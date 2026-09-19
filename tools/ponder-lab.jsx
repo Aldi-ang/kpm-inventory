@@ -32,14 +32,15 @@ import AgentInventoryView from '../src/AgentInventoryView.jsx';
 import EODReconciliationView from '../src/EODReconciliationView.jsx';
 import StockOpnameView from '../src/StockOpnameView.jsx';
 import JourneyView from '../src/JourneyView.jsx';
-import { SamplingFolderView, SamplingAnalyticsView, SampleEntryModal } from '../src/components/SamplingManager.jsx';
+import { SamplingFolderView, SamplingAnalyticsView, SampleEntryModal, formatSampleQty } from '../src/components/SamplingManager.jsx';
+import FolderCard from '../src/components/FolderCard.jsx';
 import BranchWarehouseManager from '../src/components/BranchWarehouseManager.jsx';
 import ShipmentLabel from '../src/components/ShipmentLabel.jsx';
 import ArrivalScanner from '../src/components/ArrivalScanner.jsx';
 import { ConfirmHost, confirmAction } from '../src/components/ConfirmGate.jsx';
 import { ToastHost, notify } from '../src/components/Toast.jsx';
 import BiohazardTheme from '../src/components/BiohazardTheme.jsx';
-import { Cloud } from 'lucide-react';
+import { Cloud, Folder, Calendar, MapPin, ArrowLeft, Store, Pencil, Trash2, Plus, TrendingUp } from 'lucide-react';
 /* Same module the alias in ponder-lab.config.mjs points `firebase/firestore` at, so writing a
    fixture here is what the component's own listener reads back. */
 import { FIXTURES } from './lab-firestore-stub.js';
@@ -360,6 +361,87 @@ const labSamplings = (today) => [
   { id: 's6', date: '2026-09-12', reason: 'Cibeunying', note: 'Grosir Jaya Abadi', productName: 'Cello Merah 12', qty: 3, unit: 'Bks', sticksPerPack: 12 },
   { id: 's7', date: '2026-08-28', reason: 'Dago', note: 'Warung Bu Sri Rahayu Sejahtera Abadi', productName: 'Cello Filter 20', qty: 20, unit: 'Batang', sticksPerPack: 20 },
 ];
+
+/* ?shell&sampling&fold — BOARD B, LAB ONLY (2026-09-19 19:20): the four Sampling levels (year › month › date ›
+   place) as the shipped FolderCard — the RADAR HUB's and Customers' folder — and the items level as rows
+   instead of a table. The real screen is SamplingFolderView; when he decides, the folder moves into
+   SamplingManager.jsx and this mock goes. `&tab=2026,september,19,pasar%20baru` drills it like the real one. */
+const SMP_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const SMP_LEVELS = [
+  { icon: <Folder size={22} />, label: (k) => k, count: (n) => `${Object.keys(n).length} Months Active` },
+  { icon: <Folder size={22} />, label: (k) => k, count: (n) => `${Object.keys(n).length} Dates Recorded` },
+  { icon: <Calendar size={22} />, label: (k) => new Date(k).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' }), count: (n) => `${Object.keys(n).length} Locations` },
+  { icon: <MapPin size={22} />, label: (k) => k, count: (n) => `${n.length} Items` },
+];
+const SamplingFoldMock = ({ samplings, isAdmin }) => {
+  const [path, setPath] = React.useState([]);
+  const tree = React.useMemo(() => {
+    const t = {};
+    for (const s of samplings) {
+      const d = new Date(s.date); const y = String(d.getFullYear()), m = SMP_MONTHS[d.getMonth()], p = s.reason || 'Unspecified';
+      (((t[y] ??= {})[m] ??= {})[s.date] ??= {})[p] ??= [];
+      t[y][m][s.date][p].push(s);
+    }
+    return t;
+  }, [samplings]);
+  const node = path.reduce((n, k) => n[k], tree);
+  const back = path.length > 0 && (
+    <button onClick={() => setPath(path.slice(0, -1))} className="mb-4 flex items-center gap-2 min-h-[44px] text-[var(--ink-dim)]"><ArrowLeft size={20} /> Back</button>
+  );
+  if (path.length === 4) {
+    const shops = {};
+    for (const s of node) (shops[s.note || 'General'] ??= []).push(s);
+    return (
+      <div className="animate-fade-in">
+        <div className="flex justify-between items-center">{back}{isAdmin && <button className="mb-4 flex items-center gap-2 bg-[var(--inset)] px-3 min-h-[44px] rounded-lg text-xs font-bold text-[var(--ink-dim)]"><Pencil size={14} /> Edit Folder</button>}</div>
+        <div className="bg-[var(--sunk)] rounded-2xl border border-[var(--line)] p-5 mb-4">
+          <p className="text-[var(--accent-ink)] font-bold tracking-widest text-xs uppercase mb-1">{path[2]}</p>
+          <h1 className="text-2xl font-bold font-serif">{path[3]}</h1>
+          <p className="text-[var(--ink-dim)] text-sm mt-1">{node.length} Total Items Sampled</p>
+        </div>
+        {Object.entries(shops).map(([shop, rows]) => (
+          <div key={shop} className="mb-4">
+            <h3 className="font-bold flex items-center gap-2 px-1 mb-2"><Store size={16} className="text-[var(--accent-ink)] shrink-0" /><span className="truncate">{shop}</span></h3>
+            <div className="kpm-arrive space-y-2">
+              {rows.map((s) => (
+                <div key={s.id} className="flex items-center gap-3 min-h-[52px] pl-4 pr-2 rounded-xl bg-[var(--raised)] border border-[var(--line-2)]">
+                  <span className="flex-1 min-w-0 truncate font-medium text-sm">{s.productName}</span>
+                  <span className="font-bold text-sm text-[var(--accent-ink)] whitespace-nowrap">-{formatSampleQty(s.unit === 'Batang' ? (s.qty / (s.sticksPerPack || 16)) : s.qty, s.sticksPerPack)}</span>
+                  {isAdmin && <><button className="w-11 h-11 grid place-items-center rounded-lg text-[var(--ink-dim)]"><Pencil size={16} /></button><button className="w-11 h-11 grid place-items-center rounded-lg text-[var(--ink-dim)]"><Trash2 size={16} /></button></>}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  const L = SMP_LEVELS[path.length];
+  return (
+    <div className="animate-fade-in">
+      {back}
+      {path.length === 0 ? (
+        <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
+          <h2 className="text-2xl font-bold flex items-center gap-2"><Folder size={24} className="text-[var(--accent-ink)]" /> Sampling Archives</h2>
+          <div className="flex gap-2">
+            {isAdmin && <button className="flex items-center gap-2 bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-lg font-bold shadow-lg"><Plus size={18} /> New Sample</button>}
+            <button className="flex items-center gap-2 bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-lg font-bold shadow-lg"><TrendingUp size={18} /> View Analytics</button>
+          </div>
+        </div>
+      ) : (
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><Folder size={22} className="text-[var(--accent-ink)]" /> {SMP_LEVELS[path.length - 1].label(path[path.length - 1])}</h2>
+      )}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 kpm-folders">
+        {Object.keys(node).map((k) => (
+          <FolderCard key={k} icon={L.icon} onOpen={() => setPath([...path, k])} className="kpm-folder-quiet w-full bg-[var(--raised)] border-[var(--line-2)] hover:border-[var(--accent-edge)] transition-colors">
+            <h3 className="font-bold text-[15px] lg:text-lg mb-1 truncate">{L.label(k)}</h3>
+            <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{L.count(node[k])}</p>
+          </FolderCard>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const LAB_PRODUCTS = [
   { id: 'p-cg16', name: 'Cello Green 16', sku: 'CG16', stock: 4200, priceDistributor: 8900,
@@ -763,6 +845,7 @@ function ShellLab() {
           {q.has('entry') && <SampleEntryModal isOpen initialData={null} inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]} onSubmit={() => {}} onClose={() => {}} />}
           {q.has('analytics')
             ? <SamplingAnalyticsView samplings={labSamplings(LAB_TODAY)} inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]} onBack={() => {}} />
+            : q.has('fold') ? <SamplingFoldMock samplings={labSamplings(LAB_TODAY)} isAdmin={q.has('admin')} />
             : <SamplingFolderView samplings={labSamplings(LAB_TODAY)} isAdmin={q.has('admin')} onRecordSample={() => {}} onDelete={() => {}} onEdit={() => {}} onEditFolder={() => {}} onShowAnalytics={() => {}} />}
         </>
       ) : q.has('journey') ? (

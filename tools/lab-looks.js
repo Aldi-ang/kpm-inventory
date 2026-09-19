@@ -34,4 +34,11 @@ export const PIN = '#root{width:375px}';
 /* 2026-09-19 09:10: fold-hub / fold-hub-b were decided B and shipped as .kpm-folder in theme.css + JourneyView.jsx.
    11:40: fold-cus-a / fold-cus-b — the Customers folders shipped as the same FolderCard (CustomerManager.jsx). All gone. */
 /* `?look=a,b` — comma-separated names, injected after the app's stylesheet like ?css= */
-export const LOOKS = { pin: PIN };
+/* 2026-09-19 19:20 — the SAMPLING floor (board A): the year folder's big icon inside its card, "N Locations"
+   10 → 11 px, the item's name on one line with the qty beside it. Board B is `?shell&sampling&fold` — the
+   shipped FolderCard rendered in the lab (SamplingFoldMock in ponder-lab.jsx). Delete when he decides. */
+export const SMP_FLOOR = '.grid>button.overflow-hidden>svg.absolute{right:10px;bottom:10px;width:56px;height:56px}'
+  + '.text-\\[10px\\]{font-size:11px}'
+  + 'table,tbody{display:block}tbody tr{display:flex;align-items:center}tbody td:first-child{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}tbody td:nth-child(2){white-space:nowrap}'
+  + '.space-y-6>.flex.justify-between{flex-wrap:wrap;gap:8px}';
+export const LOOKS = { pin: PIN, 'smp-floor': SMP_FLOOR };
