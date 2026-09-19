@@ -3,6 +3,7 @@ import { ArrowRight, Wallet, Package, Truck, ClipboardList, Lock, Calendar, Refr
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { getCurrentDate, getLocalDayKey} from '../utils/helpers';
 import { notify } from './Toast.jsx';
+import FolderCard from './FolderCard.jsx';
 
 // 🚀 HELPER: Safely formats decimal Bks back into "X Bks Y Btg"
 export const formatSampleQty = (qtyDecimal, sticksPerPack) => {
@@ -327,6 +328,11 @@ export const SamplingCartView = ({ inventory, isAdmin, onCancel, onSubmit }) => 
 };
 
 // --- SAMPLING FOLDER VIEW (BUG FIXED) ---
+/* The four levels are the shipped FolderCard (RADAR HUB, Customers) — his "B is better, use that instead",
+   2026-09-19, on the boards of 19:40: two to a row on the phone, the lid, the numbered tab, hold to peek, tap to
+   enter. The quiet folder (no ↗ key) as Customers wears it. */
+const FOLDER_CLASS = 'kpm-folder-quiet w-full bg-[var(--raised)] border-[var(--line-2)] hover:border-[var(--accent-edge)] transition-colors';
+
 export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelete, onEdit, onEditFolder, onShowAnalytics }) => {
     const [selectedYear, setSelectedYear] = useState(null);
     const [selectedMonth, setSelectedMonth] = useState(null);
@@ -363,6 +369,7 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
             return groups;
         }, {});
 
+        // the items are ROWS: a 3-column table plus the boss's two keys left ~70 px for the name at 375 (board 3)
         return (
             <div className="animate-fade-in">
                 <div className="flex justify-between items-center mb-6">
@@ -373,44 +380,30 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
                         </button>
                     )}
                 </div>
-                <div className="bg-[var(--raised)] rounded-2xl shadow-xl border overflow-hidden border-[var(--line)]">
-                    <div className="bg-[var(--sunk)] text-[var(--ink)] p-8">
-                        <p className="text-[var(--accent-ink)] font-bold tracking-widest text-xs uppercase mb-1">{selectedDate}</p>
-                        <h1 className="text-3xl font-bold font-serif">{selectedLocation}</h1>
-                        <p className="text-[var(--ink-dim)] text-sm mt-2">{items.length} Total Items Sampled</p>
-                    </div>
-                    <div className="p-8 space-y-8">
-                        {Object.entries(groupedItems).map(([noteGroup, groupItems]) => (
-                            <div key={noteGroup} className="bg-[var(--sunk)]/50 rounded-xl border overflow-hidden border-[var(--line)]">
-                                <div className="bg-[var(--inset)] px-4 py-3 border-b flex justify-between items-center border-[var(--line)]">
-                                    <h3 className="font-bold text-[var(--ink)] flex items-center gap-2"><Store size={16} className="text-[var(--accent-ink)]"/> {noteGroup}</h3>
-                                    <span className="text-xs bg-[var(--inset)] px-2 py-1 rounded text-[var(--ink-dim)]">{groupItems.length} items</span>
-                                </div>
-                                <table className="w-full text-sm text-left">
-                                    <tbody className="divide-y divide-[var(--line)]">
-                                        {groupItems.map(s => (
-                                            <tr key={s.id} className="hover:bg-black/5 transition-colors">
-                                                <td className="p-3 font-medium pl-4">{s.productName}</td>
-                                                {/* 🚀 NEW FORMATTED OUTPUT */}
-                                                <td className="p-3 text-right font-bold text-[var(--accent-ink)]">
-                                                    -{formatSampleQty(s.unit === 'Batang' ? (s.qty / (s.sticksPerPack||16)) : s.qty, s.sticksPerPack)}
-                                                </td>
-                                                <td className="p-3 text-right flex justify-end gap-2 pr-4">
-                                                    {isAdmin && (
-                                                        <>
-                                                            <button onClick={(e) => { e.stopPropagation(); onEdit(s); }} className="p-1.5 text-[var(--ink-dim)] hover:bg-[var(--inset)] rounded transition-colors"><Pencil size={14}/></button>
-                                                            <button data-kpm-del data-label="Delete" onClick={(e) => { e.stopPropagation(); onDelete(s); }} className="p-1.5 text-[var(--ink-dim)] hover:text-[var(--danger-ink)] hover:bg-[var(--danger-well)] rounded transition-colors"><Trash2 size={14}/></button>
-                                                        </>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ))}
-                    </div>
+                <div className="bg-[var(--sunk)] rounded-2xl border border-[var(--line)] p-5 lg:p-8 mb-4">
+                    <p className="text-[var(--accent-ink)] font-bold tracking-widest text-xs uppercase mb-1">{selectedDate}</p>
+                    <h1 className="text-2xl lg:text-3xl font-bold font-serif">{selectedLocation}</h1>
+                    <p className="text-[var(--ink-dim)] text-sm mt-1">{items.length} Total Items Sampled</p>
                 </div>
+                {Object.entries(groupedItems).map(([noteGroup, groupItems]) => (
+                    <div key={noteGroup} className="mb-4">
+                        <h3 className="font-bold text-[var(--ink)] flex items-center gap-2 px-1 mb-2"><Store size={16} className="text-[var(--accent-ink)] shrink-0"/><span className="truncate">{noteGroup}</span><span className="ml-auto text-xs text-[var(--ink-dim)] whitespace-nowrap">{groupItems.length} items</span></h3>
+                        <div className="kpm-arrive space-y-2">
+                            {groupItems.map(s => (
+                                <div key={s.id} className="flex items-center gap-3 min-h-[52px] pl-4 pr-2 rounded-xl bg-[var(--raised)] border border-[var(--line-2)]">
+                                    <span className="flex-1 min-w-0 truncate font-medium text-sm">{s.productName}</span>
+                                    <span className="font-bold text-sm text-[var(--accent-ink)] whitespace-nowrap">-{formatSampleQty(s.unit === 'Batang' ? (s.qty / (s.sticksPerPack||16)) : s.qty, s.sticksPerPack)}</span>
+                                    {isAdmin && (
+                                        <>
+                                            <button onClick={(e) => { e.stopPropagation(); onEdit(s); }} className="w-11 h-11 grid place-items-center rounded-lg text-[var(--ink-dim)] hover:bg-[var(--inset)] transition-colors"><Pencil size={16}/></button>
+                                            <button data-kpm-del data-label="Delete" onClick={(e) => { e.stopPropagation(); onDelete(s); }} className="w-11 h-11 grid place-items-center rounded-lg text-[var(--ink-dim)] hover:text-[var(--danger-ink)] hover:bg-[var(--danger-well)] transition-colors"><Trash2 size={16}/></button>
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
             </div>
         );
     }
@@ -421,14 +414,12 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
             <div className="animate-fade-in">
                 <button onClick={() => setSelectedDate(null)} className="mb-6 flex items-center gap-2 text-[var(--ink-dim)] hover:text-[var(--accent-ink)] transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to {selectedMonth}</button>
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><Calendar size={24} className="text-[var(--accent-ink)]"/> {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 kpm-folders">
                     {locations.map(loc => (
-                        <button key={loc} onClick={() => setSelectedLocation(loc)} className="w-full text-left bg-[var(--raised)] p-6 rounded-xl border shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] group transition-all border-[var(--line)]">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-[var(--inset)] rounded-lg text-[var(--accent-ink)] group-hover:bg-[var(--gold)] group-hover:text-[var(--gold-ink)] transition-colors"><MapPin size={24} /></div>
-                                <div><h3 className="font-bold text-lg group-hover:text-[var(--accent-ink)] transition-colors">{loc}</h3><p className="text-xs text-[var(--ink-dim)]">{folderStructure[selectedYear][selectedMonth][selectedDate][loc].length} Items</p></div>
-                            </div>
-                        </button>
+                        <FolderCard key={loc} icon={<MapPin size={22} />} onOpen={() => setSelectedLocation(loc)} className={FOLDER_CLASS}>
+                            <h3 className="font-bold text-[15px] lg:text-lg mb-1 truncate">{loc}</h3>
+                            <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{folderStructure[selectedYear][selectedMonth][selectedDate][loc].length} Items</p>
+                        </FolderCard>
                     ))}
                 </div>
             </div>
@@ -441,15 +432,14 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
             <div className="animate-fade-in">
                 <button onClick={() => setSelectedMonth(null)} className="mb-6 flex items-center gap-2 text-[var(--ink-dim)] hover:text-[var(--accent-ink)] transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to {selectedYear}</button>
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><Folder size={24} className="text-[var(--accent-ink)]"/> {selectedMonth} {selectedYear}</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 kpm-folders">
                     {dates.map(date => {
                         const locCount = Object.keys(folderStructure[selectedYear][selectedMonth][date] || {}).length;
                         return (
-                            <button key={date} onClick={() => setSelectedDate(date)} className="w-full text-center bg-[var(--raised)] p-4 rounded-xl border shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] group transition-all border-[var(--line)]">
-                                <div className="w-12 h-12 mx-auto bg-[var(--inset)] rounded-full flex items-center justify-center text-[var(--accent-ink)] group-hover:bg-[var(--gold)] group-hover:text-[var(--gold-ink)] transition-colors mb-3"><span className="font-bold text-lg">{new Date(date).getDate()}</span></div>
-                                <h3 className="font-bold text-sm">{new Date(date).toLocaleDateString('en-US', {weekday:'short'})}</h3>
-                                <p className="text-[10px] text-[var(--ink-dim)] mt-1">{locCount} Locations</p>
-                            </button>
+                            <FolderCard key={date} icon={<Calendar size={22} />} onOpen={() => setSelectedDate(date)} className={FOLDER_CLASS}>
+                                <h3 className="font-bold text-[15px] lg:text-lg mb-1 truncate">{new Date(date).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })}</h3>
+                                <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{locCount} Locations</p>
+                            </FolderCard>
                         );
                     })}
                 </div>
@@ -464,14 +454,12 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
             <div className="animate-fade-in">
                 <button onClick={() => setSelectedYear(null)} className="mb-6 flex items-center gap-2 text-[var(--ink-dim)] hover:text-[var(--accent-ink)] transition-colors"><ArrowRight className="rotate-180" size={20}/> Back to Years</button>
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-2"><Folder size={24} className="text-[var(--accent-ink)]"/> {selectedYear} Archives</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 kpm-folders">
                     {months.map(month => (
-                        <button key={month} onClick={() => setSelectedMonth(month)} className="w-full text-left bg-[var(--raised)] p-6 rounded-xl border shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--accent-edge)] group transition-all border-[var(--line)]">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-[var(--inset)] rounded-lg text-[var(--accent-ink)] group-hover:bg-[var(--gold)] group-hover:text-[var(--gold-ink)] transition-colors"><Folder size={24} /></div>
-                                <div><h3 className="font-bold text-lg">{month}</h3><p className="text-xs text-[var(--ink-dim)]">{Object.keys(folderStructure[selectedYear][month] || {}).length} Dates Recorded</p></div>
-                            </div>
-                        </button>
+                        <FolderCard key={month} icon={<Folder size={22} />} onOpen={() => setSelectedMonth(month)} className={FOLDER_CLASS}>
+                            <h3 className="font-bold text-[15px] lg:text-lg mb-1 truncate">{month}</h3>
+                            <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{Object.keys(folderStructure[selectedYear][month] || {}).length} Dates Recorded</p>
+                        </FolderCard>
                     ))}
                 </div>
             </div>
@@ -481,7 +469,7 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
     const years = Object.keys(folderStructure).sort((a, b) => b - a);
     return (
         <div className="animate-fade-in space-y-6">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
                 <h2 className="text-2xl font-bold flex items-center gap-2"><Folder size={24} className="text-[var(--accent-ink)]"/> Sampling Archives</h2>
                 <div className="flex gap-2">
                     {isAdmin && (
@@ -495,12 +483,12 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
             {years.length === 0 ? (
                  <div className="text-center py-20 text-[var(--ink-dim)]"><Folder size={48} className="mx-auto mb-4 opacity-20"/><p>No sampling records found.</p></div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 kpm-folders">
                     {years.map(year => (
-                        <button key={year} onClick={() => setSelectedYear(year)} className="w-full text-left block bg-[var(--raised)] border border-[var(--line)] text-[var(--ink)] p-6 rounded-xl shadow-lg cursor-pointer hover:-translate-y-1 hover:shadow-xl hover:border-[var(--accent-edge)] transition-all duration-300 relative overflow-hidden group">
-                            <Folder size={100} className="absolute -right-6 -bottom-6 text-[var(--accent-edge)] opacity-60 group-hover:opacity-100 group-hover:-rotate-6 group-hover:scale-110 transition-all duration-300 pointer-events-none origin-bottom-right"/>
-                            <div className="relative z-10 pointer-events-none"><h3 className="text-3xl font-bold mb-1">{year}</h3><div className="h-1 w-12 bg-[var(--gold)] rounded mb-3 group-hover:w-20 transition-all duration-300"></div><p className="text-sm text-[var(--ink-dim)] font-mono">{Object.keys(folderStructure[year] || {}).length} Months Active</p></div>
-                        </button>
+                        <FolderCard key={year} icon={<Folder size={22} />} onOpen={() => setSelectedYear(year)} className={FOLDER_CLASS}>
+                            <h3 className="font-bold text-[15px] lg:text-lg mb-1 truncate">{year}</h3>
+                            <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{Object.keys(folderStructure[year] || {}).length} Months Active</p>
+                        </FolderCard>
                     ))}
                 </div>
             )}

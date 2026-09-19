@@ -7806,5 +7806,29 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      'his "fix the map because it said api key needed"; checked 2026-09-19 02:40: a CARTO tile carries the watermark, the Esri tile does not');
 }
 
+{ /* SAMPLING on the phone — his "B is better, use that instead" (2026-09-19 19:55, boards 1-3 of 19:40): the four levels are FolderCards, the items are rows */
+  const sm = read('src/components/SamplingManager.jsx');
+  const pl = read('tools/ponder-lab.jsx'); const ll = read('tools/lab-looks.js');
+  ok('Sampling: the four levels (year › month › date › place) are FolderCards two to a row, four at lg — the same quiet folder as Customers',
+     /import FolderCard from '\.\/FolderCard\.jsx';/.test(sm) &&
+     /const FOLDER_CLASS = 'kpm-folder-quiet w-full bg-\[var\(--raised\)\] border-\[var\(--line-2\)\] hover:border-\[var\(--accent-edge\)\] transition-colors';/.test(sm) &&
+     (sm.match(/className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 kpm-folders"/g) || []).length === 4 &&
+     /<FolderCard key=\{year\} icon=\{<Folder size=\{22\} \/>\} onOpen=\{\(\) => setSelectedYear\(year\)\} className=\{FOLDER_CLASS\}>/.test(sm) &&
+     /<FolderCard key=\{month\} icon=\{<Folder size=\{22\} \/>\} onOpen=\{\(\) => setSelectedMonth\(month\)\} className=\{FOLDER_CLASS\}>/.test(sm) &&
+     /<FolderCard key=\{date\} icon=\{<Calendar size=\{22\} \/>\} onOpen=\{\(\) => setSelectedDate\(date\)\} className=\{FOLDER_CLASS\}>/.test(sm) &&
+     /<FolderCard key=\{loc\} icon=\{<MapPin size=\{22\} \/>\} onOpen=\{\(\) => setSelectedLocation\(loc\)\} className=\{FOLDER_CLASS\}>/.test(sm) &&
+     !/<Folder size=\{100\}/.test(code(sm)) && !/text-\[10px\] text-\[var\(--ink-dim\)\] mt-1/.test(code(sm)),
+     'the year icon that bled off the card and the 10 px count went with the old cards');
+  ok('Sampling: the items are rows (name · qty · pencil · bin at 44 px), not a table; the boss\'s two keys wrap under the title',
+     !/<tbody className="divide-y divide-\[var\(--line\)\]">/.test(code(sm)) &&
+     /<div key=\{s\.id\} className="flex items-center gap-3 min-h-\[52px\] pl-4 pr-2 rounded-xl bg-\[var\(--raised\)\] border border-\[var\(--line-2\)\]">/.test(sm) &&
+     /<button data-kpm-del data-label="Delete" onClick=\{\(e\) => \{ e\.stopPropagation\(\); onDelete\(s\); \}\} className="w-11 h-11 grid place-items-center/.test(sm) &&
+     /<div className="flex flex-wrap justify-between items-center gap-2 mb-4">\s*<h2 className="text-2xl font-bold flex items-center gap-2"><Folder size=\{24\} className="text-\[var\(--accent-ink\)\]"\/> Sampling Archives<\/h2>/.test(sm),
+     'board 3: the one-line table cut "Cello Green 16" to "Cello Gr…"; as the boss "View Analytics" ran off the phone');
+  ok('Sampling: the lab mock and the floor look went with the decision (the real screen is the proposal now)',
+     !/SamplingFoldMock/.test(pl) && !/q\.has\('fold'\)/.test(pl) && !/smp-floor/.test(code(ll)),
+     'lab 825f801 held them for the boards only');
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
