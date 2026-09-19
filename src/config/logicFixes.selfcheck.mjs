@@ -7608,6 +7608,18 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
    a 23 px assign box, a 96 px NO INTEL band and a truncated name, every label 10 px. The CARTO
    tiles print API KEY REQUIRED across every tile now - on his phone too. */
 {
+  section('2026-09-19 - the phone runs the NEW build on the first open (the PWA worker reloads once)');
+  const mainSrc = read('src/main.jsx');
+  const vcfg = read('vite.config.js');
+  const pwaReg = fs.existsSync('node_modules/vite-plugin-pwa/dist/client/build/register.js') ? read('node_modules/vite-plugin-pwa/dist/client/build/register.js') : '';
+  ok('main.jsx registers the worker through the plugin (immediate, an hourly update check) instead of the injected bare register',
+     /import \{ registerSW \} from 'virtual:pwa-register'/.test(mainSrc) &&
+     /registerSW\(\{ immediate: true, onRegisteredSW\(_url, r\) \{ if \(r\) setInterval\(\(\) => r\.update\(\), 60 \* 60 \* 1000\); \} \}\);/.test(mainSrc) &&
+     /registerType: 'autoUpdate'/.test(vcfg),
+     'the injected registerSW.js only registers - a new build showed on the SECOND open (2026-08-20, 09-18, 09-19)');
+  ok('BEHAVIOUR: the plugin\'s autoUpdate register reloads the page when a new worker activates (isUpdate) - a plugin upgrade that drops this goes red',
+     !pwaReg || (/if \(auto\)/.test(pwaReg) && /event\.isUpdate \|\| event\.isExternal/.test(pwaReg) && /window\.location\.reload\(\)/.test(pwaReg)));
+
   section('2026-09-19 - the store card: C (name, LED line, ENGAGE · NAVIGATE; the rest behind ⋯) + the LED critical light');
   const jc = read('src/JourneyView.jsx');
   const tc = read('src/styles/theme.css');
