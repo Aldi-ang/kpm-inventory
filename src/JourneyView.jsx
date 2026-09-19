@@ -1390,18 +1390,19 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
                             {/* 🚀 LEVEL 1: PROVINSI FOLDERS */}
                             {selectedProvinsi === 'All' && (
-                                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+                                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4 kpm-folders">
                                     {provList.map(prov => {
+                                        /* 📁 a FOLDER (his video, "B for both", 2026-09-19): the lid on top, the numbered tab and the
+                                           ↗ key on the panel, the lid lifts on press. The control is .kpm-folder in theme.css; the
+                                           colours are this screen's. The regency cards below wear the same folder. */
                                         const kabCount = Object.keys(groupedTree[prov] || {}).length;
                                         let storeCount = 0;
                                         Object.values(groupedTree[prov] || {}).forEach(k => Object.values(k).forEach(c => storeCount += c.length));
                                         
                                         return (
-                                            <button key={prov} onClick={() => setSelectedProvinsi(prov)} className="bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-orange-500 p-5 rounded-2xl flex flex-col items-start gap-3 transition-all duration-300 group shadow-md hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] hover:-translate-y-1 text-left">
-                                                <div className="p-3 bg-slate-800 group-hover:bg-orange-500/20 rounded-xl text-slate-400 group-hover:text-orange-500 transition-colors">
-                                                    <MapPin size={24} />
-                                                </div>
-                                                <div>
+                                            <button key={prov} onClick={() => setSelectedProvinsi(prov)} className="kpm-folder bg-slate-900 border-slate-700 hover:border-orange-500 transition-colors duration-300">
+                                                <div className="kpm-folder-lid"><MapPin size={22} /></div>
+                                                <div className="kpm-folder-panel">
                                                     <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{prov}</h3>
                                                     <p className="text-[11px] lg:text-[10px] text-slate-400 font-bold uppercase tracking-wider">{kabCount} Regions • {storeCount} Targets</p>
                                                 </div>
@@ -1413,18 +1414,16 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
                             {/* 🚀 LEVEL 2: KABUPATEN FOLDERS */}
                             {selectedProvinsi !== 'All' && selectedKabupaten === 'All' && groupedTree[selectedProvinsi] && (
-                                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4 animate-fade-in-up">
+                                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4 animate-fade-in-up kpm-folders">
                                     {Object.keys(groupedTree[selectedProvinsi]).sort().map(kab => {
                                         const kecCount = Object.keys(groupedTree[selectedProvinsi][kab] || {}).length;
                                         let storeCount = 0;
                                         Object.values(groupedTree[selectedProvinsi][kab] || {}).forEach(c => storeCount += c.length);
 
                                         return (
-                                            <button key={kab} onClick={() => setSelectedKabupaten(kab)} className="bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-blue-500 p-5 rounded-2xl flex flex-col items-start gap-3 transition-all duration-300 group shadow-md hover:shadow-[0_0_20px_rgba(59,130,246,0.15)] hover:-translate-y-1 text-left">
-                                                <div className="p-3 bg-slate-800 group-hover:bg-blue-500/20 rounded-xl text-slate-400 group-hover:text-blue-500 transition-colors">
-                                                    <Layers size={24} />
-                                                </div>
-                                                <div>
+                                            <button key={kab} onClick={() => setSelectedKabupaten(kab)} className="kpm-folder bg-slate-900 border-slate-700 hover:border-blue-500 transition-colors duration-300">
+                                                <div className="kpm-folder-lid"><Layers size={22} /></div>
+                                                <div className="kpm-folder-panel">
                                                     <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{kab}</h3>
                                                     <p className="text-[11px] lg:text-[10px] text-slate-400 font-bold uppercase tracking-wider">{kecCount} Sectors • {storeCount} Targets</p>
                                                 </div>

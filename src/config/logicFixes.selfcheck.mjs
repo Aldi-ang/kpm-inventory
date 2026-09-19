@@ -7608,6 +7608,25 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
    a 23 px assign box, a 96 px NO INTEL band and a truncated name, every label 10 px. The CARTO
    tiles print API KEY REQUIRED across every tile now - on his phone too. */
 {
+  section('2026-09-19 - the RADAR HUB region cards are FOLDERS (his video, "B for both")');
+  const jf = read('src/JourneyView.jsx');
+  const tf = read('src/styles/theme.css');
+  ok('the folder control lives in theme.css: a lid, a numbered tab (CSS counter), an ↗ key, the lid lifts on press; no shadow',
+     /\.kpm-folders \{ counter-reset: folder; \}/.test(tf) &&
+     /\.kpm-folder \{ position: relative; display: flex; flex-direction: column;[^}]*counter-increment: folder;/.test(tf) &&
+     /\.kpm-folder-lid \{ height: 78px;[^}]*transition: height 220ms/.test(tf) &&
+     /\.kpm-folder-panel::before \{ content: counter\(folder, decimal-leading-zero\);/.test(tf) &&
+     /\.kpm-folder-panel::after \{ content: "↗";/.test(tf) &&
+     /\.kpm-folder:active \.kpm-folder-lid \{ height: 34px; \}/.test(tf) &&
+     !/box-shadow|text-shadow|filter:/.test(code(tf).slice(code(tf).indexOf('.kpm-folders {'))),
+     'his "make it more alive like this video" - the press is the phone\'s hover');
+  ok('both hub levels (province, regency) wear the folder and their lists carry the counter; the old flat card is gone',
+     /className="kpm-folder bg-slate-900 border-slate-700 hover:border-orange-500 transition-colors duration-300">\s*<div className="kpm-folder-lid"><MapPin size=\{22\} \/><\/div>\s*<div className="kpm-folder-panel">/.test(jf) &&
+     /className="kpm-folder bg-slate-900 border-slate-700 hover:border-blue-500 transition-colors duration-300">\s*<div className="kpm-folder-lid"><Layers size=\{22\} \/><\/div>\s*<div className="kpm-folder-panel">/.test(jf) &&
+     (jf.match(/ kpm-folders">/g) || []).length === 2 &&
+     !/p-5 rounded-2xl flex flex-col items-start gap-3 transition-all duration-300 group shadow-md/.test(code(jf)),
+     'the panel and its tab inherit the card colour, so the screen keeps its own palette');
+
   section('2026-09-19 - the phone runs the NEW build on the first open (the PWA worker reloads once)');
   const mainSrc = read('src/main.jsx');
   const vcfg = read('vite.config.js');
