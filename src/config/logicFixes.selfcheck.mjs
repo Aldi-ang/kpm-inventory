@@ -7608,6 +7608,49 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
    a 23 px assign box, a 96 px NO INTEL band and a truncated name, every label 10 px. The CARTO
    tiles print API KEY REQUIRED across every tile now - on his phone too. */
 {
+  section('2026-09-19 - the store card: C (name, LED line, ENGAGE · NAVIGATE; the rest behind ⋯) + the LED critical light');
+  const jc = read('src/JourneyView.jsx');
+  const tc = read('src/styles/theme.css');
+  ok('C: getBountyStatus gives every state a short line and a diode class; the card prints the line beside the diode, nothing blinks',
+     /return \{ text: "⚠️ CRITICAL: NEVER VISITED", short: "NEVER VISITED", led: "crit",/.test(jc) &&
+     /short: `SAFE · \$\{daysLeft\} DAYS LEFT`, led: "ok",/.test(jc) &&
+     /short: `DUE IN \$\{daysLeft\} \$\{daysLeft === 1 \? 'DAY' : 'DAYS'\}`, led: "warn",/.test(jc) &&
+     /short: overdue === 0 \? 'DUE TODAY' : `OVERDUE · \$\{overdue\} \$\{overdue === 1 \? 'DAY' : 'DAYS'\}`, led: "crit",/.test(jc) &&
+     /<div className=\{`kpm-led-line mb-2 lg:mb-3 \$\{statusBadge\.led\}`\}><i aria-hidden="true"><\/i>\{statusBadge\.short\}<\/div>/.test(jc) &&
+     !/tracking-widest w-max \$\{statusBadge\.color\}/.test(code(jc)),
+     'his "board 2 = lamp edge, LED cyberpunk style"; the pill blinked (animate-pulse) - the loop he erased elsewhere on 09-18');
+  ok('LED: a critical card carries kpm-crit; the edge colour is a border (Lite-safe), the glow is gradients, the breath is opacity - no shadow, no filter',
+     /\$\{!isVisited && statusBadge\.led === 'crit' \? 'kpm-crit' : ''\}/.test(jc) &&
+     /--led-crit:\s+#[0-9A-Fa-f]{6};/.test(tc) && /--led-warn:\s+#[0-9A-Fa-f]{6};/.test(tc) &&
+     /\.kpm-led-line \{ display: flex; align-items: center; gap: 8px;/.test(tc) &&
+     /\.kpm-led-line\.crit > i \{ background: radial-gradient\(/.test(tc) &&
+     /\.kpm-led-line\.warn > i \{ background: radial-gradient\(/.test(tc) &&
+     /\.kpm-crit\.kpm-crit \{ border-color: var\(--led-crit\); \}/.test(tc) &&
+     /\.kpm-crit::before \{ content: ""; position: absolute; inset: 0; z-index: 30; pointer-events: none;/.test(tc) &&
+     /@keyframes kpmCritBreath \{ 50% \{ opacity: \.35; \} \}/.test(tc) &&
+     !/box-shadow|text-shadow|filter:/.test(code(tc).slice(code(tc).indexOf('.kpm-led-line {'))),
+     'G30: Lite Mode strips shadows and filters; the state must survive as a border or a background');
+  ok('C: on the phone the strip and the address show only while the ⋯ is open; the body is 12 px; the desk keeps its band and its 16 px',
+     /className=\{`\$\{customer\.storeImage \? 'h-24' : 'min-h-11 lg:h-24'\} \$\{actsOpen === customer\.id \? '' : 'hidden lg:block'\} bg-black relative shrink-0 border-b border-slate-800`\}/.test(jc) &&
+     /<div className=\{`space-y-2 mb-3 lg:mb-4 flex-1 \$\{actsOpen === customer\.id \? '' : 'hidden lg:block'\}`\}>/.test(jc) &&
+     /<div className="p-3 lg:p-4 flex-1 flex flex-col bg-gradient-to-b from-\[#1a1815\] to-\[#0f0e0d\]">/.test(jc) &&
+     /<h3 className="font-black text-base text-white uppercase tracking-wider mb-1\.5 lg:mb-2 leading-tight flex items-start gap-2 lg:block lg:truncate">/.test(jc) &&
+     !/<div className="space-y-2 mb-4 flex-1">/.test(code(jc)),
+     'his "board 1 = C"; measured 2026-09-19: today 343 px, C 158 px');
+  ok('C: ENGAGE TARGET and NAVIGATE share one 44 px row on the phone (his "usually engage target and navigate"); the desk column stays',
+     /<div className="flex flex-row lg:flex-col gap-2 mt-auto relative z-20">/.test(jc) &&
+     /className="w-full flex-\[2\] lg:flex-none bg-gradient-to-r from-orange-600 to-red-600/.test(jc) &&
+     /<div className="flex gap-2 flex-1 lg:flex-none">/.test(jc) &&
+     !/<div className="flex flex-col gap-2 mt-auto relative z-20">/.test(code(jc)));
+  ok('C: RADAR and LOG are written once (mapKey / logKey) and mounted twice - in the ⋯ fold on the phone as SHOW ON MAP / LOG A VISIT, in the key row on the desk',
+     /const mapKey = \(label\) => \(/.test(jc) && /const logKey = \(label\) => \(/.test(jc) &&
+     /<div className="flex gap-2 p-2 pb-0 lg:hidden">\{mapKey\('SHOW ON MAP'\)\}\{logKey\('LOG A VISIT'\)\}<\/div>/.test(jc) &&
+     /<div className="hidden lg:contents">\{mapKey\('Radar'\)\}<\/div>/.test(jc) &&
+     /<div className="hidden lg:contents">\{logKey\('Log'\)\}<\/div>/.test(jc) &&
+     (jc.match(/onClick=\{\(\) => jumpToMap\(customer\.id\)\}/g) || []).length === 1 &&
+     !/<Globe size=\{12\}\/> Radar/.test(code(jc)) && !/<AlertTriangle size=\{12\}\/> Log\r?\n/.test(code(jc)),
+     'his "what is radar button actually?" - RADAR opens the store in the Map War Room; the fold says what it does');
+
   section('2026-09-19 - Journey Plan on the phone: the fold, the ⋯ card, the floor, the tiles');
   const jv = read('src/JourneyView.jsx');
   const cm = read('src/components/CustomerManager.jsx');
@@ -7666,19 +7709,19 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /if \(!e\.target\.closest\('\[data-acts\]'\)\) setActsOpen\(null\);/.test(jv) &&
      /document\.addEventListener\('pointerdown', close\)/.test(jv) &&
      /<div data-acts onClick=\{e => e\.stopPropagation\(\)\} className=\{`order-last lg:order-none grid lg:flex lg:justify-between lg:items-center lg:p-1\.5 bg-black border-t lg:border-t-0 lg:border-b border-slate-800 z-10 transition-\[grid-template-rows,opacity\] duration-200 ease-out \$\{actsOpen === customer\.id \? 'opacity-100' : 'opacity-0 lg:opacity-100'\}`\} style=\{\{ gridTemplateRows: actsOpen === customer\.id \? '1fr' : '0fr' \}\}>/.test(jv) &&
-     /<div className="overflow-hidden lg:contents"><div className="flex justify-between items-center gap-2 p-2 lg:contents">/.test(jv) &&
+     /<div className="overflow-hidden lg:contents">\s*<div className="flex gap-2 p-2 pb-0 lg:hidden">[^\n]*<\/div>\s*<div className="flex justify-between items-center gap-2 p-2 lg:contents">/.test(jv) &&
      /<MoreKey id=\{customer\.id\} label=\{customer\.name\} open=\{actsOpen === customer\.id\} onToggle=\{\(id\) => setActsOpen\(o => \(o === id \? null : id\)\)\} className="shrink-0 -mt-1 -mr-1" \/>/.test(jv) &&
      !/<div className="bg-black border-b border-slate-800 p-1\.5 flex justify-between items-center z-10">/.test(code(jv)),
      'his "board 2 = B"');
   ok('2B: the arrows and the assign box are 44 on the phone, the name shows whole, the address is 11',
      (jv.match(/w-11 h-11 lg:w-6 lg:h-6 text-base lg:text-xs bg-slate-900/g) || []).length === 2 &&
      /px-2 py-1 min-h-11 lg:min-h-0 rounded outline-none border transition-all relative z-20/.test(jv) &&
-     /<h3 className="font-black text-base text-white uppercase tracking-wider mb-2 leading-tight flex items-start gap-2 lg:block lg:truncate">/.test(jv) &&
+     /<h3 className="font-black text-base text-white uppercase tracking-wider mb-1\.5 lg:mb-2 leading-tight flex items-start gap-2 lg:block lg:truncate">/.test(jv) &&
      /<p className="text-\[11px\] lg:text-\[10px\] font-bold leading-relaxed line-clamp-2">\{customer\.address\}<\/p>/.test(jv) &&
      !/leading-tight truncate">/.test(code(jv)) && !/w-6 h-6 text-xs bg-slate-900/.test(code(jv)),
      'measured 2026-09-19: arrows 24 x 24, assign 128 x 23, the name cut with …, the address 10 px');
   ok('2B: with no photo the NO INTEL band is a 44 px strip carrying the badges; with a photo it stays the 96 px picture',
-     /className=\{`\$\{customer\.storeImage \? 'h-24' : 'min-h-11 lg:h-24'\} bg-black relative shrink-0 border-b border-slate-800`\}/.test(jv) &&
+     /className=\{`\$\{customer\.storeImage \? 'h-24' : 'min-h-11 lg:h-24'\} \$\{actsOpen === customer\.id \? '' : 'hidden lg:block'\} bg-black relative shrink-0 border-b border-slate-800`\}/.test(jv) &&
      /<div className="hidden lg:flex w-full h-full flex-col items-center justify-center text-slate-700/.test(jv) &&
      /className=\{`\$\{customer\.storeImage \? 'absolute top-2 left-2 flex flex-col gap-1\.5' : 'static flex flex-row flex-wrap items-center gap-1\.5 px-2 py-1\.5 lg:absolute lg:top-2 lg:left-2 lg:flex-col lg:p-0'\}`\}/.test(jv) &&
      !/<div className="h-24 bg-black relative shrink-0 border-b border-slate-800">/.test(code(jv)),

@@ -715,9 +715,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     }, [orderedRoute, assignments, globalAgentList, agentColors]);
 
     const getBountyStatus = (customer) => {
-        if (!customer) return { text: "UNKNOWN TARGET", color: "bg-slate-600", border: "border-slate-500", flashing: false };
+        if (!customer) return { text: "UNKNOWN TARGET", short: "UNKNOWN", led: "", color: "bg-slate-600", border: "border-slate-500", flashing: false };
         const freq = parseInt(customer.visitFreq) || 7;
-        if (!customer.lastVisit) return { text: "⚠️ CRITICAL: NEVER VISITED", color: "bg-red-600 text-white", border: "border-red-500", flashing: true };
+        if (!customer.lastVisit) return { text: "⚠️ CRITICAL: NEVER VISITED", short: "NEVER VISITED", led: "crit", color: "bg-red-600 text-white", border: "border-red-500", flashing: true };
         
         try {
             const parseDate = (dStr) => {
@@ -733,11 +733,12 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
             const daysLeft = freq - diffDays;
 
-            if (daysLeft > 2) return { text: `STATUS: SAFE (${daysLeft} Days Left)`, color: "bg-emerald-900/60 text-emerald-400", border: "border-emerald-500/50" };
-            if (daysLeft > 0) return { text: `EXPIRING SOON (${daysLeft} Days Left)`, color: "bg-yellow-900/60 text-yellow-400", border: "border-yellow-500/50" };
-            return { text: `⚠️ CRITICAL: OVERDUE BY ${Math.abs(daysLeft)} DAYS`, color: "bg-red-600 text-white", border: "border-red-500", flashing: true };
+            if (daysLeft > 2) return { text: `STATUS: SAFE (${daysLeft} Days Left)`, short: `SAFE · ${daysLeft} DAYS LEFT`, led: "ok", color: "bg-emerald-900/60 text-emerald-400", border: "border-emerald-500/50" };
+            if (daysLeft > 0) return { text: `EXPIRING SOON (${daysLeft} Days Left)`, short: `DUE IN ${daysLeft} ${daysLeft === 1 ? 'DAY' : 'DAYS'}`, led: "warn", color: "bg-yellow-900/60 text-yellow-400", border: "border-yellow-500/50" };
+            const overdue = Math.abs(daysLeft);
+            return { text: `⚠️ CRITICAL: OVERDUE BY ${overdue} DAYS`, short: overdue === 0 ? 'DUE TODAY' : `OVERDUE · ${overdue} ${overdue === 1 ? 'DAY' : 'DAYS'}`, led: "crit", color: "bg-red-600 text-white", border: "border-red-500", flashing: true };
         } catch(e) {
-            return { text: "DATA CORRUPT", color: "bg-red-600 text-white", border: "border-red-500", flashing: false };
+            return { text: "DATA CORRUPT", short: "DATA CORRUPT", led: "crit", color: "bg-red-600 text-white", border: "border-red-500", flashing: false };
         }
     };
 
@@ -1500,9 +1501,21 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                 const metric = storeMetrics?.[customer.id] || { agentName: 'Unassigned', color: '#94a3b8', stopNumber: 0 };
                                                 const ringColor = isVisited ? '#10b981' : (metric.agentName === 'Unassigned' ? '#94a3b8' : metric.color);
                                                 const statusBadge = getBountyStatus(customer);
+                                                /* RADAR and LOG are written once and mounted twice: in the ⋯ fold on the phone (named by what
+                                                   they do), in the key row on the desk - his "board 1 = C", 2026-09-19 */
+                                                const mapKey = (label) => (
+                                                    <button onClick={() => jumpToMap(customer.id)} className="flex-1 min-h-11 lg:min-h-0 bg-slate-800 hover:bg-slate-700 text-blue-400 py-2.5 rounded-lg font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600">
+                                                        <Globe size={12}/> {label}
+                                                    </button>
+                                                );
+                                                const logKey = (label) => (
+                                                    <button onClick={() => { setCheckInCustomer(customer); setVisitNote(""); setVisitTag("Store Closed 🔒"); }} className="flex-1 min-h-11 lg:min-h-0 bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 py-2.5 rounded-lg font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600 hover:border-red-500/50">
+                                                        <AlertTriangle size={12}/> {label}
+                                                    </button>
+                                                );
 
                                                 return (
-                                                    <div key={customer.id} className={`bg-[#0f0e0d] rounded-2xl border-2 overflow-hidden flex flex-col relative transition-all duration-500 ${isVisited ? 'border-emerald-900/50 opacity-70 grayscale hover:grayscale-0' : 'border-slate-700 hover:border-orange-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] hover:-translate-y-1'}`}>
+                                                    <div key={customer.id} className={`bg-[#0f0e0d] rounded-2xl border-2 overflow-hidden flex flex-col relative transition-all duration-500 ${isVisited ? 'border-emerald-900/50 opacity-70 grayscale hover:grayscale-0' : 'border-slate-700 hover:border-orange-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] hover:-translate-y-1'} ${!isVisited && statusBadge.led === 'crit' ? 'kpm-crit' : ''}`}>
                                                         
                                                         {isVisited && (() => {
                                                             const tag = String(hasLiveTxToday ? '' : (customer.lastVisitTag || ''));
@@ -1535,7 +1548,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                             (order-last), 0fr until the ⋯ key beside the name opens it - his board 2 = B, 2026-09-19.
                                                             One set of controls for both widths; nothing is duplicated. */}
                                                         <div data-acts onClick={e => e.stopPropagation()} className={`order-last lg:order-none grid lg:flex lg:justify-between lg:items-center lg:p-1.5 bg-black border-t lg:border-t-0 lg:border-b border-slate-800 z-10 transition-[grid-template-rows,opacity] duration-200 ease-out ${actsOpen === customer.id ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`} style={{ gridTemplateRows: actsOpen === customer.id ? '1fr' : '0fr' }}>
-                                                        <div className="overflow-hidden lg:contents"><div className="flex justify-between items-center gap-2 p-2 lg:contents">
+                                                        <div className="overflow-hidden lg:contents">
+                                                        <div className="flex gap-2 p-2 pb-0 lg:hidden">{mapKey('SHOW ON MAP')}{logKey('LOG A VISIT')}</div>
+                                                        <div className="flex justify-between items-center gap-2 p-2 lg:contents">
                                                             <div className="flex gap-1 relative z-20">
                                                                 <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'up'); }} disabled={originalIdx === 0 || isVisited} className="w-11 h-11 lg:w-6 lg:h-6 text-base lg:text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↑</button>
                                                                 <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'down'); }} disabled={originalIdx === orderedRoute.length - 1 || isVisited} className="w-11 h-11 lg:w-6 lg:h-6 text-base lg:text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↓</button>
@@ -1555,7 +1570,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
                                                         {/* the picture band: 96 px when there is a photo; without one the phone gets a 44 px strip
                                                             that carries the badges instead of a NO INTEL texture */}
-                                                        <div className={`${customer.storeImage ? 'h-24' : 'min-h-11 lg:h-24'} bg-black relative shrink-0 border-b border-slate-800`}>
+                                                        <div className={`${customer.storeImage ? 'h-24' : 'min-h-11 lg:h-24'} ${actsOpen === customer.id ? '' : 'hidden lg:block'} bg-black relative shrink-0 border-b border-slate-800`}>
                                                             {customer.storeImage ? (
                                                                 <img src={customer.storeImage} className="w-full h-full object-cover opacity-60" alt="Store"/>
                                                             ) : (
@@ -1584,8 +1599,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                             </div>
                                                         </div>
 
-                                                        <div className="p-4 flex-1 flex flex-col bg-gradient-to-b from-[#1a1815] to-[#0f0e0d]">
-                                                            <h3 className="font-black text-base text-white uppercase tracking-wider mb-2 leading-tight flex items-start gap-2 lg:block lg:truncate">
+                                                        <div className="p-3 lg:p-4 flex-1 flex flex-col bg-gradient-to-b from-[#1a1815] to-[#0f0e0d]">
+                                                            <h3 className="font-black text-base text-white uppercase tracking-wider mb-1.5 lg:mb-2 leading-tight flex items-start gap-2 lg:block lg:truncate">
                                                                 <span className="flex-1 min-w-0">{customer.name}</span>
                                                                 <MoreKey id={customer.id} label={customer.name} open={actsOpen === customer.id} onToggle={(id) => setActsOpen(o => (o === id ? null : id))} className="shrink-0 -mt-1 -mr-1" />
                                                             </h3>
@@ -1596,12 +1611,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                     {(!hasLiveTxToday && customer.lastVisitNote) && <span className="text-[11px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-2 border-t border-emerald-500/30 pt-1.5 mt-0.5">{customer.lastVisitNote}</span>}
                                                                 </div>
                                                             ) : (
-                                                                <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[11px] font-black uppercase tracking-widest w-max ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
-                                                                    {statusBadge.text}
-                                                                </div>
+                                                                <div className={`kpm-led-line mb-2 lg:mb-3 ${statusBadge.led}`}><i aria-hidden="true"></i>{statusBadge.short}</div>
                                                             )}
                                                             
-                                                            <div className="space-y-2 mb-4 flex-1">
+                                                            <div className={`space-y-2 mb-3 lg:mb-4 flex-1 ${actsOpen === customer.id ? '' : 'hidden lg:block'}`}>
                                                                 <div className="flex items-start gap-2 text-slate-400 bg-black/40 p-2 rounded border border-white/5">
                                                                     <MapPin size={12} className="shrink-0 text-blue-500 mt-0.5"/>
                                                                     <div>
@@ -1610,23 +1623,18 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                 </div>
                                                             </div>
 
-                                                            <div className="flex flex-col gap-2 mt-auto relative z-20">
+                                                            <div className="flex flex-row lg:flex-col gap-2 mt-auto relative z-20">
                                                                 {!isVisited ? (
                                                                     <>
                                                                         <button 
                                                                             onClick={() => jumpToTerminal(customer.name)}
-                                                                            className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-3 min-h-11 lg:min-h-0 rounded-lg font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-[0_5px_20px_rgba(249,115,22,0.4)] border border-orange-400"
+                                                                            className="w-full flex-[2] lg:flex-none bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-3 min-h-11 lg:min-h-0 rounded-lg font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-[0_5px_20px_rgba(249,115,22,0.4)] border border-orange-400"
                                                                         >
                                                                             <Crosshair size={14}/> Engage Target
                                                                         </button>
                                                                         
-                                                                        <div className="flex gap-2">
-                                                                            <button 
-                                                                                onClick={() => jumpToMap(customer.id)}
-                                                                                className="flex-1 bg-slate-800 hover:bg-slate-700 text-blue-400 py-2.5 rounded-lg font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600"
-                                                                            >
-                                                                                <Globe size={12}/> Radar
-                                                                            </button>
+                                                                        <div className="flex gap-2 flex-1 lg:flex-none">
+                                                                            <div className="hidden lg:contents">{mapKey('Radar')}</div>
                                                                             
                                                                             <button 
                                                                                 onClick={() => handleOpenLocation(customer)}
@@ -1636,12 +1644,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                                 <Navigation size={12}/> Navigate
                                                                             </button>
 
-                                                                            <button 
-                                                                                onClick={() => { setCheckInCustomer(customer); setVisitNote(""); setVisitTag("Store Closed 🔒"); }}
-                                                                                className="flex-1 bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 py-2.5 rounded-lg font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600 hover:border-red-500/50"
-                                                                            >
-                                                                                <AlertTriangle size={12}/> Log
-                                                                            </button>
+                                                                            <div className="hidden lg:contents">{logKey('Log')}</div>
                                                                         </div>
                                                                     </>
                                                                 ) : (

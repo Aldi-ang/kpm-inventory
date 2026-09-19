@@ -24,5 +24,9 @@ export const PIN = '#root{width:375px}';
    the ⋯ card) were decided B / B / YES and shipped into JourneyView.jsx. Gone. `?shell&journey` and
    `?shell&journey&admin` (+ `&tab=unmapped%20provinsi,bandung` for the store level) still open the real screen. */
 
+/* 2026-09-19 07:20: the store card looks (jp-a/b/c — the compact card; jp-lamp, jp-edge — the critical light)
+   were decided C + LAMP + EDGE ("LED cyberpunk style") and shipped into JourneyView.jsx + theme.css
+   (.kpm-led-line, .kpm-crit). Gone. */
+
 /* `?look=a,b` — comma-separated names, injected after the app's stylesheet like ?css= */
 export const LOOKS = { pin: PIN };
