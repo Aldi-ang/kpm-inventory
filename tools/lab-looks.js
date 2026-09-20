@@ -39,4 +39,22 @@ export const PIN = '#root{width:375px}';
    `&tab=2026,september,19,pasar%20baru`) still opens the real screen inside the shell. */
 /* 2026-09-20 01:15: the Journey Plan compact looks (jp-strip / jp-mapfold) were decided A and shipped into
    JourneyView.jsx + theme.css (the 160 px strip, the touch gate). Gone. `?shell&journey` still opens the real screen. */
-export const LOOKS = { pin: PIN };
+/* 2026-09-20 02:20 — the EOD HQ VERIFICATION panel (his t7: "redesign to looks on theme … animation smooth and futuristic
+   … the color looks expensive … more natural"). eod-docket = A, the same card dressed in the theme's own vocabulary: no
+   gold slabs — a dark raised card, a gold hairline under the name, the type as a kpm-stamp, the stamps block an inset
+   well, one gold PLATE to verify and REJECT demoted to a text key. eod-fold = B, the pending reports and the history
+   as the shipped FolderCard (the mock EodFoldMock in ponder-lab.jsx, lab only); the look hides the real grid. Delete
+   when he decides. */
+const DOCKET_CARD = '#root .space-y-4 > div.bg-black\\/40.border.rounded-2xl{background:linear-gradient(180deg,var(--raised),var(--sunk));border-color:var(--line-2);box-shadow:none}';
+const DOCKET_HEAD = '#root .space-y-4 > div > div.p-4.flex.justify-between.items-center.border-b{background:linear-gradient(90deg,var(--gold),transparent 70%) 0 100% / 100% 1px no-repeat !important;border-bottom:0;padding:12px 16px}'
+  + '#root .space-y-4 > div > div.p-4 h4{color:var(--ink) !important;font-size:15px}#root .space-y-4 > div > div.p-4 p.text-\\[10px\\]{font-size:11px;color:var(--ink-dim)}'
+  + '#root .space-y-4 > div > div.p-4 span.rounded.uppercase{background:var(--inset) !important;color:var(--accent-ink) !important;box-shadow:none !important;border:1px solid var(--line-2);font-family:var(--font-mono);font-weight:700}';
+const DOCKET_BODY = '#root .space-y-4 .bg-\\[var\\(--gold\\)\\].p-3.rounded-lg{background:var(--inset) !important;border-color:var(--line-2) !important;border-left:2px solid var(--gold) !important}'
+  + '#root .space-y-4 .bg-\\[var\\(--gold\\)\\].p-3.rounded-lg span.text-xs{color:var(--ink-dim) !important}#root .space-y-4 .bg-\\[var\\(--gold\\)\\].p-3.rounded-lg span.text-xl{color:var(--ink) !important;white-space:nowrap;font-family:var(--font-mono)}'
+  + '#root .space-y-4 .p-6.space-y-4{padding:16px}#root .space-y-4 .text-\\[10px\\]{font-size:11px}#root .space-y-4 .bg-black\\/40.p-3.rounded-lg.border{background:var(--inset)}';
+const DOCKET_KEYS = '#root .space-y-4 .flex.gap-2.mt-4.pt-2{flex-direction:column;gap:4px}'
+  + '#root .space-y-4 .flex.gap-2.mt-4.pt-2 > button:first-child{min-height:52px;background-image:linear-gradient(180deg,rgba(255,255,255,.3) 0 1px,transparent 1px,transparent calc(100% - 2px),rgba(0,0,0,.28) calc(100% - 2px)),linear-gradient(180deg,#E09A3C,var(--gold)) !important;color:var(--gold-ink) !important;border-color:var(--accent-edge) !important;letter-spacing:.2em}'
+  + '#root .space-y-4 .flex.gap-2.mt-4.pt-2 > button:last-child{min-height:44px;background:transparent !important;border-color:transparent !important;color:var(--danger-ink) !important;font-size:11px}';
+export const EOD_DOCKET = DOCKET_CARD + DOCKET_HEAD + DOCKET_BODY + DOCKET_KEYS;
+export const EOD_FOLD = '#root .grid.grid-cols-1.lg\\:grid-cols-2.gap-8.animate-fade-in{display:none}';
+export const LOOKS = { pin: PIN, 'eod-docket': EOD_DOCKET, 'eod-fold': EOD_FOLD };

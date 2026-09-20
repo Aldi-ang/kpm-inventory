@@ -39,7 +39,8 @@ import ArrivalScanner from '../src/components/ArrivalScanner.jsx';
 import { ConfirmHost, confirmAction } from '../src/components/ConfirmGate.jsx';
 import { ToastHost, notify } from '../src/components/Toast.jsx';
 import BiohazardTheme from '../src/components/BiohazardTheme.jsx';
-import { Cloud } from 'lucide-react';
+import { Cloud, Tag, Wallet, MapPin } from 'lucide-react';
+import FolderCard from '../src/components/FolderCard.jsx';
 /* Same module the alias in ponder-lab.config.mjs points `firebase/firestore` at, so writing a
    fixture here is what the component's own listener reads back. */
 import { FIXTURES } from './lab-firestore-stub.js';
@@ -361,6 +362,54 @@ const labSamplings = (today) => [
   { id: 's7', date: '2026-08-28', reason: 'Dago', note: 'Warung Bu Sri Rahayu Sejahtera Abadi', productName: 'Cello Filter 20', qty: 20, unit: 'Batang', sticksPerPack: 20 },
 ];
 
+
+/* EOD reports for ?shell&eod&admin (2026-09-20): the boss's HQ Verification panel reads them — two PENDING (a cash &
+   stock night that matches, a pita cukai return with two lost stamps paid) and three VERIFIED for the History Log
+   (MUNTILAN › Budi Santoso › this month). The fields are the ones EODReconciliationView.jsx:855-1045 reads. */
+const labEodReports = (today) => {
+  const now = Math.floor(Date.now() / 1000);
+  const stock = [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 12, unit: 'Bks' }, { productId: 'p-djar', name: 'Djarum Coklat 12', qty: 5, unit: 'Bks' }];
+  return [
+    { id: 'e1', status: 'PENDING', reportType: 'CASH_STOCK', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 3600 }, countStatus: 'CLEAN',
+      expectedCash: 1250000, cash: 1250000, expectedTransfer: 425000, transfer: 425000, expectedStock: stock, remainingStock: stock,
+      damagedStockToReturn: [{ ticketId: 'd1', name: 'Cello Green 16', reason: 'Basah', qty: 2, unit: 'Bks' }], deployedSamples: [] },
+    { id: 'e2', status: 'PENDING', reportType: 'CUKAI', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 3000 },
+      cukaiReturned: 40, cukaiPaid: 2, cukaiFine: 30000, deployedSamples: [{ productName: 'Cello Green 16', qty: 1.5, sticksPerPack: 16 }] },
+    { id: 'e3', status: 'VERIFIED', reportType: 'CASH_STOCK', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 86400 }, verifiedAt: { seconds: now - 80000 }, expectedCash: 980000, cash: 980000, expectedTransfer: 0, transfer: 0, remainingStock: stock },
+    { id: 'e4', status: 'VERIFIED', reportType: 'CUKAI', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 86400 }, verifiedAt: { seconds: now - 79000 }, cukaiReturned: 36, cukaiPaid: 0, cukaiFine: 0 },
+    { id: 'e5', status: 'VERIFIED', reportType: 'CASH_STOCK', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 172800 }, verifiedAt: { seconds: now - 170000 }, expectedCash: 1410000, cash: 1400000, expectedTransfer: 0, transfer: 0, remainingStock: stock },
+  ];
+};
+
+/* ?shell&eod&admin&fold — BOARD B for the HQ Verification panel (2026-09-20, LAB ONLY): the pending reports and the
+   History Log as the shipped FolderCard. Rendered under the real screen; the eod-fold look hides the real grid. A tap
+   would open the docket (board A) as a sheet — not built, a still. Delete when he decides. */
+const EodFoldMock = ({ reports }) => {
+  const pending = reports.filter((r) => r.status === 'PENDING');
+  const stamp = (r) => r.reportType === 'CUKAI' ? r.cukaiReturned + ' PCS RETURNED' : 'Rp ' + ((r.cash || 0) + (r.transfer || 0)).toLocaleString('id-ID');
+  const cls = 'kpm-folder-quiet w-full bg-[var(--raised)] border-[var(--line-2)] hover:border-[var(--accent-edge)] transition-colors';
+  return (
+    <div className="max-w-7xl mx-auto p-2 -mt-2">
+      <h3 className="font-black text-[var(--ink)] uppercase tracking-widest flex items-center gap-2 mb-3 text-sm">Pending Verification ({pending.length})</h3>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 kpm-folders mb-6">
+        {pending.map((r) => (
+          <FolderCard key={r.id} icon={r.reportType === 'CUKAI' ? <Tag size={22} /> : <Wallet size={22} />} onOpen={() => {}} className={cls}>
+            <h3 className="font-bold text-[15px] lg:text-lg mb-1 truncate">{r.agentName}</h3>
+            <p className="kpm-stamp block truncate max-w-full text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{stamp(r)}</p>
+            <p className={`kpm-led-line ${r.cukaiPaid > 0 ? 'warn' : ''} mt-2 text-[11px] uppercase tracking-widest font-bold`}><i aria-hidden="true"></i>{r.cukaiPaid > 0 ? `${r.cukaiPaid} stamps lost` : 'counts match'}</p>
+          </FolderCard>
+        ))}
+      </div>
+      <h3 className="font-black text-[var(--ink-dim)] uppercase tracking-widest flex items-center gap-2 mb-3 text-sm">EOD History Log</h3>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 kpm-folders">
+        <FolderCard icon={<MapPin size={22} />} onOpen={() => {}} className={cls}>
+          <h3 className="font-bold text-[15px] lg:text-lg mb-1 truncate">MUNTILAN</h3>
+          <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">1 salesman · 3 nights</p>
+        </FolderCard>
+      </div>
+    </div>
+  );
+};
 
 const LAB_PRODUCTS = [
   { id: 'p-cg16', name: 'Cello Green 16', sku: 'CG16', stock: 4200, priceDistributor: 8900,
@@ -815,17 +864,20 @@ function ShellLab() {
            cukai card has a figure. Two cash sales plus one transfer, so the cash card and the
            transfer receipt list both have rows. onSubmitEOD records to window.__eod and writes
            nothing. `&admin` mounts the boss's review side instead. */
+        <>
         <EODReconciliationView
           agentProfileId="m2" isAdmin={q.has('admin')}
           motorists={LAB_MOTORISTS.map((m) => (m.id === 'm2' ? { ...m, ...FIXTURES['motorists/m2'] } : m))}
           agentCanvas={FIXTURES['motorists/m2'].activeCanvas}
           inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]}
           transactions={[...LAB_AGENT_TXNS, { id: 'tx5', agentId: 'm2', date: LAB_TODAY, type: 'SALE', total: 425000, paymentType: 'Transfer', customerName: 'Toko Berkah Jaya' }]}
-          samplings={[]} eodReports={[]} appSettings={{}}
+          samplings={[]} eodReports={q.has('admin') ? labEodReports(LAB_TODAY) : []} appSettings={{}}
           user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
           onSubmitEOD={async (p) => { window.__eod = [...(window.__eod || []), p]; }}
           onVerifyEOD={() => {}} onResetEOD={() => {}}
         />
+        {q.has('fold') && <EodFoldMock reports={labEodReports(LAB_TODAY)} />}
+        </>
       ) : q.has('agent') ? (
         /* ?shell&agent — the Agent Inventory (the salesman's van manifest) INSIDE the real shell,
            exactly as App.jsx:4253 mounts it: no wrapper, a direct child of biohazard-content. T5
