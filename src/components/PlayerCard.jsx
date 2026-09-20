@@ -2,9 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { CheckCircle, RotateCcw, Undo2 } from 'lucide-react';
 import { RankBorder } from '../config/rankBorders.jsx';
 import { careerXP, computeDayXP, rankLadder, totals, DEFAULT_XP } from '../config/career.js';
-import { formatRupiah, convertToBks, shortStockRows, eodBountyLines, eodReportParts, eodPartApproved, EOD_PART_LABELS } from '../utils/helpers.js';
+import { formatRupiah, convertToBks, shortStockRows, eodBountyLines, eodReportParts, eodPartApproved, eodNightMessage, EOD_PART_LABELS } from '../utils/helpers.js';
 import { revenueOf, salesDelta, dayOf } from '../utils/salesRollup.js';
-import { promptAction } from './ConfirmGate.jsx';
+import { confirmAction, promptAction } from './ConfirmGate.jsx';
 
 /* THE PLAYER CARD — one salesman's night in the boss's EOD review. Aldi, 2026-09-20 ("looks good for
    v2 lets use that"): the HEAD is the man as his Agent Profile draws him — the photo in the rank
@@ -127,24 +127,35 @@ const PlayerCard = ({ group, motorist, career, useCareerLedger = false, ranks, e
         setChecked(c => { const n = { ...c }; delete n[line.key]; return n; });
     };
 
+    /* ONE question for the night, then one write per report. A night is two documents (cash & stock + pita
+       cukai); asking per document read as the same panel twice (his 15:00). A cancel keeps his ticks. */
     const approve = async () => {
         if (busy || nChecked + nReturn === 0) return;
+        const items = group.reports.map(report => {
+            const own = pending.filter(l => l.report.id === report.id);
+            return { report, decision: {
+                approve: own.filter(l => checked[l.key]).map(l => l.part),
+                reject: Object.fromEntries(own.filter(l => returned[l.key]).map(l => [l.part, returned[l.key]]))
+            } };
+        }).filter(it => it.decision.approve.length || Object.keys(it.decision.reject).length);
+        if (!items.length) return;
         setBusy(true);
         try {
-            let allIn = true;
-            for (const report of group.reports) {
-                const own = pending.filter(l => l.report.id === report.id);
-                const decision = {
-                    approve: own.filter(l => checked[l.key]).map(l => l.part),
-                    reject: Object.fromEntries(own.filter(l => returned[l.key]).map(l => [l.part, returned[l.key]]))
-                };
-                if (decision.approve.length === 0 && Object.keys(decision.reject).length === 0) { if (own.length) allIn = false; continue; }
-                const done = await onApprove(report, decision);
-                if (!done || own.some(l => !checked[l.key])) allIn = false;
+            if (!await confirmAction(eodNightMessage(items, inventory, tier))) return;
+            let allIn = pending.every(l => checked[l.key]);   // every open line of the night ticked → the seal
+            for (const { report, decision } of items) {
+                const done = await onApprove(report, decision, { confirmed: true });
+                if (!done) allIn = false;
             }
             setChecked({}); setReturned({});
             if (allIn && onSealed) onSealed();
         } finally { setBusy(false); }
+    };
+    const resetNight = async () => {
+        if (busy) return;
+        const n = group.reports.length;
+        if (!await confirmAction(`RESET the night for ${group.agentName}? This deletes ${n === 1 ? 'the report' : `both reports`} so he can submit again.`)) return;
+        for (const r of group.reports) await onReset(r, { confirmed: true });
     };
 
     const photo = motorist?.profileImage;
@@ -217,7 +228,7 @@ const PlayerCard = ({ group, motorist, career, useCareerLedger = false, ranks, e
                         <CheckCircle size={18} /> <span>{nChecked > 0 && nReturn > 0 ? `Approve ${nChecked} · return ${nReturn}` : nReturn > 0 ? `Return ${nReturn}` : nChecked > 0 ? `Approve ${hot ? 'short' : 'checked'} (${nChecked})` : 'Approve checked'}</span>
                     </button>
                     {onReset && (
-                        <button type="button" onClick={() => group.reports.forEach(r => onReset(r))} disabled={busy} className="w-full min-h-11 mt-1 rounded-xl text-[11px] font-bold uppercase tracking-widest text-[var(--danger-ink)] flex items-center justify-center gap-2">
+                        <button type="button" onClick={resetNight} disabled={busy} className="w-full min-h-11 mt-1 rounded-xl text-[11px] font-bold uppercase tracking-widest text-[var(--danger-ink)] flex items-center justify-center gap-2">
                             <RotateCcw size={14} /> <span>Reset the night — he submits again</span>
                         </button>
                     )}

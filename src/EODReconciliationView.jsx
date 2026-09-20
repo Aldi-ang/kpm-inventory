@@ -923,93 +923,114 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
                                                                                     {openDates.includes(dateKey) && (
                                                                                         <div className="p-3 space-y-3 bg-black/40">
-                                                                                            {/* 📄 THE ACTUAL REPORTS */}
-                                                                                            {structuredHistory[location][empName][yearMonth][fullDate].map(report => {
-                                                                                                const isExpanded = expandedReports.includes(report.id);
-                                                                                                const hasDamaged = report.damagedStockToReturn && report.damagedStockToReturn.length > 0;
-                                                                                                const toggleExpand = () => setExpandedReports(prev => isExpanded ? prev.filter(id => id !== report.id) : [...prev, report.id]);
-                                                                                                return (
-                                                                                                <div key={report.id} onClick={toggleExpand} className={`bg-[var(--sunk)] border p-3 rounded-xl transition-colors shadow-sm cursor-pointer border-[var(--line)] ${report.reportType === 'BOUNTY' ? 'border-[var(--danger)] hover:border-[var(--danger)]' : 'border-[var(--line)] hover:border-[var(--line)]'} `}>
-                                                                                                    <div className="flex justify-between items-center">
-                                                                                                    <div>
-                                                                                                        <h4 className="font-bold text-[var(--ink)] text-xs flex items-center gap-2">
-                                                                                                            {report.reportType === 'CASH_STOCK' && <span className="w-2 h-2 rounded-full bg-[var(--gold)]"></span>}
-                                                                                                            {report.reportType === 'CUKAI' && <span className="w-2 h-2 rounded-full bg-[var(--gold)]"></span>}
-                                                                                                            {report.reportType === 'BOUNTY' && <span className="w-2 h-2 rounded-full bg-[var(--danger)] animate-pulse"></span>}
-                                                                                                            {!report.reportType && <span className="w-2 h-2 rounded-full bg-[var(--gold)]"></span>}
-                                                                                                            {report.reportType === 'BOUNTY' ? <span className="text-[var(--danger-ink)] tracking-widest">Bounty Cleared</span> : report.reportType === 'CUKAI' ? 'Cukai Return' : 'EOD Cash/Stock'}
-                                                                                                            {/* 🚀 NEW: quick hint badge, click the row for the full breakdown */}
-                                                                                                            {/* a warning KEEPS its gold plate — but wears --gold-ink on it, not --accent-ink, which is the gold itself */}
-                                                                                                            {hasDamaged && <span className="text-[11px] bg-[var(--gold)] text-[var(--gold-ink)] border border-[var(--accent-edge)] px-1.5 py-0.5 rounded uppercase tracking-widest">Damaged</span>}
-                                                                                                            <ChevronDown size={10} className={`text-[var(--ink-dim)] transition-transform ${isExpanded ? 'rotate-180' : ''} `}/>
-                                                                                                        </h4>
-                                                                                                        <p className="text-[11px] text-[var(--ink-dim)] flex items-center gap-1 mt-1 font-mono">
-                                                                                                            <Clock size={10}/> 
-                                                                                                            {report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Unknown Time'}
-                                                                                                        </p>
-                                                                                                    </div>
-                                                                                                    <div className="text-right flex flex-col items-end">
-                                                                                                        {(report.reportType === 'CASH_STOCK' || !report.reportType || report.reportType === 'BOUNTY') && <p className={`text-xs font-black ${report.reportType === 'BOUNTY' ? 'text-[var(--danger-ink)]' : 'text-[var(--ink-dim)]'} `}>{formatRupiah(report.cash)}</p>}
-                                                                                                        {report.reportType === 'CUKAI' && (
-                                                                                                            <p className="text-xs font-black text-[var(--accent-ink)]">
-                                                                                                                {report.cukaiReturned !== undefined ? report.cukaiReturned : (report.cukai || 0)} Pcs
-                                                                                                                {report.cukaiPaid > 0 && <span className="text-[var(--danger-ink)] ml-1">(+{report.cukaiPaid} Paid)</span>}
+                                                                                            {/* 📄 THE NIGHT AS ONE ROW. His 15:00: "put this become one history instead of 2 since both of them
+                                                                                                approved together right" - cash & stock + pita cukai are ONE night (one panel per person, his 02:50 rule);
+                                                                                                a BOUNTY (a fine paid) keeps its own row. Force Reset asks once and deletes the whole night. */}
+                                                                                            {(() => {
+                                                                                                const all = structuredHistory[location][empName][yearMonth][fullDate];
+                                                                                                const night = all.filter(r => r.reportType !== 'BOUNTY');
+                                                                                                const rows = [...(night.length ? [{ id: night.map(r => r.id).join('+'), kind: 'NIGHT', reports: night }] : []),
+                                                                                                              ...all.filter(r => r.reportType === 'BOUNTY').map(r => ({ id: r.id, kind: 'BOUNTY', reports: [r] }))];
+                                                                                                return rows.map(row => {
+                                                                                                    const isBounty = row.kind === 'BOUNTY';
+                                                                                                    const first = row.reports[0];
+                                                                                                    const isExpanded = expandedReports.includes(row.id);
+                                                                                                    const toggleExpand = () => setExpandedReports(prev => isExpanded ? prev.filter(id => id !== row.id) : [...prev, row.id]);
+                                                                                                    const cashRep = row.reports.find(r => r.reportType === 'CASH_STOCK' || !r.reportType);
+                                                                                                    const cukaiRep = row.reports.find(r => r.reportType === 'CUKAI' || (!r.reportType && Number(r.cukai) > 0));
+                                                                                                    const money = row.reports.reduce((sum, r) => sum + (r.reportType === 'CUKAI' ? 0 : (Number(r.cash) || 0) + (Number(r.transfer) || 0)), 0);
+                                                                                                    const stamps = cukaiRep ? (cukaiRep.cukaiReturned !== undefined ? cukaiRep.cukaiReturned : (cukaiRep.cukai || 0)) : 0;
+                                                                                                    const stock = row.reports.flatMap(r => r.remainingStock || []);
+                                                                                                    const damaged = row.reports.flatMap(r => r.damagedStockToReturn || []);
+                                                                                                    const hasDamaged = damaged.length > 0;
+                                                                                                    const earliest = Math.min(...row.reports.map(r => r.timestamp?.seconds || Infinity));
+                                                                                                    const resetRow = async (e) => {
+                                                                                                        e.stopPropagation();
+                                                                                                        if (!await confirmAction(`FORCE RESET ${isBounty ? 'this bounty payment' : 'the night of ' + fullDate} for ${first.agentName}? This deletes ${row.reports.length === 1 ? 'the report' : 'both reports'}; ${isBounty ? 'the debt comes back' : 'he submits again'}.`)) return;
+                                                                                                        for (const r of row.reports) await onResetEOD(r, { confirmed: true });
+                                                                                                    };
+                                                                                                    return (
+                                                                                                    <div key={row.id} onClick={toggleExpand} className={`bg-[var(--sunk)] border p-3 rounded-xl transition-colors shadow-sm cursor-pointer ${isBounty ? 'border-[var(--danger)] hover:border-[var(--danger)]' : 'border-[var(--line)] hover:border-[var(--line)]'} `}>
+                                                                                                        <div className="flex justify-between items-center">
+                                                                                                        <div>
+                                                                                                            <h4 className="font-bold text-[var(--ink)] text-xs flex items-center gap-2">
+                                                                                                                <span className={`w-2 h-2 rounded-full ${isBounty ? 'bg-[var(--danger)] animate-pulse' : 'bg-[var(--gold)]'}`}></span>
+                                                                                                                {isBounty ? <span className="text-[var(--danger-ink)] tracking-widest">Bounty Cleared</span> : 'EOD Night'}
+                                                                                                                {/* a warning KEEPS its gold plate — but wears --gold-ink on it, not --accent-ink, which is the gold itself */}
+                                                                                                                {hasDamaged && <span className="text-[11px] bg-[var(--gold)] text-[var(--gold-ink)] border border-[var(--accent-edge)] px-1.5 py-0.5 rounded uppercase tracking-widest">Damaged</span>}
+                                                                                                                <ChevronDown size={10} className={`text-[var(--ink-dim)] transition-transform ${isExpanded ? 'rotate-180' : ''} `}/>
+                                                                                                            </h4>
+                                                                                                            <p className="text-[11px] text-[var(--ink-dim)] flex items-center gap-1 mt-1 font-mono">
+                                                                                                                <Clock size={10}/>
+                                                                                                                {Number.isFinite(earliest) ? new Date(earliest * 1000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : 'Unknown Time'}
+                                                                                                                {!isBounty && <span className="ml-2 uppercase tracking-widest">{[cashRep && 'cash & stock', cukaiRep && 'pita cukai'].filter(Boolean).join(' · ')}</span>}
                                                                                                             </p>
-                                                                                                        )}
-                                                                                                        
-                                                                                                        <button 
-                                                                                                            onClick={(e) => { e.stopPropagation(); onResetEOD(report); }}
-                                                                                                            className="text-[11px] flex items-center gap-1 bg-[var(--danger-well)] hover:bg-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] px-2 py-1 rounded border border-[var(--danger)] transition-all active:scale-95 uppercase font-bold mt-2"
-                                                                                                        >
-                                                                                                            <XCircle size={10}/> Force Reset
-                                                                                                        </button>
-                                                                                                    </div>
-                                                                                                    </div>
-
-                                                                                                    {/* 🚀 NEW: full breakdown, only rendered when the row is clicked open */}
-                                                                                                    {isExpanded && (
-                                                                                                        <div className="mt-3 pt-3 border-t border-[var(--line)] space-y-2" onClick={(e) => e.stopPropagation()}>
-                                                                                                            {report.remainingStock && report.remainingStock.length > 0 && (
-                                                                                                                <div>
-                                                                                                                    <p className="text-[11px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-1">Healthy Stock Returned</p>
-                                                                                                                    {report.remainingStock.map((item, idx) => (
-                                                                                                                        <p key={idx} className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>{item.name}</span><span className="font-bold">{item.qty} {item.unit}</span></p>
-                                                                                                                    ))}
-                                                                                                                </div>
-                                                                                                            )}
-                                                                                                            {hasDamaged && (
-                                                                                                                <div>
-                                                                                                                    <p className="text-[11px] font-bold text-[var(--accent-ink)] uppercase tracking-widest mb-1">Damaged Goods Returned</p>
-                                                                                                                    {report.damagedStockToReturn.map((item) => (
-                                                                                                                        <p key={item.ticketId} className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>{item.name} <span className="text-[var(--accent-ink)] italic">({item.reason})</span></span><span className="font-bold text-[var(--accent-ink)]">{item.qty} {item.unit}</span></p>
-                                                                                                                    ))}
-                                                                                                                </div>
-                                                                                                            )}
-                                                                                                            {/* 🚀 FIX: Cukai never had expand content at all - now shows the real breakdown */}
-                                                                                                            {report.reportType === 'CUKAI' && (
-                                                                                                                <div>
-                                                                                                                    <p className="text-[11px] font-bold text-[var(--accent-ink)] uppercase tracking-widest mb-1">Pita Cukai Breakdown</p>
-                                                                                                                    <p className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>Physical Stamps Returned</span><span className="font-bold text-[var(--accent-ink)]">{report.cukaiReturned !== undefined ? report.cukaiReturned : (report.cukai || 0)} Pcs</span></p>
-                                                                                                                    {report.cukaiPaid > 0 && (
-                                                                                                                        <p className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>Lost, Paid as Fine</span><span className="font-bold text-[var(--danger-ink)]">{report.cukaiPaid} Pcs ({formatRupiah(report.cukaiFine || 0)})</span></p>
-                                                                                                                    )}
-                                                                                                                </div>
-                                                                                                            )}
-                                                                                                            {/* 🚀 FIX: report.penaltyDescription never existed - real fields are penaltyKeys and cash */}
-                                                                                                            {report.reportType === 'BOUNTY' && (
-                                                                                                                <div>
-                                                                                                                    <p className="text-[11px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-1">Bounty Details</p>
-                                                                                                                    <p className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>Penalty Item{report.penaltyKeys?.length === 1 ? '' : 's'} Cleared</span><span className="font-bold text-[var(--danger-ink)]">{report.penaltyKeys?.length || 0}</span></p>
-                                                                                                                    <p className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>Total Paid</span><span className="font-bold text-[var(--danger-ink)]">{formatRupiah(report.cash)}</span></p>
-                                                                                                                </div>
-                                                                                                            )}
-                                                                                                            {!report.remainingStock?.length && !hasDamaged && report.reportType !== 'CUKAI' && report.reportType !== 'BOUNTY' && (
-                                                                                                                <p className="text-[10px] text-[var(--ink-dim)] italic">No itemized data for this entry.</p>
-                                                                                                            )}
                                                                                                         </div>
-                                                                                                    )}
-                                                                                                </div>
-                                                                                            )})}
+                                                                                                        <div className="text-right flex flex-col items-end">
+                                                                                                            {isBounty
+                                                                                                                ? <p className="text-xs font-black text-[var(--danger-ink)]">{formatRupiah(first.cash)}</p>
+                                                                                                                : <>
+                                                                                                                    {cashRep && <p className="text-xs font-black text-[var(--ink-dim)]">{formatRupiah(money)}</p>}
+                                                                                                                    {cukaiRep && (
+                                                                                                                        <p className="text-xs font-black text-[var(--accent-ink)]">
+                                                                                                                            {stamps} Pcs
+                                                                                                                            {cukaiRep.cukaiPaid > 0 && <span className="text-[var(--danger-ink)] ml-1">(+{cukaiRep.cukaiPaid} Paid)</span>}
+                                                                                                                        </p>
+                                                                                                                    )}
+                                                                                                                </>}
+                                                                                                            <button
+                                                                                                                onClick={resetRow}
+                                                                                                                className="text-[11px] flex items-center gap-1 bg-[var(--danger-well)] hover:bg-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] px-2 py-1 rounded border border-[var(--danger)] transition-all active:scale-95 uppercase font-bold mt-2"
+                                                                                                            >
+                                                                                                                <XCircle size={10}/> Force Reset
+                                                                                                            </button>
+                                                                                                        </div>
+                                                                                                        </div>
+                                                                                            
+                                                                                                        {/* 🚀 the full breakdown of the night, only rendered when the row is clicked open */}
+                                                                                                        {isExpanded && (
+                                                                                                            <div className="mt-3 pt-3 border-t border-[var(--line)] space-y-2" onClick={(e) => e.stopPropagation()}>
+                                                                                                                {stock.length > 0 && (
+                                                                                                                    <div>
+                                                                                                                        <p className="text-[11px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-1">Healthy Stock Returned</p>
+                                                                                                                        {stock.map((item, idx) => (
+                                                                                                                            <p key={idx} className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>{item.name}</span><span className="font-bold">{item.qty} {item.unit}</span></p>
+                                                                                                                        ))}
+                                                                                                                    </div>
+                                                                                                                )}
+                                                                                                                {hasDamaged && (
+                                                                                                                    <div>
+                                                                                                                        <p className="text-[11px] font-bold text-[var(--accent-ink)] uppercase tracking-widest mb-1">Damaged Goods Returned</p>
+                                                                                                                        {damaged.map((item) => (
+                                                                                                                            <p key={item.ticketId} className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>{item.name} <span className="text-[var(--accent-ink)] italic">({item.reason})</span></span><span className="font-bold text-[var(--accent-ink)]">{item.qty} {item.unit}</span></p>
+                                                                                                                        ))}
+                                                                                                                    </div>
+                                                                                                                )}
+                                                                                                                {cukaiRep && (
+                                                                                                                    <div>
+                                                                                                                        <p className="text-[11px] font-bold text-[var(--accent-ink)] uppercase tracking-widest mb-1">Pita Cukai Breakdown</p>
+                                                                                                                        <p className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>Physical Stamps Returned</span><span className="font-bold text-[var(--accent-ink)]">{stamps} Pcs</span></p>
+                                                                                                                        {cukaiRep.cukaiPaid > 0 && (
+                                                                                                                            <p className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>Lost, Paid as Fine</span><span className="font-bold text-[var(--danger-ink)]">{cukaiRep.cukaiPaid} Pcs ({formatRupiah(cukaiRep.cukaiFine || 0)})</span></p>
+                                                                                                                        )}
+                                                                                                                    </div>
+                                                                                                                )}
+                                                                                                                {isBounty && (
+                                                                                                                    <div>
+                                                                                                                        <p className="text-[11px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-1">Bounty Details</p>
+                                                                                                                        <p className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>Penalty Item{first.penaltyKeys?.length === 1 ? '' : 's'} Cleared</span><span className="font-bold text-[var(--danger-ink)]">{first.penaltyKeys?.length || 0}</span></p>
+                                                                                                                        <p className="text-[10px] text-[var(--ink-dim)] flex justify-between"><span>Total Paid</span><span className="font-bold text-[var(--danger-ink)]">{formatRupiah(first.cash)}</span></p>
+                                                                                                                    </div>
+                                                                                                                )}
+                                                                                                                {!stock.length && !hasDamaged && !cukaiRep && !isBounty && (
+                                                                                                                    <p className="text-[10px] text-[var(--ink-dim)] italic">No itemized data for this entry.</p>
+                                                                                                                )}
+                                                                                                            </div>
+                                                                                                        )}
+                                                                                                    </div>
+                                                                                                    );
+                                                                                                });
+                                                                                            })()}
                                                                                         </div>
                                                                                     )}
                                                                                 </div>

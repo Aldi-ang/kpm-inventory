@@ -144,7 +144,7 @@ import {
 
 // --- CONFIG & UTILITIES IMPORTS ---
 import { auth, db, storage, googleProvider, appId } from './config/firebase';
-import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines, eodReportParts, EOD_PART_LABELS, absentForSure } from './utils/helpers';
+import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines, eodReportParts, eodNightMessage, EOD_PART_LABELS, absentForSure } from './utils/helpers';
 import { isLowStock } from './utils/stockThreshold';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES, DEFAULT_RANKS } from './config/career';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
@@ -2098,18 +2098,17 @@ const handleGitHubMirror = async () => {
      is re-read inside the transaction, so a part a second admin approved a moment ago is skipped.
      The career ledger, the XP and the VERIFIED stamp move once, when the last part is approved; until
      then the report stays PENDING, its `rejected` map carrying the reason the salesman reads on his
-     own EOD screen. Resolves true only when the write landed, so the card can play its seal after. */
-  const handleVerifyEOD = async (report, decision) => {
+     own EOD screen. Resolves true only when the write landed, so the card can play its seal after.
+     `opts.confirmed`: the player card asks ONCE for the whole night (eodNightMessage) and hands each
+     report in as already confirmed - a night is two documents, and two questions read as a bug
+     (his 15:00 "this panel showing up twice"). Without it the handler asks for its one report. */
+  const handleVerifyEOD = async (report, decision, opts) => {
       const parts = eodReportParts(report, inventory, appSettings?.penaltyPriceTier);
       const askedApprove = decision?.approve ? decision.approve.filter(p => parts.includes(p)) : parts;
       const askedReject = Object.fromEntries(Object.entries(decision?.reject || {}).filter(([p, why]) => parts.includes(p) && String(why || '').trim()));
       if (askedApprove.length === 0 && Object.keys(askedReject).length === 0) return false;
-      const doing = (part) => askedApprove.includes(part);
-      const fmtRp = (n) => new Intl.NumberFormat('id-ID').format(n);
       const partList = askedApprove.map(p => EOD_PART_LABELS[p].toLowerCase()).join(', ');
-      const returnList = Object.entries(askedReject).map(([p, why]) => `  \u2022 ${EOD_PART_LABELS[p]} \u2014 ${why}`).join('\n');
 
-      // 🚀 DYNAMIC CONFIRMATION: Adapt message based on the report type and the parts in hand
       /* A short count becomes a bounty in the agent's name, so the admin is told the amount
          BEFORE approving, not after. Aldi's rule, 2026-08-18: "admin can approve but it will add
          up to the agent's bounties instead". Approving is allowed — it is simply not silent. */
@@ -2118,20 +2117,8 @@ const handleGitHubMirror = async () => {
          the missing pack on retail price as a compensation". The arithmetic lives in helpers so
          the card the admin reads and the ledger he writes cannot drift apart. */
       const bountyLines = eodBountyLines(report, inventory, appSettings?.penaltyPriceTier);
-      const eodShortfall = bountyLines.reduce((sum, line) => sum + line.amount, 0);
 
-      const confirmMsg = (report.reportType === 'BOUNTY'
-          ? (doing('bounty')
-              ? `Verify Bounty Clearance of Rp ${fmtRp(report.cash)} for ${report.agentName}? This will wipe their quarantine debt.`
-              : `Return the bounty payment to ${report.agentName}?`)
-          : doing('bounty') && eodShortfall > 0
-              ? `Approve ${partList} for ${report.agentName}?\n\nThey are short Rp ${fmtRp(eodShortfall)}:\n${bountyLines.map(l => `  \u2022 ${l.label} \u2014 Rp ${fmtRp(l.amount)}`).join('\n')}\n\nApproving records each of those as a bounty in their name, which they can repay from their own EOD screen.${doing('stock') ? '\n\nThis also clears their inventory and returns it to the Vault.' : ''}`
-              : askedApprove.length
-                  ? `Approve ${partList} for ${report.agentName}?${doing('stock') ? ' This clears their inventory and returns it to the Vault.' : ''}`
-                  : `Return these to ${report.agentName}?`)
-          + (returnList ? `\n\nGoing back to them with a reason:\n${returnList}` : '');
-
-      if(!await confirmAction(confirmMsg)) return false;
+      if (!opts?.confirmed && !await confirmAction(eodNightMessage([{ report, decision: { approve: askedApprove, reject: askedReject } }], inventory, appSettings?.penaltyPriceTier))) return false;
 
       let sealed = false;   // set inside the transaction: every part is now approved
       try {
@@ -2476,8 +2463,9 @@ const handleGitHubMirror = async () => {
       } catch(e) { console.error(e); notify("Verification failed: " + e.message); return false; }
   };
 
-  const handleResetEOD = async (report) => {
-      if(!await confirmAction(`RESET EOD for ${report.agentName}? This will delete today's submission so they can try again.`)) return;
+  const handleResetEOD = async (report, opts) => {
+      // opts.confirmed: the card / the history row asked once for the whole night (two documents, one question)
+      if(!opts?.confirmed && !await confirmAction(`RESET EOD for ${report.agentName}? This will delete today's submission so they can try again.`)) return;
       try {
           await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/eod_reports`, report.id));
           await logAudit("EOD_RESET", `Admin reset EOD for ${report.agentName}`);

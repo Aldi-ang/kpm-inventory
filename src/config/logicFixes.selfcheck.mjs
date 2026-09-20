@@ -1360,12 +1360,17 @@ section('S18. A short count is approved, recorded as a bounty, and repayable');
 
 /* Repinned 2026-08-18: the cash+transfer sum moved into eodBountyLines when goods became
    billable too. The rule did not relax, it moved - so the guard follows it. */
+/* 2026-09-20 15:10: the question moved into helpers.eodNightMessage (ONE question for a night of two documents);
+   App.jsx still mints from the same lines, and asks through the same text when no card asked first. */
 ok('the shortfall is every bounty line the report mints, summed',
    /const bountyLines = eodBountyLines\(report, inventory, appSettings\?\.penaltyPriceTier\)/.test(app)
-   && /bountyLines\.reduce\(\(sum, line\) => sum \+ line\.amount, 0\)/.test(app));
+   && /const short = bounty\.reduce\(\(s, l\) => s \+ l\.amount, 0\);/.test(helpers)
+   && /\.flatMap\(\(\{ report \}\) => eodBountyLines\(report, inventory, priceTier\)\);/.test(helpers));
 ok('the admin is told the amount AND the lines before approving',
-   /records each of those as a bounty in their name/.test(app)
-   && /bountyLines\.map\(/.test(app) && /\$\{l\.label\}/.test(app));
+   /records each of those as a bounty in their name/.test(helpers)
+   && /bounty\.map\(l => /.test(helpers) && /\$\{l\.label\}/.test(helpers)
+   && /if \(!opts\?\.confirmed && !await confirmAction\(eodNightMessage\(\[\{ report, decision: \{ approve: askedApprove, reject: askedReject \} \}\], inventory, appSettings\?\.penaltyPriceTier\)\)\) return false;/.test(app)
+   && /if \(!await confirmAction\(eodNightMessage\(items, inventory, tier\)\)\) return;/.test(read('src/components/PlayerCard.jsx')));
 ok('the bounty is minted onto the agent, one PENALTY key per reason',
    /currentDebts\[line\.key\] = line\.amount;/.test(app));
 ok('it is ASSIGNED, not added to, so a double-approve cannot charge twice',
@@ -7901,7 +7906,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
     ok('the Agent Profile climbs the same ladder', /const \{ currentTier, nextTier, tierIndex, progressPercent \} = rankLadder\(lifetimeEXP, rpgData\.ranks\);/.test(profile) && /ranks: DEFAULT_RANKS/.test(profile) && !/for \(let i = sortedRanks\.length - 1; i >= 0; i--\)/.test(profile)); }
 
   /* the data: handleVerifyEOD credits only the parts in hand, from the FRESH map, and seals only when every part is in */
-  { const vFrom = app.indexOf('const handleVerifyEOD = async (report, decision) => {'); const vTo = app.indexOf('const handleResetEOD = async (report) => {');
+  { const vFrom = app.indexOf('const handleVerifyEOD = async (report, decision, opts) => {'); const vTo = app.indexOf('const handleResetEOD = async (report, opts) => {');
     ok('handleVerifyEOD is anchored', vFrom > -1 && vTo > vFrom && vTo - vFrom > 6000 && vTo - vFrom < 30000);
     const v = app.slice(vFrom, vTo);
     ok('handleVerifyEOD: the parts come from eodReportParts; a decision approves only parts the report carries; the verified map is re-read inside the transaction',
@@ -7921,7 +7926,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
        /approveNow\.forEach\(p => \{ delete rejectedNow\[p\]; \}\);/.test(v) &&
        (v.match(/\{ \.\.\.stamp, status: 'VERIFIED', verifiedAt: serverTimestamp\(\)/g) || []).length === 3 &&
        !/t\.update\(eodRef, \{ status: 'VERIFIED', verifiedAt: serverTimestamp\(\) \}\);/.test(code(v)) &&
-       /type: "EOD_RETURNED",/.test(v) && /if\(!await confirmAction\(confirmMsg\)\) return false;/.test(v) && /return true;\r?\n\s+\} catch\(e\) \{ console\.error\(e\); notify\("Verification failed: " \+ e\.message\); return false; \}/.test(v),
+       /type: "EOD_RETURNED",/.test(v) && /if \(!opts\?\.confirmed && !await confirmAction\(eodNightMessage\(/.test(v) && /return true;\r?\n\s+\} catch\(e\) \{ console\.error\(e\); notify\("Verification failed: " \+ e\.message\); return false; \}/.test(v),
        'a part sent back reaches the salesman as a notification; the handler answers true only when the write landed');
     ok('the rules draft is untouched: the boss already owns the whole tree (users/{bossUid}/{document=**}) and the salesman may not update eod_reports',
        /match \/eod_reports\/\{reportId\} \{\r?\n\s+allow read: if isSalesman\(bossUid\);\r?\n\s+allow create: if isSalesman\(bossUid\);\r?\n\s+allow update, delete: if false;/.test(read('firestore.rules').replace(/\r\n/g, '\n')),
@@ -7953,7 +7958,10 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /const parts = eodReportParts\(report, inventory, tier\);/.test(pc) && /PART_ORDER\.filter\(p => parts\.includes\(p\)\)\.forEach\(part => \{/.test(pc) &&
      /const why = await promptAction\(`Why is the \$\{line\.label\.toLowerCase\(\)\} going back to \$\{group\.agentName\}\?`, line\.why \|\| ''\);/.test(pc) &&
      /approve: own\.filter\(l => checked\[l\.key\]\)\.map\(l => l\.part\),/.test(pc) && /reject: Object\.fromEntries\(own\.filter\(l => returned\[l\.key\]\)\.map\(l => \[l\.part, returned\[l\.key\]\]\)\)/.test(pc) &&
-     /const done = await onApprove\(report, decision\);/.test(pc) && /if \(allIn && onSealed\) onSealed\(\);/.test(pc) &&
+     /const done = await onApprove\(report, decision, \{ confirmed: true \}\);/.test(pc) && /if \(allIn && onSealed\) onSealed\(\);/.test(pc) &&
+     /let allIn = pending\.every\(l => checked\[l\.key\]\);/.test(pc) && /for \(const r of group\.reports\) await onReset\(r, \{ confirmed: true \}\);/.test(pc) &&
+     /const night = all\.filter\(r => r\.reportType !== 'BOUNTY'\);/.test(ev) && /for \(const r of row\.reports\) await onResetEOD\(r, \{ confirmed: true \}\);/.test(ev) &&
+     /const handleResetEOD = async \(report, opts\) => \{/.test(app) && !/'EOD Cash\/Stock'/.test(code(ev)) &&
      /done: eodPartApproved\(report, part\), why: report\.rejected\?\.\[part\] \|\| ''/.test(pc) &&
      /aria-label=\{`approve \$\{line\.label\}`\}/.test(pc) && /aria-label=\{`send \$\{line\.label\} back`\}/.test(pc) && /w-11 h-11 grid place-items-center rounded-lg/.test(pc) &&
      !/window\.confirm|window\.prompt/.test(code(pc)),

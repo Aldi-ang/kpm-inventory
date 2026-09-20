@@ -753,6 +753,34 @@ export const eodReportParts = (report = {}, inventory = [], priceTier = 'Retail'
     return parts;
 };
 
+/* ONE QUESTION FOR THE WHOLE NIGHT. Aldi, 2026-09-20 15:00: the confirm "showing up twice" - a night is two
+   documents (cash & stock + pita cukai) and the handler asked once per document. The card asks ONCE, with this
+   text, then hands each report to handleVerifyEOD as already confirmed; an old caller with one report gets the
+   same text for one. `items` = [{ report, decision }]; no decision = every part the report carries.
+   The bounty amount is still named before it is minted (his 2026-08-18 rule: approving is allowed, never silent),
+   each line priced by eodBountyLines, so the rupiah he reads is the rupiah that will be owed. */
+export const eodNightMessage = (items = [], inventory = [], priceTier = 'Retail') => {
+    const fmtRp = (n) => new Intl.NumberFormat('id-ID').format(n);
+    const name = items[0]?.report?.agentName || 'the salesman';
+    const approvedOf = ({ report, decision }) => decision?.approve || eodReportParts(report, inventory, priceTier);
+    const approve = [...new Set(items.flatMap(it => approvedOf(it).map(p => EOD_PART_LABELS[p].toLowerCase())))];
+    const returns = items.flatMap(({ decision }) => Object.entries(decision?.reject || {}).map(([p, why]) => `  • ${EOD_PART_LABELS[p]} — ${why}`));
+    const fine = items.find(it => it.report.reportType === 'BOUNTY' && approvedOf(it).includes('bounty'));
+    const bounty = items.filter(it => it.report.reportType !== 'BOUNTY' && approvedOf(it).includes('bounty'))
+        .flatMap(({ report }) => eodBountyLines(report, inventory, priceTier));
+    const wipes = items.some(it => approvedOf(it).includes('stock'));
+
+    let msg = approve.length ? `Approve ${approve.join(', ')} for ${name}?` : `Return these to ${name}?`;
+    if (fine) msg += ` Rp ${fmtRp(fine.report.cash || 0)} pays their fines and wipes that debt.`;
+    if (bounty.length) {
+        const short = bounty.reduce((s, l) => s + l.amount, 0);
+        msg += `\n\nThey are short Rp ${fmtRp(short)}:\n${bounty.map(l => `  • ${l.label} — Rp ${fmtRp(l.amount)}`).join('\n')}\n\nApproving records each of those as a bounty in their name, which they can repay from their own EOD screen.`;
+    }
+    if (wipes) msg += `\n\nThis also clears their inventory and returns it to the Vault.`;
+    if (returns.length) msg += `\n\nGoing back to them with a reason:\n${returns.join('\n')}`;
+    return msg;
+};
+
 /* A report with no `verified` map has nothing approved yet; one that is VERIFIED has everything.
    Missing data is read as NOT approved - the safe direction for money. */
 export const eodPartApproved = (report = {}, part) =>
