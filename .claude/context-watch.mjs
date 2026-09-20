@@ -23,7 +23,7 @@ if (!tp || !fs.existsSync(tp)) process.exit(0);
    200k; Aldi's own UI then showed "459.7k / 1.0M (46%)" while this reported 80%. His window
    really is 1M. Guessing a ceiling made it over-report and cost him a needless clear — the
    mirror image of the under-reporting bug it was meant to fix. Trust the setting. */
-let WINDOW = 200_000;
+let WINDOW = 1_000_000; // the measured window (his panel: "261.3k / 1M"); the setting below still wins when present
 try {
   const s = JSON.parse(fs.readFileSync('C:/Users/ASUS/.claude/settings.json', 'utf8'));
   if (Number.isFinite(s.autoCompactWindow) && s.autoCompactWindow > 0) WINDOW = s.autoCompactWindow;
