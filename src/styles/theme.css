@@ -4585,3 +4585,6 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
 .kpm-folder-quiet .kpm-folder-file { transform: translateY(52px); }
 .kpm-folder-quiet.arming .kpm-folder-file, .kpm-folder-quiet.opening .kpm-folder-file { transform: translateY(14px); }
 
+/* JOURNEY PLAN, the map strip (his "A looks best", 2026-09-20): on the phone the 160 px strip carries only the ⛶ and the
+   recenter key — Leaflet's own +/- control goes; it returns full screen (the wrapper loses kpm-jp-map there) and on the desk. */
+@media (max-width: 1023px) { .kpm-jp-map .leaflet-control-zoom { display: none; } }

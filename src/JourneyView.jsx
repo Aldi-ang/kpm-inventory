@@ -75,6 +75,16 @@ const userLocationIcon = L.divIcon({
     iconAnchor: [12, 12]
 });
 
+/* 📱 The finger scrolls the page, not the map (his t3, 2026-09-20 — "sometimes scrolling causing the map to move instead
+   of sliding the page down"): on the phone the map's own drag is off until the map is full screen. With dragging off
+   Leaflet drops its leaflet-touch-drag class and its own stylesheet sets touch-action to pan-x pan-y, so the page
+   scrolls over the strip and two fingers still zoom. */
+const MapTouchGate = ({ locked }) => {
+    const map = useMap();
+    React.useEffect(() => { if (locked) map.dragging.disable(); else map.dragging.enable(); }, [map, locked]);
+    return null;
+};
+
 const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCenter }) => {
     const map = useMap();
     const isFirstRun = React.useRef(true);
@@ -307,6 +317,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
        tool bar (↑ ↓ and the assign box) is unfolded at a time by the ⋯ key beside its name; a tap
        anywhere outside a `[data-acts]` element folds it (the Customers ⋯ pattern). */
     const [feedOpen, setFeedOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
+    const isPhone = typeof window !== 'undefined' && window.innerWidth < 1024;   // the strip and the touch gate (his A, 2026-09-20)
     const [actsOpen, setActsOpen] = useState(null);
     useEffect(() => {
         if (actsOpen === null) return;
@@ -890,13 +901,13 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         <div className={`space-y-6 font-mono ${isFullScreen ? 'static z-[9999]' : 'animate-fade-in relative'}`}>
             {activeBrush && <style>{`.leaflet-container { cursor: crosshair !important; } .custom-icon { cursor: crosshair !important; }`}</style>}
 
-            <div className="bg-black/40 p-3 lg:p-5 rounded-2xl border border-orange-500/20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-4">
+            <div className="bg-black/40 px-3 py-2 lg:p-5 rounded-2xl border border-orange-500/20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-0 lg:mb-4">
                     <div className="w-full lg:w-1/2">
                         {/* 📱 On the phone the title is a 44 px key that folds the pickers under it and prints
                             the day and the place the list is scoped to; on the desk it is the plain heading
                             it always was (his board 1 = B, 2026-09-19). */}
-                        <h2 className="text-sm lg:text-2xl font-black text-white uppercase tracking-widest mb-1 lg:mb-3">
+                        <h2 className="text-sm lg:text-2xl font-black text-white uppercase tracking-widest mb-0.5 lg:mb-3">
                             <button type="button" onClick={() => setFeedOpen(v => !v)} aria-expanded={feedOpen}
                                 className="w-full flex items-center gap-3 text-left uppercase min-h-11 lg:min-h-0 lg:pointer-events-none lg:cursor-default">
                                 <Target size={28} className="text-orange-500 animate-pulse shrink-0 w-5 h-5 lg:w-7 lg:h-7"/>
@@ -904,12 +915,12 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                 <span className="lg:hidden ml-auto text-[11px] text-slate-400 whitespace-nowrap">{selectedDay} · {journeyWhere(selectedProvinsi, selectedKabupaten, selectedKecamatan)} {feedOpen ? '▴' : '▾'}</span>
                             </button>
                         </h2>
-                        <div className="flex flex-col gap-1.5 w-full">
+                        <div className="flex flex-col gap-[3px] lg:gap-1.5 w-full">
                             <div className="flex justify-between text-[11px] lg:text-[10px] font-black uppercase tracking-widest text-orange-400">
                                 <span>Elimination Status</span>
                                 <span className="text-white">{conqueredCount} / {orderedRoute.length} Secured</span>
                             </div>
-                            <div className="h-2.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700 shadow-inner">
+                            <div className="h-[3px] lg:h-2.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700 shadow-inner">
                                 <div className="h-full bg-gradient-to-r from-orange-600 to-yellow-400 transition-all duration-1000" style={{ width: `${progressPercent}%` }}></div>
                             </div>
                         </div>
@@ -962,10 +973,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             </div>
 
             <div 
-                className={`${isFullScreen ? 'fixed inset-0 z-[9999] rounded-none' : 'relative w-full h-[400px] lg:h-[500px] rounded-2xl'} bg-slate-900 overflow-hidden border border-slate-700 shadow-xl transition-all duration-300`}
+                className={`${isFullScreen ? 'fixed inset-0 z-[9999] rounded-none' : 'relative w-full h-40 lg:h-[500px] rounded-2xl kpm-jp-map'} bg-slate-900 overflow-hidden border border-slate-700 shadow-xl transition-all duration-300`}
                 style={isFullScreen ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', margin: 0, padding: 0 } : {}}
             >
-                <div className="absolute bottom-4 left-4 z-[9999] flex flex-col gap-2 items-start pointer-events-none">
+                <div className={`absolute bottom-4 left-4 z-[9999] ${isFullScreen ? 'flex' : 'hidden lg:flex'} flex-col gap-2 items-start pointer-events-none`}>
                     <button 
                         onClick={() => setIsPanelOpen(!isPanelOpen)} 
                         onDoubleClick={() => setDevUnlock(true)}
@@ -1058,7 +1069,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
                     <button 
                         onClick={() => setShowBorders(!showBorders)}
-                        className={`p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 transition-all active:scale-95 group flex items-center gap-2 ${showBorders ? 'bg-slate-800 border-slate-600 text-white' : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-700'}`}
+                        className={`p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 transition-all active:scale-95 group ${isFullScreen ? 'flex' : 'hidden lg:flex'} items-center gap-2 ${showBorders ? 'bg-slate-800 border-slate-600 text-white' : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-700'}`}
                         title="Toggle Regional Borders"
                     >
                         <Layers size={20} className="transition-transform"/>
@@ -1066,7 +1077,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     </button>
                     <button 
                         onClick={() => setSaveHomeTrigger(prev => prev + 1)}
-                        className="bg-slate-800/90 backdrop-blur p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-orange-400 hover:bg-slate-700 hover:text-orange-300 transition-all active:scale-95 group flex items-center gap-2"
+                        className={`bg-slate-800/90 backdrop-blur p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-orange-400 hover:bg-slate-700 hover:text-orange-300 transition-all active:scale-95 group ${isFullScreen ? 'flex' : 'hidden lg:flex'} items-center gap-2`}
                         title="Save Current Map View as Default Home"
                     >
                         <MapPin size={20} className="group-hover:scale-110 transition-transform"/>
@@ -1074,7 +1085,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     </button>
                     <button 
                         onClick={() => setRecenterTrigger(prev => prev + 1)}
-                        className="bg-slate-800/90 backdrop-blur p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-emerald-400 hover:bg-slate-700 hover:text-emerald-300 transition-all active:scale-95 group flex items-center gap-2"
+                        className={`bg-slate-800/90 backdrop-blur p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-emerald-400 hover:bg-slate-700 hover:text-emerald-300 transition-all active:scale-95 group ${isFullScreen ? 'flex' : 'hidden lg:flex'} items-center gap-2`}
                         title="Return to Saved Home View"
                     >
                         <Navigation size={20} className="group-hover:rotate-12 transition-transform"/>
@@ -1083,6 +1094,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 </div>
 
                 <MapContainer center={mapCenter} zoom={12} style={{ height: '100%', width: '100%' }}>
+                    <MapTouchGate locked={isPhone && !isFullScreen} />
                     <MapRecenter trigger={recenterTrigger} saveTrigger={saveHomeTrigger} savedHome={savedHome} onSaveHome={handleSaveHome} defaultCenter={mapCenter} />
                     <StoreFocus focusStore={focusStore} customers={customers} onHandled={onFocusStoreHandled} />
                     {/* Esri's dark canvas needs no key; CARTO's basemaps started printing API KEY REQUIRED across

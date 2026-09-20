@@ -7798,8 +7798,8 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /className=\{`text-\[11px\] lg:text-\[10px\] font-bold mt-1 \$\{isCleared/.test(jv) &&
      (jv.match(/(?<!lg:)text-\[10px\]/g) || []).length <= 10,
      'measured 2026-09-19: every label 10 px; his 2026-08-16 "make the font little bit bigger"');
-  ok('the store block and the MISSION FEED card give the phone its 16 px back (p-5 -> p-3)',
-     /<div className="bg-black\/40 p-3 lg:p-5 rounded-2xl border border-orange-500\/20/.test(jv) &&
+  ok('the store block and the MISSION FEED card give the phone its 16 px back (p-5 -> p-3; the feed card is px-3 py-2 since the strip, 2026-09-20)',
+     /<div className="bg-black\/40 px-3 py-2 lg:p-5 rounded-2xl border border-orange-500\/20/.test(jv) &&
      /<div className="animate-fade-in bg-black\/20 p-3 lg:p-5 rounded-3xl border border-white\/5 mt-2">/.test(jv),
      'the store card measured 318 wide in a 359 column');
   ok('the map: the tiles are Esri Dark Gray (no key needed) on Journey Plan and on the War Room; CARTO is gone - its tiles print API KEY REQUIRED',
@@ -7832,6 +7832,29 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   ok('Sampling: the lab mock and the floor look went with the decision (the real screen is the proposal now)',
      !/SamplingFoldMock/.test(pl) && !/q\.has\('fold'\)/.test(pl) && !/smp-floor/.test(code(ll)),
      'lab 825f801 held them for the boards only');
+}
+
+{ /* JOURNEY PLAN compact — his "A looks best" (2026-09-20 01:15) on the board of 01:05: the strip. Before: the feed card
+     124 px folded + a 400 px map put the RADAR HUB at y 821; the map's box had touch-action none, so a finger moved the map */
+  const jv = read('src/JourneyView.jsx'); const th = read('src/styles/theme.css'); const ll = read('tools/lab-looks.js');
+  ok('Journey Plan: the map is a 160 px strip on the phone (500 on the desk); only the ⛶ and the recenter key stay on the strip — the other keys, the legend and the zoom control come back full screen and on the desk',
+     /'relative w-full h-40 lg:h-\[500px\] rounded-2xl kpm-jp-map'/.test(jv) &&
+     (jv.match(/\$\{isFullScreen \? 'flex' : 'hidden lg:flex'\}/g) || []).length === 4 &&
+     /@media \(max-width: 1023px\) \{ \.kpm-jp-map \.leaflet-control-zoom \{ display: none; \} \}/.test(th) &&
+     !/h-\[400px\] lg:h-\[500px\]/.test(code(jv)),
+     'measured 2026-09-20: the RADAR HUB folder sits on the first screen (was y 821)');
+  ok('Journey Plan: the finger scrolls the page over the strip — the map\'s own drag is off on the phone until full screen (Leaflet then sets touch-action pan-x pan-y itself); two fingers still zoom; the desk drags as before',
+     /const MapTouchGate = \(\{ locked \}\) => \{/.test(jv) &&
+     /React\.useEffect\(\(\) => \{ if \(locked\) map\.dragging\.disable\(\); else map\.dragging\.enable\(\); \}, \[map, locked\]\);/.test(jv) &&
+     /<MapTouchGate locked=\{isPhone && !isFullScreen\} \/>/.test(jv) &&
+     /const isPhone = typeof window !== 'undefined' && window\.innerWidth < 1024;/.test(jv),
+     'his "sometimes scrolling causing the map to move instead of sliding the page down"');
+  ok('Journey Plan: the MISSION FEED card is one line on the phone — 8/12 padding, a 3 px bar, no gap under the status; the desk unchanged',
+     /className="bg-black\/40 px-3 py-2 lg:p-5 rounded-2xl border border-orange-500\/20/.test(jv) &&
+     /className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-0 lg:mb-4">/.test(jv) &&
+     /className="h-\[3px\] lg:h-2\.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700 shadow-inner">/.test(jv) &&
+     !/jp-strip|jp-mapfold/.test(code(ll)),
+     'the lab looks jp-strip / jp-mapfold are gone with the decision');
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

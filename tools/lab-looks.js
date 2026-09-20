@@ -37,17 +37,6 @@ export const PIN = '#root{width:375px}';
 /* 2026-09-19 19:55: the Sampling boards (the floor look, the &fold mock) were decided B and shipped into
    SamplingManager.jsx — the four levels as FolderCard, the items as rows. Gone. `?shell&sampling` (+ `&admin`,
    `&tab=2026,september,19,pasar%20baru`) still opens the real screen inside the shell. */
-/* 2026-09-20 00:55 — JOURNEY PLAN compact (his t3: "redesign the map and mission feed … compact simple and more
-   ergonomics and not taking that much space if not needed"). jp-strip = A: the feed one line + a thin bar, the map a
-   160 px strip with only the ⛶ key, the hub rises to the first screen. jp-mapfold = B: the map folds to a 96 px
-   MAP card (tap → the full-screen map that already exists) and moves under the hub. Both: the page scrolls over the
-   map (touch-action pan-y, the map moves only when opened) — a still cannot show that. Delete when he decides. */
-const JP_FEED = '#root .bg-black\\/40.p-3{padding:8px 12px}#root .bg-black\\/40 .mb-4{margin-bottom:0}#root .bg-black\\/40 .h-2\\.5{height:3px}#root .bg-black\\/40 .gap-1\\.5{gap:3px}#root .bg-black\\/40 h2.mb-1{margin-bottom:2px}';
-export const JP_STRIP = JP_FEED
-  + '#root .h-\\[400px\\]{height:160px}#root .h-\\[400px\\] .leaflet-control-zoom{display:none}#root .h-\\[400px\\] .absolute.top-4.right-4 > button + button{display:none}#root .h-\\[400px\\] .absolute.bottom-4.left-4{display:none}'
-  + '#root .space-y-6.font-mono > :not([hidden]) ~ :not([hidden]){margin-top:12px}';
-export const JP_MAPFOLD = JP_FEED
-  + '#root .space-y-6.font-mono{display:flex;flex-direction:column;gap:12px}#root .space-y-6.font-mono > *{margin:0}'
-  + '#root .h-\\[400px\\]{order:9;height:96px}#root .h-\\[400px\\] .leaflet-control-container,#root .h-\\[400px\\] > div.absolute{display:none}'
-  + '#root .h-\\[400px\\]::after{content:"MAP  ·  4 TARGETS  ·  TAP TO OPEN";position:absolute;inset:0;z-index:1000;display:grid;place-items:center;background:linear-gradient(rgba(2,6,23,.45),rgba(2,6,23,.8));color:#fff;font:900 12px/1 ui-monospace,monospace;letter-spacing:.2em}';
-export const LOOKS = { pin: PIN, 'jp-strip': JP_STRIP, 'jp-mapfold': JP_MAPFOLD };
+/* 2026-09-20 01:15: the Journey Plan compact looks (jp-strip / jp-mapfold) were decided A and shipped into
+   JourneyView.jsx + theme.css (the 160 px strip, the touch gate). Gone. `?shell&journey` still opens the real screen. */
+export const LOOKS = { pin: PIN };
