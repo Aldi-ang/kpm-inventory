@@ -90,6 +90,32 @@ export const careerXP = (c = {}, w = DEFAULT_XP) => {
        + (c.bonusXP || 0);                            // APPRECIATION (signed by you)
 };
 
+// THE LADDER. The default ranks (settings/progression overrides them) and the one rule that places an
+// XP figure on it, so the Agent Profile and the boss's player card (components/PlayerCard.jsx) read the
+// same rank, the same next rank and the same bar. `min` is in XP, NOT rupiah - see the profile's note.
+export const DEFAULT_RANKS = [
+  { id: '1', name: 'Bronze',   min: 0,      hex: '#d97706', title: 'The Wanderer',       logo: '', borderImage: '' },
+  { id: '2', name: 'Silver',   min: 5000,   hex: '#94a3b8', title: 'The Hustler',        logo: '', borderImage: '' },
+  { id: '3', name: 'Gold',     min: 20000,  hex: '#facc15', title: 'The Market King',    logo: '', borderImage: '' },
+  { id: '4', name: 'Platinum', min: 50000,  hex: '#22d3ee', title: 'The Syndicate Boss', logo: '', borderImage: '' },
+  { id: '5', name: 'Diamond',  min: 100000, hex: '#c084fc', title: 'The Robin Hood',     logo: '', borderImage: '' },
+  { id: '6', name: 'Mythic',   min: 250000, hex: '#f43f5e', title: 'The Sales Boomer',   logo: '', borderImage: '' }
+];
+
+export const rankLadder = (xp, ranks = DEFAULT_RANKS) => {
+  const sorted = [...(ranks || [])].sort((a, b) => Number(a.min) - Number(b.min));
+  let currentTier = sorted[0] || { name: 'Unranked', hex: '', min: 0 };   // no hex: the screens fall back to their own ink, never to a slate
+  let nextTier = sorted[1] || null;
+  let tierIndex = 0;
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    if (xp >= Number(sorted[i].min)) { currentTier = sorted[i]; nextTier = sorted[i + 1] || null; tierIndex = i; break; }
+  }
+  const progressPercent = nextTier
+    ? Math.min(100, Math.max(0, ((xp - currentTier.min) / Math.max(1, nextTier.min - currentTier.min)) * 100))
+    : 100;
+  return { currentTier, nextTier, tierIndex, progressPercent, sortedRanks: sorted };
+};
+
 export const computeDayXP = (report, prevCareer, cfg = DEFAULT_XP) => {
   if (report.reportType === 'BOUNTY') return { total: 0, breakdown: {} };  // a fine, not income
 

@@ -15,7 +15,7 @@ import Cropper from 'react-easy-crop';
 import { hasClearance, DYNAMIC_TIERS, TIER_ONE_ID, TIER_ONE_ALIAS_IDS } from './config/permissions';
 import HallOfFameView from './HallOfFameView';
 import { savePhotoAndGetReference, deletePhotoFromStorage, formatNumber, parseGroupedNumber, storeKey, storeLabel, getLocalDayKey} from './utils/helpers';
-import { careerXP, DEFAULT_XP, totals, DEFAULT_BADGES, STAT_LABELS, BADGE_SOURCES, statLabel } from './config/career';
+import { careerXP, DEFAULT_XP, totals, DEFAULT_BADGES, DEFAULT_RANKS, rankLadder, STAT_LABELS, BADGE_SOURCES, statLabel } from './config/career';
 import { revenueOf } from './utils/salesRollup';
 import { notify } from './components/Toast.jsx';
 
@@ -210,19 +210,13 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
     const [rpgData, setRpgData] = useState({
         expMultiplier: 1, 
         workingDays: [1,2,3,4,5,6], 
-        ranks: [
-            // `min` is in XP, NOT rupiah. These used to be rupiah-scale (Silver 25.000.000) because
-            // the old formula made lifetime EXP roughly equal to rupiah collected. careerXP() is
-            // ~100.000x smaller (Rp 100.000 collected = 1 XP), so on the old numbers a 3-year veteran
-            // with Rp 5 miliar collected and 900 verified days scored 86.975 XP and was still Bronze —
-            // Silver alone would have needed Rp 2,5 triliun. Rescaled to XP units.
-            { id: '1', name: 'Bronze', min: 0, hex: '#d97706', title: 'The Wanderer', logo: '', borderImage: '' },
-            { id: '2', name: 'Silver', min: 5000, hex: '#94a3b8', title: 'The Hustler', logo: '', borderImage: '' },
-            { id: '3', name: 'Gold', min: 20000, hex: '#facc15', title: 'The Market King', logo: '', borderImage: '' },
-            { id: '4', name: 'Platinum', min: 50000, hex: '#22d3ee', title: 'The Syndicate Boss', logo: '', borderImage: '' },
-            { id: '5', name: 'Diamond', min: 100000, hex: '#c084fc', title: 'The Robin Hood', logo: '', borderImage: '' },
-            { id: '6', name: 'Mythic', min: 250000, hex: '#f43f5e', title: 'The Sales Boomer', logo: '', borderImage: '' }
-        ]
+        // `min` is in XP, NOT rupiah. These used to be rupiah-scale (Silver 25.000.000) because
+        // the old formula made lifetime EXP roughly equal to rupiah collected. careerXP() is
+        // ~100.000x smaller (Rp 100.000 collected = 1 XP), so on the old numbers a 3-year veteran
+        // with Rp 5 miliar collected and 900 verified days scored 86.975 XP and was still Bronze —
+        // Silver alone would have needed Rp 2,5 triliun. Rescaled to XP units. The list lives in
+        // config/career.js now, so the boss's player card starts from the same ladder.
+        ranks: DEFAULT_RANKS
     });
     const [editingRpgData, setEditingRpgData] = useState(null);
 
@@ -591,21 +585,8 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         const lifetimeEXP = useCareerLedger
             ? careerXP(career?.[activeAgent.id] || {}, DEFAULT_XP)
             : (Math.floor(lifetimeOmset / DEFAULT_XP.rupiahPerXp) * (rpgData.expMultiplier || 1)) + (activeAgent.manualExp || 0);
-        const sortedRanks = [...rpgData.ranks].sort((a,b) => Number(a.min) - Number(b.min));
-        
-        let currentTier = sortedRanks[0] || { name: 'Unranked', hex: '#64748b', min: 0 }; 
-        let nextTier = sortedRanks[1] || null;
-        let tierIndex = 0;
-        
-        for (let i = sortedRanks.length - 1; i >= 0; i--) {
-            if (lifetimeEXP >= Number(sortedRanks[i].min)) { 
-                currentTier = sortedRanks[i]; 
-                nextTier = sortedRanks[i + 1] || null; 
-                tierIndex = i;
-                break; 
-            }
-        }
-        const progressPercent = nextTier ? Math.min(100, Math.max(0, ((lifetimeEXP - currentTier.min) / Math.max(1, nextTier.min - currentTier.min)) * 100)) : 100;
+        // The same ladder the boss's player card climbs (config/career.js rankLadder) - one rule, two screens.
+        const { currentTier, nextTier, tierIndex, progressPercent } = rankLadder(lifetimeEXP, rpgData.ranks);
 
         let daysInServiceNum = 0;
         if (activeAgent?.createdAt) {

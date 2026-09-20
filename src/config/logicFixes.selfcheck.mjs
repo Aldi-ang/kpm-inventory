@@ -1412,21 +1412,23 @@ ok('and clearing a bounty still deletes those keys',
 /* ── S19 · the admin sees the gap; a short count cannot be approved by reflex ───────────── */
 section('S19. Expected beside counted, the short products named, and the card itself changed');
 
-{ const card = stripComments(eod);
+/* 2026-09-20: the review card is the PLAYER CARD (components/PlayerCard.jsx); the grouping still reads countStatus,
+   the card's lines carry the gaps, the plate turns red when a short line is checked. */
+{ const card = stripComments(eod); const pc = stripComments(read('src/components/PlayerCard.jsx'));
   ok('the card reads countStatus, not only the numbers',
-     /report\.countStatus === 'DISPUTED'/.test(card));
+     /r\.countStatus === 'DISPUTED'/.test(card) && /group\.disputed/.test(pc));
   ok('a missing countStatus is CLEAN — history is never painted as disputed',
      !/countStatus !== 'CLEAN'/.test(card) && !/countStatus \|\| 'DISPUTED'/.test(card));
   ok('what the app expected is rendered beside what he counted',
-     /expected=\{report\.expectedCash\}/.test(card) && /expected=\{report\.expectedTransfer\}/.test(card));
+     /gap\(part === 'cash' \? report\.expectedCash : report\.expectedTransfer, report\[part\]\)/.test(pc) && /note = `short \$\{formatRupiah\(-g\)\}`; led = 'crit';/.test(pc));
   ok('the short products are named row by row, never one goods total',
-     /shortStockRows\(report\.expectedStock, report\.remainingStock\)/.test(card));
+     /shortStockRows\(report\.expectedStock, report\.remainingStock\)/.test(pc) && /note = `\$\{short\.length\} short on return`; led = 'crit';/.test(pc));
   ok('the approve button changes its own words when the count is short',
-     /disputed \? 'Approve Short Count'/.test(card));
+     /Approve \$\{hot \? 'short' : 'checked'\} \(\$\{nChecked\}\)/.test(pc));
   ok('and the card changes with it, so the gap is not just a number on a normal card',
-     /\(disputed \|\| report\.reportType === 'BOUNTY'\) \? 'border-\[var\(--danger\)\]'/.test(card));
+     /const diode = \(group\.disputed \|\| sentBack\) \? 'crit' : group\.lost > 0 \? 'warn' : '';/.test(pc));
   ok('the rupiah named before approving comes from the SAME rule App.jsx mints with',
-     /eodBountyLines\(report, inventory, appSettings\?\.penaltyPriceTier\)/.test(card)); }
+     /const bounty = eodBountyLines\(report, inventory, tier\);/.test(pc) && /const tier = appSettings\?\.penaltyPriceTier;/.test(pc)); }
 
 { const H = await import('../utils/helpers.js');
   ok('shortStockRows is exported from helpers, where the shared rules live',
@@ -1584,7 +1586,7 @@ ok('the EOD bounty prices goods through the setting, defaulted to Retail',
 ok('App.jsx passes the company setting in',
    /eodBountyLines\(report, inventory, appSettings\?\.penaltyPriceTier\)/.test(app));
 ok('the admin card prices with the SAME setting, so the two cannot disagree',
-   /eodBountyLines\(report, inventory, appSettings\?\.penaltyPriceTier\)/.test(eod));
+   /const tier = appSettings\?\.penaltyPriceTier;/.test(read('src/components/PlayerCard.jsx')) && /eodBountyLines\(report, inventory, tier\)/.test(read('src/components/PlayerCard.jsx')));
 ok('the damaged-goods charge stopped hardcoding distributor price',
    !/const hpp = Number\(resolutionModal\.item\.priceDistributor \|\| resolutionModal\.item\.hpp/.test(read('src/StockOpnameView.jsx')));
 ok('and prices through the same setting instead',
@@ -1634,18 +1636,21 @@ ok('and no raw red - the short-count branch uses the measured red plate',
 /* 2026-09-20: the night is verified from the DOCKET (one panel per person, his B) with one plate — gold for a normal
    night (the board he chose carries it: "the color looks expensive"), the measured red plate for a short count. The
    separate cukai key is gone: cash & stock and pita cukai verify together. */
-ok('the normal night is the gold plate on the docket (one plate for every report the salesman sent)',
-   /'bg-\[var\(--gold\)\] border-\[var\(--accent-edge\)\] text-\[var\(--gold-ink\)\]'/.test(eod) && /const seal = \(\) => \{/.test(eod));
+/* 2026-09-20 later: the docket became the PLAYER CARD; the one plate is APPROVE CHECKED on the card, gold for a normal
+   night, the measured red plate when a short line is checked or the plate only sends things back. */
+ok('the normal night is the gold plate on the card (one plate for every report the salesman sent)',
+   /'bg-\[var\(--gold\)\] border-\[var\(--accent-edge\)\] text-\[var\(--gold-ink\)\]'/.test(read('src/components/PlayerCard.jsx')) && /const seal = \(\) => \{ if \(sealing\) return; setSealing\(true\);/.test(eod));
 ok('the cukai night verifies on the same plate — one panel per person, no second key',
    !/'bg-\[var\(--raised\)\] border-\[var\(--amber\)\] text-\[var\(--amber\)\]'/.test(eod));
 ok('a short count still gets the red plate, because that one is meant to stop him',
-   /g\.disputed \? 'bg-\[var\(--danger-plate\)\] border-\[var\(--danger\)\] text-\[var\(--danger-plate-ink\)\]'/.test(eod));
+   /hot \? 'bg-\[var\(--danger-plate\)\] border-\[var\(--danger\)\] text-\[var\(--danger-plate-ink\)\]'/.test(read('src/components/PlayerCard.jsx')) &&
+   /const hot = \(nReturn > 0 && nChecked === 0\) \|\| pending\.some\(l => checked\[l\.key\] && l\.led === 'crit'\);/.test(read('src/components/PlayerCard.jsx')));
 /* Scoped to the BUTTON, by slicing the source between its onClick and the end of its tag.
    Two earlier attempts scoped it by colour string instead and both caught a bystander - first the
    WANTED total's drop-shadow, then the Pay Bounty button, which happen to use the same rgba. A
    guard that fires on an innocent element is a guard someone relaxes later. */
-{ const from = eod.indexOf('onClick={seal}');
-  const tag = from === -1 ? '' : eod.slice(from, eod.indexOf('>', eod.indexOf('className', from)));
+{ const pcs = read('src/components/PlayerCard.jsx'); const from = pcs.indexOf('onClick={approve}');
+  const tag = from === -1 ? '' : pcs.slice(from, pcs.indexOf('>', pcs.indexOf('className', from)));
   ok('the approve button exists and was found by its own handler', from !== -1 && tag.length > 0);
   ok('and carries no rgba glow of its own - quiet means quiet', !/rgba\(/.test(tag)); }
 
@@ -4199,7 +4204,7 @@ section('THE BOUNTY UNIT — a rupiah penalty must never be summed as a stamp co
    names PENALTY_ in three comments that would satisfy a file-wide match on their own. */
 const stampSums = [
   ['the agent dashboard', code(read('src/AgentInventoryView.jsx')), 'const cukaiDebts', 'totalCukaiOwed'],
-  ['the EOD screen',      code(read('src/EODReconciliationView.jsx')), 'let calcTotal', 'const total'],
+  ['the EOD screen',      code(read('src/EODReconciliationView.jsx')), 'let calcTotal', 'expectedCukai = Math.max(0, calcTotal'],
   ['the payment engine',  code(app), 'let remainingPayment', 'if (remainingPayment > 0)'],
 ];
 for (const [where, src, from, to] of stampSums) {
@@ -7629,7 +7634,8 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /\.kpm-folder-panel::after \{ content: "↗";/.test(tf) &&
      /\.kpm-folder\.arming \.kpm-folder-lid \{ height: 92px; \}/.test(tf) && !/transition-duration: 700ms/.test(code(tf)) &&
      !/\.kpm-folder:active/.test(code(tf)) &&
-     !/box-shadow|text-shadow|filter:/.test(code(tf).slice(code(tf).indexOf('.kpm-folders {'))),
+     code(tf).indexOf('.kpm-docket {') > code(tf).indexOf('.kpm-folders {') &&
+     !/box-shadow|text-shadow|filter:/.test(code(tf).slice(code(tf).indexOf('.kpm-folders {'), code(tf).indexOf('.kpm-docket {'))),
      'his "make it more alive like this video" - the press is the phone\'s hover');
   ok('both hub levels (province, regency) wear the folder and their lists carry the counter; the old flat card is gone',
      /<FolderCard key=\{prov\} icon=\{<MapPin size=\{22\} \/>\} onOpen=\{\(\) => setSelectedProvinsi\(prov\)\} className="bg-slate-900 border-slate-700 hover:border-orange-500 transition-colors duration-300">/.test(jf) &&
@@ -7695,7 +7701,8 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /\.kpm-crit\.kpm-crit \{ border-color: var\(--led-crit\); \}/.test(tc) &&
      /\.kpm-crit::before \{ content: ""; position: absolute; inset: 0; z-index: 30; pointer-events: none;/.test(tc) &&
      /@keyframes kpmCritBreath \{ 50% \{ opacity: \.35; \} \}/.test(tc) &&
-     !/box-shadow|text-shadow|filter:/.test(code(tc).slice(code(tc).indexOf('.kpm-led-line {'))),
+     code(tc).indexOf('.kpm-folders {') > code(tc).indexOf('.kpm-led-line {') &&
+     !/box-shadow|text-shadow|filter:/.test(code(tc).slice(code(tc).indexOf('.kpm-led-line {'), code(tc).indexOf('.kpm-folders {'))),
      'G30: Lite Mode strips shadows and filters; the state must survive as a border or a background');
   ok('C: on the phone the strip and the address show only while the ⋯ is open; the body is 12 px; the desk keeps its band and its 16 px',
      /className=\{`\$\{customer\.storeImage \? 'h-24' : 'min-h-11 lg:h-24'\} \$\{actsOpen === customer\.id \? '' : 'hidden lg:block'\} bg-black relative shrink-0 border-b border-slate-800`\}/.test(jc) &&
@@ -7860,38 +7867,113 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      'the lab looks jp-strip / jp-mapfold are gone with the decision');
 }
 
-{ /* EOD HQ VERIFICATION — his "B is better but i want the confirmation for cukai and cash to be one panel per person make sure
-     animation and smoothness for the graphic and colour suit our theme both dark and light mode and add some tech game
-     spices in there as well" (2026-09-20 02:50) on the board of 02:40 */
+{ /* EOD HQ VERIFICATION — THE PLAYER CARD, his "looks good for v2 lets use that" (2026-09-20 05:35) on the lab mock
+     of 05:00; the folders + docket of 03:50 (his B) became the card. Stage A: per-part verification on the data path,
+     the card in the boss's review, the mock and the look deleted. */
   const ev = read('src/EODReconciliationView.jsx'); const th = read('src/styles/theme.css'); const pl = read('tools/ponder-lab.jsx'); const ll = read('tools/lab-looks.js');
-  ok('EOD review: the pending reports are ONE folder per salesman (cash & stock + pita cukai grouped), the diode lit only for a problem; tap opens the docket',
-     /import FolderCard from '\.\/components\/FolderCard\.jsx';/.test(ev) && /import NixieCount from '\.\/components\/NixieCount\.jsx';/.test(ev) &&
+  const pc = read('src/components/PlayerCard.jsx');
+  const H = await import('../utils/helpers.js');
+  const C = await import('./career.js');
+
+  /* the data: which parts a report carries */
+  const clean = { reportType: 'CASH_STOCK', cash: 100, transfer: 0, expectedCash: 100, expectedTransfer: 0, cashVariance: 0, transferVariance: 0, remainingStock: [], expectedStock: [] };
+  ok('EOD parts: a clean cash & stock night is cash, transfer and the stock handover - nothing more',
+     JSON.stringify(H.eodReportParts(clean, [])) === '["cash","transfer","stock"]');
+  ok('EOD parts: damaged goods and a short count add their own parts; a CUKAI report is its stamps; a BOUNTY report is the fine',
+     JSON.stringify(H.eodReportParts({ ...clean, damagedStockToReturn: [{ qty: 2 }], cashVariance: -5000 }, [])) === '["cash","transfer","stock","damaged","bounty"]' &&
+     JSON.stringify(H.eodReportParts({ reportType: 'CUKAI', cukai: 40 }, [])) === '["cukai"]' &&
+     JSON.stringify(H.eodReportParts({ reportType: 'BOUNTY', cash: 50000 }, [])) === '["bounty"]' &&
+     JSON.stringify(H.eodReportParts({ cash: 1, transfer: 0, cukai: 12 }, [])) === '["cash","transfer","stock","cukai"]',
+     'a legacy combined report carries its stamps');
+  ok('EOD parts: a missing verified map reads as NOT approved; VERIFIED reads as everything approved',
+     H.eodPartApproved({ status: 'PENDING' }, 'cash') === false && H.eodPartApproved({ status: 'PENDING', verified: { cash: true } }, 'cash') === true &&
+     H.eodPartApproved({ status: 'PENDING', verified: { cash: true } }, 'stock') === false && H.eodPartApproved({ status: 'VERIFIED' }, 'stock') === true,
+     'the safe direction for money');
+  { const cs = [
+      { assignedAgent: 'Budi', visitFreq: 7, lastVisit: '2026-09-20' }, { assignedAgent: 'Budi', visitFreq: 7, lastVisit: '' },
+      { assignedAgent: 'Budi', visitFreq: 3, visitDay: 'Sunday', lastVisit: '2026-09-20' }, { assignedAgent: 'Budi', visitFreq: 3, visitDay: 'Monday', lastVisit: '2026-09-20' },
+      { assignedAgent: 'Adi', visitFreq: 7, lastVisit: '2026-09-20' }];
+    const t = H.dayTargets(cs, 'Budi', '2026-09-20', 'Sunday');
+    ok('CLOSED ?/? counts the Journey Plan route (weekly, or today\'s visit day, assigned to him) and the check-ins of today', t.closed === 2 && t.total === 3, JSON.stringify(t)); }
+  { const r = C.rankLadder(5660, C.DEFAULT_RANKS);
+    ok('the ladder places 5.660 XP on Silver with Gold next, 4,4 % along the bar', r.currentTier.name === 'Silver' && r.nextTier.name === 'Gold' && Math.round(r.progressPercent * 10) === 44 && r.tierIndex === 1);
+    ok('the top rank has no next tier and a full bar', C.rankLadder(999999, C.DEFAULT_RANKS).nextTier === null && C.rankLadder(999999, C.DEFAULT_RANKS).progressPercent === 100);
+    ok('the Agent Profile climbs the same ladder', /const \{ currentTier, nextTier, tierIndex, progressPercent \} = rankLadder\(lifetimeEXP, rpgData\.ranks\);/.test(profile) && /ranks: DEFAULT_RANKS/.test(profile) && !/for \(let i = sortedRanks\.length - 1; i >= 0; i--\)/.test(profile)); }
+
+  /* the data: handleVerifyEOD credits only the parts in hand, from the FRESH map, and seals only when every part is in */
+  { const vFrom = app.indexOf('const handleVerifyEOD = async (report, decision) => {'); const vTo = app.indexOf('const handleResetEOD = async (report) => {');
+    ok('handleVerifyEOD is anchored', vFrom > -1 && vTo > vFrom && vTo - vFrom > 6000 && vTo - vFrom < 30000);
+    const v = app.slice(vFrom, vTo);
+    ok('handleVerifyEOD: the parts come from eodReportParts; a decision approves only parts the report carries; the verified map is re-read inside the transaction',
+       /const parts = eodReportParts\(report, inventory, appSettings\?\.penaltyPriceTier\);/.test(v) &&
+       /const askedApprove = decision\?\.approve \? decision\.approve\.filter\(p => parts\.includes\(p\)\) : parts;/.test(v) &&
+       /const wasVerified = eodSnap\.data\(\)\.verified \|\| \{\};/.test(v) && /const approveNow = askedApprove\.filter\(p => wasVerified\[p\] !== true\);/.test(v),
+       'a part a second admin approved a moment ago is skipped, never credited twice');
+    ok('handleVerifyEOD: stock, damaged goods, stamps, the bounty and the van wipe each ride on their own part',
+       /const validItems = nowDoing\('stock'\) \? \(report\.remainingStock \|\| \[\]\)\.filter\(item => item\.qty > 0\) : \[\];/.test(v) &&
+       /const validDamagedItems = nowDoing\('damaged'\) \? \(report\.damagedStockToReturn \|\| \[\]\)\.filter\(item => item\.qty > 0\) : \[\];/.test(v) &&
+       /let remainingPayment = nowDoing\('cukai'\) \? \(report\.cukai \|\| 0\) : 0;/.test(v) && /if \(report\.id && nowDoing\('bounty'\)\) \{/.test(v) &&
+       /const finalCanvas = nowDoing\('stock'\) \? \[\] : currentCanvas;/.test(v) && /const touchesAgent = nowDoing\('bounty'\) \|\| nowDoing\('cukai'\) \|\| nowDoing\('stock'\);/.test(v) &&
+       !/const finalCanvas = \(report\.reportType === 'CUKAI'\) \? currentCanvas : \[\];/.test(code(v)),
+       'the old one-shot forms are gone');
+    ok('handleVerifyEOD: VERIFIED + the career ledger only when every part is approved; otherwise the maps alone are written and the report stays PENDING',
+       /sealed = parts\.every\(p => verifiedNow\[p\] === true\);/.test(v) && /if \(!sealed\) \{ t\.update\(eodRef, stamp\); return; \}/.test(v) &&
+       /approveNow\.forEach\(p => \{ delete rejectedNow\[p\]; \}\);/.test(v) &&
+       (v.match(/\{ \.\.\.stamp, status: 'VERIFIED', verifiedAt: serverTimestamp\(\)/g) || []).length === 3 &&
+       !/t\.update\(eodRef, \{ status: 'VERIFIED', verifiedAt: serverTimestamp\(\) \}\);/.test(code(v)) &&
+       /type: "EOD_RETURNED",/.test(v) && /if\(!await confirmAction\(confirmMsg\)\) return false;/.test(v) && /return true;\r?\n\s+\} catch\(e\) \{ console\.error\(e\); notify\("Verification failed: " \+ e\.message\); return false; \}/.test(v),
+       'a part sent back reaches the salesman as a notification; the handler answers true only when the write landed');
+    ok('the rules draft is untouched: the boss already owns the whole tree (users/{bossUid}/{document=**}) and the salesman may not update eod_reports',
+       /match \/eod_reports\/\{reportId\} \{\r?\n\s+allow read: if isSalesman\(bossUid\);\r?\n\s+allow create: if isSalesman\(bossUid\);\r?\n\s+allow update, delete: if false;/.test(read('firestore.rules').replace(/\r\n/g, '\n')),
+       'reported, not changed');
+    ok('the EOD mount hands the card its ledger, ladder and route',
+       /career=\{career\}\r?\n\s+ranks=\{progressionRanks\}\r?\n\s+customers=\{displayPermitted\}/.test(app) && /const \[progressionRanks, setProgressionRanks\] = useState\(DEFAULT_RANKS\);/.test(app)); }
+
+  /* the card */
+  ok('EOD review: one PlayerCard per salesman replaces the folders + docket; the frames\' CSS and filters are mounted once for the list; the scan + seal play over the list',
+     /import PlayerCard from '\.\/components\/PlayerCard\.jsx';/.test(ev) && /import \{ BORDER_KEYFRAMES, FrameFilters \} from '\.\/config\/rankBorders\.jsx';/.test(ev) &&
      /const pendingByAgent = useMemo\(\(\) => \{/.test(ev) &&
-     /<FolderCard key=\{g\.key\} icon=\{g\.disputed \? <ShieldAlert size=\{22\} \/> : <User size=\{22\} \/>\} onOpen=\{\(\) => setDocket\(g\.key\)\} className=\{EOD_FOLDER\}>/.test(ev) &&
-     /className=\{`kpm-led-line \$\{g\.disputed \? 'crit' : g\.lost > 0 \? 'warn' : ''\} mt-2`\}/.test(ev) &&
-     !/pendingReports\.map\(report =>/.test(code(ev)),
-     'the board of 02:40, B; "one panel per person"');
-  ok('EOD review: the DOCKET sheet — the night as one panel: nixie total, HUD corners, every report as a dressed section, one gold plate that verifies all of them, REJECT a text key; VERIFY runs the scan, seals, leaves',
-     /<div className=\{`kpm-docket fixed inset-0 z-\[9999\] overflow-y-auto bg-\[var\(--sunk\)\] \$\{sealing \? 'sealing' : ''\}`\}>/.test(ev) &&
-     /<NixieCount value=\{g\.cashTotal\} size=\{18\} \/>/.test(ev) &&
-     /const seal = \(\) => \{ if \(sealing\) return; setSealing\(true\); setTimeout\(\(\) => \{ g\.reports\.forEach\(\(r\) => onVerifyEOD\(r\)\); setSealing\(false\); setDocket\(null\); \}, EOD_SEAL_MS\); \};/.test(ev) &&
-     /className=\{'kpm-plate w-full min-h-\[52px\] rounded-xl border font-black uppercase tracking-\[\.2em\] flex items-center justify-center gap-2 disabled:opacity-70 ' \+ \(g\.disputed \? /.test(ev) &&
-     /\.kpm-docket\.sealing \.kpm-docket-scan \{ animation: kpmScan 500ms/.test(th) && /\.kpm-docket\.sealing \.kpm-docket-seal \{ animation: kpmSeal 320ms 450ms/.test(th) &&
-     /\.kpm-docket-head::before, \.kpm-docket-head::after \{/.test(th) && !/box-shadow/.test(th.slice(th.indexOf('THE DOCKET'))),
-     'the scan and the seal are gradients and transforms only (G30); the light and dark themes come from the tokens');
+     /<PlayerCard key=\{g\.key\} group=\{g\} motorist=\{man\} career=\{career\?\.\[g\.key\]\}/.test(ev) &&
+     /closed=\{dayTargets\(customers, man\?\.name \|\| g\.agentName, today\)\} today=\{today\}/.test(ev) &&
+     /onApprove=\{onVerifyEOD\} onReset=\{onResetEOD\} onSealed=\{seal\} \/>/.test(ev) &&
+     /<style>\{BORDER_KEYFRAMES\}<\/style>\r?\n\s+<FrameFilters \/>/.test(ev) &&
+     /<div className="kpm-seal-stage" aria-hidden="true">\r?\n\s+<i className="kpm-docket-scan"><\/i>\r?\n\s+<i className="kpm-docket-seal">VERIFIED<\/i>/.test(ev) &&
+     !/setDocket\(/.test(code(ev)) && !/const reportSection = /.test(code(ev)) && !/const MoneyLine = /.test(code(ev)) && !/onOpen=\{\(\) => setDocket/.test(code(ev)) &&
+     /\.kpm-seal-stage \.kpm-docket-scan \{ animation: kpmScan 500ms/.test(th) && /\.kpm-seal-stage \.kpm-docket-seal \{ animation: kpmSeal 320ms 450ms/.test(th),
+     'the docket and its sections are gone with the decision');
+  ok('PlayerCard: the head is the man as his profile draws him - the photo in the rank frame, rank + title, XP with tonight\'s plus, the bar to the next rank, CLOSED ?/?, the diode',
+     /<RankBorder styleId=\{frame\} \/>/.test(pc) && /const frame = motorist\?\.borderStyle \|\| currentTier\.borderStyle \|\| 'classic';/.test(pc) &&
+     /const \{ currentTier, nextTier, progressPercent \} = rankLadder\(xp, ranks\);/.test(pc) &&
+     /const gain = useCareerLedger && cashReport \? computeDayXP\(cashReport, career \|\| \{\}, DEFAULT_XP\)\.total : 0;/.test(pc) &&
+     /if \(useCareerLedger\) return careerXP\(career \|\| \{\}, DEFAULT_XP\);/.test(pc) && /Math\.floor\(omset \/ DEFAULT_XP\.rupiahPerXp\) \* \(expMultiplier \|\| 1\) \+ \(Number\(motorist\?\.manualExp\) \|\| 0\)/.test(pc) &&
+     /\{closed\.closed\}<span className="text-\[var\(--ink-dim\)\] text-2xl"> \/ \{closed\.total\}<\/span>/.test(pc) &&
+     /<p className=\{`kpm-led-line \$\{diode\}`\}><i aria-hidden="true"><\/i>\{diodeText\}<\/p>/.test(pc),
+     'XP scored exactly as AgentProfileView scores it, the ledger or the omset formula');
+  ok('PlayerCard: the body is the handover one line per part with its own ✓ / ✕; ✕ asks the reason through the dialog gate; the plate hands { approve, reject } per report and seals only when every part is in',
+     /const parts = eodReportParts\(report, inventory, tier\);/.test(pc) && /PART_ORDER\.filter\(p => parts\.includes\(p\)\)\.forEach\(part => \{/.test(pc) &&
+     /const why = await promptAction\(`Why is the \$\{line\.label\.toLowerCase\(\)\} going back to \$\{group\.agentName\}\?`, line\.why \|\| ''\);/.test(pc) &&
+     /approve: own\.filter\(l => checked\[l\.key\]\)\.map\(l => l\.part\),/.test(pc) && /reject: Object\.fromEntries\(own\.filter\(l => returned\[l\.key\]\)\.map\(l => \[l\.part, returned\[l\.key\]\]\)\)/.test(pc) &&
+     /const done = await onApprove\(report, decision\);/.test(pc) && /if \(allIn && onSealed\) onSealed\(\);/.test(pc) &&
+     /done: eodPartApproved\(report, part\), why: report\.rejected\?\.\[part\] \|\| ''/.test(pc) &&
+     /aria-label=\{`approve \$\{line\.label\}`\}/.test(pc) && /aria-label=\{`send \$\{line\.label\} back`\}/.test(pc) && /w-11 h-11 grid place-items-center rounded-lg/.test(pc) &&
+     !/window\.confirm|window\.prompt/.test(code(pc)),
+     'every key 44 px; no native dialog');
+  ok('PlayerCard: the card grows open under the head and the inside sharpens in from a blur (theme.css THE PLAYER CARD); no shadow; the mock and the look are gone',
+     /\.pc-body \{ display: grid; grid-template-rows: 0fr; transition: grid-template-rows 320ms/.test(th) && /\.pc\.open \.pc-body \{ grid-template-rows: 1fr; \}/.test(th) &&
+     /\.pc-inner \{ overflow: hidden; min-height: 0; opacity: 0; filter: blur\(6px\); transform: translateY\(-6px\);/.test(th) && /\.pc\.open \.pc-inner \{ opacity: 1; filter: blur\(0\); transform: none; \}/.test(th) &&
+     /\.pc-avatar \.sframe \{ position: absolute; inset: 0; z-index: 20; pointer-events: none; \}/.test(th) &&
+     !/box-shadow/.test(th.slice(th.indexOf('THE PLAYER CARD'))) &&
+     !/PlayerCardMock/.test(pl) && !/eod-card|EOD_CARD/.test(code(ll)) && !/q\.has\('card'\)/.test(pl),
+     'the lab mock and the look went with the decision');
+  ok('the salesman reads why a part came back, on his own EOD screen',
+     /const rejected = \{ \.\.\.\(\(pendingCash \|\| legacyPending\)\?\.rejected \|\| \{\}\), \.\.\.\(pendingCukai\?\.rejected \|\| \{\}\) \};/.test(ev) &&
+     /\{EOD_PART_LABELS\[p\] \|\| p\} sent back: /.test(ev) && /Pita cukai sent back: /.test(ev));
   ok('EOD review: the History Log is folders (place › salesman › month) and the night rows stay; the old fold-out state is gone',
      /const HIST_LEVELS = \[/.test(ev) && /const \[histPath, setHistPath\] = useState\(\[\]\);/.test(ev) &&
      /<FolderCard key=\{k\} icon=\{<L\.Icon size=\{22\} \/>\} onOpen=\{\(\) => setHistPath\(\(p\) => \[\.\.\.p, k\]\)\} className=\{EOD_FOLDER\}>/.test(ev) &&
      !/const \[openLocations, setOpenLocations\]/.test(ev) && !/const \[openAgents, setOpenAgents\]/.test(ev) && !/const \[openMonths, setOpenMonths\]/.test(ev) &&
      /const \[openDates, setOpenDates\] = useState\(\[\]\);/.test(ev) && !/h-\[700px\] overflow-y-auto/.test(code(ev)),
      'the last accordion of that shape in the app');
-  ok('EOD review: the report section wears the theme — a gold hairline under the name, the type as a kpm-stamp, the stamps block an inset well with a gold edge, the time readable; no gold slabs, no rgba shadows',
-     /kpm-hairline px-4 py-3 flex justify-between items-center/.test(ev) &&
-     !/'bg-\[var\(--gold\)\] border-\[var\(--accent-edge\)\]' : 'bg-\[var\(--gold\)\] border-\[var\(--line\)\]'/.test(code(ev)) &&
-     /bg-\[var\(--inset\)\] p-3 rounded-lg border border-\[var\(--line-2\)\] border-l-2 border-l-\[var\(--gold\)\] mt-4/.test(ev) &&
-     !/shadow-\[0_0_20px_rgba\(220,38,38,0\.2\)\]/.test(code(ev)) &&
-     !/EodFoldMock/.test(pl) && !/eod-docket|eod-fold/.test(code(ll)),
-     'the lab mock and the looks went with the decision');
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

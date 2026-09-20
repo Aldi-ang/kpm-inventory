@@ -729,6 +729,45 @@ export const eodBountyLines = (report = {}, inventory = [], priceTier = 'Retail'
     return lines;
 };
 
+/* THE PARTS OF ONE EOD REPORT, each approved or returned on its own. Aldi, 2026-09-20: "maybe it is
+   better when we made approve and reject for every single EOD, so one for each, cash, transfer, pita
+   cukai, bounties for havent paid penalty, etc". A CASH & STOCK night always carries cash, transfer
+   and the stock handover (even an empty van is a handover); damaged goods only when the van brought
+   some back; a legacy combined report carries its stamps; the bounty part exists only when the count
+   came up short, so the boss can refuse to turn a shortfall into debt and make the man bring the
+   money instead. A CUKAI report is its stamps; a BOUNTY report is the cash paying the fine.
+   `handleVerifyEOD` (App.jsx) credits ONLY the parts it is handed and marks the report VERIFIED
+   when every part here is approved - so this list is the contract, and the card reads the same one. */
+export const EOD_PART_LABELS = {
+    cash: 'Cash', transfer: 'Transfer', stock: 'Stock back', damaged: 'Damaged goods',
+    cukai: 'Pita cukai', bounty: 'Bounty'
+};
+
+export const eodReportParts = (report = {}, inventory = [], priceTier = 'Retail') => {
+    if (report.reportType === 'BOUNTY') return ['bounty'];
+    if (report.reportType === 'CUKAI') return ['cukai'];
+    const parts = ['cash', 'transfer', 'stock'];
+    if ((report.damagedStockToReturn || []).some(i => Number(i?.qty) > 0)) parts.push('damaged');
+    if (!report.reportType && Number(report.cukai) > 0) parts.push('cukai');
+    if (eodBountyLines(report, inventory, priceTier).length > 0) parts.push('bounty');
+    return parts;
+};
+
+/* A report with no `verified` map has nothing approved yet; one that is VERIFIED has everything.
+   Missing data is read as NOT approved - the safe direction for money. */
+export const eodPartApproved = (report = {}, part) =>
+    report.status === 'VERIFIED' || report.verified?.[part] === true;
+
+/* CLOSED ?/? — the stores a salesman was due at today and how many he checked in at. The same
+   rule as the Journey Plan's route (JourneyView.jsx: visitFreq 7 or visitDay = today, assigned to
+   him by name) and its "Secured" count (lastVisit = today), lifted so the boss's card and the
+   salesman's plan cannot disagree. `weekday` is the en-US long name the plan stores ('Monday'). */
+export const dayTargets = (customers = [], agentName, dayKey = getLocalDayKey(), weekday = new Date().toLocaleDateString('en-US', { weekday: 'long' })) => {
+    const route = (customers || []).filter(c => c && c.assignedAgent === agentName &&
+        ((parseInt(c.visitFreq) || 7) === 7 || c.visitDay === weekday));
+    return { closed: route.filter(c => c.lastVisit === dayKey).length, total: route.length };
+};
+
 /* THE NIXIE COUNTER'S SPLIT. A figure becomes a sign and its digits, most significant first, so
    each digit can be its own glass tube (components/NixieCount.jsx). A DIFFERENCE is `signed` and
    prints − or +; a plain count prints no sign; anything that is not a number is 0; a fraction is

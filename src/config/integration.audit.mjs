@@ -2009,15 +2009,23 @@ const systemBlock = code(themeCss).slice(code(themeCss).indexOf('.kpm-mod {'));
    The exemption is a single named selector, not a relaxed pattern: any OTHER shadow anywhere in
    the system still fails here, which is what keeps this check worth having. */
 const SHADOW_EXEMPT = /\[aria-pressed="true"\] > \.kpm-sw::after \{[^}]*\}/g;
+/* THE SECOND NAMED EXEMPTION, 2026-09-20, the same line: the player card's body sharpens in from a
+   blur as it grows open (his clip, "looks good for v2 lets use that"). The open state is carried
+   twice over without the blur — the body's row height (0fr → 1fr) and its opacity (0 → 1) — so
+   Lite Mode dropping the filter costs the sharpening and no meaning. The check below asserts both
+   carriers are still in the rule; the exemption dies with them. */
+const BLUR_EXEMPT = /\.pc-inner \{[^}]*\}|\.pc\.open \.pc-inner \{[^}]*\}/g;
 /* ⚠️ `transition:` DECLARATIONS ARE STRIPPED FIRST, and that is a sharpening rather than a
    loosening. A transition list PAINTS NOTHING — naming `box-shadow` in one only says how a
    shadow would arrive if some other rule created it. Leaving them in made this check fail on the
    line that animates the exempt glow, which is a false positive: the very next thing anyone would
    do is widen the selector exemption, and that is how a real check quietly stops being one. */
-const paintOnly = (s) => s.replace(SHADOW_EXEMPT, '').replace(/transition:[^;}]*[;}]/g, '');
+const paintOnly = (s) => s.replace(SHADOW_EXEMPT, '').replace(BLUR_EXEMPT, '').replace(/transition:[^;}]*[;}]/g, '');
 check(G30, 'nothing in the system depends on a shadow, a blur or a filter',
   !/box-shadow|backdrop-filter|filter:|text-shadow/.test(paintOnly(systemBlock)) &&
-  /\[aria-pressed="true"\] > \.kpm-sw::after \{[^}]*transform: translateX\(18px\)/.test(themeCss),
+  /\[aria-pressed="true"\] > \.kpm-sw::after \{[^}]*transform: translateX\(18px\)/.test(themeCss) &&
+  /\.pc-inner \{[^}]*opacity: 0;[^}]*\}/.test(themeCss) && /\.pc\.open \.pc-inner \{[^}]*opacity: 1;[^}]*\}/.test(themeCss) &&
+  /\.pc-body \{[^}]*grid-template-rows: 0fr;/.test(themeCss) && /\.pc\.open \.pc-body \{ grid-template-rows: 1fr; \}/.test(themeCss),
   'Lite Mode deletes all four — the old tab put every separation into shadows, so on a cheap ' +
   'Android the six panels collapsed into one undifferentiated column. The switch glow is the one ' +
   'exemption and it only holds while position + fill still carry the state without it');

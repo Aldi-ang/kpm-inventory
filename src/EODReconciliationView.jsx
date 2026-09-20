@@ -1,16 +1,17 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder, Target, BadgeDollarSign, ShieldAlert } from 'lucide-react';
-import { formatRupiah, getLocalDayKey, storeKey, shortStockRows, eodBountyLines } from './utils/helpers';
+import { formatRupiah, getLocalDayKey, storeKey, shortStockRows, eodBountyLines, dayTargets, EOD_PART_LABELS } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import EODAgentFlow from './components/EODAgentFlow.jsx';
 import FolderCard from './components/FolderCard.jsx';
-import NixieCount from './components/NixieCount.jsx';
+import PlayerCard from './components/PlayerCard.jsx';
+import { BORDER_KEYFRAMES, FrameFilters } from './config/rankBorders.jsx';
 
-/* THE BOSS'S REVIEW as folders and a docket — his "B is better but i want the confirmation for cukai and cash to be one
-   panel per person … both dark and light mode … some tech game spices" (2026-09-20). One folder per salesman holds every
-   report he sent tonight; the docket is the night as one sheet: the nixie total, the HUD corners, each report as a
-   section, one gold plate that verifies all of them. VERIFY runs a gold scan line down the sheet, stamps VERIFIED and
-   leaves (EOD_SEAL_MS) — gradients and transforms only, the tokens carry both themes. */
+/* THE BOSS'S REVIEW as player cards — his "looks good for v2 lets use that" (2026-09-20 05:35) on the card that grew out
+   of the folders + docket of 03:50. One card per salesman (components/PlayerCard.jsx) holds every report he sent
+   tonight: the head is the man as his profile draws him, the body is the handover one line per part with its own ✓ / ✕.
+   The scan + VERIFIED seal (EOD_SEAL_MS) still play over the list when the last part of a night is approved — gradients
+   and transforms only, the tokens carry both themes. The History Log stays folders. */
 const EOD_FOLDER = 'kpm-folder-quiet w-full bg-[var(--raised)] border-[var(--line-2)] hover:border-[var(--accent-edge)] transition-colors';
 const EOD_SEAL_MS = 900;
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -20,44 +21,7 @@ const HIST_LEVELS = [
     { Icon: Calendar, count: (n) => plural(Object.keys(n).length, 'night', 'nights') },
 ];
 
-/* Expected beside counted, with the gap named. A lone figure could never look wrong - the admin
-   was approving a number he had nothing to compare it against, which is the whole reason the
-   count exists. Reports from before the count carry no expected value, so they keep the single
-   figure they were submitted with. Stacked on a phone, three columns on a desk; the type never
-   shrinks to fit. */
-const MoneyLine = ({ icon, label, expected, counted }) => {
-    const has = expected !== undefined && expected !== null;
-    const gap = Number(counted || 0) - Number(expected || 0);
-    const gapInk = gap < 0 ? 'text-[var(--danger-ink)]' : 'text-[var(--ink-dim)]';
-    const cell = 'text-[11px] font-bold text-[var(--ink-dim)] uppercase tracking-widest';
-
-    return (
-        <div className="bg-black/40 p-3 rounded-lg border border-[var(--line)]">
-            <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-[var(--ink-dim)] uppercase tracking-widest flex items-center gap-2">{icon} {label}</span>
-                {!has && <span className="text-xl font-black text-[var(--ink-dim)]">{formatRupiah(counted)}</span>}
-            </div>
-            {has && (
-                <div className="mt-2 space-y-1 sm:space-y-0 sm:grid sm:grid-cols-3 sm:gap-2 sm:text-center tabular-nums">
-                    <div className="flex justify-between items-baseline sm:block">
-                        <p className={cell}>Expected</p>
-                        <p className="text-sm font-black text-[var(--ink-dim)]">{formatRupiah(expected)}</p>
-                    </div>
-                    <div className="flex justify-between items-baseline sm:block">
-                        <p className={cell}>Counted</p>
-                        <p className="text-sm font-black text-[var(--ink)]">{formatRupiah(counted)}</p>
-                    </div>
-                    <div className="flex justify-between items-baseline sm:block">
-                        <p className={`${cell} ${gap < 0 ? 'text-[var(--danger-ink)]' : ''}`}>{gap < 0 ? 'Short by' : gap > 0 ? 'Over by' : 'Matches'}</p>
-                        <p className={`text-sm font-black ${gapInk}`}>{gap === 0 ? '\u2014' : formatRupiah(Math.abs(gap))}</p>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
-const EODReconciliationView = ({ samplings = [], transactions = [], inventory = [], agentCanvas = [], agentProfileId, motorists = [], eodReports = [], user, appSettings, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin }) => {
+const EODReconciliationView = ({ samplings = [], transactions = [], inventory = [], agentCanvas = [], agentProfileId, motorists = [], eodReports = [], user, appSettings, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin, career = {}, ranks, customers = [] }) => {
     
     // 🚀 VIEW & IDENTITY STATES
     const [viewMode, setViewMode] = useState(isAdmin ? 'review' : 'submit');
@@ -95,8 +59,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
     const cukaiFinePrice = appSettings?.cukaiFinePrice || 5000;
 
     const [openDates, setOpenDates] = useState([]);
-    const [docket, setDocket] = useState(null);      // the salesman whose night is open as a sheet
-    const [sealing, setSealing] = useState(false);   // VERIFY pressed: the scan runs, the seal stamps, the sheet leaves
+    const [sealing, setSealing] = useState(false);   // a night's last part approved: the scan runs, the seal stamps over the list
     const [histPath, setHistPath] = useState([]);    // the History Log drill: [place, salesman, month]
     const [expandedReports, setExpandedReports] = useState([]);
 
@@ -274,10 +237,12 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
         const legacyVerified = todaysReports.find(r => r.status === 'VERIFIED' && !r.reportType);
 
+        /* the boss sent a part back with a reason (PlayerCard ✕ → handleVerifyEOD `rejected`); the deck shows it */
+        const rejected = { ...((pendingCash || legacyPending)?.rejected || {}), ...(pendingCukai?.rejected || {}) };
         const cashStatus = (pendingCash || legacyPending) ? 'PENDING' : (verifiedCash || legacyVerified) ? 'VERIFIED' : 'READY';
         const cukaiStatus = (pendingCukai || legacyPending) ? 'PENDING' : (verifiedCukai || legacyVerified) ? 'VERIFIED' : 'READY';
 
-        return { expectedCash, expectedTransfer, expectedCukai, activeStock: resolvedCanvas, damagedItemsToReturn, todaysSamplings, cashStatus, cukaiStatus, storesServed, titipCollected, itemsBks, cukaiRemaining: expectedCukai, cashSources, transferSources };
+        return { expectedCash, expectedTransfer, expectedCukai, activeStock: resolvedCanvas, damagedItemsToReturn, todaysSamplings, cashStatus, cukaiStatus, rejected, storesServed, titipCollected, itemsBks, cukaiRemaining: expectedCukai, cashSources, transferSources };
     }, [effectiveId, samplings, transactions, agentCanvas, eodReports, motorists, agentProfileId]);
 
     /* 🔒 THE STAMP CEILING — Aldi, 2026-08-17: *"it still allow us to sent the item data more than
@@ -366,177 +331,6 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         return profile ? profile.name : 'Admin';
     };
 
-
-    /* one report as a section of the docket — the card the boss reviewed before, dressed in the theme: a gold hairline
-       under the name, the type as a stamp, the stamps block an inset well; problems keep their red */
-    const reportSection = (report) => {
-                        /* A report with no countStatus predates the count entirely.
-                           That is CLEAN - history is never painted as disputed. */
-                        const disputed = report.countStatus === 'DISPUTED';
-                        /* The same rule App.jsx mints with, so the rupiah named here is
-                           the rupiah he will actually owe. Floored separately: extra
-                           cash does not pay off a missing transfer. */
-                        const moneyShort = eodBountyLines(report, inventory, appSettings?.penaltyPriceTier)
-                                             .reduce((sum, line) => sum + line.amount, 0);
-                        const shortRows = shortStockRows(report.expectedStock, report.remainingStock);
-
-                        return (
-                        <div key={report.id} className={`kpm-docket-card relative border rounded-2xl overflow-hidden mb-3 ${(disputed || report.reportType === 'BOUNTY') ? 'border-[var(--danger)]' : 'border-[var(--line-2)]'} `}>
-                            
-                            <div className={`kpm-hairline px-4 py-3 flex justify-between items-center ${(disputed || report.reportType === 'BOUNTY') ? 'bg-[var(--danger-well)]' : ''} `}>
-                                <div>
-                                    <h4 className={`font-black text-[15px] lg:text-lg ${(disputed || report.reportType === 'BOUNTY') ? 'text-[var(--danger-ink)]' : 'text-[var(--ink)]'} `}>{report.agentName}</h4>
-                                    <p className="text-[11px] font-mono text-[var(--ink-dim)]">
-                                        {report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000).toLocaleTimeString() : ''}
-                                    </p>
-                                </div>
-                                <div className="flex flex-col items-end gap-1">
-                                    {report.reportType === 'CASH_STOCK' && <span className="kpm-stamp text-[11px] font-bold px-2 py-0.5 rounded uppercase tracking-widest text-[var(--accent-ink)]">CASH & STOCK</span>}
-                                    {report.reportType === 'CUKAI' && <span className="kpm-stamp text-[11px] font-bold px-2 py-0.5 rounded uppercase tracking-widest text-[var(--accent-ink)]">PITA CUKAI ONLY</span>}
-                                    {report.reportType === 'BOUNTY' && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-md flex items-center gap-1"><AlertCircle size={10}/> BOUNTY CLEARANCE</span>}
-                                    {!report.reportType && <span className="kpm-stamp text-[11px] font-bold px-2 py-0.5 rounded uppercase tracking-widest text-[var(--accent-ink)]">COMBINED REPORT</span>}
-                                    {disputed && <span className="bg-[var(--danger-well)] text-[var(--danger-ink)] text-[11px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-md flex items-center gap-1"><AlertCircle size={10}/> SHORT COUNT</span>}
-                                </div>
-                            </div>
-
-                            <div className="p-4 space-y-4">
-                                
-                                {/* The count came up short. Approving is allowed - Aldi's
-                                    ruling - it just is not silent about what it does. */}
-                                {disputed && (
-                                    <div className="bg-[var(--danger-well)] border border-[var(--danger)] p-4 rounded-xl">
-                                        <p className="text-[11px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-1 flex items-center gap-1"><AlertCircle size={14}/> He Counted Less Than Expected</p>
-                                        {moneyShort > 0 ? (
-                                            <p className="text-[11px] text-[var(--danger-ink)] leading-relaxed">
-                                                Approving records <strong className="font-black">{formatRupiah(moneyShort)}</strong> as a bounty on {report.agentName} &mdash; cash, transfer and any missing packs at retail price, each as its own line. He can repay it from his own EOD screen.
-                                            </p>
-                                        ) : (
-                                            <p className="text-[11px] text-[var(--danger-ink)] leading-relaxed">
-                                                The money matches and nothing is priced &mdash; the short products below have no retail price set, so nothing can be charged for them yet.
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* 🚀 ADMIN VIEW: BOUNTY PAYMENT */}
-                                {report.reportType === 'BOUNTY' && (
-                                    <div className="bg-[var(--danger-well)] border border-[var(--danger)] p-4 rounded-xl text-center">
-                                        <p className="text-[11px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-2 flex items-center justify-center gap-1"><BadgeDollarSign size={14}/> Cash Handover Amount</p>
-                                        <p className="text-3xl font-black text-[var(--danger-ink)] font-mono">{formatRupiah(report.cash)}</p>
-                                        <p className="text-[11px] text-[var(--ink-dim)] uppercase tracking-widest mt-2">Verify physical cash received to wipe liability.</p>
-                                    </div>
-                                )}
-
-                                {/* OPTIONALLY HIDE CASH/STOCK IF IT IS A CUKAI OR BOUNTY REPORT */}
-                                {(report.reportType === 'CASH_STOCK' || !report.reportType) && (
-                                    <>
-                                        <MoneyLine icon={<DollarSign size={14}/>} label="Physical Cash"
-                                                   expected={report.expectedCash} counted={report.cash} />
-                                        <MoneyLine icon={<Wallet size={14}/>} label="Digital Transfer"
-                                                   expected={report.expectedTransfer} counted={report.transfer} />
-                                        <div className="pt-2">
-                                            <p className="text-[11px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={12}/> Inventory to Vault</p>
-                                            <div className="flex flex-wrap gap-2">
-                                                {report.remainingStock && report.remainingStock.length > 0 ? report.remainingStock.map((item, idx) => {
-                                                    const productInfo = inventory?.find(p => p.id === item.productId) || {};
-                                                    let mult = 1;
-                                                    if (item.unit === 'Slop') mult = productInfo.packsPerSlop || 10;
-                                                    if (item.unit === 'Bal') mult = (productInfo.slopsPerBal || 20) * (productInfo.packsPerSlop || 10);
-                                                    if (item.unit === 'Karton') mult = (productInfo.balsPerCarton || 4) * (productInfo.slopsPerBal || 20) * (productInfo.packsPerSlop || 10);
-                                                    const totalBksDecimal = item.qty * mult;
-                                                    const sp = productInfo.sticksPerPack || 16;
-                                                    const physicalBks = Math.floor(totalBksDecimal);
-                                                    const physicalBtg = Math.round((totalBksDecimal - physicalBks) * sp);
-                                                    let displayQty = '';
-                                                    if (physicalBks > 0) displayQty += `${physicalBks} Bks `;
-                                                    if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
-
-                                                    return (
-                                                        <span key={idx} className="text-[11px] bg-[var(--raised)] text-[var(--ink-dim)] px-2 py-1 rounded border border-[var(--line)]">
-                                                            {item.name}: <strong className="text-[var(--ink-dim)]">{displayQty.trim() || '0 Bks'}</strong>
-                                                        </span>
-                                                    );
-                                                }) : <span className="text-[11px] text-[var(--ink-dim)] italic">No stock to return.</span>}
-                                            </div>
-                                        </div>
-
-                                        {/* One goods total hides a one-product shortfall - Aldi's
-                                            rule, and the reason the goods card counts line by line. */}
-                                        {shortRows.length > 0 && (
-                                            <div className="pt-3">
-                                                <p className="text-[11px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-2 flex items-center gap-1"><AlertCircle size={12}/> Short on Return ({shortRows.length})</p>
-                                                <div className="space-y-1">
-                                                    {shortRows.map(row => (
-                                                        <div key={row.productId} className="flex justify-between items-center gap-2 text-[11px] bg-[var(--danger-well)] border border-[var(--danger)] px-2 py-1.5 rounded">
-                                                            <span className="text-[var(--danger-ink)]">{row.name}</span>
-                                                            <strong className="text-[var(--danger-ink)] tabular-nums whitespace-nowrap">{row.counted} of {row.expected} {row.unit} &middot; short {row.short}</strong>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* 🚀 NEW: DAMAGED GOODS — was missing from this review screen entirely */}
-                                        <div className="pt-3">
-                                            <p className="text-[11px] font-bold text-[var(--accent-ink)] uppercase tracking-widest mb-2 flex items-center gap-1"><ShieldAlert size={12}/> Damaged Goods to Vault</p>
-                                            <div className="space-y-1">
-                                                {report.damagedStockToReturn && report.damagedStockToReturn.length > 0 ? report.damagedStockToReturn.map((item) => (
-                                                    <div key={item.ticketId} className="flex justify-between items-center text-[11px] bg-[var(--gold)] border border-[var(--accent-edge)] px-2 py-1.5 rounded">
-                                                        <span className="text-[var(--gold-ink)]">{item.name} <span className="text-[var(--gold-ink)] italic">({item.reason})</span></span>
-                                                        <strong className="text-[var(--gold-ink)]">{item.qty} {item.unit}</strong>
-                                                    </div>
-                                                )) : <span className="text-[11px] text-[var(--ink-dim)] italic">No damaged goods to return.</span>}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-
-                                {/* 🚀 ADMIN CUKAI BREAKDOWN & FINE VERIFIER */}
-                                {(report.reportType === 'CUKAI' || !report.reportType) && (
-                                    <>
-                                        <div className="flex justify-between items-center bg-[var(--inset)] p-3 rounded-lg border border-[var(--line-2)] border-l-2 border-l-[var(--gold)] mt-4">
-                                            <span className="text-xs font-bold text-[var(--ink-dim)] uppercase tracking-widest flex items-center gap-2"><Tag size={14}/> Physical Stamps Returned</span>
-                                            <span className="text-xl font-black text-[var(--ink)] font-mono whitespace-nowrap">{report.cukaiReturned !== undefined ? report.cukaiReturned : (report.cukai || 0)} Pcs</span>
-                                        </div>
-
-                                        {(report.cukaiPaid > 0) && (
-                                            <div className="flex justify-between items-center bg-[var(--danger-well)] p-3 rounded-lg border border-[var(--danger)] mt-2">
-                                                <div>
-                                                    <span className="text-xs font-bold text-[var(--danger-ink)] uppercase tracking-widest block flex items-center gap-1"><AlertCircle size={12}/> Lost Stamps Paid</span>
-                                                    <span className="text-[11px] text-[var(--danger-ink)] font-mono mt-0.5">{report.cukaiPaid} Pcs × {formatRupiah(report.cukaiFine / report.cukaiPaid)}</span>
-                                                </div>
-                                                <span className="text-xl font-black text-[var(--danger-ink)]">+{formatRupiah(report.cukaiFine)}</span>
-                                            </div>
-                                        )}
-
-                                        {report.deployedSamples && report.deployedSamples.length > 0 && (
-                                            <div className="pt-2 border-t border-[var(--line)] mt-3">
-                                                <p className="text-[11px] font-bold text-[var(--accent-ink)] uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={12}/> Today's Deployments</p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {report.deployedSamples.map((sample, idx) => {
-                                                        const sp = sample.sticksPerPack || 16;
-                                                        const physicalBks = Math.floor(sample.qty || 0);
-                                                        const physicalBtg = Math.round(((sample.qty || 0) - physicalBks) * sp);
-                                                        let displayQty = '';
-                                                        if (physicalBks > 0) displayQty += `${physicalBks} Bks `;
-                                                        if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
-
-                                                        return (
-                                                            <span key={`cukai-${idx}`} className="text-[11px] bg-[var(--inset)] text-[var(--ink-dim)] px-2 py-1 rounded-md border border-[var(--line)]">
-                                                                {sample.productName}: <strong className="text-[var(--accent-ink)]">{displayQty.trim() || '0 Bks'}</strong>
-                                                            </span>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-
-                            </div>
-                        </div>
-                        );
-    };
 
     return (
         <div className="animate-fade-in space-y-6 max-w-7xl mx-auto p-2">
@@ -692,6 +486,9 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             <Clock className="text-[var(--ink-dim)] mb-4 animate-pulse" size={40}/>
                                             <h3 className="text-lg font-black text-[var(--ink-dim)] uppercase tracking-widest mb-1">Awaiting Verification</h3>
                                             <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest text-center">Hand envelope to Admin.</p>
+                                            {Object.entries(agentData.rejected || {}).filter(([p]) => p !== 'cukai').map(([p, why]) => (
+                                                <p key={p} className="kpm-led-line crit mt-3 text-[11px] font-bold uppercase tracking-widest"><i aria-hidden="true"></i>{EOD_PART_LABELS[p] || p} sent back: <span className="normal-case tracking-normal">{why}</span></p>
+                                            ))}
                                         </div>
                                     ) : agentData.cashStatus === 'VERIFIED' ? (
                                         <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
@@ -920,6 +717,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             <Clock className="text-[var(--accent-ink)] mb-4 animate-pulse" size={40}/>
                                             <h3 className="text-lg font-black text-[var(--accent-ink)] uppercase tracking-widest mb-1">Awaiting Verification</h3>
                                             <p className="text-[10px] text-[var(--ink-dim)] uppercase tracking-widest text-center">Hand stamps (and cash fines) to Admin.</p>
+                                            {agentData.rejected?.cukai && <p className="kpm-led-line crit mt-3 text-[11px] font-bold uppercase tracking-widest"><i aria-hidden="true"></i>Pita cukai sent back: <span className="normal-case tracking-normal">{agentData.rejected.cukai}</span></p>}
                                         </div>
                                     ) : agentData.cukaiStatus === 'VERIFIED' ? (
                                         <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
@@ -1053,52 +851,29 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                         <h3 className="font-black text-[var(--ink)] uppercase tracking-widest flex items-center gap-2 mb-4"><AlertCircle className="text-[var(--accent-ink)]"/> Pending Verification ({pendingByAgent.length})</h3>
                         {pendingByAgent.length === 0 ? (
                             <div className="bg-black/20 border border-[var(--line)] p-8 rounded-2xl text-center text-[var(--ink-dim)] text-xs uppercase tracking-widest">No pending reports.</div>
-                        ) : (
-                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 kpm-folders">
-                                {pendingByAgent.map((g) => (
-                                    <FolderCard key={g.key} icon={g.disputed ? <ShieldAlert size={22} /> : <User size={22} />} onOpen={() => setDocket(g.key)} className={EOD_FOLDER}>
-                                        <h3 className="font-bold text-[15px] lg:text-lg mb-1 truncate">{g.agentName}</h3>
-                                        {g.cashTotal > 0 && <p className="kpm-stamp block truncate max-w-full text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{formatRupiah(g.cashTotal)}</p>}
-                                        {g.cukai > 0 && <p className="kpm-stamp block truncate max-w-full text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold mt-1">{g.cukai} pcs cukai</p>}
-                                        <p className={`kpm-led-line ${g.disputed ? 'crit' : g.lost > 0 ? 'warn' : ''} mt-2`}><i aria-hidden="true"></i>{g.disputed ? 'short count' : g.lost > 0 ? `${g.lost} stamps lost` : 'counts match'}</p>
-                                    </FolderCard>
-                                ))}
-                            </div>
-                        )}
-                        {docket && (() => {
-                            const g = pendingByAgent.find((x) => x.key === docket);
-                            if (!g) return null;
-                            const seal = () => { if (sealing) return; setSealing(true); setTimeout(() => { g.reports.forEach((r) => onVerifyEOD(r)); setSealing(false); setDocket(null); }, EOD_SEAL_MS); };
-                            const night = g.reports[0]?.timestamp?.seconds ? new Date(g.reports[0].timestamp.seconds * 1000).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long' }) : '';
+                        ) : (() => {
+                            /* the rank frames' CSS + the marble / violet filters, once for every card on the list */
+                            const today = getLocalDayKey();
+                            const seal = () => { if (sealing) return; setSealing(true); setTimeout(() => setSealing(false), EOD_SEAL_MS); };
                             return (
-                                <div className={`kpm-docket fixed inset-0 z-[9999] overflow-y-auto bg-[var(--sunk)] ${sealing ? 'sealing' : ''}`}>
-                                    <div className="max-w-3xl mx-auto p-3 lg:p-6 kpm-arrive">
-                                        <div className="kpm-docket-head relative flex items-start justify-between gap-3 px-3 py-3 mb-4">
-                                            <div className="min-w-0">
-                                                <p className="kpm-stamp text-[11px] uppercase tracking-widest font-bold mb-2">{night} · {g.reports.length} {g.reports.length === 1 ? 'report' : 'reports'}</p>
-                                                <h2 className="text-xl lg:text-2xl font-black text-[var(--ink)] uppercase tracking-widest truncate">{g.agentName}</h2>
-                                                <div className="mt-3 flex items-center gap-3 flex-wrap">
-                                                    {g.cashTotal > 0 && <NixieCount value={g.cashTotal} size={18} />}
-                                                    {g.cukai > 0 && <span className="kpm-stamp text-[11px] uppercase tracking-widest font-bold text-[var(--accent-ink)]">{g.cukai} pcs cukai</span>}
-                                                </div>
-                                            </div>
-                                            <button type="button" onClick={() => setDocket(null)} disabled={sealing} aria-label="Close" className="kpm-btn shrink-0 min-h-11 min-w-11 rounded-xl border border-[var(--line-2)] text-[var(--ink-dim)]"><XCircle size={18} /></button>
-                                        </div>
-                                        {g.reports.map((report) => reportSection(report))}
-                                        <div className="mt-4 flex flex-col gap-1">
-                                            <button type="button" onClick={seal} disabled={sealing} style={{ minHeight: 52 }} className={'kpm-plate w-full min-h-[52px] rounded-xl border font-black uppercase tracking-[.2em] flex items-center justify-center gap-2 disabled:opacity-70 ' + (g.disputed ? 'bg-[var(--danger-plate)] border-[var(--danger)] text-[var(--danger-plate-ink)]' : 'bg-[var(--gold)] border-[var(--accent-edge)] text-[var(--gold-ink)]')}>
-                                                <CheckCircle size={18} /> {g.disputed ? 'Approve Short Count' : 'Verify Night'}
-                                            </button>
-                                            <button type="button" onClick={() => { g.reports.forEach((r) => onResetEOD(r)); setDocket(null); }} disabled={sealing} className="w-full min-h-11 rounded-xl text-[11px] font-bold uppercase tracking-widest text-[var(--danger-ink)] flex items-center justify-center gap-2">
-                                                <XCircle size={14} /> Reject / Reset
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <i className="kpm-docket-scan" aria-hidden="true"></i>
-                                    <i className="kpm-docket-seal" aria-hidden="true">VERIFIED</i>
+                                <div className="space-y-3 kpm-arrive">
+                                    <style>{BORDER_KEYFRAMES}</style>
+                                    <FrameFilters />
+                                    {pendingByAgent.map((g) => { const man = motorists.find((m) => m.id === g.key); return (
+                                        <PlayerCard key={g.key} group={g} motorist={man} career={career?.[g.key]}
+                                            useCareerLedger={!!appSettings?.useCareerLedger} ranks={ranks} transactions={transactions} inventory={inventory} appSettings={appSettings}
+                                            closed={dayTargets(customers, man?.name || g.agentName, today)} today={today}
+                                            onApprove={onVerifyEOD} onReset={onResetEOD} onSealed={seal} />
+                                    ); })}
                                 </div>
                             );
                         })()}
+                        {sealing && (
+                            <div className="kpm-seal-stage" aria-hidden="true">
+                                <i className="kpm-docket-scan"></i>
+                                <i className="kpm-docket-seal">VERIFIED</i>
+                            </div>
+                        )}
                     </div>
 
                     {/* RIGHT: EOD HISTORY LOG (4-Level Folder Structure) */}

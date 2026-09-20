@@ -40,7 +40,6 @@ import { ConfirmHost, confirmAction } from '../src/components/ConfirmGate.jsx';
 import { ToastHost, notify } from '../src/components/Toast.jsx';
 import BiohazardTheme from '../src/components/BiohazardTheme.jsx';
 import { Cloud } from 'lucide-react';
-import { RankBorder, BORDER_KEYFRAMES, FrameFilters } from '../src/config/rankBorders.jsx';
 /* Same module the alias in ponder-lab.config.mjs points `firebase/firestore` at, so writing a
    fixture here is what the component's own listener reads back. */
 import { FIXTURES } from './lab-firestore-stub.js';
@@ -379,73 +378,6 @@ const labEodReports = (today) => {
     { id: 'e4', status: 'VERIFIED', reportType: 'CUKAI', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 86400 }, verifiedAt: { seconds: now - 79000 }, cukaiReturned: 36, cukaiPaid: 0, cukaiFine: 0 },
     { id: 'e5', status: 'VERIFIED', reportType: 'CASH_STOCK', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 172800 }, verifiedAt: { seconds: now - 170000 }, expectedCash: 1410000, cash: 1400000, expectedTransfer: 0, transfer: 0, remainingStock: stock },
   ];
-};
-
-/* ?shell&eod&admin&card — THE PLAYER CARD v2 (2026-09-20 05:00, LAB ONLY, for the boards). His 04:55: the TONIGHT block
-   erased ("i dont know whats the point of this"); the effect is his second clip — the card GROWS open under the head and
-   the body sharpens in from a blur, then folds back; the front carries the rank frame, the recent rank + title, the XP
-   with the day's PLUS, and the progression to the next rank, as Agent Profile shows them. `&back` = open, `&mid` = half
-   open. Nothing here ships; delete when he decides. */
-const PlayerCardMock = ({ back: startOpen = false, mid = false }) => {
-  const [open, setOpen] = React.useState(startOpen);
-  const Line = ({ label, value, led, note }) => (
-    <div className="flex items-center gap-2 min-h-[52px] pl-3 pr-1 rounded-xl bg-[var(--inset)] border border-[var(--line-2)]">
-      <div className="flex-1 min-w-0"><p className={`kpm-led-line ${led || ''}`}><i aria-hidden="true"></i>{label}</p>{note && <p className="text-[11px] text-[var(--ink-dim)] truncate mt-0.5 pl-[18px]">{note}</p>}</div>
-      <span className="font-mono text-sm font-bold text-[var(--ink)] whitespace-nowrap">{value}</span>
-      <button className="w-11 h-11 grid place-items-center rounded-lg text-[var(--accent-ink)]" aria-label="approve">✓</button>
-      <button className="w-11 h-11 grid place-items-center rounded-lg text-[var(--danger-ink)]" aria-label="reject">✕</button>
-    </div>
-  );
-  return (
-    <div className="max-w-7xl mx-auto p-2 -mt-2">
-      <h3 className="font-black text-[var(--ink)] uppercase tracking-widest flex items-center gap-2 mb-3 text-sm">Pending Verification (1)</h3>
-      <div className={`pc ${open ? 'open' : ''} ${mid ? 'mid' : ''}`}>
-        <div className="pc-head p-4" onClick={() => setOpen((v) => !v)} role="button" tabIndex={0}>
-          <div className="flex items-start gap-4">
-            <div className="pc-avatar"><style>{BORDER_KEYFRAMES}</style><FrameFilters /><div className="pc-photo">BS</div><RankBorder styleId="silver" /></div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-black text-[var(--ink)] uppercase tracking-wider truncate">Budi Santoso</h3>
-              <p className="text-[11px] uppercase tracking-widest font-bold mt-1 truncate"><span className="pc-rank" style={{ '--rk': '#94a3b8' }}>Silver</span><span className="text-[var(--ink-dim)]"> · The Hustler</span></p>
-              <p className="mt-2 font-mono text-sm font-bold text-[var(--ink)]">12.450 XP <span className="text-[var(--accent-ink)]">+320</span><span className="text-[11px] text-[var(--ink-dim)] font-normal"> today</span></p>
-              <div className="h-[3px] mt-1.5 rounded-full bg-[var(--inset)]"><div className="h-full rounded-full" style={{ width: '50%', background: 'linear-gradient(90deg, var(--gold), #E4B04A)' }}></div></div>
-              <p className="text-[11px] uppercase tracking-widest text-[var(--ink-dim)] mt-1">7.550 XP to Gold</p>
-            </div>
-          </div>
-          <div className="mt-4 flex items-end justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--ink-dim)]">Closed today</p>
-              <p className="font-mono text-4xl font-black text-[var(--ink)] leading-none mt-1">3<span className="text-[var(--ink-dim)] text-2xl"> / 8</span></p>
-              <p className="text-[11px] uppercase tracking-widest text-[var(--ink-dim)] mt-1">stores on the route</p>
-            </div>
-            <p className="kpm-led-line warn"><i aria-hidden="true"></i>2 stamps lost</p>
-          </div>
-        </div>
-        <div className="pc-body">
-          <div className="pc-inner px-4 pb-4">
-            <div className="mb-3 pt-1">
-              <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-[var(--ink-dim)]"><span>Revenue</span><span className="text-[var(--ink)]">Rp 1.675.000 / 2.000.000</span></div>
-              <div className="h-[3px] mt-1 rounded-full bg-[var(--inset)]"><div className="h-full rounded-full" style={{ width: '84%', background: 'linear-gradient(90deg, var(--gold), #E4B04A)' }}></div></div>
-            </div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--ink-dim)] mb-1">Products today</p>
-            <div className="space-y-1 mb-3">
-              {[['Cello Green 16', '12 Bks', 'Rp 1.070.000'], ['Djarum Coklat 12', '5 Bks', 'Rp 605.000']].map(([n, q, v]) => (
-                <div key={n} className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg bg-[var(--inset)] border border-[var(--line-2)]"><span className="flex-1 min-w-0 truncate">{n}</span><span className="font-mono text-[var(--ink-dim)]">{q}</span><span className="font-mono font-bold">{v}</span></div>
-              ))}
-            </div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--ink-dim)] mb-1">The handover — each line on its own</p>
-            <div className="space-y-1">
-              <Line label="Cash" value="Rp 1.250.000" />
-              <Line label="Transfer" value="Rp 425.000" />
-              <Line label="Stock back" value="17 Bks" note="2 Bks damaged · basah" />
-              <Line label="Pita cukai" value="40 pcs" note="2 lost · +Rp 30.000" led="warn" />
-            </div>
-            <button className="kpm-plate w-full mt-3 rounded-xl bg-[var(--gold)] text-[var(--gold-ink)] border border-[var(--accent-edge)] font-black uppercase tracking-[.2em] flex items-center justify-center gap-2" style={{ minHeight: 52 }}>Approve checked (4)</button>
-          </div>
-        </div>
-        <button className="pc-toggle" onClick={() => setOpen((v) => !v)} aria-label={open ? 'Fold' : 'Open'}>{open ? '⌃' : '⌄'}</button>
-      </div>
-    </div>
-  );
 };
 
 const LAB_PRODUCTS = [
@@ -907,13 +839,17 @@ function ShellLab() {
           motorists={LAB_MOTORISTS.map((m) => (m.id === 'm2' ? { ...m, ...FIXTURES['motorists/m2'] } : m))}
           agentCanvas={FIXTURES['motorists/m2'].activeCanvas}
           inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]}
-          transactions={[...LAB_AGENT_TXNS, { id: 'tx5', agentId: 'm2', date: LAB_TODAY, type: 'SALE', total: 425000, paymentType: 'Transfer', customerName: 'Toko Berkah Jaya' }]}
-          samplings={[]} eodReports={q.has('admin') ? labEodReports(LAB_TODAY) : []} appSettings={{}}
+          transactions={[...LAB_AGENT_TXNS.map((t) => t.id === 'tx1' ? { ...t, items: [{ productId: 'p-cg16', qty: 12, unit: 'Bks', calculatedPrice: 89000 }, { productId: 'p-djar', qty: 5, unit: 'Bks', calculatedPrice: 156000 }] } : t.id === 'tx2' ? { ...t, items: [{ productId: 'p-cg16', qty: 8, unit: 'Bks', calculatedPrice: 80000 }] } : t), { id: 'tx5', agentId: 'm2', date: LAB_TODAY, type: 'SALE', total: 425000, paymentType: 'Transfer', customerName: 'Toko Berkah Jaya' }]}
+          samplings={[]} eodReports={q.has('admin') ? labEodReports(LAB_TODAY) : []} appSettings={q.has('admin') ? { useCareerLedger: true } : {}}
           user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
           onSubmitEOD={async (p) => { window.__eod = [...(window.__eod || []), p]; }}
-          onVerifyEOD={() => {}} onResetEOD={() => {}}
+          /* the boss's player card (shipped 2026-09-20): Budi's ledger puts him on Silver with a bar toward Gold; the
+             route is the Journey Plan's fixture (one store closed today); a verify records the decision and answers
+             true so the scan + seal play - the fixture report stays, the real app removes it when Firestore updates */
+          onVerifyEOD={async (r, d) => { window.__eodVerify = [...(window.__eodVerify || []), { id: r.id, ...d }]; return true; }} onResetEOD={() => {}}
+          career={{ m2: { live: { collected: 124500000, daysVerified: 41, cleanCukaiDays: 30, storesServed: 300 }, joinDate: '2025-01-10' } }}
+          customers={LAB_CUSTOMERS.map((c, i) => ({ ...c, assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : '' }))}
         />
-        {q.has('card') && <PlayerCardMock back={q.has('back')} mid={q.has('mid')} />}
         </>
       ) : q.has('agent') ? (
         /* ?shell&agent — the Agent Inventory (the salesman's van manifest) INSIDE the real shell,
@@ -1004,7 +940,9 @@ function ShellLab() {
 }
 
 createRoot(document.getElementById('root')).render(
-  q.has('shell') ? <ShellLab /> :
+  /* the shell carries the dialog gate + the toast column as main.jsx does, so a screen that asks (the player card's ✕
+     asks the reason through promptAction) is answered in the lab too instead of logging "not mounted" */
+  q.has('shell') ? <><ShellLab /><ConfirmHost /><ToastHost /></> :
   q.has('toast') ? <ToastLab /> :
   q.has('label') ? <ShipmentLabel shipment={LAB_SHIPMENT} onClose={() => {}} companyName="KPM INVENTORY" /> :
   q.has('photo') ? <PhotoLab /> :

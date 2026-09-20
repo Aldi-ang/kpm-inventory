@@ -4602,12 +4602,37 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
 .kpm-hairline { background: linear-gradient(90deg, var(--gold), transparent 70%) 0 100% / 100% 1px no-repeat; }
 .kpm-docket-scan { position: fixed; left: 0; right: 0; top: 0; height: 2px; opacity: 0; pointer-events: none;
   background: linear-gradient(90deg, transparent, var(--gold) 30%, var(--gold) 70%, transparent); }
-.kpm-docket.sealing .kpm-docket-scan { animation: kpmScan 500ms cubic-bezier(.2, .8, .3, 1) both; }
+.kpm-docket.sealing .kpm-docket-scan, .kpm-seal-stage .kpm-docket-scan { animation: kpmScan 500ms cubic-bezier(.2, .8, .3, 1) both; }
 @keyframes kpmScan { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100vh); opacity: 1; } }
 .kpm-docket-seal { position: fixed; left: 50%; top: 40%; opacity: 0; pointer-events: none; padding: 10px 18px; border: 3px solid var(--gold); border-radius: 8px;
   font-family: var(--font-mono); font-size: 28px; font-weight: 900; letter-spacing: .3em; color: var(--accent-ink); font-style: normal;   /* gold never as text — the readable token */
   transform: translate(-50%, -50%) rotate(-8deg) scale(1.3); }
-.kpm-docket.sealing .kpm-docket-seal { animation: kpmSeal 320ms 450ms cubic-bezier(.2, .8, .3, 1) both; }
+.kpm-docket.sealing .kpm-docket-seal, .kpm-seal-stage .kpm-docket-seal { animation: kpmSeal 320ms 450ms cubic-bezier(.2, .8, .3, 1) both; }
+/* the same scan + seal over the player-card list (the wrapper carries no transform, so the fixed children stay on the viewport) */
+.kpm-seal-stage { position: static; }
 @keyframes kpmSeal { from { opacity: 0; transform: translate(-50%, -50%) rotate(-8deg) scale(1.3); } to { opacity: 1; transform: translate(-50%, -50%) rotate(-8deg) scale(1); } }
 .kpm-docket.sealing { animation: kpmLeave 200ms 760ms cubic-bezier(.4, 0, .6, 1) both; }
-@media (prefers-reduced-motion: reduce) { .kpm-docket, .kpm-docket.sealing, .kpm-docket.sealing .kpm-docket-scan, .kpm-docket.sealing .kpm-docket-seal { animation-duration: 1ms; } }
+@media (prefers-reduced-motion: reduce) { .kpm-docket, .kpm-docket.sealing, .kpm-docket.sealing .kpm-docket-scan, .kpm-docket.sealing .kpm-docket-seal, .kpm-seal-stage .kpm-docket-scan, .kpm-seal-stage .kpm-docket-seal { animation-duration: 1ms; } }
+
+/* THE PLAYER CARD — one salesman's night in the boss's EOD review (components/PlayerCard.jsx; his "looks good for v2
+   lets use that", 2026-09-20 05:35, from his second clip). The HEAD is the man as his Agent Profile draws him: the photo
+   inside the rank frame (.sframe, 128 px, the frame's own CSS comes with BORDER_KEYFRAMES), rank, XP, the bar. A tap on
+   the head GROWS the body open under it (grid-rows 0fr → 1fr, 320 ms) while the inside sharpens in from a blur and a
+   6 px rise; the same road back folds it. The ✓ / ✕ keys press in like every key. Every colour is a token; the blur is
+   a filter on the moving layer only; `html.lite-mode *` and reduced motion kill the motion through the global rules. */
+.pc { position: relative; border-radius: 16px; border: 1px solid var(--line-2); background: linear-gradient(180deg, var(--raised), var(--sunk)); overflow: hidden; padding-bottom: 28px; }
+.pc-head { cursor: pointer; user-select: none; transition: transform 160ms ease-out; }
+.pc-head:active { transform: scale(.99); }
+.pc-avatar { position: relative; width: 128px; height: 128px; flex: 0 0 128px; }
+.pc-photo { position: absolute; inset: 14px; display: grid; place-items: center; overflow: hidden; z-index: 0;
+  background: linear-gradient(160deg, #E4C98E, #B8893A); font: 900 26px/1 var(--font-mono); color: #2a1d08; }
+.pc-avatar .sframe { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
+.pc-rank { color: var(--rk); font-weight: 900; }
+.pc-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 320ms cubic-bezier(.2, .8, .3, 1); }
+.pc.open .pc-body { grid-template-rows: 1fr; }
+.pc-inner { overflow: hidden; min-height: 0; opacity: 0; filter: blur(6px); transform: translateY(-6px); transition: opacity 320ms, filter 360ms, transform 320ms; }
+.pc.open .pc-inner { opacity: 1; filter: blur(0); transform: none; }
+.pc-toggle { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 56px; height: 44px; padding-top: 12px; border: 0; background: transparent; color: var(--ink-dim); font-size: 18px; line-height: 1; }   /* 44 px to the finger, the glyph where the mock drew it */
+.pc-key { transition: transform 120ms ease-out, background-color 160ms; }
+.pc-key:active { transform: scale(.92); }
+@media (prefers-reduced-motion: reduce) { .pc-body, .pc-inner, .pc-head, .pc-key { transition-duration: 1ms; } }

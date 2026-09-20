@@ -144,9 +144,9 @@ import {
 
 // --- CONFIG & UTILITIES IMPORTS ---
 import { auth, db, storage, googleProvider, appId } from './config/firebase';
-import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines, absentForSure } from './utils/helpers';
+import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines, eodReportParts, EOD_PART_LABELS, absentForSure } from './utils/helpers';
 import { isLowStock } from './utils/stockThreshold';
-import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES } from './config/career';
+import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES, DEFAULT_RANKS } from './config/career';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import VaultGate, { gateHoldMs, gateIsRich, gateCanvasOn } from './components/VaultGate.jsx';
@@ -489,11 +489,15 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   // whatever targets the owner customized via the Achievement Config modal — same
   // per-company path + one-release fallback AgentProfileView.jsx uses for badges/ranks.
   const [progressionBadges, setProgressionBadges] = useState(DEFAULT_BADGES);
+  // The rank ladder from the same doc, for the boss's player card (EOD review) - the same defaults
+  // and the same title/hex fill-in as AgentProfileView.jsx's own read, so both screens agree.
+  const [progressionRanks, setProgressionRanks] = useState(DEFAULT_RANKS);
   useEffect(() => {
       if (!db || !appId || !userId || userId === 'default') return;
       const fetchBadgeConfig = async () => {
           try {
               const snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'progression'));
+              if (snap.exists() && Array.isArray(snap.data().ranks)) setProgressionRanks(snap.data().ranks.map(r => ({ ...r, title: r.title || r.perks || 'No Title', borderImage: r.borderImage || '' })));
               if (snap.exists() && snap.data().badges) { setProgressionBadges(snap.data().badges); return; }
               const legacySnap = await getDoc(doc(db, `artifacts/${appId}/settings`, 'achievements'));
               if (legacySnap.exists() && legacySnap.data().badges) setProgressionBadges(legacySnap.data().badges);
@@ -2085,8 +2089,27 @@ const handleGitHubMirror = async () => {
       }
   };
 
-  const handleVerifyEOD = async (report) => {
-      // 🚀 DYNAMIC CONFIRMATION: Adapt message based on the report type
+  /* ONE REPORT, ITS PARTS APPROVED OR RETURNED ONE BY ONE. Aldi, 2026-09-20: "approve and reject for
+     every single EOD, so one for each, cash, transfer, pita cukai, bounties". `decision` is
+     `{ approve: ['cash', ...], reject: { stock: 'reason' } }` from the boss's player card; with no
+     decision every part the report carries is approved (the old one-tap verify). Each approved part
+     is credited HERE and ONLY here - the stock to the vault, the damaged packs to quarantine, the
+     stamps against the debt ledger, the shortfall as a bounty - and never twice: the `verified` map
+     is re-read inside the transaction, so a part a second admin approved a moment ago is skipped.
+     The career ledger, the XP and the VERIFIED stamp move once, when the last part is approved; until
+     then the report stays PENDING, its `rejected` map carrying the reason the salesman reads on his
+     own EOD screen. Resolves true only when the write landed, so the card can play its seal after. */
+  const handleVerifyEOD = async (report, decision) => {
+      const parts = eodReportParts(report, inventory, appSettings?.penaltyPriceTier);
+      const askedApprove = decision?.approve ? decision.approve.filter(p => parts.includes(p)) : parts;
+      const askedReject = Object.fromEntries(Object.entries(decision?.reject || {}).filter(([p, why]) => parts.includes(p) && String(why || '').trim()));
+      if (askedApprove.length === 0 && Object.keys(askedReject).length === 0) return false;
+      const doing = (part) => askedApprove.includes(part);
+      const fmtRp = (n) => new Intl.NumberFormat('id-ID').format(n);
+      const partList = askedApprove.map(p => EOD_PART_LABELS[p].toLowerCase()).join(', ');
+      const returnList = Object.entries(askedReject).map(([p, why]) => `  \u2022 ${EOD_PART_LABELS[p]} \u2014 ${why}`).join('\n');
+
+      // 🚀 DYNAMIC CONFIRMATION: Adapt message based on the report type and the parts in hand
       /* A short count becomes a bounty in the agent's name, so the admin is told the amount
          BEFORE approving, not after. Aldi's rule, 2026-08-18: "admin can approve but it will add
          up to the agent's bounties instead". Approving is allowed — it is simply not silent. */
@@ -2097,14 +2120,20 @@ const handleGitHubMirror = async () => {
       const bountyLines = eodBountyLines(report, inventory, appSettings?.penaltyPriceTier);
       const eodShortfall = bountyLines.reduce((sum, line) => sum + line.amount, 0);
 
-      const confirmMsg = report.reportType === 'BOUNTY'
-          ? `Verify Bounty Clearance of Rp ${new Intl.NumberFormat('id-ID').format(report.cash)} for ${report.agentName}? This will wipe their quarantine debt.`
-          : eodShortfall > 0
-              ? `Verify EOD for ${report.agentName}?\n\nThey are short Rp ${new Intl.NumberFormat('id-ID').format(eodShortfall)}:\n${bountyLines.map(l => `  \u2022 ${l.label} \u2014 Rp ${new Intl.NumberFormat('id-ID').format(l.amount)}`).join('\n')}\n\nApproving records each of those as a bounty in their name, which they can repay from their own EOD screen.\n\nThis also clears their inventory and returns it to the Vault.`
-              : `Verify EOD for ${report.agentName}? This clears their inventory and returns it to the Vault.`;
+      const confirmMsg = (report.reportType === 'BOUNTY'
+          ? (doing('bounty')
+              ? `Verify Bounty Clearance of Rp ${fmtRp(report.cash)} for ${report.agentName}? This will wipe their quarantine debt.`
+              : `Return the bounty payment to ${report.agentName}?`)
+          : doing('bounty') && eodShortfall > 0
+              ? `Approve ${partList} for ${report.agentName}?\n\nThey are short Rp ${fmtRp(eodShortfall)}:\n${bountyLines.map(l => `  \u2022 ${l.label} \u2014 Rp ${fmtRp(l.amount)}`).join('\n')}\n\nApproving records each of those as a bounty in their name, which they can repay from their own EOD screen.${doing('stock') ? '\n\nThis also clears their inventory and returns it to the Vault.' : ''}`
+              : askedApprove.length
+                  ? `Approve ${partList} for ${report.agentName}?${doing('stock') ? ' This clears their inventory and returns it to the Vault.' : ''}`
+                  : `Return these to ${report.agentName}?`)
+          + (returnList ? `\n\nGoing back to them with a reason:\n${returnList}` : '');
 
-      if(!await confirmAction(confirmMsg)) return;
+      if(!await confirmAction(confirmMsg)) return false;
 
+      let sealed = false;   // set inside the transaction: every part is now approved
       try {
           await runTransaction(db, async (t) => {
               // ==========================================
@@ -2122,7 +2151,22 @@ const handleGitHubMirror = async () => {
               const useBranchWarehouse = agentIsFieldLevel && agentLocation && agentLocation !== 'Headquarters' && agentLocation !== 'UNASSIGNED AREA';
               const safeBranchPath = useBranchWarehouse ? agentLocation.replace(/\//g, '-') : null;
 
-              const validItems = (report.remainingStock || []).filter(item => item.qty > 0);
+              // 🚨 FIX: read the EOD report itself so two admins verifying the same report at once
+              // can't both succeed — without this read in the transaction's read-set, Firestore has
+              // no way to detect the conflict and stock gets double-credited.
+              const eodRef = doc(db, `artifacts/${appId}/users/${userId}/eod_reports`, report.id);
+              const eodSnap = await t.get(eodRef);
+              if (!eodSnap.exists()) throw new Error('Laporan EOD sudah tidak ada.');
+              if (eodSnap.data().status === 'VERIFIED') throw new Error('Laporan ini sudah diverifikasi.');
+              /* The FRESH map, not the prop: a part another admin approved while this card was open is
+                 already credited, so it is dropped here rather than credited twice. Only the parts
+                 approved NOW are read and written below - a part going back touches nothing. */
+              const wasVerified = eodSnap.data().verified || {};
+              const approveNow = askedApprove.filter(p => wasVerified[p] !== true);
+              const nowDoing = (part) => approveNow.includes(part);
+              if (approveNow.length === 0 && Object.keys(askedReject).length === 0) throw new Error('Bagian ini sudah diverifikasi.');
+
+              const validItems = nowDoing('stock') ? (report.remainingStock || []).filter(item => item.qty > 0) : [];
               const productRefs = validItems.map(item => ({
                   itemData: item,
                   ref: useBranchWarehouse
@@ -2133,7 +2177,7 @@ const handleGitHubMirror = async () => {
 
               // 🚀 NEW: Damaged goods reported today — read their current damagedStock count
               // at the same destination (branch or master), so we can safely increment it.
-              const validDamagedItems = (report.damagedStockToReturn || []).filter(item => item.qty > 0);
+              const validDamagedItems = nowDoing('damaged') ? (report.damagedStockToReturn || []).filter(item => item.qty > 0) : [];
               const damagedRefs = validDamagedItems.map(item => ({
                   itemData: item,
                   ref: useBranchWarehouse
@@ -2149,14 +2193,6 @@ const handleGitHubMirror = async () => {
                   agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, lookupAgentId);
                   agentDoc = await t.get(agentRef);
               }
-
-              // 🚨 FIX: read the EOD report itself so two admins verifying the same report at once
-              // can't both succeed — without this read in the transaction's read-set, Firestore has
-              // no way to detect the conflict and stock gets double-credited.
-              const eodRef = doc(db, `artifacts/${appId}/users/${userId}/eod_reports`, report.id);
-              const eodSnap = await t.get(eodRef);
-              if (!eodSnap.exists()) throw new Error('Laporan EOD sudah tidak ada.');
-              if (eodSnap.data().status === 'VERIFIED') throw new Error('Laporan ini sudah diverifikasi.');
 
               // 🚀 CAREER LEDGER (Phase 2): read in the same transaction as everything else, so a
               // concurrent verify can't credit the same day twice — same read-then-write shape as
@@ -2255,8 +2291,9 @@ const handleGitHubMirror = async () => {
                   });
               }
 
-              // 2B. Update Agent Profile & Financial Wallets
-              if (agentRef && agentDoc && agentDoc.exists()) {
+              // 2B. Update Agent Profile & Financial Wallets — only for the parts approved now
+              const touchesAgent = nowDoing('bounty') || nowDoing('cukai') || nowDoing('stock');
+              if (agentRef && agentDoc && agentDoc.exists() && touchesAgent) {
                   let currentDebts = agentDoc.data().cukaiDebts || {};
                   /* Why a sibling map and not a richer value under PENALTY_: every existing sum
                      on that key expects a plain number. Changing the shape would have broken the
@@ -2281,7 +2318,7 @@ const handleGitHubMirror = async () => {
                           currentDebts['global_credit'] = (currentDebts['global_credit'] || 0) + agentDoc.data().cukaiDebt;
                       }
 
-                      let remainingPayment = report.cukai || 0;
+                      let remainingPayment = nowDoing('cukai') ? (report.cukai || 0) : 0;
                       for (let pid of Object.keys(currentDebts)) {
                           if (remainingPayment <= 0) break;
                           // 🚀 FIX: Prevent standard stamp payments from accidentally wiping out CASH bounties
@@ -2313,7 +2350,7 @@ const handleGitHubMirror = async () => {
                          ASSIGNED, never added to: verifying the same report twice writes the same
                          keys with the same numbers, so a double-approve cannot charge a man twice
                          for one night. */
-                      if (report.id) {
+                      if (report.id && nowDoing('bounty')) {
                           bountyLines.forEach(line => {
                               currentDebts[line.key] = line.amount;
                               currentNotes[line.key] = { label: line.label, date: line.date };
@@ -2321,13 +2358,36 @@ const handleGitHubMirror = async () => {
                       }
 
                       // 🚀 ANTI-WIPE BUG FIX: If they just submitted a Cukai report, do NOT wipe their stock!
-                      const finalCanvas = (report.reportType === 'CUKAI') ? currentCanvas : [];
+                      // The van is emptied by the STOCK part alone (a CUKAI report carries none), so a night
+                      // whose stock went back to the salesman keeps his canvas until the count is right.
+                      const finalCanvas = nowDoing('stock') ? [] : currentCanvas;
 
                       t.update(agentRef, { activeCanvas: finalCanvas, cukaiDebts: currentDebts, cukaiDebtNotes: currentNotes, cukaiDebt: 0 });
                   }
               }
 
-              // 2C. Update the EOD Report Status + the career ledger (Phase 2)
+              // 2C. The verified / rejected maps first; the career ledger + VERIFIED only once every part is in
+              const verifiedNow = { ...wasVerified, ...Object.fromEntries(approveNow.map(p => [p, true])) };
+              const rejectedNow = { ...(eodSnap.data().rejected || {}), ...askedReject };
+              approveNow.forEach(p => { delete rejectedNow[p]; });
+              const stamp = { verified: verifiedNow, rejected: rejectedNow };
+              if (Object.keys(askedReject).length > 0) {
+                  // 🔔 The salesman hears why, on his own screen - silence is a bug (Aldi's law).
+                  const notifRef = doc(collection(db, `artifacts/${appId}/users/${userId}/notifications`));
+                  t.set(notifRef, {
+                      title: "↩️ EOD sent back",
+                      message: `${Object.entries(askedReject).map(([p, why]) => `${EOD_PART_LABELS[p]}: ${why}`).join(' · ')}`,
+                      type: "EOD_RETURNED",
+                      read: false,
+                      isRead: false,
+                      timestamp: serverTimestamp(),
+                      agentId: report.agentId,
+                      linkToTab: 'eod'
+                  });
+              }
+              sealed = parts.every(p => verifiedNow[p] === true);
+              if (!sealed) { t.update(eodRef, stamp); return; }
+
               // Nothing reads `career` yet (that's Phase 4) — this just accumulates silently.
               if (careerRef && report.reportType !== 'BOUNTY') {
                   const reportDate = report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000) : new Date();
@@ -2399,17 +2459,21 @@ const handleGitHubMirror = async () => {
 
                       t.set(careerRef, careerUpdate, { merge: true });
                       t.update(eodRef, dayXP !== undefined
-                          ? { status: 'VERIFIED', verifiedAt: serverTimestamp(), dayXP, xpBreakdown }
-                          : { status: 'VERIFIED', verifiedAt: serverTimestamp() });
+                          ? { ...stamp, status: 'VERIFIED', verifiedAt: serverTimestamp(), dayXP, xpBreakdown }
+                          : { ...stamp, status: 'VERIFIED', verifiedAt: serverTimestamp() });
                       return;
                   }
               }
-              t.update(eodRef, { status: 'VERIFIED', verifiedAt: serverTimestamp() });
+              t.update(eodRef, { ...stamp, status: 'VERIFIED', verifiedAt: serverTimestamp() });
           });
-          
-          await logAudit("EOD_VERIFIED", `Verified ${report.reportType || 'EOD'} for ${report.agentName}`);
-          triggerCapy(report.reportType === 'BOUNTY' ? "Bounty Cleared! The law is satisfied. 🤠" : "EOD Verified & Stock Returned! 📦");
-      } catch(e) { console.error(e); notify("Verification failed: " + e.message); }
+
+          const returned = Object.keys(askedReject).map(p => EOD_PART_LABELS[p].toLowerCase()).join(', ');
+          await logAudit(sealed ? "EOD_VERIFIED" : "EOD_PART", `${sealed ? 'Verified' : `Approved ${partList || 'nothing'} of`} ${report.reportType || 'EOD'} for ${report.agentName}${returned ? ` (sent back: ${returned})` : ''}`);
+          triggerCapy(sealed
+              ? (report.reportType === 'BOUNTY' ? "Bounty Cleared! The law is satisfied. 🤠" : "EOD Verified & Stock Returned! 📦")
+              : `${partList ? `Approved ${partList}. ` : ''}${returned ? `Sent back: ${returned}.` : ''}`.trim());
+          return true;
+      } catch(e) { console.error(e); notify("Verification failed: " + e.message); return false; }
   };
 
   const handleResetEOD = async (report) => {
@@ -5029,11 +5093,15 @@ const handleGitHubMirror = async () => {
                   motorists={motorists} 
                   eodReports={eodReports}
                   user={user}
-                  onSubmitEOD={handleSubmitEOD} 
+                  onSubmitEOD={handleSubmitEOD}
                   onVerifyEOD={handleVerifyEOD}
                   onResetEOD={handleResetEOD}
-                  isAdmin={isAdmin} 
+                  isAdmin={isAdmin}
+                  career={career}
+                  ranks={progressionRanks}
+                  customers={displayPermitted}
               />
+
           )}
 
 
