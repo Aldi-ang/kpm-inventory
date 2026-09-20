@@ -763,7 +763,8 @@ export const eodNightMessage = (items = [], inventory = [], priceTier = 'Retail'
     const fmtRp = (n) => new Intl.NumberFormat('id-ID').format(n);
     const name = items[0]?.report?.agentName || 'the salesman';
     const approvedOf = ({ report, decision }) => decision?.approve || eodReportParts(report, inventory, priceTier);
-    const approve = [...new Set(items.flatMap(it => approvedOf(it).map(p => EOD_PART_LABELS[p].toLowerCase())))];
+    const order = Object.keys(EOD_PART_LABELS);   // the handover's order, whichever document came first
+    const approve = [...new Set(items.flatMap(approvedOf))].sort((a, b) => order.indexOf(a) - order.indexOf(b)).map(p => EOD_PART_LABELS[p].toLowerCase());
     const returns = items.flatMap(({ decision }) => Object.entries(decision?.reject || {}).map(([p, why]) => `  • ${EOD_PART_LABELS[p]} — ${why}`));
     const fine = items.find(it => it.report.reportType === 'BOUNTY' && approvedOf(it).includes('bounty'));
     const bounty = items.filter(it => it.report.reportType !== 'BOUNTY' && approvedOf(it).includes('bounty'))
