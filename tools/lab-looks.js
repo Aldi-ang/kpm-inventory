@@ -42,4 +42,18 @@ export const PIN = '#root{width:375px}';
 /* 2026-09-20 02:50: the EOD HQ Verification looks (eod-docket / eod-fold + the folder mock) were decided B and shipped into
    EODReconciliationView.jsx + theme.css — one folder per salesman, the docket sheet, the history as folders. Gone.
    `?shell&eod&admin` still opens the real screen with five lab reports. */
-export const LOOKS = { pin: PIN };
+/* 2026-09-20 04:20 — THE PLAYER CARD (his redirect: a card per salesman with a pixel dissolve). eod-card hides the real
+   review grid and styles the lab mock (PlayerCardMock in ponder-lab.jsx): the card, the face tile, the tile grid that
+   covers the card square by square (his video) and clears the same way. Delete when he decides. */
+export const EOD_CARD = '#root .grid.grid-cols-1.lg\\:grid-cols-2.gap-8.animate-fade-in{display:none}'
+  + '.pc{position:relative;border-radius:16px;border:1px solid var(--line-2);background:linear-gradient(180deg,var(--raised),var(--sunk));overflow:hidden;transition:transform 160ms ease-out;cursor:pointer;user-select:none}'
+  + '.pc:active{transform:perspective(700px) rotateX(2deg) rotateY(-2deg) scale(.99)}'
+  + '.pc-face{width:88px;height:88px;flex:0 0 88px;border-radius:14px;display:grid;place-items:center;font:900 28px/1 var(--font-mono);color:#2a1d08;background:linear-gradient(160deg,#E4C98E,#B8893A)}'
+  + '.pc-flip{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;border:1px solid var(--line-2);color:var(--ink-dim);font-size:18px}'
+  + '.pc-tiles{position:absolute;inset:0;display:grid;grid-template-columns:repeat(10,1fr);grid-template-rows:repeat(8,1fr);pointer-events:none;z-index:5}'
+  + '.pc-tile{opacity:0;background:color-mix(in srgb,var(--gold) 45%,var(--raised))}'
+  + '.pc.flipping .pc-tile{animation:pcIn 1ms steps(1) both;animation-delay:var(--d)}'
+  + '.pc.settling .pc-tile{opacity:1;animation:pcOut 1ms steps(1) both;animation-delay:var(--d)}'
+  + '.pc.mid .pc-tile.on{opacity:1}'
+  + '@keyframes pcIn{to{opacity:1}}@keyframes pcOut{to{opacity:0}}';
+export const LOOKS = { pin: PIN, 'eod-card': EOD_CARD };
