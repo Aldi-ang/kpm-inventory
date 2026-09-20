@@ -42,18 +42,16 @@ export const PIN = '#root{width:375px}';
 /* 2026-09-20 02:50: the EOD HQ Verification looks (eod-docket / eod-fold + the folder mock) were decided B and shipped into
    EODReconciliationView.jsx + theme.css — one folder per salesman, the docket sheet, the history as folders. Gone.
    `?shell&eod&admin` still opens the real screen with five lab reports. */
-/* 2026-09-20 04:20 — THE PLAYER CARD (his redirect: a card per salesman with a pixel dissolve). eod-card hides the real
-   review grid and styles the lab mock (PlayerCardMock in ponder-lab.jsx): the card, the face tile, the tile grid that
-   covers the card square by square (his video) and clears the same way. Delete when he decides. */
+/* 2026-09-20 05:00 — THE PLAYER CARD v2 (his second clip: the card grows open under the head, the body sharpens in from
+   a blur, folds back). eod-card hides the real review grid and styles the lab mock (PlayerCardMock in ponder-lab.jsx).
+   Delete when he decides. */
 export const EOD_CARD = '#root .grid.grid-cols-1.lg\\:grid-cols-2.gap-8.animate-fade-in{display:none}'
-  + '.pc{position:relative;border-radius:16px;border:1px solid var(--line-2);background:linear-gradient(180deg,var(--raised),var(--sunk));overflow:hidden;transition:transform 160ms ease-out;cursor:pointer;user-select:none}'
-  + '.pc:active{transform:perspective(700px) rotateX(2deg) rotateY(-2deg) scale(.99)}'
-  + '.pc-face{width:88px;height:88px;flex:0 0 88px;border-radius:14px;display:grid;place-items:center;font:900 28px/1 var(--font-mono);color:#2a1d08;background:linear-gradient(160deg,#E4C98E,#B8893A)}'
-  + '.pc-flip{width:36px;height:36px;display:grid;place-items:center;border-radius:10px;border:1px solid var(--line-2);color:var(--ink-dim);font-size:18px}'
-  + '.pc-tiles{position:absolute;inset:0;display:grid;grid-template-columns:repeat(10,1fr);grid-template-rows:repeat(8,1fr);pointer-events:none;z-index:5}'
-  + '.pc-tile{opacity:0;background:color-mix(in srgb,var(--gold) 45%,var(--raised))}'
-  + '.pc.flipping .pc-tile{animation:pcIn 1ms steps(1) both;animation-delay:var(--d)}'
-  + '.pc.settling .pc-tile{opacity:1;animation:pcOut 1ms steps(1) both;animation-delay:var(--d)}'
-  + '.pc.mid .pc-tile.on{opacity:1}'
-  + '@keyframes pcIn{to{opacity:1}}@keyframes pcOut{to{opacity:0}}';
+  + '.pc{position:relative;border-radius:16px;border:1px solid var(--line-2);background:linear-gradient(180deg,var(--raised),var(--sunk));overflow:hidden;padding-bottom:28px}'
+  + '.pc-head{cursor:pointer;user-select:none;transition:transform 160ms ease-out}.pc-head:active{transform:scale(.99)}'
+  + '.pc-avatar{position:relative;width:128px;height:128px;flex:0 0 128px}.pc-photo{position:absolute;inset:14px;display:grid;place-items:center;background:linear-gradient(160deg,#E4C98E,#B8893A);font:900 26px/1 var(--font-mono);color:#2a1d08;z-index:0}'
+  + '.pc-avatar .sframe{position:absolute;inset:0;z-index:20;pointer-events:none}'
+  + '.pc-rank{color:var(--rk);font-weight:900}'
+  + '.pc-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows 320ms cubic-bezier(.2,.8,.3,1)}.pc.open .pc-body{grid-template-rows:1fr}.pc.mid .pc-body{grid-template-rows:.55fr}'
+  + '.pc-inner{overflow:hidden;min-height:0;opacity:0;filter:blur(6px);transform:translateY(-6px);transition:opacity 320ms,filter 360ms,transform 320ms}.pc.open .pc-inner{opacity:1;filter:blur(0);transform:none}.pc.mid .pc-inner{opacity:.7;filter:blur(3px)}'
+  + '.pc-toggle{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:56px;height:28px;border:0;background:transparent;color:var(--ink-dim);font-size:18px;line-height:1}';
 export const LOOKS = { pin: PIN, 'eod-card': EOD_CARD };

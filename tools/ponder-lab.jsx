@@ -40,7 +40,7 @@ import { ConfirmHost, confirmAction } from '../src/components/ConfirmGate.jsx';
 import { ToastHost, notify } from '../src/components/Toast.jsx';
 import BiohazardTheme from '../src/components/BiohazardTheme.jsx';
 import { Cloud } from 'lucide-react';
-import NixieCount from '../src/components/NixieCount.jsx';
+import { RankBorder, BORDER_KEYFRAMES, FrameFilters } from '../src/config/rankBorders.jsx';
 /* Same module the alias in ponder-lab.config.mjs points `firebase/firestore` at, so writing a
    fixture here is what the component's own listener reads back. */
 import { FIXTURES } from './lab-firestore-stub.js';
@@ -381,21 +381,13 @@ const labEodReports = (today) => {
   ];
 };
 
-/* ?shell&eod&admin&card — THE PLAYER CARD (2026-09-20 04:20, LAB ONLY, for the boards): his redirect — a card per
-   salesman instead of a folder; FRONT = the face, the name, XP + the latest badge, the night's diode, "closed ?/?
-   stores"; tap → a PIXEL DISSOLVE (his video: the picture breaks into squares and re-forms as the other side) → BACK =
-   revenue vs target, today's products, the EOD lines each with its own ✓ / ✕, one plate. `&back` renders the back
-   for a still, `&mid` freezes the dissolve half way. Nothing here ships; delete when he decides. */
-const PC_TILES = Array.from({ length: 80 }, (_, i) => ({ i, d: ((i * 37) % 80) * 5, mid: ((i * 37) % 80) < 40 }));
-const PlayerCardMock = ({ back: startBack = false, mid = false }) => {
-  const [face, setFace] = React.useState(startBack ? 'back' : 'front');
-  const [phase, setPhase] = React.useState('');   // '' | 'in' (tiles cover) | 'out' (tiles clear)
-  const flip = () => {
-    if (phase) return;
-    setPhase('in');
-    setTimeout(() => { setFace((v) => (v === 'front' ? 'back' : 'front')); setPhase('out'); }, 440);
-    setTimeout(() => setPhase(''), 800);
-  };
+/* ?shell&eod&admin&card — THE PLAYER CARD v2 (2026-09-20 05:00, LAB ONLY, for the boards). His 04:55: the TONIGHT block
+   erased ("i dont know whats the point of this"); the effect is his second clip — the card GROWS open under the head and
+   the body sharpens in from a blur, then folds back; the front carries the rank frame, the recent rank + title, the XP
+   with the day's PLUS, and the progression to the next rank, as Agent Profile shows them. `&back` = open, `&mid` = half
+   open. Nothing here ships; delete when he decides. */
+const PlayerCardMock = ({ back: startOpen = false, mid = false }) => {
+  const [open, setOpen] = React.useState(startOpen);
   const Line = ({ label, value, led, note }) => (
     <div className="flex items-center gap-2 min-h-[52px] pl-3 pr-1 rounded-xl bg-[var(--inset)] border border-[var(--line-2)]">
       <div className="flex-1 min-w-0"><p className={`kpm-led-line ${led || ''}`}><i aria-hidden="true"></i>{label}</p>{note && <p className="text-[11px] text-[var(--ink-dim)] truncate mt-0.5 pl-[18px]">{note}</p>}</div>
@@ -407,39 +399,30 @@ const PlayerCardMock = ({ back: startBack = false, mid = false }) => {
   return (
     <div className="max-w-7xl mx-auto p-2 -mt-2">
       <h3 className="font-black text-[var(--ink)] uppercase tracking-widest flex items-center gap-2 mb-3 text-sm">Pending Verification (1)</h3>
-      <div className={`pc ${phase === 'in' ? 'flipping' : phase === 'out' ? 'settling' : ''} ${mid ? 'mid' : ''}`} onClick={flip} role="button" tabIndex={0}>
-        {face === 'front' ? (
-          <div className="pc-front p-4">
-            <div className="flex items-start gap-4">
-              <div className="pc-face">BS</div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base font-black text-[var(--ink)] uppercase tracking-wider truncate">Budi Santoso</h3>
-                <p className="kpm-stamp inline-block text-[11px] uppercase tracking-widest font-bold mt-1">12.450 XP</p>
-                <p className="text-[11px] uppercase tracking-widest text-[var(--accent-ink)] font-bold mt-1 truncate">Consistent Closer</p>
-                <p className="kpm-led-line warn mt-2"><i aria-hidden="true"></i>2 stamps lost tonight</p>
-              </div>
-              <span className="pc-flip" aria-hidden="true">⟳</span>
-            </div>
-            <div className="mt-4 flex items-end justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--ink-dim)]">Closed today</p>
-                <p className="font-mono text-4xl font-black text-[var(--ink)] leading-none mt-1">3<span className="text-[var(--ink-dim)] text-2xl"> / 8</span></p>
-                <p className="text-[11px] uppercase tracking-widest text-[var(--ink-dim)] mt-1">stores on the route</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--ink-dim)]">Tonight</p>
-                <NixieCount value={1675000} size={14} />
-                <p className="text-[11px] uppercase tracking-widest text-[var(--ink-dim)] mt-1">40 pcs cukai</p>
-              </div>
+      <div className={`pc ${open ? 'open' : ''} ${mid ? 'mid' : ''}`}>
+        <div className="pc-head p-4" onClick={() => setOpen((v) => !v)} role="button" tabIndex={0}>
+          <div className="flex items-start gap-4">
+            <div className="pc-avatar"><style>{BORDER_KEYFRAMES}</style><FrameFilters /><div className="pc-photo">BS</div><RankBorder styleId="silver" /></div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base font-black text-[var(--ink)] uppercase tracking-wider truncate">Budi Santoso</h3>
+              <p className="text-[11px] uppercase tracking-widest font-bold mt-1 truncate"><span className="pc-rank" style={{ '--rk': '#94a3b8' }}>Silver</span><span className="text-[var(--ink-dim)]"> · The Hustler</span></p>
+              <p className="mt-2 font-mono text-sm font-bold text-[var(--ink)]">12.450 XP <span className="text-[var(--accent-ink)]">+320</span><span className="text-[11px] text-[var(--ink-dim)] font-normal"> today</span></p>
+              <div className="h-[3px] mt-1.5 rounded-full bg-[var(--inset)]"><div className="h-full rounded-full" style={{ width: '50%', background: 'linear-gradient(90deg, var(--gold), #E4B04A)' }}></div></div>
+              <p className="text-[11px] uppercase tracking-widest text-[var(--ink-dim)] mt-1">7.550 XP to Gold</p>
             </div>
           </div>
-        ) : (
-          <div className="pc-back p-4">
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <div className="min-w-0"><p className="kpm-stamp inline-block text-[11px] uppercase tracking-widest font-bold">Sun 20 September · tonight</p><h3 className="text-base font-black text-[var(--ink)] uppercase tracking-widest truncate mt-1">Budi Santoso</h3></div>
-              <span className="pc-flip" aria-hidden="true">⟳</span>
+          <div className="mt-4 flex items-end justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--ink-dim)]">Closed today</p>
+              <p className="font-mono text-4xl font-black text-[var(--ink)] leading-none mt-1">3<span className="text-[var(--ink-dim)] text-2xl"> / 8</span></p>
+              <p className="text-[11px] uppercase tracking-widest text-[var(--ink-dim)] mt-1">stores on the route</p>
             </div>
-            <div className="mb-3">
+            <p className="kpm-led-line warn"><i aria-hidden="true"></i>2 stamps lost</p>
+          </div>
+        </div>
+        <div className="pc-body">
+          <div className="pc-inner px-4 pb-4">
+            <div className="mb-3 pt-1">
               <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-[var(--ink-dim)]"><span>Revenue</span><span className="text-[var(--ink)]">Rp 1.675.000 / 2.000.000</span></div>
               <div className="h-[3px] mt-1 rounded-full bg-[var(--inset)]"><div className="h-full rounded-full" style={{ width: '84%', background: 'linear-gradient(90deg, var(--gold), #E4B04A)' }}></div></div>
             </div>
@@ -458,8 +441,8 @@ const PlayerCardMock = ({ back: startBack = false, mid = false }) => {
             </div>
             <button className="kpm-plate w-full mt-3 rounded-xl bg-[var(--gold)] text-[var(--gold-ink)] border border-[var(--accent-edge)] font-black uppercase tracking-[.2em] flex items-center justify-center gap-2" style={{ minHeight: 52 }}>Approve checked (4)</button>
           </div>
-        )}
-        <div className="pc-tiles" aria-hidden="true">{PC_TILES.map((t) => <i key={t.i} className={`pc-tile ${t.mid ? 'on' : ''}`} style={{ '--d': `${t.d}ms` }}></i>)}</div>
+        </div>
+        <button className="pc-toggle" onClick={() => setOpen((v) => !v)} aria-label={open ? 'Fold' : 'Open'}>{open ? '⌃' : '⌄'}</button>
       </div>
     </div>
   );
