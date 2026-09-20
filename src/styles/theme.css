@@ -4588,3 +4588,26 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
 /* JOURNEY PLAN, the map strip (his "A looks best", 2026-09-20): on the phone the 160 px strip carries only the ⛶ and the
    recenter key — Leaflet's own +/- control goes; it returns full screen (the wrapper loses kpm-jp-map there) and on the desk. */
 @media (max-width: 1023px) { .kpm-jp-map .leaflet-control-zoom { display: none; } }
+
+/* THE DOCKET — the boss's night as one sheet (EOD HQ Verification, his B + "one panel per person … tech game spices",
+   2026-09-20). The sheet rises in (kpmArrive), the head wears HUD corners, every report section carries a gold hairline
+   under its name; VERIFY runs a gold scan line down the sheet, the VERIFIED seal stamps in, the sheet leaves. Every
+   colour is a token so light mode paints itself; every glow is a gradient (G30). */
+.kpm-docket { animation: kpmArrive 220ms cubic-bezier(.16, 1, .3, 1) both; }
+.kpm-docket-head::before, .kpm-docket-head::after { content: ""; position: absolute; width: 16px; height: 16px; pointer-events: none;
+  background: linear-gradient(var(--gold), var(--gold)) 0 0 / 100% 2px no-repeat, linear-gradient(var(--gold), var(--gold)) 0 0 / 2px 100% no-repeat; }
+.kpm-docket-head::before { left: 0; top: 0; }
+.kpm-docket-head::after { right: 0; bottom: 0; transform: rotate(180deg); }
+.kpm-docket-card { background: linear-gradient(180deg, var(--raised), var(--sunk)); }
+.kpm-hairline { background: linear-gradient(90deg, var(--gold), transparent 70%) 0 100% / 100% 1px no-repeat; }
+.kpm-docket-scan { position: fixed; left: 0; right: 0; top: 0; height: 2px; opacity: 0; pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--gold) 30%, var(--gold) 70%, transparent); }
+.kpm-docket.sealing .kpm-docket-scan { animation: kpmScan 500ms cubic-bezier(.2, .8, .3, 1) both; }
+@keyframes kpmScan { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100vh); opacity: 1; } }
+.kpm-docket-seal { position: fixed; left: 50%; top: 40%; opacity: 0; pointer-events: none; padding: 10px 18px; border: 3px solid var(--gold); border-radius: 8px;
+  font-family: var(--font-mono); font-size: 28px; font-weight: 900; letter-spacing: .3em; color: var(--accent-ink); font-style: normal;   /* gold never as text — the readable token */
+  transform: translate(-50%, -50%) rotate(-8deg) scale(1.3); }
+.kpm-docket.sealing .kpm-docket-seal { animation: kpmSeal 320ms 450ms cubic-bezier(.2, .8, .3, 1) both; }
+@keyframes kpmSeal { from { opacity: 0; transform: translate(-50%, -50%) rotate(-8deg) scale(1.3); } to { opacity: 1; transform: translate(-50%, -50%) rotate(-8deg) scale(1); } }
+.kpm-docket.sealing { animation: kpmLeave 200ms 760ms cubic-bezier(.4, 0, .6, 1) both; }
+@media (prefers-reduced-motion: reduce) { .kpm-docket, .kpm-docket.sealing, .kpm-docket.sealing .kpm-docket-scan, .kpm-docket.sealing .kpm-docket-seal { animation-duration: 1ms; } }

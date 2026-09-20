@@ -3,6 +3,22 @@ import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, Do
 import { formatRupiah, getLocalDayKey, storeKey, shortStockRows, eodBountyLines } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import EODAgentFlow from './components/EODAgentFlow.jsx';
+import FolderCard from './components/FolderCard.jsx';
+import NixieCount from './components/NixieCount.jsx';
+
+/* THE BOSS'S REVIEW as folders and a docket — his "B is better but i want the confirmation for cukai and cash to be one
+   panel per person … both dark and light mode … some tech game spices" (2026-09-20). One folder per salesman holds every
+   report he sent tonight; the docket is the night as one sheet: the nixie total, the HUD corners, each report as a
+   section, one gold plate that verifies all of them. VERIFY runs a gold scan line down the sheet, stamps VERIFIED and
+   leaves (EOD_SEAL_MS) — gradients and transforms only, the tokens carry both themes. */
+const EOD_FOLDER = 'kpm-folder-quiet w-full bg-[var(--raised)] border-[var(--line-2)] hover:border-[var(--accent-edge)] transition-colors';
+const EOD_SEAL_MS = 900;
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+const HIST_LEVELS = [
+    { Icon: MapPin, count: (n) => plural(Object.keys(n).length, 'salesman', 'salesmen') },
+    { Icon: User, count: (n) => plural(Object.values(n).reduce((a, m) => a + Object.keys(m).length, 0), 'night', 'nights') },
+    { Icon: Calendar, count: (n) => plural(Object.keys(n).length, 'night', 'nights') },
+];
 
 /* Expected beside counted, with the gap named. A lone figure could never look wrong - the admin
    was approving a number he had nothing to compare it against, which is the whole reason the
@@ -13,7 +29,7 @@ const MoneyLine = ({ icon, label, expected, counted }) => {
     const has = expected !== undefined && expected !== null;
     const gap = Number(counted || 0) - Number(expected || 0);
     const gapInk = gap < 0 ? 'text-[var(--danger-ink)]' : 'text-[var(--ink-dim)]';
-    const cell = 'text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest';
+    const cell = 'text-[11px] font-bold text-[var(--ink-dim)] uppercase tracking-widest';
 
     return (
         <div className="bg-black/40 p-3 rounded-lg border border-[var(--line)]">
@@ -78,10 +94,10 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
     const [cukaiPaidInput, setCukaiPaidInput] = useState("");
     const cukaiFinePrice = appSettings?.cukaiFinePrice || 5000;
 
-    const [openLocations, setOpenLocations] = useState([]);
-    const [openAgents, setOpenAgents] = useState([]);
-    const [openMonths, setOpenMonths] = useState([]);
     const [openDates, setOpenDates] = useState([]);
+    const [docket, setDocket] = useState(null);      // the salesman whose night is open as a sheet
+    const [sealing, setSealing] = useState(false);   // VERIFY pressed: the scan runs, the seal stamps, the sheet leaves
+    const [histPath, setHistPath] = useState([]);    // the History Log drill: [place, salesman, month]
     const [expandedReports, setExpandedReports] = useState([]);
 
     const toggleAccordion = (setter, key) => {
@@ -297,6 +313,21 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
             return timeB - timeA;
         });
     }, [eodReports, isAdmin]);
+    /* one panel per person: every PENDING report a salesman sent tonight, grouped; the folder shows the totals and a
+       diode that lights only for a problem (a short count, a bounty, lost stamps) */
+    const pendingByAgent = useMemo(() => {
+        const groups = {};
+        pendingReports.forEach((r) => {
+            const key = r.agentId || r.agentName || r.id;
+            const g = groups[key] || (groups[key] = { key, agentName: r.agentName || key, reports: [], disputed: false, lost: 0, cashTotal: 0, cukai: 0 });
+            g.reports.push(r);
+            if (r.countStatus === 'DISPUTED' || r.reportType === 'BOUNTY') g.disputed = true;
+            g.lost += Number(r.cukaiPaid) || 0;
+            if (r.reportType !== 'CUKAI') g.cashTotal += (Number(r.cash) || 0) + (Number(r.transfer) || 0);
+            if (r.reportType === 'CUKAI' || !r.reportType) g.cukai += Number(r.cukaiReturned !== undefined ? r.cukaiReturned : (r.cukai || 0)) || 0;
+        });
+        return Object.values(groups);
+    }, [pendingReports]);
 
     const structuredHistory = useMemo(() => {
         if (!isAdmin) return {};
@@ -335,6 +366,177 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         return profile ? profile.name : 'Admin';
     };
 
+
+    /* one report as a section of the docket — the card the boss reviewed before, dressed in the theme: a gold hairline
+       under the name, the type as a stamp, the stamps block an inset well; problems keep their red */
+    const reportSection = (report) => {
+                        /* A report with no countStatus predates the count entirely.
+                           That is CLEAN - history is never painted as disputed. */
+                        const disputed = report.countStatus === 'DISPUTED';
+                        /* The same rule App.jsx mints with, so the rupiah named here is
+                           the rupiah he will actually owe. Floored separately: extra
+                           cash does not pay off a missing transfer. */
+                        const moneyShort = eodBountyLines(report, inventory, appSettings?.penaltyPriceTier)
+                                             .reduce((sum, line) => sum + line.amount, 0);
+                        const shortRows = shortStockRows(report.expectedStock, report.remainingStock);
+
+                        return (
+                        <div key={report.id} className={`kpm-docket-card relative border rounded-2xl overflow-hidden mb-3 ${(disputed || report.reportType === 'BOUNTY') ? 'border-[var(--danger)]' : 'border-[var(--line-2)]'} `}>
+                            
+                            <div className={`kpm-hairline px-4 py-3 flex justify-between items-center ${(disputed || report.reportType === 'BOUNTY') ? 'bg-[var(--danger-well)]' : ''} `}>
+                                <div>
+                                    <h4 className={`font-black text-[15px] lg:text-lg ${(disputed || report.reportType === 'BOUNTY') ? 'text-[var(--danger-ink)]' : 'text-[var(--ink)]'} `}>{report.agentName}</h4>
+                                    <p className="text-[11px] font-mono text-[var(--ink-dim)]">
+                                        {report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000).toLocaleTimeString() : ''}
+                                    </p>
+                                </div>
+                                <div className="flex flex-col items-end gap-1">
+                                    {report.reportType === 'CASH_STOCK' && <span className="kpm-stamp text-[11px] font-bold px-2 py-0.5 rounded uppercase tracking-widest text-[var(--accent-ink)]">CASH & STOCK</span>}
+                                    {report.reportType === 'CUKAI' && <span className="kpm-stamp text-[11px] font-bold px-2 py-0.5 rounded uppercase tracking-widest text-[var(--accent-ink)]">PITA CUKAI ONLY</span>}
+                                    {report.reportType === 'BOUNTY' && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-md flex items-center gap-1"><AlertCircle size={10}/> BOUNTY CLEARANCE</span>}
+                                    {!report.reportType && <span className="kpm-stamp text-[11px] font-bold px-2 py-0.5 rounded uppercase tracking-widest text-[var(--accent-ink)]">COMBINED REPORT</span>}
+                                    {disputed && <span className="bg-[var(--danger-well)] text-[var(--danger-ink)] text-[11px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-md flex items-center gap-1"><AlertCircle size={10}/> SHORT COUNT</span>}
+                                </div>
+                            </div>
+
+                            <div className="p-4 space-y-4">
+                                
+                                {/* The count came up short. Approving is allowed - Aldi's
+                                    ruling - it just is not silent about what it does. */}
+                                {disputed && (
+                                    <div className="bg-[var(--danger-well)] border border-[var(--danger)] p-4 rounded-xl">
+                                        <p className="text-[11px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-1 flex items-center gap-1"><AlertCircle size={14}/> He Counted Less Than Expected</p>
+                                        {moneyShort > 0 ? (
+                                            <p className="text-[11px] text-[var(--danger-ink)] leading-relaxed">
+                                                Approving records <strong className="font-black">{formatRupiah(moneyShort)}</strong> as a bounty on {report.agentName} &mdash; cash, transfer and any missing packs at retail price, each as its own line. He can repay it from his own EOD screen.
+                                            </p>
+                                        ) : (
+                                            <p className="text-[11px] text-[var(--danger-ink)] leading-relaxed">
+                                                The money matches and nothing is priced &mdash; the short products below have no retail price set, so nothing can be charged for them yet.
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* 🚀 ADMIN VIEW: BOUNTY PAYMENT */}
+                                {report.reportType === 'BOUNTY' && (
+                                    <div className="bg-[var(--danger-well)] border border-[var(--danger)] p-4 rounded-xl text-center">
+                                        <p className="text-[11px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-2 flex items-center justify-center gap-1"><BadgeDollarSign size={14}/> Cash Handover Amount</p>
+                                        <p className="text-3xl font-black text-[var(--danger-ink)] font-mono">{formatRupiah(report.cash)}</p>
+                                        <p className="text-[11px] text-[var(--ink-dim)] uppercase tracking-widest mt-2">Verify physical cash received to wipe liability.</p>
+                                    </div>
+                                )}
+
+                                {/* OPTIONALLY HIDE CASH/STOCK IF IT IS A CUKAI OR BOUNTY REPORT */}
+                                {(report.reportType === 'CASH_STOCK' || !report.reportType) && (
+                                    <>
+                                        <MoneyLine icon={<DollarSign size={14}/>} label="Physical Cash"
+                                                   expected={report.expectedCash} counted={report.cash} />
+                                        <MoneyLine icon={<Wallet size={14}/>} label="Digital Transfer"
+                                                   expected={report.expectedTransfer} counted={report.transfer} />
+                                        <div className="pt-2">
+                                            <p className="text-[11px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={12}/> Inventory to Vault</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {report.remainingStock && report.remainingStock.length > 0 ? report.remainingStock.map((item, idx) => {
+                                                    const productInfo = inventory?.find(p => p.id === item.productId) || {};
+                                                    let mult = 1;
+                                                    if (item.unit === 'Slop') mult = productInfo.packsPerSlop || 10;
+                                                    if (item.unit === 'Bal') mult = (productInfo.slopsPerBal || 20) * (productInfo.packsPerSlop || 10);
+                                                    if (item.unit === 'Karton') mult = (productInfo.balsPerCarton || 4) * (productInfo.slopsPerBal || 20) * (productInfo.packsPerSlop || 10);
+                                                    const totalBksDecimal = item.qty * mult;
+                                                    const sp = productInfo.sticksPerPack || 16;
+                                                    const physicalBks = Math.floor(totalBksDecimal);
+                                                    const physicalBtg = Math.round((totalBksDecimal - physicalBks) * sp);
+                                                    let displayQty = '';
+                                                    if (physicalBks > 0) displayQty += `${physicalBks} Bks `;
+                                                    if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
+
+                                                    return (
+                                                        <span key={idx} className="text-[11px] bg-[var(--raised)] text-[var(--ink-dim)] px-2 py-1 rounded border border-[var(--line)]">
+                                                            {item.name}: <strong className="text-[var(--ink-dim)]">{displayQty.trim() || '0 Bks'}</strong>
+                                                        </span>
+                                                    );
+                                                }) : <span className="text-[11px] text-[var(--ink-dim)] italic">No stock to return.</span>}
+                                            </div>
+                                        </div>
+
+                                        {/* One goods total hides a one-product shortfall - Aldi's
+                                            rule, and the reason the goods card counts line by line. */}
+                                        {shortRows.length > 0 && (
+                                            <div className="pt-3">
+                                                <p className="text-[11px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-2 flex items-center gap-1"><AlertCircle size={12}/> Short on Return ({shortRows.length})</p>
+                                                <div className="space-y-1">
+                                                    {shortRows.map(row => (
+                                                        <div key={row.productId} className="flex justify-between items-center gap-2 text-[11px] bg-[var(--danger-well)] border border-[var(--danger)] px-2 py-1.5 rounded">
+                                                            <span className="text-[var(--danger-ink)]">{row.name}</span>
+                                                            <strong className="text-[var(--danger-ink)] tabular-nums whitespace-nowrap">{row.counted} of {row.expected} {row.unit} &middot; short {row.short}</strong>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* 🚀 NEW: DAMAGED GOODS — was missing from this review screen entirely */}
+                                        <div className="pt-3">
+                                            <p className="text-[11px] font-bold text-[var(--accent-ink)] uppercase tracking-widest mb-2 flex items-center gap-1"><ShieldAlert size={12}/> Damaged Goods to Vault</p>
+                                            <div className="space-y-1">
+                                                {report.damagedStockToReturn && report.damagedStockToReturn.length > 0 ? report.damagedStockToReturn.map((item) => (
+                                                    <div key={item.ticketId} className="flex justify-between items-center text-[11px] bg-[var(--gold)] border border-[var(--accent-edge)] px-2 py-1.5 rounded">
+                                                        <span className="text-[var(--gold-ink)]">{item.name} <span className="text-[var(--gold-ink)] italic">({item.reason})</span></span>
+                                                        <strong className="text-[var(--gold-ink)]">{item.qty} {item.unit}</strong>
+                                                    </div>
+                                                )) : <span className="text-[11px] text-[var(--ink-dim)] italic">No damaged goods to return.</span>}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* 🚀 ADMIN CUKAI BREAKDOWN & FINE VERIFIER */}
+                                {(report.reportType === 'CUKAI' || !report.reportType) && (
+                                    <>
+                                        <div className="flex justify-between items-center bg-[var(--inset)] p-3 rounded-lg border border-[var(--line-2)] border-l-2 border-l-[var(--gold)] mt-4">
+                                            <span className="text-xs font-bold text-[var(--ink-dim)] uppercase tracking-widest flex items-center gap-2"><Tag size={14}/> Physical Stamps Returned</span>
+                                            <span className="text-xl font-black text-[var(--ink)] font-mono whitespace-nowrap">{report.cukaiReturned !== undefined ? report.cukaiReturned : (report.cukai || 0)} Pcs</span>
+                                        </div>
+
+                                        {(report.cukaiPaid > 0) && (
+                                            <div className="flex justify-between items-center bg-[var(--danger-well)] p-3 rounded-lg border border-[var(--danger)] mt-2">
+                                                <div>
+                                                    <span className="text-xs font-bold text-[var(--danger-ink)] uppercase tracking-widest block flex items-center gap-1"><AlertCircle size={12}/> Lost Stamps Paid</span>
+                                                    <span className="text-[11px] text-[var(--danger-ink)] font-mono mt-0.5">{report.cukaiPaid} Pcs × {formatRupiah(report.cukaiFine / report.cukaiPaid)}</span>
+                                                </div>
+                                                <span className="text-xl font-black text-[var(--danger-ink)]">+{formatRupiah(report.cukaiFine)}</span>
+                                            </div>
+                                        )}
+
+                                        {report.deployedSamples && report.deployedSamples.length > 0 && (
+                                            <div className="pt-2 border-t border-[var(--line)] mt-3">
+                                                <p className="text-[11px] font-bold text-[var(--accent-ink)] uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={12}/> Today's Deployments</p>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {report.deployedSamples.map((sample, idx) => {
+                                                        const sp = sample.sticksPerPack || 16;
+                                                        const physicalBks = Math.floor(sample.qty || 0);
+                                                        const physicalBtg = Math.round(((sample.qty || 0) - physicalBks) * sp);
+                                                        let displayQty = '';
+                                                        if (physicalBks > 0) displayQty += `${physicalBks} Bks `;
+                                                        if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
+
+                                                        return (
+                                                            <span key={`cukai-${idx}`} className="text-[11px] bg-[var(--inset)] text-[var(--ink-dim)] px-2 py-1 rounded-md border border-[var(--line)]">
+                                                                {sample.productName}: <strong className="text-[var(--accent-ink)]">{displayQty.trim() || '0 Bks'}</strong>
+                                                            </span>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+
+                            </div>
+                        </div>
+                        );
+    };
 
     return (
         <div className="animate-fade-in space-y-6 max-w-7xl mx-auto p-2">
@@ -848,267 +1050,86 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                     
                     {/* LEFT: PENDING REPORTS */}
                     <div>
-                        <h3 className="font-black text-[var(--ink)] uppercase tracking-widest flex items-center gap-2 mb-4"><AlertCircle className="text-[var(--accent-ink)]"/> Pending Verification ({pendingReports.length})</h3>
-                        <div className="space-y-4">
-                            {pendingReports.length === 0 ? (
-                                <div className="bg-black/20 border border-[var(--line)] p-8 rounded-2xl text-center text-[var(--ink-dim)] text-xs uppercase tracking-widest">No pending reports.</div>
-                            ) : pendingReports.map(report => {
-                                /* A report with no countStatus predates the count entirely.
-                                   That is CLEAN - history is never painted as disputed. */
-                                const disputed = report.countStatus === 'DISPUTED';
-                                /* The same rule App.jsx mints with, so the rupiah named here is
-                                   the rupiah he will actually owe. Floored separately: extra
-                                   cash does not pay off a missing transfer. */
-                                const moneyShort = eodBountyLines(report, inventory, appSettings?.penaltyPriceTier)
-                                                     .reduce((sum, line) => sum + line.amount, 0);
-                                const shortRows = shortStockRows(report.expectedStock, report.remainingStock);
-
-                                return (
-                                <div key={report.id} className={`bg-black/40 border rounded-2xl overflow-hidden shadow-lg ${disputed ? 'border-[var(--danger)] shadow-[0_0_20px_rgba(220,38,38,0.2)]' : report.reportType === 'BOUNTY' ? 'border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.2)]' : report.reportType === 'CUKAI' ? 'border-[var(--accent-edge)]' : 'border-[var(--line)]'} `}>
-                                    
-                                    <div className={`p-4 flex justify-between items-center border-b border-[var(--line)] ${disputed ? 'bg-[var(--danger)] border-[var(--danger)]' : report.reportType === 'BOUNTY' ? 'bg-[var(--danger)] border-[var(--danger)]' : report.reportType === 'CUKAI' ? 'bg-[var(--gold)] border-[var(--accent-edge)]' : 'bg-[var(--gold)] border-[var(--line)]'} `}>
-                                        <div>
-                                            <h4 className={`font-black text-lg ${(disputed || report.reportType === 'BOUNTY') ? 'text-[var(--danger-ink)]' : 'text-[var(--ink)]'} `}>{report.agentName}</h4>
-                                            <p className="text-[10px] text-[var(--ink-dim)]">
-                                                {report.timestamp?.seconds ? new Date(report.timestamp.seconds * 1000).toLocaleTimeString() : ''}
-                                            </p>
-                                        </div>
-                                        <div className="flex flex-col items-end gap-1">
-                                            {report.reportType === 'CASH_STOCK' && <span className="bg-[var(--gold)] text-[var(--gold-ink)] text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">CASH & STOCK</span>}
-                                            {report.reportType === 'CUKAI' && <span className="bg-[var(--gold)] text-[var(--gold-ink)] text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">PITA CUKAI ONLY</span>}
-                                            {report.reportType === 'BOUNTY' && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-md flex items-center gap-1"><AlertCircle size={10}/> BOUNTY CLEARANCE</span>}
-                                            {!report.reportType && <span className="bg-[var(--gold)] text-[var(--gold-ink)] text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest shadow-md">COMBINED REPORT</span>}
-                                            {disputed && <span className="bg-[var(--danger-well)] text-[var(--danger-ink)] text-[11px] font-black px-3 py-1 rounded uppercase tracking-widest shadow-md flex items-center gap-1"><AlertCircle size={10}/> SHORT COUNT</span>}
-                                        </div>
-                                    </div>
-
-                                    <div className="p-6 space-y-4">
-                                        
-                                        {/* The count came up short. Approving is allowed - Aldi's
-                                            ruling - it just is not silent about what it does. */}
-                                        {disputed && (
-                                            <div className="bg-[var(--danger-well)] border border-[var(--danger)] p-4 rounded-xl">
-                                                <p className="text-[10px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-1 flex items-center gap-1"><AlertCircle size={14}/> He Counted Less Than Expected</p>
-                                                {moneyShort > 0 ? (
-                                                    <p className="text-[11px] text-[var(--danger-ink)] leading-relaxed">
-                                                        Approving records <strong className="font-black">{formatRupiah(moneyShort)}</strong> as a bounty on {report.agentName} &mdash; cash, transfer and any missing packs at retail price, each as its own line. He can repay it from his own EOD screen.
-                                                    </p>
-                                                ) : (
-                                                    <p className="text-[11px] text-[var(--danger-ink)] leading-relaxed">
-                                                        The money matches and nothing is priced &mdash; the short products below have no retail price set, so nothing can be charged for them yet.
-                                                    </p>
-                                                )}
+                        <h3 className="font-black text-[var(--ink)] uppercase tracking-widest flex items-center gap-2 mb-4"><AlertCircle className="text-[var(--accent-ink)]"/> Pending Verification ({pendingByAgent.length})</h3>
+                        {pendingByAgent.length === 0 ? (
+                            <div className="bg-black/20 border border-[var(--line)] p-8 rounded-2xl text-center text-[var(--ink-dim)] text-xs uppercase tracking-widest">No pending reports.</div>
+                        ) : (
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 kpm-folders">
+                                {pendingByAgent.map((g) => (
+                                    <FolderCard key={g.key} icon={g.disputed ? <ShieldAlert size={22} /> : <User size={22} />} onOpen={() => setDocket(g.key)} className={EOD_FOLDER}>
+                                        <h3 className="font-bold text-[15px] lg:text-lg mb-1 truncate">{g.agentName}</h3>
+                                        {g.cashTotal > 0 && <p className="kpm-stamp block truncate max-w-full text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{formatRupiah(g.cashTotal)}</p>}
+                                        {g.cukai > 0 && <p className="kpm-stamp block truncate max-w-full text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold mt-1">{g.cukai} pcs cukai</p>}
+                                        <p className={`kpm-led-line ${g.disputed ? 'crit' : g.lost > 0 ? 'warn' : ''} mt-2`}><i aria-hidden="true"></i>{g.disputed ? 'short count' : g.lost > 0 ? `${g.lost} stamps lost` : 'counts match'}</p>
+                                    </FolderCard>
+                                ))}
+                            </div>
+                        )}
+                        {docket && (() => {
+                            const g = pendingByAgent.find((x) => x.key === docket);
+                            if (!g) return null;
+                            const seal = () => { if (sealing) return; setSealing(true); setTimeout(() => { g.reports.forEach((r) => onVerifyEOD(r)); setSealing(false); setDocket(null); }, EOD_SEAL_MS); };
+                            const night = g.reports[0]?.timestamp?.seconds ? new Date(g.reports[0].timestamp.seconds * 1000).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long' }) : '';
+                            return (
+                                <div className={`kpm-docket fixed inset-0 z-[9999] overflow-y-auto bg-[var(--sunk)] ${sealing ? 'sealing' : ''}`}>
+                                    <div className="max-w-3xl mx-auto p-3 lg:p-6 kpm-arrive">
+                                        <div className="kpm-docket-head relative flex items-start justify-between gap-3 px-3 py-3 mb-4">
+                                            <div className="min-w-0">
+                                                <p className="kpm-stamp text-[11px] uppercase tracking-widest font-bold mb-2">{night} · {g.reports.length} {g.reports.length === 1 ? 'report' : 'reports'}</p>
+                                                <h2 className="text-xl lg:text-2xl font-black text-[var(--ink)] uppercase tracking-widest truncate">{g.agentName}</h2>
+                                                <div className="mt-3 flex items-center gap-3 flex-wrap">
+                                                    {g.cashTotal > 0 && <NixieCount value={g.cashTotal} size={18} />}
+                                                    {g.cukai > 0 && <span className="kpm-stamp text-[11px] uppercase tracking-widest font-bold text-[var(--accent-ink)]">{g.cukai} pcs cukai</span>}
+                                                </div>
                                             </div>
-                                        )}
-
-                                        {/* 🚀 ADMIN VIEW: BOUNTY PAYMENT */}
-                                        {report.reportType === 'BOUNTY' && (
-                                            <div className="bg-[var(--danger-well)] border border-[var(--danger)] p-4 rounded-xl text-center">
-                                                <p className="text-[10px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-2 flex items-center justify-center gap-1"><BadgeDollarSign size={14}/> Cash Handover Amount</p>
-                                                <p className="text-3xl font-black text-[var(--danger-ink)] font-mono">{formatRupiah(report.cash)}</p>
-                                                <p className="text-[11px] text-[var(--ink-dim)] uppercase tracking-widest mt-2">Verify physical cash received to wipe liability.</p>
-                                            </div>
-                                        )}
-
-                                        {/* OPTIONALLY HIDE CASH/STOCK IF IT IS A CUKAI OR BOUNTY REPORT */}
-                                        {(report.reportType === 'CASH_STOCK' || !report.reportType) && (
-                                            <>
-                                                <MoneyLine icon={<DollarSign size={14}/>} label="Physical Cash"
-                                                           expected={report.expectedCash} counted={report.cash} />
-                                                <MoneyLine icon={<Wallet size={14}/>} label="Digital Transfer"
-                                                           expected={report.expectedTransfer} counted={report.transfer} />
-                                                <div className="pt-2">
-                                                    <p className="text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={12}/> Inventory to Vault</p>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {report.remainingStock && report.remainingStock.length > 0 ? report.remainingStock.map((item, idx) => {
-                                                            const productInfo = inventory?.find(p => p.id === item.productId) || {};
-                                                            let mult = 1;
-                                                            if (item.unit === 'Slop') mult = productInfo.packsPerSlop || 10;
-                                                            if (item.unit === 'Bal') mult = (productInfo.slopsPerBal || 20) * (productInfo.packsPerSlop || 10);
-                                                            if (item.unit === 'Karton') mult = (productInfo.balsPerCarton || 4) * (productInfo.slopsPerBal || 20) * (productInfo.packsPerSlop || 10);
-                                                            const totalBksDecimal = item.qty * mult;
-                                                            const sp = productInfo.sticksPerPack || 16;
-                                                            const physicalBks = Math.floor(totalBksDecimal);
-                                                            const physicalBtg = Math.round((totalBksDecimal - physicalBks) * sp);
-                                                            let displayQty = '';
-                                                            if (physicalBks > 0) displayQty += `${physicalBks} Bks `;
-                                                            if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
-
-                                                            return (
-                                                                <span key={idx} className="text-[10px] bg-[var(--raised)] text-[var(--ink-dim)] px-2 py-1 rounded border border-[var(--line)]">
-                                                                    {item.name}: <strong className="text-[var(--ink-dim)]">{displayQty.trim() || '0 Bks'}</strong>
-                                                                </span>
-                                                            );
-                                                        }) : <span className="text-[10px] text-[var(--ink-dim)] italic">No stock to return.</span>}
-                                                    </div>
-                                                </div>
-
-                                                {/* One goods total hides a one-product shortfall - Aldi's
-                                                    rule, and the reason the goods card counts line by line. */}
-                                                {shortRows.length > 0 && (
-                                                    <div className="pt-3">
-                                                        <p className="text-[10px] font-bold text-[var(--danger-ink)] uppercase tracking-widest mb-2 flex items-center gap-1"><AlertCircle size={12}/> Short on Return ({shortRows.length})</p>
-                                                        <div className="space-y-1">
-                                                            {shortRows.map(row => (
-                                                                <div key={row.productId} className="flex justify-between items-center gap-2 text-[10px] bg-[var(--danger-well)] border border-[var(--danger)] px-2 py-1.5 rounded">
-                                                                    <span className="text-[var(--danger-ink)]">{row.name}</span>
-                                                                    <strong className="text-[var(--danger-ink)] tabular-nums whitespace-nowrap">{row.counted} of {row.expected} {row.unit} &middot; short {row.short}</strong>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* 🚀 NEW: DAMAGED GOODS — was missing from this review screen entirely */}
-                                                <div className="pt-3">
-                                                    <p className="text-[10px] font-bold text-[var(--accent-ink)] uppercase tracking-widest mb-2 flex items-center gap-1"><ShieldAlert size={12}/> Damaged Goods to Vault</p>
-                                                    <div className="space-y-1">
-                                                        {report.damagedStockToReturn && report.damagedStockToReturn.length > 0 ? report.damagedStockToReturn.map((item) => (
-                                                            <div key={item.ticketId} className="flex justify-between items-center text-[10px] bg-[var(--gold)] border border-[var(--accent-edge)] px-2 py-1.5 rounded">
-                                                                <span className="text-[var(--gold-ink)]">{item.name} <span className="text-[var(--gold-ink)] italic">({item.reason})</span></span>
-                                                                <strong className="text-[var(--gold-ink)]">{item.qty} {item.unit}</strong>
-                                                            </div>
-                                                        )) : <span className="text-[10px] text-[var(--ink-dim)] italic">No damaged goods to return.</span>}
-                                                    </div>
-                                                </div>
-                                            </>
-                                        )}
-
-                                        {/* 🚀 ADMIN CUKAI BREAKDOWN & FINE VERIFIER */}
-                                        {(report.reportType === 'CUKAI' || !report.reportType) && (
-                                            <>
-                                                <div className="flex justify-between items-center bg-[var(--gold)] p-3 rounded-lg border border-[var(--accent-edge)] mt-4">
-                                                    <span className="text-xs font-bold text-[var(--gold-ink)] uppercase tracking-widest flex items-center gap-2"><Tag size={14}/> Physical Stamps Returned</span>
-                                                    <span className="text-xl font-black text-[var(--gold-ink)]">{report.cukaiReturned !== undefined ? report.cukaiReturned : (report.cukai || 0)} Pcs</span>
-                                                </div>
-
-                                                {(report.cukaiPaid > 0) && (
-                                                    <div className="flex justify-between items-center bg-[var(--danger-well)] p-3 rounded-lg border border-[var(--danger)] mt-2">
-                                                        <div>
-                                                            <span className="text-xs font-bold text-[var(--danger-ink)] uppercase tracking-widest block flex items-center gap-1"><AlertCircle size={12}/> Lost Stamps Paid</span>
-                                                            <span className="text-[11px] text-[var(--danger-ink)] font-mono mt-0.5">{report.cukaiPaid} Pcs × {formatRupiah(report.cukaiFine / report.cukaiPaid)}</span>
-                                                        </div>
-                                                        <span className="text-xl font-black text-[var(--danger-ink)]">+{formatRupiah(report.cukaiFine)}</span>
-                                                    </div>
-                                                )}
-
-                                                {report.deployedSamples && report.deployedSamples.length > 0 && (
-                                                    <div className="pt-2 border-t border-[var(--line)] mt-3">
-                                                        <p className="text-[10px] font-bold text-[var(--accent-ink)] uppercase tracking-widest mb-2 flex items-center gap-1"><Package size={12}/> Today's Deployments</p>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {report.deployedSamples.map((sample, idx) => {
-                                                                const sp = sample.sticksPerPack || 16;
-                                                                const physicalBks = Math.floor(sample.qty || 0);
-                                                                const physicalBtg = Math.round(((sample.qty || 0) - physicalBks) * sp);
-                                                                let displayQty = '';
-                                                                if (physicalBks > 0) displayQty += `${physicalBks} Bks `;
-                                                                if (physicalBtg > 0) displayQty += `${physicalBtg} Btg`;
-
-                                                                return (
-                                                                    <span key={`cukai-${idx}`} className="text-[11px] bg-[var(--inset)] text-[var(--ink-dim)] px-2 py-1 rounded-md border border-[var(--line)]">
-                                                                        {sample.productName}: <strong className="text-[var(--accent-ink)]">{displayQty.trim() || '0 Bks'}</strong>
-                                                                    </span>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </>
-                                        )}
-
-                                        <div className="flex gap-2 mt-4 pt-2">
-                                            <button 
-                                                onClick={() => onVerifyEOD(report)}
-                                                /* Aldi picked B off the colour sheet, in amber: "B is better but
-                                                   i like amber color more than gold TBH". Approving a normal
-                                                   night is the thing he does fifty times a week, so it is quiet —
-                                                   a plain surface with an amber edge — and only the problems
-                                                   carry colour. The green it replaced measured 2,98:1 in dark
-                                                   and the cukai orange 2,81:1: both under the readable line, on
-                                                   the screen he uses at night. No hardcoded colours left here,
-                                                   and no rgba glows: quiet means quiet. */
-                                                className={`flex-1 py-3 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-95 border ${(disputed || report.reportType === 'BOUNTY') ? 'bg-[var(--danger-plate)] border-[var(--danger)] text-[var(--danger-plate-ink)]' : report.reportType === 'CUKAI' ? 'bg-[var(--raised)] border-[var(--amber)] text-[var(--amber)]' : 'bg-[var(--raised)] border-[var(--amber)] text-[var(--ink)]'} `}
-                                            >
-                                                <CheckCircle size={18}/> {disputed ? 'Approve Short Count' : 'Verify'}
+                                            <button type="button" onClick={() => setDocket(null)} disabled={sealing} aria-label="Close" className="kpm-btn shrink-0 min-h-11 min-w-11 rounded-xl border border-[var(--line-2)] text-[var(--ink-dim)]"><XCircle size={18} /></button>
+                                        </div>
+                                        {g.reports.map((report) => reportSection(report))}
+                                        <div className="mt-4 flex flex-col gap-1">
+                                            <button type="button" onClick={seal} disabled={sealing} style={{ minHeight: 52 }} className={'kpm-plate w-full min-h-[52px] rounded-xl border font-black uppercase tracking-[.2em] flex items-center justify-center gap-2 disabled:opacity-70 ' + (g.disputed ? 'bg-[var(--danger-plate)] border-[var(--danger)] text-[var(--danger-plate-ink)]' : 'bg-[var(--gold)] border-[var(--accent-edge)] text-[var(--gold-ink)]')}>
+                                                <CheckCircle size={18} /> {g.disputed ? 'Approve Short Count' : 'Verify Night'}
                                             </button>
-                                            
-                                            <button 
-                                                onClick={() => onResetEOD(report)}
-                                                className="flex-1 py-3 bg-[var(--danger-well)] hover:bg-[var(--danger)] border border-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95"
-                                            >
-                                                <XCircle size={18}/> Reject / Reset
+                                            <button type="button" onClick={() => { g.reports.forEach((r) => onResetEOD(r)); setDocket(null); }} disabled={sealing} className="w-full min-h-11 rounded-xl text-[11px] font-bold uppercase tracking-widest text-[var(--danger-ink)] flex items-center justify-center gap-2">
+                                                <XCircle size={14} /> Reject / Reset
                                             </button>
                                         </div>
                                     </div>
+                                    <i className="kpm-docket-scan" aria-hidden="true"></i>
+                                    <i className="kpm-docket-seal" aria-hidden="true">VERIFIED</i>
                                 </div>
-                                );
-                            })}
-                        </div>
+                            );
+                        })()}
                     </div>
 
                     {/* RIGHT: EOD HISTORY LOG (4-Level Folder Structure) */}
                     <div>
                         <h3 className="font-black text-[var(--ink-dim)] uppercase tracking-widest flex items-center gap-2 mb-4"><CheckCircle size={18}/> EOD History Log</h3>
                         
-                        <div className="space-y-3 h-[700px] overflow-y-auto custom-scrollbar pr-2 pb-10 relative">
+                        <div className="space-y-3 pb-10 relative">
                             {Object.keys(structuredHistory).length === 0 ? (
-                                <div className="text-center p-6 text-[var(--ink-dim)] text-[10px] uppercase tracking-widest border border-dashed border-[var(--line)] rounded-xl">No history logs found.</div>
-                            ) : Object.keys(structuredHistory).map(location => (
-                                <div key={location} className="bg-[var(--sunk)] border border-[var(--line)] rounded-xl overflow-hidden shadow-sm">
-                                    
-                                    {/* 📍 LEVEL 1: LOCATION */}
-                                    <button 
-                                        onClick={() => toggleAccordion(setOpenLocations, location)}
-                                        className="w-full p-4 flex justify-between items-center hover:bg-[var(--raised)] transition-colors"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-1.5 bg-[var(--gold)] rounded-lg border border-[var(--line)]"><MapPin className="text-[var(--gold-ink)]" size={16}/></div>
-                                            <span className="font-black text-[var(--ink)] uppercase tracking-widest text-sm">{location}</span>
-                                        </div>
-                                        <div className="text-[var(--ink-dim)]">{openLocations.includes(location) ? <ChevronDown size={18}/> : <ChevronRight size={18}/>}</div>
-                                    </button>
-
-                                    {openLocations.includes(location) && (
-                                        <div className="border-t border-[var(--line)] bg-black/40">
-                                            {Object.keys(structuredHistory[location]).map(empName => {
-                                                const empKey = `${location}-${empName}`;
-                                                return (
-                                                <div key={empKey} className="border-b border-[var(--line)] last:border-0">
-                                                    
-                                                    {/* 👤 LEVEL 2: EMPLOYEE */}
-                                                    <button 
-                                                        onClick={() => toggleAccordion(setOpenAgents, empKey)}
-                                                        className="w-full p-3 pl-6 flex justify-between items-center hover:bg-[var(--raised)] transition-colors"
-                                                    >
-                                                        <div className="flex items-center gap-2">
-                                                            <User className="text-[var(--ink-dim)]" size={14}/>
-                                                            <span className="font-bold text-[var(--ink-dim)] text-xs uppercase tracking-wider">{empName}</span>
-                                                        </div>
-                                                        <div className="text-[var(--ink-dim)]">{openAgents.includes(empKey) ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}</div>
-                                                    </button>
-
-                                                    {openAgents.includes(empKey) && (
-                                                        <div className="border-t border-[var(--line)] bg-[var(--sunk)]">
-                                                            {Object.keys(structuredHistory[location][empName]).map(yearMonth => {
-                                                                const monthKey = `${empKey}-${yearMonth}`;
-                                                                return (
-                                                                <div key={monthKey}>
-                                                                    
-                                                                    {/* 📅 LEVEL 3: YEAR & MONTH */}
-                                                                    <button 
-                                                                        onClick={() => toggleAccordion(setOpenMonths, monthKey)}
-                                                                        className="w-full p-2 pl-10 flex justify-between items-center hover:bg-[var(--raised)] transition-colors border-b border-[var(--line)]"
-                                                                    >
-                                                                        <div className="flex items-center gap-2">
-                                                                            <Calendar className="text-[var(--accent-ink)]" size={12}/>
-                                                                            <span className="font-bold text-[var(--ink-dim)] text-[10px] uppercase tracking-widest">{yearMonth}</span>
-                                                                        </div>
-                                                                        <div className="text-[var(--ink-dim)]">{openMonths.includes(monthKey) ? <ChevronDown size={12}/> : <ChevronRight size={12}/>}</div>
-                                                                    </button>
-
-                                                                    {openMonths.includes(monthKey) && (
-                                                                        <div className="bg-black/20">
-                                                                            {Object.keys(structuredHistory[location][empName][yearMonth]).map(fullDate => {
+                                <div className="text-center p-6 text-[var(--ink-dim)] text-[11px] uppercase tracking-widest border border-dashed border-[var(--line)] rounded-xl">No history logs found.</div>
+                            ) : (() => {
+                                /* the log drills like every folder in the app: place › salesman › month, then the nights */
+                                const node = histPath.reduce((n, k) => (n && n[k]) || {}, structuredHistory);
+                                const back = histPath.length > 0 && (
+                                    <button type="button" onClick={() => setHistPath((p) => p.slice(0, -1))} className="mb-1 flex items-center gap-2 min-h-[44px] text-[var(--ink-dim)] text-xs font-bold uppercase tracking-widest"><ChevronRight className="rotate-180" size={16} /> {histPath[histPath.length - 1]}</button>
+                                );
+                                if (histPath.length < 3) {
+                                    const L = HIST_LEVELS[histPath.length];
+                                    return (<>{back}<div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 kpm-folders">
+                                        {Object.keys(node).map((k) => (
+                                            <FolderCard key={k} icon={<L.Icon size={22} />} onOpen={() => setHistPath((p) => [...p, k])} className={EOD_FOLDER}>
+                                                <h3 className="font-bold text-[15px] lg:text-lg mb-1 truncate">{k}</h3>
+                                                <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{L.count(node[k])}</p>
+                                            </FolderCard>
+                                        ))}
+                                    </div></>);
+                                }
+                                const [location, empName, yearMonth] = histPath;
+                                const monthKey = `${location}-${empName}-${yearMonth}`;
+                                return (<>{back}<div className="bg-[var(--sunk)] border border-[var(--line)] rounded-xl overflow-hidden kpm-arrive">
+                                                        <div className="bg-black/20">
+                                                            {Object.keys(structuredHistory[location][empName][yearMonth]).map(fullDate => {
                                                                                 const dateKey = `${monthKey}-${fullDate}`;
                                                                                 return (
                                                                                 <div key={dateKey}>
@@ -1116,7 +1137,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                     {/* 📂 LEVEL 4: SPECIFIC DATE */}
                                                                                     <button 
                                                                                         onClick={() => toggleAccordion(setOpenDates, dateKey)}
-                                                                                        className="w-full p-2 pl-14 flex justify-between items-center hover:bg-[var(--raised)] transition-colors border-b border-[var(--line)]"
+                                                                                        className="w-full p-3 min-h-[44px] flex justify-between items-center hover:bg-[var(--raised)] transition-colors border-b border-[var(--line)]"
                                                                                     >
                                                                                         <div className="flex items-center gap-2">
                                                                                             <Folder className="text-[var(--ink-dim)]" size={12}/>
@@ -1126,7 +1147,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                     </button>
 
                                                                                     {openDates.includes(dateKey) && (
-                                                                                        <div className="p-3 pl-16 space-y-3 bg-black/40 shadow-inner">
+                                                                                        <div className="p-3 space-y-3 bg-black/40">
                                                                                             {/* 📄 THE ACTUAL REPORTS */}
                                                                                             {structuredHistory[location][empName][yearMonth][fullDate].map(report => {
                                                                                                 const isExpanded = expandedReports.includes(report.id);
@@ -1217,19 +1238,10 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                         </div>
                                                                                     )}
                                                                                 </div>
-                                                                            )})}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
                                                             )})}
                                                         </div>
-                                                    )}
-                                                </div>
-                                            )})}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
+                                </div></>);
+                            })()}
                         </div>
                     </div>
 

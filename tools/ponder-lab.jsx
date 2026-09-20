@@ -39,8 +39,7 @@ import ArrivalScanner from '../src/components/ArrivalScanner.jsx';
 import { ConfirmHost, confirmAction } from '../src/components/ConfirmGate.jsx';
 import { ToastHost, notify } from '../src/components/Toast.jsx';
 import BiohazardTheme from '../src/components/BiohazardTheme.jsx';
-import { Cloud, Tag, Wallet, MapPin } from 'lucide-react';
-import FolderCard from '../src/components/FolderCard.jsx';
+import { Cloud } from 'lucide-react';
 /* Same module the alias in ponder-lab.config.mjs points `firebase/firestore` at, so writing a
    fixture here is what the component's own listener reads back. */
 import { FIXTURES } from './lab-firestore-stub.js';
@@ -379,36 +378,6 @@ const labEodReports = (today) => {
     { id: 'e4', status: 'VERIFIED', reportType: 'CUKAI', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 86400 }, verifiedAt: { seconds: now - 79000 }, cukaiReturned: 36, cukaiPaid: 0, cukaiFine: 0 },
     { id: 'e5', status: 'VERIFIED', reportType: 'CASH_STOCK', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 172800 }, verifiedAt: { seconds: now - 170000 }, expectedCash: 1410000, cash: 1400000, expectedTransfer: 0, transfer: 0, remainingStock: stock },
   ];
-};
-
-/* ?shell&eod&admin&fold — BOARD B for the HQ Verification panel (2026-09-20, LAB ONLY): the pending reports and the
-   History Log as the shipped FolderCard. Rendered under the real screen; the eod-fold look hides the real grid. A tap
-   would open the docket (board A) as a sheet — not built, a still. Delete when he decides. */
-const EodFoldMock = ({ reports }) => {
-  const pending = reports.filter((r) => r.status === 'PENDING');
-  const stamp = (r) => r.reportType === 'CUKAI' ? r.cukaiReturned + ' PCS RETURNED' : 'Rp ' + ((r.cash || 0) + (r.transfer || 0)).toLocaleString('id-ID');
-  const cls = 'kpm-folder-quiet w-full bg-[var(--raised)] border-[var(--line-2)] hover:border-[var(--accent-edge)] transition-colors';
-  return (
-    <div className="max-w-7xl mx-auto p-2 -mt-2">
-      <h3 className="font-black text-[var(--ink)] uppercase tracking-widest flex items-center gap-2 mb-3 text-sm">Pending Verification ({pending.length})</h3>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 kpm-folders mb-6">
-        {pending.map((r) => (
-          <FolderCard key={r.id} icon={r.reportType === 'CUKAI' ? <Tag size={22} /> : <Wallet size={22} />} onOpen={() => {}} className={cls}>
-            <h3 className="font-bold text-[15px] lg:text-lg mb-1 truncate">{r.agentName}</h3>
-            <p className="kpm-stamp block truncate max-w-full text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{stamp(r)}</p>
-            <p className={`kpm-led-line ${r.cukaiPaid > 0 ? 'warn' : ''} mt-2 text-[11px] uppercase tracking-widest font-bold`}><i aria-hidden="true"></i>{r.cukaiPaid > 0 ? `${r.cukaiPaid} stamps lost` : 'counts match'}</p>
-          </FolderCard>
-        ))}
-      </div>
-      <h3 className="font-black text-[var(--ink-dim)] uppercase tracking-widest flex items-center gap-2 mb-3 text-sm">EOD History Log</h3>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 kpm-folders">
-        <FolderCard icon={<MapPin size={22} />} onOpen={() => {}} className={cls}>
-          <h3 className="font-bold text-[15px] lg:text-lg mb-1 truncate">MUNTILAN</h3>
-          <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">1 salesman · 3 nights</p>
-        </FolderCard>
-      </div>
-    </div>
-  );
 };
 
 const LAB_PRODUCTS = [
@@ -876,7 +845,6 @@ function ShellLab() {
           onSubmitEOD={async (p) => { window.__eod = [...(window.__eod || []), p]; }}
           onVerifyEOD={() => {}} onResetEOD={() => {}}
         />
-        {q.has('fold') && <EodFoldMock reports={labEodReports(LAB_TODAY)} />}
         </>
       ) : q.has('agent') ? (
         /* ?shell&agent — the Agent Inventory (the salesman's van manifest) INSIDE the real shell,

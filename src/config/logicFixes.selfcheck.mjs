@@ -1424,7 +1424,7 @@ section('S19. Expected beside counted, the short products named, and the card it
   ok('the approve button changes its own words when the count is short',
      /disputed \? 'Approve Short Count'/.test(card));
   ok('and the card changes with it, so the gap is not just a number on a normal card',
-     /disputed \? 'border-\[var\(--danger\)\]/.test(card));
+     /\(disputed \|\| report\.reportType === 'BOUNTY'\) \? 'border-\[var\(--danger\)\]'/.test(card));
   ok('the rupiah named before approving comes from the SAME rule App.jsx mints with',
      /eodBountyLines\(report, inventory, appSettings\?\.penaltyPriceTier\)/.test(card)); }
 
@@ -1631,17 +1631,20 @@ ok('no green anywhere on the approve button - his palette law, and it was unread
 ok('no hardcoded orange on the cukai branch either', !/bg-orange-\d+/.test(eod));
 ok('and no raw red - the short-count branch uses the measured red plate',
    !/bg-red-\d+/.test(eod));
-ok('the normal night is a quiet surface with an amber edge',
-   /'bg-\[var\(--raised\)\] border-\[var\(--amber\)\] text-\[var\(--ink\)\]'/.test(eod));
-ok('the cukai night is the same surface, amber label, so it differs without shouting',
-   /'bg-\[var\(--raised\)\] border-\[var\(--amber\)\] text-\[var\(--amber\)\]'/.test(eod));
+/* 2026-09-20: the night is verified from the DOCKET (one panel per person, his B) with one plate — gold for a normal
+   night (the board he chose carries it: "the color looks expensive"), the measured red plate for a short count. The
+   separate cukai key is gone: cash & stock and pita cukai verify together. */
+ok('the normal night is the gold plate on the docket (one plate for every report the salesman sent)',
+   /'bg-\[var\(--gold\)\] border-\[var\(--accent-edge\)\] text-\[var\(--gold-ink\)\]'/.test(eod) && /const seal = \(\) => \{/.test(eod));
+ok('the cukai night verifies on the same plate — one panel per person, no second key',
+   !/'bg-\[var\(--raised\)\] border-\[var\(--amber\)\] text-\[var\(--amber\)\]'/.test(eod));
 ok('a short count still gets the red plate, because that one is meant to stop him',
-   /'bg-\[var\(--danger-plate\)\] border-\[var\(--danger\)\] text-\[var\(--danger-plate-ink\)\]'/.test(eod));
+   /g\.disputed \? 'bg-\[var\(--danger-plate\)\] border-\[var\(--danger\)\] text-\[var\(--danger-plate-ink\)\]'/.test(eod));
 /* Scoped to the BUTTON, by slicing the source between its onClick and the end of its tag.
    Two earlier attempts scoped it by colour string instead and both caught a bystander - first the
    WANTED total's drop-shadow, then the Pay Bounty button, which happen to use the same rgba. A
    guard that fires on an innocent element is a guard someone relaxes later. */
-{ const from = eod.indexOf('onVerifyEOD(report)}');
+{ const from = eod.indexOf('onClick={seal}');
   const tag = from === -1 ? '' : eod.slice(from, eod.indexOf('>', eod.indexOf('className', from)));
   ok('the approve button exists and was found by its own handler', from !== -1 && tag.length > 0);
   ok('and carries no rgba glow of its own - quiet means quiet', !/rgba\(/.test(tag)); }
@@ -7855,6 +7858,40 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /className="h-\[3px\] lg:h-2\.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700 shadow-inner">/.test(jv) &&
      !/jp-strip|jp-mapfold/.test(code(ll)),
      'the lab looks jp-strip / jp-mapfold are gone with the decision');
+}
+
+{ /* EOD HQ VERIFICATION — his "B is better but i want the confirmation for cukai and cash to be one panel per person make sure
+     animation and smoothness for the graphic and colour suit our theme both dark and light mode and add some tech game
+     spices in there as well" (2026-09-20 02:50) on the board of 02:40 */
+  const ev = read('src/EODReconciliationView.jsx'); const th = read('src/styles/theme.css'); const pl = read('tools/ponder-lab.jsx'); const ll = read('tools/lab-looks.js');
+  ok('EOD review: the pending reports are ONE folder per salesman (cash & stock + pita cukai grouped), the diode lit only for a problem; tap opens the docket',
+     /import FolderCard from '\.\/components\/FolderCard\.jsx';/.test(ev) && /import NixieCount from '\.\/components\/NixieCount\.jsx';/.test(ev) &&
+     /const pendingByAgent = useMemo\(\(\) => \{/.test(ev) &&
+     /<FolderCard key=\{g\.key\} icon=\{g\.disputed \? <ShieldAlert size=\{22\} \/> : <User size=\{22\} \/>\} onOpen=\{\(\) => setDocket\(g\.key\)\} className=\{EOD_FOLDER\}>/.test(ev) &&
+     /className=\{`kpm-led-line \$\{g\.disputed \? 'crit' : g\.lost > 0 \? 'warn' : ''\} mt-2`\}/.test(ev) &&
+     !/pendingReports\.map\(report =>/.test(code(ev)),
+     'the board of 02:40, B; "one panel per person"');
+  ok('EOD review: the DOCKET sheet — the night as one panel: nixie total, HUD corners, every report as a dressed section, one gold plate that verifies all of them, REJECT a text key; VERIFY runs the scan, seals, leaves',
+     /<div className=\{`kpm-docket fixed inset-0 z-\[9999\] overflow-y-auto bg-\[var\(--sunk\)\] \$\{sealing \? 'sealing' : ''\}`\}>/.test(ev) &&
+     /<NixieCount value=\{g\.cashTotal\} size=\{18\} \/>/.test(ev) &&
+     /const seal = \(\) => \{ if \(sealing\) return; setSealing\(true\); setTimeout\(\(\) => \{ g\.reports\.forEach\(\(r\) => onVerifyEOD\(r\)\); setSealing\(false\); setDocket\(null\); \}, EOD_SEAL_MS\); \};/.test(ev) &&
+     /className=\{'kpm-plate w-full min-h-\[52px\] rounded-xl border font-black uppercase tracking-\[\.2em\] flex items-center justify-center gap-2 disabled:opacity-70 ' \+ \(g\.disputed \? /.test(ev) &&
+     /\.kpm-docket\.sealing \.kpm-docket-scan \{ animation: kpmScan 500ms/.test(th) && /\.kpm-docket\.sealing \.kpm-docket-seal \{ animation: kpmSeal 320ms 450ms/.test(th) &&
+     /\.kpm-docket-head::before, \.kpm-docket-head::after \{/.test(th) && !/box-shadow/.test(th.slice(th.indexOf('THE DOCKET'))),
+     'the scan and the seal are gradients and transforms only (G30); the light and dark themes come from the tokens');
+  ok('EOD review: the History Log is folders (place › salesman › month) and the night rows stay; the old fold-out state is gone',
+     /const HIST_LEVELS = \[/.test(ev) && /const \[histPath, setHistPath\] = useState\(\[\]\);/.test(ev) &&
+     /<FolderCard key=\{k\} icon=\{<L\.Icon size=\{22\} \/>\} onOpen=\{\(\) => setHistPath\(\(p\) => \[\.\.\.p, k\]\)\} className=\{EOD_FOLDER\}>/.test(ev) &&
+     !/const \[openLocations, setOpenLocations\]/.test(ev) && !/const \[openAgents, setOpenAgents\]/.test(ev) && !/const \[openMonths, setOpenMonths\]/.test(ev) &&
+     /const \[openDates, setOpenDates\] = useState\(\[\]\);/.test(ev) && !/h-\[700px\] overflow-y-auto/.test(code(ev)),
+     'the last accordion of that shape in the app');
+  ok('EOD review: the report section wears the theme — a gold hairline under the name, the type as a kpm-stamp, the stamps block an inset well with a gold edge, the time readable; no gold slabs, no rgba shadows',
+     /kpm-hairline px-4 py-3 flex justify-between items-center/.test(ev) &&
+     !/'bg-\[var\(--gold\)\] border-\[var\(--accent-edge\)\]' : 'bg-\[var\(--gold\)\] border-\[var\(--line\)\]'/.test(code(ev)) &&
+     /bg-\[var\(--inset\)\] p-3 rounded-lg border border-\[var\(--line-2\)\] border-l-2 border-l-\[var\(--gold\)\] mt-4/.test(ev) &&
+     !/shadow-\[0_0_20px_rgba\(220,38,38,0\.2\)\]/.test(code(ev)) &&
+     !/EodFoldMock/.test(pl) && !/eod-docket|eod-fold/.test(code(ll)),
+     'the lab mock and the looks went with the decision');
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
