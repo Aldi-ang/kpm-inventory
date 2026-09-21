@@ -45,8 +45,7 @@ import { Cloud } from 'lucide-react';
    fixture here is what the component's own listener reads back. */
 import { FIXTURES } from './lab-firestore-stub.js';
 import { LOOKS } from './lab-looks.js';
-import { scanNotaToBase64, homography, getLocalDayKey, dayTargets } from '../src/utils/helpers.js';
-import { ProfileHeadMock, XpGainMock } from './lab-stageb.jsx';   // LAB ONLY — stage B boards, delete when it ships
+import { scanNotaToBase64, homography, getLocalDayKey } from '../src/utils/helpers.js';
 import PhotoField from '../src/components/PhotoField.jsx';
 import { SCENES } from '../src/ponder/registry.js';
 
@@ -368,7 +367,8 @@ const labSamplings = (today) => [
    stock night that matches, a pita cukai return with two lost stamps paid) and three VERIFIED for the History Log
    (MUNTILAN › Budi Santoso › this month). The fields are the ones EODReconciliationView.jsx:855-1045 reads. */
 /* `?shell&eod&verified` — the salesman's tonight, both reports VERIFIED by the boss an hour ago, with the
-   dayXP + xpBreakdown handleVerifyEOD writes (App.jsx: `status: 'VERIFIED', dayXP, xpBreakdown`). LAB ONLY (stage B board). */
+   dayXP + xpBreakdown handleVerifyEOD writes (App.jsx: `status: 'VERIFIED', dayXP, xpBreakdown`) — the Shift Closed
+   block then counts the XP up (EODReconciliationView.jsx XpGain, stage B 2026-09-21). */
 const labVerifiedTonight = () => {
   const now = Math.floor(Date.now() / 1000);
   return [
@@ -791,8 +791,7 @@ function ShellLab() {
            wrapper. T5 Budi (m2) sees his own page; `&admin` mounts the boss's view (the agent list, the
            rank / badge config keys). The stub's getDoc answers "exists: false", so ranks and badges are
            the defaults from config/career.js; the photo save is a stub no-op. Job 4 (2026-09-20): the
-           page overflows sideways at 375 — this mount is where it is measured and boarded. */
-        <>
+           page overflows sideways at 375 — measured and boarded here, shipped as stage B (the head, the wrapping keys). */
         <AgentProfileView
           motorists={LAB_MOTORISTS.map((m) => (m.id === 'm2' ? { ...m, ...FIXTURES['motorists/m2'] } : m))}
           inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]} transactions={LAB_AGENT_TXNS}
@@ -801,18 +800,8 @@ function ShellLab() {
           appSettings={{ useCareerLedger: true }}
           career={{ m2: { live: { collected: 124500000, daysVerified: 41, cleanCukaiDays: 30, storesServed: 300 }, joinDate: '2025-01-10' } }}
           logAudit={() => {}}
+          customers={LAB_CUSTOMERS.map((c, i) => ({ ...c, assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : '' }))}
         />
-        {/* `&head` — the STAGE B board: the boss's player card, closed, portalled into the profile column (lab-stageb.jsx) */}
-        {q.has('head') && (
-          <ProfileHeadMock admin={q.has('admin')}
-            group={{ key: 'm2', agentName: 'Budi Santoso', reports: [], cashTotal: 0, lost: 0, disputed: false }}
-            motorist={{ ...LAB_MOTORISTS[1], ...FIXTURES['motorists/m2'] }}
-            career={{ live: { collected: 124500000, daysVerified: 41, cleanCukaiDays: 30, storesServed: 300 }, joinDate: '2025-01-10' }}
-            useCareerLedger transactions={LAB_AGENT_TXNS} inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]} appSettings={{ useCareerLedger: true }}
-            closed={dayTargets(LAB_CUSTOMERS.map((c, i) => ({ ...c, assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : '' })), 'Budi Santoso', LAB_TODAY)}
-            today={LAB_TODAY} />
-        )}
-        </>
       ) : q.has('sampling') ? (
         /* ?shell&sampling — Sampling INSIDE the real shell as App.jsx:5087 mounts it: the folder view
            (year › month › date › place › the shops' items), `&analytics` the boss's charts, `&entry` the
@@ -890,8 +879,6 @@ function ShellLab() {
           career={{ m2: { live: { collected: 124500000, daysVerified: 41, cleanCukaiDays: 30, storesServed: 300 }, joinDate: '2025-01-10' } }}
           customers={LAB_CUSTOMERS.map((c, i) => ({ ...c, assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : '' }))}
         />
-        {/* `&verified&xp=a|b|c` — the STAGE B board: tonight's XP gain on the salesman's Shift Closed block (lab-stageb.jsx) */}
-        {q.has('xp') && <XpGainMock variant={q.get('xp') || 'a'} />}
         </>
       ) : q.has('agent') ? (
         /* ?shell&agent — the Agent Inventory (the salesman's van manifest) INSIDE the real shell,

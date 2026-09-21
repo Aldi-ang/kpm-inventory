@@ -4735,6 +4735,7 @@ const handleGitHubMirror = async () => {
                   appSettings={appSettings}
                   career={career}
                   logAudit={logAudit}
+                  customers={customers}   // CLOSED ?/? on the head - today's route from the Journey Plan (stage B, 2026-09-21)
               />
           )}
 

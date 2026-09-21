@@ -4624,6 +4624,7 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
    6 px rise; the same road back folds it. The ✓ / ✕ keys press in like every key. Every colour is a token; the blur is
    a filter on the moving layer only; `html.lite-mode *` and reduced motion kill the motion through the global rules. */
 .pc { position: relative; border-radius: 16px; border: 1px solid var(--line-2); background: linear-gradient(180deg, var(--raised), var(--sunk)); overflow: hidden; padding-bottom: 28px; }
+.pc-solo { padding-bottom: 0; }   /* the head alone (Agent Profile, stage B): no body, no chevron room */
 .pc-head { cursor: pointer; user-select: none; transition: transform 160ms ease-out; }
 .pc-head:active { transform: scale(.99); }
 .pc-avatar { position: relative; width: 128px; height: 128px; flex: 0 0 128px; }

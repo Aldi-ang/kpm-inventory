@@ -29,6 +29,43 @@ const BAR = { background: 'linear-gradient(90deg, var(--gold), #E4B04A)' };
 
 const initialsOf = (name = '') => name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || '?';
 
+/* THE HEAD on its own - the boss's card below and the salesman's Agent Profile draw the same face from it (his
+   "the picture should be the same with the agent profile picture", stage B 2026-09-21). Presentational: the caller
+   brings the numbers it already computes (the card from its group, the profile from its stats), so each screen climbs
+   the ladder once and never twice. No `diodeText` -> no diode line (the profile has no night to report). `children`
+   sit on the avatar (the profile's camera badge and its file input). `onTap` is the head's one action: the card
+   grows open, the profile opens the avatar customizer. */
+export const PlayerCardHead = ({ name, photo, currentTier, nextTier, progressPercent, xp, gain = 0, frame = 'classic', closed, diode = '', diodeText, onTap, children }) => (
+    <div className="pc-head p-4" onClick={onTap} role={onTap ? 'button' : undefined} tabIndex={onTap ? 0 : undefined} onKeyDown={onTap ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTap(); } } : undefined}>
+        <div className="flex items-start gap-4">
+            <div className="pc-avatar">
+                <div className="pc-photo">{photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : <span>{initialsOf(name)}</span>}</div>
+                {currentTier.borderImage
+                    ? <img src={currentTier.borderImage} className="absolute inset-[-25%] w-[150%] h-[150%] object-contain z-20 pointer-events-none" alt="" />
+                    : <RankBorder styleId={frame} />}
+                {children}
+            </div>
+            <div className="min-w-0 flex-1">
+                <h3 className="text-base font-black text-[var(--ink)] uppercase tracking-wider truncate">{name}</h3>
+                <p className="text-[11px] uppercase tracking-widest font-bold mt-1 truncate"><span className="pc-rank" style={{ '--rk': currentTier.hex || 'var(--ink-dim)' }}>{currentTier.name}</span>{currentTier.title && <span className="text-[var(--ink-dim)]"> · {currentTier.title}</span>}</p>
+                <p className="mt-2 font-mono text-sm font-bold text-[var(--ink)] tabular-nums">{new Intl.NumberFormat('id-ID').format(xp)} XP{gain > 0 && <><span className="text-[var(--accent-ink)]"> +{gain}</span><span className="text-[11px] text-[var(--ink-dim)] font-normal"> tonight</span></>}</p>
+                <div className="h-[3px] mt-1.5 rounded-full bg-[var(--inset)]"><div className="h-full rounded-full" style={{ width: `${progressPercent}%`, ...BAR }}></div></div>
+                <p className="text-[11px] uppercase tracking-widest text-[var(--ink-dim)] mt-1 truncate">{nextTier ? `${new Intl.NumberFormat('id-ID').format(Math.max(0, Number(nextTier.min) - xp))} XP to ${nextTier.name}` : 'top of the ladder'}</p>
+            </div>
+        </div>
+        <div className="mt-4 flex items-end justify-between gap-3">
+            <div>
+                <p className={SUB}>Closed today</p>
+                {closed && closed.total > 0
+                    ? <p className="font-mono text-4xl font-black text-[var(--ink)] leading-none mt-1 tabular-nums">{closed.closed}<span className="text-[var(--ink-dim)] text-2xl"> / {closed.total}</span></p>
+                    : <p className="font-mono text-2xl font-black text-[var(--ink-dim)] leading-none mt-1">—</p>}
+                <p className="text-[11px] uppercase tracking-widest text-[var(--ink-dim)] mt-1">{closed && closed.total > 0 ? 'stores on the route' : 'no route today'}</p>
+            </div>
+            {diodeText && <p className={`kpm-led-line ${diode}`}><i aria-hidden="true"></i>{diodeText}</p>}
+        </div>
+    </div>
+);
+
 const PlayerCard = ({ group, motorist, career, useCareerLedger = false, ranks, expMultiplier = 1, transactions = [], inventory = [], appSettings, closed, today, onApprove, onReset, onSealed }) => {
     const [open, setOpen] = useState(false);
     const [checked, setChecked] = useState({});   // `${reportId}:${part}` -> true
@@ -161,33 +198,8 @@ const PlayerCard = ({ group, motorist, career, useCareerLedger = false, ranks, e
     const photo = motorist?.profileImage;
     return (
         <div className={`pc ${open ? 'open' : ''}`}>
-            <div className="pc-head p-4" onClick={() => setOpen(v => !v)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(v => !v); } }}>
-                <div className="flex items-start gap-4">
-                    <div className="pc-avatar">
-                        <div className="pc-photo">{photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : <span>{initialsOf(group.agentName)}</span>}</div>
-                        {currentTier.borderImage
-                            ? <img src={currentTier.borderImage} className="absolute inset-[-25%] w-[150%] h-[150%] object-contain z-20 pointer-events-none" alt="" />
-                            : <RankBorder styleId={frame} />}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                        <h3 className="text-base font-black text-[var(--ink)] uppercase tracking-wider truncate">{group.agentName}</h3>
-                        <p className="text-[11px] uppercase tracking-widest font-bold mt-1 truncate"><span className="pc-rank" style={{ '--rk': currentTier.hex || 'var(--ink-dim)' }}>{currentTier.name}</span>{currentTier.title && <span className="text-[var(--ink-dim)]"> · {currentTier.title}</span>}</p>
-                        <p className="mt-2 font-mono text-sm font-bold text-[var(--ink)] tabular-nums">{new Intl.NumberFormat('id-ID').format(xp)} XP{gain > 0 && <><span className="text-[var(--accent-ink)]"> +{gain}</span><span className="text-[11px] text-[var(--ink-dim)] font-normal"> tonight</span></>}</p>
-                        <div className="h-[3px] mt-1.5 rounded-full bg-[var(--inset)]"><div className="h-full rounded-full" style={{ width: `${progressPercent}%`, ...BAR }}></div></div>
-                        <p className="text-[11px] uppercase tracking-widest text-[var(--ink-dim)] mt-1 truncate">{nextTier ? `${new Intl.NumberFormat('id-ID').format(Math.max(0, Number(nextTier.min) - xp))} XP to ${nextTier.name}` : 'top of the ladder'}</p>
-                    </div>
-                </div>
-                <div className="mt-4 flex items-end justify-between gap-3">
-                    <div>
-                        <p className={SUB}>Closed today</p>
-                        {closed && closed.total > 0
-                            ? <p className="font-mono text-4xl font-black text-[var(--ink)] leading-none mt-1 tabular-nums">{closed.closed}<span className="text-[var(--ink-dim)] text-2xl"> / {closed.total}</span></p>
-                            : <p className="font-mono text-2xl font-black text-[var(--ink-dim)] leading-none mt-1">—</p>}
-                        <p className="text-[11px] uppercase tracking-widest text-[var(--ink-dim)] mt-1">{closed && closed.total > 0 ? 'stores on the route' : 'no route today'}</p>
-                    </div>
-                    <p className={`kpm-led-line ${diode}`}><i aria-hidden="true"></i>{diodeText}</p>
-                </div>
-            </div>
+            <PlayerCardHead name={group.agentName} photo={photo} currentTier={currentTier} nextTier={nextTier} progressPercent={progressPercent} xp={xp} gain={gain} frame={frame}
+                closed={closed} diode={diode} diodeText={diodeText} onTap={() => setOpen(v => !v)} />
             <div className="pc-body">
                 <div className="pc-inner"><div className="px-4 pb-4">{/* the padding sits INSIDE the clipped layer, so a folded card measures 0 and not its own 16 px */}
                     <div className="mb-3 pt-1">

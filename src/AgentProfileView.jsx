@@ -14,7 +14,8 @@ import { RankBorder, RANK_BORDERS, BORDER_KEYFRAMES, FrameFilters } from './conf
 import Cropper from 'react-easy-crop';
 import { hasClearance, DYNAMIC_TIERS, TIER_ONE_ID, TIER_ONE_ALIAS_IDS } from './config/permissions';
 import HallOfFameView from './HallOfFameView';
-import { savePhotoAndGetReference, deletePhotoFromStorage, formatNumber, parseGroupedNumber, storeKey, storeLabel, getLocalDayKey} from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, formatNumber, parseGroupedNumber, storeKey, storeLabel, getLocalDayKey, dayTargets } from './utils/helpers';
+import { PlayerCardHead } from './components/PlayerCard.jsx';
 import { careerXP, DEFAULT_XP, totals, DEFAULT_BADGES, DEFAULT_RANKS, rankLadder, STAT_LABELS, BADGE_SOURCES, statLabel } from './config/career';
 import { revenueOf } from './utils/salesRollup';
 import { notify } from './components/Toast.jsx';
@@ -122,7 +123,7 @@ const AgentAvatar = ({ tier, tierIndex, hex, photo, styleId, iconSize, scrim = f
     </>
 );
 
-const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentProfileId, db, appId, userId, storage, appSettings, career, logAudit }) => {
+const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentProfileId, db, appId, userId, storage, appSettings, career, logAudit, customers = [] }) => {
     const useCareerLedger = !!appSettings?.useCareerLedger;
     
     const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
@@ -330,7 +331,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
 
 
     const corpIdentity = getCorporateIdentity(activeAgent);
-    const roleStars = corpIdentity.stars;
 
     const handleBioSave = async () => {
         if (!db || !activeAgent || !canEditProfile) return;
@@ -647,17 +647,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
     const formatFullRp = (num) => new Intl.NumberFormat('id-ID').format(num);
     const chartDataToRender = chartFilter === '1W' ? stats.chartData1W : chartFilter === '1M' ? stats.chartData1M : stats.chartData1Y;
 
-    const renderRarityStars = (count, hex) => {
-        const safeHex = hex || '#64748b';
-        return (
-            <div className="flex gap-1 mt-1 mb-2">
-                {[...Array(6)].map((_, i) => (
-                    <Star key={i} size={16} className={`transition-all duration-500 ${i < count ? 'fill-current drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] scale-110 animate-pulse' : 'text-ink-dim opacity-30'}`} style={{ color: i < count ? safeHex : undefined }} />
-                ))}
-            </div>
-        );
-    };
-    
     const safeCurrentHex = stats.currentTier.hex || '#64748b';
 
     // The agent's own pick wins, but only while it is still unlocked — an admin reshuffling the
@@ -986,7 +975,9 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 Replaced with the two background idioms from the approved Rank Frames artifact: a
                 1-in-6px diagonal hatch, and a wide warm glow bleeding down from the top. Pure CSS,
                 theme tokens, no request. */}
-            <div className="flex-1 h-screen overflow-y-auto custom-scrollbar relative" style={{
+            {/* stage B (2026-09-21): on the phone the profile scrolls WITH the app - its own h-screen scroller sat nested
+                inside the shell's and the two fought; the desk keeps the sidebar + column layout from lg */}
+            <div className="flex-1 min-w-0 lg:h-screen lg:overflow-y-auto custom-scrollbar relative" style={{
                 backgroundColor: 'var(--ground)',
                 backgroundImage: [
                     'radial-gradient(1100px 500px at 50% -10%, rgba(255,140,26,.05), transparent 70%)',
@@ -995,126 +986,73 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 backgroundAttachment: 'fixed, scroll'
             }}>
                 
-                <div className="absolute top-6 left-6 z-30 flex gap-3">
+                {/* stage B (2026-09-21, his A): on the phone the keys sit in the flow and WRAP at 44 px - floating in one
+                    row they were 430 px wide and slid the page 95 px sideways; the desk keeps them floating top-left */}
+                <div className="static lg:absolute lg:top-6 lg:left-6 z-30 flex flex-wrap gap-2 lg:gap-3 p-4 pb-0 lg:p-0">
                     {/* 🚀 MATRIX: If they have dashboard rights, they need the Directory Toggle */}
                     {hasClearance(userRole, 'view_dashboard') && (
-                        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="bg-black/80 backdrop-blur-md border border-line-2 p-2.5 rounded-xl text-ink-muted hover:text-white hover:border-line-3 hover:shadow-[0_0_20px_rgba(212,175,55,0.3)] transition-all active:scale-95 group">
+                        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="min-h-11 min-w-11 bg-black/80 backdrop-blur-md border border-line-2 p-2.5 rounded-xl text-ink-muted hover:text-white hover:border-line-3 hover:shadow-[0_0_20px_rgba(212,175,55,0.3)] transition-all active:scale-95 group">
                             {isSidebarOpen ? <X size={20}/> : <Menu size={20} className="group-hover:animate-pulse"/>}
                         </button>
                     )}
                     {/* 🚀 MATRIX: Rank Config Button Access */}
                     {hasClearance(userRole, 'edit_rank_config') && (
-                        <button onClick={() => { setEditingRpgData(JSON.parse(JSON.stringify(rpgData))); setShowRankConfig(true); }} className="bg-black/80 backdrop-blur-md border border-line-2 px-4 py-2.5 rounded-xl text-ink-muted hover:text-ink-muted hover:border-line-3 hover:shadow-[0_0_20px_rgba(212,175,55,0.3)] transition-all active:scale-95 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                        <button onClick={() => { setEditingRpgData(JSON.parse(JSON.stringify(rpgData))); setShowRankConfig(true); }} className="min-h-11 bg-black/80 backdrop-blur-md border border-line-2 px-4 py-2.5 rounded-xl text-ink-muted hover:text-ink-muted hover:border-line-3 hover:shadow-[0_0_20px_rgba(212,175,55,0.3)] transition-all active:scale-95 flex items-center gap-2 text-[11px] lg:text-[10px] font-black uppercase tracking-widest">
                             <Settings size={16}/> Rank Config
                         </button>
                     )}
                     {/* 🚀 Phase 5: Customize Avatar — same modal the avatar itself opens, given a
                         labelled entry point so it's findable without guessing the avatar is a button. */}
                     {canEditProfile && (
-                        <button onClick={() => setShowAvatarCustomizer(true)} className="bg-black/80 backdrop-blur-md border border-line-2 px-4 py-2.5 rounded-xl text-ink-muted hover:text-white hover:border-line-3 transition-all active:scale-95 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                        <button onClick={() => setShowAvatarCustomizer(true)} className="min-h-11 bg-black/80 backdrop-blur-md border border-line-2 px-4 py-2.5 rounded-xl text-ink-muted hover:text-white hover:border-line-3 transition-all active:scale-95 flex items-center gap-2 text-[11px] lg:text-[10px] font-black uppercase tracking-widest">
                             <ImageIcon size={16}/> Avatar
                         </button>
                     )}
-                    {/* 🚀 NEW: HALL OF FAME MODAL BUTTON */}
-                    <button onClick={() => setShowHallOfFame(true)} className="bg-gradient-to-r from-gold to-gold text-white border border-gold/50 px-4 py-2.5 rounded-xl hover:shadow-[0_0_20px_rgba(212,175,55,0.5)] transition-all active:scale-95 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest shadow-lg">
-                        <Trophy size={16} className="animate-bounce-slow"/> Leaderboard
+                    {/* 🚀 NEW: HALL OF FAME MODAL BUTTON (the trophy no longer bounces - a light blinks only while something happens) */}
+                    <button onClick={() => setShowHallOfFame(true)} className="min-h-11 bg-gradient-to-r from-gold to-gold text-white border border-gold/50 px-4 py-2.5 rounded-xl hover:shadow-[0_0_20px_rgba(212,175,55,0.5)] transition-all active:scale-95 flex items-center gap-2 text-[11px] lg:text-[10px] font-black uppercase tracking-widest shadow-lg">
+                        <Trophy size={16}/> Leaderboard
                     </button>
+                    {/* 🚀 Phase 6: grant a real, reasoned award instead of overriding a raw number - moved up here from the
+                        OMSET box the head replaced (stage B) */}
+                    {hasClearance(userRole, 'edit_agent_roles') && (
+                        <button onClick={() => setShowAwardForm(true)} className="min-h-11 bg-black/80 backdrop-blur-md border border-line-2 px-4 py-2.5 rounded-xl text-ink-muted hover:text-white hover:border-line-3 transition-all active:scale-95 flex items-center gap-2 text-[11px] lg:text-[10px] font-black uppercase tracking-widest">
+                            <Award size={16}/> Grant Award
+                        </button>
+                    )}
                 </div>
 
-                <div className="pt-24 pb-10 px-6 md:px-10 border-b border-line relative overflow-hidden bg-gradient-to-br from-black via-sunk to-black">
+                <div className="pt-6 lg:pt-24 pb-6 lg:pb-10 px-4 lg:px-10 border-b border-line relative overflow-hidden bg-gradient-to-br from-black via-sunk to-black">
                     <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none opacity-20 transition-colors duration-1000" style={{ backgroundColor: safeCurrentHex }}></div>
                     <div className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{
                         backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,.022) 0 1px, transparent 1px 9px)'
                     }}></div>
                     
-                    <div className="flex flex-col xl:flex-row gap-8 relative z-10 max-w-7xl mx-auto">
-                        
-                        <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-6 lg:gap-10 min-w-[350px]">
-                            
-                            {/* Locked to 128px at every breakpoint: Diamond and Mythic place their
-                                blocks at absolute pixel offsets, so md:w-40 pulled them out of
-                                alignment with the frame edge. */}
-                            <div className="relative group cursor-pointer hover:scale-105 transition-transform duration-500 shrink-0 w-32 h-32" onClick={() => canEditProfile && setShowAvatarCustomizer(true)}>
-                                
-                                <AgentAvatar tier={stats.currentTier} tierIndex={stats.tierIndex} hex={safeCurrentHex} photo={activeAgent.profileImage} styleId={activeBorderStyle} iconSize={64} scrim>
-                                    {canEditProfile && (
-                                        // 🚀 Phase 6: always-visible badge, not a hover-only overlay — touch screens
-                                        // have no hover, so this was invisible on every phone until now.
-                                        <div className="absolute bottom-0 right-0 z-30 w-9 h-9 rounded-full bg-black/80 border-2 border-white/70 flex items-center justify-center shadow-lg">
-                                            <Camera size={16} className="text-white" />
-                                        </div>
-                                    )}
-                                    <input type="file" id="avatar-input" className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'avatar')} />
-                                </AgentAvatar>
-                            </div>
-                            
-                            <div className="mt-4 md:mt-0">
-                                {renderRarityStars(roleStars, safeCurrentHex)}
-                                <div className="flex items-center justify-center md:justify-start flex-wrap gap-2 mb-2">
-                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-black uppercase tracking-widest border-l-2 bg-black/50 shadow-md backdrop-blur-sm" style={{ borderLeftColor: safeCurrentHex, color: safeCurrentHex }}>
-                                        {stats.currentTier.logo ? <img src={stats.currentTier.logo} className="w-4 h-4 object-contain drop-shadow-[0_0_5px_currentColor]"/> : <Sparkles size={12}/>} 
-                                        {stats.currentTier.name} OPERATIVE
+                    {/* STAGE B (2026-09-21, his A on the board): the head of the boss's player card IS the face here -
+                        the photo in the rank frame, rank · title, XP, the bar, XP to the next rank, CLOSED ?/? on today's
+                        route - one component (components/PlayerCard.jsx PlayerCardHead), the numbers from this screen's
+                        own `stats`. It replaces the photo + stars + pills + name block and the OMSET 7 HARI box (the head
+                        says both). A tap on the head opens the avatar customizer, as the photo did. The tier tag, the ID,
+                        the region and the days active stay as one line under it. */}
+                    <div className="relative z-10 max-w-7xl mx-auto">
+                        <div className="pc pc-solo lg:max-w-lg">
+                            <PlayerCardHead name={activeAgent.name} photo={activeAgent.profileImage} currentTier={stats.currentTier} nextTier={stats.nextTier} progressPercent={stats.progressPercent}
+                                xp={stats.lifetimeEXP} frame={activeBorderStyle} closed={dayTargets(customers, activeAgent.name, getLocalDayKey())}
+                                onTap={canEditProfile ? () => setShowAvatarCustomizer(true) : undefined}>
+                                {canEditProfile && (
+                                    // 🚀 Phase 6: always-visible badge, not a hover-only overlay — touch screens
+                                    // have no hover, so this was invisible on every phone until now.
+                                    <div className="absolute bottom-0 right-0 z-30 w-9 h-9 rounded-full bg-black/80 border-2 border-white/70 flex items-center justify-center shadow-lg">
+                                        <Camera size={16} className="text-white" />
                                     </div>
-                                    <div className="inline-flex items-center gap-1.5 px-3 py-1 text-[10px] font-black uppercase tracking-widest border border-line-2/50 text-verified bg-black/50 shadow-md backdrop-blur-sm">
-                                        <Clock size={12}/> Active: {stats.daysInService}
-                                    </div>
-                                </div>
-                                {/* 🚀 CORPORATE COMMAND TAG */}
-                                <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded text-[11px] font-black uppercase tracking-widest border ${corpIdentity.border} ${corpIdentity.bg} ${corpIdentity.color} mb-2 shadow-inner`}>
-                                    <ShieldCheck size={12}/> {corpIdentity.tier} : {corpIdentity.title}
-                                </div>
-                                <h1 className="text-4xl lg:text-5xl font-black text-white leading-none uppercase tracking-tighter drop-shadow-lg mb-2">{activeAgent.name}</h1>
-                                <div className="flex items-center justify-center md:justify-start gap-3 flex-wrap">
-                                    <ShieldCheck size={16} className="text-ink-muted"/>
-                                    <span className="text-[10px] text-ink-muted font-mono tracking-widest">ID: {String(activeAgent.id || '').substring(0,8)}</span>
-                                    <span className="text-ink-muted">|</span>
-                                    <span className="text-[10px] text-ink-muted uppercase font-bold tracking-widest"><MapPin size={10} className="inline mr-1 text-orange"/>{activeAgent.location || 'Field'}</span>
-                                </div>
-                            </div>
+                                )}
+                                <input type="file" id="avatar-input" className="hidden" accept="image/*" onChange={(e) => handleFileSelect(e, 'avatar')} onClick={(e) => e.stopPropagation()} />
+                            </PlayerCardHead>
                         </div>
-
-                        <div className="flex-1 flex flex-col justify-center bg-black/60 p-6 md:p-8 rounded-2xl border border-line shadow-2xl backdrop-blur-md relative overflow-hidden group hover:border-line-3 transition-colors">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-colors pointer-events-none"></div>
-                            
-                            <div className="flex justify-between items-start mb-4 relative z-10 gap-4">
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-xs text-ink-muted font-bold uppercase tracking-[0.2em] flex items-center gap-2"><Activity size={14} className="text-ink-muted"/> Omset 7 Hari</span>
-                                    <span className="text-3xl font-black drop-shadow-[0_0_10px_rgba(0,0,0,0.8)] tracking-tight leading-none mt-1" style={{ color: safeCurrentHex }}>{new Intl.NumberFormat('id-ID').format(stats.lifetimeEXP)} <span className="text-lg">XP</span></span>
-                                </div>
-                                {/* 🚀 Phase 6: grant a real, reasoned award instead of overriding a raw number */}
-                                {hasClearance(userRole, 'edit_agent_roles') && (
-                                    <button onClick={() => setShowAwardForm(true)} className="text-ink-muted hover:text-white bg-sunk/20 border border-line-3/30 px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-colors flex items-center gap-1 shrink-0"><Award size={12}/> Grant Award</button>
-                                )}
-                            </div>
-                            
-                            <div className="h-5 w-full bg-ground rounded-md overflow-hidden border border-line shadow-inner relative mb-4 z-10 skew-x-[-10deg]">
-                                <div className="absolute inset-0 pointer-events-none" style={{
-                                    backgroundImage: [
-                                        'repeating-linear-gradient(135deg, rgba(255,255,255,.020) 0 1px, transparent 1px 4px)',
-                                        'repeating-linear-gradient(45deg, rgba(0,0,0,.14) 0 1px, transparent 1px 4px)'
-                                    ].join(',')
-                                }}></div>
-                                <div className="h-full transition-all duration-1000 ease-out relative" style={{ width: `${stats.progressPercent}%`, backgroundColor: safeCurrentHex, boxShadow: `0 0 15px ${safeCurrentHex}` }}>
-                                    <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent"></div>
-                                    <div className="absolute top-0 right-0 w-4 h-full bg-white/50 skew-x-[20deg] animate-[flow_2s_infinite]"></div>
-                                </div>
-                            </div>
-                            
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center relative z-10 gap-3 mt-1">
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-[10px] font-black text-ink-muted uppercase tracking-widest">{stats.currentTier.name} RANK</span>
-                                    {stats.currentTier.title && (
-                                        <span className="text-xs font-black uppercase tracking-[0.2em] animate-pulse" style={{ color: safeCurrentHex, textShadow: `0 0 10px ${safeCurrentHex}` }}>
-                                            « {stats.currentTier.title} »
-                                        </span>
-                                    )}
-                                </div>
-                                {stats.nextTier ? (
-                                    <span className="text-[10px] font-bold text-ink-muted uppercase tracking-widest">Next Phase: <span className="text-white">{stats.nextTier.name}</span> <span className="text-ink-muted ml-1">({formatRp(stats.nextTier.min - stats.lifetimeEXP)} req)</span></span>
-                                ) : (
-                                    <span className="text-[10px] font-black text-danger-text uppercase tracking-widest animate-pulse">MAXIMUM RANK REACHED</span>
-                                )}
-                            </div>
+                        <div className="mt-3 px-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px] uppercase tracking-widest text-ink-muted">
+                            <span className={`inline-flex items-center gap-1 font-black ${corpIdentity.color}`}><ShieldCheck size={12}/> {corpIdentity.tier} : {corpIdentity.title}</span>
+                            <span>ID: {String(activeAgent.id || '').substring(0,8)}</span>
+                            <span className="font-bold"><MapPin size={10} className="inline mr-1 text-orange"/>{activeAgent.location || 'Field'}</span>
+                            <span className="inline-flex items-center gap-1 font-bold"><Clock size={12}/> Active: {stats.daysInService}</span>
                         </div>
                     </div>
                 </div>

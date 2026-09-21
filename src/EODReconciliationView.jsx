@@ -3,6 +3,7 @@ import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, Do
 import { formatRupiah, getLocalDayKey, storeKey, shortStockRows, eodBountyLines, dayTargets, EOD_PART_LABELS } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import EODAgentFlow from './components/EODAgentFlow.jsx';
+import NixieCount from './components/NixieCount.jsx';
 import FolderCard from './components/FolderCard.jsx';
 import PlayerCard from './components/PlayerCard.jsx';
 import { BORDER_KEYFRAMES, FrameFilters } from './config/rankBorders.jsx';
@@ -20,6 +21,40 @@ const HIST_LEVELS = [
     { Icon: User, count: (n) => plural(Object.values(n).reduce((a, m) => a + Object.keys(m).length, 0), 'night', 'nights') },
     { Icon: Calendar, count: (n) => plural(Object.keys(n).length, 'night', 'nights') },
 ];
+
+/* TONIGHT'S XP on the salesman's Shift Closed block - stage B of the player card (his 2026-09-20 "put the EXP gain
+   statistic animation on the agent EOD panel after approval"; board 2 = B, 2026-09-21). The verified CASH_STOCK report
+   carries `dayXP` + `xpBreakdown` (handleVerifyEOD writes them at the night's last approval). The one number
+   instrument counts it: the signed nixie mounts at 0 and rolls to the total 400 ms after the block shows; when the
+   digits have settled the working prints under it, one row at a time (collected, day closed, pita cukai, route),
+   rising in AFTER the roll - one moment, one animation. Nothing blinks; Lite Mode lands the digits at once. */
+const XpGain = ({ total, breakdown, collected = 0, stores = 0 }) => {
+    const [v, setV] = useState(0);
+    const [settled, setSettled] = useState(false);
+    useEffect(() => {
+        const t1 = setTimeout(() => setV(total), 400);
+        const t2 = setTimeout(() => setSettled(true), 1000);
+        return () => { clearTimeout(t1); clearTimeout(t2); };
+    }, [total]);
+    const rows = [['collected', 'Collected', formatRupiah(collected)], ['closed', 'Day closed', 'verified'], ['cukai', 'Pita cukai', 'clean'], ['route', 'Route', plural(stores, 'store', 'stores')]]
+        .filter(([k]) => Number(breakdown?.[k]) > 0);
+    return (
+        <div className="w-full border-t border-[var(--line)] pt-4 mt-6 text-left">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--ink-dim)]">XP tonight</p>
+            <div className="mt-1"><NixieCount value={v} signed size={34} /></div>
+            {settled && (
+                <div className="mt-3 space-y-1">
+                    {rows.map(([k, label, note], i) => (
+                        <div key={k} className="kpm-arrive flex items-center justify-between gap-2 text-[11px] uppercase tracking-widest" style={{ animationDelay: `${i * 90}ms` }}>
+                            <span className="text-[var(--ink-dim)]">{label} <span className="normal-case tracking-normal">· {note}</span></span>
+                            <span className="font-mono font-bold text-[var(--ink)] tabular-nums">+{breakdown[k]}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
 
 const EODReconciliationView = ({ samplings = [], transactions = [], inventory = [], agentCanvas = [], agentProfileId, motorists = [], eodReports = [], user, appSettings, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin, career = {}, ranks, customers = [] }) => {
     
@@ -242,7 +277,9 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         const cashStatus = (pendingCash || legacyPending) ? 'PENDING' : (verifiedCash || legacyVerified) ? 'VERIFIED' : 'READY';
         const cukaiStatus = (pendingCukai || legacyPending) ? 'PENDING' : (verifiedCukai || legacyVerified) ? 'VERIFIED' : 'READY';
 
-        return { expectedCash, expectedTransfer, expectedCukai, activeStock: resolvedCanvas, damagedItemsToReturn, todaysSamplings, cashStatus, cukaiStatus, rejected, storesServed, titipCollected, itemsBks, cukaiRemaining: expectedCukai, cashSources, transferSources };
+        return { expectedCash, expectedTransfer, expectedCukai, activeStock: resolvedCanvas, damagedItemsToReturn, todaysSamplings, cashStatus, cukaiStatus, rejected, storesServed, titipCollected, itemsBks, cukaiRemaining: expectedCukai, cashSources, transferSources,
+            dayXP: verifiedCash?.dayXP, xpBreakdown: verifiedCash?.xpBreakdown,   // tonight's XP, written by the boss's last approval (XpGain)
+            dayCollected: Number(verifiedCash?.cash || 0) + Number(verifiedCash?.transfer || 0), dayStores: Number(verifiedCash?.storesServed || 0) };
     }, [effectiveId, samplings, transactions, agentCanvas, eodReports, motorists, agentProfileId]);
 
     /* 🔒 THE STAMP CEILING — Aldi, 2026-08-17: *"it still allow us to sent the item data more than
@@ -491,10 +528,14 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             ))}
                                         </div>
                                     ) : agentData.cashStatus === 'VERIFIED' ? (
-                                        <div className="flex flex-col items-center justify-center h-full py-10 opacity-70">
-                                            <CheckCircle className="text-[var(--ink-dim)] mb-4" size={40}/>
-                                            <h3 className="text-lg font-black text-[var(--ink-dim)] uppercase tracking-widest mb-1">Shift Closed</h3>
-                                            <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest text-center">Cash & Stock successfully verified.</p>
+                                        <div className="flex flex-col items-center justify-center h-full py-6">
+                                            {/* the three closed lines keep their 70 % dim; the XP block under them is full ink */}
+                                            <div className="flex flex-col items-center opacity-70">
+                                                <CheckCircle className="text-[var(--ink-dim)] mb-4" size={40}/>
+                                                <h3 className="text-lg font-black text-[var(--ink-dim)] uppercase tracking-widest mb-1">Shift Closed</h3>
+                                                <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest text-center">Cash & Stock successfully verified.</p>
+                                            </div>
+                                            {agentData.dayXP > 0 && <XpGain total={agentData.dayXP} breakdown={agentData.xpBreakdown} collected={agentData.dayCollected} stores={agentData.dayStores} />}
                                         </div>
                                     ) : null}
                                 </div>

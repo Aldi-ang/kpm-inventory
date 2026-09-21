@@ -7987,6 +7987,42 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/const \[openLocations, setOpenLocations\]/.test(ev) && !/const \[openAgents, setOpenAgents\]/.test(ev) && !/const \[openMonths, setOpenMonths\]/.test(ev) &&
      /const \[openDates, setOpenDates\] = useState\(\[\]\);/.test(ev) && !/h-\[700px\] overflow-y-auto/.test(code(ev)),
      'the last accordion of that shape in the app');
+
+  /* STAGE B (2026-09-21, his "i like all the recommended option" on the two boards): the card's HEAD is one
+     component both screens draw, and the salesman's EOD panel counts tonight's XP up with the one number instrument. */
+  { const ap = read('src/AgentProfileView.jsx'); const apc = code(ap);
+  ok('STAGE B: the head is exported ONCE from PlayerCard.jsx and both the card and the Agent Profile draw it - no second copy',
+     /export const PlayerCardHead = \(\{ name, photo, currentTier, nextTier, progressPercent, xp, gain = 0, frame = 'classic', closed, diode = '', diodeText, onTap, children \}\) =>/.test(pc) &&
+     (pc.match(/pc-head/g) || []).length === 1 && /<PlayerCardHead name=\{group\.agentName\}/.test(pc) && /onTap=\{\(\) => setOpen\(v => !v\)\}/.test(pc) &&
+     /import PlayerCard, \{ PlayerCardHead \} from '\.\/components\/PlayerCard\.jsx';/.test(ev) === false &&
+     /import \{ PlayerCardHead \} from '\.\/components\/PlayerCard\.jsx';/.test(ap) && /<PlayerCardHead name=\{activeAgent\.name\}/.test(ap) &&
+     !/pc-head/.test(apc) && /<div className="pc pc-solo lg:max-w-lg">/.test(ap) && /\.pc-solo \{ padding-bottom: 0; \}/.test(th),
+     'his stage-A rule: the profile is the face, other screens borrow it');
+  ok('STAGE B, board 1 = A: the hero and the OMSET 7 HARI box are gone from the profile, the head carries them; GRANT AWARD sits in the key row; the identity line stays',
+     !/Omset 7 Hari/.test(apc) && !/renderRarityStars\(roleStars, safeCurrentHex\)/.test(apc) && !/OPERATIVE\s*<\/div>/.test(apc) &&
+     /className="static lg:absolute lg:top-6 lg:left-6 z-30 flex flex-wrap gap-2 lg:gap-3 p-4 pb-0 lg:p-0"/.test(ap) &&
+     apc.indexOf('<Award size={16}/> Grant Award') > apc.indexOf('className="static lg:absolute lg:top-6 lg:left-6') && apc.indexOf('<Award size={16}/> Grant Award') < apc.indexOf('pt-6 lg:pt-24 pb-6 lg:pb-10') &&
+     /\{corpIdentity\.tier\} : \{corpIdentity\.title\}/.test(ap) && /ID: \{String\(activeAgent\.id \|\| ''\)\.substring\(0,8\)\}/.test(ap),
+     'his A: keys wrap at 44, the head, one identity line under it');
+  ok('STAGE B: the profile scrolls as ONE page on the phone (its own h-screen scroller only from lg), the keys are 44 px, nothing pulses or bounces',
+     /className="flex-1 min-w-0 lg:h-screen lg:overflow-y-auto custom-scrollbar relative"/.test(ap) &&   /* min-w-0: a flex column's min-content (372 as the boss) was pushing it past the 359 shell */
+     !/animate-bounce-slow/.test(apc.slice(apc.indexOf('className="static lg:absolute'), apc.indexOf('pt-6 lg:pt-24'))) &&
+     !/animate-pulse" style=\{\{ color: safeCurrentHex, textShadow/.test(apc) &&
+     /min-h-11 bg-black\/80 backdrop-blur-md border border-line-2 px-4 py-2\.5 rounded-xl text-ink-muted/.test(ap),
+     'a light blinks only while something happens; a key is 44 px');
+  ok('STAGE B, board 2 = B: the salesman\'s Shift Closed block counts tonight\'s XP with the nixie mounting at 0, then the working rows rise in AFTER the roll',
+     /import NixieCount from '\.\/components\/NixieCount\.jsx';/.test(ev) &&
+     /const XpGain = \(\{ total, breakdown, collected = 0, stores = 0 \}\) => \{/.test(ev) && /const \[v, setV\] = useState\(0\);/.test(ev) &&
+     /const t1 = setTimeout\(\(\) => setV\(total\), 400\);/.test(ev) && /const t2 = setTimeout\(\(\) => setSettled\(true\), 1000\);/.test(ev) &&
+     /<NixieCount value=\{v\} signed size=\{34\} \/>/.test(ev) && /\{settled && \(/.test(ev) && /style=\{\{ animationDelay: `\$\{i \* 90\}ms` \}\}/.test(ev) &&
+     /dayXP: verifiedCash\?\.dayXP, xpBreakdown: verifiedCash\?\.xpBreakdown/.test(ev) &&
+     /\{agentData\.dayXP > 0 && <XpGain total=\{agentData\.dayXP\} breakdown=\{agentData\.xpBreakdown\} collected=\{agentData\.dayCollected\} stores=\{agentData\.dayStores\} \/>\}/.test(ev) &&
+     !/animate-pulse/.test(code(ev).slice(code(ev).indexOf('const XpGain'), code(ev).indexOf('const XpGain') + 3000)),
+     'one number instrument, one moment one animation');
+  ok('STAGE B: the lab mocks went with the decision; the profile mount stays',
+     !fs.existsSync('tools/lab-stageb.jsx') && !/prof-a|prof-b|lab-stageb/.test(code(ll)) && !/q\.has\('head'\)|q\.has\('xp'\)|XpGainMock|ProfileHeadMock/.test(code(pl)) &&
+     /q\.has\('profile'\) \?/.test(pl) && /<AgentProfileView/.test(pl),
+     'a mock outlives its board only as a bug'); }
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
