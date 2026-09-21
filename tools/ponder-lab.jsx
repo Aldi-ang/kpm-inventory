@@ -30,6 +30,7 @@ import MerchantSalesView from '../src/MerchantSalesView.jsx';
 import { CustomerManagement } from '../src/components/CustomerManager.jsx';
 import AgentInventoryView from '../src/AgentInventoryView.jsx';
 import EODReconciliationView from '../src/EODReconciliationView.jsx';
+import AgentProfileView from '../src/AgentProfileView.jsx';
 import StockOpnameView from '../src/StockOpnameView.jsx';
 import JourneyView from '../src/JourneyView.jsx';
 import { SamplingFolderView, SamplingAnalyticsView, SampleEntryModal } from '../src/components/SamplingManager.jsx';
@@ -44,7 +45,8 @@ import { Cloud } from 'lucide-react';
    fixture here is what the component's own listener reads back. */
 import { FIXTURES } from './lab-firestore-stub.js';
 import { LOOKS } from './lab-looks.js';
-import { scanNotaToBase64, homography, getLocalDayKey } from '../src/utils/helpers.js';
+import { scanNotaToBase64, homography, getLocalDayKey, dayTargets } from '../src/utils/helpers.js';
+import { ProfileHeadMock, XpGainMock } from './lab-stageb.jsx';   // LAB ONLY — stage B boards, delete when it ships
 import PhotoField from '../src/components/PhotoField.jsx';
 import { SCENES } from '../src/ponder/registry.js';
 
@@ -365,6 +367,17 @@ const labSamplings = (today) => [
 /* EOD reports for ?shell&eod&admin (2026-09-20): the boss's HQ Verification panel reads them — two PENDING (a cash &
    stock night that matches, a pita cukai return with two lost stamps paid) and three VERIFIED for the History Log
    (MUNTILAN › Budi Santoso › this month). The fields are the ones EODReconciliationView.jsx:855-1045 reads. */
+/* `?shell&eod&verified` — the salesman's tonight, both reports VERIFIED by the boss an hour ago, with the
+   dayXP + xpBreakdown handleVerifyEOD writes (App.jsx: `status: 'VERIFIED', dayXP, xpBreakdown`). LAB ONLY (stage B board). */
+const labVerifiedTonight = () => {
+  const now = Math.floor(Date.now() / 1000);
+  return [
+    { id: 'v1', status: 'VERIFIED', reportType: 'CASH_STOCK', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 3600 }, verifiedAt: { seconds: now - 600 },
+      expectedCash: 1250000, cash: 1250000, expectedTransfer: 425000, transfer: 425000, remainingStock: [], storesServed: 3,
+      dayXP: 51, xpBreakdown: { collected: 33, closed: 10, cukai: 5, route: 3 } },
+    { id: 'v2', status: 'VERIFIED', reportType: 'CUKAI', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 3000 }, verifiedAt: { seconds: now - 600 }, cukaiReturned: 40, cukaiPaid: 0, cukaiFine: 0 },
+  ];
+};
 const labEodReports = (today) => {
   const now = Math.floor(Date.now() / 1000);
   const stock = [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 12, unit: 'Bks' }, { productId: 'p-djar', name: 'Djarum Coklat 12', qty: 5, unit: 'Bks' }];
@@ -773,7 +786,34 @@ function ShellLab() {
         </button>
       )}
     >
-      {q.has('sampling') ? (
+      {q.has('profile') ? (
+        /* ?shell&profile — the Agent Profile INSIDE the real shell exactly as App.jsx:4725 mounts it: no
+           wrapper. T5 Budi (m2) sees his own page; `&admin` mounts the boss's view (the agent list, the
+           rank / badge config keys). The stub's getDoc answers "exists: false", so ranks and badges are
+           the defaults from config/career.js; the photo save is a stub no-op. Job 4 (2026-09-20): the
+           page overflows sideways at 375 — this mount is where it is measured and boarded. */
+        <>
+        <AgentProfileView
+          motorists={LAB_MOTORISTS.map((m) => (m.id === 'm2' ? { ...m, ...FIXTURES['motorists/m2'] } : m))}
+          inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]} transactions={LAB_AGENT_TXNS}
+          userRole={q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE'} agentProfileId="m2"
+          db={{}} appId="lab" userId="lab-boss" storage={{}}
+          appSettings={{ useCareerLedger: true }}
+          career={{ m2: { live: { collected: 124500000, daysVerified: 41, cleanCukaiDays: 30, storesServed: 300 }, joinDate: '2025-01-10' } }}
+          logAudit={() => {}}
+        />
+        {/* `&head` — the STAGE B board: the boss's player card, closed, portalled into the profile column (lab-stageb.jsx) */}
+        {q.has('head') && (
+          <ProfileHeadMock admin={q.has('admin')}
+            group={{ key: 'm2', agentName: 'Budi Santoso', reports: [], cashTotal: 0, lost: 0, disputed: false }}
+            motorist={{ ...LAB_MOTORISTS[1], ...FIXTURES['motorists/m2'] }}
+            career={{ live: { collected: 124500000, daysVerified: 41, cleanCukaiDays: 30, storesServed: 300 }, joinDate: '2025-01-10' }}
+            useCareerLedger transactions={LAB_AGENT_TXNS} inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]} appSettings={{ useCareerLedger: true }}
+            closed={dayTargets(LAB_CUSTOMERS.map((c, i) => ({ ...c, assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : '' })), 'Budi Santoso', LAB_TODAY)}
+            today={LAB_TODAY} />
+        )}
+        </>
+      ) : q.has('sampling') ? (
         /* ?shell&sampling — Sampling INSIDE the real shell as App.jsx:5087 mounts it: the folder view
            (year › month › date › place › the shops' items), `&analytics` the boss's charts, `&entry` the
            record-a-sample modal on top. App owns `samplings`; the lab hands seven rows over three days.
@@ -840,7 +880,7 @@ function ShellLab() {
           agentCanvas={FIXTURES['motorists/m2'].activeCanvas}
           inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]}
           transactions={[...LAB_AGENT_TXNS.map((t) => t.id === 'tx1' ? { ...t, items: [{ productId: 'p-cg16', qty: 12, unit: 'Bks', calculatedPrice: 89000 }, { productId: 'p-djar', qty: 5, unit: 'Bks', calculatedPrice: 156000 }] } : t.id === 'tx2' ? { ...t, items: [{ productId: 'p-cg16', qty: 8, unit: 'Bks', calculatedPrice: 80000 }] } : t), { id: 'tx5', agentId: 'm2', date: LAB_TODAY, type: 'SALE', total: 425000, paymentType: 'Transfer', customerName: 'Toko Berkah Jaya' }]}
-          samplings={[]} eodReports={q.has('admin') ? labEodReports(LAB_TODAY) : []} appSettings={q.has('admin') ? { useCareerLedger: true } : {}}
+          samplings={[]} eodReports={q.has('admin') ? labEodReports(LAB_TODAY) : q.has('verified') ? labVerifiedTonight() : []} appSettings={q.has('admin') ? { useCareerLedger: true } : {}}
           user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
           onSubmitEOD={async (p) => { window.__eod = [...(window.__eod || []), p]; }}
           /* the boss's player card (shipped 2026-09-20): Budi's ledger puts him on Silver with a bar toward Gold; the
@@ -850,6 +890,8 @@ function ShellLab() {
           career={{ m2: { live: { collected: 124500000, daysVerified: 41, cleanCukaiDays: 30, storesServed: 300 }, joinDate: '2025-01-10' } }}
           customers={LAB_CUSTOMERS.map((c, i) => ({ ...c, assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : '' }))}
         />
+        {/* `&verified&xp=a|b|c` — the STAGE B board: tonight's XP gain on the salesman's Shift Closed block (lab-stageb.jsx) */}
+        {q.has('xp') && <XpGainMock variant={q.get('xp') || 'a'} />}
         </>
       ) : q.has('agent') ? (
         /* ?shell&agent — the Agent Inventory (the salesman's van manifest) INSIDE the real shell,

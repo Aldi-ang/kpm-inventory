@@ -44,4 +44,25 @@ export const PIN = '#root{width:375px}';
    `?shell&eod&admin` still opens the real screen with five lab reports. */
 /* 2026-09-20 13:00: the player card (eod-card + PlayerCardMock) was decided ("looks good for v2 lets use that") and shipped as
    components/PlayerCard.jsx + theme.css THE PLAYER CARD. Gone. `?shell&eod&admin` opens the real card on the five lab reports. */
-export const LOOKS = { pin: PIN };
+/* 2026-09-21 — STAGE B board 1: the player card's HEAD on the Agent Profile (`?shell&profile&head&look=prof-a`).
+   The key row stops floating and wraps (44 px keys, 11 px), the profile scrolls as one page (its own h-screen
+   scroller off), the hero (photo + stars + pills + name) is hidden because the head carries it; prof-a also hides
+   the OMSET 7 HARI box (the head has the XP, the bar, the rank and the next rank), prof-b keeps that box. The
+   pulsing title and the bouncing trophy stop (a light blinks only while something happens). The head's night
+   diode is hidden on the profile — there is no night here. Delete both when he decides. */
+const PROF = `
+.absolute.top-6.left-6.z-30{position:static;flex-wrap:wrap;padding:12px 16px 0;gap:8px}
+.absolute.top-6.left-6.z-30>button{min-height:44px;font-size:11px}
+.flex-1.h-screen.overflow-y-auto{height:auto;overflow:visible}
+.pt-24.pb-10{padding-top:0}
+.lab-head{padding:12px 16px 0}
+.lab-head .kpm-led-line{display:none}
+.lab-head .pc-body{display:none}
+.animate-pulse,.animate-bounce-slow{animation:none!important}
+.pt-24.pb-10 .text-\\[10px\\],.p-6.md\\:p-10 .text-\\[10px\\]{font-size:11px}
+`;
+const PROF_A = PROF + `.pt-24.pb-10>.flex.flex-col.xl\\:flex-row{display:none}.pt-24.pb-10{padding-bottom:12px}`;
+const PROF_B = PROF + `.pt-24.pb-10>.flex.flex-col.xl\\:flex-row>.flex.flex-col.md\\:flex-row{display:none}`;
+/* STAGE B board 2 helper: the nixie at a quarter speed so he can watch the digits roll (`&look=slow`) */
+const SLOW = `.kpm-nixie-reel{transition-duration:1.7s!important}.lab-xp .kpm-arrive{animation-duration:1.2s!important}`;
+export const LOOKS = { pin: PIN, 'prof-a': PROF_A, 'prof-b': PROF_B, slow: SLOW };
