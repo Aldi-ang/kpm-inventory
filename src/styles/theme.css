@@ -4501,6 +4501,9 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
 .kpm-led-line.crit > i { background: radial-gradient(circle, #fff 0 1.5px, var(--led-crit) 2.5px 4.5px, color-mix(in srgb, var(--led-crit) 55%, transparent) 5.5px, transparent 9px); }
 .kpm-led-line.warn { color: var(--led-warn); }
 .kpm-led-line.warn > i { background: radial-gradient(circle, #fff 0 1.5px, var(--led-warn) 2.5px 4.5px, color-mix(in srgb, var(--led-warn) 55%, transparent) 5.5px, transparent 9px); }
+/* light mode: the diode keeps its fixed light, the words take the ink - #FFB020 read 1,5:1 on the light card
+   (the player card's "2 stamps lost", 2026-09-21); the state still shows, in the diode */
+html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink); }
 .kpm-crit.kpm-crit { border-color: var(--led-crit); }
 .kpm-crit::before { content: ""; position: absolute; inset: 0; z-index: 30; pointer-events: none; border-radius: inherit;
   background:

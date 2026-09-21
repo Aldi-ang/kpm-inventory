@@ -7709,6 +7709,11 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      code(tc).indexOf('.kpm-folders {') > code(tc).indexOf('.kpm-led-line {') &&
      !/box-shadow|text-shadow|filter:/.test(code(tc).slice(code(tc).indexOf('.kpm-led-line {'), code(tc).indexOf('.kpm-folders {'))),
      'G30: Lite Mode strips shadows and filters; the state must survive as a border or a background');
+  ok('LED: in light mode a lit line keeps its diode and its WORDS take the ink - the instrument colours are fixed lights and read 1,5:1 on the light card',
+     /html\.light \.kpm-led-line\.crit, html\.light \.kpm-led-line\.warn \{ color: var\(--ink\); \}/.test(tc) &&
+     code(tc).indexOf('html.light .kpm-led-line.crit, html.light .kpm-led-line.warn') > code(tc).indexOf('.kpm-led-line.warn > i {') &&
+     code(tc).indexOf('html.light .kpm-led-line.crit, html.light .kpm-led-line.warn') < code(tc).indexOf('.kpm-folders {'),
+     'the player card\'s "2 stamps lost" was amber #FFB020 on #D2C9B4 in light mode (2026-09-21) - the rule sits inside the LED block so its own guard slice keeps it');
   ok('C: on the phone the strip and the address show only while the ⋯ is open; the body is 12 px; the desk keeps its band and its 16 px',
      /className=\{`\$\{customer\.storeImage \? 'h-24' : 'min-h-11 lg:h-24'\} \$\{actsOpen === customer\.id \? '' : 'hidden lg:block'\} bg-black relative shrink-0 border-b border-slate-800`\}/.test(jc) &&
      /<div className=\{`space-y-2 mb-3 lg:mb-4 flex-1 \$\{actsOpen === customer\.id \? '' : 'hidden lg:block'\}`\}>/.test(jc) &&
