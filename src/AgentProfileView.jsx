@@ -143,14 +143,10 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         if (!db || !appId || !userId) return;
         const fetchBadges = async () => {
             try {
-                // 🚀 Phase 4: per-company path first (fixes the cross-tenant leak — this doc
-                // used to be shared by every company in the whole Firestore project). One
-                // release of fallback to the old shared doc so nobody's existing badge config
-                // silently resets to defaults the first time they open this after the update.
+                // The company's own folder only (2026-09-22). The old shared doc is moved in once by
+                // App.jsx at the owner's start (progressionHome.js) and the rules deny it; no screen reads it.
                 const snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'progression'));
-                if (snap.exists() && snap.data().badges) { setBadgeData(snap.data().badges); return; }
-                const legacySnap = await getDoc(doc(db, `artifacts/${appId}/settings`, 'achievements'));
-                if (legacySnap.exists() && legacySnap.data().badges) setBadgeData(legacySnap.data().badges);
+                if (snap.exists() && snap.data().badges) setBadgeData(snap.data().badges);
             } catch (e) { /* badges fall back to the built-in set; no money or stock reads this */ }
         };
         fetchBadges();
@@ -225,16 +221,13 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         if (!db || !appId || !userId) return;
         const fetchSettings = async () => {
             try {
-                // 🚀 Phase 4: per-company path first, same cross-tenant-leak fix and
-                // one-release fallback as the badge config above.
+                // The company's own folder only (2026-09-22), same as the badges above.
                 const applyLoaded = (loaded) => {
                     loaded.ranks = loaded.ranks.map(r => ({...r, title: r.title || r.perks || 'No Title', hex: r.hex || '#64748b', borderImage: r.borderImage || ''}));
                     setRpgData(loaded);
                 };
                 const snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'progression'));
-                if (snap.exists() && snap.data().ranks) { applyLoaded(snap.data()); return; }
-                const legacySnap = await getDoc(doc(db, `artifacts/${appId}/settings`, 'rpg_ranks'));
-                if (legacySnap.exists() && legacySnap.data().ranks) applyLoaded(legacySnap.data());
+                if (snap.exists() && snap.data().ranks) applyLoaded(snap.data());
             } catch (e) { console.warn("Rank Config Fetch Error", e); }
         };
         fetchSettings();

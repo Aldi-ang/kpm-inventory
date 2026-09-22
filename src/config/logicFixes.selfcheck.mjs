@@ -7046,8 +7046,8 @@ section('A NEW PHONE IS TOLD "CHECKING", NEVER "ACCESS DENIED", WHILE THE APP LO
   ok('the red panel still exists for a real server "no", and the amber one for "could not check"', /userRole === 'UNAUTHORIZED' \?/.test(a) && /userRole === 'OFFLINE_UNVERIFIED' \?/.test(a));
   ok('the state is declared once, beside the role', /const \[checkingEmail, setCheckingEmail\] = useState\(null\);/.test(a));
   /* the vault: the password is verified by the hash compare; the strike-reset write is bookkeeping */
-  const P = a.indexOf('const handlePinLogin = async () => {'), pin = a.slice(P, a.indexOf('} else {', a.indexOf('if (hashedInput === data.pin)', P)));
-  ok('OPEN THE VAULT starts the unlock the moment the hash matches — the strike reset is not awaited', P > -1 && /updateDoc\(adminDocRef, \{ failedRecoveryAttempts: 0, lockoutStatus: "NONE" \}\)\.catch\(/.test(pin) && !/await updateDoc\(adminDocRef, \{ failedRecoveryAttempts: 0/.test(pin) && pin.indexOf('updateDoc(adminDocRef') < pin.indexOf('setIsUnlocking(true)'),
+  const P = a.indexOf('const handlePinLogin = async () => {'), pin = a.slice(P, a.indexOf('} else {', a.indexOf('if (await verifySecret(inputPin.trim(), data.pin))', P)));   /* 2026-09-22: the compare is the helper's */
+  ok('OPEN THE VAULT starts the unlock the moment the hash matches — the strike reset is not awaited', P > -1 && /updateDoc\(adminDocRef, \{ failedRecoveryAttempts: 0, lockoutStatus: "NONE", \.\.\.fresh \}\)\.catch\(/.test(pin) && !/await updateDoc\(adminDocRef, \{ failedRecoveryAttempts: 0/.test(pin) && pin.indexOf('updateDoc(adminDocRef') < pin.indexOf('setIsUnlocking(true)'),   /* 2026-09-22: the same write also carries the re-saved fingerprint (`...fresh`) */
      'a server round trip between the right password and the first frame of the unlock');
   /* behaviour: the state machine that painted the red panel, re-run with and without the fix */
   const paint = (role, user, checking) => (!user ? (checking ? 'checking' : 'login') : role === 'UNAUTHORIZED' ? 'RED' : 'app');
@@ -8122,6 +8122,86 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/updateDoc\(/.test(jvc.slice(jvc.indexOf('const ghostsToldRef'), jvc.indexOf('const globalAgentList'))) &&
      /if \(c\.assignedAgent && c\.assignedAgent !== 'Unassigned'\) agents\.add\(c\.assignedAgent\);/.test(jv),   /* the stale name still shows in the dropdown */
      'every action must report; a guess is not a decision the boss made');
+}
+
+
+/* ── THE MASTER PASSWORD'S FINGERPRINT IS SLOW AND SALTED (2026-09-22) ─────────────────────────
+   His yes: "yes for A make sure that security for this app is top tier". settings/admin held a plain
+   SHA-256 of the LOWERCASED password and of the recovery word; every employee account can read that
+   doc (the gate compares on the phone), so a copied fingerprint could be guessed at millions a
+   second. Now: PBKDF2-SHA256, a random 16-byte salt, 600.000 rounds, the password's case kept. An
+   old hex fingerprint still opens the vault and is re-saved in the new form on that sign-in. */
+section('THE MASTER PASSWORD\'S FINGERPRINT IS SLOW AND SALTED (2026-09-22)');
+{ const SH = await import('../utils/secretHash.js').catch(() => null);
+  ok('one helper, src/utils/secretHash.js, makes and checks every fingerprint', !!SH && typeof SH.hashSecret === 'function' && typeof SH.verifySecret === 'function' && typeof SH.needsRehash === 'function');
+  if (SH) {
+    const a = await SH.hashSecret('Kpm-2026!');
+    ok('a fingerprint is PBKDF2-SHA256 with its own salt and 600.000 rounds', a && a.algo === 'PBKDF2-SHA256' && a.iterations >= 600000 && /^[0-9a-f]{32}$/.test(a.salt) && /^[0-9a-f]{64}$/.test(a.hash));
+    const b = await SH.hashSecret('Kpm-2026!');
+    ok('the same password twice gives two different fingerprints (the salt)', a.salt !== b.salt && a.hash !== b.hash);
+    ok('the right password opens it', await SH.verifySecret('Kpm-2026!', a) === true);
+    ok('a wrong password does not', await SH.verifySecret('Kpm-2026?', a) === false);
+    ok('capital letters count now', await SH.verifySecret('kpm-2026!', a) === false);
+    ok('a missing or malformed fingerprint never opens', await SH.verifySecret('Kpm-2026!', undefined) === false && await SH.verifySecret('Kpm-2026!', { algo: 'x' }) === false && await SH.verifySecret('', a) === false);
+    const legacyHex = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('kpm-2026!')))].map(x => x.toString(16).padStart(2, '0')).join('');
+    ok('an OLD fingerprint (plain SHA-256 of the lowercased password) still opens the vault', await SH.verifySecret('Kpm-2026!', legacyHex) === true && await SH.verifySecret('KPM-2026!', legacyHex) === true);
+    ok('and is flagged for the re-save; a new one is not', SH.needsRehash(legacyHex) === true && SH.needsRehash(a) === false && SH.needsRehash(undefined) === false);
+  }
+  const appc = code(app); const crown = read('src/components/CrownTransferProtocol.jsx'); const crownc = code(crown);
+  ok('App.jsx no longer hashes on its own - the gate, the setup and the recovery import the helper',
+     imports(app, 'hashSecret') && imports(app, 'verifySecret') && imports(app, 'needsRehash') && !/crypto\.subtle\.digest\(/.test(appc) && !/const hashSecretWord = /.test(appc));
+  ok('setup saves both fingerprints in the new form; the password as typed, the recovery word lowercased',
+     /pin: await hashSecret\(setupPassword\.trim\(\)\)/.test(appc) && /recoveryHash: await hashSecret\(setupSecret\.trim\(\)\.toLowerCase\(\)\)/.test(appc));
+  ok('the gate verifies through the helper and re-saves an old fingerprint on that sign-in',
+     /if \(await verifySecret\(inputPin\.trim\(\), data\.pin\)\)/.test(appc) && /needsRehash\(data\.pin\) \? \{ pin: await hashSecret\(inputPin\.trim\(\)\) \} : \{\}/.test(appc) && !/hashedInput === data\.pin/.test(appc));
+  ok('the recovery word verifies through the helper and re-saves too',
+     /if \(await verifySecret\(cleanWord, data\.recoveryHash\)\)/.test(appc) && /needsRehash\(data\.recoveryHash\) \? \{ recoveryHash: await hashSecret\(cleanWord\) \} : \{\}/.test(appc) && !/guessHash === data\.recoveryHash/.test(appc));
+  ok('the crown transfer checks the same two fingerprints through the same helper, no private SHA-256',
+     imports(crown, 'verifySecret') && !/crypto\.subtle/.test(crownc) && /await verifySecret\(pin\.trim\(\), adminSnap\.data\(\)\.pin\)/.test(crownc) && /await verifySecret\(phrase\.trim\(\)\.toLowerCase\(\), adminSnap\.data\(\)\.recoveryHash\)/.test(crownc));
+  ok('the phone-over-http report stays exact: the helper throws SECURE_CONTEXT_REQUIRED and the gate still reads it',
+     /SECURE_CONTEXT_REQUIRED/.test(read('src/utils/secretHash.js')) && /msg === 'SECURE_CONTEXT_REQUIRED'/.test(appc));
+}
+
+/* ── RANK AND BADGE SETTINGS LIVE ONLY IN THE COMPANY'S OWN FOLDER (2026-09-22) ───────────────
+   His yes: "b is also Yes make sure that there is no intersection when second company coming in".
+   Phase 4 built the company path (users/{bossUid}/settings/progression) but left four screens
+   reading the shared docs (artifacts/{appId}/settings/achievements, /rpg_ranks) as a fallback, and
+   the rules let ANY company's owner write them. Now: the boss's app start moves whatever is still
+   only in the shared docs into the company folder ONCE and says so; no screen reads the shared
+   path; the rules DRAFT denies it. */
+section('RANK AND BADGE SETTINGS LIVE ONLY IN THE COMPANY\'S OWN FOLDER (2026-09-22)');
+{ const PH = await import('../utils/progressionHome.js').catch(() => null);
+  ok('one helper, src/utils/progressionHome.js, does the one-time move', !!PH && typeof PH.settleProgression === 'function');
+  if (PH) {
+    const run = async ({ own, shared, isOwner }) => {
+      const writes = [], reads = [];
+      const readDoc = async (path) => { reads.push(path); const d = path.endsWith('/progression') ? own : shared[path.split('/').pop()]; return d ? { exists: () => true, data: () => d } : { exists: () => false, data: () => ({}) }; };
+      const writeDoc = async (path, data) => { writes.push({ path, data }); };
+      const out = await PH.settleProgression({ readDoc, writeDoc, isOwner, ownPath: 'artifacts/a/users/boss/settings/progression', sharedDir: 'artifacts/a/settings' });
+      return { out, writes, reads };
+    };
+    const B = [{ id: 'b1' }], R = [{ name: 'Rookie' }];
+    const full = await run({ own: { badges: B, ranks: R }, shared: { achievements: { badges: [{ id: 'other' }] } }, isOwner: true });
+    ok('a company folder that already holds badges and ranks: nothing read from the shared path, nothing written', full.out.badges === B && full.out.ranks === R && full.writes.length === 0 && full.reads.every(r => r.endsWith('/progression')));
+    const move = await run({ own: null, shared: { achievements: { badges: B }, rpg_ranks: { ranks: R } }, isOwner: true });
+    ok('an empty company folder with the settings still in the shared docs: ONE write moves both in, and the caller is told', move.writes.length === 1 && move.writes[0].path.endsWith('/progression') && move.writes[0].data.badges === B && move.writes[0].data.ranks === R && move.out.moved === true && move.out.badges === B && move.out.ranks === R);
+    const half = await run({ own: { badges: B }, shared: { rpg_ranks: { ranks: R } }, isOwner: true });
+    ok('only the missing half is moved', half.writes.length === 1 && half.writes[0].data.ranks === R && !('badges' in half.writes[0].data) && half.out.badges === B);
+    const staff = await run({ own: null, shared: { achievements: { badges: B } }, isOwner: false });
+    ok('an employee never touches the shared path and never writes', staff.writes.length === 0 && staff.reads.every(r => r.endsWith('/progression')) && staff.out.moved === false && staff.out.badges === null);
+    const none = await run({ own: null, shared: {}, isOwner: true });
+    ok('nothing anywhere: no write, defaults apply', none.writes.length === 0 && none.out.moved === false && none.out.badges === null && none.out.ranks === null);
+    const denied = await PH.settleProgression({ readDoc: async (path) => { if (path.endsWith('/progression')) return { exists: () => false, data: () => ({}) }; throw Object.assign(new Error('Missing or insufficient permissions.'), { code: 'permission-denied' }); }, writeDoc: async () => { throw new Error('must not write'); }, isOwner: true, ownPath: 'x/progression', sharedDir: 'x' });
+    ok('after the rule is deployed the shared read is denied: the move quietly gives up, no crash, no write', denied.moved === false && denied.badges === null);
+  }
+  const shared = /doc\(db, `artifacts\/\$\{appId\}\/settings`/;   /* the reader form; App.jsx names the dir only as the move's sharedDir */
+  ok('the profile screen, the badge tester and the app\'s own badge read no longer look at the shared path',
+     !shared.test(code(profile)) && !shared.test(code(read('src/components/AchievementTester.jsx'))) && !shared.test(code(app)) && imports(app, 'settleProgression'));
+  ok('the move runs for the vault owner only and reports', /isOwner: user\?\.uid === userId/.test(code(app)) && /Rank and badge settings moved into this company's own folder\./.test(app));
+  const rules = read('firestore.rules');
+  const shBlock = rules.slice(rules.indexOf('match /artifacts/cello-inventory-manager/settings/{docId}'));
+  ok('the rules DRAFT denies the shared settings path to everyone, and says why (CHANGE 8)',
+     /match \/artifacts\/cello-inventory-manager\/settings\/\{docId\} \{\s*allow read, write: if false;/.test(shBlock) && /CHANGE 8/.test(rules) && !/function isRankConfigEditor/.test(rules));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

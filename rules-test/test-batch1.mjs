@@ -1,3 +1,6 @@
+// Run (emulator only, never the live project):
+//   npm install --no-save @firebase/rules-unit-testing
+//   npx firebase emulators:exec --only firestore --project demo-kpm-rules "node rules-test/test-batch1.mjs"
 import { readFileSync } from 'fs';
 import {
   initializeTestEnvironment,
@@ -112,16 +115,18 @@ async function run() {
     const rpgRef = (db) => doc(db, `artifacts/${APP_ID}/settings`, 'rpg_ranks');
     const achRef = (db) => doc(db, `artifacts/${APP_ID}/settings`, 'achievements');
 
-    await expect('COMPANY_OWNER can write rpg_ranks', setDoc(rpgRef(ownerDb), { ranks: [] }), true);
-    await expect('ADMIN (distributor admin) can write achievements', setDoc(achRef(adminDb), { badges: [] }), true);
-    await expect('COMPANY_OWNER can read rpg_ranks', getDoc(rpgRef(ownerDb)), true);
-    await expect('FLEET_CAPTAIN can READ rpg_ranks (sees own rank)', getDoc(rpgRef(captainDb)), true);
-    await expect('FIELD_OPERATIVE can READ achievements (sees own badges)', getDoc(achRef(fieldOpDb)), true);
-    await expect('ROOKIE can READ rpg_ranks (sees own rank)', getDoc(rpgRef(rookieDb)), true);
+    // CHANGE 8 (2026-09-22): the shared path is closed to everyone — the settings live under
+    // users/{bossUid}/settings/progression only. Every line below is DENIED on purpose.
+    await expect('COMPANY_OWNER CANNOT write the shared rpg_ranks any more', setDoc(rpgRef(ownerDb), { ranks: [] }), false);
+    await expect('ADMIN (distributor admin) CANNOT write the shared achievements any more', setDoc(achRef(adminDb), { badges: [] }), false);
+    await expect('COMPANY_OWNER CANNOT read the shared rpg_ranks any more', getDoc(rpgRef(ownerDb)), false);
+    await expect('FLEET_CAPTAIN CANNOT read the shared rpg_ranks', getDoc(rpgRef(captainDb)), false);
+    await expect('FIELD_OPERATIVE CANNOT read the shared achievements', getDoc(achRef(fieldOpDb)), false);
+    await expect('ROOKIE CANNOT read the shared rpg_ranks', getDoc(rpgRef(rookieDb)), false);
     await expect('FLEET_CAPTAIN CANNOT write rpg_ranks', setDoc(rpgRef(captainDb), { ranks: [] }), false);
     await expect('FIELD_OPERATIVE CANNOT write achievements', setDoc(achRef(fieldOpDb), { badges: [] }), false);
     await expect('ROOKIE CANNOT write rpg_ranks', setDoc(rpgRef(rookieDb), { ranks: [] }), false);
-    await expect('A different company\'s COMPANY_OWNER can still write (known shared-doc limitation, documented in rules)', setDoc(rpgRef(ownerBDb), { ranks: [] }), true);
+    await expect('A different company\'s COMPANY_OWNER CANNOT write it either — the intersection is gone', setDoc(rpgRef(ownerBDb), { ranks: [] }), false);
     await expect('Unauthenticated cannot read rpg_ranks', getDoc(rpgRef(anonDb)), false);
     await expect('Unauthenticated cannot write rpg_ranks', setDoc(rpgRef(anonDb), { ranks: [] }), false);
   }

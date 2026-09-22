@@ -108,14 +108,7 @@ service cloud.firestore {
       return isAuthenticated() && profile != null && profile.bossUid == bossUid;
     }
 
-    // [ADDED — rank config / achievement badges gap fix, see CHANGE 7] Checks the
-    // caller's OWN role, not tied to any one bossUid — the settings doc this guards
-    // has no bossUid of its own to check against (see CHANGE 7's note on scope).
-    function isRankConfigEditor() {
-      let profile = getEmployeeProfile();
-      return isAuthenticated() && profile != null &&
-        (profile.get('userRole', 'NONE') == 'COMPANY_OWNER' || profile.get('userRole', 'NONE') == 'ADMIN');
-    }
+    // isRankConfigEditor() lived here until CHANGE 8 (2026-09-22) closed the only path it guarded.
 
     // =====================================================================
     // [CHANGE 6 — CUSTOMER DIRECTORY EDIT PERMISSION TIER] Same shape as
@@ -236,7 +229,8 @@ service cloud.firestore {
     }
 
     // =====================================================================
-    // [CHANGE 7 — RANK CONFIG / ACHIEVEMENT BADGES RULE, gap fix] AgentProfileView.jsx
+    // [CHANGE 7 — RANK CONFIG / ACHIEVEMENT BADGES RULE, gap fix — SUPERSEDED BY CHANGE 8
+    // below; kept as the record of the gap it could not close from rules alone] AgentProfileView.jsx
     // reads/writes artifacts/cello-inventory-manager/settings/{achievements,rpg_ranks}
     // (~lines 140, 149, 208, 337) but this path never had a dedicated rule — it fell
     // through to the top-level isSuperAdmin()-only catch-all, so no real customer
@@ -272,9 +266,25 @@ service cloud.firestore {
     //    their own profile page still renders rank/badges), write DENIED
     //  - Unauthenticated -> read and write DENIED
     // =====================================================================
+    // =====================================================================
+    // [CHANGE 8 — 2026-09-22, DRAFT until Aldi deploys it] THE SHARED SETTINGS PATH IS
+    // CLOSED. CHANGE 7 documented the gap a rules-only fix could not close: one settings doc
+    // for EVERY company in the project. The app side is now done — the rank ladder and the
+    // badge list live ONLY at users/{bossUid}/settings/progression (read: that company's own
+    // staff; write: the vault owner / distributor admin, per the users/{bossUid} rules
+    // below), and the vault owner's app start moves anything still in the old shared docs
+    // into the company folder once (src/utils/progressionHome.js), reporting
+    // "Rank and badge settings moved into this company's own folder." No screen reads this
+    // path any more, so nothing an authenticated user does needs it.
+    //
+    // DEPLOY ORDER: the owner opens the app once BEFORE deploying this and sees that
+    // message (or nothing, if the settings were already in the company folder). After the
+    // deploy the move can no longer read the old docs, and the built-in defaults would show.
+    //
+    // rules-test/test-batch1.mjs TASK 1 asserts the closed path (every role DENIED).
+    // =====================================================================
     match /artifacts/cello-inventory-manager/settings/{docId} {
-      allow read: if isAuthenticated();
-      allow write: if isRankConfigEditor();
+      allow read, write: if false;
     }
 
     match /artifacts/cello-inventory-manager/users/{bossUid} {

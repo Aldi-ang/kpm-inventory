@@ -49,7 +49,7 @@ export default function AchievementTester({ db, appId, userId }) {
     const [configSource, setConfigSource] = useState('bawaan');
     const [stats, setStats] = useState({});
 
-    // Load the company's real badge config, same fallback chain the profile screen uses.
+    // Load the company's real badge config, the company folder only, same as the profile screen.
     useEffect(() => {
         if (!db || !appId || !userId) return;
         (async () => {
@@ -61,16 +61,8 @@ export default function AchievementTester({ db, appId, userId }) {
                     setConfigSource('settings/progression');
                     return;
                 }
-                // Must match AgentProfileView's own fallback exactly — this used to point at
-                // users/{userId}/settings/achievements, a path nothing in the app ever writes, so a
-                // company still on the legacy shared doc saw DEFAULT_BADGES here while the profile
-                // showed their real custom set. Two screens, two answers, same question.
-                const oldRef = doc(db, `artifacts/${appId}/settings`, 'achievements');
-                const oldSnap = await getDoc(oldRef);
-                if (oldSnap.exists() && Array.isArray(oldSnap.data().badges) && oldSnap.data().badges.length) {
-                    setBadges(oldSnap.data().badges);
-                    setConfigSource('settings/achievements (lama)');
-                }
+                // No fallback to the old shared doc any more (2026-09-22): App.jsx moves it into the
+                // company folder once at the owner's start, and the rules deny the shared path.
             } catch (e) {
                 console.error('AchievementTester: gagal memuat config badge', e);
             }

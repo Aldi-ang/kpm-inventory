@@ -4,6 +4,7 @@ import emailjs from '@emailjs/browser';
 import { ShieldAlert, Key, Fingerprint, Mail, AlertTriangle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { confirmAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
+import { verifySecret } from '../utils/secretHash';
 
 export default function CrownTransferProtocol({ db, appId, userId, user, onClose, triggerCapy }) {
     const [step, setStep] = useState(1);
@@ -22,13 +23,7 @@ export default function CrownTransferProtocol({ db, appId, userId, user, onClose
         setTimeout(() => setError(''), 3000);
     };
 
-    // 🔐 CRYPTOGRAPHIC ENGINE: SHA-256 Hash Generator
-    const hashSecretWord = async (word) => {
-        const msgBuffer = new TextEncoder().encode(word.toLowerCase().trim());
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    };
+    /* The fingerprints are checked by src/utils/secretHash.js - the same check the vault gate makes. */
 
     // STEP 1: Verify PIN against encrypted database hash
     const handleVerifyPin = async (e) => {
@@ -38,10 +33,7 @@ export default function CrownTransferProtocol({ db, appId, userId, user, onClose
             const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
             const adminSnap = await getDoc(adminDocRef);
             
-            // Hash the typed PIN to compare with the database
-            const hashedInput = await hashSecretWord(pin.trim());
-            
-            if (adminSnap.exists() && adminSnap.data().pin === hashedInput) {
+            if (adminSnap.exists() && await verifySecret(pin.trim(), adminSnap.data().pin)) {
                 setStep(2);
                 triggerCapy("Security Level 1 Cleared.");
             } else {
@@ -61,9 +53,7 @@ export default function CrownTransferProtocol({ db, appId, userId, user, onClose
             const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
             const adminSnap = await getDoc(adminDocRef);
             
-            const hashedInput = await hashSecretWord(phrase.trim());
-            
-            if (adminSnap.exists() && adminSnap.data().recoveryHash === hashedInput) {
+            if (adminSnap.exists() && await verifySecret(phrase.trim().toLowerCase(), adminSnap.data().recoveryHash)) {
                 // Generate a random 6 digit OTP
                 const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
                 setGeneratedOtp(newOtp);

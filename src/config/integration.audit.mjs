@@ -898,7 +898,7 @@ check(G19, 'no bare `return;` is left in the handler',
   !/\n\s+return;\s*\n/.test(pinLogin.replace(/notify\([\s\S]*?\);\s*\n\s+return;/g, '')),
   'every exit must leave something on screen — silence is the bug being fixed');
 check(G19, 'hashing refuses loudly outside a secure context',
-  /if \(!globalThis\.crypto\?\.subtle\) throw new Error\('SECURE_CONTEXT_REQUIRED'\)/.test(appCode),
+  /if \(!globalThis\.crypto\?\.subtle\) throw new Error\('SECURE_CONTEXT_REQUIRED'\)/.test(fs.readFileSync('src/utils/secretHash.js', 'utf8')),   /* 2026-09-22: the hash moved into the helper */
   'crypto.subtle is undefined over plain http, and the raw TypeError explains nothing to him');
 check(G19, 'that case is translated into something he can act on',
   /SECURE_CONTEXT_REQUIRED[\s\S]{0,400}?https:\/\/ or localhost/.test(appCode),

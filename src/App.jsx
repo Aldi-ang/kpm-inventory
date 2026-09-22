@@ -23,6 +23,8 @@ import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canU
 import { warehouseList } from './utils/supply';
 import { tallySaleOp, statsPath } from './utils/salesRollupWrite';
 import { rebuildMonths } from './utils/salesRollup';
+import { hashSecret, verifySecret, needsRehash } from './utils/secretHash';
+import { settleProgression } from './utils/progressionHome';
 import TierPovSwitch, { PovBanner } from './components/TierPovSwitch';
 import ProductPerformancePanel from './components/ProductPerformancePanel';
 
@@ -496,11 +498,18 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       if (!db || !appId || !userId || userId === 'default') return;
       const fetchBadgeConfig = async () => {
           try {
-              const snap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'progression'));
-              if (snap.exists() && Array.isArray(snap.data().ranks)) setProgressionRanks(snap.data().ranks.map(r => ({ ...r, title: r.title || r.perks || 'No Title', borderImage: r.borderImage || '' })));
-              if (snap.exists() && snap.data().badges) { setProgressionBadges(snap.data().badges); return; }
-              const legacySnap = await getDoc(doc(db, `artifacts/${appId}/settings`, 'achievements'));
-              if (legacySnap.exists() && legacySnap.data().badges) setProgressionBadges(legacySnap.data().badges);
+              /* The company's own folder only (2026-09-22). The vault owner's start also moves whatever is
+                 still only in the old shared docs into that folder, once, and says so — progressionHome.js. */
+              const { badges, ranks, moved } = await settleProgression({
+                  readDoc: (path) => getDoc(doc(db, path)),
+                  writeDoc: (path, data) => setDoc(doc(db, path), data, { merge: true }),
+                  isOwner: user?.uid === userId,
+                  ownPath: `artifacts/${appId}/users/${userId}/settings/progression`,
+                  sharedDir: `artifacts/${appId}/settings`,
+              });
+              if (ranks) setProgressionRanks(ranks.map(r => ({ ...r, title: r.title || r.perks || 'No Title', borderImage: r.borderImage || '' })));
+              if (badges) setProgressionBadges(badges);
+              if (moved) notify("Rank and badge settings moved into this company's own folder.");
           } catch (e) { console.warn("Badge config fetch failed, using defaults:", e.code); }
       };
       fetchBadgeConfig();
@@ -1004,26 +1013,8 @@ const handleGitHubMirror = async () => {
     checkAdminStatus();
   }, [user]);
 
-  // 🔐 CRYPTOGRAPHIC ENGINE: SHA-256 Hash Generator
-  const hashSecretWord = async (word) => {
-      /* 🔴 THE REAL CAUSE OF EVERY "I CAN'T LOG IN ON MY PHONE" REPORT, found 2026-08-10.
-         `crypto.subtle` only exists in a SECURE CONTEXT: HTTPS, or localhost. Aldi's PC works
-         because it IS localhost; his phone reaches the dev server at http://192.168.1.141, which
-         is neither, so `crypto.subtle` is undefined and this line threw "undefined is not an
-         object". For months that throw was swallowed by a silent catch, so the button simply
-         did nothing — which is precisely how it was reported, every time.
-
-         Production is unaffected: Vercel serves HTTPS, so the API is there.
-
-         This is NOT worked around with a hand-rolled SHA-256. Same algorithm or not, quietly
-         routing a master password through unreviewed crypto — to make an insecure origin work —
-         is his call to make, not a thing to slip into a bug fix. */
-      if (!globalThis.crypto?.subtle) throw new Error('SECURE_CONTEXT_REQUIRED');
-      const msgBuffer = new TextEncoder().encode(word.toLowerCase().trim());
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  };
+  /* The fingerprints are made and checked by src/utils/secretHash.js (PBKDF2, salted, 2026-09-22).
+     The phone-over-http case it reports as SECURE_CONTEXT_REQUIRED is read below, unchanged. */
 
   // 2. SETUP: Create MASTER PASSWORD & Secret Word (FULLY HASHED)
   const handleSetupSecurity = async () => {
@@ -1042,8 +1033,13 @@ const handleGitHubMirror = async () => {
     }
 
     try {
-        const scrambledWordHash = await hashSecretWord(setupSecret);
-        const scrambledPinHash = await hashSecretWord(setupPassword);
+        const security = {
+            pin: await hashSecret(setupPassword.trim()),                    /* as typed - capital letters count */
+            recoveryHash: await hashSecret(setupSecret.trim().toLowerCase()),
+            failedRecoveryAttempts: 0,
+            lockoutStatus: "NONE",
+            updatedAt: serverTimestamp()
+        };
         
         // 🚀 THE HANDSHAKE: Execute Account Migration if pending
         if (pendingMigration) {
@@ -1067,15 +1063,9 @@ const handleGitHubMirror = async () => {
             triggerCapy(`Account Migration Complete. Welcome to ${appSettings?.companyName || "the system"}!`);
         }
 
-        await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin'), {
-            pin: scrambledPinHash,           
-            recoveryHash: scrambledWordHash, 
-            failedRecoveryAttempts: 0,   
-            lockoutStatus: "NONE",
-            updatedAt: serverTimestamp()
-        });
+        await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin'), security);
 
-        setAdminPin(scrambledPinHash);
+        setAdminPin(security.pin);
         setHasAdminPin(true);
         setIsSetupMode(false);
         setIsAdmin(true); 
@@ -1131,11 +1121,10 @@ const handleGitHubMirror = async () => {
               return;
           }
 
-          // 🚨 CRITICAL: Hash the inputted PIN to compare against the database hash
-          const hashedInput = await hashSecretWord(inputPin.trim());
-
-        
-              if (hashedInput === data.pin) {
+          /* The fingerprint check (secretHash.js). An old plain SHA-256 still opens; it is re-saved in
+             the slow, salted form with the attempt reset below, on this one sign-in. */
+          if (await verifySecret(inputPin.trim(), data.pin)) {
+              const fresh = needsRehash(data.pin) ? { pin: await hashSecret(inputPin.trim()) } : {};
               // SUCCESS: Reset strikes & Trigger Cinematic Unlock
               /* Not awaited. The password is already verified by the compare above; this write is
                  bookkeeping, and waiting for the server to confirm it put a whole cold round trip
@@ -1143,7 +1132,7 @@ const handleGitHubMirror = async () => {
                  report: "pressing unlock vault button after entering password … took a long
                  time"). It still runs before the sequence starts, so a tab closed mid-animation
                  has already sent it; a failure is reported, never swallowed. */
-              updateDoc(adminDocRef, { failedRecoveryAttempts: 0, lockoutStatus: "NONE" }).catch((e) => { console.error(e); notify("Vault opened, but the attempt counter could not be reset on the server."); });
+              updateDoc(adminDocRef, { failedRecoveryAttempts: 0, lockoutStatus: "NONE", ...fresh }).catch((e) => { console.error(e); notify("Vault opened, but the attempt counter could not be reset on the server."); });
               setIsUnlocking(true);
               
               // Hold just long enough for the unlock to land (sweep ends at 740ms), then go.
@@ -1216,10 +1205,9 @@ const handleGitHubMirror = async () => {
             setIsSendingEmail(false); return;
         }
 
-        const guessHash = await hashSecretWord(cleanWord);
-        
-        if (guessHash === data.recoveryHash) {
-            await updateDoc(adminDocRef, { failedRecoveryAttempts: 0, lockoutStatus: "NONE" });
+        if (await verifySecret(cleanWord, data.recoveryHash)) {
+            const fresh = needsRehash(data.recoveryHash) ? { recoveryHash: await hashSecret(cleanWord) } : {};
+            await updateDoc(adminDocRef, { failedRecoveryAttempts: 0, lockoutStatus: "NONE", ...fresh });
             
             // 📧 LAYER 3: GENERATE & SEND EMAIL OTP
             const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
