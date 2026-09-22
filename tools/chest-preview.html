@@ -132,6 +132,10 @@
   }
   .stage.open .slot { animation:slotIn var(--t-slot,.22s) cubic-bezier(.2,.9,.3,1) both; }
   @keyframes slotIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  /* after a move: no entrance at all. The squares are already on screen and the eye is on the box
+     that was just put down — replaying the arrival is what reads as a refresh. */
+  .gui.noanim .slot, .stage.open .gui.noanim .slot { animation:none !important; opacity:1; }
+  .gui.noanim .cube, .stage.open .gui.noanim .slot .cube { animation:none !important; }
   .slot .name {
     position:absolute; left:0; right:0; bottom:0; padding:3px 5px;
     font:900 10px/1.15 var(--mono); color:#fff; text-shadow:1px 1px 0 #000;
@@ -318,7 +322,10 @@
 
   <h2>The two you added: dragging, and the damaged row</h2>
   <ul>
-    <li><b>Drag works with a finger, not only a mouse.</b> Press a box, move it, drop it on another square; a press that barely moves is still a tap, so you can turn a box without moving it. The order is written <b>once, when you let go</b> — and the word "tersimpan" appears where the work happened, because every action must say so.</li>
+    <li><b>Drag works with a finger, not only a mouse.</b> Press a box, move it, drop it on another square; a press that barely moves is still a tap, so you can turn a box without moving it. The layout is written <b>once, when you let go</b> — and the word "tersimpan" appears where the work happened, because every action must say so.</li>
+    <li><b>An empty square is a real place.</b> A box dropped on an empty square moves there and leaves its old square empty; dropped on a filled one, the two trade places. Three pages of six exist from the start, so there is always somewhere to put things — page 3 is yours to arrange however you like.</li>
+    <li><b>Nothing re-arrives after a move.</b> The boxes stay exactly where your eye left them; only the two squares that changed are different. The entrance animation belongs to opening the chest, not to tidying it.</li>
+    <li><b>To move a box to another page</b>, carry it over the page number and hold for a moment — the page turns under your finger and you drop it there.</li>
     <li><b>What gets saved is only the ORDER</b> — a short list of which product sits in which square. It is not the stock. In the app it belongs in a small field of its own, never inside the van's contents, because the two stock transactions and every sale already write that; a tidy-up must not be able to collide with a sale.</li>
     <li><b>The damaged row is always under the chest</b>, with the reason on each one (Kemasan rusak · Basah · Pita cukai). That is what an admin could only see on the night's report before.</li>
     <li><b>You cannot drag a good pack into the damaged row.</b> That would mean "this came back broken", which is a stock movement with a receipt behind it, not a tidy-up. Try it — the chest says so out loud.</li>
@@ -359,15 +366,28 @@
      the products and the van itself are never touched by a tidy-up. In the app it is one small
      field of its own (an array of product ids), written on DROP and never inside activeCanvas,
      which sales and the two stock transactions already write. */
-  var ORDER = null;
-  try { ORDER = JSON.parse(localStorage.getItem('kpm-chest-order') || 'null'); } catch (e) { ORDER = null; }
-  if (!ORDER || ORDER.length !== VAN.length) ORDER = VAN.map(function (_, i) { return i; });
+  /* THE LAYOUT IS A MAP OF SQUARES, NOT A LIST OF PRODUCTS. Three pages of six squares; a square
+     holds a product or nothing. That is what makes an EMPTY square a real place you can move a
+     box to — a plain list can only ever swap two products around. */
+  var PAGES = 3, CELLS = PAGES * 6;
+  var LAYOUT = null;
+  try { LAYOUT = JSON.parse(localStorage.getItem('kpm-chest-layout') || 'null'); } catch (e) { LAYOUT = null; }
+  if (!LAYOUT || LAYOUT.length !== CELLS) {
+    LAYOUT = [];
+    for (var c = 0; c < CELLS; c++) LAYOUT.push(c < VAN.length ? c : null);
+  }
   function saveOrder() {
-    try { localStorage.setItem('kpm-chest-order', JSON.stringify(ORDER)); } catch (e) { /* private window */ }
+    try { localStorage.setItem('kpm-chest-layout', JSON.stringify(LAYOUT)); } catch (e) { /* private window */ }
     var s = document.getElementById('saved');
+    s.textContent = 'tersimpan';
     s.classList.remove('show'); void s.offsetWidth; s.classList.add('show');
   }
-  function itemAt(i) { return VAN[ORDER[i]]; }
+  function itemAt(i) { return LAYOUT[i] === null || LAYOUT[i] === undefined ? null : VAN[LAYOUT[i]]; }
+  function filledOn(pageIndex) {
+    var n = 0;
+    for (var i = pageIndex * 6; i < pageIndex * 6 + 6; i++) if (itemAt(i)) n++;
+    return n;
+  }
 
   function cube(p) {
     return '<span class="cubeStage"><span class="cube" style="--mm-w:' + p.mm[0] + ';--mm-h:' + p.mm[1] +
@@ -375,10 +395,15 @@
            '<i class="f"><span class="band"></span></i><i class="bk"></i><i class="l"></i><i class="r"></i>' +
            '<i class="t"></i><i class="bt"></i></span></span>';
   }
-  function draw() {
+  /* `animate` is false after a move: the boxes stay exactly where the eye left them instead of
+     flying in again. A tidy-up is not an arrival, and re-playing the entrance on every drag is
+     what reads as "it refreshed". */
+  function draw(animate) {
+    var gui = document.getElementById('gui');
+    gui.classList.toggle('noanim', animate === false);
     var html = '';
     for (var i = 0; i < PER_PAGE; i++) {
-      var idx = page * PER_PAGE + i, p = idx < ORDER.length ? itemAt(idx) : null;
+      var idx = page * PER_PAGE + i, p = itemAt(idx);
       var delay = 140 + i * 55;          /* the boxes are placed one after another */
       html += '<div class="slot' + (p ? ' has' : '') + '" data-i="' + idx + '" data-zone="good" style="animation-delay:' + delay + 'ms">';
       if (p) {
@@ -408,13 +433,15 @@
       c.style.animationDelay = (c.dataset.d || 0) + 'ms';
     });
 
-    var total = Math.ceil(VAN.length / PER_PAGE), tabs = '';
-    for (var k = 0; k < total; k++) {
-      var on = k === page ? ' on' : '';
-      var count = VAN.slice(k * PER_PAGE, (k + 1) * PER_PAGE).length;
-      tabs += '<button class="pg' + on + '" data-p="' + k + '">' + (k + 1) + ' · ' + count + '</button>';
+    /* every page is always there, including an empty one — a square you can move a box TO has to
+       exist before you drag, or the only possible move is a swap */
+    var tabs = '', filled = 0;
+    for (var k = 0; k < PAGES; k++) {
+      var n = filledOn(k); filled += n;
+      tabs += '<button class="pg' + (k === page ? ' on' : '') + '" data-p="' + k + '">' +
+              (k + 1) + ' · ' + n + '</button>';
     }
-    pagesEl.innerHTML = tabs + '<span class="of">' + VAN.length + ' barang · halaman ' + (page + 1) + '/' + total + '</span>';
+    pagesEl.innerHTML = tabs + '<span class="of">' + filled + ' barang · halaman ' + (page + 1) + '/' + PAGES + '</span>';
   }
   /* ── DRAG AND DROP, on a finger as well as a mouse ──────────────────────────────
      Pointer events, not HTML5 drag-and-drop: the latter does not exist on a touch screen, and
@@ -439,9 +466,13 @@
     var slot = e.target.closest('.slot.has'); if (!slot) return;
     e.stopPropagation();
     drag = { slot: slot, from: +slot.dataset.i, x0: e.clientX, y0: e.clientY, live: false, id: e.pointerId };
-    slot.setPointerCapture(e.pointerId);
   });
-  grid.addEventListener('pointermove', function (e) {
+  /* THE MOVE AND THE DROP LISTEN ON THE WINDOW, NOT ON THE SQUARE.
+     Carrying a box over a page number turns the page, which re-draws the grid — and the square the
+     finger started on is then gone from the document. A listener living on that square (or a
+     pointer capture held by it) dies with it, and the drop silently does nothing. The window is
+     still there whatever the grid does. */
+  window.addEventListener('pointermove', function (e) {
     if (!drag || e.pointerId !== drag.id) return;
     var dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
     if (!drag.live) {
@@ -459,7 +490,23 @@
     var over = slotUnder(e.clientX, e.clientY);
     Array.prototype.forEach.call(document.querySelectorAll('.slot.over'), function (s) { s.classList.remove('over'); });
     if (over && over !== drag.slot && over.dataset.zone === 'good') over.classList.add('over');
+
+    /* carry a box to another page: hold it over a page number and the page turns under it. The
+       square it came from is an absolute number, so the move still knows where it started. */
+    var tab = pageAt(e.clientX, e.clientY);
+    if (tab !== null && tab !== page) {
+      if (!drag.hover || drag.hover.p !== tab) drag.hover = { p: tab, t: Date.now() };
+      else if (Date.now() - drag.hover.t > 260) { page = tab; draw(false); drag.hover = null; }
+    } else { drag.hover = null; }
   });
+  function pageAt(x, y) {
+    var hit = null;
+    Array.prototype.forEach.call(pagesEl.querySelectorAll('.pg'), function (b) {
+      var r = b.getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) hit = +b.dataset.p;
+    });
+    return hit;
+  }
   function endDrag(e) {
     if (!drag || (e && e.pointerId !== drag.id)) return;
     var d = drag; drag = null;
@@ -473,13 +520,14 @@
        action with a receipt behind it, not a tidy-up, so the prototype refuses it out loud */
     if (target.dataset.zone !== 'good') { flash('Barang rusak dicatat lewat EOD, bukan digeser'); return; }
     var to = +target.dataset.i;
-    if (to >= ORDER.length) to = ORDER.length - 1;
-    var moved = ORDER.splice(d.from, 1)[0];
-    ORDER.splice(to, 0, moved);
-    draw(); saveOrder(); if (!muted) pageTurn();
+    /* one line covers both cases: an EMPTY square takes the box and leaves nothing behind, a
+       filled one trades places with it */
+    var a = LAYOUT[d.from], b = LAYOUT[to];
+    LAYOUT[to] = a; LAYOUT[d.from] = b === undefined ? null : b;
+    draw(false); saveOrder(); if (!muted) pageTurn();
   }
-  grid.addEventListener('pointerup', endDrag);
-  grid.addEventListener('pointercancel', endDrag);
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', endDrag);
 
   function flash(msg) {
     var s = document.getElementById('saved');
