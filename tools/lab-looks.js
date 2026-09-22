@@ -50,4 +50,20 @@ export const PIN = '#root{width:375px}';
 /* 2026-09-22 09:45: the PC looks (rc-head / rc-two — the review card's one-row head + two-column body; inv-a / inv-c — the Agent
    Inventory strip) were decided A (with the photo kept at 128) + A and shipped into PlayerCard.jsx + theme.css + AgentInventoryView.jsx.
    Gone. `?shell&eod&admin&tab=%E2%8C%84` opens the real card (the chevron pressed); `?shell&agent` the real strip; his PC is 2000×1000. */
-export const LOOKS = { pin: PIN };
+
+/* 2026-09-22 13:40 — THE NIXIE IN LIGHT MODE (his 2026-09-20 "t4 looks okay but the light mode nixie can look better
+   that that"). Three candidates, light mode only; dark mode untouched by all three. No shadow, no filter (G30);
+   each is border + fill + gradient, so Lite Mode strips nothing that carries the look. */
+/* A — THE BEZEL: the black glass stays (his 2026-09-04 rule, an instrument does not follow the room's lights), but
+   it is SEATED in the light material — a brushed-metal ring drawn as a border-box gradient, the same anodized family
+   as the light rail. The ink stays #FFB02E. */
+export const NX_A = 'html.light .kpm-nixie{border:3px solid transparent;border-radius:7px;padding:4px 6px;background-image:linear-gradient(180deg,rgba(255,255,255,.07) 0 1px,transparent 1px,transparent 55%,rgba(255,255,255,.025)),linear-gradient(#000,#000),linear-gradient(180deg,#E9E1CF 0%,#B9B0A0 38%,#8C8474 62%,#CFC6B2 100%);background-origin:border-box,border-box,border-box;background-clip:padding-box,padding-box,border-box;background-color:#000}html.light .kpm-nixie-tube{background:radial-gradient(70% 80% at 50% 50%,rgba(255,150,40,.16),transparent 72%)}';
+/* B — DAYLIGHT GLASS: the instrument takes the light material itself. A frosted cream tube instead of black glass, the
+   digit in DENSE dark amber (#9A4200, the same inversion --gold makes in light mode: on a pale plate the only way to
+   stand off is darker), a faint warm disc behind the lit digit, the unlit reel a whisper. Dark mode unchanged. */
+export const NX_B = 'html.light .kpm-nixie{--nixie-ink:#9A4200;background-color:#F3EEE2;background-image:linear-gradient(180deg,rgba(255,255,255,.6) 0 1px,transparent 1px,transparent 55%,rgba(60,40,10,.05));border:1px solid #6E6A64}html.light .kpm-nixie-tube{background:radial-gradient(70% 80% at 50% 50%,rgba(154,66,0,.10),transparent 72%)}html.light .kpm-nixie-reel>span{color:rgba(154,66,0,.16)}html.light .kpm-nixie-reel>span.lit{color:#9A4200;background:radial-gradient(55% 62% at 50% 50%,rgba(154,66,0,.18),transparent 72%)}';
+/* C — THE ODOMETER: a mechanical counter for daylight. Each digit a cream flap tile with the ink-dark digit and the
+   split hairline across its middle; the tiles sit in a dark slate frame. Nothing is lit, so nothing can look unlit;
+   the reel still rolls, and reads as flaps turning. Dark mode unchanged. */
+export const NX_C = 'html.light .kpm-nixie{--nixie-ink:#131211;background-color:#1B1917;background-image:none;border:1px solid #46423C;border-radius:5px;gap:2px;padding:3px}html.light .kpm-nixie-sign{color:#F7F3E9}html.light .kpm-nixie-tube{border-radius:2px;background:linear-gradient(180deg,#FBF7EE 0 50%,#EFE8D8 50%),none;background-image:linear-gradient(180deg,transparent calc(50% - .5px),#8C8474 calc(50% - .5px),#8C8474 calc(50% + .5px),transparent calc(50% + .5px)),linear-gradient(180deg,#FBF7EE 0 50%,#EDE6D5 50%)}html.light .kpm-nixie-reel>span{color:rgba(19,18,17,.10)}html.light .kpm-nixie-reel>span.lit{color:#131211;background:none}';
+export const LOOKS = { pin: PIN, 'nx-a': NX_A, 'nx-b': NX_B, 'nx-c': NX_C };
