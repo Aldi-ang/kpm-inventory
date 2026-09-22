@@ -8090,5 +8090,21 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      'a shop that handed back Rp 500.000 of damaged stock was still billed for it');
 }
 
+/* ─── 2026-09-22 — GOODS COMING BACK TO THE WAREHOUSE ARE CONVERTED TO PACKS FIRST ───
+   Backlog "Returning consignment goods can corrupt the stock count": the warehouse `stock` is in Bks
+   (the sale path subtracts qtyInBks, :317-328) but the two return paths added the raw `item.qty` — a
+   2 Slop return added 2 packs. The van row was fixed on 2026-08 (mCanvas / returnedBks); the
+   warehouse line beside it and handleConsignmentReturn were not. And a failed return said nothing. */
+{ const te = read('src/hooks/useTransactionEngine.js'); const tec = code(te);
+  ok('REGRESSION: no warehouse stock write adds a raw item.qty - both return paths convert with the item\'s own unit',
+     !/stock \+ \(item\.qty \* 1\)/.test(tec) && !/stock \+ item\.qty\b/.test(tec) &&
+     /batch\.update\(prodRef, \{ stock: pData\.stock \+ convertToBks\(item\.qty, item\.unit, pData\) \}\);/.test(te) &&
+     /batch\.update\(prodRef, \{ stock: prodDoc\.data\(\)\.stock \+ convertToBks\(item\.qty, item\.unit, prodDoc\.data\(\)\) \}\);/.test(te),
+     'a 2 Slop return added 2 packs and lost 18 on paper');
+  ok('and a failed return REPORTS, it does not swallow the error (every action must report)',
+     /triggerCapy\("Return Processed!"\);\s*\r?\n\s*\} catch \(err\) \{ console\.error\(err\); notify\(`Return failed - nothing was saved: \$\{err\?\.message \|\| err\}`\); \}/.test(te),
+     'the "screen says yes, database says no" shape');
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

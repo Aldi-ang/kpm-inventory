@@ -601,7 +601,10 @@ export default function useTransactionEngine({
                         updatedCanvas.push({ productId: item.productId, name: item.name, qty: item.qty, unit: 'Bks', priceTier: item.priceTier || 'Retail', calculatedPrice: pData.priceRetail || 0 });
                     }
                 } else {
-                    batch.update(prodRef, { stock: pData.stock + (item.qty * 1) }); 
+                    /* The warehouse counts in packs (the sale path above subtracts qtyInBks); a
+                       return counted in Slop was added as packs - 2 Slop became 2 packs, 18 lost on
+                       paper. Backlog 2026-08-17, fixed 2026-09-22. */
+                    batch.update(prodRef, { stock: pData.stock + convertToBks(item.qty, item.unit, pData) });
                 }
             } 
             
@@ -696,15 +699,15 @@ export default function useTransactionEngine({
             for(const item of itemsReturned) { 
                 const prodRef = doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId); 
                 const prodDoc = await getDoc(prodRef); 
-                if(prodDoc.exists()) batch.update(prodRef, { stock: prodDoc.data().stock + (item.qty * 1) }); 
+                if(prodDoc.exists()) batch.update(prodRef, { stock: prodDoc.data().stock + convertToBks(item.qty, item.unit, prodDoc.data()) });   /* packs, like every other stock write */
             } 
             const returnRef = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`)); 
             batch.set(returnRef, { date: getCurrentDate(), customerName, items: itemsReturned, total: -refundValue, type: 'RETURN', timestamp: serverTimestamp() }); 
             
             await batch.commit();
 
-            triggerCapy("Return Processed!"); 
-        } catch (err) { console.error(err); } 
+            triggerCapy("Return Processed!");
+        } catch (err) { console.error(err); notify(`Return failed - nothing was saved: ${err?.message || err}`); }
     };
 
     return {
