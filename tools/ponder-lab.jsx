@@ -33,6 +33,8 @@ import EODReconciliationView from '../src/EODReconciliationView.jsx';
 import AgentProfileView from '../src/AgentProfileView.jsx';
 import StockOpnameView from '../src/StockOpnameView.jsx';
 import JourneyView from '../src/JourneyView.jsx';
+import FleetCanvasManager from '../src/FleetCanvasManager.jsx';
+import { LoadBayPanelMock, LoadModuleMock } from './lab-fleet-load.jsx';
 import ConsignmentFinanceView from '../src/ConsignmentFinanceView.jsx';
 import useTransactionEngine from '../src/hooks/useTransactionEngine.js';
 import { SamplingFolderView, SamplingAnalyticsView, SampleEntryModal } from '../src/components/SamplingManager.jsx';
@@ -698,8 +700,32 @@ const LAB_PIUTANG_TXNS = [
 /* the engine's return loop reads the product first (getDoc); the stub answers from this */
 FIXTURES['products/p-cg16'] = { ...LAB_PRODUCTS[0] };
 FIXTURES['products/p-djar'] = { ...LAB_PRODUCTS[1] };
+/* Fleet & Roster (`?shell&fleet`, 2026-09-22) — the REGIONAL ADMIN's roster. The screen is
+   `isAreaAdmin = !isGlobalAdmin`, so below ADMIN it ignores the `motorists` prop entirely and
+   listens to `artifacts/lab/users/lab/motorists` itself; these rows are what that listener serves,
+   and the roster then filters to the viewer's own location (BANDUNG). Three of the four are in
+   BANDUNG so the list is a real team; Rina (SEMARANG) is there to prove the region filter hides
+   her. `activeCanvas` gives two of them a loaded van, so the loading dock has an asset ledger and
+   the Initial / Sold / Current boxes have figures; `email` is how the screen finds the viewer's own
+   record (FleetCanvasManager.jsx `myProfile`). */
+const LAB_FLEET = [
+  { id: 'f-ra', name: 'Rizky Aditama', email: 'rizky@kpm.example', location: 'BANDUNG', userRole: 'AREA_ADMIN',
+    role: 'Office', vehicle: 'TOYOTA AVANZA D 1234 AB', allowedPayments: ['Cash', 'Transfer'], allowedTiers: ['Retail', 'Grosir'] },
+  { id: 'f-b1', name: 'Budi Santoso', email: 'budi@kpm.example', location: 'BANDUNG', userRole: 'FIELD_OPERATIVE',
+    role: 'Canvas', vehicle: 'HONDA VARIO D 5521 XY', allowedPayments: ['Cash', 'Titip'], allowedTiers: ['Retail', 'Ecer'],
+    activeCanvas: [
+      { productId: 'p-cg16', name: 'Cello Green 16', qty: 3, unit: 'Bal' },
+      { productId: 'p-djar', name: 'Djarum Coklat 12', qty: 12, unit: 'Slop' },
+      { productId: 'p-smp16', name: 'Sampoerna Mild 16', qty: 40, unit: 'Bks' },
+    ] },
+  { id: 'f-d1', name: 'Dedi Kurniawan', email: 'dedi@kpm.example', location: 'BANDUNG', userRole: 'FIELD_OPERATIVE',
+    role: 'Canvas', vehicle: 'HONDA BEAT D 9080 KL', allowedPayments: ['Cash'], allowedTiers: ['Ecer'],
+    activeCanvas: [{ productId: 'p-gg12', name: 'Gudang Garam Surya 12', qty: 1, unit: 'Karton' }] },
+  { id: 'f-r1', name: 'Rina Wijaya', email: 'rina@kpm.example', location: 'SEMARANG', userRole: 'FIELD_OPERATIVE',
+    role: 'Canvas', vehicle: 'HONDA BEAT H 2211 CD', allowedPayments: ['Cash'], allowedTiers: ['Ecer'] },
+];
 /* Journey Plan reads the roster with getDocs(collection motorists) */
-FIXTURES['motorists'] = LAB_MOTORISTS.map((m) => ({ ...m }));
+FIXTURES['motorists'] = [...LAB_MOTORISTS.map((m) => ({ ...m })), ...LAB_FLEET];
 
 function LabPiutang({ q }) {
   const engine = useTransactionEngine({
@@ -996,6 +1022,35 @@ function ShellLab() {
             isOnline
           />
         </div>
+      ) : q.has('fleet') && q.get('mock') ? (
+        /* ?shell&fleet&mock=panel|module — LAB ONLY, the two shapes for the van-loading talk
+           (2026-09-22). Not product code: pictures of WHERE the job lives, in the app's palette.
+           `&phone` draws the narrow arrangement (the headless frame is shot at 518). */
+        q.get('mock') === 'module'
+          ? <LoadModuleMock phone={q.has('phone')} />
+          : <LoadBayPanelMock phone={q.has('phone')} />
+      ) : q.has('fleet') ? (
+        /* ?shell&fleet — FLEET & ROSTER INSIDE the real shell exactly as App.jsx:4693 mounts it: no
+           wrapper, a direct child of biohazard-content. The viewer is the REGIONAL ADMIN, because he
+           is the one who loads a van (his 2026-09-22 "how the regional admin put item to the agent
+           inventory"): `userRole='AREA_ADMIN'` makes `isGlobalAdmin` false, so the screen runs its own
+           roster listener over the stub and filters to the viewer's own location. The email matches
+           LAB_FLEET's f-ra, so `myProfile` resolves and `rawLocation` is BANDUNG rather than
+           'UNASSIGNED'. `&admin` mounts the HQ view instead (global admin: the whole roster, the
+           header says "Fleet Roster"). Every write is recorded by the stub and nothing persists —
+           handleLoadCanvas / handleClearCanvas are the two transactions the Backlog says never to
+           touch, so the lab is for LOOKING at where they live, not for changing them. */
+        <FleetCanvasManager
+          db={{}} appId="lab" masterUserId="lab"
+          userRole={q.has('admin') ? 'ADMIN' : 'AREA_ADMIN'} isAdmin={q.has('admin')}
+          agentProfileId="f-ra" previewing={null}
+          user={{ uid: 'lab-ra', displayName: 'Rizky Aditama', email: 'rizky@kpm.example', location: 'BANDUNG' }}
+          motorists={[...LAB_MOTORISTS, ...LAB_FLEET]}
+          inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]}
+          transactions={LAB_AGENT_TXNS.map((t) => ({ ...t, agentId: 'f-b1' }))}
+          appSettings={{ companyName: 'KPM INVENTORY' }}
+          logAudit={() => {}} triggerCapy={() => {}}
+        />
       ) : q.has('places') ? (
         /* ?shell&places — the Restock Vault desk INSIDE the real shell, wrapped exactly as App.jsx
            wraps it (`activeTab === 'restock_vault'`): the shell's `p-6`, then the `border-4 p-4`
