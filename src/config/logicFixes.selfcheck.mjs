@@ -7263,8 +7263,8 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      (a.match(/(?<!lg:)text-\[10px\]/g) || []).length === 1 && /'text-\[10px\] md:text-base'/.test(a),
      'his 2026-08-19 fix sizes money by string length — that one stays');
   ok('header: p-3 / gap-3 / no top margin under lg, p-4 / gap-4 / mt-2 on the desk',
-     /bg-panel border-b border-line-2 p-3 lg:p-4 flex flex-col xl:flex-row justify-between items-start gap-3 lg:gap-4/.test(a) &&
-     /flex flex-col gap-2 lg:gap-3 w-full xl:w-\[65%\] lg:mt-2 xl:mt-0/.test(a),
+     /bg-panel border-b border-line-2 p-3 lg:p-4 flex flex-col justify-between items-start gap-3 lg:gap-4/.test(a) &&   /* the xl split left 2026-09-22 (THE DESK, board 2 = A) */
+     /flex flex-col gap-2 lg:gap-3 w-full lg:mt-2/.test(a),
      'measured header 424 → 401 before the fold');
 }
 
@@ -8022,6 +8022,32 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   ok('STAGE B: the lab mocks went with the decision; the profile mount stays',
      !fs.existsSync('tools/lab-stageb.jsx') && !/prof-a|prof-b|lab-stageb/.test(code(ll)) && !/q\.has\('head'\)|q\.has\('xp'\)|XpGainMock|ProfileHeadMock/.test(code(pl)) &&
      /q\.has\('profile'\) \?/.test(pl) && /<AgentProfileView/.test(pl),
+     'a mock outlives its board only as a bug'); }
+
+  /* THE DESK (2026-09-22, his PC screenshots): "board 1 = A but make the Profile picture bigger as big as B minimum,
+     board 2 = A looks better but make sure that all the boards looks good on phone too". The open card was 880 px on
+     his 1000 px screen; the Agent Inventory's MODAL number and CASH coin crossed their 149 px boxes at xl. */
+  { const a = read('src/AgentInventoryView.jsx'); const pcc = code(pc);
+  ok('THE DESK, board 1 = A: from lg the review card\'s head is ONE row (the photo stays 128, CLOSED TODAY beside the name) and the open body is two columns; the profile\'s head and the phone are untouched',
+     /@media \(min-width: 1024px\) \{\s*\n\s*\.pc:not\(\.pc-solo\) \.pc-head \{ display: flex; align-items: center; gap: 24px; \}/.test(th) &&
+     /\.pc:not\(\.pc-solo\) \.pc-head > div:last-child \{ margin-top: 0; flex: 0 0 auto; flex-direction: column; align-items: flex-end; gap: 10px; \}/.test(th) &&
+     !/\.pc\.open \.pc-head/.test(code(th)) && !/\.pc-avatar \.sframe \{[^}]*scale/.test(code(th)) &&   /* his "as big as B minimum": the photo is never shrunk */
+     /\.pc-avatar \{ position: relative; width: 128px; height: 128px; flex: 0 0 128px; \}/.test(th) &&
+     /<div className="px-4 pb-4 lg:grid lg:grid-cols-\[2fr_3fr\] lg:gap-x-5">/.test(pc) &&   /* 2:3 - a handover line needs ~300 px in his font; a product name wraps on the desk instead of truncating */
+     /className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg bg-\[var\(--inset\)\] border border-\[var\(--line-2\)\] text-\[var\(--ink\)\] lg:flex-wrap"/.test(pc) &&
+     /<span className="flex-1 min-w-0 truncate lg:basis-full lg:whitespace-normal">\{p\.name\}<\/span>/.test(pc) &&
+     pcc.indexOf('<div className="min-w-0">') < pcc.indexOf('<span>Revenue tonight</span>') &&
+     pcc.indexOf('The handover — each line on its own') > pcc.indexOf('<div className="min-w-0">', pcc.indexOf('<span>Revenue tonight</span>')) &&
+     (pcc.match(/<div className="min-w-0">/g) || []).length === 2,
+     'his A with the 128 photo: 880 px → fits his 1000 px screen; the phone measured identical at 375');
+  ok('THE DESK, board 2 = A: the Agent Inventory header never splits at xl - the MANIFEST block on its own row, the four boxes full-width under it, the coin inside its box',
+     !/xl:w-\[65%\]/.test(a) && !/xl:flex-row/.test(a) && !/xl:w-auto/.test(a) && !/xl:mt-0/.test(a) &&
+     /p-3 lg:p-4 flex flex-col justify-between items-start gap-3 lg:gap-4 shrink-0 relative z-10 shadow-md"/.test(a) &&
+     /className="flex flex-col gap-2 lg:gap-3 w-full lg:mt-2">/.test(a) &&
+     /className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">/.test(a),
+     'a 7-digit rupiah is 152 px in his font; a 149 px box cannot hold it, a 239 px one can');
+  ok('THE DESK: the four lab looks went with the decision',
+     !/rc-two|rc-head|inv-a|inv-c|RC_TWO|RC_HEAD|INV_A|INV_C/.test(code(ll)),
      'a mock outlives its board only as a bug'); }
 }
 

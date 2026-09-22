@@ -201,7 +201,8 @@ const PlayerCard = ({ group, motorist, career, useCareerLedger = false, ranks, e
             <PlayerCardHead name={group.agentName} photo={photo} currentTier={currentTier} nextTier={nextTier} progressPercent={progressPercent} xp={xp} gain={gain} frame={frame}
                 closed={closed} diode={diode} diodeText={diodeText} onTap={() => setOpen(v => !v)} />
             <div className="pc-body">
-                <div className="pc-inner"><div className="px-4 pb-4">{/* the padding sits INSIDE the clipped layer, so a folded card measures 0 and not its own 16 px */}
+                <div className="pc-inner"><div className="px-4 pb-4 lg:grid lg:grid-cols-[2fr_3fr] lg:gap-x-5">{/* the padding sits INSIDE the clipped layer, so a folded card measures 0 and not its own 16 px; from lg two columns (his board 1 = A): revenue + products | the handover + plate — 2:3, because a handover line (LED label + value + two 44 px keys) needs ~300 px in his font and a product row can wrap instead */}
+                    <div className="min-w-0">
                     <div className="mb-3 pt-1">
                         <div className={`flex justify-between gap-2 ${SUB}`}><span>Revenue tonight</span><span className="text-[var(--ink)] tabular-nums whitespace-nowrap">{formatRupiah(group.cashTotal)}</span></div>
                         <div className="h-[3px] mt-1 rounded-full bg-[var(--inset)]"><div className="h-full rounded-full" style={{ width: `${revenueWidth}%`, ...BAR }}></div></div>
@@ -212,11 +213,13 @@ const PlayerCard = ({ group, motorist, career, useCareerLedger = false, ranks, e
                             <p className={`${SUB} mb-1`}>Products today</p>
                             <div className="space-y-1 mb-3">
                                 {products.map(p => (
-                                    <div key={p.id} className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg bg-[var(--inset)] border border-[var(--line-2)] text-[var(--ink)]"><span className="flex-1 min-w-0 truncate">{p.name}</span><span className="font-mono text-[var(--ink-dim)] whitespace-nowrap">{p.qty} Bks</span><span className="font-mono font-bold whitespace-nowrap">{formatRupiah(p.revenue)}</span></div>
+                                    <div key={p.id} className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg bg-[var(--inset)] border border-[var(--line-2)] text-[var(--ink)] lg:flex-wrap"><span className="flex-1 min-w-0 truncate lg:basis-full lg:whitespace-normal">{p.name}</span><span className="font-mono text-[var(--ink-dim)] whitespace-nowrap">{p.qty} Bks</span><span className="font-mono font-bold whitespace-nowrap">{formatRupiah(p.revenue)}</span></div>
                                 ))}
                             </div>
                         </>
                     )}
+                    </div>
+                    <div className="min-w-0">
                     <p className={`${SUB} mb-1`}>The handover — each line on its own</p>
                     <div className="space-y-1">
                         {lines.map(line => (
@@ -244,6 +247,7 @@ const PlayerCard = ({ group, motorist, career, useCareerLedger = false, ranks, e
                             <RotateCcw size={14} /> <span>Reset the night — he submits again</span>
                         </button>
                     )}
+                    </div>
                 </div></div>
             </div>
             <button type="button" className="pc-toggle" onClick={() => setOpen(v => !v)} aria-label={open ? 'Fold' : 'Open'} aria-expanded={open}><span aria-hidden="true">{open ? '⌃' : '⌄'}</span></button>

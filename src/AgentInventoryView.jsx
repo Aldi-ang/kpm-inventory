@@ -212,10 +212,10 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
         <div className="lg:h-[calc(100vh-120px)] flex flex-col max-w-5xl mx-auto animate-fade-in bg-ground font-sans border-x border-line-2 shadow-2xl overflow-hidden relative">
 
             {/* DYNAMIC FINANCIAL COMMAND BAR */}
-            <div className="bg-panel border-b border-line-2 p-3 lg:p-4 flex flex-col xl:flex-row justify-between items-start gap-3 lg:gap-4 shrink-0 relative z-10 shadow-md">
+            <div className="bg-panel border-b border-line-2 p-3 lg:p-4 flex flex-col justify-between items-start gap-3 lg:gap-4 shrink-0 relative z-10 shadow-md">
                 
                 {/* LEFT: AGENT IDENTITY */}
-                <div className="flex items-center gap-3 shrink-0 w-full xl:w-auto">
+                <div className="flex items-center gap-3 shrink-0 w-full">
                     <div className="p-2.5 bg-ground rounded-none border border-line-2 shadow-inner">
                         <Truck className="text-gold" size={24} />
                     </div>
@@ -225,7 +225,9 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                 </div>
                 
                 {/* RIGHT: THE FINANCIAL METRICS (MOBILE OPTIMIZED BLOCK LAYOUT) */}
-                <div className="flex flex-col gap-2 lg:gap-3 w-full xl:w-[65%] lg:mt-2 xl:mt-0">
+                {/* the desk never splits this row beside the MANIFEST block (his board 2 = A, 2026-09-22): at xl the
+                    65 % column gave four 149 px boxes and a 7-digit rupiah (152 px in his font) crossed into CASH */}
+                <div className="flex flex-col gap-2 lg:gap-3 w-full lg:mt-2">
                     
                     {/* TOP ROW: Core Metrics */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">

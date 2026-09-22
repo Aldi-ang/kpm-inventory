@@ -4639,4 +4639,13 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .pc-toggle { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: 56px; height: 44px; padding-top: 12px; border: 0; background: transparent; color: var(--ink-dim); font-size: 18px; line-height: 1; }   /* 44 px to the finger, the glyph where the mock drew it */
 .pc-key { transition: transform 120ms ease-out, background-color 160ms; }
 .pc-key:active { transform: scale(.92); }
+/* THE DESK (2026-09-22, his board 1 = A "but make the Profile picture bigger as big as B minimum"): from lg the head is
+   ONE row — the 128 photo, the name block, then CLOSED TODAY + the light at the right — and the open body lays out in two
+   columns (PlayerCard.jsx). The review card only (.pc-solo is the profile's head, untouched); the phone keeps the stack.
+   The row is the same open or closed, so opening animates only the body — one moment, one animation. */
+@media (min-width: 1024px) {
+  .pc:not(.pc-solo) .pc-head { display: flex; align-items: center; gap: 24px; }
+  .pc:not(.pc-solo) .pc-head > div:first-child { flex: 1 1 auto; min-width: 0; }
+  .pc:not(.pc-solo) .pc-head > div:last-child { margin-top: 0; flex: 0 0 auto; flex-direction: column; align-items: flex-end; gap: 10px; }
+}
 @media (prefers-reduced-motion: reduce) { .pc-body, .pc-inner, .pc-head, .pc-key { transition-duration: 1ms; } }
