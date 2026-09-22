@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Inventory Chest</title>
+<style>
+  :root {
+    --ground:#0A0908; --panel:#121110; --raised:#1B1917; --inset:#0E0D0C; --sunk:#050403;
+    --line:#2A2622; --line-2:#3E3A35;
+    --ink:#E8E4DE; --ink-muted:#A39B90; --ink-dim:#928B81;
+    --gold:#D08A2E; --gold-ink:#0A0908; --accent-ink:#D08A2E; --accent-edge:#D08A2E; --amber:#F59E0B;
+    --wood:#7A5A32; --wood-dark:#4E3A20; --wood-lid:#8C6A3C; --latch:#C9C4BC;
+    --stone:#8B8B8B; --stone-dark:#555555; --stone-light:#C6C6C6;
+    --mono:ui-monospace,"Cascadia Mono","Consolas",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",sans-serif;
+  }
+  :root:not([data-theme="light"]) { color-scheme: dark; }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --ground:#D6CDBA; --panel:#E1DAC8; --raised:#EDE7D8; --inset:#C6BDA9; --sunk:#B9B0A0;
+      --line:#7E786F; --line-2:#5E5A55;
+      --ink:#131211; --ink-muted:#3A3733; --ink-dim:#3F3B36;
+      --gold:#1B1917; --gold-ink:#F7F3E9; --accent-ink:#6B4A12; --accent-edge:#6B4A12;
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:#0A0908; --panel:#121110; --raised:#1B1917; --inset:#0E0D0C; --sunk:#050403;
+    --line:#2A2622; --line-2:#3E3A35; --ink:#E8E4DE; --ink-muted:#A39B90; --ink-dim:#928B81;
+    --gold:#D08A2E; --gold-ink:#0A0908; --accent-ink:#D08A2E; --accent-edge:#D08A2E;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin:0; background:var(--ground); color:var(--ink);
+    font:400 15px/1.55 var(--sans);
+    padding:0 16px 64px;
+  }
+  .wrap { max-width:880px; margin:0 auto; }
+  header { padding:36px 0 8px; }
+  h1 { font:900 clamp(22px,5vw,30px)/1.15 var(--sans); letter-spacing:-.01em; margin:0 0 6px; }
+  .sub { color:var(--ink-muted); font-size:14px; margin:0; max-width:56ch; }
+  h2 { font:900 13px/1.2 var(--mono); letter-spacing:.2em; text-transform:uppercase;
+       color:var(--ink-dim); margin:34px 0 12px; }
+
+  /* ── the controls ─────────────────────────────────────────────── */
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:14px 0 6px; }
+  .key {
+    min-height:44px; padding:0 14px; display:inline-flex; align-items:center; gap:8px;
+    border:1px solid var(--line-2); border-radius:10px; background:var(--panel); color:var(--ink);
+    font:900 11px/1 var(--mono); letter-spacing:.16em; text-transform:uppercase;
+    cursor:pointer; transition:transform .12s ease-out, border-color .16s;
+  }
+  .key:hover { border-color:var(--accent-edge); }
+  .key:active { transform:scale(.95); }
+  .key[aria-pressed="true"], .key.on { border-color:var(--accent-edge); color:var(--accent-ink); }
+  .key.plate { background:var(--gold); color:var(--gold-ink); border-color:transparent; }
+
+  /* ── the stage ────────────────────────────────────────────────── */
+  .stage {
+    position:relative; margin-top:10px; border:1px solid var(--line-2); border-radius:16px;
+    background:
+      radial-gradient(120% 90% at 50% 120%, rgba(208,138,46,.10), transparent 60%),
+      linear-gradient(180deg, var(--raised), var(--sunk));
+    min-height:clamp(340px,52vw,430px);
+    display:flex; align-items:flex-end; justify-content:center;
+    padding:22px 12px 26px; overflow:hidden; cursor:pointer;
+    perspective:700px;
+  }
+  .stage:focus-visible { outline:2px solid var(--accent-edge); outline-offset:3px; }
+  /* SLOW MOTION — one dial stretches the same animation, so what he judges slowly is exactly
+     what ships at full speed; nothing is re-timed by hand for the demo. */
+  .stage.slow { --t-lid:.9s; --t-gui:.9s; --t-fade:.42s; --t-slot:.5s; }
+  .hint {
+    position:absolute; top:12px; left:0; right:0; text-align:center;
+    font:900 10px/1 var(--mono); letter-spacing:.24em; text-transform:uppercase; color:var(--ink-dim);
+    pointer-events:none; transition:opacity .2s;
+  }
+  .stage.open .hint { opacity:0; }
+
+  /* the chest, built from blocks — no Mojang art, just boxes */
+  .chest { position:relative; width:124px; height:104px; flex:0 0 auto; transform-style:preserve-3d; }
+  .chest .body {
+    position:absolute; left:0; right:0; bottom:0; height:70px; border-radius:3px;
+    background:linear-gradient(180deg, var(--wood) 0 52%, var(--wood-dark) 52% 100%);
+    border:3px solid var(--sunk);
+    box-shadow:inset 0 0 0 2px rgba(0,0,0,.18);
+  }
+  .chest .lid {
+    position:absolute; left:0; right:0; top:6px; height:32px; border-radius:3px 3px 0 0;
+    background:linear-gradient(180deg, var(--wood-lid), var(--wood));
+    border:3px solid var(--sunk); border-bottom-width:0;
+    transform-origin:50% 100%; transform:rotateX(0deg);
+    transition:transform var(--t-lid, .26s) cubic-bezier(.3,1.5,.5,1);
+    backface-visibility:hidden;
+  }
+  /* the underside, so an open lid still reads as a lid instead of a vanished rectangle */
+  .chest .lid::after {
+    content:""; position:absolute; inset:-3px; border-radius:3px 3px 0 0;
+    background:linear-gradient(180deg,#2B1F12,#3A2A18); border:3px solid var(--sunk);
+    transform:rotateX(180deg); backface-visibility:hidden;
+  }
+  .chest .latch {
+    position:absolute; left:50%; top:26px; width:12px; height:20px; margin-left:-6px;
+    background:linear-gradient(180deg, var(--latch), #8F8A82);
+    border:2px solid var(--sunk); border-radius:2px; z-index:3;
+    transition:transform var(--t-lid, .26s) cubic-bezier(.3,1.5,.5,1), opacity .18s;
+  }
+  /* the mouth of the chest: dark while it is open, so the box reads as EMPTY and open rather
+     than as a closed block whose lid happens to have gone */
+  .chest .body::before {
+    content:""; position:absolute; left:6px; right:6px; top:0; height:10px; border-radius:2px 2px 0 0;
+    background:linear-gradient(180deg,#140E07,#2A1E12); opacity:0; transition:opacity .18s;
+  }
+  .stage.open .chest .body::before { opacity:1; }
+  .stage.open .chest .lid { transform:rotateX(-96deg); }
+  .stage.open .chest .latch { transform:translateY(-8px) rotateX(-96deg); opacity:.3; }
+
+  /* the GUI that pops out of the lid */
+  .gui {
+    position:absolute; left:50%; bottom:108px; translate:-50% 0;
+    transform-origin:50% 100%; transform:scale(.06) translateY(26px); opacity:0;
+    transition:transform var(--t-gui, .26s) cubic-bezier(.34,1.56,.64,1), opacity var(--t-fade, .12s) linear;
+    width:min(94vw, 560px);
+    border-radius:4px; padding:10px 10px 12px;
+    background:var(--stone); border:4px solid var(--stone-light);
+    box-shadow:inset -4px -4px 0 rgba(0,0,0,.22), inset 4px 4px 0 rgba(255,255,255,.18);
+    pointer-events:none;
+  }
+  .stage.open .gui { transform:scale(1) translateY(0); opacity:1; pointer-events:auto; }
+  .gui .title {
+    font:900 13px/1.2 var(--mono); letter-spacing:.04em; color:#2B2B2B;
+    margin:2px 2px 8px; display:flex; justify-content:space-between; gap:10px; align-items:baseline;
+  }
+  .gui .title span.count { font-size:11px; color:#3E3E3E; }
+  .grid { display:grid; grid-template-columns:repeat(9, 1fr); gap:3px; }
+  .slot {
+    position:relative; aspect-ratio:1/1; border-radius:2px;
+    background:var(--stone-dark);
+    box-shadow:inset 2px 2px 0 rgba(0,0,0,.38), inset -2px -2px 0 rgba(255,255,255,.16);
+    display:grid; place-items:center;
+    opacity:0;
+  }
+  .stage.open .slot { animation:slotIn var(--t-slot, .16s) ease-out both; }
+  @keyframes slotIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+  .slot .box {
+    width:66%; height:66%; border-radius:2px;
+    background:linear-gradient(150deg, var(--wood-lid), var(--wood-dark));
+    border:1px solid rgba(0,0,0,.45);
+  }
+  .slot .box.b2 { background:linear-gradient(150deg,#8E5A3A,#4A2E1C); }
+  .slot .box.b3 { background:linear-gradient(150deg,#C0A15E,#6E5526); }
+  .slot .n {
+    position:absolute; right:2px; bottom:0;
+    font:900 10px/1 var(--mono); color:#fff; text-shadow:1px 1px 0 #000;
+  }
+
+  /* LOOK 2 — the KPM crate: same motion, our palette, no stone grey */
+  .stage[data-look="kpm"] .gui {
+    background:linear-gradient(180deg, var(--raised), var(--panel));
+    border:2px solid var(--line-2); border-radius:14px;
+    box-shadow:none; padding:12px;
+  }
+  .stage[data-look="kpm"] .gui .title { color:var(--ink); letter-spacing:.14em; text-transform:uppercase; }
+  .stage[data-look="kpm"] .gui .title span.count { color:var(--accent-ink); }
+  .stage[data-look="kpm"] .slot {
+    background:var(--inset); border:1px solid var(--line-2); border-radius:6px; box-shadow:none;
+  }
+  .stage[data-look="kpm"] .slot .n { color:var(--ink); text-shadow:none; }
+  .stage[data-look="kpm"] .chest .body { background:linear-gradient(180deg,#3A332B 0 52%,#2A241E 52% 100%); border-color:var(--line-2); }
+  .stage[data-look="kpm"] .chest .lid  { background:linear-gradient(180deg,#4A4137,#3A332B); border-color:var(--line-2); }
+  .stage[data-look="kpm"] .chest .latch { background:linear-gradient(180deg,var(--amber),#7a4c05); border-color:var(--line-2); }
+
+  .note { border-left:2px solid var(--accent-edge); padding:2px 0 2px 14px; margin:18px 0; color:var(--ink-muted); font-size:14px; }
+  .note b { color:var(--ink); }
+  ul { padding-left:18px; color:var(--ink-muted); font-size:14px; }
+  li { margin:7px 0; }
+  li b { color:var(--ink); }
+  footer { margin-top:34px; color:var(--ink-dim); font-size:12px; font-family:var(--mono); letter-spacing:.06em; }
+
+  @media (max-width:560px) {
+    .gui { bottom:96px; padding:8px; }
+    .grid { gap:2px; }
+    .gui .title { font-size:11px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chest .lid, .chest .latch, .gui { transition-duration:1ms; }
+    .stage.open .slot { animation-duration:1ms; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Agent inventory — the chest</h1>
+    <p class="sub">A review prototype of the opening you sent. Tap the chest (or the panel) to open and close it. Nothing here is in the app yet.</p>
+  </header>
+
+  <div class="bar">
+    <button class="key on" id="lookVideo" aria-pressed="true">1 · like the video</button>
+    <button class="key" id="lookKpm" aria-pressed="false">2 · KPM palette</button>
+    <button class="key" id="sound" aria-pressed="true">🔊 sound on</button>
+    <button class="key" id="slow" aria-pressed="false">slow motion</button>
+    <button class="key plate" id="replay">Open again</button>
+  </div>
+  <div class="bar" style="margin-top:2px">
+    <button class="key on" data-agent="Budi Santoso" aria-pressed="true">Budi Santoso</button>
+    <button class="key" data-agent="Dedi Kurniawan" aria-pressed="false">Dedi Kurniawan</button>
+  </div>
+
+  <div class="stage" id="stage" data-look="video" tabindex="0" role="button" aria-expanded="false" aria-label="Open the agent inventory chest">
+    <p class="hint">tap the chest</p>
+
+    <div class="gui" id="gui">
+      <p class="title"><span id="guiTitle">Budi Santoso inventory</span><span class="count" id="guiCount">760 Bks</span></p>
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <div class="chest">
+      <div class="lid"></div>
+      <div class="latch"></div>
+      <div class="body"></div>
+    </div>
+  </div>
+
+  <h2>What is real here, and what is not</h2>
+  <ul>
+    <li><b>The motion is copied, the art is not.</b> The lid tilts back and the panel grows out of it in about a quarter second with a small overshoot — the same beat as the video. Every pixel here is drawn by us with plain boxes; no Minecraft texture, sound file or font is used, because those belong to Mojang and cannot ship in a product you sell.</li>
+    <li><b>The sound is made in the browser, not downloaded.</b> A short wooden creak and a thud, built from a tone and some noise. It can be swapped for a real recording of a crate later — a recording we own.</li>
+    <li><b>Look 1 keeps the grey stone panel</b> so you can judge it against the video. It breaks your palette rule (grey is not slate, and the frame is not gold). <b>Look 2 is the same panel in KPM colours.</b></li>
+    <li><b>The title is the agent's name</b>, as you asked — "Budi Santoso inventory". Switch the name above and the panel follows.</li>
+    <li><b>Lite Mode and "reduce motion" stop the animation</b> — the panel is simply already open, with no lid tilt. The slots and the numbers still read.</li>
+  </ul>
+
+  <p class="note"><b>One thing to decide beyond the look:</b> the real agent inventory has more than 27 things in it — products, damaged goods, the pita cukai debt. A chest with 27 slots is a beautiful opening for a <b>van manifest</b>, but it cannot hold a screen. So the chest is the <b>way in</b>: it opens, the panel fills with what the van carries, and the rest of the screen stays below it. That is what this prototype shows.</p>
+
+  <footer>KPM Inventory · prototype for review · <span id="stamp"></span></footer>
+</div>
+
+<script>
+  var VAN = [
+    { n:'Cello Green 16',  q:600, cls:'' },
+    { n:'Djarum Coklat 12', q:120, cls:'b2' },
+    { n:'Sampoerna Mild 16', q:40, cls:'b3' }
+  ];
+  var stage = document.getElementById('stage');
+  var grid  = document.getElementById('grid');
+  var gui   = document.getElementById('gui');
+
+  /* 27 slots: the three real van rows first, the rest empty — exactly like a chest that is
+     part full. Each slot gets its own small delay so they arrive in a wave. */
+  (function build(){
+    var html = '';
+    for (var i = 0; i < 27; i++) {
+      var item = VAN[i];
+      var delay = 120 + i * 12;
+      html += '<div class="slot" style="animation-delay:' + delay + 'ms">' +
+              (item ? '<span class="box ' + item.cls + '" title="' + item.n + '"></span><span class="n">' + item.q + '</span>' : '') +
+              '</div>';
+    }
+    grid.innerHTML = html;
+  })();
+
+  /* ── the sound, synthesised — a creak (a falling tone) plus a wooden knock ────────────── */
+  var ctx = null, muted = false;
+  try { muted = localStorage.getItem('kpm-chest-mute') === '1'; } catch (e) { muted = false; }
+  function audio() {
+    if (!ctx) { var C = window.AudioContext || window.webkitAudioContext; if (C) ctx = new C(); }
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function knock(t0, freq, dur, gain) {
+    var c = audio(); if (!c) return;
+    var o = c.createOscillator(), g = c.createGain(), f = c.createBiquadFilter();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(freq, t0);
+    o.frequency.exponentialRampToValueAtTime(freq * 0.55, t0 + dur);
+    f.type = 'lowpass'; f.frequency.setValueAtTime(1800, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(f); f.connect(g); g.connect(c.destination);
+    o.start(t0); o.stop(t0 + dur + 0.02);
+  }
+  function creak(t0, dur, gain) {
+    var c = audio(); if (!c) return;
+    var len = Math.floor(c.sampleRate * dur), buf = c.createBuffer(1, len, c.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) { d[i] = (Math.random() * 2 - 1) * (1 - i / len); }
+    var src = c.createBufferSource(); src.buffer = buf;
+    var f = c.createBiquadFilter(); f.type = 'bandpass';
+    f.frequency.setValueAtTime(760, t0);
+    f.frequency.exponentialRampToValueAtTime(320, t0 + dur);
+    f.Q.value = 7;
+    var g = c.createGain();
+    g.gain.setValueAtTime(gain, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(f); f.connect(g); g.connect(c.destination);
+    src.start(t0); src.stop(t0 + dur);
+  }
+  function playOpen() {
+    if (muted) return; var c = audio(); if (!c) return;
+    var t = c.currentTime;
+    creak(t, 0.30, 0.16);
+    knock(t + 0.02, 180, 0.16, 0.22);
+    knock(t + 0.20, 320, 0.10, 0.10);
+  }
+  function playClose() {
+    if (muted) return; var c = audio(); if (!c) return;
+    var t = c.currentTime;
+    creak(t, 0.16, 0.10);
+    knock(t + 0.10, 130, 0.18, 0.26);
+  }
+
+  /* ── open / close ─────────────────────────────────────────────────────────────────────── */
+  function setOpen(on) {
+    stage.classList.toggle('open', on);
+    stage.setAttribute('aria-expanded', on ? 'true' : 'false');
+    if (on) { playOpen(); } else { playClose(); }
+  }
+  stage.addEventListener('click', function () { setOpen(!stage.classList.contains('open')); });
+  stage.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!stage.classList.contains('open')); }
+  });
+  var slowKey = document.getElementById('slow');
+  slowKey.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var on = !stage.classList.contains('slow');
+    stage.classList.toggle('slow', on);
+    slowKey.classList.toggle('on', on);
+    slowKey.setAttribute('aria-pressed', String(on));
+    setOpen(false);
+    setTimeout(function () { setOpen(true); }, on ? 520 : 260);
+  });
+
+  document.getElementById('replay').addEventListener('click', function (e) {
+    e.stopPropagation();
+    setOpen(false);
+    setTimeout(function () { setOpen(true); }, 260);
+  });
+
+  /* ── the two looks ────────────────────────────────────────────────────────────────────── */
+  function look(which) {
+    stage.setAttribute('data-look', which);
+    var a = document.getElementById('lookVideo'), b = document.getElementById('lookKpm');
+    a.classList.toggle('on', which === 'video'); a.setAttribute('aria-pressed', which === 'video');
+    b.classList.toggle('on', which === 'kpm');   b.setAttribute('aria-pressed', which === 'kpm');
+  }
+  document.getElementById('lookVideo').addEventListener('click', function () { look('video'); });
+  document.getElementById('lookKpm').addEventListener('click', function () { look('kpm'); });
+
+  /* ── the sound switch ─────────────────────────────────────────────────────────────────── */
+  var soundKey = document.getElementById('sound');
+  function paintSound() {
+    soundKey.textContent = muted ? '🔇 sound off' : '🔊 sound on';
+    soundKey.classList.toggle('on', !muted);
+    soundKey.setAttribute('aria-pressed', String(!muted));
+  }
+  soundKey.addEventListener('click', function () {
+    muted = !muted;
+    try { localStorage.setItem('kpm-chest-mute', muted ? '1' : '0'); } catch (e) { /* private window */ }
+    paintSound();
+    if (!muted) playOpen();
+  });
+  paintSound();
+
+  /* ── whose van ────────────────────────────────────────────────────────────────────────── */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-agent]'), function (btn) {
+    btn.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('[data-agent]'), function (o) {
+        o.classList.toggle('on', o === btn); o.setAttribute('aria-pressed', String(o === btn));
+      });
+      document.getElementById('guiTitle').textContent = btn.dataset.agent + ' inventory';
+      document.getElementById('guiCount').textContent = btn.dataset.agent === 'Budi Santoso' ? '760 Bks' : '200 Bks';
+    });
+  });
+
+  document.getElementById('stamp').textContent = new Date().toISOString().slice(0, 10);
+
+  /* open once shortly after load so the first thing he sees is the animation, not a shut box */
+  setTimeout(function () { stage.classList.add('open'); stage.setAttribute('aria-expanded', 'true'); }, 500);
+</script>
+</body>
+</html>
