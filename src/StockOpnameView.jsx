@@ -1568,7 +1568,14 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                         one costs no shift. */}
                                                     <div className={`bg-[var(--sunk)] px-3 py-2 md:px-4 border kpm-plate ${matched ? 'border-[var(--accent-edge)]' : tone === 'bad' ? 'border-[var(--danger)]' : 'border-[var(--accent-edge)]'} `}>
                                                         <div className={`text-[11px] lg:text-[9px] font-bold uppercase tracking-widest ${matched ? 'text-[var(--accent-ink)]' : tone === 'bad' ? 'text-[var(--danger-ink)]' : 'text-[var(--accent-ink)]'} `}>{matched ? 'Match' : 'Difference'}</div>
-                                                        <div className="mt-1"><NixieCount value={variance} signed size={20} /></div>
+                                                        {/* THE VERDICT FIGURE. Aldi, 2026-09-22: the nixie "doesnt look natural compared to other
+                                                            number box right there" — "just make it on red color with some animation on negative
+                                                            and also specific animation on positive but just let the format be the same with
+                                                            other text beside it". So: the same mono figure as the three plates beside it; red
+                                                            when there is a difference, plain ink on zero; keyed on the value so it moves ONCE per
+                                                            new count — a shortfall drops in, a surplus rises (theme.css THE VERDICT FIGURE).
+                                                            Lite Mode strips the motion and keeps the red. */}
+                                                        <div key={variance} className={`text-sm font-black font-mono tabular-nums ${variance === 0 ? 'text-[var(--ink)]' : 'text-[var(--danger-ink)] ' + (variance < 0 ? 'kpm-verdict-down' : 'kpm-verdict-up')}`}>{variance > 0 ? '+' : variance < 0 ? '-' : ''}{formatNumber(Math.abs(variance))}</div>
                                                     </div>
                                                 </div>
 

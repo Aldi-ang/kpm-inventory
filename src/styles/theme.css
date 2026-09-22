@@ -3953,6 +3953,20 @@ html.lite-mode .kpm-hazard { animation: none; opacity: 1; }
 @media (max-width: 1023px) { .kpm-fig3 > span { background-color: var(--sunk); padding: 8px 4px; background-image: linear-gradient(180deg, rgba(255, 255, 255, .3) 0 1px, transparent 1px, transparent calc(100% - 2px), rgba(0, 0, 0, .28) calc(100% - 2px)); } }
 @media (prefers-reduced-motion: reduce) { .kpm-nixie-reel { transition: none; } }
 
+/* THE VERDICT FIGURE on the count card (StockOpnameView.jsx, the DIFFERENCE plate). Aldi, 2026-09-22:
+   the nixie "doesnt look natural compared to other number box right there ... just make it on red color
+   with some animation on negative and also specific animation on positive but just let the format be the
+   same with other text beside it". The figure is the siblings' plain mono figure, red when there is a
+   difference; keyed on the value, so it moves ONCE per new count: a shortfall DROPS in and settles (420 ms),
+   a surplus RISES with a small pop (360 ms); zero moves nothing and stays plain ink. transform + opacity
+   only - Lite Mode strips the motion and keeps the red; nothing loops (his "too much of those blinking
+   light"). The nixie stays where it was not refused: the boss's audit line, the EOD folder, the window. */
+@keyframes kpmVerdictDown { from { opacity: 0; transform: translateY(-10px); } 60% { opacity: 1; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+@keyframes kpmVerdictUp { from { opacity: 0; transform: translateY(8px) scale(.92); } 60% { opacity: 1; transform: translateY(-1px) scale(1.08); } to { opacity: 1; transform: none; } }
+.kpm-verdict-down { animation: kpmVerdictDown 420ms cubic-bezier(.2, .8, .3, 1) both; }
+.kpm-verdict-up { animation: kpmVerdictUp 360ms cubic-bezier(.2, .8, .3, 1) both; }
+@media (prefers-reduced-motion: reduce) { .kpm-verdict-down, .kpm-verdict-up { animation: none; } }
+
 /* ============================================================================
    THE DASHBOARD — rebuilt 2026-08-25.
 

@@ -2146,7 +2146,7 @@ section('S35. The counting card is readable in both themes and cannot overlap it
   const to = opname.indexOf('{Number(damagedVal) > 0', from);
   const card = (from === -1 || to === -1) ? '' : opname.slice(from, to);
   ok('the counting card was found and is a sane size',
-     card.length > 1500 && card.length < 9000, `sliced ${card.length} chars`);
+     card.length > 1500 && card.length < 10500, `sliced ${card.length} chars`);   /* 2026-09-22: the verdict figure's note added ~560 chars */
 
   ok('no label is positioned ON a field any more - that is what caused the overlap',
      !/absolute -top-2/.test(card));
@@ -7587,10 +7587,10 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /<div className="text-\[11px\] lg:text-\[9px\] text-\[var\(--ink-dim\)\] font-bold uppercase tracking-widest whitespace-nowrap">Expected damaged<\/div>/.test(so) &&
      !/bg-\[var\(--danger-well\)\] text-\[var\(--danger-ink\)\] border border-\[var\(--danger\)\] px-2 py-0\.5 rounded/.test(code(so)) &&
      !/text-\[var\(--danger-ink\)\] font-bold uppercase tracking-widest whitespace-nowrap">Expected damaged/.test(code(so)));
-  ok('the plates carry the control system\'s top light and the DIFFERENCE is a nixie counter with its sign; the verdict block folds open on the first typed number',
+  ok('the plates carry the control system\'s top light and the DIFFERENCE is a plain red figure keyed on the value (2026-09-22: the nixie refused for this plate); the verdict block folds open on the first typed number',
      (so.match(/<div className="bg-\[var\(--sunk\)\] px-3 py-2 md:px-4 border border-transparent kpm-plate">/g) || []).length === 3 &&
      /<div className=\{`bg-\[var\(--sunk\)\] px-3 py-2 md:px-4 border kpm-plate \$\{matched \? 'border-\[var\(--accent-edge\)\]' : tone === 'bad' \? 'border-\[var\(--danger\)\]' : 'border-\[var\(--accent-edge\)\]'\} `\}>/.test(so) &&
-     /<div className="mt-1"><NixieCount value=\{variance\} signed size=\{20\} \/><\/div>/.test(so) &&
+     /<div key=\{variance\} className=\{`text-sm font-black font-mono tabular-nums /.test(so) && !/<div className="mt-1"><NixieCount value=\{variance\}/.test(so) &&
      /<div className="grid transition-\[grid-template-rows\] duration-\[260ms\] ease-out" style=\{\{ gridTemplateRows: isRevealed \? '1fr' : '0fr' \}\}>\s*<div className="overflow-hidden">\s*\{isRevealed && \(/.test(so) &&
      /import NixieCount from '\.\/components\/NixieCount\.jsx';/.test(so),
      'the LED window he refused is gone from here: no .kpm-led on this screen',
@@ -8202,6 +8202,31 @@ section('RANK AND BADGE SETTINGS LIVE ONLY IN THE COMPANY\'S OWN FOLDER (2026-09
   const shBlock = rules.slice(rules.indexOf('match /artifacts/cello-inventory-manager/settings/{docId}'));
   ok('the rules DRAFT denies the shared settings path to everyone, and says why (CHANGE 8)',
      /match \/artifacts\/cello-inventory-manager\/settings\/\{docId\} \{\s*allow read, write: if false;/.test(shBlock) && /CHANGE 8/.test(rules) && !/function isRankConfigEditor/.test(rules));
+}
+
+
+/* ── THE COUNT CARD'S DIFFERENCE IS A PLAIN RED FIGURE THAT MOVES ONCE (2026-09-22) ──────────────
+   His 14:30: the nixie "doesnt look natural compared to other number box right there"; his 15:05: "just make it
+   on red color with some animation on negative and also specific animation on positive but just let the format
+   be the same with other text beside it". So: the same mono figure as EXPECTED GOOD / EXPECTED DAMAGED / TOTAL
+   FOUND, red when there is a difference, plain ink on zero; keyed on the value so a shortfall DROPS in and a
+   surplus RISES, once; transform + opacity only, so Lite Mode strips the motion and keeps the red. The nixie
+   stays where it was not refused (the boss's audit line, the EOD folder, the Agent Inventory window). */
+section('THE COUNT CARD\'S DIFFERENCE IS A PLAIN RED FIGURE THAT MOVES ONCE (2026-09-22)');
+{ const so = read('src/StockOpnameView.jsx'); const soc = code(so); const th = read('src/styles/theme.css');
+  const plate = soc.slice(soc.indexOf('Expected good</div>'), soc.indexOf('{Number(damagedVal) > 0 && ('));
+  ok('the count card\'s DIFFERENCE plate no longer holds the nixie', plate.length > 200 && !/<NixieCount value=\{variance\}/.test(plate));
+  ok('the figure has the SAME format as its three siblings (text-sm font-black font-mono tabular-nums)',
+     /className=\{`text-sm font-black font-mono tabular-nums \$\{variance === 0 \? 'text-\[var\(--ink\)\]' : 'text-\[var\(--danger-ink\)\] ' \+ \(variance < 0 \? 'kpm-verdict-down' : 'kpm-verdict-up'\)\}`\}/.test(plate) &&
+     (plate.match(/text-sm font-black font-mono tabular-nums/g) || []).length === 4);
+  ok('red only when there is a difference; zero is plain ink like the others', /variance === 0 \? 'text-\[var\(--ink\)\]' : 'text-\[var\(--danger-ink\)\]/.test(plate));
+  ok('keyed on the value, so the motion plays once per new count, and the sign is written', /<div key=\{variance\}/.test(plate) && /\{variance > 0 \? '\+' : variance < 0 \? '-' : ''\}\{formatNumber\(Math\.abs\(variance\)\)\}/.test(plate));
+  ok('the nixie is still imported for the audit line, which was not refused', /import .*NixieCount/.test(so) && /<NixieCount value=\{item\.variance\} signed size=\{20\} className="kpm-nixie-verdict" \/>/.test(so));
+  const down = th.match(/@keyframes kpmVerdictDown \{([^}]*\}[^}]*\}[^}]*)\}/); const up = th.match(/@keyframes kpmVerdictUp \{([^}]*\}[^}]*\}[^}]*)\}/);
+  ok('two one-shot motions exist: a shortfall drops in, a surplus rises', !!down && !!up && /translateY\(-10px\)/.test(down[1]) && /translateY\(8px\) scale\(\.92\)/.test(up[1]));
+  ok('both are transform + opacity only - no shadow, no filter (G30, Lite Mode)', !!down && !!up && !/shadow|filter|width|height|margin/.test(down[1] + up[1]));
+  ok('both run once, under half a second, ease-out', /\.kpm-verdict-down \{ animation: kpmVerdictDown 420ms cubic-bezier\(\.2, \.8, \.3, 1\) both; \}/.test(th) && /\.kpm-verdict-up \{ animation: kpmVerdictUp 360ms cubic-bezier\(\.2, \.8, \.3, 1\) both; \}/.test(th) && !/kpmVerdict(Down|Up) [^;]*infinite/.test(th));
+  ok('reduced motion turns both off', /prefers-reduced-motion: reduce\) \{ \.kpm-verdict-down, \.kpm-verdict-up \{ animation: none; \} \}/.test(th));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
