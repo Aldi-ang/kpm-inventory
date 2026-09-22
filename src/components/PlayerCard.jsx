@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { CheckCircle, RotateCcw, Undo2 } from 'lucide-react';
 import { RankBorder } from '../config/rankBorders.jsx';
-import { careerXP, computeDayXP, rankLadder, totals, DEFAULT_XP } from '../config/career.js';
+import { careerXP, computeDayXP, rankLadder, DEFAULT_XP } from '../config/career.js';
 import { formatRupiah, convertToBks, shortStockRows, eodBountyLines, eodReportParts, eodPartApproved, eodNightMessage, EOD_PART_LABELS } from '../utils/helpers.js';
 import { revenueOf, salesDelta, dayOf } from '../utils/salesRollup.js';
 import { confirmAction, promptAction } from './ConfirmGate.jsx';
@@ -90,10 +90,9 @@ const PlayerCard = ({ group, motorist, career, useCareerLedger = false, ranks, e
     const { currentTier, nextTier, progressPercent } = rankLadder(xp, ranks);
     const frame = motorist?.borderStyle || currentTier.borderStyle || 'classic';
 
-    /* Tonight beside his usual night - the ledger's average verified day, real data, not a target. */
-    const tally = totals(career || {});
-    const usual = tally.daysVerified > 0 ? Math.round(tally.collected / tally.daysVerified) : 0;
-    const revenueWidth = usual > 0 ? Math.min(100, Math.round((group.cashTotal / usual) * 100)) : 0;
+    /* REVENUE TONIGHT is the night's omset alone. Aldi, 2026-09-22: "revenue bar is only showing the revenue or
+       omset that he receive that day for each person, target is only for regional team or global target" - so no
+       bar against his usual night and no per-person target; a target belongs to a region or the whole company. */
 
     const products = useMemo(() => {
         const rows = {};
@@ -205,8 +204,6 @@ const PlayerCard = ({ group, motorist, career, useCareerLedger = false, ranks, e
                     <div className="min-w-0">
                     <div className="mb-3 pt-1">
                         <div className={`flex justify-between gap-2 ${SUB}`}><span>Revenue tonight</span><span className="text-[var(--ink)] tabular-nums whitespace-nowrap">{formatRupiah(group.cashTotal)}</span></div>
-                        <div className="h-[3px] mt-1 rounded-full bg-[var(--inset)]"><div className="h-full rounded-full" style={{ width: `${revenueWidth}%`, ...BAR }}></div></div>
-                        {usual > 0 && <p className="text-[11px] uppercase tracking-widest text-[var(--ink-dim)] mt-1 text-right tabular-nums">his usual night {formatRupiah(usual)}</p>}
                     </div>
                     {products.length > 0 && (
                         <>

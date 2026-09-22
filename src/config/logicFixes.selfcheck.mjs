@@ -8046,6 +8046,11 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /className="flex flex-col gap-2 lg:gap-3 w-full lg:mt-2">/.test(a) &&
      /className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">/.test(a),
      'a 7-digit rupiah is 152 px in his font; a 149 px box cannot hold it, a 239 px one can');
+  ok('THE REVENUE LINE is the night\'s omset alone - no bar, no "his usual night" denominator (his 10:40: a target lives at the regional team or global level, never per person)',
+     /<span>Revenue tonight<\/span><span className="text-\[var\(--ink\)\] tabular-nums whitespace-nowrap">\{formatRupiah\(group\.cashTotal\)\}<\/span>/.test(pc) &&
+     !/his usual night/.test(pcc) && !/revenueWidth/.test(pcc) && !/const usual = /.test(pcc) && !/totals\(career/.test(pcc) &&
+     !/import \{[^}]*\btotals\b[^}]*\} from '\.\.\/config\/career\.js'/.test(pc),
+     'a bar with no denominator is a lie; the figure alone is the fact');
   ok('THE DESK: the four lab looks went with the decision',
      !/rc-two|rc-head|inv-a|inv-c|RC_TWO|RC_HEAD|INV_A|INV_C/.test(code(ll)),
      'a mock outlives its board only as a bug'); }
