@@ -612,40 +612,23 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         fetchAgents();
     }, [db, appId, user]);
 
-    const hasMigratedGhosts = useRef(false);
+    /* GHOSTS ARE REPORTED, NEVER REPAIRED BY A GUESS. Until 2026-09-22 this effect fuzzy-matched
+       every store whose agent name was not on the roster ("andika" contains "andi" -> Andika's
+       stores handed to Andi), wrote the guess or deleted the field on screen OPEN, and swallowed
+       the failure (Backlog: "Opening Journey Plan can silently reassign stores to the wrong
+       agent"). Now the records are left alone - the stale name still shows in the dropdown
+       through globalAgentList below - and the boss is told once per open which stores point at
+       nobody current, so the reassign is a decision he makes on each store. */
+    const ghostsToldRef = useRef(false);
     useEffect(() => {
-        if (!canAssignAgent || agentsList.length === 0 || customers.length === 0 || hasMigratedGhosts.current) return;
-        
-        let batchUpdates = false;
-        const updatedAssignments = { ...assignments };
-
-        customers.forEach(c => {
-            const currentAgent = c.assignedAgent;
-            if (currentAgent && currentAgent !== 'Unassigned' && !agentsList.includes(currentAgent)) {
-                const safeAgentStr = currentAgent.toLowerCase();
-                const match = agentsList.find(a => 
-                    safeAgentStr.includes(a.toLowerCase()) || 
-                    a.toLowerCase().includes(safeAgentStr)
-                );
-                
-                const newAgent = match || 'Unassigned';
-                updatedAssignments[c.id] = newAgent === 'Unassigned' ? null : newAgent;
-                batchUpdates = true;
-
-                const userId = user?.uid || user?.id || 'default';
-                const ref = doc(db, `artifacts/${appId}/users/${userId}/customers`, c.id);
-                updateDoc(ref, {
-                    assignedAgent: newAgent === 'Unassigned' ? deleteField() : newAgent
-                }).catch(() => {});
-            }
-        });
-
-        if (batchUpdates) {
-            setAssignments(updatedAssignments);
-            localStorage.setItem('tripBuilderCache', JSON.stringify(updatedAssignments));
+        if (!canAssignAgent || agentsList.length === 0 || customers.length === 0 || ghostsToldRef.current) return;
+        const ghosts = customers.filter(c => c.assignedAgent && c.assignedAgent !== 'Unassigned' && !agentsList.includes(c.assignedAgent));
+        if (ghosts.length > 0) {
+            const names = [...new Set(ghosts.map(c => c.assignedAgent))].sort().join(', ');
+            notify(`${ghosts.length} store${ghosts.length > 1 ? 's are' : ' is'} assigned to a name not on the roster (${names}). Open each store and pick a current salesman.`);
         }
-        hasMigratedGhosts.current = true;
-    }, [agentsList, customers, canAssignAgent, db, appId, user, assignments]);
+        ghostsToldRef.current = true;
+    }, [agentsList, customers, canAssignAgent]);
 
     const globalAgentList = useMemo(() => {
         const agents = new Set(agentsList);

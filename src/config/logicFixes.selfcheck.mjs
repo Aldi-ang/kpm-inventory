@@ -8106,5 +8106,23 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      'the "screen says yes, database says no" shape');
 }
 
+/* ─── 2026-09-22 — JOURNEY PLAN REPORTS A GHOST AGENT, IT NO LONGER GUESSES AND WRITES ───
+   Backlog "Opening Journey Plan can silently reassign stores to the wrong agent": on OPEN, for every
+   store whose agent name was not on the roster, the screen fuzzy-matched by substring ("andika"
+   contains "andi"), wrote the guess or deleted the field, and swallowed the failure. */
+{ const jv = read('src/JourneyView.jsx'); const jvc = code(jv);
+  ok('REGRESSION: no fuzzy name match, no write on screen open, no swallowed catch in Journey Plan',
+     !/hasMigratedGhosts/.test(jvc) && !/safeAgentStr/.test(jvc) && !/\.catch\(\(\) => \{\}\)/.test(jvc) &&
+     !/tripBuilderCache', JSON\.stringify\(updatedAssignments\)/.test(jvc),
+     'Andika leaves, Andi stays, every one of Andika\'s stores moves to Andi and nobody is told');
+  ok('and the boss is TOLD once per open which stores point at a name not on the roster - the records are left alone',
+     /const ghostsToldRef = useRef\(false\);/.test(jv) &&
+     /const ghosts = customers\.filter\(c => c\.assignedAgent && c\.assignedAgent !== 'Unassigned' && !agentsList\.includes\(c\.assignedAgent\)\);/.test(jv) &&
+     /assigned to a name not on the roster \(\$\{names\}\)\. Open each store and pick a current salesman\./.test(jv) &&
+     !/updateDoc\(/.test(jvc.slice(jvc.indexOf('const ghostsToldRef'), jvc.indexOf('const globalAgentList'))) &&
+     /if \(c\.assignedAgent && c\.assignedAgent !== 'Unassigned'\) agents\.add\(c\.assignedAgent\);/.test(jv),   /* the stale name still shows in the dropdown */
+     'every action must report; a guess is not a decision the boss made');
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
