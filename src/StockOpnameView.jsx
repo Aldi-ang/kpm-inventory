@@ -12,7 +12,6 @@ import * as threshold from './utils/stockThreshold';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { canSeeExpectedCount } from './config/permissions';
-import NixieCount from './components/NixieCount.jsx';
 /* Imported under a different name on purpose. The string 'MASTER' in this file is a SELECT VALUE
    that routes Firestore paths (branches/{facility}/inventory) — changing it would move documents.
    HQ_LABEL is only what the reader sees, and that is the part that had four spellings. */
@@ -1358,19 +1357,23 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                                                             expectedDamagedStock at all. */}
                                                                         <span className="text-[var(--ink-dim)]">
                                                                             <span className="lg:hidden block text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-1">Expected</span>
-                                                                            <span className="hidden lg:inline">SYS: </span><NixieCount value={(item.expectedStock || 0) + (item.expectedDamagedStock || 0)} size={20} />
+                                                                            <span className="hidden lg:inline">SYS: </span><span className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber((item.expectedStock || 0) + (item.expectedDamagedStock || 0))}</span>
                                                                             {(item.expectedDamagedStock || 0) > 0 && (
                                                                                 <span className="block lg:inline text-[11px] lg:text-xs mt-1 lg:mt-0"> ({item.expectedDamagedStock} dmg)</span>
                                                                             )}
                                                                         </span>
                                                                         <span className="hidden lg:inline text-[var(--ink-dim)]">→</span>
-                                                                        <span className="text-[var(--ink-dim)] font-bold"><span className="lg:hidden block text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-1">Found</span><span className="hidden lg:inline">FND: </span><NixieCount value={item.totalFound} size={20} /></span>
+                                                                        <span className="text-[var(--ink-dim)] font-bold"><span className="lg:hidden block text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-1">Found</span><span className="hidden lg:inline">FND: </span><span className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(item.totalFound)}</span></span>
                                                                         {/* the SAME rule the agent's row uses. `item.matched` is not a
                                                                             field on the record - a blanket rename put it here and it would
                                                                             have painted every HQ row red, on a value that never exists. */}
                                                                         <span className={`lg:text-right font-black ${withinTolerance(item.variance) ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>
                                                                             <span className="lg:hidden block text-[11px] font-bold uppercase tracking-widest mb-1">Difference</span>
-                                                                            <NixieCount value={item.variance} signed size={20} className="kpm-nixie-verdict" />
+                                                                            {/* the count card's verdict figure, his 2026-09-22 "make boss audit have the same
+                                                                                design like that one": the same plain figure as the two beside it, red outside
+                                                                                the tolerance, a shortfall drops in and a surplus rises, once (theme.css THE
+                                                                                VERDICT FIGURE). The nixie left this screen with it. */}
+                                                                            <span key={item.variance} className={`block text-sm font-black font-mono tabular-nums ${withinTolerance(item.variance) ? 'text-[var(--ink)]' : 'text-[var(--danger-ink)] ' + (item.variance < 0 ? 'kpm-verdict-down' : 'kpm-verdict-up')}`}>{item.variance > 0 ? '+' : item.variance < 0 ? '-' : ''}{formatNumber(Math.abs(item.variance))}</span>
                                                                         </span>
                                                                     </div>
                                                                 </div>

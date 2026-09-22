@@ -2267,7 +2267,7 @@ ${opname.slice(bOpen + 1, bEnd)}
      !/formatNumber\(item\.stock \|\| 0\)/.test(opname) && !/formatNumber\(item\.damagedStock \|\| 0\)/.test(opname));
   /* HQ's list had the identical fault: healthy-only expected beside a good+damaged found. */
   ok('HQ\'s review list compares like for like, and legacy audits still render',
-     /SYS: <\/span><NixieCount value=\{\(item\.expectedStock \|\| 0\) \+ \(item\.expectedDamagedStock \|\| 0\)\} size=\{20\} \/>/.test(opname));
+     /SYS: <\/span><span className="text-sm font-black font-mono tabular-nums text-\[var\(--ink\)\]">\{formatNumber\(\(item\.expectedStock \|\| 0\) \+ \(item\.expectedDamagedStock \|\| 0\)\)\}<\/span>/.test(opname));   /* 2026-09-22: a plain figure since the audit line followed the card */
   ok('and HQ can see what kind of damage it is approving',
      /item\.damageKinds\.map/.test(opname));
 
@@ -7592,7 +7592,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /<div className=\{`bg-\[var\(--sunk\)\] px-3 py-2 md:px-4 border kpm-plate \$\{matched \? 'border-\[var\(--accent-edge\)\]' : tone === 'bad' \? 'border-\[var\(--danger\)\]' : 'border-\[var\(--accent-edge\)\]'\} `\}>/.test(so) &&
      /<div key=\{variance\} className=\{`text-sm font-black font-mono tabular-nums /.test(so) && !/<div className="mt-1"><NixieCount value=\{variance\}/.test(so) &&
      /<div className="grid transition-\[grid-template-rows\] duration-\[260ms\] ease-out" style=\{\{ gridTemplateRows: isRevealed \? '1fr' : '0fr' \}\}>\s*<div className="overflow-hidden">\s*\{isRevealed && \(/.test(so) &&
-     /import NixieCount from '\.\/components\/NixieCount\.jsx';/.test(so),
+     !/import NixieCount from '\.\/components\/NixieCount\.jsx';/.test(so),   /* 2026-09-22 15:45: the audit line followed the card, so the import is gone */
      'the LED window he refused is gone from here: no .kpm-led on this screen',
      );
   ok('no .kpm-led on Stock Opname', !/kpm-led/.test(code(so)));
@@ -7603,11 +7603,13 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      (so.match(/<span className="lg:hidden block text-\[11px\] text-\[var\(--ink-dim\)\] font-bold uppercase tracking-widest mb-1">(Expected|Found)<\/span>/g) || []).length === 2 &&
      /<span className=\{`lg:text-right font-black \$\{withinTolerance\(item\.variance\) \? 'text-\[var\(--accent-ink\)\]' : 'text-\[var\(--danger-ink\)\]'\} `\}>\s*<span className="lg:hidden block text-\[11px\] font-bold uppercase tracking-widest mb-1">Difference<\/span>/.test(so) &&
      (so.match(/<span className="hidden lg:inline">(SYS: |FND: )<\/span>/g) || []).length === 2 &&
-     /<NixieCount value=\{\(item\.expectedStock \|\| 0\) \+ \(item\.expectedDamagedStock \|\| 0\)\} size=\{20\} \/>/.test(so) &&
-     /<NixieCount value=\{item\.totalFound\} size=\{20\} \/>/.test(so) &&
-     /<NixieCount value=\{item\.variance\} signed size=\{20\} className="kpm-nixie-verdict" \/>/.test(so) &&
+     /* 2026-09-22 15:45, his "make boss audit have the same design like that one": the three figures are the count card's plain
+        mono figure; the nixie and its .kpm-nixie-verdict size rule are gone from this screen */
+     /<span className="text-sm font-black font-mono tabular-nums text-\[var\(--ink\)\]">\{formatNumber\(\(item\.expectedStock \|\| 0\) \+ \(item\.expectedDamagedStock \|\| 0\)\)\}<\/span>/.test(so) &&
+     /<span className="text-sm font-black font-mono tabular-nums text-\[var\(--ink\)\]">\{formatNumber\(item\.totalFound\)\}<\/span>/.test(so) &&
+     /<span key=\{item\.variance\} className=\{`block text-sm font-black font-mono tabular-nums \$\{withinTolerance\(item\.variance\) \? 'text-\[var\(--ink\)\]' : 'text-\[var\(--danger-ink\)\] ' \+ \(item\.variance < 0 \? 'kpm-verdict-down' : 'kpm-verdict-up'\)\}`\}>\{item\.variance > 0 \? '\+' : item\.variance < 0 \? '-' : ''\}\{formatNumber\(Math\.abs\(item\.variance\)\)\}<\/span>/.test(so) &&
+     !/NixieCount/.test(code(so)) && !/kpm-nixie-verdict/.test(th) &&
      /@media \(max-width: 1023px\) \{ \.kpm-fig3 > span \{ background-color: var\(--sunk\); padding: 8px 4px; background-image: linear-gradient/.test(th) &&
-     /\.kpm-nixie-verdict \{ --nx: 26px !important; \}/.test(th) &&
      !/<div className="flex justify-between items-center mb-2 border-b border-\[var\(--line\)\] pb-2">/.test(code(so)),
      '"too compact in a small space"; the difference "a little bit bigger"');
   ok('the itemized list is one scroller with the page on the phone',
@@ -8221,7 +8223,10 @@ section('THE COUNT CARD\'S DIFFERENCE IS A PLAIN RED FIGURE THAT MOVES ONCE (202
      (plate.match(/text-sm font-black font-mono tabular-nums/g) || []).length === 4);
   ok('red only when there is a difference; zero is plain ink like the others', /variance === 0 \? 'text-\[var\(--ink\)\]' : 'text-\[var\(--danger-ink\)\]/.test(plate));
   ok('keyed on the value, so the motion plays once per new count, and the sign is written', /<div key=\{variance\}/.test(plate) && /\{variance > 0 \? '\+' : variance < 0 \? '-' : ''\}\{formatNumber\(Math\.abs\(variance\)\)\}/.test(plate));
-  ok('the nixie is still imported for the audit line, which was not refused', /import .*NixieCount/.test(so) && /<NixieCount value=\{item\.variance\} signed size=\{20\} className="kpm-nixie-verdict" \/>/.test(so));
+  /* 15:45, his "make boss audit have the same design like that one": the audit line followed, so no nixie is left on this
+     screen and its import is gone; the component itself stays for the EOD folder and the Agent Inventory window */
+  ok('no nixie is left on the Stock Opname screen; the boss\'s audit DIFFERENCE is the same keyed red figure', !/NixieCount/.test(soc) && /<span key=\{item\.variance\} className=\{`block text-sm font-black font-mono tabular-nums /.test(so) && (so.match(/kpm-verdict-down/g) || []).length === 2);
+  ok('the component still exists for the screens that keep it', fs.existsSync('src/components/NixieCount.jsx') && /NixieCount/.test(read('src/EODReconciliationView.jsx')) && /NixieCount/.test(read('src/AgentInventoryView.jsx')));
   const down = th.match(/@keyframes kpmVerdictDown \{([^}]*\}[^}]*\}[^}]*)\}/); const up = th.match(/@keyframes kpmVerdictUp \{([^}]*\}[^}]*\}[^}]*)\}/);
   ok('two one-shot motions exist: a shortfall drops in, a surplus rises', !!down && !!up && /translateY\(-10px\)/.test(down[1]) && /translateY\(8px\) scale\(\.92\)/.test(up[1]));
   ok('both are transform + opacity only - no shadow, no filter (G30, Lite Mode)', !!down && !!up && !/shadow|filter|width|height|margin/.test(down[1] + up[1]));
