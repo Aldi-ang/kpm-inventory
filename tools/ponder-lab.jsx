@@ -1028,7 +1028,7 @@ function ShellLab() {
            `&phone` draws the narrow arrangement (the headless frame is shot at 518). */
         q.get('mock') === 'module'
           ? <LoadModuleMock phone={q.has('phone')} />
-          : <LoadBayPanelMock phone={q.has('phone')} />
+          : <LoadBayPanelMock phone={q.has('phone')} look={q.get('r') || 'a'} play={q.get('play')} at={q.get('at')} rosterOnly={q.has('roster')} />
       ) : q.has('fleet') ? (
         /* ?shell&fleet — FLEET & ROSTER INSIDE the real shell exactly as App.jsx:4693 mounts it: no
            wrapper, a direct child of biohazard-content. The viewer is the REGIONAL ADMIN, because he
