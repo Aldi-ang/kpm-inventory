@@ -32,47 +32,38 @@
     color-scheme: dark;
   }
 
-  * { box-sizing: border-box; }
-  body {
-    margin:0; background:var(--ground); color:var(--ink);
-    font:400 15px/1.55 var(--sans);
-    padding:0 16px 64px;
-  }
-  .wrap { max-width:880px; margin:0 auto; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ground); color:var(--ink); font:400 15px/1.55 var(--sans); padding:0 16px 64px; }
+  .wrap { max-width:900px; margin:0 auto; }
   header { padding:36px 0 8px; }
   h1 { font:900 clamp(22px,5vw,30px)/1.15 var(--sans); letter-spacing:-.01em; margin:0 0 6px; }
-  .sub { color:var(--ink-muted); font-size:14px; margin:0; max-width:56ch; }
-  h2 { font:900 13px/1.2 var(--mono); letter-spacing:.2em; text-transform:uppercase;
-       color:var(--ink-dim); margin:34px 0 12px; }
+  .sub { color:var(--ink-muted); font-size:14px; margin:0; max-width:58ch; }
+  h2 { font:900 13px/1.2 var(--mono); letter-spacing:.2em; text-transform:uppercase; color:var(--ink-dim); margin:34px 0 12px; }
 
-  /* ── the controls ─────────────────────────────────────────────── */
   .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:14px 0 6px; }
   .key {
     min-height:44px; padding:0 14px; display:inline-flex; align-items:center; gap:8px;
     border:1px solid var(--line-2); border-radius:10px; background:var(--panel); color:var(--ink);
-    font:900 11px/1 var(--mono); letter-spacing:.16em; text-transform:uppercase;
-    cursor:pointer; transition:transform .12s ease-out, border-color .16s;
+    font:900 11px/1 var(--mono); letter-spacing:.16em; text-transform:uppercase; cursor:pointer;
+    transition:transform .12s ease-out, border-color .16s;
   }
   .key:hover { border-color:var(--accent-edge); }
   .key:active { transform:scale(.95); }
-  .key[aria-pressed="true"], .key.on { border-color:var(--accent-edge); color:var(--accent-ink); }
+  .key.on { border-color:var(--accent-edge); color:var(--accent-ink); }
   .key.plate { background:var(--gold); color:var(--gold-ink); border-color:transparent; }
 
-  /* ── the stage ────────────────────────────────────────────────── */
+  /* ── the stage ───────────────────────────────────────────────────────────────── */
   .stage {
     position:relative; margin-top:10px; border:1px solid var(--line-2); border-radius:16px;
     background:
       radial-gradient(120% 90% at 50% 120%, rgba(208,138,46,.10), transparent 60%),
       linear-gradient(180deg, var(--raised), var(--sunk));
-    min-height:clamp(340px,52vw,430px);
+    min-height:clamp(620px,80vw,760px);
     display:flex; align-items:flex-end; justify-content:center;
-    padding:22px 12px 26px; overflow:hidden; cursor:pointer;
-    perspective:700px;
+    padding:22px 12px 26px; overflow:hidden; cursor:pointer; perspective:900px;
   }
   .stage:focus-visible { outline:2px solid var(--accent-edge); outline-offset:3px; }
-  /* SLOW MOTION — one dial stretches the same animation, so what he judges slowly is exactly
-     what ships at full speed; nothing is re-timed by hand for the demo. */
-  .stage.slow { --t-lid:.9s; --t-gui:.9s; --t-fade:.42s; --t-slot:.5s; }
+  .stage.slow { --t-lid:.9s; --t-gui:.9s; --t-fade:.42s; --t-slot:.6s; --t-turn:2.2s; }
   .hint {
     position:absolute; top:12px; left:0; right:0; text-align:center;
     font:900 10px/1 var(--mono); letter-spacing:.24em; text-transform:uppercase; color:var(--ink-dim);
@@ -80,23 +71,25 @@
   }
   .stage.open .hint { opacity:0; }
 
-  /* the chest, built from blocks — no Mojang art, just boxes */
+  /* ── THE CHEST — brown in both looks (his call: "i like the brown color chest
+        dont need to follow the theme"), the same exemption the printed nota has ── */
   .chest { position:relative; width:124px; height:104px; flex:0 0 auto; transform-style:preserve-3d; }
   .chest .body {
     position:absolute; left:0; right:0; bottom:0; height:70px; border-radius:3px;
     background:linear-gradient(180deg, var(--wood) 0 52%, var(--wood-dark) 52% 100%);
-    border:3px solid var(--sunk);
-    box-shadow:inset 0 0 0 2px rgba(0,0,0,.18);
+    border:3px solid var(--sunk); box-shadow:inset 0 0 0 2px rgba(0,0,0,.18);
+  }
+  .chest .body::before {
+    content:""; position:absolute; left:6px; right:6px; top:0; height:10px; border-radius:2px 2px 0 0;
+    background:linear-gradient(180deg,#140E07,#2A1E12); opacity:0; transition:opacity .18s;
   }
   .chest .lid {
     position:absolute; left:0; right:0; top:6px; height:32px; border-radius:3px 3px 0 0;
     background:linear-gradient(180deg, var(--wood-lid), var(--wood));
     border:3px solid var(--sunk); border-bottom-width:0;
     transform-origin:50% 100%; transform:rotateX(0deg);
-    transition:transform var(--t-lid, .26s) cubic-bezier(.3,1.5,.5,1);
-    backface-visibility:hidden;
+    transition:transform var(--t-lid,.26s) cubic-bezier(.3,1.5,.5,1); backface-visibility:hidden;
   }
-  /* the underside, so an open lid still reads as a lid instead of a vanished rectangle */
   .chest .lid::after {
     content:""; position:absolute; inset:-3px; border-radius:3px 3px 0 0;
     background:linear-gradient(180deg,#2B1F12,#3A2A18); border:3px solid var(--sunk);
@@ -104,27 +97,20 @@
   }
   .chest .latch {
     position:absolute; left:50%; top:26px; width:12px; height:20px; margin-left:-6px;
-    background:linear-gradient(180deg, var(--latch), #8F8A82);
-    border:2px solid var(--sunk); border-radius:2px; z-index:3;
-    transition:transform var(--t-lid, .26s) cubic-bezier(.3,1.5,.5,1), opacity .18s;
-  }
-  /* the mouth of the chest: dark while it is open, so the box reads as EMPTY and open rather
-     than as a closed block whose lid happens to have gone */
-  .chest .body::before {
-    content:""; position:absolute; left:6px; right:6px; top:0; height:10px; border-radius:2px 2px 0 0;
-    background:linear-gradient(180deg,#140E07,#2A1E12); opacity:0; transition:opacity .18s;
+    background:linear-gradient(180deg,var(--latch),#8F8A82); border:2px solid var(--sunk);
+    border-radius:2px; z-index:3;
+    transition:transform var(--t-lid,.26s) cubic-bezier(.3,1.5,.5,1), opacity .18s;
   }
   .stage.open .chest .body::before { opacity:1; }
   .stage.open .chest .lid { transform:rotateX(-96deg); }
   .stage.open .chest .latch { transform:translateY(-8px) rotateX(-96deg); opacity:.3; }
 
-  /* the GUI that pops out of the lid */
+  /* ── the GUI that grows out of the lid ───────────────────────────────────────── */
   .gui {
-    position:absolute; left:50%; bottom:108px; translate:-50% 0;
+    position:absolute; left:50%; bottom:112px; translate:-50% 0;
     transform-origin:50% 100%; transform:scale(.06) translateY(26px); opacity:0;
-    transition:transform var(--t-gui, .26s) cubic-bezier(.34,1.56,.64,1), opacity var(--t-fade, .12s) linear;
-    width:min(94vw, 560px);
-    border-radius:4px; padding:10px 10px 12px;
+    transition:transform var(--t-gui,.26s) cubic-bezier(.34,1.56,.64,1), opacity var(--t-fade,.12s) linear;
+    width:min(94vw, 470px); border-radius:4px; padding:10px 10px 12px;
     background:var(--stone); border:4px solid var(--stone-light);
     box-shadow:inset -4px -4px 0 rgba(0,0,0,.22), inset 4px 4px 0 rgba(255,255,255,.18);
     pointer-events:none;
@@ -132,62 +118,150 @@
   .stage.open .gui { transform:scale(1) translateY(0); opacity:1; pointer-events:auto; }
   .gui .title {
     font:900 13px/1.2 var(--mono); letter-spacing:.04em; color:#2B2B2B;
-    margin:2px 2px 8px; display:flex; justify-content:space-between; gap:10px; align-items:baseline;
+    margin:2px 2px 9px; display:flex; justify-content:space-between; gap:10px; align-items:baseline;
   }
-  .gui .title span.count { font-size:11px; color:#3E3E3E; }
-  .grid { display:grid; grid-template-columns:repeat(9, 1fr); gap:3px; }
+  .gui .title .count { font-size:11px; color:#3E3E3E; }
+
+  /* SIX BIG SQUARES, three across — his call. One page always means the same thing,
+     so the count does not change between the phone and the desk; the squares grow instead. */
+  .grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }
   .slot {
-    position:relative; aspect-ratio:1/1; border-radius:2px;
-    background:var(--stone-dark);
-    box-shadow:inset 2px 2px 0 rgba(0,0,0,.38), inset -2px -2px 0 rgba(255,255,255,.16);
-    display:grid; place-items:center;
-    opacity:0;
+    position:relative; aspect-ratio:1/1; border-radius:3px; background:var(--stone-dark);
+    box-shadow:inset 3px 3px 0 rgba(0,0,0,.38), inset -3px -3px 0 rgba(255,255,255,.16);
+    display:grid; place-items:center; opacity:0; overflow:hidden;
   }
-  .stage.open .slot { animation:slotIn var(--t-slot, .16s) ease-out both; }
-  @keyframes slotIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
-  .slot .box {
-    width:66%; height:66%; border-radius:2px;
-    background:linear-gradient(150deg, var(--wood-lid), var(--wood-dark));
-    border:1px solid rgba(0,0,0,.45);
+  .stage.open .slot { animation:slotIn var(--t-slot,.22s) cubic-bezier(.2,.9,.3,1) both; }
+  @keyframes slotIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  .slot .name {
+    position:absolute; left:0; right:0; bottom:0; padding:3px 5px;
+    font:900 10px/1.15 var(--mono); color:#fff; text-shadow:1px 1px 0 #000;
+    background:linear-gradient(180deg, transparent, rgba(0,0,0,.55));
+    text-align:left; pointer-events:none;
   }
-  .slot .box.b2 { background:linear-gradient(150deg,#8E5A3A,#4A2E1C); }
-  .slot .box.b3 { background:linear-gradient(150deg,#C0A15E,#6E5526); }
   .slot .n {
-    position:absolute; right:2px; bottom:0;
-    font:900 10px/1 var(--mono); color:#fff; text-shadow:1px 1px 0 #000;
+    position:absolute; right:4px; top:3px; font:900 12px/1 var(--mono);
+    color:#fff; text-shadow:1px 1px 0 #000;
   }
 
-  /* LOOK 2 — the KPM crate: same motion, our palette, no stone grey */
+  /* ── THE PRODUCT IN 3D — the same box the Master Vault and the sales terminal draw:
+        the real width/height/depth in millimetres decide the shape, so a 16-stick pack
+        really is fatter than a 12. Here the faces are flat colours standing in for the
+        product photos the app already has. ───────────────────────────────────────── */
+  .cubeStage { --slot-h:74px; perspective:340px; display:grid; place-items:center; width:100%; height:100%; }
+  .cube {
+    --k: calc(var(--slot-h) / var(--mm-h, 90));
+    width: calc(var(--mm-w, 55) * var(--k)); height: var(--slot-h);
+    position:relative; transform-style:preserve-3d;
+    transform: rotateX(-12deg) rotateY(-28deg);
+    transition: transform .45s ease-out;
+  }
+  .stage.open .slot .cube { animation: place var(--t-turn,.62s) cubic-bezier(.2,.9,.3,1) both; }
+  @keyframes place {
+    from { transform: rotateX(-12deg) rotateY(-150deg); }
+    to   { transform: rotateX(-12deg) rotateY(-28deg); }
+  }
+  /* the one under the pointer turns; nothing turns for ever on its own */
+  @media (hover:hover) and (pointer:fine) {
+    .slot:hover .cube { animation: turn 4s linear infinite; }
+  }
+  @keyframes turn { from { transform:rotateX(-12deg) rotateY(0); } to { transform:rotateX(-12deg) rotateY(360deg); } }
+  .cube > i { position:absolute; display:block; border:1px solid rgba(0,0,0,.5); overflow:hidden; }
+  .cube > .f, .cube > .bk { inset:0; background:var(--pf); }
+  .cube > .f  { transform: translateZ(calc(var(--mm-d,22) * var(--k) / 2)); }
+  .cube > .bk { transform: rotateY(180deg) translateZ(calc(var(--mm-d,22) * var(--k) / 2)); background:var(--pb); }
+  .cube > .l, .cube > .r {
+    top:0; height:var(--slot-h); width:calc(var(--mm-d,22) * var(--k));
+    left:calc((var(--mm-w,55) * var(--k) - var(--mm-d,22) * var(--k)) / 2); background:var(--ps);
+  }
+  .cube > .l { transform: rotateY(-90deg) translateZ(calc(var(--mm-w,55) * var(--k) / 2)); }
+  .cube > .r { transform: rotateY(90deg)  translateZ(calc(var(--mm-w,55) * var(--k) / 2)); }
+  .cube > .t, .cube > .bt {
+    left:0; width:calc(var(--mm-w,55) * var(--k)); height:calc(var(--mm-d,22) * var(--k));
+    top:calc((var(--slot-h) - var(--mm-d,22) * var(--k)) / 2); background:var(--pt);
+  }
+  .cube > .t  { transform: rotateX(90deg)  translateZ(calc(var(--slot-h) / 2)); }
+  .cube > .bt { transform: rotateX(-90deg) translateZ(calc(var(--slot-h) / 2)); background:#1a1512; }
+  .cube .band { position:absolute; left:0; right:0; top:34%; height:16%; background:rgba(0,0,0,.28); }
+
+  /* ── DRAG: a square is picked up, carried, and dropped on another square ──────── */
+  .slot.has { cursor:grab; touch-action:none; }
+  .slot.has:active { cursor:grabbing; }
+  .slot.lift { opacity:.35 !important; }
+  .slot.over { outline:3px solid #F5D08A; outline-offset:-3px; }
+  .ghost {
+    position:fixed; z-index:50; pointer-events:none; width:96px; height:96px; border-radius:3px;
+    background:var(--stone-dark); display:grid; place-items:center; opacity:.94;
+    box-shadow:inset 3px 3px 0 rgba(0,0,0,.38), inset -3px -3px 0 rgba(255,255,255,.16);
+    transform:translate(-50%,-50%) scale(1.06);
+  }
+  .stage[data-look="kpm"] .ghost { background:var(--inset); border:1px solid var(--accent-edge); box-shadow:none; }
+
+  /* every move reports — his law; the word appears where the work happened */
+  .saved {
+    position:absolute; right:10px; top:-22px; opacity:0;
+    font:900 10px/1 var(--mono); letter-spacing:.18em; text-transform:uppercase; color:#EFD9A8;
+  }
+  .saved.show { animation:savedIn 1.4s ease-out both; }
+  @keyframes savedIn { 0% { opacity:0; transform:translateY(4px); } 18% { opacity:1; transform:none; } 70% { opacity:1; } 100% { opacity:0; } }
+
+  /* ── THE SECOND PANEL — damaged goods, always visible to an admin, like the player's
+        own row under a chest in the game. Its slots are marked so nothing can be dragged
+        between the two panels by accident: moving a pack from good to damaged is a stock
+        action, not a tidy-up. ─────────────────────────────────────────────────────── */
+  .dmgHead {
+    display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+    margin:12px 2px 6px; font:900 11px/1.2 var(--mono); letter-spacing:.14em; text-transform:uppercase; color:#2B2B2B;
+  }
+  .dmgHead .num { color:#7A2A1E; }
+  .stage[data-look="kpm"] .dmgHead { color:var(--ink-muted); }
+  .stage[data-look="kpm"] .dmgHead .num { color:#E08C82; }
+  .dmg { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }
+  .dmg .slot { aspect-ratio:1/.62; }
+  .dmg .slot .name { font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:2px 4px; }
+  .dmg .slot .n { font-size:11px; }
+  .dmg .slot.has { outline:2px solid rgba(190,70,50,.55); outline-offset:-2px; }
+
+  /* ── the pages ───────────────────────────────────────────────────────────────── */
+  .pages { display:flex; gap:6px; align-items:center; margin:10px 2px 0; }
+  .pg {
+    min-width:40px; min-height:40px; padding:0 12px; border-radius:3px; cursor:pointer;
+    background:var(--stone-dark); color:#EFEFEF; border:0;
+    box-shadow:inset 2px 2px 0 rgba(255,255,255,.14), inset -2px -2px 0 rgba(0,0,0,.34);
+    font:900 12px/1 var(--mono); letter-spacing:.1em;
+  }
+  .pg.on { background:#6E6E6E; color:#fff; box-shadow:inset 2px 2px 0 rgba(0,0,0,.34), inset -2px -2px 0 rgba(255,255,255,.14); }
+  .pages .of { margin-left:auto; font:900 10px/1 var(--mono); letter-spacing:.14em; color:#3E3E3E; }
+
+  /* LOOK 2 — the panel in KPM colours. The CHEST stays brown in both. */
   .stage[data-look="kpm"] .gui {
     background:linear-gradient(180deg, var(--raised), var(--panel));
-    border:2px solid var(--line-2); border-radius:14px;
-    box-shadow:none; padding:12px;
+    border:2px solid var(--line-2); border-radius:14px; box-shadow:none; padding:12px;
   }
   .stage[data-look="kpm"] .gui .title { color:var(--ink); letter-spacing:.14em; text-transform:uppercase; }
-  .stage[data-look="kpm"] .gui .title span.count { color:var(--accent-ink); }
-  .stage[data-look="kpm"] .slot {
-    background:var(--inset); border:1px solid var(--line-2); border-radius:6px; box-shadow:none;
-  }
-  .stage[data-look="kpm"] .slot .n { color:var(--ink); text-shadow:none; }
-  .stage[data-look="kpm"] .chest .body { background:linear-gradient(180deg,#3A332B 0 52%,#2A241E 52% 100%); border-color:var(--line-2); }
-  .stage[data-look="kpm"] .chest .lid  { background:linear-gradient(180deg,#4A4137,#3A332B); border-color:var(--line-2); }
-  .stage[data-look="kpm"] .chest .latch { background:linear-gradient(180deg,var(--amber),#7a4c05); border-color:var(--line-2); }
+  .stage[data-look="kpm"] .gui .title .count { color:var(--accent-ink); }
+  .stage[data-look="kpm"] .slot { background:var(--inset); border:1px solid var(--line-2); border-radius:8px; box-shadow:none; }
+  .stage[data-look="kpm"] .pg { background:var(--panel); color:var(--ink-muted); border:1px solid var(--line-2); border-radius:8px; box-shadow:none; }
+  .stage[data-look="kpm"] .pg.on { border-color:var(--accent-edge); color:var(--accent-ink); background:var(--raised); }
+  .stage[data-look="kpm"] .pages .of { color:var(--ink-dim); }
 
   .note { border-left:2px solid var(--accent-edge); padding:2px 0 2px 14px; margin:18px 0; color:var(--ink-muted); font-size:14px; }
   .note b { color:var(--ink); }
   ul { padding-left:18px; color:var(--ink-muted); font-size:14px; }
-  li { margin:7px 0; }
-  li b { color:var(--ink); }
+  li { margin:7px 0; } li b { color:var(--ink); }
   footer { margin-top:34px; color:var(--ink-dim); font-size:12px; font-family:var(--mono); letter-spacing:.06em; }
 
   @media (max-width:560px) {
+    /* the panel is taller than the desk one (six big squares + the damaged row), so the stage
+       has to make room for it or the top row is clipped by its own box */
+    .stage { min-height:720px; }
     .gui { bottom:96px; padding:8px; }
-    .grid { gap:2px; }
-    .gui .title { font-size:11px; }
+    .cubeStage { --slot-h:52px; }
+    .slot .name { font-size:9px; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .chest .lid, .chest .latch, .gui { transition-duration:1ms; }
-    .stage.open .slot { animation-duration:1ms; }
+    .chest .lid, .chest .latch, .gui, .cube { transition-duration:1ms; }
+    .stage.open .slot, .stage.open .slot .cube { animation-duration:1ms; }
+    .slot:hover .cube { animation:none; }
   }
 </style>
 </head>
@@ -196,19 +270,19 @@
 
   <header>
     <h1>Agent inventory — the chest</h1>
-    <p class="sub">A review prototype of the opening you sent. Tap the chest (or the panel) to open and close it. Nothing here is in the app yet.</p>
+    <p class="sub">Six big squares to a page, the product standing in each one as a real box. Tap the chest to open and close it, drag a box to move it, and tap a page number to turn the page. The damaged row under the chest is always visible to an admin.</p>
   </header>
 
   <div class="bar">
-    <button class="key on" id="lookVideo" aria-pressed="true">1 · like the video</button>
-    <button class="key" id="lookKpm" aria-pressed="false">2 · KPM palette</button>
-    <button class="key" id="sound" aria-pressed="true">🔊 sound on</button>
-    <button class="key" id="slow" aria-pressed="false">slow motion</button>
+    <button class="key on" id="lookVideo">1 · grey panel</button>
+    <button class="key" id="lookKpm">2 · KPM panel</button>
+    <button class="key on" id="sound">🔊 sound on</button>
+    <button class="key" id="slow">slow motion</button>
     <button class="key plate" id="replay">Open again</button>
   </div>
   <div class="bar" style="margin-top:2px">
-    <button class="key on" data-agent="Budi Santoso" aria-pressed="true">Budi Santoso</button>
-    <button class="key" data-agent="Dedi Kurniawan" aria-pressed="false">Dedi Kurniawan</button>
+    <button class="key on" data-agent="Budi Santoso">Budi Santoso</button>
+    <button class="key" data-agent="Dedi Kurniawan">Dedi Kurniawan</button>
   </div>
 
   <div class="stage" id="stage" data-look="video" tabindex="0" role="button" aria-expanded="false" aria-label="Open the agent inventory chest">
@@ -216,7 +290,12 @@
 
     <div class="gui" id="gui">
       <p class="title"><span id="guiTitle">Budi Santoso inventory</span><span class="count" id="guiCount">760 Bks</span></p>
+      <span class="saved" id="saved">tersimpan</span>
       <div class="grid" id="grid"></div>
+      <div class="pages" id="pages"></div>
+
+      <div class="dmgHead"><span>Barang rusak · di van</span><span class="num" id="dmgCount">3 barang</span></div>
+      <div class="dmg" id="dmg"></div>
     </div>
 
     <div class="chest">
@@ -226,45 +305,197 @@
     </div>
   </div>
 
-  <h2>What is real here, and what is not</h2>
+  <h2>What changed, and the one thing I would do differently</h2>
   <ul>
-    <li><b>The motion is copied, the art is not.</b> The lid tilts back and the panel grows out of it in about a quarter second with a small overshoot — the same beat as the video. Every pixel here is drawn by us with plain boxes; no Minecraft texture, sound file or font is used, because those belong to Mojang and cannot ship in a product you sell.</li>
-    <li><b>The sound is made in the browser, not downloaded.</b> A short wooden creak and a thud, built from a tone and some noise. It can be swapped for a real recording of a crate later — a recording we own.</li>
-    <li><b>Look 1 keeps the grey stone panel</b> so you can judge it against the video. It breaks your palette rule (grey is not slate, and the frame is not gold). <b>Look 2 is the same panel in KPM colours.</b></li>
-    <li><b>The title is the agent's name</b>, as you asked — "Budi Santoso inventory". Switch the name above and the panel follows.</li>
-    <li><b>Lite Mode and "reduce motion" stop the animation</b> — the panel is simply already open, with no lid tilt. The slots and the numbers still read.</li>
+    <li><b>Six squares a page, as you said.</b> Three across, two down. A page means the same thing on the phone and on the PC — the squares grow instead of multiplying, so "page 2" is never a different amount of goods on a different screen.</li>
+    <li><b>The product stands in the square as a real box</b>, the same one the Master Vault and the sales terminal draw: its true width, height and depth in millimetres decide the shape, so a 16-stick pack really is fatter than a 12. Here the faces are flat colours standing in for the product photos the app already holds — in the app they are the photos.</li>
+    <li><b>Each box is placed, not spun.</b> When the page opens every box turns once into place, one after another. Resting your mouse on a square turns that one box slowly; nothing turns for ever by itself, and on the phone nothing turns until you touch it.</li>
+    <li><b>The chest stays brown in both looks</b>, as you asked. That is the same exemption the printed nota has: the chest is a thing, not app furniture.</li>
+    <li><b>Lite Mode and "reduce motion"</b> keep every box, every number and every page — they just arrive without the turn.</li>
   </ul>
 
-  <p class="note"><b>One thing to decide beyond the look:</b> the real agent inventory has more than 27 things in it — products, damaged goods, the pita cukai debt. A chest with 27 slots is a beautiful opening for a <b>van manifest</b>, but it cannot hold a screen. So the chest is the <b>way in</b>: it opens, the panel fills with what the van carries, and the rest of the screen stays below it. That is what this prototype shows.</p>
+  <p class="note"><b>Where I would push back, slightly:</b> six squares is right for the phone, but Budi's van has nine products today, so he would be on page 2 most mornings. I would keep six — one page must mean one thing — and instead make the <b>page buttons carry what is on them</b> (a little "3" on page 2 when three products sit there), so nobody has to turn a page to find out whether it is worth turning. The prototype does that already: look under the squares.</p>
 
-  <footer>KPM Inventory · prototype for review · <span id="stamp"></span></footer>
+  <h2>The two you added: dragging, and the damaged row</h2>
+  <ul>
+    <li><b>Drag works with a finger, not only a mouse.</b> Press a box, move it, drop it on another square; a press that barely moves is still a tap, so you can turn a box without moving it. The order is written <b>once, when you let go</b> — and the word "tersimpan" appears where the work happened, because every action must say so.</li>
+    <li><b>What gets saved is only the ORDER</b> — a short list of which product sits in which square. It is not the stock. In the app it belongs in a small field of its own, never inside the van's contents, because the two stock transactions and every sale already write that; a tidy-up must not be able to collide with a sale.</li>
+    <li><b>The damaged row is always under the chest</b>, with the reason on each one (Kemasan rusak · Basah · Pita cukai). That is what an admin could only see on the night's report before.</li>
+    <li><b>You cannot drag a good pack into the damaged row.</b> That would mean "this came back broken", which is a stock movement with a receipt behind it, not a tidy-up. Try it — the chest says so out loud.</li>
+    <li><b>The chest IS the agent inventory for a regional admin and above</b>, as you said. The salesman keeps his own screen; this is the same van seen from the office.</li>
+  </ul>
+
+  <p class="note"><b>One cost to know before we build it:</b> saving the order means a write every time someone rearranges. On its own that is cheap — but it must be a field of its own, and it must be written on drop rather than while dragging, or a busy morning turns into hundreds of writes and a chance to overwrite a sale that landed mid-drag.</p>
+
+  <footer>KPM Inventory · prototype for review · v2 · <span id="stamp"></span></footer>
 </div>
 
 <script>
+  /* Budi's van: nine products, so paging is real rather than decorative. The millimetres are the
+     ones the sales terminal already uses for its 3D box; the colours stand in for the photos. */
   var VAN = [
-    { n:'Cello Green 16',  q:600, cls:'' },
-    { n:'Djarum Coklat 12', q:120, cls:'b2' },
-    { n:'Sampoerna Mild 16', q:40, cls:'b3' }
+    { n:'Cello Green 16',   q:600, mm:[55,90,22], f:'#6E8F3F', s:'#52702E', t:'#8CA95C' },
+    { n:'Djarum Coklat 12', q:120, mm:[52,86,24], f:'#7A4B22', s:'#5C3618', t:'#98663A' },
+    { n:'Sampoerna Mild 16',q:40,  mm:[54,92,21], f:'#C4A24E', s:'#9A7C34', t:'#DCC072' },
+    { n:'Gudang Garam 12',  q:200, mm:[56,88,26], f:'#A33B2A', s:'#7C2A1D', t:'#C05442' },
+    { n:'Cello Merah 12',   q:80,  mm:[50,88,20], f:'#B5462F', s:'#8C3222', t:'#CE6247' },
+    { n:'Cello Filter 20',  q:60,  mm:[57,94,23], f:'#3F6E7F', s:'#2E525F', t:'#5C8EA0' },
+    { n:'Djarum Super 12',  q:45,  mm:[53,87,25], f:'#5B4B8A', s:'#443769', t:'#7767A8' },
+    { n:'Sampoerna Kretek', q:30,  mm:[58,90,27], f:'#8A7B3F', s:'#6A5D2C', t:'#A8985A' },
+    { n:'Cello Green 12',   q:24,  mm:[50,86,19], f:'#5E8A4A', s:'#466937', t:'#7BA765' }
   ];
-  var stage = document.getElementById('stage');
-  var grid  = document.getElementById('grid');
-  var gui   = document.getElementById('gui');
+  /* what came back broken. In the app this is the quarantine the salesman reports at EOD —
+     an admin sees it here at any hour instead of only on the night's report. */
+  var DMG = [
+    { n:'Djarum Coklat 12', q:5,  why:'Kemasan rusak', mm:[52,86,24], f:'#7A4B22', s:'#5C3618', t:'#98663A' },
+    { n:'Cello Merah 12',   q:2,  why:'Basah',         mm:[50,88,20], f:'#B5462F', s:'#8C3222', t:'#CE6247' },
+    { n:'Cello Green 16',   q:12, why:'Pita cukai',    mm:[55,90,22], f:'#6E8F3F', s:'#52702E', t:'#8CA95C' }
+  ];
+  var PER_PAGE = 6, page = 0;
+  var stage = document.getElementById('stage'), grid = document.getElementById('grid'),
+      pagesEl = document.getElementById('pages'), dmgEl = document.getElementById('dmg');
 
-  /* 27 slots: the three real van rows first, the rest empty — exactly like a chest that is
-     part full. Each slot gets its own small delay so they arrive in a wave. */
-  (function build(){
+  /* THE ORDER IS THE DATA. Dragging changes this list, and only this list — the quantities,
+     the products and the van itself are never touched by a tidy-up. In the app it is one small
+     field of its own (an array of product ids), written on DROP and never inside activeCanvas,
+     which sales and the two stock transactions already write. */
+  var ORDER = null;
+  try { ORDER = JSON.parse(localStorage.getItem('kpm-chest-order') || 'null'); } catch (e) { ORDER = null; }
+  if (!ORDER || ORDER.length !== VAN.length) ORDER = VAN.map(function (_, i) { return i; });
+  function saveOrder() {
+    try { localStorage.setItem('kpm-chest-order', JSON.stringify(ORDER)); } catch (e) { /* private window */ }
+    var s = document.getElementById('saved');
+    s.classList.remove('show'); void s.offsetWidth; s.classList.add('show');
+  }
+  function itemAt(i) { return VAN[ORDER[i]]; }
+
+  function cube(p) {
+    return '<span class="cubeStage"><span class="cube" style="--mm-w:' + p.mm[0] + ';--mm-h:' + p.mm[1] +
+           ';--mm-d:' + p.mm[2] + ';--pf:' + p.f + ';--pb:' + p.s + ';--ps:' + p.s + ';--pt:' + p.t + '">' +
+           '<i class="f"><span class="band"></span></i><i class="bk"></i><i class="l"></i><i class="r"></i>' +
+           '<i class="t"></i><i class="bt"></i></span></span>';
+  }
+  function draw() {
     var html = '';
-    for (var i = 0; i < 27; i++) {
-      var item = VAN[i];
-      var delay = 120 + i * 12;
-      html += '<div class="slot" style="animation-delay:' + delay + 'ms">' +
-              (item ? '<span class="box ' + item.cls + '" title="' + item.n + '"></span><span class="n">' + item.q + '</span>' : '') +
-              '</div>';
+    for (var i = 0; i < PER_PAGE; i++) {
+      var idx = page * PER_PAGE + i, p = idx < ORDER.length ? itemAt(idx) : null;
+      var delay = 140 + i * 55;          /* the boxes are placed one after another */
+      html += '<div class="slot' + (p ? ' has' : '') + '" data-i="' + idx + '" data-zone="good" style="animation-delay:' + delay + 'ms">';
+      if (p) {
+        html += cube(p).replace('class="cube"', 'class="cube" data-d="' + (delay + 40) + '"') +
+                '<span class="n">' + p.q + '</span><span class="name">' + p.n + '</span>';
+      }
+      html += '</div>';
     }
     grid.innerHTML = html;
-  })();
 
-  /* ── the sound, synthesised — a creak (a falling tone) plus a wooden knock ────────────── */
+    /* the damaged row — same squares, shorter, and never a drop target for a good pack */
+    var d = '';
+    for (var j = 0; j < 3; j++) {
+      var q = DMG[j];
+      d += '<div class="slot' + (q ? ' has' : '') + '" data-zone="dmg" style="animation-delay:' + (400 + j * 50) + 'ms">';
+      if (q) {
+        d += cube(q).replace('class="cube"', 'class="cube" data-d="' + (440 + j * 50) + '"') +
+             '<span class="n">' + q.q + '</span><span class="name" title="' + q.why + '">' + q.n + '</span>';
+      }
+      d += '</div>';
+    }
+    dmgEl.innerHTML = d;
+    document.getElementById('dmgCount').textContent =
+      DMG.reduce(function (n, x) { return n + x.q; }, 0) + ' Bks · ' + DMG.length + ' barang';
+    /* each box starts turning just after its square lands */
+    Array.prototype.forEach.call(document.querySelectorAll('.gui .cube'), function (c) {
+      c.style.animationDelay = (c.dataset.d || 0) + 'ms';
+    });
+
+    var total = Math.ceil(VAN.length / PER_PAGE), tabs = '';
+    for (var k = 0; k < total; k++) {
+      var on = k === page ? ' on' : '';
+      var count = VAN.slice(k * PER_PAGE, (k + 1) * PER_PAGE).length;
+      tabs += '<button class="pg' + on + '" data-p="' + k + '">' + (k + 1) + ' · ' + count + '</button>';
+    }
+    pagesEl.innerHTML = tabs + '<span class="of">' + VAN.length + ' barang · halaman ' + (page + 1) + '/' + total + '</span>';
+  }
+  /* ── DRAG AND DROP, on a finger as well as a mouse ──────────────────────────────
+     Pointer events, not HTML5 drag-and-drop: the latter does not exist on a touch screen, and
+     this screen lives on a phone. A press that travels less than 6 px is still a tap, so the
+     box can be turned without moving it. The order is written on DROP, once — never per frame. */
+  var drag = null;
+  /* WHICH SQUARE IS UNDER THE FINGER — measured, not asked.
+     `document.elementFromPoint` looks like the obvious answer and it is not: it ignores anything
+     with pointer-events:none (so it would ignore the carried box, which is right) but it also
+     returns NOTHING at all when the page is not compositing — a hidden tab, a preview pane, a
+     screenshot harness. A drop that silently does nothing is exactly the kind of "it worked on my
+     machine" this app cannot afford, so the rectangles are compared directly. */
+  function slotUnder(x, y) {
+    var all = document.querySelectorAll('.gui .slot'), hit = null;
+    Array.prototype.forEach.call(all, function (s) {
+      var r = s.getBoundingClientRect();
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) hit = s;
+    });
+    return hit;
+  }
+  grid.addEventListener('pointerdown', function (e) {
+    var slot = e.target.closest('.slot.has'); if (!slot) return;
+    e.stopPropagation();
+    drag = { slot: slot, from: +slot.dataset.i, x0: e.clientX, y0: e.clientY, live: false, id: e.pointerId };
+    slot.setPointerCapture(e.pointerId);
+  });
+  grid.addEventListener('pointermove', function (e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+    if (!drag.live) {
+      if (Math.abs(dx) + Math.abs(dy) < 6) return;     /* still a tap, not a drag */
+      drag.live = true;
+      drag.slot.classList.add('lift');
+      var g = document.createElement('div');
+      g.className = 'ghost';
+      g.innerHTML = drag.slot.querySelector('.cubeStage').outerHTML;
+      document.body.appendChild(g);
+      drag.ghost = g;
+    }
+    drag.ghost.style.left = e.clientX + 'px';
+    drag.ghost.style.top  = e.clientY + 'px';
+    var over = slotUnder(e.clientX, e.clientY);
+    Array.prototype.forEach.call(document.querySelectorAll('.slot.over'), function (s) { s.classList.remove('over'); });
+    if (over && over !== drag.slot && over.dataset.zone === 'good') over.classList.add('over');
+  });
+  function endDrag(e) {
+    if (!drag || (e && e.pointerId !== drag.id)) return;
+    var d = drag; drag = null;
+    if (d.ghost) d.ghost.remove();
+    d.slot.classList.remove('lift');
+    Array.prototype.forEach.call(document.querySelectorAll('.slot.over'), function (s) { s.classList.remove('over'); });
+    if (!d.live) return;
+    var target = e ? slotUnder(e.clientX, e.clientY) : null;
+    if (!target || target === d.slot) return;
+    /* a pack dragged onto the damaged row would MEAN "this came back broken" — that is a stock
+       action with a receipt behind it, not a tidy-up, so the prototype refuses it out loud */
+    if (target.dataset.zone !== 'good') { flash('Barang rusak dicatat lewat EOD, bukan digeser'); return; }
+    var to = +target.dataset.i;
+    if (to >= ORDER.length) to = ORDER.length - 1;
+    var moved = ORDER.splice(d.from, 1)[0];
+    ORDER.splice(to, 0, moved);
+    draw(); saveOrder(); if (!muted) pageTurn();
+  }
+  grid.addEventListener('pointerup', endDrag);
+  grid.addEventListener('pointercancel', endDrag);
+
+  function flash(msg) {
+    var s = document.getElementById('saved');
+    s.textContent = msg;
+    s.classList.remove('show'); void s.offsetWidth; s.classList.add('show');
+    setTimeout(function () { s.textContent = 'tersimpan'; }, 1500);
+  }
+
+  pagesEl.addEventListener('click', function (e) {
+    var b = e.target.closest('.pg'); if (!b) return;
+    e.stopPropagation();
+    page = +b.dataset.p; draw(); if (!muted) pageTurn();
+  });
+  document.getElementById('gui').addEventListener('click', function (e) { e.stopPropagation(); });
+
+  /* ── sound: synthesised here, never a downloaded game file ─────────────────────── */
   var ctx = null, muted = false;
   try { muted = localStorage.getItem('kpm-chest-mute') === '1'; } catch (e) { muted = false; }
   function audio() {
@@ -287,101 +518,82 @@
   }
   function creak(t0, dur, gain) {
     var c = audio(); if (!c) return;
-    var len = Math.floor(c.sampleRate * dur), buf = c.createBuffer(1, len, c.sampleRate);
-    var d = buf.getChannelData(0);
-    for (var i = 0; i < len; i++) { d[i] = (Math.random() * 2 - 1) * (1 - i / len); }
+    var len = Math.floor(c.sampleRate * dur), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
     var src = c.createBufferSource(); src.buffer = buf;
     var f = c.createBiquadFilter(); f.type = 'bandpass';
-    f.frequency.setValueAtTime(760, t0);
-    f.frequency.exponentialRampToValueAtTime(320, t0 + dur);
-    f.Q.value = 7;
-    var g = c.createGain();
-    g.gain.setValueAtTime(gain, t0);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    src.connect(f); f.connect(g); g.connect(c.destination);
-    src.start(t0); src.stop(t0 + dur);
+    f.frequency.setValueAtTime(760, t0); f.frequency.exponentialRampToValueAtTime(320, t0 + dur); f.Q.value = 7;
+    var g = c.createGain(); g.gain.setValueAtTime(gain, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(f); f.connect(g); g.connect(c.destination); src.start(t0); src.stop(t0 + dur);
   }
-  function playOpen() {
-    if (muted) return; var c = audio(); if (!c) return;
-    var t = c.currentTime;
-    creak(t, 0.30, 0.16);
-    knock(t + 0.02, 180, 0.16, 0.22);
-    knock(t + 0.20, 320, 0.10, 0.10);
-  }
-  function playClose() {
-    if (muted) return; var c = audio(); if (!c) return;
-    var t = c.currentTime;
-    creak(t, 0.16, 0.10);
-    knock(t + 0.10, 130, 0.18, 0.26);
-  }
+  function playOpen()  { if (muted) return; var c = audio(); if (!c) return; var t = c.currentTime;
+                         creak(t, .30, .16); knock(t + .02, 180, .16, .22); knock(t + .20, 320, .10, .10); }
+  function playClose() { if (muted) return; var c = audio(); if (!c) return; var t = c.currentTime;
+                         creak(t, .16, .10); knock(t + .10, 130, .18, .26); }
+  function pageTurn()  { var c = audio(); if (!c) return; var t = c.currentTime; knock(t, 420, .07, .10); }
 
-  /* ── open / close ─────────────────────────────────────────────────────────────────────── */
   function setOpen(on) {
     stage.classList.toggle('open', on);
     stage.setAttribute('aria-expanded', on ? 'true' : 'false');
-    if (on) { playOpen(); } else { playClose(); }
+    if (on) { draw(); playOpen(); } else { playClose(); }
   }
   stage.addEventListener('click', function () { setOpen(!stage.classList.contains('open')); });
   stage.addEventListener('keydown', function (e) {
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!stage.classList.contains('open')); }
   });
+  document.getElementById('replay').addEventListener('click', function (e) {
+    e.stopPropagation(); page = 0; setOpen(false);
+    setTimeout(function () { setOpen(true); }, stage.classList.contains('slow') ? 520 : 260);
+  });
   var slowKey = document.getElementById('slow');
   slowKey.addEventListener('click', function (e) {
     e.stopPropagation();
     var on = !stage.classList.contains('slow');
-    stage.classList.toggle('slow', on);
-    slowKey.classList.toggle('on', on);
-    slowKey.setAttribute('aria-pressed', String(on));
-    setOpen(false);
-    setTimeout(function () { setOpen(true); }, on ? 520 : 260);
+    stage.classList.toggle('slow', on); slowKey.classList.toggle('on', on);
+    setOpen(false); setTimeout(function () { setOpen(true); }, on ? 520 : 260);
   });
 
-  document.getElementById('replay').addEventListener('click', function (e) {
-    e.stopPropagation();
-    setOpen(false);
-    setTimeout(function () { setOpen(true); }, 260);
-  });
-
-  /* ── the two looks ────────────────────────────────────────────────────────────────────── */
   function look(which) {
     stage.setAttribute('data-look', which);
-    var a = document.getElementById('lookVideo'), b = document.getElementById('lookKpm');
-    a.classList.toggle('on', which === 'video'); a.setAttribute('aria-pressed', which === 'video');
-    b.classList.toggle('on', which === 'kpm');   b.setAttribute('aria-pressed', which === 'kpm');
+    document.getElementById('lookVideo').classList.toggle('on', which === 'video');
+    document.getElementById('lookKpm').classList.toggle('on', which === 'kpm');
   }
-  document.getElementById('lookVideo').addEventListener('click', function () { look('video'); });
-  document.getElementById('lookKpm').addEventListener('click', function () { look('kpm'); });
+  document.getElementById('lookVideo').addEventListener('click', function (e) { e.stopPropagation(); look('video'); });
+  document.getElementById('lookKpm').addEventListener('click', function (e) { e.stopPropagation(); look('kpm'); });
 
-  /* ── the sound switch ─────────────────────────────────────────────────────────────────── */
   var soundKey = document.getElementById('sound');
-  function paintSound() {
-    soundKey.textContent = muted ? '🔇 sound off' : '🔊 sound on';
-    soundKey.classList.toggle('on', !muted);
-    soundKey.setAttribute('aria-pressed', String(!muted));
-  }
-  soundKey.addEventListener('click', function () {
-    muted = !muted;
-    try { localStorage.setItem('kpm-chest-mute', muted ? '1' : '0'); } catch (e) { /* private window */ }
-    paintSound();
-    if (!muted) playOpen();
+  function paintSound() { soundKey.textContent = muted ? '🔇 sound off' : '🔊 sound on'; soundKey.classList.toggle('on', !muted); }
+  soundKey.addEventListener('click', function (e) {
+    e.stopPropagation(); muted = !muted;
+    try { localStorage.setItem('kpm-chest-mute', muted ? '1' : '0'); } catch (err) { /* private window */ }
+    paintSound(); if (!muted) playOpen();
   });
   paintSound();
 
-  /* ── whose van ────────────────────────────────────────────────────────────────────────── */
   Array.prototype.forEach.call(document.querySelectorAll('[data-agent]'), function (btn) {
-    btn.addEventListener('click', function () {
-      Array.prototype.forEach.call(document.querySelectorAll('[data-agent]'), function (o) {
-        o.classList.toggle('on', o === btn); o.setAttribute('aria-pressed', String(o === btn));
-      });
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      Array.prototype.forEach.call(document.querySelectorAll('[data-agent]'), function (o) { o.classList.toggle('on', o === btn); });
       document.getElementById('guiTitle').textContent = btn.dataset.agent + ' inventory';
       document.getElementById('guiCount').textContent = btn.dataset.agent === 'Budi Santoso' ? '760 Bks' : '200 Bks';
     });
   });
 
   document.getElementById('stamp').textContent = new Date().toISOString().slice(0, 10);
+  draw();
 
-  /* open once shortly after load so the first thing he sees is the animation, not a shut box */
-  setTimeout(function () { stage.classList.add('open'); stage.setAttribute('aria-expanded', 'true'); }, 500);
+  /* ?still — open with no travel at all, for a screenshot. A headless browser does not always
+     advance a CSS transition, so a still shot of "open" has to be a state, not a moment waited
+     for; without this the board shows a half-grown panel and nobody can tell whether that is the
+     design or the camera. */
+  if (/(\?|&)still\b/.test(location.search)) {
+    stage.style.setProperty('--t-gui', '1ms'); stage.style.setProperty('--t-lid', '1ms');
+    stage.style.setProperty('--t-fade', '1ms'); stage.style.setProperty('--t-slot', '1ms');
+    stage.style.setProperty('--t-turn', '1ms');
+    muted = true; setOpen(true);
+  } else {
+    setTimeout(function () { setOpen(true); }, 500);
+  }
 </script>
 </body>
 </html>
