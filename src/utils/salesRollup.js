@@ -49,7 +49,7 @@ export const isSale = (tx) => !!tx && SALE_TYPES.includes(tx.type || 'SALE');
 /* The money rule lives in its own file so `dayStats` can read it too without the two modules
    importing each other — see the header of utils/revenueRule.js. Re-exported here because this is
    where the screens already look for it. */
-export { isTitip, countsAsRevenue, revenueOf, soldLinesOf } from './revenueRule.js';
+export { isTitip, countsAsRevenue, revenueOf, soldLinesOf, debtCredit } from './revenueRule.js';
 
 /* 'YYYY-MM-DD' → 'YYYY-MM'. Deliberately string arithmetic: parsing the day back into a Date to
    read its month would re-introduce a timezone, which is the thing `date` exists to have settled

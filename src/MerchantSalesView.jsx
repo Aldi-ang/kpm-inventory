@@ -5,6 +5,7 @@ import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot
 import { hasClearance, canPickFromGallery } from './config/permissions';
 import ProofCamera from './components/ProofCamera.jsx';
 import { savePhotoAndGetReference, convertToBks, splitToUnits, paymentLabel, storeKey, getLocalDayKey} from './utils/helpers';
+import { debtCredit } from './utils/revenueRule';
 import { isLowStock } from './utils/stockThreshold';
 import { dayStats, agoLabel } from './utils/dayStats';
 import { customerBrief, reorderFromLast } from './utils/customerBrief';
@@ -155,7 +156,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 });
             }
             if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
-                let deduction = t.type === 'RETURN' ? Math.abs(t.total) : (t.amountPaid || 0);
+                let deduction = debtCredit(t);   /* cash paid + the damaged goods handed back (revenueRule.js) */
                 for (let i = 0; i < debts.length; i++) {
                     if (debts[i].remaining > 0) {
                         if (deduction >= debts[i].remaining) {

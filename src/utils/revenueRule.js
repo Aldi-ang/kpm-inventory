@@ -54,6 +54,22 @@ export const revenueOf = (tx) => {
     return Number.isFinite(n) ? n : 0;
 };
 
+/* What one transaction takes OFF a store's consignment debt. A store audit (CONSIGNMENT_PAYMENT)
+   clears the cash it paid — `amountPaid`, `total` for a record that has only that, the precedence
+   above — PLUS `returnTotal`, the value of the damaged packs the shop handed back: those left its
+   shelf and went into quarantine, so the shop no longer owes for them. A RETURN clears its refund.
+   Six screens subtracted `amountPaid` alone for a month (Backlog, 2026-08-17 review: "Goods given
+   back during a payment never reduce what the store owes") — a shop that handed back Rp 500.000 of
+   damaged stock kept owing it. Cash for REVENUE stays `revenueOf`; this is the DEBT rule only. */
+export const debtCredit = (tx) => {
+    if (!tx) return 0;
+    if (tx.type === 'RETURN') return Math.abs(Number(tx.total) || 0);
+    if (tx.type !== 'CONSIGNMENT_PAYMENT') return 0;
+    const cash = tx.amountPaid !== undefined && tx.amountPaid !== null ? tx.amountPaid : tx.total;
+    const n = (Number(cash) || 0) + (Number(tx.returnTotal) || 0);
+    return Number.isFinite(n) ? n : 0;
+};
+
 /* The lines that actually changed hands, for the per-product columns. Same rule one level down:
    a placement contributes nothing, an audit contributes the part the shop sold (`itemsPaid`). */
 export const soldLinesOf = (tx) => {
@@ -90,8 +106,7 @@ export const outstandingTitip = (transactions = []) => {
         const name = storeKey(t.customerName || 'Unknown');
         const row = byCustomer.get(name) || { owed: 0, paid: 0 };
         if (t.type === 'SALE' && isTitip(t)) row.owed += Number(t.total) || 0;
-        else if (t.type === 'CONSIGNMENT_PAYMENT') row.paid += Number(t.amountPaid) || 0;
-        else if (t.type === 'RETURN') row.paid += Math.abs(Number(t.total) || 0);
+        else if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') row.paid += debtCredit(t);
         byCustomer.set(name, row);
     }
     let total = 0;

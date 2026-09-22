@@ -17,7 +17,7 @@ import HallOfFameView from './HallOfFameView';
 import { savePhotoAndGetReference, deletePhotoFromStorage, formatNumber, parseGroupedNumber, storeKey, storeLabel, getLocalDayKey, dayTargets } from './utils/helpers';
 import { PlayerCardHead } from './components/PlayerCard.jsx';
 import { careerXP, DEFAULT_XP, totals, DEFAULT_BADGES, DEFAULT_RANKS, rankLadder, STAT_LABELS, BADGE_SOURCES, statLabel } from './config/career';
-import { revenueOf } from './utils/salesRollup';
+import { revenueOf, debtCredit } from './utils/salesRollup';
 import { notify } from './components/Toast.jsx';
 
 const DynamicIconMap = { Calendar, PackageOpen, Crown, Target, Zap, Trophy, Medal, Star, Flame, ShieldCheck, Truck, Activity, DollarSign, Award };
@@ -541,7 +541,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                        window — and there the debt is already absent, so subtracting would invent
                        a negative entry for a shop that owes nothing. */
                     const debtKey = t.customerName ? storeKey(t.customerName) : null;
-                    if(debtKey && storeDebt[debtKey]) storeDebt[debtKey].amount -= (t.amountPaid || t.total || 0);
+                    if(debtKey && storeDebt[debtKey]) storeDebt[debtKey].amount -= debtCredit(t);   /* cash paid + the damaged goods handed back */
                 }
             }
         });

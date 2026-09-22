@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator, Printer, User, MapPin, Search } from 'lucide-react';
 import { convertToBks, formatRupiah, storeKey, storeLabel } from './utils/helpers';
+import { debtCredit } from './utils/revenueRule';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { handoffEligibility, canHandOffAcrossRegions, normalizeRegion, canApproveHandoffFrom } from './config/permissions';
 import { notify } from './components/Toast.jsx';
@@ -177,7 +178,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                 });
             }
             if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
-                let deduction = t.type === 'RETURN' ? Math.abs(t.total || 0) : (t.amountPaid || 0);
+                let deduction = debtCredit(t);   /* cash paid + the damaged goods handed back (revenueRule.js) */
                 for (let i = 0; i < customers[cName].debts.length; i++) {
                     if (customers[cName].debts[i].remaining > 0) {
                         if (deduction >= customers[cName].debts[i].remaining) {
@@ -321,7 +322,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                 }); 
             }
             if (t.type === 'CONSIGNMENT_PAYMENT') { 
-                customers[name].balance -= (t.amountPaid || 0); 
+                customers[name].balance -= debtCredit(t);   /* cash paid + the damaged goods handed back */
                 (t.itemsPaid || []).forEach(item => { 
                     const product = getProduct(item.productId); 
                     const bksQty = convertToBks(item.qty, item.unit, product); 

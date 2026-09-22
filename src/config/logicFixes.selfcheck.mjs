@@ -5073,9 +5073,9 @@ const { outstandingTitip: owed } = await import('../utils/revenueRule.js');
 ok('a placement with no audit is money still owed',
    owed([PLACEMENT]) === 550000,
    'got ' + owed([PLACEMENT]) + ' - it left omzet, so it must appear as piutang or it vanished from the app entirely');
-ok('the audit pays down the debt by what was actually collected',
-   owed([PLACEMENT, AUDIT]) === 165000,
-   'got ' + owed([PLACEMENT, AUDIT]) + ' - 550.000 placed, 385.000 paid, 165.000 still on the shelf and still owed');
+ok('the audit pays down the debt by the cash collected AND the damaged goods handed back (2026-09-22: this line asserted 165.000 for a month while its own fixture says 4 packs on the shelf = 110.000; the 55.000 of damaged stock was being billed)',
+   owed([PLACEMENT, AUDIT]) === 110000,
+   'got ' + owed([PLACEMENT, AUDIT]) + ' - 550.000 placed, 385.000 paid, 55.000 handed back damaged, 110.000 (4 packs) still on the shelf and still owed');
 ok('a cash sale is never a receivable',
    owed([CASHSALE]) === 0,
    'got ' + owed([CASHSALE]));
@@ -5089,7 +5089,7 @@ ok('HIS MONEY: one shop overpaying cannot cancel another shop DEBT',
    'got ' + owed([PLACEMENT, { ...AUDIT, amountPaid: 900000 }, { ...PLACEMENT, customerName: 'WARUNG BU SARI', total: 200000 }]) +
    ' - the floor is per customer. Summing everything and flooring once would report the company owed nothing while Bu Sari still owed 200.000');
 ok('the same shop written two ways is one debt, not two',
-   owed([PLACEMENT, { ...AUDIT, customerName: '  toko makmur jaya  ' }]) === 165000,
+   owed([PLACEMENT, { ...AUDIT, customerName: '  toko makmur jaya  ' }]) === 110000,
    'the payment must find its own placement, or a trimmed-and-lowercased name opens a second phantom account');
 ok('and it is a BALANCE, so it ignores the period the dashboard is showing',
    owed([{ ...PLACEMENT, date: '2019-01-01' }]) === 550000,
@@ -8054,6 +8054,40 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   ok('THE DESK: the four lab looks went with the decision',
      !/rc-two|rc-head|inv-a|inv-c|RC_TWO|RC_HEAD|INV_A|INV_C/.test(code(ll)),
      'a mock outlives its board only as a bug'); }
+}
+
+/* ─── 2026-09-22 — GOODS HANDED BACK DURING A STORE AUDIT NOW REDUCE WHAT THE STORE OWES ───
+   Backlog "Goods given back during a payment never reduce what the store owes" (2026-08-17 review): a
+   CONSIGNMENT_PAYMENT carries `returnTotal` (the value of the damaged packs the shop handed back) and
+   SIX debt calculators subtracted `amountPaid` alone, so a shop that gave back Rp 500.000 of damaged
+   stock kept owing it. One rule now, `debtCredit(tx)` in revenueRule.js, read by all six. */
+{ const rr = read('src/utils/revenueRule.js'); const cfv = read('src/ConsignmentFinanceView.jsx'); const msv = read('src/MerchantSalesView.jsx');
+  const apv = read('src/AgentProfileView.jsx'); const mmc = read('src/MapMissionControl.jsx');
+  const { debtCredit } = await import('../utils/revenueRule.js');
+  ok('REGRESSION: no debt calculator subtracts amountPaid alone any more - every one of the six reads debtCredit(t)',
+     !/let deduction = t\.type === 'RETURN' \? Math\.abs\(t\.total \|\| 0\) : \(t\.amountPaid \|\| 0\);/.test(cfv) &&
+     !/customers\[name\]\.balance -= \(t\.amountPaid \|\| 0\);/.test(cfv) &&
+     !/let deduction = t\.type === 'RETURN' \? Math\.abs\(t\.total\) : \(t\.amountPaid \|\| 0\);/.test(msv) &&
+     !/storeDebt\[debtKey\]\.amount -= \(t\.amountPaid \|\| t\.total \|\| 0\);/.test(apv) &&
+     !/reduce\(\(sum, t\) => sum \+ \(Number\(t\.amountPaid\) \|\| 0\), 0\);/.test(mmc) &&
+     !/else if \(t\.type === 'CONSIGNMENT_PAYMENT'\) row\.paid \+= Number\(t\.amountPaid\) \|\| 0;/.test(rr) &&
+     /export const debtCredit = \(tx\) =>/.test(rr) &&
+     (cfv.match(/debtCredit\(t\)/g) || []).length === 2 && /debtCredit\(t\)/.test(msv) && /debtCredit\(t\)/.test(apv) &&
+     /debtCredit\(t\)/.test(mmc) && /row\.paid \+= debtCredit\(t\)/.test(rr) &&
+     /import \{ debtCredit \} from '\.\/utils\/revenueRule'/.test(cfv) && /import \{ debtCredit \} from '\.\/utils\/revenueRule'/.test(msv) &&
+     /import \{ revenueOf, debtCredit \} from '\.\/utils\/salesRollup'/.test(apv) && /import \{ revenueOf, debtCredit \} from '\.\/utils\/revenueRule'/.test(mmc) &&
+     /export \{ isTitip, countsAsRevenue, revenueOf, soldLinesOf, debtCredit \} from '\.\/revenueRule\.js';/.test(read('src/utils/salesRollup.js')),
+     'the same money maths written six times is how two of them stayed wrong for a month');
+  ok('BEHAVIOUR: a store audit clears the cash it paid PLUS the damaged goods it handed back; a RETURN clears its refund; a sale clears nothing; the offline record (amountPaid only) still counts',
+     typeof debtCredit === 'function' &&
+     debtCredit({ type: 'CONSIGNMENT_PAYMENT', amountPaid: 500000, returnTotal: 200000, total: 500000 }) === 700000 &&
+     debtCredit({ type: 'CONSIGNMENT_PAYMENT', amountPaid: 0, returnTotal: 350000 }) === 350000 &&   /* the pure hand-back: nothing paid, damaged goods returned */
+     debtCredit({ type: 'CONSIGNMENT_PAYMENT', amountPaid: 120000 }) === 120000 &&                   /* offline: no total, no returnTotal */
+     debtCredit({ type: 'CONSIGNMENT_PAYMENT', total: 90000 }) === 90000 &&                          /* an old record with total only */
+     debtCredit({ type: 'RETURN', total: -150000 }) === 150000 &&
+     debtCredit({ type: 'SALE', paymentType: 'Titip', total: 800000 }) === 0 &&
+     debtCredit({ type: 'CONSIGNMENT_PAYMENT', amountPaid: 'abc', returnTotal: null }) === 0 && debtCredit(null) === 0,
+     'a shop that handed back Rp 500.000 of damaged stock was still billed for it');
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

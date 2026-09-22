@@ -14,7 +14,7 @@ import 'leaflet/dist/leaflet.css';
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { commitInChunks, convertToBks, formatRupiah, storeKey } from './utils/helpers';
 import { loadBorderCache, saveBorderCache, clearBorderCache } from './utils/borderCache';
-import { revenueOf } from './utils/revenueRule';
+import { revenueOf, debtCredit } from './utils/revenueRule';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import MarkerClusterGroup from 'react-leaflet-cluster'; // 🚀 INJECTED SUPERCLUSTER ENGINE
@@ -1167,7 +1167,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
            untouched: that one is measuring the debt on purpose. */
         const totalRev = storeTrans.reduce((sum, t) => sum + revenueOf(t), 0);
         const totalTitip = storeTrans.filter(t => t.type === 'SALE' && t.paymentType === 'Titip').reduce((sum, t) => sum + (Number(t.total) || 0), 0);
-        const totalPaid = storeTrans.filter(t => t.type === 'CONSIGNMENT_PAYMENT').reduce((sum, t) => sum + (Number(t.amountPaid) || 0), 0);
+        const totalPaid = storeTrans.reduce((sum, t) => sum + debtCredit(t), 0);   /* cash paid + damaged goods handed back + refunds (revenueRule.js) */
         const currentConsignment = Math.max(0, totalTitip - totalPaid);
         
         const itemMap = {}; 
