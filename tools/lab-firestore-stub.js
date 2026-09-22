@@ -39,20 +39,28 @@ export const onSnapshot = (ref, cb) => {
   return () => {};
 };
 
+/* 2026-09-22 — WRITES ARE RECORDED, READS SERVE THE FIXTURES. Still no network and still nothing
+   persists: a write lands in `globalThis.__labWrites` (`{ op, path, data }`) so a money path can be
+   driven through the REAL engine and the update it would have sent can be read back — his "can u do
+   your test yourself". `getDoc` / `runTransaction`'s get / `getDocs` answer from FIXTURES by the
+   same path-suffix rule as onSnapshot, so an engine loop that reads a product first has a product. */
 const noop = () => {};
-export const writeBatch = () => ({ set: noop, update: noop, delete: noop, commit: async () => {} });
+const writes = () => (globalThis.__labWrites = globalThis.__labWrites || []);
+const record = (op) => (ref, data) => { writes().push({ op, path: (ref && ref.path) || '', data }); };
+const found = (ref) => { const path = (ref && ref.path) || ''; const key = Object.keys(FIXTURES).find((k) => path.endsWith(k)); return key ? snap(FIXTURES[key]) : null; };
+export const writeBatch = () => ({ set: record('set'), update: record('update'), delete: record('delete'), commit: async () => {} });
 export const runTransaction = async (_db, fn) =>
-  fn({ get: async () => ({ exists: () => false, data: () => ({}) }), set: noop, update: noop });
-export const updateDoc = async () => {};
+  fn({ get: async (ref) => found(ref) || { exists: () => false, data: () => ({}) }, set: record('set'), update: record('update') });
+export const updateDoc = async (ref, data) => { record('update')(ref, data); };
 export const deleteDoc = async () => {};
 export const deleteField = () => undefined;
 export const serverTimestamp = () => ({ seconds: Math.floor(Date.now() / 1000) });
 export const increment = (n) => n;
 export const arrayUnion = (...v) => v;
-export const getDoc = async () => ({ exists: () => false, data: () => ({}) });
+export const getDoc = async (ref) => found(ref) || { exists: () => false, data: () => ({}) };
 export const setDoc = async () => {};
 export const query = (r) => r;
 export const where = () => ({});
 export const orderBy = () => ({});
-export const getDocs = async () => snap([]);
+export const getDocs = async (ref) => found(ref) || snap([]);
 export const addDoc = async (ref) => ({ id: `lab-${Date.now()}`, path: (ref && ref.path) || "" });

@@ -33,6 +33,8 @@ import EODReconciliationView from '../src/EODReconciliationView.jsx';
 import AgentProfileView from '../src/AgentProfileView.jsx';
 import StockOpnameView from '../src/StockOpnameView.jsx';
 import JourneyView from '../src/JourneyView.jsx';
+import ConsignmentFinanceView from '../src/ConsignmentFinanceView.jsx';
+import useTransactionEngine from '../src/hooks/useTransactionEngine.js';
 import { SamplingFolderView, SamplingAnalyticsView, SampleEntryModal } from '../src/components/SamplingManager.jsx';
 import BranchWarehouseManager from '../src/components/BranchWarehouseManager.jsx';
 import ShipmentLabel from '../src/components/ShipmentLabel.jsx';
@@ -679,6 +681,46 @@ FIXTURES['quarantine_logs'] = [
   { id: 'ql1', method: 'RTV', facility: 'BANDUNG', productName: 'Djarum Coklat 12', qty: 12, totalValueHpp: 150000,
     details: 'SJR-2026-014', resolvedBy: 'Lab', timestamp: { seconds: Math.floor(Date.now() / 1000) - 86400 } },
 ];
+/* Receivables fixture (2026-09-22): the logicFixes PLACEMENT + AUDIT pair on a real lab product and
+   a real lab shop. 20 packs placed on Titip at 27.500; the audit pays 14, hands 2 back damaged,
+   leaves 4 on the shelf. The shop owes the 4 packs: 110.000. */
+const LAB_PIUTANG_TXNS = [
+  { id: 'pt1', agentId: 'm2', date: '2026-09-02', type: 'SALE', paymentType: 'Titip', total: 550000, customerName: 'Toko Berkah Jaya',
+    items: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 20, unit: 'Bks', calculatedPrice: 27500, priceTier: 'Retail' }],
+    timestamp: { seconds: Math.floor(new Date('2026-09-02T09:00:00+07:00').getTime() / 1000) } },
+  { id: 'pt2', agentId: 'm2', date: '2026-09-20', type: 'CONSIGNMENT_PAYMENT', paymentType: 'Cash', customerName: 'Toko Berkah Jaya',
+    itemsPaid:      [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 14, unit: 'Bks', calculatedPrice: 27500, priceTier: 'Retail' }],
+    itemsRemaining: [{ productId: 'p-cg16', name: 'Cello Green 16', qty:  4, unit: 'Bks', calculatedPrice: 27500, priceTier: 'Retail' }],
+    itemsReturned:  [{ productId: 'p-cg16', name: 'Cello Green 16', qty:  2, unit: 'Bks', calculatedPrice: 27500, priceTier: 'Retail' }],
+    amountPaid: 385000, returnTotal: 55000, total: 385000,
+    timestamp: { seconds: Math.floor(new Date('2026-09-20T18:00:00+07:00').getTime() / 1000) } },
+];
+/* the engine's return loop reads the product first (getDoc); the stub answers from this */
+FIXTURES['products/p-cg16'] = { ...LAB_PRODUCTS[0] };
+FIXTURES['products/p-djar'] = { ...LAB_PRODUCTS[1] };
+/* Journey Plan reads the roster with getDocs(collection motorists) */
+FIXTURES['motorists'] = LAB_MOTORISTS.map((m) => ({ ...m }));
+
+function LabPiutang({ q }) {
+  const engine = useTransactionEngine({
+    db: {}, appId: 'lab', userId: 'lab', userRole: q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE', agentProfileId: q.has('novan') ? null : 'm2', adminSalesMode: false,
+    logAudit: () => {}, triggerCapy: (m) => { window.__labCapy = m; }, setCart: () => {}, customers: LAB_CUSTOMERS,
+    user: { uid: 'lab-t5', displayName: 'Budi Santoso', email: 'lab@example.com' }, appSettings: {},
+  });
+  window.__labAudit = engine.handleConsignmentPayment;
+  window.__labReturn = engine.handleConsignmentReturn;
+  return (
+    <ConsignmentFinanceView
+      transactions={LAB_PIUTANG_TXNS} customers={LAB_CUSTOMERS} focusStore={null} onFocusStoreHandled={() => {}}
+      inventory={LAB_PRODUCTS.map((p) => ({ ...p, priceRetail: Math.round(p.priceDistributor * 1.15), priceEcer: Math.round(p.priceDistributor * 1.25), priceGrosir: Math.round(p.priceDistributor * 1.08) }))}
+      onPayment={engine.handleConsignmentPayment} onReturn={engine.handleConsignmentReturn}
+      onAddGoods={() => {}} onDeleteConsignment={() => {}} isAdmin={q.has('admin')}
+      user={{ uid: 'lab-t5', displayName: 'Budi Santoso', email: 'lab@example.com' }}
+      agentProfileId="m2" motorists={LAB_MOTORISTS} transferRequests={[]} onShowStoreOnJourney={() => {}}
+    />
+  );
+}
+
 const LAB_AGENT_TXNS = [
   { id: 'tx1', agentId: 'm2', date: LAB_TODAY, type: 'SALE', total: 1850000, customerName: 'Toko Sumber Rejeki' },
   { id: 'tx2', agentId: 'm2', date: LAB_TODAY, type: 'SALE', total: 640000, customerName: 'Warung Bu Sri' },
@@ -827,7 +869,7 @@ function ShellLab() {
             ...LAB_CUSTOMERS.map((c, i) => ({ ...c, region: 'BANDUNG', city: 'Bandung', tier: ['Bronze', 'Silver', 'Gold', 'Bronze'][i], assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : i === 1 ? '2026-09-01' : '', phone: '0812-3456-7890' })),
             { id: 'c-sri', name: 'Warung Bu Sri Rahayu Sejahtera Abadi', address: 'Jl. Dago Atas No. 101, Bandung', latitude: -6.8700, longitude: 107.6150, priceTier: 'Ecer', region: 'BANDUNG', city: 'Bandung', tier: 'Silver', assignedAgent: 'Budi Santoso', visitFreq: 3, lastVisit: '2026-09-10' },
             { id: 'c-jaya', name: 'Grosir Jaya Abadi', address: 'Jl. Soekarno Hatta 400', latitude: -6.9400, longitude: 107.6300, priceTier: 'Grosir', region: 'BANDUNG', city: 'Bandung', tier: 'Gold', assignedAgent: 'Adi Nugroho', visitFreq: 14, lastVisit: '2026-08-20' },
-          ]}
+          ].map((c) => (q.has('ghost') && c.id === 'c-jaya' ? { ...c, assignedAgent: 'Andika Pratama' } : c))}
           transactions={LAB_AGENT_TXNS}
           user={{ uid: 'lab-t5', displayName: q.has('admin') ? 'Lab Boss' : 'Budi Santoso', email: 'lab@example.com', location: 'BANDUNG', userRole: q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE' }}
           userRole={q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE'} isAdmin={q.has('admin')}
@@ -880,6 +922,15 @@ function ShellLab() {
           customers={LAB_CUSTOMERS.map((c, i) => ({ ...c, assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : '' }))}
         />
         </>
+      ) : q.has('piutang') ? (
+        /* ?shell&piutang — Receivables (ConsignmentFinanceView) INSIDE the real shell as App.jsx:5049
+           mounts it, with onPayment / onReturn wired to the REAL useTransactionEngine over the stub
+           (2026-09-22, his "can u do your test yourself"). LAB_PIUTANG_TXNS is the selfcheck's
+           fixture: 20 packs placed at 27.500, then an audit — 14 paid, 2 handed back damaged, 4 on
+           the shelf — so the balance on screen must read 110.000, not 165.000. `window.__labAudit`
+           is the engine's handleConsignmentPayment, so a return counted in Slop can be sent through
+           the real return loop and the product update read back from `__labWrites`. */
+        <LabPiutang q={q} />
       ) : q.has('agent') ? (
         /* ?shell&agent — the Agent Inventory (the salesman's van manifest) INSIDE the real shell,
            exactly as App.jsx:4253 mounts it: no wrapper, a direct child of biohazard-content. T5
