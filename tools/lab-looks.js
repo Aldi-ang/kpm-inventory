@@ -47,4 +47,48 @@ export const PIN = '#root{width:375px}';
 /* 2026-09-21 08:40: the stage B looks (prof-a / prof-b — the card's head on the Agent Profile; the XP-gain mock) were decided
    A + B ("i like all the recommended option") and shipped into AgentProfileView.jsx (PlayerCardHead) + EODReconciliationView.jsx
    (XpGain). Gone. `?shell&profile` (+ `&admin`) and `?shell&eod&verified` open the real screens inside the shell. */
-export const LOOKS = { pin: PIN };
+/* 2026-09-22 — his PC screenshots: the review card open is 880 px tall on a 1000 px screen (he scrolls to reach
+   the plate), and the Agent Inventory's MODAL number + CASH coin cross their boxes at xl (the stats column is 65 %
+   of a 1024 container → four 149 px boxes, 124 inside; a 7-digit rupiah at text-xl is 126–152 px by font).
+   Board 1 — the open card on the desk (≥1024 only; the phone is untouched):
+     rc-two  : the body in two columns — revenue + products left, the handover + plate right.
+     rc-head : the head compacts when open — photo 72, CLOSED / NO ROUTE / COUNTS MATCH beside the name.
+     A = rc-head,rc-two (recommended) · B = rc-two alone.
+   Board 2 — the stat strip on the desk (≥1280 only):
+     inv-a : the desk uses the laptop layout — the four boxes take the full width under the MANIFEST block.
+     inv-c : one panel like PROJECTED VALUE beneath it — four cells, hairline dividers, no coin, 18 px numbers (board letter B).
+   CSS mocks for the frames; nth-child grid areas assume the lab's card (products present, reset shown). Delete when he decides. */
+const RC_TWO = `@media (min-width:1024px){
+  .pc.open .pc-inner>div{display:grid;grid-template-columns:1fr 1fr;column-gap:20px;grid-template-rows:auto auto 1fr auto auto;
+    grid-template-areas:"rev hlabel" "plabel hand" "prods hand" ". plate" ". reset"}
+  .pc.open .pc-inner>div>div:nth-child(1){grid-area:rev}
+  .pc.open .pc-inner>div>p:nth-child(2){grid-area:plabel}
+  .pc.open .pc-inner>div>div:nth-child(3){grid-area:prods;align-self:start}
+  .pc.open .pc-inner>div>p:nth-child(4){grid-area:hlabel}
+  .pc.open .pc-inner>div>div:nth-child(5){grid-area:hand}
+  .pc.open .pc-inner>div>button:nth-child(6){grid-area:plate}
+  .pc.open .pc-inner>div>button:nth-child(7){grid-area:reset}
+}`;
+const RC_HEAD = `@media (min-width:1024px){
+  .pc.open .pc-head{display:flex;align-items:center;gap:24px}
+  .pc.open .pc-head>div:first-child{flex:1 1 auto;min-width:0;align-items:center}
+  .pc.open .pc-head>div:last-child{margin-top:0;flex:0 0 auto;flex-direction:column;align-items:flex-end;gap:10px}
+  .pc.open .pc-avatar{width:72px;height:72px;flex-basis:72px}
+  .pc.open .pc-photo{inset:8px}
+  .pc.open .pc-avatar .sframe{transform:scale(.5625);transform-origin:0 0}
+  .pc.open .pc-head .text-4xl{font-size:1.5rem}
+  .pc.open .pc-head .text-4xl .text-2xl{font-size:1rem}
+}`;
+const INV_A = `@media (min-width:1280px){
+  [class~="xl:flex-row"]{flex-direction:column!important}
+  [class~="xl:w-[65%]"]{width:100%!important;margin-top:.5rem!important}
+}`;
+const INV_C = `@media (min-width:1280px){
+  [class~="xl:w-[65%]"] [class~="lg:grid-cols-4"]{background:var(--panel);border:1px solid var(--line-2);gap:0!important;padding:10px 4px}
+  [class~="xl:w-[65%]"] [class~="lg:grid-cols-4"]>div{background:transparent!important;border:0!important;box-shadow:none!important;padding:2px 6px!important;border-left:1px solid var(--line-2)!important}
+  [class~="xl:w-[65%]"] [class~="lg:grid-cols-4"]>div:first-child{border-left:0!important}
+  [class~="xl:w-[65%]"] [class~="lg:grid-cols-4"] .kpm-coin{display:none}
+  [class~="xl:w-[65%]"] [class~="lg:grid-cols-4"] span.tabular-nums{font-size:18px!important}
+  [class~="xl:w-[65%]"] [class~="lg:grid-cols-4"]>div>span:first-child{margin-bottom:6px}
+}`;
+export const LOOKS = { pin: PIN, 'rc-two': RC_TWO, 'rc-head': RC_HEAD, 'inv-a': INV_A, 'inv-c': INV_C };
