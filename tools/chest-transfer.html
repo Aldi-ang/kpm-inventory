@@ -410,6 +410,10 @@
   .units .key[aria-pressed="true"] { border-color:var(--accent-edge); color:var(--accent-ink); background:var(--inset); }
   .msg { margin:0; min-height:20px; font:700 12.5px/1.45 var(--sans); color:var(--ink-muted); }
   .msg.err { color:var(--bad); }
+  .sheet .all { width:100%; }
+  .sheet .all:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+  .try { display:flex; flex-wrap:wrap; gap:6px; align-items:center; font:900 10px/1 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--ink-dim); }
+  .tryKey { min-height:36px; padding:0 10px; letter-spacing:.06em; }
   .shKeys { display:grid; grid-template-columns:1fr 1.6fr; gap:8px; }
   .shKeys .ok { background:var(--gold); color:var(--gold-ink); border-color:transparent; }
   .shKeys .ok:disabled { background:var(--panel); color:var(--ink-dim); border:1px dashed var(--line-2); cursor:not-allowed; transform:none; }
@@ -528,6 +532,7 @@
       <span class="eq" id="eq">= — Bks</span>
     </div>
     <div class="units" id="units" role="group" aria-label="Satuan"></div>
+    <button class="key all" id="shAll" type="button">Semua</button>
     <p class="msg" id="shMsg" aria-live="polite"></p>
     <div class="shKeys"><button class="key" id="shNo" type="button">Batal</button><button class="key ok" id="shOk" type="button" disabled>Masukkan ke van</button></div>
   </div>
@@ -537,9 +542,9 @@
   <div class="studioBar">
     <label class="knob"><span>Ruang / gema <output id="o-room"></output></span><input type="range" id="room" min="0" max="0.8" step="0.01"></label>
     <label class="knob"><span>Volume semua <output id="o-master"></output></span><input type="range" id="master" min="0" max="1.2" step="0.01"></label>
-    <button class="key" id="sfxReset" type="button">Pilihan Claude</button>
+    <button class="key" id="sfxReset" type="button">Versi Aldi</button>
     <button class="key plate" id="sfxSave" type="button" disabled>Simpan</button>
-    <span class="sfxState" id="sfxState" role="status" aria-live="polite">Pilihan Claude</span>
+    <span class="sfxState" id="sfxState" role="status" aria-live="polite">Versi Aldi</span>
   </div>
   <div class="studio" id="studio"></div>
 
@@ -547,13 +552,13 @@
   <ul>
     <li><b>Drag a box from the warehouse onto the van</b> — onto any of its squares, or onto the small chest itself. The square it will land in lights up while you carry it. If the van already holds that product, the box always joins its own square: one product is one square and one line.</li>
     <li><b>Drag it back.</b> A box in the van goes back to the warehouse the same way: drop it on the warehouse and the panel asks how many come back. Dropped on another square in the van, it only moves there — the arrangement is saved, nothing else changes.</li>
-    <li><b>The panel starts empty on purpose.</b> You type the number; the line beside it always says what it means in packs (<b>= 600 Bks</b>), worked out with the app's own conversion. More than the warehouse (or the van) holds is refused before you can press anything.</li>
+    <li><b>The panel starts empty on purpose.</b> You type the number; the line beside it always says what it means in packs (<b>= 600 Bks</b>), worked out with the app's own conversion. More than the warehouse (or the van) holds is refused before you can press anything; <b>Ambil semua / Kembalikan semua</b> fills in everything that can move, and you still confirm it.</li>
     <li><b>The goods fly across the middle</b>, from the square they left to the square they land in, one box for each Slop or Bal up to six, with a soft knock as each lands.</li>
     <li><b>Nothing is written by a drag.</b> Until MUAT VAN the squares carry <b>+N</b> / <b>−N</b>, and a product that is new to the van has a dashed edge. MUAT VAN writes each product, reports in <b>one</b> line, and prints one surat jalan for what went out and one bukti kembali for what came back.</li>
     <li><b>Search</b> finds a product among hundreds. <b>Drop on the damaged row</b> → refused out loud. <b>Lite Mode</b> keeps every box, number and page; only the motion (and the purple specks) stop.</li>
   </ul>
   
-  <footer>KPM Inventory · prototype for review · van loading v3 · sounds: Kenney “RPG Audio”, CC0 · <span id="stamp"></span></footer>
+  <footer>KPM Inventory · prototype for review · van loading v4 · sounds: Kenney “RPG Audio”, CC0 · <span id="stamp"></span></footer>
 </div>
 
 <script src="sfx-kenney.js"></script>
@@ -992,6 +997,10 @@
     $('eq').classList.toggle('err', err);
     $('shMsg').textContent = msg; $('shMsg').classList.toggle('err', err);
     Array.prototype.forEach.call(unitsEl.children, function (b) { b.setAttribute('aria-pressed', b.dataset.u === SH.unit ? 'true' : 'false'); });
+    var allBtn = $('shAll');
+    allBtn.disabled = cap <= 0;
+    allBtn.textContent = (SH.mode === 'edit' ? 'Semua' : (SH.dir > 0 ? 'Ambil semua' : 'Kembalikan semua')) + ' · ' + fmt(Math.max(0, cap)) + ' Bks';
+    SH.cap = cap;
     var okBtn = $('shOk'), verb = SH.mode === 'edit' ? 'Simpan' : (SH.dir > 0 ? 'Masukkan' : 'Kembalikan');
     okBtn.disabled = !ok;
     okBtn.textContent = ok ? verb + ' ' + fmt(bks) + ' Bks' : (SH.mode === 'edit' ? 'Simpan' : (SH.dir > 0 ? 'Masukkan ke van' : 'Kembalikan ke gudang'));
@@ -1041,6 +1050,10 @@
     say(s.mode === 'edit' || s.dir < 0 ? 'van' : 'wh', 'Batal — tidak ada yang berubah');
     refocus(s);
   }
+  $('shAll').addEventListener('click', function () {
+    if (!SH || SH.cap <= 0) return;
+    SH.unit = 'Bks'; $('qty').value = String(SH.cap); update(); $('shOk').focus();
+  });
   $('shOk').addEventListener('click', confirmSheet);
   $('shNo').addEventListener('click', cancelSheet);
   $('scrim').addEventListener('click', cancelSheet);
@@ -1237,19 +1250,27 @@
     { id:'refuse',     name:'Not allowed',        sub:'ditolak' },
     { id:'done',       name:'MUAT VAN saved',     sub:'van terkunci' }
   ];
-  /* my picks — chosen by what each recording is and by its measured shape (length, where the sound starts
-     and stops, how bright it is). His ear overrides every one of them in the studio. */
-  var DEFAULTS = { v:1, room:.25, master:.8, ev:{
-    enderOpen:  { src:'doorOpen_1',         start:0,   end:.85, vol:.9,  rate:.78 },
-    enderClose: { src:'doorClose_3',        start:0,   end:.71, vol:.9,  rate:.75 },
-    woodOpen:   { src:'creak3',             start:0,   end:.30, vol:.9,  rate:1 },
-    woodClose:  { src:'doorClose_4',        start:0,   end:.54, vol:.9,  rate:1 },
-    pick:       { src:'handleSmallLeather', start:.04, end:.22, vol:.55, rate:1.1 },
-    land:       { src:'bookPlace1',         start:0,   end:.22, vol:.8,  rate:1 },
-    page:       { src:'bookFlip3',          start:.02, end:.23, vol:.45, rate:1.1 },
-    refuse:     { src:'dropLeather',        start:0,   end:.28, vol:.8,  rate:.9 },
-    done:       { src:'metalLatch',         start:0,   end:.22, vol:.8,  rate:1 }
+  /* HIS VERSION — saved from the studio (artifact db sfx/settings, version 2, 2026-09-23 11:58 WIB) and
+     carried here as the baseline: "Versi Aldi" returns to it, and it is what the app ships. Only MUAT VAN is
+     still open — he said the latch "doesnt really suit it"; the three candidates on its card are my answer. */
+  var DEFAULTS = { v:1, room:.33, master:.62, ev:{
+    enderOpen:  { src:'cloth2',             start:0,    end:.415, vol:.6,  rate:.96 },
+    enderClose: { src:'doorClose_4',        start:0,    end:.38,  vol:.75, rate:.77 },
+    woodOpen:   { src:'cloth1',             start:0,    end:.36,  vol:.55, rate:.89 },
+    woodClose:  { src:'doorClose_4',        start:0,    end:.54,  vol:.55, rate:1 },
+    pick:       { src:'handleSmallLeather', start:.04,  end:.22,  vol:1.5, rate:1.1 },
+    land:       { src:'bookPlace1',         start:.055, end:.09,  vol:.35, rate:.97 },
+    page:       { src:'bookFlip3',          start:0,    end:.231, vol:.9,  rate:.95 },
+    refuse:     { src:'dropLeather',        start:0,    end:.28,  vol:.8,  rate:.9 },
+    done:       { src:'metalLatch',         start:0,    end:.262, vol:.8,  rate:1 }
   } };
+  /* MUAT VAN is the van being closed and written down, so the candidates are a van door that shuts and
+     latches, a heavier van door, and a ledger snapping shut — one tap tries each, SIMPAN keeps it */
+  var DONE_TRY = [
+    { label:'Pintu van + kunci', src:'doorClose_1', start:0, end:.675, vol:.8, rate:.9 },
+    { label:'Pintu van berat',   src:'doorClose_2', start:0, end:.52,  vol:.8, rate:.82 },
+    { label:'Buku catatan',      src:'bookClose',   start:0, end:.231, vol:.8, rate:.85 }
+  ];
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   var SET = clone(DEFAULTS);
   var SRC = window.KENNEY_SFX || {}, NAMES = Object.keys(SRC).sort();
@@ -1327,6 +1348,7 @@
       '<div class="sfxName"><b>' + ev.name + '</b><small>' + ev.sub + '</small></div>' +
       '<label class="sr" for="src-' + ev.id + '">Rekaman</label><select id="src-' + ev.id + '" data-k="src">' + opts + '</select></div>' +
       '<canvas class="wave" id="wave-' + ev.id + '" aria-hidden="true"></canvas>' +
+      (ev.id === 'done' ? '<div class="try"><span>Coba:</span>' + DONE_TRY.map(function (c, i) { return '<button type="button" class="key tryKey" data-try="' + i + '">' + c.label + '</button>'; }).join('') + '</div>' : '') +
       '<div class="knobs">' + knob(ev.id, 'start', 'Mulai', 0, 2, .005) + knob(ev.id, 'end', 'Selesai', 0, 2, .005) +
       knob(ev.id, 'vol', 'Keras', 0, 1.5, .05) + knob(ev.id, 'rate', 'Nada', .5, 1.6, .01) + '</div></div>';
   }).join('');
@@ -1386,7 +1408,7 @@
   var DB = null, savedAt = '';
   function state(dirty) {
     $('sfxSave').disabled = !dirty;
-    $('sfxState').textContent = dirty ? 'Belum disimpan' : (savedAt ? 'Tersimpan · ' + savedAt : 'Pilihan Claude');
+    $('sfxState').textContent = dirty ? 'Belum disimpan' : (savedAt ? 'Tersimpan · ' + savedAt : 'Versi Aldi');
     if (dirty) { SET.at = Date.now(); try { localStorage.setItem('kpm-sfx-draft', JSON.stringify(SET)); } catch (x) { /* private window */ } }
   }
   function edit(e, andPlay) {
@@ -1406,7 +1428,13 @@
   document.addEventListener('input', function (e) { if (e.target.closest('#studio, .studioBar')) edit(e, false); });
   /* letting go of a slider, or picking a recording, plays the result */
   document.addEventListener('change', function (e) { if (e.target.closest('#studio')) edit(e, true); });
-  studio.addEventListener('click', function (e) { var b = e.target.closest('[data-play]'); if (b) play(b.dataset.play); });
+  studio.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-play]'); if (b) { play(b.dataset.play); return; }
+    var c = e.target.closest('[data-try]'); if (!c) return;
+    var pick = DONE_TRY[+c.dataset.try];
+    SET.ev.done = { src:pick.src, start:pick.start, end:pick.end, vol:pick.vol, rate:pick.rate };
+    paintRow('done'); state(true); play('done');
+  });
   $('sfxReset').addEventListener('click', function () { SET = clone(DEFAULTS); paintAll(); state(true); });
   $('sfxSave').addEventListener('click', function () {
     SET.at = Date.now();
