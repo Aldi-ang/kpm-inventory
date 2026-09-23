@@ -558,7 +558,7 @@
     <li><b>Search</b> finds a product among hundreds. <b>Drop on the damaged row</b> → refused out loud. <b>Lite Mode</b> keeps every box, number and page; only the motion (and the purple specks) stop.</li>
   </ul>
   
-  <footer>KPM Inventory · prototype for review · van loading v4 · sounds: Kenney “RPG Audio”, CC0 · <span id="stamp"></span></footer>
+  <footer>KPM Inventory · prototype for review · van loading v5 · sounds: Kenney “RPG Audio”, CC0 · <span id="stamp"></span></footer>
 </div>
 
 <script src="sfx-kenney.js"></script>
@@ -1111,7 +1111,7 @@
       var an = el.animate(frames, { duration:560 * SLOW, delay:i * 95 * SLOW, easing:'cubic-bezier(.45,.05,.3,1)', fill:'forwards' });
       an.onfinish = function () {
         el.remove();
-        play('land', 1 + i * .07);                   // each box a little higher — the satisfying part
+        play('land', 1 + dir * i * .07);             // into the van each box lands a little HIGHER, back to the warehouse a little LOWER (his call)
         pop(dest);
         bump(dir > 0 ? $('vanChest') : $('whChest'));
         if (dir < 0 && i === k - 1) burst(8);            // the ender chest takes it back

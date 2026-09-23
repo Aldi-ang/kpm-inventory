@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1790139791.165269,
-    "ast_hash": "64b8d0e5c8fcea5d338bb4441289ef1c",
+    "mtime": 1790142859.1874611,
+    "ast_hash": "b29115c6b5158fd555ef0f78c72f014a",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -760,8 +760,8 @@
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1790139791.16427,
-    "ast_hash": "6b9710dc26726ac11544feaf3b32ffca",
+    "mtime": 1790142859.1854644,
+    "ast_hash": "2bd1ca9efacf5f6c13e74caf0fc378b5",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -1110,8 +1110,8 @@
     "semantic_hash": ""
   },
   "tools/chest-transfer.html": {
-    "mtime": 1790139695.13553,
-    "ast_hash": "d5602d2563279f5fa249408dadec9219",
+    "mtime": 1790142822.1717157,
+    "ast_hash": "938c1c1c382c10dce6888a26b3d9b632",
     "semantic_hash": ""
   },
   "tools/sfx-kenney.js": {
