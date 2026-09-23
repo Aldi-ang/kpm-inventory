@@ -1,8 +1,8 @@
 <title>Van Loading Chests</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>
-  /* dark-first, like the app. Every colour is a token; the chest wood and the grey "look 1" panel are
-     fixed on purpose (an OBJECT keeps its own colour — his exemption for the brown chest). */
+  /* dark-first, like the app. Every colour is a token; the chests and the grey "look 1" panel are fixed on
+     purpose (an OBJECT keeps its own colour — his exemption for the brown chest, now also the ender chest). */
   :root {
     --ground:#0A0908; --panel:#121110; --raised:#1B1917; --inset:#0E0D0C; --sunk:#050403;
     --line:#2A2622; --line-2:#3E3A35;
@@ -10,6 +10,7 @@
     --gold:#D08A2E; --gold-ink:#0A0908; --accent-ink:#D08A2E; --accent-edge:#D08A2E; --amber:#F59E0B;
     --bad:#E08C82;
     --wood:#7A5A32; --wood-dark:#4E3A20; --wood-lid:#8C6A3C; --latch:#C9C4BC;
+    --ender:#152223; --ender-dark:#0C1415; --ender-lid:#1C2E2F; --ender-trim:#2E4B49; --ender-edge:#050808;
     --stone:#8B8B8B; --stone-dark:#555555; --stone-light:#C6C6C6; --stone-ink:#2B2B2B; --hi:#F5D08A;
     --mono:ui-monospace,"Cascadia Mono","Consolas",monospace;
     --sans:system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -55,9 +56,9 @@
     outline:3px solid var(--hi); outline-offset:2px;
   }
 
-  /* ── THE BAY: the panel inside Fleet & Roster. Phone first — warehouse panel, the two chests side by
-        side, the van panel, the manifest. From 960 px the two panels stand on their own chests and the
-        manifest takes the right-hand column. ─────────────────────────────────────────────────────── */
+  /* ── THE BAY: the panel inside Fleet & Roster. Phone first — warehouse panel, the two chests side by side,
+        the van panel, the manifest. From 960 px the two panels stand on their own chests and the manifest
+        takes the right-hand column. ──────────────────────────────────────────────────────────────── */
   .bay {
     position:relative; margin-top:10px; border:1px solid var(--line-2); border-radius:16px;
     background:
@@ -78,24 +79,23 @@
     }
   }
 
-  /* ── THE CHESTS — brown in both looks. The warehouse's is a double chest: twice as wide, two latches ── */
+  /* ── THE CHESTS. The van's is the brown wooden one; the warehouse's is an ENDER CHEST, his call — near-black
+        stone, a teal trim, the green eye for a latch, and the purple specks drifting round it. ────────── */
   .chestCell {
     all:unset; box-sizing:border-box; cursor:pointer; display:grid; justify-items:center; gap:6px;
-    perspective:700px; padding:4px; border-radius:12px;
+    perspective:700px; padding:4px; border-radius:12px; position:relative;
   }
   .whc { grid-area:whc; } .vanc { grid-area:vanc; }
   .chestCell .cap { font:900 10px/1 var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--ink-dim); }
   .chest { position:relative; display:block; width:var(--cw); height:var(--ch); transform-style:preserve-3d; }
-  .chest.big { --cw:150px; --ch:78px; }
+  .chest.ender { --cw:118px; --ch:90px; }
   .chest.small { --cw:88px; --ch:72px; }
-  @media (min-width:960px) { .chest.big { --cw:196px; --ch:96px; } .chest.small { --cw:108px; --ch:88px; } }
+  @media (min-width:960px) { .chest.ender { --cw:148px; --ch:112px; } .chest.small { --cw:108px; --ch:88px; } }
   .chest .body {
     position:absolute; left:0; right:0; bottom:0; height:67%; border-radius:3px;
     background:linear-gradient(180deg, var(--wood) 0 52%, var(--wood-dark) 52% 100%);
     border:3px solid var(--sunk); box-shadow:inset 0 0 0 2px rgba(0,0,0,.18);
   }
-  .chest.big .body, .chest.big .lid { background-image:linear-gradient(90deg, transparent calc(50% - 1px), rgba(0,0,0,.35) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)), linear-gradient(180deg, var(--wood) 0 52%, var(--wood-dark) 52% 100%); }
-  .chest.big .lid { background-image:linear-gradient(90deg, transparent calc(50% - 1px), rgba(0,0,0,.35) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)), linear-gradient(180deg, var(--wood-lid), var(--wood)); }
   .chest .body::before {
     content:""; position:absolute; left:6px; right:6px; top:0; height:10px; border-radius:2px 2px 0 0;
     background:linear-gradient(180deg,#140E07,#2A1E12); opacity:0; transition:opacity .18s;
@@ -112,11 +112,47 @@
     background:linear-gradient(180deg,var(--latch),#8F8A82); border:2px solid var(--sunk); border-radius:2px;
     transition:transform var(--t-lid,.26s) cubic-bezier(.3,1.5,.5,1), opacity .18s;
   }
-  .chest.big .latch.a { left:27%; } .chest.big .latch.b { left:73%; }
+  /* the ender chest: obsidian body with faint purple flecks, the teal band round every edge */
+  .chest.ender .body, .chest.ender .lid { border-color:var(--ender-edge); box-shadow:inset 0 0 0 2px var(--ender-trim); }
+  .chest.ender .body {
+    background:
+      radial-gradient(circle at 18% 72%, rgba(120,60,160,.45) 0 1.5px, transparent 2.5px),
+      radial-gradient(circle at 64% 40%, rgba(120,60,160,.35) 0 1.5px, transparent 2.5px),
+      radial-gradient(circle at 86% 80%, rgba(120,60,160,.4) 0 1.5px, transparent 2.5px),
+      linear-gradient(180deg, var(--ender) 0 52%, var(--ender-dark) 52% 100%);
+  }
+  .chest.ender .lid {
+    background:
+      radial-gradient(circle at 30% 45%, rgba(120,60,160,.4) 0 1.5px, transparent 2.5px),
+      radial-gradient(circle at 76% 62%, rgba(120,60,160,.35) 0 1.5px, transparent 2.5px),
+      linear-gradient(180deg, var(--ender-lid), var(--ender));
+  }
+  .chest.ender .body::before { background:linear-gradient(180deg,#0A0510,#231634); }
+  /* the latch is the Eye of Ender: a slit pupil in a green iris */
+  .chest.ender .latch {
+    width:16px; margin-left:-8px; height:24%; top:24%; border-color:var(--ender-edge); border-radius:3px;
+    background:radial-gradient(ellipse 18% 46% at 50% 50%, #06241A 0 88%, transparent 100%),
+               radial-gradient(ellipse 50% 50% at 50% 50%, #7FE0A8 0 38%, #2FA06E 40% 78%, #135A3D 80%);
+  }
   .bay.wh-open .whc .chest .body::before, .bay.van-open .vanc .chest .body::before { opacity:1; }
   .bay.wh-open .whc .lid, .bay.van-open .vanc .lid { transform:rotateX(-96deg); }
   .bay.wh-open .whc .latch, .bay.van-open .vanc .latch { transform:translateY(-8px) rotateX(-96deg); opacity:.3; }
-  .bay.dragging .vanc.zoneover .chest { outline:3px solid var(--hi); outline-offset:4px; border-radius:4px; }
+  .bay.dragging .chestCell.zoneover .chest { outline:3px solid var(--hi); outline-offset:4px; border-radius:4px; }
+
+  /* the purple specks — portal dust drifting out of the ender chest, as in his video. Decoration only: gone
+     in Lite Mode and under reduced motion, and never in front of a figure. */
+  .motes { position:absolute; left:50%; top:52%; width:0; height:0; pointer-events:none; z-index:2; }
+  .motes i {
+    position:absolute; left:-2px; top:-2px; width:4px; height:4px; background:var(--mc, #B44CF0); opacity:0;
+    animation:mote var(--md, 3.2s) linear var(--mdl, 0s) infinite;
+  }
+  .motes i.once { animation:mote var(--md, .9s) cubic-bezier(.2,.7,.3,1) 0s 1 both; }
+  @keyframes mote {
+    0%   { opacity:0;  transform:translate(var(--x0, 0), var(--y0, 0)) scale(1); }
+    18%  { opacity:.95; }
+    75%  { opacity:.6; }
+    100% { opacity:0;  transform:translate(var(--x1, 0), var(--y1, -40px)) scale(.35); }
+  }
 
   /* ── THE PANELS that grow out of the lids. On the phone the van's panel sits UNDER its chest, so it
         grows downward; everywhere else both grow up. A closed panel keeps its room: nothing below jumps. ── */
@@ -131,7 +167,7 @@
   .gui.van { grid-area:vang; transform-origin:50% 0; transform:scale(.08) translateY(-24px); }
   @media (min-width:960px) { .gui.van { transform-origin:50% 100%; transform:scale(.08) translateY(24px); } }
   .bay.wh-open .gui.wh, .bay.van-open .gui.van { transform:none; opacity:1; pointer-events:auto; }
-  .bay.dragging .gui.van.zoneover { border-color:var(--hi); }
+  .bay.dragging .gui.zoneover { border-color:var(--hi); }
   .gui .title {
     font:900 13px/1.2 var(--mono); letter-spacing:.04em; color:var(--stone-ink);
     margin:1px 2px 2px; display:flex; justify-content:space-between; gap:10px; align-items:baseline;
@@ -179,9 +215,8 @@
     position:absolute; left:3px; top:3px; padding:2px 4px; border-radius:2px; pointer-events:none;
     font:900 10px/1 var(--mono); font-variant-numeric:tabular-nums; background:var(--hi); color:#2a1d08;
   }
-  .slot.has { cursor:grab; }
-  .gui.wh .slot.has { touch-action:none; }
-  .gui.van .slot.has { cursor:default; }
+  .slot.has { cursor:grab; touch-action:none; }
+  .dmg .slot.has { cursor:default; touch-action:auto; }
   .slot.lift { opacity:.35; }
   .slot.out .cubeStage { opacity:.35; }
   .slot.out .n { color:#FFB4A8; }
@@ -209,7 +244,7 @@
     animation:place var(--t-turn,.62s) cubic-bezier(.2,.9,.3,1) both; animation-delay:calc(var(--d,0ms) + 40ms);
   }
   @keyframes place { from { transform:rotateX(-12deg) rotateY(-150deg); } to { transform:rotateX(-12deg) rotateY(-28deg); } }
-  @media (hover:hover) and (pointer:fine) { .gui.wh .slot.has:not(.out):hover .cube { animation:turn 4s linear infinite; } }
+  @media (hover:hover) and (pointer:fine) { .gui .grid .slot.has:not(.out):hover .cube { animation:turn 4s linear infinite; } }
   @keyframes turn { from { transform:rotateX(-12deg) rotateY(0); } to { transform:rotateX(-12deg) rotateY(360deg); } }
   .gui .slot .cube.spin { animation:spinOnce .7s cubic-bezier(.2,.9,.3,1) !important; }
   @keyframes spinOnce { from { transform:rotateX(-12deg) rotateY(-28deg); } to { transform:rotateX(-12deg) rotateY(332deg); } }
@@ -242,7 +277,7 @@
   .pg.on { background:#6E6E6E; color:#fff; box-shadow:inset 2px 2px 0 rgba(0,0,0,.34), inset -2px -2px 0 rgba(255,255,255,.14); }
   .pages .of { margin-left:auto; font:900 10px/1 var(--mono); letter-spacing:.12em; color:#3E3E3E; }
 
-  /* the damaged row lives under the van — a good pack is never dropped here */
+  /* the damaged row lives under the van — nothing is dragged into it or out of it here */
   .dmgHead { display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin:10px 2px 5px;
              font:900 10px/1.2 var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--stone-ink); }
   .dmgHead .num { color:#7A2A1E; }
@@ -253,7 +288,7 @@
   .dmg .slot .n { font-size:10px; }
   .bay.dragging .dmg.refuse { outline:3px solid #C0392B; outline-offset:2px; }
 
-  /* LOOK 2 — the panels in KPM colours. The chests stay brown in both. */
+  /* LOOK 2 — the panels in KPM colours. The chests keep their own in both. */
   .bay[data-look="kpm"] .gui { background:linear-gradient(180deg, var(--raised), var(--panel)); border:2px solid var(--line-2); border-radius:14px; box-shadow:none; padding:10px; }
   .bay[data-look="kpm"] .gui .title { color:var(--ink); letter-spacing:.12em; text-transform:uppercase; font-size:12px; }
   .bay[data-look="kpm"] .gui .title .count { color:var(--ink-muted); }
@@ -273,9 +308,9 @@
   .bay[data-look="kpm"] .pg.on { border-color:var(--accent-edge); color:var(--accent-ink); background:var(--raised); }
   .bay[data-look="kpm"] .pages .of, .bay[data-look="kpm"] .dmgHead { color:var(--ink-dim); }
   .bay[data-look="kpm"] .dmgHead .num { color:var(--bad); }
-  .bay[data-look="kpm"].dragging .gui.van.zoneover { border-color:var(--accent-edge); }
+  .bay[data-look="kpm"].dragging .gui.zoneover { border-color:var(--accent-edge); }
 
-  /* ── THE MANIFEST — the bay's contract, unchanged: lines here, ONE press writes, ONE surat jalan ── */
+  /* ── THE MANIFEST — the bay's contract, unchanged: lines here, ONE press writes ─────────────────── */
   .man { grid-area:man; align-self:stretch; display:flex; flex-direction:column; gap:10px; min-width:0;
          background:var(--raised); border:1px solid var(--line-2); border-radius:14px; padding:12px; user-select:text; -webkit-user-select:text; }
   .manHead { display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
@@ -293,6 +328,7 @@
   .ln .nm small { display:block; font:900 9px/1.4 var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .ln .q { font:900 12px/1.3 var(--mono); font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
   .ln .q b { display:block; color:var(--accent-ink); font-size:11px; }
+  .lines li.back .ln { border-style:dashed; }
   .lines li.done .ln { border-style:dashed; opacity:.55; }
   .trash { width:44px; flex:0 0 44px; border:1px solid var(--line-2); border-radius:10px; background:var(--panel); color:var(--ink-dim);
            font:900 18px/1 var(--mono); cursor:pointer; transition:transform .12s ease-out, border-color .16s; }
@@ -309,9 +345,10 @@
   .go:focus-visible { outline:3px solid var(--hi); outline-offset:2px; }
   .go svg { flex:0 0 auto; }
   .manFoot { text-align:center; }
-  .report { margin:0; min-height:0; font:800 13px/1.45 var(--sans); color:var(--ink); }
+  .report { margin:0; font:800 13px/1.45 var(--sans); color:var(--ink); }
   .report b { color:var(--accent-ink); }
   .sj { border:1px solid var(--line-2); border-radius:10px; background:var(--inset); padding:10px 12px; font:700 12px/1.45 var(--mono); color:var(--ink); }
+  .sj + .sj { margin-top:8px; }
   .sj .sjHead { display:flex; justify-content:space-between; gap:8px; margin:0 0 2px; letter-spacing:.1em; }
   .sj .sjHead span { color:var(--ink-muted); font-size:11px; }
   .sj .sjSub { margin:0 0 8px; color:var(--ink-muted); font-size:11px; }
@@ -332,7 +369,7 @@
   .ghost.home  { transition:left .3s var(--ease-out), top .3s var(--ease-out), transform .3s var(--ease-out); transform:translate(-50%,-50%) scale(.9); }
   .ghost.parked { transform:translate(-50%,-50%) scale(.72); }
   .ghost.settle { transition:transform .16s var(--ease-out), opacity .16s ease-out; transform:translate(-50%,-50%) scale(.5); opacity:0; }
-  .bay[data-look="kpm"] ~ .ghost, body.look-kpm .ghost { background:var(--inset); border:1px solid var(--accent-edge); box-shadow:none; border-radius:10px; }
+  body.look-kpm .ghost { background:var(--inset); border:1px solid var(--accent-edge); box-shadow:none; border-radius:10px; }
   .pack { position:fixed; left:0; top:0; z-index:60; width:40px; height:40px; pointer-events:none; }
   .pack .cubeStage { --slot-h:30px; }
 
@@ -348,7 +385,7 @@
   }
   .sheet.show { transform:translate(-50%, 0); opacity:1; visibility:visible; transition-delay:0s; }
   @media (min-width:960px) {
-    /* over the manifest column, so the box parked on the van square stays in sight */
+    /* over the manifest column, so the box parked on its square stays in sight */
     .sheet { left:auto; right:max(16px, calc((100vw - 1180px) / 2 + 16px)); top:50%; width:340px; transform:translate(0, -48%) scale(.98); }
     .sheet.show { transform:translate(0, -50%); }
   }
@@ -383,21 +420,23 @@
   footer { margin-top:34px; color:var(--ink-dim); font-size:12px; font-family:var(--mono); letter-spacing:.06em; }
 
   /* LITE MODE, the app's own law: every transition, animation, shadow and filter goes; every box,
-     number and page stays exactly where it is. */
+     number and page stays exactly where it is. The specks are pure decoration, so they go entirely. */
   html.lite-mode *, html.lite-mode *::before, html.lite-mode *::after {
     animation:none !important; transition:none !important; box-shadow:none !important; filter:none !important;
   }
+  html.lite-mode .motes { display:none; }
   @media (prefers-reduced-motion: reduce) {
     .chest .lid, .chest .latch, .gui, .sheet, .scrim, .ghost { transition-duration:1ms !important; }
     .bay .gui .slot, .bay .gui .slot .cube { animation-duration:1ms !important; }
-    .gui.wh .slot.has:hover .cube { animation:none; }
+    .gui .grid .slot.has:hover .cube { animation:none; }
+    .motes { display:none; }
   }
 </style>
 
 <div class="wrap">
   <header>
-    <h1>Warehouse chest → van chest</h1>
-    <p class="sub">Drag a box from the warehouse (the big chest) into Budi's van (the small chest). A panel asks how many; the goods fly across. Nothing is written until MUAT VAN — one press, one surat jalan.</p>
+    <h1>Warehouse chest ⇄ van chest</h1>
+    <p class="sub">Drag a box from the warehouse (the ender chest) into Budi's van (the small chest) — or from the van back into the warehouse. A panel asks how many; the goods fly across. Nothing is written until MUAT VAN — one press.</p>
   </header>
 
   <div class="bar">
@@ -411,7 +450,7 @@
   </div>
 
   <section class="bay" id="bay" data-look="video" aria-label="Loading bay">
-    <p class="bayHint">Tarik kotak dari gudang ke van</p>
+    <p class="bayHint">Tarik kotak dari gudang ke van — atau kembali</p>
 
     <div class="gui wh" id="whGui">
       <p class="title"><span>Gudang BANDUNG</span><span class="count" id="whCount"></span></p>
@@ -425,7 +464,8 @@
     </div>
 
     <button class="chestCell whc" id="whChest" type="button" aria-expanded="false" aria-label="Peti gudang — buka atau tutup">
-      <span class="chest big"><span class="lid"></span><span class="latch a"></span><span class="latch b"></span><span class="body"></span></span>
+      <span class="chest ender"><span class="lid"></span><span class="latch"></span><span class="body"></span></span>
+      <span class="motes" id="motes" aria-hidden="true"></span>
       <span class="cap">Gudang</span>
     </button>
     <button class="chestCell vanc" id="vanChest" type="button" aria-expanded="false" aria-label="Peti van Budi Santoso — buka atau tutup">
@@ -442,16 +482,16 @@
       <div class="dmg" id="dmg"></div>
     </div>
 
-    <aside class="man" aria-label="Muatan hari ini">
+    <aside class="man" id="man" aria-label="Muatan hari ini">
       <div class="manHead"><p class="lbl">Muatan · Budi Santoso</p><span class="tally" id="tally">0 Bks</span></div>
-      <p class="empty" id="manEmpty">Belum ada muatan. Tarik barang dari gudang ke van.</p>
+      <p class="empty" id="manEmpty">Belum ada muatan. Tarik barang dari gudang ke van, atau dari van kembali ke gudang.</p>
       <ol class="lines" id="lines"></ol>
-      <p class="contract">Menarik <b>tidak mencatat apa pun</b>. Stok gudang dan van baru berubah saat <b>MUAT VAN</b> ditekan — sekali, dengan satu surat jalan.</p>
+      <p class="contract">Menarik <b>tidak mencatat apa pun</b>. Stok gudang dan van baru berubah saat <b>MUAT VAN</b> ditekan — sekali: satu surat jalan untuk yang dimuat, satu bukti kembali untuk yang dikembalikan.</p>
       <button class="go" id="go" type="button" disabled>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62L18.3 9.38a1 1 0 0 0-.78-.38H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
         <span id="goTxt">Muat van — belum ada muatan</span>
       </button>
-      <p class="lbl manFoot">satu tekan · satu surat jalan · van tercatat sekali</p>
+      <p class="lbl manFoot">satu tekan · van tercatat sekali</p>
       <p class="report" id="report" role="status" aria-live="polite"></p>
       <div id="sjBox"></div>
     </aside>
@@ -472,16 +512,16 @@
 
   <h2>Try it</h2>
   <ul>
-    <li><b>Drag a box from the warehouse onto the van</b> — onto any of its squares, or onto the small chest itself. The square it will land in lights up while you carry it. If the van already holds that product, the box always joins its own square, so one product is one square and one line.</li>
-    <li><b>The panel starts empty on purpose.</b> You type the number; the line beside it always says what it means in packs (<b>= 600 Bks</b>), worked out with the app's own conversion, so "3" can never be read as 3 packs when you meant 3 Bal. More than the warehouse holds is refused before you can press anything.</li>
-    <li><b>Nothing is written by a drag.</b> Until MUAT VAN, the warehouse square shows <b>−N</b> and the van square <b>+N</b> with a dashed edge. MUAT VAN writes each product, then reports in <b>one</b> line and makes <b>one</b> surat jalan.</li>
-    <li><b>Search</b> finds a product among hundreds: the warehouse chest then shows only what matches, and you drag from there.</li>
-    <li><b>Drop on the damaged row</b> → refused out loud. <b>Drop back on the warehouse</b> → the box goes home and nothing changes. Tap a line in the muatan list to change its amount; × takes it out.</li>
-    <li><b>Lite Mode</b> keeps every box, number and page; only the motion stops. No keyboard needed either: focus a warehouse box and press Enter.</li>
+    <li><b>Drag a box from the warehouse onto the van</b> — onto any of its squares, or onto the small chest itself. The square it will land in lights up while you carry it. If the van already holds that product, the box always joins its own square: one product is one square and one line.</li>
+    <li><b>Drag it back.</b> A box in the van goes back to the warehouse the same way: drop it on the warehouse and the panel asks how many come back. Dropped on another square in the van, it only moves there — the arrangement is saved, nothing else changes.</li>
+    <li><b>The panel starts empty on purpose.</b> You type the number; the line beside it always says what it means in packs (<b>= 600 Bks</b>), worked out with the app's own conversion. More than the warehouse (or the van) holds is refused before you can press anything.</li>
+    <li><b>The goods fly across the middle</b>, from the square they left to the square they land in, one box for each Slop or Bal up to six, with a little pop as each lands.</li>
+    <li><b>Nothing is written by a drag.</b> Until MUAT VAN the squares carry <b>+N</b> / <b>−N</b>, and a product that is new to the van has a dashed edge. MUAT VAN writes each product, reports in <b>one</b> line, and prints one surat jalan for what went out and one bukti kembali for what came back.</li>
+    <li><b>Search</b> finds a product among hundreds. <b>Drop on the damaged row</b> → refused out loud. <b>Lite Mode</b> keeps every box, number and page; only the motion (and the purple specks) stop.</li>
   </ul>
-  <p class="note"><b>About the sound:</b> it is made from the physics of wood — a hinge creak, the lid's knock, a metal latch, a pack landing in a crate. No file from the game is in it. Our notes say you have turned down made sounds three times; if this one is not right either, record a real wooden box lid on your phone and send it — I cut it the way the book sounds were cut.</p>
+  <p class="note"><b>The sound is simpler now:</b> a soft wooden knock for the van, a low, airy swell for the ender chest, and a small pop for every box that lands, rising a little with each one. It is still made by the computer — the real Minecraft sounds belong to Mojang, and KPM is a paid app, so they cannot go into it.</p>
 
-  <footer>KPM Inventory · prototype for review · van loading v1 · <span id="stamp"></span></footer>
+  <footer>KPM Inventory · prototype for review · van loading v2 · <span id="stamp"></span></footer>
 </div>
 
 <script>
@@ -489,11 +529,12 @@
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   var fmt = function (n) { return Number(n).toLocaleString('id-ID'); };
+  var signed = function (n) { return (n > 0 ? '+' : '−') + fmt(Math.abs(n)); };
   var STILL = /(\?|&)still\b/.test(location.search);
   var PER = 6, VAN_PAGES = 3, CELLS = PER * VAN_PAGES, SLOW = 1;
 
   /* convertToBks — copied from src/utils/helpers.js WITHOUT A CHANGE. The "= N Bks" line in the
-     panel is the app's own arithmetic, so what he reads here is what the press will load. */
+     panel is the app's own arithmetic, so what he reads here is what the press will move. */
   var convertToBks = function (qty, unit, product) {
     if (!product) return qty;
     var packsPerSlop = product.packsPerSlop || 10;
@@ -528,7 +569,7 @@
     { id:'la16', n:'LA Bold 16',             q:700,  mm:[55,91,22], f:'#6A2A2A', s:'#4F1F1F', t:'#8A4040' }
   ];
   var P = {}; WH.forEach(function (p) { P[p.id] = p; });
-  /* what came back broken — the quarantine an admin sees at any hour, never a drop target */
+  /* what came back broken — the quarantine an admin sees at any hour; nothing is dragged in or out */
   var DMG = [
     { id:'dc12', q:5,  why:'Kemasan rusak' },
     { id:'cm12', q:2,  why:'Basah' },
@@ -537,17 +578,20 @@
 
   var S, OPEN = { wh:false, van:false };
   function reset() {
-    S = { stock:{}, van:{ cg16:40, dc12:20, sm16:16 }, cells:[], lines:[], whPage:0, vanPage:0, query:'', sj:0, busy:false };
+    S = { stock:{}, van:{ cg16:40, dc12:20, sm16:16 }, cells:[], lines:[], whPage:0, vanPage:0, query:'', sj:0, bk:0, busy:false };
     WH.forEach(function (p) { S.stock[p.id] = p.q; });
     /* Budi's leftovers from yesterday sit in the first three squares. THE VAN'S LAYOUT is a fixed map
        of squares where a hole means something — in the app it is its own field, never activeCanvas. */
     for (var c = 0; c < CELLS; c++) S.cells.push(null);
     S.cells[0] = 'cg16'; S.cells[1] = 'dc12'; S.cells[2] = 'sm16';
   }
+  /* ONE LINE PER PRODUCT, SIGNED: dir +1 goes into the van, dir −1 goes back to the warehouse. A drag the
+     other way nets against it, so the press still writes one movement per product. */
   function lineOf(id) { for (var i = 0; i < S.lines.length; i++) if (S.lines[i].id === id) return S.lines[i]; return null; }
   function lineBks(l) { return convertToBks(l.qty, l.unit, P[l.id]); }
-  function pendingBks(id) { var l = lineOf(id); return l ? lineBks(l) : 0; }
-  function freeBks(id) { return S.stock[id] - pendingBks(id); }
+  function netBks(id) { var l = lineOf(id); return l ? l.dir * lineBks(l) : 0; }
+  function loadCap(id) { return S.stock[id] - netBks(id); }            // what the warehouse can still send
+  function backCap(id) { return (S.van[id] || 0) + netBks(id); }       // what the van will still hold
   function cellOf(id) { return S.cells.indexOf(id); }
 
   function cube(p) {
@@ -559,6 +603,11 @@
     var q = S.query.trim().toLowerCase();
     return q ? WH.filter(function (p) { return p.n.toLowerCase().indexOf(q) >= 0; }) : WH;
   }
+  function whPageOf(id) {
+    var list = whList();
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return Math.floor(i / PER);
+    return -1;
+  }
 
   /* `anim` false = a change, not an arrival: the squares stay where the eye left them (his "it refreshed") */
   function drawWh(anim) {
@@ -568,11 +617,11 @@
     for (var i = 0; i < PER; i++) {
       var p = list[S.whPage * PER + i], d = 'style="--d:' + (120 + i * 50) + 'ms"';
       if (!p) { h += '<div class="slot" ' + d + '></div>'; continue; }
-      var st = S.stock[p.id], pend = pendingBks(p.id), out = st - pend <= 0;
+      var st = S.stock[p.id], net = netBks(p.id), out = loadCap(p.id) <= 0;
       h += '<div class="slot has' + (out ? ' out' : '') + '" data-id="' + p.id + '" tabindex="0" role="button" ' + d +
-           ' aria-label="' + p.n + ', stok ' + fmt(st) + ' Bks' + (pend ? ', ' + fmt(pend) + ' Bks di muatan' : '') + '">' + cube(p) +
+           ' aria-label="' + p.n + ', stok ' + fmt(st) + ' Bks' + (net ? ', ' + signed(-net) + ' Bks di muatan' : '') + '">' + cube(p) +
            '<span class="n">' + (st ? fmt(st) : 'habis') + '</span>' +
-           (pend ? '<span class="chip">−' + fmt(pend) + '</span>' : '') +
+           (net ? '<span class="chip">' + signed(-net) + '</span>' : '') +
            '<span class="name">' + p.n + '</span></div>';
     }
     $('whGrid').innerHTML = h;
@@ -591,10 +640,11 @@
     for (var i = 0; i < PER; i++) {
       var c = S.vanPage * PER + i, id = S.cells[c], p = id ? P[id] : null, d = 'style="--d:' + (120 + i * 50) + 'ms"';
       if (!p) { h += '<div class="slot" data-i="' + c + '" ' + d + '></div>'; continue; }
-      var have = S.van[id] || 0, pend = pendingBks(id);
-      h += '<div class="slot has' + (pend && !have ? ' new' : '') + '" data-i="' + c + '" data-id="' + id + '" title="' + p.n + '" ' + d + '>' + cube(p) +
+      var have = S.van[id] || 0, net = netBks(id);
+      h += '<div class="slot has' + (net > 0 && !have ? ' new' : '') + '" data-i="' + c + '" data-id="' + id + '" tabindex="0" role="button" title="' + p.n + '" ' + d +
+           ' aria-label="' + p.n + ', di van ' + fmt(have) + ' Bks' + (net ? ', ' + signed(net) + ' Bks di muatan' : '') + '">' + cube(p) +
            (have ? '<span class="n">' + fmt(have) + '</span>' : '') +
-           (pend ? '<span class="chip">+' + fmt(pend) + '</span>' : '') +
+           (net ? '<span class="chip">' + signed(net) + '</span>' : '') +
            '<span class="name">' + p.n + '</span></div>';
     }
     $('vanGrid').innerHTML = h;
@@ -606,10 +656,10 @@
       tabs += '<button type="button" class="pg' + (k === S.vanPage ? ' on' : '') + '" data-p="' + k + '">' + (k + 1) + ' · ' + n + '</button>';
     }
     $('vanPages').innerHTML = tabs + '<span class="of">' + filled + ' barang</span>';
-    var have = 0, pendAll = 0;
+    var have = 0, plus = 0, minus = 0;
     Object.keys(S.van).forEach(function (id) { have += S.van[id]; });
-    S.lines.forEach(function (l) { pendAll += lineBks(l); });
-    $('vanCount').innerHTML = fmt(have) + ' Bks' + (pendAll ? ' <b>+' + fmt(pendAll) + '</b>' : '');
+    S.lines.forEach(function (l) { if (l.dir > 0) plus += lineBks(l); else minus += lineBks(l); });
+    $('vanCount').innerHTML = fmt(have) + ' Bks' + (plus ? ' <b>+' + fmt(plus) + '</b>' : '') + (minus ? ' <b>−' + fmt(minus) + '</b>' : '');
     var dh = '';
     DMG.forEach(function (x) {
       dh += '<div class="slot has" title="' + P[x.id].n + ' · ' + x.why + '">' + cube(P[x.id]) +
@@ -619,19 +669,27 @@
     $('dmgCount').textContent = DMG.reduce(function (a, x) { return a + x.q; }, 0) + ' Bks · ' + DMG.length + ' barang';
   }
   function drawMan() {
-    var h = '', tot = 0;
+    var h = '', plus = 0, minus = 0;
     S.lines.forEach(function (l) {
-      var p = P[l.id], b = lineBks(l); tot += b;
-      h += '<li><button type="button" class="ln" data-edit="' + l.id + '" aria-label="Ubah jumlah ' + p.n + '"><span class="mc">' + cube(p) + '</span>' +
-           '<span class="nm">' + p.n + '<small>gudang tinggal ' + fmt(S.stock[l.id] - b) + ' Bks</small></span>' +
-           '<span class="q">' + fmt(l.qty) + ' ' + l.unit + '<b>= ' + fmt(b) + ' Bks</b></span></button>' +
+      var p = P[l.id], b = lineBks(l), have = S.van[l.id] || 0;
+      if (l.dir > 0) plus += b; else minus += b;
+      var sub = l.dir > 0 ? 'ke van · gudang tinggal ' + fmt(S.stock[l.id] - b) + ' Bks'
+                          : 'kembali ke gudang · van tinggal ' + fmt(have - b) + ' Bks';
+      h += '<li' + (l.dir < 0 ? ' class="back"' : '') + '><button type="button" class="ln" data-edit="' + l.id + '" aria-label="Ubah jumlah ' + p.n + '"><span class="mc">' + cube(p) + '</span>' +
+           '<span class="nm">' + p.n + '<small>' + sub + '</small></span>' +
+           '<span class="q">' + fmt(l.qty) + ' ' + l.unit + '<b>= ' + (l.dir > 0 ? '+' : '−') + fmt(b) + ' Bks</b></span></button>' +
            '<button type="button" class="trash" data-del="' + l.id + '" aria-label="Keluarkan ' + p.n + ' dari muatan">×</button></li>';
     });
     $('lines').innerHTML = h;
     $('manEmpty').hidden = S.lines.length > 0;
-    $('tally').textContent = fmt(tot) + ' Bks';
+    $('tally').textContent = !S.lines.length ? '0 Bks' : (plus ? '+' + fmt(plus) : '') + (plus && minus ? ' / ' : '') + (minus ? '−' + fmt(minus) : '') + ' Bks';
     $('go').disabled = !S.lines.length || S.busy;
-    if (!S.busy) $('goTxt').textContent = S.lines.length ? 'Muat van — ' + fmt(tot) + ' Bks · ' + S.lines.length + ' barang' : 'Muat van — belum ada muatan';
+    if (!S.busy) {
+      var parts = [];
+      if (plus) parts.push(fmt(plus) + ' Bks masuk');
+      if (minus) parts.push(fmt(minus) + ' Bks kembali');
+      $('goTxt').textContent = S.lines.length ? 'Muat van — ' + parts.join(' · ') : 'Muat van — belum ada muatan';
+    }
   }
   function drawAll(anim) { drawWh(anim); drawVan(anim); drawMan(); }
 
@@ -655,27 +713,28 @@
   function center(el) { var r = el.getBoundingClientRect(); return { x:r.left + r.width / 2, y:r.top + r.height / 2 }; }
   function zoneAt(x, y) {
     if (OPEN.van && inRect($('dmg'), x, y)) return 'dmg';
-    if (inRect($('vanChest'), x, y)) return 'van';
-    if (OPEN.van && inRect($('vanGui'), x, y)) return 'van';
+    if (inRect($('vanChest'), x, y) || (OPEN.van && inRect($('vanGui'), x, y))) return 'van';
+    if (inRect($('whChest'), x, y) || (OPEN.wh && inRect($('whGui'), x, y))) return 'wh';
     return 'none';
   }
-  function vanSlotAt(x, y) {
+  function slotAt(gridId, x, y) {
     var hit = null;
-    Array.prototype.forEach.call($('vanGrid').querySelectorAll('.slot'), function (s) { if (inRect(s, x, y)) hit = s; });
+    Array.prototype.forEach.call($(gridId).querySelectorAll('.slot'), function (s) { if (inRect(s, x, y)) hit = s; });
     return hit;
   }
-  function vanTabAt(x, y) {
+  function tabAt(pagesId, x, y) {
     var hit = null;
-    Array.prototype.forEach.call($('vanPages').querySelectorAll('.pg'), function (b) { if (inRect(b, x, y)) hit = +b.dataset.p; });
+    Array.prototype.forEach.call($(pagesId).querySelectorAll('.pg'), function (b) { if (inRect(b, x, y)) hit = +b.dataset.p; });
     return hit;
   }
-  function vanSlotEl(cell) { return $('vanGrid').querySelector('.slot[data-i="' + cell + '"]'); }
-  /* WHERE A DROP LANDS: a product already in the van (or already in the muatan) always joins its own
+  function vanSlotEl(cell) { return cell < 0 ? null : $('vanGrid').querySelector('.slot[data-i="' + cell + '"]'); }
+  function whSlotEl(id) { return $('whGrid').querySelector('.slot[data-id="' + id + '"]'); }
+  /* WHERE A LOAD LANDS: a product already in the van (or already in the muatan) always joins its own
      square — one product, one square, one line, exactly as handleLoadCanvas merges one row. Otherwise
      the empty square under the finger, then the first empty square on this page, then anywhere. */
   function landingFor(id, x, y) {
     var own = cellOf(id); if (own >= 0) return own;
-    var s = vanSlotAt(x, y);
+    var s = slotAt('vanGrid', x, y);
     if (s && !S.cells[+s.dataset.i]) return +s.dataset.i;
     var c;
     for (c = S.vanPage * PER; c < S.vanPage * PER + PER; c++) if (!S.cells[c]) return c;
@@ -683,31 +742,35 @@
     return -1;
   }
 
-  /* ── DRAG — pointer events (a phone has no HTML5 drag-and-drop). THE MOVE AND THE DROP LISTEN ON THE
-        WINDOW: turning the van's page mid-drag re-draws its squares, and a listener on a square that no
+  /* ── DRAG, BOTH WAYS — pointer events (a phone has no HTML5 drag-and-drop). THE MOVE AND THE DROP LISTEN
+        ON THE WINDOW: turning a page mid-drag re-draws its squares, and a listener on a square that no
         longer exists would drop the box into nothing. ─────────────────────────────────────────── */
   var drag = null, SH = null;
-  $('whGrid').addEventListener('pointerdown', function (e) {
+  function startDrag(e, src) {
     if (S.busy || SH || (e.button !== undefined && e.button !== 0)) return;
     var slot = e.target.closest('.slot.has'); if (!slot) return;
-    drag = { id:slot.dataset.id, slot:slot, x0:e.clientX, y0:e.clientY, live:false, pid:e.pointerId,
+    drag = { src:src, id:slot.dataset.id, cell:src === 'van' ? +slot.dataset.i : -1, slot:slot,
+             x0:e.clientX, y0:e.clientY, live:false, pid:e.pointerId,
              lift:e.pointerType === 'touch' ? 46 : 0 };   // on a finger the box rides above it, where it can be seen
-  });
+  }
+  $('whGrid').addEventListener('pointerdown', function (e) { startDrag(e, 'wh'); });
+  $('vanGrid').addEventListener('pointerdown', function (e) { startDrag(e, 'van'); });
   window.addEventListener('pointermove', function (e) {
     if (!drag || e.pointerId !== drag.pid) return;
     if (!drag.live) {
       if (Math.abs(e.clientX - drag.x0) + Math.abs(e.clientY - drag.y0) < 6) return;   // still a tap
       var p = P[drag.id];
-      if (freeBks(drag.id) <= 0) {
+      if (drag.src === 'wh' && loadCap(drag.id) <= 0) {
         say('wh', S.stock[drag.id] ? 'Semua stok ' + p.n + ' sudah di muatan' : p.n + ' habis di gudang', true);
         play('refuse'); drag = null; return;
       }
       drag.live = true;
+      drag.home = center(drag.slot);
       drag.slot.classList.add('lift');
       var g = document.createElement('div'); g.className = 'ghost'; g.innerHTML = cube(p);
       document.body.appendChild(g); drag.ghost = g;
       $('bay').classList.add('dragging');
-      play('pick');
+      play('pick', 1, .5);
     }
     var x = e.clientX, y = e.clientY - drag.lift;
     drag.x = x; drag.y = y;
@@ -720,51 +783,90 @@
       el.classList.remove('over', 'zoneover', 'refuse');
     });
   }
+  /* hold the box over a van page number and that page turns under it */
+  function vanTabHold(x, y) {
+    var tab = tabAt('vanPages', x, y);
+    if (tab !== null && tab !== S.vanPage) {
+      if (!drag.hover || drag.hover.p !== tab) drag.hover = { p:tab, t:Date.now() };
+      else if (Date.now() - drag.hover.t > 260) { S.vanPage = tab; drawVan(false); drag.hover = null; play('page', 1, .35); }
+    } else if (tab === null) drag.hover = null;
+    return tab;
+  }
   function mark(x, y) {
     clearMarks();
     var zone = zoneAt(x, y);
-    if (zone === 'dmg') { $('dmg').classList.add('refuse'); return; }
-    if (zone !== 'van') { drag.hover = null; return; }
-    $('vanGui').classList.add('zoneover'); $('vanChest').classList.add('zoneover');
-    /* hold the box over a page number and that page turns under it */
-    var tab = vanTabAt(x, y);
-    if (tab !== null && tab !== S.vanPage) {
-      if (!drag.hover || drag.hover.p !== tab) drag.hover = { p:tab, t:Date.now() };
-      else if (Date.now() - drag.hover.t > 260) { S.vanPage = tab; drawVan(false); drag.hover = null; play('page'); }
-    } else if (tab === null) drag.hover = null;
-    var cell = landingFor(drag.id, x, y);
-    if (cell < 0) return;
-    if (Math.floor(cell / PER) !== S.vanPage && tab === null) { S.vanPage = Math.floor(cell / PER); drawVan(false); }
-    var s = vanSlotEl(cell); if (s) s.classList.add('over');
+    if (zone === 'dmg') { $('dmg').classList.add('refuse'); drag.hover = null; return; }
+    if (drag.src === 'wh') {
+      if (zone !== 'van') { drag.hover = null; return; }
+      $('vanGui').classList.add('zoneover'); $('vanChest').classList.add('zoneover');
+      var tab = vanTabHold(x, y), cell = landingFor(drag.id, x, y);
+      if (cell < 0) return;
+      if (Math.floor(cell / PER) !== S.vanPage && tab === null) { S.vanPage = Math.floor(cell / PER); drawVan(false); }
+      var s = vanSlotEl(cell); if (s) s.classList.add('over');
+      return;
+    }
+    /* from the van: over the warehouse it is a RETURN and lands on the product's own square; over the van
+       it is only a tidy-up of where the squares sit */
+    if (zone === 'wh') {
+      drag.hover = null;
+      $('whGui').classList.add('zoneover'); $('whChest').classList.add('zoneover');
+      var pg = whPageOf(drag.id);
+      if (pg >= 0 && pg !== S.whPage) { S.whPage = pg; drawWh(false); }
+      var ws = whSlotEl(drag.id); if (ws) ws.classList.add('over');
+    } else if (zone === 'van') {
+      vanTabHold(x, y);
+      var t = slotAt('vanGrid', x, y);
+      if (t && +t.dataset.i !== drag.cell) t.classList.add('over');
+    } else drag.hover = null;
   }
   function endDrag(e) {
     if (!drag || (e && e.pointerId !== drag.pid)) return;
     var d = drag; drag = null;
     $('bay').classList.remove('dragging');
     clearMarks();
-    if (!d.live) { if (e.type === 'pointerup') tapBox(d.slot, d.id); return; }
+    if (!d.live) { if (e.type === 'pointerup') tapBox(d); return; }
     d.slot.classList.remove('lift');
     var zone = e.type === 'pointercancel' ? 'none' : zoneAt(d.x, d.y);
-    var home = center(d.slot);
     if (zone === 'dmg') {
-      say('van', 'Barang rusak dicatat lewat EOD, bukan dimuat', true); play('refuse');
-      return flyHome(d.ghost, home);
+      say('van', 'Barang rusak dicatat lewat EOD, bukan dipindah di sini', true); play('refuse');
+      return flyHome(d.ghost, d.home);
     }
-    if (zone !== 'van') return flyHome(d.ghost, home);
-    var cell = landingFor(d.id, d.x, d.y);
-    if (cell < 0) { say('van', 'Van penuh — kosongkan satu kotak dulu', true); play('refuse'); return flyHome(d.ghost, home); }
-    if (Math.floor(cell / PER) !== S.vanPage) { S.vanPage = Math.floor(cell / PER); drawVan(false); }
-    var to = center(vanSlotEl(cell));
-    park(d.ghost, to);
-    openSheet({ mode:'add', id:d.id, cell:cell, ghost:d.ghost, home:home });
+    if (d.src === 'wh') {
+      if (zone !== 'van') return flyHome(d.ghost, d.home);
+      var cell = landingFor(d.id, d.x, d.y);
+      if (cell < 0) { say('van', 'Van penuh — kosongkan satu kotak dulu', true); play('refuse'); return flyHome(d.ghost, d.home); }
+      if (Math.floor(cell / PER) !== S.vanPage) { S.vanPage = Math.floor(cell / PER); drawVan(false); }
+      park(d.ghost, center(vanSlotEl(cell)));
+      return openSheet({ mode:'add', dir:1, id:d.id, cell:cell, ghost:d.ghost, home:d.home });
+    }
+    if (zone === 'wh') {
+      if (backCap(d.id) <= 0) { say('van', 'Semua ' + P[d.id].n + ' sudah direncanakan kembali', true); play('refuse'); return flyHome(d.ghost, d.home); }
+      var ws = whSlotEl(d.id);
+      park(d.ghost, center(ws || $('whChest').querySelector('.chest')));
+      return openSheet({ mode:'add', dir:-1, id:d.id, cell:d.cell, ghost:d.ghost, home:d.home });
+    }
+    if (zone === 'van') {
+      var t = slotAt('vanGrid', d.x, d.y);
+      if (t && +t.dataset.i !== d.cell) {
+        /* a tidy-up: an empty square takes the box, a filled one trades places. Only the LAYOUT changes —
+           in the app that is its own small field, written on this drop, never the van's stock */
+        var to = +t.dataset.i, a = S.cells[d.cell], b = S.cells[to];
+        S.cells[to] = a; S.cells[d.cell] = b || null;
+        settle(d.ghost); drawVan(false);
+        say('van', 'tersimpan — hanya susunan kotak'); play('page', 1, .5);
+        return;
+      }
+    }
+    flyHome(d.ghost, d.home);
   }
   window.addEventListener('pointerup', endDrag);
   window.addEventListener('pointercancel', endDrag);
 
-  function tapBox(slot, id) {
-    var c = slot.querySelector('.cube');
+  function tapBox(d) {
+    var c = d.slot.querySelector('.cube');
     if (c && motionOK()) { c.classList.remove('spin'); void c.offsetWidth; c.classList.add('spin'); setTimeout(function () { c.classList.remove('spin'); }, 760); }
-    say('wh', S.stock[id] ? 'Tarik ' + P[id].n + ' ke van untuk memuat' : P[id].n + ' habis di gudang', !S.stock[id]);
+    if (d.src === 'van') say('van', 'Tarik ke gudang untuk mengembalikan, atau ke kotak lain untuk menata');
+    else say('wh', S.stock[d.id] ? 'Tarik ' + P[d.id].n + ' ke van untuk memuat' : P[d.id].n + ' habis di gudang', !S.stock[d.id]);
   }
   function park(g, to) {
     if (!motionOK()) { g.style.left = to.x + 'px'; g.style.top = to.y + 'px'; g.classList.add('parked'); return; }
@@ -773,7 +875,7 @@
   }
   function flyHome(g, home) {
     if (!g) return;
-    if (!motionOK()) { g.remove(); return; }
+    if (!motionOK() || !home) { g.remove(); return; }
     g.classList.remove('glide', 'parked'); g.classList.add('home'); void g.offsetWidth;
     g.style.left = home.x + 'px'; g.style.top = home.y + 'px';
     setTimeout(function () { g.remove(); }, 320 * SLOW);
@@ -784,16 +886,24 @@
     g.classList.add('settle'); setTimeout(function () { g.remove(); }, 200);
   }
 
-  /* keyboard path — no mouse, no finger: Enter on a warehouse box opens the same panel */
+  /* keyboard path — no mouse, no finger: Enter on a warehouse box loads, Enter on a van box returns */
   $('whGrid').addEventListener('keydown', function (e) {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     var slot = e.target.closest('.slot.has'); if (!slot) return;
     e.preventDefault();
     var id = slot.dataset.id;
-    if (freeBks(id) <= 0) { say('wh', S.stock[id] ? 'Semua stok ' + P[id].n + ' sudah di muatan' : P[id].n + ' habis di gudang', true); return; }
+    if (loadCap(id) <= 0) { say('wh', S.stock[id] ? 'Semua stok ' + P[id].n + ' sudah di muatan' : P[id].n + ' habis di gudang', true); return; }
     var cell = landingFor(id, -1, -1);
     if (cell < 0) { say('van', 'Van penuh — kosongkan satu kotak dulu', true); return; }
-    openSheet({ mode:'add', id:id, cell:cell, ghost:null, back:id });
+    openSheet({ mode:'add', dir:1, id:id, cell:cell, ghost:null, back:{ grid:'whGrid', id:id } });
+  });
+  $('vanGrid').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var slot = e.target.closest('.slot.has'); if (!slot) return;
+    e.preventDefault();
+    var id = slot.dataset.id;
+    if (backCap(id) <= 0) { say('van', 'Semua ' + P[id].n + ' sudah direncanakan kembali', true); return; }
+    openSheet({ mode:'add', dir:-1, id:id, cell:+slot.dataset.i, ghost:null, back:{ grid:'vanGrid', id:id } });
   });
 
   /* ── HOW MANY ────────────────────────────────────────────────────────────────────────────────── */
@@ -810,14 +920,15 @@
   });
   function openSheet(o) {
     SH = o;
-    var p = P[o.id], line = lineOf(o.id);
+    var p = P[o.id], line = lineOf(o.id), have = S.van[o.id] || 0;
+    if (o.mode === 'edit') SH.dir = line.dir;
     SH.unit = o.mode === 'edit' ? line.unit : 'Bks';   // the packs the stock is counted in — never a guessed amount
     $('qty').value = o.mode === 'edit' ? String(line.qty) : '';
     $('shCube').innerHTML = cube(p);
     $('shName').textContent = p.n;
-    $('shSub').textContent = 'Gudang BANDUNG · stok ' + fmt(S.stock[o.id]) + ' Bks' +
-      (o.mode === 'add' && line ? ' · ' + fmt(lineBks(line)) + ' sudah di muatan' : '');
-    $('shLbl').textContent = o.mode === 'edit' ? 'Ubah jumlah di muatan' : 'Berapa yang dimuat ke van?';
+    $('shSub').textContent = (SH.dir > 0 ? 'Gudang BANDUNG · stok ' + fmt(S.stock[o.id]) + ' Bks' : 'Van Budi · berisi ' + fmt(have) + ' Bks') +
+      (o.mode === 'add' && line ? ' · ' + signed(netBks(o.id)) + ' di muatan' : '');
+    $('shLbl').textContent = o.mode === 'edit' ? 'Ubah jumlah di muatan' : (SH.dir > 0 ? 'Berapa yang dimuat ke van?' : 'Berapa yang dikembalikan ke gudang?');
     Array.prototype.forEach.call(unitsEl.children, function (b) {
       b.querySelector('small').textContent = '= ' + fmt(convertToBks(1, b.dataset.u, p)) + ' bks';
     });
@@ -826,29 +937,31 @@
     $('sheet').classList.add('show'); $('sheet').setAttribute('aria-hidden', 'false');
     setTimeout(function () { if (SH) $('qty').focus(); }, 40);
     update();
-    play('open', 1.25, .5);
+    play('page', .8, .4);
   }
   function update() {
     if (!SH) return { ok:false };
     var p = P[SH.id], raw = $('qty').value.trim(), n = /^\d+$/.test(raw) ? parseInt(raw, 10) : NaN;
     var bks = n > 0 ? convertToBks(n, SH.unit, p) : 0;
-    var line = lineOf(SH.id);
-    var cap = SH.mode === 'edit' ? S.stock[SH.id] : freeBks(SH.id);
+    var line = lineOf(SH.id), net = netBks(SH.id), have = S.van[SH.id] || 0;
+    var cap = SH.mode === 'edit' ? (SH.dir > 0 ? S.stock[SH.id] : have) : (SH.dir > 0 ? loadCap(SH.id) : backCap(SH.id));
     var ok = false, msg = '', err = false;
-    if (raw === '') msg = 'Ketik jumlahnya — tidak ada angka bawaan. Sisa ' + fmt(cap) + ' Bks.';
+    if (raw === '') msg = 'Ketik jumlahnya — tidak ada angka bawaan. ' + (SH.dir > 0 ? 'Sisa gudang ' : 'Di van ') + fmt(cap) + ' Bks.';
     else if (!(n > 0)) { msg = 'Tulis angka bulat, lebih dari 0.'; err = true; }
-    else if (bks > cap) { msg = 'Lebih dari sisa gudang: ' + fmt(cap) + ' Bks.'; err = true; }
+    else if (bks > cap) { msg = 'Lebih dari ' + (SH.dir > 0 ? 'sisa gudang' : 'isi van') + ': ' + fmt(cap) + ' Bks.'; err = true; }
     else {
       ok = true;
-      msg = SH.mode === 'add' && line ? 'Ditambahkan ke ' + fmt(lineBks(line)) + ' Bks yang sudah di muatan.' : 'Gudang tinggal ' + fmt(cap - bks) + ' Bks setelah dimuat.';
+      var after = SH.mode === 'edit' ? SH.dir * bks : net + SH.dir * bks;
+      msg = (SH.mode === 'add' && line ? 'Digabung dengan ' + signed(net) + ' Bks di muatan. ' : '') +
+            'Gudang jadi ' + fmt(S.stock[SH.id] - after) + ' Bks · van jadi ' + fmt(have + after) + ' Bks.';
     }
     $('eq').textContent = n > 0 ? '= ' + fmt(bks) + ' Bks' : '= — Bks';
     $('eq').classList.toggle('err', err);
     $('shMsg').textContent = msg; $('shMsg').classList.toggle('err', err);
     Array.prototype.forEach.call(unitsEl.children, function (b) { b.setAttribute('aria-pressed', b.dataset.u === SH.unit ? 'true' : 'false'); });
-    var okBtn = $('shOk');
+    var okBtn = $('shOk'), verb = SH.mode === 'edit' ? 'Simpan' : (SH.dir > 0 ? 'Masukkan' : 'Kembalikan');
     okBtn.disabled = !ok;
-    okBtn.textContent = ok ? (SH.mode === 'edit' ? 'Simpan ' + fmt(bks) + ' Bks' : 'Masukkan ' + fmt(bks) + ' Bks') : (SH.mode === 'edit' ? 'Simpan' : 'Masukkan ke van');
+    okBtn.textContent = ok ? verb + ' ' + fmt(bks) + ' Bks' : (SH.mode === 'edit' ? 'Simpan' : (SH.dir > 0 ? 'Masukkan ke van' : 'Kembalikan ke gudang'));
     return { ok:ok, n:n, bks:bks };
   }
   function closeSheet() {
@@ -858,7 +971,7 @@
     return s;
   }
   function refocus(s) {
-    var el = s.back ? $('whGrid').querySelector('.slot[data-id="' + s.back + '"]') : null;
+    var el = s.back ? $(s.back.grid).querySelector('.slot[data-id="' + s.back.id + '"]') : null;
     if (!el && s.edit) el = $('lines').querySelector('[data-edit="' + s.edit + '"]');
     if (el) try { el.focus(); } catch (err) { /* gone */ }
   }
@@ -866,27 +979,33 @@
     var r = update(); if (!r.ok) return;
     var s = closeSheet(), p = P[s.id], line = lineOf(s.id);
     if (s.mode === 'edit') { line.qty = r.n; line.unit = s.unit; }
-    else if (line) {
-      /* one product = one line. Same unit adds up; a second unit folds the line into packs, so the
-         line never says "3 Bal" while meaning 3 Bal and 5 Slop */
-      if (line.unit === s.unit) line.qty += r.n; else { line.qty = lineBks(line) + r.bks; line.unit = 'Bks'; }
-    } else S.lines.push({ id:s.id, qty:r.n, unit:s.unit });
-    if (cellOf(s.id) < 0) S.cells[s.cell] = s.id;
+    else if (!line) S.lines.push({ id:s.id, qty:r.n, unit:s.unit, dir:s.dir });
+    else if (line.dir === s.dir && line.unit === s.unit) line.qty += r.n;
+    else {
+      /* one product = one line. A second unit, or a drag the other way, folds the line into signed packs */
+      var net = line.dir * lineBks(line) + s.dir * r.bks;
+      if (net === 0) S.lines = S.lines.filter(function (l) { return l !== line; });
+      else { line.dir = net > 0 ? 1 : -1; line.qty = Math.abs(net); line.unit = 'Bks'; }
+    }
+    if (s.dir > 0 && cellOf(s.id) < 0) S.cells[s.cell] = s.id;
+    if (!lineOf(s.id) && !S.van[s.id] && cellOf(s.id) >= 0) S.cells[cellOf(s.id)] = null;   // a square that only held a plan
     var vc = cellOf(s.id);
-    if (Math.floor(vc / PER) !== S.vanPage) S.vanPage = Math.floor(vc / PER);
+    if (vc >= 0 && Math.floor(vc / PER) !== S.vanPage) S.vanPage = Math.floor(vc / PER);
+    var pg = whPageOf(s.id); if (pg >= 0 && pg !== S.whPage) S.whPage = pg;
     /* the figures change NOW, before any motion — the flight below only decorates what is already true,
        so Lite Mode, reduced motion or a stalled animation can never hide a number */
     drawWh(false); drawVan(false); drawMan();
-    say('van', s.mode === 'edit' ? p.n + ': ' + fmt(pendingBks(s.id)) + ' Bks di muatan' : '+' + fmt(r.bks) + ' Bks ' + p.n + ' — di muatan, belum tercatat');
-    pop(vanSlotEl(vc));
+    var msg = s.mode === 'edit' ? p.n + ': ' + signed(netBks(s.id)) + ' Bks di muatan'
+            : (s.dir > 0 ? '+' + fmt(r.bks) + ' Bks ' + p.n + ' ke van' : fmt(r.bks) + ' Bks ' + p.n + ' kembali ke gudang') + ' — belum tercatat';
+    say(s.dir > 0 || s.mode === 'edit' ? 'van' : 'wh', msg);
     settle(s.ghost);
-    if (s.mode === 'add') transfer(p, r.n); else play('page');
+    if (s.mode === 'add') transfer(p, r.n, s.dir, vc); else play('page', 1, .5);
     refocus(s);
   }
   function cancelSheet() {
     var s = closeSheet(); if (!s) return;
     if (s.ghost) flyHome(s.ghost, s.home);
-    say(s.mode === 'edit' ? 'van' : 'wh', 'Batal — tidak ada yang berubah');
+    say(s.mode === 'edit' || s.dir < 0 ? 'van' : 'wh', 'Batal — tidak ada yang berubah');
     refocus(s);
   }
   $('shOk').addEventListener('click', confirmSheet);
@@ -903,8 +1022,9 @@
     }
   });
 
-  /* ── THE TRANSFER — the goods leave the big chest and drop into the small one. As many boxes as the
-        count in the unit he chose, up to six: 3 Bal fly as three, 40 Bks as six. ─────────────────── */
+  /* ── THE TRANSFER — the goods fly ACROSS THE MIDDLE, from the square they left to the square they land
+        in (his "middle level of between the chests and not too bottom"). As many boxes as the count in the
+        unit he chose, up to six: 3 Bal fly as three, 40 Bks as six. ──────────────────────────────── */
   function mouth(cell) { var r = cell.querySelector('.chest').getBoundingClientRect(); return { x:r.left + r.width / 2, y:r.top + r.height * .32 }; }
   function bump(cell, soft) {
     if (!motionOK()) return;
@@ -915,13 +1035,20 @@
   function pop(el) {
     var chip = el && el.querySelector('.chip');
     if (!chip || !motionOK()) return;
-    chip.animate([{ transform:'scale(1.35)' }, { transform:'none' }], { duration:260 * SLOW, easing:'cubic-bezier(.23,1,.32,1)' });
+    chip.animate([{ transform:'scale(1.35)' }, { transform:'none' }], { duration:220 * SLOW, easing:'cubic-bezier(.23,1,.32,1)' });
   }
-  function transfer(p, n) {
-    if (!motionOK()) { play('land'); return; }
-    var a = mouth($('whChest')), b = mouth($('vanChest'));
-    var k = Math.max(1, Math.min(6, n)), lift = Math.max(60, Math.abs(b.x - a.x) * .35 + 40), top = Math.min(a.y, b.y) - lift;
-    bump($('whChest'), true);
+  function transfer(p, n, dir, cell) {
+    var ws = whSlotEl(p.id), vs = vanSlotEl(cell);
+    var whPt = ws ? center(ws) : mouth($('whChest')), vanPt = vs ? center(vs) : mouth($('vanChest'));
+    var a = dir > 0 ? whPt : vanPt, b = dir > 0 ? vanPt : whPt, dest = dir > 0 ? vs : ws;
+    if (!motionOK()) { play('land', 1, .7); return; }
+    if (dir > 0) burst(10);                              // the ender chest gives
+    var k = Math.max(1, Math.min(6, n)), dist = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    /* a shallow bow sideways to the line, never a hop over the top: side by side (the desk) it bows up a
+       little, stacked (the phone) it bows to the side — either way it stays in the band between the chests */
+    var nx = (b.y - a.y) / dist, ny = -(b.x - a.x) / dist;
+    if (ny > 0) { nx = -nx; ny = -ny; }
+    var bow = 24 + dist * .08, cx = (a.x + b.x) / 2 + nx * bow, cy = (a.y + b.y) / 2 + ny * bow;
     for (var i = 0; i < k; i++) (function (i) {
       var el = document.createElement('div'); el.className = 'pack'; el.innerHTML = cube(p);
       el.style.transform = 'translate(' + (a.x - 20) + 'px,' + (a.y - 20) + 'px)';
@@ -930,47 +1057,95 @@
       var frames = [];
       for (var j = 0; j <= 14; j++) {
         var t = j / 14, u = 1 - t;
-        var x = u * u * a.x + 2 * u * t * ((a.x + b.x) / 2) + t * t * b.x;
-        var y = u * u * a.y + 2 * u * t * top + t * t * b.y;
-        frames.push({ transform:'translate(' + (x - 20) + 'px,' + (y - 20) + 'px) rotate(' + (t * 24 - 8) + 'deg) scale(' + (1 - .32 * t) + ')',
+        var x = u * u * a.x + 2 * u * t * cx + t * t * b.x;
+        var y = u * u * a.y + 2 * u * t * cy + t * t * b.y;
+        frames.push({ transform:'translate(' + (x - 20) + 'px,' + (y - 20) + 'px) rotate(' + (t * 24 - 8) + 'deg) scale(' + (1 - .3 * t) + ')',
                       opacity:j === 0 || j === 14 ? 0 : 1 });
       }
       var an = el.animate(frames, { duration:560 * SLOW, delay:i * 95 * SLOW, easing:'cubic-bezier(.45,.05,.3,1)', fill:'forwards' });
-      an.onfinish = function () { el.remove(); play('land', 1 + i * .035); bump($('vanChest')); };
+      an.onfinish = function () {
+        el.remove();
+        play('land', 1 + i * .07, .7);                   // each box a little higher — the satisfying part
+        pop(dest);
+        bump(dir > 0 ? $('vanChest') : $('whChest'));
+        if (dir < 0 && i === k - 1) burst(8);            // the ender chest takes it back
+      };
       setTimeout(function () { if (el.parentNode) el.remove(); }, (660 + i * 95) * SLOW + 400);   // a stalled clock never leaves a box hanging
     })(i);
   }
 
-  /* ── MUAT VAN — the ONE press. The app loops over handleLoadCanvas, one transaction per product,
-        untouched; only the REPORT collapses to one line, and the surat jalan is one document. ────── */
+  /* ── THE PURPLE SPECKS — a few drifting all the time, as in his video; a small burst when the ender chest
+        opens, gives or takes. Never in Lite Mode or reduced motion (CSS removes the whole layer). ─── */
+  var MOTE_COLORS = ['#B44CF0', '#8A2BE2', '#D98CFF', '#6A1FB0'];
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function mote(el, once) {
+    var ang = rnd(0, Math.PI * 2), r0 = rnd(6, 26), r1 = rnd(34, once ? 80 : 64);
+    el.style.setProperty('--x0', Math.cos(ang) * r0 + 'px');
+    el.style.setProperty('--y0', Math.sin(ang) * r0 * .6 + 'px');
+    el.style.setProperty('--x1', Math.cos(ang) * r1 + 'px');
+    el.style.setProperty('--y1', (Math.sin(ang) * r1 * .6 - rnd(10, 40)) + 'px');
+    el.style.setProperty('--mc', MOTE_COLORS[Math.floor(Math.random() * MOTE_COLORS.length)]);
+    el.style.setProperty('--md', (once ? rnd(.6, 1.1) : rnd(2.4, 4.4)) + 's');
+    if (!once) el.style.setProperty('--mdl', -rnd(0, 4.4) + 's');
+  }
+  for (var m = 0; m < 12; m++) { var mi = document.createElement('i'); mote(mi, false); $('motes').appendChild(mi); }
+  function burst(n) {
+    if (!motionOK()) return;
+    for (var i = 0; i < n; i++) {
+      var el = document.createElement('i'); el.className = 'once'; mote(el, true);
+      $('motes').appendChild(el);
+      setTimeout(function (x) { return function () { x.remove(); }; }(el), 1300);
+    }
+  }
+
+  /* ── MUAT VAN — the ONE press. The app calls handleLoadCanvas once per product going out (untouched), and
+        a NEW per-product return transaction for each one coming back (never handleClearCanvas). Only the
+        REPORT collapses to one line: one surat jalan for what went out, one bukti kembali for what came back. */
+  function stampNo(prefix, n) {
+    var d = new Date();
+    return prefix + '/BDG/' + String(d.getFullYear()).slice(2) + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + '/' + ('00' + n).slice(-3);
+  }
+  function docCard(title, no, sub, rows, total, count) {
+    return '<div class="sj"><p class="sjHead"><b>' + title + '</b><span>' + no + '</span></p><p class="sjSub">' + sub + '</p><ol>' +
+      rows.map(function (x) {
+        return '<li>' + P[x.id].n + ' <span>— ' + fmt(x.qty) + ' ' + x.unit + (x.unit !== 'Bks' ? ' (' + fmt(x.bks) + ' Bks)' : '') + '</span></li>';
+      }).join('') + '</ol><p class="sjTot"><span>Total</span><span>' + fmt(total) + ' Bks · ' + count + ' barang</span></p></div>';
+  }
   function load() {
     if (S.busy || !S.lines.length) return;
     S.busy = true; drawMan();
-    var lines = S.lines.slice(), done = [], total = 0, i = 0;
+    var lines = S.lines.slice(), out = [], back = [], i = 0;
     (function next() {
       if (i >= lines.length) return finish();
       $('goTxt').textContent = 'Memuat ' + (i + 1) + '/' + lines.length + '…';
       setTimeout(function () {
-        var l = lines[i], b = lineBks(l);
-        S.stock[l.id] -= b; S.van[l.id] = (S.van[l.id] || 0) + b;          // ≙ one runTransaction in the app
+        var l = lines[i], b = lineBks(l), row = { id:l.id, qty:l.qty, unit:l.unit, bks:b };
+        if (l.dir > 0) { S.stock[l.id] -= b; S.van[l.id] = (S.van[l.id] || 0) + b; out.push(row); }   // ≙ one handleLoadCanvas
+        else { S.van[l.id] -= b; S.stock[l.id] += b; back.push(row); }                                // ≙ one return transaction
         var li = $('lines').children[i]; if (li) li.classList.add('done');
-        done.push({ id:l.id, qty:l.qty, unit:l.unit, bks:b }); total += b; i++;
-        next();
+        i++; next();
       }, 260 * SLOW);
     })();
     function finish() {
-      S.lines = []; S.busy = false; S.sj++;
-      var d = new Date(), no = 'SJ/BDG/' + String(d.getFullYear()).slice(2) + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + '/' + ('00' + S.sj).slice(-3);
+      S.lines = []; S.busy = false;
+      Object.keys(S.van).forEach(function (id) { if (!S.van[id]) { delete S.van[id]; var c = cellOf(id); if (c >= 0) S.cells[c] = null; } });
+      var sum = function (rows) { return rows.reduce(function (a, x) { return a + x.bks; }, 0); };
+      var html = '', parts = [];
+      if (out.length) {
+        S.sj++; var sj = stampNo('SJ', S.sj);
+        html += docCard('SURAT JALAN', sj, 'Gudang BANDUNG → Budi Santoso · D 5521 XY', out, sum(out), out.length);
+        parts.push(out.length + ' dimuat · ' + fmt(sum(out)) + ' Bks · ' + sj);
+      }
+      if (back.length) {
+        S.bk++; var bk = stampNo('BK', S.bk);
+        html += docCard('BUKTI KEMBALI', bk, 'Budi Santoso · D 5521 XY → Gudang BANDUNG', back, sum(back), back.length);
+        parts.push(back.length + ' kembali · ' + fmt(sum(back)) + ' Bks · ' + bk);
+      }
       drawWh(false); drawVan(false); drawMan();
-      $('report').innerHTML = '<b>✓ Van Budi Santoso dimuat</b> · ' + done.length + ' barang · ' + fmt(total) + ' Bks · ' + no;
-      var rows = done.map(function (x) {
-        return '<li>' + P[x.id].n + ' <span>— ' + fmt(x.qty) + ' ' + x.unit + (x.unit !== 'Bks' ? ' (' + fmt(x.bks) + ' Bks)' : '') + '</span></li>';
-      }).join('');
-      $('sjBox').innerHTML = '<div class="sj"><p class="sjHead"><b>SURAT JALAN</b><span>' + no + '</span></p>' +
-        '<p class="sjSub">Gudang BANDUNG → Budi Santoso · D 5521 XY</p><ol>' + rows + '</ol>' +
-        '<p class="sjTot"><span>Total</span><span>' + fmt(total) + ' Bks · ' + done.length + ' barang</span></p></div>';
-      say('van', 'tersimpan · ' + no);
-      play('latch'); bump($('vanChest'));
+      $('report').innerHTML = '<b>✓ Van Budi Santoso tercatat</b> · ' + parts.join(' · ');
+      $('sjBox').innerHTML = html;
+      say('van', 'tersimpan');
+      play('done'); bump($('vanChest'));
     }
   }
   $('go').addEventListener('click', load);
@@ -982,8 +1157,8 @@
       S.lines = S.lines.filter(function (l) { return l.id !== id; });
       if (!S.van[id]) S.cells[cellOf(id)] = null;     // a square that only held a plan goes back to empty
       drawWh(false); drawVan(false); drawMan();
-      say('van', P[id].n + ' keluar dari muatan — gudang tidak berubah');
-      play('page');
+      say('van', P[id].n + ' keluar dari muatan — gudang dan van tidak berubah');
+      play('page', 1, .5);
     } else if (ed) openSheet({ mode:'edit', id:ed.dataset.edit, cell:cellOf(ed.dataset.edit), ghost:null, edit:ed.dataset.edit });
   });
 
@@ -998,86 +1173,82 @@
   });
   $('whPages').addEventListener('click', function (e) {
     var b = e.target.closest('.pg'); if (!b) return;
-    S.whPage = +b.dataset.p; drawWh(); play('page');
+    S.whPage = +b.dataset.p; drawWh(); play('page', 1, .4);
   });
   $('vanPages').addEventListener('click', function (e) {
     var b = e.target.closest('.pg'); if (!b) return;
-    S.vanPage = +b.dataset.p; drawVan(); play('page');
+    S.vanPage = +b.dataset.p; drawVan(); play('page', 1, .4);
   });
 
   function setOpen(side, on) {
     OPEN[side] = on;
     $('bay').classList.toggle(side + '-open', on);
     $(side + 'Chest').setAttribute('aria-expanded', on ? 'true' : 'false');
-    if (on) { if (side === 'wh') drawWh(); else drawVan(); }
-    play(on ? 'open' : 'close', side === 'wh' ? .84 : 1.08);
+    if (on) { if (side === 'wh') { drawWh(); burst(12); } else drawVan(); }
+    play((side === 'wh' ? 'ender' : 'wood') + (on ? 'Open' : 'Close'));
   }
   $('whChest').addEventListener('click', function () { setOpen('wh', !OPEN.wh); });
   $('vanChest').addEventListener('click', function () { setOpen('van', !OPEN.van); });
 
-  /* ── SOUND — ours, made from the physics of wood; no game file ever enters the repo. Each sound is
-        baked once into a buffer: wood modes (decaying partials at inharmonic ratios), a stick-slip
-        hinge creak, a steel latch, a short room so nothing sounds like it plays in a vacuum. ───── */
+  /* ── SOUND — simple, soft, ours. His verdict on the first try: too busy. So: one soft wooden knock for the
+        van, one low airy swell for the ender chest, a small rising pop for every box that lands. No creak,
+        no clatter, a warm room behind it. Still made here: the game's own files belong to Mojang. ── */
   var AC = null, OUT = null, BUF = {}, acted = false, muted = false;
   try { muted = localStorage.getItem('kpm-chest-mute') === '1'; } catch (e) { muted = false; }
   function rng(seed) { var s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296 * 2 - 1; }; }
-  function modes(d, sr, t0, list, amp) {
-    var s0 = Math.floor(t0 * sr);
-    list.forEach(function (m) {
-      var w = 2 * Math.PI * m[0] / sr, tau = m[1] * sr, g = m[2] * amp, len = Math.min(d.length - s0, Math.floor(tau * 7));
-      for (var i = 0; i < len; i++) d[s0 + i] += g * Math.exp(-i / tau) * Math.sin(w * i);
-    });
-  }
-  function noise(d, sr, t0, tau, amp, lp, seed) {
-    var r = rng(seed), s0 = Math.floor(t0 * sr), T = tau * sr, len = Math.min(d.length - s0, Math.floor(T * 6)), y = 0;
-    for (var i = 0; i < len; i++) { y += lp * (r() - y); d[s0 + i] += amp * y * Math.exp(-i / T); }
-  }
-  /* a hinge is friction: the lid sticks, slips, sticks — each slip rings the wood. The slip rate
-     rises and falls with the swing, which is what makes it a creak and not a buzz. */
-  function creak(d, sr, t0, dur, f0, amp, seed) {
-    var r = rng(seed), s0 = Math.floor(t0 * sr), n = Math.min(d.length - s0, Math.floor(dur * sr)), ph = 0;
-    var R1 = .9965, w1 = 2 * Math.PI * f0 / sr, a1 = 2 * R1 * Math.cos(w1), b1 = R1 * R1, y1 = 0, y2 = 0;
-    var R2 = .993,  w2 = 2 * Math.PI * f0 * 1.73 / sr, a2 = 2 * R2 * Math.cos(w2), b2 = R2 * R2, z1 = 0, z2 = 0;
+  /* a sine that glides from f0 to f1 and dies away — a knock when it falls, a pop when it rises */
+  function tone(d, sr, t0, f0, f1, dur, amp, tau) {
+    var s0 = Math.floor(t0 * sr), n = Math.min(d.length - s0, Math.floor(dur * sr)), ph = 0;
     for (var i = 0; i < n; i++) {
-      var t = i / n, x = 0;
-      ph += (24 + 72 * Math.sin(Math.PI * t) + 10 * r()) / sr;
-      if (ph >= 1) { ph -= 1; x = 1 + .5 * r(); }
-      var y = x + a1 * y1 - b1 * y2; y2 = y1; y1 = y;
-      var z = x + a2 * z1 - b2 * z2; z2 = z1; z1 = z;
-      d[s0 + i] += amp * Math.pow(Math.sin(Math.PI * t), .6) * (y * .1 + z * .05);
+      var t = i / sr, f = f0 * Math.pow(f1 / f0, Math.min(1, t / dur));
+      ph += 2 * Math.PI * f / sr;
+      d[s0 + i] += amp * Math.min(1, t / .003) * Math.exp(-t / tau) * Math.sin(ph);
     }
   }
-  var LID  = [[118,.07,1],[247,.05,.7],[402,.035,.45],[671,.022,.3],[1130,.012,.2]];
-  var SLAM = [[96,.1,1],[204,.07,.75],[352,.045,.5],[598,.028,.32],[1010,.015,.2]];
-  var STEEL = [[2380,.02,.5],[3710,.013,.35],[5230,.008,.22]];
+  /* soft noise through a filter that opens or closes — the "air" of the ender chest */
+  function air(d, sr, t0, dur, amp, lp0, lp1, attack, seed) {
+    var r = rng(seed), s0 = Math.floor(t0 * sr), n = Math.min(d.length - s0, Math.floor(dur * sr)), y = 0, z = 0;
+    for (var i = 0; i < n; i++) {
+      var t = i / n, lp = lp0 + (lp1 - lp0) * t;
+      y += lp * (r() - y); z += lp * (y - z);
+      d[s0 + i] += amp * Math.min(1, (i / sr) / attack) * Math.pow(1 - t, 1.6) * z * 3;
+    }
+  }
+  function tap(d, sr, t0, tau, amp, lp, seed) {
+    var r = rng(seed), s0 = Math.floor(t0 * sr), T = tau * sr, n = Math.min(d.length - s0, Math.floor(T * 6)), y = 0;
+    for (var i = 0; i < n; i++) { y += lp * (r() - y); d[s0 + i] += amp * y * Math.exp(-i / T); }
+  }
   function bake(dur, fill) {
     var sr = AC.sampleRate, n = Math.ceil(sr * dur), b = AC.createBuffer(1, n, sr), d = b.getChannelData(0), pk = 0, i;
     fill(d, sr);
     for (i = 0; i < n; i++) pk = Math.max(pk, Math.abs(d[i]));
-    var fade = Math.floor(sr * .012);
+    var fade = Math.floor(sr * .015);
     for (i = 0; i < n; i++) d[i] = d[i] / (pk || 1) * .9 * (i > n - fade ? (n - i) / fade : 1);
     return b;
   }
+  /* a warm, dark room — the "chill" is mostly this tail */
   function room() {
-    var sr = AC.sampleRate, n = Math.floor(sr * .42), b = AC.createBuffer(2, n, sr);
+    var sr = AC.sampleRate, n = Math.floor(sr * .9), b = AC.createBuffer(2, n, sr);
     for (var ch = 0; ch < 2; ch++) {
       var d = b.getChannelData(ch), r = rng(7 + ch), y = 0;
-      for (var i = 0; i < n; i++) { y += .45 * (r() - y); d[i] = i < sr * .006 ? 0 : y * Math.exp(-i / (sr * .075)); }
+      for (var i = 0; i < n; i++) { y += .28 * (r() - y); d[i] = i < sr * .008 ? 0 : y * Math.exp(-i / (sr * .2)); }
     }
     return b;
   }
   function build() {
-    OUT = AC.createGain(); OUT.gain.value = .6;
+    OUT = AC.createGain(); OUT.gain.value = .5;
     var wet = AC.createGain(), conv = AC.createConvolver();
-    wet.gain.value = .22; conv.buffer = room();
+    wet.gain.value = .3; conv.buffer = room();
     OUT.connect(AC.destination); OUT.connect(conv); conv.connect(wet); wet.connect(AC.destination);
-    BUF.open  = bake(.62, function (d, sr) { creak(d, sr, 0, .3, 980, 1, 11); modes(d, sr, .22, LID, .9); noise(d, sr, .22, .004, .5, .35, 12); });
-    BUF.close = bake(.55, function (d, sr) { creak(d, sr, 0, .13, 1250, .6, 21); modes(d, sr, .1, SLAM, 1); noise(d, sr, .1, .005, .7, .3, 22); modes(d, sr, .18, STEEL, .45); noise(d, sr, .18, .0015, .25, .9, 23); });
-    BUF.pick  = bake(.16, function (d, sr) { modes(d, sr, 0, [[640,.025,.6],[1380,.014,.35],[2210,.008,.2]], 1); noise(d, sr, 0, .0015, .35, .6, 31); });
-    BUF.land  = bake(.26, function (d, sr) { noise(d, sr, 0, .012, .9, .12, 41); modes(d, sr, 0, [[150,.05,.8],[265,.035,.5],[455,.02,.3]], .9); noise(d, sr, .03, .004, .15, .5, 42); });
-    BUF.page  = bake(.1,  function (d, sr) { modes(d, sr, 0, [[900,.015,.5],[1850,.008,.25]], 1); noise(d, sr, 0, .001, .2, .7, 51); });
-    BUF.refuse = bake(.3, function (d, sr) { modes(d, sr, 0, [[180,.04,.8],[330,.025,.4]], 1); modes(d, sr, .1, [[170,.04,.8],[310,.025,.4]], .9); noise(d, sr, 0, .002, .3, .3, 61); noise(d, sr, .1, .002, .3, .3, 62); });
-    BUF.latch = bake(.62, function (d, sr) { modes(d, sr, 0, SLAM, 1); noise(d, sr, 0, .006, .8, .25, 71); modes(d, sr, .16, STEEL, .5); noise(d, sr, .16, .0015, .3, .9, 72); modes(d, sr, .23, STEEL, .4); noise(d, sr, .23, .0015, .25, .9, 73); });
+    BUF.enderOpen  = bake(1.3, function (d, sr) { air(d, sr, 0, .8, 1, .012, .08, .22, 11); tone(d, sr, .28, 95, 62, .5, .9, .12); tone(d, sr, .05, 523.25, 523.25, 1.1, .05, .45); tone(d, sr, .12, 784, 784, 1, .04, .4); });
+    BUF.enderClose = bake(.9,  function (d, sr) { air(d, sr, 0, .35, .8, .08, .012, .05, 12); tone(d, sr, .2, 85, 55, .5, 1, .13); tap(d, sr, .2, .004, .2, .2, 13); });
+    BUF.woodOpen   = bake(.5,  function (d, sr) { tone(d, sr, 0, 175, 120, .3, 1, .06); tap(d, sr, 0, .005, .35, .22, 21); tone(d, sr, .07, 150, 115, .25, .4, .05); });
+    BUF.woodClose  = bake(.5,  function (d, sr) { tone(d, sr, 0, 140, 88, .35, 1, .08); tap(d, sr, 0, .006, .45, .2, 22); });
+    BUF.pick   = bake(.12, function (d, sr) { tone(d, sr, 0, 380, 520, .09, .6, .025); });
+    BUF.land   = bake(.2,  function (d, sr) { tone(d, sr, 0, 440, 880, .16, 1, .035); tone(d, sr, 0, 880, 1760, .1, .15, .02); });
+    BUF.page   = bake(.08, function (d, sr) { tone(d, sr, 0, 700, 760, .06, .5, .015); });
+    BUF.refuse = bake(.35, function (d, sr) { tone(d, sr, 0, 160, 120, .15, .8, .05); tone(d, sr, .11, 150, 110, .15, .8, .05); });
+    BUF.done   = bake(.8,  function (d, sr) { tone(d, sr, 0, 140, 88, .35, 1, .08); tap(d, sr, 0, .006, .4, .2, 31); tone(d, sr, .14, 523, 1046, .15, .45, .035); tone(d, sr, .26, 659, 1318, .15, .45, .035); });
   }
   function audio() {
     if (!acted) return null;                         // a browser plays nothing before the first tap
@@ -1091,7 +1262,7 @@
     var c = audio(); if (!c || !BUF[name]) return;
     var src = c.createBufferSource(), g = c.createGain();
     src.buffer = BUF[name];
-    src.playbackRate.value = (rate || 1) * (1 + (Math.random() - .5) * .04);
+    src.playbackRate.value = (rate || 1) * (1 + (Math.random() - .5) * .03);
     g.gain.value = gain == null ? 1 : gain;
     src.connect(g); g.connect(OUT); src.start();
   }
@@ -1111,7 +1282,7 @@
   $('sound').addEventListener('click', function () {
     muted = !muted;
     try { localStorage.setItem('kpm-chest-mute', muted ? '1' : '0'); } catch (err) { /* private window */ }
-    paintSound(); play('open');
+    paintSound(); play('woodOpen');
   });
   $('slow').addEventListener('click', function () {
     SLOW = SLOW === 1 ? 3 : 1;
