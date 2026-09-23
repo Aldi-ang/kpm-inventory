@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Van Loading Chests</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>
@@ -413,6 +414,27 @@
   .shKeys .ok { background:var(--gold); color:var(--gold-ink); border-color:transparent; }
   .shKeys .ok:disabled { background:var(--panel); color:var(--ink-dim); border:1px dashed var(--line-2); cursor:not-allowed; transform:none; }
 
+  /* ── THE SOUND STUDIO ─────────────────────────────────────────────────────────────────────────── */
+  .studioSub { margin-bottom:4px; }
+  .studioBar { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:end; margin:12px 0; }
+  .studioBar .knob { flex:1 1 180px; }
+  .key.plate { background:var(--gold); color:var(--gold-ink); border-color:transparent; }
+  .key.plate:disabled { background:var(--panel); color:var(--ink-dim); border:1px dashed var(--line-2); cursor:default; transform:none; }
+  .sfxState { font:900 10px/1.3 var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--ink-dim); min-height:44px; display:inline-flex; align-items:center; }
+  .studio { display:grid; gap:10px; grid-template-columns:repeat(auto-fill, minmax(min(100%, 330px), 1fr)); }
+  .sfx { background:var(--raised); border:1px solid var(--line-2); border-radius:14px; padding:10px; display:grid; gap:8px; min-width:0; }
+  .sfxHead { display:flex; align-items:center; gap:10px; min-width:0; }
+  .playKey { width:44px; padding:0; flex:0 0 44px; font-size:14px; letter-spacing:0; }
+  .sfxName { flex:1; min-width:0; }
+  .sfxName b { display:block; font:800 13px/1.25 var(--sans); }
+  .sfxName small { display:block; font:900 9px/1.4 var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); }
+  .sfx select { max-width:46%; min-height:40px; border-radius:10px; border:1px solid var(--line-2); background:var(--inset); color:var(--ink); font:700 12px/1 var(--mono); padding:0 8px; }
+  .sfx select:focus-visible, .knob input:focus-visible { outline:3px solid var(--hi); outline-offset:2px; }
+  .wave { width:100%; height:56px; border-radius:8px; border:1px solid var(--line-2); display:block; }
+  .knobs { display:grid; grid-template-columns:1fr 1fr; gap:6px 12px; }
+  .knob { display:grid; gap:2px; font:900 10px/1.3 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--ink-dim); }
+  .knob output { color:var(--ink); letter-spacing:.04em; font-variant-numeric:tabular-nums; }
+  .knob input[type=range] { width:100%; min-height:28px; accent-color:var(--accent-edge); }
   .note { border-left:2px solid var(--accent-edge); padding:2px 0 2px 14px; margin:18px 0; color:var(--ink-muted); font-size:14px; max-width:78ch; }
   .note b { color:var(--ink); }
   ul { padding-left:18px; color:var(--ink-muted); font-size:14px; max-width:84ch; }
@@ -510,20 +532,31 @@
     <div class="shKeys"><button class="key" id="shNo" type="button">Batal</button><button class="key ok" id="shOk" type="button" disabled>Masukkan ke van</button></div>
   </div>
 
+  <h2>Sound studio</h2>
+  <p class="sub studioSub">Every sound in the chests is a real recording from Kenney's <b>RPG Audio</b> pack — free and public domain, so it is safe in a paid app. I picked one for each moment. Change the recording, cut where it starts and stops, set how loud and how high; letting go of a slider plays it. Press <b>Simpan</b> and the chests play your version on every device — and that is the version the app gets.</p>
+  <div class="studioBar">
+    <label class="knob"><span>Ruang / gema <output id="o-room"></output></span><input type="range" id="room" min="0" max="0.8" step="0.01"></label>
+    <label class="knob"><span>Volume semua <output id="o-master"></output></span><input type="range" id="master" min="0" max="1.2" step="0.01"></label>
+    <button class="key" id="sfxReset" type="button">Pilihan Claude</button>
+    <button class="key plate" id="sfxSave" type="button" disabled>Simpan</button>
+    <span class="sfxState" id="sfxState" role="status" aria-live="polite">Pilihan Claude</span>
+  </div>
+  <div class="studio" id="studio"></div>
+
   <h2>Try it</h2>
   <ul>
     <li><b>Drag a box from the warehouse onto the van</b> — onto any of its squares, or onto the small chest itself. The square it will land in lights up while you carry it. If the van already holds that product, the box always joins its own square: one product is one square and one line.</li>
     <li><b>Drag it back.</b> A box in the van goes back to the warehouse the same way: drop it on the warehouse and the panel asks how many come back. Dropped on another square in the van, it only moves there — the arrangement is saved, nothing else changes.</li>
     <li><b>The panel starts empty on purpose.</b> You type the number; the line beside it always says what it means in packs (<b>= 600 Bks</b>), worked out with the app's own conversion. More than the warehouse (or the van) holds is refused before you can press anything.</li>
-    <li><b>The goods fly across the middle</b>, from the square they left to the square they land in, one box for each Slop or Bal up to six, with a little pop as each lands.</li>
+    <li><b>The goods fly across the middle</b>, from the square they left to the square they land in, one box for each Slop or Bal up to six, with a soft knock as each lands.</li>
     <li><b>Nothing is written by a drag.</b> Until MUAT VAN the squares carry <b>+N</b> / <b>−N</b>, and a product that is new to the van has a dashed edge. MUAT VAN writes each product, reports in <b>one</b> line, and prints one surat jalan for what went out and one bukti kembali for what came back.</li>
     <li><b>Search</b> finds a product among hundreds. <b>Drop on the damaged row</b> → refused out loud. <b>Lite Mode</b> keeps every box, number and page; only the motion (and the purple specks) stop.</li>
   </ul>
-  <p class="note"><b>The sound is simpler now:</b> a soft wooden knock for the van, a low, airy swell for the ender chest, and a small pop for every box that lands, rising a little with each one. It is still made by the computer — the real Minecraft sounds belong to Mojang, and KPM is a paid app, so they cannot go into it.</p>
-
-  <footer>KPM Inventory · prototype for review · van loading v2 · <span id="stamp"></span></footer>
+  
+  <footer>KPM Inventory · prototype for review · van loading v3 · sounds: Kenney “RPG Audio”, CC0 · <span id="stamp"></span></footer>
 </div>
 
+<script src="sfx-kenney.js"></script>
 <script>
 (function () {
   'use strict';
@@ -770,7 +803,7 @@
       var g = document.createElement('div'); g.className = 'ghost'; g.innerHTML = cube(p);
       document.body.appendChild(g); drag.ghost = g;
       $('bay').classList.add('dragging');
-      play('pick', 1, .5);
+      play('pick');
     }
     var x = e.clientX, y = e.clientY - drag.lift;
     drag.x = x; drag.y = y;
@@ -788,7 +821,7 @@
     var tab = tabAt('vanPages', x, y);
     if (tab !== null && tab !== S.vanPage) {
       if (!drag.hover || drag.hover.p !== tab) drag.hover = { p:tab, t:Date.now() };
-      else if (Date.now() - drag.hover.t > 260) { S.vanPage = tab; drawVan(false); drag.hover = null; play('page', 1, .35); }
+      else if (Date.now() - drag.hover.t > 260) { S.vanPage = tab; drawVan(false); drag.hover = null; play('page'); }
     } else if (tab === null) drag.hover = null;
     return tab;
   }
@@ -853,7 +886,7 @@
         var to = +t.dataset.i, a = S.cells[d.cell], b = S.cells[to];
         S.cells[to] = a; S.cells[d.cell] = b || null;
         settle(d.ghost); drawVan(false);
-        say('van', 'tersimpan — hanya susunan kotak'); play('page', 1, .5);
+        say('van', 'tersimpan — hanya susunan kotak'); play('page');
         return;
       }
     }
@@ -937,7 +970,7 @@
     $('sheet').classList.add('show'); $('sheet').setAttribute('aria-hidden', 'false');
     setTimeout(function () { if (SH) $('qty').focus(); }, 40);
     update();
-    play('page', .8, .4);
+    play('page', .85);
   }
   function update() {
     if (!SH) return { ok:false };
@@ -999,7 +1032,7 @@
             : (s.dir > 0 ? '+' + fmt(r.bks) + ' Bks ' + p.n + ' ke van' : fmt(r.bks) + ' Bks ' + p.n + ' kembali ke gudang') + ' — belum tercatat';
     say(s.dir > 0 || s.mode === 'edit' ? 'van' : 'wh', msg);
     settle(s.ghost);
-    if (s.mode === 'add') transfer(p, r.n, s.dir, vc); else play('page', 1, .5);
+    if (s.mode === 'add') transfer(p, r.n, s.dir, vc); else play('page');
     refocus(s);
   }
   function cancelSheet() {
@@ -1041,7 +1074,7 @@
     var ws = whSlotEl(p.id), vs = vanSlotEl(cell);
     var whPt = ws ? center(ws) : mouth($('whChest')), vanPt = vs ? center(vs) : mouth($('vanChest'));
     var a = dir > 0 ? whPt : vanPt, b = dir > 0 ? vanPt : whPt, dest = dir > 0 ? vs : ws;
-    if (!motionOK()) { play('land', 1, .7); return; }
+    if (!motionOK()) { play('land'); return; }
     if (dir > 0) burst(10);                              // the ender chest gives
     var k = Math.max(1, Math.min(6, n)), dist = Math.hypot(b.x - a.x, b.y - a.y) || 1;
     /* a shallow bow sideways to the line, never a hop over the top: side by side (the desk) it bows up a
@@ -1065,7 +1098,7 @@
       var an = el.animate(frames, { duration:560 * SLOW, delay:i * 95 * SLOW, easing:'cubic-bezier(.45,.05,.3,1)', fill:'forwards' });
       an.onfinish = function () {
         el.remove();
-        play('land', 1 + i * .07, .7);                   // each box a little higher — the satisfying part
+        play('land', 1 + i * .07);                   // each box a little higher — the satisfying part
         pop(dest);
         bump(dir > 0 ? $('vanChest') : $('whChest'));
         if (dir < 0 && i === k - 1) burst(8);            // the ender chest takes it back
@@ -1158,7 +1191,7 @@
       if (!S.van[id]) S.cells[cellOf(id)] = null;     // a square that only held a plan goes back to empty
       drawWh(false); drawVan(false); drawMan();
       say('van', P[id].n + ' keluar dari muatan — gudang dan van tidak berubah');
-      play('page', 1, .5);
+      play('page');
     } else if (ed) openSheet({ mode:'edit', id:ed.dataset.edit, cell:cellOf(ed.dataset.edit), ghost:null, edit:ed.dataset.edit });
   });
 
@@ -1173,11 +1206,11 @@
   });
   $('whPages').addEventListener('click', function (e) {
     var b = e.target.closest('.pg'); if (!b) return;
-    S.whPage = +b.dataset.p; drawWh(); play('page', 1, .4);
+    S.whPage = +b.dataset.p; drawWh(); play('page');
   });
   $('vanPages').addEventListener('click', function (e) {
     var b = e.target.closest('.pg'); if (!b) return;
-    S.vanPage = +b.dataset.p; drawVan(); play('page', 1, .4);
+    S.vanPage = +b.dataset.p; drawVan(); play('page');
   });
 
   function setOpen(side, on) {
@@ -1190,43 +1223,53 @@
   $('whChest').addEventListener('click', function () { setOpen('wh', !OPEN.wh); });
   $('vanChest').addEventListener('click', function () { setOpen('van', !OPEN.van); });
 
-  /* ── SOUND — simple, soft, ours. His verdict on the first try: too busy. So: one soft wooden knock for the
-        van, one low airy swell for the ender chest, a small rising pop for every box that lands. No creak,
-        no clatter, a warm room behind it. Still made here: the game's own files belong to Mojang. ── */
-  var AC = null, OUT = null, BUF = {}, acted = false, muted = false;
+  /* ── SOUND — real recorded foley from Kenney's RPG Audio pack (CC0, public domain: safe in a paid app).
+        Not the game's files, and nothing is made here any more. Each moment plays one recording, cut,
+        levelled and pitched by the SOUND STUDIO below; what he saves there is what the chests play. ─── */
+  var EVENTS = [
+    { id:'enderOpen',  name:'Ender chest opens',  sub:'peti gudang dibuka' },
+    { id:'enderClose', name:'Ender chest closes', sub:'peti gudang ditutup' },
+    { id:'woodOpen',   name:'Van chest opens',    sub:'peti van dibuka' },
+    { id:'woodClose',  name:'Van chest closes',   sub:'peti van ditutup' },
+    { id:'pick',       name:'Pick up a box',      sub:'kotak diangkat' },
+    { id:'land',       name:'A box lands',        sub:'naik sedikit tiap kotak' },
+    { id:'page',       name:'Page / panel tick',  sub:'halaman, panel jumlah' },
+    { id:'refuse',     name:'Not allowed',        sub:'ditolak' },
+    { id:'done',       name:'MUAT VAN saved',     sub:'van terkunci' }
+  ];
+  /* my picks — chosen by what each recording is and by its measured shape (length, where the sound starts
+     and stops, how bright it is). His ear overrides every one of them in the studio. */
+  var DEFAULTS = { v:1, room:.25, master:.8, ev:{
+    enderOpen:  { src:'doorOpen_1',         start:0,   end:.85, vol:.9,  rate:.78 },
+    enderClose: { src:'doorClose_3',        start:0,   end:.71, vol:.9,  rate:.75 },
+    woodOpen:   { src:'creak3',             start:0,   end:.30, vol:.9,  rate:1 },
+    woodClose:  { src:'doorClose_4',        start:0,   end:.54, vol:.9,  rate:1 },
+    pick:       { src:'handleSmallLeather', start:.04, end:.22, vol:.55, rate:1.1 },
+    land:       { src:'bookPlace1',         start:0,   end:.22, vol:.8,  rate:1 },
+    page:       { src:'bookFlip3',          start:.02, end:.23, vol:.45, rate:1.1 },
+    refuse:     { src:'dropLeather',        start:0,   end:.28, vol:.8,  rate:.9 },
+    done:       { src:'metalLatch',         start:0,   end:.22, vol:.8,  rate:1 }
+  } };
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  var SET = clone(DEFAULTS);
+  var SRC = window.KENNEY_SFX || {}, NAMES = Object.keys(SRC).sort();
+
+  var AC = null, DRY = null, WET = null, BUF = {}, acted = false, muted = false;
   try { muted = localStorage.getItem('kpm-chest-mute') === '1'; } catch (e) { muted = false; }
+  /* decode every recording once, before any tap: an OfflineAudioContext may decode while the browser still
+     forbids sound, so the waveforms draw straight away */
+  function decodeAll() {
+    var OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    if (!OAC) return Promise.resolve();
+    var off = new OAC(1, 44100, 44100);
+    return Promise.all(NAMES.map(function (n) {
+      var bin = atob(SRC[n]), bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return off.decodeAudioData(bytes.buffer).then(function (b) { BUF[n] = b; }, function () { /* stays silent */ });
+    }));
+  }
   function rng(seed) { var s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296 * 2 - 1; }; }
-  /* a sine that glides from f0 to f1 and dies away — a knock when it falls, a pop when it rises */
-  function tone(d, sr, t0, f0, f1, dur, amp, tau) {
-    var s0 = Math.floor(t0 * sr), n = Math.min(d.length - s0, Math.floor(dur * sr)), ph = 0;
-    for (var i = 0; i < n; i++) {
-      var t = i / sr, f = f0 * Math.pow(f1 / f0, Math.min(1, t / dur));
-      ph += 2 * Math.PI * f / sr;
-      d[s0 + i] += amp * Math.min(1, t / .003) * Math.exp(-t / tau) * Math.sin(ph);
-    }
-  }
-  /* soft noise through a filter that opens or closes — the "air" of the ender chest */
-  function air(d, sr, t0, dur, amp, lp0, lp1, attack, seed) {
-    var r = rng(seed), s0 = Math.floor(t0 * sr), n = Math.min(d.length - s0, Math.floor(dur * sr)), y = 0, z = 0;
-    for (var i = 0; i < n; i++) {
-      var t = i / n, lp = lp0 + (lp1 - lp0) * t;
-      y += lp * (r() - y); z += lp * (y - z);
-      d[s0 + i] += amp * Math.min(1, (i / sr) / attack) * Math.pow(1 - t, 1.6) * z * 3;
-    }
-  }
-  function tap(d, sr, t0, tau, amp, lp, seed) {
-    var r = rng(seed), s0 = Math.floor(t0 * sr), T = tau * sr, n = Math.min(d.length - s0, Math.floor(T * 6)), y = 0;
-    for (var i = 0; i < n; i++) { y += lp * (r() - y); d[s0 + i] += amp * y * Math.exp(-i / T); }
-  }
-  function bake(dur, fill) {
-    var sr = AC.sampleRate, n = Math.ceil(sr * dur), b = AC.createBuffer(1, n, sr), d = b.getChannelData(0), pk = 0, i;
-    fill(d, sr);
-    for (i = 0; i < n; i++) pk = Math.max(pk, Math.abs(d[i]));
-    var fade = Math.floor(sr * .015);
-    for (i = 0; i < n; i++) d[i] = d[i] / (pk || 1) * .9 * (i > n - fade ? (n - i) / fade : 1);
-    return b;
-  }
-  /* a warm, dark room — the "chill" is mostly this tail */
+  /* a warm, dark room — the "chill" is mostly this tail; ROOM in the studio sets how much of it */
   function room() {
     var sr = AC.sampleRate, n = Math.floor(sr * .9), b = AC.createBuffer(2, n, sr);
     for (var ch = 0; ch < 2; ch++) {
@@ -1235,39 +1278,166 @@
     }
     return b;
   }
-  function build() {
-    OUT = AC.createGain(); OUT.gain.value = .5;
-    var wet = AC.createGain(), conv = AC.createConvolver();
-    wet.gain.value = .3; conv.buffer = room();
-    OUT.connect(AC.destination); OUT.connect(conv); conv.connect(wet); wet.connect(AC.destination);
-    BUF.enderOpen  = bake(1.3, function (d, sr) { air(d, sr, 0, .8, 1, .012, .08, .22, 11); tone(d, sr, .28, 95, 62, .5, .9, .12); tone(d, sr, .05, 523.25, 523.25, 1.1, .05, .45); tone(d, sr, .12, 784, 784, 1, .04, .4); });
-    BUF.enderClose = bake(.9,  function (d, sr) { air(d, sr, 0, .35, .8, .08, .012, .05, 12); tone(d, sr, .2, 85, 55, .5, 1, .13); tap(d, sr, .2, .004, .2, .2, 13); });
-    BUF.woodOpen   = bake(.5,  function (d, sr) { tone(d, sr, 0, 175, 120, .3, 1, .06); tap(d, sr, 0, .005, .35, .22, 21); tone(d, sr, .07, 150, 115, .25, .4, .05); });
-    BUF.woodClose  = bake(.5,  function (d, sr) { tone(d, sr, 0, 140, 88, .35, 1, .08); tap(d, sr, 0, .006, .45, .2, 22); });
-    BUF.pick   = bake(.12, function (d, sr) { tone(d, sr, 0, 380, 520, .09, .6, .025); });
-    BUF.land   = bake(.2,  function (d, sr) { tone(d, sr, 0, 440, 880, .16, 1, .035); tone(d, sr, 0, 880, 1760, .1, .15, .02); });
-    BUF.page   = bake(.08, function (d, sr) { tone(d, sr, 0, 700, 760, .06, .5, .015); });
-    BUF.refuse = bake(.35, function (d, sr) { tone(d, sr, 0, 160, 120, .15, .8, .05); tone(d, sr, .11, 150, 110, .15, .8, .05); });
-    BUF.done   = bake(.8,  function (d, sr) { tone(d, sr, 0, 140, 88, .35, 1, .08); tap(d, sr, 0, .006, .4, .2, 31); tone(d, sr, .14, 523, 1046, .15, .45, .035); tone(d, sr, .26, 659, 1318, .15, .45, .035); });
-  }
   function audio() {
     if (!acted) return null;                         // a browser plays nothing before the first tap
-    if (!AC) { var C = window.AudioContext || window.webkitAudioContext; if (!C) return null; AC = new C(); build(); }
+    if (!AC) {
+      var C = window.AudioContext || window.webkitAudioContext; if (!C) return null;
+      AC = new C();
+      DRY = AC.createGain(); WET = AC.createGain();
+      var conv = AC.createConvolver(); conv.buffer = room();
+      DRY.connect(AC.destination); WET.connect(conv); conv.connect(AC.destination);
+    }
     if (AC.state === 'suspended') AC.resume();
     return AC;
   }
   /* Lite Mode is silent in the app too (playSound returns early), so it is silent here */
-  function play(name, rate, gain) {
+  function play(ev, rate) {
     if (muted || document.documentElement.classList.contains('lite-mode')) return;
-    var c = audio(); if (!c || !BUF[name]) return;
+    var s = SET.ev[ev], b = s && BUF[s.src]; if (!b) return;
+    var c = audio(); if (!c) return;
+    var r = s.rate * (rate || 1) * (1 + (Math.random() - .5) * .02);
+    var start = Math.min(s.start, b.duration - .02), end = Math.max(start + .02, Math.min(s.end, b.duration));
+    var len = (end - start) / r, t = c.currentTime + .005, v = s.vol * SET.master;
     var src = c.createBufferSource(), g = c.createGain();
-    src.buffer = BUF[name];
-    src.playbackRate.value = (rate || 1) * (1 + (Math.random() - .5) * .03);
-    g.gain.value = gain == null ? 1 : gain;
-    src.connect(g); g.connect(OUT); src.start();
+    src.buffer = b; src.playbackRate.value = r;
+    /* 4 ms in, 25 ms out: a cut that lands mid-wave is a click (the lesson the book sounds taught) */
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .004);
+    g.gain.setValueAtTime(v, t + Math.max(.005, len - .025)); g.gain.linearRampToValueAtTime(0, t + len);
+    WET.gain.value = SET.room;
+    src.connect(g); g.connect(DRY); g.connect(WET);
+    src.start(t, start, end - start);
   }
   document.addEventListener('pointerdown', function () { acted = true; }, true);
   document.addEventListener('keydown', function () { acted = true; }, true);
+
+  /* ── THE SOUND STUDIO — his "i want to edit the SFX myself". One card per moment: the recording, where it
+        starts and stops, how loud, how high. Letting go of a slider plays the result. SIMPAN writes it to
+        the artifact's own database, so the phone and the PC hear the same thing — and I read it back from
+        there when the app is built. Without that database (a local file) it keeps to this browser. ──── */
+  var WAVE_H = 56, studio = $('studio');
+  function secs(v) { return v.toFixed(2) + ' s'; }
+  function knob(ev, k, label, min, max, step) {
+    return '<label class="knob"><span>' + label + ' <output id="o-' + k + '-' + ev + '"></output></span>' +
+      '<input type="range" id="' + k + '-' + ev + '" data-k="' + k + '" min="' + min + '" max="' + max + '" step="' + step + '"></label>';
+  }
+  studio.innerHTML = EVENTS.map(function (ev) {
+    var opts = NAMES.map(function (n) { return '<option value="' + n + '">' + n + '</option>'; }).join('');
+    return '<div class="sfx" data-ev="' + ev.id + '">' +
+      '<div class="sfxHead"><button type="button" class="key playKey" data-play="' + ev.id + '" aria-label="Putar: ' + ev.name + '">▶</button>' +
+      '<div class="sfxName"><b>' + ev.name + '</b><small>' + ev.sub + '</small></div>' +
+      '<label class="sr" for="src-' + ev.id + '">Rekaman</label><select id="src-' + ev.id + '" data-k="src">' + opts + '</select></div>' +
+      '<canvas class="wave" id="wave-' + ev.id + '" aria-hidden="true"></canvas>' +
+      '<div class="knobs">' + knob(ev.id, 'start', 'Mulai', 0, 2, .005) + knob(ev.id, 'end', 'Selesai', 0, 2, .005) +
+      knob(ev.id, 'vol', 'Keras', 0, 1.5, .05) + knob(ev.id, 'rate', 'Nada', .5, 1.6, .01) + '</div></div>';
+  }).join('');
+  function paintRow(id) {
+    var s = SET.ev[id], b = BUF[s.src], dur = b ? b.duration : 2;
+    $('src-' + id).value = s.src;
+    ['start', 'end'].forEach(function (k) {
+      var inp = $(k + '-' + id); inp.max = dur.toFixed(3); inp.value = s[k];
+      $('o-' + k + '-' + id).textContent = secs(s[k]);
+    });
+    $('vol-' + id).value = s.vol; $('o-vol-' + id).textContent = Math.round(s.vol * 100) + '%';
+    $('rate-' + id).value = s.rate; $('o-rate-' + id).textContent = s.rate.toFixed(2) + '×';
+    drawWave(id);
+  }
+  function paintGlobal() {
+    $('room').value = SET.room; $('o-room').textContent = Math.round(SET.room * 100) + '%';
+    $('master').value = SET.master; $('o-master').textContent = Math.round(SET.master * 100) + '%';
+  }
+  function paintAll() { paintGlobal(); EVENTS.forEach(function (e) { paintRow(e.id); }); }
+  /* the waveform: the kept part in the accent, the cut-away part faded — the cut is visible, not guessed */
+  function drawWave(id) {
+    var cv = $('wave-' + id), s = SET.ev[id], b = BUF[s.src];
+    var w = cv.clientWidth || 300, dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(w * dpr); cv.height = Math.round(WAVE_H * dpr);
+    var ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var css = getComputedStyle(document.documentElement);
+    ctx.fillStyle = css.getPropertyValue('--inset').trim(); ctx.fillRect(0, 0, w, WAVE_H);
+    if (!b) return;
+    var d = b.getChannelData(0), per = Math.max(1, Math.floor(d.length / w));
+    var x0 = s.start / b.duration * w, x1 = s.end / b.duration * w;
+    var hot = css.getPropertyValue('--accent-edge').trim(), dim = css.getPropertyValue('--ink-dim').trim();
+    ctx.globalAlpha = .14; ctx.fillStyle = hot; ctx.fillRect(x0, 0, Math.max(1, x1 - x0), WAVE_H);
+    for (var x = 0; x < w; x++) {
+      var mn = 1, mx = -1;
+      for (var i = x * per; i < (x + 1) * per && i < d.length; i++) { var v = d[i]; if (v < mn) mn = v; if (v > mx) mx = v; }
+      var keep = x >= x0 && x <= x1;
+      ctx.globalAlpha = keep ? 1 : .3; ctx.fillStyle = keep ? hot : dim;
+      ctx.fillRect(x, (1 - mx) * WAVE_H / 2, 1, Math.max(1, (mx - mn) * WAVE_H / 2));
+    }
+    ctx.globalAlpha = 1;
+  }
+  /* stored settings are untrusted input: anything missing, unknown or out of range falls back to my pick */
+  function sane(raw) {
+    var out = clone(DEFAULTS);
+    if (!raw || typeof raw !== 'object') return out;
+    var num = function (v, lo, hi, dflt) { v = Number(v); return isFinite(v) ? Math.min(hi, Math.max(lo, v)) : dflt; };
+    out.room = num(raw.room, 0, .8, out.room); out.master = num(raw.master, 0, 1.2, out.master);
+    EVENTS.forEach(function (e) {
+      var r = raw.ev && raw.ev[e.id], o = out.ev[e.id];
+      if (!r || NAMES.indexOf(r.src) < 0) return;
+      o.src = r.src; o.start = num(r.start, 0, 5, 0); o.end = num(r.end, o.start + .02, 5, o.start + .3);
+      o.vol = num(r.vol, 0, 1.5, o.vol); o.rate = num(r.rate, .5, 1.6, o.rate);
+    });
+    out.at = Number(raw.at) || 0;
+    return out;
+  }
+  var DB = null, savedAt = '';
+  function state(dirty) {
+    $('sfxSave').disabled = !dirty;
+    $('sfxState').textContent = dirty ? 'Belum disimpan' : (savedAt ? 'Tersimpan · ' + savedAt : 'Pilihan Claude');
+    if (dirty) { SET.at = Date.now(); try { localStorage.setItem('kpm-sfx-draft', JSON.stringify(SET)); } catch (x) { /* private window */ } }
+  }
+  function edit(e, andPlay) {
+    var el = e.target, card = el.closest('.sfx'), k = el.dataset.k;
+    if (el.id === 'room' || el.id === 'master') { SET[el.id] = +el.value; paintGlobal(); state(true); return; }
+    if (!card || !k) return;
+    var id = card.dataset.ev, s = SET.ev[id];
+    if (k === 'src') { if (s.src === el.value) { if (andPlay) play(id); return; } s.src = el.value; var b = BUF[s.src]; s.start = 0; s.end = b ? +b.duration.toFixed(3) : 1; }
+    else {
+      s[k] = +el.value;
+      if (k === 'start' && s.start > s.end - .02) s.start = Math.max(0, s.end - .02);
+      if (k === 'end' && s.end < s.start + .02) s.end = s.start + .02;
+    }
+    paintRow(id); state(true);
+    if (andPlay) play(id);
+  }
+  document.addEventListener('input', function (e) { if (e.target.closest('#studio, .studioBar')) edit(e, false); });
+  /* letting go of a slider, or picking a recording, plays the result */
+  document.addEventListener('change', function (e) { if (e.target.closest('#studio')) edit(e, true); });
+  studio.addEventListener('click', function (e) { var b = e.target.closest('[data-play]'); if (b) play(b.dataset.play); });
+  $('sfxReset').addEventListener('click', function () { SET = clone(DEFAULTS); paintAll(); state(true); });
+  $('sfxSave').addEventListener('click', function () {
+    SET.at = Date.now();
+    var body = clone(SET), stamp = new Date().toTimeString().slice(0, 5);
+    var done = function (where) { savedAt = stamp + ' · ' + where; try { localStorage.removeItem('kpm-sfx-draft'); } catch (x) { /* ok */ } state(false); play('done'); };
+    if (!DB) { try { localStorage.setItem('kpm-sfx-saved', JSON.stringify(body)); } catch (x) { /* ok */ } done('browser ini saja'); return; }
+    $('sfxSave').disabled = true; $('sfxState').textContent = 'Menyimpan…';
+    DB.doc('sfx/settings').set(body).then(function () { done('semua perangkat'); }, function (err) {
+      $('sfxSave').disabled = false;
+      $('sfxState').textContent = 'Gagal menyimpan (' + (err && err.code || 'error') + ') — coba lagi';
+    });
+  });
+  var resizeT = 0;
+  window.addEventListener('resize', function () { clearTimeout(resizeT); resizeT = setTimeout(function () { EVENTS.forEach(function (e) { drawWave(e.id); }); }, 150); });
+
+  /* where the settings come from: an unsaved draft newer than the saved copy wins (and says "not saved");
+     otherwise the saved copy; otherwise my picks */
+  function readLocal(key) { try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch (x) { return null; } }
+  function adopt(saved) {
+    var draft = readLocal('kpm-sfx-draft');
+    if (draft && (!saved || (Number(draft.at) || 0) > (Number(saved.at) || 0))) { SET = sane(draft); paintAll(); state(true); return; }
+    if (saved) { SET = sane(saved); savedAt = saved.at ? new Date(saved.at).toTimeString().slice(0, 5) : ''; }
+    paintAll(); state(false);
+  }
+  paintAll();
+  var dbReady = (window.claude && window.claude.use) ? window.claude.use('db') : Promise.resolve(null);
+  Promise.all([decodeAll(), Promise.resolve(dbReady).catch(function () { return null; })]).then(function (r) {
+    DB = r[1];
+    if (!DB) return adopt(readLocal('kpm-sfx-saved'));
+    DB.doc('sfx/settings').get().then(function (snap) { adopt(snap.exists ? snap.data() : null); }, function () { adopt(null); });
+  });
 
   /* ── the review switches ─────────────────────────────────────────────────────────────────────── */
   function look(which) {
