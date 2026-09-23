@@ -54,4 +54,24 @@ assert.equal(playSound('nope', ctx(false)), false);
   assert.equal(speakMumble('anything', { ...ctx(true), timer }), 0, 'Lite Mode is silent');
 }
 
-console.log('useSound self-check: 6/6 pass');
+/* 7. a rate is a PITCH: the chest's landing pop rises box by box into the van and falls box by box
+      back out. An <audio> element keeps its pitch when sped up unless preservesPitch is off, and a
+      pooled element keeps the last rate unless every play sets it - so a plain play comes back to 1. */
+{
+  const els = [];
+  class RateAudio extends StubAudio {
+    constructor(src) { super(src); this.playbackRate = 1; this.preservesPitch = true; els.push(this); }
+  }
+  const rctx = (rate) => ({ AudioImpl: RateAudio, doc: makeDoc(false), ...(rate ? { rate } : {}) });
+  __reset();
+  await unlockSounds(rctx());
+  const land = () => els.filter(e => e.src === '/sounds/chest-land.mp3');
+  assert.equal(playSound('chestLand', rctx(1.14)), true, 'the chest landing sound must be registered');
+  const hit = land().find(e => e.playbackRate === 1.14);
+  assert.ok(hit, 'the rate must reach the element');
+  assert.equal(hit.preservesPitch, false, 'the rate must move the pitch, not only the speed');
+  for (let i = 0; i < 3; i++) playSound('chestLand', rctx());
+  assert.ok(land().length === 3 && land().every(e => e.playbackRate === 1), 'a play with no rate must play at 1 on every pooled element');
+}
+
+console.log('useSound self-check: 7/7 pass');

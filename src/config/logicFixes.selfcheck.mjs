@@ -8234,5 +8234,29 @@ section('THE COUNT CARD\'S DIFFERENCE IS A PLAIN RED FIGURE THAT MOVES ONCE (202
   ok('reduced motion turns both off', /prefers-reduced-motion: reduce\) \{ \.kpm-verdict-down, \.kpm-verdict-up \{ animation: none; \} \}/.test(th));
 }
 
+/* ── THE CHEST SOUNDS ARE FILES, RENDERED FROM HIS STUDIO (2026-09-24) ─────────────────────────────
+   His 2026-09-23 "if possible i want to edit the SFX myself just make a small studio" (saved as the artifact's
+   sfx/settings, version 2) and his 2026-09-24 "just use the metal latch for now its fine". Each moment is his
+   recording cut to his start/end and pitch, at his loudness, with the studio's room rendered in
+   (tools/sfx-bake.mjs), so the app plays what he heard. Its own files: a chest never borrows a sale's sound. */
+section('THE CHEST SOUNDS ARE FILES, RENDERED FROM HIS STUDIO (2026-09-24)');
+{ const usc = code(read('src/hooks/useSound.js'));
+  const CHEST = { chestEnderOpen: 'chest-ender-open', chestEnderClose: 'chest-ender-close', chestVanOpen: 'chest-van-open',
+    chestVanClose: 'chest-van-close', chestPick: 'chest-pick', chestLand: 'chest-land', chestPage: 'chest-page',
+    chestRefuse: 'chest-refuse', chestLoad: 'chest-load' };
+  const missing = Object.entries(CHEST).filter(([k, f]) =>
+    !new RegExp(k + ":\\s*'/sounds/" + f + "\\.mp3'").test(usc) || !fs.existsSync('public/sounds/' + f + '.mp3')).map(([k]) => k);
+  ok('all nine chest moments are their own files under public/sounds', missing.length === 0, 'missing: ' + missing.join(', '));
+  const big = Object.values(CHEST).filter(f => fs.existsSync('public/sounds/' + f + '.mp3') && fs.statSync('public/sounds/' + f + '.mp3').size > 40_000);
+  ok('each is a short UI sound, 40 KB or less', missing.length === 0 && big.length === 0, 'oversized: ' + big.join(', '));
+  const boost = usc.slice(usc.indexOf('const BOOST = {'), usc.indexOf('const DEFAULT_BOOST'));
+  ok('none is boosted by the default 1.8 - the file already holds his level', Object.keys(CHEST).every(k => new RegExp(k + ':').test(boost)));
+  ok('the licence travels with the files', fs.existsSync('public/sounds/chest-LICENSE.txt') && /CC0/.test(read('public/sounds/chest-LICENSE.txt')));
+  const bake = fs.existsSync('tools/sfx-bake.mjs') ? read('tools/sfx-bake.mjs') : '';
+  ok('MUAT VAN is his metal latch (kept 2026-09-24)', /done:\s*\{ src: 'metalLatch'/.test(bake));
+  ok('playSound takes a rate and plays it as a PITCH', /export function playSound\(name, \{ AudioImpl, doc, rate = 1 \} = \{\}\)/.test(usc) &&
+     /el\.playbackRate = rate;/.test(usc) && /el\.preservesPitch = false;/.test(usc));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

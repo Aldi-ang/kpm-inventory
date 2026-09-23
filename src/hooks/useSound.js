@@ -51,6 +51,19 @@ const SOURCES = {
   mumble2: '/sounds/mumble2.mp3',
   mumble3: '/sounds/mumble3.mp3',
   mumble4: '/sounds/mumble4.mp3',
+  /* The van-loading chests. Kenney "RPG Audio" recordings (CC0, chest-LICENSE.txt beside them), each cut,
+     pitched and given its room from the settings Aldi saved in the prototype's sound studio — rendered by
+     tools/sfx-bake.mjs, so change a sound there, not here. Their own files: a chest never borrows a
+     sale's sound. chestLoad is MUAT VAN, the metal latch he kept (*"just use the metal latch for now"*). */
+  chestEnderOpen:  '/sounds/chest-ender-open.mp3',
+  chestEnderClose: '/sounds/chest-ender-close.mp3',
+  chestVanOpen:    '/sounds/chest-van-open.mp3',
+  chestVanClose:   '/sounds/chest-van-close.mp3',
+  chestPick:       '/sounds/chest-pick.mp3',
+  chestLand:       '/sounds/chest-land.mp3',
+  chestPage:       '/sounds/chest-page.mp3',
+  chestRefuse:     '/sounds/chest-refuse.mp3',
+  chestLoad:       '/sounds/chest-load.mp3',
 };
 
 const MUMBLES = ['mumble1', 'mumble2', 'mumble3', 'mumble4'];
@@ -70,6 +83,9 @@ const VOLUMES = {
   /* The rail key is the most-pressed control on the terminal — seventeen of them, tapped in a row
      while reading — so it sits just under the tutorial's own open sound rather than at full. */
   padKey: 0.9,
+  /* The chest files hold his studio loudness already; at 1.0 the element plays exactly that. */
+  chestEnderOpen: 1.0, chestEnderClose: 1.0, chestVanOpen: 1.0, chestVanClose: 1.0,
+  chestPick: 1.0, chestLand: 1.0, chestPage: 1.0, chestRefuse: 1.0, chestLoad: 1.0,
 };
 const DEFAULT_VOLUME = 0.85;
 
@@ -90,6 +106,9 @@ const BOOST = {
   /* No boost. The others are blips fighting a roadside; this one is a mixed cue that was
      mastered at the level it wants, and multiplying it just clips the tok. */
   vaultb: 1.0,
+  /* No boost either: each chest file already holds the loudness he set in the studio. */
+  chestEnderOpen: 1.0, chestEnderClose: 1.0, chestVanOpen: 1.0, chestVanClose: 1.0,
+  chestPick: 1.0, chestLand: 1.0, chestPage: 1.0, chestRefuse: 1.0, chestLoad: 1.0,
 };
 const DEFAULT_BOOST = 1.8;
 
@@ -126,6 +145,10 @@ function makePool(name, AudioImpl) {
     const el = new AudioImpl(SOURCES[name]);
     el.preload = 'auto';
     el.volume = VOLUMES[name] ?? DEFAULT_VOLUME;
+    /* A rate here is a PITCH (the chest's landing pop rises box by box into the van, falls back out).
+       An element keeps its pitch when sped up unless this is off; at rate 1 it changes nothing. */
+    el.preservesPitch = false;
+    el.webkitPreservesPitch = false;
     els.push(el);
   }
   return { els, next: 0 };
@@ -145,7 +168,7 @@ function liteModeOn(doc = globalThis.document) {
   return !!doc?.documentElement?.classList?.contains('lite-mode');
 }
 
-export function playSound(name, { AudioImpl, doc } = {}) {
+export function playSound(name, { AudioImpl, doc, rate = 1 } = {}) {
   if (!SOURCES[name]) return false;
   if (liteModeOn(doc)) return false;
   if (!unlocked) return false;
@@ -157,6 +180,8 @@ export function playSound(name, { AudioImpl, doc } = {}) {
   const el = pool.els[pool.next];
   pool.next = (pool.next + 1) % pool.els.length;
   el.currentTime = 0;
+  /* Set on EVERY play: the elements are pooled, so one left at 1.21 would play the next plain call high. */
+  el.playbackRate = rate;
   const p = el.play();
   if (p && typeof p.catch === 'function') p.catch(() => {});
   return true;

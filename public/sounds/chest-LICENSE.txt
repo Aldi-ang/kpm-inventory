@@ -1,0 +1,8 @@
+chest-*.mp3 — the van-loading chest's sounds.
+
+Made from recordings in "RPG Audio" by Kenney (https://kenney.nl/assets/rpg-audio),
+licensed Creative Commons Zero, CC0: http://creativecommons.org/publicdomain/zero/1.0/
+You may use them in personal, educational and commercial projects. Credit is not required.
+
+Each file is a recording cut, pitched and given a short room by tools/sfx-bake.mjs,
+from the settings Aldi saved in the prototype's sound studio.
