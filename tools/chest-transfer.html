@@ -1,0 +1,1149 @@
+<title>Van Loading Chests</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+  /* dark-first, like the app. Every colour is a token; the chest wood and the grey "look 1" panel are
+     fixed on purpose (an OBJECT keeps its own colour — his exemption for the brown chest). */
+  :root {
+    --ground:#0A0908; --panel:#121110; --raised:#1B1917; --inset:#0E0D0C; --sunk:#050403;
+    --line:#2A2622; --line-2:#3E3A35;
+    --ink:#E8E4DE; --ink-muted:#A39B90; --ink-dim:#928B81;
+    --gold:#D08A2E; --gold-ink:#0A0908; --accent-ink:#D08A2E; --accent-edge:#D08A2E; --amber:#F59E0B;
+    --bad:#E08C82;
+    --wood:#7A5A32; --wood-dark:#4E3A20; --wood-lid:#8C6A3C; --latch:#C9C4BC;
+    --stone:#8B8B8B; --stone-dark:#555555; --stone-light:#C6C6C6; --stone-ink:#2B2B2B; --hi:#F5D08A;
+    --mono:ui-monospace,"Cascadia Mono","Consolas",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",sans-serif;
+    --ease-out:cubic-bezier(.23,1,.32,1);
+    color-scheme:dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --ground:#D6CDBA; --panel:#E1DAC8; --raised:#EDE7D8; --inset:#C6BDA9; --sunk:#B9B0A0;
+      --line:#7E786F; --line-2:#5E5A55; --ink:#131211; --ink-muted:#3A3733; --ink-dim:#3F3B36;
+      --gold:#1B1917; --gold-ink:#F7F3E9; --accent-ink:#6B4A12; --accent-edge:#6B4A12; --bad:#9A2A1E;
+      color-scheme:light;
+    }
+  }
+  :root[data-theme="light"] {
+    --ground:#D6CDBA; --panel:#E1DAC8; --raised:#EDE7D8; --inset:#C6BDA9; --sunk:#B9B0A0;
+    --line:#7E786F; --line-2:#5E5A55; --ink:#131211; --ink-muted:#3A3733; --ink-dim:#3F3B36;
+    --gold:#1B1917; --gold-ink:#F7F3E9; --accent-ink:#6B4A12; --accent-edge:#6B4A12; --bad:#9A2A1E;
+    color-scheme:light;
+  }
+
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  body { margin:0; background:var(--ground); color:var(--ink); font:400 15px/1.55 var(--sans); padding-inline:16px; padding-block:0 64px; }
+  .wrap { max-width:1180px; margin:0 auto; }
+  header { padding-block:32px 6px; }
+  h1 { font:900 clamp(22px,5vw,30px)/1.15 var(--sans); letter-spacing:-.01em; margin:0 0 6px; text-wrap:balance; }
+  .sub { color:var(--ink-muted); font-size:14px; margin:0; max-width:62ch; }
+  h2 { font:900 13px/1.2 var(--mono); letter-spacing:.2em; text-transform:uppercase; color:var(--ink-dim); margin:34px 0 12px; }
+  .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:14px 0 6px; }
+  .key {
+    min-height:44px; padding:0 14px; display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border:1px solid var(--line-2); border-radius:10px; background:var(--panel); color:var(--ink);
+    font:900 11px/1 var(--mono); letter-spacing:.16em; text-transform:uppercase; cursor:pointer;
+    transition:transform .12s ease-out, border-color .16s;
+  }
+  .key:hover { border-color:var(--accent-edge); }
+  .key:active { transform:scale(.96); }
+  .key.on { border-color:var(--accent-edge); color:var(--accent-ink); }
+  .key:focus-visible, .slot:focus-visible, .chestCell:focus-visible, .ln:focus-visible, .trash:focus-visible, .pg:focus-visible {
+    outline:3px solid var(--hi); outline-offset:2px;
+  }
+
+  /* ── THE BAY: the panel inside Fleet & Roster. Phone first — warehouse panel, the two chests side by
+        side, the van panel, the manifest. From 960 px the two panels stand on their own chests and the
+        manifest takes the right-hand column. ─────────────────────────────────────────────────────── */
+  .bay {
+    position:relative; margin-top:10px; border:1px solid var(--line-2); border-radius:16px;
+    background:
+      radial-gradient(120% 90% at 50% 120%, rgba(208,138,46,.10), transparent 60%),
+      linear-gradient(180deg, var(--raised), var(--sunk));
+    padding:14px 10px 16px;
+    display:grid; gap:10px; grid-template-columns:1fr 1fr;
+    grid-template-areas: "hint hint" "whg whg" "whc vanc" "vang vang" "man man";
+    user-select:none; -webkit-user-select:none;
+  }
+  .bay.slow { --t-lid:.9s; --t-gui:.9s; --t-fade:.42s; --t-slot:.6s; --t-turn:2.2s; }
+  .bayHint { grid-area:hint; margin:0; text-align:center; font:900 10px/1.3 var(--mono); letter-spacing:.22em; text-transform:uppercase; color:var(--ink-dim); }
+  @media (min-width:960px) {
+    .bay {
+      padding:18px 18px 20px; column-gap:18px; row-gap:8px; align-items:end;
+      grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 300px;
+      grid-template-areas: "hint hint man" "whg vang man" "whc vanc man";
+    }
+  }
+
+  /* ── THE CHESTS — brown in both looks. The warehouse's is a double chest: twice as wide, two latches ── */
+  .chestCell {
+    all:unset; box-sizing:border-box; cursor:pointer; display:grid; justify-items:center; gap:6px;
+    perspective:700px; padding:4px; border-radius:12px;
+  }
+  .whc { grid-area:whc; } .vanc { grid-area:vanc; }
+  .chestCell .cap { font:900 10px/1 var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--ink-dim); }
+  .chest { position:relative; display:block; width:var(--cw); height:var(--ch); transform-style:preserve-3d; }
+  .chest.big { --cw:150px; --ch:78px; }
+  .chest.small { --cw:88px; --ch:72px; }
+  @media (min-width:960px) { .chest.big { --cw:196px; --ch:96px; } .chest.small { --cw:108px; --ch:88px; } }
+  .chest .body {
+    position:absolute; left:0; right:0; bottom:0; height:67%; border-radius:3px;
+    background:linear-gradient(180deg, var(--wood) 0 52%, var(--wood-dark) 52% 100%);
+    border:3px solid var(--sunk); box-shadow:inset 0 0 0 2px rgba(0,0,0,.18);
+  }
+  .chest.big .body, .chest.big .lid { background-image:linear-gradient(90deg, transparent calc(50% - 1px), rgba(0,0,0,.35) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)), linear-gradient(180deg, var(--wood) 0 52%, var(--wood-dark) 52% 100%); }
+  .chest.big .lid { background-image:linear-gradient(90deg, transparent calc(50% - 1px), rgba(0,0,0,.35) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)), linear-gradient(180deg, var(--wood-lid), var(--wood)); }
+  .chest .body::before {
+    content:""; position:absolute; left:6px; right:6px; top:0; height:10px; border-radius:2px 2px 0 0;
+    background:linear-gradient(180deg,#140E07,#2A1E12); opacity:0; transition:opacity .18s;
+  }
+  .chest .lid {
+    position:absolute; left:0; right:0; top:6%; height:31%; border-radius:3px 3px 0 0;
+    background:linear-gradient(180deg, var(--wood-lid), var(--wood));
+    border:3px solid var(--sunk); border-bottom-width:0;
+    transform-origin:50% 100%; transform:rotateX(0deg);
+    transition:transform var(--t-lid,.26s) cubic-bezier(.3,1.5,.5,1); backface-visibility:hidden;
+  }
+  .chest .latch {
+    position:absolute; left:50%; top:26%; width:12px; height:22%; margin-left:-6px; z-index:3;
+    background:linear-gradient(180deg,var(--latch),#8F8A82); border:2px solid var(--sunk); border-radius:2px;
+    transition:transform var(--t-lid,.26s) cubic-bezier(.3,1.5,.5,1), opacity .18s;
+  }
+  .chest.big .latch.a { left:27%; } .chest.big .latch.b { left:73%; }
+  .bay.wh-open .whc .chest .body::before, .bay.van-open .vanc .chest .body::before { opacity:1; }
+  .bay.wh-open .whc .lid, .bay.van-open .vanc .lid { transform:rotateX(-96deg); }
+  .bay.wh-open .whc .latch, .bay.van-open .vanc .latch { transform:translateY(-8px) rotateX(-96deg); opacity:.3; }
+  .bay.dragging .vanc.zoneover .chest { outline:3px solid var(--hi); outline-offset:4px; border-radius:4px; }
+
+  /* ── THE PANELS that grow out of the lids. On the phone the van's panel sits UNDER its chest, so it
+        grows downward; everywhere else both grow up. A closed panel keeps its room: nothing below jumps. ── */
+  .gui {
+    position:relative; min-width:0; border-radius:4px; padding:9px 8px 10px;
+    background:var(--stone); border:4px solid var(--stone-light);
+    box-shadow:inset -4px -4px 0 rgba(0,0,0,.22), inset 4px 4px 0 rgba(255,255,255,.18);
+    transform-origin:50% 100%; transform:scale(.08) translateY(24px); opacity:0; pointer-events:none;
+    transition:transform var(--t-gui,.26s) cubic-bezier(.34,1.56,.64,1), opacity var(--t-fade,.12s) linear;
+  }
+  .gui.wh { grid-area:whg; }
+  .gui.van { grid-area:vang; transform-origin:50% 0; transform:scale(.08) translateY(-24px); }
+  @media (min-width:960px) { .gui.van { transform-origin:50% 100%; transform:scale(.08) translateY(24px); } }
+  .bay.wh-open .gui.wh, .bay.van-open .gui.van { transform:none; opacity:1; pointer-events:auto; }
+  .bay.dragging .gui.van.zoneover { border-color:var(--hi); }
+  .gui .title {
+    font:900 13px/1.2 var(--mono); letter-spacing:.04em; color:var(--stone-ink);
+    margin:1px 2px 2px; display:flex; justify-content:space-between; gap:10px; align-items:baseline;
+  }
+  .gui .title .count { font-size:11px; color:#3E3E3E; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .gui .title .count b { color:#6B4A12; }
+  /* every action reports, where it happened — one line kept in the layout so a message never shoves the squares */
+  .say { display:block; min-height:16px; margin:0 2px 6px; font:900 10px/1.5 var(--mono); letter-spacing:.08em; color:#3A2A10;
+         opacity:0; transition:opacity .3s; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .say.show { opacity:1; transition:opacity .08s; }
+  .say.err { color:#7A2A1E; }
+
+  .find { position:relative; display:block; margin:0 0 7px; }
+  .find input {
+    width:100%; min-height:40px; border-radius:3px; border:0; padding:0 38px 0 10px;
+    background:#3A3A3A; color:#F2F2F2; font:700 13px/1 var(--sans);
+    box-shadow:inset 2px 2px 0 rgba(0,0,0,.4); outline:none;
+  }
+  .find input::placeholder { color:#BDBDBD; }
+  .find input:focus-visible { outline:3px solid var(--hi); }
+  .find .x { position:absolute; right:2px; top:2px; width:36px; height:36px; border:0; background:transparent; color:#EDEDED; font:900 18px/1 var(--mono); cursor:pointer; }
+
+  .grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; }
+  .gui.van .grid { grid-template-columns:repeat(6, 1fr); gap:4px; }
+  @media (min-width:960px) { .gui.van .grid { grid-template-columns:repeat(3, 1fr); gap:6px; } }
+  .slot {
+    position:relative; aspect-ratio:1/1; border-radius:3px; background:var(--stone-dark);
+    box-shadow:inset 3px 3px 0 rgba(0,0,0,.38), inset -3px -3px 0 rgba(255,255,255,.16);
+    display:grid; place-items:center; overflow:hidden; max-width:100%;
+  }
+  /* THE ENTRANCE MOVES, IT NEVER REVEALS. v3's squares started at opacity 0 and only the animation
+     showed them — with Lite Mode stripping every animation that is a chest full of invisible stock.
+     Here a square is visible at rest; the arrival is 8 px of travel and nothing else. */
+  .bay.wh-open .gui.wh:not(.noanim) .slot, .bay.van-open .gui.van:not(.noanim) .slot {
+    animation:slotIn var(--t-slot,.22s) cubic-bezier(.2,.9,.3,1) both; animation-delay:var(--d,0ms);
+  }
+  @keyframes slotIn { from { transform:translateY(8px) scale(.96); } to { transform:none; } }
+  .slot .name {
+    position:absolute; left:0; right:0; bottom:0; padding:3px 5px;
+    font:900 10px/1.15 var(--mono); color:#fff; text-shadow:1px 1px 0 #000;
+    background:linear-gradient(180deg, transparent, rgba(0,0,0,.55)); text-align:left; pointer-events:none;
+  }
+  .slot .n { position:absolute; right:4px; top:3px; font:900 12px/1 var(--mono); color:#fff; text-shadow:1px 1px 0 #000; font-variant-numeric:tabular-nums; pointer-events:none; }
+  .slot .chip {
+    position:absolute; left:3px; top:3px; padding:2px 4px; border-radius:2px; pointer-events:none;
+    font:900 10px/1 var(--mono); font-variant-numeric:tabular-nums; background:var(--hi); color:#2a1d08;
+  }
+  .slot.has { cursor:grab; }
+  .gui.wh .slot.has { touch-action:none; }
+  .gui.van .slot.has { cursor:default; }
+  .slot.lift { opacity:.35; }
+  .slot.out .cubeStage { opacity:.35; }
+  .slot.out .n { color:#FFB4A8; }
+  .slot.over { outline:3px solid var(--hi); outline-offset:-3px; }
+  /* in the manifest, not yet in the van: a dashed edge until MUAT VAN writes it */
+  .slot.new { outline:2px dashed var(--hi); outline-offset:-4px; }
+  .gui.van .slot .name { font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  @media (max-width:959px) {
+    .gui.van .slot .name { display:none; }
+    .gui.van .slot .n { font-size:10px; right:3px; top:2px; }
+    .gui.van .slot .chip { font-size:9px; left:2px; top:auto; bottom:2px; padding:1px 3px; }
+  }
+
+  /* ── THE PRODUCT IN 3D — the sales terminal's own box: the real millimetres decide the shape ──── */
+  .cubeStage { --slot-h:74px; perspective:340px; display:grid; place-items:center; width:100%; height:100%; pointer-events:none; }
+  .gui.wh .cubeStage { --slot-h:56px; }
+  .gui.van .cubeStage { --slot-h:26px; }
+  @media (min-width:960px) { .gui.wh .cubeStage { --slot-h:78px; } .gui.van .cubeStage { --slot-h:54px; } }
+  .cube {
+    --k: calc(var(--slot-h) / var(--mm-h, 90));
+    width:calc(var(--mm-w, 55) * var(--k)); height:var(--slot-h);
+    position:relative; transform-style:preserve-3d; transform:rotateX(-12deg) rotateY(-28deg);
+  }
+  .bay.wh-open .gui.wh:not(.noanim) .slot .cube, .bay.van-open .gui.van:not(.noanim) .slot .cube {
+    animation:place var(--t-turn,.62s) cubic-bezier(.2,.9,.3,1) both; animation-delay:calc(var(--d,0ms) + 40ms);
+  }
+  @keyframes place { from { transform:rotateX(-12deg) rotateY(-150deg); } to { transform:rotateX(-12deg) rotateY(-28deg); } }
+  @media (hover:hover) and (pointer:fine) { .gui.wh .slot.has:not(.out):hover .cube { animation:turn 4s linear infinite; } }
+  @keyframes turn { from { transform:rotateX(-12deg) rotateY(0); } to { transform:rotateX(-12deg) rotateY(360deg); } }
+  .gui .slot .cube.spin { animation:spinOnce .7s cubic-bezier(.2,.9,.3,1) !important; }
+  @keyframes spinOnce { from { transform:rotateX(-12deg) rotateY(-28deg); } to { transform:rotateX(-12deg) rotateY(332deg); } }
+  .cube > i { position:absolute; display:block; border:1px solid rgba(0,0,0,.5); overflow:hidden; }
+  .cube > .f, .cube > .bk { inset:0; background:var(--pf); }
+  .cube > .f  { transform:translateZ(calc(var(--mm-d,22) * var(--k) / 2)); }
+  .cube > .bk { transform:rotateY(180deg) translateZ(calc(var(--mm-d,22) * var(--k) / 2)); background:var(--pb); }
+  .cube > .l, .cube > .r {
+    top:0; height:var(--slot-h); width:calc(var(--mm-d,22) * var(--k));
+    left:calc((var(--mm-w,55) * var(--k) - var(--mm-d,22) * var(--k)) / 2); background:var(--ps);
+  }
+  .cube > .l { transform:rotateY(-90deg) translateZ(calc(var(--mm-w,55) * var(--k) / 2)); }
+  .cube > .r { transform:rotateY(90deg)  translateZ(calc(var(--mm-w,55) * var(--k) / 2)); }
+  .cube > .t, .cube > .bt {
+    left:0; width:calc(var(--mm-w,55) * var(--k)); height:calc(var(--mm-d,22) * var(--k));
+    top:calc((var(--slot-h) - var(--mm-d,22) * var(--k)) / 2); background:var(--pt);
+  }
+  .cube > .t  { transform:rotateX(90deg)  translateZ(calc(var(--slot-h) / 2)); }
+  .cube > .bt { transform:rotateX(-90deg) translateZ(calc(var(--slot-h) / 2)); background:#1a1512; }
+  .cube .band { position:absolute; left:0; right:0; top:34%; height:16%; background:rgba(0,0,0,.28); }
+
+  /* ── pages ───────────────────────────────────────────────────────────────────────────────────── */
+  .pages { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:8px 2px 0; }
+  .pg {
+    min-width:44px; min-height:40px; padding:0 10px; border-radius:3px; cursor:pointer;
+    background:var(--stone-dark); color:#EFEFEF; border:0;
+    box-shadow:inset 2px 2px 0 rgba(255,255,255,.14), inset -2px -2px 0 rgba(0,0,0,.34);
+    font:900 12px/1 var(--mono); letter-spacing:.08em; font-variant-numeric:tabular-nums;
+  }
+  .pg.on { background:#6E6E6E; color:#fff; box-shadow:inset 2px 2px 0 rgba(0,0,0,.34), inset -2px -2px 0 rgba(255,255,255,.14); }
+  .pages .of { margin-left:auto; font:900 10px/1 var(--mono); letter-spacing:.12em; color:#3E3E3E; }
+
+  /* the damaged row lives under the van — a good pack is never dropped here */
+  .dmgHead { display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin:10px 2px 5px;
+             font:900 10px/1.2 var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--stone-ink); }
+  .dmgHead .num { color:#7A2A1E; }
+  .dmg { display:grid; grid-template-columns:repeat(3, 1fr); gap:5px; border-radius:4px; }
+  .dmg .slot { aspect-ratio:1/.5; outline:2px solid rgba(190,70,50,.55); outline-offset:-2px; }
+  .dmg .cubeStage { --slot-h:22px; }
+  .dmg .slot .name { font-size:9px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:2px 4px; }
+  .dmg .slot .n { font-size:10px; }
+  .bay.dragging .dmg.refuse { outline:3px solid #C0392B; outline-offset:2px; }
+
+  /* LOOK 2 — the panels in KPM colours. The chests stay brown in both. */
+  .bay[data-look="kpm"] .gui { background:linear-gradient(180deg, var(--raised), var(--panel)); border:2px solid var(--line-2); border-radius:14px; box-shadow:none; padding:10px; }
+  .bay[data-look="kpm"] .gui .title { color:var(--ink); letter-spacing:.12em; text-transform:uppercase; font-size:12px; }
+  .bay[data-look="kpm"] .gui .title .count { color:var(--ink-muted); }
+  .bay[data-look="kpm"] .gui .title .count b { color:var(--accent-ink); }
+  .bay[data-look="kpm"] .say { color:var(--accent-ink); }
+  .bay[data-look="kpm"] .say.err { color:var(--bad); }
+  .bay[data-look="kpm"] .slot { background:var(--inset); border:1px solid var(--line-2); border-radius:8px; box-shadow:none; }
+  .bay[data-look="kpm"] .slot .n { color:var(--ink); text-shadow:none; }
+  .bay[data-look="kpm"] .slot .name { color:var(--ink); text-shadow:none; background:linear-gradient(180deg, transparent, var(--inset) 70%); }
+  .bay[data-look="kpm"] .slot .chip { background:var(--panel); color:var(--accent-ink); border:1px solid var(--accent-edge); }
+  .bay[data-look="kpm"] .slot.over { outline-color:var(--accent-edge); }
+  .bay[data-look="kpm"] .slot.new { outline-color:var(--accent-edge); }
+  .bay[data-look="kpm"] .find input { background:var(--inset); color:var(--ink); border:1px solid var(--line-2); border-radius:10px; box-shadow:none; }
+  .bay[data-look="kpm"] .find input::placeholder { color:var(--ink-dim); }
+  .bay[data-look="kpm"] .find .x { color:var(--ink-muted); }
+  .bay[data-look="kpm"] .pg { background:var(--panel); color:var(--ink-muted); border:1px solid var(--line-2); border-radius:8px; box-shadow:none; }
+  .bay[data-look="kpm"] .pg.on { border-color:var(--accent-edge); color:var(--accent-ink); background:var(--raised); }
+  .bay[data-look="kpm"] .pages .of, .bay[data-look="kpm"] .dmgHead { color:var(--ink-dim); }
+  .bay[data-look="kpm"] .dmgHead .num { color:var(--bad); }
+  .bay[data-look="kpm"].dragging .gui.van.zoneover { border-color:var(--accent-edge); }
+
+  /* ── THE MANIFEST — the bay's contract, unchanged: lines here, ONE press writes, ONE surat jalan ── */
+  .man { grid-area:man; align-self:stretch; display:flex; flex-direction:column; gap:10px; min-width:0;
+         background:var(--raised); border:1px solid var(--line-2); border-radius:14px; padding:12px; user-select:text; -webkit-user-select:text; }
+  .manHead { display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+  .lbl { margin:0; font:900 11px/1.3 var(--mono); letter-spacing:.18em; text-transform:uppercase; color:var(--ink-dim); }
+  .tally { font:900 15px/1 var(--mono); font-variant-numeric:tabular-nums; color:var(--ink); white-space:nowrap; }
+  .lines { list-style:none; margin:0; padding:0; display:grid; gap:6px; }
+  .lines li { display:flex; gap:6px; align-items:stretch; }
+  .ln { flex:1; min-width:0; min-height:48px; display:flex; align-items:center; gap:10px; padding:6px 10px; cursor:pointer; text-align:left;
+        border:1px solid var(--line-2); border-radius:10px; background:var(--panel); color:var(--ink); font:inherit; transition:transform .12s ease-out, border-color .16s; }
+  .ln:hover { border-color:var(--accent-edge); }
+  .ln:active { transform:scale(.99); }
+  .ln .mc { width:30px; height:34px; flex:0 0 30px; }
+  .ln .mc .cubeStage { --slot-h:28px; }
+  .ln .nm { flex:1; min-width:0; font:800 13px/1.25 var(--sans); overflow:hidden; text-overflow:ellipsis; }
+  .ln .nm small { display:block; font:900 9px/1.4 var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ln .q { font:900 12px/1.3 var(--mono); font-variant-numeric:tabular-nums; text-align:right; white-space:nowrap; }
+  .ln .q b { display:block; color:var(--accent-ink); font-size:11px; }
+  .lines li.done .ln { border-style:dashed; opacity:.55; }
+  .trash { width:44px; flex:0 0 44px; border:1px solid var(--line-2); border-radius:10px; background:var(--panel); color:var(--ink-dim);
+           font:900 18px/1 var(--mono); cursor:pointer; transition:transform .12s ease-out, border-color .16s; }
+  .trash:hover { border-color:var(--bad); color:var(--bad); }
+  .trash:active { transform:scale(.94); }
+  .empty { margin:0; padding:14px 12px; border:1px dashed var(--line-2); border-radius:10px; color:var(--ink-muted); font-size:13px; }
+  .contract { margin:0; font-size:12.5px; line-height:1.5; color:var(--ink-muted); }
+  .contract b { color:var(--ink); }
+  .go { width:100%; min-height:52px; border-radius:12px; background:var(--gold); color:var(--gold-ink); border:0; cursor:pointer;
+        font:900 12px/1.2 var(--mono); letter-spacing:.16em; text-transform:uppercase; display:flex; align-items:center; justify-content:center; gap:8px; padding:0 12px;
+        transition:transform .12s ease-out; }
+  .go:active { transform:scale(.98); }
+  .go:disabled { background:var(--panel); color:var(--ink-dim); border:1px dashed var(--line-2); cursor:not-allowed; transform:none; }
+  .go:focus-visible { outline:3px solid var(--hi); outline-offset:2px; }
+  .go svg { flex:0 0 auto; }
+  .manFoot { text-align:center; }
+  .report { margin:0; min-height:0; font:800 13px/1.45 var(--sans); color:var(--ink); }
+  .report b { color:var(--accent-ink); }
+  .sj { border:1px solid var(--line-2); border-radius:10px; background:var(--inset); padding:10px 12px; font:700 12px/1.45 var(--mono); color:var(--ink); }
+  .sj .sjHead { display:flex; justify-content:space-between; gap:8px; margin:0 0 2px; letter-spacing:.1em; }
+  .sj .sjHead span { color:var(--ink-muted); font-size:11px; }
+  .sj .sjSub { margin:0 0 8px; color:var(--ink-muted); font-size:11px; }
+  .sj ol { margin:0; padding:0 0 0 18px; }
+  .sj li { font-variant-numeric:tabular-nums; }
+  .sj li span { color:var(--ink-muted); }
+  .sj .sjTot { display:flex; justify-content:space-between; gap:8px; margin:8px 0 0; padding-top:6px; border-top:1px dashed var(--line-2); font-weight:900; }
+
+  /* ── what moves: the carried box, the goods in flight ─────────────────────────────────────────── */
+  .ghost {
+    position:fixed; z-index:75; pointer-events:none; width:92px; height:92px; border-radius:3px;
+    background:var(--stone-dark); display:grid; place-items:center; opacity:.95;
+    box-shadow:inset 3px 3px 0 rgba(0,0,0,.38), inset -3px -3px 0 rgba(255,255,255,.16);
+    transform:translate(-50%,-50%) scale(1.04);
+  }
+  .ghost .cubeStage { --slot-h:62px; }
+  .ghost.glide { transition:left .2s var(--ease-out), top .2s var(--ease-out), transform .2s var(--ease-out); }
+  .ghost.home  { transition:left .3s var(--ease-out), top .3s var(--ease-out), transform .3s var(--ease-out); transform:translate(-50%,-50%) scale(.9); }
+  .ghost.parked { transform:translate(-50%,-50%) scale(.72); }
+  .ghost.settle { transition:transform .16s var(--ease-out), opacity .16s ease-out; transform:translate(-50%,-50%) scale(.5); opacity:0; }
+  .bay[data-look="kpm"] ~ .ghost, body.look-kpm .ghost { background:var(--inset); border:1px solid var(--accent-edge); box-shadow:none; border-radius:10px; }
+  .pack { position:fixed; left:0; top:0; z-index:60; width:40px; height:40px; pointer-events:none; }
+  .pack .cubeStage { --slot-h:30px; }
+
+  /* ── HOW MANY — the panel that opens on the drop. Never window.prompt (the dialog gate). ─────── */
+  .scrim { position:fixed; inset:0; z-index:70; background:rgba(5,4,3,.5); opacity:0; pointer-events:none; transition:opacity .18s ease-out; }
+  .scrim.show { opacity:1; pointer-events:auto; }
+  .sheet {
+    position:fixed; z-index:80; left:50%; top:calc(12px + env(safe-area-inset-top, 0px)); width:min(430px, calc(100vw - 32px));
+    background:var(--raised); color:var(--ink); border:1px solid var(--line-2); border-radius:16px; padding:14px;
+    display:grid; gap:10px; grid-template-columns:minmax(0, 1fr);
+    transform:translate(-50%, -8px) scale(.98); opacity:0; visibility:hidden;
+    transition:transform .2s var(--ease-out), opacity .16s ease-out, visibility 0s linear .2s;
+  }
+  .sheet.show { transform:translate(-50%, 0); opacity:1; visibility:visible; transition-delay:0s; }
+  @media (min-width:960px) {
+    /* over the manifest column, so the box parked on the van square stays in sight */
+    .sheet { left:auto; right:max(16px, calc((100vw - 1180px) / 2 + 16px)); top:50%; width:340px; transform:translate(0, -48%) scale(.98); }
+    .sheet.show { transform:translate(0, -50%); }
+  }
+  .shHead { display:flex; gap:12px; align-items:center; }
+  .shHead .mc { width:52px; height:60px; flex:0 0 52px; border-radius:8px; background:var(--inset); border:1px solid var(--line-2); display:grid; place-items:center; }
+  .shHead .mc .cubeStage { --slot-h:44px; }
+  .shName { margin:0; font:900 16px/1.2 var(--sans); }
+  .shSub { margin:2px 0 0; font:900 10px/1.4 var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); }
+  .qtyRow { display:flex; align-items:center; gap:10px; }
+  #qty {
+    flex:1; width:0; min-width:0; min-height:56px; border-radius:12px; border:1px solid var(--line-2); background:var(--inset); color:var(--ink);
+    font:900 28px/1 var(--mono); font-variant-numeric:tabular-nums; padding:0 14px; outline:none;
+  }
+  #qty:focus-visible { border-color:var(--accent-edge); outline:3px solid var(--hi); outline-offset:1px; }
+  #qty::placeholder { color:var(--ink-dim); }
+  .eq { font:900 15px/1.2 var(--mono); font-variant-numeric:tabular-nums; color:var(--accent-ink); white-space:nowrap; min-width:9ch; text-align:right; }
+  .eq.err { color:var(--bad); }
+  .units { display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; }
+  .units .key { flex-direction:column; gap:3px; padding:6px 4px; min-height:48px; letter-spacing:.1em; }
+  .units .key small { font:700 9px/1 var(--mono); letter-spacing:.04em; text-transform:none; color:var(--ink-dim); }
+  .units .key[aria-pressed="true"] { border-color:var(--accent-edge); color:var(--accent-ink); background:var(--inset); }
+  .msg { margin:0; min-height:20px; font:700 12.5px/1.45 var(--sans); color:var(--ink-muted); }
+  .msg.err { color:var(--bad); }
+  .shKeys { display:grid; grid-template-columns:1fr 1.6fr; gap:8px; }
+  .shKeys .ok { background:var(--gold); color:var(--gold-ink); border-color:transparent; }
+  .shKeys .ok:disabled { background:var(--panel); color:var(--ink-dim); border:1px dashed var(--line-2); cursor:not-allowed; transform:none; }
+
+  .note { border-left:2px solid var(--accent-edge); padding:2px 0 2px 14px; margin:18px 0; color:var(--ink-muted); font-size:14px; max-width:78ch; }
+  .note b { color:var(--ink); }
+  ul { padding-left:18px; color:var(--ink-muted); font-size:14px; max-width:84ch; }
+  li { margin:7px 0; } ul li b { color:var(--ink); }
+  footer { margin-top:34px; color:var(--ink-dim); font-size:12px; font-family:var(--mono); letter-spacing:.06em; }
+
+  /* LITE MODE, the app's own law: every transition, animation, shadow and filter goes; every box,
+     number and page stays exactly where it is. */
+  html.lite-mode *, html.lite-mode *::before, html.lite-mode *::after {
+    animation:none !important; transition:none !important; box-shadow:none !important; filter:none !important;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chest .lid, .chest .latch, .gui, .sheet, .scrim, .ghost { transition-duration:1ms !important; }
+    .bay .gui .slot, .bay .gui .slot .cube { animation-duration:1ms !important; }
+    .gui.wh .slot.has:hover .cube { animation:none; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Warehouse chest → van chest</h1>
+    <p class="sub">Drag a box from the warehouse (the big chest) into Budi's van (the small chest). A panel asks how many; the goods fly across. Nothing is written until MUAT VAN — one press, one surat jalan.</p>
+  </header>
+
+  <div class="bar">
+    <button class="key on" id="lookVideo" type="button">1 · grey panel</button>
+    <button class="key" id="lookKpm" type="button">2 · KPM panel</button>
+    <button class="key on" id="sound" type="button">sound on</button>
+    <button class="key" id="slow" type="button">slow motion</button>
+    <button class="key" id="lite" type="button">Lite Mode</button>
+    <button class="key" id="replay" type="button">open again</button>
+    <button class="key" id="reset" type="button">start over</button>
+  </div>
+
+  <section class="bay" id="bay" data-look="video" aria-label="Loading bay">
+    <p class="bayHint">Tarik kotak dari gudang ke van</p>
+
+    <div class="gui wh" id="whGui">
+      <p class="title"><span>Gudang BANDUNG</span><span class="count" id="whCount"></span></p>
+      <span class="say" id="whSay" role="status" aria-live="polite"></span>
+      <label class="find"><span class="sr">Cari barang di gudang</span>
+        <input id="find" type="search" placeholder="Cari barang di gudang…" autocomplete="off" enterkeyhint="search">
+        <button class="x" id="findClear" type="button" aria-label="Hapus pencarian" hidden>×</button>
+      </label>
+      <div class="grid" id="whGrid"></div>
+      <div class="pages" id="whPages"></div>
+    </div>
+
+    <button class="chestCell whc" id="whChest" type="button" aria-expanded="false" aria-label="Peti gudang — buka atau tutup">
+      <span class="chest big"><span class="lid"></span><span class="latch a"></span><span class="latch b"></span><span class="body"></span></span>
+      <span class="cap">Gudang</span>
+    </button>
+    <button class="chestCell vanc" id="vanChest" type="button" aria-expanded="false" aria-label="Peti van Budi Santoso — buka atau tutup">
+      <span class="chest small"><span class="lid"></span><span class="latch"></span><span class="body"></span></span>
+      <span class="cap">Van · D 5521 XY</span>
+    </button>
+
+    <div class="gui van" id="vanGui">
+      <p class="title"><span>Budi Santoso inventory</span><span class="count" id="vanCount"></span></p>
+      <span class="say" id="vanSay" role="status" aria-live="polite"></span>
+      <div class="grid" id="vanGrid"></div>
+      <div class="pages" id="vanPages"></div>
+      <div class="dmgHead"><span>Barang rusak · di van</span><span class="num" id="dmgCount"></span></div>
+      <div class="dmg" id="dmg"></div>
+    </div>
+
+    <aside class="man" aria-label="Muatan hari ini">
+      <div class="manHead"><p class="lbl">Muatan · Budi Santoso</p><span class="tally" id="tally">0 Bks</span></div>
+      <p class="empty" id="manEmpty">Belum ada muatan. Tarik barang dari gudang ke van.</p>
+      <ol class="lines" id="lines"></ol>
+      <p class="contract">Menarik <b>tidak mencatat apa pun</b>. Stok gudang dan van baru berubah saat <b>MUAT VAN</b> ditekan — sekali, dengan satu surat jalan.</p>
+      <button class="go" id="go" type="button" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62L18.3 9.38a1 1 0 0 0-.78-.38H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+        <span id="goTxt">Muat van — belum ada muatan</span>
+      </button>
+      <p class="lbl manFoot">satu tekan · satu surat jalan · van tercatat sekali</p>
+      <p class="report" id="report" role="status" aria-live="polite"></p>
+      <div id="sjBox"></div>
+    </aside>
+  </section>
+
+  <div class="scrim" id="scrim"></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="shLbl" aria-hidden="true">
+    <div class="shHead"><span class="mc" id="shCube"></span><div><p class="shName" id="shName"></p><p class="shSub" id="shSub"></p></div></div>
+    <label class="lbl" id="shLbl" for="qty">Berapa yang dimuat ke van?</label>
+    <div class="qtyRow">
+      <input id="qty" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="0" aria-describedby="shMsg">
+      <span class="eq" id="eq">= — Bks</span>
+    </div>
+    <div class="units" id="units" role="group" aria-label="Satuan"></div>
+    <p class="msg" id="shMsg" aria-live="polite"></p>
+    <div class="shKeys"><button class="key" id="shNo" type="button">Batal</button><button class="key ok" id="shOk" type="button" disabled>Masukkan ke van</button></div>
+  </div>
+
+  <h2>Try it</h2>
+  <ul>
+    <li><b>Drag a box from the warehouse onto the van</b> — onto any of its squares, or onto the small chest itself. The square it will land in lights up while you carry it. If the van already holds that product, the box always joins its own square, so one product is one square and one line.</li>
+    <li><b>The panel starts empty on purpose.</b> You type the number; the line beside it always says what it means in packs (<b>= 600 Bks</b>), worked out with the app's own conversion, so "3" can never be read as 3 packs when you meant 3 Bal. More than the warehouse holds is refused before you can press anything.</li>
+    <li><b>Nothing is written by a drag.</b> Until MUAT VAN, the warehouse square shows <b>−N</b> and the van square <b>+N</b> with a dashed edge. MUAT VAN writes each product, then reports in <b>one</b> line and makes <b>one</b> surat jalan.</li>
+    <li><b>Search</b> finds a product among hundreds: the warehouse chest then shows only what matches, and you drag from there.</li>
+    <li><b>Drop on the damaged row</b> → refused out loud. <b>Drop back on the warehouse</b> → the box goes home and nothing changes. Tap a line in the muatan list to change its amount; × takes it out.</li>
+    <li><b>Lite Mode</b> keeps every box, number and page; only the motion stops. No keyboard needed either: focus a warehouse box and press Enter.</li>
+  </ul>
+  <p class="note"><b>About the sound:</b> it is made from the physics of wood — a hinge creak, the lid's knock, a metal latch, a pack landing in a crate. No file from the game is in it. Our notes say you have turned down made sounds three times; if this one is not right either, record a real wooden box lid on your phone and send it — I cut it the way the book sounds were cut.</p>
+
+  <footer>KPM Inventory · prototype for review · van loading v1 · <span id="stamp"></span></footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var fmt = function (n) { return Number(n).toLocaleString('id-ID'); };
+  var STILL = /(\?|&)still\b/.test(location.search);
+  var PER = 6, VAN_PAGES = 3, CELLS = PER * VAN_PAGES, SLOW = 1;
+
+  /* convertToBks — copied from src/utils/helpers.js WITHOUT A CHANGE. The "= N Bks" line in the
+     panel is the app's own arithmetic, so what he reads here is what the press will load. */
+  var convertToBks = function (qty, unit, product) {
+    if (!product) return qty;
+    var packsPerSlop = product.packsPerSlop || 10;
+    var slopsPerBal = product.slopsPerBal || 20;
+    var balsPerCarton = product.balsPerCarton || 4;
+    if (unit === 'Slop') return qty * packsPerSlop;
+    if (unit === 'Bal') return qty * slopsPerBal * packsPerSlop;
+    if (unit === 'Karton') return qty * balsPerCarton * slopsPerBal * packsPerSlop;
+    return qty;
+  };
+  var UNITS = ['Bks', 'Slop', 'Bal', 'Karton'];
+
+  /* the BANDUNG branch warehouse — sixteen products standing in for hundreds. Stock in packs. The
+     millimetres are the sales terminal's; the colours stand in for the product photos. Sampoerna
+     Kretek packs ten slop to a bal, so its unit keys read differently — the conversion is per product. */
+  var WH = [
+    { id:'cg16', n:'Cello Green 16',         q:2400, mm:[55,90,22], f:'#6E8F3F', s:'#52702E', t:'#8CA95C' },
+    { id:'cg12', n:'Cello Green 12',         q:1600, mm:[50,86,19], f:'#5E8A4A', s:'#466937', t:'#7BA765' },
+    { id:'cm12', n:'Cello Merah 12',         q:960,  mm:[50,88,20], f:'#B5462F', s:'#8C3222', t:'#CE6247' },
+    { id:'ccc',  n:'Cello Coffee & Caramel', q:400,  mm:[54,88,21], f:'#6B4A2E', s:'#4E3521', t:'#8A6443' },
+    { id:'cm16', n:'Cello Mild 16',          q:900,  mm:[54,90,21], f:'#D0C090', s:'#A89A70', t:'#E4D6A8' },
+    { id:'cf20', n:'Cello Filter 20',        q:1200, mm:[57,94,23], f:'#3F6E7F', s:'#2E525F', t:'#5C8EA0' },
+    { id:'dc12', n:'Djarum Coklat 12',       q:800,  mm:[52,86,24], f:'#7A4B22', s:'#5C3618', t:'#98663A' },
+    { id:'ds12', n:'Djarum Super 12',        q:1400, mm:[53,87,25], f:'#5B4B8A', s:'#443769', t:'#7767A8' },
+    { id:'gg12', n:'Gudang Garam 12',        q:2000, mm:[56,88,26], f:'#A33B2A', s:'#7C2A1D', t:'#C05442' },
+    { id:'sm16', n:'Sampoerna Mild 16',      q:1800, mm:[54,92,21], f:'#C4A24E', s:'#9A7C34', t:'#DCC072' },
+    { id:'sk',   n:'Sampoerna Kretek',       q:300,  mm:[58,90,27], f:'#8A7B3F', s:'#6A5D2C', t:'#A8985A', slopsPerBal:10 },
+    { id:'djs',  n:'Dji Sam Soe 12',         q:640,  mm:[56,86,25], f:'#B08A3A', s:'#86682A', t:'#CCA75A' },
+    { id:'sy12', n:'Surya 12',               q:1100, mm:[55,88,24], f:'#9E2F2F', s:'#772222', t:'#BA4A4A' },
+    { id:'mg12', n:'Magnum Filter 12',       q:520,  mm:[54,88,22], f:'#3A3530', s:'#26221F', t:'#56504A' },
+    { id:'cl16', n:'Class Mild 16',          q:0,    mm:[54,90,21], f:'#8C8C8C', s:'#6A6A6A', t:'#A8A8A8' },
+    { id:'la16', n:'LA Bold 16',             q:700,  mm:[55,91,22], f:'#6A2A2A', s:'#4F1F1F', t:'#8A4040' }
+  ];
+  var P = {}; WH.forEach(function (p) { P[p.id] = p; });
+  /* what came back broken — the quarantine an admin sees at any hour, never a drop target */
+  var DMG = [
+    { id:'dc12', q:5,  why:'Kemasan rusak' },
+    { id:'cm12', q:2,  why:'Basah' },
+    { id:'cg16', q:12, why:'Pita cukai' }
+  ];
+
+  var S, OPEN = { wh:false, van:false };
+  function reset() {
+    S = { stock:{}, van:{ cg16:40, dc12:20, sm16:16 }, cells:[], lines:[], whPage:0, vanPage:0, query:'', sj:0, busy:false };
+    WH.forEach(function (p) { S.stock[p.id] = p.q; });
+    /* Budi's leftovers from yesterday sit in the first three squares. THE VAN'S LAYOUT is a fixed map
+       of squares where a hole means something — in the app it is its own field, never activeCanvas. */
+    for (var c = 0; c < CELLS; c++) S.cells.push(null);
+    S.cells[0] = 'cg16'; S.cells[1] = 'dc12'; S.cells[2] = 'sm16';
+  }
+  function lineOf(id) { for (var i = 0; i < S.lines.length; i++) if (S.lines[i].id === id) return S.lines[i]; return null; }
+  function lineBks(l) { return convertToBks(l.qty, l.unit, P[l.id]); }
+  function pendingBks(id) { var l = lineOf(id); return l ? lineBks(l) : 0; }
+  function freeBks(id) { return S.stock[id] - pendingBks(id); }
+  function cellOf(id) { return S.cells.indexOf(id); }
+
+  function cube(p) {
+    return '<span class="cubeStage"><span class="cube" style="--mm-w:' + p.mm[0] + ';--mm-h:' + p.mm[1] + ';--mm-d:' + p.mm[2] +
+           ';--pf:' + p.f + ';--pb:' + p.s + ';--ps:' + p.s + ';--pt:' + p.t + '"><i class="f"><span class="band"></span></i>' +
+           '<i class="bk"></i><i class="l"></i><i class="r"></i><i class="t"></i><i class="bt"></i></span></span>';
+  }
+  function whList() {
+    var q = S.query.trim().toLowerCase();
+    return q ? WH.filter(function (p) { return p.n.toLowerCase().indexOf(q) >= 0; }) : WH;
+  }
+
+  /* `anim` false = a change, not an arrival: the squares stay where the eye left them (his "it refreshed") */
+  function drawWh(anim) {
+    var list = whList(), pages = Math.max(1, Math.ceil(list.length / PER)), h = '';
+    if (S.whPage >= pages) S.whPage = pages - 1;
+    $('whGui').classList.toggle('noanim', anim === false);
+    for (var i = 0; i < PER; i++) {
+      var p = list[S.whPage * PER + i], d = 'style="--d:' + (120 + i * 50) + 'ms"';
+      if (!p) { h += '<div class="slot" ' + d + '></div>'; continue; }
+      var st = S.stock[p.id], pend = pendingBks(p.id), out = st - pend <= 0;
+      h += '<div class="slot has' + (out ? ' out' : '') + '" data-id="' + p.id + '" tabindex="0" role="button" ' + d +
+           ' aria-label="' + p.n + ', stok ' + fmt(st) + ' Bks' + (pend ? ', ' + fmt(pend) + ' Bks di muatan' : '') + '">' + cube(p) +
+           '<span class="n">' + (st ? fmt(st) : 'habis') + '</span>' +
+           (pend ? '<span class="chip">−' + fmt(pend) + '</span>' : '') +
+           '<span class="name">' + p.n + '</span></div>';
+    }
+    $('whGrid').innerHTML = h;
+    var tabs = '';
+    for (var k = 0; k < pages; k++) {
+      var n = Math.min(PER, list.length - k * PER);
+      tabs += '<button type="button" class="pg' + (k === S.whPage ? ' on' : '') + '" data-p="' + k + '">' + (k + 1) + ' · ' + Math.max(0, n) + '</button>';
+    }
+    $('whPages').innerHTML = tabs + '<span class="of">' + (S.query ? list.length + ' hasil' : 'halaman ' + (S.whPage + 1) + '/' + pages) + '</span>';
+    var total = WH.reduce(function (a, p) { return a + S.stock[p.id]; }, 0);
+    $('whCount').textContent = WH.length + ' barang · ' + fmt(total) + ' Bks';
+  }
+  function drawVan(anim) {
+    $('vanGui').classList.toggle('noanim', anim === false);
+    var h = '';
+    for (var i = 0; i < PER; i++) {
+      var c = S.vanPage * PER + i, id = S.cells[c], p = id ? P[id] : null, d = 'style="--d:' + (120 + i * 50) + 'ms"';
+      if (!p) { h += '<div class="slot" data-i="' + c + '" ' + d + '></div>'; continue; }
+      var have = S.van[id] || 0, pend = pendingBks(id);
+      h += '<div class="slot has' + (pend && !have ? ' new' : '') + '" data-i="' + c + '" data-id="' + id + '" title="' + p.n + '" ' + d + '>' + cube(p) +
+           (have ? '<span class="n">' + fmt(have) + '</span>' : '') +
+           (pend ? '<span class="chip">+' + fmt(pend) + '</span>' : '') +
+           '<span class="name">' + p.n + '</span></div>';
+    }
+    $('vanGrid').innerHTML = h;
+    var tabs = '', filled = 0;
+    for (var k = 0; k < VAN_PAGES; k++) {
+      var n = 0;
+      for (var j = k * PER; j < k * PER + PER; j++) if (S.cells[j]) n++;
+      filled += n;
+      tabs += '<button type="button" class="pg' + (k === S.vanPage ? ' on' : '') + '" data-p="' + k + '">' + (k + 1) + ' · ' + n + '</button>';
+    }
+    $('vanPages').innerHTML = tabs + '<span class="of">' + filled + ' barang</span>';
+    var have = 0, pendAll = 0;
+    Object.keys(S.van).forEach(function (id) { have += S.van[id]; });
+    S.lines.forEach(function (l) { pendAll += lineBks(l); });
+    $('vanCount').innerHTML = fmt(have) + ' Bks' + (pendAll ? ' <b>+' + fmt(pendAll) + '</b>' : '');
+    var dh = '';
+    DMG.forEach(function (x) {
+      dh += '<div class="slot has" title="' + P[x.id].n + ' · ' + x.why + '">' + cube(P[x.id]) +
+            '<span class="n">' + x.q + '</span><span class="name">' + x.why + '</span></div>';
+    });
+    $('dmg').innerHTML = dh;
+    $('dmgCount').textContent = DMG.reduce(function (a, x) { return a + x.q; }, 0) + ' Bks · ' + DMG.length + ' barang';
+  }
+  function drawMan() {
+    var h = '', tot = 0;
+    S.lines.forEach(function (l) {
+      var p = P[l.id], b = lineBks(l); tot += b;
+      h += '<li><button type="button" class="ln" data-edit="' + l.id + '" aria-label="Ubah jumlah ' + p.n + '"><span class="mc">' + cube(p) + '</span>' +
+           '<span class="nm">' + p.n + '<small>gudang tinggal ' + fmt(S.stock[l.id] - b) + ' Bks</small></span>' +
+           '<span class="q">' + fmt(l.qty) + ' ' + l.unit + '<b>= ' + fmt(b) + ' Bks</b></span></button>' +
+           '<button type="button" class="trash" data-del="' + l.id + '" aria-label="Keluarkan ' + p.n + ' dari muatan">×</button></li>';
+    });
+    $('lines').innerHTML = h;
+    $('manEmpty').hidden = S.lines.length > 0;
+    $('tally').textContent = fmt(tot) + ' Bks';
+    $('go').disabled = !S.lines.length || S.busy;
+    if (!S.busy) $('goTxt').textContent = S.lines.length ? 'Muat van — ' + fmt(tot) + ' Bks · ' + S.lines.length + ' barang' : 'Muat van — belum ada muatan';
+  }
+  function drawAll(anim) { drawWh(anim); drawVan(anim); drawMan(); }
+
+  /* every action reports, in the panel where it happened */
+  var sayT = {};
+  function say(where, msg, err) {
+    var el = $(where + 'Say');
+    el.textContent = msg; el.classList.toggle('err', !!err);
+    el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+    clearTimeout(sayT[where]); sayT[where] = setTimeout(function () { el.classList.remove('show'); }, 2600);
+  }
+  function motionOK() {
+    return !document.documentElement.classList.contains('lite-mode') &&
+           !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  /* ── WHERE THINGS ARE — rectangles compared directly. document.elementFromPoint returns null whenever
+        the page is not compositing (a hidden tab, a preview pane), and a drop that silently does nothing
+        is the one failure this screen cannot have. ─────────────────────────────────────────────── */
+  function inRect(el, x, y) { if (!el) return false; var r = el.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; }
+  function center(el) { var r = el.getBoundingClientRect(); return { x:r.left + r.width / 2, y:r.top + r.height / 2 }; }
+  function zoneAt(x, y) {
+    if (OPEN.van && inRect($('dmg'), x, y)) return 'dmg';
+    if (inRect($('vanChest'), x, y)) return 'van';
+    if (OPEN.van && inRect($('vanGui'), x, y)) return 'van';
+    return 'none';
+  }
+  function vanSlotAt(x, y) {
+    var hit = null;
+    Array.prototype.forEach.call($('vanGrid').querySelectorAll('.slot'), function (s) { if (inRect(s, x, y)) hit = s; });
+    return hit;
+  }
+  function vanTabAt(x, y) {
+    var hit = null;
+    Array.prototype.forEach.call($('vanPages').querySelectorAll('.pg'), function (b) { if (inRect(b, x, y)) hit = +b.dataset.p; });
+    return hit;
+  }
+  function vanSlotEl(cell) { return $('vanGrid').querySelector('.slot[data-i="' + cell + '"]'); }
+  /* WHERE A DROP LANDS: a product already in the van (or already in the muatan) always joins its own
+     square — one product, one square, one line, exactly as handleLoadCanvas merges one row. Otherwise
+     the empty square under the finger, then the first empty square on this page, then anywhere. */
+  function landingFor(id, x, y) {
+    var own = cellOf(id); if (own >= 0) return own;
+    var s = vanSlotAt(x, y);
+    if (s && !S.cells[+s.dataset.i]) return +s.dataset.i;
+    var c;
+    for (c = S.vanPage * PER; c < S.vanPage * PER + PER; c++) if (!S.cells[c]) return c;
+    for (c = 0; c < CELLS; c++) if (!S.cells[c]) return c;
+    return -1;
+  }
+
+  /* ── DRAG — pointer events (a phone has no HTML5 drag-and-drop). THE MOVE AND THE DROP LISTEN ON THE
+        WINDOW: turning the van's page mid-drag re-draws its squares, and a listener on a square that no
+        longer exists would drop the box into nothing. ─────────────────────────────────────────── */
+  var drag = null, SH = null;
+  $('whGrid').addEventListener('pointerdown', function (e) {
+    if (S.busy || SH || (e.button !== undefined && e.button !== 0)) return;
+    var slot = e.target.closest('.slot.has'); if (!slot) return;
+    drag = { id:slot.dataset.id, slot:slot, x0:e.clientX, y0:e.clientY, live:false, pid:e.pointerId,
+             lift:e.pointerType === 'touch' ? 46 : 0 };   // on a finger the box rides above it, where it can be seen
+  });
+  window.addEventListener('pointermove', function (e) {
+    if (!drag || e.pointerId !== drag.pid) return;
+    if (!drag.live) {
+      if (Math.abs(e.clientX - drag.x0) + Math.abs(e.clientY - drag.y0) < 6) return;   // still a tap
+      var p = P[drag.id];
+      if (freeBks(drag.id) <= 0) {
+        say('wh', S.stock[drag.id] ? 'Semua stok ' + p.n + ' sudah di muatan' : p.n + ' habis di gudang', true);
+        play('refuse'); drag = null; return;
+      }
+      drag.live = true;
+      drag.slot.classList.add('lift');
+      var g = document.createElement('div'); g.className = 'ghost'; g.innerHTML = cube(p);
+      document.body.appendChild(g); drag.ghost = g;
+      $('bay').classList.add('dragging');
+      play('pick');
+    }
+    var x = e.clientX, y = e.clientY - drag.lift;
+    drag.x = x; drag.y = y;
+    drag.ghost.style.left = x + 'px'; drag.ghost.style.top = y + 'px';
+    mark(x, y);
+    if (e.clientY > innerHeight - 48) window.scrollBy(0, 14); else if (e.clientY < 48) window.scrollBy(0, -14);
+  });
+  function clearMarks() {
+    Array.prototype.forEach.call(document.querySelectorAll('.slot.over, .zoneover, .dmg.refuse'), function (el) {
+      el.classList.remove('over', 'zoneover', 'refuse');
+    });
+  }
+  function mark(x, y) {
+    clearMarks();
+    var zone = zoneAt(x, y);
+    if (zone === 'dmg') { $('dmg').classList.add('refuse'); return; }
+    if (zone !== 'van') { drag.hover = null; return; }
+    $('vanGui').classList.add('zoneover'); $('vanChest').classList.add('zoneover');
+    /* hold the box over a page number and that page turns under it */
+    var tab = vanTabAt(x, y);
+    if (tab !== null && tab !== S.vanPage) {
+      if (!drag.hover || drag.hover.p !== tab) drag.hover = { p:tab, t:Date.now() };
+      else if (Date.now() - drag.hover.t > 260) { S.vanPage = tab; drawVan(false); drag.hover = null; play('page'); }
+    } else if (tab === null) drag.hover = null;
+    var cell = landingFor(drag.id, x, y);
+    if (cell < 0) return;
+    if (Math.floor(cell / PER) !== S.vanPage && tab === null) { S.vanPage = Math.floor(cell / PER); drawVan(false); }
+    var s = vanSlotEl(cell); if (s) s.classList.add('over');
+  }
+  function endDrag(e) {
+    if (!drag || (e && e.pointerId !== drag.pid)) return;
+    var d = drag; drag = null;
+    $('bay').classList.remove('dragging');
+    clearMarks();
+    if (!d.live) { if (e.type === 'pointerup') tapBox(d.slot, d.id); return; }
+    d.slot.classList.remove('lift');
+    var zone = e.type === 'pointercancel' ? 'none' : zoneAt(d.x, d.y);
+    var home = center(d.slot);
+    if (zone === 'dmg') {
+      say('van', 'Barang rusak dicatat lewat EOD, bukan dimuat', true); play('refuse');
+      return flyHome(d.ghost, home);
+    }
+    if (zone !== 'van') return flyHome(d.ghost, home);
+    var cell = landingFor(d.id, d.x, d.y);
+    if (cell < 0) { say('van', 'Van penuh — kosongkan satu kotak dulu', true); play('refuse'); return flyHome(d.ghost, home); }
+    if (Math.floor(cell / PER) !== S.vanPage) { S.vanPage = Math.floor(cell / PER); drawVan(false); }
+    var to = center(vanSlotEl(cell));
+    park(d.ghost, to);
+    openSheet({ mode:'add', id:d.id, cell:cell, ghost:d.ghost, home:home });
+  }
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', endDrag);
+
+  function tapBox(slot, id) {
+    var c = slot.querySelector('.cube');
+    if (c && motionOK()) { c.classList.remove('spin'); void c.offsetWidth; c.classList.add('spin'); setTimeout(function () { c.classList.remove('spin'); }, 760); }
+    say('wh', S.stock[id] ? 'Tarik ' + P[id].n + ' ke van untuk memuat' : P[id].n + ' habis di gudang', !S.stock[id]);
+  }
+  function park(g, to) {
+    if (!motionOK()) { g.style.left = to.x + 'px'; g.style.top = to.y + 'px'; g.classList.add('parked'); return; }
+    g.classList.add('glide'); void g.offsetWidth;
+    g.style.left = to.x + 'px'; g.style.top = to.y + 'px'; g.classList.add('parked');
+  }
+  function flyHome(g, home) {
+    if (!g) return;
+    if (!motionOK()) { g.remove(); return; }
+    g.classList.remove('glide', 'parked'); g.classList.add('home'); void g.offsetWidth;
+    g.style.left = home.x + 'px'; g.style.top = home.y + 'px';
+    setTimeout(function () { g.remove(); }, 320 * SLOW);
+  }
+  function settle(g) {
+    if (!g) return;
+    if (!motionOK()) { g.remove(); return; }
+    g.classList.add('settle'); setTimeout(function () { g.remove(); }, 200);
+  }
+
+  /* keyboard path — no mouse, no finger: Enter on a warehouse box opens the same panel */
+  $('whGrid').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    var slot = e.target.closest('.slot.has'); if (!slot) return;
+    e.preventDefault();
+    var id = slot.dataset.id;
+    if (freeBks(id) <= 0) { say('wh', S.stock[id] ? 'Semua stok ' + P[id].n + ' sudah di muatan' : P[id].n + ' habis di gudang', true); return; }
+    var cell = landingFor(id, -1, -1);
+    if (cell < 0) { say('van', 'Van penuh — kosongkan satu kotak dulu', true); return; }
+    openSheet({ mode:'add', id:id, cell:cell, ghost:null, back:id });
+  });
+
+  /* ── HOW MANY ────────────────────────────────────────────────────────────────────────────────── */
+  var unitsEl = $('units');
+  UNITS.forEach(function (u) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'key'; b.dataset.u = u;
+    b.innerHTML = u + '<small></small>';
+    unitsEl.appendChild(b);
+  });
+  unitsEl.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-u]'); if (!b || !SH) return;
+    SH.unit = b.dataset.u; update(); $('qty').focus();
+  });
+  function openSheet(o) {
+    SH = o;
+    var p = P[o.id], line = lineOf(o.id);
+    SH.unit = o.mode === 'edit' ? line.unit : 'Bks';   // the packs the stock is counted in — never a guessed amount
+    $('qty').value = o.mode === 'edit' ? String(line.qty) : '';
+    $('shCube').innerHTML = cube(p);
+    $('shName').textContent = p.n;
+    $('shSub').textContent = 'Gudang BANDUNG · stok ' + fmt(S.stock[o.id]) + ' Bks' +
+      (o.mode === 'add' && line ? ' · ' + fmt(lineBks(line)) + ' sudah di muatan' : '');
+    $('shLbl').textContent = o.mode === 'edit' ? 'Ubah jumlah di muatan' : 'Berapa yang dimuat ke van?';
+    Array.prototype.forEach.call(unitsEl.children, function (b) {
+      b.querySelector('small').textContent = '= ' + fmt(convertToBks(1, b.dataset.u, p)) + ' bks';
+    });
+    SH.prev = document.activeElement;
+    $('scrim').classList.add('show');
+    $('sheet').classList.add('show'); $('sheet').setAttribute('aria-hidden', 'false');
+    setTimeout(function () { if (SH) $('qty').focus(); }, 40);
+    update();
+    play('open', 1.25, .5);
+  }
+  function update() {
+    if (!SH) return { ok:false };
+    var p = P[SH.id], raw = $('qty').value.trim(), n = /^\d+$/.test(raw) ? parseInt(raw, 10) : NaN;
+    var bks = n > 0 ? convertToBks(n, SH.unit, p) : 0;
+    var line = lineOf(SH.id);
+    var cap = SH.mode === 'edit' ? S.stock[SH.id] : freeBks(SH.id);
+    var ok = false, msg = '', err = false;
+    if (raw === '') msg = 'Ketik jumlahnya — tidak ada angka bawaan. Sisa ' + fmt(cap) + ' Bks.';
+    else if (!(n > 0)) { msg = 'Tulis angka bulat, lebih dari 0.'; err = true; }
+    else if (bks > cap) { msg = 'Lebih dari sisa gudang: ' + fmt(cap) + ' Bks.'; err = true; }
+    else {
+      ok = true;
+      msg = SH.mode === 'add' && line ? 'Ditambahkan ke ' + fmt(lineBks(line)) + ' Bks yang sudah di muatan.' : 'Gudang tinggal ' + fmt(cap - bks) + ' Bks setelah dimuat.';
+    }
+    $('eq').textContent = n > 0 ? '= ' + fmt(bks) + ' Bks' : '= — Bks';
+    $('eq').classList.toggle('err', err);
+    $('shMsg').textContent = msg; $('shMsg').classList.toggle('err', err);
+    Array.prototype.forEach.call(unitsEl.children, function (b) { b.setAttribute('aria-pressed', b.dataset.u === SH.unit ? 'true' : 'false'); });
+    var okBtn = $('shOk');
+    okBtn.disabled = !ok;
+    okBtn.textContent = ok ? (SH.mode === 'edit' ? 'Simpan ' + fmt(bks) + ' Bks' : 'Masukkan ' + fmt(bks) + ' Bks') : (SH.mode === 'edit' ? 'Simpan' : 'Masukkan ke van');
+    return { ok:ok, n:n, bks:bks };
+  }
+  function closeSheet() {
+    var s = SH; SH = null;
+    $('scrim').classList.remove('show');
+    $('sheet').classList.remove('show'); $('sheet').setAttribute('aria-hidden', 'true');
+    return s;
+  }
+  function refocus(s) {
+    var el = s.back ? $('whGrid').querySelector('.slot[data-id="' + s.back + '"]') : null;
+    if (!el && s.edit) el = $('lines').querySelector('[data-edit="' + s.edit + '"]');
+    if (el) try { el.focus(); } catch (err) { /* gone */ }
+  }
+  function confirmSheet() {
+    var r = update(); if (!r.ok) return;
+    var s = closeSheet(), p = P[s.id], line = lineOf(s.id);
+    if (s.mode === 'edit') { line.qty = r.n; line.unit = s.unit; }
+    else if (line) {
+      /* one product = one line. Same unit adds up; a second unit folds the line into packs, so the
+         line never says "3 Bal" while meaning 3 Bal and 5 Slop */
+      if (line.unit === s.unit) line.qty += r.n; else { line.qty = lineBks(line) + r.bks; line.unit = 'Bks'; }
+    } else S.lines.push({ id:s.id, qty:r.n, unit:s.unit });
+    if (cellOf(s.id) < 0) S.cells[s.cell] = s.id;
+    var vc = cellOf(s.id);
+    if (Math.floor(vc / PER) !== S.vanPage) S.vanPage = Math.floor(vc / PER);
+    /* the figures change NOW, before any motion — the flight below only decorates what is already true,
+       so Lite Mode, reduced motion or a stalled animation can never hide a number */
+    drawWh(false); drawVan(false); drawMan();
+    say('van', s.mode === 'edit' ? p.n + ': ' + fmt(pendingBks(s.id)) + ' Bks di muatan' : '+' + fmt(r.bks) + ' Bks ' + p.n + ' — di muatan, belum tercatat');
+    pop(vanSlotEl(vc));
+    settle(s.ghost);
+    if (s.mode === 'add') transfer(p, r.n); else play('page');
+    refocus(s);
+  }
+  function cancelSheet() {
+    var s = closeSheet(); if (!s) return;
+    if (s.ghost) flyHome(s.ghost, s.home);
+    say(s.mode === 'edit' ? 'van' : 'wh', 'Batal — tidak ada yang berubah');
+    refocus(s);
+  }
+  $('shOk').addEventListener('click', confirmSheet);
+  $('shNo').addEventListener('click', cancelSheet);
+  $('scrim').addEventListener('click', cancelSheet);
+  $('qty').addEventListener('input', update);
+  $('sheet').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); confirmSheet(); }
+    else if (e.key === 'Escape') { e.preventDefault(); cancelSheet(); }
+    else if (e.key === 'Tab') {   // keep focus inside the panel while it is open
+      var f = $('sheet').querySelectorAll('input, button:not([disabled])'), first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
+
+  /* ── THE TRANSFER — the goods leave the big chest and drop into the small one. As many boxes as the
+        count in the unit he chose, up to six: 3 Bal fly as three, 40 Bks as six. ─────────────────── */
+  function mouth(cell) { var r = cell.querySelector('.chest').getBoundingClientRect(); return { x:r.left + r.width / 2, y:r.top + r.height * .32 }; }
+  function bump(cell, soft) {
+    if (!motionOK()) return;
+    cell.querySelector('.chest').animate(
+      [{ transform:'none' }, { transform:soft ? 'translateY(-3px)' : 'translateY(3px) scale(1.03,.95)' }, { transform:'none' }],
+      { duration:200 * SLOW, easing:'ease-out' });
+  }
+  function pop(el) {
+    var chip = el && el.querySelector('.chip');
+    if (!chip || !motionOK()) return;
+    chip.animate([{ transform:'scale(1.35)' }, { transform:'none' }], { duration:260 * SLOW, easing:'cubic-bezier(.23,1,.32,1)' });
+  }
+  function transfer(p, n) {
+    if (!motionOK()) { play('land'); return; }
+    var a = mouth($('whChest')), b = mouth($('vanChest'));
+    var k = Math.max(1, Math.min(6, n)), lift = Math.max(60, Math.abs(b.x - a.x) * .35 + 40), top = Math.min(a.y, b.y) - lift;
+    bump($('whChest'), true);
+    for (var i = 0; i < k; i++) (function (i) {
+      var el = document.createElement('div'); el.className = 'pack'; el.innerHTML = cube(p);
+      el.style.transform = 'translate(' + (a.x - 20) + 'px,' + (a.y - 20) + 'px)';
+      el.style.opacity = '0';
+      document.body.appendChild(el);
+      var frames = [];
+      for (var j = 0; j <= 14; j++) {
+        var t = j / 14, u = 1 - t;
+        var x = u * u * a.x + 2 * u * t * ((a.x + b.x) / 2) + t * t * b.x;
+        var y = u * u * a.y + 2 * u * t * top + t * t * b.y;
+        frames.push({ transform:'translate(' + (x - 20) + 'px,' + (y - 20) + 'px) rotate(' + (t * 24 - 8) + 'deg) scale(' + (1 - .32 * t) + ')',
+                      opacity:j === 0 || j === 14 ? 0 : 1 });
+      }
+      var an = el.animate(frames, { duration:560 * SLOW, delay:i * 95 * SLOW, easing:'cubic-bezier(.45,.05,.3,1)', fill:'forwards' });
+      an.onfinish = function () { el.remove(); play('land', 1 + i * .035); bump($('vanChest')); };
+      setTimeout(function () { if (el.parentNode) el.remove(); }, (660 + i * 95) * SLOW + 400);   // a stalled clock never leaves a box hanging
+    })(i);
+  }
+
+  /* ── MUAT VAN — the ONE press. The app loops over handleLoadCanvas, one transaction per product,
+        untouched; only the REPORT collapses to one line, and the surat jalan is one document. ────── */
+  function load() {
+    if (S.busy || !S.lines.length) return;
+    S.busy = true; drawMan();
+    var lines = S.lines.slice(), done = [], total = 0, i = 0;
+    (function next() {
+      if (i >= lines.length) return finish();
+      $('goTxt').textContent = 'Memuat ' + (i + 1) + '/' + lines.length + '…';
+      setTimeout(function () {
+        var l = lines[i], b = lineBks(l);
+        S.stock[l.id] -= b; S.van[l.id] = (S.van[l.id] || 0) + b;          // ≙ one runTransaction in the app
+        var li = $('lines').children[i]; if (li) li.classList.add('done');
+        done.push({ id:l.id, qty:l.qty, unit:l.unit, bks:b }); total += b; i++;
+        next();
+      }, 260 * SLOW);
+    })();
+    function finish() {
+      S.lines = []; S.busy = false; S.sj++;
+      var d = new Date(), no = 'SJ/BDG/' + String(d.getFullYear()).slice(2) + ('0' + (d.getMonth() + 1)).slice(-2) + ('0' + d.getDate()).slice(-2) + '/' + ('00' + S.sj).slice(-3);
+      drawWh(false); drawVan(false); drawMan();
+      $('report').innerHTML = '<b>✓ Van Budi Santoso dimuat</b> · ' + done.length + ' barang · ' + fmt(total) + ' Bks · ' + no;
+      var rows = done.map(function (x) {
+        return '<li>' + P[x.id].n + ' <span>— ' + fmt(x.qty) + ' ' + x.unit + (x.unit !== 'Bks' ? ' (' + fmt(x.bks) + ' Bks)' : '') + '</span></li>';
+      }).join('');
+      $('sjBox').innerHTML = '<div class="sj"><p class="sjHead"><b>SURAT JALAN</b><span>' + no + '</span></p>' +
+        '<p class="sjSub">Gudang BANDUNG → Budi Santoso · D 5521 XY</p><ol>' + rows + '</ol>' +
+        '<p class="sjTot"><span>Total</span><span>' + fmt(total) + ' Bks · ' + done.length + ' barang</span></p></div>';
+      say('van', 'tersimpan · ' + no);
+      play('latch'); bump($('vanChest'));
+    }
+  }
+  $('go').addEventListener('click', load);
+  $('lines').addEventListener('click', function (e) {
+    var del = e.target.closest('[data-del]'), ed = e.target.closest('[data-edit]');
+    if (S.busy) return;
+    if (del) {
+      var id = del.dataset.del;
+      S.lines = S.lines.filter(function (l) { return l.id !== id; });
+      if (!S.van[id]) S.cells[cellOf(id)] = null;     // a square that only held a plan goes back to empty
+      drawWh(false); drawVan(false); drawMan();
+      say('van', P[id].n + ' keluar dari muatan — gudang tidak berubah');
+      play('page');
+    } else if (ed) openSheet({ mode:'edit', id:ed.dataset.edit, cell:cellOf(ed.dataset.edit), ghost:null, edit:ed.dataset.edit });
+  });
+
+  /* search — the way to FIND a product among hundreds; the chest then shows only what matches */
+  $('find').addEventListener('input', function () {
+    S.query = this.value; S.whPage = 0; $('findClear').hidden = !this.value;
+    drawWh(false);
+    if (S.query.trim() && !whList().length) say('wh', 'Tidak ada “' + S.query.trim() + '” di Gudang BANDUNG', true);
+  });
+  $('findClear').addEventListener('click', function () {
+    $('find').value = ''; S.query = ''; S.whPage = 0; this.hidden = true; drawWh(false); $('find').focus();
+  });
+  $('whPages').addEventListener('click', function (e) {
+    var b = e.target.closest('.pg'); if (!b) return;
+    S.whPage = +b.dataset.p; drawWh(); play('page');
+  });
+  $('vanPages').addEventListener('click', function (e) {
+    var b = e.target.closest('.pg'); if (!b) return;
+    S.vanPage = +b.dataset.p; drawVan(); play('page');
+  });
+
+  function setOpen(side, on) {
+    OPEN[side] = on;
+    $('bay').classList.toggle(side + '-open', on);
+    $(side + 'Chest').setAttribute('aria-expanded', on ? 'true' : 'false');
+    if (on) { if (side === 'wh') drawWh(); else drawVan(); }
+    play(on ? 'open' : 'close', side === 'wh' ? .84 : 1.08);
+  }
+  $('whChest').addEventListener('click', function () { setOpen('wh', !OPEN.wh); });
+  $('vanChest').addEventListener('click', function () { setOpen('van', !OPEN.van); });
+
+  /* ── SOUND — ours, made from the physics of wood; no game file ever enters the repo. Each sound is
+        baked once into a buffer: wood modes (decaying partials at inharmonic ratios), a stick-slip
+        hinge creak, a steel latch, a short room so nothing sounds like it plays in a vacuum. ───── */
+  var AC = null, OUT = null, BUF = {}, acted = false, muted = false;
+  try { muted = localStorage.getItem('kpm-chest-mute') === '1'; } catch (e) { muted = false; }
+  function rng(seed) { var s = seed >>> 0; return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296 * 2 - 1; }; }
+  function modes(d, sr, t0, list, amp) {
+    var s0 = Math.floor(t0 * sr);
+    list.forEach(function (m) {
+      var w = 2 * Math.PI * m[0] / sr, tau = m[1] * sr, g = m[2] * amp, len = Math.min(d.length - s0, Math.floor(tau * 7));
+      for (var i = 0; i < len; i++) d[s0 + i] += g * Math.exp(-i / tau) * Math.sin(w * i);
+    });
+  }
+  function noise(d, sr, t0, tau, amp, lp, seed) {
+    var r = rng(seed), s0 = Math.floor(t0 * sr), T = tau * sr, len = Math.min(d.length - s0, Math.floor(T * 6)), y = 0;
+    for (var i = 0; i < len; i++) { y += lp * (r() - y); d[s0 + i] += amp * y * Math.exp(-i / T); }
+  }
+  /* a hinge is friction: the lid sticks, slips, sticks — each slip rings the wood. The slip rate
+     rises and falls with the swing, which is what makes it a creak and not a buzz. */
+  function creak(d, sr, t0, dur, f0, amp, seed) {
+    var r = rng(seed), s0 = Math.floor(t0 * sr), n = Math.min(d.length - s0, Math.floor(dur * sr)), ph = 0;
+    var R1 = .9965, w1 = 2 * Math.PI * f0 / sr, a1 = 2 * R1 * Math.cos(w1), b1 = R1 * R1, y1 = 0, y2 = 0;
+    var R2 = .993,  w2 = 2 * Math.PI * f0 * 1.73 / sr, a2 = 2 * R2 * Math.cos(w2), b2 = R2 * R2, z1 = 0, z2 = 0;
+    for (var i = 0; i < n; i++) {
+      var t = i / n, x = 0;
+      ph += (24 + 72 * Math.sin(Math.PI * t) + 10 * r()) / sr;
+      if (ph >= 1) { ph -= 1; x = 1 + .5 * r(); }
+      var y = x + a1 * y1 - b1 * y2; y2 = y1; y1 = y;
+      var z = x + a2 * z1 - b2 * z2; z2 = z1; z1 = z;
+      d[s0 + i] += amp * Math.pow(Math.sin(Math.PI * t), .6) * (y * .1 + z * .05);
+    }
+  }
+  var LID  = [[118,.07,1],[247,.05,.7],[402,.035,.45],[671,.022,.3],[1130,.012,.2]];
+  var SLAM = [[96,.1,1],[204,.07,.75],[352,.045,.5],[598,.028,.32],[1010,.015,.2]];
+  var STEEL = [[2380,.02,.5],[3710,.013,.35],[5230,.008,.22]];
+  function bake(dur, fill) {
+    var sr = AC.sampleRate, n = Math.ceil(sr * dur), b = AC.createBuffer(1, n, sr), d = b.getChannelData(0), pk = 0, i;
+    fill(d, sr);
+    for (i = 0; i < n; i++) pk = Math.max(pk, Math.abs(d[i]));
+    var fade = Math.floor(sr * .012);
+    for (i = 0; i < n; i++) d[i] = d[i] / (pk || 1) * .9 * (i > n - fade ? (n - i) / fade : 1);
+    return b;
+  }
+  function room() {
+    var sr = AC.sampleRate, n = Math.floor(sr * .42), b = AC.createBuffer(2, n, sr);
+    for (var ch = 0; ch < 2; ch++) {
+      var d = b.getChannelData(ch), r = rng(7 + ch), y = 0;
+      for (var i = 0; i < n; i++) { y += .45 * (r() - y); d[i] = i < sr * .006 ? 0 : y * Math.exp(-i / (sr * .075)); }
+    }
+    return b;
+  }
+  function build() {
+    OUT = AC.createGain(); OUT.gain.value = .6;
+    var wet = AC.createGain(), conv = AC.createConvolver();
+    wet.gain.value = .22; conv.buffer = room();
+    OUT.connect(AC.destination); OUT.connect(conv); conv.connect(wet); wet.connect(AC.destination);
+    BUF.open  = bake(.62, function (d, sr) { creak(d, sr, 0, .3, 980, 1, 11); modes(d, sr, .22, LID, .9); noise(d, sr, .22, .004, .5, .35, 12); });
+    BUF.close = bake(.55, function (d, sr) { creak(d, sr, 0, .13, 1250, .6, 21); modes(d, sr, .1, SLAM, 1); noise(d, sr, .1, .005, .7, .3, 22); modes(d, sr, .18, STEEL, .45); noise(d, sr, .18, .0015, .25, .9, 23); });
+    BUF.pick  = bake(.16, function (d, sr) { modes(d, sr, 0, [[640,.025,.6],[1380,.014,.35],[2210,.008,.2]], 1); noise(d, sr, 0, .0015, .35, .6, 31); });
+    BUF.land  = bake(.26, function (d, sr) { noise(d, sr, 0, .012, .9, .12, 41); modes(d, sr, 0, [[150,.05,.8],[265,.035,.5],[455,.02,.3]], .9); noise(d, sr, .03, .004, .15, .5, 42); });
+    BUF.page  = bake(.1,  function (d, sr) { modes(d, sr, 0, [[900,.015,.5],[1850,.008,.25]], 1); noise(d, sr, 0, .001, .2, .7, 51); });
+    BUF.refuse = bake(.3, function (d, sr) { modes(d, sr, 0, [[180,.04,.8],[330,.025,.4]], 1); modes(d, sr, .1, [[170,.04,.8],[310,.025,.4]], .9); noise(d, sr, 0, .002, .3, .3, 61); noise(d, sr, .1, .002, .3, .3, 62); });
+    BUF.latch = bake(.62, function (d, sr) { modes(d, sr, 0, SLAM, 1); noise(d, sr, 0, .006, .8, .25, 71); modes(d, sr, .16, STEEL, .5); noise(d, sr, .16, .0015, .3, .9, 72); modes(d, sr, .23, STEEL, .4); noise(d, sr, .23, .0015, .25, .9, 73); });
+  }
+  function audio() {
+    if (!acted) return null;                         // a browser plays nothing before the first tap
+    if (!AC) { var C = window.AudioContext || window.webkitAudioContext; if (!C) return null; AC = new C(); build(); }
+    if (AC.state === 'suspended') AC.resume();
+    return AC;
+  }
+  /* Lite Mode is silent in the app too (playSound returns early), so it is silent here */
+  function play(name, rate, gain) {
+    if (muted || document.documentElement.classList.contains('lite-mode')) return;
+    var c = audio(); if (!c || !BUF[name]) return;
+    var src = c.createBufferSource(), g = c.createGain();
+    src.buffer = BUF[name];
+    src.playbackRate.value = (rate || 1) * (1 + (Math.random() - .5) * .04);
+    g.gain.value = gain == null ? 1 : gain;
+    src.connect(g); g.connect(OUT); src.start();
+  }
+  document.addEventListener('pointerdown', function () { acted = true; }, true);
+  document.addEventListener('keydown', function () { acted = true; }, true);
+
+  /* ── the review switches ─────────────────────────────────────────────────────────────────────── */
+  function look(which) {
+    $('bay').setAttribute('data-look', which);
+    document.body.classList.toggle('look-kpm', which === 'kpm');
+    $('lookVideo').classList.toggle('on', which === 'video');
+    $('lookKpm').classList.toggle('on', which === 'kpm');
+  }
+  $('lookVideo').addEventListener('click', function () { look('video'); });
+  $('lookKpm').addEventListener('click', function () { look('kpm'); });
+  function paintSound() { $('sound').textContent = muted ? 'sound off' : 'sound on'; $('sound').classList.toggle('on', !muted); }
+  $('sound').addEventListener('click', function () {
+    muted = !muted;
+    try { localStorage.setItem('kpm-chest-mute', muted ? '1' : '0'); } catch (err) { /* private window */ }
+    paintSound(); play('open');
+  });
+  $('slow').addEventListener('click', function () {
+    SLOW = SLOW === 1 ? 3 : 1;
+    $('bay').classList.toggle('slow', SLOW !== 1); this.classList.toggle('on', SLOW !== 1);
+  });
+  $('lite').addEventListener('click', function () {
+    var on = document.documentElement.classList.toggle('lite-mode');
+    this.classList.toggle('on', on);
+  });
+  function reopen() {
+    setOpen('wh', false); setOpen('van', false);
+    setTimeout(function () { setOpen('wh', true); }, 260 * SLOW);
+    setTimeout(function () { setOpen('van', true); }, 520 * SLOW);
+  }
+  $('replay').addEventListener('click', reopen);
+  $('reset').addEventListener('click', function () {
+    if (SH) closeSheet();
+    reset(); $('find').value = ''; $('findClear').hidden = true;
+    $('report').textContent = ''; $('sjBox').innerHTML = '';
+    drawAll(false); say('van', 'Mulai lagi — muatan kosong');
+  });
+  paintSound();
+  $('stamp').textContent = new Date().toISOString().slice(0, 10);
+
+  reset(); drawAll();
+  /* ?still — both chests open with no travel at all, for a screenshot */
+  if (STILL) {
+    ['--t-gui', '--t-lid', '--t-fade', '--t-slot', '--t-turn'].forEach(function (v) { $('bay').style.setProperty(v, '1ms'); });
+    muted = true; setOpen('wh', true); setOpen('van', true);
+  } else {
+    setTimeout(function () { setOpen('wh', true); }, 450);
+    setTimeout(function () { setOpen('van', true); }, 800);
+  }
+})();
+</script>

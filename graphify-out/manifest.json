@@ -100,8 +100,8 @@
     "semantic_hash": ""
   },
   "src/StockOpnameView.jsx": {
-    "mtime": 1789742368.6405766,
-    "ast_hash": "4e8079bc34baa135e75175756a3ed2ff",
+    "mtime": 1790066279.0131338,
+    "ast_hash": "2686582c9dbaf456831424be1766e69a",
     "semantic_hash": ""
   },
   "src/components/AuditVaultView.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1790052446.3006706,
-    "ast_hash": "d834e798ab18aa81b00c86f9b53bad29",
+    "mtime": 1790128417.9878025,
+    "ast_hash": "250c65496f2b9dfb965f71f6a29ef892",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1790058495.2960572,
-    "ast_hash": "3aa56fcdb75e57e3346ba0f3c78dda59",
+    "mtime": 1790066340.6976793,
+    "ast_hash": "a4a71daae793431a4952502768359a2d",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1790052446.2936723,
-    "ast_hash": "c3970afbc9d80dd8b88bb7f7087e58aa",
+    "mtime": 1790128390.8794925,
+    "ast_hash": "bc066fc88e29f32db70117cb652eb58d",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1790052143.1433353,
-    "ast_hash": "e62decc33b6a8c17884a5e1697d8bdb2",
+    "mtime": 1790078925.929641,
+    "ast_hash": "5d6540d6031e27abc60bbe7e3e70e0bd",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -1065,8 +1065,8 @@
     "semantic_hash": ""
   },
   "tools/lab-looks.js": {
-    "mtime": 1790044646.5188928,
-    "ast_hash": "c749e8b4238376729c237119ac984927",
+    "mtime": 1790060992.6641552,
+    "ast_hash": "c3b502b21511cce88a8ee66ae8beab91",
     "semantic_hash": ""
   },
   "src/components/NixieCount.jsx": {
@@ -1097,6 +1097,21 @@
   "src/utils/secretHash.js": {
     "mtime": 1790058148.9478285,
     "ast_hash": "20abe15c7b7a7a5cbb0402a71f7b9225",
+    "semantic_hash": ""
+  },
+  "tools/lab-fleet-load.jsx": {
+    "mtime": 1790078925.926636,
+    "ast_hash": "c5605bfcfd404796dfe7dcb2b90530c9",
+    "semantic_hash": ""
+  },
+  "tools/chest-preview.html": {
+    "mtime": 1790083570.3492322,
+    "ast_hash": "febe5546df33d59f1d5137e9e3539431",
+    "semantic_hash": ""
+  },
+  "tools/chest-transfer.html": {
+    "mtime": 1790128250.162681,
+    "ast_hash": "b5e514606731b147dd8c423ff183d909",
     "semantic_hash": ""
   }
 }
