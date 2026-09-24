@@ -65,8 +65,8 @@
     "semantic_hash": ""
   },
   "src/FleetCanvasManager.jsx": {
-    "mtime": 1790207544.0752661,
-    "ast_hash": "82b7800350b6e029f9346657ec450268",
+    "mtime": 1790211619.4740798,
+    "ast_hash": "27972ca6cac1abdead65262c19c61e7f",
     "semantic_hash": ""
   },
   "src/HallOfFameView.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1790206164.3770585,
-    "ast_hash": "c2520dd001c6b88eefa89e2128ce0472",
+    "mtime": 1790208380.410502,
+    "ast_hash": "40fd098f5f39e43bd209f003936b45f4",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1790207584.4269147,
-    "ast_hash": "153f2f8848748792b769842217bdc746",
+    "mtime": 1790211641.837274,
+    "ast_hash": "f0bcec949dbe8fd782c41900c862c0b5",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1790206138.924138,
-    "ast_hash": "9ee0e49f92ebd1784400d24ec025c7db",
+    "mtime": 1790208356.749801,
+    "ast_hash": "73762b018d8d56193590571914391948",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {

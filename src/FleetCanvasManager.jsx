@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
     Truck, UserPlus, Save, Archive,
     MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
-    ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare, Globe, Search, Plus
+    ShieldCheck, ChevronDown, ChevronUp, ChevronLeft, FileText, Printer, MessageSquare, Globe, Search, Plus
 } from 'lucide-react';
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord } from './config/permissions';
@@ -11,6 +11,7 @@ import { normalizeRegion } from './config/permissions';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import LoadingBay from './components/LoadingBay.jsx';
+import FolderCard from './components/FolderCard.jsx';
 import { damagedInVan } from './utils/vanBay';
 
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, masterUserId = null }) {
@@ -171,6 +172,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
     /* how many lines the van-loading bay's muatan holds, so switching the salesman can ask first */
     const [bayLines, setBayLines] = useState(0);
+    /* the roster folder that is open ("PROVINCE › LOCATION"), when more than one place is in view */
+    const [rosterPlace, setRosterPlace] = useState(null);
 
     const [showHistory, setShowHistory] = useState(false);
     const [viewingReceipt, setViewingReceipt] = useState(null);
@@ -637,6 +640,56 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         }
     };
 
+    /* ── THE ROSTER (2026-09-24, his "redesign the whole left panel but dont forget to include all the logic") ──
+       The same search, grouping, rank order, guards and doors as before, drawn as his folders and in the palette.
+       Each row says what the van holds (packs and items, with a light), not only a LOADED word - his 2026-09-22
+       "better UI than that for our roster" was about missing information, not missing style. */
+    const ROSTER_FOLDER = 'kpm-folder-quiet w-full bg-[var(--raised)] border-[var(--line-2)] hover:border-[var(--accent-edge)] transition-colors';
+    const loadOf = (m) => (m.activeCanvas || []).reduce((sum, r) => sum + convertToBks(r.qty, r.unit, inventory.find(p => p.id === r.productId)), 0);
+    /* switching the salesman while the bay's muatan has lines asks first, through the dialog gate */
+    const pickAgent = async (m) => {
+        if (bayLines > 0 && selectedAgent?.id !== m.id && !await confirmAction(`Muatan ${selectedAgent?.name} belum dimuat. Pindah ke ${m.name} dan buang muatan itu?`)) return;
+        setSelectedAgent(m);
+        setShowHistory(false);
+    };
+    const rosterRow = (m) => {
+        const bks = Math.round(loadOf(m));
+        const items = (m.activeCanvas || []).filter(r => Number(r.qty) > 0).length;
+        const on = selectedAgent?.id === m.id;
+        const Icon = m.userRole === 'ADMIN' ? ShieldCheck : m.userRole === 'AREA_ADMIN' ? Globe : m.role === 'Canvas' ? Truck : Activity;
+        return (
+            <div key={m.id} role="button" tabIndex={0} onClick={() => pickAgent(m)} onKeyDown={(e) => { if (e.key === 'Enter' && e.target === e.currentTarget) pickAgent(m); }}
+                className={`p-3 rounded-xl border cursor-pointer transition-colors ${on ? 'bg-[var(--raised)] border-[var(--accent-edge)]' : 'bg-[var(--panel)] border-[var(--line-2)] hover:border-[var(--accent-edge)]'}`}>
+                <div className="flex items-start gap-3">
+                    <span className={`w-10 h-10 rounded-full grid place-items-center shrink-0 border bg-[var(--inset)] ${m.userRole === 'ADMIN' || m.userRole === 'AREA_ADMIN' ? 'border-[var(--accent-edge)] text-[var(--accent-ink)]' : 'border-[var(--line-2)] text-[var(--ink-muted)]'}`}><Icon size={18}/></span>
+                    <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm text-[var(--ink)] truncate">{m.name}</p>
+                        <p className="text-[11px] text-[var(--ink-muted)] truncate mt-0.5">
+                            {/* HIS WORD FOR THE TIER, not the code's. This card printed a hardcoded "Area Admin" while his company
+                                calls that tier HQ SALES MANAGER. `tierWord` reads the labels he set in Settings, so a rename
+                                shows up here without anyone editing this line. */}
+                            {m.userRole === 'ADMIN' ? '👑 Master Admin (Global)' : m.userRole === 'AREA_ADMIN' ? `📍 ${tierWord('AREA_ADMIN') || 'HQ Sales Manager'} (${m.location})` : `${m.role || ''}${m.vehicle ? ` • ${m.vehicle}` : ''}`}
+                        </p>
+                        <p className="flex items-center gap-2 mt-1.5 text-[11px] font-mono text-[var(--ink-muted)]">
+                            <i className={`w-2 h-2 rounded-full shrink-0 ${bks > 0 ? 'bg-[var(--gold)]' : 'bg-[var(--line-2)]'}`} aria-hidden="true" />
+                            {bks > 0 ? `${bks.toLocaleString('id-ID')} Bks · ${items} ${items === 1 ? 'item' : 'items'} in the van` : 'Van empty'}
+                        </p>
+                    </div>
+                    <span className={`kpm-read shrink-0 ${bks > 0 ? 'on' : ''}`}>{bks > 0 ? 'Loaded' : 'Empty'}</span>
+                </div>
+                <div className="flex justify-end gap-1 mt-1 -mb-1">
+                    <button onClick={(e) => handleViewClick(e, m)} className="text-[var(--ink-muted)] hover:text-[var(--accent-ink)]" title="View Profile Details" aria-label={`View ${m.name}`}><User size={15}/></button>
+                    {canEditFleet && (
+                        <>
+                            <button onClick={(e) => handleEditClick(e, m)} className="text-[var(--ink-muted)] hover:text-[var(--accent-ink)]" title="Edit Profile" aria-label={`Edit ${m.name}`}><Pencil size={15}/></button>
+                            <button data-kpm-del data-label="Delete" onClick={(e) => handleDeleteAgent(e, m)} className="text-[var(--ink-muted)] hover:text-[var(--danger-ink)]" title="Remove Profile" aria-label={`Remove ${m.name}`}><Trash2 size={15}/></button>
+                        </>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
     const handleWhatsAppShare = () => {
         if (!viewingReceipt) return;
         const isReturReceipt = viewingReceipt.type === 'RETUR' || viewingReceipt.paymentType === 'Retur/BS';
@@ -870,19 +923,19 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             )}
 
             {/* LEFT PANEL: FLEET ROSTER */}
-            <div className="hide-on-print w-full md:w-1/3 bg-slate-800/50 border-r border-slate-700 flex flex-col">
-                <div className="p-5 border-b border-slate-700 flex justify-between items-center bg-black/20">
-                    <div>
-                        <h2 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-wider">
-                            <Truck size={20} className="text-blue-500"/> 
+            <div className="hide-on-print w-full md:w-1/3 bg-[var(--panel)] border-r border-[var(--line-2)] flex flex-col">
+                <div className="p-4 border-b border-[var(--line-2)] flex justify-between items-center gap-3 bg-[var(--raised)]">
+                    <div className="min-w-0">
+                        <h2 className="text-base font-black text-[var(--ink)] flex items-center gap-2 uppercase tracking-wider truncate">
+                            <Truck size={18} className="text-[var(--accent-ink)] shrink-0"/>
                             {isAreaAdmin ? `${branchPathLocation} Roster` : 'Fleet Roster'}
                         </h2>
-                        <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-1">
-                            Active Personnel: {agents.length}
+                        <p className="text-[10px] font-mono text-[var(--ink-muted)] uppercase tracking-widest mt-1">
+                            Active Personnel: {agents.length} · {agents.filter(m => loadOf(m) > 0).length} vans loaded
                         </p>
                     </div>
                     {canEditFleet && (
-                        <button onClick={() => { setIsAddingAgent(!isAddingAgent); setEditingAgentId(null); setNewAgent(defaultAgentState); setIsReadOnlyMode(false); }} className="bg-blue-600 hover:bg-blue-500 p-2 rounded-xl transition-colors">
+                        <button onClick={() => { setIsAddingAgent(!isAddingAgent); setEditingAgentId(null); setNewAgent(defaultAgentState); setIsReadOnlyMode(false); }} className="kpm-btn key shrink-0" aria-label={isAddingAgent && !isReadOnlyMode ? 'Close the form' : 'Add personnel'}>
                             {isAddingAgent && !isReadOnlyMode ? <X size={18}/> : <UserPlus size={18}/>}
                         </button>
                     )}
@@ -890,30 +943,30 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                     {isAddingAgent && (
-                        <div className={`bg-slate-800 p-4 rounded-xl border-2 border-dashed ${isReadOnlyMode ? 'border-emerald-500/50' : 'border-blue-500/50'} mb-4 animate-slide-down`}>
-                            <h3 className={`text-xs font-bold uppercase tracking-widest mb-3 ${isReadOnlyMode ? 'text-emerald-400' : 'text-blue-400'}`}>
+                        <div className={`bg-[var(--raised)] p-4 rounded-xl border-2 border-dashed ${isReadOnlyMode ? 'border-[var(--accent-edge)]' : 'border-[var(--accent-edge)]'} mb-4 animate-slide-down`}>
+                            <h3 className={`text-xs font-bold uppercase tracking-widest mb-3 ${isReadOnlyMode ? 'text-[var(--accent-ink)]' : 'text-[var(--accent-ink)]'}`}>
                                 {isReadOnlyMode ? 'Profile Details' : editingAgentId ? 'Edit Profile' : 'Deploy New Personnel'}
                             </h3>
                             
-                            <select disabled={isReadOnlyMode} value={newAgent.role} onChange={e => setNewAgent({...newAgent, role: e.target.value})} className={`w-full border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none font-bold ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}>
+                            <select disabled={isReadOnlyMode} value={newAgent.role} onChange={e => setNewAgent({...newAgent, role: e.target.value})} className={`w-full border border-[var(--line-2)] rounded p-2.5 text-xs text-[var(--ink)] mb-2 outline-none font-bold ${isReadOnlyMode ? 'bg-[var(--raised)] opacity-60 cursor-not-allowed' : 'bg-[var(--inset)] focus:border-[var(--accent-edge)]'}`}>
                                 <option value="Motorist">Sales Motorist (Motorbike)</option>
                                 <option value="Canvas">Sales Canvas (Car / Van)</option>
                             </select>
 
-                            <input disabled={isReadOnlyMode} type="text" placeholder="Personnel Name" value={newAgent.name} onChange={e => setNewAgent({...newAgent, name: e.target.value})} className={`w-full border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}/>
+                            <input disabled={isReadOnlyMode} type="text" placeholder="Personnel Name" value={newAgent.name} onChange={e => setNewAgent({...newAgent, name: e.target.value})} className={`w-full border border-[var(--line-2)] rounded p-2.5 text-xs text-[var(--ink)] mb-2 outline-none ${isReadOnlyMode ? 'bg-[var(--raised)] opacity-60 cursor-not-allowed' : 'bg-[var(--inset)] focus:border-[var(--accent-edge)]'}`}/>
                             
                             <div className="flex gap-2 mb-2">
-                                <input disabled={isReadOnlyMode} type="email" placeholder="Google Account Email (Login)" value={newAgent.email} onChange={e => setNewAgent({...newAgent, email: e.target.value})} className={`flex-1 border border-blue-500/50 rounded p-2.5 text-xs text-white outline-none font-mono ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}/>
+                                <input disabled={isReadOnlyMode} type="email" placeholder="Google Account Email (Login)" value={newAgent.email} onChange={e => setNewAgent({...newAgent, email: e.target.value})} className={`flex-1 border border-[var(--accent-edge)] rounded p-2.5 text-xs text-[var(--ink)] outline-none font-mono ${isReadOnlyMode ? 'bg-[var(--raised)] opacity-60 cursor-not-allowed' : 'bg-[var(--inset)] focus:border-[var(--accent-edge)]'}`}/>
                                 {isAdmin && !isReadOnlyMode && (
                                     <select 
-                                        className="bg-slate-900 border border-slate-600 rounded p-2.5 text-xs font-black uppercase tracking-widest transition-colors cursor-pointer outline-none text-white focus:border-blue-500"
+                                        className="bg-[var(--inset)] border border-[var(--line-2)] rounded p-2.5 text-xs font-black uppercase tracking-widest transition-colors cursor-pointer outline-none text-[var(--ink)] focus:border-[var(--accent-edge)]"
                                         value={newAgent.userRole || 'AGENT'} 
                                         onChange={(e) => setNewAgent({...newAgent, userRole: e.target.value})}
                                         style={{ colorScheme: 'dark' }}
                                         title="Assign Corporate Matrix Tier"
                                     >
                                         {DYNAMIC_TIERS.filter(t => !['ADMIN', 'COMPANY_OWNER', 'DEVELOPER'].includes(t.id)).map(t => (
-                                            <option key={t.id} value={t.id} className="bg-slate-900 text-white">
+                                            <option key={t.id} value={t.id} className="bg-[var(--inset)] text-[var(--ink)]">
                                                 {t.label}
                                             </option>
                                         ))}
@@ -924,7 +977,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             {/* Silence would make this look like a normal save that happens to be
                                 allowed. It is a different save: no login mapping is written. */}
                             {!!user?.email && isGlobalAdmin && ['', user.email.toLowerCase().trim()].includes(newAgent.email.trim().toLowerCase()) && (
-                                <p className="text-[10px] text-amber-400 font-bold mb-2 leading-relaxed">
+                                <p className="text-[10px] text-[var(--accent-ink)] font-bold mb-2 leading-relaxed">
                                     🧪 TEST PERSONNEL — left empty, this saves as <span className="font-mono">{user.email}</span>,
                                     which is your own account in another form. No separate login is created, nobody signs in
                                     as them, and your own sign-in stays Tier 1. Phone is not required for these. Give them a
@@ -935,15 +988,15 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             <div className="flex gap-2 mb-2">
                                 {isNewProv || existingProvinces.length === 0 ? (
                                     <div className="flex-1 flex gap-2">
-                                        <input disabled={isReadOnlyMode} type="text" placeholder="Type New Province..." value={newAgent.province || ''} onChange={e => setNewAgent({...newAgent, province: e.target.value})} className={`flex-1 border border-purple-500 rounded p-2.5 text-xs text-white outline-none focus:border-purple-400 ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900'}`}/>
-                                        {existingProvinces.length > 0 && !isReadOnlyMode && <button onClick={() => setIsNewProv(false)} className="bg-slate-800 p-2.5 rounded text-slate-400 hover:text-white"><X size={14}/></button>}
+                                        <input disabled={isReadOnlyMode} type="text" placeholder="Type New Province..." value={newAgent.province || ''} onChange={e => setNewAgent({...newAgent, province: e.target.value})} className={`flex-1 border border-[var(--accent-edge)] rounded p-2.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent-edge)] ${isReadOnlyMode ? 'bg-[var(--raised)] opacity-60 cursor-not-allowed' : 'bg-[var(--inset)]'}`}/>
+                                        {existingProvinces.length > 0 && !isReadOnlyMode && <button onClick={() => setIsNewProv(false)} className="bg-[var(--raised)] p-2.5 rounded text-[var(--ink-muted)] hover:text-[var(--ink)]"><X size={14}/></button>}
                                     </div>
                                 ) : (
                                     <div className="flex-1 flex gap-2">
-                                        <select disabled={isReadOnlyMode} value={newAgent.province || existingProvinces[0]} onChange={e => setNewAgent({...newAgent, province: e.target.value})} className={`flex-1 border border-purple-500/50 rounded p-2.5 text-xs text-white outline-none focus:border-purple-500 uppercase ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900'}`}>
+                                        <select disabled={isReadOnlyMode} value={newAgent.province || existingProvinces[0]} onChange={e => setNewAgent({...newAgent, province: e.target.value})} className={`flex-1 border border-[var(--accent-edge)] rounded p-2.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent-edge)] uppercase ${isReadOnlyMode ? 'bg-[var(--raised)] opacity-60 cursor-not-allowed' : 'bg-[var(--inset)]'}`}>
                                             {existingProvinces.map(p => <option key={p} value={p}>{p}</option>)}
                                         </select>
-                                        {!isReadOnlyMode && <button onClick={() => { setIsNewProv(true); setNewAgent({...newAgent, province: ''}); }} className="bg-purple-900/50 border border-purple-500/50 text-purple-400 p-2.5 rounded hover:bg-purple-400 transition-colors" title="Add New Province"><Plus size={14}/></button>}
+                                        {!isReadOnlyMode && <button onClick={() => { setIsNewProv(true); setNewAgent({...newAgent, province: ''}); }} className="bg-[var(--inset)] border border-[var(--accent-edge)] text-[var(--accent-ink)] p-2.5 rounded hover:bg-[var(--gold)] transition-colors" title="Add New Province"><Plus size={14}/></button>}
                                     </div>
                                 )}
                             </div>
@@ -951,26 +1004,26 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             <div className="flex gap-2 mb-2">
                                 {isNewLoc || existingLocations.length === 0 ? (
                                     <div className="flex-1 flex gap-2">
-                                        <input disabled={isReadOnlyMode} type="text" placeholder="Type New Area..." value={newAgent.location || ''} onChange={e => setNewAgent({...newAgent, location: e.target.value})} className={`flex-1 border border-orange-500 rounded p-2.5 text-xs text-white outline-none focus:border-orange-400 ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900'}`}/>
-                                        {existingLocations.length > 0 && !isReadOnlyMode && <button onClick={() => setIsNewLoc(false)} className="bg-slate-800 p-2.5 rounded text-slate-400 hover:text-white"><X size={14}/></button>}
+                                        <input disabled={isReadOnlyMode} type="text" placeholder="Type New Area..." value={newAgent.location || ''} onChange={e => setNewAgent({...newAgent, location: e.target.value})} className={`flex-1 border border-[var(--accent-edge)] rounded p-2.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent-edge)] ${isReadOnlyMode ? 'bg-[var(--raised)] opacity-60 cursor-not-allowed' : 'bg-[var(--inset)]'}`}/>
+                                        {existingLocations.length > 0 && !isReadOnlyMode && <button onClick={() => setIsNewLoc(false)} className="bg-[var(--raised)] p-2.5 rounded text-[var(--ink-muted)] hover:text-[var(--ink)]"><X size={14}/></button>}
                                     </div>
                                 ) : (
                                     <div className="flex-1 flex gap-2">
-                                        <select disabled={isReadOnlyMode} value={newAgent.location || existingLocations[0]} onChange={e => setNewAgent({...newAgent, location: e.target.value})} className={`flex-1 border border-orange-500/50 rounded p-2.5 text-xs text-white outline-none focus:border-orange-500 uppercase ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900'}`}>
+                                        <select disabled={isReadOnlyMode} value={newAgent.location || existingLocations[0]} onChange={e => setNewAgent({...newAgent, location: e.target.value})} className={`flex-1 border border-[var(--accent-edge)] rounded p-2.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent-edge)] uppercase ${isReadOnlyMode ? 'bg-[var(--raised)] opacity-60 cursor-not-allowed' : 'bg-[var(--inset)]'}`}>
                                             {existingLocations.map(l => <option key={l} value={l}>{l}</option>)}
                                         </select>
-                                        {!isReadOnlyMode && <button onClick={() => { setIsNewLoc(true); setNewAgent({...newAgent, location: ''}); }} className="bg-orange-900/50 border border-orange-500/50 text-orange-400 p-2.5 rounded hover:bg-orange-400 transition-colors" title="Add New Area"><Plus size={14}/></button>}
+                                        {!isReadOnlyMode && <button onClick={() => { setIsNewLoc(true); setNewAgent({...newAgent, location: ''}); }} className="bg-[var(--inset)] border border-[var(--accent-edge)] text-[var(--accent-ink)] p-2.5 rounded hover:bg-[var(--gold)] transition-colors" title="Add New Area"><Plus size={14}/></button>}
                                     </div>
                                 )}
                             </div>
 
-                            <input disabled={isReadOnlyMode} type="text" placeholder="WhatsApp Number" value={newAgent.phone} onChange={e => setNewAgent({...newAgent, phone: e.target.value})} className={`w-full border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}/>
-                            <input disabled={isReadOnlyMode} type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className={`w-full border border-slate-600 rounded p-2.5 text-xs text-white mb-2 outline-none ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}/>
-                            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Join Date</label>
-                            <input disabled={isReadOnlyMode} type="date" value={newAgent.joinDate || ''} onChange={e => setNewAgent({...newAgent, joinDate: e.target.value})} className={`w-full border border-slate-600 rounded p-2.5 text-xs text-white mb-4 outline-none ${isReadOnlyMode ? 'bg-slate-800 opacity-60 cursor-not-allowed' : 'bg-slate-900 focus:border-blue-500'}`}/>
+                            <input disabled={isReadOnlyMode} type="text" placeholder="WhatsApp Number" value={newAgent.phone} onChange={e => setNewAgent({...newAgent, phone: e.target.value})} className={`w-full border border-[var(--line-2)] rounded p-2.5 text-xs text-[var(--ink)] mb-2 outline-none ${isReadOnlyMode ? 'bg-[var(--raised)] opacity-60 cursor-not-allowed' : 'bg-[var(--inset)] focus:border-[var(--accent-edge)]'}`}/>
+                            <input disabled={isReadOnlyMode} type="text" placeholder="Vehicle License Plate (Optional)" value={newAgent.vehicle} onChange={e => setNewAgent({...newAgent, vehicle: e.target.value})} className={`w-full border border-[var(--line-2)] rounded p-2.5 text-xs text-[var(--ink)] mb-2 outline-none ${isReadOnlyMode ? 'bg-[var(--raised)] opacity-60 cursor-not-allowed' : 'bg-[var(--inset)] focus:border-[var(--accent-edge)]'}`}/>
+                            <label className="text-[11px] font-bold text-[var(--ink-muted)] uppercase tracking-widest block mb-1">Join Date</label>
+                            <input disabled={isReadOnlyMode} type="date" value={newAgent.joinDate || ''} onChange={e => setNewAgent({...newAgent, joinDate: e.target.value})} className={`w-full border border-[var(--line-2)] rounded p-2.5 text-xs text-[var(--ink)] mb-4 outline-none ${isReadOnlyMode ? 'bg-[var(--raised)] opacity-60 cursor-not-allowed' : 'bg-[var(--inset)] focus:border-[var(--accent-edge)]'}`}/>
 
-                            <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 mb-4 shadow-inner">
-                                <h4 className="text-[10px] font-bold text-emerald-500 flex items-center gap-1 uppercase tracking-widest mb-3 border-b border-slate-700 pb-1"><ShieldCheck size={12}/> Agent Security Limits</h4>
+                            <div className="bg-[var(--inset)] border border-[var(--line-2)] rounded-lg p-3 mb-4 shadow-inner">
+                                <h4 className="text-[10px] font-bold text-[var(--accent-ink)] flex items-center gap-1 uppercase tracking-widest mb-3 border-b border-[var(--line-2)] pb-1"><ShieldCheck size={12}/> Agent Security Limits</h4>
                                 
                                 {/* 🗑️ "ALLOW ROSTER MANAGEMENT" USED TO BE A CHECKBOX HERE, PER PERSON.
                                     It is gone on his word — *"moved that into matrix on setting
@@ -982,8 +1035,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     old documents and is simply never read. */}
 
                                 <div className="mb-4">
-                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Operational Privileges</label>
-                                    <label className={`flex items-center gap-2 cursor-pointer text-xs font-bold px-3 py-2 rounded-lg border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : ''} ${newAgent.allowRetur ? 'bg-red-900/30 border-red-500 text-red-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
+                                    <label className="text-[11px] font-bold text-[var(--ink-muted)] uppercase tracking-widest block mb-2">Operational Privileges</label>
+                                    <label className={`flex items-center gap-2 cursor-pointer text-xs font-bold px-3 py-2 rounded-lg border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : ''} ${newAgent.allowRetur ? 'bg-[var(--inset)] border-[var(--danger)] text-[var(--danger-ink)]' : 'bg-[var(--raised)] border-[var(--line-2)] text-[var(--ink-muted)] hover:border-[var(--line-2)]'}`}>
                                         <input type="checkbox" className="hidden" disabled={isReadOnlyMode} checked={newAgent.allowRetur} onChange={() => setNewAgent({...newAgent, allowRetur: !newAgent.allowRetur})} />
                                         Allow Tarik Barang / Retur (Return Unsold Goods)
                                     </label>
@@ -991,17 +1044,17 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         credit" — the company owes nothing back, so paying cash out is not a
                                         normal agent power. He chose to keep it for real cases (shop closing,
                                         dispute) but locked: OFF by default, granted per person. */}
-                                    <label className={`mt-2 flex items-center gap-2 cursor-pointer text-xs font-bold px-3 py-2 rounded-lg border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : ''} ${newAgent.allowCashRefund ? 'bg-red-900/30 border-red-500 text-red-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'}`}>
+                                    <label className={`mt-2 flex items-center gap-2 cursor-pointer text-xs font-bold px-3 py-2 rounded-lg border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : ''} ${newAgent.allowCashRefund ? 'bg-[var(--inset)] border-[var(--danger)] text-[var(--danger-ink)]' : 'bg-[var(--raised)] border-[var(--line-2)] text-[var(--ink-muted)] hover:border-[var(--line-2)]'}`}>
                                         <input type="checkbox" className="hidden" disabled={isReadOnlyMode} checked={!!newAgent.allowCashRefund} onChange={() => setNewAgent({...newAgent, allowCashRefund: !newAgent.allowCashRefund})} />
                                         Allow Cash Refund / Buyback (pays money OUT)
                                     </label>
                                 </div>
 
                                 <div className="mb-3">
-                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Allowed Payment Methods</label>
+                                    <label className="text-[11px] font-bold text-[var(--ink-muted)] uppercase tracking-widest block mb-2">Allowed Payment Methods</label>
                                     <div className="flex flex-wrap gap-2">
                                         {['Cash', 'QRIS', 'Transfer', 'Titip'].map(method => (
-                                            <label key={method} className={`flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} ${newAgent.allowedPayments.includes(method) ? 'bg-blue-900/30 border-blue-500 text-blue-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
+                                            <label key={method} className={`flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} ${newAgent.allowedPayments.includes(method) ? 'bg-[var(--inset)] border-[var(--accent-edge)] text-[var(--accent-ink)]' : 'bg-[var(--raised)] border-[var(--line-2)] text-[var(--ink-muted)]'}`}>
                                                 <input type="checkbox" className="hidden" disabled={isReadOnlyMode} checked={newAgent.allowedPayments.includes(method)} onChange={() => togglePayment(method)} />
                                                 {method === 'Titip' ? 'Consignment' : method}
                                             </label>
@@ -1009,10 +1062,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Allowed Price Tiers</label>
+                                    <label className="text-[11px] font-bold text-[var(--ink-muted)] uppercase tracking-widest block mb-2">Allowed Price Tiers</label>
                                     <div className="flex flex-wrap gap-2">
                                         {['Ecer', 'Retail', 'Grosir'].map(tier => (
-                                            <label key={tier} className={`flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} ${newAgent.allowedTiers.includes(tier) ? 'bg-emerald-900/30 border-emerald-500 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
+                                            <label key={tier} className={`flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} ${newAgent.allowedTiers.includes(tier) ? 'bg-[var(--inset)] border-[var(--accent-edge)] text-[var(--accent-ink)]' : 'bg-[var(--raised)] border-[var(--line-2)] text-[var(--ink-muted)]'}`}>
                                                 <input type="checkbox" className="hidden" disabled={isReadOnlyMode} checked={newAgent.allowedTiers.includes(tier)} onChange={() => toggleTier(tier)} />
                                                 {tier}
                                             </label>
@@ -1020,20 +1073,20 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     </div>
                                 </div>
                                 <div className="mt-3">
-                                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Hand-off approval branches</label>
+                                    <label className="text-[11px] font-bold text-[var(--ink-muted)] uppercase tracking-widest block mb-2">Hand-off approval branches</label>
                                     <div className="flex flex-wrap gap-2">
                                         {approvalBranches.map(region => (
-                                            <label key={region} className={`flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} ${(newAgent.approvalRegions || []).includes(region) ? 'bg-amber-900/30 border-amber-500 text-amber-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}>
+                                            <label key={region} className={`flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded border transition-colors ${isReadOnlyMode ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'} ${(newAgent.approvalRegions || []).includes(region) ? 'bg-[var(--inset)] border-[var(--accent-edge)] text-[var(--accent-ink)]' : 'bg-[var(--raised)] border-[var(--line-2)] text-[var(--ink-muted)]'}`}>
                                                 <input type="checkbox" className="hidden" disabled={isReadOnlyMode} checked={(newAgent.approvalRegions || []).includes(region)} onChange={() => toggleApprovalRegion(region)} />
                                                 {region}
                                             </label>
                                         ))}
                                         {approvalBranches.length === 0 && (
-                                            <span className="text-[10px] text-slate-500">No branches yet — give your personnel a branch first.</span>
+                                            <span className="text-[10px] text-[var(--ink-muted)]">No branches yet — give your personnel a branch first.</span>
                                         )}
                                     </div>
                                     {/* A control that quietly does something while unticked still has to say so. */}
-                                    <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
+                                    <p className="text-[10px] text-[var(--ink-muted)] mt-2 leading-relaxed">
                                         {(newAgent.approvalRegions || []).length === 0
                                             ? 'Nothing ticked: this person follows the default \u2014 a Regional Admin authorises hand-offs into their own branch, and nobody else does.'
                                             : `Only this person authorises hand-offs into ${(newAgent.approvalRegions || []).join(', ')}, whatever their rank — including stores handed to them. That branch stops falling to its Regional Admin by default.`}
@@ -1042,11 +1095,11 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             </div>
                             
                             {isReadOnlyMode ? (
-                                <button onClick={() => setIsAddingAgent(false)} className="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-lg text-xs uppercase tracking-widest transition-colors shadow-md">
+                                <button onClick={() => setIsAddingAgent(false)} className="w-full bg-[var(--panel)] hover:bg-[var(--panel)] text-[var(--ink)] font-bold py-3 rounded-lg text-xs uppercase tracking-widest transition-colors shadow-md">
                                     Close Profile
                                 </button>
                             ) : (
-                                <button onClick={handleSaveAgent} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg text-xs uppercase tracking-widest transition-colors shadow-lg active:scale-95">
+                                <button onClick={handleSaveAgent} className="w-full bg-[var(--gold)] hover:brightness-110 text-[var(--gold-ink)] font-bold py-3 rounded-lg text-xs uppercase tracking-widest transition-colors shadow-lg active:scale-95">
                                     {editingAgentId ? 'Save Profile & Permissions' : 'Authorize & Register'}
                                 </button>
                             )}
@@ -1060,125 +1113,96 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                            all when the read was refused, when the admin's own record was missing,
                            and when their branch was simply empty. Name the cause. */
                         <div className="text-center py-10 px-4">
-                            <Truck size={48} className="mx-auto text-slate-700 mb-3 opacity-50"/>
+                            <Truck size={48} className="mx-auto text-[var(--ink-dim)] mb-3 opacity-50"/>
                             {isFetchingFleet ? (
-                                <p className="text-slate-400 text-sm">Loading the roster…</p>
+                                <p className="text-[var(--ink-muted)] text-sm">Loading the roster…</p>
                             ) : fleetError ? (
                                 <>
-                                    <p className="text-red-400 text-sm font-bold">The roster could not be read.</p>
-                                    <p className="text-slate-400 text-xs mt-1.5 leading-relaxed">
+                                    <p className="text-[var(--danger-ink)] text-sm font-bold">The roster could not be read.</p>
+                                    <p className="text-[var(--ink-muted)] text-xs mt-1.5 leading-relaxed">
                                         The database refused this request (<span className="font-mono">{fleetError}</span>). Nobody is missing — this screen could not look. Show this code to the owner.
                                     </p>
                                 </>
                             ) : isAreaAdmin && !myProfile ? (
                                 <>
-                                    <p className="text-amber-400 text-sm font-bold">Your own staff record was not found.</p>
-                                    <p className="text-slate-400 text-xs mt-1.5 leading-relaxed">
+                                    <p className="text-[var(--accent-ink)] text-sm font-bold">Your own staff record was not found.</p>
+                                    <p className="text-[var(--ink-muted)] text-xs mt-1.5 leading-relaxed">
                                         This screen shows the branch YOU are posted to, and it reads that from your record in Fleet &amp; Roster. Without it there is no branch to show, so the roster is empty rather than wrong. The owner can add you on this screen.
                                     </p>
                                 </>
                             ) : isAreaAdmin && searchLocation === 'unassigned' ? (
                                 <>
-                                    <p className="text-amber-400 text-sm font-bold">You are not posted to a branch yet.</p>
-                                    <p className="text-slate-400 text-xs mt-1.5 leading-relaxed">
+                                    <p className="text-[var(--accent-ink)] text-sm font-bold">You are not posted to a branch yet.</p>
+                                    <p className="text-[var(--ink-muted)] text-xs mt-1.5 leading-relaxed">
                                         Your record has no area set, so there is no team to list. The owner can set your area in Fleet &amp; Roster.
                                     </p>
                                 </>
                             ) : isAreaAdmin && activeMotorists.length > 0 ? (
                                 <>
-                                    <p className="text-slate-300 text-sm font-bold">Nobody is posted to {branchPathLocation}.</p>
-                                    <p className="text-slate-400 text-xs mt-1.5 leading-relaxed">
+                                    <p className="text-[var(--ink)] text-sm font-bold">Nobody is posted to {branchPathLocation}.</p>
+                                    <p className="text-[var(--ink-muted)] text-xs mt-1.5 leading-relaxed">
                                         {activeMotorists.length} people are on the company roster; none of them has this area set. You only see your own branch.
                                     </p>
                                 </>
                             ) : (
-                                <p className="text-slate-400 text-sm">No personnel found.</p>
+                                <p className="text-[var(--ink-muted)] text-sm">No personnel found.</p>
                             )}
                         </div>
                     ) : (
                         <>
-                            <div className="mb-4 relative">
-                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                <input type="text" placeholder="Search Name, Role, Area, Email..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-slate-900/80 border border-slate-700 focus:border-blue-500 rounded-lg py-2.5 pl-9 pr-3 text-xs text-white outline-none transition-colors"/>
-                            </div>
+                            <label className="relative block mb-3">
+                                <span className="sr-only">Search the roster</span>
+                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]" />
+                                <input type="text" placeholder="Search name, role, area, email…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-[var(--inset)] border border-[var(--line-2)] focus:border-[var(--accent-edge)] rounded-xl py-2.5 pl-9 pr-3 text-sm text-[var(--ink)] placeholder:text-[var(--ink-dim)] outline-none transition-colors"/>
+                            </label>
 
-                            {Object.entries(
-                                agents.filter(a => {
-                                    if (!searchTerm) return true;
-                                    const term = searchTerm.toLowerCase();
-                                    return (a.name?.toLowerCase().includes(term) || a.email?.toLowerCase().includes(term) || a.userRole?.toLowerCase().includes(term) || a.location?.toLowerCase().includes(term) || a.province?.toLowerCase().includes(term));
-                                }).reduce((acc, agent) => {
-                                    let prov = String(agent.province || 'CENTRAL JAVA').trim().toUpperCase();
-                                    let loc = String(agent.location || 'UNASSIGNED AREA').trim().toUpperCase();
-                                    if (!acc[prov]) acc[prov] = {};
-                                    if (!acc[prov][loc]) acc[prov][loc] = [];
-                                    acc[prov][loc].push(agent);
-                                    return acc;
-                                }, {})
-                            ).sort(([provA], [provB]) => provA.localeCompare(provB)).map(([province, areas]) => (
-                                <details key={province} className="mb-4 group/prov" open>
-                                    <summary className="flex items-center gap-2 mb-2 px-2 py-1.5 bg-slate-800/80 border border-slate-700 rounded-lg cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-slate-700 transition-colors select-none shadow-md">
-                                        <Globe size={16} className="text-purple-500"/>
-                                        <h2 className="text-xs font-black text-white uppercase tracking-[0.2em]">{province}</h2>
-                                        <span className="text-[10px] text-slate-400 ml-auto bg-black/50 px-2 py-0.5 rounded-md border border-slate-700">
-                                            {Object.values(areas).reduce((sum, arr) => sum + arr.length, 0)} Staff
-                                        </span>
-                                        <ChevronDown size={14} className="text-slate-400 transition-transform group-open/prov:rotate-180" />
-                                    </summary>
+                            {(() => {
+                                /* The data decides the shape, not a role list: one place in view (an area admin's own branch)
+                                   shows its people at once; several places (the owner, HQ) show one folder per place, and a tap
+                                   enters it. A search always lists every match directly. */
+                                const term = searchTerm.toLowerCase();
+                                const shown = agents.filter(a => !term || a.name?.toLowerCase().includes(term) || a.email?.toLowerCase().includes(term) || a.userRole?.toLowerCase().includes(term) || a.location?.toLowerCase().includes(term) || a.province?.toLowerCase().includes(term));
+                                const places = {};
+                                shown.forEach(a => {
+                                    const prov = String(a.province || 'CENTRAL JAVA').trim().toUpperCase();
+                                    const loc = String(a.location || 'UNASSIGNED AREA').trim().toUpperCase();
+                                    const k = `${prov} › ${loc}`;
+                                    (places[k] = places[k] || { prov, loc, people: [] }).people.push(a);
+                                });
+                                const keys = Object.keys(places).sort((x, y) => x.localeCompare(y));
+                                const rank = { 'ADMIN': 3, 'AREA_ADMIN': 2, 'AGENT': 1 };
+                                const byRank = (list) => [...list].sort((x, y) => (rank[y.userRole || 'AGENT'] || 0) - (rank[x.userRole || 'AGENT'] || 0));
+                                const inside = !term && keys.length > 1 && places[rosterPlace] ? rosterPlace : null;
 
-                                    <div className="pl-3 border-l-2 border-slate-800 ml-2 mt-2 space-y-4">
-                                        {Object.entries(areas).sort(([locA], [locB]) => locA.localeCompare(locB)).map(([location, locAgents]) => (
-                                            <details key={location} className="group/loc" open>
-                                                <summary className="flex items-center gap-2 mb-2 px-1 border-b border-slate-700/50 pb-1 cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-slate-800/30 rounded transition-colors select-none">
-                                                    <MapPin size={14} className="text-orange-500"/>
-                                                    <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{location}</h3>
-                                                    <span className="text-[11px] text-slate-400 ml-auto bg-slate-800 px-2 py-0.5 rounded-full">{locAgents.length}</span>
-                                                    <ChevronDown size={14} className="text-slate-400 transition-transform group-open/loc:rotate-180" />
-                                                </summary>
-
-                                                <div className="space-y-2 pl-2 border-l-2 border-slate-800/50 mt-2 mb-4">
-                                                    {locAgents.sort((a, b) => {
-                                                        const rank = { 'ADMIN': 3, 'AREA_ADMIN': 2, 'AGENT': 1 };
-                                                        return (rank[b.userRole || 'AGENT'] || 0) - (rank[a.userRole || 'AGENT'] || 0);
-                                                    }).map(m => (
-                                                        <div key={m.id} onClick={async () => { if (bayLines > 0 && selectedAgent?.id !== m.id && !await confirmAction(`Muatan ${selectedAgent?.name} belum dimuat. Pindah ke ${m.name} dan buang muatan itu?`)) return; setSelectedAgent(m); setShowHistory(false); }} className={`p-3 rounded-xl cursor-pointer border transition-all flex items-center justify-between group/card ${selectedAgent?.id === m.id ? 'bg-blue-600/20 border-blue-500' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 shadow-sm'}`}>
-                                                            <div className="flex items-center gap-3 min-w-0">
-                                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${m.userRole === 'ADMIN' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50' : m.userRole === 'AREA_ADMIN' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50' : m.role === 'Canvas' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                                                                    {m.userRole === 'ADMIN' ? <ShieldCheck size={18}/> : m.userRole === 'AREA_ADMIN' ? <Globe size={18}/> : m.role === 'Canvas' ? <Truck size={18}/> : <Activity size={18}/>}
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <h3 className={`font-bold truncate text-sm ${m.userRole === 'ADMIN' ? 'text-orange-400' : m.userRole === 'AREA_ADMIN' ? 'text-purple-400' : 'text-white'}`}>{m.name}</h3>
-                                                                    <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                                                                        {/* HIS WORD FOR THE TIER, not the code's. This card printed a hardcoded "Area Admin"
-    while his company calls that tier HQ SALES MANAGER — the same mismatch that made a
-    whole exchange about who may edit the fleet ambiguous. `tierWord` reads the labels he
-    set in Settings, so a rename shows up here without anyone editing this line. */}
-{m.userRole === 'ADMIN' ? <span className="text-orange-500 font-bold uppercase">👑 Master Admin (Global)</span> : m.userRole === 'AREA_ADMIN' ? <span className="text-purple-400 font-bold uppercase">📍 {tierWord('AREA_ADMIN') || 'HQ Sales Manager'} ({m.location})</span> : <>{m.role} {m.vehicle ? `• ${m.vehicle}` : ''}</>}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
-                                                            <div className="flex flex-col items-end gap-2 shrink-0">
-                                                                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-widest ${(m.activeCanvas?.length || 0) > 0 ? 'bg-emerald-900/50 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
-                                                                    {(m.activeCanvas?.length || 0) > 0 ? 'Loaded' : 'Empty'}
-                                                                </span>
-                                                                <div className="flex gap-2 opacity-30 lg:opacity-0 group-hover/card:opacity-100 transition-opacity">
-                                                                    <button onClick={(e) => handleViewClick(e, m)} className="text-slate-400 hover:text-emerald-400" title="View Profile Details"><User size={14}/></button>
-                                                                    {canEditFleet && (
-                                                                        <>
-                                                                            <button onClick={(e) => handleEditClick(e, m)} className="text-slate-400 hover:text-blue-400" title="Edit Profile"><Pencil size={14}/></button>
-                                                                            <button data-kpm-del data-label="Delete" onClick={(e) => handleDeleteAgent(e, m)} className="text-slate-400 hover:text-red-500" title="Remove Profile"><Trash2 size={14}/></button>
-                                                                        </>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </details>
-                                        ))}
+                                if (term && shown.length === 0) return <p className="text-sm text-[var(--ink-muted)] text-center py-8">Nobody matches “{searchTerm}”.</p>;
+                                if (!term && keys.length > 1 && !inside) return (
+                                    <div className="kpm-folders grid gap-2.5">
+                                        {keys.map(k => {
+                                            const pl = places[k], loaded = pl.people.filter(m => loadOf(m) > 0).length;
+                                            return (
+                                                <FolderCard key={k} icon={<MapPin size={22} />} onOpen={() => setRosterPlace(k)} className={ROSTER_FOLDER}>
+                                                    <p className="kpm-stamp text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold truncate">{pl.prov}</p>
+                                                    <h3 className="font-bold text-[15px] truncate">{pl.loc}</h3>
+                                                    <p className="kpm-stamp text-[11px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{pl.people.length} {pl.people.length === 1 ? 'person' : 'people'} · {loaded} loaded</p>
+                                                </FolderCard>
+                                            );
+                                        })}
                                     </div>
-                                </details>
-                            ))}
+                                );
+                                return (
+                                    <>
+                                        {inside && (
+                                            <div className="flex items-center justify-between gap-2 mb-3">
+                                                <button type="button" onClick={() => setRosterPlace(null)} className="flex items-center gap-2 text-sm text-[var(--ink-dim)] hover:text-[var(--accent-ink)] transition-colors"><ChevronLeft size={18}/> <span>All areas</span></button>
+                                                <span className="kpm-stamp text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold truncate">{places[inside].loc}</span>
+                                            </div>
+                                        )}
+                                        <div className="grid gap-2">
+                                            {byRank(inside ? places[inside].people : shown).map(m => rosterRow(m))}
+                                        </div>
+                                    </>
+                                );
+                            })()}
                         </>
                     )}
                 </div>

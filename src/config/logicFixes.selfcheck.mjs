@@ -8331,5 +8331,29 @@ section('THE VAN-LOADING BAY: TWO CHESTS, ONE PRESS (2026-09-24)');
   }
 }
 
+/* ── THE ROSTER, REDRAWN WITH EVERY DOOR KEPT (2026-09-24) ─────────────────────────────────────────
+   His "redesign the whole left panel but dont forget to include all the logic behind that". The data decides
+   the shape: one place in view lists its people, several places are his folders, a search lists matches. */
+section('THE ROSTER, REDRAWN WITH EVERY DOOR KEPT (2026-09-24)');
+{ const fl = read('src/FleetCanvasManager.jsx');
+  const left = fl.slice(fl.indexOf('{/* LEFT PANEL: FLEET ROSTER */}'), fl.indexOf('{/* RIGHT PANEL: THE LOADING DOCK */}'));
+  const rowFn = fl.slice(fl.indexOf('const rosterRow = (m) =>'), fl.indexOf('const handleWhatsAppShare'));
+  ok('the left panel was found', left.length > 3000 && rowFn.length > 1500);
+  ok('the panel paints in the app\'s tokens only - no blue, green, purple, orange or red Tailwind colours',
+     !/\b(bg|text|border)-(blue|emerald|green|purple|orange|indigo|amber|red|slate)-\d/.test(left + rowFn));
+  ok('view for everyone; edit and remove only behind the fleet gate, remove still wears data-kpm-del',
+     /onClick=\{\(e\) => handleViewClick\(e, m\)\}/.test(rowFn) &&
+     /\{canEditFleet && \(\s*<>\s*<button onClick=\{\(e\) => handleEditClick\(e, m\)\}[\s\S]{0,300}<button data-kpm-del data-label="Delete" onClick=\{\(e\) => handleDeleteAgent\(e, m\)\}/.test(rowFn));
+  ok('the add key is behind the same gate and still resets the form', /\{canEditFleet && \(\s*<button onClick=\{\(\) => \{ setIsAddingAgent\(!isAddingAgent\); setEditingAgentId\(null\); setNewAgent\(defaultAgentState\); setIsReadOnlyMode\(false\); \}\}/.test(left));
+  ok('the search reads the same five fields', /a\.name\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.email\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.userRole\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.location\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.province\?\.toLowerCase\(\)\.includes\(term\)/.test(left));
+  ok('people keep their rank order (admin, area admin, agent)', /const rank = \{ 'ADMIN': 3, 'AREA_ADMIN': 2, 'AGENT': 1 \};/.test(left) && /byRank\(inside \? places\[inside\]\.people : shown\)/.test(left));
+  ok('folders only when more than one place is in view, and a search never hides a match inside one',
+     /if \(!term && keys\.length > 1 && !inside\) return \(/.test(left) && /const inside = !term && keys\.length > 1 && places\[rosterPlace\] \? rosterPlace : null;/.test(left) && /<FolderCard key=\{k\}/.test(left));
+  ok('a row names the tier in his words and says what the van holds, in packs',
+     /tierWord\('AREA_ADMIN'\)/.test(rowFn) && /const bks = Math\.round\(loadOf\(m\)\);/.test(rowFn) && /convertToBks\(r\.qty, r\.unit, inventory\.find/.test(fl) && /Bks · \$\{items\}/.test(rowFn));
+  ok('picking a person goes through the muatan guard', /onClick=\{\(\) => pickAgent\(m\)\}/.test(rowFn) && /const pickAgent = async \(m\) => \{\s*if \(bayLines > 0/.test(fl));
+  ok('every empty-roster cause still names itself', /The roster could not be read\./.test(left) && /Your own staff record was not found\./.test(left) && /You are not posted to a branch yet\./.test(left) && /Nobody is posted to \{branchPathLocation\}\./.test(left));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
