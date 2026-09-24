@@ -165,6 +165,13 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     if (!chest || !motionOK()) return;
     chest.animate([{ transform: 'none' }, { transform: 'translateY(3px) scale(1.03,.95)' }, { transform: 'none' }], { duration: 200, easing: 'ease-out' });
   }
+  /* THE CHESTS STAY OPEN while a person is picked - his 2026-09-24 "weird that we have close and open button and a big
+     space": a closed chest left an empty panel's worth of room doing nothing. A tap on an open chest only knocks it. */
+  function knock(side) {
+    bump(side === 'wh' ? refs.whChest.current : refs.vanChest.current);
+    if (side === 'wh') burst(6);
+    playSound('chestPick');
+  }
   function toggle(side, on) {
     setOpen(o => ({ ...o, [side]: on }));
     setAnim(a => ({ ...a, [side]: true }));
@@ -173,8 +180,8 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   }
   useEffect(() => {
     const m = motionOK();
-    const t1 = setTimeout(() => toggle('wh', true), m ? 450 : 0);
-    const t2 = setTimeout(() => toggle('van', true), m ? 800 : 0);
+    const t1 = setTimeout(() => toggle('wh', true), m ? 150 : 0);
+    const t2 = setTimeout(() => toggle('van', true), m ? 300 : 0);
     return () => { clearTimeout(t1); clearTimeout(t2); Object.values(sayTimers.current).forEach(clearTimeout); };
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -574,19 +581,19 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
           <div className="pages">
             {Array.from({ length: whPages }, (_, k) => (
               <button key={k} type="button" className={`pg${k === whPageNow ? ' on' : ''}`} onClick={() => { setWhPage(k); setAnim(a => ({ ...a, wh: true })); playSound('chestPage'); }}>
-                {k + 1} · {Math.max(0, Math.min(PER, whList.length - k * PER))}
+                {k + 1}
               </button>
             ))}
             <span className="of">{q ? `${whList.length} hasil` : `halaman ${whPageNow + 1}/${whPages}`}</span>
           </div>
         </div>
 
-        <button ref={refs.whChest} className="chestCell whc" type="button" aria-expanded={open.wh} aria-label="Peti gudang — buka atau tutup" onClick={() => toggle('wh', !open.wh)}>
+        <button ref={refs.whChest} className="chestCell whc" type="button" aria-expanded={open.wh} aria-label="Peti gudang" onClick={() => (open.wh ? knock('wh') : toggle('wh', true))}>
           <span className="chest ender"><span className="lid" /><span className="latch" /><span className="body" /></span>
           <span className="motes" ref={refs.motes} aria-hidden="true">{motes.map((v, i) => <i key={i} style={v} />)}</span>
           <span className="cap">Gudang</span>
         </button>
-        <button ref={refs.vanChest} className="chestCell vanc" type="button" aria-expanded={open.van} aria-label={`Peti van ${agent.name} — buka atau tutup`} onClick={() => toggle('van', !open.van)}>
+        <button ref={refs.vanChest} className="chestCell vanc" type="button" aria-expanded={open.van} aria-label={`Peti van ${agent.name}`} onClick={() => (open.van ? knock('van') : toggle('van', true))}>
           <span className="chest small"><span className="lid" /><span className="latch" /><span className="body" /></span>
           <span className="cap">Van · {agent.vehicle || '—'}</span>
         </button>
@@ -616,7 +623,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
           <div className="pages" ref={refs.vanPages}>
             {Array.from({ length: vanPageCount }, (_, k) => (
               <button key={k} type="button" data-p={k} className={`pg${k === vanPage ? ' on' : ''}`} onClick={() => { setVanPage(k); setAnim(a => ({ ...a, van: true })); playSound('chestPage'); }}>
-                {k + 1} · {cells.slice(k * PER, k * PER + PER).filter(Boolean).length}
+                {k + 1}
               </button>
             ))}
             <span className="of">{cells.filter(Boolean).length} barang</span>

@@ -8351,13 +8351,20 @@ section('THE ROSTER, REDRAWN WITH EVERY DOOR KEPT (2026-09-24)');
   ok('the search reads the same five fields', /a\.name\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.email\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.userRole\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.location\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.province\?\.toLowerCase\(\)\.includes\(term\)/.test(left));
   ok('people keep their rank order (admin, area admin, agent)', /const rank = \{ 'ADMIN': 3, 'AREA_ADMIN': 2, 'AGENT': 1 \};/.test(left) && /const cast = byRank\(term \? shown : \(places\[place\]\?\.people \|\| \[\]\)\);/.test(left));
   ok('areas become tabs over the stage only when more than one place is in view, and a search puts every match on it',
-     /\{!term && keys\.length > 1 && \(/.test(left) && /role="tab" aria-selected=\{k === place\}/.test(left) && /\{cast\.map\(m => stageCard\(m\)\)\}/.test(left));
+     /\{!term && keys\.length > 1 && \(/.test(left) && /role="tab" aria-selected=\{k === place\}/.test(left) && /\{pageCast\.map\(m => stageCard\(m\)\)\}/.test(left));
+  ok('seven cards a page, pages 1 2 3 when there are more, and a new area or search starts on page 1',
+     /const PER_STAGE = 7;/.test(left) && /const pageCast = cast\.slice\(pg \* PER_STAGE, pg \* PER_STAGE \+ PER_STAGE\);/.test(left) &&
+     /setRosterPlace\(k\); setRosterPage\(0\);/.test(left) && /setSearchTerm\(e\.target\.value\); setRosterPage\(0\);/.test(left));
+  ok('the bar lights once per pick, never on a loop', /key=\{sel\?\.id \|\| 'none'\}/.test(left) &&
+     /\.kpm-stage-bar\.lit::after \{ animation: kpmStageSheen 900ms [^;]* 1 both; \}/.test(read('src/styles/theme.css')) && !/kpmStageSheen[^;]*infinite/.test(read('src/styles/theme.css')));
+  ok('an open chest is never closed by a tap - it knocks', /onClick=\{\(\) => \(open\.wh \? knock\('wh'\) : toggle\('wh', true\)\)\}/.test(read('src/components/LoadingBay.jsx')) &&
+     !/toggle\('(wh|van)', !open/.test(read('src/components/LoadingBay.jsx')));
   ok('a card names the tier in his words and says what the van holds, in packs',
      /tierWord\('AREA_ADMIN'\)/.test(rowFn) && /const bks = Math\.round\(loadOf\(m\)\);/.test(rowFn) && /convertToBks\(r\.qty, r\.unit, inventory\.find/.test(fl) && /Bks · \$\{items\}/.test(rowFn));
   ok('picking a card goes through the muatan guard, by pointer or by key', /onClick=\{\(\) => pickAgent\(m\)\}/.test(rowFn) && /e\.key === 'Enter' \|\| e\.key === ' '/.test(rowFn) && /const pickAgent = async \(m\) => \{\s*if \(bayLines > 0/.test(fl));
   const stageCss = read('src/styles/theme.css').slice(read('src/styles/theme.css').indexOf('/* ── THE ROSTER STAGE'), read('src/styles/theme.css').indexOf('/* ── END OF THE ROSTER STAGE'));
   ok('a card is visible at rest and lifts only on a pointer or a key (Lite Mode keeps it all)',
-     stageCss.length > 1500 && !/opacity:\s*0[;\s]/.test(stageCss) && /\.kpm-actor:hover \.kpm-actor-card, \.kpm-actor:focus-visible \.kpm-actor-card \{ transform: translateY\(-10px\)/.test(stageCss));
+     stageCss.length > 1500 && !/opacity:\s*0[;\s]/.test(stageCss.replace(/\.kpm-stage-bar::after \{[^}]*\}/, '')) && /\.kpm-actor:hover \.kpm-actor-card, \.kpm-actor:focus-visible \.kpm-actor-card \{ transform: translateY\(-10px\)/.test(stageCss));
   ok('the blue standby is gone; nobody picked shows the community', !/Standby For Deployment/.test(fl) && /the community today/.test(fl));
   ok('every empty-roster cause still names itself', /The roster could not be read\./.test(left) && /Your own staff record was not found\./.test(left) && /You are not posted to a branch yet\./.test(left) && /Nobody is posted to \{branchPathLocation\}\./.test(left));
 }

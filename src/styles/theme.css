@@ -4917,7 +4917,7 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-stage-tab:hover { border-color: var(--accent-edge); }
 .kpm-stage-tab.on { background: var(--gold); color: var(--gold-ink); border-color: var(--accent-edge); }
 .kpm-stage-tab.on small { color: var(--gold-ink); }
-.kpm-stage { display: flex; gap: 18px; overflow-x: auto; padding: 20px 14px 8px; scroll-snap-type: x proximity; perspective: 900px;
+.kpm-stage { display: flex; justify-content: flex-start; gap: 18px; overflow-x: auto; padding: 20px 14px 8px; scroll-snap-type: x proximity; perspective: 900px;
   border: 1px solid var(--line-2); border-bottom: 0; border-radius: 14px 14px 0 0;
   background: radial-gradient(90% 55% at 50% 100%, rgba(208, 138, 46, .16), transparent 70%), linear-gradient(180deg, var(--raised), var(--sunk)); }
 .kpm-actor { flex: 0 0 170px; scroll-snap-align: center; display: grid; justify-items: center; gap: 16px; cursor: pointer; outline: none; }
@@ -4946,14 +4946,28 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-actor:hover .kpm-actor-name, .kpm-actor:focus-visible .kpm-actor-name, .kpm-actor.on .kpm-actor-name { color: var(--ink); }
 .kpm-actor.on .kpm-actor-card { transform: translateY(-6px) rotateY(0deg) rotateX(0deg); border-color: var(--accent-edge); outline: 2px solid var(--accent-edge); outline-offset: 3px; }
 .kpm-actor.on .kpm-actor-floor { background: radial-gradient(closest-side, rgba(208, 138, 46, .75), rgba(208, 138, 46, .18) 70%, transparent); }
-.kpm-stage-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 12px;
-  border-radius: 0 0 14px 14px; background: var(--gold); color: var(--gold-ink); }
-.kpm-stage-name { font: 900 16px/1.1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
-.kpm-stage-hint { font: 700 11px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.kpm-stage-bar { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 10px 14px; border: 1px solid var(--accent-edge); border-top-width: 2px; border-radius: 0 0 14px 14px; color: var(--ink);
+  background: linear-gradient(90deg, rgba(208, 138, 46, .30), rgba(208, 138, 46, .05) 30%, rgba(208, 138, 46, .05) 70%, rgba(208, 138, 46, .30)),
+              linear-gradient(180deg, var(--raised), var(--inset)); }
+/* a picked person lights the bar once: one sweep of light across it, then it rests */
+.kpm-stage-bar::after { content: ""; position: absolute; top: 0; bottom: 0; left: -45%; width: 45%; pointer-events: none; opacity: 0;
+  background: linear-gradient(100deg, transparent, rgba(245, 208, 138, .22), transparent); }
+.kpm-stage-bar.lit::after { animation: kpmStageSheen 900ms cubic-bezier(.3, .7, .3, 1) 1 both; }
+@keyframes kpmStageSheen { from { opacity: 1; transform: translateX(0); } to { opacity: 1; transform: translateX(330%); } }
+.kpm-stage-name { font: 900 16px/1.1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent-ink); }
+.kpm-stage-hint { font: 700 11px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); }
 .kpm-stage-acts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .kpm-stage-acts > button:not([data-kpm-del]) { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 12px; cursor: pointer;
-  border: 1px solid var(--gold-ink); border-radius: 8px; background: transparent; color: var(--gold-ink);
+  border: 1px solid var(--accent-edge); border-radius: 8px; background: rgba(208, 138, 46, .08); color: var(--accent-ink);
   font: 900 11px/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
-.kpm-stage-acts > button:not([data-kpm-del]):hover { background: rgba(0, 0, 0, .14); }
-@media (prefers-reduced-motion: reduce) { .kpm-actor-card, .kpm-actor-floor { transition: none; } }
+.kpm-stage-acts > button:not([data-kpm-del]):hover { background: var(--gold); color: var(--gold-ink); }
+/* on the PC the cards share the stage evenly, however many stand on it (seven a page at most) */
+@media (min-width: 1024px) { .kpm-stage { justify-content: space-evenly; } }
+.kpm-stage-pages { display: flex; justify-content: flex-end; gap: 6px; margin: -4px 0 8px; }
+.kpm-stage-page { min-width: 40px; min-height: 36px; padding: 0 12px; cursor: pointer; border: 1px solid var(--line-2); border-radius: 8px;
+  background: var(--inset); color: var(--ink-muted); font: 900 12px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.kpm-stage-page:hover { border-color: var(--accent-edge); }
+.kpm-stage-page.on { border-color: var(--accent-edge); color: var(--accent-ink); background: var(--raised); }
+@media (prefers-reduced-motion: reduce) { .kpm-actor-card, .kpm-actor-floor { transition: none; } .kpm-stage-bar.lit::after { animation: none; } }
 /* ── END OF THE ROSTER STAGE ──────────────────────────────────────────────────────────────────────────── */

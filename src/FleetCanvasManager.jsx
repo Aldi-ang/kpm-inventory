@@ -173,6 +173,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     const [bayLines, setBayLines] = useState(0);
     /* the area tab that is open on the roster stage ("PROVINCE › LOCATION"), when more than one place is in view */
     const [rosterPlace, setRosterPlace] = useState(null);
+    /* the stage shows seven cards a page on the PC (his "it looks great that way"); more people get pages 1 2 3 */
+    const [rosterPage, setRosterPage] = useState(0);
 
     const [showHistory, setShowHistory] = useState(false);
     const [viewingReceipt, setViewingReceipt] = useState(null);
@@ -1146,7 +1148,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             <label className="relative block mb-3 max-w-md">
                                 <span className="sr-only">Search the roster</span>
                                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]" />
-                                <input type="text" placeholder="Search name, role, area, email…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-[var(--inset)] border border-[var(--line-2)] focus:border-[var(--accent-edge)] rounded-xl py-2.5 pl-9 pr-3 text-sm text-[var(--ink)] placeholder:text-[var(--ink-dim)] outline-none transition-colors"/>
+                                <input type="text" placeholder="Search name, role, area, email…" value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setRosterPage(0); }} className="w-full bg-[var(--inset)] border border-[var(--line-2)] focus:border-[var(--accent-edge)] rounded-xl py-2.5 pl-9 pr-3 text-sm text-[var(--ink)] placeholder:text-[var(--ink-dim)] outline-none transition-colors"/>
                             </label>
 
                             {(() => {
@@ -1168,6 +1170,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 const place = places[rosterPlace] ? rosterPlace : (keys.find(k => places[k].people.some(p => p.id === selectedAgent?.id)) || keys[0]);
                                 const cast = byRank(term ? shown : (places[place]?.people || []));
                                 const sel = cast.find(p => p.id === selectedAgent?.id);
+                                const PER_STAGE = 7;
+                                const pages = Math.max(1, Math.ceil(cast.length / PER_STAGE));
+                                const pg = Math.min(rosterPage, pages - 1);
+                                const pageCast = cast.slice(pg * PER_STAGE, pg * PER_STAGE + PER_STAGE);
 
                                 if (term && shown.length === 0) return <p className="text-sm text-[var(--ink-muted)] text-center py-8">Nobody matches “{searchTerm}”.</p>;
                                 return (
@@ -1175,16 +1181,24 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         {!term && keys.length > 1 && (
                                             <div className="kpm-stage-tabs" role="tablist" aria-label="Areas">
                                                 {keys.map(k => (
-                                                    <button key={k} type="button" role="tab" aria-selected={k === place} className={`kpm-stage-tab${k === place ? ' on' : ''}`} onClick={() => setRosterPlace(k)}>
+                                                    <button key={k} type="button" role="tab" aria-selected={k === place} className={`kpm-stage-tab${k === place ? ' on' : ''}`} onClick={() => { setRosterPlace(k); setRosterPage(0); }}>
                                                         <span>{places[k].loc}</span><small>{places[k].people.length}</small>
                                                     </button>
                                                 ))}
                                             </div>
                                         )}
+                                        {pages > 1 && (
+                                            <div className="kpm-stage-pages" aria-label="Roster pages">
+                                                {Array.from({ length: pages }, (_, k) => (
+                                                    <button key={k} type="button" className={`kpm-stage-page${k === pg ? ' on' : ''}`} aria-current={k === pg ? 'page' : undefined} onClick={() => setRosterPage(k)}>{k + 1}</button>
+                                                ))}
+                                            </div>
+                                        )}
                                         <div className="kpm-stage" role="listbox" aria-label="People">
-                                            {cast.map(m => stageCard(m))}
+                                            {pageCast.map(m => stageCard(m))}
                                         </div>
-                                        <div className="kpm-stage-bar">
+                                        {/* keyed by the picked person, so the bar's light sweeps once per pick, never on a loop */}
+                                        <div key={sel?.id || 'none'} className={`kpm-stage-bar${sel ? ' lit' : ''}`}>
                                             <span className="kpm-stage-name">{term ? `Search · ${cast.length}` : (places[place]?.loc || 'Fleet')}</span>
                                             {sel ? (
                                                 <span className="kpm-stage-acts">
