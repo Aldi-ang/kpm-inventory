@@ -679,8 +679,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "package_dependencies_react",
-      "community": 74,
-      "community_name": "notify",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "react"
     },
     {
@@ -690,8 +690,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "react",
-      "community": 74,
-      "community_name": "notify",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "react"
     },
     {
@@ -1317,8 +1317,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_agentinventoryview",
-      "community": 30,
-      "community_name": "notify",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "agentinventoryview.jsx"
     },
     {
@@ -1328,8 +1328,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_agentinventoryview_money",
-      "community": 30,
-      "community_name": "notify",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "money()"
     },
     {
@@ -1339,8 +1339,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_agentinventoryview_agentinventoryview",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "agentinventoryview()"
     },
     {
@@ -1350,8 +1350,8 @@
       "source_location": "L497",
       "_origin": "ast",
       "id": "src_agentinventoryview_quarantineledgerboard",
-      "community": 30,
-      "community_name": "notify",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "quarantineledgerboard()"
     },
     {
@@ -1713,8 +1713,8 @@
       "source_location": "L191",
       "_origin": "ast",
       "id": "src_app_getdocofflinesafe",
-      "community": 108,
-      "community_name": "StubAudio",
+      "community": 65,
+      "community_name": "RegionalWarehouseStage.jsx",
       "norm_label": "getdocofflinesafe()"
     },
     {
@@ -1724,8 +1724,8 @@
       "source_location": "L230",
       "_origin": "ast",
       "id": "src_app_kpminventoryapp",
-      "community": 108,
-      "community_name": "StubAudio",
+      "community": 65,
+      "community_name": "RegionalWarehouseStage.jsx",
       "norm_label": "kpminventoryapp()"
     },
     {
@@ -1735,8 +1735,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_consignmentfinanceview",
-      "community": 11,
-      "community_name": "CustomerManager.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "consignmentfinanceview.jsx"
     },
     {
@@ -1746,8 +1746,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_consignmentfinanceview_handoffoffer",
-      "community": 11,
-      "community_name": "CustomerManager.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "handoffoffer()"
     },
     {
@@ -1757,8 +1757,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "src_consignmentfinanceview_consignmentfinanceview",
-      "community": 11,
-      "community_name": "CustomerManager.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "consignmentfinanceview()"
     },
     {
@@ -1812,8 +1812,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "src_eodreconciliationview_eodreconciliationview",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "eodreconciliationview()"
     },
     {
@@ -1878,8 +1878,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_journeyview",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "journeyview.jsx"
     },
     {
@@ -1900,8 +1900,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "src_journeyview_storeiconcache",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "storeiconcache"
     },
     {
@@ -1922,8 +1922,8 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "src_journeyview_userlocationicon",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "userlocationicon"
     },
     {
@@ -1944,8 +1944,8 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "src_journeyview_maprecenter",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 75,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "maprecenter()"
     },
     {
@@ -1955,8 +1955,8 @@
       "source_location": "L128",
       "_origin": "ast",
       "id": "src_journeyview_storefocus",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "storefocus()"
     },
     {
@@ -1966,8 +1966,8 @@
       "source_location": "L147",
       "_origin": "ast",
       "id": "src_journeyview_locationcontroller",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "locationcontroller()"
     },
     {
@@ -1977,8 +1977,8 @@
       "source_location": "L206",
       "_origin": "ast",
       "id": "src_journeyview_mapeditcontroller",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "mapeditcontroller()"
     },
     {
@@ -1988,8 +1988,8 @@
       "source_location": "L216",
       "_origin": "ast",
       "id": "src_journeyview_ispointinpolygon",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "ispointinpolygon()"
     },
     {
@@ -1999,8 +1999,8 @@
       "source_location": "L229",
       "_origin": "ast",
       "id": "src_journeyview_checkpointingeojson",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "checkpointingeojson()"
     },
     {
@@ -2010,8 +2010,8 @@
       "source_location": "L249",
       "_origin": "ast",
       "id": "src_journeyview_getstorehierarchy",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "getstorehierarchy()"
     },
     {
@@ -2021,8 +2021,8 @@
       "source_location": "L262",
       "_origin": "ast",
       "id": "src_journeyview_agent_colors",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "agent_colors"
     },
     {
@@ -2032,8 +2032,8 @@
       "source_location": "L263",
       "_origin": "ast",
       "id": "src_journeyview_gethashcolor",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "gethashcolor()"
     },
     {
@@ -2043,8 +2043,8 @@
       "source_location": "L274",
       "_origin": "ast",
       "id": "src_journeyview_journeyview",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "journeyview()"
     },
     {
@@ -2208,8 +2208,8 @@
       "source_location": "L462",
       "_origin": "ast",
       "id": "src_mapmissioncontrol_borderimporter",
-      "community": 11,
-      "community_name": "CustomerManager.jsx",
+      "community": 75,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "borderimporter()"
     },
     {
@@ -2241,8 +2241,8 @@
       "source_location": "L1059",
       "_origin": "ast",
       "id": "src_mapmissioncontrol_storebottomsheet",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "storebottomsheet()"
     },
     {
@@ -2274,8 +2274,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_merchantsalesview",
-      "community": 113,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "merchantsalesview.jsx"
     },
     {
@@ -2285,8 +2285,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "src_merchantsalesview_readdraft",
-      "community": 113,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "readdraft()"
     },
     {
@@ -2296,8 +2296,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_merchantsalesview_merchantsalesview",
-      "community": 113,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "merchantsalesview()"
     },
     {
@@ -2725,8 +2725,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_authorityselect",
-      "community": 61,
-      "community_name": "firebase.js",
+      "community": 89,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "authorityselect.jsx"
     },
     {
@@ -2736,8 +2736,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "src_components_authorityselect_authorityselect",
-      "community": 61,
-      "community_name": "firebase.js",
+      "community": 89,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "authorityselect()"
     },
     {
@@ -3066,8 +3066,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_components_confirmgate_promptaction",
-      "community": 87,
-      "community_name": "career.js",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "promptaction()"
     },
     {
@@ -3088,8 +3088,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_crowntransferprotocol",
-      "community": 65,
-      "community_name": "RegionalWarehouseStage.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "crowntransferprotocol.jsx"
     },
     {
@@ -3099,8 +3099,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_components_crowntransferprotocol_crowntransferprotocol",
-      "community": 65,
-      "community_name": "RegionalWarehouseStage.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "crowntransferprotocol()"
     },
     {
@@ -3473,8 +3473,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_foldercard",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "foldercard.jsx"
     },
     {
@@ -3484,8 +3484,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_components_foldercard_foldercard",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "foldercard()"
     },
     {
@@ -3495,8 +3495,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_historyreportview",
-      "community": 30,
-      "community_name": "notify",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "historyreportview.jsx"
     },
     {
@@ -3506,8 +3506,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_components_historyreportview_historyreportview",
-      "community": 30,
-      "community_name": "notify",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "historyreportview()"
     },
     {
@@ -3561,8 +3561,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_lamp",
-      "community": 111,
-      "community_name": "ShellLab",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "lamp.jsx"
     },
     {
@@ -3572,8 +3572,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_components_lamp_lamp",
-      "community": 111,
-      "community_name": "ShellLab",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "lamp()"
     },
     {
@@ -3605,8 +3605,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_loadingbay",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "loadingbay.jsx"
     },
     {
@@ -3616,8 +3616,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_components_loadingbay_units",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "units"
     },
     {
@@ -3627,8 +3627,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_components_loadingbay_fmt",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "fmt()"
     },
     {
@@ -3638,8 +3638,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "src_components_loadingbay_signed",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "signed()"
     },
     {
@@ -3649,8 +3649,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_components_loadingbay_mote_colors",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "mote_colors"
     },
     {
@@ -3660,8 +3660,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_components_loadingbay_rnd",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "rnd()"
     },
     {
@@ -3671,8 +3671,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_components_loadingbay_jitter",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "jitter()"
     },
     {
@@ -3682,8 +3682,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_components_loadingbay_motevars",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "motevars()"
     },
     {
@@ -3693,8 +3693,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "src_components_loadingbay_motionok",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "motionok()"
     },
     {
@@ -3704,8 +3704,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "src_components_loadingbay_inrect",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "inrect()"
     },
     {
@@ -3715,8 +3715,8 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "src_components_loadingbay_center",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 75,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "center()"
     },
     {
@@ -3726,8 +3726,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "src_components_loadingbay_cube",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "cube()"
     },
     {
@@ -3737,8 +3737,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "src_components_loadingbay_cut_why",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "cut_why"
     },
     {
@@ -3748,8 +3748,8 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "src_components_loadingbay_bypass_word",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "bypass_word"
     },
     {
@@ -3759,8 +3759,8 @@
       "source_location": "L82",
       "_origin": "ast",
       "id": "src_components_loadingbay_loadingbay",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "loadingbay()"
     },
     {
@@ -3770,8 +3770,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_morekey",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "morekey.jsx"
     },
     {
@@ -3781,8 +3781,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_components_morekey_morekey",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "morekey()"
     },
     {
@@ -3792,8 +3792,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_nixiecount",
-      "community": 30,
-      "community_name": "notify",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "nixiecount.jsx"
     },
     {
@@ -3803,8 +3803,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_components_nixiecount_digits",
-      "community": 30,
-      "community_name": "notify",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "digits"
     },
     {
@@ -3814,8 +3814,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_components_nixiecount_nixiecount",
-      "community": 30,
-      "community_name": "notify",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "nixiecount()"
     },
     {
@@ -3880,8 +3880,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_photofield",
-      "community": 111,
-      "community_name": "ShellLab",
+      "community": 54,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "photofield.jsx"
     },
     {
@@ -3891,8 +3891,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_components_photofield_photofield",
-      "community": 111,
-      "community_name": "ShellLab",
+      "community": 54,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "photofield()"
     },
     {
@@ -3902,8 +3902,8 @@
       "source_location": "L123",
       "_origin": "ast",
       "id": "src_components_photofield_cornersheet",
-      "community": 111,
-      "community_name": "ShellLab",
+      "community": 54,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "cornersheet()"
     },
     {
@@ -3924,8 +3924,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_components_playercard_part_order",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 65,
+      "community_name": "RegionalWarehouseStage.jsx",
       "norm_label": "part_order"
     },
     {
@@ -3968,8 +3968,8 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "src_components_playercard_playercard",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 65,
+      "community_name": "RegionalWarehouseStage.jsx",
       "norm_label": "playercard()"
     },
     {
@@ -3979,8 +3979,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_productperformancepanel",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "productperformancepanel.jsx"
     },
     {
@@ -3990,8 +3990,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_components_productperformancepanel_label",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "label"
     },
     {
@@ -4001,8 +4001,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "src_components_productperformancepanel_productperformancepanel",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "productperformancepanel()"
     },
     {
@@ -4012,8 +4012,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_proofcamera",
-      "community": 113,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "proofcamera.jsx"
     },
     {
@@ -4023,8 +4023,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_components_proofcamera_proofcamera",
-      "community": 113,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "proofcamera()"
     },
     {
@@ -4034,7 +4034,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_receiptpreview",
-      "community": 30,
+      "community": 49,
       "community_name": "notify",
       "norm_label": "receiptpreview.jsx"
     },
@@ -4045,7 +4045,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "src_components_receiptpreview_clampzoom",
-      "community": 30,
+      "community": 49,
       "community_name": "notify",
       "norm_label": "clampzoom()"
     },
@@ -4056,7 +4056,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "src_components_receiptpreview_sample_rows",
-      "community": 30,
+      "community": 49,
       "community_name": "notify",
       "norm_label": "sample_rows"
     },
@@ -4067,7 +4067,7 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "src_components_receiptpreview_receiptpreview",
-      "community": 30,
+      "community": 49,
       "community_name": "notify",
       "norm_label": "receiptpreview()"
     },
@@ -4133,8 +4133,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_safetystatus",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "safetystatus.jsx"
     },
     {
@@ -4144,8 +4144,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_components_safetystatus_lamp",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "lamp"
     },
     {
@@ -4155,8 +4155,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_components_safetystatus_safetystatus",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "safetystatus()"
     },
     {
@@ -4166,8 +4166,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_samplingmanager",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "samplingmanager.jsx"
     },
     {
@@ -4177,8 +4177,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_components_samplingmanager_formatsampleqty",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "formatsampleqty()"
     },
     {
@@ -4188,8 +4188,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplinganalyticsview",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "samplinganalyticsview()"
     },
     {
@@ -4210,8 +4210,8 @@
       "source_location": "L336",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplingfolderview",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "samplingfolderview()"
     },
     {
@@ -4221,8 +4221,8 @@
       "source_location": "L500",
       "_origin": "ast",
       "id": "src_components_samplingmanager_sampleentrymodal",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "sampleentrymodal()"
     },
     {
@@ -4474,8 +4474,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_warehousedesknav",
-      "community": 111,
-      "community_name": "ShellLab",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "warehousedesknav.jsx"
     },
     {
@@ -4485,8 +4485,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "src_components_warehousedesknav_warehousedesknav",
-      "community": 111,
-      "community_name": "ShellLab",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "warehousedesknav()"
     },
     {
@@ -4595,8 +4595,8 @@
       "source_location": "L119",
       "_origin": "ast",
       "id": "src_config_career_computedayxp",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 65,
+      "community_name": "RegionalWarehouseStage.jsx",
       "norm_label": "computedayxp()"
     },
     {
@@ -4760,8 +4760,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck",
-      "community": 49,
-      "community_name": "notify",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "customerbrief.selfcheck.mjs"
     },
     {
@@ -4771,8 +4771,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_at",
-      "community": 49,
-      "community_name": "notify",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "at()"
     },
     {
@@ -4782,8 +4782,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_tx",
-      "community": 49,
-      "community_name": "notify",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "tx()"
     },
     {
@@ -4793,8 +4793,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_rows",
-      "community": 49,
-      "community_name": "notify",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "rows"
     },
     {
@@ -4804,8 +4804,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_b",
-      "community": 49,
-      "community_name": "notify",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "b"
     },
     {
@@ -4815,8 +4815,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_messy",
-      "community": 49,
-      "community_name": "notify",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "messy"
     },
     {
@@ -4826,8 +4826,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_sameday",
-      "community": 49,
-      "community_name": "notify",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "sameday"
     },
     {
@@ -4837,8 +4837,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_sd",
-      "community": 49,
-      "community_name": "notify",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "sd"
     },
     {
@@ -4848,8 +4848,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_withretur",
-      "community": 49,
-      "community_name": "notify",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "withretur"
     },
     {
@@ -4859,8 +4859,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_inventory",
-      "community": 49,
-      "community_name": "notify",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "inventory"
     },
     {
@@ -4870,8 +4870,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_ok",
-      "community": 49,
-      "community_name": "notify",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "ok"
     },
     {
@@ -4881,8 +4881,8 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "src_config_customerbrief_selfcheck_guarded",
-      "community": 49,
-      "community_name": "notify",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "guarded"
     },
     {
@@ -4892,8 +4892,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "daystats.selfcheck.mjs"
     },
     {
@@ -4903,8 +4903,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_at",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "at()"
     },
     {
@@ -4914,8 +4914,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_tx",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "tx()"
     },
     {
@@ -4925,8 +4925,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_now",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "now"
     },
     {
@@ -4936,8 +4936,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_rows",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "rows"
     },
     {
@@ -4947,8 +4947,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_s",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "s"
     },
     {
@@ -4958,8 +4958,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_shuffled",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "shuffled"
     },
     {
@@ -4969,8 +4969,8 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_withreturn",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "withreturn"
     },
     {
@@ -4980,8 +4980,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_justafterlocalmidnight",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "justafterlocalmidnight"
     },
     {
@@ -4991,8 +4991,8 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "src_config_daystats_selfcheck_justbeforelocalmidnight",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "justbeforelocalmidnight"
     },
     {
@@ -5178,8 +5178,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_config_findduplicates_selfcheck_t",
-      "community": 74,
-      "community_name": "notify",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "t()"
     },
     {
@@ -10865,8 +10865,8 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "src_config_notascan_selfcheck_inside",
-      "community": 54,
-      "community_name": "RestockVaultView.jsx",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "inside()"
     },
     {
@@ -10876,8 +10876,8 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "src_config_notascan_selfcheck_photo",
-      "community": 54,
-      "community_name": "RestockVaultView.jsx",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "photo()"
     },
     {
@@ -11041,8 +11041,8 @@
       "source_location": "L128",
       "_origin": "ast",
       "id": "src_config_permissions_role_permissions",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "role_permissions"
     },
     {
@@ -11096,8 +11096,8 @@
       "source_location": "L248",
       "_origin": "ast",
       "id": "src_config_permissions_canmanageregistry",
-      "community": 105,
-      "community_name": "convertToBks",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "canmanageregistry()"
     },
     {
@@ -11151,8 +11151,8 @@
       "source_location": "L316",
       "_origin": "ast",
       "id": "src_config_permissions_getcustomeraccesslevel",
-      "community": 53,
-      "community_name": "helpers.js",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "getcustomeraccesslevel()"
     },
     {
@@ -11250,8 +11250,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_config_povpreview_canusepovswitch",
-      "community": 108,
-      "community_name": "StubAudio",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "canusepovswitch()"
     },
     {
@@ -11393,7 +11393,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_receiptwatermark",
-      "community": 30,
+      "community": 49,
       "community_name": "notify",
       "norm_label": "receiptwatermark.js"
     },
@@ -11404,7 +11404,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_config_receiptwatermark_watermark_style",
-      "community": 30,
+      "community": 49,
       "community_name": "notify",
       "norm_label": "watermark_style"
     },
@@ -11415,7 +11415,7 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "src_config_receiptwatermark_watermarkfrom",
-      "community": 30,
+      "community": 49,
       "community_name": "notify",
       "norm_label": "watermarkfrom()"
     },
@@ -11767,8 +11767,8 @@
       "source_location": "L95",
       "_origin": "ast",
       "id": "src_config_toastseverity_selfcheck_report",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 65,
+      "community_name": "RegionalWarehouseStage.jsx",
       "norm_label": "report()"
     },
     {
@@ -12207,8 +12207,8 @@
       "source_location": "L171",
       "_origin": "ast",
       "id": "src_hooks_usesound_playsound",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 109,
+      "community_name": "PonderPad.jsx",
       "norm_label": "playsound()"
     },
     {
@@ -12251,8 +12251,8 @@
       "source_location": "L273",
       "_origin": "ast",
       "id": "src_hooks_usesound_reset",
-      "community": 83,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 63,
+      "community_name": "confirmAction",
       "norm_label": "__reset()"
     },
     {
@@ -12262,8 +12262,8 @@
       "source_location": "L277",
       "_origin": "ast",
       "id": "src_hooks_usesound_isunlocked",
-      "community": 83,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 63,
+      "community_name": "confirmAction",
       "norm_label": "__isunlocked()"
     },
     {
@@ -12273,8 +12273,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck",
-      "community": 83,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 63,
+      "community_name": "confirmAction",
       "norm_label": "usesound.selfcheck.mjs"
     },
     {
@@ -12284,8 +12284,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_played",
-      "community": 83,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 63,
+      "community_name": "confirmAction",
       "norm_label": "played"
     },
     {
@@ -12339,8 +12339,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_makedoc",
-      "community": 83,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 63,
+      "community_name": "confirmAction",
       "norm_label": "makedoc()"
     },
     {
@@ -12350,8 +12350,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_ctx",
-      "community": 83,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 63,
+      "community_name": "confirmAction",
       "norm_label": "ctx()"
     },
     {
@@ -12361,8 +12361,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_rateaudio",
-      "community": 83,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 63,
+      "community_name": "confirmAction",
       "norm_label": "rateaudio"
     },
     {
@@ -12372,8 +12372,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_rateaudio_constructor",
-      "community": 83,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 63,
+      "community_name": "confirmAction",
       "norm_label": ".constructor()"
     },
     {
@@ -13153,8 +13153,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_sfx",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 109,
+      "community_name": "PonderPad.jsx",
       "norm_label": "sfx.js"
     },
     {
@@ -13164,8 +13164,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_ponder_sfx_bookpick",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 109,
+      "community_name": "PonderPad.jsx",
       "norm_label": "bookpick()"
     },
     {
@@ -13175,8 +13175,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_ponder_sfx_bookopen",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 109,
+      "community_name": "PonderPad.jsx",
       "norm_label": "bookopen()"
     },
     {
@@ -13186,8 +13186,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_ponder_sfx_bookpage",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 109,
+      "community_name": "PonderPad.jsx",
       "norm_label": "bookpage()"
     },
     {
@@ -13197,8 +13197,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_ponder_sfx_bookclose",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 109,
+      "community_name": "PonderPad.jsx",
       "norm_label": "bookclose()"
     },
     {
@@ -13692,8 +13692,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_customerbrief",
-      "community": 49,
-      "community_name": "notify",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "customerbrief.js"
     },
     {
@@ -13703,8 +13703,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_utils_customerbrief_briefseconds",
-      "community": 49,
-      "community_name": "notify",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "briefseconds()"
     },
     {
@@ -13714,8 +13714,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_utils_customerbrief_customerbrief",
-      "community": 49,
-      "community_name": "notify",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "customerbrief()"
     },
     {
@@ -13725,8 +13725,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "src_utils_customerbrief_reorderfromlast",
-      "community": 113,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "reorderfromlast()"
     },
     {
@@ -13736,8 +13736,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_daystats",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "daystats.js"
     },
     {
@@ -13747,8 +13747,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_utils_daystats_txseconds",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "txseconds()"
     },
     {
@@ -13758,8 +13758,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_utils_daystats_daystats",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "daystats()"
     },
     {
@@ -13769,8 +13769,8 @@
       "source_location": "L86",
       "_origin": "ast",
       "id": "src_utils_daystats_agolabel",
-      "community": 113,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "agolabel()"
     },
     {
@@ -14187,8 +14187,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_helpers",
-      "community": 30,
-      "community_name": "notify",
+      "community": 54,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "helpers.js"
     },
     {
@@ -14242,8 +14242,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "src_utils_helpers_storekey",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "storekey()"
     },
     {
@@ -14253,8 +14253,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "src_utils_helpers_storelabel",
-      "community": 11,
-      "community_name": "CustomerManager.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "storelabel()"
     },
     {
@@ -14275,8 +14275,8 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "src_utils_helpers_getcurrentdate",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "getcurrentdate()"
     },
     {
@@ -14319,8 +14319,8 @@
       "source_location": "L165",
       "_origin": "ast",
       "id": "src_utils_helpers_splittounits",
-      "community": 30,
-      "community_name": "notify",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "splittounits()"
     },
     {
@@ -14341,8 +14341,8 @@
       "source_location": "L222",
       "_origin": "ast",
       "id": "src_utils_helpers_absentforsure",
-      "community": 108,
-      "community_name": "StubAudio",
+      "community": 65,
+      "community_name": "RegionalWarehouseStage.jsx",
       "norm_label": "absentforsure()"
     },
     {
@@ -14374,8 +14374,8 @@
       "source_location": "L310",
       "_origin": "ast",
       "id": "src_utils_helpers_savephotoandgetreference",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 87,
+      "community_name": "career.js",
       "norm_label": "savephotoandgetreference()"
     },
     {
@@ -14385,8 +14385,8 @@
       "source_location": "L323",
       "_origin": "ast",
       "id": "src_utils_helpers_deletephotofromstorage",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 87,
+      "community_name": "career.js",
       "norm_label": "deletephotofromstorage()"
     },
     {
@@ -14418,8 +14418,8 @@
       "source_location": "L420",
       "_origin": "ast",
       "id": "src_utils_helpers_findpaper",
-      "community": 111,
-      "community_name": "ShellLab",
+      "community": 54,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "findpaper()"
     },
     {
@@ -14451,8 +14451,8 @@
       "source_location": "L548",
       "_origin": "ast",
       "id": "src_utils_helpers_loadnotaphoto",
-      "community": 111,
-      "community_name": "ShellLab",
+      "community": 54,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "loadnotaphoto()"
     },
     {
@@ -14462,8 +14462,8 @@
       "source_location": "L573",
       "_origin": "ast",
       "id": "src_utils_helpers_scannotatobase64",
-      "community": 111,
-      "community_name": "ShellLab",
+      "community": 54,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "scannotatobase64()"
     },
     {
@@ -14473,8 +14473,8 @@
       "source_location": "L608",
       "_origin": "ast",
       "id": "src_utils_helpers_compressimagetobase64",
-      "community": 5,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 87,
+      "community_name": "career.js",
       "norm_label": "compressimagetobase64()"
     },
     {
@@ -14484,8 +14484,8 @@
       "source_location": "L635",
       "_origin": "ast",
       "id": "src_utils_helpers_paymentlabel",
-      "community": 113,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "paymentlabel()"
     },
     {
@@ -14495,8 +14495,8 @@
       "source_location": "L645",
       "_origin": "ast",
       "id": "src_utils_helpers_shortstockrows",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 65,
+      "community_name": "RegionalWarehouseStage.jsx",
       "norm_label": "shortstockrows()"
     },
     {
@@ -14528,8 +14528,8 @@
       "source_location": "L704",
       "_origin": "ast",
       "id": "src_utils_helpers_eodbountylines",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 65,
+      "community_name": "RegionalWarehouseStage.jsx",
       "norm_label": "eodbountylines()"
     },
     {
@@ -14550,8 +14550,8 @@
       "source_location": "L746",
       "_origin": "ast",
       "id": "src_utils_helpers_eodreportparts",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 65,
+      "community_name": "RegionalWarehouseStage.jsx",
       "norm_label": "eodreportparts()"
     },
     {
@@ -14561,8 +14561,8 @@
       "source_location": "L762",
       "_origin": "ast",
       "id": "src_utils_helpers_eodnightmessage",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 65,
+      "community_name": "RegionalWarehouseStage.jsx",
       "norm_label": "eodnightmessage()"
     },
     {
@@ -14572,8 +14572,8 @@
       "source_location": "L787",
       "_origin": "ast",
       "id": "src_utils_helpers_eodpartapproved",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 65,
+      "community_name": "RegionalWarehouseStage.jsx",
       "norm_label": "eodpartapproved()"
     },
     {
@@ -14594,8 +14594,8 @@
       "source_location": "L804",
       "_origin": "ast",
       "id": "src_utils_helpers_nixiedigits",
-      "community": 30,
-      "community_name": "notify",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "nixiedigits()"
     },
     {
@@ -14605,8 +14605,8 @@
       "source_location": "L814",
       "_origin": "ast",
       "id": "src_utils_helpers_journeywhere",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "journeywhere()"
     },
     {
@@ -14616,8 +14616,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_nextstop",
-      "community": 113,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "nextstop.js"
     },
     {
@@ -14627,8 +14627,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_utils_nextstop_km",
-      "community": 113,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "km()"
     },
     {
@@ -14638,8 +14638,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_utils_nextstop_mine",
-      "community": 113,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "mine()"
     },
     {
@@ -14649,8 +14649,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_utils_nextstop_visitedwithincycle",
-      "community": 113,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "visitedwithincycle()"
     },
     {
@@ -14660,8 +14660,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "src_utils_nextstop_nextstop",
-      "community": 113,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "nextstop()"
     },
     {
@@ -14671,8 +14671,8 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "src_utils_nextstop_directionsurl",
-      "community": 113,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "directionsurl()"
     },
     {
@@ -14682,8 +14682,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "src_utils_nextstop_metreslabel",
-      "community": 113,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "metreslabel()"
     },
     {
@@ -14803,8 +14803,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_revenuerule",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "revenuerule.js"
     },
     {
@@ -14814,8 +14814,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_utils_revenuerule_istitip",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "istitip()"
     },
     {
@@ -14825,8 +14825,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "src_utils_revenuerule_countsasrevenue",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "countsasrevenue()"
     },
     {
@@ -14847,8 +14847,8 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "src_utils_revenuerule_debtcredit",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "debtcredit()"
     },
     {
@@ -14858,8 +14858,8 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "src_utils_revenuerule_soldlinesof",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "soldlinesof()"
     },
     {
@@ -14869,8 +14869,8 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "src_utils_revenuerule_outstandingtitip",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "outstandingtitip()"
     },
     {
@@ -14880,8 +14880,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_salesrollup",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "salesrollup.js"
     },
     {
@@ -14891,8 +14891,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "src_utils_salesrollup_sale_types",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "sale_types"
     },
     {
@@ -14902,8 +14902,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "src_utils_salesrollup_issale",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "issale()"
     },
     {
@@ -14913,8 +14913,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "src_utils_salesrollup_monthof",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "monthof()"
     },
     {
@@ -14924,8 +14924,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "src_utils_salesrollup_dayof",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "dayof()"
     },
     {
@@ -14935,8 +14935,8 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "src_utils_salesrollup_salesdelta",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "salesdelta()"
     },
     {
@@ -14946,8 +14946,8 @@
       "source_location": "L136",
       "_origin": "ast",
       "id": "src_utils_salesrollup_monthsinrange",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "monthsinrange()"
     },
     {
@@ -14957,8 +14957,8 @@
       "source_location": "L156",
       "_origin": "ast",
       "id": "src_utils_salesrollup_sumrange",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "sumrange()"
     },
     {
@@ -14968,8 +14968,8 @@
       "source_location": "L186",
       "_origin": "ast",
       "id": "src_utils_salesrollup_dailyseries",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "dailyseries()"
     },
     {
@@ -14979,8 +14979,8 @@
       "source_location": "L203",
       "_origin": "ast",
       "id": "src_utils_salesrollup_ranges",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "ranges"
     },
     {
@@ -14990,8 +14990,8 @@
       "source_location": "L205",
       "_origin": "ast",
       "id": "src_utils_salesrollup_rangedays",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "rangedays()"
     },
     {
@@ -15001,8 +15001,8 @@
       "source_location": "L230",
       "_origin": "ast",
       "id": "src_utils_salesrollup_rebuildmonths",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "rebuildmonths()"
     },
     {
@@ -15012,8 +15012,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_salesrollupwrite",
-      "community": 30,
-      "community_name": "notify",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "salesrollupwrite.js"
     },
     {
@@ -15023,8 +15023,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_utils_salesrollupwrite_statspath",
-      "community": 30,
-      "community_name": "notify",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "statspath()"
     },
     {
@@ -15034,8 +15034,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_utils_salesrollupwrite_statswrite",
-      "community": 30,
-      "community_name": "notify",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "statswrite()"
     },
     {
@@ -15045,8 +15045,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_utils_salesrollupwrite_tallysale",
-      "community": 30,
-      "community_name": "notify",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "tallysale()"
     },
     {
@@ -15056,8 +15056,8 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "src_utils_salesrollupwrite_tallysaleop",
-      "community": 30,
-      "community_name": "notify",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "tallysaleop()"
     },
     {
@@ -15144,8 +15144,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "src_utils_secrethash_needsrehash",
-      "community": 108,
-      "community_name": "StubAudio",
+      "community": 65,
+      "community_name": "RegionalWarehouseStage.jsx",
       "norm_label": "needsrehash()"
     },
     {
@@ -15210,8 +15210,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_supply",
-      "community": 30,
-      "community_name": "notify",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "supply.js"
     },
     {
@@ -15221,8 +15221,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_utils_supply_hq_locations",
-      "community": 30,
-      "community_name": "notify",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "hq_locations"
     },
     {
@@ -15243,7 +15243,7 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_utils_supply_warehouselist",
-      "community": 89,
+      "community": 5,
       "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "warehouselist()"
     },
@@ -15254,8 +15254,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "src_utils_supply_locationof",
-      "community": 30,
-      "community_name": "notify",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "locationof()"
     },
     {
@@ -15331,8 +15331,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_vanbay",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "vanbay.js"
     },
     {
@@ -15342,8 +15342,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_utils_vanbay_linebks",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "linebks()"
     },
     {
@@ -15353,8 +15353,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_utils_vanbay_netbks",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "netbks()"
     },
     {
@@ -15364,8 +15364,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_utils_vanbay_loadcap",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "loadcap()"
     },
     {
@@ -15375,8 +15375,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_utils_vanbay_backcap",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "backcap()"
     },
     {
@@ -15386,8 +15386,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_utils_vanbay_foldline",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "foldline()"
     },
     {
@@ -15397,8 +15397,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_utils_vanbay_vancells",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "vancells()"
     },
     {
@@ -15408,8 +15408,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "src_utils_vanbay_landingcell",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "landingcell()"
     },
     {
@@ -15419,8 +15419,8 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "src_utils_vanbay_applypreset",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "applypreset()"
     },
     {
@@ -15430,8 +15430,8 @@
       "source_location": "L89",
       "_origin": "ast",
       "id": "src_utils_vanbay_teamload",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "teamload()"
     },
     {
@@ -15452,8 +15452,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_vaultgrace",
-      "community": 108,
-      "community_name": "StubAudio",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "vaultgrace.js"
     },
     {
@@ -15463,8 +15463,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_utils_vaultgrace_graceisvalid",
-      "community": 108,
-      "community_name": "StubAudio",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "graceisvalid()"
     },
     {
@@ -15474,8 +15474,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_utils_vaultgrace_readgrace",
-      "community": 108,
-      "community_name": "StubAudio",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "readgrace()"
     },
     {
@@ -15485,8 +15485,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "src_utils_vaultgrace_touchgrace",
-      "community": 108,
-      "community_name": "StubAudio",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "touchgrace()"
     },
     {
@@ -15496,8 +15496,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_utils_vaultgrace_cleargrace",
-      "community": 108,
-      "community_name": "StubAudio",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "cleargrace()"
     },
     {
@@ -15633,21 +15633,10 @@
       "norm_label": "snap()"
     },
     {
-      "label": "FIXTURES",
-      "file_type": "code",
-      "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L26",
-      "_origin": "ast",
-      "id": "tools_lab_firestore_stub_fixtures",
-      "community": 61,
-      "community_name": "firebase.js",
-      "norm_label": "fixtures"
-    },
-    {
       "label": "collection()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L28",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_collection",
       "community": 61,
@@ -15658,7 +15647,7 @@
       "label": "doc()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L31",
+      "source_location": "L33",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_doc",
       "community": 61,
@@ -15669,7 +15658,7 @@
       "label": "onSnapshot()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L33",
+      "source_location": "L35",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_onsnapshot",
       "community": 61,
@@ -15680,7 +15669,7 @@
       "label": "noop()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L47",
+      "source_location": "L49",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_noop",
       "community": 61,
@@ -15691,7 +15680,7 @@
       "label": "writes()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L48",
+      "source_location": "L50",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_writes",
       "community": 61,
@@ -15702,7 +15691,7 @@
       "label": "record()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L49",
+      "source_location": "L51",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_record",
       "community": 61,
@@ -15713,7 +15702,7 @@
       "label": "found()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L50",
+      "source_location": "L52",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_found",
       "community": 61,
@@ -15724,7 +15713,7 @@
       "label": "writeBatch()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L51",
+      "source_location": "L53",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_writebatch",
       "community": 11,
@@ -15735,7 +15724,7 @@
       "label": "runTransaction()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L52",
+      "source_location": "L54",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_runtransaction",
       "community": 61,
@@ -15746,7 +15735,7 @@
       "label": "updateDoc()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L54",
+      "source_location": "L56",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_updatedoc",
       "community": 61,
@@ -15757,7 +15746,7 @@
       "label": "deleteDoc()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L55",
+      "source_location": "L57",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_deletedoc",
       "community": 61,
@@ -15768,7 +15757,7 @@
       "label": "deleteField()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L56",
+      "source_location": "L58",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_deletefield",
       "community": 61,
@@ -15779,7 +15768,7 @@
       "label": "serverTimestamp()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L57",
+      "source_location": "L59",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_servertimestamp",
       "community": 61,
@@ -15790,7 +15779,7 @@
       "label": "increment()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L58",
+      "source_location": "L60",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_increment",
       "community": 61,
@@ -15801,7 +15790,7 @@
       "label": "arrayUnion()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L59",
+      "source_location": "L61",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_arrayunion",
       "community": 61,
@@ -15812,7 +15801,7 @@
       "label": "getDoc()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L60",
+      "source_location": "L62",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_getdoc",
       "community": 61,
@@ -15823,7 +15812,7 @@
       "label": "setDoc()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L61",
+      "source_location": "L63",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_setdoc",
       "community": 61,
@@ -15834,7 +15823,7 @@
       "label": "query()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L62",
+      "source_location": "L64",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_query",
       "community": 53,
@@ -15845,7 +15834,7 @@
       "label": "where()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L63",
+      "source_location": "L65",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_where",
       "community": 61,
@@ -15856,7 +15845,7 @@
       "label": "orderBy()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L64",
+      "source_location": "L66",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_orderby",
       "community": 61,
@@ -15867,7 +15856,7 @@
       "label": "getDocs()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L65",
+      "source_location": "L67",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_getdocs",
       "community": 61,
@@ -15878,7 +15867,7 @@
       "label": "addDoc()",
       "file_type": "code",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L66",
+      "source_location": "L68",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_adddoc",
       "community": 61,
@@ -16024,8 +16013,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "tools_ponder_lab_lab",
-      "community": 74,
-      "community_name": "notify",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "lab()"
     },
     {
@@ -16035,8 +16024,8 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "tools_ponder_lab_forcehover",
-      "community": 74,
-      "community_name": "notify",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "forcehover()"
     },
     {
@@ -16046,8 +16035,8 @@
       "source_location": "L115",
       "_origin": "ast",
       "id": "tools_ponder_lab_booklab",
-      "community": 74,
-      "community_name": "notify",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "booklab()"
     },
     {
@@ -16079,8 +16068,8 @@
       "source_location": "L183",
       "_origin": "ast",
       "id": "tools_ponder_lab_minkirimlab",
-      "community": 74,
-      "community_name": "notify",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "minkirimlab()"
     },
     {
@@ -16189,8 +16178,8 @@
       "source_location": "L358",
       "_origin": "ast",
       "id": "tools_ponder_lab_labsamplings",
-      "community": 74,
-      "community_name": "notify",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "labsamplings()"
     },
     {
@@ -16200,8 +16189,8 @@
       "source_location": "L375",
       "_origin": "ast",
       "id": "tools_ponder_lab_labverifiedtonight",
-      "community": 74,
-      "community_name": "notify",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "labverifiedtonight()"
     },
     {
@@ -16211,8 +16200,8 @@
       "source_location": "L384",
       "_origin": "ast",
       "id": "tools_ponder_lab_labeodreports",
-      "community": 74,
-      "community_name": "notify",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "labeodreports()"
     },
     {
@@ -16266,8 +16255,8 @@
       "source_location": "L502",
       "_origin": "ast",
       "id": "tools_ponder_lab_photolab",
-      "community": 54,
-      "community_name": "RestockVaultView.jsx",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "photolab()"
     },
     {
@@ -16277,8 +16266,8 @@
       "source_location": "L554",
       "_origin": "ast",
       "id": "tools_ponder_lab_notascanlab",
-      "community": 54,
-      "community_name": "RestockVaultView.jsx",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "notascanlab()"
     },
     {
@@ -16288,8 +16277,8 @@
       "source_location": "L615",
       "_origin": "ast",
       "id": "tools_ponder_lab_toastlab",
-      "community": 74,
-      "community_name": "notify",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "toastlab()"
     },
     {
@@ -16365,8 +16354,8 @@
       "source_location": "L756",
       "_origin": "ast",
       "id": "tools_ponder_lab_shelllab",
-      "community": 74,
-      "community_name": "notify",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "shelllab()"
     },
     {
@@ -16376,8 +16365,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tools_seed_emulator",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "seed-emulator.mjs"
     },
     {
@@ -16387,8 +16376,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "tools_seed_emulator_arg",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "arg()"
     },
     {
@@ -16398,8 +16387,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "tools_seed_emulator_uid",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "uid"
     },
     {
@@ -16420,8 +16409,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "tools_seed_emulator_fields",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "fields()"
     },
     {
@@ -16431,8 +16420,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "tools_seed_emulator_put",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "put()"
     },
     {
@@ -16442,8 +16431,8 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "tools_seed_emulator_products",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "products"
     },
     {
@@ -16453,8 +16442,8 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "tools_seed_emulator_motorists",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "motorists"
     },
     {
@@ -16464,8 +16453,8 @@
       "source_location": "L83",
       "_origin": "ast",
       "id": "tools_seed_emulator_customers",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "customers"
     },
     {
@@ -16475,8 +16464,8 @@
       "source_location": "L91",
       "_origin": "ast",
       "id": "tools_seed_emulator_day",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "day()"
     },
     {
@@ -16486,8 +16475,8 @@
       "source_location": "L92",
       "_origin": "ast",
       "id": "tools_seed_emulator_transactions",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "transactions"
     },
     {
@@ -16497,8 +16486,8 @@
       "source_location": "L101",
       "_origin": "ast",
       "id": "tools_seed_emulator_run",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "run()"
     },
     {
@@ -16618,8 +16607,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tools_sfx_draft",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "sfx-draft.mjs"
     },
     {
@@ -16629,8 +16618,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "tools_sfx_draft_buf",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "buf()"
     },
     {
@@ -16640,8 +16629,8 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "tools_sfx_draft_at",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "at()"
     },
     {
@@ -16651,8 +16640,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "tools_sfx_draft_env",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "env()"
     },
     {
@@ -16662,8 +16651,8 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "tools_sfx_draft_tone",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "tone()"
     },
     {
@@ -16673,8 +16662,8 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "tools_sfx_draft_noise",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "noise()"
     },
     {
@@ -16684,8 +16673,8 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "tools_sfx_draft_finish",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "finish()"
     },
     {
@@ -16695,8 +16684,8 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "tools_sfx_draft_wav",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "wav()"
     },
     {
@@ -16706,8 +16695,8 @@
       "source_location": "L127",
       "_origin": "ast",
       "id": "tools_sfx_draft_sounds",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "sounds"
     },
     {
@@ -16717,8 +16706,8 @@
       "source_location": "L128",
       "_origin": "ast",
       "id": "tools_sfx_draft_add",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "add()"
     },
     {
@@ -20819,7 +20808,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L50",
+      "source_location": "L52",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub_found",
@@ -20831,7 +20820,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L35",
+      "source_location": "L37",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub_onsnapshot",
@@ -54174,7 +54163,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L66",
+      "source_location": "L68",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54185,7 +54174,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L59",
+      "source_location": "L61",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54196,7 +54185,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L28",
+      "source_location": "L30",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54207,7 +54196,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L55",
+      "source_location": "L57",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54218,7 +54207,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L56",
+      "source_location": "L58",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54229,7 +54218,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L31",
+      "source_location": "L33",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54240,18 +54229,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L26",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "tools_lab_firestore_stub",
-      "target": "tools_lab_firestore_stub_fixtures",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L50",
+      "source_location": "L52",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54262,7 +54240,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L60",
+      "source_location": "L62",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54273,7 +54251,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L65",
+      "source_location": "L67",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54284,7 +54262,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L58",
+      "source_location": "L60",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54295,7 +54273,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L47",
+      "source_location": "L49",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54306,7 +54284,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L33",
+      "source_location": "L35",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54317,7 +54295,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L64",
+      "source_location": "L66",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54328,7 +54306,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L62",
+      "source_location": "L64",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54339,7 +54317,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L49",
+      "source_location": "L51",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54350,7 +54328,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L52",
+      "source_location": "L54",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54361,7 +54339,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L57",
+      "source_location": "L59",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54372,7 +54350,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L61",
+      "source_location": "L63",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54394,7 +54372,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L54",
+      "source_location": "L56",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54405,7 +54383,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L63",
+      "source_location": "L65",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54416,7 +54394,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L51",
+      "source_location": "L53",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54427,7 +54405,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L48",
+      "source_location": "L50",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub",
@@ -54451,7 +54429,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L50",
+      "source_location": "L52",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub_found",
@@ -54463,7 +54441,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L65",
+      "source_location": "L67",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub_getdocs",
@@ -54475,7 +54453,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L38",
+      "source_location": "L40",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub_onsnapshot",
@@ -54483,23 +54461,11 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "tools/ponder-lab.jsx",
-      "source_location": "L49",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "tools_ponder_lab",
-      "target": "tools_lab_firestore_stub_fixtures",
-      "confidence_score": 1.0
-    },
-    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L49",
+      "source_location": "L51",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub_record",
@@ -54511,7 +54477,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L53",
+      "source_location": "L55",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub_runtransaction",
@@ -54523,7 +54489,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L54",
+      "source_location": "L56",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub_updatedoc",
@@ -54535,7 +54501,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L51",
+      "source_location": "L53",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub_writebatch",
@@ -54547,7 +54513,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L60",
+      "source_location": "L62",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub_getdoc",
@@ -54559,7 +54525,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L65",
+      "source_location": "L67",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub_getdocs",
@@ -54571,7 +54537,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "tools/lab-firestore-stub.js",
-      "source_location": "L53",
+      "source_location": "L55",
       "weight": 1.0,
       "_origin": "ast",
       "source": "tools_lab_firestore_stub_runtransaction",
@@ -59197,5 +59163,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "d02fe2ca71ad6eb57d181fcf6019d4c54c522852"
+  "built_at_commit": "dfc38206bcf3603bb9a0a03b087ffd3395d9b026"
 }

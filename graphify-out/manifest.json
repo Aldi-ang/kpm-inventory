@@ -755,8 +755,8 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1790225718.9880586,
-    "ast_hash": "cee44763ed47ce6b6c25e333c4e0d0ba",
+    "mtime": 1790226162.4536192,
+    "ast_hash": "69e2da6967c71c85630d0e8b5781bf2e",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
@@ -1005,8 +1005,8 @@
     "semantic_hash": ""
   },
   "tools/lab-firestore-stub.js": {
-    "mtime": 1790052087.2962286,
-    "ast_hash": "a5fd7e3dec5a42bc9b98a4c96f0d8e58",
+    "mtime": 1790226014.6441092,
+    "ast_hash": "dfed70dfb247c616f82772eed93c4b41",
     "semantic_hash": ""
   },
   "src/ponder/PonderPad.jsx": {

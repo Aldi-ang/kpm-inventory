@@ -23,7 +23,9 @@ const snap = (rows) => Array.isArray(rows)
 
 /* Keyed by the tail of the collection path, because the lab's appId and masterUserId are made up
    and the prefix is therefore meaningless. */
-export const FIXTURES = {};
+/* a shooter can seed it before the page runs (globalThis.__labFixtures, set on a new document), so a listener that
+   subscribes on mount - the geofence requests, say - already has rows; a later import would lose that race */
+export const FIXTURES = globalThis.__labFixtures || {};
 
 export const collection = (_db, path) => ({ path });
 /* like the real one, the id segments join the path — so a document fixture can be keyed

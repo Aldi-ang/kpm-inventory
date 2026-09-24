@@ -8392,6 +8392,8 @@ section('ROUND 4: A CLOSED CHEST SHOWS TABS IN ITS PANEL\'S PLACE (2026-09-24)')
      /\$\{open\.wh === false \? ' wh-shut' : ''\}/.test(bayc) && /\$\{open\.van === false \? ' van-shut' : ''\}/.test(bayc));
   ok('both closed = one short row: each chest stands beside its tabs',
      /\.kpm-bay\.wh-shut\.van-shut \{[^}]*grid-template-areas:[^}]*"whc whg vang vanc"/.test(bayCss));
+  ok('a tab\'s list never pushes its status chips past the edge: one minmax column (his 1440 frame clipped "DITOLAK")',
+     /\.kpm-bay \.slip \.rows \{[^}]*grid-template-columns: minmax\(0, 1fr\)/.test(bayCss));
   ok('the lid still closes in full, with its own sound', /chestEnderClose/.test(bayc) && /chestVanClose/.test(bayc) && /\.kpm-bay \.chest \.lid \{[^}]*transition: transform/.test(bayCss));
   ok('the usual load is its own field on the person\'s record, written like the layout, never inside activeCanvas',
      /const handleSavePreset = async \(preset\) =>/.test(flc) && /updateDoc\(doc\(db, collPath, selectedAgent\.id\), \{ loadPreset: preset \}\)/.test(flc) &&

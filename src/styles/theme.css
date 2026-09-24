@@ -4928,7 +4928,7 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-bay .slip .say.err { color: var(--bad); }
 .kpm-bay .slip .pane { min-height: 0; display: flex; flex-direction: column; gap: 8px; }
 /* only the list scrolls - the keys under it never leave the tab */
-.kpm-bay .slip .rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 260px; overflow-y: auto; }
+.kpm-bay .slip .rows { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; max-height: 260px; overflow-y: auto; }
 .kpm-bay.wh-shut.van-shut .slip .rows { max-height: 150px; }
 .kpm-bay .slip .rows li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 7px 9px; border-radius: 8px; background: var(--raised);
   font-weight: 800; font-size: 13px; line-height: 1.25; }
