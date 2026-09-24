@@ -8459,5 +8459,32 @@ section('ROUND 4: FAR AND NEAR ON THE STAGE (2026-09-24)');
      (stageCss.match(/opacity: \.\d+;/g) || []).length === 1 && /:root:not\(\.lite-mode\)[^{]*\{ opacity: \.72; \}/.test(stageCss));
 }
 
+/* ── ROUND 4: THE DEPLOYMENT HEADER MOVES INTO THE GOLD BAR (2026-09-24) ───────────────────────────────────
+   His 09:35 "i just dont like that the active deployment terminal take a big space even when not use maybe we
+   should redeign the UI format and placement for this while keeping everything". Nothing it showed is lost. */
+section('ROUND 4: THE DEPLOYMENT HEADER MOVES INTO THE GOLD BAR (2026-09-24)');
+{ const fl = read('src/FleetCanvasManager.jsx'), th = read('src/styles/theme.css');
+  const left = fl.slice(fl.indexOf('{/* LEFT PANEL: FLEET ROSTER'), fl.indexOf('{/* RIGHT PANEL: THE LOADING DOCK */}'));
+  const bar = left.slice(left.indexOf('className={`kpm-stage-bar'));
+  const right = fl.slice(fl.indexOf('{/* RIGHT PANEL: THE LOADING DOCK */}'));
+  const person = right.slice(right.indexOf('{selectedAgent ? ('), right.indexOf('<LoadingBay'));
+  const stageCss = th.slice(th.indexOf('/* ── THE ROSTER STAGE'), th.indexOf('/* ── END OF THE ROSTER STAGE'));
+  ok('the big "Active Deployment Terminal" header is gone from the person\'s side',
+     person.length > 100 && !/Active Deployment Terminal/.test(fl) && !/text-3xl font-black/.test(person) && !/allowedPayments|Initial|Current/.test(person));
+  ok('the bar names the place and the picked person, left',
+     /className="kpm-stage-who"/.test(bar) && /\{sel && <b className="kpm-stage-person">\{sel\.name\}<\/b>\}/.test(bar) && /placeOf\(sel\)\.loc/.test(bar));
+  ok('the permission chips moved into the bar\'s middle, Titip still read as Consign',
+     /className="kpm-stage-chips"/.test(bar) && /\(sel\.allowedPayments \|\| \['Cash'\]\)\.map/.test(bar) && /p === 'Titip' \? 'Consign' : p/.test(bar) &&
+     /\(sel\.allowedTiers \|\| \['Retail', 'Ecer'\]\)\.map/.test(bar));
+  ok('INITIAL / SOLD / CURRENT moved into the bar with the same sums: buybacks and IOU promises are not sold',
+     /className="kpm-stage-counts"/.test(bar) && /\['Initial', initialLoadBks\], \['Sold', soldTodayBks\], \['Current', currentLoadBks\]/.test(bar) &&
+     /if \(t\.type === 'RETUR' && t\.paymentType !== 'Tukar Ganti'\) return;/.test(left) && /if \(t\.paymentType === 'Tukar Ganti' && item\.fulfillment === 'IOU'\) return;/.test(left) &&
+     /const initialLoadBks = currentLoadBks \+ soldTodayBks;/.test(left));
+  ok('the bar follows the picked person on any page or area tab, as the header did', /const sel = selectedAgent \|\| null;/.test(left));
+  ok('two lines on the phone, one on the PC',
+     /\.kpm-stage-bar \{[^}]*grid-template-areas: "who acts" "chips counts"/.test(stageCss) &&
+     /@media \(min-width: 1024px\) \{[^@]*\.kpm-stage-bar \{[^}]*grid-template-areas: "who chips counts acts"/.test(stageCss));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

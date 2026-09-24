@@ -65,8 +65,8 @@
     "semantic_hash": ""
   },
   "src/FleetCanvasManager.jsx": {
-    "mtime": 1790225154.5668197,
-    "ast_hash": "c8eb6a4c3289976579d47c03db1fa13b",
+    "mtime": 1790225745.8363883,
+    "ast_hash": "22d10dfd6dbb87923d08406f604d9585",
     "semantic_hash": ""
   },
   "src/HallOfFameView.jsx": {
@@ -755,8 +755,8 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1790225600.4363394,
-    "ast_hash": "009d8a8d74ffa6c6293e82e1ee9ae19f",
+    "mtime": 1790225718.9880586,
+    "ast_hash": "cee44763ed47ce6b6c25e333c4e0d0ba",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {

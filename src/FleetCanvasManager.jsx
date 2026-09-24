@@ -1191,7 +1191,27 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 const byRank = (list) => [...list].sort((x, y) => (rank[y.userRole || 'AGENT'] || 0) - (rank[x.userRole || 'AGENT'] || 0));
                                 const place = places[rosterPlace] ? rosterPlace : (keys.find(k => places[k].people.some(p => p.id === selectedAgent?.id)) || keys[0]);
                                 const cast = byRank(term ? shown : (places[place]?.people || []));
-                                const sel = cast.find(p => p.id === selectedAgent?.id);
+                                /* the bar carries the picked person wherever the stage is paged or tabbed - it took over the old
+                                   deployment header (his 09:35 "take a big space even when not use"), which always showed them */
+                                const sel = selectedAgent || null;
+                                /* INITIAL / SOLD / CURRENT, moved from that header with the same sums */
+                                let currentLoadBks = 0, soldTodayBks = 0;
+                                if (sel) {
+                                    (sel.activeCanvas || []).forEach(item => {
+                                        const product = inventory.find(p => p.id === item.productId);
+                                        currentLoadBks += convertToBks(item.qty, item.unit, product);
+                                    });
+                                    agentSales.forEach(t => {
+                                        (t.items || []).forEach(item => {
+                                            // 🚀 IGNORE PURE BUYBACKS AND IOU PROMISES FROM "SOLD" TALLY
+                                            if (t.type === 'RETUR' && t.paymentType !== 'Tukar Ganti') return;
+                                            if (t.paymentType === 'Tukar Ganti' && item.fulfillment === 'IOU') return;
+                                            const product = inventory.find(p => p.id === item.productId);
+                                            soldTodayBks += convertToBks(item.qty, item.unit, product);
+                                        });
+                                    });
+                                }
+                                const initialLoadBks = currentLoadBks + soldTodayBks;
                                 const PER_STAGE = 7;
                                 const pages = Math.max(1, Math.ceil(cast.length / PER_STAGE));
                                 const pg = Math.min(rosterPage, pages - 1);
@@ -1221,7 +1241,23 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         </div>
                                         {/* keyed by the picked person, so the bar's light sweeps once per pick, never on a loop */}
                                         <div key={sel?.id || 'none'} className={`kpm-stage-bar${sel ? ' lit' : ''}`}>
-                                            <span className="kpm-stage-name">{term ? `Search · ${cast.length}` : (places[place]?.loc || 'Fleet')}</span>
+                                            <span className="kpm-stage-who">
+                                                <span className="kpm-stage-name">{sel ? placeOf(sel).loc : term ? `Search · ${cast.length}` : (places[place]?.loc || 'Fleet')}</span>
+                                                {sel && <b className="kpm-stage-person">{sel.name}</b>}
+                                            </span>
+                                            {sel && (
+                                                <>
+                                                    <span className="kpm-stage-chips" title="Permissions">
+                                                        <ShieldCheck size={13} aria-hidden="true"/><small>Permissions</small>
+                                                        {(sel.allowedPayments || ['Cash']).map(p => <span key={'p' + p}>{p === 'Titip' ? 'Consign' : p}</span>)}
+                                                        <i aria-hidden="true">|</i>
+                                                        {(sel.allowedTiers || ['Retail', 'Ecer']).map(t => <span key={'t' + t}>{t}</span>)}
+                                                    </span>
+                                                    <span className="kpm-stage-counts">
+                                                        {[['Initial', initialLoadBks], ['Sold', soldTodayBks], ['Current', currentLoadBks]].map(([k, v]) => <span key={k}><small>{k}</small><b>{v}</b></span>)}
+                                                    </span>
+                                                </>
+                                            )}
                                             {sel ? (
                                                 <span className="kpm-stage-acts">
                                                     <button type="button" onClick={(e) => handleViewClick(e, sel)}><User size={14}/> <span>Details</span></button>
@@ -1309,65 +1345,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
                 {selectedAgent ? (
                     <>
-                        <div className="p-6 border-b border-[var(--line-2)] bg-[var(--inset)]">
-                            <div className="flex items-start justify-between mb-2">
-                                <div>
-                                    <p className="text-[10px] text-[var(--accent-ink)] font-bold uppercase tracking-[0.2em] mb-1 flex items-center gap-2"><Activity size={12}/> Active Deployment Terminal</p>
-                                    <h2 className="text-3xl font-black text-[var(--ink)]">{selectedAgent.name}</h2>
-                                    <div className="flex items-center gap-2 mt-3 flex-wrap">
-                                        <ShieldCheck size={14} className="text-[var(--accent-ink)]"/>
-                                        <span className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Permissions:</span>
-                                        {(selectedAgent.allowedPayments || ['Cash']).map(p => (
-                                            <span key={p} className="text-[11px] bg-[var(--inset)] text-[var(--accent-ink)] border border-[var(--accent-edge)] px-1.5 py-0.5 rounded uppercase font-bold">{p === 'Titip' ? 'Consign' : p}</span>
-                                        ))}
-                                        <span className="text-[var(--ink-muted)]">|</span>
-                                        {(selectedAgent.allowedTiers || ['Retail', 'Ecer']).map(t => (
-                                            <span key={t} className="text-[11px] bg-[var(--inset)] text-[var(--accent-ink)] border border-[var(--accent-edge)] px-1.5 py-0.5 rounded uppercase font-bold">{t}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="flex gap-2">
-                                    {(() => {
-                                        let currentLoadBks = 0;
-                                        (selectedAgent.activeCanvas || []).forEach(item => {
-                                            const product = inventory.find(p => p.id === item.productId);
-                                            currentLoadBks += convertToBks(item.qty, item.unit, product);
-                                        });
-                                        
-                                        let soldTodayBks = 0;
-                                        agentSales.forEach(t => {
-                                            (t.items || []).forEach(item => {
-                                                // 🚀 IGNORE PURE BUYBACKS AND IOU PROMISES FROM "SOLD" TALLY
-                                                if (t.type === 'RETUR' && t.paymentType !== 'Tukar Ganti') return; 
-                                                if (t.paymentType === 'Tukar Ganti' && item.fulfillment === 'IOU') return; 
-                                                
-                                                const product = inventory.find(p => p.id === item.productId);
-                                                soldTodayBks += convertToBks(item.qty, item.unit, product);
-                                            });
-                                        });
-                                        const initialLoadBks = currentLoadBks + soldTodayBks;
-
-                                        return (
-                                            <>
-                                                <div className="bg-[var(--raised)] p-2.5 rounded-xl border border-[var(--line-2)] text-center min-w-[70px] shadow-inner">
-                                                    <p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest mb-1">Initial</p>
-                                                    <p className="text-lg font-black text-[var(--ink)]">{initialLoadBks}</p>
-                                                </div>
-                                                <div className="bg-[var(--inset)] p-2.5 rounded-xl border border-[var(--accent-edge)] text-center min-w-[70px] shadow-inner">
-                                                    <p className="text-[11px] text-[var(--accent-ink)] uppercase tracking-widest mb-1">Sold</p>
-                                                    <p className="text-lg font-black text-[var(--accent-ink)]">{soldTodayBks}</p>
-                                                </div>
-                                                <div className="bg-[var(--inset)] p-2.5 rounded-xl border border-[var(--accent-edge)] text-center min-w-[70px] shadow-inner relative overflow-hidden">
-                                                    <p className="text-[11px] text-[var(--accent-ink)] uppercase tracking-widest mb-1">Current</p>
-                                                    <p className="text-lg font-black text-[var(--accent-ink)] relative z-10">{currentLoadBks}</p>
-                                                </div>
-                                            </>
-                                        );
-                                    })()}
-                                </div>
-                            </div>
-                        </div>
-
+                        {/* the person's name, permissions and INITIAL / SOLD / CURRENT live in the stage's gold bar now */}
                         <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
                             
                             {/* THE VAN-LOADING BAY — his two chests (components/LoadingBay.jsx). Keyed by the

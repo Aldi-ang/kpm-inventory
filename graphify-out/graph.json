@@ -3066,8 +3066,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_components_confirmgate_promptaction",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 87,
+      "community_name": "career.js",
       "norm_label": "promptaction()"
     },
     {
@@ -11107,8 +11107,8 @@
       "source_location": "L282",
       "_origin": "ast",
       "id": "src_config_permissions_fleet_edit_perms",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "fleet_edit_perms"
     },
     {
@@ -11118,8 +11118,8 @@
       "source_location": "L295",
       "_origin": "ast",
       "id": "src_config_permissions_defaultfleetaccess",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "defaultfleetaccess()"
     },
     {
@@ -14385,8 +14385,8 @@
       "source_location": "L323",
       "_origin": "ast",
       "id": "src_utils_helpers_deletephotofromstorage",
-      "community": 87,
-      "community_name": "career.js",
+      "community": 5,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "deletephotofromstorage()"
     },
     {
@@ -15243,7 +15243,7 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_utils_supply_warehouselist",
-      "community": 5,
+      "community": 89,
       "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "warehouselist()"
     },
@@ -20771,7 +20771,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L1206",
+      "source_location": "L1226",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager_fleetcanvasmanager",
@@ -26604,7 +26604,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L1381",
+      "source_location": "L1359",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager_fleetcanvasmanager",
@@ -59197,5 +59197,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "c7647a36b02b18d0a29ecdb3c2907929ae9e94e5"
+  "built_at_commit": "d02fe2ca71ad6eb57d181fcf6019d4c54c522852"
 }
