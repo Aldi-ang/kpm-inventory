@@ -640,6 +640,18 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             return false;
         }
     };
+    /* HIS USUAL LOAD (round 4) - its own field too, written the same way: the bay's "Simpan sebagai muatan biasa".
+       Using it only fills the muatan (vanBay applyPreset); only MUAT VAN moves stock. */
+    const handleSavePreset = async (preset) => {
+        if (!canEditFleet || !selectedAgent) return false;
+        try {
+            await updateDoc(doc(db, collPath, selectedAgent.id), { loadPreset: preset });
+            return true;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+    };
 
     /* ── THE ROSTER STAGE (2026-09-24) ─────────────────────────────────────────────────────────────────────
        His State of Decay 2 community screen: the people stand side by side on a stage, a name over each, the one
@@ -650,6 +662,18 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
        Each card says what the van holds (packs and items, with a light) - his 2026-09-22 "better UI" was about
        information. */
     const loadOf = (m) => (m.activeCanvas || []).reduce((sum, r) => sum + convertToBks(r.qty, r.unit, inventory.find(p => p.id === r.productId)), 0);
+    /* one place key for the stage's area tabs AND the warehouse chest's TEAM tab (the other vans in this place) */
+    const placeOf = (a) => {
+        const prov = String(a.province || 'CENTRAL JAVA').trim().toUpperCase();
+        const loc = String(a.location || 'UNASSIGNED AREA').trim().toUpperCase();
+        return { prov, loc, k: `${prov} › ${loc}` };
+    };
+    /* ONE matcher for "this person's override requests": the bypass ledger, the activity log and the van chest's
+       GEOFENCE tab all use it, so the three can never disagree about whose request it is */
+    const isAgentBypass = (b, a) => {
+        const prefix = (a.email || '').split('@')[0].toLowerCase();
+        return b.salesmanId === a.id || (b.salesmanName || '').toLowerCase() === (a.name || '').toLowerCase() || (b.salesmanName || '').toLowerCase() === prefix;
+    };
     /* switching the salesman while the bay's muatan has lines asks first, through the dialog gate */
     const pickAgent = async (m) => {
         if (bayLines > 0 && selectedAgent?.id !== m.id && !await confirmAction(`Muatan ${selectedAgent?.name} belum dimuat. Pindah ke ${m.name} dan buang muatan itu?`)) return;
@@ -1159,9 +1183,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 const shown = agents.filter(a => !term || a.name?.toLowerCase().includes(term) || a.email?.toLowerCase().includes(term) || a.userRole?.toLowerCase().includes(term) || a.location?.toLowerCase().includes(term) || a.province?.toLowerCase().includes(term));
                                 const places = {};
                                 shown.forEach(a => {
-                                    const prov = String(a.province || 'CENTRAL JAVA').trim().toUpperCase();
-                                    const loc = String(a.location || 'UNASSIGNED AREA').trim().toUpperCase();
-                                    const k = `${prov} › ${loc}`;
+                                    const { prov, loc, k } = placeOf(a);
                                     (places[k] = places[k] || { prov, loc, people: [] }).people.push(a);
                                 });
                                 const keys = Object.keys(places).sort((x, y) => x.localeCompare(y));
@@ -1362,6 +1384,9 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     onReturn={handleReturnToWarehouse}
                                     onLayout={handleSaveLayout}
                                     onDirty={setBayLines}
+                                    onPreset={handleSavePreset}
+                                    team={agents.filter(a => a.id !== selectedAgent.id && placeOf(a).k === placeOf(selectedAgent).k)}
+                                    bypasses={allBypasses.filter(b => isAgentBypass(b, selectedAgent))}
                                 />
                             </div>
 
@@ -1407,15 +1432,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
                             {/* 🚀 AGENT-SPECIFIC BYPASS HISTORY 🚀 */}
                             {(() => {
-                                const agentPrefix = (selectedAgent.email || '').split('@')[0].toLowerCase();
-                                const agentBypasses = allBypasses.filter(b => 
-                                    b.status !== 'PENDING' && 
-                                    (
-                                        b.salesmanId === selectedAgent.id || 
-                                        (b.salesmanName || '').toLowerCase() === (selectedAgent.name || '').toLowerCase() ||
-                                        (b.salesmanName || '').toLowerCase() === agentPrefix
-                                    )
-                                );
+                                const agentBypasses = allBypasses.filter(b => b.status !== 'PENDING' && isAgentBypass(b, selectedAgent));
 
                                 if (agentBypasses.length === 0) return null;
 
@@ -1464,16 +1481,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 </button>
                                 
                                 {showHistory && (() => {
-                                    const agentPrefix = (selectedAgent.email || '').split('@')[0].toLowerCase();
-                                    const agentBypasses = allBypasses.filter(b => 
-                                        b.status !== 'PENDING' &&
-                                        (
-                                            b.salesmanId === selectedAgent.id || 
-                                            (b.salesmanName || '').toLowerCase() === (selectedAgent.name || '').toLowerCase() ||
-                                            (b.salesmanName || '').toLowerCase() === agentPrefix ||
-                                            agentSales.some(tx => (tx.customerName || '').toLowerCase() === (b.storeName || '').toLowerCase())
-                                        )
-                                    );
+                                    const agentBypasses = allBypasses.filter(b => b.status !== 'PENDING' && (isAgentBypass(b, selectedAgent) ||
+                                        agentSales.some(tx => (tx.customerName || '').toLowerCase() === (b.storeName || '').toLowerCase())));
 
                                     return (
                                         <div className="p-4 bg-[var(--inset)] border-t border-[var(--line-2)] max-h-[600px] overflow-y-auto custom-scrollbar">

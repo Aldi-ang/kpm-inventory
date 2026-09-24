@@ -8357,8 +8357,10 @@ section('THE ROSTER, REDRAWN WITH EVERY DOOR KEPT (2026-09-24)');
      /setRosterPlace\(k\); setRosterPage\(0\);/.test(left) && /setSearchTerm\(e\.target\.value\); setRosterPage\(0\);/.test(left));
   ok('the bar lights once per pick, never on a loop', /key=\{sel\?\.id \|\| 'none'\}/.test(left) &&
      /\.kpm-stage-bar\.lit::after \{ animation: kpmStageSheen 900ms [^;]* 1 both; \}/.test(read('src/styles/theme.css')) && !/kpmStageSheen[^;]*infinite/.test(read('src/styles/theme.css')));
-  ok('an open chest is never closed by a tap - it knocks', /onClick=\{\(\) => \(open\.wh \? knock\('wh'\) : toggle\('wh', true\)\)\}/.test(read('src/components/LoadingBay.jsx')) &&
-     !/toggle\('(wh|van)', !open/.test(read('src/components/LoadingBay.jsx')));
+  /* round 4 (his 09:35 "i still want u to add the closing animation on the chest"): the knock is gone, a tap closes again */
+  ok('a tap on a chest opens it AND closes it again; nothing knocks',
+     /onClick=\{\(\) => toggle\('wh', !open\.wh\)\}/.test(code(read('src/components/LoadingBay.jsx'))) &&
+     /onClick=\{\(\) => toggle\('van', !open\.van\)\}/.test(code(read('src/components/LoadingBay.jsx'))) && !/knock/.test(code(read('src/components/LoadingBay.jsx'))));
   ok('a card names the tier in his words and says what the van holds, in packs',
      /tierWord\('AREA_ADMIN'\)/.test(rowFn) && /const bks = Math\.round\(loadOf\(m\)\);/.test(rowFn) && /convertToBks\(r\.qty, r\.unit, inventory\.find/.test(fl) && /Bks · \$\{items\}/.test(rowFn));
   ok('picking a card goes through the muatan guard, by pointer or by key', /onClick=\{\(\) => pickAgent\(m\)\}/.test(rowFn) && /e\.key === 'Enter' \|\| e\.key === ' '/.test(rowFn) && /const pickAgent = async \(m\) => \{\s*if \(bayLines > 0/.test(fl));
@@ -8367,6 +8369,74 @@ section('THE ROSTER, REDRAWN WITH EVERY DOOR KEPT (2026-09-24)');
      stageCss.length > 1500 && !/opacity:\s*0[;\s]/.test(stageCss.replace(/\.kpm-stage-bar::after \{[^}]*\}/, '')) && /\.kpm-actor:hover \.kpm-actor-card, \.kpm-actor:focus-visible \.kpm-actor-card \{ transform: translateY\(-10px\)/.test(stageCss));
   ok('the blue standby is gone; nobody picked shows the community', !/Standby For Deployment/.test(fl) && /the community today/.test(fl));
   ok('every empty-roster cause still names itself', /The roster could not be read\./.test(left) && /Your own staff record was not found\./.test(left) && /You are not posted to a branch yet\./.test(left) && /Nobody is posted to \{branchPathLocation\}\./.test(left));
+}
+
+/* ── ROUND 4: A CLOSED CHEST SHOWS TABS IN ITS PANEL'S PLACE (2026-09-24) ────────────────────────────────
+   His 09:35 "make sure that there is something behind the panel that is useful to see". Behind the warehouse:
+   his usual load (PRESET) and the other vans in this place (TEAM); behind the van: this person's GEOFENCE
+   requests. His rule for the preset, 09:55: "A preset only fills the muatan, the same way a drag does. That
+   keeps the rule that only MUAT VAN moves stock, so a wrong preset can never change real numbers by itself." */
+section('ROUND 4: A CLOSED CHEST SHOWS TABS IN ITS PANEL\'S PLACE (2026-09-24)');
+{ const fl = read('src/FleetCanvasManager.jsx'), flc = code(fl);
+  const bay = read('src/components/LoadingBay.jsx'), bayc = code(bay);
+  const th = read('src/styles/theme.css');
+  const bayCss = th.slice(th.indexOf('/* ── THE VAN-LOADING BAY'), th.indexOf('/* ── END OF THE VAN-LOADING BAY'));
+  const fnOf = (src, name) => { const s = src.indexOf(`function ${name}(`); return s < 0 ? '' : src.slice(s, src.indexOf('\n  }\n', s)); };
+  const right = fl.slice(fl.indexOf('{/* RIGHT PANEL: THE LOADING DOCK */}'));
+
+  ok('a chest closed by hand shows its tabs in the panel\'s place - the warehouse PRESET + TEAM, the van GEOFENCE',
+     /\{open\.wh === false && \(\s*<div className="slip wh"/.test(bayc) && /\{open\.van === false && \(\s*<div className="slip van"/.test(bayc) &&
+     /'preset'/.test(bayc) && /'team'/.test(bayc) && /'geo'/.test(bayc) && /role="tablist"/.test(bayc));
+  ok('the shut panel leaves the flow, so its tabs take the room instead of an empty square',
+     /\.kpm-bay\.wh-shut \.gui\.wh \{[^}]*position: absolute/.test(bayCss) && /\.kpm-bay\.van-shut \.gui\.van \{[^}]*position: absolute/.test(bayCss) &&
+     /\$\{open\.wh === false \? ' wh-shut' : ''\}/.test(bayc) && /\$\{open\.van === false \? ' van-shut' : ''\}/.test(bayc));
+  ok('both closed = one short row: each chest stands beside its tabs',
+     /\.kpm-bay\.wh-shut\.van-shut \{[^}]*grid-template-areas:[^}]*"whc whg vang vanc"/.test(bayCss));
+  ok('the lid still closes in full, with its own sound', /chestEnderClose/.test(bayc) && /chestVanClose/.test(bayc) && /\.kpm-bay \.chest \.lid \{[^}]*transition: transform/.test(bayCss));
+  ok('the usual load is its own field on the person\'s record, written like the layout, never inside activeCanvas',
+     /const handleSavePreset = async \(preset\) =>/.test(flc) && /updateDoc\(doc\(db, collPath, selectedAgent\.id\), \{ loadPreset: preset \}\)/.test(flc) &&
+     /<LoadingBay[\s\S]{0,1400}onPreset=\{handleSavePreset\}/.test(flc) && /canEditFleet/.test(flc.slice(flc.indexOf('const handleSavePreset = async'), flc.indexOf('const handleSavePreset = async') + 300)));
+  ok('saving keeps only the PLUS lines, as { id, qty, unit }', /lines\.filter\(l => l\.dir > 0\)\.map\(\(\{ id, qty, unit \}\) => \(\{ id, qty, unit \}\)\)/.test(fnOf(bayc, 'savePreset')));
+  ok('using it only FILLS THE MUATAN (his rule): applyPreset, no writer, and it says what was cut',
+     /applyPreset\(/.test(fnOf(bayc, 'fillFromPreset')) && !/onLoad\(|onReturn\(|onPreset\(|onLayout\(/.test(fnOf(bayc, 'fillFromPreset')) &&
+     /cut/.test(fnOf(bayc, 'fillFromPreset')) && /say\(/.test(fnOf(bayc, 'fillFromPreset')));
+  ok('the team is the other people in THIS place, from the roster the viewer already sees',
+     /const placeOf = \(a\) =>/.test(flc) && /const \{ prov, loc, k \} = placeOf\(a\);/.test(flc) &&
+     /team=\{agents\.filter\(a => a\.id !== selectedAgent\.id && placeOf\(a\)\.k === placeOf\(selectedAgent\)\.k\)\}/.test(flc));
+  ok('ONE matcher for a person\'s override requests - the ledger, the log and the van tab all use it',
+     /const isAgentBypass = \(b, a\) =>/.test(flc) && (flc.match(/\(b\.salesmanName \|\| ''\)\.toLowerCase\(\) ===/g) || []).length === 2 &&
+     (flc.match(/b\.status !== 'PENDING' && \(?isAgentBypass\(b, selectedAgent\)/g) || []).length === 2 &&
+     /bypasses=\{allBypasses\.filter\(b => isAgentBypass\(b, selectedAgent\)\)\}/.test(flc));
+  ok('the company-wide PENDING queue stays at the top of the screen, never only behind a closed chest',
+     right.indexOf("allBypasses.some(b => b.status === 'PENDING') && (") > 0 && right.indexOf("allBypasses.some(b => b.status === 'PENDING') && (") < right.indexOf('{selectedAgent ? ('));
+  ok('the van tab only READS the requests - approving stays in the queue', !/updateDoc|gps_bypasses|confirmAction/.test(bayc));
+
+  /* the arithmetic, re-run on real numbers */
+  const vb = await import('../utils/vanBay.js');
+  if (typeof vb.applyPreset !== 'function' || typeof vb.teamLoad !== 'function') ok('applyPreset and teamLoad exist in src/utils/vanBay.js', false);
+  else {
+    const U = { packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 };
+    const P2 = { a: { id: 'a', stock: 100, ...U }, b: { id: 'b', stock: 15, ...U }, d: { id: 'd', stock: 0, ...U }, n: { id: 'n', stock: 50, ...U } };
+    const r = vb.applyPreset([{ id: 'a', qty: 20, unit: 'Bks', dir: 1 }], ['a', ...Array(17).fill(null)], [
+      { id: 'a', qty: 5, unit: 'Slop' }, { id: 'b', qty: 2, unit: 'Slop' }, { id: 'd', qty: 3, unit: 'Bks' }, { id: 'x', qty: 1, unit: 'Bal' }, { id: 'n', qty: 4, unit: 'Bks' }], P2, 0);
+    const line = (id) => r.lines.find(l => l.id === id), cutOf = (id) => r.cut.find(c => c.id === id);
+    ok('5 Slop of a product already +20 Bks in the muatan folds into ONE line of +70 Bks, like a drag',
+       r.lines.filter(l => l.id === 'a').length === 1 && line('a').dir === 1 && line('a').qty === 70 && line('a').unit === 'Bks' && !cutOf('a'));
+    ok('2 Slop wanted, 15 Bks in the warehouse: cut to 15 Bks and SAID', line('b')?.qty === 15 && line('b')?.unit === 'Bks' && cutOf('b')?.why === 'short' && cutOf('b')?.want === 20 && cutOf('b')?.got === 15);
+    ok('an empty shelf and a product this warehouse does not carry are skipped and SAID', !line('d') && cutOf('d')?.why === 'dry' && !line('x') && cutOf('x')?.why === 'missing');
+    ok('a new product takes the next square (landingCell); the old one keeps its own', r.layout[0] === 'a' && r.layout[1] === 'b' && r.layout[2] === 'n' && line('n')?.qty === 4);
+    ok('nothing real changed: the warehouse figures are untouched', P2.a.stock === 100 && P2.b.stock === 15);
+    ok('a product whose whole stock is already planned is skipped and SAID',
+       vb.applyPreset([{ id: 'c', qty: 10, unit: 'Bks', dir: 1 }], ['c', ...Array(17).fill(null)], [{ id: 'c', qty: 1, unit: 'Bks' }], { c: { id: 'c', stock: 10 } }, 0).cut[0]?.why === 'planned');
+    ok('a full van refuses a new product, as a drag does',
+       vb.applyPreset([], Array.from({ length: 18 }, (_, i) => 'p' + i), [{ id: 'n', qty: 1, unit: 'Bks' }], P2, 0).cut[0]?.why === 'full');
+    const T = vb.teamLoad([
+      { name: 'Budi', activeCanvas: [{ productId: 'a', qty: 2, unit: 'Slop' }, { productId: 'b', qty: 0, unit: 'Bks' }] },
+      { name: 'Sari', activeCanvas: [{ productId: 'a', qty: 5, unit: 'Bks' }, { productId: 'n', qty: 1, unit: 'Bal' }] }], P2);
+    ok('the team, per product: 2 Slop + 5 Bks = 25 Bks in two vans, 1 Bal = 200 Bks, an empty row left out, biggest first',
+       T.length === 2 && T[0].id === 'n' && T[0].bks === 200 && T[1].id === 'a' && T[1].bks === 25 &&
+       T[1].vans.length === 2 && T[1].vans[0].name === 'Budi' && T[1].vans[0].bks === 20);
+  }
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

@@ -17,7 +17,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import { convertToBks, getLocalDayKey } from '../utils/helpers';
-import { PER, lineBks, netBks, loadCap, backCap, foldLine, vanCells, landingCell } from '../utils/vanBay';
+import { PER, lineBks, netBks, loadCap, backCap, foldLine, vanCells, landingCell, applyPreset, teamLoad } from '../utils/vanBay';
 import { playSound } from '../hooks/useSound';
 
 const UNITS = ['Bks', 'Slop', 'Bal', 'Karton'];
@@ -69,7 +69,17 @@ function Cube({ p }) {
   );
 }
 
-export default function LoadingBay({ agent, warehouse, stock, damaged = [], canEdit, onLoad, onReturn, onLayout, onDirty }) {
+/* what a cut preset line says, by its reason (vanBay applyPreset) */
+const CUT_WHY = {
+  short: (c) => `dipotong ke ${fmt(c.got)} dari ${fmt(c.want)} Bks — sisa gudang segitu`,
+  planned: () => 'semua stok sudah di muatan',
+  dry: () => 'habis di gudang',
+  missing: () => 'tidak ada di gudang ini',
+  full: () => 'van penuh — kosongkan satu kotak dulu',
+};
+const BYPASS_WORD = { PENDING: 'menunggu', APPROVED: 'disetujui', REJECTED: 'ditolak' };
+
+export default function LoadingBay({ agent, warehouse, stock, damaged = [], canEdit, onLoad, onReturn, onLayout, onDirty, onPreset, team = [], bypasses = [] }) {
   const P = useMemo(() => Object.fromEntries(stock.map(p => [p.id, p])), [stock]);
   /* the van, in packs, from its live rows */
   const vanOf = useMemo(() => {
@@ -87,7 +97,11 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   const [whPage, setWhPage] = useState(0);
   const [vanPage, setVanPage] = useState(0);
   const [query, setQuery] = useState('');
-  const [open, setOpen] = useState({ wh: false, van: false });
+  /* null = not opened yet (the pick opens both); false = closed by hand, and its tabs take the panel's place */
+  const [open, setOpen] = useState({ wh: null, van: null });
+  const [tabs, setTabs] = useState({ wh: 'preset', van: 'geo' });
+  const [preset, setPreset] = useState(() => agent.loadPreset || []);
+  const [presetCut, setPresetCut] = useState(null);
   const [anim, setAnim] = useState({ wh: true, van: true });
   const [sheet, setSheet] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -165,13 +179,9 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     if (!chest || !motionOK()) return;
     chest.animate([{ transform: 'none' }, { transform: 'translateY(3px) scale(1.03,.95)' }, { transform: 'none' }], { duration: 200, easing: 'ease-out' });
   }
-  /* THE CHESTS STAY OPEN while a person is picked - his 2026-09-24 "weird that we have close and open button and a big
-     space": a closed chest left an empty panel's worth of room doing nothing. A tap on an open chest only knocks it. */
-  function knock(side) {
-    bump(side === 'wh' ? refs.whChest.current : refs.vanChest.current);
-    if (side === 'wh') burst(6);
-    playSound('chestPick');
-  }
+  /* A tap opens a chest and closes it again (his 09:35 "i still want u to add the closing animation on the chest"),
+     and a chest closed by hand shows its TABS in its panel's place, so the room is never empty: behind the
+     warehouse his usual load and the team, behind the van this person's geofence requests. */
   function toggle(side, on) {
     setOpen(o => ({ ...o, [side]: on }));
     setAnim(a => ({ ...a, [side]: true }));
@@ -522,6 +532,30 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
       playSound('chestRefuse');
     }
   }
+  /* ── behind the closed warehouse: HIS USUAL LOAD ── */
+  async function savePreset() {
+    if (!canEdit || busy) return;
+    const next = lines.filter(l => l.dir > 0).map(({ id, qty, unit }) => ({ id, qty, unit }));
+    if (!next.length) return say('wh', 'Belum ada barang masuk di muatan untuk disimpan', true);
+    const ok = await onPreset?.(next);
+    if (ok !== true) return say('wh', 'Muatan biasa tidak tersimpan — coba lagi', true);
+    say('wh', `${preset.length ? 'Muatan biasa diganti' : 'Tersimpan sebagai muatan biasa'} — ${next.length} barang`);
+    setPreset(next); setPresetCut(null);
+    playSound('chestPage');
+  }
+  /* his rule: a preset only FILLS THE MUATAN, the same way a drag does - nothing is written here */
+  function fillFromPreset() {
+    if (!canEdit || busy) return;
+    if (!preset.length) return say('wh', 'Belum ada muatan biasa — isi muatan, lalu simpan', true);
+    const r = applyPreset(lines, cells, preset, P, vanPage);
+    const went = preset.length - r.cut.filter(c => c.why !== 'short').length;
+    flushSync(() => { setLines(r.lines); setLayout(r.layout); setAnim({ wh: false, van: false }); });
+    setPresetCut(r.cut);
+    say('wh', went ? `${went} barang masuk ke muatan — belum tercatat${r.cut.length ? ` · ${r.cut.length} dipotong, alasannya di bawah` : ''}`
+      : 'Tidak ada yang bisa masuk — alasannya di bawah', !went);
+    playSound(went ? 'chestLand' : 'chestRefuse');
+  }
+
   function removeLine(id) {
     if (busy) return;
     setLines(ls => ls.filter(l => l.id !== id));
@@ -542,15 +576,68 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   if (minus) goParts.push(`${fmt(minus)} Bks kembali`);
 
   const sh = sheet && P[sheet.id] ? { s: sheet, p: P[sheet.id], c: calc(sheet) } : null;
+  /* what sits behind a closed chest */
+  const teamRows = open.wh === false && tabs.wh === 'team' ? teamLoad(team, P) : [];
+  const geo = [...bypasses].sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+  const plusLines = lines.filter(l => l.dir > 0).length;
+  const tabKeys = (side, list) => (
+    <div className="tabs" role="tablist" aria-label={side === 'wh' ? 'Di balik peti gudang' : 'Di balik peti van'}>
+      {list.map(([k, label]) => (
+        <button key={k} id={`kpm-slip-${k}`} type="button" role="tab" aria-selected={tabs[side] === k} className={`tab${tabs[side] === k ? ' on' : ''}`}
+          onClick={() => { setTabs(t => ({ ...t, [side]: k })); playSound('chestPage'); }}>{label}</button>
+      ))}
+    </div>
+  );
 
   return (
     <div className="kpm-bay-wrap">
-      <section ref={refs.bay} className={`kpm-bay${open.wh ? ' wh-open' : ''}${open.van ? ' van-open' : ''}${dragging ? ' dragging' : ''}`} aria-label="Muat van">
+      <section ref={refs.bay} className={`kpm-bay${open.wh ? ' wh-open' : ''}${open.van ? ' van-open' : ''}${open.wh === false ? ' wh-shut' : ''}${open.van === false ? ' van-shut' : ''}${dragging ? ' dragging' : ''}`} aria-label="Muat van">
         <p className="bayHint">{canEdit ? 'Tarik kotak dari gudang ke van — atau kembali' : 'Hanya lihat — tingkatmu tidak bisa memuat van'}</p>
+
+        {open.wh === false && (
+          <div className="slip wh">
+            {tabKeys('wh', [['preset', 'Muatan biasa'], ['team', `Tim · ${team.length}`]])}
+            {sayEl('wh')}
+            {tabs.wh === 'preset' ? (
+              <div className="pane" role="tabpanel" aria-labelledby="kpm-slip-preset">
+                {preset.length ? (
+                  <ul className="rows">
+                    {preset.map(l => (
+                      <li key={l.id}><span>{P[l.id]?.name || 'Barang yang sudah tidak ada'}<small>gudang {fmt(stockOf(l.id))} Bks</small></span>
+                        <b>{fmt(l.qty)} {l.unit}</b></li>
+                    ))}
+                  </ul>
+                ) : <p className="note">Belum ada muatan biasa untuk {agent.name}. Tarik barang ke van, lalu simpan di sini.</p>}
+                {presetCut?.length ? (
+                  <ul className="rows cut" aria-label="Yang dipotong">
+                    {presetCut.map(c => <li key={c.id}><span>{P[c.id]?.name || 'Barang yang sudah tidak ada'}</span><b>{CUT_WHY[c.why](c)}</b></li>)}
+                  </ul>
+                ) : null}
+                {canEdit && (
+                  <div className="acts">
+                    <button type="button" className="use" disabled={!preset.length || busy} onClick={fillFromPreset}>Pakai muatan biasa</button>
+                    <button type="button" className="keep" disabled={!plusLines || busy} onClick={savePreset}>Simpan sebagai muatan biasa</button>
+                  </div>
+                )}
+                <p className="note">Hanya mengisi muatan, seperti menarik kotak. Stok baru berubah saat MUAT VAN ditekan.</p>
+              </div>
+            ) : (
+              <div className="pane" role="tabpanel" aria-labelledby="kpm-slip-team">
+                {teamRows.length ? (
+                  <ul className="rows">
+                    {teamRows.map(r => (
+                      <li key={r.id}><span>{r.name}<small>{r.vans.map(v => `${v.name} ${fmt(v.bks)}`).join(' · ')}</small></span><b>{fmt(r.bks)} Bks</b></li>
+                    ))}
+                  </ul>
+                ) : <p className="note">{team.length ? 'Van lain di tempat ini kosong.' : 'Tidak ada orang lain di tempat ini.'}</p>}
+              </div>
+            )}
+          </div>
+        )}
 
         <div ref={refs.whGui} className={`gui wh${anim.wh ? '' : ' noanim'}`}>
           <p className="title"><span>Gudang {warehouse}</span><span className="count">{stock.length} barang · {fmt(totalWh)} Bks</span></p>
-          {sayEl('wh')}
+          {open.wh !== false && sayEl('wh')}
           <label className="find">
             <span className="sr-only">Cari barang di gudang</span>
             <input type="search" value={query} placeholder="Cari barang di gudang…" autoComplete="off" enterKeyHint="search"
@@ -588,12 +675,12 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
           </div>
         </div>
 
-        <button ref={refs.whChest} className="chestCell whc" type="button" aria-expanded={open.wh} aria-label="Peti gudang" onClick={() => (open.wh ? knock('wh') : toggle('wh', true))}>
+        <button ref={refs.whChest} className="chestCell whc" type="button" aria-expanded={!!open.wh} aria-label="Peti gudang — buka atau tutup" onClick={() => toggle('wh', !open.wh)}>
           <span className="chest ender"><span className="lid" /><span className="latch" /><span className="body" /></span>
           <span className="motes" ref={refs.motes} aria-hidden="true">{motes.map((v, i) => <i key={i} style={v} />)}</span>
           <span className="cap">Gudang</span>
         </button>
-        <button ref={refs.vanChest} className="chestCell vanc" type="button" aria-expanded={open.van} aria-label={`Peti van ${agent.name}`} onClick={() => (open.van ? knock('van') : toggle('van', true))}>
+        <button ref={refs.vanChest} className="chestCell vanc" type="button" aria-expanded={!!open.van} aria-label={`Peti van ${agent.name} — buka atau tutup`} onClick={() => toggle('van', !open.van)}>
           <span className="chest small"><span className="lid" /><span className="latch" /><span className="body" /></span>
           <span className="cap">Van · {agent.vehicle || '—'}</span>
         </button>
@@ -603,7 +690,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
             <span>{agent.name} inventory</span>
             <span className="count">{fmt(vanHave)} Bks{plus ? <> <b>+{fmt(plus)}</b></> : null}{minus ? <> <b>−{fmt(minus)}</b></> : null}</span>
           </p>
-          {sayEl('van')}
+          {open.van !== false && sayEl('van')}
           <div className="grid" key={'van' + vanPage} ref={refs.vanGrid} onPointerDown={(e) => startDrag(e, 'van')} onKeyDown={(e) => keyBox(e, 'van')}>
             {Array.from({ length: PER }, (_, i) => {
               const c = vanPage * PER + i, id = cells[c], p = id ? P[id] : null, style = { '--d': 120 + i * 50 + 'ms' };
@@ -639,6 +726,26 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
             )) : <p className="none">Tidak ada barang rusak di van hari ini</p>}
           </div>
         </div>
+
+        {/* behind the closed van: this person's geofence requests. The company-wide PENDING queue stays at the top
+            of the screen - his salesman waits at a shop for it - so approving never hides behind a chest. */}
+        {open.van === false && (
+          <div className="slip van">
+            {tabKeys('van', [['geo', `Geofence · ${geo.length}`]])}
+            {sayEl('van')}
+            <div className="pane" role="tabpanel" aria-labelledby="kpm-slip-geo">
+              {geo.length ? (
+                <ul className="rows">
+                  {geo.map(b => (
+                    <li key={b.id}><span>{b.storeName}<small>{b.timestamp ? new Date(b.timestamp).toLocaleString('id-ID') : '—'} · {b.distance ?? '—'} m</small></span>
+                      <b className={`st ${b.status}`}>{BYPASS_WORD[b.status] || b.status}</b></li>
+                  ))}
+                </ul>
+              ) : <p className="note">Belum ada permintaan geofence dari {agent.name}.</p>}
+              {geo.some(b => b.status === 'PENDING') && <p className="note">Yang menunggu disetujui atau ditolak di antrean paling atas layar.</p>}
+            </div>
+          </div>
+        )}
 
         {canEdit && (
           <aside className="man" aria-label="Muatan hari ini">

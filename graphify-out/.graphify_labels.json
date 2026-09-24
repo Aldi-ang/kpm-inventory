@@ -100,7 +100,6 @@
   "98": "vgRestore",
   "99": "StockByWarehouseTable.jsx",
   "100": "🟠 2026-09-08 09:23 — the hand-off bug was a SALE bug. `967e447`",
-  "101": "HistoryReportView.jsx",
   "102": "🟠 2026-09-08 09:38 — consignment is now shop-only, strict. `83f5041`",
   "103": "🟠 2026-09-10 07:55 — prices consolidated into one page; business track closed",
   "104": "🟠 2026-09-11 — the red alarm is an adoption failure, not a threshold bug",
@@ -113,7 +112,6 @@
   "111": "ShellLab",
   "112": "AcceptanceReceipt.jsx",
   "113": "dayStats.selfcheck.mjs",
-  "114": "StockByWarehouseTable.jsx",
   "115": "ShipmentPlanStage.jsx",
   "116": "StubAudio",
   "118": "sfx-kenney.js"

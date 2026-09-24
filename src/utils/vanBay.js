@@ -57,6 +57,50 @@ export function landingCell(cells, id, under, page) {
   return cells.indexOf(null);
 }
 
+/* HIS USUAL LOAD, put back in the muatan. His rule, 2026-09-24: "A preset only fills the muatan, the same way
+   a drag does. That keeps the rule that only MUAT VAN moves stock, so a wrong preset can never change real
+   numbers by itself." So each saved line folds in through foldLine, capped at what the warehouse can still
+   give (loadCap), and a new product takes its square through landingCell. Every line that did not go in
+   whole comes back in `cut` with its reason: short (cut to what is left), planned (all of it is already in
+   the muatan), dry (the shelf is empty), missing (this warehouse does not carry it), full (no square). */
+export function applyPreset(lines, cells, preset, P, page = 0) {
+  let L = lines;
+  const C = [...cells], cut = [];
+  for (const { id, qty, unit } of preset || []) {
+    const p = P[id];
+    if (!p) { cut.push({ id, why: 'missing' }); continue; }
+    const want = convertToBks(qty, unit, p);
+    if (!(want > 0)) continue;
+    const got = Math.min(want, loadCap(p.stock || 0, netBks(L, id, p)));
+    if (got <= 0) { cut.push({ id, want, got: 0, why: p.stock ? 'planned' : 'dry' }); continue; }
+    if (!C.includes(id)) {
+      const c = landingCell(C, id, -1, page);
+      if (c < 0) { cut.push({ id, want, got: 0, why: 'full' }); continue; }
+      C[c] = id;
+    }
+    L = foldLine(L, got < want ? { id, qty: got, unit: 'Bks', dir: 1, bks: got } : { id, qty, unit, dir: 1, bks: want }, p);
+    if (got < want) cut.push({ id, want, got, why: 'short' });
+  }
+  return { lines: L, layout: C, cut };
+}
+
+/* THE TEAM: what the other vans in this place hold, per product, biggest first - the same packs the roster
+   cards count (FleetCanvasManager loadOf). A product this warehouse does not list still counts, by its row. */
+export function teamLoad(people, P) {
+  const by = {};
+  for (const m of people) {
+    for (const r of m.activeCanvas || []) {
+      const bks = convertToBks(Number(r.qty) || 0, r.unit, P[r.productId]);
+      if (!(bks > 0)) continue;
+      const row = by[r.productId] || (by[r.productId] = { id: r.productId, name: P[r.productId]?.name || r.name || r.productId, bks: 0, vans: [] });
+      row.bks += bks;
+      const van = row.vans.find(v => v.name === m.name);
+      if (van) van.bks += bks; else row.vans.push({ name: m.name, bks });
+    }
+  }
+  return Object.values(by).sort((a, b) => b.bks - a.bks);
+}
+
 /* The damaged row: what came back broken today. A damaged RETUR never goes back to stock
    (useTransactionEngine isReturnedToStock), so it rides in the van until the EOD settles it. */
 export function damagedInVan(sales, inventory) {

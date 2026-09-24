@@ -4901,6 +4901,51 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
   .kpm-bay .motes { display: none; }
   .kpm-bay .slot, .kpm-bay .kpm-cube, .kpm-bay .gui, .kpm-bay .chest .lid, .kpm-bay .chest .latch { animation: none !important; transition: none !important; }
 }
+
+/* ROUND 4 - a chest closed by hand shows TABS in its panel's place (his 09:35 "make sure that there is something
+   behind the panel that is useful to see"). The shut panel leaves the flow and shrinks into its lid over the tabs,
+   so the square is never empty; both shut, each chest stands beside its tabs in one short row. The tabs are the
+   app's own surface, not the stone - they are a note behind the chest, not part of it. */
+.kpm-bay.wh-shut .gui.wh { position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; }
+.kpm-bay.van-shut .gui.van { position: absolute; left: 0; right: 0; top: 0; margin: 0 auto; }
+@container kpmbay (min-width: 640px) { .kpm-bay.van-shut .gui.van { top: auto; bottom: 0; } }
+.kpm-bay.wh-shut.van-shut { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "hint hint" "whc whg" "vanc vang" "man man"; align-items: center; }
+@container kpmbay (min-width: 640px) {
+  .kpm-bay.wh-shut.van-shut { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto; grid-template-areas: "hint hint hint hint" "whc whg vang vanc" "man man man man"; }
+}
+@container kpmbay (min-width: 1100px) {
+  .kpm-bay.wh-shut.van-shut { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto 300px; grid-template-areas: "hint hint hint hint man" "whc whg vang vanc man"; }
+}
+.kpm-bay .slip { min-width: 0; width: 100%; max-width: 460px; justify-self: center; align-self: stretch; display: flex; flex-direction: column; gap: 8px;
+  padding: 10px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--inset); color: var(--ink); }
+.kpm-bay .slip.wh { grid-area: whg; }
+.kpm-bay .slip.van { grid-area: vang; }
+.kpm-bay .slip .tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.kpm-bay .slip .tab { min-height: 40px; padding: 0 12px; cursor: pointer; border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel); color: var(--ink-muted);
+  font: 900 11px/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.kpm-bay .slip .tab.on { background: var(--gold); color: var(--gold-ink); border-color: var(--accent-edge); }
+.kpm-bay .slip .say { margin: 0; color: var(--accent-ink); }
+.kpm-bay .slip .say.err { color: var(--bad); }
+.kpm-bay .slip .pane { min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+/* only the list scrolls - the keys under it never leave the tab */
+.kpm-bay .slip .rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 260px; overflow-y: auto; }
+.kpm-bay.wh-shut.van-shut .slip .rows { max-height: 150px; }
+.kpm-bay .slip .rows li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 7px 9px; border-radius: 8px; background: var(--raised);
+  font-weight: 800; font-size: 13px; line-height: 1.25; }
+.kpm-bay .slip .rows li > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.kpm-bay .slip .rows small { display: block; font: 700 10px/1.4 var(--font-mono); letter-spacing: .04em; color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpm-bay .slip .rows b { flex: 0 0 auto; font: 900 12px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kpm-bay .slip .rows.cut li { background: transparent; border: 1px dashed var(--line-2); }
+.kpm-bay .slip .rows.cut b { flex: 0 1 auto; white-space: normal; text-align: right; color: var(--bad); font-size: 11px; }
+.kpm-bay .slip .st { padding: 3px 6px; border-radius: 4px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; background: var(--panel); color: var(--ink-muted); }
+.kpm-bay .slip .st.PENDING, .kpm-bay .slip .st.APPROVED { background: var(--gold); color: var(--gold-ink); }
+.kpm-bay .slip .st.REJECTED { background: var(--danger-plate); color: var(--danger-plate-ink); }
+.kpm-bay .slip .note { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-muted); }
+.kpm-bay .slip .acts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; }
+.kpm-bay .slip .acts button { min-height: 44px; padding: 0 10px; border-radius: 10px; cursor: pointer; font: 900 11px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.kpm-bay .slip .acts .use { border: 0; background: var(--gold); color: var(--gold-ink); }
+.kpm-bay .slip .acts .keep { border: 1px solid var(--accent-edge); background: var(--panel); color: var(--accent-ink); }
+.kpm-bay .slip .acts button:disabled { border: 1px dashed var(--line-2); background: var(--panel); color: var(--ink-dim); cursor: not-allowed; }
 /* ── END OF THE VAN-LOADING BAY ─────────────────────────────────────────────────────────────────── */
 
 /* ── THE ROSTER STAGE (FleetCanvasManager.jsx stageCard) — his State of Decay 2 community screen ───────────
