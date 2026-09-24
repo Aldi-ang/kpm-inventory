@@ -6,7 +6,7 @@
 
 His 09:35: *"i still want u to add the closing animation on the chest but make sure that there is something behind the panel that is useful to see ... add far and near effect on the cards ... better 3D background ... i just dont like that the active deployment terminal take a big space even when not use maybe we should redeign the UI format and placement for this while keeping everything what do you think"*.
 
-**WAITING ON ALDI:** 🔴 DECIDE the round-4 plan (chat + NEXT-SESSION.md): go, or change a part · ❓ ANSWER what a CLOSED chest shows - suggested: warehouse = the 3 lowest-stock products, van = its contents list · ✅ TEST (still owed) the stage + chests, 09:30 entry below.
+**WAITING ON ALDI:** 🔴 DECIDE the round-4 plan (chat + NEXT-SESSION.md): go, or change a part · ❓ ANSWER what a CLOSED chest shows - he asked for my view (09:45); proposed: WAREHOUSE closed = "what he usually sells": his top 3 products over the last 7 days, his average a day each, how many are in the van, and the gap to load; VAN closed = "money on the road": the van in Bks AND in Rupiah at its tier price, how many days it lasts at his pace, and the damaged count. Data: this screen already has transactions, activeCanvas and product prices · ✅ TEST (still owed) the stage + chests, 09:30 entry below.
 
 ## 🟢 2026-09-24 09:30 — polish shipped; SESSION CLOSED (his 5-hour quota)
 
