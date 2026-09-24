@@ -8439,5 +8439,25 @@ section('ROUND 4: A CLOSED CHEST SHOWS TABS IN ITS PANEL\'S PLACE (2026-09-24)')
   }
 }
 
+/* ── ROUND 4: FAR AND NEAR ON THE STAGE (2026-09-24) ─────────────────────────────────────────────────────
+   His 09:35 "add far and near effect on the cards ... better 3D background", on his State of Decay 2 screenshot. */
+section('ROUND 4: FAR AND NEAR ON THE STAGE (2026-09-24)');
+{ const th = read('src/styles/theme.css');
+  const stageCss = th.slice(th.indexOf('/* ── THE ROSTER STAGE'), th.indexOf('/* ── END OF THE ROSTER STAGE'));
+  const back = /\.kpm-stage:has\(\.kpm-actor\.on, \.kpm-actor:hover, \.kpm-actor:focus-visible\) \.kpm-actor:not\(\.on, :hover, :focus-visible\) \.kpm-actor-card \{([^}]*)\}/.exec(stageCss);
+  ok('when one card is pointed at or picked, every other card stands further back - smaller, dimmer, higher',
+     !!back && /translateY\(-\d+px\) scale\(\.\d+\)/.test(back[1]) &&
+     /:root:not\(\.lite-mode\) \.kpm-stage:has\([^{]*\.kpm-actor-card \{ opacity: \.[6-9]\d*; \}/.test(stageCss));
+  ok('the pointed or picked card steps forward',
+     /\.kpm-actor:hover \.kpm-actor-card, \.kpm-actor:focus-visible \.kpm-actor-card \{ transform: translateY\(-10px\) scale\(1\.0\d\)/.test(stageCss) &&
+     /\.kpm-actor\.on \.kpm-actor-card \{ transform: translateY\(-6px\) scale\(1\.0\d\)/.test(stageCss));
+  ok('a better floor: a grid plane running back to the horizon, a spotlight from above, a light haze',
+     /repeating-conic-gradient\(/.test(stageCss) && /conic-gradient\(from 1[5-6]\d?deg at 50% -/.test(stageCss) && /the haze/.test(stageCss));
+  ok('no shadow, no filter, nothing on a loop (G30)', stageCss.length > 3000 && !/box-shadow|drop-shadow|filter:|infinite/.test(stageCss));
+  ok('Lite Mode keeps every card whole: the dimming is gated out of it, and nothing glides',
+     /\.lite-mode \.kpm-actor-card, \.lite-mode \.kpm-actor-floor \{ transition: none; \}/.test(stageCss) &&
+     (stageCss.match(/opacity: \.\d+;/g) || []).length === 1 && /:root:not\(\.lite-mode\)[^{]*\{ opacity: \.72; \}/.test(stageCss));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

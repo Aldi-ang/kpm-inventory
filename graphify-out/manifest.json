@@ -755,8 +755,8 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1790225107.1371179,
-    "ast_hash": "ef03add5f0735f98c6099e6256bd0060",
+    "mtime": 1790225600.4363394,
+    "ast_hash": "009d8a8d74ffa6c6293e82e1ee9ae19f",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {

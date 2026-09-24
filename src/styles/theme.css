@@ -4964,7 +4964,20 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-stage-tab.on small { color: var(--gold-ink); }
 .kpm-stage { display: flex; justify-content: flex-start; gap: 18px; overflow-x: auto; padding: 20px 14px 8px; scroll-snap-type: x proximity; perspective: 900px;
   border: 1px solid var(--line-2); border-bottom: 0; border-radius: 14px 14px 0 0;
-  background: radial-gradient(90% 55% at 50% 100%, rgba(208, 138, 46, .16), transparent 70%), linear-gradient(180deg, var(--raised), var(--sunk)); }
+  background: radial-gradient(90% 55% at 50% 100%, rgba(208, 138, 46, .16), transparent 70%), linear-gradient(180deg, var(--raised), var(--sunk));
+  /* round 4, his "better 3D background": a spotlight from above and its beam, the haze along the horizon, and the
+     floor - a grid plane whose lines run back to a vanishing point above the stage, cross lines closer together the
+     further back they are, fading into the haze. The line above stays for a browser without color-mix. */
+  background:
+    radial-gradient(50% 60% at 50% -10%, rgba(245, 208, 138, .22), transparent 70%),
+    conic-gradient(from 158deg at 50% -8%, transparent 0deg, rgba(245, 208, 138, .07) 10deg 34deg, transparent 44deg),
+    linear-gradient(180deg, transparent 40%, rgba(236, 222, 196, .06) 54%, transparent 70%),
+    linear-gradient(180deg, color-mix(in srgb, var(--raised) 46%, var(--sunk)), transparent 60%) 0 100% / 100% 46% no-repeat,
+    repeating-conic-gradient(from 0deg at 50% -150%, rgba(208, 138, 46, .22) 0deg .3deg, transparent .3deg 5deg) 0 100% / 100% 46% no-repeat,
+    linear-gradient(180deg, transparent 0 9%, rgba(208, 138, 46, .2) 9% 10%, transparent 10% 21%, rgba(208, 138, 46, .2) 21% 22.2%, transparent 22.2% 36%,
+      rgba(208, 138, 46, .2) 36% 37.5%, transparent 37.5% 55%, rgba(208, 138, 46, .2) 55% 56.8%, transparent 56.8% 79%, rgba(208, 138, 46, .2) 79% 81%, transparent 81%) 0 100% / 100% 46% no-repeat,
+    radial-gradient(90% 55% at 50% 100%, rgba(208, 138, 46, .16), transparent 70%),
+    linear-gradient(180deg, var(--raised), var(--sunk)); }
 .kpm-actor { flex: 0 0 170px; scroll-snap-align: center; display: grid; justify-items: center; gap: 16px; cursor: pointer; outline: none; }
 .kpm-actor-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 900 11px/1.2 var(--font-mono);
   letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); transition: color .15s; }
@@ -4972,7 +4985,7 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
   padding: 16px 8px 10px; text-align: center; overflow: hidden; border-radius: 12px;
   border: 1px solid var(--line-2); border-right-width: 4px; border-bottom-width: 4px;
   background: linear-gradient(180deg, var(--raised), var(--inset));
-  transform: rotateY(-14deg) rotateX(4deg); transition: transform .28s cubic-bezier(.2, .9, .3, 1), border-color .15s; }
+  transform: rotateY(-14deg) rotateX(4deg); transition: transform .28s cubic-bezier(.2, .9, .3, 1), border-color .15s, opacity .2s; }
 .kpm-actor-card .band { position: absolute; left: 0; right: 0; top: 0; height: 6px; background: var(--line-2); }
 .kpm-actor.leader .kpm-actor-card .band { background: var(--gold); }
 .kpm-actor-card .avatar { position: relative; width: 54px; height: 54px; flex: 0 0 54px; border-radius: 50%; display: grid; place-items: center;
@@ -4985,12 +4998,21 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-actor-card .load i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-2); }
 .kpm-actor-card .load i.on { background: var(--gold); }
 .kpm-actor-floor { width: 140px; height: 22px; margin-top: -8px; border-radius: 50%; display: grid; place-items: center; color: var(--accent-ink);
-  background: radial-gradient(closest-side, rgba(0, 0, 0, .35), transparent); transition: background .2s; }
-.kpm-actor:hover .kpm-actor-card, .kpm-actor:focus-visible .kpm-actor-card { transform: translateY(-10px) rotateY(0deg) rotateX(0deg); border-color: var(--accent-edge); }
+  background: radial-gradient(closest-side, rgba(0, 0, 0, .35), transparent); transition: background .2s, transform .28s cubic-bezier(.2, .9, .3, 1); }
+.kpm-actor:hover .kpm-actor-card, .kpm-actor:focus-visible .kpm-actor-card { transform: translateY(-10px) scale(1.05) rotateY(0deg) rotateX(0deg); border-color: var(--accent-edge); }
 .kpm-actor:hover .kpm-actor-floor, .kpm-actor:focus-visible .kpm-actor-floor { background: radial-gradient(closest-side, rgba(208, 138, 46, .45), transparent); }
 .kpm-actor:hover .kpm-actor-name, .kpm-actor:focus-visible .kpm-actor-name, .kpm-actor.on .kpm-actor-name { color: var(--ink); }
-.kpm-actor.on .kpm-actor-card { transform: translateY(-6px) rotateY(0deg) rotateX(0deg); border-color: var(--accent-edge); outline: 2px solid var(--accent-edge); outline-offset: 3px; }
+.kpm-actor.on .kpm-actor-card { transform: translateY(-6px) scale(1.05) rotateY(0deg) rotateX(0deg); border-color: var(--accent-edge); outline: 2px solid var(--accent-edge); outline-offset: 3px; }
 .kpm-actor.on .kpm-actor-floor { background: radial-gradient(closest-side, rgba(208, 138, 46, .75), rgba(208, 138, 46, .18) 70%, transparent); }
+/* FAR AND NEAR (round 4, his State of Decay 2 screenshot): while one card is pointed at or picked, every other card
+   stands a little further back - smaller, dimmer, higher up the floor, its floor light going with it - and the one
+   looked at steps forward. Nothing moves until a pointer, a key or a pick asks it to. */
+.kpm-stage:has(.kpm-actor.on, .kpm-actor:hover, .kpm-actor:focus-visible) .kpm-actor:not(.on, :hover, :focus-visible) .kpm-actor-card { transform: translateY(-14px) scale(.9) rotateY(-14deg) rotateX(4deg); }
+.kpm-stage:has(.kpm-actor.on, .kpm-actor:hover, .kpm-actor:focus-visible) .kpm-actor:not(.on, :hover, :focus-visible) .kpm-actor-floor { transform: translateY(-14px) scale(.85); }
+/* Lite Mode keeps every card whole: the far ones only stand back, they never dim (the dimming is gated out of it,
+   not overridden - the far-card selector outranks any plain Lite Mode rule), and nothing glides */
+:root:not(.lite-mode) .kpm-stage:has(.kpm-actor.on, .kpm-actor:hover, .kpm-actor:focus-visible) .kpm-actor:not(.on, :hover, :focus-visible) .kpm-actor-card { opacity: .72; }
+.lite-mode .kpm-actor-card, .lite-mode .kpm-actor-floor { transition: none; }
 .kpm-stage-bar { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
   padding: 10px 14px; border: 1px solid var(--accent-edge); border-top-width: 2px; border-radius: 0 0 14px 14px; color: var(--ink);
   background: linear-gradient(90deg, rgba(208, 138, 46, .30), rgba(208, 138, 46, .05) 30%, rgba(208, 138, 46, .05) 70%, rgba(208, 138, 46, .30)),
