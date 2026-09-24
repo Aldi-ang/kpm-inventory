@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
     Truck, UserPlus, Save, Archive,
     MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
-    ShieldCheck, ChevronDown, ChevronUp, ChevronLeft, FileText, Printer, MessageSquare, Globe, Search, Plus
+    ShieldCheck, ChevronDown, ChevronUp, Crown, FileText, Printer, MessageSquare, Globe, Search, Plus
 } from 'lucide-react';
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord } from './config/permissions';
@@ -11,7 +11,6 @@ import { normalizeRegion } from './config/permissions';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import LoadingBay from './components/LoadingBay.jsx';
-import FolderCard from './components/FolderCard.jsx';
 import { damagedInVan } from './utils/vanBay';
 
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, masterUserId = null }) {
@@ -172,7 +171,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
     /* how many lines the van-loading bay's muatan holds, so switching the salesman can ask first */
     const [bayLines, setBayLines] = useState(0);
-    /* the roster folder that is open ("PROVINCE › LOCATION"), when more than one place is in view */
+    /* the area tab that is open on the roster stage ("PROVINCE › LOCATION"), when more than one place is in view */
     const [rosterPlace, setRosterPlace] = useState(null);
 
     const [showHistory, setShowHistory] = useState(false);
@@ -640,11 +639,14 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         }
     };
 
-    /* ── THE ROSTER (2026-09-24, his "redesign the whole left panel but dont forget to include all the logic") ──
-       The same search, grouping, rank order, guards and doors as before, drawn as his folders and in the palette.
-       Each row says what the van holds (packs and items, with a light), not only a LOADED word - his 2026-09-22
-       "better UI than that for our roster" was about missing information, not missing style. */
-    const ROSTER_FOLDER = 'kpm-folder-quiet w-full bg-[var(--raised)] border-[var(--line-2)] hover:border-[var(--accent-edge)] transition-colors';
+    /* ── THE ROSTER STAGE (2026-09-24) ─────────────────────────────────────────────────────────────────────
+       His State of Decay 2 community screen: the people stand side by side on a stage, a name over each, the one
+       under the pointer lifts and its floor lights, the picked one wears the gold ring, the leader stands on a
+       crown, and a gold bar along the bottom names the place and carries the actions. "3D character, if its too
+       heavy then just 3D cards" - a 3D engine and character models on a cheap Android is too heavy, so each
+       person is a 3D profile card. The search, grouping, rank order, guards and doors are the ones the list had.
+       Each card says what the van holds (packs and items, with a light) - his 2026-09-22 "better UI" was about
+       information. */
     const loadOf = (m) => (m.activeCanvas || []).reduce((sum, r) => sum + convertToBks(r.qty, r.unit, inventory.find(p => p.id === r.productId)), 0);
     /* switching the salesman while the bay's muatan has lines asks first, through the dialog gate */
     const pickAgent = async (m) => {
@@ -652,40 +654,31 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         setSelectedAgent(m);
         setShowHistory(false);
     };
-    const rosterRow = (m) => {
+    const stageCard = (m) => {
         const bks = Math.round(loadOf(m));
         const items = (m.activeCanvas || []).filter(r => Number(r.qty) > 0).length;
         const on = selectedAgent?.id === m.id;
+        const leader = m.userRole === 'ADMIN' || m.userRole === 'AREA_ADMIN';
         const Icon = m.userRole === 'ADMIN' ? ShieldCheck : m.userRole === 'AREA_ADMIN' ? Globe : m.role === 'Canvas' ? Truck : Activity;
+        const initials = String(m.name || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
         return (
-            <div key={m.id} role="button" tabIndex={0} onClick={() => pickAgent(m)} onKeyDown={(e) => { if (e.key === 'Enter' && e.target === e.currentTarget) pickAgent(m); }}
-                className={`p-3 rounded-xl border cursor-pointer transition-colors ${on ? 'bg-[var(--raised)] border-[var(--accent-edge)]' : 'bg-[var(--panel)] border-[var(--line-2)] hover:border-[var(--accent-edge)]'}`}>
-                <div className="flex items-start gap-3">
-                    <span className={`w-10 h-10 rounded-full grid place-items-center shrink-0 border bg-[var(--inset)] ${m.userRole === 'ADMIN' || m.userRole === 'AREA_ADMIN' ? 'border-[var(--accent-edge)] text-[var(--accent-ink)]' : 'border-[var(--line-2)] text-[var(--ink-muted)]'}`}><Icon size={18}/></span>
-                    <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm text-[var(--ink)] truncate">{m.name}</p>
-                        <p className="text-[11px] text-[var(--ink-muted)] truncate mt-0.5">
-                            {/* HIS WORD FOR THE TIER, not the code's. This card printed a hardcoded "Area Admin" while his company
-                                calls that tier HQ SALES MANAGER. `tierWord` reads the labels he set in Settings, so a rename
-                                shows up here without anyone editing this line. */}
-                            {m.userRole === 'ADMIN' ? '👑 Master Admin (Global)' : m.userRole === 'AREA_ADMIN' ? `📍 ${tierWord('AREA_ADMIN') || 'HQ Sales Manager'} (${m.location})` : `${m.role || ''}${m.vehicle ? ` • ${m.vehicle}` : ''}`}
-                        </p>
-                        <p className="flex items-center gap-2 mt-1.5 text-[11px] font-mono text-[var(--ink-muted)]">
-                            <i className={`w-2 h-2 rounded-full shrink-0 ${bks > 0 ? 'bg-[var(--gold)]' : 'bg-[var(--line-2)]'}`} aria-hidden="true" />
-                            {bks > 0 ? `${bks.toLocaleString('id-ID')} Bks · ${items} ${items === 1 ? 'item' : 'items'} in the van` : 'Van empty'}
-                        </p>
-                    </div>
-                    <span className={`kpm-read shrink-0 ${bks > 0 ? 'on' : ''}`}>{bks > 0 ? 'Loaded' : 'Empty'}</span>
-                </div>
-                <div className="flex justify-end gap-1 mt-1 -mb-1">
-                    <button onClick={(e) => handleViewClick(e, m)} className="text-[var(--ink-muted)] hover:text-[var(--accent-ink)]" title="View Profile Details" aria-label={`View ${m.name}`}><User size={15}/></button>
-                    {canEditFleet && (
-                        <>
-                            <button onClick={(e) => handleEditClick(e, m)} className="text-[var(--ink-muted)] hover:text-[var(--accent-ink)]" title="Edit Profile" aria-label={`Edit ${m.name}`}><Pencil size={15}/></button>
-                            <button data-kpm-del data-label="Delete" onClick={(e) => handleDeleteAgent(e, m)} className="text-[var(--ink-muted)] hover:text-[var(--danger-ink)]" title="Remove Profile" aria-label={`Remove ${m.name}`}><Trash2 size={15}/></button>
-                        </>
-                    )}
-                </div>
+            <div key={m.id} role="option" aria-selected={on} tabIndex={0} onClick={() => pickAgent(m)}
+                onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); pickAgent(m); } }}
+                className={`kpm-actor${on ? ' on' : ''}${leader ? ' leader' : ''}`}>
+                <span className="kpm-actor-name">{m.name}</span>
+                <span className="kpm-actor-card">
+                    <span className="band" aria-hidden="true" />
+                    <span className="avatar">{initials}<Icon size={14} className="role" /></span>
+                    <span className="who">{m.name}</span>
+                    <span className="tier">
+                        {/* HIS WORD FOR THE TIER, not the code's. `tierWord` reads the labels he set in Settings, so a
+                            rename shows up here without anyone editing this line. */}
+                        {m.userRole === 'ADMIN' ? 'Master Admin (Global)' : m.userRole === 'AREA_ADMIN' ? `${tierWord('AREA_ADMIN') || 'HQ Sales Manager'} (${m.location})` : `${m.role || ''}${m.vehicle ? ` • ${m.vehicle}` : ''}`}
+                    </span>
+                    <span className="load"><i className={bks > 0 ? 'on' : ''} aria-hidden="true" />{bks > 0 ? `${bks.toLocaleString('id-ID')} Bks · ${items} ${items === 1 ? 'item' : 'items'}` : 'Van empty'}</span>
+                    <span className={`kpm-read ${bks > 0 ? 'on' : ''}`}>{bks > 0 ? 'Loaded' : 'Empty'}</span>
+                </span>
+                <span className="kpm-actor-floor" aria-hidden="true">{leader && <Crown size={14} />}</span>
             </div>
         );
     };
@@ -748,7 +741,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
     if (isFetchingFleet) {
         return (
-            <div className="h-full w-full flex items-center justify-center bg-slate-900 rounded-2xl border border-slate-700">
+            <div className="h-full w-full flex items-center justify-center bg-[var(--panel)] rounded-2xl border border-[var(--line-2)]">
                 <div className="text-center animate-pulse">
                     <Activity size={48} className="text-blue-500 mx-auto mb-4" />
                     <h2 className="text-xl font-bold text-white uppercase tracking-widest">Establishing Regional Uplink</h2>
@@ -759,7 +752,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     }
 
     return (
-        <div className="print-reset h-full w-full bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl overflow-hidden flex flex-col md:flex-row text-white font-sans relative">
+        <div className="print-reset h-full w-full bg-[var(--panel)] rounded-2xl border border-[var(--line-2)] overflow-y-auto custom-scrollbar flex flex-col text-[var(--ink)] font-sans relative">
             
             {/* 🚀 UPGRADED FORENSIC RECEIPT MODAL 🚀 */}
             {viewingReceipt && (() => {
@@ -922,8 +915,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 </div>
             )}
 
-            {/* LEFT PANEL: FLEET ROSTER */}
-            <div className="hide-on-print w-full md:w-1/3 bg-[var(--panel)] border-r border-[var(--line-2)] flex flex-col">
+            {/* LEFT PANEL: FLEET ROSTER — since 2026-09-24 the full-width stage on top */}
+            <div className="hide-on-print w-full bg-[var(--panel)] border-b border-[var(--line-2)] flex flex-col shrink-0">
                 <div className="p-4 border-b border-[var(--line-2)] flex justify-between items-center gap-3 bg-[var(--raised)]">
                     <div className="min-w-0">
                         <h2 className="text-base font-black text-[var(--ink)] flex items-center gap-2 uppercase tracking-wider truncate">
@@ -941,7 +934,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     )}
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                <div className="p-4 space-y-3">
                     {isAddingAgent && (
                         <div className={`bg-[var(--raised)] p-4 rounded-xl border-2 border-dashed ${isReadOnlyMode ? 'border-[var(--accent-edge)]' : 'border-[var(--accent-edge)]'} mb-4 animate-slide-down`}>
                             <h3 className={`text-xs font-bold uppercase tracking-widest mb-3 ${isReadOnlyMode ? 'text-[var(--accent-ink)]' : 'text-[var(--accent-ink)]'}`}>
@@ -996,7 +989,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         <select disabled={isReadOnlyMode} value={newAgent.province || existingProvinces[0]} onChange={e => setNewAgent({...newAgent, province: e.target.value})} className={`flex-1 border border-[var(--accent-edge)] rounded p-2.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent-edge)] uppercase ${isReadOnlyMode ? 'bg-[var(--raised)] opacity-60 cursor-not-allowed' : 'bg-[var(--inset)]'}`}>
                                             {existingProvinces.map(p => <option key={p} value={p}>{p}</option>)}
                                         </select>
-                                        {!isReadOnlyMode && <button onClick={() => { setIsNewProv(true); setNewAgent({...newAgent, province: ''}); }} className="bg-[var(--inset)] border border-[var(--accent-edge)] text-[var(--accent-ink)] p-2.5 rounded hover:bg-[var(--gold)] transition-colors" title="Add New Province"><Plus size={14}/></button>}
+                                        {!isReadOnlyMode && <button onClick={() => { setIsNewProv(true); setNewAgent({...newAgent, province: ''}); }} className="bg-[var(--inset)] border border-[var(--accent-edge)] text-[var(--accent-ink)] p-2.5 rounded hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] transition-colors" title="Add New Province"><Plus size={14}/></button>}
                                     </div>
                                 )}
                             </div>
@@ -1012,7 +1005,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         <select disabled={isReadOnlyMode} value={newAgent.location || existingLocations[0]} onChange={e => setNewAgent({...newAgent, location: e.target.value})} className={`flex-1 border border-[var(--accent-edge)] rounded p-2.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent-edge)] uppercase ${isReadOnlyMode ? 'bg-[var(--raised)] opacity-60 cursor-not-allowed' : 'bg-[var(--inset)]'}`}>
                                             {existingLocations.map(l => <option key={l} value={l}>{l}</option>)}
                                         </select>
-                                        {!isReadOnlyMode && <button onClick={() => { setIsNewLoc(true); setNewAgent({...newAgent, location: ''}); }} className="bg-[var(--inset)] border border-[var(--accent-edge)] text-[var(--accent-ink)] p-2.5 rounded hover:bg-[var(--gold)] transition-colors" title="Add New Area"><Plus size={14}/></button>}
+                                        {!isReadOnlyMode && <button onClick={() => { setIsNewLoc(true); setNewAgent({...newAgent, location: ''}); }} className="bg-[var(--inset)] border border-[var(--accent-edge)] text-[var(--accent-ink)] p-2.5 rounded hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] transition-colors" title="Add New Area"><Plus size={14}/></button>}
                                     </div>
                                 )}
                             </div>
@@ -1150,7 +1143,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                         </div>
                     ) : (
                         <>
-                            <label className="relative block mb-3">
+                            <label className="relative block mb-3 max-w-md">
                                 <span className="sr-only">Search the roster</span>
                                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]" />
                                 <input type="text" placeholder="Search name, role, area, email…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-[var(--inset)] border border-[var(--line-2)] focus:border-[var(--accent-edge)] rounded-xl py-2.5 pl-9 pr-3 text-sm text-[var(--ink)] placeholder:text-[var(--ink-dim)] outline-none transition-colors"/>
@@ -1158,8 +1151,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
                             {(() => {
                                 /* The data decides the shape, not a role list: one place in view (an area admin's own branch)
-                                   shows its people at once; several places (the owner, HQ) show one folder per place, and a tap
-                                   enters it. A search always lists every match directly. */
+                                   is one stage; several places (the owner, HQ) get one tab each over the stage. A search puts
+                                   every match on the stage at once. */
                                 const term = searchTerm.toLowerCase();
                                 const shown = agents.filter(a => !term || a.name?.toLowerCase().includes(term) || a.email?.toLowerCase().includes(term) || a.userRole?.toLowerCase().includes(term) || a.location?.toLowerCase().includes(term) || a.province?.toLowerCase().includes(term));
                                 const places = {};
@@ -1172,35 +1165,40 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 const keys = Object.keys(places).sort((x, y) => x.localeCompare(y));
                                 const rank = { 'ADMIN': 3, 'AREA_ADMIN': 2, 'AGENT': 1 };
                                 const byRank = (list) => [...list].sort((x, y) => (rank[y.userRole || 'AGENT'] || 0) - (rank[x.userRole || 'AGENT'] || 0));
-                                const inside = !term && keys.length > 1 && places[rosterPlace] ? rosterPlace : null;
+                                const place = places[rosterPlace] ? rosterPlace : (keys.find(k => places[k].people.some(p => p.id === selectedAgent?.id)) || keys[0]);
+                                const cast = byRank(term ? shown : (places[place]?.people || []));
+                                const sel = cast.find(p => p.id === selectedAgent?.id);
 
                                 if (term && shown.length === 0) return <p className="text-sm text-[var(--ink-muted)] text-center py-8">Nobody matches “{searchTerm}”.</p>;
-                                if (!term && keys.length > 1 && !inside) return (
-                                    <div className="kpm-folders grid gap-2.5">
-                                        {keys.map(k => {
-                                            const pl = places[k], loaded = pl.people.filter(m => loadOf(m) > 0).length;
-                                            return (
-                                                <FolderCard key={k} icon={<MapPin size={22} />} onOpen={() => setRosterPlace(k)} className={ROSTER_FOLDER}>
-                                                    <p className="kpm-stamp text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold truncate">{pl.prov}</p>
-                                                    <h3 className="font-bold text-[15px] truncate">{pl.loc}</h3>
-                                                    <p className="kpm-stamp text-[11px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{pl.people.length} {pl.people.length === 1 ? 'person' : 'people'} · {loaded} loaded</p>
-                                                </FolderCard>
-                                            );
-                                        })}
-                                    </div>
-                                );
                                 return (
-                                    <>
-                                        {inside && (
-                                            <div className="flex items-center justify-between gap-2 mb-3">
-                                                <button type="button" onClick={() => setRosterPlace(null)} className="flex items-center gap-2 text-sm text-[var(--ink-dim)] hover:text-[var(--accent-ink)] transition-colors"><ChevronLeft size={18}/> <span>All areas</span></button>
-                                                <span className="kpm-stamp text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold truncate">{places[inside].loc}</span>
+                                    <div>
+                                        {!term && keys.length > 1 && (
+                                            <div className="kpm-stage-tabs" role="tablist" aria-label="Areas">
+                                                {keys.map(k => (
+                                                    <button key={k} type="button" role="tab" aria-selected={k === place} className={`kpm-stage-tab${k === place ? ' on' : ''}`} onClick={() => setRosterPlace(k)}>
+                                                        <span>{places[k].loc}</span><small>{places[k].people.length}</small>
+                                                    </button>
+                                                ))}
                                             </div>
                                         )}
-                                        <div className="grid gap-2">
-                                            {byRank(inside ? places[inside].people : shown).map(m => rosterRow(m))}
+                                        <div className="kpm-stage" role="listbox" aria-label="People">
+                                            {cast.map(m => stageCard(m))}
                                         </div>
-                                    </>
+                                        <div className="kpm-stage-bar">
+                                            <span className="kpm-stage-name">{term ? `Search · ${cast.length}` : (places[place]?.loc || 'Fleet')}</span>
+                                            {sel ? (
+                                                <span className="kpm-stage-acts">
+                                                    <button type="button" onClick={(e) => handleViewClick(e, sel)}><User size={14}/> <span>Details</span></button>
+                                                    {canEditFleet && (
+                                                        <>
+                                                            <button type="button" onClick={(e) => handleEditClick(e, sel)}><Pencil size={14}/> <span>Edit</span></button>
+                                                            <button data-kpm-del data-label="Delete" type="button" onClick={(e) => handleDeleteAgent(e, sel)} aria-label={`Remove ${sel.name}`}><Trash2 size={15}/></button>
+                                                        </>
+                                                    )}
+                                                </span>
+                                            ) : <span className="kpm-stage-hint">Point at a card to look · tap to pick</span>}
+                                        </div>
+                                    </div>
                                 );
                             })()}
                         </>
@@ -1209,41 +1207,41 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             </div>
 
             {/* RIGHT PANEL: THE LOADING DOCK */}
-            <div className="hide-on-print flex-1 bg-slate-900 flex flex-col relative">
+            <div className="hide-on-print flex-1 bg-[var(--panel)] flex flex-col relative">
                 
                 {/* 🚀 GLOBAL GEOFENCE COMMAND CENTER 🚀 */}
                 {allBypasses.some(b => b.status === 'PENDING') && (
-                    <div className="m-6 mb-0 bg-slate-800/90 rounded-2xl border-2 border-orange-500 shadow-[0_0_30px_rgba(249,115,22,0.3)] overflow-hidden shrink-0 animate-fade-in-up z-20 backdrop-blur-sm">
-                        <div className="p-4 bg-orange-500/20 border-b border-orange-500/50 flex justify-between items-center">
+                    <div className="m-6 mb-0 bg-[var(--raised)] rounded-2xl border-2 border-[var(--accent-edge)] shadow-[0_0_30px_rgba(249,115,22,0.3)] overflow-hidden shrink-0 animate-fade-in-up z-20 backdrop-blur-sm">
+                        <div className="p-4 bg-[var(--inset)] border-b border-[var(--accent-edge)] flex justify-between items-center">
                             <div className="flex items-center gap-2">
-                                <AlertCircle size={18} className="text-orange-500 animate-pulse"/>
-                                <h3 className="font-bold text-orange-400 uppercase tracking-widest text-xs">Active HQ Override Requests</h3>
+                                <AlertCircle size={18} className="text-[var(--accent-ink)] animate-pulse"/>
+                                <h3 className="font-bold text-[var(--accent-ink)] uppercase tracking-widest text-xs">Active HQ Override Requests</h3>
                             </div>
-                            <span className="bg-orange-500 text-black text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
+                            <span className="bg-[var(--gold)] text-[var(--gold-ink)] text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
                                 Action Required
                             </span>
                         </div>
-                        <div className="p-4 space-y-3 bg-black/40 max-h-[300px] overflow-y-auto custom-scrollbar">
+                        <div className="p-4 space-y-3 bg-[var(--inset)] max-h-[300px] overflow-y-auto custom-scrollbar">
                             {allBypasses.filter(b => b.status === 'PENDING').map(bypass => (
-                                <div key={bypass.id} className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-3 rounded-xl border border-orange-500/30 bg-orange-900/20 shadow-sm">
+                                <div key={bypass.id} className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-3 rounded-xl border border-[var(--accent-edge)] bg-[var(--inset)] shadow-sm">
                                     <div className="flex items-start gap-4 w-full">
                                         {bypass.photoData && (
-                                            <div className="w-16 h-16 shrink-0 bg-black rounded-lg border border-slate-600 overflow-hidden cursor-zoom-in" onClick={() => window.open(bypass.photoData, '_blank')}>
+                                            <div className="w-16 h-16 shrink-0 bg-[var(--inset)] rounded-lg border border-[var(--line-2)] overflow-hidden cursor-zoom-in" onClick={() => window.open(bypass.photoData, '_blank')}>
                                                 <img src={bypass.photoData} className="w-full h-full object-cover opacity-80 hover:opacity-100 transition-opacity" alt="Store Proof" title="Click to enlarge" />
                                             </div>
                                         )}
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-1">
-                                                <h4 className="font-bold text-white text-sm uppercase">{bypass.storeName}</h4>
-                                                <span className="text-[11px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest bg-orange-500 text-black">PENDING</span>
+                                                <h4 className="font-bold text-[var(--ink)] text-sm uppercase">{bypass.storeName}</h4>
+                                                <span className="text-[11px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest bg-[var(--gold)] text-[var(--gold-ink)]">PENDING</span>
                                             </div>
-                                            <p className="text-[10px] text-slate-400 font-mono mb-0.5">Agent: <span className="text-orange-300 font-bold">{bypass.salesmanName}</span> • Time: {new Date(bypass.timestamp).toLocaleString('id-ID')}</p>
-                                            <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest flex items-center gap-1">
+                                            <p className="text-[10px] text-[var(--ink-muted)] font-mono mb-0.5">Agent: <span className="text-[var(--accent-ink)] font-bold">{bypass.salesmanName}</span> • Time: {new Date(bypass.timestamp).toLocaleString('id-ID')}</p>
+                                            <p className="text-[10px] text-[var(--danger-ink)] font-bold uppercase tracking-widest flex items-center gap-1">
                                                 <MapPin size={10}/> Distance Logged: {bypass.distance} Meters
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2 w-full md:w-auto shrink-0 border-t border-orange-500/20 md:border-none pt-3 md:pt-0 mt-2 md:mt-0">
+                                    <div className="flex gap-2 w-full md:w-auto shrink-0 border-t border-[var(--accent-edge)] md:border-none pt-3 md:pt-0 mt-2 md:mt-0">
                                         <button 
                                             onClick={async () => {
                                                 if(await confirmAction(`Grant 100m Bypass for ${bypass.storeName}?`)){
@@ -1251,7 +1249,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                     if(logAudit) logAudit("GPS_BYPASS_APPROVED", `Granted override for ${bypass.salesmanName} at ${bypass.storeName}`);
                                                 }
                                             }}
-                                            className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-lg transition-colors shadow-md"
+                                            className="flex-1 md:flex-none bg-[var(--gold)] hover:brightness-110 text-[var(--gold-ink)] text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-lg transition-colors shadow-md"
                                         >
                                             Approve Override
                                         </button>
@@ -1262,7 +1260,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                     if(logAudit) logAudit("GPS_BYPASS_REJECTED", `Denied override for ${bypass.salesmanName} at ${bypass.storeName}`);
                                                 }
                                             }}
-                                            className="flex-1 md:flex-none bg-red-600 hover:bg-red-500 text-white text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-lg transition-colors shadow-md"
+                                            className="flex-1 md:flex-none bg-[var(--danger)] hover:bg-[var(--danger)] text-[var(--ink)] text-[10px] font-black uppercase tracking-widest px-4 py-3 rounded-lg transition-colors shadow-md"
                                         >
                                             Reject
                                         </button>
@@ -1275,20 +1273,20 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
                 {selectedAgent ? (
                     <>
-                        <div className="p-6 border-b border-slate-800 bg-black/40">
+                        <div className="p-6 border-b border-[var(--line-2)] bg-[var(--inset)]">
                             <div className="flex items-start justify-between mb-2">
                                 <div>
-                                    <p className="text-[10px] text-blue-500 font-bold uppercase tracking-[0.2em] mb-1 flex items-center gap-2"><Activity size={12}/> Active Deployment Terminal</p>
-                                    <h2 className="text-3xl font-black text-white">{selectedAgent.name}</h2>
+                                    <p className="text-[10px] text-[var(--accent-ink)] font-bold uppercase tracking-[0.2em] mb-1 flex items-center gap-2"><Activity size={12}/> Active Deployment Terminal</p>
+                                    <h2 className="text-3xl font-black text-[var(--ink)]">{selectedAgent.name}</h2>
                                     <div className="flex items-center gap-2 mt-3 flex-wrap">
-                                        <ShieldCheck size={14} className="text-emerald-500"/>
-                                        <span className="text-[11px] text-slate-400 uppercase tracking-widest font-bold">Permissions:</span>
+                                        <ShieldCheck size={14} className="text-[var(--accent-ink)]"/>
+                                        <span className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Permissions:</span>
                                         {(selectedAgent.allowedPayments || ['Cash']).map(p => (
-                                            <span key={p} className="text-[11px] bg-blue-900/30 text-blue-400 border border-blue-500/30 px-1.5 py-0.5 rounded uppercase font-bold">{p === 'Titip' ? 'Consign' : p}</span>
+                                            <span key={p} className="text-[11px] bg-[var(--inset)] text-[var(--accent-ink)] border border-[var(--accent-edge)] px-1.5 py-0.5 rounded uppercase font-bold">{p === 'Titip' ? 'Consign' : p}</span>
                                         ))}
-                                        <span className="text-slate-400">|</span>
+                                        <span className="text-[var(--ink-muted)]">|</span>
                                         {(selectedAgent.allowedTiers || ['Retail', 'Ecer']).map(t => (
-                                            <span key={t} className="text-[11px] bg-emerald-900/30 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded uppercase font-bold">{t}</span>
+                                            <span key={t} className="text-[11px] bg-[var(--inset)] text-[var(--accent-ink)] border border-[var(--accent-edge)] px-1.5 py-0.5 rounded uppercase font-bold">{t}</span>
                                         ))}
                                     </div>
                                 </div>
@@ -1315,18 +1313,17 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
                                         return (
                                             <>
-                                                <div className="bg-slate-800 p-2.5 rounded-xl border border-slate-700 text-center min-w-[70px] shadow-inner">
-                                                    <p className="text-[11px] text-slate-400 uppercase tracking-widest mb-1">Initial</p>
-                                                    <p className="text-lg font-black text-slate-300">{initialLoadBks}</p>
+                                                <div className="bg-[var(--raised)] p-2.5 rounded-xl border border-[var(--line-2)] text-center min-w-[70px] shadow-inner">
+                                                    <p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest mb-1">Initial</p>
+                                                    <p className="text-lg font-black text-[var(--ink)]">{initialLoadBks}</p>
                                                 </div>
-                                                <div className="bg-orange-900/20 p-2.5 rounded-xl border border-orange-500/30 text-center min-w-[70px] shadow-inner">
-                                                    <p className="text-[11px] text-orange-400 uppercase tracking-widest mb-1">Sold</p>
-                                                    <p className="text-lg font-black text-orange-500">{soldTodayBks}</p>
+                                                <div className="bg-[var(--inset)] p-2.5 rounded-xl border border-[var(--accent-edge)] text-center min-w-[70px] shadow-inner">
+                                                    <p className="text-[11px] text-[var(--accent-ink)] uppercase tracking-widest mb-1">Sold</p>
+                                                    <p className="text-lg font-black text-[var(--accent-ink)]">{soldTodayBks}</p>
                                                 </div>
-                                                <div className="bg-emerald-900/20 p-2.5 rounded-xl border border-emerald-500/30 text-center min-w-[70px] shadow-inner relative overflow-hidden">
-                                                    <div className="absolute inset-0 bg-emerald-500/10 animate-pulse pointer-events-none"></div>
-                                                    <p className="text-[11px] text-emerald-400 uppercase tracking-widest mb-1">Current</p>
-                                                    <p className="text-lg font-black text-emerald-500 relative z-10">{currentLoadBks}</p>
+                                                <div className="bg-[var(--inset)] p-2.5 rounded-xl border border-[var(--accent-edge)] text-center min-w-[70px] shadow-inner relative overflow-hidden">
+                                                    <p className="text-[11px] text-[var(--accent-ink)] uppercase tracking-widest mb-1">Current</p>
+                                                    <p className="text-lg font-black text-[var(--accent-ink)] relative z-10">{currentLoadBks}</p>
                                                 </div>
                                             </>
                                         );
@@ -1355,39 +1352,39 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             </div>
 
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2"><ShoppingCart size={14}/> Itemized Asset Ledger</h3>
+                                <h3 className="text-xs font-bold text-[var(--ink-muted)] uppercase tracking-widest flex items-center gap-2"><ShoppingCart size={14}/> Itemized Asset Ledger</h3>
                                 
                                 {(selectedAgent.activeCanvas || []).length > 0 && (
                                     <div className="flex items-center gap-2">
-                                        <button onClick={() => setViewingSuratJalan(true)} className="text-[11px] bg-blue-600 text-white hover:bg-blue-500 px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors shadow-lg flex items-center gap-1"><Printer size={12}/> Surat Jalan</button>
-                                        {canEditFleet && <button onClick={handleClearCanvas} className="text-[11px] bg-red-900/30 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors">Reconcile & Clear</button>}
+                                        <button onClick={() => setViewingSuratJalan(true)} className="text-[11px] bg-[var(--gold)] text-[var(--gold-ink)] hover:brightness-110 px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors shadow-lg flex items-center gap-1"><Printer size={12}/> Surat Jalan</button>
+                                        {canEditFleet && <button onClick={handleClearCanvas} className="text-[11px] bg-[var(--inset)] text-[var(--danger-ink)] hover:bg-[var(--danger)] hover:text-[var(--ink)] px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors">Reconcile & Clear</button>}
                                     </div>
                                 )}
                             </div>
 
                             <div className="space-y-2">
                                 {combinedItems.length === 0 ? (
-                                    <div className="text-center py-8 bg-black/20 rounded-xl border border-slate-800 border-dashed">
-                                        <Archive size={24} className="mx-auto mb-2 text-slate-400"/>
-                                        <p className="text-xs text-slate-400 uppercase tracking-widest">No Items Assigned Today</p>
+                                    <div className="text-center py-8 bg-[var(--inset)] rounded-xl border border-[var(--line-2)] border-dashed">
+                                        <Archive size={24} className="mx-auto mb-2 text-[var(--ink-muted)]"/>
+                                        <p className="text-xs text-[var(--ink-muted)] uppercase tracking-widest">No Items Assigned Today</p>
                                     </div>
                                 ) : (
                                     combinedItems.map((item, idx) => (
-                                        <div key={idx} className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 animate-pop-in">
+                                        <div key={idx} className="bg-[var(--raised)] p-4 rounded-xl border border-[var(--line-2)] flex flex-col md:flex-row justify-between items-start md:items-center gap-3 animate-pop-in">
                                             <div className="flex items-center gap-3">
-                                                <div className={`w-2 h-2 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)] ${item.currentBks > 0 ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                                                <div className={`w-2 h-2 rounded-full ${item.currentBks > 0 ? 'bg-[var(--gold)]' : 'bg-[var(--danger)]'}`}></div>
                                                 <div>
-                                                    <span className="font-bold text-white text-sm">{item.name}</span>
-                                                    {item.currentRaw > 0 && <p className="text-[10px] text-slate-400 mt-0.5">Active Load: {item.currentRaw} {item.unit}</p>}
+                                                    <span className="font-bold text-[var(--ink)] text-sm">{item.name}</span>
+                                                    {item.currentRaw > 0 && <p className="text-[10px] text-[var(--ink-muted)] mt-0.5">Active Load: {item.currentRaw} {item.unit}</p>}
                                                 </div>
                                             </div>
                                             
-                                            <div className="flex items-center gap-2 bg-black/40 p-2 rounded-lg border border-slate-600 text-[10px] font-mono font-bold w-full md:w-auto">
-                                                <span className="text-slate-400 w-16 text-center">INIT: {item.initialBks}</span>
-                                                <span className="w-[1px] h-4 bg-slate-700"></span>
-                                                <span className="text-orange-400 w-16 text-center">SOLD: {item.soldBks}</span>
-                                                <span className="w-[1px] h-4 bg-slate-700"></span>
-                                                <span className={`${item.currentBks > 0 ? 'text-emerald-400' : 'text-red-500'} w-16 text-center`}>LEFT: {item.currentBks}</span>
+                                            <div className="flex items-center gap-2 bg-[var(--inset)] p-2 rounded-lg border border-[var(--line-2)] text-[10px] font-mono font-bold w-full md:w-auto">
+                                                <span className="text-[var(--ink-muted)] w-16 text-center">INIT: {item.initialBks}</span>
+                                                <span className="w-[1px] h-4 bg-[var(--panel)]"></span>
+                                                <span className="text-[var(--accent-ink)] w-16 text-center">SOLD: {item.soldBks}</span>
+                                                <span className="w-[1px] h-4 bg-[var(--panel)]"></span>
+                                                <span className={`${item.currentBks > 0 ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} w-16 text-center`}>LEFT: {item.currentBks}</span>
                                             </div>
                                         </div>
                                     ))
@@ -1409,30 +1406,30 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 if (agentBypasses.length === 0) return null;
 
                                 return (
-                                    <div className="mt-6 mb-2 bg-slate-800 rounded-2xl border border-slate-700 shadow-xl overflow-hidden animate-fade-in-up">
-                                        <div className="p-4 bg-black/40 border-b border-slate-700 flex justify-between items-center">
+                                    <div className="mt-6 mb-2 bg-[var(--raised)] rounded-2xl border border-[var(--line-2)] shadow-xl overflow-hidden animate-fade-in-up">
+                                        <div className="p-4 bg-[var(--inset)] border-b border-[var(--line-2)] flex justify-between items-center">
                                             <div className="flex items-center gap-2">
-                                                <Archive size={18} className="text-slate-400"/>
-                                                <h3 className="font-bold text-white uppercase tracking-widest text-xs">Geofence Bypass History</h3>
+                                                <Archive size={18} className="text-[var(--ink-muted)]"/>
+                                                <h3 className="font-bold text-[var(--ink)] uppercase tracking-widest text-xs">Geofence Bypass History</h3>
                                             </div>
                                         </div>
-                                        <div className="p-4 space-y-3 bg-black/10 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                        <div className="p-4 space-y-3 bg-[var(--inset)] max-h-[300px] overflow-y-auto custom-scrollbar">
                                             {agentBypasses.map(bypass => (
-                                                <div key={bypass.id} className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-3 rounded-xl border shadow-sm ${bypass.status === 'APPROVED' ? 'bg-emerald-900/10 border-emerald-500/20' : 'bg-red-900/10 border-red-500/20'}`}>
+                                                <div key={bypass.id} className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-3 rounded-xl border shadow-sm ${bypass.status === 'APPROVED' ? 'bg-[var(--inset)] border-[var(--accent-edge)]' : 'bg-[var(--inset)] border-[var(--danger)]'}`}>
                                                     <div className="flex items-start gap-4 w-full">
                                                         {bypass.photoData && (
-                                                            <div className="w-12 h-12 shrink-0 bg-black rounded-lg border border-slate-600 overflow-hidden cursor-zoom-in" onClick={() => window.open(bypass.photoData, '_blank')}>
+                                                            <div className="w-12 h-12 shrink-0 bg-[var(--inset)] rounded-lg border border-[var(--line-2)] overflow-hidden cursor-zoom-in" onClick={() => window.open(bypass.photoData, '_blank')}>
                                                                 <img src={bypass.photoData} className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="Store Proof" title="Click to enlarge" />
                                                             </div>
                                                         )}
                                                         <div className="flex-1">
                                                             <div className="flex items-center gap-2 mb-1">
-                                                                <h4 className="font-bold text-white text-xs uppercase">{bypass.storeName}</h4>
-                                                                <span className={`text-[11px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${bypass.status === 'APPROVED' ? 'bg-emerald-500 text-black' : 'bg-red-500 text-white'}`}>
+                                                                <h4 className="font-bold text-[var(--ink)] text-xs uppercase">{bypass.storeName}</h4>
+                                                                <span className={`text-[11px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${bypass.status === 'APPROVED' ? 'bg-[var(--gold)] text-[var(--gold-ink)]' : 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]'}`}>
                                                                     {bypass.status}
                                                                 </span>
                                                             </div>
-                                                            <p className="text-[10px] text-slate-400 font-mono mb-0.5">{new Date(bypass.timestamp).toLocaleString('id-ID')}</p>
+                                                            <p className="text-[10px] text-[var(--ink-muted)] font-mono mb-0.5">{new Date(bypass.timestamp).toLocaleString('id-ID')}</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1443,13 +1440,13 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             })()}
 
                             {/* 🚀 UNIFIED ACTIVITY LOG (SALES & BYPASSES) 🚀 */}
-                            <div className="mt-8 bg-slate-800 rounded-2xl border border-slate-700 shadow-xl overflow-hidden animate-fade-in-up">
-                                <button onClick={() => setShowHistory(!showHistory)} className="w-full p-4 flex justify-between items-center bg-black/20 hover:bg-black/40 transition-colors">
+                            <div className="mt-8 bg-[var(--raised)] rounded-2xl border border-[var(--line-2)] shadow-xl overflow-hidden animate-fade-in-up">
+                                <button onClick={() => setShowHistory(!showHistory)} className="w-full p-4 flex justify-between items-center bg-[var(--inset)] hover:bg-[var(--inset)] transition-colors">
                                     <div className="flex items-center gap-2">
-                                        <FileText size={18} className="text-blue-500"/>
-                                        <h3 className="font-bold text-white uppercase tracking-widest text-xs">Today's Activity Logs ({agentSales.length} Transactions)</h3>
+                                        <FileText size={18} className="text-[var(--accent-ink)]"/>
+                                        <h3 className="font-bold text-[var(--ink)] uppercase tracking-widest text-xs">Today's Activity Logs ({agentSales.length} Transactions)</h3>
                                     </div>
-                                    {showHistory ? <ChevronUp size={18} className="text-slate-400"/> : <ChevronDown size={18} className="text-slate-400"/>}
+                                    {showHistory ? <ChevronUp size={18} className="text-[var(--ink-muted)]"/> : <ChevronDown size={18} className="text-[var(--ink-muted)]"/>}
                                 </button>
                                 
                                 {showHistory && (() => {
@@ -1465,14 +1462,14 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     );
 
                                     return (
-                                        <div className="p-4 bg-black/10 border-t border-slate-700 max-h-[600px] overflow-y-auto custom-scrollbar">
+                                        <div className="p-4 bg-[var(--inset)] border-t border-[var(--line-2)] max-h-[600px] overflow-y-auto custom-scrollbar">
                                             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
                                                 
                                                 {/* LEFT COLUMN: FORENSIC SALES LOG */}
                                                 <div className="space-y-3">
-                                                    <h4 className="text-[10px] text-slate-400 uppercase tracking-widest font-bold border-b border-slate-700 pb-2 mb-3 flex items-center gap-1"><ShoppingCart size={12}/> Daily Transactions</h4>
+                                                    <h4 className="text-[10px] text-[var(--ink-muted)] uppercase tracking-widest font-bold border-b border-[var(--line-2)] pb-2 mb-3 flex items-center gap-1"><ShoppingCart size={12}/> Daily Transactions</h4>
                                                     {agentSales.length === 0 ? (
-                                                        <p className="text-center text-xs text-slate-400 uppercase tracking-widest py-4 bg-slate-900/50 rounded-lg border border-slate-700 border-dashed">No transactions recorded today.</p>
+                                                        <p className="text-center text-xs text-[var(--ink-muted)] uppercase tracking-widest py-4 bg-[var(--inset)] rounded-lg border border-[var(--line-2)] border-dashed">No transactions recorded today.</p>
                                                     ) : (
                                                         agentSales.map(tx => {
                                                             const linkedBypass = agentBypasses.find(b => {
@@ -1489,35 +1486,35 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                             const isIouFulfill = tx.paymentType === 'IOU Fulfillment';
 
                                                             return (
-                                                                <div key={tx.id} className="flex justify-between items-center p-3 bg-slate-900 rounded-xl border border-slate-700 shadow-sm transition-all hover:border-blue-500/50 group">
+                                                                <div key={tx.id} className="flex justify-between items-center p-3 bg-[var(--inset)] rounded-xl border border-[var(--line-2)] shadow-sm transition-all hover:border-[var(--accent-edge)] group">
                                                                     <div>
                                                                         <div className="flex items-center gap-2">
-                                                                            <h4 className="font-bold text-white text-sm uppercase">{tx.customerName}</h4>
+                                                                            <h4 className="font-bold text-[var(--ink)] text-sm uppercase">{tx.customerName}</h4>
                                                                             {isRetur ? (
-                                                                                <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-red-500 text-white shadow-md">RETUR</span>
+                                                                                <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-[var(--danger)] text-[var(--ink)] shadow-md">RETUR</span>
                                                                             ) : isExchange ? (
-                                                                                <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-blue-500 text-white shadow-md">EXCHANGE</span>
+                                                                                <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-[var(--gold)] text-[var(--gold-ink)] shadow-md">EXCHANGE</span>
                                                                             ) : isIouFulfill ? (
-                                                                                <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-emerald-500 text-white shadow-md">UTANG BARANG LUNAS</span>
+                                                                                <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-[var(--gold)] text-[var(--gold-ink)] shadow-md">UTANG BARANG LUNAS</span>
                                                                             ) : null}
                                                                         </div>
-                                                                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">{tx.timestamp ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString('id-ID') : 'Today'} • {tx.paymentType}</p>
+                                                                        <p className="text-[10px] text-[var(--ink-muted)] font-mono mt-0.5">{tx.timestamp ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString('id-ID') : 'Today'} • {tx.paymentType}</p>
                                                                         
                                                                         {linkedBypass && (
-                                                                            <div className="mt-1.5 flex items-center gap-1 text-[11px] bg-orange-900/30 text-orange-400 border border-orange-500/30 px-1.5 py-0.5 rounded uppercase tracking-widest w-fit shadow-inner">
+                                                                            <div className="mt-1.5 flex items-center gap-1 text-[11px] bg-[var(--inset)] text-[var(--accent-ink)] border border-[var(--accent-edge)] px-1.5 py-0.5 rounded uppercase tracking-widest w-fit shadow-inner">
                                                                                 <MapPin size={8}/> 100m Bypass Used
                                                                             </div>
                                                                         )}
                                                                     </div>
                                                                     <div className="flex items-center gap-3 md:gap-4">
                                                                         <div className="text-right">
-                                                                            <p className={`font-black text-sm md:text-base ${isRetur ? 'text-red-400' : 'text-emerald-400'}`}>
+                                                                            <p className={`font-black text-sm md:text-base ${isRetur ? 'text-[var(--danger-ink)]' : 'text-[var(--accent-ink)]'}`}>
                                                                                 {isRetur && (tx.total || tx.amountPaid || 0) > 0 ? '-' : ''}
                                                                                 {new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', minimumFractionDigits:0}).format(tx.total || tx.amountPaid || 0)}
                                                                             </p>
-                                                                            <p className="text-[11px] text-slate-400 uppercase tracking-widest">{tx.items?.length || 0} Items</p>
+                                                                            <p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest">{tx.items?.length || 0} Items</p>
                                                                         </div>
-                                                                        <button onClick={() => setViewingReceipt(tx)} className="p-2 bg-slate-800 group-hover:bg-slate-700 text-blue-400 rounded-lg transition-colors shadow-sm" title="View Receipt">
+                                                                        <button onClick={() => setViewingReceipt(tx)} className="p-2 bg-[var(--raised)] group-hover:bg-[var(--panel)] text-[var(--accent-ink)] rounded-lg transition-colors shadow-sm" title="View Receipt">
                                                                             <FileText size={16}/>
                                                                         </button>
                                                                     </div>
@@ -1529,26 +1526,26 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
                                                 {/* RIGHT COLUMN: GEOFENCE VISUAL LOG */}
                                                 <div className="space-y-3">
-                                                    <h4 className="text-[10px] text-slate-400 uppercase tracking-widest font-bold border-b border-slate-700 pb-2 mb-3 flex items-center gap-1"><MapPin size={12}/> Geofence Bypass Log</h4>
+                                                    <h4 className="text-[10px] text-[var(--ink-muted)] uppercase tracking-widest font-bold border-b border-[var(--line-2)] pb-2 mb-3 flex items-center gap-1"><MapPin size={12}/> Geofence Bypass Log</h4>
                                                     {agentBypasses.length === 0 ? (
-                                                        <p className="text-center text-xs text-slate-400 uppercase tracking-widest py-4 bg-slate-900/50 rounded-lg border border-slate-700 border-dashed">No bypass history.</p>
+                                                        <p className="text-center text-xs text-[var(--ink-muted)] uppercase tracking-widest py-4 bg-[var(--inset)] rounded-lg border border-[var(--line-2)] border-dashed">No bypass history.</p>
                                                     ) : (
                                                         agentBypasses.map(bypass => (
-                                                            <div key={bypass.id} className={`flex items-start gap-3 p-3 rounded-xl border shadow-sm ${bypass.status === 'APPROVED' ? 'bg-emerald-900/10 border-emerald-500/20' : 'bg-red-900/10 border-red-500/20'}`}>
+                                                            <div key={bypass.id} className={`flex items-start gap-3 p-3 rounded-xl border shadow-sm ${bypass.status === 'APPROVED' ? 'bg-[var(--inset)] border-[var(--accent-edge)]' : 'bg-[var(--inset)] border-[var(--danger)]'}`}>
                                                                 {bypass.photoData && (
-                                                                    <div className="w-12 h-12 shrink-0 bg-black rounded-lg border border-slate-600 overflow-hidden cursor-zoom-in" onClick={() => window.open(bypass.photoData, '_blank')}>
+                                                                    <div className="w-12 h-12 shrink-0 bg-[var(--inset)] rounded-lg border border-[var(--line-2)] overflow-hidden cursor-zoom-in" onClick={() => window.open(bypass.photoData, '_blank')}>
                                                                         <img src={bypass.photoData} className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="Store Proof" title="Click to enlarge" />
                                                                     </div>
                                                                 )}
                                                                 <div className="flex-1">
                                                                     <div className="flex items-center gap-2 mb-1">
-                                                                        <h4 className="font-bold text-white text-xs uppercase">{bypass.storeName}</h4>
-                                                                        <span className={`text-[11px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${bypass.status === 'APPROVED' ? 'bg-emerald-500 text-black' : 'bg-red-500 text-white'}`}>
+                                                                        <h4 className="font-bold text-[var(--ink)] text-xs uppercase">{bypass.storeName}</h4>
+                                                                        <span className={`text-[11px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${bypass.status === 'APPROVED' ? 'bg-[var(--gold)] text-[var(--gold-ink)]' : 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]'}`}>
                                                                             {bypass.status}
                                                                         </span>
                                                                     </div>
-                                                                    <p className="text-[10px] text-slate-400 font-mono mb-0.5">{new Date(bypass.timestamp).toLocaleString('id-ID')}</p>
-                                                                    <p className="text-[11px] text-slate-400 uppercase tracking-widest">Distance: {bypass.distance}m</p>
+                                                                    <p className="text-[10px] text-[var(--ink-muted)] font-mono mb-0.5">{new Date(bypass.timestamp).toLocaleString('id-ID')}</p>
+                                                                    <p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest">Distance: {bypass.distance}m</p>
                                                                 </div>
                                                             </div>
                                                         ))
@@ -1564,10 +1561,24 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                         </div>
                     </>
                 ) : (
-                    <div className="flex-1 flex items-center justify-center flex-col opacity-30 select-none">
-                        <Truck size={64} className="mb-4 text-slate-400"/>
-                        <h2 className="text-xl font-black uppercase tracking-[0.3em]">Standby For Deployment</h2>
-                        <p className="text-xs text-slate-400 uppercase tracking-widest mt-2">Select Personnel from the Roster</p>
+                    /* THE COMMUNITY, when nobody is picked — his "i dont like this blue panel": State of Decay's
+                       resource strip instead of a navy "standby". Every figure is one this screen already reads. */
+                    <div className="p-6">
+                        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--ink-dim)] mb-3">{isAreaAdmin ? branchPathLocation : 'Fleet'} · the community today</p>
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                            {[
+                                ['People', agents.length],
+                                ['Vans loaded', `${agents.filter(m => loadOf(m) > 0).length} / ${agents.length}`],
+                                ['Bks in the vans', Math.round(agents.reduce((sum, m) => sum + loadOf(m), 0)).toLocaleString('id-ID')],
+                                ['Override requests', allBypasses.filter(b => b.status === 'PENDING').length],
+                            ].map(([label, value]) => (
+                                <div key={label} className="rounded-xl border border-[var(--line-2)] bg-[var(--raised)] p-4">
+                                    <p className="text-[10px] font-mono uppercase tracking-widest text-[var(--ink-dim)]">{label}</p>
+                                    <p className="text-2xl font-black font-mono tabular-nums text-[var(--ink)] mt-1">{value}</p>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="text-sm text-[var(--ink-muted)] mt-4 flex items-center gap-2"><Truck size={16} className="text-[var(--accent-ink)]"/> Pick someone on the stage to see their van and load it.</p>
                     </div>
                 )}
             </div>

@@ -8336,22 +8336,29 @@ section('THE VAN-LOADING BAY: TWO CHESTS, ONE PRESS (2026-09-24)');
    the shape: one place in view lists its people, several places are his folders, a search lists matches. */
 section('THE ROSTER, REDRAWN WITH EVERY DOOR KEPT (2026-09-24)');
 { const fl = read('src/FleetCanvasManager.jsx');
-  const left = fl.slice(fl.indexOf('{/* LEFT PANEL: FLEET ROSTER */}'), fl.indexOf('{/* RIGHT PANEL: THE LOADING DOCK */}'));
-  const rowFn = fl.slice(fl.indexOf('const rosterRow = (m) =>'), fl.indexOf('const handleWhatsAppShare'));
+  const left = fl.slice(fl.indexOf('{/* LEFT PANEL: FLEET ROSTER'), fl.indexOf('{/* RIGHT PANEL: THE LOADING DOCK */}'));
+  /* 2026-09-24 08:40: his State of Decay 2 screen replaced the folders the same morning - the people stand on a
+     stage as 3D cards, the doors moved to the gold bar under it, acting on the picked person */
+  const rowFn = fl.slice(fl.indexOf('const stageCard = (m) =>'), fl.indexOf('const handleWhatsAppShare'));
+  const right = fl.slice(fl.indexOf('{/* RIGHT PANEL: THE LOADING DOCK */}'));
   ok('the left panel was found', left.length > 3000 && rowFn.length > 1500);
-  ok('the panel paints in the app\'s tokens only - no blue, green, purple, orange or red Tailwind colours',
-     !/\b(bg|text|border)-(blue|emerald|green|purple|orange|indigo|amber|red|slate)-\d/.test(left + rowFn));
+  ok('the stage, its cards and the person\'s side paint in the app\'s tokens only - no blue, green, purple, orange or red Tailwind colours',
+     !/\b(bg|text|border)-(blue|emerald|green|purple|orange|indigo|amber|red|slate)-\d/.test(left + rowFn + right));
   ok('view for everyone; edit and remove only behind the fleet gate, remove still wears data-kpm-del',
-     /onClick=\{\(e\) => handleViewClick\(e, m\)\}/.test(rowFn) &&
-     /\{canEditFleet && \(\s*<>\s*<button onClick=\{\(e\) => handleEditClick\(e, m\)\}[\s\S]{0,300}<button data-kpm-del data-label="Delete" onClick=\{\(e\) => handleDeleteAgent\(e, m\)\}/.test(rowFn));
+     /onClick=\{\(e\) => handleViewClick\(e, sel\)\}/.test(left) &&
+     /\{canEditFleet && \(\s*<>\s*<button type="button" onClick=\{\(e\) => handleEditClick\(e, sel\)\}[\s\S]{0,300}<button data-kpm-del data-label="Delete" type="button" onClick=\{\(e\) => handleDeleteAgent\(e, sel\)\}/.test(left));
   ok('the add key is behind the same gate and still resets the form', /\{canEditFleet && \(\s*<button onClick=\{\(\) => \{ setIsAddingAgent\(!isAddingAgent\); setEditingAgentId\(null\); setNewAgent\(defaultAgentState\); setIsReadOnlyMode\(false\); \}\}/.test(left));
   ok('the search reads the same five fields', /a\.name\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.email\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.userRole\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.location\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.province\?\.toLowerCase\(\)\.includes\(term\)/.test(left));
-  ok('people keep their rank order (admin, area admin, agent)', /const rank = \{ 'ADMIN': 3, 'AREA_ADMIN': 2, 'AGENT': 1 \};/.test(left) && /byRank\(inside \? places\[inside\]\.people : shown\)/.test(left));
-  ok('folders only when more than one place is in view, and a search never hides a match inside one',
-     /if \(!term && keys\.length > 1 && !inside\) return \(/.test(left) && /const inside = !term && keys\.length > 1 && places\[rosterPlace\] \? rosterPlace : null;/.test(left) && /<FolderCard key=\{k\}/.test(left));
-  ok('a row names the tier in his words and says what the van holds, in packs',
+  ok('people keep their rank order (admin, area admin, agent)', /const rank = \{ 'ADMIN': 3, 'AREA_ADMIN': 2, 'AGENT': 1 \};/.test(left) && /const cast = byRank\(term \? shown : \(places\[place\]\?\.people \|\| \[\]\)\);/.test(left));
+  ok('areas become tabs over the stage only when more than one place is in view, and a search puts every match on it',
+     /\{!term && keys\.length > 1 && \(/.test(left) && /role="tab" aria-selected=\{k === place\}/.test(left) && /\{cast\.map\(m => stageCard\(m\)\)\}/.test(left));
+  ok('a card names the tier in his words and says what the van holds, in packs',
      /tierWord\('AREA_ADMIN'\)/.test(rowFn) && /const bks = Math\.round\(loadOf\(m\)\);/.test(rowFn) && /convertToBks\(r\.qty, r\.unit, inventory\.find/.test(fl) && /Bks · \$\{items\}/.test(rowFn));
-  ok('picking a person goes through the muatan guard', /onClick=\{\(\) => pickAgent\(m\)\}/.test(rowFn) && /const pickAgent = async \(m\) => \{\s*if \(bayLines > 0/.test(fl));
+  ok('picking a card goes through the muatan guard, by pointer or by key', /onClick=\{\(\) => pickAgent\(m\)\}/.test(rowFn) && /e\.key === 'Enter' \|\| e\.key === ' '/.test(rowFn) && /const pickAgent = async \(m\) => \{\s*if \(bayLines > 0/.test(fl));
+  const stageCss = read('src/styles/theme.css').slice(read('src/styles/theme.css').indexOf('/* ── THE ROSTER STAGE'), read('src/styles/theme.css').indexOf('/* ── END OF THE ROSTER STAGE'));
+  ok('a card is visible at rest and lifts only on a pointer or a key (Lite Mode keeps it all)',
+     stageCss.length > 1500 && !/opacity:\s*0[;\s]/.test(stageCss) && /\.kpm-actor:hover \.kpm-actor-card, \.kpm-actor:focus-visible \.kpm-actor-card \{ transform: translateY\(-10px\)/.test(stageCss));
+  ok('the blue standby is gone; nobody picked shows the community', !/Standby For Deployment/.test(fl) && /the community today/.test(fl));
   ok('every empty-roster cause still names itself', /The roster could not be read\./.test(left) && /Your own staff record was not found\./.test(left) && /You are not posted to a branch yet\./.test(left) && /Nobody is posted to \{branchPathLocation\}\./.test(left));
 }
 

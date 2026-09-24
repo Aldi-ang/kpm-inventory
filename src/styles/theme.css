@@ -4902,3 +4902,58 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
   .kpm-bay .slot, .kpm-bay .kpm-cube, .kpm-bay .gui, .kpm-bay .chest .lid, .kpm-bay .chest .latch { animation: none !important; transition: none !important; }
 }
 /* ── END OF THE VAN-LOADING BAY ─────────────────────────────────────────────────────────────────── */
+
+/* ── THE ROSTER STAGE (FleetCanvasManager.jsx stageCard) — his State of Decay 2 community screen ───────────
+   The people stand side by side on a lit floor, a name over each; pointing lifts a card and lights its floor,
+   the picked one wears the gold ring, the area leader stands on a crown, and a gold bar names the place and
+   carries the actions. "3D character, if its too heavy then just 3D cards": each person is a card turned
+   into the stage, straightening as it is looked at. Borders and backgrounds only - Lite Mode keeps every
+   card, name and figure and loses only the lift. */
+.kpm-stage-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 10px; }
+.kpm-stage-tab { flex: 0 0 auto; min-height: 40px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  border: 1px solid var(--line-2); border-radius: 10px; background: var(--inset); color: var(--ink-muted);
+  font: 900 11px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; }
+.kpm-stage-tab small { font-size: 10px; color: var(--ink-dim); }
+.kpm-stage-tab:hover { border-color: var(--accent-edge); }
+.kpm-stage-tab.on { background: var(--gold); color: var(--gold-ink); border-color: var(--accent-edge); }
+.kpm-stage-tab.on small { color: var(--gold-ink); }
+.kpm-stage { display: flex; gap: 18px; overflow-x: auto; padding: 20px 14px 8px; scroll-snap-type: x proximity; perspective: 900px;
+  border: 1px solid var(--line-2); border-bottom: 0; border-radius: 14px 14px 0 0;
+  background: radial-gradient(90% 55% at 50% 100%, rgba(208, 138, 46, .16), transparent 70%), linear-gradient(180deg, var(--raised), var(--sunk)); }
+.kpm-actor { flex: 0 0 170px; scroll-snap-align: center; display: grid; justify-items: center; gap: 16px; cursor: pointer; outline: none; }
+.kpm-actor-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 900 11px/1.2 var(--font-mono);
+  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); transition: color .15s; }
+.kpm-actor-card { position: relative; width: 156px; height: 196px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 16px 8px 10px; text-align: center; overflow: hidden; border-radius: 12px;
+  border: 1px solid var(--line-2); border-right-width: 4px; border-bottom-width: 4px;
+  background: linear-gradient(180deg, var(--raised), var(--inset));
+  transform: rotateY(-14deg) rotateX(4deg); transition: transform .28s cubic-bezier(.2, .9, .3, 1), border-color .15s; }
+.kpm-actor-card .band { position: absolute; left: 0; right: 0; top: 0; height: 6px; background: var(--line-2); }
+.kpm-actor.leader .kpm-actor-card .band { background: var(--gold); }
+.kpm-actor-card .avatar { position: relative; width: 54px; height: 54px; flex: 0 0 54px; border-radius: 50%; display: grid; place-items: center;
+  border: 2px solid var(--line-2); background: var(--inset); color: var(--ink); font: 900 18px/1 var(--font-mono); }
+.kpm-actor.leader .kpm-actor-card .avatar { border-color: var(--accent-edge); color: var(--accent-ink); }
+.kpm-actor-card .avatar .role { position: absolute; right: -5px; bottom: -5px; padding: 2px; border-radius: 50%; background: var(--panel); color: var(--ink-muted); box-sizing: content-box; }
+.kpm-actor-card .who { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; font-size: 13px; line-height: 1.2; color: var(--ink); }
+.kpm-actor-card .tier { max-height: 2.7em; overflow: hidden; font-size: 10px; line-height: 1.35; color: var(--ink-muted); }
+.kpm-actor-card .load { margin-top: auto; display: flex; align-items: center; gap: 5px; font: 700 10px/1.2 var(--font-mono); color: var(--ink-muted); }
+.kpm-actor-card .load i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-2); }
+.kpm-actor-card .load i.on { background: var(--gold); }
+.kpm-actor-floor { width: 140px; height: 22px; margin-top: -8px; border-radius: 50%; display: grid; place-items: center; color: var(--accent-ink);
+  background: radial-gradient(closest-side, rgba(0, 0, 0, .35), transparent); transition: background .2s; }
+.kpm-actor:hover .kpm-actor-card, .kpm-actor:focus-visible .kpm-actor-card { transform: translateY(-10px) rotateY(0deg) rotateX(0deg); border-color: var(--accent-edge); }
+.kpm-actor:hover .kpm-actor-floor, .kpm-actor:focus-visible .kpm-actor-floor { background: radial-gradient(closest-side, rgba(208, 138, 46, .45), transparent); }
+.kpm-actor:hover .kpm-actor-name, .kpm-actor:focus-visible .kpm-actor-name, .kpm-actor.on .kpm-actor-name { color: var(--ink); }
+.kpm-actor.on .kpm-actor-card { transform: translateY(-6px) rotateY(0deg) rotateX(0deg); border-color: var(--accent-edge); outline: 2px solid var(--accent-edge); outline-offset: 3px; }
+.kpm-actor.on .kpm-actor-floor { background: radial-gradient(closest-side, rgba(208, 138, 46, .75), rgba(208, 138, 46, .18) 70%, transparent); }
+.kpm-stage-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 12px;
+  border-radius: 0 0 14px 14px; background: var(--gold); color: var(--gold-ink); }
+.kpm-stage-name { font: 900 16px/1.1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.kpm-stage-hint { font: 700 11px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.kpm-stage-acts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.kpm-stage-acts > button:not([data-kpm-del]) { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 12px; cursor: pointer;
+  border: 1px solid var(--gold-ink); border-radius: 8px; background: transparent; color: var(--gold-ink);
+  font: 900 11px/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.kpm-stage-acts > button:not([data-kpm-del]):hover { background: rgba(0, 0, 0, .14); }
+@media (prefers-reduced-motion: reduce) { .kpm-actor-card, .kpm-actor-floor { transition: none; } }
+/* ── END OF THE ROSTER STAGE ──────────────────────────────────────────────────────────────────────────── */
