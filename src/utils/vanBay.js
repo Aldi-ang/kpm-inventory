@@ -84,21 +84,25 @@ export function applyPreset(lines, cells, preset, P, page = 0) {
   return { lines: L, layout: C, cut };
 }
 
-/* THE TEAM: what the other vans in this place hold, per product, biggest first - the same packs the roster
-   cards count (FleetCanvasManager loadOf). A product this warehouse does not list still counts, by its row. */
+/* THE TEAM: one row per other van in this place with the goods it carries, in the row's own unit (his 12:50 "1 personnel
+   and list of the products they bring"), biggest van first - the same packs the roster cards count (FleetCanvasManager
+   loadOf). An empty van is left out. The items are also what "Salin" copies into this muatan. */
 export function teamLoad(people, P) {
-  const by = {};
+  const vans = [];
   for (const m of people) {
+    const by = {};
     for (const r of m.activeCanvas || []) {
-      const bks = convertToBks(Number(r.qty) || 0, r.unit, P[r.productId]);
+      const qty = Number(r.qty) || 0, unit = r.unit || 'Bks', bks = convertToBks(qty, unit, P[r.productId]);
       if (!(bks > 0)) continue;
-      const row = by[r.productId] || (by[r.productId] = { id: r.productId, name: P[r.productId]?.name || r.name || r.productId, bks: 0, vans: [] });
-      row.bks += bks;
-      const van = row.vans.find(v => v.name === m.name);
-      if (van) van.bks += bks; else row.vans.push({ name: m.name, bks });
+      const it = by[r.productId];
+      if (!it) by[r.productId] = { id: r.productId, name: P[r.productId]?.name || r.name || r.productId, qty, unit, bks };
+      else if (it.unit === unit) { it.qty += qty; it.bks += bks; }
+      else { it.bks += bks; it.qty = it.bks; it.unit = 'Bks'; }          // two units of one product read as packs
     }
+    const items = Object.values(by).sort((a, b) => b.bks - a.bks);
+    if (items.length) vans.push({ id: m.id, name: m.name, bks: items.reduce((s, x) => s + x.bks, 0), items });
   }
-  return Object.values(by).sort((a, b) => b.bks - a.bks);
+  return vans.sort((a, b) => b.bks - a.bks);
 }
 
 /* The damaged row: what came back broken today. A damaged RETUR never goes back to stock

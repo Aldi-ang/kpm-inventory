@@ -78,6 +78,7 @@ const CUT_WHY = {
   full: () => 'van penuh — kosongkan satu kotak dulu',
 };
 const BYPASS_WORD = { PENDING: 'menunggu', APPROVED: 'disetujui', REJECTED: 'ditolak' };
+const VIEW_ONLY = 'Hanya lihat — jabatan ini tidak bisa memuat van';
 
 export default function LoadingBay({ agent, warehouse, stock, damaged = [], canEdit, onLoad, onReturn, onLayout, onDirty, onPreset, team = [], bypasses = [] }) {
   const P = useMemo(() => Object.fromEntries(stock.map(p => [p.id, p])), [stock]);
@@ -101,7 +102,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   const [open, setOpen] = useState({ wh: null, van: null });
   const [tabs, setTabs] = useState({ wh: 'preset', van: 'geo' });
   const [preset, setPreset] = useState(() => agent.loadPreset || []);
-  const [presetCut, setPresetCut] = useState(null);
+  const [fillCut, setFillCut] = useState(null);
   const [anim, setAnim] = useState({ wh: true, van: true });
   const [sheet, setSheet] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -265,7 +266,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     if (!d.live) {
       if (Math.abs(e.clientX - d.x0) + Math.abs(e.clientY - d.y0) < 6) return;   // still a tap
       const p = P[d.id];
-      if (!canEdit) { say(d.src, 'Hanya lihat — tingkatmu tidak bisa memuat van', true); drag.current = null; return; }
+      if (!canEdit) { say(d.src, VIEW_ONLY, true); drag.current = null; return; }
       if (d.src === 'wh' && capLoad(d.id) <= 0) {
         say('wh', stockOf(d.id) ? `Semua stok ${p.name} sudah di muatan` : `${p.name} habis di gudang`, true);
         playSound('chestRefuse'); drag.current = null; return;
@@ -353,7 +354,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     const c = d.slot.querySelector('.kpm-cube');
     if (c && motionOK()) { c.classList.remove('spin'); void c.offsetWidth; c.classList.add('spin'); setTimeout(() => c.classList.remove('spin'), 760); }
     const p = P[d.id];
-    if (!canEdit) return say(d.src, 'Hanya lihat — tingkatmu tidak bisa memuat van');
+    if (!canEdit) return say(d.src, VIEW_ONLY);
     if (d.src === 'van') say('van', 'Tarik ke gudang untuk mengembalikan, atau ke kotak lain untuk menata');
     else say('wh', stockOf(d.id) ? `Tarik ${p.name} ke van untuk memuat` : `${p.name} habis di gudang`, !stockOf(d.id));
   }
@@ -392,7 +393,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     const line = lines.find(l => l.id === s.id), nt = net(s.id), have = vanOf[s.id] || 0, st = stockOf(s.id);
     const cap = s.mode === 'edit' ? (s.dir > 0 ? st : have) : (s.dir > 0 ? capLoad(s.id) : capBack(s.id));
     let ok = false, msg = '', err = false;
-    if (raw === '') msg = `Ketik jumlahnya — tidak ada angka bawaan. ${s.dir > 0 ? 'Sisa gudang ' : 'Di van '}${fmt(cap)} Bks.`;
+    if (raw === '') msg = `${s.dir > 0 ? 'Sisa di gudang' : 'Isi van'} ${fmt(cap)} Bks.`;
     else if (!(n > 0)) { msg = 'Tulis angka bulat, lebih dari 0.'; err = true; }
     else if (bks > cap) { msg = `Lebih dari ${s.dir > 0 ? 'sisa gudang' : 'isi van'}: ${fmt(cap)} Bks.`; err = true; }
     else {
@@ -540,21 +541,23 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     const ok = await onPreset?.(next);
     if (ok !== true) return say('wh', 'Muatan biasa tidak tersimpan — coba lagi', true);
     say('wh', `${preset.length ? 'Muatan biasa diganti' : 'Tersimpan sebagai muatan biasa'} — ${next.length} barang`);
-    setPreset(next); setPresetCut(null);
+    setPreset(next); setFillCut(null);
     playSound('chestPage');
   }
-  /* his rule: a preset only FILLS THE MUATAN, the same way a drag does - nothing is written here */
-  function fillFromPreset() {
-    if (!canEdit || busy) return;
-    if (!preset.length) return say('wh', 'Belum ada muatan biasa — isi muatan, lalu simpan', true);
-    const r = applyPreset(lines, cells, preset, P, vanPage);
-    const went = preset.length - r.cut.filter(c => c.why !== 'short').length;
+  /* his rule: a preset only FILLS THE MUATAN, the same way a drag does - and so does a van copied from the team.
+     Nothing is written here; every line that could not go in whole is listed with its reason. */
+  function fillMuatan(src, done, from) {
+    if (!canEdit || busy || !src.length) return;
+    const r = applyPreset(lines, cells, src, P, vanPage);
+    const went = src.length - r.cut.filter(c => c.why !== 'short').length;
     flushSync(() => { setLines(r.lines); setLayout(r.layout); setAnim({ wh: false, van: false }); });
-    setPresetCut(r.cut);
-    say('wh', went ? `${went} barang masuk ke muatan — belum tercatat${r.cut.length ? ` · ${r.cut.length} dipotong, alasannya di bawah` : ''}`
-      : 'Tidak ada yang bisa masuk — alasannya di bawah', !went);
+    setFillCut(r.cut);
+    say('wh', went ? `${done} — ${went} barang, belum tercatat${r.cut.length ? ` · ${r.cut.length} dipotong` : ''}`
+      : `Tidak ada yang bisa diambil dari ${from}`, !went);
     playSound(went ? 'chestLand' : 'chestRefuse');
   }
+  /* his 12:50 "copy paste loadout": another van's goods into this muatan, pure convenience */
+  function copyLoad(v) { fillMuatan(v.items.map(({ id, qty, unit }) => ({ id, qty, unit })), `Muatan ${v.name} disalin`, `muatan ${v.name}`); }
 
   function removeLine(id) {
     if (busy) return;
@@ -577,7 +580,12 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
 
   const sh = sheet && P[sheet.id] ? { s: sheet, p: P[sheet.id], c: calc(sheet) } : null;
   /* what sits behind a closed chest */
-  const teamRows = open.wh === false && tabs.wh === 'team' ? teamLoad(team, P) : [];
+  const teamRows = open.wh === false ? teamLoad(team, P) : [];
+  const cutList = fillCut?.length ? (
+    <ul className="rows cut" aria-label="Yang dipotong">
+      {fillCut.map(c => <li key={c.id}><span>{P[c.id]?.name || 'Barang yang sudah tidak ada'}</span><b>{CUT_WHY[c.why](c)}</b></li>)}
+    </ul>
+  ) : null;
   const geo = [...bypasses].sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
   const plusLines = lines.filter(l => l.dir > 0).length;
   const tabKeys = (side, list) => (
@@ -592,11 +600,11 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   return (
     <div className="kpm-bay-wrap">
       <section ref={refs.bay} className={`kpm-bay${open.wh ? ' wh-open' : ''}${open.van ? ' van-open' : ''}${open.wh === false ? ' wh-shut' : ''}${open.van === false ? ' van-shut' : ''}${dragging ? ' dragging' : ''}`} aria-label="Muat van">
-        <p className="bayHint">{canEdit ? 'Tarik kotak dari gudang ke van — atau kembali' : 'Hanya lihat — tingkatmu tidak bisa memuat van'}</p>
+        {!canEdit && <p className="bayHint">{VIEW_ONLY}</p>}
 
         {open.wh === false && (
           <div className="slip wh">
-            {tabKeys('wh', [['preset', 'Muatan biasa'], ['team', `Tim · ${team.length}`]])}
+            {tabKeys('wh', [['preset', 'Muatan biasa'], ['team', `Tim · ${teamRows.length}`]])}
             {sayEl('wh')}
             {tabs.wh === 'preset' ? (
               <div className="pane" role="tabpanel" aria-labelledby="kpm-slip-preset">
@@ -607,29 +615,29 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
                         <b>{fmt(l.qty)} {l.unit}</b></li>
                     ))}
                   </ul>
-                ) : <p className="note">Belum ada muatan biasa untuk {agent.name}. Tarik barang ke van, lalu simpan di sini.</p>}
-                {presetCut?.length ? (
-                  <ul className="rows cut" aria-label="Yang dipotong">
-                    {presetCut.map(c => <li key={c.id}><span>{P[c.id]?.name || 'Barang yang sudah tidak ada'}</span><b>{CUT_WHY[c.why](c)}</b></li>)}
-                  </ul>
-                ) : null}
+                ) : <p className="note">Belum ada muatan biasa.</p>}
+                {cutList}
                 {canEdit && (
                   <div className="acts">
-                    <button type="button" className="use" disabled={!preset.length || busy} onClick={fillFromPreset}>Pakai muatan biasa</button>
+                    <button type="button" className="use" disabled={!preset.length || busy} onClick={() => fillMuatan(preset, 'Muatan biasa dipakai', 'muatan biasa')}>Pakai muatan biasa</button>
                     <button type="button" className="keep" disabled={!plusLines || busy} onClick={savePreset}>Simpan sebagai muatan biasa</button>
                   </div>
                 )}
-                <p className="note">Hanya mengisi muatan, seperti menarik kotak. Stok baru berubah saat MUAT VAN ditekan.</p>
               </div>
             ) : (
               <div className="pane" role="tabpanel" aria-labelledby="kpm-slip-team">
                 {teamRows.length ? (
-                  <ul className="rows">
-                    {teamRows.map(r => (
-                      <li key={r.id}><span>{r.name}<small>{r.vans.map(v => `${v.name} ${fmt(v.bks)}`).join(' · ')}</small></span><b>{fmt(r.bks)} Bks</b></li>
+                  <ul className="rows team">
+                    {teamRows.map(v => (
+                      <li key={v.id}>
+                        <span>{v.name}<small>{v.items.map(x => `${x.name} ${fmt(x.qty)} ${x.unit}`).join(' · ')}</small></span>
+                        <span className="side"><b>{fmt(v.bks)} Bks</b>
+                          {canEdit && <button type="button" className="copy" aria-label={`Salin muatan ${v.name}`} disabled={busy} onClick={() => copyLoad(v)}>Salin</button>}</span>
+                      </li>
                     ))}
                   </ul>
                 ) : <p className="note">{team.length ? 'Van lain di tempat ini kosong.' : 'Tidak ada orang lain di tempat ini.'}</p>}
+                {cutList}
               </div>
             )}
           </div>
@@ -742,7 +750,6 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
                   ))}
                 </ul>
               ) : <p className="note">Belum ada permintaan geofence dari {agent.name}.</p>}
-              {geo.some(b => b.status === 'PENDING') && <p className="note">Yang menunggu disetujui atau ditolak di antrean paling atas layar.</p>}
             </div>
           </div>
         )}
@@ -751,7 +758,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
           <aside className="man" aria-label="Muatan hari ini">
             <div className="manHead"><p className="lbl">Muatan · {agent.name}</p>
               <span className="tally">{!lines.length ? '0 Bks' : `${plus ? '+' + fmt(plus) : ''}${plus && minus ? ' / ' : ''}${minus ? '−' + fmt(minus) : ''} Bks`}</span></div>
-            {!lines.length && <p className="empty">Belum ada muatan. Tarik barang dari gudang ke van, atau dari van kembali ke gudang.</p>}
+            {!lines.length && <p className="empty">Muatan masih kosong.</p>}
             <ol className="lines">
               {lines.map((l, i) => {
                 const p = P[l.id], b = lineBks(l, p), have = vanOf[l.id] || 0;
@@ -769,12 +776,10 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
                 );
               })}
             </ol>
-            <p className="contract">Menarik <b>tidak mencatat apa pun</b>. Stok gudang dan van baru berubah saat <b>MUAT VAN</b> ditekan — sekali: satu surat jalan untuk yang dimuat, satu bukti kembali untuk yang dikembalikan.</p>
             <button className="go" type="button" disabled={!lines.length || busy} onClick={load}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62L18.3 9.38a1 1 0 0 0-.78-.38H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
-              <span>{busy ? `Memuat ${Math.min(doneUpTo + 2, lines.length)}/${lines.length}…` : lines.length ? `Muat van — ${goParts.join(' · ')}` : 'Muat van — belum ada muatan'}</span>
+              <span>{busy ? `Memuat ${Math.min(doneUpTo + 2, lines.length)} dari ${lines.length}…` : lines.length ? `Muat van · ${goParts.join(', ')}` : 'Muat van'}</span>
             </button>
-            <p className="lbl manFoot">satu tekan · van tercatat sekali</p>
             <p className="report" role="status" aria-live="polite">
               {report && <>{report.landed ? <b>✓ Van {agent.name} tercatat</b> : <b>Belum tercatat</b>} · {report.parts.join(' · ')}</>}
             </p>

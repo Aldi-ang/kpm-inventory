@@ -1258,7 +1258,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                     </span>
                                                 </>
                                             )}
-                                            {sel ? (
+                                            {sel && (
                                                 <span className="kpm-stage-acts">
                                                     <button type="button" onClick={(e) => handleViewClick(e, sel)}><User size={14}/> <span>Details</span></button>
                                                     {canEditFleet && (
@@ -1268,7 +1268,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                         </>
                                                     )}
                                                 </span>
-                                            ) : <span className="kpm-stage-hint">Point at a card to look · tap to pick</span>}
+                                            )}
                                         </div>
                                     </div>
                                 );

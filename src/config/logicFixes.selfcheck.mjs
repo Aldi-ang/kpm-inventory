@@ -8400,8 +8400,13 @@ section('ROUND 4: A CLOSED CHEST SHOWS TABS IN ITS PANEL\'S PLACE (2026-09-24)')
      /<LoadingBay[\s\S]{0,1400}onPreset=\{handleSavePreset\}/.test(flc) && /canEditFleet/.test(flc.slice(flc.indexOf('const handleSavePreset = async'), flc.indexOf('const handleSavePreset = async') + 300)));
   ok('saving keeps only the PLUS lines, as { id, qty, unit }', /lines\.filter\(l => l\.dir > 0\)\.map\(\(\{ id, qty, unit \}\) => \(\{ id, qty, unit \}\)\)/.test(fnOf(bayc, 'savePreset')));
   ok('using it only FILLS THE MUATAN (his rule): applyPreset, no writer, and it says what was cut',
-     /applyPreset\(/.test(fnOf(bayc, 'fillFromPreset')) && !/onLoad\(|onReturn\(|onPreset\(|onLayout\(/.test(fnOf(bayc, 'fillFromPreset')) &&
-     /cut/.test(fnOf(bayc, 'fillFromPreset')) && /say\(/.test(fnOf(bayc, 'fillFromPreset')));
+     /applyPreset\(/.test(fnOf(bayc, 'fillMuatan')) && !/onLoad\(|onReturn\(|onPreset\(|onLayout\(/.test(fnOf(bayc, 'fillMuatan')) &&
+     /cut/.test(fnOf(bayc, 'fillMuatan')) && /say\(/.test(fnOf(bayc, 'fillMuatan')) && /onClick=\{\(\) => fillMuatan\(preset, /.test(bayc));
+  /* his 12:50 "add copy paste loadout on that so that the choosen salesperson can have the same group of item that the
+     other salesman bring, just pure for convenience" - the SAME fill, so the same rule holds: nothing is written */
+  ok('copying another van\'s load goes through the same fill - the muatan only, capped, cuts said',
+     /function copyLoad\(v\) \{ fillMuatan\(v\.items\.map\(\(\{ id, qty, unit \}\) => \(\{ id, qty, unit \}\)\), /.test(bayc) &&
+     /onClick=\{\(\) => copyLoad\(v\)\}/.test(bayc) && /\{canEdit && <button[^>]*onClick=\{\(\) => copyLoad\(v\)\}/.test(bayc));
   ok('the team is the other people in THIS place, from the roster the viewer already sees',
      /const placeOf = \(a\) =>/.test(flc) && /const \{ prov, loc, k \} = placeOf\(a\);/.test(flc) &&
      /team=\{agents\.filter\(a => a\.id !== selectedAgent\.id && placeOf\(a\)\.k === placeOf\(selectedAgent\)\.k\)\}/.test(flc));
@@ -8412,6 +8417,13 @@ section('ROUND 4: A CLOSED CHEST SHOWS TABS IN ITS PANEL\'S PLACE (2026-09-24)')
   ok('the company-wide PENDING queue stays at the top of the screen, never only behind a closed chest',
      right.indexOf("allBypasses.some(b => b.status === 'PENDING') && (") > 0 && right.indexOf("allBypasses.some(b => b.status === 'PENDING') && (") < right.indexOf('{selectedAgent ? ('));
   ok('the van tab only READS the requests - approving stays in the queue', !/updateDoc|gps_bypasses|confirmAction/.test(bayc));
+  /* his 12:50 "instruction on sc1 is not explained correctly in indonesian and its sound so robot ... dont put tutorial
+     inside the panel, we will put all the tutorial on the ponder book anyway" */
+  ok('no tutorial inside the bay or on the stage bar - the ponder book will carry it',
+     !/tidak mencatat apa pun|satu tekan|Tarik kotak dari gudang|tidak ada angka bawaan|Hanya mengisi muatan|antrean paling atas|lalu simpan di sini|Tarik barang dari gudang ke van, atau/.test(bay) &&
+     !/className="contract"|manFoot/.test(bay) && !/Point at a card to look/.test(fl) && !/\.kpm-bay \.contract|\.kpm-stage-hint/.test(th));
+  ok('the bay\'s words read as people talk: no "-mu", no "belum ada muatan" on the key',
+     !/tingkatmu|Muat van — belum ada muatan/.test(bay) && /'Muat van'/.test(bay) && /Muatan masih kosong\./.test(bay));
 
   /* the arithmetic, re-run on real numbers */
   const vb = await import('../utils/vanBay.js');
@@ -8432,12 +8444,17 @@ section('ROUND 4: A CLOSED CHEST SHOWS TABS IN ITS PANEL\'S PLACE (2026-09-24)')
        vb.applyPreset([{ id: 'c', qty: 10, unit: 'Bks', dir: 1 }], ['c', ...Array(17).fill(null)], [{ id: 'c', qty: 1, unit: 'Bks' }], { c: { id: 'c', stock: 10 } }, 0).cut[0]?.why === 'planned');
     ok('a full van refuses a new product, as a drag does',
        vb.applyPreset([], Array.from({ length: 18 }, (_, i) => 'p' + i), [{ id: 'n', qty: 1, unit: 'Bks' }], P2, 0).cut[0]?.why === 'full');
+    /* his 12:50 "i want 1 personnel and list of the products they bring, not 1 personnel and 1 product" */
     const T = vb.teamLoad([
-      { name: 'Budi', activeCanvas: [{ productId: 'a', qty: 2, unit: 'Slop' }, { productId: 'b', qty: 0, unit: 'Bks' }] },
-      { name: 'Sari', activeCanvas: [{ productId: 'a', qty: 5, unit: 'Bks' }, { productId: 'n', qty: 1, unit: 'Bal' }] }], P2);
-    ok('the team, per product: 2 Slop + 5 Bks = 25 Bks in two vans, 1 Bal = 200 Bks, an empty row left out, biggest first',
-       T.length === 2 && T[0].id === 'n' && T[0].bks === 200 && T[1].id === 'a' && T[1].bks === 25 &&
-       T[1].vans.length === 2 && T[1].vans[0].name === 'Budi' && T[1].vans[0].bks === 20);
+      { id: 'b1', name: 'Budi', activeCanvas: [{ productId: 'a', qty: 2, unit: 'Slop' }, { productId: 'b', qty: 0, unit: 'Bks' }] },
+      { id: 's1', name: 'Sari', activeCanvas: [{ productId: 'a', qty: 5, unit: 'Bks' }, { productId: 'n', qty: 1, unit: 'Bal' }] },
+      { id: 'e1', name: 'Eko', activeCanvas: [] }], P2);
+    ok('the team, one row per van with the goods it carries: Sari 1 Bal + 5 Bks = 205 Bks, Budi 2 Slop = 20; an empty van and an empty row left out',
+       T.length === 2 && T[0].name === 'Sari' && T[0].bks === 205 && T[0].items.length === 2 && T[0].items[0].id === 'n' && T[0].items[0].qty === 1 && T[0].items[0].unit === 'Bal' &&
+       T[1].name === 'Budi' && T[1].bks === 20 && T[1].items.length === 1 && T[1].items[0].unit === 'Slop');
+    const C = vb.applyPreset([], Array(18).fill(null), T[0].items.map(({ id, qty, unit }) => ({ id, qty, unit })), { ...P2, n: { ...P2.n, stock: 500 } }, 0);
+    ok('Sari\'s load copied into an empty muatan: her goods in her units, one square each, nothing cut',
+       C.lines.length === 2 && C.lines.find(l => l.id === 'n')?.unit === 'Bal' && C.lines.find(l => l.id === 'a')?.qty === 5 && C.cut.length === 0 && C.layout.filter(Boolean).length === 2);
   }
 }
 
@@ -8453,8 +8470,16 @@ section('ROUND 4: FAR AND NEAR ON THE STAGE (2026-09-24)');
   ok('the pointed or picked card steps forward',
      /\.kpm-actor:hover \.kpm-actor-card, \.kpm-actor:focus-visible \.kpm-actor-card \{ transform: translateY\(-10px\) scale\(1\.0\d\)/.test(stageCss) &&
      /\.kpm-actor\.on \.kpm-actor-card \{ transform: translateY\(-6px\) scale\(1\.0\d\)/.test(stageCss));
-  ok('a better floor: a grid plane running back to the horizon, a spotlight from above, a light haze',
-     /repeating-conic-gradient\(/.test(stageCss) && /conic-gradient\(from 1[5-6]\d?deg at 50% -/.test(stageCss) && /the haze/.test(stageCss));
+  /* his 12:50: the grid floor was "too norak ... less lines like there is some cyberpunk stuff going on there, just simple
+     cool and elegant with the warm lighting just like what the State of decay have" */
+  ok('the stage is lit warm and plain - a lamp overhead, its pool on the floor, the edges in shadow - and no lines',
+     /the lamp overhead/.test(stageCss) && /its pool on the floor/.test(stageCss) && !/repeating-(conic|linear)-gradient|conic-gradient/.test(stageCss) &&
+     !/rgba\(208, 138, 46, \.2\) 9%/.test(stageCss));
+  /* his 12:50 recording: with nobody picked the row pulsed as the pointer crossed it - in each GAP between cards nothing
+     is hovered, so every far card grew back, then shrank again at the next card */
+  ok('the hover zones touch - no gap between cards - so crossing the row never drops the far/near state',
+     /\.kpm-stage \{[^}]*gap: 0;/.test(stageCss) && /\.kpm-actor \{ flex: 0 0 188px;/.test(stageCss) &&
+     /@media \(min-width: 1024px\) \{ \.kpm-stage \.kpm-actor \{ flex: 1 1 188px; \} \}/.test(stageCss) && !/space-evenly/.test(stageCss));
   ok('no shadow, no filter, nothing on a loop (G30)', stageCss.length > 3000 && !/box-shadow|drop-shadow|filter:|infinite/.test(stageCss));
   ok('Lite Mode keeps every card whole: the dimming is gated out of it, and nothing glides',
      /\.lite-mode \.kpm-actor-card, \.lite-mode \.kpm-actor-floor \{ transition: none; \}/.test(stageCss) &&
