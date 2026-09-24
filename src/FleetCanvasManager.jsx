@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-    Truck, UserPlus, PackagePlus, Save, Archive, 
-    ArrowRight, MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
+    Truck, UserPlus, Save, Archive,
+    MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
     ShieldCheck, ChevronDown, ChevronUp, FileText, Printer, MessageSquare, Globe, Search, Plus
 } from 'lucide-react';
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
@@ -10,6 +10,8 @@ import { convertToBks, isSafeDocIdEmail, getLocalDayKey} from './utils/helpers';
 import { normalizeRegion } from './config/permissions';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
+import LoadingBay from './components/LoadingBay.jsx';
+import { damagedInVan } from './utils/vanBay';
 
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, masterUserId = null }) {
 
@@ -167,9 +169,9 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     const existingProvinces = useMemo(() => [...new Set(activeMotorists.map(a => a.province ? a.province.trim().toUpperCase() : 'CENTRAL JAVA'))].sort(), [activeMotorists]);
     const existingLocations = useMemo(() => [...new Set(activeMotorists.map(a => a.location ? a.location.trim().toUpperCase() : 'UNASSIGNED AREA'))].sort(), [activeMotorists]);
 
-    const [selectedProduct, setSelectedProduct] = useState("");
-    const [loadQty, setLoadQty] = useState("");
-    
+    /* how many lines the van-loading bay's muatan holds, so switching the salesman can ask first */
+    const [bayLines, setBayLines] = useState(0);
+
     const [showHistory, setShowHistory] = useState(false);
     const [viewingReceipt, setViewingReceipt] = useState(null);
     const [viewingSuratJalan, setViewingSuratJalan] = useState(false); 
@@ -412,21 +414,25 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         } catch (e) { notify("Firebase Blocked the Deletion: " + e.message); }
     };
 
-    const handleLoadCanvas = async () => {
+    const handleLoadCanvas = async (productId, qtyBks) => {
         /* THE CANVAS HALF OF THE SAME HOLE, AND IT WAS WORSE: Load and Reconcile & Clear move real
            stock between the warehouse and a van, and neither was gated by anything at all. The
            button is hidden below as well — this guard is here because a hidden button is a UI
-           promise and a handler is the actual door. */
+           promise and a handler is the actual door.
+
+           2026-09-24: the van-loading bay's MUAT VAN calls this once per product going out, with the
+           product and the packs, and keeps a failed line in its muatan with the reason this returns.
+           Only the inputs and the report changed; the transaction below is the one it always was. */
         if (!canEditFleet) return notify("VIEW ONLY: your tier cannot load a canvas. Ask an admin to change it in Settings › Permissions.");
-        if (!selectedProduct || !loadQty || isNaN(loadQty) || Number(loadQty) <= 0) return notify("Select a product and valid quantity.");
-        if (!selectedAgent) return;
+        if (!productId || !(Number(qtyBks) > 0)) return { ok: false, reason: 'Jumlah tidak sah' };
+        if (!selectedAgent) return { ok: false, reason: 'Tidak ada salesman dipilih' };
 
         // Use the master product record for name/pricing/conversion metadata — always correct,
         // regardless of which warehouse the actual stock count comes from.
-        const masterProduct = inventory.find(p => p.id === selectedProduct);
-        if (!masterProduct) return;
+        const masterProduct = inventory.find(p => p.id === productId);
+        if (!masterProduct) return { ok: false, reason: 'Barang tidak ada di daftar produk' };
 
-        const qtyToLoad = Number(loadQty);
+        const qtyToLoad = Number(qtyBks);
         const unitToLoad = 'Bks';
         const loadInBks = qtyToLoad;
 
@@ -490,13 +496,13 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 t.update(agentRef, { activeCanvas: updatedCanvas });
             });
 
-            triggerCapy(`Loaded ${qtyToLoad} ${unitToLoad} into vehicle. ${sourceLabel} stock deducted! 📦`);
-            setLoadQty("");
-            setSelectedProduct("");
+            /* the bay reports the whole press in ONE line, so the per-product mascot line is gone;
+               the audit log keeps one entry per movement */
             logAudit("CANVAS_LOAD", `Loaded ${qtyToLoad} ${masterProduct.name} to ${selectedAgent.name} (from ${sourceLabel})`);
+            return { ok: true };
         } catch (e) {
             console.error(e);
-            notify(e.message || "Failed to load vehicle canvas.");
+            return { ok: false, reason: e.message || "Failed to load vehicle canvas." };
         }
     };
 
@@ -568,6 +574,67 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             triggerCapy(`Vehicle cleared. All unsold stock returned to the ${destinationLabel}! 🧹`);
             logAudit("CANVAS_CLEAR", `Cleared and reconciled canvas for ${selectedAgent.name} → ${destinationLabel}`);
         } catch(e) { notify("Failed to clear canvas: " + e.message); }
+    };
+
+    /* A RETURN from the van-loading bay: its own per-product transaction, never the Reconcile & Clear
+       one above (that empties the whole van). The van's row is read LIVE inside the transaction - a
+       sale may have landed since the drag - converted in the row's own unit, taken down by the packs
+       coming back, and the same warehouse Load and Clear use goes up by those packs. */
+    const handleReturnToWarehouse = async (productId, qtyBks) => {
+        if (!canEditFleet) return notify("VIEW ONLY: your tier cannot return a canvas. Ask an admin to change it in Settings › Permissions.");
+        const product = inventory.find(p => p.id === productId);
+        if (!selectedAgent || !product || !(Number(qtyBks) > 0)) return { ok: false, reason: 'Jumlah tidak sah' };
+
+        const agentIsFieldLevel = isFieldLevelTier(selectedAgent.userRole);
+        const agentLocation = selectedAgent.location;
+        const useBranchWarehouse = agentIsFieldLevel && agentLocation && agentLocation !== 'Headquarters' && agentLocation !== 'UNASSIGNED AREA' && agentLocation !== 'UNASSIGNED';
+        const destinationLabel = useBranchWarehouse ? `${agentLocation} Branch` : 'Master Vault';
+        const agentRef = doc(db, collPath, selectedAgent.id);
+        const destRef = useBranchWarehouse
+            ? doc(db, `artifacts/${appId}/users/${userId}/branches/${agentLocation.replace(/\//g, '-')}/inventory`, product.id)
+            : doc(db, `artifacts/${appId}/users/${userId}/products`, product.id);
+
+        try {
+            await runTransaction(db, async (t) => {
+                // 📖 PHASE 1: READS — both before any write, which a transaction requires
+                const agentSnap = await t.get(agentRef);
+                const destSnap = await t.get(destRef);
+                const liveCanvas = agentSnap.exists() ? (agentSnap.data().activeCanvas || []) : [];
+                const idx = liveCanvas.findIndex(item => item.productId === product.id);
+                const rowBks = idx >= 0 ? convertToBks(liveCanvas[idx].qty, liveCanvas[idx].unit, product) : 0;
+                if (rowBks < qtyBks) throw new Error(`Van tinggal ${rowBks} Bks ${product.name} — ada penjualan sejak ditarik`);
+
+                // ✍️ PHASE 2: WRITES
+                const updated = JSON.parse(JSON.stringify(liveCanvas));
+                updated[idx].qty -= qtyBks / convertToBks(1, updated[idx].unit, product);
+                if (updated[idx].qty <= 1e-9) updated.splice(idx, 1);
+                const currentStock = destSnap.exists() ? (destSnap.data().stock || 0) : 0;
+                if (useBranchWarehouse) {
+                    t.set(destRef, { productId: product.id, name: product.name, stock: currentStock + qtyBks }, { merge: true });
+                } else {
+                    t.set(destRef, { stock: currentStock + qtyBks }, { merge: true });
+                }
+                t.update(agentRef, { activeCanvas: updated });
+            });
+            logAudit("CANVAS_RETURN", `Returned ${qtyBks} Bks ${product.name} from ${selectedAgent.name} → ${destinationLabel}`);
+            return { ok: true };
+        } catch (e) {
+            console.error(e);
+            return { ok: false, reason: e.message || 'Gagal mengembalikan ke gudang' };
+        }
+    };
+
+    /* The van's LAYOUT - which square holds which product, holes included - is its own field, written
+       on the bay's drop. Never inside activeCanvas, which both transactions and every sale write. */
+    const handleSaveLayout = async (cells) => {
+        if (!canEditFleet || !selectedAgent) return false;
+        try {
+            await updateDoc(doc(db, collPath, selectedAgent.id), { vanLayout: cells });
+            return true;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
     };
 
     const handleWhatsAppShare = () => {
@@ -1074,7 +1141,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                         const rank = { 'ADMIN': 3, 'AREA_ADMIN': 2, 'AGENT': 1 };
                                                         return (rank[b.userRole || 'AGENT'] || 0) - (rank[a.userRole || 'AGENT'] || 0);
                                                     }).map(m => (
-                                                        <div key={m.id} onClick={() => { setSelectedAgent(m); setShowHistory(false); }} className={`p-3 rounded-xl cursor-pointer border transition-all flex items-center justify-between group/card ${selectedAgent?.id === m.id ? 'bg-blue-600/20 border-blue-500' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 shadow-sm'}`}>
+                                                        <div key={m.id} onClick={async () => { if (bayLines > 0 && selectedAgent?.id !== m.id && !await confirmAction(`Muatan ${selectedAgent?.name} belum dimuat. Pindah ke ${m.name} dan buang muatan itu?`)) return; setSelectedAgent(m); setShowHistory(false); }} className={`p-3 rounded-xl cursor-pointer border transition-all flex items-center justify-between group/card ${selectedAgent?.id === m.id ? 'bg-blue-600/20 border-blue-500' : 'bg-slate-800/50 border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 shadow-sm'}`}>
                                                             <div className="flex items-center gap-3 min-w-0">
                                                                 <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${m.userRole === 'ADMIN' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50' : m.userRole === 'AREA_ADMIN' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50' : m.role === 'Canvas' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-blue-500/20 text-blue-400'}`}>
                                                                     {m.userRole === 'ADMIN' ? <ShieldCheck size={18}/> : m.userRole === 'AREA_ADMIN' ? <Globe size={18}/> : m.role === 'Canvas' ? <Truck size={18}/> : <Activity size={18}/>}
@@ -1246,35 +1313,21 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
                         <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
                             
-                            <div className="bg-slate-800 p-5 rounded-2xl border border-slate-700 mb-6 shadow-xl">
-                                <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2"><PackagePlus size={16} className="text-emerald-500"/> Transfer to Vehicle Vault</h3>
-                                <div className="flex flex-col lg:flex-row gap-3 items-end">
-                                    <div className="w-full lg:flex-1">
-                                        <label className="text-[10px] text-slate-400 uppercase tracking-widest mb-1 block">
-                                            Select {selectedAgentUsesBranch ? `${selectedAgentLocation} Branch` : 'Main Vault'} Stock
-                                        </label>
-                                        <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm font-bold text-white outline-none focus:border-emerald-500">
-                                            <option value="">-- Choose Product --</option>
-                                            {displayInventory && displayInventory.map(item => (
-                                                <option key={item.id} value={item.id}>
-                                                    {/* stock is stored in Bks and the qty box beside this is labelled
-                                                        Bungkus; a master product carries no `unit`, which is why this
-                                                        used to print "(Available: 100 )" */}
-                                                    {item.name} (Available: {item.stock} Bks)
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="w-full lg:w-32">
-                                        <label className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest mb-1 block">Qty (Bungkus)</label>
-                                        <input type="number" min="1" value={loadQty} onChange={(e) => setLoadQty(e.target.value)} className="w-full bg-slate-900 border border-emerald-500/50 rounded-lg p-3 text-sm font-bold text-white outline-none focus:border-emerald-500 text-center" placeholder="0"/>
-                                    </div>
-                                    {canEditFleet && (
-                                    <button onClick={handleLoadCanvas} className="w-full lg:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-colors uppercase tracking-widest text-xs h-[46px] shrink-0 shadow-lg shadow-emerald-900/20">
-                                        Load <ArrowRight size={16}/>
-                                    </button>
-                                    )}
-                                </div>
+                            {/* THE VAN-LOADING BAY — his two chests (components/LoadingBay.jsx). Keyed by the
+                                salesman, so a switch starts a fresh muatan; the roster asks first. */}
+                            <div className="mb-6">
+                                <LoadingBay
+                                    key={selectedAgent.id}
+                                    agent={selectedAgent}
+                                    warehouse={selectedAgentUsesBranch ? String(selectedAgentLocation).toUpperCase() : 'PUSAT'}
+                                    stock={displayInventory || []}
+                                    damaged={damagedInVan(agentSales, inventory)}
+                                    canEdit={canEditFleet}
+                                    onLoad={handleLoadCanvas}
+                                    onReturn={handleReturnToWarehouse}
+                                    onLayout={handleSaveLayout}
+                                    onDirty={setBayLines}
+                                />
                             </div>
 
                             <div className="flex justify-between items-center mb-4">

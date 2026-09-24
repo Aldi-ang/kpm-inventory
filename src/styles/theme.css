@@ -4662,3 +4662,234 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
   .pc:not(.pc-solo) .pc-head > div:last-child { margin-top: 0; flex: 0 0 auto; flex-direction: column; align-items: flex-end; gap: 10px; }
 }
 @media (prefers-reduced-motion: reduce) { .pc-body, .pc-inner, .pc-head, .pc-key { transition-duration: 1ms; } }
+
+/* ── THE VAN-LOADING BAY (components/LoadingBay.jsx) — his prototype, look 1 ─────────────────────────
+   Two chests inside Fleet & Roster: the warehouse is an ENDER CHEST, the van a brown one, and the
+   panels that grow out of their lids are the Minecraft stone grey he kept on 2026-09-24 ("inventory
+   box panel just stay with that minecraft color"). An OBJECT keeps its own colours - the chests, the
+   stone, the green eye and the purple specks are fixed on purpose, in both themes; everything around
+   them (the bay, the muatan, the HOW MANY sheet) is the app's own tokens.
+   The text on the stone is darker than the prototype's so it reads at 4.5:1 (the prototype's gold
+   count was 2.4:1 on the grey). Widths follow the PANEL, not the screen: the bay sits beside the
+   roster, so its desktop arrangement is a container query. */
+.kpm-bay, .kpm-bay-sheet, .kpm-bay-ghost, .kpm-bay-pack {
+  --hi: #F5D08A; --bad: var(--danger-ink);
+  --wood: #7A5A32; --wood-dark: #4E3A20; --wood-lid: #8C6A3C; --latch: #C9C4BC;
+  --ender: #152223; --ender-dark: #0C1415; --ender-lid: #1C2E2F; --ender-trim: #2E4B49; --ender-edge: #050808;
+  --stone: #8B8B8B; --stone-dark: #555555; --stone-light: #C6C6C6; --stone-ink: #161616;
+  --stone-note: #2A1D08; --stone-bad: #45120A;
+  --bay-ease: cubic-bezier(.23, 1, .32, 1);
+}
+.kpm-bay-wrap { container: kpmbay / inline-size; }
+.kpm-bay {
+  position: relative; border: 1px solid var(--line-2); border-radius: 16px;
+  background: radial-gradient(120% 90% at 50% 120%, rgba(208, 138, 46, .10), transparent 60%), linear-gradient(180deg, var(--raised), var(--sunk));
+  padding: 14px 10px 16px; color: var(--ink);
+  display: grid; gap: 10px; grid-template-columns: 1fr 1fr;
+  grid-template-areas: "hint hint" "whg whg" "whc vanc" "vang vang" "man man";
+  user-select: none; -webkit-user-select: none;
+}
+.kpm-bay .bayHint { grid-area: hint; margin: 0; text-align: center; font: 900 10px/1.3 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--ink-dim); }
+@container kpmbay (min-width: 900px) {
+  .kpm-bay {
+    padding: 18px 18px 20px; column-gap: 18px; row-gap: 8px; align-items: end;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 300px;
+    grid-template-areas: "hint hint man" "whg vang man" "whc vanc man";
+  }
+}
+.kpm-bay button:focus-visible, .kpm-bay [role="button"]:focus-visible { outline: 3px solid var(--hi); outline-offset: 2px; }
+
+/* the chests */
+.kpm-bay .chestCell { all: unset; box-sizing: border-box; cursor: pointer; display: grid; justify-items: center; gap: 6px; perspective: 700px; padding: 4px; border-radius: 12px; position: relative; }
+.kpm-bay .whc { grid-area: whc; }
+.kpm-bay .vanc { grid-area: vanc; }
+.kpm-bay .chestCell .cap { font: 900 10px/1 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-dim); }
+.kpm-bay .chest { position: relative; display: block; width: var(--cw); height: var(--ch); transform-style: preserve-3d; }
+.kpm-bay .chest.ender { --cw: 118px; --ch: 90px; }
+.kpm-bay .chest.small { --cw: 88px; --ch: 72px; }
+@container kpmbay (min-width: 900px) { .kpm-bay .chest.ender { --cw: 148px; --ch: 112px; } .kpm-bay .chest.small { --cw: 108px; --ch: 88px; } }
+.kpm-bay .chest .body { position: absolute; left: 0; right: 0; bottom: 0; height: 67%; border-radius: 3px; background: linear-gradient(180deg, var(--wood) 0 52%, var(--wood-dark) 52% 100%); border: 3px solid var(--sunk); }
+.kpm-bay .chest .body::before { content: ""; position: absolute; left: 6px; right: 6px; top: 0; height: 10px; border-radius: 2px 2px 0 0; background: linear-gradient(180deg, #140E07, #2A1E12); opacity: 0; transition: opacity .18s; }
+.kpm-bay .chest .lid { position: absolute; left: 0; right: 0; top: 6%; height: 31%; border-radius: 3px 3px 0 0; background: linear-gradient(180deg, var(--wood-lid), var(--wood)); border: 3px solid var(--sunk); border-bottom-width: 0; transform-origin: 50% 100%; transform: rotateX(0deg); transition: transform .26s cubic-bezier(.3, 1.5, .5, 1); backface-visibility: hidden; }
+.kpm-bay .chest .latch { position: absolute; left: 50%; top: 26%; width: 12px; height: 22%; margin-left: -6px; z-index: 3; background: linear-gradient(180deg, var(--latch), #8F8A82); border: 2px solid var(--sunk); border-radius: 2px; transition: transform .26s cubic-bezier(.3, 1.5, .5, 1), opacity .18s; }
+.kpm-bay .chest.ender .body, .kpm-bay .chest.ender .lid { border-color: var(--ender-edge); outline: 2px solid var(--ender-trim); outline-offset: -5px; }
+.kpm-bay .chest.ender .body { background: radial-gradient(circle at 18% 72%, rgba(120, 60, 160, .45) 0 1.5px, transparent 2.5px), radial-gradient(circle at 64% 40%, rgba(120, 60, 160, .35) 0 1.5px, transparent 2.5px), radial-gradient(circle at 86% 80%, rgba(120, 60, 160, .4) 0 1.5px, transparent 2.5px), linear-gradient(180deg, var(--ender) 0 52%, var(--ender-dark) 52% 100%); }
+.kpm-bay .chest.ender .lid { background: radial-gradient(circle at 30% 45%, rgba(120, 60, 160, .4) 0 1.5px, transparent 2.5px), radial-gradient(circle at 76% 62%, rgba(120, 60, 160, .35) 0 1.5px, transparent 2.5px), linear-gradient(180deg, var(--ender-lid), var(--ender)); }
+.kpm-bay .chest.ender .body::before { background: linear-gradient(180deg, #0A0510, #231634); }
+/* the latch is the Eye of Ender: a slit pupil in a green iris */
+.kpm-bay .chest.ender .latch { width: 16px; margin-left: -8px; height: 24%; top: 24%; border-color: var(--ender-edge); border-radius: 3px; background: radial-gradient(ellipse 18% 46% at 50% 50%, #06241A 0 88%, transparent 100%), radial-gradient(ellipse 50% 50% at 50% 50%, #7FE0A8 0 38%, #2FA06E 40% 78%, #135A3D 80%); }
+.kpm-bay.wh-open .whc .chest .body::before, .kpm-bay.van-open .vanc .chest .body::before { opacity: 1; }
+.kpm-bay.wh-open .whc .lid, .kpm-bay.van-open .vanc .lid { transform: rotateX(-96deg); }
+.kpm-bay.wh-open .whc .latch, .kpm-bay.van-open .vanc .latch { transform: translateY(-8px) rotateX(-96deg); opacity: .3; }
+.kpm-bay.dragging .chestCell.zoneover .chest { outline: 3px solid var(--hi); outline-offset: 4px; border-radius: 4px; }
+
+/* the purple specks drifting out of the ender chest - decoration only, never in front of a figure */
+.kpm-bay .motes { position: absolute; left: 50%; top: 52%; width: 0; height: 0; pointer-events: none; z-index: 2; }
+.kpm-bay .motes i { position: absolute; left: -2px; top: -2px; width: 4px; height: 4px; background: var(--mc, #B44CF0); opacity: 0; animation: kpmBayMote var(--md, 3.2s) linear var(--mdl, 0s) infinite; }
+.kpm-bay .motes i.once { animation: kpmBayMote var(--md, .9s) cubic-bezier(.2, .7, .3, 1) 0s 1 both; }
+@keyframes kpmBayMote {
+  0%   { opacity: 0;   transform: translate(var(--x0, 0), var(--y0, 0)) scale(1); }
+  18%  { opacity: .95; }
+  75%  { opacity: .6; }
+  100% { opacity: 0;   transform: translate(var(--x1, 0), var(--y1, -40px)) scale(.35); }
+}
+.lite-mode .kpm-bay .motes { display: none; }
+
+/* the panels that grow out of the lids; a closed panel keeps its room, so nothing below jumps */
+.kpm-bay .gui { position: relative; min-width: 0; border-radius: 4px; padding: 9px 8px 10px; background: var(--stone); border: 4px solid; border-color: #DBDBDB #555555 #555555 #DBDBDB; transform-origin: 50% 100%; transform: scale(.08) translateY(24px); opacity: 0; pointer-events: none; transition: transform .26s cubic-bezier(.34, 1.56, .64, 1), opacity .12s linear; }
+.kpm-bay .gui.wh { grid-area: whg; }
+.kpm-bay .gui.van { grid-area: vang; transform-origin: 50% 0; transform: scale(.08) translateY(-24px); }
+@container kpmbay (min-width: 900px) { .kpm-bay .gui.van { transform-origin: 50% 100%; transform: scale(.08) translateY(24px); } }
+.kpm-bay.wh-open .gui.wh, .kpm-bay.van-open .gui.van { transform: none; opacity: 1; pointer-events: auto; }
+.kpm-bay.dragging .gui.zoneover { border-color: var(--hi); }
+.kpm-bay .gui .title { font: 900 13px/1.2 var(--font-mono); letter-spacing: .04em; color: var(--stone-ink); margin: 1px 2px 2px; display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.kpm-bay .gui .title .count { font-size: 11px; color: var(--stone-ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.kpm-bay .gui .title .count b { color: var(--stone-note); }
+.kpm-bay .say { display: block; min-height: 16px; margin: 0 2px 6px; font: 900 10px/1.5 var(--font-mono); letter-spacing: .08em; color: var(--stone-note); opacity: 0; transition: opacity .3s; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.kpm-bay .say.show { opacity: 1; transition: opacity .08s; }
+.kpm-bay .say.err { color: var(--stone-bad); }
+.kpm-bay .find { position: relative; display: block; margin: 0 0 7px; }
+.kpm-bay .find input { width: 100%; min-height: 40px; border-radius: 3px; border: 2px solid; border-color: #1E1E1E #6A6A6A #6A6A6A #1E1E1E; padding: 0 38px 0 10px; background: #3A3A3A; color: #F2F2F2; font-weight: 700; font-size: 13px; line-height: 1; outline: none; }
+.kpm-bay .find input::placeholder { color: #BDBDBD; }
+.kpm-bay .find input:focus-visible { outline: 3px solid var(--hi); }
+.kpm-bay .find .x { position: absolute; right: 2px; top: 2px; width: 36px; height: 36px; border: 0; background: transparent; color: #EDEDED; font: 900 18px/1 var(--font-mono); cursor: pointer; }
+
+.kpm-bay .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.kpm-bay .gui.van .grid { grid-template-columns: repeat(6, 1fr); gap: 4px; }
+@container kpmbay (min-width: 900px) { .kpm-bay .gui.van .grid { grid-template-columns: repeat(3, 1fr); gap: 6px; } }
+.kpm-bay .slot { position: relative; aspect-ratio: 1/1; border-radius: 3px; background: var(--stone-dark); border: 2px solid; border-color: #2E2E2E #9A9A9A #9A9A9A #2E2E2E; display: grid; place-items: center; overflow: hidden; max-width: 100%; }
+/* THE ENTRANCE MOVES, IT NEVER REVEALS: a square is visible at rest, and the arrival is 8 px of travel.
+   Stripped by Lite Mode or reduced motion, the chest is simply already full. */
+.kpm-bay.wh-open .gui.wh:not(.noanim) .slot, .kpm-bay.van-open .gui.van:not(.noanim) .slot { animation: kpmBaySlotIn .22s cubic-bezier(.2, .9, .3, 1) both; animation-delay: var(--d, 0ms); }
+@keyframes kpmBaySlotIn { from { transform: translateY(8px) scale(.96); } to { transform: none; } }
+.kpm-bay .slot .name { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 5px; font: 900 10px/1.15 var(--font-mono); color: #fff; background: linear-gradient(180deg, rgba(0, 0, 0, .2), rgba(0, 0, 0, .7)); text-align: left; pointer-events: none; }
+.kpm-bay .slot .n { position: absolute; right: 3px; top: 3px; padding: 1px 3px; border-radius: 2px; background: rgba(0, 0, 0, .6); font: 900 12px/1 var(--font-mono); color: #fff; font-variant-numeric: tabular-nums; pointer-events: none; }
+.kpm-bay .slot .chip { position: absolute; left: 3px; top: 3px; padding: 2px 4px; border-radius: 2px; pointer-events: none; font: 900 10px/1 var(--font-mono); font-variant-numeric: tabular-nums; background: var(--hi); color: #2a1d08; }
+.kpm-bay .slot.has { cursor: grab; touch-action: none; }
+.kpm-bay .dmg .slot.has { cursor: default; touch-action: auto; }
+.kpm-bay .slot.lift { opacity: .35; }
+.kpm-bay .slot.out .kpm-cube-stage { opacity: .35; }
+.kpm-bay .slot.out .n { color: #FFB4A8; }
+.kpm-bay .slot.over { outline: 3px solid var(--hi); outline-offset: -3px; }
+.kpm-bay .slot.new { outline: 2px dashed var(--hi); outline-offset: -4px; }
+.kpm-bay .gui.van .slot .name { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@container kpmbay (max-width: 899px) {
+  .kpm-bay .gui.van .slot .name { display: none; }
+  .kpm-bay .gui.van .slot .n { font-size: 10px; right: 3px; top: 2px; }
+  .kpm-bay .gui.van .slot .chip { font-size: 9px; left: 2px; top: auto; bottom: 2px; padding: 1px 3px; }
+}
+
+/* the product is the app's own 3D box (.kpm-cube, the ware's true millimetres), sized per place */
+.kpm-bay .kpm-cube-stage, .kpm-bay-sheet .kpm-cube-stage, .kpm-bay-ghost .kpm-cube-stage, .kpm-bay-pack .kpm-cube-stage { perspective: 340px; width: 100%; height: 100%; pointer-events: none; }
+.kpm-bay .gui.wh .kpm-cube-stage { --kpm-slot-h: 56px; }
+.kpm-bay .gui.van .kpm-cube-stage { --kpm-slot-h: 26px; }
+@container kpmbay (min-width: 900px) { .kpm-bay .gui.wh .kpm-cube-stage { --kpm-slot-h: 78px; } .kpm-bay .gui.van .kpm-cube-stage { --kpm-slot-h: 54px; } }
+.kpm-bay .dmg .kpm-cube-stage { --kpm-slot-h: 22px; }
+.kpm-bay .ln .mc .kpm-cube-stage { --kpm-slot-h: 28px; }
+.kpm-bay-sheet .shHead .mc .kpm-cube-stage { --kpm-slot-h: 44px; }
+.kpm-bay-ghost .kpm-cube-stage { --kpm-slot-h: 62px; }
+.kpm-bay-pack .kpm-cube-stage { --kpm-slot-h: 30px; }
+.kpm-bay.wh-open .gui.wh:not(.noanim) .slot .kpm-cube, .kpm-bay.van-open .gui.van:not(.noanim) .slot .kpm-cube { animation: kpmBayPlace .62s cubic-bezier(.2, .9, .3, 1) both; animation-delay: calc(var(--d, 0ms) + 40ms); }
+@keyframes kpmBayPlace { from { transform: rotateX(-8deg) rotateY(-150deg); } to { transform: rotateX(-8deg) rotateY(-24deg); } }
+@media (hover: hover) and (pointer: fine) { .kpm-bay .gui .grid .slot.has:not(.out):hover .kpm-cube { animation: kpm-turn 4s linear infinite; } }
+.kpm-bay .gui .slot .kpm-cube.spin { animation: kpmBaySpin .7s cubic-bezier(.2, .9, .3, 1) !important; }
+@keyframes kpmBaySpin { from { transform: rotateX(-8deg) rotateY(-24deg); } to { transform: rotateX(-8deg) rotateY(336deg); } }
+
+.kpm-bay .pages { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 2px 0; }
+.kpm-bay .pg { min-width: 44px; min-height: 40px; padding: 0 10px; border-radius: 3px; cursor: pointer; background: var(--stone-dark); color: #EFEFEF; border: 2px solid; border-color: #7A7A7A #2E2E2E #2E2E2E #7A7A7A; font: 900 12px/1 var(--font-mono); letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+.kpm-bay .pg.on { background: #6E6E6E; color: #fff; border-color: #2E2E2E #9A9A9A #9A9A9A #2E2E2E; }
+.kpm-bay .pages .of { margin-left: auto; font: 900 10px/1 var(--font-mono); letter-spacing: .12em; color: var(--stone-ink); }
+
+/* the damaged row lives under the van - nothing is dragged into it or out of it */
+.kpm-bay .dmgHead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 10px 2px 5px; font: 900 10px/1.2 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--stone-ink); }
+.kpm-bay .dmgHead .num { color: var(--stone-bad); }
+.kpm-bay .dmg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; border-radius: 4px; }
+.kpm-bay .dmg .slot { aspect-ratio: 1/.5; outline: 2px solid rgba(190, 70, 50, .55); outline-offset: -2px; }
+.kpm-bay .dmg .slot .name { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 2px 4px; }
+.kpm-bay .dmg .slot .n { font-size: 10px; }
+.kpm-bay .dmg .none { grid-column: 1 / -1; margin: 0; padding: 6px 2px; font: 900 10px/1.4 var(--font-mono); letter-spacing: .08em; color: var(--stone-ink); }
+.kpm-bay.dragging .dmg.refuse { outline: 3px solid #C0392B; outline-offset: 2px; }
+
+/* the muatan: lines here, ONE press writes */
+.kpm-bay .man { grid-area: man; align-self: stretch; display: flex; flex-direction: column; gap: 10px; min-width: 0; background: var(--raised); border: 1px solid var(--line-2); border-radius: 14px; padding: 12px; user-select: text; -webkit-user-select: text; }
+.kpm-bay .manHead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.kpm-bay .lbl, .kpm-bay-sheet .lbl { margin: 0; font: 900 11px/1.3 var(--font-mono); letter-spacing: .18em; text-transform: uppercase; color: var(--ink-dim); }
+.kpm-bay .tally { font: 900 15px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+.kpm-bay .lines { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.kpm-bay .lines li { display: flex; gap: 6px; align-items: stretch; }
+.kpm-bay .ln { flex: 1; min-width: 0; min-height: 48px; display: flex; align-items: center; gap: 10px; padding: 6px 10px; cursor: pointer; text-align: left; border: 1px solid var(--line-2); border-radius: 10px; background: var(--panel); color: var(--ink); font: inherit; transition: transform .12s ease-out, border-color .16s; }
+.kpm-bay .ln:hover { border-color: var(--accent-edge); }
+.kpm-bay .ln:active { transform: scale(.99); }
+.kpm-bay .ln .mc { width: 30px; height: 34px; flex: 0 0 30px; }
+.kpm-bay .ln .nm { flex: 1; min-width: 0; font-weight: 800; font-size: 13px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; }
+.kpm-bay .ln .nm small { display: block; font: 900 9px/1.4 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpm-bay .ln .nm .why { color: var(--bad); white-space: normal; text-transform: none; letter-spacing: .02em; }
+.kpm-bay .ln .q { font: 900 12px/1.3 var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.kpm-bay .ln .q b { display: block; color: var(--accent-ink); font-size: 11px; }
+.kpm-bay .lines li.back .ln { border-style: dashed; }
+.kpm-bay .lines li.failed .ln { border-color: var(--bad); }
+.kpm-bay .lines li.done .ln { border-style: dashed; opacity: .55; }
+.kpm-bay .trash { width: 44px; flex: 0 0 44px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--panel); color: var(--ink-dim); font: 900 18px/1 var(--font-mono); cursor: pointer; transition: transform .12s ease-out, border-color .16s; }
+.kpm-bay .trash:hover { border-color: var(--bad); color: var(--bad); }
+.kpm-bay .trash:active { transform: scale(.94); }
+.kpm-bay .empty { margin: 0; padding: 14px 12px; border: 1px dashed var(--line-2); border-radius: 10px; color: var(--ink-muted); font-size: 13px; }
+.kpm-bay .contract { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--ink-muted); }
+.kpm-bay .contract b { color: var(--ink); }
+.kpm-bay .go { width: 100%; min-height: 52px; border-radius: 12px; background: var(--gold); color: var(--gold-ink); border: 0; cursor: pointer; font: 900 12px/1.2 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px; transition: transform .12s ease-out; }
+.kpm-bay .go:active { transform: scale(.98); }
+.kpm-bay .go:disabled { background: var(--panel); color: var(--ink-dim); border: 1px dashed var(--line-2); cursor: not-allowed; transform: none; }
+.kpm-bay .manFoot { text-align: center; }
+.kpm-bay .report { margin: 0; font-weight: 800; font-size: 13px; line-height: 1.45; color: var(--ink); }
+.kpm-bay .report b { color: var(--accent-ink); }
+.kpm-bay .sj { border: 1px solid var(--line-2); border-radius: 10px; background: var(--inset); padding: 10px 12px; font: 700 12px/1.45 var(--font-mono); color: var(--ink); }
+.kpm-bay .sj + .sj { margin-top: 8px; }
+.kpm-bay .sj .sjHead { display: flex; justify-content: space-between; gap: 8px; margin: 0 0 2px; letter-spacing: .1em; }
+.kpm-bay .sj .sjHead span, .kpm-bay .sj .sjSub, .kpm-bay .sj li span { color: var(--ink-muted); }
+.kpm-bay .sj .sjHead span, .kpm-bay .sj .sjSub { font-size: 11px; }
+.kpm-bay .sj .sjSub { margin: 0 0 8px; }
+.kpm-bay .sj ol { margin: 0; padding: 0 0 0 18px; list-style: decimal; }
+.kpm-bay .sj li { font-variant-numeric: tabular-nums; }
+.kpm-bay .sj .sjTot { display: flex; justify-content: space-between; gap: 8px; margin: 8px 0 0; padding-top: 6px; border-top: 1px dashed var(--line-2); font-weight: 900; }
+
+/* what moves: the carried box and the goods in flight live on <body>, above everything */
+.kpm-bay-ghost { position: fixed; z-index: 75; pointer-events: none; width: 92px; height: 92px; border-radius: 3px; background: var(--stone-dark); display: grid; place-items: center; opacity: .95; border: 2px solid; border-color: #2E2E2E #9A9A9A #9A9A9A #2E2E2E; transform: translate(-50%, -50%) scale(1.04); }
+.kpm-bay-ghost.glide { transition: left .2s var(--bay-ease), top .2s var(--bay-ease), transform .2s var(--bay-ease); }
+.kpm-bay-ghost.home  { transition: left .3s var(--bay-ease), top .3s var(--bay-ease), transform .3s var(--bay-ease); transform: translate(-50%, -50%) scale(.9); }
+.kpm-bay-ghost.parked { transform: translate(-50%, -50%) scale(.72); }
+.kpm-bay-ghost.settle { transition: transform .16s var(--bay-ease), opacity .16s ease-out; transform: translate(-50%, -50%) scale(.5); opacity: 0; }
+.kpm-bay-pack { position: fixed; left: 0; top: 0; z-index: 60; width: 40px; height: 40px; pointer-events: none; display: grid; place-items: center; }
+
+/* HOW MANY - the panel that opens on the drop. Never window.prompt (the dialog gate). */
+.kpm-bay-scrim { position: fixed; inset: 0; z-index: 70; background: rgba(5, 4, 3, .5); }
+.kpm-bay-sheet { position: fixed; z-index: 80; left: 50%; top: calc(12px + env(safe-area-inset-top, 0px)); width: min(430px, calc(100vw - 32px)); background: var(--raised); color: var(--ink); border: 1px solid var(--line-2); border-radius: 16px; padding: 14px; display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); transform: translate(-50%, 0); }
+@media (min-width: 960px) { .kpm-bay-sheet { left: auto; right: 24px; top: 50%; width: 340px; transform: translate(0, -50%); } }
+.kpm-bay-sheet .shHead { display: flex; gap: 12px; align-items: center; }
+.kpm-bay-sheet .shHead .mc { width: 52px; height: 60px; flex: 0 0 52px; border-radius: 8px; background: var(--inset); border: 1px solid var(--line-2); display: grid; place-items: center; }
+.kpm-bay-sheet .shName { margin: 0; font-weight: 900; font-size: 16px; line-height: 1.2; }
+.kpm-bay-sheet .shSub { margin: 2px 0 0; font: 900 10px/1.4 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
+.kpm-bay-sheet .qtyRow { display: flex; align-items: center; gap: 10px; }
+.kpm-bay-sheet .qty { flex: 1; width: 0; min-width: 0; min-height: 56px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--inset); color: var(--ink); font: 900 28px/1 var(--font-mono); font-variant-numeric: tabular-nums; padding: 0 14px; outline: none; }
+.kpm-bay-sheet .qty:focus-visible { border-color: var(--accent-edge); outline: 3px solid var(--hi); outline-offset: 1px; }
+.kpm-bay-sheet .qty::placeholder { color: var(--ink-dim); }
+.kpm-bay-sheet .eq { font: 900 15px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--accent-ink); white-space: nowrap; min-width: 9ch; text-align: right; }
+.kpm-bay-sheet .eq.err, .kpm-bay-sheet .msg.err { color: var(--bad); }
+.kpm-bay-sheet .key { min-height: 44px; padding: 0 14px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--panel); color: var(--ink); font: 900 11px/1 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; cursor: pointer; transition: transform .12s ease-out, border-color .16s; }
+.kpm-bay-sheet .key:hover { border-color: var(--accent-edge); }
+.kpm-bay-sheet .key:active { transform: scale(.96); }
+.kpm-bay-sheet .key:focus-visible { outline: 3px solid var(--hi); outline-offset: 2px; }
+.kpm-bay-sheet .units { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.kpm-bay-sheet .units .key { flex-direction: column; gap: 3px; padding: 6px 4px; min-height: 48px; letter-spacing: .1em; }
+.kpm-bay-sheet .units .key small { font: 700 9px/1 var(--font-mono); letter-spacing: .04em; text-transform: none; color: var(--ink-dim); }
+.kpm-bay-sheet .units .key[aria-pressed="true"] { border-color: var(--accent-edge); color: var(--accent-ink); background: var(--inset); }
+.kpm-bay-sheet .msg { margin: 0; min-height: 20px; font-weight: 700; font-size: 12.5px; line-height: 1.45; color: var(--ink-muted); }
+.kpm-bay-sheet .all { width: 100%; }
+.kpm-bay-sheet .all:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.kpm-bay-sheet .shKeys { display: grid; grid-template-columns: 1fr 1.6fr; gap: 8px; }
+.kpm-bay-sheet .shKeys .ok { background: var(--gold); color: var(--gold-ink); border-color: transparent; }
+.kpm-bay-sheet .shKeys .ok:disabled { background: var(--panel); color: var(--ink-dim); border: 1px dashed var(--line-2); cursor: not-allowed; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .kpm-bay .motes { display: none; }
+  .kpm-bay .slot, .kpm-bay .kpm-cube, .kpm-bay .gui, .kpm-bay .chest .lid, .kpm-bay .chest .latch { animation: none !important; transition: none !important; }
+}
+/* ── END OF THE VAN-LOADING BAY ─────────────────────────────────────────────────────────────────── */

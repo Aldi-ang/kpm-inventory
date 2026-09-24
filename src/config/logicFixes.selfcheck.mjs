@@ -3239,10 +3239,11 @@ section('T · Fleet & canvas: who may look, and who may change');
          whole window and the check would go red against correct code. */
       const head  = fleetSrc.slice(start, start + 900).replace(/\s+/g, ' ');
       ok(`${fn} refuses before it does anything`,
-         start > -1 && /const \w+ = async \( ?\) => \{ if \(!canEditFleet\) return notify\(/.test(head));
+         start > -1 && /const \w+ = async \([^)]*\) => \{ if \(!canEditFleet\) return notify\(/.test(head));
   }
-  ok('and both buttons are hidden as well as guarded',
-     /\{canEditFleet && \(?\s*<button onClick=\{handleLoadCanvas\}/.test(fleetSrc) &&
+  /* 2026-09-24: loading moved into the van-loading bay; its MUAT VAN is hidden by the same gate */
+  ok('and both doors are hidden as well as guarded',
+     /<LoadingBay[\s\S]{0,900}canEdit=\{canEditFleet\}/.test(fleetSrc) &&
      /\{canEditFleet && <button onClick=\{handleClearCanvas\}/.test(fleetSrc));
   /* Reconcile & Clear was on the backlog on its own as "a button that lies" - the database rules
      already refused the save, so pressing it gave a failure and no reason. */
@@ -6715,13 +6716,10 @@ section('TWO STOCK LABELS SAY WHERE AND WHAT (2026-09-13)');
   ok('and it uses the two mode buttons\' own words, not a third name',
      /'Master Vault'/.test(low) && /'vehicle'/.test(low) && !/warehouse|gudang|stok/i.test(low),
      'the buttons say Master Vault and Boss Car; a third label sends him looking for a third place');
-  const fc = code(read('src/FleetCanvasManager.jsx'));
-  const optA = fc.indexOf('(Available:');
-  const optB = fc.indexOf('</option>', optA);
-  ok('the loading picker option was found', optA > -1 && optB > optA && optB - optA < 200, `${optA}..${optB}`);
-  const opt = fc.slice(optA, optB);
-  ok('the picker prints the stock in Bks, the unit the qty box beside it is labelled in',
-     /\{item\.stock\} Bks\)/.test(opt) && !/item\.unit/.test(opt),
+  /* 2026-09-24: the select picker became the van-loading bay's warehouse chest; the same rule moved with it */
+  const bayCode = code(read('src/components/LoadingBay.jsx'));
+  ok('the warehouse chest prints its stock in Bks and never reads a product unit',
+     /stok \$\{fmt\(st\)\} Bks/.test(bayCode) && /\{fmt\(totalWh\)\} Bks/.test(bayCode) && !/p\.unit\b/.test(bayCode),
      'a master product has no unit field, so `{item.unit}` printed "(Available: 100 )"'); }
 
 section('THE NOTA PRINTS THE BOSS\'S NAME, NOT HIS EMAIL (2026-09-13)');
@@ -7977,7 +7975,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /\.pc-body \{ display: grid; grid-template-rows: 0fr; transition: grid-template-rows 320ms/.test(th) && /\.pc\.open \.pc-body \{ grid-template-rows: 1fr; \}/.test(th) &&
      /\.pc-inner \{ overflow: hidden; min-height: 0; opacity: 0; filter: blur\(6px\); transform: translateY\(-6px\);/.test(th) && /\.pc\.open \.pc-inner \{ opacity: 1; filter: blur\(0\); transform: none; \}/.test(th) &&
      /\.pc-avatar \.sframe \{ position: absolute; inset: 0; z-index: 20; pointer-events: none; \}/.test(th) &&
-     !/box-shadow/.test(th.slice(th.indexOf('THE PLAYER CARD'))) &&
+     !/box-shadow/.test(th.slice(th.indexOf('THE PLAYER CARD'), th.indexOf('/* ── THE VAN-LOADING BAY') > 0 ? th.indexOf('/* ── THE VAN-LOADING BAY') : undefined)) &&
      !/PlayerCardMock/.test(pl) && !/eod-card|EOD_CARD/.test(code(ll)) && !/q\.has\('card'\)/.test(pl),
      'the lab mock and the look went with the decision');
   ok('the salesman reads why a part came back, on his own EOD screen',
@@ -8256,6 +8254,81 @@ section('THE CHEST SOUNDS ARE FILES, RENDERED FROM HIS STUDIO (2026-09-24)');
   ok('MUAT VAN is his metal latch (kept 2026-09-24)', /done:\s*\{ src: 'metalLatch'/.test(bake));
   ok('playSound takes a rate and plays it as a PITCH', /export function playSound\(name, \{ AudioImpl, doc, rate = 1 \} = \{\}\)/.test(usc) &&
      /el\.playbackRate = rate;/.test(usc) && /el\.preservesPitch = false;/.test(usc));
+}
+
+/* ── THE VAN-LOADING BAY: TWO CHESTS, ONE PRESS (2026-09-24) ──────────────────────────────────────
+   His prototype, built into Fleet & Roster at his "yes start it now": the warehouse is an ender chest,
+   the van a brown one, a drag builds the muatan and writes NOTHING, one MUAT VAN writes one movement
+   per product - handleLoadCanvas for what goes out, a NEW per-product return transaction for what
+   comes back - and only the report collapses to one line. What a drag saves is the LAYOUT, in its
+   own field. The panel is his look 1, the Minecraft stone grey. */
+section('THE VAN-LOADING BAY: TWO CHESTS, ONE PRESS (2026-09-24)');
+{ const fl = read('src/FleetCanvasManager.jsx'), flc = code(fl);
+  const bayPath = 'src/components/LoadingBay.jsx', bay = fs.existsSync(bayPath) ? read(bayPath) : '', bayc = code(bay);
+  const th = read('src/styles/theme.css');
+  const bayCss = th.slice(th.indexOf('/* ── THE VAN-LOADING BAY'), th.indexOf('/* ── END OF THE VAN-LOADING BAY'));
+  const fnBody = (src, name) => { const s = src.indexOf(`const ${name} = async`); return s < 0 ? '' : src.slice(s, src.indexOf('\n    };', s)); };
+  const load = fnBody(flc, 'handleLoadCanvas'), ret = fnBody(flc, 'handleReturnToWarehouse');
+
+  ok('Fleet & Roster mounts the bay with the three writers and the edit gate',
+     /<LoadingBay[\s\S]{0,900}onLoad=\{handleLoadCanvas\}/.test(flc) && /<LoadingBay[\s\S]{0,900}onReturn=\{handleReturnToWarehouse\}/.test(flc) &&
+     /<LoadingBay[\s\S]{0,900}onLayout=\{handleSaveLayout\}/.test(flc) && /<LoadingBay[\s\S]{0,900}canEdit=\{canEditFleet\}/.test(flc));
+  ok('the old select + qty + LOAD is gone', !/-- Choose Product --/.test(flc) && !/setLoadQty|setSelectedProduct/.test(flc));
+  ok('handleLoadCanvas takes the product and the packs, reports per product to the audit log only, and answers ok / reason',
+     /const handleLoadCanvas = async \(productId, qtyBks\) =>/.test(flc) && /logAudit\("CANVAS_LOAD"[\s\S]{0,200}return \{ ok: true \};/.test(load) &&
+     /return \{ ok: false, reason: e\.message/.test(load) && !/triggerCapy/.test(load));
+  ok('its transaction is the old one: the live van read, the stock check, the merge in the row\'s own unit',
+     /const agentSnap = await t\.get\(agentRef\);/.test(load) && /INSUFFICIENT WAREHOUSE STOCK!/.test(load) &&
+     /const rowSize = convertToBks\(1, updatedCanvas\[existingItemIndex\]\.unit, masterProduct\);/.test(load));
+  ok('a RETURN is its own per-product transaction: the van row read LIVE inside it, converted in the row\'s own unit, never an emptied van',
+     ret.length > 400 && /runTransaction\(db, async \(t\) => \{\s*const agentSnap = await t\.get\(agentRef\);/.test(ret) &&
+     /convertToBks\(1, updated\[idx\]\.unit, product\)/.test(ret) && /if \(rowBks < qtyBks\) throw/.test(ret) && !/activeCanvas: \[\]/.test(ret));
+  ok('the layout is its own field, written on its own, never inside activeCanvas',
+     /updateDoc\(doc\(db, collPath, selectedAgent\.id\), \{ vanLayout: cells \}\)/.test(flc) && !/activeCanvas/.test(bayc.replace(/agent\.activeCanvas/g, '')));
+  ok('switching the salesman while the muatan has lines asks through the dialog gate', /bayLines > 0[\s\S]{0,200}await confirmAction\(/.test(flc));
+  ok('the drag listens on the WINDOW and finds squares by rectangles, never elementFromPoint',
+     /window\.addEventListener\('pointermove'/.test(bayc) && /window\.addEventListener\('pointerup'/.test(bayc) && /window\.addEventListener\('pointercancel'/.test(bayc) &&
+     /getBoundingClientRect/.test(bayc) && !/elementFromPoint/.test(bay));
+  ok('nothing is dropped into the damaged row, and the chest says why', /zone === 'dmg'/.test(bayc) && /Barang rusak dicatat lewat EOD/.test(bay));
+  ok('the figures change before any motion: the state is committed, then the goods fly', /flushSync\([\s\S]{0,400}\);\s*[\s\S]{0,300}transfer\(/.test(bayc));
+  ok('the landing pop rises into the van and falls back out, as a pitch', /playSound\('chestLand', \{ rate: \(1 \+ dir \* i \* \.07\)/.test(bayc));
+  ok('the panel is look 1, the stone grey, and the look switch did not come along', /--stone:\s*#8B8B8B/.test(bayCss) && !/data-look/.test(bayCss + bay));
+  ok('a square is visible at rest: no rule hides it, the entrance is 8 px of travel',
+     bayCss.length > 2000 && !/\.slot[^{]*\{[^}]*opacity:\s*0[;\s]/.test(bayCss) && /@keyframes kpmBaySlotIn \{ from \{ transform: translateY\(8px\) scale\(\.96\); \}/.test(bayCss));
+  ok('the purple specks are gone in Lite Mode and under reduced motion',
+     /\.lite-mode \.kpm-bay \.motes \{ display: none; \}/.test(bayCss) && /prefers-reduced-motion: reduce\)[^{]*\{[^}]*\.kpm-bay \.motes/.test(bayCss));
+  ok('the HOW MANY sheet cannot overflow at 518: one minmax column and a zero-width input',
+     /\.kpm-bay-sheet \{[^}]*grid-template-columns: minmax\(0, 1fr\)/.test(bayCss) && /\.kpm-bay-sheet \.qty \{[^}]*width: 0;/.test(bayCss));
+
+  /* the arithmetic, re-run on real numbers */
+  const vb = fs.existsSync('src/utils/vanBay.js') ? await import('../utils/vanBay.js') : null;
+  const cg = { id: 'cg16', packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 };
+  if (!vb) ok('the bay arithmetic exists (src/utils/vanBay.js)', false);
+  else {
+    let L = vb.foldLine([], { id: 'cg16', qty: 3, unit: 'Slop', dir: 1, bks: 30 }, cg);
+    L = vb.foldLine(L, { id: 'cg16', qty: 5, unit: 'Bks', dir: 1, bks: 5 }, cg);
+    ok('3 Slop then 5 Bks of one product fold into ONE line of +35 Bks', L.length === 1 && L[0].dir === 1 && L[0].qty === 35 && L[0].unit === 'Bks');
+    L = vb.foldLine(L, { id: 'cg16', qty: 35, unit: 'Bks', dir: -1, bks: 35 }, cg);
+    ok('dragging the same 35 back nets the line to nothing', L.length === 0);
+    L = vb.foldLine([{ id: 'cg16', qty: 2, unit: 'Slop', dir: 1 }], { id: 'cg16', qty: 5, unit: 'Bks', dir: -1, bks: 5 }, cg);
+    ok('+2 Slop and -5 Bks net to +15 Bks', L.length === 1 && L[0].dir === 1 && L[0].qty === 15);
+    const cells = vb.vanCells(['gone', null, 'b'], ['b', 'c']);
+    ok('the saved layout keeps its holes; a product that left frees its square; a new one takes the first empty',
+       cells.length === 18 && cells[0] === 'c' && cells[1] === null && cells[2] === 'b');
+    ok('a van with more products than squares grows a page rather than hiding stock',
+       vb.vanCells([], Array.from({ length: 19 }, (_, i) => 'p' + i)).length === 24);
+    const full = Array.from({ length: 18 }, (_, i) => 'p' + i);
+    ok('a load joins its own square, else the square under the finger, else the page, else anywhere; -1 when full',
+       vb.landingCell(['a', null, null, 'b', null, null, ...Array(12).fill(null)], 'b', 1, 0) === 3 &&
+       vb.landingCell(['a', null, null, null, null, null, ...Array(12).fill(null)], 'x', 4, 0) === 4 &&
+       vb.landingCell(['a', 'b', null, ...Array(15).fill(null)], 'x', -1, 0) === 2 &&
+       vb.landingCell(['a', 'b', 'c', 'd', 'e', 'f', null, ...Array(11).fill(null)], 'x', -1, 0) === 6 &&
+       vb.landingCell(full, 'x', -1, 0) === -1);
+    const dmg = vb.damagedInVan([
+      { type: 'RETUR', items: [{ productId: 'cg16', qty: 2, unit: 'Slop', condition: 'DAMAGED', returnReason: 'Basah' }, { productId: 'cg16', qty: 5, unit: 'Bks', condition: 'DAMAGED' }, { productId: 'cg16', qty: 9, unit: 'Bks', condition: 'GOOD' }] },
+      { type: 'SALE', items: [{ productId: 'cg16', qty: 4, unit: 'Bks', condition: 'DAMAGED' }] }], [cg]);
+    ok('the damaged row counts only what came back broken: 2 Slop + 5 Bks = 25 Bks', dmg.length === 1 && dmg[0].bks === 25 && dmg[0].why === 'Basah');
+  }
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

@@ -34,7 +34,6 @@ import AgentProfileView from '../src/AgentProfileView.jsx';
 import StockOpnameView from '../src/StockOpnameView.jsx';
 import JourneyView from '../src/JourneyView.jsx';
 import FleetCanvasManager from '../src/FleetCanvasManager.jsx';
-import { LoadBayPanelMock, LoadModuleMock } from './lab-fleet-load.jsx';
 import ConsignmentFinanceView from '../src/ConsignmentFinanceView.jsx';
 import useTransactionEngine from '../src/hooks/useTransactionEngine.js';
 import { SamplingFolderView, SamplingAnalyticsView, SampleEntryModal } from '../src/components/SamplingManager.jsx';
@@ -1022,13 +1021,6 @@ function ShellLab() {
             isOnline
           />
         </div>
-      ) : q.has('fleet') && q.get('mock') ? (
-        /* ?shell&fleet&mock=panel|module — LAB ONLY, the two shapes for the van-loading talk
-           (2026-09-22). Not product code: pictures of WHERE the job lives, in the app's palette.
-           `&phone` draws the narrow arrangement (the headless frame is shot at 518). */
-        q.get('mock') === 'module'
-          ? <LoadModuleMock phone={q.has('phone')} />
-          : <LoadBayPanelMock phone={q.has('phone')} look={q.get('r') || 'a'} play={q.get('play')} at={q.get('at')} rosterOnly={q.has('roster')} />
       ) : q.has('fleet') ? (
         /* ?shell&fleet — FLEET & ROSTER INSIDE the real shell exactly as App.jsx:4693 mounts it: no
            wrapper, a direct child of biohazard-content. The viewer is the REGIONAL ADMIN, because he

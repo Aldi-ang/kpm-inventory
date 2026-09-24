@@ -65,8 +65,8 @@
     "semantic_hash": ""
   },
   "src/FleetCanvasManager.jsx": {
-    "mtime": 1789301630.8471642,
-    "ast_hash": "34752d98347e0aee3a7853c378c850f4",
+    "mtime": 1790207544.0752661,
+    "ast_hash": "82b7800350b6e029f9346657ec450268",
     "semantic_hash": ""
   },
   "src/HallOfFameView.jsx": {
@@ -425,13 +425,13 @@
     "semantic_hash": ""
   },
   "src/hooks/useSound.js": {
-    "mtime": 1788495967.2117674,
-    "ast_hash": "e124efa6e262cc70281af22d54a17864",
+    "mtime": 1790206540.098769,
+    "ast_hash": "67a1e2376e9803a0130f1c360eec5277",
     "semantic_hash": ""
   },
   "src/hooks/useSound.selfcheck.mjs": {
-    "mtime": 1785668352.0538187,
-    "ast_hash": "aadf0dda0ed055cf55cf8c359abe5ac9",
+    "mtime": 1790206478.118149,
+    "ast_hash": "ce465853ac3341b7b2e59a53cbd01668",
     "semantic_hash": ""
   },
   "public/sounds/commit.mp3": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1790142859.1874611,
-    "ast_hash": "b29115c6b5158fd555ef0f78c72f014a",
+    "mtime": 1790206164.3770585,
+    "ast_hash": "c2520dd001c6b88eefa89e2128ce0472",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1790066340.6976793,
-    "ast_hash": "a4a71daae793431a4952502768359a2d",
+    "mtime": 1790207584.4269147,
+    "ast_hash": "153f2f8848748792b769842217bdc746",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1790142859.1854644,
-    "ast_hash": "2bd1ca9efacf5f6c13e74caf0fc378b5",
+    "mtime": 1790206138.924138,
+    "ast_hash": "9ee0e49f92ebd1784400d24ec025c7db",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1790078925.929641,
-    "ast_hash": "5d6540d6031e27abc60bbe7e3e70e0bd",
+    "mtime": 1790208162.1815927,
+    "ast_hash": "9b78e3f276f5e3e3e515e6c3d6952a0a",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -1099,24 +1099,74 @@
     "ast_hash": "20abe15c7b7a7a5cbb0402a71f7b9225",
     "semantic_hash": ""
   },
-  "tools/lab-fleet-load.jsx": {
-    "mtime": 1790078925.926636,
-    "ast_hash": "c5605bfcfd404796dfe7dcb2b90530c9",
-    "semantic_hash": ""
-  },
-  "tools/chest-preview.html": {
-    "mtime": 1790083570.3492322,
-    "ast_hash": "febe5546df33d59f1d5137e9e3539431",
-    "semantic_hash": ""
-  },
-  "tools/chest-transfer.html": {
-    "mtime": 1790142822.1717157,
-    "ast_hash": "938c1c1c382c10dce6888a26b3d9b632",
-    "semantic_hash": ""
-  },
   "tools/sfx-kenney.js": {
     "mtime": 1790137053.353324,
     "ast_hash": "56c96564291f3753514000a6dbf8c8ee",
+    "semantic_hash": ""
+  },
+  "tools/sfx-bake.mjs": {
+    "mtime": 1790206626.6210139,
+    "ast_hash": "a74d98aa545d91c36f6f49772265c552",
+    "semantic_hash": ""
+  },
+  "public/sounds/chest-LICENSE.txt": {
+    "mtime": 1790206519.1060026,
+    "ast_hash": "7182d48b7b7c0f1b0f4a0bf1384e6ef3",
+    "semantic_hash": ""
+  },
+  "public/sounds/chest-ender-close.mp3": {
+    "mtime": 1790206636.0221512,
+    "ast_hash": "88da1e54d486909149d763f4283e0142",
+    "semantic_hash": ""
+  },
+  "public/sounds/chest-ender-open.mp3": {
+    "mtime": 1790206634.291103,
+    "ast_hash": "93a3bfa85429cf14685fa36f69151772",
+    "semantic_hash": ""
+  },
+  "public/sounds/chest-land.mp3": {
+    "mtime": 1790206640.170942,
+    "ast_hash": "bcad3ac79d400e54445050324744fae2",
+    "semantic_hash": ""
+  },
+  "public/sounds/chest-load.mp3": {
+    "mtime": 1790206643.175639,
+    "ast_hash": "7fcb88e87023da7702e8bb5d655c055e",
+    "semantic_hash": ""
+  },
+  "public/sounds/chest-page.mp3": {
+    "mtime": 1790206641.106697,
+    "ast_hash": "aae2267ba324e72100e72507162106c2",
+    "semantic_hash": ""
+  },
+  "public/sounds/chest-pick.mp3": {
+    "mtime": 1790206639.9626398,
+    "ast_hash": "354d7b842ee0307c3d207395cdb27402",
+    "semantic_hash": ""
+  },
+  "public/sounds/chest-refuse.mp3": {
+    "mtime": 1790206642.2247427,
+    "ast_hash": "30254fd74e1cdfb63d7f5137075edd80",
+    "semantic_hash": ""
+  },
+  "public/sounds/chest-van-close.mp3": {
+    "mtime": 1790206639.3322222,
+    "ast_hash": "3b0fb3bdf92516e23cec3709edc0f693",
+    "semantic_hash": ""
+  },
+  "public/sounds/chest-van-open.mp3": {
+    "mtime": 1790206637.4538243,
+    "ast_hash": "40b62cf0718f86b85efccded783553cf",
+    "semantic_hash": ""
+  },
+  "src/components/LoadingBay.jsx": {
+    "mtime": 1790207470.698723,
+    "ast_hash": "ca8adea39dd436a02e75673540670f1c",
+    "semantic_hash": ""
+  },
+  "src/utils/vanBay.js": {
+    "mtime": 1790207109.1302657,
+    "ast_hash": "b6189fc3ac55242076c74cef1c0cacf7",
     "semantic_hash": ""
   }
 }
