@@ -729,6 +729,34 @@ export const eodBountyLines = (report = {}, inventory = [], priceTier = 'Retail'
     return lines;
 };
 
+/* THE BOSS'S EOD LIST, ONE CARD PER SALESMAN PER NIGHT (Aldi, 2026-09-26: "split cards by night to make it clear, and
+   make special panel for late EOD"). A night is the report's dayKey, else the local day of its timestamp (a bounty
+   payment carries no dayKey - it lands on the night it was paid). Tonight's cards and the late ones (an earlier night
+   still waiting, e.g. one with a part sent back) come back apart. A bounty PAYMENT is money clearing a fine: it never
+   marks the night "short count" and is never revenue - it only flags that a payback rides on the card. */
+export const eodNightOf = (r = {}) => r.dayKey
+    || getLocalDayKey(r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000) : r.timestamp ? new Date(r.timestamp) : new Date());
+/* spelled out, not toLocaleDateString: the ICU in each browser disagrees ("Sep" / "Sept") */
+export const nightLabel = (dayKey) => {
+    const d = new Date(`${dayKey}T12:00:00`);
+    return `${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]} ${d.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getMonth()]}`;
+};
+export const groupPendingEOD = (reports = [], today = getLocalDayKey()) => {
+    const groups = {};
+    (reports || []).filter(r => r && r.status === 'PENDING').forEach(r => {
+        const agent = r.agentId || r.agentName || r.id, night = eodNightOf(r), key = `${agent}|${night}`;
+        const g = groups[key] || (groups[key] = { key, agent, night, agentName: r.agentName || agent, reports: [], disputed: false, paysBounty: false, lost: 0, cashTotal: 0, cukai: 0 });
+        g.reports.push(r);
+        if (r.reportType === 'BOUNTY') { g.paysBounty = true; return; }
+        if (r.countStatus === 'DISPUTED') g.disputed = true;
+        g.lost += Number(r.cukaiPaid) || 0;
+        if (r.reportType !== 'CUKAI') g.cashTotal += (Number(r.cash) || 0) + (Number(r.transfer) || 0);
+        if (r.reportType === 'CUKAI' || !r.reportType) g.cukai += Number(r.cukaiReturned !== undefined ? r.cukaiReturned : (r.cukai || 0)) || 0;
+    });
+    const all = Object.values(groups).sort((a, b) => b.night.localeCompare(a.night) || String(a.agentName).localeCompare(String(b.agentName)));
+    return { tonight: all.filter(g => g.night >= today), late: all.filter(g => g.night < today) };
+};
+
 /* THE LINES OF ONE SALE, for the agent's own list (his 2026-09-26 "there should be data history what is being titip
    on the agent inventory, right now it only shows '1 item'"): the name, the amount and unit as sold, the price tier,
    and the line's rupiah - qty × the unit price the sale stored in calculatedPrice. A consignment payment lists what

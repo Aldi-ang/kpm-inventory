@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder, Target, BadgeDollarSign, ShieldAlert } from 'lucide-react';
-import { formatRupiah, getLocalDayKey, storeKey, shortStockRows, eodBountyLines, bountyItems, dayTargets, EOD_PART_LABELS } from './utils/helpers';
+import { formatRupiah, getLocalDayKey, storeKey, shortStockRows, eodBountyLines, bountyItems, groupPendingEOD, dayTargets, EOD_PART_LABELS } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import EODAgentFlow from './components/EODAgentFlow.jsx';
 import NixieCount from './components/NixieCount.jsx';
@@ -292,21 +292,9 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
             return timeB - timeA;
         });
     }, [eodReports, isAdmin]);
-    /* one panel per person: every PENDING report a salesman sent tonight, grouped; the folder shows the totals and a
-       diode that lights only for a problem (a short count, a bounty, lost stamps) */
-    const pendingByAgent = useMemo(() => {
-        const groups = {};
-        pendingReports.forEach((r) => {
-            const key = r.agentId || r.agentName || r.id;
-            const g = groups[key] || (groups[key] = { key, agentName: r.agentName || key, reports: [], disputed: false, lost: 0, cashTotal: 0, cukai: 0 });
-            g.reports.push(r);
-            if (r.countStatus === 'DISPUTED' || r.reportType === 'BOUNTY') g.disputed = true;
-            g.lost += Number(r.cukaiPaid) || 0;
-            if (r.reportType !== 'CUKAI') g.cashTotal += (Number(r.cash) || 0) + (Number(r.transfer) || 0);
-            if (r.reportType === 'CUKAI' || !r.reportType) g.cukai += Number(r.cukaiReturned !== undefined ? r.cukaiReturned : (r.cukai || 0)) || 0;
-        });
-        return Object.values(groups);
-    }, [pendingReports]);
+    /* one card per salesman per NIGHT (his 2026-09-26 "split cards by night to make it clear"): tonight's cards on
+       top, any earlier night still waiting in its own LATE EOD panel - see helpers.js groupPendingEOD */
+    const { tonight: pendingTonight, late: pendingLate } = useMemo(() => groupPendingEOD(pendingReports, getLocalDayKey()), [pendingReports]);
 
     const structuredHistory = useMemo(() => {
         if (!isAdmin) return {};
@@ -867,24 +855,32 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                     
                     {/* LEFT: PENDING REPORTS */}
                     <div>
-                        <h3 className="font-black text-[var(--ink)] uppercase tracking-widest flex items-center gap-2 mb-4"><AlertCircle className="text-[var(--accent-ink)]"/> Pending Verification ({pendingByAgent.length})</h3>
-                        {pendingByAgent.length === 0 ? (
-                            <div className="bg-black/20 border border-[var(--line)] p-8 rounded-2xl text-center text-[var(--ink-dim)] text-xs uppercase tracking-widest">No pending reports.</div>
-                        ) : (() => {
+                        <h3 className="font-black text-[var(--ink)] uppercase tracking-widest flex items-center gap-2 mb-4"><AlertCircle className="text-[var(--accent-ink)]"/> Pending Verification ({pendingTonight.length})</h3>
+                        {(() => {
                             /* the rank frames' CSS + the marble / violet filters, once for every card on the list */
-                            const today = getLocalDayKey();
                             const seal = () => { if (sealing) return; setSealing(true); setTimeout(() => setSealing(false), EOD_SEAL_MS); };
+                            /* each card reads ITS night: that night's sales, route and date */
+                            const cardOf = (g, late) => { const man = motorists.find((m) => m.id === g.agent); return (
+                                <PlayerCard key={g.key} group={g} late={late} motorist={man} career={career?.[g.agent]}
+                                    useCareerLedger={!!appSettings?.useCareerLedger} ranks={ranks} transactions={transactions} inventory={inventory} appSettings={appSettings}
+                                    closed={dayTargets(customers, man?.name || g.agentName, g.night)} today={g.night}
+                                    onApprove={onVerifyEOD} onReset={onResetEOD} onSealed={seal} />
+                            ); };
                             return (
-                                <div className="space-y-3 kpm-arrive">
+                                <>
                                     <style>{BORDER_KEYFRAMES}</style>
                                     <FrameFilters />
-                                    {pendingByAgent.map((g) => { const man = motorists.find((m) => m.id === g.key); return (
-                                        <PlayerCard key={g.key} group={g} motorist={man} career={career?.[g.key]}
-                                            useCareerLedger={!!appSettings?.useCareerLedger} ranks={ranks} transactions={transactions} inventory={inventory} appSettings={appSettings}
-                                            closed={dayTargets(customers, man?.name || g.agentName, today)} today={today}
-                                            onApprove={onVerifyEOD} onReset={onResetEOD} onSealed={seal} />
-                                    ); })}
-                                </div>
+                                    {pendingTonight.length === 0
+                                        ? <div className="bg-black/20 border border-[var(--line)] p-8 rounded-2xl text-center text-[var(--ink-dim)] text-xs uppercase tracking-widest">No pending reports.</div>
+                                        : <div className="space-y-3 kpm-arrive">{pendingTonight.map(g => cardOf(g, false))}</div>}
+                                    {/* LATE EOD - his "make special panel for late EOD": an earlier night still waiting, apart from tonight */}
+                                    {pendingLate.length > 0 && (
+                                        <section aria-label="Late EOD" className="mt-8 rounded-2xl border border-[var(--danger)] bg-[var(--danger-well)] p-3 md:p-4">
+                                            <h3 className="font-black text-[var(--danger-ink)] uppercase tracking-widest flex items-center gap-2 mb-3"><Clock size={18}/> Late EOD ({pendingLate.length})</h3>
+                                            <div className="space-y-3">{pendingLate.map(g => cardOf(g, true))}</div>
+                                        </section>
+                                    )}
+                                </>
                             );
                         })()}
                         {sealing && (

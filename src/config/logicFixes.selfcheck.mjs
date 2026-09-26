@@ -1421,7 +1421,7 @@ section('S19. Expected beside counted, the short products named, and the card it
    the card's lines carry the gaps, the plate turns red when a short line is checked. */
 { const card = stripComments(eod); const pc = stripComments(read('src/components/PlayerCard.jsx'));
   ok('the card reads countStatus, not only the numbers',
-     /r\.countStatus === 'DISPUTED'/.test(card) && /group\.disputed/.test(pc));
+     /r\.countStatus === 'DISPUTED'/.test(read('src/utils/helpers.js')) && /groupPendingEOD\(/.test(card) && /group\.disputed/.test(pc));   // the grouping lives in helpers.js since 2026-09-26
   ok('a missing countStatus is CLEAN — history is never painted as disputed',
      !/countStatus !== 'CLEAN'/.test(card) && !/countStatus \|\| 'DISPUTED'/.test(card));
   ok('what the app expected is rendered beside what he counted',
@@ -1431,7 +1431,7 @@ section('S19. Expected beside counted, the short products named, and the card it
   ok('the approve button changes its own words when the count is short',
      /Approve \$\{hot \? 'short' : 'checked'\} \(\$\{nChecked\}\)/.test(pc));
   ok('and the card changes with it, so the gap is not just a number on a normal card',
-     /const diode = \(group\.disputed \|\| sentBack\) \? 'crit' : group\.lost > 0 \? 'warn' : '';/.test(pc));
+     /const diode = \(group\.disputed \|\| sentBack\) \? 'crit' : \(group\.lost > 0 \|\| group\.paysBounty\) \? 'warn' : '';/.test(pc));   // a bounty payment warns, never 'short count' (2026-09-26)
   ok('the rupiah named before approving comes from the SAME rule App.jsx mints with',
      /const bounty = eodBountyLines\(report, inventory, tier\);/.test(pc) && /const tier = appSettings\?\.penaltyPriceTier;/.test(pc)); }
 
@@ -7942,9 +7942,9 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   /* the card */
   ok('EOD review: one PlayerCard per salesman replaces the folders + docket; the frames\' CSS and filters are mounted once for the list; the scan + seal play over the list',
      /import PlayerCard from '\.\/components\/PlayerCard\.jsx';/.test(ev) && /import \{ BORDER_KEYFRAMES, FrameFilters \} from '\.\/config\/rankBorders\.jsx';/.test(ev) &&
-     /const pendingByAgent = useMemo\(\(\) => \{/.test(ev) &&
-     /<PlayerCard key=\{g\.key\} group=\{g\} motorist=\{man\} career=\{career\?\.\[g\.key\]\}/.test(ev) &&
-     /closed=\{dayTargets\(customers, man\?\.name \|\| g\.agentName, today\)\} today=\{today\}/.test(ev) &&
+     /groupPendingEOD\(pendingReports, getLocalDayKey\(\)\)/.test(ev) &&   // one card per salesman per NIGHT since 2026-09-26
+     /<PlayerCard key=\{g\.key\} group=\{g\} late=\{late\} motorist=\{man\} career=\{career\?\.\[g\.agent\]\}/.test(ev) &&
+     /closed=\{dayTargets\(customers, man\?\.name \|\| g\.agentName, g\.night\)\} today=\{g\.night\}/.test(ev) &&
      /onApprove=\{onVerifyEOD\} onReset=\{onResetEOD\} onSealed=\{seal\} \/>/.test(ev) &&
      /<style>\{BORDER_KEYFRAMES\}<\/style>\r?\n\s+<FrameFilters \/>/.test(ev) &&
      /<div className="kpm-seal-stage" aria-hidden="true">\r?\n\s+<i className="kpm-docket-scan"><\/i>\r?\n\s+<i className="kpm-docket-seal">VERIFIED<\/i>/.test(ev) &&
@@ -7964,7 +7964,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /const why = await promptAction\(`Why is the \$\{line\.label\.toLowerCase\(\)\} going back to \$\{group\.agentName\}\?`, line\.why \|\| ''\);/.test(pc) &&
      /approve: own\.filter\(l => checked\[l\.key\]\)\.map\(l => l\.part\),/.test(pc) && /reject: Object\.fromEntries\(own\.filter\(l => returned\[l\.key\]\)\.map\(l => \[l\.part, returned\[l\.key\]\]\)\)/.test(pc) &&
      /const done = await onApprove\(report, decision, \{ confirmed: true \}\);/.test(pc) && /if \(allIn && onSealed\) onSealed\(\);/.test(pc) &&
-     /let allIn = pending\.every\(l => checked\[l\.key\]\);/.test(pc) && /for \(const r of group\.reports\) await onReset\(r, \{ confirmed: true \}\);/.test(pc) &&
+     /let allIn = pending\.every\(l => checked\[l\.key\]\);/.test(pc) && /for \(const r of night\) await onReset\(r, \{ confirmed: true \}\);/.test(pc) &&   // the night only, never a bounty payment (2026-09-26)
      /const night = all\.filter\(r => r\.reportType !== 'BOUNTY'\);/.test(ev) && /for \(const r of row\.reports\) await onResetEOD\(r, \{ confirmed: true \}\);/.test(ev) &&
      /const handleResetEOD = async \(report, opts\) => \{/.test(app) && !/'EOD Cash\/Stock'/.test(code(ev)) &&
      /done: eodPartApproved\(report, part\), why: report\.rejected\?\.\[part\] \|\| ''/.test(pc) &&
@@ -7992,7 +7992,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      component both screens draw, and the salesman's EOD panel counts tonight's XP up with the one number instrument. */
   { const ap = read('src/AgentProfileView.jsx'); const apc = code(ap);
   ok('STAGE B: the head is exported ONCE from PlayerCard.jsx and both the card and the Agent Profile draw it - no second copy',
-     /export const PlayerCardHead = \(\{ name, photo, currentTier, nextTier, progressPercent, xp, gain = 0, frame = 'classic', closed, diode = '', diodeText, onTap, children \}\) =>/.test(pc) &&
+     /export const PlayerCardHead = \(\{ name, photo, currentTier, nextTier, progressPercent, xp, gain = 0, frame = 'classic', closed, night = null, diode = '', diodeText, onTap, children \}\) =>/.test(pc) &&
      (pc.match(/pc-head/g) || []).length === 1 && /<PlayerCardHead name=\{group\.agentName\}/.test(pc) && /onTap=\{\(\) => setOpen\(v => !v\)\}/.test(pc) &&
      /import PlayerCard, \{ PlayerCardHead \} from '\.\/components\/PlayerCard\.jsx';/.test(ev) === false &&
      /import \{ PlayerCardHead \} from '\.\/components\/PlayerCard\.jsx';/.test(ap) && /<PlayerCardHead name=\{activeAgent\.name\}/.test(ap) &&
@@ -8036,8 +8036,8 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /<div className="px-4 pb-4 lg:grid lg:grid-cols-\[2fr_3fr\] lg:gap-x-5">/.test(pc) &&   /* 2:3 - a handover line needs ~300 px in his font; a product name wraps on the desk instead of truncating */
      /className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg bg-\[var\(--inset\)\] border border-\[var\(--line-2\)\] text-\[var\(--ink\)\] lg:flex-wrap"/.test(pc) &&
      /<span className="flex-1 min-w-0 truncate lg:basis-full lg:whitespace-normal">\{p\.name\}<\/span>/.test(pc) &&
-     pcc.indexOf('<div className="min-w-0">') < pcc.indexOf('<span>Revenue tonight</span>') &&
-     pcc.indexOf('The handover — each line on its own') > pcc.indexOf('<div className="min-w-0">', pcc.indexOf('<span>Revenue tonight</span>')) &&
+     pcc.indexOf('<div className="min-w-0">') < pcc.indexOf("'Revenue tonight'") &&
+     pcc.indexOf('The handover — each line on its own') > pcc.indexOf('<div className="min-w-0">', pcc.indexOf("'Revenue tonight'")) &&
      (pcc.match(/<div className="min-w-0">/g) || []).length === 2,
      'his A with the 128 photo: 880 px → fits his 1000 px screen; the phone measured identical at 375');
   ok('THE DESK, board 2 = A: the Agent Inventory header never splits at xl - the MANIFEST block on its own row, the four boxes full-width under it, the coin inside its box',
@@ -8047,7 +8047,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">/.test(a),
      'a 7-digit rupiah is 152 px in his font; a 149 px box cannot hold it, a 239 px one can');
   ok('THE REVENUE LINE is the night\'s omset alone - no bar, no "his usual night" denominator (his 10:40: a target lives at the regional team or global level, never per person)',
-     /<span>Revenue tonight<\/span><span className="text-\[var\(--ink\)\] tabular-nums whitespace-nowrap">\{formatRupiah\(group\.cashTotal\)\}<\/span>/.test(pc) &&
+     /<span>\{late \? 'Revenue that night' : 'Revenue tonight'\}<\/span><span className="text-\[var\(--ink\)\] tabular-nums whitespace-nowrap">\{formatRupiah\(group\.cashTotal\)\}<\/span>/.test(pc) &&
      !/his usual night/.test(pcc) && !/revenueWidth/.test(pcc) && !/const usual = /.test(pcc) && !/totals\(career/.test(pcc) &&
      !/import \{[^}]*\btotals\b[^}]*\} from '\.\.\/config\/career\.js'/.test(pc),
      'a bar with no denominator is a lie; the figure alone is the fact');
@@ -8679,6 +8679,48 @@ section('THE AGENT\'S EOD: BACK A STEP, AND A DRAFT THAT SURVIVES LEAVING THE SC
     ok('a draft comes back where he left it: 2 cards in, the goods card open with his 3, and the app\'s cash figure re-read (Rp 190.000)',
        D && D.step === 2 && D.stage === 'open' && D.inputs.goods.rows.a === '3' && D.letter.cards.cash.declared === 150000 && D.letter.cards.cash.expected === 190000);
     ok('a draft that is not a letter this build writes is dropped', R.restoreDraft({ letter: { cards: { cash: {} } } }, {}) === null && R.restoreDraft(null, {}) === null);
+  }
+}
+
+/* ── THE BOSS'S EOD LIST: ONE CARD PER NIGHT, LATE NIGHTS APART, THE BOUNTY PAYBACK ITS OWN THING (2026-09-26) ──────
+   His 08:35: "split cards by night to make it clear, and make special panel for late EOD for this, there is bug on the
+   EOD admin there is still short count even after i force reset the EOD that day an the salesman is returning the good
+   in full and i want u to make the bounties payback to be more clear and little bit different from other because i
+   dont realise that the bounties payback is submitted down there". The short count was the bounty PAYMENT itself:
+   the list marked any BOUNTY report "disputed", and counted its cash as the night's revenue. */
+section('THE BOSS\'S EOD LIST: ONE CARD PER NIGHT, LATE NIGHTS APART, THE BOUNTY PAYBACK ITS OWN THING (2026-09-26)');
+{ const eodv = code(read('src/EODReconciliationView.jsx')), card = code(read('src/components/PlayerCard.jsx'));
+  ok('the list is grouped per salesman AND per night by one helper; tonight\'s cards and a LATE EOD panel',
+     /groupPendingEOD\(pendingReports, getLocalDayKey\(\)\)/.test(eodv) && /pendingLate\.length > 0 && \(/.test(eodv) && /Late EOD \(\{pendingLate\.length\}\)/.test(eodv) &&
+     !/const pendingByAgent/.test(eodv));
+  ok('REGRESSION: a bounty payment never lights "short count" and is never revenue', !/r\.reportType === 'BOUNTY'\) g\.disputed = true/.test(eodv + read('src/utils/helpers.js')));
+  ok('a card knows its salesman and its night: the sales, the route and the date are that night\'s',
+     /t\.agentId === group\.agent/.test(card) && /today=\{g\.night\}/.test(eodv) && /dayTargets\(customers, man\?\.name \|\| g\.agentName, g\.night\)/.test(eodv) && /night=\{late \? nightLabel\(group\.night\) : null\}/.test(card));
+  ok('the bounty payback is its own plate under the handover, naming the fines it pays, with its own keys',
+     /aria-label="Bounty payback"/.test(card) && /bountyItems\(motorist \|\| \{\}\)\.filter\(b => \(line\.report\.penaltyKeys \|\| \[\]\)\.includes\(b\.key\)\)/.test(card) &&
+     /const payback = lines\.filter\(l => l\.report\.reportType === 'BOUNTY'\)/.test(card));
+  ok('reset the night deletes the night only - never a bounty payment (the history row already kept it apart)',
+     /const night = group\.reports\.filter\(r => r\.reportType !== 'BOUNTY'\);/.test(card) && /for \(const r of night\) await onReset\(r, \{ confirmed: true \}\);/.test(card));
+  const H = await import('../utils/helpers.js');
+  if (typeof H.groupPendingEOD !== 'function' || typeof H.nightLabel !== 'function') ok('groupPendingEOD and nightLabel exist in src/utils/helpers.js', false);
+  else {
+    const at = (d, h = 20) => ({ seconds: Math.floor(new Date(`${d}T${String(h).padStart(2, '0')}:00:00+07:00`).getTime() / 1000) });
+    const R = [
+      { id: 'y1', status: 'PENDING', agentId: 'b1', agentName: 'Budi', reportType: 'CASH_STOCK', dayKey: '2026-09-25', cash: 0, countStatus: 'DISPUTED', rejected: { stock: 'short 1' }, timestamp: at('2026-09-25') },
+      { id: 't1', status: 'PENDING', agentId: 'b1', agentName: 'Budi', reportType: 'CASH_STOCK', dayKey: '2026-09-26', cash: 156000, transfer: 0, countStatus: 'CLEAN', timestamp: at('2026-09-26') },
+      { id: 't2', status: 'PENDING', agentId: 'b1', agentName: 'Budi', reportType: 'CUKAI', dayKey: '2026-09-26', cukaiReturned: 20, timestamp: at('2026-09-26') },
+      { id: 'bp', status: 'PENDING', agentId: 'b1', agentName: 'Budi', reportType: 'BOUNTY', cash: 39000, penaltyKeys: ['PENALTY_EOD_y1_GOODS_cg'], timestamp: at('2026-09-26', 21) },
+      { id: 's1', status: 'PENDING', agentId: 's1', agentName: 'Sari', reportType: 'CASH_STOCK', dayKey: '2026-09-26', cash: 80000, timestamp: at('2026-09-26') },
+      { id: 'v1', status: 'VERIFIED', agentId: 's1', agentName: 'Sari', reportType: 'CASH_STOCK', dayKey: '2026-09-24', timestamp: at('2026-09-24') },
+    ];
+    const G = H.groupPendingEOD(R, '2026-09-26');
+    const budi = G.tonight.find(g => g.agent === 'b1');
+    ok('two nights of Budi are two cards: tonight (cash & stock, stamps, the bounty payment by its timestamp) and the late 25th; a verified night is not listed',
+       G.tonight.length === 2 && G.late.length === 1 && budi?.reports.length === 3 && G.late[0].agent === 'b1' && G.late[0].night === '2026-09-25' && G.late[0].disputed === true &&
+       !G.tonight.concat(G.late).some(g => g.reports.some(r => r.id === 'v1')));
+    ok('the bounty payment on Budi\'s card: not a short count, not revenue - revenue tonight is Rp 156.000, not 195.000',
+       budi.paysBounty === true && budi.disputed === false && budi.cashTotal === 156000);
+    ok('a night reads as a date he knows', H.nightLabel('2026-09-25') === 'Fri 25 Sep');
   }
 }
 

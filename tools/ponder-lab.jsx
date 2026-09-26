@@ -390,6 +390,13 @@ const labEodReports = (today) => {
       damagedStockToReturn: [{ ticketId: 'd1', name: 'Cello Green 16', reason: 'Basah', qty: 2, unit: 'Bks' }], deployedSamples: [] },
     { id: 'e2', status: 'PENDING', reportType: 'CUKAI', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 3000 },
       cukaiReturned: 40, cukaiPaid: 2, cukaiFine: 30000, deployedSamples: [{ productName: 'Cello Green 16', qty: 1.5, sticksPerPack: 16 }] },
+    /* 2026-09-26: a bounty PAYMENT tonight (its own plate on the card) and last night still waiting with its stock
+       line sent back (the LATE EOD panel) */
+    { id: 'e7', status: 'PENDING', reportType: 'BOUNTY', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 1800 },
+      cash: 39000, transfer: 0, cukai: 0, penaltyKeys: ['PENALTY_EOD_lab0_GOODS_p-cg16'] },
+    { id: 'e6', status: 'PENDING', reportType: 'CASH_STOCK', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 86400 - 3600 }, countStatus: 'DISPUTED',
+      expectedCash: 640000, cash: 640000, expectedTransfer: 0, transfer: 0, rejected: { stock: '1 Bks kurang' },
+      expectedStock: stock, remainingStock: [{ ...stock[0], qty: 11 }, stock[1]], deployedSamples: [] },
     { id: 'e3', status: 'VERIFIED', reportType: 'CASH_STOCK', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 86400 }, verifiedAt: { seconds: now - 80000 }, expectedCash: 980000, cash: 980000, expectedTransfer: 0, transfer: 0, remainingStock: stock },
     { id: 'e4', status: 'VERIFIED', reportType: 'CUKAI', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 86400 }, verifiedAt: { seconds: now - 79000 }, cukaiReturned: 36, cukaiPaid: 0, cukaiFine: 0 },
     { id: 'e5', status: 'VERIFIED', reportType: 'CASH_STOCK', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 172800 }, verifiedAt: { seconds: now - 170000 }, expectedCash: 1410000, cash: 1400000, expectedTransfer: 0, transfer: 0, remainingStock: stock },
@@ -650,7 +657,8 @@ FIXTURES['motorists/m2'] = {
     { productId: 'p-gg12', name: 'Gudang Garam Surya 12', qty: 1, unit: 'Karton' },
     { productId: 'p-smp16', name: 'Sampoerna Mild 16', qty: 40, unit: 'Bks' },
   ],
-  cukaiDebts: { 'p-cg16': 120, 'p-djar': 35 },
+  cukaiDebts: { 'p-cg16': 120, 'p-djar': 35, 'PENALTY_EOD_lab0_GOODS_p-cg16': 39000 },   /* + the fine tonight's bounty payment clears (2026-09-26) */
+  cukaiDebtNotes: { 'PENALTY_EOD_lab0_GOODS_p-cg16': { label: 'Cello Green 16 5 Bks @ Retail', date: '2026-09-24' } },
 };
 /* two more wares for the van only — LAB_PRODUCTS is shared with the terminal and the vault desk,
    whose boards were measured on its two rows and stay as they were */

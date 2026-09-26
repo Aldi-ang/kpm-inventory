@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { CheckCircle, RotateCcw, Undo2 } from 'lucide-react';
+import { CheckCircle, RotateCcw, Undo2, Coins } from 'lucide-react';
 import { RankBorder } from '../config/rankBorders.jsx';
 import { careerXP, computeDayXP, rankLadder, DEFAULT_XP } from '../config/career.js';
-import { formatRupiah, convertToBks, shortStockRows, eodBountyLines, eodReportParts, eodPartApproved, eodNightMessage, EOD_PART_LABELS } from '../utils/helpers.js';
+import { formatRupiah, convertToBks, shortStockRows, eodBountyLines, eodReportParts, eodPartApproved, eodNightMessage, EOD_PART_LABELS, bountyItems, nightLabel } from '../utils/helpers.js';
 import { revenueOf, salesDelta, dayOf } from '../utils/salesRollup.js';
 import { confirmAction, promptAction } from './ConfirmGate.jsx';
 
@@ -35,7 +35,7 @@ const initialsOf = (name = '') => name.split(/\s+/).filter(Boolean).slice(0, 2).
    the ladder once and never twice. No `diodeText` -> no diode line (the profile has no night to report). `children`
    sit on the avatar (the profile's camera badge and its file input). `onTap` is the head's one action: the card
    grows open, the profile opens the avatar customizer. */
-export const PlayerCardHead = ({ name, photo, currentTier, nextTier, progressPercent, xp, gain = 0, frame = 'classic', closed, diode = '', diodeText, onTap, children }) => (
+export const PlayerCardHead = ({ name, photo, currentTier, nextTier, progressPercent, xp, gain = 0, frame = 'classic', closed, night = null, diode = '', diodeText, onTap, children }) => (
     <div className="pc-head p-4" onClick={onTap} role={onTap ? 'button' : undefined} tabIndex={onTap ? 0 : undefined} onKeyDown={onTap ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTap(); } } : undefined}>
         <div className="flex items-start gap-4">
             <div className="pc-avatar">
@@ -48,25 +48,25 @@ export const PlayerCardHead = ({ name, photo, currentTier, nextTier, progressPer
             <div className="min-w-0 flex-1">
                 <h3 className="text-base font-black text-[var(--ink)] uppercase tracking-wider truncate">{name}</h3>
                 <p className="text-[11px] uppercase tracking-widest font-bold mt-1 truncate"><span className="pc-rank" style={{ '--rk': currentTier.hex || 'var(--ink-dim)' }}>{currentTier.name}</span>{currentTier.title && <span className="text-[var(--ink-dim)]"> · {currentTier.title}</span>}</p>
-                <p className="mt-2 font-mono text-sm font-bold text-[var(--ink)] tabular-nums">{new Intl.NumberFormat('id-ID').format(xp)} XP{gain > 0 && <><span className="text-[var(--accent-ink)]"> +{gain}</span><span className="text-[11px] text-[var(--ink-dim)] font-normal"> tonight</span></>}</p>
+                <p className="mt-2 font-mono text-sm font-bold text-[var(--ink)] tabular-nums">{new Intl.NumberFormat('id-ID').format(xp)} XP{gain > 0 && <><span className="text-[var(--accent-ink)]"> +{gain}</span><span className="text-[11px] text-[var(--ink-dim)] font-normal">{night ? " that night" : " tonight"}</span></>}</p>
                 <div className="h-[3px] mt-1.5 rounded-full bg-[var(--inset)]"><div className="h-full rounded-full" style={{ width: `${progressPercent}%`, ...BAR }}></div></div>
                 <p className="text-[11px] uppercase tracking-widest text-[var(--ink-dim)] mt-1 truncate">{nextTier ? `${new Intl.NumberFormat('id-ID').format(Math.max(0, Number(nextTier.min) - xp))} XP to ${nextTier.name}` : 'top of the ladder'}</p>
             </div>
         </div>
         <div className="mt-4 flex items-end justify-between gap-3">
             <div>
-                <p className={SUB}>Closed today</p>
+                <p className={SUB}>{night ? `Closed · ${night}` : 'Closed today'}</p>
                 {closed && closed.total > 0
                     ? <p className="font-mono text-4xl font-black text-[var(--ink)] leading-none mt-1 tabular-nums">{closed.closed}<span className="text-[var(--ink-dim)] text-2xl"> / {closed.total}</span></p>
                     : <p className="font-mono text-2xl font-black text-[var(--ink-dim)] leading-none mt-1">—</p>}
-                <p className="text-[11px] uppercase tracking-widest text-[var(--ink-dim)] mt-1">{closed && closed.total > 0 ? 'stores on the route' : 'no route today'}</p>
+                <p className="text-[11px] uppercase tracking-widest text-[var(--ink-dim)] mt-1">{closed && closed.total > 0 ? 'stores on the route' : night ? 'no route that night' : 'no route today'}</p>
             </div>
             {diodeText && <p className={`kpm-led-line ${diode}`}><i aria-hidden="true"></i>{diodeText}</p>}
         </div>
     </div>
 );
 
-const PlayerCard = ({ group, motorist, career, useCareerLedger = false, ranks, expMultiplier = 1, transactions = [], inventory = [], appSettings, closed, today, onApprove, onReset, onSealed }) => {
+const PlayerCard = ({ group, late = false, motorist, career, useCareerLedger = false, ranks, expMultiplier = 1, transactions = [], inventory = [], appSettings, closed, today, onApprove, onReset, onSealed }) => {
     const [open, setOpen] = useState(false);
     const [checked, setChecked] = useState({});   // `${reportId}:${part}` -> true
     const [returned, setReturned] = useState({}); // `${reportId}:${part}` -> reason
@@ -76,8 +76,8 @@ const PlayerCard = ({ group, motorist, career, useCareerLedger = false, ranks, e
     const productsById = useMemo(() => Object.fromEntries((inventory || []).map(p => [p.id, p])), [inventory]);
 
     const mine = useMemo(() => (transactions || []).filter(t =>
-        t && (t.agentId === group.key || (motorist?.name && t.agentName && String(t.agentName).toLowerCase() === String(motorist.name).toLowerCase()))
-    ), [transactions, group.key, motorist?.name]);
+        t && (t.agentId === group.agent || (motorist?.name && t.agentName && String(t.agentName).toLowerCase() === String(motorist.name).toLowerCase()))
+    ), [transactions, group.agent, motorist?.name]);
 
     /* XP as the profile scores it: the career ledger when the switch is on, else the omset formula. */
     const xp = useMemo(() => {
@@ -135,7 +135,7 @@ const PlayerCard = ({ group, motorist, career, useCareerLedger = false, ranks, e
                     value = `${report.cukaiReturned !== undefined ? report.cukaiReturned : (report.cukai || 0)} pcs`;
                     if (Number(report.cukaiPaid) > 0) { note = `${report.cukaiPaid} lost · +${formatRupiah(report.cukaiFine || 0)}`; led = 'warn'; }
                 } else if (part === 'bounty') {
-                    if (report.reportType === 'BOUNTY') { value = formatRupiah(report.cash || 0); note = `pays ${(report.penaltyKeys || []).length || 'his'} fines`; led = 'warn'; }
+                    if (report.reportType === 'BOUNTY') { const n = (report.penaltyKeys || []).length; value = formatRupiah(report.cash || 0); note = n ? `pays ${n} fine${n === 1 ? '' : 's'}` : 'pays his fines'; led = 'warn'; }
                     else { value = formatRupiah(bounty.reduce((s, l) => s + l.amount, 0)); note = bounty.map(l => l.label).join(' · '); led = 'crit'; }
                 }
                 out.push({ key: `${report.id}:${part}`, report, part, label: EOD_PART_LABELS[part], value, note, led, done: eodPartApproved(report, part), why: report.rejected?.[part] || '' });
@@ -152,8 +152,15 @@ const PlayerCard = ({ group, motorist, career, useCareerLedger = false, ranks, e
        return) checked for approval, or a plate that only sends things back */
     const hot = (nReturn > 0 && nChecked === 0) || pending.some(l => checked[l.key] && l.led === 'crit');
     const sentBack = lines.filter(l => l.why).length;
-    const diode = (group.disputed || sentBack) ? 'crit' : group.lost > 0 ? 'warn' : '';
-    const diodeText = sentBack ? `${sentBack} sent back` : group.disputed ? 'short count' : group.lost > 0 ? `${group.lost} stamps lost` : 'counts match';
+    const diode = (group.disputed || sentBack) ? 'crit' : (group.lost > 0 || group.paysBounty) ? 'warn' : '';
+    /* a bounty PAYMENT is not a short count (his 2026-09-26: "still short count ... the salesman is returning the good
+       in full") - it says what it is */
+    const diodeText = sentBack ? `${sentBack} sent back` : group.disputed ? 'short count' : group.lost > 0 ? `${group.lost} stamps lost` : group.paysBounty ? 'pays a bounty' : 'counts match';
+    /* the bounty payback rides on the card as its own plate, apart from the night's handover (his "make the bounties
+       payback to be more clear and little bit different from other because i dont realise that the bounties payback
+       is submitted down there") */
+    const payback = lines.filter(l => l.report.reportType === 'BOUNTY');
+    const handover = lines.filter(l => l.report.reportType !== 'BOUNTY');
 
     const tick = (key) => { setChecked(c => ({ ...c, [key]: !c[key] })); setReturned(r => { const n = { ...r }; delete n[key]; return n; }); };
     const sendBack = async (line) => {
@@ -187,39 +194,18 @@ const PlayerCard = ({ group, motorist, career, useCareerLedger = false, ranks, e
             if (allIn && onSealed) onSealed();
         } finally { setBusy(false); }
     };
+    /* the night only: a bounty payment is money for fines already owed, and has its own ✓ / ✕ (the history row keeps it
+       apart the same way) */
+    const night = group.reports.filter(r => r.reportType !== 'BOUNTY');
     const resetNight = async () => {
-        if (busy) return;
-        const n = group.reports.length;
+        if (busy || !night.length) return;
+        const n = night.length;
         if (!await confirmAction(`RESET the night for ${group.agentName}? This deletes ${n === 1 ? 'the report' : `both reports`} so he can submit again.`)) return;
-        for (const r of group.reports) await onReset(r, { confirmed: true });
+        for (const r of night) await onReset(r, { confirmed: true });
     };
 
-    const photo = motorist?.profileImage;
-    return (
-        <div className={`pc ${open ? 'open' : ''}`}>
-            <PlayerCardHead name={group.agentName} photo={photo} currentTier={currentTier} nextTier={nextTier} progressPercent={progressPercent} xp={xp} gain={gain} frame={frame}
-                closed={closed} diode={diode} diodeText={diodeText} onTap={() => setOpen(v => !v)} />
-            <div className="pc-body">
-                <div className="pc-inner"><div className="px-4 pb-4 lg:grid lg:grid-cols-[2fr_3fr] lg:gap-x-5">{/* the padding sits INSIDE the clipped layer, so a folded card measures 0 and not its own 16 px; from lg two columns (his board 1 = A): revenue + products | the handover + plate — 2:3, because a handover line (LED label + value + two 44 px keys) needs ~300 px in his font and a product row can wrap instead */}
-                    <div className="min-w-0">
-                    <div className="mb-3 pt-1">
-                        <div className={`flex justify-between gap-2 ${SUB}`}><span>Revenue tonight</span><span className="text-[var(--ink)] tabular-nums whitespace-nowrap">{formatRupiah(group.cashTotal)}</span></div>
-                    </div>
-                    {products.length > 0 && (
-                        <>
-                            <p className={`${SUB} mb-1`}>Products today</p>
-                            <div className="space-y-1 mb-3">
-                                {products.map(p => (
-                                    <div key={p.id} className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg bg-[var(--inset)] border border-[var(--line-2)] text-[var(--ink)] lg:flex-wrap"><span className="flex-1 min-w-0 truncate lg:basis-full lg:whitespace-normal">{p.name}</span><span className="font-mono text-[var(--ink-dim)] whitespace-nowrap">{p.qty} Bks</span><span className="font-mono font-bold whitespace-nowrap">{formatRupiah(p.revenue)}</span></div>
-                                ))}
-                            </div>
-                        </>
-                    )}
-                    </div>
-                    <div className="min-w-0">
-                    <p className={`${SUB} mb-1`}>The handover — each line on its own</p>
-                    <div className="space-y-1">
-                        {lines.map(line => (
+    /* one line of the handover or the payback: its LED label, its value, ✓ and ✕ */
+    const lineRow = (line) => (
                             <div key={line.key} className={`pc-line flex items-center gap-2 min-h-[52px] pl-3 pr-1 rounded-xl border ${line.done ? 'bg-[var(--raised)] border-[var(--line)] opacity-70' : returned[line.key] || line.why ? 'bg-[var(--danger-well)] border-[var(--danger)]' : checked[line.key] ? 'bg-[var(--inset)] border-[var(--accent-edge)]' : 'bg-[var(--inset)] border-[var(--line-2)]'}`}>
                                 <div className="flex-1 min-w-0">
                                     <p className={`kpm-led-line ${line.led}`}><i aria-hidden="true"></i>{line.label}</p>
@@ -234,8 +220,54 @@ const PlayerCard = ({ group, motorist, career, useCareerLedger = false, ranks, e
                                         <button type="button" onClick={() => sendBack(line)} aria-pressed={!!returned[line.key]} aria-label={`send ${line.label} back`} className={`pc-key w-11 h-11 grid place-items-center rounded-lg ${returned[line.key] ? 'bg-[var(--danger)] text-[var(--danger-plate-ink)]' : 'text-[var(--danger-ink)]'}`}><span aria-hidden="true">✕</span></button>
                                     </>}
                             </div>
-                        ))}
+    );
+    const photo = motorist?.profileImage;
+    return (
+        <div className={`pc ${open ? 'open' : ''}`}>
+            <PlayerCardHead name={group.agentName} photo={photo} currentTier={currentTier} nextTier={nextTier} progressPercent={progressPercent} xp={xp} gain={gain} frame={frame}
+                closed={closed} night={late ? nightLabel(group.night) : null} diode={diode} diodeText={diodeText} onTap={() => setOpen(v => !v)} />
+            <div className="pc-body">
+                <div className="pc-inner"><div className="px-4 pb-4 lg:grid lg:grid-cols-[2fr_3fr] lg:gap-x-5">{/* the padding sits INSIDE the clipped layer, so a folded card measures 0 and not its own 16 px; from lg two columns (his board 1 = A): revenue + products | the handover + plate — 2:3, because a handover line (LED label + value + two 44 px keys) needs ~300 px in his font and a product row can wrap instead */}
+                    <div className="min-w-0">
+                    <div className="mb-3 pt-1">
+                        <div className={`flex justify-between gap-2 ${SUB}`}><span>{late ? 'Revenue that night' : 'Revenue tonight'}</span><span className="text-[var(--ink)] tabular-nums whitespace-nowrap">{formatRupiah(group.cashTotal)}</span></div>
                     </div>
+                    {products.length > 0 && (
+                        <>
+                            <p className={`${SUB} mb-1`}>Products today</p>
+                            <div className="space-y-1 mb-3">
+                                {products.map(p => (
+                                    <div key={p.id} className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg bg-[var(--inset)] border border-[var(--line-2)] text-[var(--ink)] lg:flex-wrap"><span className="flex-1 min-w-0 truncate lg:basis-full lg:whitespace-normal">{p.name}</span><span className="font-mono text-[var(--ink-dim)] whitespace-nowrap">{p.qty} Bks</span><span className="font-mono font-bold whitespace-nowrap">{formatRupiah(p.revenue)}</span></div>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                    </div>
+                    <div className="min-w-0">
+                    {handover.length > 0 && <>
+                    <p className={`${SUB} mb-1`}>The handover — each line on its own</p>
+                    <div className="space-y-1">
+                        {handover.map(lineRow)}
+                    </div>
+                    </>}
+                    {payback.length > 0 && (
+                        <div aria-label="Bounty payback" className="mt-3 rounded-xl border-2 border-[var(--accent-edge)] bg-[var(--raised)] p-2">
+                            <p className="flex items-center gap-1.5 px-1 mb-1.5 text-[11px] font-black uppercase tracking-[.18em] text-[var(--accent-ink)]"><Coins size={14} aria-hidden="true" /> Bounty payback</p>
+                            {payback.map(line => {
+                                const fines = bountyItems(motorist || {}).filter(b => (line.report.penaltyKeys || []).includes(b.key));
+                                return (
+                                    <div key={line.key}>
+                                        {lineRow(line)}
+                                        {fines.length > 0 && (
+                                            <ul className="mt-1 px-2 space-y-0.5">
+                                                {fines.map(b => <li key={b.key} className="flex justify-between gap-3 text-[11px] text-[var(--ink-muted)]"><span className="min-w-0 truncate">{b.label}{b.date ? ` · ${b.date}` : ''}</span><span className="font-mono tabular-nums whitespace-nowrap">{formatRupiah(b.amount)}</span></li>)}
+                                            </ul>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                     <button type="button" onClick={approve} disabled={busy || nChecked + nReturn === 0} style={{ minHeight: 52 }} className={`kpm-plate w-full mt-3 rounded-xl border font-black uppercase tracking-[.2em] flex items-center justify-center gap-2 disabled:opacity-60 ${hot ? 'bg-[var(--danger-plate)] border-[var(--danger)] text-[var(--danger-plate-ink)]' : 'bg-[var(--gold)] border-[var(--accent-edge)] text-[var(--gold-ink)]'}`}>
                         <CheckCircle size={18} /> <span>{nChecked > 0 && nReturn > 0 ? `Approve ${nChecked} · return ${nReturn}` : nReturn > 0 ? `Return ${nReturn}` : nChecked > 0 ? `Approve ${hot ? 'short' : 'checked'} (${nChecked})` : 'Approve checked'}</span>
                     </button>
