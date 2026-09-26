@@ -111,6 +111,11 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   const [says, setSays] = useState({ wh: null, van: null });
   const [dragging, setDragging] = useState(false);
   const [lift, setLift] = useState(null);
+  /* squares on a page: 6 on the PC, 4 in one row on the phone (his 07:50 "make per page 4 box only"); the same 640 px
+     line the CSS container queries use */
+  const [per, setPer] = useState(PER);
+  /* tap a product, then tap a van square (his 07:50 "press the product and press on the expty van space box") */
+  const [picked, setPicked] = useState(null);
 
   const refs = { bay: useRef(null), whGui: useRef(null), vanGui: useRef(null), whChest: useRef(null), vanChest: useRef(null),
     dmg: useRef(null), whGrid: useRef(null), vanGrid: useRef(null), vanPages: useRef(null), motes: useRef(null), qty: useRef(null), sheet: useRef(null) };
@@ -130,17 +135,25 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     for (const l of ls) if (l.dir > 0 && !ids.includes(l.id)) ids.push(l.id);
     return ids;
   };
-  const cells = useMemo(() => vanCells(layout, keepOf(lines)), [layout, lines, vanOf]);   // eslint-disable-line react-hooks/exhaustive-deps
-  const vanPageCount = cells.length / PER;
+  const cells = useMemo(() => vanCells(layout, keepOf(lines), per), [layout, lines, vanOf, per]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const vanPageCount = cells.length / per;
 
   const q = query.trim().toLowerCase();
   const whList = q ? stock.filter(p => (p.name || '').toLowerCase().includes(q)) : stock;
-  const whPages = Math.max(1, Math.ceil(whList.length / PER));
+  const whPages = Math.max(1, Math.ceil(whList.length / per));
   const whPageNow = Math.min(whPage, whPages - 1);
-  const whPageOf = (id) => { const i = whList.findIndex(p => p.id === id); return i < 0 ? -1 : Math.floor(i / PER); };
+  const whPageOf = (id) => { const i = whList.findIndex(p => p.id === id); return i < 0 ? -1 : Math.floor(i / per); };
 
   useEffect(() => { onDirty?.(lines.length); }, [lines.length]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => onDirty?.(0), []);                          // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const el = refs.bay.current?.closest('.kpm-bay-wrap');
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(([e]) => setPer(e.contentRect.width < 640 ? 4 : PER));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setWhPage(0); setVanPage(0); }, [per]);
 
   /* every action reports, in the panel where it happened */
   function say(where, msg, err) {
@@ -161,7 +174,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   }
   function landingFor(id, x, y) {
     const under = slotAt(refs.vanGrid.current, x, y);
-    return landingCell(cells, id, under ? +under.dataset.i : -1, vanPage);
+    return landingCell(cells, id, under ? +under.dataset.i : -1, vanPage, per);
   }
 
   /* ── the chests ── */
@@ -235,7 +248,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
       refs.vanGui.current.classList.add('zoneover'); refs.vanChest.current.classList.add('zoneover');
       const tab = vanTabHold(d, x, y), cell = landingFor(d.id, x, y);
       if (cell < 0) return;
-      if (Math.floor(cell / PER) !== vanPage && tab === null) { setVanPage(Math.floor(cell / PER)); setAnim(a => ({ ...a, van: false })); }
+      if (Math.floor(cell / per) !== vanPage && tab === null) { setVanPage(Math.floor(cell / per)); setAnim(a => ({ ...a, van: false })); }
       vanSlotEl(cell)?.classList.add('over');
       return;
     }
@@ -272,6 +285,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
         playSound('chestRefuse'); drag.current = null; return;
       }
       d.live = true;
+      setPicked(null);
       d.home = center(d.slot);
       const g = document.createElement('div');
       g.className = 'kpm-bay-ghost';
@@ -304,7 +318,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
       if (zone !== 'van') return flyHome(d.ghost, d.home);
       const cell = landingFor(d.id, d.x, d.y);
       if (cell < 0) { say('van', 'Van penuh — kosongkan satu kotak dulu', true); playSound('chestRefuse'); return flyHome(d.ghost, d.home); }
-      if (Math.floor(cell / PER) !== vanPage) flushSync(() => { setVanPage(Math.floor(cell / PER)); setAnim(a => ({ ...a, van: false })); });
+      if (Math.floor(cell / per) !== vanPage) flushSync(() => { setVanPage(Math.floor(cell / per)); setAnim(a => ({ ...a, van: false })); });
       const to = vanSlotEl(cell);
       if (to) park(d.ghost, center(to));
       return openSheet({ mode: 'add', dir: 1, id: d.id, cell, ghost: d.ghost, home: d.home });
@@ -355,8 +369,32 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     if (c && motionOK()) { c.classList.remove('spin'); void c.offsetWidth; c.classList.add('spin'); setTimeout(() => c.classList.remove('spin'), 760); }
     const p = P[d.id];
     if (!canEdit) return say(d.src, VIEW_ONLY);
-    if (d.src === 'van') say('van', 'Tarik ke gudang untuk mengembalikan, atau ke kotak lain untuk menata');
-    else say('wh', stockOf(d.id) ? `Tarik ${p.name} ke van untuk memuat` : `${p.name} habis di gudang`, !stockOf(d.id));
+    if (d.src === 'van') {
+      if (picked) return placePicked(d.cell);
+      return say('van', 'Tarik ke gudang untuk mengembalikan, atau ke kotak lain untuk menata');
+    }
+    if (picked?.id === d.id) { setPicked(null); return say('wh', `${p.name} batal dipilih`); }
+    if (capLoad(d.id) <= 0) {
+      setPicked(null); playSound('chestRefuse');
+      return say('wh', stockOf(d.id) ? `Semua stok ${p.name} sudah di muatan` : `${p.name} habis di gudang`, true);
+    }
+    setPicked({ src: 'wh', id: d.id });
+    playSound('chestPick');
+    say('wh', `${p.name} dipilih · ketuk kotak di van`);
+  }
+  /* the second tap: the square under the finger, else the product's own square or the next empty one - the landing
+     a drop uses - then the same HOW MANY sheet. Nothing is written before MUAT VAN. */
+  function placePicked(cell) {
+    const at = landingCell(cells, picked.id, cell, vanPage, per);
+    if (at < 0) { playSound('chestRefuse'); return say('van', 'Van penuh — kosongkan satu kotak dulu', true); }
+    setPicked(null);
+    openSheet({ mode: 'add', dir: 1, id: picked.id, cell: at, back: { grid: 'wh', id: picked.id } });
+  }
+  function tapVan(e) {
+    if (!picked) return;
+    const slot = e.target.closest('.slot');
+    if (!slot || slot.classList.contains('has')) return;   // a filled square answers through tapBox
+    placePicked(+slot.dataset.i);
   }
   /* keyboard path — no mouse, no finger: Enter on a warehouse box loads, Enter on a van box returns */
   function keyBox(e, src) {
@@ -367,7 +405,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     const id = slot.dataset.id;
     if (src === 'wh') {
       if (capLoad(id) <= 0) return say('wh', stockOf(id) ? `Semua stok ${P[id].name} sudah di muatan` : `${P[id].name} habis di gudang`, true);
-      const cell = landingCell(cells, id, -1, vanPage);
+      const cell = landingCell(cells, id, -1, vanPage, per);
       if (cell < 0) return say('van', 'Van penuh — kosongkan satu kotak dulu', true);
       openSheet({ mode: 'add', dir: 1, id, cell, back: { grid: 'wh', id } });
     } else {
@@ -419,10 +457,10 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     const nextLines = foldLine(lines, { id: s.id, qty: c.n, unit: s.unit, dir: s.dir, bks: c.bks }, p, s.mode);
     let nextLayout = layout;
     if (s.dir > 0 && s.mode === 'add' && !cells.includes(s.id)) { nextLayout = [...cells]; nextLayout[s.cell] = s.id; }
-    const vc = vanCells(nextLayout, keepOf(nextLines)).indexOf(s.id), wp = whPageOf(s.id);
+    const vc = vanCells(nextLayout, keepOf(nextLines), per).indexOf(s.id), wp = whPageOf(s.id);
     const ghost = sheetGhost.current; sheetGhost.current = null;
     /* the figures change NOW, before any motion — the flight below only decorates what is already true */
-    flushSync(() => { setLines(nextLines); setLayout(nextLayout); setSheet(null); if (vc >= 0) setVanPage(Math.floor(vc / PER)); if (wp >= 0) setWhPage(wp); setAnim({ wh: false, van: false }); });
+    flushSync(() => { setLines(nextLines); setLayout(nextLayout); setSheet(null); if (vc >= 0) setVanPage(Math.floor(vc / per)); if (wp >= 0) setWhPage(wp); setAnim({ wh: false, van: false }); });
     settle(ghost);
     if (s.mode === 'add') transfer(p, c.n, s.dir, vc); else playSound('chestPage');
     say(s.dir > 0 || s.mode === 'edit' ? 'van' : 'wh', s.mode === 'edit' ? `${p.name}: ${signed(netBks(nextLines, s.id, p))} Bks di muatan`
@@ -548,7 +586,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
      Nothing is written here; every line that could not go in whole is listed with its reason. */
   function fillMuatan(src, done, from) {
     if (!canEdit || busy || !src.length) return;
-    const r = applyPreset(lines, cells, src, P, vanPage);
+    const r = applyPreset(lines, cells, src, P, vanPage, per);
     const went = src.length - r.cut.filter(c => c.why !== 'short').length;
     flushSync(() => { setLines(r.lines); setLayout(r.layout); setAnim({ wh: false, van: false }); });
     setFillCut(r.cut);
@@ -599,7 +637,8 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
 
   return (
     <div className="kpm-bay-wrap">
-      <section ref={refs.bay} className={`kpm-bay${open.wh ? ' wh-open' : ''}${open.van ? ' van-open' : ''}${open.wh === false ? ' wh-shut' : ''}${open.van === false ? ' van-shut' : ''}${dragging ? ' dragging' : ''}`} aria-label="Muat van">
+      <div className="kpm-bay-duo">
+      <section ref={refs.bay} className={`kpm-bay${open.wh ? ' wh-open' : ''}${open.van ? ' van-open' : ''}${open.wh === false ? ' wh-shut' : ''}${open.van === false ? ' van-shut' : ''}${dragging ? ' dragging' : ''}${picked ? ' picking' : ''}`} aria-label="Muat van">
         {!canEdit && <p className="bayHint">{VIEW_ONLY}</p>}
 
         {open.wh === false && (
@@ -645,7 +684,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
 
         <div ref={refs.whGui} className={`gui wh${anim.wh ? '' : ' noanim'}`}>
           <p className="title"><span>Gudang {warehouse}</span><span className="count">{stock.length} barang · {fmt(totalWh)} Bks</span></p>
-          {open.wh !== false && sayEl('wh')}
+          {open.wh !== false ? sayEl('wh') : <span className="say" aria-hidden="true" />}
           <label className="find">
             <span className="sr-only">Cari barang di gudang</span>
             <input type="search" value={query} placeholder="Cari barang di gudang…" autoComplete="off" enterKeyHint="search"
@@ -658,12 +697,12 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
             {query && <button className="x" type="button" aria-label="Hapus pencarian" onClick={() => { setQuery(''); setWhPage(0); setAnim(a => ({ ...a, wh: false })); }}>×</button>}
           </label>
           <div className="grid" key={'wh' + whPageNow} ref={refs.whGrid} onPointerDown={(e) => startDrag(e, 'wh')} onKeyDown={(e) => keyBox(e, 'wh')}>
-            {Array.from({ length: PER }, (_, i) => {
-              const p = whList[whPageNow * PER + i], style = { '--d': 120 + i * 50 + 'ms' };
+            {Array.from({ length: per }, (_, i) => {
+              const p = whList[whPageNow * per + i], style = { '--d': 120 + i * 50 + 'ms' };
               if (!p) return <div key={'e' + i} className="slot" style={style} />;
               const st = p.stock || 0, nt = net(p.id), out = capLoad(p.id) <= 0;
               return (
-                <div key={p.id} className={`slot has${out ? ' out' : ''}${lift === 'wh:' + p.id ? ' lift' : ''}`} data-id={p.id} tabIndex={0} role="button" style={style}
+                <div key={p.id} className={`slot has${out ? ' out' : ''}${lift === 'wh:' + p.id ? ' lift' : ''}${picked?.id === p.id ? ' picked' : ''}`} data-id={p.id} tabIndex={0} role="button" style={style}
                   aria-label={`${p.name}, stok ${fmt(st)} Bks${nt ? `, ${signed(-nt)} Bks di muatan` : ''}`}>
                   <Cube p={p} />
                   <span className="n">{st ? fmt(st) : 'habis'}</span>
@@ -698,10 +737,10 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
             <span>{agent.name} inventory</span>
             <span className="count">{fmt(vanHave)} Bks{plus ? <> <b>+{fmt(plus)}</b></> : null}{minus ? <> <b>−{fmt(minus)}</b></> : null}</span>
           </p>
-          {open.van !== false && sayEl('van')}
-          <div className="grid" key={'van' + vanPage} ref={refs.vanGrid} onPointerDown={(e) => startDrag(e, 'van')} onKeyDown={(e) => keyBox(e, 'van')}>
-            {Array.from({ length: PER }, (_, i) => {
-              const c = vanPage * PER + i, id = cells[c], p = id ? P[id] : null, style = { '--d': 120 + i * 50 + 'ms' };
+          {open.van !== false ? sayEl('van') : <span className="say" aria-hidden="true" />}
+          <div className="grid" key={'van' + vanPage} ref={refs.vanGrid} onPointerDown={(e) => startDrag(e, 'van')} onKeyDown={(e) => keyBox(e, 'van')} onClick={tapVan}>
+            {Array.from({ length: per }, (_, i) => {
+              const c = vanPage * per + i, id = cells[c], p = id ? P[id] : null, style = { '--d': 120 + i * 50 + 'ms' };
               if (!p) return <div key={'e' + c} className="slot" data-i={c} style={style} />;
               const have = vanOf[id] || 0, nt = net(id);
               return (
@@ -773,6 +812,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
           </div>
         )}
 
+      </section>
         {canEdit && (
           <aside className="man" aria-label="Muatan hari ini">
             <div className="manHead"><p className="lbl">Muatan · {agent.name}</p>
@@ -812,7 +852,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
             ))}
           </aside>
         )}
-      </section>
+      </div>
 
       {sh && createPortal(
         <>

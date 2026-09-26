@@ -8390,8 +8390,9 @@ section('ROUND 4: A CLOSED CHEST SHOWS TABS IN ITS PANEL\'S PLACE (2026-09-24)')
   ok('the shut panel leaves the flow, so its tabs take the room instead of an empty square',
      /\.kpm-bay\.wh-shut \.gui\.wh \{[^}]*position: absolute/.test(bayCss) && /\.kpm-bay\.van-shut \.gui\.van \{[^}]*position: absolute/.test(bayCss) &&
      /\$\{open\.wh === false \? ' wh-shut' : ''\}/.test(bayc) && /\$\{open\.van === false \? ' van-shut' : ''\}/.test(bayc));
-  ok('both closed = one short row: each chest stands beside its tabs',
-     /\.kpm-bay\.wh-shut\.van-shut \{[^}]*grid-template-areas:[^}]*"whc whg vang vanc"/.test(bayCss));
+  /* the round-4 "both closed = one short row" was replaced by his 07:50 (2026-09-26): on the PC the bay keeps its height */
+  ok('both closed: the chests stay under their tabs, in the open layout - no layout of its own',
+     !/\.kpm-bay\.wh-shut\.van-shut \{/.test(bayCss) && /grid-template-areas: "hint hint" "whg vang" "whc vanc";/.test(bayCss));
   ok('a tab\'s list never pushes its status chips past the edge: one minmax column (his 1440 frame clipped "DITOLAK")',
      /\.kpm-bay \.slip \.rows \{[^}]*grid-template-columns: minmax\(0, 1fr\)/.test(bayCss));
   ok('the lid still closes in full, with its own sound', /chestEnderClose/.test(bayc) && /chestVanClose/.test(bayc) && /\.kpm-bay \.chest \.lid \{[^}]*transition: transform/.test(bayCss));
@@ -8508,8 +8509,8 @@ section('ROUND 4: THE DEPLOYMENT HEADER MOVES INTO THE GOLD BAR (2026-09-24)');
      /if \(t\.type === 'RETUR' && t\.paymentType !== 'Tukar Ganti'\) return;/.test(left) && /if \(t\.paymentType === 'Tukar Ganti' && item\.fulfillment === 'IOU'\) return;/.test(left) &&
      /const initialLoadBks = currentLoadBks \+ soldTodayBks;/.test(left));
   ok('the bar follows the picked person on any page or area tab, as the header did', /const sel = selectedAgent \|\| null;/.test(left));
-  ok('two lines on the phone, one on the PC',
-     /\.kpm-stage-bar \{[^}]*grid-template-areas: "who acts" "chips counts"/.test(stageCss) &&
+  ok('one column on the phone (his 07:50: the place ran under the keys), one line on the PC',
+     /\.kpm-stage-bar \{[^}]*grid-template-areas: "who" "chips" "counts" "acts"/.test(stageCss) &&
      /@media \(min-width: 1024px\) \{[^@]*\.kpm-stage-bar \{[^}]*grid-template-areas: "who chips counts acts"/.test(stageCss));
 }
 
@@ -8539,7 +8540,7 @@ section('ROUND 5: TITIP AND BOUNTIES BEHIND THE VAN CHEST (2026-09-26)');
      three tabs stacked one per line and "12 Bks di toko" was cut. The phone now keeps its OPEN order: the warehouse slip
      full width above, the two chests side by side, the van slip full width below. */
   ok('phone, both chests shut: the slips run full width in the open layout\'s order, the chests side by side',
-     /\.kpm-bay\.wh-shut\.van-shut \{ grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\); grid-template-areas: "hint hint" "whg whg" "whc vanc" "vang vang" "man man";/.test(read('src/styles/theme.css')));
+     /grid-template-areas: "hint hint" "whg whg" "whc vanc" "vang vang";/.test(read('src/styles/theme.css')) && !/\.kpm-bay\.wh-shut\.van-shut \{/.test(read('src/styles/theme.css')));
   ok('ONE reading of a person\'s bounties - the EOD WANTED board and the van tab both call bountyItems',
      /export const bountyItems = /.test(hlp) && /bountyItems\(agentProfile\)/.test(code(eod)) && !/const describe = \(pid\)/.test(eod));
 
@@ -8576,6 +8577,56 @@ section('ROUND 5: TITIP AND BOUNTIES BEHIND THE VAN CHEST (2026-09-26)');
        bt[1].label === 'Damaged goods penalty' && bt[1].date === H.getLocalDayKey(new Date(1757480400000)) && bt[1].amount === 40000 &&
        bt[2].label === 'End-of-day shortfall' && bt[2].amount === 0 && bt.reduce((s, b) => s + b.amount, 0) === 65000);
   }
+}
+
+/* ── HIS 07:50 TEST OF ROUND 5 - FLEET & ROSTER ON THE PC AND THE PHONE (2026-09-26) ──────────────────────────
+   Round 5 itself passed ("titip and bounties test showing on behind the van chest, nothing cant be pressed").
+   The rest of his message, one check each. */
+section('HIS 07:50 TEST OF ROUND 5 - FLEET & ROSTER ON THE PC AND THE PHONE (2026-09-26)');
+{ const fl = read('src/FleetCanvasManager.jsx');
+  const bay = read('src/components/LoadingBay.jsx'), bayc = code(bay);
+  const th = read('src/styles/theme.css');
+  const bayCss = th.slice(th.indexOf('/* ── THE VAN-LOADING BAY'), th.indexOf('/* ── END OF THE VAN-LOADING BAY'));
+  const stageCss = th.slice(th.indexOf('/* ── THE ROSTER STAGE'), th.indexOf('/* ── END OF THE ROSTER STAGE'));
+  const fnOf = (src, name) => { const s = src.indexOf(`function ${name}(`); return s < 0 ? '' : src.slice(s, src.indexOf('\n  }\n', s)); };
+
+  /* "this whole panel shrink and expand too much as pc user i need to scroll up and down whenever i close and open the chest" */
+  ok('PC: a closed chest keeps its panel\'s room - the tabs take the same space, nothing below jumps; the one-short-row layout is gone',
+     /@container kpmbay \(min-width: 640px\) \{ \.kpm-bay\.wh-shut \.gui\.wh, \.kpm-bay\.van-shut \.gui\.van \{ position: relative; \} \}/.test(bayCss) &&
+     !/"whc whg vang vanc"/.test(bayCss) && !/\.kpm-bay\.wh-shut\.van-shut \{/.test(bayCss) &&
+     /* the shut panel keeps its status line's room too - measured 643 -> 621 px at 1440 without it */
+     /\{open\.wh !== false \? sayEl\('wh'\) : <span className="say" aria-hidden="true" \/>\}/.test(bayc) &&
+     /\{open\.van !== false \? sayEl\('van'\) : <span className="say" aria-hidden="true" \/>\}/.test(bayc));
+  /* "make sure that the muatan panel with the van inventory panel is well separated and looks separated because it looks like 1 big panel" */
+  ok('the muatan is its own card OUTSIDE the bay\'s frame - beside it on a wide screen, under it on a narrow one',
+     /<div className="kpm-bay-duo">\s*<section /.test(bayc) && bayc.indexOf('</section>') < bayc.indexOf('<aside className="man"') &&
+     /\.kpm-bay-duo \{ display: grid; gap: 14px;/.test(bayCss) && /@container kpmbay \(min-width: 1100px\) \{ \.kpm-bay-duo \{ grid-template-columns: minmax\(0, 1fr\) 300px; \} \}/.test(bayCss) &&
+     !/"man|man"|grid-area: man/.test(bayCss) && !/\.kpm-bay \.(man|manHead|tally|lines|ln|trash|empty|go|report|sj)\b/.test(bayCss));
+  /* "on phone it looks soo big ... make the product 3D smaller and make per page 4 box only" */
+  ok('phone: four squares a page in ONE row, smaller boxes, the product\'s name kept',
+     /const \[per, setPer\] = useState\(PER\);/.test(bayc) && /setPer\(e\.contentRect\.width < 640 \? 4 : PER\)/.test(bayc) &&
+     (bayc.match(/\bPER\b/g) || []).length === 3 &&   // the import, the start value, the PC width - every page sum reads `per`
+     /\.kpm-bay \.grid \{ display: grid; grid-template-columns: repeat\(4, 1fr\); gap: 5px; \}/.test(bayCss) &&
+     /@container kpmbay \(min-width: 640px\) \{ \.kpm-bay \.grid \{ grid-template-columns: repeat\(3, 1fr\); gap: 6px; \} \}/.test(bayCss) &&
+     !/\.gui\.van \.slot \.name \{ display: none; \}/.test(bayCss));
+  /* "maybe better if the users are be able to press the product and press the van box to place it there" */
+  ok('tap a product, then tap a van square: the same HOW MANY sheet a drop opens, nothing written before MUAT VAN',
+     /setPicked\(\{ src: 'wh', id: d\.id \}\)/.test(fnOf(bayc, 'tapBox')) && /onClick=\{tapVan\}/.test(bayc) &&
+     /landingCell\(cells, picked\.id, cell, vanPage, per\)/.test(fnOf(bayc, 'placePicked')) && /openSheet\(\{ mode: 'add', dir: 1, id: picked\.id, cell: at/.test(fnOf(bayc, 'placePicked')) &&
+     !/onLoad\(|onReturn\(|onLayout\(/.test(fnOf(bayc, 'placePicked')));
+  /* sc7 "there is collapsing text here" - the place ran under Details / Edit on the phone */
+  ok('gold bar on the phone: one column - place + name, the permissions, the counts, the keys - nothing under anything',
+     /\.kpm-stage-bar \{[^}]*grid-template-columns: minmax\(0, 1fr\);\s*grid-template-areas: "who" "chips" "counts" "acts";/.test(stageCss) &&
+     /\.kpm-stage-name \{[^}]*text-overflow: ellipsis/.test(stageCss) &&
+     /@media \(min-width: 1024px\) \{[^@]*\.kpm-stage-bar \{[^}]*grid-template-areas: "who chips counts acts"/.test(stageCss));
+  /* sc8 "make the roster slide lock 1 by 1 ... so slide to move 1 user to another user" */
+  ok('the roster slides one person at a time', /\.kpm-stage \{[^}]*scroll-snap-type: x mandatory;/.test(stageCss) && /\.kpm-actor \{[^}]*scroll-snap-stop: always;/.test(stageCss));
+
+  const vb = await import('../utils/vanBay.js');
+  ok('the page maths take the page size: 4 a page gives the van 20 squares (5 pages), 19 products still 20, 21 grow a page; the PC keeps 18',
+     vb.vanCells([], [], 4).length === 20 && vb.vanCells([], Array.from({ length: 19 }, (_, i) => 'p' + i), 4).length === 20 &&
+     vb.vanCells([], Array.from({ length: 21 }, (_, i) => 'p' + i), 4).length === 24 && vb.vanCells([], []).length === 18 &&
+     vb.landingCell(Array(20).fill(null), 'x', -1, 1, 4) === 4 && vb.landingCell(['a', 'b', 'c', 'd', null, ...Array(15).fill(null)], 'x', -1, 0, 4) === 4);
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

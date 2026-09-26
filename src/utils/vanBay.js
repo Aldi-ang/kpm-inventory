@@ -32,10 +32,11 @@ export function foldLine(lines, { id, qty, unit, dir, bks }, product, mode = 'ad
 
 /* The van's squares. The saved layout comes first, holes and all; a square whose product has left
    the van (and is not planned) goes back to empty; every product with no square takes the first
-   empty one. More products than squares grows a page - a chest never hides stock. */
-export function vanCells(layout, keepIds) {
+   empty one. More products than squares grows a page - a chest never hides stock. `per` is the squares on a
+   page: 6 on the PC, 4 on the phone (his 07:50 "make per page 4 box only"), so the phone's van has 20. */
+export function vanCells(layout, keepIds, per = PER) {
   const keep = new Set(keepIds);
-  const size = Math.max(CELLS, Math.ceil(keepIds.length / PER) * PER);
+  const size = Math.max(Math.ceil(CELLS / per) * per, Math.ceil(keepIds.length / per) * per);
   const cells = Array.from({ length: size }, (_, i) => (layout && keep.has(layout[i]) ? layout[i] : null));
   cells.forEach((id, i) => { if (id && cells.indexOf(id) !== i) cells[i] = null; });   // one product, one square
   for (const id of keepIds) {
@@ -50,11 +51,11 @@ export function vanCells(layout, keepIds) {
 /* WHERE A LOAD LANDS: a product already in a square joins it (one product, one square, one line -
    the same merge handleLoadCanvas does on the van row); else the empty square under the finger,
    then the first empty square on this page, then anywhere. -1 = the van is full. */
-export function landingCell(cells, id, under, page) {
+export function landingCell(cells, id, under, page, per = PER) {
   const own = cells.indexOf(id);
   if (own >= 0) return own;
   if (under >= 0 && under < cells.length && !cells[under]) return under;
-  for (let c = page * PER; c < page * PER + PER && c < cells.length; c++) if (!cells[c]) return c;
+  for (let c = page * per; c < page * per + per && c < cells.length; c++) if (!cells[c]) return c;
   return cells.indexOf(null);
 }
 
@@ -64,7 +65,7 @@ export function landingCell(cells, id, under, page) {
    give (loadCap), and a new product takes its square through landingCell. Every line that did not go in
    whole comes back in `cut` with its reason: short (cut to what is left), planned (all of it is already in
    the muatan), dry (the shelf is empty), missing (this warehouse does not carry it), full (no square). */
-export function applyPreset(lines, cells, preset, P, page = 0) {
+export function applyPreset(lines, cells, preset, P, page = 0, per = PER) {
   let L = lines;
   const C = [...cells], cut = [];
   for (const { id, qty, unit } of preset || []) {
@@ -75,7 +76,7 @@ export function applyPreset(lines, cells, preset, P, page = 0) {
     const got = Math.min(want, loadCap(p.stock || 0, netBks(L, id, p)));
     if (got <= 0) { cut.push({ id, want, got: 0, why: p.stock ? 'planned' : 'dry' }); continue; }
     if (!C.includes(id)) {
-      const c = landingCell(C, id, -1, page);
+      const c = landingCell(C, id, -1, page, per);
       if (c < 0) { cut.push({ id, want, got: 0, why: 'full' }); continue; }
       C[c] = id;
     }

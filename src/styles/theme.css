@@ -4684,12 +4684,16 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
   --bay-ease: cubic-bezier(.23, 1, .32, 1);
 }
 .kpm-bay-wrap { container: kpmbay / inline-size; }
+/* the muatan is its own card - beside the bay on a wide screen, under it on a narrow one, never inside the bay's
+   frame (his 07:50 "make sure that the muatan panel with the van inventory panel is well separated") */
+.kpm-bay-duo { display: grid; gap: 14px; }
+@container kpmbay (min-width: 1100px) { .kpm-bay-duo { grid-template-columns: minmax(0, 1fr) 300px; } }
 .kpm-bay {
   position: relative; border: 1px solid var(--line-2); border-radius: 16px;
   background: radial-gradient(120% 90% at 50% 120%, rgba(208, 138, 46, .10), transparent 60%), linear-gradient(180deg, var(--raised), var(--sunk));
   padding: 14px 10px 16px; color: var(--ink);
   display: grid; gap: 10px; grid-template-columns: 1fr 1fr;
-  grid-template-areas: "hint hint" "whg whg" "whc vanc" "vang vang" "man man";
+  grid-template-areas: "hint hint" "whg whg" "whc vanc" "vang vang";
   user-select: none; -webkit-user-select: none;
 }
 .kpm-bay .bayHint { grid-area: hint; margin: 0; text-align: center; font: 900 10px/1.3 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--ink-dim); }
@@ -4697,16 +4701,15 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
   .kpm-bay {
     padding: 18px 18px 20px; column-gap: 18px; row-gap: 8px; align-items: end;
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-    grid-template-areas: "hint hint" "whg vang" "whc vanc" "man man";
+    grid-template-areas: "hint hint" "whg vang" "whc vanc";
   }
 }
 @container kpmbay (min-width: 1100px) {
   .kpm-bay {
-    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 300px;
-    grid-template-areas: "hint hint man" "whg vang man" "whc vanc man";
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
   }
 }
-.kpm-bay button:focus-visible, .kpm-bay [role="button"]:focus-visible { outline: 3px solid var(--hi); outline-offset: 2px; }
+.kpm-bay-duo button:focus-visible, .kpm-bay-duo [role="button"]:focus-visible { outline: 3px solid var(--hi); outline-offset: 2px; }
 
 /* the chests */
 .kpm-bay .chestCell { all: unset; box-sizing: border-box; cursor: pointer; display: grid; justify-items: center; gap: 6px; perspective: 700px; padding: 4px; border-radius: 12px; position: relative; }
@@ -4763,9 +4766,9 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-bay .find input:focus-visible { outline: 3px solid var(--hi); }
 .kpm-bay .find .x { position: absolute; right: 2px; top: 2px; width: 36px; height: 36px; border: 0; background: transparent; color: #EDEDED; font: 900 18px/1 var(--font-mono); cursor: pointer; }
 
-.kpm-bay .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.kpm-bay .gui.van .grid { grid-template-columns: repeat(6, 1fr); gap: 4px; }
-@container kpmbay (min-width: 640px) { .kpm-bay .gui.van .grid { grid-template-columns: repeat(3, 1fr); gap: 6px; } }
+/* the phone: four squares in one row (his 07:50 "make the product 3D smaller and make per page 4 box only") */
+.kpm-bay .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+@container kpmbay (min-width: 640px) { .kpm-bay .grid { grid-template-columns: repeat(3, 1fr); gap: 6px; } }
 .kpm-bay .slot { position: relative; aspect-ratio: 1/1; border-radius: 3px; background: var(--stone-dark); border: 2px solid; border-color: #2E2E2E #9A9A9A #9A9A9A #2E2E2E; display: grid; place-items: center; overflow: hidden; max-width: 100%; }
 /* THE ENTRANCE MOVES, IT NEVER REVEALS: a square is visible at rest, and the arrival is 8 px of travel.
    Stripped by Lite Mode or reduced motion, the chest is simply already full. */
@@ -4781,20 +4784,22 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-bay .slot.out .n { color: #FFB4A8; }
 .kpm-bay .slot.over { outline: 3px solid var(--hi); outline-offset: -3px; }
 .kpm-bay .slot.new { outline: 2px dashed var(--hi); outline-offset: -4px; }
+/* tap to place: the picked product rings gold, the van's free squares show where it can go */
+.kpm-bay .slot.picked { outline: 3px solid var(--hi); outline-offset: -3px; }
+.kpm-bay.picking .gui.van .slot:not(.has) { outline: 2px dashed var(--hi); outline-offset: -4px; cursor: pointer; }
 .kpm-bay .gui.van .slot .name { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @container kpmbay (max-width: 639px) {
-  .kpm-bay .gui.van .slot .name { display: none; }
+  .kpm-bay .gui .slot .name { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .kpm-bay .gui.van .slot .n { font-size: 10px; right: 3px; top: 2px; }
   .kpm-bay .gui.van .slot .chip { font-size: 9px; left: 2px; top: auto; bottom: 2px; padding: 1px 3px; }
 }
 
 /* the product is the app's own 3D box (.kpm-cube, the ware's true millimetres), sized per place */
 .kpm-bay .kpm-cube-stage, .kpm-bay-sheet .kpm-cube-stage, .kpm-bay-ghost .kpm-cube-stage, .kpm-bay-pack .kpm-cube-stage { perspective: 340px; width: 100%; height: 100%; pointer-events: none; }
-.kpm-bay .gui.wh .kpm-cube-stage { --kpm-slot-h: 56px; }
-.kpm-bay .gui.van .kpm-cube-stage { --kpm-slot-h: 26px; }
+.kpm-bay .gui.wh .kpm-cube-stage, .kpm-bay .gui.van .kpm-cube-stage { --kpm-slot-h: 42px; }
 @container kpmbay (min-width: 640px) { .kpm-bay .gui.wh .kpm-cube-stage { --kpm-slot-h: 78px; } .kpm-bay .gui.van .kpm-cube-stage { --kpm-slot-h: 54px; } }
 .kpm-bay .dmg .kpm-cube-stage { --kpm-slot-h: 22px; }
-.kpm-bay .ln .mc .kpm-cube-stage { --kpm-slot-h: 28px; }
+.kpm-bay-duo .ln .mc .kpm-cube-stage { --kpm-slot-h: 28px; }
 .kpm-bay-sheet .shHead .mc .kpm-cube-stage { --kpm-slot-h: 44px; }
 .kpm-bay-ghost .kpm-cube-stage { --kpm-slot-h: 62px; }
 .kpm-bay-pack .kpm-cube-stage { --kpm-slot-h: 30px; }
@@ -4820,42 +4825,42 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-bay.dragging .dmg.refuse { outline: 3px solid #C0392B; outline-offset: 2px; }
 
 /* the muatan: lines here, ONE press writes */
-.kpm-bay .man { grid-area: man; align-self: stretch; display: flex; flex-direction: column; gap: 10px; min-width: 0; background: var(--raised); border: 1px solid var(--line-2); border-radius: 14px; padding: 12px; user-select: text; -webkit-user-select: text; }
-.kpm-bay .manHead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-.kpm-bay .lbl, .kpm-bay-sheet .lbl { margin: 0; font: 900 11px/1.3 var(--font-mono); letter-spacing: .18em; text-transform: uppercase; color: var(--ink-dim); }
-.kpm-bay .tally { font: 900 15px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
-.kpm-bay .lines { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
-.kpm-bay .lines li { display: flex; gap: 6px; align-items: stretch; }
-.kpm-bay .ln { flex: 1; min-width: 0; min-height: 48px; display: flex; align-items: center; gap: 10px; padding: 6px 10px; cursor: pointer; text-align: left; border: 1px solid var(--line-2); border-radius: 10px; background: var(--panel); color: var(--ink); font: inherit; transition: transform .12s ease-out, border-color .16s; }
-.kpm-bay .ln:hover { border-color: var(--accent-edge); }
-.kpm-bay .ln:active { transform: scale(.99); }
-.kpm-bay .ln .mc { width: 30px; height: 34px; flex: 0 0 30px; }
-.kpm-bay .ln .nm { flex: 1; min-width: 0; font-weight: 800; font-size: 13px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; }
-.kpm-bay .ln .nm small { display: block; font: 900 9px/1.4 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.kpm-bay .ln .nm .why { color: var(--bad); white-space: normal; text-transform: none; letter-spacing: .02em; }
-.kpm-bay .ln .q { font: 900 12px/1.3 var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
-.kpm-bay .ln .q b { display: block; color: var(--accent-ink); font-size: 11px; }
-.kpm-bay .lines li.back .ln { border-style: dashed; }
-.kpm-bay .lines li.failed .ln { border-color: var(--bad); }
-.kpm-bay .lines li.done .ln { border-style: dashed; opacity: .55; }
-.kpm-bay .trash { width: 44px; flex: 0 0 44px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--panel); color: var(--ink-dim); font: 900 18px/1 var(--font-mono); cursor: pointer; transition: transform .12s ease-out, border-color .16s; }
-.kpm-bay .trash:hover { border-color: var(--bad); color: var(--bad); }
-.kpm-bay .trash:active { transform: scale(.94); }
-.kpm-bay .empty { margin: 0; padding: 14px 12px; border: 1px dashed var(--line-2); border-radius: 10px; color: var(--ink-muted); font-size: 13px; }
-.kpm-bay .go { width: 100%; min-height: 52px; border-radius: 12px; background: var(--gold); color: var(--gold-ink); border: 0; cursor: pointer; font: 900 12px/1.2 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px; transition: transform .12s ease-out; }
-.kpm-bay .go:active { transform: scale(.98); }
-.kpm-bay .go:disabled { background: var(--panel); color: var(--ink-dim); border: 1px dashed var(--line-2); cursor: not-allowed; transform: none; }
-.kpm-bay .report { margin: 0; font-weight: 800; font-size: 13px; line-height: 1.45; color: var(--ink); }
-.kpm-bay .report b { color: var(--accent-ink); }
-.kpm-bay .sj { border: 1px solid var(--line-2); border-radius: 10px; background: var(--inset); padding: 10px 12px; font: 700 12px/1.45 var(--font-mono); color: var(--ink); }
-.kpm-bay .sj + .sj { margin-top: 8px; }
-.kpm-bay .sj .sjHead { display: flex; justify-content: space-between; gap: 8px; margin: 0 0 2px; letter-spacing: .1em; }
-.kpm-bay .sj .sjHead span, .kpm-bay .sj .sjSub, .kpm-bay .sj li span { color: var(--ink-muted); }
-.kpm-bay .sj .sjHead span, .kpm-bay .sj .sjSub { font-size: 11px; }
-.kpm-bay .sj .sjSub { margin: 0 0 8px; }
-.kpm-bay .sj ol { margin: 0; padding: 0 0 0 18px; list-style: decimal; }
-.kpm-bay .sj li { font-variant-numeric: tabular-nums; }
-.kpm-bay .sj .sjTot { display: flex; justify-content: space-between; gap: 8px; margin: 8px 0 0; padding-top: 6px; border-top: 1px dashed var(--line-2); font-weight: 900; }
+.kpm-bay-duo .man { display: flex; flex-direction: column; gap: 10px; min-width: 0; background: var(--raised); border: 1px solid var(--line-2); border-radius: 14px; padding: 12px; user-select: text; -webkit-user-select: text; }
+.kpm-bay-duo .manHead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.kpm-bay-duo .lbl, .kpm-bay-sheet .lbl { margin: 0; font: 900 11px/1.3 var(--font-mono); letter-spacing: .18em; text-transform: uppercase; color: var(--ink-dim); }
+.kpm-bay-duo .tally { font: 900 15px/1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+.kpm-bay-duo .lines { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.kpm-bay-duo .lines li { display: flex; gap: 6px; align-items: stretch; }
+.kpm-bay-duo .ln { flex: 1; min-width: 0; min-height: 48px; display: flex; align-items: center; gap: 10px; padding: 6px 10px; cursor: pointer; text-align: left; border: 1px solid var(--line-2); border-radius: 10px; background: var(--panel); color: var(--ink); font: inherit; transition: transform .12s ease-out, border-color .16s; }
+.kpm-bay-duo .ln:hover { border-color: var(--accent-edge); }
+.kpm-bay-duo .ln:active { transform: scale(.99); }
+.kpm-bay-duo .ln .mc { width: 30px; height: 34px; flex: 0 0 30px; }
+.kpm-bay-duo .ln .nm { flex: 1; min-width: 0; font-weight: 800; font-size: 13px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; }
+.kpm-bay-duo .ln .nm small { display: block; font: 900 9px/1.4 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpm-bay-duo .ln .nm .why { color: var(--bad); white-space: normal; text-transform: none; letter-spacing: .02em; }
+.kpm-bay-duo .ln .q { font: 900 12px/1.3 var(--font-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.kpm-bay-duo .ln .q b { display: block; color: var(--accent-ink); font-size: 11px; }
+.kpm-bay-duo .lines li.back .ln { border-style: dashed; }
+.kpm-bay-duo .lines li.failed .ln { border-color: var(--bad); }
+.kpm-bay-duo .lines li.done .ln { border-style: dashed; opacity: .55; }
+.kpm-bay-duo .trash { width: 44px; flex: 0 0 44px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--panel); color: var(--ink-dim); font: 900 18px/1 var(--font-mono); cursor: pointer; transition: transform .12s ease-out, border-color .16s; }
+.kpm-bay-duo .trash:hover { border-color: var(--bad); color: var(--bad); }
+.kpm-bay-duo .trash:active { transform: scale(.94); }
+.kpm-bay-duo .empty { margin: 0; padding: 14px 12px; border: 1px dashed var(--line-2); border-radius: 10px; color: var(--ink-muted); font-size: 13px; }
+.kpm-bay-duo .go { width: 100%; min-height: 52px; border-radius: 12px; background: var(--gold); color: var(--gold-ink); border: 0; cursor: pointer; font: 900 12px/1.2 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px; transition: transform .12s ease-out; }
+.kpm-bay-duo .go:active { transform: scale(.98); }
+.kpm-bay-duo .go:disabled { background: var(--panel); color: var(--ink-dim); border: 1px dashed var(--line-2); cursor: not-allowed; transform: none; }
+.kpm-bay-duo .report { margin: 0; font-weight: 800; font-size: 13px; line-height: 1.45; color: var(--ink); }
+.kpm-bay-duo .report b { color: var(--accent-ink); }
+.kpm-bay-duo .sj { border: 1px solid var(--line-2); border-radius: 10px; background: var(--inset); padding: 10px 12px; font: 700 12px/1.45 var(--font-mono); color: var(--ink); }
+.kpm-bay-duo .sj + .sj { margin-top: 8px; }
+.kpm-bay-duo .sj .sjHead { display: flex; justify-content: space-between; gap: 8px; margin: 0 0 2px; letter-spacing: .1em; }
+.kpm-bay-duo .sj .sjHead span, .kpm-bay-duo .sj .sjSub, .kpm-bay-duo .sj li span { color: var(--ink-muted); }
+.kpm-bay-duo .sj .sjHead span, .kpm-bay-duo .sj .sjSub { font-size: 11px; }
+.kpm-bay-duo .sj .sjSub { margin: 0 0 8px; }
+.kpm-bay-duo .sj ol { margin: 0; padding: 0 0 0 18px; list-style: decimal; }
+.kpm-bay-duo .sj li { font-variant-numeric: tabular-nums; }
+.kpm-bay-duo .sj .sjTot { display: flex; justify-content: space-between; gap: 8px; margin: 8px 0 0; padding-top: 6px; border-top: 1px dashed var(--line-2); font-weight: 900; }
 
 /* what moves: the carried box and the goods in flight live on <body>, above everything */
 .kpm-bay-ghost { position: fixed; z-index: 75; pointer-events: none; width: 92px; height: 92px; border-radius: 3px; background: var(--stone-dark); display: grid; place-items: center; opacity: .95; border: 2px solid; border-color: #2E2E2E #9A9A9A #9A9A9A #2E2E2E; transform: translate(-50%, -50%) scale(1.04); }
@@ -4901,18 +4906,13 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 
 /* ROUND 4 - a chest closed by hand shows TABS in its panel's place (his 09:35 "make sure that there is something
    behind the panel that is useful to see"). The shut panel leaves the flow and shrinks into its lid over the tabs,
-   so the square is never empty; both shut, each chest stands beside its tabs in one short row. The tabs are the
+   so the square is never empty. On the PC the shut panel keeps its room and the tabs fill it, so opening and
+   closing never moves the page (his 07:50 "as pc user i need to scroll up and down whenever i close and open the
+   chest"); on the phone it still folds away. The tabs are the
    app's own surface, not the stone - they are a note behind the chest, not part of it. */
 .kpm-bay.wh-shut .gui.wh { position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; }
 .kpm-bay.van-shut .gui.van { position: absolute; left: 0; right: 0; top: 0; margin: 0 auto; }
-@container kpmbay (min-width: 640px) { .kpm-bay.van-shut .gui.van { top: auto; bottom: 0; } }
-.kpm-bay.wh-shut.van-shut { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "hint hint" "whg whg" "whc vanc" "vang vang" "man man"; align-items: center; }
-@container kpmbay (min-width: 640px) {
-  .kpm-bay.wh-shut.van-shut { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto; grid-template-areas: "hint hint hint hint" "whc whg vang vanc" "man man man man"; }
-}
-@container kpmbay (min-width: 1100px) {
-  .kpm-bay.wh-shut.van-shut { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto 300px; grid-template-areas: "hint hint hint hint man" "whc whg vang vanc man"; }
-}
+@container kpmbay (min-width: 640px) { .kpm-bay.wh-shut .gui.wh, .kpm-bay.van-shut .gui.van { position: relative; } }
 .kpm-bay .slip { min-width: 0; width: 100%; max-width: 460px; justify-self: center; align-self: stretch; display: flex; flex-direction: column; gap: 8px;
   padding: 10px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--inset); color: var(--ink); }
 .kpm-bay .slip.wh { grid-area: whg; }
@@ -4926,7 +4926,6 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-bay .slip .pane { min-height: 0; display: flex; flex-direction: column; gap: 8px; }
 /* only the list scrolls - the keys under it never leave the tab */
 .kpm-bay .slip .rows { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; max-height: 260px; overflow-y: auto; }
-.kpm-bay.wh-shut.van-shut .slip .rows { max-height: 150px; }
 .kpm-bay .slip .rows li { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 7px 9px; border-radius: 8px; background: var(--raised);
   font-weight: 800; font-size: 13px; line-height: 1.25; }
 .kpm-bay .slip .rows li > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -4966,7 +4965,7 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-stage-tab:hover { border-color: var(--accent-edge); }
 .kpm-stage-tab.on { background: var(--gold); color: var(--gold-ink); border-color: var(--accent-edge); }
 .kpm-stage-tab.on small { color: var(--gold-ink); }
-.kpm-stage { display: flex; justify-content: flex-start; gap: 0; overflow-x: auto; padding: 20px 14px 8px; scroll-snap-type: x proximity; perspective: 900px;
+.kpm-stage { display: flex; justify-content: flex-start; gap: 0; overflow-x: auto; padding: 20px 14px 8px; scroll-snap-type: x mandatory; perspective: 900px;
   border: 1px solid var(--line-2); border-bottom: 0; border-radius: 14px 14px 0 0;
   background: radial-gradient(90% 55% at 50% 100%, rgba(208, 138, 46, .16), transparent 70%), linear-gradient(180deg, var(--raised), var(--sunk));
   /* his 12:50 "simple cool and elegant with the warm lighting just like what the State of decay have" - no lines:
@@ -4979,7 +4978,7 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
     linear-gradient(180deg, var(--raised), var(--sunk)); }
 /* the hover zones TOUCH (no gap, each person's column is 188 px): his 12:50 recording - with a gap, the pointer crossing
    between two cards pointed at nothing, so every far card grew back, then shrank again at the next card */
-.kpm-actor { flex: 0 0 188px; scroll-snap-align: center; display: grid; justify-items: center; gap: 16px; cursor: pointer; outline: none; }
+.kpm-actor { flex: 0 0 188px; scroll-snap-align: center; scroll-snap-stop: always; display: grid; justify-items: center; gap: 16px; cursor: pointer; outline: none; }
 .kpm-actor-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 900 11px/1.2 var(--font-mono);
   letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); transition: color .15s; }
 .kpm-actor-card { position: relative; width: 156px; height: 196px; display: flex; flex-direction: column; align-items: center; gap: 6px;
@@ -5016,8 +5015,8 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .lite-mode .kpm-actor-card, .lite-mode .kpm-actor-floor { transition: none; }
 /* round 4: the bar took over the big deployment header (his "take a big space even when not use") - place + name
    left, permission chips middle, INITIAL / SOLD / CURRENT + the keys right; two lines on the phone, one on the PC */
-.kpm-stage-bar { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas: "who acts" "chips counts"; align-items: center; gap: 8px 12px;
+.kpm-stage-bar { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "who" "chips" "counts" "acts"; align-items: center; gap: 8px 12px;
   padding: 10px 14px; border: 1px solid var(--accent-edge); border-top-width: 2px; border-radius: 0 0 14px 14px; color: var(--ink);
   background: linear-gradient(90deg, rgba(208, 138, 46, .30), rgba(208, 138, 46, .05) 30%, rgba(208, 138, 46, .05) 70%, rgba(208, 138, 46, .30)),
               linear-gradient(180deg, var(--raised), var(--inset)); }
@@ -5026,7 +5025,7 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
   background: linear-gradient(100deg, transparent, rgba(245, 208, 138, .22), transparent); }
 .kpm-stage-bar.lit::after { animation: kpmStageSheen 900ms cubic-bezier(.3, .7, .3, 1) 1 both; }
 @keyframes kpmStageSheen { from { opacity: 1; transform: translateX(0); } to { opacity: 1; transform: translateX(330%); } }
-.kpm-stage-name { font: 900 16px/1.1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent-ink); }
+.kpm-stage-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 900 16px/1.1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent-ink); }
 .kpm-stage-bar:not(.lit) { grid-template-areas: "who acts"; }
 .kpm-stage-who { grid-area: who; min-width: 0; display: grid; gap: 3px; }
 .kpm-stage-person { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 900; font-size: 15px; line-height: 1.15; color: var(--ink); }
@@ -5035,15 +5034,16 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-stage-chips span { padding: 2px 6px; border: 1px solid var(--accent-edge); border-radius: 4px; background: var(--inset); color: var(--accent-ink);
   font: 900 10px/1.3 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
 .kpm-stage-chips i { font-style: normal; color: var(--ink-muted); }
-.kpm-stage-counts { grid-area: counts; justify-self: end; display: flex; gap: 6px; }
+.kpm-stage-counts { grid-area: counts; justify-self: start; display: flex; gap: 6px; }
 .kpm-stage-counts span { min-width: 58px; display: grid; justify-items: center; gap: 2px; padding: 4px 8px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--inset); }
 .kpm-stage-counts span + span { border-color: var(--accent-edge); }
 .kpm-stage-counts small { font: 700 9px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); }
 .kpm-stage-counts b { font: 900 15px/1.1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
 .kpm-stage-counts span + span small, .kpm-stage-counts span + span b { color: var(--accent-ink); }
-.kpm-stage-acts { grid-area: acts; justify-self: end; }
+.kpm-stage-acts { grid-area: acts; justify-self: start; }
 @media (min-width: 1024px) {
   .kpm-stage-bar { grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: "who chips counts acts"; gap: 10px 18px; }
+  .kpm-stage-counts, .kpm-stage-acts { justify-self: end; }
 }
 .kpm-stage-acts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .kpm-stage-acts > button:not([data-kpm-del]) { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 12px; cursor: pointer;
