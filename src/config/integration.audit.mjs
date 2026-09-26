@@ -4089,7 +4089,7 @@ const sceneFiles = fs.readdirSync('src/ponder/scenes').filter(f => f.endsWith('.
    drift apart. The `data-ponder` keys therefore live in `src/components/`, and reading only this
    folder reports the scene as pointing at nothing while it points at exactly the right element.
    Anything else a stage mounts from outside gets added here for the same reason. */
-const MOUNTED_OUTSIDE = ['src/components/WarehouseDeskNav.jsx'];
+const MOUNTED_OUTSIDE = ['src/components/WarehouseDeskNav.jsx', 'src/components/LoadingBay.jsx'];
 const stageSrc = fs.readdirSync('src/ponder/stages')
   .map(f => pStrip(fs.readFileSync('src/ponder/stages/' + f, 'utf8')))
   .concat(MOUNTED_OUTSIDE.map(f => pStrip(fs.readFileSync(f, 'utf8')))).join('\n');

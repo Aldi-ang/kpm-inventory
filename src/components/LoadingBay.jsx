@@ -80,7 +80,9 @@ const CUT_WHY = {
 const BYPASS_WORD = { PENDING: 'menunggu', APPROVED: 'disetujui', REJECTED: 'ditolak' };
 const VIEW_ONLY = 'Hanya lihat — jabatan ini tidak bisa memuat van';
 
-export default function LoadingBay({ agent, warehouse, stock, damaged = [], canEdit, onLoad, onReturn, onLayout, onDirty, onPreset, team = [], bypasses = [], titip = [], bounties = [] }) {
+/* `pose` is the ponder book's (ponder/stages/LoadingBayStage.jsx): a STARTING state only - the chests, the tabs and the
+   muatan a beat wants on screen. It is read by useState and nowhere else, and Fleet & Roster never passes one. */
+export default function LoadingBay({ agent, warehouse, stock, damaged = [], canEdit, onLoad, onReturn, onLayout, onDirty, onPreset, team = [], bypasses = [], titip = [], bounties = [], pose }) {
   const P = useMemo(() => Object.fromEntries(stock.map(p => [p.id, p])), [stock]);
   /* the van, in packs, from its live rows */
   const vanOf = useMemo(() => {
@@ -93,14 +95,14 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     return m;
   }, [agent.activeCanvas, P]);
 
-  const [lines, setLines] = useState([]);
+  const [lines, setLines] = useState(() => pose?.lines || []);
   const [layout, setLayout] = useState(() => agent.vanLayout || []);
   const [whPage, setWhPage] = useState(0);
   const [vanPage, setVanPage] = useState(0);
   const [query, setQuery] = useState('');
   /* null = not opened yet (the pick opens both); false = closed by hand, and its tabs take the panel's place */
-  const [open, setOpen] = useState({ wh: null, van: null });
-  const [tabs, setTabs] = useState({ wh: 'preset', van: 'geo' });
+  const [open, setOpen] = useState(pose?.open || { wh: null, van: null });
+  const [tabs, setTabs] = useState(pose?.tabs || { wh: 'preset', van: 'geo' });
   const [preset, setPreset] = useState(() => agent.loadPreset || []);
   const [fillCut, setFillCut] = useState(null);
   const [anim, setAnim] = useState({ wh: true, van: true });
@@ -204,8 +206,8 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   }
   useEffect(() => {
     const m = motionOK();
-    const t1 = setTimeout(() => toggle('wh', true), m ? 150 : 0);
-    const t2 = setTimeout(() => toggle('van', true), m ? 300 : 0);
+    const t1 = pose?.open ? 0 : setTimeout(() => toggle('wh', true), m ? 150 : 0);
+    const t2 = pose?.open ? 0 : setTimeout(() => toggle('van', true), m ? 300 : 0);
     return () => { clearTimeout(t1); clearTimeout(t2); Object.values(sayTimers.current).forEach(clearTimeout); };
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -642,7 +644,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
         {!canEdit && <p className="bayHint">{VIEW_ONLY}</p>}
 
         {open.wh === false && (
-          <div className="slip wh">
+          <div className="slip wh" data-ponder="slip:wh">
             {tabKeys('wh', [['preset', 'Muatan biasa'], ['team', `Tim · ${teamRows.length}`]])}
             {sayEl('wh')}
             {tabs.wh === 'preset' ? (
@@ -682,7 +684,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
           </div>
         )}
 
-        <div ref={refs.whGui} className={`gui wh${anim.wh ? '' : ' noanim'}`}>
+        <div ref={refs.whGui} className={`gui wh${anim.wh ? '' : ' noanim'}`} data-ponder="gui:wh">
           <p className="title"><span>Gudang {warehouse}</span><span className="count">{stock.length} barang · {fmt(totalWh)} Bks</span></p>
           {open.wh !== false ? sayEl('wh') : <span className="say" aria-hidden="true" />}
           <label className="find">
@@ -722,17 +724,17 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
           </div>
         </div>
 
-        <button ref={refs.whChest} className="chestCell whc" type="button" aria-expanded={!!open.wh} aria-label="Peti gudang — buka atau tutup" onClick={() => toggle('wh', !open.wh)}>
+        <button ref={refs.whChest} className="chestCell whc" type="button" data-ponder="chest:wh" aria-expanded={!!open.wh} aria-label="Peti gudang — buka atau tutup" onClick={() => toggle('wh', !open.wh)}>
           <span className="chest ender"><span className="lid" /><span className="latch" /><span className="body" /></span>
           <span className="motes" ref={refs.motes} aria-hidden="true">{motes.map((v, i) => <i key={i} style={v} />)}</span>
           <span className="cap">Gudang</span>
         </button>
-        <button ref={refs.vanChest} className="chestCell vanc" type="button" aria-expanded={!!open.van} aria-label={`Peti van ${agent.name} — buka atau tutup`} onClick={() => toggle('van', !open.van)}>
+        <button ref={refs.vanChest} className="chestCell vanc" type="button" data-ponder="chest:van" aria-expanded={!!open.van} aria-label={`Peti van ${agent.name} — buka atau tutup`} onClick={() => toggle('van', !open.van)}>
           <span className="chest small"><span className="lid" /><span className="latch" /><span className="body" /></span>
           <span className="cap">Van · {agent.vehicle || '—'}</span>
         </button>
 
-        <div ref={refs.vanGui} className={`gui van${anim.van ? '' : ' noanim'}`}>
+        <div ref={refs.vanGui} className={`gui van${anim.van ? '' : ' noanim'}`} data-ponder="gui:van">
           <p className="title">
             <span>{agent.name} inventory</span>
             <span className="count">{fmt(vanHave)} Bks{plus ? <> <b>+{fmt(plus)}</b></> : null}{minus ? <> <b>−{fmt(minus)}</b></> : null}</span>
@@ -778,7 +780,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
             All three only READ - the company-wide PENDING queue stays at the top of the screen (his salesman waits at a
             shop for it), settling a titip and paying a bounty stay on their own screens. */}
         {open.van === false && (
-          <div className="slip van">
+          <div className="slip van" data-ponder="slip:van">
             {tabKeys('van', [['geo', `Geofence · ${geo.length}`], ['titip', `Titip · ${titip.length}`], ['bounty', `Bounty · ${bounties.length}`]])}
             {sayEl('van')}
             {tabs.van === 'titip' ? (
@@ -814,7 +816,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
 
       </section>
         {canEdit && (
-          <aside className="man" aria-label="Muatan hari ini">
+          <aside className="man" aria-label="Muatan hari ini" data-ponder="man">
             <div className="manHead"><p className="lbl">Muatan · {agent.name}</p>
               <span className="tally">{!lines.length ? '0 Bks' : `${plus ? '+' + fmt(plus) : ''}${plus && minus ? ' / ' : ''}${minus ? '−' + fmt(minus) : ''} Bks`}</span></div>
             {!lines.length && <p className="empty">Muatan masih kosong.</p>}
@@ -835,7 +837,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
                 );
               })}
             </ol>
-            <button className="go" type="button" disabled={!lines.length || busy} onClick={load}>
+            <button className="go" type="button" data-ponder="go" disabled={!lines.length || busy} onClick={load}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62L18.3 9.38a1 1 0 0 0-.78-.38H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
               <span>{busy ? `Memuat ${Math.min(doneUpTo + 2, lines.length)} dari ${lines.length}…` : lines.length ? `Muat van · ${goParts.join(', ')}` : 'Muat van'}</span>
             </button>

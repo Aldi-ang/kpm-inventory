@@ -8769,5 +8769,46 @@ section('THE ROSTER: ONE PERSON PER SWIPE, MEASURED (2026-09-26)');
   }
 }
 
+/* ── THE PONDER PAGE FOR THE LOADING BAY (2026-09-26) ──────────────────────────────────────────────────────────
+   His 12:50 took the teaching words out of the bay ("robotic", "dont put tutorial inside the panel, we will put all the
+   tutorial on the ponder book anyway"). They come back here, rewritten, as one more page in the book's own shape: a scene
+   (data) and a stage that mounts the REAL LoadingBay on a fixed demo world. */
+section('THE PONDER PAGE FOR THE LOADING BAY (2026-09-26)');
+{ const reg = read('src/ponder/registry.js'), bay = read('src/components/LoadingBay.jsx'), fl = code(read('src/FleetCanvasManager.jsx'));
+  const stgPath = 'src/ponder/stages/LoadingBayStage.jsx', stg = fs.existsSync(stgPath) ? code(read(stgPath)) : '';
+  let scene = null;
+  try { scene = (await import('../ponder/scenes/loading-bay.js')).loadingBay; } catch { /* red below */ }
+  const steps = scene?.steps || [], text = steps.map(s => s.text).join('\n');
+  const fleet = SECTIONS.find(s => s.id === 'fleet');
+  ok('the Fleet chapter opens the loading-bay page - a real scene, no longer a "soon" card',
+     !!fleet && fleet.entries.some(e => e.sceneId === 'loading-bay') && !fleet.entries.some(e => e.soon));
+  ok('one page engine: the scene and its stage are registered like every other page, and the stage mounts the REAL bay',
+     /'loading-bay': loadingBay,/.test(reg) && /'loading-bay': LoadingBayStage,/.test(reg) && scene?.stage === 'loading-bay' &&
+     /import LoadingBay from '\.\.\/\.\.\/components\/LoadingBay\.jsx'/.test(stg) && /<LoadingBay\b/.test(stg));
+  ok('the bay takes a pose only as its starting state, and the live screen never passes one',
+     /useState\(\(\) => pose\?\.lines \|\| \[\]\)/.test(bay) && /useState\(pose\?\.open \|\| \{ wh: null, van: null \}\)/.test(bay) &&
+     /pose\?\.open \? 0 : setTimeout/.test(bay) && !/\bpose=/.test(fl));
+  for (const [what, re] of [
+    ['dragging a box only plans: it lands in the muatan and nothing moves yet', /\*\*Muatan\*\*[\s\S]*belum/],
+    ['Muat van is the one key that moves stock', /\*\*Muat van\*\*[^\n]*satu-satunya/],
+    ['one surat jalan for what goes out, one bukti kembali for what comes back', /\*\*surat jalan\*\*[\s\S]*\*\*bukti kembali\*\*/],
+    ['on the phone: tap a product, then tap a van box', /Di HP[^\n]*diketuk/],
+    ['the usual load and Salin from Tim only fill the muatan', /\*\*Muatan biasa\*\*[\s\S]*\*\*Salin\*\*/],
+    ['a closed chest shows tabs in its place, and on the PC the panel keeps its room', /tab[\s\S]*Di PC/],
+    ['Geofence / Titip / Bounty only show: approving stays in the queue at the top, a titip and a bounty are settled on their own screens',
+     /\*\*Geofence\*\*[\s\S]*antrean[\s\S]*\*\*Titip\*\*[\s\S]*Receivables & Consignment[\s\S]*\*\*Bounty\*\*[\s\S]*EOD Setoran/],
+  ]) ok('the page says it: ' + what, re.test(text));
+  ok('rewritten, never pasted: none of the sentences removed from the bay is in the book',
+     !!text && !/tidak mencatat apa pun|Tarik kotak dari gudang ke van|Hanya mengisi muatan, seperti menarik kotak|antrean paling atas layar|Point at a card/.test(text));
+  /* the replay the stage runs: a beat that points at a chest's tabs must come after the act that shut that chest */
+  const shut = { wh: false, van: false }, stranded = [];
+  steps.forEach((s, i) => {
+    const a = String(s.act || '');
+    if (a.startsWith('shut:')) shut[a.slice(5)] = true; else if (a.startsWith('open:')) shut[a.slice(5)] = false;
+    for (const k of [].concat(s.focus || [])) if (/^slip:/.test(k) && !shut[k.slice(5)]) stranded.push(i);
+  });
+  ok('no beat points at a chest\'s tabs while that chest is still open', steps.length > 0 && stranded.length === 0, 'beats ' + stranded.join(', '));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

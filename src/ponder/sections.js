@@ -79,8 +79,8 @@ export const SECTIONS = [
   },
   {
     id: 'fleet', label: 'Fleet & Canvas', short: 'Fleet', icon: 'Truck',
-    blurb: 'Memuat motor, dan stok yang ikut jalan.',
-    entries: [{ title: 'Memuat armada', desc: 'Memuat motor MEMINDAHKAN stok, bukan menyalinnya.', icon: 'Truck', soon: true }],
+    blurb: 'Memuat van, dan stok yang ikut jalan.',
+    entries: [{ sceneId: 'loading-bay', title: 'Loading Bay', desc: 'Menarik kotak cuma menyusun muatan. Stok baru pindah saat Muat van ditekan.', icon: 'Truck' }],
   },
   {
     id: 'journey', label: 'Journey Plan', short: 'Journey', icon: 'Route',
