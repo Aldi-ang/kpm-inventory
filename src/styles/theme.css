@@ -4978,6 +4978,8 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
     linear-gradient(180deg, var(--raised), var(--sunk)); }
 /* the hover zones TOUCH (no gap, each person's column is 188 px): his 12:50 recording - with a gap, the pointer crossing
    between two cards pointed at nothing, so every far card grew back, then shrank again at the next card */
+/* one person per swipe on a touch screen: the stage takes the horizontal swipe itself (FleetCanvasManager stageTouchEnd) */
+@media (pointer: coarse) { .kpm-stage { touch-action: pan-y; } }
 .kpm-actor { flex: 0 0 188px; scroll-snap-align: center; scroll-snap-stop: always; display: grid; justify-items: center; gap: 16px; cursor: pointer; outline: none; }
 .kpm-actor-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 900 11px/1.2 var(--font-mono);
   letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); transition: color .15s; }

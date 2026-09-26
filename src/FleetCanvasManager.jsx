@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
     Truck, UserPlus, Save, Archive,
     MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord } from './config/permissions';
-import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems } from './utils/helpers';
+import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems, swipeTarget } from './utils/helpers';
 import { normalizeRegion } from './config/permissions';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
@@ -674,6 +674,21 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         const prefix = (a.email || '').split('@')[0].toLowerCase();
         return b.salesmanId === a.id || (b.salesmanName || '').toLowerCase() === (a.name || '').toLowerCase() || (b.salesmanName || '').toLowerCase() === prefix;
     };
+    /* ONE PERSON PER SWIPE on a touch screen (his 2026-09-26 "make the roster slide lock 1 by 1"): the stage takes the
+       horizontal swipe itself (CSS touch-action: pan-y) and moves exactly one card - helpers.js swipeTarget. A tap
+       is no swipe, so picking a card still works; the PC keeps its own scrolling. */
+    const swipeFrom = useRef(null);
+    const stageTouchStart = (e) => { const t = e.touches[0]; swipeFrom.current = t ? { x: t.clientX, y: t.clientY } : null; };
+    const stageTouchEnd = (e) => {
+        const s = swipeFrom.current, t = e.changedTouches[0];
+        swipeFrom.current = null;
+        if (!s || !t) return;
+        const st = e.currentTarget, box = st.getBoundingClientRect();
+        const centers = [...st.querySelectorAll('.kpm-actor')].map(c => { const r = c.getBoundingClientRect(); return r.left - box.left + st.scrollLeft + r.width / 2; });
+        const i = swipeTarget(centers, st.scrollLeft + st.clientWidth / 2, t.clientX - s.x, t.clientY - s.y);
+        const still = document.documentElement.classList.contains('lite-mode') || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (i >= 0) st.scrollTo({ left: centers[i] - st.clientWidth / 2, behavior: still ? 'auto' : 'smooth' });
+    };
     /* switching the salesman while the bay's muatan has lines asks first, through the dialog gate */
     const pickAgent = async (m) => {
         if (bayLines > 0 && selectedAgent?.id !== m.id && !await confirmAction(`Muatan ${selectedAgent?.name} belum dimuat. Pindah ke ${m.name} dan buang muatan itu?`)) return;
@@ -1236,7 +1251,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                 ))}
                                             </div>
                                         )}
-                                        <div className="kpm-stage" role="listbox" aria-label="People">
+                                        <div className="kpm-stage" role="listbox" aria-label="People" onTouchStart={stageTouchStart} onTouchEnd={stageTouchEnd}>
                                             {pageCast.map(m => stageCard(m))}
                                         </div>
                                         {/* keyed by the picked person, so the bar's light sweeps once per pick, never on a loop */}

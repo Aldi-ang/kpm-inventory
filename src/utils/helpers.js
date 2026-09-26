@@ -729,6 +729,16 @@ export const eodBountyLines = (report = {}, inventory = [], priceTier = 'Retail'
     return lines;
 };
 
+/* ONE PERSON PER SWIPE on the roster stage (Aldi, 2026-09-26: "make the roster slide lock 1 by 1 ... so slide to move 1
+   user to another user"). Given each card's centre and the stage's middle, a swipe lands on the card NEXT to the one in
+   the middle - never two along, however long the drag (a real 300 px drag skipped a person under scroll-snap alone).
+   A drag under 30 px, or a mostly vertical one, is not a swipe: -1. */
+export const swipeTarget = (centers = [], mid = 0, dx = 0, dy = 0) => {
+    if (!centers.length || Math.abs(dx) < 30 || Math.abs(dx) < Math.abs(dy)) return -1;
+    const at = centers.reduce((best, c, i) => (Math.abs(c - mid) < Math.abs(centers[best] - mid) ? i : best), 0);
+    return Math.max(0, Math.min(centers.length - 1, at + (dx < 0 ? 1 : -1)));
+};
+
 /* THE BOSS'S EOD LIST, ONE CARD PER SALESMAN PER NIGHT (Aldi, 2026-09-26: "split cards by night to make it clear, and
    make special panel for late EOD"). A night is the report's dayKey, else the local day of its timestamp (a bounty
    payment carries no dayKey - it lands on the night it was paid). Tonight's cards and the late ones (an earlier night

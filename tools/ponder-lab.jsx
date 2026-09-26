@@ -972,7 +972,7 @@ function ShellLab() {
           /* the boss's player card (shipped 2026-09-20): Budi's ledger puts him on Silver with a bar toward Gold; the
              route is the Journey Plan's fixture (one store closed today); a verify records the decision and answers
              true so the scan + seal play - the fixture report stays, the real app removes it when Firestore updates */
-          onVerifyEOD={async (r, d) => { window.__eodVerify = [...(window.__eodVerify || []), { id: r.id, ...d }]; return true; }} onResetEOD={() => {}}
+          onVerifyEOD={async (r, d) => { window.__eodVerify = [...(window.__eodVerify || []), { id: r.id, ...d }]; return true; }} onResetEOD={async (r) => { window.__eodReset = [...(window.__eodReset || []), r.id]; }}
           career={{ m2: { live: { collected: 124500000, daysVerified: 41, cleanCukaiDays: 30, storesServed: 300 }, joinDate: '2025-01-10' } }}
           customers={LAB_CUSTOMERS.map((c, i) => ({ ...c, assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : '' }))}
         />

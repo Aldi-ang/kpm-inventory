@@ -8749,5 +8749,25 @@ section('THE SALESMAN SEES HIS OWN LATE EOD (2026-09-26)');
   }
 }
 
+/* ── THE ROSTER: ONE PERSON PER SWIPE, MEASURED (2026-09-26) ─────────────────────────────────────────────────
+   His "can u test it yourself": a real 300 px touch drag moved the roster TWO people - scroll-snap-stop alone does not
+   hold a long drag. On a touch screen the stage now takes the horizontal swipe itself and moves exactly one card. */
+section('THE ROSTER: ONE PERSON PER SWIPE, MEASURED (2026-09-26)');
+{ const fl = code(read('src/FleetCanvasManager.jsx')), th = read('src/styles/theme.css');
+  const stageCss = th.slice(th.indexOf('/* ── THE ROSTER STAGE'), th.indexOf('/* ── END OF THE ROSTER STAGE'));
+  ok('on a touch screen the stage takes the horizontal swipe itself and moves one card through swipeTarget',
+     /@media \(pointer: coarse\) \{ \.kpm-stage \{ touch-action: pan-y; \} \}/.test(stageCss) &&
+     /<div className="kpm-stage" role="listbox" aria-label="People" onTouchStart=\{stageTouchStart\} onTouchEnd=\{stageTouchEnd\}>/.test(fl) &&
+     /swipeTarget\(centers, st\.scrollLeft \+ st\.clientWidth \/ 2, t\.clientX - s\.x, t\.clientY - s\.y\)/.test(fl));
+  const H = await import('../utils/helpers.js');
+  if (typeof H.swipeTarget !== 'function') ok('swipeTarget exists in src/utils/helpers.js', false);
+  else {
+    const C = [108, 296, 484, 672];   // four 188 px cards behind a 14 px pad; the stage 378 wide, at rest its middle is 189
+    ok('one person per swipe: a 300 px drag left from the first moves to the second (never the third); right at the first stays; a 20 px nudge or a vertical scroll is no swipe',
+       H.swipeTarget(C, 189, -300, 10) === 1 && H.swipeTarget(C, 189, 300, 0) === 0 && H.swipeTarget(C, 296, -600, 0) === 2 &&
+       H.swipeTarget(C, 189, -20, 0) === -1 && H.swipeTarget(C, 189, -60, 200) === -1 && H.swipeTarget(C, 672, -300, 0) === 3);
+  }
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
