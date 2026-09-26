@@ -47,38 +47,38 @@ export const loadingBay = {
       focus: 'gui:van', at: 'near', hold: 4000 },
 
     { text: 'Setelah jumlahnya diisi, barisnya masuk ke **Muatan**.',
-      focus: 'man', at: 'near', act: 'lines:plan', hold: 3200 },
+      focus: 'man', at: 'bottom', act: 'lines:plan', hold: 3200 },
 
     { text: 'Tanda **+** berangkat ke van, tanda **−** pulang ke gudang.',
-      focus: 'man', at: 'near', hold: 3200 },
+      focus: 'man', at: 'bottom', hold: 3200 },
 
     { text: 'Sampai di sini stok gudang dan van belum berubah sedikit pun.',
-      focus: 'man', at: 'near', tone: 'gold', hold: 3600 },
+      focus: 'man', at: 'bottom', tone: 'gold', hold: 3600 },
 
     { text: 'Muatan masih rencana, jadi masih boleh salah.',
-      focus: 'man', at: 'near', hold: 2800 },
+      focus: 'man', at: 'bottom', hold: 2800 },
 
     { text: 'Barisnya ditekan untuk mengubah jumlah, atau dibuang lewat **×**.',
-      focus: 'man', at: 'near', hold: 3400 },
+      focus: 'man', at: 'bottom', hold: 3400 },
 
     /* ── the one key ──────────────────────────────────────────────────────────────────────────── */
     { text: '**Muat van** satu-satunya tombol yang memindahkan stok.',
-      focus: 'go', at: 'near', tone: 'gold', hold: 3400 },
+      focus: 'go', at: 'bottom', tone: 'gold', hold: 3400 },
 
     { text: 'Sekali ditekan, semua baris di muatan dicatat bersama.',
-      focus: 'go', at: 'near', hold: 3000 },
+      focus: 'go', at: 'bottom', hold: 3000 },
 
     { text: 'Yang berangkat ke van dapat satu **surat jalan**.',
-      focus: 'go', at: 'near', hold: 3000 },
+      focus: 'go', at: 'bottom', hold: 3000 },
 
     { text: 'Yang pulang ke gudang dapat satu **bukti kembali**.',
-      focus: 'go', at: 'near', hold: 3000 },
+      focus: 'go', at: 'bottom', hold: 3000 },
 
     { text: 'Baris yang gagal tidak hilang: tetap di muatan, dengan alasannya.',
-      focus: 'man', at: 'near', tone: 'danger', act: 'lines:failed', hold: 3800 },
+      focus: 'man', at: 'bottom', tone: 'danger', act: 'lines:failed', hold: 3800 },
 
     { text: 'Surat jalannya cuma berisi yang benar-benar sampai.',
-      focus: 'man', at: 'near', tone: 'danger', hold: 3000 },
+      focus: 'man', at: 'bottom', tone: 'danger', hold: 3000 },
 
     /* ── behind the warehouse chest ───────────────────────────────────────────────────────────── */
     { text: 'Peti yang ditutup tidak meninggalkan ruang kosong.',
@@ -94,10 +94,10 @@ export const loadingBay = {
       focus: 'slip:wh', at: 'near', hold: 3200 },
 
     { text: '**Pakai muatan biasa** mengisi muatan dari daftar itu.',
-      focus: 'man', at: 'near', act: 'lines:preset', hold: 3200 },
+      focus: 'man', at: 'bottom', act: 'lines:preset', hold: 3200 },
 
     { text: 'Stoknya tetap diam. Muatan ini juga masih rencana.',
-      focus: 'man', at: 'near', tone: 'gold', hold: 3200 },
+      focus: 'man', at: 'bottom', tone: 'gold', hold: 3200 },
 
     { text: 'Tab **Tim**: van lain di tempat yang sama, lengkap dengan isinya.',
       focus: 'slip:wh', at: 'near', act: 'tab:wh:team', hold: 3400 },
@@ -106,7 +106,7 @@ export const loadingBay = {
       focus: 'slip:wh', at: 'near', hold: 3000 },
 
     { text: 'Sama seperti muatan biasa, stok baru pindah saat **Muat van** ditekan.',
-      focus: 'go', at: 'near', tone: 'gold', hold: 3600 },
+      focus: 'go', at: 'bottom', tone: 'gold', hold: 3600 },
 
     /* ── behind the van chest ─────────────────────────────────────────────────────────────────── */
     { text: 'Peti van yang ditutup juga diganti tab.',
@@ -138,6 +138,6 @@ export const loadingBay = {
       focus: '*', at: 'bottom', act: 'open:wh', hold: 3400 },
 
     { text: 'Stok gudang dan van berubah lewat satu tombol saja: **Muat van**.',
-      focus: 'go', at: 'near', tone: 'gold', act: 'open:van', hold: 3600 },
+      focus: 'go', at: 'bottom', tone: 'gold', act: 'open:van', hold: 3600 },
   ],
 };
