@@ -966,7 +966,7 @@ function ShellLab() {
           agentCanvas={FIXTURES['motorists/m2'].activeCanvas}
           inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]}
           transactions={[...LAB_AGENT_TXNS.map((t) => t.id === 'tx1' ? { ...t, items: [{ productId: 'p-cg16', qty: 12, unit: 'Bks', calculatedPrice: 89000 }, { productId: 'p-djar', qty: 5, unit: 'Bks', calculatedPrice: 156000 }] } : t.id === 'tx2' ? { ...t, items: [{ productId: 'p-cg16', qty: 8, unit: 'Bks', calculatedPrice: 80000 }] } : t), { id: 'tx5', agentId: 'm2', date: LAB_TODAY, type: 'SALE', total: 425000, paymentType: 'Transfer', customerName: 'Toko Berkah Jaya' }]}
-          samplings={[]} eodReports={q.has('admin') ? labEodReports(LAB_TODAY) : q.has('verified') ? labVerifiedTonight() : []} appSettings={q.has('admin') ? { useCareerLedger: true } : {}}
+          samplings={[]} eodReports={q.has('admin') ? labEodReports(LAB_TODAY) : q.has('verified') ? labVerifiedTonight() : q.has('late') ? labEodReports(LAB_TODAY).filter((r) => r.id === 'e6') : []} appSettings={q.has('admin') ? { useCareerLedger: true } : {}}
           user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
           onSubmitEOD={async (p) => { window.__eod = [...(window.__eod || []), p]; }}
           /* the boss's player card (shipped 2026-09-20): Budi's ledger puts him on Silver with a bar toward Gold; the

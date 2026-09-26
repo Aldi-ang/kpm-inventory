@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder, Target, BadgeDollarSign, ShieldAlert } from 'lucide-react';
-import { formatRupiah, getLocalDayKey, storeKey, shortStockRows, eodBountyLines, bountyItems, groupPendingEOD, dayTargets, EOD_PART_LABELS } from './utils/helpers';
+import { formatRupiah, getLocalDayKey, storeKey, shortStockRows, eodBountyLines, bountyItems, groupPendingEOD, nightLabel, nightParts, dayTargets, EOD_PART_LABELS } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import EODAgentFlow from './components/EODAgentFlow.jsx';
 import NixieCount from './components/NixieCount.jsx';
@@ -295,6 +295,10 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
     /* one card per salesman per NIGHT (his 2026-09-26 "split cards by night to make it clear"): tonight's cards on
        top, any earlier night still waiting in its own LATE EOD panel - see helpers.js groupPendingEOD */
     const { tonight: pendingTonight, late: pendingLate } = useMemo(() => groupPendingEOD(pendingReports, getLocalDayKey()), [pendingReports]);
+    /* HIS late EOD on his own screen (his 2026-09-26 "salesman should also need to see the late EOD, because it is their
+       late responsibility"): his earlier nights still waiting, grouped the way the boss's LATE EOD panel is. It only
+       shows - approving and resetting stay with the boss. */
+    const myLateNights = useMemo(() => effectiveId ? groupPendingEOD(eodReports.filter(r => r.agentId === effectiveId), getLocalDayKey()).late : [], [eodReports, effectiveId]);
 
     const structuredHistory = useMemo(() => {
         if (!isAdmin) return {};
@@ -393,6 +397,28 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                         </div>
                     ) : agentData && (
                         <>
+                            {myLateNights.length > 0 && (
+                                <section aria-label="Your late EOD" className="md:col-span-2 rounded-2xl border border-[var(--danger)] bg-[var(--danger-well)] p-4 md:p-5">
+                                    <h3 className="font-black text-[var(--danger-ink)] uppercase tracking-widest flex items-center gap-2 mb-3"><Clock size={18}/> Late EOD ({myLateNights.length})</h3>
+                                    <div className="space-y-2">
+                                        {myLateNights.map(g => (
+                                            <div key={g.key} className="rounded-xl border border-[var(--line-2)] bg-[var(--raised)] p-3">
+                                                <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--ink-muted)] mb-2">{nightLabel(g.night)}</p>
+                                                <ul className="space-y-1.5">
+                                                    {nightParts(g, inventory, appSettings?.penaltyPriceTier).map(l => (
+                                                        <li key={l.key} className="flex justify-between items-baseline gap-3 text-[13px]">
+                                                            <span className="min-w-0 font-bold text-[var(--ink)]">{l.label}{l.why && <span className="block text-[11px] font-normal text-[var(--danger-ink)]">{l.why}</span>}</span>
+                                                            <span className={`shrink-0 text-[11px] font-bold uppercase tracking-widest ${l.state === 'back' ? 'text-[var(--danger-ink)]' : l.state === 'done' ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-dim)]'}`}>
+                                                                {l.state === 'done' ? 'Approved' : l.state === 'back' ? 'Sent back' : 'Waiting'}
+                                                            </span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
                             {/* 🐎 THE RDR2 WANTED BOUNTY BOARD 🐎 */}
                             {(agentBountyData.keys.length > 0 || agentBountyData.isPending) && (
                                 <div className="md:col-span-2 bg-[#1a0505] border-2 border-[var(--danger)] rounded-2xl p-6 md:p-8 shadow-[0_0_50px_rgba(220,38,38,0.2)] relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 mb-2 animate-pop-in">

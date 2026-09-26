@@ -8724,5 +8724,30 @@ section('THE BOSS\'S EOD LIST: ONE CARD PER NIGHT, LATE NIGHTS APART, THE BOUNTY
   }
 }
 
+/* ── THE SALESMAN SEES HIS OWN LATE EOD (2026-09-26) ──────────────────────────────────────────────────────────
+   His 08:55: "yes salesman should also need to see the late EOD, because it is their late responsibility". His
+   screen read only TODAY, so a night the boss sent back vanished from it the next morning. */
+section('THE SALESMAN SEES HIS OWN LATE EOD (2026-09-26)');
+{ const ev = code(read('src/EODReconciliationView.jsx'));
+  const from = ev.indexOf('aria-label="Your late EOD"');
+  const panel = from < 0 ? '' : ev.slice(from, ev.indexOf('{(agentBountyData.keys.length > 0', from));
+  ok('his screen lists his own earlier nights still waiting - the same grouping the boss\'s LATE EOD panel reads',
+     /const myLateNights = useMemo\(\(\) => effectiveId \? groupPendingEOD\(eodReports\.filter\(r => r\.agentId === effectiveId\), getLocalDayKey\(\)\)\.late : \[\]/.test(ev) &&
+     /\{myLateNights\.length > 0 && \(/.test(ev) && panel.length > 200);
+  ok('each night names its date and every part: approved, sent back (with the reason), or still waiting - and only shows',
+     /nightLabel\(g\.night\)/.test(panel) && /nightParts\(g, inventory, appSettings\?\.penaltyPriceTier\)/.test(panel) && !/onSubmit|onVerifyEOD|onResetEOD|submit\(/.test(panel));
+  const H = await import('../utils/helpers.js');
+  if (typeof H.nightParts !== 'function') ok('nightParts exists in src/utils/helpers.js', false);
+  else {
+    const g = { reports: [{ id: 'y1', status: 'PENDING', reportType: 'CASH_STOCK', cash: 640000, verified: { cash: true, transfer: true }, rejected: { stock: '1 Bks kurang' } },
+                           { id: 'y2', status: 'PENDING', reportType: 'CUKAI', cukaiReturned: 20 }] };
+    const P = H.nightParts(g, [], 'Retail');
+    const st = (k) => P.find(p => p.key === k)?.state;
+    ok('Friday\'s night: cash and transfer approved, the stock sent back with its reason, the stamps still waiting',
+       st('y1:cash') === 'done' && st('y1:transfer') === 'done' && st('y1:stock') === 'back' && P.find(p => p.key === 'y1:stock').why === '1 Bks kurang' &&
+       st('y2:cukai') === 'waiting' && P.find(p => p.key === 'y1:stock').label === 'Stock back');
+  }
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

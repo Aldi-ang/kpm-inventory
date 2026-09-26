@@ -850,6 +850,16 @@ export const eodNightMessage = (items = [], inventory = [], priceTier = 'Retail'
 export const eodPartApproved = (report = {}, part) =>
     report.status === 'VERIFIED' || report.verified?.[part] === true;
 
+/* WHERE EACH PART OF ONE NIGHT STANDS, for the salesman's own LATE EOD panel (Aldi, 2026-09-26: "salesman should also
+   need to see the late EOD, because it is their late responsibility"): approved, sent back with the boss's reason, or
+   still waiting - the same parts and the same approval rule the boss's card reads. */
+export const nightParts = (group = {}, inventory = [], priceTier = 'Retail') => (group.reports || []).flatMap(r =>
+    eodReportParts(r, inventory, priceTier).map(part => ({
+        key: `${r.id}:${part}`, label: EOD_PART_LABELS[part] || part,
+        state: eodPartApproved(r, part) ? 'done' : r.rejected?.[part] ? 'back' : 'waiting',
+        why: r.rejected?.[part] || '',
+    })));
+
 /* CLOSED ?/? — the stores a salesman was due at today and how many he checked in at. The same
    rule as the Journey Plan's route (JourneyView.jsx: visitFreq 7 or visitDay = today, assigned to
    him by name) and its "Secured" count (lastVisit = today), lifted so the boss's card and the
