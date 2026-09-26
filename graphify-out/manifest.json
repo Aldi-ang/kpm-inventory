@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1790058271.081803,
-    "ast_hash": "4ab4af581a1c4a5e7eb153fca42d3ee2",
+    "mtime": 1790382189.431869,
+    "ast_hash": "f54f741169f7468e3ffb2edbe28e267a",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -60,13 +60,13 @@
     "semantic_hash": ""
   },
   "src/EODReconciliationView.jsx": {
-    "mtime": 1789955156.0566435,
-    "ast_hash": "9549bc0eb550a6763d847487f94cc8be",
+    "mtime": 1790382127.6180444,
+    "ast_hash": "2132ce4e9e48ea0f67b7ca370a727b76",
     "semantic_hash": ""
   },
   "src/FleetCanvasManager.jsx": {
-    "mtime": 1790229502.5176792,
-    "ast_hash": "d892dcdbecfe98f4091240feb6085515",
+    "mtime": 1790382189.157739,
+    "ast_hash": "5d69d687f86ddebc8d3cd89c8f658293",
     "semantic_hash": ""
   },
   "src/HallOfFameView.jsx": {
@@ -225,8 +225,8 @@
     "semantic_hash": ""
   },
   "src/utils/helpers.js": {
-    "mtime": 1789896495.9829211,
-    "ast_hash": "381c981fa017dc756252ec01a50c3a3c",
+    "mtime": 1790382125.7933147,
+    "ast_hash": "9ed23e2c37cf8aa8018e872952c516ee",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -360,8 +360,8 @@
     "semantic_hash": ""
   },
   ".claude/settings.local.json": {
-    "mtime": 1788786427.9051647,
-    "ast_hash": "8b9886ac300c51d5813be3f90593870e",
+    "mtime": 1790382355.081644,
+    "ast_hash": "c95c280da4c4f436684f200c7c0cc656",
     "semantic_hash": ""
   },
   ".mcp.json": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1790226437.1625433,
-    "ast_hash": "c434d26367239a54136511262fd016f7",
+    "mtime": 1790238724.380686,
+    "ast_hash": "c955c16f13dcbb61255c57f73f7737fd",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1790229656.6124136,
-    "ast_hash": "295f72eb2cb15b60f15b635888524fb5",
+    "mtime": 1790382396.0915976,
+    "ast_hash": "e7545f64a2761a8913b22cb61cc8d366",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1790226424.6528392,
-    "ast_hash": "97b60d8087172f371f5c2098b1047fc5",
+    "mtime": 1790240254.136517,
+    "ast_hash": "34341ea5883428665eb7f914580f4081",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1790208162.1815927,
-    "ast_hash": "9b78e3f276f5e3e3e515e6c3d6952a0a",
+    "mtime": 1790382212.7605307,
+    "ast_hash": "7e149fa60d85faef39faa7a8b6182514",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -1160,13 +1160,13 @@
     "semantic_hash": ""
   },
   "src/components/LoadingBay.jsx": {
-    "mtime": 1790229818.572708,
-    "ast_hash": "308827291d6a6c9609f4a76752fc4ab0",
+    "mtime": 1790382188.8852112,
+    "ast_hash": "db40dbac7bf750c715240e96b6b77c1e",
     "semantic_hash": ""
   },
   "src/utils/vanBay.js": {
-    "mtime": 1790229528.8165264,
-    "ast_hash": "5d42cb853503e879d95ee9c679b2db37",
+    "mtime": 1790382180.5360532,
+    "ast_hash": "6191f7fa17f6f4d6976f5a48bba6cf94",
     "semantic_hash": ""
   }
 }
