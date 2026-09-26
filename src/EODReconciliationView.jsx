@@ -545,6 +545,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                             entering, and React would otherwise reuse this component and keep
                                             the previous agent's counted figures in its own state. */}
                                         <EODAgentFlow key={effectiveId}
+                                            draftKey={`kpm-eod-draft:${effectiveId}:${getLocalDayKey()}`}
                                             submitting={submitting}
                                             expected={{
                                                 cash: agentData.expectedCash,

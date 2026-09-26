@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Wallet, Send, Package, Tag } from 'lucide-react';
 import { formatRupiah } from '../utils/helpers';
 import { CARD_IDS, CARD_LABELS } from '../utils/eodRecord';
@@ -103,17 +103,24 @@ export default function EODCardDeck({
   notes = {},
   mouthRef,
   onConfirm,
+  onBack,
+  onInputs,
+  initialStep = 0,
+  inputs = {},              // what he typed on each card, kept by the flow in his draft
   disabled = false
 }) {
-  const [step, setStep] = useState(0);
-  const [entry, setEntry] = useState('');     // single-value cards
-  const [rows, setRows] = useState({});       // per-line cards, keyed by line key
-  const [ticks, setTicks] = useState({});     // receipt cards: key -> { v, amt }
+  const typed = (i) => inputs[CARD_IDS[i]] || {};
+  const [step, setStep] = useState(initialStep);
+  const [entry, setEntry] = useState(() => typed(initialStep).entry ?? '');   // single-value cards
+  const [rows, setRows] = useState(() => typed(initialStep).rows || {});      // per-line cards, keyed by line key
+  const [ticks, setTicks] = useState(() => typed(initialStep).ticks || {});   // receipt cards: key -> { v, amt }
   const [flown, setFlown] = useState({});     // card id -> the measured flight to the letter
   const activeRef = useRef(null);
 
   const active = CARD_IDS[step];
   const finished = step >= CARD_IDS.length;
+  /* every keystroke of the open card goes to the draft, so leaving the screen loses nothing */
+  useEffect(() => { if (!finished) onInputs?.(active, { entry, rows, ticks }); }, [entry, rows, ticks]);   // eslint-disable-line react-hooks/exhaustive-deps
   const activeLines = lines[active];
   const activeReceipts = receipts[active];
 
@@ -195,11 +202,26 @@ export default function EODCardDeck({
     const counted = src ? src.reduce((s, r) => s + r.amount, 0) : toNum(entry);
 
     setFlown(prev => ({ ...prev, [active]: measure() }));
-    setEntry('');
-    setRows({});
-    setTicks({});
+    /* the next card opens with whatever he already typed on it (he may have come back to this one) */
+    const nx = typed(step + 1);
+    setEntry(nx.entry ?? '');
+    setRows(nx.rows || {});
+    setTicks(nx.ticks || {});
     setStep(s => s + 1);
     if (onConfirm) onConfirm(active, counted, Number(expected[active] ?? 0), src);
+  };
+
+  /* BACK ONE CARD (Aldi, 2026-09-26: "make sure that the agent can go back to step before so that they can revise
+     before submit"): the card before comes out of the letter and back on top, holding what he typed on it */
+  const back = () => {
+    if (disabled || step === 0) return;
+    const prev = CARD_IDS[step - 1], was = inputs[prev] || {};
+    setFlown(f => { const n = { ...f }; delete n[prev]; return n; });
+    setEntry(was.entry ?? '');
+    setRows(was.rows || {});
+    setTicks(was.ticks || {});
+    setStep(s => s - 1);
+    onBack?.(prev);
   };
 
   return (
@@ -481,11 +503,18 @@ export default function EODCardDeck({
       </div>
 
       {!finished && (
+        <div className="flex gap-2">
+        {step > 0 && (
+          <button type="button" onClick={back} disabled={disabled}
+            className="shrink-0 px-4 py-3.5 rounded-xl font-black border border-[var(--line-2)] bg-[var(--raised)] text-[var(--ink)] transition-transform active:scale-[.98] disabled:opacity-40">
+            ← Back
+          </button>
+        )}
         <button
           type="button"
           onClick={commit}
           disabled={disabled || !ready}
-          className="w-full py-3.5 rounded-xl font-black bg-[var(--gold)] text-[var(--gold-ink)] border border-[var(--accent-edge)] shadow-md transition-transform active:scale-[.98] disabled:opacity-40"
+          className="flex-1 w-full py-3.5 rounded-xl font-black bg-[var(--gold)] text-[var(--gold-ink)] border border-[var(--accent-edge)] shadow-md transition-transform active:scale-[.98] disabled:opacity-40"
         >
           {ready
             ? `Put ${CARD_LABELS[active]} in the letter`
@@ -497,6 +526,7 @@ export default function EODCardDeck({
                   ? `Count all ${activeLines.length} lines first`
                   : 'Enter what you counted'}
         </button>
+        </div>
       )}
     </div>
   );

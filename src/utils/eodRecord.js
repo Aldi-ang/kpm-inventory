@@ -72,6 +72,27 @@ export function emptyLetter() {
   return { cards, signatures: { agent: null, regional: null, hq: null } };
 }
 
+/* THE AGENT TAKES A CARD BACK OUT OF THE LETTER to count it again (Aldi, 2026-09-26: "make sure that the agent can go
+   back to step before so that they can revise before submit"). That card is blank again; the others are untouched. */
+export function undeclareCard(letter, id) {
+  return { ...letter, cards: { ...letter.cards, [id]: emptyCard(id) } };
+}
+
+/* A SAVED DRAFT, BROUGHT BACK when he returns to the screen (same day: "make sure the progress draft saved when the
+   user move to other segment"). What he COUNTED is kept; what the APP EXPECTED is re-read, because a sale that landed
+   while he was away changes it and a letter carrying the old figure names the wrong gap. The step is where the first
+   blank card is - never trusted from storage - and only a full letter comes back sealed. Anything that is not a letter
+   this build writes is dropped (null). */
+export function restoreDraft(draft, expected = {}) {
+  const src = draft?.letter?.cards;
+  if (!src || !CARD_IDS.every(id => src[id] && 'declared' in src[id])) return null;
+  const cards = {};
+  for (const id of CARD_IDS) cards[id] = src[id].declared === null ? src[id] : { ...src[id], expected: Number(expected[id] ?? 0) };
+  const open = CARD_IDS.findIndex(id => cards[id].declared === null);
+  const step = open < 0 ? CARD_IDS.length : open;
+  return { letter: { ...draft.letter, cards }, step, stage: step === CARD_IDS.length ? 'sealed' : 'open', inputs: draft.inputs || {} };
+}
+
 /** Sum a card's sources. The declared total must always equal this — see the self-check. */
 export function sourcesTotal(sources = []) {
   return sources.reduce((sum, s) => sum + (Number(s.amount) || 0), 0);

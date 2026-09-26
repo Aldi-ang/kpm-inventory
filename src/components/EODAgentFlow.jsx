@@ -1,7 +1,12 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import EODCardDeck from './EODCardDeck';
 import EODLetter from './EODLetter';
-import { CARD_IDS, CARD_LABELS, emptyLetter, emptyCard, declareCard, canSend } from '../utils/eodRecord';
+import { CARD_IDS, CARD_LABELS, emptyLetter, emptyCard, declareCard, canSend, undeclareCard, restoreDraft } from '../utils/eodRecord';
+
+/* THE DRAFT lives on this phone only, one per salesman per night (the key comes from the screen). Storage that refuses -
+   a private window, a full disk - must never stop the count, so every touch is guarded; a stale night is swept away. */
+const readDraft = (k) => { if (!k) return null; try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
+const writeDraft = (k, v) => { if (!k) return; try { if (v) localStorage.setItem(k, JSON.stringify(v)); else localStorage.removeItem(k); } catch { /* storage refused */ } };
 
 /* THE AGENT'S WHOLE EVENING, IN ONE COMPONENT: count four cards → each one flies into the letter
    that has been on screen the whole time → the letter seals and is launched to the regional admin.
@@ -28,11 +33,37 @@ export default function EODAgentFlow({
   notes = {},
   sources = {},
   onSubmit,
-  submitting = false
+  submitting = false,
+  draftKey = null
 }) {
-  const [letter, setLetter] = useState(() => emptyLetter());
-  const [stage, setStage] = useState('open');   // open → sealed → launching → sent
+  /* Aldi, 2026-09-26: "make sure the progress draft saved when the user move to other segment" - leaving the tab
+     unmounts this screen, so what he counted comes back from the draft, the app's own figures re-read */
+  const [draft] = useState(() => restoreDraft(readDraft(draftKey), expected));
+  const [letter, setLetter] = useState(() => draft?.letter || emptyLetter());
+  const [stage, setStage] = useState(() => draft?.stage || 'open');   // open → sealed → launching → sent
+  const [step, setStep] = useState(() => draft?.step || 0);             // the card on top, for the deck
+  const [inputs, setInputs] = useState(() => draft?.inputs || {});     // what he typed on each card
+  const [deckKey, setDeckKey] = useState(0);
   const mouthRef = useRef(null);
+
+  useEffect(() => {
+    if (stage === 'launching' || stage === 'sent') return writeDraft(draftKey, null);
+    writeDraft(draftKey, { letter, stage, inputs });
+  }, [draftKey, letter, stage, inputs]);
+  useEffect(() => {
+    const night = String(draftKey || '').split(':').pop();
+    try { Object.keys(localStorage).filter(k => k.startsWith('kpm-eod-draft:') && !k.endsWith(':' + night)).forEach(k => localStorage.removeItem(k)); } catch { /* storage refused */ }
+  }, [draftKey]);
+
+  /* "make sure that the agent can go back to step before so that they can revise before submit": a sealed letter
+     opens again on its last card; from there Back walks the cards one by one */
+  const revise = () => {
+    const last = CARD_IDS[CARD_IDS.length - 1];
+    setLetter(prev => undeclareCard(prev, last));
+    setStep(CARD_IDS.length - 1);
+    setStage('open');
+    setDeckKey(k => k + 1);
+  };
 
   /* One card confirmed. The source list is what makes the total traceable later — see
      src/utils/eodRecord.js on why a stored sum with no sources cannot be investigated.
@@ -66,6 +97,7 @@ export default function EODAgentFlow({
       if (canSend(next)) setTimeout(() => setStage('sealed'), 820);
       return next;
     });
+    setStep(s => s + 1);
   };
 
   /* What the letter prints on each line. `undefined` means that line is still blank. */
@@ -107,6 +139,12 @@ export default function EODAgentFlow({
       </ol>
 
       <EODLetter counted={counted} stage={stage} mouthRef={mouthRef} onSend={send} disabled={submitting} />
+      {stage === 'sealed' && (
+        <button type="button" onClick={revise} disabled={submitting}
+          className="mt-3 w-full py-3 rounded-xl font-bold text-[13px] border border-[var(--line-2)] bg-[var(--raised)] text-[var(--ink)] hover:border-[var(--accent-edge)] disabled:opacity-40">
+          ← Back to the cards
+        </button>
+      )}
 
       {/* ⚠️ GATED ON `stage`, NOT ON THE CARD COUNT — and the difference is the whole fourth flight.
           `canSend(letter)` becomes true on the SAME render that launches card 4. Driving it in a
@@ -129,6 +167,11 @@ export default function EODAgentFlow({
         }}
       >
         <EODCardDeck
+          key={deckKey}
+          initialStep={step}
+          inputs={inputs}
+          onInputs={(id, v) => setInputs(p => ({ ...p, [id]: v }))}
+          onBack={(id) => { setLetter(prev => undeclareCard(prev, id)); setStep(s => s - 1); }}
           expected={expected}
           lines={lines}
           receipts={receipts}

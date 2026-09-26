@@ -8648,5 +8648,39 @@ section('A SALE ON THE AGENT\'S LIST OPENS TO ITS LINES (2026-09-26)');
   }
 }
 
+/* ── THE AGENT'S EOD: BACK A STEP, AND A DRAFT THAT SURVIVES LEAVING THE SCREEN (2026-09-26) ───────────────────────
+   His 07:50: "make sure that the agent can go back to step before so that they can revise before submit and make
+   sure the progress draft saved when the user move to other segment". The submit payload does not change. */
+section('THE AGENT\'S EOD: BACK A STEP, AND A DRAFT THAT SURVIVES LEAVING THE SCREEN (2026-09-26)');
+{ const deck = code(read('src/components/EODCardDeck.jsx')), flow = code(read('src/components/EODAgentFlow.jsx')), eodv = code(read('src/EODReconciliationView.jsx'));
+  ok('a Back key on every card after the first: the card leaves the letter and comes back with what he typed',
+     /const back = \(\) => \{[\s\S]{0,600}inputs\[prev\][\s\S]{0,300}onBack\?\.\(prev\);/.test(deck) && /\{step > 0 && \(\s*<button[^>]*onClick=\{back\}/.test(deck) &&
+     /onBack=\{\(id\) => \{ setLetter\(prev => undeclareCard\(prev, id\)\); setStep\(s => s - 1\); \}\}/.test(flow));
+  ok('a sealed letter can be opened again before Send: the last card comes back out',
+     /\{stage === 'sealed' && \(\s*<button[^>]*onClick=\{revise\}/.test(flow) && /const revise = \(\) => \{[\s\S]{0,300}undeclareCard\(prev, last\)[\s\S]{0,200}setStage\('open'\)/.test(flow));
+  ok('every keystroke of the open card is kept in the draft, and the draft is read back on return',
+     /onInputs\?\.\(active, \{ entry, rows, ticks \}\)/.test(deck) && /restoreDraft\(readDraft\(draftKey\), expected\)/.test(flow) &&
+     /writeDraft\(draftKey, \{ letter, stage, inputs \}\)/.test(flow));
+  ok('the draft goes when the letter is sent; storage that refuses (private mode) never breaks the count',
+     /if \(stage === 'launching' \|\| stage === 'sent'\) return writeDraft\(draftKey, null\);/.test(flow) &&
+     /const readDraft = \(k\) => \{ if \(!k\) return null; try \{/.test(flow) && /const writeDraft = \(k, v\) => \{ if \(!k\) return; try \{/.test(flow));
+  ok('one draft per salesman per night, and the submit still hands over the same letter',
+     /draftKey=\{`kpm-eod-draft:\$\{effectiveId\}:\$\{getLocalDayKey\(\)\}`\}/.test(eodv) && /if \(onSubmit\) onSubmit\(letter\);/.test(flow));
+  const R = await import('../utils/eodRecord.js');
+  if (typeof R.undeclareCard !== 'function' || typeof R.restoreDraft !== 'function') ok('undeclareCard and restoreDraft exist in src/utils/eodRecord.js', false);
+  else {
+    let L = R.emptyLetter();
+    L = { ...L, cards: { ...L.cards, cash: { ...R.declareCard(R.emptyCard('cash'), [{ txId: 't1', amount: 150000 }], 'agent', 1), declared: 150000, expected: 150000 },
+      transfer: { ...R.declareCard(R.emptyCard('transfer'), [], 'agent', 2), declared: 0, expected: 0 } } };
+    const U = R.undeclareCard(L, 'transfer');
+    ok('taking the transfer card back: it is blank again, cash untouched, the old letter not changed',
+       U.cards.transfer.declared === null && U.cards.cash.declared === 150000 && L.cards.transfer.declared === 0);
+    const D = R.restoreDraft({ letter: L, stage: 'sealed', inputs: { goods: { rows: { a: '3' } } } }, { cash: 190000, transfer: 0 });
+    ok('a draft comes back where he left it: 2 cards in, the goods card open with his 3, and the app\'s cash figure re-read (Rp 190.000)',
+       D && D.step === 2 && D.stage === 'open' && D.inputs.goods.rows.a === '3' && D.letter.cards.cash.declared === 150000 && D.letter.cards.cash.expected === 190000);
+    ok('a draft that is not a letter this build writes is dropped', R.restoreDraft({ letter: { cards: { cash: {} } } }, {}) === null && R.restoreDraft(null, {}) === null);
+  }
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
