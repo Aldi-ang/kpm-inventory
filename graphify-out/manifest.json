@@ -60,8 +60,8 @@
     "semantic_hash": ""
   },
   "src/EODReconciliationView.jsx": {
-    "mtime": 1790386932.0382607,
-    "ast_hash": "e30e664858673a0298735a7b1e15c646",
+    "mtime": 1790387667.2513585,
+    "ast_hash": "934b52e4efa8395682916fa3bbfbbe3d",
     "semantic_hash": ""
   },
   "src/FleetCanvasManager.jsx": {
@@ -225,8 +225,8 @@
     "semantic_hash": ""
   },
   "src/utils/helpers.js": {
-    "mtime": 1790386909.0721145,
-    "ast_hash": "b54f26193b771704c80448e29785175d",
+    "mtime": 1790387664.806934,
+    "ast_hash": "b078ee3ecc770c74eab07e274936bf8a",
     "semantic_hash": ""
   },
   "tailwind.config.js": {
@@ -360,8 +360,8 @@
     "semantic_hash": ""
   },
   ".claude/settings.local.json": {
-    "mtime": 1790387102.361136,
-    "ast_hash": "42594b5408e8e750786a83f3244788c4",
+    "mtime": 1790390449.9262831,
+    "ast_hash": "c35f0a1c339f94a500fb67713a04e536",
     "semantic_hash": ""
   },
   ".mcp.json": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1790386001.125105,
-    "ast_hash": "8a5f0168ae35eaaa893786285ca16401",
+    "mtime": 1790387270.1026251,
+    "ast_hash": "b94f6b58b3a081adc5f37fd99bcf97a7",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1790387049.3711343,
-    "ast_hash": "e2379cfa428a3553b1584006214972a7",
+    "mtime": 1790387693.093953,
+    "ast_hash": "d11eb1551f195490c6ca6bd9b1689eba",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1790386001.174666,
-    "ast_hash": "24daec40e26b638110a7d6023c2b3980",
+    "mtime": 1790387270.206108,
+    "ast_hash": "86c53354320542e820b2aff3747443a0",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1790387149.578378,
-    "ast_hash": "96fa3471302b2633eccd42aa4ac7c075",
+    "mtime": 1790387707.5579808,
+    "ast_hash": "536515eee6579a127edf8c5a449e20df",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
