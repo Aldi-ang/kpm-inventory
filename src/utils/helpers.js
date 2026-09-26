@@ -729,6 +729,28 @@ export const eodBountyLines = (report = {}, inventory = [], priceTier = 'Retail'
     return lines;
 };
 
+/* ONE READING OF A PERSON'S BOUNTIES: the PENALTY_ keys on their record, each with the reason and date written
+   beside it when it was minted (cukaiDebtNotes - Aldi, 2026-08-18: "the bounties panel need to specify how the
+   bounties number are calculated"). The EOD WANTED board and the van chest's BOUNTY tab (Fleet & Roster) both read
+   this, so the two can never disagree about what a man owes or why. A Rp 0 fine is kept - the board's old
+   "val > 0" blind spot hid those. */
+export const bountyItems = (agent = {}) => {
+    const debts = agent.cukaiDebts || {}, notes = agent.cukaiDebtNotes || {};
+    /* A bounty from before the notes existed still has to say something. The key shape is
+       what is left to read it from: PENALTY_<epoch-ms> is a quarantine damage charge and
+       carries its own date; PENALTY_EOD_<reportId> is the old single-figure night. */
+    const describe = (pid) => {
+        if (notes[pid]) return { label: notes[pid].label || 'Bounty', date: notes[pid].date || '' };
+        const stamp = /^PENALTY_(\d{10,})$/.exec(pid);
+        if (stamp) return { label: 'Damaged goods penalty', date: getLocalDayKey(new Date(Number(stamp[1]))) };
+        if (pid.startsWith('PENALTY_EOD_')) return { label: 'End-of-day shortfall', date: '' };
+        return { label: 'Bounty', date: '' };
+    };
+    return Object.entries(debts).filter(([pid]) => pid.startsWith('PENALTY_'))
+        .map(([pid, val]) => ({ key: pid, amount: Number(val) || 0, ...describe(pid) }))
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)) || b.amount - a.amount);
+};
+
 /* THE PARTS OF ONE EOD REPORT, each approved or returned on its own. Aldi, 2026-09-20: "maybe it is
    better when we made approve and reject for every single EOD, so one for each, cash, transfer, pita
    cukai, bounties for havent paid penalty, etc". A CASH & STOCK night always carries cash, transfer

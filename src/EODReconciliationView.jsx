@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder, Target, BadgeDollarSign, ShieldAlert } from 'lucide-react';
-import { formatRupiah, getLocalDayKey, storeKey, shortStockRows, eodBountyLines, dayTargets, EOD_PART_LABELS } from './utils/helpers';
+import { formatRupiah, getLocalDayKey, storeKey, shortStockRows, eodBountyLines, bountyItems, dayTargets, EOD_PART_LABELS } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import EODAgentFlow from './components/EODAgentFlow.jsx';
 import NixieCount from './components/NixieCount.jsx';
@@ -106,35 +106,12 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
     const agentBountyData = useMemo(() => {
         if (!effectiveId) return { total: 0, keys: [], items: [], isPending: false };
         const agentProfile = motorists.find(m => m.id === effectiveId) || {};
-        const cDebts = agentProfile.cukaiDebts || {};
-        /* The label and date for each key, written when the bounty was minted. Aldi, 2026-08-18:
-           "the bounties panel need to specify how the bounties number are calculated". */
-        const cNotes = agentProfile.cukaiDebtNotes || {};
+        /* one line per PENALTY_ key with its reason and date, Rp 0 fines kept - helpers.js bountyItems, the same
+           reading the van chest's BOUNTY tab in Fleet & Roster shows */
+        const items = bountyItems(agentProfile);
+        const keys = items.map(i => i.key);
+        const total = items.reduce((s, i) => s + i.amount, 0);
 
-        /* A bounty from before the notes existed still has to say something. The key shape is
-           what is left to read it from: PENALTY_<epoch-ms> is a quarantine damage charge and
-           carries its own date; PENALTY_EOD_<reportId> is the old single-figure night. */
-        const describe = (pid) => {
-            if (cNotes[pid]) return { label: cNotes[pid].label || 'Bounty', date: cNotes[pid].date || '' };
-            const stamp = /^PENALTY_(\d{10,})$/.exec(pid);
-            if (stamp) return { label: 'Damaged goods penalty', date: getLocalDayKey(new Date(Number(stamp[1]))) };
-            if (pid.startsWith('PENALTY_EOD_')) return { label: 'End-of-day shortfall', date: '' };
-            return { label: 'Bounty', date: '' };
-        };
-
-        let total = 0;
-        let keys = [];
-        let items = [];
-        for (let [pid, val] of Object.entries(cDebts)) {
-            // 🚀 THE FIX: Removed the "val > 0" blindspot. It will now catch Rp 0 fines!
-            if (pid.startsWith('PENALTY_')) {
-                total += (val || 0);
-                keys.push(pid);
-                items.push({ key: pid, amount: Number(val) || 0, ...describe(pid) });
-            }
-        }
-        items.sort((a, b) => String(b.date).localeCompare(String(a.date)) || b.amount - a.amount);
-        
         const todaysReports = eodReports.filter(r => {
             if (r.agentId !== effectiveId) return false;
             const rDate = r.timestamp?.seconds ? new Date(r.timestamp.seconds * 1000) : (r.timestamp ? new Date(r.timestamp) : new Date());

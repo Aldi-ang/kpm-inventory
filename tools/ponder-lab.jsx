@@ -716,7 +716,11 @@ const LAB_FLEET = [
       { productId: 'p-cg16', name: 'Cello Green 16', qty: 3, unit: 'Bal' },
       { productId: 'p-djar', name: 'Djarum Coklat 12', qty: 12, unit: 'Slop' },
       { productId: 'p-smp16', name: 'Sampoerna Mild 16', qty: 40, unit: 'Bks' },
-    ] },
+    ],
+    /* round 5: the van chest's BOUNTY tab - two noted fines from one night and an old quarantine charge */
+    cukaiDebts: { PENALTY_EOD_lab1_CASH: 25000, 'PENALTY_EOD_lab1_GOODS_p-cg16': 55000, PENALTY_1758600000000: 40000, 'p-cg16': 12 },
+    cukaiDebtNotes: { PENALTY_EOD_lab1_CASH: { label: 'Cash short', date: '2026-09-23' },
+      'PENALTY_EOD_lab1_GOODS_p-cg16': { label: 'Cello Green 16 2 Bks @ Retail', date: '2026-09-23' } } },
   { id: 'f-d1', name: 'Dedi Kurniawan', email: 'dedi@kpm.example', location: 'BANDUNG', userRole: 'FIELD_OPERATIVE',
     role: 'Canvas', vehicle: 'HONDA BEAT D 9080 KL', allowedPayments: ['Cash'], allowedTiers: ['Ecer'],
     activeCanvas: [{ productId: 'p-gg12', name: 'Gudang Garam Surya 12', qty: 1, unit: 'Karton' }] },
@@ -725,6 +729,22 @@ const LAB_FLEET = [
 ];
 /* Journey Plan reads the roster with getDocs(collection motorists) */
 FIXTURES['motorists'] = [...LAB_MOTORISTS.map((m) => ({ ...m })), ...LAB_FLEET];
+/* round 5: what Budi left at shops on titip (the van chest's TITIP tab) - one part-paid, one Dedi handed to him,
+   one settled (so it stays off the tab). They reach the screen as props, like App passes them, not through a listener. */
+const labTs = (d) => ({ seconds: Math.floor(new Date(d + 'T10:00:00+07:00').getTime() / 1000) });
+const LAB_FLEET_TITIP = [
+  { id: 'ft1', agentId: 'f-b1', date: '2026-09-21', type: 'SALE', paymentType: 'Titip', total: 550000, customerName: 'Toko Berkah Jaya',
+    items: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 2, unit: 'Slop', priceTier: 'Retail' }], timestamp: labTs('2026-09-21') },
+  { id: 'ft2', agentId: 'f-b1', date: '2026-09-24', type: 'CONSIGNMENT_PAYMENT', paymentType: 'Cash', customerName: 'Toko Berkah Jaya', amountPaid: 220000, total: 220000,
+    itemsPaid: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 8, unit: 'Bks', priceTier: 'Retail' }], timestamp: labTs('2026-09-24') },
+  { id: 'ft3', agentId: 'f-d1', date: '2026-09-22', type: 'SALE', paymentType: 'Titip', total: 180000, customerName: 'Kios Maju Mundur',
+    items: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 12, unit: 'Bks', priceTier: 'Retail' }], timestamp: labTs('2026-09-22') },
+  { id: 'ft4', agentId: 'f-b1', date: '2026-09-22', type: 'SALE', paymentType: 'Titip', total: 90000, customerName: 'Toko Lancar',
+    items: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 4, unit: 'Bks', priceTier: 'Retail' }], timestamp: labTs('2026-09-22') },
+  { id: 'ft5', agentId: 'f-b1', date: '2026-09-25', type: 'CONSIGNMENT_PAYMENT', paymentType: 'Cash', customerName: 'Toko Lancar', amountPaid: 90000, total: 90000,
+    itemsPaid: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 4, unit: 'Bks', priceTier: 'Retail' }], timestamp: labTs('2026-09-25') },
+];
+const LAB_FLEET_CUSTOMERS = LAB_CUSTOMERS.map((c) => (c.id === 'c-maju' ? { ...c, ownerAgentId: 'f-b1', handoffs: [{ fromId: 'f-d1', toId: 'f-b1' }] } : c));
 
 function LabPiutang({ q }) {
   const engine = useTransactionEngine({
@@ -1039,7 +1059,8 @@ function ShellLab() {
           user={{ uid: 'lab-ra', displayName: 'Rizky Aditama', email: 'rizky@kpm.example', location: 'BANDUNG' }}
           motorists={[...LAB_MOTORISTS, ...LAB_FLEET]}
           inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]}
-          transactions={LAB_AGENT_TXNS.map((t) => ({ ...t, agentId: 'f-b1' }))}
+          transactions={[...LAB_AGENT_TXNS.map((t) => ({ ...t, agentId: 'f-b1' })), ...LAB_FLEET_TITIP]}
+          customers={LAB_FLEET_CUSTOMERS}
           appSettings={{ companyName: 'KPM INVENTORY' }}
           logAudit={() => {}} triggerCapy={() => {}}
         />

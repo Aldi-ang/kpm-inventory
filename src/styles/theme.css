@@ -4906,7 +4906,7 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-bay.wh-shut .gui.wh { position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; }
 .kpm-bay.van-shut .gui.van { position: absolute; left: 0; right: 0; top: 0; margin: 0 auto; }
 @container kpmbay (min-width: 640px) { .kpm-bay.van-shut .gui.van { top: auto; bottom: 0; } }
-.kpm-bay.wh-shut.van-shut { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "hint hint" "whc whg" "vanc vang" "man man"; align-items: center; }
+.kpm-bay.wh-shut.van-shut { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "hint hint" "whg whg" "whc vanc" "vang vang" "man man"; align-items: center; }
 @container kpmbay (min-width: 640px) {
   .kpm-bay.wh-shut.van-shut { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr) auto; grid-template-areas: "hint hint hint hint" "whc whg vang vanc" "man man man man"; }
 }

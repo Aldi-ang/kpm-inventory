@@ -1,7 +1,8 @@
 /* The van-loading bay's arithmetic (components/LoadingBay.jsx), kept pure so the self-check can
    re-run it on real numbers. Everything is in packs (Bks) through the app's own convertToBks, so
    the "= N Bks" he reads in the HOW MANY panel is exactly what MUAT VAN moves. */
-import { convertToBks } from './helpers.js';
+import { convertToBks, storeKey, storeLabel } from './helpers.js';
+import { debtCredit, isTitip } from './revenueRule.js';
 
 export const PER = 6;          // squares on a page
 export const CELLS = 18;       // the van's layout: three pages, and a hole means something
@@ -120,4 +121,37 @@ export function damagedInVan(sales, inventory) {
     }
   }
   return Object.values(by);
+}
+
+/* TITIP behind the van chest: the shops this person holds that still owe money or still hold goods. The same sums as
+   the consignment screen (ConsignmentFinanceView customerData) and the dashboard's receivable (revenueRule
+   outstandingTitip): a Titip sale is owed, a payment or a return is paid (debtCredit), floored per shop so one shop's
+   overpayment never cancels another's debt. The holder is the shop record's ownerAgentId after a hand-off, else
+   whoever made its newest Titip sale. Packs left = the Titip goods less what was paid for or came back. */
+export function titipOf(transactions, customers, agentId, inventory) {
+  const P = new Map(inventory.map(p => [p.id, p]));
+  const handed = new Map(customers.filter(c => c.ownerAgentId).map(c => [storeKey(c.name), c.ownerAgentId]));
+  const bks = (i) => convertToBks(i.qty, i.unit, P.get(i.productId));
+  const line = (i) => `${i.productId}-${i.priceTier || 'Standard'}`;
+  const shops = new Map();
+  const rows = transactions.filter(t => t?.customerName).sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+  for (const t of rows) {
+    const k = storeKey(t.customerName);
+    if (!shops.has(k)) shops.set(k, { key: k, name: storeLabel(t.customerName), owed: 0, paid: 0, left: {}, seller: t.agentId || 'ADMIN' });
+    const s = shops.get(k);
+    if (t.type === 'SALE' && isTitip(t)) {
+      s.owed += Number(t.total) || 0;
+      s.seller = t.agentId || 'ADMIN';
+      for (const i of t.items || []) s.left[line(i)] = (s.left[line(i)] || 0) + bks(i);
+    } else if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
+      s.paid += debtCredit(t);
+      const back = t.type === 'RETURN' ? t.items || [] : [...(t.itemsPaid || []), ...(t.itemsReturned || [])];
+      for (const i of back) if (s.left[line(i)] !== undefined) s.left[line(i)] -= bks(i);
+    }
+  }
+  return [...shops.values()]
+    .filter(s => (handed.get(s.key) || s.seller) === agentId)
+    .map(s => ({ key: s.key, name: s.name, rp: Math.max(0, s.owed - s.paid), bks: Object.values(s.left).reduce((a, q) => a + Math.max(0, q), 0) }))
+    .filter(s => s.rp > 0 || s.bks > 0)
+    .sort((a, b) => b.rp - a.rp || b.bks - a.bks);
 }

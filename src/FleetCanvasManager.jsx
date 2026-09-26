@@ -6,14 +6,14 @@ import {
 } from 'lucide-react';
 import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord } from './config/permissions';
-import { convertToBks, isSafeDocIdEmail, getLocalDayKey} from './utils/helpers';
+import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems } from './utils/helpers';
 import { normalizeRegion } from './config/permissions';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import LoadingBay from './components/LoadingBay.jsx';
-import { damagedInVan } from './utils/vanBay';
+import { damagedInVan, titipOf } from './utils/vanBay';
 
-export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, masterUserId = null }) {
+export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], customers = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, masterUserId = null }) {
 
     const isGlobalAdmin = ['DEVELOPER', 'COMPANY_OWNER', 'ADMIN'].includes(userRole);
     const isAreaAdmin = !isGlobalAdmin;
@@ -1365,6 +1365,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     onPreset={handleSavePreset}
                                     team={agents.filter(a => a.id !== selectedAgent.id && placeOf(a).k === placeOf(selectedAgent).k)}
                                     bypasses={allBypasses.filter(b => isAgentBypass(b, selectedAgent))}
+                                    titip={titipOf(transactions, customers, selectedAgent.id, inventory)}
+                                    bounties={bountyItems(selectedAgent)}
                                 />
                             </div>
 

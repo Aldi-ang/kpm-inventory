@@ -16,7 +16,7 @@
    Lite Mode, reduced motion or a stalled animation can never hide a number. */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal, flushSync } from 'react-dom';
-import { convertToBks, getLocalDayKey } from '../utils/helpers';
+import { convertToBks, getLocalDayKey, formatRupiah } from '../utils/helpers';
 import { PER, lineBks, netBks, loadCap, backCap, foldLine, vanCells, landingCell, applyPreset, teamLoad } from '../utils/vanBay';
 import { playSound } from '../hooks/useSound';
 
@@ -80,7 +80,7 @@ const CUT_WHY = {
 const BYPASS_WORD = { PENDING: 'menunggu', APPROVED: 'disetujui', REJECTED: 'ditolak' };
 const VIEW_ONLY = 'Hanya lihat — jabatan ini tidak bisa memuat van';
 
-export default function LoadingBay({ agent, warehouse, stock, damaged = [], canEdit, onLoad, onReturn, onLayout, onDirty, onPreset, team = [], bypasses = [] }) {
+export default function LoadingBay({ agent, warehouse, stock, damaged = [], canEdit, onLoad, onReturn, onLayout, onDirty, onPreset, team = [], bypasses = [], titip = [], bounties = [] }) {
   const P = useMemo(() => Object.fromEntries(stock.map(p => [p.id, p])), [stock]);
   /* the van, in packs, from its live rows */
   const vanOf = useMemo(() => {
@@ -735,22 +735,41 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
           </div>
         </div>
 
-        {/* behind the closed van: this person's geofence requests. The company-wide PENDING queue stays at the top
-            of the screen - his salesman waits at a shop for it - so approving never hides behind a chest. */}
+        {/* behind the closed van: this person's geofence requests, what they left at shops on titip, their bounties.
+            All three only READ - the company-wide PENDING queue stays at the top of the screen (his salesman waits at a
+            shop for it), settling a titip and paying a bounty stay on their own screens. */}
         {open.van === false && (
           <div className="slip van">
-            {tabKeys('van', [['geo', `Geofence · ${geo.length}`]])}
+            {tabKeys('van', [['geo', `Geofence · ${geo.length}`], ['titip', `Titip · ${titip.length}`], ['bounty', `Bounty · ${bounties.length}`]])}
             {sayEl('van')}
-            <div className="pane" role="tabpanel" aria-labelledby="kpm-slip-geo">
-              {geo.length ? (
-                <ul className="rows">
-                  {geo.map(b => (
-                    <li key={b.id}><span>{b.storeName}<small>{b.timestamp ? new Date(b.timestamp).toLocaleString('id-ID') : '—'} · {b.distance ?? '—'} m</small></span>
-                      <b className={`st ${b.status}`}>{BYPASS_WORD[b.status] || b.status}</b></li>
-                  ))}
-                </ul>
-              ) : <p className="note">Belum ada permintaan geofence dari {agent.name}.</p>}
-            </div>
+            {tabs.van === 'titip' ? (
+              <div className="pane" role="tabpanel" aria-labelledby="kpm-slip-titip">
+                {titip.length ? (
+                  <ul className="rows">
+                    {titip.map(s => <li key={s.key}><span>{s.name}<small>{fmt(s.bks)} Bks di toko</small></span><b>{formatRupiah(s.rp)}</b></li>)}
+                  </ul>
+                ) : <p className="note">{agent.name} tidak punya titipan yang belum lunas.</p>}
+              </div>
+            ) : tabs.van === 'bounty' ? (
+              <div className="pane" role="tabpanel" aria-labelledby="kpm-slip-bounty">
+                {bounties.length ? (
+                  <ul className="rows">
+                    {bounties.map(x => <li key={x.key}><span>{x.label}{x.date && <small>{x.date}</small>}</span><b>{formatRupiah(x.amount)}</b></li>)}
+                  </ul>
+                ) : <p className="note">{agent.name} tidak punya bounty.</p>}
+              </div>
+            ) : (
+              <div className="pane" role="tabpanel" aria-labelledby="kpm-slip-geo">
+                {geo.length ? (
+                  <ul className="rows">
+                    {geo.map(b => (
+                      <li key={b.id}><span>{b.storeName}<small>{b.timestamp ? new Date(b.timestamp).toLocaleString('id-ID') : '—'} · {b.distance ?? '—'} m</small></span>
+                        <b className={`st ${b.status}`}>{BYPASS_WORD[b.status] || b.status}</b></li>
+                    ))}
+                  </ul>
+                ) : <p className="note">Belum ada permintaan geofence dari {agent.name}.</p>}
+              </div>
+            )}
           </div>
         )}
 

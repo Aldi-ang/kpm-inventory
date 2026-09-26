@@ -4698,6 +4698,7 @@ const handleGitHubMirror = async () => {
                 previewing={previewing} // 🎭 POV keeps his real email, so the branch lookup must stand down
                 inventory={inventory} 
                 transactions={transactions} 
+                customers={customers}   // the van chest's TITIP tab reads who holds a shop after a hand-off - no new listener
                 appSettings={appSettings}
                 logAudit={logAudit} 
                 triggerCapy={triggerCapy} 

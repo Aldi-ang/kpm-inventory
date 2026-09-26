@@ -1524,7 +1524,7 @@ ok('clearing a bounty removes its note too, or the panel grows forever',
 ok('the WANTED board shows one line per reason, not one total',
    /agentBountyData\.items\.map/.test(eod));
 ok('a bounty from before the notes existed still gets a name on the board',
-   /Damaged goods penalty/.test(eod) && /End-of-day shortfall/.test(eod));
+   /Damaged goods penalty/.test(helpers) && /End-of-day shortfall/.test(helpers) && /bountyItems\(agentProfile\)/.test(eod));   // moved to helpers bountyItems (round 5), shared with the van chest
 ok('the quarantine damage charge writes its own note too, so nothing lands unexplained',
    /cukaiDebtNotes: \{\s*\[penaltyId\]: \{/.test(read('src/StockOpnameView.jsx')));
 
@@ -8511,6 +8511,71 @@ section('ROUND 4: THE DEPLOYMENT HEADER MOVES INTO THE GOLD BAR (2026-09-24)');
   ok('two lines on the phone, one on the PC',
      /\.kpm-stage-bar \{[^}]*grid-template-areas: "who acts" "chips counts"/.test(stageCss) &&
      /@media \(min-width: 1024px\) \{[^@]*\.kpm-stage-bar \{[^}]*grid-template-areas: "who chips counts acts"/.test(stageCss));
+}
+
+/* ── ROUND 5: TITIP AND BOUNTIES BEHIND THE VAN CHEST (2026-09-26) ─────────────────────────────────────
+   His round-5 paste: two more tabs beside GEOFENCE - what this person left at which store, still unpaid or
+   unreturned (TITIP), and this person's bounties (BOUNTY). Both READ data the screen already holds: the
+   transactions come in as a prop from App, the bounties sit on the person's own record (cukaiDebts, the PENALTY_
+   keys). Settling a titip or paying a bounty stays on its own screen, as approving stays in the override queue. */
+section('ROUND 5: TITIP AND BOUNTIES BEHIND THE VAN CHEST (2026-09-26)');
+{ const fl = read('src/FleetCanvasManager.jsx'), flc = code(fl);
+  const bayc = code(read('src/components/LoadingBay.jsx'));
+  const app = read('src/App.jsx'), eod = read('src/EODReconciliationView.jsx'), hlp = read('src/utils/helpers.js');
+  const sig = flc.slice(flc.indexOf('export default function FleetCanvasManager'), flc.indexOf('export default function FleetCanvasManager') + 400);
+
+  ok('the closed van chest carries three tabs: GEOFENCE, TITIP, BOUNTY',
+     /tabKeys\('van', \[\['geo', [^\]]*\], \['titip', `Titip · \$\{titip\.length\}`\], \['bounty', `Bounty · \$\{bounties\.length\}`\]\]\)/.test(bayc) &&
+     /aria-labelledby="kpm-slip-titip"/.test(bayc) && /aria-labelledby="kpm-slip-bounty"/.test(bayc));
+  ok('each new list is the slip\'s one-minmax-column list', (bayc.match(/<ul className="rows">/g) || []).length === 4);
+  ok('Fleet hands the rows to the bay AFTER bypasses, from what it already holds',
+     /bypasses=\{allBypasses\.filter\(b => isAgentBypass\(b, selectedAgent\)\)\}\s*titip=\{titipOf\(transactions, customers, selectedAgent\.id, inventory\)\}\s*bounties=\{bountyItems\(selectedAgent\)\}/.test(flc));
+  ok('no new listener: the customers come from App as a prop, the transactions already did',
+     /<FleetCanvasManager[\s\S]{0,1200}customers=\{customers\}/.test(app) && /customers = \[\]/.test(sig) && !/collection\(db, [^)]*(transactions|customers)/.test(flc));
+  ok('the tabs only READ - no payment, no clearing, no writer inside the bay', !/updateDoc|confirmAction|onPayment|penaltyKeys|Pay Bounty/.test(bayc));
+  ok('the sums live in pure helpers, never inside LoadingBay',
+     !/debtCredit|isTitip|cukaiDebts|PENALTY_|paymentType/.test(bayc) && /export function titipOf\(/.test(read('src/utils/vanBay.js')));
+  /* his 07:24 "make sure that both pc and phone looks good": at 518 each slip sat beside its chest in a ~190 px column -
+     three tabs stacked one per line and "12 Bks di toko" was cut. The phone now keeps its OPEN order: the warehouse slip
+     full width above, the two chests side by side, the van slip full width below. */
+  ok('phone, both chests shut: the slips run full width in the open layout\'s order, the chests side by side',
+     /\.kpm-bay\.wh-shut\.van-shut \{ grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\); grid-template-areas: "hint hint" "whg whg" "whc vanc" "vang vang" "man man";/.test(read('src/styles/theme.css')));
+  ok('ONE reading of a person\'s bounties - the EOD WANTED board and the van tab both call bountyItems',
+     /export const bountyItems = /.test(hlp) && /bountyItems\(agentProfile\)/.test(code(eod)) && !/const describe = \(pid\)/.test(eod));
+
+  /* the arithmetic, re-run on real numbers */
+  const vb = await import('../utils/vanBay.js'), H = await import('../utils/helpers.js'), R = await import('../utils/revenueRule.js');
+  if (typeof vb.titipOf !== 'function' || typeof H.bountyItems !== 'function') ok('titipOf (vanBay.js) and bountyItems (helpers.js) exist', false);
+  else {
+    const inv = [{ id: 'cg16', packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 }];
+    const ts = (d) => ({ seconds: Math.floor(new Date(d + 'T09:00:00+07:00').getTime() / 1000) });
+    const it = (qty, unit) => [{ productId: 'cg16', qty, unit, priceTier: 'Retail' }];
+    const tx = [
+      { agentId: 'b1', type: 'SALE', paymentType: 'Titip', customerName: 'Warung Bu Sari', total: 150000, items: it(2, 'Slop'), timestamp: ts('2026-09-20') },
+      { agentId: 'b1', type: 'CONSIGNMENT_PAYMENT', customerName: 'Warung Bu Sari (Retail)', amountPaid: 50000, total: 50000, itemsPaid: it(5, 'Bks'), timestamp: ts('2026-09-22') },
+      { agentId: 'b1', type: 'SALE', paymentType: 'Titip', customerName: 'Toko Maju', total: 80000, items: it(10, 'Bks'), timestamp: ts('2026-09-20') },
+      { agentId: 'b1', type: 'CONSIGNMENT_PAYMENT', customerName: 'Toko Maju', amountPaid: 80000, total: 80000, itemsPaid: it(10, 'Bks'), timestamp: ts('2026-09-23') },
+      { agentId: 's1', type: 'SALE', paymentType: 'Titip', customerName: 'Kios Ani', total: 60000, items: it(6, 'Bks'), timestamp: ts('2026-09-21') },
+      { agentId: 'b1', type: 'SALE', paymentType: 'Titip', customerName: 'Warung Pojok', total: 40000, items: it(4, 'Bks'), timestamp: ts('2026-09-21') },
+      { agentId: 'b1', type: 'SALE', paymentType: 'Titip', customerName: 'Toko Lebih', total: 30000, items: it(3, 'Bks'), timestamp: ts('2026-09-21') },
+      { agentId: 'b1', type: 'CONSIGNMENT_PAYMENT', customerName: 'Toko Lebih', amountPaid: 50000, total: 50000, itemsPaid: it(3, 'Bks'), timestamp: ts('2026-09-22') },
+      { agentId: 'b1', type: 'SALE', paymentType: 'Cash', customerName: 'Toko Tunai', total: 99000, items: it(9, 'Bks'), timestamp: ts('2026-09-22') },
+    ];
+    const cust = [{ name: 'Kios Ani', ownerAgentId: 'b1' }, { name: 'Warung Pojok', ownerAgentId: 's1' }];
+    const B = vb.titipOf(tx, cust, 'b1', inv), S = vb.titipOf(tx, cust, 's1', inv);
+    ok('Budi\'s titip: Warung Bu Sari Rp 150.000 - 50.000 = 100.000 and 20 - 5 = 15 Bks (the "(Retail)" payment is the same shop), then Kios Ani handed to him: Rp 60.000, 6 Bks',
+       B.length === 2 && B[0].name === 'Warung Bu Sari' && B[0].rp === 100000 && B[0].bks === 15 && B[1].name === 'Kios Ani' && B[1].rp === 60000 && B[1].bks === 6);
+    ok('a settled shop, an overpaid one and a cash sale are not titip left; a shop handed away belongs to its new holder',
+       !B.some(s => /Toko Maju|Toko Lebih|Toko Tunai|Warung Pojok/.test(s.name)) && S.length === 1 && S[0].name === 'Warung Pojok' && S[0].rp === 40000 && S[0].bks === 4);
+    ok('the holders add up to the dashboard\'s receivable (Rp 200.000), so the tab and the consignment screen cannot disagree',
+       B.reduce((s, x) => s + x.rp, 0) + S.reduce((s, x) => s + x.rp, 0) === R.outstandingTitip(tx) && R.outstandingTitip(tx) === 200000);
+    const bt = H.bountyItems({ cukaiDebts: { PENALTY_EOD_r1_CASH: 25000, PENALTY_1757480400000: 40000, 'p-cg16': 3, global_credit: -2, PENALTY_EOD_old: 0 },
+      cukaiDebtNotes: { PENALTY_EOD_r1_CASH: { label: 'Cash short', date: '2026-09-20' } } });
+    ok('the bounties: every PENALTY_ key and only those, a Rp 0 fine kept, each with its reason, newest first, Rp 65.000 in all',
+       bt.length === 3 && bt[0].key === 'PENALTY_EOD_r1_CASH' && bt[0].label === 'Cash short' && bt[0].amount === 25000 &&
+       bt[1].label === 'Damaged goods penalty' && bt[1].date === H.getLocalDayKey(new Date(1757480400000)) && bt[1].amount === 40000 &&
+       bt[2].label === 'End-of-day shortfall' && bt[2].amount === 0 && bt.reduce((s, b) => s + b.amount, 0) === 65000);
+  }
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
