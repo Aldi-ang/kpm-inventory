@@ -729,6 +729,19 @@ export const eodBountyLines = (report = {}, inventory = [], priceTier = 'Retail'
     return lines;
 };
 
+/* THE LINES OF ONE SALE, for the agent's own list (his 2026-09-26 "there should be data history what is being titip
+   on the agent inventory, right now it only shows '1 item'"): the name, the amount and unit as sold, the price tier,
+   and the line's rupiah - qty × the unit price the sale stored in calculatedPrice. A consignment payment lists what
+   the shop paid for. */
+export const saleLines = (tx = {}, inventory = []) =>
+    ((tx.type === 'CONSIGNMENT_PAYMENT' ? tx.itemsPaid : tx.items) || []).map(it => ({
+        name: it.name || (inventory || []).find(p => p && p.id === it.productId)?.name || it.productId || '—',
+        qty: Number(it.qty) || 0,
+        unit: it.unit || 'Bks',
+        tier: it.priceTier || '',
+        amount: (Number(it.qty) || 0) * (Number(it.calculatedPrice) || 0),
+    }));
+
 /* ONE READING OF A PERSON'S BOUNTIES: the PENALTY_ keys on their record, each with the reason and date written
    beside it when it was minted (cukaiDebtNotes - Aldi, 2026-08-18: "the bounties panel need to specify how the
    bounties number are calculated"). The EOD WANTED board and the van chest's BOUNTY tab (Fleet & Roster) both read

@@ -768,7 +768,9 @@ function LabPiutang({ q }) {
 
 const LAB_AGENT_TXNS = [
   { id: 'tx1', agentId: 'm2', date: LAB_TODAY, type: 'SALE', total: 1850000, customerName: 'Toko Sumber Rejeki' },
-  { id: 'tx2', agentId: 'm2', date: LAB_TODAY, type: 'SALE', total: 640000, customerName: 'Warung Bu Sri' },
+  /* a titip sale with its lines, so the agent's sale row has something to open to (2026-09-26) */
+  { id: 'tx2', agentId: 'm2', date: LAB_TODAY, type: 'SALE', paymentType: 'Titip', total: 640000, customerName: 'Warung Bu Sri',
+    items: [{ productId: 'p-cg16', qty: 20, unit: 'Bks', calculatedPrice: 27500, priceTier: 'Retail' }, { productId: 'p-djar', qty: 1, unit: 'Slop', calculatedPrice: 90000, priceTier: 'Grosir' }] },
   { id: 'tx3', agentId: 'm2', date: LAB_TODAY, type: 'RETUR', total: -89000, customerName: 'Toko Sumber Rejeki',
     forensicData: { quarantineCargo: [{ itemName: 'Cello Green 16', qty: 10, returnReason: 'Rusak / Basah' }] } },
 ];

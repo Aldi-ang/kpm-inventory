@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Package, Truck, AlertCircle, TrendingUp, Wallet, Coins, Receipt, Tag, AlertOctagon, ShieldAlert, User } from 'lucide-react';
+import { Package, Truck, AlertCircle, TrendingUp, Wallet, Coins, Receipt, Tag, AlertOctagon, ShieldAlert, User, ChevronDown } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import NixieCount from './components/NixieCount.jsx';
 /* `getCurrentDate` is IMPORTED, not redefined. This file used to keep its own copy —
    `new Date().toISOString()`, the UTC one — so it stayed a day behind between midnight and 07:00
    WIB even after the shared helper was fixed. A second copy of a date rule is a second bug
    waiting for someone to fix only the first. */
-import { formatRupiah, getCurrentDate } from './utils/helpers';
+import { formatRupiah, getCurrentDate, saleLines } from './utils/helpers';
 
 // 🚀 ACCEPT 'samplings' PROP HERE
 /* AUTO-FIT MONEY. Aldi, 2026-08-19, with a screenshot: the three IF SOLD figures ran into each
@@ -27,6 +27,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
     const [canvasItems, setCanvasItems] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [liveProfileData, setLiveProfileData] = useState(null);
+    const [openTx, setOpenTx] = useState(null);   // the sale row opened to its lines
     
     // 🚀 NEW: QUARANTINE TOGGLE STATE
     const [viewMode, setViewMode] = useState('HEALTHY'); // 'HEALTHY' | 'QUARANTINE'
@@ -412,8 +413,11 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                             </div>
                         ) : (
                             <div className="space-y-3 mb-6">
-                                {todayTransactions.map((tx, idx) => (
-                                    <div key={idx} className="bg-panel border border-line-2 p-3.5 rounded-none flex justify-between items-center kpm-hot hover:border-line-3">
+                                {todayTransactions.map((tx, idx) => { const txKey = tx.id || idx; const txLines = openTx === txKey ? saleLines(tx, inventory) : []; return (
+                                    <div key={txKey} className="bg-panel border border-line-2 rounded-none kpm-hot hover:border-line-3">
+                                    {/* the row opens to what the sale was made of (his 2026-09-26 "we need more description dropdown on that") */}
+                                    <button type="button" onClick={() => setOpenTx(o => (o === txKey ? null : txKey))} aria-expanded={openTx === txKey}
+                                        className="w-full p-3.5 flex justify-between items-center text-left cursor-pointer">
                                         <div>
                                             <h4 className="font-bold text-ink text-sm uppercase tracking-wide">{tx.customerName || 'Unknown Customer'}</h4>
                                             <div className="flex items-center gap-2 mt-1.5">
@@ -427,10 +431,24 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                         </div>
                                         <div className="text-right">
                                             <p className="text-lg md:text-xl font-black text-ink leading-none kpm-num inline-flex items-center gap-2"><i className="kpm-coin" aria-hidden="true"></i>{formatRupiah(tx.total || tx.amountPaid || 0)}</p>
-                                            <p className="text-[11px] text-ink-dim font-bold uppercase tracking-widest mt-1.5">{tx.items?.length || 0} items</p>
+                                            <p className="text-[11px] text-ink-dim font-bold uppercase tracking-widest mt-1.5 flex items-center justify-end gap-1">
+                                                {(tx.type === 'CONSIGNMENT_PAYMENT' ? tx.itemsPaid : tx.items)?.length || 0} {((tx.type === 'CONSIGNMENT_PAYMENT' ? tx.itemsPaid : tx.items)?.length || 0) === 1 ? 'item' : 'items'}
+                                                <ChevronDown size={13} aria-hidden="true" className={`transition-transform ${openTx === txKey ? 'rotate-180' : ''}`} />
+                                            </p>
                                         </div>
+                                    </button>
+                                    {openTx === txKey && (
+                                        <ul className="border-t border-line-2 px-3.5 py-2.5 space-y-1.5">
+                                            {txLines.length ? txLines.map((l, i) => (
+                                                <li key={i} className="flex justify-between items-baseline gap-3 text-[12px]">
+                                                    <span className="min-w-0 truncate font-bold text-ink">{l.name} <span className="font-mono font-semibold text-ink-dim">{l.qty} {l.unit}{l.tier ? ` · ${l.tier}` : ''}</span></span>
+                                                    <span className="shrink-0 font-mono font-bold text-ink kpm-num">{formatRupiah(l.amount)}</span>
+                                                </li>
+                                            )) : <li className="text-[12px] text-ink-dim">Tidak ada barang tercatat di penjualan ini.</li>}
+                                        </ul>
+                                    )}
                                     </div>
-                                ))}
+                                ); })}
                             </div>
                         )}
 

@@ -8629,5 +8629,24 @@ section('HIS 07:50 TEST OF ROUND 5 - FLEET & ROSTER ON THE PC AND THE PHONE (202
      vb.landingCell(Array(20).fill(null), 'x', -1, 1, 4) === 4 && vb.landingCell(['a', 'b', 'c', 'd', null, ...Array(15).fill(null)], 'x', -1, 0, 4) === 4);
 }
 
+/* ── A SALE ON THE AGENT'S LIST OPENS TO ITS LINES (2026-09-26) ────────────────────────────────────────────────
+   His 07:50: "there should be data history what is being titip on the agent inventory, right now it only shows
+   '1 item' instead we need more description dropdown on that". */
+section('A SALE ON THE AGENT\'S LIST OPENS TO ITS LINES (2026-09-26)');
+{ const aiv = code(read('src/AgentInventoryView.jsx'));
+  ok('each sale row is a key that opens its lines (aria-expanded), the lines from one helper; the bare "N items" is gone',
+     /aria-expanded=\{openTx === txKey\}/.test(aiv) && /saleLines\(tx, inventory\)/.test(aiv) && !/\{tx\.items\?\.length \|\| 0\} items/.test(aiv));
+  const H = await import('../utils/helpers.js');
+  if (typeof H.saleLines !== 'function') ok('saleLines exists in src/utils/helpers.js', false);
+  else {
+    const inv = [{ id: 'cg', name: 'Cello Green' }];
+    const L = H.saleLines({ type: 'SALE', paymentType: 'Titip', items: [{ productId: 'cg', qty: 5, unit: 'Bks', calculatedPrice: 9000, priceTier: 'Retail' }, { productId: 'dj', name: 'Djarum Coklat', qty: 2, unit: 'Slop', calculatedPrice: 90000 }] }, inv);
+    ok('a titip sale opens to its lines: Cello Green 5 Bks @ Retail = Rp 45.000 (the name from the inventory), Djarum Coklat 2 Slop = Rp 180.000',
+       L.length === 2 && L[0].name === 'Cello Green' && L[0].qty === 5 && L[0].unit === 'Bks' && L[0].tier === 'Retail' && L[0].amount === 45000 &&
+       L[1].name === 'Djarum Coklat' && L[1].unit === 'Slop' && L[1].amount === 180000);
+    ok('a consignment payment opens to what the shop paid for', H.saleLines({ type: 'CONSIGNMENT_PAYMENT', items: [{ qty: 9 }], itemsPaid: [{ productId: 'cg', qty: 3, unit: 'Bks', calculatedPrice: 9000 }] }, inv)[0]?.amount === 27000);
+  }
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
