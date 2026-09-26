@@ -118,7 +118,7 @@ export const loadingBay = {
     { text: '**Geofence**: permintaan Budi waktu berjualan di luar jarak toko, dengan statusnya.',
       focus: 'slip:van', at: 'near', hold: 3800 },
 
-    { text: 'Permintaan yang menunggu disetujui dari antrean di bagian atas layar, bukan dari sini.',
+    { text: 'Persetujuannya tetap lewat antrean di atas layar, bukan lewat tab ini.',
       focus: 'slip:van', at: 'near', tone: 'gold', hold: 4000 },
 
     { text: '**Titip**: toko yang masih memegang barang atau utang titipan Budi.',
