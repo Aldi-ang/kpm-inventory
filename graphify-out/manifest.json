@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "src/config/integration.audit.mjs": {
-    "mtime": 1790058574.1616542,
-    "ast_hash": "99c5a4afebe13eb89881d31507f23bd5",
+    "mtime": 1790392810.6216042,
+    "ast_hash": "080701285746b51039d9dd3e36e02f99",
     "semantic_hash": ""
   },
   "src/config/nextStop.selfcheck.mjs": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1790390527.6076105,
-    "ast_hash": "15c7efbb5ba8fe8873d54a1f01dbc1cd",
+    "mtime": 1790393311.488373,
+    "ast_hash": "607dbbf437333683dabdcc8a25558afa",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1790391214.947018,
-    "ast_hash": "b12ba8d69c4830bb3125aa6ef9bac33d",
+    "mtime": 1790392810.5339375,
+    "ast_hash": "4eb7b1e4b3407ad385040b429f1d89c9",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1790390527.6645913,
-    "ast_hash": "f9fd807ad89bebd0b61a8aadd9312d39",
+    "mtime": 1790393311.4913726,
+    "ast_hash": "8a5d977a53d585314416f2fa5a0b0b24",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -815,8 +815,8 @@
     "semantic_hash": ""
   },
   "src/ponder/registry.js": {
-    "mtime": 1788226002.2141497,
-    "ast_hash": "4c090537f8e3d207335d3e2959635a8d",
+    "mtime": 1790393049.0075986,
+    "ast_hash": "ef1b4d8c2fe6dd9824dd27f372054b64",
     "semantic_hash": ""
   },
   "src/ponder/scenes/stock-by-warehouse.js": {
@@ -860,8 +860,8 @@
     "semantic_hash": ""
   },
   "src/ponder/sections.js": {
-    "mtime": 1788263580.9368453,
-    "ast_hash": "fdf93b1994ced15d3f7992753e8beb64",
+    "mtime": 1790393037.7130666,
+    "ast_hash": "e84c249be0d36ce5d27c708f56150379",
     "semantic_hash": ""
   },
   "src/ponder/sfx.js": {
@@ -1160,13 +1160,28 @@
     "semantic_hash": ""
   },
   "src/components/LoadingBay.jsx": {
-    "mtime": 1790384783.658413,
-    "ast_hash": "3c650e92c850fe0284ec928f08413667",
+    "mtime": 1790392948.4802673,
+    "ast_hash": "33a661c1c1eafe4cce4a9213ce1dd554",
     "semantic_hash": ""
   },
   "src/utils/vanBay.js": {
     "mtime": 1790384205.0505805,
     "ast_hash": "2ab3107fee8b078ef93a910994389f54",
+    "semantic_hash": ""
+  },
+  "src/ponder/demo/loadingBay.js": {
+    "mtime": 1790393026.5529575,
+    "ast_hash": "6ca800b9b5a8d36221eeece04e6108da",
+    "semantic_hash": ""
+  },
+  "src/ponder/scenes/loading-bay.js": {
+    "mtime": 1790393213.1653821,
+    "ast_hash": "b0ddcfd419b34908324dea4949a5f2c2",
+    "semantic_hash": ""
+  },
+  "src/ponder/stages/LoadingBayStage.jsx": {
+    "mtime": 1790393026.7393482,
+    "ast_hash": "53bd40271036477894057c342bfafbf3",
     "semantic_hash": ""
   }
 }
