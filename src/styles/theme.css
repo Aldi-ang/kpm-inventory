@@ -4953,18 +4953,208 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-bay .slip .acts .keep { border: 1px solid var(--accent-edge); background: var(--panel); color: var(--accent-ink); }
 .kpm-bay .slip .acts button:disabled { border: 1px dashed var(--line-2); background: var(--panel); color: var(--ink-dim); cursor: not-allowed; }
 
-/* THE AGENT INVENTORY CHEST (LoadingBay vanOnly, AgentInventoryView for a regional admin and above) - his chest v3
-   prototype: the van chest alone, its panel growing out of the lid above it, six big squares a page, three across at
-   EVERY width ("one page always means the same thing", so the squares grow instead of multiplying). Same classes as the
-   bay; only the arrangement and the sizes differ. The closed state is its own rule so the open one still wins. */
-.kpm-bay.solo { grid-template-columns: minmax(0, 1fr); grid-template-areas: "hint" "vang" "vanc"; }
+/* THE AGENT INVENTORY CHESTS (LoadingBay vanOnly, AgentInventoryView for a regional admin and above) - v4, his 2026-09-27
+   PC test: "erase the Saleable / Quarantine switch and put TWO chests that open" (prototype v11 of
+   https://claude.ai/artifact/V5Z3ZkQZ3fvtXHynn4AnNF). The goods chest and the quarantine crate stand side by side, each
+   panel growing out of its own lid; the phone keeps the bay's order - the goods panel, the two chests, the quarantine
+   panel. Six big squares a page, three across at EVERY width. Same classes as the bay; only the arrangement and the
+   sizes differ. The closed state is its own rule so the open one still wins. */
+.kpm-bay.solo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "hint hint" "vang vang" "vanc qc" "qg qg"; }
+@container kpmbay (min-width: 640px) { .kpm-bay.solo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "hint hint" "vang qg" "vanc qc"; } }
 .kpm-bay.solo .gui.van { transform-origin: 50% 100%; }
 .kpm-bay.solo:not(.van-open) .gui.van { transform: scale(.08) translateY(24px); }
 .kpm-bay.solo .grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.kpm-bay.solo .gui.van .kpm-cube-stage { --kpm-slot-h: 52px; }
+.kpm-bay.solo .gui .kpm-cube-stage { --kpm-slot-h: 52px; }
 .kpm-bay.solo .chest.small { --cw: 124px; --ch: 104px; }
-@container kpmbay (min-width: 640px) { .kpm-bay.solo .gui.van .kpm-cube-stage { --kpm-slot-h: 74px; } }
+@container kpmbay (min-width: 640px) { .kpm-bay.solo .gui .kpm-cube-stage { --kpm-slot-h: 74px; } }
+
+/* THE QUARANTINE CRATE: yellow, the pixel radiation sign on its front (vanBay HAZARD_SIGN). An object keeps its own
+   colours - the same exemption as the brown chest and the ender chest's purple specks. His "too much ... very minimalist
+   but looks good" killed the rolling waves; his pick, "C and B is good i want it together but makes the effect for C
+   little bit brighter": four tiny green squares rise off the lid one at a time and fade, AND the sign's black turns
+   green and back. Both are animations, so Lite Mode and reduced motion stop them (the global rules), and the specks rest
+   at opacity 0 - gone, never frozen mid-air. Never a glow. */
+.kpm-bay .qc { grid-area: qc; isolation: isolate; }
+.kpm-bay .gui.q { grid-area: qg; transform-origin: 50% 0; transform: scale(.08) translateY(-24px); }
+@container kpmbay (min-width: 640px) { .kpm-bay .gui.q { transform-origin: 50% 100%; transform: scale(.08) translateY(24px); } }
+.kpm-bay.q-open .gui.q { transform: none; opacity: 1; pointer-events: auto; }
+.kpm-bay.q-shut .gui.q { visibility: hidden; transition: transform .26s cubic-bezier(.34, 1.56, .64, 1), opacity .12s linear, visibility 0s linear .26s; }
+.kpm-bay.q-open .qc .chest .body::before { opacity: 1; }
+.kpm-bay.q-open .qc .lid { transform: rotateX(-96deg); }
+.kpm-bay.q-open .qc .latch { transform: translateY(-8px) rotateX(-96deg); opacity: .3; }
+.kpm-bay .chest.hazard .body { background: linear-gradient(180deg, #F2C318 0 52%, #C99A0A 52% 100%); }
+.kpm-bay .chest.hazard .lid { background: linear-gradient(180deg, #F7D445, #F2C318); }
+.kpm-bay .chest.hazard .latch { background: linear-gradient(180deg, #3A3A3A, #151515); }
+.kpm-bay .chest.hazard .sign { position: absolute; left: 50%; top: 56%; width: 40px; height: 40px; transform: translate(-50%, -50%); }
+.kpm-bay .chest.hazard .sign svg { display: block; width: 100%; height: 100%; fill: #111; animation: kpmSignPulse 3.6s ease-in-out infinite; }
+@keyframes kpmSignPulse { 0%, 100% { fill: #111; } 50% { fill: #2F9A1C; } }
+.kpm-bay .qc .specks { position: absolute; left: 50%; top: 32px; width: 0; height: 0; pointer-events: none; z-index: 1; }
+.kpm-bay .qc .specks i { position: absolute; width: 4px; height: 4px; background: #62F03C; opacity: 0; animation: kpmSpeck 3.6s ease-out infinite; }
+.kpm-bay .qc .specks i:nth-child(1) { left: -38px; }
+.kpm-bay .qc .specks i:nth-child(2) { left: -12px; animation-delay: .9s; }
+.kpm-bay .qc .specks i:nth-child(3) { left: 14px; animation-delay: 1.8s; }
+.kpm-bay .qc .specks i:nth-child(4) { left: 36px; animation-delay: 2.7s; }
+@keyframes kpmSpeck { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: .75; } 100% { transform: translateY(-26px); opacity: 0; } }
+.lite-mode .kpm-bay .specks { display: none; }
+/* its squares only tell (a tap names shop + reason), so they point, never grab */
+.kpm-bay .gui.q .title .count { color: var(--stone-bad); }
+.kpm-bay .gui.q .slot.has { cursor: pointer; touch-action: auto; outline: 2px solid rgba(190, 70, 50, .6); outline-offset: -2px; }
+.kpm-bay .gui.q .slot .name { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpm-bay.q-open .gui.q:not(.noanim) .slot { animation: kpmBaySlotIn .22s cubic-bezier(.2, .9, .3, 1) both; animation-delay: var(--d, 0ms); }
+.kpm-bay.q-open .gui.q:not(.noanim) .slot .kpm-cube { animation: kpmBayPlace .62s cubic-bezier(.2, .9, .3, 1) both; animation-delay: calc(var(--d, 0ms) + 40ms); }
+.kpm-bay.dragging .gui.q.refuse { outline: 3px solid #C0392B; outline-offset: 2px; }
 /* ── END OF THE VAN-LOADING BAY ─────────────────────────────────────────────────────────────────── */
+
+/* ── THE BOOK OF THE DAY (components/TodayBook.jsx, Agent Inventory for T1-T4) ─────────────────────────────────────────
+   Sales and Samples as ONE notebook with two sections (his 2026-09-27 "make it 1 book instead with 2 section ... more
+   natural ... open when hover and slide its pages like some magic book"); prototype v11 of
+   https://claude.ai/artifact/V5Z3ZkQZ3fvtXHynn4AnNF, approved. Built from real parts: a back cover, a rounded spine, a
+   page block a little smaller than the covers, three loose leaves hinged at the spine, a front cover with leather
+   outside and endpaper inside, two ribbons (one per section). A fine pointer lifts it, swings the cover and riffles the
+   leaves, the enchanting-table book. An object keeps its own colours (leather, paper), like the chests. No shadow
+   anywhere: bevels are borders, depth is layers. */
+.kpm-shelf, .kpm-ob {
+  --leather: #7A4424; --leather-dark: #4A2612; --leather-hi: #9A5A33; --gilt: #C99A3E;
+  --paper: #EFE3C4; --paper-edge: #D9C9A0; --paper-ink: #2F2113; --paper-dim: #6B5537; --paper-rule: #D2C19A; --hi: #F5D08A;
+}
+.kpm-shelf { margin-top: 14px; padding: 18px 10px 14px; border: 1px solid var(--line-2); border-radius: 14px; background: var(--panel); display: flex; justify-content: center; }
+.kpm-nbBtn { all: unset; box-sizing: border-box; cursor: pointer; display: grid; justify-items: center; gap: 10px; padding: 10px 18px; border-radius: 12px; }
+.kpm-nbBtn:focus-visible { outline: 3px solid var(--hi); outline-offset: 2px; }
+.kpm-nbBtn .stage { perspective: 800px; width: 220px; height: 170px; display: grid; place-items: center; }
+.kpm-nb { --w: 96px; --h: 124px; --t: 30px; position: relative; width: var(--w); height: var(--h); transform-style: preserve-3d; margin-left: 60px;
+  transform: rotateX(22deg) rotateY(-26deg) rotateZ(3deg); transition: transform .55s cubic-bezier(.2, .9, .3, 1); }
+.kpm-nb i { position: absolute; display: block; }
+.kpm-nb .back { inset: 0; border-radius: 3px 7px 7px 3px; background: var(--leather-dark); }
+.kpm-nb .spine { left: 0; top: 0; width: var(--t); height: var(--h); transform-origin: left center; transform: rotateY(-90deg); border-radius: 6px;
+  background: linear-gradient(90deg, var(--leather-dark), var(--leather-hi) 45%, var(--leather) 60%, var(--leather-dark)); }
+.kpm-nb .spine::before, .kpm-nb .spine::after { content: ""; position: absolute; left: 0; right: 0; height: 5px; background: rgba(0, 0, 0, .28); border-top: 1px solid rgba(255, 255, 255, .14); }
+.kpm-nb .spine::before { top: 22%; }
+.kpm-nb .spine::after { bottom: 22%; }
+/* the page block: its top sheet, its fore-edge and its head, all in paper with fine lines */
+.kpm-nb .block { left: 3px; top: 4px; width: calc(var(--w) - 8px); height: calc(var(--h) - 8px); transform: translateZ(calc(var(--t) - 3px)); background: var(--paper); border-radius: 1px 3px 3px 1px; }
+.kpm-nb .edge { top: 4px; height: calc(var(--h) - 8px); width: calc(var(--t) - 4px); left: calc(var(--w) - 5px - (var(--t) - 4px) / 2); transform: translateZ(calc(var(--t) / 2)) rotateY(90deg);
+  background: repeating-linear-gradient(90deg, var(--paper) 0 2px, var(--paper-edge) 2px 3px); }
+.kpm-nb .head { left: 3px; width: calc(var(--w) - 8px); height: calc(var(--t) - 4px); top: calc(4px - (var(--t) - 4px) / 2); transform: translateZ(calc(var(--t) / 2)) rotateX(90deg);
+  background: repeating-linear-gradient(180deg, var(--paper) 0 2px, var(--paper-edge) 2px 3px); }
+/* the loose leaves, hinged at the spine: at rest they lie on the block; on hover they riffle over one after another */
+.kpm-nb .leaf { left: 3px; top: 5px; width: calc(var(--w) - 9px); height: calc(var(--h) - 10px); transform-origin: left center; transform: translateZ(calc(var(--t) - 2.5px)) rotateY(0deg);
+  background: linear-gradient(90deg, #E6D7B2, var(--paper) 18%); border-radius: 1px 3px 3px 1px; border-right: 1px solid var(--paper-edge); }
+.kpm-nb .block::after, .kpm-nb .leaf::after { content: ""; position: absolute; left: 14px; right: 12px; top: 16px; bottom: 18px; background: repeating-linear-gradient(180deg, transparent 0 8px, var(--paper-rule) 8px 9px); opacity: .8; }
+/* the front cover: leather outside, endpaper inside */
+.kpm-nb .cover { inset: 0; transform-style: preserve-3d; transform-origin: left center; transform: translateZ(var(--t)) rotateY(0deg); transition: transform .6s cubic-bezier(.3, 1.15, .45, 1); }
+.kpm-nb .out, .kpm-nb .in { position: absolute; inset: 0; border-radius: 3px 7px 7px 3px; backface-visibility: hidden; }
+.kpm-nb .out { background: radial-gradient(120% 90% at 28% 18%, var(--leather-hi), transparent 62%), var(--leather); border: 2px solid var(--leather-dark); }
+.kpm-nb .out::before { content: ""; position: absolute; left: 14px; right: 10px; top: 14px; bottom: 14px; border: 2px solid var(--gilt); border-radius: 2px; opacity: .9; }
+.kpm-nb .out::after { content: "CATATAN"; position: absolute; left: 0; right: 0; top: 44%; text-align: center; font: 900 9px/1 var(--font-mono); letter-spacing: .22em; color: var(--gilt); }
+.kpm-nb .in { transform: rotateY(180deg); background: linear-gradient(90deg, #D8C49A, #EADBB7); border: 2px solid var(--leather-dark); }
+/* two ribbons, one per section, hanging out of the bottom of the block */
+.kpm-nb .rib { top: calc(var(--h) - 8px); width: 7px; height: 30px; transform: translateZ(calc(var(--t) - 4px)); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%); }
+.kpm-nb .rib.a { left: 34%; background: #C99A3E; }
+.kpm-nb .rib.b { left: 46%; height: 24px; background: #8A2A22; }
+@media (hover: hover) and (pointer: fine) {
+  .kpm-nbBtn:hover .kpm-nb, .kpm-nbBtn:focus-visible .kpm-nb { transform: rotateX(44deg) rotateY(-4deg) rotateZ(0deg) translateY(-8px) translateZ(12px); }
+  .kpm-nbBtn:hover .kpm-nb .cover, .kpm-nbBtn:focus-visible .kpm-nb .cover { transform: translateZ(var(--t)) rotateY(-172deg); }
+  .kpm-nbBtn:hover .kpm-nb .leaf { animation: kpmRiffle 1.9s cubic-bezier(.45, .05, .35, 1) infinite; }
+  .kpm-nbBtn:hover .kpm-nb .leaf:nth-child(7) { animation-delay: .28s; }
+  .kpm-nbBtn:hover .kpm-nb .leaf:nth-child(8) { animation-delay: .56s; }
+}
+@keyframes kpmRiffle {
+  /* a leaf turns over, rests on the open cover, fades, and the next loop starts it on the block again - no jump */
+  0% { transform: translateZ(calc(var(--t) - 2.5px)) rotateY(0deg); opacity: 0; }
+  10% { transform: translateZ(calc(var(--t) - 2.5px)) rotateY(0deg); opacity: 1; }
+  60%, 86% { transform: translateZ(calc(var(--t) - 2px)) rotateY(-168deg); opacity: 1; }
+  100% { transform: translateZ(calc(var(--t) - 2px)) rotateY(-168deg); opacity: 0; }
+}
+.kpm-nbBtn .lbl { font: 900 11px/1.3 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink); text-align: center; }
+.kpm-nbBtn .lbl b { display: block; font-size: 10px; letter-spacing: .1em; color: var(--accent-ink); }
+
+/* THE OPEN BOOK: a real book, opened when pressed (his v8 review: "make the book more natural make it open when press and
+   also keep the original size even when there is few transaction then just the other space blank"). The shut book flies
+   up from the shelf, then its cover swings over on the spine and becomes the left page (a cover's inside IS the first
+   page); the paper darkens into the gutter and the page stack shows at both fore-edges. ONE FIXED SIZE: six ruled lines
+   a page, unused lines stay ruled and blank. It stays STRAIGHT (his "just let it straight") and shows its thickness
+   flat: 9 px of warm tan page layers along the bottom and both outer edges, never a bright white line; the left half's
+   layers settle in as the cover lands. Phone: the cover turns away and one page fills the book. */
+.kpm-ob-scrim { position: fixed; inset: 0; z-index: 70; background: rgba(5, 4, 3, .6); transition: opacity .3s; }
+.kpm-ob-scrim.fade { opacity: 0; }
+.kpm-ob { --W: min(900px, calc(100vw - 32px)); --H: min(560px, calc(100vh - 110px)); --shutX: -25%; --edgeA: #CDBB8E; --edgeB: #A8956A;
+  position: fixed; z-index: 80; left: 50%; top: 50%; width: var(--W); height: var(--H); margin: calc(var(--H) / -2 + 22px) 0 0 calc(var(--W) / -2);
+  perspective: 2400px; color: var(--paper-ink); font-family: var(--font-sans, inherit); }
+.kpm-ob .book2 { position: absolute; inset: 0; transform-style: preserve-3d; transform: none; transition: transform .75s cubic-bezier(.3, .9, .3, 1); }
+.kpm-ob.shut .book2 { transform: translateX(var(--shutX)); }
+.kpm-ob.fly .book2 { animation: kpmObFly .38s cubic-bezier(.2, .9, .3, 1) both; }
+@keyframes kpmObFly { from { transform: translate(calc(var(--shutX) + var(--fx, 0px)), var(--fy, 0px)) scale(.18) rotate(-4deg); opacity: .3; } to { transform: translateX(var(--shutX)); opacity: 1; } }
+.kpm-ob.away .book2 { transform: translate(calc(var(--shutX) + var(--fx, 0px)), var(--fy, 0px)) scale(.18); opacity: 0; transition: transform .26s ease-in, opacity .26s linear; }
+/* the right half: the back board, the page stack at the fore-edge, the right page */
+.kpm-ob .half { position: absolute; top: 0; bottom: 0; left: 50%; width: 50%; transform-style: preserve-3d; }
+.kpm-ob .tail, .kpm-ob .fore { position: absolute; pointer-events: none; }
+.kpm-ob .tail { height: 9px; background: repeating-linear-gradient(180deg, var(--edgeA) 0 2px, var(--edgeB) 2px 3px); }
+.kpm-ob .half > .tail { left: 0; right: -9px; bottom: -9px; border-radius: 0 0 4px 0; }
+.kpm-ob .half > .fore { top: 2px; bottom: -9px; right: -9px; width: 9px; border-radius: 0 4px 4px 0; background: repeating-linear-gradient(90deg, var(--edgeA) 0 2px, var(--edgeB) 2px 3px); }
+.kpm-ob .book2 > .tail.l { left: -9px; width: calc(50% + 9px); bottom: -9px; border-radius: 0 0 0 4px; transition: opacity .2s linear .55s; }
+.kpm-ob .book2 > .fore.l { top: 2px; bottom: -9px; left: -9px; width: 9px; border-radius: 4px 0 0 4px; transition: opacity .2s linear .55s; background: repeating-linear-gradient(90deg, var(--edgeB) 0 1px, var(--edgeA) 1px 3px); }
+.kpm-ob.shut .book2 > .l { opacity: 0; transition-delay: 0s; }
+.kpm-ob .board { position: absolute; inset: -10px -10px -10px 0; background: var(--leather); border-radius: 0 10px 10px 0; border: 2px solid var(--leather-dark); border-left: 0; }
+.kpm-ob .stack { position: absolute; top: 3px; bottom: 3px; right: 0; width: 8px; background: repeating-linear-gradient(90deg, var(--paper) 0 1px, var(--paper-edge) 1px 2px); border-radius: 0 3px 3px 0; }
+.kpm-ob .sheet { position: absolute; top: 0; bottom: 0; left: 0; right: 7px; background: linear-gradient(90deg, #CDB988 0, #E4D3A8 4%, var(--paper) 12%); border-radius: 0 3px 3px 0; overflow: hidden; }
+/* the cover: leather outside; its inside is the left page */
+.kpm-ob .flap { position: absolute; top: 0; bottom: 0; left: 50%; width: 50%; transform-origin: left center; transform-style: preserve-3d; transform: rotateY(-180deg); transition: transform .8s cubic-bezier(.45, .05, .25, 1); }
+.kpm-ob.shut .flap { transform: rotateY(0deg); }
+.kpm-ob .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; transition: opacity .25s linear; }
+.kpm-ob .face.out { inset: -10px -10px -10px 0; border-radius: 0 10px 10px 0; background: radial-gradient(120% 90% at 30% 20%, var(--leather-hi), transparent 60%), var(--leather); border: 2px solid var(--leather-dark); border-left: 0; }
+.kpm-ob .face.out::before { content: ""; position: absolute; left: 12%; right: 10%; top: 12%; bottom: 12%; border: 2px solid var(--gilt); border-radius: 3px; opacity: .9; }
+.kpm-ob .face.out::after { content: "CATATAN"; position: absolute; left: 0; right: 0; top: 46%; text-align: center; font: 900 18px/1 var(--font-mono); letter-spacing: .3em; color: var(--gilt); }
+.kpm-ob .face.in { transform: rotateY(180deg); }
+.kpm-ob .face.in .board { inset: -10px 0 -10px -10px; border-radius: 10px 0 0 10px; border: 2px solid var(--leather-dark); border-right: 0; }
+.kpm-ob .face.in .stack { right: auto; left: 0; border-radius: 3px 0 0 3px; }
+.kpm-ob .face.in .sheet { left: 7px; right: 0; background: linear-gradient(270deg, #CDB988 0, #E4D3A8 4%, var(--paper) 12%); border-radius: 3px 0 0 3px; }
+/* the paper: six ruled lines a page, filled or not - the book never changes size */
+.kpm-ob .page { position: absolute; inset: 0; padding: 22px 26px 0; display: block; min-height: 0; }
+.kpm-ob .page h3 { margin: 0 0 12px; font: 900 14px/1.25 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--paper-ink); display: flex; justify-content: space-between; gap: 10px; }
+.kpm-ob .page h3 span { color: var(--paper-dim); font-size: 12px; letter-spacing: .04em; }
+.kpm-ob .rows { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); height: calc(6 * 52px); grid-auto-rows: 52px; align-content: start;
+  background: repeating-linear-gradient(180deg, transparent 0 51px, var(--paper-rule) 51px 52px); }
+.kpm-ob .rows button { all: unset; box-sizing: border-box; width: 100%; height: 52px; cursor: pointer; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; padding: 6px; }
+.kpm-ob .rows button:focus-visible { outline: 2px solid var(--paper-ink); outline-offset: 1px; }
+.kpm-ob .rows button[aria-current="true"] { background: rgba(107, 74, 18, .10); }
+.kpm-ob .who2 { min-width: 0; font-weight: 800; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--paper-ink); }
+.kpm-ob .who2 small { display: block; font: 700 11px/1.4 var(--font-mono); color: var(--paper-dim); letter-spacing: .04em; }
+.kpm-ob .amt { flex: 0 0 auto; font: 900 13px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--paper-ink); }
+.kpm-ob .owe { display: block; font: 800 10px/1.4 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: #8A2418; text-align: right; }
+.kpm-ob .foot { position: absolute; left: 26px; right: 26px; bottom: 12px; display: grid; gap: 2px; }
+.kpm-ob .lines { list-style: none; margin: 4px 0 8px; padding: 0 4px 0 14px; display: grid; gap: 4px; font: 700 12px/1.45 var(--font-mono); color: var(--paper-ink); }
+.kpm-ob .lines li { display: flex; justify-content: space-between; gap: 10px; }
+.kpm-ob .lines li span:last-child { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kpm-ob .detail { margin-top: 4px; font: 700 12.5px/1.55 var(--font-mono); color: var(--paper-ink); display: grid; gap: 6px; }
+.kpm-ob .detail .empty { color: var(--paper-dim); }
+.kpm-ob .tot { display: flex; justify-content: space-between; border-top: 2px solid var(--paper-rule); padding-top: 8px; font: 900 13px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; }
+.kpm-ob .turn { display: flex; justify-content: space-between; align-items: center; padding: 8px 4px 2px; color: var(--paper-dim); font: 800 11px/1 var(--font-mono); letter-spacing: .1em; }
+.kpm-ob .arrow { all: unset; cursor: pointer; width: 40px; height: 36px; display: grid; place-items: center; color: var(--paper-ink); font: 900 18px/1 var(--font-mono); border-radius: 4px; }
+.kpm-ob .arrow:disabled { opacity: .25; cursor: default; }
+.kpm-ob .arrow:focus-visible { outline: 2px solid var(--paper-ink); }
+.kpm-ob .back { all: unset; cursor: pointer; margin-top: 16px; font: 900 11px/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--paper-ink); padding: 10px 0; }
+.kpm-ob .back:focus-visible { outline: 2px solid var(--paper-ink); }
+.kpm-ob .page.slide { animation: kpmPageSlide .34s cubic-bezier(.2, .9, .3, 1) both; }
+@keyframes kpmPageSlide { from { transform: translateX(calc(var(--dir, 1) * 28px)); opacity: 0; } to { transform: none; opacity: 1; } }
+/* the two sections are ribbons standing out of the top edge; the close key sits beside them */
+.kpm-ob .top { position: absolute; left: 12px; right: -10px; bottom: 100%; display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; }
+.kpm-ob .tabs2 { display: flex; gap: 6px; }
+.kpm-ob .tab2 { all: unset; cursor: pointer; min-height: 40px; padding: 0 14px; display: grid; place-items: center; border-radius: 6px 6px 0 0; color: #F7ECD6;
+  font: 900 11px/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px; transition: margin-bottom .2s ease, padding-bottom .2s ease; }
+.kpm-ob .tab2[data-sec="sales"] { background: #A87C2C; }
+.kpm-ob .tab2[data-sec="samples"] { background: #8A2A22; }
+.kpm-ob .tab2[aria-selected="true"] { margin-bottom: 0; padding-bottom: 10px; }
+.kpm-ob .tab2:focus-visible { outline: 3px solid var(--hi); }
+.kpm-ob .close { all: unset; cursor: pointer; min-width: 44px; min-height: 36px; margin-bottom: 14px; padding: 0 12px; display: grid; place-items: center; border: 1px solid rgba(243, 230, 204, .5);
+  border-radius: 8px; color: #F3E6CC; font: 900 11px/1 var(--font-mono); letter-spacing: .12em; background: rgba(0, 0, 0, .25); }
+.kpm-ob .close:focus-visible { outline: 3px solid var(--hi); }
+@media (max-width: 719px) {
+  .kpm-ob .book2 > .l { display: none; }
+  .kpm-ob { --W: calc(100vw - 32px); --shutX: 0%; }
+  .kpm-ob .half, .kpm-ob .flap { left: 0; width: 100%; }
+  .kpm-ob:not(.shut) .face.in { opacity: 0; transition-delay: .45s; }   /* the cover turns away; one page fills the book */
+}
+/* ── END OF THE BOOK OF THE DAY ─────────────────────────────────────────────────────────────────── */
 
 /* ── THE ROSTER STAGE (FleetCanvasManager.jsx stageCard) — his State of Decay 2 community screen ───────────
    The people stand side by side on a lit floor, a name over each; pointing lifts a card and lights its floor,

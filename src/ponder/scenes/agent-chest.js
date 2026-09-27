@@ -20,7 +20,7 @@ export const agentChest = {
   related: [],
   steps: [
     /* ── who sees it ──────────────────────────────────────────────────────────────────────────── */
-    { text: 'Untuk **Regional Admin** ke atas, Agent Inventory tampil sebagai peti van.',
+    { text: 'Untuk **Regional Admin** ke atas, Agent Inventory tampil sebagai dua peti dan satu buku.',
       focus: '*', at: 'bottom', hold: 3400 },
 
     { text: 'Salesman tetap melihat daftar barang seperti biasa.',
@@ -70,15 +70,28 @@ export const agentChest = {
     { text: 'Memuat dan mengembalikan barang tetap lewat **Muat van** di Loading Bay.',
       focus: 'gui:van', at: 'near', tone: 'gold', hold: 3600 },
 
-    /* ── the damaged row ──────────────────────────────────────────────────────────────────────── */
-    { text: '**Barang rusak · di van**: retur rusak hari ini, dengan alasannya.',
-      focus: 'dmg:van', at: 'near', hold: 3400 },
+    /* ── the quarantine crate (v4) ──────────────────────────────────────────────────────────────── */
+    { text: 'Di sebelahnya berdiri peti kuning **Karantina**: retur rusak hari ini yang menunggu EOD.',
+      focus: 'chest:q', at: 'near', hold: 3400 },
 
-    { text: 'Baris ini tidak bisa diisi atau dikosongkan dengan menarik kotak.',
-      focus: 'dmg:van', at: 'near', tone: 'danger', hold: 3400 },
+    { text: 'Kotak di dalamnya diketuk untuk melihat asal toko dan alasannya.',
+      focus: 'gui:q', at: 'near', hold: 3200 },
+
+    { text: 'Isi peti ini tidak bisa ditambah atau dikeluarkan dengan menarik kotak.',
+      focus: 'gui:q', at: 'near', tone: 'danger', hold: 3400 },
 
     { text: 'Barang rusak dicatat lewat **EOD Setoran**.',
-      focus: 'dmg:van', at: 'near', hold: 3000 },
+      focus: 'gui:q', at: 'near', hold: 3000 },
+
+    /* ── the book of the day (v4) ─────────────────────────────────────────────────────────────── */
+    { text: 'Di bawahnya ada buku **Catatan hari ini**: penjualan dan sampel hari ini.',
+      focus: 'book', at: 'near', hold: 3400 },
+
+    { text: 'Bukunya punya dua bagian, **Penjualan** dan **Sampel**, dua pita di atasnya.',
+      focus: 'book', at: 'near', hold: 3400 },
+
+    { text: 'Ditekan, bukunya terbuka lebar. **Tutup** mengembalikannya ke rak.',
+      focus: 'book', at: 'near', hold: 3400 },
 
     /* ── shut and open ────────────────────────────────────────────────────────────────────────── */
     { text: 'Petinya boleh ditutup kalau layar mau lebih lega.',

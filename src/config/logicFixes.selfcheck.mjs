@@ -7236,7 +7236,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
 {
   const a = read('src/AgentInventoryView.jsx');
   ok('REGRESSION: the fixed 850 px box is gone under lg — the desk keeps its height, the phone takes its content height',
-     /className="lg:h-\[calc\(100vh-120px\)\] flex flex-col max-w-5xl mx-auto/.test(a) && !/h-\[850px\]/.test(code(a)),
+     /className=\{`\$\{seesChest \? '' : 'lg:h-\[calc\(100vh-120px\)\] '\}flex flex-col max-w-5xl mx-auto/.test(a) && !/h-\[850px\]/.test(code(a)),   /* the chest view is one scroll on the desk too (v4, 2026-09-27) */
      'measured 2026-09-18: the page scrolled 188 px and the list scrolled another 366 inside it — two thumbs for one screen');
   ok('the list scrolls itself only on the desk; on the phone the shell scrolls everything once',
      /<div className="flex-1 lg:overflow-y-auto p-4 custom-scrollbar relative z-10">/.test(a));
@@ -8786,7 +8786,7 @@ section('THE PONDER PAGE FOR THE LOADING BAY (2026-09-26)');
      /'loading-bay': loadingBay,/.test(reg) && /'loading-bay': LoadingBayStage,/.test(reg) && scene?.stage === 'loading-bay' &&
      /import LoadingBay from '\.\.\/\.\.\/components\/LoadingBay\.jsx'/.test(stg) && /<LoadingBay\b/.test(stg));
   ok('the bay takes a pose only as its starting state, and the live screen never passes one',
-     /useState\(\(\) => pose\?\.lines \|\| \[\]\)/.test(bay) && /useState\(pose\?\.open \|\| \{ wh: null, van: null \}\)/.test(bay) &&
+     /useState\(\(\) => pose\?\.lines \|\| \[\]\)/.test(bay) && /useState\(pose\?\.open \|\| \{ wh: null, van: null, q: null \}\)/.test(bay) &&   /* q: the Agent Inventory crate (v4) */
      /pose\?\.open \? 0 : setTimeout/.test(bay) && !/\bpose=/.test(fl));
   for (const [what, re] of [
     ['dragging a box only plans: it lands in the muatan and nothing moves yet', /\*\*Muatan\*\*[\s\S]*belum/],
@@ -8831,15 +8831,17 @@ section('THE AGENT INVENTORY CHEST (2026-09-27)');
   ok('the salesman keeps his own list screen', /canvasItems\.map\(/.test(aiv));
   ok('a drag writes the SAME vanLayout field through the fleet edit rule - never activeCanvas',
      /updateDoc\([^;]*\{ vanLayout: cells \}\)/.test(aiv) && /canEditFleetRoster\(userRole\)/.test(aiv) && !/activeCanvas:/.test(aiv));
-  ok('the damaged row is the bay\'s own damagedInVan, fed today\'s sales for this van', /damaged=\{damagedInVan\(todayTransactions, inventory\)\}/.test(aiv));
+  ok('the quarantine chest holds quarantinedCargo - the Quarantine tab\'s own list and count, never damagedInVan (which ignores eodCredited)',
+     /quarantine=\{quarantinedCargo\}/.test(aiv) && !/damagedInVan/.test(aiv) && /!tx\.forensicData\.eodCredited/.test(aiv));
   ok('van-only: no warehouse chest, no tabs, no muatan - nothing here can load or return',
      /\{!vanOnly && \(\s*<>\s*\{open\.wh === false/.test(bay) && /\{canEdit && !vanOnly && \(/.test(bay) && /open\.van === false && !vanOnly/.test(bay) &&
      /if \(!slot \|\| !canEdit \|\| busy\) return;\s*if \(vanOnly\)/.test(bay));
   ok('van-only is six squares a page on every width, and each page button carries its count',
      /if \(vanOnly \|\| !el \|\| typeof ResizeObserver/.test(bay) && /vanOnly \? ` · \$\{/.test(bay));
-  ok('the chest sits alone with its panel over the lid, three across at every width, and nothing starts hidden',
-     /\.kpm-bay\.solo \{[^}]*grid-template-areas: "hint" "vang" "vanc"/.test(th) && /\.kpm-bay\.solo \.grid \{[^}]*repeat\(3, 1fr\)/.test(th) &&
-     !/\.kpm-bay\.solo[^{]*\{[^}]*opacity: 0/.test(th));
+  ok('two chests: side by side on the PC, each panel over its lid; the phone reads goods panel, the two chests, the quarantine panel; three across, nothing starts hidden',
+     /\.kpm-bay\.solo \{[^}]*grid-template-areas: "hint hint" "vang vang" "vanc qc" "qg qg"/.test(th) &&
+     /@container kpmbay \(min-width: 640px\) \{ \.kpm-bay\.solo \{[^}]*grid-template-areas: "hint hint" "vang qg" "vanc qc"/.test(th) &&
+     /\.kpm-bay\.solo \.grid \{[^}]*repeat\(3, 1fr\)/.test(th) && !/\.kpm-bay\.solo[^{]*\{[^}]*opacity: 0/.test(th));
   /* the book writes an inline opacity on every part it dims (PonderOverlay measure, 0.26), so a shut panel hidden only by
      opacity: 0 came back as a grey speck under the chest (frame book-430-dark-step19, 2026-09-27) - in both book pages */
   ok('a shut panel is HIDDEN after it shrinks, never only see-through',
@@ -8852,7 +8854,9 @@ section('THE AGENT INVENTORY CHEST (2026-09-27)');
   const cells = demo ? vb.vanCells(demo.agent.vanLayout, ids, vb.PER) : [];
   const perPage = [0, 1, 2].map(k => cells.slice(k * vb.PER, k * vb.PER + vb.PER).filter(Boolean).length);
   ok('the demo van pages as 5 · 4 · 0 (a hole on page 1 stays a hole)', perPage.join() === '5,4,0', perPage.join());
-  ok('the demo damaged row has reasons to show', (demo?.damaged || []).length >= 2 && demo.damaged.every(x => x.why && x.bks > 0));
+  ok('the demo quarantine chest has shops and reasons to tell, in the quarantinedCargo shape',
+     (demo?.quarantine || []).length >= 2 && demo.quarantine.every(x => x.productId && x.qty > 0 && x.returnReason && x.customerOrigin));
+  ok('the demo book has sales with lines and samples to open', (demo?.sales || []).length >= 2 && demo.sales.every(t => (t.items || []).length) && (demo?.samples || []).length >= 1);
   /* the book page */
   let scene = null;
   try { scene = (await import('../ponder/scenes/agent-chest.js')).agentChest; } catch { /* red below */ }
@@ -8869,9 +8873,67 @@ section('THE AGENT INVENTORY CHEST (2026-09-27)');
     ['six squares a page, and a page button carries what is on it', /enam kotak[\s\S]*\*\*2 · 4\*\*/],
     ['a drag saves only the arrangement - the stock does not move', /susunan[\s\S]*[Ss]tok[^\n]*tidak/],
     ['stock moves only through Muat van in the Loading Bay', /\*\*Muat van\*\*[^\n]*Loading Bay|Loading Bay[^\n]*\*\*Muat van\*\*/],
-    ['the damaged row is recorded through EOD, never dragged', /\*\*Barang rusak · di van\*\*[\s\S]*\*\*EOD Setoran\*\*/],
+    ['the quarantine chest is settled through EOD, never dragged', /\*\*Karantina\*\*[\s\S]*\*\*EOD Setoran\*\*/],
+    ['one book, two sections', /\*\*Catatan hari ini\*\*[\s\S]*\*\*Penjualan\*\*[\s\S]*\*\*Sampel\*\*/],
   ]) ok('the chest page says it: ' + what, re.test(text));
+  ok('the chest page mounts the real book too, and a press on it inside the page opens nothing behind the page',
+     /import TodayBook from '\.\.\/\.\.\/components\/TodayBook\.jsx'/.test(stg) && /<TodayBook\b/.test(stg) && /onClickCapture=/.test(stg));
   ok('the chest page never says "kamu"', !!text && !/\bkamu\b|-mu\b/i.test(text));
+}
+
+/* ── AGENT INVENTORY V4: TWO CHESTS AND ONE BOOK (2026-09-27) ─────────────────────────────────────────────────────
+   His PC test: the desk pinned the Manifest header and the chest got a ~300 px window. His words: erase the Saleable /
+   Quarantine switch and put TWO chests that open; Sales and Samples as one 3D notebook with two sections. The
+   prototype is v11 of https://claude.ai/artifact/V5Z3ZkQZ3fvtXHynn4AnNF (approved). T1-T4 only; the salesman's screen
+   does not change. */
+section('AGENT INVENTORY V4: TWO CHESTS AND ONE BOOK (2026-09-27)');
+{ const raw = read('src/AgentInventoryView.jsx'), aiv = code(raw), bay = code(read('src/components/LoadingBay.jsx'));
+  const th = read('src/styles/theme.css');
+  const bookPath = 'src/components/TodayBook.jsx', book = fs.existsSync(bookPath) ? code(read(bookPath)) : '';
+  const cut = (s, a, b) => { const i = s.indexOf(a); if (i < 0) return ''; const j = s.indexOf(b, i + a.length); return j < 0 ? '' : s.slice(i, j); };
+  const chestView = cut(aiv, '{seesChest ? (', ') : (<>');
+  ok('one scroll on the desk too: the chest view drops the pinned height and the inner scroller; the salesman keeps both',
+     /className=\{`\$\{seesChest \? '' : 'lg:h-\[calc\(100vh-120px\)\] '\}flex flex-col/.test(raw) &&
+     !!chestView && !/overflow-y-auto|lg:h-/.test(chestView) && /<div className="flex-1 lg:overflow-y-auto p-4 custom-scrollbar relative z-10">/.test(raw));
+  ok('the Saleable / Quarantine switch is gone for T1-T4: the chest view holds the bay and the book, no switch',
+     /<LoadingBay vanOnly\b/.test(chestView) && /<TodayBook sales=\{todayTransactions\} samples=\{todaySamplings\} inventory=\{inventory\}/.test(chestView) &&
+     !/setViewMode|QuarantineLedgerBoard/.test(chestView));
+  ok('the quarantine list keeps the Quarantine tab\'s filter and carries what the crate needs (product, unit)',
+     /productId: item\.productId/.test(aiv) && /unit: item\.unit/.test(aiv) && /!tx\.forensicData\.eodCredited/.test(aiv));
+  ok('van-only: the goods chest has NO damaged row; the crate stands beside it with its own panel',
+     /\{!vanOnly && \(<>\s*<div className="dmgHead">/.test(bay) && /\{vanOnly && \(<>/.test(bay) &&
+     /className="chest small hazard"/.test(bay) && /data-ponder="chest:q"/.test(bay) && /data-ponder="gui:q"/.test(bay));
+  ok('the crate only tells: a tap names shop + reason, nothing drags in or out (a drop on it is refused like the damaged row)',
+     /function tellQ\(/.test(bay) && /dari \$\{x\.customerOrigin\}/.test(bay) &&
+     /vanOnly \? inRect\(refs\.qChest\.current, x, y\) \|\| \(open\.q && inRect\(refs\.dmg\.current, x, y\)\)/.test(bay));
+  const vb = await import('../utils/vanBay.js'), S = new Set((vb.HAZARD_SIGN || []).map(([x, y]) => x + ',' + y));
+  ok('the radiation sign is drawn square by square: the dot, three blades (top-left, top-right, bottom), gaps between them',
+     S.has('7,7') && S.has('7,13') && S.has('12,4') && S.has('2,4') && !S.has('7,1') && !S.has('1,10') && !S.has('9,7') && S.size > 40, S.size);
+  const crate = cut(th, 'THE QUARANTINE CRATE', 'END OF THE VAN-LOADING BAY');
+  ok('the crate is yellow with the sign; the quiet effect is his C+B pick: four 4 px #62F03C specks rising 26 px, 3.6 s, .9 s apart, and the sign black -> #2F9A1C',
+     /\.chest\.hazard \.body \{[^}]*#F2C318/.test(crate) && /\.specks i \{[^}]*width: 4px; height: 4px; background: #62F03C;[^}]*3\.6s/.test(crate) &&
+     /translateY\(-26px\)/.test(crate) && /nth-child\(4\) \{[^}]*animation-delay: 2\.7s/.test(crate) && /50% \{ fill: #2F9A1C; \}/.test(crate) &&
+     /\.lite-mode \.kpm-bay \.specks \{ display: none; \}/.test(crate));
+  const bookCss = cut(th, 'THE BOOK OF THE DAY', 'END OF THE BOOK OF THE DAY');
+  ok('no shadow, no filter, no glow in the crate or the book (G30) - bevels are borders', crate.length > 800 && bookCss.length > 3000 && !/box-shadow|text-shadow|drop-shadow|filter:/.test(crate + bookCss));
+  ok('one notebook: real parts (back, rounded spine, smaller page block, three leaves on the spine, cover with leather and endpaper, two ribbons), 30 px deep',
+     (book.match(/<i className="leaf" \/>/g) || []).length === 3 && /className="spine"/.test(book) && /className="block"/.test(book) &&
+     /<span className="out" \/><span className="in" \/>/.test(book) && /className="rib a"/.test(book) && /className="rib b"/.test(book) && /\.kpm-nb \{[^}]*--t: 30px/.test(bookCss));
+  ok('hover (fine pointer only) lifts it, swings the cover and riffles the leaves; both counts on its label',
+     /@media \(hover: hover\) and \(pointer: fine\) \{[^@]*\.kpm-nbBtn:hover \.kpm-nb \.leaf \{ animation: kpmRiffle/.test(bookCss) && /penjualan · \$\{samples\.length\} sampel/.test(book));
+  ok('a press opens a REAL book: it flies up shut, then the cover swings over; Tutup / Escape shut it and it flies back; portaled, never a native dialog',
+     /createPortal\(/.test(book) && /role="dialog"/.test(book) && /e\.key === 'Escape'/.test(book) && />Tutup</.test(book) &&
+     /'fly'/.test(book) && /'away'/.test(book) && !/window\.(confirm|alert|prompt)|<dialog/.test(book));
+  ok('ONE FIXED SIZE: min(900px, 100vw-32) x min(560px, 100vh-110), six ruled 52 px lines a page, unused lines stay blank',
+     /--W: min\(900px, calc\(100vw - 32px\)\); --H: min\(560px, calc\(100vh - 110px\)\)/.test(bookCss) && /const ROWS = 6;/.test(book) &&
+     /\.kpm-ob \.rows \{[^}]*height: calc\(6 \* 52px\)/.test(bookCss));
+  ok('the sections are ribbon tabs (Penjualan gold, Sampel wine) with Tutup beside them; the phone turns the page with "‹ Kembali ke daftar"',
+     /\[data-sec="sales"\] \{ background: #A87C2C; \}/.test(bookCss) && /\[data-sec="samples"\] \{ background: #8A2A22; \}/.test(bookCss) &&
+     /Penjualan/.test(book) && /Sampel/.test(book) && /‹ Kembali ke daftar/.test(book));
+  ok('the open book stays STRAIGHT (his "just let it straight") and shows its thickness as 9 px of tan page layers, never a white line',
+     !/rotateX\(var\(--tilt\)\)|--tilt/.test(bookCss) && /--edgeA: #CDBB8E; --edgeB: #A8956A;/.test(bookCss) && /\.tail \{[^}]*height: 9px/.test(bookCss));
+  ok('a sale opens to its lines through saleLines; Lite Mode and reduced motion open the book at once',
+     imports(book, 'saleLines') && /saleLines\(/.test(book) && /lite-mode/.test(book) && /prefers-reduced-motion: reduce/.test(book));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

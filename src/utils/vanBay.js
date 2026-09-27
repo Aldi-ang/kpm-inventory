@@ -156,3 +156,16 @@ export function titipOf(transactions, customers, agentId, inventory) {
     .filter(s => s.rp > 0 || s.bks > 0)
     .sort((a, b) => b.rp - a.rp || b.bks - a.bks);
 }
+
+/* THE QUARANTINE CRATE'S RADIATION SIGN (Agent Inventory v4, his 2026-09-27 reference picture): three blades - top-left,
+   top-right, bottom, 60 degrees each - and the dot in the middle, on a 15 x 15 grid, square by square so it stays crisp at
+   any size. [x, y] cells, y down. */
+export const HAZARD_SIGN = (() => {
+  const N = 15, c = 7, out = [];
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const dx = x - c, dy = c - y, r = Math.hypot(dx, dy), a = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
+    const blade = r >= 2.9 && r <= 7.3 && [30, 150, 270].some(m => { const d = Math.abs(a - m); return Math.min(d, 360 - d) <= 30; });
+    if (r <= 1.6 || blade) out.push([x, y]);
+  }
+  return out;
+})();

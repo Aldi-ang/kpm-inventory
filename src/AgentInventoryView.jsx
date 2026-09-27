@@ -3,7 +3,7 @@ import { Package, Truck, AlertCircle, TrendingUp, Wallet, Coins, Receipt, Tag, A
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import NixieCount from './components/NixieCount.jsx';
 import LoadingBay from './components/LoadingBay.jsx';
-import { damagedInVan } from './utils/vanBay';
+import TodayBook from './components/TodayBook.jsx';
 import { isFleetManagementTier, canEditFleetRoster } from './config/permissions';
 /* `getCurrentDate` is IMPORTED, not redefined. This file used to keep its own copy —
    `new Date().toISOString()`, the UTC one — so it stayed a day behind between midnight and 07:00
@@ -196,8 +196,10 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
             .flatMap(tx => {
                 return tx.forensicData.quarantineCargo.map((item, index) => ({
                     id: `${tx.id || tx.transactionId || Math.random().toString()}-${index}`,
+                    productId: item.productId,
                     itemName: item.itemName || 'Unknown Asset',
                     qty: item.qty || 0,
+                    unit: item.unit,
                     returnReason: item.returnReason || 'Unclassified',
                     customerOrigin: tx.customerName || 'Walk-in / Unknown',
                     timestamp: tx.timestamp
@@ -224,13 +226,23 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
         }
     };
 
+    const syncing = (
+        <div className="flex items-center justify-center h-40 opacity-50">
+            <div className="text-center animate-pulse">
+                <AlertCircle size={32} className="mx-auto mb-3 text-ink-dim"/>
+                <p className="text-xs font-bold tracking-widest uppercase text-ink-dim">Syncing</p>
+            </div>
+        </div>
+    );
+
     return (
         /* ONE SCROLL ON THE PHONE. Aldi, 2026-09-18, board 1 YES. This was `h-[850px]` at every
            width: inside the shell's 678 px scroller the page scrolled 188 px AND the list below
            scrolled in its own 366 px window — two thumbs for one screen. Under lg the box now
            takes its content height and the shell scrolls everything once; the desk keeps its
-           pinned header over a scrolling list (`lg:h-…` + `lg:overflow-y-auto` below). */
-        <div className="lg:h-[calc(100vh-120px)] flex flex-col max-w-5xl mx-auto animate-fade-in bg-ground font-sans border-x border-line-2 shadow-2xl overflow-hidden relative">
+           pinned header over a scrolling list (`lg:h-…` + `lg:overflow-y-auto` below) - the SALESMAN's desk only since v4
+           (2026-09-27): his PC test found the chest in a ~300 px window under the pinned Manifest, so T1-T4 scroll as one. */
+        <div className={`${seesChest ? '' : 'lg:h-[calc(100vh-120px)] '}flex flex-col max-w-5xl mx-auto animate-fade-in bg-ground font-sans border-x border-line-2 shadow-2xl overflow-hidden relative`}>
 
             {/* DYNAMIC FINANCIAL COMMAND BAR */}
             <div className="bg-panel border-b border-line-2 p-3 lg:p-4 flex flex-col justify-between items-start gap-3 lg:gap-4 shrink-0 relative z-10 shadow-md">
@@ -309,6 +321,19 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                 </div>
             </div>
 
+            {/* AGENT INVENTORY V4 (T1-T4, his 2026-09-27 PC test): no Saleable / Quarantine switch - two chests, the goods chest
+                and the quarantine crate (LoadingBay vanOnly), and ONE book for Sales + Samples (TodayBook). The salesman keeps
+                the switch and the lists below, unchanged. */}
+            {seesChest ? (
+                <div className="p-4 relative z-10">
+                    {isLoading ? syncing : (<>
+                        <LoadingBay vanOnly key={trueAgentId || 'none'} agent={{ ...liveProfileData, id: trueAgentId, name: agentName }}
+                            stock={inventory} quarantine={quarantinedCargo}
+                            canEdit={canEditFleetRoster(userRole)} onLayout={saveLayout} />
+                        <TodayBook sales={todayTransactions} samples={todaySamplings} inventory={inventory} />
+                    </>)}
+                </div>
+            ) : (<>
             {/* 🚀 SEGMENTED CONTROL TOGGLE */}
             <div className="px-4 pt-4 shrink-0 relative z-10 bg-ground">
                 <div className="flex p-1 bg-panel rounded-none ring-1 ring-line-2">
@@ -344,20 +369,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                 {viewMode === 'HEALTHY' ? (
                     <>
                         {/* 1. PRODUCT MANIFEST LIST */}
-                        {isLoading ? (
-                            <div className="flex items-center justify-center h-40 opacity-50">
-                                <div className="text-center animate-pulse">
-                                    <AlertCircle size={32} className="mx-auto mb-3 text-ink-dim"/>
-                                    <p className="text-xs font-bold tracking-widest uppercase text-ink-dim">Syncing</p>
-                                </div>
-                            </div>
-                        ) : seesChest ? (
-                            <div className="mb-8">
-                                <LoadingBay vanOnly key={trueAgentId || 'none'} agent={{ ...liveProfileData, id: trueAgentId, name: agentName }}
-                                    stock={inventory} damaged={damagedInVan(todayTransactions, inventory)}
-                                    canEdit={canEditFleetRoster(userRole)} onLayout={saveLayout} />
-                            </div>
-                        ) : canvasItems.length === 0 ? (
+                        {isLoading ? syncing : canvasItems.length === 0 ? (
                             <div className="flex items-center justify-center h-40 opacity-30 flex-col">
                                 <Package size={48} className="mb-4 text-ink-dim"/>
                                 <p className="font-black text-lg tracking-widest uppercase text-ink-dim">Nothing Loaded</p>
@@ -530,6 +542,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                 )}
 
             </div>
+            </>)}
             <style>{`.custom-scrollbar::-webkit-scrollbar { width: 6px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--line-3); border-radius: 3px; } .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }`}</style>
         </div>
     );
