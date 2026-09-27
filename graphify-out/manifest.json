@@ -40,8 +40,8 @@
     "semantic_hash": ""
   },
   "src/AgentInventoryView.jsx": {
-    "mtime": 1790476539.4359994,
-    "ast_hash": "0206698e8bfd3cd7313ea2ff8b06c366",
+    "mtime": 1790488829.1046765,
+    "ast_hash": "1914eb4ef468b277da3d9ab458f363b2",
     "semantic_hash": ""
   },
   "src/AgentProfileView.jsx": {
@@ -360,8 +360,8 @@
     "semantic_hash": ""
   },
   ".claude/settings.local.json": {
-    "mtime": 1790391864.9043322,
-    "ast_hash": "0072726d5d65f10923b8f70043045ad5",
+    "mtime": 1790478952.0709736,
+    "ast_hash": "8155895099b006de487c5cf6ddeaf255",
     "semantic_hash": ""
   },
   ".mcp.json": {
@@ -540,8 +540,8 @@
     "semantic_hash": ""
   },
   "src/config/integration.audit.mjs": {
-    "mtime": 1790392810.6216042,
-    "ast_hash": "080701285746b51039d9dd3e36e02f99",
+    "mtime": 1790487354.545437,
+    "ast_hash": "5e14b70fe9e050c806932163a27acab2",
     "semantic_hash": ""
   },
   "src/config/nextStop.selfcheck.mjs": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1790395418.162037,
-    "ast_hash": "a825cabb7b7ed0eaa50ac4563cd354a1",
+    "mtime": 1790493718.523317,
+    "ast_hash": "cab46357eb54031a2ec18f58e20c1c51",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1790476891.4415226,
-    "ast_hash": "af3d22db2eb1f2598320ec1562719900",
+    "mtime": 1790488870.2385411,
+    "ast_hash": "8cc6f4f470010cb5b1eb1e25239b16f4",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1790395418.1059847,
-    "ast_hash": "296be6f03a08ec6fcddf4cdff30e01d4",
+    "mtime": 1790493718.5223203,
+    "ast_hash": "6d6d84ecc6bc097720e09a49d3222143",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1790476632.6646917,
-    "ast_hash": "1f856964b0066ba0369679498f519bb2",
+    "mtime": 1790477614.6159499,
+    "ast_hash": "cb3ca75f57ad0f259661cfd81fcbdbac",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -850,8 +850,8 @@
     "semantic_hash": ""
   },
   "src/ponder/PonderBook.jsx": {
-    "mtime": 1788452924.6293085,
-    "ast_hash": "9ecad1ab98a2e4f6340244cdde52d928",
+    "mtime": 1790487392.4452474,
+    "ast_hash": "f1e7ce53c3b1c86487c172c31cc2b1d2",
     "semantic_hash": ""
   },
   "src/ponder/demo/warehouses.js": {
@@ -1160,13 +1160,13 @@
     "semantic_hash": ""
   },
   "src/components/LoadingBay.jsx": {
-    "mtime": 1790476518.4131153,
-    "ast_hash": "4e01cf1356e78fed78b94471754777ce",
+    "mtime": 1790488640.8643608,
+    "ast_hash": "5efb4becfa05ffe7dc2ce88a8dd74acf",
     "semantic_hash": ""
   },
   "src/utils/vanBay.js": {
-    "mtime": 1790384205.0505805,
-    "ast_hash": "2ab3107fee8b078ef93a910994389f54",
+    "mtime": 1790488460.5975857,
+    "ast_hash": "5ed339aef9a54ba048e996eabea75123",
     "semantic_hash": ""
   },
   "src/ponder/demo/loadingBay.js": {
@@ -1185,18 +1185,28 @@
     "semantic_hash": ""
   },
   "src/ponder/demo/agentInventory.js": {
-    "mtime": 1790476582.2270281,
-    "ast_hash": "b00da9b30f496e4f39682977db15ed96",
+    "mtime": 1790488856.3875945,
+    "ast_hash": "27700e66cd7649e51ec755b0fb6864a5",
     "semantic_hash": ""
   },
   "src/ponder/scenes/agent-chest.js": {
-    "mtime": 1790476605.862022,
-    "ast_hash": "1b7f3c1e732b79b73e9871f5e3cd9894",
+    "mtime": 1790488856.3911102,
+    "ast_hash": "17d8ae7d18a3b922190b170c1d3380f9",
     "semantic_hash": ""
   },
   "src/ponder/stages/AgentChestStage.jsx": {
-    "mtime": 1790476582.3105297,
-    "ast_hash": "ae7fd5be93338d555ca45d513dfbf2cb",
+    "mtime": 1790488856.3901088,
+    "ast_hash": "9d2b88ba8944e2a19e525065958ef170",
+    "semantic_hash": ""
+  },
+  "rules-test/test-agent-chest.mjs": {
+    "mtime": 1790477594.945522,
+    "ast_hash": "3b0366c397711b0b08b16470ca94f34a",
+    "semantic_hash": ""
+  },
+  "src/components/TodayBook.jsx": {
+    "mtime": 1790488769.0963616,
+    "ast_hash": "bca11e2148fd040b0b39b2ee7f6c07a5",
     "semantic_hash": ""
   }
 }
