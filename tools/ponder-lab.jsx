@@ -999,7 +999,7 @@ function ShellLab() {
              out of LAB_AGENT_TXNS, which the EOD and Fleet labs share */
           transactions={q.has('admin') ? agentTxns.map((t) => (t.id === 'tx3' ? { ...t, items: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 10, unit: 'Bks', condition: 'DAMAGED', returnReason: 'Rusak / Basah' }] } : t)) : agentTxns} samplings={[]}
           user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
-          userRole={q.has('admin') ? 'FLEET_CAPTAIN' : 'FIELD_OPERATIVE'}   /* ?shell&agent&admin: the regional admin's chest */
+          userRole={q.get('tier') || (q.has('admin') ? 'FLEET_CAPTAIN' : 'FIELD_OPERATIVE')}   /* ?shell&agent&admin: the regional admin's chest; &tier=<id> any tier */
           motorists={LAB_MOTORISTS} previewing={null}
         />
       ) : q.has('customers') ? (
