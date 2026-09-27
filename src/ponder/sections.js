@@ -60,7 +60,7 @@ export const SECTIONS = [
   {
     id: 'agent_inventory', label: 'Agent Inventory', short: 'Agent', icon: 'Boxes',
     blurb: 'Barang yang sedang dibawa salesman.',
-    entries: [{ title: 'Stok di tangan agen', desc: 'Sudah sampai, sudah bisa dijual, belum di rak.', icon: 'Boxes', soon: true }],
+    entries: [{ sceneId: 'agent-chest', title: 'Agent Chest', desc: 'Isi van sebagai peti: enam kotak satu halaman. Menarik kotak cuma menata susunan.', icon: 'Boxes' }],
   },
   {
     id: 'stock_opname', label: 'Stock Opname', short: 'Opname', icon: 'ClipboardList',

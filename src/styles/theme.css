@@ -4910,6 +4910,9 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
    closing never moves the page (his 07:50 "as pc user i need to scroll up and down whenever i close and open the
    chest"); on the phone it still folds away. The tabs are the
    app's own surface, not the stone - they are a note behind the chest, not part of it. */
+/* HIDDEN once it has shrunk, not only see-through: the ponder book writes an inline opacity on every part it dims, and a
+   shut panel held back by opacity alone came back as a grey speck (and its page keys stayed in the Tab order) */
+.kpm-bay.wh-shut .gui.wh, .kpm-bay.van-shut .gui.van { visibility: hidden; transition: transform .26s cubic-bezier(.34, 1.56, .64, 1), opacity .12s linear, visibility 0s linear .26s; }
 .kpm-bay.wh-shut .gui.wh { position: absolute; left: 0; right: 0; bottom: 0; margin: 0 auto; }
 .kpm-bay.van-shut .gui.van { position: absolute; left: 0; right: 0; top: 0; margin: 0 auto; }
 @container kpmbay (min-width: 640px) { .kpm-bay.wh-shut .gui.wh, .kpm-bay.van-shut .gui.van { position: relative; } }
@@ -4949,6 +4952,18 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-bay .slip .acts .use { border: 0; background: var(--gold); color: var(--gold-ink); }
 .kpm-bay .slip .acts .keep { border: 1px solid var(--accent-edge); background: var(--panel); color: var(--accent-ink); }
 .kpm-bay .slip .acts button:disabled { border: 1px dashed var(--line-2); background: var(--panel); color: var(--ink-dim); cursor: not-allowed; }
+
+/* THE AGENT INVENTORY CHEST (LoadingBay vanOnly, AgentInventoryView for a regional admin and above) - his chest v3
+   prototype: the van chest alone, its panel growing out of the lid above it, six big squares a page, three across at
+   EVERY width ("one page always means the same thing", so the squares grow instead of multiplying). Same classes as the
+   bay; only the arrangement and the sizes differ. The closed state is its own rule so the open one still wins. */
+.kpm-bay.solo { grid-template-columns: minmax(0, 1fr); grid-template-areas: "hint" "vang" "vanc"; }
+.kpm-bay.solo .gui.van { transform-origin: 50% 100%; }
+.kpm-bay.solo:not(.van-open) .gui.van { transform: scale(.08) translateY(24px); }
+.kpm-bay.solo .grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.kpm-bay.solo .gui.van .kpm-cube-stage { --kpm-slot-h: 52px; }
+.kpm-bay.solo .chest.small { --cw: 124px; --ch: 104px; }
+@container kpmbay (min-width: 640px) { .kpm-bay.solo .gui.van .kpm-cube-stage { --kpm-slot-h: 74px; } }
 /* ── END OF THE VAN-LOADING BAY ─────────────────────────────────────────────────────────────────── */
 
 /* ── THE ROSTER STAGE (FleetCanvasManager.jsx stageCard) — his State of Decay 2 community screen ───────────

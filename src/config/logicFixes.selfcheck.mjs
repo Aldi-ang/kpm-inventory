@@ -8385,7 +8385,7 @@ section('ROUND 4: A CLOSED CHEST SHOWS TABS IN ITS PANEL\'S PLACE (2026-09-24)')
   const right = fl.slice(fl.indexOf('{/* RIGHT PANEL: THE LOADING DOCK */}'));
 
   ok('a chest closed by hand shows its tabs in the panel\'s place - the warehouse PRESET + TEAM, the van GEOFENCE',
-     /\{open\.wh === false && \(\s*<div className="slip wh"/.test(bayc) && /\{open\.van === false && \(\s*<div className="slip van"/.test(bayc) &&
+     /\{open\.wh === false && \(\s*<div className="slip wh"/.test(bayc) && /\{open\.van === false(?: && !vanOnly)? && \(\s*<div className="slip van"/.test(bayc) &&
      /'preset'/.test(bayc) && /'team'/.test(bayc) && /'geo'/.test(bayc) && /role="tablist"/.test(bayc));
   ok('the shut panel leaves the flow, so its tabs take the room instead of an empty square',
      /\.kpm-bay\.wh-shut \.gui\.wh \{[^}]*position: absolute/.test(bayCss) && /\.kpm-bay\.van-shut \.gui\.van \{[^}]*position: absolute/.test(bayCss) &&
@@ -8808,6 +8808,70 @@ section('THE PONDER PAGE FOR THE LOADING BAY (2026-09-26)');
     for (const k of [].concat(s.focus || [])) if (/^slip:/.test(k) && !shut[k.slice(5)]) stranded.push(i);
   });
   ok('no beat points at a chest\'s tabs while that chest is still open', steps.length > 0 && stranded.length === 0, 'beats ' + stranded.join(', '));
+}
+
+/* ── THE AGENT INVENTORY CHEST (2026-09-27) ──────────────────────────────────────────────────────────────────────
+   His 2026-09-22: *"agent chest is basically agent inventory for regional admin tier and above by default"*. In his tier
+   names T4 is REGIONAL ADMIN and its id is FLEET_CAPTAIN, so the audience is T1-T4 - the set isFleetManagementTier
+   already names. The chest is the bay's own van chest (LoadingBay vanOnly), never a second copy, and a drag writes the
+   same vanLayout field Fleet & Roster writes. */
+section('THE AGENT INVENTORY CHEST (2026-09-27)');
+{ const aiv = code(read('src/AgentInventoryView.jsx')), bay = code(read('src/components/LoadingBay.jsx')), app = read('src/App.jsx');
+  const th = read('src/styles/theme.css'), reg = read('src/ponder/registry.js');
+  const { isFleetManagementTier } = await import('./permissions.js');
+  ok('regional admin and above sees the chest: T1-T4 in, T5-T6 out (T4 = FLEET_CAPTAIN is the tier he named)',
+     ['DEVELOPER', 'ADMIN', 'COMPANY_OWNER', 'AREA_ADMIN', 'FLEET_CAPTAIN'].every(isFleetManagementTier) &&
+     !['FIELD_OPERATIVE', 'ROOKIE', 'AGENT', undefined].some(isFleetManagementTier));
+  ok('the screen asks the named tier helper, never a literal role list (the Fleet Captain Permission Gap)',
+     imports(aiv, 'isFleetManagementTier') && /isFleetManagementTier\(userRole\)/.test(aiv) && !/\[\s*'DEVELOPER'/.test(aiv));
+  ok('App hands Agent Inventory the role it decides on', /<AgentInventoryView[\s\S]{0,900}userRole=\{userRole\}/.test(app));
+  ok('one chest: Agent Inventory mounts the REAL LoadingBay in its van-only mode, with no chest markup of its own',
+     /import LoadingBay from '\.\/components\/LoadingBay\.jsx'/.test(aiv) && /<LoadingBay\b[^>]*\bvanOnly\b/.test(aiv) &&
+     !/kpm-cube|className="chest/.test(aiv));
+  ok('the salesman keeps his own list screen', /canvasItems\.map\(/.test(aiv));
+  ok('a drag writes the SAME vanLayout field through the fleet edit rule - never activeCanvas',
+     /updateDoc\([^;]*\{ vanLayout: cells \}\)/.test(aiv) && /canEditFleetRoster\(userRole\)/.test(aiv) && !/activeCanvas:/.test(aiv));
+  ok('the damaged row is the bay\'s own damagedInVan, fed today\'s sales for this van', /damaged=\{damagedInVan\(todayTransactions, inventory\)\}/.test(aiv));
+  ok('van-only: no warehouse chest, no tabs, no muatan - nothing here can load or return',
+     /\{!vanOnly && \(\s*<>\s*\{open\.wh === false/.test(bay) && /\{canEdit && !vanOnly && \(/.test(bay) && /open\.van === false && !vanOnly/.test(bay) &&
+     /if \(!slot \|\| !canEdit \|\| busy\) return;\s*if \(vanOnly\)/.test(bay));
+  ok('van-only is six squares a page on every width, and each page button carries its count',
+     /if \(vanOnly \|\| !el \|\| typeof ResizeObserver/.test(bay) && /vanOnly \? ` · \$\{/.test(bay));
+  ok('the chest sits alone with its panel over the lid, three across at every width, and nothing starts hidden',
+     /\.kpm-bay\.solo \{[^}]*grid-template-areas: "hint" "vang" "vanc"/.test(th) && /\.kpm-bay\.solo \.grid \{[^}]*repeat\(3, 1fr\)/.test(th) &&
+     !/\.kpm-bay\.solo[^{]*\{[^}]*opacity: 0/.test(th));
+  /* the book writes an inline opacity on every part it dims (PonderOverlay measure, 0.26), so a shut panel hidden only by
+     opacity: 0 came back as a grey speck under the chest (frame book-430-dark-step19, 2026-09-27) - in both book pages */
+  ok('a shut panel is HIDDEN after it shrinks, never only see-through',
+     /\.kpm-bay\.wh-shut \.gui\.wh, \.kpm-bay\.van-shut \.gui\.van \{ visibility: hidden;[^}]*visibility 0s linear \.26s/.test(th));
+  /* the demo world's figures carry beats: nine products and a hole on page 1 read as pages 5 · 4 · 0 */
+  let demo = null;
+  try { demo = (await import('../ponder/demo/agentInventory.js')).DEMO_CHEST; } catch { /* red below */ }
+  const vb = await import('../utils/vanBay.js');
+  const ids = (demo?.agent?.activeCanvas || []).map(r => r.productId);
+  const cells = demo ? vb.vanCells(demo.agent.vanLayout, ids, vb.PER) : [];
+  const perPage = [0, 1, 2].map(k => cells.slice(k * vb.PER, k * vb.PER + vb.PER).filter(Boolean).length);
+  ok('the demo van pages as 5 · 4 · 0 (a hole on page 1 stays a hole)', perPage.join() === '5,4,0', perPage.join());
+  ok('the demo damaged row has reasons to show', (demo?.damaged || []).length >= 2 && demo.damaged.every(x => x.why && x.bks > 0));
+  /* the book page */
+  let scene = null;
+  try { scene = (await import('../ponder/scenes/agent-chest.js')).agentChest; } catch { /* red below */ }
+  const stgPath = 'src/ponder/stages/AgentChestStage.jsx', stg = fs.existsSync(stgPath) ? code(read(stgPath)) : '';
+  const text = (scene?.steps || []).map(s => s.text).join('\n');
+  const chap = SECTIONS.find(s => s.id === 'agent_inventory');
+  ok('the Agent Inventory chapter opens the chest page - a real scene, no longer a "soon" card',
+     !!chap && chap.entries.some(e => e.sceneId === 'agent-chest') && !chap.entries.some(e => e.soon));
+  ok('one page engine: scene + stage registered, and the stage mounts the REAL bay in van-only mode',
+     /'agent-chest': agentChest,/.test(reg) && /'agent-chest': AgentChestStage,/.test(reg) && scene?.stage === 'agent-chest' &&
+     /import LoadingBay from '\.\.\/\.\.\/components\/LoadingBay\.jsx'/.test(stg) && /<LoadingBay\b[^>]*\bvanOnly\b/.test(stg));
+  for (const [what, re] of [
+    ['who sees it: Regional Admin and above; the salesman keeps his list', /\*\*Regional Admin\*\*[\s\S]*[Ss]alesman/],
+    ['six squares a page, and a page button carries what is on it', /enam kotak[\s\S]*\*\*2 · 4\*\*/],
+    ['a drag saves only the arrangement - the stock does not move', /susunan[\s\S]*[Ss]tok[^\n]*tidak/],
+    ['stock moves only through Muat van in the Loading Bay', /\*\*Muat van\*\*[^\n]*Loading Bay|Loading Bay[^\n]*\*\*Muat van\*\*/],
+    ['the damaged row is recorded through EOD, never dragged', /\*\*Barang rusak · di van\*\*[\s\S]*\*\*EOD Setoran\*\*/],
+  ]) ok('the chest page says it: ' + what, re.test(text));
+  ok('the chest page never says "kamu"', !!text && !/\bkamu\b|-mu\b/i.test(text));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

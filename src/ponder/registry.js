@@ -10,12 +10,14 @@ import { shipmentPlan } from './scenes/shipment-plan.js';
 import { productPerformance } from './scenes/product-performance.js';
 import { regionalWarehouse } from './scenes/regional-warehouse.js';
 import { loadingBay } from './scenes/loading-bay.js';
+import { agentChest } from './scenes/agent-chest.js';
 import StockStage from './stages/StockStage.jsx';
 import GoodsReceivedStage from './stages/GoodsReceivedStage.jsx';
 import ShipmentPlanStage from './stages/ShipmentPlanStage.jsx';
 import ProductPerformanceStage from './stages/ProductPerformanceStage.jsx';
 import RegionalWarehouseStage from './stages/RegionalWarehouseStage.jsx';
 import LoadingBayStage from './stages/LoadingBayStage.jsx';
+import AgentChestStage from './stages/AgentChestStage.jsx';
 
 export const SCENES = {
   'goods-received': goodsReceived,
@@ -24,6 +26,7 @@ export const SCENES = {
   'product-performance': productPerformance,
   'regional-warehouse': regionalWarehouse,
   'loading-bay': loadingBay,
+  'agent-chest': agentChest,
 };
 
 /* A stage is the little fixed world a scene plays inside. Scenes name one by string so that a
@@ -36,6 +39,7 @@ export const STAGES = {
   'product-performance': ProductPerformanceStage,
   'regional-warehouse': RegionalWarehouseStage,
   'loading-bay': LoadingBayStage,
+  'agent-chest': AgentChestStage,
 };
 
 /* The book's table of contents is data, so it lives in its own file — see sections.js for why

@@ -1,0 +1,33 @@
+/* The Agent Chest stage: the REAL chest, fed the fixed demo world.
+
+   Same contract as `LoadingBayStage`: it mounts the component Agent Inventory mounts for a regional admin and above -
+   the bay's own van chest, `LoadingBay vanOnly` - so the page cannot drift from the thing it teaches. The only act is
+   `shut:van` / `open:van`, replayed from beat 0 so seeking backwards costs nothing, and the bay is mounted again (a new
+   `key`) whenever it changes.
+
+   🔴 A DRAG IS SWALLOWED HERE, for the bay page's reason: the carried box sits at z 75 and the book at 9000. A tap on the
+   chest still opens and shuts it, and onLayout is a stub - a tidy-up inside the book writes nothing anywhere. */
+import React, { useMemo } from 'react';
+import LoadingBay from '../../components/LoadingBay.jsx';
+import { DEMO_CHEST } from '../demo/agentInventory.js';
+
+function chestOpen(scene, stepIndex) {
+  let open = true;
+  for (let i = 0; i <= stepIndex; i++) {
+    const act = scene?.steps?.[i]?.act;
+    if (act === 'shut:van') open = false;
+    else if (act === 'open:van') open = true;
+  }
+  return open;
+}
+
+const noop = () => {};
+
+export default function AgentChestStage({ scene, stepIndex = 0 }) {
+  const open = useMemo(() => chestOpen(scene, stepIndex), [scene, stepIndex]);
+  return (
+    <div className="py-5" onPointerDownCapture={(e) => e.stopPropagation()}>
+      <LoadingBay vanOnly key={String(open)} {...DEMO_CHEST} canEdit pose={{ open: { wh: false, van: open } }} onLayout={noop} />
+    </div>
+  );
+}

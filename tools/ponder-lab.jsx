@@ -995,8 +995,11 @@ function ShellLab() {
         <AgentInventoryView
           db={{}} appId="lab" userId="lab" agentProfileId="m2"
           inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA].map((p) => ({ ...p, priceRetail: Math.round(p.priceDistributor * 1.15), priceEcer: Math.round(p.priceDistributor * 1.25), priceGrosir: Math.round(p.priceDistributor * 1.08) }))}
-          transactions={agentTxns} samplings={[]}
+          /* &admin: tx3 also carries its damaged line, the shape the chest's damaged row reads (vanBay damagedInVan) - kept
+             out of LAB_AGENT_TXNS, which the EOD and Fleet labs share */
+          transactions={q.has('admin') ? agentTxns.map((t) => (t.id === 'tx3' ? { ...t, items: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 10, unit: 'Bks', condition: 'DAMAGED', returnReason: 'Rusak / Basah' }] } : t)) : agentTxns} samplings={[]}
           user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
+          userRole={q.has('admin') ? 'FLEET_CAPTAIN' : 'FIELD_OPERATIVE'}   /* ?shell&agent&admin: the regional admin's chest */
           motorists={LAB_MOTORISTS} previewing={null}
         />
       ) : q.has('customers') ? (

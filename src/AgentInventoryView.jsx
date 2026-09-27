@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Package, Truck, AlertCircle, TrendingUp, Wallet, Coins, Receipt, Tag, AlertOctagon, ShieldAlert, User, ChevronDown } from 'lucide-react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import NixieCount from './components/NixieCount.jsx';
+import LoadingBay from './components/LoadingBay.jsx';
+import { damagedInVan } from './utils/vanBay';
+import { isFleetManagementTier, canEditFleetRoster } from './config/permissions';
 /* `getCurrentDate` is IMPORTED, not redefined. This file used to keep its own copy —
    `new Date().toISOString()`, the UTC one — so it stayed a day behind between midnight and 07:00
    WIB even after the shared helper was fixed. A second copy of a date rule is a second bug
@@ -23,7 +26,7 @@ const Money = ({ value, className = '' }) => {
 };
 
 
-const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], transactions = [], samplings = [], user, motorists = [], previewing = null }) => {
+const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], transactions = [], samplings = [], user, userRole, motorists = [], previewing = null }) => {
     const [canvasItems, setCanvasItems] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [liveProfileData, setLiveProfileData] = useState(null);
@@ -204,6 +207,23 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
 
     const quarantineCount = quarantinedCargo.reduce((sum, item) => sum + item.qty, 0);
 
+    /* THE CHEST IS THE AGENT INVENTORY for a regional admin and above - his 2026-09-22 words, "agent chest is basically
+       agent inventory for regional admin tier and above by default". His REGIONAL ADMIN is T4, id FLEET_CAPTAIN, so the
+       set is T1-T4: isFleetManagementTier, never a literal list (a list is how FLEET_CAPTAIN gets dropped - the Fleet
+       Captain Permission Gap). The salesman keeps the list below. The chest is the bay's own van chest (LoadingBay
+       vanOnly); a drag writes the SAME vanLayout field Fleet & Roster writes, on the drop, through the fleet edit rule. */
+    const seesChest = isFleetManagementTier(userRole);
+    const saveLayout = async (cells) => {
+        if (!canEditFleetRoster(userRole) || !trueAgentId) return false;
+        try {
+            await updateDoc(doc(db, `artifacts/${appId}/users/${userId}/motorists`, trueAgentId), { vanLayout: cells });
+            return true;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+    };
+
     return (
         /* ONE SCROLL ON THE PHONE. Aldi, 2026-09-18, board 1 YES. This was `h-[850px]` at every
            width: inside the shell's 678 px scroller the page scrolled 188 px AND the list below
@@ -330,6 +350,12 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                     <AlertCircle size={32} className="mx-auto mb-3 text-ink-dim"/>
                                     <p className="text-xs font-bold tracking-widest uppercase text-ink-dim">Syncing</p>
                                 </div>
+                            </div>
+                        ) : seesChest ? (
+                            <div className="mb-8">
+                                <LoadingBay vanOnly key={trueAgentId || 'none'} agent={{ ...liveProfileData, id: trueAgentId, name: agentName }}
+                                    stock={inventory} damaged={damagedInVan(todayTransactions, inventory)}
+                                    canEdit={canEditFleetRoster(userRole)} onLayout={saveLayout} />
                             </div>
                         ) : canvasItems.length === 0 ? (
                             <div className="flex items-center justify-center h-40 opacity-30 flex-col">

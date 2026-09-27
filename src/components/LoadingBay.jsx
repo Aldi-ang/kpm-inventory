@@ -13,7 +13,12 @@
    in its own field through onLayout, never inside activeCanvas, which every sale also writes.
 
    The figures change before any motion; the flying boxes only decorate what is already true, so
-   Lite Mode, reduced motion or a stalled animation can never hide a number. */
+   Lite Mode, reduced motion or a stalled animation can never hide a number.
+
+   `vanOnly` is the AGENT INVENTORY CHEST (AgentInventoryView, regional admin and above - his 2026-09-22 "agent chest is
+   basically agent inventory for regional admin tier and above by default", design: the chest v3 prototype
+   https://claude.ai/artifact/V5Z3ZkQZ3fvtXHynn4AnNF). The van chest alone: no warehouse, no tabs, no muatan, so nothing
+   there can load or return - a drag only tidies the SAME vanLayout field, six squares a page on every width. */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import { convertToBks, getLocalDayKey, formatRupiah } from '../utils/helpers';
@@ -79,10 +84,11 @@ const CUT_WHY = {
 };
 const BYPASS_WORD = { PENDING: 'menunggu', APPROVED: 'disetujui', REJECTED: 'ditolak' };
 const VIEW_ONLY = 'Hanya lihat — jabatan ini tidak bisa memuat van';
+const TIDY = 'Tarik ke kotak lain untuk menata susunan';
 
 /* `pose` is the ponder book's (ponder/stages/LoadingBayStage.jsx): a STARTING state only - the chests, the tabs and the
    muatan a beat wants on screen. It is read by useState and nowhere else, and Fleet & Roster never passes one. */
-export default function LoadingBay({ agent, warehouse, stock, damaged = [], canEdit, onLoad, onReturn, onLayout, onDirty, onPreset, team = [], bypasses = [], titip = [], bounties = [], pose }) {
+export default function LoadingBay({ agent, warehouse, stock, damaged = [], canEdit, onLoad, onReturn, onLayout, onDirty, onPreset, team = [], bypasses = [], titip = [], bounties = [], pose, vanOnly = false }) {
   const P = useMemo(() => Object.fromEntries(stock.map(p => [p.id, p])), [stock]);
   /* the van, in packs, from its live rows */
   const vanOf = useMemo(() => {
@@ -150,7 +156,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   useEffect(() => () => onDirty?.(0), []);                          // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const el = refs.bay.current?.closest('.kpm-bay-wrap');
-    if (!el || typeof ResizeObserver === 'undefined') return;
+    if (vanOnly || !el || typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(([e]) => setPer(e.contentRect.width < 640 ? 4 : PER));
     ro.observe(el);
     return () => ro.disconnect();
@@ -206,7 +212,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   }
   useEffect(() => {
     const m = motionOK();
-    const t1 = pose?.open ? 0 : setTimeout(() => toggle('wh', true), m ? 150 : 0);
+    const t1 = pose?.open || vanOnly ? 0 : setTimeout(() => toggle('wh', true), m ? 150 : 0);
     const t2 = pose?.open ? 0 : setTimeout(() => toggle('van', true), m ? 300 : 0);
     return () => { clearTimeout(t1); clearTimeout(t2); Object.values(sayTimers.current).forEach(clearTimeout); };
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -373,7 +379,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     if (!canEdit) return say(d.src, VIEW_ONLY);
     if (d.src === 'van') {
       if (picked) return placePicked(d.cell);
-      return say('van', 'Tarik ke gudang untuk mengembalikan, atau ke kotak lain untuk menata');
+      return say('van', vanOnly ? TIDY : 'Tarik ke gudang untuk mengembalikan, atau ke kotak lain untuk menata');
     }
     if (picked?.id === d.id) { setPicked(null); return say('wh', `${p.name} batal dipilih`); }
     if (capLoad(d.id) <= 0) {
@@ -403,6 +409,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const slot = e.target.closest('.slot.has');
     if (!slot || !canEdit || busy) return;
+    if (vanOnly) { e.preventDefault(); return say('van', TIDY); }
     e.preventDefault();
     const id = slot.dataset.id;
     if (src === 'wh') {
@@ -640,9 +647,10 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   return (
     <div className="kpm-bay-wrap">
       <div className="kpm-bay-duo">
-      <section ref={refs.bay} className={`kpm-bay${open.wh ? ' wh-open' : ''}${open.van ? ' van-open' : ''}${open.wh === false ? ' wh-shut' : ''}${open.van === false ? ' van-shut' : ''}${dragging ? ' dragging' : ''}${picked ? ' picking' : ''}`} aria-label="Muat van">
+      <section ref={refs.bay} className={`kpm-bay${open.wh ? ' wh-open' : ''}${open.van ? ' van-open' : ''}${open.wh === false ? ' wh-shut' : ''}${open.van === false ? ' van-shut' : ''}${dragging ? ' dragging' : ''}${picked ? ' picking' : ''}${vanOnly ? ' solo' : ''}`} aria-label={vanOnly ? `${agent.name} inventory` : 'Muat van'}>
         {!canEdit && <p className="bayHint">{VIEW_ONLY}</p>}
 
+        {!vanOnly && (<>
         {open.wh === false && (
           <div className="slip wh" data-ponder="slip:wh">
             {tabKeys('wh', [['preset', 'Muatan biasa'], ['team', `Tim · ${teamRows.length}`]])}
@@ -729,6 +737,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
           <span className="motes" ref={refs.motes} aria-hidden="true">{motes.map((v, i) => <i key={i} style={v} />)}</span>
           <span className="cap">Gudang</span>
         </button>
+        </>)}
         <button ref={refs.vanChest} className="chestCell vanc" type="button" data-ponder="chest:van" aria-expanded={!!open.van} aria-label={`Peti van ${agent.name} — buka atau tutup`} onClick={() => toggle('van', !open.van)}>
           <span className="chest small"><span className="lid" /><span className="latch" /><span className="body" /></span>
           <span className="cap">Van · {agent.vehicle || '—'}</span>
@@ -756,16 +765,16 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
               );
             })}
           </div>
-          <div className="pages" ref={refs.vanPages}>
+          <div className="pages" ref={refs.vanPages} data-ponder="pages:van">
             {Array.from({ length: vanPageCount }, (_, k) => (
               <button key={k} type="button" data-p={k} className={`pg${k === vanPage ? ' on' : ''}`} onClick={() => { setVanPage(k); setAnim(a => ({ ...a, van: true })); playSound('chestPage'); }}>
-                {k + 1}
+                {k + 1}{vanOnly ? ` · ${cells.slice(k * per, k * per + per).filter(Boolean).length}` : ''}
               </button>
             ))}
             <span className="of">{cells.filter(Boolean).length} barang</span>
           </div>
           <div className="dmgHead"><span>Barang rusak · di van</span><span className="num">{fmt(dmgTotal)} Bks · {damaged.length} barang</span></div>
-          <div className="dmg" ref={refs.dmg}>
+          <div className="dmg" ref={refs.dmg} data-ponder="dmg:van">
             {damaged.length ? damaged.map(x => (
               <div key={x.id} className="slot has" title={`${x.name}${x.why ? ' · ' + x.why : ''}`}>
                 <Cube p={P[x.id]} />
@@ -779,7 +788,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
         {/* behind the closed van: this person's geofence requests, what they left at shops on titip, their bounties.
             All three only READ - the company-wide PENDING queue stays at the top of the screen (his salesman waits at a
             shop for it), settling a titip and paying a bounty stay on their own screens. */}
-        {open.van === false && (
+        {open.van === false && !vanOnly && (
           <div className="slip van" data-ponder="slip:van">
             {tabKeys('van', [['geo', `Geofence · ${geo.length}`], ['titip', `Titip · ${titip.length}`], ['bounty', `Bounty · ${bounties.length}`]])}
             {sayEl('van')}
@@ -815,7 +824,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
         )}
 
       </section>
-        {canEdit && (
+        {canEdit && !vanOnly && (
           <aside className="man" aria-label="Muatan hari ini" data-ponder="man">
             <div className="manHead"><p className="lbl">Muatan · {agent.name}</p>
               <span className="tally">{!lines.length ? '0 Bks' : `${plus ? '+' + fmt(plus) : ''}${plus && minus ? ' / ' : ''}${minus ? '−' + fmt(minus) : ''} Bks`}</span></div>
