@@ -4983,14 +4983,20 @@ check(G56, 'the book closes by folding its right half over, and nothing in it fa
    that ARE the stack's thickness lived inside the stack and were never animated, so the pages
    folded away and left their own fore-edge and tail behind on the right half. They are part of the
    block; `foldables` gathers them by `data-fold` and they lead the fold, being its outside. */
+/* 🔴 AND "HINGED AT THE SPINE" MEANS THE SPINE. Aldi, 2026-09-27, a screenshot of the shut book with a white line
+   standing far to its right: *"make sure that there is no white lines in there"*. This check used to pass on two 6 px
+   strips each given `transformOrigin: 'left center'` - which is the strip's OWN left edge, out at the fore-edge, so
+   the fore-edge turned in place and stood 440 px from the spine after the cover had shut (measured, A-Brain
+   Raw/2026-09-27-agent-chest/measure-ponder-edge.mjs). The edges now ride in ONE wrapper the size of the stack, and
+   the wrapper's left edge IS the spine. */
 check(G56, 'the paper block folds with its own edges, leaving no outline behind',
   /const foldables = \(\) => \{/.test(bookSrc) &&
   /querySelectorAll\('\[data-fold\]'\)/.test(bookSrc) &&
-  (bookSrc.match(/<span data-fold /g) || []).length === 2 &&
-  (bookSrc.match(/transformOrigin: 'left center' \}\} \/>/g) || []).length >= 2 &&
+  (bookSrc.match(/<(?:span|div) data-fold /g) || []).length === 1 &&
+  /<div data-fold className="pointer-events-none absolute inset-0" style=\{\{ transformStyle: 'preserve-3d', transformOrigin: 'left center' \}\}>/.test(bookSrc) &&
   /\.filter\(k => k >= posRef\.current\)\.sort\(\(a, b\) => b - a\)/.test(bookSrc),
-  'the fore-edge and the tail must carry data-fold and hinge at the spine, and foldables must ' +
-  'return them alongside the unturned sheets — otherwise the book shuts and its edges stay put');
+  'the fore-edge and the tail must fold inside ONE data-fold wrapper the size of the stack, hinged at its left edge ' +
+  '(the spine) - a thin strip hinged at its own left edge turns in place and stands as a white line after the book shuts');
 
 /* 🔴 THE BOOK ARRIVES CLOSED. *"i want the starting book to be closed before its fly towards the
    screen and open ... right now book already open on screen when pressed and there is intersection

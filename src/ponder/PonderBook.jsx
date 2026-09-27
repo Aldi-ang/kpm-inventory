@@ -1164,12 +1164,15 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
           <div ref={stackRef}
                className="absolute inset-y-0 left-0 w-full lg:left-1/2 lg:w-1/2"
                style={{ transformStyle: 'preserve-3d' }}>
-            {/* `data-fold` marks them as part of the block — see `foldables`. Hinged at the spine
-                like the sheets they are the edge of, or they would fold about their own middle. */}
-            <span data-fold className="pointer-events-none absolute inset-y-[8px] -right-[5px] w-[6px] rounded-r-[3px]"
-                  style={{ background: EDGES, transformOrigin: 'left center' }} />
-            <span data-fold className="pointer-events-none absolute -bottom-[5px] left-0 right-[10px] h-[5px]"
-                  style={{ background: EDGES_H, transformOrigin: 'left center' }} />
+            {/* `data-fold` marks them as part of the block — see `foldables`. ONE wrapper the size of the
+                stack, hinged at its left edge, which IS the spine - the sheets' own hinge. Each strip used to
+                carry `left center` itself, and a 6 px strip's left centre is its OWN edge, out at the
+                fore-edge: it turned in place and stood as a white line 440 px from the shut book (his
+                2026-09-27 screenshot, measured by A-Brain Raw/2026-09-27-agent-chest/measure-ponder-edge.mjs). */}
+            <div data-fold className="pointer-events-none absolute inset-0" style={{ transformStyle: 'preserve-3d', transformOrigin: 'left center' }}>
+              <span className="absolute inset-y-[8px] -right-[5px] w-[6px] rounded-r-[3px]" style={{ background: EDGES }} />
+              <span className="absolute -bottom-[5px] left-0 right-[10px] h-[5px]" style={{ background: EDGES_H }} />
+            </div>
 
             {near.map(k => {
               const flipped = k < safeTurn;
