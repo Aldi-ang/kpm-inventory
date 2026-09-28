@@ -4,6 +4,7 @@
 
 ## 🟢 2026-09-28 — v4.1: the chest panel floats over its chest (`460c55b`; local, not pushed)
 NOW: nothing half-done, both repos clean (A-Brain `359d024`: the walk + shooter follow v4.1). The live app still runs v4 (`a43a9f2`).
+**HIS NEXT ASK (2026-09-28):** the book in the MIDDLE of the chest row, floating over a Minecraft enchanting table, animation smooth. Prototype v2 on https://claude.ai/artifact/QA46EfZgkJPd6PH7f2FSjD (obsidian table, red cloth, diamond corners; the book bobs 7 px / 3.2 s; hover or hold opens it in the air). Found while building it: a leaf let go mid-riffle snapped back - leaves now rest at opacity 0 (fix to port to TodayBook too). His yes owed before the app build.
 **WAITING ON ALDI:** 🔴 DECIDE *"Push v4.1 to the live app (the floating chest panels and holding the book on the phone)?"* · ✅ TEST *"After the push, on the live app as a Regional Admin: both chests start shut. Press the brown chest - its box pops up above it over the Manifest numbers and nothing on the page moves. Press the yellow crate - the brown one shuts and the crate's box takes the same place. On the phone, hold the book: it opens its cover and flips its pages; let go and it opens."* · the LOAD-card ❓ below is still open.
 Where things live: the floating panel = theme.css `.kpm-bay.solo .gui.van, .kpm-bay.solo .gui.q` + LoadingBay `toggle` (one at a time) / `fitPanel` (scroll up, then `--sink`) · the hold = TodayBook `hold` + `.kpm-nbBtn.hold` · checks logicFixes "AGENT INVENTORY V4.1".
 
