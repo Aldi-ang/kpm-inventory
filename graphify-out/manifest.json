@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1790570626.7247703,
-    "ast_hash": "711a70a91b5d651d3529734ea009486e",
+    "mtime": 1790598186.727087,
+    "ast_hash": "024f7c7fde939cca8f00df2ecedae9e5",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -65,8 +65,8 @@
     "semantic_hash": ""
   },
   "src/FleetCanvasManager.jsx": {
-    "mtime": 1790391236.9967413,
-    "ast_hash": "d661e8abd6b4541e82c8774178256664",
+    "mtime": 1790598211.1422462,
+    "ast_hash": "6551ce55c3322a3fa3e60534caf9cbde",
     "semantic_hash": ""
   },
   "src/HallOfFameView.jsx": {
@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "src/components/LandlordDashboard.jsx": {
-    "mtime": 1790570626.932146,
-    "ast_hash": "d972adef13854586291146a1f1c9ca02",
+    "mtime": 1790598604.3275287,
+    "ast_hash": "5a52dc1dce5f14e10ed229559251ad72",
     "semantic_hash": ""
   },
   "src/components/NotificationBell.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1790570862.2166326,
-    "ast_hash": "279632deb371c38597da89f892c4c35d",
+    "mtime": 1790596650.6979218,
+    "ast_hash": "02abbb04eec0dd598c5fbc1932ec32b4",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1790570693.1380212,
-    "ast_hash": "675a096cf2f23232809fe97dac05f4ac",
+    "mtime": 1790598623.8207734,
+    "ast_hash": "257c18f9d505c2a6bc1506a60edf16dc",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1790570862.256952,
-    "ast_hash": "c14960cd4841396bb9a6feecbb0e6514",
+    "mtime": 1790596650.6393075,
+    "ast_hash": "a01c28b23cd07d62ec8b8a2181c53763",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -1210,8 +1210,18 @@
     "semantic_hash": ""
   },
   "src/utils/vaultLock.js": {
-    "mtime": 1790570597.2698183,
-    "ast_hash": "a98b13a73bc91c38ff59b793f87de387",
+    "mtime": 1790598604.4811168,
+    "ast_hash": "3c9fb4d0dd578072f81434e5f5faec05",
+    "semantic_hash": ""
+  },
+  "rules-test/test-vault-keys.mjs": {
+    "mtime": 1790598450.3974125,
+    "ast_hash": "40c95732375648c14a7aefe096129941",
+    "semantic_hash": ""
+  },
+  "src/utils/vaultDoc.js": {
+    "mtime": 1790598101.312167,
+    "ast_hash": "9557fe41a51375cab40c8cf2f14d60d2",
     "semantic_hash": ""
   }
 }

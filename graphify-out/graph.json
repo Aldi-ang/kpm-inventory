@@ -569,8 +569,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "package_dependencies_framer_motion",
-      "community": 96,
-      "community_name": "framer-motion",
+      "community": 2,
+      "community_name": "dependencies",
       "norm_label": "framer-motion"
     },
     {
@@ -580,8 +580,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "framer_motion",
-      "community": 96,
-      "community_name": "framer-motion",
+      "community": 2,
+      "community_name": "dependencies",
       "norm_label": "framer-motion"
     },
     {
@@ -657,8 +657,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "package_dependencies_lucide_react",
-      "community": 2,
-      "community_name": "dependencies",
+      "community": 94,
+      "community_name": "rankBorders.jsx",
       "norm_label": "lucide-react"
     },
     {
@@ -668,8 +668,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "lucide_react",
-      "community": 2,
-      "community_name": "dependencies",
+      "community": 94,
+      "community_name": "rankBorders.jsx",
       "norm_label": "lucide-react"
     },
     {
@@ -679,8 +679,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "package_dependencies_react",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 68,
+      "community_name": "VaultGate.jsx",
       "norm_label": "react"
     },
     {
@@ -690,8 +690,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "react",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 68,
+      "community_name": "VaultGate.jsx",
       "norm_label": "react"
     },
     {
@@ -976,8 +976,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "package_devdependencies_cross_env",
-      "community": 116,
-      "community_name": "StubAudio",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "cross-env"
     },
     {
@@ -987,8 +987,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "cross_env",
-      "community": 116,
-      "community_name": "StubAudio",
+      "community": 4,
+      "community_name": "devDependencies",
       "norm_label": "cross-env"
     },
     {
@@ -1042,8 +1042,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "package_devdependencies_eslint_plugin_react_refresh",
-      "community": 4,
-      "community_name": "devDependencies",
+      "community": 90,
+      "community_name": "firebase.js",
       "norm_label": "eslint-plugin-react-refresh"
     },
     {
@@ -1053,8 +1053,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "eslint_plugin_react_refresh",
-      "community": 4,
-      "community_name": "devDependencies",
+      "community": 90,
+      "community_name": "firebase.js",
       "norm_label": "eslint-plugin-react-refresh"
     },
     {
@@ -1399,14 +1399,179 @@
       "norm_label": "run()"
     },
     {
+      "label": "test-vault-keys.mjs",
+      "file_type": "code",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "rules_test_test_vault_keys",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
+      "norm_label": "test-vault-keys.mjs"
+    },
+    {
+      "label": "RULES",
+      "file_type": "code",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L13",
+      "_origin": "ast",
+      "id": "rules_test_test_vault_keys_rules",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
+      "norm_label": "rules"
+    },
+    {
+      "label": "expect()",
+      "file_type": "code",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L17",
+      "_origin": "ast",
+      "id": "rules_test_test_vault_keys_expect",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
+      "norm_label": "expect()"
+    },
+    {
+      "label": "DIR",
+      "file_type": "code",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L26",
+      "_origin": "ast",
+      "id": "rules_test_test_vault_keys_dir",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
+      "norm_label": "dir"
+    },
+    {
+      "label": "KEY",
+      "file_type": "code",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L35",
+      "_origin": "ast",
+      "id": "rules_test_test_vault_keys_key",
+      "community": 0,
+      "community_name": "App.jsx",
+      "norm_label": "key"
+    },
+    {
+      "label": "as()",
+      "file_type": "code",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L51",
+      "_origin": "ast",
+      "id": "rules_test_test_vault_keys_as",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
+      "norm_label": "as()"
+    },
+    {
+      "label": "COUNTERS",
+      "file_type": "code",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L53",
+      "_origin": "ast",
+      "id": "rules_test_test_vault_keys_counters",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
+      "norm_label": "counters"
+    },
+    {
+      "label": "t2",
+      "file_type": "code",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L55",
+      "_origin": "ast",
+      "id": "rules_test_test_vault_keys_t2",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
+      "norm_label": "t2"
+    },
+    {
+      "label": "t2b",
+      "file_type": "code",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L55",
+      "_origin": "ast",
+      "id": "rules_test_test_vault_keys_t2b",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
+      "norm_label": "t2b"
+    },
+    {
+      "label": "owner",
+      "file_type": "code",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L55",
+      "_origin": "ast",
+      "id": "rules_test_test_vault_keys_owner",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
+      "norm_label": "owner"
+    },
+    {
+      "label": "legacy",
+      "file_type": "code",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L56",
+      "_origin": "ast",
+      "id": "rules_test_test_vault_keys_legacy",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
+      "norm_label": "legacy"
+    },
+    {
+      "label": "t5",
+      "file_type": "code",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L56",
+      "_origin": "ast",
+      "id": "rules_test_test_vault_keys_t5",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
+      "norm_label": "t5"
+    },
+    {
+      "label": "t2x",
+      "file_type": "code",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L56",
+      "_origin": "ast",
+      "id": "rules_test_test_vault_keys_t2x",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
+      "norm_label": "t2x"
+    },
+    {
+      "label": "stranger",
+      "file_type": "code",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L57",
+      "_origin": "ast",
+      "id": "rules_test_test_vault_keys_stranger",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
+      "norm_label": "stranger"
+    },
+    {
+      "label": "superA",
+      "file_type": "code",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L57",
+      "_origin": "ast",
+      "id": "rules_test_test_vault_keys_supera",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
+      "norm_label": "supera"
+    },
+    {
       "label": "AgentInventoryView.jsx",
       "file_type": "code",
       "source_file": "src/AgentInventoryView.jsx",
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_agentinventoryview",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "agentinventoryview.jsx"
     },
     {
@@ -1416,8 +1581,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_agentinventoryview_money",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "money()"
     },
     {
@@ -1427,8 +1592,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_agentinventoryview_agentinventoryview",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "agentinventoryview()"
     },
     {
@@ -1438,8 +1603,8 @@
       "source_location": "L554",
       "_origin": "ast",
       "id": "src_agentinventoryview_quarantineledgerboard",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "quarantineledgerboard()"
     },
     {
@@ -1757,8 +1922,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "src_app_lazytabboundary",
-      "community": 101,
-      "community_name": "LazyTabBoundary",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "lazytabboundary"
     },
     {
@@ -1768,8 +1933,8 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "src_app_lazytabboundary_getderivedstatefromerror",
-      "community": 101,
-      "community_name": "LazyTabBoundary",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": ".getderivedstatefromerror()"
     },
     {
@@ -1779,8 +1944,8 @@
       "source_location": "L82",
       "_origin": "ast",
       "id": "src_app_lazytabboundary_retry",
-      "community": 101,
-      "community_name": "LazyTabBoundary",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": ".retry()"
     },
     {
@@ -1790,30 +1955,30 @@
       "source_location": "L89",
       "_origin": "ast",
       "id": "src_app_lazytabboundary_render",
-      "community": 101,
-      "community_name": "LazyTabBoundary",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": ".render()"
     },
     {
       "label": "getDocOfflineSafe()",
       "file_type": "code",
       "source_file": "src/App.jsx",
-      "source_location": "L192",
+      "source_location": "L193",
       "_origin": "ast",
       "id": "src_app_getdocofflinesafe",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "getdocofflinesafe()"
     },
     {
       "label": "KPMInventoryApp()",
       "file_type": "code",
       "source_file": "src/App.jsx",
-      "source_location": "L231",
+      "source_location": "L232",
       "_origin": "ast",
       "id": "src_app_kpminventoryapp",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "kpminventoryapp()"
     },
     {
@@ -1823,8 +1988,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_consignmentfinanceview",
-      "community": 117,
-      "community_name": "context-watch.mjs",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "consignmentfinanceview.jsx"
     },
     {
@@ -1834,8 +1999,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_consignmentfinanceview_handoffoffer",
-      "community": 117,
-      "community_name": "context-watch.mjs",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "handoffoffer()"
     },
     {
@@ -1845,8 +2010,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "src_consignmentfinanceview_consignmentfinanceview",
-      "community": 117,
-      "community_name": "context-watch.mjs",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "consignmentfinanceview()"
     },
     {
@@ -1856,8 +2021,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_eodreconciliationview",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "eodreconciliationview.jsx"
     },
     {
@@ -1867,8 +2032,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_eodreconciliationview_plural",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "plural()"
     },
     {
@@ -1878,8 +2043,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_eodreconciliationview_hist_levels",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "hist_levels"
     },
     {
@@ -1889,8 +2054,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_eodreconciliationview_xpgain",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "xpgain()"
     },
     {
@@ -1900,8 +2065,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "src_eodreconciliationview_eodreconciliationview",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "eodreconciliationview()"
     },
     {
@@ -1919,7 +2084,7 @@
       "label": "FleetCanvasManager()",
       "file_type": "code",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L16",
+      "source_location": "L18",
       "_origin": "ast",
       "id": "src_fleetcanvasmanager_fleetcanvasmanager",
       "community": 91,
@@ -2329,8 +2494,8 @@
       "source_location": "L1059",
       "_origin": "ast",
       "id": "src_mapmissioncontrol_storebottomsheet",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "storebottomsheet()"
     },
     {
@@ -2516,8 +2681,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_stockopnameview",
-      "community": 87,
-      "community_name": "StockOpnameView.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "stockopnameview.jsx"
     },
     {
@@ -2527,8 +2692,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_stockopnameview_variance_reasons",
-      "community": 87,
-      "community_name": "StockOpnameView.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "variance_reasons"
     },
     {
@@ -2538,8 +2703,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "src_stockopnameview_variancereasonmissing",
-      "community": 87,
-      "community_name": "StockOpnameView.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "variancereasonmissing()"
     },
     {
@@ -2549,8 +2714,8 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "src_stockopnameview_damage_reasons",
-      "community": 87,
-      "community_name": "StockOpnameView.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "damage_reasons"
     },
     {
@@ -2560,8 +2725,8 @@
       "source_location": "L108",
       "_origin": "ast",
       "id": "src_stockopnameview_withintolerance",
-      "community": 87,
-      "community_name": "StockOpnameView.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "withintolerance()"
     },
     {
@@ -2571,8 +2736,8 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "src_stockopnameview_samepass",
-      "community": 87,
-      "community_name": "StockOpnameView.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "samepass()"
     },
     {
@@ -2582,8 +2747,8 @@
       "source_location": "L114",
       "_origin": "ast",
       "id": "src_stockopnameview_recountstate",
-      "community": 87,
-      "community_name": "StockOpnameView.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "recountstate()"
     },
     {
@@ -2593,8 +2758,8 @@
       "source_location": "L154",
       "_origin": "ast",
       "id": "src_stockopnameview_shortagestreak",
-      "community": 87,
-      "community_name": "StockOpnameView.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "shortagestreak()"
     },
     {
@@ -2604,8 +2769,8 @@
       "source_location": "L167",
       "_origin": "ast",
       "id": "src_stockopnameview_isleak",
-      "community": 87,
-      "community_name": "StockOpnameView.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "isleak()"
     },
     {
@@ -2615,8 +2780,8 @@
       "source_location": "L170",
       "_origin": "ast",
       "id": "src_stockopnameview_damagesorted",
-      "community": 87,
-      "community_name": "StockOpnameView.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "damagesorted()"
     },
     {
@@ -2626,8 +2791,8 @@
       "source_location": "L178",
       "_origin": "ast",
       "id": "src_stockopnameview_damageblocked",
-      "community": 87,
-      "community_name": "StockOpnameView.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "damageblocked()"
     },
     {
@@ -2637,8 +2802,8 @@
       "source_location": "L194",
       "_origin": "ast",
       "id": "src_stockopnameview_stockopnameview",
-      "community": 87,
-      "community_name": "StockOpnameView.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "stockopnameview()"
     },
     {
@@ -2648,8 +2813,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_acceptancereceipt",
-      "community": 49,
-      "community_name": "notify",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "acceptancereceipt.jsx"
     },
     {
@@ -2659,8 +2824,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_components_acceptancereceipt_field",
-      "community": 49,
-      "community_name": "notify",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "field()"
     },
     {
@@ -2670,8 +2835,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "src_components_acceptancereceipt_money",
-      "community": 49,
-      "community_name": "notify",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "money()"
     },
     {
@@ -2681,8 +2846,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "src_components_acceptancereceipt_acceptancereceipt",
-      "community": 49,
-      "community_name": "notify",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "acceptancereceipt()"
     },
     {
@@ -2813,8 +2978,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_authorityselect",
-      "community": 11,
-      "community_name": "CustomerManager.jsx",
+      "community": 71,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "authorityselect.jsx"
     },
     {
@@ -2824,8 +2989,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "src_components_authorityselect_authorityselect",
-      "community": 11,
-      "community_name": "CustomerManager.jsx",
+      "community": 71,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "authorityselect()"
     },
     {
@@ -3044,8 +3209,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_capybaramascot",
-      "community": 99,
-      "community_name": "CapybaraMascot.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "capybaramascot.jsx"
     },
     {
@@ -3055,8 +3220,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_components_capybaramascot_logged_in_messages",
-      "community": 99,
-      "community_name": "CapybaraMascot.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "logged_in_messages"
     },
     {
@@ -3066,8 +3231,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_components_capybaramascot_locked_messages",
-      "community": 99,
-      "community_name": "CapybaraMascot.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "locked_messages"
     },
     {
@@ -3077,8 +3242,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_components_capybaramascot_no_messages",
-      "community": 99,
-      "community_name": "CapybaraMascot.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "no_messages"
     },
     {
@@ -3088,8 +3253,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_components_capybaramascot_capybaramascot",
-      "community": 99,
-      "community_name": "CapybaraMascot.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "capybaramascot()"
     },
     {
@@ -3099,8 +3264,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_careerdevtools",
-      "community": 49,
-      "community_name": "notify",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "careerdevtools.jsx"
     },
     {
@@ -3110,8 +3275,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_components_careerdevtools_default_ranks",
-      "community": 49,
-      "community_name": "notify",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "default_ranks"
     },
     {
@@ -3121,8 +3286,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_components_careerdevtools_careerdevtools",
-      "community": 49,
-      "community_name": "notify",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "careerdevtools()"
     },
     {
@@ -3154,8 +3319,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_components_confirmgate_promptaction",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "promptaction()"
     },
     {
@@ -3165,8 +3330,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "src_components_confirmgate_confirmhost",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 84,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "confirmhost()"
     },
     {
@@ -3198,8 +3363,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_customermanager",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "customermanager.jsx"
     },
     {
@@ -3209,8 +3374,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_components_customermanager_ispointinpolygon",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "ispointinpolygon()"
     },
     {
@@ -3220,8 +3385,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_components_customermanager_checkpointingeojson",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "checkpointingeojson()"
     },
     {
@@ -3231,8 +3396,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "src_components_customermanager_customerdetailview",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "customerdetailview()"
     },
     {
@@ -3242,8 +3407,8 @@
       "source_location": "L209",
       "_origin": "ast",
       "id": "src_components_customermanager_customermanagement",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "customermanagement()"
     },
     {
@@ -3583,8 +3748,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_foldercard",
-      "community": 88,
-      "community_name": "SamplingManager.jsx",
+      "community": 75,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "foldercard.jsx"
     },
     {
@@ -3594,8 +3759,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_components_foldercard_foldercard",
-      "community": 88,
-      "community_name": "SamplingManager.jsx",
+      "community": 75,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "foldercard()"
     },
     {
@@ -3616,8 +3781,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_components_historyreportview_historyreportview",
-      "community": 53,
-      "community_name": "helpers.js",
+      "community": 89,
+      "community_name": "HistoryReportView.jsx",
       "norm_label": "historyreportview()"
     },
     {
@@ -3693,8 +3858,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_landlorddashboard",
-      "community": 53,
-      "community_name": "helpers.js",
+      "community": 91,
+      "community_name": "FleetCanvasManager.jsx",
       "norm_label": "landlorddashboard.jsx"
     },
     {
@@ -3704,8 +3869,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_components_landlorddashboard_landlorddashboard",
-      "community": 53,
-      "community_name": "helpers.js",
+      "community": 91,
+      "community_name": "FleetCanvasManager.jsx",
       "norm_label": "landlorddashboard()"
     },
     {
@@ -3715,8 +3880,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_loadingbay",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "loadingbay.jsx"
     },
     {
@@ -3726,8 +3891,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_components_loadingbay_units",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "units"
     },
     {
@@ -3737,8 +3902,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_components_loadingbay_fmt",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "fmt()"
     },
     {
@@ -3748,8 +3913,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_components_loadingbay_signed",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "signed()"
     },
     {
@@ -3759,8 +3924,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_components_loadingbay_mote_colors",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "mote_colors"
     },
     {
@@ -3770,8 +3935,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_components_loadingbay_rnd",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "rnd()"
     },
     {
@@ -3781,8 +3946,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_components_loadingbay_jitter",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "jitter()"
     },
     {
@@ -3792,8 +3957,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_components_loadingbay_motevars",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "motevars()"
     },
     {
@@ -3803,8 +3968,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "src_components_loadingbay_motionok",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "motionok()"
     },
     {
@@ -3814,8 +3979,8 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "src_components_loadingbay_inrect",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "inrect()"
     },
     {
@@ -3836,8 +4001,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "src_components_loadingbay_cube",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "cube()"
     },
     {
@@ -3847,8 +4012,8 @@
       "source_location": "L78",
       "_origin": "ast",
       "id": "src_components_loadingbay_cut_why",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "cut_why"
     },
     {
@@ -3858,8 +4023,8 @@
       "source_location": "L85",
       "_origin": "ast",
       "id": "src_components_loadingbay_bypass_word",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "bypass_word"
     },
     {
@@ -3869,8 +4034,8 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "src_components_loadingbay_loadingbay",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "loadingbay()"
     },
     {
@@ -3902,8 +4067,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_nixiecount",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "nixiecount.jsx"
     },
     {
@@ -3913,8 +4078,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_components_nixiecount_digits",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "digits"
     },
     {
@@ -3924,8 +4089,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_components_nixiecount_nixiecount",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "nixiecount()"
     },
     {
@@ -3990,8 +4155,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_photofield",
-      "community": 76,
-      "community_name": "useTransactionEngine.js",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "photofield.jsx"
     },
     {
@@ -4001,8 +4166,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_components_photofield_photofield",
-      "community": 76,
-      "community_name": "useTransactionEngine.js",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "photofield()"
     },
     {
@@ -4012,8 +4177,8 @@
       "source_location": "L123",
       "_origin": "ast",
       "id": "src_components_photofield_cornersheet",
-      "community": 76,
-      "community_name": "useTransactionEngine.js",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "cornersheet()"
     },
     {
@@ -4023,8 +4188,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_playercard",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "playercard.jsx"
     },
     {
@@ -4034,8 +4199,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_components_playercard_part_order",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "part_order"
     },
     {
@@ -4045,8 +4210,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_components_playercard_bar",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "bar"
     },
     {
@@ -4056,8 +4221,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_components_playercard_initialsof",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "initialsof()"
     },
     {
@@ -4067,8 +4232,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_components_playercard_playercardhead",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "playercardhead()"
     },
     {
@@ -4078,8 +4243,8 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "src_components_playercard_playercard",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "playercard()"
     },
     {
@@ -4243,8 +4408,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_safetystatus",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "safetystatus.jsx"
     },
     {
@@ -4254,8 +4419,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_components_safetystatus_lamp",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "lamp"
     },
     {
@@ -4265,8 +4430,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_components_safetystatus_safetystatus",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "safetystatus()"
     },
     {
@@ -4309,8 +4474,8 @@
       "source_location": "L193",
       "_origin": "ast",
       "id": "src_components_samplingmanager_samplingcartview",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "samplingcartview()"
     },
     {
@@ -4430,8 +4595,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_tierpovswitch",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "tierpovswitch.jsx"
     },
     {
@@ -4441,8 +4606,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_components_tierpovswitch_povbanner",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "povbanner()"
     },
     {
@@ -4452,8 +4617,8 @@
       "source_location": "L74",
       "_origin": "ast",
       "id": "src_components_tierpovswitch_tierpovswitch",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "tierpovswitch()"
     },
     {
@@ -4463,8 +4628,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_toast",
-      "community": 79,
-      "community_name": "supply.js",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "toast.jsx"
     },
     {
@@ -4485,8 +4650,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "src_components_toast_toasthost",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 84,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "toasthost()"
     },
     {
@@ -4496,8 +4661,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_todaybook",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "todaybook.jsx"
     },
     {
@@ -4507,8 +4672,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_components_todaybook_section",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "section"
     },
     {
@@ -4518,8 +4683,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_components_todaybook_still",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "still()"
     },
     {
@@ -4529,8 +4694,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_components_todaybook_iswide",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "iswide()"
     },
     {
@@ -4540,8 +4705,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_components_todaybook_hhmm",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "hhmm()"
     },
     {
@@ -4551,8 +4716,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_components_todaybook_packs",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "packs()"
     },
     {
@@ -4562,8 +4727,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_components_todaybook_saletotal",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "saletotal()"
     },
     {
@@ -4573,8 +4738,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_components_todaybook_todaybook",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "todaybook()"
     },
     {
@@ -4782,8 +4947,8 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "src_config_career_rankladder",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "rankladder()"
     },
     {
@@ -4793,8 +4958,8 @@
       "source_location": "L119",
       "_origin": "ast",
       "id": "src_config_career_computedayxp",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "computedayxp()"
     },
     {
@@ -5365,8 +5530,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_findduplicates_selfcheck",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 70,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "findduplicates.selfcheck.mjs"
     },
     {
@@ -5376,8 +5541,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_config_findduplicates_selfcheck_t",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 68,
+      "community_name": "VaultGate.jsx",
       "norm_label": "t()"
     },
     {
@@ -5387,8 +5552,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_config_findduplicates_selfcheck_near",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 70,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "near()"
     },
     {
@@ -5398,7 +5563,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_firebase",
-      "community": 90,
+      "community": 61,
       "community_name": "firebase.js",
       "norm_label": "firebase.js"
     },
@@ -5409,7 +5574,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_config_firebase_proxied_auth_hosts",
-      "community": 90,
+      "community": 61,
       "community_name": "firebase.js",
       "norm_label": "proxied_auth_hosts"
     },
@@ -5420,7 +5585,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_config_firebase_firebaseconfig",
-      "community": 90,
+      "community": 61,
       "community_name": "firebase.js",
       "norm_label": "firebaseconfig"
     },
@@ -5431,7 +5596,7 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_config_firebase_app",
-      "community": 90,
+      "community": 61,
       "community_name": "firebase.js",
       "norm_label": "app"
     },
@@ -5442,7 +5607,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "src_config_firebase_auth",
-      "community": 90,
+      "community": 61,
       "community_name": "firebase.js",
       "norm_label": "auth"
     },
@@ -5453,7 +5618,7 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "src_config_firebase_db",
-      "community": 90,
+      "community": 61,
       "community_name": "firebase.js",
       "norm_label": "db"
     },
@@ -5464,7 +5629,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "src_config_firebase_storage",
-      "community": 90,
+      "community": 61,
       "community_name": "firebase.js",
       "norm_label": "storage"
     },
@@ -5475,7 +5640,7 @@
       "source_location": "L81",
       "_origin": "ast",
       "id": "src_config_firebase_googleprovider",
-      "community": 90,
+      "community": 61,
       "community_name": "firebase.js",
       "norm_label": "googleprovider"
     },
@@ -8544,8 +8709,8 @@
       "source_location": "L4237",
       "_origin": "ast",
       "id": "src_config_logicfixes_selfcheck_stampsowed",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 40,
+      "community_name": "CapybaraMascot.jsx",
       "norm_label": "stampsowed()"
     },
     {
@@ -10689,8 +10854,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck",
-      "community": 74,
-      "community_name": "notify",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "mixedunits.selfcheck.mjs"
     },
     {
@@ -10700,8 +10865,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_bksperunit",
-      "community": 74,
-      "community_name": "notify",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "bksperunit()"
     },
     {
@@ -10711,8 +10876,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_savepacking",
-      "community": 74,
-      "community_name": "notify",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "savepacking()"
     },
     {
@@ -10722,8 +10887,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_totalbks",
-      "community": 74,
-      "community_name": "notify",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "totalbks()"
     },
     {
@@ -10733,8 +10898,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_d",
-      "community": 74,
-      "community_name": "notify",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "d"
     },
     {
@@ -10744,8 +10909,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_custom",
-      "community": 74,
-      "community_name": "notify",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "custom"
     },
     {
@@ -10755,8 +10920,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_real",
-      "community": 74,
-      "community_name": "notify",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "real"
     },
     {
@@ -10766,8 +10931,8 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_cello",
-      "community": 74,
-      "community_name": "notify",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "cello"
     },
     {
@@ -10777,8 +10942,8 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_back",
-      "community": 74,
-      "community_name": "notify",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "back()"
     },
     {
@@ -10832,7 +10997,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_config_nextstop_selfcheck_store",
-      "community": 75,
+      "community": 62,
       "community_name": "MerchantSalesView.jsx",
       "norm_label": "store()"
     },
@@ -11140,8 +11305,8 @@
       "source_location": "L2",
       "_origin": "ast",
       "id": "src_config_permissions_corporate_tiers",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "corporate_tiers"
     },
     {
@@ -11151,8 +11316,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_config_permissions_tier_one_alias_ids",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 117,
+      "community_name": "context-watch.mjs",
       "norm_label": "tier_one_alias_ids"
     },
     {
@@ -11162,8 +11327,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_config_permissions_resolvetieroneid",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 117,
+      "community_name": "context-watch.mjs",
       "norm_label": "resolvetieroneid()"
     },
     {
@@ -11217,8 +11382,8 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "src_config_permissions_isfleetmanagementtier",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "isfleetmanagementtier()"
     },
     {
@@ -11305,8 +11470,8 @@
       "source_location": "L282",
       "_origin": "ast",
       "id": "src_config_permissions_fleet_edit_perms",
-      "community": 71,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 117,
+      "community_name": "context-watch.mjs",
       "norm_label": "fleet_edit_perms"
     },
     {
@@ -11316,8 +11481,8 @@
       "source_location": "L295",
       "_origin": "ast",
       "id": "src_config_permissions_defaultfleetaccess",
-      "community": 71,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 117,
+      "community_name": "context-watch.mjs",
       "norm_label": "defaultfleetaccess()"
     },
     {
@@ -11327,8 +11492,8 @@
       "source_location": "L299",
       "_origin": "ast",
       "id": "src_config_permissions_caneditfleetroster",
-      "community": 71,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 117,
+      "community_name": "context-watch.mjs",
       "norm_label": "caneditfleetroster()"
     },
     {
@@ -11349,8 +11514,8 @@
       "source_location": "L316",
       "_origin": "ast",
       "id": "src_config_permissions_getcustomeraccesslevel",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 117,
+      "community_name": "context-watch.mjs",
       "norm_label": "getcustomeraccesslevel()"
     },
     {
@@ -11437,8 +11602,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_povpreview",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "povpreview.js"
     },
     {
@@ -11448,8 +11613,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_config_povpreview_canusepovswitch",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "canusepovswitch()"
     },
     {
@@ -11459,8 +11624,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_config_povpreview_test_accounts",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "test_accounts"
     },
     {
@@ -11470,8 +11635,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_config_povpreview_testaccountfor",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "testaccountfor()"
     },
     {
@@ -11481,8 +11646,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "src_config_povpreview_tierlabel",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "tierlabel()"
     },
     {
@@ -11492,8 +11657,8 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "src_config_povpreview_testaccountname",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "testaccountname()"
     },
     {
@@ -11503,8 +11668,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "src_config_povpreview_testaccountdoc",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "testaccountdoc()"
     },
     {
@@ -11514,8 +11679,8 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "src_config_povpreview_previewidentity",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "previewidentity()"
     },
     {
@@ -11525,8 +11690,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_rankborders",
-      "community": 94,
-      "community_name": "rankBorders.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "rankborders.jsx"
     },
     {
@@ -11536,8 +11701,8 @@
       "source_location": "L576",
       "_origin": "ast",
       "id": "src_config_rankborders_framefilters",
-      "community": 94,
-      "community_name": "rankBorders.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "framefilters()"
     },
     {
@@ -11547,8 +11712,8 @@
       "source_location": "L604",
       "_origin": "ast",
       "id": "src_config_rankborders_frame_html",
-      "community": 94,
-      "community_name": "rankBorders.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "frame_html"
     },
     {
@@ -11558,8 +11723,8 @@
       "source_location": "L613",
       "_origin": "ast",
       "id": "src_config_rankborders_border_load",
-      "community": 94,
-      "community_name": "rankBorders.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "border_load"
     },
     {
@@ -11569,8 +11734,8 @@
       "source_location": "L615",
       "_origin": "ast",
       "id": "src_config_rankborders_rank_borders",
-      "community": 94,
-      "community_name": "rankBorders.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "rank_borders"
     },
     {
@@ -11580,8 +11745,8 @@
       "source_location": "L629",
       "_origin": "ast",
       "id": "src_config_rankborders_rankborder",
-      "community": 94,
-      "community_name": "rankBorders.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "rankborder()"
     },
     {
@@ -11965,8 +12130,8 @@
       "source_location": "L95",
       "_origin": "ast",
       "id": "src_config_toastseverity_selfcheck_report",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "report()"
     },
     {
@@ -11976,8 +12141,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_txsize_selfcheck",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "txsize.selfcheck.mjs"
     },
     {
@@ -11987,8 +12152,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_config_txsize_selfcheck_product",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "product"
     },
     {
@@ -11998,8 +12163,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_config_txsize_selfcheck_line",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "line"
     },
     {
@@ -12009,8 +12174,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_config_txsize_selfcheck_size",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "size()"
     },
     {
@@ -12020,8 +12185,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_config_txsize_selfcheck_naive",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "naive"
     },
     {
@@ -12031,8 +12196,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_config_txsize_selfcheck_stripped",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "stripped"
     },
     {
@@ -12042,8 +12207,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "src_config_txsize_selfcheck_big",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "big"
     },
     {
@@ -12218,8 +12383,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_hooks_useofflineengine",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "useofflineengine.js"
     },
     {
@@ -12229,8 +12394,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_hooks_useofflineengine_canreachinternet",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "canreachinternet()"
     },
     {
@@ -12240,8 +12405,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_hooks_useofflineengine_onlinelisteners",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "onlinelisteners"
     },
     {
@@ -12251,8 +12416,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "src_hooks_useofflineengine_subscribeonline",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "subscribeonline()"
     },
     {
@@ -12262,8 +12427,8 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "src_hooks_useofflineengine_setsharedonline",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "setsharedonline()"
     },
     {
@@ -12273,8 +12438,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "src_hooks_useofflineengine_useofflineengine",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "useofflineengine()"
     },
     {
@@ -12405,8 +12570,8 @@
       "source_location": "L171",
       "_origin": "ast",
       "id": "src_hooks_usesound_playsound",
-      "community": 109,
-      "community_name": "PonderPad.jsx",
+      "community": 87,
+      "community_name": "StockOpnameView.jsx",
       "norm_label": "playsound()"
     },
     {
@@ -12581,8 +12746,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_hooks_usetransactionengine",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "usetransactionengine.js"
     },
     {
@@ -12592,8 +12757,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_hooks_usetransactionengine_applysaletocanvas",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "applysaletocanvas()"
     },
     {
@@ -12603,8 +12768,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "src_hooks_usetransactionengine_usetransactionengine",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "usetransactionengine()"
     },
     {
@@ -12614,8 +12779,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_main",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 84,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "main.jsx"
     },
     {
@@ -12625,8 +12790,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "src_main_onregisteredsw",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 84,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "onregisteredsw()"
     },
     {
@@ -12636,8 +12801,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_main_sound_gestures",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 84,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "sound_gestures"
     },
     {
@@ -12647,8 +12812,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_main_ongestureunlock",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 84,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "ongestureunlock()"
     },
     {
@@ -13010,8 +13175,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_demo_agentinventory",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "agentinventory.js"
     },
     {
@@ -13021,8 +13186,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_ponder_demo_agentinventory_u",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "u"
     },
     {
@@ -13032,8 +13197,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "src_ponder_demo_agentinventory_product",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "product()"
     },
     {
@@ -13043,8 +13208,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_ponder_demo_agentinventory_demo_chest",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "demo_chest"
     },
     {
@@ -13131,8 +13296,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_demo_productperformance",
-      "community": 105,
-      "community_name": "convertToBks",
+      "community": 78,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "productperformance.js"
     },
     {
@@ -13142,8 +13307,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_ponder_demo_productperformance_demo_performance_rows",
-      "community": 105,
-      "community_name": "convertToBks",
+      "community": 78,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "demo_performance_rows"
     },
     {
@@ -13505,8 +13670,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_ponder_sections_sections",
-      "community": 109,
-      "community_name": "PonderPad.jsx",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "norm_label": "sections"
     },
     {
@@ -13516,8 +13681,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_sfx",
-      "community": 109,
-      "community_name": "PonderPad.jsx",
+      "community": 87,
+      "community_name": "StockOpnameView.jsx",
       "norm_label": "sfx.js"
     },
     {
@@ -13538,8 +13703,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_ponder_sfx_bookopen",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 87,
+      "community_name": "StockOpnameView.jsx",
       "norm_label": "bookopen()"
     },
     {
@@ -13549,8 +13714,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_ponder_sfx_bookpage",
-      "community": 109,
-      "community_name": "PonderPad.jsx",
+      "community": 87,
+      "community_name": "StockOpnameView.jsx",
       "norm_label": "bookpage()"
     },
     {
@@ -13560,8 +13725,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_ponder_sfx_bookclose",
-      "community": 109,
-      "community_name": "PonderPad.jsx",
+      "community": 87,
+      "community_name": "StockOpnameView.jsx",
       "norm_label": "bookclose()"
     },
     {
@@ -13571,8 +13736,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "src_ponder_sfx_padkey",
-      "community": 109,
-      "community_name": "PonderPad.jsx",
+      "community": 87,
+      "community_name": "StockOpnameView.jsx",
       "norm_label": "padkey()"
     },
     {
@@ -13582,8 +13747,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_stages_agentcheststage",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "agentcheststage.jsx"
     },
     {
@@ -13593,8 +13758,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_ponder_stages_agentcheststage_chestopen",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "chestopen()"
     },
     {
@@ -13604,8 +13769,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_ponder_stages_agentcheststage_noop",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "noop()"
     },
     {
@@ -13615,8 +13780,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_ponder_stages_agentcheststage_agentcheststage",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "agentcheststage()"
     },
     {
@@ -13626,8 +13791,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_stages_goodsreceivedstage",
-      "community": 70,
-      "community_name": "RestockVaultView.jsx",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "norm_label": "goodsreceivedstage.jsx"
     },
     {
@@ -13637,8 +13802,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_ponder_stages_goodsreceivedstage_rp",
-      "community": 70,
-      "community_name": "RestockVaultView.jsx",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "norm_label": "rp()"
     },
     {
@@ -13648,8 +13813,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_ponder_stages_goodsreceivedstage_field",
-      "community": 70,
-      "community_name": "RestockVaultView.jsx",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "norm_label": "field()"
     },
     {
@@ -13659,8 +13824,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_ponder_stages_goodsreceivedstage_goodsreceivedstage",
-      "community": 70,
-      "community_name": "RestockVaultView.jsx",
+      "community": 26,
+      "community_name": "LOG \u2014 newest first, older entries live in `git log` for this file",
       "norm_label": "goodsreceivedstage()"
     },
     {
@@ -13736,8 +13901,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_stages_productperformancestage",
-      "community": 105,
-      "community_name": "convertToBks",
+      "community": 78,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "productperformancestage.jsx"
     },
     {
@@ -13747,8 +13912,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_ponder_stages_productperformancestage_productperformancestage",
-      "community": 105,
-      "community_name": "convertToBks",
+      "community": 78,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "productperformancestage()"
     },
     {
@@ -13758,8 +13923,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_stages_productperformancetable",
-      "community": 105,
-      "community_name": "convertToBks",
+      "community": 78,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "productperformancetable.jsx"
     },
     {
@@ -13769,8 +13934,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "src_ponder_stages_productperformancetable_n",
-      "community": 105,
-      "community_name": "convertToBks",
+      "community": 78,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "n()"
     },
     {
@@ -13780,8 +13945,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_ponder_stages_productperformancetable_rp",
-      "community": 105,
-      "community_name": "convertToBks",
+      "community": 78,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "rp()"
     },
     {
@@ -13791,8 +13956,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_ponder_stages_productperformancetable_productperformancetable",
-      "community": 105,
-      "community_name": "convertToBks",
+      "community": 78,
+      "community_name": "customerBrief.selfcheck.mjs",
       "norm_label": "productperformancetable()"
     },
     {
@@ -14198,8 +14363,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "src_utils_customerbrief_reorderfromlast",
-      "community": 48,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 54,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "reorderfromlast()"
     },
     {
@@ -14209,8 +14374,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_daystats",
-      "community": 54,
-      "community_name": "RestockVaultView.jsx",
+      "community": 86,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "daystats.js"
     },
     {
@@ -14220,8 +14385,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_utils_daystats_txseconds",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 86,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "txseconds()"
     },
     {
@@ -14231,8 +14396,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_utils_daystats_daystats",
-      "community": 54,
-      "community_name": "RestockVaultView.jsx",
+      "community": 86,
+      "community_name": "dayStats.selfcheck.mjs",
       "norm_label": "daystats()"
     },
     {
@@ -14605,8 +14770,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_findduplicates",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 70,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "findduplicates.js"
     },
     {
@@ -14616,8 +14781,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_utils_findduplicates_normalisename",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 70,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "normalisename()"
     },
     {
@@ -14627,8 +14792,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_utils_findduplicates_metresbetween",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 70,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "metresbetween()"
     },
     {
@@ -14638,8 +14803,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_utils_findduplicates_hascoords",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 70,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "hascoords()"
     },
     {
@@ -14649,8 +14814,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "src_utils_findduplicates_groupkey",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 70,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "groupkey()"
     },
     {
@@ -14660,8 +14825,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "src_utils_findduplicates_createdmillis",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 70,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "createdmillis()"
     },
     {
@@ -14671,8 +14836,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "src_utils_findduplicates_findduplicates",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 70,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "findduplicates()"
     },
     {
@@ -14682,8 +14847,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_helpers",
-      "community": 76,
-      "community_name": "useTransactionEngine.js",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "helpers.js"
     },
     {
@@ -14715,8 +14880,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_utils_helpers_formatnumber",
-      "community": 49,
-      "community_name": "notify",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "formatnumber()"
     },
     {
@@ -14726,8 +14891,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_utils_helpers_parsegroupednumber",
-      "community": 49,
-      "community_name": "notify",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "parsegroupednumber()"
     },
     {
@@ -14737,8 +14902,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "src_utils_helpers_storekey",
-      "community": 54,
-      "community_name": "RestockVaultView.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "storekey()"
     },
     {
@@ -14759,8 +14924,8 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "src_utils_helpers_getlocaldaykey",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "getlocaldaykey()"
     },
     {
@@ -14781,8 +14946,8 @@
       "source_location": "L119",
       "_origin": "ast",
       "id": "src_utils_helpers_issafedocidemail",
-      "community": 53,
-      "community_name": "helpers.js",
+      "community": 91,
+      "community_name": "FleetCanvasManager.jsx",
       "norm_label": "issafedocidemail()"
     },
     {
@@ -14814,8 +14979,8 @@
       "source_location": "L165",
       "_origin": "ast",
       "id": "src_utils_helpers_splittounits",
-      "community": 74,
-      "community_name": "notify",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "splittounits()"
     },
     {
@@ -14825,8 +14990,8 @@
       "source_location": "L195",
       "_origin": "ast",
       "id": "src_utils_helpers_stripcartitemforstorage",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "stripcartitemforstorage()"
     },
     {
@@ -14836,8 +15001,8 @@
       "source_location": "L222",
       "_origin": "ast",
       "id": "src_utils_helpers_absentforsure",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "absentforsure()"
     },
     {
@@ -14869,8 +15034,8 @@
       "source_location": "L310",
       "_origin": "ast",
       "id": "src_utils_helpers_savephotoandgetreference",
-      "community": 87,
-      "community_name": "StockOpnameView.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "savephotoandgetreference()"
     },
     {
@@ -14880,8 +15045,8 @@
       "source_location": "L323",
       "_origin": "ast",
       "id": "src_utils_helpers_deletephotofromstorage",
-      "community": 87,
-      "community_name": "StockOpnameView.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "deletephotofromstorage()"
     },
     {
@@ -14891,8 +15056,8 @@
       "source_location": "L340",
       "_origin": "ast",
       "id": "src_utils_helpers_scanpixels",
-      "community": 76,
-      "community_name": "useTransactionEngine.js",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "scanpixels()"
     },
     {
@@ -14902,8 +15067,8 @@
       "source_location": "L386",
       "_origin": "ast",
       "id": "src_utils_helpers_deskewangle",
-      "community": 76,
-      "community_name": "useTransactionEngine.js",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "deskewangle()"
     },
     {
@@ -14913,8 +15078,8 @@
       "source_location": "L420",
       "_origin": "ast",
       "id": "src_utils_helpers_findpaper",
-      "community": 76,
-      "community_name": "useTransactionEngine.js",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "findpaper()"
     },
     {
@@ -14946,8 +15111,8 @@
       "source_location": "L548",
       "_origin": "ast",
       "id": "src_utils_helpers_loadnotaphoto",
-      "community": 76,
-      "community_name": "useTransactionEngine.js",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "loadnotaphoto()"
     },
     {
@@ -14957,8 +15122,8 @@
       "source_location": "L573",
       "_origin": "ast",
       "id": "src_utils_helpers_scannotatobase64",
-      "community": 76,
-      "community_name": "useTransactionEngine.js",
+      "community": 74,
+      "community_name": "notify",
       "norm_label": "scannotatobase64()"
     },
     {
@@ -14968,8 +15133,8 @@
       "source_location": "L608",
       "_origin": "ast",
       "id": "src_utils_helpers_compressimagetobase64",
-      "community": 87,
-      "community_name": "StockOpnameView.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "compressimagetobase64()"
     },
     {
@@ -14990,8 +15155,8 @@
       "source_location": "L645",
       "_origin": "ast",
       "id": "src_utils_helpers_shortstockrows",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "shortstockrows()"
     },
     {
@@ -15012,8 +15177,8 @@
       "source_location": "L699",
       "_origin": "ast",
       "id": "src_utils_helpers_tierprice",
-      "community": 87,
-      "community_name": "StockOpnameView.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "tierprice()"
     },
     {
@@ -15023,8 +15188,8 @@
       "source_location": "L704",
       "_origin": "ast",
       "id": "src_utils_helpers_eodbountylines",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "eodbountylines()"
     },
     {
@@ -15045,8 +15210,8 @@
       "source_location": "L747",
       "_origin": "ast",
       "id": "src_utils_helpers_eodnightof",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "eodnightof()"
     },
     {
@@ -15056,8 +15221,8 @@
       "source_location": "L750",
       "_origin": "ast",
       "id": "src_utils_helpers_nightlabel",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "nightlabel()"
     },
     {
@@ -15067,8 +15232,8 @@
       "source_location": "L754",
       "_origin": "ast",
       "id": "src_utils_helpers_grouppendingeod",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "grouppendingeod()"
     },
     {
@@ -15078,8 +15243,8 @@
       "source_location": "L774",
       "_origin": "ast",
       "id": "src_utils_helpers_salelines",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "salelines()"
     },
     {
@@ -15089,8 +15254,8 @@
       "source_location": "L788",
       "_origin": "ast",
       "id": "src_utils_helpers_bountyitems",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "bountyitems()"
     },
     {
@@ -15100,8 +15265,8 @@
       "source_location": "L814",
       "_origin": "ast",
       "id": "src_utils_helpers_eod_part_labels",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "eod_part_labels"
     },
     {
@@ -15111,8 +15276,8 @@
       "source_location": "L819",
       "_origin": "ast",
       "id": "src_utils_helpers_eodreportparts",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "eodreportparts()"
     },
     {
@@ -15122,8 +15287,8 @@
       "source_location": "L835",
       "_origin": "ast",
       "id": "src_utils_helpers_eodnightmessage",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "eodnightmessage()"
     },
     {
@@ -15133,8 +15298,8 @@
       "source_location": "L860",
       "_origin": "ast",
       "id": "src_utils_helpers_eodpartapproved",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "eodpartapproved()"
     },
     {
@@ -15144,8 +15309,8 @@
       "source_location": "L866",
       "_origin": "ast",
       "id": "src_utils_helpers_nightparts",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "nightparts()"
     },
     {
@@ -15155,8 +15320,8 @@
       "source_location": "L877",
       "_origin": "ast",
       "id": "src_utils_helpers_daytargets",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "daytargets()"
     },
     {
@@ -15166,8 +15331,8 @@
       "source_location": "L887",
       "_origin": "ast",
       "id": "src_utils_helpers_nixiedigits",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "nixiedigits()"
     },
     {
@@ -15243,8 +15408,8 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "src_utils_nextstop_directionsurl",
-      "community": 93,
-      "community_name": "nextStop.js",
+      "community": 54,
+      "community_name": "RestockVaultView.jsx",
       "norm_label": "directionsurl()"
     },
     {
@@ -15408,8 +15573,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "src_utils_revenuerule_revenueof",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 31,
+      "community_name": "eslint-plugin-react-refresh",
       "norm_label": "revenueof()"
     },
     {
@@ -15496,8 +15661,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "src_utils_salesrollup_dayof",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "dayof()"
     },
     {
@@ -15507,8 +15672,8 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "src_utils_salesrollup_salesdelta",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "salesdelta()"
     },
     {
@@ -15573,8 +15738,8 @@
       "source_location": "L230",
       "_origin": "ast",
       "id": "src_utils_salesrollup_rebuildmonths",
-      "community": 78,
-      "community_name": "customerBrief.selfcheck.mjs",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "rebuildmonths()"
     },
     {
@@ -15628,8 +15793,8 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "src_utils_salesrollupwrite_tallysaleop",
-      "community": 105,
-      "community_name": "convertToBks",
+      "community": 89,
+      "community_name": "HistoryReportView.jsx",
       "norm_label": "tallysaleop()"
     },
     {
@@ -15782,8 +15947,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_supply",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "supply.js"
     },
     {
@@ -15793,8 +15958,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_utils_supply_hq_locations",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "hq_locations"
     },
     {
@@ -15826,8 +15991,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "src_utils_supply_locationof",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "locationof()"
     },
     {
@@ -15837,8 +16002,8 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "src_utils_supply_supplybyproduct",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "supplybyproduct()"
     },
     {
@@ -15903,8 +16068,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_vanbay",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "vanbay.js"
     },
     {
@@ -15914,8 +16079,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_utils_vanbay_linebks",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "linebks()"
     },
     {
@@ -15925,8 +16090,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_utils_vanbay_netbks",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "netbks()"
     },
     {
@@ -15936,8 +16101,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_utils_vanbay_loadcap",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "loadcap()"
     },
     {
@@ -15947,8 +16112,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_utils_vanbay_backcap",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "backcap()"
     },
     {
@@ -15958,8 +16123,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_utils_vanbay_foldline",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "foldline()"
     },
     {
@@ -15969,8 +16134,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_utils_vanbay_vancells",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "vancells()"
     },
     {
@@ -15980,8 +16145,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "src_utils_vanbay_landingcell",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "landingcell()"
     },
     {
@@ -15991,8 +16156,8 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "src_utils_vanbay_applypreset",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "applypreset()"
     },
     {
@@ -16002,8 +16167,8 @@
       "source_location": "L92",
       "_origin": "ast",
       "id": "src_utils_vanbay_teamload",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "teamload()"
     },
     {
@@ -16024,8 +16189,8 @@
       "source_location": "L132",
       "_origin": "ast",
       "id": "src_utils_vanbay_titipof",
-      "community": 91,
-      "community_name": "FleetCanvasManager.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "titipof()"
     },
     {
@@ -16035,9 +16200,42 @@
       "source_location": "L163",
       "_origin": "ast",
       "id": "src_utils_vanbay_hazard_sign",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 105,
+      "community_name": "convertToBks",
       "norm_label": "hazard_sign"
+    },
+    {
+      "label": "vaultDoc.js",
+      "file_type": "code",
+      "source_file": "src/utils/vaultDoc.js",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "src_utils_vaultdoc",
+      "community": 91,
+      "community_name": "FleetCanvasManager.jsx",
+      "norm_label": "vaultdoc.js"
+    },
+    {
+      "label": "vaultDocPath()",
+      "file_type": "code",
+      "source_file": "src/utils/vaultDoc.js",
+      "source_location": "L13",
+      "_origin": "ast",
+      "id": "src_utils_vaultdoc_vaultdocpath",
+      "community": 91,
+      "community_name": "FleetCanvasManager.jsx",
+      "norm_label": "vaultdocpath()"
+    },
+    {
+      "label": "VAULT_TRIES_RESET",
+      "file_type": "code",
+      "source_file": "src/utils/vaultDoc.js",
+      "source_location": "L19",
+      "_origin": "ast",
+      "id": "src_utils_vaultdoc_vault_tries_reset",
+      "community": 91,
+      "community_name": "FleetCanvasManager.jsx",
+      "norm_label": "vault_tries_reset"
     },
     {
       "label": "vaultGrace.js",
@@ -16046,8 +16244,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_vaultgrace",
-      "community": 100,
-      "community_name": "vaultGrace.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "vaultgrace.js"
     },
     {
@@ -16057,8 +16255,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_utils_vaultgrace_graceisvalid",
-      "community": 100,
-      "community_name": "vaultGrace.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "graceisvalid()"
     },
     {
@@ -16068,8 +16266,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_utils_vaultgrace_readgrace",
-      "community": 100,
-      "community_name": "vaultGrace.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "readgrace()"
     },
     {
@@ -16079,8 +16277,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "src_utils_vaultgrace_touchgrace",
-      "community": 100,
-      "community_name": "vaultGrace.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "touchgrace()"
     },
     {
@@ -16090,8 +16288,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_utils_vaultgrace_cleargrace",
-      "community": 100,
-      "community_name": "vaultGrace.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "cleargrace()"
     },
     {
@@ -16101,41 +16299,41 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_vaultlock",
-      "community": 53,
-      "community_name": "helpers.js",
+      "community": 91,
+      "community_name": "FleetCanvasManager.jsx",
       "norm_label": "vaultlock.js"
     },
     {
       "label": "lockLeftMs()",
       "file_type": "code",
       "source_file": "src/utils/vaultLock.js",
-      "source_location": "L13",
+      "source_location": "L14",
       "_origin": "ast",
       "id": "src_utils_vaultlock_lockleftms",
-      "community": 53,
-      "community_name": "helpers.js",
+      "community": 91,
+      "community_name": "FleetCanvasManager.jsx",
       "norm_label": "lockleftms()"
     },
     {
       "label": "untilText()",
       "file_type": "code",
       "source_file": "src/utils/vaultLock.js",
-      "source_location": "L16",
+      "source_location": "L17",
       "_origin": "ast",
       "id": "src_utils_vaultlock_untiltext",
-      "community": 53,
-      "community_name": "helpers.js",
+      "community": 91,
+      "community_name": "FleetCanvasManager.jsx",
       "norm_label": "untiltext()"
     },
     {
       "label": "strikeUpdate()",
       "file_type": "code",
       "source_file": "src/utils/vaultLock.js",
-      "source_location": "L21",
+      "source_location": "L22",
       "_origin": "ast",
       "id": "src_utils_vaultlock_strikeupdate",
-      "community": 53,
-      "community_name": "helpers.js",
+      "community": 0,
+      "community_name": "App.jsx",
       "norm_label": "strikeupdate()"
     },
     {
@@ -16464,8 +16662,8 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_query",
-      "community": 75,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "query()"
     },
     {
@@ -16651,8 +16849,8 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "tools_ponder_lab_lab",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 68,
+      "community_name": "VaultGate.jsx",
       "norm_label": "lab()"
     },
     {
@@ -16662,8 +16860,8 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "tools_ponder_lab_forcehover",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 68,
+      "community_name": "VaultGate.jsx",
       "norm_label": "forcehover()"
     },
     {
@@ -16673,8 +16871,8 @@
       "source_location": "L115",
       "_origin": "ast",
       "id": "tools_ponder_lab_booklab",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 68,
+      "community_name": "VaultGate.jsx",
       "norm_label": "booklab()"
     },
     {
@@ -16706,8 +16904,8 @@
       "source_location": "L183",
       "_origin": "ast",
       "id": "tools_ponder_lab_minkirimlab",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 68,
+      "community_name": "VaultGate.jsx",
       "norm_label": "minkirimlab()"
     },
     {
@@ -16816,8 +17014,8 @@
       "source_location": "L358",
       "_origin": "ast",
       "id": "tools_ponder_lab_labsamplings",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 68,
+      "community_name": "VaultGate.jsx",
       "norm_label": "labsamplings()"
     },
     {
@@ -16827,8 +17025,8 @@
       "source_location": "L375",
       "_origin": "ast",
       "id": "tools_ponder_lab_labverifiedtonight",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 68,
+      "community_name": "VaultGate.jsx",
       "norm_label": "labverifiedtonight()"
     },
     {
@@ -16838,8 +17036,8 @@
       "source_location": "L384",
       "_origin": "ast",
       "id": "tools_ponder_lab_labeodreports",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 68,
+      "community_name": "VaultGate.jsx",
       "norm_label": "labeodreports()"
     },
     {
@@ -16893,7 +17091,7 @@
       "source_location": "L509",
       "_origin": "ast",
       "id": "tools_ponder_lab_photolab",
-      "community": 35,
+      "community": 76,
       "community_name": "useTransactionEngine.js",
       "norm_label": "photolab()"
     },
@@ -16904,7 +17102,7 @@
       "source_location": "L561",
       "_origin": "ast",
       "id": "tools_ponder_lab_notascanlab",
-      "community": 35,
+      "community": 76,
       "community_name": "useTransactionEngine.js",
       "norm_label": "notascanlab()"
     },
@@ -16915,8 +17113,8 @@
       "source_location": "L622",
       "_origin": "ast",
       "id": "tools_ponder_lab_toastlab",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 68,
+      "community_name": "VaultGate.jsx",
       "norm_label": "toastlab()"
     },
     {
@@ -17003,8 +17201,8 @@
       "source_location": "L757",
       "_origin": "ast",
       "id": "tools_ponder_lab_labpiutang",
-      "community": 84,
-      "community_name": "useTransactionEngine.js",
+      "community": 64,
+      "community_name": "PonderOverlay.jsx",
       "norm_label": "labpiutang()"
     },
     {
@@ -17025,8 +17223,8 @@
       "source_location": "L786",
       "_origin": "ast",
       "id": "tools_ponder_lab_shelllab",
-      "community": 35,
-      "community_name": "useTransactionEngine.js",
+      "community": 68,
+      "community_name": "VaultGate.jsx",
       "norm_label": "shelllab()"
     },
     {
@@ -17069,8 +17267,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "tools_seed_emulator_val",
-      "community": 68,
-      "community_name": "VaultGate.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "val()"
     },
     {
@@ -17528,7 +17726,7 @@
       "label": "History - facts only, NOT a prompt to copy",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L65",
+      "source_location": "L75",
       "_origin": "ast",
       "id": "claude_next_session_history_facts_only_not_a_prompt_to_copy",
       "community": 47,
@@ -17539,7 +17737,7 @@
       "label": "THE SHOWCASE ARTIFACT (2026-09-20 06:30) \u2014 keep it current",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L171",
+      "source_location": "L181",
       "_origin": "ast",
       "id": "claude_next_session_the_showcase_artifact_2026_09_20_06_30_keep_it_current",
       "community": 47,
@@ -17550,7 +17748,7 @@
       "label": "SHIPPED 2026-09-20 14:25 \u2014 THE PLAYER CARD, stage A (`a401463`) \u2014 \u2705 TEST owed; then STAGE B",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L175",
+      "source_location": "L185",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_20_14_25_the_player_card_stage_a_a401463_test_owed_then_stage_b",
       "community": 47,
@@ -17561,7 +17759,7 @@
       "label": "THE QUEUE (2026-09-20 00:35) \u2014 his test answers became three design jobs; boards first on every one",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L199",
+      "source_location": "L209",
       "_origin": "ast",
       "id": "claude_next_session_the_queue_2026_09_20_00_35_his_test_answers_became_three_design_jobs_boards_first_on_every_one",
       "community": 47,
@@ -17572,7 +17770,7 @@
       "label": "Job 4: AGENT PROFILE on the phone \u2014 mount first (2026-09-20 00:20, nothing built yet)",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L213",
+      "source_location": "L223",
       "_origin": "ast",
       "id": "claude_next_session_job_4_agent_profile_on_the_phone_mount_first_2026_09_20_00_20_nothing_built_yet",
       "community": 47,
@@ -17583,7 +17781,7 @@
       "label": "FIXED 2026-09-20 00:05 \u2014 the folder's leaving mark outlived its page (`6379364`) \u2014 CONFIRMED 00:15 (*\"approve, continue\"*), and d7f2193 with it",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L219",
+      "source_location": "L229",
       "_origin": "ast",
       "id": "claude_next_session_fixed_2026_09_20_00_05_the_folder_s_leaving_mark_outlived_its_page_6379364_confirmed_00_15_approve_continue_and_d7f2193_with_it",
       "community": 47,
@@ -17594,7 +17792,7 @@
       "label": "SHIPPED 2026-09-19 19:55 \u2014 Sampling on the phone, B (`d7f2193`) \u2014 \u2705 TEST owed; NO NEXT JOB NAMED",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L223",
+      "source_location": "L233",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_19_19_55_sampling_on_the_phone_b_d7f2193_test_owed_no_next_job_named",
       "community": 47,
@@ -17605,7 +17803,7 @@
       "label": "The boards \u2014 SENT 2026-09-19 19:40 (lab `825f801`), decided B at 19:52",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L229",
+      "source_location": "L239",
       "_origin": "ast",
       "id": "claude_next_session_the_boards_sent_2026_09_19_19_40_lab_825f801_decided_b_at_19_52",
       "community": 47,
@@ -17616,7 +17814,7 @@
       "label": "How to measure and propose \u2014 the recipe is settled, do not re-derive it",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L249",
+      "source_location": "L259",
       "_origin": "ast",
       "id": "claude_next_session_how_to_measure_and_propose_the_recipe_is_settled_do_not_re_derive_it",
       "community": 47,
@@ -17627,7 +17825,7 @@
       "label": "Paste this to start the next session",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L257",
+      "source_location": "L267",
       "_origin": "ast",
       "id": "claude_next_session_paste_this_to_start_the_next_session",
       "community": 47,
@@ -17638,7 +17836,7 @@
       "label": "Shipped 2026-09-19 12:50 \u2014 leaving a level steps back (`037d017`) \u2014 \u2705 TEST owed",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L268",
+      "source_location": "L278",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_19_12_50_leaving_a_level_steps_back_037d017_test_owed",
       "community": 47,
@@ -17649,7 +17847,7 @@
       "label": "Shipped 2026-09-19 12:30 \u2014 entering a folder rises in (`b540adb`) \u2014 \u2705 TEST owed",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L273",
+      "source_location": "L283",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_19_12_30_entering_a_folder_rises_in_b540adb_test_owed",
       "community": 47,
@@ -17660,7 +17858,7 @@
       "label": "Shipped 2026-09-19 12:05 \u2014 a tap plays the open, the Customers paper rests inside (`507281d`) \u2014 \u2705 TEST owed",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L278",
+      "source_location": "L288",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_19_12_05_a_tap_plays_the_open_the_customers_paper_rests_inside_507281d_test_owed",
       "community": 47,
@@ -17671,7 +17869,7 @@
       "label": "Shipped 2026-09-19 11:40 \u2014 the Customers folders (`8eb8a25`) \u2014 \u2705 TEST owed",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L283",
+      "source_location": "L293",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_19_11_40_the_customers_folders_8eb8a25_test_owed",
       "community": 47,
@@ -17682,7 +17880,7 @@
       "label": "Shipped 2026-09-19 11:05 \u2014 the paper back inside the folder (`0b1b46f`) \u2014 \u2705 TEST owed (replaces every earlier folder test)",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L288",
+      "source_location": "L298",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_19_11_05_the_paper_back_inside_the_folder_0b1b46f_test_owed_replaces_every_earlier_folder_test",
       "community": 47,
@@ -17693,7 +17891,7 @@
       "label": "Shipped 2026-09-19 10:45 \u2014 a hold animates, a tap enters, the paper slides out (`06c3906`) \u2014 the paper part reverted by 0b1b46f",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L293",
+      "source_location": "L303",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_19_10_45_a_hold_animates_a_tap_enters_the_paper_slides_out_06c3906_the_paper_part_reverted_by_0b1b46f",
       "community": 47,
@@ -17704,7 +17902,7 @@
       "label": "Shipped 2026-09-19 10:20 \u2014 the folder OPENS while held, the file rises (`dbd771c`) \u2014 superseded by 06c3906",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L298",
+      "source_location": "L308",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_19_10_20_the_folder_opens_while_held_the_file_rises_dbd771c_superseded_by_06c3906",
       "community": 47,
@@ -17715,7 +17913,7 @@
       "label": "Shipped 2026-09-19 09:55 \u2014 the folder HOLD (`11e7e94`) \u2014 superseded by dbd771c",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L303",
+      "source_location": "L313",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_19_09_55_the_folder_hold_11e7e94_superseded_by_dbd771c",
       "community": 47,
@@ -17726,7 +17924,7 @@
       "label": "Shipped 2026-09-19 09:25 \u2014 the RADAR HUB folders (`4dfc590`) \u2014 \u2705 TEST owed",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L308",
+      "source_location": "L318",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_19_09_25_the_radar_hub_folders_4dfc590_test_owed",
       "community": 47,
@@ -17737,7 +17935,7 @@
       "label": "Shipped 2026-09-19 08:25 \u2014 the phone runs the new build on the first open (`cbf9cfb`) \u2014 \u2705 TEST owed",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L313",
+      "source_location": "L323",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_19_08_25_the_phone_runs_the_new_build_on_the_first_open_cbf9cfb_test_owed",
       "community": 47,
@@ -17748,7 +17946,7 @@
       "label": "Shipped 2026-09-19 07:45 \u2014 the store card: C + the LED (`0743a17`) \u2014 \u2705 TEST owed",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L318",
+      "source_location": "L328",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_19_07_45_the_store_card_c_the_led_0743a17_test_owed",
       "community": 47,
@@ -17759,7 +17957,7 @@
       "label": "Shipped 2026-09-19 02:47 \u2014 Journey Plan on the phone + the map tiles (`056d8e3`) \u2014 \u2705 TEST owed",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L323",
+      "source_location": "L333",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_19_02_47_journey_plan_on_the_phone_the_map_tiles_056d8e3_test_owed",
       "community": 47,
@@ -17770,7 +17968,7 @@
       "label": "Shipped 2026-09-18 22:18 \u2014 the nixie face and the dot lights (`bcb08c4`) \u2014 \u2705 TEST owed",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L327",
+      "source_location": "L337",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_18_22_18_the_nixie_face_and_the_dot_lights_bcb08c4_test_owed",
       "community": 47,
@@ -17781,7 +17979,7 @@
       "label": "Shipped 2026-09-18 21:50 \u2014 the nixie counter + amber count card + one-thing-per-line audit item (`a13744a`) \u2014 \u2705 TEST owed",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L331",
+      "source_location": "L341",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_18_21_50_the_nixie_counter_amber_count_card_one_thing_per_line_audit_item_a13744a_test_owed",
       "community": 47,
@@ -17792,7 +17990,7 @@
       "label": "Shipped 2026-09-18 19:20 \u2014 the Stock Opname floor (`f72ef35`) \u2014 \u2705 TEST owed",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L335",
+      "source_location": "L345",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_18_19_20_the_stock_opname_floor_f72ef35_test_owed",
       "community": 47,
@@ -17803,7 +18001,7 @@
       "label": "Shipped 2026-09-18 ~16:45 \u2014 Customers round two on the phone (his A / A / A)",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L339",
+      "source_location": "L349",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_18_16_45_customers_round_two_on_the_phone_his_a_a_a",
       "community": 47,
@@ -17814,7 +18012,7 @@
       "label": "Shipped 2026-09-18 ~14:05 \u2014 EOD Setoran on the phone (his board 1 YES + board 2 B)",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L343",
+      "source_location": "L353",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_18_14_05_eod_setoran_on_the_phone_his_board_1_yes_board_2_b",
       "community": 47,
@@ -17825,7 +18023,7 @@
       "label": "Shipped 2026-09-18 11:11 \u2014 key caps, the stacked competitor table, the LED count (`832ea7c`)",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L347",
+      "source_location": "L357",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_18_11_11_key_caps_the_stacked_competitor_table_the_led_count_832ea7c",
       "community": 47,
@@ -17836,7 +18034,7 @@
       "label": "Shipped 2026-09-18 09:38 \u2014 Agent Inventory on the phone (`8b9b3f9`) \u2014 CONFIRMED 10:40",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L358",
+      "source_location": "L368",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_18_09_38_agent_inventory_on_the_phone_8b9b3f9_confirmed_10_40",
       "community": 47,
@@ -17847,7 +18045,7 @@
       "label": "Shipped 2026-09-17 10:16 \u2014 Customers on the phone (`a9822ff`)",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L372",
+      "source_location": "L382",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_17_10_16_customers_on_the_phone_a9822ff",
       "community": 47,
@@ -17858,7 +18056,7 @@
       "label": "Shipped 2026-09-17 \u2014 the Sales Terminal on the phone (`4ba6563`) and the vault press (`dfc2392`)",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L384",
+      "source_location": "L394",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_17_the_sales_terminal_on_the_phone_4ba6563_and_the_vault_press_dfc2392",
       "community": 47,
@@ -17869,7 +18067,7 @@
       "label": "Shipped 2026-09-16 20:29 \u2014 `c5c7ed3` the phone ribbon rests a quarter of the way down",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L396",
+      "source_location": "L406",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_16_20_29_c5c7ed3_the_phone_ribbon_rests_a_quarter_of_the_way_down",
       "community": 47,
@@ -17880,7 +18078,7 @@
       "label": "Shipped 2026-09-16 \u2014 the nota scanner finds the paper, squares it, and has a corner editor",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L404",
+      "source_location": "L414",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_16_the_nota_scanner_finds_the_paper_squares_it_and_has_a_corner_editor",
       "community": 47,
@@ -17891,7 +18089,7 @@
       "label": "Shipped 2026-09-15 \u2014 Restock Vault on the phone, complete",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L423",
+      "source_location": "L433",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_15_restock_vault_on_the_phone_complete",
       "community": 47,
@@ -17902,7 +18100,7 @@
       "label": "Shipped 2026-09-14 \u2014 `2af2dd9` \u2014 CONFIRMED by Aldi",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L429",
+      "source_location": "L439",
       "_origin": "ast",
       "id": "claude_next_session_shipped_2026_09_14_2af2dd9_confirmed_by_aldi",
       "community": 47,
@@ -17913,7 +18111,7 @@
       "label": "Promoted and parked behind the sweep",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L437",
+      "source_location": "L447",
       "_origin": "ast",
       "id": "claude_next_session_promoted_and_parked_behind_the_sweep",
       "community": 47,
@@ -17924,7 +18122,7 @@
       "label": "Still ship-blocking, and both are his call",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L483",
+      "source_location": "L493",
       "_origin": "ast",
       "id": "claude_next_session_still_ship_blocking_and_both_are_his_call",
       "community": 47,
@@ -17935,7 +18133,7 @@
       "label": "Business track \u2014 CLOSED and PARKED, do not reopen",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L494",
+      "source_location": "L504",
       "_origin": "ast",
       "id": "claude_next_session_business_track_closed_and_parked_do_not_reopen",
       "community": 47,
@@ -17946,7 +18144,7 @@
       "label": "Rebuild sales totals \u2014 DONE, stop asking",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L502",
+      "source_location": "L512",
       "_origin": "ast",
       "id": "claude_next_session_rebuild_sales_totals_done_stop_asking",
       "community": 47,
@@ -17957,7 +18155,7 @@
       "label": "Phone \u2014 the lab instruments that exist now",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L506",
+      "source_location": "L516",
       "_origin": "ast",
       "id": "claude_next_session_phone_the_lab_instruments_that_exist_now",
       "community": 47,
@@ -17968,7 +18166,7 @@
       "label": "Wording \u2014 cheap, each one read by a customer",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L516",
+      "source_location": "L526",
       "_origin": "ast",
       "id": "claude_next_session_wording_cheap_each_one_read_by_a_customer",
       "community": 47,
@@ -17979,7 +18177,7 @@
       "label": "Closed \u2014 do not reopen",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L522",
+      "source_location": "L532",
       "_origin": "ast",
       "id": "claude_next_session_closed_do_not_reopen",
       "community": 47,
@@ -17990,7 +18188,7 @@
       "label": "Appearance \u2014 deferred on purpose, last",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L538",
+      "source_location": "L548",
       "_origin": "ast",
       "id": "claude_next_session_appearance_deferred_on_purpose_last",
       "community": 47,
@@ -18001,7 +18199,7 @@
       "label": "Still owed from earlier sessions",
       "file_type": "document",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L544",
+      "source_location": "L554",
       "_origin": "ast",
       "id": "claude_next_session_still_owed_from_earlier_sessions",
       "community": 47,
@@ -18152,10 +18350,43 @@
       "norm_label": "progress \u2014 read this, search for nothing"
     },
     {
-      "label": "\ud83d\udfe1 2026-09-28 12:05 \u2014 KPM: vault fixes BUILT (uncommitted) - his strikeUpdate owed",
+      "label": "\ud83d\udfe1 2026-09-28 17:50 \u2014 KPM: his pick A - a vault password for every person",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
       "source_location": "L5",
+      "_origin": "ast",
+      "id": "claude_progress_2026_09_28_17_50_kpm_his_pick_a_a_vault_password_for_every_person",
+      "community": 41,
+      "community_name": "\u2705 THE LIGHT DUKE'S LEDGER IS BUILT \u2014 524/524, contrast self-check passes",
+      "norm_label": "\ud83d\udfe1 2026-09-28 17:50 \u2014 kpm: his pick a - a vault password for every person"
+    },
+    {
+      "label": "\ud83d\udfe1 2026-09-28 17:45 \u2014 KPM: two new asks - vault passwords per account, and a biohazard quarantine box",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L10",
+      "_origin": "ast",
+      "id": "claude_progress_2026_09_28_17_45_kpm_two_new_asks_vault_passwords_per_account_and_a_biohazard_quarantine_box",
+      "community": 41,
+      "community_name": "\u2705 THE LIGHT DUKE'S LEDGER IS BUILT \u2014 524/524, contrast self-check passes",
+      "norm_label": "\ud83d\udfe1 2026-09-28 17:45 \u2014 kpm: two new asks - vault passwords per account, and a biohazard quarantine box"
+    },
+    {
+      "label": "\ud83d\udfe2 2026-09-28 12:00 \u2014 KPM: vault fixes COMMITTED `e8477c7` (local, not pushed)",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L14",
+      "_origin": "ast",
+      "id": "claude_progress_2026_09_28_12_00_kpm_vault_fixes_committed_e8477c7_local_not_pushed",
+      "community": 41,
+      "community_name": "\u2705 THE LIGHT DUKE'S LEDGER IS BUILT \u2014 524/524, contrast self-check passes",
+      "norm_label": "\ud83d\udfe2 2026-09-28 12:00 \u2014 kpm: vault fixes committed `e8477c7` (local, not pushed)"
+    },
+    {
+      "label": "\ud83d\udfe1 2026-09-28 12:05 \u2014 KPM: vault fixes BUILT (uncommitted) - his strikeUpdate owed",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L18",
       "_origin": "ast",
       "id": "claude_progress_2026_09_28_12_05_kpm_vault_fixes_built_uncommitted_his_strikeupdate_owed",
       "community": 41,
@@ -18166,7 +18397,7 @@
       "label": "\ud83d\udd34 2026-09-28 11:30 \u2014 KPM: master-vault ROOT CAUSE (his Firebase Console screenshot)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L9",
+      "source_location": "L22",
       "_origin": "ast",
       "id": "claude_progress_2026_09_28_11_30_kpm_master_vault_root_cause_his_firebase_console_screenshot",
       "community": 41,
@@ -18177,7 +18408,7 @@
       "label": "\ud83d\udd34 2026-09-28 11:15 \u2014 KPM: master-vault - the length cut RULED OUT",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L13",
+      "source_location": "L26",
       "_origin": "ast",
       "id": "claude_progress_2026_09_28_11_15_kpm_master_vault_the_length_cut_ruled_out",
       "community": 41,
@@ -18188,7 +18419,7 @@
       "label": "\ud83d\udd34 2026-09-28 10:35 \u2014 KPM: master-vault incident DIAGNOSED (read-only, no code changed)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L17",
+      "source_location": "L30",
       "_origin": "ast",
       "id": "claude_progress_2026_09_28_10_35_kpm_master_vault_incident_diagnosed_read_only_no_code_changed",
       "community": 41,
@@ -18199,7 +18430,7 @@
       "label": "\ud83d\udfe2 2026-09-28 \u2014 v4.1: the chest panel floats over its chest (`460c55b`; local, not pushed)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L21",
+      "source_location": "L34",
       "_origin": "ast",
       "id": "claude_progress_2026_09_28_v4_1_the_chest_panel_floats_over_its_chest_460c55b_local_not_pushed",
       "community": 41,
@@ -18210,7 +18441,7 @@
       "label": "\ud83d\udfe1 2026-09-27 15:10 \u2014 the chest placement: three layouts to pick from (answered: A, 2026-09-28)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L32",
+      "source_location": "L45",
       "_origin": "ast",
       "id": "claude_progress_2026_09_27_15_10_the_chest_placement_three_layouts_to_pick_from_answered_a_2026_09_28",
       "community": 41,
@@ -18221,7 +18452,7 @@
       "label": "\ud83d\udfe2 2026-09-27 14:50 \u2014 LIVE on Vercel (`a43a9f2`)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L36",
+      "source_location": "L49",
       "_origin": "ast",
       "id": "claude_progress_2026_09_27_14_50_live_on_vercel_a43a9f2",
       "community": 41,
@@ -18232,7 +18463,7 @@
       "label": "\ud83d\udfe2 2026-09-27 14:40 \u2014 v4 proven; the Vercel push waits on his yes",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L40",
+      "source_location": "L53",
       "_origin": "ast",
       "id": "claude_progress_2026_09_27_14_40_v4_proven_the_vercel_push_waits_on_his_yes",
       "community": 41,
@@ -18243,7 +18474,7 @@
       "label": "\ud83d\udfe2 2026-09-27 13:09 \u2014 Agent Inventory v4: two chests and one book (`f0ec63d`; local, not pushed)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L45",
+      "source_location": "L58",
       "_origin": "ast",
       "id": "claude_progress_2026_09_27_13_09_agent_inventory_v4_two_chests_and_one_book_f0ec63d_local_not_pushed",
       "community": 41,
@@ -18254,7 +18485,7 @@
       "label": "\ud83d\udfe2 2026-09-27 10:20 \u2014 self-tested 24/25; his PC ask became prototype v4",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L55",
+      "source_location": "L68",
       "_origin": "ast",
       "id": "claude_progress_2026_09_27_10_20_self_tested_24_25_his_pc_ask_became_prototype_v4",
       "community": 41,
@@ -18265,7 +18496,7 @@
       "label": "\ud83d\udfe2 2026-09-27 09:52 \u2014 the Agent Inventory chest (`4f44e3d`; local, not pushed)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L58",
+      "source_location": "L71",
       "_origin": "ast",
       "id": "claude_progress_2026_09_27_09_52_the_agent_inventory_chest_4f44e3d_local_not_pushed",
       "community": 41,
@@ -18276,7 +18507,7 @@
       "label": "\ud83d\udfe2 2026-09-26 10:35 \u2014 the Loading Bay ponder page, self-tested 9/9 (`fcaad9c` `13f34fb` `1a5647d`; local, not pushed)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L61",
+      "source_location": "L74",
       "_origin": "ast",
       "id": "claude_progress_2026_09_26_10_35_the_loading_bay_ponder_page_self_tested_9_9_fcaad9c_13f34fb_1a5647d_local_not_pushed",
       "community": 41,
@@ -18287,7 +18518,7 @@
       "label": "\ud83d\udfe2 2026-09-26 10:15 \u2014 APPROVED: *\"test approve continue your work\"*",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L64",
+      "source_location": "L77",
       "_origin": "ast",
       "id": "claude_progress_2026_09_26_10_15_approved_test_approve_continue_your_work",
       "community": 41,
@@ -19849,7 +20080,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L1241",
+      "source_location": "L1261",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager_fleetcanvasmanager",
@@ -20505,7 +20736,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L3562",
+      "source_location": "L3587",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -21354,6 +21585,196 @@
       "source": "rules_test_test_batch2_run",
       "target": "rules_test_test_batch2_ctxfor",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L51",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "rules_test_test_vault_keys",
+      "target": "rules_test_test_vault_keys_as",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L53",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "rules_test_test_vault_keys",
+      "target": "rules_test_test_vault_keys_counters",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L26",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "rules_test_test_vault_keys",
+      "target": "rules_test_test_vault_keys_dir",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L17",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "rules_test_test_vault_keys",
+      "target": "rules_test_test_vault_keys_expect",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L52",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "rules_test_test_vault_keys",
+      "target": "rules_test_test_vault_keys_key",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L56",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "rules_test_test_vault_keys",
+      "target": "rules_test_test_vault_keys_legacy",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L55",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "rules_test_test_vault_keys",
+      "target": "rules_test_test_vault_keys_owner",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L13",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "rules_test_test_vault_keys",
+      "target": "rules_test_test_vault_keys_rules",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L57",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "rules_test_test_vault_keys",
+      "target": "rules_test_test_vault_keys_stranger",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L57",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "rules_test_test_vault_keys",
+      "target": "rules_test_test_vault_keys_supera",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L55",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "rules_test_test_vault_keys",
+      "target": "rules_test_test_vault_keys_t2",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L55",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "rules_test_test_vault_keys",
+      "target": "rules_test_test_vault_keys_t2b",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L56",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "rules_test_test_vault_keys",
+      "target": "rules_test_test_vault_keys_t2x",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "rules-test/test-vault-keys.mjs",
+      "source_location": "L56",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "rules_test_test_vault_keys",
+      "target": "rules_test_test_vault_keys_t5",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/utils/vaultGrace.js",
+      "source_location": "L52",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_vaultgrace_cleargrace",
+      "target": "rules_test_test_vault_keys_key"
+    },
+    {
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/utils/vaultGrace.js",
+      "source_location": "L40",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_vaultgrace_readgrace",
+      "target": "rules_test_test_vault_keys_key"
+    },
+    {
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "src/utils/vaultGrace.js",
+      "source_location": "L48",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_vaultgrace_touchgrace",
+      "target": "rules_test_test_vault_keys_key"
     },
     {
       "relation": "contains",
@@ -22565,7 +22986,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.jsx",
-      "source_location": "L192",
+      "source_location": "L193",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -22598,7 +23019,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/App.jsx",
-      "source_location": "L231",
+      "source_location": "L232",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -23944,7 +24365,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.jsx",
-      "source_location": "L177",
+      "source_location": "L178",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
@@ -23956,11 +24377,35 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/App.jsx",
-      "source_location": "L177",
+      "source_location": "L178",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app",
       "target": "src_utils_toastseverity_isfailure",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/App.jsx",
+      "source_location": "L157",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_app",
+      "target": "src_utils_vaultdoc",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/App.jsx",
+      "source_location": "L157",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_app",
+      "target": "src_utils_vaultdoc_vaultdocpath",
       "confidence_score": 1.0
     },
     {
@@ -24121,7 +24566,7 @@
       "context": "argument",
       "confidence": "INFERRED",
       "source_file": "src/App.jsx",
-      "source_location": "L2614",
+      "source_location": "L2639",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24134,7 +24579,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L747",
+      "source_location": "L755",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24146,7 +24591,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1277",
+      "source_location": "L1302",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24158,7 +24603,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L517",
+      "source_location": "L525",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24170,7 +24615,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L4347",
+      "source_location": "L4372",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24182,7 +24627,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1153",
+      "source_location": "L1174",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24194,7 +24639,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L4349",
+      "source_location": "L4374",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24206,7 +24651,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L2441",
+      "source_location": "L2466",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24218,7 +24663,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L2412",
+      "source_location": "L2437",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24230,7 +24675,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/App.jsx",
-      "source_location": "L3128",
+      "source_location": "L3153",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24242,7 +24687,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1913",
+      "source_location": "L1938",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24254,7 +24699,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1854",
+      "source_location": "L1879",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24266,7 +24711,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1754",
+      "source_location": "L1779",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24278,7 +24723,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L3635",
+      "source_location": "L3660",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24290,7 +24735,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L535",
+      "source_location": "L543",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24302,7 +24747,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L2133",
+      "source_location": "L2158",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24314,7 +24759,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L3606",
+      "source_location": "L3631",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24326,7 +24771,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L268",
+      "source_location": "L269",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24338,7 +24783,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L3613",
+      "source_location": "L3638",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24350,7 +24795,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L3607",
+      "source_location": "L3632",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24362,7 +24807,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/App.jsx",
-      "source_location": "L2103",
+      "source_location": "L2128",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24374,7 +24819,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L493",
+      "source_location": "L501",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24386,7 +24831,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L309",
+      "source_location": "L310",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24398,7 +24843,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L3068",
+      "source_location": "L3093",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24410,7 +24855,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L3068",
+      "source_location": "L3093",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24422,7 +24867,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L3566",
+      "source_location": "L3591",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24434,7 +24879,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L2760",
+      "source_location": "L2785",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24446,7 +24891,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L403",
+      "source_location": "L404",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24458,7 +24903,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L2231",
+      "source_location": "L2256",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24470,7 +24915,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L2116",
+      "source_location": "L2141",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24482,7 +24927,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L2118",
+      "source_location": "L2143",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24494,7 +24939,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L2103",
+      "source_location": "L2128",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24506,7 +24951,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L737",
+      "source_location": "L745",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24518,7 +24963,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L607",
+      "source_location": "L615",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24530,7 +24975,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L3255",
+      "source_location": "L3280",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24542,7 +24987,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1722",
+      "source_location": "L1747",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24554,7 +24999,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L3563",
+      "source_location": "L3588",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24566,7 +25011,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L508",
+      "source_location": "L516",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24578,7 +25023,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L3161",
+      "source_location": "L3186",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24590,7 +25035,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L3166",
+      "source_location": "L3191",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24602,7 +25047,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L386",
+      "source_location": "L387",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24614,7 +25059,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1042",
+      "source_location": "L1056",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24626,7 +25071,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1133",
+      "source_location": "L1154",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24638,7 +25083,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1132",
+      "source_location": "L1153",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24650,7 +25095,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1389",
+      "source_location": "L1414",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24662,7 +25107,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L3603",
+      "source_location": "L3628",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24674,7 +25119,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L3069",
+      "source_location": "L3094",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24686,7 +25131,19 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L2921",
+      "source_location": "L469",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_app_kpminventoryapp",
+      "target": "src_utils_vaultdoc_vaultdocpath"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/App.jsx",
+      "source_location": "L2946",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24698,7 +25155,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L2886",
+      "source_location": "L2911",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24710,7 +25167,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L2885",
+      "source_location": "L2910",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24722,7 +25179,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1123",
+      "source_location": "L1144",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24734,7 +25191,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1156",
+      "source_location": "L1177",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24746,7 +25203,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/App.jsx",
-      "source_location": "L1125",
+      "source_location": "L1146",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24758,7 +25215,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/App.jsx",
-      "source_location": "L403",
+      "source_location": "L404",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -24770,7 +25227,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/App.jsx",
-      "source_location": "L3491",
+      "source_location": "L3516",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_app_kpminventoryapp",
@@ -25723,7 +26180,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L11",
+      "source_location": "L13",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
@@ -25735,7 +26192,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L11",
+      "source_location": "L13",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
@@ -25747,7 +26204,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L13",
+      "source_location": "L15",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
@@ -25759,7 +26216,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L13",
+      "source_location": "L15",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
@@ -25771,7 +26228,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L12",
+      "source_location": "L14",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
@@ -25783,7 +26240,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L12",
+      "source_location": "L14",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
@@ -25795,7 +26252,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L10",
+      "source_location": "L12",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
@@ -25835,6 +26292,18 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
+      "target": "src_config_permissions_hasclearance",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/FleetCanvasManager.jsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_fleetcanvasmanager",
       "target": "src_config_permissions_isfieldleveltier",
       "confidence_score": 1.0
     },
@@ -25843,11 +26312,23 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L10",
+      "source_location": "L12",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
       "target": "src_config_permissions_normalizeregion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/FleetCanvasManager.jsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_fleetcanvasmanager",
+      "target": "src_config_permissions_resolvetieroneid",
       "confidence_score": 1.0
     },
     {
@@ -25866,7 +26347,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L16",
+      "source_location": "L18",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
@@ -25878,7 +26359,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L9",
+      "source_location": "L11",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
@@ -25890,7 +26371,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L9",
+      "source_location": "L11",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
@@ -25902,7 +26383,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L9",
+      "source_location": "L11",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
@@ -25914,7 +26395,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L9",
+      "source_location": "L11",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
@@ -25926,7 +26407,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L9",
+      "source_location": "L11",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
@@ -25938,7 +26419,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L9",
+      "source_location": "L11",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
@@ -25950,7 +26431,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L14",
+      "source_location": "L16",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
@@ -25962,7 +26443,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L14",
+      "source_location": "L16",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
@@ -25974,11 +26455,83 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L14",
+      "source_location": "L16",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager",
       "target": "src_utils_vanbay_titipof",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/FleetCanvasManager.jsx",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_fleetcanvasmanager",
+      "target": "src_utils_vaultdoc",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/FleetCanvasManager.jsx",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_fleetcanvasmanager",
+      "target": "src_utils_vaultdoc_vault_tries_reset",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/FleetCanvasManager.jsx",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_fleetcanvasmanager",
+      "target": "src_utils_vaultdoc_vaultdocpath",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/FleetCanvasManager.jsx",
+      "source_location": "L10",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_fleetcanvasmanager",
+      "target": "src_utils_vaultlock",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/FleetCanvasManager.jsx",
+      "source_location": "L10",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_fleetcanvasmanager",
+      "target": "src_utils_vaultlock_lockleftms",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/FleetCanvasManager.jsx",
+      "source_location": "L10",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_fleetcanvasmanager",
+      "target": "src_utils_vaultlock_untiltext",
       "confidence_score": 1.0
     },
     {
@@ -25999,7 +26552,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L409",
+      "source_location": "L411",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager_fleetcanvasmanager",
@@ -26011,7 +26564,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L295",
+      "source_location": "L297",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager_fleetcanvasmanager",
@@ -26023,7 +26576,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L107",
+      "source_location": "L109",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager_fleetcanvasmanager",
@@ -26035,7 +26588,19 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L126",
+      "source_location": "L1306",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_fleetcanvasmanager_fleetcanvasmanager",
+      "target": "src_config_permissions_hasclearance"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/FleetCanvasManager.jsx",
+      "source_location": "L128",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager_fleetcanvasmanager",
@@ -26047,7 +26612,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L228",
+      "source_location": "L230",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager_fleetcanvasmanager",
@@ -26059,7 +26624,19 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L717",
+      "source_location": "L1306",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_fleetcanvasmanager_fleetcanvasmanager",
+      "target": "src_config_permissions_resolvetieroneid"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/FleetCanvasManager.jsx",
+      "source_location": "L737",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager_fleetcanvasmanager",
@@ -26071,7 +26648,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L1384",
+      "source_location": "L1408",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager_fleetcanvasmanager",
@@ -26083,7 +26660,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L487",
+      "source_location": "L507",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager_fleetcanvasmanager",
@@ -26095,7 +26672,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L748",
+      "source_location": "L768",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager_fleetcanvasmanager",
@@ -26107,7 +26684,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L304",
+      "source_location": "L306",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager_fleetcanvasmanager",
@@ -26119,7 +26696,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L688",
+      "source_location": "L708",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager_fleetcanvasmanager",
@@ -26131,7 +26708,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L1374",
+      "source_location": "L1398",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager_fleetcanvasmanager",
@@ -26143,11 +26720,47 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/FleetCanvasManager.jsx",
-      "source_location": "L1383",
+      "source_location": "L1407",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_fleetcanvasmanager_fleetcanvasmanager",
       "target": "src_utils_vanbay_titipof"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/FleetCanvasManager.jsx",
+      "source_location": "L428",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_fleetcanvasmanager_fleetcanvasmanager",
+      "target": "src_utils_vaultdoc_vaultdocpath"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/FleetCanvasManager.jsx",
+      "source_location": "L431",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_fleetcanvasmanager_fleetcanvasmanager",
+      "target": "src_utils_vaultlock_lockleftms"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/FleetCanvasManager.jsx",
+      "source_location": "L433",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_fleetcanvasmanager_fleetcanvasmanager",
+      "target": "src_utils_vaultlock_untiltext"
     },
     {
       "relation": "imports",
@@ -35024,7 +35637,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/components/LandlordDashboard.jsx",
-      "source_location": "L258",
+      "source_location": "L259",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_landlorddashboard_landlorddashboard",
@@ -35060,7 +35673,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/LandlordDashboard.jsx",
-      "source_location": "L152",
+      "source_location": "L153",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_landlorddashboard_landlorddashboard",
@@ -35072,7 +35685,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/LandlordDashboard.jsx",
-      "source_location": "L154",
+      "source_location": "L155",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_landlorddashboard_landlorddashboard",
@@ -54848,6 +55461,28 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "src/utils/vaultDoc.js",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_vaultdoc",
+      "target": "src_utils_vaultdoc_vault_tries_reset",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/utils/vaultDoc.js",
+      "source_location": "L13",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "src_utils_vaultdoc",
+      "target": "src_utils_vaultdoc_vaultdocpath",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "src/utils/vaultGrace.js",
       "source_location": "L51",
       "weight": 1.0,
@@ -54905,7 +55540,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/vaultLock.js",
-      "source_location": "L13",
+      "source_location": "L14",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_vaultlock",
@@ -54916,7 +55551,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/vaultLock.js",
-      "source_location": "L21",
+      "source_location": "L22",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_vaultlock",
@@ -54927,7 +55562,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/vaultLock.js",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_vaultlock",
@@ -56508,7 +57143,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L219",
+      "source_location": "L229",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56519,7 +57154,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L65",
+      "source_location": "L75",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56530,7 +57165,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L249",
+      "source_location": "L259",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56541,7 +57176,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L213",
+      "source_location": "L223",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56552,7 +57187,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L257",
+      "source_location": "L267",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56563,7 +57198,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L429",
+      "source_location": "L439",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56574,7 +57209,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L423",
+      "source_location": "L433",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56585,7 +57220,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L396",
+      "source_location": "L406",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56596,7 +57231,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L404",
+      "source_location": "L414",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56607,7 +57242,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L372",
+      "source_location": "L382",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56618,7 +57253,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L384",
+      "source_location": "L394",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56629,7 +57264,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L358",
+      "source_location": "L368",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56640,7 +57275,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L347",
+      "source_location": "L357",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56651,7 +57286,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L343",
+      "source_location": "L353",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56662,7 +57297,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L339",
+      "source_location": "L349",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56673,7 +57308,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L335",
+      "source_location": "L345",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56684,7 +57319,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L331",
+      "source_location": "L341",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56695,7 +57330,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L327",
+      "source_location": "L337",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56706,7 +57341,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L323",
+      "source_location": "L333",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56717,7 +57352,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L318",
+      "source_location": "L328",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56728,7 +57363,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L313",
+      "source_location": "L323",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56739,7 +57374,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L308",
+      "source_location": "L318",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56750,7 +57385,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L303",
+      "source_location": "L313",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56761,7 +57396,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L298",
+      "source_location": "L308",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56772,7 +57407,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L293",
+      "source_location": "L303",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56783,7 +57418,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L288",
+      "source_location": "L298",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56794,7 +57429,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L283",
+      "source_location": "L293",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56805,7 +57440,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L278",
+      "source_location": "L288",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56816,7 +57451,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L273",
+      "source_location": "L283",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56827,7 +57462,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L268",
+      "source_location": "L278",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56838,7 +57473,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L223",
+      "source_location": "L233",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56849,7 +57484,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L175",
+      "source_location": "L185",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56860,7 +57495,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L229",
+      "source_location": "L239",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56871,7 +57506,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L199",
+      "source_location": "L209",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56882,7 +57517,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L171",
+      "source_location": "L181",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_the_one_job",
@@ -56893,7 +57528,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L538",
+      "source_location": "L548",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_shipped_2026_09_14_2af2dd9_confirmed_by_aldi",
@@ -56904,7 +57539,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L494",
+      "source_location": "L504",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_shipped_2026_09_14_2af2dd9_confirmed_by_aldi",
@@ -56915,7 +57550,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L522",
+      "source_location": "L532",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_shipped_2026_09_14_2af2dd9_confirmed_by_aldi",
@@ -56926,7 +57561,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L506",
+      "source_location": "L516",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_shipped_2026_09_14_2af2dd9_confirmed_by_aldi",
@@ -56937,7 +57572,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L437",
+      "source_location": "L447",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_shipped_2026_09_14_2af2dd9_confirmed_by_aldi",
@@ -56948,7 +57583,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L502",
+      "source_location": "L512",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_shipped_2026_09_14_2af2dd9_confirmed_by_aldi",
@@ -56959,7 +57594,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L544",
+      "source_location": "L554",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_shipped_2026_09_14_2af2dd9_confirmed_by_aldi",
@@ -56970,7 +57605,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L483",
+      "source_location": "L493",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_shipped_2026_09_14_2af2dd9_confirmed_by_aldi",
@@ -56981,7 +57616,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/NEXT-SESSION.md",
-      "source_location": "L516",
+      "source_location": "L526",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_next_session_shipped_2026_09_14_2af2dd9_confirmed_by_aldi",
@@ -57113,7 +57748,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L64",
+      "source_location": "L77",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -57124,7 +57759,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L61",
+      "source_location": "L74",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -57135,7 +57770,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L58",
+      "source_location": "L71",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -57146,7 +57781,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L55",
+      "source_location": "L68",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -57157,7 +57792,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L45",
+      "source_location": "L58",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -57168,7 +57803,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L40",
+      "source_location": "L53",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -57179,7 +57814,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L36",
+      "source_location": "L49",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -57190,7 +57825,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L32",
+      "source_location": "L45",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -57201,7 +57836,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L17",
+      "source_location": "L30",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -57212,7 +57847,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L13",
+      "source_location": "L26",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -57223,7 +57858,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L9",
+      "source_location": "L22",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -57234,7 +57869,18 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L5",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_progress_progress_read_this_search_for_nothing",
+      "target": "claude_progress_2026_09_28_12_00_kpm_vault_fixes_committed_e8477c7_local_not_pushed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L18",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -57245,7 +57891,29 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L21",
+      "source_location": "L10",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_progress_progress_read_this_search_for_nothing",
+      "target": "claude_progress_2026_09_28_17_45_kpm_two_new_asks_vault_passwords_per_account_and_a_biohazard_quarantine_box",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_progress_progress_read_this_search_for_nothing",
+      "target": "claude_progress_2026_09_28_17_50_kpm_his_pick_a_a_vault_password_for_every_person",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L34",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -58442,5 +59110,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "d3a17e2c1ea52d83b95e243e6e76e0a9441fb5e5"
+  "built_at_commit": "c45ce5bd1d2ef7829440f1682b928f125dace06f"
 }
