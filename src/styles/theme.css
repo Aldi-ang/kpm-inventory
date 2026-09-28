@@ -4959,10 +4959,13 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
    panel growing out of its own lid; the phone keeps the bay's order - the goods panel, the two chests, the quarantine
    panel. Six big squares a page, three across at EVERY width. Same classes as the bay; only the arrangement and the
    sizes differ. The closed state is its own rule so the open one still wins. */
-.kpm-bay.solo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "hint hint" "vang vang" "vanc qc" "qg qg"; }
-@container kpmbay (min-width: 640px) { .kpm-bay.solo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "hint hint" "vang qg" "vanc qc"; } }
-.kpm-bay.solo .gui.van { transform-origin: 50% 100%; }
-.kpm-bay.solo:not(.van-open) .gui.van { transform: scale(.08) translateY(24px); }
+.kpm-bay.solo { grid-template-columns: auto auto; justify-content: center; column-gap: 48px; row-gap: 8px; align-items: end; grid-template-areas: "vanc qc" "hint hint"; --perch: 14px; }
+@container kpmbay (min-width: 640px) { .kpm-bay.solo { grid-template-columns: auto auto; column-gap: 96px; grid-template-areas: "vanc qc" "hint hint"; --perch: 18px; } }
+/* v4.1, his pick A (2026-09-28): "when chest is pressed, the inventory box should appear on the top of it but dont move
+   any panel". Each panel floats above the chest row, over the Manifest, and takes no room; one is open at a time
+   (LoadingBay toggle) and it is always seen whole (fitPanel: the page scrolls up, --sink only for what is left). */
+.kpm-bay.solo .gui.van, .kpm-bay.solo .gui.q { position: absolute; top: auto; grid-area: auto; left: 0; right: 0; margin-inline: auto; bottom: calc(100% - var(--perch) - var(--sink, 0px)); z-index: 30; transform-origin: var(--ox, 50%) 100%; }
+.kpm-bay.solo:not(.van-open) .gui.van, .kpm-bay.solo:not(.q-open) .gui.q { transform: scale(.08) translateY(24px); }
 .kpm-bay.solo .grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .kpm-bay.solo .gui .kpm-cube-stage { --kpm-slot-h: 52px; }
 .kpm-bay.solo .chest.small { --cw: 124px; --ch: 104px; }
@@ -5018,7 +5021,8 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
   --paper: #EFE3C4; --paper-edge: #D9C9A0; --paper-ink: #2F2113; --paper-dim: #6B5537; --paper-rule: #D2C19A; --hi: #F5D08A;
 }
 .kpm-shelf { margin-top: 14px; padding: 18px 10px 14px; border: 1px solid var(--line-2); border-radius: 14px; background: var(--panel); display: flex; justify-content: center; }
-.kpm-nbBtn { all: unset; box-sizing: border-box; cursor: pointer; display: grid; justify-items: center; gap: 10px; padding: 10px 18px; border-radius: 12px; }
+.kpm-nbBtn { all: unset; box-sizing: border-box; cursor: pointer; display: grid; justify-items: center; gap: 10px; padding: 10px 18px; border-radius: 12px;
+  -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; touch-action: manipulation; }
 .kpm-nbBtn:focus-visible { outline: 3px solid var(--hi); outline-offset: 2px; }
 .kpm-nbBtn .stage { perspective: 800px; width: 220px; height: 170px; display: grid; place-items: center; }
 .kpm-nb { --w: 96px; --h: 124px; --t: 30px; position: relative; width: var(--w); height: var(--h); transform-style: preserve-3d; margin-left: 60px;
@@ -5058,6 +5062,13 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
   .kpm-nbBtn:hover .kpm-nb .leaf:nth-child(7) { animation-delay: .28s; }
   .kpm-nbBtn:hover .kpm-nb .leaf:nth-child(8) { animation-delay: .56s; }
 }
+/* a phone has no pointer to hover with (his "holding or hovering on phone doesnt open the book animation"): HOLDING the
+   book does what pointing does on the PC; letting go opens it (TodayBook `hold`) */
+.kpm-nbBtn.hold .kpm-nb { transform: rotateX(44deg) rotateY(-4deg) rotateZ(0deg) translateY(-8px) translateZ(12px); }
+.kpm-nbBtn.hold .kpm-nb .cover { transform: translateZ(var(--t)) rotateY(-172deg); }
+.kpm-nbBtn.hold .kpm-nb .leaf { animation: kpmRiffle 1.9s cubic-bezier(.45, .05, .35, 1) infinite; }
+.kpm-nbBtn.hold .kpm-nb .leaf:nth-child(7) { animation-delay: .28s; }
+.kpm-nbBtn.hold .kpm-nb .leaf:nth-child(8) { animation-delay: .56s; }
 @keyframes kpmRiffle {
   /* a leaf turns over, rests on the open cover, fades, and the next loop starts it on the block again - no jump */
   0% { transform: translateZ(calc(var(--t) - 2.5px)) rotateY(0deg); opacity: 0; }

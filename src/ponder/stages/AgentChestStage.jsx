@@ -15,12 +15,15 @@ import LoadingBay from '../../components/LoadingBay.jsx';
 import TodayBook from '../../components/TodayBook.jsx';
 import { DEMO_CHEST } from '../demo/agentInventory.js';
 
+/* v4.1: one chest open at a time - opening one shuts the other, as on the screen */
 function chestOpen(scene, stepIndex) {
-  let open = true;
+  let open = { van: true, q: false };
   for (let i = 0; i <= stepIndex; i++) {
     const act = scene?.steps?.[i]?.act;
-    if (act === 'shut:van') open = false;
-    else if (act === 'open:van') open = true;
+    if (act === 'shut:van') open = { ...open, van: false };
+    else if (act === 'open:van') open = { van: true, q: false };
+    else if (act === 'shut:q') open = { ...open, q: false };
+    else if (act === 'open:q') open = { van: false, q: true };
   }
   return open;
 }
@@ -31,9 +34,10 @@ export default function AgentChestStage({ scene, stepIndex = 0 }) {
   const open = useMemo(() => chestOpen(scene, stepIndex), [scene, stepIndex]);
   const { sales, samples, ...bay } = DEMO_CHEST;
   return (
-    <div className="py-5" onPointerDownCapture={(e) => e.stopPropagation()}
+    /* the panels float ABOVE the chest row (v4.1); on the screen the Manifest is under them, here the room is kept empty */
+    <div className="pt-[360px] sm:pt-[430px] pb-5" onPointerDownCapture={(e) => e.stopPropagation()}
       onClickCapture={(e) => { if (e.target.closest('[data-ponder="book"]')) e.stopPropagation(); }}>
-      <LoadingBay vanOnly key={String(open)} {...bay} canEdit pose={{ open: { wh: false, van: open, q: true } }} onLayout={noop} />
+      <LoadingBay vanOnly key={open.van + '-' + open.q} {...bay} canEdit pose={{ open: { wh: false, van: open.van, q: open.q } }} onLayout={noop} />
       <TodayBook sales={sales} samples={samples} inventory={bay.stock} />
     </div>
   );

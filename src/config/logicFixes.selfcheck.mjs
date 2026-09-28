@@ -8787,7 +8787,7 @@ section('THE PONDER PAGE FOR THE LOADING BAY (2026-09-26)');
      /import LoadingBay from '\.\.\/\.\.\/components\/LoadingBay\.jsx'/.test(stg) && /<LoadingBay\b/.test(stg));
   ok('the bay takes a pose only as its starting state, and the live screen never passes one',
      /useState\(\(\) => pose\?\.lines \|\| \[\]\)/.test(bay) && /useState\(pose\?\.open \|\| \{ wh: null, van: null, q: null \}\)/.test(bay) &&   /* q: the Agent Inventory crate (v4) */
-     /pose\?\.open \? 0 : setTimeout/.test(bay) && !/\bpose=/.test(fl));
+     /pose\?\.open \|\| vanOnly \? 0 : setTimeout/.test(bay) && !/\bpose=/.test(fl));   /* van-only waits for a tap too (v4.1) */
   for (const [what, re] of [
     ['dragging a box only plans: it lands in the muatan and nothing moves yet', /\*\*Muatan\*\*[\s\S]*belum/],
     ['Muat van is the one key that moves stock', /\*\*Muat van\*\*[^\n]*satu-satunya/],
@@ -8838,9 +8838,9 @@ section('THE AGENT INVENTORY CHEST (2026-09-27)');
      /if \(!slot \|\| !canEdit \|\| busy\) return;\s*if \(vanOnly\)/.test(bay));
   ok('van-only is six squares a page on every width, and each page button carries its count',
      /if \(vanOnly \|\| !el \|\| typeof ResizeObserver/.test(bay) && /vanOnly \? ` · \$\{/.test(bay));
-  ok('two chests: side by side on the PC, each panel over its lid; the phone reads goods panel, the two chests, the quarantine panel; three across, nothing starts hidden',
-     /\.kpm-bay\.solo \{[^}]*grid-template-areas: "hint hint" "vang vang" "vanc qc" "qg qg"/.test(th) &&
-     /@container kpmbay \(min-width: 640px\) \{ \.kpm-bay\.solo \{[^}]*grid-template-areas: "hint hint" "vang qg" "vanc qc"/.test(th) &&
+  ok('two chests side by side in ONE row at every width (his pick A, 2026-09-28); the panels float over the page; three across, nothing starts hidden',
+     /\.kpm-bay\.solo \{[^}]*grid-template-areas: "vanc qc" "hint hint"/.test(th) &&
+     /\.kpm-bay\.solo \.gui\.van, \.kpm-bay\.solo \.gui\.q \{ position: absolute;/.test(th) &&
      /\.kpm-bay\.solo \.grid \{[^}]*repeat\(3, 1fr\)/.test(th) && !/\.kpm-bay\.solo[^{]*\{[^}]*opacity: 0/.test(th));
   /* the book writes an inline opacity on every part it dims (PonderOverlay measure, 0.26), so a shut panel hidden only by
      opacity: 0 came back as a grey speck under the chest (frame book-430-dark-step19, 2026-09-27) - in both book pages */
@@ -8934,6 +8934,35 @@ section('AGENT INVENTORY V4: TWO CHESTS AND ONE BOOK (2026-09-27)');
      !/rotateX\(var\(--tilt\)\)|--tilt/.test(bookCss) && /--edgeA: #CDBB8E; --edgeB: #A8956A;/.test(bookCss) && /\.tail \{[^}]*height: 9px/.test(bookCss));
   ok('a sale opens to its lines through saleLines; Lite Mode and reduced motion open the book at once',
      imports(book, 'saleLines') && /saleLines\(/.test(book) && /lite-mode/.test(book) && /prefers-reduced-motion: reduce/.test(book));
+}
+
+/* ── AGENT INVENTORY V4.1: THE PANEL FLOATS OVER ITS CHEST (2026-09-28) ─────────────────────────────────────────────
+   His look at the live v4: "whenever i press it it always change the spacing and i need to scroll up and down again ...
+   big blank space" (measured: a shut goods panel gave back 338 px, a shut crate kept 338 px of blank). His pick from the
+   board https://claude.ai/artifact/QA46EfZgkJPd6PH7f2FSjD: A, "open them one by one, but make sure that when chest is
+   pressed, the inventory box should appear on the top of it but dont move any panel"; and "dont put the book beside the
+   chest because it just feel not symetrical". Plus his "holding or hovering on phone doesnt open the book animation". */
+section('AGENT INVENTORY V4.1: THE PANEL FLOATS OVER ITS CHEST (2026-09-28)');
+{ const raw = read('src/AgentInventoryView.jsx'), bay = code(read('src/components/LoadingBay.jsx')), th = read('src/styles/theme.css');
+  const book = code(read('src/components/TodayBook.jsx')), stg = code(read('src/ponder/stages/AgentChestStage.jsx'));
+  const { agentChest } = await import('../ponder/scenes/agent-chest.js');
+  ok('one chest at a time: opening one shuts the other (van-only), and nothing opens by itself on arrival',
+     /if \(vanOnly && on\) setOpen\(o => \(\{ \.\.\.o, van: side === 'van', q: side === 'q' \}\)\);/.test(bay) &&
+     /const t2 = pose\?\.open \|\| vanOnly \? 0 : setTimeout/.test(bay) && !/toggle\('q', true\)/.test(bay));
+  ok('the panel never takes room: absolute, above the chest row, over the Manifest, so no other panel moves',
+     /\.kpm-bay\.solo \.gui\.van, \.kpm-bay\.solo \.gui\.q \{ position: absolute; top: auto; grid-area: auto; left: 0; right: 0; margin-inline: auto; bottom: calc\(100% - var\(--perch\) - var\(--sink, 0px\)\); z-index: 30;/.test(th));
+  ok('it is seen whole: the page scrolls up just enough, and only what is still missing sinks it into the row',
+     /function fitPanel\(side\) \{/.test(bay) && /scrollBy\(\{ top: -by/.test(bay) && /setProperty\('--sink'/.test(bay) && /requestAnimationFrame\(\(\) => fitPanel\(side\)\)/.test(bay));
+  ok('the chest view does not clip it: no overflow-hidden on the chest view; the salesman keeps his',
+     /shadow-2xl\$\{seesChest \? '' : ' overflow-hidden'\} relative`\}/.test(raw));
+  ok('the book stays on its own shelf under the chests, never beside them (his "not symetrical")',
+     /<LoadingBay vanOnly[^>]*\/>\s*<TodayBook /.test(code(raw)));
+  ok('HOLD on a phone riffles the book (hover is PC-only); letting go opens it; no long-press menu',
+     /if \(e\.pointerType !== 'mouse'\) setHold\(true\)/.test(book) && /onPointerUp=\{\(e\) => \{ if \(hold && e\.pointerType !== 'mouse'\) \{ tapped\.current = Date\.now\(\); open\(\); \}/.test(book) && /onContextMenu=\{\(e\) => e\.preventDefault\(\)\}/.test(book) &&
+     /\.kpm-nbBtn\.hold \.kpm-nb \.leaf \{ animation: kpmRiffle/.test(th) && /-webkit-touch-callout: none/.test(th));
+  ok('the tutorial follows: the crate opens by its own act, one at a time, and the stage keeps room above the chests',
+     agentChest.steps.some(x => x.act === 'open:q') && /act === 'open:q'/.test(stg) && /pt-\[/.test(stg) &&
+     /tanpa menggeser/.test(agentChest.steps.map(x => x.text).join(' ')));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

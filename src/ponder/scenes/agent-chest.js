@@ -9,7 +9,7 @@
    🔴 THE PAGE IS BUILT AROUND ONE RULE: a drag here only tidies the SUSUNAN. The stock does not move, and loading still
    goes through Muat van in the Loading Bay - the same thing the bay page teaches, from the other side.
 
-   Step fields as every other scene: text · focus · at · tone · hold · act. The only acts are shut:van / open:van
+   Step fields as every other scene: text · focus · at · tone · hold · act. The acts are shut:van / open:van / shut:q / open:q, one chest open at a time
    (stages/AgentChestStage.jsx). 'near' where one part is pointed at; 'bottom' where the beat is about the whole chest. */
 export const agentChest = {
   id: 'agent-chest',
@@ -72,7 +72,7 @@ export const agentChest = {
 
     /* ── the quarantine crate (v4) ──────────────────────────────────────────────────────────────── */
     { text: 'Di sebelahnya berdiri peti kuning **Karantina**: retur rusak hari ini yang menunggu EOD.',
-      focus: 'chest:q', at: 'near', hold: 3400 },
+      focus: 'chest:q', at: 'near', act: 'open:q', hold: 3400 },
 
     { text: 'Kotak di dalamnya diketuk untuk melihat asal toko dan alasannya.',
       focus: 'gui:q', at: 'near', hold: 3200 },
@@ -94,11 +94,11 @@ export const agentChest = {
       focus: 'book', at: 'near', hold: 3400 },
 
     /* ── shut and open ────────────────────────────────────────────────────────────────────────── */
-    { text: 'Petinya boleh ditutup kalau layar mau lebih lega.',
-      focus: 'chest:van', at: 'near', act: 'shut:van', hold: 3000 },
+    { text: 'Diketuk sekali lagi, petinya tertutup.',
+      focus: 'chest:q', at: 'near', act: 'shut:q', hold: 3000 },
 
-    { text: 'Diketuk lagi, isinya kembali persis seperti tadi.',
-      focus: 'gui:van', at: 'near', act: 'open:van', hold: 3200 },
+    { text: 'Satu peti terbuka dalam satu waktu. Panelnya muncul di atas peti tanpa menggeser apa pun.',
+      focus: 'gui:van', at: 'near', act: 'open:van', hold: 3600 },
 
     { text: 'Di Lite Mode kotaknya langsung tampil, tanpa putaran.',
       focus: 'gui:van', at: 'near', hold: 3000 },

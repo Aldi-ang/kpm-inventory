@@ -209,17 +209,42 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
      and a chest closed by hand shows its TABS in its panel's place, so the room is never empty: behind the
      warehouse his usual load and the team, behind the van this person's geofence requests. */
   function toggle(side, on) {
-    setOpen(o => ({ ...o, [side]: on }));
+    /* van-only (Agent Inventory v4.1, his 2026-09-28 "open them one by one"): the two panels float in the same place over
+       the page, so opening one shuts the other */
+    if (vanOnly && on) setOpen(o => ({ ...o, van: side === 'van', q: side === 'q' }));
+    else setOpen(o => ({ ...o, [side]: on }));
     setAnim(a => ({ ...a, [side]: true }));
     if (on && side === 'wh') burst(12);
     playSound(side === 'wh' ? (on ? 'chestEnderOpen' : 'chestEnderClose') : (on ? 'chestVanOpen' : 'chestVanClose'));
+    if (vanOnly && on) {
+      const [gui, chest] = panelOf(side);   // it grows out of the chest that was pressed
+      if (gui && chest) gui.style.setProperty('--ox', Math.round(chest.offsetLeft + chest.offsetWidth / 2 - gui.offsetLeft) + 'px');
+      requestAnimationFrame(() => fitPanel(side));
+    }
+  }
+  const panelOf = (side) => [side === 'q' ? refs.dmg.current : refs.vanGui.current, (side === 'q' ? refs.qChest : refs.vanChest).current];
+  /* THE FLOATING PANEL (van-only, his "the inventory box should appear on the top of it but dont move any panel") opens
+     above its chest, over the page, and must be seen whole: the page scrolls up just enough, and only if it cannot go
+     higher does the panel sink into the chest row by what is still missing. Nothing else on the page moves. */
+  function fitPanel(side) {
+    const [gui] = panelOf(side), bay = refs.bay.current;
+    if (!gui || !bay) return;
+    gui.style.setProperty('--sink', '0px');
+    let sc = bay.parentElement;
+    while (sc && sc !== document.body && !/(auto|scroll)/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement;
+    const win = !sc || sc === document.body;
+    let short = (win ? 0 : sc.getBoundingClientRect().top) + 8 - (bay.getBoundingClientRect().top + gui.offsetTop);
+    if (short <= 0) return;
+    const by = Math.min(short, win ? window.scrollY : sc.scrollTop);
+    if (by > 0) (win ? window : sc).scrollBy({ top: -by, behavior: motionOK() ? 'smooth' : 'auto' });
+    short -= by;
+    if (short > 0) gui.style.setProperty('--sink', Math.ceil(short) + 'px');
   }
   useEffect(() => {
     const m = motionOK();
     const t1 = pose?.open || vanOnly ? 0 : setTimeout(() => toggle('wh', true), m ? 150 : 0);
-    const t2 = pose?.open ? 0 : setTimeout(() => toggle('van', true), m ? 300 : 0);
-    const t3 = pose?.open || !vanOnly ? 0 : setTimeout(() => toggle('q', true), m ? 450 : 0);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); Object.values(sayTimers.current).forEach(clearTimeout); };
+    const t2 = pose?.open || vanOnly ? 0 : setTimeout(() => toggle('van', true), m ? 300 : 0);   // van-only waits for a tap: an open panel covers the Manifest
+    return () => { clearTimeout(t1); clearTimeout(t2); Object.values(sayTimers.current).forEach(clearTimeout); };
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── the carried box ── */

@@ -34,6 +34,9 @@ export default function TodayBook({ sales = [], samples = [], inventory = [] }) 
   const [fly, setFly] = useState({});
   const [s, setS] = useState({ kind: 'sales', page: 0, sel: 0, view: 'list', dir: 0, n: 0 });
   const [wide, setWide] = useState(isWide);
+  const [hold, setHold] = useState(false);   // a finger held on the shelf book: the phone's hover
+  const letGo = () => setHold(false);
+  const tapped = useRef(0);   // a hold opened it on the finger's release; the click that may follow is the same press
   const later = (fn, ms) => { timers.current.push(setTimeout(fn, ms)); };
   const stop = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   useEffect(() => {
@@ -138,7 +141,10 @@ export default function TodayBook({ sales = [], samples = [], inventory = [] }) 
 
   return (
     <div className="kpm-shelf" aria-label="Catatan hari ini">
-      <button ref={btn} className="kpm-nbBtn" type="button" data-ponder="book" aria-haspopup="dialog" aria-expanded={!!phase} onClick={open}>
+      <button ref={btn} className={`kpm-nbBtn${hold ? ' hold' : ''}`} type="button" data-ponder="book" aria-haspopup="dialog" aria-expanded={!!phase} onClick={() => { if (Date.now() - tapped.current > 700) open(); }}
+        onPointerDown={(e) => { if (e.pointerType !== 'mouse') setHold(true); }}
+        onPointerUp={(e) => { if (hold && e.pointerType !== 'mouse') { tapped.current = Date.now(); open(); } setHold(false); }} onPointerCancel={letGo} onPointerLeave={letGo}
+        onContextMenu={(e) => e.preventDefault()}>
         <span className="stage"><span className="kpm-nb">
           <i className="back" /><i className="spine" /><i className="block" /><i className="edge" /><i className="head" />
           <i className="leaf" /><i className="leaf" /><i className="leaf" />

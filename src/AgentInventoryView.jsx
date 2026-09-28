@@ -242,7 +242,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
            takes its content height and the shell scrolls everything once; the desk keeps its
            pinned header over a scrolling list (`lg:h-…` + `lg:overflow-y-auto` below) - the SALESMAN's desk only since v4
            (2026-09-27): his PC test found the chest in a ~300 px window under the pinned Manifest, so T1-T4 scroll as one. */
-        <div className={`${seesChest ? '' : 'lg:h-[calc(100vh-120px)] '}flex flex-col max-w-5xl mx-auto animate-fade-in bg-ground font-sans border-x border-line-2 shadow-2xl overflow-hidden relative`}>
+        <div className={`${seesChest ? '' : 'lg:h-[calc(100vh-120px)] '}flex flex-col max-w-5xl mx-auto animate-fade-in bg-ground font-sans border-x border-line-2 shadow-2xl${seesChest ? '' : ' overflow-hidden'} relative`}>
 
             {/* DYNAMIC FINANCIAL COMMAND BAR */}
             <div className="bg-panel border-b border-line-2 p-3 lg:p-4 flex flex-col justify-between items-start gap-3 lg:gap-4 shrink-0 relative z-10 shadow-md">
