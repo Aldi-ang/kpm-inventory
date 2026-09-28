@@ -40,8 +40,8 @@
     "semantic_hash": ""
   },
   "src/AgentInventoryView.jsx": {
-    "mtime": 1790488829.1046765,
-    "ast_hash": "1914eb4ef468b277da3d9ab458f363b2",
+    "mtime": 1790553907.0124156,
+    "ast_hash": "d8a726fd70dd74aacf5194fee7da106d",
     "semantic_hash": ""
   },
   "src/AgentProfileView.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1790493718.523317,
-    "ast_hash": "cab46357eb54031a2ec18f58e20c1c51",
+    "mtime": 1790554819.185172,
+    "ast_hash": "c319e73466cbbb20c3ba2ba6d8225bba",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1790488870.2385411,
-    "ast_hash": "8cc6f4f470010cb5b1eb1e25239b16f4",
+    "mtime": 1790554181.7338412,
+    "ast_hash": "a1cb987a93c5a9fe1f7c0dd38394032b",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1790493718.5223203,
-    "ast_hash": "6d6d84ecc6bc097720e09a49d3222143",
+    "mtime": 1790554819.1826506,
+    "ast_hash": "87bdb5f77449945763cc6e27688c9161",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -1160,8 +1160,8 @@
     "semantic_hash": ""
   },
   "src/components/LoadingBay.jsx": {
-    "mtime": 1790488640.8643608,
-    "ast_hash": "5efb4becfa05ffe7dc2ce88a8dd74acf",
+    "mtime": 1790553906.9993784,
+    "ast_hash": "02aa893640ba7cf286016deb87b3bf73",
     "semantic_hash": ""
   },
   "src/utils/vanBay.js": {
@@ -1190,13 +1190,13 @@
     "semantic_hash": ""
   },
   "src/ponder/scenes/agent-chest.js": {
-    "mtime": 1790488856.3911102,
-    "ast_hash": "17d8ae7d18a3b922190b170c1d3380f9",
+    "mtime": 1790553917.2490034,
+    "ast_hash": "23d5453d7c1182f716c191144f9bf72f",
     "semantic_hash": ""
   },
   "src/ponder/stages/AgentChestStage.jsx": {
-    "mtime": 1790488856.3901088,
-    "ast_hash": "9d2b88ba8944e2a19e525065958ef170",
+    "mtime": 1790553907.0146165,
+    "ast_hash": "f9c99435c4dee779f2e0b15e5a052254",
     "semantic_hash": ""
   },
   "rules-test/test-agent-chest.mjs": {
@@ -1205,8 +1205,8 @@
     "semantic_hash": ""
   },
   "src/components/TodayBook.jsx": {
-    "mtime": 1790488769.0963616,
-    "ast_hash": "bca11e2148fd040b0b39b2ee7f6c07a5",
+    "mtime": 1790554181.7197728,
+    "ast_hash": "72e0e19847aafb20b91f88ec9eb388cb",
     "semantic_hash": ""
   }
 }

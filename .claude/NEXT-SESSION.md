@@ -1,6 +1,6 @@
 # The one job
 
-**2026-09-27 14:50 — THE ONE JOB: the T3 block right below ("T3 sees every region"). Copy that block, and nothing else. Agent Inventory v4 is DONE and LIVE (`a43a9f2`, pushed 14:45 WIB, the live bundle checked for the chests and the book); today's counts: audit 722, logicFixes 1918.**
+**2026-09-28 — THE ONE JOB: the T3 block right below ("T3 sees every region"). Copy that block, and nothing else. Agent Inventory v4.1 is DONE, committed `460c55b`, NOT pushed (the live app still runs v4 `a43a9f2`; a push is his call by name). Today's counts: audit 722, logicFixes 1925.**
 
 ---
 
