@@ -1,6 +1,10 @@
 # The one job
 
-**2026-09-28 12:05 — THE ONE JOB: finish the vault fixes (built, uncommitted). Copy the block below, and nothing else.**
+**2026-09-28 12:00 — THE ONE JOB: the enchanting-table row. The vault fixes are DONE and committed (`e8477c7`, local; his "push" is owed - a push is his call by name). Copy ONLY the block that starts `/alucard AGENT INVENTORY V5` further down (under "QUEUED right after the incident"). Every vault block between here and there is history, NOT a prompt.**
+
+---
+
+**(history - the vault job, DONE 2026-09-28 as `e8477c7`; NOT a prompt to copy)**
 
 /alucard FINISH THE VAULT FIXES. State: built 2026-09-28 12:05, NOT committed (see PROGRESS.md, the 12:05 entry, for the file list): the 15-minute lock (`src/utils/vaultLock.js`, both doors in `src/App.jsx`), "Reset vault tries" on each company row (`src/components/LandlordDashboard.jsx`, writes the owner's `users/{bossUid}/settings/admin`; the super-admin rule allows it), the intro name from the roster (`profileName` in App.jsx), the iPhone notch (`--kpm-safe-top` in theme.css, padded in BiohazardTheme.jsx; frames 0 → 59 px read back). FIRST: `git status` - the work is on disk, uncommitted. Is `strikeUpdate` in `src/utils/vaultLock.js` still `// TODO(human)`? It is his Learn by Doing - if still a TODO, ask him for it, never write it for him. When it is written: `node src/config/logicFixes.selfcheck.mjs` (1936 checks; the two strikeUpdate behaviour checks must go green), `npm run build; node src/config/integration.audit.mjs` (722), every `*.selfcheck.mjs`; then ONE commit of all of it, `graphify update .`, and ask him "push". Then rewrite this file: the enchanting-table build below is next.
 

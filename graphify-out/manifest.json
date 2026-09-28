@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1790476539.4860125,
-    "ast_hash": "8926d67dbc1cf17c0af7131a8be920d0",
+    "mtime": 1790570626.7247703,
+    "ast_hash": "711a70a91b5d651d3529734ea009486e",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -110,8 +110,8 @@
     "semantic_hash": ""
   },
   "src/components/BiohazardTheme.jsx": {
-    "mtime": 1789567378.7182665,
-    "ast_hash": "83272b1046325678bbe58ab8d9112cf7",
+    "mtime": 1790570627.2481153,
+    "ast_hash": "da6bdad85b00c6953c39e901f565910f",
     "semantic_hash": ""
   },
   "src/components/BranchWarehouseManager.jsx": {
@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "src/components/LandlordDashboard.jsx": {
-    "mtime": 1786621080.4011302,
-    "ast_hash": "e11aed69d95229169d6ce7013f15c118",
+    "mtime": 1790570626.932146,
+    "ast_hash": "d972adef13854586291146a1f1c9ca02",
     "semantic_hash": ""
   },
   "src/components/NotificationBell.jsx": {
@@ -360,8 +360,8 @@
     "semantic_hash": ""
   },
   ".claude/settings.local.json": {
-    "mtime": 1790478952.0709736,
-    "ast_hash": "8155895099b006de487c5cf6ddeaf255",
+    "mtime": 1790563047.7130718,
+    "ast_hash": "0c2e5f512969315257d4d069e3e51711",
     "semantic_hash": ""
   },
   ".mcp.json": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1790554819.185172,
-    "ast_hash": "c319e73466cbbb20c3ba2ba6d8225bba",
+    "mtime": 1790570862.2166326,
+    "ast_hash": "279632deb371c38597da89f892c4c35d",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1790554181.7338412,
-    "ast_hash": "a1cb987a93c5a9fe1f7c0dd38394032b",
+    "mtime": 1790570693.1380212,
+    "ast_hash": "675a096cf2f23232809fe97dac05f4ac",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1790554819.1826506,
-    "ast_hash": "87bdb5f77449945763cc6e27688c9161",
+    "mtime": 1790570862.256952,
+    "ast_hash": "c14960cd4841396bb9a6feecbb0e6514",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -1207,6 +1207,11 @@
   "src/components/TodayBook.jsx": {
     "mtime": 1790554181.7197728,
     "ast_hash": "72e0e19847aafb20b91f88ec9eb388cb",
+    "semantic_hash": ""
+  },
+  "src/utils/vaultLock.js": {
+    "mtime": 1790570597.2698183,
+    "ast_hash": "a98b13a73bc91c38ff59b793f87de387",
     "semantic_hash": ""
   }
 }
