@@ -29,8 +29,12 @@ service cloud.firestore {
     //     || exists(/databases/$(database)/documents/system_admins/$(request.auth.uid))
     // NOT applied here: it widens god-mode and is the owner's call to make knowingly.
 
+    // [CHANGE 11b — 2026-09-28, DRAFT, HIS 🔴 DECIDE] was `allow read, write: if isSuperAdmin();`.
+    // Leaves out one person's vault-password doc (users/{bossUid}/vault_keys/{id}) - his words:
+    // "even me as tier 1 should not and could not be able to know their password". His own
+    // company's docs still answer to him as its owner, through the vault_keys rule below.
     match /{document=**} {
-      allow read, write: if isSuperAdmin();
+      allow read, write: if isSuperAdmin() && !string(document).matches('(.*/)?users/[^/]+/vault_keys/[^/]+');
     }
 
     function isAuthenticated() { return request.auth != null; }
@@ -106,6 +110,15 @@ service cloud.firestore {
     function isSalesman(bossUid) {
       let profile = getEmployeeProfile();
       return isAuthenticated() && profile != null && profile.bossUid == bossUid;
+    }
+
+    // [CHANGE 11 — 2026-09-28] T1/T2 of ONE company: the owner, the legacy 'ADMIN' tag, and a T2
+    // employee - saved as userRole 'COMPANY_OWNER' (permissions.js TIER_2), which isDistributorAdmin
+    // alone never recognised. Only the vault_keys rule below uses it.
+    function isCompanyTopTier(bossUid) {
+      let profile = getEmployeeProfile();
+      return isVaultOwner(bossUid) || isDistributorAdmin(bossUid) ||
+        (isAuthenticated() && profile != null && profile.bossUid == bossUid && profile.get('userRole', 'NONE') == 'COMPANY_OWNER');
     }
 
     // isRankConfigEditor() lived here until CHANGE 8 (2026-09-22) closed the only path it guarded.
@@ -288,8 +301,39 @@ service cloud.firestore {
     }
 
     match /artifacts/cello-inventory-manager/users/{bossUid} {
+      // [CHANGE 11b — 2026-09-28, DRAFT, HIS 🔴 DECIDE] was `if isVaultOwner(bossUid) || isDistributorAdmin(bossUid);`
+      // The catch-all no longer covers vault_keys: rules add up, so while it did, the owner could
+      // overwrite anyone's password from outside the app whatever the vault_keys rule said.
       match /{document=**} {
-        allow read, write: if isVaultOwner(bossUid) || isDistributorAdmin(bossUid);
+        allow read, write: if (isVaultOwner(bossUid) || isDistributorAdmin(bossUid)) && document[0] != 'vault_keys';
+      }
+
+      // =====================================================================
+      // [CHANGE 11 — 2026-09-28, DRAFT until Aldi deploys it] A VAULT PASSWORD FOR EVERY PERSON.
+      // His call: "everyone has their own password and even me as tier 1 should not and could not
+      // be able to know their password but we have power to help them reset the password tries".
+      // The app (src/utils/vaultDoc.js) keeps each employee's master-vault password here, keyed by
+      // their roster profile; the owner's stays at settings/admin, untouched.
+      //
+      // NEEDED, not optional: a T2 is saved as 'COMPANY_OWNER', and before this nothing granted that
+      // role a write anywhere in this folder - the live catch-all knows only the owner and 'ADMIN'.
+      // DEPLOY ORDER: this rule BEFORE the app push, or a T2 cannot open the vault at all.
+      //
+      //  - the person: reads and writes their own doc. Creating it needs their OWN roster profile
+      //    (the directory's agentId) and their own uid in it, so nobody can squat another's doc.
+      //  - T1/T2 of the company: read, and change ONLY the three try counters (Fleet & Roster's
+      //    "Reset vault tries"). Never the password, never the recovery word.
+      //  - nobody deletes one.
+      // rules-test/test-vault-keys.mjs asserts every line.
+      // =====================================================================
+      match /vault_keys/{profileId} {
+        allow read: if isCompanyTopTier(bossUid) ||
+          (isSalesman(bossUid) && (resource == null || resource.data.uid == request.auth.uid));
+        allow create: if isSalesman(bossUid) && getEmployeeProfile().agentId == profileId &&
+          request.resource.data.uid == request.auth.uid;
+        allow update: if (isSalesman(bossUid) && resource.data.uid == request.auth.uid && request.resource.data.uid == request.auth.uid) ||
+          (isCompanyTopTier(bossUid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['failedRecoveryAttempts', 'lockedUntil', 'lockoutStatus']));
+        allow delete: if false;
       }
 
       match /stock_requests/{requestId} {

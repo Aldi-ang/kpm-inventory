@@ -7163,7 +7163,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
 {
   const a = code(appSrc);
   ok('the security profile is fetched when the gate is SHOWN, keyed on showAdminLogin, not on the press',
-     /useEffect\(\(\) => \{\s*if \(!showAdminLogin \|\| !db \|\| !userId \|\| userId === 'default'\) \{ adminProfileRef\.current = null; return; \}\s*adminProfileRef\.current = getDoc\(doc\(db, `artifacts\/\$\{appId\}\/users\/\$\{userId\}\/settings`, 'admin'\)\)\.catch\(\(\) => null\);\s*\}, \[showAdminLogin, db, appId, userId\]\);/.test(a),
+     /useEffect\(\(\) => \{\s*const ref = showAdminLogin \? vaultRef\(\) : null;\s*if \(!ref\) \{ adminProfileRef\.current = null; return; \}\s*adminProfileRef\.current = getDoc\(ref\)\.catch\(\(\) => null\);\s*\}, \[showAdminLogin, vaultPath\]\);/.test(a),   /* 2026-09-28: the doc is the PERSON's (vaultRef) */
      'the round trip a phone pays is the same either way; starting it while he types is what removes it from the press');
   ok('the press uses the prefetched copy and falls back to a live read — never a bare cached answer',
      /const prefetched = adminProfileRef\.current;\s*adminProfileRef\.current = null;\s*const adminSnap = \(prefetched && await prefetched\) \|\| await getDoc\(adminDocRef\);/.test(a),
@@ -9000,6 +9000,55 @@ section('THE VAULT LOCKS FOR 15 MINUTES, NOT FOR GOOD; THE LANDLORD RESETS TRIES
   ok('the shell clears the iPhone notch: one variable from env(safe-area-inset-top), used by the shell and the phone drawer',
      /--kpm-safe-top:\s*env\(safe-area-inset-top, 0px\)/.test(th) && /h-\[100dvh\][^"]*pt-\[var\(--kpm-safe-top\)\]/.test(shell) &&
      /pt-\[calc\(1\.25rem\+var\(--kpm-safe-top\)\)\]/.test(shell));
+}
+
+section('A VAULT PASSWORD FOR EVERY PERSON (2026-09-28)');
+/* His call, 2026-09-28 (pick A): "everyone has their own password and even me as tier 1 should not and could not be able to
+   know their password but we have power to help them reset the password tries, if they want to reset it they can use the
+   forgot password button that the app have to send them the email for the recovery code". Before: an employee's vault WAS
+   the owner's settings/admin (user.uid is the boss's for an employee), so a T2 typed the owner's password. */
+{ let VD = null; try { VD = await import('../utils/vaultDoc.js'); } catch { /* red below */ }
+  const rules = read('firestore.rules');
+  const slice = (src, head, end) => { const i = src.indexOf(head); return i > -1 ? src.slice(i, src.indexOf(end, i)) : ''; };
+  const resetPin = slice(app, 'const handleResetPin = async', '\n  };'), login = slice(app, 'const handlePinLogin = async', '\n  };');
+  const setup = slice(app, 'const handleSetupSecurity = async', '\n  };'), fleetReset = slice(fleet, 'const handleResetVaultTries = async', '\n    };');
+  ok('behaviour: the owner (no bossUid) keeps settings/admin - the live doc the landlord reset and the crown transfer read',
+     VD?.vaultDocPath('A', { bossUid: null, uid: 'own', agentProfileId: null }) === 'artifacts/A/users/own/settings/admin');
+  ok("behaviour: an employee gets their OWN doc in the company folder, keyed by their roster profile",
+     VD?.vaultDocPath('A', { bossUid: 'boss', uid: 'boss', agentProfileId: 'AGT_1' }) === 'artifacts/A/users/boss/vault_keys/AGT_1');
+  ok("behaviour: an employee with no roster profile gets NO vault doc - never the owner's by default",
+     VD?.vaultDocPath('A', { bossUid: 'boss', uid: 'boss', agentProfileId: null }) === null && VD?.vaultDocPath('A', {}) === null);
+  ok('every vault read and write goes through the one helper: no literal settings/admin left in App.jsx',
+     !/settings`, 'admin'\)/.test(app) && (app.match(/vaultRef\(\)/g) || []).length >= 7 && imports(app, 'vaultDocPath') &&
+     /const vaultPath = user \? vaultDocPath\(appId, \{ bossUid, uid: user\?\.uid, agentProfileId: trueAgentProfileId \}\) : null;/.test(app));
+  ok("the first check reads the PERSON's doc and re-runs when it changes (it read user.uid - the boss's, for an employee)",
+     /const ref = vaultRef\(\);[\s\S]{0,60}?const snap = await getDoc\(ref\);/.test(app) && /\}, \[vaultPath\]\);/.test(app));
+  ok('the three doors report an account with no vault doc, never a silent stop',
+     [login, setup, resetPin].every(s => /notify\(NO_VAULT\)/.test(s)));
+  ok('setup saves whose doc it is for an employee: their own sign-in (realUid) and email',
+     /\.\.\.\(bossUid \? \{ uid: user\.realUid, email: user\.email \} : \{\}\)/.test(setup));
+  ok('forgot password: the recovery code is addressed to the person, with their name (the template fills {{name}})',
+     /emailjs\.send\([\s\S]{0,400}?to_email: user\.email/.test(resetPin) && /name: profileName \|\| user\.displayName/.test(resetPin));
+  ok('behaviour: the tries reset is exactly the three counter fields - never pin, never recoveryHash',
+     !!VD && JSON.stringify(Object.keys(VD.VAULT_TRIES_RESET).sort()) === JSON.stringify(['failedRecoveryAttempts', 'lockedUntil', 'lockoutStatus']) &&
+     VD.VAULT_TRIES_RESET.failedRecoveryAttempts === 0 && VD.VAULT_TRIES_RESET.lockedUntil === 0);
+  ok("Fleet & Roster resets a person's tries on THEIR doc, writing only that reset, reporting every path",
+     /doc\(db, vaultDocPath\(appId, \{ bossUid: userId, agentProfileId: agent\.id \}\)\)/.test(fleetReset) &&
+     /updateDoc\(ref, VAULT_TRIES_RESET\)/.test(fleetReset) && !/pin|recoveryHash/.test(code(fleetReset)) &&
+     (fleetReset.match(/notify\(/g) || []).length >= 3 && /back to 0 \(it was /.test(fleetReset) &&
+     ['getDoc', 'hasClearance', 'vaultDocPath', 'VAULT_TRIES_RESET', 'lockLeftMs', 'untilText', 'RotateCcw'].every(n => imports(fleet, n)));
+  { const { isFailure } = await import('../utils/toastSeverity.js');
+    ok("the Fleet reset's success messages are not painted red",
+       /the lock until \$\{untilText\(d\.lockedUntil\)\} is lifted/.test(fleetReset) &&
+       !isFailure('Vault tries reset for Budi: back to 0 (it was 3). They can try again now.') &&
+       !isFailure('Vault tries reset for Budi: the lock until 14:05 is lifted. They can try again now.')); }
+  ok('the button: T1/T2 only, on cards whose tier meets the vault, never on your own card or the owner\'s',
+     /\{isGlobalAdmin && sel\.id !== agentProfileId && resolveTierOneId\(sel\.id\) !== TIER_ONE_ID && hasClearance\(sel\.userRole, 'view_master_vault'\) && \(/.test(fleet) &&
+     /onClick=\{\(\) => handleResetVaultTries\(sel\)\}/.test(fleet));
+  ok('rules DRAFT: vault_keys - only the person changes the password; the company T1/T2 only the three counters; nobody deletes',
+     /match \/vault_keys\/\{profileId\} \{/.test(rules) && /resource\.data\.uid == request\.auth\.uid/.test(rules) &&
+     /affectedKeys\(\)\.hasOnly\(\['failedRecoveryAttempts', 'lockedUntil', 'lockoutStatus'\]\)/.test(rules) &&
+     /match \/vault_keys\/\{profileId\} \{[\s\S]{0,2500}?allow delete: if false;/.test(rules));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

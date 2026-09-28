@@ -139,8 +139,9 @@ export default function LandlordDashboard({ db, appId, user }) {
     };
 
     /* His 2026-09-28: "an option to reset the wrong tries ... from my front end and not using the firebase
-       console to find the user by id one by one". A company has ONE vault - its owner's
-       users/{bossUid}/settings/admin; the employees unlock the owner's. The super-admin rule lets this
+       console to find the user by id one by one". This resets the company OWNER's vault -
+       users/{bossUid}/settings/admin. Since 2026-09-28 each employee has their own (vault_keys, see
+       utils/vaultDoc.js), reset by the company's T1/T2 on Fleet & Roster. The super-admin rule lets this
        account write it. */
     const handleResetVaultTries = async (tenant) => {
         const who = tenant.name || tenant.email;

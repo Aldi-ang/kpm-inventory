@@ -2,10 +2,12 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
     Truck, UserPlus, Save, Archive,
     MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
-    ShieldCheck, ChevronDown, ChevronUp, Crown, FileText, Printer, MessageSquare, Globe, Search, Plus
+    ShieldCheck, ChevronDown, ChevronUp, Crown, FileText, Printer, MessageSquare, Globe, Search, Plus, RotateCcw
 } from 'lucide-react';
-import { collection, doc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord } from './config/permissions';
+import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord, hasClearance, TIER_ONE_ID, resolveTierOneId } from './config/permissions';
+import { vaultDocPath, VAULT_TRIES_RESET } from './utils/vaultDoc.js';
+import { lockLeftMs, untilText } from './utils/vaultLock.js';
 import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems, swipeTarget } from './utils/helpers';
 import { normalizeRegion } from './config/permissions';
 import { confirmAction } from './components/ConfirmGate.jsx';
@@ -416,6 +418,24 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             logAudit("FLEET_DELETE", `Terminated agent: ${agent.email}`);
             if (selectedAgent?.id === agent.id) setSelectedAgent(null);
         } catch (e) { notify("Firebase Blocked the Deletion: " + e.message); }
+    };
+
+    /* RESET A PERSON'S VAULT TRIES. His 2026-09-28: "we have power to help them reset the password tries".
+       Their own vault doc (utils/vaultDoc.js) and the tries reset only - no screen shows, sets or sends anyone's
+       password. The landlord's handleResetVaultTries (LandlordDashboard.jsx), per person. */
+    const handleResetVaultTries = async (agent) => {
+        try {
+            const ref = doc(db, vaultDocPath(appId, { bossUid: userId, agentProfileId: agent.id }));
+            const snap = await getDoc(ref);
+            if (!snap.exists()) return notify(`${agent.name} has not set a vault password yet. Nothing to reset.`);
+            const d = snap.data(), left = lockLeftMs(d, Date.now());
+            await updateDoc(ref, VAULT_TRIES_RESET);
+            notify(`Vault tries reset for ${agent.name}: ${left ? `the lock until ${untilText(d.lockedUntil)} is lifted` : `back to 0 (it was ${d.failedRecoveryAttempts || 0})`}. They can try again now.`);
+            logAudit("VAULT_TRIES_RESET", `Reset vault tries for ${agent.email || agent.name}`);
+        } catch (e) {
+            console.error(e);
+            notify(`Could not reset the vault tries for ${agent.name}: ${e.message || 'unknown error'}`);
+        }
     };
 
     const handleLoadCanvas = async (productId, qtyBks) => {
@@ -1281,6 +1301,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                             <button type="button" onClick={(e) => handleEditClick(e, sel)}><Pencil size={14}/> <span>Edit</span></button>
                                                             <button data-kpm-del data-label="Delete" type="button" onClick={(e) => handleDeleteAgent(e, sel)} aria-label={`Remove ${sel.name}`}><Trash2 size={15}/></button>
                                                         </>
+                                                    )}
+                                                    {/* T1/T2 help a person who ran out of tries; not on your own card, not on the owner's (the landlord resets that one) */}
+                                                    {isGlobalAdmin && sel.id !== agentProfileId && resolveTierOneId(sel.id) !== TIER_ONE_ID && hasClearance(sel.userRole, 'view_master_vault') && (
+                                                        <button type="button" onClick={() => handleResetVaultTries(sel)} title="Set this person's wrong vault-password tries back to 0 and lift a lock"><RotateCcw size={14}/> <span>Reset vault tries</span></button>
                                                     )}
                                                 </span>
                                             )}

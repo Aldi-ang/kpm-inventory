@@ -154,6 +154,7 @@ import { notify } from './components/Toast.jsx';
 import VaultGate, { gateHoldMs, gateIsRich, gateCanvasOn } from './components/VaultGate.jsx';
 import { readGrace, touchGrace, clearGrace } from './utils/vaultGrace.js';
 import { VAULT_TRIES, VAULT_LOCK_MS, lockLeftMs, strikeUpdate, untilText } from './utils/vaultLock.js';
+import { vaultDocPath } from './utils/vaultDoc.js';
 
 /* Phones flash the character you just typed before masking it — Aldi: "it shows in split second
    after i type it". That reveal is the platform's, not ours, and there is no way to switch it
@@ -461,6 +462,13 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
   // 🛑 THE DATABASE HIJACK: If bossUid exists, ALL database calls globally redirect to the Admin's vault.
   const userId = bossUid || user?.uid || user?.id || 'default';
+
+  /* THE MASTER VAULT IS PER PERSON (src/utils/vaultDoc.js, his 2026-09-28 pick A). NOT userId: that is the
+     owner's folder for everyone, and reading the vault there is how a T2 ended up typing the owner's password.
+     Every vault read and write goes through vaultRef(); null = an employee with no roster profile. */
+  const vaultPath = user ? vaultDocPath(appId, { bossUid, uid: user?.uid, agentProfileId: trueAgentProfileId }) : null;
+  const vaultRef = () => vaultPath ? doc(db, vaultPath) : null;
+  const NO_VAULT = "This account has no roster profile, so it has no vault password of its own. Ask the owner to check you on Fleet & Roster.";
 
   // 🚀 1.5 THE FIX: DIRECT SYSTEM NOTIFICATIONS LISTENER
   // Bypasses the useDatabaseSync hook which was completely blind to this collection
@@ -997,11 +1005,13 @@ const handleGitHubMirror = async () => {
 
   // 1. INITIAL CHECK: Does a PIN exist?
   useEffect(() => {
+    let live = true;
     const checkAdminStatus = async () => {
-        if (!user) return;
-        const ref = doc(db, `artifacts/${appId}/users/${user.uid}/settings`, 'admin');
+        const ref = vaultRef();
+        if (!ref) return;
         const snap = await getDoc(ref);
-        
+        if (!live) return;   /* an answer for a doc this account no longer uses (sign-in still settling) */
+
        if (snap.exists() && snap.data().pin) {
                     const data = snap.data();
                     setAdminPin(data.pin);
@@ -1010,13 +1020,15 @@ const handleGitHubMirror = async () => {
                     setHasAdminPin(true);
                     setIsSetupMode(false);
                 } else {
-            // No PIN found: Force Setup Mode
+            // No PIN found: Force Setup Mode. Every T2 meets this once: their own password + recovery word.
+            setRegisteredPasskeys([]);   /* the device list is this person's too, never a previous account's */
             setHasAdminPin(false);
             setIsSetupMode(true);
         }
     };
     checkAdminStatus();
-  }, [user]);
+    return () => { live = false; };
+  }, [vaultPath]);
 
   /* The fingerprints are made and checked by src/utils/secretHash.js (PBKDF2, salted, 2026-09-22).
      The phone-over-http case it reports as SECURE_CONTEXT_REQUIRED is read below, unchanged. */
@@ -1033,9 +1045,11 @@ const handleGitHubMirror = async () => {
     }
     if (!setupSecret || !setupSecret.trim()) { 
         setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
-        notify("Secret recovery word is required!"); 
-        return; 
+        notify("Secret recovery word is required!");
+        return;
     }
+    const vaultDoc = vaultRef();
+    if (!vaultDoc) { notify(NO_VAULT); return; }
 
     try {
         const security = {
@@ -1043,6 +1057,8 @@ const handleGitHubMirror = async () => {
             recoveryHash: await hashSecret(setupSecret.trim().toLowerCase()),
             failedRecoveryAttempts: 0,
             lockoutStatus: "NONE",
+            /* an employee's doc says whose it is: the rules draft lets only this sign-in change the password */
+            ...(bossUid ? { uid: user.realUid, email: user.email } : {}),
             updatedAt: serverTimestamp()
         };
         
@@ -1068,7 +1084,7 @@ const handleGitHubMirror = async () => {
             triggerCapy(`Account Migration Complete. Welcome to ${appSettings?.companyName || "the system"}!`);
         }
 
-        await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin'), security);
+        await setDoc(vaultDoc, security);
 
         setAdminPin(security.pin);
         setHasAdminPin(true);
@@ -1087,9 +1103,10 @@ const handleGitHubMirror = async () => {
 
   // 3. LOGIN: Verify PIN (NOW WITH HASH & 5-STRIKE LOCKOUT)
   useEffect(() => {
-      if (!showAdminLogin || !db || !userId || userId === 'default') { adminProfileRef.current = null; return; }
-      adminProfileRef.current = getDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin')).catch(() => null);
-  }, [showAdminLogin, db, appId, userId]);
+      const ref = showAdminLogin ? vaultRef() : null;
+      if (!ref) { adminProfileRef.current = null; return; }
+      adminProfileRef.current = getDoc(ref).catch(() => null);
+  }, [showAdminLogin, vaultPath]);
 
   const handlePinLogin = async () => {
       if (pinChecking) return;
@@ -1106,7 +1123,11 @@ const handleGitHubMirror = async () => {
       setPinChecking(true);
       try {
           // The security profile: the prefetched copy when the gate had time to fetch it, a live read otherwise
-          const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
+          const adminDocRef = vaultRef();
+          if (!adminDocRef) {
+              notify(NO_VAULT);
+              return;
+          }
           const prefetched = adminProfileRef.current;
           adminProfileRef.current = null;
           const adminSnap = (prefetched && await prefetched) || await getDoc(adminDocRef);
@@ -1201,9 +1222,10 @@ const handleGitHubMirror = async () => {
     try {
         setIsSendingEmail(true); // Trigger UI loading state
 
-        const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
+        const adminDocRef = vaultRef();
+        if (!adminDocRef) { notify(NO_VAULT); setIsSendingEmail(false); return; }
         const adminSnap = await getDoc(adminDocRef);
-        
+
         if (!adminSnap.exists()) { notify("No security profile found."); setIsSendingEmail(false); return; }
         const data = adminSnap.data();
 
@@ -1225,7 +1247,10 @@ const handleGitHubMirror = async () => {
                 await emailjs.send(
                     'service_b564nlp',
                     'template_89lgavp',
-                    { otp_code: newOtp }, 
+                    /* To the PERSON (his 2026-09-28 pick A). The template's "To Email" box reads {{to_email}} only
+                       once he changes it in EmailJS; until then every code still goes to his own address. */
+                    { to_email: user.email, name: profileName || user.displayName || user.email,
+                      message: 'Master vault recovery code for your KPM account.', time: new Date().toLocaleString(), otp_code: newOtp },
                     'veSkmuEcR5qSImMSq'  // 🔐 BRAND NEW SECURE PUBLIC KEY
                 );
                 setIsResetMode(false);
@@ -1299,7 +1324,7 @@ const handleGitHubMirror = async () => {
               const newPasskey = { id: credential.id, name: deviceName, addedAt: new Date().toISOString() };
 
               // 🚀 Save to Master Vault
-              const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
+              const adminDocRef = vaultRef();
               await updateDoc(adminDocRef, { passkeys: arrayUnion(newPasskey) });
 
               setRegisteredPasskeys(prev => [...prev, newPasskey]);
@@ -1315,7 +1340,7 @@ const handleGitHubMirror = async () => {
       if(!await confirmAction(`Remove authorization for "${passkeyToRemove.name}"? This device will no longer be able to use fingerprint login.`)) return;
       try {
           const updatedPasskeys = registeredPasskeys.filter(pk => pk.id !== passkeyToRemove.id);
-          const adminDocRef = doc(db, `artifacts/${appId}/users/${userId}/settings`, 'admin');
+          const adminDocRef = vaultRef();
           await updateDoc(adminDocRef, { passkeys: updatedPasskeys });
           setRegisteredPasskeys(updatedPasskeys);
           triggerCapy(`Device removed from Biometric Auth.`);
