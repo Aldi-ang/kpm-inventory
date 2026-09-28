@@ -423,7 +423,7 @@ export default function BiohazardTheme({
             approved has no wrapper, so transparent is what he actually signed off on.
             ⚠️ `text-gray-300` went with it — a cold grey default ink, unreadable on cream, and
             slate-adjacent besides. */
-        <div className="print-reset h-[100dvh] w-full bg-transparent text-[var(--ink-muted)] font-sans tracking-wide overflow-hidden flex relative">
+        <div className="print-reset h-[100dvh] w-full bg-transparent text-[var(--ink-muted)] font-sans tracking-wide overflow-hidden flex relative pt-[var(--kpm-safe-top)]">
             <style>{`
                 @keyframes reRequiem {
                     0% { opacity: 0; transform: scale(0.98) translateY(10px); filter: blur(3px); }
@@ -656,7 +656,7 @@ export default function BiohazardTheme({
                    session never actually took effect on a desk. A source-string check had been
                    asserting the class was PRESENT, which is not the same as asserting it WINS.
                    One owner for this property now, and it is theme.css. */
-                className={`hide-on-print fixed inset-y-0 right-0 z-[90] bg-[#0b0a09]/97 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border-l lg:border-0 border-[#3e3226] flex flex-col pt-5 lg:pt-0 px-0 overflow-hidden
+                className={`hide-on-print fixed inset-y-0 right-0 z-[90] bg-[#0b0a09]/97 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border-l lg:border-0 border-[#3e3226] flex flex-col pt-[calc(1.25rem+var(--kpm-safe-top))] lg:pt-0 px-0 overflow-hidden
                              transition-[transform,width,padding,opacity] duration-300 ease-[cubic-bezier(.22,1,.36,1)] lg:relative lg:translate-x-0 lg:opacity-100 lg:pointer-events-auto
                              ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 

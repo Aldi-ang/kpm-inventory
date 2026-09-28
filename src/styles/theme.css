@@ -25,6 +25,13 @@
    cannot fall behind, because adding a token to dark mode adds it to the island in the same
    keystroke. An element's own declaration beats anything it would otherwise inherit from
    `html.light`, which is what makes this work at all. */
+/* THE IPHONE NOTCH. index.html asks for `black-translucent` + `viewport-fit=cover`, so on a home-screen
+   iPhone the page runs under the status bar. His 2026-09-28: "UI top is still cutted due to full screen in
+   iphone". One variable, 0 everywhere else (a desk, a Safari tab); the shell and the phone drawer pad by
+   it (BiohazardTheme.jsx), and the lab sets it to fake a notch. On `html`, not `:root` - the audit reads
+   every `:root` block as a theme block the dark island must ride. */
+html { --kpm-safe-top: env(safe-area-inset-top, 0px); }
+
 :root,
 .kpm-dark-island {
   /* surfaces — warm near-black, never pure #000 (kills the machined look) */

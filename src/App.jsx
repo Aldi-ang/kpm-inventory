@@ -153,6 +153,7 @@ import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import VaultGate, { gateHoldMs, gateIsRich, gateCanvasOn } from './components/VaultGate.jsx';
 import { readGrace, touchGrace, clearGrace } from './utils/vaultGrace.js';
+import { VAULT_TRIES, VAULT_LOCK_MS, lockLeftMs, strikeUpdate, untilText } from './utils/vaultLock.js';
 
 /* Phones flash the character you just typed before masking it — Aldi: "it shows in split second
    after i type it". That reveal is the platform's, not ours, and there is no way to switch it
@@ -434,6 +435,10 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
      derives all five together and `user` is read long before this line. The setters
      are unchanged and still land on the true values. */
   const [bossUid, setBossUid] = useState(null);
+  /* The account's OWN name for the vault intro - the roster / agent name, not Google's. His 2026-09-28:
+     "i want the intro welcome name to always match the nickname / agent name for that google account".
+     Employees already carry it in user.displayName (the hijacked user); owners did not. */
+  const [profileName, setProfileName] = useState(null);
   const [agentCanvas, setAgentCanvas] = useState([]);
  
   const [adminSalesMode, setAdminSalesMode] = useState('VAULT'); // 'VAULT' or 'VEHICLE'
@@ -1114,9 +1119,10 @@ const handleGitHubMirror = async () => {
           }
           const data = adminSnap.data();
 
-          // Check if already locked out
-          if (data.lockoutStatus === "PERMANENT" || data.failedRecoveryAttempts >= 5) {
-              notify("SECURITY LOCKOUT: Maximum attempts exceeded. Please unlock via Firebase Console.");
+          // Locked after too many wrong tries? It lifts by itself after 15 minutes (vaultLock.js)
+          const lockLeft = lockLeftMs(data, Date.now());
+          if (lockLeft > 0) {
+              notify(`Too many wrong tries. The vault opens again at ${untilText(data.lockedUntil)} (in ${Math.ceil(lockLeft / 60000)} min).`);
               setInputPin("");
               return;
           }
@@ -1146,14 +1152,15 @@ const handleGitHubMirror = async () => {
                   setInputPin("");
               }, gateHoldMs());
           } else {
-              // FAILED: Add a strike to the database
-              const newStrikes = (data.failedRecoveryAttempts || 0) + 1;
-              const newLockout = newStrikes >= 5 ? "PERMANENT" : "NONE";
-              await updateDoc(adminDocRef, { failedRecoveryAttempts: newStrikes, lockoutStatus: newLockout });
+              // FAILED: one strike; the fifth locks the vault for 15 minutes (vaultLock.js)
+              const upd = strikeUpdate(data, Date.now());
+              await updateDoc(adminDocRef, upd);
               
               setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
               setInputPin("");
-              notify(`Incorrect PIN. Strike ${newStrikes}/5.`);
+              notify(upd.lockedUntil
+                  ? `${VAULT_TRIES} wrong tries. The vault is locked for ${VAULT_LOCK_MS / 60000} minutes, until ${untilText(upd.lockedUntil)}.`
+                  : `Incorrect PIN. Strike ${upd.failedRecoveryAttempts}/${VAULT_TRIES}.`);
               adminProfileRef.current = getDoc(adminDocRef).catch(() => null);
           }
       } catch (error) {
@@ -1200,8 +1207,9 @@ const handleGitHubMirror = async () => {
         if (!adminSnap.exists()) { notify("No security profile found."); setIsSendingEmail(false); return; }
         const data = adminSnap.data();
 
-        if (data.lockoutStatus === "PERMANENT" || data.failedRecoveryAttempts >= 5) {
-            notify("SECURITY LOCKOUT: Maximum attempts exceeded. Please unlock via Firebase Console.");
+        const lockLeft = lockLeftMs(data, Date.now());
+        if (lockLeft > 0) {
+            notify(`Too many wrong tries. The vault opens again at ${untilText(data.lockedUntil)} (in ${Math.ceil(lockLeft / 60000)} min).`);
             setIsSendingEmail(false); return;
         }
 
@@ -1227,12 +1235,13 @@ const handleGitHubMirror = async () => {
                 notify("Identity verified, but failed to send OTP email. Check your internet or EmailJS account limits.");
             }
         } else {
-            const newStrikes = (data.failedRecoveryAttempts || 0) + 1;
-            const newLockout = newStrikes >= 5 ? "PERMANENT" : "NONE";
-            await updateDoc(adminDocRef, { failedRecoveryAttempts: newStrikes, lockoutStatus: newLockout });
+            const upd = strikeUpdate(data, Date.now());
+            await updateDoc(adminDocRef, upd);
             
             setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
-            notify(`Access Denied. Strike ${newStrikes}/5.`);
+            notify(upd.lockedUntil
+                ? `${VAULT_TRIES} wrong tries. The vault is locked for ${VAULT_LOCK_MS / 60000} minutes, until ${untilText(upd.lockedUntil)}.`
+                : `Access Denied. Strike ${upd.failedRecoveryAttempts}/${VAULT_TRIES}.`);
         }
     } catch (error) {
         console.error("Recovery Error:", error);
@@ -2613,6 +2622,7 @@ const handleGitHubMirror = async () => {
                 if (sysAdminSnap.exists() || inviteSnap.exists() || isDeveloper) {
                     setIsSystemOwner(true);
                     setBossUid(null);
+                    setProfileName([uidSnap, emailSnap].map(s => s.exists() && (s.data().name || s.data().agentName)).find(Boolean) || null);
                     setUserRole('ADMIN'); 
                     setAgentProfileId(null);
                     setUser(currentUser);
@@ -2663,6 +2673,7 @@ const handleGitHubMirror = async () => {
                     if (activeData.role === 'COMPANY_OWNER') {
                         // 🚨 THIS IS THE BOSS: They MUST be ADMIN
                         setBossUid(null);
+                        setProfileName(activeData.name || activeData.agentName || null);
                         setUserRole('ADMIN'); 
                         setAgentProfileId(null);
                         setUser(currentUser);
@@ -2720,6 +2731,7 @@ const handleGitHubMirror = async () => {
                         }
 
                         setBossUid(trueBossUid);
+                        setProfileName(finalName || null);
                         setUserRole(finalUserRole); 
                         setAgentProfileId(trueAgentId);
 
@@ -4335,7 +4347,7 @@ const handleGitHubMirror = async () => {
           {gateCanvasOn() && (
             <VaultGate
               playing={isUnlocking && gateIsRich()}
-              agentName={user?.displayName?.split(' ')[0] || user?.email?.split('@')[0]}
+              agentName={(profileName || user?.displayName)?.split(' ')[0] || user?.email?.split('@')[0]}
             />
           )}
           {/* The card, at the preview's own values: near-black, a single rust hairline, and no

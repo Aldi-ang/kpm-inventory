@@ -7169,7 +7169,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /const prefetched = adminProfileRef\.current;\s*adminProfileRef\.current = null;\s*const adminSnap = \(prefetched && await prefetched\) \|\| await getDoc\(adminDocRef\);/.test(a),
      'a rejected prefetch (offline) resolves to null, so the live read runs and the existing offline / insecure-context wording still fires');
   ok('BEHAVIOUR: a wrong password re-arms the prefetch AFTER its own strike write, so the next press reads the new count',
-     /notify\(`Incorrect PIN\. Strike \$\{newStrikes\}\/5\.`\);\s*adminProfileRef\.current = getDoc\(adminDocRef\)\.catch\(\(\) => null\);/.test(a),
+     /await updateDoc\(adminDocRef, upd\);[\s\S]{0,400}?`Incorrect PIN\. Strike \$\{upd\.failedRecoveryAttempts\}\/\$\{VAULT_TRIES\}\.`\);\s*adminProfileRef\.current = getDoc\(adminDocRef\)\.catch\(\(\) => null\);/.test(a),   /* 2026-09-28: the strike is strikeUpdate's */
      'a copy fetched before the strike would let a sixth try read as a fifth');
   ok('REGRESSION: the button says CHECKING with a spinner while the press is in flight, and takes no second press',
      /disabled=\{pinChecking \|\| isUnlocking\}/.test(a) && /aria-busy=\{pinChecking\}/.test(a) &&
@@ -8963,6 +8963,43 @@ section('AGENT INVENTORY V4.1: THE PANEL FLOATS OVER ITS CHEST (2026-09-28)');
   ok('the tutorial follows: the crate opens by its own act, one at a time, and the stage keeps room above the chests',
      agentChest.steps.some(x => x.act === 'open:q') && /act === 'open:q'/.test(stg) && /pt-\[/.test(stg) &&
      /tanpa menggeser/.test(agentChest.steps.map(x => x.text).join(' ')));
+}
+
+section('THE VAULT LOCKS FOR 15 MINUTES, NOT FOR GOOD; THE LANDLORD RESETS TRIES; THE INTRO NAME; THE NOTCH (2026-09-28)');
+/* His 2026-09-28: "i want lock 15 minutes and also an option to reset the wrong tries to be available and it
+   is better when i can do it from my front end and not using the firebase console", "i want the intro welcome
+   name to always match the nickname / agent name for that google account", and "UI top is still cutted due to
+   full screen in iphone". */
+{ let VL = null; try { VL = await import('../utils/vaultLock.js'); } catch { /* red below */ }
+  const land = read('src/components/LandlordDashboard.jsx'), shell = read('src/components/BiohazardTheme.jsx'), th = read('src/styles/theme.css');
+  ok('no permanent lock is written any more, and no message sends him to the Firebase Console',
+     !/"PERMANENT" : "NONE"/.test(app) && !/unlock via Firebase Console/.test(app));
+  ok('the password try and the recovery-word try share one rule: lockLeftMs + strikeUpdate, twice each',
+     (app.match(/lockLeftMs\(data, /g) || []).length === 2 && (app.match(/strikeUpdate\(data, /g) || []).length === 2);
+  const T = 1_800_000_000_000, M = 15 * 60 * 1000;
+  ok('behaviour: the 4th wrong try counts and does not lock',
+     !!VL && (() => { const u = VL.strikeUpdate({ failedRecoveryAttempts: 3 }, T); return u?.failedRecoveryAttempts === 4 && !(u?.lockedUntil > T); })());
+  ok('behaviour: the 5th wrong try locks for exactly 15 minutes and starts the count again',
+     !!VL && (() => { const u = VL.strikeUpdate({ failedRecoveryAttempts: 4 }, T); return u?.lockedUntil === T + M && u?.failedRecoveryAttempts === 0; })());
+  ok('behaviour: shut 60 s before the time, open at the time',
+     !!VL && VL.lockLeftMs({ lockedUntil: T + 60000 }, T) === 60000 && VL.lockLeftMs({ lockedUntil: T }, T) === 0);
+  ok('behaviour: a doc the old rule marked "PERMANENT" has no time, so it is open again',
+     !!VL && VL.lockLeftMs({ lockoutStatus: 'PERMANENT', failedRecoveryAttempts: 5 }, T) === 0);
+  const R = land.indexOf('const handleResetVaultTries'), reset = R > -1 ? land.slice(R, land.indexOf('\n    };', R)) : '';
+  ok("the landlord resets a company's tries on ITS vault doc (the owner's uid) and clears the lock",
+     /users\/\$\{tenant\.bossUid\}\/settings`, 'admin'/.test(reset) && /failedRecoveryAttempts: 0/.test(reset) && /lockedUntil: 0/.test(reset));
+  ok('the reset reports on every path (his "every action must report")', (reset.match(/notify\(/g) || []).length >= 3 && /catch/.test(reset));
+  ok('the reset has a button on the company row', /onClick=\{\(\) => handleResetVaultTries\(t\)\}/.test(land));
+  { const { isFailure } = await import('../utils/toastSeverity.js');
+    ok('the reset\'s SUCCESS message is not painted as a failure (the word "wrong" made it red in the lab)',
+       !/wrong tries cleared/.test(reset) && /back to 0 \(it was /.test(reset) &&
+       !isFailure('Vault tries reset for PT Maju Jaya: back to 0 (it was 3). They can try again now.') &&
+       !isFailure('Vault tries reset for PT Maju Jaya: the lock until 14:05 is lifted. They can try again now.')); }
+  ok("the intro name is the account's own name first (roster / agent name), Google's name only as the fallback",
+     /agentName=\{\(profileName \|\| user\?\.displayName\)/.test(app) && (app.match(/setProfileName\(/g) || []).length >= 3);
+  ok('the shell clears the iPhone notch: one variable from env(safe-area-inset-top), used by the shell and the phone drawer',
+     /--kpm-safe-top:\s*env\(safe-area-inset-top, 0px\)/.test(th) && /h-\[100dvh\][^"]*pt-\[var\(--kpm-safe-top\)\]/.test(shell) &&
+     /pt-\[calc\(1\.25rem\+var\(--kpm-safe-top\)\)\]/.test(shell));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

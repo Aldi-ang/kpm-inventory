@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, doc, setDoc, writeBatch, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
-import { Power, UserPlus, ShieldAlert, CheckCircle, ShieldCheck, Edit, Trash2, Save, X } from 'lucide-react';
+import { collection, query, where, onSnapshot, doc, setDoc, writeBatch, getDoc, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
+import { Power, UserPlus, ShieldAlert, CheckCircle, ShieldCheck, Edit, Trash2, Save, X, RotateCcw } from 'lucide-react';
 import { commitInChunks, isSafeDocIdEmail } from '../utils/helpers';
+import { lockLeftMs, untilText } from '../utils/vaultLock.js';
 import { confirmAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 
@@ -137,6 +138,26 @@ export default function LandlordDashboard({ db, appId, user }) {
         setEditTier(tenant.tier || 2);
     };
 
+    /* His 2026-09-28: "an option to reset the wrong tries ... from my front end and not using the firebase
+       console to find the user by id one by one". A company has ONE vault - its owner's
+       users/{bossUid}/settings/admin; the employees unlock the owner's. The super-admin rule lets this
+       account write it. */
+    const handleResetVaultTries = async (tenant) => {
+        const who = tenant.name || tenant.email;
+        if (!tenant.bossUid) return notify(`${who} has not signed in yet, so there is no vault to reset.`);
+        try {
+            const ref = doc(db, `artifacts/${appId}/users/${tenant.bossUid}/settings`, 'admin');
+            const snap = await getDoc(ref);
+            if (!snap.exists()) return notify(`${who} has not set a master password yet. Nothing to reset.`);
+            const d = snap.data(), left = lockLeftMs(d, Date.now());
+            await updateDoc(ref, { failedRecoveryAttempts: 0, lockoutStatus: 'NONE', lockedUntil: 0 });
+            notify(`Vault tries reset for ${who}: ${left ? `the lock until ${untilText(d.lockedUntil)} is lifted` : `back to 0 (it was ${d.failedRecoveryAttempts || 0})`}. They can try again now.`);
+        } catch (e) {
+            console.error(e);
+            notify(`Could not reset the vault tries for ${who}: ${e.message || 'unknown error'}`);
+        }
+    };
+
     // --- UPGRADED: DATABASE SWEEPER FOR EDITING ---
     const handleSaveEdit = async (tenant) => {
         if (!editName.trim()) return notify("Name cannot be empty");
@@ -269,6 +290,9 @@ export default function LandlordDashboard({ db, appId, user }) {
                                         </button>
                                         <button type="button" className="kpm-btn" onClick={() => handleEditClick(t)} title="Rename this account">
                                             <Edit size={14} /> Rename
+                                        </button>
+                                        <button type="button" className="kpm-btn" onClick={() => handleResetVaultTries(t)} title="Set this company's wrong master-password tries back to 0 and lift a lock">
+                                            <RotateCcw size={14} /> Reset vault tries
                                         </button>
                                         <button type="button" className="kpm-btn hazard" onClick={() => handleDelete(t)} title="Permanently delete this account">
                                             <Trash2 size={14} /> Delete
