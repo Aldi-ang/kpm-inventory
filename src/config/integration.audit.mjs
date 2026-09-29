@@ -747,11 +747,14 @@ check(G16, 'the scramble letters keep a fixed cell, so spaces survive',
   /minWidth\s*=\s*'0\.62em'/.test(gateCode),
   'these spans are flex items — a lone space collapses to zero and "Welcome back" renders as '
   + 'WELCOMEBACK, which is exactly what he saw');
-/* The master password must NEVER be readable on screen. The no-flash trick needs a text input,
-   and a text input with no working CSS mask is plaintext — so the swap is feature-detected and
-   these two checks exist to keep it that way. */
-check(G16, 'the password field only becomes a text input where the mask works',
-  /type=\{CAN_MASK_TEXT_INPUT \? 'text' : 'password'\}/.test(appCode)
+/* The master password must NEVER be readable on screen unless HE asks for it. The no-flash trick
+   needs a text input, and a text input with no working CSS mask is plaintext — so the swap is
+   feature-detected and these two checks exist to keep it that way. Since 2026-09-29 ("make sure
+   every box for those security have eye peek option") the eye may show it on purpose: text only
+   when shown, or where the mask works - and the mask is dropped only while shown. */
+check(G16, 'the password field only becomes a text input where the mask works (or when his eye shows it)',
+  /type=\{showPin \|\| CAN_MASK_TEXT_INPUT \? 'text' : 'password'\}/.test(appCode)
+  && /style=\{!showPin && CAN_MASK_TEXT_INPUT \? \{ WebkitTextSecurity: 'disc', textSecurity: 'disc' \} : undefined\}/.test(appCode)
   && /CSS\.supports\('-webkit-text-security', 'disc'\)/.test(appCode),
   'an unconditional text input renders his master password as readable plaintext');
 check(G16, 'that field is kept away from autofill and spellcheck',

@@ -1002,6 +1002,15 @@ const handleGitHubMirror = async () => {
      password can be shown while he types it; hidden again whenever the setup screen closes. */
   const [showSetupPassword, setShowSetupPassword] = useState(false);
   useEffect(() => { if (!isSetupMode) setShowSetupPassword(false); }, [isSetupMode]);
+  /* His 2026-09-29: "make sure every box for those security have eye peek option just like the new password" - the new
+     recovery word, the secret word typed before the code is sent, and the master password at the gate. Each hides again
+     when its screen closes; the gate box also whenever it is emptied (a failed try clears it). */
+  const [showSetupSecret, setShowSetupSecret] = useState(false);
+  useEffect(() => { if (!isSetupMode) setShowSetupSecret(false); }, [isSetupMode]);
+  const [showResetWord, setShowResetWord] = useState(false);
+  useEffect(() => { if (!isResetMode) setShowResetWord(false); }, [isResetMode]);
+  const [showPin, setShowPin] = useState(false);
+  useEffect(() => { if (!inputPin) setShowPin(false); }, [inputPin]);
   const [setupSecret, setSetupSecret] = useState("");
 
   const calculateStrength = (pass) => {
@@ -4521,14 +4530,25 @@ const handleGitHubMirror = async () => {
                         </div>
                     </div>
 
-                    <input 
-                        type="password" 
-                        placeholder="SECRET RECOVERY WORD" 
-                        value={setupSecret}
-                        onChange={(e) => setSetupSecret(e.target.value)}
-                        className="w-full bg-[var(--duke-well-solid)] border border-[color-mix(in_srgb,var(--duke-amber-edge)_30%,transparent)] p-4 text-center text-[var(--shell-ink)] text-xs outline-none focus:border-[var(--duke-amber-edge)] uppercase tracking-widest placeholder:text-[color-mix(in_srgb,var(--duke-ink-hi)_20%,transparent)] font-mono transition-colors" 
-                    />
-                    
+                    <div className="relative">
+                        <input
+                            type={showSetupSecret ? 'text' : 'password'}
+                            autoCapitalize="off"
+                            autoCorrect="off"
+                            spellCheck={false}
+                            placeholder="SECRET RECOVERY WORD"
+                            value={setupSecret}
+                            onChange={(e) => setSetupSecret(e.target.value)}
+                            className="w-full bg-[var(--duke-well-solid)] border border-[color-mix(in_srgb,var(--duke-amber-edge)_30%,transparent)] p-4 px-12 text-center text-[var(--shell-ink)] text-xs outline-none focus:border-[var(--duke-amber-edge)] uppercase tracking-widest placeholder:text-[color-mix(in_srgb,var(--duke-ink-hi)_20%,transparent)] font-mono transition-colors"
+                        />
+                        <button type="button" onClick={() => setShowSetupSecret(v => !v)}
+                            aria-label={showSetupSecret ? 'Hide recovery word' : 'Show recovery word'} aria-pressed={showSetupSecret}
+                            title={showSetupSecret ? 'Hide recovery word' : 'Show recovery word'}
+                            className="absolute right-0 inset-y-0 w-12 flex items-center justify-center text-[var(--duke-ink-3)] hover:text-[var(--duke-amber-ink)] transition-colors">
+                            {showSetupSecret ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                    </div>
+
                     <button 
                         onClick={handleSetupSecurity} 
                         className={`w-full py-4 font-bold uppercase text-xs tracking-[0.2em] transition-all shadow-lg font-mono border ${calculateStrength(setupPassword).score === 5 && setupSecret ? 'bg-[color-mix(in_srgb,var(--duke-amber)_10%,transparent)] hover:bg-[color-mix(in_srgb,var(--duke-amber)_25%,transparent)] border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)] text-[var(--duke-amber-ink)] hover:text-[var(--shell-ink)] cursor-pointer' : 'bg-[var(--duke-well-solid)] border-[var(--duke-edge-1)] text-[var(--duke-ink-3)] cursor-not-allowed opacity-50'}`}
@@ -4552,7 +4572,15 @@ const handleGitHubMirror = async () => {
                 /* CASE 2: RECOVERY MODE (Now with Loading State) */
                 <div className="space-y-4">
                     <p className="text-[10px] text-orange-400 uppercase font-bold mb-4 tracking-widest">Enter Secret Word</p>
-                   <input type="password" id="resetWord" placeholder="ENTER SECRET WORD..." className="w-full bg-[var(--duke-well-solid)] border border-orange-500/30 p-4 text-center text-[var(--duke-ink-hi)] text-xl outline-none tracking-widest focus:border-orange-500 font-mono placeholder:text-[color-mix(in_srgb,var(--duke-ink-hi)_20%,transparent)] transition-colors" autoFocus disabled={isSendingEmail} onKeyDown={(e) => e.key === 'Enter' && handleResetPin(e.target.value)}/>
+                   <div className="relative">
+                   <input type={showResetWord ? 'text' : 'password'} id="resetWord" autoCapitalize="off" autoCorrect="off" spellCheck={false} placeholder="ENTER SECRET WORD..." className="w-full bg-[var(--duke-well-solid)] border border-orange-500/30 p-4 px-12 text-center text-[var(--duke-ink-hi)] text-xl outline-none tracking-widest focus:border-orange-500 font-mono placeholder:text-[color-mix(in_srgb,var(--duke-ink-hi)_20%,transparent)] transition-colors" autoFocus disabled={isSendingEmail} onKeyDown={(e) => e.key === 'Enter' && handleResetPin(e.target.value)}/>
+                   <button type="button" onClick={() => setShowResetWord(v => !v)}
+                       aria-label={showResetWord ? 'Hide secret word' : 'Show secret word'} aria-pressed={showResetWord}
+                       title={showResetWord ? 'Hide secret word' : 'Show secret word'}
+                       className="absolute right-0 inset-y-0 w-12 flex items-center justify-center text-[var(--duke-ink-3)] hover:text-orange-400 transition-colors">
+                       {showResetWord ? <EyeOff size={18} /> : <Eye size={18} />}
+                   </button>
+                   </div>
                     <div className="flex gap-3 mt-4">
                         <button onClick={() => setIsResetMode(false)} disabled={isSendingEmail} className="flex-1 py-3 border border-[var(--duke-veil-edge)] text-[var(--duke-ink-2)] text-xs font-bold uppercase hover:text-[var(--duke-ink-hi)] hover:bg-[var(--duke-veil)] font-mono tracking-widest transition-colors">Abort</button>
                         <button onClick={() => handleResetPin(document.getElementById('resetWord').value)} disabled={isSendingEmail} className={`flex-1 py-3 border text-xs font-bold uppercase font-mono tracking-widest transition-colors ${isSendingEmail ? 'bg-orange-900/50 border-orange-800 text-orange-700 cursor-wait' : 'bg-orange-600/20 hover:bg-orange-600 border-orange-500/50 text-orange-500 hover:text-[var(--duke-ink-hi)]'}`}>
@@ -4576,11 +4604,13 @@ const handleGitHubMirror = async () => {
                   by onSubmit alone; the old onKeyDown was removed with it, because both together
                   would call handlePinLogin twice and each call spends one of his five tries. */}
               <form onSubmit={(e) => { e.preventDefault(); handlePinLogin(); }}>
+                <div className="relative">
                 <input
-                    /* See CAN_MASK_TEXT_INPUT at the top of this file. Falls back to a real
-                       password field wherever the CSS mask is not supported — never plaintext. */
-                    type={CAN_MASK_TEXT_INPUT ? 'text' : 'password'}
-                    style={CAN_MASK_TEXT_INPUT ? { WebkitTextSecurity: 'disc', textSecurity: 'disc' } : undefined}
+                    /* See CAN_MASK_TEXT_INPUT at the top of this file. Hidden, it falls back to a real
+                       password field wherever the CSS mask is not supported — never plaintext. Shown
+                       (the eye, his 2026-09-29 ask), it is plain text on purpose. */
+                    type={showPin || CAN_MASK_TEXT_INPUT ? 'text' : 'password'}
+                    style={!showPin && CAN_MASK_TEXT_INPUT ? { WebkitTextSecurity: 'disc', textSecurity: 'disc' } : undefined}
                     /* A text input would otherwise be offered to autofill, spellcheck and
                        autocapitalise — none of which should ever see a master password. */
                     autoComplete="off"
@@ -4588,7 +4618,7 @@ const handleGitHubMirror = async () => {
                     autoCapitalize="off"
                     spellCheck={false}
                     placeholder="MASTER PASSWORD"
-                    className="w-full bg-transparent border-0 border-b border-[color-mix(in_srgb,var(--shell-orange-edge)_20%,transparent)] py-[11px] px-1.5 text-center font-mono text-[13px] tracking-[0.42em] text-[var(--shell-ink-2)] outline-none focus:border-[var(--shell-orange-edge)] placeholder:text-[#5f4a2c] placeholder:tracking-[0.16em] placeholder:text-[9.5px] transition-colors"
+                    className="w-full bg-transparent border-0 border-b border-[color-mix(in_srgb,var(--shell-orange-edge)_20%,transparent)] py-[11px] px-10 text-center font-mono text-[13px] tracking-[0.42em] text-[var(--shell-ink-2)] outline-none focus:border-[var(--shell-orange-edge)] placeholder:text-[#5f4a2c] placeholder:tracking-[0.16em] placeholder:text-[9.5px] transition-colors"
                     value={inputPin}
                     onChange={(e) => setInputPin(e.target.value)}
                     /* Labels the phone's own return key GO instead of "return". */
@@ -4597,6 +4627,15 @@ const handleGitHubMirror = async () => {
                     autoFocus={!IS_TOUCH}
                     maxLength={15}
                 />
+                {/* type="button": inside this form a plain button is a submit, and a submit spends one of his five tries */}
+                <button type="button" onClick={() => setShowPin(v => !v)}
+                    aria-label={showPin ? 'Hide password' : 'Show password'} aria-pressed={showPin}
+                    title={showPin ? 'Hide password' : 'Show password'}
+                    style={{ touchAction: 'manipulation' }}
+                    className="absolute right-0 inset-y-0 w-10 flex items-center justify-center text-[var(--shell-ink-3)] hover:text-[var(--shell-orange-ink)] transition-colors">
+                    {showPin ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+                </div>
 
                 <button
                     type="submit"

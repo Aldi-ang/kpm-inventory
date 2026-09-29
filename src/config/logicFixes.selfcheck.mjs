@@ -9174,5 +9174,49 @@ section('THE EYE ON THE NEW MASTER PASSWORD (2026-09-29)');
   ok('leaving the setup screen hides it again', /useEffect\(\(\) => \{ if \(!isSetupMode\) setShowSetupPassword\(false\); \}, \[isSetupMode\]\);/.test(app));
 }
 
+section('THE EYE ON EVERY VAULT SECURITY BOX (2026-09-29)');
+/* His 2026-09-29, after using the eye on the new password: "there should be eye symbol as well when we enter the new
+   recovery code and when before we receive the code and also when we enter the master vault code, make sure every box
+   for those security have eye peek option just like the new password". Three boxes: the new SECRET RECOVERY WORD at
+   setup, the SECRET WORD typed before the email code is sent, and the MASTER PASSWORD at the gate. TRAPS: the gate box
+   sits INSIDE a <form> - a plain <button> there is a submit, so the eye would spend one of his five tries; and hidden,
+   the gate box must keep its no-flash mask (CAN_MASK_TEXT_INPUT) and its password fallback - never plaintext. */
+{ const eyeOk = (box, st, what) =>
+    new RegExp(`<button type="button" onClick=\\{\\(\\) => ${st.set}\\(v => !v\\)\\}`).test(box) &&
+    new RegExp(`aria-label=\\{${st.v} \\? 'Hide ${what}' : 'Show ${what}'\\}`).test(box) && new RegExp(`aria-pressed=\\{${st.v}\\}`).test(box) &&
+    new RegExp(`\\{${st.v} \\? <EyeOff size=\\{18\\} ?\\/> : <Eye size=\\{18\\} ?\\/>\\}`).test(box);
+  const noKeyboard = (box) => /autoCapitalize="off"/.test(box) && /autoCorrect="off"/.test(box) && /spellCheck=\{false\}/.test(box);
+  /* 1 - the new recovery word at setup */
+  const s1 = app.indexOf('placeholder="SECRET RECOVERY WORD"'), e1 = app.indexOf('onClick={handleSetupSecurity}', s1);
+  const b1 = s1 > -1 && e1 > s1 ? app.slice(app.lastIndexOf('<input', s1), e1) : '';
+  ok('the slice found the new-recovery-word box (200-2500 chars)', b1.length > 200 && b1.length < 2500);
+  ok('the new recovery word shows or hides on its eye; hidden is the default',
+     /type=\{showSetupSecret \? 'text' : 'password'\}/.test(b1) && /const \[showSetupSecret, setShowSetupSecret\] = useState\(false\);/.test(app));
+  ok('its eye is its own button, says what it does, flips Eye / EyeOff', eyeOk(b1, { v: 'showSetupSecret', set: 'setShowSetupSecret' }, 'recovery word'));
+  ok('shown as text the recovery word is never capitalised, corrected or spell-checked', noKeyboard(b1));
+  ok('leaving the setup screen hides the recovery word again', /useEffect\(\(\) => \{ if \(!isSetupMode\) setShowSetupSecret\(false\); \}, \[isSetupMode\]\);/.test(app));
+  /* 2 - the secret word typed before the email code is sent */
+  const s2 = app.indexOf('id="resetWord"'), e2 = app.indexOf('>Abort<', s2);
+  const b2 = s2 > -1 && e2 > s2 ? app.slice(app.lastIndexOf('<input', s2), e2) : '';
+  ok('the slice found the secret-word box (200-2500 chars)', b2.length > 200 && b2.length < 2500);
+  ok('the secret word shows or hides on its eye; hidden is the default',
+     /type=\{showResetWord \? 'text' : 'password'\}/.test(b2) && /const \[showResetWord, setShowResetWord\] = useState\(false\);/.test(app));
+  ok('its eye is its own button, says what it does, flips Eye / EyeOff', eyeOk(b2, { v: 'showResetWord', set: 'setShowResetWord' }, 'secret word'));
+  ok('shown as text the secret word is never capitalised, corrected or spell-checked', noKeyboard(b2));
+  ok('leaving the recovery screen hides the secret word again', /useEffect\(\(\) => \{ if \(!isResetMode\) setShowResetWord\(false\); \}, \[isResetMode\]\);/.test(app));
+  /* 3 - the master password at the gate */
+  const s3 = app.indexOf('placeholder="MASTER PASSWORD"'), f3 = app.lastIndexOf('<form onSubmit', s3), e3 = app.indexOf('type="submit"', s3);
+  const b3 = f3 > -1 && e3 > s3 ? app.slice(f3, e3) : '';
+  ok('the slice found the master-password box inside its form (200-3500 chars)', b3.length > 200 && b3.length < 3500);
+  ok('hidden, the gate box keeps its no-flash mask and its password fallback - never plaintext',
+     /type=\{showPin \|\| CAN_MASK_TEXT_INPUT \? 'text' : 'password'\}/.test(b3) &&
+     /style=\{!showPin && CAN_MASK_TEXT_INPUT \? \{ WebkitTextSecurity: 'disc', textSecurity: 'disc' \} : undefined\}/.test(b3) &&
+     /const \[showPin, setShowPin\] = useState\(false\);/.test(app));
+  ok('the gate eye is type="button" - inside the form a plain button would submit and spend a try',
+     eyeOk(b3, { v: 'showPin', set: 'setShowPin' }, 'password'));
+  ok('an emptied gate box (a failed try clears it, so does leaving) hides the password again',
+     /useEffect\(\(\) => \{ if \(!inputPin\) setShowPin\(false\); \}, \[inputPin\]\);/.test(app));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
