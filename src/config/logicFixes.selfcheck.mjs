@@ -9123,5 +9123,37 @@ section('T1/T2 MOVE A PERSON TO A NEW GMAIL + THE RESET BOX SAYS RESET (2026-09-
      /\(isCompanyTopTier\(bossUid\) && !isT1Tag\(resource\.data\.get\('userRole', 'NONE'\)\) && !isT1Tag\(request\.resource\.data\.get\('userRole', 'NONE'\)\)\)/.test(rules));
 }
 
+section('RULES CHANGE 14 - THE EIGHT HOLES IN THE LIVE RULES (2026-09-29)');
+/* His 2026-09-29: "fix first publish later just checked first what need to be fixed, finaliza then publish last",
+   then "okay continue" to the eight-hole list (A-Brain Brainstorm/2026-09-29_live-rules-review.md). T1-T4 = the owner,
+   T2 admins, T3 AREA_ADMIN, T4 FLEET_CAPTAIN - the Fleet & Roster tiers that approve and move stock. */
+{ const rules = code(read('firestore.rules'));
+  const block = (head) => { const i = rules.indexOf(head); return i > -1 ? rules.slice(i, rules.indexOf('\n      }', i)) : ''; };
+  ok('ONE predicate for the approving tiers, T1-T4', /function isFleetTier\(bossUid\) \{ return isCompanyTopTier\(bossUid\) \|\| isAreaAdmin\(bossUid\) \|\| isFleetCaptain\(bossUid\); \}/.test(rules));
+  ok('1 GPS bypass: an employee only files it PENDING; approve / reject is T1-T4',
+     /allow create: if isSalesman\(bossUid\) && request\.resource\.data\.get\('status', ''\) == 'PENDING';/.test(block('match /gps_bypasses/')) &&
+     /allow update: if isFleetTier\(bossUid\);/.test(block('match /gps_bypasses/')));
+  ok("2 a branch warehouse's stock is written by T1-T4 only", /allow write: if isFleetTier\(bossUid\);/.test(block('match /branches/{branchLocation}/inventory/')));
+  ok('3 HQ -> branch stock orders are written by T1-T4 only', /allow create, update: if isFleetTier\(bossUid\);/.test(block('match /stock_requests/')));
+  ok("4 the owner's vault record (settings/admin) is not in every employee's read",
+     /allow read: if isSalesman\(bossUid\) && docId != 'admin';/.test(block('match /settings/{docId}')));
+  ok('5 the login list: one record at a time for anyone signed in, the whole list for nobody (the super admin keeps it)',
+     /allow get: if isAuthenticated\(\);\s*allow list: if false;/.test(rules));
+  ok("6 T2 joins the company catch-all - never a vault_keys doc, never the owner's settings/admin, roster cards by their own rule",
+     /\|\|\s*\(isCompanyTopTier\(bossUid\) && document\[0\] != 'vault_keys' && document\[0\] != 'motorists' && !\(document\[0\] == 'settings' && document\[1\] == 'admin'\)\)/.test(rules) &&
+     /allow create: if \(isAuthorizedAreaAdmin\(bossUid\) &&\s*request\.resource\.data\.location == getEmployeeProfile\(\)\.location\) \|\|\s*\(isCompanyTopTier\(bossUid\) && !isT1Tag\(request\.resource\.data\.get\('userRole', 'NONE'\)\)\);/.test(rules) &&
+     /allow delete: if \(isAuthorizedAreaAdmin\(bossUid\) &&\s*resource\.data\.location == getEmployeeProfile\(\)\.location\) \|\|\s*\(isCompanyTopTier\(bossUid\) && !isT1Tag\(resource\.data\.get\('userRole', 'NONE'\)\)\);/.test(rules));
+  ok('7 a hand-over is never created APPROVED, and only T1-T4 set APPROVED',
+     /allow create: if isSalesman\(bossUid\) && request\.resource\.data\.get\('status', ''\) != 'APPROVED';/.test(block('match /account_transfers/')) &&
+     /allow update: if isSalesman\(bossUid\) && \(request\.resource\.data\.get\('status', ''\) != 'APPROVED' \|\| isFleetTier\(bossUid\)\);/.test(block('match /account_transfers/')));
+  ok('8 T3/T4 change a product\'s stock only - never its price',
+     /allow update: if \(isAreaAdmin\(bossUid\) \|\| isFleetCaptain\(bossUid\)\) &&\s*request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\.hasOnly\(\['stock', 'damagedStock', 'name', 'productId'\]\);/.test(block('match /products/')));
+  ok('8 behaviour: the fields the fleet and EOD flows write to a master product are exactly the four allowed',
+     ['FleetCanvasManager.jsx', 'App.jsx'].every(f => { const s = read('src/' + f);
+       const sets = [...s.matchAll(/t\.set\(\w+(?:\[\w+\])?(?:\.ref)?, \{([^}]*)\}, \{ merge: true \}\)/g)];
+       return sets.length >= 2 && sets.every(m =>
+         m[1].split(',').map(p => p.split(':')[0].trim()).filter(Boolean).every(k => ['stock', 'damagedStock', 'name', 'productId', 'activeCanvas'].includes(k))); }));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
