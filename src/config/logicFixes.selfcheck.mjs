@@ -9085,8 +9085,10 @@ section('T1/T2 RESET A VAULT PASSWORD (typed confirm) AND LOCK AN ACCOUNT (2026-
      /\}, \[bossUid, user\?\.email\]\);/.test(app));
   ok('rules DRAFT: a locked login record is no profile at all - every company rule refuses it (the data half of "unable to login")',
      /return empDoc != null && empDoc\.data\.get\('locked', false\) != true \? empDoc\.data : null;/.test(rules));
-  ok('rules DRAFT: a T2 may write ONLY the lock fields on a colleague\'s login record, never their own',
-     /isCompanyTopTier\(resource\.data\.bossUid\) && email != request\.auth\.token\.email\.lower\(\) &&\s*request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\.hasOnly\(\['locked', 'lockedAt', 'lockedBy'\]\)/.test(rules));
+  // 2026-09-29: widened by CHANGE 13 from "only the lock fields" to the whole card save (his T2 Gmail move); still never
+  // their own record, and never a T1's (the section below pins the rest)
+  ok('rules DRAFT: a T2 may lock a colleague\'s login record, never their own, never a T1\'s',
+     /isCompanyTopTier\(resource\.data\.bossUid\) && email != request\.auth\.token\.email\.lower\(\) && !isT1Tag\(resource\.data\.get\('userRole', 'NONE'\)\)/.test(rules));
   // TRAP: without `resource == null` the ghost killer's delete of a MISSING record throws, and App.jsx's
   // "Live profile sync failed" catch lets the ghost IN.
   ok('rules DRAFT: a LOCKED person cannot delete their own login record (erasing the lock), a missing record still can',
@@ -9097,6 +9099,28 @@ section('T1/T2 RESET A VAULT PASSWORD (typed confirm) AND LOCK AN ACCOUNT (2026-
        !isFailure('Vault password reset for Budi. They make a new one the next time they open the vault.') &&
        !isFailure('Budi is locked. budi@kpm.example is signed out and stays out until you unlock it.') &&
        !isFailure('Budi is unlocked and can sign in again.')); }
+}
+
+section('T1/T2 MOVE A PERSON TO A NEW GMAIL + THE RESET BOX SAYS RESET (2026-09-29)');
+/* His 2026-09-29: moving a person to a new Gmail "just like transferring bag from broken vehicle to the new one" (the
+   Edit email on Fleet & Roster already moves the login; the van, EOD, cash and cukai stay on the roster card), then
+   "Tier 1 , tier 2 could also be able to do that" and "u can put reset button instead of save button". TRAP: the app
+   reads 'ADMIN' and 'DEVELOPER' as TIER 1 (permissions.js), so a T2 who may write any login record could make someone
+   Tier 1 - every T2 clause refuses a T1 tag, old or new. */
+{ const rules = code(read('firestore.rules')), gate = read('src/components/ConfirmGate.jsx');
+  ok('the reset box accepts with RESET; every other typed box keeps SAVE',
+     /Type confirm and press Enter\.`, '', 'Reset'\)/.test(fleet) && /export function promptAction\(message, defaultValue = '', acceptLabel\)/.test(gate) &&
+     /const acceptLabel = pending\.acceptLabel \|\| \(isPrompt \? 'Save'/.test(gate));
+  ok('rules DRAFT: the T1 tags are ONE function, the same two the app normalizes to TIER_1',
+     /function isT1Tag\(role\) \{ return role == 'ADMIN' \|\| role == 'DEVELOPER'; \}/.test(rules) &&
+     /if \(role === 'ADMIN' \|\| role === 'DEVELOPER'\) role = CORPORATE_TIERS\.TIER_1;/.test(read('src/config/permissions.js')));
+  ok('rules DRAFT: a T2 writes the NEW login record for their own company, never with a T1 tag',
+     /isCompanyTopTier\(request\.resource\.data\.bossUid\) && !isT1Tag\(request\.resource\.data\.get\('userRole', 'NONE'\)\)/.test(rules));
+  ok("rules DRAFT: a T2 edits or deletes a colleague's login record - never their own, never a T1's, never into a T1",
+     /isCompanyTopTier\(resource\.data\.bossUid\) && email != request\.auth\.token\.email\.lower\(\) && !isT1Tag\(resource\.data\.get\('userRole', 'NONE'\)\) &&\s*request\.resource\.data\.bossUid == resource\.data\.bossUid && !isT1Tag\(request\.resource\.data\.get\('userRole', 'NONE'\)\)/.test(rules) &&
+     /\(isCompanyTopTier\(resource\.data\.bossUid\) && email != request\.auth\.token\.email\.lower\(\) && !isT1Tag\(resource\.data\.get\('userRole', 'NONE'\)\)\)/.test(rules));
+  ok("rules DRAFT: a T2 saves a roster card (the move's other half), never onto or into a T1 tag",
+     /\(isCompanyTopTier\(bossUid\) && !isT1Tag\(resource\.data\.get\('userRole', 'NONE'\)\) && !isT1Tag\(request\.resource\.data\.get\('userRole', 'NONE'\)\)\)/.test(rules));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

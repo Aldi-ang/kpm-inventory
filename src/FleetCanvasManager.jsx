@@ -452,7 +452,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
        doc, so their next vault visit is the setup screen and THEY make the new one; nobody else ever sees it. On a lost
        phone, lock the account first: a reset alone lets whoever holds the phone make the new password. */
     const handleResetVaultPassword = async (agent) => {
-        const typed = await promptAction(`Reset ${agent.name}'s vault password? They make a new one the next time they open the vault. Type confirm and press Enter.`);
+        const typed = await promptAction(`Reset ${agent.name}'s vault password? They make a new one the next time they open the vault. Type confirm and press Enter.`, '', 'Reset');
         if (typed === null) return;
         if (typed.trim().toLowerCase() !== 'confirm') return notify(`Not reset: you typed "${typed}", not "confirm".`);
         try {

@@ -125,6 +125,11 @@ service cloud.firestore {
         (isAuthenticated() && profile != null && profile.bossUid == bossUid && profile.get('userRole', 'NONE') == 'COMPANY_OWNER');
     }
 
+    // [CHANGE 13 — 2026-09-29, DRAFT] the two role tags the app reads as TIER 1 (permissions.js normalizes
+    // 'ADMIN' and 'DEVELOPER' to TIER_1). A T2 may never write one, nor touch a record that carries one - or a
+    // T2 could make someone Tier 1.
+    function isT1Tag(role) { return role == 'ADMIN' || role == 'DEVELOPER'; }
+
     // isRankConfigEditor() lived here until CHANGE 8 (2026-09-22) closed the only path it guarded.
 
     // =====================================================================
@@ -224,7 +229,10 @@ service cloud.firestore {
       allow create: if isAuthenticated() && (
         request.resource.data.bossUid == request.auth.uid ||
         isDistributorAdmin(request.resource.data.bossUid) ||
-        isAuthorizedAreaAdmin(request.resource.data.bossUid)
+        isAuthorizedAreaAdmin(request.resource.data.bossUid) ||
+        // [CHANGE 13 — 2026-09-29, DRAFT] a T1/T2 moves a person to a new Gmail (Fleet & Roster -> Edit -> email;
+        // his "Tier 1 , tier 2 could also be able to do that"): the new login record, never with a T1 tag.
+        (isCompanyTopTier(request.resource.data.bossUid) && !isT1Tag(request.resource.data.get('userRole', 'NONE')))
       );
 
       allow update: if isAuthenticated() && resource != null && (
@@ -232,9 +240,11 @@ service cloud.firestore {
         isDistributorAdmin(resource.data.bossUid) ||
         isAuthorizedAreaAdmin(resource.data.bossUid) ||
         // [CHANGE 12 — 2026-09-28, DRAFT] a T1/T2 (incl. a T2 saved as 'COMPANY_OWNER') locks or unlocks a
-        // colleague: ONLY the lock fields, never their own record.
-        (isCompanyTopTier(resource.data.bossUid) && email != request.auth.token.email.lower() &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['locked', 'lockedAt', 'lockedBy']))
+        // colleague, never their own record. [CHANGE 13 — 2026-09-29] widened from "ONLY the lock fields" to the
+        // whole card save (the Gmail move re-saves the record), but never a T1's record and never into a T1 tag,
+        // and the record stays in the same company.
+        (isCompanyTopTier(resource.data.bossUid) && email != request.auth.token.email.lower() && !isT1Tag(resource.data.get('userRole', 'NONE')) &&
+          request.resource.data.bossUid == resource.data.bossUid && !isT1Tag(request.resource.data.get('userRole', 'NONE')))
       );
 
       // Self-service delete (migration / ghost-killer) retained from live, plus the
@@ -247,7 +257,10 @@ service cloud.firestore {
         (resource != null && (
           resource.data.bossUid == request.auth.uid ||
           isDistributorAdmin(resource.data.bossUid) ||
-          isAuthorizedAreaAdmin(resource.data.bossUid)
+          isAuthorizedAreaAdmin(resource.data.bossUid) ||
+          // [CHANGE 13 — 2026-09-29, DRAFT] the Gmail move deletes the OLD login record: a T1/T2, never their
+          // own (that is the self-delete branch above), never a T1's.
+          (isCompanyTopTier(resource.data.bossUid) && email != request.auth.token.email.lower() && !isT1Tag(resource.data.get('userRole', 'NONE')))
         ))
       );
     }
@@ -544,7 +557,10 @@ service cloud.firestore {
         //  - Vault owner (Tier 1) -> unaffected, full access via the users/{bossUid} catch-all
         // =====================================================================
         allow update: if (isAuthorizedAreaAdmin(bossUid) && resource.data.location == getEmployeeProfile().location) ||
-          (isSalesman(bossUid) && getEmployeeProfile().agentId == motoristId);
+          (isSalesman(bossUid) && getEmployeeProfile().agentId == motoristId) ||
+          // [CHANGE 13 — 2026-09-29, DRAFT] a T1/T2 saves a roster card (the Gmail move's other half) - a T2 saved
+          // as 'COMPANY_OWNER' is not in the catch-all below. Never a T1's card, never into a T1 tag.
+          (isCompanyTopTier(bossUid) && !isT1Tag(resource.data.get('userRole', 'NONE')) && !isT1Tag(request.resource.data.get('userRole', 'NONE')));
 
         // =====================================================================
         // [CHANGE 3 — OPTION B, APPLIED 2026-07-24] Delegated Area Admins are now

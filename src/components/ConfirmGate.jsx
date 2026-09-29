@@ -47,7 +47,7 @@ export function confirmAction(message) {
    The contract is kept identical to the browser's so the call sites did not have to change
    shape: resolves the typed string on accept (possibly empty) and null on any cancel. Callers
    already guard with `if (name && name.trim())`, and that guard keeps working untouched. */
-export function promptAction(message, defaultValue = '') {
+export function promptAction(message, defaultValue = '', acceptLabel) {
     if (!openGate) {
         console.error(
             '[ConfirmGate] <ConfirmHost /> is not mounted — check src/main.jsx. ' +
@@ -59,6 +59,7 @@ export function promptAction(message, defaultValue = '') {
         kind: 'prompt',
         message: String(message ?? ''),
         defaultValue: defaultValue == null ? '' : String(defaultValue),
+        acceptLabel,   // a box that does something other than save names it ("Reset"); unset = Save
         resolve,
     }));
 }
@@ -117,7 +118,7 @@ export function ConfirmHost() {
     const danger = !isPrompt && DANGER.test(pending.message);
     const accent = danger ? '#b4524a' : '#ff9d00';
     const heading = isPrompt ? 'Type it in' : danger ? 'Confirm — this one is destructive' : 'Confirm';
-    const acceptLabel = isPrompt ? 'Save' : danger ? 'Yes, do it' : 'Confirm';
+    const acceptLabel = pending.acceptLabel || (isPrompt ? 'Save' : danger ? 'Yes, do it' : 'Confirm');
 
     return (
         <div
