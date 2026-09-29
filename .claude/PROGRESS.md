@@ -4,7 +4,7 @@
 
 ## 🟡 2026-09-29 10:15 — KPM: rules full pass - 8 holes ranked, his go owed (read only)
 His words: *"fix first publish later just checked first what need to be fixed, finaliza then publish last"*. The table (hole, fix, what could break): A-Brain `Brainstorm/2026-09-29_live-rules-review.md`. Order after his go: fix all in `firestore.rules` as CHANGE 14 (emulator case per hole) → final full run + one diff summary → HE publishes → "push" → EmailJS → he re-saves his recovery word (the old fast form).
-**WAITING ON ALDI:** 🔴 DECIDE *"Fix all 8 as listed?"*
+**WAITING ON ALDI:** 🔴 DECIDE *"Fix all 8 as listed?"* · ⚠️ EmailJS: at ~10:20 he set "To Email" to `{{to_email}}` EARLY (before the push) and rewrote the body ("Hi {{name}}, Your KPM master vault recovery code is: {{otp_code}} ..."). The live app sends no `to_email`, so every recovery email fails until the push - asked him to put his Gmail back until then; his answer not in yet. Confirm the box before assuming either state.
 
 ## 🟡 2026-09-29 10:00 — KPM: live Firestore rules reviewed (read only)
 His words: *"this is the firestore rules that we have i want u to review first before change"*. Findings: A-Brain `Brainstorm/2026-09-29_live-rules-review.md`.
