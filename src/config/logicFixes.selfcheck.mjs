@@ -9155,5 +9155,24 @@ section('RULES CHANGE 14 - THE EIGHT HOLES IN THE LIVE RULES (2026-09-29)');
          m[1].split(',').map(p => p.split(':')[0].trim()).filter(Boolean).every(k => ['stock', 'damagedStock', 'name', 'productId', 'activeCanvas'].includes(k))); }));
 }
 
+section('THE EYE ON THE NEW MASTER PASSWORD (2026-09-29)');
+/* His 2026-09-29, on the Create Credentials screen (first setup AND after a reset): "i want u to put eye review just
+   so that i can make sure my desired password is correct". TRAP: shown as TEXT, a phone keyboard capitalises the first
+   letter and autocorrects the word - silently changing the password he meant ("capital letters count") - so the
+   text form must switch those off. And a password left SHOWN must not greet the next setup on the same device. */
+{ const i = app.indexOf('placeholder="CREATE MASTER PASSWORD"'), j = app.indexOf('RESIDENT EVIL STRENGTH METER', i);
+  const box = i > -1 && j > i ? app.slice(app.lastIndexOf('<div className="relative">', i), j) : '';
+  ok('the slice found the new-password box (anchors present, 200-2500 chars)', box.length > 200 && box.length < 2500);
+  ok('the box shows or hides the password on the eye; hidden is the default',
+     /type=\{showSetupPassword \? 'text' : 'password'\}/.test(box) && /const \[showSetupPassword, setShowSetupPassword\] = useState\(false\);/.test(app));
+  ok('shown as text it never capitalises, corrects or spell-checks the password',
+     /autoCapitalize="off"/.test(box) && /autoCorrect="off"/.test(box) && /spellCheck=\{false\}/.test(box));
+  ok('the eye is its own button (never submits), says what it does, and flips Eye / EyeOff',
+     /<button type="button" onClick=\{\(\) => setShowSetupPassword\(v => !v\)\}/.test(box) &&
+     /aria-label=\{showSetupPassword \? 'Hide password' : 'Show password'\}/.test(box) && /aria-pressed=\{showSetupPassword\}/.test(box) &&
+     /\{showSetupPassword \? <EyeOff size=\{18\} ?\/> : <Eye size=\{18\} ?\/>\}/.test(box) && /\bEye, EyeOff\b/.test(app.slice(0, 2000)));
+  ok('leaving the setup screen hides it again', /useEffect\(\(\) => \{ if \(!isSetupMode\) setShowSetupPassword\(false\); \}, \[isSetupMode\]\);/.test(app));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

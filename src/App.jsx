@@ -11,7 +11,7 @@ import {
   User, Lock, ClipboardList, Crop, RotateCw, Move, Maximize2, ArrowRight, RefreshCcw, MessageSquarePlus, MinusCircle, ZoomIn, ZoomOut, Unlock,
   History, ShieldCheck, Copy, Replace, ClipboardCheck, Store, Wallet, Truck, Menu, MapPin, Phone, Edit, Folder,
   Key, MessageSquare, LogIn, LogOut, ShieldAlert, FileJson, UploadCloud, Tag, Calendar, XCircle, Printer, FileSpreadsheet, Pencil, Globe, Music, Database, Bell, ScanFace,
-  Cloud, CloudOff, Activity
+  Cloud, CloudOff, Activity, Eye, EyeOff
 } from 'lucide-react';
 import emailjs from '@emailjs/browser';
 import useTransactionEngine from './hooks/useTransactionEngine';
@@ -998,6 +998,10 @@ const handleGitHubMirror = async () => {
 
   // 🔐 NEW: Real-time Password Strength State
   const [setupPassword, setSetupPassword] = useState("");
+  /* His 2026-09-29: "put eye review just so that i can make sure my desired password is correct" - the new master
+     password can be shown while he types it; hidden again whenever the setup screen closes. */
+  const [showSetupPassword, setShowSetupPassword] = useState(false);
+  useEffect(() => { if (!isSetupMode) setShowSetupPassword(false); }, [isSetupMode]);
   const [setupSecret, setSetupSecret] = useState("");
 
   const calculateStrength = (pass) => {
@@ -4476,15 +4480,28 @@ const handleGitHubMirror = async () => {
                     )}
                     
                     <div className="relative">
-                        <input 
-                            type="password" 
-                            placeholder="CREATE MASTER PASSWORD"
-                            value={setupPassword}
-                            onChange={(e) => setSetupPassword(e.target.value)}
-                            className="w-full bg-[var(--duke-well-solid)] border border-[color-mix(in_srgb,var(--duke-amber-edge)_30%,transparent)] p-4 text-center text-[var(--shell-ink)] text-lg outline-none focus:border-[var(--duke-amber-edge)] font-mono placeholder:text-[color-mix(in_srgb,var(--duke-ink-hi)_20%,transparent)] transition-colors" 
-                            maxLength={25}
-                        />
-                        
+                        <div className="relative">
+                            <input
+                                type={showSetupPassword ? 'text' : 'password'}
+                                /* Shown as text, a phone keyboard would capitalise and autocorrect it - a
+                                   different password from the one he typed. */
+                                autoCapitalize="off"
+                                autoCorrect="off"
+                                spellCheck={false}
+                                placeholder="CREATE MASTER PASSWORD"
+                                value={setupPassword}
+                                onChange={(e) => setSetupPassword(e.target.value)}
+                                className="w-full bg-[var(--duke-well-solid)] border border-[color-mix(in_srgb,var(--duke-amber-edge)_30%,transparent)] p-4 px-12 text-center text-[var(--shell-ink)] text-lg outline-none focus:border-[var(--duke-amber-edge)] font-mono placeholder:text-[color-mix(in_srgb,var(--duke-ink-hi)_20%,transparent)] transition-colors"
+                                maxLength={25}
+                            />
+                            <button type="button" onClick={() => setShowSetupPassword(v => !v)}
+                                aria-label={showSetupPassword ? 'Hide password' : 'Show password'} aria-pressed={showSetupPassword}
+                                title={showSetupPassword ? 'Hide password' : 'Show password'}
+                                className="absolute right-0 inset-y-0 w-12 flex items-center justify-center text-[var(--duke-ink-3)] hover:text-[var(--duke-amber-ink)] transition-colors">
+                                {showSetupPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
+
                         {/* 🚀 RESIDENT EVIL STRENGTH METER 🚀 */}
                         <div className="mt-3">
                             <div className="flex justify-between items-end mb-1">
