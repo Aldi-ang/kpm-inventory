@@ -470,6 +470,17 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const vaultRef = () => vaultPath ? doc(db, vaultPath) : null;
   const NO_VAULT = "This account has no roster profile, so it has no vault password of its own. Ask the owner to check you on Fleet & Roster.";
 
+  /* LOCKED BY THE COMPANY (Fleet & Roster's "Lock account" - a lost or hacked phone; his 2026-09-28 "make that email
+     unable to login at all"). The flag sits on this person's login record; an app already OPEN signs out the moment it
+     lands, and the sign-in check (the kill switch below) keeps the email out after that. */
+  const LOCKED_MSG = "This account is locked by your company. Ask your owner or admin to unlock it.";
+  useEffect(() => {
+      if (!bossUid || !user?.email) return;
+      return onSnapshot(doc(db, `artifacts/${appId}/employee_directory`, user.email.toLowerCase().trim()), (snap) => {
+          if (snap.data()?.locked === true) { notify(LOCKED_MSG); signOut(auth); setUser(null); }
+      }, (err) => console.warn("Account lock listener:", err.code));
+  }, [bossUid, user?.email]);
+
   // 🚀 1.5 THE FIX: DIRECT SYSTEM NOTIFICATIONS LISTENER
   // Bypasses the useDatabaseSync hook which was completely blind to this collection
   const [systemNotifs, setSystemNotifs] = useState([]);
@@ -1135,7 +1146,8 @@ const handleGitHubMirror = async () => {
              every session starts at. handleResetPin has reported this same condition since it was
              written (see "No security profile found." below); only this path was missed. */
           if (!adminSnap.exists()) {
-              notify("No security profile found for this account. The Master Vault has to be set up first.");
+              setHasAdminPin(false); setIsSetupMode(true);   /* new, or reset by a T1/T2 on Fleet & Roster: make one now */
+              notify("No vault password on this account yet - it is new, or your admin reset it. Make a new one now.");
               return;
           }
           const data = adminSnap.data();
@@ -2690,6 +2702,13 @@ const handleGitHubMirror = async () => {
                     // 🚨 KILL SWITCH: Instantly reject suspended Tenants & Salesmen
                     if (activeData.subscriptionStatus === 'SUSPENDED' || activeData.status === 'SUSPENDED') {
                         notify("ACCOUNT SUSPENDED: Subscription inactive. Please contact KPM System Administration.");
+                        signOut(auth);
+                        setUser(null);
+                        return;
+                    }
+                    // Locked by a T1/T2 on Fleet & Roster (lost or hacked phone) - no way in until they unlock it
+                    if (activeData.locked === true) {
+                        notify(LOCKED_MSG);
                         signOut(auth);
                         setUser(null);
                         return;

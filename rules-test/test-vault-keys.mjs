@@ -74,13 +74,11 @@ await expect('resets the three counters -> ALLOWED', updateDoc(key(t2b, 'AGT_T2'
 await expect("overwrites the other person's password -> DENIED", updateDoc(key(t2b, 'AGT_T2'), { pin: 'mine' }), false);
 await expect("overwrites the other person's recovery word -> DENIED", updateDoc(key(t2b, 'AGT_T2'), { recoveryHash: 'mine' }), false);
 await expect('counters AND the password in one write -> DENIED', updateDoc(key(t2b, 'AGT_T2'), { ...COUNTERS, pin: 'mine' }), false);
-await expect('deletes the doc (to force a new setup) -> DENIED', deleteDoc(key(t2b, 'AGT_T2')), false);
 
 console.log('The owner (tier 1) - the same: tries yes, password no:');
 await expect('resets the counters -> ALLOWED', updateDoc(key(owner, 'AGT_T2B'), COUNTERS), true);
 await expect("overwrites an employee's password -> DENIED", updateDoc(key(owner, 'AGT_T2B'), { pin: 'boss' }), false);
 await expect("replaces an employee's whole doc -> DENIED", setDoc(key(owner, 'AGT_T2B'), { ...KEY, pin: 'boss' }), false);
-await expect('deletes it -> DENIED', deleteDoc(key(owner, 'AGT_T2B')), false);
 await expect("still reads + writes their OWN settings/admin -> ALLOWED", updateDoc(doc(owner, `artifacts/${APP_ID}/users/ownerA/settings`, 'admin'), COUNTERS), true);
 await expect('still writes the rest of the company folder (motorists) -> ALLOWED', updateDoc(doc(owner, `artifacts/${APP_ID}/users/ownerA/motorists`, 'AGT_T2'), { name: 'T2!' }), true);
 
@@ -105,6 +103,16 @@ await expect('still writes a company folder (motorists) -> ALLOWED', updateDoc(d
 await expect('still writes the employee directory -> ALLOWED', setDoc(doc(superA, `artifacts/${APP_ID}/employee_directory`, 'new@test.com'), { bossUid: 'ownerA' }), true);
 await expect("still reads a SHORT path only the catch-all grants (system_admins/<someone else>) -> ALLOWED", getDoc(doc(superA, 'system_admins', 'someone')), true);
 await expect('still writes a SHORT path only the catch-all grants -> ALLOWED', setDoc(doc(superA, 'zz_misc', 'x'), { ok: true }), true);
+await expect("deletes company A's vault_keys doc -> DENIED", deleteDoc(key(superA, 'AGT_T2B')), false);
+
+console.log('"Reset vault password" = T1/T2 delete the doc; the person makes a new one (his CHANGE 11 follow-up):');
+await expect("a T5 deletes another person's doc -> DENIED", deleteDoc(key(t5, 'AGT_T2B')), false);
+await expect("company B's T2 deletes company A's doc -> DENIED", deleteDoc(key(t2x, 'AGT_T2B')), false);
+await expect('a T2 deletes their OWN doc (would skip the 15-minute lock) -> DENIED', deleteDoc(key(t2b, 'AGT_T2B')), false);
+await expect("the legacy 'ADMIN' tag deletes another person's doc -> ALLOWED", deleteDoc(key(legacy, 'AGT_T5')), true);
+await expect("a T2 deletes another person's doc -> ALLOWED", deleteDoc(key(t2b, 'AGT_T2')), true);
+await expect("the owner deletes an employee's doc -> ALLOWED", deleteDoc(key(owner, 'AGT_T2B')), true);
+await expect('the person then makes a NEW one themselves -> ALLOWED', setDoc(key(t2, 'AGT_T2'), { uid: 'u-t2', pin: 'new', recoveryHash: 'new', failedRecoveryAttempts: 0, lockoutStatus: 'NONE' }), true);
 
 await testEnv.cleanup();
 console.log(`\n${pass} passed, ${fail} failed`);

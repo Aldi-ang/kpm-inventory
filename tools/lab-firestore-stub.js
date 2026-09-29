@@ -54,7 +54,7 @@ export const writeBatch = () => ({ set: record('set'), update: record('update'),
 export const runTransaction = async (_db, fn) =>
   fn({ get: async (ref) => found(ref) || { exists: () => false, data: () => ({}) }, set: record('set'), update: record('update') });
 export const updateDoc = async (ref, data) => { record('update')(ref, data); };
-export const deleteDoc = async () => {};
+export const deleteDoc = async (ref) => { record('delete')(ref); };   /* recorded like the batch's, so a reset can be read back */
 export const deleteField = () => undefined;
 export const serverTimestamp = () => ({ seconds: Math.floor(Date.now() / 1000) });
 export const increment = (n) => n;

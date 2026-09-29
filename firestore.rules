@@ -45,11 +45,15 @@ service cloud.firestore {
     // FleetCanvasManager.jsx:180,192 always writes the authoritative record EMAIL-keyed;
     // the only account that ends up UID-keyed-only is a migrated COMPANY_OWNER
     // (App.jsx:788-803), who is covered by isVaultOwner() and never needs this lookup.
+    // [CHANGE 12 — 2026-09-28, DRAFT] was `return empDoc != null ? empDoc.data : null;`. A login record a
+    // T1/T2 LOCKED on Fleet & Roster (lost or hacked phone) is no profile at all, so every employee rule
+    // (isSalesman, isDistributorAdmin, isCompanyTopTier ...) refuses that account - his words: "lock
+    // account basically just make that email unable to login at all". rules-test/test-account-lock.mjs.
     function getEmployeeProfile() {
       let rawEmail = request.auth.token.email;
       let safeEmail = rawEmail != null ? rawEmail.lower() : 'unknown';
       let empDoc = get(/databases/$(database)/documents/artifacts/cello-inventory-manager/employee_directory/$(safeEmail));
-      return empDoc != null ? empDoc.data : null;
+      return empDoc != null && empDoc.data.get('locked', false) != true ? empDoc.data : null;
     }
 
     function isDistributorAdmin(bossUid) {
@@ -226,13 +230,20 @@ service cloud.firestore {
       allow update: if isAuthenticated() && resource != null && (
         resource.data.bossUid == request.auth.uid ||
         isDistributorAdmin(resource.data.bossUid) ||
-        isAuthorizedAreaAdmin(resource.data.bossUid)
+        isAuthorizedAreaAdmin(resource.data.bossUid) ||
+        // [CHANGE 12 — 2026-09-28, DRAFT] a T1/T2 (incl. a T2 saved as 'COMPANY_OWNER') locks or unlocks a
+        // colleague: ONLY the lock fields, never their own record.
+        (isCompanyTopTier(resource.data.bossUid) && email != request.auth.token.email.lower() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['locked', 'lockedAt', 'lockedBy']))
       );
 
       // Self-service delete (migration / ghost-killer) retained from live, plus the
       // same admin authority live grants for deleting someone else's record.
+      // [CHANGE 12 — 2026-09-28, DRAFT] was `email == request.auth.token.email ||`. A LOCKED person may not
+      // delete their own record: that would erase the lock, and the next profile edit re-creates the record
+      // unlocked. A missing record (the ghost killer's delete) still passes.
       allow delete: if isAuthenticated() && (
-        email == request.auth.token.email ||
+        (email == request.auth.token.email && (resource == null || resource.data.get('locked', false) != true)) ||
         (resource != null && (
           resource.data.bossUid == request.auth.uid ||
           isDistributorAdmin(resource.data.bossUid) ||
@@ -323,7 +334,9 @@ service cloud.firestore {
       //    (the directory's agentId) and their own uid in it, so nobody can squat another's doc.
       //  - T1/T2 of the company: read, and change ONLY the three try counters (Fleet & Roster's
       //    "Reset vault tries"). Never the password, never the recovery word.
-      //  - nobody deletes one.
+      //  - T1/T2 delete one = "Reset vault password" (his: "we admin can reset their password ...
+      //    but we cant change their password"): the person makes the new one at their next vault
+      //    visit. Never their own - that would skip the 15-minute lock.
       // rules-test/test-vault-keys.mjs asserts every line.
       // =====================================================================
       match /vault_keys/{profileId} {
@@ -333,7 +346,7 @@ service cloud.firestore {
           request.resource.data.uid == request.auth.uid;
         allow update: if (isSalesman(bossUid) && resource.data.uid == request.auth.uid && request.resource.data.uid == request.auth.uid) ||
           (isCompanyTopTier(bossUid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['failedRecoveryAttempts', 'lockedUntil', 'lockoutStatus']));
-        allow delete: if false;
+        allow delete: if isCompanyTopTier(bossUid) && resource.data.uid != request.auth.uid;
       }
 
       match /stock_requests/{requestId} {

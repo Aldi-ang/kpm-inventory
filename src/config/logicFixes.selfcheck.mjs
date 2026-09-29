@@ -9042,13 +9042,61 @@ section('A VAULT PASSWORD FOR EVERY PERSON (2026-09-28)');
        /the lock until \$\{untilText\(d\.lockedUntil\)\} is lifted/.test(fleetReset) &&
        !isFailure('Vault tries reset for Budi: back to 0 (it was 3). They can try again now.') &&
        !isFailure('Vault tries reset for Budi: the lock until 14:05 is lifted. They can try again now.')); }
-  ok('the button: T1/T2 only, on cards whose tier meets the vault, never on your own card or the owner\'s',
-     /\{isGlobalAdmin && sel\.id !== agentProfileId && resolveTierOneId\(sel\.id\) !== TIER_ONE_ID && hasClearance\(sel\.userRole, 'view_master_vault'\) && \(/.test(fleet) &&
-     /onClick=\{\(\) => handleResetVaultTries\(sel\)\}/.test(fleet));
-  ok('rules DRAFT: vault_keys - only the person changes the password; the company T1/T2 only the three counters; nobody deletes',
+  ok('the buttons: T1/T2 only, never on your own card or the owner\'s; the vault ones only on tiers that meet the vault',
+     /\{isGlobalAdmin && sel\.id !== agentProfileId && resolveTierOneId\(sel\.id\) !== TIER_ONE_ID && \(/.test(fleet) &&
+     /\{hasClearance\(sel\.userRole, 'view_master_vault'\) && \(/.test(fleet) &&
+     /onClick=\{\(\) => handleResetVaultTries\(sel\)\}/.test(fleet) && /onClick=\{\(\) => handleResetVaultPassword\(sel\)\}/.test(fleet) &&
+     /\{sel\.email && \(/.test(fleet) && /onClick=\{\(\) => handleLockAccount\(sel, !selLocked\)\}/.test(fleet));
+  ok('rules DRAFT: vault_keys - only the person changes the password; T1/T2 only the three counters, or delete it (reset), never their own',
      /match \/vault_keys\/\{profileId\} \{/.test(rules) && /resource\.data\.uid == request\.auth\.uid/.test(rules) &&
      /affectedKeys\(\)\.hasOnly\(\['failedRecoveryAttempts', 'lockedUntil', 'lockoutStatus'\]\)/.test(rules) &&
-     /match \/vault_keys\/\{profileId\} \{[\s\S]{0,2500}?allow delete: if false;/.test(rules));
+     /match \/vault_keys\/\{profileId\} \{[\s\S]{0,2500}?allow delete: if isCompanyTopTier\(bossUid\) && resource\.data\.uid != request\.auth\.uid;/.test(rules));
+}
+
+section('T1/T2 RESET A VAULT PASSWORD (typed confirm) AND LOCK AN ACCOUNT (2026-09-28)');
+/* His 2026-09-28: "we admin can reset their password but of course this need double confirmation but we cant change their
+   password, we are also should be able to lock their account as tier 1 and 2 just incase their phone is gone or get hacked
+   make sure that the company data is not leaked right"; "admin is tier 1 and 2 btw not regional admin"; then "if possible
+   we should type confirm and press enter button to reset their password would be safe to avoid accidental pressing, lock
+   account basically just make that email unable to login at all". */
+{ const rules = read('firestore.rules');
+  const slice = (src, head, end) => { const i = src.indexOf(head); return i > -1 ? src.slice(i, src.indexOf(end, i)) : ''; };
+  const pwReset = slice(fleet, 'const handleResetVaultPassword = async', '\n    };'), lock = slice(fleet, 'const handleLockAccount = async', '\n    };');
+  const login = slice(app, 'const handlePinLogin = async', '\n  };');
+  ok('reset password: one press does nothing - it asks for the word "confirm" typed, Enter sends it, anything else is reported',
+     /await promptAction\(/.test(pwReset) && /typed\.trim\(\)\.toLowerCase\(\) !== 'confirm'/.test(pwReset) && /if \(typed === null\) return;/.test(pwReset) &&
+     imports(fleet, 'promptAction'));
+  ok("reset password DELETES the person's vault doc - nobody sets or sees a new one; they make it at their next vault visit",
+     /const ref = doc\(db, vaultDocPath\(appId, \{ bossUid: userId, agentProfileId: agent\.id \}\)\);/.test(pwReset) &&
+     /await deleteDoc\(ref\);/.test(pwReset) && !/setDoc|updateDoc|pin:|recoveryHash/.test(code(pwReset)) && (pwReset.match(/notify\(/g) || []).length >= 4);
+  ok('a person whose doc was reset while the gate is open lands on the setup screen, not a dead end',
+     /if \(!adminSnap\.exists\(\)\) \{\s*setHasAdminPin\(false\); setIsSetupMode\(true\);\s*notify\(/.test(code(login)));
+  ok("lock: ONE flag on the person's login record (employee_directory/<email>), nothing else; unlock clears it; both report",
+     /doc\(db, `artifacts\/\$\{appId\}\/employee_directory`, agent\.email\.toLowerCase\(\)\.trim\(\)\)/.test(lock) &&
+     /lock \? \{ locked: true, lockedAt: serverTimestamp\(\), lockedBy: user\?\.email \|\| '' \} : \{ locked: false \}/.test(lock) &&
+     /if \(lock && !await confirmAction\(/.test(lock) && (lock.match(/notify\(/g) || []).length >= 2 && /catch/.test(lock));
+  ok('the card knows the lock live (Lock / Unlock), from the same login record',
+     /onSnapshot\(doc\(db, `artifacts\/\$\{appId\}\/employee_directory`, email\), \(s\) => setSelLocked\(s\.data\(\)\?\.locked === true\)/.test(fleet) &&
+     ['Lock', 'Unlock', 'KeyRound'].every(n => imports(fleet, n)));
+  ok('a locked account cannot sign in: the sign-in check signs it out with its own message',
+     /if \(activeData\.locked === true\) \{\s*notify\(LOCKED_MSG\);\s*signOut\(auth\);\s*setUser\(null\);\s*return;\s*\}/.test(app));
+  ok('an app already OPEN signs out the moment the lock lands (a listener on the same login record)',
+     /onSnapshot\(doc\(db, `artifacts\/\$\{appId\}\/employee_directory`, user\.email\.toLowerCase\(\)\.trim\(\)\), \(snap\) => \{\s*if \(snap\.data\(\)\?\.locked === true\) \{ notify\(LOCKED_MSG\); signOut\(auth\); setUser\(null\); \}/.test(app) &&
+     /\}, \[bossUid, user\?\.email\]\);/.test(app));
+  ok('rules DRAFT: a locked login record is no profile at all - every company rule refuses it (the data half of "unable to login")',
+     /return empDoc != null && empDoc\.data\.get\('locked', false\) != true \? empDoc\.data : null;/.test(rules));
+  ok('rules DRAFT: a T2 may write ONLY the lock fields on a colleague\'s login record, never their own',
+     /isCompanyTopTier\(resource\.data\.bossUid\) && email != request\.auth\.token\.email\.lower\(\) &&\s*request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\.hasOnly\(\['locked', 'lockedAt', 'lockedBy'\]\)/.test(rules));
+  // TRAP: without `resource == null` the ghost killer's delete of a MISSING record throws, and App.jsx's
+  // "Live profile sync failed" catch lets the ghost IN.
+  ok('rules DRAFT: a LOCKED person cannot delete their own login record (erasing the lock), a missing record still can',
+     /allow delete: if isAuthenticated\(\) && \(\s*\(email == request\.auth\.token\.email && \(resource == null \|\| resource\.data\.get\('locked', false\) != true\)\) \|\|/.test(code(rules)));
+  { const { isFailure } = await import('../utils/toastSeverity.js');
+    ok('the reset / lock / unlock success messages are not painted red',
+       /Vault password reset for \$\{agent\.name\}\. They make a new one the next time they open the vault\./.test(pwReset) &&
+       !isFailure('Vault password reset for Budi. They make a new one the next time they open the vault.') &&
+       !isFailure('Budi is locked. budi@kpm.example is signed out and stays out until you unlock it.') &&
+       !isFailure('Budi is unlocked and can sign in again.')); }
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

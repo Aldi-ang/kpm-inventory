@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
     Truck, UserPlus, Save, Archive,
     MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
-    ShieldCheck, ChevronDown, ChevronUp, Crown, FileText, Printer, MessageSquare, Globe, Search, Plus, RotateCcw
+    ShieldCheck, ChevronDown, ChevronUp, Crown, FileText, Printer, MessageSquare, Globe, Search, Plus, RotateCcw, KeyRound, Lock, Unlock
 } from 'lucide-react';
 import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord, hasClearance, TIER_ONE_ID, resolveTierOneId } from './config/permissions';
@@ -10,7 +10,7 @@ import { vaultDocPath, VAULT_TRIES_RESET } from './utils/vaultDoc.js';
 import { lockLeftMs, untilText } from './utils/vaultLock.js';
 import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems, swipeTarget } from './utils/helpers';
 import { normalizeRegion } from './config/permissions';
-import { confirmAction } from './components/ConfirmGate.jsx';
+import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import LoadingBay from './components/LoadingBay.jsx';
 import { damagedInVan, titipOf } from './utils/vanBay';
@@ -116,6 +116,15 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     }, [activeMotorists, isAreaAdmin, searchLocation]);
     
     const [selectedAgent, setSelectedAgent] = useState(null);
+    /* The picked person's account lock, live from their login record - the card offers Lock or Unlock */
+    const [selLocked, setSelLocked] = useState(false);
+    useEffect(() => {
+        setSelLocked(false);
+        const email = selectedAgent?.email?.toLowerCase().trim();
+        if (!isGlobalAdmin || !email) return;
+        return onSnapshot(doc(db, `artifacts/${appId}/employee_directory`, email), (s) => setSelLocked(s.data()?.locked === true),
+            (err) => console.warn("Account lock listener:", err.code));
+    }, [selectedAgent?.email, isGlobalAdmin]);
     const [isAddingAgent, setIsAddingAgent] = useState(false);
     const [isReadOnlyMode, setIsReadOnlyMode] = useState(false); 
     const [editingAgentId, setEditingAgentId] = useState(null); 
@@ -435,6 +444,42 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         } catch (e) {
             console.error(e);
             notify(`Could not reset the vault tries for ${agent.name}: ${e.message || 'unknown error'}`);
+        }
+    };
+
+    /* RESET A PERSON'S VAULT PASSWORD. His 2026-09-28: "we admin can reset their password but of course this need
+       double confirmation but we cant change their password" - "type confirm and press enter". It DELETES their vault
+       doc, so their next vault visit is the setup screen and THEY make the new one; nobody else ever sees it. On a lost
+       phone, lock the account first: a reset alone lets whoever holds the phone make the new password. */
+    const handleResetVaultPassword = async (agent) => {
+        const typed = await promptAction(`Reset ${agent.name}'s vault password? They make a new one the next time they open the vault. Type confirm and press Enter.`);
+        if (typed === null) return;
+        if (typed.trim().toLowerCase() !== 'confirm') return notify(`Not reset: you typed "${typed}", not "confirm".`);
+        try {
+            const ref = doc(db, vaultDocPath(appId, { bossUid: userId, agentProfileId: agent.id }));
+            if (!(await getDoc(ref)).exists()) return notify(`${agent.name} has no vault password yet. Nothing to reset.`);
+            await deleteDoc(ref);
+            notify(`Vault password reset for ${agent.name}. They make a new one the next time they open the vault.`);
+            logAudit("VAULT_PASSWORD_RESET", `Reset vault password for ${agent.email || agent.name}`);
+        } catch (e) {
+            console.error(e);
+            notify(`Could not reset the vault password for ${agent.name}: ${e.message || 'unknown error'}`);
+        }
+    };
+
+    /* LOCK AN ACCOUNT - a lost or hacked phone. His 2026-09-28: "lock account basically just make that email unable to
+       login at all". One flag on the person's login record (employee_directory/<email>): the app signs them out, open
+       or not, and the rules draft refuses every read and write from that account. Unlock clears the flag. */
+    const handleLockAccount = async (agent, lock) => {
+        if (lock && !await confirmAction(`Lock ${agent.name}'s account? ${agent.email} is signed out at once and cannot sign in or read any company data until you unlock it.`)) return;
+        try {
+            await updateDoc(doc(db, `artifacts/${appId}/employee_directory`, agent.email.toLowerCase().trim()),
+                lock ? { locked: true, lockedAt: serverTimestamp(), lockedBy: user?.email || '' } : { locked: false });
+            notify(lock ? `${agent.name} is locked. ${agent.email} is signed out and stays out until you unlock it.` : `${agent.name} is unlocked and can sign in again.`);
+            logAudit(lock ? "ACCOUNT_LOCK" : "ACCOUNT_UNLOCK", `${lock ? 'Locked' : 'Unlocked'} ${agent.email}`);
+        } catch (e) {
+            console.error(e);
+            notify(`Could not ${lock ? 'lock' : 'unlock'} ${agent.name}: ${e.message || 'unknown error'}`);
         }
     };
 
@@ -1302,9 +1347,21 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                             <button data-kpm-del data-label="Delete" type="button" onClick={(e) => handleDeleteAgent(e, sel)} aria-label={`Remove ${sel.name}`}><Trash2 size={15}/></button>
                                                         </>
                                                     )}
-                                                    {/* T1/T2 help a person who ran out of tries; not on your own card, not on the owner's (the landlord resets that one) */}
-                                                    {isGlobalAdmin && sel.id !== agentProfileId && resolveTierOneId(sel.id) !== TIER_ONE_ID && hasClearance(sel.userRole, 'view_master_vault') && (
-                                                        <button type="button" onClick={() => handleResetVaultTries(sel)} title="Set this person's wrong vault-password tries back to 0 and lift a lock"><RotateCcw size={14}/> <span>Reset vault tries</span></button>
+                                                    {/* T1/T2 only; never on your own card, never on the owner's (the landlord resets that one) */}
+                                                    {isGlobalAdmin && sel.id !== agentProfileId && resolveTierOneId(sel.id) !== TIER_ONE_ID && (
+                                                        <>
+                                                            {hasClearance(sel.userRole, 'view_master_vault') && (
+                                                                <>
+                                                                    <button type="button" onClick={() => handleResetVaultTries(sel)} title="Set this person's wrong vault-password tries back to 0 and lift a lock"><RotateCcw size={14}/> <span>Reset vault tries</span></button>
+                                                                    <button type="button" onClick={() => handleResetVaultPassword(sel)} title="Wipe this person's vault password - they make a new one themselves"><KeyRound size={14}/> <span>Reset vault password</span></button>
+                                                                </>
+                                                            )}
+                                                            {sel.email && (
+                                                                <button type="button" onClick={() => handleLockAccount(sel, !selLocked)} title={selLocked ? 'Let this email sign in again' : 'Sign this email out and keep it out (lost or hacked phone)'}>
+                                                                    {selLocked ? <Unlock size={14}/> : <Lock size={14}/>} <span>{selLocked ? 'Unlock account' : 'Lock account'}</span>
+                                                                </button>
+                                                            )}
+                                                        </>
                                                     )}
                                                 </span>
                                             )}
