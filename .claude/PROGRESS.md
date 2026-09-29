@@ -4,7 +4,7 @@
 
 ## 🟢 2026-09-29 10:57 — KPM: PUSHED `42ab421..cc89275` (30 commits) on his "push"
 Checks before: build ok, audit 722/722, logicFixes 1976/1976, every selfcheck green; remote was 0 ahead. After: origin/phase0-solid-ground == cc89275. LIVE CONFIRMED 10:57: kpm-ang.vercel.app serves the new Fleet & Roster chunk (FleetCanvasManager-5UuSWRLA.js carries "Type confirm and press Enter").
-**WAITING ON ALDI:** (1) DONE ~11:05: EmailJS "To Email" = `{{to_email}}` (his screenshot; Save assumed) · (2) his recovery word: type it once in Forgot password - a correct word re-saves itself in the new form (App.jsx:1251 needsRehash) · then `/clear` and paste NEXT-SESSION.md (the tape-band crate, then the 4 chests).
+**WAITING ON ALDI:** (1) DONE ~11:05: EmailJS "To Email" = `{{to_email}}` (his screenshot; Save assumed) · (2) DONE ~11:10: his recovery word verified in Forgot password ("Identity verified") - both builds re-save it in the new form before the email step · (3) OPEN: that same try said "failed to send OTP email" - the live code sends to_email (checked in index-CyK-Z4IW.js), the OLD build (42ab421) does not, so his screen most likely still ran the old copy; asked him to reload fully and retry, then EmailJS Email History if it fails again · then `/clear` and paste NEXT-SESSION.md (the tape-band crate, then the 4 chests).
 
 ## 🟢 2026-09-29 10:52 — KPM: RULES PUBLISHED by him (his word "published"; the Console is not readable from here)
 `firestore.rules.deployed-baseline` = the published text (`788692f`, cmp-identical). T2 admins on the OLD app cannot open the vault until the push.
