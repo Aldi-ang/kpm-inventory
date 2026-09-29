@@ -1,9 +1,9 @@
 // =============================================================================
-// DEPLOYED 2026-07-28 via `firebase deploy --only firestore:rules` to
-//   cello-inventory-manager. This file IS the live rules as of that date.
-//
-// Baseline: firestore.rules.deployed-baseline is kept in sync with this file —
-// it's the instant rollback copy if a future change goes wrong.
+// DRAFT, READY TO PUBLISH (2026-09-29) — NOT LIVE until Aldi publishes it from the Firebase Console.
+//   = the rules live since 2026-07-28 (firestore.rules.deployed-baseline, the instant rollback copy)
+//   + the shared rank/badge path closed, + CHANGE 11/11b (a vault password per person), 12 (lock an
+//   account), 13 (T1/T2 move a person to a new Gmail), 14 (the eight holes found reviewing the live rules).
+//   After he publishes: copy this file over firestore.rules.deployed-baseline.
 //
 // Everything except the marked [CHANGE N] / [ADDED] / [FLAGGED] blocks below is
 // intentionally byte-for-byte the rules that were live before 2026-07-23. An
@@ -29,8 +29,12 @@ service cloud.firestore {
     //     || exists(/databases/$(database)/documents/system_admins/$(request.auth.uid))
     // NOT applied here: it widens god-mode and is the owner's call to make knowingly.
 
+    // [CHANGE 11b — 2026-09-28, DRAFT, HIS 🔴 DECIDE] was `allow read, write: if isSuperAdmin();`.
+    // Leaves out one person's vault-password doc (users/{bossUid}/vault_keys/{id}) - his words:
+    // "even me as tier 1 should not and could not be able to know their password". His own
+    // company's docs still answer to him as its owner, through the vault_keys rule below.
     match /{document=**} {
-      allow read, write: if isSuperAdmin();
+      allow read, write: if isSuperAdmin() && !string(document).matches('(.*/)?users/[^/]+/vault_keys/[^/]+');
     }
 
     function isAuthenticated() { return request.auth != null; }
@@ -41,11 +45,15 @@ service cloud.firestore {
     // FleetCanvasManager.jsx:180,192 always writes the authoritative record EMAIL-keyed;
     // the only account that ends up UID-keyed-only is a migrated COMPANY_OWNER
     // (App.jsx:788-803), who is covered by isVaultOwner() and never needs this lookup.
+    // [CHANGE 12 — 2026-09-28, DRAFT] was `return empDoc != null ? empDoc.data : null;`. A login record a
+    // T1/T2 LOCKED on Fleet & Roster (lost or hacked phone) is no profile at all, so every employee rule
+    // (isSalesman, isDistributorAdmin, isCompanyTopTier ...) refuses that account - his words: "lock
+    // account basically just make that email unable to login at all". rules-test/test-account-lock.mjs.
     function getEmployeeProfile() {
       let rawEmail = request.auth.token.email;
       let safeEmail = rawEmail != null ? rawEmail.lower() : 'unknown';
       let empDoc = get(/databases/$(database)/documents/artifacts/cello-inventory-manager/employee_directory/$(safeEmail));
-      return empDoc != null ? empDoc.data : null;
+      return empDoc != null && empDoc.data.get('locked', false) != true ? empDoc.data : null;
     }
 
     function isDistributorAdmin(bossUid) {
@@ -108,14 +116,27 @@ service cloud.firestore {
       return isAuthenticated() && profile != null && profile.bossUid == bossUid;
     }
 
-    // [ADDED — rank config / achievement badges gap fix, see CHANGE 7] Checks the
-    // caller's OWN role, not tied to any one bossUid — the settings doc this guards
-    // has no bossUid of its own to check against (see CHANGE 7's note on scope).
-    function isRankConfigEditor() {
+    // [CHANGE 11 — 2026-09-28] T1/T2 of ONE company: the owner, the legacy 'ADMIN' tag, and a T2
+    // employee - saved as userRole 'COMPANY_OWNER' (permissions.js TIER_2), which isDistributorAdmin
+    // alone never recognised. Only the vault_keys rule below uses it.
+    function isCompanyTopTier(bossUid) {
       let profile = getEmployeeProfile();
-      return isAuthenticated() && profile != null &&
-        (profile.get('userRole', 'NONE') == 'COMPANY_OWNER' || profile.get('userRole', 'NONE') == 'ADMIN');
+      return isVaultOwner(bossUid) || isDistributorAdmin(bossUid) ||
+        (isAuthenticated() && profile != null && profile.bossUid == bossUid && profile.get('userRole', 'NONE') == 'COMPANY_OWNER');
     }
+
+    // [CHANGE 13 — 2026-09-29, DRAFT] the two role tags the app reads as TIER 1 (permissions.js normalizes
+    // 'ADMIN' and 'DEVELOPER' to TIER_1). A T2 may never write one, nor touch a record that carries one - or a
+    // T2 could make someone Tier 1.
+    function isT1Tag(role) { return role == 'ADMIN' || role == 'DEVELOPER'; }
+
+    // [CHANGE 14 — 2026-09-29, DRAFT] the eight holes found reviewing the live rules (his "fix first publish later
+    // just checked first what need to be fixed, finaliza then publish last"; list: A-Brain
+    // Brainstorm/2026-09-29_live-rules-review.md). T1-T4 = owner, T2, T3 AREA_ADMIN, T4 FLEET_CAPTAIN - the
+    // Fleet & Roster tiers that approve bypasses and hand-overs and move warehouse stock. rules-test/test-rules-holes.mjs.
+    function isFleetTier(bossUid) { return isCompanyTopTier(bossUid) || isAreaAdmin(bossUid) || isFleetCaptain(bossUid); }
+
+    // isRankConfigEditor() lived here until CHANGE 8 (2026-09-22) closed the only path it guarded.
 
     // =====================================================================
     // [CHANGE 6 — CUSTOMER DIRECTORY EDIT PERMISSION TIER] Same shape as
@@ -209,34 +230,55 @@ service cloud.firestore {
     //  - Ghost Killer's deleteDoc(emailRef) still passes via the self-delete branch.
     // =====================================================================
     match /artifacts/cello-inventory-manager/employee_directory/{email} {
-      allow read: if isAuthenticated();
+      // [CHANGE 14 #5] was `allow read: if isAuthenticated()` - any Google account could LIST every company's
+      // login records (emails, roles, company ids). One record at a time stays open (sign-in, the ghost killer,
+      // the lock listener, the roster's own look-ups); the whole list only for the super admin (the landlord
+      // screen, LandlordDashboard.jsx - the god-mode rule at the top covers it).
+      allow get: if isAuthenticated();
+      allow list: if false;
 
       allow create: if isAuthenticated() && (
         request.resource.data.bossUid == request.auth.uid ||
         isDistributorAdmin(request.resource.data.bossUid) ||
-        isAuthorizedAreaAdmin(request.resource.data.bossUid)
+        isAuthorizedAreaAdmin(request.resource.data.bossUid) ||
+        // [CHANGE 13 — 2026-09-29, DRAFT] a T1/T2 moves a person to a new Gmail (Fleet & Roster -> Edit -> email;
+        // his "Tier 1 , tier 2 could also be able to do that"): the new login record, never with a T1 tag.
+        (isCompanyTopTier(request.resource.data.bossUid) && !isT1Tag(request.resource.data.get('userRole', 'NONE')))
       );
 
       allow update: if isAuthenticated() && resource != null && (
         resource.data.bossUid == request.auth.uid ||
         isDistributorAdmin(resource.data.bossUid) ||
-        isAuthorizedAreaAdmin(resource.data.bossUid)
+        isAuthorizedAreaAdmin(resource.data.bossUid) ||
+        // [CHANGE 12 — 2026-09-28, DRAFT] a T1/T2 (incl. a T2 saved as 'COMPANY_OWNER') locks or unlocks a
+        // colleague, never their own record. [CHANGE 13 — 2026-09-29] widened from "ONLY the lock fields" to the
+        // whole card save (the Gmail move re-saves the record), but never a T1's record and never into a T1 tag,
+        // and the record stays in the same company.
+        (isCompanyTopTier(resource.data.bossUid) && email != request.auth.token.email.lower() && !isT1Tag(resource.data.get('userRole', 'NONE')) &&
+          request.resource.data.bossUid == resource.data.bossUid && !isT1Tag(request.resource.data.get('userRole', 'NONE')))
       );
 
       // Self-service delete (migration / ghost-killer) retained from live, plus the
       // same admin authority live grants for deleting someone else's record.
+      // [CHANGE 12 — 2026-09-28, DRAFT] was `email == request.auth.token.email ||`. A LOCKED person may not
+      // delete their own record: that would erase the lock, and the next profile edit re-creates the record
+      // unlocked. A missing record (the ghost killer's delete) still passes.
       allow delete: if isAuthenticated() && (
-        email == request.auth.token.email ||
+        (email == request.auth.token.email && (resource == null || resource.data.get('locked', false) != true)) ||
         (resource != null && (
           resource.data.bossUid == request.auth.uid ||
           isDistributorAdmin(resource.data.bossUid) ||
-          isAuthorizedAreaAdmin(resource.data.bossUid)
+          isAuthorizedAreaAdmin(resource.data.bossUid) ||
+          // [CHANGE 13 — 2026-09-29, DRAFT] the Gmail move deletes the OLD login record: a T1/T2, never their
+          // own (that is the self-delete branch above), never a T1's.
+          (isCompanyTopTier(resource.data.bossUid) && email != request.auth.token.email.lower() && !isT1Tag(resource.data.get('userRole', 'NONE')))
         ))
       );
     }
 
     // =====================================================================
-    // [CHANGE 7 — RANK CONFIG / ACHIEVEMENT BADGES RULE, gap fix] AgentProfileView.jsx
+    // [CHANGE 7 — RANK CONFIG / ACHIEVEMENT BADGES RULE, gap fix — SUPERSEDED BY CHANGE 8
+    // below; kept as the record of the gap it could not close from rules alone] AgentProfileView.jsx
     // reads/writes artifacts/cello-inventory-manager/settings/{achievements,rpg_ranks}
     // (~lines 140, 149, 208, 337) but this path never had a dedicated rule — it fell
     // through to the top-level isSuperAdmin()-only catch-all, so no real customer
@@ -272,24 +314,81 @@ service cloud.firestore {
     //    their own profile page still renders rank/badges), write DENIED
     //  - Unauthenticated -> read and write DENIED
     // =====================================================================
+    // =====================================================================
+    // [CHANGE 8 — 2026-09-22, DRAFT until Aldi deploys it] THE SHARED SETTINGS PATH IS
+    // CLOSED. CHANGE 7 documented the gap a rules-only fix could not close: one settings doc
+    // for EVERY company in the project. The app side is now done — the rank ladder and the
+    // badge list live ONLY at users/{bossUid}/settings/progression (read: that company's own
+    // staff; write: the vault owner / distributor admin, per the users/{bossUid} rules
+    // below), and the vault owner's app start moves anything still in the old shared docs
+    // into the company folder once (src/utils/progressionHome.js), reporting
+    // "Rank and badge settings moved into this company's own folder." No screen reads this
+    // path any more, so nothing an authenticated user does needs it.
+    //
+    // DEPLOY ORDER: the owner opens the app once BEFORE deploying this and sees that
+    // message (or nothing, if the settings were already in the company folder). After the
+    // deploy the move can no longer read the old docs, and the built-in defaults would show.
+    //
+    // rules-test/test-batch1.mjs TASK 1 asserts the closed path (every role DENIED).
+    // =====================================================================
     match /artifacts/cello-inventory-manager/settings/{docId} {
-      allow read: if isAuthenticated();
-      allow write: if isRankConfigEditor();
+      allow read, write: if false;
     }
 
     match /artifacts/cello-inventory-manager/users/{bossUid} {
+      // [CHANGE 11b — 2026-09-28, DRAFT, HIS 🔴 DECIDE] was `if isVaultOwner(bossUid) || isDistributorAdmin(bossUid);`
+      // The catch-all no longer covers vault_keys: rules add up, so while it did, the owner could
+      // overwrite anyone's password from outside the app whatever the vault_keys rule said.
       match /{document=**} {
-        allow read, write: if isVaultOwner(bossUid) || isDistributorAdmin(bossUid);
+        // [CHANGE 14 #6] a T2 saved as 'COMPANY_OWNER' gets the old ADMIN tag's company powers - except a
+        // vault_keys doc (CHANGE 11b), the owner's own vault record (settings/admin), and roster cards (the
+        // motorists rules below, which refuse a Tier 1 tag).
+        allow read, write: if (isVaultOwner(bossUid) || isDistributorAdmin(bossUid)) && document[0] != 'vault_keys' ||
+          (isCompanyTopTier(bossUid) && document[0] != 'vault_keys' && document[0] != 'motorists' && !(document[0] == 'settings' && document[1] == 'admin'));
+      }
+
+      // =====================================================================
+      // [CHANGE 11 — 2026-09-28, DRAFT until Aldi deploys it] A VAULT PASSWORD FOR EVERY PERSON.
+      // His call: "everyone has their own password and even me as tier 1 should not and could not
+      // be able to know their password but we have power to help them reset the password tries".
+      // The app (src/utils/vaultDoc.js) keeps each employee's master-vault password here, keyed by
+      // their roster profile; the owner's stays at settings/admin, untouched.
+      //
+      // NEEDED, not optional: a T2 is saved as 'COMPANY_OWNER', and before this nothing granted that
+      // role a write anywhere in this folder - the live catch-all knows only the owner and 'ADMIN'.
+      // DEPLOY ORDER: this rule BEFORE the app push, or a T2 cannot open the vault at all.
+      //
+      //  - the person: reads and writes their own doc. Creating it needs their OWN roster profile
+      //    (the directory's agentId) and their own uid in it, so nobody can squat another's doc.
+      //  - T1/T2 of the company: read, and change ONLY the three try counters (Fleet & Roster's
+      //    "Reset vault tries"). Never the password, never the recovery word.
+      //  - T1/T2 delete one = "Reset vault password" (his: "we admin can reset their password ...
+      //    but we cant change their password"): the person makes the new one at their next vault
+      //    visit. Never their own - that would skip the 15-minute lock.
+      // rules-test/test-vault-keys.mjs asserts every line.
+      // =====================================================================
+      match /vault_keys/{profileId} {
+        allow read: if isCompanyTopTier(bossUid) ||
+          (isSalesman(bossUid) && (resource == null || resource.data.uid == request.auth.uid));
+        allow create: if isSalesman(bossUid) && getEmployeeProfile().agentId == profileId &&
+          request.resource.data.uid == request.auth.uid;
+        allow update: if (isSalesman(bossUid) && resource.data.uid == request.auth.uid && request.resource.data.uid == request.auth.uid) ||
+          (isCompanyTopTier(bossUid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['failedRecoveryAttempts', 'lockedUntil', 'lockoutStatus']));
+        allow delete: if isCompanyTopTier(bossUid) && resource.data.uid != request.auth.uid;
       }
 
       match /stock_requests/{requestId} {
         allow read: if isSalesman(bossUid);
-        allow create, update: if isSalesman(bossUid);
+        // [CHANGE 14 #3] was isSalesman - any employee could edit or mark an HQ -> branch order. Only
+        // RestockVaultView and BranchWarehouseManager write it, both management screens.
+        allow create, update: if isFleetTier(bossUid);
         allow delete: if false;
       }
       match /branches/{branchLocation}/inventory/{productId} {
         allow read: if isSalesman(bossUid);
-        allow write: if isSalesman(bossUid);
+        // [CHANGE 14 #2] was isSalesman - any employee could set any branch's stock and damaged stock. The
+        // writers are Fleet & Roster load/return, branch receive, EOD verify and the Stock Opname approval.
+        allow write: if isFleetTier(bossUid);
       }
 
       match /products/{productId} {
@@ -327,7 +426,10 @@ service cloud.firestore {
         //  - Different company (bossUid mismatch) -> DENIED
         //  - Vault owner (Tier 1) -> unaffected, full access via the users/{bossUid} catch-all
         // =====================================================================
-        allow update: if isAreaAdmin(bossUid) || isFleetCaptain(bossUid);
+        // [CHANGE 14 #8] was any field - a T3/T4 could change prices. The fleet load/return and the EOD
+        // verify write only these four to a master product.
+        allow update: if (isAreaAdmin(bossUid) || isFleetCaptain(bossUid)) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock', 'damagedStock', 'name', 'productId']);
         allow create, delete: if false;
       }
       // [INVESTIGATED — 2026-07-24, customer visibility gap] Every employee's browser
@@ -477,7 +579,10 @@ service cloud.firestore {
         //  - Vault owner (Tier 1) -> unaffected, full access via the users/{bossUid} catch-all
         // =====================================================================
         allow update: if (isAuthorizedAreaAdmin(bossUid) && resource.data.location == getEmployeeProfile().location) ||
-          (isSalesman(bossUid) && getEmployeeProfile().agentId == motoristId);
+          (isSalesman(bossUid) && getEmployeeProfile().agentId == motoristId) ||
+          // [CHANGE 13 — 2026-09-29, DRAFT] a T1/T2 saves a roster card (the Gmail move's other half) - roster cards
+          // stay out of the T2 catch-all (CHANGE 14). Never a T1's card, never into a T1 tag.
+          (isCompanyTopTier(bossUid) && !isT1Tag(resource.data.get('userRole', 'NONE')) && !isT1Tag(request.resource.data.get('userRole', 'NONE')));
 
         // =====================================================================
         // [CHANGE 3 — OPTION B, APPLIED 2026-07-24] Delegated Area Admins are now
@@ -506,10 +611,14 @@ service cloud.firestore {
         //    users/{bossUid} catch-all above, which this block doesn't touch
         //  - Non-authorized Area Admin (no canEditRoster) -> still DENIED, same as before
         // =====================================================================
-        allow create: if isAuthorizedAreaAdmin(bossUid) &&
-          request.resource.data.location == getEmployeeProfile().location;
-        allow delete: if isAuthorizedAreaAdmin(bossUid) &&
-          resource.data.location == getEmployeeProfile().location;
+        // [CHANGE 14 #6] a T1/T2 hires and fires too (the catch-all leaves roster cards to these rules), never a
+        // Tier 1 card.
+        allow create: if (isAuthorizedAreaAdmin(bossUid) &&
+          request.resource.data.location == getEmployeeProfile().location) ||
+          (isCompanyTopTier(bossUid) && !isT1Tag(request.resource.data.get('userRole', 'NONE')));
+        allow delete: if (isAuthorizedAreaAdmin(bossUid) &&
+          resource.data.location == getEmployeeProfile().location) ||
+          (isCompanyTopTier(bossUid) && !isT1Tag(resource.data.get('userRole', 'NONE')));
       }
 
       match /samplings/{sampleId} {
@@ -524,12 +633,43 @@ service cloud.firestore {
       }
       match /account_transfers/{transferId} {
         allow read: if isSalesman(bossUid);
-        allow create, update: if isSalesman(bossUid);
+        // [CHANGE 14 #7] was isSalesman for both - any employee could mark a hand-over APPROVED. The flow:
+        // created PENDING_AGENT, the receiving agent answers PENDING_ADMIN / REJECTED (App.jsx ~1845), the
+        // approver finalizes APPROVED / REJECTED (~2000).
+        allow create: if isSalesman(bossUid) && request.resource.data.get('status', '') != 'APPROVED';
+        allow update: if isSalesman(bossUid) && (request.resource.data.get('status', '') != 'APPROVED' || isFleetTier(bossUid));
         allow delete: if false;
       }
       match /settings/{docId} {
+        // [CHANGE 14 #4] was isSalesman for every doc - every employee could read the owner's vault record
+        // (settings/admin: the password and recovery-word fingerprints). The owner keeps it via the catch-all;
+        // employees have their own (vault_keys) since CHANGE 11.
+        allow read: if isSalesman(bossUid) && docId != 'admin';
+        allow write: if false;
+      }
+      // [ADDED — career ledger, Phase 2] READ: every employee — profile + leaderboard need it.
+      // WRITE: deliberately nothing here. Falls through to the users/{bossUid} catch-all above
+      // (isVaultOwner || isDistributorAdmin) — same mechanic [CHANGE 2] below already documents
+      // for mapSettings. An agent can read their own XP and can never increment it themselves.
+      // Not deployed — draft only, same as every other change in this file until Aldi deploys it.
+      //
+      // [FLAGGED] awards' `allow update, delete: if false` below is NOT actually a hard block for
+      // the vault owner / distributor admin — verified live via emulator (9/9 doc-stated cases pass,
+      // plus this one extra check): the users/{bossUid} catch-all above ORs in write access to
+      // EVERY nested path including career/{agentId}/awards/{awardId}, so an owner CAN update or
+      // delete an "immutable" award despite this line. Same shape as [CHANGE 2]'s mapSettings
+      // gotcha, not fixed for the same reason — narrowing the catch-all is the owner's call to
+      // make deliberately, not a side effect of adding one new collection. If awards are ever meant
+      // to be un-editable even by the owner (e.g. so a revoked award still shows in history),
+      // that needs its own explicit rule, not an assumption that `if false` here is load-bearing.
+      match /career/{agentId} {
         allow read: if isSalesman(bossUid);
         allow write: if false;
+
+        match /awards/{awardId} {
+          allow read: if isSalesman(bossUid);
+          allow update, delete: if false;
+        }
       }
       // [CHANGE 2 — mapSettings fleet-paintbrush gap] The bare `allow write: if false`
       // here looked like a hard block for everyone, but the catch-all above
@@ -594,7 +734,10 @@ service cloud.firestore {
       // 📡 GEOFENCE BYPASS ENGINE SECURITY OVERRIDE
       match /gps_bypasses/{bypassId} {
         allow read: if isSalesman(bossUid);
-        allow create, update: if isSalesman(bossUid);
+        // [CHANGE 14 #1] was isSalesman for both - an agent could approve their own bypass, and the sales screen
+        // sells on status 'APPROVED' (MerchantSalesView.jsx ~869). Filed PENDING; the Fleet & Roster tiers answer.
+        allow create: if isSalesman(bossUid) && request.resource.data.get('status', '') == 'PENDING';
+        allow update: if isFleetTier(bossUid);
         allow delete: if false;
       }
 
@@ -673,6 +816,17 @@ service cloud.firestore {
         allow read: if isAreaAdmin(bossUid);
         allow create: if isSalesman(bossUid);
         allow update, delete: if false;
+      }
+
+      // [ADDED — production_targets defense-in-depth] RestockVaultView.jsx reads/
+      // writes this collection but the whole screen is gated behind the owner-only
+      // isAdmin flag at the App.jsx level — nothing reachable today actually needs
+      // rules-level protection. Was falling through to the users/{bossUid} catch-all
+      // above (isVaultOwner || isDistributorAdmin) same as procurement/appSettings/
+      // mapBorders/canvas below; this is that same behavior made explicit, in case
+      // the UI gate ever changes. No behavior change.
+      match /production_targets/{targetId} {
+        allow read, write: if isVaultOwner(bossUid) || isDistributorAdmin(bossUid);
       }
 
       // [NOTE — no change] These collections the app touches have NO explicit rule
