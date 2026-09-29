@@ -4,7 +4,7 @@
 
 ## 🟢 2026-09-29 19:15 — KPM: day closed (no code)
 His words: *"lets do that tomorrow just prepare notes and prompt for now"*. Tomorrow: `/clear`, then paste the line at the top of NEXT-SESSION.md (the quarantine build, approved at prototype v21). Nothing is pushed: local commits since the last push include `99ec443` and `ab1023f` (the vault eyes).
-**WAITING ON ALDI:** ✅ TEST the three vault eyes (steps in the 19:10 entry below) · "push" when he wants them live · then the build · ❓ (19:25, his *"this quarantine chest should also be available on the stock opname dont u think and regional warehouse"*) *"OK to do it in this order: Fleet & Roster tomorrow, then the regional warehouse, then Stock Opname - pictures first for the last two?"*
+**WAITING ON ALDI:** ✅ TEST the three vault eyes (steps in the 19:10 entry below) · "push" when he wants them live · then the build · DECIDED 19:30 (his *"yes good order"*, on his 19:25 *"this quarantine chest should also be available on the stock opname dont u think and regional warehouse"*): Fleet & Roster tomorrow -> the regional warehouse -> Stock Opname, pictures first for the last two.
 
 ## 🟢 2026-09-29 19:10 — KPM: `ab1023f` an eye on every vault security box (local, not pushed)
 His words: *"there should be eye symbol as well when we enter the new recovery code and when before we receive the code and also when we enter the master vault code, make sure every box for those security have eye peek option just like the new password"*. Built (story in the commit); logicFixes 1995, audit 722, every selfcheck green. Not rendered by me (behind his real vault).
