@@ -8764,9 +8764,26 @@ section('THE ROSTER: ONE PERSON PER SWIPE, MEASURED (2026-09-26)');
 { const fl = code(read('src/FleetCanvasManager.jsx')), th = read('src/styles/theme.css');
   const stageCss = th.slice(th.indexOf('/* ── THE ROSTER STAGE'), th.indexOf('/* ── END OF THE ROSTER STAGE'));
   ok('on a touch screen the stage takes the horizontal swipe itself and moves one card through swipeTarget',
-     /@media \(pointer: coarse\) \{ \.kpm-stage \{ touch-action: pan-y; \} \}/.test(stageCss) &&
-     /<div className="kpm-stage" role="listbox" aria-label="People" onTouchStart=\{stageTouchStart\} onTouchEnd=\{stageTouchEnd\}>/.test(fl) &&
-     /swipeTarget\(centers, st\.scrollLeft \+ st\.clientWidth \/ 2, t\.clientX - s\.x, t\.clientY - s\.y\)/.test(fl));
+     /@media \(pointer: coarse\) \{ \.kpm-stage \{ touch-action: pan-y; scroll-snap-type: none; \} \}/.test(stageCss) &&
+     /<div className="kpm-stage" role="listbox" aria-label="People" onTouchStart=\{stageTouchStart\} onTouchMove=\{stageTouchMove\} onTouchEnd=\{stageTouchEnd\} onTouchCancel=\{stageTouchEnd\}>/.test(fl) &&
+     /swipeTarget\(centers, s\.left \+ st\.clientWidth \/ 2, t\.clientX - s\.x, t\.clientY - s\.y\)/.test(fl));
+  /* HEAVY APP 4 (2026-09-30, his "sliding the fleet ... is not fluid as well in the phone since we make it one by one"):
+     the stage sat still for the whole drag (lab 375: 10 finger moves, 0 px moved). The move handler is RUN here on fakes.
+     The one-card count must start from s.left (where the drag began): counted from the moved stage, a 350 px drag that
+     already carried the next card to the middle would land two along. */
+  const mv = fl.match(/const stageTouchMove = (\(e\) => \{[\s\S]*?\n    \});/);
+  ok('the stage follows the finger sideways on a touch screen, ignores a vertical drag and the PC mouse',
+     !!mv && (() => {
+       const go = (coarse, moves) => {
+         const el = { scrollLeft: 134 }, ref = { current: { x: 200, y: 300, left: 134, dir: '' } }, seen = [];
+         const fn = new Function('swipeFrom', 'window', 'return ' + mv[1])(ref, { matchMedia: () => ({ matches: coarse }) });
+         for (const [x, y] of moves) { fn({ touches: [{ clientX: x, clientY: y }], currentTarget: el }); seen.push(el.scrollLeft); }
+         return seen.join(',');
+       };
+       return go(true, [[190, 301], [180, 302], [100, 303]]) === '144,154,234' && go(true, [[199, 330], [150, 360]]) === '134,134'
+         && go(false, [[180, 300], [100, 300]]) === '134,134';
+     })());
+  ok('a drag too short to count glides back to where it started', /else if \(s\.dir === 'x'\) st\.scrollTo\(\{ left: s\.left,/.test(fl));
   const H = await import('../utils/helpers.js');
   if (typeof H.swipeTarget !== 'function') ok('swipeTarget exists in src/utils/helpers.js', false);
   else {

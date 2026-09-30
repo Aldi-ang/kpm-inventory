@@ -743,18 +743,32 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     };
     /* ONE PERSON PER SWIPE on a touch screen (his 2026-09-26 "make the roster slide lock 1 by 1"): the stage takes the
        horizontal swipe itself (CSS touch-action: pan-y) and moves exactly one card - helpers.js swipeTarget. A tap
-       is no swipe, so picking a card still works; the PC keeps its own scrolling. */
+       is no swipe, so picking a card still works; the PC keeps its own scrolling.
+       THE CARDS FOLLOW THE FINGER (2026-09-30, his "sliding the fleet and canvas is not fluid as well in the phone since we
+       make it one by one"): the stage sat still for the whole drag, then jumped on release. Now a sideways drag carries
+       it under the finger, and the release still lands exactly one card along - counted from where the drag STARTED
+       (s.left), so a long drag that already brought the next card to the middle can never skip a person. A drag too
+       short to count glides back. Snap is off on touch screens (theme.css): this code is the only thing moving the stage
+       there, and a snap would yank it to a card on every finger move. */
     const swipeFrom = useRef(null);
-    const stageTouchStart = (e) => { const t = e.touches[0]; swipeFrom.current = t ? { x: t.clientX, y: t.clientY } : null; };
+    const stageTouchStart = (e) => { const t = e.touches[0]; swipeFrom.current = t ? { x: t.clientX, y: t.clientY, left: e.currentTarget.scrollLeft, dir: '' } : null; };
+    const stageTouchMove = (e) => {
+        const s = swipeFrom.current, t = e.touches[0];
+        if (!s || !t || !window.matchMedia('(pointer: coarse)').matches) return;
+        const dx = t.clientX - s.x, dy = t.clientY - s.y;
+        if (!s.dir && Math.max(Math.abs(dx), Math.abs(dy)) > 8) s.dir = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+        if (s.dir === 'x') e.currentTarget.scrollLeft = s.left - dx;
+    };
     const stageTouchEnd = (e) => {
         const s = swipeFrom.current, t = e.changedTouches[0];
         swipeFrom.current = null;
         if (!s || !t) return;
         const st = e.currentTarget, box = st.getBoundingClientRect();
         const centers = [...st.querySelectorAll('.kpm-actor')].map(c => { const r = c.getBoundingClientRect(); return r.left - box.left + st.scrollLeft + r.width / 2; });
-        const i = swipeTarget(centers, st.scrollLeft + st.clientWidth / 2, t.clientX - s.x, t.clientY - s.y);
+        const i = swipeTarget(centers, s.left + st.clientWidth / 2, t.clientX - s.x, t.clientY - s.y);
         const still = document.documentElement.classList.contains('lite-mode') || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (i >= 0) st.scrollTo({ left: centers[i] - st.clientWidth / 2, behavior: still ? 'auto' : 'smooth' });
+        else if (s.dir === 'x') st.scrollTo({ left: s.left, behavior: still ? 'auto' : 'smooth' });
     };
     /* switching the salesman while the bay's muatan has lines asks first, through the dialog gate */
     const pickAgent = async (m) => {
@@ -1318,7 +1332,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                 ))}
                                             </div>
                                         )}
-                                        <div className="kpm-stage" role="listbox" aria-label="People" onTouchStart={stageTouchStart} onTouchEnd={stageTouchEnd}>
+                                        <div className="kpm-stage" role="listbox" aria-label="People" onTouchStart={stageTouchStart} onTouchMove={stageTouchMove} onTouchEnd={stageTouchEnd} onTouchCancel={stageTouchEnd}>
                                             {pageCast.map(m => stageCard(m))}
                                         </div>
                                         {/* keyed by the picked person, so the bar's light sweeps once per pick, never on a loop */}
