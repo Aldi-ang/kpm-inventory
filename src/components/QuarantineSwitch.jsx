@@ -16,6 +16,18 @@ import React, { useState, useEffect, useRef, useImperativeHandle } from 'react';
 import { HAZARD_SIGN } from '../utils/vanBay';
 
 const SIGN = <svg viewBox="0 0 15 15" shapeRendering="crispEdges" aria-hidden="true">{HAZARD_SIGN.map(([x, y]) => <rect key={x + '-' + y} x={x} y={y} width="1.02" height="1.02" />)}</svg>;
+/* the doors' two stamps as images (theme.css draws them with --sign-img / --eye-img): the radiation sign on the quarantine
+   seal, and the Eye of Ender - 16 x 16 pixel art in the sign's crisp style - on the healthy door's lock (his 2026-09-30
+   "change it into eye of ender logo") */
+const svgImg = (viewBox, body) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='${viewBox}' shape-rendering='crispEdges'>${body}</svg>`)}")`;
+const SIGN_IMG = svgImg('-4.5 -4.5 24 24', `<g fill='#141414'>${HAZARD_SIGN.map(([x, y]) => `<rect x='${x}' y='${y}' width='1.02' height='1.02'/>`).join('')}</g>`);
+const EYE_IMG = svgImg('0 0 16 16', Array.from({ length: 256 }, (_, i) => {
+  const x = i % 16, y = Math.floor(i / 16), r = Math.hypot(x - 7.5, y - 7.5);
+  let c = r > 7.3 ? null : r > 6.3 ? '#0B3F31' : r > 4.7 ? '#1E8A66' : r > 2.9 ? '#46C38D' : '#B6EFA2';
+  if (c && (x === 7 || x === 8) && y >= 4 && y <= 11) c = '#08180F';          // the slit pupil
+  if ((x === 4 && (y === 4 || y === 5)) || (x === 5 && y === 4)) c = '#EFFFF4';   // the shine
+  return c ? `<rect x='${x}' y='${y}' width='1.02' height='1.02' fill='${c}'/>` : '';
+}).join(''));
 const IN = 'cubic-bezier(.55, 0, .85, .35)', OUT = 'cubic-bezier(.23, 1, .32, 1)';
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 const done = (a, ms) => Promise.race([a.finished.catch(() => {}), wait(ms + 150)]);
@@ -107,17 +119,20 @@ export function BlastDoors({ ref }) {
       const [L, R] = d.children, all = [];
       const A = (n, kf, o) => { const a = n.animate(kf, o); all.push(a); return a; };
       d.dataset.kind = toQ ? 'tape' : 'steel';
-      A(L, [{ transform: 'translateX(-101%)' }, { transform: 'translateX(0)' }], { duration: 240, easing: IN, fill: 'forwards' });
-      await done(A(R, [{ transform: 'translateX(101%)' }, { transform: 'translateX(0)' }], { duration: 240, easing: IN, fill: 'forwards' }), 240);
+      /* each door rests past the edge by more than its stamp overhangs (lock 36 px, seal 23), so the stamp leaves with it */
+      const OFF_L = 'translateX(calc(-101% - 44px))', OFF_R = 'translateX(calc(101% + 30px))';
+      A(L, [{ transform: OFF_L }, { transform: 'translateX(0)' }], { duration: 240, easing: IN, fill: 'forwards' });
+      await done(A(R, [{ transform: OFF_R }, { transform: 'translateX(0)' }], { duration: 240, easing: IN, fill: 'forwards' }), 240);
       swap();
       A(d.parentElement, [{ transform: 'translateY(0)' }, { transform: 'translateY(2px)' }, { transform: 'translateY(-1px)' }, { transform: 'translateY(0)' }], { duration: 160 });
       await wait(190);
-      A(L, [{ transform: 'translateX(0)' }, { transform: 'translateX(-101%)' }], { duration: 340, easing: OUT, fill: 'forwards' });
-      await done(A(R, [{ transform: 'translateX(0)' }, { transform: 'translateX(101%)' }], { duration: 340, easing: OUT, fill: 'forwards' }), 340);
+      A(L, [{ transform: 'translateX(0)' }, { transform: OFF_L }], { duration: 340, easing: OUT, fill: 'forwards' });
+      await done(A(R, [{ transform: 'translateX(0)' }, { transform: OFF_R }], { duration: 340, easing: OUT, fill: 'forwards' }), 340);
       all.forEach(a => a.cancel());
+      delete d.dataset.kind;   // open = no door face at all (his "make sure that the logo is gone after its open")
     },
   }));
-  return <div ref={el} className="kpm-doors" aria-hidden="true"><i className="dl" /><i className="dr" /></div>;
+  return <div ref={el} className="kpm-doors" aria-hidden="true" style={{ '--sign-img': SIGN_IMG, '--eye-img': EYE_IMG }}><i className="dl" /><i className="dr" /></div>;
 }
 
 /* one press: the hatch runs, and 130 ms later the doors close over the box; the box changes while they are shut */

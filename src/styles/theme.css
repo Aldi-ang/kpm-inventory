@@ -5087,14 +5087,42 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-hatch .d2 { right: 0; transform: translateX(102%); border-left: 2px solid #262626; }
 .kpm-hatch .dr::after { content: ""; position: absolute; left: 0; right: 0; top: 48%; height: 3px; background: #5E5E5E; border-bottom: 1px solid #D0D0D0; }
 
-/* the blast doors over the box: tape going into the Quarantine, steel coming back to the healthy stock */
+/* the blast doors over the box, prototype v27 (his 2026-09-30 picks). Going INTO the Quarantine (data-kind tape): door 1
+   "hazard seam" - dark steel, a tape strip at each meeting edge, the radiation seal riding on the right door ("minimalist
+   but cool but still shows that it is quarantine blast door"). Coming BACK (steel): silver brushed steel, panel grooves,
+   bolts, interlocking teeth, the Eye of Ender as the lock ("i like the silver color tho", "eye of ender logo instead of
+   spiinning vault"). Both ON the middle ("make sure that both ... is really in the middle"): the tape doors overlap 2 px
+   around it (never half-and-a-bit wide - a 1 percent overlap put the seal 4.6 px off), the healthy teeth span 7 px each side of it. Both
+   doors rest past the edge far enough that the seal (23 px) and the lock (36 px) leave with them; `data-kind` is
+   removed once open, so no face is left. The two images come from QuarantineSwitch.jsx (--sign-img, --eye-img). */
 .kpm-doors { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
-.kpm-doors i { position: absolute; top: 0; bottom: 0; width: 50.5%; box-sizing: border-box; }
-.kpm-doors .dl { left: 0; transform: translateX(-101%); border-right: 3px solid #141414; }
-.kpm-doors .dr { right: 0; transform: translateX(101%); border-left: 3px solid #141414; }
-.kpm-doors[data-kind="tape"] i { background: repeating-linear-gradient(-45deg, #F2C318 0 14px, #141414 14px 28px); }
-.kpm-doors[data-kind="steel"] i { background: radial-gradient(circle at 12px 14px, #5E5E5E 0 2.5px, transparent 3.5px) 0 0 / 100% 50%, repeating-linear-gradient(90deg, #A2A2A2 0 22px, #8A8A8A 22px 24px, #B4B4B4 24px 25px); }
-.kpm-doors[data-kind="steel"] i::after { content: ""; position: absolute; left: 0; right: 0; top: 46%; height: 8%; background: #1C2E2F; border-block: 2px solid #141414; }
+.kpm-doors i { position: absolute; top: 0; bottom: 0; width: calc(50% + 1px); box-sizing: border-box; }
+.kpm-doors .dl { left: 0; transform: translateX(calc(-101% - 44px)); }
+.kpm-doors .dr { right: 0; transform: translateX(calc(101% + 30px)); }
+.kpm-doors[data-kind="tape"] i { background: linear-gradient(90deg, #202325, #2C3033 50%, #202325); }
+.kpm-doors[data-kind="tape"] i::after { content: ""; position: absolute; top: 0; bottom: 0; width: 4px; background: repeating-linear-gradient(-45deg, #F2C318 0 5px, #141414 5px 10px); }
+.kpm-doors[data-kind="tape"] .dl::after { right: 0; }
+.kpm-doors[data-kind="tape"] .dr::after { left: 0; background-position: -2px 0; }   /* 2 px right of the left strip: the stripes run on unbroken */
+.kpm-doors[data-kind="tape"] .dr::before { content: ""; position: absolute; z-index: 1; left: -23px; top: calc(50% - 24px); width: 48px; height: 48px; border-radius: 50%;
+  background: var(--sign-img) 0 0 / 48px 48px no-repeat, #F2C318; }
+.kpm-doors[data-kind="steel"] i { background:
+    radial-gradient(circle at 12% 16%, #F2F2F2 0 2px, #4A4A4A 2.6px 3.6px, transparent 4.2px), radial-gradient(circle at 12% 84%, #F2F2F2 0 2px, #4A4A4A 2.6px 3.6px, transparent 4.2px),
+    radial-gradient(circle at 50% 16%, #F2F2F2 0 2px, #4A4A4A 2.6px 3.6px, transparent 4.2px), radial-gradient(circle at 50% 84%, #F2F2F2 0 2px, #4A4A4A 2.6px 3.6px, transparent 4.2px),
+    radial-gradient(circle at 88% 16%, #F2F2F2 0 2px, #4A4A4A 2.6px 3.6px, transparent 4.2px), radial-gradient(circle at 88% 84%, #F2F2F2 0 2px, #4A4A4A 2.6px 3.6px, transparent 4.2px),
+    linear-gradient(180deg, transparent 33%, #5A5A5A 33% calc(33% + 2px), #EDEDED calc(33% + 2px) calc(33% + 3px), transparent calc(33% + 3px) 66%, #5A5A5A 66% calc(66% + 2px), #EDEDED calc(66% + 2px) calc(66% + 3px), transparent calc(66% + 3px)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .09) 0 1px, rgba(0, 0, 0, .05) 1px 2px, transparent 2px 3px),
+    linear-gradient(90deg, #7E7E7E, #C6C6C6 42%, #D6D6D6 52%, #9C9C9C); }
+.kpm-doors[data-kind="steel"] .dl { z-index: 1; width: calc(50% - 7px); }
+/* the right door's edge is the teeth's mirror (sockets); it starts 1 px under the left door, so no hairline shows */
+.kpm-doors[data-kind="steel"] .dr { width: calc(50% + 8px);
+  clip-path: polygon(1px 0.000%, 15px 4.167%, 1px 8.333%, 15px 12.500%, 1px 16.667%, 15px 20.833%, 1px 25.000%, 15px 29.167%, 1px 33.333%, 15px 37.500%, 1px 41.667%, 15px 45.833%, 1px 50.000%, 15px 54.167%, 1px 58.333%, 15px 62.500%, 1px 66.667%, 15px 70.833%, 1px 75.000%, 15px 79.167%, 1px 83.333%, 15px 87.500%, 1px 91.667%, 15px 95.833%, 1px 100%, 100% 100%, 100% 0); }
+.kpm-doors[data-kind="steel"] .dl::after, .kpm-doors[data-kind="steel"] .dr::after { content: ""; position: absolute; top: 0; bottom: 0;
+  clip-path: polygon(0 0.000%, 100% 4.167%, 0 8.333%, 100% 12.500%, 0 16.667%, 100% 20.833%, 0 25.000%, 100% 29.167%, 0 33.333%, 100% 37.500%, 0 41.667%, 100% 45.833%, 0 50.000%, 100% 54.167%, 0 58.333%, 100% 62.500%, 0 66.667%, 100% 70.833%, 0 75.000%, 100% 79.167%, 0 83.333%, 100% 87.500%, 0 91.667%, 100% 95.833%, 0 100%); }
+.kpm-doors[data-kind="steel"] .dl::after { z-index: 1; right: -14px; width: 14px; background: linear-gradient(90deg, #DADADA, #A4A4A4); }   /* the teeth */
+.kpm-doors[data-kind="steel"] .dr::after { left: 3px; width: 14px; background: #3A3A3A; }   /* only a 2 px dark edge along the sockets shows */
+.kpm-doors[data-kind="steel"] .dl::before { content: ""; position: absolute; z-index: 2; right: -36px; top: calc(50% - 29px); width: 58px; height: 58px; box-sizing: border-box; border-radius: 50%; border: 2px solid #1E1E1E;
+  background: var(--eye-img) center / 36px 36px no-repeat, radial-gradient(circle, #2E3134 0 62%, #111 63% 65%, transparent 66%),
+    conic-gradient(from 215deg, #FFFFFF, #8A8A8A 16%, #E8E8E8 30%, #5A5A5A 48%, #D6D6D6 64%, #767676 80%, #FFFFFF); }
 /* ── END OF THE QUARANTINE SWITCH ─────────────────────────────────────────────────────────────────── */
 
 /* ── THE BOOK OF THE DAY (components/TodayBook.jsx, Agent Inventory for T1-T4) ─────────────────────────────────────────

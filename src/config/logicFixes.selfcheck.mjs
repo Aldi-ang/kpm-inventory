@@ -9287,6 +9287,25 @@ section('FLEET & ROSTER: THE QUARANTINE SWITCH (2026-09-30)');
   ok('a stalled clock never leaves the box shut: every wait on an animation is raced with a timer',
      /const done = \(a, ms\) => Promise\.race\(\[a\.finished\.catch\(\(\) => \{\}\), wait\(ms \+ 150\)\]\);/.test(sw) && !/await [^;]*\.finished;/.test(sw));
   ok('no shadow, no glow, no filter in the switch (G30) - depth is gradients and borders', qsCss.length > 0 && !/box-shadow|filter:|text-shadow/.test(qsCss));
+  /* the doors of v27 (his 2026-09-30 picks: door 1 "hazard seam" going in, silver + the Eye of Ender coming back, and
+     "make sure that both quarantine and eye of ender logo in the middle is really in the middle") */
+  ok('the doors meet ON the middle - never 50.5% wide again (that 1% overlap put the seal 4.6 px off the middle)',
+     !/50\.5%/.test(qsCss) && /\.kpm-doors i \{[^}]*width: calc\(50% \+ 1px\);/.test(qsCss) &&
+     /\.kpm-doors\[data-kind="steel"\] \.dl \{[^}]*width: calc\(50% - 7px\);/.test(qsCss) && /\.kpm-doors\[data-kind="steel"\] \.dr \{[^}]*width: calc\(50% \+ 8px\);/.test(qsCss));
+  { /* the maths, re-run from the CSS itself: each lock's centre minus the stage's middle must be 0 px */
+    const n = (re) => { const m = qsCss.match(re); return m ? parseFloat(m[1]) : NaN; };
+    const sealLeft = n(/\.kpm-doors\[data-kind="tape"\] \.dr::before \{[^}]*left: (-?\d+)px;/), sealW = n(/\.kpm-doors\[data-kind="tape"\] \.dr::before \{[^}]*width: (\d+)px;/);
+    const lockRight = n(/\.kpm-doors\[data-kind="steel"\] \.dl::before \{[^}]*right: (-?\d+)px;/), lockW = n(/\.kpm-doors\[data-kind="steel"\] \.dl::before \{[^}]*width: (\d+)px;/);
+    const tapeOff = -1 + sealLeft + sealW / 2, steelOff = -7 - lockRight - lockW / 2;   // right door starts 1 px left of the middle; left door ends 7 px left of it
+    ok('both locks sit ON the middle, computed from the CSS: quarantine seal ' + tapeOff + ' px, Eye of Ender ' + steelOff + ' px', tapeOff === 0 && steelOff === 0);
+    const teethR = n(/\.kpm-doors\[data-kind="steel"\] \.dl::after \{[^}]*right: (-?\d+)px;/), teethW = n(/\.kpm-doors\[data-kind="steel"\] \.dl::after \{[^}]*width: (\d+)px;/);
+    ok('the healthy teeth zone is centred on the middle (7 px each side)', -7 + (-teethR) - teethW / 2 === 0); }
+  ok('the seal and the lock leave WITH their doors, and no door face is left once open',
+     /translateX\(calc\(-101% - 44px\)\)/.test(sw) && /translateX\(calc\(101% \+ 30px\)\)/.test(sw) && /delete d\.dataset\.kind;/.test(sw) &&
+     /\.kpm-doors \.dl \{[^}]*transform: translateX\(calc\(-101% - 44px\)\);/.test(qsCss) && /\.kpm-doors \.dr \{[^}]*transform: translateX\(calc\(101% \+ 30px\)\);/.test(qsCss));
+  ok('going in: dark steel, a tape strip at the seam, the radiation seal on ONE door; coming back: silver steel, interlocking teeth, the Eye of Ender - nothing turns',
+     /var\(--sign-img\)/.test(qsCss) && /var\(--eye-img\)/.test(qsCss) && /'--sign-img': SIGN_IMG, '--eye-img': EYE_IMG/.test(sw) &&
+     /\.kpm-doors\[data-kind="steel"\] \.dr \{[^}]*clip-path: polygon\(/.test(qsCss) && !/rotate\(|animation:/.test(qsCss.slice(qsCss.indexOf('.kpm-doors {'))));
 
   /* the van side */
   ok('the wooden chest and the yellow crate take turns in one place: opening one shuts the other, on both screens',
