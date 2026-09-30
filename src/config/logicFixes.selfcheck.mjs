@@ -9487,5 +9487,20 @@ section('HEAVY APP 5a: FIREBASE AND REACT IN THEIR OWN FILES (2026-09-30)');
      split('/x/src/App.jsx') === undefined);
 }
 
+/* ── HEAVY APP 5b: CUSTOMERS, SETTINGS AND THE AUDIT VAULT LOAD ON OPEN (2026-09-30) ──────────────────────────────────
+   App file 639 KB -> 435 KB. All three render inside the tabs' <Suspense> + LazyTabBoundary, so a lazy one is safe; a
+   static import anywhere in App.jsx would pull its file straight back into the first load. */
+section('HEAVY APP 5b: CUSTOMERS, SETTINGS AND THE AUDIT VAULT LOAD ON OPEN (2026-09-30)');
+{ const a = code(read('src/App.jsx'));
+  ok('the three tabs are lazy, and nothing in App.jsx imports them statically',
+     /const CustomerManagement = lazy\(\(\) => import\('\.\/components\/CustomerManager'\)\.then\(m => \(\{ default: m\.CustomerManagement \}\)\)\);/.test(a) &&
+     /const SettingsView = lazy\(\(\) => import\('\.\/components\/SettingsView'\)\);/.test(a) &&
+     /const AuditVaultView = lazy\(\(\) => import\('\.\/components\/AuditVaultView'\)\);/.test(a) &&
+     !/^import[^;]*from '\.\/components\/(CustomerManager|SettingsView|AuditVaultView)'/m.test(a));
+  const s = a.indexOf('<Suspense fallback='), e = a.indexOf('</Suspense>', s), inside = s > -1 && e > s ? a.slice(s, e) : '';
+  ok('all three render inside the tabs\' Suspense (a lazy screen outside it would blank the app while it loads)',
+     ['<CustomerManagement', '<SettingsView', '<AuditVaultView'].every(t => inside.includes(t) && a.indexOf(t) === a.lastIndexOf(t)));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

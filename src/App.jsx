@@ -36,9 +36,6 @@ import ImageCropper from './components/ImageCropper';
 import ExamineModal from './components/ExamineModal';
 import LandlordDashboard from './components/LandlordDashboard'; 
 import CrownTransferProtocol from './components/CrownTransferProtocol'; 
-import { CustomerManagement, CustomerDetailView } from './components/CustomerManager';
-import SettingsView from './components/SettingsView'; 
-import AuditVaultView from './components/AuditVaultView'; 
 import BiohazardTheme from './components/BiohazardTheme';
 import { unlockSounds, speakMumble } from './hooks/useSound';
 
@@ -57,6 +54,12 @@ const ResidentEvilInventory = lazy(() => import('./components/ResidentEvilInvent
 const HistoryReportView = lazy(() => import('./components/HistoryReportView')); 
 const DashboardView = lazy(() => import('./components/DashboardView')); 
 const BranchWarehouseManager = lazy(() => import('./components/BranchWarehouseManager'));
+/* HEAVY APP 5b (2026-09-30, "it takes a while to load"): three more tabs that were read at the first screen and
+   opened by few - Customers 101 KB, Settings 107 KB (with its landlord and career panels), the audit vault. They all
+   render inside the <Suspense> + LazyTabBoundary below, so they load on open like every tab above. */
+const CustomerManagement = lazy(() => import('./components/CustomerManager').then(m => ({ default: m.CustomerManagement })));
+const SettingsView = lazy(() => import('./components/SettingsView'));
+const AuditVaultView = lazy(() => import('./components/AuditVaultView'));
 // 🚀 recharts + @reduxjs/toolkit + d3-* only live inside SamplingManager — keep it out of the
 // eager chunk. Named exports need the .then(m => ({default: m.X})) form since lazy() only
 // accepts a default export.
