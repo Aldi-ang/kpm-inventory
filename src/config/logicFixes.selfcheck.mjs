@@ -8381,7 +8381,9 @@ section('ROUND 4: A CLOSED CHEST SHOWS TABS IN ITS PANEL\'S PLACE (2026-09-24)')
   const bay = read('src/components/LoadingBay.jsx'), bayc = code(bay);
   const th = read('src/styles/theme.css');
   const bayCss = th.slice(th.indexOf('/* ── THE VAN-LOADING BAY'), th.indexOf('/* ── END OF THE VAN-LOADING BAY'));
-  const fnOf = (src, name) => { const s = src.indexOf(`function ${name}(`); return s < 0 ? '' : src.slice(s, src.indexOf('\n  }\n', s)); };
+  /* CRLF-proof and both ends asserted (2026-09-30: a stash round-trip rewrote LoadingBay.jsx to CRLF, the end anchor
+     missed, and the slice ran to the end of the file - a correct file went red) */
+  const fnOf = (src, name) => { const t = src.replace(/\r/g, ''), s = t.indexOf(`function ${name}(`), e = t.indexOf('\n  }\n', s); return s > -1 && e > s ? t.slice(s, e) : ''; };
   const right = fl.slice(fl.indexOf('{/* RIGHT PANEL: THE LOADING DOCK */}'));
 
   ok('a chest closed by hand shows its tabs in the panel\'s place - the warehouse PRESET + TEAM, the van GEOFENCE',
@@ -8588,7 +8590,9 @@ section('HIS 07:50 TEST OF ROUND 5 - FLEET & ROSTER ON THE PC AND THE PHONE (202
   const th = read('src/styles/theme.css');
   const bayCss = th.slice(th.indexOf('/* ── THE VAN-LOADING BAY'), th.indexOf('/* ── END OF THE VAN-LOADING BAY'));
   const stageCss = th.slice(th.indexOf('/* ── THE ROSTER STAGE'), th.indexOf('/* ── END OF THE ROSTER STAGE'));
-  const fnOf = (src, name) => { const s = src.indexOf(`function ${name}(`); return s < 0 ? '' : src.slice(s, src.indexOf('\n  }\n', s)); };
+  /* CRLF-proof and both ends asserted (2026-09-30: a stash round-trip rewrote LoadingBay.jsx to CRLF, the end anchor
+     missed, and the slice ran to the end of the file - a correct file went red) */
+  const fnOf = (src, name) => { const t = src.replace(/\r/g, ''), s = t.indexOf(`function ${name}(`), e = t.indexOf('\n  }\n', s); return s > -1 && e > s ? t.slice(s, e) : ''; };
 
   /* "this whole panel shrink and expand too much as pc user i need to scroll up and down whenever i close and open the chest" */
   ok('PC: a closed chest keeps its panel\'s room - the tabs take the same space, nothing below jumps; the one-short-row layout is gone',
