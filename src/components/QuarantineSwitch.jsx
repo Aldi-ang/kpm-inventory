@@ -31,7 +31,7 @@ const EYE_IMG = svgImg('0 0 16 16', Array.from({ length: 256 }, (_, i) => {
 const IN = 'cubic-bezier(.55, 0, .85, .35)', OUT = 'cubic-bezier(.23, 1, .32, 1)';
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 const done = (a, ms) => Promise.race([a.finished.catch(() => {}), wait(ms + 150)]);
-const still = () => document.documentElement.classList.contains('lite-mode') ||
+export const still = () => document.documentElement.classList.contains('lite-mode') ||
   !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
 /* a band under the title in BOTH views - the tape in the Quarantine, the ender chest's own material in the healthy

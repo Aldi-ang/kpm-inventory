@@ -7504,8 +7504,9 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/w-full md:w-auto overflow-x-auto custom-scrollbar">/.test(code(so)),
      'strip scrollWidth 331 in 325 at 375; QUARANTINE and NEW COUNT overlapped');
   ok('every picker on the screen is a 44 px target on the phone - the select itself, not its padded wrapper',
-     (so.match(/<select .*?className="min-h-11 lg:min-h-0 /g) || []).length === 5 &&
-     (so.match(/<select /g) || []).length === 5,
+     /* 4 since 2026-09-30: the Quarantine facility picker became the crates (CrateVault, his option B) */
+     (so.match(/<select .*?className="min-h-11 lg:min-h-0 /g) || []).length === 4 &&
+     (so.match(/<select /g) || []).length === 4,
      'the region picker measured 17 px tall, the facility picker 19, the quarantine picker 38');
   ok('names wrap on the phone and truncate on the desk - the audit item and the counting card',
      /<span className="font-bold text-sm lg:text-xs text-\[var\(--ink\)\] uppercase lg:truncate">\{item\.name\}<\/span>/.test(so) &&
@@ -7534,8 +7535,10 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /className="shrink-0 min-h-11 lg:min-h-\[40px\] px-4 rounded-lg text-\[11px\] lg:text-\[10px\] font-black/.test(so) &&
      !/shrink-0 min-h-\[40px\] px-4/.test(code(so)),
      'measured 305 x 32 and 280 x 40');
+  /* since 2026-09-30 the line lives in the crate vault's strip (CrateVault), under the box: it must still wrap */
   ok('the quarantine item\'s info line wraps on the phone instead of clipping its facility',
-     /<div className="flex flex-wrap lg:flex-nowrap items-center gap-3 mt-1 text-xs font-mono">/.test(so),
+     /<div className="rn">\{line\(picked\)\}<\/div>/.test(read('src/components/WarehouseChest.jsx')) && /\$\{item\.facility\}`\}/.test(so) &&
+     /\.kpm-vault \.strip \.rn \{(?![^}]*(nowrap|ellipsis))[^}]*\}/.test(read('src/styles/theme.css')),
      '"MASTER" cut: 300 wide in a 285 box');
 }
 
@@ -9356,9 +9359,29 @@ section('THE REGIONAL WAREHOUSE\'S CHEST (2026-09-30)');
      /onClick=\{\(\) => setOpen\(o => !o\)\}/.test(wc) && /\.kpm-wh2 \.sbx\.shut \{[^}]*visibility: hidden;/.test(whCss) && !/display: none/.test(whCss.slice(whCss.indexOf('.kpm-wh2 .sbx.shut'))));
   ok('the End island lives INSIDE the chest\'s 3D, and the chest + island float together; Lite Mode and reduced motion stop the scene',
      /<span className="cc">\s*<i className="bf" \/><i className="bl" \/><i className="br" \/><i className="bt" \/>\s*<i className="it" \/><i className="if" \/><i className="iu" \/>/.test(wc) &&
-     /\.kpm-wh2 \.kpm-c3 \{[^}]*animation: kpmIsleBob 5s/.test(whCss) && /html\.lite-mode \.kpm-wh2 \*/.test(whCss) && /prefers-reduced-motion/.test(whCss));
+     /\.kpm-wh2 \.kpm-c3 \{[^}]*animation: kpmIsleBob 5s/.test(whCss) && /html\.lite-mode \.kpm-sbox \*/.test(whCss) && /prefers-reduced-motion/.test(whCss));
   ok('a lid needs headroom INSIDE its row (70 px phone, 96 px wide) and the island its room below the chest',
      /\.kpm-wh2 \.kpm-c3 \{[^}]*margin: 70px 0 calc\(var\(--hb\) \* 1\.45\);/.test(whCss) && /@container kpmwh \(min-width: 700px\) \{[^}]*margin-top: 96px/.test(whCss));
+  /* Stock Opname's Quarantine Vault, option B: the crates are the way in, the resolve actions and the log stay */
+  const sv = code(read('src/StockOpnameView.jsx')).replace(/\r/g, '');
+  ok('Stock Opname: the facility list is gone from the Active tab - one crate per warehouse (HQ + every branch) opens its box',
+     imports(sv, 'CrateVault') && !/setQuarantineFacility\(e\.target\.value\)/.test(sv) &&
+     /<CrateVault facilities=\{vaultFacilities\} rows=\{quarantineInventory\} fac=\{openFac\} onPick=\{setCrateFac\}/.test(sv) &&
+     /const vaultFacilities = useMemo\(\(\) => \[\{ key: 'MASTER', name: HQ_LABEL \}, \.\.\.uniqueBranches\.map\(b => \(\{ key: b, name: b \}\)\)\], \[uniqueBranches\]\);/.test(sv));
+  ok('the listener still loads EVERY warehouse (the crates need all their counts); the open crate filters on the screen',
+     /const \[quarantineFacility\] = useState\('ALL'\);/.test(sv) && /const shownQuarantine = quarantineInventory\.filter\(i => i\.facility === openFac\);/.test(sv));
+  ok('the three resolve actions are the screen\'s own buttons, moved under the box, not copied (the log and HQ approval unchanged)',
+     (sv.match(/setResolutionModal\(\{item, method: 'SAMPLING'\}\)/g) || []).length === 1 && (sv.match(/setResolutionModal\(\{item, method: 'PENALTY'\}\)/g) || []).length === 1 &&
+     /actions=\{\(item\) => \(/.test(sv) && /quarantine_logs/.test(sv) && /PENDING_HQ_APPROVAL/.test(sv));
+  ok('the sunk capital follows the open crate', /formatRupiah\(shownQuarantine\.reduce\(/.test(sv) && !/formatRupiah\(quarantineInventory\.reduce\(/.test(sv));
+  ok('switching crates: the box shrinks into the old crate (170 ms) and grows out of the new one (300 ms, the spring), the new origin read AFTER the shrink is cancelled; one crate is always open',
+     /if \(k === fac \|\| busy\.current\) return;/.test(wc) && /duration: 170, easing: IN, fill: 'forwards'/.test(wc) && /a\.cancel\(\); h\.style\.transformOrigin = ox\(k\);/.test(wc) && /duration: 300, easing: SPRING/.test(wc) &&
+     /if \(!h \|\| still\(\)\) \{ onPick\(k\);/.test(wc));
+  ok('the crates\' lids have headroom INSIDE their row (64 px, 44 on a phone, a size smaller there)',
+     /\.kpm-vault \.kpm-c3 \{ margin: 64px 0 16px; \}/.test(whCss) && /@container kpmwh \(max-width: 699px\) \{ \.kpm-vault \.kpm-c3 \{ --w: 62px;[^}]*margin: 44px 0 14px; \}/.test(whCss));
+  ok('a long warehouse name never widens a box past the phone screen (lab 430: the vault box ran off the right edge)',
+     /\.kpm-vault \{[^}]*grid-template-columns: minmax\(0, 1fr\);/.test(whCss) && /\.kpm-wh2 \{[^}]*grid-template-columns: minmax\(0, 1fr\);/.test(whCss) &&
+     /\.kpm-sbox \.stl \.tx \{ min-width: 0; overflow: hidden; text-overflow: ellipsis; \}/.test(whCss));
   ok('The End stays dark in both themes, so its caption keeps fixed light inks; no shadow, no glow (G30)',
      /\.kpm-wh2 \.capt \{[^}]*color: #D9D2E6;/.test(whCss) && !/box-shadow|filter:|text-shadow/.test(whCss));
 }

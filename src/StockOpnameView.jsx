@@ -3,7 +3,7 @@ import {
     ClipboardList, Search, Save, AlertTriangle, CheckCircle, 
     RefreshCcw, Box, EyeOff, Send, ShieldAlert, Check, X, 
     ChevronDown, ChevronUp, Clock, User, Database, ShieldCheck, 
-    Camera, UploadCloud, Image as ImageIcon, PackageMinus,
+    Camera, UploadCloud, Image as ImageIcon,
     Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
@@ -16,6 +16,7 @@ import { canSeeExpectedCount } from './config/permissions';
    that routes Firestore paths (branches/{facility}/inventory) — changing it would move documents.
    HQ_LABEL is only what the reader sees, and that is the part that had four spellings. */
 import { MASTER as HQ_LABEL } from './utils/supply.js';
+import { CrateVault } from './components/WarehouseChest.jsx';
 
 /* THE KINDS OF DAMAGE — Aldi, 2026-08-21: "our sales terminal give solid few options then we
    should able to add another one in the stock opname".
@@ -250,10 +251,13 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
     const [isProcessingAudit, setIsProcessingAudit] = useState(false);
     const [viewingImage, setViewingImage] = useState(null);
 
-    const [quarantineFacility, setQuarantineFacility] = useState('ALL');
+    /* every warehouse, always: the Quarantine Vault's crates (his option B, 2026-09-30) each show their own count, so the
+       listener loads them all and the open crate filters on the screen */
+    const [quarantineFacility] = useState('ALL');
     const [quarantineInventory, setQuarantineInventory] = useState([]);
-    const [quarantineLogs, setQuarantineLogs] = useState([]); 
+    const [quarantineLogs, setQuarantineLogs] = useState([]);
     const [resolutionModal, setResolutionModal] = useState(null);
+    const [crateFac, setCrateFac] = useState(null);
 
     const uniqueBranches = useMemo(() => {
         const branches = new Set();
@@ -262,6 +266,10 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
         });
         return Array.from(branches);
     }, [safeMotorists]);
+    /* one crate per warehouse; until one is pressed, the first with damaged boxes is open (HQ when none has any) */
+    const vaultFacilities = useMemo(() => [{ key: 'MASTER', name: HQ_LABEL }, ...uniqueBranches.map(b => ({ key: b, name: b }))], [uniqueBranches]);
+    const openFac = crateFac || (vaultFacilities.find(f => quarantineInventory.some(i => i.facility === f.key)) || vaultFacilities[0]).key;
+    const shownQuarantine = quarantineInventory.filter(i => i.facility === openFac);
 
     useEffect(() => {
         if (!isHighCommand || !db || !appId || !masterId) return;
@@ -1110,13 +1118,8 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                 </button>
                             </div>
 
-                            {quarSubTab === 'active' ? (
-                                <select value={quarantineFacility} onChange={(e) => setQuarantineFacility(e.target.value)} className="min-h-11 lg:min-h-0 w-full md:w-48 bg-[var(--sunk)] border border-[var(--accent-edge)] rounded-lg p-2.5 text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none focus:border-[var(--accent-edge)]">
-                                    <option value="ALL" className="bg-[var(--sunk)] text-[var(--ink)]">All Facilities</option>
-                                    <option value="MASTER" className="bg-[var(--sunk)] text-[var(--ink)]">{HQ_LABEL}</option>
-                                    {uniqueBranches.map(branch => <option key={branch} value={branch} className="bg-[var(--sunk)] text-[var(--ink)]">{branch}</option>)}
-                                </select>
-                            ) : (
+                            {/* the Active tab picks its warehouse with the crates below, not a list */}
+                            {quarSubTab === 'active' ? null : (
                                 <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-1.5 px-3">
                                     <Filter size={14} className="text-[var(--ink-dim)]"/>
                                     <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="min-h-11 lg:min-h-0 bg-transparent text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none">
@@ -1132,7 +1135,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                             <div className="text-right w-full md:w-auto bg-[var(--sunk)] p-3 rounded-lg border border-[var(--accent-edge)]">
                                 <p className="text-[11px] text-[var(--ink-dim)] uppercase font-bold tracking-widest mb-1">Sunk Capital (Dead Asset Value)</p>
                                 <p className="text-xl font-black text-[var(--accent-ink)] font-mono tabular-nums">
-                                    {formatRupiah(quarantineInventory.reduce((sum, item) => sum + ((item.damagedStock || 0) * Number(item.priceDistributor || item.hpp || 0)), 0))}
+                                    {formatRupiah(shownQuarantine.reduce((sum, item) => sum + ((item.damagedStock || 0) * Number(item.priceDistributor || item.hpp || 0)), 0))}
                                 </p>
                             </div>
                         )}
@@ -1140,45 +1143,23 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
 
                     <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 relative z-10 pr-2">
                         {quarSubTab === 'active' ? (
-                            quarantineInventory.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3 pt-10">
-                                    <CheckCircle size={48} className="text-[var(--ink-dim)]"/>
-                                    <p className="text-sm font-bold text-[var(--ink-dim)] uppercase tracking-widest">No Damaged Assets in this zone.</p>
-                                </div>
-                            ) : (
-                                quarantineInventory.map(item => {
-                                    const hpp = Number(item.priceDistributor || item.hpp || item.costPrice || 0);
-                                    return (
-                                        <div key={item.id} className="bg-[var(--sunk)] border border-[var(--line)] rounded-xl p-4 flex flex-col xl:flex-row justify-between xl:items-center gap-4 hover:border-[var(--accent-edge)] transition-colors shadow-md">
-                                            <div className="flex items-center gap-4">
-                                                <div className="p-3 bg-[var(--sunk)] text-[var(--accent-ink)] rounded-full border border-[var(--accent-edge)] shrink-0"><PackageMinus size={24}/></div>
-                                                <div>
-                                                    <h3 className="font-bold text-[var(--ink)] text-base uppercase tracking-wider">{item.name}</h3>
-                                                    <div className="flex flex-wrap lg:flex-nowrap items-center gap-3 mt-1 text-xs font-mono">
-                                                        <span className="text-[var(--accent-ink)] font-bold">{item.damagedStock} Bks Damaged</span>
-                                                        <span className="text-[var(--ink-dim)]">|</span>
-                                                        <span className="text-[var(--ink-dim)]">Total HPP Loss: {formatRupiah(item.damagedStock * hpp)}</span>
-                                                        <span className="text-[var(--ink-dim)]">|</span>
-                                                        <span className="text-[var(--ink-dim)] uppercase tracking-widest text-[11px]">{item.facility}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto shrink-0 border-t border-[var(--line)] xl:border-none pt-3 xl:pt-0 mt-2 xl:mt-0">
-                                                <button onClick={() => setResolutionModal({item, method: 'SAMPLING'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--alt-ink)_12%,var(--raised))] border border-[var(--alt-edge)] text-[var(--alt-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
-                                                    <FlaskConical size={14}/> Convert to Sample
-                                                </button>
-                                                <button onClick={() => setResolutionModal({item, method: 'RTV'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--ink)_8%,var(--raised))] border border-[var(--line)] text-[var(--ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
-                                                    <Undo2 size={14}/> RTV Factory
-                                                </button>
-                                                <button onClick={() => setResolutionModal({item, method: 'PENALTY'})} className="kpm-rim-neon flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--danger)_14%,var(--raised))] border border-[var(--danger)] text-[var(--danger-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg">
-                                                    <BadgeDollarSign size={14}/> Penalty Charge
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )
-                                })
-                            )
+                            /* his option B: one crate per warehouse; the open crate's box holds its damaged squares, and a
+                               picked square gets the three actions below - the same buttons and handlers as before */
+                            <CrateVault facilities={vaultFacilities} rows={quarantineInventory} fac={openFac} onPick={setCrateFac}
+                                line={(item) => `${item.name} · ${item.damagedStock} Bks damaged · Total HPP Loss: ${formatRupiah(item.damagedStock * Number(item.priceDistributor || item.hpp || item.costPrice || 0))} · ${item.facility}`}
+                                actions={(item) => (
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                <button onClick={() => setResolutionModal({item, method: 'SAMPLING'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--alt-ink)_12%,var(--raised))] border border-[var(--alt-edge)] text-[var(--alt-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
+                                    <FlaskConical size={14}/> Convert to Sample
+                                </button>
+                                <button onClick={() => setResolutionModal({item, method: 'RTV'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--ink)_8%,var(--raised))] border border-[var(--line)] text-[var(--ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
+                                    <Undo2 size={14}/> RTV Factory
+                                </button>
+                                <button onClick={() => setResolutionModal({item, method: 'PENALTY'})} className="kpm-rim-neon flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--danger)_14%,var(--raised))] border border-[var(--danger)] text-[var(--danger-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg">
+                                    <BadgeDollarSign size={14}/> Penalty Charge
+                                </button>
+                                    </div>
+                                )} />
                         ) : (
                             displayedQuarantineLogs.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3 pt-10">
