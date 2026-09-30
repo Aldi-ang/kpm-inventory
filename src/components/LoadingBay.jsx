@@ -743,10 +743,10 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   /* THE QUARANTINE CRATE: a yellow hazard crate, the pixel radiation sign on its front, ONE quiet effect (his 2026-09-27
      C+B pick). Agent Inventory: the Quarantine tab's own list. Fleet & Roster: the van's damaged goods. */
   const crate = (
-    <button ref={refs.qChest} className="chestCell qc" type="button" data-ponder="chest:q" aria-expanded={!!open.q} aria-label="Peti karantina — buka atau tutup" onClick={() => toggle('q', !open.q)}>
+    <button ref={refs.qChest} className="chestCell qc" type="button" data-ponder="chest:q" aria-expanded={!!open.q} aria-label="Quarantine chest — open or close" onClick={() => toggle('q', !open.q)}>
       <span className="specks" aria-hidden="true"><i /><i /><i /><i /></span>
       <span className="chest small hazard"><span className="lid" /><span className="latch" /><span className="body"><span className="sign">{SIGN}</span></span></span>
-      <span className="cap">{vanOnly ? 'Karantina' : 'Quarantine'}</span>
+      <span className="cap">Quarantine</span>
     </button>
   );
 
@@ -946,7 +946,12 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
         {vanOnly && (<>
         {crate}
         <div ref={refs.dmg} className={`gui q${anim.q ? '' : ' noanim'}`} data-ponder="gui:q">
-          <p className="title"><span>Karantina · di van</span><span className="count">{fmt(qTotal)} · {quarantine.length} barang</span></p>
+          {/* look C (his 2026-09-29 pick): the sign in the title, the tape band under it, no word on the band */}
+          <p className="title">
+            <span className="tname"><span className="tsign">{SIGN}</span><span className="tt">Quarantine · in van</span></span>
+            <span className="count">{fmt(qTotal)} · {items(quarantine.length)}</span>
+          </p>
+          <QuarantineBand q />
           {open.q !== false ? sayEl('q') : <span className="say" aria-hidden="true" />}
           <div className="grid" key={'q' + qPage} onClick={tellQ} onKeyDown={tellQ}>
             {Array.from({ length: per }, (_, i) => {

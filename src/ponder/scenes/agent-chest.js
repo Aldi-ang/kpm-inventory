@@ -71,7 +71,7 @@ export const agentChest = {
       focus: 'gui:van', at: 'near', tone: 'gold', hold: 3600 },
 
     /* ── the quarantine crate (v4) ──────────────────────────────────────────────────────────────── */
-    { text: 'Di sebelahnya berdiri peti kuning **Karantina**: retur rusak hari ini yang menunggu EOD.',
+    { text: 'Di sebelahnya berdiri peti kuning **Quarantine**: retur rusak hari ini yang menunggu EOD.',
       focus: 'chest:q', at: 'near', act: 'open:q', hold: 3400 },
 
     { text: 'Kotak di dalamnya diketuk untuk melihat asal toko dan alasannya.',

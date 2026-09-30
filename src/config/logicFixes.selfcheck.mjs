@@ -8878,7 +8878,7 @@ section('THE AGENT INVENTORY CHEST (2026-09-27)');
     ['six squares a page, and a page button carries what is on it', /enam kotak[\s\S]*\*\*2 · 4\*\*/],
     ['a drag saves only the arrangement - the stock does not move', /susunan[\s\S]*[Ss]tok[^\n]*tidak/],
     ['stock moves only through Muat van in the Loading Bay', /\*\*Muat van\*\*[^\n]*Loading Bay|Loading Bay[^\n]*\*\*Muat van\*\*/],
-    ['the quarantine chest is settled through EOD, never dragged', /\*\*Karantina\*\*[\s\S]*\*\*EOD Setoran\*\*/],
+    ['the quarantine chest is settled through EOD, never dragged', /\*\*Quarantine\*\*[\s\S]*\*\*EOD Setoran\*\*/],   /* his English name for it, 2026-09-29 */
     ['one book, two sections', /\*\*Catatan hari ini\*\*[\s\S]*\*\*Penjualan\*\*[\s\S]*\*\*Sampel\*\*/],
   ]) ok('the chest page says it: ' + what, re.test(text));
   ok('the chest page mounts the real book too, and a press on it inside the page opens nothing behind the page',
@@ -9266,7 +9266,7 @@ section('FLEET & ROSTER: THE QUARANTINE SWITCH (2026-09-30)');
      /\.kpm-bay \.deck \{ display: grid; grid-template-columns: minmax\(0, 1fr\) auto minmax\(0, 1fr\);/.test(bayCss));
   ok('every switch reports in the box\'s status line', /`Showing Quarantine · \$\{/.test(bay) && /`Showing healthy stock · \$\{/.test(bay));
   ok('ONE height in both views: the sign in the Quarantine title never makes the title taller (baseline measured 15.6 -> 17.7 px)',
-     /\.kpm-bay \.gui\.wh \.title, \.kpm-bay:not\(\.solo\) \.gui\.q \.title \{ align-items: center; \}/.test(bayCss));
+     /\.kpm-bay \.gui\.wh \.title, \.kpm-bay \.gui\.q \.title \{ align-items: center; \}/.test(bayCss));
   ok('a press while a switch runs is ignored; only a RETURN queues its switch back',
      /if \(sw\.current\.busy\) \{ if \(queue\) sw\.current\.next = next; return; \}/.test(bay));
   ok('a return always lands in the healthy stock: a drop on the ender chest, or Enter on a van box, switches back first',
@@ -9295,13 +9295,33 @@ section('FLEET & ROSTER: THE QUARANTINE SWITCH (2026-09-30)');
      /if \(inRect\(refs\.qChest\.current, x, y\) \|\| \(open\.q && inRect\(refs\.dmg\.current, x, y\)\)\) return 'dmg';/.test(bay) &&
      !/dmgHead/.test(bay) && !/\.dmgHead|\.kpm-bay \.dmg\b/.test(bayCss));
   ok('the crate\'s box is the van\'s damaged goods under the tape band, caption Quarantine, waiting for EOD',
-     /Quarantine · in van/.test(bay) && /waits for EOD/.test(bay) && /const qRows = vanOnly \? quarantine : damaged;/.test(bay) && /\{vanOnly \? 'Karantina' : 'Quarantine'\}/.test(bay));
+     /Quarantine · in van/.test(bay) && /waits for EOD/.test(bay) && /const qRows = vanOnly \? quarantine : damaged;/.test(bay) && /<span className="cap">Quarantine<\/span>/.test(bay));
   ok('behind a van shut BY THE CRATE there are no tabs - the crate\'s box has the place', /\{open\.van === false && !vanOnly && !open\.q && \(/.test(bay));
   ok('phone: the three chests in ONE row (ender | wooden + crate), the boxes full width above and below; a crate box not open gives its room back',
      /grid-template-columns: auto minmax\(0, 1fr\);\s*grid-template-areas: "hint hint" "whg whg" "whc vpair" "vang vang";/.test(bayCss) &&
      /\.kpm-bay \.vpair \{ grid-area: vpair; display: flex; justify-content: space-evenly;/.test(bayCss) &&
      /@container kpmbay \(max-width: 639px\) \{\s*\.kpm-bay:not\(\.solo\):not\(\.q-open\) \.gui\.q \{ position: absolute;/.test(bayCss));
   ok('PC: the boxes stand on their chests - "whg vang" over "whc vpair"', /grid-template-areas: "hint hint" "whg vang" "whc vpair";/.test(bayCss));
+}
+
+/* ── AGENT INVENTORY: THE CRATE'S BOX IN LOOK C, IN ENGLISH (2026-09-30) ─────────────────────────────────────────────
+   His pick 2026-09-29: *"tape band is the one that i like the most"* (look C: the sign in the title, a tape band under it,
+   no word on the band) and *"use Quarantine instead of karantina we will add language switching int he future"*. Only
+   the crate's own words change - title, count, caption, aria-label, and the tutorial's name for it; every other
+   Indonesian string stays until the language switch (his rule: new labels English, old ones wait). */
+section('AGENT INVENTORY: THE CRATE\'S BOX IN LOOK C, IN ENGLISH (2026-09-30)');
+{ const bay = code(read('src/components/LoadingBay.jsx')).replace(/\r/g, ''), th = read('src/styles/theme.css').replace(/\r/g, '');
+  const s = bay.indexOf('{vanOnly && (<>'), e = bay.indexOf('</>)}', s), solo = s > -1 && e > s ? bay.slice(s, e) : '';
+  ok('the van-only crate block was found (1500-6000 chars)', solo.length > 1500 && solo.length < 6000);
+  ok('look C: the sign in the title and the tape band under it, on the Agent Inventory crate\'s box',
+     /<span className="tname"><span className="tsign">\{SIGN\}<\/span><span className="tt">Quarantine · in van<\/span><\/span>/.test(solo) && /<QuarantineBand q \/>/.test(solo));
+  ok('its words are English: "Quarantine · in van", the count "N · M items", the caption, the aria-label',
+     /<span className="count">\{fmt\(qTotal\)\} · \{items\(quarantine\.length\)\}<\/span>/.test(solo) &&
+     /<span className="cap">Quarantine<\/span>/.test(bay) && /aria-label="Quarantine chest — open or close"/.test(bay) && !/[Kk]arantina/.test(bay));
+  ok('no other Indonesian string was converted: the crate\'s page note still says menunggu EOD / kosong hari ini',
+     /'menunggu EOD' : 'kosong hari ini'/.test(solo));
+  ok('the tutorial calls the crate Quarantine too', /\*\*Quarantine\*\*/.test(read('src/ponder/scenes/agent-chest.js')) && !/[Kk]arantina/.test(read('src/ponder/scenes/agent-chest.js')));
+  ok('the sign never makes the crate box\'s title taller, on both screens', /\.kpm-bay \.gui\.wh \.title, \.kpm-bay \.gui\.q \.title \{ align-items: center; \}/.test(th));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
