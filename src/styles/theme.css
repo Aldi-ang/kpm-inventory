@@ -4699,8 +4699,8 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
   position: relative; border: 1px solid var(--line-2); border-radius: 16px;
   background: radial-gradient(120% 90% at 50% 120%, rgba(208, 138, 46, .10), transparent 60%), linear-gradient(180deg, var(--raised), var(--sunk));
   padding: 14px 10px 16px; color: var(--ink);
-  display: grid; gap: 10px; grid-template-columns: 1fr 1fr;
-  grid-template-areas: "hint hint" "whg whg" "whc vanc" "vang vang";
+  display: grid; gap: 10px; grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: "hint hint" "whg whg" "whc vpair" "vang vang";
   user-select: none; -webkit-user-select: none;
 }
 .kpm-bay .bayHint { grid-area: hint; margin: 0; text-align: center; font: 900 10px/1.3 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--ink-dim); }
@@ -4708,7 +4708,7 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
   .kpm-bay {
     padding: 18px 18px 20px; column-gap: 18px; row-gap: 8px; align-items: end;
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-    grid-template-areas: "hint hint" "whg vang" "whc vanc";
+    grid-template-areas: "hint hint" "whg vang" "whc vpair";
   }
 }
 @container kpmbay (min-width: 1100px) {
@@ -4723,6 +4723,12 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-bay .whc { grid-area: whc; }
 .kpm-bay .vanc { grid-area: vanc; }
 .kpm-bay .chestCell .cap { font: 900 10px/1 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-dim); }
+/* Fleet & Roster v21: the wooden chest and the yellow crate stand together beside the ender chest - on the phone all three
+   in one row - and their boxes take turns in one place ("vang"). On the phone the plate goes on its own line. */
+.kpm-bay .vpair { grid-area: vpair; display: flex; justify-content: space-evenly; align-items: end; gap: 8px; min-width: 0; }
+.kpm-bay .vanc .cap { text-align: center; }
+.kpm-bay .vanc .cap .plate::before { content: " · "; }
+@container kpmbay (max-width: 639px) { .kpm-bay .vanc .cap .plate { display: block; margin-top: 4px; } .kpm-bay .vanc .cap .plate::before { content: none; } }
 .kpm-bay .chest { position: relative; display: block; width: var(--cw); height: var(--ch); transform-style: preserve-3d; }
 .kpm-bay .chest.ender { --cw: 118px; --ch: 90px; }
 .kpm-bay .chest.small { --cw: 88px; --ch: 72px; }
@@ -4757,8 +4763,8 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 /* the panels that grow out of the lids; a closed panel keeps its room, so nothing below jumps */
 .kpm-bay .gui { position: relative; min-width: 0; width: 100%; max-width: 460px; justify-self: center; border-radius: 4px; padding: 9px 8px 10px; background: var(--stone); border: 4px solid; border-color: #DBDBDB #555555 #555555 #DBDBDB; transform-origin: 50% 100%; transform: scale(.08) translateY(24px); opacity: 0; pointer-events: none; transition: transform .26s cubic-bezier(.34, 1.56, .64, 1), opacity .12s linear; }
 .kpm-bay .gui.wh { grid-area: whg; }
-.kpm-bay .gui.van { grid-area: vang; transform-origin: 50% 0; transform: scale(.08) translateY(-24px); }
-@container kpmbay (min-width: 640px) { .kpm-bay .gui.van { transform-origin: 50% 100%; transform: scale(.08) translateY(24px); } }
+.kpm-bay .gui.van { grid-area: vang; transform-origin: var(--ox, 50%) 0; transform: scale(.08) translateY(-24px); }
+@container kpmbay (min-width: 640px) { .kpm-bay .gui.van { transform-origin: var(--ox, 50%) 100%; transform: scale(.08) translateY(24px); } }
 .kpm-bay.wh-open .gui.wh, .kpm-bay.van-open .gui.van { transform: none; opacity: 1; pointer-events: auto; }
 .kpm-bay.dragging .gui.zoneover { border-color: var(--hi); }
 .kpm-bay .gui .title { font: 900 13px/1.2 var(--font-mono); letter-spacing: .04em; color: var(--stone-ink); margin: 1px 2px 2px; display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
@@ -4775,7 +4781,6 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 
 /* the phone: four squares in one row (his 07:50 "make the product 3D smaller and make per page 4 box only") */
 .kpm-bay .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
-@container kpmbay (min-width: 640px) { .kpm-bay .grid { grid-template-columns: repeat(3, 1fr); gap: 6px; } }
 .kpm-bay .slot { position: relative; aspect-ratio: 1/1; border-radius: 3px; background: var(--stone-dark); border: 2px solid; border-color: #2E2E2E #9A9A9A #9A9A9A #2E2E2E; display: grid; place-items: center; overflow: hidden; max-width: 100%; }
 /* THE ENTRANCE MOVES, IT NEVER REVEALS: a square is visible at rest, and the arrival is 8 px of travel.
    Stripped by Lite Mode or reduced motion, the chest is simply already full. */
@@ -4785,7 +4790,6 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-bay .slot .n { position: absolute; right: 3px; top: 3px; padding: 1px 3px; border-radius: 2px; background: rgba(0, 0, 0, .6); font: 900 12px/1 var(--font-mono); color: #fff; font-variant-numeric: tabular-nums; pointer-events: none; }
 .kpm-bay .slot .chip { position: absolute; left: 3px; top: 3px; padding: 2px 4px; border-radius: 2px; pointer-events: none; font: 900 10px/1 var(--font-mono); font-variant-numeric: tabular-nums; background: var(--hi); color: #2a1d08; }
 .kpm-bay .slot.has { cursor: grab; touch-action: none; }
-.kpm-bay .dmg .slot.has { cursor: default; touch-action: auto; }
 .kpm-bay .slot.lift { opacity: .35; }
 .kpm-bay .slot.out .kpm-cube-stage { opacity: .35; }
 .kpm-bay .slot.out .n { color: #FFB4A8; }
@@ -4803,9 +4807,8 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 
 /* the product is the app's own 3D box (.kpm-cube, the ware's true millimetres), sized per place */
 .kpm-bay .kpm-cube-stage, .kpm-bay-sheet .kpm-cube-stage, .kpm-bay-ghost .kpm-cube-stage, .kpm-bay-pack .kpm-cube-stage { perspective: 340px; width: 100%; height: 100%; pointer-events: none; }
-.kpm-bay .gui.wh .kpm-cube-stage, .kpm-bay .gui.van .kpm-cube-stage { --kpm-slot-h: 42px; }
-@container kpmbay (min-width: 640px) { .kpm-bay .gui.wh .kpm-cube-stage { --kpm-slot-h: 78px; } .kpm-bay .gui.van .kpm-cube-stage { --kpm-slot-h: 54px; } }
-.kpm-bay .dmg .kpm-cube-stage { --kpm-slot-h: 22px; }
+.kpm-bay .gui.wh .kpm-cube-stage, .kpm-bay .gui.van .kpm-cube-stage, .kpm-bay .gui.q .kpm-cube-stage { --kpm-slot-h: 42px; }
+@container kpmbay (min-width: 640px) { .kpm-bay .gui.wh .kpm-cube-stage { --kpm-slot-h: 60px; } .kpm-bay .gui.van .kpm-cube-stage, .kpm-bay .gui.q .kpm-cube-stage { --kpm-slot-h: 54px; } }
 .kpm-bay-duo .ln .mc .kpm-cube-stage { --kpm-slot-h: 28px; }
 .kpm-bay-sheet .shHead .mc .kpm-cube-stage { --kpm-slot-h: 44px; }
 .kpm-bay-ghost .kpm-cube-stage { --kpm-slot-h: 62px; }
@@ -4821,15 +4824,28 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-bay .pg.on { background: #6E6E6E; color: #fff; border-color: #2E2E2E #9A9A9A #9A9A9A #2E2E2E; }
 .kpm-bay .pages .of { margin-left: auto; font: 900 10px/1 var(--font-mono); letter-spacing: .12em; color: var(--stone-ink); }
 
-/* the damaged row lives under the van - nothing is dragged into it or out of it */
-.kpm-bay .dmgHead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 10px 2px 5px; font: 900 10px/1.2 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--stone-ink); }
-.kpm-bay .dmgHead .num { color: var(--stone-bad); }
-.kpm-bay .dmg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; border-radius: 4px; }
-.kpm-bay .dmg .slot { aspect-ratio: 1/.5; outline: 2px solid rgba(190, 70, 50, .55); outline-offset: -2px; }
-.kpm-bay .dmg .slot .name { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 2px 4px; }
-.kpm-bay .dmg .slot .n { font-size: 10px; }
-.kpm-bay .dmg .none { grid-column: 1 / -1; margin: 0; padding: 6px 2px; font: 900 10px/1.4 var(--font-mono); letter-spacing: .08em; color: var(--stone-ink); }
-.kpm-bay.dragging .dmg.refuse { outline: 3px solid #C0392B; outline-offset: 2px; }
+/* THE QUARANTINE SWITCH in the warehouse box (components/QuarantineSwitch.jsx, his v21): ONE box, two views. The title,
+   the band, the status line, the search and the squares sit on a STAGE the blast doors close over; his hatch lives in a
+   deck under it - page keys | hatch | note - outside every grid (startDrag listens on the grid). The page keys scroll
+   sideways in their cell, so the box keeps one height in both views however many pages there are. */
+.kpm-bay .gui .stage { position: relative; overflow: hidden; margin: 0 -8px; padding: 1px 8px 0; }
+.kpm-bay .gui .tname { display: inline-flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; }
+.kpm-bay .gui .tt { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.kpm-bay .gui .tsign { display: block; width: 14px; height: 14px; flex: none; }
+.kpm-bay .gui .tsign svg { display: block; width: 100%; height: 100%; fill: #141414; }
+.kpm-bay .gui.isq .title .count { color: var(--stone-bad); }
+.kpm-bay .gui.wh .title, .kpm-bay:not(.solo) .gui.q .title { align-items: center; }   /* the sign never makes the title taller (measured 15.6 -> 17.7 px on baseline) */
+.kpm-bay .gui.wh .slot.qs { cursor: pointer; touch-action: auto; outline: 2px solid rgba(190, 70, 50, .6); outline-offset: -2px; }
+.kpm-bay .deck { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; margin: 10px 2px 0; }
+.kpm-bay .deck .pgs { justify-self: start; display: flex; gap: 6px; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.kpm-bay .deck .pg { flex: none; }
+.kpm-bay .deck .of { justify-self: end; text-align: right; font: 900 10px/1.35 var(--font-mono); letter-spacing: .1em; color: var(--stone-ink); }
+/* the crate's box (Fleet & Roster) stands in the van box's place; on the phone, while it is not open, it gives its room
+   back - the van box (or the van's tabs) has the place */
+@container kpmbay (max-width: 639px) {
+  .kpm-bay:not(.solo):not(.q-open) .gui.q { position: absolute; left: 0; right: 0; top: 0; margin: 0 auto; }
+  .kpm-bay:not(.solo):not(.q-open):not(.q-shut) .gui.q { visibility: hidden; }
+}
 
 /* the muatan: lines here, ONE press writes */
 .kpm-bay-duo .man { display: flex; flex-direction: column; gap: 10px; min-width: 0; background: var(--raised); border: 1px solid var(--line-2); border-radius: 14px; padding: 12px; user-select: text; -webkit-user-select: text; }
@@ -4985,8 +5001,8 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
    green and back. Both are animations, so Lite Mode and reduced motion stop them (the global rules), and the specks rest
    at opacity 0 - gone, never frozen mid-air. Never a glow. */
 .kpm-bay .qc { grid-area: qc; isolation: isolate; }
-.kpm-bay .gui.q { grid-area: qg; transform-origin: 50% 0; transform: scale(.08) translateY(-24px); }
-@container kpmbay (min-width: 640px) { .kpm-bay .gui.q { transform-origin: 50% 100%; transform: scale(.08) translateY(24px); } }
+.kpm-bay .gui.q { grid-area: vang; transform-origin: var(--ox, 50%) 0; transform: scale(.08) translateY(-24px); }
+@container kpmbay (min-width: 640px) { .kpm-bay .gui.q { transform-origin: var(--ox, 50%) 100%; transform: scale(.08) translateY(24px); } }
 .kpm-bay.q-open .gui.q { transform: none; opacity: 1; pointer-events: auto; }
 .kpm-bay.q-shut .gui.q { visibility: hidden; transition: transform .26s cubic-bezier(.34, 1.56, .64, 1), opacity .12s linear, visibility 0s linear .26s; }
 .kpm-bay.q-open .qc .chest .body::before { opacity: 1; }
@@ -5014,6 +5030,72 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-bay.q-open .gui.q:not(.noanim) .slot .kpm-cube { animation: kpmBayPlace .62s cubic-bezier(.2, .9, .3, 1) both; animation-delay: calc(var(--d, 0ms) + 40ms); }
 .kpm-bay.dragging .gui.q.refuse { outline: 3px solid #C0392B; outline-offset: 2px; }
 /* ── END OF THE VAN-LOADING BAY ─────────────────────────────────────────────────────────────────── */
+
+/* ── THE QUARANTINE SWITCH (components/QuarantineSwitch.jsx) — his Satisfactory hatch + the blast doors ──────────────
+   Prototype v21 (approved 2026-09-29 18:40), ported as drawn: a ribbed hatch with a metal top bar; two brushed-steel
+   doors over an elevator shaft; a bolted steel platform carrying a glossy dome in a chrome bezel and a label plate. The
+   dome is yellow + the radiation sign while the healthy stock is on show, dark ender + a living eye while the Quarantine
+   is. These are OBJECTS and keep their own colours - the tape, the ender teal, the steel, the dome - the same exemption
+   the chests have. Depth is gradients and borders only: no shadow, no glow, no filter (G30). ONE shared piece: the
+   regional warehouse and Stock Opname can put it on their own grey box later. */
+.kpm-qband { display: block; height: 20px; margin: 6px -8px 8px; border-block: 2px solid #050808;
+  background: radial-gradient(circle at 8% 45%, #B44CF0 0 1.5px, transparent 2.5px), radial-gradient(circle at 31% 70%, #8A3CC0 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 57% 30%, #B44CF0 0 1.5px, transparent 2.5px), radial-gradient(circle at 83% 62%, #8A3CC0 0 1.5px, transparent 2.5px),
+    linear-gradient(180deg, #1C2E2F, #0C1415);
+  background-size: 90px 100%; }
+.kpm-qband.tape { border-color: #141414; background: repeating-linear-gradient(-45deg, #F2C318 0 8px, #141414 8px 16px); }
+
+.kpm-hatch { all: unset; box-sizing: border-box; position: relative; display: block; width: 124px; height: 106px; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.kpm-hatch:focus-visible { outline: 3px solid #F5D08A; outline-offset: 2px; }
+.kpm-hatch .hs { position: absolute; inset: 0; border-radius: 8px; border: 2px solid #0A0A0A;
+  background: linear-gradient(180deg, #B4B4B4, #6A6A6A 60%, #4A4A4A) top / 100% 6px no-repeat,
+    repeating-linear-gradient(90deg, #0E0E0E 0 2px, #3C3C3C 2px 3px, #222 3px 4px) left 3px top 10px / 10px calc(100% - 18px) no-repeat,
+    repeating-linear-gradient(90deg, #0E0E0E 0 2px, #3C3C3C 2px 3px, #222 3px 4px) right 3px top 10px / 10px calc(100% - 18px) no-repeat,
+    linear-gradient(180deg, #3A3A3A, #161616); }
+/* the elevator shaft */
+.kpm-hatch .rc { position: absolute; left: 15px; right: 15px; top: 10px; bottom: 7px; border-radius: 4px; overflow: hidden; box-sizing: border-box; border: 2px solid; border-color: #050505 #6E6E6E #6E6E6E #050505;
+  background: repeating-linear-gradient(90deg, transparent 0 14px, #262626 14px 16px, transparent 16px 30px), linear-gradient(180deg, #030303, #1A1A1A); }
+.kpm-hatch .lift { position: absolute; inset: 2px; }
+.kpm-hatch .plat { position: absolute; inset: 0; border-radius: 3px; box-sizing: border-box; border: 2px solid; border-color: #F2F2F2 #4A4A4A #4A4A4A #F2F2F2;
+  background: radial-gradient(circle at 7px 7px, #EDEDED 0 1.3px, #505050 1.6px 2.6px, transparent 3px), radial-gradient(circle at calc(100% - 7px) 7px, #EDEDED 0 1.3px, #505050 1.6px 2.6px, transparent 3px),
+    radial-gradient(circle at 7px calc(100% - 7px), #EDEDED 0 1.3px, #505050 1.6px 2.6px, transparent 3px), radial-gradient(circle at calc(100% - 7px) calc(100% - 7px), #EDEDED 0 1.3px, #505050 1.6px 2.6px, transparent 3px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .07) 0 1px, rgba(0, 0, 0, .05) 1px 2px, transparent 2px 3px),
+    linear-gradient(160deg, #E4E4E4, #B2B2B2 35%, #8E8E8E 70%, #A6A6A6); }
+.kpm-hatch .bez { position: absolute; left: 50%; top: 6px; width: 54px; height: 54px; margin-left: -27px; box-sizing: border-box; border-radius: 50%; padding: 4px; border: 1px solid #1E1E1E;
+  background: conic-gradient(from 215deg, #FFFFFF, #8A8A8A 16%, #E8E8E8 30%, #5A5A5A 48%, #D6D6D6 64%, #767676 80%, #FFFFFF); }
+.kpm-hatch .dome { position: relative; display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; box-sizing: border-box; border: 1px solid rgba(0, 0, 0, .7); overflow: hidden;
+  background: radial-gradient(circle at 33% 27%, rgba(255, 255, 255, .95) 0 5%, rgba(255, 255, 255, .4) 10%, transparent 19%), radial-gradient(ellipse 70% 38% at 50% 94%, rgba(255, 244, 190, .5), transparent 72%),
+    radial-gradient(circle at 44% 38%, #FFE56E 0 16%, #F2C318 44%, #B8880A 76%, #6A4C00 100%);
+  transition: transform .09s ease-out; }
+.kpm-hatch[data-skin="ok"] .dome { background: radial-gradient(circle at 33% 27%, rgba(255, 255, 255, .8) 0 5%, rgba(255, 255, 255, .28) 10%, transparent 19%), radial-gradient(ellipse 70% 38% at 50% 94%, rgba(127, 224, 168, .35), transparent 72%),
+    radial-gradient(circle at 44% 38%, #4A6C6E 0 14%, #1F3435 44%, #0E1819 78%, #040707 100%); }
+.kpm-hatch .ico { position: relative; z-index: 1; display: block; width: 24px; height: 24px; }
+.kpm-hatch .ico svg { display: block; width: 100%; height: 100%; fill: #1A1405; }
+/* the ender eye is alive (QuarantineHatch's eye life): the slit glances, the lid blinks; Lite Mode keeps it still and open */
+.kpm-hatch .ico.eye { overflow: hidden; border-radius: 50%; border: 1px solid #06241A; background: radial-gradient(ellipse 50% 50% at 50% 50%, #8AF0B8 0 34%, #2FA06E 42% 76%, #135A3D 84%); }
+.kpm-hatch .eye .pupil { position: absolute; left: 50%; top: 50%; width: 5px; height: 15px; margin: -7.5px 0 0 -2.5px; border-radius: 50%; background: #051E15; transition: transform .38s cubic-bezier(.23, 1, .32, 1); }
+.kpm-hatch .eye .lid { position: absolute; inset: -1px; background: linear-gradient(180deg, #2A4546, #14231F); transform: scaleY(0); transform-origin: 50% 0; transition: transform .07s ease-in; }
+.kpm-hatch .eye.blink .lid { transform: scaleY(1); }
+.kpm-hatch .dk { position: absolute; inset: 0; z-index: 2; border-radius: 50%; background: #000; opacity: 0; transition: opacity .09s ease-out; }
+.kpm-hatch:active .dome { transform: scale(.93); }
+.kpm-hatch:active .dk { opacity: .3; }
+.kpm-hatch .lbl { position: absolute; left: 50%; bottom: 5px; transform: translateX(-50%); padding: 1px 5px; border-radius: 2px; border: 1px solid #4A4A4A; background: linear-gradient(180deg, #F4F4F4, #CFCFCF);
+  font: 900 7px/1.25 var(--font-mono); letter-spacing: .14em; color: #1A1A1A; white-space: nowrap; }
+.kpm-hatch .dr { position: absolute; top: 0; bottom: 0; width: 51%; z-index: 3; box-sizing: border-box; border: 1px solid #111;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .06) 0 1px, transparent 1px 3px), linear-gradient(180deg, #C4C4C4, #969696 55%, #7E7E7E); }
+.kpm-hatch .d1 { left: 0; transform: translateX(-102%); border-right: 2px solid #262626; }
+.kpm-hatch .d2 { right: 0; transform: translateX(102%); border-left: 2px solid #262626; }
+.kpm-hatch .dr::after { content: ""; position: absolute; left: 0; right: 0; top: 48%; height: 3px; background: #5E5E5E; border-bottom: 1px solid #D0D0D0; }
+
+/* the blast doors over the box: tape going into the Quarantine, steel coming back to the healthy stock */
+.kpm-doors { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.kpm-doors i { position: absolute; top: 0; bottom: 0; width: 50.5%; box-sizing: border-box; }
+.kpm-doors .dl { left: 0; transform: translateX(-101%); border-right: 3px solid #141414; }
+.kpm-doors .dr { right: 0; transform: translateX(101%); border-left: 3px solid #141414; }
+.kpm-doors[data-kind="tape"] i { background: repeating-linear-gradient(-45deg, #F2C318 0 14px, #141414 14px 28px); }
+.kpm-doors[data-kind="steel"] i { background: radial-gradient(circle at 12px 14px, #5E5E5E 0 2.5px, transparent 3.5px) 0 0 / 100% 50%, repeating-linear-gradient(90deg, #A2A2A2 0 22px, #8A8A8A 22px 24px, #B4B4B4 24px 25px); }
+.kpm-doors[data-kind="steel"] i::after { content: ""; position: absolute; left: 0; right: 0; top: 46%; height: 8%; background: #1C2E2F; border-block: 2px solid #141414; }
+/* ── END OF THE QUARANTINE SWITCH ─────────────────────────────────────────────────────────────────── */
 
 /* ── THE BOOK OF THE DAY (components/TodayBook.jsx, Agent Inventory for T1-T4) ─────────────────────────────────────────
    Sales and Samples as ONE notebook with two sections (his 2026-09-27 "make it 1 book instead with 2 section ... more

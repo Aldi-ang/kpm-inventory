@@ -18,16 +18,24 @@
    `vanOnly` is the AGENT INVENTORY CHEST (AgentInventoryView, regional admin and above - his 2026-09-22 "agent chest is
    basically agent inventory for regional admin tier and above by default", design: the chest v3 prototype
    https://claude.ai/artifact/V5Z3ZkQZ3fvtXHynn4AnNF). The van chest alone: no warehouse, no tabs, no muatan, so nothing
-   there can load or return - a drag only tidies the SAME vanLayout field, six squares a page on every width. */
+   there can load or return - a drag only tidies the SAME vanLayout field, six squares a page on every width.
+
+   THE QUARANTINE SWITCH (Fleet & Roster, his prototype v21, 2026-09-29): the ender chest keeps ONE box that shows the
+   healthy stock or that warehouse's Quarantine (`warehouseQ`), switched on his Satisfactory hatch in a deck at the bottom
+   of the box (components/QuarantineSwitch.jsx); blast doors close over the box while it changes. The Quarantine squares
+   only tell - fixing damaged stock stays in Stock Opname. On the van side the wooden chest and the yellow crate (the van's
+   damaged goods) take turns in one place. Four squares a page, in one row, at every width. */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import { convertToBks, getLocalDayKey, formatRupiah } from '../utils/helpers';
 import { PER, lineBks, netBks, loadCap, backCap, foldLine, vanCells, landingCell, applyPreset, teamLoad, HAZARD_SIGN } from '../utils/vanBay';
 import { playSound } from '../hooks/useSound';
+import { QuarantineHatch, BlastDoors, QuarantineBand, runSwitch } from './QuarantineSwitch.jsx';
 
 const UNITS = ['Bks', 'Slop', 'Bal', 'Karton'];
 const fmt = (n) => Number(n).toLocaleString('id-ID');
 const signed = (n) => (n > 0 ? '+' : '−') + fmt(Math.abs(n));
+const items = (n) => `${fmt(n)} item${n === 1 ? '' : 's'}`;
 const MOTE_COLORS = ['#B44CF0', '#8A2BE2', '#D98CFF', '#6A1FB0'];
 const rnd = (a, b) => a + Math.random() * (b - a);
 const jitter = () => 1 + (Math.random() - 0.5) * 0.02;
@@ -90,7 +98,7 @@ const SIGN = <svg viewBox="0 0 15 15" shapeRendering="crispEdges" aria-hidden="t
 
 /* `pose` is the ponder book's (ponder/stages/LoadingBayStage.jsx): a STARTING state only - the chests, the tabs and the
    muatan a beat wants on screen. It is read by useState and nowhere else, and Fleet & Roster never passes one. */
-export default function LoadingBay({ agent, warehouse, stock, damaged = [], canEdit, onLoad, onReturn, onLayout, onDirty, onPreset, team = [], bypasses = [], titip = [], bounties = [], pose, vanOnly = false, quarantine = [] }) {
+export default function LoadingBay({ agent, warehouse, stock, damaged = [], canEdit, onLoad, onReturn, onLayout, onDirty, onPreset, team = [], bypasses = [], titip = [], bounties = [], pose, vanOnly = false, quarantine = [], warehouseQ = [] }) {
   const P = useMemo(() => Object.fromEntries(stock.map(p => [p.id, p])), [stock]);
   /* the van, in packs, from its live rows */
   const vanOf = useMemo(() => {
@@ -122,14 +130,19 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   const [says, setSays] = useState({ wh: null, van: null, q: null });
   const [dragging, setDragging] = useState(false);
   const [lift, setLift] = useState(null);
-  /* squares on a page: 6 on the PC, 4 in one row on the phone (his 07:50 "make per page 4 box only"); the same 640 px
-     line the CSS container queries use */
-  const [per, setPer] = useState(PER);
+  /* squares on a page: 4 in one row at every width (his 07:50 "make per page 4 box only" on the phone, and v21's "the
+     inventory box can also be 4" on the PC, so the hatch gets its room); van-only keeps its six */
+  const per = vanOnly ? PER : 4;
   /* tap a product, then tap a van square (his 07:50 "press the product and press on the expty van space box") */
   const [picked, setPicked] = useState(null);
+  /* the warehouse box's view: 'ok' = the healthy stock, 'q' = this warehouse's Quarantine */
+  const [whView, setWhView] = useState('ok');
+  const [qwPage, setQwPage] = useState(0);
+  const whViewRef = useRef('ok'), sw = useRef({ busy: false, next: null });
 
   const refs = { bay: useRef(null), whGui: useRef(null), vanGui: useRef(null), whChest: useRef(null), vanChest: useRef(null), qChest: useRef(null),
-    dmg: useRef(null), whGrid: useRef(null), vanGrid: useRef(null), vanPages: useRef(null), motes: useRef(null), qty: useRef(null), sheet: useRef(null) };
+    dmg: useRef(null), whGrid: useRef(null), vanGrid: useRef(null), vanPages: useRef(null), motes: useRef(null), qty: useRef(null), sheet: useRef(null),
+    hatch: useRef(null), doors: useRef(null) };
   const drag = useRef(null);
   const sheetGhost = useRef(null);
   const sheetPrev = useRef(null);
@@ -154,17 +167,16 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   const whPages = Math.max(1, Math.ceil(whList.length / per));
   const whPageNow = Math.min(whPage, whPages - 1);
   const whPageOf = (id) => { const i = whList.findIndex(p => p.id === id); return i < 0 ? -1 : Math.floor(i / per); };
+  /* the same box's Quarantine view, searched by the same field */
+  const isq = whView === 'q';
+  const wq = q ? warehouseQ.filter(p => (p.name || '').toLowerCase().includes(q)) : warehouseQ;
+  const qwPages = Math.max(1, Math.ceil(wq.length / per));
+  const qwPageNow = Math.min(qwPage, qwPages - 1);
+  /* the crate's squares: the Quarantine tab's list in Agent Inventory, the van's damaged goods in Fleet & Roster */
+  const qRows = vanOnly ? quarantine : damaged;
 
   useEffect(() => { onDirty?.(lines.length); }, [lines.length]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => onDirty?.(0), []);                          // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    const el = refs.bay.current?.closest('.kpm-bay-wrap');
-    if (vanOnly || !el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(([e]) => setPer(e.contentRect.width < 640 ? 4 : PER));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);   // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setWhPage(0); setVanPage(0); }, [per]);
 
   /* every action reports, in the panel where it happened */
   function say(where, msg, err) {
@@ -178,8 +190,8 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   const slotAt = (grid, x, y) => { let hit = null; grid?.querySelectorAll('.slot').forEach(s => { if (inRect(s, x, y)) hit = s; }); return hit; };
   const tabAt = (x, y) => { let hit = null; refs.vanPages.current?.querySelectorAll('.pg').forEach(b => { if (inRect(b, x, y)) hit = +b.dataset.p; }); return hit; };
   function zoneAt(x, y) {
-    /* van-only, the quarantine crate and its panel refuse a drop the way the damaged row does (refs.dmg is its panel) */
-    if (vanOnly ? inRect(refs.qChest.current, x, y) || (open.q && inRect(refs.dmg.current, x, y)) : open.van && inRect(refs.dmg.current, x, y)) return 'dmg';
+    /* the quarantine crate and its panel refuse a drop (refs.dmg is its panel) - damaged goods are settled at EOD */
+    if (inRect(refs.qChest.current, x, y) || (open.q && inRect(refs.dmg.current, x, y))) return 'dmg';
     if (inRect(refs.vanChest.current, x, y) || (open.van && inRect(refs.vanGui.current, x, y))) return 'van';
     if (inRect(refs.whChest.current, x, y) || (open.wh && inRect(refs.whGui.current, x, y))) return 'wh';
     return 'none';
@@ -209,17 +221,17 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
      and a chest closed by hand shows its TABS in its panel's place, so the room is never empty: behind the
      warehouse his usual load and the team, behind the van this person's geofence requests. */
   function toggle(side, on) {
-    /* van-only (Agent Inventory v4.1, his 2026-09-28 "open them one by one"): the two panels float in the same place over
-       the page, so opening one shuts the other */
-    if (vanOnly && on) setOpen(o => ({ ...o, van: side === 'van', q: side === 'q' }));
+    /* the van and the crate share ONE place (Agent Inventory v4.1, his 2026-09-28 "open them one by one"; Fleet & Roster
+       v21, his "opening quarantine chest will close the wooden chest and vice versa"), so opening one shuts the other */
+    if (on && side !== 'wh') setOpen(o => ({ ...o, van: side === 'van', q: side === 'q' }));
     else setOpen(o => ({ ...o, [side]: on }));
     setAnim(a => ({ ...a, [side]: true }));
     if (on && side === 'wh') burst(12);
     playSound(side === 'wh' ? (on ? 'chestEnderOpen' : 'chestEnderClose') : (on ? 'chestVanOpen' : 'chestVanClose'));
-    if (vanOnly && on) {
+    if (on && side !== 'wh') {
       const [gui, chest] = panelOf(side);   // it grows out of the chest that was pressed
       if (gui && chest) gui.style.setProperty('--ox', Math.round(chest.offsetLeft + chest.offsetWidth / 2 - gui.offsetLeft) + 'px');
-      requestAnimationFrame(() => fitPanel(side));
+      if (vanOnly) requestAnimationFrame(() => fitPanel(side));
     }
   }
   const panelOf = (side) => [side === 'q' ? refs.dmg.current : refs.vanGui.current, (side === 'q' ? refs.qChest : refs.vanChest).current];
@@ -349,7 +361,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     setDragging(false); setLift(null);
     const zone = e.type === 'pointercancel' ? 'none' : zoneAt(d.x, d.y);
     if (zone === 'dmg') {
-      say('van', 'Barang rusak dicatat lewat EOD, bukan dipindah di sini', true); playSound('chestRefuse');
+      say(open.q ? 'q' : 'van', 'Barang rusak dicatat lewat EOD, bukan dipindah di sini', true); playSound('chestRefuse');
       return flyHome(d.ghost, d.home);
     }
     if (d.src === 'wh') {
@@ -362,6 +374,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
       return openSheet({ mode: 'add', dir: 1, id: d.id, cell, ghost: d.ghost, home: d.home });
     }
     if (zone === 'wh') {
+      showWh('ok', true);   // a return always lands in the healthy stock
       if (capBack(d.id) <= 0) { say('van', `Semua ${P[d.id]?.name} sudah direncanakan kembali`, true); playSound('chestRefuse'); return flyHome(d.ghost, d.home); }
       const ws = whSlotEl(d.id);
       park(d.ghost, center(ws || refs.whChest.current.querySelector('.chest')));
@@ -440,10 +453,43 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     const slot = e.target.closest('.slot.has');
     if (!slot) return;
     e.preventDefault();
-    const x = quarantine[+slot.dataset.q];
-    const at = x.timestamp?.seconds ? ' ' + new Date(x.timestamp.seconds * 1000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '';
+    const x = qRows[+slot.dataset.q];
     playSound('chestPage');
+    if (!vanOnly) return say('q', `${x.name} · ${fmt(x.bks)} Bks${x.why ? ' · ' + x.why : ''} · waits for EOD`);
+    const at = x.timestamp?.seconds ? ' ' + new Date(x.timestamp.seconds * 1000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '';
     say('q', `${x.itemName} · ${fmt(x.qty)}${x.unit ? ' ' + x.unit : ''} · ${x.returnReason} · dari ${x.customerOrigin}${at}`);
+  }
+  /* THE WAREHOUSE'S QUARANTINE ONLY TELLS too: the product and how much of it is damaged here. Fixing it is Stock Opname's. */
+  function tellWhQ(e) {
+    if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+    const slot = e.target.closest('.slot.has');
+    if (!slot) return;
+    e.preventDefault();
+    const p = warehouseQ.find(x => x.id === slot.dataset.id);
+    if (!p) return;
+    playSound('chestPage');
+    say('wh', `${p.name} · ${fmt(p.damagedStock)} Bks damaged`);
+  }
+  /* THE SWITCH: his hatch runs and the blast doors close over the box; the box changes while they are shut, and reports.
+     A press while one runs is ignored; a RETURN queues its switch back, so a box coming home always lands in the healthy
+     stock. */
+  function swapWh(next) {
+    whViewRef.current = next;
+    flushSync(() => { setWhView(next); setQuery(''); setAnim(a => ({ ...a, wh: false })); });
+    say('wh', next === 'q' ? `Showing Quarantine · ${items(warehouseQ.length)}` : `Showing healthy stock · ${items(stock.length)}`);
+  }
+  async function showWh(next, queue) {
+    if (sw.current.busy) { if (queue) sw.current.next = next; return; }
+    if (next === whViewRef.current) return;
+    sw.current.busy = true;
+    playSound('chestPage');
+    try { await runSwitch(refs.hatch.current, refs.doors.current, next === 'q', () => swapWh(next)); }
+    finally {
+      sw.current.busy = false;
+      const n = sw.current.next;
+      sw.current.next = null;
+      if (n) showWh(n);
+    }
   }
   /* keyboard path — no mouse, no finger: Enter on a warehouse box loads, Enter on a van box returns */
   function keyBox(e, src) {
@@ -460,6 +506,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
       openSheet({ mode: 'add', dir: 1, id, cell, back: { grid: 'wh', id } });
     } else {
       if (capBack(id) <= 0) return say('van', `Semua ${P[id].name} sudah direncanakan kembali`, true);
+      showWh('ok', true);
       openSheet({ mode: 'add', dir: -1, id, cell: +slot.dataset.i, back: { grid: 'van', id } });
     }
   }
@@ -661,7 +708,8 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   Object.values(vanOf).forEach(v => { vanHave += v; });
   lines.forEach(l => { const b = lineBks(l, P[l.id]); if (l.dir > 0) plus += b; else minus += b; });
   const dmgTotal = damaged.reduce((a, x) => a + x.bks, 0);
-  const qTotal = quarantine.reduce((a, x) => a + (x.qty || 0), 0), qPages = Math.max(1, Math.ceil(quarantine.length / per));
+  const qTotal = quarantine.reduce((a, x) => a + (x.qty || 0), 0), qPages = Math.max(1, Math.ceil(qRows.length / per));
+  const qwTotal = warehouseQ.reduce((a, p) => a + p.damagedStock, 0);
   const sayEl = (where) => { const s = says[where]; return <span key={s?.n || 0} className={`say${s?.show ? ' show' : ''}${s?.err ? ' err' : ''}`} role="status" aria-live="polite">{s?.msg || ''}</span>; };
   const goParts = [];
   if (plus) goParts.push(`${fmt(plus)} Bks masuk`);
@@ -684,6 +732,22 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
           onClick={() => { setTabs(t => ({ ...t, [side]: k })); playSound('chestPage'); }}>{label}</button>
       ))}
     </div>
+  );
+
+  const vanChest = (
+    <button ref={refs.vanChest} className="chestCell vanc" type="button" data-ponder="chest:van" aria-expanded={!!open.van} aria-label={`Peti van ${agent.name} — buka atau tutup`} onClick={() => toggle('van', !open.van)}>
+      <span className="chest small"><span className="lid" /><span className="latch" /><span className="body" /></span>
+      <span className="cap">{vanOnly ? `Van · ${agent.vehicle || '—'}` : <>Van<span className="plate">{agent.vehicle || '—'}</span></>}</span>
+    </button>
+  );
+  /* THE QUARANTINE CRATE: a yellow hazard crate, the pixel radiation sign on its front, ONE quiet effect (his 2026-09-27
+     C+B pick). Agent Inventory: the Quarantine tab's own list. Fleet & Roster: the van's damaged goods. */
+  const crate = (
+    <button ref={refs.qChest} className="chestCell qc" type="button" data-ponder="chest:q" aria-expanded={!!open.q} aria-label="Peti karantina — buka atau tutup" onClick={() => toggle('q', !open.q)}>
+      <span className="specks" aria-hidden="true"><i /><i /><i /><i /></span>
+      <span className="chest small hazard"><span className="lid" /><span className="latch" /><span className="body"><span className="sign">{SIGN}</span></span></span>
+      <span className="cap">{vanOnly ? 'Karantina' : 'Quarantine'}</span>
+    </button>
   );
 
   return (
@@ -734,20 +798,41 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
           </div>
         )}
 
-        <div ref={refs.whGui} className={`gui wh${anim.wh ? '' : ' noanim'}`} data-ponder="gui:wh">
-          <p className="title"><span>Gudang {warehouse}</span><span className="count">{stock.length} barang · {fmt(totalWh)} Bks</span></p>
+        <div ref={refs.whGui} className={`gui wh${anim.wh ? '' : ' noanim'}${isq ? ' isq' : ''}`} data-ponder="gui:wh">
+          <div className="stage">
+          <p className="title">
+            <span className="tname">{isq && <span className="tsign">{SIGN}</span>}<span className="tt">{isq ? `Quarantine · ${warehouse}` : `Gudang ${warehouse}`}</span></span>
+            <span className="count">{isq ? `${fmt(qwTotal)} Bks · ${items(warehouseQ.length)}` : `${stock.length} barang · ${fmt(totalWh)} Bks`}</span>
+          </p>
+          <QuarantineBand q={isq} />
           {open.wh !== false ? sayEl('wh') : <span className="say" aria-hidden="true" />}
           <label className="find">
-            <span className="sr-only">Cari barang di gudang</span>
-            <input type="search" value={query} placeholder="Cari barang di gudang…" autoComplete="off" enterKeyHint="search"
+            <span className="sr-only">{isq ? 'Search quarantine' : 'Cari barang di gudang'}</span>
+            <input type="search" value={query} placeholder={isq ? 'Search quarantine…' : 'Cari barang di gudang…'} autoComplete="off" enterKeyHint="search"
               onChange={(e) => {
                 const v = e.target.value;
-                setQuery(v); setWhPage(0); setAnim(a => ({ ...a, wh: false }));
+                setQuery(v); (isq ? setQwPage : setWhPage)(0); setAnim(a => ({ ...a, wh: false }));
                 const qq = v.trim().toLowerCase();
-                if (qq && !stock.some(p => (p.name || '').toLowerCase().includes(qq))) say('wh', `Tidak ada “${v.trim()}” di Gudang ${warehouse}`, true);
+                if (qq && !(isq ? warehouseQ : stock).some(p => (p.name || '').toLowerCase().includes(qq)))
+                  say('wh', isq ? `No “${v.trim()}” in the Quarantine` : `Tidak ada “${v.trim()}” di Gudang ${warehouse}`, true);
               }} />
-            {query && <button className="x" type="button" aria-label="Hapus pencarian" onClick={() => { setQuery(''); setWhPage(0); setAnim(a => ({ ...a, wh: false })); }}>×</button>}
+            {query && <button className="x" type="button" aria-label="Hapus pencarian" onClick={() => { setQuery(''); (isq ? setQwPage : setWhPage)(0); setAnim(a => ({ ...a, wh: false })); }}>×</button>}
           </label>
+          {isq ? (
+            <div className="grid" key={'wq' + qwPageNow} onClick={tellWhQ} onKeyDown={tellWhQ}>
+              {Array.from({ length: per }, (_, i) => {
+                const p = wq[qwPageNow * per + i], style = { '--d': 120 + i * 50 + 'ms' };
+                if (!p) return <div key={'e' + i} className="slot" style={style} />;
+                return (
+                  <div key={p.id} className="slot has qs" data-id={p.id} tabIndex={0} role="button" style={style} aria-label={`${p.name}, ${fmt(p.damagedStock)} Bks damaged`}>
+                    <Cube p={p} />
+                    <span className="n">{fmt(p.damagedStock)}</span>
+                    <span className="name">{p.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
           <div className="grid" key={'wh' + whPageNow} ref={refs.whGrid} onPointerDown={(e) => startDrag(e, 'wh')} onKeyDown={(e) => keyBox(e, 'wh')}>
             {Array.from({ length: per }, (_, i) => {
               const p = whList[whPageNow * per + i], style = { '--d': 120 + i * 50 + 'ms' };
@@ -764,13 +849,20 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
               );
             })}
           </div>
-          <div className="pages">
-            {Array.from({ length: whPages }, (_, k) => (
-              <button key={k} type="button" className={`pg${k === whPageNow ? ' on' : ''}`} onClick={() => { setWhPage(k); setAnim(a => ({ ...a, wh: true })); playSound('chestPage'); }}>
-                {k + 1}
-              </button>
-            ))}
-            <span className="of">{q ? `${whList.length} hasil` : `halaman ${whPageNow + 1}/${whPages}`}</span>
+          )}
+          <BlastDoors ref={refs.doors} />
+          </div>
+          {/* the deck: page keys | his hatch | the note - the hatch outside every grid, so a press never starts a drag */}
+          <div className="deck">
+            <span className="pgs">
+              {Array.from({ length: isq ? qwPages : whPages }, (_, k) => (
+                <button key={k} type="button" className={`pg${k === (isq ? qwPageNow : whPageNow) ? ' on' : ''}`} onClick={() => { (isq ? setQwPage : setWhPage)(k); setAnim(a => ({ ...a, wh: true })); playSound('chestPage'); }}>
+                  {k + 1}
+                </button>
+              ))}
+            </span>
+            <QuarantineHatch ref={refs.hatch} view={whView} onPress={() => showWh(isq ? 'ok' : 'q')} />
+            <span className="of">{isq ? 'fix in Stock Opname' : q ? `${whList.length} hasil` : `halaman ${whPageNow + 1}/${whPages}`}</span>
           </div>
         </div>
 
@@ -780,10 +872,8 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
           <span className="cap">Gudang</span>
         </button>
         </>)}
-        <button ref={refs.vanChest} className="chestCell vanc" type="button" data-ponder="chest:van" aria-expanded={!!open.van} aria-label={`Peti van ${agent.name} — buka atau tutup`} onClick={() => toggle('van', !open.van)}>
-          <span className="chest small"><span className="lid" /><span className="latch" /><span className="body" /></span>
-          <span className="cap">Van · {agent.vehicle || '—'}</span>
-        </button>
+        {/* Fleet & Roster: the wooden chest and the yellow crate stand together beside the ender chest, one box between them */}
+        {vanOnly ? vanChest : <div className="vpair">{vanChest}{crate}</div>}
 
         <div ref={refs.vanGui} className={`gui van${anim.van ? '' : ' noanim'}`} data-ponder="gui:van">
           <p className="title">
@@ -815,29 +905,46 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
             ))}
             <span className="of">{cells.filter(Boolean).length} barang</span>
           </div>
-          {!vanOnly && (<>
-          <div className="dmgHead"><span>Barang rusak · di van</span><span className="num">{fmt(dmgTotal)} Bks · {damaged.length} barang</span></div>
-          <div className="dmg" ref={refs.dmg} data-ponder="dmg:van">
-            {damaged.length ? damaged.map(x => (
-              <div key={x.id} className="slot has" title={`${x.name}${x.why ? ' · ' + x.why : ''}`}>
-                <Cube p={P[x.id]} />
-                <span className="n">{fmt(x.bks)}</span>
-                <span className="name">{x.why || x.name}</span>
-              </div>
-            )) : <p className="none">Tidak ada barang rusak di van hari ini</p>}
-          </div>
-          </>)}
         </div>
+
+        {/* THE CRATE'S BOX (Fleet & Roster v21): the van's damaged goods under the tape band, in the van box's place. It only
+            tells, as the damaged row did - a drop on it is refused; settling it is EOD's job. */}
+        {!vanOnly && (
+          <div ref={refs.dmg} className={`gui q${anim.q ? '' : ' noanim'}`} data-ponder="gui:q">
+            <p className="title">
+              <span className="tname"><span className="tsign">{SIGN}</span><span className="tt">Quarantine · in van</span></span>
+              <span className="count">{fmt(dmgTotal)} Bks · {items(damaged.length)}</span>
+            </p>
+            <QuarantineBand q />
+            {open.q !== false ? sayEl('q') : <span className="say" aria-hidden="true" />}
+            <div className="grid" key={'d' + qPage} onClick={tellQ} onKeyDown={tellQ}>
+              {Array.from({ length: per }, (_, i) => {
+                const k = qPage * per + i, x = damaged[k], style = { '--d': 120 + i * 50 + 'ms' };
+                if (!x) return <div key={'e' + k} className="slot" style={style} />;
+                return (
+                  <div key={x.id} className="slot has" data-q={k} tabIndex={0} role="button" title={x.name} style={style}
+                    aria-label={`${x.name}, ${fmt(x.bks)} Bks${x.why ? ', ' + x.why : ''}`}>
+                    <Cube p={P[x.id]} />
+                    <span className="n">{fmt(x.bks)}</span>
+                    <span className="name">{x.why || x.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="pages">
+              {Array.from({ length: qPages }, (_, k) => (
+                <button key={k} type="button" className={`pg${k === qPage ? ' on' : ''}`} onClick={() => { setQPage(k); setAnim(a => ({ ...a, q: true })); playSound('chestPage'); }}>{k + 1}</button>
+              ))}
+              <span className="of">{damaged.length ? 'waits for EOD' : 'nothing damaged today'}</span>
+            </div>
+          </div>
+        )}
 
         {/* THE QUARANTINE CRATE (van-only, Agent Inventory v4): a yellow hazard crate beside the goods chest, the pixel
             radiation sign on its front, and ONE quiet effect (his 2026-09-27 C+B pick). Its squares are the Quarantine
             tab's own list - what came back damaged today and waits for EOD. A tap tells shop + reason; nothing drags. */}
         {vanOnly && (<>
-        <button ref={refs.qChest} className="chestCell qc" type="button" data-ponder="chest:q" aria-expanded={!!open.q} aria-label="Peti karantina — buka atau tutup" onClick={() => toggle('q', !open.q)}>
-          <span className="specks" aria-hidden="true"><i /><i /><i /><i /></span>
-          <span className="chest small hazard"><span className="lid" /><span className="latch" /><span className="body"><span className="sign">{SIGN}</span></span></span>
-          <span className="cap">Karantina</span>
-        </button>
+        {crate}
         <div ref={refs.dmg} className={`gui q${anim.q ? '' : ' noanim'}`} data-ponder="gui:q">
           <p className="title"><span>Karantina · di van</span><span className="count">{fmt(qTotal)} · {quarantine.length} barang</span></p>
           {open.q !== false ? sayEl('q') : <span className="say" aria-hidden="true" />}
@@ -869,7 +976,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
         {/* behind the closed van: this person's geofence requests, what they left at shops on titip, their bounties.
             All three only READ - the company-wide PENDING queue stays at the top of the screen (his salesman waits at a
             shop for it), settling a titip and paying a bounty stay on their own screens. */}
-        {open.van === false && !vanOnly && (
+        {open.van === false && !vanOnly && !open.q && (
           <div className="slip van" data-ponder="slip:van">
             {tabKeys('van', [['geo', `Geofence · ${geo.length}`], ['titip', `Titip · ${titip.length}`], ['bounty', `Bounty · ${bounties.length}`]])}
             {sayEl('van')}

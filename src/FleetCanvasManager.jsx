@@ -13,7 +13,7 @@ import { normalizeRegion } from './config/permissions';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import LoadingBay from './components/LoadingBay.jsx';
-import { damagedInVan, titipOf } from './utils/vanBay';
+import { damagedInVan, titipOf, quarantineOf } from './utils/vanBay';
 
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], customers = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, masterUserId = null }) {
 
@@ -158,6 +158,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             return { ...item, stock: bItem ? (bItem.stock || 0) : 0 };
         });
     }, [inventory, branchStock, selectedAgentUsesBranch]);
+    /* the bay's Quarantine view: the same rows the stock comes from - a branch's own damagedStock, HQ's for PUSAT */
+    const whQuarantine = useMemo(() => quarantineOf(inventory, selectedAgentUsesBranch ? branchStock : null), [inventory, branchStock, selectedAgentUsesBranch]);
 
     const defaultAgentState = {
         name: '', phone: '', vehicle: '', role: 'Motorist', email: '',
@@ -1452,6 +1454,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     agent={selectedAgent}
                                     warehouse={selectedAgentUsesBranch ? String(selectedAgentLocation).toUpperCase() : 'PUSAT'}
                                     stock={displayInventory || []}
+                                    warehouseQ={whQuarantine}
                                     damaged={damagedInVan(agentSales, inventory)}
                                     canEdit={canEditFleet}
                                     onLoad={handleLoadCanvas}

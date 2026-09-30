@@ -157,6 +157,14 @@ export function titipOf(transactions, customers, agentId, inventory) {
     .sort((a, b) => b.rp - a.rp || b.bks - a.bks);
 }
 
+/* THE WAREHOUSE'S QUARANTINE (Fleet & Roster's switch, 2026-09-30): the products with damaged stock in the warehouse the
+   van loads from, read the way Stock Opname reads it - HQ = the product's own damagedStock, a BRANCH = its own
+   branches/<loc>/inventory row, never the master product's (that is HQ's number). The master row gives the name and box. */
+export function quarantineOf(inventory, branchRows) {
+  const br = branchRows && Object.fromEntries(branchRows.map(r => [r.id, r]));
+  return inventory.map(p => ({ ...p, damagedStock: (br ? br[p.id]?.damagedStock : p.damagedStock) || 0 })).filter(p => p.damagedStock > 0);
+}
+
 /* THE QUARANTINE CRATE'S RADIATION SIGN (Agent Inventory v4, his 2026-09-27 reference picture): three blades - top-left,
    top-right, bottom, 60 degrees each - and the dot in the middle, on a 15 x 15 grid, square by square so it stays crisp at
    any size. [x, y] cells, y down. */

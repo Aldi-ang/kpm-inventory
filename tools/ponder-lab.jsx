@@ -341,9 +341,11 @@ function PlacesLab() {
    his own products, and an ellipsis at four characters deletes the only part that tells them
    apart — the exact fault he reported on 2026-08-17. If the wrap regressed, this is where it shows. */
 const NOW = Math.floor(Date.now() / 1000);
+/* damagedStock on two rows (2026-09-30): Fleet & Roster's warehouse box has a Quarantine view, and a branch's
+   Quarantine is read from ITS OWN rows here - never the master product's number */
 FIXTURES['branches/BANDUNG/inventory'] = [
-  { id: 'p-cg16', name: 'Cello Green 16', stock: 420 },
-  { id: 'p-cm12', name: 'Cello Merah 12', stock: 168 },
+  { id: 'p-cg16', name: 'Cello Green 16', stock: 420, damagedStock: 12 },
+  { id: 'p-cm12', name: 'Cello Merah 12', stock: 168, damagedStock: 4 },
   { id: 'p-sig',  name: 'Sigaret Kretek Tangan Premium', stock: 54 },
   { id: 'p-djar', name: 'Djarum Coklat 12', stock: 0 },
 ];

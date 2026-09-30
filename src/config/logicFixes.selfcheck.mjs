@@ -8385,14 +8385,14 @@ section('ROUND 4: A CLOSED CHEST SHOWS TABS IN ITS PANEL\'S PLACE (2026-09-24)')
   const right = fl.slice(fl.indexOf('{/* RIGHT PANEL: THE LOADING DOCK */}'));
 
   ok('a chest closed by hand shows its tabs in the panel\'s place - the warehouse PRESET + TEAM, the van GEOFENCE',
-     /\{open\.wh === false && \(\s*<div className="slip wh"/.test(bayc) && /\{open\.van === false(?: && !vanOnly)? && \(\s*<div className="slip van"/.test(bayc) &&
+     /\{open\.wh === false && \(\s*<div className="slip wh"/.test(bayc) && /\{open\.van === false(?: && !vanOnly)?(?: && !open\.q)? && \(\s*<div className="slip van"/.test(bayc) &&
      /'preset'/.test(bayc) && /'team'/.test(bayc) && /'geo'/.test(bayc) && /role="tablist"/.test(bayc));
   ok('the shut panel leaves the flow, so its tabs take the room instead of an empty square',
      /\.kpm-bay\.wh-shut \.gui\.wh \{[^}]*position: absolute/.test(bayCss) && /\.kpm-bay\.van-shut \.gui\.van \{[^}]*position: absolute/.test(bayCss) &&
      /\$\{open\.wh === false \? ' wh-shut' : ''\}/.test(bayc) && /\$\{open\.van === false \? ' van-shut' : ''\}/.test(bayc));
   /* the round-4 "both closed = one short row" was replaced by his 07:50 (2026-09-26): on the PC the bay keeps its height */
   ok('both closed: the chests stay under their tabs, in the open layout - no layout of its own',
-     !/\.kpm-bay\.wh-shut\.van-shut \{/.test(bayCss) && /grid-template-areas: "hint hint" "whg vang" "whc vanc";/.test(bayCss));
+     !/\.kpm-bay\.wh-shut\.van-shut \{/.test(bayCss) && /grid-template-areas: "hint hint" "whg vang" "whc vpair";/.test(bayCss));   /* vpair = the wooden chest + the crate (v21, 2026-09-30) */
   ok('a tab\'s list never pushes its status chips past the edge: one minmax column (his 1440 frame clipped "DITOLAK")',
      /\.kpm-bay \.slip \.rows \{[^}]*grid-template-columns: minmax\(0, 1fr\)/.test(bayCss));
   ok('the lid still closes in full, with its own sound', /chestEnderClose/.test(bayc) && /chestVanClose/.test(bayc) && /\.kpm-bay \.chest \.lid \{[^}]*transition: transform/.test(bayCss));
@@ -8540,7 +8540,7 @@ section('ROUND 5: TITIP AND BOUNTIES BEHIND THE VAN CHEST (2026-09-26)');
      three tabs stacked one per line and "12 Bks di toko" was cut. The phone now keeps its OPEN order: the warehouse slip
      full width above, the two chests side by side, the van slip full width below. */
   ok('phone, both chests shut: the slips run full width in the open layout\'s order, the chests side by side',
-     /grid-template-areas: "hint hint" "whg whg" "whc vanc" "vang vang";/.test(read('src/styles/theme.css')) && !/\.kpm-bay\.wh-shut\.van-shut \{/.test(read('src/styles/theme.css')));
+     /grid-template-areas: "hint hint" "whg whg" "whc vpair" "vang vang";/.test(read('src/styles/theme.css')) && !/\.kpm-bay\.wh-shut\.van-shut \{/.test(read('src/styles/theme.css')));
   ok('ONE reading of a person\'s bounties - the EOD WANTED board and the van tab both call bountyItems',
      /export const bountyItems = /.test(hlp) && /bountyItems\(agentProfile\)/.test(code(eod)) && !/const describe = \(pid\)/.test(eod));
 
@@ -8603,11 +8603,12 @@ section('HIS 07:50 TEST OF ROUND 5 - FLEET & ROSTER ON THE PC AND THE PHONE (202
      /\.kpm-bay-duo \{ display: grid; gap: 14px;/.test(bayCss) && /@container kpmbay \(min-width: 1100px\) \{ \.kpm-bay-duo \{ grid-template-columns: minmax\(0, 1fr\) 300px; \} \}/.test(bayCss) &&
      !/"man|man"|grid-area: man/.test(bayCss) && !/\.kpm-bay \.(man|manHead|tally|lines|ln|trash|empty|go|report|sj)\b/.test(bayCss));
   /* "on phone it looks soo big ... make the product 3D smaller and make per page 4 box only" */
-  ok('phone: four squares a page in ONE row, smaller boxes, the product\'s name kept',
-     /const \[per, setPer\] = useState\(PER\);/.test(bayc) && /setPer\(e\.contentRect\.width < 640 \? 4 : PER\)/.test(bayc) &&
-     (bayc.match(/\bPER\b/g) || []).length === 3 &&   // the import, the start value, the PC width - every page sum reads `per`
+  /* since v21 (2026-09-30) the PC is four in a row too - "the inventory box can also be 4" - so the hatch has its room */
+  ok('four squares a page in ONE row (the phone since 07:50, the PC since v21), smaller boxes, the product\'s name kept',
+     /const per = vanOnly \? PER : 4;/.test(bayc) &&
+     (bayc.match(/\bPER\b/g) || []).length === 2 &&   // the import and van-only's six - every page sum reads `per`
      /\.kpm-bay \.grid \{ display: grid; grid-template-columns: repeat\(4, 1fr\); gap: 5px; \}/.test(bayCss) &&
-     /@container kpmbay \(min-width: 640px\) \{ \.kpm-bay \.grid \{ grid-template-columns: repeat\(3, 1fr\); gap: 6px; \} \}/.test(bayCss) &&
+     !/@container kpmbay \(min-width: 640px\) \{ \.kpm-bay \.grid \{/.test(bayCss) &&
      !/\.gui\.van \.slot \.name \{ display: none; \}/.test(bayCss));
   /* "maybe better if the users are be able to press the product and press the van box to place it there" */
   ok('tap a product, then tap a van square: the same HOW MANY sheet a drop opens, nothing written before MUAT VAN',
@@ -8837,7 +8838,7 @@ section('THE AGENT INVENTORY CHEST (2026-09-27)');
      /\{!vanOnly && \(\s*<>\s*\{open\.wh === false/.test(bay) && /\{canEdit && !vanOnly && \(/.test(bay) && /open\.van === false && !vanOnly/.test(bay) &&
      /if \(!slot \|\| !canEdit \|\| busy\) return;\s*if \(vanOnly\)/.test(bay));
   ok('van-only is six squares a page on every width, and each page button carries its count',
-     /if \(vanOnly \|\| !el \|\| typeof ResizeObserver/.test(bay) && /vanOnly \? ` · \$\{/.test(bay));
+     /const per = vanOnly \? PER : 4;/.test(bay) && /vanOnly \? ` · \$\{/.test(bay));
   ok('two chests side by side in ONE row at every width (his pick A, 2026-09-28); the panels float over the page; three across, nothing starts hidden',
      /\.kpm-bay\.solo \{[^}]*grid-template-areas: "vanc qc" "hint hint"/.test(th) &&
      /\.kpm-bay\.solo \.gui\.van, \.kpm-bay\.solo \.gui\.q \{ position: absolute;/.test(th) &&
@@ -8901,11 +8902,11 @@ section('AGENT INVENTORY V4: TWO CHESTS AND ONE BOOK (2026-09-27)');
   ok('the quarantine list keeps the Quarantine tab\'s filter and carries what the crate needs (product, unit)',
      /productId: item\.productId/.test(aiv) && /unit: item\.unit/.test(aiv) && /!tx\.forensicData\.eodCredited/.test(aiv));
   ok('van-only: the goods chest has NO damaged row; the crate stands beside it with its own panel',
-     /\{!vanOnly && \(<>\s*<div className="dmgHead">/.test(bay) && /\{vanOnly && \(<>/.test(bay) &&
+     !/dmgHead/.test(bay) && /\{vanOnly && \(<>\s*\{crate\}/.test(bay) &&   /* the damaged row left every van box at v21 (2026-09-30) */
      /className="chest small hazard"/.test(bay) && /data-ponder="chest:q"/.test(bay) && /data-ponder="gui:q"/.test(bay));
   ok('the crate only tells: a tap names shop + reason, nothing drags in or out (a drop on it is refused like the damaged row)',
      /function tellQ\(/.test(bay) && /dari \$\{x\.customerOrigin\}/.test(bay) &&
-     /vanOnly \? inRect\(refs\.qChest\.current, x, y\) \|\| \(open\.q && inRect\(refs\.dmg\.current, x, y\)\)/.test(bay));
+     /if \(inRect\(refs\.qChest\.current, x, y\) \|\| \(open\.q && inRect\(refs\.dmg\.current, x, y\)\)\) return 'dmg';/.test(bay));
   const vb = await import('../utils/vanBay.js'), S = new Set((vb.HAZARD_SIGN || []).map(([x, y]) => x + ',' + y));
   ok('the radiation sign is drawn square by square: the dot, three blades (top-left, top-right, bottom), gaps between them',
      S.has('7,7') && S.has('7,13') && S.has('12,4') && S.has('2,4') && !S.has('7,1') && !S.has('1,10') && !S.has('9,7') && S.size > 40, S.size);
@@ -8947,7 +8948,7 @@ section('AGENT INVENTORY V4.1: THE PANEL FLOATS OVER ITS CHEST (2026-09-28)');
   const book = code(read('src/components/TodayBook.jsx')), stg = code(read('src/ponder/stages/AgentChestStage.jsx'));
   const { agentChest } = await import('../ponder/scenes/agent-chest.js');
   ok('one chest at a time: opening one shuts the other (van-only), and nothing opens by itself on arrival',
-     /if \(vanOnly && on\) setOpen\(o => \(\{ \.\.\.o, van: side === 'van', q: side === 'q' \}\)\);/.test(bay) &&
+     /if \(on && side !== 'wh'\) setOpen\(o => \(\{ \.\.\.o, van: side === 'van', q: side === 'q' \}\)\);/.test(bay) &&
      /const t2 = pose\?\.open \|\| vanOnly \? 0 : setTimeout/.test(bay) && !/toggle\('q', true\)/.test(bay));
   ok('the panel never takes room: absolute, above the chest row, over the Manifest, so no other panel moves',
      /\.kpm-bay\.solo \.gui\.van, \.kpm-bay\.solo \.gui\.q \{ position: absolute; top: auto; grid-area: auto; left: 0; right: 0; margin-inline: auto; bottom: calc\(100% - var\(--perch\) - var\(--sink, 0px\)\); z-index: 30;/.test(th));
@@ -9216,6 +9217,87 @@ section('THE EYE ON EVERY VAULT SECURITY BOX (2026-09-29)');
      eyeOk(b3, { v: 'showPin', set: 'setShowPin' }, 'password'));
   ok('an emptied gate box (a failed try clears it, so does leaving) hides the password again',
      /useEffect\(\(\) => \{ if \(!inputPin\) setShowPin\(false\); \}, \[inputPin\]\);/.test(app));
+}
+
+/* ── FLEET & ROSTER: THE QUARANTINE SWITCH (2026-09-30) ───────────────────────────────────────────────────────────────
+   His design, approved at prototype v21 (2026-09-29 18:40: "i love the button now, everything else is great nothing to
+   complain really u can continue the work"): the ender chest keeps ONE box that switches between the healthy stock and
+   that warehouse's Quarantine on his Satisfactory hatch, in the middle of a deck at the bottom of the box; blast doors
+   close over the box while it changes; the van side's wooden chest and yellow crate take turns in one place. TRAPS: the
+   Quarantine squares never start a drag and the hatch sits outside every grid (startDrag listens on the grid); a return
+   always lands in the healthy stock; a BRANCH's Quarantine is the branch's own damagedStock - displayInventory spreads the
+   MASTER product row, so the damagedStock riding on it is HQ's number. */
+section('FLEET & ROSTER: THE QUARANTINE SWITCH (2026-09-30)');
+{ const bay = code(read('src/components/LoadingBay.jsx')).replace(/\r/g, ''), fl = code(read('src/FleetCanvasManager.jsx'));
+  const th = read('src/styles/theme.css').replace(/\r/g, '');
+  const swPath = 'src/components/QuarantineSwitch.jsx', sw = fs.existsSync(swPath) ? code(read(swPath)) : '';
+  const b0 = th.indexOf('/* ── THE VAN-LOADING BAY'), b1 = th.indexOf('/* ── END OF THE VAN-LOADING BAY');
+  const s0 = th.indexOf('/* ── THE QUARANTINE SWITCH'), s1 = th.indexOf('/* ── END OF THE QUARANTINE SWITCH');
+  const bayCss = b0 > -1 && b1 > b0 ? th.slice(b0, b1) : '', qsCss = s0 > -1 && s1 > s0 ? th.slice(s0, s1) : '';
+  ok('both CSS slices found: the bay, and the switch as its own section outside it', bayCss.length > 20000 && qsCss.length > 2000 && qsCss.length < 20000 && s0 > b1);
+  const fnOf = (name) => { const s = bay.indexOf(`function ${name}(`), e = bay.indexOf('\n  }\n', s); return s > -1 && e > s ? bay.slice(s, e) : ''; };
+  const endFn = fnOf('end'), keyFn = fnOf('keyBox'), togFn = fnOf('toggle');
+  ok('the end / keyBox / toggle slices were found (each 300-6000 chars)', [endFn, keyFn, togFn].every(f => f.length > 300 && f.length < 6000));
+
+  /* the data - behaviour on real numbers */
+  const vb = await import('../utils/vanBay.js'), qOf = typeof vb.quarantineOf === 'function' ? vb.quarantineOf : () => [];
+  const inv = [{ id: 'a', name: 'Cello Green 16', stock: 420, damagedStock: 5 }, { id: 'b', name: 'Cello Merah 12', stock: 168, damagedStock: 0 }, { id: 'c', name: 'Djarum Coklat 12', stock: 0 }];
+  const hq = qOf(inv, null), br = qOf(inv, [{ id: 'a', stock: 3, damagedStock: 0 }, { id: 'b', stock: 1, damagedStock: 2 }]);
+  ok('HQ Quarantine = the products whose own damagedStock is above 0: Cello Green 16 · 5 only', hq.length === 1 && hq[0].id === 'a' && hq[0].damagedStock === 5);
+  ok('a BRANCH Quarantine reads the branch rows, never HQ\'s number: Cello Merah 12 · 2 only, named from the master row',
+     br.length === 1 && br[0].id === 'b' && br[0].damagedStock === 2 && br[0].name === 'Cello Merah 12');
+  ok('Fleet & Roster reads it off rows it already listens to - no new listener, one prop',
+     /const whQuarantine = useMemo\(\(\) => quarantineOf\(inventory, selectedAgentUsesBranch \? branchStock : null\)/.test(fl) &&
+     /warehouseQ=\{whQuarantine\}/.test(fl) && (fl.match(/onSnapshot\(/g) || []).length === 4);
+
+  /* the box */
+  ok('ONE box, two views: healthy (the ender band) or the Quarantine (the tape band), a band in both so the height holds',
+     /const \[whView, setWhView\] = useState\('ok'\);/.test(bay) && /<QuarantineBand q=\{isq\} \/>/.test(bay) && /`Quarantine · \$\{warehouse\}`/.test(bay) &&
+     /\.kpm-bay \.gui\.isq \.title \.count \{ color: var\(--stone-bad\); \}/.test(bayCss));
+  ok('the Quarantine squares only tell - a tap names the product and its damaged count; nothing drags out of them',
+     /<div className="grid" key=\{'wq' \+ qwPageNow\} onClick=\{tellWhQ\} onKeyDown=\{tellWhQ\}>/.test(bay) && /Bks damaged`\);/.test(fnOf('tellWhQ')) &&
+     (bay.match(/onPointerDown=\{\(e\) => startDrag\(e, 'wh'\)\}/g) || []).length === 1);
+  ok('the hatch sits in the deck between the page keys and the note - outside every grid, so a press never starts a drag',
+     /<div className="deck">\s*<span className="pgs">[\s\S]*?<\/span>\s*<QuarantineHatch ref=\{refs\.hatch\} view=\{whView\}/.test(bay) &&
+     /\.kpm-bay \.deck \{ display: grid; grid-template-columns: minmax\(0, 1fr\) auto minmax\(0, 1fr\);/.test(bayCss));
+  ok('every switch reports in the box\'s status line', /`Showing Quarantine · \$\{/.test(bay) && /`Showing healthy stock · \$\{/.test(bay));
+  ok('ONE height in both views: the sign in the Quarantine title never makes the title taller (baseline measured 15.6 -> 17.7 px)',
+     /\.kpm-bay \.gui\.wh \.title, \.kpm-bay:not\(\.solo\) \.gui\.q \.title \{ align-items: center; \}/.test(bayCss));
+  ok('a press while a switch runs is ignored; only a RETURN queues its switch back',
+     /if \(sw\.current\.busy\) \{ if \(queue\) sw\.current\.next = next; return; \}/.test(bay));
+  ok('a return always lands in the healthy stock: a drop on the ender chest, or Enter on a van box, switches back first',
+     /if \(zone === 'wh'\) \{\s*showWh\('ok', true\);/.test(endFn) && /showWh\('ok', true\);\s*openSheet\(\{ mode: 'add', dir: -1/.test(keyFn));
+  ok('four squares in ONE row on both widths (van-only keeps its six)',
+     /const per = vanOnly \? PER : 4;/.test(bay) && !/ResizeObserver|setPer\b/.test(bay) && !/@container kpmbay \(min-width: 640px\) \{ \.kpm-bay \.grid \{/.test(bayCss));
+
+  /* the shared piece */
+  ok('the hatch, the doors and the band are ONE shared piece the bay imports (ready for the regional warehouse and Stock Opname)',
+     /export function QuarantineHatch\(/.test(sw) && /export function BlastDoors\(/.test(sw) && /export function QuarantineBand\(/.test(sw) &&
+     /export async function runSwitch\(/.test(sw) && imports(bay, 'QuarantineHatch') && imports(bay, 'BlastDoors') && imports(bay, 'runSwitch'));
+  ok('the dome shows where the NEXT press goes and the label says it; the doors change it while they are shut',
+     /const skin = hold \|\| \(view === 'q' \? 'ok' : 'q'\);/.test(sw) && /\{skin === 'q' \? 'QUARANTINE' : 'HEALTHY'\}/.test(sw) &&
+     /setHold\(toQ \? 'ok' : 'q'\);/.test(sw) && /d\.dataset\.kind = toQ \? 'tape' : 'steel';/.test(sw));
+  ok('the ender eye lives - a glance or a blink every 0.9-3.5 s - and stays still and open in Lite Mode',
+     /900 \+ Math\.random\(\) \* 2600/.test(sw) && /if \(e && !still\(\)\)/.test(sw) && /classList\.contains\('lite-mode'\)/.test(sw));
+  ok('Lite Mode / reduced motion: the switch swaps at once, no motion', /if \(still\(\)\) \{ swap\(\); return; \}/.test(sw));
+  ok('a stalled clock never leaves the box shut: every wait on an animation is raced with a timer',
+     /const done = \(a, ms\) => Promise\.race\(\[a\.finished\.catch\(\(\) => \{\}\), wait\(ms \+ 150\)\]\);/.test(sw) && !/await [^;]*\.finished;/.test(sw));
+  ok('no shadow, no glow, no filter in the switch (G30) - depth is gradients and borders', qsCss.length > 0 && !/box-shadow|filter:|text-shadow/.test(qsCss));
+
+  /* the van side */
+  ok('the wooden chest and the yellow crate take turns in one place: opening one shuts the other, on both screens',
+     /if \(on && side !== 'wh'\) setOpen\(o => \(\{ \.\.\.o, van: side === 'van', q: side === 'q' \}\)\);/.test(togFn));
+  ok('the crate and its box refuse a drop on both screens; the van box has no damaged row any more',
+     /if \(inRect\(refs\.qChest\.current, x, y\) \|\| \(open\.q && inRect\(refs\.dmg\.current, x, y\)\)\) return 'dmg';/.test(bay) &&
+     !/dmgHead/.test(bay) && !/\.dmgHead|\.kpm-bay \.dmg\b/.test(bayCss));
+  ok('the crate\'s box is the van\'s damaged goods under the tape band, caption Quarantine, waiting for EOD',
+     /Quarantine · in van/.test(bay) && /waits for EOD/.test(bay) && /const qRows = vanOnly \? quarantine : damaged;/.test(bay) && /\{vanOnly \? 'Karantina' : 'Quarantine'\}/.test(bay));
+  ok('behind a van shut BY THE CRATE there are no tabs - the crate\'s box has the place', /\{open\.van === false && !vanOnly && !open\.q && \(/.test(bay));
+  ok('phone: the three chests in ONE row (ender | wooden + crate), the boxes full width above and below; a crate box not open gives its room back',
+     /grid-template-columns: auto minmax\(0, 1fr\);\s*grid-template-areas: "hint hint" "whg whg" "whc vpair" "vang vang";/.test(bayCss) &&
+     /\.kpm-bay \.vpair \{ grid-area: vpair; display: flex; justify-content: space-evenly;/.test(bayCss) &&
+     /@container kpmbay \(max-width: 639px\) \{\s*\.kpm-bay:not\(\.solo\):not\(\.q-open\) \.gui\.q \{ position: absolute;/.test(bayCss));
+  ok('PC: the boxes stand on their chests - "whg vang" over "whc vpair"', /grid-template-areas: "hint hint" "whg vang" "whc vpair";/.test(bayCss));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
