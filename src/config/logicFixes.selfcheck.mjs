@@ -9544,5 +9544,30 @@ section('POTATO 2: THE BIOHAZARD SIGN PULSES BY OPACITY, NOT FILL (2026-10-01)')
      Array.from({ length: 101 }, (_, i) => i / 100).every(a => K.every((k, c) => Math.abs((k * (1 - a) + G[c] * a) - (k + (G[c] - k) * a)) < 1e-9)));
 }
 
+/* ── POTATO 3: THE MASTER VAULT CARD SPINS ON THE GRAPHICS CHIP (2026-10-01) ─────────────────────────────────────────
+   setRotation +0.3deg in a requestAnimationFrame loop re-rendered the card 125 times a second: Master Vault 85% -> 5%
+   idle CPU (6x-slow phone), re-renders 125/s -> 1.5/s. The spin layer sits INSIDE the drag rotation; the matrix
+   maths is RUN below - outside it, the tilted card would wobble instead of spinning on its own axis. */
+section('POTATO 3: THE MASTER VAULT CARD SPINS ON THE GRAPHICS CHIP (2026-10-01)');
+{ const re = code(read('src/components/ResidentEvilInventory.jsx')).replace(/\r/g, ''), th = read('src/styles/theme.css').replace(/\r/g, '');
+  ok('no React state spins the card any more (no setRotation inside a requestAnimationFrame loop)', !/requestAnimationFrame/.test(re) && !/y: prev\.y \+ 0\.3/.test(re));
+  const rot = re.indexOf('transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`'), spin = re.indexOf("className={`kpm-inspect-spin${isDragging || isInteracting ? ' held' : ''}`}");
+  const faces = spin > -1 ? (re.slice(spin, re.indexOf('</div>\n                    </div>\n                </div>', spin)).match(/backfaceVisibility: 'hidden'/g) || []).length : 0;
+  ok('the spin layer is inside the drag rotation and carries all six faces; it holds while he drags or edits a size', rot > -1 && spin > rot && faces === 6);
+  ok('one turn per 20 s on the graphics chip (0.3deg at 60 fps), held by .held, stopped by Lite Mode, kept under Reduce Motion as before',
+     /\.kpm-inspect-spin \{ position: absolute; inset: 0; transform-style: preserve-3d; animation: kpmInspectSpin 20s linear infinite; \}/.test(th) &&
+     /\.kpm-inspect-spin\.held \{ animation-play-state: paused; \}/.test(th) && /@keyframes kpmInspectSpin \{ to \{ transform: rotateY\(360deg\); \} \}/.test(th) &&
+     /:root:not\(\.lite-mode\) \.kpm-inspect-spin \{ animation: kpmInspectSpin 20s linear infinite !important; \}/.test(th) && Math.abs(360 / 20 / 60 - 0.3) < 1e-9);
+  /* the composition RUN: rotateX(x) rotateY(y) rotateY(s) must equal the old rotateX(x) rotateY(y + s) */
+  const RX = (a) => { const c = Math.cos(a), s = Math.sin(a); return [[1, 0, 0], [0, c, -s], [0, s, c]]; };
+  const RY = (a) => { const c = Math.cos(a), s = Math.sin(a); return [[c, 0, s], [0, 1, 0], [-s, 0, c]]; };
+  const mul = (A, B) => A.map((r, i) => B[0].map((_, j) => r.reduce((t, _, k) => t + A[i][k] * B[k][j], 0)));
+  const same = (A, B) => A.every((r, i) => r.every((v, j) => Math.abs(v - B[i][j]) < 1e-9));
+  const d = Math.PI / 180, cases = [[-15, 35, 0], [-15, 35, 90], [-40, 120, 217], [10, -60, 359]];
+  ok('the spin inside the drag rotation is the old spin exactly; outside it would not be (the wobble)',
+     cases.every(([x, y, s]) => same(mul(mul(RX(x * d), RY(y * d)), RY(s * d)), mul(RX(x * d), RY((y + s) * d)))) &&
+     !same(mul(RY(90 * d), mul(RX(-15 * d), RY(35 * d))), mul(RX(-15 * d), RY(125 * d))));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

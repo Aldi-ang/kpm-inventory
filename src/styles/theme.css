@@ -5626,3 +5626,16 @@ html.lite-mode .kpm-ench *, html.lite-mode .kpm-ench *::before, html.lite-mode .
 .kpm-stage-page.on { border-color: var(--accent-edge); color: var(--accent-ink); background: var(--raised); }
 @media (prefers-reduced-motion: reduce) { .kpm-actor-card, .kpm-actor-floor { transition: none; } .kpm-stage-bar.lit::after { animation: none; } }
 /* ── END OF THE ROSTER STAGE ──────────────────────────────────────────────────────────────────────────── */
+
+/* ── THE MASTER VAULT'S 3D CARD SPIN (2026-10-01, potato phone) ───────────────────────────────────────────── */
+/* The idle spin used to be React state +0.3deg every frame (ResidentEvilInventory.jsx). This inner layer turns the
+   faces on the graphics chip instead, inside the drag rotation, one turn per 20 s (0.3deg at 60 fps), and holds its
+   angle while he drags. The old JS spin ignored Reduce Motion, and his iPhone has it on: kept spinning there so his
+   screen looks the same. Lite Mode stops it - his "nothing rotates" - through html.lite-mode *. */
+.kpm-inspect-spin { position: absolute; inset: 0; transform-style: preserve-3d; animation: kpmInspectSpin 20s linear infinite; }
+.kpm-inspect-spin.held { animation-play-state: paused; }
+@keyframes kpmInspectSpin { to { transform: rotateY(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  :root:not(.lite-mode) .kpm-inspect-spin { animation: kpmInspectSpin 20s linear infinite !important; }
+  :root:not(.lite-mode) .kpm-inspect-spin.held { animation-play-state: paused !important; }
+}

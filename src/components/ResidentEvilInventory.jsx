@@ -64,18 +64,11 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
         setZoom(product.defaultZoom || 3.0);
     }, [product]);
 
-    useEffect(() => {
-        let frameId;
-        const animate = () => {
-            if (!isDragging && !isInteracting) {
-                setRotation(prev => ({ ...prev, y: prev.y + 0.3 }));
-            }
-            frameId = requestAnimationFrame(animate);
-        };
-        frameId = requestAnimationFrame(animate);
-        return () => cancelAnimationFrame(frameId);
-    }, [isDragging, isInteracting]);
-
+    /* THE IDLE SPIN IS A CSS ANIMATION (2026-10-01, "potato phone even in full animation mode"). It was setRotation +0.3deg
+       in a requestAnimationFrame loop - a React re-render of this card every frame, 125 a second: Master Vault 85% idle CPU
+       on a 6x-slow phone, 22% without it. Now .kpm-inspect-spin turns the faces on the graphics chip, INSIDE the drag
+       rotation (rotateX(x) rotateY(y) rotateY(spin) = the old rotateY(y + spin)), one turn per 20 s = 0.3deg at 60 fps,
+       and holds its angle while he drags or edits a size. Lite Mode stops it (his "nothing rotates"); theme.css. */
     const handleMouseDown = (e) => { 
         if(e.target.closest('.controls-panel') || e.target.closest('.admin-actions') || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return; 
         setIsDragging(true); 
@@ -131,12 +124,14 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                         willChange: 'transform' 
                     }}
                 >
+                    <div className={`kpm-inspect-spin${isDragging || isInteracting ? ' held' : ''}`}>
                     <div className="absolute inset-0 bg-white" style={{ transform: `translateZ(${d/2}px)`, backfaceVisibility: 'hidden' }}>{renderFace(front, "bg-white")}</div>
                     <div className="absolute inset-0 bg-slate-800" style={{ transform: `rotateY(180deg) translateZ(${d/2}px)`, backfaceVisibility: 'hidden' }}>{renderFace(back, "bg-slate-800")}</div>
                     <div className="absolute" style={{ width: d, height: h, transform: `rotateY(90deg) translateZ(${w/2}px)`, left: (w-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.right, "bg-slate-400")}</div>
                     <div className="absolute" style={{ width: d, height: h, transform: `rotateY(-90deg) translateZ(${w/2}px)`, left: (w-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.left, "bg-slate-400")}</div>
                     <div className="absolute" style={{ width: w, height: d, transform: `rotateX(90deg) translateZ(${h/2}px)`, top: (h-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.top, "bg-slate-300")}</div>
                     <div className="absolute" style={{ width: w, height: d, transform: `rotateX(-90deg) translateZ(${h/2}px)`, top: (h-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.bottom, "bg-slate-500")}</div>
+                    </div>
                 </div>
             </div>
 
