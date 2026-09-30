@@ -126,6 +126,7 @@ export default function VaultGate({ playing, agentName }) {
     const track = e => {
       const r = cv.getBoundingClientRect();
       S.p.x = e.clientX - r.left; S.p.y = e.clientY - r.top; S.p.on = true;
+      S.wake();
     };
     const off = () => { S.p.on = false; };
     /* On a touch screen the light must go out when the finger lifts; on a mouse it must not,
@@ -185,8 +186,15 @@ export default function VaultGate({ playing, agentName }) {
         ctx.strokeStyle = 'rgba(231,112,15,' + (0.55 * (1 - wp) * (1 - gather)).toFixed(3) + ')';
         ctx.lineWidth = 1; ctx.stroke();
       }
+      /* ASLEEP AT REST (2026-10-01, "potato phone even in full animation mode"). With no finger down and no unlock
+         running every dot is dark, so this frame only cleared the canvas - 60 times a second, forever: the sign-in
+         screen and the gate at 26% idle CPU on a 6x-slow phone, 3% without the loop. Stop after drawing that one empty
+         frame; a touch (track) or the unlock (S.unlockAt) wakes it. The light still goes out on the frame the finger
+         lifts, and the wave runs on the same clock as before. */
+      if (S.unlockAt === null && !S.p.on) { S.raf = 0; return; }
       S.raf = requestAnimationFrame(frame);
     };
+    S.wake = () => { if (!S.raf) S.raf = requestAnimationFrame(frame); };
     S.raf = requestAnimationFrame(frame);
 
     return () => {
@@ -312,6 +320,7 @@ export default function VaultGate({ playing, agentName }) {
 
     const name = (agentName || 'AGENT').trim().toUpperCase().slice(0, 14) || 'AGENT';
     S.unlockAt = performance.now();
+    S.wake?.();
     assign(sampleWord(name));
     /* Pre-sample the scramble glyphs NOW, while nothing is moving. Sampling mid-animation is
        what would stutter on a weak phone, and his phone is the weak one. */

@@ -9569,5 +9569,19 @@ section('POTATO 3: THE MASTER VAULT CARD SPINS ON THE GRAPHICS CHIP (2026-10-01)
      !same(mul(RY(90 * d), mul(RX(-15 * d), RY(35 * d))), mul(RX(-15 * d), RY(125 * d))));
 }
 
+/* ── POTATO 4: THE GATE'S DOT FIELD SLEEPS AT REST (2026-10-01) ───────────────────────────────────────────────────────
+   At rest every dot is dark, yet the loop cleared the canvas 60 times a second: the gate 23% -> 2% idle CPU (6x-slow
+   phone). Walked in the built app with touch events: rest 0 loop calls, a finger lights the same 4,596 pixels as
+   before, lifting it goes dark AND asleep, the unlock wave still draws. */
+section('POTATO 4: THE GATE\'S DOT FIELD SLEEPS AT REST (2026-10-01)');
+{ const g = code(read('src/components/VaultGate.jsx')).replace(/\r/g, '');
+  const fr = g.slice(g.indexOf('const frame = now => {'), g.indexOf('S.wake = () =>'));
+  ok('the loop stops after the frame that finds no finger and no unlock (and only then)',
+     /if \(S\.unlockAt === null && !S\.p\.on\) \{ S\.raf = 0; return; \}\s*S\.raf = requestAnimationFrame\(frame\);\s*\};\s*$/.test(fr));
+  ok('a finger wakes it, the unlock wakes it, and it can never be woken twice',
+     /S\.p\.on = true;\s*S\.wake\(\);/.test(g) && /S\.unlockAt = performance\.now\(\);\s*S\.wake\?\.\(\);/.test(g) &&
+     /S\.wake = \(\) => \{ if \(!S\.raf\) S\.raf = requestAnimationFrame\(frame\); \};/.test(g));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
