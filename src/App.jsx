@@ -279,7 +279,6 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const [showCrownTransfer, setShowCrownTransfer] = useState(false); // 🚀 ADD THIS
   const [adminPin, setAdminPin] = useState(null);       
   const [hasAdminPin, setHasAdminPin] = useState(false); 
-  const [inputPin, setInputPin] = useState("");         
   const [isSetupMode, setIsSetupMode] = useState(false); 
 
   const [loginError, setLoginError] = useState(null); 
@@ -1010,7 +1009,15 @@ const handleGitHubMirror = async () => {
   const [showResetWord, setShowResetWord] = useState(false);
   useEffect(() => { if (!isResetMode) setShowResetWord(false); }, [isResetMode]);
   const [showPin, setShowPin] = useState(false);
-  useEffect(() => { if (!inputPin) setShowPin(false); }, [inputPin]);
+  /* THE GATE BOX KEEPS ITS OWN TEXT (2026-09-30, his "entering master vault password even feel really heavy, lagging
+     delayed"). The typed password was App state, so every letter re-ran this whole component - 13 ms a letter measured
+     on the PC dev build, several times that on a phone, with the gate's dot field drawing on the same thread. Now the
+     box holds it (pinRef) and handlePinLogin reads it on submit. "Emptied" is caught where it happens: clearPin() after
+     a failed try, a lock or an unlock; the box's onChange when he deletes it all; and here, whenever the box is swapped
+     for another mode or the gate closes - it comes back empty, so the eye closes with it. */
+  useEffect(() => { setShowPin(false); }, [showAdminLogin, isSetupMode, isResetMode, isOtpMode]);
+  const pinRef = useRef(null);
+  const clearPin = () => { if (pinRef.current) pinRef.current.value = ''; setShowPin(false); };
   const [setupSecret, setSetupSecret] = useState("");
 
   const calculateStrength = (pass) => {
@@ -1134,6 +1141,7 @@ const handleGitHubMirror = async () => {
 
   const handlePinLogin = async () => {
       if (pinChecking) return;
+      const inputPin = pinRef.current?.value || "";
       /* A shake alone is not a report. On a phone he may not even see it — and pressing OPEN THE
          VAULT with an empty box is the likeliest thing to happen now that the field no longer
          autofocuses there. His report was exactly this shape: "doesnt let me enter but no
@@ -1169,7 +1177,7 @@ const handleGitHubMirror = async () => {
           const lockLeft = lockLeftMs(data, Date.now());
           if (lockLeft > 0) {
               notify(`Too many wrong tries. The vault opens again at ${untilText(data.lockedUntil)} (in ${Math.ceil(lockLeft / 60000)} min).`);
-              setInputPin("");
+              clearPin();
               return;
           }
 
@@ -1195,7 +1203,7 @@ const handleGitHubMirror = async () => {
                   setIsAdmin(true);
                   setShowAdminLogin(false);
                   setIsUnlocking(false);
-                  setInputPin("");
+                  clearPin();
               }, gateHoldMs());
           } else {
               // FAILED: one strike; the fifth locks the vault for 15 minutes (vaultLock.js)
@@ -1203,7 +1211,7 @@ const handleGitHubMirror = async () => {
               await updateDoc(adminDocRef, upd);
               
               setAuthShake(true); setTimeout(() => setAuthShake(false), 500);
-              setInputPin("");
+              clearPin();
               notify(upd.lockedUntil
                   ? `${VAULT_TRIES} wrong tries. The vault is locked for ${VAULT_LOCK_MS / 60000} minutes, until ${untilText(upd.lockedUntil)}.`
                   : `Incorrect PIN. Strike ${upd.failedRecoveryAttempts}/${VAULT_TRIES}.`);
@@ -1318,7 +1326,7 @@ const handleGitHubMirror = async () => {
       setIsSetupMode(true); 
       setShowAdminLogin(true);
       setIsResetMode(false);
-      setInputPin("");
+      clearPin();
       triggerCapy("Initialize PIN Reset Protocol.");
   };
 
@@ -4619,8 +4627,9 @@ const handleGitHubMirror = async () => {
                     spellCheck={false}
                     placeholder="MASTER PASSWORD"
                     className="w-full bg-transparent border-0 border-b border-[color-mix(in_srgb,var(--shell-orange-edge)_20%,transparent)] py-[11px] px-10 text-center font-mono text-[13px] tracking-[0.42em] text-[var(--shell-ink-2)] outline-none focus:border-[var(--shell-orange-edge)] placeholder:text-[#5f4a2c] placeholder:tracking-[0.16em] placeholder:text-[9.5px] transition-colors"
-                    value={inputPin}
-                    onChange={(e) => setInputPin(e.target.value)}
+                    /* the box keeps its own text - a letter no longer re-renders the app (pinRef, above) */
+                    ref={pinRef}
+                    onChange={(e) => { if (!e.target.value) setShowPin(false); }}
                     /* Labels the phone's own return key GO instead of "return". */
                     enterKeyHint="go"
                     /* NOT on a phone — see IS_TOUCH at the top of this file. */

@@ -9253,7 +9253,17 @@ section('THE EYE ON EVERY VAULT SECURITY BOX (2026-09-29)');
   ok('the gate eye is type="button" - inside the form a plain button would submit and spend a try',
      eyeOk(b3, { v: 'showPin', set: 'setShowPin' }, 'password'));
   ok('an emptied gate box (a failed try clears it, so does leaving) hides the password again',
-     /useEffect\(\(\) => \{ if \(!inputPin\) setShowPin\(false\); \}, \[inputPin\]\);/.test(app));
+     /const clearPin = \(\) => \{ if \(pinRef\.current\) pinRef\.current\.value = ''; setShowPin\(false\); \};/.test(app) &&
+     /useEffect\(\(\) => \{ setShowPin\(false\); \}, \[showAdminLogin, isSetupMode, isResetMode, isOtpMode\]\);/.test(app) &&
+     /onChange=\{\(e\) => \{ if \(!e\.target\.value\) setShowPin\(false\); \}\}/.test(b3));
+  /* HEAVY APP 2 (2026-09-30, his "entering master vault password even feel really heavy, lagging delayed"): the typed
+     password was App state, so each letter re-rendered the whole app - measured on the real gate (emulator, PC dev
+     build) 13.2 ms a letter. The box now keeps its own text; the compare lines above are byte-for-byte unchanged. */
+  ok('a letter typed at the gate re-renders nothing: the box keeps its text (ref), handlePinLogin reads it on submit',
+     /ref=\{pinRef\}/.test(b3) && !/value=\{inputPin\}/.test(b3) && !/setInputPin/.test(app) &&
+     /const handlePinLogin = async \(\) => \{\s*if \(pinChecking\) return;\s*const inputPin = pinRef\.current\?\.value \|\| "";/.test(app));
+  ok('every place that emptied the box still empties it: the lock, the wrong try, the unlock, "change PIN" (4 clearPin calls)',
+     (app.match(/clearPin\(\);/g) || []).length === 4);
 }
 
 /* ── FLEET & ROSTER: THE QUARANTINE SWITCH (2026-09-30) ───────────────────────────────────────────────────────────────
