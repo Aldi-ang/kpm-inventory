@@ -27,7 +27,14 @@ const packs = (s) => {
 };
 const saleTotal = (tx) => tx.total || tx.amountPaid || 0;
 
-export default function TodayBook({ sales = [], samples = [], inventory = [] }) {
+/* the spell letters that drift into the book while it is open in the air (his v6: "some mantra or spell flying into the book") */
+const GLYPHS = [['ᔑ', -62, -6], ['ʖ', 60, -16], ['ᓵ', -46, -40], ['↸', 44, -44], ['ᒷ', -68, 16], ['⎓', 66, 10], ['⊣', -22, -56], ['ꖌ', 26, -58]];
+
+/* `table` (Agent Inventory, his v6 2026-09-28, approved with v23's "make the book little bit closer to the table"): the book
+   floats over an enchanting table in the middle of the chest row, as in Minecraft - a little open, turning slowly as it bobs;
+   pointed at (PC) or held (phone) it opens in the air, its leaves flip, spell letters drift in. A press opens it exactly as
+   the shelf book does. Its look lives in theme.css "THE ENCHANTING TABLE". */
+export default function TodayBook({ sales = [], samples = [], inventory = [], table = false }) {
   const btn = useRef(null), book = useRef(null), timers = useRef([]);
   /* null = on the shelf; fly -> shut -> open when it opens; closing -> away -> null when it shuts */
   const [phase, setPhase] = useState(null);
@@ -48,7 +55,7 @@ export default function TodayBook({ sales = [], samples = [], inventory = [] }) 
   function open() {
     stop();
     /* the flight starts where the shelf book stands: the open book is centred at (50vw, 50vh + 22px) by its CSS */
-    const r = btn.current.querySelector('.kpm-nb').getBoundingClientRect();
+    const r = btn.current.querySelector('.kpm-nb, .ebook').getBoundingClientRect();
     setFly({ '--fx': r.left + r.width / 2 - window.innerWidth / 2 + 'px', '--fy': r.top + r.height / 2 - (window.innerHeight / 2 + 22) + 'px' });
     setS({ kind: 'sales', page: 0, sel: 0, view: 'list', dir: 0, n: 0 });
     const calm = still();
@@ -140,17 +147,32 @@ export default function TodayBook({ sales = [], samples = [], inventory = [] }) 
   const cls = { fly: 'kpm-ob shut fly', shut: 'kpm-ob shut', open: 'kpm-ob', closing: 'kpm-ob shut', away: 'kpm-ob shut away' }[phase];
 
   return (
-    <div className="kpm-shelf" aria-label="Catatan hari ini">
+    <div className={`kpm-shelf${table ? ' kpm-ench' : ''}`} aria-label="Catatan hari ini">
       <button ref={btn} className={`kpm-nbBtn${hold ? ' hold' : ''}`} type="button" data-ponder="book" aria-haspopup="dialog" aria-expanded={!!phase} onClick={() => { if (Date.now() - tapped.current > 700) open(); }}
         onPointerDown={(e) => { if (e.pointerType !== 'mouse') setHold(true); }}
         onPointerUp={(e) => { if (hold && e.pointerType !== 'mouse') { tapped.current = Date.now(); open(); } setHold(false); }} onPointerCancel={letGo} onPointerLeave={letGo}
         onContextMenu={(e) => e.preventDefault()}>
+        {table ? (
+          <span className="table3d">
+            <span className="float">
+              <span className="glyphs" aria-hidden="true">{GLYPHS.map(([g, x, y], i) => <i key={i} style={{ '--x0': x + 'px', '--y0': y + 'px', '--gd': (i * .3).toFixed(1) + 's' }}>{g}</i>)}</span>
+              <span className="ebook"><span className="ebyaw"><span className="ebtilt">
+                <i className="sp" />
+                <i className="hl"><b className="pp" /><b className="fe" /><b className="te" /><b className="be" /></i>
+                <i className="hr"><b className="pp" /><b className="fe" /><b className="te" /><b className="be" /></i>
+                <i className="fl" /><i className="fl" /><i className="fl" />
+              </span></span></span>
+            </span>
+            <span className="tstage"><span className="tcube"><i className="fr" /><i className="rt" /><i className="tp"><b /><b /><b /><b /></i></span></span>
+          </span>
+        ) : (
         <span className="stage"><span className="kpm-nb">
           <i className="back" /><i className="spine" /><i className="block" /><i className="edge" /><i className="head" />
           <i className="leaf" /><i className="leaf" /><i className="leaf" />
           <i className="rib a" /><i className="rib b" />
           <i className="cover"><span className="out" /><span className="in" /></i>
         </span></span>
+        )}
         <span className="lbl">Catatan hari ini<b>{`${sales.length} penjualan · ${samples.length} sampel`}</b></span>
       </button>
       {phase && createPortal(

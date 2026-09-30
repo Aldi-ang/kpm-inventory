@@ -37,8 +37,8 @@ export default function AgentChestStage({ scene, stepIndex = 0 }) {
     /* the panels float ABOVE the chest row (v4.1); on the screen the Manifest is under them, here the room is kept empty */
     <div className="pt-[360px] sm:pt-[430px] pb-5" onPointerDownCapture={(e) => e.stopPropagation()}
       onClickCapture={(e) => { if (e.target.closest('[data-ponder="book"]')) e.stopPropagation(); }}>
-      <LoadingBay vanOnly key={open.van + '-' + open.q} {...bay} canEdit pose={{ open: { wh: false, van: open.van, q: open.q } }} onLayout={noop} />
-      <TodayBook sales={sales} samples={samples} inventory={bay.stock} />
+      <LoadingBay vanOnly key={open.van + '-' + open.q} {...bay} canEdit pose={{ open: { wh: false, van: open.van, q: open.q } }} onLayout={noop}
+        middle={<TodayBook table sales={sales} samples={samples} inventory={bay.stock} />} />
     </div>
   );
 }

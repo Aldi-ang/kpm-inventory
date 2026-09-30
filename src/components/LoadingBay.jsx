@@ -96,9 +96,19 @@ const TIDY = 'Tarik ke kotak lain untuk menata susunan';
 /* the quarantine crate's sign, drawn once (vanBay HAZARD_SIGN); its colour is the CSS's, so it can turn green and back */
 const SIGN = <svg viewBox="0 0 15 15" shapeRendering="crispEdges" aria-hidden="true">{HAZARD_SIGN.map(([x, y]) => <rect key={x + '-' + y} x={x} y={y} width="1.02" height="1.02" />)}</svg>;
 
+/* Agent Inventory's chests in 3D (his v6, 2026-09-28: "make the chest 3D as well"): the prototype's body box and lid
+   slab hinged at the back, seen a little from above - theme.css .kpm-c3 ("THE WAREHOUSE CHESTS"); the lid swings open with
+   the bay's van-open / q-open. Fleet & Roster keeps its sprite chests. */
+const c3 = (kind, face) => (
+  <span className={`kpm-c3${kind ? ' ' + kind : ''}`}><span className="cc">
+    <i className="bf">{face}</i><i className="bl" /><i className="br" /><i className="bt" />
+    <span className="lid3"><i className="lf" /><i className="ll" /><i className="lr" /><i className="lt" /><i className="lu" /><i className="latch" /></span>
+  </span></span>
+);
+
 /* `pose` is the ponder book's (ponder/stages/LoadingBayStage.jsx): a STARTING state only - the chests, the tabs and the
    muatan a beat wants on screen. It is read by useState and nowhere else, and Fleet & Roster never passes one. */
-export default function LoadingBay({ agent, warehouse, stock, damaged = [], canEdit, onLoad, onReturn, onLayout, onDirty, onPreset, team = [], bypasses = [], titip = [], bounties = [], pose, vanOnly = false, quarantine = [], warehouseQ = [] }) {
+export default function LoadingBay({ agent, warehouse, stock, damaged = [], canEdit, onLoad, onReturn, onLayout, onDirty, onPreset, team = [], bypasses = [], titip = [], bounties = [], pose, vanOnly = false, quarantine = [], warehouseQ = [], middle = null }) {
   const P = useMemo(() => Object.fromEntries(stock.map(p => [p.id, p])), [stock]);
   /* the van, in packs, from its live rows */
   const vanOf = useMemo(() => {
@@ -230,6 +240,11 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     playSound(side === 'wh' ? (on ? 'chestEnderOpen' : 'chestEnderClose') : (on ? 'chestVanOpen' : 'chestVanClose'));
     if (on && side !== 'wh') {
       const [gui, chest] = panelOf(side);   // it grows out of the chest that was pressed
+      if (vanOnly && gui && chest && refs.bay.current) {   // above ITS OWN chest, never over the table (his v6 "just above their own chest")
+        const bay = refs.bay.current, cx = chest.offsetLeft + chest.offsetWidth / 2;
+        const gl = Math.max(10, Math.min(bay.clientWidth - gui.offsetWidth - 10, cx - gui.offsetWidth / 2));
+        gui.style.left = Math.round(gl) + 'px'; gui.style.right = 'auto'; gui.style.marginInline = '0';
+      }
       if (gui && chest) gui.style.setProperty('--ox', Math.round(chest.offsetLeft + chest.offsetWidth / 2 - gui.offsetLeft) + 'px');
       if (vanOnly) requestAnimationFrame(() => fitPanel(side));
     }
@@ -736,7 +751,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
 
   const vanChest = (
     <button ref={refs.vanChest} className="chestCell vanc" type="button" data-ponder="chest:van" aria-expanded={!!open.van} aria-label={`Peti van ${agent.name} — buka atau tutup`} onClick={() => toggle('van', !open.van)}>
-      <span className="chest small"><span className="lid" /><span className="latch" /><span className="body" /></span>
+      {vanOnly ? c3('', null) : <span className="chest small"><span className="lid" /><span className="latch" /><span className="body" /></span>}
       <span className="cap">{vanOnly ? `Van · ${agent.vehicle || '—'}` : <>Van<span className="plate">{agent.vehicle || '—'}</span></>}</span>
     </button>
   );
@@ -745,7 +760,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   const crate = (
     <button ref={refs.qChest} className="chestCell qc" type="button" data-ponder="chest:q" aria-expanded={!!open.q} aria-label="Quarantine chest — open or close" onClick={() => toggle('q', !open.q)}>
       <span className="specks" aria-hidden="true"><i /><i /><i /><i /></span>
-      <span className="chest small hazard"><span className="lid" /><span className="latch" /><span className="body"><span className="sign">{SIGN}</span></span></span>
+      {vanOnly ? c3('hazard', <span className="sign">{SIGN}</span>) : <span className="chest small hazard"><span className="lid" /><span className="latch" /><span className="body"><span className="sign">{SIGN}</span></span></span>}
       <span className="cap">Quarantine</span>
     </button>
   );
@@ -874,6 +889,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
         </>)}
         {/* Fleet & Roster: the wooden chest and the yellow crate stand together beside the ender chest, one box between them */}
         {vanOnly ? vanChest : <div className="vpair">{vanChest}{crate}</div>}
+        {vanOnly && middle && <div className="tbl">{middle}</div>}
 
         <div ref={refs.vanGui} className={`gui van${anim.van ? '' : ' noanim'}`} data-ponder="gui:van">
           <p className="title">

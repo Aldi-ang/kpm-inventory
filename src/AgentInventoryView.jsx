@@ -329,8 +329,8 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                     {isLoading ? syncing : (<>
                         <LoadingBay vanOnly key={trueAgentId || 'none'} agent={{ ...liveProfileData, id: trueAgentId, name: agentName }}
                             stock={inventory} quarantine={quarantinedCargo}
-                            canEdit={canEditFleetRoster(userRole)} onLayout={saveLayout} />
-                        <TodayBook sales={todayTransactions} samples={todaySamplings} inventory={inventory} />
+                            canEdit={canEditFleetRoster(userRole)} onLayout={saveLayout}
+                            middle={<TodayBook table sales={todayTransactions} samples={todaySamplings} inventory={inventory} />} />
                     </>)}
                 </div>
             ) : (<>

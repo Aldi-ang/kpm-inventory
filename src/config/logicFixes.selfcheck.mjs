@@ -8846,8 +8846,8 @@ section('THE AGENT INVENTORY CHEST (2026-09-27)');
      /if \(!slot \|\| !canEdit \|\| busy\) return;\s*if \(vanOnly\)/.test(bay));
   ok('van-only is six squares a page on every width, and each page button carries its count',
      /const per = vanOnly \? PER : 4;/.test(bay) && /vanOnly \? ` · \$\{/.test(bay));
-  ok('two chests side by side in ONE row at every width (his pick A, 2026-09-28); the panels float over the page; three across, nothing starts hidden',
-     /\.kpm-bay\.solo \{[^}]*grid-template-areas: "vanc qc" "hint hint"/.test(th) &&
+  ok('ONE row at every width - the goods chest, the enchanting table, the crate (his v6, 2026-09-28/30); the panels float over the page; three across, nothing starts hidden',
+     /\.kpm-bay\.solo \{[^}]*grid-template-areas: "vanc tbl qc" "hint hint hint"/.test(th) &&
      /\.kpm-bay\.solo \.gui\.van, \.kpm-bay\.solo \.gui\.q \{ position: absolute;/.test(th) &&
      /\.kpm-bay\.solo \.grid \{[^}]*repeat\(3, 1fr\)/.test(th) && !/\.kpm-bay\.solo[^{]*\{[^}]*opacity: 0/.test(th));
   /* the book writes an inline opacity on every part it dims (PonderOverlay measure, 0.26), so a shut panel hidden only by
@@ -8904,7 +8904,7 @@ section('AGENT INVENTORY V4: TWO CHESTS AND ONE BOOK (2026-09-27)');
      /className=\{`\$\{seesChest \? '' : 'lg:h-\[calc\(100vh-120px\)\] '\}flex flex-col/.test(raw) &&
      !!chestView && !/overflow-y-auto|lg:h-/.test(chestView) && /<div className="flex-1 lg:overflow-y-auto p-4 custom-scrollbar relative z-10">/.test(raw));
   ok('the Saleable / Quarantine switch is gone for T1-T4: the chest view holds the bay and the book, no switch',
-     /<LoadingBay vanOnly\b/.test(chestView) && /<TodayBook sales=\{todayTransactions\} samples=\{todaySamplings\} inventory=\{inventory\}/.test(chestView) &&
+     /<LoadingBay vanOnly\b/.test(chestView) && /<TodayBook table sales=\{todayTransactions\} samples=\{todaySamplings\} inventory=\{inventory\}/.test(chestView) &&
      !/setViewMode|QuarantineLedgerBoard/.test(chestView));
   ok('the quarantine list keeps the Quarantine tab\'s filter and carries what the crate needs (product, unit)',
      /productId: item\.productId/.test(aiv) && /unit: item\.unit/.test(aiv) && /!tx\.forensicData\.eodCredited/.test(aiv));
@@ -8963,8 +8963,21 @@ section('AGENT INVENTORY V4.1: THE PANEL FLOATS OVER ITS CHEST (2026-09-28)');
      /function fitPanel\(side\) \{/.test(bay) && /scrollBy\(\{ top: -by/.test(bay) && /setProperty\('--sink'/.test(bay) && /requestAnimationFrame\(\(\) => fitPanel\(side\)\)/.test(bay));
   ok('the chest view does not clip it: no overflow-hidden on the chest view; the salesman keeps his',
      /shadow-2xl\$\{seesChest \? '' : ' overflow-hidden'\} relative`\}/.test(raw));
-  ok('the book stays on its own shelf under the chests, never beside them (his "not symetrical")',
-     /<LoadingBay vanOnly[^>]*\/>\s*<TodayBook /.test(code(raw)));
+  /* superseded 2026-09-30 by his v6 ("on the middle of the chest ... symetrical", "floating on top of table like enchanting
+     table from minecraft"): the book is no longer on its own shelf - it floats over an enchanting table BETWEEN the chests */
+  ok('the book floats over an enchanting table in the MIDDLE of the chest row (his v6), never on a shelf of its own',
+     /<LoadingBay vanOnly[^>]*middle=\{<TodayBook table sales=\{todayTransactions\} samples=\{todaySamplings\} inventory=\{inventory\} \/>\}/.test(code(raw)) &&
+     !/\/>\s*<TodayBook /.test(code(raw)) && /\{vanOnly && middle && <div className="tbl">\{middle\}<\/div>\}/.test(bay) && /\.kpm-bay \.tbl \{ grid-area: tbl;/.test(th));
+  ok('Agent Inventory\'s chests are 3D (his v6 "make the chest 3D as well"); Fleet & Roster keeps its own',
+     /\{vanOnly \? c3\('', null\) : <span className="chest small">/.test(bay) && /\{vanOnly \? c3\('hazard', <span className="sign">\{SIGN\}<\/span>\) : <span className="chest small hazard">/.test(bay) &&
+     /\.kpm-bay\.van-open \.vanc \.kpm-c3 \.lid3, \.kpm-bay\.q-open \.qc \.kpm-c3 \.lid3 \{ transform: rotateX\(100deg\); \}/.test(th));
+  ok('each box opens above ITS OWN chest, never over the table (his "just above their own chest not above the enchanted table")',
+     /const gl = Math\.max\(10, Math\.min\(bay\.clientWidth - gui\.offsetWidth - 10, cx - gui\.offsetWidth \/ 2\)\);/.test(bay) && /gui\.style\.left = Math\.round\(gl\) \+ 'px';/.test(bay));
+  ok('the book floats a quarter block over the table, a little lower than drawn first (his "closer to the table"), bobbing; Lite Mode stills it',
+     /\.kpm-ench \.float \{[^}]*bottom: calc\(36px \+ var\(--th\) \* \.95 - 8px\);[^}]*animation: kpmBookBob 3\.2s/.test(th) && /html\.lite-mode \.kpm-ench \*/.test(th));
+  ok('pointing (PC) or a held finger (phone) opens the book in the air, its leaves flip and the spell glyphs drift in; a press opens the day\'s book as before',
+     /\.kpm-ench \.kpm-nbBtn\.hold \.ebtilt \.fl \{ animation: kpmLeafFlip/.test(th) && /@media \(hover: hover\) and \(pointer: fine\) \{[^@]*\.kpm-ench \.kpm-nbBtn:hover \.glyphs i \{ animation: kpmGlyph/.test(th) &&
+     /querySelector\('\.kpm-nb, \.ebook'\)/.test(book) && !/className="pg"/.test(book));
   ok('HOLD on a phone riffles the book (hover is PC-only); letting go opens it; no long-press menu',
      /if \(e\.pointerType !== 'mouse'\) setHold\(true\)/.test(book) && /onPointerUp=\{\(e\) => \{ if \(hold && e\.pointerType !== 'mouse'\) \{ tapped\.current = Date\.now\(\); open\(\); \}/.test(book) && /onContextMenu=\{\(e\) => e\.preventDefault\(\)\}/.test(book) &&
      /\.kpm-nbBtn\.hold \.kpm-nb \.leaf \{ animation: kpmRiffle/.test(th) && /-webkit-touch-callout: none/.test(th));
