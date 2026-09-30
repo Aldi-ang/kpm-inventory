@@ -52,6 +52,21 @@
       "autoPort": true
     },
     {
+      "name": "kpm-preview-http",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "preview",
+        "--mode",
+        "httpdev",
+        "--port",
+        "4174",
+        "--strictPort"
+      ],
+      "port": 4174,
+      "url": "http://localhost:4174"
+    },
+    {
       "name": "kpm-dev-http",
       "runtimeExecutable": "npm",
       "runtimeArgs": [

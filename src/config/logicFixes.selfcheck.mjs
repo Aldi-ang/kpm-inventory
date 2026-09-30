@@ -9419,5 +9419,30 @@ section('AGENT INVENTORY: THE CRATE\'S BOX IN LOOK C, IN ENGLISH (2026-09-30)');
   ok('the sign never makes the crate box\'s title taller, on both screens', /\.kpm-bay \.gui\.wh \.title, \.kpm-bay \.gui\.q \.title \{ align-items: center; \}/.test(th));
 }
 
+/* ── HEAVY APP 1: A MISSING PIECE AFTER A PUSH RELOADS BY ITSELF, ONCE (2026-09-30) ────────────────────────────────────
+   His words: *"sometimes it error first then i need to refresh to make it works"*. The built preload helper dispatches
+   `vite:preloadError` when a tab's import fails; main.jsx now reloads on it. The handler is RUN here on fakes: it must
+   reload once, not again within 30 s (no loop when a piece is really gone), and never offline or with storage blocked. */
+section('HEAVY APP 1: A MISSING PIECE AFTER A PUSH RELOADS BY ITSELF, ONCE (2026-09-30)');
+{ const mainSrc = code(read('src/main.jsx')).replace(/\r/g, '');
+  const s = mainSrc.indexOf("window.addEventListener('vite:preloadError', "), e = mainSrc.indexOf('\n})', s);
+  const body = s > -1 && e > s ? mainSrc.slice(s + "window.addEventListener('vite:preloadError', ".length, e + 2) : '';
+  ok('main.jsx listens for vite:preloadError (the event the built preload helper fires on a failed tab import)', body.length > 100);
+  const run = ({ online = true, store = {}, blocked = false, now = 1e6 } = {}) => {
+    let reloads = 0;
+    const ss = { getItem: (k) => { if (blocked) throw new Error('denied'); return store[k] ?? null; },
+                 setItem: (k, v) => { if (blocked) throw new Error('denied'); store[k] = v; } };
+    const fn = new Function('navigator', 'sessionStorage', 'window', 'Date', `return ${body}`)(
+      { onLine: online }, ss, { location: { reload: () => { reloads++; } } }, { now: () => now });
+    fn(); return reloads;
+  };
+  const store = {};
+  ok('first failure online -> one reload', body && run({ store, now: 1e6 }) === 1);
+  ok('a second failure 5 s later -> no reload (the piece is really gone; the box shows, no loop)', body && run({ store, now: 1e6 + 5000 }) === 0);
+  ok('a failure 31 s later -> reloads again (a later push is a new chance)', body && run({ store, now: 1e6 + 31000 }) === 1);
+  ok('no signal -> no reload (the offline box answers; a dev reload offline is a white page)', body && run({ online: false }) === 0);
+  ok('storage blocked -> no reload (no stamp means no loop guard, so never reload)', body && run({ blocked: true }) === 0);
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

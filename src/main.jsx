@@ -15,6 +15,23 @@ import { registerSW } from 'virtual:pwa-register'
    every hour while the tab stays open. The BUILD id in the Flight Recorder says which build runs. */
 registerSW({ immediate: true, onRegisteredSW(_url, r) { if (r) setInterval(() => r.update(), 60 * 60 * 1000); } });
 
+/* THE ERROR-THEN-REFRESH (2026-09-30). His words: "sometimes it error first then i need to refresh
+   to make it works". After a push the offline helper swaps in the new build (skipWaiting +
+   clientsClaim + cleanupOutdatedCaches) and deletes the old stored copy while the old screen is
+   still open; that screen's next tab asks for a piece (a lazy chunk) that exists nowhere any more,
+   and LazyTabBoundary shows its box. Vite announces exactly that failure as `vite:preloadError`, so
+   reload here, once, and the new build answers instead. The 30-second stamp stops a loop when a
+   piece is genuinely missing; no signal is left to the box, because a reload offline on the dev
+   server paints a white page (2026-08-19); storage blocked -> no stamp -> no reload, never a loop. */
+window.addEventListener('vite:preloadError', () => {
+  if (!navigator.onLine) return
+  try {
+    if (Date.now() - (Number(sessionStorage.getItem('kpm-chunk-reload')) || 0) < 30000) return
+    sessionStorage.setItem('kpm-chunk-reload', String(Date.now()))
+  } catch { return }
+  window.location.reload()
+})
+
 /* Browsers refuse to play audio until the page has had a real user gesture, and `playSound`
    correctly returns false rather than throwing. Until now the ONLY thing that ever unlocked it
    was the sales terminal — so every sound anywhere else in the app was silent forever, which is
