@@ -724,24 +724,31 @@ html.light {
    digit. 8-frame sprite, stepped in PIXELS — percentage stepping lands between
    frames and tears. Frame 3 is the front face, which Lite Mode holds.
    ---------------------------------------------------------------------------- */
+/* THE STRIP, NOT BACKGROUND-POSITION (2026-10-01, potato phone - his "sure fix the coin too"): the same fix as the
+   mascot sheet. A background-position spin kept the main processor drawing every frame - Agent Inventory 30% idle CPU
+   on a 6x-slow phone, 9% with the coin paused. The coin is now an 18px (24px) window and the 8-frame sheet a ::before
+   strip moved by transform on the graphics chip: same steps, same pixel offsets, same frames. */
 .kpm-coin { display: inline-block; flex: none; vertical-align: -3px;
-  width: 18px; height: 18px;
+  width: 18px; height: 18px; overflow: hidden; }
+:where(.kpm-coin) { position: relative; }
+.kpm-coin::before { content: ''; position: absolute; left: 0; top: 0;
+  width: 144px; height: 18px;           /* 8 frames x 18px */
   background-image: url('/coin-sprite.png');
-  background-size: 144px 18px;          /* 8 frames x 18px */
+  background-size: 144px 18px;
   background-position: 0 0;
   background-repeat: no-repeat;
   image-rendering: pixelated;
   animation: kpmCoinSpin .72s steps(8, end) infinite; }
-.kpm-coin.lg { width: 24px; height: 24px; background-size: 192px 24px; vertical-align: -4px; }
-@keyframes kpmCoinSpin   { to { background-position: -144px 0; } }
-.kpm-coin.lg { animation-name: kpmCoinSpinLg; }
-@keyframes kpmCoinSpinLg { to { background-position: -192px 0; } }
-/* front face when motion is off */
-html.lite-mode .kpm-coin,      .kpm-coin.still      { animation: none; background-position: -54px 0; }
-html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px 0; }
+.kpm-coin.lg { width: 24px; height: 24px; vertical-align: -4px; }
+.kpm-coin.lg::before { width: 192px; height: 24px; background-size: 192px 24px; animation-name: kpmCoinSpinLg; }
+@keyframes kpmCoinSpin   { to { transform: translateX(-144px); } }
+@keyframes kpmCoinSpinLg { to { transform: translateX(-192px); } }
+/* front face (frame 3) when motion is off */
+html.lite-mode .kpm-coin::before,      .kpm-coin.still::before      { animation: none; transform: translateX(-54px); }
+html.lite-mode .kpm-coin.lg::before,   .kpm-coin.lg.still::before   { transform: translateX(-72px); }
 @media (prefers-reduced-motion: reduce) {
-  .kpm-coin    { animation: none; background-position: -54px 0; }
-  .kpm-coin.lg { background-position: -72px 0; }
+  .kpm-coin::before    { animation: none; transform: translateX(-54px); }
+  .kpm-coin.lg::before { transform: translateX(-72px); }
 }
 
 /* ----------------------------------------------------------------------------

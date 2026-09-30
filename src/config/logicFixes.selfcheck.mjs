@@ -9604,5 +9604,22 @@ section('POTATO 5: THE RESTOCK NOTICE BREATHES BY OPACITY (2026-10-01)');
     const mixAlpha = 1 * (1 - p) + 0.35 * p, opacity = 1 + (0.35 - 1) * p; return Math.abs(mixAlpha - opacity) < 1e-12; }));
 }
 
+/* ── POTATO 7: THE COIN SPINS ON THE GRAPHICS CHIP (2026-10-01, his "sure fix the coin too") ─────────────────────────
+   The mascot fix again: a background-position coin kept the main processor drawing every frame - Agent Inventory
+   30% -> 15% idle CPU (6x-slow phone) with the strip. Pixels: the small coin identical; the large coin identical but
+   for a half-pixel sliver of the neighbouring frame (scaling) that moved from the right edge to the left. */
+section('POTATO 7: THE COIN SPINS ON THE GRAPHICS CHIP (2026-10-01)');
+{ const th = read('src/styles/theme.css').replace(/\r/g, '');
+  ok('the coin animates a ::before strip by transform - never background-position',
+     /@keyframes kpmCoinSpin   \{ to \{ transform: translateX\(-144px\); \} \}/.test(th) && /@keyframes kpmCoinSpinLg \{ to \{ transform: translateX\(-192px\); \} \}/.test(th) &&
+     !/@keyframes kpmCoinSpin(Lg)?\s*\{[^}]*background-position/.test(th) && /\.kpm-coin \{[^}]*width: 18px; height: 18px; overflow: hidden; \}/.test(th));
+  /* the maths RUN: 8 steps over a 144px (192px) strip put frame k at -18k (-24k); the held front face is frame 3 */
+  const fr = (size) => Array.from({ length: 8 }, (_, k) => Math.floor(((k + 0.5) / 8) * 8) / 8 * -size * 8);
+  ok('every frame lands on a frame edge (18px small, 24px large) and the still coin holds frame 3 (-54px / -72px)',
+     fr(18).every((x, k) => x === -18 * k) && fr(24).every((x, k) => x === -24 * k) &&
+     /\.kpm-coin\.still::before      \{ animation: none; transform: translateX\(-54px\); \}/.test(th) && /\.kpm-coin\.lg\.still::before   \{ transform: translateX\(-72px\); \}/.test(th) &&
+     /\.kpm-coin::before    \{ animation: none; transform: translateX\(-54px\); \}/.test(th) && -54 === -18 * 3 && -72 === -24 * 3);
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
