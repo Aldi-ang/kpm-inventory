@@ -1977,8 +1977,13 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
 
                             {/* THE LINES — batch is a column, not a box in a corner */}
                             {/* Empty = a NOTICE, not a panel: dashed amber edge, amber words, fades in and breathes
-                                (his ask, 2026-09-15). Full = the plain table. */}
-                            <div className={`overflow-x-auto rounded-lg ${cart.length === 0 ? 'border border-dashed border-accent-ink bg-transparent kpm-notice' : 'border border-line-2 bg-panel'}`}>
+                                (his ask, 2026-09-15). Full = the plain table.
+                                The breathing dashed edge lives on this WRAPPER's ::before (index.css), fading by opacity on the
+                                graphics chip (2026-10-01, potato phone: the border-color breathe repainted the box every
+                                frame). On the wrapper, not the scroller, so it never scrolls away; the scroller keeps a
+                                clear 1px border, so the table sits exactly where it did. */}
+                            <div className={cart.length === 0 ? 'kpm-notice rounded-lg' : undefined}>
+                            <div className={`overflow-x-auto rounded-lg ${cart.length === 0 ? 'border border-transparent bg-transparent' : 'border border-line-2 bg-panel'}`}>
                                 <table className="w-full text-sm sm:min-w-[780px] kpm-stack-rows">
                                     <thead>
                                         <tr className="bg-raised">
@@ -2078,6 +2083,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                         })}
                                     </tbody>
                                 </table>
+                            </div>
                             </div>
 
                             {/* COSTS — cukai and upah are an intake cost only */}

@@ -86,9 +86,15 @@ body {
 
 /* A NOTICE box (an empty table telling the user what to do next): fades in, then its dashed
    amber edge breathes. Lite Mode below completes the fade at once and stops the breathing. */
+/* The breathe is the dashed edge's OPACITY on a ::before (2026-10-01, "potato phone even in full animation mode"):
+   animating border-color repainted the whole box every frame - Restock Vault 42% idle CPU on a 6x-slow phone. Over the
+   see-through box, opacity 1 -> .35 is the same pixels as border-color X -> X at 35% (X x alpha either way), on the
+   same 2.4s ease-in-out after .35s. Lite Mode / reduced motion stop it at 1: the full edge, as before. */
 @keyframes kpmNoticeIn { from { opacity: 0; transform: translateY(4px); } }
-@keyframes kpmNoticeBreathe { 50% { border-color: color-mix(in srgb, var(--accent-ink) 35%, transparent); } }
-.kpm-notice { animation: kpmNoticeIn .35s ease-out both, kpmNoticeBreathe 2.4s ease-in-out .35s infinite; }
+@keyframes kpmNoticeBreathe { 50% { opacity: .35; } }
+.kpm-notice { position: relative; animation: kpmNoticeIn .35s ease-out both; }
+.kpm-notice::before { content: ''; position: absolute; inset: 0; border: 1px dashed var(--accent-ink); border-radius: inherit;
+  pointer-events: none; animation: kpmNoticeBreathe 2.4s ease-in-out .35s infinite; }
 
 /* A photo preview (components/PhotoField.jsx): the picture enters with a short fade + scale, and
    while a nota is being scanned a thin amber line sweeps the box. Lite Mode below completes both

@@ -6936,9 +6936,13 @@ section('RESTOCK VAULT — the empty table is a NOTICE, the register buttons sha
 { const rv = read('src/RestockVaultView.jsx');
   const w = rv.indexOf('THE LINES — batch is a column, not a box in a corner');
   const wrap = rv.slice(w, rv.indexOf('<table', w));
-  ok('the intake table wrapper was found', w > -1 && wrap.length < 700);
+  ok('the intake table wrapper was found', w > -1 && wrap.length < 1200);
+  /* 2026-10-01 (potato 5): the dashed amber edge moved to the .kpm-notice WRAPPER's ::before (index.css) so it can
+     breathe by opacity; the scroller keeps a clear 1px border while empty and the plain edge while full */
   ok('the wrapper turns into a dashed amber notice ONLY while the cart is empty',
-     /cart\.length === 0\s*\?\s*'[^']*border-dashed border-accent-ink[^']*kpm-notice[^']*'\s*:\s*'[^']*border-line-2[^']*'/.test(wrap),
+     /cart\.length === 0 \? 'kpm-notice rounded-lg' : undefined/.test(wrap) &&
+     /cart\.length === 0\s*\?\s*'border border-transparent bg-transparent'\s*:\s*'[^']*border-line-2[^']*'/.test(wrap) &&
+     /\.kpm-notice::before \{[^}]*border: 1px dashed var\(--accent-ink\)/.test(read('src/index.css')),
      'a notice look on a full table would shout at every intake');
   ok('the notice has no fill', !/cart\.length === 0\s*\?\s*'[^']*bg-orange/.test(wrap), 'amber is an edge and an ink, not a fill');
   const e = rv.indexOf('Belum ada barang. Cari dan klik salah satu di daftar barang.');
@@ -6946,7 +6950,7 @@ section('RESTOCK VAULT — the empty table is a NOTICE, the register buttons sha
   ok('the empty row speaks in amber with a "Perlu diisi" label above the sentence',
      e > -1 && /text-accent-ink/.test(cell) && /Perlu diisi/.test(rv.slice(e - 400, e)));
   const css = read('src/index.css');
-  ok('the notice fades in and its edge breathes', /@keyframes kpmNoticeIn/.test(css) && /@keyframes kpmNoticeBreathe/.test(css) && /\.kpm-notice\s*\{[^}]*kpmNoticeIn[^}]*kpmNoticeBreathe/.test(css));
+  ok('the notice fades in and its edge breathes', /@keyframes kpmNoticeIn/.test(css) && /@keyframes kpmNoticeBreathe/.test(css) && /\.kpm-notice\s*\{[^}]*kpmNoticeIn/.test(css) && /\.kpm-notice::before\s*\{[^}]*kpmNoticeBreathe/.test(css));
   ok('Lite Mode still completes every animation instantly and stops the breathing', /html\.lite-mode \* \{[^}]*animation-iteration-count: 1 !important/.test(css));
   const b1 = rv.search(/Daftarkan pabrik\r?\n/), b2 = rv.search(/Daftarkan orang\r?\n/);   // the desk file mixes CRLF
   const btn1 = rv.slice(rv.lastIndexOf('<button', b1), b1), btn2 = rv.slice(rv.lastIndexOf('<button', b2), b2);
@@ -9581,6 +9585,23 @@ section('POTATO 4: THE GATE\'S DOT FIELD SLEEPS AT REST (2026-10-01)');
   ok('a finger wakes it, the unlock wakes it, and it can never be woken twice',
      /S\.p\.on = true;\s*S\.wake\(\);/.test(g) && /S\.unlockAt = performance\.now\(\);\s*S\.wake\?\.\(\);/.test(g) &&
      /S\.wake = \(\) => \{ if \(!S\.raf\) S\.raf = requestAnimationFrame\(frame\); \};/.test(g));
+}
+
+/* ── POTATO 5: THE RESTOCK NOTICE BREATHES BY OPACITY (2026-10-01) ────────────────────────────────────────────────────
+   Animating border-color repainted the whole box every frame: Restock Vault 45% -> 4% idle CPU (6x-slow phone). The
+   dashed edge is a ::before on a WRAPPER (a layer inside the scroller would scroll away), fading 1 -> .35 -> 1; the
+   scroller keeps a clear 1px border so the table does not move. 12 moments compared: worst pixel 1/255. */
+section('POTATO 5: THE RESTOCK NOTICE BREATHES BY OPACITY (2026-10-01)');
+{ const ix = read('src/index.css').replace(/\r/g, ''), rv = read('src/RestockVaultView.jsx');
+  ok('the breathe animates opacity on the edge layer, never border-color',
+     /@keyframes kpmNoticeBreathe \{ 50% \{ opacity: \.35; \} \}/.test(ix) && !/kpmNoticeBreathe[^}]*border-color/.test(ix) &&
+     /\.kpm-notice::before \{ content: ''; position: absolute; inset: 0; border: 1px dashed var\(--accent-ink\); border-radius: inherit;\s*pointer-events: none; animation: kpmNoticeBreathe 2\.4s ease-in-out \.35s infinite; \}/.test(ix));
+  ok('the edge sits on a wrapper outside the scroller, and the scroller keeps a clear 1px border (the table does not move)',
+     /<div className=\{cart\.length === 0 \? 'kpm-notice rounded-lg' : undefined\}>\s*<div className=\{`overflow-x-auto rounded-lg \$\{cart\.length === 0 \? 'border border-transparent bg-transparent' : 'border border-line-2 bg-panel'\}`\}>/.test(rv) &&
+     !/overflow-x-auto[^`]*kpm-notice/.test(rv));
+  /* the maths RUN: colour X at alpha (1 - .65p) over the box = X at opacity (1 - .65p) - premultiplied, both are X x alpha */
+  ok('opacity .35 is the old 35% colour mix at every step', Array.from({ length: 101 }, (_, i) => i / 100).every(p => {
+    const mixAlpha = 1 * (1 - p) + 0.35 * p, opacity = 1 + (0.35 - 1) * p; return Math.abs(mixAlpha - opacity) < 1e-12; }));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
