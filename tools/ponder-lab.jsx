@@ -1079,6 +1079,20 @@ function ShellLab() {
           appSettings={{ companyName: 'KPM INVENTORY' }}
           logAudit={() => {}} triggerCapy={() => {}}
         />
+      ) : q.has('gudang') ? (
+        /* ?shell&gudang — the REGIONAL WAREHOUSE desk INSIDE the real shell, in the restock-vault box
+           App.jsx:5031 wraps it in (copied verbatim) - `?gudang` alone mounts it outside the shell. A
+           branch viewer (FLEET_CAPTAIN in BANDUNG, as GudangLab): the HQ desk above it is not mounted. */
+        <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-full w-full max-w-7xl mx-auto border-2 lg:border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col bg-[var(--duke-well-solid)] p-2 lg:p-4 overflow-y-auto custom-scrollbar">
+          <BranchWarehouseManager
+            db={{}} storage={null} appId="lab" user={{ displayName: 'Rina Wijaya', email: 'rina@kpm.id', location: 'BANDUNG' }}
+            userRole={q.get('tier') || 'FLEET_CAPTAIN'} userLocation="BANDUNG" isAdmin={false} masterUserId="lab"
+            globalInventory={FIXTURES['branches/BANDUNG/inventory']} motorists={[...LAB_MOTORISTS, ...LAB_FLEET]}
+            transactions={[]} branchStockMap={{ BANDUNG: FIXTURES['branches/BANDUNG/inventory'] }}
+            triggerCapy={() => {}} logAudit={() => {}}
+            appSettings={{ companyName: 'KPM INVENTORY', adminDisplayName: 'Rina Wijaya' }}
+          />
+        </div>
       ) : q.has('places') ? (
         /* ?shell&places — the Restock Vault desk INSIDE the real shell, wrapped exactly as App.jsx
            wraps it (`activeTab === 'restock_vault'`): the shell's `p-6`, then the `border-4 p-4`
