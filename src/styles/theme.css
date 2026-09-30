@@ -796,16 +796,27 @@ html.lite-mode .kpm-coin.lg,   .kpm-coin.lg.still   { background-position: -72px
 /* 10 frames, 200px each -> 2000px sheet. What he does when nothing is happening.
    Exactly ONE of the ten frames is a blink; the generated sheets arrive with four or
    five, which reads as a nervous tic, so the extras are dropped at cut time. */
-.kpm-merch-idle { background-image: url('/sprites/merchant-idle.png');
-  background-size: 2000px 200px;
+/* THE SHEET SLIDES ON A STRIP, NOT BY BACKGROUND-POSITION (2026-10-01, his "make it lighter ... potato
+   phone even in full animation mode"). A background-position animation cannot run on the graphics chip,
+   so the phone's main processor re-ran the page's frame pipeline 60 times a second for a picture that
+   changes 4 times a second - on EVERY screen, hidden or not: 18% -> 2% idle CPU on a 6x-slow phone when
+   it was switched off. Now the element is a 200px window and the whole sheet is a ::before strip moved
+   by transform, which the graphics chip does alone. Same steps, same pixel offsets, so every frame is the
+   same picture (checked byte for byte). Lite Mode / reduced motion: `html.lite-mode *::before` below
+   stops the strip at 0, frame 1, as before. `:where()` keeps position at zero specificity - the corner
+   and float boxes position the element themselves. */
+.kpm-merch-idle, .kpm-merch-talk { overflow: hidden; }
+:where(.kpm-merch-idle, .kpm-merch-talk) { position: relative; }
+.kpm-merch-idle::before, .kpm-merch-talk::before { content: ''; position: absolute; left: 0; top: 0; height: 200px;
+  background-repeat: no-repeat; background-position: 0 0; }
+.kpm-merch-idle::before { width: 2000px; background-image: url('/sprites/merchant-idle.png'); background-size: 2000px 200px;
   animation: kpmMerchIdle 3s steps(10, end) infinite; }
-@keyframes kpmMerchIdle { to { background-position: -2000px 0; } }
+@keyframes kpmMerchIdle { to { transform: translateX(-2000px); } }
 
 /* 13 frames, 200px each -> 2600px sheet. Loops while he is speaking. */
-.kpm-merch-talk { background-image: url('/sprites/merchant-talk.png');
-  background-size: 2600px 200px;
+.kpm-merch-talk::before { width: 2600px; background-image: url('/sprites/merchant-talk.png'); background-size: 2600px 200px;
   animation: kpmMerchTalk 2.4s steps(13, end) infinite; }
-@keyframes kpmMerchTalk { to { background-position: -2600px 0; } }
+@keyframes kpmMerchTalk { to { transform: translateX(-2600px); } }
 
 /* DEAL IS ONE POSE, NOT A SHEET. Every defect the multi-frame version had - a body
    that drifted, a hat that vanished, a hand left floating from a bad split - was a
@@ -1073,12 +1084,10 @@ html.lite-mode .kpm-merch-hold::after { animation: none; background-position: -9
 /* Lite Mode and reduced motion hold a frame. Talking holds frame 1, the neutral
    pose. Deal holds the LAST frame, so a Lite Mode user still sees the thumbs up -
    the point of the animation, not its starting pose. */
-html.lite-mode .kpm-merch-idle { animation: none; background-position: 0 0; }
-html.lite-mode .kpm-merch-talk { background-position: 0 0; }
+html.lite-mode .kpm-merch-idle::before, html.lite-mode .kpm-merch-talk::before { animation: none; transform: none; }
 html.lite-mode .kpm-merch-deal { animation: none; background-position: 0 0; }
 @media (prefers-reduced-motion: reduce) {
-  .kpm-merch-idle { animation: none; background-position: 0 0; }
-  .kpm-merch-talk { animation: none; background-position: 0 0; }
+  .kpm-merch-idle::before, .kpm-merch-talk::before { animation: none; transform: none; }
   .kpm-merch-deal { animation: none; background-position: 0 0; }
 }
 

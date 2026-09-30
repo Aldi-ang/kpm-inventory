@@ -9502,5 +9502,28 @@ section('HEAVY APP 5b: CUSTOMERS, SETTINGS AND THE AUDIT VAULT LOAD ON OPEN (202
      ['<CustomerManagement', '<SettingsView', '<AuditVaultView'].every(t => inside.includes(t) && a.indexOf(t) === a.lastIndexOf(t)));
 }
 
+/* ── POTATO 1: THE MASCOT SHEET SLIDES ON THE GRAPHICS CHIP (2026-10-01) ─────────────────────────────────────────────
+   His "lighter ... potato phone even in full animation mode". A background-position sheet animation kept the main
+   processor drawing 60 frames a second on every screen: 18% -> 3% idle CPU (6x-slow phone) with the strip. The
+   frames were compared byte for byte (plain box: identical; phone corner box: worst pixel 1/255). */
+section('POTATO 1: THE MASCOT SHEET SLIDES ON THE GRAPHICS CHIP (2026-10-01)');
+{ const th = read('src/styles/theme.css').replace(/\r/g, '');
+  ok('the idle and talk sheets animate a ::before strip by transform - never background-position on the element',
+     /@keyframes kpmMerchIdle \{ to \{ transform: translateX\(-2000px\); \} \}/.test(th) && /@keyframes kpmMerchTalk \{ to \{ transform: translateX\(-2600px\); \} \}/.test(th) &&
+     !/@keyframes kpmMerch(Idle|Talk) \{[^}]*background-position/.test(th) && /\.kpm-merch-idle, \.kpm-merch-talk \{ overflow: hidden; \}/.test(th));
+  /* the frame maths RUN: for each sheet, the strip width, the translate and the step count must put frame k at -200k px */
+  const sheet = (n) => { const w = +(th.match(new RegExp(`\\.kpm-merch-${n}::before \\{ width: (\\d+)px;`)) || [])[1];
+    const steps = +(th.match(new RegExp(`animation: kpmMerch${n[0].toUpperCase() + n.slice(1)} [\\d.]+s steps\\((\\d+), end\\)`)) || [])[1];
+    const to = +(th.match(new RegExp(`kpmMerch${n[0].toUpperCase() + n.slice(1)} \\{ to \\{ transform: translateX\\((-?\\d+)px\\)`)) || [])[1];
+    return { w, steps, to, frames: Array.from({ length: steps || 0 }, (_, k) => Math.floor(((k + 0.5) / steps) * steps) / steps * to) }; };
+  const idle = sheet('idle'), talk = sheet('talk');
+  ok('every frame lands on a 200px frame edge: idle 10 frames on a 2000px strip, talk 13 on 2600px (frame k at -200k)',
+     idle.w === 2000 && idle.steps === 10 && idle.to === -2000 && idle.frames.every((x, k) => x === -200 * k) &&
+     talk.w === 2600 && talk.steps === 13 && talk.to === -2600 && talk.frames.every((x, k) => x === -200 * k));
+  ok('Lite Mode and reduced motion still hold frame 1 (the strip stops at 0)',
+     /html\.lite-mode \.kpm-merch-idle::before, html\.lite-mode \.kpm-merch-talk::before \{ animation: none; transform: none; \}/.test(th) &&
+     /\.kpm-merch-idle::before, \.kpm-merch-talk::before \{ animation: none; transform: none; \}/.test(th));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
