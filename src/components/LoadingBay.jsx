@@ -95,6 +95,9 @@ const VIEW_ONLY = 'Hanya lihat — jabatan ini tidak bisa memuat van';
 const TIDY = 'Tarik ke kotak lain untuk menata susunan';
 /* the quarantine crate's sign, drawn once (vanBay HAZARD_SIGN); its colour is the CSS's, so it can turn green and back */
 const SIGN = <svg viewBox="0 0 15 15" shapeRendering="crispEdges" aria-hidden="true">{HAZARD_SIGN.map(([x, y]) => <rect key={x + '-' + y} x={x} y={y} width="1.02" height="1.02" />)}</svg>;
+/* the crate's pulsing sign: a still black one under a green copy whose OPACITY pulses (theme.css kpmSignGlow) - the same
+   colours at every moment as the old fill pulse, but the graphics chip does it; the fill pulse restyled 90 squares a frame */
+const SIGN_PULSE = <>{SIGN}{SIGN}</>;
 
 /* Agent Inventory's chests in 3D (his v6, 2026-09-28: "make the chest 3D as well"): the prototype's body box and lid
    slab hinged at the back, seen a little from above - theme.css .kpm-c3 ("THE WAREHOUSE CHESTS"); the lid swings open with
@@ -760,7 +763,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   const crate = (
     <button ref={refs.qChest} className="chestCell qc" type="button" data-ponder="chest:q" aria-expanded={!!open.q} aria-label="Quarantine chest — open or close" onClick={() => toggle('q', !open.q)}>
       <span className="specks" aria-hidden="true"><i /><i /><i /><i /></span>
-      {vanOnly ? c3('hazard', <span className="sign">{SIGN}</span>) : <span className="chest small hazard"><span className="lid" /><span className="latch" /><span className="body"><span className="sign">{SIGN}</span></span></span>}
+      {vanOnly ? c3('hazard', <span className="sign">{SIGN_PULSE}</span>) : <span className="chest small hazard"><span className="lid" /><span className="latch" /><span className="body"><span className="sign">{SIGN_PULSE}</span></span></span>}
       <span className="cap">Quarantine</span>
     </button>
   );

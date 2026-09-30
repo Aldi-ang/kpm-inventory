@@ -16,6 +16,8 @@ import { QuarantineHatch, BlastDoors, QuarantineBand, runSwitch, still } from '.
 const fmt = (n) => Number(n).toLocaleString('id-ID');
 const items = (n) => `${fmt(n)} item${n === 1 ? '' : 's'}`;
 const SIGN = <svg viewBox="0 0 15 15" shapeRendering="crispEdges" aria-hidden="true">{HAZARD_SIGN.map(([x, y]) => <rect key={x + '-' + y} x={x} y={y} width="1.02" height="1.02" />)}</svg>;
+/* the crate's pulsing sign: still black under a green copy whose opacity pulses - see LoadingBay.jsx SIGN_PULSE */
+const SIGN_PULSE = <>{SIGN}{SIGN}</>;
 /* ten ender particles rising through The End (animation - Lite Mode stops them) */
 const MOTES = Array.from({ length: 10 }, (_, i) => ({ '--mx': 8 + (i * 37) % 84 + '%', '--md': (5 + (i % 4) * 1.3).toFixed(1) + 's', '--mdl': '-' + (i * 0.9).toFixed(1) + 's' }));
 
@@ -167,7 +169,7 @@ export function CrateVault({ facilities, rows, fac, onPick, line, actions }) {
               aria-label={`Quarantine crate ${f.name} - open`} onClick={() => pick(f.key)}>
               <span className="kpm-c3 hazard">
                 <span className="cc">
-                  <i className="bf"><span className="sign">{SIGN}</span></i><i className="bl" /><i className="br" /><i className="bt" />
+                  <i className="bf"><span className="sign">{SIGN_PULSE}</span></i><i className="bl" /><i className="br" /><i className="bt" />
                   <span className="lid3"><i className="lf" /><i className="ll" /><i className="lr" /><i className="lt" /><i className="lu" /><i className="latch" /></span>
                 </span>
               </span>

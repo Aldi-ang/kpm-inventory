@@ -8937,7 +8937,7 @@ section('AGENT INVENTORY V4: TWO CHESTS AND ONE BOOK (2026-09-27)');
   const crate = cut(th, 'THE QUARANTINE CRATE', 'END OF THE VAN-LOADING BAY');
   ok('the crate is yellow with the sign; the quiet effect is his C+B pick: four 4 px #62F03C specks rising 26 px, 3.6 s, .9 s apart, and the sign black -> #2F9A1C',
      /\.chest\.hazard \.body \{[^}]*#F2C318/.test(crate) && /\.specks i \{[^}]*width: 4px; height: 4px; background: #62F03C;[^}]*3\.6s/.test(crate) &&
-     /translateY\(-26px\)/.test(crate) && /nth-child\(4\) \{[^}]*animation-delay: 2\.7s/.test(crate) && /50% \{ fill: #2F9A1C; \}/.test(crate) &&
+     /translateY\(-26px\)/.test(crate) && /nth-child\(4\) \{[^}]*animation-delay: 2\.7s/.test(crate) && /svg \+ svg \{ position: absolute; inset: 0; fill: #2F9A1C; opacity: 0;/.test(crate) && /@keyframes kpmSignGlow \{ 0%, 100% \{ opacity: 0; \} 50% \{ opacity: 1; \} \}/.test(crate) &&
      /\.lite-mode \.kpm-bay \.specks \{ display: none; \}/.test(crate));
   const bookCss = cut(th, 'THE BOOK OF THE DAY', 'END OF THE BOOK OF THE DAY');
   ok('no shadow, no filter, no glow in the crate or the book (G30) - bevels are borders', crate.length > 800 && bookCss.length > 3000 && !/box-shadow|text-shadow|drop-shadow|filter:/.test(crate + bookCss));
@@ -8986,7 +8986,7 @@ section('AGENT INVENTORY V4.1: THE PANEL FLOATS OVER ITS CHEST (2026-09-28)');
      /<LoadingBay vanOnly[^>]*middle=\{<TodayBook table sales=\{todayTransactions\} samples=\{todaySamplings\} inventory=\{inventory\} \/>\}/.test(code(raw)) &&
      !/\/>\s*<TodayBook /.test(code(raw)) && /\{vanOnly && middle && <div className="tbl">\{middle\}<\/div>\}/.test(bay) && /\.kpm-bay \.tbl \{ grid-area: tbl;/.test(th));
   ok('Agent Inventory\'s chests are 3D (his v6 "make the chest 3D as well"); Fleet & Roster keeps its own',
-     /\{vanOnly \? c3\('', null\) : <span className="chest small">/.test(bay) && /\{vanOnly \? c3\('hazard', <span className="sign">\{SIGN\}<\/span>\) : <span className="chest small hazard">/.test(bay) &&
+     /\{vanOnly \? c3\('', null\) : <span className="chest small">/.test(bay) && /\{vanOnly \? c3\('hazard', <span className="sign">\{SIGN_PULSE\}<\/span>\) : <span className="chest small hazard">/.test(bay) &&
      /\.kpm-bay\.van-open \.vanc \.kpm-c3 \.lid3, \.kpm-bay\.q-open \.qc \.kpm-c3 \.lid3 \{ transform: rotateX\(100deg\); \}/.test(th));
   ok('each box opens above ITS OWN chest, never over the table (his "just above their own chest not above the enchanted table")',
      /const gl = Math\.max\(10, Math\.min\(bay\.clientWidth - gui\.offsetWidth - 10, cx - gui\.offsetWidth \/ 2\)\);/.test(bay) && /gui\.style\.left = Math\.round\(gl\) \+ 'px';/.test(bay));
@@ -9523,6 +9523,25 @@ section('POTATO 1: THE MASCOT SHEET SLIDES ON THE GRAPHICS CHIP (2026-10-01)');
   ok('Lite Mode and reduced motion still hold frame 1 (the strip stops at 0)',
      /html\.lite-mode \.kpm-merch-idle::before, html\.lite-mode \.kpm-merch-talk::before \{ animation: none; transform: none; \}/.test(th) &&
      /\.kpm-merch-idle::before, \.kpm-merch-talk::before \{ animation: none; transform: none; \}/.test(th));
+}
+
+/* ── POTATO 2: THE BIOHAZARD SIGN PULSES BY OPACITY, NOT FILL (2026-10-01) ───────────────────────────────────────────
+   Animating fill on the 90-square sign restyled and repainted every square every frame: Agent Inventory 97% -> 27%
+   idle CPU (6x-slow phone). A still black sign under a green copy fading 0 -> 1 -> 0 is the same colour at every moment
+   (12 moments compared, worst pixel difference 0). The mix is RUN here: black x (1-a) + green x a equals the fill's
+   linear interpolation for every channel and every a. */
+section('POTATO 2: THE BIOHAZARD SIGN PULSES BY OPACITY, NOT FILL (2026-10-01)');
+{ const th = read('src/styles/theme.css').replace(/\r/g, ''), bay = read('src/components/LoadingBay.jsx'), wh = read('src/components/WarehouseChest.jsx');
+  ok('no sign animates fill any more; the green copy fades by opacity on the old 3.6s ease-in-out',
+     !/kpmSignPulse/.test(th) && !/animation:[^;]*;[^}]*fill|@keyframes[^{]*\{[^}]*fill:/.test(th.slice(th.indexOf('.kpm-bay .chest.hazard .sign svg'), th.indexOf('.kpm-bay .chest.hazard .sign svg') + 1200)) &&
+     /\.kpm-bay \.chest\.hazard \.sign svg \+ svg, \.kpm-c3 \.sign svg \+ svg \{ position: absolute; inset: 0; fill: #2F9A1C; opacity: 0;\s*animation: kpmSignGlow 3\.6s ease-in-out infinite; \}/.test(th) &&
+     /@keyframes kpmSignGlow \{ 0%, 100% \{ opacity: 0; \} 50% \{ opacity: 1; \} \}/.test(th));
+  ok('every pulsing sign carries the two copies (van crate, van chest, warehouse crates)',
+     /const SIGN_PULSE = <>\{SIGN\}\{SIGN\}<\/>;/.test(bay) && /const SIGN_PULSE = <>\{SIGN\}\{SIGN\}<\/>;/.test(wh) &&
+     (bay.match(/<span className="sign">\{SIGN_PULSE\}<\/span>/g) || []).length === 2 && /<span className="sign">\{SIGN_PULSE\}<\/span>/.test(wh) && !/<span className="sign">\{SIGN\}<\/span>/.test(bay + wh));
+  const hex = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), K = hex('#111111'), G = hex('#2F9A1C');
+  ok('the opacity mix equals the fill mix for every step 0..1 (the same colour at every moment)',
+     Array.from({ length: 101 }, (_, i) => i / 100).every(a => K.every((k, c) => Math.abs((k * (1 - a) + G[c] * a) - (k + (G[c] - k) * a)) < 1e-9)));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

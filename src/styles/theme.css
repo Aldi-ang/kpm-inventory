@@ -5028,8 +5028,15 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-bay .chest.hazard .lid { background: linear-gradient(180deg, #F7D445, #F2C318); }
 .kpm-bay .chest.hazard .latch { background: linear-gradient(180deg, #3A3A3A, #151515); }
 .kpm-bay .chest.hazard .sign { position: absolute; left: 50%; top: 56%; width: 40px; height: 40px; transform: translate(-50%, -50%); }
-.kpm-bay .chest.hazard .sign svg { display: block; width: 100%; height: 100%; fill: #111; animation: kpmSignPulse 3.6s ease-in-out infinite; }
-@keyframes kpmSignPulse { 0%, 100% { fill: #111; } 50% { fill: #2F9A1C; } }
+.kpm-bay .chest.hazard .sign svg { display: block; width: 100%; height: 100%; fill: #111; }
+/* THE PULSE IS AN OPACITY, NOT A FILL (2026-10-01, "potato phone even in full animation mode"). Animating fill on a sign
+   of 90 squares restyled and repainted every square every frame: Agent Inventory 97% idle CPU on a 6x-slow phone, 29%
+   with it paused. A green copy over the still black sign (SIGN_PULSE) fading 0 -> 1 -> 0 on the same 3.6s ease-in-out
+   is the same colour at every moment (black x (1-a) + green x a is exactly the fill's mix) and runs on the graphics
+   chip. Lite Mode / reduced motion stop it at 0: a still black sign, as before. */
+.kpm-bay .chest.hazard .sign svg + svg, .kpm-c3 .sign svg + svg { position: absolute; inset: 0; fill: #2F9A1C; opacity: 0;
+  animation: kpmSignGlow 3.6s ease-in-out infinite; }
+@keyframes kpmSignGlow { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
 .kpm-bay .qc .specks { position: absolute; left: 50%; top: 32px; width: 0; height: 0; pointer-events: none; z-index: 1; }
 .kpm-bay .qc .specks i { position: absolute; width: 4px; height: 4px; background: #62F03C; opacity: 0; animation: kpmSpeck 3.6s ease-out infinite; }
 .kpm-bay .qc .specks i:nth-child(1) { left: -38px; }
@@ -5267,8 +5274,7 @@ html.lite-mode .kpm-sbox *, html.lite-mode .kpm-sbox *::before, html.lite-mode .
 .kpm-c3.hazard .lid3 .latch { background: linear-gradient(180deg, #3A3A3A, #151515); }
 .kpm-c3 .sign { position: absolute; left: 50%; top: 54%; width: 32px; height: 32px; transform: translate(-50%, -50%); }
 @container kpmwh (min-width: 700px) { .kpm-c3 .sign { width: 38px; height: 38px; } }
-.kpm-c3 .sign svg { display: block; width: 100%; height: 100%; fill: #111; animation: kpmSignPulse 3.6s ease-in-out infinite; }
-@keyframes kpmSignPulse { 0%, 100% { fill: #111; } 50% { fill: #2F9A1C; } }
+.kpm-c3 .sign svg { display: block; width: 100%; height: 100%; fill: #111; }
 /* ── END OF THE WAREHOUSE CHESTS ──────────────────────────────────────────────────────────────────── */
 
 /* ── THE BOOK OF THE DAY (components/TodayBook.jsx, Agent Inventory for T1-T4) ─────────────────────────────────────────
