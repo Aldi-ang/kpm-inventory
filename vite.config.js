@@ -57,6 +57,21 @@ return {
      in August 2026; it changed to .109 on 2026-08-19 and cost a test session. `host: true` makes
      vite print the real one as "Network:" every time `npm run dev` starts — read that line, or
      run `ipconfig`. */
+  /* HEAVY APP 5 (2026-09-30, his "it takes a while to load ... it started smoother after some time"). The main file
+     was ONE 1.27 MB piece, and every push changed its name, so after every push the phone fetched and re-read all of
+     it - Firebase and React included, which had not changed. Split into three: Firebase and React now keep the same
+     file name from push to push (the name is a fingerprint of the content), so the phone keeps them and only the
+     app's own code is new. Nothing is loaded later than before; the three load side by side at the first screen. */
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (/node_modules[\\/](@firebase|firebase|idb)[\\/]/.test(id)) return 'firebase';
+          if (/node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'react';
+        },
+      },
+    },
+  },
   server: { https: !httpDev, host: true },
   plugins: [
     ...(httpDev ? [] : [basicSsl()]),

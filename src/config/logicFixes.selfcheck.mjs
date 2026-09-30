@@ -9471,5 +9471,21 @@ section('HEAVY APP 1: A MISSING PIECE AFTER A PUSH RELOADS BY ITSELF, ONCE (2026
   ok('storage blocked -> no reload (no stamp means no loop guard, so never reload)', body && run({ blocked: true }) === 0);
 }
 
+/* ── HEAVY APP 5a: FIREBASE AND REACT IN THEIR OWN FILES (2026-09-30) ──────────────────────────────────────────────────
+   The main file was one 1,266 KB piece renamed by every push, so the phone re-fetched Firebase and React each time.
+   Split: app 639 KB + firebase 436 KB + react 188 KB. The split function is RUN on real module paths. */
+section('HEAVY APP 5a: FIREBASE AND REACT IN THEIR OWN FILES (2026-09-30)');
+{ const vc = read('vite.config.js').replace(/\r/g, '');
+  const m = vc.match(/manualChunks(\(id\) \{[\s\S]*?\n        \})/);
+  const split = m ? new Function(`return function ${m[1]}`)() : null;
+  ok('vite.config.js splits the build (manualChunks)', !!split);
+  ok('firebase, its idb store and react/react-dom/scheduler get their own files; the app, react-leaflet and recharts do not',
+     !!split && split('D:/x/node_modules/@firebase/firestore/dist/index.esm.js') === 'firebase' && split('D:\\x\\node_modules\\firebase\\app\\dist\\index.mjs') === 'firebase' &&
+     split('/x/node_modules/idb/build/index.js') === 'firebase' && split('/x/node_modules/react-dom/cjs/react-dom-client.production.js') === 'react' &&
+     split('/x/node_modules/react/index.js') === 'react' && split('/x/node_modules/scheduler/index.js') === 'react' &&
+     split('/x/node_modules/react-leaflet/lib/index.js') === undefined && split('/x/node_modules/recharts/es6/index.js') === undefined &&
+     split('/x/src/App.jsx') === undefined);
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
