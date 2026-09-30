@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, ChevronDown, ChevronUp, Check, Eye, Save, X } from 'lucide-react';
+import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, ChevronUp, Check, Eye, Save, X } from 'lucide-react';
 import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc, runTransaction, increment } from 'firebase/firestore';
 import { savePhotoAndGetReference, compressImageToBase64 } from '../utils/helpers';
 /* Reused rather than rewritten: a Firestore Timestamp, an offline `{seconds}` and an unresolved
@@ -21,6 +21,9 @@ import { notify } from './Toast.jsx';
    component in both places, so the tutorial cannot drift from the screen it teaches. */
 import StockByWarehouseTable from '../ponder/stages/StockByWarehouseTable.jsx';
 import ShipmentPlanTable from '../ponder/stages/ShipmentPlanTable.jsx';
+/* the Stock tab is the stone inventory box on a 3D ender chest (his option B, 2026-09-30) */
+import WarehouseChest from './WarehouseChest.jsx';
+import { shelfOf } from '../utils/vanBay';
 
 /* ===========================================================================
    THE ARRIVAL CHECK — a count at the door, PARTIAL BLIND.
@@ -545,50 +548,10 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
         .filter(p => p.kind === 'orang')
         .sort((a, b) => (a.name || '').localeCompare(b.name || '')), [places]);
 
-    const stockCard = (item) => {
-        const arrivals = productArrivals(requests, branchLocation, item.productId || item.id);
-        const { held, unexplained } = arrivalsOnHand(arrivals, item.stock);
-        const days = oldestStockDays(held, Math.floor(Date.now() / 1000));
-        return (
-            <div key={item.id} className="bg-sunk p-3 sm:p-4 rounded-xl border border-line-2 shadow-inner">
-                <div className="flex justify-between items-center gap-2">
-                    <span className="font-bold text-ink uppercase text-sm break-words">{item.name}</span>
-                    <span className="text-lg font-black text-accent-ink shrink-0">{item.stock} <span className="text-[10px] text-ink-muted font-bold">Bks</span></span>
-                </div>
-                {(days !== null || unexplained > 0) && (
-                    <details className="group/age mt-2 pt-2 border-t border-line-2">
-                        <summary className="list-none [&::-webkit-details-marker]:hidden cursor-pointer flex items-center justify-between gap-2 text-[10px] uppercase tracking-widest text-ink-muted hover:text-ink">
-                            <span className="tabular-nums">
-                                {days !== null
-                                    ? <>Paling lama di sini <b className="text-ink font-black">{days} hari</b></>
-                                    : <>Umur belum tercatat</>}
-                                {held.length > 1 && <span className="text-ink-muted"> · {held.length} kiriman</span>}
-                            </span>
-                            <ChevronDown size={12} className="group-open/age:rotate-180 transition-transform shrink-0"/>
-                        </summary>
-                        <div className="mt-2 space-y-1">
-                            {held.map(h => (
-                                <div key={h.orderId} className="flex justify-between gap-2 text-[10px] font-mono tabular-nums text-ink-muted">
-                                    <span>{new Date(h.at * 1000).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' })}</span>
-                                    <span className="truncate opacity-60">{h.orderId}</span>
-                                    <span className="text-ink font-bold shrink-0">{h.qty} Bks</span>
-                                </div>
-                            ))}
-                            {/* Said out loud rather than hidden. Stock the shipment records cannot
-                                account for is older than the records themselves — pretending it is
-                                part of the newest delivery would make the age read younger than it is. */}
-                            {unexplained > 0 && (
-                                <div className="flex justify-between gap-2 text-[10px] font-mono tabular-nums text-ink-muted border-t border-line-2 pt-1 mt-1">
-                                    <span className="italic">sebelum ada catatan</span>
-                                    <span className="text-ink font-bold shrink-0">{unexplained} Bks</span>
-                                </div>
-                            )}
-                        </div>
-                    </details>
-                )}
-            </div>
-        );
-    };
+    /* Days the oldest box of a product has sat on this shelf, or null when the records cannot say. The chest's square
+       tells it in one line; the per-kiriman list that sat under each card went with the cards (his accepted cost on
+       prototype v22: "the age list under each card becomes one line when you press a square"). */
+    const ageOf = (item) => oldestStockDays(arrivalsOnHand(productArrivals(requests, branchLocation, item.productId || item.id), item.stock).held, Math.floor(Date.now() / 1000));
 
     const getAdminName = () => appSettings?.adminDisplayName || user?.displayName || (user?.email || "").split('@')[0] || "HQ Admin";
 
@@ -1311,7 +1274,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                     Warehouse is empty. Ask HQ for stock on the Request tab.
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{branchStock.map(stockCard)}</div>
+                                <WarehouseChest rows={shelfOf(globalInventory, branchStock)} warehouse={branchLocation} ageOf={ageOf} />
                             )
 
                         ) : deskTab === 'request' ? (
@@ -1634,8 +1597,8 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 it: that shows every warehouse at once, and per product it adds di jalan, di tangan
                 agen and terjual, which this never had. What went with it is the per-SHIPMENT
                 breakdown — `stockCard`'s <details>, naming each individual kiriman. He was told
-                that and chose the delete. `stockCard` itself stays: the branch-side view still
-                renders it for a user's own warehouse. */}
+                that and chose the delete. The branch-side Stock tab became the chest on 2026-09-30
+                (WarehouseChest.jsx); the age of a shelf row is one line there (`ageOf`). */}
 
             {/* ====== MODALS ====== */}
             <ArrivalScanner

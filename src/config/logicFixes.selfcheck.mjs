@@ -9323,6 +9323,46 @@ section('FLEET & ROSTER: THE QUARANTINE SWITCH (2026-09-30)');
   ok('PC: the boxes stand on their chests - "whg vang" over "whc vpair"', /grid-template-areas: "hint hint" "whg vang" "whc vpair";/.test(bayCss));
 }
 
+/* ── THE REGIONAL WAREHOUSE'S CHEST (2026-09-30) ─────────────────────────────────────────────────────────────────────
+   His picks on prototypes v22-v27: the branch desk's Stock tab is the stone inventory box (option B) standing on a 3D
+   ender chest (*"add the 3D chest in the regional warehouse and not just the inventory panel"*), in The End on a
+   floating island that bobs with the chest, the Quarantine view in box A (the tape rim), the shared hatch + doors. TRAPS:
+   the Quarantine is the BRANCH's own damagedStock - a master product row carries HQ's number, so the join must never
+   let it through; the box is look-and-tap, it writes nothing; the HQ half of the file is out of scope. */
+section('THE REGIONAL WAREHOUSE\'S CHEST (2026-09-30)');
+{ const bw = read('src/components/BranchWarehouseManager.jsx').replace(/\r/g, ''), bwc = code(bw);
+  const wcPath = 'src/components/WarehouseChest.jsx', wc = fs.existsSync(wcPath) ? code(read(wcPath)).replace(/\r/g, '') : '';
+  const th = read('src/styles/theme.css').replace(/\r/g, '');
+  const w0 = th.indexOf('/* ── THE WAREHOUSE CHESTS'), w1 = th.indexOf('/* ── END OF THE WAREHOUSE CHESTS'), whCss = w0 > -1 && w1 > w0 ? th.slice(w0, w1) : '';
+  ok('the Stock tab is the chest: one WarehouseChest on the branch\'s shelf, and the old card grid is gone',
+     imports(bw, 'shelfOf') && /import WarehouseChest from '\.\/WarehouseChest\.jsx';/.test(bw) &&
+     /<WarehouseChest rows=\{shelfOf\(globalInventory, branchStock\)\} warehouse=\{branchLocation\} ageOf=\{ageOf\} \/>/.test(bwc) && !/const stockCard =/.test(bwc));
+  { const vb = await import('../utils/vanBay.js'), sOf = typeof vb.shelfOf === 'function' ? vb.shelfOf : null;
+    const master = [{ id: 'p1', name: 'Cello 16', stock: 900, damagedStock: 50, images: { front: 'f.png' }, dimensions: { w: 55, h: 90, d: 22 } }];
+    const shelf = sOf ? sOf(master, [{ id: 'p1', stock: 12 }, { id: 'p9', name: 'Loose row', stock: 3, damagedStock: 2 }]) : [];
+    ok('the shelf joins the branch\'s OWN numbers to the master product\'s 3D box - HQ\'s damagedStock never leaks in',
+       shelf.length === 2 && shelf[0].stock === 12 && shelf[0].damagedStock === 0 && shelf[0].images?.front === 'f.png' && shelf[0].name === 'Cello 16' &&
+       shelf[1].name === 'Loose row' && shelf[1].damagedStock === 2); }
+  ok('the Quarantine view is the branch\'s damaged rows, in box A (the tape rim, no band); the healthy view keeps the ender band',
+     /const damaged = rows\.filter\(r => \(r\.damagedStock \|\| 0\) > 0\);/.test(wc) && /`sbx\$\{q \? ' lkA' : ''\}/.test(wc) && /\{!q && <QuarantineBand q=\{false\} \/>\}/.test(wc));
+  ok('the shared hatch and doors, and every switch reports in the box\'s status line',
+     imports(wc, 'QuarantineHatch') && imports(wc, 'BlastDoors') && imports(wc, 'runSwitch') &&
+     /`Showing Quarantine · \$\{/.test(wc) && /`Showing healthy stock · \$\{/.test(wc));
+  ok('look-and-tap: a square tells its line (damaged count / Bks + days on the shelf); the box writes nothing, nothing drags',
+     /Bks damaged`/.test(wc) && /paling lama \$\{days\} hari/.test(wc) && !/firebase|onPointerDown|setDoc|updateDoc/.test(wc));
+  ok('ONE height in both views: the Quarantine has no band, so it keeps the healthy view\'s height (lab: 326 -> 294 px without it)',
+     /setHoldH\(toQ \? stg\.current\?\.offsetHeight \|\| 0 : 0\);/.test(wc) && /style=\{holdH \? \{ minHeight: holdH \} : undefined\}/.test(wc));
+  ok('the chest shuts its box into it and keeps its room (nothing below moves)',
+     /onClick=\{\(\) => setOpen\(o => !o\)\}/.test(wc) && /\.kpm-wh2 \.sbx\.shut \{[^}]*visibility: hidden;/.test(whCss) && !/display: none/.test(whCss.slice(whCss.indexOf('.kpm-wh2 .sbx.shut'))));
+  ok('the End island lives INSIDE the chest\'s 3D, and the chest + island float together; Lite Mode and reduced motion stop the scene',
+     /<span className="cc">\s*<i className="bf" \/><i className="bl" \/><i className="br" \/><i className="bt" \/>\s*<i className="it" \/><i className="if" \/><i className="iu" \/>/.test(wc) &&
+     /\.kpm-wh2 \.kpm-c3 \{[^}]*animation: kpmIsleBob 5s/.test(whCss) && /html\.lite-mode \.kpm-wh2 \*/.test(whCss) && /prefers-reduced-motion/.test(whCss));
+  ok('a lid needs headroom INSIDE its row (70 px phone, 96 px wide) and the island its room below the chest',
+     /\.kpm-wh2 \.kpm-c3 \{[^}]*margin: 70px 0 calc\(var\(--hb\) \* 1\.45\);/.test(whCss) && /@container kpmwh \(min-width: 700px\) \{[^}]*margin-top: 96px/.test(whCss));
+  ok('The End stays dark in both themes, so its caption keeps fixed light inks; no shadow, no glow (G30)',
+     /\.kpm-wh2 \.capt \{[^}]*color: #D9D2E6;/.test(whCss) && !/box-shadow|filter:|text-shadow/.test(whCss));
+}
+
 /* ── AGENT INVENTORY: THE CRATE'S BOX IN LOOK C, IN ENGLISH (2026-09-30) ─────────────────────────────────────────────
    His pick 2026-09-29: *"tape band is the one that i like the most"* (look C: the sign in the title, a tape band under it,
    no word on the band) and *"use Quarantine instead of karantina we will add language switching int he future"*. Only

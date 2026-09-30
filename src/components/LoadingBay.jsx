@@ -67,7 +67,7 @@ function center(el) { const r = el.getBoundingClientRect(); return { x: r.left +
 
 /* The app's own 3D box - the same faces as the sales terminal's renderCube (MerchantSalesView),
    without its EXAMINE label, which means nothing inside a chest. */
-function Cube({ p }) {
+export function Cube({ p }) {
   const d = p?.dimensions || { w: 55, h: 90, d: 22 };
   const img = p?.images || {};
   const front = img.front || p?.image;

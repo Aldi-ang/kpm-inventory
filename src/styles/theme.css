@@ -5125,6 +5125,110 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
     conic-gradient(from 215deg, #FFFFFF, #8A8A8A 16%, #E8E8E8 30%, #5A5A5A 48%, #D6D6D6 64%, #767676 80%, #FFFFFF); }
 /* ── END OF THE QUARANTINE SWITCH ─────────────────────────────────────────────────────────────────── */
 
+/* ── THE WAREHOUSE CHESTS (components/WarehouseChest.jsx) — the regional warehouse's Stock tab, his prototype v24-v27 ──
+   The stone inventory box standing on a 3D ENDER chest, in The End: a dark purple sky that stays dark in both themes
+   (so the caption keeps fixed light inks), rising ender particles, a floating End stone island that lives INSIDE the
+   chest's own 3D so the chest stands ON it, chest + island bobbing together. The Quarantine view wears box A, the tape
+   rim. Objects keep their own colours (the chest, the tape, the stone, the island) - the chests' exemption. No shadow,
+   no glow: depth is gradients and borders. The 3D chest (.kpm-c3) is the prototype's: a body box and a lid slab hinged
+   at the back, seen a little from above; the lid swings up on its hinge. */
+.kpm-wh2 { --hi: #F5D08A; --stone: #8B8B8B; --stone-dark: #555555; --stone-ink: #161616; --stone-note: #2A1D08; --stone-bad: #45120A;
+  position: relative; overflow: hidden; isolation: isolate; container: kpmwh / inline-size; display: grid; justify-items: center;
+  border-radius: 12px; padding: 14px 14px 18px;
+  background: radial-gradient(40% 34% at 50% 80%, rgba(120, 60, 170, .30), transparent 70%),
+    radial-gradient(circle at 20% 30%, rgba(160, 130, 200, .10) 0 1px, transparent 1.5px) 0 0 / 14px 14px,
+    radial-gradient(circle at 70% 60%, rgba(160, 130, 200, .08) 0 1px, transparent 1.5px) 0 0 / 22px 22px,
+    linear-gradient(180deg, #0D0914, #170F22 55%, #1E142C); }
+.kpm-wh2 .endmotes { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.kpm-wh2 .endmotes i { position: absolute; left: var(--mx); bottom: 12%; width: 3px; height: 3px; background: #B44CF0; opacity: 0; animation: kpmEndMote var(--md) linear var(--mdl) infinite; }
+.kpm-wh2 .endmotes i:nth-child(3n) { background: #D98CFF; width: 2px; height: 2px; }
+.kpm-wh2 .endmotes i:nth-child(4n) { background: #8A3CC0; width: 4px; height: 4px; }
+@keyframes kpmEndMote { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: .8; } 100% { transform: translateY(-260px); opacity: 0; } }
+
+/* the box: one row of squares (8 wide, 4 on a phone - the component counts them), the shared switch on its deck */
+.kpm-wh2 .sbx { position: relative; z-index: 1; width: 100%; max-width: 940px; background: var(--stone); border: 4px solid; border-color: #DBDBDB #555555 #555555 #DBDBDB; border-radius: 4px; padding: 9px 8px 10px;
+  transform-origin: 50% 100%; transition: transform .26s cubic-bezier(.34, 1.56, .64, 1), opacity .12s linear; }
+.kpm-wh2 .sbx.shut { transform: scale(.08) translateY(24px); opacity: 0; visibility: hidden; transition: transform .2s ease-in, opacity .12s linear, visibility 0s linear .2s; }
+.kpm-wh2 .sbx.lkA { border: 6px solid transparent; border-image: repeating-linear-gradient(-45deg, #F2C318 0 8px, #141414 8px 16px) 6; padding: 7px 6px 8px; }   /* box A: the rim is 2 px thicker than the stone border, so the box keeps its size */
+.kpm-wh2 .stg { position: relative; overflow: hidden; margin: 0 -8px; padding: 1px 8px 0; }
+.kpm-wh2 .sbx.lkA .stg { margin: 0 -6px; padding: 1px 6px 0; }
+.kpm-wh2 .stl { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 0 2px 2px; font: 900 13px/1.2 var(--font-mono); letter-spacing: .04em; color: var(--stone-ink); }
+.kpm-wh2 .stl .tn { display: inline-flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; }
+.kpm-wh2 .stl .tx { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.kpm-wh2 .stl .tn i { display: block; width: 14px; height: 14px; flex: none; }
+.kpm-wh2 .stl .tn i svg { display: block; width: 100%; height: 100%; fill: #141414; }
+.kpm-wh2 .stl .ct { flex: none; font-size: 11px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.kpm-wh2 .stg.isq .stl .ct { color: var(--stone-bad); }
+.kpm-wh2 .kpm-qband { margin: 6px -8px 8px; }
+.kpm-wh2 .say { display: block; min-height: 16px; margin: 0 2px 6px; font: 900 10px/1.5 var(--font-mono); letter-spacing: .08em; color: var(--stone-note); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpm-wh2 .grid { display: grid; grid-template-columns: repeat(var(--per, 4), minmax(0, 1fr)); gap: 5px; }
+.kpm-wh2 .slot { position: relative; aspect-ratio: 1/1; border-radius: 3px; background: var(--stone-dark); border: 2px solid; border-color: #2E2E2E #9A9A9A #9A9A9A #2E2E2E; display: grid; place-items: center; overflow: hidden; }
+.kpm-wh2 .slot.has { cursor: pointer; }
+.kpm-wh2 .slot.qs { outline: 2px solid rgba(190, 70, 50, .6); outline-offset: -2px; }
+.kpm-wh2 .slot:focus-visible, .kpm-wh2 .pg:focus-visible, .kpm-wh2 .kpm-chest:focus-visible { outline: 3px solid var(--hi); outline-offset: 2px; }
+.kpm-wh2 .slot .name { position: absolute; left: 0; right: 0; bottom: 0; padding: 3px 5px; font: 900 9px/1.15 var(--font-mono); color: #fff; background: linear-gradient(180deg, rgba(0, 0, 0, .2), rgba(0, 0, 0, .7)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.kpm-wh2 .slot .n { position: absolute; right: 3px; top: 3px; padding: 1px 3px; border-radius: 2px; background: rgba(0, 0, 0, .6); font: 900 11px/1 var(--font-mono); color: #fff; font-variant-numeric: tabular-nums; pointer-events: none; }
+.kpm-wh2 .kpm-cube-stage { --kpm-slot-h: 42px; }
+@container kpmwh (min-width: 700px) { .kpm-wh2 .kpm-cube-stage { --kpm-slot-h: 60px; } }
+.kpm-wh2 .ddeck { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; margin: 10px 2px 0; }
+.kpm-wh2 .ddeck .pgs { justify-self: start; display: flex; gap: 6px; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.kpm-wh2 .pg { flex: none; min-width: 44px; min-height: 40px; padding: 0 10px; border-radius: 3px; cursor: pointer; background: var(--stone-dark); color: #EFEFEF; border: 2px solid; border-color: #7A7A7A #2E2E2E #2E2E2E #7A7A7A; font: 900 12px/1 var(--font-mono); }
+.kpm-wh2 .pg.on { background: #6E6E6E; color: #fff; border-color: #2E2E2E #9A9A9A #9A9A9A #2E2E2E; }
+.kpm-wh2 .ddeck .of { justify-self: end; text-align: right; font: 900 10px/1.35 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--stone-ink); }
+
+/* the 3D chest */
+.kpm-chest { all: unset; box-sizing: border-box; position: relative; z-index: 1; cursor: pointer; display: grid; justify-items: center; gap: 6px; padding: 4px; border-radius: 12px;
+  perspective: 700px; -webkit-touch-callout: none; touch-action: manipulation; }
+.kpm-c3 { --w: 84px; --hb: 46px; --hl: 23px; --d: 72px; --edge: #1B130A;
+  --c-body: linear-gradient(180deg, #6E5230, #4E3A20); --c-lid: linear-gradient(180deg, #8C6A3C, #7A5A32); --c-top: #9A7646; --c-under: #2A1E12;
+  position: relative; display: block; width: var(--w); height: calc(var(--hb) + var(--hl)); perspective: 520px; }
+.kpm-c3 .cc { position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateX(-26deg); }
+.kpm-c3 .cc i { position: absolute; display: block; box-sizing: border-box; border: 3px solid var(--edge); }
+.kpm-c3 .bf { left: 0; top: var(--hl); width: var(--w); height: var(--hb); transform: translateZ(calc(var(--d) / 2)); background: var(--c-body); }
+.kpm-c3 .bl, .kpm-c3 .br, .kpm-c3 .lid3 .ll, .kpm-c3 .lid3 .lr { left: calc((var(--w) - var(--d)) / 2); width: var(--d); }
+.kpm-c3 .bl, .kpm-c3 .br { top: var(--hl); height: var(--hb); background: var(--c-body); }
+.kpm-c3 .bl, .kpm-c3 .lid3 .ll { transform: rotateY(-90deg) translateZ(calc(var(--w) / 2)); }
+.kpm-c3 .br, .kpm-c3 .lid3 .lr { transform: rotateY(90deg) translateZ(calc(var(--w) / 2)); }
+.kpm-c3 .bl::after, .kpm-c3 .br::after, .kpm-c3 .lid3 .ll::after, .kpm-c3 .lid3 .lr::after { content: ""; position: absolute; inset: 0; background: rgba(0, 0, 0, .3); }
+.kpm-c3 .bt { left: 0; top: calc(var(--hl) - var(--d) / 2); width: var(--w); height: var(--d); transform: rotateX(90deg); background: #140E07; }
+.kpm-c3 .lid3 { position: absolute; inset: 0; transform-style: preserve-3d; transform-origin: 50% var(--hl) calc(var(--d) / -2); transition: transform .32s cubic-bezier(.3, 1.4, .5, 1); }
+.kpm-c3 .lid3 .lf { left: 0; top: 0; width: var(--w); height: var(--hl); transform: translateZ(calc(var(--d) / 2)); background: var(--c-lid); }
+.kpm-c3 .lid3 .ll, .kpm-c3 .lid3 .lr { top: 0; height: var(--hl); background: var(--c-lid); }
+.kpm-c3 .lid3 .lt { left: 0; top: calc(var(--d) / -2); width: var(--w); height: var(--d); transform: rotateX(90deg); background: var(--c-top); }
+.kpm-c3 .lid3 .lu { left: 0; top: calc(var(--hl) - var(--d) / 2 - 1px); width: var(--w); height: var(--d); transform: rotateX(90deg); background: var(--c-under); }
+.kpm-c3 .lid3 .latch { left: calc(var(--w) / 2 - 7px); top: calc(var(--hl) - 10px); width: 14px; height: 19px; border-width: 2px; transform: translateZ(calc(var(--d) / 2 + 1px)); background: linear-gradient(180deg, #D9D4CC, #8F8A82); }
+.kpm-chest.on .kpm-c3 .lid3 { transform: rotateX(100deg); }
+.kpm-c3.ender { --edge: #050808; --c-top: #22393A; --c-under: #0A1011;
+  --c-body: radial-gradient(circle at 18% 72%, rgba(150, 70, 200, .5) 0 1.5px, transparent 2.5px), radial-gradient(circle at 64% 40%, rgba(150, 70, 200, .45) 0 1.5px, transparent 2.5px), radial-gradient(circle at 86% 80%, rgba(150, 70, 200, .5) 0 1.5px, transparent 2.5px), linear-gradient(180deg, #152223, #0C1415);
+  --c-lid: radial-gradient(circle at 30% 45%, rgba(150, 70, 200, .45) 0 1.5px, transparent 2.5px), radial-gradient(circle at 76% 62%, rgba(150, 70, 200, .4) 0 1.5px, transparent 2.5px), linear-gradient(180deg, #1C2E2F, #152223); }
+.kpm-c3.ender .lid3 .latch { border-color: #050808; border-radius: 3px; background: radial-gradient(ellipse 18% 46% at 50% 50%, #06241A 0 88%, transparent 100%), radial-gradient(ellipse 50% 50% at 50% 50%, #7FE0A8 0 38%, #2FA06E 40% 78%, #135A3D 80%); }
+
+/* the floating End island, in the chest's own 3D: a top face the chest stands on, a lit slab, a stepped underside
+   tapering into the void; the chest and the island bob together (his "slow floating animation for those chest and
+   platform"), 5 px every 5 s. Headroom above for the open lid, room below for the island. */
+.kpm-wh2 .kpm-c3 { --iw: calc(var(--w) * 1.62); --id: calc(var(--d) * 1.34); --is: calc(var(--hb) * .34); --iu: calc(var(--hb) * .9);
+  margin: 70px 0 calc(var(--hb) * 1.45); animation: kpmIsleBob 5s cubic-bezier(.37, 0, .63, 1) infinite; }
+@container kpmwh (min-width: 700px) { .kpm-wh2 .kpm-c3 { --w: 116px; --hb: 62px; --hl: 30px; --d: 98px; margin-top: 96px; } }
+@keyframes kpmIsleBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+.kpm-c3 .cc .it, .kpm-c3 .cc .if, .kpm-c3 .cc .iu { left: calc((var(--w) - var(--iw)) / 2); width: var(--iw); border: 0; }
+.kpm-c3 .cc .it { top: calc(var(--hl) + var(--hb) - var(--id) / 2 - 1px); height: var(--id); transform: rotateX(90deg);
+  background: radial-gradient(circle at 22% 38%, #B9BC7E 0 1.6px, transparent 2.2px) 0 0 / 18px 12px, radial-gradient(circle at 68% 72%, #F3F5C6 0 1.3px, transparent 1.9px) 0 0 / 26px 14px,
+    radial-gradient(circle at 44% 20%, #C4C78A 0 1.2px, transparent 1.8px) 0 0 / 34px 16px, linear-gradient(180deg, #C6C98C, #E6E9AE);
+  clip-path: polygon(7% 0, 93% 0, 93% 12%, 100% 12%, 100% 100%, 0 100%, 0 12%, 7% 12%); }
+.kpm-c3 .cc .if { top: calc(var(--hl) + var(--hb) - 1px); height: var(--is); transform: translateZ(calc(var(--id) / 2));
+  background: radial-gradient(circle at 22% 38%, #B9BC7E 0 1.6px, transparent 2.2px) 0 0 / 18px 12px, radial-gradient(circle at 68% 72%, #F3F5C6 0 1.3px, transparent 1.9px) 0 0 / 26px 14px,
+    radial-gradient(circle at 44% 20%, #C4C78A 0 1.2px, transparent 1.8px) 0 0 / 34px 16px, linear-gradient(180deg, #F0F2BE 0 2px, #D2D596 2px, #B8BB7D); }
+.kpm-c3 .cc .iu { top: calc(var(--hl) + var(--hb) + var(--is) - 2px); height: var(--iu); transform: translateZ(calc(var(--id) / 2));
+  background: radial-gradient(circle at 30% 40%, #5F5B45 0 1.5px, transparent 2.1px) 0 0 / 20px 13px,
+    repeating-linear-gradient(180deg, transparent 0 8px, rgba(24, 12, 34, .18) 8px 9px), linear-gradient(180deg, #8E8C64, #625A49 50%, #392D3C);
+  clip-path: polygon(0 0, 100% 0, 100% 10%, 95% 10%, 95% 26%, 88% 26%, 88% 42%, 80% 42%, 80% 58%, 71% 58%, 71% 74%, 62% 74%, 62% 88%, 55% 88%, 55% 100%, 45% 100%, 45% 86%, 37% 86%, 37% 70%, 27% 70%, 27% 52%, 17% 52%, 17% 34%, 9% 34%, 9% 18%, 3% 18%, 3% 6%, 0 6%); }
+.kpm-wh2 .capt { font: 900 10px/1.35 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; text-align: center; text-wrap: balance; color: #D9D2E6; }
+@container kpmwh (min-width: 700px) { .kpm-wh2 .capt { font-size: 11px; letter-spacing: .12em; } }
+.kpm-wh2 .capt small { display: block; font-size: 9px; letter-spacing: .1em; color: #F0B35C; }
+html.lite-mode .kpm-wh2 *, html.lite-mode .kpm-wh2 *::before, html.lite-mode .kpm-wh2 *::after { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) { .kpm-wh2 *, .kpm-wh2 *::before, .kpm-wh2 *::after { animation: none !important; transition: none !important; } }
+/* ── END OF THE WAREHOUSE CHESTS ──────────────────────────────────────────────────────────────────── */
+
 /* ── THE BOOK OF THE DAY (components/TodayBook.jsx, Agent Inventory for T1-T4) ─────────────────────────────────────────
    Sales and Samples as ONE notebook with two sections (his 2026-09-27 "make it 1 book instead with 2 section ... more
    natural ... open when hover and slide its pages like some magic book"); prototype v11 of

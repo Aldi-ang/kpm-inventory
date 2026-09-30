@@ -165,6 +165,14 @@ export function quarantineOf(inventory, branchRows) {
   return inventory.map(p => ({ ...p, damagedStock: (br ? br[p.id]?.damagedStock : p.damagedStock) || 0 })).filter(p => p.damagedStock > 0);
 }
 
+/* A branch's shelf for the regional warehouse's chest: each of the branch's OWN rows on its master product - the master
+   gives the name, pictures and size for the 3D box; the branch gives the numbers. stock and damagedStock are always the
+   branch's, 0 when it has none: the master row carries HQ's damagedStock, which must never show as this branch's. */
+export function shelfOf(inventory, branchRows) {
+  const m = Object.fromEntries((inventory || []).map(p => [p.id, p]));
+  return (branchRows || []).map(r => ({ ...m[r.productId || r.id], ...r, stock: r.stock || 0, damagedStock: r.damagedStock || 0 }));
+}
+
 /* THE QUARANTINE CRATE'S RADIATION SIGN (Agent Inventory v4, his 2026-09-27 reference picture): three blades - top-left,
    top-right, bottom, 60 degrees each - and the dot in the middle, on a 15 x 15 grid, square by square so it stays crisp at
    any size. [x, y] cells, y down. */
