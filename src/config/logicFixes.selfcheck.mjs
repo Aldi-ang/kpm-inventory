@@ -9577,6 +9577,20 @@ section('THE NAME SURVIVES A RESIZE MID-UNLOCK (2026-10-01)');
      /S\.unlockAt = null; S\.relayout = null; \};\s*\}, \[playing, agentName, S\]\);/.test(g));
 }
 
+/* ── EVERY LOGOUT ENDS THE 5-MINUTE VAULT PASS (2026-10-01) ───────────────────────────────────────────────────────────
+   His Samsung: "i sign in my google account and its skipped everything now, no master vault UI" - right after the
+   side menu's "Terminate Session?". That logout called signOut without clearGrace, so the same account signing back
+   in within 5 minutes got the vault with no password. vaultGrace.js: logging out must end it. */
+section('EVERY LOGOUT ENDS THE 5-MINUTE VAULT PASS (2026-10-01)');
+for (const f of ['src/App.jsx', 'src/components/BiohazardTheme.jsx']) {
+  const s = code(read(f)).replace(/\r/g, '');
+  const h = s.slice(s.indexOf('const handleLogout = async () => {'));
+  const body = h.slice(0, h.indexOf('};') + 2);
+  ok(`${f}: handleLogout clears the vault pass before it signs out`,
+     /import \{[^}]*\bclearGrace\b[^}]*\} from '[./]+utils\/vaultGrace(\.js)?';/.test(s) &&
+     body.includes('signOut(auth)') && body.indexOf('clearGrace()') > -1 && body.indexOf('clearGrace()') < body.indexOf('signOut(auth)'));
+}
+
 /* ── POTATO 5: THE RESTOCK NOTICE BREATHES BY OPACITY (2026-10-01) ────────────────────────────────────────────────────
    Animating border-color repainted the whole box every frame: Restock Vault 45% -> 4% idle CPU (6x-slow phone). The
    dashed edge is a ::before on a WRAPPER (a layer inside the scroller would scroll away), fading 1 -> .35 -> 1; the

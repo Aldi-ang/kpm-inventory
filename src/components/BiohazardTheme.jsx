@@ -4,7 +4,8 @@ import { Lock, LogOut, LogIn, ArrowRight, Trophy, Sun, Moon,
          User, LayoutGrid, Map, Route, Truck, Package, Boxes, PackagePlus, Store,
          Receipt, Wallet, ClipboardList, Users, Gift, BarChart3, ScrollText, Settings } from 'lucide-react';
 import { signOut } from 'firebase/auth';
-import { auth } from '../config/firebase'; 
+import { auth } from '../config/firebase';
+import { clearGrace } from '../utils/vaultGrace.js';
 import NotificationBell from './NotificationBell';
 /* the dot field from the Master Vault gate — reused, not re-drawn, so the two locked screens
    cannot drift apart. gateCanvasOn() is its own Lite-Mode switch. */
@@ -191,6 +192,7 @@ export default function BiohazardTheme({
 
     const handleLogout = async () => {
         if(await confirmAction("Terminate Session?")) {
+            clearGrace();   // the 5-minute vault pass ends with the session - or signing back in skips the vault
             signOut(auth);
             window.location.reload();
         }
