@@ -9564,6 +9564,19 @@ section('POTATO 4: THE GATE\'S DOT FIELD SLEEPS AT REST (2026-10-01)');
      /S\.wake = \(\) => \{ if \(!S\.raf\) S\.raf = requestAnimationFrame\(frame\); \};/.test(g));
 }
 
+/* ── THE NAME SURVIVES A RESIZE MID-UNLOCK (2026-10-01) ───────────────────────────────────────────────────────────────
+   His Samsung: "animation is there but no agent name". The keyboard closes after Enter, the screen grows, size()
+   rebuilds the dot grid with fresh dots (fly 0) and the name never forms. Headless 360 @3x, screen 400 -> 740 tall
+   150 ms into the unlock: 0 bright name pixels before, the name formed after. */
+section('THE NAME SURVIVES A RESIZE MID-UNLOCK (2026-10-01)');
+{ const g = code(read('src/components/VaultGate.jsx')).replace(/\r/g, '');
+  ok('a resize re-aims the new dots at the name while an unlock runs',
+     /build\(\);\s*S\.relayout\?\.\(\);/.test(g) && /S\.relayout = layout;/.test(g) &&
+     /const layout = \(\) => \{ assign\(sampleWord\(name\)\); RANDSETS = /.test(g));
+  ok('the hook is dropped when the unlock ends (a later resize must not re-form an old name)',
+     /S\.unlockAt = null; S\.relayout = null; \};\s*\}, \[playing, agentName, S\]\);/.test(g));
+}
+
 /* ── POTATO 5: THE RESTOCK NOTICE BREATHES BY OPACITY (2026-10-01) ────────────────────────────────────────────────────
    Animating border-color repainted the whole box every frame: Restock Vault 45% -> 4% idle CPU (6x-slow phone). The
    dashed edge is a ::before on a WRAPPER (a layer inside the scroller would scroll away), fading 1 -> .35 -> 1; the

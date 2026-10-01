@@ -117,6 +117,7 @@ export default function VaultGate({ playing, agentName }) {
       cv.width = r.width * dpr; cv.height = r.height * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       build();
+      S.relayout?.();   // a running unlock re-aims the NEW dots at the name - see `layout` below
     };
     size();
     const ro = new ResizeObserver(size); ro.observe(cv);
@@ -319,12 +320,18 @@ export default function VaultGate({ playing, agentName }) {
     };
 
     const name = (agentName || 'AGENT').trim().toUpperCase().slice(0, 14) || 'AGENT';
-    S.unlockAt = performance.now();
-    S.wake?.();
-    assign(sampleWord(name));
     /* Pre-sample the scramble glyphs NOW, while nothing is moving. Sampling mid-animation is
        what would stutter on a weak phone, and his phone is the weak one. */
-    const RANDSETS = [0, 1, 2].map(() => sampleWord(rndWord(name.length)));
+    let RANDSETS = [];
+    const layout = () => { assign(sampleWord(name)); RANDSETS = [0, 1, 2].map(() => sampleWord(rndWord(name.length))); };
+    S.unlockAt = performance.now();
+    S.wake?.();
+    layout();
+    /* THE SCREEN CHANGES SIZE MID-SEQUENCE (2026-10-01, his Samsung: "animation is there but no agent name").
+       On Android the keyboard closes right after Enter and the screen grows; the resize rebuilds the dot grid with
+       fresh dots that were never told where the name is, so the wave ran and no dot flew. Re-aim them at the new
+       size. ponytail: a resize after a letter has left brings that letter back - the keyboard closes at the start. */
+    S.relayout = layout;
     playSound('vaultb');
 
     /* His wording, 2026-08-10: the second line names the whole app, not the vault screen —
@@ -344,7 +351,7 @@ export default function VaultGate({ playing, agentName }) {
     resolveOut(helloRef.current, OUT, 34);
     resolveOut(lineRef.current, OUT + 120, 22);
 
-    return () => { S.timers.forEach(clearTimeout); S.timers = []; S.unlockAt = null; };
+    return () => { S.timers.forEach(clearTimeout); S.timers = []; S.unlockAt = null; S.relayout = null; };
   }, [playing, agentName, S]);
 
   return (
