@@ -195,10 +195,14 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
         return list;
     }, [motorists, ownerProfile]);
 
-    const [selectedId, setSelectedId] = useState(() => {
-        if (userRole !== 'ADMIN' && userRole !== 'AREA_ADMIN' && userRole !== 'COMPANY_OWNER' && agentProfileId) return agentProfileId;
-        return allAgents && allAgents.length > 0 ? allAgents[0].id : null;
-    });
+    /* OPENS ON YOUR OWN PROFILE, AND YOURS IS FIRST IN THE LIST (2026-10-01). His words: "when user press the agent
+       profile, it directly show them their own agent profile and put it on the top of the list". Before, T2/T3 opened
+       on the boss (the admin roles were sent to allAgents[0]) and the owner on whoever loaded first - his own entry
+       arrives a moment later (the getDoc above). So the selection is DERIVED until a name is pressed: it lands on
+       his own entry the moment it exists. Own = the roster profile; the owner has none, so his is master_owner. */
+    const ownId = agentProfileId || (userRole === 'ADMIN' ? TIER_ONE_ID : null);
+    const [pickedId, setSelectedId] = useState(null);
+    const selectedId = pickedId ?? (allAgents.some(m => m.id === ownId) ? ownId : allAgents[0]?.id ?? null);
 
     const activeAgent = allAgents?.find(m => m.id === selectedId);
     // 🚀 MATRIX: Can edit if they have global editing rights OR if it's their personal profile
@@ -234,7 +238,8 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
     }, [db, appId, userId]);
 
     const uniqueLocations = useMemo(() => ['ALL', ...new Set((allAgents || []).map(m => m.location || 'Field'))], [allAgents]);
-    const filteredMotorists = allAgents?.filter(m => locationFilter === 'ALL' || (m.location || 'Field') === locationFilter) || [];
+    const filteredMotorists = (allAgents?.filter(m => locationFilter === 'ALL' || (m.location || 'Field') === locationFilter) || [])
+        .sort((a, b) => (b.id === ownId) - (a.id === ownId));   // own entry on top; the sort is stable, the rest keep their order
 
     useEffect(() => { setBioText(activeAgent?.bio || ''); setIsEditingBio(false); }, [activeAgent]);
 

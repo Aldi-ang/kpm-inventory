@@ -9577,6 +9577,25 @@ section('THE NAME SURVIVES A RESIZE MID-UNLOCK (2026-10-01)');
      /S\.unlockAt = null; S\.relayout = null; \};\s*\}, \[playing, agentName, S\]\);/.test(g));
 }
 
+/* ── AGENT PROFILE OPENS ON YOUR OWN PROFILE, YOURS FIRST IN THE LIST (2026-10-01) ────────────────────────────────────
+   His words: "when user press the agent profile, it directly show them their own agent profile and put it on the top
+   of the list". Real component, lab: owner opened on Adi before -> Master Owner now; T2 Rina on Adi -> Rina; T5 Budi
+   unchanged (his own page); pressing another name still moves the selection. */
+section('AGENT PROFILE OPENS ON YOUR OWN PROFILE, YOURS FIRST IN THE LIST (2026-10-01)');
+{ const ap = code(read('src/AgentProfileView.jsx')).replace(/\r/g, '');
+  ok('own = the roster profile, or master_owner for the owner who has none',
+     /const ownId = agentProfileId \|\| \(userRole === 'ADMIN' \? TIER_ONE_ID : null\);/.test(ap));
+  ok('the selection is derived until a name is pressed, so it lands on his own entry when it arrives late',
+     /const \[pickedId, setSelectedId\] = useState\(null\);/.test(ap) &&
+     /const selectedId = pickedId \?\? \(allAgents\.some\(m => m\.id === ownId\) \? ownId : allAgents\[0\]\?\.id \?\? null\);/.test(ap) &&
+     !/userRole !== 'AREA_ADMIN' && userRole !== 'COMPANY_OWNER' && agentProfileId\) return agentProfileId/.test(ap));
+  ok('the directory puts his own entry on top', /\.sort\(\(a, b\) => \(b\.id === ownId\) - \(a\.id === ownId\)\);/.test(ap));
+  /* the maths RUN: the same comparator on a roster - own first, the rest keep their order */
+  const own = 'm4', list = [{ id: 'master_owner' }, { id: 'm1' }, { id: 'm4' }, { id: 'm2' }];
+  ok('behaviour: own first, the others in their old order',
+     [...list].sort((a, b) => (b.id === own) - (a.id === own)).map(m => m.id).join() === 'm4,master_owner,m1,m2');
+}
+
 /* ── THE RANK-FRAME SWIRL SLEEPS WITHOUT A SWIRLING FRAME (2026-10-01) ────────────────────────────────────────────────
    FrameFilters' four SVG <animate> ticked every frame while mounted, used or not: EOD Setoran 49% -> 5%, Agent Profile
    53% -> 5% busy at rest (6x-slow phone, built app on the emulator). Isolated: paused with no frame, running with a
