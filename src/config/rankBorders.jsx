@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 /* Square rank frames, ported from the approved "KPM - Rank Frames" artifact with every revision
  * already folded in: Bronze's planks thinned, Silver's gleam masked so the light travels along
@@ -573,8 +573,23 @@ export const BORDER_KEYFRAMES = `
 /* feTurbulence / feDisplacementMap filters. Platinum's marble and Mythic's violet churn
  * reference these by id, so this must be mounted once anywhere a frame renders. */
 
-export const FrameFilters = () => (
-<svg width="0" height="0" style={{position: 'absolute'}} aria-hidden="true" focusable="false">
+/* ASLEEP WITHOUT A FRAME THAT USES THEM (2026-10-01, "potato phone even in full animation mode"). The four <animate>
+ * below tick on every frame for as long as this svg is mounted, whether or not anything references the filters:
+ * EOD Setoran 49% -> 6% and Agent Profile 53% -> 4% busy at rest on a 6x-slow phone, with no Platinum or Mythic
+ * frame on screen. So they run only while one of those two frames is in the page; the look of both is unchanged. */
+export const FrameFilters = () => {
+  const ref = useRef(null);
+  useEffect(() => {
+    const svg = ref.current;
+    if (!svg?.pauseAnimations) return;
+    const sync = () => (document.querySelector('.s-platinum, .s-mythic') ? svg.unpauseAnimations() : svg.pauseAnimations());
+    sync();
+    const mo = new MutationObserver(sync);
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, []);
+  return (
+<svg ref={ref} width="0" height="0" style={{position: 'absolute'}} aria-hidden="true" focusable="false">
   <defs>
     {/* corrupted grace: fractal noise displaces a hard band into flowing marble veins.
          Both the noise frequency and the displacement scale animate, on unrelated periods. */}
@@ -599,7 +614,8 @@ export const FrameFilters = () => (
     </filter>
   </defs>
 </svg>
-);
+  );
+};
 
 const FRAME_HTML = {
   "bronze": "<div class=\"lyr beams\"></div><div class=\"lyr grain\"></div><div class=\"lyr wear\"></div><div class=\"lyr joints\"></div><div class=\"lyr iron\"></div><div class=\"lyr rim\"></div>",

@@ -9577,6 +9577,22 @@ section('THE NAME SURVIVES A RESIZE MID-UNLOCK (2026-10-01)');
      /S\.unlockAt = null; S\.relayout = null; \};\s*\}, \[playing, agentName, S\]\);/.test(g));
 }
 
+/* ── THE RANK-FRAME SWIRL SLEEPS WITHOUT A SWIRLING FRAME (2026-10-01) ────────────────────────────────────────────────
+   FrameFilters' four SVG <animate> ticked every frame while mounted, used or not: EOD Setoran 49% -> 5%, Agent Profile
+   53% -> 5% busy at rest (6x-slow phone, built app on the emulator). Isolated: paused with no frame, running with a
+   Mythic frame, paused again when it leaves. */
+section('THE RANK-FRAME SWIRL SLEEPS WITHOUT A SWIRLING FRAME (2026-10-01)');
+{ const rb = code(read('src/config/rankBorders.jsx')).replace(/\r/g, '');
+  const ff = rb.slice(rb.indexOf('export const FrameFilters'), rb.indexOf('const FRAME_HTML'));
+  ok('the filters pause unless a Platinum or Mythic frame is in the page, and re-check whenever the page changes',
+     /const sync = \(\) => \(document\.querySelector\('\.s-platinum, \.s-mythic'\) \? svg\.unpauseAnimations\(\) : svg\.pauseAnimations\(\)\);/.test(ff) &&
+     /sync\(\);\s*const mo = new MutationObserver\(sync\);\s*mo\.observe\(document\.body, \{ childList: true, subtree: true \}\);\s*return \(\) => mo\.disconnect\(\);/.test(ff) &&
+     /<svg ref=\{ref\}/.test(ff));
+  ok('the two frames that use them are still the only two (a new swirling frame must join the selector)',
+     /\.s-platinum \.cg\{[^}]*filter:url\(#cgWarp\)/.test(rb) && /filter:url\(#myWarp\)/.test(rb.slice(rb.indexOf('.s-mythic'))) &&
+     !/filter:url\(#(?!cgWarp|myWarp)/.test(rb));
+}
+
 /* ── PHONES SIGN IN IN THE SAME TAB (2026-10-01) ──────────────────────────────────────────────────────────────────────
    His Samsung: the popup tab opened the Gmail app, refreshing it gave "missing initial state", and finishing left KPM
    duplicated in the second tab. On the proxied host a touch phone redirects instead; the popup stays everywhere else. */
