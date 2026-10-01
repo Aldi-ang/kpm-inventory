@@ -762,7 +762,7 @@ check(G16, 'that field is kept away from autofill and spellcheck',
   /autoComplete="off"[\s\S]{0,200}?spellCheck=\{false\}/.test(appCode),
   'a text input is offered to autofill and spellcheck services; a password input is not');
 check(G16, 'the mascot stays out of the login screen',
-  /\{user && !gateUp && \(\s*<CapybaraMascot/.test(appCode) && /const gateUp = showAdminLogin \|\| entryLocked;/.test(appCode),
+  /\{user && !gateUp && !cropImageSrc && \(\s*<CapybaraMascot/.test(appCode) && /const gateUp = showAdminLogin \|\| entryLocked;/.test(appCode),
   'he saw the capybara standing beside the vault gate on his phone, telling him to run a backup '
   + 'he could not reach — the mascot belongs to the app, not to the door');
 check(G16, 'the second line names the app, not the vault screen',

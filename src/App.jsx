@@ -5,7 +5,7 @@ import packageJson from '../package.json'; // 🚀 INJECT THE PACKAGE LINK HERE
 
 import { 
   LayoutDashboard, Package, ShoppingCart, FileText, 
-  Settings, Sun, Moon, Search, Plus, Trash2, 
+  Settings, Sun, Moon, Plus, Trash2,
   Save, X, Upload, RotateCcw, Camera, Download,
   TrendingUp, AlertCircle, ChevronRight, ChevronLeft, DollarSign, Image as ImageIcon,
   User, Lock, ClipboardList, Crop, RotateCw, Move, Maximize2, ArrowRight, RefreshCcw, MessageSquarePlus, MinusCircle, ZoomIn, ZoomOut, Unlock,
@@ -4926,21 +4926,12 @@ const handleGitHubMirror = async () => {
           {activeTab === 'inventory' && (
           <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col">
 
-              {/* 🚀 FIX: searchTerm/setSearchTerm existed and already filtered inventory
-                  into filteredInventory below, but the input that was supposed to drive it
-                  was missing from the UI entirely. */}
-              <div className="relative shrink-0 border-b-4 border-[var(--duke-frame)] bg-[var(--duke-badge)] p-3">
-                  <Search size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-[var(--duke-ink-8)] pointer-events-none" />
-                  <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Search inventory by name..."
-                      className="w-full bg-[var(--duke-fill-well)] border border-[var(--duke-edge-1)] rounded-lg py-2 pl-9 pr-3 text-sm text-[var(--duke-ink-hi)] outline-none focus:border-[var(--duke-amber-edge)] transition-colors"
-                  />
-              </div>
-
+              {/* searchTerm drives filteredInventory (the Sales Terminal's list reads it too). Its box lives INSIDE the
+                  Master Vault's list now (2026-10-02): there were two search boxes, and on the phone this one sat above
+                  the product screen. */}
               <ResidentEvilInventory
+                  searchTerm={searchTerm}
+                  onSearch={setSearchTerm}
                   inventory={filteredInventory}
                   motorists={motorists}
                   transactions={transactions}
@@ -5541,7 +5532,8 @@ const handleGitHubMirror = async () => {
           mascot was standing next to the vault gate telling him to run a backup he could not
           reach. Not rendered rather than hidden with a class: the same class-hide was tried on
           the nav button hours earlier and was still visible in the running app. */}
-      {user && !gateUp && (
+      {/* ...and not over the photo cropper: its bubble sat on Crop & Save on the phone (2026-10-02) */}
+      {user && !gateUp && !cropImageSrc && (
         <CapybaraMascot
             isDiscoMode={isDiscoMode}
             message={showCapyMsg ? capyMsg : null}

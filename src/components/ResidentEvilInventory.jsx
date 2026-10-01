@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, Plus, Package, AlertCircle, ImageIcon, Maximize2 } from 'lucide-react';
+import { Search, Plus, Package, AlertCircle, ImageIcon, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatRupiah, convertToBks, getLocalDayKey} from '../utils/helpers';
 import * as threshold from '../utils/stockThreshold';
 
@@ -69,13 +69,17 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
        on a 6x-slow phone, 22% without it. Now .kpm-inspect-spin turns the faces on the graphics chip, INSIDE the drag
        rotation (rotateX(x) rotateY(y) rotateY(spin) = the old rotateY(y + spin)), one turn per 20 s = 0.3deg at 60 fps,
        and holds its angle while he drags or edits a size. Lite Mode stops it (his "nothing rotates"); theme.css. */
-    const handleMouseDown = (e) => { 
-        if(e.target.closest('.controls-panel') || e.target.closest('.admin-actions') || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return; 
-        setIsDragging(true); 
-        lastMousePos.current = { x: e.clientX, y: e.clientY }; 
+    /* A FINGER TURNS IT (2026-10-02, Master Vault on the phone). These were mouse events, and a phone sends none for a
+       drag - the lab's touch drag left the box at rotateY(35deg) while a mouse turned it. Pointer events cover mouse and
+       finger alike; the stage has touch-action off so the drag turns the box instead of scrolling the page. */
+    const handlePointerDown = (e) => {
+        if(e.target.closest('.controls-panel') || e.target.closest('.admin-actions') || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+        setIsDragging(true);
+        lastMousePos.current = { x: e.clientX, y: e.clientY };
     };
-    
-    const handleMouseMove = (e) => { 
+
+    const handlePointerMove = (e) => {
         if (!isDragging) return; 
         const deltaX = e.clientX - lastMousePos.current.x; 
         const deltaY = e.clientY - lastMousePos.current.y; 
@@ -92,28 +96,33 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
     const front = images.front || product.image;
     const back = product.useFrontForBack ? front : images.back;
 
+    /* the 3D size controls: a floating panel on the desk (top-right button), a fold under the prices on the phone */
+    const sizeControls = (<>
+        <DimensionControl label="W" val={dims.w} axis="w" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
+        <DimensionControl label="H" val={dims.h} axis="h" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
+        <DimensionControl label="D" val={dims.d} axis="d" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
+        <button onClick={() => onUpdateProduct(product.id, { dimensions: dims, defaultZoom: zoom })} className="w-full mt-2 min-h-11 lg:min-h-0 bg-gradient-to-b from-amber-500 to-amber-700 text-black text-[10px] font-bold py-2 rounded shadow-[0_0_10px_rgba(217,164,65,0.4)]">Save 3D Layout</button>
+    </>);
+
     return (
-        <div className="h-full flex flex-col relative animate-fade-in select-none bg-gradient-to-b from-black via-purple-950/20 to-black overflow-hidden">
+        <div className="lg:h-full flex flex-col relative animate-fade-in select-none bg-gradient-to-b from-black via-stone-900/30 to-black overflow-hidden">
             {isAdmin && (
-                <div className="absolute top-4 right-4 z-[100] flex flex-col items-end gap-2 controls-panel">
-                    <button onClick={() => setShowControls(!showControls)} className={`p-2 rounded-full border ${showControls ? 'bg-amber-500 border-amber-300 text-black shadow-[0_0_12px_rgba(217,164,65,0.6)]' : 'bg-black/50 border-amber-500/20 text-amber-200/70'}`}>
+                <div className="absolute top-4 right-4 z-[100] hidden lg:flex flex-col items-end gap-2 controls-panel">
+                    <button onClick={() => setShowControls(!showControls)} className={`w-11 h-11 flex items-center justify-center rounded-full border ${showControls ? 'bg-amber-500 border-amber-300 text-black shadow-[0_0_12px_rgba(217,164,65,0.6)]' : 'bg-black/50 border-amber-500/20 text-amber-200/70'}`}>
                         <Maximize2 size={16}/>
                     </button>
                     {showControls && (
                         <div className="bg-black/90 backdrop-blur-md border border-amber-500/30 p-4 rounded-xl w-64 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
-                             <DimensionControl label="W" val={dims.w} axis="w" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
-                             <DimensionControl label="H" val={dims.h} axis="h" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
-                             <DimensionControl label="D" val={dims.d} axis="d" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
-                             <button onClick={() => onUpdateProduct(product.id, { dimensions: dims, defaultZoom: zoom })} className="w-full mt-2 bg-gradient-to-b from-amber-500 to-amber-700 text-black text-[10px] font-bold py-2 rounded shadow-[0_0_10px_rgba(217,164,65,0.4)]">Save 3D Layout</button>
+                             {sizeControls}
                         </div>
                     )}
                 </div>
             )}
 
-            <div 
-                className="flex-1 flex items-center justify-center relative perspective-[1200px] cursor-move z-10"
-                style={{ perspective: '1200px' }}
-                onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={() => setIsDragging(false)}
+            <div
+                className="flex-1 min-h-[340px] lg:min-h-0 flex items-center justify-center relative perspective-[1200px] cursor-move z-10"
+                style={{ perspective: '1200px', touchAction: 'none' }}
+                onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={() => setIsDragging(false)} onPointerCancel={() => setIsDragging(false)}
             >
                 <div 
                     className="relative" 
@@ -157,8 +166,8 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
 
                     {isAdmin && (
                         <div className="flex gap-2 w-full md:w-auto">
-                            <button onClick={() => onEdit(product)} className="flex-1 md:px-6 py-2 bg-gradient-to-b from-amber-400 to-amber-600 text-black text-[10px] font-bold uppercase tracking-widest hover:from-amber-300 hover:to-amber-500 transition-colors shadow-[0_0_10px_rgba(217,164,65,0.3)]">Edit</button>
-                            <button onClick={() => onDelete(product.id)} className="flex-1 md:px-6 py-2 bg-red-950/40 text-rose-500 border border-rose-800 text-[10px] font-bold uppercase tracking-widest hover:bg-rose-700 hover:text-white transition-colors">Discard</button>
+                            <button onClick={() => onEdit(product)} className="flex-1 md:px-6 py-2 min-h-11 lg:min-h-0 bg-gradient-to-b from-amber-400 to-amber-600 text-black text-[10px] font-bold uppercase tracking-widest hover:from-amber-300 hover:to-amber-500 transition-colors shadow-[0_0_10px_rgba(217,164,65,0.3)]">Edit</button>
+                            <button onClick={() => onDelete(product.id)} className="flex-1 md:px-6 py-2 min-h-11 lg:min-h-0 bg-red-950/40 text-rose-500 border border-rose-800 text-[10px] font-bold uppercase tracking-widest hover:bg-rose-700 hover:text-white transition-colors">Discard</button>
                         </div>
                     )}
                 </div>
@@ -172,7 +181,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                         <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Retail</p>
                         <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceRetail)}</p>
                     </div>
-                    <div className="bg-white/5 p-3 border-l-4 border-purple-500">
+                    <div className="bg-white/5 p-3 border-l-4 border-stone-400">
                         <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Grosir</p>
                         <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceGrosir)}</p>
                     </div>
@@ -181,16 +190,43 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                         <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceEcer)}</p>
                     </div>
                 </div>
+
+                {isAdmin && (
+                    <details className="lg:hidden mt-4 border border-amber-500/20 controls-panel group">
+                        <summary className="min-h-11 px-3 flex items-center cursor-pointer list-none text-[11px] font-mono text-stone-300">
+                            3D size {dims.w} × {dims.h} × {dims.d} mm<ChevronRight size={14} className="ml-auto text-amber-500/60 group-open:rotate-90 transition-transform"/>
+                        </summary>
+                        <div className="px-3 pb-3">{sizeControls}</div>
+                    </details>
+                )}
             </div>
         </div>
     );
 };
 
 // --- MAIN INVENTORY COMPONENT ---
-export default function ResidentEvilInventory({ inventory, motorists = [], transactions = [], isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct, appSettings }) { 
+/* ON THE PHONE: THE LIST, THEN THE PRODUCT (2026-10-02, his pick C - "c is the best one for master vault"). Below lg
+   the screen is one thing at a time: the list full width (it used to sit in a 350 px box - one and a half products),
+   and a tap opens that product on its own screen with a Back. The desk keeps both side by side. ONE search box: it
+   was two (App's above, this one's inside); this one now drives App's searchTerm, which the Sales Terminal's product
+   list reads too, so nothing that filtered before stops filtering. */
+const isPhone = () => window.matchMedia('(max-width: 1023px)').matches;
+
+export default function ResidentEvilInventory({ inventory, motorists = [], transactions = [], isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct, appSettings, searchTerm = '', onSearch }) {
     const [selectedId, setSelectedId] = useState(null);
-    const [search, setSearch] = useState("");
     const [activeSection, setActiveSection] = useState("ALL");
+    const [phoneOpen, setPhoneOpen] = useState(false);
+    const rootRef = useRef(null);
+    const openProduct = (id) => {
+        setSelectedId(id);
+        if (!isPhone()) return;
+        setPhoneOpen(true);
+        setTimeout(() => rootRef.current?.scrollIntoView({ block: 'start' }));   /* after the screen has switched */
+    };
+    const backToList = () => {
+        setPhoneOpen(false);
+        setTimeout(() => document.getElementById(`mv-row-${selectedId}`)?.scrollIntoView({ block: 'center' }));
+    };
 
     const sections = useMemo(() => {
         const groups = { "ALL": inventory };
@@ -207,31 +243,33 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
     }, [inventory]);
 
     const sectionKeys = Object.keys(sections).sort();
-    const currentList = sections[activeSection].filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
+    const currentList = sections[activeSection] || [];   /* a search can empty the chosen type: no group, no crash */
     const selectedItem = inventory.find(i => i.id === selectedId) || inventory[0];
 
     return (
-        <div className="flex flex-col lg:flex-row h-auto lg:h-full w-full bg-black overflow-hidden border border-amber-500/20 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.6)] relative">
-            <div className="w-full lg:w-96 h-[350px] lg:h-full flex flex-col shrink-0 border-b lg:border-b-0 lg:border-r border-amber-500/20 bg-black/95 relative z-30 shadow-[10px_0_30px_rgba(0,0,0,0.5)]">
+        <div ref={rootRef} className="flex flex-col lg:flex-row h-auto lg:h-full w-full bg-black overflow-hidden border border-amber-500/20 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.6)] relative">
+            <div className={`${phoneOpen ? 'hidden lg:flex' : 'flex'} w-full lg:w-96 h-auto lg:h-full flex-col shrink-0 border-b lg:border-b-0 lg:border-r border-amber-500/20 bg-black/95 relative z-30 shadow-[10px_0_30px_rgba(0,0,0,0.5)]`}>
                 <div className="p-4 md:p-6 border-b border-amber-500/20">
                     <h3 className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-200 font-serif italic text-lg md:text-2xl mb-2">Supply Case</h3>
                     <div className="relative mb-3">
-                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="SEARCH..." className="w-full bg-black/50 border border-amber-500/30 p-2 pl-8 text-white text-[10px] font-mono outline-none focus:border-amber-400"/>
-                        <Search size={12} className="absolute left-2 top-2.5 text-amber-500/50"/>
-                        {isAdmin && <button onClick={onAddNew} className="absolute right-2 top-1.5 text-amber-500/70 hover:text-amber-300"><Plus size={16}/></button>}
+                        <input value={searchTerm} onChange={e => onSearch?.(e.target.value)} placeholder="Search products..." className="w-full h-11 lg:h-9 bg-black/50 border border-amber-500/30 pl-9 pr-3 text-white text-xs font-mono outline-none focus:border-amber-400"/>
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-500/50 pointer-events-none"/>
                     </div>
-                    <div className="flex gap-1 overflow-x-auto scrollbar-hide">
-                        {sectionKeys.map(sec => (
-                            <button key={sec} onClick={() => setActiveSection(sec)} className={`px-2 py-1 text-[11px] font-bold uppercase border whitespace-nowrap ${activeSection === sec ? 'bg-amber-500 text-black border-amber-400' : 'text-amber-200/40 border-amber-900/60'}`}>{sec}</button>
-                        ))}
+                    <div className="flex gap-1 items-center">
+                        <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+                            {sectionKeys.map(sec => (
+                                <button key={sec} onClick={() => setActiveSection(sec)} className={`h-11 lg:h-8 px-3 text-[11px] font-bold uppercase border whitespace-nowrap ${activeSection === sec ? 'bg-amber-500 text-black border-amber-400' : 'text-amber-200/40 border-amber-900/60'}`}>{sec}</button>
+                            ))}
+                        </div>
+                        {isAdmin && <button onClick={onAddNew} className="ml-auto shrink-0 h-11 lg:h-8 px-3 flex items-center gap-1 border border-amber-500/50 text-amber-400 hover:text-amber-200 text-[11px] font-bold uppercase tracking-widest"><Plus size={14}/> Add</button>}
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-amber-900/40">
+                <div className="lg:flex-1 lg:overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-amber-900/40">
                     {currentList.map(item => {
                         const isLowStock = threshold.isLowStock(item, appSettings);
                         return (
-                            <div key={item.id} onClick={() => setSelectedId(item.id)} className={`p-3 md:p-4 cursor-pointer border mb-2 flex items-center gap-4 transition-all relative ${selectedId === item.id ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_15px_rgba(217,164,65,0.15)]' : 'border-transparent'}`}>
+                            <div key={item.id} id={`mv-row-${item.id}`} onClick={() => openProduct(item.id)} className={`p-3 md:p-4 cursor-pointer border mb-2 flex items-center gap-4 transition-all relative ${selectedId === item.id ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_15px_rgba(217,164,65,0.15)]' : 'border-transparent'}`}>
                                 {isLowStock && isAdmin && (<div className="absolute left-0 top-0 bottom-0 w-1.5 bg-rose-600 shadow-[0_0_12px_rgba(220,38,38,1)] z-10"></div>)}
                                 <div className={`w-12 h-12 shrink-0 border flex items-center justify-center bg-black relative ${selectedId === item.id ? 'border-amber-500' : isLowStock && isAdmin ? 'border-rose-500' : 'border-amber-900/30'}`}>
                                     {item.images?.front ? <img src={item.images.front} className="w-full h-full object-cover" /> : <Package size={20} className="text-amber-900/60"/>}
@@ -257,15 +295,17 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                                             const damagedBks = item.damagedStock || 0;
 
                                             return (
-                                                <div className="flex items-center gap-2 text-[10px] md:text-xs font-mono font-bold w-full overflow-x-auto custom-scrollbar pb-1">
-                                                    <span className={`whitespace-nowrap ${isLowStock ? 'text-rose-500' : 'text-amber-200'}`}>
+                                                /* the numbers WRAP under the name - they used to slide sideways in every row, at
+                                                   every width (his rule: "sideways swipe is inconvenience for phone") */
+                                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] md:text-xs font-mono font-bold w-full">
+                                                    <span className={`basis-full whitespace-nowrap ${isLowStock ? 'text-rose-500' : 'text-amber-200'}`}>
                                                         VAULT: {formatAdvancedStock(item.stock, item).bks} ({formatAdvancedStock(item.stock, item).slop})
                                                     </span>
-                                                    <span className="text-slate-400 border-l border-amber-900/40 pl-2 whitespace-nowrap">START: {startBks}</span>
-                                                    <span className="text-amber-400 border-l border-amber-900/40 pl-2">FIELD: {fieldBks}</span>
-                                                    <span className="text-emerald-400 border-l border-amber-900/40 pl-2">SOLD: {soldBks}</span>
+                                                    <span className="text-slate-400 whitespace-nowrap">START: {startBks}</span>
+                                                    <span className="text-amber-400 whitespace-nowrap">FIELD: {fieldBks}</span>
+                                                    <span className="text-stone-200 whitespace-nowrap">SOLD: {soldBks}</span>
                                                     {damagedBks > 0 && (
-                                                        <span className="text-rose-400 border-l border-amber-900/40 pl-2">DMG: {damagedBks}</span>
+                                                        <span className="text-rose-400 whitespace-nowrap">DMG: {damagedBks}</span>
                                                     )}
                                                 </div>
                                             );
@@ -273,6 +313,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                                         {isLowStock && isAdmin && (<span className="text-[11px] font-black bg-rose-950/50 text-rose-400 px-1.5 py-0.5 rounded border border-rose-500/50 uppercase animate-pulse tracking-widest shadow-[0_0_8px_rgba(220,38,38,0.4)] mt-1">Low</span>)}
                                     </div>
                                 </div>
+                                <ChevronRight size={18} className="lg:hidden shrink-0 text-amber-500/40" />
                             </div>
                         );
                     })}
@@ -280,15 +321,21 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                 </div>
             </div>
 
-            <div className="w-full h-[600px] lg:flex-1 lg:h-full relative bg-black shrink-0">
+            <div className={`${phoneOpen ? 'block' : 'hidden'} lg:block w-full h-auto lg:flex-1 lg:h-full relative bg-black shrink-0`}>
                 <div className="absolute inset-0 z-0">
                     <img src={backgroundSrc || 'https://www.transparenttextures.com/patterns/dark-leather.png'} className="w-full h-full object-cover opacity-60" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-purple-950/10 to-black/80"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-stone-900/20 to-black/80"></div>
                 </div>
-                <div className="relative z-10 h-full">
+                <div className="relative z-10 lg:h-full">
+                    {/* hidden on the WRAPPER: theme.css's `button:has(> svg:only-child)` outranks lg:hidden on the button itself */}
+                    <div className="lg:hidden relative z-[110]">
+                        <button type="button" onClick={backToList} className="h-11 px-3 flex items-center gap-1 text-[11px] font-mono font-bold uppercase tracking-widest text-amber-200/80">
+                            <ChevronLeft size={16}/> Back
+                        </button>
+                    </div>
                     {isAdmin && (
-                        <label className="absolute top-4 right-14 z-50 cursor-pointer"> 
-                            <div className="bg-black/50 p-2 rounded-full text-amber-300 border border-amber-500/20"><ImageIcon size={14}/></div>
+                        <label className="absolute top-[52px] lg:top-4 right-4 lg:right-[68px] z-50 cursor-pointer">
+                            <div className="w-11 h-11 flex items-center justify-center bg-black/50 rounded-full text-amber-300 border border-amber-500/20"><ImageIcon size={14}/></div>
                             <input type="file" accept="image/*" onChange={onUploadBg} className="hidden" />
                         </label>
                     )}

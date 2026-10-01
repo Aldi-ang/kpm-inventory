@@ -1,19 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Crop, Move, Maximize2, RotateCcw, RotateCw } from 'lucide-react';
 
+/* Two fingers apart = zoom in: the zoom when they landed x how far apart they are now / how far apart they started. */
+export const pinchZoom = (z0, d0, d) => Math.min(5, Math.max(0.1, d0 > 0 ? z0 * d / d0 : z0));
+
+/* MADE FOR A FINGER (2026-10-02, his "the picture insert submission for the 3D cigarette box is incompatible in phone",
+   and his yes to the AFTER picture). It listened to mouse events only, and a phone sends none for a drag - the photo and
+   the frame could not be moved at all (lab: touch drag left the photo where it was, a mouse moved it). Now pointer
+   events (mouse, finger, pen alike) with touch-action off on the drag surfaces, a pinch zooms, the photo gets most of
+   the phone screen, the handles are 44 px, 3D size folds away, Cancel / Crop & Save stay pinned at the bottom, and the
+   colours are the app's (it was cyan and white). The desk keeps its side panel. */
 export default function ImageCropper({ imageSrc, onCancel, onCrop, dimensions, onDimensionsChange, face }) {
   const imgRef = useRef(null);
   const boxRef = useRef(null);
   const containerRef = useRef(null);
-  
+
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
-  
+  const [sizeOpen] = useState(() => window.matchMedia('(min-width: 768px)').matches);   /* the desk has room to show it */
+  const zoomRef = useRef(1);
+  zoomRef.current = zoom;
+
   const state = useRef({
     isDragging: false, dragType: null, startX: 0, startY: 0,
     initialPanX: 0, initialPanY: 0, initialW: 200, initialH: 200,
     panX: 0, panY: 0, w: 200, h: 200
   });
+  const pointers = useRef(new Map());
+  const pinch = useRef(null);
 
   useEffect(() => {
     if (containerRef.current) {
@@ -22,16 +36,16 @@ export default function ImageCropper({ imageSrc, onCancel, onCrop, dimensions, o
         let axisX = 'w'; let axisY = 'h';
         if (face === 'left' || face === 'right') axisX = 'd';
         if (face === 'top' || face === 'bottom') axisY = 'd';
-        
+
         const ratio = dimensions[axisX] / dimensions[axisY];
         let initialW, initialH;
-        
-        if (ratio > 1) { 
-            initialW = Math.min(320, width - padding); 
-            initialH = initialW / ratio; 
-        } else { 
-            initialH = Math.min(320, height - padding); 
-            initialW = initialH * ratio; 
+
+        if (ratio > 1) {
+            initialW = Math.min(320, width - padding);
+            initialH = initialW / ratio;
+        } else {
+            initialH = Math.min(320, height - padding);
+            initialW = initialH * ratio;
         }
 
         state.current.w = initialW;
@@ -51,17 +65,14 @@ export default function ImageCropper({ imageSrc, onCancel, onCrop, dimensions, o
     }
   };
 
-  const handleMouseDown = (e, type) => {
-    e.preventDefault(); e.stopPropagation();
-    state.current.isDragging = true; state.current.dragType = type;
-    state.current.startX = e.clientX; state.current.startY = e.clientY;
-    state.current.initialPanX = state.current.panX; state.current.initialPanY = state.current.panY;
-    state.current.initialW = state.current.w; state.current.initialH = state.current.h;
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
-  };
+  const spread = () => { const [a, b] = [...pointers.current.values()]; return Math.hypot(a.x - b.x, a.y - b.y); };
 
-  const onMouseMove = (e) => {
+  /* The document listeners need ONE identity each (add and remove must match) while the bodies read this render. */
+  const live = useRef({});
+  live.current.move = (e) => {
+    if (!pointers.current.has(e.pointerId)) return;
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch.current && pointers.current.size >= 2) { setZoom(pinchZoom(pinch.current.z0, pinch.current.d0, spread())); return; }
     if (!state.current.isDragging) return;
     const dx = e.clientX - state.current.startX; const dy = e.clientY - state.current.startY;
     if (state.current.dragType === 'move') {
@@ -76,106 +87,131 @@ export default function ImageCropper({ imageSrc, onCancel, onCrop, dimensions, o
         if (boxRef.current) { boxRef.current.style.width = `${newW}px`; boxRef.current.style.height = `${newH}px`; }
     }
   };
-
-  const onMouseUp = () => {
-    state.current.isDragging = false;
-    document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp);
+  live.current.up = (e) => {
+    pointers.current.delete(e.pointerId);
+    if (pointers.current.size < 2) pinch.current = null;
+    if (pointers.current.size === 0) {
+        state.current.isDragging = false;
+        document.removeEventListener('pointermove', onPointerMove); document.removeEventListener('pointerup', onPointerUp); document.removeEventListener('pointercancel', onPointerUp);
+    }
   };
+  const [{ onPointerMove, onPointerUp }] = useState(() => ({ onPointerMove: (e) => live.current.move(e), onPointerUp: (e) => live.current.up(e) }));
+
+  const handlePointerDown = (e, type) => {
+    e.preventDefault(); e.stopPropagation();
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (type === 'move' && pointers.current.size === 2) {
+        pinch.current = { d0: spread(), z0: zoomRef.current };
+        state.current.isDragging = false;
+    } else if (pointers.current.size === 1) {
+        state.current.isDragging = true; state.current.dragType = type;
+        state.current.startX = e.clientX; state.current.startY = e.clientY;
+        state.current.initialPanX = state.current.panX; state.current.initialPanY = state.current.panY;
+        state.current.initialW = state.current.w; state.current.initialH = state.current.h;
+    }
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+    document.addEventListener('pointercancel', onPointerUp);
+  };
+  useEffect(() => () => {
+    document.removeEventListener('pointermove', onPointerMove); document.removeEventListener('pointerup', onPointerUp); document.removeEventListener('pointercancel', onPointerUp);
+  }, [onPointerMove, onPointerUp]);
 
   const executeCrop = () => {
-    const canvas = document.createElement('canvas'); 
-    
+    const canvas = document.createElement('canvas');
+
     // 🚀 THE MICRO-COMPRESSOR OVERRIDE
     // Lowered base resolution from 500 to 256 for a massive drop in raw pixel data
-    const BASE_RES = 256; 
+    const BASE_RES = 256;
     const ratio = state.current.w / state.current.h;
-    
-    if (ratio > 1) { 
-        canvas.width = BASE_RES; 
-        canvas.height = BASE_RES / ratio; 
-    } else { 
-        canvas.height = BASE_RES; 
-        canvas.width = BASE_RES * ratio; 
+
+    if (ratio > 1) {
+        canvas.width = BASE_RES;
+        canvas.height = BASE_RES / ratio;
+    } else {
+        canvas.height = BASE_RES;
+        canvas.width = BASE_RES * ratio;
     }
-    
-    const ctx = canvas.getContext('2d'); 
+
+    const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    const img = imgRef.current; 
-    ctx.translate(canvas.width / 2, canvas.height / 2); 
+
+    const img = imgRef.current;
+    ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate((rotation * Math.PI) / 180);
-    
-    const scaleFactor = canvas.width / state.current.w; 
-    ctx.translate(state.current.panX * scaleFactor, state.current.panY * scaleFactor); 
+
+    const scaleFactor = canvas.width / state.current.w;
+    ctx.translate(state.current.panX * scaleFactor, state.current.panY * scaleFactor);
     ctx.scale(zoom * scaleFactor, zoom * scaleFactor);
-    
+
     if (img) ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
-    
+
     // 🚀 CRITICAL COMPRESSION: Switched from lossless PNG (1.0) to JPEG (0.7 quality)
     // This turns a 5MB image into a ~40kb image while maintaining perfect UI visual fidelity.
     onCrop(canvas.toDataURL('image/jpeg', 0.7));
   };
-  
-  const DimSlider = ({ label, val, axis }) => (
-    <div className="flex flex-col mb-4">
+
+  const label = 'font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--duke-ink-8)]';
+  const range = 'w-full h-6 cursor-pointer accent-[color:var(--duke-amber)]';
+  const DimSlider = ({ label: name, val, axis }) => (
+    <div className="flex flex-col mb-3">
         <div className="flex justify-between items-center mb-1">
-            <label className="text-[10px] uppercase font-bold text-orange-600 dark:text-orange-400">{label}</label>
+            <label className={label}>{name}</label>
             <div className="flex items-center gap-1">
-                <input type="number" value={val} onChange={(e) => onDimensionsChange({...dimensions, [axis]: Math.max(1, parseInt(e.target.value) || 0)})} className="w-12 text-right text-xs font-mono bg-slate-100 dark:bg-slate-700 px-1 rounded text-slate-700 dark:text-slate-200 border border-transparent focus:border-orange-500 outline-none"/>
-                <span className="text-[10px] text-slate-400">mm</span>
+                <input type="number" value={val} onChange={(e) => onDimensionsChange({...dimensions, [axis]: Math.max(1, parseInt(e.target.value) || 0)})} className="w-14 h-8 text-right text-xs font-mono bg-[var(--duke-fill-well)] px-1 text-[var(--duke-ink-hi)] border border-[var(--duke-edge-1)] focus:border-[var(--duke-amber-edge)] outline-none"/>
+                <span className="text-[10px] text-[var(--duke-ink-8)]">mm</span>
             </div>
         </div>
-        <input type="range" min="1" max="300" step="1" value={val} onChange={(e) => onDimensionsChange({...dimensions, [axis]: parseInt(e.target.value)})} className="w-full h-3 rounded-full appearance-none cursor-pointer accent-orange-500 bg-orange-100 dark:bg-orange-900/30"/>
+        <input type="range" min="1" max="300" step="1" value={val} onChange={(e) => onDimensionsChange({...dimensions, [axis]: parseInt(e.target.value)})} className={range}/>
     </div>
   );
+  const handle = 'absolute w-11 h-11 rounded-full border-2 border-[var(--duke-amber)] z-30 flex items-center justify-center shadow-lg';
 
   return (
-    <div className="fixed inset-0 z-[70] bg-black/95 flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white dark:bg-slate-800 w-full max-w-5xl h-[90vh] rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden">
-        <div className="flex-1 flex flex-col bg-slate-900 relative select-none">
-            <div className="p-4 z-30 flex justify-between items-center bg-gradient-to-b from-black/50 to-transparent">
-                <div className="bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
-                    <h3 className="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-wide"><Crop size={14} className="text-cyan-400"/> Align {face}</h3>
-                </div>
+    <div className="fixed inset-0 z-[70] bg-black/95 flex items-center justify-center md:p-4 animate-fade-in">
+      <div className="bg-[var(--duke-well-solid)] w-full h-[100dvh] md:max-w-5xl md:h-[90vh] md:rounded-2xl md:border md:border-[var(--duke-edge-1)] shadow-2xl flex flex-col md:flex-row overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col relative select-none">
+            <div className="h-12 shrink-0 px-4 flex items-center gap-2 border-b border-[var(--duke-edge-1)] font-mono text-[12px] font-bold uppercase tracking-[0.16em] text-[var(--duke-ink-hi)]">
+                <Crop size={14} className="text-[var(--duke-amber)]"/> Align {face}
             </div>
-            <div className="flex-1 flex items-center justify-center overflow-hidden relative" ref={containerRef}>
+            <div ref={containerRef} className="flex-1 min-h-0 flex items-center justify-center overflow-hidden relative cursor-move" style={{ touchAction: 'none' }} onPointerDown={(e) => handlePointerDown(e, 'move')}>
                 <div ref={boxRef} className="relative" style={{ width: 200, height: 200 }}>
-                    <div className="absolute inset-0 overflow-visible cursor-move z-10" onMouseDown={(e) => handleMouseDown(e, 'move')}>
+                    <div className="absolute inset-0 overflow-visible z-10">
                         <img ref={imgRef} src={imageSrc} className="absolute max-w-none origin-center" style={{ left: '50%', top: '50%', transform: `translate3d(-50%, -50%, 0) scale(${zoom}) rotate(${rotation}deg)`, userSelect: 'none', pointerEvents: 'none' }}/>
                     </div>
-                    <div className="absolute inset-0 border-[3px] border-cyan-400 shadow-[0_0_0_9999px_rgba(0,0,0,0.85)] z-20 pointer-events-none"></div>
-                    <div className="absolute right-[-12px] top-1/2 -translate-y-1/2 w-6 h-12 bg-white border-2 border-cyan-500 rounded-full z-30 cursor-ew-resize flex items-center justify-center shadow-lg" onMouseDown={(e) => handleMouseDown(e, 'resize-r')}><Move size={12} className="text-cyan-600 rotate-90"/></div>
-                    <div className="absolute bottom-[-12px] left-1/2 -translate-x-1/2 h-6 w-12 bg-white border-2 border-cyan-500 rounded-full z-30 cursor-ns-resize flex items-center justify-center shadow-lg" onMouseDown={(e) => handleMouseDown(e, 'resize-b')}><Move size={12} className="text-cyan-600"/></div>
-                    <div className="absolute bottom-[-10px] right-[-10px] w-8 h-8 bg-cyan-500 border-4 border-white rounded-full z-30 cursor-nwse-resize shadow-lg" onMouseDown={(e) => handleMouseDown(e, 'resize-rb')}/>
+                    <div className="absolute inset-0 border-2 border-[var(--duke-amber)] shadow-[0_0_0_9999px_rgba(5,4,3,0.8)] z-20 pointer-events-none"></div>
+                    <div className={`${handle} right-[-22px] top-1/2 -translate-y-1/2 bg-[var(--duke-well-solid)] text-[var(--duke-amber)] cursor-ew-resize`} style={{ touchAction: 'none' }} onPointerDown={(e) => handlePointerDown(e, 'resize-r')}><Move size={14} className="rotate-90"/></div>
+                    <div className={`${handle} bottom-[-22px] left-1/2 -translate-x-1/2 bg-[var(--duke-well-solid)] text-[var(--duke-amber)] cursor-ns-resize`} style={{ touchAction: 'none' }} onPointerDown={(e) => handlePointerDown(e, 'resize-b')}><Move size={14}/></div>
+                    <div className={`${handle} bottom-[-22px] right-[-22px] bg-[var(--duke-amber)] text-[var(--duke-on-fill)] cursor-nwse-resize`} style={{ touchAction: 'none' }} onPointerDown={(e) => handlePointerDown(e, 'resize-rb')}><Maximize2 size={14}/></div>
                 </div>
+                <p className="absolute bottom-3 inset-x-0 text-center font-mono text-[11px] text-[var(--duke-ink-8)] pointer-events-none">drag the photo · pinch to zoom</p>
             </div>
         </div>
-        <div className="w-full md:w-80 bg-white dark:bg-slate-900 p-6 flex flex-col gap-6 border-l dark:border-slate-700 overflow-y-auto z-40">
-            <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
-                    <div className="flex items-center gap-2"><Maximize2 size={18} className="text-orange-500"/><h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">3D Size</h4></div>
-                </div>
-                <div><DimSlider label="Width" val={dimensions.w} axis="w" /><DimSlider label="Height" val={dimensions.h} axis="h" /><DimSlider label="Depth" val={dimensions.d} axis="d" /></div>
-            </div>
-            <div className="space-y-6">
+        <div className="shrink-0 md:w-80 md:border-l border-t md:border-t-0 border-[var(--duke-edge-1)] flex flex-col max-h-[46dvh] md:max-h-none">
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-3 md:p-6 space-y-3">
                 <div>
-                    <div className="flex justify-between mb-2"><label className="text-xs font-bold text-slate-400 block">ZOOM</label><span className="text-xs text-slate-400">{zoom.toFixed(2)}x</span></div>
-                    <input type="range" min="0.1" max="5" step="0.05" value={zoom} onChange={(e) => setZoom(parseFloat(e.target.value))} className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-cyan-500"/>
+                    <div className="flex justify-between"><label className={label}>Zoom</label><span className={label}>{zoom.toFixed(2)}x</span></div>
+                    <input type="range" min="0.1" max="5" step="0.05" value={zoom} onChange={(e) => setZoom(parseFloat(e.target.value))} className={range}/>
                 </div>
                 <div>
-                    <div className="flex justify-between mb-2 items-center">
-                        <label className="text-xs font-bold text-slate-400 block">ROTATE</label>
-                        <div className="flex items-center gap-1">
-                            <button onClick={() => setRotation(r => r - 90)} className="p-1.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-400 dark:text-slate-300 hover:bg-slate-200 transition-colors"><RotateCcw size={14} /></button>
-                            <button onClick={() => setRotation(r => r + 90)} className="p-1.5 bg-slate-100 dark:bg-slate-700 rounded text-slate-400 dark:text-slate-300 hover:bg-slate-200 transition-colors"><RotateCw size={14} /></button>
-                        </div>
+                    <div className="flex justify-between"><label className={label}>Rotate</label><span className={label}>{Math.round(rotation)}°</span></div>
+                    <input type="range" min="-180" max="180" step="1" value={rotation} onChange={(e) => setRotation(parseFloat(e.target.value))} className={range}/>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                        <button type="button" onClick={() => setRotation(r => r - 90)} className="h-11 flex items-center justify-center gap-2 border border-[var(--duke-edge-1)] font-mono text-xs text-[var(--duke-ink-hi)] active:scale-[.97] transition-transform"><RotateCcw size={14} /> 90°</button>
+                        <button type="button" onClick={() => setRotation(r => r + 90)} className="h-11 flex items-center justify-center gap-2 border border-[var(--duke-edge-1)] font-mono text-xs text-[var(--duke-ink-hi)] active:scale-[.97] transition-transform"><RotateCw size={14} /> 90°</button>
                     </div>
-                    <input type="range" min="-180" max="180" step="1" value={rotation} onChange={(e) => setRotation(parseFloat(e.target.value))} className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-cyan-500"/>
                 </div>
+                <details open={sizeOpen} className="border border-[var(--duke-edge-1)] group">
+                    <summary className="h-11 px-3 flex items-center gap-2 cursor-pointer list-none font-mono text-xs text-[var(--duke-ink-hi)]">
+                        <Maximize2 size={14} className="text-[var(--duke-amber)]"/> 3D size {dimensions.w} × {dimensions.h} × {dimensions.d} mm
+                        <span className="ml-auto text-[var(--duke-ink-8)] group-open:rotate-90 transition-transform">›</span>
+                    </summary>
+                    <div className="px-3 pb-1"><DimSlider label="Width" val={dimensions.w} axis="w" /><DimSlider label="Height" val={dimensions.h} axis="h" /><DimSlider label="Depth" val={dimensions.d} axis="d" /></div>
+                </details>
             </div>
-            <div className="mt-auto pt-4 flex gap-3">
-                <button onClick={onCancel} className="px-6 py-4 rounded-xl bg-slate-100 dark:bg-slate-800 dark:text-slate-300 font-bold hover:bg-slate-200 transition-colors">Cancel</button>
-                <button onClick={executeCrop} className="flex-1 py-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-orange-500/40 transition-all transform active:scale-95"><Crop size={20}/> Crop & Save</button>
+            <div className="shrink-0 flex gap-2 p-4 pt-3">
+                <button type="button" onClick={onCancel} className="w-28 h-12 border border-[var(--duke-edge-1)] font-mono text-xs font-bold uppercase tracking-[0.16em] text-[var(--duke-ink-hi)] active:scale-[.97] transition-transform">Cancel</button>
+                <button type="button" onClick={executeCrop} className="flex-1 h-12 bg-[var(--duke-amber)] text-[var(--duke-on-fill)] font-mono text-xs font-bold uppercase tracking-[0.16em] flex items-center justify-center gap-2 active:scale-[.97] transition-transform"><Crop size={16}/> Crop &amp; Save</button>
             </div>
         </div>
       </div>

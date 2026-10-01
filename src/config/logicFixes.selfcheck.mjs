@@ -9825,5 +9825,37 @@ await (async () => {
      /!document\.documentElement\.classList\.contains\('lite-mode'\)/.test(us));
 })();
 
+/* ── MASTER VAULT ON THE PHONE (2026-10-02, his pick C + "cropper plan is great") ─────────────────────────────────────
+   His words: "the mastervault need to be redesign and make it compatible on the phone, and make sure all the features is
+   there, and the picture insert submission for the 3D cigarette box is incompatible in phone as well". Lab
+   (A-Brain Raw/2026-10-02-master-vault-phone/mv-walk.mjs, the built app on the emulator, 390 touch): a finger drag
+   turned neither the 3D box nor the cropper photo before; both move now; list -> product -> Back; the cropper's
+   pinch zooms. The pinch maths is RUN below. */
+section('MASTER VAULT ON THE PHONE (2026-10-02)');
+{ const re = code(read('src/components/ResidentEvilInventory.jsx')).replace(/\r/g, ''), ic = code(read('src/components/ImageCropper.jsx')).replace(/\r/g, '');
+  const a = code(read('src/App.jsx')).replace(/\r/g, '');
+  ok('a finger turns the 3D box: pointer events with touch-action off on the stage, no mouse-only handlers left',
+     /style=\{\{ perspective: '1200px', touchAction: 'none' \}\}/.test(re) && /onPointerDown=\{handlePointerDown\} onPointerMove=\{handlePointerMove\}/.test(re) && !/onMouseDown=\{handleMouseDown\}/.test(re));
+  ok('a finger moves the cropper photo and its handles: pointer events on document, touch-action off, no mousemove left',
+     /document\.addEventListener\('pointermove', onPointerMove\)/.test(ic) && /document\.addEventListener\('pointercancel', onPointerUp\)/.test(ic) &&
+     (ic.match(/touchAction: 'none'/g) || []).length === 4 && !/mousemove|onMouseDown/.test(ic));
+  const m = ic.match(/export const pinchZoom = \(z0, d0, d\) => ([^;]+);/);
+  const pz = m ? new Function('z0', 'd0', 'd', `return ${m[1]};`) : null;
+  ok('pinch maths on real numbers: fingers twice as far apart doubles the zoom, half halves it, clamped 0.1-5, a zero start changes nothing',
+     !!pz && pz(1, 100, 200) === 2 && pz(2, 200, 100) === 1 && pz(3, 100, 300) === 5 && pz(0.2, 100, 10) === 0.1 && pz(1.5, 0, 50) === 1.5);
+  ok('phone = the list, then the product on its own screen with a Back; the desk keeps both',
+     /\$\{phoneOpen \? 'hidden lg:flex' : 'flex'\} w-full lg:w-96 h-auto lg:h-full/.test(re) && /\$\{phoneOpen \? 'block' : 'hidden'\} lg:block/.test(re) &&
+     /<div className="lg:hidden relative z-\[110\]">\s*<button type="button" onClick=\{backToList\}/.test(re) && /onClick=\{\(\) => openProduct\(item\.id\)\}/.test(re) && !/h-\[350px\]/.test(re));
+  ok('one search box: the list\'s own drives App\'s searchTerm (the Sales Terminal list still filters), the outer box is gone',
+     /<ResidentEvilInventory\s+searchTerm=\{searchTerm\}\s+onSearch=\{setSearchTerm\}/.test(a) && !/placeholder="Search inventory by name\.\.\."/.test(a) &&
+     /value=\{searchTerm\} onChange=\{e => onSearch\?\.\(e\.target\.value\)\}/.test(re) && /sections\[activeSection\] \|\| \[\]/.test(re));
+  ok('the row numbers wrap, never slide sideways; 3D size folds under the prices on the phone',
+     /flex flex-wrap items-center gap-x-3 gap-y-1/.test(re) && !/overflow-x-auto custom-scrollbar/.test(re) && /<details className="lg:hidden mt-4/.test(re));
+  ok('the cropper: Crop & Save pinned below the scroll, every tool kept, 44 px handles, the capybara out of the way',
+     /<div className="shrink-0 flex gap-2 p-4 pt-3">/.test(ic) && /Crop &amp; Save/.test(ic) && /min="-180" max="180"/.test(ic) && /r => r - 90/.test(ic) && /r => r \+ 90/.test(ic) &&
+     /<DimSlider label="Depth"/.test(ic) && /absolute w-11 h-11 rounded-full/.test(ic) && /\{user && !gateUp && !cropImageSrc && \(/.test(a));
+  ok('palette law in both: no cyan, no purple, no emerald, no white panel', !/cyan-|purple-|emerald-|bg-white /.test(re + ic));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
