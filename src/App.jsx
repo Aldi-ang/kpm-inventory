@@ -470,6 +470,20 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
      Every vault read and write goes through vaultRef(); null = an employee with no roster profile. */
   const vaultPath = user ? vaultDocPath(appId, { bossUid, uid: user?.uid, agentProfileId: trueAgentProfileId }) : null;
   const vaultRef = () => vaultPath ? doc(db, vaultPath) : null;
+
+  /* EVERY PERSON OPENS THE APP WITH THEIR OWN PASSWORD (2026-10-01). His words: "i want the other user also have
+     password and their agent name displayed on the intro animation". T1/T2 already had one - it opens the Master
+     Vault, and that path is unchanged. T3-T6 never saw the gate at all. Now anyone without the vault who has a
+     roster profile (so a vault_keys doc can exist) meets the same gate when they enter; their password opens their
+     OWN app, never the vault (`appUnlocked`, not isAdmin), and the unlock plays the intro with their name.
+     There is no way past it but a real unlock or their own 5-minute pass. Off while previewing someone (POV) and
+     on the lockout screens, which have nothing behind them to open. */
+  const [appUnlocked, setAppUnlocked] = useState(false);
+  const holdsVault = hasClearance(trueRole, 'view_master_vault');
+  const entryLocked = !!trueUser && !!vaultPath && !holdsVault && !appUnlocked && !previewing
+      && trueRole !== 'UNAUTHORIZED' && trueRole !== 'OFFLINE_UNVERIFIED';
+  const gateUp = showAdminLogin || entryLocked;
+  const openGate = () => { if (holdsVault) setIsAdmin(true); else setAppUnlocked(true); setShowAdminLogin(false); };
   const NO_VAULT = "This account has no roster profile, so it has no vault password of its own. Ask the owner to check you on Fleet & Roster.";
 
   /* LOCKED BY THE COMPANY (Fleet & Roster's "Lock account" - a lost or hacked phone; his 2026-09-28 "make that email
@@ -1018,7 +1032,7 @@ const handleGitHubMirror = async () => {
      box holds it (pinRef) and handlePinLogin reads it on submit. "Emptied" is caught where it happens: clearPin() after
      a failed try, a lock or an unlock; the box's onChange when he deletes it all; and here, whenever the box is swapped
      for another mode or the gate closes - it comes back empty, so the eye closes with it. */
-  useEffect(() => { setShowPin(false); }, [showAdminLogin, isSetupMode, isResetMode, isOtpMode]);
+  useEffect(() => { setShowPin(false); }, [gateUp, isSetupMode, isResetMode, isOtpMode]);
   const pinRef = useRef(null);
   const clearPin = () => { if (pinRef.current) pinRef.current.value = ''; setShowPin(false); };
   const [setupSecret, setSetupSecret] = useState("");
@@ -1123,8 +1137,7 @@ const handleGitHubMirror = async () => {
         setAdminPin(security.pin);
         setHasAdminPin(true);
         setIsSetupMode(false);
-        setIsAdmin(true); 
-        setShowAdminLogin(false);
+        openGate();
         setSetupPassword("");
         setSetupSecret("");
         
@@ -1137,10 +1150,10 @@ const handleGitHubMirror = async () => {
 
   // 3. LOGIN: Verify PIN (NOW WITH HASH & 5-STRIKE LOCKOUT)
   useEffect(() => {
-      const ref = showAdminLogin ? vaultRef() : null;
+      const ref = gateUp ? vaultRef() : null;
       if (!ref) { adminProfileRef.current = null; return; }
       adminProfileRef.current = getDoc(ref).catch(() => null);
-  }, [showAdminLogin, vaultPath]);
+  }, [gateUp, vaultPath]);
 
   const handlePinLogin = async () => {
       if (pinChecking) return;
@@ -1203,8 +1216,7 @@ const handleGitHubMirror = async () => {
               // above already awaited, so every login paid 2.5s for an animation with no work
               // behind it.
               setTimeout(() => {
-                  setIsAdmin(true);
-                  setShowAdminLogin(false);
+                  openGate();
                   setIsUnlocking(false);
                   clearPin();
               }, gateHoldMs());
@@ -1414,7 +1426,7 @@ const handleGitHubMirror = async () => {
 
           if (assertion) {
               setIsUnlocking(true);
-              setTimeout(() => { setIsAdmin(true); setShowAdminLogin(false); setIsUnlocking(false); }, gateHoldMs()); // was 2500ms of pure waiting
+              setTimeout(() => { openGate(); setIsUnlocking(false); }, gateHoldMs()); // was 2500ms of pure waiting
           }
       } catch (error) { 
           console.error("Biometric failed:", error); 
@@ -2899,6 +2911,7 @@ const handleGitHubMirror = async () => {
             setIsSystemOwner(false);
             setUserRole('UNAUTHORIZED'); // 🚨 CLEAR ROLE ON LOGOUT
             setCheckingEmail(null);
+            setAppUnlocked(false);       // the next person to sign in on this tab starts locked
         }
     });
     
@@ -2949,10 +2962,17 @@ const handleGitHubMirror = async () => {
   useEffect(() => {
     const realUid = user?.realUid || user?.uid;
     if (!realUid) return;
+    /* T3-T6 (2026-10-01): their own pass, keyed by their own uid, re-opens only their own app - never the vault.
+       It is written only after a real unlock (appUnlocked) and cleared by every logout. */
+    if (!holdsVault) {
+      if (appUnlocked) touchGrace(realUid);
+      else if (readGrace(realUid)) setAppUnlocked(true);
+      return;
+    }
     if (user?.realUid && user.realUid !== user.uid) return;
     if (isAdmin) { touchGrace(realUid); return; }
     if (readGrace(realUid)) { setIsAdmin(true); setShowAdminLogin(false); }
-  }, [isAdmin, user, showAdminLogin]);
+  }, [isAdmin, user, showAdminLogin, holdsVault, appUnlocked]);
 
   /* "should reset when i interact with the app" — the window measures from his last touch, not
      from the unlock. Throttled to one write per 20s: localStorage.setItem is synchronous, and
@@ -2960,7 +2980,7 @@ const handleGitHubMirror = async () => {
   useEffect(() => {
     // Same key as the restore above — the person's own id, never the hijacked boss uid.
     const uid = user?.realUid || user?.uid;
-    if (!isAdmin || !uid) return;
+    if (!(isAdmin || appUnlocked) || !uid) return;
     let lastWrite = 0;
     const bump = () => {
       const now = Date.now();
@@ -2974,7 +2994,7 @@ const handleGitHubMirror = async () => {
       window.removeEventListener('pointerdown', bump, true);
       window.removeEventListener('keydown', bump, true);
     };
-  }, [isAdmin, user]);
+  }, [isAdmin, appUnlocked, user]);
 
   const handleAdminAuthSuccess = () => {
     setIsAdmin(true);
@@ -4278,7 +4298,7 @@ const handleGitHubMirror = async () => {
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             user={user}
-            showAdminLogin={showAdminLogin}
+            showAdminLogin={gateUp}
             appSettings={appSettings}
             
             /* 🎭 MATRIX VIEW FIX: Instantly strip Admin UI privileges if masquerading as Tier 3/4 */
@@ -4409,7 +4429,7 @@ const handleGitHubMirror = async () => {
           the dot field has to compete with it. The preview's stage was pure black and that is
           half of why it read as a vault rather than an overlay. Dropping backdrop-blur with it
           is free — there is nothing left to blur. */}
-      {showAdminLogin && (
+      {gateUp && (
         /* `kpm-dark-island` is not decoration — it is what keeps this screen black. See the block
            of the same name in theme.css: the gate is a THEME ISLAND, because a card that is
            near-black in both themes cannot be painted with inks that flip. */
@@ -4723,8 +4743,10 @@ const handleGitHubMirror = async () => {
           </div>
       )}
 
-      {/* 3. MAIN TABS (Only render if user exists) */}
-      {user && (
+      {/* 3. MAIN TABS (Only render if user exists) - and not behind a T3-T6 entry lock (2026-10-01): the screens'
+          own z-[9999] layers (Journey's Fullscreen button, the T5 landing tab) share the gate's stacking context and
+          painted over it; nothing behind a lock should be in the page anyway. */}
+      {user && !entryLocked && (
         <>
         {/* 🎭 THE COSTUME LABEL AND THE COSTUME RACK. The banner is rendered from the
             derived `previewing`, not from `pov`, so it can only ever appear when the
@@ -5487,7 +5509,7 @@ const handleGitHubMirror = async () => {
           mascot was standing next to the vault gate telling him to run a backup he could not
           reach. Not rendered rather than hidden with a class: the same class-hide was tried on
           the nav button hours earlier and was still visible in the running app. */}
-      {user && !showAdminLogin && (
+      {user && !gateUp && (
         <CapybaraMascot
             isDiscoMode={isDiscoMode}
             message={showCapyMsg ? capyMsg : null}

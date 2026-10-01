@@ -6219,7 +6219,7 @@ section('THE VAULT GRACE BELONGS TO A PERSON, NOT TO A BROWSER (Aldi, 2026-09-07
 
 const vgApp = code(read('src/App.jsx'));
 const vgA = vgApp.indexOf('const realUid = user?.realUid || user?.uid;');
-const vgB = vgApp.indexOf('}, [isAdmin, user, showAdminLogin]);');
+const vgB = vgApp.indexOf('}, [isAdmin, user, showAdminLogin, holdsVault, appUnlocked]);');   // + the T3-T6 entry lock, 2026-10-01
 ok('the grace-restore scope was found (anchors const realUid .. its own dep list)',
    vgA > -1 && vgB > vgA, 'anchor missed — the slice below would read the whole file');
 if (vgA > -1 && vgB > vgA) {
@@ -7040,7 +7040,7 @@ section('A NEW PHONE IS TOLD "CHECKING", NEVER "ACCESS DENIED", WHILE THE APP LO
      !/await getDocOfflineSafe\(/.test(listener.slice(0, listener.indexOf('await Promise.all('))) && (listener.match(/await getDocOfflineSafe\(/g) || []).length === 1);
   const H = a.indexOf('const handleLogin = async () => {'), handler = a.slice(H, a.indexOf('const handleLogout', H));
   ok('handleLogin no longer sets the user itself — the listener does, with the role', H > -1 && !/setUser\(result\.user\)/.test(handler) && /signInWithPopup\(auth, googleProvider\)/.test(handler));
-  const C = a.indexOf('{!user && checkingEmail && ('), panel = a.slice(C, a.indexOf('{user && (', C));   // code() strips the JSX comment between them
+  const C = a.indexOf('{!user && checkingEmail && ('), panel = a.slice(C, a.indexOf('{user && !entryLocked && (', C));   // code() strips the JSX comment between them; `!entryLocked` since the T3-T6 entry lock (2026-10-01)
   ok('the panel slice is bounded', C > -1 && panel.length > 400 && panel.length < 2500);
   ok('the CHECKING panel lives in the `!user` moment, names the account, spins, offers a way out, on solid ground', C > -1 && /Checking your account/.test(panel) && /\[\{checkingEmail\}\]/.test(panel) && /animate-spin/.test(panel) && /onClick=\{handleLogout\}/.test(panel) && /bg-\[var\(--duke-well-solid\)\]/.test(panel),
      'in the `user &&` block it would start every user-keyed effect early; translucent, the sign-in door would bleed through');
@@ -7166,8 +7166,9 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
    whatever wait is left. */
 {
   const a = code(appSrc);
-  ok('the security profile is fetched when the gate is SHOWN, keyed on showAdminLogin, not on the press',
-     /useEffect\(\(\) => \{\s*const ref = showAdminLogin \? vaultRef\(\) : null;\s*if \(!ref\) \{ adminProfileRef\.current = null; return; \}\s*adminProfileRef\.current = getDoc\(ref\)\.catch\(\(\) => null\);\s*\}, \[showAdminLogin, vaultPath\]\);/.test(a),   /* 2026-09-28: the doc is the PERSON's (vaultRef) */
+  /* `gateUp` since 2026-10-01: the gate is also up for a T3-T6 entry lock, which never sets showAdminLogin */
+  ok('the security profile is fetched when the gate is SHOWN, keyed on gateUp, not on the press',
+     /useEffect\(\(\) => \{\s*const ref = gateUp \? vaultRef\(\) : null;\s*if \(!ref\) \{ adminProfileRef\.current = null; return; \}\s*adminProfileRef\.current = getDoc\(ref\)\.catch\(\(\) => null\);\s*\}, \[gateUp, vaultPath\]\);/.test(a),   /* 2026-09-28: the doc is the PERSON's (vaultRef) */
      'the round trip a phone pays is the same either way; starting it while he types is what removes it from the press');
   ok('the press uses the prefetched copy and falls back to a live read — never a bare cached answer',
      /const prefetched = adminProfileRef\.current;\s*adminProfileRef\.current = null;\s*const adminSnap = \(prefetched && await prefetched\) \|\| await getDoc\(adminDocRef\);/.test(a),
@@ -9235,7 +9236,7 @@ section('THE EYE ON EVERY VAULT SECURITY BOX (2026-09-29)');
      eyeOk(b3, { v: 'showPin', set: 'setShowPin' }, 'password'));
   ok('an emptied gate box (a failed try clears it, so does leaving) hides the password again',
      /const clearPin = \(\) => \{ if \(pinRef\.current\) pinRef\.current\.value = ''; setShowPin\(false\); \};/.test(app) &&
-     /useEffect\(\(\) => \{ setShowPin\(false\); \}, \[showAdminLogin, isSetupMode, isResetMode, isOtpMode\]\);/.test(app) &&
+     /useEffect\(\(\) => \{ setShowPin\(false\); \}, \[gateUp, isSetupMode, isResetMode, isOtpMode\]\);/.test(app) &&   /* gateUp: 2026-10-01 entry lock */
      /onChange=\{\(e\) => \{ if \(!e\.target\.value\) setShowPin\(false\); \}\}/.test(b3));
   /* HEAVY APP 2 (2026-09-30, his "entering master vault password even feel really heavy, lagging delayed"): the typed
      password was App state, so each letter re-rendered the whole app - measured on the real gate (emulator, PC dev
@@ -9575,6 +9576,28 @@ section('THE NAME SURVIVES A RESIZE MID-UNLOCK (2026-10-01)');
      /const layout = \(\) => \{ assign\(sampleWord\(name\)\); RANDSETS = /.test(g));
   ok('the hook is dropped when the unlock ends (a later resize must not re-form an old name)',
      /S\.unlockAt = null; S\.relayout = null; \};\s*\}, \[playing, agentName, S\]\);/.test(g));
+}
+
+/* ── EVERY PERSON OPENS THE APP WITH THEIR OWN PASSWORD (2026-10-01) ─────────────────────────────────────────────────
+   His words: "i want the other user also have password and their agent name displayed on the intro animation".
+   Emulator, built app, T5 Budi (m_budi), rules enforced: before - straight into the app; now - the gate on entry, his
+   own vault_keys/m_budi made under the rules, unlock plays the intro with BUDI and opens his app (no vault), his
+   5-minute pass skips the gate on a reload, a sign-out starts the next sign-in locked. */
+section('EVERY PERSON OPENS THE APP WITH THEIR OWN PASSWORD (2026-10-01)');
+{ const a = code(read('src/App.jsx')).replace(/\r/g, '');
+  ok('T3-T6 with a roster profile meet the gate on entry; not while previewing, not on the lockout screens',
+     /const holdsVault = hasClearance\(trueRole, 'view_master_vault'\);/.test(a) &&
+     /const entryLocked = !!trueUser && !!vaultPath && !holdsVault && !appUnlocked && !previewing\s*&& trueRole !== 'UNAUTHORIZED' && trueRole !== 'OFFLINE_UNVERIFIED';/.test(a) &&
+     /const gateUp = showAdminLogin \|\| entryLocked;/.test(a) && /\{gateUp && \(/.test(a) && /showAdminLogin=\{gateUp\}/.test(a));
+  ok('their password opens their own app, never the vault - every unlock path goes through openGate',
+     /const openGate = \(\) => \{ if \(holdsVault\) setIsAdmin\(true\); else setAppUnlocked\(true\); setShowAdminLogin\(false\); \};/.test(a) &&
+     (a.match(/openGate\(\);/g) || []).length === 3 && !/setIsAdmin\(true\);\s*setShowAdminLogin\(false\);\s*setIsUnlocking\(false\)/.test(a));
+  ok('their own 5-minute pass, written only after a real unlock; the next sign-in on the tab starts locked',
+     /if \(!holdsVault\) \{\s*if \(appUnlocked\) touchGrace\(realUid\);\s*else if \(readGrace\(realUid\)\) setAppUnlocked\(true\);\s*return;\s*\}/.test(a) &&
+     /if \(!\(isAdmin \|\| appUnlocked\) \|\| !uid\) return;/.test(a) &&
+     /setCheckingEmail\(null\);\s*setAppUnlocked\(false\);/.test(a));
+  ok('nothing behind the lock is in the page (screens with their own z-[9999] painted over the gate)',
+     /\{user && !entryLocked && \(/.test(a));
 }
 
 /* ── AGENT PROFILE OPENS ON YOUR OWN PROFILE, YOURS FIRST IN THE LIST (2026-10-01) ────────────────────────────────────

@@ -562,7 +562,8 @@ check(G14, 'the unlock animation respects reduced motion', /prefers-reduced-moti
    group passed while first-time setup was still emerald and the whole OTP screen was still blue.
    A guard that watches one of five modes reports a law as kept when it is half-kept. These read
    the entire modal. */
-const gateBlock = (appCode.match(/\{showAdminLogin && \(([\s\S]*?)\n {6}\)\}/) || ['', ''])[1];
+/* `gateUp` since 2026-10-01: showAdminLogin OR a T3-T6 entry lock (App.jsx) - one flag for every reader of "is the gate up" */
+const gateBlock = (appCode.match(/\{gateUp && \(([\s\S]*?)\n {6}\)\}/) || ['', ''])[1];
 
 check(G14, 'all five gate modes are where this group can see them', gateBlock.length > 2000,
   'could not find the showAdminLogin modal in App.jsx — the two checks below are blind, fix the match');
@@ -761,7 +762,7 @@ check(G16, 'that field is kept away from autofill and spellcheck',
   /autoComplete="off"[\s\S]{0,200}?spellCheck=\{false\}/.test(appCode),
   'a text input is offered to autofill and spellcheck services; a password input is not');
 check(G16, 'the mascot stays out of the login screen',
-  /\{user && !showAdminLogin && \(\s*<CapybaraMascot/.test(appCode),
+  /\{user && !gateUp && \(\s*<CapybaraMascot/.test(appCode) && /const gateUp = showAdminLogin \|\| entryLocked;/.test(appCode),
   'he saw the capybara standing beside the vault gate on his phone, telling him to run a backup '
   + 'he could not reach — the mascot belongs to the app, not to the door');
 check(G16, 'the second line names the app, not the vault screen',
@@ -781,7 +782,7 @@ check(G16, 'the nav button is not rendered at all while the gate is up',
   /\{!shellHidden && \(/.test(strip(themeSrc)),
   'it sits in its own stacking context, so raising the gate z-index does NOT cover it, and a '
   + 'class-based hide is only as reliable as the stylesheet that happens to be loaded');
-check(G16, 'App hands the theme the flag that hides it', /showAdminLogin=\{showAdminLogin\}/.test(appCode),
+check(G16, 'App hands the theme the flag that hides it', /showAdminLogin=\{gateUp\}/.test(appCode) && /const gateUp = showAdminLogin \|\| entryLocked;/.test(appCode),
   'hiding it in the theme does nothing if the prop never arrives');
 /* 🔴 AND THE SAME TRAP CAUGHT THE LOCKOUT SCREENS. Aldi, from the phone on 2026-09-01:
    *"i was on access denied ... and looks like the sidebar work in that screen"*. Access Denied and
