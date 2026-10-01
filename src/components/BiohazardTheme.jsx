@@ -10,6 +10,7 @@ import NotificationBell from './NotificationBell';
 /* the dot field from the Master Vault gate — reused, not re-drawn, so the two locked screens
    cannot drift apart. gateCanvasOn() is its own Lite-Mode switch. */
 import VaultGate, { gateCanvasOn } from './VaultGate.jsx';
+import UpdateStatus from './UpdateStatus.jsx';
 import MusicPlayer from '../MusicPlayer'; 
 
 // 🚀 IMPORT THE BRAIN
@@ -568,6 +569,7 @@ export default function BiohazardTheme({
                                 <LogIn size={15} /> Sign in with Google
                             </button>
                         </div>
+                        <UpdateStatus className="mt-4 font-mono text-[10px] tracking-[0.12em] text-[var(--ink-muted)]" />
                     </div>
                 </div>
             )}

@@ -6,6 +6,7 @@ import { ConfirmHost } from './components/ConfirmGate.jsx'
 import { ToastHost } from './components/Toast.jsx'
 import { unlockSounds } from './hooks/useSound.js'
 import { registerSW } from 'virtual:pwa-register'
+import { setRegistration } from './utils/updateCheck.js'
 
 /* THE PHONE SHOWED THE OLD APP AFTER AN UPDATE — three times (2026-08-20, 09-18, 09-19). This app is
    a PWA: the service worker hands the phone its STORED copy first and the new build downloads behind
@@ -13,7 +14,7 @@ import { registerSW } from 'virtual:pwa-register'
    on the SECOND open, and a test on the first open judged the old code. This register (the plugin's
    autoUpdate mode) reloads the page once, the moment a new worker takes over, and asks for updates
    every hour while the tab stays open. The BUILD id in the Flight Recorder says which build runs. */
-registerSW({ immediate: true, onRegisteredSW(_url, r) { if (r) setInterval(() => r.update(), 60 * 60 * 1000); } });
+registerSW({ immediate: true, onRegisteredSW(_url, r) { if (r) { setRegistration(r); setInterval(() => r.update(), 60 * 60 * 1000); } } });
 
 /* THE ERROR-THEN-REFRESH (2026-09-30). His words: "sometimes it error first then i need to refresh
    to make it works". After a push the offline helper swaps in the new build (skipWaiting +

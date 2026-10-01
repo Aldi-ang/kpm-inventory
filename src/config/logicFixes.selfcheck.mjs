@@ -7688,7 +7688,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   const pwaReg = fs.existsSync('node_modules/vite-plugin-pwa/dist/client/build/register.js') ? read('node_modules/vite-plugin-pwa/dist/client/build/register.js') : '';
   ok('main.jsx registers the worker through the plugin (immediate, an hourly update check) instead of the injected bare register',
      /import \{ registerSW \} from 'virtual:pwa-register'/.test(mainSrc) &&
-     /registerSW\(\{ immediate: true, onRegisteredSW\(_url, r\) \{ if \(r\) setInterval\(\(\) => r\.update\(\), 60 \* 60 \* 1000\); \} \}\);/.test(mainSrc) &&
+     /registerSW\(\{ immediate: true, onRegisteredSW\(_url, r\) \{ if \(r\) \{ setRegistration\(r\); setInterval\(\(\) => r\.update\(\), 60 \* 60 \* 1000\); \} \} \}\);/.test(mainSrc) &&
      /registerType: 'autoUpdate'/.test(vcfg),
      'the injected registerSW.js only registers - a new build showed on the SECOND open (2026-08-20, 09-18, 09-19)');
   ok('BEHAVIOUR: the plugin\'s autoUpdate register reloads the page when a new worker activates (isUpdate) - a plugin upgrade that drops this goes red',
@@ -9795,6 +9795,34 @@ await (async () => {
      (await read1({}, async () => { throw new Error('offline'); })).length === 0 &&
      (await read1({}, async () => snap(undefined))).length === 0 &&
      (await read1({}, async () => snap({ pin: 'x' }))).length === 0);
+})();
+
+/* ── IS THIS THE LATEST VERSION? ON THE SIGN-IN CARD AND THE VAULT (2026-10-01, his pick B) ────────────────────────────
+   His words: "sometimes i reload the page and login, waste a lot of time and energy just to login and realised late that
+   the version is outdated". Both doors ask the offline helper for an update when they open and say the answer + the
+   build id. Lab (A-Brain t5-update.mjs): build A reads "Latest version", build B on the same address reads
+   "New version found - updating…" and the page reloads itself into B. The state rule is RUN below on fixtures. */
+section('IS THIS THE LATEST VERSION? ON THE SIGN-IN CARD AND THE VAULT (2026-10-01)');
+await (async () => {
+  const U = await import('../utils/updateCheck.js');
+  const st = (o) => U.updateState({ supported: true, online: true, failed: false, ...o });
+  ok('the state: latest / updating (installing or waiting) / offline (no network or the check failed) / unsupported (no helper)',
+     st({ reg: {} }) === 'latest' && st({ reg: { installing: {} } }) === 'updating' && st({ reg: { waiting: {} } }) === 'updating' &&
+     st({ online: false, reg: undefined }) === 'offline' && st({ reg: {}, failed: true }) === 'offline' &&
+     st({ reg: null }) === 'unsupported' && U.updateState({ supported: false, online: true }) === 'unsupported');
+  let got = 'none';
+  const p = U.getRegistration(1000).then((r) => { got = r; });
+  U.setRegistration('REG'); await p;
+  ok('a screen that opens before the helper registers still gets the registration when it arrives', got === 'REG');
+  const a = code(read('src/App.jsx')).replace(/\r/g, ''), bt = code(read('src/components/BiohazardTheme.jsx')).replace(/\r/g, '');
+  const m = read('src/main.jsx').replace(/\r/g, ''), us = code(read('src/components/UpdateStatus.jsx')).replace(/\r/g, '');
+  ok('both doors show it: under Sign in with Google, and under the vault\'s Fingerprint row; main.jsx hands the helper over',
+     /Sign in with Google\s*<\/button>\s*<\/div>\s*<UpdateStatus /.test(bt) &&
+     /Lost your key\?\s*<\/button>\s*<\/div>\s*<UpdateStatus /.test(a) &&
+     /onRegisteredSW\(_url, r\) \{ if \(r\) \{ setRegistration\(r\);/.test(m));
+  ok('the line asks for an update, reports a download that dies, is read out to screen readers, and never spins in Lite Mode',
+     /await r\.update\(\)/.test(us) && /w\.state === 'redundant'\) say\('failed'\)/.test(us) && /role="status" aria-live="polite"/.test(us) &&
+     /!document\.documentElement\.classList\.contains\('lite-mode'\)/.test(us));
 })();
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

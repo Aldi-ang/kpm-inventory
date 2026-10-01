@@ -155,6 +155,7 @@ import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES, DEFAULT_RANKS } 
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import VaultGate, { gateHoldMs, gateIsRich, gateCanvasOn } from './components/VaultGate.jsx';
+import UpdateStatus from './components/UpdateStatus.jsx';
 import { readGrace, touchGrace, clearGrace } from './utils/vaultGrace.js';
 import { VAULT_TRIES, VAULT_LOCK_MS, lockLeftMs, strikeUpdate, untilText } from './utils/vaultLock.js';
 import { vaultDocPath } from './utils/vaultDoc.js';
@@ -4744,6 +4745,7 @@ const handleGitHubMirror = async () => {
                         Lost your key?
                     </button>
                 </div>
+                <UpdateStatus className="mt-[7px] text-[8.5px] tracking-[0.16em] text-[var(--shell-ink-3)]" />
               </form>
             </div>
             )}
