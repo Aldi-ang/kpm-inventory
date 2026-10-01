@@ -180,6 +180,7 @@ const CAN_MASK_TEXT_INPUT =
    convenience and costs nothing, so it stays there. */
 const IS_TOUCH = typeof matchMedia === 'function' && matchMedia('(hover: none)').matches;
 import { isFailure } from './utils/toastSeverity.js';
+import { missedDocPath, bindMissed, recordMissed } from './utils/missedLog.js';
 
 const APP_VERSION = packageJson.version;
 
@@ -471,6 +472,19 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
      Every vault read and write goes through vaultRef(); null = an employee with no roster profile. */
   const vaultPath = user ? vaultDocPath(appId, { bossUid, uid: user?.uid, agentProfileId: trueAgentProfileId }) : null;
   const vaultRef = () => vaultPath ? doc(db, vaultPath) : null;
+
+  /* THE BELL'S MISSED LIST LIVES ON THE PERSON (utils/missedLog.js, his 2026-10-02 "phone and pc show the
+     same thing"): one doc each, keyed like the vault. A failed read or write is a console warning - it must
+     never reach the strip or the capybara that is reporting. Unbinding on sign-out empties the list. */
+  const missedPath = user ? missedDocPath(appId, { bossUid, uid: user?.uid, agentProfileId: trueAgentProfileId }) : null;
+  useEffect(() => {
+      if (!db || !missedPath) return;
+      const ref = doc(db, missedPath);
+      return bindMissed({
+          listen: (cb) => onSnapshot(ref, (s) => cb(s.data()), (err) => console.warn('[Missed] read', err.code)),
+          save: (data) => setDoc(ref, data),
+      });
+  }, [db, missedPath]);
 
   /* EVERY PERSON OPENS THE APP WITH THEIR OWN PASSWORD (2026-10-01). His words: "i want the other user also have
      password and their agent name displayed on the intro animation". T1/T2 already had one - it opens the Master
@@ -3165,12 +3179,13 @@ const handleGitHubMirror = async () => {
   };
   
   /* Every mascot line goes through here, so the previous hide-timer is always cancelled and
-     each message gets its own full 8 seconds. See capyTimerRef for what happened without it. */
+     each message gets its own full 5 seconds (8 until his 2026-10-02 "maybe around 5 seconds is
+     enough" - the same as a top strip). See capyTimerRef for what happened without it. */
   const speakCapy = (message) => {
     setCapyMsg(message);
     setShowCapyMsg(true);
     clearTimeout(capyTimerRef.current);
-    capyTimerRef.current = setTimeout(() => setShowCapyMsg(false), 8000);
+    capyTimerRef.current = setTimeout(() => setShowCapyMsg(false), 5000);
   };
 
   const cycleMascotMessage = () => {
@@ -3188,15 +3203,17 @@ const handleGitHubMirror = async () => {
      is suppressed entirely while the sales terminal owns the corner — so those were announced by
      the one thing in the app that is allowed to be missed. Aldi marked exactly that BROKEN.
 
-     A recognised failure now ALSO raises a strip, which stays until he taps it. Only a
-     recognised failure: isFailure is deliberately narrower than isSticky, or every "Map Icons
-     Exported!" would be reported twice. The mascot still says everything he said before. */
+     Then both spoke a failure at once - the capybara AND the strip, the same words twice. His
+     pick A, 2026-10-02: *"warnings and failures only in the top panel"*, the capybara keeps
+     everything else. So a recognised failure goes to the strip ALONE (notify records it in the
+     bell's Missed list); any other line is the capybara's, and is recorded here. */
   const triggerCapy = (msg) => {
     const text = msg || "Hello!";
+    if (isFailure(text)) return notify(text);
     speakCapy(text);
     // T6: the mascot was mute outside the sales terminal. unlockSounds() is a no-op once unlocked.
     unlockSounds().then(() => speakMumble(text)).catch(() => {});
-    if (isFailure(text)) notify(text);
+    recordMissed(text, false);
   };
   
   const handleAddMascotMessage = async () => {

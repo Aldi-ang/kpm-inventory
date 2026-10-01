@@ -377,6 +377,23 @@ service cloud.firestore {
         allow delete: if isCompanyTopTier(bossUid) && resource.data.uid != request.auth.uid;
       }
 
+      // =====================================================================
+      // [CHANGE 15 — 2026-10-02, DRAFT until Aldi deploys it] THE BELL'S MISSED LIST, ONE PER PERSON.
+      // His design: every top strip and capybara line is kept in the bell so nothing is missed, and
+      // *"phone and pc show the same thing"* - so the list lives on the account, one doc per person
+      // (src/utils/missedLog.js), keyed like vault_keys: the roster profile for an employee (their
+      // user.uid in the app is the boss's), the owner's own uid for the owner.
+      //  - the person: reads and writes their own doc, matched by their roster profile.
+      //  - the owner and a T2 already reach it through the catch-all above (anything but vault_keys);
+      //    nothing in the app reads another person's list.
+      // DEPLOY ORDER: any time. Before it, an employee's list still works on the screen they are on,
+      // it just does not follow them to their other device (the write is refused, a console warning).
+      // rules-test/test-missed-log.mjs asserts every line.
+      // =====================================================================
+      match /missed_log/{profileId} {
+        allow read, write: if isSalesman(bossUid) && getEmployeeProfile().get('agentId', '') == profileId;
+      }
+
       match /stock_requests/{requestId} {
         allow read: if isSalesman(bossUid);
         // [CHANGE 14 #3] was isSalesman - any employee could edit or mark an HQ -> branch order. Only

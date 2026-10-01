@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { isSticky } from '../utils/toastSeverity.js';
+import { isFailure } from '../utils/toastSeverity.js';
+import { recordMissed } from '../utils/missedLog.js';
 import { playSound } from '../hooks/useSound.js';
 
 /* WHY THIS FILE EXISTS
@@ -30,12 +31,14 @@ import { playSound } from '../hooks/useSound.js';
 let pushToast = null;
 let nextId = 1;
 
-/* Which messages are allowed to disappear on their own lives in src/utils/toastSeverity.js,
-   out here where node can import it — src/config/toastSeverity.selfcheck.mjs runs it against
-   32 real messages from the app. That is the tuning knob: if he says the toasts nag too much,
-   widen the SUCCESS list there and add the message to the self-check, never make the default
-   fade. Sticky is the fail-safe direction and the audit asserts this file still asks for it. */
-const FADE_MS = 3500;
+/* EVERY STRIP FADES, failures too - his design, 2026-10-02: *"i want the top panel notification to be
+   timed for few second then fade"*, *"maybe around 5 seconds is enough"*. Until then a failure stayed
+   until clicked, because a faded "stock did not save" was a message lost. It is not lost now: notify()
+   records every line in the bell's Missed list (utils/missedLog.js) BEFORE it shows, and the bell's
+   gold number says it is there. A failure (isFailure, utils/toastSeverity.js) keeps its red edge and
+   its own sound so it still reads as one while it is up. integration.audit.mjs group 13 asserts both
+   halves: the record comes first, and the timer is set for every strip. */
+const FADE_MS = 5000;
 /* Long enough to read as a movement, short enough that a strip is never in the way. Must match
    the keyframe durations below — a strip removed before its exit finishes snaps, which is the
    exact complaint that got the mascot marked BROKEN. */
@@ -46,11 +49,14 @@ const EXIT_MS = 200;
    for it here would reintroduce the silent failure inside its own fix. */
 export function notify(message) {
     const text = String(message ?? '');
+    const bad = isFailure(text);
+    /* first, so even a message with no host to show it is still in the bell */
+    recordMissed(text, bad);
     if (!pushToast) {
         console.error('[Toast] <ToastHost /> is not mounted — check src/main.jsx. Message lost:', text);
         return undefined;
     }
-    pushToast({ id: nextId++, text, sticky: isSticky(text) });
+    pushToast({ id: nextId++, text, bad });
     return undefined;
 }
 
@@ -88,12 +94,10 @@ export function ToastHost() {
                is not a quiet sound, it is an inaudible one — Aldi reported the strips as having
                no SFX at all and this was half the reason. Measure a sound before choosing it;
                the file being present says nothing about it being hearable. */
-            playSound(item.sticky ? 'error' : 'commit');
-            if (!item.sticky) {
-                /* silent: a message that times out on its own was not dismissed BY him, so it
-                   gets the exit animation but no click sound. */
-                timers.current.set(item.id, setTimeout(() => dismiss(item.id, true), FADE_MS));
-            }
+            playSound(item.bad ? 'error' : 'commit');
+            /* silent: a message that times out on its own was not dismissed BY him, so it gets
+               the exit animation but no click sound. Every strip, failures included (FADE_MS). */
+            timers.current.set(item.id, setTimeout(() => dismiss(item.id, true), FADE_MS));
         };
         pushToast = show;
         return () => { if (pushToast === show) pushToast = null; };
@@ -136,12 +140,12 @@ export function ToastHost() {
                 }
             `}</style>
             {items.map((item) => {
-                const accent = item.sticky ? '#b4524a' : '#ff9d00';
+                const accent = item.bad ? '#b4524a' : '#ff9d00';
                 return (
                     <div
                         key={item.id}
-                        role={item.sticky ? 'alert' : 'status'}
-                        aria-live={item.sticky ? 'assertive' : 'polite'}
+                        role={item.bad ? 'alert' : 'status'}
+                        aria-live={item.bad ? 'assertive' : 'polite'}
                         onClick={() => dismiss(item.id)}
                         className={`pointer-events-auto w-full max-w-md cursor-pointer border border-[#a89070] bg-[#14100e] shadow-[0_0_30px_rgba(0,0,0,0.8)] ${item.leaving ? 'kpm-toast-out' : 'kpm-toast-in'}`}
                     >
@@ -151,17 +155,6 @@ export function ToastHost() {
                             <div className="min-w-0 flex-1 whitespace-pre-line break-words font-mono text-[11px] leading-relaxed text-[#cfc6ba]">
                                 {item.text}
                             </div>
-                            {/* A sticky toast needs something that visibly says "this is waiting
-                                on you"; the fading ones clear themselves and get no clutter. */}
-                            {item.sticky && (
-                                <span
-                                    aria-hidden="true"
-                                    className="mt-[1px] shrink-0 font-mono text-[13px] font-black leading-none"
-                                    style={{ color: accent }}
-                                >
-                                    ×
-                                </span>
-                            )}
                         </div>
                     </div>
                 );

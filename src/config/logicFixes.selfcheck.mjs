@@ -9857,5 +9857,65 @@ section('MASTER VAULT ON THE PHONE (2026-10-02)');
   ok('palette law in both: no cyan, no purple, no emerald, no white panel', !/cyan-|purple-|emerald-|bg-white /.test(re + ic));
 }
 
+section('THE TWO-PART BELL: NEEDS YOU / MISSED, EVERY STRIP FADES (2026-10-02)');
+{ const ml = await import('../utils/missedLog.js');
+  const H = 3600000, D = 24 * H, t0 = Date.UTC(2026, 9, 2, 7, 0);
+  const low = '⚠️ BOSS! Sampoerna Mild 16 is critically low (3 Bks left). Restock needed!';
+  let L = [];
+  L = ml.addMissed(L, low, t0, true);
+  L = ml.addMissed(L, '✅ Sync Complete! 12 items secured in Master Vault.', t0 + 60000, false);
+  L = ml.addMissed(L, low, t0 + 120000, true);
+  L = ml.addMissed(L, low, t0 + 180000, true);
+  L = ml.addMissed(L, low, t0 + 240000, true);
+  ok('the low-stock line said 4 times is ONE row, x4, newest time, back on top',
+     L.length === 2 && L[0].text === low && L[0].count === 4 && L[0].ts === t0 + 240000 && L[0].bad === true && L[1].count === 1);
+  ok('blank lines are not recorded', ml.addMissed(L, '   ', t0, false) === L && ml.addMissed(L, undefined, t0, false) === L);
+  const old = [{ text: 'a week and a minute ago', ts: t0 - 7 * D - 60000, count: 1 }, { text: 'six days ago', ts: t0 - 6 * D, count: 1 }];
+  ok('kept 7 days: an 8th-day row goes, a 6-day row stays', ml.pruneMissed(old, t0).map(r => r.text).join() === 'six days ago');
+  let many = [];
+  for (let i = 0; i < 130; i++) many = ml.addMissed(many, 'line ' + i, t0 + i * 1000, false);
+  ok('kept 100: 130 different lines leave the newest 100, newest first',
+     many.length === 100 && many[0].text === 'line 129' && many[99].text === 'line 30');
+  ok('the gold number = rows after he last looked', ml.unseenCount(L, t0 + 90000) === 1 && ml.unseenCount(L, 0) === 2 && ml.unseenCount([], 0) === 0);
+  const merged = ml.mergeMissed([{ text: low, ts: t0, count: 2, bad: true }], [{ text: low, ts: t0 + H, count: 1, bad: false }, { text: 'said before sign-in', ts: t0 + 2 * H, count: 1, bad: false }], t0 + 3 * H);
+  ok('sign-in merge: what was said on the way in joins the account list, counts add, newest first',
+     merged.length === 2 && merged[0].text === 'said before sign-in' && merged[1].count === 3 && merged[1].ts === t0 + H && merged[1].bad === true);
+  ok('the person, not the boss: an employee keys on the roster profile, the owner on his uid, no profile = no doc',
+     ml.missedDocPath('app', { bossUid: 'boss', uid: 'boss', agentProfileId: 'AGT_T5' }) === 'artifacts/app/users/boss/missed_log/AGT_T5' &&
+     ml.missedDocPath('app', { uid: 'owner1' }) === 'artifacts/app/users/owner1/missed_log/owner1' &&
+     ml.missedDocPath('app', { bossUid: 'boss', uid: 'boss' }) === null);
+  const saved = []; let feed;
+  const unbind = ml.bindMissed({ listen: (cb) => { feed = cb; return () => {}; }, save: (d) => saved.push(d) });
+  feed({ items: [{ text: 'from the PC', ts: t0, count: 1, bad: false }], seenAt: t0 });
+  ok('the store shows the account list once bound', ml.getMissed().items[0]?.text === 'from the PC');
+  let threw = false;
+  try { ml.recordMissed({ toString() { throw new Error('boom'); } }, false); } catch { threw = true; }
+  ok('a broken record never throws into the strip that called it', !threw);
+  unbind();
+  ok('signing out empties the list, so the next person never sees these rows', ml.getMissed().items.length === 0 && ml.getMissed().seenAt === 0);
+
+  const tst = code(read('src/components/Toast.jsx')).replace(/\r/g, '');
+  const app = code(read('src/App.jsx')).replace(/\r/g, '');
+  const bell = read('src/components/NotificationBell.jsx').replace(/\r/g, '');
+  const capy = code(read('src/components/CapybaraMascot.jsx')).replace(/\r/g, '');
+  const rules = read('firestore.rules').replace(/\r/g, '');
+  ok('every strip: recorded first, then up for 5 s - no strip stays until clicked',
+     /recordMissed\(text, bad\);\s*if \(!pushToast\)/.test(tst) && /const FADE_MS = 5000;/.test(tst) && !/sticky/.test(tst) && !/isSticky/.test(code(read('src/utils/toastSeverity.js'))));
+  ok('his A: a failure goes to the top panel alone; the capybara says the rest and it is recorded',
+     /if \(isFailure\(text\)\) return notify\(text\);\s*speakCapy\(text\);/.test(app) && /recordMissed\(text, false\);/.test(app));
+  ok('the capybara bubble is up 5 s too, both of his paths',
+     /capyTimerRef\.current = setTimeout\(\(\) => setShowCapyMsg\(false\), 5000\);/.test(app) && /\}, incomingPeek \|\| 5000\);/.test(capy) && !/8000\)/.test(capy));
+  ok('the list follows the person: App binds it on the missed_log path, keyed like the vault',
+     /missedDocPath\(appId, \{ bossUid, uid: user\?\.uid, agentProfileId: trueAgentProfileId \}\)/.test(app) && /return bindMissed\(\{/.test(app));
+  ok('the bell: phone = one box and a switch (A), PC = side by side (B), both counts on the plate',
+     /<div className="lg:hidden p-2 /.test(bell) && /role="tablist"/.test(bell) && /className="lg:w-\[680px\] /.test(bell) &&
+     /\$\{side === 'needs' \? 'flex' : 'hidden'\} lg:flex/.test(bell) && /\$\{side === 'missed' \? 'flex' : 'hidden'\} lg:flex/.test(bell) &&
+     /unseenCount\(missed\.items, missed\.seenAt\)/.test(bell) && /onClick=\{clearMissed\}/.test(bell));
+  ok('no orange-N00 class in the bell: tailwind.config.js has ONE orange, so they were never generated (titles printed black)',
+     !/(text|border|bg)-orange-\d/.test(bell) && /'orange':?\s*'var\(--orange\)'|orange:\s+'var\(--orange\)'/.test(read('tailwind.config.js')));
+  ok('rules draft: a person reads and writes only their own missed_log doc',
+     /match \/missed_log\/\{profileId\} \{\s*allow read, write: if isSalesman\(bossUid\) && getEmployeeProfile\(\)\.get\('agentId', ''\) == profileId;\s*\}/.test(rules));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

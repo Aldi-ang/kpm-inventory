@@ -51,7 +51,8 @@ import { LOOKS } from './lab-looks.js';
 import { scanNotaToBase64, homography, getLocalDayKey } from '../src/utils/helpers.js';
 import PhotoField from '../src/components/PhotoField.jsx';
 import { SCENES } from '../src/ponder/registry.js';
-import { LAB_BELL_NEEDS } from './lab-bell.jsx';
+import { LAB_BELL_NEEDS, seedLabBell } from './lab-bell.jsx';
+if (new URLSearchParams(window.location.search).has('bell')) seedLabBell();
 
 const q = new URLSearchParams(window.location.search);
 if (q.has('light')) document.documentElement.classList.add('light');

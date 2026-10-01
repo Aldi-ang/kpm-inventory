@@ -1,15 +1,14 @@
 /* node src/config/toastSeverity.selfcheck.mjs
    ────────────────────────────────────────────
-   Every message below is a real one, copied out of the app, not invented for the test. The
-   question this answers is the only judgement call in the toast job: which reports are allowed
-   to vanish after 3.5 seconds without Aldi ever seeing them.
-
-   Getting a STICKY one wrong is the expensive direction — that is a failure he never reads,
-   which is precisely the silent-failure bug the whole toast job replaced. Getting a FADE one
-   wrong just costs him a click. So when in doubt, a message belongs in STICKY. */
+   Every message below is a real one, copied out of the app, not invented for the test. Since
+   2026-10-02 (his design) every strip fades after 5 seconds and the bell's Missed list keeps all of
+   them, so the one question left is isFailure: which lines are failures. Three things hang on it -
+   the capybara hands a failure to the top panel and says nothing (his pick A), the strip gets the red
+   edge and the error sound, and the Missed row gets the red edge. Too narrow and a failure reads as
+   news; too wide and ordinary news leaves the capybara for the top panel. */
 
 import { readFileSync } from 'node:fs';
-import { isSticky, isFailure } from '../utils/toastSeverity.js';
+import { isFailure } from '../utils/toastSeverity.js';
 
 /* isFailure decides which of the 68 mascot-only reports in App.jsx also raise a strip. Too
    narrow and a real failure is announced solely by a bubble that can be walked over; too wide
@@ -34,8 +33,9 @@ const MASCOT_CHATTER = [
     'Deep-fetching system databases and intelligence... ⏳',
 ];
 
-/* Must stay on screen until clicked. */
-const STICKY = [
+/* Strips that must read as failures: red edge, error sound, a red row in the Missed list. A plain
+   refusal with no failure word ("Award needs a title.") shows orange - it is still in the list. */
+const FAILURE_STRIPS = [
     'Failed to save Achievements.',
     'Failed to save record: permission-denied',
     'Failed to grant award: network error',
@@ -43,24 +43,14 @@ const STICKY = [
     'ACCOUNT SUSPENDED: Subscription inactive. Please contact KPM System Administration.',
     'AUTHORIZATION REVOKED: Your KPM profile was deleted by the Administrator.',
     'Could not register passkey. Check your device screen lock settings.',
-    'No devices registered! Please enter your PIN, go to Settings, and register this device.',
     'Incorrect PIN. Strike 3/5.',
-    'No security profile found.',
     'Request not found!',
-    'Award needs a title.',
-    'XP must be a nonzero number.',
-    'Select a product and valid quantity.',
-    'Secret recovery word is required!',
-    'Hold on! A transfer request for Toko Jaya is already pending.',
     /* The case that made this file exist. It contains "complete", so a success-only test
        faded it — a sync failure disappearing after 3.5 seconds, unread. */
     'Could not complete the sync. Your last sale is still queued.',
     'Stok tidak cukup untuk penjualan ini.',
     'Gagal menyimpan data pelanggan.',
-    /* Unrecognised text is not a success, so it stays. This is the default and it must hold. */
-    'Go to Sales Terminal for Warung Bu Sri',
-    '',
-    /* The three real messages the Master Vault product save now sends. The middle one is why
+        /* The three real messages the Master Vault product save now sends. The middle one is why
        "not <something>ed" had to join the failure list: it contains the word "saved", so a
        failure whose error text carried no failure word of its own faded away. A save that did
        not happen, clearing itself off the screen after 3.5 seconds. */
@@ -71,8 +61,8 @@ const STICKY = [
     'Stock belum masuk ke server.',
 ];
 
-/* Safe to miss — nothing is lost if it fades before he looks up. */
-const FADE = [
+/* Good news — never painted as a failure. */
+const SUCCESSES = [
     'Security Protocol Established! Vault Unlocked.',
     'Authorization Code Accepted. You may now create new Master Credentials.',
     'Success! "Aldi Phone" is now authorized for Biometric Login.',
@@ -97,16 +87,16 @@ const report = (ok, label, detail) => {
     else { fail++; console.log(' FAIL  ' + label + '   <-- ' + detail); }
 };
 
-console.log('\nmust stay until clicked');
-for (const m of STICKY) {
-    report(isSticky(m) === true, JSON.stringify(m).slice(0, 74),
-        'this would fade after 3.5s and he would never read it');
+console.log('\nstrips that read as failures');
+for (const m of FAILURE_STRIPS) {
+    report(isFailure(m) === true, JSON.stringify(m).slice(0, 74),
+        'a failure would show as ordinary news - no red edge, no error sound');
 }
 
-console.log('\nsafe to fade on its own');
-for (const m of FADE) {
-    report(isSticky(m) === false, JSON.stringify(m).slice(0, 74),
-        'this would nag him for a click he does not need');
+console.log('\ngood news is never painted as a failure');
+for (const m of SUCCESSES) {
+    report(isFailure(m) === false, JSON.stringify(m).slice(0, 74),
+        'a success would arrive red with the error sound');
 }
 
 console.log('\nmascot lines that must ALSO raise a strip');
@@ -121,13 +111,13 @@ for (const m of MASCOT_CHATTER) {
         'every piece of ordinary news would be reported twice');
 }
 
-/* A classifier that answers "sticky" to everything passes the STICKY block and would look
+/* A classifier that answers "failure" to everything passes the failure block and would look
    healthy on a glance at the totals. Assert both directions actually fire. */
 console.log('\nthe test itself is not vacuous');
-report(STICKY.some(m => isSticky(m)) && FADE.some(m => !isSticky(m)),
+report(FAILURE_STRIPS.some(m => isFailure(m)) && SUCCESSES.some(m => !isFailure(m)),
     'both answers are reachable', 'the classifier is answering one way for everything');
 
-/* A sticky strip never clears itself, and a confirm dialog is modal: whatever was on screen when
+/* A strip is up for 5 seconds, and a confirm dialog is modal: whatever was on screen when
    the question opened has to sit UNDER it, or the low-stock alarm lies across the top of the
    question he is trying to read. Both numbers are read from the two host lines so the check
    cannot drift from the code, and each anchor is asserted before its number is trusted. */
@@ -145,7 +135,7 @@ console.log('\nthe dialog paints over the toast column, never under it');
     const toastZ = toastHost ? Number(toastHost[1]) : NaN;
     const gateZ = gate ? Number(gate[1]) : NaN;
     report(toastZ < gateZ, `toast column z-[${toastZ}] sits below the dialog z-[${gateZ}]`,
-        'a sticky strip paints across the top edge of an open dialog');
+        'a strip paints across the top edge of an open dialog');
 }
 
 console.log('\n' + '='.repeat(58));

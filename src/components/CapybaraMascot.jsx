@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { recordMissed } from '../utils/missedLog.js';
 
 /* Module scope, not inside the component. As locals these were rebuilt on every single render,
    so `dialogueList` was a new array every time, so the peek effect below — which lists it as a
@@ -113,6 +114,9 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
                had no way in before this: every path into `isPeeking` went through a message,
                and a message is what puts the bubble up and swaps him to the talking sprite. */
             const incomingPeek = typeof d === 'string' ? 0 : d?.peek;
+            /* a plain line is the capybara's own news and goes in the bell's Missed list; an object
+               with a sprite is the merchant's flavour line ("Right, that's noted."), which is not */
+            if (typeof d === 'string' && d) recordMissed(d, false);
             if (incomingMessage || incomingPeek) {
                 /* blank, not left alone: with `activeMessage` falsy `spriteToShow` resolves to
                    kpm-merch-idle and no bubble renders — which IS the ask. A line still on
@@ -150,7 +154,7 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
                        this handler forty times leaves ONE window open, counted from the last
                        move. Without that, the 5s would expire mid-drag and he would leave while
                        the slider was still under his thumb. */
-                }, incomingPeek || 8000);
+                }, incomingPeek || 5000);   /* 5 s like every strip - his 2026-10-02 */
             }
         };
 

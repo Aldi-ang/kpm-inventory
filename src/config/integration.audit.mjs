@@ -446,37 +446,37 @@ check(G13, 'notify stays fire-and-forget', /export function notify\s*\(/.test(to
   !/export\s+async\s+function\s+notify/.test(toast) &&
   (toast.match(/return undefined;/g) || []).length >= 2,
   '`return alert(x)` call sites depend on notify returning undefined, not a promise');
-/* THE trap in this job. Get this backwards and every failure message starts fading after 3.5
-   seconds — the exact silent-failure class the whole thing existed to end. Unrecognised text
-   must stay on screen; only a recognised success is allowed to clear itself. */
-const sev = fs.readFileSync('src/utils/toastSeverity.js', 'utf8');
+/* THE trap in this job used to be a failure fading unread, so failures stayed until clicked. His
+   design, 2026-10-02, ended that: EVERY strip fades after 5 s, and the bell's Missed list
+   (utils/missedLog.js) keeps every one. The fade is only safe while BOTH halves hold - the line is
+   recorded before it shows, and the timer is set for every strip - so both are asserted. */
 check(G13, 'the host asks the classifier, it does not judge for itself',
-  /sticky:\s*isSticky\(text\)/.test(toast) && /from\s+['"][^'"]*toastSeverity\.js['"]/.test(toast),
-  'the severity rule must stay in one testable place');
-check(G13, 'anything not recognisably a success stays until clicked',
-  /return\s+!SUCCESS\.test\(text\)/.test(sev),
-  'the default must be sticky — a dropped failure message is the bug this replaced');
-/* "Could not complete the sync" contains "complete". Checking SUCCESS first faded it — a sync
-   failure vanishing unread. FAILURE returning true before SUCCESS is ever consulted is what
-   stops that, so the order is asserted, not just commented. */
-check(G13, 'a failure wins even when it also reads like a success',
-  /if\s*\(FAILURE\.test\(text\)\)\s*return true;[\s\S]{0,120}return\s+!SUCCESS\.test/.test(sev),
-  'FAILURE must be tested before SUCCESS — see toastSeverity.selfcheck.mjs');
+  /const bad = isFailure\(text\);/.test(toast) && /pushToast\(\{ id: nextId\+\+, text, bad \}\)/.test(toast) &&
+  /from\s+['"][^'"]*toastSeverity\.js['"]/.test(toast),
+  'the failure rule must stay in one testable place');
+check(G13, 'every strip is in the Missed list before it shows, even with no host mounted',
+  /recordMissed\(text, bad\);\s*if \(!pushToast\)/.test(toast) && /from\s+['"][^'"]*missedLog\.js['"]/.test(toast),
+  'a strip that fades without being recorded is the silent failure this group exists to stop');
+check(G13, 'every strip fades after 5 seconds, failures too (his 2026-10-02)',
+  /const FADE_MS = 5000;/.test(toast) && /timers\.current\.set\(item\.id, setTimeout\(\(\) => dismiss\(item\.id, true\), FADE_MS\)\);/.test(toast) &&
+  !/item\.sticky/.test(toast),
+  'a strip that stays until clicked is the old rule he replaced');
 check(G13, 'the severity rule has a runnable self-check',
   fs.existsSync('src/config/toastSeverity.selfcheck.mjs'),
   'node src/config/toastSeverity.selfcheck.mjs');
-/* 68 reports in App.jsx speak only through the mascot, and some of them are failures. He holds
-   a line 8 seconds, the next line can walk over it, and the sales terminal suppresses him
-   entirely — so a failure announced only by him is a failure allowed to go unseen, which is the
-   whole class of bug this group exists to close. A recognised failure must also raise a strip. */
+/* 68 reports in App.jsx speak only through the mascot, and some of them are failures. A failure
+   announced only by him could go unseen, so it also raised a strip - and then he and the strip said
+   the same words at once. His pick A, 2026-10-02: a failure goes to the top panel ALONE (which
+   records it); every other line is his, and is recorded in the Missed list where he says it. */
 const appSrc = fs.readFileSync('src/App.jsx', 'utf8');
-check(G13, 'a failure the mascot reports also raises a strip',
-  /const triggerCapy[\s\S]{0,400}?isFailure\(text\)\s*&&\s*notify\(text\)|const triggerCapy[\s\S]{0,400}?if\s*\(isFailure\(text\)\)\s*notify\(text\)/.test(appSrc) &&
+check(G13, 'a failure the mascot would say goes to the top panel alone (his A)',
+  /const triggerCapy = \(msg\) => \{\s*const text = msg \|\| "Hello!";\s*if \(isFailure\(text\)\) return notify\(text\);\s*speakCapy\(text\);/.test(appSrc) &&
+  /const triggerCapy[\s\S]{0,500}?recordMissed\(text, false\);/.test(appSrc) &&
   /from\s+['"][^'"]*toastSeverity\.js['"]/.test(appSrc),
-  'the mascot is allowed to be missed; a failure is not');
-check(G13, 'a stuck toast can always be cleared', /onClick=\{\(\)\s*=>\s*dismiss\(item\.id\)\}/.test(toast) &&
+  'the same failure in the bubble and the strip is the double notification he reported');
+check(G13, 'a strip can always be tapped away early', /onClick=\{\(\)\s*=>\s*dismiss\(item\.id\)\}/.test(toast) &&
   /clearTimeout/.test(toast),
-  'sticky with no way out would wall off the screen');
+  'five seconds over the sale he is typing is too long to wait');
 const nUsers = appFiles.filter(f => /(?<![.\w$])notify\s*\(/.test(fs.readFileSync(f, 'utf8')) &&
   f !== 'src/components/Toast.jsx');
 const nMissing = nUsers.filter(f => !/from\s+['"][^'"]*\/Toast\.jsx['"]/.test(fs.readFileSync(f, 'utf8')));
@@ -2453,7 +2453,7 @@ check(G34, 'the slider says where the mascot went',
   'a five-second appearance in a corner he is not looking at is the same as no appearance');
 check(G34, 'the mascot answers a peek that carries no line',
   capySrc.includes('if (incomingMessage || incomingPeek) {') &&
-  capySrc.includes('}, incomingPeek || 8000);'),
+  capySrc.includes('}, incomingPeek || 5000);'),
   'the radio used to demand a message to show at all, so every appearance was a talking one');
 /* *"just the idle animation"* — his words when asked what the mascot should DO while it is out.
    Two things have to hold for that: the peek must blank the line, and a blank line must still
