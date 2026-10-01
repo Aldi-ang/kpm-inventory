@@ -9623,5 +9623,19 @@ section('THE PLAIN UNLOCK BOX GREETS HIM BY NAME (2026-10-01)');
      /agentName=\{\(profileName \|\| user\?\.displayName\)\?\.split\(' '\)\[0\] \|\| user\?\.email\?\.split\('@'\)\[0\]\}/.test(a));
 }
 
+/* ── SIGN-IN REACHES FIREBASE, NOT THE STORED APP (2026-10-01, his Samsung) ───────────────────────────────────────────
+   *"i press sign in it loads a little while and comeback to the sign in screen and not redirecting to google"*. Sign-in
+   opens OUR /__/auth/handler first (authDomain = this site, vercel.json proxies it to Firebase); the offline helper's
+   page fallback answered it with the stored app. Proved with a stand-in handler on the server: old helper -> the app,
+   new helper -> the handler. The denylist is RUN on real paths below. */
+section('SIGN-IN REACHES FIREBASE, NOT THE STORED APP (2026-10-01)');
+{ const vc = read('vite.config.js').replace(/\r/g, '');
+  const m = vc.match(/navigateFallbackDenylist: \[(\/[^\]]+\/)\]/);
+  const re = m ? new Function(`return ${m[1]}`)() : null;
+  ok('the offline helper never answers Firebase\'s /__/ pages (auth handler, iframe), and still answers the app\'s own pages',
+     !!re && re.test('/__/auth/handler') && re.test('/__/auth/iframe') && re.test('/__/firebase/init.json') &&
+     !re.test('/') && !re.test('/fleet') && !re.test('/index.html') && !re.test('/assets/x.js'));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -94,7 +94,13 @@ return {
       workbox: {
         /* sprites/ only - the full-size masters in public/ are megabytes each and
            must never enter the precache. Add new art under sprites/, resized. */
-        globPatterns: ['**/*.{js,css,html,ico}', 'sprites/*.png', 'sounds/*.mp3', 'coin-sprite.png']
+        globPatterns: ['**/*.{js,css,html,ico}', 'sprites/*.png', 'sounds/*.mp3', 'coin-sprite.png'],
+        /* SIGN-IN MUST REACH FIREBASE (2026-10-01, his Samsung: "i press sign in it loads a little while and comeback
+           to the sign in screen and not redirecting to google"). The offline helper answers every page navigation
+           with the stored app, and sign-in starts by opening OUR /__/auth/handler (authDomain is this site, proxied
+           to Firebase by vercel.json) - so the helper served the app instead of Firebase's handler and Google was
+           never reached. /__/ is Firebase's; the helper must never answer it. */
+        navigateFallbackDenylist: [/^\/__\//]
       },
       manifest: {
         name: 'KPM Inventory by AK', // <--- CHANGED: Full name for PC/Installation prompts
