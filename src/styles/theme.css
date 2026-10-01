@@ -5566,11 +5566,9 @@ html.lite-mode .kpm-ench *, html.lite-mode .kpm-ench *::before, html.lite-mode .
     linear-gradient(180deg, var(--raised), var(--sunk)); }
 /* the hover zones TOUCH (no gap, each person's column is 188 px): his 12:50 recording - with a gap, the pointer crossing
    between two cards pointed at nothing, so every far card grew back, then shrank again at the next card */
-/* one person per swipe on a touch screen: the stage takes the horizontal swipe itself (FleetCanvasManager stageTouchMove
-   follows the finger, stageTouchEnd lands one card). No snap there: that code is the only thing moving the stage, and a
-   snap would pull it to a card on every finger move (2026-09-30, "not fluid") */
-@media (pointer: coarse) { .kpm-stage { touch-action: pan-y; scroll-snap-type: none; } }
-.kpm-actor { flex: 0 0 188px; scroll-snap-align: center; scroll-snap-stop: always; display: grid; justify-items: center; gap: 16px; cursor: pointer; outline: none; }
+/* the stage scrolls freely on a touch screen, with the phone's own momentum, and the snap lands a person in the middle -
+   his 2026-10-01 "unlocked and not one by one just to make it fluid" (no touch-action lock, no scroll-snap-stop) */
+.kpm-actor { flex: 0 0 188px; scroll-snap-align: center; display: grid; justify-items: center; gap: 16px; cursor: pointer; outline: none; }
 .kpm-actor-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 900 11px/1.2 var(--font-mono);
   letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); transition: color .15s; }
 .kpm-actor-card { position: relative; width: 156px; height: 196px; display: flex; flex-direction: column; align-items: center; gap: 6px;

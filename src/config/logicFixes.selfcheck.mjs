@@ -8632,7 +8632,8 @@ section('HIS 07:50 TEST OF ROUND 5 - FLEET & ROSTER ON THE PC AND THE PHONE (202
      /\.kpm-stage-name \{[^}]*text-overflow: ellipsis/.test(stageCss) &&
      /@media \(min-width: 1024px\) \{[^@]*\.kpm-stage-bar \{[^}]*grid-template-areas: "who chips counts acts"/.test(stageCss));
   /* sc8 "make the roster slide lock 1 by 1 ... so slide to move 1 user to another user" */
-  ok('the roster slides one person at a time', /\.kpm-stage \{[^}]*scroll-snap-type: x mandatory;/.test(stageCss) && /\.kpm-actor \{[^}]*scroll-snap-stop: always;/.test(stageCss));
+  /* 2026-10-01 his "unlocked and not one by one just to make it fluid" replaced sc8: the snap still lands a person, nothing forces one at a time */
+  ok('the roster snaps a person to the middle but no longer stops at every one', /\.kpm-stage \{[^}]*scroll-snap-type: x mandatory;/.test(stageCss) && /\.kpm-actor \{[^}]*scroll-snap-align: center;/.test(stageCss) && !/scroll-snap-stop: always/.test(stageCss));
 
   const vb = await import('../utils/vanBay.js');
   ok('the page maths take the page size: 4 a page gives the van 20 squares (5 pages), 19 products still 20, 21 grow a page; the PC keeps 18',
@@ -8761,41 +8762,17 @@ section('THE SALESMAN SEES HIS OWN LATE EOD (2026-09-26)');
   }
 }
 
-/* ── THE ROSTER: ONE PERSON PER SWIPE, MEASURED (2026-09-26) ─────────────────────────────────────────────────
-   His "can u test it yourself": a real 300 px touch drag moved the roster TWO people - scroll-snap-stop alone does not
-   hold a long drag. On a touch screen the stage now takes the horizontal swipe itself and moves exactly one card. */
-section('THE ROSTER: ONE PERSON PER SWIPE, MEASURED (2026-09-26)');
-{ const fl = code(read('src/FleetCanvasManager.jsx')), th = read('src/styles/theme.css');
-  const stageCss = th.slice(th.indexOf('/* ── THE ROSTER STAGE'), th.indexOf('/* ── END OF THE ROSTER STAGE'));
-  ok('on a touch screen the stage takes the horizontal swipe itself and moves one card through swipeTarget',
-     /@media \(pointer: coarse\) \{ \.kpm-stage \{ touch-action: pan-y; scroll-snap-type: none; \} \}/.test(stageCss) &&
-     /<div className="kpm-stage" role="listbox" aria-label="People" onTouchStart=\{stageTouchStart\} onTouchMove=\{stageTouchMove\} onTouchEnd=\{stageTouchEnd\} onTouchCancel=\{stageTouchEnd\}>/.test(fl) &&
-     /swipeTarget\(centers, s\.left \+ st\.clientWidth \/ 2, t\.clientX - s\.x, t\.clientY - s\.y\)/.test(fl));
-  /* HEAVY APP 4 (2026-09-30, his "sliding the fleet ... is not fluid as well in the phone since we make it one by one"):
-     the stage sat still for the whole drag (lab 375: 10 finger moves, 0 px moved). The move handler is RUN here on fakes.
-     The one-card count must start from s.left (where the drag began): counted from the moved stage, a 350 px drag that
-     already carried the next card to the middle would land two along. */
-  const mv = fl.match(/const stageTouchMove = (\(e\) => \{[\s\S]*?\n    \});/);
-  ok('the stage follows the finger sideways on a touch screen, ignores a vertical drag and the PC mouse',
-     !!mv && (() => {
-       const go = (coarse, moves) => {
-         const el = { scrollLeft: 134 }, ref = { current: { x: 200, y: 300, left: 134, dir: '' } }, seen = [];
-         const fn = new Function('swipeFrom', 'window', 'return ' + mv[1])(ref, { matchMedia: () => ({ matches: coarse }) });
-         for (const [x, y] of moves) { fn({ touches: [{ clientX: x, clientY: y }], currentTarget: el }); seen.push(el.scrollLeft); }
-         return seen.join(',');
-       };
-       return go(true, [[190, 301], [180, 302], [100, 303]]) === '144,154,234' && go(true, [[199, 330], [150, 360]]) === '134,134'
-         && go(false, [[180, 300], [100, 300]]) === '134,134';
-     })());
-  ok('a drag too short to count glides back to where it started', /else if \(s\.dir === 'x'\) st\.scrollTo\(\{ left: s\.left,/.test(fl));
-  const H = await import('../utils/helpers.js');
-  if (typeof H.swipeTarget !== 'function') ok('swipeTarget exists in src/utils/helpers.js', false);
-  else {
-    const C = [108, 296, 484, 672];   // four 188 px cards behind a 14 px pad; the stage 378 wide, at rest its middle is 189
-    ok('one person per swipe: a 300 px drag left from the first moves to the second (never the third); right at the first stays; a 20 px nudge or a vertical scroll is no swipe',
-       H.swipeTarget(C, 189, -300, 10) === 1 && H.swipeTarget(C, 189, 300, 0) === 0 && H.swipeTarget(C, 296, -600, 0) === 2 &&
-       H.swipeTarget(C, 189, -20, 0) === -1 && H.swipeTarget(C, 189, -60, 200) === -1 && H.swipeTarget(C, 672, -300, 0) === 3);
-  }
+/* ── THE ROSTER SLIDES FREELY (2026-10-01) ───────────────────────────────────────────────────────────────────────────
+   His Samsung: "im expecting the fleet and roster user card slider to be unlocked and not one by one just to make it fluid".
+   Replaces 2026-09-26's one-person-per-swipe and 2026-09-30's follow-the-finger handlers. Measured with real touch events
+   (lab 360 @3x, a 300 px swipe): before 1 person (it followed the finger, then snapped back), after 2 people with the
+   phone's own momentum, landing 1 px from a person's centre. */
+section('THE ROSTER SLIDES FREELY (2026-10-01)');
+{ const fl = code(read('src/FleetCanvasManager.jsx')), th = read('src/styles/theme.css').replace(/\r/g, '');
+  ok('no code takes the swipe any more: the stage has no touch handlers and nothing locks its sideways scroll',
+     /<div className="kpm-stage" role="listbox" aria-label="People">/.test(fl) && !/stageTouch|swipeFrom|swipeTarget/.test(fl) &&
+     !/\.kpm-stage \{[^}]*touch-action: pan-y/.test(th) && !/@media \(pointer: coarse\) \{ \.kpm-stage/.test(th));
+  ok('the one-per-swipe helper is gone with its caller', !/swipeTarget/.test(read('src/utils/helpers.js')));
 }
 
 /* ── THE PONDER PAGE FOR THE LOADING BAY (2026-09-26) ──────────────────────────────────────────────────────────

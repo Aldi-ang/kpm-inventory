@@ -8,7 +8,7 @@ import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc, writeBatch, runT
 import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord, hasClearance, TIER_ONE_ID, resolveTierOneId } from './config/permissions';
 import { vaultDocPath, VAULT_TRIES_RESET } from './utils/vaultDoc.js';
 import { lockLeftMs, untilText } from './utils/vaultLock.js';
-import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems, swipeTarget } from './utils/helpers';
+import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems } from './utils/helpers';
 import { normalizeRegion } from './config/permissions';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
@@ -741,35 +741,9 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         const prefix = (a.email || '').split('@')[0].toLowerCase();
         return b.salesmanId === a.id || (b.salesmanName || '').toLowerCase() === (a.name || '').toLowerCase() || (b.salesmanName || '').toLowerCase() === prefix;
     };
-    /* ONE PERSON PER SWIPE on a touch screen (his 2026-09-26 "make the roster slide lock 1 by 1"): the stage takes the
-       horizontal swipe itself (CSS touch-action: pan-y) and moves exactly one card - helpers.js swipeTarget. A tap
-       is no swipe, so picking a card still works; the PC keeps its own scrolling.
-       THE CARDS FOLLOW THE FINGER (2026-09-30, his "sliding the fleet and canvas is not fluid as well in the phone since we
-       make it one by one"): the stage sat still for the whole drag, then jumped on release. Now a sideways drag carries
-       it under the finger, and the release still lands exactly one card along - counted from where the drag STARTED
-       (s.left), so a long drag that already brought the next card to the middle can never skip a person. A drag too
-       short to count glides back. Snap is off on touch screens (theme.css): this code is the only thing moving the stage
-       there, and a snap would yank it to a card on every finger move. */
-    const swipeFrom = useRef(null);
-    const stageTouchStart = (e) => { const t = e.touches[0]; swipeFrom.current = t ? { x: t.clientX, y: t.clientY, left: e.currentTarget.scrollLeft, dir: '' } : null; };
-    const stageTouchMove = (e) => {
-        const s = swipeFrom.current, t = e.touches[0];
-        if (!s || !t || !window.matchMedia('(pointer: coarse)').matches) return;
-        const dx = t.clientX - s.x, dy = t.clientY - s.y;
-        if (!s.dir && Math.max(Math.abs(dx), Math.abs(dy)) > 8) s.dir = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
-        if (s.dir === 'x') e.currentTarget.scrollLeft = s.left - dx;
-    };
-    const stageTouchEnd = (e) => {
-        const s = swipeFrom.current, t = e.changedTouches[0];
-        swipeFrom.current = null;
-        if (!s || !t) return;
-        const st = e.currentTarget, box = st.getBoundingClientRect();
-        const centers = [...st.querySelectorAll('.kpm-actor')].map(c => { const r = c.getBoundingClientRect(); return r.left - box.left + st.scrollLeft + r.width / 2; });
-        const i = swipeTarget(centers, s.left + st.clientWidth / 2, t.clientX - s.x, t.clientY - s.y);
-        const still = document.documentElement.classList.contains('lite-mode') || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (i >= 0) st.scrollTo({ left: centers[i] - st.clientWidth / 2, behavior: still ? 'auto' : 'smooth' });
-        else if (s.dir === 'x') st.scrollTo({ left: s.left, behavior: still ? 'auto' : 'smooth' });
-    };
+    /* THE ROSTER SLIDES FREELY (2026-10-01, his "im expecting the fleet and roster user card slider to be unlocked and not
+       one by one just to make it fluid"). The one-person-per-swipe handlers (2026-09-26 / 2026-09-30) are gone: the phone
+       scrolls the stage itself, with its own momentum, and the CSS snap still lands a person in the middle. */
     /* switching the salesman while the bay's muatan has lines asks first, through the dialog gate */
     const pickAgent = async (m) => {
         if (bayLines > 0 && selectedAgent?.id !== m.id && !await confirmAction(`Muatan ${selectedAgent?.name} belum dimuat. Pindah ke ${m.name} dan buang muatan itu?`)) return;
@@ -1332,7 +1306,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                 ))}
                                             </div>
                                         )}
-                                        <div className="kpm-stage" role="listbox" aria-label="People" onTouchStart={stageTouchStart} onTouchMove={stageTouchMove} onTouchEnd={stageTouchEnd} onTouchCancel={stageTouchEnd}>
+                                        <div className="kpm-stage" role="listbox" aria-label="People">
                                             {pageCast.map(m => stageCard(m))}
                                         </div>
                                         {/* keyed by the picked person, so the bar's light sweeps once per pick, never on a loop */}
