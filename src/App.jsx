@@ -3027,7 +3027,18 @@ const handleGitHubMirror = async () => {
         try {
             // 🚀 FORCE GOOGLE ACCOUNT CHOOSER
             googleProvider.setCustomParameters({ prompt: 'select_account' });
-            
+
+            /* PHONES SIGN IN IN THE SAME TAB (2026-10-01, his Samsung). The popup is a second tab on a phone, and
+               it loses its link back: "it redirect me to gmail" (the Gmail app opened), refreshing it gave Firebase's
+               "missing initial state", and when it did finish, "the kpm app will be open on the second app and
+               duplicate the tab". A full-page redirect has no second tab. It is only safe where /__/auth is proxied
+               to our own address (firebase.js PROXIED_AUTH_HOSTS) - anywhere else the handshake is cross-site and
+               Brave/Safari break it - so LAN IPs, previews and the PC keep the popup. Still no await before it. */
+            if (auth.app?.options?.authDomain === window.location.host && window.matchMedia?.('(pointer: coarse)').matches) {
+                await signInWithRedirect(auth, googleProvider);
+                return;
+            }
+
             // 🚨 CRITICAL MOBILE FIX: 
             // We MUST NOT put any 'await' commands before opening the popup.
             // Mobile browsers strictly require popups to open in the EXACT same 

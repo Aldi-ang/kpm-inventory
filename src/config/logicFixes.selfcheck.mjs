@@ -9577,6 +9577,21 @@ section('THE NAME SURVIVES A RESIZE MID-UNLOCK (2026-10-01)');
      /S\.unlockAt = null; S\.relayout = null; \};\s*\}, \[playing, agentName, S\]\);/.test(g));
 }
 
+/* ── PHONES SIGN IN IN THE SAME TAB (2026-10-01) ──────────────────────────────────────────────────────────────────────
+   His Samsung: the popup tab opened the Gmail app, refreshing it gave "missing initial state", and finishing left KPM
+   duplicated in the second tab. On the proxied host a touch phone redirects instead; the popup stays everywhere else. */
+section('PHONES SIGN IN IN THE SAME TAB (2026-10-01)');
+{ const a = code(read('src/App.jsx')).replace(/\r/g, '');
+  const h = a.slice(a.indexOf('const handleLogin = async () => {'), a.indexOf('const handleLogout'));
+  const redirect = h.indexOf('await signInWithRedirect(auth, googleProvider);'), popup = h.indexOf('await signInWithPopup(auth, googleProvider);');
+  ok('a touch phone on our own auth address redirects in the same tab, BEFORE any popup and with no await ahead of it',
+     /if \(auth\.app\?\.options\?\.authDomain === window\.location\.host && window\.matchMedia\?\.\('\(pointer: coarse\)'\)\.matches\) \{\s*await signInWithRedirect\(auth, googleProvider\);\s*return;\s*\}/.test(h) &&
+     redirect > -1 && popup > redirect && !/await (?!signInWith)/.test(h.slice(0, popup)));
+  ok('everyone else keeps the popup, with the redirect fallback when it fails', popup > -1 && /if \(POPUP_FAILED\.includes\(error\.code\)\) \{\s*signInWithRedirect\(auth, googleProvider\);/.test(h));
+  ok('the redirect\'s answer is still read and its error still reported on load',
+     /getRedirectResult\(auth\)\.catch\(\(error\) => \{[^}]*setLoginError\(/.test(a));
+}
+
 /* ── EVERY LOGOUT ENDS THE 5-MINUTE VAULT PASS (2026-10-01) ───────────────────────────────────────────────────────────
    His Samsung: "i sign in my google account and its skipped everything now, no master vault UI" - right after the
    side menu's "Terminate Session?". That logout called signOut without clearGrace, so the same account signing back
