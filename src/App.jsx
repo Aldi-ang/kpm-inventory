@@ -484,6 +484,10 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       && trueRole !== 'UNAUTHORIZED' && trueRole !== 'OFFLINE_UNVERIFIED';
   const gateUp = showAdminLogin || entryLocked;
   const openGate = () => { if (holdsVault) setIsAdmin(true); else setAppUnlocked(true); setShowAdminLogin(false); };
+  /* Does this device have a fingerprint / face sensor a passkey can use? Asked once, ahead of time: the first-password
+     Save must start the passkey prompt without waiting on anything (handleSetupSecurity). */
+  const [canBio, setCanBio] = useState(false);
+  useEffect(() => { window.PublicKeyCredential?.isUserVerifyingPlatformAuthenticatorAvailable?.().then(setCanBio).catch(() => {}); }, []);
   const NO_VAULT = "This account has no roster profile, so it has no vault password of its own. Ask the owner to check you on Fleet & Roster.";
 
   /* LOCKED BY THE COMPANY (Fleet & Roster's "Lock account" - a lost or hacked phone; his 2026-09-28 "make that email
@@ -1099,8 +1103,17 @@ const handleGitHubMirror = async () => {
     const vaultDoc = vaultRef();
     if (!vaultDoc) { notify(NO_VAULT); return; }
 
+    /* FINGERPRINT AT THE FIRST PASSWORD (2026-10-01). His words: "can u add biometric registration as well when the
+       first password setup". Started HERE, still inside the Save press: the hashing below takes seconds on a phone,
+       and Safari refuses a passkey prompt once the press has gone cold. Cancelled or no sensor = the password is
+       still saved, and the report says which. */
+    const bio = canBio ? makePasskey().catch(() => null) : Promise.resolve(null);
+
     try {
+        const credential = await bio;
+        const passkey = credential ? { id: credential.id, name: `This device (set up ${new Date().toLocaleDateString('en-GB')})`, addedAt: new Date().toISOString() } : null;
         const security = {
+            ...(passkey ? { passkeys: [passkey] } : {}),
             pin: await hashSecret(setupPassword.trim()),                    /* as typed - capital letters count */
             recoveryHash: await hashSecret(setupSecret.trim().toLowerCase()),
             failedRecoveryAttempts: 0,
@@ -1137,11 +1150,14 @@ const handleGitHubMirror = async () => {
         setAdminPin(security.pin);
         setHasAdminPin(true);
         setIsSetupMode(false);
+        if (passkey) setRegisteredPasskeys([passkey]);
         openGate();
         setSetupPassword("");
         setSetupSecret("");
-        
-        notify("Security Protocol Established! Vault Unlocked.");
+
+        notify(passkey ? "Password saved. Fingerprint is on for this device - next time, press Fingerprint."
+            : canBio ? "Password saved. Fingerprint was skipped on this device."
+            : "Security Protocol Established! Vault Unlocked.");
     } catch (error) {
         console.error("Save Error:", error);
         notify(`Database Error: ${error.message || "Could not save credentials."}`);
@@ -1346,27 +1362,30 @@ const handleGitHubMirror = async () => {
   };
 
   // 🚀 PASSKEY REGISTRATION ENGINE (FIREBASE SYNCED) 🚀
+  /* One builder for Settings and the first-password setup. The user handle is the PERSON's uid: for an employee
+     user.uid is the boss's (the hijacked user), so two people on one phone would share - and overwrite - one key. */
+  const makePasskey = () => {
+      const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
+      return navigator.credentials.create({
+          publicKey: {
+              challenge: challenge,
+              rp: { name: "KPM System", id: window.location.hostname },
+              user: { id: new TextEncoder().encode(user.realUid || user.uid), name: user?.email || "Admin", displayName: user?.displayName || "Administrator" },
+              pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+              authenticatorSelection: {
+                  userVerification: "required",
+                  residentKey: "required" // 🚨 CRITICAL: Forces Android to save it locally
+              },
+              timeout: 60000
+          }
+      });
+  };
   const handleRegisterPasskey = async () => {
       const deviceName = await promptAction("Enter a name for this device (e.g., 'My Samsung S23' or 'Office iPad'):");
       if (!deviceName) return;
 
       try {
-          const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
-          const userBuffer = new TextEncoder().encode(user.uid);
-
-          const credential = await navigator.credentials.create({
-              publicKey: {
-                  challenge: challenge,
-                  rp: { name: "KPM System", id: window.location.hostname },
-                  user: { id: userBuffer, name: user?.email || "Admin", displayName: user?.displayName || "Administrator" },
-                  pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
-                  authenticatorSelection: { 
-                      userVerification: "required",
-                      residentKey: "required" // 🚨 CRITICAL: Forces Android to save it locally
-                  },
-                  timeout: 60000
-              }
-          });
+          const credential = await makePasskey();
 
           if (credential) {
               const newPasskey = { id: credential.id, name: deviceName, addedAt: new Date().toISOString() };

@@ -9600,6 +9600,24 @@ section('EVERY PERSON OPENS THE APP WITH THEIR OWN PASSWORD (2026-10-01)');
      /\{user && !entryLocked && \(/.test(a));
 }
 
+/* ── FINGERPRINT AT THE FIRST PASSWORD (2026-10-01) ───────────────────────────────────────────────────────────────────
+   His words: "can u add biometric registration as well when the first password setup". Emulator + Chrome's virtual
+   platform authenticator, T5 Budi: Save -> password AND one passkey in vault_keys/m_budi, "Fingerprint is on"; a later
+   Fingerprint press unlocks. Prompt cancelled -> password saved, no passkey, "Fingerprint was skipped". */
+section('FINGERPRINT AT THE FIRST PASSWORD (2026-10-01)');
+{ const a = code(read('src/App.jsx')).replace(/\r/g, '');
+  const s = a.slice(a.indexOf('const handleSetupSecurity = async'), a.indexOf('const handlePinLogin = async'));
+  ok('the passkey prompt starts inside the Save press, before any await (Safari refuses a cold one)',
+     /const bio = canBio \? makePasskey\(\)\.catch\(\(\) => null\) : Promise\.resolve\(null\);/.test(s) &&
+     s.indexOf('const bio = canBio') < s.indexOf('await '));
+  ok('a cancelled or missing sensor still saves the password, and every outcome is reported',
+     /\.\.\.\(passkey \? \{ passkeys: \[passkey\] \} : \{\}\)/.test(s) && /Fingerprint is on for this device/.test(s) && /Fingerprint was skipped on this device/.test(s));
+  ok('the sensor question is asked ahead of time, never inside the press',
+     /useEffect\(\(\) => \{ window\.PublicKeyCredential\?\.isUserVerifyingPlatformAuthenticatorAvailable\?\.\(\)\.then\(setCanBio\)/.test(a));
+  ok('one passkey builder for Settings and setup, keyed on the PERSON (an employee\'s user.uid is the boss\'s)',
+     /new TextEncoder\(\)\.encode\(user\.realUid \|\| user\.uid\)/.test(a) && (a.match(/navigator\.credentials\.create\(/g) || []).length === 1);
+}
+
 /* ── AGENT PROFILE OPENS ON YOUR OWN PROFILE, YOURS FIRST IN THE LIST (2026-10-01) ────────────────────────────────────
    His words: "when user press the agent profile, it directly show them their own agent profile and put it on the top
    of the list". Real component, lab: owner opened on Adi before -> Master Owner now; T2 Rina on Adi -> Rina; T5 Budi
