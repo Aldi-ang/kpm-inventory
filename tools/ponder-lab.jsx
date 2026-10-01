@@ -51,6 +51,7 @@ import { LOOKS } from './lab-looks.js';
 import { scanNotaToBase64, homography, getLocalDayKey } from '../src/utils/helpers.js';
 import PhotoField from '../src/components/PhotoField.jsx';
 import { SCENES } from '../src/ponder/registry.js';
+import { LAB_BELL_NEEDS } from './lab-bell.jsx';
 
 const q = new URLSearchParams(window.location.search);
 if (q.has('light')) document.documentElement.classList.add('light');
@@ -875,7 +876,7 @@ function ShellLab() {
       activeTab="command_center" setActiveTab={() => {}}
       user={{ displayName: 'Lab', email: 'lab@example.com' }}
       appSettings={{}} isAdmin userRole="ADMIN" agentSettings={{}}
-      notifications={[]} onNotificationClick={() => {}} appVersion="lab"
+      notifications={q.has('bell') ? LAB_BELL_NEEDS : []} onNotificationClick={() => {}} appVersion="lab"
       darkMode={dark} setDarkMode={setDark}
       onOpenPov={null} povActive={false}
       syncIndicator={(
