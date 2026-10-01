@@ -9593,6 +9593,17 @@ section('THE RANK-FRAME SWIRL SLEEPS WITHOUT A SWIRLING FRAME (2026-10-01)');
      !/filter:url\(#(?!cgWarp|myWarp)/.test(rb));
 }
 
+/* ── THE SHIPMENT PLAN'S CELLS ARE NOT REBUILT ON EVERY RENDER (2026-10-01) ──────────────────────────────────────────
+   `Cell` was declared inside the table, so each render was a new component type and React rebuilt every number cell:
+   15 nodes per render on a 2-product plan (0 now), the "37 DOM changes a second" Restock Vault showed while its data
+   was arriving. */
+section('THE SHIPMENT PLAN\'S CELLS ARE NOT REBUILT ON EVERY RENDER (2026-10-01)');
+{ const sp = code(read('src/ponder/stages/ShipmentPlanTable.jsx')).replace(/\r/g, '');
+  const body = sp.slice(sp.indexOf('export default function ShipmentPlanTable'));
+  ok('Cell is declared once at module level, never inside the table', /^const Cell = \(/m.test(sp) && !/const Cell\b/.test(body) &&
+     sp.indexOf('const Cell = (') < sp.indexOf('export default function ShipmentPlanTable'));
+}
+
 /* ── PHONES SIGN IN IN THE SAME TAB (2026-10-01) ──────────────────────────────────────────────────────────────────────
    His Samsung: the popup tab opened the Gmail app, refreshing it gave "missing initial state", and finishing left KPM
    duplicated in the second tab. On the proxied host a touch phone redirects instead; the popup stays everywhere else. */

@@ -41,6 +41,13 @@ import { Package, AlertTriangle } from 'lucide-react';
 
 const n = (v) => Number(v || 0).toLocaleString('id-ID');
 
+/* Out here, not inside the table (2026-10-01). Declared inside, every render made a NEW component type, so React
+   threw away and rebuilt every number cell on each data update: 15 nodes per render on a 2-product plan, and the
+   "37 DOM changes a second" Restock Vault showed while its data was arriving. */
+const Cell = ({ children, className = '', k }) => (
+    <span data-ponder={k} className={`text-right font-mono tabular-nums ${className}`}>{children}</span>
+);
+
 export default function ShipmentPlanTable({ rows = [], branches = [] }) {
     if (branches.length === 0) {
         return (
@@ -66,10 +73,6 @@ export default function ShipmentPlanTable({ rows = [], branches = [] }) {
     /* One grid template for header, rows and total, built from the branch count so the columns
        cannot drift apart the way three hand-written templates would. */
     const cols = `minmax(0,1.4fr) 108px ${branches.map(() => '104px').join(' ')} 108px 112px`;
-
-    const Cell = ({ children, className = '', k }) => (
-        <span data-ponder={k} className={`text-right font-mono tabular-nums ${className}`}>{children}</span>
-    );
 
     return (
         <div className="overflow-x-auto">
