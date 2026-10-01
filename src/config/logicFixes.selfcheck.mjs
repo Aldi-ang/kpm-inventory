@@ -9771,5 +9771,31 @@ section('SIGN-IN REACHES FIREBASE, NOT THE STORED APP (2026-10-01)');
      !re.test('/') && !re.test('/fleet') && !re.test('/index.html') && !re.test('/assets/x.js'));
 }
 
+/* ── FINGERPRINT READS THE VAULT AT THE PRESS WHEN ITS LIST IS EMPTY (2026-10-01) ─────────────────────────────────────
+   His words: "whenever we push a new version of the app, the biometric reset and i need to register it again" - and the
+   message he saw was "No devices registered!". The list was read once, at open. Lab (A-Brain t5-stale.mjs, emulator +
+   virtual authenticator): the doc holds 1 passkey at the press, the open-time read saw 0 -> old code refused, fixed code
+   unlocks. The read expression is RUN below on fixtures. */
+section('FINGERPRINT READS THE VAULT AT THE PRESS WHEN ITS LIST IS EMPTY (2026-10-01)');
+await (async () => {
+  const a = code(read('src/App.jsx')).replace(/\r/g, '');
+  const i = a.indexOf('const handleBiometricUnlock = async'), j = i > -1 ? a.indexOf('navigator.credentials.get(', i) : -1;
+  const b = i > -1 && j > -1 ? a.slice(i, j) : '';
+  ok('an empty list reads the vault doc before refusing, and the prompt is built from what was read',
+     /let passkeys = registeredPasskeys;\s*if \(passkeys\.length === 0\) \{/.test(b) &&
+     b.indexOf('getDoc(ref)') > -1 && b.indexOf('getDoc(ref)') < b.indexOf('No devices registered') &&
+     /const allowCredentials = passkeys\s*\.map/.test(b) && !/registeredPasskeys\s*\.map/.test(b));
+  const m = b.match(/passkeys = (\(ref && \(await getDoc\(ref\)\.catch\(\(\) => null\)\)\?\.data\(\)\?\.passkeys\) \|\| \[\]);/);
+  const read1 = m ? new (Object.getPrototypeOf(async () => {}).constructor)('ref', 'getDoc', `return ${m[1]};`) : null;
+  const snap = (d) => ({ data: () => d });
+  const two = [{ id: 'a' }, { id: 'b' }];
+  ok('the read: the doc\'s passkeys when it has them; [] for no doc path, a failed read, no doc, or a doc without passkeys',
+     !!read1 && (await read1({}, async () => snap({ passkeys: two }))) === two &&
+     (await read1(null, async () => snap({ passkeys: two }))).length === 0 &&
+     (await read1({}, async () => { throw new Error('offline'); })).length === 0 &&
+     (await read1({}, async () => snap(undefined))).length === 0 &&
+     (await read1({}, async () => snap({ pin: 'x' }))).length === 0);
+})();
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

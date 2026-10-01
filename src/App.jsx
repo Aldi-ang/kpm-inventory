@@ -1416,7 +1416,18 @@ const handleGitHubMirror = async () => {
 
   // 🚀 BIOMETRIC UNLOCK ENGINE (DEVICE TARGETED) 🚀
   const handleBiometricUnlock = async () => {
-      if (registeredPasskeys.length === 0) {
+      /* "NO DEVICES REGISTERED!" AFTER A PUSH (his 2026-10-01: "whenever we push a new version of the app, the biometric
+         reset and i need to register it again"). The list was read ONCE, when the vault opened (checkAdminStatus); a read
+         that came back without the passkeys left it empty for the whole visit, while the password kept working because
+         handlePinLogin reads the doc at the press. So an empty list reads the doc here too. Only the empty case waits on
+         the read - the normal press still goes straight to the prompt. */
+      let passkeys = registeredPasskeys;
+      if (passkeys.length === 0) {
+          const ref = vaultRef();
+          passkeys = (ref && (await getDoc(ref).catch(() => null))?.data()?.passkeys) || [];
+          if (passkeys.length) setRegisteredPasskeys(passkeys);
+      }
+      if (passkeys.length === 0) {
           notify("No devices registered! Please enter your PIN, go to Settings, and register this device.");
           return;
       }
@@ -1425,7 +1436,7 @@ const handleGitHubMirror = async () => {
           const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
           
           // 🚨 WINDOWS HELLO & ANDROID HYBRID FIX
-          const allowCredentials = registeredPasskeys
+          const allowCredentials = passkeys
               .map(pk => ({
                   type: "public-key",
                   id: base64urlToUint8Array(pk.id),
