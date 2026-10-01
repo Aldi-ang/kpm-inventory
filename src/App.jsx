@@ -4449,6 +4449,10 @@ const handleGitHubMirror = async () => {
                     </div>
                     <div>
                         <h3 className="text-[var(--shell-ink)] font-black text-2xl uppercase mb-2 kpm-unlock-title">Access Granted</h3>
+                        {/* THE NAME, WITHOUT THE ANIMATION (2026-10-01, his Samsung: "the welcome 'aldi' is gone"). Lite
+                            Mode and Reduce Motion / Samsung's "Remove animations" skip the dot sequence that spells his
+                            name, so this plain box greeted nobody. Same name as the sequence (VaultGate agentName). */}
+                        <p className="text-[var(--shell-ink)] font-mono text-sm uppercase tracking-[0.3em] mb-2">Welcome back, {((profileName || user?.displayName)?.split(' ')[0] || user?.email?.split('@')[0] || 'Agent').toUpperCase()}</p>
                         <p className="text-[color-mix(in_srgb,var(--shell-ink)_40%,transparent)] font-mono text-[10px] uppercase tracking-[0.25em]">Master Vault</p>
                     </div>
                     {/* A single sweep, not a progress bar. Nothing is loading here, so a bar that

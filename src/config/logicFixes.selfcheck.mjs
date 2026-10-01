@@ -9635,5 +9635,16 @@ section('THE PAGES GO UNDER THE HATCH ON A PHONE (2026-10-01)');
      /\.kpm-bay \.deck \{ display: grid; grid-template-columns: minmax\(0, 1fr\) auto minmax\(0, 1fr\);/.test(th) && /\.kpm-sbox \.ddeck \{ display: grid; grid-template-columns: minmax\(0, 1fr\) auto minmax\(0, 1fr\);/.test(th));
 }
 
+/* ── THE PLAIN UNLOCK BOX GREETS HIM BY NAME (2026-10-01, his Samsung: "the welcome 'aldi' is gone") ────────────────────
+   Lite Mode and Reduce Motion / Samsung's "Remove animations" skip the dot sequence that spells the name; the plain box
+   said only ACCESS GRANTED. Built app, 360 @3x, reduced motion: the box reads "WELCOME BACK, ALDI". */
+section('THE PLAIN UNLOCK BOX GREETS HIM BY NAME (2026-10-01)');
+{ const a = code(read('src/App.jsx')).replace(/\r/g, '');
+  const s = a.indexOf('{isUnlocking && !gateIsRich() ? ('), box = s > -1 ? a.slice(s, a.indexOf('kpm-unlock-sweep', s)) : '';
+  ok('the plain box carries "Welcome back, NAME" from the same source as the dot sequence (profile, then Google name, then email)',
+     /Welcome back, \{\(\(profileName \|\| user\?\.displayName\)\?\.split\(' '\)\[0\] \|\| user\?\.email\?\.split\('@'\)\[0\] \|\| 'Agent'\)\.toUpperCase\(\)\}/.test(box) &&
+     /agentName=\{\(profileName \|\| user\?\.displayName\)\?\.split\(' '\)\[0\] \|\| user\?\.email\?\.split\('@'\)\[0\]\}/.test(a));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
