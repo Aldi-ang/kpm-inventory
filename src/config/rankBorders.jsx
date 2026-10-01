@@ -582,11 +582,17 @@ export const FrameFilters = () => {
   useEffect(() => {
     const svg = ref.current;
     if (!svg?.pauseAnimations) return;
-    const sync = () => (document.querySelector('.s-platinum, .s-mythic') ? svg.unpauseAnimations() : svg.pauseAnimations());
+    /* Lite Mode and reduced motion freeze it too - his "lite mode should freeze everything thats heavy" (2026-10-01).
+       `html.lite-mode *` stops CSS animations, but SMIL ignores CSS, so this swirl was the one thing still moving. */
+    const mq = matchMedia('(prefers-reduced-motion: reduce)');
+    const sync = () => (document.querySelector('.s-platinum, .s-mythic') && !mq.matches && !document.documentElement.classList.contains('lite-mode')
+      ? svg.unpauseAnimations() : svg.pauseAnimations());
     sync();
     const mo = new MutationObserver(sync);
     mo.observe(document.body, { childList: true, subtree: true });
-    return () => mo.disconnect();
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    mq.addEventListener('change', sync);
+    return () => { mo.disconnect(); mq.removeEventListener('change', sync); };
   }, []);
   return (
 <svg ref={ref} width="0" height="0" style={{position: 'absolute'}} aria-hidden="true" focusable="false">

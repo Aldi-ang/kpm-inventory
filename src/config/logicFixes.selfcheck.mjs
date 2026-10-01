@@ -9585,9 +9585,14 @@ section('THE RANK-FRAME SWIRL SLEEPS WITHOUT A SWIRLING FRAME (2026-10-01)');
 { const rb = code(read('src/config/rankBorders.jsx')).replace(/\r/g, '');
   const ff = rb.slice(rb.indexOf('export const FrameFilters'), rb.indexOf('const FRAME_HTML'));
   ok('the filters pause unless a Platinum or Mythic frame is in the page, and re-check whenever the page changes',
-     /const sync = \(\) => \(document\.querySelector\('\.s-platinum, \.s-mythic'\) \? svg\.unpauseAnimations\(\) : svg\.pauseAnimations\(\)\);/.test(ff) &&
-     /sync\(\);\s*const mo = new MutationObserver\(sync\);\s*mo\.observe\(document\.body, \{ childList: true, subtree: true \}\);\s*return \(\) => mo\.disconnect\(\);/.test(ff) &&
+     /const sync = \(\) => \(document\.querySelector\('\.s-platinum, \.s-mythic'\) && /.test(ff) && /\? svg\.unpauseAnimations\(\) : svg\.pauseAnimations\(\)\);/.test(ff) &&
+     /sync\(\);\s*const mo = new MutationObserver\(sync\);\s*mo\.observe\(document\.body, \{ childList: true, subtree: true \}\);/.test(ff) &&
      /<svg ref=\{ref\}/.test(ff));
+  /* his "lite mode should freeze everything thats heavy": SMIL ignores the `html.lite-mode *` CSS kill */
+  ok('Lite Mode and reduced motion freeze the swirl too, and switching either re-checks at once',
+     /&& !mq\.matches && !document\.documentElement\.classList\.contains\('lite-mode'\)/.test(ff) &&
+     /mo\.observe\(document\.documentElement, \{ attributes: true, attributeFilter: \['class'\] \}\);/.test(ff) &&
+     /mq\.addEventListener\('change', sync\);/.test(ff) && /mq\.removeEventListener\('change', sync\)/.test(ff));
   ok('the two frames that use them are still the only two (a new swirling frame must join the selector)',
      /\.s-platinum \.cg\{[^}]*filter:url\(#cgWarp\)/.test(rb) && /filter:url\(#myWarp\)/.test(rb.slice(rb.indexOf('.s-mythic'))) &&
      !/filter:url\(#(?!cgWarp|myWarp)/.test(rb));
