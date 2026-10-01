@@ -4856,6 +4856,14 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-bay .deck .pgs { justify-self: start; display: flex; gap: 6px; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
 .kpm-bay .deck .pg { flex: none; }
 .kpm-bay .deck .of { justify-self: end; text-align: right; font: 900 10px/1.35 var(--font-mono); letter-spacing: .1em; color: var(--stone-ink); }
+/* ON A PHONE THE PAGES GO UNDER THE HATCH - the Gudang Pusat box on Fleet & Roster, the same bar and the same collision
+   as .kpm-sbox .ddeck below (his Samsung, 2026-10-01). The hatch keeps the exact middle; the PC keeps one row. */
+@container kpmbay (max-width: 639px) {
+  .kpm-bay .deck { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "hatch hatch" "pgs of"; row-gap: 12px; }
+  .kpm-bay .deck .kpm-hatch { grid-area: hatch; justify-self: center; }
+  .kpm-bay .deck .pgs { grid-area: pgs; }
+  .kpm-bay .deck .of { grid-area: of; }
+}
 /* the crate's box (Fleet & Roster) stands in the van box's place; on the phone, while it is not open, it gives its room
    back - the van box (or the van's tabs) has the place */
 @container kpmbay (max-width: 639px) {
@@ -5205,6 +5213,16 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-sbox .pg { flex: none; min-width: 44px; min-height: 40px; padding: 0 10px; border-radius: 3px; cursor: pointer; background: var(--stone-dark); color: #EFEFEF; border: 2px solid; border-color: #7A7A7A #2E2E2E #2E2E2E #7A7A7A; font: 900 12px/1 var(--font-mono); }
 .kpm-sbox .pg.on { background: #6E6E6E; color: #fff; border-color: #2E2E2E #9A9A9A #9A9A9A #2E2E2E; }
 .kpm-sbox .ddeck .of { justify-self: end; text-align: right; font: 900 10px/1.35 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--stone-ink); }
+/* ON A PHONE THE PAGES GO UNDER THE HATCH (2026-10-01, his Samsung: "page 1 and 2 on the gudang pusat, especially page 2
+   is colliding with the button"). Beside the hatch the page column was 48px at 360 (83px at 430) and the hatch's ring
+   drawing spills ~27px past its own box, so two 44px page buttons never fit. The hatch keeps the exact middle (his v27
+   rule); the pages and the shelf count share the row below it. The PC keeps one row. */
+@container kpmwh (max-width: 699px) {
+  .kpm-sbox .ddeck { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "hatch hatch" "pgs of"; row-gap: 12px; }
+  .kpm-sbox .ddeck .kpm-hatch { grid-area: hatch; justify-self: center; }
+  .kpm-sbox .ddeck .pgs { grid-area: pgs; }
+  .kpm-sbox .ddeck .of { grid-area: of; }
+}
 
 /* the 3D chest */
 .kpm-chest { all: unset; box-sizing: border-box; position: relative; z-index: 1; cursor: pointer; display: grid; justify-items: center; gap: 6px; padding: 4px; border-radius: 12px;

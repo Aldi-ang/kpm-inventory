@@ -9621,5 +9621,19 @@ section('POTATO 7: THE COIN SPINS ON THE GRAPHICS CHIP (2026-10-01)');
      /\.kpm-coin::before    \{ animation: none; transform: translateX\(-54px\); \}/.test(th) && -54 === -18 * 3 && -72 === -24 * 3);
 }
 
+/* ── THE PAGES GO UNDER THE HATCH ON A PHONE (2026-10-01, his Samsung) ───────────────────────────────────────────────
+   *"page 1 and 2 on the gudang pusat, especially page 2 is colliding with the button"*. Beside the hatch the page column
+   was 48px at 360 (two 44px buttons need 94) and the hatch's ring spills ~27px past its box. Lab 360, both boxes: hatch
+   centre 180 = bar centre 180, pages 1+2 fully visible below it, nothing overlapping; the PC keeps one row. */
+section('THE PAGES GO UNDER THE HATCH ON A PHONE (2026-10-01)');
+{ const th = read('src/styles/theme.css').replace(/\r/g, '');
+  const rule = (box, deck, q) => new RegExp(`@container ${q} \\{\\s*\\.${box} \\.${deck} \\{ grid-template-columns: minmax\\(0, 1fr\\) minmax\\(0, 1fr\\); grid-template-areas: "hatch hatch" "pgs of"; row-gap: 12px; \\}\\s*\\.${box} \\.${deck} \\.kpm-hatch \\{ grid-area: hatch; justify-self: center; \\}\\s*\\.${box} \\.${deck} \\.pgs \\{ grid-area: pgs; \\}\\s*\\.${box} \\.${deck} \\.of \\{ grid-area: of; \\}`);
+  ok('Fleet & Roster\'s Gudang box: on a phone the hatch has its own row on the middle, the pages and the count share the row below',
+     rule('kpm-bay', 'deck', 'kpmbay \\(max-width: 639px\\)').test(th));
+  ok('the regional warehouse box: the same', rule('kpm-sbox', 'ddeck', 'kpmwh \\(max-width: 699px\\)').test(th));
+  ok('the PC keeps one row (the three-column bar is untouched)',
+     /\.kpm-bay \.deck \{ display: grid; grid-template-columns: minmax\(0, 1fr\) auto minmax\(0, 1fr\);/.test(th) && /\.kpm-sbox \.ddeck \{ display: grid; grid-template-columns: minmax\(0, 1fr\) auto minmax\(0, 1fr\);/.test(th));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
