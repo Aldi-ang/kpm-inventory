@@ -110,7 +110,11 @@ inJs (G3, 'stock in units he counts in',  'Bks total');
 inJs (G3, 'reorder guarded by stock',     'on the vehicle today');
 inJs (G3, 'next stop',                    'Next stop');
 inJs (G3, 'how many are left today',      'left today');
-check(G3, 'directions opens maps', term.includes('maps/dir/?api=1'));
+/* nextStop.js has two importers since the expedition map (2026-10-02), so the bundler gives it its own chunk:
+   the URL counts when the terminal carries it OR imports the chunk that does */
+const stopChunk = files.find(f => f.startsWith('nextStop-'));
+check(G3, 'directions opens maps', term.includes('maps/dir/?api=1') ||
+  (!!stopChunk && term.includes(stopChunk) && fs.readFileSync(D + stopChunk, 'utf8').includes('maps/dir/?api=1')));
 /* It leaves the app, and an app that leaves cannot finish a sale — so it must open in a new
    tab and must never carry primary weight. */
 check(G3, 'directions opens in a new tab', term.includes('noopener noreferrer'));

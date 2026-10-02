@@ -6,7 +6,7 @@ import {
     ShieldCheck, Globe, Menu, Database, Tag, DollarSign,
     MinusCircle, Maximize2, Search, Trash2, Download, 
     Save, AlertCircle, Upload, Pencil, Folder, TrendingUp, ShieldAlert,
-    Navigation, LocateFixed, Clock, CheckCircle, Settings, ArrowUpCircle, ArrowDownCircle, Activity, User
+    Navigation, LocateFixed, Clock, CheckCircle, Settings, ArrowUpCircle, ArrowDownCircle, Activity, User, Footprints
 } from 'lucide-react';
 
 import L from 'leaflet';
@@ -17,6 +17,9 @@ import { loadBorderCache, saveBorderCache, clearBorderCache } from './utils/bord
 import { revenueOf, debtCredit } from './utils/revenueRule';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
+import { ExpeditionLayer, ExpeditionPanel } from './components/Expedition.jsx';
+import { useWide } from './hooks/useWide';
+import { expedition } from './utils/expedition';
 import MarkerClusterGroup from 'react-leaflet-cluster'; // 🚀 INJECTED SUPERCLUSTER ENGINE
 
 // 🚀 GOOGLE MAPS STYLE: THE SMART AVATAR ENGINE
@@ -1906,6 +1909,20 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const mapRef = useRef(null);
     const [dragPinCoords, setDragPinCoords] = useState(null);
 
+    /* THE EXPEDITION. On by itself once anyone has been seen today; his switch on the control card
+       overrides that. A minute tick keeps "last seen N min ago" honest between Firestore updates. */
+    const [minute, setMinute] = useState(0);
+    useEffect(() => { const t = setInterval(() => setMinute((m) => m + 1), 60000); return () => clearInterval(t); }, []);
+    const team = useMemo(() => expedition(motorists || [], customers || [], transactions || []), [motorists, customers, transactions, minute]); // eslint-disable-line react-hooks/exhaustive-deps
+    const [expOn, setExpOn] = useState(null);
+    const exp = expOn ?? team.some((a) => a.out);
+    const [sel, setSel] = useState(null);
+    const selId = team.some((a) => a.id === sel) ? sel : team[0]?.id;
+    const [focus, setFocus] = useState(false);   // PC: false = frame the whole team, true = frame the picked row
+    const wide = useWide();
+    const pickAgent = (id) => { if (wide && focus && id === selId) setFocus(false); else { setSel(id); setFocus(true); } };
+    useEffect(() => { mapRef.current?.invalidateSize(); }, [exp]);   // the panel came or went: the map changed size
+
     const canAddManualPin = isAdmin === true || user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin';
 
     const [pendingNewStore, setPendingNewStore] = useState(null);
@@ -2181,7 +2198,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const activeStore = selectedStore ? mapPoints.find(s => s.id === selectedStore.id) || selectedStore : null;
 
     return (
-        <div className="absolute inset-0 w-full h-[100dvh] lg:h-full bg-slate-900 overflow-hidden font-sans z-[50] overscroll-none">
+        <div className="absolute inset-0 w-full h-[100dvh] lg:h-full bg-slate-900 overflow-hidden font-sans z-[50] overscroll-none flex flex-col lg:flex-row">
             
             <style>{`
                 body, html { overscroll-behavior-y: none !important; }
@@ -2308,6 +2325,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             {Object.keys(locationTree).sort().map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                     </div>
+                    <button type="button" onClick={() => setExpOn(!exp)} aria-pressed={exp} title={exp ? 'Expedition on - tap to show the shops' : 'Show the expedition'} aria-label="Expedition"
+                        className="kx-toggle p-2 min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 bg-slate-800 rounded-lg border border-slate-700 hover:bg-slate-700 transition-colors text-slate-300 shrink-0 mr-1 flex items-center justify-center">
+                        <Footprints size={18}/>
+                    </button>
                     <button onClick={() => setShowControls(!showControls)} className="p-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors text-white shrink-0">
                         {showControls ? <X size={18}/> : <Menu size={18}/>}
                     </button>
@@ -2367,7 +2388,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             </div>
 
             {/* 🚀 DEDICATED ADD STORE BUTTON */}
-            {!isAddingMode && !editingStoreId && canAddManualPin && (
+            {!exp && !isAddingMode && !editingStoreId && canAddManualPin && (
                 <div className="absolute bottom-[90px] left-[14px] z-[999]">
                     <button 
                         onClick={() => {
@@ -2414,6 +2435,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             {showTierEngine && <TierAutomationEngine db={db} appId={appId} user={user} activeTiers={activeTiers} mapPoints={mapPoints} transactions={transactions} onClose={() => setShowTierEngine(false)} logAudit={logAudit} triggerCapy={triggerCapy} setLocalTierUpdates={setLocalTierUpdates} />}
 
             {/* 🚀 LITE MODE UPGRADE: preferCanvas={true} flattens vector borders to save RAM */}
+            <div className="relative flex-1 min-h-0 min-w-0">
             <MapContainer ref={mapRef} preferCanvas={true} center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
                 <ZoomControl position="bottomright" />
                 <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
@@ -2507,7 +2529,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 })}
 
                 {/* 🚀 THE LEAFLET SUPERCLUSTER ENGINE */}
-                <MarkerClusterGroup
+                {!exp && <MarkerClusterGroup
                     chunkedLoading={true}
                     iconCreateFunction={createCustomClusterIcon}
                     maxClusterRadius={40}
@@ -2524,83 +2546,15 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             isActive={activeStore && activeStore.id === store.id}
                         />
                     ))}
-                </MarkerClusterGroup>
+                </MarkerClusterGroup>}
 
-                {/* 🚀 LIVE AGENT SNAIL FOOTPRINT & RADAR (WITH SPIDERFY ENGINE) 🚀 */}
-                {(() => {
-                    const safeMotorists = motorists || [];
-                    const locationGroups = {};
-                    
-                    // 1. Group agents who are standing in the exact same spot (within ~11 meters)
-                    safeMotorists.forEach(agent => {
-                        if (!agent.currentLocation || !agent.currentLocation.lat) return;
-                        // Use a fixed decimal precision to cluster nearby agents
-                        const locKey = `${agent.currentLocation.lat.toFixed(4)}_${agent.currentLocation.lng.toFixed(4)}`;
-                        if (!locationGroups[locKey]) locationGroups[locKey] = [];
-                        locationGroups[locKey].push(agent);
-                    });
-
-                    return safeMotorists.map(agent => {
-                        if (!agent.currentLocation || !agent.currentLocation.lat) return null;
-                        
-                        const locKey = `${agent.currentLocation.lat.toFixed(4)}_${agent.currentLocation.lng.toFixed(4)}`;
-                        const group = locationGroups[locKey];
-                        const indexInGroup = group.findIndex(a => a.id === agent.id);
-                        const totalInGroup = group.length;
-
-                        // 2. Apply a Spiderfy Mathematical Offset if multiple agents share the same space
-                        let displayLat = agent.currentLocation.lat;
-                        let displayLng = agent.currentLocation.lng;
-
-                        // 🚀 NEW: THE SIDECAR ENGINE
-                        // Check if the agent is standing right on top of a store (within ~15 meters)
-                        const isStandingOnStore = mapPoints.some(store => {
-                            if (!store.latitude || !store.longitude) return false;
-                            const dLat = Math.abs(store.latitude - agent.currentLocation.lat);
-                            const dLng = Math.abs(store.longitude - agent.currentLocation.lng);
-                            return dLat < 0.00015 && dLng < 0.00015;
-                        });
-
-                        if (isStandingOnStore) {
-                            // Push the agent slightly Top-Right so they become a "badge" on the store icon
-                            displayLat += 0.00012; 
-                            displayLng += 0.00012;
-                        } else if (totalInGroup > 1) {
-                            const offsetRadius = 0.00015; // Pushes them out ~15 meters on the map
-                            const angle = (indexInGroup / totalInGroup) * (Math.PI * 2);
-                            displayLat += Math.cos(angle) * offsetRadius;
-                            displayLng += Math.sin(angle) * offsetRadius;
-                        }
-
-                        // 3. Create the pulsing Agent Avatar
-                        // 🚀 DYNAMIC AVATAR ENGINE: Bulletproof Database Key Net + Smart Fallback
-                        const agentPhoto = agent.profileImage || agent.photoURL || agent.photoUrl || agent.profilePic || agent.photo || agent.image || agent.avatar;
-                        
-                        // Generates a clean, professional initials avatar if they haven't uploaded a photo yet
-                        const fallbackAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${agent.name || 'Agent'}&backgroundColor=3b82f6&textColor=ffffff`;
-                        
-                        const finalImageSrc = agentPhoto ? agentPhoto : fallbackAvatar;
-
-                        const agentIcon = L.divIcon({
-                            className: 'agent-live-icon',
-                            html: `<div style="position:relative; z-index: 20000;">
-                                       <div style="background-color: #3b82f6; width: 34px; height: 34px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); display: flex; align-items: center; justify-content: center; animation: pulse 2s infinite; overflow: hidden;">
-                                           <img src="${finalImageSrc}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='${fallbackAvatar}'" />
-                                       </div>
-                                       <div style="position: absolute; bottom: -24px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.2); color: white; font-size: 10px; padding: 2px 8px; border-radius: 6px; font-weight: 900; white-space: nowrap; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">${agent.name?.split(' ')[0] || 'Agent'}</div>
-                                   </div>`,
-                            iconSize: [34, 34],
-                            iconAnchor: [17, 17]
-                        });
-
-                        return (
-                            <React.Fragment key={`tracker-${agent.id}`}>
-                                <Marker position={[displayLat, displayLng]} icon={agentIcon} zIndexOffset={20000} />
-                            </React.Fragment>
-                        );
-                    });
-                })()}
+                {/* THE EXPEDITION (his pick 2026-10-02): every salesman at his last-seen point, and with the
+                    expedition on, today's trail + the march line to his next shop. Replaced the blue
+                    #3b82f6 avatar and its dicebear image call (palette law; an outside request per agent). */}
+                <ExpeditionLayer team={team} sel={selId} focus={focus} wide={wide} bare={!exp} />
             </MapContainer>
+            </div>
+            {exp && <ExpeditionPanel team={team} sel={selId} onPick={pickAgent} wide={wide} />}
 
             {activeStore && (
                 <StoreBottomSheet 

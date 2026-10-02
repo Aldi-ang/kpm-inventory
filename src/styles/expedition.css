@@ -1,0 +1,103 @@
+/* The expedition (src/components/Expedition.jsx), ported from the prototype he picked
+   (A-Brain Raw/2026-10-02-expedition/expedition.html). The MAP half sits on the dark tiles in both
+   themes, so its colours are fixed; the PANEL half reads the theme tokens, so light mode works and
+   gold never lands as text on a light ground (there --gold is near-black). */
+
+/* ---- on the map ---- */
+.kx-mk { background: none; border: 0; }
+.kx-chip { position: relative; width: 36px; height: 48px; display: grid; justify-items: center; align-content: start; }
+.kx-chip b { width: 36px; height: 36px; box-sizing: border-box; border-radius: 50%; display: grid; place-items: center; overflow: hidden;
+  background: linear-gradient(160deg, #E4C98E, #B8893A); color: #2a1d08; font: 900 12px/1 var(--font-mono);
+  border: 3px solid #A39B90; outline: 2px solid #0A0908; }
+.kx-chip b img { width: 100%; height: 100%; object-fit: cover; }
+.kx-chip > i { width: 2px; height: 10px; background: #E4B04A; }
+.kx-chip span { position: absolute; left: 42px; top: 9px; font: 800 10px/1 var(--font-mono); letter-spacing: .1em; color: #E8E4DE;
+  background: #0A0908; border: 1px solid #6A645C; border-radius: 4px; padding: 3px 5px; white-space: nowrap; }
+.kx-chip.sel b { border-color: #E4B04A; }
+.kx-chip.off { opacity: .55; }
+.kx-chip.off > i { background: #6A645C; }
+.kx-chip.dim { opacity: .35; }
+.kx-target { width: 30px; height: 30px; box-sizing: border-box; border-radius: 50%; border: 2px solid #E4B04A; position: relative; animation: kx-ping 1.8s cubic-bezier(.23, 1, .32, 1) infinite; }
+.kx-target::after { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: #E4B04A; }
+@keyframes kx-ping { 0% { box-shadow: 0 0 0 0 rgba(228, 176, 74, .55); } 100% { box-shadow: 0 0 0 14px rgba(228, 176, 74, 0); } }
+.kx-march { animation: kx-flow 5s linear infinite; }
+@keyframes kx-flow { to { stroke-dashoffset: -80; } }   /* 80 = a whole number of both dash patterns (16 and 10) */
+.kx-loc { position: relative; width: 22px; height: 22px; }
+.kx-loc i { width: 22px; height: 22px; box-sizing: border-box; border-radius: 6px 6px 50% 50%; background: #1B1917; border: 2px solid #6A645C;
+  display: grid; place-items: center; font: 900 10px/1 var(--font-mono); font-style: normal; color: #A39B90; }
+.kx-loc.hit i { background: #E4B04A; border-color: #D08A2E; color: #0A0908; }
+.kx-loc.next i { border-color: #E4B04A; color: #E4B04A; }
+.kx-loc span { position: absolute; top: 25px; left: 50%; translate: -50% 0; font: 700 9px/1 var(--font-mono); letter-spacing: .08em; color: #E8E4DE;
+  background: #0A0908; border: 1px solid #3E3A35; border-radius: 3px; padding: 3px 4px; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) { .kx-march, .kx-target { animation: none; } }
+
+/* ---- the panel: phone = under the map, PC = a 400px column on the right ---- */
+.kx-panel { flex: none; max-height: 58%; overflow-y: auto; border-top: 1px solid var(--line-2); background: var(--panel); color: var(--ink);
+  padding: 12px 16px 14px; display: grid; gap: 10px; align-content: start; min-width: 0; font-family: var(--font-body); }
+@media (min-width: 1024px) { .kx-panel { width: 400px; max-height: none; height: 100%; border-top: 0; border-left: 1px solid var(--line-2); } }
+.kx-ph { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.kx-ph b { font: 900 20px/1 var(--font-display); letter-spacing: .1em; text-transform: uppercase; }
+.kx-ph span { font: 700 10px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); }
+.kx-ph em { font-style: normal; color: var(--gold); }
+.kx-empty { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink-muted); }
+
+.kx-av { flex: none; width: 44px; height: 44px; box-sizing: border-box; border-radius: 50%; display: grid; place-items: center; overflow: hidden;
+  background: linear-gradient(160deg, #E4C98E, #B8893A); color: #2a1d08; font: 900 13px/1 var(--font-mono); border: 3px solid var(--line-3); }
+.kx-av.md { width: 40px; height: 40px; }
+.kx-av img { width: 100%; height: 100%; object-fit: cover; }
+.kx-nm { display: block; font: 800 17px/1.05 var(--font-display); letter-spacing: .05em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kx-led { display: flex; align-items: center; gap: 7px; margin-top: 5px; font: 700 10px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); min-width: 0; }
+.kx-led > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kx-led i { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #000; border: 1px solid var(--line-3); }
+.kx-led.go { color: var(--gold); } .kx-led.go i { background: radial-gradient(circle, #fff 0 1px, #E4B04A 2px); border-color: var(--gold); }
+.kx-led.at i { background: radial-gradient(circle, #fff 0 1px, var(--led-warn) 2px); border-color: var(--led-warn); }
+
+/* PC: one row per salesman, like a squad list */
+.kx-rows { display: grid; gap: 8px; }
+.kx-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; width: 100%; padding: 10px 12px; text-align: left; color: inherit; font: inherit;
+  border: 1px solid var(--line-2); border-radius: 12px; background: var(--inset); cursor: pointer; }
+.kx-row.sel { border-color: var(--gold); }
+.kx-row.off { opacity: .6; }
+.kx-mid { min-width: 0; }
+.kx-cells { display: grid; gap: 3px; margin-top: 7px; }
+.kx-cells i { height: 6px; border-radius: 2px; background: var(--line-2); }
+.kx-cells i.on { background: #E4B04A; }
+.kx-cells i.now { background: repeating-linear-gradient(90deg, #D08A2E 0 3px, transparent 3px 5px); }
+.kx-rt { text-align: right; display: grid; gap: 4px; }
+.kx-rt b { font: 900 22px/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.kx-rt small { font: 700 10px/1 var(--font-mono); letter-spacing: .06em; color: var(--ink-dim); white-space: nowrap; }
+.kx-legend { display: grid; gap: 8px; margin-top: 6px; padding: 12px; border: 1px dashed var(--line-2); border-radius: 12px; }
+.kx-legend div { display: flex; align-items: center; gap: 10px; font: 600 12px/1.35 var(--font-body); color: var(--ink-muted); }
+.kx-legend svg { flex: none; }
+.kx-legend b { color: var(--ink); font-weight: 700; }
+
+/* phone: pick one salesman, see his travel card */
+/* four fit across a phone; a fifth scrolls sideways instead of costing a second row of height */
+.kx-pick { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 18px) / 4); gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.kx-pick button { min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--line-3); border-radius: 8px;
+  background: var(--raised); color: var(--ink-muted); cursor: pointer; font: 800 11px/1 var(--font-mono); letter-spacing: .08em; white-space: nowrap;
+  transition: transform 140ms cubic-bezier(.23, 1, .32, 1); -webkit-tap-highlight-color: transparent; }
+.kx-pick button:active { transform: scale(.97); }
+.kx-pick button i { width: 8px; height: 8px; border-radius: 50%; background: #000; border: 1px solid var(--line-3); }
+.kx-pick button[aria-pressed="true"] { background: var(--inset); border-color: var(--gold); color: var(--ink); }
+.kx-pick button[aria-pressed="true"] i { background: radial-gradient(circle, #fff 0 1px, #E4B04A 2px); border-color: var(--gold); }
+.kx-travel { border: 1px solid var(--line-2); border-radius: 14px; background: linear-gradient(180deg, var(--raised), var(--sunk)); padding: 14px; display: grid; gap: 10px; }
+.kx-who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.kx-who > div { min-width: 0; }
+.kx-who small { display: block; font: 700 10px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); margin-top: 4px; }
+.kx-dest small { font: 700 10px/1 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-dim); }
+.kx-dest div { font: 900 30px/.95 var(--font-display); letter-spacing: .02em; text-transform: uppercase; margin-top: 4px; overflow-wrap: anywhere; }
+.kx-pips { display: flex; align-items: center; margin-top: 4px; }
+.kx-pips i { flex: none; width: 18px; height: 18px; box-sizing: border-box; border-radius: 6px 6px 50% 50%; background: var(--raised); border: 2px solid var(--line-3); }
+.kx-pips i.on { background: #E4B04A; border-color: #D08A2E; }
+.kx-pips i.nx { border-color: var(--gold); }
+.kx-pips u { flex: 1; height: 2px; background: var(--line-2); }
+.kx-pips u.on { background: #E4B04A; }
+.kx-pips u.go { background: repeating-linear-gradient(90deg, #E4B04A 0 5px, transparent 5px 9px); }
+.kx-meta3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.kx-meta3 div { border: 1px solid var(--line-2); border-radius: 8px; background: var(--inset); padding: 8px; min-width: 0; }
+.kx-meta3 b { display: block; font: 900 18px/1 var(--font-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kx-meta3 small { font: 700 9px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
+
+/* the toggle on the map's control card */
+.kx-toggle[aria-pressed="true"] { border-color: #E4B04A !important; color: #E4B04A !important; }

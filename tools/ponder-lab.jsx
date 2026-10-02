@@ -33,6 +33,7 @@ import EODReconciliationView from '../src/EODReconciliationView.jsx';
 import AgentProfileView from '../src/AgentProfileView.jsx';
 import StockOpnameView from '../src/StockOpnameView.jsx';
 import JourneyView from '../src/JourneyView.jsx';
+import MapMissionControl from '../src/MapMissionControl.jsx';
 import FleetCanvasManager from '../src/FleetCanvasManager.jsx';
 import ConsignmentFinanceView from '../src/ConsignmentFinanceView.jsx';
 import useTransactionEngine from '../src/hooks/useTransactionEngine.js';
@@ -787,6 +788,44 @@ const LAB_AGENT_TXNS = [
     forensicData: { quarantineCargo: [{ itemName: 'Cello Green 16', qty: 10, returnReason: 'Rusak / Basah' }] } },
 ];
 
+/* ?shell&map — the Map System INSIDE the real shell, mounted exactly as App.jsx mounts it (no wrapper),
+   with the expedition prototype's team (A-Brain Raw/2026-10-02-expedition/expedition.html) placed on
+   the same real roads: the prototype's ground-image pixels turned back into lat/lng with the tile maths
+   of its ground.mjs (zoom 14 around Muntilan). Today's sales, today's round (visitDay = today) and a
+   last-seen point per salesman; Cahyo was last seen yesterday, so he is "Not out today". */
+const LAB_MAP = (() => {
+  const Z = 14, n = 2 ** Z, K = 2048 / 2000, LAT = -7.5808, LNG = 110.2925;
+  const x0 = Math.floor((LNG + 180) / 360 * n) - 3, y0 = Math.floor((1 - Math.asinh(Math.tan(LAT * Math.PI / 180)) / Math.PI) / 2 * n) - 3;
+  const geo = ([x, y]) => {
+    const gx = x0 * 256 + x * K, gy = y0 * 256 + y * K;
+    return { lat: Math.atan(Math.sinh(Math.PI * (1 - 2 * gy / (256 * n)))) * 180 / Math.PI, lng: gx / (256 * n) * 360 - 180 };
+  };
+  const SHOPS = ['Toko Berkah Jaya', 'Warung Sumber Rejeki', 'Toko Makmur', 'Warung Bu Sri', 'Toko Sinar Abadi', 'Warung Pojok', 'Toko Lancar', 'Warung Barokah',
+    'Toko Maju', 'Warung Mbak Yu', 'Toko Sentosa', 'Warung Pak Kumis', 'Toko Rejeki', 'Warung Bu Tini', 'Toko Abadi', 'Warung Sederhana',
+    'Toko Murah', 'Warung Mampir', 'Toko Mulia', 'Warung Tegal', 'Toko Harapan', 'Warung Bu Darmi', 'Toko Amanah', 'Warung Kita',
+    'Toko Bintang', 'Warung Pinggir', 'Toko Jaya', 'Warung Asri', 'Toko Subur', 'Warung Nusantara', 'Toko Indah', 'Warung Bu Yati'];
+  const TEAM = [
+    { id: 'm2', name: 'Budi Santoso', hits: 5, seen: 3, stops: [[500, 600], [440, 425], [322, 386], [240, 282], [170, 345], [95, 560], [62, 720], [80, 930]] },
+    { id: 'm5', name: 'Ari Rahman', hits: 3, seen: 1, stops: [[600, 386], [730, 368], [850, 355], [960, 300], [1080, 262], [1230, 245], [1340, 232], [1450, 170]] },
+    { id: 'm6', name: 'Dewi Wulandari', hits: 6, seen: 12, stops: [[725, 635], [790, 740], [880, 860], [960, 990], [1040, 1120], [1130, 1268], [1205, 1300], [1225, 1450]] },
+    { id: 'm7', name: 'Rini Saputri', hits: 8, seen: 6, stops: [[470, 820], [400, 900], [330, 990], [250, 1080], [330, 1120], [420, 1160], [470, 1250], [475, 1400]] },
+  ];
+  const now = Date.now(), weekday = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+  const customers = [], transactions = [];
+  const motorists = TEAM.map((t, i) => {
+    t.stops.forEach((p, k) => {
+      const g = geo(p);
+      customers.push({ id: `c-${i}-${k}`, name: SHOPS[i * 8 + k], latitude: g.lat, longitude: g.lng, assignedAgent: t.name, visitDay: weekday, status: 'APPROVED' });
+      if (k < t.hits) transactions.push({ id: `tx-${i}-${k}`, customerName: SHOPS[i * 8 + k], agentId: t.id, agentName: t.name, total: 250000, timestamp: { seconds: Math.floor((now - (t.seen + (t.hits - k) * 25) * 60000) / 1000) } });
+    });
+    const here = geo(t.hits ? t.stops[t.hits - 1] : [565, 710]);
+    return { id: t.id, name: t.name, currentLocation: { lat: here.lat, lng: here.lng, timestamp: new Date(now - t.seen * 60000).toISOString() } };
+  });
+  const base = geo([565, 710]);
+  motorists.push({ id: 'm3', name: 'Cahyo Putra', currentLocation: { ...base, timestamp: new Date(now - 26 * 3600000).toISOString() } });
+  return { customers, transactions, motorists };
+})();
+
 function ShellLab() {
   const [dark, setDark] = React.useState(!q.has('light'));
   /* ?shell&agent&tick — every 2.5 s a second RETUR (5 pcs) joins and leaves today's transactions,
@@ -874,7 +913,7 @@ function ShellLab() {
   }, []);
   return (
     <BiohazardTheme
-      activeTab="command_center" setActiveTab={() => {}}
+      activeTab={q.has('map') ? 'map_war_room' : 'command_center'} setActiveTab={() => {}}
       user={{ displayName: 'Lab', email: 'lab@example.com' }}
       appSettings={{}} isAdmin userRole="ADMIN" agentSettings={{}}
       notifications={q.has('bell') ? LAB_BELL_NEEDS : []} onNotificationClick={() => {}} appVersion="lab"
@@ -1095,6 +1134,9 @@ function ShellLab() {
             appSettings={{ companyName: 'KPM INVENTORY', adminDisplayName: 'Rina Wijaya' }}
           />
         </div>
+      ) : q.has('map') ? (
+        <MapMissionControl customers={LAB_MAP.customers} transactions={LAB_MAP.transactions} inventory={[]} db={{}} appId="lab" user={{ uid: 'lab' }}
+          logAudit={() => {}} triggerCapy={() => {}} isAdmin savedHome={null} onSetHome={() => {}} motorists={LAB_MAP.motorists} onNavigateToDirectory={() => {}} />
       ) : q.has('places') ? (
         /* ?shell&places — the Restock Vault desk INSIDE the real shell, wrapped exactly as App.jsx
            wraps it (`activeTab === 'restock_vault'`): the shell's `p-6`, then the `border-4 p-4`

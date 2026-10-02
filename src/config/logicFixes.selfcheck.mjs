@@ -9960,5 +9960,55 @@ section('PHONE SWEEP: REPORTS + LEADERBOARD (2026-10-02)');
      'measured: a bright blue 211x32 button over 104x33 chips');
 }
 
+/* ── THE EXPEDITION MAP (his pick 2026-10-02: B travel card on the phone, A squad list on the PC) ── */
+section('Expedition map');
+{
+  const mp = code(read('src/MapMissionControl.jsx')), ex = code(read('src/components/Expedition.jsx')), es = code(read('src/utils/expedition.js'));
+  ok('salesmen on the map are the gold expedition chip - the blue #3b82f6 avatar and its dicebear call are gone',
+     /<ExpeditionLayer team=\{team\}/.test(mp) && !/dicebear/.test(mp) && !/agent-live-icon/.test(mp) && !/#3b82f6|59, 130, 246/i.test(ex),
+     'palette law; and every agent fired an outside image request');
+  ok('the march line\'s class is a PROP: react-leaflet applies pathOptions with setStyle, which never sets a class',
+     /className="kx-march"/.test(ex) && !/className:\s*'kx-march'/.test(ex),
+     'measured: with the class in pathOptions .kx-march matched 0 paths and the line never flowed');
+  ok('the trail is today\'s SALES - pathHistory (unbounded, read by nothing) is not read', !/pathHistory/.test(es));
+  ok('the map follows its own box (ResizeObserver), not just the window',
+     /new ResizeObserver\(/.test(ex) && /invalidateSize\(\)/.test(ex), 'measured at 1440: grey tiles over half the map, the team framed for a 520 px box');
+
+  const { expedition } = await import('../utils/expedition.js');
+  const NOW = new Date(2026, 9, 2, 14, 0);                       // a Friday, 14:00 local
+  const at = (h, m) => ({ seconds: Math.floor(new Date(2026, 9, 2, h, m).getTime() / 1000) });
+  const iso = (d, h, m) => new Date(2026, 9, d, h, m).toISOString();
+  const shops = [
+    { name: 'TOKO A', latitude: -7.580, longitude: 110.290, assignedAgent: 'Budi Santoso', visitDay: 'Friday' },
+    { name: 'TOKO B', latitude: -7.585, longitude: 110.295, assignedAgent: 'budi santoso ', visitDay: 'Friday' },
+    { name: 'TOKO C', latitude: -7.600, longitude: 110.300, assignedAgent: 'Budi Santoso', visitFreq: 7 },
+    { name: 'TOKO D', latitude: -7.590, longitude: 110.296, assignedAgent: 'Budi Santoso', visitDay: 'Friday' },
+    { name: 'TOKO X', latitude: -7.570, longitude: 110.280, assignedAgent: 'Budi Santoso', visitDay: 'Monday' },
+    { name: 'TOKO Z', latitude: -7.571, longitude: 110.281, assignedAgent: 'Budi Santosa', visitDay: 'Friday' },
+  ];
+  const team = expedition([
+    { id: 'm2', name: 'Budi Santoso', currentLocation: { lat: -7.5851, lng: 110.2951, timestamp: iso(2, 13, 55) } },
+    { id: 'm3', name: 'Cahyo Putra', currentLocation: { lat: -7.58, lng: 110.29, timestamp: iso(1, 17, 0) } },
+    { id: 'master_owner', name: 'Master HQ', currentLocation: { lat: -7.58, lng: 110.29, timestamp: iso(2, 13, 0) } },
+  ], shops, [
+    { agentId: 'm2', customerName: 'TOKO A', timestamp: at(9, 0) },
+    { agentId: 'm2', customerName: 'TOKO B (Retail)', timestamp: at(13, 50) },
+    { agentId: 'm2', customerName: 'TOKO A', timestamp: at(11, 0) },
+    { agentId: 'm2', customerName: 'TOKO D', type: 'RETURN', timestamp: at(12, 0) },
+    { agentId: 'm2', customerName: 'TOKO C', date: '2026-10-01' },
+    { agentId: 'm9', customerName: 'TOKO D', timestamp: at(10, 0) },
+  ], NOW);
+  const b = team[0], c = team[1];
+  ok('the boss\'s own pings are not a salesman; whoever was seen today is listed first',
+     team.length === 2 && b?.id === 'm2' && c?.id === 'm3', JSON.stringify(team.map((t) => t.id)));
+  ok('today\'s trail: his own SALES today, oldest first, one stop per shop (a return, yesterday, a teammate do not count)',
+     b.done.map((d) => d.name).join() === 'TOKO A,TOKO B', b.done.map((d) => d.name).join());
+  ok('his round = his own shops due today, exact name ("Budi Santosa" is another man), nearest-first from where he was seen',
+     b.ahead.map((d) => d.name).join() === 'TOKO D,TOKO C' && b.of === 4 && b.next?.name === 'TOKO D', `${b.ahead.map((d) => d.name).join()} of ${b.of}`);
+  ok('5 min ago and 15 m from his last sale = still AT that shop; 550 m to the next one',
+     b.state === 'at' && b.mins === 5 && Math.abs(b.metresToNext - 550) < 30, `${b.state} ${b.mins} min ${b.metresToNext} m`);
+  ok('seen yesterday = not out today, whatever his last point', c.state === 'off' && c.out === false && c.done.length === 0, c.state);
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
