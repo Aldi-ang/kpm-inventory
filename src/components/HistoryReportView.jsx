@@ -407,7 +407,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                         <p className="text-[var(--ink-muted)] text-[10px] font-mono uppercase tracking-widest">Filter dates & extract deep historical records</p>
                     </div>
                     <div className="z-10 flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
-                        <select value={rangeType} onChange={e=>setRangeType(e.target.value)} className="bg-[var(--raised)] border border-[var(--line)] text-[var(--ink)] p-3 rounded-xl font-bold uppercase text-[10px] tracking-widest outline-none">
+                        <select value={rangeType} onChange={e=>setRangeType(e.target.value)} className="bg-[var(--raised)] border border-[var(--line)] text-[var(--ink)] p-3 min-h-11 rounded-xl font-bold uppercase text-[10px] tracking-widest outline-none">
                             <option value="daily">Daily</option>
                             <option value="weekly">Weekly</option>
                             <option value="monthly">Monthly</option>
@@ -476,16 +476,18 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
                      <style>{` @media print { .print-container { zoom: ${printScale / 100} !important; -moz-transform: scale(${printScale / 100}); -moz-transform-origin: top left; } } `}</style>
 
-                     <div className="print-container bg-[var(--raised)] dark:bg-[var(--raised)] dark:print:bg-[var(--raised)] p-8 rounded-2xl shadow-xl border dark:border-[var(--line)] print:shadow-none print:border-none print:p-0">
+                     <div className="print-container bg-[var(--raised)] dark:bg-[var(--raised)] dark:print:bg-[var(--raised)] p-4 md:p-8 rounded-2xl shadow-xl border dark:border-[var(--line)] print:shadow-none print:border-none print:p-0">
                          {/* MACRO VIEW: GLOBAL STATS */}
-                         <div className="flex justify-between items-end mb-8 print:mb-4 border-b-2 border-[var(--accent-edge)] pb-4 print:pb-2">
+                         {/* Phone: the title, then the revenue under it - side by side the revenue ran off the screen and
+                             the whole page slid sideways. md and the printed sheet (A4 is ~718 px, under md) keep the row. */}
+                         <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-end md:gap-0 print:flex-row print:justify-between print:items-end print:gap-0 mb-8 print:mb-4 border-b-2 border-[var(--accent-edge)] pb-4 print:pb-2">
                              <div>
                                  <h1 className="text-3xl print:text-xl font-bold text-[var(--ink)] dark:text-[var(--ink)] dark:print:text-[var(--ink)] uppercase tracking-tight">
                                      {isFieldAgent ? 'My Performance' : selectedAgent ? `${selectedAgent}'s Performance` : selectedRegion ? `${selectedRegion} Operations` : 'Global Master Analytics'}
                                  </h1>
                                  <p className="text-[var(--ink-muted)] dark:print:text-[var(--ink-muted)] font-mono text-sm print:text-[10px] mt-1 uppercase">{rangeType} Recap • {new Date(targetDate).toLocaleDateString()}</p>
                              </div>
-                             <div className="text-right"><p className="text-xs print:text-[10px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Context Revenue</p><h2 className="text-4xl print:text-2xl font-bold text-[var(--verified)] dark:print:text-[var(--verified)]">{formatRupiah(stats.totalRev)}</h2></div>
+                             <div className="md:text-right print:text-right"><p className="text-xs print:text-[10px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Context Revenue</p><h2 className="text-3xl md:text-4xl print:text-2xl [overflow-wrap:anywhere] font-bold text-[var(--verified)] dark:print:text-[var(--verified)]">{formatRupiah(stats.totalRev)}</h2></div>
                          </div>
                          
                          <div className="grid grid-cols-1 md:grid-cols-3 print:grid-cols-3 gap-4 md:gap-6 print:gap-2 mb-8 print:mb-4">
@@ -497,15 +499,15 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                          <div className="mb-8 print:mb-0">
                              <h3 className="font-bold text-lg print:text-sm mb-4 print:mb-2 text-[var(--ink)] dark:text-[var(--ink)] dark:print:text-[var(--ink)] flex items-center gap-2"><Package size={20} className="print:w-4 print:h-4 text-[var(--accent-ink)]"/> Product Performance</h3>
                              <div className="overflow-x-auto pb-2">
-                                 <table className="w-full text-sm print:text-[10px] text-left border-collapse min-w-[450px]">
+                                 <table className="w-full text-sm print:text-[10px] text-left border-collapse">
                                     <thead className="text-[var(--ink-muted)] border-b-2 border-[var(--line-2)] dark:border-[var(--line)] dark:print:border-[var(--line-2)]">
-                                        <tr><th className="py-2 print:py-1 w-1/2">Product Name</th><th className="py-2 print:py-1 text-right pr-6 w-1/4">Qty (Bks)</th><th className="py-2 print:py-1 text-right w-1/4">Revenue</th></tr>
+                                        <tr><th className="py-2 print:py-1 w-1/2">Product Name</th><th className="py-2 print:py-1 text-right pr-3 md:pr-6 print:pr-6 w-1/4">Qty (Bks)</th><th className="py-2 print:py-1 text-right w-1/4">Revenue</th></tr>
                                     </thead>
                                     <tbody className="divide-y divide-[var(--line)] dark:divide-[var(--line)] dark:print:divide-[var(--line)]">
                                         {Object.entries(stats.items).sort((a,b) => b[1].val - a[1].val).map(([name, data]) => (
                                             <tr key={name} className="hover:bg-[var(--raised)] dark:hover:bg-[var(--raised)] transition-colors">
                                                 <td className="py-3 print:py-1.5 font-bold text-[var(--ink)] dark:text-[var(--ink)] dark:print:text-[var(--ink)] uppercase text-xs">{name}</td>
-                                                <td className="py-3 print:py-1.5 text-right pr-6 text-[var(--ink-muted)] dark:text-[var(--ink-muted)] dark:print:text-[var(--ink)] font-mono">{data.qty}</td>
+                                                <td className="py-3 print:py-1.5 text-right pr-3 md:pr-6 print:pr-6 text-[var(--ink-muted)] dark:text-[var(--ink-muted)] dark:print:text-[var(--ink)] font-mono">{data.qty}</td>
                                                 <td className="py-3 print:py-1.5 text-right font-bold text-[var(--verified)]">{formatRupiah(data.val)}</td>
                                             </tr>
                                         ))}
@@ -529,9 +531,9 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                              {/* Accordion Header */}
                                              <button 
                                                 onClick={() => setExpandedAgent(isExpanded ? null : agent.name)}
-                                                className={`w-full p-4 flex items-center justify-between text-left focus:outline-none ${isFieldAgent ? 'cursor-default pointer-events-none' : ''}`}
+                                                className={`w-full p-4 flex flex-wrap gap-y-2 items-center justify-between text-left focus:outline-none ${isFieldAgent ? 'cursor-default pointer-events-none' : ''}`}
                                              >
-                                                 <div className="flex items-center gap-4">
+                                                 <div className="flex items-center gap-4 min-w-0">
                                                      {agentProfile.photoURL ? (
                                                          <img src={agentProfile.photoURL} className="w-12 h-12 rounded-full object-cover border-2 border-[var(--line-2)] dark:border-[var(--line)] shrink-0" alt={agent.name} />
                                                      ) : (
@@ -540,11 +542,11 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                          </div>
                                                      )}
                                                      <div>
-                                                         <h4 className="font-bold text-lg dark:text-[var(--ink)] leading-none mb-1">{agent.name}</h4>
+                                                         <h4 className="font-bold text-lg dark:text-[var(--ink)] leading-none mb-1 break-words">{agent.name}</h4>
                                                          <p className="text-[10px] text-[var(--ink-muted)] uppercase tracking-widest">{agent.count} Receipts</p>
                                                      </div>
                                                  </div>
-                                                 <div className="flex items-center gap-6">
+                                                 <div className="flex items-center gap-6 shrink-0">
                                                      <div className="text-right">
                                                          <p className="text-[10px] text-[var(--ink-muted)] uppercase tracking-widest font-bold mb-0.5">Agent Total</p>
                                                          <p className={`font-black text-lg ${agent.total < 0 ? 'text-[var(--danger-text)]' : 'text-[var(--verified)]'}`}>{formatRupiah(agent.total)}</p>
@@ -804,12 +806,15 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="p-4 md:p-6 overflow-x-auto">
-                                        <table className="w-full text-sm text-left min-w-[600px]">
-                                            <thead className="bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--ink-muted)] uppercase text-[10px] font-bold tracking-widest">
+                                    {/* Under lg every sale is a card: date | amount, type | the keys, then the details full
+                                        width - the same grid as the competitor table. 632 px in a 372 px box hid
+                                        the amount and the keys behind a sideways swipe. */}
+                                    <div className="p-4 md:p-6 lg:overflow-x-auto">
+                                        <table className="w-full text-sm text-left block lg:table lg:min-w-[600px]">
+                                            <thead className="hidden lg:table-header-group bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--ink-muted)] uppercase text-[10px] font-bold tracking-widest">
                                                 <tr><th className="p-3 rounded-l-lg">Date / Time</th><th className="p-3">Type</th><th className="p-3">Details</th><th className="p-3 text-right">Amount</th><th className="p-3 rounded-r-lg text-center">Action</th></tr>
                                             </thead>
-                                            <tbody className="divide-y divide-[var(--line)] dark:divide-[var(--line)]">
+                                            <tbody className="block lg:table-row-group divide-y divide-[var(--line)] dark:divide-[var(--line)]">
                                                 {cObj.history.map(t => {
                                                     // 🚀 FORENSIC BADGES
                                                     const isRetur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
@@ -817,9 +822,9 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                     const isIouFulfill = t.paymentType === 'IOU Fulfillment';
 
                                                     return (
-                                                    <tr key={t.id} className="hover:bg-[var(--raised)] dark:hover:bg-[var(--panel)] transition-colors">
-                                                        <td className="p-3 font-mono text-[var(--ink-muted)] dark:text-[var(--ink-muted)] text-xs font-bold">{t.date}<br/><span className="text-[10px] opacity-70">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span></td>
-                                                        <td className="p-3">
+                                                    <tr key={t.id} className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-2 py-3 lg:table-row lg:py-0 hover:bg-[var(--raised)] dark:hover:bg-[var(--panel)] transition-colors">
+                                                        <td className="col-start-1 row-start-1 lg:p-3 font-mono text-[var(--ink-muted)] dark:text-[var(--ink-muted)] text-xs font-bold">{t.date}<br/><span className="text-[10px] opacity-70">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span></td>
+                                                        <td className="col-start-1 row-start-2 self-center lg:p-3">
                                                             {isRetur ? (
                                                                 <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-[var(--danger-well)] text-[var(--danger-text)] border border-[var(--danger)]">RETUR</span>
                                                             ) : isExchange ? (
@@ -832,7 +837,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                                 <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-[var(--verified-fill)] text-[var(--verified)] border border-[var(--line-2)]">SALE</span>
                                                             )}
                                                         </td>
-                                                        <td className="p-3 text-[var(--ink)] dark:text-[var(--ink-muted)] text-xs font-bold leading-relaxed max-w-[250px] break-words uppercase">
+                                                        <td className="col-span-2 row-start-3 lg:col-span-1 lg:p-3 text-[var(--ink)] dark:text-[var(--ink-muted)] text-xs font-bold leading-relaxed lg:max-w-[250px] break-words uppercase">
                                                             {t.type === 'CONSIGNMENT_PAYMENT' ? (
                                                                 <div className="space-y-1">
                                                                     {(t.itemsPaid || []).concat(t.itemsReturned || [], t.itemsRemaining || []).reduce((acc, curr) => {
@@ -851,11 +856,11 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                             {t.paymentType === 'Titip' && <span className="block mt-1 text-[11px] text-[var(--accent-ink)] tracking-widest border border-[var(--accent-edge)] w-fit px-1 rounded">(CONSIGNMENT)</span>}
                                                             {t.paymentType !== 'Titip' && t.paymentType !== 'Cash' && t.paymentType && !isExchange && !isIouFulfill && <span className="block mt-1 text-[11px] text-[var(--ink)] tracking-widest">({t.paymentType})</span>}
                                                         </td>
-                                                        <td className={`p-3 text-right font-black ${isRetur && (t.amountPaid || t.total) > 0 ? 'text-[var(--danger-text)]' : 'text-[var(--verified)]'}`}>
+                                                        <td className={`col-start-2 row-start-1 lg:p-3 text-right font-black ${isRetur && (t.amountPaid || t.total) > 0 ? 'text-[var(--danger-text)]' : 'text-[var(--verified)]'}`}>
                                                             {isRetur && (t.amountPaid || t.total) > 0 ? '-' : ''}{formatRupiah(t.amountPaid || t.total)}
                                                         </td>
-                                                        <td className="p-3 text-center">
-                                                            <div className="flex justify-center gap-2">
+                                                        <td className="col-start-2 row-start-2 lg:p-3 text-center">
+                                                            <div className="flex justify-end lg:justify-center gap-2">
                                                                 {t.deliveryProof && <button onClick={() => setViewingPhoto(t.deliveryProof)} className="p-2 bg-[var(--verified-fill)] dark:bg-[var(--verified-fill)] text-[var(--verified)] dark:text-[var(--verified)] hover:bg-[var(--verified-fill)] rounded-lg transition-colors"><Camera size={14}/></button>}
                                                                 <button onClick={() => setViewingReceipt(t)} className="p-2 bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--ink-muted)] dark:text-[var(--ink-muted)] hover:text-[var(--accent-ink)] rounded-lg transition-colors"><FileText size={14}/></button>
                                                                 {isAdmin && <button onClick={() => setEditingTrans({ ...t, __before: t })} className="p-2 bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--ink-muted)] dark:text-[var(--ink-muted)] hover:text-[var(--ink)] rounded-lg transition-colors"><Pencil size={14}/></button>}

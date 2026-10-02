@@ -80,11 +80,13 @@ export default function ProductPerformancePanel({ db, appId, userId, inventory =
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                {/* Phone: two by two, each 44 tall with an 11 px label - in one wrapping row they were 29 tall and
+                    "This year" fell onto a line of its own. */}
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:shrink-0 sm:flex-wrap">
                     {RANGES.map(r => (
                         <button key={r} type="button" onClick={() => setRange(r)}
                             data-ponder={`range:${r}`}
-                            className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-colors
+                            className={`min-h-11 sm:min-h-0 px-3 py-1.5 rounded-lg border text-[11px] sm:text-[10px] font-black uppercase tracking-widest transition-colors
                                         ${range === r ? 'border-orange text-ink bg-raised' : 'border-line-2 text-ink-muted hover:text-ink'}`}>
                             {LABEL[r]}
                         </button>

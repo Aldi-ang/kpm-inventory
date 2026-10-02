@@ -93,8 +93,8 @@ export default function HallOfFameView({ motorists = [], transactions = [], rpgD
                                 <div className="w-16 h-16 rounded-full bg-black border-[3px] flex items-center justify-center overflow-hidden shadow-lg" style={{ borderColor: rankHex }}>
                                     {agent.profileImage ? <img src={agent.profileImage} className="w-full h-full object-cover"/> : <User size={32} className="opacity-50" style={{ color: rankHex }} />}
                                 </div>
-                                <div>
-                                    <h3 className="font-black text-white text-lg uppercase tracking-wider truncate max-w-[150px]">{agent.name}</h3>
+                                <div className="min-w-0">
+                                    <h3 className="font-black text-white text-lg uppercase tracking-wider break-words">{agent.name}</h3>
                                     <p className="text-[10px] font-black uppercase tracking-widest flex items-center gap-1" style={{ color: rankHex }}>
                                         {agent.currentTier?.logo ? <img src={agent.currentTier.logo} className="w-3 h-3 object-contain"/> : <Star size={10}/>} 
                                         {agent.currentTier?.name}
@@ -115,11 +115,11 @@ export default function HallOfFameView({ motorists = [], transactions = [], rpgD
                             <div className="grid grid-cols-2 gap-2 mb-4">
                                 <div className="bg-black/30 p-2 rounded border border-slate-800/50">
                                     <p className="text-[11px] text-slate-400 uppercase font-black tracking-widest mb-1">Total Omset</p>
-                                    <p className="text-xs font-bold text-emerald-400">Rp {new Intl.NumberFormat('id-ID', { notation: "compact", maximumFractionDigits: 1 }).format(agent.totalOmset)}</p>
+                                    <p className="text-xs font-bold text-amber-400">Rp {new Intl.NumberFormat('id-ID', { notation: "compact", maximumFractionDigits: 1 }).format(agent.totalOmset)}</p>
                                 </div>
                                 <div className="bg-black/30 p-2 rounded border border-slate-800/50">
                                     <p className="text-[11px] text-slate-400 uppercase font-black tracking-widest mb-1">Transactions</p>
-                                    <p className="text-xs font-bold text-blue-400">{agent.totalTransactions} closed</p>
+                                    <p className="text-xs font-bold text-white">{agent.totalTransactions} closed</p>
                                 </div>
                             </div>
 

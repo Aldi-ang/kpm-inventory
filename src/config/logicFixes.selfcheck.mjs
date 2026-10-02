@@ -7312,7 +7312,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      (c.match(/min-h-\[44px\] lg:min-h-0 text-sm rounded border border-\[var\(--line\)\] bg-\[var\(--raised\)\] text-\[var\(--ink\)\]/g) || []).length === 5 &&
      /bg-\[var\(--raised\)\] hover:bg-\[var\(--gold\)\] text-\[var\(--ink\)\] hover:text-\[var\(--gold-ink\)\] rounded-xl/.test(c),
      'gold-ink on raised was black on near-black until hover; a bare input is white in dark mode');
-  ok('THE SIDEWAYS RATCHET: no app table under lg may carry a fixed min-width — only the two Reports tables still do, and no new one may join them',
+  ok('THE SIDEWAYS RATCHET: no app table under lg may carry a fixed min-width — the two Reports tables were the last, fixed 2026-10-02',
      (() => {
        const files = fs.readdirSync('src').filter((f) => f.endsWith('.jsx')).map((f) => 'src/' + f)
          .concat(fs.readdirSync('src/components').filter((f) => f.endsWith('.jsx')).map((f) => 'src/components/' + f));
@@ -7323,9 +7323,9 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
            if (/(^|\s)min-w-\[(\d{3,4})px\]/.test(m[1]) && !/(sm|md|lg):min-w-\[/.test(m[1])) bad.push(f);
          }
        }
-       return bad.length <= 2 && bad.every((f) => f === 'src/components/HistoryReportView.jsx');
+       return bad.length === 0;
      })(),
-     'his rule 2026-09-18: "sideways swipe is inconvenience for phone so make sure that most of the segment doesnt have that" — HistoryReportView.jsx:500 and :808 are the Reports sweep day, not a licence');
+     'his rule 2026-09-18: "sideways swipe is inconvenience for phone so make sure that most of the segment doesnt have that"');
   ok('theme: the key rises from its keyframe, not from its base — Lite Mode\'s 0.001 s jump lands on a visible row',
      /\.kpm-key \{ position: relative; border-color: var\(--line-2\);/.test(th) && /animation: kpmKeyRise 280ms cubic-bezier\(\.23, 1, \.32, 1\) both/.test(th) &&
      /@keyframes kpmKeyRise \{ from \{ opacity: 0; translate: 0 10px; \} \}/.test(th) && !/\.kpm-key \{[^}]*opacity: 0/.test(th) &&
@@ -9918,6 +9918,38 @@ section('THE TWO-PART BELL: NEEDS YOU / MISSED, EVERY STRIP FADES (2026-10-02)')
      !/PROTOCOL ALERT|last_usb_backup/.test(capy));
   ok('rules draft: a person reads and writes only their own missed_log doc',
      /match \/missed_log\/\{profileId\} \{\s*allow read, write: if isSalesman\(bossUid\) && getEmployeeProfile\(\)\.get\('agentId', ''\) == profileId;\s*\}/.test(rules));
+}
+
+section('PHONE SWEEP: REPORTS + LEADERBOARD (2026-10-02)');
+{ const hr = code(read('src/components/HistoryReportView.jsx')).replace(/\r/g, ''), pp = code(read('src/components/ProductPerformancePanel.jsx')).replace(/\r/g, '');
+  const hf = code(read('src/HallOfFameView.jsx')).replace(/\r/g, '');
+  ok('Reports analytics on the phone: the title stacks over the revenue; md and the printed A4 sheet (~718 px, under md) keep the row',
+     /className="flex flex-col gap-3 md:flex-row md:justify-between md:items-end md:gap-0 print:flex-row print:justify-between print:items-end print:gap-0 mb-8/.test(hr) &&
+     /<div className="md:text-right print:text-right"><p className="text-xs print:text-\[10px\][^"]*">Context Revenue/.test(hr) && /dark:print:bg-\[var\(--raised\)\] p-4 md:p-8 rounded-2xl/.test(hr),
+     'measured 2026-10-02: "Rp 14.625.0" ran off a 390 phone and the whole page slid sideways (390 < 441)');
+  ok('the product table has no fixed width: Revenue is on the phone screen, not behind a swipe; print keeps its 24 px qty gap',
+     /<table className="w-full text-sm print:text-\[10px\] text-left border-collapse">/.test(hr) && !/min-w-\[450px\]/.test(hr) &&
+     (hr.match(/text-right pr-3 md:pr-6 print:pr-6/g) || []).length === 2,
+     'measured: 450 px in a 308 px box, 8 cells hidden');
+  ok('the store ledger is a card per sale under lg (date | amount, type | keys, details), a table on the desk',
+     /<div className="p-4 md:p-6 lg:overflow-x-auto">/.test(hr) && /<table className="w-full text-sm text-left block lg:table lg:min-w-\[600px\]">/.test(hr) &&
+     /<thead className="hidden lg:table-header-group/.test(hr) && /<tbody className="block lg:table-row-group/.test(hr) &&
+     /<tr key=\{t\.id\} className="grid grid-cols-\[1fr_auto\] gap-x-3 gap-y-2 py-3 lg:table-row lg:py-0/.test(hr) &&
+     /"col-start-1 row-start-1 lg:p-3 font-mono/.test(hr) && /"col-start-1 row-start-2 self-center lg:p-3"/.test(hr) &&
+     /"col-span-2 row-start-3 lg:col-span-1 lg:p-3 [^"]*lg:max-w-\[250px\]/.test(hr) && /`col-start-2 row-start-1 lg:p-3 text-right/.test(hr) &&
+     /"col-start-2 row-start-2 lg:p-3 text-center">\s*<div className="flex justify-end lg:justify-center gap-2">/.test(hr),
+     'measured: 632 px in a 372 px box - the amount and the keys were behind a sideways swipe');
+  ok('agent roster row wraps on the phone: the name shrinks and breaks, the total keeps its width',
+     /p-4 flex flex-wrap gap-y-2 items-center justify-between text-left/.test(hr) && /"flex items-center gap-4 min-w-0"/.test(hr) &&
+     /"flex items-center gap-6 shrink-0"/.test(hr) && /leading-none mb-1 break-words">\{agent\.name\}/.test(hr));
+  ok('the four period keys: two by two on the phone, 44 tall, 11 px; one row from sm',
+     /<div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:shrink-0 sm:flex-wrap">/.test(pp) &&
+     /min-h-11 sm:min-h-0 px-3 py-1\.5 rounded-lg border text-\[11px\] sm:text-\[10px\]/.test(pp),
+     'measured: 29 px tall, "This year" alone on a second line');
+  ok('Leaderboard: names wrap (never cut), money amber and the count white on its always-dark sheet - no green, no blue',
+     /<div className="min-w-0">\s*<h3 className="font-black text-white text-lg uppercase tracking-wider break-words">\{agent\.name\}/.test(hf) &&
+     !/truncate/.test(hf) && !/(emerald|blue|green|cyan|teal|indigo|sky)-\d/.test(hf) && /text-amber-400">Rp /.test(hf),
+     '"SARI WULAN..." for SARI WULANDARI on the phone AND the desk; the sheet stays black in light mode too');
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
