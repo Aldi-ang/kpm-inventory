@@ -2303,7 +2303,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 <div className="bg-slate-900/95 backdrop-blur-md rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)] border border-slate-700 p-1 pointer-events-auto flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1 min-w-0 px-2">
                         <MapPin size={16} className="text-orange-500 shrink-0"/>
-                        <select value={selectedRegion} onChange={(e) => { setSelectedRegion(e.target.value); setSelectedCity("All"); }} className="w-full bg-transparent text-sm font-bold text-white outline-none py-1.5 cursor-pointer truncate appearance-none">
+                        <select value={selectedRegion} onChange={(e) => { setSelectedRegion(e.target.value); setSelectedCity("All"); }} className="w-full bg-transparent text-sm font-bold text-white outline-none py-1.5 min-h-11 lg:min-h-0 cursor-pointer truncate appearance-none">
                             <option value="All">All Regions</option>
                             {Object.keys(locationTree).sort().map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
@@ -2315,10 +2315,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
                 <div className={`transition-all duration-300 origin-top bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl pointer-events-auto overflow-y-auto custom-scrollbar flex flex-col gap-2 ${showControls ? 'opacity-100 scale-y-100 max-h-[60vh] p-3' : 'opacity-0 scale-y-0 max-h-0 p-0 border-none'}`}>
                     <div className="flex flex-col gap-1 bg-black/40 p-2 rounded-xl border border-slate-700">
-                        <button onClick={toggleAllTiers} className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${filterTier.length === activeTiers.length ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>Show All Tiers</button>
+                        <button onClick={toggleAllTiers} className={`px-3 py-2 min-h-11 lg:min-h-0 rounded-lg text-xs font-bold transition-all ${filterTier.length === activeTiers.length ? 'bg-amber-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>Show All Tiers</button>
                         <div className="grid grid-cols-2 gap-1 mt-1">
                             {activeTiers.map(tier => (
-                                <button key={tier.id} onClick={() => toggleTierFilter(tier.id)} className={`px-2 py-2 rounded-lg text-[10px] font-bold flex justify-center items-center gap-1.5 transition-all ${filterTier.includes(tier.id) ? 'bg-slate-700 text-white shadow-inner border border-slate-500' : 'text-slate-400 hover:bg-slate-800 opacity-60'}`}>
+                                <button key={tier.id} onClick={() => toggleTierFilter(tier.id)} className={`px-2 py-2 min-h-11 lg:min-h-0 rounded-lg text-[11px] lg:text-[10px] font-bold flex justify-center items-center gap-1.5 transition-all ${filterTier.includes(tier.id) ? 'bg-slate-700 text-white shadow-inner border border-slate-500' : 'text-slate-400 hover:bg-slate-800 opacity-60'}`}>
                                     {tier.iconType === 'image' ? <img src={tier.value} className="w-3 h-3 rounded-full"/> : <span>{String(tier.value || '')}</span>}{String(tier.label || '')}
                                 </button>
                             ))}

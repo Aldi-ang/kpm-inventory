@@ -4160,6 +4160,8 @@ html.lite-mode .kpm-hazard { animation: none; opacity: 1; }
 .kpm-safety-lamp { display: inline-flex; align-items: center; gap: var(--s2);
   min-height: 32px; padding: 0; background: transparent; border: 0; cursor: pointer;
   color: var(--ink-muted); transition: color 140ms cubic-bezier(.2,.8,.3,1); }
+/* a finger, not a pointer: each lamp's hint is one tap, and at 32 px the tap landed on its neighbour */
+@media (max-width: 1023px) { .kpm-safety-lamp { min-height: 44px; min-width: 44px; } }
 .kpm-safety-lamp:hover { color: var(--ink); }
 .kpm-safety-lamp:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: 2px; }
 .kpm-lamp-dot { display: inline-block; width: 9px; height: 9px; flex: 0 0 9px;

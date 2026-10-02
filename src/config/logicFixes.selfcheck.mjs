@@ -9950,6 +9950,14 @@ section('PHONE SWEEP: REPORTS + LEADERBOARD (2026-10-02)');
      /<div className="min-w-0">\s*<h3 className="font-black text-white text-lg uppercase tracking-wider break-words">\{agent\.name\}/.test(hf) &&
      !/truncate/.test(hf) && !/(emerald|blue|green|cyan|teal|indigo|sky)-\d/.test(hf) && /text-amber-400">Rp /.test(hf),
      '"SARI WULAN..." for SARI WULANDARI on the phone AND the desk; the sheet stays black in light mode too');
+  const th = read('src/styles/theme.css'), mp = code(read('src/MapMissionControl.jsx')).replace(/\r/g, '');
+  ok('Command Center backup lamps are 44 under lg (each one\'s hint is a tap); the desk keeps 32',
+     /@media \(max-width: 1023px\) \{ \.kpm-safety-lamp \{ min-height: 44px; min-width: 44px; \} \}/.test(th) && /\.kpm-safety-lamp \{[^}]*min-height: 32px;/.test(th),
+     'measured: CLOUD 60x32, USB 43x32, SAVE POINT 103x32 side by side');
+  ok('map menu: Show All Tiers lights amber, not blue; it, the tier chips and the region box are 44 under lg',
+     /min-h-11 lg:min-h-0 rounded-lg text-xs font-bold transition-all \$\{filterTier\.length === activeTiers\.length \? 'bg-amber-600 text-white'/.test(mp) &&
+     /px-2 py-2 min-h-11 lg:min-h-0 rounded-lg text-\[11px\] lg:text-\[10px\] font-bold/.test(mp) && /outline-none py-1\.5 min-h-11 lg:min-h-0 cursor-pointer/.test(mp) && !/'bg-blue-600 text-white'/.test(mp),
+     'measured: a bright blue 211x32 button over 104x33 chips');
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
