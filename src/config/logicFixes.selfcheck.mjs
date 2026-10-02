@@ -9971,6 +9971,20 @@ section('Expedition map');
      /className="kx-march"/.test(ex) && !/className:\s*'kx-march'/.test(ex),
      'measured: with the class in pathOptions .kx-march matched 0 paths and the line never flowed');
   ok('the trail is today\'s SALES - pathHistory (unbounded, read by nothing) is not read', !/pathHistory/.test(es));
+  ok('the GPS ping keeps TODAY\'S points only: a new day replaces pathHistory, the same day adds to it (his B, 2026-10-02)',
+     /pathHistory: sameDay \? arrayUnion\(currentCoords\) : \[currentCoords\],/.test(code(app)) &&
+     (code(app).match(/pathHistory:/g) || []).length === 1 &&
+     /sameDay = localStorage\.getItem\(dayKey\) === today; localStorage\.setItem\(dayKey, today\);[\s\S]{0,400}await setDoc\(agentRef/.test(code(app)),
+     'one point appended per sale and app open, never trimmed - heading for the 1 MB record his van stock lives in; the day is saved BEFORE the await, or offline pings each wipe the list');
+  {  /* the SHIPPED day logic, cut out of App.jsx and run over three pings and two days */
+    const snip = code(app).match(/const today = getLocalDayKey\(\), dayKey = [^;]+;\s*let sameDay = false;\s*try \{[^}]*\} catch \{[^}]*\}/)?.[0];
+    const mem = {}, store = { getItem: (k) => mem[k] ?? null, setItem: (k, v) => { mem[k] = v; } };
+    const ping = (day, s = store) => snip && new Function('getLocalDayKey', 'localStorage', 'activeTrackerId', `${snip}; return sameDay;`)(() => day, s, 'm2');
+    const seen = [ping('2026-10-02'), ping('2026-10-02'), ping('2026-10-03')].map((x) => (x ? 'add' : 'replace')).join();
+    const noStore = ping('2026-10-03', { getItem: () => { throw new Error('blocked'); }, setItem: () => {} });
+    ok('pathHistory day logic re-run: first ping of a day replaces, the next adds, a new day replaces; no storage = replace, never a crash',
+       seen === 'replace,add,replace' && noStore === false, `${seen} / ${noStore}`);
+  }
   ok('the map follows its own box (ResizeObserver), not just the window',
      /new ResizeObserver\(/.test(ex) && /invalidateSize\(\)/.test(ex), 'measured at 1440: grey tiles over half the map, the team framed for a 520 px box');
 

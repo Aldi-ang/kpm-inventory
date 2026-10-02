@@ -1792,12 +1792,21 @@ const handleGitHubMirror = async () => {
                   
                   try {
                       const agentRef = doc(db, `artifacts/${appId}/users/${user.uid}/motorists`, activeTrackerId);
-                      
+
+                      /* pathHistory = TODAY'S points only (his B, 2026-10-02). It used to grow by one point
+                         every ping forever, heading for the 1 MB record his van stock also lives in. The first
+                         ping of a new day REPLACES the list; later pings that day add to it. The day is kept on
+                         this phone, not read from the record: no extra read, and it works offline. The day is
+                         stored BEFORE the save, because an offline save does not resolve until it syncs. */
+                      const today = getLocalDayKey(), dayKey = `kpm_path_day_${activeTrackerId}`;
+                      let sameDay = false;
+                      try { sameDay = localStorage.getItem(dayKey) === today; localStorage.setItem(dayKey, today); } catch { /* no storage: start the day's list again, harmless */ }
+
                       // 🚀 FIX: Changed updateDoc to setDoc + merge:true
                       // This forces Firebase to create the Master Owner profile if it doesn't exist yet!
                       await setDoc(agentRef, {
                           currentLocation: currentCoords,
-                          pathHistory: arrayUnion(currentCoords),
+                          pathHistory: sameDay ? arrayUnion(currentCoords) : [currentCoords],
                           name: activeTrackerId === 'master_owner' ? 'Master HQ' : (user.displayName || 'Agent')
                       }, { merge: true });
                       
