@@ -1,9 +1,10 @@
 // =============================================================================
-// PUBLISHED 2026-09-29 ~10:50 WIB by Aldi from the Firebase Console (the text of commit 788692f, whose
-//   header still read "DRAFT, READY TO PUBLISH"). firestore.rules.deployed-baseline is that exact text -
-//   the instant rollback copy. Live = the 2026-07-28 rules + the shared rank/badge path closed, + CHANGE
-//   11/11b (a vault password per person), 12 (lock an account), 13 (T1/T2 move a person to a new Gmail),
-//   14 (the eight holes found reviewing the live rules). Any change below this line is a DRAFT again.
+// PUBLISHED 2026-10-02 ~07:38 WIB by Aldi from the Firebase Console (the text of commit de33030, pasted
+//   whole from the clipboard). firestore.rules.deployed-baseline is that exact text - the instant rollback
+//   copy. Live = the 2026-07-28 rules + the shared rank/badge path closed, + CHANGE 11/11b (a vault
+//   password per person), 12 (lock an account), 13 (T1/T2 move a person to a new Gmail), 14 (the eight
+//   holes found reviewing the live rules), 15 (the bell's Missed list, one per person). Before this:
+//   2026-09-29 ~10:50 (commit 788692f, without 15). Any change below this line is a DRAFT again.
 //
 // Everything except the marked [CHANGE N] / [ADDED] / [FLAGGED] blocks below is
 // intentionally byte-for-byte the rules that were live before 2026-07-23. An

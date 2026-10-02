@@ -1,9 +1,9 @@
 // =============================================================================
-// DRAFT, READY TO PUBLISH (2026-09-29) — NOT LIVE until Aldi publishes it from the Firebase Console.
-//   = the rules live since 2026-07-28 (firestore.rules.deployed-baseline, the instant rollback copy)
-//   + the shared rank/badge path closed, + CHANGE 11/11b (a vault password per person), 12 (lock an
-//   account), 13 (T1/T2 move a person to a new Gmail), 14 (the eight holes found reviewing the live rules).
-//   After he publishes: copy this file over firestore.rules.deployed-baseline.
+// PUBLISHED 2026-09-29 ~10:50 WIB by Aldi from the Firebase Console (the text of commit 788692f, whose
+//   header still read "DRAFT, READY TO PUBLISH"). firestore.rules.deployed-baseline is that exact text -
+//   the instant rollback copy. Live = the 2026-07-28 rules + the shared rank/badge path closed, + CHANGE
+//   11/11b (a vault password per person), 12 (lock an account), 13 (T1/T2 move a person to a new Gmail),
+//   14 (the eight holes found reviewing the live rules). Any change below this line is a DRAFT again.
 //
 // Everything except the marked [CHANGE N] / [ADDED] / [FLAGGED] blocks below is
 // intentionally byte-for-byte the rules that were live before 2026-07-23. An
@@ -375,6 +375,23 @@ service cloud.firestore {
         allow update: if (isSalesman(bossUid) && resource.data.uid == request.auth.uid && request.resource.data.uid == request.auth.uid) ||
           (isCompanyTopTier(bossUid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['failedRecoveryAttempts', 'lockedUntil', 'lockoutStatus']));
         allow delete: if isCompanyTopTier(bossUid) && resource.data.uid != request.auth.uid;
+      }
+
+      // =====================================================================
+      // [CHANGE 15 — 2026-10-02, DRAFT until Aldi deploys it] THE BELL'S MISSED LIST, ONE PER PERSON.
+      // His design: every top strip and capybara line is kept in the bell so nothing is missed, and
+      // *"phone and pc show the same thing"* - so the list lives on the account, one doc per person
+      // (src/utils/missedLog.js), keyed like vault_keys: the roster profile for an employee (their
+      // user.uid in the app is the boss's), the owner's own uid for the owner.
+      //  - the person: reads and writes their own doc, matched by their roster profile.
+      //  - the owner and a T2 already reach it through the catch-all above (anything but vault_keys);
+      //    nothing in the app reads another person's list.
+      // DEPLOY ORDER: any time. Before it, an employee's list still works on the screen they are on,
+      // it just does not follow them to their other device (the write is refused, a console warning).
+      // rules-test/test-missed-log.mjs asserts every line.
+      // =====================================================================
+      match /missed_log/{profileId} {
+        allow read, write: if isSalesman(bossUid) && getEmployeeProfile().get('agentId', '') == profileId;
       }
 
       match /stock_requests/{requestId} {
