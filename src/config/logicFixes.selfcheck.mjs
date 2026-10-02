@@ -7788,7 +7788,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /<select value=\{selectedAgent\} onChange=\{\(e\) => setSelectedAgent\(e\.target\.value\)\} className=\{selectedAgent !== 'All' \? 'set' : ''\}>/.test(jv),
      'measured 2026-09-19: 107 x 13 inside a 27 px box');
   ok('the floor: the legend / paintbrush key and the four map keys are 44 on the phone',
-     /hover:bg-slate-800 transition-colors active:scale-95 select-none min-h-11 lg:min-h-0"/.test(jv) &&
+     /className="pointer-events-auto kx-mapkey flex items-center gap-2 select-none min-h-11 lg:min-h-0"/.test(jv) &&
      /<div className="absolute top-4 right-4 z-\[9999\] flex flex-col gap-3 pointer-events-auto \[&>button\]:min-h-11 \[&>button\]:min-w-11 lg:\[&>button\]:min-h-0 lg:\[&>button\]:min-w-0">/.test(jv),
      'measured 2026-09-19: 149 x 37 and 43 x 43');
   ok('board 3: the path row stays inside the page and the sector cards wrap two to a row - no sideways move, no swipe reel',
@@ -7832,7 +7832,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   ok('the floor: every label on the phone flows is 11 px (the hover-only key labels and the pin popup are the exceptions)',
      /\.kx-feed-meta \{ font: 700 11px\/1/.test(read('src/styles/expedition.css')) && /\.kx-feed-field > span \{ font: 700 11px\/1/.test(read('src/styles/expedition.css')) && /\.kx-feed \.kx-meta3 small \{ font-size: 11px; \}/.test(read('src/styles/expedition.css')) &&
      /\.kx-feed-meta, \.kx-feed-count small, \.kx-feed-field > span \{ font-size: 10px; \}/.test(read('src/styles/expedition.css')) &&
-     /<span className="text-white text-\[11px\] lg:text-\[10px\] font-black uppercase tracking-widest">\{canManageFleetSettings/.test(jv) &&
+     /<span className="text-\[var\(--ink\)\] text-\[11px\] lg:text-\[10px\] font-black uppercase tracking-widest">\{canManageFleetSettings/.test(jv) &&
      (jv.match(/<p className="text-\[11px\] lg:text-\[10px\] text-slate-400 font-bold uppercase tracking-wider">\{k(ab|ec)Count\}/g) || []).length === 2 &&
      /className=\{`text-\[11px\] lg:text-\[10px\] font-bold mt-1 \$\{isCleared/.test(jv) &&
      (jv.match(/(?<!lg:)text-\[10px\]/g) || []).length <= 10,
@@ -10009,6 +10009,18 @@ section('Expedition map');
        /<JourneyView motorists=\{motorists\} agentProfileId=\{agentProfileId\}/.test(app) &&
        /<ExpeditionLayer team=\{team\} bare \/>/.test(mp) && !/ExpeditionPanel|setExpOn/.test(mp),
        '"map mission control is used to analyze the stores ... the journey map is for ... journey of the salesman throughout the day"');
+  }
+  {  /* JOURNEY PLAN'S MAP ON THE THEME (his "make sure that the map also follow our theme and also the buttons", 2026-10-03):
+        from the map box to the end of the shop popup there is no blue and no green, the keys share one themed style
+        that sets no display (Tailwind's hidden / lg:flex must keep working), and the Leaflet controls are themed */
+    const jvc = code(read('src/JourneyView.jsx')), exc = read('src/styles/expedition.css');
+    const mapPart = jvc.slice(jvc.indexOf('kx-map bg-slate-900'), jvc.indexOf('Navigate via Google Maps') + 30);
+    ok('Journey map on the theme: no blue or green from the map box to the popup, gold = secured, cream = you are here, one key style',
+       mapPart.length > 1000 && !/(blue|emerald|green|cyan|sky|teal)-\d|#3b82f6|#2563eb|#10b981|#38bdf8/.test(mapPart) &&
+       !/#3b82f6|#2563eb|#06b6d4|#14b8a6|#10b981/.test(jvc.slice(0, jvc.indexOf('const JourneyView = '))) &&
+       (jvc.match(/kx-mapkey/g) || []).length >= 6 && /\.kx-mapkey \{ align-items: center;/.test(exc) && !/\.kx-mapkey \{[^}]*display:/.test(exc) &&
+       /\.kx-map \.leaflet-bar a \{ background: var\(--panel\);/.test(exc),
+       'his screenshot: a blue fullscreen key, an emerald Fly Home, white zoom keys, green secured pins on a slate map');
   }
   {  /* the SHIPPED day logic, cut out of App.jsx and run over three pings and two days */
     const snip = code(app).match(/const today = getLocalDayKey\(\), dayKey = [^;]+;\s*let sameDay = false;\s*try \{[^}]*\} catch \{[^}]*\}/)?.[0];

@@ -154,3 +154,22 @@
   .kx-feed .kx-desk { display: flex; }
   .kx-feed-meta, .kx-feed-count small, .kx-feed-field > span { font-size: 10px; }
 }
+
+/* ---- Journey Plan's map keys and the map's own controls, on the theme (his "make sure that the map also follow our
+   theme and also the buttons as well", 2026-10-03). No display here on purpose: the keys hide with Tailwind's
+   hidden / lg:flex, and a display in this file (loaded after Tailwind) would win - the trap noted above. ---- */
+.kx-mapkey { align-items: center; padding: 10px; border-radius: 12px; border: 1px solid var(--line-3); background: var(--panel); color: var(--ink-muted);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .45); cursor: pointer; transition: transform 140ms cubic-bezier(.23, 1, .32, 1), border-color 140ms ease, color 140ms ease;
+  -webkit-tap-highlight-color: transparent; }
+.kx-mapkey.round { border-radius: 50%; padding: 12px; }
+.kx-mapkey:active { transform: scale(.97); }
+.kx-mapkey.on { color: var(--ink); border-color: var(--gold); background: var(--inset); }
+.kx-mapkey:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.kx-mapkey > span { font: 800 10px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; }
+@media (hover: hover) and (pointer: fine) { .kx-mapkey:hover { color: var(--ink); border-color: var(--gold); } }
+.kx-map .leaflet-bar { border: 1px solid var(--line-3); border-radius: 12px; overflow: hidden; box-shadow: 0 6px 20px rgba(0, 0, 0, .45); }
+.kx-map .leaflet-bar a { background: var(--panel); color: var(--ink); border-bottom-color: var(--line-2); }
+.kx-map .leaflet-bar a:hover, .kx-map .leaflet-bar a:focus-visible { background: var(--raised); color: var(--ink); }
+.kx-map .leaflet-bar a.leaflet-disabled { background: var(--inset); color: var(--line-3); }
+.kx-map .leaflet-control-attribution { background: rgba(10, 9, 8, .72); color: var(--ink-dim); }
+.kx-map .leaflet-control-attribution a { color: var(--ink-muted); }

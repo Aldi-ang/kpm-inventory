@@ -28,7 +28,7 @@ L.Icon.Default.mergeOptions({
 // Painting ~20 bubbles at zoom 12 instead of N pins is the whole point; the count label is
 // what tells you a bubble is many stores, so it has to stay readable at a glance.
 const createJourneyClusterIcon = (cluster) => L.divIcon({
-    html: `<div style="background-color: rgba(15, 23, 42, 0.95); border: 2px solid #f97316; color: #fb923c; font-weight: 900; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(249, 115, 22, 0.5); font-family: monospace; font-size: 14px;">${cluster.getChildCount()}</div>`,
+    html: `<div style="background-color: rgba(18, 17, 16, 0.95); border: 2px solid #D08A2E; color: #E4B04A; font-weight: 900; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(249, 115, 22, 0.5); font-family: monospace; font-size: 14px;">${cluster.getChildCount()}</div>`,
     className: 'custom-cluster-icon',
     iconSize: [40, 40],
     iconAnchor: [20, 20]
@@ -53,7 +53,7 @@ const getStoreIcon = (glyph, ringColor, isEditing) => {
         icon = L.divIcon({
             className: 'bg-transparent border-none',
             html: `
-                                <div style="background-color: #1e293b; width: ${size}px; height: ${size}px; border-radius: 50%; border: 2px solid ${ringColor}; display: flex; align-items: center; justify-content: center; font-size: ${isEditing ? '16px' : '12px'}; box-shadow: 0 0 ${glow} ${ringColor}${alpha}; transition: all 0.2s;">
+                                <div style="background-color: #1B1917; width: ${size}px; height: ${size}px; border-radius: 50%; border: 2px solid ${ringColor}; display: flex; align-items: center; justify-content: center; font-size: ${isEditing ? '16px' : '12px'}; box-shadow: 0 0 ${glow} ${ringColor}${alpha}; transition: all 0.2s;">
                                     ${isEditing ? '🖐️' : glyph}
                                 </div>
                             `,
@@ -70,8 +70,8 @@ const userLocationIcon = L.divIcon({
     className: 'user-location-icon',
     html: `
         <div style="position: relative; display: flex; justify-content: center; align-items: center; width: 24px; height: 24px;">
-            <div style="position: absolute; width: 100%; height: 100%; background-color: #3b82f6; border-radius: 50%; opacity: 0.4; animation: pulse-ring 2s infinite;"></div>
-            <div style="width: 14px; height: 14px; background-color: #2563eb; border: 2px solid white; border-radius: 50%; z-index: 10; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>
+            <div style="position: absolute; width: 100%; height: 100%; background-color: #E8E4DE; border-radius: 50%; opacity: 0.35; animation: pulse-ring 2s infinite;"></div>
+            <div style="width: 14px; height: 14px; background-color: #E8E4DE; border: 2px solid #0A0908; border-radius: 50%; z-index: 10; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>
         </div>
     `,
     iconSize: [24, 24],
@@ -197,10 +197,10 @@ const LocationController = ({ userLocation, setUserLocation, isEditing, isLiteMo
         <div className="absolute bottom-[20px] right-[10px] z-[999]">
             <button 
                 onClick={handleLocateClick} 
-                className={`bg-slate-800 text-white border p-3 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)] transition-colors border-slate-600 hover:bg-slate-700 hover:text-blue-400`}
+                className="kx-mapkey round"
                 title="Locate Me"
             >
-                <LocateFixed size={20} className={watchId.current ? "text-blue-400" : "text-slate-300"} />
+                <LocateFixed size={20} className={watchId.current ? "text-[#E4B04A]" : ""} />
             </button>
         </div>
     );
@@ -262,7 +262,8 @@ const getStoreHierarchy = (customer) => {
     };
 };
 
-const AGENT_COLORS = ['#3b82f6', '#a855f7', '#ec4899', '#eab308', '#06b6d4', '#f43f5e', '#8b5cf6', '#14b8a6'];
+/* no blue, no green, no gold (gold = secured): cream, purple, pink, sand, rust, rose, violet, stone */
+const AGENT_COLORS = ['#E8E4DE', '#a855f7', '#ec4899', '#C9B38B', '#C2553A', '#f43f5e', '#8b5cf6', '#A39B90'];
 const getHashColor = (name) => {
     const safeName = String(name || '');
     if (!safeName) return '#64748b';
@@ -978,7 +979,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
             <div className="flex flex-col gap-3 lg:flex-row lg:gap-4">
             <div 
-                className={`${isFullScreen ? 'fixed inset-0 z-[9999] rounded-none' : 'relative w-full h-40 lg:h-[500px] rounded-2xl kpm-jp-map'} bg-slate-900 overflow-hidden border border-slate-700 shadow-xl transition-all duration-300`}
+                className={`${isFullScreen ? 'fixed inset-0 z-[9999] rounded-none' : 'relative w-full h-40 lg:h-[500px] rounded-2xl kpm-jp-map'} kx-map bg-slate-900 overflow-hidden border border-slate-700 shadow-xl transition-all duration-300`}
                 style={isFullScreen ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', margin: 0, padding: 0 } : {}}
             >
                 <div className={`absolute bottom-4 left-4 z-[9999] ${isFullScreen ? 'flex' : 'hidden lg:flex'} flex-col gap-2 items-start pointer-events-none`}>
@@ -986,10 +987,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         onClick={() => setIsPanelOpen(!isPanelOpen)} 
                         onDoubleClick={() => setDevUnlock(true)}
                         title="Double-Tap to Override Permissions"
-                        className="pointer-events-auto bg-slate-900/95 backdrop-blur border border-slate-700 p-2.5 rounded-xl shadow-xl flex items-center gap-2 hover:bg-slate-800 transition-colors active:scale-95 select-none min-h-11 lg:min-h-0"
+                        className="pointer-events-auto kx-mapkey flex items-center gap-2 select-none min-h-11 lg:min-h-0"
                     >
-                        {canManageFleetSettings ? <Paintbrush size={16} className="text-orange-500"/> : <Globe size={16} className="text-blue-500"/>}
-                        <span className="text-white text-[11px] lg:text-[10px] font-black uppercase tracking-widest">{canManageFleetSettings ? 'Paintbrush' : 'Squad Legend'}</span>
+                        {canManageFleetSettings ? <Paintbrush size={16} className="text-[var(--gold)]"/> : <Globe size={16}/>}
+                        <span className="text-[var(--ink)] text-[11px] lg:text-[10px] font-black uppercase tracking-widest">{canManageFleetSettings ? 'Paintbrush' : 'Squad Legend'}</span>
                         <ChevronDown size={14} className={`text-slate-400 transition-transform ${isPanelOpen ? 'rotate-180' : ''}`}/>
                     </button>
 
@@ -1063,7 +1064,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                             setIsFullScreen(!isFullScreen);
                             setTimeout(() => window.dispatchEvent(new Event('resize')), 200); 
                         }}
-                        className="bg-blue-600 hover:bg-blue-500 text-white p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-blue-400 transition-all active:scale-95 group flex items-center gap-2"
+                        className="kx-mapkey on group flex items-center gap-2"
                         title="Toggle Fullscreen Map"
                     >
                         {isFullScreen ? <Minimize size={20} /> : <Maximize size={20} />}
@@ -1074,7 +1075,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
                     <button 
                         onClick={() => setShowBorders(!showBorders)}
-                        className={`p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 transition-all active:scale-95 group ${isFullScreen ? 'flex' : 'hidden lg:flex'} items-center gap-2 ${showBorders ? 'bg-slate-800 border-slate-600 text-white' : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-700'}`}
+                        className={`kx-mapkey group ${isFullScreen ? 'flex' : 'hidden lg:flex'} items-center gap-2 ${showBorders ? 'on' : ''}`} aria-pressed={showBorders}
                         title="Toggle Regional Borders"
                     >
                         <Layers size={20} className="transition-transform"/>
@@ -1082,7 +1083,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     </button>
                     <button 
                         onClick={() => setSaveHomeTrigger(prev => prev + 1)}
-                        className={`bg-slate-800/90 backdrop-blur p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-orange-400 hover:bg-slate-700 hover:text-orange-300 transition-all active:scale-95 group ${isFullScreen ? 'flex' : 'hidden lg:flex'} items-center gap-2`}
+                        className={`kx-mapkey group ${isFullScreen ? 'flex' : 'hidden lg:flex'} items-center gap-2`}
                         title="Save Current Map View as Default Home"
                     >
                         <MapPin size={20} className="group-hover:scale-110 transition-transform"/>
@@ -1090,7 +1091,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     </button>
                     <button 
                         onClick={() => setRecenterTrigger(prev => prev + 1)}
-                        className={`bg-slate-800/90 backdrop-blur p-2.5 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.8)] border-2 border-slate-600 text-emerald-400 hover:bg-slate-700 hover:text-emerald-300 transition-all active:scale-95 group ${isFullScreen ? 'flex' : 'hidden lg:flex'} items-center gap-2`}
+                        className={`kx-mapkey group ${isFullScreen ? 'flex' : 'hidden lg:flex'} items-center gap-2`}
                         title="Return to Saved Home View"
                     >
                         <Navigation size={20} className="group-hover:rotate-12 transition-transform"/>
@@ -1120,7 +1121,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         
                         const boundName = String(boundary?.name || '').toUpperCase();
                         const isSelected = selectedKecamatan === boundName;
-                        const fillColor = isSelected ? '#f97316' : boundary.color || '#38bdf8';
+                        const fillColor = isSelected ? '#f97316' : boundary.color || '#A39B90';
                         
                         return (
                             <GeoJSON
@@ -1130,7 +1131,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                    Same fix MapMissionControl already uses. */
                                 key={`journey-bnd-${boundary.id}-${isSelected ? 'sel' : 'idle'}`}
                                 data={geoData}
-                                style={{ color: boundary.color || '#38bdf8', weight: isSelected ? 3 : 1.5, opacity: 0.6, fillOpacity: isSelected ? 0.2 : 0.05, fillColor: fillColor, dashArray: '5, 5' }}
+                                style={{ color: boundary.color || '#A39B90', weight: isSelected ? 3 : 1.5, opacity: 0.6, fillOpacity: isSelected ? 0.2 : 0.05, fillColor: fillColor, dashArray: '5, 5' }}
                                 onEachFeature={(f, layer) => {
                                     /* Region labels are hover/selected-only, not permanent. A typical
                                        import is 80-100 boundaries; as permanent tooltips that was
@@ -1185,12 +1186,12 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                             else iconHtml = '✅';
                         }
                         
-                        const metric = storeMetrics?.[store.id] || { agentName: 'Unassigned', color: '#94a3b8', stopNumber: 0 };
+                        const metric = storeMetrics?.[store.id] || { agentName: 'Unassigned', color: '#6A645C', stopNumber: 0 };
                         const stopNum = metric.stopNumber;
                         const statusBadge = getBountyStatus(store);
                         const isEditing = editingStoreId === store.id;
 
-                        let ringColor = isVisited ? '#10b981' : (metric.agentName === 'Unassigned' ? '#94a3b8' : metric.color);
+                        let ringColor = isVisited ? '#E4B04A' : (metric.agentName === 'Unassigned' ? '#6A645C' : metric.color);
                         const finalRingColor = isEditing ? '#f97316' : ringColor;
                         const markerPos = isEditing && tempPinLocation ? [tempPinLocation.lat, tempPinLocation.lng] : [store.latitude, store.longitude];
                         
@@ -1224,10 +1225,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                     is no hover. Matches MapMissionControl:311. */}
                                 {activePopupId !== store.id && !isEditing && (
                                     <LeafletTooltip direction="top" offset={[0, -15]} opacity={1} className="custom-leaflet-tooltip hidden lg:block">
-                                        <div className={`backdrop-blur px-3 py-1.5 rounded-lg border shadow-xl text-xs font-bold whitespace-nowrap ${isVisited ? 'bg-emerald-900/95 border-emerald-500 text-white' : 'bg-slate-900/95 border-slate-700 text-white'}`}>
+                                        <div className={`backdrop-blur px-3 py-1.5 rounded-lg border shadow-xl text-xs font-bold whitespace-nowrap ${isVisited ? 'bg-[#121110]/95 border-[#D08A2E] text-white' : 'bg-[#121110]/95 border-[#3E3A35] text-white'}`}>
                                             {isVisited ? (
                                                 <span className="flex items-center gap-1">
-                                                    <CheckCircle size={12} className="text-emerald-400"/> 
+                                                    <CheckCircle size={12} className="text-[#E4B04A]"/> 
                                                     SECURED BY {String(todaysVisits[storeKey(store.name)] || store.lastVisitedBy || 'FLEET').toUpperCase().split(' ')[0]}
                                                 </span>
                                             ) : (
@@ -1244,7 +1245,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                         style={{ margin: '-13px' }}
                                         onClose={() => setActivePopupId(null)}
                                     >
-                                        <div className="bg-slate-900 p-4 rounded-xl shadow-2xl border border-slate-700 w-[240px] font-mono">
+                                        <div className="bg-[#121110] p-4 rounded-xl shadow-2xl border border-[#3E3A35] w-[240px] font-mono">
                                             <div className="flex justify-between items-start mb-3 border-b border-slate-700 pb-2">
                                                 <p className="font-black text-white text-sm leading-tight pr-2 uppercase">{store.name}</p>
                                                 <span 
@@ -1256,9 +1257,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                             </div>
                                             
                                             {isVisited ? (
-                                                <div className="mb-3 px-3 py-2 rounded-lg border border-emerald-500 bg-emerald-900/40 text-emerald-400 text-[10px] font-black tracking-wider flex flex-col gap-1 text-left shadow-inner">
+                                                <div className="mb-3 px-3 py-2 rounded-lg border border-[#D08A2E] bg-black/40 text-[#E4B04A] text-[10px] font-black tracking-wider flex flex-col gap-1 text-left shadow-inner">
                                                     <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {hasLiveTxToday ? 'SECURED TODAY' : store.lastVisitTag}</span>
-                                                    {(!hasLiveTxToday && store.lastVisitNote) && <span className="text-[11px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-3 border-t border-emerald-500/30 pt-1.5 mt-0.5">{store.lastVisitNote}</span>}
+                                                    {(!hasLiveTxToday && store.lastVisitNote) && <span className="text-[11px] font-mono text-[#A39B90] font-normal normal-case leading-snug line-clamp-3 border-t border-[#3E3A35] pt-1.5 mt-0.5">{store.lastVisitNote}</span>}
                                                 </div>
                                             ) : (
                                                 <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[11px] font-black uppercase tracking-widest text-center ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
@@ -1313,7 +1314,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                         <span className="block text-[11px] text-slate-400 uppercase font-black">Performance Rank</span>
                                                         <span className="text-[10px] text-orange-400 font-bold uppercase leading-none">{store.tier}</span>
                                                         {store.priceTier !== store.tier && (
-                                                            <span className="text-[11px] text-blue-400 font-bold uppercase leading-none mt-0.5">Price: {store.priceTier}</span>
+                                                            <span className="text-[11px] text-[#E8E4DE] font-bold uppercase leading-none mt-0.5">Price: {store.priceTier}</span>
                                                         )}
                                                     </div>
                                                     {store.phone ? (
@@ -1348,7 +1349,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                 <div>
                                                     <label className="text-[11px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><Truck size={10}/> Assign Fleet:</label>
                                                     <select
-                                                        className={`w-full bg-black text-xs font-bold uppercase p-2 rounded outline-none border transition-colors shadow-inner ${assignments[store.id] ? 'border-emerald-500 text-emerald-400' : 'border-slate-700 text-slate-300'} ${canAssignAgent ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+                                                        className={`w-full bg-black text-xs font-bold uppercase p-2 rounded outline-none border transition-colors shadow-inner ${assignments[store.id] ? 'border-[#D08A2E] text-[#E8E4DE]' : 'border-slate-700 text-slate-300'} ${canAssignAgent ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                                                         value={assignments[store.id] || 'Unassigned'}
                                                         onChange={(e) => handleAssignAgent(store.id, e.target.value)}
                                                         style={{ colorScheme: 'dark' }}
@@ -1362,7 +1363,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
                                             <button 
                                                 onClick={() => handleOpenLocation(store)}
-                                                className="w-full mt-4 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black py-3 rounded-lg uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-[0_0_15px_rgba(37,99,235,0.4)]"
+                                                className="w-full mt-4 min-h-11 bg-black border border-[#D08A2E] hover:bg-[#1B1917] text-[#E4B04A] text-[10px] font-black py-3 rounded-lg uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95"
                                             >
                                                 <Navigation size={14}/> Navigate via Google Maps
                                             </button>
@@ -1512,8 +1513,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                 const isVisited = customer.lastVisit === todayDate || hasLiveTxToday;
                                                 
                                                 const originalIdx = orderedRoute.findIndex(c => c.id === customer.id);
-                                                const metric = storeMetrics?.[customer.id] || { agentName: 'Unassigned', color: '#94a3b8', stopNumber: 0 };
-                                                const ringColor = isVisited ? '#10b981' : (metric.agentName === 'Unassigned' ? '#94a3b8' : metric.color);
+                                                const metric = storeMetrics?.[customer.id] || { agentName: 'Unassigned', color: '#6A645C', stopNumber: 0 };
+                                                const ringColor = isVisited ? '#E4B04A' : (metric.agentName === 'Unassigned' ? '#6A645C' : metric.color);
                                                 const statusBadge = getBountyStatus(customer);
                                                 /* RADAR and LOG are written once and mounted twice: in the ⋯ fold on the phone (named by what
                                                    they do), in the key row on the desk - his "board 1 = C", 2026-09-19 */
