@@ -20,8 +20,9 @@ const lamp = (a) => ({ go: 'go', at: 'at' })[a.state] || '';
 const ll = (p) => [p.lat, p.lng];
 
 /* ---- the map layer: chips at the last-seen point, today's trail, the march line to the next shop ---- */
-/* `bare` (the expedition switched off): the chips only, no lines and no camera - the map is his again */
-export function ExpeditionLayer({ team, sel, focus, wide, bare }) {
+/* `bare`: the chips only, no lines and no camera (Map System, the store-analysis map).
+   `stops={false}`: no shop pins or dots of its own - Journey Plan already draws every shop of the round */
+export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true }) {
     const map = useMap();
     const svg = useMemo(() => L.svg({ padding: 0.5 }), []);   // the march line's flow needs SVG; the map itself draws on canvas
 
@@ -35,8 +36,10 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare }) {
         map.invalidateSize();
         const who = teamRef.current.filter((a) => (wide && !focus ? a.out : a.id === sel));
         const pts = who.flatMap((a) => [a.at, ...a.done, ...a.ahead]).filter((p) => p?.lat).map(ll);
-        // room for the control card on top and Set Home / the zoom keys at the bottom, so no stop hides under them
-        if (pts.length) map.fitBounds(pts, { paddingTopLeft: [48, 96], paddingBottomRight: [48, 80], maxZoom: 16 });
+        // room for the controls on top and the keys at the bottom, so no stop hides under them - except on Journey
+        // Plan's 160 px phone strip, where that room would be the whole map
+        const tall = map.getSize().y > 300;
+        if (pts.length) map.fitBounds(pts, { paddingTopLeft: [48, tall ? 96 : 52], paddingBottomRight: [48, tall ? 80 : 16], maxZoom: 16 });
     };
     useEffect(() => fit.current(), [shot, bare, map]);
     /* the map's box changes size after mount (the shell settles, the panel comes or goes, the phone turns);
@@ -72,7 +75,7 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare }) {
     team.forEach((a) => { (groups[spot(a)] ||= []).push(a.id); });
 
     return team.map((a) => {
-        const mine = bare || wide || a.id === sel, faint = mine ? 1 : 0.35, pins = !bare && !wide && a.id === sel;
+        const mine = bare || wide || a.id === sel, faint = mine ? 1 : 0.35, one = !bare && !wide && a.id === sel, pins = one && stops;
         const g = groups[spot(a)], shift = (g.indexOf(a.id) - (g.length - 1) / 2) * 30;
         const chip = L.divIcon({
             className: 'kx-mk',
@@ -90,14 +93,14 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare }) {
                 )}
                 {lines && trail.length > 1 && (
                     <Polyline positions={trail} renderer={svg} interactive={false}
-                        pathOptions={pins ? { color: '#E4B04A', weight: 4, dashArray: '1 9', lineCap: 'round' } : { color: '#E8E4DE', opacity: faint, weight: 3, lineCap: 'round', lineJoin: 'round' }} />
+                        pathOptions={one ? { color: '#E4B04A', weight: 4, dashArray: '1 9', lineCap: 'round' } : { color: '#E8E4DE', opacity: faint, weight: 3, lineCap: 'round', lineJoin: 'round' }} />
                 )}
                 {lines && goal && (
                     /* className as a prop: react-leaflet applies pathOptions with setStyle, which never sets a class */
                     <Polyline positions={[ll(a.at), ll(goal)]} renderer={svg} interactive={false} className="kx-march"
-                        pathOptions={{ color: '#E4B04A', opacity: faint, weight: pins ? 4 : 3, dashArray: pins ? '2 8' : '9 7', lineCap: 'round' }} />
+                        pathOptions={{ color: '#E4B04A', opacity: faint, weight: one ? 4 : 3, dashArray: one ? '2 8' : '9 7', lineCap: 'round' }} />
                 )}
-                {lines && wide && [...a.done, ...a.ahead].filter((p) => p.lat).map((p, k) => (
+                {lines && wide && stops && [...a.done, ...a.ahead].filter((p) => p.lat).map((p, k) => (
                     <CircleMarker key={p.key} center={ll(p)} radius={6} renderer={svg} interactive={false}
                         pathOptions={k < a.done.length ? { color: '#D08A2E', fillColor: '#E4B04A', fillOpacity: 1, weight: 2 } : { color: '#A39B90', fillColor: '#2a2826', fillOpacity: 1, weight: 2 }} />
                 ))}
@@ -138,13 +141,15 @@ const Pips = ({ a }) => (
     </div>
 );
 
-export function ExpeditionPanel({ team, sel, onPick, wide, scoped }) {
+/* `page`: the panel sits in Journey Plan's scrolling page (under the phone strip, beside the 500 px map on the PC)
+   instead of filling a full-height map screen */
+export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page }) {
     const out = team.filter((a) => a.out);
     const done = out.reduce((s, a) => s + a.done.length, 0), of = out.reduce((s, a) => s + (a.of ?? a.done.length), 0);
     const a = team.find((t) => t.id === sel) || team[0];
 
     return (
-        <aside className="kx-panel" aria-label="Expedition">
+        <aside className={`kx-panel${page ? ' kx-page' : ''}`} aria-label="Expedition">
             <div className="kx-ph"><b>Expedition</b><span>{out.length} out · <em>{done}/{of}</em> shops</span></div>
             {!team.length ? (
                 <p className="kx-empty">No salesman{scoped ? ' in your region' : ''} has sent a position yet. His phone sends one with every sale and every time he opens the app.</p>

@@ -35,6 +35,10 @@
 .kx-panel { flex: none; max-height: 58%; overflow-y: auto; border-top: 1px solid var(--line-2); background: var(--panel); color: var(--ink);
   padding: 12px 16px 14px; display: grid; gap: 10px; align-content: start; min-width: 0; font-family: var(--font-body); }
 @media (min-width: 1024px) { .kx-panel { width: 400px; max-height: none; height: 100%; border-top: 0; border-left: 1px solid var(--line-2); } }
+/* Journey Plan: a card in the scrolling page - the whole panel shows on the phone, and on the PC it is the
+   400 px column beside the 500 px map */
+.kx-panel.kx-page { max-height: none; overflow: visible; border: 1px solid var(--line-2); border-radius: 16px; }
+@media (min-width: 1024px) { .kx-panel.kx-page { height: 500px; overflow-y: auto; border: 1px solid var(--line-2); } }
 .kx-ph { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .kx-ph b { font: 900 20px/1 var(--font-display); letter-spacing: .1em; text-transform: uppercase; }
 .kx-ph span { font: 700 10px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); }

@@ -9,7 +9,10 @@ import FolderCard from './components/FolderCard.jsx';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { loadBorderCache, saveBorderCache } from './utils/borderCache';
-import { isFleetManagementTier } from './config/permissions';
+import { isFleetManagementTier, hasClearance } from './config/permissions';
+import { ExpeditionLayer, ExpeditionPanel } from './components/Expedition.jsx';
+import { useWide } from './hooks/useWide';
+import { expedition, visibleTeam } from './utils/expedition';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 
@@ -271,7 +274,7 @@ const getHashColor = (name) => {
     return AGENT_COLORS[index];
 };
 
-const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = [], db, appId, user, userRole, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings, isLiteMode, appSettings, focusStore = null, onFocusStoreHandled }) => {
+const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = [], db, appId, user, userRole, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings, isLiteMode, appSettings, focusStore = null, onFocusStoreHandled, motorists = [], agentProfileId }) => {
     
     // 🛡️ THE MASTER DATA SANITIZER V2
     // Added 'phone', 'address', 'storeImage' and 'lastVisitNote' to guarantee 100% string compliance.
@@ -377,6 +380,21 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     });
 
     const [isFullScreen, setIsFullScreen] = useState(false);
+
+    /* THE EXPEDITION (his look pick 2026-10-02, moved here from Map System 2026-10-03: "the journey map is for
+       ... journey of the salesman throughout the day"). Each salesman at his last-seen point, today's sales as
+       a trail, a dashed line to his next shop; the phone shows ONE travel card, the PC the squad list. Below the
+       boss's tiers a viewer sees his own region only (Reports' authority switch). A minute tick keeps
+       "last seen N min ago" honest between Firestore updates. */
+    const [minute, setMinute] = useState(0);
+    useEffect(() => { const t = setInterval(() => setMinute((m) => m + 1), 60000); return () => clearInterval(t); }, []);
+    const globalView = ['ADMIN', 'DEVELOPER', 'COMPANY_OWNER'].includes(userRole) || hasClearance(userRole, 'view_reports_global');
+    const team = useMemo(() => expedition(visibleTeam(motorists || [], { global: globalView, viewerId: agentProfileId }), rawCustomers || [], rawTransactions || []), [motorists, rawCustomers, rawTransactions, minute, globalView, agentProfileId]); // eslint-disable-line react-hooks/exhaustive-deps
+    const [expSel, setExpSel] = useState(null);
+    const selId = team.some((a) => a.id === expSel) ? expSel : team.some((a) => a.id === agentProfileId) ? agentProfileId : team[0]?.id;   // a salesman opens on his own card
+    const [expFocus, setExpFocus] = useState(false);   // PC: false = frame the whole team, true = frame the picked row
+    const wide = useWide();
+    const pickAgent = (id) => { if (wide && expFocus && id === selId) setExpFocus(false); else { setExpSel(id); setExpFocus(true); } };
     const [isPanelOpen, setIsPanelOpen] = useState(false); 
 
     const [editingStoreId, setEditingStoreId] = useState(null);
@@ -955,6 +973,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 </div>
             </div>
 
+            <div className="flex flex-col gap-3 lg:flex-row lg:gap-4">
             <div 
                 className={`${isFullScreen ? 'fixed inset-0 z-[9999] rounded-none' : 'relative w-full h-40 lg:h-[500px] rounded-2xl kpm-jp-map'} bg-slate-900 overflow-hidden border border-slate-700 shadow-xl transition-all duration-300`}
                 style={isFullScreen ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', margin: 0, padding: 0 } : {}}
@@ -1351,7 +1370,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         );
                     })}
                     </MarkerClusterGroup>
+                    {team.length > 0 && <ExpeditionLayer team={team} sel={selId} focus={expFocus} wide={wide} stops={false} />}
                 </MapContainer>
+            </div>
+            {team.length > 0 && <ExpeditionPanel team={team} sel={selId} onPick={pickAgent} wide={wide} scoped={!globalView} page />}
             </div>
 
             <div className="pt-6 space-y-4 animate-fade-in">

@@ -810,7 +810,9 @@ const LAB_MAP = (() => {
     { id: 'm6', name: 'Dewi Wulandari', hits: 6, seen: 12, stops: [[725, 635], [790, 740], [880, 860], [960, 990], [1040, 1120], [1130, 1268], [1205, 1300], [1225, 1450]] },
     { id: 'm7', name: 'Rini Saputri', hits: 8, seen: 6, stops: [[470, 820], [400, 900], [330, 990], [250, 1080], [330, 1120], [420, 1160], [470, 1250], [475, 1400]] },
   ];
-  const now = Date.now(), weekday = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+  /* the day's sales go back ~3.5 h; before 10:00 that crosses midnight and they turn into YESTERDAY's (right for
+     the app, a thin demo) - so before 10:00 the lab's day is anchored at 10:00 */
+  const now = Math.max(Date.now(), new Date().setHours(10, 0, 0, 0)), weekday = new Date().toLocaleDateString('en-US', { weekday: 'long' });
   const customers = [], transactions = [];
   const motorists = TEAM.map((t, i) => {
     t.stops.forEach((p, k) => {
@@ -962,14 +964,17 @@ function ShellLab() {
            Budi (his check-in writes under user.displayName, JourneyView.jsx:773); `&admin` is the
            boss (isAdmin → the fleet paintbrush, :322). Every write is a stub no-op; the lab is for
            looking. */
+        /* `&exp` swaps in the expedition team (LAB_MAP above): Muntilan shops due today, today's sales, five
+           salesmen in two regions - Budi (m2, MUNTILAN) is the viewer unless `&admin` */
         <JourneyView
           db={{}} appId="lab"
-          customers={[
+          motorists={q.has('exp') ? LAB_MAP.motorists : []} agentProfileId="m2"
+          customers={q.has('exp') ? LAB_MAP.customers : [
             ...LAB_CUSTOMERS.map((c, i) => ({ ...c, region: 'BANDUNG', city: 'Bandung', tier: ['Bronze', 'Silver', 'Gold', 'Bronze'][i], assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : i === 1 ? '2026-09-01' : '', phone: '0812-3456-7890' })),
             { id: 'c-sri', name: 'Warung Bu Sri Rahayu Sejahtera Abadi', address: 'Jl. Dago Atas No. 101, Bandung', latitude: -6.8700, longitude: 107.6150, priceTier: 'Ecer', region: 'BANDUNG', city: 'Bandung', tier: 'Silver', assignedAgent: 'Budi Santoso', visitFreq: 3, lastVisit: '2026-09-10' },
             { id: 'c-jaya', name: 'Grosir Jaya Abadi', address: 'Jl. Soekarno Hatta 400', latitude: -6.9400, longitude: 107.6300, priceTier: 'Grosir', region: 'BANDUNG', city: 'Bandung', tier: 'Gold', assignedAgent: 'Adi Nugroho', visitFreq: 14, lastVisit: '2026-08-20' },
           ].map((c) => (q.has('ghost') && c.id === 'c-jaya' ? { ...c, assignedAgent: 'Andika Pratama' } : c))}
-          transactions={LAB_AGENT_TXNS}
+          transactions={q.has('exp') ? LAB_MAP.transactions : LAB_AGENT_TXNS}
           user={{ uid: 'lab-t5', displayName: q.has('admin') ? 'Lab Boss' : 'Budi Santoso', email: 'lab@example.com', location: 'BANDUNG', userRole: q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE' }}
           userRole={q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE'} isAdmin={q.has('admin')}
           logAudit={() => {}} triggerCapy={() => {}} setActiveTab={() => {}}

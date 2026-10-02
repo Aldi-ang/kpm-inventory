@@ -9990,6 +9990,15 @@ section('Expedition map');
        /<MapMissionControl [^\n]*userRole=\{userRole\} agentProfileId=\{agentProfileId\}/.test(app),
        'without the role every viewer falls to the fail-closed side and the boss sees nobody');
   }
+  {  /* WHERE IT LIVES (his call 2026-10-03): Map System analyses stores, Journey Plan is the salesman's day */
+    const jv = code(read('src/JourneyView.jsx'));
+    ok('the expedition lives on Journey Plan (trail, next shop, travel card / squad list, region-fenced); Map System keeps the chips only',
+       /<ExpeditionLayer team=\{team\} sel=\{selId\} focus=\{expFocus\} wide=\{wide\} stops=\{false\} \/>/.test(jv) && /<ExpeditionPanel [^>]*\bpage \/>/.test(jv) &&
+       /expedition\(visibleTeam\(motorists \|\| \[\], \{ global: globalView, viewerId: agentProfileId \}\)/.test(jv) &&
+       /<JourneyView motorists=\{motorists\} agentProfileId=\{agentProfileId\}/.test(app) &&
+       /<ExpeditionLayer team=\{team\} bare \/>/.test(mp) && !/ExpeditionPanel|setExpOn/.test(mp),
+       '"map mission control is used to analyze the stores ... the journey map is for ... journey of the salesman throughout the day"');
+  }
   {  /* the SHIPPED day logic, cut out of App.jsx and run over three pings and two days */
     const snip = code(app).match(/const today = getLocalDayKey\(\), dayKey = [^;]+;\s*let sameDay = false;\s*try \{[^}]*\} catch \{[^}]*\}/)?.[0];
     const mem = {}, store = { getItem: (k) => mem[k] ?? null, setItem: (k, v) => { mem[k] = v; } };

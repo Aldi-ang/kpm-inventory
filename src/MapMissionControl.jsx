@@ -6,7 +6,7 @@ import {
     ShieldCheck, Globe, Menu, Database, Tag, DollarSign,
     MinusCircle, Maximize2, Search, Trash2, Download, 
     Save, AlertCircle, Upload, Pencil, Folder, TrendingUp, ShieldAlert,
-    Navigation, LocateFixed, Clock, CheckCircle, Settings, ArrowUpCircle, ArrowDownCircle, Activity, User, Footprints
+    Navigation, LocateFixed, Clock, CheckCircle, Settings, ArrowUpCircle, ArrowDownCircle, Activity, User
 } from 'lucide-react';
 
 import L from 'leaflet';
@@ -17,8 +17,7 @@ import { loadBorderCache, saveBorderCache, clearBorderCache } from './utils/bord
 import { revenueOf, debtCredit } from './utils/revenueRule';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
-import { ExpeditionLayer, ExpeditionPanel } from './components/Expedition.jsx';
-import { useWide } from './hooks/useWide';
+import { ExpeditionLayer } from './components/Expedition.jsx';
 import { expedition, visibleTeam } from './utils/expedition';
 import { hasClearance } from './config/permissions';
 import MarkerClusterGroup from 'react-leaflet-cluster'; // 🚀 INJECTED SUPERCLUSTER ENGINE
@@ -1910,21 +1909,12 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const mapRef = useRef(null);
     const [dragPinCoords, setDragPinCoords] = useState(null);
 
-    /* THE EXPEDITION. On by itself once anyone has been seen today; his switch on the control card
-       overrides that. A minute tick keeps "last seen N min ago" honest between Firestore updates. */
-    const [minute, setMinute] = useState(0);
-    useEffect(() => { const t = setInterval(() => setMinute((m) => m + 1), 60000); return () => clearInterval(t); }, []);
-    // the boss's tiers see the whole company, everyone else his own region (Reports' authority switch)
+    /* The salesmen on the analysis map: a gold chip at each one's last-seen point, his own region only below
+       the boss's tiers (Reports' authority switch). The expedition itself - trail, next shop, travel card - lives
+       on Journey Plan, his call 2026-10-03: "map mission control is used to analyze the stores ... the journey
+       map is for ... journey of the salesman throughout the day". */
     const globalView = ['ADMIN', 'DEVELOPER', 'COMPANY_OWNER'].includes(userRole) || hasClearance(userRole, 'view_reports_global');
-    const team = useMemo(() => expedition(visibleTeam(motorists || [], { global: globalView, viewerId: agentProfileId }), customers || [], transactions || []), [motorists, customers, transactions, minute, globalView, agentProfileId]); // eslint-disable-line react-hooks/exhaustive-deps
-    const [expOn, setExpOn] = useState(null);
-    const exp = expOn ?? team.some((a) => a.out);
-    const [sel, setSel] = useState(null);
-    const selId = team.some((a) => a.id === sel) ? sel : team.some((a) => a.id === agentProfileId) ? agentProfileId : team[0]?.id;   // a salesman opens on his own card
-    const [focus, setFocus] = useState(false);   // PC: false = frame the whole team, true = frame the picked row
-    const wide = useWide();
-    const pickAgent = (id) => { if (wide && focus && id === selId) setFocus(false); else { setSel(id); setFocus(true); } };
-    useEffect(() => { mapRef.current?.invalidateSize(); }, [exp]);   // the panel came or went: the map changed size
+    const team = useMemo(() => expedition(visibleTeam(motorists || [], { global: globalView, viewerId: agentProfileId }), customers || [], transactions || []), [motorists, customers, transactions, globalView, agentProfileId]);
 
     const canAddManualPin = isAdmin === true || user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin';
 
@@ -2201,7 +2191,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const activeStore = selectedStore ? mapPoints.find(s => s.id === selectedStore.id) || selectedStore : null;
 
     return (
-        <div className="absolute inset-0 w-full h-[100dvh] lg:h-full bg-slate-900 overflow-hidden font-sans z-[50] overscroll-none flex flex-col lg:flex-row">
+        <div className="absolute inset-0 w-full h-[100dvh] lg:h-full bg-slate-900 overflow-hidden font-sans z-[50] overscroll-none">
             
             <style>{`
                 body, html { overscroll-behavior-y: none !important; }
@@ -2328,10 +2318,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             {Object.keys(locationTree).sort().map(r => <option key={r} value={r}>{r}</option>)}
                         </select>
                     </div>
-                    <button type="button" onClick={() => setExpOn(!exp)} aria-pressed={exp} title={exp ? 'Expedition on - tap to show the shops' : 'Show the expedition'} aria-label="Expedition"
-                        className="kx-toggle p-2 min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 bg-slate-800 rounded-lg border border-slate-700 hover:bg-slate-700 transition-colors text-slate-300 shrink-0 mr-1 flex items-center justify-center">
-                        <Footprints size={18}/>
-                    </button>
                     <button onClick={() => setShowControls(!showControls)} className="p-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors text-white shrink-0">
                         {showControls ? <X size={18}/> : <Menu size={18}/>}
                     </button>
@@ -2391,7 +2377,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             </div>
 
             {/* 🚀 DEDICATED ADD STORE BUTTON */}
-            {!exp && !isAddingMode && !editingStoreId && canAddManualPin && (
+            {!isAddingMode && !editingStoreId && canAddManualPin && (
                 <div className="absolute bottom-[90px] left-[14px] z-[999]">
                     <button 
                         onClick={() => {
@@ -2438,7 +2424,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             {showTierEngine && <TierAutomationEngine db={db} appId={appId} user={user} activeTiers={activeTiers} mapPoints={mapPoints} transactions={transactions} onClose={() => setShowTierEngine(false)} logAudit={logAudit} triggerCapy={triggerCapy} setLocalTierUpdates={setLocalTierUpdates} />}
 
             {/* 🚀 LITE MODE UPGRADE: preferCanvas={true} flattens vector borders to save RAM */}
-            <div className="relative flex-1 min-h-0 min-w-0">
             <MapContainer ref={mapRef} preferCanvas={true} center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
                 <ZoomControl position="bottomright" />
                 <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
@@ -2532,7 +2517,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 })}
 
                 {/* 🚀 THE LEAFLET SUPERCLUSTER ENGINE */}
-                {!exp && <MarkerClusterGroup
+                <MarkerClusterGroup
                     chunkedLoading={true}
                     iconCreateFunction={createCustomClusterIcon}
                     maxClusterRadius={40}
@@ -2549,15 +2534,12 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             isActive={activeStore && activeStore.id === store.id}
                         />
                     ))}
-                </MarkerClusterGroup>}
+                </MarkerClusterGroup>
 
-                {/* THE EXPEDITION (his pick 2026-10-02): every salesman at his last-seen point, and with the
-                    expedition on, today's trail + the march line to his next shop. Replaced the blue
-                    #3b82f6 avatar and its dicebear image call (palette law; an outside request per agent). */}
-                <ExpeditionLayer team={team} sel={selId} focus={focus} wide={wide} bare={!exp} />
+                {/* Every salesman as a gold chip at his last-seen point. Replaced the blue #3b82f6 avatar and
+                    its dicebear image call (palette law; an outside request per agent). */}
+                <ExpeditionLayer team={team} bare />
             </MapContainer>
-            </div>
-            {exp && <ExpeditionPanel team={team} sel={selId} onPick={pickAgent} wide={wide} scoped={!globalView} />}
 
             {activeStore && (
                 <StoreBottomSheet 
