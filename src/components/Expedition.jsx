@@ -138,7 +138,7 @@ const Pips = ({ a }) => (
     </div>
 );
 
-export function ExpeditionPanel({ team, sel, onPick, wide }) {
+export function ExpeditionPanel({ team, sel, onPick, wide, scoped }) {
     const out = team.filter((a) => a.out);
     const done = out.reduce((s, a) => s + a.done.length, 0), of = out.reduce((s, a) => s + (a.of ?? a.done.length), 0);
     const a = team.find((t) => t.id === sel) || team[0];
@@ -147,7 +147,7 @@ export function ExpeditionPanel({ team, sel, onPick, wide }) {
         <aside className="kx-panel" aria-label="Expedition">
             <div className="kx-ph"><b>Expedition</b><span>{out.length} out · <em>{done}/{of}</em> shops</span></div>
             {!team.length ? (
-                <p className="kx-empty">No salesman has sent a position yet. His phone sends one with every sale and every time he opens the app.</p>
+                <p className="kx-empty">No salesman{scoped ? ' in your region' : ''} has sent a position yet. His phone sends one with every sale and every time he opens the app.</p>
             ) : wide ? (
                 <>
                     <div className="kx-rows">

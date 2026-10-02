@@ -19,7 +19,8 @@ import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { ExpeditionLayer, ExpeditionPanel } from './components/Expedition.jsx';
 import { useWide } from './hooks/useWide';
-import { expedition } from './utils/expedition';
+import { expedition, visibleTeam } from './utils/expedition';
+import { hasClearance } from './config/permissions';
 import MarkerClusterGroup from 'react-leaflet-cluster'; // 🚀 INJECTED SUPERCLUSTER ENGINE
 
 // 🚀 GOOGLE MAPS STYLE: THE SMART AVATAR ENGINE
@@ -1856,7 +1857,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 };
 
 // --- MAIN WRAPPER (APP IN APP) ---
-const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings, motorists = [], onNavigateToDirectory }) => {
+const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings, motorists = [], onNavigateToDirectory, userRole, agentProfileId }) => {
 
     const userId = user?.uid || user?.id || "default";
 
@@ -1913,11 +1914,13 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
        overrides that. A minute tick keeps "last seen N min ago" honest between Firestore updates. */
     const [minute, setMinute] = useState(0);
     useEffect(() => { const t = setInterval(() => setMinute((m) => m + 1), 60000); return () => clearInterval(t); }, []);
-    const team = useMemo(() => expedition(motorists || [], customers || [], transactions || []), [motorists, customers, transactions, minute]); // eslint-disable-line react-hooks/exhaustive-deps
+    // the boss's tiers see the whole company, everyone else his own region (Reports' authority switch)
+    const globalView = ['ADMIN', 'DEVELOPER', 'COMPANY_OWNER'].includes(userRole) || hasClearance(userRole, 'view_reports_global');
+    const team = useMemo(() => expedition(visibleTeam(motorists || [], { global: globalView, viewerId: agentProfileId }), customers || [], transactions || []), [motorists, customers, transactions, minute, globalView, agentProfileId]); // eslint-disable-line react-hooks/exhaustive-deps
     const [expOn, setExpOn] = useState(null);
     const exp = expOn ?? team.some((a) => a.out);
     const [sel, setSel] = useState(null);
-    const selId = team.some((a) => a.id === sel) ? sel : team[0]?.id;
+    const selId = team.some((a) => a.id === sel) ? sel : team.some((a) => a.id === agentProfileId) ? agentProfileId : team[0]?.id;   // a salesman opens on his own card
     const [focus, setFocus] = useState(false);   // PC: false = frame the whole team, true = frame the picked row
     const wide = useWide();
     const pickAgent = (id) => { if (wide && focus && id === selId) setFocus(false); else { setSel(id); setFocus(true); } };
@@ -2554,7 +2557,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 <ExpeditionLayer team={team} sel={selId} focus={focus} wide={wide} bare={!exp} />
             </MapContainer>
             </div>
-            {exp && <ExpeditionPanel team={team} sel={selId} onPick={pickAgent} wide={wide} />}
+            {exp && <ExpeditionPanel team={team} sel={selId} onPick={pickAgent} wide={wide} scoped={!globalView} />}
 
             {activeStore && (
                 <StoreBottomSheet 

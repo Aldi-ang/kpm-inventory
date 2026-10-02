@@ -9976,6 +9976,20 @@ section('Expedition map');
      (code(app).match(/pathHistory:/g) || []).length === 1 &&
      /sameDay = localStorage\.getItem\(dayKey\) === today; localStorage\.setItem\(dayKey, today\);[\s\S]{0,400}await setDoc\(agentRef/.test(code(app)),
      'one point appended per sale and app open, never trimmed - heading for the 1 MB record his van stock lives in; the day is saved BEFORE the await, or offline pings each wipe the list');
+  {  /* WHO SEES WHOM (his A, 2026-10-02): his own region below the boss's tiers, everyone at the top */
+    const { visibleTeam } = await import('../utils/expedition.js');
+    const roster = [{ id: 'm2', location: 'MUNTILAN' }, { id: 'm5', location: 'muntilan ' }, { id: 'm6', location: 'MAGELANG' }, { id: 'm9' }];
+    const ids = (r) => r.map((m) => m.id).join();
+    ok('expedition region fence: a salesman sees his own region (spelling-proof), the boss everyone, an unknown region nobody',
+       ids(visibleTeam(roster, { global: false, viewerId: 'm2' })) === 'm2,m5' && ids(visibleTeam(roster, { global: true, viewerId: 'm2' })) === 'm2,m5,m6,m9' &&
+       visibleTeam(roster, { global: false, viewerId: 'm9' }).length === 0 && visibleTeam(roster, { global: false, viewerId: undefined }).length === 0,
+       `${ids(visibleTeam(roster, { global: false, viewerId: 'm2' }))} / ${ids(visibleTeam(roster, { global: false, viewerId: 'm9' }))}`);
+    ok('the map fences the team with Reports\' own authority switch, and App passes the role + profile it needs',
+       /expedition\(visibleTeam\(motorists \|\| \[\], \{ global: globalView, viewerId: agentProfileId \}\)/.test(mp) &&
+       /globalView = \['ADMIN', 'DEVELOPER', 'COMPANY_OWNER'\]\.includes\(userRole\) \|\| hasClearance\(userRole, 'view_reports_global'\)/.test(mp) &&
+       /<MapMissionControl [^\n]*userRole=\{userRole\} agentProfileId=\{agentProfileId\}/.test(app),
+       'without the role every viewer falls to the fail-closed side and the boss sees nobody');
+  }
   {  /* the SHIPPED day logic, cut out of App.jsx and run over three pings and two days */
     const snip = code(app).match(/const today = getLocalDayKey\(\), dayKey = [^;]+;\s*let sameDay = false;\s*try \{[^}]*\} catch \{[^}]*\}/)?.[0];
     const mem = {}, store = { getItem: (k) => mem[k] ?? null, setItem: (k, v) => { mem[k] = v; } };

@@ -819,10 +819,11 @@ const LAB_MAP = (() => {
       if (k < t.hits) transactions.push({ id: `tx-${i}-${k}`, customerName: SHOPS[i * 8 + k], agentId: t.id, agentName: t.name, total: 250000, timestamp: { seconds: Math.floor((now - (t.seen + (t.hits - k) * 25) * 60000) / 1000) } });
     });
     const here = geo(t.hits ? t.stops[t.hits - 1] : [565, 710]);
-    return { id: t.id, name: t.name, currentLocation: { lat: here.lat, lng: here.lng, timestamp: new Date(now - t.seen * 60000).toISOString() } };
+    /* two regions, so the region fence shows: Budi + Ari (+ Cahyo) work MUNTILAN, Dewi + Rini MAGELANG */
+    return { id: t.id, name: t.name, location: i < 2 ? 'MUNTILAN' : 'MAGELANG', currentLocation: { lat: here.lat, lng: here.lng, timestamp: new Date(now - t.seen * 60000).toISOString() } };
   });
   const base = geo([565, 710]);
-  motorists.push({ id: 'm3', name: 'Cahyo Putra', currentLocation: { ...base, timestamp: new Date(now - 26 * 3600000).toISOString() } });
+  motorists.push({ id: 'm3', name: 'Cahyo Putra', location: 'muntilan ', currentLocation: { ...base, timestamp: new Date(now - 26 * 3600000).toISOString() } });
   return { customers, transactions, motorists };
 })();
 
@@ -1136,7 +1137,8 @@ function ShellLab() {
         </div>
       ) : q.has('map') ? (
         <MapMissionControl customers={LAB_MAP.customers} transactions={LAB_MAP.transactions} inventory={[]} db={{}} appId="lab" user={{ uid: 'lab' }}
-          logAudit={() => {}} triggerCapy={() => {}} isAdmin savedHome={null} onSetHome={() => {}} motorists={LAB_MAP.motorists} onNavigateToDirectory={() => {}} />
+          logAudit={() => {}} triggerCapy={() => {}} isAdmin={q.has('admin')} savedHome={null} onSetHome={() => {}} motorists={LAB_MAP.motorists} onNavigateToDirectory={() => {}}
+          userRole={q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE'} agentProfileId="m2" />
       ) : q.has('places') ? (
         /* ?shell&places — the Restock Vault desk INSIDE the real shell, wrapped exactly as App.jsx
            wraps it (`activeTab === 'restock_vault'`): the shell's `p-6`, then the `border-4 p-4`

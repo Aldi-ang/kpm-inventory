@@ -15,6 +15,19 @@ import { km, nextStop } from './nextStop.js';
 import { isSale } from './salesRollup.js';
 import { storeKey, getLocalDayKey } from './helpers.js';
 import { txDate } from './period.js';
+import { normalizeRegion } from '../config/permissions.js';
+
+/* WHO SEES WHOM (his A, 2026-10-02: "team member only can see other team member within the same regional
+   group"). The boss's tiers see the whole company; everyone else sees his own region's salesmen only - decided
+   by the same Reporting Authority switch the Reports screen reads (HistoryReportView.jsx). A viewer below global
+   whose own region is unknown sees nobody, never everybody: fail closed, like Reports. */
+export const visibleTeam = (motorists = [], { global, viewerId }) => {
+    if (global) return motorists;
+    const me = motorists.find((m) => m.id === viewerId);
+    if (!me?.location) return [];
+    const mine = normalizeRegion(me.location);
+    return motorists.filter((m) => normalizeRegion(m.location) === mine);
+};
 
 const AT_SHOP_M = 150;      // his last point this close to his last sale = still at that shop...
 const AT_SHOP_MIN = 10;     // ...but only while that point is this fresh

@@ -4914,7 +4914,7 @@ const handleGitHubMirror = async () => {
 
 
           {/* MAP SYSTEM: Shows ALL customers (Read-only for agents to maintain situational awareness) */}
-          {activeTab === 'map_war_room' && <MapMissionControl customers={userRole === 'ADMIN' ? displayCustomers : displayPermitted} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} motorists={motorists} onNavigateToDirectory={() => setActiveTab('customers')} />}
+          {activeTab === 'map_war_room' && <MapMissionControl customers={userRole === 'ADMIN' ? displayCustomers : displayPermitted} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} motorists={motorists} onNavigateToDirectory={() => setActiveTab('customers')} userRole={userRole} agentProfileId={agentProfileId} />}
           
          {/* JOURNEY PLAN: Strictly locked down to ONLY show Admin's authorized Pricing Tiers */}
          {activeTab === 'journey' && <JourneyView transactions={transactions} customers={displayPermitted} db={db} appId={appId} user={user} userRole={userRole} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} isAdmin={isAdmin} isLiteMode={isLiteMode} appSettings={appSettings} focusStore={journeyFocus} onFocusStoreHandled={() => setJourneyFocus(null)} />}
