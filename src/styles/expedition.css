@@ -105,3 +105,52 @@
 
 /* the toggle on the map's control card */
 .kx-toggle[aria-pressed="true"] { border-color: #E4B04A !important; color: #E4B04A !important; }
+
+/* ---- Journey Plan's top panel, MISSION FEED (his pick 2026-10-03: A strip on the PC, B day card on the phone) ---- */
+.kx-feed { background: var(--panel); border: 1px solid var(--line-2); border-radius: 16px; padding: 8px 12px 12px; display: grid; gap: 10px; color: var(--ink); }
+.kx-feed-head { margin: 0; font: 900 18px/1 var(--font-display); letter-spacing: .1em; }
+.kx-feed-head button { color: inherit; font: inherit; letter-spacing: inherit; background: none; border: 0; padding: 0; }
+.kx-feed-mark { flex: none; width: 18px; height: 18px; box-sizing: border-box; border-radius: 50%; border: 2px solid #E4B04A; position: relative; }
+.kx-feed-mark::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: #E4B04A; }
+.kx-feed-meta { font: 700 11px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); white-space: nowrap; }
+.kx-feed-meta b { color: var(--ink); }
+.kx-feed-count { font: 900 26px/1 var(--font-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kx-feed-count small { font: 700 11px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); margin-left: 6px; }
+.kx-feed-day { display: flex; align-items: flex-end; gap: 12px; }
+.kx-feed-day > span:first-child { font: 900 30px/.9 var(--font-display); letter-spacing: .02em; text-transform: uppercase; }
+.kx-feed-day .kx-feed-count { margin-left: auto; }
+.kx-feed-prog { display: flex; align-items: center; gap: 12px; }
+.kx-feed-prog > .kx-cells, .kx-feed-prog > .kx-feed-bar { flex: 1; margin: 0; }
+.kx-feed-bar { height: 6px; border-radius: 3px; background: var(--line-2); overflow: hidden; }
+.kx-feed-bar i { display: block; height: 100%; background: #E4B04A; }
+.kx-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.kx-days button { min-height: 44px; position: relative; border: 1px solid var(--line-3); border-radius: 8px; background: var(--raised); color: var(--ink-muted);
+  font: 800 11px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; transition: transform 140ms cubic-bezier(.23, 1, .32, 1); -webkit-tap-highlight-color: transparent; }
+.kx-days button:active { transform: scale(.97); }
+.kx-days button[aria-pressed="true"] { background: var(--inset); border-color: var(--gold); color: var(--ink); }
+.kx-days button.today::after { content: ""; position: absolute; left: 50%; bottom: 4px; translate: -50% 0; width: 4px; height: 4px; border-radius: 50%; background: #E4B04A; }
+.kx-feed-controls { display: grid; gap: 10px; padding-top: 2px; }
+.kx-feed-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.kx-feed-field > span { font: 700 11px/1 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-muted); }
+.kx-feed select { min-height: 44px; width: 100%; min-width: 0; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--inset); color: var(--ink);
+  font: 700 12px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+.kx-feed select.set { border-color: var(--gold); }
+.kx-feed select:focus-visible, .kx-days button:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+/* one under the other on the phone - three across measured 144/81/81 at 375, the third past its column (2026-09-19) */
+.kx-feed-place { display: grid; grid-template-columns: 1fr; gap: 6px; }
+/* phone-only / desk-only parts that carry their own display: Tailwind's hidden / lg:hidden lose to them (this file loads
+   after index.css, same specificity), measured - the day keys showed twice in the open fold at 390 */
+.kx-feed .kx-desk { display: none; }
+/* labels 11 px on the phone, his "make the font little bit bigger" (2026-08-16); the desk keeps 10 */
+.kx-feed .kx-meta3 small { font-size: 11px; }
+@media (min-width: 1024px) {
+  .kx-feed { padding: 14px 16px 16px; gap: 12px; }
+  .kx-feed-head { font-size: 22px; }
+  .kx-feed-head button { gap: 14px; }
+  .kx-days button, .kx-feed select { min-height: 36px; }
+  .kx-feed-controls { grid-template-columns: 330px 240px minmax(0, 1fr); gap: 16px; align-items: end; padding-top: 0; }
+  .kx-feed-place { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .kx-feed .kx-phone { display: none; }
+  .kx-feed .kx-desk { display: flex; }
+  .kx-feed-meta, .kx-feed-count small, .kx-feed-field > span { font-size: 10px; }
+}

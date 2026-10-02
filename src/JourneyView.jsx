@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Truck, MapPin, CheckCircle, Calendar, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, Target, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, ListFilter, Paintbrush, LocateFixed, Maximize, Minimize, ChevronRight } from 'lucide-react';
+import { Truck, MapPin, CheckCircle, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, Paintbrush, LocateFixed, Maximize, Minimize, ChevronRight } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs, getDoc, setDoc } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
@@ -822,6 +822,24 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     const conqueredCount = orderedRoute.filter(c => c.lastVisit === todayDate).length;
     const progressPercent = orderedRoute.length > 0 ? Math.round((conqueredCount / orderedRoute.length) * 100) : 0;
 
+    /* MISSION FEED's parts (his pick 2026-10-03: A strip on the PC, B day card on the phone). One cell per shop up
+       to 40 - past that a cell is thinner than its gap on a phone, so it becomes a bar. The day is 7 keys, today
+       dotted. Overdue = the same rule the store cards use (getBountyStatus), not "due today". */
+    const todayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    const feedProgress = orderedRoute.length > 0 && orderedRoute.length <= 40
+        ? <div className="kx-cells" style={{ gridTemplateColumns: `repeat(${orderedRoute.length}, 1fr)` }}>{orderedRoute.map((_, k) => <i key={k} className={k < conqueredCount ? 'on' : k === conqueredCount ? 'now' : ''} />)}</div>
+        : <div className="kx-feed-bar"><i style={{ width: `${progressPercent}%` }} /></div>;
+    const feedDays = (
+        <div className="kx-days" role="group" aria-label="Day">
+            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => (
+                <button type="button" key={d} aria-pressed={selectedDay === d} className={d === todayName ? 'today' : ''} onClick={() => setSelectedDay(d)} title={d}>
+                    <span className="lg:hidden">{d.slice(0, 2)}</span><span className="hidden lg:inline">{d.slice(0, 3)}</span>
+                </button>
+            ))}
+        </div>
+    );
+    const overdueCount = orderedRoute.filter(c => String(getBountyStatus(c)?.short || '').startsWith('OVERDUE')).length;
+
     const sortedRoute = useMemo(() => {
         return [...orderedRoute].sort((a, b) => {
             const aVis = a.lastVisit === todayDate ? 1 : 0;
@@ -902,70 +920,55 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         <div className={`space-y-6 font-mono ${isFullScreen ? 'static z-[9999]' : 'animate-fade-in relative'}`}>
             {activeBrush && <style>{`.leaflet-container { cursor: crosshair !important; } .custom-icon { cursor: crosshair !important; }`}</style>}
 
-            <div className="bg-black/40 px-3 py-2 lg:p-5 rounded-2xl border border-orange-500/20 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
-                <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-0 lg:mb-4">
-                    <div className="w-full lg:w-1/2">
-                        {/* 📱 On the phone the title is a 44 px key that folds the pickers under it and prints
-                            the day and the place the list is scoped to; on the desk it is the plain heading
-                            it always was (his board 1 = B, 2026-09-19). */}
-                        <h2 className="text-sm lg:text-2xl font-black text-white uppercase tracking-widest mb-0.5 lg:mb-3">
-                            <button type="button" onClick={() => setFeedOpen(v => !v)} aria-expanded={feedOpen}
-                                className="w-full flex items-center gap-3 text-left uppercase min-h-11 lg:min-h-0 lg:pointer-events-none lg:cursor-default">
-                                <Target size={28} className="text-orange-500 animate-pulse shrink-0 w-5 h-5 lg:w-7 lg:h-7"/>
-                                Mission Feed
-                                <span className="lg:hidden ml-auto text-[11px] text-slate-400 whitespace-nowrap">{selectedDay} · {journeyWhere(selectedProvinsi, selectedKabupaten, selectedKecamatan)} {feedOpen ? '▴' : '▾'}</span>
-                            </button>
-                        </h2>
-                        <div className="flex flex-col gap-[3px] lg:gap-1.5 w-full">
-                            <div className="flex justify-between text-[11px] lg:text-[10px] font-black uppercase tracking-widest text-orange-400">
-                                <span>Elimination Status</span>
-                                <span className="text-white">{conqueredCount} / {orderedRoute.length} Secured</span>
-                            </div>
-                            <div className="h-[3px] lg:h-2.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700 shadow-inner">
-                                <div className="h-full bg-gradient-to-r from-orange-600 to-yellow-400 transition-all duration-1000" style={{ width: `${progressPercent}%` }}></div>
-                            </div>
-                        </div>
-                    </div>
+            {/* MISSION FEED, redesigned 2026-10-03 - his pick: A strip on the PC, B day card on the phone (board A-Brain
+                Raw/2026-10-03-journey-header). Theme tokens, no green or blue, his names kept. On the phone the title is
+                still the 44 px key that folds the pickers (his board 1 = B, 2026-09-19); the day keys stay out of the fold
+                there, because "which day" is the first thing this screen asks. */}
+            <div className="kx-feed">
+                <h2 className="kx-feed-head">
+                    <button type="button" onClick={() => setFeedOpen(v => !v)} aria-expanded={feedOpen}
+                        className="w-full flex items-center gap-3 text-left uppercase min-h-11 lg:min-h-0 lg:pointer-events-none lg:cursor-default">
+                        <i className="kx-feed-mark" aria-hidden="true" />
+                        Mission Feed
+                        <span className="kx-feed-meta lg:hidden ml-auto">{journeyWhere(selectedProvinsi, selectedKabupaten, selectedKecamatan)} {feedOpen ? '▴' : '▾'}</span>
+                        <span className="kx-feed-meta hidden lg:inline"><b>{selectedDay}</b> · {journeyWhere(selectedProvinsi, selectedKabupaten, selectedKecamatan)} · {selectedAgent === 'All' ? 'Global Fleet' : selectedAgent}</span>
+                        <span className="kx-feed-count hidden lg:inline ml-auto">{conqueredCount}/{orderedRoute.length}<small>Secured</small></span>
+                    </button>
+                </h2>
+                <div className="kx-feed-day kx-phone"><span>{selectedDay}</span><span className="kx-feed-count">{conqueredCount}/{orderedRoute.length}<small>Secured</small></span></div>
+                <div className="kx-feed-prog"><span className="kx-feed-meta hidden lg:inline">Elimination Status</span>{feedProgress}</div>
+                <div className="kx-meta3 kx-phone">
+                    <div><b>{orderedRoute.length - conqueredCount}</b><small>shops left</small></div>
+                    <div><b>{team.filter(t => t.out).length}</b><small>salesmen out</small></div>
+                    <div><b>{overdueCount}</b><small>overdue</small></div>
                 </div>
+                <div className="lg:hidden">{feedDays}</div>
 
                 {/* the pickers ride a grid-rows fold on the phone (0fr → 1fr, 200 ms) and are always open on the desk */}
                 <div className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out lg:block ${feedOpen ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`} style={{ gridTemplateRows: feedOpen ? '1fr' : '0fr' }}>
                 <div className="overflow-hidden lg:contents">
-                <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-700 shadow-inner flex flex-wrap gap-4 mt-4">
-                    <div className="flex-1 min-w-[200px] flex flex-col gap-2 lg:border-r lg:border-slate-700 lg:pr-4">
-                        <label className="text-[11px] lg:text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1"><MapPin size={12}/> Regional Command</label>
-                        <div className="flex flex-col lg:flex-row gap-2 w-full">
-                            <select value={selectedProvinsi} onChange={(e) => { setSelectedProvinsi(e.target.value); setSelectedKabupaten('All'); setSelectedKecamatan('All'); }} className="flex-1 bg-black text-slate-300 font-bold text-[11px] lg:text-[10px] uppercase p-2 min-h-11 lg:min-h-0 rounded outline-none border border-slate-700 cursor-pointer">
+                <div className="kx-feed-controls">
+                    <div className="kx-feed-field kx-desk"><span>Day</span>{feedDays}</div>
+                    <label className="kx-feed-field"><span>Operational Filter</span>
+                        <select value={selectedAgent} onChange={(e) => setSelectedAgent(e.target.value)} className={selectedAgent !== 'All' ? 'set' : ''}>
+                            <option value="All">Global Fleet</option>
+                            {globalAgentList.map(a => <option key={a} value={a}>{a}'s Bounties</option>)}
+                        </select>
+                    </label>
+                    <div className="kx-feed-field"><span>Regional Command</span>
+                        <div className="kx-feed-place">
+                            <select aria-label="Province" value={selectedProvinsi} onChange={(e) => { setSelectedProvinsi(e.target.value); setSelectedKabupaten('All'); setSelectedKecamatan('All'); }} className={selectedProvinsi !== 'All' ? 'set' : ''}>
                                 <option value="All">All Prov</option>
                                 {hierarchyData.provs.map(p => <option key={p} value={p}>{p}</option>)}
                             </select>
-                            <select value={selectedKabupaten} onChange={(e) => { setSelectedKabupaten(e.target.value); setSelectedKecamatan('All'); }} className="flex-1 bg-black text-slate-300 font-bold text-[11px] lg:text-[10px] uppercase p-2 min-h-11 lg:min-h-0 rounded outline-none border border-slate-700 cursor-pointer">
+                            <select aria-label="Kabupaten" value={selectedKabupaten} onChange={(e) => { setSelectedKabupaten(e.target.value); setSelectedKecamatan('All'); }} className={selectedKabupaten !== 'All' ? 'set' : ''}>
                                 <option value="All">All Kab</option>
                                 {hierarchyData.kabs.map(k => <option key={k} value={k}>{k}</option>)}
                             </select>
-                            <select value={selectedKecamatan} onChange={(e) => setSelectedKecamatan(e.target.value)} className="flex-1 bg-black text-orange-400 font-bold text-[11px] lg:text-[10px] uppercase p-2 min-h-11 lg:min-h-0 rounded outline-none border border-orange-500/50 focus:border-orange-500 cursor-pointer">
+                            <select aria-label="Kecamatan" value={selectedKecamatan} onChange={(e) => setSelectedKecamatan(e.target.value)} className={selectedKecamatan !== 'All' ? 'set' : ''}>
                                 <option value="All">All Kec</option>
                                 {hierarchyData.kecs.map(k => <option key={k} value={k}>{k}</option>)}
                             </select>
-                        </div>
-                    </div>
-
-                    <div className="flex-1 min-w-[200px] flex flex-col gap-2">
-                        <label className="text-[11px] lg:text-[10px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1"><ListFilter size={12}/> Operational Filters</label>
-                        <div className="flex gap-2">
-                            <div className="flex items-center flex-1 bg-black px-1.5 py-0 lg:py-1.5 rounded border border-slate-700">
-                                <Truck size={14} className="text-emerald-400 ml-1 shrink-0"/>
-                                <select value={selectedAgent} onChange={(e) => setSelectedAgent(e.target.value)} className="bg-transparent text-emerald-400 font-bold text-[11px] lg:text-[10px] uppercase w-full outline-none cursor-pointer pl-1 min-h-11 lg:min-h-0">
-                                    <option value="All">Global Fleet</option>
-                                    {globalAgentList.map(a => <option key={a} value={a}>{a}'s Bounties</option>)}
-                                </select>
-                            </div>
-                            <div className="flex items-center flex-1 bg-black px-1.5 py-0 lg:py-1.5 rounded border border-slate-700">
-                                <Calendar size={14} className="text-blue-400 ml-1 shrink-0"/>
-                                <select value={selectedDay} onChange={(e) => setSelectedDay(e.target.value)} className="bg-transparent text-blue-400 font-bold text-[11px] lg:text-[10px] uppercase w-full outline-none cursor-pointer pl-1 min-h-11 lg:min-h-0">
-                                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => <option key={d} value={d}>{d}</option>)}
-                                </select>
-                            </div>
                         </div>
                     </div>
                 </div>

@@ -7752,29 +7752,40 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /const \[feedOpen, setFeedOpen\] = useState\(\(\) => typeof window !== 'undefined' && window\.innerWidth >= 1024\);/.test(jv) &&
      /<button type="button" onClick=\{\(\) => setFeedOpen\(v => !v\)\} aria-expanded=\{feedOpen\}/.test(jv) &&
      /text-left uppercase min-h-11 lg:min-h-0 lg:pointer-events-none lg:cursor-default/.test(jv) &&
-     /\{selectedDay\} · \{journeyWhere\(selectedProvinsi, selectedKabupaten, selectedKecamatan\)\} \{feedOpen \? '▴' : '▾'\}/.test(jv) &&
+     /* since 2026-10-03 the phone key prints the place only - the day is the big headline right under it (his B) */
+     /<span className="kx-feed-meta lg:hidden ml-auto">\{journeyWhere\(selectedProvinsi, selectedKabupaten, selectedKecamatan\)\} \{feedOpen \? '▴' : '▾'\}<\/span>/.test(jv) &&
+     /<div className="kx-feed-day kx-phone"><span>\{selectedDay\}<\/span>/.test(jv) &&
      /import \{ storeKey, getLocalDayKey, journeyWhere \} from '\.\/utils\/helpers'/.test(jv),
      'his "board 1 = B"');
   ok('1B: the filter panel rides a grid-template-rows fold, 200 ms, and is always open on the desk',
      /className=\{`grid transition-\[grid-template-rows,opacity\] duration-200 ease-out lg:block \$\{feedOpen \? 'opacity-100' : 'opacity-0 lg:opacity-100'\}`\} style=\{\{ gridTemplateRows: feedOpen \? '1fr' : '0fr' \}\}/.test(jv) &&
-     /<div className="overflow-hidden lg:contents">\s*<div className="bg-slate-900\/60 p-4 rounded-xl border border-slate-700 shadow-inner flex flex-wrap gap-4 mt-4">/.test(jv));
+     /<div className="overflow-hidden lg:contents">\s*<div className="kx-feed-controls">/.test(jv));
+  ok('MISSION FEED redesign (his A on the PC, B on the phone, 2026-10-03): no green or blue, 7 day keys (today dotted), one cell per shop up to 40, 3 numbers on the phone, his names kept',
+     !/(emerald|blue)-\d/.test(jv.slice(jv.indexOf('<div className="kx-feed">'), jv.indexOf('<div className="flex flex-col gap-3 lg:flex-row lg:gap-4">'))) &&
+     /aria-pressed=\{selectedDay === d\} className=\{d === todayName \? 'today' : ''\} onClick=\{\(\) => setSelectedDay\(d\)\}/.test(jv) &&
+     /orderedRoute\.length > 0 && orderedRoute\.length <= 40/.test(jv) && /<small>salesmen out<\/small>/.test(jv) && /<small>overdue<\/small>/.test(jv) &&
+     /Mission Feed/.test(jv) && /Elimination Status/.test(jv) && /<small>Secured<\/small>/.test(jv) && /'s Bounties/.test(jv) &&
+     /<div className="lg:hidden">\{feedDays\}<\/div>/.test(jv) && /<div className="kx-feed-field kx-desk"><span>Day<\/span>\{feedDays\}<\/div>/.test(jv) &&
+     /* the feed's own classes carry a display, so Tailwind's hidden / lg:hidden lose to them - the feed hides its own
+        (measured 2026-10-03: the day keys showed twice in the open fold at 390) */
+     /\.kx-feed \.kx-desk \{ display: none; \}/.test(read('src/styles/expedition.css')) && /\.kx-feed \.kx-phone \{ display: none; \}/.test(read('src/styles/expedition.css')) &&
+     !/className="(kx-feed-day|kx-meta3|kx-feed-field|kx-feed-prog|kx-days|kx-feed-controls|kx-feed-place|kx-cells)\b[^"]* (lg:)?(hidden|flex|block|grid)\b/.test(jv.slice(jv.indexOf('<div className="kx-feed">'), jv.indexOf('<div className="flex flex-col gap-3 lg:flex-row lg:gap-4">'))),
+     'his screenshot: a green fleet box, a blue day box, five drop-downs in three styles');
   const journeyWhere = (await import('../utils/helpers.js')).journeyWhere || (() => null);
   ok('BEHAVIOUR: journeyWhere names the narrowest place picked, and All when nothing is',
      journeyWhere('All', 'All', 'All') === 'All' && journeyWhere('JAWA BARAT', 'All', 'All') === 'JAWA BARAT' &&
      journeyWhere('JAWA BARAT', 'BANDUNG', 'All') === 'BANDUNG' && journeyWhere('JAWA BARAT', 'BANDUNG', 'CIBEUNYING') === 'CIBEUNYING' &&
      journeyWhere(undefined, undefined, undefined) === 'All',
      'the word the folded row prints');
-  ok('the floor: the three region pickers are 44 px rows at 11 px, one under the other; the desk column rule is desk-only',
-     /<div className="flex flex-col lg:flex-row gap-2 w-full">/.test(jv) &&
-     /className="flex-1 min-w-\[200px\] flex flex-col gap-2 lg:border-r lg:border-slate-700 lg:pr-4">/.test(jv) &&
-     (jv.match(/font-bold text-\[11px\] lg:text-\[10px\] uppercase p-2 min-h-11 lg:min-h-0 rounded outline-none border border-(slate-700|orange-500\/50 focus:border-orange-500) cursor-pointer/g) || []).length === 3 &&
-     !/border-r border-slate-700 pr-4">/.test(code(jv)) &&
-     !/text-\[10px\] uppercase p-2 rounded outline-none/.test(code(jv)),
+  ok('the floor: the three region pickers are 44 px rows at 12 px, one under the other; three across on the desk only (MISSION FEED redesign 2026-10-03)',
+     /\.kx-feed-place \{ display: grid; grid-template-columns: 1fr; gap: 6px; \}/.test(read('src/styles/expedition.css')) &&
+     /@media \(min-width: 1024px\) \{[^@]*\.kx-feed-place \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\); \}/.test(read('src/styles/expedition.css')) &&
+     /\.kx-feed select \{ min-height: 44px;[^}]*font: 700 12px\/1/.test(read('src/styles/expedition.css')) &&
+     (jv.match(/<select aria-label="(Province|Kabupaten|Kecamatan)"/g) || []).length === 3,
      'measured 2026-09-19: 144/81/81 x 30 at 10 px, the third to x 367 past its column at 330');
-  ok('the floor: the FLEET and DAY <select> are 44 px tall at 11 px - the select is the tap target, its box is not',
-     (jv.match(/font-bold text-\[11px\] lg:text-\[10px\] uppercase w-full outline-none cursor-pointer pl-1 min-h-11 lg:min-h-0/g) || []).length === 2 &&
-     (jv.match(/flex items-center flex-1 bg-black px-1\.5 py-0 lg:py-1\.5 rounded border border-slate-700/g) || []).length === 2 &&
-     !/bg-black p-1\.5 rounded border border-slate-700">/.test(code(jv)),
+  ok('the floor: the FLEET select and the DAY keys are 44 px tall on the phone - the control itself is the tap target',
+     /\.kx-feed select \{ min-height: 44px;/.test(read('src/styles/expedition.css')) && /\.kx-days button \{ min-height: 44px;/.test(read('src/styles/expedition.css')) &&
+     /<select value=\{selectedAgent\} onChange=\{\(e\) => setSelectedAgent\(e\.target\.value\)\} className=\{selectedAgent !== 'All' \? 'set' : ''\}>/.test(jv),
      'measured 2026-09-19: 107 x 13 inside a 27 px box');
   ok('the floor: the legend / paintbrush key and the four map keys are 44 on the phone',
      /hover:bg-slate-800 transition-colors active:scale-95 select-none min-h-11 lg:min-h-0"/.test(jv) &&
@@ -7819,15 +7830,15 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/<div className="h-24 bg-black relative shrink-0 border-b border-slate-800">/.test(code(jv)),
      'measured 2026-09-19: 96 px of hex texture and NO INTEL on every card without a photo');
   ok('the floor: every label on the phone flows is 11 px (the hover-only key labels and the pin popup are the exceptions)',
-     /flex justify-between text-\[11px\] lg:text-\[10px\] font-black uppercase tracking-widest text-orange-400/.test(jv) &&
-     (jv.match(/<label className="text-\[11px\] lg:text-\[10px\] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1">/g) || []).length === 2 &&
+     /\.kx-feed-meta \{ font: 700 11px\/1/.test(read('src/styles/expedition.css')) && /\.kx-feed-field > span \{ font: 700 11px\/1/.test(read('src/styles/expedition.css')) && /\.kx-feed \.kx-meta3 small \{ font-size: 11px; \}/.test(read('src/styles/expedition.css')) &&
+     /\.kx-feed-meta, \.kx-feed-count small, \.kx-feed-field > span \{ font-size: 10px; \}/.test(read('src/styles/expedition.css')) &&
      /<span className="text-white text-\[11px\] lg:text-\[10px\] font-black uppercase tracking-widest">\{canManageFleetSettings/.test(jv) &&
      (jv.match(/<p className="text-\[11px\] lg:text-\[10px\] text-slate-400 font-bold uppercase tracking-wider">\{k(ab|ec)Count\}/g) || []).length === 2 &&
      /className=\{`text-\[11px\] lg:text-\[10px\] font-bold mt-1 \$\{isCleared/.test(jv) &&
      (jv.match(/(?<!lg:)text-\[10px\]/g) || []).length <= 10,
      'measured 2026-09-19: every label 10 px; his 2026-08-16 "make the font little bit bigger"');
-  ok('the store block and the MISSION FEED card give the phone its 16 px back (p-5 -> p-3; the feed card is px-3 py-2 since the strip, 2026-09-20)',
-     /<div className="bg-black\/40 px-3 py-2 lg:p-5 rounded-2xl border border-orange-500\/20/.test(jv) &&
+  ok('the store block and the MISSION FEED card give the phone its 16 px back (p-5 -> p-3; the feed card keeps 12 px sides since the strip, 2026-09-20)',
+     /\.kx-feed \{[^}]*padding: 8px 12px 12px;/.test(read('src/styles/expedition.css')) &&
      /<div className="animate-fade-in bg-black\/20 p-3 lg:p-5 rounded-3xl border border-white\/5 mt-2">/.test(jv),
      'the store card measured 318 wide in a 359 column');
   ok('the map: the tiles are Esri Dark Gray (no key needed) on Journey Plan and on the War Room; CARTO is gone - its tiles print API KEY REQUIRED',
@@ -7877,11 +7888,11 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /<MapTouchGate locked=\{isPhone && !isFullScreen\} \/>/.test(jv) &&
      /const isPhone = typeof window !== 'undefined' && window\.innerWidth < 1024;/.test(jv),
      'his "sometimes scrolling causing the map to move instead of sliding the page down"');
-  ok('Journey Plan: the MISSION FEED card is one line on the phone — 8/12 padding, a 3 px bar, no gap under the status; the desk unchanged',
-     /className="bg-black\/40 px-3 py-2 lg:p-5 rounded-2xl border border-orange-500\/20/.test(jv) &&
-     /className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 mb-0 lg:mb-4">/.test(jv) &&
-     /className="h-\[3px\] lg:h-2\.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-700 shadow-inner">/.test(jv) &&
-     !/jp-strip|jp-mapfold/.test(code(ll)),
+  /* SUPERSEDED 2026-10-03: "one line on the phone" (2026-09-20) gave way to his B day card - the day as the headline,
+     the count, one cell per shop, three numbers, the day keys out of the fold (his "A for pc B for phone"). What
+     survives of it: the old lab looks stay gone, and the pickers still fold. */
+  ok('Journey Plan: the MISSION FEED on the phone is his B day card (the strip it replaced is retired); the lab looks jp-strip / jp-mapfold stay gone',
+     /<div className="kx-feed-day kx-phone">/.test(jv) && /<div className="kx-meta3 kx-phone">/.test(jv) && !/jp-strip|jp-mapfold/.test(code(ll)),
      'the lab looks jp-strip / jp-mapfold are gone with the decision');
 }
 
