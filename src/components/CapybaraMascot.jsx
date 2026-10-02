@@ -36,17 +36,6 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
     const DISCO_VIDEO_URL = "/Bit_Capybara_Fortnite_Dance_Video.mp4";
     const DISCO_MUSIC_URL = "/disco_music.mp3";
 
-    useEffect(() => {
-        const lastBackup = localStorage.getItem('last_usb_backup');
-        const now = new Date().getTime();
-        const sevenDays = 7 * 24 * 60 * 60 * 1000;
-
-        if (!lastBackup || (now - lastBackup) > sevenDays) {
-            setInternalMsg("⚠️ PROTOCOL ALERT: TIME FOR USB SAFE BACKUP!");
-            setIsPeeking(true);
-        }
-    }, []);
-
     const dialogueList = useMemo(
         () => (messages.length > 0 ? messages : (user ? LOGGED_IN_MESSAGES : LOCKED_MESSAGES)),
         [messages, user]

@@ -774,6 +774,16 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   // --- LOGIC: CHECK IF USB BACKUP IS CURRENTLY SECURE (Within 7 Days) ---
   const lastUSB = localStorage.getItem('last_usb_backup');
   const isUsbSecure = lastUSB && (new Date().getTime() - parseInt(lastUSB)) < (7 * 24 * 60 * 60 * 1000);
+  /* THE 7-DAY USB-BACKUP REMINDER is a warning, so it goes to the top panel (his pick A, 2026-10-02: "A is
+     good"): 5 seconds, then kept in the bell's Missed list, where a repeat is one row with xN. It used to be the
+     capybara's own line, set when he mounted with no timer, so it stayed on screen - and came back every time the
+     mascot remounted (the cropper, the vault gate). Now: once per sign-in, after the vault gate is passed. */
+  const usbNagged = useRef(null);
+  useEffect(() => {
+    if (!user || gateUp || isUsbSecure || usbNagged.current === user.uid) return;
+    usbNagged.current = user.uid;
+    notify('⚠️ PROTOCOL ALERT: TIME FOR USB SAFE BACKUP!');
+  }, [user, gateUp, isUsbSecure]);
   
   
 

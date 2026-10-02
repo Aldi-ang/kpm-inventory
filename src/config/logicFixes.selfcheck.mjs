@@ -9913,6 +9913,9 @@ section('THE TWO-PART BELL: NEEDS YOU / MISSED, EVERY STRIP FADES (2026-10-02)')
      /unseenCount\(missed\.items, missed\.seenAt\)/.test(bell) && /onClick=\{clearMissed\}/.test(bell));
   ok('no orange-N00 class in the bell: tailwind.config.js has ONE orange, so they were never generated (titles printed black)',
      !/(text|border|bg)-orange-\d/.test(bell) && /'orange':?\s*'var\(--orange\)'|orange:\s+'var\(--orange\)'/.test(read('tailwind.config.js')));
+  ok('the USB-backup reminder is a warning in the top panel once per sign-in (his A, 07:50), never the capybara\'s untimed line',
+     /if \(!user \|\| gateUp \|\| isUsbSecure \|\| usbNagged\.current === user\.uid\) return;\s*usbNagged\.current = user\.uid;\s*notify\('⚠️ PROTOCOL ALERT: TIME FOR USB SAFE BACKUP!'\);/.test(app) &&
+     !/PROTOCOL ALERT|last_usb_backup/.test(capy));
   ok('rules draft: a person reads and writes only their own missed_log doc',
      /match \/missed_log\/\{profileId\} \{\s*allow read, write: if isSalesman\(bossUid\) && getEmployeeProfile\(\)\.get\('agentId', ''\) == profileId;\s*\}/.test(rules));
 }
