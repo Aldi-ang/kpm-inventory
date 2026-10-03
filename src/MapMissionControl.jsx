@@ -1856,7 +1856,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 };
 
 // --- MAIN WRAPPER (APP IN APP) ---
-const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings, motorists = [], onNavigateToDirectory, userRole, agentProfileId }) => {
+const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings, motorists = [], onNavigateToDirectory, userRole, agentProfileId, eodReports }) => {
 
     const userId = user?.uid || user?.id || "default";
 
@@ -1914,7 +1914,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
        on Journey Plan, his call 2026-10-03: "map mission control is used to analyze the stores ... the journey
        map is for ... journey of the salesman throughout the day". */
     const globalView = ['ADMIN', 'DEVELOPER', 'COMPANY_OWNER'].includes(userRole) || hasClearance(userRole, 'view_reports_global');
-    const team = useMemo(() => expedition(visibleTeam(motorists || [], { global: globalView, viewerId: agentProfileId }), customers || [], transactions || []), [motorists, customers, transactions, globalView, agentProfileId]);
+    const team = useMemo(() => expedition(visibleTeam(motorists || [], { global: globalView, viewerId: agentProfileId }), customers || [], transactions || [], new Date(), eodReports || []), [motorists, customers, transactions, globalView, agentProfileId, eodReports]);
 
     const canAddManualPin = isAdmin === true || user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin';
 

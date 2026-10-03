@@ -3,11 +3,11 @@
    Day on Earth). One map layer for both. Prototype: A-Brain Raw/2026-10-02-expedition/expedition.html.
    Data: src/utils/expedition.js. Motion is the march line's flow and the target's ping only - Lite
    Mode completes both instantly (index.css), so nothing moves there. */
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Marker, Polyline, CircleMarker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { agoLabel } from '../utils/expedition';
-import { personSvg, QUEST, safeHex } from '../utils/mapSprites';
+import { personSvg, sellerHtml, QUEST, safeHex } from '../utils/mapSprites';
 import '../styles/expedition.css';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -15,7 +15,7 @@ const count = (a) => `${a.done.length}${a.of != null ? `/${a.of}` : ''}`;
 const kmLabel = (m) => (m == null ? '-' : `${(m / 1000).toFixed(1).replace('.', ',')} km`);
 const said = (a) => ({
     go: `En route → ${a.next?.name}`, at: `At shop · ${a.done[a.done.length - 1]?.name}`,
-    home: 'Round done', idle: 'No shop left to suggest', off: 'Not out today',
+    home: 'Round done', idle: 'No shop left to suggest', off: 'Not out today', closed: 'Day closed',
 })[a.state];
 const lamp = (a) => ({ go: 'go', at: 'at' })[a.state] || '';
 const ll = (p) => [p.lat, p.lng];
@@ -31,8 +31,9 @@ const cachedIcon = (o) => {
 
 /* ---- the map layer: chips at the last-seen point, today's trail, the march line to the next shop ---- */
 /* `bare`: the chips only, no lines and no camera (Map System, the store-analysis map).
-   `stops={false}`: no shop pins or dots of its own - Journey Plan already draws every shop of the round */
-export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true, colorOf }) {
+   `stops={false}`: no shop pins or dots of its own - Journey Plan already draws every shop of the round.
+   Journey Plan's salesmen themselves are ExpeditionPeople, rendered inside its bubbles. */
+export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true }) {
     const map = useMap();
     const svg = useMemo(() => L.svg({ padding: 0.5 }), []);   // the march line's flow needs SVG; the map itself draws on canvas
 
@@ -44,7 +45,7 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true, co
     fit.current = () => {
         if (bare) return;
         map.invalidateSize();
-        const who = teamRef.current.filter((a) => (wide && !focus ? a.out : a.id === sel));
+        const who = teamRef.current.filter((a) => (wide && !focus ? a.live : a.id === sel));
         const pts = who.flatMap((a) => [a.live ? a.at : null, ...a.done, ...a.ahead]).filter((p) => p?.lat).map(ll);
         // room for the controls on top and the keys at the bottom, so no stop hides under them - except on Journey
         // Plan's 160 px phone strip, where that room would be the whole map
@@ -88,25 +89,15 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true, co
     return team.map((a) => {
         const mine = bare || wide || a.id === sel, faint = mine ? 1 : 0.35, one = !bare && !wide && a.id === sel, pins = one && stops;
         const g = groups[spot(a)] || [a.id], shift = (g.indexOf(a.id) - (g.length - 1) / 2) * 30;
-        /* Map System keeps the gold chip; Journey Plan draws the salesman as a pixel person in his squad colour (his
-           pick 2026-10-03, "full pixel"): walking to his next shop, standing at one, faded when not out today */
-        const shirt = colorOf ? colorOf(a.name) : '#E8E4DE';
-        const chip = bare ? cachedIcon({
+        /* Map System keeps the gold chip */
+        const chip = bare && cachedIcon({
             className: 'kx-mk',
             html: `<div class="kx-chip${a.out ? '' : ' off'}"><b>${a.photo ? `<img src="${esc(a.photo)}" alt="">` : esc(a.ini)}</b><span>${esc(a.ini)} · ${count(a)}</span><i></i></div>`,
             iconSize: [36, 48], iconAnchor: [18 - shift, 48],
-        }) : cachedIcon({
-            className: 'kx-mk',
-            html: `<div class="kx-sm ${a.out ? (a.state === 'go' ? 'walk' : 'idle') : 'off'}${a.id === sel ? ' sel' : ''}${mine ? '' : ' dim'}" style="--c:${safeHex(shirt, '#E8E4DE')}"><i class="kx-shadow"></i>`
-                + `<div class="who"><div class="body">${personSvg(HAIR[String(a.id).length % HAIR.length], shirt)}</div></div>`
-                + `<span class="tag"><i style="background:var(--c)"></i>${esc(a.ini)} · ${count(a)}</span>${QUEST}</div>`,
-            /* fixed to his spot at every zoom (his "supposed to be fix", 2026-10-03 20:00 - the screen-space step-aside
-               moved him on each zoom): he stands just LEFT of his point, so his shop's chest (centred on it) stays clear */
-            iconSize: [30, 42], iconAnchor: [45 - shift, 42],
         });
         const trail = [...a.done.filter((d) => d.lat), ...(a.live ? [a.at] : [])].map(ll);
         const goal = a.next?.lat ? a.next : null;
-        const lines = a.out && !bare;
+        const lines = a.live && !bare;   // a closed day leaves the map with him: no trail, no march line
         return (
             <React.Fragment key={a.id}>
                 {lines && a.ahead.length > 1 && goal && (
@@ -137,9 +128,59 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true, co
                             html: `<div class="kx-loc${k < a.done.length ? ' hit' : k === a.done.length ? ' next' : ''}"><i>${k + 1}</i>${k < a.done.length ? '' : `<span>${esc(p.name)}</span>`}</div>`,
                         })} />
                 ))}
-                {a.live && <Marker position={ll(a.at)} icon={chip} interactive={false} zIndexOffset={a.id === sel ? 21000 : 20000} />}
+                {chip && a.live && <Marker position={ll(a.at)} icon={chip} interactive={false} zIndexOffset={a.id === sel ? 21000 : 20000} />}
             </React.Fragment>
         );
+    });
+}
+
+/* ---- Journey Plan's salesmen: a pixel person in his squad colour (his pick 2026-10-03, "full pixel"), rendered INSIDE
+   the shop cluster group so Leaflet's own clustering puts each man in exactly one bubble at every zoom, walking ones
+   too; the bubble draws them as a crowd from `kxFig` (JourneyView createJourneyClusterIcon). Zoomed in, each stands
+   fixed at his spot (his "supposed to be fix", 2026-10-03 20:00), just LEFT of it so his shop's chest stays clear.
+   Seen at a shop (state `at`) = the selling scene: he stands beside that shop's chest holding the coin up. ---- */
+export function ExpeditionPeople({ team, sel, wide, colorOf }) {
+    const shopOf = (a) => (a.state === 'at' && a.done[a.done.length - 1]?.lat ? a.done[a.done.length - 1] : null);
+    /* THE SELLING MOMENT plays only for a man newly seen at a shop while the map is open - the chest's own rule (his
+       "it refreshed"): first load and later renders draw the held coin. Refs, not state: StrictMode runs the memo twice. */
+    const seen = useRef(null), playing = useRef({});
+    const [, setTick] = useState(0);
+    useMemo(() => {
+        const prev = seen.current, now = Date.now();
+        seen.current = Object.fromEntries(team.map((a) => [a.id, shopOf(a)?.key || null]));
+        if (!prev) return;
+        for (const id in playing.current) if (playing.current[id] < now) delete playing.current[id];
+        team.forEach((a) => {
+            if (!(a.id in prev)) return;
+            const k = seen.current[a.id];
+            if (k && prev[a.id] !== k) playing.current[a.id] = now + 1500;
+        });
+    }, [team]);
+    useEffect(() => {   // back to the still picture once the moment has played, or a zoom would replay it
+        if (!Object.values(playing.current).some((t) => t > Date.now())) return;
+        const t = setTimeout(() => setTick((x) => x + 1), 1600);
+        return () => clearTimeout(t);
+    }, [team]);
+
+    const where = (a) => shopOf(a) || a.at;
+    const spot = (a) => `${where(a).lat.toFixed(4)}_${where(a).lng.toFixed(4)}`;
+    const live = team.filter((a) => a.live), groups = {};
+    live.forEach((a) => { (groups[spot(a)] ||= []).push(a.id); });   // two on one spot stand side by side, not stacked
+
+    return live.map((a) => {
+        const shop = shopOf(a), g = groups[spot(a)], i = g.indexOf(a.id), shift = (i - (g.length - 1) / 2) * 30;
+        const shirt = colorOf ? colorOf(a.name) : '#E8E4DE', hair = HAIR[String(a.id).length % HAIR.length];
+        const mine = wide || a.id === sel, play = playing.current[a.id] > Date.now();
+        const icon = cachedIcon({
+            className: 'kx-mk',
+            html: `<div class="kx-sm ${shop ? `sell${play ? ' play' : ''}` : a.state === 'go' ? 'walk' : 'idle'}${a.id === sel ? ' sel' : ''}${mine ? '' : ' dim'}" style="--c:${safeHex(shirt, '#E8E4DE')}"><i class="kx-shadow"></i>`
+                + `<div class="who"><div class="body">${shop ? sellerHtml(hair, shirt) : personSvg(hair, shirt)}</div></div>`
+                + `<span class="tag"><i style="background:var(--c)"></i>${esc(a.ini)} · ${count(a)}</span>${QUEST}</div>`,
+            /* at a shop his feet line up with the chest's (anchor 14, 31) and he stands 2 px clear of its left edge */
+            iconSize: [30, 42], iconAnchor: shop ? [46 + i * 32, 39] : [45 - shift, 42],
+            kxFig: [hair, shirt],
+        });
+        return <Marker key={a.id} position={ll(where(a))} icon={icon} interactive={false} zIndexOffset={a.id === sel ? 21000 : 20000} />;
     });
 }
 
@@ -207,8 +248,8 @@ export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page }) {
                     <div className="kx-travel">
                         <div className="kx-who"><Av a={a} size="md" /><div><div className="kx-nm">{a.name}</div><small>Last seen {agoLabel(a.mins)}</small></div></div>
                         <div className="kx-dest">
-                            <small>{({ go: 'Heading to', at: 'Selling at', home: 'Round done', idle: 'No next shop', off: 'Not out today' })[a.state]}</small>
-                            <div>{({ go: a.next?.name, at: a.done[a.done.length - 1]?.name, home: `${a.done.length} shops today`, idle: '-', off: `Seen ${agoLabel(a.mins)}` })[a.state]}</div>
+                            <small>{({ go: 'Heading to', at: 'Selling at', home: 'Round done', idle: 'No next shop', off: 'Not out today', closed: 'Day closed' })[a.state]}</small>
+                            <div>{({ go: a.next?.name, at: a.done[a.done.length - 1]?.name, home: `${a.done.length} shops today`, idle: '-', off: `Seen ${agoLabel(a.mins)}`, closed: `${a.done.length} shops today` })[a.state]}</div>
                         </div>
                         {a.of > 0 && (a.of <= 12 ? <Pips a={a} /> : <Cells a={a} />)}
                         <div className="kx-meta3">

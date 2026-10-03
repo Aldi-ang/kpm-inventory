@@ -31,10 +31,17 @@ export const visibleTeam = (motorists = [], { global, viewerId }) => {
 
 const AT_SHOP_M = 150;      // his last point this close to his last sale = still at that shop...
 const AT_SHOP_MIN = 10;     // ...but only while that point is this fresh
-/* ON THE MAP only while his position is this fresh (his "there should be no data for their location right now
-   because they are offline and not working", 2026-10-03 20:00): a phone sends a point only with a sale or an app
-   open, so an old point is where he WAS - seven salesmen stood all evening where they opened the app that morning */
-export const LIVE_MIN = 120;
+/* ON THE MAP = seen today and no End of Day sent today (his "after EOD then character will leave the map, EOD finished
+   should replace 2 hours rule, and EOD is must to close that day job", 2026-10-03 20:25 - it replaced the two-hour
+   clock of 7b770be). Sent = his eod_reports doc for today exists, whatever the boss has approved yet: his field day is
+   over when HE closes it; a reset (App.jsx handleResetEOD deletes the doc) puts him back. A pending write has no
+   timestamp yet - that is an EOD sent just now. Known cost, told to him: a man who forgets his EOD stays at his last
+   spot until midnight. */
+const eodDay = (r, now) => {
+    const t = r?.timestamp;
+    const d = !t ? now : t.toDate ? t.toDate() : t.seconds != null ? new Date(t.seconds * 1000) : new Date(t);
+    return getLocalDayKey(Number.isNaN(d.getTime()) ? now : d);
+};
 
 const metres = (a, b) => Math.round(km(a.lat, a.lng, b.lat, b.lng) * 1000);
 const pin = (c) => (c?.latitude && c?.longitude ? { lat: Number(c.latitude), lng: Number(c.longitude) } : null);
@@ -47,8 +54,9 @@ const his = (c, name) => {
     return !!a && a !== 'unassigned' && a === String(name || '').trim().toLowerCase();
 };
 
-export function expedition(motorists = [], customers = [], transactions = [], now = new Date()) {
+export function expedition(motorists = [], customers = [], transactions = [], now = new Date(), eods = []) {
     const today = getLocalDayKey(now);
+    const closedToday = new Set(eods.filter((r) => r?.agentId && eodDay(r, now) === today).map((r) => r.agentId));
     const weekday = now.toLocaleDateString('en-US', { weekday: 'long' });
     const byKey = new Map(customers.map((c) => [storeKey(c.name), c]));
 
@@ -96,7 +104,9 @@ export function expedition(motorists = [], customers = [], transactions = [], no
             const next = ahead[0] || null;
             const last = done[done.length - 1];
 
+            const closed = out && closedToday.has(m.id);
             const state = !out ? 'off'
+                : closed ? 'closed'
                 : planned && !next ? 'home'
                 : next && last?.lat && mins <= AT_SHOP_MIN && metres(at, last) <= AT_SHOP_M ? 'at'
                 : next ? 'go' : 'idle';
@@ -104,7 +114,7 @@ export function expedition(motorists = [], customers = [], transactions = [], no
             return {
                 id: m.id, name: m.name || 'Agent', ini: initials(m.name),
                 photo: m.profileImage || m.photoURL || m.photoUrl || m.profilePic || m.photo || m.image || m.avatar || null,
-                at, seenAt: seen ? seenAt : null, mins, out, live: seen && mins <= LIVE_MIN, state, done, ahead, next, planned,
+                at, seenAt: seen ? seenAt : null, mins, out, live: out && !closed, state, done, ahead, next, planned,
                 of: planned ? done.length + ahead.length : null,          // "5/8" only when a round exists
                 metresToNext: next?.lat ? metres(at, next) : null,
             };

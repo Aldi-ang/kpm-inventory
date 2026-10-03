@@ -10,12 +10,12 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { loadBorderCache, saveBorderCache } from './utils/borderCache';
 import { isFleetManagementTier, hasClearance } from './config/permissions';
-import { ExpeditionLayer, ExpeditionPanel } from './components/Expedition.jsx';
+import { ExpeditionLayer, ExpeditionPanel, ExpeditionPeople } from './components/Expedition.jsx';
 import { useWide } from './hooks/useWide';
 import { expedition, visibleTeam } from './utils/expedition';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
-import { signFor, chestHtml, slotHtml } from './utils/mapSprites';
+import { signFor, chestHtml, slotHtml, crowdHtml } from './utils/mapSprites';
 
 // 🚀 SAFE LEAFLET ICON SETUP
 delete L.Icon.Default.prototype._getIconUrl;
@@ -29,10 +29,15 @@ L.Icon.Default.mergeOptions({
 // like an item stack, a bar under it filling amber with the share already visited today. Painting ~20 bubbles at
 // zoom 12 instead of N pins is the whole point. A store's visited flag rides on its icon (`kxVisited`), because
 // setIcon keeps the icon current while a marker's own options never update.
+/* a bubble holds shops AND salesmen (ExpeditionPeople renders inside the cluster group): the slot counts the shops, the
+   men stand on it as a crowd (his "group of 8bit character", 2026-10-03 20:15); men only = the crowd on its own */
 const createJourneyClusterIcon = (cluster) => {
     const kids = cluster.getAllChildMarkers();
+    const men = kids.map((m) => m.options.icon?.options?.kxFig).filter(Boolean);
+    const shops = kids.filter((m) => !m.options.icon?.options?.kxFig);
     return L.divIcon({
-        html: slotHtml(kids.length, kids.filter((m) => m.options.icon?.options?.kxVisited).length),
+        html: (shops.length ? slotHtml(shops.length, shops.filter((m) => m.options.icon?.options?.kxVisited).length) : '<i class="kx-crowd-shadow"></i>')
+            + crowdHtml(men, shops.length ? 0 : 21),
         className: 'kx-mk',
         iconSize: [42, 51],
         iconAnchor: [21, 21]
@@ -289,7 +294,7 @@ const getHashColor = (name) => {
     return AGENT_COLORS[index];
 };
 
-const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = [], db, appId, user, userRole, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings, isLiteMode, appSettings, focusStore = null, onFocusStoreHandled, motorists = [], agentProfileId }) => {
+const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = [], db, appId, user, userRole, logAudit, triggerCapy, isAdmin, setActiveTab, tierSettings, isLiteMode, appSettings, focusStore = null, onFocusStoreHandled, motorists = [], agentProfileId, eodReports }) => {
     
     // 🛡️ THE MASTER DATA SANITIZER V2
     // Added 'phone', 'address', 'storeImage' and 'lastVisitNote' to guarantee 100% string compliance.
@@ -404,7 +409,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     const [minute, setMinute] = useState(0);
     useEffect(() => { const t = setInterval(() => setMinute((m) => m + 1), 60000); return () => clearInterval(t); }, []);
     const globalView = ['ADMIN', 'DEVELOPER', 'COMPANY_OWNER'].includes(userRole) || hasClearance(userRole, 'view_reports_global');
-    const team = useMemo(() => expedition(visibleTeam(motorists || [], { global: globalView, viewerId: agentProfileId }), rawCustomers || [], rawTransactions || []), [motorists, rawCustomers, rawTransactions, minute, globalView, agentProfileId]); // eslint-disable-line react-hooks/exhaustive-deps
+    const team = useMemo(() => expedition(visibleTeam(motorists || [], { global: globalView, viewerId: agentProfileId }), rawCustomers || [], rawTransactions || [], new Date(), eodReports || []), [motorists, rawCustomers, rawTransactions, minute, globalView, agentProfileId, eodReports]); // eslint-disable-line react-hooks/exhaustive-deps
     const [expSel, setExpSel] = useState(null);
     const selId = team.some((a) => a.id === expSel) ? expSel : team.some((a) => a.id === agentProfileId) ? agentProfileId : team[0]?.id;   // a salesman opens on his own card
     const [expFocus, setExpFocus] = useState(false);   // PC: false = frame the whole team, true = frame the picked row
@@ -1419,8 +1424,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                             </Marker>
                         );
                     })}
+                    <ExpeditionPeople team={team} sel={selId} wide={wide} colorOf={squadColor} />
                     </MarkerClusterGroup>
-                    {team.length > 0 && <ExpeditionLayer team={team} sel={selId} focus={expFocus} wide={wide} stops={false} colorOf={squadColor} />}
+                    {team.length > 0 && <ExpeditionLayer team={team} sel={selId} focus={expFocus} wide={wide} stops={false} />}
                 </MapContainer>
             </div>
             {team.length > 0 && <ExpeditionPanel team={team} sel={selId} onPick={pickAgent} wide={wide} scoped={!globalView} page />}

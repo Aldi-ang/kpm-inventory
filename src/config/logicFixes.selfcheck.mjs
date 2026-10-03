@@ -10008,7 +10008,7 @@ section('Expedition map');
   {  /* WHERE IT LIVES (his call 2026-10-03): Map System analyses stores, Journey Plan is the salesman's day */
     const jv = code(read('src/JourneyView.jsx'));
     ok('the expedition lives on Journey Plan (trail, next shop, travel card / squad list, region-fenced); Map System keeps the chips only',
-       /<ExpeditionLayer team=\{team\} sel=\{selId\} focus=\{expFocus\} wide=\{wide\} stops=\{false\} colorOf=\{squadColor\} \/>/.test(jv) && /<ExpeditionPanel [^>]*\bpage \/>/.test(jv) &&
+       /<ExpeditionLayer team=\{team\} sel=\{selId\} focus=\{expFocus\} wide=\{wide\} stops=\{false\} \/>/.test(jv) && /<ExpeditionPanel [^>]*\bpage \/>/.test(jv) &&
        /expedition\(visibleTeam\(motorists \|\| \[\], \{ global: globalView, viewerId: agentProfileId \}\)/.test(jv) &&
        /<JourneyView motorists=\{motorists\} agentProfileId=\{agentProfileId\}/.test(app) &&
        /<ExpeditionLayer team=\{team\} bare \/>/.test(mp) && !/ExpeditionPanel|setExpOn/.test(mp),
@@ -10062,20 +10062,45 @@ section('Expedition map');
     /* HIS "why these agent position is changed when i zoom in and out when it supposed to be fix ... there should be no
        data for their location right now because they are offline" (2026-10-03 20:00, his screenshot: seven salesmen at
        0 sales ringed round one bubble, each moved by the screen-space step-aside) */
-    const { expedition: exped, LIVE_MIN } = await import('../utils/expedition.js');
+    /* HIS "after EOD then character will leave the map, EOD finished should replace 2 hours rule, and EOD is must to
+       close that day job" (2026-10-03 20:25): on the map = seen today and no EOD sent today; the two-hour clock is gone */
+    const expSrc = read('src/utils/expedition.js');
+    const { expedition: exped } = await import('../utils/expedition.js');
     const nowT = new Date(2026, 9, 3, 20, 0), ago = (m) => new Date(nowT - m * 60000).toISOString();
-    const team = exped([{ id: 'a', name: 'Fresh', currentLocation: { lat: -7.6, lng: 110.3, timestamp: ago(30) } },
-      { id: 'b', name: 'Morning', currentLocation: { lat: -7.6, lng: 110.3, timestamp: ago(12 * 60) } },
-      { id: 'c', name: 'Edge', currentLocation: { lat: -7.6, lng: 110.3, timestamp: ago(LIVE_MIN + 1) } }], [], [], nowT);
-    const liveOf = (id) => team.find((t) => t.id === id)?.live;
-    ok('Journey map re-run: a salesman is on the map only while his last position is under LIVE_MIN old - this morning\'s app open at the branch is not where he is at 20:00',
-       LIVE_MIN === 120 && liveOf('a') === true && liveOf('b') === false && liveOf('c') === false &&
-       /\{a\.live && <Marker position=\{ll\(a\.at\)\} icon=\{chip\}/.test(exj) && /\{lines && goal && a\.live && \(/.test(exj) && /\.\.\.\(a\.live \? \[a\.at\] : \[\]\)/.test(exj) &&
-       /team\.filter\(\(a\) => a\.live\)\.forEach/.test(exj),
-       `fresh ${liveOf('a')} / 12 h ${liveOf('b')} / ${LIVE_MIN + 1} min ${liveOf('c')}`);
+    const pos = (m) => ({ lat: -7.6, lng: 110.3, timestamp: ago(m) });
+    const sec = (d) => ({ seconds: Math.floor(d.getTime() / 1000) });
+    const team = exped([{ id: 'a', name: 'Fresh', currentLocation: pos(30) }, { id: 'b', name: 'Morning', currentLocation: pos(12 * 60) },
+      { id: 'c', name: 'Closed', currentLocation: pos(20) }, { id: 'd', name: 'Sending', currentLocation: pos(5) },
+      { id: 'e', name: 'Yesterday EOD', currentLocation: pos(40) }, { id: 'f', name: 'Off', currentLocation: pos(21 * 60) }], [], [], nowT, [
+      { agentId: 'c', timestamp: sec(new Date(2026, 9, 3, 19, 30)) }, { agentId: 'd', timestamp: null },
+      { agentId: 'e', timestamp: sec(new Date(2026, 9, 2, 21, 0)) }]);
+    const of = (id) => team.find((t) => t.id === id) || {};
+    ok('Journey map EOD re-run: on the map = seen today and no EOD sent today (this morning\'s point stays, a sent EOD - even one still on its way - takes him off, yesterday\'s EOD does not); no two-hour clock left',
+       of('a').live === true && of('b').live === true && of('c').live === false && of('c').state === 'closed' && of('d').live === false &&
+       of('e').live === true && of('f').live === false && of('f').state === 'off' && !/LIVE_MIN|mins <= 120/.test(expSrc) &&
+       /\{lines && goal && a\.live && \(/.test(exj) && /const lines = a\.live && !bare;/.test(exj),
+       ['a', 'b', 'c', 'd', 'e', 'f'].map((id) => `${id} ${of(id).live}/${of(id).state}`).join(' · '));
+    ok('Journey map EOD reaches both maps: App hands eodReports to Journey Plan and Map System, and both pass it to expedition()',
+       /<JourneyView motorists=\{motorists\}[^\n]*eodReports=\{eodReports\}/.test(app) && /<MapMissionControl [^\n]*eodReports=\{eodReports\}/.test(app) &&
+       /expedition\(visibleTeam\([^\n]*new Date\(\), eodReports \|\| \[\]\)/.test(jvr) && /expedition\(visibleTeam\([^\n]*new Date\(\), eodReports \|\| \[\]\)/.test(mp),
+       'without it the panel says "Day closed" while the map keeps him');
     ok('Journey map: a salesman is fixed to his spot at every zoom (no screen-space step-aside), standing just left of it so his shop\'s chest stays clear; one cached icon per look',
-       !/style\.translate =|kx-tether|MutationObserver/.test(exj) && !/kx-tether/.test(exc) && /iconSize: \[30, 42\], iconAnchor: \[45 - shift, 42\]/.test(exj) && /const cachedIcon = /.test(exj),
+       !/style\.translate =|kx-tether|MutationObserver/.test(exj) && !/kx-tether/.test(exc) && /iconAnchor: shop \? \[46 \+ i \* 32, 39\] : \[45 - shift, 42\]/.test(exj) && /const cachedIcon = /.test(exj),
        'the step-aside of eabda69 picked a new spot after every zoom, so he jumped');
+    /* HIS "group of 8bit character" on the bubble (2026-10-03 20:15) and his pick B "paid" with "coin animation that used
+       on the agent inventory and receipt" (23:05) */
+    const { crowdHtml, sellerHtml } = await import('../utils/mapSprites.js');
+    const seven = Array.from({ length: 7 }, (_, k) => ['#2B1A0E', k % 2 ? '#a855f7' : 'red;background:url(x)']);
+    const crowd = crowdHtml(seven), cluster = jvr.slice(jvr.indexOf('<MarkerClusterGroup'), jvr.indexOf('</MarkerClusterGroup>'));
+    ok('Journey map crowd re-run: a bubble draws at most 5 men then "+N", none for no men, every figure a cached picture, a colour that is not a plain hex never reaches the HTML; the bubble counts shops only',
+       (crowd.match(/class="kx-fig /g) || []).length === 5 && crowd.includes('<b>+2</b>') && crowdHtml([]) === '' && !crowd.includes('<rect') && !crowd.includes('url(') &&
+       /<ExpeditionPeople [^>]*\/>/.test(cluster) && /slotHtml\(shops\.length, shops\.filter\(/.test(jvr) && /kxFig: \[hair, shirt\]/.test(exj),
+       crowd.slice(0, 90));
+    ok('Journey map selling scene (B, the inventory coin): at a shop he holds the spinning .kpm-coin up; the resting style is the last picture (Lite and a fresh map); the moment plays only for a man newly seen at a shop while the map is open',
+       sellerHtml('#2B1A0E', '#a855f7').includes('class="pArms"') && sellerHtml('#2B1A0E', '#a855f7').includes('<i class="kpm-coin"></i>') &&
+       /\.kx-sm\.sell \.pStand \{ opacity: 0; \}/.test(exc) && /\.kx-sm\.sell\.play \.kx-cx \{ animation: kx-coin-x 450ms linear 600ms both; \}/.test(exc) &&
+       /if \(!\(a\.id in prev\)\) return;/.test(exj) && /playing\.current\[a\.id\] = now \+ 1500/.test(exj),
+       'his: "chest and 8 bit character not colliding but combined into one animation instead"');
   }
   {  /* the SHIPPED day logic, cut out of App.jsx and run over three pings and two days */
     const snip = code(app).match(/const today = getLocalDayKey\(\), dayKey = [^;]+;\s*let sameDay = false;\s*try \{[^}]*\} catch \{[^}]*\}/)?.[0];

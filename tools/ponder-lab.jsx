@@ -975,7 +975,13 @@ function ShellLab() {
            salesmen in two regions - Budi (m2, MUNTILAN) is the viewer unless `&admin` */
         <JourneyView
           db={{}} appId="lab"
-          motorists={q.has('exp') ? LAB_MAP.motorists : []} agentProfileId="m2"
+          /* `&sell` (with `&tick`): on every odd tick Dewi (m6, last seen 12 min ago) is seen again at her last sale's
+             shop, on every even one she is not - the selling moment replays every 5 s, for frames. `&focus=<shop>` (with
+             `&tick`) flies there at zoom 16 after the first tick, once the team camera has settled. `&eod`: Rini (m7)
+             has sent today's End of Day - she leaves the map */
+          motorists={!q.has('exp') ? [] : q.has('sell') && tick % 2 === 1 ? LAB_MAP.motorists.map((m) => (m.id === 'm6' ? { ...m, currentLocation: { ...m.currentLocation, timestamp: new Date().toISOString() } } : m)) : LAB_MAP.motorists}
+          eodReports={q.has('eod') ? [{ id: 'eod-m7', agentId: 'm7', timestamp: { seconds: Math.floor(Date.now() / 1000) - 600 } }] : []}
+          agentProfileId="m2"
           customers={q.has('exp') ? (q.has('visits') ? LAB_MAP.customers.map(labVisit(tick)) : LAB_MAP.customers) : [
             ...LAB_CUSTOMERS.map((c, i) => ({ ...c, region: 'BANDUNG', city: 'Bandung', tier: ['Bronze', 'Silver', 'Gold', 'Bronze'][i], assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : i === 1 ? '2026-09-01' : '', phone: '0812-3456-7890' })),
             { id: 'c-sri', name: 'Warung Bu Sri Rahayu Sejahtera Abadi', address: 'Jl. Dago Atas No. 101, Bandung', latitude: -6.8700, longitude: 107.6150, priceTier: 'Ecer', region: 'BANDUNG', city: 'Bandung', tier: 'Silver', assignedAgent: 'Budi Santoso', visitFreq: 3, lastVisit: '2026-09-10' },
@@ -986,7 +992,7 @@ function ShellLab() {
           userRole={q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE'} isAdmin={q.has('admin')}
           logAudit={() => {}} triggerCapy={() => {}} setActiveTab={() => {}}
           tierSettings={{}} isLiteMode={false} appSettings={{}}
-          focusStore={null} onFocusStoreHandled={() => {}}
+          focusStore={q.get('focus') && tick >= 1 ? q.get('focus') : null} onFocusStoreHandled={() => {}}
         />
       ) : q.has('opname') ? (
         /* ?shell&opname — Stock Opname INSIDE the real shell exactly as App.jsx:5069 mounts it: no

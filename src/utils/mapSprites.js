@@ -97,11 +97,49 @@ const HEAD = ['..OOOOOO..', '.OhhhhhhO.', '.OhsssshO.', '.OsessesO.', '.OsszzssO
 const TORSO = ['OccccccccO', 'OcCccccCcO', 'OcCccccCcO', 'OsCccccCsO', 'OOppppppOO'];
 const LEGS_A = ['.OppOOppO.', '.OppOOffO.', '.OffO.OO..', '.OOOO.....'];   /* left foot down, right foot lifted */
 const LEGS_B = ['.OppOOppO.', '.OffOOppO.', '..OO.OffO.', '.....OOOO.'];   /* the other way round */
-export const personSvg = (hair, shirt) => {
+const LEGS_S = ['.OppOOppO.', '.OppOOppO.', '.OffO.OffO', '.OOOO.OOOO'];   /* both feet down: standing in a crowd */
+const STAND = HEAD.concat(TORSO, LEGS_S);
+const ARMS = ['s.OOOOOO.s', 'cOhhhhhhOc', 'cOhsssshOc', 'cOsessesOc', 'cOsszzssOc',   /* both hands up, holding the coin */
+    'OccccccccO', 'OcCccccCcO', 'OcCccccCcO', 'OcCccccCcO', 'OOppppppOO'].concat(LEGS_S);
+const pal = (hair, shirt) => {
     const c = safeHex(shirt, '#E8E4DE');
-    const P = { O: 'fill="#0A0908"', h: `fill="${safeHex(hair, '#2B1A0E')}"`, s: 'fill="#E2AE80"', z: 'fill="#C48C5E"', e: 'fill="#2A1A10"',
+    return { O: 'fill="#0A0908"', h: `fill="${safeHex(hair, '#2B1A0E')}"`, s: 'fill="#E2AE80"', z: 'fill="#C48C5E"', e: 'fill="#2A1A10"',
         c: `fill="${c}"`, C: `fill="${darker(c)}"`, p: 'fill="#3A3530"', f: 'fill="#17130F"' };
+};
+export const personSvg = (hair, shirt) => {
+    const P = pal(hair, shirt);
     return `<svg class="px" viewBox="0 0 10 14" width="30" height="42"><g class="legsA">${px(at(LEGS_A, 10), P)}</g><g class="legsB">${px(at(LEGS_B, 10), P)}</g>`
         + `<g>${px(HEAD.concat(TORSO), P)}</g></svg>`;
+};
+
+/* SELLING AT A SHOP (his pick B "paid", with "coin animation that used on the agent inventory and receipt", 2026-10-03
+   23:05): hands up holding Agent Inventory's spinning coin (.kpm-coin, theme.css). Standing is the moment's first frame
+   only; the resting picture is the held coin, so Lite and a freshly opened map show it. Motion in expedition.css. */
+export const sellerHtml = (hair, shirt) => {
+    const P = pal(hair, shirt);
+    return `<svg class="px" viewBox="0 0 10 14" width="30" height="42"><g class="pStand">${px(STAND, P)}</g><g class="pArms">${px(ARMS, P)}</g></svg>`
+        + '<span class="kx-cx"><span class="kx-cy"><i class="kpm-coin"></i></span></span>';
+};
+
+/* THE CROWD ON A BUBBLE (his "group of 8bit character", 2026-10-03 20:15): every man whose marker the bubble holds,
+   standing on its top edge - a front row of 3, a back row of 2 between them, then "+N". Each figure is ONE cached
+   picture per hair + shirt (a class added to the sprite style the first time that look is seen), never pixel squares:
+   inline squares cost 236-346 ms frames zoomed out (the 17:53 lag fix). Still on purpose - no loop per bubble. */
+const figs = new Map();
+const figClass = (hair, shirt) => {
+    const h = safeHex(hair, '#2B1A0E'), c = safeHex(shirt, '#E8E4DE'), k = h + c;
+    if (!figs.has(k)) {
+        figs.set(k, `kx-fg${figs.size}`);
+        if (typeof document !== 'undefined') document.getElementById('kx-sprites')?.append(`\n.${figs.get(k)}{background-image:${uri(px(STAND, pal(h, c)), 10, 14)}}`);
+    }
+    return figs.get(k);
+};
+const FRONT = { 1: [0], 2: [-7, 7], 3: [-14, 0, 14] }, BACK = { 1: [-7], 2: [-7, 7] };
+export const crowdHtml = (people, feetY = 0) => {
+    if (!people.length) return '';
+    const f = people.slice(0, 3), b = people.slice(3, 5), more = people.length - 5;
+    const fig = ([hair, shirt], x, back) => `<i class="kx-fig ${figClass(hair, shirt)}${back ? ' back' : ''}" style="left:${21 + x}px"></i>`;
+    return `<div class="kx-crowd" style="top:${feetY}px">${b.map((p, i) => fig(p, BACK[b.length][i], 1)).join('')}`
+        + `${f.map((p, i) => fig(p, FRONT[f.length][i])).join('')}${more > 0 ? `<b>+${more}</b>` : ''}</div>`;
 };
 export const QUEST = `<svg class="px quest" viewBox="0 0 6 5" width="12" height="10"><path d="M0 0h6v1h-1v1h-1v1h-1v1h-1v-1h-1v-1h-1v-1h-1z" fill="#E4B04A"/><path d="M0 0h6v1h-6z" fill="#FFE2A0"/></svg>`;

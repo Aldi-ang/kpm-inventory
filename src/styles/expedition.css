@@ -267,7 +267,39 @@
 @keyframes kx-breathe { 50% { transform: translateY(-1px); } }
 .kx-sm.off { opacity: .5; }
 .kx-sm.dim { opacity: .35; }
-@media (prefers-reduced-motion: reduce) { .kx-sm .body, .kx-sm .legsA, .kx-sm .legsB, .kx-sm .quest { animation: none; } }
+/* selling at a shop (his pick B with Agent Inventory's coin, 2026-10-03 23:05): he stands just left of the shop's chest,
+   hands up, the coin spinning over his head. Every resting style here is the LAST frame (Lite, a freshly opened map).
+   The moment rides the chest's own secure moment (.kx-c5.burst opens the lid 220-740 ms): the coin pops out above the
+   chest's back rim at 600 ms and lands in his raised hands at 1050 ms - 31 px right / 13 px down of its resting place,
+   from his anchor (46, 39) against the chest's (14, 31). */
+.kx-sm.sell .body { animation: kx-breathe 2600ms ease-in-out infinite; }
+.kx-sm.sell .pStand { opacity: 0; }
+.kx-sm.sell .tag { bottom: calc(100% + 22px); }
+.kx-sm.sell .quest { bottom: calc(100% + 44px); }
+.kx-sm .kx-cx { position: absolute; left: 6px; top: -19px; width: 18px; height: 18px; }
+.kx-sm .kx-cy, .kx-sm .kx-cy .kpm-coin { display: block; }
+.kx-sm.sell.play .pStand { animation: kx-cut-out 1000ms steps(1, end) both; }
+.kx-sm.sell.play .pArms { animation: kx-cut-in 1000ms steps(1, end) both; }
+@keyframes kx-cut-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes kx-cut-in { from { opacity: 0; } to { opacity: 1; } }
+.kx-sm.sell.play .kx-cx { animation: kx-coin-x 450ms linear 600ms both; }
+.kx-sm.sell.play .kx-cy { animation: kx-coin-y 450ms linear 600ms both; }
+@keyframes kx-coin-x { from { transform: translateX(31px); } to { transform: none; } }
+@keyframes kx-coin-y {
+  0%   { opacity: 0; transform: translateY(13px) scale(.6); animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
+  8%   { opacity: 1; }
+  70%  { transform: translateY(-4px) scale(1); animation-timing-function: cubic-bezier(.6, 0, .8, .4); }
+  100% { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .kx-sm .body, .kx-sm .legsA, .kx-sm .legsB, .kx-sm .quest, .kx-sm .pStand, .kx-sm .pArms, .kx-sm .kx-cx, .kx-sm .kx-cy { animation: none; } }
+
+/* the crowd on a bubble (his "group of 8bit character", 2026-10-03 20:15): feet on the slot's top edge, or on the point
+   itself when the bubble holds men only; still pictures, no loop */
+.kx-crowd { position: absolute; left: 0; width: 42px; height: 0; pointer-events: none; }
+.kx-fig { position: absolute; bottom: 0; width: 20px; height: 28px; margin-left: -10px; background-size: 100% 100%; background-repeat: no-repeat; image-rendering: pixelated; }
+.kx-fig.back { bottom: 6px; }
+.kx-crowd b { position: absolute; left: 46px; bottom: 7px; padding: 3px 4px 2px; background: rgba(10, 9, 8, .82); color: #FFFFFF; font: 800 12px/1 var(--font-display); letter-spacing: .04em; }
+.kx-crowd-shadow { position: absolute; left: -9px; top: 16px; width: 60px; height: 10px; border-radius: 50%; background: rgba(0, 0, 0, .45); }
 
 /* ---- the keys: each icon acts out its job (his pick, "icon acts") ---- */
 .kx-mapkey svg { transition: rotate 240ms cubic-bezier(.23, 1, .32, 1); }
