@@ -64,17 +64,33 @@ export const signFor = (tag, sold) => {
 /* sparks: only on an element born to play the moment */
 const SPARKS = '<span class="fx">' + [[-14, -16], [12, -18], [-6, -24], [16, -6], [-17, -4], [5, -27]].map(([dx, dy]) => `<i style="--dx:${dx}px;--dy:${dy}px"></i>`).join('') + '</span>';
 
+/* AT REST a chest or a sign is ONE cached picture, not ~150 pixel squares (his "zoomed out ... so much lag on the
+   phone", 2026-10-03 17:30: every zoom rebuilt ~1,700-2,600 squares, frames up to 346 ms at phone speed). The same
+   pixel rows as the animated chest, frozen in each end state, so the swap after the moment is invisible. */
+const STILL = {
+    closed: px(at(BODY5, 8), W5DIM) + px(at(INSIDE5, 5), W5) + px(at(LID5, 3), W5DIM),   // not visited: dim, lid down
+    shut: px(at(BODY5, 8), W5) + px(at(INSIDE5, 5), W5) + px(at(LID5, 3), W5),           // closed store (and a bubble's chest)
+    open: px(at(BODY5, 8), W5) + px(at(INSIDE5, 5), W5) + px(UNDER5, W5),                // visited: lid up, dark inside
+};
+const uri = (body, w, h) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges">${body}</svg>`)}")`;
+export const SPRITE_CSS = Object.entries(STILL).map(([k, b]) => `.kx-spr-${k}{background-image:${uri(b, 14, 17)}}`)
+    .concat(Object.keys(PIC5).map((k) => `.kx-sgn-${k}{background-image:${uri(SIGN5[k].replace(/^<svg[^>]*>|<\/svg>$/g, ''), 11, 11)}}`)).join('\n');
+if (typeof document !== 'undefined' && !document.getElementById('kx-sprites')) {
+    const s = document.createElement('style'); s.id = 'kx-sprites'; s.textContent = SPRITE_CSS; document.head.append(s);
+}
+
 /* a shop: not visited = dim closed chest; visited = lid open, dark inside, a lit sign; closed store = lid down + lock.
-   `play` = 'burst' (first visit) or 'resign' (the outcome changed) - only while the map is open */
+   `play` = 'burst' (first visit) or 'resign' (the outcome changed) - only while the map is open, and only then is the
+   chest built from its animated parts */
 export const chestHtml = (outcome, ring, play = '') =>
     `<div class="kx-c5${outcome ? ' v' : ''}${outcome === 'closed' ? ' shut' : ''}${play ? ` ${play}` : ''}" style="--c:${safeHex(ring)}"><i class="kx-ring"></i>`
-    + `<div class="art"><div class="hop">${CHEST5}</div></div>`
-    + (outcome ? `<i class="sign5"><i class="lamp"></i>${SIGN5[outcome]}</i>` : '') + (play ? SPARKS : '') + '</div>';
+    + `<div class="art"><div class="hop">${play ? CHEST5 : `<i class="kx-spr kx-spr-${!outcome ? 'closed' : outcome === 'closed' ? 'shut' : 'open'}"></i>`}</div></div>`
+    + (outcome ? `<i class="sign5"><i class="lamp"></i>${play ? SIGN5[outcome] : `<i class="kx-sgn kx-sgn-${outcome}"></i>`}</i>` : '') + (play ? SPARKS : '') + '</div>';
 
 /* a bubble: an inventory slot, the shop count like an item stack, a bar filling amber with the visited share */
 export const slotHtml = (n, visited) =>
     `<div class="kx-slot${n && visited === n ? ' full' : ''}" style="--f:${n ? (visited / n).toFixed(3) : 0}"><div class="hop">`
-    + `<span class="kx-c5">${CHEST5}</span><b class="cnt" data-n="${n}">${n}</b></div><i class="dur"><i></i></i></div>`;
+    + `<span class="kx-c5"><i class="kx-spr kx-spr-${n && visited === n ? 'open' : 'shut'}"></i></span><b class="cnt" data-n="${n}">${n}</b></div><i class="dur"><i></i></i></div>`;
 
 /* ---- the salesman: 10 x 14 pixel person, the shirt in his squad colour, two leg frames for walking ---- */
 const HEAD = ['..OOOOOO..', '.OhhhhhhO.', '.OhsssshO.', '.OsessesO.', '.OsszzssO.'];

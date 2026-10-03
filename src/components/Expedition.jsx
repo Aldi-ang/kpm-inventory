@@ -20,6 +20,14 @@ const said = (a) => ({
 const lamp = (a) => ({ go: 'go', at: 'at' })[a.state] || '';
 const ll = (p) => [p.lat, p.lng];
 const HAIR = ['#2B1A0E', '#151210', '#5A3418'];
+/* one icon per look: react-leaflet calls setIcon whenever the icon OBJECT changes, and a fresh divIcon every render
+   rebuilt each salesman (and restarted his walk) on every keystroke of the page around the map */
+const iconCache = new Map();
+const cachedIcon = (o) => {
+    const k = `${o.html}|${o.iconAnchor}`;
+    if (!iconCache.has(k)) iconCache.set(k, L.divIcon(o));   // ponytail: never trimmed - a day adds a few dozen looks at most
+    return iconCache.get(k);
+};
 
 /* ---- the map layer: chips at the last-seen point, today's trail, the march line to the next shop ---- */
 /* `bare`: the chips only, no lines and no camera (Map System, the store-analysis map).
@@ -71,6 +79,45 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true, co
         return () => map.off('zoomend', declutter);
     });
 
+    /* a salesman never stands on a chest, a bubble or another salesman (his ask 2026-10-03 17:30, "make sure that the
+       chest and person not colliding"): once the map settles after a zoom, a pan or a marker change, each one - the
+       picked one first - takes the first free spot around his true point, and a thin line leads back to it. Screen
+       space, so it holds at every zoom. Debounced, so a zoom's burst of marker changes costs one pass, not one a frame. */
+    useEffect(() => {
+        if (bare) return undefined;
+        const pane = map.getPane('markerPane');
+        const hit = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+        const move = (r, x, y) => ({ left: r.left + x, right: r.right + x, top: r.top + y, bottom: r.bottom + y });
+        // nearest first, up to 144 px: zoomed out, a block of nine bubbles filled every spot within 72 px (measured)
+        const SPOTS = [];
+        for (let y = -144; y <= 144; y += 48) for (let x = -144; x <= 144; x += 36) SPOTS.push([x, y]);
+        SPOTS.sort((a, b) => Math.hypot(a[0], a[1]) - Math.hypot(b[0], b[1]));
+        let timer = 0;
+        const run = () => {
+            const taken = [...pane.querySelectorAll('.kx-c5:not(.kx-slot .kx-c5), .kx-c5 .sign5, .kx-slot .hop')].map((e) => e.getBoundingClientRect());
+            const people = [...pane.querySelectorAll('.kx-sm')].sort((a, b) => b.classList.contains('sel') - a.classList.contains('sel'));
+            people.forEach((el) => { el.style.translate = ''; el.classList.remove('moved'); });
+            people.forEach((el) => {
+                const b = el.querySelector('.body').getBoundingClientRect(), t = el.querySelector('.tag').getBoundingClientRect();
+                const me = { left: Math.min(b.left, t.left), right: Math.max(b.right, t.right), top: t.top, bottom: b.bottom };
+                const [x, y] = SPOTS.find(([dx, dy]) => !taken.some((r) => hit(move(me, dx, dy), r))) || [0, 0];
+                taken.push(move(me, x, y));
+                if (!x && !y) return;
+                el.style.translate = `${x}px ${y}px`;
+                el.style.setProperty('--tl', `${Math.hypot(x, y)}px`);
+                el.style.setProperty('--ta', `${Math.atan2(-y, -x)}rad`);
+                el.classList.add('moved');
+            });
+        };
+        const soon = () => { clearTimeout(timer); timer = setTimeout(run, 400); };   // 400: the bubbles slide 300 ms into place after a zoom
+        const mo = new MutationObserver(soon);
+        mo.observe(pane, { childList: true });
+        pane.addEventListener('transitionend', soon);   // a bubble that slid into place after the zoom
+        map.on('zoomend moveend', soon);
+        soon();
+        return () => { clearTimeout(timer); mo.disconnect(); pane.removeEventListener('transitionend', soon); map.off('zoomend moveend', soon); };
+    }, [map, bare]);
+
     /* two salesmen on one spot (everyone opens the app at the branch) stand side by side, not stacked */
     const spot = (a) => `${a.at.lat.toFixed(4)}_${a.at.lng.toFixed(4)}`;
     const groups = {};
@@ -82,15 +129,15 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true, co
         /* Map System keeps the gold chip; Journey Plan draws the salesman as a pixel person in his squad colour (his
            pick 2026-10-03, "full pixel"): walking to his next shop, standing at one, faded when not out today */
         const shirt = colorOf ? colorOf(a.name) : '#E8E4DE';
-        const chip = bare ? L.divIcon({
+        const chip = bare ? cachedIcon({
             className: 'kx-mk',
             html: `<div class="kx-chip${a.out ? '' : ' off'}"><b>${a.photo ? `<img src="${esc(a.photo)}" alt="">` : esc(a.ini)}</b><span>${esc(a.ini)} · ${count(a)}</span><i></i></div>`,
             iconSize: [36, 48], iconAnchor: [18 - shift, 48],
-        }) : L.divIcon({
+        }) : cachedIcon({
             className: 'kx-mk',
-            html: `<div class="kx-sm ${a.out ? (a.state === 'go' ? 'walk' : 'idle') : 'off'}${a.id === sel ? ' sel' : ''}${mine ? '' : ' dim'}"><i class="kx-shadow"></i>`
-                + `<div class="who"><div class="body">${personSvg(HAIR[String(a.id).length % HAIR.length], shirt)}</div></div>`
-                + `<span class="tag"><i style="background:${safeHex(shirt, '#E8E4DE')}"></i>${esc(a.ini)} · ${count(a)}</span>${QUEST}</div>`,
+            html: `<div class="kx-sm ${a.out ? (a.state === 'go' ? 'walk' : 'idle') : 'off'}${a.id === sel ? ' sel' : ''}${mine ? '' : ' dim'}" style="--c:${safeHex(shirt, '#E8E4DE')}"><i class="kx-shadow"></i>`
+                + `<i class="kx-tether"></i><div class="who"><div class="body">${personSvg(HAIR[String(a.id).length % HAIR.length], shirt)}</div></div>`
+                + `<span class="tag"><i style="background:var(--c)"></i>${esc(a.ini)} · ${count(a)}</span>${QUEST}</div>`,
             iconSize: [30, 42], iconAnchor: [15 - shift, 42],
         });
         const trail = [...a.done.filter((d) => d.lat), a.at].map(ll);

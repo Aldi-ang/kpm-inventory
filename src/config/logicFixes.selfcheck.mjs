@@ -10047,6 +10047,22 @@ section('Expedition map');
        !/\.kx-(c5|slot|sm)[^{]*\{[^}]*box-shadow/.test(exc) && /\.kx-mk \.px \{[^}]*z-index: auto;/.test(exc) &&
        /if \(!prev\) return;/.test(jvr) && /if \(!\(id in prev\) \|\| prev\[id\] === outcomeById\[id\]\) continue;/.test(jvr),
        'measured on the round-5 prototype: a 0-height wrapper threw the chest 28 px up; the front-edge collapse left a 3-row jump');
+    /* HIS "chest and person not colliding ... so much lag on the phone" (2026-10-03 17:30), measured at 6x CPU, 390 wide */
+    const { SPRITE_CSS } = await import('../utils/mapSprites.js');
+    const exj = code(read('src/components/Expedition.jsx'));
+    ok('Journey map lag re-run: a chest or bubble at rest is ONE cached picture (no pixel squares); only the element playing the moment is built from parts; every still look and every sign has its picture',
+       !chestHtml('order', '#a855f7').includes('<rect') && !chestHtml(null, '#a855f7').includes('<rect') && !slotHtml(3, 1).includes('<rect') &&
+       chestHtml('order', '#a855f7', 'burst').includes('<rect') && /kx-spr-open/.test(chestHtml('order', '#a855f7')) && /kx-spr-shut/.test(chestHtml('closed', '#a855f7')) &&
+       ['closed', 'shut', 'open'].every((k) => SPRITE_CSS.includes(`.kx-spr-${k}{background-image:url("data:image/svg+xml,`)) &&
+       ['sold', 'order', 'routine', 'full', 'issue', 'request', 'closed'].every((k) => SPRITE_CSS.includes(`.kx-sgn-${k}{`)),
+       'zoomed out, every zoom rebuilt 1,704-2,621 pixel squares: frames up to 346 ms; with pictures 55-109 ms');
+    ok('Journey map lag: the flowing line moves only where there is a mouse (one flowing line repaints the whole line layer every frame - 85% of a phone\'s main thread at rest)',
+       /@media \(hover: hover\) and \(pointer: fine\) \{ \.kx-march \{ animation: kx-flow 5s linear infinite; \} \}/.test(exc) && !/^\.kx-march \{ animation/m.test(exc),
+       'measured: idle 2,874-2,935 ms busy of every 3,000 before, 261-392 after');
+    ok('Journey map: salesmen step aside from chests, bubbles and each other once the map settles (nearest free spot up to 144 px, a line back to the true spot); one cached icon per look',
+       /new MutationObserver\(soon\)/.test(exj) && /pane\.addEventListener\('transitionend', soon\)/.test(exj) && /for \(let y = -144; y <= 144; y \+= 48\) for \(let x = -144; x <= 144; x \+= 36\)/.test(exj) &&
+       /'\.kx-c5:not\(\.kx-slot \.kx-c5\), \.kx-c5 \.sign5, \.kx-slot \.hop'/.test(exj) && /const cachedIcon = /.test(exj) && /<i class="kx-tether"><\/i>/.test(exj),
+       'measured zoomed out 1-3 steps: 4-5 of 5 salesmen on a bubble before, 0 after (and 0 on each other); within 72 px a block of nine bubbles left no spot');
   }
   {  /* the SHIPPED day logic, cut out of App.jsx and run over three pings and two days */
     const snip = code(app).match(/const today = getLocalDayKey\(\), dayKey = [^;]+;\s*let sameDay = false;\s*try \{[^}]*\} catch \{[^}]*\}/)?.[0];

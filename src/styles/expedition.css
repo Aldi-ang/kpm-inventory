@@ -20,7 +20,9 @@
 .kx-target { width: 30px; height: 30px; box-sizing: border-box; border-radius: 50%; border: 2px solid #E4B04A; position: relative; animation: kx-ping 1.8s cubic-bezier(.23, 1, .32, 1) infinite; }
 .kx-target::after { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: #E4B04A; }
 @keyframes kx-ping { 0% { box-shadow: 0 0 0 0 rgba(228, 176, 74, .55); } 100% { box-shadow: 0 0 0 14px rgba(228, 176, 74, 0); } }
-.kx-march { animation: kx-flow 5s linear infinite; }
+/* the flow repaints the whole line layer every frame: measured 2026-10-03 at phone speed (6x slower CPU), 85% of the
+   main thread at rest, and one flowing line costs the same as three. A phone gets the still dashed line. */
+@media (hover: hover) and (pointer: fine) { .kx-march { animation: kx-flow 5s linear infinite; } }
 @keyframes kx-flow { to { stroke-dashoffset: -80; } }   /* 80 = a whole number of both dash patterns (16 and 10) */
 .kx-loc { position: relative; width: 22px; height: 22px; }
 .kx-loc i { width: 22px; height: 22px; box-sizing: border-box; border-radius: 6px 6px 50% 50%; background: #1B1917; border: 2px solid #6A645C;
@@ -186,7 +188,10 @@
 .kx-c5 .art { transition: transform 180ms cubic-bezier(.23, 1, .32, 1); }
 @media (hover: hover) and (pointer: fine) { .kx-c5:hover .art { transform: translateY(-3px); } }
 .kx-c5:active .art { transform: scale(.92); transition-duration: 80ms; }
-.kx-c5 svg.chest { position: absolute; left: 0; bottom: 0; width: 28px; height: 34px; }
+.kx-c5 svg.chest, .kx-c5 .kx-spr { position: absolute; left: 0; bottom: 0; width: 28px; height: 34px; }
+/* at rest: one cached picture each (src/utils/mapSprites.js SPRITE_CSS) */
+.kx-spr, .kx-sgn { background: center / 100% 100% no-repeat; }
+.kx-sgn { position: relative; display: block; width: 22px; height: 22px; }
 .kx-c5 .lidF, .kx-c5 .lidU { transform-box: fill-box; transform-origin: 50% 100%; }
 .kx-c5 .lidF { transform: translateY(3px); }
 .kx-c5 .lidU { opacity: 0; }
@@ -233,9 +238,6 @@
 .kx-slot { position: relative; width: 42px; height: 51px; }
 .kx-slot .hop { position: relative; width: 42px; height: 42px; background: #8B8B8B; border: 3px solid; border-color: #373737 #FFFFFF #FFFFFF #373737; display: grid; place-items: center; }
 .kx-slot .kx-c5 { width: 28px; height: 34px; cursor: inherit; }
-.kx-slot .kx-c5 .bright { opacity: 1; }
-.kx-slot.full .kx-c5 .lidF { opacity: 0; transform: translateY(-3px) scaleY(.15); }
-.kx-slot.full .kx-c5 .lidU { opacity: 1; }
 .kx-slot .cnt { position: absolute; right: 2px; bottom: 1px; font: 900 16px/1 var(--font-display); color: #FFFFFF; z-index: 1; }
 .kx-slot .cnt::before { content: attr(data-n); position: absolute; left: 2px; top: 2px; color: #3F3F3F; z-index: -1; }
 .kx-slot .dur { position: absolute; left: 0; right: 0; top: 46px; height: 5px; background: #0A0908; border: 1px solid #0A0908; }
@@ -263,6 +265,11 @@
 @keyframes kx-bob { 50% { transform: translateY(-1px); } }
 .kx-sm.idle .body { animation: kx-breathe 2600ms ease-in-out infinite; }
 @keyframes kx-breathe { 50% { transform: translateY(-1px); } }
+/* stepped aside so he never stands on a chest, a bubble or another salesman: a thin line back to where he really is */
+.kx-sm .kx-tether { position: absolute; left: 50%; bottom: 0; width: var(--tl, 0); height: 2px; transform-origin: 0 50%; rotate: var(--ta, 0deg);
+  background: rgba(232, 228, 222, .55); pointer-events: none; }
+.kx-sm .kx-tether::after { content: ""; position: absolute; right: -3px; top: -2px; width: 6px; height: 6px; border-radius: 50%; background: var(--c, #E8E4DE); outline: 1px solid #0A0908; }
+.kx-sm:not(.moved) .kx-tether { visibility: hidden; }
 .kx-sm.off { opacity: .5; }
 .kx-sm.dim { opacity: .35; }
 @media (prefers-reduced-motion: reduce) { .kx-sm .body, .kx-sm .legsA, .kx-sm .legsB, .kx-sm .quest { animation: none; } }
