@@ -978,9 +978,9 @@ function ShellLab() {
           /* `&sell` (with `&tick`): on every odd tick Dewi (m6, last seen 12 min ago) is seen again at her last sale's
              shop, on every even one she is not - the selling moment replays every 5 s, for frames. `&focus=<shop>` (with
              `&tick`) flies there at zoom 16 after the first tick, once the team camera has settled. `&eod`: Rini (m7)
-             has sent today's End of Day - she leaves the map */
+             has sent today's End of Day and the boss approved it - she leaves the map */
           motorists={!q.has('exp') ? [] : q.has('sell') && tick % 2 === 1 ? LAB_MAP.motorists.map((m) => (m.id === 'm6' ? { ...m, currentLocation: { ...m.currentLocation, timestamp: new Date().toISOString() } } : m)) : LAB_MAP.motorists}
-          eodReports={q.has('eod') ? [{ id: 'eod-m7', agentId: 'm7', timestamp: { seconds: Math.floor(Date.now() / 1000) - 600 } }] : []}
+          eodReports={q.has('eod') ? [{ id: 'eod-m7', agentId: 'm7', reportType: 'CASH_STOCK', status: 'VERIFIED', timestamp: { seconds: Math.floor(Date.now() / 1000) - 600 } }] : []}
           agentProfileId="m2"
           customers={q.has('exp') ? (q.has('visits') ? LAB_MAP.customers.map(labVisit(tick)) : LAB_MAP.customers) : [
             ...LAB_CUSTOMERS.map((c, i) => ({ ...c, region: 'BANDUNG', city: 'Bandung', tier: ['Bronze', 'Silver', 'Gold', 'Bronze'][i], assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : i === 1 ? '2026-09-01' : '', phone: '0812-3456-7890' })),

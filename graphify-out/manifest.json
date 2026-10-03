@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1791041798.2046795,
-    "ast_hash": "35037da8cc4ff9d38a795175ae65e566",
+    "mtime": 1791045115.4751048,
+    "ast_hash": "100b9a4f2184371f92043572abd5e07e",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1791044117.8803108,
-    "ast_hash": "f9f562f1718f9037689f35523bd1b05c",
+    "mtime": 1791045243.2998824,
+    "ast_hash": "6a47beeea1e97a8e971c90dd547022d2",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1791041774.814759,
-    "ast_hash": "1e8262e653ddafd01fec6571545a1f80",
+    "mtime": 1791044807.9741876,
+    "ast_hash": "3b512e5d3b27c5d1906f9504c0028f75",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1791044265.5385907,
-    "ast_hash": "4fe731d1049bebce7ba93c654adc1c8f",
+    "mtime": 1791045259.3768044,
+    "ast_hash": "54ac5b2923dc8ada8f137c672cbc1ce9",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -1280,8 +1280,8 @@
     "semantic_hash": ""
   },
   "src/utils/expedition.js": {
-    "mtime": 1791043970.6121137,
-    "ast_hash": "19ab01fce50133eaddd0d8b9db56f7e9",
+    "mtime": 1791045259.2643776,
+    "ast_hash": "1ba2cfc8e2cb29c13d39e8985fd65ee1",
     "semantic_hash": ""
   },
   "src/utils/mapSprites.js": {

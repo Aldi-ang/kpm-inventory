@@ -31,12 +31,13 @@ export const visibleTeam = (motorists = [], { global, viewerId }) => {
 
 const AT_SHOP_M = 150;      // his last point this close to his last sale = still at that shop...
 const AT_SHOP_MIN = 10;     // ...but only while that point is this fresh
-/* ON THE MAP = seen today and no End of Day sent today (his "after EOD then character will leave the map, EOD finished
-   should replace 2 hours rule, and EOD is must to close that day job", 2026-10-03 20:25 - it replaced the two-hour
-   clock of 7b770be). Sent = his eod_reports doc for today exists, whatever the boss has approved yet: his field day is
-   over when HE closes it; a reset (App.jsx handleResetEOD deletes the doc) puts him back. A pending write has no
-   timestamp yet - that is an EOD sent just now. Known cost, told to him: a man who forgets his EOD stays at his last
-   spot until midnight. */
+/* ON THE MAP = seen today until his End of Day is APPROVED (his "after EOD then character will leave the map, EOD
+   finished should replace 2 hours rule, and EOD is must to close that day job", 2026-10-03 20:25 - it replaced the
+   two-hour clock of 7b770be - and *"leave map after approval"*, 23:33). Approved = every eod_reports doc he sent today
+   is VERIFIED (App.jsx handleVerifyEOD) and the cash/stock one is among them (a doc with no reportType is the old
+   one-doc EOD): a part the boss sent back stays PENDING, so he stays; a bounty payment alone is not a closed day. A
+   pending write has no timestamp yet - that is a doc sent just now. Known cost, told to him: a man whose EOD is not
+   approved stays at his last spot until midnight. */
 const eodDay = (r, now) => {
     const t = r?.timestamp;
     const d = !t ? now : t.toDate ? t.toDate() : t.seconds != null ? new Date(t.seconds * 1000) : new Date(t);
@@ -56,7 +57,10 @@ const his = (c, name) => {
 
 export function expedition(motorists = [], customers = [], transactions = [], now = new Date(), eods = []) {
     const today = getLocalDayKey(now);
-    const closedToday = new Set(eods.filter((r) => r?.agentId && eodDay(r, now) === today).map((r) => r.agentId));
+    const tonight = {};
+    eods.forEach((r) => { if (r?.agentId && eodDay(r, now) === today) (tonight[r.agentId] ||= []).push(r); });
+    const closedToday = new Set(Object.keys(tonight).filter((id) => tonight[id].some((r) => r.reportType === 'CASH_STOCK' || !r.reportType)
+        && tonight[id].every((r) => r.status === 'VERIFIED')));
     const weekday = now.toLocaleDateString('en-US', { weekday: 'long' });
     const byKey = new Map(customers.map((c) => [storeKey(c.name), c]));
 

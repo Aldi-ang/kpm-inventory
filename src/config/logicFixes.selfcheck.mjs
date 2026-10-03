@@ -10069,17 +10069,26 @@ section('Expedition map');
     const nowT = new Date(2026, 9, 3, 20, 0), ago = (m) => new Date(nowT - m * 60000).toISOString();
     const pos = (m) => ({ lat: -7.6, lng: 110.3, timestamp: ago(m) });
     const sec = (d) => ({ seconds: Math.floor(d.getTime() / 1000) });
+    /* 23:33, his answer to "sent or approved": *"leave map after approval"* */
+    const T = (h, m, d = 3) => sec(new Date(2026, 9, d, h, m));
     const team = exped([{ id: 'a', name: 'Fresh', currentLocation: pos(30) }, { id: 'b', name: 'Morning', currentLocation: pos(12 * 60) },
-      { id: 'c', name: 'Closed', currentLocation: pos(20) }, { id: 'd', name: 'Sending', currentLocation: pos(5) },
-      { id: 'e', name: 'Yesterday EOD', currentLocation: pos(40) }, { id: 'f', name: 'Off', currentLocation: pos(21 * 60) }], [], [], nowT, [
-      { agentId: 'c', timestamp: sec(new Date(2026, 9, 3, 19, 30)) }, { agentId: 'd', timestamp: null },
-      { agentId: 'e', timestamp: sec(new Date(2026, 9, 2, 21, 0)) }]);
+      { id: 'c', name: 'Approved', currentLocation: pos(20) }, { id: 'd', name: 'Sending', currentLocation: pos(5) },
+      { id: 'e', name: 'Yesterday EOD', currentLocation: pos(40) }, { id: 'f', name: 'Off', currentLocation: pos(21 * 60) },
+      { id: 'g', name: 'Half approved', currentLocation: pos(15) }, { id: 'h', name: 'Bounty only', currentLocation: pos(15) },
+      { id: 'i', name: 'Old app', currentLocation: pos(15) }], [], [], nowT, [
+      { agentId: 'c', reportType: 'CASH_STOCK', status: 'VERIFIED', timestamp: T(19, 30) }, { agentId: 'c', reportType: 'CUKAI', status: 'VERIFIED', timestamp: T(19, 31) },
+      { agentId: 'd', reportType: 'CASH_STOCK', status: 'PENDING', timestamp: null },
+      { agentId: 'e', reportType: 'CASH_STOCK', status: 'VERIFIED', timestamp: T(21, 0, 2) },
+      { agentId: 'g', reportType: 'CASH_STOCK', status: 'VERIFIED', timestamp: T(19, 0) }, { agentId: 'g', reportType: 'CUKAI', status: 'PENDING', timestamp: T(19, 1), rejected: { cukai: 'recount' } },
+      { agentId: 'h', reportType: 'BOUNTY', status: 'VERIFIED', timestamp: T(18, 0) },
+      { agentId: 'i', status: 'VERIFIED', timestamp: T(19, 0) }]);
     const of = (id) => team.find((t) => t.id === id) || {};
-    ok('Journey map EOD re-run: on the map = seen today and no EOD sent today (this morning\'s point stays, a sent EOD - even one still on its way - takes him off, yesterday\'s EOD does not); no two-hour clock left',
-       of('a').live === true && of('b').live === true && of('c').live === false && of('c').state === 'closed' && of('d').live === false &&
-       of('e').live === true && of('f').live === false && of('f').state === 'off' && !/LIVE_MIN|mins <= 120/.test(expSrc) &&
+    ok('Journey map EOD re-run: on the map = seen today until the boss has APPROVED every EOD report he sent today, the cash/stock one included (sent but waiting stays, a part sent back stays, a bounty alone is not a closed day, yesterday\'s does not count); no two-hour clock left',
+       of('a').live === true && of('b').live === true && of('c').live === false && of('c').state === 'closed' && of('d').live === true &&
+       of('e').live === true && of('f').live === false && of('f').state === 'off' && of('g').live === true && of('h').live === true &&
+       of('i').live === false && !/LIVE_MIN|mins <= 120/.test(expSrc) &&
        /\{lines && goal && a\.live && \(/.test(exj) && /const lines = a\.live && !bare;/.test(exj),
-       ['a', 'b', 'c', 'd', 'e', 'f'].map((id) => `${id} ${of(id).live}/${of(id).state}`).join(' · '));
+       ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'].map((id) => `${id} ${of(id).live}/${of(id).state}`).join(' · '));
     ok('Journey map EOD reaches both maps: App hands eodReports to Journey Plan and Map System, and both pass it to expedition()',
        /<JourneyView motorists=\{motorists\}[^\n]*eodReports=\{eodReports\}/.test(app) && /<MapMissionControl [^\n]*eodReports=\{eodReports\}/.test(app) &&
        /expedition\(visibleTeam\([^\n]*new Date\(\), eodReports \|\| \[\]\)/.test(jvr) && /expedition\(visibleTeam\([^\n]*new Date\(\), eodReports \|\| \[\]\)/.test(mp),
