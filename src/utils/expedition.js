@@ -31,6 +31,10 @@ export const visibleTeam = (motorists = [], { global, viewerId }) => {
 
 const AT_SHOP_M = 150;      // his last point this close to his last sale = still at that shop...
 const AT_SHOP_MIN = 10;     // ...but only while that point is this fresh
+/* ON THE MAP only while his position is this fresh (his "there should be no data for their location right now
+   because they are offline and not working", 2026-10-03 20:00): a phone sends a point only with a sale or an app
+   open, so an old point is where he WAS - seven salesmen stood all evening where they opened the app that morning */
+export const LIVE_MIN = 120;
 
 const metres = (a, b) => Math.round(km(a.lat, a.lng, b.lat, b.lng) * 1000);
 const pin = (c) => (c?.latitude && c?.longitude ? { lat: Number(c.latitude), lng: Number(c.longitude) } : null);
@@ -100,7 +104,7 @@ export function expedition(motorists = [], customers = [], transactions = [], no
             return {
                 id: m.id, name: m.name || 'Agent', ini: initials(m.name),
                 photo: m.profileImage || m.photoURL || m.photoUrl || m.profilePic || m.photo || m.image || m.avatar || null,
-                at, seenAt: seen ? seenAt : null, mins, out, state, done, ahead, next, planned,
+                at, seenAt: seen ? seenAt : null, mins, out, live: seen && mins <= LIVE_MIN, state, done, ahead, next, planned,
                 of: planned ? done.length + ahead.length : null,          // "5/8" only when a round exists
                 metresToNext: next?.lat ? metres(at, next) : null,
             };

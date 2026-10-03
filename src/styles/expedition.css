@@ -265,11 +265,6 @@
 @keyframes kx-bob { 50% { transform: translateY(-1px); } }
 .kx-sm.idle .body { animation: kx-breathe 2600ms ease-in-out infinite; }
 @keyframes kx-breathe { 50% { transform: translateY(-1px); } }
-/* stepped aside so he never stands on a chest, a bubble or another salesman: a thin line back to where he really is */
-.kx-sm .kx-tether { position: absolute; left: 50%; bottom: 0; width: var(--tl, 0); height: 2px; transform-origin: 0 50%; rotate: var(--ta, 0deg);
-  background: rgba(232, 228, 222, .55); pointer-events: none; }
-.kx-sm .kx-tether::after { content: ""; position: absolute; right: -3px; top: -2px; width: 6px; height: 6px; border-radius: 50%; background: var(--c, #E8E4DE); outline: 1px solid #0A0908; }
-.kx-sm:not(.moved) .kx-tether { visibility: hidden; }
 .kx-sm.off { opacity: .5; }
 .kx-sm.dim { opacity: .35; }
 @media (prefers-reduced-motion: reduce) { .kx-sm .body, .kx-sm .legsA, .kx-sm .legsB, .kx-sm .quest { animation: none; } }

@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1791013349.8644762,
-    "ast_hash": "4db47f7ef43ca8f0505b5c1b98c68f94",
+    "mtime": 1791024851.0183568,
+    "ast_hash": "e51abbcf8042c8a5c09363a8f3fdab53",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1791024675.4543793,
-    "ast_hash": "47caa405cfb7a0b6110dea2a6da30148",
+    "mtime": 1791032554.2967813,
+    "ast_hash": "bdbf7f47455ce694584c43db8ed185bd",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1791013334.8503146,
-    "ast_hash": "b1773ace08889dcc5bd41b77ae4deb19",
+    "mtime": 1791024850.9176772,
+    "ast_hash": "015ecf9a11ce0a5eee5b35c2499709cb",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -1270,8 +1270,8 @@
     "semantic_hash": ""
   },
   "src/components/Expedition.jsx": {
-    "mtime": 1791024414.7039263,
-    "ast_hash": "1b3c99e48f427da05306b249768a1448",
+    "mtime": 1791032569.07969,
+    "ast_hash": "47fd59bd269c4ff2b56e205afb2ce5b7",
     "semantic_hash": ""
   },
   "src/hooks/useWide.js": {
@@ -1280,8 +1280,8 @@
     "semantic_hash": ""
   },
   "src/utils/expedition.js": {
-    "mtime": 1790951718.8706183,
-    "ast_hash": "6d0d97c38a11663dcc95c2da399945ca",
+    "mtime": 1791032521.5043828,
+    "ast_hash": "7d4634be0fa8624afe8f0231a124d552",
     "semantic_hash": ""
   },
   "src/utils/mapSprites.js": {

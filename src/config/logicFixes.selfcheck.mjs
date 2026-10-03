@@ -10059,10 +10059,23 @@ section('Expedition map');
     ok('Journey map lag: the flowing line moves only where there is a mouse (one flowing line repaints the whole line layer every frame - 85% of a phone\'s main thread at rest)',
        /@media \(hover: hover\) and \(pointer: fine\) \{ \.kx-march \{ animation: kx-flow 5s linear infinite; \} \}/.test(exc) && !/^\.kx-march \{ animation/m.test(exc),
        'measured: idle 2,874-2,935 ms busy of every 3,000 before, 261-392 after');
-    ok('Journey map: salesmen step aside from chests, bubbles and each other once the map settles (nearest free spot up to 144 px, a line back to the true spot); one cached icon per look',
-       /new MutationObserver\(soon\)/.test(exj) && /pane\.addEventListener\('transitionend', soon\)/.test(exj) && /for \(let y = -144; y <= 144; y \+= 48\) for \(let x = -144; x <= 144; x \+= 36\)/.test(exj) &&
-       /'\.kx-c5:not\(\.kx-slot \.kx-c5\), \.kx-c5 \.sign5, \.kx-slot \.hop'/.test(exj) && /const cachedIcon = /.test(exj) && /<i class="kx-tether"><\/i>/.test(exj),
-       'measured zoomed out 1-3 steps: 4-5 of 5 salesmen on a bubble before, 0 after (and 0 on each other); within 72 px a block of nine bubbles left no spot');
+    /* HIS "why these agent position is changed when i zoom in and out when it supposed to be fix ... there should be no
+       data for their location right now because they are offline" (2026-10-03 20:00, his screenshot: seven salesmen at
+       0 sales ringed round one bubble, each moved by the screen-space step-aside) */
+    const { expedition: exped, LIVE_MIN } = await import('../utils/expedition.js');
+    const nowT = new Date(2026, 9, 3, 20, 0), ago = (m) => new Date(nowT - m * 60000).toISOString();
+    const team = exped([{ id: 'a', name: 'Fresh', currentLocation: { lat: -7.6, lng: 110.3, timestamp: ago(30) } },
+      { id: 'b', name: 'Morning', currentLocation: { lat: -7.6, lng: 110.3, timestamp: ago(12 * 60) } },
+      { id: 'c', name: 'Edge', currentLocation: { lat: -7.6, lng: 110.3, timestamp: ago(LIVE_MIN + 1) } }], [], [], nowT);
+    const liveOf = (id) => team.find((t) => t.id === id)?.live;
+    ok('Journey map re-run: a salesman is on the map only while his last position is under LIVE_MIN old - this morning\'s app open at the branch is not where he is at 20:00',
+       LIVE_MIN === 120 && liveOf('a') === true && liveOf('b') === false && liveOf('c') === false &&
+       /\{a\.live && <Marker position=\{ll\(a\.at\)\} icon=\{chip\}/.test(exj) && /\{lines && goal && a\.live && \(/.test(exj) && /\.\.\.\(a\.live \? \[a\.at\] : \[\]\)/.test(exj) &&
+       /team\.filter\(\(a\) => a\.live\)\.forEach/.test(exj),
+       `fresh ${liveOf('a')} / 12 h ${liveOf('b')} / ${LIVE_MIN + 1} min ${liveOf('c')}`);
+    ok('Journey map: a salesman is fixed to his spot at every zoom (no screen-space step-aside), standing just left of it so his shop\'s chest stays clear; one cached icon per look',
+       !/style\.translate =|kx-tether|MutationObserver/.test(exj) && !/kx-tether/.test(exc) && /iconSize: \[30, 42\], iconAnchor: \[45 - shift, 42\]/.test(exj) && /const cachedIcon = /.test(exj),
+       'the step-aside of eabda69 picked a new spot after every zoom, so he jumped');
   }
   {  /* the SHIPPED day logic, cut out of App.jsx and run over three pings and two days */
     const snip = code(app).match(/const today = getLocalDayKey\(\), dayKey = [^;]+;\s*let sameDay = false;\s*try \{[^}]*\} catch \{[^}]*\}/)?.[0];

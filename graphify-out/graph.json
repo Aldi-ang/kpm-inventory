@@ -120,8 +120,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "claude_context_watch",
-      "community": 99,
-      "community_name": "permissions.js",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "context-watch.mjs"
     },
     {
@@ -131,8 +131,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "claude_context_watch_hook",
-      "community": 99,
-      "community_name": "permissions.js",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "hook"
     },
     {
@@ -142,8 +142,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "claude_context_watch_lines",
-      "community": 99,
-      "community_name": "permissions.js",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "lines"
     },
     {
@@ -153,8 +153,8 @@
       "source_location": "L85",
       "_origin": "ast",
       "id": "claude_context_watch_pct",
-      "community": 99,
-      "community_name": "permissions.js",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "pct"
     },
     {
@@ -164,8 +164,8 @@
       "source_location": "L86",
       "_origin": "ast",
       "id": "claude_context_watch_left",
-      "community": 99,
-      "community_name": "permissions.js",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "left"
     },
     {
@@ -175,8 +175,8 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "claude_context_watch_k",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "k()"
     },
     {
@@ -679,8 +679,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "package_dependencies_react",
-      "community": 79,
-      "community_name": "WarehouseChest.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "react"
     },
     {
@@ -690,8 +690,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "react",
-      "community": 79,
-      "community_name": "WarehouseChest.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "react"
     },
     {
@@ -2054,8 +2054,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_agentinventoryview",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "agentinventoryview.jsx"
     },
     {
@@ -2065,8 +2065,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_agentinventoryview_money",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "money()"
     },
     {
@@ -2076,8 +2076,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_agentinventoryview_agentinventoryview",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "agentinventoryview()"
     },
     {
@@ -2087,8 +2087,8 @@
       "source_location": "L554",
       "_origin": "ast",
       "id": "src_agentinventoryview_quarantineledgerboard",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "quarantineledgerboard()"
     },
     {
@@ -2516,8 +2516,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_consignmentfinanceview_handoffoffer",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 70,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "handoffoffer()"
     },
     {
@@ -2681,8 +2681,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "src_journeyview_getstoreicon",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "getstoreicon()"
     },
     {
@@ -2714,8 +2714,8 @@
       "source_location": "L97",
       "_origin": "ast",
       "id": "src_journeyview_maptouchgate",
-      "community": 61,
-      "community_name": "firebase.js",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "maptouchgate()"
     },
     {
@@ -2725,8 +2725,8 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "src_journeyview_maprecenter",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 89,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "maprecenter()"
     },
     {
@@ -3044,8 +3044,8 @@
       "source_location": "L1859",
       "_origin": "ast",
       "id": "src_mapmissioncontrol_mapmissioncontrol",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 89,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "mapmissioncontrol()"
     },
     {
@@ -3209,8 +3209,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_stockopnameview",
-      "community": 92,
-      "community_name": "StockStage.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "stockopnameview.jsx"
     },
     {
@@ -3220,8 +3220,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_stockopnameview_variance_reasons",
-      "community": 92,
-      "community_name": "StockStage.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "variance_reasons"
     },
     {
@@ -3231,8 +3231,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "src_stockopnameview_variancereasonmissing",
-      "community": 92,
-      "community_name": "StockStage.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "variancereasonmissing()"
     },
     {
@@ -3242,8 +3242,8 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "src_stockopnameview_damage_reasons",
-      "community": 92,
-      "community_name": "StockStage.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "damage_reasons"
     },
     {
@@ -3253,8 +3253,8 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "src_stockopnameview_withintolerance",
-      "community": 92,
-      "community_name": "StockStage.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "withintolerance()"
     },
     {
@@ -3264,8 +3264,8 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "src_stockopnameview_samepass",
-      "community": 92,
-      "community_name": "StockStage.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "samepass()"
     },
     {
@@ -3275,8 +3275,8 @@
       "source_location": "L115",
       "_origin": "ast",
       "id": "src_stockopnameview_recountstate",
-      "community": 92,
-      "community_name": "StockStage.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "recountstate()"
     },
     {
@@ -3286,8 +3286,8 @@
       "source_location": "L155",
       "_origin": "ast",
       "id": "src_stockopnameview_shortagestreak",
-      "community": 92,
-      "community_name": "StockStage.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "shortagestreak()"
     },
     {
@@ -3297,8 +3297,8 @@
       "source_location": "L168",
       "_origin": "ast",
       "id": "src_stockopnameview_isleak",
-      "community": 92,
-      "community_name": "StockStage.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "isleak()"
     },
     {
@@ -3308,8 +3308,8 @@
       "source_location": "L171",
       "_origin": "ast",
       "id": "src_stockopnameview_damagesorted",
-      "community": 92,
-      "community_name": "StockStage.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "damagesorted()"
     },
     {
@@ -3319,8 +3319,8 @@
       "source_location": "L179",
       "_origin": "ast",
       "id": "src_stockopnameview_damageblocked",
-      "community": 92,
-      "community_name": "StockStage.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "damageblocked()"
     },
     {
@@ -3330,8 +3330,8 @@
       "source_location": "L195",
       "_origin": "ast",
       "id": "src_stockopnameview_stockopnameview",
-      "community": 92,
-      "community_name": "StockStage.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "stockopnameview()"
     },
     {
@@ -3341,8 +3341,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_acceptancereceipt",
-      "community": 30,
-      "community_name": "notify",
+      "community": 99,
+      "community_name": "permissions.js",
       "norm_label": "acceptancereceipt.jsx"
     },
     {
@@ -3352,8 +3352,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_components_acceptancereceipt_field",
-      "community": 30,
-      "community_name": "notify",
+      "community": 99,
+      "community_name": "permissions.js",
       "norm_label": "field()"
     },
     {
@@ -3363,8 +3363,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "src_components_acceptancereceipt_money",
-      "community": 30,
-      "community_name": "notify",
+      "community": 99,
+      "community_name": "permissions.js",
       "norm_label": "money()"
     },
     {
@@ -3374,8 +3374,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "src_components_acceptancereceipt_acceptancereceipt",
-      "community": 30,
-      "community_name": "notify",
+      "community": 99,
+      "community_name": "permissions.js",
       "norm_label": "acceptancereceipt()"
     },
     {
@@ -3825,8 +3825,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_confirmgate",
-      "community": 106,
-      "community_name": "AcceptanceReceipt.jsx",
+      "community": 117,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "confirmgate.jsx"
     },
     {
@@ -3847,8 +3847,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_components_confirmgate_promptaction",
-      "community": 106,
-      "community_name": "AcceptanceReceipt.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "promptaction()"
     },
     {
@@ -3858,8 +3858,8 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "src_components_confirmgate_confirmhost",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 117,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "confirmhost()"
     },
     {
@@ -3869,8 +3869,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_crowntransferprotocol",
-      "community": 106,
-      "community_name": "AcceptanceReceipt.jsx",
+      "community": 113,
+      "community_name": "secretHash.js",
       "norm_label": "crowntransferprotocol.jsx"
     },
     {
@@ -3880,8 +3880,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_components_crowntransferprotocol_crowntransferprotocol",
-      "community": 106,
-      "community_name": "AcceptanceReceipt.jsx",
+      "community": 113,
+      "community_name": "secretHash.js",
       "norm_label": "crowntransferprotocol()"
     },
     {
@@ -3891,8 +3891,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_customermanager",
-      "community": 106,
-      "community_name": "AcceptanceReceipt.jsx",
+      "community": 93,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "customermanager.jsx"
     },
     {
@@ -3902,8 +3902,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_components_customermanager_ispointinpolygon",
-      "community": 106,
-      "community_name": "AcceptanceReceipt.jsx",
+      "community": 93,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "ispointinpolygon()"
     },
     {
@@ -3913,8 +3913,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_components_customermanager_checkpointingeojson",
-      "community": 106,
-      "community_name": "AcceptanceReceipt.jsx",
+      "community": 93,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "checkpointingeojson()"
     },
     {
@@ -3924,8 +3924,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "src_components_customermanager_customerdetailview",
-      "community": 106,
-      "community_name": "AcceptanceReceipt.jsx",
+      "community": 93,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "customerdetailview()"
     },
     {
@@ -3935,8 +3935,8 @@
       "source_location": "L209",
       "_origin": "ast",
       "id": "src_components_customermanager_customermanagement",
-      "community": 106,
-      "community_name": "AcceptanceReceipt.jsx",
+      "community": 93,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "customermanagement()"
     },
     {
@@ -3946,8 +3946,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_dashboardbenchmarks",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "dashboardbenchmarks.jsx"
     },
     {
@@ -3957,8 +3957,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_components_dashboardbenchmarks_tobal",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "tobal()"
     },
     {
@@ -3968,8 +3968,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "src_components_dashboardbenchmarks_pct",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "pct()"
     },
     {
@@ -3979,8 +3979,8 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "src_components_dashboardbenchmarks_groupdigits",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "groupdigits()"
     },
     {
@@ -3990,8 +3990,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "src_components_dashboardbenchmarks_dashboardbenchmarks",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "dashboardbenchmarks()"
     },
     {
@@ -4001,8 +4001,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_dashboardview",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "dashboardview.jsx"
     },
     {
@@ -4012,8 +4012,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_components_dashboardview_share",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "share()"
     },
     {
@@ -4023,8 +4023,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "src_components_dashboardview_series",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "series"
     },
     {
@@ -4034,8 +4034,8 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "src_components_dashboardview_dashboardview",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "dashboardview()"
     },
     {
@@ -4276,8 +4276,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_expedition",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "expedition.jsx"
     },
     {
@@ -4287,8 +4287,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_components_expedition_esc",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "esc()"
     },
     {
@@ -4298,8 +4298,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_components_expedition_count",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "count()"
     },
     {
@@ -4309,8 +4309,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_components_expedition_kmlabel",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "kmlabel()"
     },
     {
@@ -4320,8 +4320,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "src_components_expedition_said",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "said()"
     },
     {
@@ -4331,8 +4331,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_components_expedition_lamp",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "lamp()"
     },
     {
@@ -4342,8 +4342,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_components_expedition_ll",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "ll()"
     },
     {
@@ -4353,8 +4353,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_components_expedition_hair",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "hair"
     },
     {
@@ -4364,8 +4364,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "src_components_expedition_iconcache",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "iconcache"
     },
     {
@@ -4375,8 +4375,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "src_components_expedition_cachedicon",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "cachedicon()"
     },
     {
@@ -4386,52 +4386,52 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_components_expedition_expeditionlayer",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "expeditionlayer()"
     },
     {
       "label": "Av()",
       "file_type": "code",
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L183",
+      "source_location": "L147",
       "_origin": "ast",
       "id": "src_components_expedition_av",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "av()"
     },
     {
       "label": "Cells()",
       "file_type": "code",
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L186",
+      "source_location": "L150",
       "_origin": "ast",
       "id": "src_components_expedition_cells",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "cells()"
     },
     {
       "label": "Pips()",
       "file_type": "code",
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L191",
+      "source_location": "L155",
       "_origin": "ast",
       "id": "src_components_expedition_pips",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "pips()"
     },
     {
       "label": "ExpeditionPanel()",
       "file_type": "code",
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L204",
+      "source_location": "L168",
       "_origin": "ast",
       "id": "src_components_expedition_expeditionpanel",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "expeditionpanel()"
     },
     {
@@ -4507,8 +4507,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_imagecropper",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 105,
+      "community_name": "ImageCropper.jsx",
       "norm_label": "imagecropper.jsx"
     },
     {
@@ -4518,8 +4518,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "src_components_imagecropper_pinchzoom",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 105,
+      "community_name": "ImageCropper.jsx",
       "norm_label": "pinchzoom()"
     },
     {
@@ -4529,8 +4529,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_components_imagecropper_imagecropper",
-      "community": 0,
-      "community_name": "App.jsx",
+      "community": 105,
+      "community_name": "ImageCropper.jsx",
       "norm_label": "imagecropper()"
     },
     {
@@ -4540,8 +4540,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_lamp",
-      "community": 30,
-      "community_name": "notify",
+      "community": 119,
+      "community_name": "WarehouseDeskNav.jsx",
       "norm_label": "lamp.jsx"
     },
     {
@@ -4551,8 +4551,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_components_lamp_lamp",
-      "community": 30,
-      "community_name": "notify",
+      "community": 119,
+      "community_name": "WarehouseDeskNav.jsx",
       "norm_label": "lamp()"
     },
     {
@@ -4705,8 +4705,8 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "src_components_loadingbay_center",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 89,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "center()"
     },
     {
@@ -4903,8 +4903,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_pacechart",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "pacechart.jsx"
     },
     {
@@ -4914,8 +4914,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_components_pacechart_vb",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "vb"
     },
     {
@@ -4925,8 +4925,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_components_pacechart_pacechart",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "pacechart()"
     },
     {
@@ -5090,8 +5090,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_quarantineswitch",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "quarantineswitch.jsx"
     },
     {
@@ -5101,8 +5101,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_components_quarantineswitch_svgimg",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "svgimg()"
     },
     {
@@ -5112,8 +5112,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_components_quarantineswitch_sign_img",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "sign_img"
     },
     {
@@ -5123,8 +5123,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_components_quarantineswitch_eye_img",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "eye_img"
     },
     {
@@ -5134,8 +5134,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_components_quarantineswitch_wait",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "wait()"
     },
     {
@@ -5145,8 +5145,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_components_quarantineswitch_done",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "done()"
     },
     {
@@ -5156,8 +5156,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "src_components_quarantineswitch_still",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "still()"
     },
     {
@@ -5167,8 +5167,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "src_components_quarantineswitch_quarantineband",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "quarantineband()"
     },
     {
@@ -5178,8 +5178,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "src_components_quarantineswitch_quarantinehatch",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "quarantinehatch()"
     },
     {
@@ -5189,8 +5189,8 @@
       "source_location": "L113",
       "_origin": "ast",
       "id": "src_components_quarantineswitch_blastdoors",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "blastdoors()"
     },
     {
@@ -5200,8 +5200,8 @@
       "source_location": "L139",
       "_origin": "ast",
       "id": "src_components_quarantineswitch_runswitch",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "runswitch()"
     },
     {
@@ -5255,8 +5255,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_residentevilinventory",
-      "community": 30,
-      "community_name": "notify",
+      "community": 92,
+      "community_name": "StockStage.jsx",
       "norm_label": "residentevilinventory.jsx"
     },
     {
@@ -5266,8 +5266,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "src_components_residentevilinventory_formatadvancedstock",
-      "community": 30,
-      "community_name": "notify",
+      "community": 92,
+      "community_name": "StockStage.jsx",
       "norm_label": "formatadvancedstock()"
     },
     {
@@ -5277,8 +5277,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_components_residentevilinventory_dimensioncontrol",
-      "community": 30,
-      "community_name": "notify",
+      "community": 92,
+      "community_name": "StockStage.jsx",
       "norm_label": "dimensioncontrol()"
     },
     {
@@ -5288,8 +5288,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "src_components_residentevilinventory_iteminspector",
-      "community": 30,
-      "community_name": "notify",
+      "community": 92,
+      "community_name": "StockStage.jsx",
       "norm_label": "iteminspector()"
     },
     {
@@ -5299,8 +5299,8 @@
       "source_location": "L213",
       "_origin": "ast",
       "id": "src_components_residentevilinventory_isphone",
-      "community": 30,
-      "community_name": "notify",
+      "community": 92,
+      "community_name": "StockStage.jsx",
       "norm_label": "isphone()"
     },
     {
@@ -5310,8 +5310,8 @@
       "source_location": "L215",
       "_origin": "ast",
       "id": "src_components_residentevilinventory_residentevilinventory",
-      "community": 30,
-      "community_name": "notify",
+      "community": 92,
+      "community_name": "StockStage.jsx",
       "norm_label": "residentevilinventory()"
     },
     {
@@ -5541,8 +5541,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_toast",
-      "community": 106,
-      "community_name": "AcceptanceReceipt.jsx",
+      "community": 117,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "toast.jsx"
     },
     {
@@ -5563,8 +5563,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "src_components_toast_toasthost",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 117,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "toasthost()"
     },
     {
@@ -5574,8 +5574,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_todaybook",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "todaybook.jsx"
     },
     {
@@ -5585,8 +5585,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_components_todaybook_section",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "section"
     },
     {
@@ -5596,8 +5596,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_components_todaybook_still",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "still()"
     },
     {
@@ -5607,8 +5607,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_components_todaybook_iswide",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "iswide()"
     },
     {
@@ -5618,8 +5618,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_components_todaybook_hhmm",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "hhmm()"
     },
     {
@@ -5629,8 +5629,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_components_todaybook_packs",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "packs()"
     },
     {
@@ -5640,8 +5640,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_components_todaybook_saletotal",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "saletotal()"
     },
     {
@@ -5651,8 +5651,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_components_todaybook_glyphs",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 109,
+      "community_name": "PonderPad.jsx",
       "norm_label": "glyphs"
     },
     {
@@ -5662,8 +5662,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_components_todaybook_todaybook",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "todaybook()"
     },
     {
@@ -5783,8 +5783,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_warehousechest",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "warehousechest.jsx"
     },
     {
@@ -5794,8 +5794,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "src_components_warehousechest_fmt",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "fmt()"
     },
     {
@@ -5805,8 +5805,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_components_warehousechest_items",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "items()"
     },
     {
@@ -5816,8 +5816,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_components_warehousechest_motes",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "motes"
     },
     {
@@ -5827,8 +5827,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "src_components_warehousechest_useper",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "useper()"
     },
     {
@@ -5838,8 +5838,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_components_warehousechest_warehousechest",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "warehousechest()"
     },
     {
@@ -5849,8 +5849,8 @@
       "source_location": "L132",
       "_origin": "ast",
       "id": "src_components_warehousechest_cratevault",
-      "community": 67,
-      "community_name": "MerchantSalesView.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "cratevault()"
     },
     {
@@ -5860,8 +5860,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_components_warehousedesknav",
-      "community": 30,
-      "community_name": "notify",
+      "community": 119,
+      "community_name": "WarehouseDeskNav.jsx",
       "norm_label": "warehousedesknav.jsx"
     },
     {
@@ -5871,8 +5871,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "src_components_warehousedesknav_warehousedesknav",
-      "community": 30,
-      "community_name": "notify",
+      "community": 119,
+      "community_name": "WarehouseDeskNav.jsx",
       "norm_label": "warehousedesknav()"
     },
     {
@@ -6564,8 +6564,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_config_findduplicates_selfcheck_t",
-      "community": 79,
-      "community_name": "WarehouseChest.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "t()"
     },
     {
@@ -9732,8 +9732,8 @@
       "source_location": "L4237",
       "_origin": "ast",
       "id": "src_config_logicfixes_selfcheck_stampsowed",
-      "community": 40,
-      "community_name": "CapybaraMascot.jsx",
+      "community": 106,
+      "community_name": "AcceptanceReceipt.jsx",
       "norm_label": "stampsowed()"
     },
     {
@@ -11888,8 +11888,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck",
-      "community": 30,
-      "community_name": "notify",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "mixedunits.selfcheck.mjs"
     },
     {
@@ -11899,8 +11899,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_bksperunit",
-      "community": 30,
-      "community_name": "notify",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "bksperunit()"
     },
     {
@@ -11910,8 +11910,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_savepacking",
-      "community": 30,
-      "community_name": "notify",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "savepacking()"
     },
     {
@@ -11921,8 +11921,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_totalbks",
-      "community": 30,
-      "community_name": "notify",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "totalbks()"
     },
     {
@@ -11932,8 +11932,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_d",
-      "community": 30,
-      "community_name": "notify",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "d"
     },
     {
@@ -11943,8 +11943,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_custom",
-      "community": 30,
-      "community_name": "notify",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "custom"
     },
     {
@@ -11954,8 +11954,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_real",
-      "community": 30,
-      "community_name": "notify",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "real"
     },
     {
@@ -11965,8 +11965,8 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_cello",
-      "community": 30,
-      "community_name": "notify",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "cello"
     },
     {
@@ -11976,8 +11976,8 @@
       "source_location": "L87",
       "_origin": "ast",
       "id": "src_config_mixedunits_selfcheck_back",
-      "community": 30,
-      "community_name": "notify",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "back()"
     },
     {
@@ -12031,8 +12031,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "src_config_nextstop_selfcheck_store",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 62,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "store()"
     },
     {
@@ -12416,8 +12416,8 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "src_config_permissions_isfleetmanagementtier",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "isfleetmanagementtier()"
     },
     {
@@ -12548,8 +12548,8 @@
       "source_location": "L316",
       "_origin": "ast",
       "id": "src_config_permissions_getcustomeraccesslevel",
-      "community": 106,
-      "community_name": "AcceptanceReceipt.jsx",
+      "community": 93,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "getcustomeraccesslevel()"
     },
     {
@@ -13692,8 +13692,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 103,
+      "community_name": "StubAudio",
       "norm_label": "stubaudio"
     },
     {
@@ -13703,8 +13703,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio_constructor",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 103,
+      "community_name": "StubAudio",
       "norm_label": ".constructor()"
     },
     {
@@ -13714,8 +13714,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio_play",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 103,
+      "community_name": "StubAudio",
       "norm_label": ".play()"
     },
     {
@@ -13725,8 +13725,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "src_hooks_usesound_selfcheck_stubaudio_pause",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 103,
+      "community_name": "StubAudio",
       "norm_label": ".pause()"
     },
     {
@@ -13780,8 +13780,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_hooks_usetransactionengine",
-      "community": 101,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "usetransactionengine.js"
     },
     {
@@ -13791,8 +13791,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_hooks_usetransactionengine_applysaletocanvas",
-      "community": 101,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "applysaletocanvas()"
     },
     {
@@ -13802,8 +13802,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "src_hooks_usetransactionengine_usetransactionengine",
-      "community": 101,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "usetransactionengine()"
     },
     {
@@ -13835,8 +13835,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_main",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 117,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "main.jsx"
     },
     {
@@ -13846,8 +13846,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "src_main_onregisteredsw",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 117,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "onregisteredsw()"
     },
     {
@@ -13857,8 +13857,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_main_sound_gestures",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 117,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "sound_gestures"
     },
     {
@@ -13868,8 +13868,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "src_main_ongestureunlock",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 117,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "ongestureunlock()"
     },
     {
@@ -14231,8 +14231,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_demo_agentinventory",
-      "community": 111,
-      "community_name": "AgentChestStage.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "agentinventory.js"
     },
     {
@@ -14242,8 +14242,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_ponder_demo_agentinventory_u",
-      "community": 111,
-      "community_name": "AgentChestStage.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "u"
     },
     {
@@ -14253,8 +14253,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "src_ponder_demo_agentinventory_product",
-      "community": 111,
-      "community_name": "AgentChestStage.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "product()"
     },
     {
@@ -14264,8 +14264,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_ponder_demo_agentinventory_demo_chest",
-      "community": 111,
-      "community_name": "AgentChestStage.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "demo_chest"
     },
     {
@@ -14275,8 +14275,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_demo_loadingbay",
-      "community": 96,
-      "community_name": "povPreview.js",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "loadingbay.js"
     },
     {
@@ -14286,8 +14286,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_ponder_demo_loadingbay_u",
-      "community": 96,
-      "community_name": "povPreview.js",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "u"
     },
     {
@@ -14297,8 +14297,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "src_ponder_demo_loadingbay_product",
-      "community": 96,
-      "community_name": "povPreview.js",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "product()"
     },
     {
@@ -14308,8 +14308,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_ponder_demo_loadingbay_demo_bay",
-      "community": 96,
-      "community_name": "povPreview.js",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "demo_bay"
     },
     {
@@ -14319,8 +14319,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "src_ponder_demo_loadingbay_demo_bay_plan",
-      "community": 96,
-      "community_name": "povPreview.js",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "demo_bay_plan"
     },
     {
@@ -14330,8 +14330,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "src_ponder_demo_loadingbay_demo_bay_failed",
-      "community": 96,
-      "community_name": "povPreview.js",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "demo_bay_failed"
     },
     {
@@ -14341,8 +14341,8 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "src_ponder_demo_loadingbay_demo_bay_preset",
-      "community": 96,
-      "community_name": "povPreview.js",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "demo_bay_preset"
     },
     {
@@ -14539,8 +14539,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_ponder_registry_getscene",
-      "community": 109,
-      "community_name": "PonderPad.jsx",
+      "community": 73,
+      "community_name": "HistoryReportView.jsx",
       "norm_label": "getscene()"
     },
     {
@@ -14770,8 +14770,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_ponder_sfx_bookpage",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 63,
+      "community_name": "confirmAction",
       "norm_label": "bookpage()"
     },
     {
@@ -14781,8 +14781,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_ponder_sfx_bookclose",
-      "community": 55,
-      "community_name": "postcss",
+      "community": 73,
+      "community_name": "HistoryReportView.jsx",
       "norm_label": "bookclose()"
     },
     {
@@ -14803,8 +14803,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_stages_agentcheststage",
-      "community": 111,
-      "community_name": "AgentChestStage.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "agentcheststage.jsx"
     },
     {
@@ -14814,8 +14814,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "src_ponder_stages_agentcheststage_chestopen",
-      "community": 111,
-      "community_name": "AgentChestStage.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "chestopen()"
     },
     {
@@ -14825,8 +14825,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_ponder_stages_agentcheststage_noop",
-      "community": 111,
-      "community_name": "AgentChestStage.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "noop()"
     },
     {
@@ -14836,8 +14836,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_ponder_stages_agentcheststage_agentcheststage",
-      "community": 111,
-      "community_name": "AgentChestStage.jsx",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "agentcheststage()"
     },
     {
@@ -14891,8 +14891,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_stages_loadingbaystage",
-      "community": 96,
-      "community_name": "povPreview.js",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "loadingbaystage.jsx"
     },
     {
@@ -14902,8 +14902,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_ponder_stages_loadingbaystage_lines",
-      "community": 96,
-      "community_name": "povPreview.js",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "lines"
     },
     {
@@ -14913,8 +14913,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_ponder_stages_loadingbaystage_scriptedpose",
-      "community": 96,
-      "community_name": "povPreview.js",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "scriptedpose()"
     },
     {
@@ -14924,8 +14924,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "src_ponder_stages_loadingbaystage_landed",
-      "community": 96,
-      "community_name": "povPreview.js",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "landed()"
     },
     {
@@ -14935,8 +14935,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_ponder_stages_loadingbaystage_noop",
-      "community": 96,
-      "community_name": "povPreview.js",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "noop()"
     },
     {
@@ -14946,8 +14946,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "src_ponder_stages_loadingbaystage_loadingbaystage",
-      "community": 96,
-      "community_name": "povPreview.js",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "loadingbaystage()"
     },
     {
@@ -15254,8 +15254,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_ponder_stages_stockbywarehousetable",
-      "community": 30,
-      "community_name": "notify",
+      "community": 108,
+      "community_name": "StockByWarehouseTable.jsx",
       "norm_label": "stockbywarehousetable.jsx"
     },
     {
@@ -15265,8 +15265,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "src_ponder_stages_stockbywarehousetable_n",
-      "community": 30,
-      "community_name": "notify",
+      "community": 108,
+      "community_name": "StockByWarehouseTable.jsx",
       "norm_label": "n()"
     },
     {
@@ -15276,8 +15276,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_ponder_stages_stockbywarehousetable_stockbywarehousetable",
-      "community": 30,
-      "community_name": "notify",
+      "community": 108,
+      "community_name": "StockByWarehouseTable.jsx",
       "norm_label": "stockbywarehousetable()"
     },
     {
@@ -15342,8 +15342,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_bordercache",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 89,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "bordercache.js"
     },
     {
@@ -15353,8 +15353,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "src_utils_bordercache_opencachedb",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 89,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "opencachedb()"
     },
     {
@@ -15364,8 +15364,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "src_utils_bordercache_savebordercache",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 89,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "savebordercache()"
     },
     {
@@ -15375,8 +15375,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "src_utils_bordercache_loadbordercache",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 89,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "loadbordercache()"
     },
     {
@@ -15386,8 +15386,8 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "src_utils_bordercache_clearbordercache",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 89,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "clearbordercache()"
     },
     {
@@ -15397,8 +15397,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_customerbrief",
-      "community": 54,
-      "community_name": "RestockVaultView.jsx",
+      "community": 107,
+      "community_name": "t",
       "norm_label": "customerbrief.js"
     },
     {
@@ -15408,8 +15408,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_utils_customerbrief_briefseconds",
-      "community": 54,
-      "community_name": "RestockVaultView.jsx",
+      "community": 107,
+      "community_name": "t",
       "norm_label": "briefseconds()"
     },
     {
@@ -15419,8 +15419,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_utils_customerbrief_customerbrief",
-      "community": 54,
-      "community_name": "RestockVaultView.jsx",
+      "community": 107,
+      "community_name": "t",
       "norm_label": "customerbrief()"
     },
     {
@@ -15441,8 +15441,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_daystats",
-      "community": 76,
-      "community_name": "useTransactionEngine.js",
+      "community": 107,
+      "community_name": "t",
       "norm_label": "daystats.js"
     },
     {
@@ -15452,8 +15452,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "src_utils_daystats_txseconds",
-      "community": 76,
-      "community_name": "useTransactionEngine.js",
+      "community": 30,
+      "community_name": "notify",
       "norm_label": "txseconds()"
     },
     {
@@ -15463,8 +15463,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_utils_daystats_daystats",
-      "community": 76,
-      "community_name": "useTransactionEngine.js",
+      "community": 107,
+      "community_name": "t",
       "norm_label": "daystats()"
     },
     {
@@ -15848,15 +15848,15 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "src_utils_expedition_visibleteam",
-      "community": 31,
-      "community_name": "eslint-plugin-react-refresh",
+      "community": 89,
+      "community_name": "mixedUnits.selfcheck.mjs",
       "norm_label": "visibleteam()"
     },
     {
       "label": "metres()",
       "file_type": "code",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L35",
+      "source_location": "L39",
       "_origin": "ast",
       "id": "src_utils_expedition_metres",
       "community": 65,
@@ -15867,7 +15867,7 @@
       "label": "pin()",
       "file_type": "code",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L36",
+      "source_location": "L40",
       "_origin": "ast",
       "id": "src_utils_expedition_pin",
       "community": 65,
@@ -15878,7 +15878,7 @@
       "label": "initials()",
       "file_type": "code",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L37",
+      "source_location": "L41",
       "_origin": "ast",
       "id": "src_utils_expedition_initials",
       "community": 65,
@@ -15889,7 +15889,7 @@
       "label": "his()",
       "file_type": "code",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L41",
+      "source_location": "L45",
       "_origin": "ast",
       "id": "src_utils_expedition_his",
       "community": 65,
@@ -15900,7 +15900,7 @@
       "label": "expedition()",
       "file_type": "code",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L46",
+      "source_location": "L50",
       "_origin": "ast",
       "id": "src_utils_expedition_expedition",
       "community": 65,
@@ -15911,11 +15911,11 @@
       "label": "agoLabel()",
       "file_type": "code",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L111",
+      "source_location": "L115",
       "_origin": "ast",
       "id": "src_utils_expedition_agolabel",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "agolabel()"
     },
     {
@@ -16013,8 +16013,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "src_utils_helpers_compactrp",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "compactrp()"
     },
     {
@@ -16024,8 +16024,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "src_utils_helpers_formatrupiah",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "formatrupiah()"
     },
     {
@@ -16057,8 +16057,8 @@
       "source_location": "L47",
       "_origin": "ast",
       "id": "src_utils_helpers_storekey",
-      "community": 61,
-      "community_name": "firebase.js",
+      "community": 107,
+      "community_name": "t",
       "norm_label": "storekey()"
     },
     {
@@ -16068,8 +16068,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "src_utils_helpers_storelabel",
-      "community": 49,
-      "community_name": "notify",
+      "community": 70,
+      "community_name": "BiohazardTheme.jsx",
       "norm_label": "storelabel()"
     },
     {
@@ -16112,8 +16112,8 @@
       "source_location": "L139",
       "_origin": "ast",
       "id": "src_utils_helpers_display_units",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "display_units"
     },
     {
@@ -16123,8 +16123,8 @@
       "source_location": "L141",
       "_origin": "ast",
       "id": "src_utils_helpers_displayqty",
-      "community": 30,
-      "community_name": "notify",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "displayqty()"
     },
     {
@@ -16134,8 +16134,8 @@
       "source_location": "L165",
       "_origin": "ast",
       "id": "src_utils_helpers_splittounits",
-      "community": 107,
-      "community_name": "t",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "splittounits()"
     },
     {
@@ -16145,8 +16145,8 @@
       "source_location": "L195",
       "_origin": "ast",
       "id": "src_utils_helpers_stripcartitemforstorage",
-      "community": 101,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "stripcartitemforstorage()"
     },
     {
@@ -16167,8 +16167,8 @@
       "source_location": "L225",
       "_origin": "ast",
       "id": "src_utils_helpers_converttobks",
-      "community": 30,
-      "community_name": "notify",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "converttobks()"
     },
     {
@@ -16200,7 +16200,7 @@
       "source_location": "L323",
       "_origin": "ast",
       "id": "src_utils_helpers_deletephotofromstorage",
-      "community": 30,
+      "community": 49,
       "community_name": "notify",
       "norm_label": "deletephotofromstorage()"
     },
@@ -16211,8 +16211,8 @@
       "source_location": "L340",
       "_origin": "ast",
       "id": "src_utils_helpers_scanpixels",
-      "community": 53,
-      "community_name": "helpers.js",
+      "community": 119,
+      "community_name": "WarehouseDeskNav.jsx",
       "norm_label": "scanpixels()"
     },
     {
@@ -16222,8 +16222,8 @@
       "source_location": "L386",
       "_origin": "ast",
       "id": "src_utils_helpers_deskewangle",
-      "community": 53,
-      "community_name": "helpers.js",
+      "community": 119,
+      "community_name": "WarehouseDeskNav.jsx",
       "norm_label": "deskewangle()"
     },
     {
@@ -16332,8 +16332,8 @@
       "source_location": "L699",
       "_origin": "ast",
       "id": "src_utils_helpers_tierprice",
-      "community": 92,
-      "community_name": "StockStage.jsx",
+      "community": 49,
+      "community_name": "notify",
       "norm_label": "tierprice()"
     },
     {
@@ -16387,8 +16387,8 @@
       "source_location": "L764",
       "_origin": "ast",
       "id": "src_utils_helpers_salelines",
-      "community": 89,
-      "community_name": "mixedUnits.selfcheck.mjs",
+      "community": 84,
+      "community_name": "t",
       "norm_label": "salelines()"
     },
     {
@@ -16530,8 +16530,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_utils_mapsprites_safehex",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 67,
+      "community_name": "MerchantSalesView.jsx",
       "norm_label": "safehex()"
     },
     {
@@ -16706,8 +16706,8 @@
       "source_location": "L85",
       "_origin": "ast",
       "id": "src_utils_mapsprites_chesthtml",
-      "community": 64,
-      "community_name": "PonderOverlay.jsx",
+      "community": 61,
+      "community_name": "firebase.js",
       "norm_label": "chesthtml()"
     },
     {
@@ -16948,8 +16948,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_nextstop",
-      "community": 65,
-      "community_name": "RegionalWarehouseStage.jsx",
+      "community": 107,
+      "community_name": "t",
       "norm_label": "nextstop.js"
     },
     {
@@ -16959,8 +16959,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "src_utils_nextstop_km",
-      "community": 65,
-      "community_name": "RegionalWarehouseStage.jsx",
+      "community": 107,
+      "community_name": "t",
       "norm_label": "km()"
     },
     {
@@ -16970,8 +16970,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "src_utils_nextstop_mine",
-      "community": 65,
-      "community_name": "RegionalWarehouseStage.jsx",
+      "community": 107,
+      "community_name": "t",
       "norm_label": "mine()"
     },
     {
@@ -16981,8 +16981,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "src_utils_nextstop_visitedwithincycle",
-      "community": 65,
-      "community_name": "RegionalWarehouseStage.jsx",
+      "community": 107,
+      "community_name": "t",
       "norm_label": "visitedwithincycle()"
     },
     {
@@ -16992,8 +16992,8 @@
       "source_location": "L45",
       "_origin": "ast",
       "id": "src_utils_nextstop_nextstop",
-      "community": 65,
-      "community_name": "RegionalWarehouseStage.jsx",
+      "community": 107,
+      "community_name": "t",
       "norm_label": "nextstop()"
     },
     {
@@ -17025,8 +17025,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_period",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "period.js"
     },
     {
@@ -17036,8 +17036,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "src_utils_period_months",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "months"
     },
     {
@@ -17047,8 +17047,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "src_utils_period_periods",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "periods"
     },
     {
@@ -17058,8 +17058,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "src_utils_period_periodmeta",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "periodmeta()"
     },
     {
@@ -17069,8 +17069,8 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "src_utils_period_periodwindow",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "periodwindow()"
     },
     {
@@ -17080,8 +17080,8 @@
       "source_location": "L83",
       "_origin": "ast",
       "id": "src_utils_period_perioddays",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "perioddays()"
     },
     {
@@ -17091,8 +17091,8 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "src_utils_period_txdate",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "txdate()"
     },
     {
@@ -17135,8 +17135,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_revenuerule",
-      "community": 49,
-      "community_name": "notify",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "revenuerule.js"
     },
     {
@@ -17146,8 +17146,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "src_utils_revenuerule_istitip",
-      "community": 49,
-      "community_name": "notify",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "istitip()"
     },
     {
@@ -17157,8 +17157,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "src_utils_revenuerule_countsasrevenue",
-      "community": 49,
-      "community_name": "notify",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "countsasrevenue()"
     },
     {
@@ -17179,8 +17179,8 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "src_utils_revenuerule_debtcredit",
-      "community": 70,
-      "community_name": "BiohazardTheme.jsx",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "debtcredit()"
     },
     {
@@ -17190,8 +17190,8 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "src_utils_revenuerule_soldlinesof",
-      "community": 49,
-      "community_name": "notify",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "soldlinesof()"
     },
     {
@@ -17201,8 +17201,8 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "src_utils_revenuerule_outstandingtitip",
-      "community": 49,
-      "community_name": "notify",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "outstandingtitip()"
     },
     {
@@ -17212,8 +17212,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_salesrollup",
-      "community": 49,
-      "community_name": "notify",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "salesrollup.js"
     },
     {
@@ -17256,8 +17256,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "src_utils_salesrollup_dayof",
-      "community": 49,
-      "community_name": "notify",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "dayof()"
     },
     {
@@ -17267,8 +17267,8 @@
       "source_location": "L75",
       "_origin": "ast",
       "id": "src_utils_salesrollup_salesdelta",
-      "community": 49,
-      "community_name": "notify",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "salesdelta()"
     },
     {
@@ -17333,8 +17333,8 @@
       "source_location": "L230",
       "_origin": "ast",
       "id": "src_utils_salesrollup_rebuildmonths",
-      "community": 49,
-      "community_name": "notify",
+      "community": 48,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "rebuildmonths()"
     },
     {
@@ -17487,8 +17487,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "src_utils_stockthreshold",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "stockthreshold.js"
     },
     {
@@ -17498,8 +17498,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "src_utils_stockthreshold_min_stock_units",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "min_stock_units"
     },
     {
@@ -17509,8 +17509,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "src_utils_stockthreshold_minstockbks",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "minstockbks()"
     },
     {
@@ -17520,8 +17520,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "src_utils_stockthreshold_islowstock",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "islowstock()"
     },
     {
@@ -17531,8 +17531,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "src_utils_stockthreshold_daysofcover",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "daysofcover()"
     },
     {
@@ -17597,8 +17597,8 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "src_utils_supply_supplybyproduct",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "supplybyproduct()"
     },
     {
@@ -17619,8 +17619,8 @@
       "source_location": "L161",
       "_origin": "ast",
       "id": "src_utils_supply_dormant",
-      "community": 30,
-      "community_name": "notify",
+      "community": 37,
+      "community_name": "MapMissionControl.jsx",
       "norm_label": "dormant()"
     },
     {
@@ -17674,8 +17674,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "src_utils_updatecheck_setregistration",
-      "community": 63,
-      "community_name": "confirmAction",
+      "community": 117,
+      "community_name": "toastSeverity.selfcheck.mjs",
       "norm_label": "setregistration()"
     },
     {
@@ -18059,8 +18059,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tools_lab_bell",
-      "community": 46,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 96,
+      "community_name": "povPreview.js",
       "norm_label": "lab-bell.jsx"
     },
     {
@@ -18070,8 +18070,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "tools_lab_bell_ago",
-      "community": 46,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 96,
+      "community_name": "povPreview.js",
       "norm_label": "ago()"
     },
     {
@@ -18081,8 +18081,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "tools_lab_bell_sec",
-      "community": 46,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 96,
+      "community_name": "povPreview.js",
       "norm_label": "sec()"
     },
     {
@@ -18092,8 +18092,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "tools_lab_bell_lab_bell_needs",
-      "community": 46,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 96,
+      "community_name": "povPreview.js",
       "norm_label": "lab_bell_needs"
     },
     {
@@ -18103,8 +18103,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "tools_lab_bell_lab_missed",
-      "community": 46,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 96,
+      "community_name": "povPreview.js",
       "norm_label": "lab_missed"
     },
     {
@@ -18114,8 +18114,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "tools_lab_bell_seedlabbell",
-      "community": 46,
-      "community_name": "dayStats.selfcheck.mjs",
+      "community": 96,
+      "community_name": "povPreview.js",
       "norm_label": "seedlabbell()"
     },
     {
@@ -18191,8 +18191,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "lab-firestore-stub.js"
     },
     {
@@ -18202,8 +18202,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_snap",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "snap()"
     },
     {
@@ -18213,8 +18213,8 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_collection",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "collection()"
     },
     {
@@ -18224,8 +18224,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_doc",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "doc()"
     },
     {
@@ -18235,8 +18235,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_onsnapshot",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "onsnapshot()"
     },
     {
@@ -18246,8 +18246,8 @@
       "source_location": "L49",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_noop",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "noop()"
     },
     {
@@ -18257,8 +18257,8 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_writes",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "writes()"
     },
     {
@@ -18268,8 +18268,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_record",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "record()"
     },
     {
@@ -18279,8 +18279,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_found",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "found()"
     },
     {
@@ -18301,8 +18301,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_runtransaction",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "runtransaction()"
     },
     {
@@ -18312,8 +18312,8 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_updatedoc",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "updatedoc()"
     },
     {
@@ -18323,8 +18323,8 @@
       "source_location": "L57",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_deletedoc",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "deletedoc()"
     },
     {
@@ -18334,8 +18334,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_deletefield",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "deletefield()"
     },
     {
@@ -18345,8 +18345,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_servertimestamp",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "servertimestamp()"
     },
     {
@@ -18356,8 +18356,8 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_increment",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "increment()"
     },
     {
@@ -18367,8 +18367,8 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_arrayunion",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "arrayunion()"
     },
     {
@@ -18378,8 +18378,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_getdoc",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "getdoc()"
     },
     {
@@ -18389,8 +18389,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_setdoc",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "setdoc()"
     },
     {
@@ -18400,8 +18400,8 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_query",
-      "community": 106,
-      "community_name": "AcceptanceReceipt.jsx",
+      "community": 93,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "query()"
     },
     {
@@ -18411,8 +18411,8 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_where",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "where()"
     },
     {
@@ -18422,8 +18422,8 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_orderby",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "orderby()"
     },
     {
@@ -18433,8 +18433,8 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_getdocs",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "getdocs()"
     },
     {
@@ -18444,8 +18444,8 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "tools_lab_firestore_stub_adddoc",
-      "community": 37,
-      "community_name": "MapMissionControl.jsx",
+      "community": 11,
+      "community_name": "CustomerManager.jsx",
       "norm_label": "adddoc()"
     },
     {
@@ -18587,8 +18587,8 @@
       "source_location": "L76",
       "_origin": "ast",
       "id": "tools_ponder_lab_lab",
-      "community": 79,
-      "community_name": "WarehouseChest.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "lab()"
     },
     {
@@ -18598,8 +18598,8 @@
       "source_location": "L100",
       "_origin": "ast",
       "id": "tools_ponder_lab_forcehover",
-      "community": 79,
-      "community_name": "WarehouseChest.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "forcehover()"
     },
     {
@@ -18609,8 +18609,8 @@
       "source_location": "L118",
       "_origin": "ast",
       "id": "tools_ponder_lab_booklab",
-      "community": 79,
-      "community_name": "WarehouseChest.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "booklab()"
     },
     {
@@ -18642,8 +18642,8 @@
       "source_location": "L186",
       "_origin": "ast",
       "id": "tools_ponder_lab_minkirimlab",
-      "community": 79,
-      "community_name": "WarehouseChest.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "minkirimlab()"
     },
     {
@@ -18752,8 +18752,8 @@
       "source_location": "L363",
       "_origin": "ast",
       "id": "tools_ponder_lab_labsamplings",
-      "community": 79,
-      "community_name": "WarehouseChest.jsx",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "labsamplings()"
     },
     {
@@ -18763,8 +18763,8 @@
       "source_location": "L380",
       "_origin": "ast",
       "id": "tools_ponder_lab_labverifiedtonight",
-      "community": 79,
-      "community_name": "WarehouseChest.jsx",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "labverifiedtonight()"
     },
     {
@@ -18774,8 +18774,8 @@
       "source_location": "L389",
       "_origin": "ast",
       "id": "tools_ponder_lab_labeodreports",
-      "community": 79,
-      "community_name": "WarehouseChest.jsx",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "labeodreports()"
     },
     {
@@ -18851,8 +18851,8 @@
       "source_location": "L627",
       "_origin": "ast",
       "id": "tools_ponder_lab_toastlab",
-      "community": 79,
-      "community_name": "WarehouseChest.jsx",
+      "community": 53,
+      "community_name": "helpers.js",
       "norm_label": "toastlab()"
     },
     {
@@ -18939,8 +18939,8 @@
       "source_location": "L762",
       "_origin": "ast",
       "id": "tools_ponder_lab_labpiutang",
-      "community": 101,
-      "community_name": "toastSeverity.selfcheck.mjs",
+      "community": 79,
+      "community_name": "WarehouseChest.jsx",
       "norm_label": "labpiutang()"
     },
     {
@@ -18983,8 +18983,8 @@
       "source_location": "L834",
       "_origin": "ast",
       "id": "tools_ponder_lab_labvisit",
-      "community": 79,
-      "community_name": "WarehouseChest.jsx",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "labvisit()"
     },
     {
@@ -18994,8 +18994,8 @@
       "source_location": "L839",
       "_origin": "ast",
       "id": "tools_ponder_lab_shelllab",
-      "community": 79,
-      "community_name": "WarehouseChest.jsx",
+      "community": 35,
+      "community_name": "useTransactionEngine.js",
       "norm_label": "shelllab()"
     },
     {
@@ -20132,10 +20132,21 @@
       "norm_label": "progress \u2014 read this, search for nothing"
     },
     {
-      "label": "\ud83d\udfe1 2026-10-03 14:47 \u2014 KPM: Journey map design BUILT `aaf6a7e` (local, not pushed)",
+      "label": "\ud83d\udfe1 2026-10-03 17:55 \u2014 KPM: Journey map lag + collisions FIXED `eabda69` (local, not pushed)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
       "source_location": "L5",
+      "_origin": "ast",
+      "id": "claude_progress_2026_10_03_17_55_kpm_journey_map_lag_collisions_fixed_eabda69_local_not_pushed",
+      "community": 41,
+      "community_name": "\u2705 THE LIGHT DUKE'S LEDGER IS BUILT \u2014 524/524, contrast self-check passes",
+      "norm_label": "\ud83d\udfe1 2026-10-03 17:55 \u2014 kpm: journey map lag + collisions fixed `eabda69` (local, not pushed)"
+    },
+    {
+      "label": "\ud83d\udfe1 2026-10-03 14:47 \u2014 KPM: Journey map design BUILT `aaf6a7e` (local, not pushed)",
+      "file_type": "document",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L8",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_14_47_kpm_journey_map_design_built_aaf6a7e_local_not_pushed",
       "community": 41,
@@ -20146,7 +20157,7 @@
       "label": "\ud83d\udfe2 2026-10-03 09:26 \u2014 Tobacco: keluwasen and ngrapak defined (no KPM code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L8",
+      "source_location": "L11",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_09_26_tobacco_keluwasen_and_ngrapak_defined_no_kpm_code",
       "community": 41,
@@ -20157,7 +20168,7 @@
       "label": "\ud83d\udfe2 2026-10-03 08:20 \u2014 Tobacco: how the plant works + Gemini check (no KPM code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L11",
+      "source_location": "L14",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_08_20_tobacco_how_the_plant_works_gemini_check_no_kpm_code",
       "community": 41,
@@ -20168,7 +20179,7 @@
       "label": "\ud83d\udfe1 2026-10-03 09:55 \u2014 KPM: Journey map design DECIDED (full pixel salesman); next = the build, in a fresh session (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L14",
+      "source_location": "L17",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_09_55_kpm_journey_map_design_decided_full_pixel_salesman_next_the_build_in_a_fresh_session_no_app_code",
       "community": 41,
@@ -20179,7 +20190,7 @@
       "label": "\ud83d\udfe1 2026-10-03 09:47 \u2014 KPM: chest v5 (14 px, dark inside, lit signs) + pixel salesman, page v5 (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L17",
+      "source_location": "L20",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_09_47_kpm_chest_v5_14_px_dark_inside_lit_signs_pixel_salesman_page_v5_no_app_code",
       "community": 41,
@@ -20190,7 +20201,7 @@
       "label": "\ud83d\udfe1 2026-10-03 09:31 \u2014 KPM: the chest with signs + correct motion, page v4 (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L20",
+      "source_location": "L23",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_09_31_kpm_the_chest_with_signs_correct_motion_page_v4_no_app_code",
       "community": 41,
@@ -20201,7 +20212,7 @@
       "label": "\ud83d\udfe1 2026-10-03 08:56 \u2014 KPM: shop mark = the CHEST; his \"secured and unvisited look the same\" fixed in page v3 (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L23",
+      "source_location": "L26",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_08_56_kpm_shop_mark_the_chest_his_secured_and_unvisited_look_the_same_fixed_in_page_v3_no_app_code",
       "community": 41,
@@ -20212,7 +20223,7 @@
       "label": "\ud83d\udfe1 2026-10-03 08:35 \u2014 KPM: map keys DECIDED (icon acts); shop marks round 2 drawn, his pick owed (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L26",
+      "source_location": "L29",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_08_35_kpm_map_keys_decided_icon_acts_shop_marks_round_2_drawn_his_pick_owed_no_app_code",
       "community": 41,
@@ -20223,7 +20234,7 @@
       "label": "\ud83d\udfe1 2026-10-03 08:18 \u2014 KPM: Journey map keys + shop marks DRAWN, his pick owed (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L29",
+      "source_location": "L32",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_08_18_kpm_journey_map_keys_shop_marks_drawn_his_pick_owed_no_app_code",
       "community": 41,
@@ -20234,7 +20245,7 @@
       "label": "\ud83d\udfe2 2026-10-03 08:10 \u2014 Tobacco: Gudang Garam question answered (no KPM code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L32",
+      "source_location": "L35",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_08_10_tobacco_gudang_garam_question_answered_no_kpm_code",
       "community": 41,
@@ -20245,7 +20256,7 @@
       "label": "\ud83d\udfe2 2026-10-03 08:06 \u2014 Tobacco: rajangan page v4 on his field knowledge (no KPM code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L35",
+      "source_location": "L38",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_08_06_tobacco_rajangan_page_v4_on_his_field_knowledge_no_kpm_code",
       "community": 41,
@@ -20256,7 +20267,7 @@
       "label": "\ud83d\udfe2 2026-10-03 01:59 \u2014 Tobacco: rajangan 2026 research page (no KPM code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L38",
+      "source_location": "L41",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_01_59_tobacco_rajangan_2026_research_page_no_kpm_code",
       "community": 41,
@@ -20267,7 +20278,7 @@
       "label": "\ud83d\udfe1 2026-10-03 02:00 \u2014 KPM: next ask saved, no code",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L41",
+      "source_location": "L44",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_02_00_kpm_next_ask_saved_no_code",
       "community": 41,
@@ -20278,7 +20289,7 @@
       "label": "\ud83d\udfe1 2026-10-03 01:52 \u2014 KPM: Journey map + its keys on the theme `d321daf`, local",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L44",
+      "source_location": "L47",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_01_52_kpm_journey_map_its_keys_on_the_theme_d321daf_local",
       "community": 41,
@@ -20289,7 +20300,7 @@
       "label": "\ud83d\udfe1 2026-10-03 01:46 \u2014 KPM: Mission Feed redesign `339522f`, local (his \"A for pc B for phone\")",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L47",
+      "source_location": "L50",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_01_46_kpm_mission_feed_redesign_339522f_local_his_a_for_pc_b_for_phone",
       "community": 41,
@@ -20300,7 +20311,7 @@
       "label": "\ud83d\udfe1 2026-10-03 01:36 \u2014 KPM: Journey Plan top panel, two looks drawn (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L50",
+      "source_location": "L53",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_01_36_kpm_journey_plan_top_panel_two_looks_drawn_no_app_code",
       "community": 41,
@@ -20311,7 +20322,7 @@
       "label": "\ud83d\udfe1 2026-10-03 01:03 \u2014 KPM: expedition moved to Journey Plan `ccae937`, local",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L53",
+      "source_location": "L56",
       "_origin": "ast",
       "id": "claude_progress_2026_10_03_01_03_kpm_expedition_moved_to_journey_plan_ccae937_local",
       "community": 41,
@@ -20322,7 +20333,7 @@
       "label": "\ud83d\udfe1 2026-10-02 21:38 \u2014 KPM: expedition region fence `d206f6a`, local (his A)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L56",
+      "source_location": "L59",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_21_38_kpm_expedition_region_fence_d206f6a_local_his_a",
       "community": 41,
@@ -20333,7 +20344,7 @@
       "label": "\ud83d\udfe1 2026-10-02 21:16 \u2014 KPM: expedition region scoping asked (no code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L59",
+      "source_location": "L62",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_21_16_kpm_expedition_region_scoping_asked_no_code",
       "community": 41,
@@ -20344,7 +20355,7 @@
       "label": "\ud83d\udfe1 2026-10-02 20:21 \u2014 KPM: pathHistory = today's points only, `664b756`, local (his B)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L62",
+      "source_location": "L65",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_20_21_kpm_pathhistory_today_s_points_only_664b756_local_his_b",
       "community": 41,
@@ -20355,7 +20366,7 @@
       "label": "\ud83d\udfe1 2026-10-02 20:16 \u2014 KPM: pathHistory, A written but held (no commit)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L65",
+      "source_location": "L68",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_20_16_kpm_pathhistory_a_written_but_held_no_commit",
       "community": 41,
@@ -20366,7 +20377,7 @@
       "label": "\ud83d\udfe1 2026-10-02 19:47 \u2014 KPM: expedition map BUILT `eef2f55`, local (not pushed)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L68",
+      "source_location": "L71",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_19_47_kpm_expedition_map_built_eef2f55_local_not_pushed",
       "community": 41,
@@ -20377,7 +20388,7 @@
       "label": "\ud83d\udfe2 2026-10-02 19:00 \u2014 KPM: expedition map look picked (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L71",
+      "source_location": "L74",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_19_00_kpm_expedition_map_look_picked_no_app_code",
       "community": 41,
@@ -20388,7 +20399,7 @@
       "label": "\ud83d\udfe1 2026-10-02 18:55 \u2014 KPM: expedition map, two looks drawn (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L74",
+      "source_location": "L77",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_18_55_kpm_expedition_map_two_looks_drawn_no_app_code",
       "community": 41,
@@ -20399,7 +20410,7 @@
       "label": "\ud83d\udfe1 2026-10-02 12:35 \u2014 KPM: hero A picked; expedition map asked (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L77",
+      "source_location": "L80",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_12_35_kpm_hero_a_picked_expedition_map_asked_no_app_code",
       "community": 41,
@@ -20410,7 +20421,7 @@
       "label": "\ud83d\udfe1 2026-10-02 10:55 \u2014 KPM: customer showcase, the first screen drawn three ways (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L80",
+      "source_location": "L83",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_10_55_kpm_customer_showcase_the_first_screen_drawn_three_ways_no_app_code",
       "community": 41,
@@ -20421,7 +20432,7 @@
       "label": "\ud83d\udfe2 2026-10-02 10:30 \u2014 KPM: customer showcase GO, his four answers in (no code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L83",
+      "source_location": "L86",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_10_30_kpm_customer_showcase_go_his_four_answers_in_no_code",
       "community": 41,
@@ -20432,7 +20443,7 @@
       "label": "\ud83d\udfe2 2026-10-02 10:08 \u2014 KPM: PUSHED phone sweep 1-4; names stay (his \"C and push\")",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L86",
+      "source_location": "L89",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_10_08_kpm_pushed_phone_sweep_1_4_names_stay_his_c_and_push",
       "community": 41,
@@ -20443,7 +20454,7 @@
       "label": "\ud83d\udfe2 2026-10-02 09:25 \u2014 KPM: phone sweep 1-4 BUILT, local (his \"1 and 2 first then continue\")",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L89",
+      "source_location": "L92",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_09_25_kpm_phone_sweep_1_4_built_local_his_1_and_2_first_then_continue",
       "community": 41,
@@ -20454,7 +20465,7 @@
       "label": "\ud83d\udfe1 2026-10-02 08:55 \u2014 KPM: phone sweep, the last 5 screens measured and ranked (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L92",
+      "source_location": "L95",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_08_55_kpm_phone_sweep_the_last_5_screens_measured_and_ranked_no_app_code",
       "community": 41,
@@ -20465,7 +20476,7 @@
       "label": "\ud83d\udfe2 2026-10-02 08:20 \u2014 KPM: Master Vault on the phone CONFIRMED",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L95",
+      "source_location": "L98",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_08_20_kpm_master_vault_on_the_phone_confirmed",
       "community": 41,
@@ -20476,7 +20487,7 @@
       "label": "\ud83d\udfe2 2026-10-02 08:15 \u2014 KPM: the two-part bell + USB reminder CONFIRMED",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L98",
+      "source_location": "L101",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_08_15_kpm_the_two_part_bell_usb_reminder_confirmed",
       "community": 41,
@@ -20487,7 +20498,7 @@
       "label": "\ud83d\udfe2 2026-10-02 07:55 \u2014 KPM: USB-backup reminder fixed `3ce869b`, local (his \"A is good\")",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L102",
+      "source_location": "L105",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_07_55_kpm_usb_backup_reminder_fixed_3ce869b_local_his_a_is_good",
       "community": 41,
@@ -20498,7 +20509,7 @@
       "label": "\ud83d\udfe1 2026-10-02 07:48 \u2014 KPM: the USB-backup alert stays on the capybara (his report, diagnosed, no code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L106",
+      "source_location": "L109",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_07_48_kpm_the_usb_backup_alert_stays_on_the_capybara_his_report_diagnosed_no_code",
       "community": 41,
@@ -20509,7 +20520,7 @@
       "label": "\ud83d\udfe2 2026-10-02 07:43 \u2014 KPM: PUSHED the two-part bell",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L110",
+      "source_location": "L113",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_07_43_kpm_pushed_the_two_part_bell",
       "community": 41,
@@ -20520,7 +20531,7 @@
       "label": "\ud83d\udfe2 2026-10-02 07:40 \u2014 KPM: rules [CHANGE 15] published",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L114",
+      "source_location": "L117",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_07_40_kpm_rules_change_15_published",
       "community": 41,
@@ -20531,7 +20542,7 @@
       "label": "\ud83d\udfe2 2026-10-02 03:05 \u2014 KPM: the two-part bell built `de33030`, local",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L118",
+      "source_location": "L121",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_03_05_kpm_the_two_part_bell_built_de33030_local",
       "community": 41,
@@ -20542,7 +20553,7 @@
       "label": "\ud83d\udfe1 2026-10-02 02:40 \u2014 KPM: the two-part bell drawn (lab only, no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L122",
+      "source_location": "L125",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_02_40_kpm_the_two_part_bell_drawn_lab_only_no_app_code",
       "community": 41,
@@ -20553,7 +20564,7 @@
       "label": "\ud83d\udfe1 2026-10-02 02:15 \u2014 KPM: notifications - his A + a two-part bell (no code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L126",
+      "source_location": "L129",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_02_15_kpm_notifications_his_a_a_two_part_bell_no_code",
       "community": 41,
@@ -20564,7 +20575,7 @@
       "label": "\ud83d\udfe1 2026-10-02 01:42 \u2014 KPM: PUSHED `12b736f`; double notification diagnosed (no code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L130",
+      "source_location": "L133",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_01_42_kpm_pushed_12b736f_double_notification_diagnosed_no_code",
       "community": 41,
@@ -20575,7 +20586,7 @@
       "label": "\ud83d\udfe2 2026-10-02 01:37 \u2014 KPM: Master Vault on the phone built `12b736f`, local",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L134",
+      "source_location": "L137",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_01_37_kpm_master_vault_on_the_phone_built_12b736f_local",
       "community": 41,
@@ -20586,7 +20597,7 @@
       "label": "\ud83d\udfe1 2026-10-02 01:13 \u2014 KPM: Master Vault on the phone - measured, three layouts drawn (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L138",
+      "source_location": "L141",
       "_origin": "ast",
       "id": "claude_progress_2026_10_02_01_13_kpm_master_vault_on_the_phone_measured_three_layouts_drawn_no_app_code",
       "community": 41,
@@ -20597,7 +20608,7 @@
       "label": "\ud83d\udfe2 2026-10-01 21:35 \u2014 KPM: PUSHED `9d276db`; fingerprint CONFIRMED",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L142",
+      "source_location": "L145",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_21_35_kpm_pushed_9d276db_fingerprint_confirmed",
       "community": 41,
@@ -20608,7 +20619,7 @@
       "label": "\ud83d\udfe2 2026-10-01 21:30 \u2014 KPM: \"is this the latest version?\" built `9d276db`, local",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L146",
+      "source_location": "L149",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_21_30_kpm_is_this_the_latest_version_built_9d276db_local",
       "community": 41,
@@ -20619,7 +20630,7 @@
       "label": "\ud83d\udfe1 2026-10-01 20:48 \u2014 KPM: test deploy `37a482b` live; version-on-screen options (no code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L150",
+      "source_location": "L153",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_20_48_kpm_test_deploy_37a482b_live_version_on_screen_options_no_code",
       "community": 41,
@@ -20630,7 +20641,7 @@
       "label": "\ud83d\udfe2 2026-10-01 19:47 \u2014 KPM: PUSHED `6857f27..ec122c1` on his \"push\"",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L154",
+      "source_location": "L157",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_19_47_kpm_pushed_6857f27_ec122c1_on_his_push",
       "community": 41,
@@ -20641,7 +20652,7 @@
       "label": "\ud83d\udfe2 2026-10-01 19:37 \u2014 KPM: fingerprint \"No devices registered!\" fixed `ec122c1`, local",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L158",
+      "source_location": "L161",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_19_37_kpm_fingerprint_no_devices_registered_fixed_ec122c1_local",
       "community": 41,
@@ -20652,7 +20663,7 @@
       "label": "\ud83d\udfe1 2026-10-01 18:50 \u2014 KPM: fingerprint resets after a push; Master Vault on the phone (no code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L162",
+      "source_location": "L165",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_18_50_kpm_fingerprint_resets_after_a_push_master_vault_on_the_phone_no_code",
       "community": 41,
@@ -20663,7 +20674,7 @@
       "label": "\ud83d\udfe1 2026-10-01 12:05 \u2014 KPM: every person opens the app with their own password `6857f27`, local",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L166",
+      "source_location": "L169",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_12_05_kpm_every_person_opens_the_app_with_their_own_password_6857f27_local",
       "community": 41,
@@ -20674,7 +20685,7 @@
       "label": "\ud83d\udfe1 2026-10-01 11:12 \u2014 KPM: Agent Profile opens on your own `28b5d14`, local; intro for every tier OPEN",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L170",
+      "source_location": "L173",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_11_12_kpm_agent_profile_opens_on_your_own_28b5d14_local_intro_for_every_tier_open",
       "community": 41,
@@ -20685,7 +20696,7 @@
       "label": "\ud83d\udfe2 2026-10-01 10:40 \u2014 KPM: Lite Mode freezes the rank-frame swirl `c64de8b`, local",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L174",
+      "source_location": "L177",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_10_40_kpm_lite_mode_freezes_the_rank_frame_swirl_c64de8b_local",
       "community": 41,
@@ -20696,7 +20707,7 @@
       "label": "\ud83d\udfe2 2026-10-01 10:27 \u2014 KPM: the two potato open costs fixed, local",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L178",
+      "source_location": "L181",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_10_27_kpm_the_two_potato_open_costs_fixed_local",
       "community": 41,
@@ -20707,7 +20718,7 @@
       "label": "\ud83d\udfe2 2026-10-01 10:08 \u2014 KPM: Samsung fixes CONFIRMED live",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L182",
+      "source_location": "L185",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_10_08_kpm_samsung_fixes_confirmed_live",
       "community": 41,
@@ -20718,7 +20729,7 @@
       "label": "\ud83d\udfe2 2026-10-01 09:57 \u2014 KPM: phones sign in in the same tab `216a7df`, local",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L186",
+      "source_location": "L189",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_09_57_kpm_phones_sign_in_in_the_same_tab_216a7df_local",
       "community": 41,
@@ -20729,7 +20740,7 @@
       "label": "\ud83d\udfe1 2026-10-01 09:45 \u2014 KPM: Gmail jump = the sign-in popup tab losing its context (diagnosed, no code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L190",
+      "source_location": "L193",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_09_45_kpm_gmail_jump_the_sign_in_popup_tab_losing_its_context_diagnosed_no_code",
       "community": 41,
@@ -20740,7 +20751,7 @@
       "label": "\ud83d\udfe1 2026-10-01 09:42 \u2014 KPM: two Samsung reports after the push (diagnosed, no code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L194",
+      "source_location": "L197",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_09_42_kpm_two_samsung_reports_after_the_push_diagnosed_no_code",
       "community": 41,
@@ -20751,7 +20762,7 @@
       "label": "\ud83d\udfe2 2026-10-01 09:33 \u2014 KPM: logout fix `0e285e6`, local; unlock-name fix live",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L198",
+      "source_location": "L201",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_09_33_kpm_logout_fix_0e285e6_local_unlock_name_fix_live",
       "community": 41,
@@ -20762,7 +20773,7 @@
       "label": "\ud83d\udfe1 2026-10-01 09:30 \u2014 KPM: PUSHED `79b3e7d..acdb0cf`; NEW: vault skipped after sign-in (diagnosed, no code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L202",
+      "source_location": "L205",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_09_30_kpm_pushed_79b3e7d_acdb0cf_new_vault_skipped_after_sign_in_diagnosed_no_code",
       "community": 41,
@@ -20773,7 +20784,7 @@
       "label": "\ud83d\udfe2 2026-10-01 08:58 \u2014 KPM: unlock name fixed `acdb0cf`, local",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L206",
+      "source_location": "L209",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_08_58_kpm_unlock_name_fixed_acdb0cf_local",
       "community": 41,
@@ -20784,7 +20795,7 @@
       "label": "\ud83d\udfe1 2026-10-01 08:45 \u2014 KPM: sign-in works; intro name still missing",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L210",
+      "source_location": "L213",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_08_45_kpm_sign_in_works_intro_name_still_missing",
       "community": 41,
@@ -20795,7 +20806,7 @@
       "label": "\ud83d\udfe1 2026-10-01 08:36 \u2014 KPM: sign-in fix pushed; Vercel checkpoint on this network",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L214",
+      "source_location": "L217",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_08_36_kpm_sign_in_fix_pushed_vercel_checkpoint_on_this_network",
       "community": 41,
@@ -20806,7 +20817,7 @@
       "label": "\ud83d\udd34 2026-10-01 08:05 \u2014 KPM: sign-in did not reach Google - fixed `79b3e7d`, local",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L218",
+      "source_location": "L221",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_08_05_kpm_sign_in_did_not_reach_google_fixed_79b3e7d_local",
       "community": 41,
@@ -20817,7 +20828,7 @@
       "label": "\ud83d\udfe2 2026-10-01 07:50 \u2014 KPM: Samsung test -> 3 fixes, local",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L223",
+      "source_location": "L226",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_07_50_kpm_samsung_test_3_fixes_local",
       "community": 41,
@@ -20828,7 +20839,7 @@
       "label": "\ud83d\udfe2 2026-10-01 06:55 \u2014 KPM: pushed and live",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L228",
+      "source_location": "L231",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_06_55_kpm_pushed_and_live",
       "community": 41,
@@ -20839,7 +20850,7 @@
       "label": "\ud83d\udfe2 2026-10-01 01:20 \u2014 KPM: the coin spin built, local",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L232",
+      "source_location": "L235",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_01_20_kpm_the_coin_spin_built_local",
       "community": 41,
@@ -20850,7 +20861,7 @@
       "label": "\ud83d\udfe2 2026-10-01 00:55 \u2014 KPM: potato fixes 1-5 built, local",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L236",
+      "source_location": "L239",
       "_origin": "ast",
       "id": "claude_progress_2026_10_01_00_55_kpm_potato_fixes_1_5_built_local",
       "community": 41,
@@ -20861,7 +20872,7 @@
       "label": "\ud83d\udfe1 2026-09-30 21:30 \u2014 KPM: potato-phone audit, measured (no code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L240",
+      "source_location": "L243",
       "_origin": "ast",
       "id": "claude_progress_2026_09_30_21_30_kpm_potato_phone_audit_measured_no_code",
       "community": 41,
@@ -20872,7 +20883,7 @@
       "label": "\ud83d\udfe2 2026-09-30 18:25 \u2014 KPM: heavy-app fixes built, local",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L244",
+      "source_location": "L247",
       "_origin": "ast",
       "id": "claude_progress_2026_09_30_18_25_kpm_heavy_app_fixes_built_local",
       "community": 41,
@@ -20883,7 +20894,7 @@
       "label": "\ud83d\udfe1 2026-09-30 13:55 \u2014 KPM: \"the app feels heavy\" - diagnosed, no code",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L248",
+      "source_location": "L251",
       "_origin": "ast",
       "id": "claude_progress_2026_09_30_13_55_kpm_the_app_feels_heavy_diagnosed_no_code",
       "community": 41,
@@ -20894,7 +20905,7 @@
       "label": "\ud83d\udfe2 2026-09-30 13:50 \u2014 KPM: v24 BUILT (d `ee0b666`) and PUSHED - live",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L252",
+      "source_location": "L255",
       "_origin": "ast",
       "id": "claude_progress_2026_09_30_13_50_kpm_v24_built_d_ee0b666_and_pushed_live",
       "community": 41,
@@ -20905,7 +20916,7 @@
       "label": "\ud83d\udfe2 2026-09-30 13:45 \u2014 KPM: (c) Stock Opname crates committed `1942d9e`; (d) moved to a fresh session",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L256",
+      "source_location": "L259",
       "_origin": "ast",
       "id": "claude_progress_2026_09_30_13_45_kpm_c_stock_opname_crates_committed_1942d9e_d_moved_to_a_fresh_session",
       "community": 41,
@@ -20916,7 +20927,7 @@
       "label": "\ud83d\udfe2 2026-09-30 13:19 \u2014 KPM: v24 build, parts (a)+(b) committed, (c) on disk",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L260",
+      "source_location": "L263",
       "_origin": "ast",
       "id": "claude_progress_2026_09_30_13_19_kpm_v24_build_parts_a_b_committed_c_on_disk",
       "community": 41,
@@ -20927,7 +20938,7 @@
       "label": "\ud83d\udfe1 2026-09-30 12:55 \u2014 KPM: v27 - his healthy door + centred seals (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L265",
+      "source_location": "L268",
       "_origin": "ast",
       "id": "claude_progress_2026_09_30_12_55_kpm_v27_his_healthy_door_centred_seals_no_app_code",
       "community": 41,
@@ -20938,7 +20949,7 @@
       "label": "\ud83d\udfe1 2026-09-30 10:10 \u2014 KPM: island approved; the healthy blast door, 3 looks on v26 (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L269",
+      "source_location": "L272",
       "_origin": "ast",
       "id": "claude_progress_2026_09_30_10_10_kpm_island_approved_the_healthy_blast_door_3_looks_on_v26_no_app_code",
       "community": 41,
@@ -20949,7 +20960,7 @@
       "label": "\ud83d\udfe1 2026-09-30 09:20 \u2014 KPM: v24's End island redrawn + slow float (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L273",
+      "source_location": "L276",
       "_origin": "ast",
       "id": "claude_progress_2026_09_30_09_20_kpm_v24_s_end_island_redrawn_slow_float_no_app_code",
       "community": 41,
@@ -20960,7 +20971,7 @@
       "label": "\ud83d\udfe1 2026-09-30 09:10 \u2014 KPM: his ask on v24's island - saved, not started (context 83%)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L277",
+      "source_location": "L280",
       "_origin": "ast",
       "id": "claude_progress_2026_09_30_09_10_kpm_his_ask_on_v24_s_island_saved_not_started_context_83",
       "community": 41,
@@ -20971,7 +20982,7 @@
       "label": "\ud83d\udfe2 2026-09-30 08:40 \u2014 KPM: v24 drawn from his v23 answers - ready to build (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L281",
+      "source_location": "L284",
       "_origin": "ast",
       "id": "claude_progress_2026_09_30_08_40_kpm_v24_drawn_from_his_v23_answers_ready_to_build_no_app_code",
       "community": 41,
@@ -20982,7 +20993,7 @@
       "label": "\ud83d\udfe1 2026-09-30 08:10 \u2014 KPM: his v22 answers drawn as prototype v23 (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L285",
+      "source_location": "L288",
       "_origin": "ast",
       "id": "claude_progress_2026_09_30_08_10_kpm_his_v22_answers_drawn_as_prototype_v23_no_app_code",
       "community": 41,
@@ -20993,7 +21004,7 @@
       "label": "\ud83d\udfe1 2026-09-30 07:45 \u2014 KPM: his \"do the 3 job\" - two boards drawn, one build (local, not pushed)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L289",
+      "source_location": "L292",
       "_origin": "ast",
       "id": "claude_progress_2026_09_30_07_45_kpm_his_do_the_3_job_two_boards_drawn_one_build_local_not_pushed",
       "community": 41,
@@ -21004,7 +21015,7 @@
       "label": "\ud83d\udfe2 2026-09-30 07:20 \u2014 KPM: `8476f20` the Fleet & Roster quarantine switch (local, not pushed)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L294",
+      "source_location": "L297",
       "_origin": "ast",
       "id": "claude_progress_2026_09_30_07_20_kpm_8476f20_the_fleet_roster_quarantine_switch_local_not_pushed",
       "community": 41,
@@ -21015,7 +21026,7 @@
       "label": "\ud83d\udfe2 2026-09-29 19:15 \u2014 KPM: day closed (no code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L299",
+      "source_location": "L302",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_19_15_kpm_day_closed_no_code",
       "community": 41,
@@ -21026,7 +21037,7 @@
       "label": "\ud83d\udfe2 2026-09-29 19:10 \u2014 KPM: `ab1023f` an eye on every vault security box (local, not pushed)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L303",
+      "source_location": "L306",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_19_10_kpm_ab1023f_an_eye_on_every_vault_security_box_local_not_pushed",
       "community": 41,
@@ -21037,7 +21048,7 @@
       "label": "\ud83d\udfe2 2026-09-29 18:40 \u2014 KPM: Fleet & Roster quarantine switch APPROVED (v21) - build next session (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L307",
+      "source_location": "L310",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_18_40_kpm_fleet_roster_quarantine_switch_approved_v21_build_next_session_no_app_code",
       "community": 41,
@@ -21048,7 +21059,7 @@
       "label": "\ud83d\udfe1 2026-09-29 17:54 \u2014 KPM: Fleet & Roster quarantine - v20: the button redrawn after his clip (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L311",
+      "source_location": "L314",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_17_54_kpm_fleet_roster_quarantine_v20_the_button_redrawn_after_his_clip_no_app_code",
       "community": 41,
@@ -21059,7 +21070,7 @@
       "label": "\ud83d\udfe1 2026-09-29 17:40 \u2014 KPM: Fleet & Roster quarantine - v19 DRAFT for his revisions (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L315",
+      "source_location": "L318",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_17_40_kpm_fleet_roster_quarantine_v19_draft_for_his_revisions_no_app_code",
       "community": 41,
@@ -21070,7 +21081,7 @@
       "label": "\ud83d\udfe1 2026-09-29 17:02 \u2014 KPM: Fleet & Roster quarantine - prototype v18: his Satisfactory button, four box changes (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L319",
+      "source_location": "L322",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_17_02_kpm_fleet_roster_quarantine_prototype_v18_his_satisfactory_button_four_box_changes_no_app_code",
       "community": 41,
@@ -21081,7 +21092,7 @@
       "label": "\ud83d\udfe1 2026-09-29 16:18 \u2014 KPM: Fleet & Roster quarantine - prototype v17: one button, a scan (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L323",
+      "source_location": "L326",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_16_18_kpm_fleet_roster_quarantine_prototype_v17_one_button_a_scan_no_app_code",
       "community": 41,
@@ -21092,7 +21103,7 @@
       "label": "\ud83d\udfe1 2026-09-29 16:00 \u2014 KPM: Fleet & Roster quarantine - his changes drawn as prototype v16 (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L327",
+      "source_location": "L330",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_16_00_kpm_fleet_roster_quarantine_his_changes_drawn_as_prototype_v16_no_app_code",
       "community": 41,
@@ -21103,7 +21114,7 @@
       "label": "\ud83d\udfe1 2026-09-29 15:35 \u2014 KPM: Fleet & Roster quarantine - prototype v15 PUBLISHED (no app code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L331",
+      "source_location": "L334",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_15_35_kpm_fleet_roster_quarantine_prototype_v15_published_no_app_code",
       "community": 41,
@@ -21114,7 +21125,7 @@
       "label": "\ud83d\udfe2 2026-09-29 12:05 \u2014 KPM: Fleet & Roster quarantine - HIS design decided (no code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L335",
+      "source_location": "L338",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_12_05_kpm_fleet_roster_quarantine_his_design_decided_no_code",
       "community": 41,
@@ -21125,7 +21136,7 @@
       "label": "\ud83d\udfe1 2026-09-29 11:58 \u2014 KPM: Fleet & Roster quarantine chests - his question answered, pictures next (no code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L339",
+      "source_location": "L342",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_11_58_kpm_fleet_roster_quarantine_chests_his_question_answered_pictures_next_no_code",
       "community": 41,
@@ -21136,7 +21147,7 @@
       "label": "\ud83d\udfe2 2026-09-29 11:55 \u2014 KPM: recovery email WORKS (from Mr Capybara, after a full reload) + the eye on the new password `99ec443` (local, not pushed)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L343",
+      "source_location": "L346",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_11_55_kpm_recovery_email_works_from_mr_capybara_after_a_full_reload_the_eye_on_the_new_password_99ec443_local_not_pushed",
       "community": 41,
@@ -21147,7 +21158,7 @@
       "label": "\ud83d\udfe2 2026-09-29 10:57 \u2014 KPM: PUSHED `42ab421..cc89275` (30 commits) on his \"push\"",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L347",
+      "source_location": "L350",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_10_57_kpm_pushed_42ab421_cc89275_30_commits_on_his_push",
       "community": 41,
@@ -21158,7 +21169,7 @@
       "label": "\ud83d\udfe2 2026-09-29 10:52 \u2014 KPM: RULES PUBLISHED by him (his word \"published\"; the Console is not readable from here)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L351",
+      "source_location": "L354",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_10_52_kpm_rules_published_by_him_his_word_published_the_console_is_not_readable_from_here",
       "community": 41,
@@ -21169,7 +21180,7 @@
       "label": "\ud83d\udfe2 2026-09-29 10:40 \u2014 KPM: rules FINAL - the eight holes closed, `788692f` (CHANGE 14)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L355",
+      "source_location": "L358",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_10_40_kpm_rules_final_the_eight_holes_closed_788692f_change_14",
       "community": 41,
@@ -21180,7 +21191,7 @@
       "label": "\ud83d\udfe1 2026-09-29 10:15 \u2014 KPM: rules full pass - 8 holes ranked, his go owed (read only)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L359",
+      "source_location": "L362",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_10_15_kpm_rules_full_pass_8_holes_ranked_his_go_owed_read_only",
       "community": 41,
@@ -21191,7 +21202,7 @@
       "label": "\ud83d\udfe1 2026-09-29 10:00 \u2014 KPM: live Firestore rules reviewed (read only)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L363",
+      "source_location": "L366",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_10_00_kpm_live_firestore_rules_reviewed_read_only",
       "community": 41,
@@ -21202,7 +21213,7 @@
       "label": "\ud83d\udfe2 2026-09-29 09:45 \u2014 KPM: T1/T2 Gmail move + RESET button, `c8cdc1c` (local, not pushed)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L367",
+      "source_location": "L370",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_09_45_kpm_t1_t2_gmail_move_reset_button_c8cdc1c_local_not_pushed",
       "community": 41,
@@ -21213,7 +21224,7 @@
       "label": "\ud83d\udfe1 2026-09-29 08:42 \u2014 KPM: look C picked; warehouse quarantine + Gmail move read (no code)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L371",
+      "source_location": "L374",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_08_42_kpm_look_c_picked_warehouse_quarantine_gmail_move_read_no_code",
       "community": 41,
@@ -21224,7 +21235,7 @@
       "label": "\ud83d\udfe1 2026-09-29 08:30 \u2014 KPM: the biohazard box - three looks on the prototype, his pick owed",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L375",
+      "source_location": "L378",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_08_30_kpm_the_biohazard_box_three_looks_on_the_prototype_his_pick_owed",
       "community": 41,
@@ -21235,7 +21246,7 @@
       "label": "\ud83d\udfe2 2026-09-29 08:25 \u2014 KPM: vault reset + account lock COMMITTED `56801d9` (local, not pushed)",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L379",
+      "source_location": "L382",
       "_origin": "ast",
       "id": "claude_progress_2026_09_29_08_25_kpm_vault_reset_account_lock_committed_56801d9_local_not_pushed",
       "community": 41,
@@ -21246,7 +21257,7 @@
       "label": "\ud83d\udfe1 2026-09-28 20:59 \u2014 KPM: vault reset + account lock BUILT, NOT COMMITTED; he stops for the night",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L384",
+      "source_location": "L387",
       "_origin": "ast",
       "id": "claude_progress_2026_09_28_20_59_kpm_vault_reset_account_lock_built_not_committed_he_stops_for_the_night",
       "community": 41,
@@ -21257,7 +21268,7 @@
       "label": "\ud83d\udfe1 2026-09-28 20:05 \u2014 KPM: his follow-up - T1/T2 reset a person's vault password (double confirm, never set it) + LOCK a person's account",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L390",
+      "source_location": "L393",
       "_origin": "ast",
       "id": "claude_progress_2026_09_28_20_05_kpm_his_follow_up_t1_t2_reset_a_person_s_vault_password_double_confirm_never_set_it_lock_a_person_s_account",
       "community": 41,
@@ -21268,7 +21279,7 @@
       "label": "\ud83d\udfe2 2026-09-28 19:45 \u2014 KPM: a vault password for every person, built `7b85941`",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L395",
+      "source_location": "L398",
       "_origin": "ast",
       "id": "claude_progress_2026_09_28_19_45_kpm_a_vault_password_for_every_person_built_7b85941",
       "community": 41,
@@ -21279,7 +21290,7 @@
       "label": "\ud83d\udfe1 2026-09-28 17:50 \u2014 KPM: his pick A - a vault password for every person",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L399",
+      "source_location": "L402",
       "_origin": "ast",
       "id": "claude_progress_2026_09_28_17_50_kpm_his_pick_a_a_vault_password_for_every_person",
       "community": 41,
@@ -21290,7 +21301,7 @@
       "label": "\ud83d\udfe1 2026-09-28 17:45 \u2014 KPM: two new asks - vault passwords per account, and a biohazard quarantine box",
       "file_type": "document",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L404",
+      "source_location": "L407",
       "_origin": "ast",
       "id": "claude_progress_2026_09_28_17_45_kpm_two_new_asks_vault_passwords_per_account_and_a_biohazard_quarantine_box",
       "community": 41,
@@ -22936,7 +22947,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/utils/expedition.js",
-      "source_location": "L68",
+      "source_location": "L72",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition_expedition",
@@ -39088,7 +39099,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L183",
+      "source_location": "L147",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_expedition",
@@ -39110,7 +39121,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L186",
+      "source_location": "L150",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_expedition",
@@ -39154,7 +39165,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L204",
+      "source_location": "L168",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_expedition",
@@ -39220,7 +39231,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L191",
+      "source_location": "L155",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_expedition",
@@ -39303,7 +39314,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L134",
+      "source_location": "L96",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_expedition_expeditionlayer",
@@ -39315,7 +39326,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L134",
+      "source_location": "L96",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_expedition_expeditionlayer",
@@ -39327,7 +39338,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L225",
+      "source_location": "L189",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_expedition_expeditionpanel",
@@ -39351,7 +39362,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L225",
+      "source_location": "L189",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_expedition_expeditionpanel",
@@ -39363,7 +39374,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L222",
+      "source_location": "L186",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_expedition_expeditionpanel",
@@ -39375,7 +39386,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L222",
+      "source_location": "L186",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_expedition_expeditionpanel",
@@ -39411,7 +39422,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L132",
+      "source_location": "L94",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_expedition_expeditionlayer",
@@ -39436,7 +39447,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L139",
+      "source_location": "L101",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_expedition_expeditionlayer",
@@ -39448,7 +39459,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L138",
+      "source_location": "L100",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_expedition_expeditionlayer",
@@ -39460,7 +39471,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L222",
+      "source_location": "L186",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_expedition_expeditionpanel",
@@ -39472,7 +39483,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/components/Expedition.jsx",
-      "source_location": "L225",
+      "source_location": "L189",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_components_expedition_expeditionpanel",
@@ -45636,7 +45647,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/utils/expedition.js",
-      "source_location": "L63",
+      "source_location": "L67",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition_expedition",
@@ -58383,7 +58394,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L111",
+      "source_location": "L115",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition",
@@ -58394,7 +58405,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L46",
+      "source_location": "L50",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition",
@@ -58405,7 +58416,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L41",
+      "source_location": "L45",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition",
@@ -58416,7 +58427,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L37",
+      "source_location": "L41",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition",
@@ -58427,7 +58438,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L35",
+      "source_location": "L39",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition",
@@ -58438,7 +58449,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L36",
+      "source_location": "L40",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition",
@@ -58581,7 +58592,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L80",
+      "source_location": "L84",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition_expedition",
@@ -58593,7 +58604,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L35",
+      "source_location": "L39",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition_metres",
@@ -58605,7 +58616,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L69",
+      "source_location": "L73",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition_expedition",
@@ -58617,7 +58628,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L101",
+      "source_location": "L105",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition_expedition",
@@ -58629,7 +58640,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "src/utils/expedition.js",
-      "source_location": "L73",
+      "source_location": "L77",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition_expedition",
@@ -58642,7 +58653,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/utils/expedition.js",
-      "source_location": "L47",
+      "source_location": "L51",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition_expedition",
@@ -58654,7 +58665,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/utils/expedition.js",
-      "source_location": "L49",
+      "source_location": "L53",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition_expedition",
@@ -58666,7 +58677,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "src/utils/expedition.js",
-      "source_location": "L97",
+      "source_location": "L101",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition_expedition",
@@ -58678,7 +58689,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/utils/expedition.js",
-      "source_location": "L89",
+      "source_location": "L93",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition_expedition",
@@ -58690,7 +58701,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/utils/expedition.js",
-      "source_location": "L63",
+      "source_location": "L67",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition_expedition",
@@ -58702,7 +58713,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/utils/expedition.js",
-      "source_location": "L63",
+      "source_location": "L67",
       "weight": 1.0,
       "_origin": "ast",
       "source": "src_utils_expedition_expedition",
@@ -64511,7 +64522,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L404",
+      "source_location": "L407",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64522,7 +64533,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L399",
+      "source_location": "L402",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64533,7 +64544,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L395",
+      "source_location": "L398",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64544,7 +64555,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L390",
+      "source_location": "L393",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64555,7 +64566,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L384",
+      "source_location": "L387",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64566,7 +64577,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L379",
+      "source_location": "L382",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64577,7 +64588,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L375",
+      "source_location": "L378",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64588,7 +64599,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L371",
+      "source_location": "L374",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64599,7 +64610,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L367",
+      "source_location": "L370",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64610,7 +64621,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L363",
+      "source_location": "L366",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64621,7 +64632,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L359",
+      "source_location": "L362",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64632,7 +64643,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L355",
+      "source_location": "L358",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64643,7 +64654,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L351",
+      "source_location": "L354",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64654,7 +64665,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L347",
+      "source_location": "L350",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64665,7 +64676,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L343",
+      "source_location": "L346",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64676,7 +64687,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L339",
+      "source_location": "L342",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64687,7 +64698,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L335",
+      "source_location": "L338",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64698,7 +64709,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L331",
+      "source_location": "L334",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64709,7 +64720,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L327",
+      "source_location": "L330",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64720,7 +64731,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L323",
+      "source_location": "L326",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64731,7 +64742,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L319",
+      "source_location": "L322",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64742,7 +64753,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L315",
+      "source_location": "L318",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64753,7 +64764,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L311",
+      "source_location": "L314",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64764,7 +64775,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L307",
+      "source_location": "L310",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64775,7 +64786,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L303",
+      "source_location": "L306",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64786,7 +64797,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L299",
+      "source_location": "L302",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64797,7 +64808,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L294",
+      "source_location": "L297",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64808,7 +64819,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L289",
+      "source_location": "L292",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64819,7 +64830,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L285",
+      "source_location": "L288",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64830,7 +64841,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L281",
+      "source_location": "L284",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64841,7 +64852,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L277",
+      "source_location": "L280",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64852,7 +64863,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L273",
+      "source_location": "L276",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64863,7 +64874,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L269",
+      "source_location": "L272",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64874,7 +64885,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L265",
+      "source_location": "L268",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64885,7 +64896,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L260",
+      "source_location": "L263",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64896,7 +64907,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L256",
+      "source_location": "L259",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64907,7 +64918,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L252",
+      "source_location": "L255",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64918,7 +64929,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L248",
+      "source_location": "L251",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64929,7 +64940,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L244",
+      "source_location": "L247",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64940,7 +64951,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L240",
+      "source_location": "L243",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64951,7 +64962,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L236",
+      "source_location": "L239",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64962,7 +64973,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L232",
+      "source_location": "L235",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64973,7 +64984,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L228",
+      "source_location": "L231",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64984,7 +64995,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L223",
+      "source_location": "L226",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -64995,7 +65006,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L218",
+      "source_location": "L221",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65006,7 +65017,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L214",
+      "source_location": "L217",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65017,7 +65028,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L210",
+      "source_location": "L213",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65028,7 +65039,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L206",
+      "source_location": "L209",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65039,7 +65050,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L202",
+      "source_location": "L205",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65050,7 +65061,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L198",
+      "source_location": "L201",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65061,7 +65072,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L194",
+      "source_location": "L197",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65072,7 +65083,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L190",
+      "source_location": "L193",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65083,7 +65094,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L186",
+      "source_location": "L189",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65094,7 +65105,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L182",
+      "source_location": "L185",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65105,7 +65116,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L178",
+      "source_location": "L181",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65116,7 +65127,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L174",
+      "source_location": "L177",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65127,7 +65138,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L170",
+      "source_location": "L173",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65138,7 +65149,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L166",
+      "source_location": "L169",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65149,7 +65160,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L162",
+      "source_location": "L165",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65160,7 +65171,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L158",
+      "source_location": "L161",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65171,7 +65182,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L154",
+      "source_location": "L157",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65182,7 +65193,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L150",
+      "source_location": "L153",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65193,7 +65204,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L146",
+      "source_location": "L149",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65204,7 +65215,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L142",
+      "source_location": "L145",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65215,7 +65226,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L138",
+      "source_location": "L141",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65226,7 +65237,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L134",
+      "source_location": "L137",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65237,7 +65248,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L130",
+      "source_location": "L133",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65248,7 +65259,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L126",
+      "source_location": "L129",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65259,7 +65270,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L122",
+      "source_location": "L125",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65270,7 +65281,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L118",
+      "source_location": "L121",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65281,7 +65292,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L114",
+      "source_location": "L117",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65292,7 +65303,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L110",
+      "source_location": "L113",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65303,7 +65314,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L106",
+      "source_location": "L109",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65314,7 +65325,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L102",
+      "source_location": "L105",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65325,7 +65336,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L98",
+      "source_location": "L101",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65336,7 +65347,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L95",
+      "source_location": "L98",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65347,7 +65358,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L92",
+      "source_location": "L95",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65358,7 +65369,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L89",
+      "source_location": "L92",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65369,7 +65380,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L86",
+      "source_location": "L89",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65380,7 +65391,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L83",
+      "source_location": "L86",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65391,7 +65402,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L80",
+      "source_location": "L83",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65402,7 +65413,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L77",
+      "source_location": "L80",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65413,7 +65424,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L74",
+      "source_location": "L77",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65424,7 +65435,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L71",
+      "source_location": "L74",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65435,7 +65446,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L68",
+      "source_location": "L71",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65446,7 +65457,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L65",
+      "source_location": "L68",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65457,7 +65468,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L62",
+      "source_location": "L65",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65468,7 +65479,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L59",
+      "source_location": "L62",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65479,7 +65490,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L56",
+      "source_location": "L59",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65490,7 +65501,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L53",
+      "source_location": "L56",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65501,7 +65512,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L50",
+      "source_location": "L53",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65512,7 +65523,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L47",
+      "source_location": "L50",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65523,7 +65534,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L44",
+      "source_location": "L47",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65534,7 +65545,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L38",
+      "source_location": "L41",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65545,7 +65556,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L41",
+      "source_location": "L44",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65556,7 +65567,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L35",
+      "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65567,7 +65578,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L32",
+      "source_location": "L35",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65578,7 +65589,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L29",
+      "source_location": "L32",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65589,7 +65600,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L11",
+      "source_location": "L14",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65600,7 +65611,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L26",
+      "source_location": "L29",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65611,7 +65622,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L23",
+      "source_location": "L26",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65622,7 +65633,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L8",
+      "source_location": "L11",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65633,7 +65644,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L20",
+      "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65644,7 +65655,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L17",
+      "source_location": "L20",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65655,7 +65666,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L14",
+      "source_location": "L17",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
@@ -65666,11 +65677,22 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": ".claude/PROGRESS.md",
-      "source_location": "L5",
+      "source_location": "L8",
       "weight": 1.0,
       "_origin": "ast",
       "source": "claude_progress_progress_read_this_search_for_nothing",
       "target": "claude_progress_2026_10_03_14_47_kpm_journey_map_design_built_aaf6a7e_local_not_pushed",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".claude/PROGRESS.md",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "claude_progress_progress_read_this_search_for_nothing",
+      "target": "claude_progress_2026_10_03_17_55_kpm_journey_map_lag_collisions_fixed_eabda69_local_not_pushed",
       "confidence_score": 1.0
     },
     {
@@ -66863,5 +66885,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "2548ab1cc59f355e53a340c6dc95dfeb9617df1a"
+  "built_at_commit": "6b515b72bca18513e408f282db23c8d6833acb3f"
 }
