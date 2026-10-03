@@ -7,6 +7,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { Marker, Polyline, CircleMarker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { agoLabel } from '../utils/expedition';
+import { personSvg, QUEST, safeHex } from '../utils/mapSprites';
 import '../styles/expedition.css';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -18,11 +19,12 @@ const said = (a) => ({
 })[a.state];
 const lamp = (a) => ({ go: 'go', at: 'at' })[a.state] || '';
 const ll = (p) => [p.lat, p.lng];
+const HAIR = ['#2B1A0E', '#151210', '#5A3418'];
 
 /* ---- the map layer: chips at the last-seen point, today's trail, the march line to the next shop ---- */
 /* `bare`: the chips only, no lines and no camera (Map System, the store-analysis map).
    `stops={false}`: no shop pins or dots of its own - Journey Plan already draws every shop of the round */
-export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true }) {
+export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true, colorOf }) {
     const map = useMap();
     const svg = useMemo(() => L.svg({ padding: 0.5 }), []);   // the march line's flow needs SVG; the map itself draws on canvas
 
@@ -55,7 +57,7 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true }) 
     useEffect(() => {
         const box = map.getContainer();
         const declutter = () => {
-            const kept = [...box.querySelectorAll('.kx-chip b, .kx-loc i')].map((e) => e.getBoundingClientRect());
+            const kept = [...box.querySelectorAll('.kx-chip b, .kx-sm .body, .kx-loc i')].map((e) => e.getBoundingClientRect());
             const next = box.querySelector('.kx-loc.next span');   // the next shop's name always stays (its pin sits on top)
             box.querySelectorAll('.kx-loc span').forEach((el) => {
                 el.style.visibility = '';
@@ -77,10 +79,19 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true }) 
     return team.map((a) => {
         const mine = bare || wide || a.id === sel, faint = mine ? 1 : 0.35, one = !bare && !wide && a.id === sel, pins = one && stops;
         const g = groups[spot(a)], shift = (g.indexOf(a.id) - (g.length - 1) / 2) * 30;
-        const chip = L.divIcon({
+        /* Map System keeps the gold chip; Journey Plan draws the salesman as a pixel person in his squad colour (his
+           pick 2026-10-03, "full pixel"): walking to his next shop, standing at one, faded when not out today */
+        const shirt = colorOf ? colorOf(a.name) : '#E8E4DE';
+        const chip = bare ? L.divIcon({
             className: 'kx-mk',
-            html: `<div class="kx-chip${a.id === sel && !bare ? ' sel' : ''}${a.out ? '' : ' off'}${mine ? '' : ' dim'}"><b>${a.photo ? `<img src="${esc(a.photo)}" alt="">` : esc(a.ini)}</b>${wide || bare ? `<span>${esc(a.ini)} · ${count(a)}</span>` : ''}<i></i></div>`,
+            html: `<div class="kx-chip${a.out ? '' : ' off'}"><b>${a.photo ? `<img src="${esc(a.photo)}" alt="">` : esc(a.ini)}</b><span>${esc(a.ini)} · ${count(a)}</span><i></i></div>`,
             iconSize: [36, 48], iconAnchor: [18 - shift, 48],
+        }) : L.divIcon({
+            className: 'kx-mk',
+            html: `<div class="kx-sm ${a.out ? (a.state === 'go' ? 'walk' : 'idle') : 'off'}${a.id === sel ? ' sel' : ''}${mine ? '' : ' dim'}"><i class="kx-shadow"></i>`
+                + `<div class="who"><div class="body">${personSvg(HAIR[String(a.id).length % HAIR.length], shirt)}</div></div>`
+                + `<span class="tag"><i style="background:${safeHex(shirt, '#E8E4DE')}"></i>${esc(a.ini)} · ${count(a)}</span>${QUEST}</div>`,
+            iconSize: [30, 42], iconAnchor: [15 - shift, 42],
         });
         const trail = [...a.done.filter((d) => d.lat), a.at].map(ll);
         const goal = a.next?.lat ? a.next : null;

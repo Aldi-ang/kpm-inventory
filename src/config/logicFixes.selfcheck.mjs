@@ -7787,10 +7787,12 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /\.kx-feed select \{ min-height: 44px;/.test(read('src/styles/expedition.css')) && /\.kx-days button \{ min-height: 44px;/.test(read('src/styles/expedition.css')) &&
      /<select value=\{selectedAgent\} onChange=\{\(e\) => setSelectedAgent\(e\.target\.value\)\} className=\{selectedAgent !== 'All' \? 'set' : ''\}>/.test(jv),
      'measured 2026-09-19: 107 x 13 inside a 27 px box');
-  ok('the floor: the legend / paintbrush key and the four map keys are 44 on the phone',
-     /className="pointer-events-auto kx-mapkey flex items-center gap-2 select-none min-h-11 lg:min-h-0"/.test(jv) &&
-     /<div className="absolute top-4 right-4 z-\[9999\] flex flex-col gap-3 pointer-events-auto \[&>button\]:min-h-11 \[&>button\]:min-w-11 lg:\[&>button\]:min-h-0 lg:\[&>button\]:min-w-0">/.test(jv),
-     'measured 2026-09-19: 149 x 37 and 43 x 43');
+  ok('the floor: the strip\'s ⛶ key is 44 on the phone; the full map\'s keys are one dock of six 58 tall (his "new" key layout, 2026-10-03)',
+     /className=\{`kx-keys absolute top-4 right-4 z-\[9999\] \$\{isFullScreen \? 'hidden lg:flex' : 'flex'\} flex-col gap-3 pointer-events-auto \[&>button\]:min-h-11 \[&>button\]:min-w-11 lg:\[&>button\]:min-h-0 lg:\[&>button\]:min-w-0`\}/.test(jv) &&
+     /<nav className="kx-dock absolute z-\[9999\] grid lg:hidden \[&>button\]:flex \[&>button\]:flex-col" aria-label="Map keys">/.test(jv) &&
+     (jv.match(/<nav className="kx-dock[\s\S]*?<\/nav>/)?.[0].match(/<button /g) || []).length === 6 &&
+     /\.kx-dock \.kx-mapkey \{[^}]*min-height: 58px;/.test(read('src/styles/expedition.css')) && /\.kx-pen \{[^}]*min-height: 44px;/.test(read('src/styles/expedition.css')),
+     'measured 2026-09-19: 149 x 37 and 43 x 43; the dock and 44 rows are his pick on the round-5 board');
   ok('board 3: the path row stays inside the page and the sector cards wrap two to a row - no sideways move, no swipe reel',
      /bg-slate-900\/80 backdrop-blur p-3 rounded-xl border border-slate-700 max-w-full lg:w-max shadow-lg">/.test(jv) &&
      /<div className="flex flex-wrap lg:flex-nowrap lg:overflow-x-auto hide-scrollbar gap-3 pb-4 kpm-arrive">/.test(jv) &&
@@ -7832,7 +7834,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   ok('the floor: every label on the phone flows is 11 px (the hover-only key labels and the pin popup are the exceptions)',
      /\.kx-feed-meta \{ font: 700 11px\/1/.test(read('src/styles/expedition.css')) && /\.kx-feed-field > span \{ font: 700 11px\/1/.test(read('src/styles/expedition.css')) && /\.kx-feed \.kx-meta3 small \{ font-size: 11px; \}/.test(read('src/styles/expedition.css')) &&
      /\.kx-feed-meta, \.kx-feed-count small, \.kx-feed-field > span \{ font-size: 10px; \}/.test(read('src/styles/expedition.css')) &&
-     /<span className="text-\[var\(--ink\)\] text-\[11px\] lg:text-\[10px\] font-black uppercase tracking-widest">\{canManageFleetSettings/.test(jv) &&
+     /\.kx-dock \.kx-mapkey > span \{ font: 800 11px\/1 var\(--font-display\);/.test(read('src/styles/expedition.css')) &&   // the phone's brush key moved into the full map's dock (2026-10-03)
      (jv.match(/<p className="text-\[11px\] lg:text-\[10px\] text-slate-400 font-bold uppercase tracking-wider">\{k(ab|ec)Count\}/g) || []).length === 2 &&
      /className=\{`text-\[11px\] lg:text-\[10px\] font-bold mt-1 \$\{isCleared/.test(jv) &&
      (jv.match(/(?<!lg:)text-\[10px\]/g) || []).length <= 10,
@@ -7876,9 +7878,11 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
 { /* JOURNEY PLAN compact — his "A looks best" (2026-09-20 01:15) on the board of 01:05: the strip. Before: the feed card
      124 px folded + a 400 px map put the RADAR HUB at y 821; the map's box had touch-action none, so a finger moved the map */
   const jv = read('src/JourneyView.jsx'); const th = read('src/styles/theme.css'); const ll = read('tools/lab-looks.js');
-  ok('Journey Plan: the map is a 160 px strip on the phone (500 on the desk); only the ⛶ and the recenter key stay on the strip — the other keys, the legend and the zoom control come back full screen and on the desk',
+  ok('Journey Plan: the map is a 160 px strip on the phone (500 on the desk); only the ⛶ and the recenter key stay on the strip — the other keys, the legend and the zoom control come back full screen (in the dock) and on the desk',
      /'relative w-full h-40 lg:h-\[500px\] rounded-2xl kpm-jp-map'/.test(jv) &&
-     (jv.match(/\$\{isFullScreen \? 'flex' : 'hidden lg:flex'\}/g) || []).length === 4 &&
+     (jv.match(/\$\{isFullScreen \? 'flex' : 'hidden lg:flex'\}/g) || []).length === 1 &&
+     (jv.match(/className="kx-mapkey k-(home|fly) hidden lg:flex items-center gap-2"/g) || []).length === 2 &&
+     /\{isFullScreen && \(\s*<nav className="kx-dock/.test(jv) &&
      /@media \(max-width: 1023px\) \{ \.kpm-jp-map \.leaflet-control-zoom \{ display: none; \} \}/.test(th) &&
      !/h-\[400px\] lg:h-\[500px\]/.test(code(jv)),
      'measured 2026-09-20: the RADAR HUB folder sits on the first screen (was y 821)');
@@ -10004,7 +10008,7 @@ section('Expedition map');
   {  /* WHERE IT LIVES (his call 2026-10-03): Map System analyses stores, Journey Plan is the salesman's day */
     const jv = code(read('src/JourneyView.jsx'));
     ok('the expedition lives on Journey Plan (trail, next shop, travel card / squad list, region-fenced); Map System keeps the chips only',
-       /<ExpeditionLayer team=\{team\} sel=\{selId\} focus=\{expFocus\} wide=\{wide\} stops=\{false\} \/>/.test(jv) && /<ExpeditionPanel [^>]*\bpage \/>/.test(jv) &&
+       /<ExpeditionLayer team=\{team\} sel=\{selId\} focus=\{expFocus\} wide=\{wide\} stops=\{false\} colorOf=\{squadColor\} \/>/.test(jv) && /<ExpeditionPanel [^>]*\bpage \/>/.test(jv) &&
        /expedition\(visibleTeam\(motorists \|\| \[\], \{ global: globalView, viewerId: agentProfileId \}\)/.test(jv) &&
        /<JourneyView motorists=\{motorists\} agentProfileId=\{agentProfileId\}/.test(app) &&
        /<ExpeditionLayer team=\{team\} bare \/>/.test(mp) && !/ExpeditionPanel|setExpOn/.test(mp),
@@ -10021,6 +10025,28 @@ section('Expedition map');
        (jvc.match(/kx-mapkey/g) || []).length >= 6 && /\.kx-mapkey \{ align-items: center;/.test(exc) && !/\.kx-mapkey \{[^}]*display:/.test(exc) &&
        /\.kx-map \.leaflet-bar a \{ background: var\(--panel\);/.test(exc),
        'his screenshot: a blue fullscreen key, an emerald Fly Home, white zoom keys, green secured pins on a slate map');
+  }
+  {  /* JOURNEY MAP, HIS SETTLED DESIGN (2026-10-03): a shop is a chest, a visit plants a lit sign per outcome, a bubble is
+        an inventory slot, the secure moment plays only on a change seen while the map is open */
+    const { signFor, SIGN5, chestHtml, slotHtml } = await import('../utils/mapSprites.js');
+    const jvr = read('src/JourneyView.jsx'), exc = read('src/styles/expedition.css');
+    const tags = JSON.parse(jvr.match(/const QUICK_TAGS = (\[[^\]]*\]);/)?.[1] || '[]');
+    const got = tags.map((t) => signFor(t, false));
+    ok('Journey map signs re-run: every QUICK_TAG gets its own sign, Routine Check / no tag a tick, a terminal sale the coin; every sign has a picture',
+       tags.length === 5 && new Set(got).size === 5 && !got.includes('routine') && signFor('Routine Check', false) === 'routine' && signFor('', false) === 'routine' &&
+       signFor('Store Closed 🔒', true) === 'sold' && ['sold', 'order', 'routine', 'full', 'issue', 'request', 'closed'].every((k) => SIGN5[k]?.includes('<rect')),
+       `${tags.join(' / ')} -> ${got.join()}`);
+    ok('Journey map chest re-run: not visited = no sign; visited = open + lit sign; closed = lid down; a squad colour that is not a plain hex never reaches the HTML; the slot fills with the visited share',
+       !chestHtml(null, '#a855f7').includes('sign5') && /class="kx-c5 v"/.test(chestHtml('order', '#a855f7')) && chestHtml('order', '#a855f7').includes('class="lamp"') &&
+       /class="kx-c5 v shut"/.test(chestHtml('closed', '#a855f7')) && !chestHtml('routine', 'red;background:url(x)').includes('url(') &&
+       /--f:0\.250/.test(slotHtml(4, 1)) && /kx-slot full/.test(slotHtml(3, 3)) && !/kx-slot full/.test(slotHtml(3, 2)),
+       chestHtml('closed', '#a855f7').slice(0, 60));
+    ok('Journey map traps: marker wrappers inset 0, the lid tilts INTO the back rim, glows are gradients, the moment is only for a change seen while the map is open',
+       /\.kx-c5 \.art, \.kx-c5 \.hop \{ position: absolute; inset: 0;/.test(exc) &&
+       /\.kx-c5\.v:not\(\.shut\) \.lidF \{ opacity: 0; transform: translateY\(-3px\) scaleY\(\.15\); \}/.test(exc) &&
+       !/\.kx-(c5|slot|sm)[^{]*\{[^}]*box-shadow/.test(exc) && /\.kx-mk \.px \{[^}]*z-index: auto;/.test(exc) &&
+       /if \(!prev\) return;/.test(jvr) && /if \(!\(id in prev\) \|\| prev\[id\] === outcomeById\[id\]\) continue;/.test(jvr),
+       'measured on the round-5 prototype: a 0-height wrapper threw the chest 28 px up; the front-edge collapse left a 3-row jump');
   }
   {  /* the SHIPPED day logic, cut out of App.jsx and run over three pings and two days */
     const snip = code(app).match(/const today = getLocalDayKey\(\), dayKey = [^;]+;\s*let sameDay = false;\s*try \{[^}]*\} catch \{[^}]*\}/)?.[0];

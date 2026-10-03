@@ -173,3 +173,164 @@
 .kx-map .leaflet-bar a.leaflet-disabled { background: var(--inset); color: var(--line-3); }
 .kx-map .leaflet-control-attribution { background: rgba(10, 9, 8, .72); color: var(--ink-dim); }
 .kx-map .leaflet-control-attribution a { color: var(--ink-muted); }
+
+/* ---- Journey Plan's map, his settled design (2026-10-03), ported from A-Brain Raw/2026-10-03-map-keys/round5/map-chest-r5.html.
+   Sprites: src/utils/mapSprites.js. Glows are gradients, never box-shadow (Lite kills shadow); every loop and every
+   moment ends on the plain end state, so Lite (index.css: animations complete at once) shows the end state. ---- */
+/* z-index auto: Leaflet gives every svg in the map 200 (.leaflet-map-pane svg), which lifted the sprites over the bubble's count and the sparks */
+.kx-mk .px { shape-rendering: crispEdges; display: block; overflow: visible; z-index: auto; }
+
+/* a shop: a 14 x 14 chest. Every wrapper is as big as the mark - a transformed 0-height wrapper threw the chest 28 px up */
+.kx-c5 { position: relative; width: 28px; height: 34px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.kx-c5 .art, .kx-c5 .hop { position: absolute; inset: 0; transform-origin: 50% 100%; }
+.kx-c5 .art { transition: transform 180ms cubic-bezier(.23, 1, .32, 1); }
+@media (hover: hover) and (pointer: fine) { .kx-c5:hover .art { transform: translateY(-3px); } }
+.kx-c5:active .art { transform: scale(.92); transition-duration: 80ms; }
+.kx-c5 svg.chest { position: absolute; left: 0; bottom: 0; width: 28px; height: 34px; }
+.kx-c5 .lidF, .kx-c5 .lidU { transform-box: fill-box; transform-origin: 50% 100%; }
+.kx-c5 .lidF { transform: translateY(3px); }
+.kx-c5 .lidU { opacity: 0; }
+/* the front tilts up INTO the back rim (row 5), the line the inside face then rises from - onto the front edge left a 3-row jump */
+.kx-c5.v:not(.shut) .lidF { opacity: 0; transform: translateY(-3px) scaleY(.15); }
+.kx-c5.v:not(.shut) .lidU { opacity: 1; }
+.kx-c5 .bright { opacity: 0; }
+.kx-c5.v .bright { opacity: 1; }
+.kx-c5 .kx-ring { position: absolute; left: 50%; bottom: -5px; width: 36px; height: 12px; translate: -50% 0; border-radius: 50%; border: 2px solid var(--c); background: rgba(10, 9, 8, .55); z-index: -1; }
+.kx-c5 .sign5 { position: absolute; left: 19px; bottom: -8px; width: 22px; height: 22px; transform-origin: 50% 100%; }
+.kx-c5 .sign5 svg { position: relative; width: 22px; height: 22px; }
+.kx-c5 .lamp { position: absolute; left: -11px; top: -12px; width: 44px; height: 36px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(255, 214, 140, .62), rgba(228, 176, 74, .22) 55%, transparent); }
+.kx-c5 .fx { position: absolute; left: 30px; top: 18px; width: 0; height: 0; pointer-events: none; }
+.kx-c5 .fx i { position: absolute; width: 4px; height: 4px; background: #FFE2A0; opacity: 0; }
+.kx-c5 .fx i:nth-child(2n) { background: #E4B04A; width: 3px; height: 3px; }
+/* the moment: keyframes FROM the closed values, on the element Leaflet builds for the new icon */
+.kx-c5.burst .hop { animation: kx-hop 600ms both; }
+@keyframes kx-hop {
+  0%   { transform: none; animation-timing-function: cubic-bezier(.3, 0, .5, 1); }
+  16%  { transform: scale(1.14, .84); animation-timing-function: cubic-bezier(.2, .6, .35, 1); }
+  44%  { transform: translateY(-9px) scale(.94, 1.08); animation-timing-function: cubic-bezier(.55, 0, .85, .35); }
+  64%  { transform: scale(1.1, .9); animation-timing-function: cubic-bezier(.2, .8, .3, 1); }
+  82%  { transform: scale(.98, 1.02); }
+  100% { transform: none; }
+}
+.kx-c5.burst:not(.shut) .lidF { animation: kx-lid-tilt 190ms cubic-bezier(.5, 0, .9, .6) 220ms both; }
+@keyframes kx-lid-tilt { from { opacity: 1; transform: translateY(3px); } 92% { opacity: 1; } to { opacity: 0; transform: translateY(-3px) scaleY(.15); } }
+.kx-c5.burst:not(.shut) .lidU { animation: kx-lid-unfold 340ms cubic-bezier(.34, 1.56, .64, 1) 400ms both; }
+@keyframes kx-lid-unfold { from { opacity: 1; transform: scaleY(0); } to { opacity: 1; transform: none; } }
+.kx-c5.burst .bright { animation: kx-fade-in 240ms ease 150ms both; }
+@keyframes kx-fade-in { from { opacity: 0; } }
+.kx-c5.burst .sign5 { animation: kx-plant 380ms cubic-bezier(.34, 1.56, .64, 1) 540ms both; }
+.kx-c5.burst .lamp { animation: kx-lamp-on 520ms cubic-bezier(.23, 1, .32, 1) 820ms both; }
+.kx-c5.burst .fx i { animation: kx-spark 680ms cubic-bezier(.23, 1, .32, 1) 840ms; }
+.kx-c5.resign .sign5 { animation: kx-plant 380ms cubic-bezier(.34, 1.56, .64, 1) both; }
+.kx-c5.resign .lamp { animation: kx-lamp-on 520ms cubic-bezier(.23, 1, .32, 1) 260ms both; }
+.kx-c5.resign .fx i { animation: kx-spark 680ms cubic-bezier(.23, 1, .32, 1) 280ms; }
+@keyframes kx-plant { from { opacity: 0; transform: translateY(-12px) rotate(-8deg); } }
+@keyframes kx-lamp-on { from { opacity: 0; transform: scale(.4); } 45% { opacity: 1; transform: scale(1.25); } }
+@keyframes kx-spark { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.4); } }
+
+/* a bubble: an inventory slot - the chest inside, the count like an item stack, a bar filling amber with the visited share */
+.kx-slot { position: relative; width: 42px; height: 51px; }
+.kx-slot .hop { position: relative; width: 42px; height: 42px; background: #8B8B8B; border: 3px solid; border-color: #373737 #FFFFFF #FFFFFF #373737; display: grid; place-items: center; }
+.kx-slot .kx-c5 { width: 28px; height: 34px; cursor: inherit; }
+.kx-slot .kx-c5 .bright { opacity: 1; }
+.kx-slot.full .kx-c5 .lidF { opacity: 0; transform: translateY(-3px) scaleY(.15); }
+.kx-slot.full .kx-c5 .lidU { opacity: 1; }
+.kx-slot .cnt { position: absolute; right: 2px; bottom: 1px; font: 900 16px/1 var(--font-display); color: #FFFFFF; z-index: 1; }
+.kx-slot .cnt::before { content: attr(data-n); position: absolute; left: 2px; top: 2px; color: #3F3F3F; z-index: -1; }
+.kx-slot .dur { position: absolute; left: 0; right: 0; top: 46px; height: 5px; background: #0A0908; border: 1px solid #0A0908; }
+.kx-slot .dur i { position: absolute; inset: 0; background: #E4B04A; transform-origin: 0 50%; transform: scaleX(var(--f)); }
+.kx-slot.full .hop::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(115deg, transparent 30%, rgba(186, 120, 255, .35) 46%, rgba(255, 214, 140, .30) 54%, transparent 70%); }
+
+/* a salesman: a pixel person in his squad colour, a name tag above (initials · shops done) */
+.kx-sm { position: relative; width: 30px; height: 42px; }
+.kx-sm .who, .kx-sm .body { position: absolute; inset: 0; }
+.kx-sm .body svg { position: absolute; left: 0; bottom: 0; width: 30px; height: 42px; }
+.kx-sm .kx-shadow { position: absolute; left: 50%; bottom: -4px; width: 28px; height: 8px; translate: -50% 0; border-radius: 50%; background: rgba(0, 0, 0, .5); }
+.kx-sm .tag { position: absolute; bottom: calc(100% + 5px); left: 50%; translate: -50% 0; white-space: nowrap; padding: 3px 5px 2px; background: rgba(10, 9, 8, .72);
+  color: #FFFFFF; font: 800 12px/1 var(--font-display); letter-spacing: .06em; display: flex; align-items: center; gap: 5px; }
+.kx-sm .tag i { width: 7px; height: 7px; }
+.kx-sm .quest { position: absolute; left: 50%; bottom: calc(100% + 27px); width: 12px; height: 10px; translate: -50% 0; display: none; }
+.kx-sm.sel .quest { display: block; animation: kx-quest 1100ms ease-in-out infinite; }
+@keyframes kx-quest { 50% { transform: translateY(-3px); } }
+.kx-sm .legsB { opacity: 0; }
+.kx-sm.walk .legsA { animation: kx-stepA 440ms steps(1) infinite; }
+.kx-sm.walk .legsB { animation: kx-stepB 440ms steps(1) infinite; }
+@keyframes kx-stepA { 50% { opacity: 0; } }
+@keyframes kx-stepB { 50% { opacity: 1; } }
+.kx-sm.walk .body { animation: kx-bob 440ms steps(1) infinite; }
+@keyframes kx-bob { 50% { transform: translateY(-1px); } }
+.kx-sm.idle .body { animation: kx-breathe 2600ms ease-in-out infinite; }
+@keyframes kx-breathe { 50% { transform: translateY(-1px); } }
+.kx-sm.off { opacity: .5; }
+.kx-sm.dim { opacity: .35; }
+@media (prefers-reduced-motion: reduce) { .kx-sm .body, .kx-sm .legsA, .kx-sm .legsB, .kx-sm .quest { animation: none; } }
+
+/* ---- the keys: each icon acts out its job (his pick, "icon acts") ---- */
+.kx-mapkey svg { transition: rotate 240ms cubic-bezier(.23, 1, .32, 1); }
+.kx-mapkey svg * { transform-box: fill-box; transform-origin: center; transition: transform 240ms cubic-bezier(.23, 1, .32, 1); }
+.k-full:not(.on):is(:active, .act) path:nth-child(1) { transform: translate(-2px, -2px); }
+.k-full:not(.on):is(:active, .act) path:nth-child(2) { transform: translate(2px, -2px); }
+.k-full:not(.on):is(:active, .act) path:nth-child(3) { transform: translate(-2px, 2px); }
+.k-full:not(.on):is(:active, .act) path:nth-child(4) { transform: translate(2px, 2px); }
+.k-full.on:is(:active, .act) path:nth-child(1) { transform: translate(2px, 2px); }
+.k-full.on:is(:active, .act) path:nth-child(2) { transform: translate(-2px, 2px); }
+.k-full.on:is(:active, .act) path:nth-child(3) { transform: translate(2px, -2px); }
+.k-full.on:is(:active, .act) path:nth-child(4) { transform: translate(-2px, -2px); }
+.k-bord:is(:active, .act) path:nth-child(1) { transform: translateY(-3px); }
+.k-bord:is(:active, .act) path:nth-child(3) { transform: translateY(1.5px); }
+.k-home.act svg { animation: kx-pin-drop 460ms cubic-bezier(.23, 1, .32, 1); }
+@keyframes kx-pin-drop { 0% { transform: translateY(-6px); } 55% { transform: translateY(0); } 75% { transform: translateY(-2px); } 100% { transform: translateY(0); } }
+.k-fly:is(:active, .act) polygon { transform: translate(3px, -3px); }
+.k-loc:is(:active, .act) circle:last-child { transform: scale(.4); }
+.k-loc:is(:active, .act) circle:nth-last-child(2) { transform: scale(.82); }
+.k-brush:is(:active, .act, .open) svg:first-child { rotate: -16deg; }
+@media (hover: hover) and (pointer: fine) {
+  .k-full:not(.on):hover path:nth-child(1) { transform: translate(-1.5px, -1.5px); }
+  .k-full:not(.on):hover path:nth-child(2) { transform: translate(1.5px, -1.5px); }
+  .k-full:not(.on):hover path:nth-child(3) { transform: translate(-1.5px, 1.5px); }
+  .k-full:not(.on):hover path:nth-child(4) { transform: translate(1.5px, 1.5px); }
+  .k-bord:hover path:nth-child(1) { transform: translateY(-2.5px); }
+  .k-home:hover svg { animation: kx-pin-drop 460ms cubic-bezier(.23, 1, .32, 1); }
+  .k-fly:hover polygon { transform: translate(2px, -2px); }
+  .k-loc:hover circle:last-child { transform: scale(.55); }
+  .k-brush:hover svg:first-child { rotate: -12deg; }
+}
+/* the phone's strip keeps its gold ⛶ key */
+@media (max-width: 1023px) { .kx-keys .k-full { color: var(--ink); border-color: var(--gold); } }
+/* PC: one toolbar, the names always on */
+@media (min-width: 1024px) {
+  .kx-keys { gap: 0; padding: 4px; border: 1px solid var(--line-3); border-radius: 14px; background: var(--panel); box-shadow: 0 6px 20px rgba(0, 0, 0, .45); }
+  .kx-keys .kx-mapkey { border-color: transparent; box-shadow: none; background: none; padding: 9px 14px 9px 10px; border-radius: 10px; gap: 10px; }
+  .kx-keys .kx-mapkey + .kx-mapkey { margin-top: 2px; }
+  .kx-keys .kx-mapkey.on { background: var(--inset); border-color: var(--gold); }
+}
+/* phone, full map: every key in one bottom bar, 58 tall */
+.kx-dock { left: 10px; right: 10px; bottom: calc(22px + env(safe-area-inset-bottom)); grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; padding: 4px;
+  border: 1px solid var(--line-3); border-radius: 18px; background: var(--panel); box-shadow: 0 10px 30px rgba(0, 0, 0, .6); }
+.kx-dock .kx-mapkey { justify-content: center; gap: 5px; min-height: 58px; padding: 6px 2px; border: 1px solid transparent; background: none; box-shadow: none; border-radius: 14px; }
+.kx-dock .kx-mapkey > span { font: 800 11px/1 var(--font-display); letter-spacing: .03em; white-space: nowrap; }   /* 11 = the floor; "SET HOME" at 12 measured 57 in a 57 px key at 390 */
+.kx-dock .kx-mapkey.on { background: var(--inset); border-color: var(--gold); }
+
+/* the brush list: rows 44 tall, whole names, "off" is a row like the others */
+.kx-brush { background: rgba(18, 17, 16, .96); border: 1px solid var(--line-3); padding: 10px; border-radius: 16px; display: flex; flex-direction: column; gap: 4px;
+  width: max-content; max-height: 380px; overflow: auto; transform-origin: bottom left; animation: kx-sheet-in 220ms cubic-bezier(.23, 1, .32, 1) both; }
+@keyframes kx-sheet-in { from { opacity: 0; transform: translateY(8px) scale(.96); } }
+.kx-brush > * { animation: kx-row-in 240ms cubic-bezier(.23, 1, .32, 1) both; animation-delay: calc(var(--i, 0) * 28ms); }
+@keyframes kx-row-in { from { opacity: 0; transform: translateX(-6px); } }
+.kx-pen-row { display: flex; align-items: center; gap: 8px; }
+.kx-pen { flex: 1; display: flex; align-items: center; justify-content: flex-start; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid transparent; background: rgba(27, 25, 23, .6);
+  color: var(--ink-muted); font: 700 14px/1 var(--font-body); text-align: left; cursor: pointer; }
+.kx-pen:disabled { cursor: default; }
+.kx-pen .sw { width: 20px; height: 20px; border-radius: 50%; background: var(--c); flex: none; }
+.kx-pen .nm { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kx-pen.sel { background: var(--raised); color: var(--ink); border-color: var(--c); }
+.kx-pen.off { font: 900 11px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; }
+.kx-pen.off.sel { background: var(--inset); border-color: var(--gold); }
+.kx-swatch { width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--line-3); }
+@media (max-width: 1023px) {
+  .kx-brushwrap { left: 10px; right: 10px; bottom: calc(112px + env(safe-area-inset-bottom)); align-items: stretch; }
+  .kx-brush { width: auto; max-height: 360px; }
+  .kx-pen .nm { max-width: none; }
+}

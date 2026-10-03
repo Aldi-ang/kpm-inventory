@@ -15,6 +15,7 @@ import { useWide } from './hooks/useWide';
 import { expedition, visibleTeam } from './utils/expedition';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
+import { signFor, chestHtml, slotHtml } from './utils/mapSprites';
 
 // 🚀 SAFE LEAFLET ICON SETUP
 delete L.Icon.Default.prototype._getIconUrl;
@@ -24,45 +25,56 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// 🚀 CLUSTER BUBBLE — same shape as MapMissionControl's, orange to match Journey's palette.
-// Painting ~20 bubbles at zoom 12 instead of N pins is the whole point; the count label is
-// what tells you a bubble is many stores, so it has to stay readable at a glance.
-const createJourneyClusterIcon = (cluster) => L.divIcon({
-    html: `<div style="background-color: rgba(18, 17, 16, 0.95); border: 2px solid #D08A2E; color: #E4B04A; font-weight: 900; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(249, 115, 22, 0.5); font-family: monospace; font-size: 14px;">${cluster.getChildCount()}</div>`,
-    className: 'custom-cluster-icon',
-    iconSize: [40, 40],
-    iconAnchor: [20, 20]
-});
+// 🚀 CLUSTER BUBBLE — an inventory slot holding a chest (his settled design 2026-10-03): the shop count bottom-right
+// like an item stack, a bar under it filling amber with the share already visited today. Painting ~20 bubbles at
+// zoom 12 instead of N pins is the whole point. A store's visited flag rides on its icon (`kxVisited`), because
+// setIcon keeps the icon current while a marker's own options never update.
+const createJourneyClusterIcon = (cluster) => {
+    const kids = cluster.getAllChildMarkers();
+    return L.divIcon({
+        html: slotHtml(kids.length, kids.filter((m) => m.options.icon?.options?.kxVisited).length),
+        className: 'kx-mk',
+        iconSize: [42, 51],
+        iconAnchor: [21, 21]
+    });
+};
 
 /* Store pin icons, cached by appearance.
    react-leaflet's Marker compares `icon` by OBJECT IDENTITY, so building a fresh L.divIcon inside
    the render loop made it call setIcon() on every marker on every render — tearing down and
    rebuilding each pin's DOM. One keystroke in a popup input rebuilt every pin on the map, which is
    most of why this screen felt heavy with a few hundred stores.
-   A pin's look depends only on (glyph, ring colour, editing), so cache on exactly that. Sharing one
-   L.Icon across many markers is the normal Leaflet pattern — createIcon() makes a fresh element per
-   marker, the same way every marker shares L.Icon.Default. */
+   A pin's look depends only on (visit outcome, ring colour, editing, the moment playing), so cache on
+   exactly that. Sharing one L.Icon across many markers is the normal Leaflet pattern — createIcon()
+   makes a fresh element per marker, the same way every marker shares L.Icon.Default.
+   A shop is a chest (src/utils/mapSprites.js); the pin being moved keeps the hand. */
 const storeIconCache = new Map();
-const getStoreIcon = (glyph, ringColor, isEditing) => {
-    const key = `${glyph}|${ringColor}|${isEditing ? 1 : 0}`;
+const getStoreIcon = (outcome, ringColor, isEditing, play = '') => {
+    const key = `${outcome}|${ringColor}|${isEditing ? 1 : 0}|${play}`;
     let icon = storeIconCache.get(key);
     if (!icon) {
-        const size = isEditing ? 34 : 28;
-        const glow = isEditing ? '25px' : '10px';
-        const alpha = isEditing ? 'ff' : '80';
-        icon = L.divIcon({
+        icon = isEditing ? L.divIcon({
             className: 'bg-transparent border-none',
-            html: `
-                                <div style="background-color: #1B1917; width: ${size}px; height: ${size}px; border-radius: 50%; border: 2px solid ${ringColor}; display: flex; align-items: center; justify-content: center; font-size: ${isEditing ? '16px' : '12px'}; box-shadow: 0 0 ${glow} ${ringColor}${alpha}; transition: all 0.2s;">
-                                    ${isEditing ? '🖐️' : glyph}
-                                </div>
-                            `,
-            iconSize: [size, size],
-            iconAnchor: [size / 2, size / 2]
+            html: `<div style="background-color: #1B1917; width: 34px; height: 34px; border-radius: 50%; border: 2px solid ${ringColor}; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 0 25px ${ringColor}ff;">🖐️</div>`,
+            iconSize: [34, 34],
+            iconAnchor: [17, 17]
+        }) : L.divIcon({
+            className: 'kx-mk',
+            html: chestHtml(outcome, ringColor, play),
+            iconSize: [28, 34],
+            iconAnchor: [14, 31],
+            kxVisited: !!outcome
         });
         storeIconCache.set(key, icon);
     }
     return icon;
+};
+
+/* the map keys act out their job once per press (his pick 2026-10-03, "icon acts"); Lite completes it at once */
+const act = (e) => {
+    const b = e.currentTarget;
+    b.classList.remove('act'); void b.offsetWidth; b.classList.add('act');
+    setTimeout(() => b.classList.remove('act'), 480);
 };
 
 // 🚀 LIVE GPS ICON
@@ -147,7 +159,8 @@ const StoreFocus = ({ focusStore, customers, onHandled }) => {
     return null;
 };
 
-const LocationController = ({ userLocation, setUserLocation, isEditing, isLiteMode }) => {
+/* `trigger`: the phone's full-map dock has its own Locate key, so its round key here hides there (`hideKey`) */
+const LocationController = ({ userLocation, setUserLocation, isEditing, isLiteMode, trigger = 0, hideKey }) => {
     const map = useMap();
     const watchId = useRef(null);
     const isEditingRef = useRef(isEditing);
@@ -192,12 +205,13 @@ const LocationController = ({ userLocation, setUserLocation, isEditing, isLiteMo
     useEffect(() => {
         return () => { if (watchId.current) navigator.geolocation.clearWatch(watchId.current); };
     }, []);
+    useEffect(() => { if (trigger) handleLocateClick(); }, [trigger]);
 
     return (
-        <div className="absolute bottom-[20px] right-[10px] z-[999]">
-            <button 
-                onClick={handleLocateClick} 
-                className="kx-mapkey round"
+        <div className={`absolute bottom-[20px] right-[10px] z-[999] ${hideKey ? 'hidden lg:block' : ''}`}>
+            <button
+                onClick={(e) => { act(e); handleLocateClick(); }}
+                className="kx-mapkey round k-loc"
                 title="Locate Me"
             >
                 <LocateFixed size={20} className={watchId.current ? "text-[#E4B04A]" : ""} />
@@ -823,6 +837,41 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     const conqueredCount = orderedRoute.filter(c => c.lastVisit === todayDate).length;
     const progressPercent = orderedRoute.length > 0 ? Math.round((conqueredCount / orderedRoute.length) * 100) : 0;
 
+    /* THE SECURE MOMENT (his "it refreshed" rule): a chest plays only when its outcome changes while the map is
+       open - first load and every later render draw the end state. Leaflet's setIcon builds a NEW element, so the
+       moment is the class that element is born with (worked out here, during render, so the end state never paints
+       first), then the store goes back to the still icon once it has played. */
+    const outcomeById = useMemo(() => Object.fromEntries(orderedRoute.map((s) => {
+        const sold = !!todaysVisits[storeKey(s.name)];
+        return [s.id, s.lastVisit === todayDate || sold ? signFor(s.lastVisitTag, sold) : null];
+    })), [orderedRoute, todaysVisits, todayDate]);
+    // refs, not a returned value: StrictMode runs this memo twice in dev and the second run sees no change
+    const seenOutcome = useRef(null), playing = useRef({}), clusterRef = useRef(null), outcomeMoved = useRef(false);
+    const [, setReplayTick] = useState(0);
+    useMemo(() => {
+        const prev = seenOutcome.current, now = Date.now();
+        seenOutcome.current = outcomeById;
+        if (!prev) return;
+        for (const id in playing.current) if (playing.current[id].until < now) delete playing.current[id];
+        for (const id in outcomeById) {
+            if (!(id in prev) || prev[id] === outcomeById[id]) continue;
+            outcomeMoved.current = true;
+            if (outcomeById[id]) playing.current[id] = { cls: prev[id] ? 'resign' : 'burst', until: now + 1500 };
+        }
+    }, [outcomeById]);
+    useEffect(() => {
+        if (outcomeMoved.current) { outcomeMoved.current = false; clusterRef.current?.refreshClusters(); }   // a bubble's bar only redraws when told
+        if (!Object.values(playing.current).some((p) => p.until > Date.now())) return;
+        const t = setTimeout(() => setReplayTick((x) => x + 1), 1600);
+        return () => clearTimeout(t);
+    }, [outcomeById]);
+    const [locateTrigger, setLocateTrigger] = useState(0);
+    const squadColor = (name) => agentColors[name] || getHashColor(name);
+    const toggleFullScreen = () => {
+        setIsFullScreen(!isFullScreen);
+        setTimeout(() => window.dispatchEvent(new Event('resize')), 200);
+    };
+
     /* MISSION FEED's parts (his pick 2026-10-03: A strip on the PC, B day card on the phone). One cell per shop up
        to 40 - past that a cell is thinner than its gap on a phone, so it becomes a bar. The day is 7 keys, today
        dotted. Overdue = the same rule the store cards use (getBountyStatus), not "due today". */
@@ -982,59 +1031,54 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 className={`${isFullScreen ? 'fixed inset-0 z-[9999] rounded-none' : 'relative w-full h-40 lg:h-[500px] rounded-2xl kpm-jp-map'} kx-map bg-slate-900 overflow-hidden border border-slate-700 shadow-xl transition-all duration-300`}
                 style={isFullScreen ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', margin: 0, padding: 0 } : {}}
             >
-                <div className={`absolute bottom-4 left-4 z-[9999] ${isFullScreen ? 'flex' : 'hidden lg:flex'} flex-col gap-2 items-start pointer-events-none`}>
-                    <button 
-                        onClick={() => setIsPanelOpen(!isPanelOpen)} 
+                {/* the brush (his "new" key layout, 2026-10-03): the key stays in its corner and the list opens ABOVE it;
+                    on the phone's full map the key lives in the dock and the list opens above the dock. Rows 44 tall,
+                    whole names, no orange slab for "off". */}
+                <div className={`kx-brushwrap absolute bottom-4 left-4 z-[9999] ${isFullScreen ? 'flex' : 'hidden lg:flex'} flex-col-reverse gap-2 items-start pointer-events-none`}>
+                    <button
+                        onClick={(e) => { act(e); setIsPanelOpen(!isPanelOpen); }}
                         onDoubleClick={() => setDevUnlock(true)}
                         title="Double-Tap to Override Permissions"
-                        className="pointer-events-auto kx-mapkey flex items-center gap-2 select-none min-h-11 lg:min-h-0"
+                        className={`pointer-events-auto kx-mapkey k-brush hidden lg:flex items-center gap-2 select-none ${isPanelOpen ? 'open' : ''}`}
                     >
-                        {canManageFleetSettings ? <Paintbrush size={16} className="text-[var(--gold)]"/> : <Globe size={16}/>}
-                        <span className="text-[var(--ink)] text-[11px] lg:text-[10px] font-black uppercase tracking-widest">{canManageFleetSettings ? 'Paintbrush' : 'Squad Legend'}</span>
-                        <ChevronDown size={14} className={`text-slate-400 transition-transform ${isPanelOpen ? 'rotate-180' : ''}`}/>
+                        {canManageFleetSettings ? <Paintbrush size={20} className="text-[var(--gold)]"/> : <Globe size={20}/>}
+                        <span className="text-[var(--ink)]">{canManageFleetSettings ? 'Paintbrush' : 'Squad Legend'}</span>
+                        <ChevronDown size={14} className={`text-[var(--ink-dim)] transition-transform ${isPanelOpen ? 'rotate-180' : ''}`}/>
                     </button>
 
                     {isPanelOpen && (
-                        <div className="pointer-events-auto bg-slate-900/95 backdrop-blur border border-slate-700 p-3 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.8)] max-h-[60vh] overflow-y-auto flex flex-col gap-2 custom-scrollbar w-max animate-fade-in-up">
+                        <div className="kx-brush pointer-events-auto custom-scrollbar">
                             {canManageFleetSettings && (
                                 <>
-                                    <button
-                                        onClick={() => setActiveBrush(null)}
-                                        className={`flex items-center justify-center gap-2 p-2 rounded-xl border transition-all text-[11px] lg:text-[10px] uppercase tracking-widest font-black ${activeBrush === null ? 'bg-orange-600 text-white border-orange-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
-                                    >
-                                        <X size={14}/> Disable Brush
+                                    <button onClick={() => setActiveBrush(null)} className={`kx-pen off ${activeBrush === null ? 'sel' : ''}`} style={{ '--i': 0 }}>
+                                        <X size={16}/><span>Disable Brush</span>
                                     </button>
-                                    <button
-                                        onClick={() => setActiveBrush('Unassigned')}
-                                        className={`flex items-center justify-center gap-2 p-2 rounded-xl border transition-all text-xs font-bold ${activeBrush === 'Unassigned' ? 'bg-slate-200 text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.5)]' : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'}`}
-                                    >
-                                        <div className="w-3 h-3 rounded-full bg-slate-500"></div> Unassign
+                                    <button onClick={() => setActiveBrush('Unassigned')} className={`kx-pen ${activeBrush === 'Unassigned' ? 'sel' : ''}`} style={{ '--c': '#6A645C', '--i': 1 }}>
+                                        <i className="sw" /><span className="nm">Unassign</span>
                                     </button>
                                 </>
                             )}
 
-                            {globalAgentList.map(a => {
+                            {globalAgentList.map((a, k) => {
                                 const color = agentColors[a] || getHashColor(a);
-                                const isActive = activeBrush === a;
                                 return (
-                                    <div key={a} className="flex items-center gap-2">
+                                    <div key={a} className="kx-pen-row" style={{ '--i': k + 2 }}>
                                         <button
                                             onClick={() => canManageFleetSettings && setActiveBrush(a)}
                                             disabled={!canManageFleetSettings}
-                                            className={`flex-1 flex items-center gap-2 p-2 rounded-xl border transition-all text-xs font-bold ${isActive ? 'bg-slate-800 text-white shadow-[0_0_15px_rgba(0,0,0,0.5)]' : 'bg-slate-800/50 text-slate-400 border-transparent'} ${canManageFleetSettings ? 'hover:bg-slate-700 cursor-pointer' : 'cursor-default'}`}
-                                            style={{ borderColor: isActive ? color : 'transparent' }}
+                                            className={`kx-pen ${activeBrush === a ? 'sel' : ''}`}
+                                            style={{ '--c': color }}
                                         >
-                                            <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: color, boxShadow: isActive ? `0 0 10px ${color}` : 'none' }}></div>
-                                            <span className="truncate max-w-[80px]">{a.split(' ')[0]}</span>
+                                            <i className="sw" /><span className="nm">{a}</span>
                                         </button>
                                         {canManageFleetSettings && (
-                                            <div className="relative w-8 h-8 shrink-0 rounded-lg overflow-hidden border border-slate-600 cursor-pointer hover:border-white transition-colors shadow-inner" title="Change Squad Color">
-                                                <input 
-                                                    type="color" 
-                                                    value={color} 
-                                                    onChange={(e) => handleColorChange(a, e.target.value)} 
+                                            <div className="kx-swatch relative shrink-0 overflow-hidden cursor-pointer" title="Change Squad Color">
+                                                <input
+                                                    type="color"
+                                                    value={color}
+                                                    onChange={(e) => handleColorChange(a, e.target.value)}
                                                     onBlur={(e) => saveColorToDB(a, e.target.value)}
-                                                    className="absolute inset-[-10px] w-12 h-12 cursor-pointer"
+                                                    className="absolute inset-[-10px] w-16 h-16 cursor-pointer"
                                                 />
                                             </div>
                                         )}
@@ -1058,46 +1102,55 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     </div>
                 )}
 
-                <div className="absolute top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-auto [&>button]:min-h-11 [&>button]:min-w-11 lg:[&>button]:min-h-0 lg:[&>button]:min-w-0">
-                    <button 
-                        onClick={() => {
-                            setIsFullScreen(!isFullScreen);
-                            setTimeout(() => window.dispatchEvent(new Event('resize')), 200); 
-                        }}
-                        className="kx-mapkey on group flex items-center gap-2"
+                {/* the keys (his "new" layout, 2026-10-03): the PC gets one toolbar with the names always on; the phone's
+                    strip keeps only ⛶ here, and its full map moves every key into the bottom dock below */}
+                <div className={`kx-keys absolute top-4 right-4 z-[9999] ${isFullScreen ? 'hidden lg:flex' : 'flex'} flex-col gap-3 pointer-events-auto [&>button]:min-h-11 [&>button]:min-w-11 lg:[&>button]:min-h-0 lg:[&>button]:min-w-0`}>
+                    <button
+                        onClick={(e) => { act(e); toggleFullScreen(); }}
+                        className={`kx-mapkey k-full ${isFullScreen ? 'on' : ''} flex items-center gap-2`}
                         title="Toggle Fullscreen Map"
                     >
                         {isFullScreen ? <Minimize size={20} /> : <Maximize size={20} />}
-                        <span className="hidden group-hover:block text-[10px] font-black uppercase tracking-widest whitespace-nowrap pr-1">
-                            {isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}
-                        </span>
+                        <span className="hidden lg:block">{isFullScreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
                     </button>
-
-                    <button 
-                        onClick={() => setShowBorders(!showBorders)}
-                        className={`kx-mapkey group ${isFullScreen ? 'flex' : 'hidden lg:flex'} items-center gap-2 ${showBorders ? 'on' : ''}`} aria-pressed={showBorders}
+                    <button
+                        onClick={(e) => { act(e); setShowBorders(!showBorders); }}
+                        className={`kx-mapkey k-bord hidden lg:flex items-center gap-2 ${showBorders ? 'on' : ''}`} aria-pressed={showBorders}
                         title="Toggle Regional Borders"
                     >
-                        <Layers size={20} className="transition-transform"/>
-                        <span className="hidden group-hover:block text-[10px] font-black uppercase tracking-widest whitespace-nowrap pr-1">Borders</span>
+                        <Layers size={20}/>
+                        <span className="hidden lg:block">Borders</span>
                     </button>
-                    <button 
-                        onClick={() => setSaveHomeTrigger(prev => prev + 1)}
-                        className={`kx-mapkey group ${isFullScreen ? 'flex' : 'hidden lg:flex'} items-center gap-2`}
+                    <button
+                        onClick={(e) => { act(e); setSaveHomeTrigger(prev => prev + 1); }}
+                        className="kx-mapkey k-home hidden lg:flex items-center gap-2"
                         title="Save Current Map View as Default Home"
                     >
-                        <MapPin size={20} className="group-hover:scale-110 transition-transform"/>
-                        <span className="hidden group-hover:block text-[10px] font-black uppercase tracking-widest whitespace-nowrap pr-1">Set Home</span>
+                        <MapPin size={20}/>
+                        <span className="hidden lg:block">Set Home</span>
                     </button>
-                    <button 
-                        onClick={() => setRecenterTrigger(prev => prev + 1)}
-                        className={`kx-mapkey group ${isFullScreen ? 'flex' : 'hidden lg:flex'} items-center gap-2`}
+                    <button
+                        onClick={(e) => { act(e); setRecenterTrigger(prev => prev + 1); }}
+                        className="kx-mapkey k-fly hidden lg:flex items-center gap-2"
                         title="Return to Saved Home View"
                     >
-                        <Navigation size={20} className="group-hover:rotate-12 transition-transform"/>
-                        <span className="hidden group-hover:block text-[10px] font-black uppercase tracking-widest whitespace-nowrap pr-1">Fly Home</span>
+                        <Navigation size={20}/>
+                        <span className="hidden lg:block">Fly Home</span>
                     </button>
                 </div>
+
+                {isFullScreen && (
+                    <nav className="kx-dock absolute z-[9999] grid lg:hidden [&>button]:flex [&>button]:flex-col" aria-label="Map keys">
+                        <button onClick={(e) => { act(e); setIsPanelOpen(!isPanelOpen); }} className={`kx-mapkey k-brush ${isPanelOpen ? 'on open' : ''}`}>
+                            {canManageFleetSettings ? <Paintbrush size={20} className="text-[var(--gold)]"/> : <Globe size={20}/>}<span>{canManageFleetSettings ? 'Brush' : 'Legend'}</span>
+                        </button>
+                        <button onClick={(e) => { act(e); setShowBorders(!showBorders); }} className={`kx-mapkey k-bord ${showBorders ? 'on' : ''}`} aria-pressed={showBorders}><Layers size={20}/><span>Borders</span></button>
+                        <button onClick={(e) => { act(e); setSaveHomeTrigger(prev => prev + 1); }} className="kx-mapkey k-home"><MapPin size={20}/><span>Set Home</span></button>
+                        <button onClick={(e) => { act(e); setRecenterTrigger(prev => prev + 1); }} className="kx-mapkey k-fly"><Navigation size={20}/><span>Fly Home</span></button>
+                        <button onClick={(e) => { act(e); setLocateTrigger((t) => t + 1); }} className="kx-mapkey k-loc"><LocateFixed size={20}/><span>Locate</span></button>
+                        <button onClick={(e) => { act(e); toggleFullScreen(); }} className="kx-mapkey k-full on"><Minimize size={20}/><span>Exit</span></button>
+                    </nav>
+                )}
 
                 <MapContainer center={mapCenter} zoom={12} style={{ height: '100%', width: '100%' }}>
                     <MapTouchGate locked={isPhone && !isFullScreen} />
@@ -1108,7 +1161,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         for the street-level zooms instead of showing grey squares. */}
                     <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}" maxNativeZoom={16} attribution='© Esri' />
                     
-                    <LocationController userLocation={userLocation} setUserLocation={setUserLocation} isEditing={!!editingStoreId} isLiteMode={isLiteMode} />
+                    <LocationController userLocation={userLocation} setUserLocation={setUserLocation} isEditing={!!editingStoreId} isLiteMode={isLiteMode} trigger={locateTrigger} hideKey={isFullScreen} />
                     <MapEditController isEditing={!!editingStoreId} onMapClick={(latlng) => setTempPinLocation({ lat: latlng.lat, lng: latlng.lng })} />
                     
                     {userLocation && (
@@ -1164,6 +1217,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         reassigns instance.options — so without a remount the toggle would silently
                         do nothing. Remounting on a rare, deliberate action is a fair price. */}
                     <MarkerClusterGroup
+                        ref={clusterRef}
                         key={editingStoreId ? 'journey-unclustered' : 'journey-clustered'}
                         chunkedLoading={true}
                         iconCreateFunction={createJourneyClusterIcon}
@@ -1174,18 +1228,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     {orderedRoute.map((store) => {
                         const hasLiveTxToday = !!todaysVisits[storeKey(store.name)];
                         const isVisited = store.lastVisit === todayDate || hasLiveTxToday;
-                        const activeTag = String(hasLiveTxToday ? '' : (store.lastVisitTag || ''));
+                        const outcome = outcomeById[store.id] ?? null;
+                        const play = playing.current[store.id]?.until > Date.now() ? playing.current[store.id].cls : '';
 
-                        let iconHtml = '📍';
-                        if (isVisited) {
-                            if (activeTag.includes('📦')) iconHtml = '📦';
-                            else if (activeTag.includes('🛑')) iconHtml = '🛑';
-                            else if (activeTag.includes('⚠️')) iconHtml = '⚠️';
-                            else if (activeTag.includes('📝')) iconHtml = '📝';
-                            else if (activeTag.includes('🔒')) iconHtml = '🔒';
-                            else iconHtml = '✅';
-                        }
-                        
                         const metric = storeMetrics?.[store.id] || { agentName: 'Unassigned', color: '#6A645C', stopNumber: 0 };
                         const stopNum = metric.stopNumber;
                         const statusBadge = getBountyStatus(store);
@@ -1195,7 +1240,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         const finalRingColor = isEditing ? '#f97316' : ringColor;
                         const markerPos = isEditing && tempPinLocation ? [tempPinLocation.lat, tempPinLocation.lng] : [store.latitude, store.longitude];
                         
-                        const customIcon = getStoreIcon(iconHtml, finalRingColor, isEditing);
+                        // the ring under the chest stays the salesman's colour; the sign says it was visited
+                        const customIcon = getStoreIcon(outcome, isEditing ? finalRingColor : (metric.agentName === 'Unassigned' ? '#6A645C' : metric.color), isEditing, play);
 
                         return (
                             <Marker 
@@ -1374,7 +1420,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         );
                     })}
                     </MarkerClusterGroup>
-                    {team.length > 0 && <ExpeditionLayer team={team} sel={selId} focus={expFocus} wide={wide} stops={false} />}
+                    {team.length > 0 && <ExpeditionLayer team={team} sel={selId} focus={expFocus} wide={wide} stops={false} colorOf={squadColor} />}
                 </MapContainer>
             </div>
             {team.length > 0 && <ExpeditionPanel team={team} sel={selId} onPick={pickAgent} wide={wide} scoped={!globalView} page />}
