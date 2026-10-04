@@ -1207,7 +1207,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     </nav>
                 )}
 
-                <MapContainer center={mapCenter} zoom={12} style={{ height: '100%', width: '100%' }}>
+                {/* the empty map = the dark tiles' own land colour (71,71,73), never Leaflet's #ddd: every camera move showed
+                    a light flash until the tiles arrived (his "people with epilepsy may suffer from that", 2026-10-04) */}
+                <MapContainer center={mapCenter} zoom={12} style={{ height: '100%', width: '100%', background: '#474749' }}>
                     <MapTouchGate locked={isPhone && !isFullScreen} />
                     <MapRecenter trigger={recenterTrigger} saveTrigger={saveHomeTrigger} savedHome={savedHome} onSaveHome={handleSaveHome} defaultCenter={mapCenter} />
                     <StoreFocus focusStore={focusStore} customers={customers} onHandled={onFocusStoreHandled} />

@@ -10160,6 +10160,15 @@ section('Expedition map');
     /* (6) the break case "a salesman with no shops today" (lab &noround: visitDay elsewhere, no visitFreq): Journey Plan's
        sanitizer reads a missing visitFreq as 7 (every day) and listed his shops as due today, while expedition() read the
        RAW field and found no round - so a press hid shops Journey Plan itself called his for today */
+    /* HIS 2026-10-04 12:30: "the flash where i change the expedition user must be fix, because people with epilepsy may
+       suffer from that". Measured (A-Brain Raw/2026-10-03-map-keys/built8/probe-flash.mjs): the camera flies to the new
+       man, and until the dark tiles arrive the map shows Leaflet's own background, #ddd - PC page: map brightness 68 -> 146
+       for ~40 ms over 54 % of it; PC fullscreen: 68 -> 145 for ~370 ms. The empty map is the tiles' own land colour now
+       (World_Dark_Gray_Base, measured 71,71,73), so a missing tile is invisible */
+    ok('Journey map never flashes light while tiles load: the map\'s own background is the dark basemap\'s land colour, not Leaflet\'s #ddd',
+       /<MapContainer center=\{mapCenter\} zoom=\{12\} style=\{\{ height: '100%', width: '100%', background: '#474749' \}\}>/.test(jvr) &&
+       /World_Dark_Gray_Base/.test(jvr) && !/World_(Light_Gray|Street_Map)|google\.com\/vt/.test(jvr),
+       'his: "people with epilepsy may suffer from that"');
     /* (7) lab &noround (Ari's shops due another day, 3 sold today anyway): pressed, his road ran him -> 3 sales -> the
        suggestion, and the map held 0 chests - Journey Plan draws only the day's route, so the road bent at empty ground */
     ok('Journey pressed man: a stop on his road that is not on the day\'s route (a sale off-schedule, another day picked) still gets its chest, with its real owner and outcome',
