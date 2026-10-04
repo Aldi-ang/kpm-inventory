@@ -82,8 +82,12 @@ if (typeof document !== 'undefined' && !document.getElementById('kx-sprites')) {
 /* a shop: not visited = dim closed chest; visited = lid open, dark inside, a lit sign; closed store = lid down + lock.
    `play` = 'burst' (first visit) or 'resign' (the outcome changed) - only while the map is open, and only then is the
    chest built from its animated parts */
-export const chestHtml = (outcome, ring, play = '') =>
-    `<div class="kx-c5${outcome ? ' v' : ''}${outcome === 'closed' ? ' shut' : ''}${play ? ` ${play}` : ''}" style="--c:${safeHex(ring)}"><i class="kx-ring"></i>`
+/* `tag`: the pressed salesman's own name tag with the stop number ("BS · 3", his look B 2026-10-04, "Name tags is easier
+   to see") - ownership in words, never only the ring's colour */
+const escTag = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+export const chestHtml = (outcome, ring, play = '', tag = '') =>
+    `<div class="kx-c5${outcome ? ' v' : ''}${outcome === 'closed' ? ' shut' : ''}${play ? ` ${play}` : ''}${tag ? ' mine' : ''}" style="--c:${safeHex(ring)}"><i class="kx-ring"></i>`
+    + (tag ? `<span class="kx-otag"><i style="background:var(--c)"></i>${escTag(tag)}</span>` : '')
     + `<div class="art"><div class="hop">${play ? CHEST5 : `<i class="kx-spr kx-spr-${!outcome ? 'closed' : outcome === 'closed' ? 'shut' : 'open'}"></i>`}</div></div>`
     + (outcome ? `<i class="sign5"><i class="lamp"></i>${play ? SIGN5[outcome] : `<i class="kx-sgn kx-sgn-${outcome}"></i>`}</i>` : '') + (play ? SPARKS : '') + '</div>';
 

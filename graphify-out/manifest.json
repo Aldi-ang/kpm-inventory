@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1791044111.322201,
-    "ast_hash": "56cd9d992d92fb083235194e67314025",
+    "mtime": 1791082173.4277656,
+    "ast_hash": "7c31feeea1e2c5f6b4baa1666b3cbd89",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -75,8 +75,8 @@
     "semantic_hash": ""
   },
   "src/JourneyView.jsx": {
-    "mtime": 1791044095.5002718,
-    "ast_hash": "7a90d3095fb8e482b20102557d01fbae",
+    "mtime": 1791082281.7948706,
+    "ast_hash": "ace50cc9a6bd1889f9544b948ff7f848",
     "semantic_hash": ""
   },
   "src/MapMissionControl.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1791045115.4751048,
-    "ast_hash": "100b9a4f2184371f92043572abd5e07e",
+    "mtime": 1791080383.0986533,
+    "ast_hash": "591ac4b6d1d5fdd6248ebe4eec0c41e1",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1791045243.2998824,
-    "ast_hash": "6a47beeea1e97a8e971c90dd547022d2",
+    "mtime": 1791082341.3463612,
+    "ast_hash": "8b3435b036bdd6d4149aecbd97b3aefa",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1791044807.9741876,
-    "ast_hash": "3b512e5d3b27c5d1906f9504c0028f75",
+    "mtime": 1791080383.0966413,
+    "ast_hash": "e913fd8110305dac324540a71d5bb6df",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1791045259.3768044,
-    "ast_hash": "54ac5b2923dc8ada8f137c672cbc1ce9",
+    "mtime": 1791082433.9829698,
+    "ast_hash": "7d13be8b0107f7f1f81d4164a7c82363",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -1270,8 +1270,8 @@
     "semantic_hash": ""
   },
   "src/components/Expedition.jsx": {
-    "mtime": 1791044063.7209175,
-    "ast_hash": "6857f94f420d7056a645db60f0fa095e",
+    "mtime": 1791082231.1455476,
+    "ast_hash": "196a936485f6b96d1b856c61ce1206f7",
     "semantic_hash": ""
   },
   "src/hooks/useWide.js": {
@@ -1280,13 +1280,13 @@
     "semantic_hash": ""
   },
   "src/utils/expedition.js": {
-    "mtime": 1791045259.2643776,
-    "ast_hash": "1ba2cfc8e2cb29c13d39e8985fd65ee1",
+    "mtime": 1791082165.8243763,
+    "ast_hash": "fdd2f1338a2a0488545342561297cb39",
     "semantic_hash": ""
   },
   "src/utils/mapSprites.js": {
-    "mtime": 1791043987.5929866,
-    "ast_hash": "ea900e59a9c57d51a411f0e7f121790d",
+    "mtime": 1791082165.887428,
+    "ast_hash": "e208f16d02b4dc10658b498fce7b9456",
     "semantic_hash": ""
   }
 }

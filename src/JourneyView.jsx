@@ -10,9 +10,9 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { loadBorderCache, saveBorderCache } from './utils/borderCache';
 import { isFleetManagementTier, hasClearance } from './config/permissions';
-import { ExpeditionLayer, ExpeditionPanel, ExpeditionPeople } from './components/Expedition.jsx';
+import { ExpeditionLayer, ExpeditionPanel, ExpeditionPeople, ExpeditionMini } from './components/Expedition.jsx';
 import { useWide } from './hooks/useWide';
-import { expedition, visibleTeam } from './utils/expedition';
+import { expedition, visibleTeam, roadStops, initials } from './utils/expedition';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { signFor, chestHtml, slotHtml, crowdHtml } from './utils/mapSprites';
@@ -54,8 +54,8 @@ const createJourneyClusterIcon = (cluster) => {
    makes a fresh element per marker, the same way every marker shares L.Icon.Default.
    A shop is a chest (src/utils/mapSprites.js); the pin being moved keeps the hand. */
 const storeIconCache = new Map();
-const getStoreIcon = (outcome, ringColor, isEditing, play = '') => {
-    const key = `${outcome}|${ringColor}|${isEditing ? 1 : 0}|${play}`;
+const getStoreIcon = (outcome, ringColor, isEditing, play = '', tag = '') => {
+    const key = `${outcome}|${ringColor}|${isEditing ? 1 : 0}|${play}|${tag}`;
     let icon = storeIconCache.get(key);
     if (!icon) {
         icon = isEditing ? L.divIcon({
@@ -65,7 +65,7 @@ const getStoreIcon = (outcome, ringColor, isEditing, play = '') => {
             iconAnchor: [17, 17]
         }) : L.divIcon({
             className: 'kx-mk',
-            html: chestHtml(outcome, ringColor, play),
+            html: chestHtml(outcome, ringColor, play, tag),
             iconSize: [28, 34],
             iconAnchor: [14, 31],
             kxVisited: !!outcome
@@ -414,7 +414,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     const selId = team.some((a) => a.id === expSel) ? expSel : team.some((a) => a.id === agentProfileId) ? agentProfileId : team[0]?.id;   // a salesman opens on his own card
     const [expFocus, setExpFocus] = useState(false);   // PC: false = frame the whole team, true = frame the picked row
     const wide = useWide();
-    const pickAgent = (id) => { if (wide && expFocus && id === selId) setExpFocus(false); else { setExpSel(id); setExpFocus(true); } };
+    const pickAgent = (id) => { if (expFocus && id === selId) setExpFocus(false); else { setExpSel(id); setExpFocus(true); } };   // tap him again = let go
     const [isPanelOpen, setIsPanelOpen] = useState(false); 
 
     const [editingStoreId, setEditingStoreId] = useState(null);
@@ -747,6 +747,24 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         return metrics;
     }, [orderedRoute, assignments, globalAgentList, agentColors]);
 
+    /* THE PRESSED SALESMAN (his 2026-10-04: "im expecting when i press the expedition team there will be a roadmap for them
+       and a clearer indicator that the chest is theirs to collect not just color ... especially for the people who color
+       blinds"; look B, "Name tags is easier to see"): each of his chests wears his name tag with the stop number, everyone
+       else fades (.kx-focus), and a road runs from where he stands through them. Pressed = his Expedition row/chip
+       (expFocus) or his Paintbrush pen. Today's round by default; every shop assigned to him with "All shops" (his "shop
+       assigned today, but also add option on all shop assigned"). */
+    const [roadAll, setRoadAll] = useState(false);
+    const focusName = expFocus ? team.find((a) => a.id === selId)?.name : activeBrush && activeBrush !== 'Unassigned' ? activeBrush : null;
+    const road = useMemo(() => {
+        if (!focusName) return null;
+        const man = team.find((a) => a.name === focusName);
+        const assigned = orderedRoute.filter((s) => storeMetrics[s.id]?.agentName === focusName && s.latitude && s.longitude)
+            .map((s) => ({ key: storeKey(s.name), name: s.name, lat: Number(s.latitude), lng: Number(s.longitude) }));
+        const stops = roadStops(man, roadAll, assigned), ini = initials(focusName);
+        return { tagOf: Object.fromEntries(stops.map((s) => [s.key, `${ini} · ${s.n}`])),
+            points: [...(man && !roadAll ? [man.at] : []), ...stops.filter((s) => s.lat)] };
+    }, [focusName, team, roadAll, orderedRoute, storeMetrics]);
+
     const getBountyStatus = (customer) => {
         if (!customer) return { text: "UNKNOWN TARGET", short: "UNKNOWN", led: "", color: "bg-slate-600", border: "border-slate-500", flashing: false };
         const freq = parseInt(customer.visitFreq) || 7;
@@ -1033,7 +1051,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
             <div className="flex flex-col gap-3 lg:flex-row lg:gap-4">
             <div 
-                className={`${isFullScreen ? 'fixed inset-0 z-[9999] rounded-none' : 'relative w-full h-40 lg:h-[500px] rounded-2xl kpm-jp-map'} kx-map bg-slate-900 overflow-hidden border border-slate-700 shadow-xl transition-all duration-300`}
+                className={`${isFullScreen ? 'fixed inset-0 z-[9999] rounded-none' : 'relative w-full h-40 lg:h-[500px] rounded-2xl kpm-jp-map'} kx-map bg-slate-900 overflow-hidden border border-slate-700 shadow-xl transition-all duration-300${road ? ' kx-focus' : ''}`}
                 style={isFullScreen ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', margin: 0, padding: 0 } : {}}
             >
                 {/* the brush (his "new" key layout, 2026-10-03): the key stays in its corner and the list opens ABOVE it;
@@ -1142,7 +1160,11 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         <Navigation size={20}/>
                         <span className="hidden lg:block">Fly Home</span>
                     </button>
+                    {isFullScreen && team.length > 0 && wide && <ExpeditionMini team={team} sel={selId} onPick={pickAgent} wide colorOf={squadColor} focused={!!road} roadAll={roadAll} onRoadAll={setRoadAll} />}
                 </div>
+                {isFullScreen && team.length > 0 && !wide && (
+                    <div className="kx-mbarwrap"><ExpeditionMini team={team} sel={selId} onPick={pickAgent} colorOf={squadColor} focused={!!road} roadAll={roadAll} onRoadAll={setRoadAll} /></div>
+                )}
 
                 {isFullScreen && (
                     <nav className="kx-dock absolute z-[9999] grid lg:hidden [&>button]:flex [&>button]:flex-col" aria-label="Map keys">
@@ -1246,7 +1268,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         const markerPos = isEditing && tempPinLocation ? [tempPinLocation.lat, tempPinLocation.lng] : [store.latitude, store.longitude];
                         
                         // the ring under the chest stays the salesman's colour; the sign says it was visited
-                        const customIcon = getStoreIcon(outcome, isEditing ? finalRingColor : (metric.agentName === 'Unassigned' ? '#6A645C' : metric.color), isEditing, play);
+                        const customIcon = getStoreIcon(outcome, isEditing ? finalRingColor : (metric.agentName === 'Unassigned' ? '#6A645C' : metric.color), isEditing, play, road?.tagOf[storeKey(store.name)] || '');
 
                         return (
                             <Marker 
@@ -1424,12 +1446,12 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                             </Marker>
                         );
                     })}
-                    <ExpeditionPeople team={team} sel={selId} wide={wide} colorOf={squadColor} />
+                    <ExpeditionPeople team={team} sel={selId} wide={wide} colorOf={squadColor} focusName={road ? focusName : null} />
                     </MarkerClusterGroup>
-                    {team.length > 0 && <ExpeditionLayer team={team} sel={selId} focus={expFocus} wide={wide} stops={false} />}
+                    {team.length > 0 && <ExpeditionLayer team={team} sel={selId} focus={expFocus} wide={wide} stops={false} road={road?.points} />}
                 </MapContainer>
             </div>
-            {team.length > 0 && <ExpeditionPanel team={team} sel={selId} onPick={pickAgent} wide={wide} scoped={!globalView} page />}
+            {team.length > 0 && <ExpeditionPanel team={team} sel={selId} onPick={pickAgent} wide={wide} scoped={!globalView} focused={!!road} roadAll={roadAll} onRoadAll={setRoadAll} page />}
             </div>
 
             <div className="pt-6 space-y-4 animate-fade-in">

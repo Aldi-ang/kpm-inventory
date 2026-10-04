@@ -33,7 +33,17 @@ const cachedIcon = (o) => {
 /* `bare`: the chips only, no lines and no camera (Map System, the store-analysis map).
    `stops={false}`: no shop pins or dots of its own - Journey Plan already draws every shop of the round.
    Journey Plan's salesmen themselves are ExpeditionPeople, rendered inside its bubbles. */
-export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true }) {
+/* the road's arrows: one cached picture per 5 degrees; the angle is the screen angle (east = 0, y down), longitude
+   shortened by the latitude's cosine the way the map stretches it */
+const arrowAt = (a, b) => {
+    const deg = Math.round(Math.atan2(-(b.lat - a.lat), (b.lng - a.lng) * Math.cos(a.lat * Math.PI / 180)) * 180 / Math.PI / 5) * 5;
+    return cachedIcon({ className: 'kx-mk', iconSize: [16, 16], iconAnchor: [8, 8],
+        html: `<svg class="kx-arrow" viewBox="-8 -8 16 16" style="transform:rotate(${deg}deg)"><path d="M-4 -5 L3 0 L-4 5" fill="none" stroke="#0A0908" stroke-width="5" stroke-linecap="square"/><path d="M-4 -5 L3 0 L-4 5" fill="none" stroke="#E8E4DE" stroke-width="2.5" stroke-linecap="square"/></svg>` });
+};
+
+/* `road`: the pressed salesman's road (JourneyView), from where he stands through his shops in stop order - a cream
+   line with arrows, under the chests (his look B, 2026-10-04) */
+export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true, road }) {
     const map = useMap();
     const svg = useMemo(() => L.svg({ padding: 0.5 }), []);   // the march line's flow needs SVG; the map itself draws on canvas
 
@@ -86,7 +96,17 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true }) 
     const groups = {};
     team.filter((a) => a.live).forEach((a) => { (groups[spot(a)] ||= []).push(a.id); });
 
-    return team.map((a) => {
+    const roadLine = road?.length > 1 && (
+        <React.Fragment key="kx-road">
+            <Polyline positions={road.map(ll)} renderer={svg} interactive={false} pathOptions={{ color: '#0A0908', opacity: 0.5, weight: 7, lineCap: 'round', lineJoin: 'round' }} />
+            <Polyline positions={road.map(ll)} renderer={svg} interactive={false} className="kx-road" pathOptions={{ color: '#E8E4DE', weight: 3, lineCap: 'round', lineJoin: 'round' }} />
+            {road.slice(1).map((p, i) => (
+                <Marker key={i} position={[(road[i].lat + p.lat) / 2, (road[i].lng + p.lng) / 2]} icon={arrowAt(road[i], p)} interactive={false} zIndexOffset={-500} />
+            ))}
+        </React.Fragment>
+    );
+
+    return [...team.map((a) => {
         const mine = bare || wide || a.id === sel, faint = mine ? 1 : 0.35, one = !bare && !wide && a.id === sel, pins = one && stops;
         const g = groups[spot(a)] || [a.id], shift = (g.indexOf(a.id) - (g.length - 1) / 2) * 30;
         /* Map System keeps the gold chip */
@@ -131,7 +151,7 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true }) 
                 {chip && a.live && <Marker position={ll(a.at)} icon={chip} interactive={false} zIndexOffset={a.id === sel ? 21000 : 20000} />}
             </React.Fragment>
         );
-    });
+    }), roadLine];
 }
 
 /* ---- Journey Plan's salesmen: a pixel person in his squad colour (his pick 2026-10-03, "full pixel"), rendered INSIDE
@@ -139,7 +159,7 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true }) 
    too; the bubble draws them as a crowd from `kxFig` (JourneyView createJourneyClusterIcon). Zoomed in, each stands
    fixed at his spot (his "supposed to be fix", 2026-10-03 20:00), just LEFT of it so his shop's chest stays clear.
    Seen at a shop (state `at`) = the selling scene: he stands beside that shop's chest holding the coin up. ---- */
-export function ExpeditionPeople({ team, sel, wide, colorOf }) {
+export function ExpeditionPeople({ team, sel, wide, colorOf, focusName }) {
     const shopOf = (a) => (a.state === 'at' && a.done[a.done.length - 1]?.lat ? a.done[a.done.length - 1] : null);
     /* THE SELLING MOMENT plays only for a man newly seen at a shop while the map is open - the chest's own rule (his
        "it refreshed"): first load and later renders draw the held coin. Refs, not state: StrictMode runs the memo twice. */
@@ -170,7 +190,7 @@ export function ExpeditionPeople({ team, sel, wide, colorOf }) {
     return live.map((a) => {
         const shop = shopOf(a), g = groups[spot(a)], i = g.indexOf(a.id), shift = (i - (g.length - 1) / 2) * 30;
         const shirt = colorOf ? colorOf(a.name) : '#E8E4DE', hair = HAIR[String(a.id).length % HAIR.length];
-        const mine = wide || a.id === sel, play = playing.current[a.id] > Date.now();
+        const mine = focusName ? a.name === focusName : wide || a.id === sel, play = playing.current[a.id] > Date.now();   // a pressed man: everyone else fades
         const icon = cachedIcon({
             className: 'kx-mk',
             html: `<div class="kx-sm ${shop ? `sell${play ? ' play' : ''}` : a.state === 'go' ? 'walk' : 'idle'}${a.id === sel ? ' sel' : ''}${mine ? '' : ' dim'}" style="--c:${safeHex(shirt, '#E8E4DE')}"><i class="kx-shadow"></i>`
@@ -206,7 +226,15 @@ const Pips = ({ a }) => (
 
 /* `page`: the panel sits in Journey Plan's scrolling page (under the phone strip, beside the 500 px map on the PC)
    instead of filling a full-height map screen */
-export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page }) {
+/* Today / All shops for the pressed salesman's road (his "shop assigned today, but also add option on all shop assigned") */
+const RoadSwitch = ({ all, onAll }) => (
+    <div className="kx-roadsw" role="group" aria-label="Road">
+        <button type="button" aria-pressed={!all} onClick={() => onAll(false)}>Today</button>
+        <button type="button" aria-pressed={all} onClick={() => onAll(true)}>All shops</button>
+    </div>
+);
+
+export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page, focused, roadAll, onRoadAll }) {
     const out = team.filter((a) => a.out);
     const done = out.reduce((s, a) => s + a.done.length, 0), of = out.reduce((s, a) => s + (a.of ?? a.done.length), 0);
     const a = team.find((t) => t.id === sel) || team[0];
@@ -214,6 +242,7 @@ export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page }) {
     return (
         <aside className={`kx-panel${page ? ' kx-page' : ''}`} aria-label="Expedition">
             <div className="kx-ph"><b>Expedition</b><span>{out.length} out · <em>{done}/{of}</em> shops</span></div>
+            {focused && <RoadSwitch all={roadAll} onAll={onRoadAll} />}
             {!team.length ? (
                 <p className="kx-empty">No salesman{scoped ? ' in your region' : ''} has sent a position yet. His phone sends one with every sale and every time he opens the app.</p>
             ) : wide ? (
@@ -223,7 +252,7 @@ export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page }) {
                             <button type="button" key={t.id} className={`kx-row${t.id === sel ? ' sel' : ''}${t.out ? '' : ' off'}`} aria-pressed={t.id === sel} onClick={() => onPick(t.id)}>
                                 <Av a={t} />
                                 <span className="kx-mid">
-                                    <span className="kx-nm">{t.name}</span>
+                                    <span className="kx-nm">{t.name}{t.title && <em className="kx-title">{t.title}</em>}</span>
                                     <span className={`kx-led ${lamp(t)}`}><i /><span>{said(t)}</span></span>
                                     {t.of > 0 && <Cells a={t} />}
                                 </span>
@@ -246,7 +275,7 @@ export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page }) {
                         ))}
                     </div>
                     <div className="kx-travel">
-                        <div className="kx-who"><Av a={a} size="md" /><div><div className="kx-nm">{a.name}</div><small>Last seen {agoLabel(a.mins)}</small></div></div>
+                        <div className="kx-who"><Av a={a} size="md" /><div><div className="kx-nm">{a.name}{a.title && <em className="kx-title">{a.title}</em>}</div><small>Last seen {agoLabel(a.mins)}</small></div></div>
                         <div className="kx-dest">
                             <small>{({ go: 'Heading to', at: 'Selling at', home: 'Round done', idle: 'No next shop', off: 'Not out today', closed: 'Day closed' })[a.state]}</small>
                             <div>{({ go: a.next?.name, at: a.done[a.done.length - 1]?.name, home: `${a.done.length} shops today`, idle: '-', off: `Seen ${agoLabel(a.mins)}`, closed: `${a.done.length} shops today` })[a.state]}</div>
@@ -261,5 +290,43 @@ export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page }) {
                 </>
             )}
         </aside>
+    );
+}
+
+/* ---- the Expedition on the FULLSCREEN map, smaller (his "i want the expedition to be visible but smaller on fullscreen
+   as well", 2026-10-04; "fulscreen looks good" to round 7): his two settled looks shrunk - the PC keeps the squad list as
+   short rows under the map keys, the phone keeps the pick chips plus ONE line of the picked man's card. Only the men on
+   the map are listed; the rest are counted. A tap is the same pick as the full panel. ---- */
+export function ExpeditionMini({ team, sel, onPick, wide, colorOf, focused, roadAll, onRoadAll }) {
+    const on = team.filter((a) => a.live), off = team.length - on.length;
+    const a = on.find((t) => t.id === sel) || on[0];
+    const sq = (t) => ({ '--c': safeHex(colorOf ? colorOf(t.name) : '#E8E4DE', '#E8E4DE') });
+    if (wide) return (
+        <aside className="kx-mini" aria-label="Expedition">
+            <header><b>Expedition</b><small>{on.length} out</small></header>
+            {on.map((t) => (
+                <button type="button" key={t.id} className={`kx-mrow${t.id === sel && focused ? ' sel' : ''}`} style={sq(t)} aria-pressed={t.id === sel && focused} onClick={() => onPick(t.id)}>
+                    <i /><span>{t.name}</span><u className={lamp(t)} /><em>{count(t)}</em>
+                </button>
+            ))}
+            {off > 0 && <small className="kx-moff">+{off} not out today</small>}
+            {focused && <RoadSwitch all={roadAll} onAll={onRoadAll} />}
+        </aside>
+    );
+    return (
+        <div className="kx-mbar">
+            <div className="kx-mchips">
+                {on.map((t) => (
+                    <button type="button" key={t.id} className={t.id === sel ? 'sel' : ''} style={sq(t)} aria-pressed={t.id === sel} onClick={() => onPick(t.id)}><i />{t.ini} {count(t)}</button>
+                ))}
+            </div>
+            {a && (
+                <div className="kx-mline">
+                    <span>{a.name}</span><small>{({ go: 'heading to', at: 'selling at', home: 'round done', idle: 'no next shop' })[a.state]}</small>
+                    <span>{({ go: a.next?.name, at: a.done[a.done.length - 1]?.name })[a.state] || ''}</span><em>{count(a)}</em>
+                </div>
+            )}
+            {focused && <RoadSwitch all={roadAll} onAll={onRoadAll} />}
+        </div>
     );
 }

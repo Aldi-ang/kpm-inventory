@@ -1807,7 +1807,10 @@ const handleGitHubMirror = async () => {
                       await setDoc(agentRef, {
                           currentLocation: currentCoords,
                           pathHistory: sameDay ? arrayUnion(currentCoords) : [currentCoords],
-                          name: activeTrackerId === 'master_owner' ? 'Master HQ' : (user.displayName || 'Agent')
+                          /* the boss shows on Journey Plan's Expedition like his team (his 2026-10-04 call): his own name, not
+                             "Master HQ", and his place in the company beside it - Settings calls Tier 1 the Overseer */
+                          name: activeTrackerId === 'master_owner' ? (user.displayName || 'Master HQ') : (user.displayName || 'Agent'),
+                          ...(activeTrackerId === 'master_owner' ? { title: user?.tier === 1 || user?.role === 'ADMIN' || user?.role === 'DEVELOPER' ? 'T1 · OVERSEER' : 'T2 · OWNER' } : {})
                       }, { merge: true });
                       
                   } catch (e) {

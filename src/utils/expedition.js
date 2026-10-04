@@ -65,7 +65,9 @@ export function expedition(motorists = [], customers = [], transactions = [], no
     const byKey = new Map(customers.map((c) => [storeKey(c.name), c]));
 
     return motorists
-        .filter((m) => m?.id && m.id !== 'master_owner' && m.currentLocation?.lat)   // the boss's own pings are not a salesman
+        /* the boss is listed too (his 2026-10-04 "i put master admin here on headquarters team , my account, but it is
+           not there"), under his own name and title - App.jsx's location ping writes both onto master_owner */
+        .filter((m) => m?.id && m.currentLocation?.lat)
         .map((m) => {
             const at = { lat: Number(m.currentLocation.lat), lng: Number(m.currentLocation.lng) };
             const seenAt = m.currentLocation.timestamp ? new Date(m.currentLocation.timestamp) : null;
@@ -117,7 +119,7 @@ export function expedition(motorists = [], customers = [], transactions = [], no
 
             return {
                 id: m.id, name: m.name || 'Agent', ini: initials(m.name),
-                photo: m.profileImage || m.photoURL || m.photoUrl || m.profilePic || m.photo || m.image || m.avatar || null,
+                photo: m.profileImage || m.photoURL || m.photoUrl || m.profilePic || m.photo || m.image || m.avatar || null, title: m.title || null,
                 at, seenAt: seen ? seenAt : null, mins, out, live: out && !closed, state, done, ahead, next, planned,
                 of: planned ? done.length + ahead.length : null,          // "5/8" only when a round exists
                 metresToNext: next?.lat ? metres(at, next) : null,
@@ -125,5 +127,10 @@ export function expedition(motorists = [], customers = [], transactions = [], no
         })
         .sort((a, b) => (b.out - a.out) || a.name.localeCompare(b.name));
 }
+
+/* THE ROAD of a pressed salesman (his 2026-10-04 "shop assigned today, but also add option on all shop assigned"): today =
+   his sales so far, then the round still ahead, in that order; all = every shop assigned to him, in stop order. 1..n. */
+export const roadStops = (man, all, assigned = []) =>
+    (all ? assigned : [...(man?.done || []), ...(man?.ahead || [])]).map((s, i) => ({ ...s, n: i + 1 }));
 
 export const agoLabel = (mins) => mins == null ? 'never' : mins < 1 ? 'just now' : mins < 60 ? `${mins} min ago` : mins < 1440 ? `${Math.floor(mins / 60)} h ago` : `${Math.floor(mins / 1440)} d ago`;

@@ -979,7 +979,9 @@ function ShellLab() {
              shop, on every even one she is not - the selling moment replays every 5 s, for frames. `&focus=<shop>` (with
              `&tick`) flies there at zoom 16 after the first tick, once the team camera has settled. `&eod`: Rini (m7)
              has sent today's End of Day and the boss approved it - she leaves the map */
-          motorists={!q.has('exp') ? [] : q.has('sell') && tick % 2 === 1 ? LAB_MAP.motorists.map((m) => (m.id === 'm6' ? { ...m, currentLocation: { ...m.currentLocation, timestamp: new Date().toISOString() } } : m)) : LAB_MAP.motorists}
+          motorists={!q.has('exp') ? [] : [...(q.has('sell') && tick % 2 === 1 ? LAB_MAP.motorists.map((m) => (m.id === 'm6' ? { ...m, currentLocation: { ...m.currentLocation, timestamp: new Date().toISOString() } } : m)) : LAB_MAP.motorists),
+            /* `&boss`: the owner's own record, as App.jsx's location ping now writes it (his 2026-10-04 call) */
+            ...(q.has('boss') ? [{ id: 'master_owner', name: 'Aldi', title: 'T1 · OVERSEER', location: 'MUNTILAN', currentLocation: { lat: LAB_MAP.motorists[0].currentLocation.lat + 0.004, lng: LAB_MAP.motorists[0].currentLocation.lng - 0.006, timestamp: new Date(Date.now() - 5 * 60000).toISOString() } }] : [])]}
           eodReports={q.has('eod') ? [{ id: 'eod-m7', agentId: 'm7', reportType: 'CASH_STOCK', status: 'VERIFIED', timestamp: { seconds: Math.floor(Date.now() / 1000) - 600 } }] : []}
           agentProfileId="m2"
           customers={q.has('exp') ? (q.has('visits') ? LAB_MAP.customers.map(labVisit(tick)) : LAB_MAP.customers) : [

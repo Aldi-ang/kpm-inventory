@@ -10008,7 +10008,7 @@ section('Expedition map');
   {  /* WHERE IT LIVES (his call 2026-10-03): Map System analyses stores, Journey Plan is the salesman's day */
     const jv = code(read('src/JourneyView.jsx'));
     ok('the expedition lives on Journey Plan (trail, next shop, travel card / squad list, region-fenced); Map System keeps the chips only',
-       /<ExpeditionLayer team=\{team\} sel=\{selId\} focus=\{expFocus\} wide=\{wide\} stops=\{false\} \/>/.test(jv) && /<ExpeditionPanel [^>]*\bpage \/>/.test(jv) &&
+       /<ExpeditionLayer team=\{team\} sel=\{selId\} focus=\{expFocus\} wide=\{wide\} stops=\{false\} road=\{road\?\.points\} \/>/.test(jv) && /<ExpeditionPanel [^>]*\bpage \/>/.test(jv) &&
        /expedition\(visibleTeam\(motorists \|\| \[\], \{ global: globalView, viewerId: agentProfileId \}\)/.test(jv) &&
        /<JourneyView motorists=\{motorists\} agentProfileId=\{agentProfileId\}/.test(app) &&
        /<ExpeditionLayer team=\{team\} bare \/>/.test(mp) && !/ExpeditionPanel|setExpOn/.test(mp),
@@ -10110,6 +10110,25 @@ section('Expedition map');
        /\.kx-sm\.sell \.pStand \{ opacity: 0; \}/.test(exc) && /\.kx-sm\.sell\.play \.kx-cx \{ animation: kx-coin-x 450ms linear 600ms both; \}/.test(exc) &&
        /if \(!\(a\.id in prev\)\) return;/.test(exj) && /playing\.current\[a\.id\] = now \+ 1500/.test(exj),
        'his: "chest and 8 bit character not colliding but combined into one animation instead"');
+    /* HIS 2026-10-04: "a clearer indicator that the chest is theirs to collect not just color ... especially for the people
+       who color blinds" -> look B "Name tags is easier to see"; road "shop assigned today, but also add option on all shop
+       assigned"; "i want the expedition to be visible but smaller on fullscreen as well" -> "fulscreen looks good" */
+    const { roadStops } = await import('../utils/expedition.js');
+    const man = { done: [{ key: 'A', lat: 1, lng: 1 }], ahead: [{ key: 'B', lat: 2, lng: 2 }, { key: 'C' }] };
+    const today = roadStops(man, false, [{ key: 'X' }]), all = roadStops(man, true, [{ key: 'X' }, { key: 'Y' }]);
+    const tagged = chestHtml('order', '#a855f7', '', 'BS · 3');
+    ok('Journey road re-run: today = his sales so far then the round still ahead, numbered 1..n; "All shops" = every shop assigned to him in stop order; nobody pressed = no road',
+       today.map((s) => s.key + s.n).join() === 'A1,B2,C3' && all.map((s) => s.key + s.n).join() === 'X1,Y2' && roadStops(undefined, false, []).length === 0 &&
+       /const \[roadAll, setRoadAll\] = useState\(false\);/.test(jvr) && /road=\{road\?\.points\}/.test(jvr) && /className="kx-road"/.test(exj),
+       `${today.map((s) => s.key + s.n)} / ${all.map((s) => s.key + s.n)}`);
+    ok('Journey "his chest" re-run: a pressed man\'s chest wears his name tag with the stop number (text, not colour), the tag is escaped, an untagged chest has none; everyone else fades',
+       /class="kx-c5 v mine"/.test(tagged) && tagged.includes('<span class="kx-otag">') && tagged.includes('BS · 3') && !chestHtml('order', '#a855f7').includes('kx-otag') &&
+       !chestHtml('order', '#a855f7', '', '<b>x').includes('<b>x') && /\.kx-focus \.leaflet-marker-icon > \.kx-c5:not\(\.mine\) \{ opacity: \.28; \}/.test(exc) &&
+       /\$\{road \? ' kx-focus' : ''\}/.test(jvr),
+       tagged.slice(0, 70));
+    ok('Journey fullscreen keeps a smaller Expedition: the short squad list under the keys on the PC, the chips + one line on the phone; tapping a name is the same pick',
+       (jvr.match(/<ExpeditionMini /g) || []).length === 2 && /export function ExpeditionMini\(/.test(exj) && /if \(expFocus && id === selId\) setExpFocus\(false\)/.test(jvr),
+       'his: "i want the expedition to be visible but smaller on fullscreen as well"');
   }
   {  /* the SHIPPED day logic, cut out of App.jsx and run over three pings and two days */
     const snip = code(app).match(/const today = getLocalDayKey\(\), dayKey = [^;]+;\s*let sameDay = false;\s*try \{[^}]*\} catch \{[^}]*\}/)?.[0];
@@ -10147,9 +10166,18 @@ section('Expedition map');
     { agentId: 'm2', customerName: 'TOKO C', date: '2026-10-01' },
     { agentId: 'm9', customerName: 'TOKO D', timestamp: at(10, 0) },
   ], NOW);
-  const b = team[0], c = team[1];
-  ok('the boss\'s own pings are not a salesman; whoever was seen today is listed first',
-     team.length === 2 && b?.id === 'm2' && c?.id === 'm3', JSON.stringify(team.map((t) => t.id)));
+  const b = team[0], c = team.find((t) => t.id === 'm3');
+  /* his 2026-10-04 call: "i put master admin here on headquarters team , my account, but it is not there" -> the boss is
+     listed like every salesman, under his own name with his title ("change the master owner to be my tier 1 name instead
+     but add some title on that name to show his position/tier in the company") */
+  const boss = team.find((t) => t.id === 'master_owner');
+  ok('the boss is listed like every salesman now, with the title his record carries; whoever was seen today is listed first',
+     team.length === 3 && b?.id === 'm2' && team[2]?.id === 'm3' && !!boss && boss.out === true &&
+     expedition([{ id: 'master_owner', name: 'Aldi', title: 'T1 · OVERSEER', currentLocation: { lat: -7.6, lng: 110.3, timestamp: iso(2, 13, 0) } }], [], [], NOW)[0]?.title === 'T1 · OVERSEER' &&
+     /name: activeTrackerId === 'master_owner' \? \(user\.displayName \|\| 'Master HQ'\) : \(user\.displayName \|\| 'Agent'\)/.test(app) &&
+     /title: user\?\.tier === 1 \|\| user\?\.role === 'ADMIN' \|\| user\?\.role === 'DEVELOPER' \? 'T1 · OVERSEER' : 'T2 · OWNER'/.test(app) &&
+     /\{t\.title && <em className="kx-title">\{t\.title\}<\/em>\}/.test(read('src/components/Expedition.jsx')),
+     JSON.stringify(team.map((t) => t.id)));
   ok('today\'s trail: his own SALES today, oldest first, one stop per shop (a return, yesterday, a teammate do not count)',
      b.done.map((d) => d.name).join() === 'TOKO A,TOKO B', b.done.map((d) => d.name).join());
   ok('his round = his own shops due today, exact name ("Budi Santosa" is another man), nearest-first from where he was seen',
