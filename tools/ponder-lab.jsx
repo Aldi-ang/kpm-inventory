@@ -835,6 +835,13 @@ const labVisit = (tick) => (c) => {
   const [, i, k] = c.id.split('-').map(Number);
   return (i === 0 ? k < 2 + tick : (i + k) % 3 !== 0) ? { ...c, lastVisit: LAB_TODAY, lastVisitTag: LAB_TAGS[(i + k) % LAB_TAGS.length] } : c;
 };
+/* the break cases (2026-10-04 test): `&nobody` = everyone last seen yesterday; `&pair` = Ari stands on Budi's spot;
+   `&nopin` = two of Budi's shops lost their pin (one sold today, one still ahead); `&noround` = Ari's shops are all
+   due on another day */
+const labBreakMen = (ms) => ms.map((m) => (q.has('nobody') ? { ...m, currentLocation: { ...m.currentLocation, timestamp: new Date(Date.now() - 30 * 3600000).toISOString() } }
+  : q.has('pair') && m.id === 'm5' ? { ...m, currentLocation: { ...ms.find((b) => b.id === 'm2').currentLocation } } : m));
+const labBreakShops = (cs) => cs.map((c) => (q.has('nopin') && (c.id === 'c-0-2' || c.id === 'c-0-6') ? { ...c, latitude: null, longitude: null }
+  : q.has('noround') && c.id.startsWith('c-1-') ? { ...c, visitDay: 'Someday', visitFreq: 14 } : c));
 
 function ShellLab() {
   const [dark, setDark] = React.useState(!q.has('light'));
@@ -979,13 +986,14 @@ function ShellLab() {
              shop, on every even one she is not - the selling moment replays every 5 s, for frames. `&focus=<shop>` (with
              `&tick`) flies there at zoom 16 after the first tick, once the team camera has settled. `&eod`: Rini (m7)
              has sent today's End of Day and the boss approved it - she leaves the map */
-          motorists={!q.has('exp') ? [] : [...(q.has('sell') && tick % 2 === 1 ? LAB_MAP.motorists.map((m) => (m.id === 'm6' ? { ...m, currentLocation: { ...m.currentLocation, timestamp: new Date().toISOString() } } : m)) : LAB_MAP.motorists),
+          motorists={!q.has('exp') ? [] : [...labBreakMen(q.has('sell') && tick % 2 === 1 ? LAB_MAP.motorists.map((m) => (m.id === 'm6' ? { ...m, currentLocation: { ...m.currentLocation, timestamp: new Date().toISOString() } } : m)) : LAB_MAP.motorists),
             /* `&boss`: the owner's own record, as App.jsx's location ping now writes it (his 2026-10-04 call) */
             ...(q.has('boss') ? [{ id: 'master_owner', name: 'Aldi', title: 'T1 · OVERSEER', location: 'MUNTILAN', currentLocation: { lat: LAB_MAP.motorists[0].currentLocation.lat + 0.004, lng: LAB_MAP.motorists[0].currentLocation.lng - 0.006, timestamp: new Date(Date.now() - 5 * 60000).toISOString() } }] : [])]}
-          eodReports={q.has('eod') ? [{ id: 'eod-m7', agentId: 'm7', reportType: 'CASH_STOCK', status: 'VERIFIED', timestamp: { seconds: Math.floor(Date.now() / 1000) - 600 } }] : []}
+          /* `&eodwait`: Rini has SENT it, the boss has not approved it yet - she stays */
+          eodReports={q.has('eod') || q.has('eodwait') ? [{ id: 'eod-m7', agentId: 'm7', reportType: 'CASH_STOCK', status: q.has('eod') ? 'VERIFIED' : 'PENDING', timestamp: { seconds: Math.floor(Date.now() / 1000) - 600 } }] : []}
           agentProfileId="m2"
           /* `&free`: every 7th shop belongs to nobody - the red flag (his 2026-10-04 ask) */
-          customers={q.has('exp') ? (q.has('visits') ? LAB_MAP.customers.map(labVisit(tick)) : LAB_MAP.customers).map((c, i) => (q.has('free') && i % 7 === 3 ? { ...c, assignedAgent: 'Unassigned' } : c)) : [
+          customers={q.has('exp') ? labBreakShops((q.has('visits') ? LAB_MAP.customers.map(labVisit(tick)) : LAB_MAP.customers).map((c, i) => (q.has('free') && i % 7 === 3 ? { ...c, assignedAgent: 'Unassigned' } : c))) : [
             ...LAB_CUSTOMERS.map((c, i) => ({ ...c, region: 'BANDUNG', city: 'Bandung', tier: ['Bronze', 'Silver', 'Gold', 'Bronze'][i], assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : i === 1 ? '2026-09-01' : '', phone: '0812-3456-7890' })),
             { id: 'c-sri', name: 'Warung Bu Sri Rahayu Sejahtera Abadi', address: 'Jl. Dago Atas No. 101, Bandung', latitude: -6.8700, longitude: 107.6150, priceTier: 'Ecer', region: 'BANDUNG', city: 'Bandung', tier: 'Silver', assignedAgent: 'Budi Santoso', visitFreq: 3, lastVisit: '2026-09-10' },
             { id: 'c-jaya', name: 'Grosir Jaya Abadi', address: 'Jl. Soekarno Hatta 400', latitude: -6.9400, longitude: 107.6300, priceTier: 'Grosir', region: 'BANDUNG', city: 'Bandung', tier: 'Gold', assignedAgent: 'Adi Nugroho', visitFreq: 14, lastVisit: '2026-08-20' },

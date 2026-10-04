@@ -75,8 +75,8 @@
     "semantic_hash": ""
   },
   "src/JourneyView.jsx": {
-    "mtime": 1791083456.7579722,
-    "ast_hash": "99ec606d99bcee371c4b4a31be465c4b",
+    "mtime": 1791086795.7990112,
+    "ast_hash": "309ae659ad59de64bfe2fa319b25cc31",
     "semantic_hash": ""
   },
   "src/MapMissionControl.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1791083027.4432876,
-    "ast_hash": "11ff9962ceb981e9f0b931a126c97d6d",
+    "mtime": 1791083962.0688903,
+    "ast_hash": "2fb6d93359205d077ff5a09e309189e2",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1791083375.198621,
-    "ast_hash": "90cf9485f9b34d2a57dbbfab34b4dfa5",
+    "mtime": 1791087081.3892865,
+    "ast_hash": "128dbb3a56113734a6486700f0668693",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1791083027.4402876,
-    "ast_hash": "e2ac4937ed290207797988e992bcb7d3",
+    "mtime": 1791083962.0668914,
+    "ast_hash": "f3a4c6701f1b3237366dc756ad817c5d",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1791083590.1459794,
-    "ast_hash": "87886c468321c1cbf59a2b423be4c30f",
+    "mtime": 1791086588.122298,
+    "ast_hash": "9a5db55a4dc981e2db37d2ed0036f62c",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -1270,8 +1270,8 @@
     "semantic_hash": ""
   },
   "src/components/Expedition.jsx": {
-    "mtime": 1791083456.8247316,
-    "ast_hash": "c785820aea5aab6f6face0d1111493b3",
+    "mtime": 1791086371.113098,
+    "ast_hash": "061065905009cf08dbae10e702684a6d",
     "semantic_hash": ""
   },
   "src/hooks/useWide.js": {
@@ -1280,8 +1280,8 @@
     "semantic_hash": ""
   },
   "src/utils/expedition.js": {
-    "mtime": 1791082165.8243763,
-    "ast_hash": "fdd2f1338a2a0488545342561297cb39",
+    "mtime": 1791087092.2755234,
+    "ast_hash": "c1f8eaba3f223b61ddf2ba3f8872b0db",
     "semantic_hash": ""
   },
   "src/utils/mapSprites.js": {

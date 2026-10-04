@@ -110,11 +110,18 @@
   "108": "scanNotaToBase64",
   "109": "PonderPad.jsx",
   "110": "playSound",
+  "111": "PlayerCard.jsx",
   "112": "SamplingManager.jsx",
+  "113": "CrownTransferProtocol.jsx",
+  "114": "AgentChestStage.jsx",
   "115": "ShipmentPlanStage.jsx",
   "116": "StockStage.jsx",
   "117": "toastSeverity.selfcheck.mjs",
   "118": "sfx-kenney.js",
+  "119": "main.jsx",
+  "120": "lab-bell.jsx",
   "121": "framer-motion",
-  "122": "eslint"
+  "122": "eslint",
+  "123": "ShellLab",
+  "124": "salesRollupWrite.js"
 }

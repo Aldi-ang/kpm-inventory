@@ -44,6 +44,12 @@ const createJourneyClusterIcon = (cluster) => {
     });
 };
 
+/* A man on his shop shares its exact point, and identical points never split by zooming, so markercluster SPIDERFIED that
+   bubble and threw him onto the chest's sign (test 2026-10-04). A bubble holding a man zooms in instead - to 16, where
+   clustering stops and the selling scene draws; a pile of shops alone (pinless shops share the sanitizer's spot) still
+   spiderfies, the only way to reach each one. Runs before markercluster's own click handler (registered on creation). */
+const noSpiderOnMen = (e) => { e.target.options.spiderfyOnMaxZoom = !e.layer.getAllChildMarkers().some((m) => m.options.icon?.options?.kxFig); };
+
 /* Store pin icons, cached by appearance.
    react-leaflet's Marker compares `icon` by OBJECT IDENTITY, so building a fresh L.divIcon inside
    the render loop made it call setIcon() on every marker on every render — tearing down and
@@ -415,7 +421,14 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     const selId = team.some((a) => a.id === expSel) ? expSel : team.some((a) => a.id === agentProfileId) ? agentProfileId : team[0]?.id;   // a salesman opens on his own card
     const [expFocus, setExpFocus] = useState(false);   // PC: false = frame the whole team, true = frame the picked row
     const wide = useWide();
-    const pickAgent = (id) => { if (expFocus && id === selId) setExpFocus(false); else { setExpSel(id); setExpFocus(true); } };   // tap him again = let go
+    /* the pressed man and the Paintbrush pen are ONE pick (test 2026-10-04: the Ari pen on, Budi pressed = Budi's road on
+       screen while a tap painted for Ari): a press moves an active pen to him, or off if he cannot be painted for */
+    const pickAgent = (id) => {
+        const name = team.find((a) => a.id === id)?.name;
+        if (expFocus && id === selId) { setExpFocus(false); if (activeBrush === name) setActiveBrush(null); return; }   // tap him again = let go, his pen too
+        setExpSel(id); setExpFocus(true);
+        if (activeBrush) setActiveBrush(globalAgentList.includes(name) ? name : null);
+    };
     const [isPanelOpen, setIsPanelOpen] = useState(false); 
 
     const [editingStoreId, setEditingStoreId] = useState(null);
@@ -754,8 +767,11 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
        else fades (.kx-focus), and a road runs from where he stands through them. Pressed = his Expedition row/chip
        (expFocus) or his Paintbrush pen. Today's round by default; every shop assigned to him with "All shops" (his "shop
        assigned today, but also add option on all shop assigned"). */
-    const [roadAll, setRoadAll] = useState(false);
+    const [roadAllFor, setRoadAllFor] = useState(null);
     const focusName = expFocus ? team.find((a) => a.id === selId)?.name : activeBrush && activeBrush !== 'Unassigned' ? activeBrush : null;
+    /* "All shops" belongs to the man it was pressed for: the next man pressed opens on Today (test 2026-10-04) */
+    const roadAll = !!focusName && roadAllFor === focusName;
+    const setRoadAll = (v) => setRoadAllFor(v ? focusName : null);
     const road = useMemo(() => {
         if (!focusName) return null;
         const man = team.find((a) => a.name === focusName);
@@ -769,6 +785,13 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
        that is being assigned for him instead even when zoomed out"). With a Paintbrush pen the others only fade: hiding
        them would leave nothing to paint. */
     const hideOthers = !!road && expFocus && !activeBrush;
+    /* a stop on his road that is not on this day's route (a sale off-schedule, another day picked) still gets its chest, or
+       the road bends at empty ground (test 2026-10-04: Ari's road had 4 stops and the map 0 chests) */
+    const offRoute = useMemo(() => {
+        if (!road) return [];
+        const on = new Set(orderedRoute.map((s) => storeKey(s.name)));
+        return customers.filter((c) => road.tagOf[storeKey(c.name)] && !on.has(storeKey(c.name)));
+    }, [road, orderedRoute, customers]);
 
     const getBountyStatus = (customer) => {
         if (!customer) return { text: "UNKNOWN TARGET", short: "UNKNOWN", led: "", color: "bg-slate-600", border: "border-slate-500", flashing: false };
@@ -1092,7 +1115,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                 return (
                                     <div key={a} className="kx-pen-row" style={{ '--i': k + 2 }}>
                                         <button
-                                            onClick={() => canManageFleetSettings && setActiveBrush(a)}
+                                            onClick={() => { if (canManageFleetSettings) { setActiveBrush(a); setExpFocus(false); } }}
                                             disabled={!canManageFleetSettings}
                                             className={`kx-pen ${activeBrush === a ? 'sel' : ''}`}
                                             style={{ '--c': color }}
@@ -1255,15 +1278,17 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         iconCreateFunction={createJourneyClusterIcon}
                         maxClusterRadius={40}
                         spiderfyOnMaxZoom={true}
+                        onClick={noSpiderOnMen} onKeypress={noSpiderOnMen}
                         disableClusteringAtZoom={editingStoreId ? 1 : 16}
                     >
-                    {orderedRoute.map((store) => {
+                    {[...orderedRoute, ...offRoute].map((store) => {
                         const hasLiveTxToday = !!todaysVisits[storeKey(store.name)];
                         const isVisited = store.lastVisit === todayDate || hasLiveTxToday;
-                        const outcome = outcomeById[store.id] ?? null;
+                        const outcome = outcomeById[store.id] ?? (isVisited ? signFor(store.lastVisitTag, hasLiveTxToday) : null);
                         const play = playing.current[store.id]?.until > Date.now() ? playing.current[store.id].cls : '';
 
-                        const metric = storeMetrics?.[store.id] || { agentName: 'Unassigned', color: '#6A645C', stopNumber: 0 };
+                        const owner = assignments[store.id] || 'Unassigned';   // an off-route stop has no route metric: its real owner
+                        const metric = storeMetrics?.[store.id] || { agentName: owner, color: owner === 'Unassigned' ? '#6A645C' : agentColors?.[owner] || getHashColor(owner), stopNumber: 0 };
                         const stopNum = metric.stopNumber;
                         const statusBadge = getBountyStatus(store);
                         const isEditing = editingStoreId === store.id;

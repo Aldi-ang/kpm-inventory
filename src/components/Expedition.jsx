@@ -60,7 +60,8 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true, ro
         // room for the controls on top and the keys at the bottom, so no stop hides under them - except on Journey
         // Plan's 160 px phone strip, where that room would be the whole map
         const tall = map.getSize().y > 300;
-        if (pts.length) map.fitBounds(pts, { paddingTopLeft: [48, tall ? 96 : 52], paddingBottomRight: [48, tall ? 80 : 16], maxZoom: 16 });
+        // the team frame needs two points: one man alone (the owner's phone pings before anyone is out) would dive to zoom 16 on him
+        if (pts.length > (wide && !focus ? 1 : 0)) map.fitBounds(pts, { paddingTopLeft: [48, tall ? 96 : 52], paddingBottomRight: [48, tall ? 80 : 16], maxZoom: 16 });
     };
     useEffect(() => fit.current(), [shot, bare, map]);
     /* the map's box changes size after mount (the shell settles, the panel comes or goes, the phone turns);
@@ -107,7 +108,8 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true, ro
     );
 
     return [...team.map((a) => {
-        const mine = bare || wide || a.id === sel, faint = mine ? 1 : 0.35, one = !bare && !wide && a.id === sel, pins = one && stops;
+        // a pressed man: the others' lines fade with them
+        const mine = bare || (wide && !focus) || a.id === sel, faint = mine ? 1 : 0.35, one = !bare && !wide && a.id === sel, pins = one && stops;
         const g = groups[spot(a)] || [a.id], shift = (g.indexOf(a.id) - (g.length - 1) / 2) * 30;
         /* Map System keeps the gold chip */
         const chip = bare && cachedIcon({
@@ -138,7 +140,7 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true, ro
                         pathOptions={k < a.done.length ? { color: '#D08A2E', fillColor: '#E4B04A', fillOpacity: 1, weight: 2 } : { color: '#A39B90', fillColor: '#2a2826', fillOpacity: 1, weight: 2 }} />
                 ))}
                 {lines && wide && goal && (
-                    <Marker position={ll(goal)} interactive={false} zIndexOffset={18000}
+                    <Marker position={ll(goal)} interactive={false} zIndexOffset={18000} opacity={faint}
                         icon={L.divIcon({ className: 'kx-mk', html: '<div class="kx-target"></div>', iconSize: [30, 30], iconAnchor: [15, 15] })} />
                 )}
                 {pins && [...a.done, ...a.ahead].map((p, k) => p.lat && (
@@ -184,11 +186,13 @@ export function ExpeditionPeople({ team, sel, wide, colorOf, focusName }) {
 
     const where = (a) => shopOf(a) || a.at;
     const spot = (a) => `${where(a).lat.toFixed(4)}_${where(a).lng.toFixed(4)}`;
-    const live = team.filter((a) => a.live), groups = {};
+    const live = team.filter((a) => a.live), groups = {}, byId = Object.fromEntries(live.map((a) => [a.id, a]));
     live.forEach((a) => { (groups[spot(a)] ||= []).push(a.id); });   // two on one spot stand side by side, not stacked
+    /* at a selling man's shop the whole group stands in ONE row left of the chest, sellers nearest it */
+    Object.values(groups).forEach((g) => g.sort((x, y) => !!shopOf(byId[y]) - !!shopOf(byId[x])));
 
     return live.map((a) => {
-        const shop = shopOf(a), g = groups[spot(a)], i = g.indexOf(a.id), shift = (i - (g.length - 1) / 2) * 30;
+        const shop = shopOf(a), g = groups[spot(a)], i = g.indexOf(a.id), shift = (i - (g.length - 1) / 2) * 30, row = !!shopOf(byId[g[0]]);
         const shirt = colorOf ? colorOf(a.name) : '#E8E4DE', hair = HAIR[String(a.id).length % HAIR.length];
         const mine = focusName ? a.name === focusName : wide || a.id === sel, play = playing.current[a.id] > Date.now();   // a pressed man: everyone else fades
         const icon = cachedIcon({
@@ -197,7 +201,7 @@ export function ExpeditionPeople({ team, sel, wide, colorOf, focusName }) {
                 + `<div class="who"><div class="body">${shop ? sellerHtml(hair, shirt) : personSvg(hair, shirt)}</div></div>`
                 + `<span class="tag"><i style="background:var(--c)"></i>${esc(a.ini)} · ${count(a)}</span>${QUEST}</div>`,
             /* at a shop his feet line up with the chest's (anchor 14, 31) and he stands 2 px clear of its left edge */
-            iconSize: [30, 42], iconAnchor: shop ? [46 + i * 32, 39] : [45 - shift, 42],
+            iconSize: [30, 42], iconAnchor: row ? [46 + i * 32, 39] : [45 - shift, 42],
             kxFig: [hair, shirt],
         });
         return <Marker key={a.id} position={ll(where(a))} icon={icon} interactive={false} zIndexOffset={a.id === sel ? 21000 : 20000} />;

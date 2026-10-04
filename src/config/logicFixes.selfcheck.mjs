@@ -10094,7 +10094,7 @@ section('Expedition map');
        /expedition\(visibleTeam\([^\n]*new Date\(\), eodReports \|\| \[\]\)/.test(jvr) && /expedition\(visibleTeam\([^\n]*new Date\(\), eodReports \|\| \[\]\)/.test(mp),
        'without it the panel says "Day closed" while the map keeps him');
     ok('Journey map: a salesman is fixed to his spot at every zoom (no screen-space step-aside), standing just left of it so his shop\'s chest stays clear; one cached icon per look',
-       !/style\.translate =|kx-tether|MutationObserver/.test(exj) && !/kx-tether/.test(exc) && /iconAnchor: shop \? \[46 \+ i \* 32, 39\] : \[45 - shift, 42\]/.test(exj) && /const cachedIcon = /.test(exj),
+       !/style\.translate =|kx-tether|MutationObserver/.test(exj) && !/kx-tether/.test(exc) && /iconAnchor: row \? \[46 \+ i \* 32, 39\] : \[45 - shift, 42\]/.test(exj) && /const cachedIcon = /.test(exj),
        'the step-aside of eabda69 picked a new spot after every zoom, so he jumped');
     /* HIS "group of 8bit character" on the bubble (2026-10-03 20:15) and his pick B "paid" with "coin animation that used
        on the agent inventory and receipt" (23:05) */
@@ -10119,8 +10119,73 @@ section('Expedition map');
     const tagged = chestHtml('order', '#a855f7', '', 'BS · 3');
     ok('Journey road re-run: today = his sales so far then the round still ahead, numbered 1..n; "All shops" = every shop assigned to him in stop order; nobody pressed = no road',
        today.map((s) => s.key + s.n).join() === 'A1,B2,C3' && all.map((s) => s.key + s.n).join() === 'X1,Y2' && roadStops(undefined, false, []).length === 0 &&
-       /const \[roadAll, setRoadAll\] = useState\(false\);/.test(jvr) && /road=\{road\?\.points\}/.test(jvr) && /className="kx-road"/.test(exj),
+       /const \[roadAllFor, setRoadAllFor\] = useState\(null\);/.test(jvr) && /road=\{road\?\.points\}/.test(jvr) && /className="kx-road"/.test(exj),
        `${today.map((s) => s.key + s.n)} / ${all.map((s) => s.key + s.n)}`);
+    /* 2026-10-04 end-to-end test (A-Brain Raw/2026-10-03-map-keys/built8): Budi pressed, "All shops", let go, Ari pressed ->
+       Ari opened on "All shops" - the switch outlived the man it was pressed for. "Today's round by default" means for
+       every new press, so "All shops" is held as the NAME it belongs to, never as a bare true */
+    ok('Journey road switch: "All shops" belongs to the man it was pressed for - the next man pressed (row, chip or pen) opens on Today',
+       /const roadAll = !!focusName && roadAllFor === focusName;/.test(jvr) && /const setRoadAll = \(v\) => setRoadAllFor\(v \? focusName : null\);/.test(jvr) &&
+       !/const \[roadAll, setRoadAll\] = useState/.test(jvr),
+       'test: Ari opened on "Today:false All shops:true" after Budi was let go');
+    /* same test, three more breaks: (1) only the owner out (his phone pings from the office before the team is out) ->
+       the team camera framed ONE point and dived to zoom 16 on him, 4 of 32 shops left in view; (2) a man standing on
+       the shop where another sells: the seller's row anchor and the stander's centred shift overlapped them by 12 px;
+       (3) the Ari pen on, Budi pressed -> Budi's tags and road on screen while a tap painted shops for Ari */
+    const layerFit = exj.slice(exj.indexOf('fit.current = () => {'), exj.indexOf('useEffect(() => fit.current()'));
+    const people = exj.slice(exj.indexOf('export function ExpeditionPeople('), exj.indexOf('/* ---- the panel ---- */'));
+    ok('Journey team camera: the team frame needs two points - one man alone (the owner before anyone is out) keeps the home view instead of diving to zoom 16',
+       /if \(pts\.length > \(wide && !focus \? 1 : 0\)\) map\.fitBounds\(/.test(layerFit) && !/if \(pts\.length\) map\.fitBounds\(/.test(layerFit),
+       'test: &nobody&boss left 4 of 32 shops in view');
+    ok('Journey two men on one shop: a group standing at a selling man\'s shop forms ONE row left of the chest, sellers nearest it - never the seller\'s row mixed with the centred shift',
+       /g\.sort\(\(x, y\) => !!shopOf\(byId\[y\]\) - !!shopOf\(byId\[x\]\)\)/.test(people) && /iconAnchor: row \? \[46 \+ i \* 32, 39\] : \[45 - shift, 42\]/.test(people),
+       'test: Ari on Budi\'s shop overlapped Budi by 12 px (manOnMan 1)');
+    ok('Journey pen and press are ONE pick: pressing a man while a pen is on moves the pen to him (off if he cannot be painted for); picking a pen lets the pressed man go; tapping him again lets his pen go too',
+       /if \(activeBrush\) setActiveBrush\(globalAgentList\.includes\(name\) \? name : null\);/.test(jvr) && /onClick=\{\(\) => \{ if \(canManageFleetSettings\) \{ setActiveBrush\(a\); setExpFocus\(false\); \} \}\}/.test(jvr) &&
+       /if \(activeBrush === name\) setActiveBrush\(null\);/.test(jvr),
+       'test: pen Ari + Budi pressed -> tags BS · 1.. while the brush painted for Ari');
+    /* (4) the phone, z15: the bubble "1" with Budi on it (his chest and himself share one exact point, which no zoom can
+       split) was tapped -> markercluster SPIDERFIED it: Budi thrown right of his chest onto its sign, the bubble left at
+       30 % behind him (spider legs 2, manOnChest 1) */
+    ok('Journey bubble with a man on it: a tap zooms in (to 16, where clustering stops) instead of spiderfying him onto the chest; a pile of shops alone still spiderfies',
+       /const noSpiderOnMen = \(e\) => \{ e\.target\.options\.spiderfyOnMaxZoom = !e\.layer\.getAllChildMarkers\(\)\.some\(\(m\) => m\.options\.icon\?\.options\?\.kxFig\); \};/.test(jvr) &&
+       /onClick=\{noSpiderOnMen\} onKeypress=\{noSpiderOnMen\}/.test(jvr) && /spiderfyOnMaxZoom=\{true\}/.test(jvr),
+       'test: phone tap 1 at z15 -> slot opacity 0.3, 2 spider legs, Budi\'s body over the sign');
+    /* (5) PC, Budi pressed (frame pc-budi-today.png): his shops alone on the map, but Ari's and Dewi's march lines + target
+       rings and Rini's trail stayed at full strength, pointing at shops that were now hidden - "everyone else fades" (look
+       B) covered the men and the chests, not their lines */
+    ok('Journey pressed man on the PC: the other men\'s trails, march lines and target rings fade with them (wide no longer makes everyone "mine" once a man is pressed)',
+       /const mine = bare \|\| \(wide && !focus\) \|\| a\.id === sel, faint = mine \? 1 : 0\.35/.test(exj) && /opacity=\{faint\}/.test(exj),
+       'frame: AR\'s gold march line + target ring at full strength while his shops were hidden');
+    /* (6) the break case "a salesman with no shops today" (lab &noround: visitDay elsewhere, no visitFreq): Journey Plan's
+       sanitizer reads a missing visitFreq as 7 (every day) and listed his shops as due today, while expedition() read the
+       RAW field and found no round - so a press hid shops Journey Plan itself called his for today */
+    /* (7) lab &noround (Ari's shops due another day, 3 sold today anyway): pressed, his road ran him -> 3 sales -> the
+       suggestion, and the map held 0 chests - Journey Plan draws only the day's route, so the road bent at empty ground */
+    ok('Journey pressed man: a stop on his road that is not on the day\'s route (a sale off-schedule, another day picked) still gets its chest, with its real owner and outcome',
+       /const offRoute = useMemo\(\(\) => \{/.test(jvr) && /\{\[\.\.\.orderedRoute, \.\.\.offRoute\]\.map\(\(store\) => \{/.test(jvr) &&
+       /const outcome = outcomeById\[store\.id\] \?\? \(isVisited \? signFor\(store\.lastVisitTag, hasLiveTxToday\) : null\);/.test(jvr),
+       'test: stopsOnRoad 4, taggedChests 0, shops on the map 0');
+    {
+        const { expedition: exp2 } = await import('../utils/expedition.js');
+        const now2 = new Date(2026, 9, 4, 11, 0), wd = now2.toLocaleDateString('en-US', { weekday: 'long' });
+        const man2 = [{ id: 'm', name: 'Budi Santoso', currentLocation: { lat: -7.58, lng: 110.29, timestamp: now2.toISOString() } }];
+        const shops2 = [{ name: 'A', latitude: -7.581, longitude: 110.291, assignedAgent: 'Budi Santoso', visitDay: 'Someday' },
+            { name: 'B', latitude: -7.582, longitude: 110.292, assignedAgent: 'Budi Santoso', visitFreq: 14, visitDay: 'Someday' },
+            { name: 'C', latitude: -7.583, longitude: 110.293, assignedAgent: 'Budi Santoso', visitFreq: '7' },
+            { name: 'D', latitude: -7.584, longitude: 110.294, assignedAgent: 'Budi Santoso', visitFreq: 14, visitDay: wd }];
+        const r2 = exp2(man2, shops2, [], now2)[0];
+        /* (8) same case, frame break-noround.png: with no round the suggestion is the terminal's nextStop over his whole
+           list - and it picked Toko Sentosa, where he stood selling: "AR · 4" sat on the chest he had just sold at as "3" */
+        const shops3 = [{ name: 'HERE', latitude: -7.5801, longitude: 110.2901, assignedAgent: 'Budi Santoso', visitFreq: 14, visitDay: 'Someday' },
+            { name: 'FAR', latitude: -7.60, longitude: 110.31, assignedAgent: 'Budi Santoso', visitFreq: 14, visitDay: 'Someday' }];
+        const r3 = exp2(man2, shops3, [{ agentId: 'm', customerName: 'HERE', total: 1000, timestamp: { seconds: Math.floor(now2.getTime() / 1000) - 600 } }], now2)[0];
+        ok('Journey no round today: the suggested next shop is never one he already sold at today',
+           r3.done.map((d) => d.name).join() === 'HERE' && r3.next?.name === 'FAR', `done ${r3.done.map((d) => d.name)} next ${r3.next?.name}`);
+        ok('Journey "today\'s round" re-run = Journey Plan\'s own rule: a shop with no visitFreq (or "7") is due every day, a 14-day shop only on its visitDay',
+           r2.of === 3 && r2.ahead.map((s) => s.name).sort().join() === 'A,C,D' && /\(parseInt\(c\.visitFreq\) \|\| 7\) === 7/.test(code(read('src/utils/expedition.js'))),
+           `of ${r2.of}: ${r2.ahead.map((s) => s.name)}`);
+    }
     ok('Journey "his chest" re-run: a pressed man\'s chest wears his name tag with the stop number (text, not colour), the tag is escaped, an untagged chest has none; everyone else fades',
        /class="kx-c5 v mine"/.test(tagged) && tagged.includes('<span class="kx-otag">') && tagged.includes('BS · 3') && !chestHtml('order', '#a855f7').includes('kx-otag') &&
        !chestHtml('order', '#a855f7', '', '<b>x').includes('<b>x') && /\.kx-focus \.leaflet-marker-icon > \.kx-c5:not\(\.mine\) \{ opacity: \.28; \}/.test(exc) &&
@@ -10142,7 +10207,7 @@ section('Expedition map');
        (mini.match(/\{team\.map\(\(t\) => \(/g) || []).length === 2 && !/not out today<\/small>/.test(mini) && /kx-mrow\$\{t\.live \? '' : ' off'\}/.test(mini),
        'his screenshot: "EXPEDITION 0 OUT · +7 NOT OUT TODAY" and no names');
     ok('Journey fullscreen keeps a smaller Expedition: the short squad list under the keys on the PC, the chips + one line on the phone; tapping a name is the same pick',
-       (jvr.match(/<ExpeditionMini /g) || []).length === 2 && /export function ExpeditionMini\(/.test(exj) && /if \(expFocus && id === selId\) setExpFocus\(false\)/.test(jvr),
+       (jvr.match(/<ExpeditionMini /g) || []).length === 2 && /export function ExpeditionMini\(/.test(exj) && /if \(expFocus && id === selId\) \{ setExpFocus\(false\);/.test(jvr),
        'his: "i want the expedition to be visible but smaller on fullscreen as well"');
   }
   {  /* the SHIPPED day logic, cut out of App.jsx and run over three pings and two days */
@@ -10166,7 +10231,7 @@ section('Expedition map');
     { name: 'TOKO B', latitude: -7.585, longitude: 110.295, assignedAgent: 'budi santoso ', visitDay: 'Friday' },
     { name: 'TOKO C', latitude: -7.600, longitude: 110.300, assignedAgent: 'Budi Santoso', visitFreq: 7 },
     { name: 'TOKO D', latitude: -7.590, longitude: 110.296, assignedAgent: 'Budi Santoso', visitDay: 'Friday' },
-    { name: 'TOKO X', latitude: -7.570, longitude: 110.280, assignedAgent: 'Budi Santoso', visitDay: 'Monday' },
+    { name: 'TOKO X', latitude: -7.570, longitude: 110.280, assignedAgent: 'Budi Santoso', visitFreq: 14, visitDay: 'Monday' },   // a missing visitFreq is 7 everywhere in the app (2026-10-04), so a Monday-only shop carries one
     { name: 'TOKO Z', latitude: -7.571, longitude: 110.281, assignedAgent: 'Budi Santosa', visitDay: 'Friday' },
   ];
   const team = expedition([

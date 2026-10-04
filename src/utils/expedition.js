@@ -88,7 +88,9 @@ export function expedition(motorists = [], customers = [], transactions = [], no
                 });
 
             /* the round still ahead, nearest-first from where he was last seen; a shop with no pin still counts, last */
-            const round = customers.filter((c) => his(c, m.name) && c.status !== 'PENDING' && (c.visitFreq === 7 || c.visitDay === weekday));
+            /* a missing visitFreq is 7 (every day), exactly as Journey Plan's sanitizer reads it - or a press hides shops Journey
+               Plan itself lists as due today (test 2026-10-04) */
+            const round = customers.filter((c) => his(c, m.name) && c.status !== 'PENDING' && ((parseInt(c.visitFreq) || 7) === 7 || c.visitDay === weekday));
             const left = round.filter((c) => !done.some((d) => d.key === storeKey(c.name)));
             const ahead = [];
             let from = at;
@@ -104,7 +106,8 @@ export function expedition(motorists = [], customers = [], transactions = [], no
 
             const planned = round.length > 0;
             if (!planned) {
-                const s = nextStop(customers, { latitude: at.lat, longitude: at.lng }, m.name, now);
+                // never a shop he already sold at today (test 2026-10-04: it suggested the shop he stood selling in)
+                const s = nextStop(customers.filter((c) => !done.some((d) => d.key === storeKey(c.name))), { latitude: at.lat, longitude: at.lng }, m.name, now);
                 if (s) ahead.push({ key: storeKey(s.customer.name), name: s.customer.name, ...pin(s.customer) });
             }
             const next = ahead[0] || null;
