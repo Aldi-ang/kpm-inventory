@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletT
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { storeKey, getLocalDayKey, journeyWhere } from './utils/helpers';
 import MoreKey from './components/MoreKey.jsx';
-import FolderCard from './components/FolderCard.jsx';
+import FolderCard, { FOLDER_HOLD_MS } from './components/FolderCard.jsx';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { loadBorderCache, saveBorderCache } from './utils/borderCache';
@@ -153,26 +153,33 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
    carry GPS — the outlet form captures it — but nothing in the save path enforces it, and Leaflet
    given a NaN pair does not error: it drifts to the map's default view. For a question that is
    specifically about DISTANCE, silently showing the wrong place is the worst possible answer. */
-/* his look C (2026-10-04): every visited shop's sign carries its word. A word that would land on another word, a name tag or
-   a man is hidden (Expedition's own rule for shop names); zooming in brings it back */
-const SignWords = () => {
+/* his look C (2026-10-04): every visited shop's sign carries its word - and his 19:45 "only showing when hovered or hold that
+   way it looks cleaner": hidden at rest (expedition.css), a mouse shows it on hover, a finger held FOLDER_HOLD_MS on a chest
+   shows it until release - his folder-day rule, hold is a preview, tap is the commit. The click a held finger fires on
+   release is swallowed before Leaflet sees it (Leaflet listens on this same container, bubbling), so a hold never opens
+   the popup; a normal tap opens it as before. One listener set on the container, not one per marker */
+const SignHold = () => {
     const map = useMap();
     useEffect(() => {
         const box = map.getContainer();
-        const declutter = () => {
-            const kept = [...box.querySelectorAll('.kx-otag, .kx-sm .body')].map((e) => e.getBoundingClientRect());
-            box.querySelectorAll('.kx-sw').forEach((el) => {
-                el.style.visibility = '';
-                const r = el.getBoundingClientRect();
-                if (kept.some((k) => r.left < k.right && r.right > k.left && r.top < k.bottom && r.bottom > k.top)) el.style.visibility = 'hidden';
-                else kept.push(r);
-            });
+        let mk = null, timer = 0, x = 0, y = 0, swallow = false;
+        const end = () => { clearTimeout(timer); mk?.classList.remove('held'); mk = null; };
+        const down = (e) => {
+            swallow = false;   // a long press that never fired a click must not eat the next tap
+            if (e.pointerType === 'mouse') return;
+            end();
+            const el = e.target.closest?.('.kx-mk');
+            if (!el?.querySelector('.kx-sw')) return;
+            mk = el; x = e.clientX; y = e.clientY;
+            timer = setTimeout(() => { swallow = true; mk.classList.add('held'); }, FOLDER_HOLD_MS);
         };
-        declutter();
-        const later = () => setTimeout(declutter, 320);   // after the shop clusters finish splitting / joining
-        map.on('zoomend moveend', later);
-        return () => map.off('zoomend moveend', later);
-    });
+        const move = (e) => { if (mk && !swallow && Math.hypot(e.clientX - x, e.clientY - y) > 10) end(); };   // a pan, not a hold
+        const click = (e) => { if (swallow) { swallow = false; e.stopPropagation(); e.preventDefault(); } };
+        const menu = (e) => { if (e.target.closest?.('.kx-mk')) e.preventDefault(); };   // no long-press menu over the chest
+        const on = [['pointerdown', down], ['pointermove', move], ['pointerup', end], ['pointercancel', end], ['click', click], ['contextmenu', menu]];
+        on.forEach(([t, f]) => box.addEventListener(t, f, true));
+        return () => { end(); on.forEach(([t, f]) => box.removeEventListener(t, f, true)); };
+    }, [map]);
     return null;
 };
 
@@ -1538,7 +1545,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     <ExpeditionPeople team={team} sel={selId} wide={wide} colorOf={squadColor} focusName={road ? focusName : null} />
                     </MarkerClusterGroup>
                     {team.length > 0 && <ExpeditionLayer team={team} sel={selId} focus={expFocus} wide={wide} stops={false} road={road?.points} />}
-                    <SignWords />
+                    <SignHold />
                 </MapContainer>
             </div>
             {team.length > 0 && <ExpeditionPanel team={team} sel={selId} onPick={pickAgent} wide={wide} scoped={!globalView} focused={!!road} roadAll={roadAll} onRoadAll={setRoadAll} page />}

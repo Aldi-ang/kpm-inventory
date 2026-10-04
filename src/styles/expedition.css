@@ -212,9 +212,14 @@
 .kx-c5 .f-plain { --l1: rgba(240, 226, 188, .34); --l2: rgba(240, 226, 188, .1); }
 .kx-c5 .f-problem { --l1: rgba(224, 88, 58, .55); --l2: rgba(179, 38, 30, .2); }
 .kx-c5 .f-closed .lamp { visibility: hidden; }
-/* the word, the name tag's own style (his "Name tags is easier to see"); JourneyView hides one that would sit on another */
+/* the word, the name tag's own style (his "Name tags is easier to see"). His 2026-10-04 19:45 "only showing when hovered or
+   hold that way it looks cleaner": hidden at rest, shown on hover (mouse) or while a finger holds the chest (JourneyView
+   SignHold); the sign, its lamp and the "!" stay. The shown one rises over its neighbours so no chest covers it */
 .kx-c5 .kx-sw { position: absolute; left: 50%; top: calc(100% + 2px); translate: -50% 0; white-space: nowrap; padding: 2px 4px 1px;
-  background: rgba(10, 9, 8, .84); color: #FFFFFF; font: 800 10px/1 var(--font-display); letter-spacing: .06em; pointer-events: none; }
+  background: rgba(10, 9, 8, .84); color: #FFFFFF; font: 800 10px/1 var(--font-display); letter-spacing: .06em; pointer-events: none; visibility: hidden; }
+.kx-mk.held .kx-sw { visibility: visible; }
+.kx-mk.held { z-index: 100000 !important; }
+@media (hover: hover) and (pointer: fine) { .kx-mk:hover .kx-sw { visibility: visible; } .kx-mk:hover { z-index: 100000 !important; } }
 .kx-c5 .fx { position: absolute; left: 30px; top: 18px; width: 0; height: 0; pointer-events: none; }
 .kx-c5 .fx i { position: absolute; width: 4px; height: 4px; background: #FFE2A0; opacity: 0; }
 .kx-c5 .fx i:nth-child(2n) { background: #E4B04A; width: 3px; height: 3px; }

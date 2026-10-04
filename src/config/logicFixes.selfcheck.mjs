@@ -7653,7 +7653,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   ok('both hub levels (province, regency) wear the folder and their lists carry the counter; the old flat card is gone',
      /<FolderCard key=\{prov\} icon=\{<MapPin size=\{22\} \/>\} onOpen=\{\(\) => setSelectedProvinsi\(prov\)\} className="bg-slate-900 border-slate-700 hover:border-orange-500 transition-colors duration-300">/.test(jf) &&
      /<FolderCard key=\{kab\} icon=\{<Layers size=\{22\} \/>\} onOpen=\{\(\) => setSelectedKabupaten\(kab\)\} className="bg-slate-900 border-slate-700 hover:border-blue-500 transition-colors duration-300">/.test(jf) &&
-     /import FolderCard from '\.\/components\/FolderCard\.jsx';/.test(jf) &&
+     /import FolderCard(, \{ FOLDER_HOLD_MS \})? from '\.\/components\/FolderCard\.jsx';/.test(jf) &&
      (jf.match(/ kpm-folders">/g) || []).length === 2 &&
      !/p-5 rounded-2xl flex flex-col items-start gap-3 transition-all duration-300 group shadow-md/.test(code(jf)),
      'the panel and its tab inherit the card colour, so the screen keeps its own palette');
@@ -10074,10 +10074,18 @@ section('Expedition map');
       const kb = kindByShop([{ date: 'D', customerName: 'A', type: 'RETUR' }, { date: 'D', customerName: 'B', type: 'SALE' }, { date: 'D', customerName: 'B', type: 'RETUR' },
         { date: 'D', customerName: 'C', type: 'RETUR' }, { date: 'D', customerName: 'C', type: 'SALE' }, { date: 'X', customerName: 'E', type: 'SALE' },
         { date: 'D', customerName: 'F', type: 'SALE', paymentType: 'Retur/BS' }, null], 'D', (s) => s);
-      ok('Journey signs re-run: an exchange is not a sale - a shop whose only record today is a RETUR gets the Exchange sign, any real sale still wins, another day counts nothing; the map reads it and hides a word that would sit on another',
+      /* HIS 2026-10-04 19:45 "only showing when hovered or hold that way it looks cleaner": the word is hidden at rest, a mouse
+         shows it on hover, a finger held FOLDER_HOLD_MS shows it until release and the click that follows a hold is swallowed
+         (or the popup opens anyway - measured on the lab build 2026-10-05: 18 words at rest, a hold opened the popup) */
+      const hold = (jv.match(/const SignHold = \(\) => \{[\s\S]*?\n\};/) || [''])[0];
+      ok('Journey signs re-run: an exchange is not a sale - a shop whose only record today is a RETUR gets the Exchange sign, any real sale still wins, another day counts nothing; the word shows only on hover (PC) or hold (phone), and a hold never opens the popup',
          JSON.stringify(kb) === JSON.stringify({ A: 'swap', B: 'sold', C: 'sold', F: 'swap' })
          && /signFor\(s\.lastVisitTag, kind === 'sold', kind === 'swap'\)/.test(jv) && /signFor\(store\.lastVisitTag, kind === 'sold', kind === 'swap'\)/.test(jv)
-         && /<SignWords \/>\s*<\/MapContainer>/.test(jv) && /querySelectorAll\('\.kx-sw'\)[\s\S]{0,300}visibility = 'hidden'/.test(jv),
+         && /\.kx-c5 \.kx-sw \{[^}]*visibility: hidden;/.test(ex) && /\.kx-mk\.held \.kx-sw \{ visibility: visible; \}/.test(ex)
+         && /@media \(hover: hover\) and \(pointer: fine\) \{[^{}]*\.kx-mk:hover \.kx-sw \{ visibility: visible; \}/.test(ex)
+         && !/SignWords/.test(jv) && /<SignHold \/>\s*<\/MapContainer>/.test(jv)
+         && /pointerType === 'mouse'\) return/.test(hold) && /setTimeout\([\s\S]{0,80}classList\.add\('held'\)[\s\S]{0,20}FOLDER_HOLD_MS\)/.test(hold)
+         && /if \(swallow\) \{[^}]*stopPropagation\(\)/.test(hold) && /\['click', click\]/.test(hold) && /addEventListener\(t, f, true\)/.test(hold) && /\}, \[map\]\);/.test(hold),
          JSON.stringify(kb)); }
     /* HIS 2026-10-04 18:30 "for request since it is very important we need more visible compared to other maybe add some flag
        on that stores until order is fullfilled" + 19:25 "B is good" (the "!", drawn on Day Replay v4). A visit report OVERWROTE
