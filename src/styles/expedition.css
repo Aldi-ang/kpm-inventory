@@ -372,6 +372,15 @@
 /* nobody's shop: a red pixel flag at the chest's top-left (and at a bubble's corner); the sign keeps the right side */
 .kx-free { position: absolute; left: -9px; top: -6px; width: 14px; height: 20px; background-size: 100% 100%; background-repeat: no-repeat; image-rendering: pixelated; z-index: 1; pointer-events: none; }
 .kx-slot .kx-free { left: -9px; top: 22px; }   /* low on the left edge: the crowd stands on the top, the count sits bottom-right */
+/* an open request: the "!" (his look B, 2026-10-04) top right of the chest - clear of the red flag (top left) and of the
+   name tag (measured on the drawn page: 0 clashes); it drops in once on the moment the request is sent, then stands still */
+.kx-req { position: absolute; left: 42px; top: -10px; width: 16px; height: 24px; background-size: 100% 100%; background-repeat: no-repeat; image-rendering: pixelated; z-index: 2; pointer-events: none; transform-origin: 50% 100%; }
+.kx-slot .kx-req { left: 30px; top: -16px; }
+.kx-c5.burst .kx-req.new { animation: kx-req-drop 600ms 540ms both; }   /* .new = today's report IS the request; an older one stays put */
+.kx-c5.resign .kx-req.new { animation: kx-req-drop 600ms both; }
+@keyframes kx-req-drop { 0% { transform: translateY(-16px); opacity: 0; animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
+  45% { transform: translateY(0) scale(1.1, .88); opacity: 1; animation-timing-function: ease-out; } 65% { transform: translateY(-4px) scale(.96, 1.05); animation-timing-function: ease-in-out; }
+  82%, 100% { transform: none; opacity: 1; } }
 .kx-arrow { display: block; width: 16px; height: 16px; overflow: visible; }
 .kx-title { margin-left: 8px; padding: 2px 5px 1px; border: 1px solid var(--line-3); border-radius: 4px; color: #E4B04A; font: 800 10px/1 var(--font-display); letter-spacing: .1em; font-style: normal; vertical-align: 2px; white-space: nowrap; }
 .kx-roadsw { display: inline-flex; gap: 4px; margin: 6px 0 2px; }

@@ -36,7 +36,7 @@ const createJourneyClusterIcon = (cluster) => {
     const men = kids.map((m) => m.options.icon?.options?.kxFig).filter(Boolean);
     const shops = kids.filter((m) => !m.options.icon?.options?.kxFig);
     return L.divIcon({
-        html: (shops.length ? slotHtml(shops.length, shops.filter((m) => m.options.icon?.options?.kxVisited).length, shops.some((m) => m.options.icon?.options?.kxFree)) :'<i class="kx-crowd-shadow"></i>')
+        html: (shops.length ? slotHtml(shops.length, shops.filter((m) => m.options.icon?.options?.kxVisited).length, shops.some((m) => m.options.icon?.options?.kxFree), shops.some((m) => m.options.icon?.options?.kxReq)) :'<i class="kx-crowd-shadow"></i>')
             + crowdHtml(men, shops.length ? 0 : 21),
         className: 'kx-mk',
         iconSize: [42, 51],
@@ -60,8 +60,8 @@ const noSpiderOnMen = (e) => { e.target.options.spiderfyOnMaxZoom = !e.layer.get
    makes a fresh element per marker, the same way every marker shares L.Icon.Default.
    A shop is a chest (src/utils/mapSprites.js); the pin being moved keeps the hand. */
 const storeIconCache = new Map();
-const getStoreIcon = (outcome, ringColor, isEditing, play = '', tag = '', free = false) => {
-    const key = `${outcome}|${ringColor}|${isEditing ? 1 : 0}|${play}|${tag}|${free ? 1 : 0}`;
+const getStoreIcon = (outcome, ringColor, isEditing, play = '', tag = '', free = false, req = false) => {
+    const key = `${outcome}|${ringColor}|${isEditing ? 1 : 0}|${play}|${tag}|${free ? 1 : 0}|${req ? 1 : 0}`;
     let icon = storeIconCache.get(key);
     if (!icon) {
         icon = isEditing ? L.divIcon({
@@ -71,11 +71,12 @@ const getStoreIcon = (outcome, ringColor, isEditing, play = '', tag = '', free =
             iconAnchor: [17, 17]
         }) : L.divIcon({
             className: 'kx-mk',
-            html: chestHtml(outcome, ringColor, play, tag, free),
+            html: chestHtml(outcome, ringColor, play, tag, free, req),
             iconSize: [28, 34],
             iconAnchor: [14, 31],
             kxVisited: !!outcome,
-            kxFree: free   // the bubble raises the red flag too
+            kxFree: free,   // the bubble raises the red flag too
+            kxReq: req      // and the open request's "!"
         });
         storeIconCache.set(key, icon);
     }
@@ -343,6 +344,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             lastVisitTag: c.lastVisitTag ? String(c.lastVisitTag) : '',
             lastVisitNote: c.lastVisitNote ? String(c.lastVisitNote) : '',
             lastVisitedBy: c.lastVisitedBy ? String(c.lastVisitedBy) : '',
+            openRequest: c.openRequest && typeof c.openRequest === 'object'
+                ? { note: String(c.openRequest.note || ''), day: String(c.openRequest.day || ''), by: String(c.openRequest.by || '') } : null,
             tier: String(c.tier || 'Retail'),
             priceTier: String(c.priceTier || 'Retail'),
             visitFreq: parseInt(c.visitFreq) || 7,
@@ -875,6 +878,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 lastVisit: null,
                 lastVisitNote: deleteField(),
                 lastVisitTag: deleteField(),
+                /* undoing today's New Request takes its open mark back too; an older request stays */
+                ...(String(customer.lastVisitTag || '').includes('📝') && customer.openRequest?.day === todayDate ? { openRequest: deleteField() } : {}),
                 updatedAt: serverTimestamp()
             });
 
@@ -882,6 +887,27 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             if (triggerCapy) triggerCapy("Visit Cancelled. Bounty Restored. ↩️");
         } catch (error) { notify("Failed to undo: " + error.message); }
     };
+
+    /* his pick 2026-10-04 (B "!", cleared by a press): the request mark leaves only when someone presses Request done -
+       nothing clears it by itself, so a request nobody delivered is never lost. Asks first, reports, logged */
+    const handleRequestDone = async (customer) => {
+        const req = customer?.openRequest;
+        if (!user || !req) return;
+        if (!(await confirmAction(`Request done at ${customer.name}? "${req.note || 'New Request'}" (asked ${req.day} by ${req.by})`))) return;
+        try {
+            await updateDoc(doc(db, `artifacts/${appId}/users/${user.uid}/customers`, customer.id), { openRequest: deleteField(), updatedAt: serverTimestamp() });
+            const who = user.displayName || user.email.split('@')[0];
+            if (logAudit) await logAudit("REQUEST_DONE", `Request done at ${customer.name}: ${req.note} (asked ${req.day} by ${req.by}) - ${who}`);
+            if (triggerCapy) triggerCapy(`Request done at ${customer.name} ✅`);
+        } catch (error) { notify("Failed to close the request: " + error.message); }
+    };
+    /* the same key on the shop's card and in its map popup: what was asked, by whom, when - press when it is done */
+    const requestDoneKey = (c) => c?.openRequest ? (
+        <button onClick={() => handleRequestDone(c)} className="kx-reqkey w-full mb-2 flex flex-col items-start gap-0.5 px-3 py-2 min-h-11 rounded-lg border border-[#E4B04A] bg-[#1B1917] text-left transition-transform active:scale-[.97]">
+            <span className="text-[11px] font-black uppercase tracking-widest text-[#E4B04A]">! Request open · press when done</span>
+            <span className="text-[11px] font-normal normal-case text-[#A39B90] line-clamp-2">"{c.openRequest.note || 'New Request'}" · {c.openRequest.by} · {c.openRequest.day}</span>
+        </button>
+    ) : null;
 
     const confirmCheckIn = async (e) => {
         e.preventDefault();
@@ -894,7 +920,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 lastVisit: todayDate,
                 lastVisitNote: `[${visitTag}] ${visitNote}`,
                 lastVisitTag: visitTag,
-                lastVisitedBy: trueAgentName, 
+                lastVisitedBy: trueAgentName,
+                /* his 2026-10-04 "for request since it is very important ... until order is fullfilled": a New Request stays
+                   open on the shop (the "!" on the map) until someone presses Request done; any other report leaves it alone */
+                ...(String(visitTag).includes('📝') ? { openRequest: { note: String(visitNote || ''), day: todayDate, by: trueAgentName } } : {}),
                 updatedAt: serverTimestamp()
             });
 
@@ -1327,7 +1356,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         const markerPos = isEditing && tempPinLocation ? [tempPinLocation.lat, tempPinLocation.lng] : [store.latitude, store.longitude];
                         
                         // the ring under the chest stays the salesman's colour; the sign says it was visited
-                        const customIcon = getStoreIcon(outcome, isEditing ? finalRingColor : (metric.agentName === 'Unassigned' ? '#6A645C' : metric.color), isEditing, play, road?.tagOf[storeKey(store.name)] || '', metric.agentName === 'Unassigned');
+                        const customIcon = getStoreIcon(outcome, isEditing ? finalRingColor : (metric.agentName === 'Unassigned' ? '#6A645C' : metric.color), isEditing, play, road?.tagOf[storeKey(store.name)] || '', metric.agentName === 'Unassigned', !!store.openRequest);
 
                         return (
                             <Marker 
@@ -1398,7 +1427,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                     {statusBadge.text}
                                                 </div>
                                             )}
-                                            
+                                            {requestDoneKey(store)}
+
                                             <div className="space-y-3">
                                                 {/* 🚀 MANUAL FOLDER OVERRIDE UI */}
                                                 <div className="bg-black/50 p-2 rounded-lg border border-slate-700 shadow-inner">
@@ -1772,7 +1802,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                 </div>
                                                             </div>
 
-                                                            <div className="flex flex-row lg:flex-col gap-2 mt-auto relative z-20">
+                                                            <div className="mt-auto relative z-20">{requestDoneKey(customer)}</div>
+                                                            <div className="flex flex-row lg:flex-col gap-2 relative z-20">
                                                                 {!isVisited ? (
                                                                     <>
                                                                         <button 

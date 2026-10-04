@@ -7730,7 +7730,8 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/<div className="space-y-2 mb-4 flex-1">/.test(code(jc)),
      'his "board 1 = C"; measured 2026-09-19: today 343 px, C 158 px');
   ok('C: ENGAGE TARGET and NAVIGATE share one 44 px row on the phone (his "usually engage target and navigate"); the desk column stays',
-     /<div className="flex flex-row lg:flex-col gap-2 mt-auto relative z-20">/.test(jc) &&
+     /* 2026-10-04: the push to the bottom (mt-auto) moved to the open request's key right above this row, so the key sits on it */
+     /<div className="mt-auto relative z-20">\{requestDoneKey\(customer\)\}<\/div>\s*<div className="flex flex-row lg:flex-col gap-2 relative z-20">/.test(jc) &&
      /className="w-full flex-\[2\] lg:flex-none bg-gradient-to-r from-orange-600 to-red-600/.test(jc) &&
      /<div className="flex gap-2 flex-1 lg:flex-none">/.test(jc) &&
      !/<div className="flex flex-col gap-2 mt-auto relative z-20">/.test(code(jc)));
@@ -10078,6 +10079,28 @@ section('Expedition map');
          && /signFor\(s\.lastVisitTag, kind === 'sold', kind === 'swap'\)/.test(jv) && /signFor\(store\.lastVisitTag, kind === 'sold', kind === 'swap'\)/.test(jv)
          && /<SignWords \/>\s*<\/MapContainer>/.test(jv) && /querySelectorAll\('\.kx-sw'\)[\s\S]{0,300}visibility = 'hidden'/.test(jv),
          JSON.stringify(kb)); }
+    /* HIS 2026-10-04 18:30 "for request since it is very important we need more visible compared to other maybe add some flag
+       on that stores until order is fullfilled" + 19:25 "B is good" (the "!", drawn on Day Replay v4). A visit report OVERWROTE
+       lastVisitTag, so a request was forgotten at the next visit. Now a New Request writes openRequest; only a Request done
+       press clears it (asks, reports, logged); undoing today's request takes it back; the "!" sits top right on the chest
+       and on the bubble */
+    { const { chestHtml: ch2, slotHtml: sl2, SPRITE_CSS: sc2 } = await import('../utils/mapSprites.js');
+      const jv = code(jvr), ex = code(exc), cut = (re) => (jv.match(re) || [''])[0];
+      const report = cut(/const confirmCheckIn = async[\s\S]*?\n    \};/), undo = cut(/const handleUndoCheckIn = async[\s\S]*?\n    \};/), done = cut(/const handleRequestDone = async[\s\S]*?\n    \};/);
+      ok('Journey open request: a New Request report opens it, any other report leaves it alone, undoing today\'s request takes it back, and only a Request done press clears it - asking first, reporting, logged',
+         /\.\.\.\(String\(visitTag\)\.includes\('📝'\) \? \{ openRequest: \{ note: [^}]*day: todayDate, by: trueAgentName \} \} : \{\}\)/.test(report)
+         && /openRequest: deleteField\(\)/.test(undo) && /customer\.openRequest\?\.day === todayDate/.test(undo)
+         && /confirmAction\(/.test(done) && /openRequest: deleteField\(\)/.test(done) && /logAudit\("REQUEST_DONE"/.test(done) && /triggerCapy\(/.test(done)
+         && (jv.match(/openRequest: deleteField\(\)/g) || []).length === 2 && /openRequest: c\.openRequest && typeof c\.openRequest === 'object'/.test(jv)
+         && (jv.match(/\{requestDoneKey\((customer|store)\)\}/g) || []).length === 2,
+         'his: "until order is fullfilled"');
+      ok('Journey open request re-run: the "!" is on a shop with an open request and on its bubble, never without one; it drops in only when today\'s report IS the request; the map passes it and the bubble reads it',
+         ch2('request', '#a855f7', '', '', false, true).includes('class="kx-req new"') && ch2('routine', '#a855f7', '', '', false, true).includes('class="kx-req"')
+         && !ch2('request', '#a855f7').includes('kx-req') && sl2(3, 1, false, true).includes('kx-req') && !sl2(3, 1).includes('kx-req')
+         && sc2.includes('.kx-req{background-image:') && /\.kx-c5\.burst \.kx-req\.new \{ animation: kx-req-drop/.test(ex) && !/kx-req-drop[^;]*infinite/.test(ex)
+         && /\.kx-req \{ position: absolute; left: 42px; top: -10px;/.test(ex)
+         && /metric\.agentName === 'Unassigned', !!store\.openRequest\);/.test(jv) && /kxReq: req/.test(jv) && /options\?\.kxReq\)/.test(jv),
+         'drawn and measured on the page: 0 clashes with the name tag (top centre) and the red flag (top left)'); }
     /* HIS "chest and person not colliding ... so much lag on the phone" (2026-10-03 17:30), measured at 6x CPU, 390 wide */
     const { SPRITE_CSS } = await import('../utils/mapSprites.js');
     const exj = code(read('src/components/Expedition.jsx'));

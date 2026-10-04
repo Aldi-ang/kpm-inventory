@@ -833,7 +833,11 @@ const LAB_MAP = (() => {
 const LAB_TAGS = ['Routine Check', 'Repeat Order 📦', 'Stock Full (No Order) 🛑', 'Competitor Issue ⚠️', 'New Request 📝', 'Store Closed 🔒'];
 const labVisit = (tick) => (c) => {
   const [, i, k] = c.id.split('-').map(Number);
-  return (i === 0 ? k < 2 + tick : (i + k) % 3 !== 0) ? { ...c, lastVisit: LAB_TODAY, lastVisitTag: LAB_TAGS[(i + k) % LAB_TAGS.length] } : c;
+  const tag = LAB_TAGS[(i + k) % LAB_TAGS.length];
+  /* an open request (his 2026-10-04 "!"): today's New Request reports carry one, and one shop not visited today still has
+     Friday's - it stays until someone presses Request done */
+  if (i === 0 ? k < 2 + tick : (i + k) % 3 !== 0) return { ...c, lastVisit: LAB_TODAY, lastVisitTag: tag, ...(tag.includes('📝') ? { openRequest: { note: 'Minta rasa menthol', day: LAB_TODAY, by: 'Budi Santoso' } } : {}) };
+  return i === 1 && k === 2 ? { ...c, openRequest: { note: 'Minta Sampoerna Mild 16', day: '2026-10-02', by: 'Ari Wibowo' } } : c;
 };
 /* the break cases (2026-10-04 test): `&nobody` = everyone last seen yesterday; `&pair` = Ari stands on Budi's spot;
    `&nopin` = two of Budi's shops lost their pin (one sold today, one still ahead); `&noround` = Ari's shops are all

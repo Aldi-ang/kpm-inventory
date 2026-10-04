@@ -75,8 +75,8 @@
     "semantic_hash": ""
   },
   "src/JourneyView.jsx": {
-    "mtime": 1791115167.9109044,
-    "ast_hash": "d75b54e0300aef229e00053fb0bf3461",
+    "mtime": 1791117129.6285176,
+    "ast_hash": "64ba49d3a7857f3b3a500b78727d7dc9",
     "semantic_hash": ""
   },
   "src/MapMissionControl.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1791112981.205942,
-    "ast_hash": "ed66135df6d5f2cc2080a6c47bc163b6",
+    "mtime": 1791115898.0646465,
+    "ast_hash": "3c48ddda56cb0665ae7d5f8f4c574563",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1791115196.5928524,
-    "ast_hash": "83bf44fb3b971ebf89ab3c4f42f93eb5",
+    "mtime": 1791117150.8787904,
+    "ast_hash": "53082aafe1e016d67499f4e55f399478",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1791112964.826038,
-    "ast_hash": "fc0b57bfa1ff41ae0097a70994655f9d",
+    "mtime": 1791115882.0411515,
+    "ast_hash": "098c3022a691f88b26028a64bc3bca5d",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1791086588.122298,
-    "ast_hash": "9a5db55a4dc981e2db37d2ed0036f62c",
+    "mtime": 1791117093.7435274,
+    "ast_hash": "f59ddc0525db2e99b76ec49f9350398f",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -1285,8 +1285,8 @@
     "semantic_hash": ""
   },
   "src/utils/mapSprites.js": {
-    "mtime": 1791115166.9978404,
-    "ast_hash": "5041f519ceb76252ded92d438c217ecf",
+    "mtime": 1791117128.7199838,
+    "ast_hash": "767eec42fb416e5aeeb6d2be825c4aff",
     "semantic_hash": ""
   }
 }

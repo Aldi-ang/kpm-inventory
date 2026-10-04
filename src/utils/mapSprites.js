@@ -115,9 +115,14 @@ const uri = (body, w, h) => `url("data:image/svg+xml,${encodeURIComponent(`<svg 
    red pixel flag on a pole, one cached picture like the chests */
 const FREE = px(['OOOOOO.', 'OPrRRRO', 'OPRRRRO', 'OPRRRO.', 'OPOOO..', 'OP.....', 'OP.....', 'OP.....', 'OP.....', 'OO.....'],
     { O: 'fill="#0A0908"', P: 'fill="#5B3F22"', R: 'fill="#B3261E"', r: 'fill="#E0473C"' });
+/* AN OPEN REQUEST (his 2026-10-04 "for request since it is very important we need more visible ... until order is
+   fullfilled", look B "is good"): a game's "!" - this shop wants something from you - top right of the chest (the red flag
+   owns the top left), on the bubble too, until someone presses Request done */
+const REQ = px(['.OOOOOO.', 'OYGGGGGO', 'OGGOOGGO', 'OGGOOGGO', 'OGGOOGGO', 'OGGOOGGO', 'OGGGGGGO', 'OGGOOGGO', 'OGGGGGGO', '.OOOOOO.', '...OO...', '....O...'],
+    { O: 'fill="#0A0908"', G: 'fill="#E2A12E"', Y: 'fill="#FFF4CF"' });
 export const SPRITE_CSS = Object.entries(STILL).map(([k, b]) => `.kx-spr-${k}{background-image:${uri(b, 14, 17)}}`)
     .concat(Object.keys(PIC6).map((k) => `.kx-sgn-${k}{background-image:${uri(SIGN5[k].replace(/^<svg[^>]*>|<\/svg>$/g, ''), 12, 12)}}`))
-    .concat(`.kx-free{background-image:${uri(FREE, 7, 10)}}`).join('\n');
+    .concat(`.kx-free{background-image:${uri(FREE, 7, 10)}}`, `.kx-req{background-image:${uri(REQ, 8, 12)}}`).join('\n');
 if (typeof document !== 'undefined' && !document.getElementById('kx-sprites')) {
     const s = document.createElement('style'); s.id = 'kx-sprites'; s.textContent = SPRITE_CSS; document.head.append(s);
 }
@@ -128,15 +133,15 @@ if (typeof document !== 'undefined' && !document.getElementById('kx-sprites')) {
 /* `tag`: the pressed salesman's own name tag with the stop number ("BS · 3", his look B 2026-10-04, "Name tags is easier
    to see") - ownership in words, never only the ring's colour */
 const escTag = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-export const chestHtml = (outcome, ring, play = '', tag = '', free = false) =>
+export const chestHtml = (outcome, ring, play = '', tag = '', free = false, req = false) =>
     `<div class="kx-c5${outcome ? ' v' : ''}${outcome === 'closed' ? ' shut' : ''}${play ? ` ${play}` : ''}${tag ? ' mine' : ''}" style="--c:${safeHex(ring)}"><i class="kx-ring"></i>`
-    + (tag ? `<span class="kx-otag"><i style="background:var(--c)"></i>${escTag(tag)}</span>` : '') + (free ? '<i class="kx-free"></i>' : '')
+    + (tag ? `<span class="kx-otag"><i style="background:var(--c)"></i>${escTag(tag)}</span>` : '') + (free ? '<i class="kx-free"></i>' : '') + (req ? `<i class="kx-req${outcome === 'request' ? ' new' : ''}"></i>` : '')
     + `<div class="art"><div class="hop">${play ? CHEST5 : `<i class="kx-spr kx-spr-${!outcome ? 'closed' : outcome === 'closed' ? 'shut' : 'open'}"></i>`}</div></div>`
     + (outcome ? `<i class="sign5 k-${outcome} f-${SIGN_FAMILY[outcome]}"><i class="lamp"></i>${play || outcome === 'sold' ? SIGN5[outcome] : `<i class="kx-sgn kx-sgn-${outcome}"></i>`}<b class="kx-sw">${SIGN_WORD[outcome]}</b></i>` : '') + (play ? SPARKS : '') + '</div>';
 
 /* a bubble: an inventory slot, the shop count like an item stack, a bar filling amber with the visited share */
-export const slotHtml = (n, visited, free = false) =>   // free = the bubble holds a shop nobody is assigned to
-    `<div class="kx-slot${n && visited === n ? ' full' : ''}" style="--f:${n ? (visited / n).toFixed(3) : 0}">${free ? '<i class="kx-free"></i>' : ''}<div class="hop">`
+export const slotHtml = (n, visited, free = false, req = false) =>   // free = the bubble holds a shop nobody is assigned to; req = one with an open request
+    `<div class="kx-slot${n && visited === n ? ' full' : ''}" style="--f:${n ? (visited / n).toFixed(3) : 0}">${free ? '<i class="kx-free"></i>' : ''}${req ? '<i class="kx-req"></i>' : ''}<div class="hop">`
     + `<span class="kx-c5"><i class="kx-spr kx-spr-${n && visited === n ? 'open' : 'shut'}"></i></span><b class="cnt" data-n="${n}">${n}</b></div><i class="dur"><i></i></i></div>`;
 
 /* ---- the salesman: 10 x 14 pixel person, the shirt in his squad colour, two leg frames for walking ---- */
