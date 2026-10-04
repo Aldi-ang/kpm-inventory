@@ -2,6 +2,8 @@
 
 **Paste this to start:** `/alucard Do the ONE JOB at the top of .claude/NEXT-SESSION.md (2026-10-04 11:20: redesign Journey Plan's shop popup on the pixel-map theme).`
 
+**(0) FIRST, if his answer to the 12:55 ❓ is yes: the same light flash on Map System.** `src/MapMissionControl.jsx` ~2426: the MapContainer keeps Leaflet's `#ddd` under its dark default basemap (`balanced-dark-tile`, `brightness(1.2)` -> land ~#555557); it also offers light maps (Google streets/hybrid, Esri street, light canvas), so the background must FOLLOW the base layer (`useMapEvents({ baselayerchange })`, set the container background per layer name; dark = the measured land colour, light = keep #ddd). Measure before/after with `A-Brain/Raw/2026-10-03-map-keys/built8/probe-flash.mjs` (adapt the press to a region/zoom change on `?shell&map`); guard first. Journey's fix: kpm `aa87cd1`.
+
 **2026-10-04 11:20 — THE ONE JOB: redesign Journey Plan's shop popup on the pixel-map theme. DESIGN WORK: §1a stack, draw 2-3 looks on a LIVE page before any app code.** (Everything in the QUEUED block below is the brief - it is now this job.) One addition: after the popup is built, re-run the map test `node "A-Brain/Raw/2026-10-03-map-keys/built8/test-journey.mjs"` on a fresh lab build (49 checks; it must stay 49/49) - the popup lives inside the same store Marker the test presses.
 
 ~~2026-10-04 10:20 — THE ONE JOB: TEST the Journey map work.~~ (DONE 11:15, kpm `8e38420`, local, not pushed - 9 bugs found and fixed, 49/49 pass, board sent; root causes in A-Brain `Brainstorm/2026-10-03_journey-map-keys.md` TESTED END TO END; do not act on it.) Left on purpose: a pinless shop drawn at Muntilan centre (sanitizer default); the real app not looked at (dev server was down).
