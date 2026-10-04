@@ -984,7 +984,8 @@ function ShellLab() {
             ...(q.has('boss') ? [{ id: 'master_owner', name: 'Aldi', title: 'T1 · OVERSEER', location: 'MUNTILAN', currentLocation: { lat: LAB_MAP.motorists[0].currentLocation.lat + 0.004, lng: LAB_MAP.motorists[0].currentLocation.lng - 0.006, timestamp: new Date(Date.now() - 5 * 60000).toISOString() } }] : [])]}
           eodReports={q.has('eod') ? [{ id: 'eod-m7', agentId: 'm7', reportType: 'CASH_STOCK', status: 'VERIFIED', timestamp: { seconds: Math.floor(Date.now() / 1000) - 600 } }] : []}
           agentProfileId="m2"
-          customers={q.has('exp') ? (q.has('visits') ? LAB_MAP.customers.map(labVisit(tick)) : LAB_MAP.customers) : [
+          /* `&free`: every 7th shop belongs to nobody - the red flag (his 2026-10-04 ask) */
+          customers={q.has('exp') ? (q.has('visits') ? LAB_MAP.customers.map(labVisit(tick)) : LAB_MAP.customers).map((c, i) => (q.has('free') && i % 7 === 3 ? { ...c, assignedAgent: 'Unassigned' } : c)) : [
             ...LAB_CUSTOMERS.map((c, i) => ({ ...c, region: 'BANDUNG', city: 'Bandung', tier: ['Bronze', 'Silver', 'Gold', 'Bronze'][i], assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : i === 1 ? '2026-09-01' : '', phone: '0812-3456-7890' })),
             { id: 'c-sri', name: 'Warung Bu Sri Rahayu Sejahtera Abadi', address: 'Jl. Dago Atas No. 101, Bandung', latitude: -6.8700, longitude: 107.6150, priceTier: 'Ecer', region: 'BANDUNG', city: 'Bandung', tier: 'Silver', assignedAgent: 'Budi Santoso', visitFreq: 3, lastVisit: '2026-09-10' },
             { id: 'c-jaya', name: 'Grosir Jaya Abadi', address: 'Jl. Soekarno Hatta 400', latitude: -6.9400, longitude: 107.6300, priceTier: 'Grosir', region: 'BANDUNG', city: 'Bandung', tier: 'Gold', assignedAgent: 'Adi Nugroho', visitFreq: 14, lastVisit: '2026-08-20' },

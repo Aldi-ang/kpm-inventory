@@ -36,7 +36,7 @@ const createJourneyClusterIcon = (cluster) => {
     const men = kids.map((m) => m.options.icon?.options?.kxFig).filter(Boolean);
     const shops = kids.filter((m) => !m.options.icon?.options?.kxFig);
     return L.divIcon({
-        html: (shops.length ? slotHtml(shops.length, shops.filter((m) => m.options.icon?.options?.kxVisited).length) : '<i class="kx-crowd-shadow"></i>')
+        html: (shops.length ? slotHtml(shops.length, shops.filter((m) => m.options.icon?.options?.kxVisited).length, shops.some((m) => m.options.icon?.options?.kxFree)) :'<i class="kx-crowd-shadow"></i>')
             + crowdHtml(men, shops.length ? 0 : 21),
         className: 'kx-mk',
         iconSize: [42, 51],
@@ -54,8 +54,8 @@ const createJourneyClusterIcon = (cluster) => {
    makes a fresh element per marker, the same way every marker shares L.Icon.Default.
    A shop is a chest (src/utils/mapSprites.js); the pin being moved keeps the hand. */
 const storeIconCache = new Map();
-const getStoreIcon = (outcome, ringColor, isEditing, play = '', tag = '') => {
-    const key = `${outcome}|${ringColor}|${isEditing ? 1 : 0}|${play}|${tag}`;
+const getStoreIcon = (outcome, ringColor, isEditing, play = '', tag = '', free = false) => {
+    const key = `${outcome}|${ringColor}|${isEditing ? 1 : 0}|${play}|${tag}|${free ? 1 : 0}`;
     let icon = storeIconCache.get(key);
     if (!icon) {
         icon = isEditing ? L.divIcon({
@@ -65,10 +65,11 @@ const getStoreIcon = (outcome, ringColor, isEditing, play = '', tag = '') => {
             iconAnchor: [17, 17]
         }) : L.divIcon({
             className: 'kx-mk',
-            html: chestHtml(outcome, ringColor, play, tag),
+            html: chestHtml(outcome, ringColor, play, tag, free),
             iconSize: [28, 34],
             iconAnchor: [14, 31],
-            kxVisited: !!outcome
+            kxVisited: !!outcome,
+            kxFree: free   // the bubble raises the red flag too
         });
         storeIconCache.set(key, icon);
     }
@@ -764,6 +765,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         return { tagOf: Object.fromEntries(stops.map((s) => [s.key, `${ini} · ${s.n}`])),
             points: [...(man && !roadAll ? [man.at] : []), ...stops.filter((s) => s.lat)] };
     }, [focusName, team, roadAll, orderedRoute, storeMetrics]);
+    /* pressed in Expedition = ONLY his shops stay on the map, so a bubble counts his shops too (his "just show the stores
+       that is being assigned for him instead even when zoomed out"). With a Paintbrush pen the others only fade: hiding
+       them would leave nothing to paint. */
+    const hideOthers = !!road && expFocus && !activeBrush;
 
     const getBountyStatus = (customer) => {
         if (!customer) return { text: "UNKNOWN TARGET", short: "UNKNOWN", led: "", color: "bg-slate-600", border: "border-slate-500", flashing: false };
@@ -1262,13 +1267,14 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         const stopNum = metric.stopNumber;
                         const statusBadge = getBountyStatus(store);
                         const isEditing = editingStoreId === store.id;
+                        if (hideOthers && !road.tagOf[storeKey(store.name)] && !isEditing) return null;   // a pressed man: only his shops, so the bubbles count his too
 
                         let ringColor = isVisited ? '#E4B04A' : (metric.agentName === 'Unassigned' ? '#6A645C' : metric.color);
                         const finalRingColor = isEditing ? '#f97316' : ringColor;
                         const markerPos = isEditing && tempPinLocation ? [tempPinLocation.lat, tempPinLocation.lng] : [store.latitude, store.longitude];
                         
                         // the ring under the chest stays the salesman's colour; the sign says it was visited
-                        const customIcon = getStoreIcon(outcome, isEditing ? finalRingColor : (metric.agentName === 'Unassigned' ? '#6A645C' : metric.color), isEditing, play, road?.tagOf[storeKey(store.name)] || '');
+                        const customIcon = getStoreIcon(outcome, isEditing ? finalRingColor : (metric.agentName === 'Unassigned' ? '#6A645C' : metric.color), isEditing, play, road?.tagOf[storeKey(store.name)] || '', metric.agentName === 'Unassigned');
 
                         return (
                             <Marker 

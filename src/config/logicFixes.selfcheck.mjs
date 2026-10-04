@@ -10126,6 +10126,21 @@ section('Expedition map');
        !chestHtml('order', '#a855f7', '', '<b>x').includes('<b>x') && /\.kx-focus \.leaflet-marker-icon > \.kx-c5:not\(\.mine\) \{ opacity: \.28; \}/.test(exc) &&
        /\$\{road \? ' kx-focus' : ''\}/.test(jvr),
        tagged.slice(0, 70));
+    /* HIS 2026-10-04 10:20: "if i press one of the expedition user just show the stores that is being assigned for him
+       instead even when zoomed out" + "give some mark on the stores that havent been assigned by anyone on red flag" +
+       "i still cant see the team list when fullscreen btw i think it is a bug" (the small list showed only men out today) */
+    const mini = exj.slice(exj.indexOf('export function ExpeditionMini('));
+    const { slotHtml: slot3 } = await import('../utils/mapSprites.js');
+    ok('Journey pressed man = only his shops on the map, so the bubbles count his shops too (zoomed out); with a Paintbrush pen the others only fade, or nothing could be painted',
+       /const hideOthers = !!road && expFocus && !activeBrush;/.test(jvr) && /if \(hideOthers && !road\.tagOf\[storeKey\(store\.name\)\] && !isEditing\) return null;/.test(jvr),
+       'his: "just show the stores that is being assigned for him instead even when zoomed out"');
+    ok('Journey red flag: a shop nobody is assigned to carries a red flag, and so does a bubble holding one; an assigned shop has none',
+       chestHtml(null, '#6A645C', '', '', true).includes('class="kx-free"') && !chestHtml(null, '#a855f7').includes('kx-free') &&
+       slot3(3, 1, true).includes('class="kx-free"') && !slot3(3, 1).includes('kx-free') && /kxFree: free/.test(jvr) && /options\?\.kxFree\)/.test(jvr),
+       'his: "give some mark on the stores that havent been assigned by anyone on red flag marked"');
+    ok('Journey fullscreen team list = the WHOLE team (men not out today dimmed, not hidden) on the PC rows and the phone chips',
+       (mini.match(/\{team\.map\(\(t\) => \(/g) || []).length === 2 && !/not out today<\/small>/.test(mini) && /kx-mrow\$\{t\.live \? '' : ' off'\}/.test(mini),
+       'his screenshot: "EXPEDITION 0 OUT · +7 NOT OUT TODAY" and no names');
     ok('Journey fullscreen keeps a smaller Expedition: the short squad list under the keys on the PC, the chips + one line on the phone; tapping a name is the same pick',
        (jvr.match(/<ExpeditionMini /g) || []).length === 2 && /export function ExpeditionMini\(/.test(exj) && /if \(expFocus && id === selId\) setExpFocus\(false\)/.test(jvr),
        'his: "i want the expedition to be visible but smaller on fullscreen as well"');

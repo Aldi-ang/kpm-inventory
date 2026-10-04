@@ -308,6 +308,9 @@
   color: #FFFFFF; font: 800 12px/1 var(--font-display); letter-spacing: .06em; display: flex; align-items: center; gap: 5px; pointer-events: none; z-index: 2; }
 .kx-c5 .kx-otag i { width: 7px; height: 7px; }
 .kx-focus .leaflet-marker-icon > .kx-c5:not(.mine) { opacity: .28; }
+/* nobody's shop: a red pixel flag at the chest's top-left (and at a bubble's corner); the sign keeps the right side */
+.kx-free { position: absolute; left: -9px; top: -6px; width: 14px; height: 20px; background-size: 100% 100%; background-repeat: no-repeat; image-rendering: pixelated; z-index: 1; pointer-events: none; }
+.kx-slot .kx-free { left: -9px; top: 22px; }   /* low on the left edge: the crowd stands on the top, the count sits bottom-right */
 .kx-arrow { display: block; width: 16px; height: 16px; overflow: visible; }
 .kx-title { margin-left: 8px; padding: 2px 5px 1px; border: 1px solid var(--line-3); border-radius: 4px; color: #E4B04A; font: 800 10px/1 var(--font-display); letter-spacing: .1em; font-style: normal; vertical-align: 2px; white-space: nowrap; }
 .kx-roadsw { display: inline-flex; gap: 4px; margin: 6px 0 2px; }
@@ -319,10 +322,11 @@
 .kx-mini { width: 200px; padding: 6px; border: 1px solid var(--line-3); border-radius: 10px; background: rgba(18, 17, 16, .94); display: grid; gap: 4px; }
 .kx-mini header { display: flex; justify-content: space-between; align-items: baseline; padding: 0 3px 3px; }
 .kx-mini header b { font: 800 13px/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
-.kx-mini header small, .kx-moff { color: var(--ink-muted); font: 700 11px/1.3 var(--font-display); letter-spacing: .06em; text-transform: uppercase; }
-.kx-moff { padding: 2px 4px 0; }
+.kx-mini header small { color: var(--ink-muted); font: 700 11px/1.3 var(--font-display); letter-spacing: .06em; text-transform: uppercase; }
 .kx-mrow { display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 7px; background: var(--panel); color: var(--ink); cursor: pointer; text-align: left; }
 .kx-mrow.sel { border-color: #E4B04A; }
+.kx-mrows { display: grid; gap: 4px; max-height: calc(100vh - 320px); overflow-y: auto; scrollbar-width: thin; }
+.kx-mrow.off, .kx-mchips button.off { opacity: .55; }   /* not out today: listed, dimmed (his "i still cant see the team list") */
 .kx-mrow i { width: 8px; height: 8px; border-radius: 2px; background: var(--c); flex: none; }
 .kx-mrow span { font: 800 13px/1 var(--font-display); letter-spacing: .03em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kx-mrow u { width: 6px; height: 6px; border-radius: 50%; background: var(--line-3); flex: none; }

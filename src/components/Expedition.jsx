@@ -295,34 +295,36 @@ export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page, focused
 
 /* ---- the Expedition on the FULLSCREEN map, smaller (his "i want the expedition to be visible but smaller on fullscreen
    as well", 2026-10-04; "fulscreen looks good" to round 7): his two settled looks shrunk - the PC keeps the squad list as
-   short rows under the map keys, the phone keeps the pick chips plus ONE line of the picked man's card. Only the men on
-   the map are listed; the rest are counted. A tap is the same pick as the full panel. ---- */
+   short rows under the map keys, the phone keeps the pick chips plus ONE line of the picked man's card. The WHOLE team
+   is listed, men not out today dimmed (his "i still cant see the team list when fullscreen", 10:20 - listing only the men
+   on the map left it empty on a day nobody was out). A tap is the same pick as the full panel. ---- */
 export function ExpeditionMini({ team, sel, onPick, wide, colorOf, focused, roadAll, onRoadAll }) {
-    const on = team.filter((a) => a.live), off = team.length - on.length;
-    const a = on.find((t) => t.id === sel) || on[0];
+    const out = team.filter((a) => a.live).length;
+    const a = team.find((t) => t.id === sel) || team[0];
     const sq = (t) => ({ '--c': safeHex(colorOf ? colorOf(t.name) : '#E8E4DE', '#E8E4DE') });
     if (wide) return (
         <aside className="kx-mini" aria-label="Expedition">
-            <header><b>Expedition</b><small>{on.length} out</small></header>
-            {on.map((t) => (
-                <button type="button" key={t.id} className={`kx-mrow${t.id === sel && focused ? ' sel' : ''}`} style={sq(t)} aria-pressed={t.id === sel && focused} onClick={() => onPick(t.id)}>
-                    <i /><span>{t.name}</span><u className={lamp(t)} /><em>{count(t)}</em>
-                </button>
-            ))}
-            {off > 0 && <small className="kx-moff">+{off} not out today</small>}
+            <header><b>Expedition</b><small>{out} out · {team.length - out} not</small></header>
+            <div className="kx-mrows">
+                {team.map((t) => (
+                    <button type="button" key={t.id} className={`kx-mrow${t.live ? '' : ' off'}${t.id === sel && focused ? ' sel' : ''}`} style={sq(t)} aria-pressed={t.id === sel && focused} onClick={() => onPick(t.id)}>
+                        <i /><span>{t.name}</span><u className={lamp(t)} /><em>{count(t)}</em>
+                    </button>
+                ))}
+            </div>
             {focused && <RoadSwitch all={roadAll} onAll={onRoadAll} />}
         </aside>
     );
     return (
         <div className="kx-mbar">
             <div className="kx-mchips">
-                {on.map((t) => (
-                    <button type="button" key={t.id} className={t.id === sel ? 'sel' : ''} style={sq(t)} aria-pressed={t.id === sel} onClick={() => onPick(t.id)}><i />{t.ini} {count(t)}</button>
+                {team.map((t) => (
+                    <button type="button" key={t.id} className={`${t.id === sel ? 'sel' : ''}${t.live ? '' : ' off'}`} style={sq(t)} aria-pressed={t.id === sel} onClick={() => onPick(t.id)}><i />{t.ini} {count(t)}</button>
                 ))}
             </div>
             {a && (
                 <div className="kx-mline">
-                    <span>{a.name}</span><small>{({ go: 'heading to', at: 'selling at', home: 'round done', idle: 'no next shop' })[a.state]}</small>
+                    <span>{a.name}</span><small>{({ go: 'heading to', at: 'selling at', home: 'round done', idle: 'no next shop', off: 'not out today', closed: 'day closed' })[a.state]}</small>
                     <span>{({ go: a.next?.name, at: a.done[a.done.length - 1]?.name })[a.state] || ''}</span><em>{count(a)}</em>
                 </div>
             )}

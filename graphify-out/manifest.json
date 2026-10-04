@@ -75,8 +75,8 @@
     "semantic_hash": ""
   },
   "src/JourneyView.jsx": {
-    "mtime": 1791082281.7948706,
-    "ast_hash": "ace50cc9a6bd1889f9544b948ff7f848",
+    "mtime": 1791083456.7579722,
+    "ast_hash": "99ec606d99bcee371c4b4a31be465c4b",
     "semantic_hash": ""
   },
   "src/MapMissionControl.jsx": {
@@ -570,8 +570,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1791080383.0986533,
-    "ast_hash": "591ac4b6d1d5fdd6248ebe4eec0c41e1",
+    "mtime": 1791083027.4432876,
+    "ast_hash": "11ff9962ceb981e9f0b931a126c97d6d",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1791082341.3463612,
-    "ast_hash": "8b3435b036bdd6d4149aecbd97b3aefa",
+    "mtime": 1791083375.198621,
+    "ast_hash": "90cf9485f9b34d2a57dbbfab34b4dfa5",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1791080383.0966413,
-    "ast_hash": "e913fd8110305dac324540a71d5bb6df",
+    "mtime": 1791083027.4402876,
+    "ast_hash": "e2ac4937ed290207797988e992bcb7d3",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -835,8 +835,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1791082433.9829698,
-    "ast_hash": "7d13be8b0107f7f1f81d4164a7c82363",
+    "mtime": 1791083590.1459794,
+    "ast_hash": "87886c468321c1cbf59a2b423be4c30f",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -1270,8 +1270,8 @@
     "semantic_hash": ""
   },
   "src/components/Expedition.jsx": {
-    "mtime": 1791082231.1455476,
-    "ast_hash": "196a936485f6b96d1b856c61ce1206f7",
+    "mtime": 1791083456.8247316,
+    "ast_hash": "c785820aea5aab6f6face0d1111493b3",
     "semantic_hash": ""
   },
   "src/hooks/useWide.js": {
@@ -1285,8 +1285,8 @@
     "semantic_hash": ""
   },
   "src/utils/mapSprites.js": {
-    "mtime": 1791082165.887428,
-    "ast_hash": "e208f16d02b4dc10658b498fce7b9456",
+    "mtime": 1791083404.5505579,
+    "ast_hash": "89ba782f762caa03998da0d4b9f08abb",
     "semantic_hash": ""
   }
 }
