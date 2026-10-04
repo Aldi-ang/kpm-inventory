@@ -36,29 +36,67 @@ const CHEST5 = `<svg class="px chest" viewBox="0 0 14 17" width="28" height="34"
     + `<g>${px(at(INSIDE5, 5), W5)}</g><g class="lidU">${px(UNDER5, W5)}</g>`
     + `<g class="lidF"><g>${px(LID5, W5DIM)}</g><g class="bright">${px(LID5, W5)}</g></g></svg>`;
 
-/* ---- the lit sign: a pale board on a post, a 9 x 6 picture per visit outcome ---- */
-const SP5 = { O: 'fill="#3F2C18"', w: 'fill="#F0E2BC"', v: 'fill="#D9C597"', P: 'fill="#5B3F22"', K: 'fill="#221509"', R: 'fill="#B3261E"',
-    G: 'fill="#E2A12E"', Y: 'fill="#FFF4CF"', b: 'fill="#A8743A"' };
-const BOARD5 = ['.OOOOOOOOO.', 'OwwwwwwwwwO', 'OwwwwwwwwwO', 'OwwwwwwwwwO', 'OwwwwwwwwwO', 'OwwwwwwwwwO', 'OvvvvvvvvvO', '.OOOOOOOOO.', '.....P.....', '.....P.....', '....PPP....'];
-const PIC5 = {
-    sold:    ['...KKK...', '..KGGGK..', '.KGYGGGK.', '.KGGGGGK.', '..KGGGK..', '...KKK...'],
-    order:   ['.KKKKKKK.', '.KbbKbbK.', '.KKKKKKK.', '.KbbbbbK.', '.KbbbbbK.', '.KKKKKKK.'],
-    routine: ['........K', '.......KK', '.K....KK.', '.KK..KK..', '..KKKK...', '...KK....'],
-    full:    ['.K.K.K.K.', '.K.K.K.K.', 'KKKKKKKKK', '.K.K.K.K.', '.K.K.K.K.', 'KKKKKKKKK'],
-    issue:   ['....R....', '...RKR...', '..RRKRR..', '..RRKRR..', '.RRRRRRR.', 'RRRRKRRRR'],
-    request: ['.KKKKKKK.', 'K.......K', 'K.K.K.K.K', 'K.......K', '.KKKKKKK.', '..KK.....'],
-    closed:  ['...RRR...', '..R...R..', '..R...R..', '.RRRRRRR.', '.RRRKRRR.', '.RRRRRRR.'],
+/* ---- the visit signs, his look C (2026-10-04 18:30, "C is the best because it is really clear"; drawn and checked on A-Brain
+   Raw/2026-10-04-day-replay/day-replay.html v3). No board: each status is its own 12 x 12 object (the outline tells them apart
+   without colour), the lamp behind it says the family (gold money / pale no sale / red problem / none closed), the word under
+   it. Parts .m / .x ACT OUT the word once on the chest's moment (expedition.css kx-a-*), then stand still. Sale is the app's
+   own coin (his "one coin across the app"). Today's cream board read alike at 22 px: one outline for all ---- */
+const SP6 = Object.fromEntries(Object.entries({ K: '#0A0908', w: '#F0E2BC', v: '#D9C597', W: '#FFF8E6', G: '#E2A12E', Y: '#FFF4CF', g: '#9C6A1E',
+    R: '#B3261E', r: '#E0473C', b: '#C98A4A', B: '#8A5A2C', s: '#A9A49A', S: '#6E6A62', t: '#E8E4DC', y: '#E4B04A' }).map(([k, v]) => [k, `fill="${v}"`]));
+const E12 = Array(12).fill('............');
+const rowsAt = (rows, y0) => E12.slice(0, y0).concat(rows, E12.slice(0, Math.max(0, 12 - y0 - rows.length)));
+/* crossed swords for the competitor (a flag already means "nobody's shop" here), drawn by rule so both blades are mirrors */
+const sword = (flip) => { const g = E12.map((r) => r.split('')); const put = (x, y, c) => { g[y][flip ? 11 - x : x] = c; };
+    for (let i = 0; i <= 6; i++) { put(i, i, 't'); put(i + 1, i, 'S'); if (i < 6) put(i, i + 1, 'K'); }
+    put(8, 6, 'G'); put(7, 7, 'G'); put(6, 8, 'G'); put(8, 8, 'B'); put(9, 9, 'B'); put(10, 10, 'R'); put(11, 11, 'K');
+    return g.map((r) => r.join('')); };
+/* m / x = the parts that move; mo / xo = where each one turns from; xAt = drawn off its box; xHide = gone at rest */
+const PIC6 = {
+    order: { m: ['............', '...KKK.KKK..', 'KK.KGK.KYK..', '.K.KGK.KGK..', '.KKKKKKKKKKK', '.KbbbbbbbbbK', '.KbBbBbBbBbK', '..KbbbbbbbK.', '..KKKKKKKKK.', '.KKK....KKK.', '.KsK....KsK.', '.KKK....KKK.'] },
+    full: { m: ['KKKKKKKKKKKK', 'KBBKBBKBBKBK', 'KwwKwwKwwKwK', 'KwwKwwKwwKwK', 'KbbbbbbbbbbK', 'KBBKBBKBBKBK', 'KwwKwwKwwKwK', 'KwwKwwKwwKwK', 'KbbbbbbbbbbK', 'KKKKKKKKKKKK', 'KbK......KbK', 'KKK......KKK'],
+        x: ['KKK', 'KBK', 'KwK', 'KwK', 'KKK'], xAt: [-3, 0], xHide: true },
+    issue: { m: sword(true), mo: '0% 100%', x: sword(false), xo: '100% 100%' },
+    request: { m: ['............', '..KKKKKKKK..', '..KwwwwwwK..', '..KwSSSSwK..', '..KwwwwwwK..', '..KwSSSSwK..', '..KwwwwwwK..', '..KwSSSwwK..', '..KwwwwwvK..', '..KwwwwvKK..', '..KKKKKKK...', '............'], mo: '50% 0%',
+        x: rowsAt(['.....rr.....', '.....RR.....'], 0) },
+    /* a little shop under its roof (without it the shop read as the full shelf), shutter down, padlock on */
+    closed: { body: ['.....KK.....', '....KBBK....', '...KBbbBK...', '..KBbbbbBK..', '.KKKKKKKKKK.'].concat(Array(6).fill('.K........K.'), ['.KKKKKKKKKK.']),
+        m: rowsAt(['..ssssssss..', '..SSSSSSSS..', '..ssssssss..', '..SSSSSSSS..', '..ssssssss..', '..SSSSSSSS..'], 5), mo: '50% 0%',
+        x: rowsAt(['....KKKK....', '....K..K....', '...KGGGGK...', '...KGKKGK...', '...KGGGGK...', '...KKKKKK...'], 6), xo: '50% 0%' },
+    routine: { m: ['...KKKK.....', '..KWwwwK....', '.KWwwwwwK...', '.KwwwwwwK...', '.KwwwwwwK...', '.KwwwwwvK...', '..KwwvvKK...', '...KKKKBBK..', '.......KBBK.', '........KBBK', '.........KBK', '..........K.'], mo: '50% 50%',
+        x: rowsAt(['......g.....', '...g.g......', '....g.......'], 3) },
+    /* the taped crate (Quarantine's band) goes out, a clean one comes in */
+    swap: { body: ['.........w..', '.........w..', '.........w..', '.......wwwww', '........www.', '.........w..', '..w.........', '.www........', 'wwwww.......', '..w.........', '..w.........', '..w.........'],
+        m: rowsAt(['KKKKKKK', 'KbbbbbK', 'KyKyKyK', 'KKyKyKK', 'KBBBBBK', 'KKKKKKK'].map((r) => r + '.....'), 0),
+        x: rowsAt(['KKKKKKK', 'KbbbbbK', 'KBBBBBK', 'KbbbbbK', 'KBBBBBK', 'KKKKKKK'].map((r) => '.....' + r), 6) },
 };
-export const SIGN5 = Object.fromEntries(Object.entries(PIC5).map(([k, pic]) => [k,
-    `<svg class="px" viewBox="0 0 11 11" width="22" height="22">${px(BOARD5, SP5)}${px(['...........'].concat(pic.map((r) => '.' + r + '.')), SP5)}</svg>`]));
+const part = (cls, rows, o, at2, hide) => `<g${at2 ? ` transform="translate(${at2[0]} ${at2[1]})"` : ''}><g class="${cls}" style="transform-origin:${o || '50% 100%'}${hide ? ';opacity:0' : ''}">${px(rows, SP6)}</g></g>`;
+export const SIGNS = ['sold', 'order', 'full', 'issue', 'request', 'closed', 'routine', 'swap'];
+export const SIGN_FAMILY = { sold: 'money', order: 'money', full: 'plain', request: 'plain', routine: 'plain', issue: 'problem', swap: 'problem', closed: 'closed' };
+/* one word each, the Visit Report's own names (QUICK_TAGS) cut to their first word */
+export const SIGN_WORD = { sold: 'SALE', order: 'ORDER', full: 'FULL', issue: 'COMPETITOR', request: 'REQUEST', closed: 'CLOSED', routine: 'CHECK', swap: 'EXCHANGE' };
+export const SIGN5 = Object.fromEntries(SIGNS.map((k) => { const p = PIC6[k];
+    return [k, k === 'sold' ? '<i class="kpm-coin lg"></i>'
+        : `<svg class="px" viewBox="0 0 12 12" width="24" height="24">${p.body ? px(p.body, SP6) : ''}${part('m', p.m, p.mo)}${p.x ? part('x', p.x, p.xo, p.xAt, p.xHide) : ''}</svg>`]; }));
 
-/* the visit's outcome -> its sign. A real sale through the terminal today wins; otherwise the report's tag
-   (QUICK_TAGS in src/JourneyView.jsx, matched on their emoji like the pins always were); no tag = Routine Check */
-export const signFor = (tag, sold) => {
+/* the visit's outcome -> its sign. A real sale through the terminal today wins, then an exchange (a RETUR: it showed the
+   sale coin until look C gave it its own sign); otherwise the report's tag (QUICK_TAGS in src/JourneyView.jsx, matched on
+   their emoji like the pins always were); no tag = Routine Check */
+export const signFor = (tag, sold, swap = false) => {
     if (sold) return 'sold';
+    if (swap) return 'swap';
     const t = String(tag || '');
     return t.includes('📦') ? 'order' : t.includes('🛑') ? 'full' : t.includes('⚠️') ? 'issue'
         : t.includes('📝') ? 'request' : t.includes('🔒') ? 'closed' : 'routine';
+};
+/* what the terminal recorded at each shop today: 'sold' if any record is not an exchange, else 'swap' */
+export const kindByShop = (transactions, day, key) => {
+    const k = {};
+    (transactions || []).forEach((t) => {
+        if (t?.date !== day || !t.customerName) return;
+        const id = key(t.customerName), retur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
+        k[id] = k[id] === 'sold' || !retur ? 'sold' : 'swap';
+    });
+    return k;
 };
 
 /* sparks: only on an element born to play the moment */
@@ -78,7 +116,7 @@ const uri = (body, w, h) => `url("data:image/svg+xml,${encodeURIComponent(`<svg 
 const FREE = px(['OOOOOO.', 'OPrRRRO', 'OPRRRRO', 'OPRRRO.', 'OPOOO..', 'OP.....', 'OP.....', 'OP.....', 'OP.....', 'OO.....'],
     { O: 'fill="#0A0908"', P: 'fill="#5B3F22"', R: 'fill="#B3261E"', r: 'fill="#E0473C"' });
 export const SPRITE_CSS = Object.entries(STILL).map(([k, b]) => `.kx-spr-${k}{background-image:${uri(b, 14, 17)}}`)
-    .concat(Object.keys(PIC5).map((k) => `.kx-sgn-${k}{background-image:${uri(SIGN5[k].replace(/^<svg[^>]*>|<\/svg>$/g, ''), 11, 11)}}`))
+    .concat(Object.keys(PIC6).map((k) => `.kx-sgn-${k}{background-image:${uri(SIGN5[k].replace(/^<svg[^>]*>|<\/svg>$/g, ''), 12, 12)}}`))
     .concat(`.kx-free{background-image:${uri(FREE, 7, 10)}}`).join('\n');
 if (typeof document !== 'undefined' && !document.getElementById('kx-sprites')) {
     const s = document.createElement('style'); s.id = 'kx-sprites'; s.textContent = SPRITE_CSS; document.head.append(s);
@@ -94,7 +132,7 @@ export const chestHtml = (outcome, ring, play = '', tag = '', free = false) =>
     `<div class="kx-c5${outcome ? ' v' : ''}${outcome === 'closed' ? ' shut' : ''}${play ? ` ${play}` : ''}${tag ? ' mine' : ''}" style="--c:${safeHex(ring)}"><i class="kx-ring"></i>`
     + (tag ? `<span class="kx-otag"><i style="background:var(--c)"></i>${escTag(tag)}</span>` : '') + (free ? '<i class="kx-free"></i>' : '')
     + `<div class="art"><div class="hop">${play ? CHEST5 : `<i class="kx-spr kx-spr-${!outcome ? 'closed' : outcome === 'closed' ? 'shut' : 'open'}"></i>`}</div></div>`
-    + (outcome ? `<i class="sign5"><i class="lamp"></i>${play ? SIGN5[outcome] : `<i class="kx-sgn kx-sgn-${outcome}"></i>`}</i>` : '') + (play ? SPARKS : '') + '</div>';
+    + (outcome ? `<i class="sign5 k-${outcome} f-${SIGN_FAMILY[outcome]}"><i class="lamp"></i>${play || outcome === 'sold' ? SIGN5[outcome] : `<i class="kx-sgn kx-sgn-${outcome}"></i>`}<b class="kx-sw">${SIGN_WORD[outcome]}</b></i>` : '') + (play ? SPARKS : '') + '</div>';
 
 /* a bubble: an inventory slot, the shop count like an item stack, a bar filling amber with the visited share */
 export const slotHtml = (n, visited, free = false) =>   // free = the bubble holds a shop nobody is assigned to

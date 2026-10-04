@@ -75,8 +75,8 @@
     "semantic_hash": ""
   },
   "src/JourneyView.jsx": {
-    "mtime": 1791092621.4243846,
-    "ast_hash": "deb95b2254ade30a2a1a02fada908551",
+    "mtime": 1791115167.9109044,
+    "ast_hash": "d75b54e0300aef229e00053fb0bf3461",
     "semantic_hash": ""
   },
   "src/MapMissionControl.jsx": {
@@ -755,8 +755,8 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1791114660.060255,
-    "ast_hash": "16c5e273a5dd198cd2c8781c784eb160",
+    "mtime": 1791115196.5928524,
+    "ast_hash": "83bf44fb3b971ebf89ab3c4f42f93eb5",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
@@ -1285,8 +1285,8 @@
     "semantic_hash": ""
   },
   "src/utils/mapSprites.js": {
-    "mtime": 1791083404.5505579,
-    "ast_hash": "89ba782f762caa03998da0d4b9f08abb",
+    "mtime": 1791115166.9978404,
+    "ast_hash": "5041f519ceb76252ded92d438c217ecf",
     "semantic_hash": ""
   }
 }

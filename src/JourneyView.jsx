@@ -15,7 +15,7 @@ import { useWide } from './hooks/useWide';
 import { expedition, visibleTeam, roadStops, initials } from './utils/expedition';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
-import { signFor, chestHtml, slotHtml, crowdHtml } from './utils/mapSprites';
+import { signFor, kindByShop, chestHtml, slotHtml, crowdHtml } from './utils/mapSprites';
 
 // 🚀 SAFE LEAFLET ICON SETUP
 delete L.Icon.Default.prototype._getIconUrl;
@@ -152,6 +152,29 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
    carry GPS — the outlet form captures it — but nothing in the save path enforces it, and Leaflet
    given a NaN pair does not error: it drifts to the map's default view. For a question that is
    specifically about DISTANCE, silently showing the wrong place is the worst possible answer. */
+/* his look C (2026-10-04): every visited shop's sign carries its word. A word that would land on another word, a name tag or
+   a man is hidden (Expedition's own rule for shop names); zooming in brings it back */
+const SignWords = () => {
+    const map = useMap();
+    useEffect(() => {
+        const box = map.getContainer();
+        const declutter = () => {
+            const kept = [...box.querySelectorAll('.kx-otag, .kx-sm .body')].map((e) => e.getBoundingClientRect());
+            box.querySelectorAll('.kx-sw').forEach((el) => {
+                el.style.visibility = '';
+                const r = el.getBoundingClientRect();
+                if (kept.some((k) => r.left < k.right && r.right > k.left && r.top < k.bottom && r.bottom > k.top)) el.style.visibility = 'hidden';
+                else kept.push(r);
+            });
+        };
+        declutter();
+        const later = () => setTimeout(declutter, 320);   // after the shop clusters finish splitting / joining
+        map.on('zoomend moveend', later);
+        return () => map.off('zoomend moveend', later);
+    });
+    return null;
+};
+
 const StoreFocus = ({ focusStore, customers, onHandled }) => {
     const map = useMap();
     useEffect(() => {
@@ -892,10 +915,12 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
        open - first load and every later render draw the end state. Leaflet's setIcon builds a NEW element, so the
        moment is the class that element is born with (worked out here, during render, so the end state never paints
        first), then the store goes back to the still icon once it has played. */
+    /* an exchange is not a sale: a shop whose only record today was a RETUR showed the Sale coin (look C gave it its own sign) */
+    const kindToday = useMemo(() => kindByShop(transactions, todayDate, storeKey), [transactions, todayDate]);
     const outcomeById = useMemo(() => Object.fromEntries(orderedRoute.map((s) => {
-        const sold = !!todaysVisits[storeKey(s.name)];
-        return [s.id, s.lastVisit === todayDate || sold ? signFor(s.lastVisitTag, sold) : null];
-    })), [orderedRoute, todaysVisits, todayDate]);
+        const kind = kindToday[storeKey(s.name)];
+        return [s.id, s.lastVisit === todayDate || kind ? signFor(s.lastVisitTag, kind === 'sold', kind === 'swap') : null];
+    })), [orderedRoute, kindToday, todayDate]);
     // refs, not a returned value: StrictMode runs this memo twice in dev and the second run sees no change
     const seenOutcome = useRef(null), playing = useRef({}), clusterRef = useRef(null), outcomeMoved = useRef(false);
     const [, setReplayTick] = useState(0);
@@ -1286,7 +1311,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     {[...orderedRoute, ...offRoute].map((store) => {
                         const hasLiveTxToday = !!todaysVisits[storeKey(store.name)];
                         const isVisited = store.lastVisit === todayDate || hasLiveTxToday;
-                        const outcome = outcomeById[store.id] ?? (isVisited ? signFor(store.lastVisitTag, hasLiveTxToday) : null);
+                        const kind = kindToday[storeKey(store.name)];
+                        const outcome = outcomeById[store.id] ?? (isVisited ? signFor(store.lastVisitTag, kind === 'sold', kind === 'swap') : null);
                         const play = playing.current[store.id]?.until > Date.now() ? playing.current[store.id].cls : '';
 
                         const owner = assignments[store.id] || 'Unassigned';   // an off-route stop has no route metric: its real owner
@@ -1482,6 +1508,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     <ExpeditionPeople team={team} sel={selId} wide={wide} colorOf={squadColor} focusName={road ? focusName : null} />
                     </MarkerClusterGroup>
                     {team.length > 0 && <ExpeditionLayer team={team} sel={selId} focus={expFocus} wide={wide} stops={false} road={road?.points} />}
+                    <SignWords />
                 </MapContainer>
             </div>
             {team.length > 0 && <ExpeditionPanel team={team} sel={selId} onPick={pickAgent} wide={wide} scoped={!globalView} focused={!!road} roadAll={roadAll} onRoadAll={setRoadAll} page />}

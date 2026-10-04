@@ -10034,7 +10034,8 @@ section('Expedition map');
     const got = tags.map((t) => signFor(t, false));
     ok('Journey map signs re-run: every QUICK_TAG gets its own sign, Routine Check / no tag a tick, a terminal sale the coin; every sign has a picture',
        tags.length === 5 && new Set(got).size === 5 && !got.includes('routine') && signFor('Routine Check', false) === 'routine' && signFor('', false) === 'routine' &&
-       signFor('Store Closed 🔒', true) === 'sold' && ['sold', 'order', 'routine', 'full', 'issue', 'request', 'closed'].every((k) => SIGN5[k]?.includes('<rect')),
+       signFor('Store Closed 🔒', true) === 'sold' && signFor('Stock Full (No Order) 🛑', false, true) === 'swap' && signFor('', true, true) === 'sold' &&
+       ['order', 'routine', 'full', 'issue', 'request', 'closed', 'swap'].every((k) => SIGN5[k]?.includes('<rect')) && SIGN5.sold?.includes('kpm-coin'),
        `${tags.join(' / ')} -> ${got.join()}`);
     ok('Journey map chest re-run: not visited = no sign; visited = open + lit sign; closed = lid down; a squad colour that is not a plain hex never reaches the HTML; the slot fills with the visited share',
        !chestHtml(null, '#a855f7').includes('sign5') && /class="kx-c5 v"/.test(chestHtml('order', '#a855f7')) && chestHtml('order', '#a855f7').includes('class="lamp"') &&
@@ -10047,6 +10048,36 @@ section('Expedition map');
        !/\.kx-(c5|slot|sm)[^{]*\{[^}]*box-shadow/.test(exc) && /\.kx-mk \.px \{[^}]*z-index: auto;/.test(exc) &&
        /if \(!prev\) return;/.test(jvr) && /if \(!\(id in prev\) \|\| prev\[id\] === outcomeById\[id\]\) continue;/.test(jvr),
        'measured on the round-5 prototype: a 0-height wrapper threw the chest 28 px up; the front-edge collapse left a 3-row jump');
+    /* HIS 2026-10-04 18:30 "C is the best because it is really clear" (look C, drawn on A-Brain Raw/2026-10-04-day-replay v3):
+       no board - each status its own 12 x 12 object, a family lamp, the word; each acts out its word once on the moment.
+       Today's board gave all 7 signs ONE outline (overlap 1.00): Sale / Repeat Order / Stock Full read alike at 22 px. And an
+       exchange (RETUR) counted as a sale: a shop whose only record today was an exchange showed the Sale coin */
+    { const { SIGNS, SIGN_FAMILY, SIGN_WORD, SPRITE_CSS, kindByShop } = await import('../utils/mapSprites.js');
+      const ex = code(exc), jv = code(jvr);
+      const parts = (k) => [...SIGN5[k].matchAll(/class="(m|x)"/g)].map((m) => m[1]);
+      const actOf = (k, p) => (ex.match(new RegExp(`\\.k-${k} \\.${p} \\{ animation-name: (kx-a-[a-z-]+); \\}`)) || [])[1];
+      const acts = SIGNS.filter((k) => k !== 'sold').flatMap((k) => parts(k).map((p) => actOf(k, p)));
+      const mask = (k) => { const g = Array.from({ length: 12 }, () => Array(12).fill(false));
+        [...SIGN5[k].replace(/<g class="x" style="[^"]*opacity:0">[\s\S]*?<\/g>/, '').matchAll(/<rect x="(\d+)" y="(\d+)" width="(\d+)"/g)]
+          .forEach(([, x, y, w]) => { for (let i = 0; i < +w; i++) if (g[+y]) g[+y][+x + i] = true; }); return g; };
+      const iou = (A, B) => { let i = 0, u = 0; A.forEach((r, y) => r.forEach((v, x) => { if (v && B[y][x]) i++; if (v || B[y][x]) u++; })); return i / u; };
+      const kinds = SIGNS.filter((k) => k !== 'sold'); let worst = 0, pair = '';
+      kinds.forEach((a, i) => kinds.slice(i + 1).forEach((b) => { const v = iou(mask(a), mask(b)); if (v > worst) { worst = v; pair = `${a}/${b}`; } }));
+      ok('Journey signs, his look C: every status has its own object (no two share an outline), a still picture, a family lamp and its word; every part that moves has its act and the act exists; nothing loops; each part turns about its own box',
+         SIGNS.length === 8 && worst < .9 && kinds.every((k) => SPRITE_CSS.includes(`.kx-sgn-${k}{`)) && SIGNS.every((k) => ['money', 'plain', 'problem', 'closed'].includes(SIGN_FAMILY[k]))
+         && /\.kx-c5 \.f-plain \{/.test(ex) && /\.kx-c5 \.f-problem \{/.test(ex) && /\.kx-c5 \.f-closed \.lamp \{ visibility: hidden; \}/.test(ex)
+         && SIGNS.every((k) => /^[A-Z]+$/.test(SIGN_WORD[k]) && chestHtml(k, '#a855f7').includes(`<b class="kx-sw">${SIGN_WORD[k]}</b>`))
+         && acts.length >= 13 && acts.every((a) => a && new RegExp(`@keyframes ${a} \\{`).test(ex)) && /\.k-sold \.kpm-coin \{ animation-name: kx-a-sold; \}/.test(ex)
+         && !/kx-a-[a-z-]+[^;{}]*infinite/.test(ex) && /\.kx-c5 \.sign5 \.m, \.kx-c5 \.sign5 \.x \{ transform-box: fill-box; \}/.test(ex),
+         `outline overlap max ${worst.toFixed(2)} (${pair}), acts ${acts.length}`);
+      const kb = kindByShop([{ date: 'D', customerName: 'A', type: 'RETUR' }, { date: 'D', customerName: 'B', type: 'SALE' }, { date: 'D', customerName: 'B', type: 'RETUR' },
+        { date: 'D', customerName: 'C', type: 'RETUR' }, { date: 'D', customerName: 'C', type: 'SALE' }, { date: 'X', customerName: 'E', type: 'SALE' },
+        { date: 'D', customerName: 'F', type: 'SALE', paymentType: 'Retur/BS' }, null], 'D', (s) => s);
+      ok('Journey signs re-run: an exchange is not a sale - a shop whose only record today is a RETUR gets the Exchange sign, any real sale still wins, another day counts nothing; the map reads it and hides a word that would sit on another',
+         JSON.stringify(kb) === JSON.stringify({ A: 'swap', B: 'sold', C: 'sold', F: 'swap' })
+         && /signFor\(s\.lastVisitTag, kind === 'sold', kind === 'swap'\)/.test(jv) && /signFor\(store\.lastVisitTag, kind === 'sold', kind === 'swap'\)/.test(jv)
+         && /<SignWords \/>\s*<\/MapContainer>/.test(jv) && /querySelectorAll\('\.kx-sw'\)[\s\S]{0,300}visibility = 'hidden'/.test(jv),
+         JSON.stringify(kb)); }
     /* HIS "chest and person not colliding ... so much lag on the phone" (2026-10-03 17:30), measured at 6x CPU, 390 wide */
     const { SPRITE_CSS } = await import('../utils/mapSprites.js');
     const exj = code(read('src/components/Expedition.jsx'));
@@ -10054,7 +10085,9 @@ section('Expedition map');
        !chestHtml('order', '#a855f7').includes('<rect') && !chestHtml(null, '#a855f7').includes('<rect') && !slotHtml(3, 1).includes('<rect') &&
        chestHtml('order', '#a855f7', 'burst').includes('<rect') && /kx-spr-open/.test(chestHtml('order', '#a855f7')) && /kx-spr-shut/.test(chestHtml('closed', '#a855f7')) &&
        ['closed', 'shut', 'open'].every((k) => SPRITE_CSS.includes(`.kx-spr-${k}{background-image:url("data:image/svg+xml,`)) &&
-       ['sold', 'order', 'routine', 'full', 'issue', 'request', 'closed'].every((k) => SPRITE_CSS.includes(`.kx-sgn-${k}{`)),
+       ['order', 'routine', 'full', 'issue', 'request', 'closed', 'swap'].every((k) => SPRITE_CSS.includes(`.kx-sgn-${k}{`)) &&
+       /* look C (2026-10-04): the sale sign at rest is the app's own coin - one element, no squares */
+       !chestHtml('sold', '#a855f7').includes('<rect') && chestHtml('sold', '#a855f7').includes('kpm-coin'),
        'zoomed out, every zoom rebuilt 1,704-2,621 pixel squares: frames up to 346 ms; with pictures 55-109 ms');
     ok('Journey map lag: the flowing line moves only where there is a mouse (one flowing line repaints the whole line layer every frame - 85% of a phone\'s main thread at rest)',
        /@media \(hover: hover\) and \(pointer: fine\) \{ \.kx-march \{ animation: kx-flow 5s linear infinite; \} \}/.test(exc) && !/^\.kx-march \{ animation/m.test(exc),
@@ -10189,7 +10222,7 @@ section('Expedition map');
        suggestion, and the map held 0 chests - Journey Plan draws only the day's route, so the road bent at empty ground */
     ok('Journey pressed man: a stop on his road that is not on the day\'s route (a sale off-schedule, another day picked) still gets its chest, with its real owner and outcome',
        /const offRoute = useMemo\(\(\) => \{/.test(jvr) && /\{\[\.\.\.orderedRoute, \.\.\.offRoute\]\.map\(\(store\) => \{/.test(jvr) &&
-       /const outcome = outcomeById\[store\.id\] \?\? \(isVisited \? signFor\(store\.lastVisitTag, hasLiveTxToday\) : null\);/.test(jvr),
+       /const outcome = outcomeById\[store\.id\] \?\? \(isVisited \? signFor\(store\.lastVisitTag, kind === 'sold', kind === 'swap'\) : null\);/.test(jvr),
        'test: stopsOnRoad 4, taggedChests 0, shops on the map 0');
     {
         const { expedition: exp2 } = await import('../utils/expedition.js');
