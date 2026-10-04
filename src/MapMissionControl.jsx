@@ -231,6 +231,15 @@ const LocationController = ({ userLocation, setUserLocation, isEditing }) => {
     );
 };
 
+/* the empty map = the picked base map's own colour, never Leaflet's light #ddd under a dark map: zooming or flying on the
+   dark default lit up to 15.7 % of the map until the tiles arrived (his "yes please fix the map flash as well", 2026-10-04,
+   after Journey's aa87cd1). Measured settled colours; the light maps keep #ddd */
+const MAP_GROUND = { 'Dark Canvas (Esri)': '#4F4F51', 'Google Maps (Hybrid)': '#545450' };
+const MapGround = () => {
+    const map = useMapEvents({ baselayerchange: (e) => { map.getContainer().style.background = MAP_GROUND[e.name] || '#ddd'; } });
+    return null;
+};
+
 const AdminControls = ({ isAdmin, onSetHome }) => {
     const map = useMapEvents({});
     if(!isAdmin) return null;
@@ -2424,7 +2433,8 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             {showTierEngine && <TierAutomationEngine db={db} appId={appId} user={user} activeTiers={activeTiers} mapPoints={mapPoints} transactions={transactions} onClose={() => setShowTierEngine(false)} logAudit={logAudit} triggerCapy={triggerCapy} setLocalTierUpdates={setLocalTierUpdates} />}
 
             {/* 🚀 LITE MODE UPGRADE: preferCanvas={true} flattens vector borders to save RAM */}
-            <MapContainer ref={mapRef} preferCanvas={true} center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%' }} className="z-0" zoomControl={false}>
+            <MapContainer ref={mapRef} preferCanvas={true} center={[-7.6145, 110.7122]} zoom={10} style={{ height: '100%', width: '100%', background: MAP_GROUND['Dark Canvas (Esri)'] }} className="z-0" zoomControl={false}>
+                <MapGround />
                 <ZoomControl position="bottomright" />
                 <MapEffectController selectedRegion={selectedRegion} selectedCity={selectedCity} mapPoints={mapPoints} savedHome={savedHome} uploadedFocus={uploadedFocus} selectedZone={selectedZone} />
                 

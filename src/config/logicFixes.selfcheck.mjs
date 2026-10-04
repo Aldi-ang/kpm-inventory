@@ -10169,6 +10169,22 @@ section('Expedition map');
        /<MapContainer center=\{mapCenter\} zoom=\{12\} style=\{\{ height: '100%', width: '100%', background: '#474749' \}\}>/.test(jvr) &&
        /World_Dark_Gray_Base/.test(jvr) && !/World_(Light_Gray|Street_Map)|google\.com\/vt/.test(jvr),
        'his: "people with epilepsy may suffer from that"');
+    /* HIS 2026-10-04 18:30 "yes please fix the map flash as well" - Map System. Measured on the lab build (A-Brain
+       Raw/2026-10-04-map-flash/probe-mapflash.mjs, 300 ms per request): on the dark default map a double-click zoom showed
+       Leaflet's #ddd where tiles were still missing - light share of the map 0.3 % -> 15.7 %, mean brightness 79 -> 107.
+       Unlike Journey it offers light maps too, so the empty map must FOLLOW the picked base map: each dark one gets its own
+       measured colour (settled: Dark Canvas 79,79,81; Hybrid 75,88,69 = brightness 84), the light ones keep #ddd. Behaviour:
+       every base layer named in the source resolves to a ground, and every dark one's ground is dark */
+    { const mc = code(map), blk = (mc.match(/<MapContainer ref=\{mapRef\}[\s\S]*?<\/MapContainer>/) || [''])[0];
+      const layers = [...blk.matchAll(/<LayersControl\.BaseLayer( checked)? name="([^"]+)">/g)].map((m) => ({ checked: !!m[1], name: m[2] }));
+      const table = Object.fromEntries([...((mc.match(/const MAP_GROUND = \{([^}]*)\}/) || ['', ''])[1]).matchAll(/'([^']+)':\s*'(#[0-9a-fA-F]{6})'/g)].map((m) => [m[1], m[2]]));
+      const luma = (h) => { const n = parseInt(h.slice(1), 16); return .2126 * (n >> 16) + .7152 * ((n >> 8) & 255) + .0722 * (n & 255); };
+      const dark = layers.filter((l) => /Dark|Hybrid/.test(l.name)), def = layers.find((l) => l.checked);
+      ok('Map System never flashes light while tiles load: each dark base map has its own dark ground (light maps keep #ddd), the map starts on the default map\'s ground and follows every base-map switch',
+         layers.length >= 5 && dark.length >= 2 && dark.every((l) => table[l.name] && luma(table[l.name]) < 110) && !!def && /Dark/.test(def.name)
+         && new RegExp(`<MapContainer ref=\\{mapRef\\}[^>]*background: MAP_GROUND\\['${def.name.replace(/[()]/g, '\\$&')}'\\]`).test(blk)
+         && /baselayerchange:\s*\(e\)\s*=>[^}]*MAP_GROUND\[e\.name\]\s*\|\|\s*'#ddd'/.test(mc) && /<MapGround \/>/.test(blk),
+         `layers ${layers.length}, dark ${dark.map((l) => l.name + '=' + (table[l.name] || 'none')).join(' / ')}, default ${def?.name}`); }
     /* (7) lab &noround (Ari's shops due another day, 3 sold today anyway): pressed, his road ran him -> 3 sales -> the
        suggestion, and the map held 0 chests - Journey Plan draws only the day's route, so the road bent at empty ground */
     ok('Journey pressed man: a stop on his road that is not on the day\'s route (a sale off-schedule, another day picked) still gets its chest, with its real owner and outcome',
