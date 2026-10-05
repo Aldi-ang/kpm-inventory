@@ -531,8 +531,12 @@
   background: #14110e; border: 1.5px solid #E4B04A; border-radius: 3px; padding: 2px 4px 1px 5px; white-space: nowrap; font-style: normal; }
 .ms-head .ms-mk.hub { margin-top: 16px; }
 .ms-head .ms-mk .word { display: none; }
-.ms-cluster { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(18, 17, 16, .95); border: 2px solid #D08A2E;
-  color: #E8E4DE; font: 800 15px/1 var(--font-display); box-shadow: 0 4px 14px rgba(0, 0, 0, .55); }
+/* a group of shops = a little market town (his pick B): roof line + doors in the best level's colour, the count under it */
+.ms-town { display: grid; justify-items: center; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .55)); }
+.ms-town svg { width: 42px; height: 30px; overflow: visible; }
+.ms-town path { fill: #14110e; stroke: var(--c); stroke-width: 2; stroke-linejoin: round; }
+.ms-town rect { fill: var(--c); }
+.ms-town b { margin-top: 2px; font: 700 13px/1 var(--font-display); color: #F0E2BC; background: #14110e; border: 1.5px solid #6A645C; border-radius: 4px; padding: 2px 5px 1px; letter-spacing: .04em; }
 .ms-tip { background: rgba(18, 17, 16, .95); color: #E8E4DE; border: 1px solid #3E3A35; border-radius: 8px; padding: 6px 10px; font: 700 12px/1.2 var(--font-body);
   white-space: nowrap; box-shadow: 0 6px 16px rgba(0, 0, 0, .5); }
 .ms-tip small { display: block; margin-top: 3px; font: 700 10px/1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: #E4B04A; }

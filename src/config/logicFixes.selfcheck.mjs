@@ -10445,7 +10445,10 @@ section('Map System redesign (phone A, PC B)');
      ['areas', 'levels', 'layers'].every((k) => new RegExp(`flip\\('${k}'\\)`).test(body)) && /<span>Locate<\/span>/.test(body) && /<div className="ms-sheet lg:hidden"/.test(body));
   ok('markers: the level is a colour AND a shape by the tier\'s rank (the last = a plain dot), overdue / due soon = a dot on the corner, nothing pulses',
      /const levelLook = \(tierId, tiers\) =>/.test(pins) && /i === tiers\.length - 1 \? LEVEL_NONE : LEVEL_LOOKS\[Math\.min\(i, 3\)\]/.test(pins) &&
-     /store\.status === 'overdue' \? 'late' : store\.status === 'soon' \? 'soon' : ''/.test(pins) && !/animation/.test(pins.slice(0, pins.indexOf('const userLocationIcon'))) && /class="ms-cluster"/.test(pins));
+     /store\.status === 'overdue' \? 'late' : store\.status === 'soon' \? 'soon' : ''/.test(pins) && !/animation/.test(pins.slice(0, pins.indexOf('const userLocationIcon'))) && /class="ms-town"/.test(pins));
+  ok('his group symbol B (2026-10-05 "B is better"): a group of shops is a little market town - two shop houses, the count under them, the roof in the colour of the best level inside (each pin carries its level rank and colour into the group)',
+     /class="ms-town"/.test(pins) && /getAllChildMarkers\(\)/.test(pins) && /lvRank=\{/.test(mm) && /lvColor=\{/.test(mm) &&
+     /\.ms-town path \{[^}]*stroke: var\(--c\)/.test(read('src/styles/expedition.css')) && !/class="ms-cluster"/.test(mm));
   ok('the shop card as drawn: level + area, the salesman, this month, last order, still unpaid, visit rhythm, next visit; Directions / WhatsApp / ⋯ boss tools / On Journey Plan',
      /<small>This month<\/small>/.test(sheet) && /<small>Last order<\/small>/.test(sheet) && /<small>Still unpaid<\/small>/.test(sheet) && /<small>Visit<\/small>/.test(sheet) &&
      /<small>Next visit<\/small>/.test(sheet) && /store\.assignedAgent/.test(sheet) && /areaOf\(store\)/.test(sheet) && /Directions/.test(sheet) && /aria-label="Boss tools"/.test(sheet) &&

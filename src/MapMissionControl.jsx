@@ -79,7 +79,13 @@ const userLocationIcon = L.divIcon({
 const act = (e) => { const b = e.currentTarget; b.classList.remove('act'); void b.offsetWidth; b.classList.add('act'); setTimeout(() => b.classList.remove('act'), 480); };
 
 /* a cluster of shops: the panel's own plate, a gold edge, the count in ink (it was a blue glow) */
-const createCustomClusterIcon = (cluster) => L.divIcon({ html: `<div class="ms-cluster">${cluster.getChildCount()}</div>`, className: 'custom-cluster-icon', iconSize: [40, 40], iconAnchor: [20, 20] });
+/* a group of shops (his pick B, 2026-10-05 "B is better"): a little market town - two shop houses, the count under them; the
+   roof line takes the colour of the best level inside (each pin carries lvRank / lvColor, see MarkerWithZoom) */
+const createCustomClusterIcon = (cluster) => {
+    const best = cluster.getAllChildMarkers().reduce((b, m) => ((m.options.lvRank ?? 99) < (b.options.lvRank ?? 99) ? m : b));
+    return L.divIcon({ html: `<div class="ms-town" style="--c:${best.options.lvColor || '#F0E2BC'}"><svg viewBox="0 0 42 30" aria-hidden="true"><path d="M3 28V14l9-8 9 8v14z"/><path d="M21 28V11l9-8 9 8v17z"/><rect x="9" y="20" width="6" height="8" rx="1"/><rect x="27" y="18" width="6" height="10" rx="1"/></svg><b>${cluster.getChildCount()}</b></div>`,
+        className: 'custom-cluster-icon', iconSize: [48, 52], iconAnchor: [24, 26] });
+};
 
 const compressCoords = (coords) => {
     if (Array.isArray(coords)) {
@@ -268,6 +274,7 @@ const DraggableAddMarker = ({ position, setPosition }) => {
 const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, isActive }) => {
     const map = useMap();
     const smartIcon = getIcon(store, activeTiers, isActive);
+    const rank = activeTiers.findIndex((t) => t.id === store.tier);
 
     return (
         <Marker
@@ -276,6 +283,7 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, isAc
             eventHandlers={{ click: () => { handlePinClick(store, map); } }}
             riseOnHover={true}
             zIndexOffset={isActive ? 1000 : store.storeType === 'Wholesaler' ? 500 : 0}
+            lvRank={rank < 0 ? 99 : rank} lvColor={levelLook(store.tier, activeTiers)[0]}
         >
             {!conquestMode && (
                 <LeafletTooltip direction="top" offset={[0, -14]} opacity={1} className="custom-leaflet-tooltip hidden lg:block">
