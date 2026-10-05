@@ -42,17 +42,23 @@ const LEVEL_LOOKS = [
     ['#F0E2BC', '<path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M3 3l10 10M13 3L3 13M1.5 10.5l4 4M10.5 14.5l4-4"/>'],   // crossed swords, cream
     ['#A0703C', '<path d="M8 1l6 2v5c0 4-3 6-6 7-3-1-6-3-6-7V3z"/>'],                                 // shield, bronze
 ];
-const LEVEL_NONE = ['#6A645C', '<circle cx="8" cy="8" r="4"/>'];
+/* the last level (Unranked) = a sprout, "a new shop that can still grow" - his pick 2026-10-05 ("unranked is sprout"); a light
+   stone grey so it reads on the dark map, never green (palette law) */
+const LEVEL_NONE = ['#B8B0A4', '<path d="M8 15V8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 9.2C8 5.6 5.6 3.4 2 3.4c0 3.6 2.4 5.8 6 5.8z"/><path d="M8 8.4c0-3.1 2.3-5.1 6-5.1 0 3.3-2.3 5.1-6 5.1z"/>'];
 const levelLook = (tierId, tiers) => { const i = tiers.findIndex((t) => t.id === tierId); return i < 0 || i === tiers.length - 1 ? LEVEL_NONE : LEVEL_LOOKS[Math.min(i, 3)]; };
 /* one badge for the pin, the chips, the area bars and the card; `dot` = late (red) / soon (gold) on the corner */
+/* a wholesale hub (his pick C, 2026-10-05 "wholesale hub is C good"): its level badge, bigger, under a warehouse roof, with
+   the word HUB under it - the object and the word */
+const HUB_ROOF = '<svg class="roof" viewBox="0 0 44 13" preserveAspectRatio="none" aria-hidden="true"><path d="M2 12L22 2l20 10"/></svg>';
 const levelBadge = (look, { dot = '', big = false, hub = false } = {}) =>
-    `<i class="ms-mk${big ? ' big' : ''}${hub ? ' hub' : ''}" style="--c:${look[0]}"><svg viewBox="0 0 16 16" aria-hidden="true">${look[1]}</svg>${dot ? `<i class="st ${dot}"></i>` : ''}</i>`;
+    `<i class="ms-mk${big ? ' big' : ''}${hub ? ' hub' : ''}" style="--c:${look[0]}">${hub ? HUB_ROOF : ''}<svg viewBox="0 0 16 16" aria-hidden="true">${look[1]}</svg>${dot ? `<i class="st ${dot}"></i>` : ''}${hub ? '<b class="word">HUB</b>' : ''}</i>`;
 const Badge = ({ look, ...o }) => <span className="contents" dangerouslySetInnerHTML={{ __html: levelBadge(look, o) }} />;
 
-/* the pin: a 24 px badge in a 32 px hit box (44 when pressed); a wholesale hub wears a second ring */
+/* the pin: a 24 px badge in a 32 px hit box (44 when pressed); a hub's bigger badge gets a 44 box (52 pressed) - its roof
+   and word sit outside the box and stay pressable (they are children of the marker) */
 const getIcon = (store, activeTiers, isActive = false) => {
     const dot = store.status === 'overdue' ? 'late' : store.status === 'soon' ? 'soon' : '';
-    const size = isActive ? 44 : 32;
+    const size = (isActive ? 44 : 32) + (store.storeType === 'Wholesaler' ? 8 + (isActive ? 0 : 4) : 0);
     return L.divIcon({ className: 'custom-icon ms-pin', html: levelBadge(levelLook(store.tier, activeTiers), { dot, big: isActive, hub: store.storeType === 'Wholesaler' }), iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
 };
 
@@ -269,7 +275,7 @@ const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, isAc
             icon={smartIcon}
             eventHandlers={{ click: () => { handlePinClick(store, map); } }}
             riseOnHover={true}
-            zIndexOffset={isActive ? 1000 : 0}
+            zIndexOffset={isActive ? 1000 : store.storeType === 'Wholesaler' ? 500 : 0}
         >
             {!conquestMode && (
                 <LeafletTooltip direction="top" offset={[0, -14]} opacity={1} className="custom-leaflet-tooltip hidden lg:block">
@@ -2411,7 +2417,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     spiderfyOnMaxZoom={true}
                     disableClusteringAtZoom={16} /* Ensures individual pins appear when zoomed in close */
                 >
-                    {mapPoints.map(store => (
+                    {mapPoints.filter((s) => s.storeType !== 'Wholesaler').map(store => (
                         <MarkerWithZoom 
                             key={store.id} 
                             store={store} 
@@ -2422,6 +2428,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         />
                     ))}
                 </MarkerClusterGroup>
+                {/* the hubs stay on the map at every zoom - never folded into a cluster bubble (his "more visible than other stores") */}
+                {mapPoints.filter((s) => s.storeType === 'Wholesaler').map(store => (
+                    <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick} isActive={activeStore && activeStore.id === store.id} />
+                ))}
 
                 {/* Every salesman as a gold chip at his last-seen point. Replaced the blue #3b82f6 avatar and
                     its dicebear image call (palette law; an outside request per agent). */}
