@@ -1,6 +1,11 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+/* the app's one face (his 2026-10-05 "C is best for fonts"): Rajdhani, bundled with the app so it works with no signal -
+   latin only (Indonesian needs nothing more), the three weights the CSS asks for (800 / 900 resolve to 700) */
+import '@fontsource/rajdhani/latin-500.css'
+import '@fontsource/rajdhani/latin-600.css'
+import '@fontsource/rajdhani/latin-700.css'
 import App from './App.jsx'
 import { ConfirmHost } from './components/ConfirmGate.jsx'
 import { ToastHost } from './components/Toast.jsx'

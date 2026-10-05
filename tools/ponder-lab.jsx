@@ -18,6 +18,10 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import '../src/index.css';
+/* the app's face, as src/main.jsx bundles it - the lab must render in the font the app ships (his "C is best for fonts") */
+import '@fontsource/rajdhani/latin-500.css';
+import '@fontsource/rajdhani/latin-600.css';
+import '@fontsource/rajdhani/latin-700.css';
 import PonderOverlay from '../src/ponder/PonderOverlay.jsx';
 import PonderBookButton from '../src/ponder/PonderBook.jsx';
 import TierPovSwitch from '../src/components/TierPovSwitch.jsx';

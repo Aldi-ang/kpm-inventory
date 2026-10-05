@@ -10463,13 +10463,23 @@ section('Map System redesign (phone A, PC B)');
      (body.match(/onClick=\{\(e\) => \{ act\(e\);/g) || []).length >= 6 && /kx-mapkey m-areas/.test(body) && /kx-mapkey m-levels/.test(body) && /kx-mapkey k-bord/.test(body) && /kx-mapkey k-loc/.test(body),
      keyCls.join());
   /* his picks, 2026-10-05 11:50: "wholesale hub is C good, unranked is sprout" (drawn: https://claude.ai/artifact/J7Y5RdwwUhtRPas3KP8Fti) */
-  ok('his hub pick C: a hub pin is a bigger badge under a warehouse roof with the word HUB (a gold EDGE on the dark plate, never an amber fill), rides above the other pins and is never folded into a cluster bubble',
+  /* 12:05 the same day: "make sure that the hub is hidden also when zoom out" - the hub joins the bubbles again (it sat on top
+     of one in his screenshot); it still rides above the other pins once the bubbles open */
+  ok('his hub pick C: a hub pin is a bigger badge under a warehouse roof with the word HUB (a gold EDGE on the dark plate, never an amber fill), rides above the other pins, and hides inside the bubbles when zoomed out like every shop',
      /\$\{hub \? HUB_ROOF : ''\}/.test(pins) && /\$\{hub \? '<b class="word">HUB<\/b>' : ''\}/.test(pins) &&
      /\.ms-mk > svg\.roof \{[^}]*fill: #14110e;[^}]*stroke: #E4B04A;/.test(exc) && /\.ms-mk\.hub \{ width: 30px; height: 30px;/.test(exc) &&
-     /mapPoints\.filter\(\(s\) => s\.storeType !== 'Wholesaler'\)\.map\(store => \(/.test(body) && /mapPoints\.filter\(\(s\) => s\.storeType === 'Wholesaler'\)\.map\(store => \(/.test(body) &&
+     !/storeType [!=]== 'Wholesaler'\)\.map\(store/.test(body) && /iconCreateFunction=\{createCustomClusterIcon\}[\s\S]{0,300}\{mapPoints\.map\(store => \(/.test(body) &&
      /zIndexOffset=\{isActive \? 1000 : store\.storeType === 'Wholesaler' \? 500 : 0\}/.test(mm));
   ok('his Unranked pick: the lowest level is a sprout (two leaves on a stem), a light stone grey that reads on the dark map - never the grey dot, never green',
      /const LEVEL_NONE = \['#B8B0A4', '[^']*M8 9\.2C8 5\.6 5\.6 3\.4 2 3\.4[^']*'\];/.test(pins) && !/<circle cx="8" cy="8" r="4"\/>/.test(pins));
+  /* his font pick, 2026-10-05 12:00: "C is best for fonts" - Rajdhani for the big numbers AND the small labels, app-wide. The
+     root cause he was looking at: --font-display named Barlow Condensed but nothing loaded it, so Windows drew Arial Narrow.
+     So the face ships INSIDE the app (offline PWA: bundled + precached), and the printed nota keeps its own Courier */
+  { const th = read('src/styles/theme.css'), mainJs = read('src/main.jsx'), pkg = JSON.parse(read('package.json')), vc = read('vite.config.js');
+    ok('his font C: Rajdhani for big numbers and labels on every screen, bundled with the app (not a web link), precached for no signal; the thermal nota keeps Courier',
+       /--font-display: "Rajdhani",/.test(th) && /--font-mono:\s+"Rajdhani",/.test(th) && !!(pkg.dependencies || {})['@fontsource/rajdhani'] &&
+       ['500', '600', '700'].every((w) => mainJs.includes(`import '@fontsource/rajdhani/latin-${w}.css'`)) && /globPatterns: \[[^\]]*'\*\*\/\*\.woff2'/.test(vc) &&
+       !/fonts\.googleapis/.test(read('index.html')) && /\.format-thermal \{ font-family: 'Courier New', Courier, monospace/.test(merchant)); }
   ok('palette law on Map System\'s own surfaces (the screen, the card, the pins): no blue / green / purple class or hex, amber never a fill',
      ![body, sheet, pins].some((s) => /\b(?:blue|emerald|green|purple|sky|cyan|indigo|teal|violet)-\d|#3b82f6|#10b981|#38bdf8|#8b5cf6|#2563eb|#c084fc|bg-amber-\d/i.test(s)));
 }

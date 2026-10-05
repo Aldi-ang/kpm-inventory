@@ -2417,7 +2417,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     spiderfyOnMaxZoom={true}
                     disableClusteringAtZoom={16} /* Ensures individual pins appear when zoomed in close */
                 >
-                    {mapPoints.filter((s) => s.storeType !== 'Wholesaler').map(store => (
+                    {mapPoints.map(store => (
                         <MarkerWithZoom 
                             key={store.id} 
                             store={store} 
@@ -2428,10 +2428,6 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         />
                     ))}
                 </MarkerClusterGroup>
-                {/* the hubs stay on the map at every zoom - never folded into a cluster bubble (his "more visible than other stores") */}
-                {mapPoints.filter((s) => s.storeType === 'Wholesaler').map(store => (
-                    <MarkerWithZoom key={store.id} store={store} activeTiers={activeTiers} conquestMode={conquestMode} handlePinClick={handlePinClick} isActive={activeStore && activeStore.id === store.id} />
-                ))}
 
                 {/* Every salesman as a gold chip at his last-seen point. Replaced the blue #3b82f6 avatar and
                     its dicebear image call (palette law; an outside request per agent). */}

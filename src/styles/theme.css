@@ -202,9 +202,11 @@ html { --kpm-safe-top: env(safe-area-inset-top, 0px); }
   --s5:20px; --s6:24px; --s8:32px; --s12:48px; --s16:64px;
 
   /* type */
-  --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+  /* his 2026-10-05 pick C: Rajdhani for the big numbers AND the small labels (src/main.jsx bundles it). Before this the
+     display face was named but never loaded, so Windows drew Arial Narrow everywhere. The printed nota keeps Courier. */
+  --font-display: "Rajdhani", "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
   --font-body:    system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono:    ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-mono:    "Rajdhani", ui-monospace, "Cascadia Mono", Consolas, monospace;
 }
 
 /* ----------------------------------------------------------------------------
