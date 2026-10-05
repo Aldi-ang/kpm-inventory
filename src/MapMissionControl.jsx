@@ -32,34 +32,40 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-/* A shop's level on Map System = its colour AND its shape, by the tier's rank (top first; the last tier is a plain grey
-   dot) - readable without the colour (his colour-blind rule, 2026-10-04). The tier's own colour setting is not used on
-   the map: it allows purple / pink, and the palette law has no blue, green or purple. The redesign he picked 2026-10-05
-   (A-Brain Brainstorm/2026-10-05_map-system-redesign.md). */
+/* his tier set B, the rank medals (2026-10-05 "rank medal is cool"), with his Mythic A, the royal crown ("A is good") - asked as
+   "we need set of of new tier symbol as well to better show their exclusiveness": each level a different game object on a
+   32 x 32 grid, the rarer the bigger on the map (Unranked 22 px -> Mythic 32 px). A look = [colour, the 16 x 16 picture
+   inside it, map size, draw(colour, picture)]. Drawn first: https://claude.ai/artifact/J7Y5RdwwUhtRPas3KP8Fti (SETS.B, MY.A) */
+const MD = '#14110e';
+const inner = (p, c, x, y, w) => `<svg x="${x}" y="${y}" width="${w}" height="${w}" viewBox="0 0 16 16" style="fill:${c};color:${c}">${p}</svg>`;
 const LEVEL_LOOKS = [
-    ['#E4B04A', '<path d="M2 12h12l1-8-4 3-3-5-3 5-4-3z"/>'],                                        // crown, gold
-    ['#C4551E', '<path d="M8 1c1 3 4 4 4 8a4 4 0 0 1-8 0c0-2 1-3 2-4 0 2 1 3 2 3-1-3 0-5 0-7z"/>'],  // flame, rust
-    ['#F0E2BC', '<path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M3 3l10 10M13 3L3 13M1.5 10.5l4 4M10.5 14.5l4-4"/>'],   // crossed swords, cream
-    ['#A0703C', '<path d="M8 1l6 2v5c0 4-3 6-6 7-3-1-6-3-6-7V3z"/>'],                                 // shield, bronze
+    ['#E4B04A', '', 32, (c) => `<path d="M3 10.5l6.8 5.3L16 4.5l6.2 11.3 6.8-5.3-3 15.5H6z" fill="${MD}" stroke="${c}" stroke-width="2" stroke-linejoin="round"/><path d="M6 26h20" stroke="${c}" stroke-width="2.4" stroke-linecap="round"/><circle cx="3" cy="10.5" r="2" fill="${c}"/><circle cx="16" cy="4.5" r="2.2" fill="${c}"/><circle cx="29" cy="10.5" r="2" fill="${c}"/><circle cx="10" cy="21" r="1.6" fill="${c}"/><circle cx="16" cy="20.5" r="2" fill="${c}"/><circle cx="22" cy="21" r="1.6" fill="${c}"/>`],   // Mythic: the royal crown
+    ['#C4551E', '<path d="M8 1c1 3 4 4 4 8a4 4 0 0 1-8 0c0-2 1-3 2-4 0 2 1 3 2 3-1-3 0-5 0-7z"/>', 28, (c, p) => `<path d="M8.5 4h15l6 8L16 30 2.5 12z" fill="${MD}" stroke="${c}" stroke-width="2" stroke-linejoin="round"/><path d="M2.5 12h27M11.5 4l-3 8L16 30l7.5-18-3-8" fill="none" stroke="${c}" stroke-opacity=".5" stroke-width="1.2" stroke-linejoin="round"/>${inner(p, c, 11, 10, 10)}`],   // Epic: an ember gem with its flame
+    ['#F0E2BC', '<path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M3 3l10 10M13 3L3 13M1.5 10.5l4 4M10.5 14.5l4-4"/>', 26, (c, p) => `<path d="M16 2l11 4v9c0 8-5 12-11 15C10 27 5 23 5 15V6z" fill="${MD}" stroke="${c}" stroke-width="2" stroke-linejoin="round"/><path d="M16 5.6l7.8 2.9v6.6c0 5.8-3.4 9-7.8 11.4" fill="none" stroke="${c}" stroke-opacity=".45"/>${inner(p, c, 9, 8, 14)}`],   // Grandmaster: a silver kite shield with crossed swords
+    ['#A0703C', '<path d="M8 1l6 2v5c0 4-3 6-6 7-3-1-6-3-6-7V3z"/>', 24, (c, p) => `<path d="M11 20l-3 10 4.5-2.5 3 3.5 1-10M21 20l3 10-4.5-2.5-3 3.5-1-10" fill="${MD}" stroke="${c}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="16" cy="13" r="10" fill="${MD}" stroke="${c}" stroke-width="2"/><circle cx="16" cy="13" r="7" fill="none" stroke="${c}" stroke-opacity=".5"/>${inner(p, c, 10, 7, 12)}`],   // Bronze: a medal on a ribbon
 ];
 /* the last level (Unranked) = a sprout, "a new shop that can still grow" - his pick 2026-10-05 ("unranked is sprout"); a light
-   stone grey so it reads on the dark map, never green (palette law) */
-const LEVEL_NONE = ['#B8B0A4', '<path d="M8 15V8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 9.2C8 5.6 5.6 3.4 2 3.4c0 3.6 2.4 5.8 6 5.8z"/><path d="M8 8.4c0-3.1 2.3-5.1 6-5.1 0 3.3-2.3 5.1-6 5.1z"/>'];
+   stone grey on a faint ring so it reads on the dark map, never green (palette law) */
+const LEVEL_NONE = ['#B8B0A4', '<path d="M8 15V8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 9.2C8 5.6 5.6 3.4 2 3.4c0 3.6 2.4 5.8 6 5.8z"/><path d="M8 8.4c0-3.1 2.3-5.1 6-5.1 0 3.3-2.3 5.1-6 5.1z"/>', 22, (c, p) => `<circle cx="16" cy="16" r="9" fill="${MD}" stroke="${c}" stroke-opacity=".55" stroke-width="1.3"/>${inner(p, c, 9.5, 9.5, 13)}`];
 const levelLook = (tierId, tiers) => { const i = tiers.findIndex((t) => t.id === tierId); return i < 0 || i === tiers.length - 1 ? LEVEL_NONE : LEVEL_LOOKS[Math.min(i, 3)]; };
-/* one badge for the pin, the chips, the area bars and the card; `dot` = late (red) / soon (gold) on the corner */
-/* a wholesale hub (his pick C, 2026-10-05 "wholesale hub is C good"): its level badge, bigger, under a warehouse roof, with
+/* one symbol for the pin, the chips, the card; `dot` = late (red) / soon (gold) on the corner, `big` = the pressed pin (a cream
+   ring), `fit` = one size for a row of chips */
+/* a wholesale hub (his pick C, 2026-10-05 "wholesale hub is C good"): its level symbol, bigger, under a warehouse roof, with
    the word HUB under it - the object and the word */
 const HUB_ROOF = '<svg class="roof" viewBox="0 0 44 13" preserveAspectRatio="none" aria-hidden="true"><path d="M2 12L22 2l20 10"/></svg>';
-const levelBadge = (look, { dot = '', big = false, hub = false } = {}) =>
-    `<i class="ms-mk${big ? ' big' : ''}${hub ? ' hub' : ''}" style="--c:${look[0]}">${hub ? HUB_ROOF : ''}<svg viewBox="0 0 16 16" aria-hidden="true">${look[1]}</svg>${dot ? `<i class="st ${dot}"></i>` : ''}${hub ? '<b class="word">HUB</b>' : ''}</i>`;
+const levelBadge = (look, { dot = '', big = false, hub = false, fit = 0 } = {}) => {
+    const px = fit || Math.round(look[2] * (big ? 1.3 : 1) + (hub ? 6 : 0));
+    return `<i class="ms-mk${big ? ' big' : ''}${hub ? ' hub' : ''}" style="--c:${look[0]};width:${px}px;height:${px}px">${hub ? HUB_ROOF : ''}<svg class="lv" viewBox="0 0 32 32" aria-hidden="true">${look[3](look[0], look[1])}</svg>${dot ? `<i class="st ${dot}"></i>` : ''}${hub ? '<b class="word">HUB</b>' : ''}</i>`;
+};
 const Badge = ({ look, ...o }) => <span className="contents" dangerouslySetInnerHTML={{ __html: levelBadge(look, o) }} />;
 
-/* the pin: a 24 px badge in a 32 px hit box (44 when pressed); a hub's bigger badge gets a 44 box (52 pressed) - its roof
-   and word sit outside the box and stay pressable (they are children of the marker) */
+/* the pin: the symbol in a hit box at least 32 px and 10 px wider than it (the rarer, the bigger); a hub's roof and word sit
+   outside the box and stay pressable (they are children of the marker) */
 const getIcon = (store, activeTiers, isActive = false) => {
     const dot = store.status === 'overdue' ? 'late' : store.status === 'soon' ? 'soon' : '';
-    const size = (isActive ? 44 : 32) + (store.storeType === 'Wholesaler' ? 8 + (isActive ? 0 : 4) : 0);
-    return L.divIcon({ className: 'custom-icon ms-pin', html: levelBadge(levelLook(store.tier, activeTiers), { dot, big: isActive, hub: store.storeType === 'Wholesaler' }), iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
+    const look = levelLook(store.tier, activeTiers), hub = store.storeType === 'Wholesaler';
+    const size = Math.max(32, Math.round(look[2] * (isActive ? 1.3 : 1) + (hub ? 6 : 0)) + 10);
+    return L.divIcon({ className: 'custom-icon ms-pin', html: levelBadge(look, { dot, big: isActive, hub }), iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
 };
 
 /* you are here - Journey's ink dot (palette law: it was blue) */
@@ -1016,7 +1022,7 @@ const LevelChips = ({ tiers, counts, filterTier, toggle, toggleAll }) => (
         <button type="button" className={`ms-chip all ${filterTier.length === tiers.length ? 'on' : ''}`} aria-pressed={filterTier.length === tiers.length} onClick={toggleAll}>All</button>
         {tiers.map((t) => (
             <button type="button" key={t.id} className={`ms-chip ${filterTier.includes(t.id) ? '' : 'off'}`} aria-pressed={filterTier.includes(t.id)} onClick={() => toggle(t.id)}>
-                <Badge look={levelLook(t.id, tiers)} />{String(t.label || t.id)} <b>{counts[t.id] || 0}</b>
+                <Badge look={levelLook(t.id, tiers)} fit={24} />{String(t.label || t.id)} <b>{counts[t.id] || 0}</b>
             </button>
         ))}
     </>

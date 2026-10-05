@@ -512,20 +512,16 @@
 /* the pins: level = colour AND shape, a dot on the corner for overdue (red) / due soon (gold); fixed colours - they sit
    on the map, not on a panel */
 .ms-pin { display: grid; place-items: center; }
-.ms-mk { position: relative; width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; flex: none; font-style: normal;
-  background: #14110e; border: 2px solid var(--c); box-shadow: 0 2px 0 rgba(0, 0, 0, .55); color: var(--c); }
-.ms-mk svg { width: 14px; height: 14px; fill: var(--c); }
+/* the rank medals (his set B + the royal crown): each symbol draws its own shape, so no plate here - the size comes inline
+   from levelBadge (22 px Unranked -> 32 px Mythic) */
+.ms-mk { position: relative; display: grid; place-items: center; flex: none; font-style: normal; color: var(--c); }
+.ms-mk > svg.lv { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 2px 0 rgba(0, 0, 0, .6)); }
 .ms-mk .st { position: absolute; right: -5px; top: -5px; width: 9px; height: 9px; border-radius: 50%; border: 2px solid #14110e; }
 .ms-mk .st.late { background: #E0583A; }
 .ms-mk .st.soon { background: #E4B04A; }
-.ms-mk.big { width: 34px; height: 34px; border-radius: 8px; outline: 2px solid #F0E2BC; outline-offset: 3px; }
-.ms-mk.big svg { width: 20px; height: 20px; }
+.ms-mk.big::before { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid #F0E2BC; }   /* the pressed pin */
 /* the wholesale hub (his pick C): a bigger badge, a warehouse roof over it and the word HUB under it - a gold EDGE on
    the dark plate, never an amber fill. `> svg.roof` outranks `.ms-mk.big svg` on purpose */
-.ms-mk.hub { width: 30px; height: 30px; border-radius: 5px; }
-.ms-mk.hub > svg:not(.roof) { width: 17px; height: 17px; }
-.ms-mk.hub.big { width: 38px; height: 38px; }
-.ms-mk.hub.big > svg:not(.roof) { width: 22px; height: 22px; }
 .ms-mk > svg.roof { position: absolute; left: -7px; right: -7px; top: -14px; width: auto; height: 13px; fill: #14110e; stroke: #E4B04A; stroke-width: 2.2; stroke-linejoin: round; overflow: visible; }
 .ms-mk .word { position: absolute; top: calc(100% + 4px); left: 50%; translate: -50% 0; font: 800 10px/1 var(--font-display); letter-spacing: .12em; color: #F0E2BC;
   background: #14110e; border: 1.5px solid #E4B04A; border-radius: 3px; padding: 2px 4px 1px 5px; white-space: nowrap; font-style: normal; }
@@ -608,8 +604,6 @@
 .ms-chip.off { opacity: .42; }
 .ms-chip b { color: var(--ink-muted); }
 .ms-chip:active { transform: scale(.97); }
-.ms-chip .ms-mk { width: 20px; height: 20px; }
-.ms-chip .ms-mk svg { width: 11px; height: 11px; }
 @media (min-width: 1024px) { .ms-chip { min-height: 36px; } }
 
 /* PC: the layer keys in a bottom dock; the tools top right (Journey's .kx-keys toolbar) */

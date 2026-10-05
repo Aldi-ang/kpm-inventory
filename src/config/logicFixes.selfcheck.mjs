@@ -10470,11 +10470,17 @@ section('Map System redesign (phone A, PC B)');
      of one in his screenshot); it still rides above the other pins once the bubbles open */
   ok('his hub pick C: a hub pin is a bigger badge under a warehouse roof with the word HUB (a gold EDGE on the dark plate, never an amber fill), rides above the other pins, and hides inside the bubbles when zoomed out like every shop',
      /\$\{hub \? HUB_ROOF : ''\}/.test(pins) && /\$\{hub \? '<b class="word">HUB<\/b>' : ''\}/.test(pins) &&
-     /\.ms-mk > svg\.roof \{[^}]*fill: #14110e;[^}]*stroke: #E4B04A;/.test(exc) && /\.ms-mk\.hub \{ width: 30px; height: 30px;/.test(exc) &&
+     /\.ms-mk > svg\.roof \{[^}]*fill: #14110e;[^}]*stroke: #E4B04A;/.test(exc) && /\(hub \? 6 : 0\)/.test(pins) &&
      !/storeType [!=]== 'Wholesaler'\)\.map\(store/.test(body) && /iconCreateFunction=\{createCustomClusterIcon\}[\s\S]{0,300}\{mapPoints\.map\(store => \(/.test(body) &&
      /zIndexOffset=\{isActive \? 1000 : store\.storeType === 'Wholesaler' \? 500 : 0\}/.test(mm));
   ok('his Unranked pick: the lowest level is a sprout (two leaves on a stem), a light stone grey that reads on the dark map - never the grey dot, never green',
-     /const LEVEL_NONE = \['#B8B0A4', '[^']*M8 9\.2C8 5\.6 5\.6 3\.4 2 3\.4[^']*'\];/.test(pins) && !/<circle cx="8" cy="8" r="4"\/>/.test(pins));
+     /const LEVEL_NONE = \['#B8B0A4', '[^']*M8 9\.2C8 5\.6 5\.6 3\.4 2 3\.4[^']*'/.test(pins) && !/<circle cx="8" cy="8" r="4"\/>/.test(pins));
+  /* 12:15 - 12:40: "we need set of of new tier symbol as well to better show their exclusiveness" -> "rank medal is cool but i dont
+     like the mythic logo" -> "A is good" (the royal crown). Drawn: https://claude.ai/artifact/J7Y5RdwwUhtRPas3KP8Fti (SETS.B, MY.A) */
+  ok('his tier set B, the rank medals, with his Mythic A, the royal crown: every level a different object on a 32 grid, the rarer the bigger on the map (22 / 24 / 26 / 28 / 32), the old square plate and the winged crown gone; the chips show them at one size',
+     /\['#E4B04A', '', 32, \(c\) => `<path d="M3 10\.5l6\.8 5\.3L16 4\.5/.test(pins) && /\['#C4551E', '[^']*', 28,/.test(pins) && /\['#F0E2BC', '[^']*', 26,/.test(pins) &&
+     /\['#A0703C', '[^']*', 24,/.test(pins) && /const LEVEL_NONE = \['#B8B0A4', '[^']*', 22,/.test(pins) && /<svg class="lv" viewBox="0 0 32 32"/.test(pins) &&
+     !/M10 20C6 20 2 17 1 11/.test(mm) && /fit=\{24\}/.test(mm) && !/\.ms-mk svg \{ width: 14px/.test(read('src/styles/expedition.css')));
   /* his font pick, 2026-10-05 12:00: "C is best for fonts" - Rajdhani for the big numbers AND the small labels, app-wide. The
      root cause he was looking at: --font-display named Barlow Condensed but nothing loaded it, so Windows drew Arial Narrow.
      So the face ships INSIDE the app (offline PWA: bundled + precached), and the printed nota keeps its own Courier */
