@@ -118,6 +118,10 @@ export function DayReplayLayer({ rp, ini, shirt, hair, cam, picked, onPick }) {
         return `${held}|${walking ? 1 : 0}|${busy ? 1 : 0}|${n}`;
     };
     const [phases, setPhases] = useState(''), [pose, setPose] = useState('|0|0|0');
+    /* a new day or a new man (the date picker, the fullscreen swap) = new stops: the old day's phases name stops the new day
+       does not have ('s8' on a 6-stop day read stops[8].kind and blanked the page) - drop them before the first render reads them */
+    const [seenTl, setSeenTl] = useState(tl);
+    if (seenTl !== tl) { setSeenTl(tl); setPhases(''); setPose('|0|0|0'); }
     const manRef = useRef(null), trail = useRef(null), trailU = useRef(null), marks = useRef({}), camSnap = useRef(true), drawn = useRef('');
     useEffect(() => { camSnap.current = true; }, [cam, tl]);
 
@@ -225,8 +229,11 @@ export function DayReplayLayer({ rp, ini, shirt, hair, cam, picked, onPick }) {
     );
 }
 
-/* ---- off the map: the player, the Day Log, the card of a pressed shop ---- */
-export function DayReplayPanel({ rp, man, day, onDay, onClose, cam, onCam, picked, onPick, wide, appSettings }) {
+/* ---- off the map: the player, the Day Log, the card of a pressed shop ----
+   `full` = the FULLSCREEN map (his look A, 2026-10-05 "A - thin bottom bar"): the same player as ONE thin bar along the map's
+   bottom, the day as colour ticks; no totals and no Day Log; a pressed shop's card sits under the Expedition list on the PC
+   (`cardHost`, a node inside ExpeditionMini) and above the player on the phone */
+export function DayReplayPanel({ rp, man, day, onDay, onClose, cam, onCam, picked, onPick, wide, appSettings, full, cardHost }) {
     const { log, logs, stops, tl, cur, playing, toggle, speed, setSpeed, jumpTo, seek, setPlaying } = rp;
     const fill = useRef(null), head = useRef(null), clock = useRef(null), bar = useRef(null), panel = useRef(null), strip = useRef(null);
     const [rcpt, setRcpt] = useState(null);
@@ -251,11 +258,11 @@ export function DayReplayPanel({ rp, man, day, onDay, onClose, cam, onCam, picke
        anything scrolled into view - a row reached with Tab - stops under the player too */
     useEffect(() => {
         const player = panel.current?.querySelector('.kx-rp-player');
-        if (!player || !wide) return;
+        if (!player || !wide || full) return;
         panel.current.style.setProperty('--rp-top', `${player.offsetHeight}px`);
         const card = picked != null && panel.current.querySelector('.kx-rp-card:not(.now)');
         if (card) panel.current.scrollTo({ top: card.offsetTop - player.offsetHeight - 8, behavior: rp.lite ? 'auto' : 'smooth' });
-    }, [picked, tl, wide, rp.lite]);
+    }, [picked, tl, wide, rp.lite, full]);
 
     const scrub = useRef(null);
     const toClock = (e) => { const r = bar.current.getBoundingClientRect(); return tl.day0 + Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * (tl.day1 - tl.day0); };
@@ -273,35 +280,49 @@ export function DayReplayPanel({ rp, man, day, onDay, onClose, cam, onCam, picke
     const lanes = useMemo(() => { const last = []; return (tl?.T || []).map((c) => { const p = ((c - tl.day0) / (tl.day1 - tl.day0)) * 100; let l = last.findIndex((q) => p - q >= 8); if (l < 0) l = last.length; last[l] = p; return l; }); }, [tl]);
     const hours = tl ?Array.from({ length: Math.floor((tl.day1 - tl.day0) / 60) + 1 }, (_, i) => Math.ceil(tl.day0 / 60) * 60 + i * 60).filter((h) => h <= tl.day1) : [];
 
+    const card = pickedEv && (
+        <section className="kx-rp-card" aria-live="polite">
+            <div className="top"><Pic k={pickedEv.kind} /><div className="min-w-0"><b>{pickedEv.name}</b><small>{pickedEv.time} · {NAME[pickedEv.kind]}</small></div>
+                <button type="button" className="kx-rp-x" aria-label="Close" onClick={() => onPick(null)}>×</button></div>
+            <p className="st" style={{ '--tone': TONE[pickedEv.kind] }}><i />{result(pickedEv)}</p>
+            {pickedEv.note && <p className="nt">"{pickedEv.note}"</p>}
+            <p className="by">{by(pickedEv, man?.name)}</p>
+            <div className="acts">
+                {pickedEv.kind === 'sold' && pickedEv.tx && <button type="button" className="gold" onClick={() => openRcpt(pickedEv)}>Review receipt</button>}
+                <button type="button" onClick={() => { onPick(null); jumpTo(picked, true); setPlaying(true); }}>Play from here</button>
+            </div>
+        </section>
+    );
+
     return (
-        <aside ref={panel} className="kx-panel kx-page kx-rp" aria-label="Day Replay">
-            <div className="kx-ph"><b>Day Replay</b><button type="button" className="kx-rp-x" onClick={onClose}>Back to team</button></div>
-            <div className="kx-rp-who">
+        <aside ref={panel} className={full ? 'kx-rp kx-rp-fs' : 'kx-panel kx-page kx-rp'} aria-label="Day Replay">
+            {!full && <div className="kx-ph"><b>Day Replay</b><button type="button" className="kx-rp-x" onClick={onClose}>Back to team</button></div>}
+            {!full && <div className="kx-rp-who">
                 <div className="min-w-0"><span className="kx-nm">{man?.name}</span>
                     <small>{events.length} {events.length === 1 ? 'thing' : 'things'} recorded{log?.skipped ? ` · ${log.skipped} report${log.skipped > 1 ? 's' : ''} could not be read` : ''}</small></div>
                 <input type="date" value={day} max={getLocalDayKey()} onChange={(e) => e.target.value && onDay(e.target.value)} aria-label="Day" />
-            </div>
-            {logs === null ? <p className="kx-empty">Reading his day…</p> : !events.length ? (
+            </div>}
+            {logs === null ? <p className="kx-empty">Reading {full ? `${man?.name}'s` : 'his'} day…</p> : !events.length ? (
                 <p className="kx-empty">No sales and no visit reports from {man?.name} on {day}.</p>
             ) : (
                 <>
-                    <div className="kx-rp-stats">
+                    {!full && <div className="kx-rp-stats">
                         <div><b>{formatRupiah(money)}</b><small>{sales.length} {sales.length === 1 ? 'sale' : 'sales'}</small></div>
                         <div><b>{noOrder}</b><small>visits, no sale</small></div>
                         <div><b>{events[0].time}-{events[events.length - 1].time}</b><small>first to last</small></div>
-                    </div>
-                    {!tl ? <p className="kx-empty">None of these shops has a map pin, so there is nothing to walk - the list is below.</p> : (
+                    </div>}
+                    {!tl ? <p className="kx-empty">None of {full ? `${man?.name}'s` : 'these'} shops has a map pin, so there is nothing to walk - {full ? 'his list is on the page (Exit Fullscreen)' : 'the list is below'}.</p> : (
                         <section className="kx-rp-player" aria-label="Replay">
-                            <div ref={bar} className="kx-rp-tl" style={{ height: 44 + 28 * Math.max(0, ...lanes) }} role="slider" tabIndex={0} aria-label="Time of day" aria-valuemin={0} aria-valuemax={100}
+                            <div ref={bar} className="kx-rp-tl" style={full ? undefined : { height: 44 + 28 * Math.max(0, ...lanes) }} role="slider" tabIndex={0} aria-label="Time of day" aria-valuemin={0} aria-valuemax={100}
                                 onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
                                 <div className="track"><i ref={fill} className="fill" /></div>
                                 {stops.map((s, k) => (
-                                    <button key={k} type="button" className={`kx-rp-notch${k <= cur ? ' done' : ''}${k === cur ? ' now' : ''}`} style={{ left: `${pct(tl.T[k])}%`, '--lane': lanes[k] }}
+                                    <button key={k} type="button" data-kind={s.kind} className={`kx-rp-notch${k <= cur ? ' done' : ''}${k === cur ? ' now' : ''}`} style={{ left: `${pct(tl.T[k])}%`, '--lane': lanes[k] }}
                                         aria-label={`${s.time} ${s.name}`} onClick={() => jumpTo(k)}><Pic k={s.kind} /></button>
                                 ))}
                                 <i ref={head} className="head" />
                             </div>
-                            <div className="kx-rp-hours">{hours.map((h) => <span key={h} style={{ left: `${pct(h)}%` }}>{hm(h)}</span>)}</div>
+                            {!full && <div className="kx-rp-hours">{hours.map((h) => <span key={h} style={{ left: `${pct(h)}%` }}>{hm(h)}</span>)}</div>}
                             <div className="kx-rp-ctl">
                                 <button type="button" aria-label="Restart" onClick={() => { seek(0, true); setPlaying(true); }}><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 9a5 5 0 1 0 1.5-3.6" /><path d="M4 3v3.4h3.4" /></svg></button>
                                 <button type="button" aria-label="Previous stop" onClick={() => { const s = tl.segAt(rp.t.current); jumpTo(s.kind === 'scene' && rp.t.current - s.t0 > 600 ? cur : Math.max(0, cur - 1)); }}><svg viewBox="0 0 18 18" fill="currentColor"><path d="M4 3h2v12H4zM15 3v12L7 9z" /></svg></button>
@@ -314,23 +335,11 @@ export function DayReplayPanel({ rp, man, day, onDay, onClose, cam, onCam, picke
                                 <button type="button" aria-pressed={cam === 'whole'} onClick={() => onCam('whole')}>Whole day</button>
                                 <button type="button" aria-pressed={cam === 'follow'} onClick={() => onCam('follow')}>Follow him</button>
                             </div>
-                            <p className="kx-rp-note">The walk between stops is drawn, not tracked.</p>
+                            {!full && <p className="kx-rp-note">The walk between stops is drawn, not tracked.</p>}
                         </section>
                     )}
-                    {pickedEv && (
-                        <section className="kx-rp-card" aria-live="polite">
-                            <div className="top"><Pic k={pickedEv.kind} /><div className="min-w-0"><b>{pickedEv.name}</b><small>{pickedEv.time} · {NAME[pickedEv.kind]}</small></div>
-                                <button type="button" className="kx-rp-x" aria-label="Close" onClick={() => onPick(null)}>×</button></div>
-                            <p className="st" style={{ '--tone': TONE[pickedEv.kind] }}><i />{result(pickedEv)}</p>
-                            {pickedEv.note && <p className="nt">"{pickedEv.note}"</p>}
-                            <p className="by">{by(pickedEv, man?.name)}</p>
-                            <div className="acts">
-                                {pickedEv.kind === 'sold' && pickedEv.tx && <button type="button" className="gold" onClick={() => openRcpt(pickedEv)}>Review receipt</button>}
-                                <button type="button" onClick={() => { onPick(null); jumpTo(picked, true); setPlaying(true); }}>Play from here</button>
-                            </div>
-                        </section>
-                    )}
-                    {wide ? (
+                    {full && wide && cardHost ? card && createPortal(card, cardHost) : card}
+                    {full ? null : wide ? (
                         <ol className="kx-rp-rows">
                             {events.map((e, i) => {
                                 const k = kOf(e);

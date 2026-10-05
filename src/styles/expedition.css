@@ -414,6 +414,10 @@
 .kx-mrow { display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 7px; background: var(--panel); color: var(--ink); cursor: pointer; text-align: left; }
 .kx-mrow.sel { border-color: #E4B04A; }
 .kx-mrows { display: grid; gap: 4px; max-height: calc(100vh - 320px); overflow-y: auto; scrollbar-width: thin; }
+/* a long name ("[TEST] HQ SALES MANAGER") ends in "..." and never pushes the count out sideways (his shot, 2026-10-05: the rows
+   cut off with a sideways scrollbar - an auto grid column grows to the widest row's text) */
+.kx-mini, .kx-mrows { grid-template-columns: minmax(0, 1fr); }
+.kx-mrow span { min-width: 0; }
 .kx-mrow.off, .kx-mchips button.off { opacity: .55; }   /* not out today: listed, dimmed (his "i still cant see the team list") */
 .kx-mrow i { width: 8px; height: 8px; border-radius: 2px; background: var(--c); flex: none; }
 .kx-mrow span { font: 800 13px/1 var(--font-display); letter-spacing: .03em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -843,3 +847,45 @@
   font: 800 12px/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
 .kx-rp-go svg { width: 14px; height: 14px; fill: currentColor; }
 .kx-rp-rcpt { position: fixed; inset: 0; z-index: 9999; }
+
+/* ---- the replay on the FULLSCREEN map, his look A (2026-10-05 "A - thin bottom bar", drawn compact on his "more compact
+   especially on pc"): one bar along the map's bottom, the day as colour ticks - gold money, pale visited no sale, red a
+   problem, dark closed. The phone: above the key dock, the timeline on its own row, the panel's 40 px keys. Under the
+   phone's Brush list (z 9999) on purpose: an opened list draws over the bar ---- */
+.kx-rp-fs { position: absolute; z-index: 9998; left: 8px; right: 8px; bottom: calc(98px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 8px;
+  padding: 8px 10px; border: 1px solid var(--line-3); border-radius: 14px; background: var(--panel); color: var(--ink); box-shadow: 0 8px 28px rgba(0, 0, 0, .55); }
+.kx-rp-fs .kx-rp-card { order: -1; }
+.kx-rp-fs .kx-rp-player { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.kx-rp-fs .kx-rp-tl { order: -1; flex: 1 1 100%; height: 30px; margin: 0 6px; }
+.kx-rp-fs .kx-rp-tl .track { bottom: 12px; height: 4px; }
+.kx-rp-fs .kx-rp-tl .head { bottom: 7px; height: 14px; }
+.kx-rp-fs .kx-rp-notch { bottom: 7px; width: 6px; height: 14px; border: 0; border-radius: 2px; opacity: 1; background: #E8E4DE; }
+.kx-rp-fs .kx-rp-notch::before { content: ''; position: absolute; inset: -8px -4px; }   /* the 6 px tick is pressable 14 x 30 */
+.kx-rp-fs .kx-rp-notch .kx-rp-pic { display: none; }
+.kx-rp-fs .kx-rp-notch[data-kind="sold"], .kx-rp-fs .kx-rp-notch[data-kind="order"] { background: #E4B04A; }
+.kx-rp-fs .kx-rp-notch[data-kind="issue"], .kx-rp-fs .kx-rp-notch[data-kind="swap"] { background: #E0583A; }
+.kx-rp-fs .kx-rp-notch[data-kind="closed"] { background: #6A645C; }
+.kx-rp-fs .kx-rp-notch.now { outline: 2px solid #E4B04A; outline-offset: 2px; }
+/* phone: the keys join the bar's own rows so the clock rides the camera row (one row less than a wrapped clock) */
+.kx-rp-fs .kx-rp-ctl { display: contents; }
+.kx-rp-fs .kx-roadsw { order: 1; margin: 0; }
+.kx-rp-fs .kx-rp-clock { order: 2; }
+@media (min-width: 1024px) {
+  .kx-rp-fs { left: 16px; right: 232px; bottom: 16px; padding: 6px 10px; }
+  .kx-rp-fs .kx-rp-player { flex-wrap: nowrap; }
+  .kx-rp-fs .kx-rp-tl { order: 1; flex: 1; }
+  .kx-rp-fs .kx-roadsw { order: 2; }
+  .kx-rp-fs .kx-rp-ctl { display: flex; flex-wrap: nowrap; gap: 4px; }
+  .kx-rp-fs .kx-rp-ctl > button { width: 32px; height: 32px; border-radius: 8px; }
+  .kx-rp-fs .kx-rp-ctl > button.play { width: 38px; }
+  .kx-rp-fs .kx-rp-ctl > button svg { width: 14px; height: 14px; }
+  .kx-rp-fs .kx-rp-speed button { min-width: 28px; height: 30px; font-size: 11px; }
+  .kx-rp-fs .kx-rp-clock { order: 0; margin-left: 6px; font-size: 15px; }
+  .kx-rp-fs .kx-roadsw button { min-height: 30px; padding: 0 8px; font-size: 10px; }
+}
+/* PC: the pressed shop's card sits under the fullscreen Expedition list; the list gives up room so the card stays on screen */
+.kx-mini .kx-rp-card { grid-template-columns: minmax(0, 1fr); padding: 8px 10px; gap: 4px; }   /* else a long shop name pushes the × out */
+.kx-mini .kx-rp-card .top b { font-size: 13px; }
+.kx-mini .kx-rp-card .top .kx-rp-x { min-width: 30px; min-height: 30px; }
+.kx-mini .kx-rp-card .acts button { min-height: 30px; padding: 0 8px; font-size: 10px; }
+.kx-mini:has(.kx-rp-card) .kx-mrows { max-height: max(120px, calc(100vh - 600px)); }

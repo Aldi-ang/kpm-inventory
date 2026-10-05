@@ -7885,7 +7885,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   const jv = read('src/JourneyView.jsx'); const th = read('src/styles/theme.css'); const ll = read('tools/lab-looks.js');
   ok('Journey Plan: the map is a 160 px strip on the phone (500 on the desk); only the ⛶ and the recenter key stay on the strip — the other keys, the legend and the zoom control come back full screen (in the dock) and on the desk',
      /'relative w-full h-40 lg:h-\[500px\] rounded-2xl kpm-jp-map'/.test(jv) &&
-     (jv.match(/\$\{isFullScreen \? 'flex' : 'hidden lg:flex'\}/g) || []).length === 1 &&
+     (jv.match(/\$\{isFullScreen && replayFor \? 'flex lg:hidden' : isFullScreen \? 'flex' : 'hidden lg:flex'\}/g) || []).length === 1 &&   /* the PC brush key steps off during a fullscreen replay (no shops on the map to paint), 2026-10-05 */
      (jv.match(/className="kx-mapkey k-(home|fly) hidden lg:flex items-center gap-2"/g) || []).length === 2 &&
      /\{isFullScreen && \(\s*<nav className="kx-dock/.test(jv) &&
      /@media \(max-width: 1023px\) \{ \.kpm-jp-map \.leaflet-control-zoom \{ display: none; \} \}/.test(th) &&
@@ -10519,7 +10519,16 @@ section('THE DAY REPLAY ON JOURNEY PLAN (2026-10-05) - his "this chain of events
      /import SaleReceipt from '\.\/SaleReceipt\.jsx'/.test(hist) && /<SaleReceipt tx=\{viewingReceipt\}/.test(hist) && !/print-receipt|NOTA PENJUALAN/.test(hist)
      && /NOTA PENJUALAN/.test(rc) && /createPortal\(<div className="kx-rp-rcpt"><SaleReceipt/.test(rp) && /\.kx-rp-rcpt \{ position: fixed; inset: 0; z-index: 9999; \}/.test(css));
   ok('while it plays the shops and the team step off the map, and the panel slot holds the player',
-     /\{!replayFor && \(\s*<MarkerClusterGroup/.test(jv) && /team\.length > 0 && !replayFor && <ExpeditionLayer/.test(jv) && /\{replayFor \? \(\s*<DayReplayPanel/.test(jv));
+     /\{!replayFor && \(\s*<MarkerClusterGroup/.test(jv) && /team\.length > 0 && !replayFor && <ExpeditionLayer/.test(jv) && /\{replayFor \? !isFullScreen && \(\s*<DayReplayPanel/.test(jv));
+  ok('fullscreen (his look A, 2026-10-05): the SAME player as a bar on the map - one DayReplayPanel with `full`, never a second copy; the page one steps aside',
+     (jv.match(/<DayReplayPanel /g) || []).length === 2 && /\{isFullScreen && replayFor && \(\s*<DayReplayPanel [^>]*full cardHost=\{rpSlot\} \/>/.test(jv)
+     && /className=\{full \? 'kx-rp kx-rp-fs' : 'kx-panel kx-page kx-rp'\}/.test(rp) && /\.kx-rp-fs \{ position: absolute; z-index: 9998;/.test(css));
+  ok('fullscreen swap: while a day plays, a press on another man in the small Expedition plays HIS day on the SAME day (PC rows and phone chips)',
+     (jv.match(/onPick=\{replayFor \? swapReplay : pickAgent\}/g) || []).length === 2 && /const swapReplay = \(id\) => \{ if \(id === replayFor\?\.id\) return; setRpPick\(null\);[^}]*setReplayFor\(\{ id, day: replayFor\.day \}\); \};/.test(jv));
+  ok('a new man or a new day drops the old day\'s phases before the map reads them (the swap to a man with fewer stops read stops[8].kind and blanked the page - walk 2026-10-05)',
+     /const \[seenTl, setSeenTl\] = useState\(tl\);\s*if \(seenTl !== tl\) \{ setSeenTl\(tl\); setPhases\(''\); setPose\('\|0\|0\|0'\); \}/.test(rp));
+  ok('the small fullscreen Expedition never scrolls sideways: a long name ends in "..." (his shot - "[TEST] HQ SALES MANAGER" pushed the count out)',
+     /\.kx-mini, \.kx-mrows \{ grid-template-columns: minmax\(0, 1fr\); \}/.test(css) && /\.kx-mrow span \{ min-width: 0; \}/.test(css));
   ok('the replay\'s scenes reuse the app\'s own chest moment (.kx-c5.burst, look C acts), with the sign moved after what the shop hands him',
      /chestHtml\(kind, c, st\[0\] === 's' \? 'burst' : ''/.test(rp) && /\.kx-rp-mk \.kx-c5\.burst \.sign5 \{ --d: 1300ms; animation-delay: 1300ms; \}/.test(css));
   ok('the walk is never claimed as tracked: the note says it is drawn, the card says a report\'s time is when he pressed Report',

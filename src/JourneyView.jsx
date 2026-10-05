@@ -1007,6 +1007,11 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         setRpCam(null); setRpPick(null); setReplayFor({ id, day: todayDate });
     };
     const rpPickAt = (k) => { setRpPick(k); if (k != null) rp.setPlaying(false); };
+    /* fullscreen (his "swap means change other people daily recording when press", 2026-10-05): while a day plays, a press
+       on another man in the small Expedition plays HIS day - the same day, the camera kept; the card under the list is
+       `rpSlot`, a node ExpeditionMini draws */
+    const swapReplay = (id) => { if (id === replayFor?.id) return; setRpPick(null); setExpSel(id); setExpFocus(true); setReplayFor({ id, day: replayFor.day }); };
+    const [rpSlot, setRpSlot] = useState(null);
     const toggleFullScreen = () => {
         setIsFullScreen(!isFullScreen);
         setTimeout(() => window.dispatchEvent(new Event('resize')), 200);
@@ -1164,7 +1169,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 {/* the brush (his "new" key layout, 2026-10-03): the key stays in its corner and the list opens ABOVE it;
                     on the phone's full map the key lives in the dock and the list opens above the dock. Rows 44 tall,
                     whole names, no orange slab for "off". */}
-                <div className={`kx-brushwrap absolute bottom-4 left-4 z-[9999] ${isFullScreen ? 'flex' : 'hidden lg:flex'} flex-col-reverse gap-2 items-start pointer-events-none`}>
+                <div className={`kx-brushwrap absolute bottom-4 left-4 z-[9999] ${isFullScreen && replayFor ? 'flex lg:hidden' : isFullScreen ? 'flex' : 'hidden lg:flex'} flex-col-reverse gap-2 items-start pointer-events-none`}>
                     <button
                         onClick={(e) => { act(e); setIsPanelOpen(!isPanelOpen); }}
                         onDoubleClick={() => setDevUnlock(true)}
@@ -1267,10 +1272,16 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         <Navigation size={20}/>
                         <span className="hidden lg:block">Fly Home</span>
                     </button>
-                    {isFullScreen && team.length > 0 && wide && <ExpeditionMini team={team} sel={selId} onPick={pickAgent} wide colorOf={squadColor} focused={!!road} roadAll={roadAll} onRoadAll={setRoadAll} />}
+                    {isFullScreen && team.length > 0 && wide && <ExpeditionMini team={team} sel={selId} onPick={replayFor ? swapReplay : pickAgent} wide colorOf={squadColor} focused={!!road || !!replayFor} roadAll={roadAll} onRoadAll={setRoadAll}
+                        onReplay={replayFor ? () => setReplayFor(null) : openReplay} replaying={!!replayFor}>{replayFor && <div ref={setRpSlot} className="kx-rp-slot" />}</ExpeditionMini>}
                 </div>
                 {isFullScreen && team.length > 0 && !wide && (
-                    <div className="kx-mbarwrap"><ExpeditionMini team={team} sel={selId} onPick={pickAgent} colorOf={squadColor} focused={!!road} roadAll={roadAll} onRoadAll={setRoadAll} /></div>
+                    <div className="kx-mbarwrap"><ExpeditionMini team={team} sel={selId} onPick={replayFor ? swapReplay : pickAgent} colorOf={squadColor} focused={!!road || !!replayFor} roadAll={roadAll} onRoadAll={setRoadAll}
+                        onReplay={replayFor ? () => setReplayFor(null) : openReplay} replaying={!!replayFor} /></div>
+                )}
+                {isFullScreen && replayFor && (
+                    <DayReplayPanel rp={rp} man={replayMan} day={replayFor.day}
+                        cam={rpCam || (wide ? 'whole' : 'follow')} onCam={setRpCam} picked={rpPick} onPick={rpPickAt} wide={wide} appSettings={appSettings} full cardHost={rpSlot} />
                 )}
 
                 {isFullScreen && (
@@ -1566,7 +1577,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     <SignHold />
                 </MapContainer>
             </div>
-            {replayFor ? (
+            {replayFor ? !isFullScreen && (
                 <DayReplayPanel rp={rp} man={replayMan} day={replayFor.day} onDay={(day) => { setRpPick(null); setReplayFor({ ...replayFor, day }); }} onClose={() => setReplayFor(null)}
                     cam={rpCam || (wide ? 'whole' : 'follow')} onCam={setRpCam} picked={rpPick} onPick={rpPickAt} wide={wide} appSettings={appSettings} />
             ) : team.length > 0 && <ExpeditionPanel team={team} sel={selId} onPick={pickAgent} wide={wide} scoped={!globalView} focused={!!road} roadAll={roadAll} onRoadAll={setRoadAll} onReplay={openReplay} page />}

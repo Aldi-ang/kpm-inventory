@@ -303,7 +303,10 @@ export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page, focused
    short rows under the map keys, the phone keeps the pick chips plus ONE line of the picked man's card. The WHOLE team
    is listed, men not out today dimmed (his "i still cant see the team list when fullscreen", 10:20 - listing only the men
    on the map left it empty on a day nobody was out). A tap is the same pick as the full panel. ---- */
-export function ExpeditionMini({ team, sel, onPick, wide, colorOf, focused, roadAll, onRoadAll }) {
+/* `onReplay` + `replaying` (his 2026-10-05 "playable and swapble in the fullscreen"): the same Replay key as the full panel;
+   while his day plays, a press on another man swaps the replay to HIS day (JourneyView decides), the key stops it, and
+   `children` is where the pressed shop's card sits (PC) */
+export function ExpeditionMini({ team, sel, onPick, wide, colorOf, focused, roadAll, onRoadAll, onReplay, replaying, children }) {
     const out = team.filter((a) => a.live).length;
     const a = team.find((t) => t.id === sel) || team[0];
     const sq = (t) => ({ '--c': safeHex(colorOf ? colorOf(t.name) : '#E8E4DE', '#E8E4DE') });
@@ -317,7 +320,9 @@ export function ExpeditionMini({ team, sel, onPick, wide, colorOf, focused, road
                     </button>
                 ))}
             </div>
-            {focused && <RoadSwitch all={roadAll} onAll={onRoadAll} />}
+            {focused && !replaying && <RoadSwitch all={roadAll} onAll={onRoadAll} />}
+            {focused && onReplay && <button type="button" className="kx-rp-go" aria-pressed={!!replaying} onClick={onReplay}>{replaying ? <svg viewBox="0 0 12 12"><path d="M2 2h8v8H2z" /></svg> : <svg viewBox="0 0 12 12"><path d="M3 1.5v9l7.5-4.5z" /></svg>}{replaying ? 'Stop replay' : 'Replay his day'}</button>}
+            {children}
         </aside>
     );
     return (
@@ -333,7 +338,8 @@ export function ExpeditionMini({ team, sel, onPick, wide, colorOf, focused, road
                     <span>{({ go: a.next?.name, at: a.done[a.done.length - 1]?.name })[a.state] || ''}</span><em>{count(a)}</em>
                 </div>
             )}
-            {focused && <RoadSwitch all={roadAll} onAll={onRoadAll} />}
+            {focused && !replaying && <RoadSwitch all={roadAll} onAll={onRoadAll} />}
+            {focused && onReplay && <button type="button" className="kx-rp-go" aria-pressed={!!replaying} onClick={onReplay}>{replaying ? <svg viewBox="0 0 12 12"><path d="M2 2h8v8H2z" /></svg> : <svg viewBox="0 0 12 12"><path d="M3 1.5v9l7.5-4.5z" /></svg>}{replaying ? 'Stop replay' : 'Replay his day'}</button>}
         </div>
     );
 }
