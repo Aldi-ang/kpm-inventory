@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Marker, Polyline, CircleMarker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { agoLabel } from '../utils/expedition';
-import { personSvg, sellerHtml, QUEST, safeHex } from '../utils/mapSprites';
+import { personSvg, sellerHtml, QUEST, safeHex, HAIR } from '../utils/mapSprites';
 import '../styles/expedition.css';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -19,7 +19,6 @@ const said = (a) => ({
 })[a.state];
 const lamp = (a) => ({ go: 'go', at: 'at' })[a.state] || '';
 const ll = (p) => [p.lat, p.lng];
-const HAIR = ['#2B1A0E', '#151210', '#5A3418'];
 /* one icon per look: react-leaflet calls setIcon whenever the icon OBJECT changes, and a fresh divIcon every render
    rebuilt each salesman (and restarted his walk) on every keystroke of the page around the map */
 const iconCache = new Map();
@@ -238,7 +237,8 @@ const RoadSwitch = ({ all, onAll }) => (
     </div>
 );
 
-export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page, focused, roadAll, onRoadAll }) {
+/* `onReplay`: the pressed man's Day Replay (src/components/DayReplay.jsx) - his day played back on this map */
+export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page, focused, roadAll, onRoadAll, onReplay }) {
     const out = team.filter((a) => a.out);
     const done = out.reduce((s, a) => s + a.done.length, 0), of = out.reduce((s, a) => s + (a.of ?? a.done.length), 0);
     const a = team.find((t) => t.id === sel) || team[0];
@@ -247,6 +247,7 @@ export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page, focused
         <aside className={`kx-panel${page ? ' kx-page' : ''}`} aria-label="Expedition">
             <div className="kx-ph"><b>Expedition</b><span>{out.length} out · <em>{done}/{of}</em> shops</span></div>
             {focused && <RoadSwitch all={roadAll} onAll={onRoadAll} />}
+            {focused && onReplay && <button type="button" className="kx-rp-go" onClick={onReplay}><svg viewBox="0 0 12 12"><path d="M3 1.5v9l7.5-4.5z" /></svg>Replay his day</button>}
             {!team.length ? (
                 <p className="kx-empty">No salesman{scoped ? ' in your region' : ''} has sent a position yet. His phone sends one with every sale and every time he opens the app.</p>
             ) : wide ? (

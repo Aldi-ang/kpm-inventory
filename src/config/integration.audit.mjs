@@ -2350,7 +2350,8 @@ check(G34, 'the mascot lines are a picker, not an unbounded list',
    the animated mascot with a still photo AND was the only candidate for the nota's mark, so a
    business document moved whenever he changed the mascot's face — his *"the picture is following
    the mascot image"*. These four checks hold the split. */
-const histSrc = fs.readFileSync('src/components/HistoryReportView.jsx', 'utf8');
+/* the nota moved out of HistoryReportView into SaleReceipt.jsx (2026-10-05, the Day Replay opens it too) */
+const histSrc = fs.readFileSync('src/components/SaleReceipt.jsx', 'utf8');
 const prevSrc = fs.readFileSync('src/components/ReceiptPreview.jsx', 'utf8');
 const wmCfg   = fs.readFileSync('src/config/receiptWatermark.js', 'utf8');
 check(G34, 'the watermark panel sits directly below Signature & bank',

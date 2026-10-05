@@ -3169,7 +3169,9 @@ const handleGitHubMirror = async () => {
   // --- ACTIONS ---
  
   // --- MODIFIED: SYSTEM LOG ENGINE (FIXED 4TH DOWNLOAD BUG) ---
-  const logAudit = async (action, details, includeSnapshot = false) => {
+  /* `fields`: plain values saved beside the sentence (a Visit Report's storeId / tag / agentId, for the Day Replay -
+     src/utils/dayLog.js), so a reader never has to cut the sentence apart; the rules' audit create has no field list */
+  const logAudit = async (action, details, includeSnapshot = false, fields = {}) => {
     if (!user) return;
     const now = new Date();
     const dateKey = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
@@ -3183,6 +3185,7 @@ const handleGitHubMirror = async () => {
         }
 
         const logData = {
+            ...fields,
             action,
             details,
             user: user.email,

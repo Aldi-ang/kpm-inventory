@@ -11,11 +11,13 @@ import 'leaflet/dist/leaflet.css';
 import { loadBorderCache, saveBorderCache } from './utils/borderCache';
 import { isFleetManagementTier, hasClearance } from './config/permissions';
 import { ExpeditionLayer, ExpeditionPanel, ExpeditionPeople, ExpeditionMini } from './components/Expedition.jsx';
+import { DayReplayLayer, DayReplayPanel } from './components/DayReplay.jsx';
+import { useDayReplay } from './hooks/useDayReplay.js';
 import { useWide } from './hooks/useWide';
 import { expedition, visibleTeam, roadStops, initials } from './utils/expedition';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
-import { signFor, kindByShop, chestHtml, slotHtml, crowdHtml } from './utils/mapSprites';
+import { signFor, kindByShop, chestHtml, slotHtml, crowdHtml, HAIR } from './utils/mapSprites';
 
 // 🚀 SAFE LEAFLET ICON SETUP
 delete L.Icon.Default.prototype._getIconUrl;
@@ -944,7 +946,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 updatedAt: serverTimestamp()
             });
 
-            if (logAudit) await logAudit("VISIT_REPORT", `Visited ${checkInCustomer.name} - ${visitTag}: ${visitNote}`);
+            /* the shop, the tag and the man as fields too (the Day Replay reads them; older entries are the sentence only) */
+            if (logAudit) await logAudit("VISIT_REPORT", `Visited ${checkInCustomer.name} - ${visitTag}: ${visitNote}`, false,
+                { storeId: checkInCustomer.id, tag: visitTag, agentId: agentProfileId || null });
             if (triggerCapy) triggerCapy(`Bounty Claimed! ✅`);
             
             setCheckInCustomer(null);
@@ -989,6 +993,20 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     }, [outcomeById]);
     const [locateTrigger, setLocateTrigger] = useState(0);
     const squadColor = (name) => agentColors[name] || getHashColor(name);
+    /* THE DAY REPLAY (his 2026-10-04 "this chain of events is replay able"): the pressed man's day played back on this map.
+       While it plays the shops and the team step off the map, and the player + Day Log take the Expedition panel's slot */
+    const [replayFor, setReplayFor] = useState(null);   // { id, day }
+    const [rpCam, setRpCam] = useState(null), [rpPick, setRpPick] = useState(null);
+    const replayMan = replayFor ? (motorists || []).find((m) => m.id === replayFor.id) || null : null;
+    const reduceMotion = typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    /* rawCustomers: the sanitizer above gives a shop with no pin a made-up one, and the replay must not walk him there */
+    const rp = useDayReplay({ man: replayMan, day: replayFor?.day, db, appId, uid: user?.uid, transactions, customers: rawCustomers || [], lite: !!isLiteMode || reduceMotion });
+    const openReplay = () => {
+        const id = team.find((a) => a.name === focusName)?.id;
+        if (!id) return notify('Press a salesman in the Expedition first.');
+        setRpCam(null); setRpPick(null); setReplayFor({ id, day: todayDate });
+    };
+    const rpPickAt = (k) => { setRpPick(k); if (k != null) rp.setPlaying(false); };
     const toggleFullScreen = () => {
         setIsFullScreen(!isFullScreen);
         setTimeout(() => window.dispatchEvent(new Event('resize')), 200);
@@ -1329,6 +1347,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         at init to build its distance grids, and react-leaflet-cluster's updater only
                         reassigns instance.options — so without a remount the toggle would silently
                         do nothing. Remounting on a rare, deliberate action is a fair price. */}
+                    {replayFor && <DayReplayLayer rp={rp} ini={initials(replayMan?.name)} shirt={squadColor(replayMan?.name)} hair={HAIR[String(replayFor.id).length % HAIR.length]}
+                        cam={rpCam || (wide ? 'whole' : 'follow')} picked={rpPick} onPick={rpPickAt} />}
+                    {!replayFor && (
                     <MarkerClusterGroup
                         ref={clusterRef}
                         key={editingStoreId ? 'journey-unclustered' : 'journey-clustered'}
@@ -1539,12 +1560,16 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     })}
                     <ExpeditionPeople team={team} sel={selId} wide={wide} colorOf={squadColor} focusName={road ? focusName : null} />
                     </MarkerClusterGroup>
-                    {team.length > 0 && <ExpeditionLayer team={team} sel={selId} focus={expFocus} wide={wide} stops={false} road={road?.points} />}
+                    )}
+                    {team.length > 0 && !replayFor && <ExpeditionLayer team={team} sel={selId} focus={expFocus} wide={wide} stops={false} road={road?.points} />}
                     <ShopNames />
                     <SignHold />
                 </MapContainer>
             </div>
-            {team.length > 0 && <ExpeditionPanel team={team} sel={selId} onPick={pickAgent} wide={wide} scoped={!globalView} focused={!!road} roadAll={roadAll} onRoadAll={setRoadAll} page />}
+            {replayFor ? (
+                <DayReplayPanel rp={rp} man={replayMan} day={replayFor.day} onDay={(day) => { setRpPick(null); setReplayFor({ ...replayFor, day }); }} onClose={() => setReplayFor(null)}
+                    cam={rpCam || (wide ? 'whole' : 'follow')} onCam={setRpCam} picked={rpPick} onPick={rpPickAt} wide={wide} appSettings={appSettings} />
+            ) : team.length > 0 && <ExpeditionPanel team={team} sel={selId} onPick={pickAgent} wide={wide} scoped={!globalView} focused={!!road} roadAll={roadAll} onRoadAll={setRoadAll} onReplay={openReplay} page />}
             </div>
 
             <div className="pt-6 space-y-4 animate-fade-in">

@@ -4,7 +4,7 @@
    divIcon takes HTML. CSS lives in src/styles/expedition.css (.kx-c5, .kx-slot, .kx-sm). */
 
 /* one letter per pixel, '.' = empty; a run of one colour becomes one rect */
-const px = (rows, pal) => {
+export const px = (rows, pal) => {
     let out = '';
     rows.forEach((row, y) => {
         for (let x = 0; x < row.length;) {
@@ -149,6 +149,7 @@ export const slotHtml = (n, visited, free = false, req = false) =>   // free = t
     + `<span class="kx-c5"><i class="kx-spr kx-spr-${n && visited === n ? 'open' : 'shut'}"></i></span><b class="cnt" data-n="${n}">${n}</b></div><i class="dur"><i></i></i></div>`;
 
 /* ---- the salesman: 10 x 14 pixel person, the shirt in his squad colour, two leg frames for walking ---- */
+export const HAIR = ['#2B1A0E', '#151210', '#5A3418'];   /* picked by the length of his id: Expedition's men and the Day Replay's man match */
 const HEAD = ['..OOOOOO..', '.OhhhhhhO.', '.OhsssshO.', '.OsessesO.', '.OsszzssO.'];
 const TORSO = ['OccccccccO', 'OcCccccCcO', 'OcCccccCcO', 'OsCccccCsO', 'OOppppppOO'];
 const LEGS_A = ['.OppOOppO.', '.OppOOffO.', '.OffO.OO..', '.OOOO.....'];   /* left foot down, right foot lifted */

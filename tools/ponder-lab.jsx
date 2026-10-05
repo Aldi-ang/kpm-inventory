@@ -830,8 +830,21 @@ const LAB_MAP = (() => {
   });
   const base = geo([565, 710]);
   motorists.push({ id: 'm3', name: 'Cahyo Putra', location: 'muntilan ', currentLocation: { ...base, timestamp: new Date(now - 26 * 3600000).toISOString() } });
-  return { customers, transactions, motorists };
+  /* THE DAY REPLAY's day for Budi (2026-10-05): his first position (the base), his Visit Reports in the day's activity log
+     (served below as the path the app reads) and one exchange (a RETUR: not a sale, so the trail and the counts above do
+     not move) - every scene plays; a Routine Check sent by mistake is undone, so it must NOT show; Ari's report must not */
+  const at = (min) => ({ seconds: Math.floor((now - min * 60000) / 1000) });
+  Object.assign(motorists[0], { email: 'budi@lab.test', pathHistory: [{ lat: base.lat, lng: base.lng, timestamp: new Date(now - 150 * 60000).toISOString() }] });
+  transactions.push({ id: 'tx-retur', customerName: SHOPS[7], agentId: 'm2', agentName: 'Budi Santoso', type: 'RETUR', paymentType: 'Retur/BS', total: 0, timestamp: at(8) });
+  const rep = (min, k, tag, note, extra = {}) => ({ id: `log-${min}`, action: 'VISIT_REPORT', details: `Visited ${SHOPS[k]} - ${tag}: ${note}`, user: 'budi@lab.test', timestamp: at(min), ...extra });
+  const logs = [rep(100, 1, 'Repeat Order 📦', 'Minta dikirim hari Kamis'), rep(50, 3, 'Competitor Issue ⚠️', 'Ada promo merek lain, beli 2 gratis 1'),
+    rep(20, 5, 'New Request 📝', 'Minta rasa menthol', { storeId: 'c-0-5', tag: 'New Request 📝', agentId: 'm2' }), rep(16, 6, 'Routine Check', 'Stok aman'),
+    { id: 'log-undo', action: 'VISIT_UNDO', details: `Undid visit for ${SHOPS[6]}`, user: 'budi@lab.test', timestamp: at(15) },
+    rep(14, 6, 'Store Closed 🔒', 'Tutup, pemilik ke pasar'), rep(6, 7, 'Stock Full (No Order) 🛑', 'Stok minggu lalu masih 6 slop'),
+    { id: 'log-ari', action: 'VISIT_REPORT', details: `Visited ${SHOPS[8]} - Routine Check: aman`, user: 'ari@lab.test', timestamp: at(30) }];
+  return { customers, transactions, motorists, logs };
 })();
+FIXTURES[`audit_vault/${LAB_TODAY}/logs`] = LAB_MAP.logs;
 /* ?shell&map — the Map System redesign's lab shops (2026-10-05, his "A for phone B for PC"): each salesman's round sits in
    its own kecamatan, the levels and the last visits spread, one hub with three shops on it and one unpaid Titip - so the
    areas rank, the level chips count, the corner dots show and every card number has a value. Only this mount uses it. */

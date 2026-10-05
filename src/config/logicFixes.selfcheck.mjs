@@ -10493,5 +10493,44 @@ section('Map System redesign (phone A, PC B)');
      ![body, sheet, pins].some((s) => /\b(?:blue|emerald|green|purple|sky|cyan|indigo|teal|violet)-\d|#3b82f6|#10b981|#38bdf8|#8b5cf6|#2563eb|#c084fc|bg-amber-\d/i.test(s)));
 }
 
+section('THE DAY REPLAY ON JOURNEY PLAN (2026-10-05) - his "this chain of events is replay able"');
+{ const jv = read('src/JourneyView.jsx'), rp = read('src/components/DayReplay.jsx'), hist = read('src/components/HistoryReportView.jsx'), rc = read('src/components/SaleReceipt.jsx');
+  const css = read('src/styles/expedition.css'), rpCss = css.slice(css.indexOf('/* ===== THE DAY REPLAY'));
+  /* regression guards */
+  ok('a Visit Report saves the shop, the tag and the man as FIELDS beside the sentence (the replay matches a renamed shop by id)',
+     /logAudit\("VISIT_REPORT", `Visited \$\{checkInCustomer\.name\} - \$\{visitTag\}: \$\{visitNote\}`, false,\s*\{ storeId: checkInCustomer\.id, tag: visitTag, agentId: agentProfileId \|\| null \}\)/.test(jv));
+  ok('logAudit spreads those fields FIRST, so a field can never overwrite the action, the sentence, the user or the time',
+     /const logAudit = async \(action, details, includeSnapshot = false, fields = \{\}\)[\s\S]{0,700}const logData = \{\s*\.\.\.fields,\s*action,\s*details,\s*user: user\.email,/.test(app));
+  ok('the replay reads the RAW shops: the sanitizer gives a pinless shop a made-up pin (-7.5845), and he must not walk there',
+     /useDayReplay\(\{[^}]*customers: rawCustomers \|\| \[\]/.test(jv) && /latitude: parseFloat\(c\.latitude\) \|\| -7\.5845/.test(jv));
+  ok('a scene\'s animations are cached on the scene\'s own chest, not on the marker box (a divIcon REUSES its element - the stale cache froze the props)',
+     /box\.__rpFor !== scene/.test(rp) && !/if \(!box\.__rp\)/.test(rp));
+  ok('one receipt for a sale: Reports and the replay both open SaleReceipt.jsx, and Reports keeps no copy of the nota',
+     /import SaleReceipt from '\.\/SaleReceipt\.jsx'/.test(hist) && /<SaleReceipt tx=\{viewingReceipt\}/.test(hist) && !/print-receipt|NOTA PENJUALAN/.test(hist)
+     && /NOTA PENJUALAN/.test(rc) && /createPortal\(<div className="kx-rp-rcpt"><SaleReceipt/.test(rp) && /\.kx-rp-rcpt \{ position: fixed; inset: 0; z-index: 9999; \}/.test(css));
+  ok('while it plays the shops and the team step off the map, and the panel slot holds the player',
+     /\{!replayFor && \(\s*<MarkerClusterGroup/.test(jv) && /team\.length > 0 && !replayFor && <ExpeditionLayer/.test(jv) && /\{replayFor \? \(\s*<DayReplayPanel/.test(jv));
+  ok('the replay\'s scenes reuse the app\'s own chest moment (.kx-c5.burst, look C acts), with the sign moved after what the shop hands him',
+     /chestHtml\(kind, c, st\[0\] === 's' \? 'burst' : ''/.test(rp) && /\.kx-rp-mk \.kx-c5\.burst \.sign5 \{ --d: 1300ms; animation-delay: 1300ms; \}/.test(css));
+  ok('the walk is never claimed as tracked: the note says it is drawn, the card says a report\'s time is when he pressed Report',
+     /The walk between stops is drawn, not tracked\./.test(rp) && /\(when he pressed Report\)/.test(rp));
+  ok('palette law on the replay (component + its CSS): no blue / green / purple / slate class or hex, gold only as a line or a fill, never a text colour',
+     !/\b(?:blue|emerald|green|purple|sky|cyan|indigo|teal|violet|slate)-\d|#3b82f6|#10b981|#38bdf8|#8b5cf6|#2563eb/i.test(rp + rpCss) && !/[^-]color: #E4B04A/.test(rpCss));
+  /* behaviour checks: the Day Log re-run on real-shaped records */
+  const { dayLog, replayTimeline } = await import('../utils/dayLog.js');
+  const s = (h, m) => ({ seconds: Math.floor(new Date(2026, 9, 5, h, m).getTime() / 1000) });
+  const shops = [{ id: 'a', name: 'Toko A - B', latitude: -7.5, longitude: 110.2 }, { id: 'b', name: 'Warung C', latitude: -7.6, longitude: 110.3 }];
+  const d = dayLog({ man: { id: 'm2', email: 'budi@x.id' }, day: '2026-10-05', customers: shops,
+    transactions: [{ customerName: 'Toko A - B', agentId: 'm2', type: 'SALE', total: 5, timestamp: s(8, 0) }, { customerName: 'Warung C', agentId: 'm9', type: 'SALE', total: 5, timestamp: s(8, 5) }],
+    logs: [{ action: 'VISIT_REPORT', details: 'Visited Warung C - Store Closed 🔒: tutup', user: 'budi@x.id', timestamp: s(9, 0) },
+           { action: 'VISIT_UNDO', details: 'Undid visit for Warung C', user: 'budi@x.id', timestamp: s(9, 1) },
+           { action: 'VISIT_REPORT', details: 'Visited Warung C - Stock Full (No Order) 🛑: masih: 6', user: 'budi@x.id', timestamp: s(9, 2) },
+           { action: 'VISIT_REPORT', details: 'Visited Toko A - B - Repeat Order 📦: kamis', user: 'ari@x.id', timestamp: s(9, 3) }] });
+  ok('his day = his sale, then the report that stood (the undone one dropped, another man\'s excluded, the note kept whole)',
+     d.events.map((e) => `${e.time} ${e.kind} ${e.name} ${e.note}`).join(' | ') === '08:00 sold Toko A - B  | 09:02 full Warung C masih: 6');
+  const tl = replayTimeline([{ at: new Date(2026, 9, 5, 7, 30) }, ...d.events]);
+  ok('the replay clock: a scene holds the clock still; a drag to a stop\'s time lands on that stop', tl.clockAt(tl.sceneSeg(2).t0 + 900) === tl.T[2] && tl.tAtClock(tl.T[1]) === tl.sceneSeg(1).t0);
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
