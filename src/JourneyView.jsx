@@ -60,8 +60,8 @@ const noSpiderOnMen = (e) => { e.target.options.spiderfyOnMaxZoom = !e.layer.get
    makes a fresh element per marker, the same way every marker shares L.Icon.Default.
    A shop is a chest (src/utils/mapSprites.js); the pin being moved keeps the hand. */
 const storeIconCache = new Map();
-const getStoreIcon = (outcome, ringColor, isEditing, play = '', tag = '', free = false, req = false) => {
-    const key = `${outcome}|${ringColor}|${isEditing ? 1 : 0}|${play}|${tag}|${free ? 1 : 0}|${req ? 1 : 0}`;
+const getStoreIcon = (outcome, ringColor, isEditing, play = '', tag = '', free = false, req = false, name = '') => {
+    const key = `${outcome}|${ringColor}|${isEditing ? 1 : 0}|${play}|${tag}|${free ? 1 : 0}|${req ? 1 : 0}|${name}`;
     let icon = storeIconCache.get(key);
     if (!icon) {
         icon = isEditing ? L.divIcon({
@@ -71,7 +71,7 @@ const getStoreIcon = (outcome, ringColor, isEditing, play = '', tag = '', free =
             iconAnchor: [17, 17]
         }) : L.divIcon({
             className: 'kx-mk',
-            html: chestHtml(outcome, ringColor, play, tag, free, req),
+            html: chestHtml(outcome, ringColor, play, tag, free, req, name),
             iconSize: [28, 34],
             iconAnchor: [14, 31],
             kxVisited: !!outcome,
@@ -153,6 +153,35 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
    carry GPS — the outlet form captures it — but nothing in the save path enforces it, and Leaflet
    given a NaN pair does not error: it drifts to the map's default view. For a question that is
    specifically about DISTANCE, silently showing the wrong place is the worst possible answer. */
+/* his 2026-10-05 "keep the store name visible": every chest wears its shop's name (mapSprites chestHtml). A name that would
+   land on another name, a name tag, a man, a bubble or another chest is hidden - Expedition's own rule for shop names -
+   and zooming in brings it back (hover / hold shows it anyway, expedition.css). Clear all, read all, then write: one
+   layout pass, not one per name */
+const ShopNames = () => {
+    const map = useMap();
+    useEffect(() => {
+        const box = map.getContainer();
+        const R = (e) => e.getBoundingClientRect();
+        const declutter = () => {
+            const names = [...box.querySelectorAll('.kx-snm > i')];
+            names.forEach((el) => { el.style.visibility = ''; });
+            const kept = [...box.querySelectorAll('.kx-otag, .kx-sm .body, .kx-slot, .leaflet-marker-icon > .kx-c5 > .art')].map(R);
+            const rects = names.map(R);
+            names.forEach((el, i) => {
+                const r = rects[i];
+                if (kept.some((k) => r.left < k.right && r.right > k.left && r.top < k.bottom && r.bottom > k.top)) el.style.visibility = 'hidden';
+                else kept.push(r);
+            });
+        };
+        declutter();
+        let t = 0;
+        const later = () => { clearTimeout(t); t = setTimeout(declutter, 320); };   // after the shop clusters finish splitting / joining
+        map.on('zoomend moveend', later);
+        return () => { clearTimeout(t); map.off('zoomend moveend', later); };
+    });
+    return null;
+};
+
 /* his look C (2026-10-04): every visited shop's sign carries its word - and his 19:45 "only showing when hovered or hold that
    way it looks cleaner": hidden at rest (expedition.css), a mouse shows it on hover, a finger held FOLDER_HOLD_MS on a chest
    shows it until release - his folder-day rule, hold is a preview, tap is the commit. The click a held finger fires on
@@ -1363,7 +1392,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         const markerPos = isEditing && tempPinLocation ? [tempPinLocation.lat, tempPinLocation.lng] : [store.latitude, store.longitude];
                         
                         // the ring under the chest stays the salesman's colour; the sign says it was visited
-                        const customIcon = getStoreIcon(outcome, isEditing ? finalRingColor : (metric.agentName === 'Unassigned' ? '#6A645C' : metric.color), isEditing, play, road?.tagOf[storeKey(store.name)] || '', metric.agentName === 'Unassigned', !!store.openRequest);
+                        const customIcon = getStoreIcon(outcome, isEditing ? finalRingColor : (metric.agentName === 'Unassigned' ? '#6A645C' : metric.color), isEditing, play, road?.tagOf[storeKey(store.name)] || '', metric.agentName === 'Unassigned', !!store.openRequest, store.name);
 
                         return (
                             <Marker 
@@ -1545,6 +1574,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     <ExpeditionPeople team={team} sel={selId} wide={wide} colorOf={squadColor} focusName={road ? focusName : null} />
                     </MarkerClusterGroup>
                     {team.length > 0 && <ExpeditionLayer team={team} sel={selId} focus={expFocus} wide={wide} stops={false} road={road?.points} />}
+                    <ShopNames />
                     <SignHold />
                 </MapContainer>
             </div>

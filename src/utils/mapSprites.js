@@ -133,11 +133,15 @@ if (typeof document !== 'undefined' && !document.getElementById('kx-sprites')) {
 /* `tag`: the pressed salesman's own name tag with the stop number ("BS · 3", his look B 2026-10-04, "Name tags is easier
    to see") - ownership in words, never only the ring's colour */
 const escTag = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-export const chestHtml = (outcome, ring, play = '', tag = '', free = false, req = false) =>
+/* `name`: the shop's name under the chest, always (his 2026-10-05 "keep the store name visible"); the status word rides at
+   its right end, shown only on hover / hold */
+export const chestHtml = (outcome, ring, play = '', tag = '', free = false, req = false, name = '') =>
     `<div class="kx-c5${outcome ? ' v' : ''}${outcome === 'closed' ? ' shut' : ''}${play ? ` ${play}` : ''}${tag ? ' mine' : ''}" style="--c:${safeHex(ring)}"><i class="kx-ring"></i>`
     + (tag ? `<span class="kx-otag"><i style="background:var(--c)"></i>${escTag(tag)}</span>` : '') + (free ? '<i class="kx-free"></i>' : '') + (req ? `<i class="kx-req${outcome === 'request' ? ' new' : ''}"></i>` : '')
     + `<div class="art"><div class="hop">${play ? CHEST5 : `<i class="kx-spr kx-spr-${!outcome ? 'closed' : outcome === 'closed' ? 'shut' : 'open'}"></i>`}</div></div>`
-    + (outcome ? `<i class="sign5 k-${outcome} f-${SIGN_FAMILY[outcome]}"><i class="lamp"></i>${play || outcome === 'sold' ? SIGN5[outcome] : `<i class="kx-sgn kx-sgn-${outcome}"></i>`}<b class="kx-sw">${SIGN_WORD[outcome]}</b></i>` : '') + (play ? SPARKS : '') + '</div>';
+    + (outcome ? `<i class="sign5 k-${outcome} f-${SIGN_FAMILY[outcome]}"><i class="lamp"></i>${play || outcome === 'sold' ? SIGN5[outcome] : `<i class="kx-sgn kx-sgn-${outcome}"></i>`}</i>` : '')
+    + (name || outcome ? `<span class="kx-snm">${name ? `<i>${escTag(name)}</i>` : ''}${outcome ? `<b class="kx-sw">${SIGN_WORD[outcome]}</b>` : ''}</span>` : '')
+    + (play ? SPARKS : '') + '</div>';
 
 /* a bubble: an inventory slot, the shop count like an item stack, a bar filling amber with the visited share */
 export const slotHtml = (n, visited, free = false, req = false) =>   // free = the bubble holds a shop nobody is assigned to; req = one with an open request

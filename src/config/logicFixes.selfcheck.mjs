@@ -10086,7 +10086,20 @@ section('Expedition map');
          && !/SignWords/.test(jv) && /<SignHold \/>\s*<\/MapContainer>/.test(jv)
          && /pointerType === 'mouse'\) return/.test(hold) && /setTimeout\([\s\S]{0,80}classList\.add\('held'\)[\s\S]{0,20}FOLDER_HOLD_MS\)/.test(hold)
          && /if \(swallow\) \{[^}]*stopPropagation\(\)/.test(hold) && /\['click', click\]/.test(hold) && /addEventListener\(t, f, true\)/.test(hold) && /\}, \[map\]\);/.test(hold),
-         JSON.stringify(kb)); }
+         JSON.stringify(kb));
+      /* HIS 2026-10-05 07:10 "the description status is hidden for the store but keep the store name visible" + "right now it
+         is hidden and showed only when hovered": every chest wears its shop's name at rest; the status word joins the name on
+         the right (one strip) on hover / hold; a name that would sit on another hides until zoomed in, but shows on hover /
+         hold; the name is escaped */
+      const names = (jv.match(/const ShopNames = \(\) => \{[\s\S]*?\n\};/) || [''])[0];
+      ok('Journey shop names: every chest wears its shop\'s name at rest (visited or not, escaped), the status word joins it on hover / hold, a crowded name hides until zoomed in and comes back on hover / hold',
+         chestHtml('sold', '#a855f7', '', '', false, false, 'Toko <A>').includes('<span class="kx-snm"><i>Toko &#60;A&#62;</i><b class="kx-sw">SALE</b></span>')
+         && chestHtml('', '#a855f7', '', '', false, false, 'Toko B').includes('<span class="kx-snm"><i>Toko B</i></span>')
+         && /\.kx-c5 \.kx-snm > i \{[^}]*text-overflow: ellipsis;/.test(ex) && /\.kx-c5 \.kx-sw \{[^}]*left: 100%;/.test(ex)
+         && /\.kx-mk\.held \.kx-snm > i \{ visibility: visible !important; \}/.test(ex) && /\.kx-mk:hover \.kx-snm > i \{ visibility: visible !important; \}/.test(ex)
+         && /<ShopNames \/>\s*<SignHold \/>\s*<\/MapContainer>/.test(jv) && /store\.openRequest, store\.name\)/.test(jv)
+         && /querySelectorAll\('\.kx-snm > i'\)/.test(names) && /visibility = 'hidden'/.test(names) && /map\.on\('zoomend moveend', later\)/.test(names),
+         names ? 'ShopNames found' : 'no ShopNames'); }
     /* HIS 2026-10-04 18:30 "for request since it is very important we need more visible compared to other maybe add some flag
        on that stores until order is fullfilled" + 19:25 "B is good" (the "!", drawn on Day Replay v4). A visit report OVERWROTE
        lastVisitTag, so a request was forgotten at the next visit. Now a New Request writes openRequest; only a Request done
@@ -10107,7 +10120,7 @@ section('Expedition map');
          && !ch2('request', '#a855f7').includes('kx-req') && sl2(3, 1, false, true).includes('kx-req') && !sl2(3, 1).includes('kx-req')
          && sc2.includes('.kx-req{background-image:') && /\.kx-c5\.burst \.kx-req\.new \{ animation: kx-req-drop/.test(ex) && !/kx-req-drop[^;]*infinite/.test(ex)
          && /\.kx-req \{ position: absolute; left: 42px; top: -10px;/.test(ex)
-         && /metric\.agentName === 'Unassigned', !!store\.openRequest\);/.test(jv) && /kxReq: req/.test(jv) && /options\?\.kxReq\)/.test(jv),
+         && /metric\.agentName === 'Unassigned', !!store\.openRequest, store\.name\);/.test(jv) && /kxReq: req/.test(jv) && /options\?\.kxReq\)/.test(jv),
          'drawn and measured on the page: 0 clashes with the name tag (top centre) and the red flag (top left)'); }
     /* HIS "chest and person not colliding ... so much lag on the phone" (2026-10-03 17:30), measured at 6x CPU, 390 wide */
     const { SPRITE_CSS } = await import('../utils/mapSprites.js');
