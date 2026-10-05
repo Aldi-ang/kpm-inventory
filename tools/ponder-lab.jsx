@@ -828,6 +828,17 @@ const LAB_MAP = (() => {
   motorists.push({ id: 'm3', name: 'Cahyo Putra', location: 'muntilan ', currentLocation: { ...base, timestamp: new Date(now - 26 * 3600000).toISOString() } });
   return { customers, transactions, motorists };
 })();
+/* ?shell&map — the Map System redesign's lab shops (2026-10-05, his "A for phone B for PC"): each salesman's round sits in
+   its own kecamatan, the levels and the last visits spread, one hub with three shops on it and one unpaid Titip - so the
+   areas rank, the level chips count, the corner dots show and every card number has a value. Only this mount uses it. */
+const MAP_AREAS = ['Muntilan', 'Mertoyudan', 'Salam', 'Borobudur'], MAP_TIERS = ['Mythic', 'Epic', 'Grandmaster', 'Bronze', 'Unranked'];
+const labMapShop = (c) => {
+  const [, i, k] = c.id.split('-').map(Number), days = [1, 3, 6, 9, 12, 20][(i + k) % 6];
+  return { ...c, region: 'MAGELANG', city: MAP_AREAS[i] || 'Muntilan', tier: MAP_TIERS[(i * 3 + k) % 5], visitFreq: 7, lastVisit: new Date(Date.now() - days * 86400000).toISOString(),
+    phone: k % 3 ? '0812-3456-7890' : '', storeType: i === 0 && k === 0 ? 'Wholesaler' : 'Retailer', ...(i === 0 && k > 0 && k < 4 ? { suppliedBy: 'c-0-0' } : {}) };
+};
+const LAB_MAP_TITIP = { id: 'tx-titip', customerName: 'Toko Sinar Abadi', agentId: 'm2', agentName: 'Budi Santoso', type: 'SALE', paymentType: 'Titip', total: 420000,
+  timestamp: { seconds: Math.floor(Date.now() / 1000) - 2 * 86400 }, items: [{ productId: 'p-x', name: 'Sampoerna Mild 16', qty: 12, unit: 'Bks' }] };
 /* ?shell&journey&exp&visits — today's visits carry every report outcome (and every 4th sale is dated today), so every
    chest sign shows; with `&tick` one more of Budi's shops is visited every 2.5 s - the secure moment, watched live */
 const LAB_TAGS = ['Routine Check', 'Repeat Order 📦', 'Stock Full (No Order) 🛑', 'Competitor Issue ⚠️', 'New Request 📝', 'Store Closed 🔒'];
@@ -1169,9 +1180,9 @@ function ShellLab() {
           />
         </div>
       ) : q.has('map') ? (
-        <MapMissionControl customers={LAB_MAP.customers} transactions={LAB_MAP.transactions} inventory={[]} db={{}} appId="lab" user={{ uid: 'lab' }}
+        <MapMissionControl customers={LAB_MAP.customers.map(labMapShop)} transactions={[...LAB_MAP.transactions, LAB_MAP_TITIP]} inventory={[]} db={{}} appId="lab" user={{ uid: 'lab' }}
           logAudit={() => {}} triggerCapy={() => {}} isAdmin={q.has('admin')} savedHome={null} onSetHome={() => {}} motorists={LAB_MAP.motorists} onNavigateToDirectory={() => {}}
-          userRole={q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE'} agentProfileId="m2" />
+          userRole={q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE'} agentProfileId="m2" onShowStoreOnJourney={(n) => notify(`Lab: Journey Plan would open on ${n}`)} />
       ) : q.has('places') ? (
         /* ?shell&places — the Restock Vault desk INSIDE the real shell, wrapped exactly as App.jsx
            wraps it (`activeTab === 'restock_vault'`): the shell's `p-6`, then the `border-4 p-4`

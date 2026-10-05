@@ -9974,9 +9974,11 @@ section('PHONE SWEEP: REPORTS + LEADERBOARD (2026-10-02)');
   ok('Command Center backup lamps are 44 under lg (each one\'s hint is a tap); the desk keeps 32',
      /@media \(max-width: 1023px\) \{ \.kpm-safety-lamp \{ min-height: 44px; min-width: 44px; \} \}/.test(th) && /\.kpm-safety-lamp \{[^}]*min-height: 32px;/.test(th),
      'measured: CLOUD 60x32, USB 43x32, SAVE POINT 103x32 side by side');
-  ok('map menu: Show All Tiers lights amber, not blue; it, the tier chips and the region box are 44 under lg',
-     /min-h-11 lg:min-h-0 rounded-lg text-xs font-bold transition-all \$\{filterTier\.length === activeTiers\.length \? 'bg-amber-600 text-white'/.test(mp) &&
-     /px-2 py-2 min-h-11 lg:min-h-0 rounded-lg text-\[11px\] lg:text-\[10px\] font-bold/.test(mp) && /outline-none py-1\.5 min-h-11 lg:min-h-0 cursor-pointer/.test(mp) && !/'bg-blue-600 text-white'/.test(mp),
+  /* the ☰ menu left with the 2026-10-05 redesign (his "A for phone B for PC"): the tier buttons are the level chips now,
+     "All" lit by a gold EDGE (amber is never a fill), the region box keeps its 44 on the phone - "Map System redesign" below */
+  ok('map: the "All" level chip lights with a gold edge, not a fill; the chips and the region box are 44 under lg',
+     /className=\{`ms-chip all \$\{filterTier\.length === tiers\.length \? 'on' : ''\}`\}/.test(mp) && /\.ms-chip \{[^}]*min-height: 44px/.test(read('src/styles/expedition.css')) &&
+     /className="ms-field[^"]*min-h-11 lg:min-h-0/.test(mp) && !/'bg-blue-600 text-white'|bg-amber-600/.test(mp),
      'measured: a bright blue 211x32 button over 104x33 chips');
 }
 
@@ -10397,6 +10399,62 @@ section('Expedition map');
   ok('5 min ago and 15 m from his last sale = still AT that shop; 550 m to the next one',
      b.state === 'at' && b.mins === 5 && Math.abs(b.metresToNext - 550) < 30, `${b.state} ${b.mins} min ${b.metresToNext} m`);
   ok('seen yesterday = not out today, whatever his last point', c.state === 'off' && c.out === false && c.done.length === 0, c.state);
+}
+
+/* ── MAP SYSTEM REDESIGN (his pick 2026-10-05 09:25: "A for phone B for PC") ──
+   PC = the whole width is map: three totals top centre, the top 3 areas floating left ("see all" = the full list), the
+   level chips bottom left, the layer keys in a bottom dock. Phone = Journey's full-map dock (Areas / Levels / Layers /
+   Locate), one key one sheet, press again = the whole map. Same markers in both: level = colour AND shape, a corner dot
+   for overdue / due soon. The areas are the shop's OWN city/region field, so the ranking needs no drawn border. */
+section('Map System redesign (phone A, PC B)');
+{ const A = await import('../utils/mapAreas.js');
+  const NOW = new Date(2026, 9, 5, 9, 0), at = (d, m = 9) => ({ seconds: Math.floor(new Date(2026, m, d, 10).getTime() / 1000) });
+  const shops = [
+    { name: 'Toko A', city: 'Muntilan', tier: 'Mythic', status: 'ok' }, { name: 'TOKO A', city: 'Muntilan', tier: 'Mythic', status: 'ok' },
+    { name: 'Toko B', city: 'Muntilan', tier: 'Bronze', status: 'overdue' }, { name: 'Toko C', city: 'Uncategorized', region: 'MAGELANG', tier: 'Unranked', status: 'overdue' },
+    { name: 'Toko D', tier: 'Epic', status: 'soon' }];
+  const tx = [
+    { customerName: 'Toko A', type: 'SALE', paymentType: 'Cash', total: 300000, timestamp: at(2) },
+    { customerName: 'toko a (Retail)', type: 'SALE', paymentType: 'Cash', total: 100000, date: '2026-10-04' },
+    { customerName: 'Toko A', type: 'SALE', paymentType: 'Cash', total: 999000, timestamp: at(20, 8) },   /* last month */
+    { customerName: 'Toko B', type: 'SALE', paymentType: 'Titip', total: 500000, timestamp: at(1) },      /* a placement is not money */
+    { customerName: 'Toko B', type: 'CONSIGNMENT_PAYMENT', amountPaid: 200000, total: 500000, timestamp: at(3) },
+    { customerName: 'Toko C', type: 'SALE', paymentType: 'Transfer', total: 50000, timestamp: at(4) }];
+  const r = A.rankAreas(shops, tx, ['Mythic', 'Epic', 'Grandmaster', 'Bronze', 'Unranked'], NOW);
+  const mu = r.find((a) => a.name === 'Muntilan');
+  ok('areas: a shop\'s own city, else its region, else "No area"; this month only; a Titip placement is not money, its audit is; one shop counted once under any spelling',
+     r.map((a) => a.name).join() === 'Muntilan,MAGELANG,No area' && mu.money === 600000 && mu.shops === 3 && mu.late === 1 && mu.mix.join() === '2,0,0,1,0' &&
+     r[1].money === 50000 && r[1].late === 1 && r[2].money === 0 && r[2].mix.join() === '0,1,0,0,0',
+     JSON.stringify(r));
+  ok('a whole area\'s money fits a floating card: Rp 52,6 jt / Rp 420 rb', A.rpShort(52600000) === 'Rp 52,6 jt' && A.rpShort(420000) === 'Rp 420 rb', A.rpShort(52600000) + ' / ' + A.rpShort(420000));
+
+  const mm = code(read('src/MapMissionControl.jsx')).replace(/\r/g, '');
+  const body = mm.slice(mm.indexOf('const MapMissionControl = ('), mm.indexOf('export default MapMissionControl'));
+  const sheet = mm.slice(mm.indexOf('const StoreBottomSheet = ('), mm.indexOf('const TierAutomationEngine = ('));
+  const pins = mm.slice(mm.indexOf('const LEVEL_LOOKS'), mm.indexOf('const compressCoords'));
+  ok('the ☰ drawer is gone and every one of its tools still has a key: tier filter, Tier rules, Borders setup, Borders, Sales heat, Sector board, Supply lines, Catchment, New pin, Set home, Locate, Find a shop, the base map',
+     !/showControls/.test(body) && /toggle=\{toggleTierFilter\}/.test(body) && /toggleAllTiers/.test(body) && /setShowTierEngine\(/.test(body) && /setShowImporter\(/.test(body) &&
+     /setShowBorders\(/.test(body) && /setSalesHeatmapMode\(/.test(body) && /setShowTacticalDash\(/.test(body) && /setNetworkMode\(/.test(body) && /setConquestMode\(/.test(body) &&
+     /setIsAddingMode\(true\)/.test(body) && /onSetHome\(mapRef\.current\.getCenter\(\), mapRef\.current\.getZoom\(\)\)/.test(body) && /setLocateTick\(/.test(body) &&
+     /<input type="search" aria-label="Find a shop"/.test(body) && /<LayersControl position="bottomright">/.test(body));
+  ok('PC (his B): three totals top centre, the top 3 areas floating left with See all, the level chips bottom left, the layer keys in a bottom dock',
+     /<div className="ms-totals hidden lg:flex"/.test(body) && /<small>Shops<\/small>/.test(body) && /<small>This month<\/small>/.test(body) && /<small>Need a visit<\/small>/.test(body) &&
+     /areas\.slice\(0, allAreas \? areas\.length : 3\)/.test(body) && /See all/.test(body) && /<div className="ms-levels hidden lg:flex"/.test(body) && /<nav className="ms-layers hidden lg:flex"/.test(body));
+  ok('phone (his A): Journey\'s full-map dock - Areas / Levels / Layers / Locate; one key opens one sheet, the same key again = the whole map',
+     /<nav className="kx-dock ms-dock grid lg:hidden"/.test(body) && /const flip = \(k\) => setSheet\(\(s\) => \(s === k \? null : k\)\);/.test(body) &&
+     ['areas', 'levels', 'layers'].every((k) => new RegExp(`flip\\('${k}'\\)`).test(body)) && /<span>Locate<\/span>/.test(body) && /<div className="ms-sheet lg:hidden"/.test(body));
+  ok('markers: the level is a colour AND a shape by the tier\'s rank (the last = a plain dot), overdue / due soon = a dot on the corner, nothing pulses',
+     /const levelLook = \(tierId, tiers\) =>/.test(pins) && /i === tiers\.length - 1 \? LEVEL_NONE : LEVEL_LOOKS\[Math\.min\(i, 3\)\]/.test(pins) &&
+     /store\.status === 'overdue' \? 'late' : store\.status === 'soon' \? 'soon' : ''/.test(pins) && !/animation/.test(pins.slice(0, pins.indexOf('const userLocationIcon'))) && /class="ms-cluster"/.test(pins));
+  ok('the shop card as drawn: level + area, the salesman, this month, last order, still unpaid, visit rhythm, next visit; Directions / WhatsApp / ⋯ boss tools / On Journey Plan',
+     /<small>This month<\/small>/.test(sheet) && /<small>Last order<\/small>/.test(sheet) && /<small>Still unpaid<\/small>/.test(sheet) && /<small>Visit<\/small>/.test(sheet) &&
+     /<small>Next visit<\/small>/.test(sheet) && /store\.assignedAgent/.test(sheet) && /areaOf\(store\)/.test(sheet) && /Directions/.test(sheet) && /aria-label="Boss tools"/.test(sheet) &&
+     /onShowStoreOnJourney\(store\.name\)/.test(sheet) && /<MapMissionControl [^\n]*onShowStoreOnJourney=\{showStoreOnJourney\}/.test(app));
+  ok('every action the old card had is still on it: Correct pin, Edit profile, level override, Wholesale hub, supplier hub, individual reach, Delete, consignment items, recent sales',
+     /setEditingStoreId\(store\.id\)/.test(sheet) && /targetEditStore/.test(sheet) && /handleSaveTier\(e\.target\.value\)/.test(sheet) && /handleToggleStoreType/.test(sheet) &&
+     /handleAssignHub\(e\.target\.value\)/.test(sheet) && /handleSaveLocalScale/.test(sheet) && /handleDeleteStore/.test(sheet) && /stats\.activeItems/.test(sheet) && /recentSales\.length > 0/.test(sheet));
+  ok('palette law on Map System\'s own surfaces (the screen, the card, the pins): no blue / green / purple class or hex, amber never a fill',
+     ![body, sheet, pins].some((s) => /\b(?:blue|emerald|green|purple|sky|cyan|indigo|teal|violet)-\d|#3b82f6|#10b981|#38bdf8|#8b5cf6|#2563eb|#c084fc|bg-amber-\d/i.test(s)));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

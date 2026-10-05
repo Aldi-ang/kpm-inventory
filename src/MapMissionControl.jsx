@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Circle, Polyline, GeoJSON, Tooltip as LeafletTooltip, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
 
 import { 
-    MapPin, Store, Calendar, Wallet, X, Phone, ChevronRight, 
-    ShieldCheck, Globe, Menu, Database, Tag, DollarSign,
-    MinusCircle, Maximize2, Search, Trash2, Download, 
+    MapPin, Store, Calendar, X, Phone, ChevronRight,
+    Globe, Database, Tag,
+    MinusCircle, Maximize2, Search, Trash2, Download,
     Save, AlertCircle, Upload, Pencil, Folder, TrendingUp, ShieldAlert,
-    Navigation, LocateFixed, Clock, CheckCircle, Settings, ArrowUpCircle, ArrowDownCircle, Activity, User
+    Navigation, LocateFixed, CheckCircle, Settings, ArrowUpCircle, ArrowDownCircle, Activity,
+    BarChart3, Layers, Flame, Route, CircleDot, Home, MoreHorizontal, Crown
 } from 'lucide-react';
+import { areaOf, rankAreas, monthByShop, rpShort, txTime } from './utils/mapAreas';
 
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; 
@@ -30,66 +32,45 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-const getIcon = (store, activeTiers, isTemp = false, isActive = false) => {
-    if (isTemp) return L.divIcon({ className: 'custom-icon', html: `<div style="background-color: white; width: 24px; height: 24px; border-radius: 50%; border: 4px solid black; animation: bounce 1s infinite;"></div>`, iconSize: [24, 24] });
-    
-    const tierDef = activeTiers.find(t => t.id === store.tier) || activeTiers[0] || {};
-    
-    let glow = '';
-    let transform = 'scale(1)';
-    let zIndex = '';
-    
-    if (isActive) {
-        glow = `box-shadow: 0 0 0 4px #10b981, 0 0 25px #10b981;`;
-        transform = `scale(1.3)`;
-        zIndex = `z-index: 9999 !important;`;
-    } else if (store.status === 'overdue') {
-        glow = `box-shadow: 0 0 0 3px #ef4444; animation: pulse 1.5s infinite;`;
-    }
+/* A shop's level on Map System = its colour AND its shape, by the tier's rank (top first; the last tier is a plain grey
+   dot) - readable without the colour (his colour-blind rule, 2026-10-04). The tier's own colour setting is not used on
+   the map: it allows purple / pink, and the palette law has no blue, green or purple. The redesign he picked 2026-10-05
+   (A-Brain Brainstorm/2026-10-05_map-system-redesign.md). */
+const LEVEL_LOOKS = [
+    ['#E4B04A', '<path d="M2 12h12l1-8-4 3-3-5-3 5-4-3z"/>'],                                        // crown, gold
+    ['#C4551E', '<path d="M8 1c1 3 4 4 4 8a4 4 0 0 1-8 0c0-2 1-3 2-4 0 2 1 3 2 3-1-3 0-5 0-7z"/>'],  // flame, rust
+    ['#F0E2BC', '<path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M3 3l10 10M13 3L3 13M1.5 10.5l4 4M10.5 14.5l4-4"/>'],   // crossed swords, cream
+    ['#A0703C', '<path d="M8 1l6 2v5c0 4-3 6-6 7-3-1-6-3-6-7V3z"/>'],                                 // shield, bronze
+];
+const LEVEL_NONE = ['#6A645C', '<circle cx="8" cy="8" r="4"/>'];
+const levelLook = (tierId, tiers) => { const i = tiers.findIndex((t) => t.id === tierId); return i < 0 || i === tiers.length - 1 ? LEVEL_NONE : LEVEL_LOOKS[Math.min(i, 3)]; };
+/* one badge for the pin, the chips, the area bars and the card; `dot` = late (red) / soon (gold) on the corner */
+const levelBadge = (look, { dot = '', big = false, hub = false } = {}) =>
+    `<i class="ms-mk${big ? ' big' : ''}${hub ? ' hub' : ''}" style="--c:${look[0]}"><svg viewBox="0 0 16 16" aria-hidden="true">${look[1]}</svg>${dot ? `<i class="st ${dot}"></i>` : ''}</i>`;
+const Badge = ({ look, ...o }) => <span className="contents" dangerouslySetInnerHTML={{ __html: levelBadge(look, o) }} />;
 
-    let border = `border: 3px solid ${store.storeType === 'Wholesaler' ? '#f59e0b' : (tierDef.color || '#94a3b8')};`;
-    const hubBadge = store.storeType === 'Wholesaler' ? `<div style="position:absolute; top:-8px; right:-8px; background:gold; border-radius:50%; width:18px; height:18px; display:flex; align-items:center; justify-content:center; font-size:10px; border:2px solid black; z-index:20; box-shadow: 0 2px 4px rgba(0,0,0,0.5);">👑</div>` : '';
-
-    // 🚀 THE FIX: Differentiate between Native Leaflet Image Icons and Div Emojis
-    if (tierDef.iconType === 'image' && tierDef.value && tierDef.value.startsWith('data:image')) {
-        return L.divIcon({
-            className: 'custom-icon',
-            html: `
-                <div style="position:relative; ${zIndex}">
-                    <div class="marker-inner" style="background-color: white; width: 34px; height: 34px; border-radius: 50%; ${border} ${glow} transform: ${transform}; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden; position: relative; z-index: 10; display: flex; align-items: center; justify-content: center;">
-                        <img src="${tierDef.value}" style="width: 100%; height: 100%; object-fit: cover;" />
-                    </div>
-                    ${hubBadge}
-                </div>`,
-            iconSize: [34, 34], iconAnchor: [17, 17]
-        });
-    }
-
-    // Fallback to standard Emoji rendering
-    return L.divIcon({
-        className: 'custom-icon', 
-        html: `
-            <div style="position:relative; ${zIndex}">
-                <div class="marker-inner" style="background-color: white; width: 34px; height: 34px; border-radius: 50%; ${border} ${glow} transform: ${transform}; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden; position: relative; z-index: 10; display: flex; align-items: center; justify-content: center; font-size: 16px;">
-                    ${tierDef.value || '📍'}
-                </div>
-                ${hubBadge}
-            </div>`,
-        iconSize: [34, 34], iconAnchor: [17, 17]
-    });
+/* the pin: a 24 px badge in a 32 px hit box (44 when pressed); a wholesale hub wears a second ring */
+const getIcon = (store, activeTiers, isActive = false) => {
+    const dot = store.status === 'overdue' ? 'late' : store.status === 'soon' ? 'soon' : '';
+    const size = isActive ? 44 : 32;
+    return L.divIcon({ className: 'custom-icon ms-pin', html: levelBadge(levelLook(store.tier, activeTiers), { dot, big: isActive, hub: store.storeType === 'Wholesaler' }), iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
 };
 
+/* you are here - Journey's ink dot (palette law: it was blue) */
 const userLocationIcon = L.divIcon({
     className: 'user-location-icon',
     html: `
         <div style="position: relative; display: flex; justify-content: center; align-items: center; width: 24px; height: 24px;">
-            <div style="position: absolute; width: 100%; height: 100%; background-color: #3b82f6; border-radius: 50%; opacity: 0.4; animation: pulse-ring 2s infinite;"></div>
-            <div style="width: 14px; height: 14px; background-color: #2563eb; border: 2px solid white; border-radius: 50%; z-index: 10; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>
+            <div style="position: absolute; width: 100%; height: 100%; background-color: #E8E4DE; border-radius: 50%; opacity: 0.35; animation: pulse-ring 2s infinite;"></div>
+            <div style="width: 14px; height: 14px; background-color: #E8E4DE; border: 2px solid #0A0908; border-radius: 50%; z-index: 10; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>
         </div>
     `,
     iconSize: [24, 24],
     iconAnchor: [12, 12]
 });
+
+/* a cluster of shops: the panel's own plate, a gold edge, the count in ink (it was a blue glow) */
+const createCustomClusterIcon = (cluster) => L.divIcon({ html: `<div class="ms-cluster">${cluster.getChildCount()}</div>`, className: 'custom-cluster-icon', iconSize: [40, 40], iconAnchor: [20, 20] });
 
 const compressCoords = (coords) => {
     if (Array.isArray(coords)) {
@@ -122,16 +103,6 @@ const checkPointInGeoJSON = (lng, lat, geometry) => {
         }
     } catch(e) { console.warn("Geofence parse error caught safely", e); }
     return false;
-};
-
-// 🚀 CUSTOM CLUSTER STYLING: Matches the dark tactical UI and removes default Leaflet cluster colors
-const createCustomClusterIcon = (cluster) => {
-    return L.divIcon({
-        html: `<div style="background-color: rgba(15, 23, 42, 0.95); border: 2px solid #3b82f6; color: #38bdf8; font-weight: 900; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); font-family: monospace; font-size: 14px; z-index: 10000;">${cluster.getChildCount()}</div>`,
-        className: 'custom-cluster-icon',
-        iconSize: [40, 40],
-        iconAnchor: [20, 20]
-    });
 };
 
 const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHome, uploadedFocus, selectedZone }) => {
@@ -174,7 +145,8 @@ const MapEffectController = ({ selectedRegion, selectedCity, mapPoints, savedHom
     return null;
 };
 
-const LocationController = ({ userLocation, setUserLocation, isEditing }) => {
+/* `trigger`: the Locate key lives in the PC toolbar and the phone dock now, outside the map - each press bumps it */
+const LocationController = ({ userLocation, setUserLocation, isEditing, trigger }) => {
     const map = useMap();
     const watchId = useRef(null);
     const isEditingRef = useRef(isEditing);
@@ -218,17 +190,8 @@ const LocationController = ({ userLocation, setUserLocation, isEditing }) => {
         return () => { if (watchId.current) navigator.geolocation.clearWatch(watchId.current); };
     }, []);
 
-    return (
-        <div className="absolute bottom-[200px] lg:bottom-[160px] right-[10px] z-[999]">
-            <button 
-                onClick={handleLocateClick} 
-                className={`bg-slate-800 text-white border p-3 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)] transition-colors border-slate-600 hover:bg-slate-700 hover:text-blue-400`}
-                title="Locate Me"
-            >
-                <LocateFixed size={24} className={watchId.current ? "text-blue-400" : "text-slate-300"} />
-            </button>
-        </div>
-    );
+    useEffect(() => { if (trigger) handleLocateClick(); }, [trigger]);   // eslint-disable-line react-hooks/exhaustive-deps
+    return null;
 };
 
 /* the empty map = the picked base map's own colour, never Leaflet's light #ddd under a dark map: zooming or flying on the
@@ -238,22 +201,6 @@ const MAP_GROUND = { 'Dark Canvas (Esri)': '#4F4F51', 'Google Maps (Hybrid)': '#
 const MapGround = () => {
     const map = useMapEvents({ baselayerchange: (e) => { map.getContainer().style.background = MAP_GROUND[e.name] || '#ddd'; } });
     return null;
-};
-
-const AdminControls = ({ isAdmin, onSetHome }) => {
-    const map = useMapEvents({});
-    if(!isAdmin) return null;
-    return (
-        <div className="absolute bottom-[30px] left-[14px] z-[999]">
-            <button 
-                onClick={() => onSetHome && onSetHome(map.getCenter(), map.getZoom())} 
-                className="bg-slate-900/90 backdrop-blur-md text-slate-300 border border-slate-700 px-3 py-2.5 rounded-xl text-xs font-bold shadow-[0_4px_20px_rgba(0,0,0,0.5)] flex items-center gap-2 hover:bg-slate-800 hover:text-white transition-all group"
-            >
-                <MapPin size={16} className="text-slate-400 group-hover:text-white" /> 
-                Set Home
-            </button>
-        </div>
-    );
 };
 
 const MapClicker = ({ isAddingMode, editingStoreId, setDragPinCoords, setSelectedStore, setSelectedZone }) => {
@@ -312,21 +259,19 @@ const DraggableAddMarker = ({ position, setPosition }) => {
 
 const MarkerWithZoom = ({ store, activeTiers, conquestMode, handlePinClick, isActive }) => {
     const map = useMap();
-    const smartIcon = getIcon(store, activeTiers, false, isActive);
+    const smartIcon = getIcon(store, activeTiers, isActive);
 
     return (
-        <Marker 
-            position={[store.latitude, store.longitude]} 
-            icon={smartIcon} 
-            eventHandlers={{ click: () => { handlePinClick(store, map); } }} 
+        <Marker
+            position={[store.latitude, store.longitude]}
+            icon={smartIcon}
+            eventHandlers={{ click: () => { handlePinClick(store, map); } }}
             riseOnHover={true}
-            zIndexOffset={isActive ? 1000 : 0} 
+            zIndexOffset={isActive ? 1000 : 0}
         >
             {!conquestMode && (
-                <LeafletTooltip direction="top" offset={[0, -20]} opacity={1} className="custom-leaflet-tooltip hidden lg:block">
-                    <div className="bg-slate-900/95 backdrop-blur text-white px-3 py-1.5 rounded-lg border border-slate-700 shadow-xl text-xs font-bold whitespace-nowrap">
-                        {String(store.name || 'Unknown')}
-                    </div>
+                <LeafletTooltip direction="top" offset={[0, -14]} opacity={1} className="custom-leaflet-tooltip hidden lg:block">
+                    <div className="ms-tip">{String(store.name || 'Unknown')}{store.storeType === 'Wholesaler' && <small>Wholesale hub</small>}</div>
                 </LeafletTooltip>
             )}
         </Marker>
@@ -1022,53 +967,48 @@ const ZoneHUD = ({ zone, mapPoints, setSelectedZone }) => {
     const retailers = storesInZone.length - wholesalers;
 
     return (
-        <div className="absolute left-4 right-4 lg:right-auto top-[70px] lg:top-24 lg:w-72 bg-slate-900/95 backdrop-blur-md text-white rounded-2xl shadow-2xl border border-blue-500 p-5 z-[1000] animate-slide-in-left">
-            <button onClick={() => setSelectedZone(null)} className="absolute top-4 right-4 p-1.5 bg-slate-800 rounded-full hover:bg-red-500 transition-colors"><X size={14}/></button>
-            <div className="flex items-center gap-2 mb-1">
-                <Globe className="text-blue-500" size={20}/>
-                <h2 className="text-xl font-bold leading-tight truncate pr-6">{zone.name}</h2>
-            </div>
-            <p className="text-[11px] text-slate-400 mb-4 border-b border-slate-700 pb-2 truncate">{zone.fullName || "Imported Region"}</p>
-            <div className="mb-3 flex items-center gap-2">
-                <Tag size={12} className="text-slate-400" />
-                <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">{zone.level}</span>
-            </div>
-            
-            <div className="space-y-3">
-                <div className="bg-slate-800 p-3 rounded-xl flex justify-between items-center border border-slate-700">
-                    <span className="text-xs font-bold text-slate-400 uppercase">Total Stores Inside</span>
-                    <span className="text-2xl font-black text-white">{storesInZone.length}</span>
-                </div>
-            </div>
+        <div className="ms-card ms-zone">
+            <div className="ms-ptitle"><h4>{zone.name}</h4><button type="button" className="ms-x" onClick={() => setSelectedZone(null)} aria-label="Close"><X size={16}/></button></div>
+            <p className="ms-where">{zone.level}{zone.fullName ? ` · ${zone.fullName}` : ''}</p>
+            <div className="ms-stats one"><div><small>Shops inside</small><b>{storesInZone.length}</b></div></div>
         </div>
     );
 };
 
-const GameHUD = ({ conquestMode, mapPoints }) => {
-    const [isMinimized, setIsMinimized] = useState(false);
-    if (!conquestMode) return null;
-    const totalStores = (mapPoints || []).length;
-    const conqueredCount = (mapPoints || []).filter(s => s.isConquered).length;
-    const percentage = totalStores > 0 ? Math.round((conqueredCount / totalStores) * 100) : 0;
-    let rank = percentage > 75 ? "Kingpin" : (percentage > 50 ? "City Boss" : (percentage > 25 ? "District Manager" : "Street Peddler"));
-
-    if (isMinimized) return (
-        <div onClick={() => setIsMinimized(false)} className="absolute top-[70px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-4 py-2 rounded-full border border-orange-500 shadow-xl cursor-pointer hover:scale-105 transition-transform flex items-center gap-3">
-            <ShieldCheck className="text-orange-500"/><span className="text-xs font-bold font-mono">Control: {percentage}%</span><Maximize2 size={12} className="text-slate-400"/>
-        </div>
-    );
-
-    return (
-        <div className="absolute top-[70px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-6 py-4 rounded-2xl border-2 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)] backdrop-blur-md flex flex-col items-center animate-slide-down min-w-[280px]">
-            <button onClick={() => setIsMinimized(true)} className="absolute top-2 right-2 text-slate-400 hover:text-white"><MinusCircle size={16}/></button>
-            <div className="text-[10px] text-orange-400 font-bold tracking-[0.2em] uppercase mb-1">Territory Control</div>
-            <div className="flex items-center gap-4 mb-3 mt-1"><div className="text-3xl font-black font-mono">{percentage}%</div><div className="h-8 w-[1px] bg-slate-600"></div><div><div className="text-[10px] text-slate-400 uppercase">Current Rank</div><div className="text-sm font-bold text-emerald-400">{rank}</div></div></div>
-            <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700"><div className="h-full bg-gradient-to-r from-orange-600 to-yellow-400 transition-all duration-1000" style={{ width: `${percentage}%` }}></div></div>
-        </div>
-    );
+/* the Territory Control box folded into the Catchment key (his pick 2026-10-05): a shop visited in the last 30 days is
+   "held"; the key says what share of the shops on the map is held, its title the old rank name */
+const territoryOf = (mapPoints) => {
+    const pct = mapPoints.length ? Math.round(mapPoints.filter((s) => s.isConquered).length / mapPoints.length * 100) : 0;
+    return { pct, rank: pct > 75 ? 'Kingpin' : pct > 50 ? 'City Boss' : pct > 25 ? 'District Manager' : 'Street Peddler' };
 };
 
-const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride, setEditingStoreId, setDragPinCoords, canOverrideGps, activeTiers, setLocalTierUpdates, onNavigateToDirectory }) => {
+/* one area row: rank, name, money (boss only), a bar split by its shops' levels, its size and how many need a visit */
+const AreaRow = ({ a, i, top, tiers, showMoney, onPick }) => (
+    <button type="button" className="ms-area" onClick={() => onPick(a)}>
+        <span className="n">{i + 1}</span><span className="nm">{a.name}</span>
+        <span className="rp">{showMoney ? rpShort(a.money) : `${a.shops}`}</span>
+        <span className="meter" style={{ width: `${Math.max(6, Math.round((showMoney ? a.money / (top.money || 1) : a.shops / (top.shops || 1)) * 100))}%` }}>
+            {a.mix.map((m, k) => m > 0 && <u key={k} style={{ flex: m, background: levelLook(tiers[k].id, tiers)[0] }} />)}
+        </span>
+        <span className="sub"><span>{a.shops} shops</span>{a.late ? <em>{a.late} need a visit</em> : <span>all visited</span>}</span>
+    </button>
+);
+
+/* the level chips = the old tier filter: press one to hide its shops, All = every level back */
+const LevelChips = ({ tiers, counts, filterTier, toggle, toggleAll }) => (
+    <>
+        <button type="button" className={`ms-chip all ${filterTier.length === tiers.length ? 'on' : ''}`} aria-pressed={filterTier.length === tiers.length} onClick={toggleAll}>All</button>
+        {tiers.map((t) => (
+            <button type="button" key={t.id} className={`ms-chip ${filterTier.includes(t.id) ? '' : 'off'}`} aria-pressed={filterTier.includes(t.id)} onClick={() => toggle(t.id)}>
+                <Badge look={levelLook(t.id, tiers)} />{String(t.label || t.id)} <b>{counts[t.id] || 0}</b>
+            </button>
+        ))}
+    </>
+);
+
+const daysAgo = (ms) => { if (!ms) return 'Never'; const d = Math.floor((Date.now() - ms) / 86400000); return d <= 0 ? 'Today' : d === 1 ? 'Yesterday' : `${d} days ago`; };
+
+const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride, setEditingStoreId, setDragPinCoords, canOverrideGps, activeTiers, setLocalTierUpdates, onNavigateToDirectory, onShowStoreOnJourney }) => {
     const sheetRef = useRef(null);
     const translateVal = useRef(0);
     const touchY = useRef(0);
@@ -1077,6 +1017,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     const [localScale, setLocalScale] = useState(store?.catchmentScale || 1.0);
     const [visitFreq, setVisitFreq] = useState(store?.visitFreq || 7);
     const [showConsignDetails, setShowConsignDetails] = useState(false);
+    const [showTools, setShowTools] = useState(false);   /* ⋯ = the boss's tools, folded */
 
     useEffect(() => {
         if (!store) return;
@@ -1161,7 +1102,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     }, [mapPoints, store?.id]);
 
     const stats = useMemo(() => {
-        if (!store?.name) return { totalRev: 0, currentConsignment: 0, activeItems: [] };
+        if (!store?.name) return { totalRev: 0, currentConsignment: 0, activeItems: [], monthRev: 0, lastOrderAt: 0 };
 
         const safeTrans = Array.isArray(transactions) ? transactions : [];
         /* 🚀 FIX — SUM SITE. This feeds the pin's revenue and, through totalTitip - totalPaid,
@@ -1206,7 +1147,10 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
             }
         });
         const activeItems = Object.values(itemMap).filter(i => i.qty > 0);
-        return { totalRev, currentConsignment, activeItems };
+        /* the card's two new numbers: money this month (same revenue rule) and when the last sale was */
+        const monthRev = monthByShop(storeTrans)[key] || 0;
+        const lastOrderAt = storeTrans.filter(t => (t.type || 'SALE') === 'SALE').reduce((m, t) => Math.max(m, txTime(t)), 0);
+        return { totalRev, currentConsignment, activeItems, monthRev, lastOrderAt };
     }, [store?.name, transactions, inventory]);
 
     const recentSales = useMemo(() => {
@@ -1338,218 +1282,95 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
 
     const isMobile = window.innerWidth < 1024;
 
-    if (!store) return null; 
+    if (!store) return null;
+
+    const tiers = activeTiers || [];
+    const tierLabel = String(tiers.find((t) => t.id === store.tier)?.label || store.tier || 'Unranked');
+    const owner = store.assignedAgent && store.assignedAgent !== 'Unassigned' ? String(store.assignedAgent) : '';
+    const initials = owner ? owner.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() : '?';
+    const nextVisit = !store.lastVisit ? 'Never visited · due now' : store.diffDays < 0 ? `${Math.abs(store.diffDays)} days overdue` : store.diffDays === 0 ? 'Due today' : `Due in ${store.diffDays} days`;
+    const dot = store.status === 'overdue' ? 'late' : store.status === 'soon' ? 'soon' : '';
 
     return (
-        <div 
-            ref={sheetRef}
-            /* 🚀 FIX: Upgraded to z-[10000] to permanently block map text from bleeding through */
-            className="fixed bottom-0 left-0 right-0 lg:absolute lg:top-24 lg:bottom-auto lg:left-4 lg:w-[400px] lg:h-auto lg:max-h-[90vh] bg-slate-900 lg:bg-slate-900/95 backdrop-blur-xl lg:border border-slate-700 lg:rounded-2xl rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.6)] lg:shadow-2xl z-[10000] flex flex-col lg:animate-slide-in-left lg:transform-none"
-            style={isMobile ? { height: '85vh', transform: 'translateY(100%)' } : {}}
-            onClick={(e) => e.stopPropagation()} 
-        >
-            <div 
-                className="shrink-0 flex flex-col pt-3 px-6 pb-4 border-b border-slate-800 bg-slate-900 rounded-t-3xl lg:cursor-default"
-                style={{ touchAction: isMobile ? 'none' : 'auto' }}
-                onTouchStart={isMobile ? onHandleTouchStart : undefined}
-                onTouchMove={isMobile ? onHandleTouchMove : undefined}
-                onTouchEnd={isMobile ? onHandleTouchEnd : undefined}
-            >
-                <div className="lg:hidden w-16 h-1.5 bg-slate-700 rounded-full mx-auto mb-4 pointer-events-none"></div>
-                
-                <div className="flex items-start justify-between mb-1 pr-8 pointer-events-none">
-                    <h2 className="text-2xl font-black leading-tight text-white truncate pointer-events-none">{store.name || 'Unknown Store'}</h2>
-                </div>
-                
-                {store.storeType === 'Wholesaler' && <span className="inline-flex items-center gap-1 bg-amber-500 text-amber-950 px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase mb-4 shadow-[0_0_10px_rgba(245,158,11,0.5)] pointer-events-none"><Store size={10} /> WHOLESALE HUB</span>}
-                
-                <p className="text-slate-400 text-xs flex items-center gap-1.5 mb-5 leading-relaxed truncate font-bold pointer-events-none">
-                    <MapPin size={14} className="shrink-0 mt-0.5 text-orange-500"/>
-                    <span className="truncate">{displayLocation}</span>
-                </p>
-
-                <div className="grid grid-cols-2 gap-3">
-                    <a href={getGpsLink()} target="_blank" rel="noreferrer" className="w-full py-3.5 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold flex items-center justify-center gap-2 transition-transform active:scale-95 text-xs text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]">
-                        <Navigation size={14}/> Directions
-                    </a>
-                    
-                    {isAdmin && store.phone ? (
-                        <a href={getWhatsappLink()} target="_blank" rel="noreferrer" className="w-full py-3 bg-emerald-600 rounded-xl hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 text-xs font-bold text-white shadow-md">
-                            <Phone size={14}/> WhatsApp
-                        </a>
-                    ) : (
-                        <div className="w-full py-3 bg-slate-800 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-slate-400">
-                            <Phone size={14}/> No Phone
-                        </div>
-                    )}
-
-                    {canOverrideGps && (
-                        <>
-                            <button onClick={() => {
-                                setDragPinCoords({ lat: store.latitude, lng: store.longitude });
-                                setEditingStoreId(store.id);
-                                setSelectedStore(null); 
-                            }} className="w-full py-3.5 bg-slate-800 border border-slate-600 hover:border-orange-500 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-orange-400 transition-colors shadow-md">
-                                <MapPin size={14}/> Correct Pin
-                            </button>
-
-                            <button onClick={() => {
-                                sessionStorage.setItem('targetEditStore', store.id);
-                                if (onNavigateToDirectory) onNavigateToDirectory();
-                                else window.dispatchEvent(new CustomEvent('switchTab', { detail: 'customers' }));
-                            }} className="w-full py-3.5 bg-slate-800 border border-slate-600 hover:border-blue-500 rounded-xl flex items-center justify-center gap-2 text-xs font-bold text-blue-400 transition-colors shadow-md">
-                                <Pencil size={14}/> Edit Profile
-                            </button>
-                        </>
-                    )}
+        <div ref={sheetRef} className="ms-store fixed bottom-0 left-0 right-0 z-[10000] flex flex-col lg:absolute lg:bottom-auto lg:right-auto lg:z-[1200] lg:transform-none"
+            style={isMobile ? { height: '85vh', transform: 'translateY(100%)' } : {}} onClick={(e) => e.stopPropagation()}>
+            <div className="ms-store-head" style={{ touchAction: isMobile ? 'none' : 'auto' }}
+                onTouchStart={isMobile ? onHandleTouchStart : undefined} onTouchMove={isMobile ? onHandleTouchMove : undefined} onTouchEnd={isMobile ? onHandleTouchEnd : undefined}>
+                <span className="ms-grab lg:hidden" />
+                <div className="ms-head">
+                    <Badge look={levelLook(store.tier, tiers)} big dot={dot} hub={store.storeType === 'Wholesaler'} />
+                    <div className="min-w-0 flex-1">
+                        <h5>{store.name || 'Unknown Store'}</h5>
+                        <div className="ms-where">{tierLabel} · {areaOf(store)}{store.storeType === 'Wholesaler' ? ' · Wholesale hub' : ''}</div>
+                    </div>
+                    <button type="button" className="ms-x" onClick={() => setSelectedStore(null)} aria-label="Close the shop"><X size={16}/></button>
                 </div>
             </div>
-
-            <button onClick={() => setSelectedStore(null)} className="hidden lg:flex absolute top-4 right-4 p-2 bg-slate-800 rounded-full hover:bg-red-500 transition-colors text-white"><X size={16}/></button>
-
-            <div className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar px-6 pt-2 pb-[10vh] lg:pb-6">
-                
-                <div className={`p-4 rounded-xl mb-6 flex flex-col gap-3 border ${store.status === 'overdue' ? 'bg-red-500/20 border-red-500' : 'bg-emerald-500/20 border-emerald-500'}`}>
-                    <div className="flex items-center gap-3">
-                        <Calendar size={24} className={store.status === 'overdue' ? 'text-red-500' : 'text-emerald-500'}/>
-                        <div className="flex-1">
-                            <p className="text-[10px] uppercase font-bold opacity-70 text-white">Next Visit Target</p>
-                            <p className="font-bold text-sm text-white">
-                                {!store.lastVisit ? 'Never Visited (Due Now)' : (store.diffDays <= 0 ? `${Math.abs(store.diffDays)} Days Overdue` : `Due in ${store.diffDays} days`)}
-                            </p>
-                        </div>
-                        
-                        {isAdmin && (
-                            <div className="flex items-center gap-1 bg-slate-900/50 p-1.5 rounded-lg border border-slate-600 shadow-inner">
-                                <Clock size={12} className="text-slate-400 ml-1"/>
-                                <input 
-                                    type="number" 
-                                    min="1" 
-                                    value={visitFreq} 
-                                    onChange={(e) => setVisitFreq(e.target.value)} 
-                                    onBlur={(e) => handleSaveVisitFreq(e.target.value)}
-                                    className="w-8 text-center text-xs font-black bg-transparent text-white outline-none"
-                                />
-                                <span className="text-[11px] text-slate-400 font-bold pr-1 uppercase">Days</span>
+            <div className="ms-store-body custom-scrollbar">
+                <span className="ms-who"><i>{initials}</i>{owner ? <>{owner} <em>salesman</em></> : 'No salesman yet'}</span>
+                <p className="ms-where">{displayLocation}</p>
+                <div className="ms-stats">
+                    {isAdmin && <div><small>This month</small><b className="g">{rpShort(stats.monthRev)}</b></div>}
+                    <div><small>Last order</small><b>{daysAgo(stats.lastOrderAt)}</b></div>
+                    {isAdmin && (
+                        <button type="button" onClick={() => setShowConsignDetails(!showConsignDetails)} aria-expanded={showConsignDetails} disabled={!stats.currentConsignment}>
+                            <small>Still unpaid</small><b className={stats.currentConsignment > 0 ? 'r' : ''}>{rpShort(stats.currentConsignment)}</b>
+                        </button>
+                    )}
+                    <div><small>Visit</small>{isAdmin ? (
+                        <label className="ms-freq">Every <input type="number" min="1" value={visitFreq} onChange={(e) => setVisitFreq(e.target.value)} onBlur={(e) => handleSaveVisitFreq(e.target.value)} aria-label="Visit every how many days" /> days</label>
+                    ) : <b>Every {visitFreq} days</b>}</div>
+                </div>
+                {isAdmin && showConsignDetails && stats.currentConsignment > 0 && (
+                    <div className="ms-list">{stats.activeItems.length > 0 ? stats.activeItems.map((item, idx) => <div key={idx}><span>{item.name}</span><b>{item.qty} Bks</b></div>) : <p className="ms-where">No item details found.</p>}</div>
+                )}
+                <div className="ms-stats one"><div><small>Next visit</small><b className={store.status === 'overdue' ? 'r' : ''}>{nextVisit}</b></div></div>
+                <div className={`ms-acts ${isAdmin || canOverrideGps ? '' : 'two'}`}>
+                    <a href={getGpsLink()} target="_blank" rel="noreferrer" className="p"><Navigation size={14}/> Directions</a>
+                    {isAdmin && store.phone ? <a href={getWhatsappLink()} target="_blank" rel="noreferrer"><Phone size={14}/> WhatsApp</a> : <span className="off"><Phone size={14}/> No phone</span>}
+                    {(isAdmin || canOverrideGps) && <button type="button" aria-label="Boss tools" aria-expanded={showTools} className={showTools ? 'on' : ''} onClick={() => setShowTools((v) => !v)}><MoreHorizontal size={20}/></button>}
+                </div>
+                {onShowStoreOnJourney && <button type="button" className="ms-wide" onClick={() => onShowStoreOnJourney(store.name)}>On Journey Plan <ChevronRight size={14}/></button>}
+                {showTools && (
+                    <div className="ms-boss">
+                        {canOverrideGps && (
+                            <div className="ms-acts two">
+                                <button type="button" onClick={() => { setDragPinCoords({ lat: store.latitude, lng: store.longitude }); setEditingStoreId(store.id); setSelectedStore(null); }}><MapPin size={14}/> Correct pin</button>
+                                <button type="button" onClick={() => { sessionStorage.setItem('targetEditStore', store.id); if (onNavigateToDirectory) onNavigateToDirectory(); else window.dispatchEvent(new CustomEvent('switchTab', { detail: 'customers' })); }}><Pencil size={14}/> Edit profile</button>
                             </div>
+                        )}
+                        {isAdmin && (
+                            <>
+                                <label className="ms-row"><span>Level</span>
+                                    <select value={store.tier || store.priceTier || 'Retail'} onChange={(e) => handleSaveTier(e.target.value)} className="ms-select">{tiers.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}</select>
+                                </label>
+                                <div className="ms-row"><span>Wholesale hub</span>
+                                    <button type="button" role="switch" aria-checked={store.storeType === 'Wholesaler'} onClick={handleToggleStoreType} disabled={isLinking} className={`ms-switch ${store.storeType === 'Wholesaler' ? 'on' : ''}`}><i /></button>
+                                </div>
+                                {store.storeType !== 'Wholesaler' && (
+                                    <label className="ms-row"><span>Supplied by</span>
+                                        <select value={store.suppliedBy || 'none'} onChange={(e) => handleAssignHub(e.target.value)} disabled={isLinking} className="ms-select">
+                                            <option value="none">No hub</option>{availableHubs.map((hub) => <option key={hub.id} value={hub.id}>{hub.name} ({hub.city})</option>)}
+                                        </select>
+                                    </label>
+                                )}
+                                <div className="ms-row col"><span>Catchment reach <b>{Number(localScale).toFixed(1)}x</b></span>
+                                    <input type="range" min="0.1" max="5.0" step="0.1" value={localScale} onChange={(e) => { const val = parseFloat(e.target.value); setLocalScale(val); setLiveScaleOverride(val); }} onMouseUp={handleSaveLocalScale} onTouchEnd={handleSaveLocalScale} className="ms-range" aria-label="Catchment reach" />
+                                </div>
+                                <button type="button" onClick={handleDeleteStore} className="ms-del"><Trash2 size={14}/> Delete this shop</button>
+                            </>
                         )}
                     </div>
-                </div>
-
+                )}
                 {isAdmin && (
-                    <>
-                        <div className="flex gap-2 mb-4">
-                            <div className="flex-1 p-3 rounded-xl border border-slate-700 bg-slate-800/80 flex flex-col justify-center shadow-inner">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Tag size={10} className="text-blue-400"/> Override Performance Tier</label>
-                                <select 
-                                    value={store.tier || store.priceTier || 'Retail'} 
-                                    onChange={(e) => handleSaveTier(e.target.value)} 
-                                    className="bg-slate-900 border border-slate-600 rounded p-1.5 text-[10px] uppercase tracking-widest text-white outline-none focus:border-emerald-500 font-bold cursor-pointer w-full"
-                                >
-                                    {activeTiers?.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
-                                </select>
-                            </div>
-                            <button onClick={handleDeleteStore} className="flex-[0.5] bg-slate-800 hover:bg-red-900/60 text-slate-400 hover:text-red-400 rounded-xl border border-slate-700 hover:border-red-500 transition-colors flex flex-col items-center justify-center shadow-inner active:scale-95">
-                                <Trash2 size={16} className="mb-1"/>
-                                <span className="text-[11px] font-black uppercase tracking-widest">Delete</span>
-                            </button>
-                        </div>
-
-                        <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-slate-600 shadow-inner">
-                            <div className="flex justify-between items-center mb-2">
-                                <label className="text-[10px] uppercase font-bold text-slate-300 flex items-center gap-1"><Database size={12} className="text-orange-500"/> Individual Reach</label>
-                                <div className="flex items-center gap-1">
-                                    <input type="number" step="0.1" min="0.1" max="5.0" value={localScale} onChange={(e) => { const val = Math.max(0.1, parseFloat(e.target.value) || 1); setLocalScale(val); setLiveScaleOverride(val); }} onBlur={handleSaveLocalScale} className="w-14 text-right text-xs font-mono bg-slate-900 p-1 rounded text-white border border-slate-600 focus:border-orange-500 outline-none" />
-                                    <span className="text-[10px] text-slate-400 font-bold">x</span>
-                                </div>
-                            </div>
-                            <input type="range" min="0.1" max="5.0" step="0.1" value={localScale} onChange={(e) => { const val = parseFloat(e.target.value); setLocalScale(val); setLiveScaleOverride(val); }} onMouseUp={handleSaveLocalScale} onTouchEnd={handleSaveLocalScale} className="w-full h-1.5 bg-slate-700 rounded-full appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all" />
-                        </div>
-
-                        <div className="mb-4 p-3 rounded-xl border border-slate-700 bg-slate-800/50 flex items-center justify-between">
-                            <span className="text-xs font-bold text-slate-300">Set as Wholesale Hub</span>
-                            <button onClick={handleToggleStoreType} disabled={isLinking} className={`w-10 h-6 rounded-full transition-colors relative ${store.storeType === 'Wholesaler' ? 'bg-amber-500' : 'bg-slate-600'}`}><span className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${store.storeType === 'Wholesaler' ? 'translate-x-4' : 'translate-x-0'}`}></span></button>
-                        </div>
-
-                        {store.storeType !== 'Wholesaler' && (
-                            <div className="mb-6 bg-slate-800 p-4 rounded-xl border border-amber-500/30">
-                                <label className="text-[10px] text-amber-500 uppercase font-bold tracking-widest mb-2 flex items-center gap-2"><Tag size={12}/> Map to Wholesaler</label>
-                                <select value={store.suppliedBy || "none"} onChange={(e) => handleAssignHub(e.target.value)} disabled={isLinking} className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2.5 text-xs text-white outline-none focus:border-amber-500 font-bold">
-                                    <option value="none">-- Select Wholesale Hub --</option>
-                                    {availableHubs.map(hub => <option key={hub.id} value={hub.id}>{hub.name} ({hub.city})</option>)}
-                                </select>
-                            </div>
-                        )}
-
-                        <div className="space-y-4 mb-2">
-                            {stats.currentConsignment > 0 && (
-                                <div className="p-4 bg-orange-500/20 border border-orange-500 rounded-xl transition-all">
-                                    <div className="flex justify-between items-center cursor-pointer" onClick={() => setShowConsignDetails(!showConsignDetails)}>
-                                        <div><p className="text-[10px] text-orange-300 uppercase font-bold flex items-center gap-2"><Wallet size={12}/> Active Consignment</p><p className="text-xl font-bold text-orange-500">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(stats.currentConsignment)}</p></div>
-                                        <div className={`bg-orange-500/20 p-1 rounded-full transition-transform duration-300 ${showConsignDetails ? 'rotate-180' : ''}`}><ChevronRight size={16} className="text-orange-500 rotate-90"/></div>
-                                    </div>
-                                    {showConsignDetails && (
-                                        <div className="mt-3 pt-3 border-t border-orange-500/30 space-y-2 animate-fade-in scrollable-content overflow-y-auto max-h-[30vh]">
-                                            {stats.activeItems.length > 0 ? stats.activeItems.map((item, idx) => (
-                                                <div key={idx} className="flex justify-between text-xs items-center"><span className="text-slate-300 font-medium">{item.name}</span><span className="text-orange-400 font-bold bg-orange-900/40 px-2 py-0.5 rounded">{item.qty} Bks</span></div>
-                                            )) : <p className="text-xs text-slate-400 italic text-center">No item details found.</p>}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                                <h3 className="text-[10px] text-slate-400 uppercase tracking-widest mb-4 font-bold flex justify-between items-center border-b border-slate-700 pb-2">
-                                    Recent Sales
-                                    <span className="text-emerald-400 font-black">{new Intl.NumberFormat('id-ID', { compactDisplay: "short", notation: "compact", currency: 'IDR' }).format(stats.totalRev)} Lifetime</span>
-                                </h3>
-                                
-                                <div className="space-y-3 scrollable-content overflow-y-auto max-h-[40vh]">
-                                    {recentSales.length > 0 ? recentSales.map(tx => {
-                                        let displayDate = "Unknown Date";
-                                        let displayTime = "--:--";
-                                        try {
-                                            const rawDate = tx.timestamp?.seconds ? new Date(tx.timestamp.seconds * 1000) : new Date(tx.date || 0);
-                                            if (!isNaN(rawDate.getTime()) && rawDate.getTime() > 0) {
-                                                displayDate = rawDate.toLocaleString('id-ID', {day:'numeric', month:'short', year:'numeric'});
-                                                displayTime = rawDate.toLocaleString('id-ID', {hour:'2-digit', minute:'2-digit'});
-                                            }
-                                        } catch(err) { /* an unparseable timestamp keeps the placeholder date; never worth a toast */ }
-
-                                        return (
-                                            <div key={tx.id} className="bg-slate-900 p-3 rounded-lg border border-slate-600 shadow-inner">
-                                                <div className="flex justify-between items-start mb-2 border-b border-slate-700 pb-2">
-                                                    <div>
-                                                        <span className="text-xs font-bold text-white block">{displayDate}</span>
-                                                        <div className="flex items-center gap-2 mt-0.5">
-                                                            <span className="text-[10px] text-slate-400">{displayTime}</span>
-                                                            <span className="text-[11px] bg-slate-800 text-blue-400 border border-slate-600 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider flex items-center gap-1">
-                                                                <User size={10} /> {tx.agentName === 'Admin' ? 'Admin' : (tx.agentName || 'Sales')}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <span className="text-xs font-black text-emerald-400">{formatRupiah(Number(tx.total) || 0)}</span>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    {(Array.isArray(tx.items) ? tx.items : Object.values(tx.items || {})).map((item, i) => (
-                                                    <div key={i} className="flex justify-between text-[10px]">
-                                                        <span className="text-slate-300 truncate pr-2">- {String(item?.name || 'Item')}</span>
-                                                        <span className="text-orange-400 font-bold shrink-0">{Number(item?.qty || 0)} {String(item?.unit || 'Bks')}</span>
-                                                    </div>
-                                                ))}
-                                                </div>
-                                            </div>
-                                        )
-                                    }) : (
-                                        <div className="text-center py-4 opacity-50 flex flex-col items-center">
-                                            <TrendingUp size={20} className="text-slate-400 mb-1"/>
-                                            <p className="text-xs text-slate-400 italic">No recent sales data.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </>
+                    <div className="ms-recent">
+                        <div className="ms-ptitle"><span>Recent sales</span><span><b>{rpShort(stats.totalRev)}</b> all time</span></div>
+                        {recentSales.length > 0 ? recentSales.map((tx) => { const at = txTime(tx); return (
+                            <div key={tx.id} className="ms-sale">
+                                <div className="ms-ptitle"><span>{at ? new Date(at).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Unknown date'} · {tx.agentName || 'Sales'}</span><b>{formatRupiah(Number(tx.total) || 0)}</b></div>
+                                {(Array.isArray(tx.items) ? tx.items : Object.values(tx.items || {})).map((item, i) => <div key={i} className="ms-line"><span>{String(item?.name || 'Item')}</span><span>{Number(item?.qty || 0)} {String(item?.unit || 'Bks')}</span></div>)}
+                            </div>); }) : <p className="ms-where">No sales yet.</p>}
+                    </div>
                 )}
             </div>
         </div>
@@ -1865,16 +1686,16 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 };
 
 // --- MAIN WRAPPER (APP IN APP) ---
-const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings, motorists = [], onNavigateToDirectory, userRole, agentProfileId, eodReports }) => {
+const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings, motorists = [], onNavigateToDirectory, userRole, agentProfileId, eodReports, onShowStoreOnJourney }) => {
 
     const userId = user?.uid || user?.id || "default";
 
     const activeTiers = useMemo(() => (Array.isArray(tierSettings) && tierSettings.length > 0) ? tierSettings : [
-        { id: 'Mythic', label: 'Mythic', color: '#f59e0b', iconType: 'emoji', value: '👑' },
-        { id: 'Epic', label: 'Epic', color: '#8b5cf6', iconType: 'emoji', value: '🔥' },
-        { id: 'Grandmaster', label: 'Grandmaster', color: '#ec4899', iconType: 'emoji', value: '⚔️' },
-        { id: 'Bronze', label: 'Bronze', color: '#d97706', iconType: 'emoji', value: '🛡️' },
-        { id: 'Unranked', label: 'Unranked', color: '#475569', iconType: 'emoji', value: '🪵' }
+        { id: 'Mythic', label: 'Mythic', color: '#E4B04A', iconType: 'emoji', value: '👑' },
+        { id: 'Epic', label: 'Epic', color: '#C4551E', iconType: 'emoji', value: '🔥' },
+        { id: 'Grandmaster', label: 'Grandmaster', color: '#F0E2BC', iconType: 'emoji', value: '⚔️' },
+        { id: 'Bronze', label: 'Bronze', color: '#A0703C', iconType: 'emoji', value: '🛡️' },
+        { id: 'Unranked', label: 'Unranked', color: '#6A645C', iconType: 'emoji', value: '🪵' }
     ], [tierSettings]);
 
     const [localTierUpdates, setLocalTierUpdates] = useState({});
@@ -1892,7 +1713,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const [isAddingMode, setIsAddingMode] = useState(false); 
     const [editingStoreId, setEditingStoreId] = useState(null); 
     
-    const [showControls, setShowControls] = useState(false);
+    const [sheet, setSheet] = useState(null);            /* phone: the one open sheet - areas / levels / layers */
+    const flip = (k) => setSheet((s) => (s === k ? null : k));
+    const [allAreas, setAllAreas] = useState(false);     /* PC: the whole ranking instead of the top 3 */
+    const [locateTick, setLocateTick] = useState(0);
     const [conquestMode, setConquestMode] = useState(false); 
     const [networkMode, setNetworkMode] = useState(false); 
     const [showBorders, setShowBorders] = useState(false); 
@@ -2005,7 +1829,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         });
     }, [boundaries]);
 
-    const { mapPoints, locationTree } = useMemo(() => {
+    const { mapPoints, locationTree, levelCounts } = useMemo(() => {
         const tree = {}; 
         
         const safeCustomers = Array.isArray(customers) ? customers : [];
@@ -2061,6 +1885,9 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 })
                 .filter(c => c !== null);
 
+            const levelCounts = {};
+            validStores.forEach(c => { if ((selectedRegion === "All" || c.region === selectedRegion) && (selectedCity === "All" || c.city === selectedCity)) levelCounts[c.tier] = (levelCounts[c.tier] || 0) + 1; });
+
             const filtered = validStores.filter(c => {
                 if (selectedRegion !== "All" && c.region !== selectedRegion) return false;
                 if (selectedCity !== "All" && c.city !== selectedCity) return false;
@@ -2069,7 +1896,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             });
 
         const treeArray = Object.keys(tree).reduce((acc, reg) => { acc[reg] = Array.from(tree[reg]).sort(); return acc; }, {});
-        return { mapPoints: filtered, locationTree: treeArray };
+        return { mapPoints: filtered, locationTree: treeArray, levelCounts };
     }, [customers, filterTier, selectedRegion, selectedCity, activeTiers, localTierUpdates]);
 
     const networkLinks = useMemo(() => {
@@ -2149,12 +1976,12 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     const getZoneColor = (boundaryId) => {
         if (!salesHeatmapMode) return null;
         const rev = zoneRevenues[boundaryId] || 0;
-        if (rev === 0) return '#ef4444'; 
+        if (rev === 0) return '#6A645C'; 
         const maxRev = Math.max(...Object.values(zoneRevenues), 1);
         const ratio = rev / maxRev;
-        if (ratio > 0.6) return '#10b981'; 
-        if (ratio > 0.2) return '#f59e0b'; 
-        return '#f97316'; 
+        if (ratio > 0.6) return '#E4B04A'; 
+        if (ratio > 0.2) return '#D08A2E'; 
+        return '#C4551E'; 
     };
 
     // 🚀 THE MAP CATCHER: Intercepts targets sent from Journey Plan
@@ -2187,14 +2014,16 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     
     const handlePinClick = (store, map) => { 
         if (isAddingMode || editingStoreId) return; 
+        setSheet(null);
         setSelectedStore(store); 
         setSelectedZone(null); 
         setLiveScaleOverride(null); 
         
         const minZoom = window.innerWidth < 1024 ? 17 : 15;
         const targetZoom = Math.max(map.getZoom(), minZoom);
-        
-        map.flyTo([store.latitude, store.longitude], targetZoom, { duration: 1.2 });
+        /* on the phone the card covers the lower half: aim a quarter screen lower so the shop stays above it */
+        const aim = window.innerWidth < 1024 ? map.unproject(map.project([store.latitude, store.longitude], targetZoom).add([0, map.getSize().y * 0.25]), targetZoom) : [store.latitude, store.longitude];
+        map.flyTo(aim, targetZoom, { duration: 1.2 });
     };
 
     /* his 2026-10-05 "add searching box for store name to show the location ... we also need that on the regular map": a
@@ -2209,15 +2038,63 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     const activeStore = selectedStore ? mapPoints.find(s => s.id === selectedStore.id) || selectedStore : null;
 
+    /* his job for this screen: "sales performance of an area, stores level and position". Areas = the shop's own city /
+       region field (mapAreas.js), so the ranking needs no drawn border; money only for the boss, as on the old card */
+    const areas = useMemo(() => {
+        const r = rankAreas(mapPoints, transactions, activeTiers.map((t) => t.id));
+        return isAdmin ? r : [...r].sort((x, y) => y.shops - x.shops);
+    }, [mapPoints, transactions, activeTiers, isAdmin]);
+    const totals = useMemo(() => areas.reduce((t, a) => ({ money: t.money + a.money, late: t.late + a.late }), { money: 0, late: 0 }), [areas]);
+    const territory = territoryOf(mapPoints);
+
+    /* an area row flies the map to that area's shops; on the phone the sheet closes so the map shows it */
+    const pickArea = (a) => {
+        const pts = mapPoints.filter((s) => areaOf(s) === a.name).map((s) => [s.latitude, s.longitude]);
+        if (!pts.length || !mapRef.current) return;
+        const wide = window.innerWidth >= 1024;
+        mapRef.current.flyToBounds(L.latLngBounds(pts), { paddingTopLeft: wide ? [400, 90] : [30, 140], paddingBottomRight: wide ? [80, 100] : [30, 110], maxZoom: 15, duration: 1 });
+        if (!wide) setSheet(null);
+    };
+
+    const startNewPin = () => {
+        let center = [-7.6145, 110.7122];
+        if (mapRef.current) { const c = mapRef.current.getCenter(); center = [c.lat, c.lng]; }
+        else if (userLocation) center = userLocation;
+        setDragPinCoords(center);
+        setIsAddingMode(true);
+        setSelectedStore(null);
+    };
+
+    /* the layers (bottom dock on the PC, the Layers sheet on the phone); a layer with nothing to draw says why */
+    const layerKeys = [
+        { k: 'borders', on: showBorders, icon: <Globe size={18}/>, label: 'Borders', press: () => { if (!showBorders && !sortedBoundaries.length) notify('No area borders yet - import them with Borders setup first.'); setShowBorders(!showBorders); } },
+        isAdmin && { k: 'heat', on: salesHeatmapMode, icon: <Flame size={18}/>, label: 'Sales heat', press: () => { if (!salesHeatmapMode && !sortedBoundaries.length) notify('Sales heat colours the area borders - import borders with Borders setup first.'); setSalesHeatmapMode(!salesHeatmapMode); setShowBorders(true); } },
+        { k: 'supply', on: networkMode, icon: <Route size={18}/>, label: 'Supply lines', press: () => { if (!networkMode && !mapPoints.some((s) => s.suppliedBy)) notify('No shop is linked to a wholesale hub yet - set "Supplied by" on a shop\'s card.'); setNetworkMode(!networkMode); } },
+        { k: 'catch', on: conquestMode, icon: <CircleDot size={18}/>, label: conquestMode ? `Catchment ${territory.pct}%` : 'Catchment', title: `Territory held: ${territory.pct}% (${territory.rank}) - shops visited in the last 30 days`, press: () => setConquestMode(!conquestMode) },
+    ].filter(Boolean);
+
+    /* the tools (PC toolbar top right, the phone's Layers sheet) - every tool the ☰ menu and the floating buttons had */
+    const toolKeys = [
+        { k: 'loc', icon: <LocateFixed size={18}/>, label: 'Locate', press: () => setLocateTick((t) => t + 1) },
+        isAdmin && { k: 'tier', on: showTierEngine, icon: <Settings size={18}/>, label: 'Tier rules', press: () => setShowTierEngine(!showTierEngine) },
+        isAdmin && { k: 'imp', on: showImporter, icon: <Download size={18}/>, label: 'Borders setup', press: () => setShowImporter(!showImporter) },
+        isAdmin && { k: 'sector', on: showTacticalDash, icon: <TrendingUp size={18}/>, label: 'Sector board', press: () => {
+            const next = !showTacticalDash;
+            if (next && !sortedBoundaries.length) return notify('The Sector board ranks the area borders - import them with Borders setup first.');
+            setShowTacticalDash(next); if (next) { setSalesHeatmapMode(true); setShowBorders(true); setSelectedStore(null); }
+        } },
+        canAddManualPin && !isAddingMode && !editingStoreId && { k: 'pin', icon: <MapPin size={18}/>, label: 'New pin', press: startNewPin },
+        isAdmin && onSetHome && { k: 'home', icon: <Home size={18}/>, label: 'Set home', press: () => { if (mapRef.current) onSetHome(mapRef.current.getCenter(), mapRef.current.getZoom()); } },
+    ].filter(Boolean);
+
     return (
-        <div className="absolute inset-0 w-full h-[100dvh] lg:h-full bg-slate-900 overflow-hidden font-sans z-[50] overscroll-none">
+        <div className="kx-map ms-root absolute inset-0 w-full h-[100dvh] lg:h-full bg-slate-900 overflow-hidden font-sans z-[50] overscroll-none">
             
             <style>{`
                 body, html { overscroll-behavior-y: none !important; }
             `}</style>
 
-            <GameHUD conquestMode={conquestMode} mapPoints={mapPoints} /> 
-            
+
             {/* 🚀 TARGETING HUD */}
             {(isAddingMode || editingStoreId) && dragPinCoords && (
                 <div className="absolute top-[80px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1500] flex flex-col gap-2 items-center w-max min-w-[220px] pointer-events-auto bg-slate-900/95 backdrop-blur border-2 border-orange-500 p-2.5 rounded-xl shadow-[0_10px_30px_rgba(249,115,22,0.5)] animate-fade-in-up">
@@ -2256,7 +2133,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                     setNewStoreForm({ name: '', phone: '', address: '', priceTier: 'Retail' });
                                 }
                             }}
-                            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-1 shadow-md transition-all active:scale-95 px-4"
+                            className="flex-1 bg-orange-600 hover:bg-orange-500 text-white py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-1 shadow-md transition-all active:scale-95 px-4"
                         >
                             <CheckCircle size={12} /> {editingStoreId ? "Save" : "Confirm"}
                         </button>
@@ -2274,7 +2151,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             <div className="bg-orange-500/20 p-2 rounded-full"><Store className="text-orange-500" size={24}/></div>
                             <div>
                                 <h3 className="text-white font-black uppercase tracking-widest">Register Target</h3>
-                                <p className="text-blue-400 font-mono text-[10px]">{pendingNewStore.lat.toFixed(5)}, {pendingNewStore.lng.toFixed(5)}</p>
+                                <p className="text-slate-400 font-mono text-[10px]">{pendingNewStore.lat.toFixed(5)}, {pendingNewStore.lng.toFixed(5)}</p>
                             </div>
                         </div>
 
@@ -2317,113 +2194,93 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 </div>
             )}
 
+            {/* the sales heat key: what the colours on the area borders mean (gold sells most, rust least, grey nothing) */}
             {salesHeatmapMode && (
-                <div className="absolute bottom-[100px] lg:bottom-8 left-1/2 transform -translate-x-1/2 z-[1000] bg-slate-900/95 text-white px-5 py-3 rounded-2xl border-2 border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)] backdrop-blur-md flex items-center gap-5 animate-slide-down">
-                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.2em]">Heatmap</span>
-                    <div className="h-5 w-[1px] bg-slate-700"></div>
-                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#10b981] border border-white"></div> High</div>
-                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#f59e0b] border border-white"></div> Med</div>
-                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#f97316] border border-white"></div> Low</div>
-                    <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest"><div className="w-3 h-3 rounded-full bg-[#ef4444] border border-white"></div> Zero</div>
+                <div className="ms-heatkey" role="note"><span>Sales heat</span><i style={{ background: '#E4B04A' }} />High<i style={{ background: '#D08A2E' }} />Mid<i style={{ background: '#C4551E' }} />Low<i style={{ background: '#6A645C' }} />None</div>
+            )}
+
+            {/* the region and the shop search: side by side on the PC, stacked on the phone (both his picks keep them) */}
+            <div className="ms-top">
+                <label className="ms-field min-h-11 lg:min-h-0">
+                    <MapPin size={16} className="shrink-0" aria-hidden="true"/>
+                    <select aria-label="Region" value={selectedRegion} onChange={(e) => { setSelectedRegion(e.target.value); setSelectedCity("All"); }}>
+                        <option value="All">All Regions</option>
+                        {Object.keys(locationTree).sort().map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                </label>
+                <label className="ms-field ms-find min-h-11 lg:min-h-0">
+                    <Search size={16} className="shrink-0" aria-hidden="true"/>
+                    <input type="search" aria-label="Find a shop" list="kx-map-shops" value={shopQuery} placeholder="Find a shop" enterKeyHint="search"
+                        onChange={(e) => { setShopQuery(e.target.value); if (mapPoints.some((s) => s.name === e.target.value)) { e.target.blur(); goToShop(e.target.value); } }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.currentTarget.blur(); goToShop(e.currentTarget.value); } }} />
+                    <datalist id="kx-map-shops">{mapPoints.map((s) => <option key={s.id} value={s.name} />)}</datalist>
+                </label>
+            </div>
+
+            {/* PC (his B): the three totals, top centre */}
+            <div className="ms-totals hidden lg:flex" role="status">
+                <div><b>{mapPoints.length}</b><small>Shops</small></div>
+                {isAdmin && <div><b className="g">{rpShort(totals.money)}</b><small>This month</small></div>}
+                <div><b className={totals.late ? 'r' : ''}>{totals.late}</b><small>Need a visit</small></div>
+            </div>
+
+            {/* PC: the top 3 areas float left; See all = the whole ranking. A pressed shop, a zone or the Sector board takes the slot */}
+            {!activeStore && !showTacticalDash && !selectedZone && (
+                <div className="ms-card ms-areas hidden lg:flex">
+                    <div className="ms-ptitle"><h4>{allAreas ? 'Areas' : 'Top areas'}</h4>
+                        {areas.length > 3 && <button type="button" className="ms-link" aria-expanded={allAreas} onClick={() => setAllAreas((v) => !v)}>{allAreas ? 'Top 3 ›' : `See all ${areas.length} ›`}</button>}
+                    </div>
+                    <div className="ms-rank">
+                        {areas.slice(0, allAreas ? areas.length : 3).map((a, i) => <AreaRow key={a.name} a={a} i={i} top={areas[0]} tiers={activeTiers} showMoney={isAdmin} onPick={pickArea} />)}
+                        {areas.length === 0 && <p className="ms-where">No shops on the map - the region or level filter hides them all.</p>}
+                    </div>
                 </div>
             )}
 
-            <div className="absolute top-[12px] left-[65px] right-[70px] lg:left-[80px] lg:right-auto lg:w-[320px] z-[500] pointer-events-none flex flex-col gap-2">
-                <div className="bg-slate-900/95 backdrop-blur-md rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)] border border-slate-700 p-1 pointer-events-auto flex items-center justify-between">
-                    <div className="flex items-center gap-2 flex-1 min-w-0 px-2">
-                        <MapPin size={16} className="text-orange-500 shrink-0"/>
-                        <select value={selectedRegion} onChange={(e) => { setSelectedRegion(e.target.value); setSelectedCity("All"); }} className="w-full bg-transparent text-sm font-bold text-white outline-none py-1.5 min-h-11 lg:min-h-0 cursor-pointer truncate appearance-none">
-                            <option value="All">All Regions</option>
-                            {Object.keys(locationTree).sort().map(r => <option key={r} value={r}>{r}</option>)}
-                        </select>
-                    </div>
-                    <button onClick={() => setShowControls(!showControls)} className="p-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors text-white shrink-0">
-                        {showControls ? <X size={18}/> : <Menu size={18}/>}
-                    </button>
-                </div>
-
-                <div className="bg-slate-900/95 backdrop-blur-md rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)] border border-slate-700 px-3 pointer-events-auto flex items-center gap-2">
-                    <Search size={16} className="text-orange-500 shrink-0"/>
-                    <input type="search" aria-label="Find a shop" list="kx-map-shops" value={shopQuery} placeholder="Find a shop" enterKeyHint="search"
-                        onChange={(e) => { setShopQuery(e.target.value); if (mapPoints.some((s) => s.name === e.target.value)) { e.target.blur(); goToShop(e.target.value); } }}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.currentTarget.blur(); goToShop(e.currentTarget.value); } }}
-                        className="w-full bg-transparent text-base lg:text-sm font-bold text-white outline-none py-1.5 min-h-11 lg:min-h-0 placeholder:text-slate-500" />
-                    <datalist id="kx-map-shops">{mapPoints.map((s) => <option key={s.id} value={s.name} />)}</datalist>
-                </div>
-
-                <div className={`transition-all duration-300 origin-top bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl pointer-events-auto overflow-y-auto custom-scrollbar flex flex-col gap-2 ${showControls ? 'opacity-100 scale-y-100 max-h-[60vh] p-3' : 'opacity-0 scale-y-0 max-h-0 p-0 border-none'}`}>
-                    <div className="flex flex-col gap-1 bg-black/40 p-2 rounded-xl border border-slate-700">
-                        <button onClick={toggleAllTiers} className={`px-3 py-2 min-h-11 lg:min-h-0 rounded-lg text-xs font-bold transition-all ${filterTier.length === activeTiers.length ? 'bg-amber-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>Show All Tiers</button>
-                        <div className="grid grid-cols-2 gap-1 mt-1">
-                            {activeTiers.map(tier => (
-                                <button key={tier.id} onClick={() => toggleTierFilter(tier.id)} className={`px-2 py-2 min-h-11 lg:min-h-0 rounded-lg text-[11px] lg:text-[10px] font-bold flex justify-center items-center gap-1.5 transition-all ${filterTier.includes(tier.id) ? 'bg-slate-700 text-white shadow-inner border border-slate-500' : 'text-slate-400 hover:bg-slate-800 opacity-60'}`}>
-                                    {tier.iconType === 'image' ? <img src={tier.value} className="w-3 h-3 rounded-full"/> : <span>{String(tier.value || '')}</span>}{String(tier.label || '')}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-2 w-full mt-2">
-                        {isAdmin && (
-                            <>
-                                <button onClick={() => setShowTierEngine(!showTierEngine)} className="px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center bg-slate-800 text-slate-300 border border-slate-600 hover:text-white hover:border-emerald-500 transition-all">
-                                    Tier Automation Engine <Settings size={16}/>
-                                </button>
-                                <button onClick={() => setShowImporter(!showImporter)} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${showImporter ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-slate-800 text-slate-300 border-slate-600 hover:text-white hover:border-blue-500'}`}>
-                                    {showImporter ? 'Close Boundary Setup' : 'Map Boundaries Setup'} <Download size={16}/>
-                                </button>
-                            </>
-                        )}
-                        
-                        <button onClick={() => setShowBorders(!showBorders)} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${showBorders ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
-                            {showBorders ? "Regional Borders: ON" : "Regional Borders"} <Globe size={16}/>
-                        </button>
-                        
-                        {isAdmin && (
-                            <>
-                                <button onClick={() => { 
-                                    const nextState = !showTacticalDash;
-                                    setShowTacticalDash(nextState); 
-                                    if (nextState) { setSalesHeatmapMode(true); setShowBorders(true); }
-                                }} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${showTacticalDash ? 'bg-red-600 text-white border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
-                                    {showTacticalDash ? "Tactical Dashboard: ON" : "Tactical Dashboard"} <TrendingUp size={16}/>
-                                </button>
-
-                                <button onClick={() => { setSalesHeatmapMode(!salesHeatmapMode); setShowBorders(true); }} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${salesHeatmapMode ? 'bg-emerald-600 text-white border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
-                                    {salesHeatmapMode ? "Sales Heatmap: ON" : "Territory Revenue"} <DollarSign size={16}/>
-                                </button>
-                            </>
-                        )}
-                        <button onClick={() => setNetworkMode(!networkMode)} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${networkMode ? 'bg-amber-600 text-white border-amber-500 shadow-[0_0_15px_rgba(217,119,6,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
-                            {networkMode ? "Supply Lines: ON" : "View Supply Lines"} <Database size={16}/>
-                        </button>
-                        <button onClick={() => setConquestMode(!conquestMode)} className={`px-4 py-3 rounded-xl font-bold text-xs flex justify-between items-center border transition-all ${conquestMode ? 'bg-purple-600 text-white border-purple-500 shadow-[0_0_15px_rgba(147,51,234,0.3)]' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
-                            {conquestMode ? "Catchment Footprints: ON" : "Analyze Catchment Areas"} <Folder size={16}/>
-                        </button>
-                    </div>
-                </div>
+            {/* PC: the levels, bottom left - each one a filter you press */}
+            <div className="ms-levels hidden lg:flex" role="group" aria-label="Levels - press one to hide it">
+                <LevelChips tiers={activeTiers} counts={levelCounts} filterTier={filterTier} toggle={toggleTierFilter} toggleAll={toggleAllTiers} />
             </div>
 
-            {/* 🚀 DEDICATED ADD STORE BUTTON */}
-            {!isAddingMode && !editingStoreId && canAddManualPin && (
-                <div className="absolute bottom-[90px] left-[14px] z-[999]">
-                    <button 
-                        onClick={() => {
-                            let center = [-7.6145, 110.7122];
-                            if (mapRef.current) {
-                                const c = mapRef.current.getCenter();
-                                center = [c.lat, c.lng];
-                            } else if (userLocation) {
-                                center = userLocation;
-                            }
-                            setDragPinCoords(center);
-                            setIsAddingMode(true);
-                        }} 
-                        className="bg-orange-600/95 backdrop-blur-md text-white border-2 border-orange-400 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest shadow-[0_4px_20px_rgba(249,115,22,0.6)] flex items-center gap-2 hover:bg-orange-500 transition-all hover:scale-105 active:scale-95"
-                    >
-                        <MapPin size={18} className="animate-bounce" /> 
-                        Drop New Pin
-                    </button>
+            {/* PC: the layer keys in a bottom dock */}
+            <nav className="ms-layers hidden lg:flex" aria-label="Map layers">
+                {layerKeys.map((l) => <button type="button" key={l.k} className={`kx-mapkey flex items-center ${l.on ? 'on' : ''}`} aria-pressed={l.on} title={l.title} onClick={l.press}>{l.icon}<span>{l.label}</span></button>)}
+            </nav>
+
+            {/* PC: the tools, top right - Journey's toolbar, names always on */}
+            <div className="kx-keys ms-tools hidden lg:flex flex-col">
+                {toolKeys.map((t) => <button type="button" key={t.k} className={`kx-mapkey flex items-center ${t.on ? 'on' : ''}`} aria-pressed={t.on} onClick={t.press}>{t.icon}<span>{t.label}</span></button>)}
+            </div>
+
+            {/* phone (his A): Journey's full-map dock; one key opens one sheet, the same key again = the whole map */}
+            <nav className="kx-dock ms-dock grid lg:hidden" aria-label="Map keys">
+                <button type="button" className={`kx-mapkey flex flex-col ${sheet === 'areas' ? 'on' : ''}`} aria-expanded={sheet === 'areas'} onClick={() => flip('areas')}><BarChart3 size={20}/><span>Areas</span></button>
+                <button type="button" className={`kx-mapkey flex flex-col ${sheet === 'levels' ? 'on' : ''}`} aria-expanded={sheet === 'levels'} onClick={() => flip('levels')}><Crown size={20}/><span>Levels</span></button>
+                <button type="button" className={`kx-mapkey flex flex-col ${sheet === 'layers' ? 'on' : ''}`} aria-expanded={sheet === 'layers'} onClick={() => flip('layers')}><Layers size={20}/><span>Layers</span></button>
+                <button type="button" className="kx-mapkey flex flex-col" onClick={() => { setSheet(null); setLocateTick((t) => t + 1); }}><LocateFixed size={20}/><span>Locate</span></button>
+            </nav>
+            {sheet && (
+                <div className="ms-sheet lg:hidden" role="dialog" aria-label={sheet}>
+                    <span className="ms-grab" />
+                    {sheet === 'areas' && (<>
+                        <div className="ms-ptitle"><h4>Areas</h4><span>{mapPoints.length} shops{isAdmin && <> · <b>{rpShort(totals.money)}</b></>}{totals.late > 0 && <> · <em>{totals.late} to visit</em></>}</span></div>
+                        <div className="ms-rank">
+                            {areas.map((a, i) => <AreaRow key={a.name} a={a} i={i} top={areas[0]} tiers={activeTiers} showMoney={isAdmin} onPick={pickArea} />)}
+                            {areas.length === 0 && <p className="ms-where">No shops on the map - the region or level filter hides them all.</p>}
+                        </div>
+                    </>)}
+                    {sheet === 'levels' && (<>
+                        <div className="ms-ptitle"><h4>Levels</h4><span>press one to hide it</span></div>
+                        <div className="ms-chips"><LevelChips tiers={activeTiers} counts={levelCounts} filterTier={filterTier} toggle={toggleTierFilter} toggleAll={toggleAllTiers} /></div>
+                    </>)}
+                    {sheet === 'layers' && (<>
+                        <div className="ms-ptitle"><h4>Layers</h4><span>on the map</span></div>
+                        <div className="ms-grid">{layerKeys.map((l) => <button type="button" key={l.k} className={`kx-mapkey flex items-center ${l.on ? 'on' : ''}`} aria-pressed={l.on} title={l.title} onClick={l.press}>{l.icon}<span>{l.label}</span></button>)}</div>
+                        {toolKeys.length > 1 && (<>
+                            <div className="ms-ptitle"><h4>Tools</h4></div>
+                            <div className="ms-grid">{toolKeys.filter((t) => t.k !== 'loc').map((t) => <button type="button" key={t.k} className={`kx-mapkey flex items-center ${t.on ? 'on' : ''}`} aria-pressed={t.on} onClick={() => { setSheet(null); t.press(); }}>{t.icon}<span>{t.label}</span></button>)}</div>
+                        </>)}
+                    </>)}
                 </div>
             )}
 
@@ -2478,12 +2335,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </LayersControl.BaseLayer>
                 </LayersControl>
 
-                <LocationController userLocation={userLocation} setUserLocation={setUserLocation} isEditing={!!editingStoreId} />
+                <LocationController userLocation={userLocation} setUserLocation={setUserLocation} isEditing={!!editingStoreId} trigger={locateTick} />
                 {userLocation && (
                     <Marker position={userLocation} icon={userLocationIcon} zIndexOffset={9999} interactive={false} />
                 )}
 
-                <AdminControls isAdmin={isAdmin} onSetHome={onSetHome}/>
                 
                 <MapClicker isAddingMode={isAddingMode} editingStoreId={editingStoreId} setDragPinCoords={setDragPinCoords} setSelectedStore={setSelectedStore} setSelectedZone={setSelectedZone} />
                 
@@ -2496,7 +2352,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     if (!geoData || !geoData.type) return null; 
                     
                     const isHeatmap = salesHeatmapMode;
-                    const bndColor = isHeatmap ? getZoneColor(boundary.id) : (boundary.color || '#3b82f6');
+                    const bndColor = isHeatmap ? getZoneColor(boundary.id) : (boundary.color || '#A39B90');
                     const bndRev = zoneRevenues[boundary.id] || 0;
                     const isKab = boundary.level === 'Kabupaten' || boundary.level === 'Provinsi';
                     const isSelected = selectedZone?.id === boundary.id;
@@ -2505,7 +2361,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                         <GeoJSON 
                             key={`bnd-${boundary.id}-${isHeatmap ? 'heat' : 'norm'}-${bndRev}-${isSelected}-${timeFilter}`} 
                             data={geoData} 
-                            style={{ color: isSelected ? '#38bdf8' : bndColor, weight: isSelected ? 4 : (isKab ? 3 : 2), opacity: 1, fillOpacity: isSelected ? 0.7 : (isHeatmap ? 0.45 : (isKab ? 0.02 : 0.15)), fillColor: bndColor, dashArray: isKab ? null : '5, 5' }}
+                            style={{ color: isSelected ? '#E4B04A' : bndColor, weight: isSelected ? 4 : (isKab ? 3 : 2), opacity: 1, fillOpacity: isSelected ? 0.7 : (isHeatmap ? 0.45 : (isKab ? 0.02 : 0.15)), fillColor: bndColor, dashArray: isKab ? null : '5, 5' }}
                             onEachFeature={(f, layer) => {
                                 layer.on({
                                     click: (e) => { L.DomEvent.stopPropagation(e); setSelectedStore(null); setSelectedZone(boundary); },
@@ -2513,13 +2369,13 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                     mouseout: (e) => e.target.setStyle({ fillOpacity: isSelected ? 0.7 : (isHeatmap ? 0.45 : (isKab ? 0.02 : 0.15)), weight: isSelected ? 4 : (isKab ? 3 : 2) })
                                 });
                                 
-                                const targetHtml = boundary.targetRev ? `<div style="color: #94a3b8; font-size: 9px; margin-top: 2px;">TARGET: ${formatRupiah(boundary.targetRev)}</div>` : '';
-                                const agentHtml = boundary.assignedAgent ? `<div style="color: #c084fc; font-size: 9px; margin-top: 2px; font-weight: bold;">👤 AGENT ASSIGNED</div>` : '';
+                                const targetHtml = boundary.targetRev ? `<div style="color: #A39B90; font-size: 9px; margin-top: 2px;">TARGET: ${formatRupiah(boundary.targetRev)}</div>` : '';
+                                const agentHtml = boundary.assignedAgent ? `<div style="color: #F0E2BC; font-size: 9px; margin-top: 2px; font-weight: bold;">SALESMAN ASSIGNED</div>` : '';
 
                                 const ttContent = `
-                                    <div style="background-color: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); padding: 8px 14px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); text-align: center; line-height: 1.2; white-space: nowrap;">
-                                        <div style="color: #cbd5e1; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">${boundary.name || "Region"}</div>
-                                        ${isHeatmap ? `<div style="color: #fbbf24; font-size: 15px; font-weight: 900; font-family: monospace;">${formatRupiah(bndRev)}</div>` : ''}
+                                    <div style="background-color: rgba(18, 17, 16, 0.92); border: 1px solid #3E3A35; padding: 8px 14px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); text-align: center; line-height: 1.2; white-space: nowrap;">
+                                        <div style="color: #E8E4DE; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">${boundary.name || "Region"}</div>
+                                        ${isHeatmap ? `<div style="color: #E4B04A; font-size: 15px; font-weight: 900; font-family: monospace;">${formatRupiah(bndRev)}</div>` : ''}
                                         ${isHeatmap ? targetHtml : ''}
                                         ${agentHtml}
                                     </div>`;
@@ -2542,7 +2398,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     const isEditingThisStore = activeStore && activeStore.id === store.id && liveScaleOverride !== null;
                     const storeScale = isEditingThisStore ? liveScaleOverride : (store.catchmentScale || 1.0);
                     const finalRadius = baseRadius * storeScale;
-                    return <Circle key={`circle-${store.id}`} center={[store.latitude, store.longitude]} radius={finalRadius} className="venn-heatmap-circle" pathOptions={{ color: 'transparent', fillColor: '#f97316', fillOpacity: 0.35 }}/>;
+                    return <Circle key={`circle-${store.id}`} center={[store.latitude, store.longitude]} radius={finalRadius} className="venn-heatmap-circle" pathOptions={{ color: 'transparent', fillColor: '#C4551E', fillOpacity: 0.35 }}/>;
                 })}
 
                 {/* 🚀 THE LEAFLET SUPERCLUSTER ENGINE */}
@@ -2578,11 +2434,11 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride}
                     setEditingStoreId={setEditingStoreId} setDragPinCoords={setDragPinCoords} canOverrideGps={canAddManualPin} 
                     activeTiers={activeTiers} setLocalTierUpdates={setLocalTierUpdates}
-                    onNavigateToDirectory={onNavigateToDirectory}
+                    onNavigateToDirectory={onNavigateToDirectory} onShowStoreOnJourney={onShowStoreOnJourney}
                 />
             )}
             
-            {!showTacticalDash && <ZoneHUD zone={selectedZone} mapPoints={mapPoints} setSelectedZone={setSelectedZone} />}
+            {!showTacticalDash && !activeStore && <ZoneHUD zone={selectedZone} mapPoints={mapPoints} setSelectedZone={setSelectedZone} />}
             
             <style>{`
                 .leaflet-tooltip-pane { z-index: 9999 !important; pointer-events: none !important; }
