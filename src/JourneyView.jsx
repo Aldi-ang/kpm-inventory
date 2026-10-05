@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Truck, MapPin, CheckCircle, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, Paintbrush, LocateFixed, Maximize, Minimize, ChevronRight } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs, getDoc, setDoc } from "firebase/firestore";
-import { MapContainer, TileLayer, Marker, Polyline, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
-import { storeKey, getLocalDayKey, journeyWhere } from './utils/helpers';
+import { storeKey, getLocalDayKey, journeyWhere, findShop } from './utils/helpers';
 import MoreKey from './components/MoreKey.jsx';
 import FolderCard, { FOLDER_HOLD_MS } from './components/FolderCard.jsx';
 import L from 'leaflet';
@@ -647,10 +647,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     const [visitNote, setVisitNote] = useState("");
     const [visitTag, setVisitTag] = useState("Routine Check");
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [streetRoute, setStreetRoute] = useState(null);
 
     const [agentsList, setAgentsList] = useState([]);
-    const [selectedAgent, setSelectedAgent] = useState('All');
+    const [shopQuery, setShopQuery] = useState('');       // the shop search's text
+    const [searchFocus, setSearchFocus] = useState(null); // the shop it flies to (StoreFocus)
     const [orderedRoute, setOrderedRoute] = useState([]);
     const [assignments, setAssignments] = useState({});
 
@@ -785,14 +785,13 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         let baseRoute = mappedCustomers.filter(c => {
             return c.visitFreq === 7 || c.visitDay === selectedDay;
         });
-        
-        if (selectedAgent !== 'All') baseRoute = baseRoute.filter(c => assignments[c.id] === selectedAgent);
+
         if (selectedProvinsi !== 'All') baseRoute = baseRoute.filter(c => c._hierarchy?.Provinsi === selectedProvinsi);
         if (selectedKabupaten !== 'All') baseRoute = baseRoute.filter(c => c._hierarchy?.Kabupaten === selectedKabupaten);
         if (selectedKecamatan !== 'All') baseRoute = baseRoute.filter(c => c._hierarchy?.Kecamatan === selectedKecamatan);
         
         setOrderedRoute(baseRoute);
-    }, [mappedCustomers, selectedDay, selectedAgent, selectedProvinsi, selectedKabupaten, selectedKecamatan, assignments]);
+    }, [mappedCustomers, selectedDay, selectedProvinsi, selectedKabupaten, selectedKecamatan]);
 
     const moveStore = (index, direction) => {
         const newRoute = [...orderedRoute];
@@ -883,26 +882,20 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         }
     };
 
-    useEffect(() => {
-        const fetchRoute = async () => {
-            if (selectedAgent === 'All') return setStreetRoute(null);
+    /* his 2026-10-05 "global filter is useless since we have the expedition panel now ... add searching box for store name to
+       show the location": the Global Fleet filter (and the orange street route it fetched for one salesman) is gone - pressing
+       a salesman in the Expedition panel does that job. A picked or typed shop name flies the map to it (StoreFocus, the
+       hand-off card's own fly, which reports a shop with no GPS pin); a miss is reported, and so is a shop that is not on
+       this day's round, whose chest is not drawn */
+    const goToShop = (text) => {
+        const shop = findShop(customers, text);
+        if (!shop) return notify(`No shop called "${String(text).trim()}" here.`);
+        setShopQuery(shop.name);
+        setSearchFocus(shop.name);
+        const pinned = Number(shop.latitude) && Number(shop.longitude);
+        if (pinned && ![...orderedRoute, ...offRoute].some((s) => s.id === shop.id)) notify(`${shop.name} is not on ${selectedDay}'s round, so no chest is drawn there - this is where it is.`);
+    };
 
-            const validStops = orderedRoute.filter(c => !isNaN(parseFloat(c.latitude)) && !isNaN(parseFloat(c.longitude)));
-            if (validStops.length < 2) return setStreetRoute(null);
-            
-            const coordsString = validStops.map(stop => `${stop.longitude},${stop.latitude}`).join(';');
-            try {
-                const response = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`);
-                const data = await response.json();
-                if (data.routes && data.routes[0]) {
-                    const flippedCoords = data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
-                    setStreetRoute(flippedCoords);
-                }
-            } catch (error) { /* the routing service is outside this app; the straight line stays drawn */ }
-        };
-        fetchRoute();
-    }, [orderedRoute]); 
-    
     const validStore = orderedRoute.find(c => !isNaN(parseFloat(c.latitude)) && !isNaN(parseFloat(c.longitude)));
     const mapCenter = validStore ? [parseFloat(validStore.latitude), parseFloat(validStore.longitude)] : [-7.6145, 110.7122];
 
@@ -1122,7 +1115,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         <i className="kx-feed-mark" aria-hidden="true" />
                         Mission Feed
                         <span className="kx-feed-meta lg:hidden ml-auto">{journeyWhere(selectedProvinsi, selectedKabupaten, selectedKecamatan)} {feedOpen ? '▴' : '▾'}</span>
-                        <span className="kx-feed-meta hidden lg:inline"><b>{selectedDay}</b> · {journeyWhere(selectedProvinsi, selectedKabupaten, selectedKecamatan)} · {selectedAgent === 'All' ? 'Global Fleet' : selectedAgent}</span>
+                        <span className="kx-feed-meta hidden lg:inline"><b>{selectedDay}</b> · {journeyWhere(selectedProvinsi, selectedKabupaten, selectedKecamatan)}</span>
                         <span className="kx-feed-count hidden lg:inline ml-auto">{conqueredCount}/{orderedRoute.length}<small>Secured</small></span>
                     </button>
                 </h2>
@@ -1140,11 +1133,11 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 <div className="overflow-hidden lg:contents">
                 <div className="kx-feed-controls">
                     <div className="kx-feed-field kx-desk"><span>Day</span>{feedDays}</div>
-                    <label className="kx-feed-field"><span>Operational Filter</span>
-                        <select value={selectedAgent} onChange={(e) => setSelectedAgent(e.target.value)} className={selectedAgent !== 'All' ? 'set' : ''}>
-                            <option value="All">Global Fleet</option>
-                            {globalAgentList.map(a => <option key={a} value={a}>{a}'s Bounties</option>)}
-                        </select>
+                    <label className="kx-feed-field"><span>Find a Shop</span>
+                        <input type="search" aria-label="Find a shop" list="kx-journey-shops" value={shopQuery} placeholder="Type a shop name" enterKeyHint="search"
+                            onChange={(e) => { setShopQuery(e.target.value); if (customers.some((c) => c.name === e.target.value)) { e.target.blur(); goToShop(e.target.value); } }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.currentTarget.blur(); goToShop(e.currentTarget.value); } }} />
+                        <datalist id="kx-journey-shops">{customers.map((c) => <option key={c.id} value={c.name} />)}</datalist>
                     </label>
                     <div className="kx-feed-field"><span>Regional Command</span>
                         <div className="kx-feed-place">
@@ -1303,6 +1296,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     <MapTouchGate locked={isPhone && !isFullScreen} />
                     <MapRecenter trigger={recenterTrigger} saveTrigger={saveHomeTrigger} savedHome={savedHome} onSaveHome={handleSaveHome} defaultCenter={mapCenter} />
                     <StoreFocus focusStore={focusStore} customers={customers} onHandled={onFocusStoreHandled} />
+                    <StoreFocus focusStore={searchFocus} customers={customers} onHandled={() => setSearchFocus(null)} />
                     {/* Esri's dark canvas needs no key; CARTO's basemaps started printing API KEY REQUIRED across
                         every tile (checked 2026-09-19). Native tiles stop at zoom 16, so Leaflet scales those up
                         for the street-level zooms instead of showing grey squares. */}
@@ -1346,12 +1340,6 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                             />
                         );
                     })}
-
-                    {/* No animate-pulse: a continuously repainting dashed path spanning the whole
-                        viewport, for no information gain. Lite Mode killed it anyway. */}
-                    {streetRoute && (
-                        <Polyline positions={streetRoute} pathOptions={{ color: '#f97316', weight: 4, opacity: 0.8, dashArray: '10, 15' }}/>
-                    )}
 
                     {/* 🚀 Clustering: at zoom 12 (the default view) this paints ~20 cluster bubbles
                         instead of one pin per store, which is what made the map crawl on phones.

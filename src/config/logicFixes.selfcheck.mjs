@@ -7756,7 +7756,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /* since 2026-10-03 the phone key prints the place only - the day is the big headline right under it (his B) */
      /<span className="kx-feed-meta lg:hidden ml-auto">\{journeyWhere\(selectedProvinsi, selectedKabupaten, selectedKecamatan\)\} \{feedOpen \? '▴' : '▾'\}<\/span>/.test(jv) &&
      /<div className="kx-feed-day kx-phone"><span>\{selectedDay\}<\/span>/.test(jv) &&
-     /import \{ storeKey, getLocalDayKey, journeyWhere \} from '\.\/utils\/helpers'/.test(jv),
+     /import \{ storeKey, getLocalDayKey, journeyWhere, findShop \} from '\.\/utils\/helpers'/.test(jv),
      'his "board 1 = B"');
   ok('1B: the filter panel rides a grid-template-rows fold, 200 ms, and is always open on the desk',
      /className=\{`grid transition-\[grid-template-rows,opacity\] duration-200 ease-out lg:block \$\{feedOpen \? 'opacity-100' : 'opacity-0 lg:opacity-100'\}`\} style=\{\{ gridTemplateRows: feedOpen \? '1fr' : '0fr' \}\}/.test(jv) &&
@@ -7765,7 +7765,8 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/(emerald|blue)-\d/.test(jv.slice(jv.indexOf('<div className="kx-feed">'), jv.indexOf('<div className="flex flex-col gap-3 lg:flex-row lg:gap-4">'))) &&
      /aria-pressed=\{selectedDay === d\} className=\{d === todayName \? 'today' : ''\} onClick=\{\(\) => setSelectedDay\(d\)\}/.test(jv) &&
      /orderedRoute\.length > 0 && orderedRoute\.length <= 40/.test(jv) && /<small>salesmen out<\/small>/.test(jv) && /<small>overdue<\/small>/.test(jv) &&
-     /Mission Feed/.test(jv) && /Elimination Status/.test(jv) && /<small>Secured<\/small>/.test(jv) && /'s Bounties/.test(jv) &&
+     /* "'s Bounties" left with the Global Fleet filter - his 2026-10-05 "global filter is useless since we have the expedition panel" */
+     /Mission Feed/.test(jv) && /Elimination Status/.test(jv) && /<small>Secured<\/small>/.test(jv) &&
      /<div className="lg:hidden">\{feedDays\}<\/div>/.test(jv) && /<div className="kx-feed-field kx-desk"><span>Day<\/span>\{feedDays\}<\/div>/.test(jv) &&
      /* the feed's own classes carry a display, so Tailwind's hidden / lg:hidden lose to them - the feed hides its own
         (measured 2026-10-03: the day keys showed twice in the open fold at 390) */
@@ -7784,9 +7785,9 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /\.kx-feed select \{ min-height: 44px;[^}]*font: 700 12px\/1/.test(read('src/styles/expedition.css')) &&
      (jv.match(/<select aria-label="(Province|Kabupaten|Kecamatan)"/g) || []).length === 3,
      'measured 2026-09-19: 144/81/81 x 30 at 10 px, the third to x 367 past its column at 330');
-  ok('the floor: the FLEET select and the DAY keys are 44 px tall on the phone - the control itself is the tap target',
+  ok('the floor: the shop search (the FLEET select until 2026-10-05) and the DAY keys are 44 px tall on the phone - the control itself is the tap target',
      /\.kx-feed select \{ min-height: 44px;/.test(read('src/styles/expedition.css')) && /\.kx-days button \{ min-height: 44px;/.test(read('src/styles/expedition.css')) &&
-     /<select value=\{selectedAgent\} onChange=\{\(e\) => setSelectedAgent\(e\.target\.value\)\} className=\{selectedAgent !== 'All' \? 'set' : ''\}>/.test(jv),
+     /\.kx-feed input\[type="search"\] \{ min-height: 44px;/.test(read('src/styles/expedition.css')) && /<input type="search" aria-label="Find a shop"/.test(jv),
      'measured 2026-09-19: 107 x 13 inside a 27 px box');
   ok('the floor: the strip\'s ⛶ key is 44 on the phone; the full map\'s keys are one dock of six 58 tall (his "new" key layout, 2026-10-03)',
      /className=\{`kx-keys absolute top-4 right-4 z-\[9999\] \$\{isFullScreen \? 'hidden lg:flex' : 'flex'\} flex-col gap-3 pointer-events-auto \[&>button\]:min-h-11 \[&>button\]:min-w-11 lg:\[&>button\]:min-h-0 lg:\[&>button\]:min-w-0`\}/.test(jv) &&
@@ -10100,6 +10101,22 @@ section('Expedition map');
          && /<ShopNames \/>\s*<SignHold \/>\s*<\/MapContainer>/.test(jv) && /store\.openRequest, store\.name\)/.test(jv)
          && /querySelectorAll\('\.kx-snm > i'\)/.test(names) && /visibility = 'hidden'/.test(names) && /map\.on\('zoomend moveend', later\)/.test(names),
          names ? 'ShopNames found' : 'no ShopNames'); }
+    /* HIS 2026-10-05 07:30 "global filter is useless since we have the expedition panel now right and we need to add
+       searching box for store name to show the location we also need that on the regular map" */
+    { const { findShop } = await import('../utils/helpers.js');
+      const shops = [{ id: 1, name: 'Toko Sinar Abadi' }, { id: 2, name: 'Warung Bu Darmi (Retail)' }, { id: 3, name: 'Toko Abadi' }];
+      const jv = code(read('src/JourneyView.jsx')), mmc = code(read('src/MapMissionControl.jsx'));
+      ok('BEHAVIOUR: findShop - the exact name wins over a longer one holding it, a part finds the first holder, the (Retail) tail and case do not matter, nothing typed finds nothing',
+         findShop(shops, 'toko abadi')?.id === 3 && findShop(shops, 'abadi')?.id === 1 && findShop(shops, 'Warung Bu Darmi')?.id === 2 && findShop(shops, 'DARMI')?.id === 2
+         && findShop(shops, '  ') === null && findShop(shops, 'zzz') === null && findShop(null, 'a') === null, 'Toko Abadi vs Toko Sinar Abadi');
+      ok('Journey: the Global Fleet filter is gone (the Expedition press does its job) with its orange street route; a shop search flies the map to the shop and reports a miss and a shop off today\'s round',
+         !/Operational Filter|Global Fleet|setSelectedAgent|selectedAgent|streetRoute|project-osrm/.test(jv)
+         && /<StoreFocus focusStore=\{searchFocus\} customers=\{customers\} onHandled=\{\(\) => setSearchFocus\(null\)\} \/>/.test(jv)
+         && /const goToShop = [\s\S]{0,700}findShop\(customers, text\)[\s\S]{0,300}notify\(`No shop called/.test(jv) && /is not on \$\{selectedDay\}'s round/.test(jv)
+         && /<datalist id="kx-journey-shops">/.test(jv) && /<input type="search" aria-label="Find a shop"/.test(jv), 'his screenshot: GLOBAL FLEET open over the map');
+      ok('Map System: the same search under the region bar - picking a shop presses its pin (its card opens, the map flies there) and a miss is reported',
+         /<input type="search" aria-label="Find a shop"/.test(mmc) && /<datalist id="kx-map-shops">/.test(mmc)
+         && /const goToShop = [\s\S]{0,500}findShop\(mapPoints, text\)[\s\S]{0,400}handlePinClick\(shop, mapRef\.current\)/.test(mmc) && /notify\(`No shop called/.test(mmc), ''); }
     /* HIS 2026-10-04 18:30 "for request since it is very important we need more visible compared to other maybe add some flag
        on that stores until order is fullfilled" + 19:25 "B is good" (the "!", drawn on Day Replay v4). A visit report OVERWROTE
        lastVisitTag, so a request was forgotten at the next visit. Now a New Request writes openRequest; only a Request done

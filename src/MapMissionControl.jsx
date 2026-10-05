@@ -12,7 +12,7 @@ import {
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; 
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
-import { commitInChunks, convertToBks, formatRupiah, storeKey } from './utils/helpers';
+import { commitInChunks, convertToBks, formatRupiah, storeKey, findShop } from './utils/helpers';
 import { loadBorderCache, saveBorderCache, clearBorderCache } from './utils/borderCache';
 import { revenueOf, debtCredit } from './utils/revenueRule';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
@@ -2194,7 +2194,17 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
         const minZoom = window.innerWidth < 1024 ? 17 : 15;
         const targetZoom = Math.max(map.getZoom(), minZoom);
         
-        map.flyTo([store.latitude, store.longitude], targetZoom, { duration: 1.2 }); 
+        map.flyTo([store.latitude, store.longitude], targetZoom, { duration: 1.2 });
+    };
+
+    /* his 2026-10-05 "add searching box for store name to show the location ... we also need that on the regular map": a
+       picked or typed shop presses its pin - its card opens and the map flies there; a miss is reported */
+    const [shopQuery, setShopQuery] = useState('');
+    const goToShop = (text) => {
+        const shop = findShop(mapPoints, text);
+        if (!shop) return notify(`No shop called "${String(text).trim()}" on the map right now - the region and tier filters may be hiding it.`);
+        setShopQuery(shop.name);
+        if (mapRef.current) handlePinClick(shop, mapRef.current);
     };
 
     const activeStore = selectedStore ? mapPoints.find(s => s.id === selectedStore.id) || selectedStore : null;
@@ -2330,6 +2340,15 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     <button onClick={() => setShowControls(!showControls)} className="p-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors text-white shrink-0">
                         {showControls ? <X size={18}/> : <Menu size={18}/>}
                     </button>
+                </div>
+
+                <div className="bg-slate-900/95 backdrop-blur-md rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.5)] border border-slate-700 px-3 pointer-events-auto flex items-center gap-2">
+                    <Search size={16} className="text-orange-500 shrink-0"/>
+                    <input type="search" aria-label="Find a shop" list="kx-map-shops" value={shopQuery} placeholder="Find a shop" enterKeyHint="search"
+                        onChange={(e) => { setShopQuery(e.target.value); if (mapPoints.some((s) => s.name === e.target.value)) { e.target.blur(); goToShop(e.target.value); } }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.currentTarget.blur(); goToShop(e.currentTarget.value); } }}
+                        className="w-full bg-transparent text-base lg:text-sm font-bold text-white outline-none py-1.5 min-h-11 lg:min-h-0 placeholder:text-slate-500" />
+                    <datalist id="kx-map-shops">{mapPoints.map((s) => <option key={s.id} value={s.name} />)}</datalist>
                 </div>
 
                 <div className={`transition-all duration-300 origin-top bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-2xl shadow-2xl pointer-events-auto overflow-y-auto custom-scrollbar flex flex-col gap-2 ${showControls ? 'opacity-100 scale-y-100 max-h-[60vh] p-3' : 'opacity-0 scale-y-0 max-h-0 p-0 border-none'}`}>

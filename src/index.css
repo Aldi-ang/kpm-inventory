@@ -180,3 +180,6 @@ button:has(> svg:only-child) {
     align-items: center;
     justify-content: center;
 }
+/* the shop search boxes (Journey, Map System - his 2026-10-05 ask): the browser's own clear key is blue; the palette law
+   has no blue, so it goes grey */
+input[aria-label="Find a shop"]::-webkit-search-cancel-button { filter: grayscale(1) brightness(1.5); cursor: pointer; }

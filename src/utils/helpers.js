@@ -50,6 +50,14 @@ export const storeKey = (name) => String(name ?? '')
     .trim()
     .toLowerCase();
 
+/* A typed shop name -> the shop (the map searches, his 2026-10-05 "searching box for store name to show the location"):
+   the exact name first, so "Toko Abadi" never lands on "Toko Sinar Abadi"; else the first whose name holds the text */
+export const findShop = (shops, text) => {
+    const want = storeKey(text);
+    if (!want || !Array.isArray(shops)) return null;
+    return shops.find((s) => storeKey(s?.name) === want) || shops.find((s) => storeKey(s?.name).includes(want)) || null;
+};
+
 /* 🚀 What a store is CALLED on screen. storeKey answers "same shop?"; this answers "what do I
    print?". Same suffix rule, but the name keeps its capitals and its spacing — "Warung Bu Sari
    (Retail)" shows as "Warung Bu Sari", not "warung bu sari".

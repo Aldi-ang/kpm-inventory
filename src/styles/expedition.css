@@ -137,6 +137,12 @@
 .kx-feed select { min-height: 44px; width: 100%; min-width: 0; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--inset); color: var(--ink);
   font: 700 12px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
 .kx-feed select.set { border-color: var(--gold); }
+/* the shop search in the Global Fleet filter's old place (his 2026-10-05): the selects' box, typed in normal case; 16 px on
+   the phone so a phone browser does not zoom the page when it is tapped */
+.kx-feed input[type="search"] { min-height: 44px; width: 100%; min-width: 0; padding: 0 10px; border: 1px solid var(--line-2); border-radius: 8px;
+  background: var(--inset); color: var(--ink); font: 700 16px/1 var(--font-mono); letter-spacing: .02em; }
+.kx-feed input[type="search"]::placeholder { color: var(--ink-muted); }
+.kx-feed input[type="search"]:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
 .kx-feed select:focus-visible, .kx-days button:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
 /* one under the other on the phone - three across measured 144/81/81 at 375, the third past its column (2026-09-19) */
 .kx-feed-place { display: grid; grid-template-columns: 1fr; gap: 6px; }
@@ -150,6 +156,7 @@
   .kx-feed-head { font-size: 22px; }
   .kx-feed-head button { gap: 14px; }
   .kx-days button, .kx-feed select { min-height: 36px; }
+  .kx-feed input[type="search"] { min-height: 36px; font-size: 12px; }
   .kx-feed-controls { grid-template-columns: 330px 240px minmax(0, 1fr); gap: 16px; align-items: end; padding-top: 0; }
   .kx-feed-place { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .kx-feed .kx-phone { display: none; }
