@@ -3,7 +3,7 @@ import { Truck, MapPin, CheckCircle, Phone, Store, Navigation, X, Save, MessageS
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs, getDoc, setDoc } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
-import { storeKey, getLocalDayKey, journeyWhere, findShop } from './utils/helpers';
+import { storeKey, getLocalDayKey, journeyWhere, findShop, teamKey } from './utils/helpers';
 import MoreKey from './components/MoreKey.jsx';
 import FolderCard, { FOLDER_HOLD_MS } from './components/FolderCard.jsx';
 import L from 'leaflet';
@@ -458,6 +458,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     const [selectedProvinsi, setSelectedProvinsi] = useState('All');
     const [selectedKabupaten, setSelectedKabupaten] = useState('All');
     const [selectedKecamatan, setSelectedKecamatan] = useState('All');
+    /* his 2026-10-05 "for regional command just add selection of team instead to make it simpler": the feed's three region
+       pickers became ONE Team picker (a team = a branch, teamKey); the sector tree below still drills by region */
+    const [selectedTeam, setSelectedTeam] = useState('All');
     const [collapsedSectors, setCollapsedSectors] = useState({});
 
     const [activeBrush, setActiveBrush] = useState(null);
@@ -478,7 +481,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     const [minute, setMinute] = useState(0);
     useEffect(() => { const t = setInterval(() => setMinute((m) => m + 1), 60000); return () => clearInterval(t); }, []);
     const globalView = ['ADMIN', 'DEVELOPER', 'COMPANY_OWNER'].includes(userRole) || hasClearance(userRole, 'view_reports_global');
-    const team = useMemo(() => expedition(visibleTeam(motorists || [], { global: globalView, viewerId: agentProfileId }), rawCustomers || [], rawTransactions || [], new Date(), eodReports || []), [motorists, rawCustomers, rawTransactions, minute, globalView, agentProfileId, eodReports]); // eslint-disable-line react-hooks/exhaustive-deps
+    const team = useMemo(() => expedition(visibleTeam((motorists || []).filter((m) => selectedTeam === 'All' || teamKey(m.location) === selectedTeam), { global: globalView, viewerId: agentProfileId }), rawCustomers || [], rawTransactions || [], new Date(), eodReports || []), [motorists, rawCustomers, rawTransactions, minute, globalView, agentProfileId, eodReports, selectedTeam]); // eslint-disable-line react-hooks/exhaustive-deps
+    const teams = useMemo(() => [...new Set((motorists || []).map((m) => teamKey(m.location)).filter(Boolean))].sort(), [motorists]);
+    const teamByName = useMemo(() => Object.fromEntries((motorists || []).map((m) => [m.name, teamKey(m.location)])), [motorists]);
     const [expSel, setExpSel] = useState(null);
     const selId = team.some((a) => a.id === expSel) ? expSel : team.some((a) => a.id === agentProfileId) ? agentProfileId : team[0]?.id;   // a salesman opens on his own card
     const [expFocus, setExpFocus] = useState(false);   // PC: false = frame the whole team, true = frame the picked row
@@ -762,36 +767,19 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         }));
     }, [customers]);
 
-    const hierarchyData = useMemo(() => {
-        const provs = new Set();
-        const kabs = new Set();
-        const kecs = new Set();
-        
-        mappedCustomers.forEach(c => {
-            const h = c._hierarchy; 
-            provs.add(h.Provinsi);
-            
-            if (selectedProvinsi === 'All' || h.Provinsi === selectedProvinsi) kabs.add(h.Kabupaten);
-            if ((selectedProvinsi === 'All' || h.Provinsi === selectedProvinsi) &&
-                (selectedKabupaten === 'All' || h.Kabupaten === selectedKabupaten)) {
-                kecs.add(h.Kecamatan);
-            }
-        });
-        
-        return { provs: Array.from(provs).sort(), kabs: Array.from(kabs).sort(), kecs: Array.from(kecs).sort() };
-    }, [mappedCustomers, selectedProvinsi, selectedKabupaten]);
 
     useEffect(() => {
         let baseRoute = mappedCustomers.filter(c => {
             return c.visitFreq === 7 || c.visitDay === selectedDay;
         });
 
+        if (selectedTeam !== 'All') baseRoute = baseRoute.filter((c) => teamByName[assignments[c.id]] === selectedTeam);
         if (selectedProvinsi !== 'All') baseRoute = baseRoute.filter(c => c._hierarchy?.Provinsi === selectedProvinsi);
         if (selectedKabupaten !== 'All') baseRoute = baseRoute.filter(c => c._hierarchy?.Kabupaten === selectedKabupaten);
         if (selectedKecamatan !== 'All') baseRoute = baseRoute.filter(c => c._hierarchy?.Kecamatan === selectedKecamatan);
         
         setOrderedRoute(baseRoute);
-    }, [mappedCustomers, selectedDay, selectedProvinsi, selectedKabupaten, selectedKecamatan]);
+    }, [mappedCustomers, selectedDay, selectedProvinsi, selectedKabupaten, selectedKecamatan, selectedTeam, teamByName, assignments]);
 
     const moveStore = (index, direction) => {
         const newRoute = [...orderedRoute];
@@ -1115,7 +1103,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         <i className="kx-feed-mark" aria-hidden="true" />
                         Mission Feed
                         <span className="kx-feed-meta lg:hidden ml-auto">{journeyWhere(selectedProvinsi, selectedKabupaten, selectedKecamatan)} {feedOpen ? '▴' : '▾'}</span>
-                        <span className="kx-feed-meta hidden lg:inline"><b>{selectedDay}</b> · {journeyWhere(selectedProvinsi, selectedKabupaten, selectedKecamatan)}</span>
+                        <span className="kx-feed-meta hidden lg:inline"><b>{selectedDay}</b> · {journeyWhere(selectedProvinsi, selectedKabupaten, selectedKecamatan)} · {selectedTeam === 'All' ? 'All Teams' : selectedTeam}</span>
                         <span className="kx-feed-count hidden lg:inline ml-auto">{conqueredCount}/{orderedRoute.length}<small>Secured</small></span>
                     </button>
                 </h2>
@@ -1139,22 +1127,12 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                             onKeyDown={(e) => { if (e.key === 'Enter') { e.currentTarget.blur(); goToShop(e.currentTarget.value); } }} />
                         <datalist id="kx-journey-shops">{customers.map((c) => <option key={c.id} value={c.name} />)}</datalist>
                     </label>
-                    <div className="kx-feed-field"><span>Regional Command</span>
-                        <div className="kx-feed-place">
-                            <select aria-label="Province" value={selectedProvinsi} onChange={(e) => { setSelectedProvinsi(e.target.value); setSelectedKabupaten('All'); setSelectedKecamatan('All'); }} className={selectedProvinsi !== 'All' ? 'set' : ''}>
-                                <option value="All">All Prov</option>
-                                {hierarchyData.provs.map(p => <option key={p} value={p}>{p}</option>)}
-                            </select>
-                            <select aria-label="Kabupaten" value={selectedKabupaten} onChange={(e) => { setSelectedKabupaten(e.target.value); setSelectedKecamatan('All'); }} className={selectedKabupaten !== 'All' ? 'set' : ''}>
-                                <option value="All">All Kab</option>
-                                {hierarchyData.kabs.map(k => <option key={k} value={k}>{k}</option>)}
-                            </select>
-                            <select aria-label="Kecamatan" value={selectedKecamatan} onChange={(e) => setSelectedKecamatan(e.target.value)} className={selectedKecamatan !== 'All' ? 'set' : ''}>
-                                <option value="All">All Kec</option>
-                                {hierarchyData.kecs.map(k => <option key={k} value={k}>{k}</option>)}
-                            </select>
-                        </div>
-                    </div>
+                    <label className="kx-feed-field"><span>Team</span>
+                        <select aria-label="Team" value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)} className={selectedTeam !== 'All' ? 'set' : ''}>
+                            <option value="All">All Teams</option>
+                            {teams.map((t) => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                    </label>
                 </div>
                 </div>
                 </div>

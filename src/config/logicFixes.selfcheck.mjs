@@ -7756,7 +7756,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /* since 2026-10-03 the phone key prints the place only - the day is the big headline right under it (his B) */
      /<span className="kx-feed-meta lg:hidden ml-auto">\{journeyWhere\(selectedProvinsi, selectedKabupaten, selectedKecamatan\)\} \{feedOpen \? '▴' : '▾'\}<\/span>/.test(jv) &&
      /<div className="kx-feed-day kx-phone"><span>\{selectedDay\}<\/span>/.test(jv) &&
-     /import \{ storeKey, getLocalDayKey, journeyWhere, findShop \} from '\.\/utils\/helpers'/.test(jv),
+     /import \{ storeKey, getLocalDayKey, journeyWhere, findShop, teamKey \} from '\.\/utils\/helpers'/.test(jv),
      'his "board 1 = B"');
   ok('1B: the filter panel rides a grid-template-rows fold, 200 ms, and is always open on the desk',
      /className=\{`grid transition-\[grid-template-rows,opacity\] duration-200 ease-out lg:block \$\{feedOpen \? 'opacity-100' : 'opacity-0 lg:opacity-100'\}`\} style=\{\{ gridTemplateRows: feedOpen \? '1fr' : '0fr' \}\}/.test(jv) &&
@@ -7779,11 +7779,14 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      journeyWhere('JAWA BARAT', 'BANDUNG', 'All') === 'BANDUNG' && journeyWhere('JAWA BARAT', 'BANDUNG', 'CIBEUNYING') === 'CIBEUNYING' &&
      journeyWhere(undefined, undefined, undefined) === 'All',
      'the word the folded row prints');
-  ok('the floor: the three region pickers are 44 px rows at 12 px, one under the other; three across on the desk only (MISSION FEED redesign 2026-10-03)',
-     /\.kx-feed-place \{ display: grid; grid-template-columns: 1fr; gap: 6px; \}/.test(read('src/styles/expedition.css')) &&
-     /@media \(min-width: 1024px\) \{[^@]*\.kx-feed-place \{ grid-template-columns: repeat\(3, minmax\(0, 1fr\)\); \}/.test(read('src/styles/expedition.css')) &&
+  /* HIS 2026-10-05 08:30 "for regional command just add selection of team instead to make it simpler": the three region
+     pickers (Prov / Kab / Kec, 2026-10-03) left the feed for ONE Team picker; the sector tree further down still drills by
+     region. The search takes the wide column on the desk, the Team picker the narrow one */
+  ok('the floor: one Team picker (44 px at 12 px) where the three region pickers were; on the desk the search is the wide column',
+     !/\.kx-feed-place/.test(read('src/styles/expedition.css')) &&
+     /\.kx-feed-controls \{ grid-template-columns: 330px minmax\(0, 1fr\) 240px;/.test(read('src/styles/expedition.css')) &&
      /\.kx-feed select \{ min-height: 44px;[^}]*font: 700 12px\/1/.test(read('src/styles/expedition.css')) &&
-     (jv.match(/<select aria-label="(Province|Kabupaten|Kecamatan)"/g) || []).length === 3,
+     !/<select aria-label="(Province|Kabupaten|Kecamatan)"/.test(jv) && /<select aria-label="Team" value=\{selectedTeam\}/.test(jv),
      'measured 2026-09-19: 144/81/81 x 30 at 10 px, the third to x 367 past its column at 330');
   ok('the floor: the shop search (the FLEET select until 2026-10-05) and the DAY keys are 44 px tall on the phone - the control itself is the tap target',
      /\.kx-feed select \{ min-height: 44px;/.test(read('src/styles/expedition.css')) && /\.kx-days button \{ min-height: 44px;/.test(read('src/styles/expedition.css')) &&
@@ -10011,7 +10014,8 @@ section('Expedition map');
     const jv = code(read('src/JourneyView.jsx'));
     ok('the expedition lives on Journey Plan (trail, next shop, travel card / squad list, region-fenced); Map System keeps the chips only',
        /<ExpeditionLayer team=\{team\} sel=\{selId\} focus=\{expFocus\} wide=\{wide\} stops=\{false\} road=\{road\?\.points\} \/>/.test(jv) && /<ExpeditionPanel [^>]*\bpage \/>/.test(jv) &&
-       /expedition\(visibleTeam\(motorists \|\| \[\], \{ global: globalView, viewerId: agentProfileId \}\)/.test(jv) &&
+       /* since 2026-10-05 the Team picker narrows the salesmen first; the region fence (global / viewerId) is unchanged */
+       /expedition\(visibleTeam\(\(motorists \|\| \[\]\)\.filter\([\s\S]{0,120}?\), \{ global: globalView, viewerId: agentProfileId \}\)/.test(jv) &&
        /<JourneyView motorists=\{motorists\} agentProfileId=\{agentProfileId\}/.test(app) &&
        /<ExpeditionLayer team=\{team\} bare \/>/.test(mp) && !/ExpeditionPanel|setExpOn/.test(mp),
        '"map mission control is used to analyze the stores ... the journey map is for ... journey of the salesman throughout the day"');
@@ -10103,7 +10107,16 @@ section('Expedition map');
          names ? 'ShopNames found' : 'no ShopNames'); }
     /* HIS 2026-10-05 07:30 "global filter is useless since we have the expedition panel now right and we need to add
        searching box for store name to show the location we also need that on the regular map" */
-    { const { findShop } = await import('../utils/helpers.js');
+    { const { findShop, teamKey } = await import('../utils/helpers.js');
+      /* HIS 2026-10-05 08:30 "for regional command just add selection of team instead": a team is a branch, the salesmen
+         sharing a `location` ("the regional team", A-Brain); the lab types the same branch "MUNTILAN" and "muntilan " */
+      const jvt = code(read('src/JourneyView.jsx'));
+      ok('Journey Team picker: a team is a branch, its key ignores case and spaces; picking one keeps only its salesmen (panel and men) and only the shops they own; All Teams = everyone',
+         teamKey('muntilan ') === 'MUNTILAN' && teamKey(' Magelang') === 'MAGELANG' && teamKey(null) === '' && teamKey(undefined) === ''
+         && /const \[selectedTeam, setSelectedTeam\] = useState\('All'\);/.test(jvt)
+         && /visibleTeam\(\(motorists \|\| \[\]\)\.filter\(\(m\) => selectedTeam === 'All' \|\| teamKey\(m\.location\) === selectedTeam\)/.test(jvt)
+         && /if \(selectedTeam !== 'All'\) baseRoute = baseRoute\.filter\(\(c\) => teamByName\[assignments\[c\.id\]\] === selectedTeam\);/.test(jvt)
+         && /<option value="All">All Teams<\/option>/.test(jvt), 'lab: MUNTILAN + "muntilan " = one team');
       const shops = [{ id: 1, name: 'Toko Sinar Abadi' }, { id: 2, name: 'Warung Bu Darmi (Retail)' }, { id: 3, name: 'Toko Abadi' }];
       const jv = code(read('src/JourneyView.jsx')), mmc = code(read('src/MapMissionControl.jsx'));
       ok('BEHAVIOUR: findShop - the exact name wins over a longer one holding it, a part finds the first holder, the (Retail) tail and case do not matter, nothing typed finds nothing',

@@ -144,8 +144,6 @@
 .kx-feed input[type="search"]::placeholder { color: var(--ink-muted); }
 .kx-feed input[type="search"]:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
 .kx-feed select:focus-visible, .kx-days button:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
-/* one under the other on the phone - three across measured 144/81/81 at 375, the third past its column (2026-09-19) */
-.kx-feed-place { display: grid; grid-template-columns: 1fr; gap: 6px; }
 /* phone-only / desk-only parts that carry their own display: Tailwind's hidden / lg:hidden lose to them (this file loads
    after index.css, same specificity), measured - the day keys showed twice in the open fold at 390 */
 .kx-feed .kx-desk { display: none; }
@@ -157,8 +155,8 @@
   .kx-feed-head button { gap: 14px; }
   .kx-days button, .kx-feed select { min-height: 36px; }
   .kx-feed input[type="search"] { min-height: 36px; font-size: 12px; }
-  .kx-feed-controls { grid-template-columns: 330px 240px minmax(0, 1fr); gap: 16px; align-items: end; padding-top: 0; }
-  .kx-feed-place { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* day keys, then the shop search (wide), then the Team picker - his 2026-10-05 search + "selection of team instead" */
+  .kx-feed-controls { grid-template-columns: 330px minmax(0, 1fr) 240px; gap: 16px; align-items: end; padding-top: 0; }
   .kx-feed .kx-phone { display: none; }
   .kx-feed .kx-desk { display: flex; }
   .kx-feed-meta, .kx-feed-count small, .kx-feed-field > span { font-size: 10px; }

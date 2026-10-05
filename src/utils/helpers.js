@@ -58,6 +58,10 @@ export const findShop = (shops, text) => {
     return shops.find((s) => storeKey(s?.name) === want) || shops.find((s) => storeKey(s?.name).includes(want)) || null;
 };
 
+/* A salesman's team = his branch, the `location` he shares with others ("the regional team"; Journey's Team picker, his
+   2026-10-05 "add selection of team instead"). Trimmed and upper-cased: one branch is typed "MUNTILAN" and "muntilan " */
+export const teamKey = (location) => String(location ?? '').trim().toUpperCase();
+
 /* 🚀 What a store is CALLED on screen. storeKey answers "same shop?"; this answers "what do I
    print?". Same suffix rule, but the name keeps its capitals and its spacing — "Warung Bu Sari
    (Retail)" shows as "Warung Bu Sari", not "warung bu sari".
