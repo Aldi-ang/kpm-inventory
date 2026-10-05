@@ -72,7 +72,10 @@ return {
       },
     },
   },
-  server: { https: !httpDev, host: true },
+  /* the lab build (tools/ponder-lab.config.mjs) rewrites dist-ponderlab/ inside this tree, and `npm run build` rewrites
+     dist/; watching them killed this dev server mid-session (EBUSY on dist-ponderlab/Bit_Capybara_Fortnite_Dance_Video.mp4,
+     2026-10-05 07:19). The dev server serves neither */
+  server: { https: !httpDev, host: true, watch: { ignored: ['**/dist/**', '**/dist-ponderlab/**'] } },
   plugins: [
     ...(httpDev ? [] : [basicSsl()]),
     react(),
