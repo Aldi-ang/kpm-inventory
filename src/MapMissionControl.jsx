@@ -69,6 +69,9 @@ const userLocationIcon = L.divIcon({
     iconAnchor: [12, 12]
 });
 
+/* a press plays the key's act once (Journey's helper: a touch never hovers, so the act rides a class for 480 ms) */
+const act = (e) => { const b = e.currentTarget; b.classList.remove('act'); void b.offsetWidth; b.classList.add('act'); setTimeout(() => b.classList.remove('act'), 480); };
+
 /* a cluster of shops: the panel's own plate, a gold edge, the count in ink (it was a blue glow) */
 const createCustomClusterIcon = (cluster) => L.divIcon({ html: `<div class="ms-cluster">${cluster.getChildCount()}</div>`, className: 'custom-cluster-icon', iconSize: [40, 40], iconAnchor: [20, 20] });
 
@@ -234,7 +237,8 @@ const DraggableAddMarker = ({ position, setPosition }) => {
 
     const targetIcon = L.divIcon({
         className: 'custom-icon',
-        html: `<div style="background-color: #f97316; width: 44px; height: 44px; border-radius: 50%; border: 4px solid white; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 10px 25px rgba(249,115,22,0.8);">📍</div>`,
+        /* the pin being placed: a gold-edged plate with a drawn pin (it was an orange emoji ball that bounced) */
+        html: `<div class="ms-drop"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg></div>`,
         iconSize: [44, 44],
         iconAnchor: [22, 44]
     });
@@ -249,9 +253,7 @@ const DraggableAddMarker = ({ position, setPosition }) => {
             zIndexOffset={10000}
         >
             <LeafletTooltip permanent direction="top" offset={[0, -44]} className="custom-leaflet-tooltip">
-                <div className="bg-orange-600 text-white font-black text-[10px] px-3 py-1.5 rounded-lg border-2 border-white shadow-xl animate-bounce">
-                    DRAG ME
-                </div>
+                <div className="ms-tip">Drag me</div>
             </LeafletTooltip>
         </Marker>
     );
@@ -304,7 +306,7 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
         return (
             <div className="absolute top-[70px] lg:top-20 left-4 z-[2000] animate-slide-in-left">
                 <button onClick={() => setIsMinimized(false)} className="bg-slate-900/95 backdrop-blur-md border-2 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)] text-emerald-400 px-4 py-3 rounded-xl flex items-center gap-3 hover:bg-slate-800 transition-colors font-mono font-bold text-xs uppercase tracking-widest">
-                    <ShieldAlert size={18} className="animate-pulse" />
+                    <ShieldAlert size={18} />
                     Sector Command
                     <Maximize2 size={14} className="text-slate-400 ml-2"/>
                 </button>
@@ -321,7 +323,7 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
                     <button onClick={onClose} className="text-slate-400 hover:text-red-500 transition-colors"><X size={18}/></button>
                 </div>
                 <div className="flex items-center gap-3 mb-3">
-                    <ShieldAlert size={24} className="text-emerald-500 animate-pulse"/>
+                    <ShieldAlert size={24} className="text-emerald-500"/>
                     <h2 className="text-lg font-black text-white uppercase tracking-[0.2em]">Sector Command</h2>
                 </div>
 
@@ -394,7 +396,7 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
                     <>
                         <div className="flex justify-between items-center mb-2.5">
                             <div className="min-w-0 pr-2">
-                                <p className="text-[11px] text-emerald-500 uppercase font-bold tracking-widest animate-pulse mb-0.5">Target Locked</p>
+                                <p className="text-[11px] text-emerald-500 uppercase font-bold tracking-widest mb-0.5">Target Locked</p>
                                 <h3 className="text-base font-black text-white uppercase tracking-wider truncate leading-tight">{selectedZone.name}</h3>
                             </div>
                             <div className="text-right shrink-0"><p className="text-base font-black text-emerald-400 leading-tight">{formatRupiah(activeZoneRev)}</p></div>
@@ -403,7 +405,7 @@ const TacticalDashboard = ({ boundaries, zoneRevenues, mapPoints, transactions, 
                             <div className="flex-1 bg-black/50 p-2 rounded-lg border border-slate-700 flex justify-between items-center"><span className="text-[11px] text-slate-400 uppercase tracking-widest">Assets</span><span className="text-xs font-bold text-white">{activeZoneStores.length}</span></div>
                             <div className={`flex-[1.2] p-2 rounded-lg border flex justify-between items-center ${activeOverdue > 0 ? 'bg-red-900/20 border-red-500/50' : 'bg-black/50 border-slate-700'}`}>
                                 <span className={`text-[11px] uppercase tracking-widest ${activeOverdue > 0 ? 'text-red-400' : 'text-slate-400'}`}>Threat</span>
-                                <span className={`font-bold text-[11px] ${activeOverdue > 0 ? 'text-red-500 animate-pulse' : 'text-emerald-500'}`}>{activeOverdue > 0 ? `${activeOverdue} OVERDUE` : 'CLEAR'}</span>
+                                <span className={`font-bold text-[11px] ${activeOverdue > 0 ? 'text-red-500' : 'text-emerald-500'}`}>{activeOverdue > 0 ? `${activeOverdue} OVERDUE` : 'CLEAR'}</span>
                             </div>
                         </div>
                     </>
@@ -2067,24 +2069,24 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
     /* the layers (bottom dock on the PC, the Layers sheet on the phone); a layer with nothing to draw says why */
     const layerKeys = [
-        { k: 'borders', on: showBorders, icon: <Globe size={18}/>, label: 'Borders', press: () => { if (!showBorders && !sortedBoundaries.length) notify('No area borders yet - import them with Borders setup first.'); setShowBorders(!showBorders); } },
-        isAdmin && { k: 'heat', on: salesHeatmapMode, icon: <Flame size={18}/>, label: 'Sales heat', press: () => { if (!salesHeatmapMode && !sortedBoundaries.length) notify('Sales heat colours the area borders - import borders with Borders setup first.'); setSalesHeatmapMode(!salesHeatmapMode); setShowBorders(true); } },
-        { k: 'supply', on: networkMode, icon: <Route size={18}/>, label: 'Supply lines', press: () => { if (!networkMode && !mapPoints.some((s) => s.suppliedBy)) notify('No shop is linked to a wholesale hub yet - set "Supplied by" on a shop\'s card.'); setNetworkMode(!networkMode); } },
-        { k: 'catch', on: conquestMode, icon: <CircleDot size={18}/>, label: conquestMode ? `Catchment ${territory.pct}%` : 'Catchment', title: `Territory held: ${territory.pct}% (${territory.rank}) - shops visited in the last 30 days`, press: () => setConquestMode(!conquestMode) },
+        { k: 'borders', cls: 'm-bord', on: showBorders, icon: <Globe size={18}/>, label: 'Borders', press: () => { if (!showBorders && !sortedBoundaries.length) notify('No area borders yet - import them with Borders setup first.'); setShowBorders(!showBorders); } },
+        isAdmin && { k: 'heat', cls: 'm-heat', on: salesHeatmapMode, icon: <Flame size={18}/>, label: 'Sales heat', press: () => { if (!salesHeatmapMode && !sortedBoundaries.length) notify('Sales heat colours the area borders - import borders with Borders setup first.'); setSalesHeatmapMode(!salesHeatmapMode); setShowBorders(true); } },
+        { k: 'supply', cls: 'm-supply', on: networkMode, icon: <Route size={18}/>, label: 'Supply lines', press: () => { if (!networkMode && !mapPoints.some((s) => s.suppliedBy)) notify('No shop is linked to a wholesale hub yet - set "Supplied by" on a shop\'s card.'); setNetworkMode(!networkMode); } },
+        { k: 'catch', cls: 'm-catch', on: conquestMode, icon: <CircleDot size={18}/>, label: conquestMode ? `Catchment ${territory.pct}%` : 'Catchment', title: `Territory held: ${territory.pct}% (${territory.rank}) - shops visited in the last 30 days`, press: () => setConquestMode(!conquestMode) },
     ].filter(Boolean);
 
     /* the tools (PC toolbar top right, the phone's Layers sheet) - every tool the ☰ menu and the floating buttons had */
     const toolKeys = [
-        { k: 'loc', icon: <LocateFixed size={18}/>, label: 'Locate', press: () => setLocateTick((t) => t + 1) },
-        isAdmin && { k: 'tier', on: showTierEngine, icon: <Settings size={18}/>, label: 'Tier rules', press: () => setShowTierEngine(!showTierEngine) },
-        isAdmin && { k: 'imp', on: showImporter, icon: <Download size={18}/>, label: 'Borders setup', press: () => setShowImporter(!showImporter) },
-        isAdmin && { k: 'sector', on: showTacticalDash, icon: <TrendingUp size={18}/>, label: 'Sector board', press: () => {
+        { k: 'loc', cls: 'k-loc', icon: <LocateFixed size={18}/>, label: 'Locate', press: () => setLocateTick((t) => t + 1) },
+        isAdmin && { k: 'tier', cls: 'm-tier', on: showTierEngine, icon: <Settings size={18}/>, label: 'Tier rules', press: () => setShowTierEngine(!showTierEngine) },
+        isAdmin && { k: 'imp', cls: 'm-imp', on: showImporter, icon: <Download size={18}/>, label: 'Borders setup', press: () => setShowImporter(!showImporter) },
+        isAdmin && { k: 'sector', cls: 'm-sector', on: showTacticalDash, icon: <TrendingUp size={18}/>, label: 'Sector board', press: () => {
             const next = !showTacticalDash;
             if (next && !sortedBoundaries.length) return notify('The Sector board ranks the area borders - import them with Borders setup first.');
             setShowTacticalDash(next); if (next) { setSalesHeatmapMode(true); setShowBorders(true); setSelectedStore(null); }
         } },
-        canAddManualPin && !isAddingMode && !editingStoreId && { k: 'pin', icon: <MapPin size={18}/>, label: 'New pin', press: startNewPin },
-        isAdmin && onSetHome && { k: 'home', icon: <Home size={18}/>, label: 'Set home', press: () => { if (mapRef.current) onSetHome(mapRef.current.getCenter(), mapRef.current.getZoom()); } },
+        canAddManualPin && !isAddingMode && !editingStoreId && { k: 'pin', cls: 'm-drop', icon: <MapPin size={18}/>, label: 'New pin', press: startNewPin },
+        isAdmin && onSetHome && { k: 'home', cls: 'm-drop', icon: <Home size={18}/>, label: 'Set home', press: () => { if (mapRef.current) onSetHome(mapRef.current.getCenter(), mapRef.current.getZoom()); } },
     ].filter(Boolean);
 
     return (
@@ -2099,7 +2101,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             {(isAddingMode || editingStoreId) && dragPinCoords && (
                 <div className="absolute top-[80px] lg:top-4 left-1/2 transform -translate-x-1/2 z-[1500] flex flex-col gap-2 items-center w-max min-w-[220px] pointer-events-auto bg-slate-900/95 backdrop-blur border-2 border-orange-500 p-2.5 rounded-xl shadow-[0_10px_30px_rgba(249,115,22,0.5)] animate-fade-in-up">
                     <div className="text-orange-500 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1">
-                        <MapPin size={12} className="animate-bounce" /> {editingStoreId ? "Correct Location" : "Drop New Pin"}
+                        <MapPin size={12} /> {editingStoreId ? "Correct Location" : "Drop New Pin"}
                     </div>
                     <span className="text-slate-300 text-[11px] font-bold mt-0.5 leading-tight">Drag pin or tap map to move.</span>
                     
@@ -2144,7 +2146,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
             {/* 🚀 NEW STORE REGISTRATION MODAL */}
             {pendingNewStore && (
                 <div className="absolute inset-0 z-[2000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-slate-900 border-2 border-orange-500 shadow-[0_0_50px_rgba(249,115,22,0.3)] rounded-2xl w-full max-w-sm p-6 animate-slide-down relative">
+                    <div className="bg-slate-900 border-2 border-orange-500 shadow-[0_0_50px_rgba(249,115,22,0.3)] rounded-2xl w-full max-w-sm p-6 ms-pop relative">
                         <button onClick={() => setPendingNewStore(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><X size={20}/></button>
                         
                         <div className="flex items-center gap-3 mb-6">
@@ -2244,20 +2246,20 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
             {/* PC: the layer keys in a bottom dock */}
             <nav className="ms-layers hidden lg:flex" aria-label="Map layers">
-                {layerKeys.map((l) => <button type="button" key={l.k} className={`kx-mapkey flex items-center ${l.on ? 'on' : ''}`} aria-pressed={l.on} title={l.title} onClick={l.press}>{l.icon}<span>{l.label}</span></button>)}
+                {layerKeys.map((l) => <button type="button" key={l.k} className={`kx-mapkey ${l.cls} flex items-center ${l.on ? 'on' : ''}`} aria-pressed={l.on} title={l.title} onClick={(e) => { act(e); l.press(); }}>{l.icon}<span>{l.label}</span></button>)}
             </nav>
 
             {/* PC: the tools, top right - Journey's toolbar, names always on */}
             <div className="kx-keys ms-tools hidden lg:flex flex-col">
-                {toolKeys.map((t) => <button type="button" key={t.k} className={`kx-mapkey flex items-center ${t.on ? 'on' : ''}`} aria-pressed={t.on} onClick={t.press}>{t.icon}<span>{t.label}</span></button>)}
+                {toolKeys.map((t) => <button type="button" key={t.k} className={`kx-mapkey ${t.cls} flex items-center ${t.on ? 'on' : ''}`} aria-pressed={t.on} onClick={(e) => { act(e); t.press(); }}>{t.icon}<span>{t.label}</span></button>)}
             </div>
 
             {/* phone (his A): Journey's full-map dock; one key opens one sheet, the same key again = the whole map */}
             <nav className="kx-dock ms-dock grid lg:hidden" aria-label="Map keys">
-                <button type="button" className={`kx-mapkey flex flex-col ${sheet === 'areas' ? 'on' : ''}`} aria-expanded={sheet === 'areas'} onClick={() => flip('areas')}><BarChart3 size={20}/><span>Areas</span></button>
-                <button type="button" className={`kx-mapkey flex flex-col ${sheet === 'levels' ? 'on' : ''}`} aria-expanded={sheet === 'levels'} onClick={() => flip('levels')}><Crown size={20}/><span>Levels</span></button>
-                <button type="button" className={`kx-mapkey flex flex-col ${sheet === 'layers' ? 'on' : ''}`} aria-expanded={sheet === 'layers'} onClick={() => flip('layers')}><Layers size={20}/><span>Layers</span></button>
-                <button type="button" className="kx-mapkey flex flex-col" onClick={() => { setSheet(null); setLocateTick((t) => t + 1); }}><LocateFixed size={20}/><span>Locate</span></button>
+                <button type="button" className={`kx-mapkey m-areas flex flex-col ${sheet === 'areas' ? 'on' : ''}`} aria-expanded={sheet === 'areas'} onClick={(e) => { act(e); flip('areas'); }}><BarChart3 size={20}/><span>Areas</span></button>
+                <button type="button" className={`kx-mapkey m-levels flex flex-col ${sheet === 'levels' ? 'on' : ''}`} aria-expanded={sheet === 'levels'} onClick={(e) => { act(e); flip('levels'); }}><Crown size={20}/><span>Levels</span></button>
+                <button type="button" className={`kx-mapkey k-bord flex flex-col ${sheet === 'layers' ? 'on' : ''}`} aria-expanded={sheet === 'layers'} onClick={(e) => { act(e); flip('layers'); }}><Layers size={20}/><span>Layers</span></button>
+                <button type="button" className="kx-mapkey k-loc flex flex-col" onClick={(e) => { act(e); setSheet(null); setLocateTick((t) => t + 1); }}><LocateFixed size={20}/><span>Locate</span></button>
             </nav>
             {sheet && (
                 <div className="ms-sheet lg:hidden" role="dialog" aria-label={sheet}>
@@ -2275,10 +2277,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                     </>)}
                     {sheet === 'layers' && (<>
                         <div className="ms-ptitle"><h4>Layers</h4><span>on the map</span></div>
-                        <div className="ms-grid">{layerKeys.map((l) => <button type="button" key={l.k} className={`kx-mapkey flex items-center ${l.on ? 'on' : ''}`} aria-pressed={l.on} title={l.title} onClick={l.press}>{l.icon}<span>{l.label}</span></button>)}</div>
+                        <div className="ms-grid">{layerKeys.map((l) => <button type="button" key={l.k} className={`kx-mapkey ${l.cls} flex items-center ${l.on ? 'on' : ''}`} aria-pressed={l.on} title={l.title} onClick={(e) => { act(e); l.press(); }}>{l.icon}<span>{l.label}</span></button>)}</div>
                         {toolKeys.length > 1 && (<>
                             <div className="ms-ptitle"><h4>Tools</h4></div>
-                            <div className="ms-grid">{toolKeys.filter((t) => t.k !== 'loc').map((t) => <button type="button" key={t.k} className={`kx-mapkey flex items-center ${t.on ? 'on' : ''}`} aria-pressed={t.on} onClick={() => { setSheet(null); t.press(); }}>{t.icon}<span>{t.label}</span></button>)}</div>
+                            <div className="ms-grid">{toolKeys.filter((t) => t.k !== 'loc').map((t) => <button type="button" key={t.k} className={`kx-mapkey ${t.cls} flex items-center ${t.on ? 'on' : ''}`} aria-pressed={t.on} onClick={() => { setSheet(null); t.press(); }}>{t.icon}<span>{t.label}</span></button>)}</div>
                         </>)}
                     </>)}
                 </div>
@@ -2458,11 +2460,10 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                 @keyframes flow { to { stroke-dashoffset: -1000; } }
                 .venn-heatmap-circle { mix-blend-mode: screen; }
                 
-                @keyframes slide-down { from { transform: translate(-50%, -100%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
-                .animate-slide-down { animation: slide-down 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
                 
-                @keyframes slide-in-left { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-                .animate-slide-in-left { animation: slide-in-left 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+                /* the house entrance (Journey's sheets): 220 ms, the strong ease-out, from 12 px - never from off-screen */
+                @keyframes slide-in-left { from { transform: translateX(-12px); opacity: 0; } }
+                .animate-slide-in-left { animation: slide-in-left 220ms cubic-bezier(.23, 1, .32, 1) both; }
                 
                 @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(3.5); opacity: 0; } }
 

@@ -10453,6 +10453,15 @@ section('Map System redesign (phone A, PC B)');
   ok('every action the old card had is still on it: Correct pin, Edit profile, level override, Wholesale hub, supplier hub, individual reach, Delete, consignment items, recent sales',
      /setEditingStoreId\(store\.id\)/.test(sheet) && /targetEditStore/.test(sheet) && /handleSaveTier\(e\.target\.value\)/.test(sheet) && /handleToggleStoreType/.test(sheet) &&
      /handleAssignHub\(e\.target\.value\)/.test(sheet) && /handleSaveLocalScale/.test(sheet) && /handleDeleteStore/.test(sheet) && /stats\.activeItems/.test(sheet) && /recentSales\.length > 0/.test(sheet));
+  /* his 2026-10-05 "make sure all the animation is on theme with ours": Journey's motion - a key's icon acts out its job
+     once on a press (act()) and a little on hover, the house curve; nothing bounces, nothing pulses forever */
+  const exc = read('src/styles/expedition.css');
+  const keyCls = [...body.matchAll(/cls: '([a-z-]+)'/g)].map((m) => m[1]);
+  ok('Map System motion on the house theme: no bounce, no forever-pulse, no off-screen slide; every layer / tool / dock key carries an act that exists in expedition.css and fires on a press',
+     !/animate-bounce|animate-pulse|slide-down/.test(mm) && /@keyframes slide-in-left \{ from \{ transform: translateX\(-12px\); opacity: 0; \} \}/.test(mm) &&
+     keyCls.length >= 10 && keyCls.every((c) => new RegExp(`\\.${c}(?::is\\(:active, \\.act\\)|\\.act)`).test(exc)) &&
+     (body.match(/onClick=\{\(e\) => \{ act\(e\);/g) || []).length >= 6 && /kx-mapkey m-areas/.test(body) && /kx-mapkey m-levels/.test(body) && /kx-mapkey k-bord/.test(body) && /kx-mapkey k-loc/.test(body),
+     keyCls.join());
   ok('palette law on Map System\'s own surfaces (the screen, the card, the pins): no blue / green / purple class or hex, amber never a fill',
      ![body, sheet, pins].some((s) => /\b(?:blue|emerald|green|purple|sky|cyan|indigo|teal|violet)-\d|#3b82f6|#10b981|#38bdf8|#8b5cf6|#2563eb|#c084fc|bg-amber-\d/i.test(s)));
 }

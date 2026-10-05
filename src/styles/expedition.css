@@ -696,3 +696,40 @@
   .ms-link:hover { color: var(--ink); }
   .ms-area:hover, .ms-chip:hover, .ms-acts > :not(.off):hover, .ms-wide:hover, .ms-x:hover { border-color: var(--gold); }
 }
+
+/* ── MAP SYSTEM KEY ACTS (his "make sure all the animation is on theme with ours", 2026-10-05) ──
+   Journey's rule (his 2026-10-03 "icon acts is the best"): each key's icon acts out its job once on a press (.act, the
+   480 ms class `act()` adds) and a little on hover with a mouse. Same curve and box as Journey's (.kx-mapkey svg * above:
+   transform-box fill-box, 240 ms cubic-bezier(.23, 1, .32, 1)); Lite Mode's `html.lite-mode *` stills every one.
+   Layers and Locate reuse Journey's own .k-bord / .k-loc. The press rules carry .kx-mapkey so a held mouse press beats
+   the equal-strength hover rules below (measured: without it a press showed the hover pose). */
+.kx-mapkey.m-bord:is(:active, .act) path:nth-child(2) { transform: scaleX(.35); }                          /* the globe turns */
+.kx-mapkey.m-heat:is(:active, .act) path { transform-origin: 50% 100%; transform: scaleY(1.22); }           /* the flame flares */
+.kx-mapkey.m-supply:is(:active, .act) circle:first-child { transform: translate(3px, -3px) scale(.6); }     /* goods leave the hub */
+.kx-mapkey.m-supply:is(:active, .act) circle:last-of-type { transform: scale(1.35); }                       /* ... and land at the shop */
+.kx-mapkey.m-catch:is(:active, .act) circle:first-child { transform: scale(1.14); }                         /* the reach widens */
+.kx-mapkey.m-catch:is(:active, .act) circle:last-child { transform: scale(3); }
+.kx-mapkey.m-tier:is(:active, .act) path { transform: rotate(60deg); }                                      /* the gear turns */
+.kx-mapkey.m-imp:is(:active, .act) path:nth-child(1), .kx-mapkey.m-imp:is(:active, .act) path:nth-child(3) { transform: translateY(3px); }   /* into the tray */
+.kx-mapkey.m-sector:is(:active, .act) path { transform: translate(2px, -2px); }                             /* the line climbs */
+.kx-mapkey.m-drop.act svg { animation: kx-pin-drop 460ms cubic-bezier(.23, 1, .32, 1); }                    /* a pin / a home is set down */
+.kx-mapkey.m-areas:is(:active, .act) path:nth-child(n+2) { transform-origin: 50% 100%; transform: scaleY(1.3); }   /* the bars rise */
+.kx-mapkey.m-levels:is(:active, .act) path:first-child { transform: translateY(-3px); }                     /* the crown lifts */
+@media (hover: hover) and (pointer: fine) {
+  .m-bord:hover path:nth-child(2) { transform: scaleX(.6); }
+  .m-heat:hover path { transform-origin: 50% 100%; transform: scaleY(1.1); }
+  .m-supply:hover circle:last-of-type { transform: scale(1.2); }
+  .m-catch:hover circle:last-child { transform: scale(2); }
+  .m-tier:hover path { transform: rotate(30deg); }
+  .m-imp:hover path:nth-child(1), .m-imp:hover path:nth-child(3) { transform: translateY(2px); }
+  .m-sector:hover path { transform: translate(1.5px, -1.5px); }
+  .m-drop:hover svg { animation: kx-pin-drop 460ms cubic-bezier(.23, 1, .32, 1); }
+}
+
+/* the pin being placed (New pin / Correct pin): a gold-edged plate, a drawn pin, no bounce */
+.ms-drop { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: #14110e; border: 2px solid #E4B04A; box-shadow: 0 6px 16px rgba(0, 0, 0, .55); }
+.ms-drop svg { width: 24px; height: 24px; fill: none; stroke: #E4B04A; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* a centred window arrives in place (the new-shop form): never a translate that is not undone */
+.ms-pop { animation: ms-pop 220ms cubic-bezier(.23, 1, .32, 1) both; }
+@keyframes ms-pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
