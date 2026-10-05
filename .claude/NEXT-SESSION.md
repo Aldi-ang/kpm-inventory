@@ -1,6 +1,8 @@
 # The one job
 
-**Paste this to start:** `/alucard Do the ONE JOB at the top of .claude/NEXT-SESSION.md (2026-10-05 12:45: build the Day Replay into Journey Plan).`
+**Paste this to start:** `/alucard Do the ONE JOB at the top of .claude/NEXT-SESSION.md (2026-10-05 12:50: finish Journey Plan - the Day Replay first).`
+
+**2026-10-05 12:50 — his "finish the journey plan" = three jobs, in this order, ONE per session, rewrite this file after each: (1) the Day Replay (this block); (2) the shop popup redesign (the block headed "THE BRIEF FOR THE ONE JOB (queued 10:20, promoted 11:20) - redesign Journey Plan's shop popup" - design first: draw 2-3 looks on a live page, his pick, then build); (3) the store list under the map still carries emerald / blue (`getBountyStatus` lamps and the list cards in `src/JourneyView.jsx`, ~1516-1660 as of 2026-10-03 - re-find them) - palette law, then a guard. Start with (1):**
 
 **2026-10-05 12:45 — THE ONE JOB: build the Day Replay into Journey Plan.** The brief is the block below headed "2026-10-05 10:55 — NEXT AFTER THE JOB ABOVE", unchanged, with these updates: the Map System redesign is DONE (kpm `57abe25` .. `5aa0b80`, all local, not pushed); the app font is now Rajdhani everywhere (`7f88984` - it has NO tabular digits, so a replay timeline of numbers will not line up digit by digit; use fixed-width cells if it matters); Map System pins are rank medals (`5aa0b80`) - Journey keeps its own chests, do not mix them. Open side items, his call, do not start them unasked: the imported area borders keep random bright colours (pink / cyan / green); the "Fix Tier rules never loading saved rules" task chip (getDoc never imported). Rewrite this file when done.
 
