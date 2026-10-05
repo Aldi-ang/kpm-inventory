@@ -152,7 +152,9 @@ export function ToastHost() {
                         <div className="flex items-start gap-3 border-l-[3px] px-3 py-2.5" style={{ borderColor: accent }}>
                             {/* pre-line: many of these messages were written with \n\n paragraph
                                 breaks back when a browser box was rendering them. */}
-                            <div className="min-w-0 flex-1 whitespace-pre-line break-words font-mono text-[11px] leading-relaxed text-[#cfc6ba]">
+                            {/* 15 px semibold, his "this font for notification is not visible i think it is too small" (2026-10-05):
+                                since 7f88984 "mono" IS Rajdhani, a narrow face that reads two sizes smaller than the old 11 px mono */}
+                            <div className="min-w-0 flex-1 whitespace-pre-line break-words font-mono text-[15px] font-semibold leading-snug text-[#E8E4DE]">
                                 {item.text}
                             </div>
                         </div>

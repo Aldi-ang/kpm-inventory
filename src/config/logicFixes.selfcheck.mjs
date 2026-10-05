@@ -10493,6 +10493,16 @@ section('Map System redesign (phone A, PC B)');
      ![body, sheet, pins].some((s) => /\b(?:blue|emerald|green|purple|sky|cyan|indigo|teal|violet)-\d|#3b82f6|#10b981|#38bdf8|#8b5cf6|#2563eb|#c084fc|bg-amber-\d/i.test(s)));
 }
 
+section('TOO SMALL TO READ (2026-10-05) - his "this font for notification is not visible" and "why is this so small man"');
+{ const tst = read('src/components/Toast.jsx'), mm = read('src/MapMissionControl.jsx');
+  ok('a notification\'s text is 15 px semibold in the app\'s ink (it was 11 px Rajdhani since the font switch - reads like 9 px)',
+     /font-mono text-\[15px\] font-semibold leading-snug text-\[#E8E4DE\]/.test(tst) && !/text-\[11px\] leading-relaxed text-\[#cfc6ba\]/.test(tst));
+  ok('Map System\'s pins are the level size x 1.4 on the map (Unranked 31 px, Mythic 45 px), the hit box 10 px wider; chips and card keep the level size',
+     /const PIN_SCALE = 1\.4;/.test(mm) && /const px = Math\.round\(look\[2\] \* PIN_SCALE \* \(isActive \? 1\.3 : 1\) \+ \(hub \? 6 : 0\)\), size = Math\.max\(32, px \+ 10\);/.test(mm)
+     && /levelBadge\(look, \{ dot, big: isActive, hub, fit: px \}\)/.test(mm));
+  ok('the Unranked sprout fills its box like the other levels (r 13.5 of 16, a firm ring), never the r 9 dot his phone shot showed',
+     /<circle cx="16" cy="16" r="13\.5" fill="\$\{MD\}" stroke="\$\{c\}" stroke-opacity="\.85" stroke-width="2"\/>\$\{inner\(p, c, 8, 8, 16\)\}/.test(mm) && !/r="9" fill="\$\{MD\}" stroke="\$\{c\}" stroke-opacity="\.55"/.test(mm)); }
+
 section('THE DAY REPLAY ON JOURNEY PLAN (2026-10-05) - his "this chain of events is replay able"');
 { const jv = read('src/JourneyView.jsx'), rp = read('src/components/DayReplay.jsx'), hist = read('src/components/HistoryReportView.jsx'), rc = read('src/components/SaleReceipt.jsx');
   const css = read('src/styles/expedition.css'), rpCss = css.slice(css.indexOf('/* ===== THE DAY REPLAY'));

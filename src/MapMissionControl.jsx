@@ -46,7 +46,7 @@ const LEVEL_LOOKS = [
 ];
 /* the last level (Unranked) = a sprout, "a new shop that can still grow" - his pick 2026-10-05 ("unranked is sprout"); a light
    stone grey on a faint ring so it reads on the dark map, never green (palette law) */
-const LEVEL_NONE = ['#B8B0A4', '<path d="M8 15V8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 9.2C8 5.6 5.6 3.4 2 3.4c0 3.6 2.4 5.8 6 5.8z"/><path d="M8 8.4c0-3.1 2.3-5.1 6-5.1 0 3.3-2.3 5.1-6 5.1z"/>', 22, (c, p) => `<circle cx="16" cy="16" r="9" fill="${MD}" stroke="${c}" stroke-opacity=".55" stroke-width="1.3"/>${inner(p, c, 9.5, 9.5, 13)}`];
+const LEVEL_NONE = ['#B8B0A4', '<path d="M8 15V8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 9.2C8 5.6 5.6 3.4 2 3.4c0 3.6 2.4 5.8 6 5.8z"/><path d="M8 8.4c0-3.1 2.3-5.1 6-5.1 0 3.3-2.3 5.1-6 5.1z"/>', 22, (c, p) => `<circle cx="16" cy="16" r="13.5" fill="${MD}" stroke="${c}" stroke-opacity=".85" stroke-width="2"/>${inner(p, c, 8, 8, 16)}`];   /* fills its box like every other level (r 9 left it a dot - his "so small", 2026-10-05) */
 const levelLook = (tierId, tiers) => { const i = tiers.findIndex((t) => t.id === tierId); return i < 0 || i === tiers.length - 1 ? LEVEL_NONE : LEVEL_LOOKS[Math.min(i, 3)]; };
 /* one symbol for the pin, the chips, the card; `dot` = late (red) / soon (gold) on the corner, `big` = the pressed pin (a cream
    ring), `fit` = one size for a row of chips */
@@ -61,11 +61,14 @@ const Badge = ({ look, ...o }) => <span className="contents" dangerouslySetInner
 
 /* the pin: the symbol in a hit box at least 32 px and 10 px wider than it (the rarer, the bigger); a hub's roof and word sit
    outside the box and stay pressable (they are children of the marker) */
+/* his "why is this so small man please fix that" (2026-10-05, a phone shot of Unranked sprouts): the MAP pin is the level size
+   x 1.4 (Unranked 31 px ... Mythic 45 px, the rarer still the bigger); the chips and the card keep the level size */
+const PIN_SCALE = 1.4;
 const getIcon = (store, activeTiers, isActive = false) => {
     const dot = store.status === 'overdue' ? 'late' : store.status === 'soon' ? 'soon' : '';
     const look = levelLook(store.tier, activeTiers), hub = store.storeType === 'Wholesaler';
-    const size = Math.max(32, Math.round(look[2] * (isActive ? 1.3 : 1) + (hub ? 6 : 0)) + 10);
-    return L.divIcon({ className: 'custom-icon ms-pin', html: levelBadge(look, { dot, big: isActive, hub }), iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
+    const px = Math.round(look[2] * PIN_SCALE * (isActive ? 1.3 : 1) + (hub ? 6 : 0)), size = Math.max(32, px + 10);
+    return L.divIcon({ className: 'custom-icon ms-pin', html: levelBadge(look, { dot, big: isActive, hub, fit: px }), iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
 };
 
 /* you are here - Journey's ink dot (palette law: it was blue) */
