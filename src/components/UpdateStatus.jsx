@@ -18,9 +18,10 @@ export default function UpdateStatus({ className = '' }) {
       let failed = false;
       if (r) { try { await r.update(); } catch { failed = true; } }
       const s = updateState({ supported, online: navigator.onLine, reg: r, failed });
-      /* a download that dies never reloads the page - say so instead of "updating…" forever */
+      /* a download that dies never reloads the page - say so instead of "updating…" forever. One that FINISHES on a page
+         no worker controlled at load (hard refresh, fresh tab) gets no autoUpdate reload either - it says so too (2026-10-06) */
       const w = r && (r.installing || r.waiting);
-      if (s === 'updating' && w) w.addEventListener('statechange', () => { if (w.state === 'redundant') say('failed'); });
+      if (s === 'updating' && w) w.addEventListener('statechange', () => { if (w.state === 'redundant') say('failed'); if (w.state === 'activated') say('latest'); });
       say(s);
     })();
     return () => { live = false; };

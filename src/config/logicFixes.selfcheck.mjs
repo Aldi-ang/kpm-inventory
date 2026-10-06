@@ -9843,6 +9843,12 @@ await (async () => {
   ok('the line asks for an update, reports a download that dies, is read out to screen readers, and never spins in Lite Mode',
      /await r\.update\(\)/.test(us) && /w\.state === 'redundant'\) say\('failed'\)/.test(us) && /role="status" aria-live="polite"/.test(us) &&
      /!document\.documentElement\.classList\.contains\('lite-mode'\)/.test(us));
+  /* 2026-10-06, his shot of the vault: "update keep spinning but not finished but i checked and looks like the app is
+     updated". The line only listened for a download that DIES; a download that finished on a page no worker controlled
+     when it loaded (hard refresh, fresh tab) gets no autoUpdate reload (vite-plugin-pwa reloads only isUpdate ||
+     isExternal), so "updating…" stayed forever beside the NEW build id. A finished download must say so itself. */
+  ok('a download that finishes turns the line to "Latest version" by itself - no reload needed (the forever-spinning line)',
+     /w\.state === 'activated'\) say\('latest'\)/.test(us) && !/location\.reload/.test(us));
 })();
 
 /* ── MASTER VAULT ON THE PHONE (2026-10-02, his pick C + "cropper plan is great") ─────────────────────────────────────
