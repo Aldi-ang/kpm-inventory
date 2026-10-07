@@ -3563,6 +3563,7 @@ const handleGitHubMirror = async () => {
       try { 
           const formData = new FormData(e.target); 
           const data = Object.fromEntries(formData.entries());
+          data.description = String(data.description || '').trim();   /* spaces-only would show as an empty quote in the viewer */
           // 🚀 ADDED 'sticksPerPack' TO THE NUMBER CONVERSION ARRAY
           const numFields = ['stock', 'minStock', 'sticksPerPack', 'priceDistributor', 'priceRetail', 'priceGrosir', 'priceEcer'];
           numFields.forEach(field => data[field] = Number(data[field]) || 0);
@@ -4995,7 +4996,8 @@ const handleGitHubMirror = async () => {
                   // ---------------------------
 
                   onDelete={(id) => deleteProduct(id)}
-                  onEdit={(item) => { 
+                  onExamine={(item) => setExaminingProduct(item)}
+                  onEdit={(item) => {
                       setEditingProduct(item); 
                       setTempImages(item.images || {}); 
                       setBoxDimensions(item.dimensions || {w:55, h:90, d:22}); 
@@ -5025,6 +5027,11 @@ const handleGitHubMirror = async () => {
                             <div className="grid md:grid-cols-2 gap-8">
                                 <div className="space-y-4">
                                     <div><label className="text-[var(--duke-ink-8)] block mb-1">PRODUCT NAME</label><input name="name" defaultValue={editingProduct.name} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none"/></div>
+
+                                    {/* DESCRIPTION, BACK IN THE FORM (2026-10-07). The field had dropped out of this form, so a new
+                                        product could never get one, while the old products kept theirs - updateDoc only writes the
+                                        fields the form sends. The Sales Terminal's 3D view and the Master Vault both read it. */}
+                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">DESCRIPTION</label><textarea name="description" rows={3} defaultValue={editingProduct.description || ''} placeholder="Shown under the 3D view" className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none resize-y"/></div>
 
                                   {/* --- PINPOINT: Edit Product Modal --- */}
                                     <div className="grid grid-cols-4 gap-2">

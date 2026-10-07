@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, Plus, Package, AlertCircle, ImageIcon, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Package, AlertCircle, ImageIcon, Maximize2, Expand, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatRupiah, convertToBks, getLocalDayKey} from '../utils/helpers';
 import * as threshold from '../utils/stockThreshold';
 
@@ -49,11 +49,12 @@ export const DimensionControl = ({ label, val, axis, onChange, onInteract }) => 
 );
 
 // --- TRUE 3D ITEM INSPECTOR ---
-export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct }) => { 
+export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct, onExamine }) => { 
     const [rotation, setRotation] = useState({ x: -15, y: 35 });
     const [isDragging, setIsDragging] = useState(false);
     const [isInteracting, setIsInteracting] = useState(false); 
     const lastMousePos = useRef({ x: 0, y: 0 });
+    const tapStart = useRef(null);
     
     const [dims, setDims] = useState(product.dimensions || { w: 55, h: 90, d: 22 });
     const [zoom, setZoom] = useState(product.defaultZoom || 3.0); 
@@ -69,22 +70,61 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
        on a 6x-slow phone, 22% without it. Now .kpm-inspect-spin turns the faces on the graphics chip, INSIDE the drag
        rotation (rotateX(x) rotateY(y) rotateY(spin) = the old rotateY(y + spin)), one turn per 20 s = 0.3deg at 60 fps,
        and holds its angle while he drags or edits a size. Lite Mode stops it (his "nothing rotates"); theme.css. */
-    /* A FINGER TURNS IT (2026-10-02, Master Vault on the phone). These were mouse events, and a phone sends none for a
+    /* (SUPERSEDED 2026-10-07 - see the block below: a finger no longer turns THIS box, the stage is pan-y; the finger
+       turns it in the full-screen viewer.) A FINGER TURNS IT (2026-10-02, Master Vault on the phone). These were mouse events, and a phone sends none for a
        drag - the lab's touch drag left the box at rotateY(35deg) while a mouse turned it. Pointer events cover mouse and
        finger alike; the stage has touch-action off so the drag turns the box instead of scrolling the page. */
+    /* FULL SCREEN, LIKE THE SALES TERMINAL (2026-10-07, his ask: "fixed and full screen just like the one we have on
+       the viewable menu on sales terminal because sometimes when rotate the 3D model it move the whole page instead").
+       A tap on the box opens ExamineModal - the Sales Terminal's own full-screen viewer, not a lookalike - and the
+       turning happens there (its root is touch-action none, so the finger turns the box and nothing behind it moves).
+       On the phone the box here no longer grabs the finger at all (touch-action pan-y): a vertical swipe scrolls the
+       page, a tap opens the viewer. A mouse still drags it round on the desk; a click without a drag opens the viewer.
+       It OPENS ON click, not on pointerup: a tap that only stops a fling, a long-press and a right-click send a
+       pointerup but no (left) click, and none of them should throw a full-screen viewer at him. It gets the sizes on
+       the sliders right now, saved or not (a cleared size box falls back to the saved one), so what he sees full
+       screen is what he is measuring. */
+    const DRAG_SLOP = 6;
     const handlePointerDown = (e) => {
-        if(e.target.closest('.controls-panel') || e.target.closest('.admin-actions') || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+        /* closest(), not tagName: a press on the Full screen key lands on its <svg>, and a tagName test let that
+           press through - the stage captured the pointer, so the key's own click never fired */
+        if (e.target.closest('.controls-panel, .admin-actions, button, input, label')) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;   /* a right-click opens its menu, not the viewer */
+        tapStart.current = { x: e.clientX, y: e.clientY, moved: false };
+        lastMousePos.current = { x: e.clientX, y: e.clientY };
+        if (e.pointerType !== 'mouse') return;
         e.currentTarget.setPointerCapture?.(e.pointerId);
         setIsDragging(true);
-        lastMousePos.current = { x: e.clientX, y: e.clientY };
     };
 
     const handlePointerMove = (e) => {
+        const t = tapStart.current;
+        if (t && Math.hypot(e.clientX - t.x, e.clientY - t.y) > DRAG_SLOP) t.moved = true;
         if (!isDragging) return; 
         const deltaX = e.clientX - lastMousePos.current.x; 
         const deltaY = e.clientY - lastMousePos.current.y; 
         setRotation(prev => ({ x: prev.x - deltaY * 0.5, y: prev.y + deltaX * 0.5 })); 
         lastMousePos.current = { x: e.clientX, y: e.clientY }; 
+    };
+
+    const dragMoved = useRef(false);
+    const handlePointerUp = (e) => {
+        /* read by the click that follows: a mouse drag is not a click. A finger's tap-or-scroll is the browser's call -
+           when it sends a click it was a tap, wobble and all. */
+        dragMoved.current = e.pointerType === 'mouse' && !!tapStart.current?.moved;
+        tapStart.current = null;
+        setIsDragging(false);
+    };
+    const handlePointerCancel = () => { tapStart.current = null; dragMoved.current = true; setIsDragging(false); };   /* the page took the swipe */
+    const handleStageClick = (e) => {
+        if (e.target.closest('.controls-panel, .admin-actions, button, input, label') || dragMoved.current) return;
+        openFullScreen();
+    };
+    const openFullScreen = () => {
+        const saved = product.dimensions || { w: 55, h: 90, d: 22 };
+        const ok = (v) => Number.isFinite(v) && v > 0;
+        const size = (v, s, def) => (ok(v) ? v : ok(s) ? s : def);   /* a saved size can be NaN too: Save 3D Layout with a cleared box */
+        onExamine?.({ ...product, dimensions: { w: size(dims.w, saved.w, 55), h: size(dims.h, saved.h, 90), d: size(dims.d, saved.d, 22) } });
     };
 
     const w = dims.w * zoom; 
@@ -120,10 +160,15 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
             )}
 
             <div
-                className="flex-1 min-h-[340px] lg:min-h-0 flex items-center justify-center relative perspective-[1200px] cursor-move z-10"
-                style={{ perspective: '1200px', touchAction: 'none' }}
-                onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={() => setIsDragging(false)} onPointerCancel={() => setIsDragging(false)}
+                className="flex-1 min-h-[340px] lg:min-h-0 flex items-center justify-center relative perspective-[1200px] cursor-pointer lg:cursor-move z-10"
+                style={{ perspective: '1200px', touchAction: 'pan-y' }}
+                onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onClick={handleStageClick}
             >
+                {onExamine && (
+                    <button type="button" onClick={openFullScreen} className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 min-h-11 lg:min-h-0 px-3 py-1.5 flex items-center gap-1.5 bg-black/60 border border-amber-500/30 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest text-amber-200/80 hover:text-amber-100">
+                        <Expand size={12}/> Full screen
+                    </button>
+                )}
                 <div 
                     className="relative" 
                     style={{ 
@@ -162,6 +207,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                             )}
                             <span className="text-[10px] text-slate-400 font-mono uppercase border border-white/10 px-2 py-0.5 rounded">{product.type}</span>
                         </div>
+                        {product.description?.trim() && <p className="mt-3 text-sm text-stone-300 font-serif leading-relaxed whitespace-pre-line line-clamp-3" title={product.description.trim()}>{product.description.trim()}</p>}
                     </div>
 
                     {isAdmin && (
@@ -212,7 +258,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
    list reads too, so nothing that filtered before stops filtering. */
 const isPhone = () => window.matchMedia('(max-width: 1023px)').matches;
 
-export default function ResidentEvilInventory({ inventory, motorists = [], transactions = [], isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct, appSettings, searchTerm = '', onSearch }) {
+export default function ResidentEvilInventory({ inventory, motorists = [], transactions = [], isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct, onExamine, appSettings, searchTerm = '', onSearch }) {
     const [selectedId, setSelectedId] = useState(null);
     const [activeSection, setActiveSection] = useState("ALL");
     const [phoneOpen, setPhoneOpen] = useState(false);
@@ -346,6 +392,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                             onEdit={onEdit} 
                             onDelete={onDelete} 
                             onUpdateProduct={onUpdateProduct} 
+                            onExamine={onExamine}
                         />
                     )}
                 </div>
