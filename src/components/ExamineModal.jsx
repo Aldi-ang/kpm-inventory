@@ -27,25 +27,29 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
 
   /* Lite Mode / reduced motion: no idle spin (his "nothing rotates") - the box stands still until a finger or the
      mouse turns it. The Master Vault opens this screen too since 2026-10-07, on the weak phones Lite Mode is for. */
-  const still = useRef(document.documentElement.classList.contains('lite-mode') || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+  const [still] = useState(() => document.documentElement.classList.contains('lite-mode') || !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
   useEffect(() => {
     let animationFrameId;
     const animate = () => {
-      if (!draggingRef.current && !still.current) rotRef.current.y += 0.4;
+      if (!draggingRef.current && !still) rotRef.current.y += 0.4;
       const el = boxRef.current;
       if (el) el.style.transform = `rotateX(${rotRef.current.x}deg) rotateY(${rotRef.current.y}deg)`;
       animationFrameId = requestAnimationFrame(animate);
     };
     animationFrameId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationFrameId);
-  }, []);
+  }, [still]);
 
   /* Escape closes it: the Master Vault's Full screen key is a real button, so a keyboard can open this */
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e) => { if (e.key === 'Escape' && !e.defaultPrevented) onClose(); };   /* a ConfirmGate above took it first */
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+  useEffect(() => {   /* closing hands focus back to whatever opened it (the vault's Full screen key) */
+    const opener = document.activeElement;
+    return () => opener?.focus?.({ preventScroll: true });
+  }, []);
 
   const handleReset = () => { rotRef.current = { ...START_ROTATION }; setViewScale(START_SCALE); };
   const handleZoom = (delta) => { if (isScaleLocked) return; setViewScale(prev => Math.min(5, Math.max(0.5, prev + delta))); };
@@ -54,17 +58,21 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
 
   /* Pointer events, not mouse events: this screen is opened from the sales terminal, which he
      uses on a phone, and a mouse handler never fires for a finger drag. */
-  const handleMouseDown = (e) => { draggingRef.current = true; setIsDragging(true); lastMousePos.current = { x: e.clientX, y: e.clientY }; };
+  /* ONE finger turns it (2026-10-07). With the root at touch-action none a second finger (a pinch, a resting thumb) now
+     reaches these handlers too, and with one shared lastMousePos each finger's move was measured from the OTHER finger -
+     the box flipped ~60deg per event. The first pointer down owns the drag; the others are ignored. */
+  const activeId = useRef(null);
+  const handleMouseDown = (e) => { if (draggingRef.current) return; activeId.current = e.pointerId; draggingRef.current = true; setIsDragging(true); lastMousePos.current = { x: e.clientX, y: e.clientY }; };
 
   const handleMouseMove = (e) => {
-      if (!draggingRef.current) return;
+      if (!draggingRef.current || e.pointerId !== activeId.current) return;
       const deltaX = e.clientX - lastMousePos.current.x;
       const deltaY = e.clientY - lastMousePos.current.y;
       rotRef.current = { x: rotRef.current.x - deltaY * 0.5, y: rotRef.current.y + deltaX * 0.5 };
       lastMousePos.current = { x: e.clientX, y: e.clientY };
   };
 
-  const handleMouseUp = () => { draggingRef.current = false; setIsDragging(false); };
+  const handleMouseUp = (e) => { if (e?.pointerId !== activeId.current) return; activeId.current = null; draggingRef.current = false; setIsDragging(false); };
 
   const renderFace = (imageSrc, defaultColor = "bg-white") => { if (imageSrc) return <img src={imageSrc} className="w-full h-full object-cover" alt="texture" />; return <div className={`w-full h-full ${defaultColor} border border-[#5c4b3a] opacity-90`}></div>; };
   
@@ -106,7 +114,7 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
       <div className="text-white mb-12 text-center font-mono pointer-events-none select-none mt-20 md:mt-0">
           <h2 className="text-3xl font-bold tracking-[0.2em] uppercase text-orange-500 drop-shadow-lg">{product.name}</h2>
           <p className="text-[#d4af37] text-xs mt-2 tracking-widest animate-pulse">
-              {isDragging ? "INSPECTING OBJECT..." : "AUTOMATIC ROTATION"}
+              {isDragging ? "INSPECTING OBJECT..." : still ? "DRAG TO ROTATE" : "AUTOMATIC ROTATION"}
           </p>
       </div>
 

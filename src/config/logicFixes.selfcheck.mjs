@@ -10710,7 +10710,7 @@ await (async () => {
      drag.captured === 1 && drag.everDragging && drag.rot.y > 35 && drag.opened.length === 0);
 
   /* 6. the description shows in the vault too */
-  const nameAt = insp.search(/>\s*\{\s*product\.name\s*\}\s*</), descAt = insp.search(/>\s*\{\s*product\.description\s*\}\s*</);
+  const nameAt = insp.search(/>\s*\{\s*product\.name\s*\}\s*</), descAt = insp.search(/>\s*\{\s*product\.description(?:\.trim\(\))?\s*\}\s*</);
   ok('the Master Vault inspector shows the product\'s description, under its name', nameAt > -1 && descAt > nameAt);
 
   /* 7. the early return asks closest(), so a press on the key's <svg> belongs to the key (the e350a87 form tested
@@ -10734,14 +10734,23 @@ await (async () => {
      /\boverflow-y-auto\b/.test(panel) && /\btouchAction:\s*'pan-y'/.test(panel) && /\bonPointerDown=\{\(e\)\s*=>\s*e\.stopPropagation\(\)\}/.test(panel) && !/\bpointer-events-none\b/.test(panel) &&
      /whitespace-pre-line[^>]*>"\{product\.description\?\.trim\(\)\s*\|\|/.test(em));
   ok('Lite Mode / reduced motion: the viewer does not idle-spin (his "nothing rotates"); Escape closes it; it is a dialog with a labelled Close',
-     /classList\.contains\('lite-mode'\)/.test(em) && /prefers-reduced-motion:\s*reduce/.test(em) && /if\s*\(!draggingRef\.current\s*&&\s*!still\.current\)\s*rotRef\.current\.y\s*\+=/.test(em) &&
-     /e\.key\s*===\s*'Escape'\)\s*onClose\(\)/.test(em) && /\brole="dialog"/.test(emRoot) && /\baria-modal="true"/.test(emRoot) && /aria-label="Close"/.test(em));
+     /classList\.contains\('lite-mode'\)/.test(em) && /prefers-reduced-motion:\s*reduce/.test(em) && /if\s*\(!draggingRef\.current\s*&&\s*!still(?:\.current)?\)\s*rotRef\.current\.y\s*\+=/.test(em) &&
+     /e\.key\s*===\s*'Escape'(?:\s*&&\s*!e\.defaultPrevented)?\)\s*onClose\(\)/.test(em) && /\brole="dialog"/.test(emRoot) && /\baria-modal="true"/.test(emRoot) && /aria-label="Close"/.test(em));
   ok('the save trims the description (spaces only = no description), and a blank one shows nothing in the vault',
      /data\.description\s*=\s*String\(data\.description\s*\|\|\s*''\)\.trim\(\)/.test(save) && /\{\s*product\.description\?\.trim\(\)\s*&&\s*<p\b/.test(insp));
-  let nanSize = null;
+  let nanSize = null, nanSaved = null;
   try { const { product } = fresh(), o = []; mk(product, { w: NaN, h: 0, d: 30 }, (p) => o.push(p)).openFullScreen(); nanSize = o[0]?.dimensions; } catch { nanSize = null; }
-  ok('a size box cleared mid-edit (NaN) or zero never reaches the viewer: it falls back to the saved size, the good live one rides along',
-     !!nanSize && nanSize.w === 55 && nanSize.h === 90 && nanSize.d === 30);
+  try { const o = []; mk({ id: 'p2', name: 'x', dimensions: { w: NaN, h: 120 } }, { w: NaN, h: NaN, d: undefined }, (p) => o.push(p)).openFullScreen(); nanSaved = o[0]?.dimensions; } catch { nanSaved = null; }
+  ok('a size box cleared mid-edit (NaN) or zero never reaches the viewer: it falls back to the saved size, a broken saved size to the 55 x 90 x 22 pack, the good live one rides along',
+     !!nanSize && nanSize.w === 55 && nanSize.h === 90 && nanSize.d === 30 && !!nanSaved && nanSaved.w === 55 && nanSaved.h === 120 && nanSaved.d === 22);
+  /* 9. round-2 review (2026-10-07): a second finger flipped the box (each finger's move measured from the other's spot,
+        ~60deg per event, reproduced with CDP 2-point touch); a ConfirmGate's Escape also closed the viewer under it;
+        in Lite Mode the line said AUTOMATIC ROTATION over a box standing still */
+  ok('one finger turns the viewer\'s box: the first pointer owns the drag, a second finger\'s down / move / up is ignored; Escape a layer above already took is left alone; a still box says DRAG TO ROTATE',
+     /const handleMouseDown = \(e\) => \{\s*if \(draggingRef\.current\) return;\s*activeId\.current = e\.pointerId;/.test(em) &&
+     /if \(!draggingRef\.current \|\| e\.pointerId !== activeId\.current\) return;/.test(em) &&
+     /const handleMouseUp = \(e\) => \{\s*if \(e\?\.pointerId !== activeId\.current\) return;/.test(em) &&
+     /e\.key === 'Escape' && !e\.defaultPrevented\) onClose\(\)/.test(em) && /still(?:\.current)? \? "DRAG TO ROTATE" : "AUTOMATIC ROTATION"/.test(em));
 })();
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

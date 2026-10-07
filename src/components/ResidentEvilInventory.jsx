@@ -122,8 +122,9 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
     };
     const openFullScreen = () => {
         const saved = product.dimensions || { w: 55, h: 90, d: 22 };
-        const size = (v, f) => (Number.isFinite(v) && v > 0 ? v : f);
-        onExamine?.({ ...product, dimensions: { w: size(dims.w, saved.w), h: size(dims.h, saved.h), d: size(dims.d, saved.d) } });
+        const ok = (v) => Number.isFinite(v) && v > 0;
+        const size = (v, s, def) => (ok(v) ? v : ok(s) ? s : def);   /* a saved size can be NaN too: Save 3D Layout with a cleared box */
+        onExamine?.({ ...product, dimensions: { w: size(dims.w, saved.w, 55), h: size(dims.h, saved.h, 90), d: size(dims.d, saved.d, 22) } });
     };
 
     const w = dims.w * zoom; 
@@ -206,7 +207,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                             )}
                             <span className="text-[10px] text-slate-400 font-mono uppercase border border-white/10 px-2 py-0.5 rounded">{product.type}</span>
                         </div>
-                        {product.description?.trim() && <p className="mt-3 text-sm text-stone-300 font-serif leading-relaxed whitespace-pre-line line-clamp-3" title={product.description}>{product.description}</p>}
+                        {product.description?.trim() && <p className="mt-3 text-sm text-stone-300 font-serif leading-relaxed whitespace-pre-line line-clamp-3" title={product.description.trim()}>{product.description.trim()}</p>}
                     </div>
 
                     {isAdmin && (
