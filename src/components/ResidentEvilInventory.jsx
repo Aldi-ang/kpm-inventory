@@ -82,7 +82,9 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
        sliders right now, saved or not, so what he sees full screen is what he is measuring. */
     const DRAG_SLOP = 6;
     const handlePointerDown = (e) => {
-        if(e.target.closest('.controls-panel') || e.target.closest('.admin-actions') || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+        /* closest(), not tagName: a press on the Full screen key lands on its <svg>, and a tagName test let that
+           press through - the stage captured the pointer, so the key's own click never fired */
+        if (e.target.closest('.controls-panel, .admin-actions, button, input, label')) return;
         tapStart.current = { x: e.clientX, y: e.clientY, moved: false };
         lastMousePos.current = { x: e.clientX, y: e.clientY };
         if (e.pointerType !== 'mouse') return;
