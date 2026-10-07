@@ -9851,6 +9851,28 @@ await (async () => {
      /w\.state === 'activated'\) say\('latest'\)/.test(us) && !/location\.reload/.test(us));
 })();
 
+/* JSX READERS FOR THE MASTER VAULT 3D GUARDS (2026-10-07). A tag regex with [^>]* stops at the first '>' it meets, and an
+   arrow function inside an attribute (onPointerUp={() => ...}) has one - so these walk braces instead of guessing.
+   tagAt: the whole opening tag that begins at the last `open` (e.g. '<div') at or before index `at`; '' when none.
+   bodyOf: the {...} block that follows `head` (a function's body), braces balanced; '' when `head` is not there. */
+const tagAt = (src, at, open = '<') => {
+  const s = at < 0 ? -1 : src.lastIndexOf(open, at);
+  if (s < 0) return '';
+  for (let i = s, d = 0; i < src.length; i++) {
+    const c = src[i];
+    if (c === '{') d++; else if (c === '}') d--; else if (c === '>' && d === 0) return src.slice(s, i + 1);
+  }
+  return '';
+};
+const bodyOf = (src, head) => {
+  const h = src.indexOf(head), s = h < 0 ? -1 : src.indexOf('{', h + head.length);
+  if (s < 0) return '';
+  for (let i = s, d = 0; i < src.length; i++) {
+    if (src[i] === '{') d++; else if (src[i] === '}' && --d === 0) return src.slice(s, i + 1);
+  }
+  return '';
+};
+
 /* ── MASTER VAULT ON THE PHONE (2026-10-02, his pick C + "cropper plan is great") ─────────────────────────────────────
    His words: "the mastervault need to be redesign and make it compatible on the phone, and make sure all the features is
    there, and the picture insert submission for the 3D cigarette box is incompatible in phone as well". Lab
@@ -9860,8 +9882,18 @@ await (async () => {
 section('MASTER VAULT ON THE PHONE (2026-10-02)');
 { const re = code(read('src/components/ResidentEvilInventory.jsx')).replace(/\r/g, ''), ic = code(read('src/components/ImageCropper.jsx')).replace(/\r/g, '');
   const a = code(read('src/App.jsx')).replace(/\r/g, '');
-  ok('a finger turns the 3D box: pointer events with touch-action off on the stage, no mouse-only handlers left',
-     /style=\{\{ perspective: '1200px', touchAction: 'none' \}\}/.test(re) && /onPointerDown=\{handlePointerDown\} onPointerMove=\{handlePointerMove\}/.test(re) && !/onMouseDown=\{handleMouseDown\}/.test(re));
+  /* RE-POINTED 2026-10-07. This line held the 2026-10-02 call: touch-action off on the stage so a finger turned the box in
+     place. His 2026-10-07 ask reversed it - "i want the master vault screen when viewing the 3D is fixed and full screen
+     just like the one we have on the view able menu on sales terminal because sometimes when rotate the 3D model it move
+     the whole page instead". The turning moved to ExamineModal; on this stage a swipe scrolls the page (pan-y) and a tap
+     opens the viewer. Still guarded from 10-02: pointer events on the stage, no mouse-only handler back. The rest is
+     pinned and RUN in 'MASTER VAULT: FULL SCREEN 3D + DESCRIPTION (2026-10-07)'. */
+  const stage = tagAt(re, re.indexOf('onPointerDown={handlePointerDown}'), '<div');
+  ok('the 3D box on the phone: a tap opens the full-screen viewer, a swipe scrolls the page (touch-action pan-y), pointer events, no mouse-only handlers',
+     /\btouchAction:\s*'pan-y'/.test(stage) && !/\btouchAction:\s*'none'/.test(stage) &&
+     /\bonPointerMove=\{handlePointerMove\}/.test(stage) && /\bonPointerUp=\{handlePointerUp\}/.test(stage) && /\bonPointerCancel=\{\w+\}/.test(stage) &&
+     /\bonClick=\{handleStageClick\}/.test(stage) && /\bopenFullScreen\(\)/.test(bodyOf(re, 'const handleStageClick')) &&
+     !/\bon(?:Mouse|Touch)\w*=/.test(stage) && !/\bhandleMouse(?:Down|Move|Up)\b/.test(re));
   ok('a finger moves the cropper photo and its handles: pointer events on document, touch-action off, no mousemove left',
      /document\.addEventListener\('pointermove', onPointerMove\)/.test(ic) && /document\.addEventListener\('pointercancel', onPointerUp\)/.test(ic) &&
      (ic.match(/touchAction: 'none'/g) || []).length === 4 && !/mousemove|onMouseDown/.test(ic));
@@ -10556,6 +10588,161 @@ section('THE DAY REPLAY ON JOURNEY PLAN (2026-10-05) - his "this chain of events
   const tl = replayTimeline([{ at: new Date(2026, 9, 5, 7, 30) }, ...d.events]);
   ok('the replay clock: a scene holds the clock still; a drag to a stop\'s time lands on that stop', tl.clockAt(tl.sceneSeg(2).t0 + 900) === tl.T[2] && tl.tAtClock(tl.T[1]) === tl.sceneSeg(1).t0);
 }
+
+/* ── MASTER VAULT: FULL SCREEN 3D + DESCRIPTION (2026-10-07) ─────────────────────────────────────────────────────────────
+   His words, 2026-10-07: "the description editor for each product is gone ... i cant give new product a description while
+   the old one still remains there", and "i want the master vault screen when viewing the 3D is fixed and full screen just
+   like the one we have on the view able menu on sales terminal because sometimes when rotate the 3D model it move the
+   whole page instead". The product form gets its description box back (updateDoc writes only what the form sends, so
+   old products kept theirs and a new one could never get one). A tap or a click on the vault's box, or its Full screen
+   key, opens ExamineModal - the Sales Terminal's own viewer, not a lookalike - with the sizes on the sliders right now.
+   On the phone the box no longer takes the finger (a swipe scrolls the page); a mouse still turns it on the desk.
+   The stage's pointer handlers are RUN below on stand-in presses. This replaces the 2026-10-02 "a finger turns the 3D
+   box" line, re-pointed in 'MASTER VAULT ON THE PHONE (2026-10-02)'. */
+section('MASTER VAULT: FULL SCREEN 3D + DESCRIPTION (2026-10-07)');
+await (async () => {
+  const reRaw = read('src/components/ResidentEvilInventory.jsx');
+  const re = code(reRaw).replace(/\r/g, ''), a = code(read('src/App.jsx')).replace(/\r/g, '');
+  const em = code(read('src/components/ExamineModal.jsx')).replace(/\r/g, '');
+  const ii = re.indexOf('export const ItemInspector'), ij = re.indexOf('export default function ResidentEvilInventory');
+  const insp = ii > -1 && ij > ii ? re.slice(ii, ij) : '';
+  const allTags = (src, open) => { const out = []; for (let k = src.indexOf(open); k > -1; k = src.indexOf(open, k + 1)) out.push({ k, tag: tagAt(src, k, open) }); return out; };
+
+  /* 1. the description box is back in the form handleSaveProduct reads (FormData -> Object.fromEntries, so a named field
+        rides along with no other change), and it is text - never in the list that turns fields into numbers */
+  const fi = a.indexOf('<form onSubmit={handleSaveProduct}'), fj = fi > -1 ? a.indexOf('</form>', fi) : -1;
+  const form = fi > -1 && fj > fi ? a.slice(fi, fj) : '';
+  const box = (allTags(form, '<textarea').find(({ tag }) => /\bname=["']description["']/.test(tag)) || {}).tag || '';
+  const save = bodyOf(a, 'const handleSaveProduct = async');
+  ok('the product form has its description box back: a <textarea name="description"> inside the handleSaveProduct form, filled from the product being edited (a new one starts empty)',
+     /\bdefaultValue=\{\s*editingProduct\??\.description\b/.test(box) &&
+     /new FormData\(e\.target\)/.test(save) && /Object\.fromEntries\(formData\.entries\(\)\)/.test(save) && !/numFields\s*=\s*\[[^\]]*['"]description['"]/.test(save));
+
+  /* 2. the vault opens the SAME viewer the Sales Terminal does: App's one ExamineModal, fixed over the whole screen */
+  const vault = tagAt(a, a.indexOf('<ResidentEvilInventory'), '<ResidentEvilInventory');
+  const emTag = tagAt(a, a.indexOf('<ExamineModal'), '<ExamineModal');
+  const sets = (src, prop) => new RegExp(`\\b${prop}=\\{\\s*(?:setExaminingProduct|\\(?\\s*(\\w+)\\s*\\)?\\s*=>\\s*setExaminingProduct\\(\\s*\\1\\s*\\))\\s*\\}`).test(src);
+  const props = ((re.match(/export default function ResidentEvilInventory\(\{([^}]*)\}\)/) || [])[1] || '').split(',').map((s) => s.split('=')[0].trim());
+  ok('App hands the Master Vault onExamine and it sets examiningProduct - the ONE global ExamineModal the Sales Terminal\'s onInspect opens, fixed over the whole screen - and the vault passes it on to the inspector',
+     sets(vault, 'onExamine') && sets(a, 'onInspect') && (a.match(/<ExamineModal\b/g) || []).length === 1 &&
+     /\{\s*examiningProduct\s*&&\s*<ExamineModal\b/.test(a) && /\bproduct=\{examiningProduct\}/.test(emTag) && !/<ExamineModal\b/.test(re) &&
+     /className="[^"]*\bfixed\b[^"]*\binset-0\b/.test(em) &&
+     props.includes('onExamine') && /\bonExamine=\{onExamine\}/.test(tagAt(re, re.indexOf('<ItemInspector'), '<ItemInspector')));
+
+  /* the stage's handlers, lifted out of ItemInspector and RUN: React state becomes plain variables (a setter that runs
+     at once is what the next event sees after a re-render), the element under the finger a stand-in whose closest()
+     walks its chain matching tag names and .classes. tagName is what a browser reports: HTML upper case, 'svg' as is. */
+  const hs = re.indexOf('const DRAG_SLOP') > -1 ? re.indexOf('const DRAG_SLOP') : re.indexOf('const handlePointerDown');
+  const he = re.indexOf('const w = dims.w * zoom');
+  const handlers = hs > -1 && he > hs ? re.slice(hs, he) : '';
+  let mk = null;
+  try {
+    mk = new Function('product', 'dims', 'onExamine', `
+      let isDragging = false; const setIsDragging = (v) => { isDragging = v; };
+      let rotation = { x: -15, y: 35 }; const setRotation = (f) => { rotation = typeof f === 'function' ? f(rotation) : f; };
+      const tapStart = { current: null }, lastMousePos = { current: { x: 0, y: 0 } };
+      const useRef = (v) => ({ current: v });
+      ${handlers}
+      return { handlePointerDown, handlePointerMove, handlePointerUp, handlePointerCancel, handleStageClick, openFullScreen, now: () => ({ isDragging, rotation }) };`);
+  } catch { mk = null; }
+  const node = (...chain) => ({ tagName: chain[0].T, closest: (sel) => chain.find((n) => sel.split(',').map((s) => s.trim())
+    .some((s) => s.startsWith('.') ? (n.cls || []).includes(s.slice(1)) : s.toLowerCase() === n.T.toLowerCase())) || null });
+  const STAGE = { T: 'DIV' };
+  const ON_BOX = node({ T: 'IMG' }, { T: 'DIV', cls: ['kpm-inspect-spin'] }, STAGE);
+  const ON_KEY = node({ T: 'svg', cls: ['lucide'] }, { T: 'BUTTON' }, STAGE);   /* a press on the Full screen key's icon */
+  const fresh = () => ({ product: { id: 'p1', name: 'Sampoerna Mild 16', description: 'the old one stays', dimensions: { w: 55, h: 90, d: 22 } },
+                         live: { w: 60, h: 88, d: 24 } });   /* a slider moved, not saved */
+  const play = (steps, { noViewer = false } = {}) => {
+    try {
+      const { product, live } = fresh(), opened = [];
+      let captured = 0, everDragging = false;
+      const h = mk(product, live, noViewer ? undefined : (p) => opened.push(p));
+      for (const [kind, pointerType, x, y, on = ON_BOX] of steps) {
+        const ev = { pointerType, pointerId: 1, button: pointerType === 'right' ? 2 : 0, clientX: x, clientY: y, target: on, currentTarget: { setPointerCapture: () => { captured++; } } };
+        if (pointerType === 'right') ev.pointerType = 'mouse';
+        ({ down: h.handlePointerDown, move: h.handlePointerMove, up: h.handlePointerUp, cancel: h.handlePointerCancel, click: h.handleStageClick })[kind](ev);
+        everDragging = everDragging || h.now().isDragging;
+      }
+      return { opened, captured, everDragging, rot: h.now().rotation, product, live };
+    } catch { return null; }
+  };
+  const sized = (o, l) => !!o && !!o.dimensions && o.dimensions.w === l.w && o.dimensions.h === l.h && o.dimensions.d === l.d;
+
+  /* 3. the tap / click path. It opens on the CLICK the browser sends after the up (2026-10-07, review): a tap that only
+        stops a fling, a long-press and a right-click send an up but no left click, and must not open anything; a finger
+        tap that wobbles a few px past DRAG_SLOP is still a tap when the browser says so with a click. */
+  const click = play([['down', 'mouse', 100, 100], ['move', 'mouse', 102, 101], ['up', 'mouse', 102, 101], ['click', 'mouse', 102, 101]]);
+  const tap = play([['down', 'touch', 100, 100], ['up', 'touch', 101, 100], ['click', 'touch', 101, 100]]);
+  const wobble = play([['down', 'touch', 100, 100], ['move', 'touch', 100, 110], ['up', 'touch', 100, 110], ['click', 'touch', 100, 110]]);
+  const flingStop = play([['down', 'touch', 100, 100], ['up', 'touch', 100, 100]]);
+  const right = play([['down', 'right', 100, 100], ['up', 'right', 100, 100]]);
+  const bare = play([['down', 'touch', 100, 100], ['up', 'touch', 100, 100], ['click', 'touch', 100, 100]], { noViewer: true });
+  ok('a tap (finger, wobble and all) or a click (mouse, a few px of wobble) opens the viewer once, on the click, with the sizes on the sliders now - not the saved ones - and the rest of the product whole; a fling-stopping tap or a right-click opens nothing; no viewer handed in = nothing opens, nothing throws',
+     !!click && !!tap && !!bare && !!wobble && !!flingStop && !!right && click.opened.length === 1 && tap.opened.length === 1 &&
+     wobble.opened.length === 1 && flingStop.opened.length === 0 && right.opened.length === 0 && right.captured === 0 && !right.everDragging &&
+     sized(click.opened[0], click.live) && sized(tap.opened[0], tap.live) && tap.product.dimensions.w === 55 &&
+     tap.opened[0].id === 'p1' && tap.opened[0].name === 'Sampoerna Mild 16' && tap.opened[0].description === 'the old one stays');
+
+  /* 4. the Full screen key */
+  const key = allTags(insp, '<button').find(({ tag }) => /\bonClick=\{\s*(?:openFullScreen|\(\)\s*=>\s*openFullScreen\(\))\s*\}/.test(tag));
+  const keyInside = key ? insp.slice(key.k + key.tag.length, insp.indexOf('</button>', key.k)) : '';
+  const icons = [...keyInside.matchAll(/<([A-Z]\w*)\b/g)].map((m) => m[1]);
+  const lucide = await import('lucide-react').catch(() => ({}));
+  let direct = null;
+  try { const { product, live } = fresh(), o = []; mk(product, live, (p) => o.push(p)).openFullScreen(); direct = { o, live }; } catch { direct = null; }
+  ok('the Full screen key is there, says so, and calls the same open function a tap does (which hands the viewer the live sizes); every icon on it is imported and real in lucide-react - an undefined one blanks the vault',
+     !!key && /full\s*screen/i.test(keyInside) && /\bopenFullScreen\(\)/.test(bodyOf(re, 'const handleStageClick')) &&
+     !!direct && direct.o.length === 1 && sized(direct.o[0], direct.live) &&
+     icons.every((n) => imports(reRaw, n) && !!lucide[n]));
+
+  /* 5. a finger never turns the inline box; a mouse still does */
+  const down = bodyOf(re, 'const handlePointerDown');
+  const pt = down.search(/\bpointerType\s*!==?\s*['"]mouse['"]\s*\)\s*return\b/);
+  const swipe = play([['down', 'touch', 100, 100], ['move', 'touch', 100, 160], ['cancel', 'touch', 100, 160]]);
+  const sideways = play([['down', 'touch', 100, 100], ['move', 'touch', 160, 100], ['up', 'touch', 160, 100]]);
+  const drag = play([['down', 'mouse', 100, 100], ['move', 'mouse', 150, 100], ['up', 'mouse', 150, 100], ['click', 'mouse', 150, 100]]);
+  ok('a touch never starts the inline turning (pointerType is checked before setPointerCapture / setIsDragging): a swipe the page takes, a sideways drag, a tap - none captures, drags, turns or opens; a mouse drag still turns the box and opens nothing',
+     pt > -1 && pt < down.indexOf('setPointerCapture') && pt < down.search(/setIsDragging\(\s*true\s*\)/) &&
+     !!swipe && !!sideways && !!drag && !!tap &&
+     swipe.captured === 0 && !swipe.everDragging && swipe.rot.x === -15 && swipe.rot.y === 35 && swipe.opened.length === 0 &&
+     sideways.captured === 0 && !sideways.everDragging && sideways.rot.y === 35 && sideways.opened.length === 0 &&
+     tap.captured === 0 && !tap.everDragging &&
+     drag.captured === 1 && drag.everDragging && drag.rot.y > 35 && drag.opened.length === 0);
+
+  /* 6. the description shows in the vault too */
+  const nameAt = insp.search(/>\s*\{\s*product\.name\s*\}\s*</), descAt = insp.search(/>\s*\{\s*product\.description\s*\}\s*</);
+  ok('the Master Vault inspector shows the product\'s description, under its name', nameAt > -1 && descAt > nameAt);
+
+  /* 7. the early return asks closest(), so a press on the key's <svg> belongs to the key (the e350a87 form tested
+        tagName === 'BUTTON', the svg slipped through, the stage captured the pointer and the key's own click never fired) */
+  const sels = [...down.matchAll(/\.closest\(\s*(['"`])([^'"`]+)\1\s*\)/g)].flatMap((m) => m[2].split(',').map((s) => s.trim()));
+  const onKey = play([['down', 'mouse', 100, 100, ON_KEY], ['up', 'mouse', 100, 100, ON_KEY], ['click', 'mouse', 100, 100, ON_KEY]]);
+  const onKeyFinger = play([['down', 'touch', 100, 100, ON_KEY], ['up', 'touch', 100, 100, ON_KEY], ['click', 'touch', 100, 100, ON_KEY]]);
+  ok('the stage\'s pointerdown early return asks closest() for button (still input, the size panel, the admin keys): a press on the Full screen key\'s icon is left to the key - the stage neither captures it nor opens the viewer too',
+     ['button', 'input', '.controls-panel', '.admin-actions'].every((s) => sels.includes(s)) &&
+     !!onKey && !!onKeyFinger && onKey.captured === 0 && !onKey.everDragging && onKey.opened.length === 0 &&
+     onKeyFinger.captured === 0 && onKeyFinger.opened.length === 0);
+
+  /* 8. THE VIEWER TAKES THE FINGER (2026-10-07, measured with CDP touch at 390 before the fix: pointercancel at the first
+        move, the box went back to spinning, a vertical drag scrolled the page BEHIND the full screen +185 px; with
+        touch-action none: +100deg for a 200 px drag, 0 scroll, 0 cancel). The Sales Terminal's viewer had it too. */
+  const emRoot = tagAt(em, em.search(/<div\b[^>]*\bkpm-examine-in\b/), '<div');
+  ok('the full-screen viewer takes the finger: its root is touch-action none and a cancelled pointer ends the drag, so a finger turns the box and nothing behind it scrolls',
+     /\btouchAction:\s*'none'/.test(emRoot) && /\bonPointerCancel=\{handleMouseUp\}/.test(emRoot) && /\bonPointerDown=\{handleMouseDown\}/.test(emRoot));
+  const panel = tagAt(em, em.search(/<div\b[^>]*\bmax-h-\[28vh\]/), '<div');
+  ok('the viewer\'s description panel scrolls by itself (pan-y, capped height) and a press on it never starts a turn; the text keeps his line breaks and blank means the old flavour line',
+     /\boverflow-y-auto\b/.test(panel) && /\btouchAction:\s*'pan-y'/.test(panel) && /\bonPointerDown=\{\(e\)\s*=>\s*e\.stopPropagation\(\)\}/.test(panel) && !/\bpointer-events-none\b/.test(panel) &&
+     /whitespace-pre-line[^>]*>"\{product\.description\?\.trim\(\)\s*\|\|/.test(em));
+  ok('Lite Mode / reduced motion: the viewer does not idle-spin (his "nothing rotates"); Escape closes it; it is a dialog with a labelled Close',
+     /classList\.contains\('lite-mode'\)/.test(em) && /prefers-reduced-motion:\s*reduce/.test(em) && /if\s*\(!draggingRef\.current\s*&&\s*!still\.current\)\s*rotRef\.current\.y\s*\+=/.test(em) &&
+     /e\.key\s*===\s*'Escape'\)\s*onClose\(\)/.test(em) && /\brole="dialog"/.test(emRoot) && /\baria-modal="true"/.test(emRoot) && /aria-label="Close"/.test(em));
+  ok('the save trims the description (spaces only = no description), and a blank one shows nothing in the vault',
+     /data\.description\s*=\s*String\(data\.description\s*\|\|\s*''\)\.trim\(\)/.test(save) && /\{\s*product\.description\?\.trim\(\)\s*&&\s*<p\b/.test(insp));
+  let nanSize = null;
+  try { const { product } = fresh(), o = []; mk(product, { w: NaN, h: 0, d: 30 }, (p) => o.push(p)).openFullScreen(); nanSize = o[0]?.dimensions; } catch { nanSize = null; }
+  ok('a size box cleared mid-edit (NaN) or zero never reaches the viewer: it falls back to the saved size, the good live one rides along',
+     !!nanSize && nanSize.w === 55 && nanSize.h === 90 && nanSize.d === 30);
+})();
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

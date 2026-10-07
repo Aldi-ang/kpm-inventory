@@ -25,10 +25,13 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
   const rotRef = useRef({ ...START_ROTATION });
   const draggingRef = useRef(false);
 
+  /* Lite Mode / reduced motion: no idle spin (his "nothing rotates") - the box stands still until a finger or the
+     mouse turns it. The Master Vault opens this screen too since 2026-10-07, on the weak phones Lite Mode is for. */
+  const still = useRef(document.documentElement.classList.contains('lite-mode') || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
   useEffect(() => {
     let animationFrameId;
     const animate = () => {
-      if (!draggingRef.current) rotRef.current.y += 0.4;
+      if (!draggingRef.current && !still.current) rotRef.current.y += 0.4;
       const el = boxRef.current;
       if (el) el.style.transform = `rotateX(${rotRef.current.x}deg) rotateY(${rotRef.current.y}deg)`;
       animationFrameId = requestAnimationFrame(animate);
@@ -36,6 +39,13 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
     animationFrameId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationFrameId);
   }, []);
+
+  /* Escape closes it: the Master Vault's Full screen key is a real button, so a keyboard can open this */
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   const handleReset = () => { rotRef.current = { ...START_ROTATION }; setViewScale(START_SCALE); };
   const handleZoom = (delta) => { if (isScaleLocked) return; setViewScale(prev => Math.min(5, Math.max(0.5, prev + delta))); };
@@ -73,8 +83,11 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
        screen" view was never actually on top — the bell stayed clickable through it and a
        stray press could navigate away mid-inspection. Backdrop blur as well as the dark:
        blur is what signals a layer you can dismiss, rather than one more panel. */
-    <div className="kpm-examine-in fixed inset-0 z-[10000] bg-black/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 overflow-hidden" onPointerDown={handleMouseDown} onPointerMove={handleMouseMove} onPointerUp={handleMouseUp} onPointerLeave={handleMouseUp}>
-      <button onClick={onClose} className="absolute top-8 right-8 text-white hover:text-red-500 z-50 p-2 bg-black/20 rounded-full"><X size={40} /></button>
+    /* touch-action none (2026-10-07): without it the browser took a finger drag as a page pan after a few px - it sent
+       pointercancel, the box went back to spinning, and a vertical drag scrolled the page BEHIND this full screen
+       (measured: +185 px, CDP touch at 390). Nothing in here scrolls except the description, which says so itself. */
+    <div role="dialog" aria-modal="true" aria-label={product.name} className="kpm-examine-in fixed inset-0 z-[10000] bg-black/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 overflow-hidden" style={{ touchAction: 'none' }} onPointerDown={handleMouseDown} onPointerMove={handleMouseMove} onPointerUp={handleMouseUp} onPointerCancel={handleMouseUp} onPointerLeave={handleMouseUp}>
+      <button onClick={onClose} autoFocus aria-label="Close" className="absolute top-8 right-8 text-white hover:text-red-500 z-50 p-2 bg-black/20 rounded-full"><X size={40} /></button>
 
       {/* THE DIMENSIONS PANEL IS GONE FROM THIS SCREEN, on his instruction: "dimension panel
           should only be exist inside master vault and not the preview in sales terminal".
@@ -110,13 +123,15 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
         </div>
       </div>
 
-      <div className="mt-8 w-full max-w-2xl bg-black/60 border-t border-b border-orange-500/50 p-6 backdrop-blur-md pointer-events-none select-none">
+      {/* the description is his own text now (the Master Vault form) and can run long: the panel caps at 28% of the
+          screen and scrolls by itself - pan-y on the scroller, and its presses never start a turn of the box */}
+      <div className="mt-8 w-full max-w-2xl max-h-[28vh] overflow-y-auto overscroll-contain bg-black/60 border-t border-b border-orange-500/50 p-6 backdrop-blur-md select-none" style={{ touchAction: 'pan-y' }} onPointerDown={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-start mb-2 font-mono text-xs text-[#ff9d00]">
            <span>{isAdmin ? `STOCK: ${product.stock} Bks` : "3D VISUALIZATION"}</span>
            <span>TYPE: {product.type}</span>
            <span>CUKAI: {product.taxStamp || 'Standard'}</span>
         </div>
-        <p className="text-white font-serif text-lg leading-relaxed text-center shadow-black drop-shadow-md">"{product.description || "A standard pack of cigarettes. No unusual properties detected."}"</p>
+        <p className="text-white font-serif text-lg leading-relaxed text-center shadow-black drop-shadow-md whitespace-pre-line">"{product.description?.trim() || "A standard pack of cigarettes. No unusual properties detected."}"</p>
       </div>
     </div>
   );

@@ -70,21 +70,26 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
        on a 6x-slow phone, 22% without it. Now .kpm-inspect-spin turns the faces on the graphics chip, INSIDE the drag
        rotation (rotateX(x) rotateY(y) rotateY(spin) = the old rotateY(y + spin)), one turn per 20 s = 0.3deg at 60 fps,
        and holds its angle while he drags or edits a size. Lite Mode stops it (his "nothing rotates"); theme.css. */
-    /* A FINGER TURNS IT (2026-10-02, Master Vault on the phone). These were mouse events, and a phone sends none for a
+    /* (SUPERSEDED 2026-10-07 - see the block below: a finger no longer turns THIS box, the stage is pan-y; the finger
+       turns it in the full-screen viewer.) A FINGER TURNS IT (2026-10-02, Master Vault on the phone). These were mouse events, and a phone sends none for a
        drag - the lab's touch drag left the box at rotateY(35deg) while a mouse turned it. Pointer events cover mouse and
        finger alike; the stage has touch-action off so the drag turns the box instead of scrolling the page. */
     /* FULL SCREEN, LIKE THE SALES TERMINAL (2026-10-07, his ask: "fixed and full screen just like the one we have on
        the viewable menu on sales terminal because sometimes when rotate the 3D model it move the whole page instead").
        A tap on the box opens ExamineModal - the Sales Terminal's own full-screen viewer, not a lookalike - and the
-       turning happens there, on a fixed screen with nothing under the finger to scroll. On the phone the box here no
-       longer grabs the finger at all (touch-action pan-y): a vertical swipe scrolls the page, a tap opens the viewer.
-       A mouse still drags it round on the desk; a click without a drag opens the viewer. It gets the sizes on the
-       sliders right now, saved or not, so what he sees full screen is what he is measuring. */
+       turning happens there (its root is touch-action none, so the finger turns the box and nothing behind it moves).
+       On the phone the box here no longer grabs the finger at all (touch-action pan-y): a vertical swipe scrolls the
+       page, a tap opens the viewer. A mouse still drags it round on the desk; a click without a drag opens the viewer.
+       It OPENS ON click, not on pointerup: a tap that only stops a fling, a long-press and a right-click send a
+       pointerup but no (left) click, and none of them should throw a full-screen viewer at him. It gets the sizes on
+       the sliders right now, saved or not (a cleared size box falls back to the saved one), so what he sees full
+       screen is what he is measuring. */
     const DRAG_SLOP = 6;
     const handlePointerDown = (e) => {
         /* closest(), not tagName: a press on the Full screen key lands on its <svg>, and a tagName test let that
            press through - the stage captured the pointer, so the key's own click never fired */
         if (e.target.closest('.controls-panel, .admin-actions, button, input, label')) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;   /* a right-click opens its menu, not the viewer */
         tapStart.current = { x: e.clientX, y: e.clientY, moved: false };
         lastMousePos.current = { x: e.clientX, y: e.clientY };
         if (e.pointerType !== 'mouse') return;
@@ -102,14 +107,24 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
         lastMousePos.current = { x: e.clientX, y: e.clientY }; 
     };
 
-    const handlePointerUp = () => {
-        const t = tapStart.current;
+    const dragMoved = useRef(false);
+    const handlePointerUp = (e) => {
+        /* read by the click that follows: a mouse drag is not a click. A finger's tap-or-scroll is the browser's call -
+           when it sends a click it was a tap, wobble and all. */
+        dragMoved.current = e.pointerType === 'mouse' && !!tapStart.current?.moved;
         tapStart.current = null;
         setIsDragging(false);
-        if (t && !t.moved) openFullScreen();
     };
-    const handlePointerCancel = () => { tapStart.current = null; setIsDragging(false); };   /* the page took the swipe */
-    const openFullScreen = () => onExamine?.({ ...product, dimensions: dims });
+    const handlePointerCancel = () => { tapStart.current = null; dragMoved.current = true; setIsDragging(false); };   /* the page took the swipe */
+    const handleStageClick = (e) => {
+        if (e.target.closest('.controls-panel, .admin-actions, button, input, label') || dragMoved.current) return;
+        openFullScreen();
+    };
+    const openFullScreen = () => {
+        const saved = product.dimensions || { w: 55, h: 90, d: 22 };
+        const size = (v, f) => (Number.isFinite(v) && v > 0 ? v : f);
+        onExamine?.({ ...product, dimensions: { w: size(dims.w, saved.w), h: size(dims.h, saved.h), d: size(dims.d, saved.d) } });
+    };
 
     const w = dims.w * zoom; 
     const h = dims.h * zoom; 
@@ -146,7 +161,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
             <div
                 className="flex-1 min-h-[340px] lg:min-h-0 flex items-center justify-center relative perspective-[1200px] cursor-pointer lg:cursor-move z-10"
                 style={{ perspective: '1200px', touchAction: 'pan-y' }}
-                onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel}
+                onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel} onClick={handleStageClick}
             >
                 {onExamine && (
                     <button type="button" onClick={openFullScreen} className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 min-h-11 lg:min-h-0 px-3 py-1.5 flex items-center gap-1.5 bg-black/60 border border-amber-500/30 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest text-amber-200/80 hover:text-amber-100">
@@ -191,7 +206,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                             )}
                             <span className="text-[10px] text-slate-400 font-mono uppercase border border-white/10 px-2 py-0.5 rounded">{product.type}</span>
                         </div>
-                        {product.description && <p className="mt-3 text-sm text-stone-300 font-serif leading-relaxed whitespace-pre-line">{product.description}</p>}
+                        {product.description?.trim() && <p className="mt-3 text-sm text-stone-300 font-serif leading-relaxed whitespace-pre-line line-clamp-3" title={product.description}>{product.description}</p>}
                     </div>
 
                     {isAdmin && (

@@ -3563,6 +3563,7 @@ const handleGitHubMirror = async () => {
       try { 
           const formData = new FormData(e.target); 
           const data = Object.fromEntries(formData.entries());
+          data.description = String(data.description || '').trim();   /* spaces-only would show as an empty quote in the viewer */
           // 🚀 ADDED 'sticksPerPack' TO THE NUMBER CONVERSION ARRAY
           const numFields = ['stock', 'minStock', 'sticksPerPack', 'priceDistributor', 'priceRetail', 'priceGrosir', 'priceEcer'];
           numFields.forEach(field => data[field] = Number(data[field]) || 0);
