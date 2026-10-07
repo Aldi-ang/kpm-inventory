@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, Plus, Package, AlertCircle, ImageIcon, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Package, AlertCircle, ImageIcon, Maximize2, Expand, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatRupiah, convertToBks, getLocalDayKey} from '../utils/helpers';
 import * as threshold from '../utils/stockThreshold';
 
@@ -49,11 +49,12 @@ export const DimensionControl = ({ label, val, axis, onChange, onInteract }) => 
 );
 
 // --- TRUE 3D ITEM INSPECTOR ---
-export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct }) => { 
+export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct, onExamine }) => { 
     const [rotation, setRotation] = useState({ x: -15, y: 35 });
     const [isDragging, setIsDragging] = useState(false);
     const [isInteracting, setIsInteracting] = useState(false); 
     const lastMousePos = useRef({ x: 0, y: 0 });
+    const tapStart = useRef(null);
     
     const [dims, setDims] = useState(product.dimensions || { w: 55, h: 90, d: 22 });
     const [zoom, setZoom] = useState(product.defaultZoom || 3.0); 
@@ -72,20 +73,41 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
     /* A FINGER TURNS IT (2026-10-02, Master Vault on the phone). These were mouse events, and a phone sends none for a
        drag - the lab's touch drag left the box at rotateY(35deg) while a mouse turned it. Pointer events cover mouse and
        finger alike; the stage has touch-action off so the drag turns the box instead of scrolling the page. */
+    /* FULL SCREEN, LIKE THE SALES TERMINAL (2026-10-07, his ask: "fixed and full screen just like the one we have on
+       the viewable menu on sales terminal because sometimes when rotate the 3D model it move the whole page instead").
+       A tap on the box opens ExamineModal - the Sales Terminal's own full-screen viewer, not a lookalike - and the
+       turning happens there, on a fixed screen with nothing under the finger to scroll. On the phone the box here no
+       longer grabs the finger at all (touch-action pan-y): a vertical swipe scrolls the page, a tap opens the viewer.
+       A mouse still drags it round on the desk; a click without a drag opens the viewer. It gets the sizes on the
+       sliders right now, saved or not, so what he sees full screen is what he is measuring. */
+    const DRAG_SLOP = 6;
     const handlePointerDown = (e) => {
         if(e.target.closest('.controls-panel') || e.target.closest('.admin-actions') || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+        tapStart.current = { x: e.clientX, y: e.clientY, moved: false };
+        lastMousePos.current = { x: e.clientX, y: e.clientY };
+        if (e.pointerType !== 'mouse') return;
         e.currentTarget.setPointerCapture?.(e.pointerId);
         setIsDragging(true);
-        lastMousePos.current = { x: e.clientX, y: e.clientY };
     };
 
     const handlePointerMove = (e) => {
+        const t = tapStart.current;
+        if (t && Math.hypot(e.clientX - t.x, e.clientY - t.y) > DRAG_SLOP) t.moved = true;
         if (!isDragging) return; 
         const deltaX = e.clientX - lastMousePos.current.x; 
         const deltaY = e.clientY - lastMousePos.current.y; 
         setRotation(prev => ({ x: prev.x - deltaY * 0.5, y: prev.y + deltaX * 0.5 })); 
         lastMousePos.current = { x: e.clientX, y: e.clientY }; 
     };
+
+    const handlePointerUp = () => {
+        const t = tapStart.current;
+        tapStart.current = null;
+        setIsDragging(false);
+        if (t && !t.moved) openFullScreen();
+    };
+    const handlePointerCancel = () => { tapStart.current = null; setIsDragging(false); };   /* the page took the swipe */
+    const openFullScreen = () => onExamine?.({ ...product, dimensions: dims });
 
     const w = dims.w * zoom; 
     const h = dims.h * zoom; 
@@ -120,10 +142,15 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
             )}
 
             <div
-                className="flex-1 min-h-[340px] lg:min-h-0 flex items-center justify-center relative perspective-[1200px] cursor-move z-10"
-                style={{ perspective: '1200px', touchAction: 'none' }}
-                onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={() => setIsDragging(false)} onPointerCancel={() => setIsDragging(false)}
+                className="flex-1 min-h-[340px] lg:min-h-0 flex items-center justify-center relative perspective-[1200px] cursor-pointer lg:cursor-move z-10"
+                style={{ perspective: '1200px', touchAction: 'pan-y' }}
+                onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerCancel={handlePointerCancel}
             >
+                {onExamine && (
+                    <button type="button" onClick={openFullScreen} className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 min-h-11 lg:min-h-0 px-3 py-1.5 flex items-center gap-1.5 bg-black/60 border border-amber-500/30 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest text-amber-200/80 hover:text-amber-100">
+                        <Expand size={12}/> Full screen
+                    </button>
+                )}
                 <div 
                     className="relative" 
                     style={{ 
@@ -162,6 +189,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                             )}
                             <span className="text-[10px] text-slate-400 font-mono uppercase border border-white/10 px-2 py-0.5 rounded">{product.type}</span>
                         </div>
+                        {product.description && <p className="mt-3 text-sm text-stone-300 font-serif leading-relaxed whitespace-pre-line">{product.description}</p>}
                     </div>
 
                     {isAdmin && (
@@ -212,7 +240,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
    list reads too, so nothing that filtered before stops filtering. */
 const isPhone = () => window.matchMedia('(max-width: 1023px)').matches;
 
-export default function ResidentEvilInventory({ inventory, motorists = [], transactions = [], isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct, appSettings, searchTerm = '', onSearch }) {
+export default function ResidentEvilInventory({ inventory, motorists = [], transactions = [], isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct, onExamine, appSettings, searchTerm = '', onSearch }) {
     const [selectedId, setSelectedId] = useState(null);
     const [activeSection, setActiveSection] = useState("ALL");
     const [phoneOpen, setPhoneOpen] = useState(false);
@@ -346,6 +374,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                             onEdit={onEdit} 
                             onDelete={onDelete} 
                             onUpdateProduct={onUpdateProduct} 
+                            onExamine={onExamine}
                         />
                     )}
                 </div>
