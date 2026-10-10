@@ -5,6 +5,7 @@ import { ShieldAlert, Key, Fingerprint, Mail, AlertTriangle, CheckCircle2, Arrow
 import { confirmAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 import { verifySecret } from '../utils/secretHash';
+import { IS_DEMO } from '../config/firebase';
 
 export default function CrownTransferProtocol({ db, appId, userId, user, onClose, triggerCapy }) {
     const [step, setStep] = useState(1);
@@ -54,6 +55,8 @@ export default function CrownTransferProtocol({ db, appId, userId, user, onClose
             const adminSnap = await getDoc(adminDocRef);
             
             if (adminSnap.exists() && await verifySecret(phrase.trim().toLowerCase(), adminSnap.data().recoveryHash)) {
+                /* the demo never sends: the code would go through HIS EmailJS account (demoBuild.check.mjs) */
+                if (IS_DEMO) { showError("DEMO: EMAILS ARE SWITCHED OFF"); setLoading(false); return; }
                 // Generate a random 6 digit OTP
                 const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
                 setGeneratedOtp(newOtp);

@@ -30,7 +30,21 @@ const resolvedAuthDomain =
     ? window.location.host
     : FIREBASE_AUTH_DOMAIN;
 
-const firebaseConfig = {
+/* THE PUBLIC DEMO (his picks 2026-10-06 "Stays for everyone", 2026-10-10 "B"): the same app on its own
+   Firebase project, kpm-demo-f4d74 (Spark, no billing). Vite writes VITE_DEMO in as a literal, so each
+   build carries only its own config - src/config/demoBuild.check.mjs proves it on both bundles.
+   `appId` below stays "cello-inventory-manager" in the demo ON PURPOSE: it is only the folder name
+   inside whichever database is open (artifacts/<appId>/...), so firestore.rules deploys unchanged. */
+export const IS_DEMO = import.meta.env.VITE_DEMO === '1';
+
+const firebaseConfig = IS_DEMO ? {
+  apiKey: "AIzaSyCstVo9iVwhA_ivYsmT9A-UAbBYL-VMFgc",
+  authDomain: "kpm-demo-f4d74.firebaseapp.com",
+  projectId: "kpm-demo-f4d74",
+  storageBucket: "kpm-demo-f4d74.firebasestorage.app",
+  messagingSenderId: "804156513194",
+  appId: "1:804156513194:web:ca2d6c2e89d976c8c9a9d3"
+} : {
   apiKey: "AIzaSyC9Qr2w0K_RbygNvrzVW1ALE8SmLH6qK_4",
   authDomain: resolvedAuthDomain,
   projectId: "cello-inventory-manager",

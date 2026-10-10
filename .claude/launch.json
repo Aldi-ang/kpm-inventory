@@ -81,6 +81,23 @@
       ],
       "port": 5174,
       "url": "http://localhost:5174"
+    },
+    {
+      "name": "demo-build",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "preview",
+        "--mode",
+        "httpdev",
+        "--outDir",
+        "dist-demo",
+        "--port",
+        "4195",
+        "--strictPort"
+      ],
+      "port": 4195,
+      "url": "http://localhost:4195"
     }
   ]
 }

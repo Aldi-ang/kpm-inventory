@@ -148,7 +148,7 @@ import {
 } from "firebase/firestore";
 
 // --- CONFIG & UTILITIES IMPORTS ---
-import { auth, db, storage, googleProvider, appId } from './config/firebase';
+import { auth, db, storage, googleProvider, appId, IS_DEMO } from './config/firebase';
 import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines, eodReportParts, eodNightMessage, EOD_PART_LABELS, absentForSure } from './utils/helpers';
 import { isLowStock } from './utils/stockThreshold';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES, DEFAULT_RANKS } from './config/career';
@@ -1329,6 +1329,8 @@ const handleGitHubMirror = async () => {
             await updateDoc(adminDocRef, { failedRecoveryAttempts: 0, lockoutStatus: "NONE", ...fresh });
             
             // 📧 LAYER 3: GENERATE & SEND EMAIL OTP
+            /* the demo never sends: the code would go through HIS EmailJS account (demoBuild.check.mjs) */
+            if (IS_DEMO) { notify("This is the demo: recovery emails are switched off, so no code is sent."); setIsSendingEmail(false); return; }
             const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
             setGeneratedOtp(newOtp);
 

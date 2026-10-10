@@ -10565,5 +10565,19 @@ section('THE DAY REPLAY ON JOURNEY PLAN (2026-10-05) - his "this chain of events
   ok('the replay clock: a scene holds the clock still; a drag to a stop\'s time lands on that stop', tl.clockAt(tl.sceneSeg(2).t0 + 900) === tl.T[2] && tl.tAtClock(tl.T[1]) === tl.sceneSeg(1).t0);
 }
 
+section('The public demo build (VITE_DEMO=1, his picks 2026-10-06 + 2026-10-10 "B") - the bundles themselves: src/config/demoBuild.check.mjs');
+{
+  const fb = read('src/config/firebase.js');
+  ok('one switch picks the project: IS_DEMO from VITE_DEMO, the demo config only behind it, appId unchanged so firestore.rules deploys to the demo as it is',
+     /export const IS_DEMO = import\.meta\.env\.VITE_DEMO === '1';/.test(fb) && /const firebaseConfig = IS_DEMO \? \{\s*apiKey: "AIzaSyCstVo9iVwhA_ivYsmT9A-UAbBYL-VMFgc"/.test(fb)
+     && /export const appId = "cello-inventory-manager";/.test(fb));
+  /* every EmailJS send in the app stops on IS_DEMO first - a send site added later without the guard
+     would let a stranger in the demo mail through HIS account */
+  const sends = fs.readdirSync('src', { recursive: true }).filter((f) => /\.jsx?$/.test(f))
+    .flatMap((f) => { const src = read(`src/${f}`); return [...src.matchAll(/emailjs\.send\(/g)].map((m) => ({ f, guarded: /if \(IS_DEMO\) \{[^}]*return; \}/.test(src.slice(Math.max(0, m.index - 900), m.index)) })); });
+  ok(`every emailjs.send is guarded by IS_DEMO just before it (${sends.filter((s) => s.guarded).length}/${sends.length}: ${sends.map((s) => s.f).join(', ')})`,
+     sends.length >= 2 && sends.every((s) => s.guarded));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
