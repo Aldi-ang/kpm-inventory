@@ -49,12 +49,10 @@ export const DimensionControl = ({ label, val, axis, onChange, onInteract }) => 
 );
 
 // --- TRUE 3D ITEM INSPECTOR ---
-export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct }) => { 
-    const [rotation, setRotation] = useState({ x: -15, y: 35 });
-    const [isDragging, setIsDragging] = useState(false);
-    const [isInteracting, setIsInteracting] = useState(false); 
-    const lastMousePos = useRef({ x: 0, y: 0 });
-    
+export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct, onExpand }) => {
+    const rotation = { x: -15, y: 35 };   /* the resting tilt; turning by hand happens in the fullscreen viewer now (see the stage) */
+    const [isInteracting, setIsInteracting] = useState(false);
+
     const [dims, setDims] = useState(product.dimensions || { w: 55, h: 90, d: 22 });
     const [zoom, setZoom] = useState(product.defaultZoom || 3.0); 
     const [showControls, setShowControls] = useState(false);
@@ -68,24 +66,12 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
        in a requestAnimationFrame loop - a React re-render of this card every frame, 125 a second: Master Vault 85% idle CPU
        on a 6x-slow phone, 22% without it. Now .kpm-inspect-spin turns the faces on the graphics chip, INSIDE the drag
        rotation (rotateX(x) rotateY(y) rotateY(spin) = the old rotateY(y + spin)), one turn per 20 s = 0.3deg at 60 fps,
-       and holds its angle while he drags or edits a size. Lite Mode stops it (his "nothing rotates"); theme.css. */
-    /* A FINGER TURNS IT (2026-10-02, Master Vault on the phone). These were mouse events, and a phone sends none for a
-       drag - the lab's touch drag left the box at rotateY(35deg) while a mouse turned it. Pointer events cover mouse and
-       finger alike; the stage has touch-action off so the drag turns the box instead of scrolling the page. */
-    const handlePointerDown = (e) => {
-        if(e.target.closest('.controls-panel') || e.target.closest('.admin-actions') || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
-        e.currentTarget.setPointerCapture?.(e.pointerId);
-        setIsDragging(true);
-        lastMousePos.current = { x: e.clientX, y: e.clientY };
-    };
-
-    const handlePointerMove = (e) => {
-        if (!isDragging) return; 
-        const deltaX = e.clientX - lastMousePos.current.x; 
-        const deltaY = e.clientY - lastMousePos.current.y; 
-        setRotation(prev => ({ x: prev.x - deltaY * 0.5, y: prev.y + deltaX * 0.5 })); 
-        lastMousePos.current = { x: e.clientX, y: e.clientY }; 
-    };
+       and holds its angle while he edits a size. Lite Mode stops it (his "nothing rotates"); theme.css. */
+    /* THE SMALL BOX NO LONGER TAKES A DRAG (2026-10-10, his pick A + "add the view in fullscreen button"). Turning it here
+       (2026-10-02's pointer drag) worked only when the finger STARTED on the box; one that started beside it scrolled the
+       page instead - "sometimes when rotate the 3D model it move the whole page instead". Now the page scrolls through
+       the box, and a tap on it or the button opens the sales terminal's fullscreen viewer (ExamineModal: fixed, nothing
+       behind it moves), where the finger turns it. */
 
     const w = dims.w * zoom; 
     const h = dims.h * zoom; 
@@ -120,10 +106,16 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
             )}
 
             <div
-                className="flex-1 min-h-[340px] lg:min-h-0 flex items-center justify-center relative perspective-[1200px] cursor-move z-10"
-                style={{ perspective: '1200px', touchAction: 'none' }}
-                onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={() => setIsDragging(false)} onPointerCancel={() => setIsDragging(false)}
+                className="flex-1 min-h-[340px] lg:min-h-0 flex items-center justify-center relative perspective-[1200px] cursor-pointer z-10"
+                style={{ perspective: '1200px', touchAction: 'manipulation' }}
+                onClick={() => onExpand?.(product)}
             >
+                {onExpand && (
+                    <button type="button" onClick={(e) => { e.stopPropagation(); onExpand(product); }}
+                        className="absolute top-3 left-3 z-20 inline-flex items-center gap-2 min-h-11 px-4 rounded-full border border-amber-500/40 bg-black/80 text-amber-200 text-xs font-bold uppercase tracking-widest whitespace-nowrap hover:border-amber-400 active:scale-[0.97] transition-transform">
+                        <Maximize2 size={14} aria-hidden="true" />View in fullscreen
+                    </button>
+                )}
                 <div 
                     className="relative" 
                     style={{ 
@@ -133,7 +125,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                         willChange: 'transform' 
                     }}
                 >
-                    <div className={`kpm-inspect-spin${isDragging || isInteracting ? ' held' : ''}`}>
+                    <div className={`kpm-inspect-spin${isInteracting ? ' held' : ''}`}>
                     <div className="absolute inset-0 bg-white" style={{ transform: `translateZ(${d/2}px)`, backfaceVisibility: 'hidden' }}>{renderFace(front, "bg-white")}</div>
                     <div className="absolute inset-0 bg-slate-800" style={{ transform: `rotateY(180deg) translateZ(${d/2}px)`, backfaceVisibility: 'hidden' }}>{renderFace(back, "bg-slate-800")}</div>
                     <div className="absolute" style={{ width: d, height: h, transform: `rotateY(90deg) translateZ(${w/2}px)`, left: (w-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.right, "bg-slate-400")}</div>
@@ -212,7 +204,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
    list reads too, so nothing that filtered before stops filtering. */
 const isPhone = () => window.matchMedia('(max-width: 1023px)').matches;
 
-export default function ResidentEvilInventory({ inventory, motorists = [], transactions = [], isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct, appSettings, searchTerm = '', onSearch }) {
+export default function ResidentEvilInventory({ inventory, motorists = [], transactions = [], isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct, onInspect, appSettings, searchTerm = '', onSearch }) {
     const [selectedId, setSelectedId] = useState(null);
     const [activeSection, setActiveSection] = useState("ALL");
     const [phoneOpen, setPhoneOpen] = useState(false);
@@ -346,6 +338,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                             onEdit={onEdit} 
                             onDelete={onDelete} 
                             onUpdateProduct={onUpdateProduct} 
+                            onExpand={onInspect}
                         />
                     )}
                 </div>

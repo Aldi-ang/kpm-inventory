@@ -28,6 +28,8 @@ import TierPovSwitch from '../src/components/TierPovSwitch.jsx';
 import StockByWarehouseTable from '../src/ponder/stages/StockByWarehouseTable.jsx';
 import ShipmentPlanTable from '../src/ponder/stages/ShipmentPlanTable.jsx';
 import ProductPerformancePanel from '../src/components/ProductPerformancePanel.jsx';
+import { ItemInspector } from '../src/components/ResidentEvilInventory.jsx';
+import ExamineModal from '../src/components/ExamineModal.jsx';
 import AcceptanceReceipt from '../src/components/AcceptanceReceipt.jsx';
 import RestockVaultView from '../src/RestockVaultView.jsx';
 import MerchantSalesView from '../src/MerchantSalesView.jsx';
@@ -1223,7 +1225,24 @@ function ShellLab() {
   );
 }
 
+/* ?vault3d - the Master Vault's small 3D box inside a page that scrolls, with the fullscreen viewer it opens (2026-10-10,
+   his pick A + "add the view in fullscreen button"): a drag on the small box must scroll the page, a tap or the button must
+   open ExamineModal. */
+const LAB_PRODUCT = { id: 'p_lab', name: 'PRODUK C', stock: 120, description: 'Kretek 16 batang, rasa manis.', dimensions: { w: 55, h: 90, d: 22 }, images: {} };
+function Vault3DLab() {
+  const [open, setOpen] = React.useState(null);
+  return (
+    <div style={{ background: '#0A0908', minHeight: '260vh', padding: 12 }}>
+      <div style={{ height: 120, color: '#A39B90' }}>above the box</div>
+      <ItemInspector product={LAB_PRODUCT} isAdmin onEdit={() => {}} onDelete={() => {}} onUpdateProduct={() => {}} onExpand={(p) => setOpen(p)} />
+      <div style={{ height: 900, color: '#A39B90' }}>below the box</div>
+      {open && <ExamineModal product={open} onClose={() => setOpen(null)} isAdmin />}
+    </div>
+  );
+}
+
 createRoot(document.getElementById('root')).render(
+  q.has('vault3d') ? <Vault3DLab /> :
   /* the shell carries the dialog gate + the toast column as main.jsx does, so a screen that asks (the player card's ✕
      asks the reason through promptAction) is answered in the lab too instead of logging "not mounted" */
   q.has('shell') ? <><ShellLab /><ConfirmHost /><ToastHost /></> :

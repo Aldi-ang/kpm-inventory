@@ -9553,7 +9553,7 @@ section('POTATO 2: THE BIOHAZARD SIGN PULSES BY OPACITY, NOT FILL (2026-10-01)')
 section('POTATO 3: THE MASTER VAULT CARD SPINS ON THE GRAPHICS CHIP (2026-10-01)');
 { const re = code(read('src/components/ResidentEvilInventory.jsx')).replace(/\r/g, ''), th = read('src/styles/theme.css').replace(/\r/g, '');
   ok('no React state spins the card any more (no setRotation inside a requestAnimationFrame loop)', !/requestAnimationFrame/.test(re) && !/y: prev\.y \+ 0\.3/.test(re));
-  const rot = re.indexOf('transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`'), spin = re.indexOf("className={`kpm-inspect-spin${isDragging || isInteracting ? ' held' : ''}`}");
+  const rot = re.indexOf('transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`'), spin = re.indexOf("className={`kpm-inspect-spin${isInteracting ? ' held' : ''}`}");
   const faces = spin > -1 ? (re.slice(spin, re.indexOf('</div>\n                    </div>\n                </div>', spin)).match(/backfaceVisibility: 'hidden'/g) || []).length : 0;
   ok('the spin layer is inside the drag rotation and carries all six faces; it holds while he drags or edits a size', rot > -1 && spin > rot && faces === 6);
   ok('one turn per 20 s on the graphics chip (0.3deg at 60 fps), held by .held, stopped by Lite Mode, kept under Reduce Motion as before',
@@ -9860,8 +9860,16 @@ await (async () => {
 section('MASTER VAULT ON THE PHONE (2026-10-02)');
 { const re = code(read('src/components/ResidentEvilInventory.jsx')).replace(/\r/g, ''), ic = code(read('src/components/ImageCropper.jsx')).replace(/\r/g, '');
   const a = code(read('src/App.jsx')).replace(/\r/g, '');
-  ok('a finger turns the 3D box: pointer events with touch-action off on the stage, no mouse-only handlers left',
-     /style=\{\{ perspective: '1200px', touchAction: 'none' \}\}/.test(re) && /onPointerDown=\{handlePointerDown\} onPointerMove=\{handlePointerMove\}/.test(re) && !/onMouseDown=\{handleMouseDown\}/.test(re));
+  /* SUPERSEDED 2026-10-10, his pick A + "add the view in fullscreen button": a drag on the small box sometimes moved the
+     whole page ("sometimes when rotate the 3D model it move the whole page instead"). The small box no longer turns on a
+     drag - the page scrolls through it - and a tap or the button opens the sales terminal's fullscreen viewer
+     (ExamineModal, fixed, nothing behind it moves), where the finger turns it. */
+  ok('the small Master Vault box never takes a drag (the page scrolls through it); a tap or "View in fullscreen" opens the sales terminal viewer',
+     /style=\{\{ perspective: '1200px', touchAction: 'manipulation' \}\}/.test(re) && !/handlePointerMove|setPointerCapture|touchAction: 'none'/.test(re) &&
+     /onClick=\{\(\) => onExpand\?\.\(product\)\}/.test(re) && /View in fullscreen\s*<\/button>/.test(re) && /onExpand=\{onInspect\}/.test(re) &&
+     /onInspect=\{\(item\) => setExaminingProduct\(item\)\}[\s\S]{0,400}<\/div>|<ResidentEvilInventory[\s\S]*?onInspect=\{\(item\) => setExaminingProduct\(item\)\}/.test(a));
+  ok('the product form has its description box again, saved by the form like every other field (his 2026-10-10 "the description editor for each product is gone")',
+     /<textarea name="description" defaultValue=\{editingProduct\.description \|\| ''\}/.test(a));
   ok('a finger moves the cropper photo and its handles: pointer events on document, touch-action off, no mousemove left',
      /document\.addEventListener\('pointermove', onPointerMove\)/.test(ic) && /document\.addEventListener\('pointercancel', onPointerUp\)/.test(ic) &&
      (ic.match(/touchAction: 'none'/g) || []).length === 4 && !/mousemove|onMouseDown/.test(ic));

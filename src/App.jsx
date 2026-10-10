@@ -4975,6 +4975,7 @@ const handleGitHubMirror = async () => {
                   searchTerm={searchTerm}
                   onSearch={setSearchTerm}
                   inventory={filteredInventory}
+                  onInspect={(item) => setExaminingProduct(item)}
                   motorists={motorists}
                   transactions={transactions}
                   isAdmin={isAdmin}
@@ -5025,6 +5026,8 @@ const handleGitHubMirror = async () => {
                             <div className="grid md:grid-cols-2 gap-8">
                                 <div className="space-y-4">
                                     <div><label className="text-[var(--duke-ink-8)] block mb-1">PRODUCT NAME</label><input name="name" defaultValue={editingProduct.name} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none"/></div>
+                                    {/* the description shows in the fullscreen viewer (ExamineModal); handleSaveProduct takes it from the form like every other field (his 2026-10-10 "the description editor for each product is gone") */}
+                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">DESCRIPTION</label><textarea name="description" defaultValue={editingProduct.description || ''} rows={3} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none resize-y"/></div>
 
                                   {/* --- PINPOINT: Edit Product Modal --- */}
                                     <div className="grid grid-cols-4 gap-2">
