@@ -10579,5 +10579,23 @@ section('The public demo build (VITE_DEMO=1, his picks 2026-10-06 + 2026-10-10 "
      sends.length >= 2 && sends.every((s) => s.guarded));
 }
 
+section('The demo seed (demo/seed.json, made by tools/demo-seed-from-backup.mjs from his real backup, his pick A 2026-10-10) - nothing private on a public page');
+{
+  /* DEMO_SEED points this at another file - how it was proven red: on the raw backup every check below fails */
+  const seed = JSON.parse(read(process.env.DEMO_SEED || 'demo/seed.json'));
+  const SHOP_OK = new Set(['id', 'name', 'city', 'province', 'region', 'storeType', 'tier', 'priceTier', 'pricingTier', 'status', 'visitFreq',
+    'catchmentScale', 'lifetimeXP', 'seasonXP', 'lastXPUpdate', 'createdAt', 'updatedAt', 'latitude', 'longitude', 'mapFolder', 'assignedAgent']);
+  const shops = seed.customers || [], items = seed.inventory || [];
+  const extra = [...new Set(shops.flatMap((c) => Object.keys(c).filter((k) => !SHOP_OK.has(k))))];
+  ok(`the shops carry only allowed fields - no phone, address, photo, note, contact, debt, competitor note (extra: ${extra.join(', ') || 'none'})`,
+     shops.length >= 100 && extra.length === 0 && !JSON.stringify(shops).includes('data:image') && !shops.some((c) => /\d{9,}/.test(String(c.name))));
+  ok('no real salesman or folder name on a shop: demo-agent-n / Folder n only; no activity log, no sales history in the seed',
+     shops.every((c) => (c.assignedAgent === undefined || /^demo-agent-\d+$/.test(c.assignedAgent)) && (c.mapFolder === undefined || /^Folder \d+$/.test(c.mapFolder)))
+     && !('auditLogs' in seed) && !('transactions' in seed) && seed.appSettings?.companyName === 'KPM Demo');
+  const P = ['priceDistributor', 'priceGrosir', 'priceRetail', 'priceEcer'];
+  ok('his "easier to compute" prices: every price a multiple of Rp 500, distributor < grosir < retail < ecer',
+     items.length >= 1 && items.every((p) => P.every((k) => p[k] > 0 && p[k] % 500 === 0) && P.every((k, i) => i === 0 || p[P[i - 1]] < p[k])));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
