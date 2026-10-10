@@ -98,6 +98,15 @@
       ],
       "port": 4195,
       "url": "http://localhost:4195"
+    },
+    {
+      "name": "sound-studio-check",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "C:/Users/ASUS/AppData/Local/Temp/claude/D--APP-DEVELOPMENT-kpm-inventory-main-FILES-kpm-inventory-main/52ba992a-034f-45e0-b237-6207300e88bb/scratchpad/studio/serve.mjs"
+      ],
+      "port": 4196,
+      "url": "http://localhost:4196"
     }
   ]
 }
