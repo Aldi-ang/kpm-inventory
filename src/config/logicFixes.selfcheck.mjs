@@ -10579,6 +10579,18 @@ section('The public demo build (VITE_DEMO=1, his picks 2026-10-06 + 2026-10-10 "
      sends.length >= 2 && sends.every((s) => s.guarded));
 }
 
+section('A product save reports what the SERVER said (his pick B, 2026-10-10: the save landed but the strip said "on this device only")');
+{
+  const save = app.slice(app.indexOf('const handleSaveProduct'), app.indexOf('const handleUpdateProduct'));
+  ok('the wait for the server is 10 s, not 1.5 s - a photo-heavy product on a slow line was called "device only" while it landed',
+     /setTimeout\(\(\) => resolve\(false\), 10000\)/.test(save) && !/resolve\(false\), 1500\)/.test(save));
+  ok('a phone that is really offline is told at once, with no 10 s wait (navigator.onLine)',
+     /navigator\.onLine === false/.test(save));
+  ok('"Saving…" shows on the button while it waits, and the button cannot be pressed twice',
+     /setSavingProduct\(true\)/.test(save) && /setSavingProduct\(false\)/.test(save)
+     && /disabled=\{savingProduct\}/.test(app) && /\{savingProduct \? 'Saving…' : 'Update Database'\}/.test(app));
+}
+
 section('The demo seed (demo/seed.json, made by tools/demo-seed-from-backup.mjs from his real backup, his pick A 2026-10-10) - nothing private on a public page');
 {
   /* DEMO_SEED points this at another file - how it was proven red: on the raw backup every check below fails */

@@ -1645,6 +1645,7 @@ const handleGitHubMirror = async () => {
 
   // UI States
   const [editingProduct, setEditingProduct] = useState(null);
+  const [savingProduct, setSavingProduct] = useState(false);
   const [examiningProduct, setExaminingProduct] = useState(null);
   const [tempImages, setTempImages] = useState({}); 
   const [tempCustomerImage, setTempCustomerImage] = useState(null); // Staging for customer photo
@@ -3599,14 +3600,17 @@ const handleGitHubMirror = async () => {
              put it in the local cache and replays it on reconnect — so the only thing broken
              was his ability to find that out.
 
-             So: wait a moment for an acknowledgement, then report whichever happened. A late
+             So: wait for an acknowledgement, then report whichever happened. A late
              failure still reports, because the catch below stays attached to the same promise.
-             ponytail: fixed 1.5s ack window; make it adaptive only if a slow connection starts
-             reporting "not sent" for writes that did land. */
-          const acked = await Promise.race([
+             10 s, not 1.5 s (his pick B, 2026-10-10): every save re-sends the product's photos, so on
+             his line a description edit landed AFTER 1.5 s and was reported "on this device only".
+             The button says "Saving…" while it waits; a phone that is really offline skips the wait. */
+          setSavingProduct(true);
+          const acked = navigator.onLine === false ? false : await Promise.race([
               write.then(() => true, () => true),   // settled either way — the catch below reports a rejection
-              new Promise(resolve => setTimeout(() => resolve(false), 1500)),
+              new Promise(resolve => setTimeout(() => resolve(false), 10000)),
           ]);
+          setSavingProduct(false);
           write.catch(err => notify(`"${data.name}" was NOT saved. ${err.message}`));
 
           /* Not awaited: the audit trail is a record of the save, never a gate on it. Awaited,
@@ -3628,6 +3632,7 @@ const handleGitHubMirror = async () => {
           setTempImages({});
           setUseFrontForBack(false);
       } catch (err) {
+          setSavingProduct(false);
           console.error(err);
           notify(`Could not save this product. ${err.message || err}`);
       }
@@ -5124,8 +5129,9 @@ const handleGitHubMirror = async () => {
                                    near-black in light put dark text on a dark plate. An ink only
                                    flips when the ground beneath it does. */
                                 className="group w-full mt-6 py-4 bg-[#0d0a09] text-[var(--duke-on-plank)] font-black uppercase tracking-widest text-sm border-2 border-[#3a3128] border-b-[3px] border-b-[#ff9d00] shadow-[0_3px_0_rgba(0,0,0,0.55)] transition-[background-color,border-color,letter-spacing,transform] duration-150 ease-out hover:bg-[#1c1814] hover:border-[var(--duke-edge-3)] hover:border-b-[#ff9d00] hover:tracking-[0.22em] active:translate-y-[3px] active:shadow-none"
+                                disabled={savingProduct}
                             >
-                                Update Database
+                                {savingProduct ? 'Saving…' : 'Update Database'}
                             </button>
                         </form>
                     </div>
