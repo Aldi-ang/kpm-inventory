@@ -10805,5 +10805,18 @@ section('THE AMBER BUTTONS GET A GOLD EDGE (2026-10-12) - his "the yellow backgr
      /\.kpm-edgebtn:active \{ background: color-mix\(in srgb, var\(--accent-edge\) 22%, var\(--plate\)\); \}/.test(th) && !/\.kpm-edgebtn[^{]*\{[^}]*(?:(?:background|color): var\(--gold\)|shadow)/.test(th));
 }
 
+section('THE MASUK ROUTE CAPTION NO LONGER SITS ON PENGIRIM (2026-10-12) - his "these malang 1 is also almost collapsing with the other textbox ... inside the restock vault \\"masuk\\" panel"');
+{
+  const rv = read('src/RestockVaultView.jsx');
+  /* the picked place's address (or the "nothing registered" hint) hangs under its box with `lg:absolute top-full` so the
+     route row's boxes stay level - 4 px + a 15 px line = 19 px below the row, into a 14 px gap: 5 px on top of the
+     Pengirim label (measured at 1280 in the built lab). The rows now carry that room themselves. */
+  const rowOf = (word) => { const i = rv.indexOf(word), j = rv.lastIndexOf('<div className="grid', i); return i < 0 || j < 0 ? '' : rv.slice(j, rv.indexOf('>', j)); };
+  ok('the caption is still placed under its own box (absolute on the desk, so Asal and Tujuan stay level)',
+     (rv.match(/<p className="static lg:absolute lg:left-0 lg:right-0 lg:top-full mt-1 text-\[10px\]/g) || []).length === 2);
+  ok('both Masuk rows that hold the pickers (Asal / Tujuan, Pengirim / Penerima) keep 20 px under them on the desk for that caption',
+     [rowOf('label="Asal" value={poData.supplierName}'), rowOf('label="Pengirim" value={poData.deliveredBy}')].every((r) => /\blg:pb-5\b/.test(r)));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

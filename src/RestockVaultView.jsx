@@ -1913,8 +1913,10 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                 </div>
                             )}
 
-                            {/* THE ROUTE — the field that makes one form do both jobs */}
-                            <div className="grid grid-cols-1 sm:grid-cols-[1fr_44px_1fr] gap-2 items-end">
+                            {/* THE ROUTE — the field that makes one form do both jobs. lg:pb-5 = room for the
+                                address that hangs under a picked place on the desk (his "almost
+                                collapsing", 2026-10-12: it sat 5 px on the Pengirim label) */}
+                            <div className="grid grid-cols-1 sm:grid-cols-[1fr_44px_1fr] gap-2 items-end lg:pb-5">
                                 {/* MASUK: goods come FROM a factory. KELUAR: they leave the master
                                     vault. Either way Asal is never a free list of everything —
                                     that is how a delivery could once run factory → factory. */}
@@ -1944,7 +1946,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                 invented. They are facts about THIS delivery — the old nota printed
                                 the fixed words "Factory Logistics" and whoever happened to be
                                 logged in when the paper was opened. */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-end">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-end lg:pb-5">
                                 <RouteCombo
                                     label="Pengirim" value={poData.deliveredBy}
                                     onChange={v => setPoData({ ...poData, deliveredBy: v })}
