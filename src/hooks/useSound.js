@@ -64,6 +64,12 @@ const SOURCES = {
   chestPage:       '/sounds/chest-page.mp3',
   chestRefuse:     '/sounds/chest-refuse.mp3',
   chestLoad:       '/sounds/chest-load.mp3',
+  /* The message strip (Toast.jsx). Kenney "Interface Sounds" (CC0, msg-LICENSE.txt beside them), cut, pitched,
+     bass-cut and given the studio's room from what Aldi saved in the message sound studio — rendered by
+     tools/sfx-bake.mjs, so change a sound there, not here. Their own files: until 2026-10-11 a message borrowed
+     `commit`, the SALE, so "saved" sounded like money moving. */
+  msgIn:   '/sounds/msg-in.mp3',
+  msgFail: '/sounds/msg-fail.mp3',
 };
 
 const MUMBLES = ['mumble1', 'mumble2', 'mumble3', 'mumble4'];
@@ -86,6 +92,7 @@ const VOLUMES = {
   /* The chest files hold his studio loudness already; at 1.0 the element plays exactly that. */
   chestEnderOpen: 1.0, chestEnderClose: 1.0, chestVanOpen: 1.0, chestVanClose: 1.0,
   chestPick: 1.0, chestLand: 1.0, chestPage: 1.0, chestRefuse: 1.0, chestLoad: 1.0,
+  msgIn: 1.0, msgFail: 1.0,
 };
 const DEFAULT_VOLUME = 0.85;
 
@@ -109,6 +116,8 @@ const BOOST = {
   /* No boost either: each chest file already holds the loudness he set in the studio. */
   chestEnderOpen: 1.0, chestEnderClose: 1.0, chestVanOpen: 1.0, chestVanClose: 1.0,
   chestPick: 1.0, chestLand: 1.0, chestPage: 1.0, chestRefuse: 1.0, chestLoad: 1.0,
+  /* Same for the message strip: the files hold the loudness he set in the message studio. */
+  msgIn: 1.0, msgFail: 1.0,
 };
 const DEFAULT_BOOST = 1.8;
 

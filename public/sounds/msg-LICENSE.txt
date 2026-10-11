@@ -1,0 +1,8 @@
+msg-*.mp3 — the message strip's sounds (msg-in: a message, msg-fail: a failure).
+
+Made from recordings in "Interface Sounds" by Kenney (https://kenney.nl/assets/interface-sounds),
+licensed Creative Commons Zero, CC0: http://creativecommons.org/publicdomain/zero/1.0/
+You may use them in personal, educational and commercial projects. Credit is not required.
+
+Each file is a recording cut, pitched, bass-cut and given a short room by tools/sfx-bake.mjs,
+from the settings Aldi saved in the message sound studio.

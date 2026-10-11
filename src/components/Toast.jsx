@@ -90,11 +90,11 @@ export function ToastHost() {
                he should be able to tell them apart without looking up. Both are no-ops under
                Lite Mode and before the first user gesture — playSound handles that itself.
 
-               `commit` (0.18s), NOT `tap`. tap is 45 MILLISECONDS long, and at that length it
-               is not a quiet sound, it is an inaudible one — Aldi reported the strips as having
-               no SFX at all and this was half the reason. Measure a sound before choosing it;
-               the file being present says nothing about it being hearable. */
-            playSound(item.bad ? 'error' : 'commit');
+               Their OWN files, picked and tuned by Aldi in the message sound studio (2026-10-10).
+               Until then a message borrowed `commit`, the SALE sound, so "saved" sounded like
+               money moving. Never `tap` either: it is 45 MILLISECONDS long, and at that length it
+               is not a quiet sound, it is an inaudible one — his "no SFX at all" report. */
+            playSound(item.bad ? 'msgFail' : 'msgIn');
             /* silent: a message that times out on its own was not dismissed BY him, so it gets
                the exit animation but no click sound. Every strip, failures included (FADE_MS). */
             timers.current.set(item.id, setTimeout(() => dismiss(item.id, true), FADE_MS));

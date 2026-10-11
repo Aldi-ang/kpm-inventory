@@ -1,12 +1,15 @@
-/* Renders the van-loading chest's sounds from Aldi's SOUND STUDIO into files for the app.
-   Run: node tools/sfx-bake.mjs   (needs ffmpeg on PATH; writes public/sounds/chest-*.mp3)
+/* Renders Aldi's SOUND STUDIO saves into files for the app.
+   Run: node tools/sfx-bake.mjs   (needs ffmpeg on PATH; writes public/sounds/chest-*.mp3 and msg-*.mp3)
 
-   The studio (the prototype artifact, https://claude.ai/artifact/M3xbaPAJ9LT7FL1ETmXvuu) plays each moment
-   as: his recording, cut to his start/end, at his pitch, 4 ms in / 25 ms out, at loudness x master, plus a
-   share of a dark room (a 0.9 s convolution tail) set by ROOM. An <audio> element can do none of that live,
-   so it is rendered here the way the studio's Web Audio graph does it, and the app plays the result as is.
-   He changes a sound: he presses SIMPAN in the studio, the new numbers from sfx/settings go into SET below,
-   and this runs again. The recordings are the ones the studio plays (tools/sfx-kenney.js, Kenney, CC0). */
+   Each studio (a prototype artifact) plays a moment as: his recording, cut to his start/end, at his pitch,
+   through a high-pass at his bass cut (the message studio only), 4 ms in / 25 ms out, at loudness x master,
+   plus a share of that studio's room (a short convolution tail) set by ROOM. An <audio> element can do none
+   of that live, so it is rendered here the way the studio's Web Audio graph does it, and the app plays the
+   result as is. He changes a sound: he presses Save in the studio, the new numbers from sfx/settings go into
+   the studio's block below, and this runs again.
+     - the van-loading chests: https://claude.ai/artifact/M3xbaPAJ9LT7FL1ETmXvuu (tools/sfx-kenney.js, Kenney RPG Audio, CC0)
+     - the message strip:      https://claude.ai/artifact/AmgCRrR8s8MfPaAxfPQtNr (Kenney Interface Sounds, CC0, read from
+       the A-Brain vault's Raw/2026-10-10-sfx-packs - not in the repo; if missing, re-download kenney.nl "Interface Sounds") */
 import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -28,50 +31,83 @@ const FILE = { enderOpen: 'chest-ender-open', enderClose: 'chest-ender-close', w
   woodClose: 'chest-van-close', pick: 'chest-pick', land: 'chest-land', page: 'chest-page',
   refuse: 'chest-refuse', done: 'chest-load' };
 
+/* the message studio's sfx/settings version 1, saved by Aldi 2026-10-10 22:24 WIB. Only the two he accepted:
+   the capybara and the intro he rejected (*"the capybara talk is not satisfying enough"*), so they are not baked. */
+const MSG = { room: .6, master: 1, ev: {
+  msg:  { src: 'confirmation_002', start: 0, end: .575, vol: .29, rate: 1.8, hp: 180 },
+  fail: { src: 'error_002',        start: 0, end: .194, vol: .14, rate: 1,   hp: 0 },
+} };
+const MSG_FILE = { msg: 'msg-in', fail: 'msg-fail' };
+
 const SR = 44100;
 const pack = fs.readFileSync(new URL('./sfx-kenney.js', import.meta.url), 'utf8');
+const KENNEY = new URL('../../A-Brain/Raw/2026-10-10-sfx-packs/kenney_interface-sounds/Audio/', import.meta.url);
 const OUT = new URL('../public/sounds/', import.meta.url);
 
-function recording(name) {
-  const m = pack.match(new RegExp('"' + name + '": "([^"]+)"'));
-  if (!m) throw new Error('no recording named ' + name);
+function decode(mp3) {
   const r = spawnSync('ffmpeg', ['-v', 'error', '-f', 'mp3', '-i', 'pipe:0', '-f', 'f32le', '-ac', '1', '-ar', String(SR), 'pipe:1'],
-    { input: Buffer.from(m[1], 'base64'), maxBuffer: 1 << 26 });
+    { input: mp3, maxBuffer: 1 << 26 });
   if (r.status) throw new Error(String(r.stderr));
   /* The browser's decoder clamps to full scale and ffmpeg's does not: metalLatch decodes to a 1.71 peak here and
      1.00 in the studio (measured 2026-09-24). He heard the clamped one, so it is clamped here too. */
   return new Float32Array(new Uint8Array(r.stdout).buffer).map(v => Math.max(-1, Math.min(1, v)));
 }
+function chestRecording(name) {
+  const m = pack.match(new RegExp('"' + name + '": "([^"]+)"'));
+  if (!m) throw new Error('no recording named ' + name);
+  return decode(Buffer.from(m[1], 'base64'));
+}
+/* the message studio played each .ogg as the mp3 its build-pack.mjs made (mono, 44.1 kHz, 112k) - same here */
+function studioRecording(name) {
+  const r = spawnSync('ffmpeg', ['-v', 'error', '-i', fileURLToPath(new URL(name + '.ogg', KENNEY)),
+    '-ac', '1', '-ar', '44100', '-b:a', '112k', '-f', 'mp3', 'pipe:1'], { maxBuffer: 1 << 26 });
+  if (r.status) throw new Error(name + ': ' + r.stderr);
+  return decode(r.stdout);
+}
 
-/* the studio's room(), sample for sample: two channels of darkened noise, silent for 8 ms, dying over ~0.2 s */
+/* a studio's room(), sample for sample: two channels of darkened noise, silent for the first few ms, dying away */
 function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296 * 2 - 1; }; }
-const N = Math.floor(SR * .9);
-const IR = [0, 1].map(ch => {
-  const d = new Float32Array(N), r = rng(7 + ch); let y = 0;
-  for (let i = 0; i < N; i++) { y += .28 * (r() - y); d[i] = i < SR * .008 ? 0 : y * Math.exp(-i / (SR * .2)); }
-  return d;
-});
-/* a ConvolverNode normalises its impulse by default (Web Audio spec, ConvolverNode "normalize"); same scale */
-let power = 0;
-for (const d of IR) for (const v of d) power += v * v;
-const NORM = 0.00125 / Math.max(Math.sqrt(power / (2 * N)), 0.000125);
+function room(seconds, dark, quiet, decay, seed) {
+  const N = Math.floor(SR * seconds);
+  const IR = [0, 1].map(ch => {
+    const d = new Float32Array(N), r = rng(seed + ch); let y = 0;
+    for (let i = 0; i < N; i++) { y += dark * (r() - y); d[i] = i < SR * quiet ? 0 : y * Math.exp(-i / (SR * decay)); }
+    return d;
+  });
+  /* a ConvolverNode normalises its impulse by default (Web Audio spec, ConvolverNode "normalize"); same scale */
+  let power = 0;
+  for (const d of IR) for (const v of d) power += v * v;
+  return { N, IR, NORM: 0.00125 / Math.max(Math.sqrt(power / (2 * N)), 0.000125) };
+}
 
-function render(s) {
-  const b = recording(s.src), dur = b.length / SR;
+/* the message studio's BiquadFilterNode 'highpass', Q .707 - for this type the Web Audio spec reads Q in dB */
+function highpass(x, f, q) {
+  const w = 2 * Math.PI * f / SR, c = Math.cos(w), a = Math.sin(w) / (2 * Math.pow(10, q / 20)), a0 = 1 + a;
+  const b0 = (1 + c) / 2 / a0, b1 = -(1 + c) / a0, a1 = -2 * c / a0, a2 = (1 - a) / a0;
+  let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+  return x.map(v => { const y = b0 * v + b1 * x1 + b0 * x2 - a1 * y1 - a2 * y2; x2 = x1; x1 = v; y2 = y1; y1 = y; return y; });
+}
+
+function render(s, set, rec, { N, IR, NORM }) {
+  const b = rec(s.src), dur = b.length / SR;
   const start = Math.min(s.start, dur - .02), end = Math.max(start + .02, Math.min(s.end, dur));
-  const len = (end - start) / s.rate, n = Math.round(len * SR), v = s.vol * SET.master, hold = Math.max(.005, len - .025);
-  const x = new Float64Array(n);
+  const len = (end - start) / s.rate, n = Math.round(len * SR), v = s.vol * set.master, hold = Math.max(.005, len - .025);
+  let x = new Float64Array(n);
   for (let k = 0; k < n; k++) {
-    const t = k / SR, p = start * SR + k * s.rate, i = Math.floor(p), f = p - i;   // playbackRate = linear read
-    const g = t < .004 ? v * t / .004 : t < hold ? v : v * Math.max(0, (len - t) / (len - hold));
-    x[k] = ((b[i] ?? 0) * (1 - f) + (b[i + 1] ?? 0) * f) * g;
+    const p = start * SR + k * s.rate, i = Math.floor(p), f = p - i;   // playbackRate = linear read
+    x[k] = (b[i] ?? 0) * (1 - f) + (b[i + 1] ?? 0) * f;
+  }
+  if (s.hp != null) x = highpass(x, Math.max(10, s.hp), .707);          // the studio: source -> high-pass -> gain
+  for (let k = 0; k < n; k++) {
+    const t = k / SR;
+    x[k] *= t < .004 ? v * t / .004 : t < hold ? v : v * Math.max(0, (len - t) / (len - hold));
   }
   /* dry (mono, heard in both ears) + ROOM x the room, per channel */
   const out = IR.map(h => {
     const o = new Float64Array(n + N - 1);
     for (let k = 0; k < n; k++) {
       o[k] += x[k];
-      const w = x[k] * SET.room * NORM; if (!w) continue;
+      const w = x[k] * set.room * NORM; if (!w) continue;
       for (let j = 0; j < N; j++) o[k + j] += w * h[j];
     }
     return o;
@@ -88,13 +124,17 @@ function render(s) {
   return { pcm, seconds: size / SR, peak };
 }
 
-for (const [ev, s] of Object.entries(SET.ev)) {
-  const { pcm, seconds, peak } = render(s);
+const STUDIOS = [
+  { set: SET, file: FILE, rec: chestRecording, room: room(.9, .28, .008, .2, 7) },
+  { set: MSG, file: MSG_FILE, rec: studioRecording, room: room(.6, .35, .006, .12, 11) },
+];
+for (const { set, file: names, rec, room: rm } of STUDIOS) for (const [ev, s] of Object.entries(set.ev)) {
+  const { pcm, seconds, peak } = render(s, set, rec, rm);
   if (peak > .99) throw new Error(ev + ' peaks at ' + peak.toFixed(3) + ' - it would clip; lower its loudness in the studio');
-  const file = new URL(FILE[ev] + '.mp3', OUT);
+  const file = new URL(names[ev] + '.mp3', OUT);
   const r = spawnSync('ffmpeg', ['-v', 'error', '-y', '-f', 'f32le', '-ar', String(SR), '-ac', '2', '-i', 'pipe:0',
     '-c:a', 'libmp3lame', '-b:a', '96k', fileURLToPath(file)], { input: Buffer.from(pcm.buffer) });
   if (r.status) throw new Error(String(r.stderr));
-  console.log(FILE[ev].padEnd(18), seconds.toFixed(2) + ' s', 'peak ' + peak.toFixed(2),
+  console.log(names[ev].padEnd(18), seconds.toFixed(2) + ' s', 'peak ' + peak.toFixed(2),
     (fs.statSync(file).size / 1024).toFixed(1) + ' KB', '<- ' + s.src);
 }

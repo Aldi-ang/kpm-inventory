@@ -10609,5 +10609,25 @@ section('The demo seed (demo/seed.json, made by tools/demo-seed-from-backup.mjs 
      items.length >= 1 && items.every((p) => P.every((k) => p[k] > 0 && p[k] % 500 === 0) && P.every((k, i) => i === 0 || p[P[i - 1]] < p[k])));
 }
 
+section('THE MESSAGE STRIP\'S OWN SOUNDS (2026-10-11) - his message-studio save: message = confirmation_002, failure = error_002; a message never borrows the sale sound');
+{
+  const tst = code(read('src/components/Toast.jsx')), us = code(read('src/hooks/useSound.js')), bake = read('tools/sfx-bake.mjs');
+  ok('a message strip plays msgIn / msgFail - never `commit` (the SALE) and never `error` (the stepper floor still uses it)',
+     /playSound\(item\.bad \? 'msgFail' : 'msgIn'\)/.test(tst) && !/playSound\([^)]*'(commit|error|tap)'/.test(tst));
+  ok('both are registered files, played at 1.0 with no boost - the file already holds his studio loudness',
+     /msgIn:\s*'\/sounds\/msg-in\.mp3'/.test(us) && /msgFail:\s*'\/sounds\/msg-fail\.mp3'/.test(us)
+     && (us.match(/msgIn: 1\.0, msgFail: 1\.0/g) || []).length === 2
+     && /commit:\s*'\/sounds\/commit\.mp3'/.test(us) && /error:\s*'\/sounds\/error\.mp3'/.test(us));
+  const files = ['msg-in.mp3', 'msg-fail.mp3', 'msg-LICENSE.txt'].map((f) => 'public/sounds/' + f);
+  ok('the two files and their CC0 licence are in public/sounds, and each is a short blip, not a capture (< 20 KB)',
+     files.every((f) => fs.existsSync(f)) && files.slice(0, 2).every((f) => fs.statSync(f).size > 2000 && fs.statSync(f).size < 20_000));
+  ok('the bake carries his save as he left it: msg confirmation_002 x1.8, 0.29, bass cut 180 Hz, 0-0.575 s; fail error_002 0-0.194 s, 0.14; echo 0.6, master 1',
+     /msg:\s*\{ src: 'confirmation_002', start: 0, end: \.575, vol: \.29, rate: 1\.8, hp: 180 \}/.test(bake)
+     && /fail:\s*\{ src: 'error_002',\s*start: 0, end: \.194, vol: \.14, rate: 1,\s*hp: 0 \}/.test(bake)
+     && /const MSG = \{ room: \.6, master: 1,/.test(bake));
+  ok('the message studio\'s OWN room (0.6 s, decay 0.12 s, seed 11) and its high-pass (Q in dB, Web Audio), never the chest studio\'s 0.9 s room',
+     /room\(\.6, \.35, \.006, \.12, 11\)/.test(bake) && /room\(\.9, \.28, \.008, \.2, 7\)/.test(bake) && /Math\.pow\(10, q \/ 20\)/.test(bake));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
