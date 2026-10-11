@@ -107,6 +107,15 @@
       ],
       "port": 4196,
       "url": "http://localhost:4196"
+    },
+    {
+      "name": "sound-studio-r2",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/Raw/2026-10-11-sfx-round2/serve.mjs"
+      ],
+      "port": 4197,
+      "url": "http://localhost:4197"
     }
   ]
 }
