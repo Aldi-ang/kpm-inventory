@@ -10818,5 +10818,22 @@ section('THE MASUK ROUTE CAPTION NO LONGER SITS ON PENGIRIM (2026-10-12) - his "
      [rowOf('label="Asal" value={poData.supplierName}'), rowOf('label="Pengirim" value={poData.deliveredBy}')].every((r) => /\blg:pb-5\b/.test(r)));
 }
 
+section('THE STOCK TABLE NUMBERS LINE UP (2026-10-12) - his "it is annoying to see that the number inside the restock vault is not inline inside this product quantity table here"');
+{
+  const t = read('src/ponder/stages/StockByWarehouseTable.jsx');
+  /* each row was its OWN grid, and the name track is minmax(260px, max-content) - so a product with a long name or a long
+     grey "oldest pack ... with no delivery record" line widened only its own first column and pushed its numbers right */
+  ok('ONE column template, on the table itself; every row (header, warehouse, product, company total) and every wrapper between them borrows it as a subgrid - a browser without subgrid falls back to the template per row',
+     /const SUB = `col-span-full grid \$\{TRACKS\} supports-\[grid-template-columns:subgrid\]:grid-cols-subgrid`;/.test(t) && /const COLS = `\$\{SUB\} gap-x-6 items-center`;/.test(t) &&
+     /<div className=\{`min-w-\[1080px\] grid \$\{TRACKS\} gap-x-6`\}>/.test(t) && (t.match(/className=\{`\$\{COLS\}/g) || []).length === 4 && (t.match(/className=\{`\$\{SUB\}/g) || []).length === 3 &&
+     /col-span-full px-5 py-2 text-\[11px\]/.test(t));
+  /* a 0fr grid track stops collapsing once its drawer is a row of the table's grid (the grid sizes that row from its
+     content: BANDUNG stayed 157 px "closed" in the lab) - so the drawer slides by its measured height instead */
+  ok('a warehouse drawer still opens and shuts: it slides by its measured height (no 0fr track left), stays mounted at 0 px when shut, and lands on auto when Lite Mode has no transition',
+     !/gridTemplateRows|0fr/.test(code(t)) && /<Drawer open=\{open\}>/.test(t) && /el\.style\.height = `\$\{el\.scrollHeight\}px`;/.test(t) &&
+     /if \(!open\) \{ void el\.offsetHeight; el\.style\.height = '0px'; \}/.test(t) && /else if \(getComputedStyle\(el\)\.transitionProperty === 'none'\) el\.style\.height = 'auto';/.test(t) &&
+     /overflow-hidden transition-\[height\] duration-300 ease-out/.test(t));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -31,14 +31,44 @@ import { MASTER } from '../../utils/supply.js';
 
    `gap-x-6` because the numbers are right-aligned against a left-aligned name; four is enough for
    two numeric columns and too little between a word and a figure. */
-const COLS = 'grid grid-cols-[minmax(260px,max-content)_100px_104px_124px_96px_108px_104px_112px] gap-x-6 items-center';
+const TRACKS = 'grid-cols-[minmax(260px,max-content)_100px_104px_124px_96px_108px_104px_112px]';
+/* ONE template, on the table (2026-10-12, his "the number inside the restock vault is not inline"): every
+   row used to be its own grid, so `max-content` measured only that row - a long name or a long grey
+   "oldest pack ..." line widened its own first column and pushed its numbers ~16 px right. Now every
+   row, and every wrapper between the table and a row, borrows the table's columns (subgrid), and the
+   name column is as wide as the longest name in the whole table - drawers included, so opening one
+   moves nothing. A browser without subgrid keeps the old per-row template. */
+const SUB = `col-span-full grid ${TRACKS} supports-[grid-template-columns:subgrid]:grid-cols-subgrid`;
+const COLS = `${SUB} gap-x-6 items-center`;
 
 const n = (v) => Number(v || 0).toLocaleString('id-ID');
+
+/* A warehouse's products slide open by their measured height. It was a 0fr -> 1fr grid track, but the
+   drawer is a row of the table's grid now (so its products share the columns), and a grid sizes that
+   row from its content - 0fr never reached 0 (BANDUNG stayed 157 px "closed" in the lab). Shut, it
+   stays mounted at 0 px, so the tutorial's keys still resolve. Lite Mode has no transition (its
+   property is `none`, the duration .001s), so it lands on `auto` at once. */
+function Drawer({ open, children }) {
+  const ref = React.useRef(null), first = React.useRef(true);
+  React.useLayoutEffect(() => {
+    const el = ref.current;
+    if (first.current) { first.current = false; el.style.height = open ? 'auto' : '0px'; return; }
+    el.style.height = `${el.scrollHeight}px`;   /* from where it stands, in px: `auto` cannot be animated */
+    if (!open) { void el.offsetHeight; el.style.height = '0px'; }
+    else if (getComputedStyle(el).transitionProperty === 'none') el.style.height = 'auto';   /* Lite Mode: no slide, no transitionend */
+  }, [open]);
+  return (
+    <div ref={ref} className={`${SUB} overflow-hidden transition-[height] duration-300 ease-out`}
+      onTransitionEnd={(e) => { if (open && e.target === ref.current) ref.current.style.height = 'auto'; }}>
+      {children}
+    </div>
+  );
+}
 
 export default function StockByWarehouseTable({ rows = [], openGudang, onToggle, totals = {} }) {
   return (
     <div className="overflow-x-auto">
-      <div className="min-w-[1080px]">
+      <div className={`min-w-[1080px] grid ${TRACKS} gap-x-6`}>
 
         <div className={`${COLS} px-5 pb-2.5 border-b border-line-2 text-[10px] font-bold text-ink-muted uppercase tracking-widest`}>
           {/* Renamed 2026-08-27 on his instruction: *"dont make vague terms"*, and
@@ -72,7 +102,7 @@ export default function StockByWarehouseTable({ rows = [], openGudang, onToggle,
                cannot be tied to the `row:` keys the scenes ask for, so the check that stops scenes
                rotting would have had to be loosened to accept it. Loosening a guard to fit the
                code is how the guard stops catching anything. */
-            <div key={r.name} data-ponder={`row:${r.name === MASTER ? 'master' : r.name.toLowerCase()}`} className="border-b border-line-2 last:border-b-0">
+            <div key={r.name} data-ponder={`row:${r.name === MASTER ? 'master' : r.name.toLowerCase()}`} className={`${SUB} border-b border-line-2 last:border-b-0`}>
 
               <div className={`${COLS} px-5 transition-colors duration-200 ${open ? 'bg-raised py-3 pb-4' : 'py-3 hover:bg-raised/50'}`}>
                 <div data-ponder="col:warehouse">
@@ -112,13 +142,7 @@ export default function StockByWarehouseTable({ rows = [], openGudang, onToggle,
                 </span>
               </div>
 
-              {/* 0fr → 1fr is the whole animation. `height: auto` cannot be
-                  transitioned; a grid track can, and it measures itself. */}
-              <div
-                className="grid transition-[grid-template-rows] duration-300 ease-out"
-                style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
-              >
-                <div className="overflow-hidden">
+              <Drawer open={open}>
                   {/* SPACE, not another rule, is what separates a warehouse
                       from its products. His note: *"there should be personal
                       space between the location line and the product lines
@@ -127,9 +151,9 @@ export default function StockByWarehouseTable({ rows = [], openGudang, onToggle,
                       rows; the border is gone and the padding does the work.
                       The tone change (bg-inset) already says "nested" — a
                       line on top of that was saying it twice. */}
-                  <div data-ponder={`drawer:${r.name === MASTER ? 'master' : r.name.toLowerCase()}`} className="bg-inset py-5">
+                  <div data-ponder={`drawer:${r.name === MASTER ? 'master' : r.name.toLowerCase()}`} className={`${SUB} bg-inset py-5`}>
                     {r.detail.length === 0 ? (
-                      <p className="px-5 py-2 text-[11px] text-ink-muted uppercase tracking-widest text-center">
+                      <p className="col-span-full px-5 py-2 text-[11px] text-ink-muted uppercase tracking-widest text-center">
                         No stock recorded at {r.name === MASTER ? 'Master Vault' : r.name}
                       </p>
                     ) : r.detail.map((p, i) => (
@@ -161,8 +185,7 @@ export default function StockByWarehouseTable({ rows = [], openGudang, onToggle,
                       </div>
                     ))}
                   </div>
-                </div>
-              </div>
+              </Drawer>
             </div>
           );
         })}
