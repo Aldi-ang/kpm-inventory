@@ -169,7 +169,33 @@
     }
     return out;
   }
-  function syllable(p, v, on, len, rise, sr = SR) { return p.shape === 'gb' ? chipSyllable(p, v, on, len, rise, sr) : voiceSyllable(p, v, on, len, rise, sr); }
+  /* round 7, his *"change the sfx for capybara to mumbling insted ... some fat but soft mumbling sound, just imagine the
+     duke from resident evil village but inside the sim city"*: shape 'rec' plays a REAL mumbled syllable from his
+     reference video (mumble-pack.js, cut by build-mumble-pack.mjs), at the voice's pitch and with the same slide in /
+     fall / question rise as a made one - so the plan, the baker and the app treat it like any other voice. Each
+     syllable file gets its own clip (picked by its key among the clips nearest its length), pitched down = a bigger
+     chest, two soft low-passes = soft lips (the "mouth size" slider moves them). */
+  const recPcm = {};
+  function recSyllable(p, v, on, len, rise, sr = SR) {
+    const pack = G.KPM_MUMBLE && G.KPM_MUMBLE[p.rec || 'round'], { lenV } = sylLen(p, on, len), key = 'rec' + v + on + len + (rise ? 'R' : '');
+    const n = Math.round(lenV * 1.15 * sr), out = new Float32Array(n);
+    if (!pack || !pack.clips.length) return out;
+    const near = pack.clips.map((c, i) => ({ i, d: Math.abs(c.len * c.f0 / p.f - lenV) })).sort((a, b) => a.d - b.d).slice(0, 6);
+    const ci = near[hash(key) % near.length].i, c = pack.clips[ci];
+    if (!recPcm[ci + p.rec]) { const bytes = Uint8Array.from(atob(c.pcm), (ch) => ch.charCodeAt(0)), i16 = new Int16Array(bytes.buffer); recPcm[ci + p.rec] = Float32Array.from(i16, (x) => x / 32768); }
+    const src = recPcm[ci + p.rec], cut = 1 - Math.exp(-TAU * 1900 * p.formant / sr);
+    let pos = 0, l1 = 0, l2 = 0, k = 0;
+    for (; k < n && pos < src.length - 1; k++) {
+      const tv = k / sr, u = Math.min(1, tv / lenV);
+      const semis = -p.scoop * Math.max(0, 1 - tv / .06) + (rise ? 3.5 * Math.max(0, (u - .3) / .7) : -p.bend * Math.max(0, (u - .55) / .45));
+      const j = Math.floor(pos), x = src[j] + (src[j + 1] - src[j]) * (pos - j);
+      l1 += cut * (x - l1); l2 += cut * (l1 - l2);
+      out[k] = l2 * Math.min(1, (n - k) / (.03 * sr));
+      pos += p.f * st2(semis) / c.f0 * pack.sr / sr;
+    }
+    return normalize(out, .8);
+  }
+  function syllable(p, v, on, len, rise, sr = SR) { return p.shape === 'gb' ? chipSyllable(p, v, on, len, rise, sr) : p.shape === 'rec' ? recSyllable(p, v, on, len, rise, sr) : voiceSyllable(p, v, on, len, rise, sr); }
 
   /* the line as syllables: each gets the onset class of its first letter, its first vowel, and which word it is in */
   function syllables(text) {
@@ -276,6 +302,11 @@
     return { mix, plan: pl };
   }
   const CAPY = {
+    /* round 7 - his "fat but soft mumbling ... the duke from resident evil village but inside the sim city or maybe esquie
+       voice from expedition 33 but mumbling": the gentleman merchant, happy, never fewer than 3 sounds a line */
+    vidmumble: { label: 'Video mumble (fat + soft)', hint: 'the real mumbles from your video (Gravity Sound), pitched down into a big chest and softened - Sim City talk from a gentleman', shape: 'rec', rec: 'round', moods: 'happy', f: 118, formant: .7, intonation: 1.3, jitter: .3, scoop: 1, bend: 1.5, speed: .9, cons: 0, vib: 0, breath: 0, maxSyl: 12, minSyl: 3, tempo: .6, drop: .5, emph: .6, fry: 0 },
+    duke:      { label: 'The Duke (fat, jolly)', hint: 'a big round jolly merchant mumbling - deep chest, soft lips, a happy bounce', shape: 'mumble', moods: 'happy', f: 92, formant: .82, intonation: 1.5, jitter: .3, scoop: 1.6, bend: 2, speed: .85, cons: .35, vib: .25, breath: .28, maxSyl: 12, minSyl: 3, tempo: .6, drop: .5, emph: .6, fry: .12 },
+    esquie:    { label: 'Esquie (big, soft, bouncy)', hint: 'a gentle giant - a huge round body, airy and slow, every syllable slides up into a smile', shape: 'mumble', moods: 'happy', f: 125, formant: .74, intonation: 1.8, jitter: .3, scoop: 2.6, bend: 2.4, speed: .8, cons: .2, vib: .35, breath: .35, maxSyl: 11, minSyl: 3, tempo: .5, drop: .5, emph: .5, fry: 0 },
     agent:    { label: 'Agent (firm)', hint: 'low, steady and serious - firm falling endings, one word stressed, a pace that speeds up and slows down like a person', shape: 'voice', moods: 'agent', f: 112, formant: 1, intonation: 1.1, jitter: .35, scoop: 1.2, bend: 2.4, speed: 1, cons: .9, vib: .1, breath: .18, maxSyl: 12, tempo: .7, drop: .6, emph: .7, fry: .35 },
     radio:    { label: 'Radio agent', hint: 'the agent over a walkie-talkie - narrow, a little overdriven, a touch of static', shape: 'radio', moods: 'agent', f: 118, formant: 1, intonation: 1.1, jitter: .35, scoop: 1, bend: 2.2, speed: 1.05, cons: .9, vib: .05, breath: .15, maxSyl: 12, tempo: .7, drop: .6, emph: .7, fry: .2 },
     gravel:   { label: 'Gravel agent', hint: 'a rough, raspy, older voice - every other throat cycle weak and late', shape: 'gravel', moods: 'agent', f: 100, formant: .95, intonation: 1, jitter: .4, scoop: 1, bend: 2.4, speed: .95, cons: .85, vib: .05, breath: .3, maxSyl: 11, tempo: .7, drop: .6, emph: .7, fry: .5 },
