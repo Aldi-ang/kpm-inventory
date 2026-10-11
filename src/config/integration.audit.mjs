@@ -704,7 +704,7 @@ const gateSrc = fs.readFileSync('src/components/VaultGate.jsx', 'utf8');
 const gateCode = gateSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
 
 check(G16, 'the wave is still the 3.0s he chose', /T_WAVE_DUR\s*=\s*3\.00/.test(gateCode),
-  'vault-b.mp3 is cut to 3.0s — change this and the tok no longer lands on his name');
+  'vault-intro.mp3 is baked on the 3.0s wave — change this and the intro no longer lands on his name');
 check(G16, 'background spacing, letter density and name size are his',
   /GAP\s*=\s*26/.test(gateCode) && /DEN\s*=\s*7/.test(gateCode) && /TSIZE\s*=\s*0\.10/.test(gateCode),
   'spacing 26 / density 7 / size 0.10 were measured on the sliders, not chosen');
@@ -741,10 +741,10 @@ check(G16, 'the hold and the animation share one number',
 check(G16, 'both unlock paths use that number, not a literal',
   (appCode.match(/setIsUnlocking\(true\)[\s\S]{0,400}?gateHoldMs\(\)/g) || []).length === 2,
   'PIN and biometric must both hold for the gate, or one of them cuts his name off mid-air');
-check(G16, 'the gate sound is registered and points at the retimed file',
-  /vaultb:\s*'\/sounds\/vault-b\.mp3'/.test(fs.readFileSync('src/hooks/useSound.js', 'utf8')),
-  'vault.mp3 is the OLD cut and does not fit the 3.0s wave');
-check(G16, 'the sound actually reaches the built bundle', /vault-b\.mp3/.test(allJs),
+check(G16, 'the gate sound is registered and points at his studio intro',
+  /vaultIntro:\s*'\/sounds\/vault-intro\.mp3'/.test(fs.readFileSync('src/hooks/useSound.js', 'utf8')),
+  'vault-intro.mp3 is baked on the gate clock from his sound-studio save (2026-10-11); vault.mp3 / vault-b.mp3 were older cuts');
+check(G16, 'the sound actually reaches the built bundle', /vault-intro\.mp3/.test(allJs),
   'registering it in source proves nothing if the bundle never references it');
 check(G16, 'App renders the gate behind the card', /<VaultGate\b/.test(appCode),
   'the component existing is not the same as it being mounted');

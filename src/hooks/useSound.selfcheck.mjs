@@ -43,13 +43,15 @@ assert.equal(playSound('tap', ctx(false)), true, 'and un-silence when toggled ba
 /* 5. unknown sound is a no-op, not a crash */
 assert.equal(playSound('nope', ctx(false)), false);
 
-/* 6. mumble: blip count scales with the line, and is capped */
+/* 6. the capybara speaks his line as syllables from the studio's plan: a count that changes with the seed (his
+      "variety on the number of syllabus"), capped near his longest-line setting, silent when empty or in Lite Mode */
 {
   const timer = (fn) => fn();                   // run synchronously, no waiting
-  const n1 = speakMumble("Deal's done. Good haul.", { ...ctx(false), timer });
-  assert.equal(n1, Math.min(8, Math.round(20 / 3)), 'blip count follows line length');
-  const n2 = speakMumble('x'.repeat(300), { ...ctx(false), timer });
-  assert.equal(n2, 8, 'must cap at 8 blips however long the line is');
+  const counts = new Set([1, 2, 3, 4, 5, 6, 7, 8].map((seed) => speakMumble('Sync Complete! 24 items secured in Master Vault.', { ...ctx(false), timer, seed })));
+  assert.ok(counts.size > 1, 'the same line must not always come out with the same number of syllables');
+  assert.ok([...counts].every((n) => n >= 2 && n <= 16), 'and never more than about his 12-syllable limit');
+  const n2 = speakMumble('x'.repeat(300), { ...ctx(false), timer, seed: 1 });
+  assert.ok(n2 >= 1 && n2 <= 16, 'a 300-letter line is still capped');
   assert.equal(speakMumble('', { ...ctx(false), timer }), 0, 'empty line is silent');
   assert.equal(speakMumble('anything', { ...ctx(true), timer }), 0, 'Lite Mode is silent');
 }

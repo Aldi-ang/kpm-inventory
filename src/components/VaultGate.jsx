@@ -32,8 +32,8 @@ import { playSound } from '../hooks/useSound';
 const GAP = 26;             // background spacing
 const DEN = 7;              // letter density — how finely the glyph is sampled
 const TSIZE = 0.10;         // name size
-const T_WAVE_DUR = 3.00;    // his pick. public/sounds/vault-b.mp3 is cut to THIS number —
-                            // change the wave and the sound must be regenerated to match.
+const T_WAVE_DUR = 3.00;    // his pick. public/sounds/vault-intro.mp3 is baked on THIS clock (tools/chip.js T) —
+                            // change the wave and the sound must be re-baked to match.
 
 const T_WAVE = 0.10;        // seconds of stillness before the ring leaves the card
 const T_GATHER_DUR = 1.70;
@@ -332,7 +332,7 @@ export default function VaultGate({ playing, agentName }) {
        fresh dots that were never told where the name is, so the wave ran and no dot flew. Re-aim them at the new
        size. ponytail: a resize after a letter has left brings that letter back - the keyboard closes at the start. */
     S.relayout = layout;
-    playSound('vaultb');
+    playSound('vaultIntro');   // his intro from the sound studio (2026-10-11)
 
     /* His wording, 2026-08-10: the second line names the whole app, not the vault screen —
        "master vault sentence should be KPM APP instead so kpm app access unlocked". */

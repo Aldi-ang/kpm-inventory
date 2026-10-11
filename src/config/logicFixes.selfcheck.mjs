@@ -8280,7 +8280,7 @@ section('THE CHEST SOUNDS ARE FILES, RENDERED FROM HIS STUDIO (2026-09-24)');
   ok('the licence travels with the files', fs.existsSync('public/sounds/chest-LICENSE.txt') && /CC0/.test(read('public/sounds/chest-LICENSE.txt')));
   const bake = fs.existsSync('tools/sfx-bake.mjs') ? read('tools/sfx-bake.mjs') : '';
   ok('MUAT VAN is his metal latch (kept 2026-09-24)', /done:\s*\{ src: 'metalLatch'/.test(bake));
-  ok('playSound takes a rate and plays it as a PITCH', /export function playSound\(name, \{ AudioImpl, doc, rate = 1 \} = \{\}\)/.test(usc) &&
+  ok('playSound takes a rate and plays it as a PITCH', /export function playSound\(name, \{ AudioImpl, doc, rate = 1(?:, gain = 1)? \} = \{\}\)/.test(usc) &&
      /el\.playbackRate = rate;/.test(usc) && /el\.preservesPitch = false;/.test(usc));
 }
 
@@ -10627,6 +10627,35 @@ section('THE MESSAGE STRIP\'S OWN SOUNDS (2026-10-11) - his message-studio save:
      && /const MSG = \{ room: \.6, master: 1,/.test(bake));
   ok('the message studio\'s OWN room (0.6 s, decay 0.12 s, seed 11) and its high-pass (Q in dB, Web Audio), never the chest studio\'s 0.9 s room',
      /room\(\.6, \.35, \.006, \.12, 11\)/.test(bake) && /room\(\.9, \.28, \.008, \.2, 7\)/.test(bake) && /Math\.pow\(10, q \/ 20\)/.test(bake));
+}
+
+section('THE CAPYBARA\'S VOICE + THE VAULT INTRO FROM HIS STUDIO (2026-10-11) - Agent (firm) and his intro mix, sfx/settings doc version 7');
+{
+  const us = code(read('src/hooks/useSound.js')), vg = code(read('src/components/VaultGate.jsx'));
+  const vp = fs.existsSync('src/utils/voicePlan.js') ? code(read('src/utils/voicePlan.js')) : '';
+  const cv = read('src/config/capyVoice.js'), bake = read('tools/sfx-bake.mjs');
+  ok('the numbers are his save: Agent (firm) 112 Hz, agent moods, variety 1, pace .7, syllable drop .6, stress .7, creak .35, loudness .4, echo .12',
+     /shape: 'voice', moods: 'agent', f: 112, formant: 1, intonation: 1\.1, jitter: \.35, scoop: 1\.2, bend: 2\.4, speed: 1,/.test(cv)
+     && /maxSyl: 12, variety: 1, tempo: \.7, drop: \.6, emph: \.7, fry: \.35, vol: \.4, echo: \.12/.test(cv));
+  ok('his intro mix: slow chord .5, reverse bell -12 .25, warm bloom -12 1, breath -12 1, soft key .5, hall .35',
+     /wave:\s*\{ d: 'bloom', vol: \.5, pitch: 0 \}/.test(cv) && /gather: \{ d: 'riser', vol: \.25, pitch: -12 \}/.test(cv)
+     && /formed: \{ d: 'bloomchord', vol: 1, pitch: -12 \}/.test(cv) && /leave:\s*\{ d: 'breath', vol: 1, pitch: -12 \}/.test(cv)
+     && /type:\s*\{ src: 'soft:key', vol: \.5,/.test(cv) && /echo: \.35,/.test(cv));
+  ok('speakMumble runs the studio\'s own plan (voicePlan -> tools/chip.js) with a NEW seed every call - his "annoying if its keep repeating the same sound"',
+     /import \{ voicePlan \} from '\.\.\/utils\/voicePlan\.js'/.test(us) && /voicePlan\(text, seed \?\? \(Math\.random\(\) \* 4294967296\) >>> 0\)/.test(us)
+     && /import '\.\.\/\.\.\/tools\/chip\.js'/.test(vp) && !/MUMBLES|mumble\d/.test(us));
+  ok('every syllable plays its own baked file at the plan\'s pitch AND loudness (playSound takes a gain)',
+     /playSound\(capyFile\(x\.on, x\.v, x\.len, x\.rise\), \{ AudioImpl, doc, rate: x\.rate, gain: x\.gain \}\)/.test(us)
+     && /export function playSound\(name, \{ AudioImpl, doc, rate = 1, gain = 1 \} = \{\}\)/.test(us));
+  ok('the 61 syllable files load only when first spoken - never all at once at the first tap (a weak phone)',
+     /if \(name\.startsWith\('capy-'\)\) continue;/.test(us) && /pool = makePool\(name, AudioImpl \|\| globalThis\.Audio\)/.test(us));
+  ok('the vault gate plays his intro, and the old cut is gone from the sound list',
+     /playSound\('vaultIntro'\)/.test(vg) && !/playSound\('vaultb'\)/.test(vg) && /vaultIntro:\s*'\/sounds\/vault-intro\.mp3'/.test(us) && !/vaultb:/.test(us));
+  const capy = (await import('./capyVoice.js')).capyFiles();
+  const files = capy.map((f) => 'public/sounds/capy-' + f.on + '-' + f.v + '-' + f.len + (f.rise ? '-r' : '') + '.mp3').concat(['public/sounds/vault-intro.mp3']);
+  const missing = files.filter((f) => !fs.existsSync(f));
+  ok(`all 61 syllable files + vault-intro.mp3 are baked (missing: ${missing.length})`, capy.length === 61 && missing.length === 0);
+  ok('the baker renders both from capyVoice.js with tools/chip.js - the studio\'s own synth file', /from '\.\.\/src\/config\/capyVoice\.js'/.test(bake) && /chip\.js/.test(bake) && /vault-intro/.test(bake));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

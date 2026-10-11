@@ -10,22 +10,21 @@
    two-speed quantity design creates. Three pre-decoded elements per sound, round
    robin, rewound to 0, covers overlapping taps with no allocation. */
 
+import { voicePlan } from '../utils/voicePlan.js';
+import { capyFiles, capyFile } from '../config/capyVoice.js';
+
 const SOURCES = {
   tap:    '/sounds/tap.mp3',
   commit: '/sounds/commit.mp3',
   error:  '/sounds/error.mp3',
-  /* Merchant "voice". Four pitches of the same short blip, played in sequence while
-     his line is on screen — the Animal Crossing / Dave the Diver trick. It is not a
-     language, so it never sounds wrong in English or Indonesian, needs no voice actor
-     and no TTS service, and costs 4,6 KB against 100 KB+ for recorded lines. */
   /* Aldi's own SFX, from RE UI/SFX. click is trimmed to 150ms - the source was 3,4s of
      mostly silence, which made every press sound late. */
   click:  '/sounds/click.mp3',
   sign:   '/sounds/sign.mp3',
-  /* The Master Vault gate. Cut to the 3.0s wave Aldi signed off: the "tok" lands at 4.50s
-     where his name finishes forming, the ticks at 6.70s as the letters leave. It only fits
-     that wave — move VaultGate's T_WAVE_DUR and this file has to be regenerated. */
-  vaultb: '/sounds/vault-b.mp3',
+  /* The Master Vault gate - HIS intro, made in the sound studio (2026-10-11): slow chord, reverse bell, warm bloom,
+     breath, a soft key per letter, a 2.4 s hall. Baked by tools/sfx-bake.mjs from src/config/capyVoice.js on
+     VaultGate's own clock (T_WAVE 0.1, T_WAVE_DUR 3, FORMED 4.5, OUT 6.7) - move those and re-bake. */
+  vaultIntro: '/sounds/vault-intro.mp3',
   /* The tutorial. Aldi's own file, from RE UI/SFX — *"this is the SFX when ponder tutorial is
      pressed"*. It is deliberately NOT one of the sounds above: `click` and `commit` already mean
      a transaction in this app, and re-pointing them at a tutorial teaches the ear the wrong thing.
@@ -47,10 +46,6 @@ const SOURCES = {
      bookPage already sits. Seven synthesised takes were built first and he rejected all of them:
      *"all bad nvm, use this for the section button click on the side"*. */
   padKey: '/sounds/pad-key.mp3',
-  mumble1: '/sounds/mumble1.mp3',
-  mumble2: '/sounds/mumble2.mp3',
-  mumble3: '/sounds/mumble3.mp3',
-  mumble4: '/sounds/mumble4.mp3',
   /* The van-loading chests. Kenney "RPG Audio" recordings (CC0, chest-LICENSE.txt beside them), each cut,
      pitched and given its room from the settings Aldi saved in the prototype's sound studio — rendered by
      tools/sfx-bake.mjs, so change a sound there, not here. Their own files: a chest never borrows a
@@ -72,18 +67,17 @@ const SOURCES = {
   msgFail: '/sounds/msg-fail.mp3',
 };
 
-const MUMBLES = ['mumble1', 'mumble2', 'mumble3', 'mumble4'];
-const CHARS_PER_BLIP = 3;
-const MAX_BLIPS = 8;        // Undertale mumbles the whole line; this is a work tool
+/* The capybara's voice - Agent (firm), made in the sound studio (2026-10-11): one baked file per syllable his speech
+   plan can ask for (src/config/capyVoice.js lists them, tools/sfx-bake.mjs renders them). They replace the four
+   mumble blips, which played the same few sounds every time - his *"annoying if its keep repeating the same sound"*. */
+for (const f of capyFiles()) SOURCES[capyFile(f.on, f.v, f.len, f.rise)] = '/sounds/' + capyFile(f.on, f.v, f.len, f.rise) + '.mp3';
 
 /* Per-sound level. Everything used to sit at a flat 0,5, which made the steppers - the
    control pressed more than any other in the app, often outdoors next to a road - the
-   quietest thing in it. The stepper and the error tone go to full; the mumbles stay lower
-   because eight of them fire in a row and at full they stop being a voice and become noise. */
+   quietest thing in it. The stepper and the error tone go to full. */
 const VOLUMES = {
   click: 1.0, error: 1.0, tap: 0.9, commit: 0.9, sign: 0.9,
-  mumble1: 0.7, mumble2: 0.7, mumble3: 0.7, mumble4: 0.7,
-  vaultb: 0.9,
+  vaultIntro: 1.0,
   ponderOpen: 0.95,
   bookPage: 0.85, bookOpenS: 0.9, bookCloseS: 0.9,
   /* The rail key is the most-pressed control on the terminal — seventeen of them, tapped in a row
@@ -94,6 +88,8 @@ const VOLUMES = {
   chestPick: 1.0, chestLand: 1.0, chestPage: 1.0, chestRefuse: 1.0, chestLoad: 1.0,
   msgIn: 1.0, msgFail: 1.0,
 };
+/* the syllable files hold his studio loudness already; each play scales them by the plan's own gain */
+for (const name of Object.keys(SOURCES)) if (name.startsWith('capy-')) VOLUMES[name] = 1.0;
 const DEFAULT_VOLUME = 0.85;
 
 /* ---- LOUDER THAN THE FILE ----
@@ -103,16 +99,13 @@ const DEFAULT_VOLUME = 0.85;
 
    Numbers are multipliers of the file, not fractions of it. The stepper gets the most
    because it is pressed more than anything else in the app, usually outdoors beside a road.
-   The mumbles stay modest: eight fire in a row, and loud enough they stop being a voice.
 
    If Web Audio is missing or refuses, nothing breaks — the element keeps playing at its own
    volume, which is exactly today's behaviour. */
 const BOOST = {
   click: 3.2, error: 2.4, tap: 2.2, commit: 2.4, sign: 2.4,
-  mumble1: 1.5, mumble2: 1.5, mumble3: 1.5, mumble4: 1.5,
-  /* No boost. The others are blips fighting a roadside; this one is a mixed cue that was
-     mastered at the level it wants, and multiplying it just clips the tok. */
-  vaultb: 1.0,
+  /* No boost. The others are blips fighting a roadside; the intro is a mixed cue made at the level he set. */
+  vaultIntro: 1.0,
   /* No boost either: each chest file already holds the loudness he set in the studio. */
   chestEnderOpen: 1.0, chestEnderClose: 1.0, chestVanOpen: 1.0, chestVanClose: 1.0,
   chestPick: 1.0, chestLand: 1.0, chestPage: 1.0, chestRefuse: 1.0, chestLoad: 1.0,
@@ -166,6 +159,8 @@ function makePool(name, AudioImpl) {
 export function initSounds(AudioImpl = globalThis.Audio) {
   if (!AudioImpl) return;
   for (const name of Object.keys(SOURCES)) {
+    /* the capybara's 61 syllable files load when first spoken - all at the first tap would be 183 elements on a weak phone */
+    if (name.startsWith('capy-')) continue;
     if (!pools.has(name)) pools.set(name, makePool(name, AudioImpl));
   }
 }
@@ -177,13 +172,14 @@ function liteModeOn(doc = globalThis.document) {
   return !!doc?.documentElement?.classList?.contains('lite-mode');
 }
 
-export function playSound(name, { AudioImpl, doc, rate = 1 } = {}) {
+export function playSound(name, { AudioImpl, doc, rate = 1, gain = 1 } = {}) {
   if (!SOURCES[name]) return false;
   if (liteModeOn(doc)) return false;
   if (!unlocked) return false;
 
   initSounds(AudioImpl);
-  const pool = pools.get(name);
+  let pool = pools.get(name);
+  if (!pool && (AudioImpl || globalThis.Audio)) { pool = makePool(name, AudioImpl || globalThis.Audio); pools.set(name, pool); }
   if (!pool) return false;
 
   const el = pool.els[pool.next];
@@ -191,6 +187,9 @@ export function playSound(name, { AudioImpl, doc, rate = 1 } = {}) {
   el.currentTime = 0;
   /* Set on EVERY play: the elements are pooled, so one left at 1.21 would play the next plain call high. */
   el.playbackRate = rate;
+  /* and a loudness: the capybara's plan stresses one word and softens the rest. A routed element's own volume is the
+     pre-gain level (1), so it scales from there; any other element from its VOLUMES level. */
+  el.volume = Math.min(1, (routed.has(el) ? 1 : (VOLUMES[name] ?? DEFAULT_VOLUME)) * gain);
   const p = el.play();
   if (p && typeof p.catch === 'function') p.catch(() => {});
   return true;
@@ -263,19 +262,16 @@ export function unlockSounds({ AudioImpl, doc } = {}) {
     .then(() => unlocked);
 }
 
-/* Speak a line as mumbling. Returns the number of blips scheduled, so a caller (or a
+/* Speak a line in the capybara's voice. Returns the number of syllables scheduled, so a caller (or a
    test) can check it without waiting. Silent under Lite Mode and before unlock, because
    playSound refuses there — no separate check needed. */
-export function speakMumble(text, { AudioImpl, doc, timer = setTimeout } = {}) {
-  const len = (text || '').replace(/\s+/g, '').length;
-  if (!len) return 0;
-  const count = Math.min(MAX_BLIPS, Math.max(1, Math.round(len / CHARS_PER_BLIP)));
+export function speakMumble(text, { AudioImpl, doc, timer = setTimeout, seed } = {}) {
+  if (!(text || '').replace(/\s+/g, '').length) return 0;
   if (liteModeOn(doc) || !unlocked) return 0;
-  for (let i = 0; i < count; i++) {
-    const name = MUMBLES[(i * 3 + len) % MUMBLES.length];   // varies per line, no RNG
-    timer(() => playSound(name, { AudioImpl, doc }), i * 105);
-  }
-  return count;
+  /* the studio's own plan, a fresh seed each call: another mood, syllable count and pace every time he talks */
+  const steps = voicePlan(text, seed ?? (Math.random() * 4294967296) >>> 0);
+  for (const x of steps) timer(() => playSound(capyFile(x.on, x.v, x.len, x.rise), { AudioImpl, doc, rate: x.rate, gain: x.gain }), x.at * 1000);
+  return steps.length;
 }
 
 /* test seam - not for app code */
