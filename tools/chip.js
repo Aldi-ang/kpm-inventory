@@ -175,25 +175,76 @@
      fall / question rise as a made one - so the plan, the baker and the app treat it like any other voice. Each
      syllable file gets its own clip (picked by its key among the clips nearest its length), pitched down = a bigger
      chest, two soft low-passes = soft lips (the "mouth size" slider moves them). */
+  /* `natural` (his *"your pick is good but make it more natural sounding instead of electronic edited sound"*, 19:50):
+     the first try forced EVERY clip to one pitch, so one syllable dropped 8 notes and the next 15 - each with a different
+     mouth, which is what splicing sounds like - then cut it short, bent a fake melody over the speaker's own, and
+     filtered it dark twice. Natural: ONE shift for the whole voice (the pack's middle pitch -> p.f), so every syllable
+     keeps the same mouth and the speaker's own melody; no added slide or fall (only a question still rises); a smooth
+     cubic read; a syllable that runs long fades out over its last quarter instead of a 30 ms cut; one gentle low-pass
+     high up; levels matched by loudness (RMS), not by their loudest peak. */
   const recPcm = {};
   function recSyllable(p, v, on, len, rise, sr = SR) {
     const pack = G.KPM_MUMBLE && G.KPM_MUMBLE[p.rec || 'round'], { lenV } = sylLen(p, on, len), key = 'rec' + v + on + len + (rise ? 'R' : '');
-    const n = Math.round(lenV * 1.15 * sr), out = new Float32Array(n);
+    const nat = !!p.natural, n = Math.round(lenV * (nat ? 1.35 : 1.15) * sr), out = new Float32Array(n);
     if (!pack || !pack.clips.length) return out;
-    const near = pack.clips.map((c, i) => ({ i, d: Math.abs(c.len * c.f0 / p.f - lenV) })).sort((a, b) => a.d - b.d).slice(0, 6);
+    if (!pack.mid) { const fs = pack.clips.map((c) => c.f0).sort((a, b) => a - b); pack.mid = fs[Math.floor(fs.length / 2)]; }
+    const ratio = (c) => (nat ? p.f / pack.mid : p.f / c.f0);
+    const near = pack.clips.map((c, i) => ({ i, d: Math.abs(c.len / ratio(c) - lenV) })).sort((a, b) => a.d - b.d).slice(0, 6);
     const ci = near[hash(key) % near.length].i, c = pack.clips[ci];
     if (!recPcm[ci + p.rec]) { const bytes = Uint8Array.from(atob(c.pcm), (ch) => ch.charCodeAt(0)), i16 = new Int16Array(bytes.buffer); recPcm[ci + p.rec] = Float32Array.from(i16, (x) => x / 32768); }
+    if (nat) return recNatural(p, c, recPcm[ci + p.rec], pack, lenV, rise, n, sr);
     const src = recPcm[ci + p.rec], cut = 1 - Math.exp(-TAU * 1900 * p.formant / sr);
+    const at = (j) => src[Math.min(src.length - 1, Math.max(0, j))];
     let pos = 0, l1 = 0, l2 = 0, k = 0;
     for (; k < n && pos < src.length - 1; k++) {
       const tv = k / sr, u = Math.min(1, tv / lenV);
-      const semis = -p.scoop * Math.max(0, 1 - tv / .06) + (rise ? 3.5 * Math.max(0, (u - .3) / .7) : -p.bend * Math.max(0, (u - .55) / .45));
-      const j = Math.floor(pos), x = src[j] + (src[j + 1] - src[j]) * (pos - j);
+      const semis = nat ? (rise ? 3.5 * Math.max(0, (u - .3) / .7) : 0)
+        : -p.scoop * Math.max(0, 1 - tv / .06) + (rise ? 3.5 * Math.max(0, (u - .3) / .7) : -p.bend * Math.max(0, (u - .55) / .45));
+      const j = Math.floor(pos), f = pos - j;
+      let x;
+      if (nat) { const a = at(j - 1), b = at(j), cc = at(j + 1), d = at(j + 2); x = b + .5 * f * (cc - a + f * (2 * a - 5 * b + 4 * cc - d + f * (3 * (b - cc) + d - a))); }
+      else x = src[j] + (src[j + 1] - src[j]) * f;
       l1 += cut * (x - l1); l2 += cut * (l1 - l2);
-      out[k] = l2 * Math.min(1, (n - k) / (.03 * sr));
-      pos += p.f * st2(semis) / c.f0 * pack.sr / sr;
+      out[k] = (nat ? l1 : l2) * (nat ? Math.min(1, (n - k) / (.25 * n)) : Math.min(1, (n - k) / (.03 * sr)));
+      pos += (nat ? p.f / pack.mid : p.f / c.f0) * st2(semis) * pack.sr / sr;
     }
-    return normalize(out, .8);
+    if (!nat) return normalize(out, .8);
+    let e = 0; for (let q = 0; q < k; q++) e += out[q] * out[q];
+    const g = .2 / Math.sqrt(e / (k || 1) + 1e-9);
+    for (let q = 0; q < k; q++) out[q] = Math.tanh(out[q] * g * 1.2) / 1.2;     // matched loudness; tanh only rounds a rare peak
+    return out;
+  }
+  /* the natural way down (19:55, after the first natural try measured high and bright - 235-306 Hz): lowering a
+     recording by playing it slower drops the MOUTH with the pitch, the slowed-tape sound. Here only the throat drops:
+     1. a small slow-down = a slightly bigger body (mouth size slider, .9 at 1.0);
+     2. PSOLA for the rest - cut the voice into two-period grains at its own pulses and lay them down further apart,
+        so the pitch falls and the vowel colour and the length stay the speaker's own.
+     One ratio for the whole voice (the pack's middle pitch -> p.f): every syllable keeps the same mouth. */
+  function recNatural(p, c, src0, pack, lenV, rise, n, sr) {
+    const body = .9 * p.formant, total = p.f / pack.mid, pr = total / body;
+    const step = body * pack.sr / sr, m = Math.floor((src0.length - 2) / step), src = new Float32Array(m);
+    for (let k = 0; k < m; k++) { const x = k * step, j = Math.floor(x), f = x - j; src[k] = src0[j] + (src0[j + 1] - src0[j]) * f; }
+    const P = sr / (c.f0 * body);                                              // the source's period after the body step, samples
+    const marks = []; let t = 0, best = 0;
+    for (let k = 0; k < Math.min(m, P); k++) if (Math.abs(src[k]) > Math.abs(src[best])) best = k;
+    for (t = best; t < m; ) { marks.push(t); let nx = Math.round(t + P), b = nx; for (let k = Math.max(0, nx - P / 4 | 0); k < Math.min(m, nx + P / 4); k++) if (src[k] > src[b]) b = k; t = b > t ? b : nx; }
+    const out = new Float32Array(n), half = Math.round(P);
+    let to = 0, gi = 0;
+    while (to < n && marks.length) {
+      const u = Math.min(1, to / sr / lenV), semis = rise ? 3.5 * Math.max(0, (u - .3) / .7) : 0;
+      const sc = Math.min(m - 1, to * (m / Math.max(n, m)));                   // where in the source this moment is (same speed)
+      while (gi < marks.length - 1 && marks[gi + 1] <= sc) gi++;
+      const mk = marks[gi];
+      for (let k = -half; k < half; k++) { const o = Math.round(to) + k, s = mk + k; if (o >= 0 && o < n && s >= 0 && s < m) out[o] += src[s] * (.5 + .5 * Math.cos(Math.PI * k / half)); }
+      to += P / (pr * st2(semis));
+      if (mk + half >= m && to > m) break;
+    }
+    const cut = 1 - Math.exp(-TAU * 2600 * p.formant / sr);
+    let l1 = 0, e = 0, last = 0;
+    for (let k = 0; k < n; k++) { l1 += cut * (out[k] - l1); out[k] = l1 * Math.min(1, (n - k) / (.25 * n)); e += out[k] * out[k]; if (Math.abs(out[k]) > 1e-4) last = k; }
+    const g = .2 / Math.sqrt(e / (last + 1) + 1e-9);
+    for (let k = 0; k < n; k++) out[k] = Math.tanh(out[k] * g * 1.2) / 1.2;   // matched loudness; tanh only rounds a rare peak
+    return out;
   }
   function syllable(p, v, on, len, rise, sr = SR) { return p.shape === 'gb' ? chipSyllable(p, v, on, len, rise, sr) : p.shape === 'rec' ? recSyllable(p, v, on, len, rise, sr) : voiceSyllable(p, v, on, len, rise, sr); }
 
@@ -304,7 +355,8 @@
   const CAPY = {
     /* round 7 - his "fat but soft mumbling ... the duke from resident evil village but inside the sim city or maybe esquie
        voice from expedition 33 but mumbling": the gentleman merchant, happy, never fewer than 3 sounds a line */
-    vidmumble: { label: 'Video mumble (fat + soft)', hint: 'the real mumbles from your video (Gravity Sound), pitched down into a big chest and softened - Sim City talk from a gentleman', shape: 'rec', rec: 'round', moods: 'happy', f: 118, formant: .7, intonation: 1.3, jitter: .3, scoop: 1, bend: 1.5, speed: .9, cons: 0, vib: 0, breath: 0, maxSyl: 12, minSyl: 3, tempo: .6, drop: .5, emph: .6, fry: 0 },
+    vidnatural: { label: 'Video mumble - natural', hint: 'your pick, made natural: the same person in every syllable, his own melody, no chopped ends - just a little lower and softer', shape: 'rec', rec: 'round', natural: true, moods: 'happy', f: 108, formant: .9, intonation: .9, jitter: .2, scoop: 0, bend: 0, speed: .9, cons: 0, vib: 0, breath: 0, maxSyl: 12, minSyl: 3, tempo: .5, drop: .5, emph: .5, fry: 0 },
+    vidmumble: { label: 'Video mumble - first try', hint: 'the first try: the real mumbles from your video, every syllable forced to one low pitch and darkened', shape: 'rec', rec: 'round', moods: 'happy', f: 118, formant: .7, intonation: 1.3, jitter: .3, scoop: 1, bend: 1.5, speed: .9, cons: 0, vib: 0, breath: 0, maxSyl: 12, minSyl: 3, tempo: .6, drop: .5, emph: .6, fry: 0 },
     duke:      { label: 'The Duke (fat, jolly)', hint: 'a big round jolly merchant mumbling - deep chest, soft lips, a happy bounce', shape: 'mumble', moods: 'happy', f: 92, formant: .82, intonation: 1.5, jitter: .3, scoop: 1.6, bend: 2, speed: .85, cons: .35, vib: .25, breath: .28, maxSyl: 12, minSyl: 3, tempo: .6, drop: .5, emph: .6, fry: .12 },
     esquie:    { label: 'Esquie (big, soft, bouncy)', hint: 'a gentle giant - a huge round body, airy and slow, every syllable slides up into a smile', shape: 'mumble', moods: 'happy', f: 125, formant: .74, intonation: 1.8, jitter: .3, scoop: 2.6, bend: 2.4, speed: .8, cons: .2, vib: .35, breath: .35, maxSyl: 11, minSyl: 3, tempo: .5, drop: .5, emph: .5, fry: 0 },
     agent:    { label: 'Agent (firm)', hint: 'low, steady and serious - firm falling endings, one word stressed, a pace that speeds up and slows down like a person', shape: 'voice', moods: 'agent', f: 112, formant: 1, intonation: 1.1, jitter: .35, scoop: 1.2, bend: 2.4, speed: 1, cons: .9, vib: .1, breath: .18, maxSyl: 12, tempo: .7, drop: .6, emph: .7, fry: .35 },
