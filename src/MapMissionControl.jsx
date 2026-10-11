@@ -50,25 +50,28 @@ const LEVEL_NONE = ['#B8B0A4', '<path d="M8 15V8.5" fill="none" stroke="currentC
 const levelLook = (tierId, tiers) => { const i = tiers.findIndex((t) => t.id === tierId); return i < 0 || i === tiers.length - 1 ? LEVEL_NONE : LEVEL_LOOKS[Math.min(i, 3)]; };
 /* one symbol for the pin, the chips, the card; `dot` = late (red) / soon (gold) on the corner, `big` = the pressed pin (a cream
    ring), `fit` = one size for a row of chips */
-/* a wholesale hub (his pick C, 2026-10-05 "wholesale hub is C good"): its level symbol, bigger, under a warehouse roof, with
-   the word HUB under it - the object and the word */
-const HUB_ROOF = '<svg class="roof" viewBox="0 0 44 13" preserveAspectRatio="none" aria-hidden="true"><path d="M2 12L22 2l20 10"/></svg>';
+/* a wholesale hub (his pick A, 2026-10-12 "HUB = A"; board A-Brain Raw/2026-10-12-hub-symbol/board.jpg): ONE drawing, 50 x 66 -
+   the warehouse (roof + walls) is the dark plate, the level symbol inside its door, the word HUB under it. Centred by
+   construction: the old roof was a second svg placed by left/right and hung 3.5 px left. The badge centre (25, 34) sits on
+   the pin's point */
+const hubPlate = (look) => `<path d="M3 23L25 5l22 18" fill="none" stroke="#E4B04A" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M8 21.5L25 8l17 13.5V49H8z" fill="${MD}" stroke="#E4B04A" stroke-width="2" stroke-linejoin="round"/><svg x="13.5" y="22.5" width="23" height="23" viewBox="0 0 32 32">${look[3](look[0], look[1])}</svg><g class="word"><rect x="10" y="52" width="30" height="13" rx="2.5" fill="${MD}" stroke="#E4B04A" stroke-width="1.5"/><text x="25.65" y="62.2" text-anchor="middle" fill="#F0E2BC">HUB</text></g>`;
+const hubSize = (px) => [px + 13, Math.round((px + 13) * 1.32)];   /* Unranked on the map: 37 -> 50 x 66, the board's size */
 const levelBadge = (look, { dot = '', big = false, hub = false, fit = 0 } = {}) => {
-    const px = fit || Math.round(look[2] * (big ? 1.3 : 1) + (hub ? 6 : 0));
-    return `<i class="ms-mk${big ? ' big' : ''}${hub ? ' hub' : ''}" style="--c:${look[0]};width:${px}px;height:${px}px">${hub ? HUB_ROOF : ''}<svg class="lv" viewBox="0 0 32 32" aria-hidden="true">${look[3](look[0], look[1])}</svg>${dot ? `<i class="st ${dot}"></i>` : ''}${hub ? '<b class="word">HUB</b>' : ''}</i>`;
+    const px = fit || Math.round(look[2] * (big ? 1.3 : 1) + (hub ? 6 : 0)), [w, h] = hub ? hubSize(px) : [px, px];
+    return `<i class="ms-mk${big ? ' big' : ''}${hub ? ' hub' : ''}" style="--c:${look[0]};width:${w}px;height:${h}px"><svg class="lv" viewBox="${hub ? '0 0 50 66' : '0 0 32 32'}" aria-hidden="true">${hub ? hubPlate(look) : look[3](look[0], look[1])}</svg>${dot ? `<i class="st ${dot}"></i>` : ''}</i>`;
 };
 const Badge = ({ look, ...o }) => <span className="contents" dangerouslySetInnerHTML={{ __html: levelBadge(look, o) }} />;
 
-/* the pin: the symbol in a hit box at least 32 px and 10 px wider than it (the rarer, the bigger); a hub's roof and word sit
-   outside the box and stay pressable (they are children of the marker) */
+/* the pin: the symbol in a hit box at least 32 px and 10 px wider than it (the rarer, the bigger); a hub's box is its whole
+   drawing (roof to word), 10 px wider and taller */
 /* his "why is this so small man please fix that" (2026-10-05, a phone shot of Unranked sprouts): the MAP pin is the level size
    x 1.4 (Unranked 31 px ... Mythic 45 px, the rarer still the bigger); the chips and the card keep the level size */
 const PIN_SCALE = 1.4;
 const getIcon = (store, activeTiers, isActive = false) => {
     const dot = store.status === 'overdue' ? 'late' : store.status === 'soon' ? 'soon' : '';
     const look = levelLook(store.tier, activeTiers), hub = store.storeType === 'Wholesaler';
-    const px = Math.round(look[2] * PIN_SCALE * (isActive ? 1.3 : 1) + (hub ? 6 : 0)), size = Math.max(32, px + 10);
-    return L.divIcon({ className: 'custom-icon ms-pin', html: levelBadge(look, { dot, big: isActive, hub, fit: px }), iconSize: [size, size], iconAnchor: [size / 2, size / 2] });
+    const px = Math.round(look[2] * PIN_SCALE * (isActive ? 1.3 : 1) + (hub ? 6 : 0)), [w, h] = (hub ? hubSize(px) : [px, px]).map((n) => Math.max(32, n + 10));
+    return L.divIcon({ className: 'custom-icon ms-pin', html: levelBadge(look, { dot, big: isActive, hub, fit: px }), iconSize: [w, h], iconAnchor: [w / 2, h / 2] });
 };
 
 /* you are here - Journey's ink dot (palette law: it was blue) */

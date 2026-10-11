@@ -10482,18 +10482,33 @@ section('Map System redesign (phone A, PC B)');
   /* his picks, 2026-10-05 11:50: "wholesale hub is C good, unranked is sprout" (drawn: https://claude.ai/artifact/J7Y5RdwwUhtRPas3KP8Fti) */
   /* 12:05 the same day: "make sure that the hub is hidden also when zoom out" - the hub joins the bubbles again (it sat on top
      of one in his screenshot); it still rides above the other pins once the bubbles open */
-  ok('his hub pick C: a hub pin is a bigger badge under a warehouse roof with the word HUB (a gold EDGE on the dark plate, never an amber fill), rides above the other pins, and hides inside the bubbles when zoomed out like every shop',
-     /\$\{hub \? HUB_ROOF : ''\}/.test(pins) && /\$\{hub \? '<b class="word">HUB<\/b>' : ''\}/.test(pins) &&
-     /\.ms-mk > svg\.roof \{[^}]*fill: #14110e;[^}]*stroke: #E4B04A;/.test(exc) && /\(hub \? 6 : 0\)/.test(pins) &&
+  /* 2026-10-12 his "i feels like the logo here is not inline with the HUB symbol ... we need more recognize able HUB symbol" ->
+     his pick A ("HUB = A"): the roof was a SECOND svg placed by left/right - an svg's `width: auto` is its own 44 px, so `right`
+     was ignored and the roof hung 3.5 px left; the overdue dot sat on the roof's end. Now ONE drawing (roof + walls = the plate,
+     the level symbol in its door, the word under it), centred by construction. Board: A-Brain Raw/2026-10-12-hub-symbol/board.jpg */
+  const hubDraw = (pins.match(/const hubPlate = [^\n]*/) || [''])[0];
+  const hubX = [/M(\d+) 23L(\d+) 5l(\d+) 18/, /M(\d+) 21\.5L25 8l(\d+) 13\.5V49H8z/, /<svg x="([\d.]+)" y="22\.5" width="([\d.]+)"/, /<rect x="(\d+)" y="52" width="(\d+)"/].map((r) => (hubDraw.match(r) || []).slice(1).map(Number));
+  ok('his HUB pick A: a hub pin is ONE svg - the warehouse (roof + walls) is the dark plate with a gold edge, the level symbol inside its door, the word HUB under it, the dot off the roof line; it rides above the other pins and hides inside the bubbles when zoomed out like every shop',
+     !/HUB_ROOF|svg\.roof|class="roof"|<b class="word">/.test(mm + exc) && /viewBox="\$\{hub \? '0 0 50 66' : '0 0 32 32'\}"/.test(pins) &&
+     /\$\{look\[3\]\(look\[0\], look\[1\]\)\}<\/svg><g class="word">/.test(hubDraw) && /fill="\$\{MD\}" stroke="#E4B04A"/.test(hubDraw) &&
+     /\.ms-mk\.hub \.st \{[^}]*left: calc\(88% - 4\.5px\); top: calc\(13\.6% - 4\.5px\)/.test(exc) && /\.ms-head \.ms-mk \.word \{ display: none; \}/.test(exc) && /\(hub \? 6 : 0\)/.test(pins) &&
      !/storeType [!=]== 'Wholesaler'\)\.map\(store/.test(body) && /iconCreateFunction=\{createCustomClusterIcon\}[\s\S]{0,300}\{mapPoints\.map\(store => \(/.test(body) &&
      /zIndexOffset=\{isActive \? 1000 : store\.storeType === 'Wholesaler' \? 500 : 0\}/.test(mm));
+  {
+    const [[rl, ra, rr], [wl, wr], [bx, bw], [tx, tw]] = hubX.map((a) => (a.length ? a : [NaN, NaN, NaN]));
+    const centres = [(rl + ra + rr) / 2, (wl + 25 + wr) / 2, bx + bw / 2, tx + tw / 2];
+    /* the dot (9 px at 88% / 13.6% of the 50 x 66 box = (44, 9)) against the roof's right slope (25,5)-(47,23), roof stroke 2.6 */
+    const gap = Math.abs(22 * (9 - 5) - 18 * (44 - 25)) / Math.hypot(22, 18) - 4.5 - 1.3;
+    ok('the HUB drawing re-measured: the roof, the walls, the level symbol and the word all centre on x = 25 (half of the 50-wide box), and the overdue dot clears the roof line by at least 2 units',
+       centres.every((c) => c === 25) && gap >= 2, `centres ${centres.join(' / ')}, dot gap ${gap.toFixed(2)}`);
+  }
   ok('his Unranked pick: the lowest level is a sprout (two leaves on a stem), a light stone grey that reads on the dark map - never the grey dot, never green',
      /const LEVEL_NONE = \['#B8B0A4', '[^']*M8 9\.2C8 5\.6 5\.6 3\.4 2 3\.4[^']*'/.test(pins) && !/<circle cx="8" cy="8" r="4"\/>/.test(pins));
   /* 12:15 - 12:40: "we need set of of new tier symbol as well to better show their exclusiveness" -> "rank medal is cool but i dont
      like the mythic logo" -> "A is good" (the royal crown). Drawn: https://claude.ai/artifact/J7Y5RdwwUhtRPas3KP8Fti (SETS.B, MY.A) */
   ok('his tier set B, the rank medals, with his Mythic A, the royal crown: every level a different object on a 32 grid, the rarer the bigger on the map (22 / 24 / 26 / 28 / 32), the old square plate and the winged crown gone; the chips show them at one size',
      /\['#E4B04A', '', 32, \(c\) => `<path d="M3 10\.5l6\.8 5\.3L16 4\.5/.test(pins) && /\['#C4551E', '[^']*', 28,/.test(pins) && /\['#F0E2BC', '[^']*', 26,/.test(pins) &&
-     /\['#A0703C', '[^']*', 24,/.test(pins) && /const LEVEL_NONE = \['#B8B0A4', '[^']*', 22,/.test(pins) && /<svg class="lv" viewBox="0 0 32 32"/.test(pins) &&
+     /\['#A0703C', '[^']*', 24,/.test(pins) && /const LEVEL_NONE = \['#B8B0A4', '[^']*', 22,/.test(pins) && /<svg class="lv" viewBox="\$\{hub \? '0 0 50 66' : '0 0 32 32'\}"/.test(pins) &&
      !/M10 20C6 20 2 17 1 11/.test(mm) && /fit=\{24\}/.test(mm) && !/\.ms-mk svg \{ width: 14px/.test(read('src/styles/expedition.css')));
   /* his font pick, 2026-10-05 12:00: "C is best for fonts" - Rajdhani for the big numbers AND the small labels, app-wide. The
      root cause he was looking at: --font-display named Barlow Condensed but nothing loaded it, so Windows drew Arial Narrow.
@@ -10512,7 +10527,7 @@ section('TOO SMALL TO READ (2026-10-05) - his "this font for notification is not
   ok('a notification\'s text is 15 px semibold in the app\'s ink (it was 11 px Rajdhani since the font switch - reads like 9 px)',
      /font-mono text-\[15px\] font-semibold leading-snug text-\[#E8E4DE\]/.test(tst) && !/text-\[11px\] leading-relaxed text-\[#cfc6ba\]/.test(tst));
   ok('Map System\'s pins are the level size x 1.4 on the map (Unranked 31 px, Mythic 45 px), the hit box 10 px wider; chips and card keep the level size',
-     /const PIN_SCALE = 1\.4;/.test(mm) && /const px = Math\.round\(look\[2\] \* PIN_SCALE \* \(isActive \? 1\.3 : 1\) \+ \(hub \? 6 : 0\)\), size = Math\.max\(32, px \+ 10\);/.test(mm)
+     /const PIN_SCALE = 1\.4;/.test(mm) && /const px = Math\.round\(look\[2\] \* PIN_SCALE \* \(isActive \? 1\.3 : 1\) \+ \(hub \? 6 : 0\)\), \[w, h\] = \(hub \? hubSize\(px\) : \[px, px\]\)\.map\(\(n\) => Math\.max\(32, n \+ 10\)\);/.test(mm)
      && /levelBadge\(look, \{ dot, big: isActive, hub, fit: px \}\)/.test(mm));
   ok('the Unranked sprout fills its box like the other levels (r 13.5 of 16, a firm ring), never the r 9 dot his phone shot showed',
      /<circle cx="16" cy="16" r="13\.5" fill="\$\{MD\}" stroke="\$\{c\}" stroke-opacity="\.85" stroke-width="2"\/>\$\{inner\(p, c, 8, 8, 16\)\}/.test(mm) && !/r="9" fill="\$\{MD\}" stroke="\$\{c\}" stroke-opacity="\.55"/.test(mm)); }
