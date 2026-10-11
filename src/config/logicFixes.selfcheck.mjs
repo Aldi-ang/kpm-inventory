@@ -10782,5 +10782,28 @@ section('THE BELL SAYS THE DAY, THE DATE AND THE TIME (2026-10-12) - his "add da
      (bellSrc.match(/bellTime\(/g) || []).length === 2 && !/fmtTime/.test(bellSrc) && /import \{[^}]*bellTime[^}]*\} from '\.\.\/utils\/missedLog\.js'/.test(bellSrc));
 }
 
+section('THE AMBER BUTTONS GET A GOLD EDGE (2026-10-12) - his "the yellow background onm some button inside the customer directory is not inline with our theme and its hurt the eye" + "sampling also have those button", then "buttons = A"');
+{
+  /* raw source, not code(): `accept="image/*"` in CustomerManager opens a fake comment that swallows the Auto-Find button */
+  const cm = read('src/components/CustomerManager.jsx'), sm = read('src/components/SamplingManager.jsx'), th = read('src/styles/theme.css');
+  /* scoped to each button's OWN opening tag (the text from its `<button` / `<label` to its word), not to the file */
+  const tagOf = (src, word) => {   /* the first place the word is a button's own label (not a toast or a confirm that names it) */
+    for (let i = src.indexOf(word); i >= 0; i = src.indexOf(word, i + 1)) {
+      const j = Math.max(src.lastIndexOf('<button', i), src.lastIndexOf('<label', i)), t = j < 0 ? '' : src.slice(j, i);
+      if (t && t.length < 700 && !/<\/(?:button|label|div)>/.test(t)) return t;
+    }
+    return '';
+  };
+  const tools = cm.slice(cm.indexOf('const adminTools = (phone) =>'), cm.indexOf('return (', cm.indexOf('const adminTools = (phone) =>')));
+  const desk = (name) => ((tools.match(new RegExp(`const ${name} = phone \\? '[^']*' : '([^']*)'`)) || [])[1] || '');
+  const seven = [[cm, 'Find Duplicates'], [cm, 'Data Scrub'], [cm, 'Import Map Marker (KML)'], [cm, 'Auto-Find'], [cm, "'Save Customer'"], [sm, 'New Sample'], [sm, 'View Analytics']]
+    .map(([src, w]) => { const t = tagOf(src, w), m = t.match(/className=\{`?(?:\$\{)?(glow|plain)\b/); return m ? desk(m[1]) : t; });
+  ok('his pick A: the seven buttons (Find Duplicates, Data Scrub, Import Map Marker (KML), Auto-Find, Save Customer, New Sample, View Analytics) wear the shared gold-edge class - no amber fill, no amber glow',
+     seven.length === 7 && seven.every((t) => t && /\bkpm-edgebtn\b/.test(t) && !/bg-\[var\(--gold\)\]|text-\[var\(--gold-ink\)\]|rgba\(217,119,6/.test(t)), seven.map((t) => (/kpm-edgebtn/.test(t) ? 'edge' : 'FILL')).join(' '));
+  ok('the class is ONE rule in theme.css on the theme tokens: the dark plate, a 1.5 px gold edge, the word in the app ink, the icon in gold; the press lights it from inside - and the light theme gets the brown edge + dark ink from the same tokens',
+     /\.kpm-edgebtn \{ background: var\(--plate\); border: 1\.5px solid var\(--accent-edge\); color: var\(--ink\);/.test(th) && /\.kpm-edgebtn > svg \{ color: var\(--accent-ink\); \}/.test(th) &&
+     /\.kpm-edgebtn:active \{ background: color-mix\(in srgb, var\(--accent-edge\) 22%, var\(--plate\)\); \}/.test(th) && !/\.kpm-edgebtn[^{]*\{[^}]*(?:(?:background|color): var\(--gold\)|shadow)/.test(th));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

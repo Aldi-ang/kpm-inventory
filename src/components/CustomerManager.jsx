@@ -1183,8 +1183,8 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
        as tier 1 at 375: beside the title they ran 146 px past the edge and the whole page could be
        dragged sideways — the salesman's mount never shows them, so the sweep missed it twice. */
     const adminTools = (phone) => {
-        const glow = phone ? 'kpm-btn block rounded-xl' : 'bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-[0_0_15px_rgba(217,119,6,0.4)] transition-all active:scale-95 flex items-center gap-2';
-        const plain = phone ? 'kpm-btn block rounded-xl' : 'bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer shadow-md transition-all active:scale-95 flex items-center gap-2';
+        const glow = phone ? 'kpm-btn block rounded-xl' : 'kpm-edgebtn px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer transition-all active:scale-95 flex items-center gap-2';
+        const plain = phone ? 'kpm-btn block rounded-xl' : 'kpm-edgebtn px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest cursor-pointer transition-all active:scale-95 flex items-center gap-2';
         return (
             <>
                 {/* Only shown when there is actually something to repair, so it stops
@@ -1468,7 +1468,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                 <span className="font-bold text-sm whitespace-nowrap">Location & Street View</span>
                             </div>
                             <div className="grid grid-cols-2 lg:flex gap-2 w-full lg:w-auto">
-                                <button type="button" onClick={handleAutoGeocode} disabled={isLocating} className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-3 py-1 min-h-[44px] lg:min-h-0 rounded text-[13px] lg:text-xs font-bold flex items-center justify-center lg:justify-start gap-1 whitespace-nowrap shadow-md">
+                                <button type="button" onClick={handleAutoGeocode} disabled={isLocating} className="kpm-edgebtn px-3 py-1 min-h-[44px] lg:min-h-0 rounded text-[13px] lg:text-xs font-bold flex items-center justify-center lg:justify-start gap-1 whitespace-nowrap">
                                     {isLocating ? <RefreshCcw size={12} className="animate-spin"/> : <Search size={12}/>} Auto-Find
                                 </button>
                                 <button type="button" onClick={handleGetLocation} className="bg-[var(--raised)] border px-3 min-h-[44px] lg:min-h-0 rounded text-[13px] lg:text-xs font-bold hover:bg-[var(--inset)] flex items-center justify-center lg:justify-start gap-1 whitespace-nowrap border-[var(--line)]">
@@ -1550,7 +1550,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     </div>
 
                     <div className="flex justify-end pt-2">
-                        <button className={`text-[var(--gold-ink)] px-8 py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95 ${editingId ? 'bg-[var(--gold)] hover:bg-[var(--gold)] border-2 border-[var(--lamp-on)]' : 'bg-[var(--gold)] hover:bg-[var(--gold)] border-2 border-transparent'} `}>{editingId ? 'Update Profile' : 'Save Customer'}</button>
+                        <button className={`kpm-edgebtn px-8 py-3 rounded-xl font-bold transition-transform active:scale-95 ${editingId ? 'border-2 border-[var(--lamp-on)]' : ''} `}>{editingId ? 'Update Profile' : 'Save Customer'}</button>
                     </div>
                 </form>
             </div>

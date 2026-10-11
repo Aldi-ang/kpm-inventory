@@ -473,11 +473,11 @@ export const SamplingFolderView = ({ samplings, isAdmin, onRecordSample, onDelet
                 <h2 className="text-2xl font-bold flex items-center gap-2"><Folder size={24} className="text-[var(--accent-ink)]"/> Sampling Archives</h2>
                 <div className="flex gap-2">
                     {isAdmin && (
-                        <button onClick={onRecordSample} className="flex items-center gap-2 bg-[var(--gold)] hover:brightness-110 text-[var(--gold-ink)] px-4 py-2 rounded-lg font-bold shadow-lg transition-all">
+                        <button onClick={onRecordSample} className="kpm-edgebtn flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-all">
                             <Plus size={18}/> New Sample
                         </button>
                     )}
-                    <button onClick={onShowAnalytics} className="flex items-center gap-2 bg-[var(--gold)] hover:brightness-110 text-[var(--gold-ink)] px-4 py-2 rounded-lg font-bold shadow-lg transition-all"><TrendingUp size={18}/> View Analytics</button>
+                    <button onClick={onShowAnalytics} className="kpm-edgebtn flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-all"><TrendingUp size={18}/> View Analytics</button>
                 </div>
             </div>
             {years.length === 0 ? (

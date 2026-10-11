@@ -3179,6 +3179,16 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 }
 .kpm-btn:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -4px; }
 
+/* 🔑 his pick A, 2026-10-12 ("buttons = A"), for the solid amber buttons he said "hurt the eye" (Customer Directory,
+   Sampling): a gold EDGE on the dark plate, never an amber fill - his own rule from the hub pin. Icon in gold, word in
+   the app ink; the press lights it from inside (a warm fill, not a glow - Lite Mode deletes shadows). Light theme: the
+   same tokens give a brown edge and dark ink (gold is never text on light). Size and type stay on each button. */
+.kpm-edgebtn { background: var(--plate); border: 1.5px solid var(--accent-edge); color: var(--ink);
+  transition: background-color 120ms ease-out; }
+.kpm-edgebtn > svg { color: var(--accent-ink); }
+.kpm-edgebtn:active { background: color-mix(in srgb, var(--accent-edge) 22%, var(--plate)); }
+@media (hover: hover) and (pointer: fine) { .kpm-edgebtn:hover { background: var(--raised); } }
+
 /* ============================================================================
    A BUTTON THAT IS ONLY GOLD ON HOVER MUST STILL BE READABLE BEFORE YOU HOVER IT.
    22 buttons carry text-[var(--gold-ink)] permanently but hover:bg-[var(--gold)] - the plate
