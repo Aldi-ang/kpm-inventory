@@ -10757,5 +10757,15 @@ section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual 
   ok('Vercel calls it once a day (00:05 WIB = 17:05 UTC)', /"crons"/.test(vj) && /"path": "\/api\/demo-reset"/.test(vj) && /"schedule": "5 17 \* \* \*"/.test(vj));
 }
 
+section('THE BELL SAYS THE DAY, THE DATE AND THE TIME (2026-10-12) - his "add dates and day and time inside the notification bell ... sunday, 10 february, 10.21 for example"');
+{
+  const ml = await import('../utils/missedLog.js'), bt = ml.bellTime;
+  const bellSrc = code(read('src/components/NotificationBell.jsx'));
+  ok('his shape: weekday, day month, hour.minute - "Sunday, 11 October, 10.21"', !!bt && bt(new Date(2026, 9, 11, 10, 21).getTime()) === 'Sunday, 11 October, 10.21');
+  ok('early hours keep two digits - "Monday, 12 October, 09.05", and today is written out too, never "10:21" alone', !!bt && bt(new Date(2026, 9, 12, 9, 5).getTime()) === 'Monday, 12 October, 09.05' && bt(Date.now()).includes(','));
+  ok('both lists use it - the Missed rows and the Needs-you requests - and the old "Sun 10:21" helper is gone',
+     (bellSrc.match(/bellTime\(/g) || []).length === 2 && !/fmtTime/.test(bellSrc) && /import \{[^}]*bellTime[^}]*\} from '\.\.\/utils\/missedLog\.js'/.test(bellSrc));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

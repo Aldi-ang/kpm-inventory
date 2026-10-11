@@ -51,6 +51,13 @@ export function mergeMissed(a, b, now) {
 /* The gold number on the bell: rows that arrived after he last looked at the list. */
 export const unseenCount = (items, seenAt) => items.filter((i) => i.ts > (seenAt || 0)).length;
 
+/* the bell's time, his shape (2026-10-12, *"sunday, 10 february, 10.21 for example"*): weekday, day month, hour.minute -
+   always written out, today included, so he knows exactly when */
+export const bellTime = (ms) => {
+    const d = new Date(ms), two = (n) => String(n).padStart(2, '0');
+    return `${d.toLocaleDateString('en-GB', { weekday: 'long' })}, ${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'long' })}, ${two(d.getHours())}.${two(d.getMinutes())}`;
+};
+
 const EMPTY = { items: [], seenAt: 0 };
 let state = EMPTY;
 const subs = new Set();

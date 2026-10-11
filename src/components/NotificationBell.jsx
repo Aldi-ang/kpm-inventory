@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell } from 'lucide-react';
-import { getMissed, subscribeMissed, unseenCount, markMissedSeen, clearMissed } from '../utils/missedLog.js';
+import { getMissed, subscribeMissed, unseenCount, markMissedSeen, clearMissed, bellTime } from '../utils/missedLog.js';
 
 /* THE BELL HAS TWO PARTS - his design, 2026-10-02: *"1 is for the confirmation request or handsoff request
    and all of the urgent notification, and the other one is for temporary notification that can be cleared,
@@ -12,11 +12,6 @@ import { getMissed, subscribeMissed, unseenCount, markMissedSeen, clearMissed } 
      - PC (B, lg and up): both lists side by side, nothing to press. Both are the same markup; `lg:` decides.
    The red number counts Needs you and is the only thing that lights the plate or rings; the small gold
    number under it counts Missed lines that came after he last looked. */
-const fmtTime = (ms) => {
-    const d = new Date(ms);
-    const hm = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    return d.toDateString() === new Date().toDateString() ? hm : `${d.toLocaleDateString([], { weekday: 'short' })} ${hm}`;
-};
 
 const Count = ({ n, tone }) => n > 0 && (
     <span className={`min-w-5 h-5 px-1.5 rounded-full text-[11px] font-black leading-none flex items-center justify-center ${tone === 'red'
@@ -36,11 +31,12 @@ const ColumnTitle = ({ children, n, tone }) => (
 const MissedRow = ({ m, fresh }) => (
     <div className={`flex items-start gap-3 border-l-[3px] px-3 py-2.5 ${fresh ? 'bg-[#14100e]' : 'opacity-55'}`}
         style={{ borderLeftColor: m.bad ? '#b4524a' : fresh ? '#ff9d00' : 'transparent' }}>
-        <p className="min-w-0 flex-1 whitespace-pre-line break-words text-[12px] leading-snug text-[#cfc6ba]">{m.text}</p>
-        <div className="shrink-0 flex flex-col items-end gap-1">
-            <span className="text-[11px] text-[var(--duke-ink-3)] tabular-nums">{fmtTime(m.ts)}</span>
-            {m.count > 1 && <span className="px-1.5 rounded border border-[var(--duke-edge-2)] text-[10px] font-black text-[var(--duke-ink-2)]">×{m.count}</span>}
+        {/* the time on its own line under the message: "Sunday, 11 October, 10.21" is too long to sit beside it on a phone */}
+        <div className="min-w-0 flex-1">
+            <p className="whitespace-pre-line break-words text-[12px] leading-snug text-[#cfc6ba]">{m.text}</p>
+            <span className="block mt-1 text-[11px] text-[var(--duke-ink-3)] tabular-nums">{bellTime(m.ts)}</span>
         </div>
+        {m.count > 1 && <span className="shrink-0 px-1.5 rounded border border-[var(--duke-edge-2)] text-[10px] font-black text-[var(--duke-ink-2)]">×{m.count}</span>}
     </div>
 );
 
@@ -203,12 +199,12 @@ const NotificationBell = ({ notifications = [], onNotificationClick }) => {
                                                 : 'bg-black/30 border-[var(--duke-edge-1)] opacity-50 hover:opacity-100'
                                             }`}
                                         >
-                                            <div className="flex justify-between items-start gap-2 mb-1">
+                                            <div className="mb-1">
                                                 <h4 className={`text-[11px] font-black uppercase tracking-wider ${isUnread ? 'text-[var(--duke-amber-ink)]' : 'text-[var(--duke-ink-3)]'}`}>
                                                     {notif.title || "Alert"}
                                                 </h4>
-                                                <span className="text-[11px] text-[var(--duke-ink-3)] font-mono shrink-0">
-                                                    {notif.timestamp?.seconds ? fmtTime(notif.timestamp.seconds * 1000) : 'Just now'}
+                                                <span className="block text-[11px] text-[var(--duke-ink-3)] tabular-nums">
+                                                    {notif.timestamp?.seconds ? bellTime(notif.timestamp.seconds * 1000) : 'Just now'}
                                                 </span>
                                             </div>
                                             {/* 12, up from 10 - his "bigger small type", 2026-08-16 */}
