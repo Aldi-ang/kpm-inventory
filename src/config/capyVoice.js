@@ -8,10 +8,13 @@
    sounds the same way, so it is left out here and every sound keeps the balance he heard. His call on the messages,
    2026-10-11: *"just leave the message like that for now"*. */
 
-/* Agent (firm) - his words: *"tegas and serious but expressive ... elegant manly and focus"* */
+/* Agent (firm) - his words: *"tegas and serious but expressive ... elegant manly and focus"*. The same voice since
+   2026-10-11 17:35 with HAPPY melodies and at least 3 sounds a line - his *"sometimes the capybara said one words only
+   its kinda scary tbh we need more happy emotion and minimum of 3 words when saying stuff"* (moods 'happy' + minSyl
+   are in tools/chip.js plan). The syllable files did not change, so nothing was re-baked. */
 export const CAPY_VOICE = {
-  shape: 'voice', moods: 'agent', f: 112, formant: 1, intonation: 1.1, jitter: .35, scoop: 1.2, bend: 2.4, speed: 1,
-  cons: .9, vib: .1, breath: .18, maxSyl: 12, variety: 1, tempo: .7, drop: .6, emph: .7, fry: .35, vol: .4, echo: .12,
+  shape: 'voice', moods: 'happy', f: 112, formant: 1, intonation: 1.1, jitter: .35, scoop: 1.2, bend: 2.4, speed: 1,
+  cons: .9, vib: .1, breath: .18, maxSyl: 12, minSyl: 3, variety: 1, tempo: .7, drop: .6, emph: .7, fry: .35, vol: .4, echo: .12,
 };
 
 /* the vault intro - his own mix: *"dont make the intro 8 bit bruh, we need elegant for that"* */

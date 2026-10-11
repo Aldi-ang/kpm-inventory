@@ -207,6 +207,8 @@
   function moodFor(text, r, set) {
     const x = r(), ask = /\?\s*\W*$/.test(text), bang = /!/.test(text);
     if (set === 'agent') return ask ? (x < .85 ? 'questioning' : 'focused') : bang ? (x < .6 ? 'firm' : 'approving') : x < .45 ? 'focused' : x < .8 ? 'firm' : 'approving';
+    /* his 2026-10-11 "we need more happy emotion": the agent's voice, only bright melodies */
+    if (set === 'happy') return ask ? (x < .7 ? 'curious' : 'cheerful') : bang ? (x < .6 ? 'excited' : 'cheerful') : x < .45 ? 'cheerful' : x < .8 ? 'approving' : 'excited';
     return ask ? (x < .8 ? 'curious' : 'cheerful') : bang ? (x < .7 ? 'excited' : 'cheerful') : x < .5 ? 'calm' : 'cheerful';
   }
   /* the plan: which syllable file, at what pitch (a playback rate), how loud, when. The app will run THIS, with a new
@@ -217,11 +219,19 @@
     const mood = MOODS[o.mood] || MOODS[moodFor(text, r, p.moods)], lift = (mood.pitch + (r() * 2 - 1) * 1.5) * v;
     const rangeK = 1 + (mood.range - 1) * v, gapK = 1 + (mood.gap - 1) * v;
     /* 1. HOW MANY syllables this time: some unstressed ones swallowed, sometimes an "hm." first, a limit that moves */
-    const cap = Math.max(2, Math.round(p.maxSyl * (1 + (r() * 2 - 1) * .3 * dv))), dropP = dv * (.1 + .3 * r());
+    const cap = Math.max(p.minSyl || 2, Math.round(p.maxSyl * (1 + (r() * 2 - 1) * .3 * dv))), dropP = dv * (.1 + .3 * r());
     let sy = syllables(text);
     const lastOf = new Set(); sy.forEach((x, i) => { if (!x.end && (!sy[i + 1] || sy[i + 1].end)) lastOf.add(i); });
     sy = sy.filter((x, i) => x.end || x.first || lastOf.has(i) || r() >= dropP);
-    if (r() < dv * .3) sy.unshift({ v: 'm', on: 'soft', first: true, word: -1, wlen: 2, from: 0, to: 0, filler: true }, { end: '.' });
+    /* his 2026-10-11 "minimum of 3 words when saying stuff": a short line ("Hi.", "Good pick.") is stretched with its
+       own sounds again, inside its last word, so he never answers with one lonely sound */
+    const said = sy.filter((x) => !x.end);
+    for (let k = 0; said.length && sy.filter((x) => !x.end).length < (p.minSyl || 0); k++) {
+      const at = sy[sy.length - 1].end ? sy.length - 1 : sy.length;
+      sy.splice(at, 0, { ...said[k % said.length], first: false, word: said[said.length - 1].word });
+    }
+    /* the low lone "hm." is the agent's habit - a happy voice does not grunt first */
+    if (p.moods !== 'happy' && r() < dv * .3) sy.unshift({ v: 'm', on: 'soft', first: true, word: -1, wlen: 2, from: 0, to: 0, filler: true }, { end: '.' });
     /* 2. HOW FAST: the whole line quicker or slower, and inside it a drift - quick through the middle, slow at the end */
     const pace = 1 + (r() * 2 - 1) * .28 * tv, phase = r();
     const sentences = []; let cur = [];

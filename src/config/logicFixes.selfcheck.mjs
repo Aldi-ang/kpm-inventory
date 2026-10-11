@@ -10634,9 +10634,9 @@ section('THE CAPYBARA\'S VOICE + THE VAULT INTRO FROM HIS STUDIO (2026-10-11) - 
   const us = code(read('src/hooks/useSound.js')), vg = code(read('src/components/VaultGate.jsx'));
   const vp = fs.existsSync('src/utils/voicePlan.js') ? code(read('src/utils/voicePlan.js')) : '';
   const cv = read('src/config/capyVoice.js'), bake = read('tools/sfx-bake.mjs');
-  ok('the numbers are his save: Agent (firm) 112 Hz, agent moods, variety 1, pace .7, syllable drop .6, stress .7, creak .35, loudness .4, echo .12',
-     /shape: 'voice', moods: 'agent', f: 112, formant: 1, intonation: 1\.1, jitter: \.35, scoop: 1\.2, bend: 2\.4, speed: 1,/.test(cv)
-     && /maxSyl: 12, variety: 1, tempo: \.7, drop: \.6, emph: \.7, fry: \.35, vol: \.4, echo: \.12/.test(cv));
+  ok('the numbers are his save: Agent (firm) 112 Hz, variety 1, pace .7, syllable drop .6, stress .7, creak .35, loudness .4, echo .12 - happy moods + 3 sounds minimum since his 17:35 call',
+     /shape: 'voice', moods: 'happy', f: 112, formant: 1, intonation: 1\.1, jitter: \.35, scoop: 1\.2, bend: 2\.4, speed: 1,/.test(cv)
+     && /maxSyl: 12, minSyl: 3, variety: 1, tempo: \.7, drop: \.6, emph: \.7, fry: \.35, vol: \.4, echo: \.12/.test(cv));
   ok('his intro mix: slow chord .5, reverse bell -12 .25, warm bloom -12 1, breath -12 1, soft key .5, hall .35',
      /wave:\s*\{ d: 'bloom', vol: \.5, pitch: 0 \}/.test(cv) && /gather: \{ d: 'riser', vol: \.25, pitch: -12 \}/.test(cv)
      && /formed: \{ d: 'bloomchord', vol: 1, pitch: -12 \}/.test(cv) && /leave:\s*\{ d: 'breath', vol: 1, pitch: -12 \}/.test(cv)
@@ -10656,6 +10656,22 @@ section('THE CAPYBARA\'S VOICE + THE VAULT INTRO FROM HIS STUDIO (2026-10-11) - 
   const missing = files.filter((f) => !fs.existsSync(f));
   ok(`all 61 syllable files + vault-intro.mp3 are baked (missing: ${missing.length})`, capy.length === 61 && missing.length === 0);
   ok('the baker renders both from capyVoice.js with tools/chip.js - the studio\'s own synth file', /from '\.\.\/src\/config\/capyVoice\.js'/.test(bake) && /chip\.js/.test(bake) && /vault-intro/.test(bake));
+}
+
+section('THE CAPYBARA SOUNDS HAPPY, NEVER ONE LONELY SOUND (2026-10-11) - his "sometimes the capybara said one words only its kinda scary ... we need more happy emotion and minimum of 3 words"');
+{
+  const { voicePlan } = await import('../utils/voicePlan.js');
+  const cv = read('src/config/capyVoice.js');
+  const SHORT = ['Good pick.', 'Hello!', 'Hi.', 'Ok', 'Fine taste.', 'Their page, then.', 'Any new products to add?'];
+  let fewest = 99, moods = new Set(), hm = 0;
+  for (const t of SHORT) for (let s = 1; s <= 200; s++) {
+    const p = voicePlan(t, s); moods.add(p.mood);
+    fewest = Math.min(fewest, p.filter((x) => x.v !== 'm').length); if (p.some((x) => x.v === 'm')) hm++;
+  }
+  ok(`every line is at least 3 sounds (fewest over ${SHORT.length * 200} rolls: ${fewest})`, fewest >= 3);
+  ok(`only happy moods - cheerful / approving / excited / curious (heard: ${[...moods].sort().join(', ')})`, [...moods].every((m) => ['cheerful', 'approving', 'excited', 'curious'].includes(m)) && moods.size >= 3);
+  ok(`no lone low "hm." grunt before a line (${hm} of ${SHORT.length * 200})`, hm === 0);
+  ok('his Agent voice itself is unchanged - only its melody and its shortest line moved', /moods: 'happy'/.test(cv) && /minSyl: 3/.test(cv) && /f: 112, formant: 1, intonation: 1\.1/.test(cv));
 }
 
 section('THE CORNER CAPYBARA TALKS TOO (2026-10-11) - his pick A after "the capy shows up and there is no voice tho"');
