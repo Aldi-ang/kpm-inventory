@@ -83,6 +83,21 @@
       "url": "http://localhost:5174"
     },
     {
+      "name": "ponder-lab-built",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "preview",
+        "--config",
+        "tools/ponder-lab.config.mjs",
+        "--port",
+        "4187",
+        "--strictPort"
+      ],
+      "port": 4187,
+      "url": "http://localhost:4187"
+    },
+    {
       "name": "demo-build",
       "runtimeExecutable": "npx",
       "runtimeArgs": [

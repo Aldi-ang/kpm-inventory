@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { recordMissed } from '../utils/missedLog.js';
+import { speakMumble } from '../hooks/useSound';
 
 /* Module scope, not inside the component. As locals these were rebuilt on every single render,
    so `dialogueList` was a new array every time, so the peek effect below — which lists it as a
@@ -104,8 +105,10 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
                and a message is what puts the bubble up and swaps him to the talking sprite. */
             const incomingPeek = typeof d === 'string' ? 0 : d?.peek;
             /* a plain line is the capybara's own news and goes in the bell's Missed list; an object
-               with a sprite is the merchant's flavour line ("Right, that's noted."), which is not */
-            if (typeof d === 'string' && d) recordMissed(d, false);
+               with a sprite is the merchant's flavour line ("Right, that's noted."), which is not.
+               Same split for the voice: his own line is spoken here; the merchant's was already
+               spoken by the sales terminal that sent it, and a peek has no line. */
+            if (typeof d === 'string' && d) { recordMissed(d, false); speakMumble(d); }
             if (incomingMessage || incomingPeek) {
                 /* blank, not left alone: with `activeMessage` falsy `spriteToShow` resolves to
                    kpm-merch-idle and no bubble renders — which IS the ask. A line still on
@@ -202,6 +205,7 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
                 const nextText = dialogueList[currentIndex];
                 
                 setInternalMsg(nextText);
+                speakMumble(nextText);
                 msgIndexRef.current = (currentIndex + 1) % dialogueList.length;
 
                 setIsPeeking(true);

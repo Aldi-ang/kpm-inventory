@@ -23,6 +23,8 @@ import '@fontsource/rajdhani/latin-500.css';
 import '@fontsource/rajdhani/latin-600.css';
 import '@fontsource/rajdhani/latin-700.css';
 import PonderOverlay from '../src/ponder/PonderOverlay.jsx';
+import CapybaraMascot from '../src/components/CapybaraMascot.jsx';
+import { unlockSounds } from '../src/hooks/useSound.js';
 import PonderBookButton from '../src/ponder/PonderBook.jsx';
 import TierPovSwitch from '../src/components/TierPovSwitch.jsx';
 import StockByWarehouseTable from '../src/ponder/stages/StockByWarehouseTable.jsx';
@@ -1241,7 +1243,20 @@ function Vault3DLab() {
   );
 }
 
+/* ?capy - the REAL corner capybara with the real voice (2026-10-11, his "the capy shows up and there is no voice tho").
+   The tap unlocks sound exactly as main.jsx does, then mounts him; a CAPY_COMMS line or his idle line must fetch and play
+   /sounds/capy-*.mp3. */
+function CapyLab() {
+  const [on, setOn] = React.useState(false);
+  return on ? <CapybaraMascot user={{ uid: 'lab' }} /> : (
+    <button style={{ margin: 40, padding: 16, color: '#fff', border: '1px solid #fff' }} onClick={() => { unlockSounds(); setOn(true); }}>
+      Tap: unlock sound + mount the capybara
+    </button>
+  );
+}
+
 createRoot(document.getElementById('root')).render(
+  q.has('capy') ? <CapyLab /> :
   q.has('vault3d') ? <Vault3DLab /> :
   /* the shell carries the dialog gate + the toast column as main.jsx does, so a screen that asks (the player card's ✕
      asks the reason through promptAction) is answered in the lab too instead of logging "not mounted" */

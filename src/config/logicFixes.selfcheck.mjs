@@ -10658,5 +10658,16 @@ section('THE CAPYBARA\'S VOICE + THE VAULT INTRO FROM HIS STUDIO (2026-10-11) - 
   ok('the baker renders both from capyVoice.js with tools/chip.js - the studio\'s own synth file', /from '\.\.\/src\/config\/capyVoice\.js'/.test(bake) && /chip\.js/.test(bake) && /vault-intro/.test(bake));
 }
 
+section('THE CORNER CAPYBARA TALKS TOO (2026-10-11) - his pick A after "the capy shows up and there is no voice tho"');
+{
+  const capy = code(read('src/components/CapybaraMascot.jsx')).replace(/\r/g, '');
+  ok('the corner capybara imports the voice', /import \{ speakMumble \} from '\.\.\/hooks\/useSound'/.test(capy));
+  ok('his idle line is spoken the moment it goes up', /setInternalMsg\(nextText\);\s*speakMumble\(nextText\);/.test(capy));
+  ok('a plain CAPY_COMMS line (his own news, e.g. "Sector Configuration Saved!") is spoken',
+     /if \(typeof d === 'string' && d\) \{ recordMissed\(d, false\); speakMumble\(d\); \}/.test(capy));
+  ok('exactly those two: never the message prop (triggerCapy speaks it), never an object detail (the deal line - the terminal spoke it; the slider peek - no line)',
+     (capy.match(/speakMumble\(/g) || []).length === 2);
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
