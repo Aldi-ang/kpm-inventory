@@ -10669,5 +10669,74 @@ section('THE CORNER CAPYBARA TALKS TOO (2026-10-11) - his pick A after "the capy
      (capy.match(/speakMumble\(/g) || []).length === 2);
 }
 
+section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual reset im expecting tier 1 account to be able to do that ... visitor is tier2 and below"');
+{
+  let dc = null, handler = null, demoKey = null;
+  try { dc = await import('../../api/_demoCompany.js'); ({ default: handler, demoKey } = await import('../../api/demo-reset.js')); } catch (e) { console.log('  (demo reset not importable: ' + e.message.split('\n')[0] + ')'); }
+  const seed = JSON.parse(read('demo/seed.json'));
+  const NOW = new Date('2026-10-11T03:00:00Z');                       /* 10:00 WIB */
+  const VAULT = { pin: { algo: 'PBKDF2-SHA256', hash: 'p' }, recoveryHash: { algo: 'PBKDF2-SHA256', hash: 'r' } };
+  const a = dc ? dc.buildDemoCompany(seed, NOW, VAULT) : null, b = dc ? dc.buildDemoCompany(seed, NOW, VAULT) : null;
+  const paths = a ? a.docs.map((d) => d.path) : [];
+  const under = (p) => a.docs.filter((d) => d.path.startsWith(`artifacts/cello-inventory-manager/users/${dc.OWNER_UID}/${p}/`));
+  const sales = a ? under('transactions') : [];
+  ok('the reset only knows the demo project, and the T1 Gmail is never one of its logins',
+     !!dc && dc.DEMO_PROJECT === 'kpm-demo-f4d74' && dc.T1_EMAIL === 'adikaryasukses99@gmail.com' && !a.logins.some((l) => l.email === dc.T1_EMAIL));
+  ok('demoKey refuses no key, a broken key, and the REAL project key; takes only kpm-demo-f4d74',
+     !!demoKey && demoKey(undefined) === null && demoKey('not json') === null
+     && demoKey(JSON.stringify({ project_id: 'cello-inventory-manager' })) === null && demoKey(JSON.stringify({ project_id: 'kpm-demo-f4d74' }))?.project_id === 'kpm-demo-f4d74');
+  let refused = null;
+  if (handler) { const r = { code: 0, body: null, status(c) { this.code = c; return this; }, json(o) { this.body = o; return this; } };
+    const saved = process.env.DEMO_FIREBASE_KEY; delete process.env.DEMO_FIREBASE_KEY; await handler({ method: 'GET', headers: {} }, r); if (saved !== undefined) process.env.DEMO_FIREBASE_KEY = saved; refused = r; }
+  ok('without the key (the REAL Vercel project) the function answers 404 and touches nothing', refused?.code === 404 && refused?.body?.ok === false);
+  ok('five switch logins, T2..T6, each a real tier id; T2 is the owner the company lives under',
+     !!a && a.logins.map((l) => l.tier).join() === 'T2,T3,T4,T5,T6' && a.logins[0].uid === dc.OWNER_UID
+     && a.logins.slice(1).map((l) => l.userRole).join() === 'AREA_ADMIN,FLEET_CAPTAIN,FIELD_OPERATIVE,ROOKIE');
+  ok('every write is inside artifacts/cello-inventory-manager - nothing else in the demo database is touched', !!a && paths.every((p) => p.startsWith('artifacts/cello-inventory-manager/')));
+  ok('the whole seed goes in: 6 products, 152 shops, his company name, the 5 tier pictures',
+     !!a && under('products').length === 6 && under('customers').length === 152
+     && a.docs.find((d) => d.path.endsWith('/settings/general'))?.data.companyName === 'KPM Demo' && a.docs.find((d) => d.path.endsWith('/settings/tiers'))?.data.list.length === 5);
+  ok('the seed\'s exported timestamps become real dates (an object with seconds would show as "Invalid Date"); the 7 text dates stay text, as the app saved them',
+     !!a && !JSON.stringify(a.docs).includes('firestore/timestamp/1.0') && under('products').every((d) => d.data.updatedAt instanceof Date)
+     && under('customers').filter((d) => typeof d.data.createdAt === 'string').length === seed.customers.filter((c) => typeof c.createdAt === 'string').length);
+  ok('each switch login has its login record (bossUid = the owner, demoLogin) and every staff login a vault; the owner\'s vault is settings/admin',
+     !!a && a.logins.slice(1).every((l) => { const e = a.docs.find((d) => d.path.endsWith('/employee_directory/' + l.email)); return e && e.data.bossUid === dc.OWNER_UID && e.data.agentId === l.agentId && e.data.demoLogin === true && e.data.locked === false; })
+     && a.logins.slice(1).every((l) => paths.includes(`artifacts/cello-inventory-manager/users/${dc.OWNER_UID}/vault_keys/${l.agentId}`))
+     && paths.includes(`artifacts/cello-inventory-manager/users/${dc.OWNER_UID}/settings/admin`));
+  ok('the owner\'s login records carry bossUid = the owner (the rules list sales through isSalesman, by email - without it his dashboard read Rp 0 on the emulator)',
+     !!a && [dc.OWNER_UID, a.logins[0].email].every((id) => a.docs.find((d) => d.path.endsWith('/employee_directory/' + id))?.data.bossUid === dc.OWNER_UID));
+  ok('a staff vault says whose it is - uid + email of that login, as App.jsx\'s vault setup writes it (the vault_keys rule reads resource.data.uid; without it the T6 vault would not open on the emulator)',
+     !!a && a.logins.slice(1).every((l) => { const v = a.docs.find((d) => d.path.endsWith('/vault_keys/' + l.agentId))?.data; return v?.uid === l.uid && v?.email === l.email; }));
+  const staffNames = a ? under('motorists').map((d) => d.data.name) : [];
+  ok('a shop\'s assignedAgent is a NAME on the roster, as JourneyView compares it (agentsList = names) - never the seed\'s demo-agent-N (the emulator said "91 stores are assigned to a name not on the roster")',
+     !!a && under('customers').filter((d) => d.data.assignedAgent && d.data.assignedAgent !== 'Unassigned').length === seed.customers.filter((c) => c.assignedAgent).length
+     && under('customers').every((d) => !d.data.assignedAgent || d.data.assignedAgent === 'Unassigned' || staffNames.includes(d.data.assignedAgent)));
+  ok('every seller is ON the map today: currentLocation = his last sale\'s shop at its time, pathHistory = one point per sale (expedition() lists only men with currentLocation - without it the emulator showed no team and no Replay)',
+     !!a && under('motorists').every((d) => {
+       const mine = sales.filter((s) => s.data.agentId === d.data.id).sort((x, y) => x.data.timestamp - y.data.timestamp);
+       if (!mine.length) return !d.data.currentLocation;
+       const last = mine[mine.length - 1], shop = seed.customers.find((c) => c.name === last.data.customerName);
+       return d.data.currentLocation?.lat === shop.latitude && d.data.currentLocation?.timestamp === last.data.timestamp.toISOString() && d.data.pathHistory?.length === mine.length;
+     }));
+  const t4 = a ? a.logins[2] : null, t4Team = a ? under('motorists').filter((d) => d.data.location === t4.location && d.data.id !== t4.agentId) : [];
+  const branchRows = a ? a.docs.filter((d) => d.path.includes(`/branches/${t4.location}/inventory/`)) : [];
+  ok('the Regional Admin has a team to run (visibleTeam = same location) - all of them sell today; their warehouse (branches/<place>/inventory, where a field man outside HQ loads from) holds every product',
+     !!a && t4Team.length >= 2 && t4Team.every((d) => sales.some((s) => s.data.agentId === d.data.id))
+     && branchRows.length === 6 && branchRows.every((d) => d.data.stock > 0 && d.data.name));
+  ok('the Regional Admin\'s place matches shops in the seed (the rules compare location to the shop region)',
+     !!a && seed.customers.some((c) => String(c.region).toLowerCase() === String(a.logins[2].location).toLowerCase()));
+  ok('B: today\'s sales are dated by the WIB day of the run, 08:00-17:00 WIB, every seller with shops sells',
+     !!a && sales.length > 0 && sales.every((d) => d.data.date === '2026-10-11' && d.data.timestamp.getUTCHours() >= 1 && d.data.timestamp.getUTCHours() < 10)
+     && new Set(sales.map((d) => d.data.agentId)).size === new Set(seed.customers.map((c) => c.assignedAgent).filter(Boolean)).size);
+  ok('a sale names a real seed shop and prices each line at that shop\'s price level',
+     !!a && sales.every((d) => seed.customers.some((c) => c.name === d.data.customerName) && d.data.total === d.data.items.reduce((s, i) => s + i.qty * i.calculatedPrice, 0)));
+  const stats = a ? under('sales_stats') : [];
+  const statRev = stats.reduce((s, d) => s + Object.values(d.data.byProduct).reduce((t, v) => t + v.revenue, 0), 0);
+  ok('the month tally (Reports) is the app\'s own salesDelta over those sales - it equals the cash total', !!a && stats.length === 1 && statRev === sales.reduce((s, d) => s + d.data.total, 0));
+  ok('run twice on the same day = the same company, byte for byte (nothing doubles)', !!a && JSON.stringify(a) === JSON.stringify(b));
+  const vj = read('vercel.json');
+  ok('Vercel calls it once a day (00:05 WIB = 17:05 UTC)', /"crons"/.test(vj) && /"path": "\/api\/demo-reset"/.test(vj) && /"schedule": "5 17 \* \* \*"/.test(vj));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

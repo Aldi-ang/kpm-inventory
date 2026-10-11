@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, connectFirestoreEmulator } from "firebase/firestore";
-import { connectAuthEmulator, signInWithCredential } from "firebase/auth";
+import { connectAuthEmulator, signInWithCredential, EmailAuthProvider } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 /* WHY THE LOGIN DOMAIN IS NOT A CONSTANT ANY MORE.
@@ -87,8 +87,11 @@ if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATOR === 'true') {
      This block sits inside a gate that needs BOTH import.meta.env.DEV and VITE_USE_EMULATOR, and
      only vite's `httpdev` mode sets that flag - so it is absent from every build, absent from
      `npm run dev`, and absent from Aldi's phone. It is not a way into the live project even when
-     it does exist, because the credential it takes is one live Firebase will not honour. */
-  window.__kpmEmulatorAuth = { auth, credential: GoogleAuthProvider.credential, signIn: signInWithCredential };
+     it does exist, because the credential it takes is one live Firebase will not honour.
+
+     `emailCredential` (2026-10-11): the demo's switch logins are email + password, made by
+     api/demo-reset.js in the emulator - `signIn(auth, emailCredential(email, password))`. */
+  window.__kpmEmulatorAuth = { auth, credential: GoogleAuthProvider.credential, emailCredential: EmailAuthProvider.credential, signIn: signInWithCredential };
 }
 
 export const storage = getStorage(app);

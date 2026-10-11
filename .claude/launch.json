@@ -83,6 +83,36 @@
       "url": "http://localhost:5174"
     },
     {
+      "name": "demo-emulator",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "firebase",
+        "emulators:start",
+        "--only",
+        "auth,firestore",
+        "--project",
+        "kpm-demo-f4d74"
+      ],
+      "port": 4000,
+      "url": "http://127.0.0.1:4000"
+    },
+    {
+      "name": "demo-app-emulator",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "cross-env",
+        "VITE_DEMO=1",
+        "vite",
+        "--mode",
+        "httpdev",
+        "--port",
+        "5176",
+        "--strictPort"
+      ],
+      "port": 5176,
+      "url": "http://localhost:5176"
+    },
+    {
       "name": "ponder-lab-built",
       "runtimeExecutable": "npx",
       "runtimeArgs": [
