@@ -1,6 +1,8 @@
 # The one job
 
-**Paste this to start:** `/alucard Do the ONE JOB at the top of .claude/NEXT-SESSION.md (2026-10-11 19:40: bake his mumbling capybara voice from studio round 7).`
+**Paste this to start:** `/alucard Do the ONE JOB at the top of .claude/NEXT-SESSION.md (2026-10-11 20:13: push on his word, phone test of the mumbling voice, then the demo front door).`
+
+**2026-10-11 20:13 — THE ONE JOB: the mumbling capybara is BAKED (kpm `75878e8`, local) - push on his word, get his phone test, then the demo front door.** His *"just use that voice for now"* -> CAPY_VOICE = "Video mumble - natural" (shape rec, natural, PSOLA; tools/mumble-pack.js loaded by the baker). The 19:40 / 19:48 bake blocks below are DONE. Step 0: `git fetch origin; git rev-list --count origin/phase0-solid-ground..HEAD` (9 at 20:13: demo reset `199b19a`, happy voice `e55536c`, studio synth `e8cee7d` / `60b9c19`, this bake + notes; firestore.rules 0 lines). **Push ONLY on his word "push"** -> Vercel status once -> one live read. ✅ his phone test: the corner capybara and the sales terminal mumble in the new deep, soft voice, always 3+ sounds, cheerful; what would mean broken: silence (the baked files are fine - check that the phone loaded the new build: close and reopen the app). AFTER: the demo front door (the 16:05 block), then the T2 rules draft (the 17:40 block). Rewrite this file when done.
 
 **2026-10-11 19:48 AMENDS the job below (studio v8):** his *"your pick is good but make it more natural sounding instead of electronic edited sound"* -> the ★ is now "Video mumble - natural" (`vidnatural`: shape rec, rec round, natural true, f 108, formant .9, PSOLA in chip.js `recNatural`); "Video mumble - first try" stays to compare. If he saves `vidnatural`, CAPY_VOICE needs `natural: true` too, or the bake renders the first try. tools/chip.js is already the v8 copy.
 
