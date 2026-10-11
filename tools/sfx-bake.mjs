@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { CAPY_VOICE, INTRO_MIX, capyFiles, capyFile } from '../src/config/capyVoice.js';
+import './mumble-pack.js';                  // the recorded mumble clips (A-Brain Tools/sound-studio) -> globalThis.KPM_MUMBLE, read by chip.js shape 'rec'
 import './chip.js';                         // the studio's own synth (a byte copy of the published studio's chip.js) -> globalThis.KPM_CHIP
 
 /* sfx/settings version 2, saved by Aldi 2026-09-23 11:58 WIB; MUAT VAN (done) kept as is 2026-09-24 */
@@ -178,7 +179,7 @@ for (const f of capyFiles()) {
   capyBytes += encode(pcm, 1, capyFile(f.on, f.v, f.len, f.rise), '64k');
 }
 if (capyPeak > .99) throw new Error('a capybara syllable peaks at ' + capyPeak.toFixed(3) + ' - it would clip');
-console.log('capy-*'.padEnd(18), capyFiles().length + ' files', 'peak ' + capyPeak.toFixed(2), (capyBytes / 1024).toFixed(1) + ' KB', '<- Agent (firm)');
+console.log('capy-*'.padEnd(18), capyFiles().length + ' files', 'peak ' + capyPeak.toFixed(2), (capyBytes / 1024).toFixed(1) + ' KB', '<- ' + (CAPY_VOICE.shape === 'rec' ? 'Video mumble - natural' : CAPY_VOICE.shape));
 
 /* the hall is 2.4 s and the intro ~10.5 s: a direct convolution would be ~90 G multiply-adds, so it goes through an FFT */
 function fft(re, im, inverse) {

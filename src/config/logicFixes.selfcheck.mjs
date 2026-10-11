@@ -10634,9 +10634,12 @@ section('THE CAPYBARA\'S VOICE + THE VAULT INTRO FROM HIS STUDIO (2026-10-11) - 
   const us = code(read('src/hooks/useSound.js')), vg = code(read('src/components/VaultGate.jsx'));
   const vp = fs.existsSync('src/utils/voicePlan.js') ? code(read('src/utils/voicePlan.js')) : '';
   const cv = read('src/config/capyVoice.js'), bake = read('tools/sfx-bake.mjs');
-  ok('the numbers are his save: Agent (firm) 112 Hz, variety 1, pace .7, syllable drop .6, stress .7, creak .35, loudness .4, echo .12 - happy moods + 3 sounds minimum since his 17:35 call',
-     /shape: 'voice', moods: 'happy', f: 112, formant: 1, intonation: 1\.1, jitter: \.35, scoop: 1\.2, bend: 2\.4, speed: 1,/.test(cv)
-     && /maxSyl: 12, minSyl: 3, variety: 1, tempo: \.7, drop: \.6, emph: \.7, fry: \.35, vol: \.4, echo: \.12/.test(cv));
+  ok('the voice is his "just use that voice for now" (2026-10-11 20:08): Video mumble - natural, the studio v8 numbers, his loudness .4 and echo .12',
+     /shape: 'rec', rec: 'round', natural: true, moods: 'happy', f: 108, formant: \.9, intonation: \.9, jitter: \.2, scoop: 0, bend: 0, speed: \.9,/.test(cv)
+     && /maxSyl: 12, minSyl: 3, variety: 1, tempo: \.5, drop: \.5, emph: \.5, fry: 0, vol: \.4, echo: \.12/.test(cv));
+  const bk = read('tools/sfx-bake.mjs');
+  ok('the baker loads the mumble clips BEFORE the synth - a rec voice baked without them is 61 silent files',
+     bk.indexOf("import './mumble-pack.js';") > -1 && bk.indexOf("import './mumble-pack.js';") < bk.indexOf("import './chip.js';") && fs.existsSync('tools/mumble-pack.js'));
   ok('his intro mix: slow chord .5, reverse bell -12 .25, warm bloom -12 1, breath -12 1, soft key .5, hall .35',
      /wave:\s*\{ d: 'bloom', vol: \.5, pitch: 0 \}/.test(cv) && /gather: \{ d: 'riser', vol: \.25, pitch: -12 \}/.test(cv)
      && /formed: \{ d: 'bloomchord', vol: 1, pitch: -12 \}/.test(cv) && /leave:\s*\{ d: 'breath', vol: 1, pitch: -12 \}/.test(cv)
@@ -10671,7 +10674,7 @@ section('THE CAPYBARA SOUNDS HAPPY, NEVER ONE LONELY SOUND (2026-10-11) - his "s
   ok(`every line is at least 3 sounds (fewest over ${SHORT.length * 200} rolls: ${fewest})`, fewest >= 3);
   ok(`only happy moods - cheerful / approving / excited / curious (heard: ${[...moods].sort().join(', ')})`, [...moods].every((m) => ['cheerful', 'approving', 'excited', 'curious'].includes(m)) && moods.size >= 3);
   ok(`no lone low "hm." grunt before a line (${hm} of ${SHORT.length * 200})`, hm === 0);
-  ok('his Agent voice itself is unchanged - only its melody and its shortest line moved', /moods: 'happy'/.test(cv) && /minSyl: 3/.test(cv) && /f: 112, formant: 1, intonation: 1\.1/.test(cv));
+  ok('happy moods and the 3-sound minimum stay on whatever voice he picks', /moods: 'happy'/.test(cv) && /minSyl: 3/.test(cv));
 }
 
 section('THE CORNER CAPYBARA TALKS TOO (2026-10-11) - his pick A after "the capy shows up and there is no voice tho"');

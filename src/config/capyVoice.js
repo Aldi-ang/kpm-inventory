@@ -12,9 +12,14 @@
    2026-10-11 17:35 with HAPPY melodies and at least 3 sounds a line - his *"sometimes the capybara said one words only
    its kinda scary tbh we need more happy emotion and minimum of 3 words when saying stuff"* (moods 'happy' + minSyl
    are in tools/chip.js plan). The syllable files did not change, so nothing was re-baked. */
+/* REPLACED 2026-10-11 20:08 by his *"just use that voice for now"*: "Video mumble - natural" from the studio (v8) - the
+   real mumbles of his reference video (tools/mumble-pack.js, Gravity Sound "RPG Character Mumble Voices", no copyright),
+   one PSOLA shift for the whole voice so every syllable is the same person, deep and soft; his asks behind it:
+   *"fat but soft mumbling sound, just imagine the duke from resident evil village but inside the sim city"* and
+   *"make it more natural sounding instead of electronic edited sound"*. His loudness .4 and echo .12 kept. */
 export const CAPY_VOICE = {
-  shape: 'voice', moods: 'happy', f: 112, formant: 1, intonation: 1.1, jitter: .35, scoop: 1.2, bend: 2.4, speed: 1,
-  cons: .9, vib: .1, breath: .18, maxSyl: 12, minSyl: 3, variety: 1, tempo: .7, drop: .6, emph: .7, fry: .35, vol: .4, echo: .12,
+  shape: 'rec', rec: 'round', natural: true, moods: 'happy', f: 108, formant: .9, intonation: .9, jitter: .2, scoop: 0, bend: 0, speed: .9,
+  cons: 0, vib: 0, breath: 0, maxSyl: 12, minSyl: 3, variety: 1, tempo: .5, drop: .5, emph: .5, fry: 0, vol: .4, echo: .12,
 };
 
 /* the vault intro - his own mix: *"dont make the intro 8 bit bruh, we need elegant for that"* */
