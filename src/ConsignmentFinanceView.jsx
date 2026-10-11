@@ -5,6 +5,7 @@ import { debtCredit } from './utils/revenueRule';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { handoffEligibility, canHandOffAcrossRegions, normalizeRegion, canApproveHandoffFrom } from './config/permissions';
 import { notify } from './components/Toast.jsx';
+import { shareReceipt } from './components/shareReceipt.js';
 
 /* 📦 THE OFFER, drawn identically wherever a hand-off is being decided. Aldi, 2026-09-07, the moment
    the approver's button finally appeared: *"please also put the store and product information so
@@ -911,7 +912,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                     });
 
                                     text += `------------------------\n*TOTAL: Rp ${new Intl.NumberFormat('id-ID').format(viewingReceipt.amountPaid || 0)}*\n\nThank you!`;
-                                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                                    shareReceipt(text, customers.find(c => storeKey(c.name) === storeKey(viewingReceipt.customerName)));
                                 }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
                                     <MessageSquare size={14}/> Share
                                 </button>

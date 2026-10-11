@@ -51,6 +51,8 @@ import ShipmentLabel from '../src/components/ShipmentLabel.jsx';
 import ArrivalScanner from '../src/components/ArrivalScanner.jsx';
 import { ConfirmHost, confirmAction } from '../src/components/ConfirmGate.jsx';
 import { ToastHost, notify } from '../src/components/Toast.jsx';
+import SaleReceipt from '../src/components/SaleReceipt.jsx';
+import { shareReceipt } from '../src/components/shareReceipt.js';
 import BiohazardTheme from '../src/components/BiohazardTheme.jsx';
 import { Cloud } from 'lucide-react';
 /* Same module the alias in ponder-lab.config.mjs points `firebase/firestore` at, so writing a
@@ -632,6 +634,18 @@ function NotaScanLab() {
 /* ?toast MOUNTS THE TWO SINGLETON HOSTS in the order main.jsx mounts them — page, ConfirmHost,
    ToastHost, as siblings — with a sticky alarm strip up and a confirm dialog open on top of it.
    The one question it answers is which layer paints over the other, which no check can see. */
+/* ?share - the receipt's WhatsApp Share (his "WhatsApp = A", 2026-10-12): the real SaleReceipt, for a shop WITH a number
+   (`&phone`) or without; `&save` adds the sales terminal's path (shareReceipt with a saver). window.open is recorded in
+   window.__opened, a save in window.__saved - nothing leaves the page. */
+function ShareLab() {
+  window.open = (url) => { (window.__opened = window.__opened || []).push(url); return null; };
+  const shop = { id: 'c1', name: 'Toko Jaya', ...(q.has('phone') ? { phone: '0812-3456-7890' } : {}) };
+  const tx = { customerName: 'Toko Jaya', paymentType: 'Cash', total: 52000, date: '12/10/2026, 07.00.00', items: [{ name: 'Cello Chocolate', qty: 2, unit: 'Bks', calculatedPrice: 26000 }] };
+  return q.has('save')
+    ? <button id="lab-share" onClick={() => shareReceipt('receipt', shop, async (p) => { window.__saved = p; })}>Share</button>
+    : <SaleReceipt tx={tx} appSettings={{}} onClose={() => {}} shop={shop} />;
+}
+
 function ToastLab() {
   React.useEffect(() => {
     notify('⚠️ BOSS! Sampoerna Mild is critically low (3 Bks left). Restock needed!');
@@ -1257,6 +1271,7 @@ function CapyLab() {
 
 createRoot(document.getElementById('root')).render(
   q.has('capy') ? <CapyLab /> :
+  q.has('share') ? <><ShareLab /><ConfirmHost /><ToastHost /></> :
   q.has('vault3d') ? <Vault3DLab /> :
   /* the shell carries the dialog gate + the toast column as main.jsx does, so a screen that asks (the player card's ✕
      asks the reason through promptAction) is answered in the lab too instead of logging "not mounted" */

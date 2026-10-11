@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { X, Printer, MessageSquare } from 'lucide-react';
 import { WATERMARK_STYLE, WATERMARK_POSITION, watermarkFrom } from '../config/receiptWatermark';
+import { shareReceipt } from './shareReceipt.js';
 
 /* ONE RECEIPT FOR A SALE, wherever it is opened: Reports (HistoryReportView) and the Day Replay on Journey Plan
    (his 2026-10-04 "button to review the receipt from that sales"). Moved here from HistoryReportView 2026-10-05 with
    only its indent changed; `tx` is the record shown, onClose closes it. The nota keeps the company theme (the palette
-   law stops at the print block). */
-export default function SaleReceipt({ tx: viewingReceipt, appSettings, onClose }) {
+   law stops at the print block). `shop` (optional) = the shop's record, so Share opens its own WhatsApp chat. */
+export default function SaleReceipt({ tx: viewingReceipt, appSettings, onClose, shop }) {
     const [printFormat, setPrintFormat] = useState('thermal');
     /* the mark printed in the corner of the A4 nota. Undefined when he has never set one, which
        is what keeps the nota unchanged for anyone who does not want a watermark. */
@@ -231,7 +232,7 @@ export default function SaleReceipt({ tx: viewingReceipt, appSettings, onClose }
                             viewingReceipt.itemsPaid.forEach(item => { text += `[LAKU] ${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
                         }
                         text += `------------------------\n*TOTAL: ${isReturReceipt && displayTotal > 0 ? '-' : ''}Rp ${new Intl.NumberFormat('id-ID').format(displayTotal)}*\n\nThank you for your business!`;
-                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                        shareReceipt(text, shop);
                     }} className="flex-1 !bg-[#25D366] !text-[var(--ink)] py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
                         <MessageSquare size={14}/> Share
                     </button>

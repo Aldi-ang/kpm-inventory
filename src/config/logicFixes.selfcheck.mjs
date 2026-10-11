@@ -10835,5 +10835,23 @@ section('THE STOCK TABLE NUMBERS LINE UP (2026-10-12) - his "it is annoying to s
      /overflow-hidden transition-\[height\] duration-300 ease-out/.test(t));
 }
 
+section('THE RECEIPT GOES TO THE SHOP\'S OWN WHATSAPP (2026-10-12) - his "is it possible to straight forward digital receipt straight to people phone through whatsapp number even when not registered inside the sales whatsapp?", then "WhatsApp = A"');
+{
+  let wa = {}; try { wa = await import('../utils/whatsapp.js'); } catch { /* not built yet */ }
+  const num = wa.waNumber || (() => null);
+  ok('a shop number in any shape becomes the international one wa.me needs (0812-..., +62 812 ..., 812 ...), and a non-number gives nothing',
+     num('0812-3456-7890') === '6281234567890' && num('+62 812 3456 7890') === '6281234567890' && num('812 3456 7890') === '6281234567890' &&
+     num('021-555') === '' && num('') === '' && num(undefined) === '' && num('abc') === '');
+  ok('WITH a number the link opens that chat (saved in his contacts or not); without one it still opens the chat picker, as before',
+     !!wa.waUrl && wa.waUrl('0812 3456 7890', 'a b') === 'https://wa.me/6281234567890?text=a%20b' && wa.waUrl('', 'x') === 'https://wa.me/?text=x');
+  const sites = ['src/components/SaleReceipt.jsx', 'src/MerchantSalesView.jsx', 'src/ConsignmentFinanceView.jsx'].map((f) => read(f));
+  ok('the three receipt Share buttons (Reports / Day Replay receipt, sales terminal, consignment) go through shareReceipt - no number-less wa.me link left in them',
+     sites.every((s) => /shareReceipt\(/.test(s) && !/wa\.me\/\?text=/.test(s)));
+  const ms = read('src/MerchantSalesView.jsx');
+  ok('the sales terminal hands the shop it just sold to, and offers to save a typed number on it (the rules already let a salesman update a shop)',
+     /setReceiptData\(\{\s*customer: finalCust, shop: selectedCustomerInfo,/.test(ms) &&
+     /shareReceipt\(text, receiptData\.shop, \(phone\) => updateDoc\(doc\(db, `artifacts\/\$\{appId\}\/users\/\$\{userId\}\/customers`, receiptData\.shop\.id\), \{ phone \}\)\)/.test(ms));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

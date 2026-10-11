@@ -5,7 +5,7 @@ import { commitInChunks } from '../utils/helpers';
 /* An edit is the third path that can rot the sales rollup, and the least obvious of the
    three: a delete at least looks destructive, while changing a quantity looks like tidying. */
 import { tallySaleOp } from '../utils/salesRollupWrite';
-import { formatRupiah, convertToBks, getCurrentDate } from '../utils/helpers';
+import { formatRupiah, convertToBks, getCurrentDate, storeKey } from '../utils/helpers';
 import { hasClearance } from '../config/permissions';
 import { notify } from './Toast.jsx';
 import SaleReceipt from './SaleReceipt.jsx';
@@ -955,7 +955,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             )}
 
             {/* RECEIPT PRINTER MODAL */}
-            {viewingReceipt && <SaleReceipt tx={viewingReceipt} appSettings={appSettings} onClose={() => setViewingReceipt(null)} />}
+            {viewingReceipt && <SaleReceipt tx={viewingReceipt} appSettings={appSettings} onClose={() => setViewingReceipt(null)}
+                shop={(customers || []).find(c => storeKey(c.name) === storeKey(viewingReceipt.customerName))} />}
 
         </div>
     );

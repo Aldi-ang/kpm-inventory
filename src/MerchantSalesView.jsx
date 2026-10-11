@@ -12,6 +12,7 @@ import { customerBrief, reorderFromLast } from './utils/customerBrief';
 import { nextStop, directionsUrl, metresLabel } from './utils/nextStop';
 import { unlockSounds, speakMumble, playSound } from './hooks/useSound';
 import { notify } from './components/Toast.jsx';
+import { shareReceipt } from './components/shareReceipt.js';
 
 /* `onAdminSalesMode` is undefined for everyone but the boss, and that IS the permission check —
    App only hands it over on `userRole === 'ADMIN'`, the same test that used to gate the bar it
@@ -1122,7 +1123,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                handler was created, so resetTerminalAfterDeal() cannot pull them out from under
                the bookkeeping that still has to run. */
             setReceiptData({
-                customer: finalCust, method: paymentLabel(displayMethod), items: finalCart, total: finalTotal,
+                customer: finalCust, shop: selectedCustomerInfo, method: paymentLabel(displayMethod), items: finalCart, total: finalTotal,
                 date: new Date().toLocaleString('id-ID'), agentName: agentFallback 
             });
 
@@ -3419,8 +3420,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                         receiptData.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
                                     }
                                     text += `------------------------\n*TOTAL: ${receiptData.method === 'Retur/BS' ? '-' : ''}Rp ${new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}*\n\nThank you for your business!`;
-                                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                                }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
+                                    /* the shop it just sold to: its own chat; no number -> ask, and offer to keep it on the shop */
+                                    shareReceipt(text, receiptData.shop, (phone) => updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, receiptData.shop.id), { phone }));
+                                }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px]shadow-md active:scale-95">
                                     <MessageSquare size={14}/> WhatsApp Share
                                 </button>
                             </div>
