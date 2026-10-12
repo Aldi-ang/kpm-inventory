@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { CheckCircle, RotateCcw, Undo2, Coins } from 'lucide-react';
 import { RankBorder } from '../config/rankBorders.jsx';
 import { careerXP, computeDayXP, rankLadder, DEFAULT_XP } from '../config/career.js';
-import { formatRupiah, convertToBks, shortStockRows, eodBountyLines, eodReportParts, eodPartApproved, eodNightMessage, EOD_PART_LABELS, bountyItems, nightLabel } from '../utils/helpers.js';
+import { formatRupiah, nameInitials, convertToBks, shortStockRows, eodBountyLines, eodReportParts, eodPartApproved, eodNightMessage, EOD_PART_LABELS, bountyItems, nightLabel } from '../utils/helpers.js';
 import { revenueOf, salesDelta, dayOf } from '../utils/salesRollup.js';
 import { confirmAction, promptAction } from './ConfirmGate.jsx';
 
@@ -27,8 +27,6 @@ const PART_ORDER = ['cash', 'transfer', 'stock', 'damaged', 'cukai', 'bounty'];
 const SUB = 'text-[11px] font-bold uppercase tracking-widest text-[var(--ink-dim)]';
 const BAR = { background: 'linear-gradient(90deg, var(--gold), #E4B04A)' };
 
-const initialsOf = (name = '') => name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || '?';
-
 /* THE HEAD on its own - the boss's card below and the salesman's Agent Profile draw the same face from it (his
    "the picture should be the same with the agent profile picture", stage B 2026-09-21). Presentational: the caller
    brings the numbers it already computes (the card from its group, the profile from its stats), so each screen climbs
@@ -39,7 +37,7 @@ export const PlayerCardHead = ({ name, photo, currentTier, nextTier, progressPer
     <div className="pc-head p-4" onClick={onTap} role={onTap ? 'button' : undefined} tabIndex={onTap ? 0 : undefined} onKeyDown={onTap ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTap(); } } : undefined}>
         <div className="flex items-start gap-4">
             <div className="pc-avatar">
-                <div className="pc-photo">{photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : <span>{initialsOf(name)}</span>}</div>
+                <div className="pc-photo">{photo ? <img src={photo} alt="" className="w-full h-full object-cover" /> : <span>{nameInitials(name)}</span>}</div>
                 {currentTier.borderImage
                     ? <img src={currentTier.borderImage} className="absolute inset-[-25%] w-[150%] h-[150%] object-contain z-20 pointer-events-none" alt="" />
                     : <RankBorder styleId={frame} />}

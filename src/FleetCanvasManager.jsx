@@ -8,7 +8,7 @@ import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc, writeBatch, runT
 import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord, hasClearance, TIER_ONE_ID, resolveTierOneId } from './config/permissions';
 import { vaultDocPath, VAULT_TRIES_RESET } from './utils/vaultDoc.js';
 import { lockLeftMs, untilText } from './utils/vaultLock.js';
-import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems } from './utils/helpers';
+import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems, nameInitials } from './utils/helpers';
 import { normalizeRegion } from './config/permissions';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
@@ -756,7 +756,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         const on = selectedAgent?.id === m.id;
         const leader = m.userRole === 'ADMIN' || m.userRole === 'AREA_ADMIN';
         const Icon = m.userRole === 'ADMIN' ? ShieldCheck : m.userRole === 'AREA_ADMIN' ? Globe : m.role === 'Canvas' ? Truck : Activity;
-        const initials = String(m.name || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+        const initials = nameInitials(m.name);
         return (
             <div key={m.id} role="option" aria-selected={on} tabIndex={0} onClick={() => pickAgent(m)}
                 onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); pickAgent(m); } }}

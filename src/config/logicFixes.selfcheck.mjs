@@ -10892,5 +10892,21 @@ section('THE A4 NOTA FITS ITS OWN SHEET (2026-10-12) - his "the format for the A
   }
 }
 
+section('INITIALS TAKE LETTERS, NOT A TAG (2026-10-12) - his "the initial name on the journey plan also weird on the phone"');
+{
+  /* Journey's chips read "[H" for "[TEST] HQ Sales Manager": four copies of the initials each took the first CHARACTER
+     of a word, bracket included. One helper now takes the first letter or digit and skips a [TAG]; all four call it. */
+  const m = helpers.match(/export const nameInitials = (.+);\r?$/m);
+  ok('helpers.js exports nameInitials', !!m);
+  const ini = m ? eval(m[1]) : () => '';
+  for (const [n, want] of [['[TEST] HQ Sales Manager', 'HS'], ['Budi Santoso', 'BS'], ['aldi', 'A'], ['', '?'], [undefined, '?'], ['  - budi ', 'B']])
+    ok(`nameInitials(${JSON.stringify(n)}) -> "${want}"`, ini(n) === want, `got "${ini(n)}"`);
+  for (const f of ['src/utils/expedition.js', 'src/components/PlayerCard.jsx', 'src/FleetCanvasManager.jsx', 'src/MapMissionControl.jsx']) {
+    const s = read(f);
+    ok(`${f.split('/').pop()}: imports nameInitials and keeps no first-character copy of its own`,
+       imports(s, 'nameInitials') && !/=>\s*w\[0\]/.test(s));
+  }
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

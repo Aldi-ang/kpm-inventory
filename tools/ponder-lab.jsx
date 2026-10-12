@@ -828,7 +828,8 @@ const LAB_MAP = (() => {
     'Toko Bintang', 'Warung Pinggir', 'Toko Jaya', 'Warung Asri', 'Toko Subur', 'Warung Nusantara', 'Toko Indah', 'Warung Bu Yati'];
   const TEAM = [
     { id: 'm2', name: 'Budi Santoso', hits: 5, seen: 3, stops: [[500, 600], [440, 425], [322, 386], [240, 282], [170, 345], [95, 560], [62, 720], [80, 930]] },
-    { id: 'm5', name: 'Ari Rahman', hits: 3, seen: 1, stops: [[600, 386], [730, 368], [850, 355], [960, 300], [1080, 262], [1230, 245], [1340, 232], [1450, 170]] },
+    /* `&tag`: Ari carries a test account's tag - the chip must read "HS", never "[H" (his 2026-10-12 shot) */
+    { id: 'm5', name: q.has('tag') ? '[TEST] HQ Sales Manager' : 'Ari Rahman', hits: 3, seen: 1, stops: [[600, 386], [730, 368], [850, 355], [960, 300], [1080, 262], [1230, 245], [1340, 232], [1450, 170]] },
     { id: 'm6', name: 'Dewi Wulandari', hits: 6, seen: 12, stops: [[725, 635], [790, 740], [880, 860], [960, 990], [1040, 1120], [1130, 1268], [1205, 1300], [1225, 1450]] },
     { id: 'm7', name: 'Rini Saputri', hits: 8, seen: 6, stops: [[470, 820], [400, 900], [330, 990], [250, 1080], [330, 1120], [420, 1160], [470, 1250], [475, 1400]] },
   ];

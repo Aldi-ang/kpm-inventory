@@ -44,6 +44,10 @@ export const parseGroupedNumber = (value) => Number(String(value ?? '').replace(
    fix carry the suffix and rows written after do not. Stripping it here is what keeps those two
    halves on ONE receivable. Never strip anywhere but the end — "Warung (Retail) Jaya" is a real
    name, not a tier. */
+/* Two initials for an avatar: the first LETTER (or digit) of the first two words, a [TAG] skipped - "[TEST] HQ Sales
+   Manager" -> "HS", never "[H" (his Journey chips, 2026-10-12). The one copy: Journey, the player card, the fleet
+   stage and the map's shop sheet all call it. */
+export const nameInitials = (name) => String(name || '').replace(/\[[^\]]*\]/g, ' ').split(/\s+/).map((w) => w.match(/[\p{L}\p{N}]/u)?.[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() || '?';
 export const storeKey = (name) => String(name ?? '')
     .trim()
     .replace(/\s*\((?:Retail|Individual|Wholesale)\)$/i, '')

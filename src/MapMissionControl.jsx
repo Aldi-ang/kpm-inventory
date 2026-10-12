@@ -14,7 +14,7 @@ import { areaOf, rankAreas, monthByShop, rpShort, txTime } from './utils/mapArea
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; 
 import { doc, collection, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
-import { commitInChunks, convertToBks, formatRupiah, storeKey, findShop } from './utils/helpers';
+import { commitInChunks, convertToBks, formatRupiah, storeKey, findShop, nameInitials } from './utils/helpers';
 import { loadBorderCache, saveBorderCache, clearBorderCache } from './utils/borderCache';
 import { revenueOf, debtCredit } from './utils/revenueRule';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
@@ -1315,7 +1315,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
     const tiers = activeTiers || [];
     const tierLabel = String(tiers.find((t) => t.id === store.tier)?.label || store.tier || 'Unranked');
     const owner = store.assignedAgent && store.assignedAgent !== 'Unassigned' ? String(store.assignedAgent) : '';
-    const initials = owner ? owner.split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase() : '?';
+    const initials = nameInitials(owner);
     const nextVisit = !store.lastVisit ? 'Never visited · due now' : store.diffDays < 0 ? `${Math.abs(store.diffDays)} days overdue` : store.diffDays === 0 ? 'Due today' : `Due in ${store.diffDays} days`;
     const dot = store.status === 'overdue' ? 'late' : store.status === 'soon' ? 'soon' : '';
 

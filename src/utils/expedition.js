@@ -13,7 +13,7 @@
      terminal's own suggestion, nextStop() over his whole list. */
 import { km, nextStop } from './nextStop.js';
 import { isSale } from './salesRollup.js';
-import { storeKey, getLocalDayKey } from './helpers.js';
+import { storeKey, getLocalDayKey, nameInitials } from './helpers.js';
 import { txDate } from './period.js';
 import { normalizeRegion } from '../config/permissions.js';
 
@@ -46,7 +46,7 @@ const eodDay = (r, now) => {
 
 const metres = (a, b) => Math.round(km(a.lat, a.lng, b.lat, b.lng) * 1000);
 const pin = (c) => (c?.latitude && c?.longitude ? { lat: Number(c.latitude), lng: Number(c.longitude) } : null);
-export const initials = (name) => String(name || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase();
+export const initials = nameInitials;
 
 /* exact name, not nextStop's loose `includes`: "andi" must not claim Andika's round (the ghost bug
    JourneyView.jsx records, 2026-09-22) */
