@@ -10877,5 +10877,20 @@ section('THE TUTORIAL BOOK ANSWERS EVERY PRESS (2026-10-12) - his "the ponder bo
      /fill: 'backwards'/.test(opening) && !/fill: 'both'/.test(opening));
 }
 
+section('THE A4 NOTA FITS ITS OWN SHEET (2026-10-12) - his "the format for the A4 receipt is not right on the pc here it is so big and some box is collapsing with one another"');
+{
+  /* measured (lab ?share, A4): the info table was squeezed into a third of the sheet, so "SALES / AGENT" and "TIPE
+     TRANSAKSI" wrapped into two lines beside their values, while the KEPADA YTH box stretched to 152 px around 44 px of
+     content and 267 px of the sheet sat empty between them. The sales terminal's own A4 copy had the same block. */
+  for (const f of ['src/components/SaleReceipt.jsx', 'src/MerchantSalesView.jsx']) {
+    const s = read(f), a4 = s.slice(s.indexOf("{printFormat === 'a4' && ("), s.indexOf('KEPADA YTH') + 400);
+    ok(`${f.split('/').pop()}: the info table takes the free width and its labels never wrap; the KEPADA YTH box hugs its words; the headings one step smaller`,
+       /<div className="flex items-start justify-between gap-8 mb-8 text-sm">/.test(a4) &&
+       /<table className="flex-1 \[&_td:first-child\]:whitespace-nowrap \[&_td:first-child\]:pr-3">/.test(a4) &&
+       !/<table className="w-1\/3">/.test(a4) && /className="w-72 shrink-0 border-2 /.test(a4) && !/w-1\/3 border-2/.test(a4) &&
+       !/md:text-3xl/.test(a4) && /<p className="text-lg font-black uppercase/.test(a4));
+  }
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

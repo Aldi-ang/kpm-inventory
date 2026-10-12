@@ -26,6 +26,9 @@ import { ESLint } from 'eslint';
 const BASELINE = {
   'src/App.jsx:__BUILD_ID__':
     'a Vite `define`, replaced at build time. Not a real free variable.',
+  /* added 2026-10-12: this one line kept the whole check red, so it went unrun - and missed the `userId` save bug */
+  'src/components/UpdateStatus.jsx:__BUILD_ID__':
+    'the same Vite `define`, behind a typeof guard (falls back to "dev"). Not a real free variable.',
   'src/config/career.js:process':
     'guarded by a typeof check for the Node-side test harness.',
   'src/MapMissionControl.jsx:getDoc':

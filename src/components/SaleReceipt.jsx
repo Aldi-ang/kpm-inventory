@@ -124,11 +124,11 @@ export default function SaleReceipt({ tx: viewingReceipt, appSettings, onClose, 
                             )}
                             <div className="border-b-4 !border-[var(--accent-edge)] pb-4 mb-6 flex justify-between items-end gap-8">
                                 <div className="flex-1">
-                                    <h1 className="text-2xl md:text-3xl font-black !text-[var(--ink)] tracking-widest uppercase break-words">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
+                                    <h1 className="text-2xl font-black !text-[var(--ink)] tracking-widest uppercase break-words">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
                                     <p className="text-xs md:text-sm font-bold !text-[var(--ink)] mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11'}</p>
                                 </div>
                                 <div className="text-right shrink-0">
-                                    <h2 className="text-xl md:text-2xl font-bold !text-[var(--ink)] uppercase tracking-widest">
+                                    <h2 className="text-xl font-bold !text-[var(--ink)] uppercase tracking-widest">
                                         {viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT REPORT' : 
                                          isReturReceipt ? 'NOTA RETUR' : 
                                          viewingReceipt.paymentType === 'Tukar Ganti' ? 'NOTA TUKAR GANTI' : 'NOTA PENJUALAN'}
@@ -136,15 +136,15 @@ export default function SaleReceipt({ tx: viewingReceipt, appSettings, onClose, 
                                     <p className="text-[10px] uppercase font-bold !text-[var(--ink-muted)] tracking-widest mt-1">REPRINT COPY</p>
                                 </div>
                             </div>
-                            <div className="flex justify-between mb-8 text-sm">
-                                <table className="w-1/3"><tbody>
+                            <div className="flex items-start justify-between gap-8 mb-8 text-sm">
+                                <table className="flex-1 [&_td:first-child]:whitespace-nowrap [&_td:first-child]:pr-3"><tbody>
                                     <tr><td className="font-bold py-1 w-24 !text-[var(--ink-muted)] uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-[var(--ink)]">: {receiptDateStr}</td></tr>
                                     {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-[var(--ink-muted)] uppercase align-top">Waktu</td><td className="font-bold py-1 !text-[var(--ink)]">: {receiptTimeStr}</td></tr>}
                                     <tr><td className="font-bold py-1 !text-[var(--ink-muted)] uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-[var(--ink)] uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
                                     <tr><td className="font-bold py-1 !text-[var(--ink-muted)] uppercase align-top">Tipe Transaksi</td><td className="font-bold py-1 !text-[var(--ink)] uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
                                 </tbody></table>
-                                <div className="w-1/3 border-2 !border-[var(--line)] p-3 rounded-lg bg-[var(--raised)] shadow-sm flex flex-col justify-center">
-                                    <p className="font-bold !text-[var(--ink-muted)] text-xs mb-1">KEPADA YTH,</p><p className="text-xl font-black uppercase !text-[var(--ink)]">{viewingReceipt.customerName}</p>
+                                <div className="w-72 shrink-0 border-2 !border-[var(--line)] p-3 rounded-lg bg-[var(--raised)] shadow-sm">
+                                    <p className="font-bold !text-[var(--ink-muted)] text-xs mb-1">KEPADA YTH,</p><p className="text-lg font-black uppercase !text-[var(--ink)]">{viewingReceipt.customerName}</p>
                                 </div>
                             </div>
                             {isNormalSale ? (
