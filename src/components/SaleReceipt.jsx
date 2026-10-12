@@ -122,76 +122,76 @@ export default function SaleReceipt({ tx: viewingReceipt, appSettings, onClose, 
                             {watermarkSrc && (
                                 <img src={watermarkSrc} alt="" className={WATERMARK_POSITION} style={WATERMARK_STYLE} />
                             )}
-                            <div className="border-b-4 !border-[var(--accent-edge)] pb-4 mb-6 flex justify-between items-end gap-8">
+                            <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end gap-8">
                                 <div className="flex-1">
-                                    <h1 className="text-2xl font-black !text-[var(--ink)] tracking-widest uppercase break-words">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
-                                    <p className="text-xs md:text-sm font-bold !text-[var(--ink)] mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11'}</p>
+                                    <h1 className="text-2xl font-black !text-blue-900 tracking-widest uppercase break-words">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
+                                    <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11'}</p>
                                 </div>
                                 <div className="text-right shrink-0">
-                                    <h2 className="text-xl font-bold !text-[var(--ink)] uppercase tracking-widest">
+                                    <h2 className="text-xl font-bold !text-blue-800 uppercase tracking-widest">
                                         {viewingReceipt.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT REPORT' : 
                                          isReturReceipt ? 'NOTA RETUR' : 
                                          viewingReceipt.paymentType === 'Tukar Ganti' ? 'NOTA TUKAR GANTI' : 'NOTA PENJUALAN'}
                                     </h2>
-                                    <p className="text-[10px] uppercase font-bold !text-[var(--ink-muted)] tracking-widest mt-1">REPRINT COPY</p>
+                                    <p className="text-[10px] uppercase font-bold !text-slate-400 tracking-widest mt-1">REPRINT COPY</p>
                                 </div>
                             </div>
                             <div className="flex items-start justify-between gap-8 mb-8 text-sm">
                                 <table className="flex-1 [&_td:first-child]:whitespace-nowrap [&_td:first-child]:pr-3"><tbody>
-                                    <tr><td className="font-bold py-1 w-24 !text-[var(--ink-muted)] uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-[var(--ink)]">: {receiptDateStr}</td></tr>
-                                    {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-[var(--ink-muted)] uppercase align-top">Waktu</td><td className="font-bold py-1 !text-[var(--ink)]">: {receiptTimeStr}</td></tr>}
-                                    <tr><td className="font-bold py-1 !text-[var(--ink-muted)] uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-[var(--ink)] uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
-                                    <tr><td className="font-bold py-1 !text-[var(--ink-muted)] uppercase align-top">Tipe Transaksi</td><td className="font-bold py-1 !text-[var(--ink)] uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
+                                    <tr><td className="font-bold py-1 w-24 !text-slate-400 uppercase align-top">Tanggal</td><td className="font-bold py-1 !text-slate-900">: {receiptDateStr}</td></tr>
+                                    {receiptTimeStr && <tr><td className="font-bold py-1 w-24 !text-slate-400 uppercase align-top">Waktu</td><td className="font-bold py-1 !text-slate-900">: {receiptTimeStr}</td></tr>}
+                                    <tr><td className="font-bold py-1 !text-slate-400 uppercase align-top">Sales / Agent</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.agentName === 'Admin' ? (appSettings?.adminDisplayName || 'Admin') : (viewingReceipt.agentName || 'Sales')}</td></tr>
+                                    <tr><td className="font-bold py-1 !text-slate-400 uppercase align-top">Tipe Transaksi</td><td className="font-bold py-1 !text-slate-900 uppercase">: {viewingReceipt.paymentType || 'Cash'}</td></tr>
                                 </tbody></table>
-                                <div className="w-72 shrink-0 border-2 !border-[var(--line)] p-3 rounded-lg bg-[var(--raised)] shadow-sm">
-                                    <p className="font-bold !text-[var(--ink-muted)] text-xs mb-1">KEPADA YTH,</p><p className="text-lg font-black uppercase !text-[var(--ink)]">{viewingReceipt.customerName}</p>
+                                <div className="w-72 shrink-0 border-2 !border-slate-800 p-3 rounded-lg bg-slate-50 shadow-sm">
+                                    <p className="font-bold !text-slate-400 text-xs mb-1">KEPADA YTH,</p><p className="text-lg font-black uppercase !text-slate-900">{viewingReceipt.customerName}</p>
                                 </div>
                             </div>
                             {isNormalSale ? (
-                                <table className="w-full text-sm border-collapse border-2 !border-[var(--line)] mb-8 shadow-sm">
-                                    <thead className="!bg-[var(--raised)] !text-[var(--ink)]"><tr><th className="border-2 !border-[var(--line)] p-3 text-center w-12 font-black">NO</th><th className="border-2 !border-[var(--line)] p-3 text-left font-black">MACAM BARANG (KATALOG)</th><th className="border-2 !border-[var(--line)] p-3 text-center w-24 font-black">QTY</th><th className="border-2 !border-[var(--line)] p-3 text-right w-40 font-black">JUMLAH</th></tr></thead>
+                                <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
+                                    <thead className="!bg-blue-50 !text-blue-900"><tr><th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th><th className="border-2 !border-slate-800 p-3 text-left font-black">MACAM BARANG (KATALOG)</th><th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">QTY</th><th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">JUMLAH</th></tr></thead>
                                     <tbody>{viewingReceipt.items?.map((item, i) => (
                                         <tr key={i}>
-                                            <td className="border-2 !border-[var(--line)] p-2 text-center !text-[var(--ink-muted)] font-bold align-top">{i+1}</td>
-                                            <td className="border-2 !border-[var(--line)] p-2 font-bold !text-[var(--ink)] uppercase align-top">
+                                            <td className="border-2 !border-slate-800 p-2 text-center !text-slate-400 font-bold align-top">{i+1}</td>
+                                            <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase align-top">
                                                 <div className="flex flex-wrap gap-1 items-center mb-1">
                                                     {item.name}
-                                                    {item.condition === 'DAMAGED' && <span className="text-[11px] bg-[var(--danger-well)] !text-[var(--danger-text)] border !border-[var(--danger)] px-1 rounded">DAMAGED</span>}
-                                                    {item.fulfillment === 'IOU' && <span className="text-[11px] bg-[var(--raised)] !text-[var(--ink)] border !border-[var(--accent-edge)] px-1 rounded">UTANG BARANG</span>}
-                                                    {item.isIouFulfillment && <span className="text-[11px] bg-[var(--verified-fill)] !text-[var(--verified)] border !border-[var(--line-2)] px-1 rounded">UTANG BARANG LUNAS</span>}
+                                                    {item.condition === 'DAMAGED' && <span className="text-[11px] bg-red-50 !text-red-700 border !border-red-300 px-1 rounded">DAMAGED</span>}
+                                                    {item.fulfillment === 'IOU' && <span className="text-[11px] bg-blue-50 !text-blue-800 border !border-blue-200 px-1 rounded">UTANG BARANG</span>}
+                                                    {item.isIouFulfillment && <span className="text-[11px] bg-blue-100 !text-blue-900 border !border-blue-300 px-1 rounded">UTANG BARANG LUNAS</span>}
                                                 </div>
                                                 {item.condition === 'DAMAGED' && item.returnReason && (
-                                                    <div className="text-[10px] italic !text-[var(--ink-muted)] font-normal">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
+                                                    <div className="text-[10px] italic !text-slate-500 font-normal">Reason: {item.returnReason === 'Other' ? item.otherReasonDetail : item.returnReason}</div>
                                                 )}
                                             </td>
-                                            <td className="border-2 !border-[var(--line)] p-2 text-center font-black text-lg !text-[var(--ink)] align-top">{item.qty} <span className="text-sm font-bold">{item.unit}</span></td>
-                                            <td className="border-2 !border-[var(--line)] p-2 text-right font-black text-lg !text-[var(--ink)] align-top">
+                                            <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700 align-top">{item.qty} <span className="text-sm font-bold">{item.unit}</span></td>
+                                            <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900 align-top">
                                                 {isReturReceipt && item.calculatedPrice > 0 ? '-' : ''}{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
                                             </td>
                                         </tr>
                                     ))}</tbody>
-                                    <tfoot><tr className="!bg-[var(--raised)]"><td colSpan="3" className="border-2 !border-[var(--line)] p-4 text-right font-black text-xl !text-[var(--ink)] tracking-widest">GRAND TOTAL</td><td className={`border-2 !border-[var(--line)] p-4 text-right font-black text-2xl ${isReturReceipt && displayTotal > 0 ? '!text-[var(--danger-text)]' : '!text-[var(--ink)]'}`}>{isReturReceipt && displayTotal > 0 ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}</td></tr></tfoot>
+                                    <tfoot><tr className="!bg-blue-100"><td colSpan="3" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-blue-900 tracking-widest">GRAND TOTAL</td><td className={`border-2 !border-slate-800 p-4 text-right font-black text-2xl ${isReturReceipt && displayTotal > 0 ? '!text-red-700' : '!text-blue-900'}`}>{isReturReceipt && displayTotal > 0 ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}</td></tr></tfoot>
                                 </table>
                             ) : (
-                                <table className="w-full text-sm border-collapse border-2 !border-[var(--line)] mb-8 shadow-sm">
-                                    <thead className="!bg-[var(--raised)] !text-[var(--ink)]"><tr><th className="border-2 !border-[var(--line)] p-3 text-center w-12 font-black">NO</th><th className="border-2 !border-[var(--line)] p-3 text-left font-black">AUDITED PRODUCT</th><th className="border-2 !border-[var(--line)] p-3 text-center w-24 font-black">INITIAL STOCK</th><th className="border-2 !border-[var(--line)] p-3 text-center w-32 font-black">BREAKDOWN</th><th className="border-2 !border-[var(--line)] p-3 text-right w-40 font-black">TAGIHAN (Rp)</th></tr></thead>
+                                <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
+                                    <thead className="!bg-blue-50 !text-blue-900"><tr><th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th><th className="border-2 !border-slate-800 p-3 text-left font-black">AUDITED PRODUCT</th><th className="border-2 !border-slate-800 p-3 text-center w-24 font-black">INITIAL STOCK</th><th className="border-2 !border-slate-800 p-3 text-center w-32 font-black">BREAKDOWN</th><th className="border-2 !border-slate-800 p-3 text-right w-40 font-black">TAGIHAN (Rp)</th></tr></thead>
                                     <tbody>
                                         {(viewingReceipt.itemsPaid || []).concat(viewingReceipt.itemsReturned || [], viewingReceipt.itemsRemaining || []).reduce((acc, curr) => { if (!acc.find(i => i.productId === curr.productId)) acc.push(curr); return acc; }, []).map((item, i) => {
                                             const paidItem = (viewingReceipt.itemsPaid || []).find(p => p.productId === item.productId); const returItem = (viewingReceipt.itemsReturned || []).find(r => r.productId === item.productId); const remainItem = (viewingReceipt.itemsRemaining || []).find(s => s.productId === item.productId);
                                             if (!paidItem && !returItem && !remainItem) return null; const initialQty = (paidItem?.qty || 0) + (returItem?.qty || 0) + (remainItem?.qty || 0);
                                             return (
-                                                <tr key={i}><td className="border-2 !border-[var(--line)] p-2 text-center !text-[var(--ink-muted)] font-bold align-top">{i+1}</td><td className="border-2 !border-[var(--line)] p-2 font-bold !text-[var(--ink)] uppercase align-top">{item.name}</td><td className="border-2 !border-[var(--line)] p-2 text-center font-bold !text-[var(--ink)] align-top">{initialQty} Bks</td>
-                                                    <td className="border-2 !border-[var(--line)] p-2 text-[10px] font-mono align-top">
-                                                        {paidItem && paidItem.qty > 0 && <div className="text-[var(--verified)] font-bold mb-1">• LAKU: {paidItem.qty}</div>}
-                                                        {returItem && returItem.qty > 0 && <div className="text-[var(--danger-text)] font-bold mb-1">• RETUR: {returItem.qty}</div>}
-                                                        {remainItem && remainItem.qty > 0 && <div className="!text-[var(--ink-muted)] font-bold">• SISA: {remainItem.qty}</div>}
+                                                <tr key={i}><td className="border-2 !border-slate-800 p-2 text-center !text-slate-400 font-bold align-top">{i+1}</td><td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase align-top">{item.name}</td><td className="border-2 !border-slate-800 p-2 text-center font-bold !text-slate-900 align-top">{initialQty} Bks</td>
+                                                    <td className="border-2 !border-slate-800 p-2 text-[10px] font-mono align-top">
+                                                        {paidItem && paidItem.qty > 0 && <div className="!text-blue-800 font-bold mb-1">• LAKU: {paidItem.qty}</div>}
+                                                        {returItem && returItem.qty > 0 && <div className="!text-red-700 font-bold mb-1">• RETUR: {returItem.qty}</div>}
+                                                        {remainItem && remainItem.qty > 0 && <div className="!text-slate-600 font-bold">• SISA: {remainItem.qty}</div>}
                                                     </td>
-                                                    <td className="border-2 !border-[var(--line)] p-2 text-right font-black text-lg !text-[var(--ink)] align-bottom">{paidItem ? new Intl.NumberFormat('id-ID').format((paidItem.calculatedPrice || 0) * paidItem.qty) : '-'}</td>
+                                                    <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900 align-bottom">{paidItem ? new Intl.NumberFormat('id-ID').format((paidItem.calculatedPrice || 0) * paidItem.qty) : '-'}</td>
                                                 </tr>
                                             );
                                         })}
                                     </tbody>
-                                    <tfoot><tr className="!bg-[var(--verified-fill)]"><td colSpan="4" className="border-2 !border-[var(--line)] p-4 text-right font-black text-xl !text-[var(--verified)] tracking-widest">TOTAL TAGIHAN COLLECTED</td><td className="border-2 !border-[var(--line)] p-4 text-right font-black text-2xl !text-[var(--verified)]">Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}</td></tr></tfoot>
+                                    <tfoot><tr className="!bg-blue-100"><td colSpan="4" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-blue-900 tracking-widest">TOTAL TAGIHAN COLLECTED</td><td className="border-2 !border-slate-800 p-4 text-right font-black text-2xl !text-blue-900">Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}</td></tr></tfoot>
                                 </table>
                             )}
                         </div>

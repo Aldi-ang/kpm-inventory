@@ -10918,5 +10918,19 @@ section('THE MAP FITS BELOW THE NOTCH (2026-10-12) - his "the bottom map button 
      /\babsolute inset-0\b/.test(root) && !/h-\[100dvh\]|h-screen|100vh/.test(root), root || 'root not found');
 }
 
+section('THE A4 SHEET PRINTS IN COMPANY INK, NOT THEME INK (2026-10-12) - the Reports / Day Replay nota read cream on white in the dark theme');
+{
+  /* the sheet is always white, but SaleReceipt's copy coloured its text with the app's theme tokens - in the dark theme
+     the company name, the values and the item rows came out cream on white (A-Brain Raw/2026-10-12-a4-nota/a4-after-1280.png).
+     The terminal's copy uses fixed company blue / slate and reads in both themes; his rule: the nota keeps company blue. */
+  for (const f of ['src/components/SaleReceipt.jsx', 'src/MerchantSalesView.jsx']) {
+    const s = read(f), from = s.indexOf('a4-print-jail'), to = s.indexOf('className="no-print', from);
+    const sheet = from > -1 && to > from ? s.slice(from, to) : '';
+    ok(`${f.split('/').pop()}: the A4 sheet uses no theme token, and its company name is company blue`,
+       sheet.length > 3000 && !/var\(--/.test(sheet) && /<h1 className="text-2xl font-black !text-blue-900 /.test(sheet),
+       sheet ? `${(sheet.match(/var\(--/g) || []).length} theme tokens` : 'sheet not found');
+  }
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
