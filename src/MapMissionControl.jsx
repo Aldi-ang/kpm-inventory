@@ -2116,7 +2116,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
     ].filter(Boolean);
 
     return (
-        <div className="kx-map ms-root absolute inset-0 w-full h-[100dvh] lg:h-full bg-slate-900 overflow-hidden font-sans z-[50] overscroll-none">
+        <div className="kx-map ms-root absolute inset-0 w-full bg-slate-900 overflow-hidden font-sans z-[50] overscroll-none">
             
             <style>{`
                 body, html { overscroll-behavior-y: none !important; }

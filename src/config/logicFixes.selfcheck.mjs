@@ -10908,5 +10908,15 @@ section('INITIALS TAKE LETTERS, NOT A TAG (2026-10-12) - his "the initial name o
   }
 }
 
+section('THE MAP FITS BELOW THE NOTCH (2026-10-12) - his "the bottom map button on the safari also cutted as well"');
+{
+  /* the shell pads its top by the notch (e8477c7, --kpm-safe-top) but the map sized itself h-[100dvh] - a whole screen
+     tall, starting BELOW the notch. Lab, 375x812 with a 59 px notch: the map ran 59 px past the screen and the bottom dock
+     lost 37 of its 68 px. `absolute inset-0` alone fills the shell's box at every width (dock bottom 790 at 0 and 59). */
+  const root = (map.match(/<div className="kx-map ms-root [^"]*"/) || [''])[0];
+  ok('the map root fills its box with inset-0 and sets no screen height of its own',
+     /\babsolute inset-0\b/.test(root) && !/h-\[100dvh\]|h-screen|100vh/.test(root), root || 'root not found');
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
