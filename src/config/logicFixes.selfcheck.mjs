@@ -10932,5 +10932,64 @@ section('THE A4 SHEET PRINTS IN COMPANY INK, NOT THEME INK (2026-10-12) - the Re
   }
 }
 
+section('THE CAPYBARA SAYS 3 WORDS A SENTENCE AND YOU CAN HEAR THEM (2026-10-12) - his "i still can hear the capybara saying 1 or 2 words only ... minimum 3 words each sentence remember"');
+{
+  /* the 2026-10-11 fix counted SOUNDS per LINE and glued the extra ones into the last word: "Hi." was 3 sounds heard as
+     one, and "Deal's done. Good haul." two 2-word sentences. Measured on the real voice, rendered: 3 of 72 sentences were
+     heard as 3+ words. Now every sentence of every line he can hear has 3+ words, and a word gap a listener can hear. */
+  await import('../../tools/mumble-pack.js');
+  const { voicePlan } = await import('../utils/voicePlan.js');
+  const { CAPY_VOICE: V } = await import('./capyVoice.js');
+  const C = globalThis.KPM_CHIP;
+  /* every line he can hear: the triggerCapy lines (a ${value} read as digits, which are never voiced - the worst case),
+     the mascot's own lists, the sales terminal's chatter and deal lines */
+  const lines = new Set(), walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(d + '/' + e.name) : /\.jsx?$/.test(e.name) ? [d + '/' + e.name] : []));
+  for (const f of walk('src')) for (const m of read(f).matchAll(/triggerCapy\??\.?\(\s*(['"`])((?:\\.|(?!\1).)+?)\1\s*[,)]/g)) lines.add(m[2].replace(/\$\{[^}]*\}/g, '12'));
+  const block = (f, a, b) => { const s = read(f), i = s.indexOf(a), j = s.indexOf(b, i); return i > -1 && j > i ? s.slice(i, j) : ''; };
+  for (const b of [block('src/components/CapybaraMascot.jsx', 'const LOGGED_IN_MESSAGES', 'const NO_MESSAGES'), block('src/MerchantSalesView.jsx', 'const CHATTER = {', '};'), block('src/MerchantSalesView.jsx', 'const DEAL_LINES = [', '];')])
+    for (const m of b.matchAll(/"((?:[^"\\]|\\.)*?[A-Za-z](?:[^"\\]|\\.)*?)"/g)) lines.add(m[1]);
+  ok(`the corpus is every kind of line he hears (${lines.size} lines)`, lines.size > 120 && lines.has('Access Denied. 🛑') && lines.has('Good pick.') && lines.has("Deal's done. Good haul."));
+  /* THE PLAN: words per sentence, 40 rolls a line */
+  let sentences = 0, short = 0; const shortEx = [];
+  for (const t of lines) for (let s = 1; s <= 40; s++) {
+    const by = new Map(); for (const x of voicePlan(t, s)) { if (!by.has(x.sent)) by.set(x.sent, new Set()); by.get(x.sent).add(x.word); }
+    for (const w of by.values()) { sentences++; if (w.size < 3) { short++; if (shortEx.length < 3) shortEx.push(`${JSON.stringify(t)} #${s}: ${w.size}`); } }
+  }
+  ok(`every sentence is planned as 3+ words (${sentences} sentences, ${short} short${shortEx.length ? ': ' + shortEx.join(' | ') : ''})`, sentences > 3000 && short === 0);
+  { const ss = voicePlan('Sold Rp 52.000 today. Thanks a lot.', 1).map((x) => x.sent);
+    ok('a dot inside a number ("Rp 52.000") does not end a sentence; the real full stop does', ss.every(Number.isInteger) && new Set(ss).size === 2); }
+  /* THE EAR: what the phone plays - each syllable file as tools/sfx-bake.mjs bakes it (voice x vol + its short room at his
+     echo, added here as energy: a noise room adds energy, not a waveform), at the plan's rate, time and gain. A word is a
+     burst of sound with >= 60 ms under 12% of the peak before it. Cross-checked 2026-10-12 against a full sample render:
+     the same count in 72 of 72 sentences at wordGap .15, never more lenient. */
+  const SR = 44100, W = 220, room = (() => {
+    let y = 0, s = 11 * 2654435761 >>> 0, pw = 0; const r = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296), N = Math.floor(SR * .6), d = new Float64Array(N);
+    for (let i = 0; i < N; i++) { y += .35 * (r() - y); d[i] = i < SR * .006 ? 0 : y * Math.exp(-i / (SR * .12)); pw += d[i] * d[i]; }
+    const NORM = .00125 / Math.max(Math.sqrt(pw / N), .000125), H = [];
+    for (let i = 0; i < N; i += W) { let e = 0; for (let j = i; j < Math.min(N, i + W); j++) e += d[j] * d[j]; H.push(e * NORM * NORM); }
+    return H;
+  })(), keyE = {};
+  const heard = (text, seed) => {
+    const plan = voicePlan(text, seed), last = plan[plan.length - 1];
+    if (!last) return [];
+    const n = Math.ceil((last.at + 1.2) * SR / W), E = new Float64Array(n), T = new Float64Array(n);
+    for (const x of plan) {
+      const k = x.on + x.v + x.len + (x.rise ? 'R' : '');
+      if (!keyE[k]) { const sy = C.syllable(V, x.v, x.on, x.len, x.rise, SR), e = []; for (let i = 0; i < sy.length; i += W) { let a = 0; for (let j = i; j < Math.min(sy.length, i + W); j++) a += (sy[j] * V.vol) ** 2; e.push(a); } keyE[k] = e; }
+      const e = keyE[k], off = Math.round(x.at * SR / W), len = Math.floor(e.length / x.rate);
+      for (let i = 0; i < len && off + i < n; i++) E[off + i] += e[Math.floor(i * x.rate)] * x.gain * x.gain;
+    }
+    for (let i = 0; i < n; i++) { T[i] += E[i]; if (E[i]) for (let q = 1; q < room.length && i + q < n; q++) T[i + q] += E[i] * room[q] * V.echo * V.echo; }
+    const A = [...T].map(Math.sqrt), th = Math.max(...A) * .12, on = []; let quiet = 12;
+    A.forEach((a, i) => { if (a >= th) { if (quiet >= 12) on.push(i * W / SR); quiet = 0; } else quiet++; });
+    const st = [...new Set(plan.map((x) => x.sent))].map((s) => plan.find((x) => x.sent === s).at);
+    return st.map((at, i) => on.filter((t) => t >= at - .01 && (i + 1 >= st.length || t < st[i + 1] - .01)).length);
+  };
+  let heardS = 0, heardShort = 0; const heardEx = [];
+  for (const t of lines) for (const s of [1, 2, 3]) for (const b of heard(t, s)) { heardS++; if (b < 3) { heardShort++; if (heardEx.length < 3) heardEx.push(`${JSON.stringify(t)} #${s}: ${b}`); } }
+  ok(`every sentence is HEARD as 3+ words on the phone's files (${heardS} sentences, ${heardShort} heard short${heardEx.length ? ': ' + heardEx.join(' | ') : ''})`, heardS > 300 && heardShort === 0);
+  ok('his voice keeps the 3-word minimum and the audible word gap (capyVoice.js minSyl 3, wordGap .15)', /minSyl: 3,/.test(read('src/config/capyVoice.js')) && /wordGap: \.15/.test(read('src/config/capyVoice.js')));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

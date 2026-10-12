@@ -16,10 +16,14 @@
    real mumbles of his reference video (tools/mumble-pack.js, Gravity Sound "RPG Character Mumble Voices", no copyright),
    one PSOLA shift for the whole voice so every syllable is the same person, deep and soft; his asks behind it:
    *"fat but soft mumbling sound, just imagine the duke from resident evil village but inside the sim city"* and
-   *"make it more natural sounding instead of electronic edited sound"*. His loudness .4 and echo .12 kept. */
+   *"make it more natural sounding instead of electronic edited sound"*. His loudness .4 and echo .12 kept.
+   2026-10-12, his *"i still can hear the capybara saying 1 or 2 words only ... minimum 3 words each sentence remember"*:
+   minSyl is now 3 WORDS per SENTENCE (tools/chip.js plan), and wordGap .15 s is the quiet between two words - at the old
+   .05 the syllables ran together with the echo and "Welcome back, Boss!" was heard as ONE sound (rendered and measured:
+   3 of 72 sentences heard as 3+ words at .05, 72 of 72 at .12 and up). */
 export const CAPY_VOICE = {
   shape: 'rec', rec: 'round', natural: true, moods: 'happy', f: 108, formant: .9, intonation: .9, jitter: .2, scoop: 0, bend: 0, speed: .9,
-  cons: 0, vib: 0, breath: 0, maxSyl: 12, minSyl: 3, variety: 1, tempo: .5, drop: .5, emph: .5, fry: 0, vol: .4, echo: .12,
+  cons: 0, vib: 0, breath: 0, maxSyl: 12, minSyl: 3, variety: 1, tempo: .5, drop: .5, emph: .5, fry: 0, vol: .4, echo: .12, wordGap: .15,
 };
 
 /* the vault intro - his own mix: *"dont make the intro 8 bit bruh, we need elegant for that"* */

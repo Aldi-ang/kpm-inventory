@@ -251,9 +251,11 @@
   /* the line as syllables: each gets the onset class of its first letter, its first vowel, and which word it is in */
   function syllables(text) {
     const out = []; let word = 0;
-    for (const m of text.matchAll(/[A-Za-z']+|[.!?]/g)) {
+    /* a sentence ends at . ! ? followed by a space or the end - never the dot inside "Rp 52.000" or "2.5 Bks", which
+       used to cut "Sold Rp 52.000 today." into a sentence of one word */
+    for (const m of text.matchAll(/[A-Za-z']+|[.!?]+(?=\s|$)/g)) {
       const w = m[0].replace(/'/g, '');
-      if (/^[.!?]$/.test(w)) { out.push({ end: w }); continue; }
+      if (/^[.!?]+$/.test(w)) { out.push({ end: w.slice(-1) }); continue; }
       if (!w) continue;
       const parts = w.toLowerCase().match(/[^aeiouy]*[aeiouy]+/g) || [w.toLowerCase() + 'e'];
       let pos = m.index;
@@ -300,13 +302,6 @@
     let sy = syllables(text);
     const lastOf = new Set(); sy.forEach((x, i) => { if (!x.end && (!sy[i + 1] || sy[i + 1].end)) lastOf.add(i); });
     sy = sy.filter((x, i) => x.end || x.first || lastOf.has(i) || r() >= dropP);
-    /* his 2026-10-11 "minimum of 3 words when saying stuff": a short line ("Hi.", "Good pick.") is stretched with its
-       own sounds again, inside its last word, so he never answers with one lonely sound */
-    const said = sy.filter((x) => !x.end);
-    for (let k = 0; said.length && sy.filter((x) => !x.end).length < (p.minSyl || 0); k++) {
-      const at = sy[sy.length - 1].end ? sy.length - 1 : sy.length;
-      sy.splice(at, 0, { ...said[k % said.length], first: false, word: said[said.length - 1].word });
-    }
     /* the low lone "hm." is the agent's habit - a happy voice does not grunt first */
     if (p.moods !== 'happy' && r() < dv * .3) sy.unshift({ v: 'm', on: 'soft', first: true, word: -1, wlen: 2, from: 0, to: 0, filler: true }, { end: '.' });
     /* 2. HOW FAST: the whole line quicker or slower, and inside it a drift - quick through the middle, slow at the end */
@@ -314,14 +309,35 @@
     const sentences = []; let cur = [];
     for (const s of sy) { if (s.end) { if (cur.length) sentences.push({ s: cur, end: s.end }); cur = []; } else cur.push(s); }
     if (cur.length) sentences.push({ s: cur, end: '.' });
-    let at = 0;
+    /* his "minimum of 3 words when saying stuff" (2026-10-11) and "minimum 3 words each sentence remember" (2026-10-12):
+       counted per SENTENCE and in WORDS he can hear. The first fix counted sounds per line and glued the extra ones into
+       the last word with no gap - "Hi." was 3 sounds heard as ONE, and "Deal's done. Good haul." two words a sentence.
+       A short sentence now gets more words made of its own sounds, each its own word (so a word gap follows it). */
+    const minW = p.minSyl || 0;
+    let made = 0;
+    for (const S of sentences) {
+      if (S.s.every((x) => x.filler)) continue;
+      const words = new Set(S.s.map((x) => x.word)), own = S.s.slice();
+      for (let k = 0; words.size < minW; k++) { const w = 'w' + made++; S.s.push({ ...own[k % own.length], first: true, word: w }); words.add(w); }
+    }
+    /* the limit on a long line cuts between WORDS, never leaves a sentence with fewer than minW of them, and drops a
+       whole sentence rather than start one it cannot finish to that minimum */
+    let budget = cap;
+    for (const S of sentences) {
+      if (budget <= 0) { S.s = []; continue; }
+      const keep = [], seen = new Set();
+      for (const x of S.s) { if (!seen.has(x.word)) { if (keep.length >= budget && seen.size >= minW) break; seen.add(x.word); } keep.push(x); }
+      S.s = keep; budget -= keep.length;
+    }
+    let at = 0, si = 0;
     for (const { s, end } of sentences) {
+      if (!s.length) continue;
+      si++;
       const n = s.length, bang = end === '!', ask = end === '?', range = p.intonation * (bang ? 1.3 : 1) * rangeK;
       /* 3. WHICH WORD carries the weight: the longest (a filler never does) */
       let hot = -1, best = 0; s.forEach((x) => { if (!x.filler && x.wlen > best) { best = x.wlen; hot = x.word; } });
       s.forEach((x, i) => {
-        if (out.length >= cap) return;
-        const u = n > 1 ? i / (n - 1) : 0, last = i === n - 1 || out.length === cap - 1, nextS = s[i + 1];
+        const u = n > 1 ? i / (n - 1) : 0, last = i === n - 1, nextS = s[i + 1];
         const stress = x.first && x.wlen > 2, emph = x.word === hot && x.first && n > 2;
         const lp = pace * (1 + Math.sin(TAU * (u * 1.3 + phase)) * .15 * tv) * (last ? .78 : 1) * (emph ? 1 - .25 * ev : 1);
         const len = x.filler ? 'm' : last || (emph && lp < 1) ? 'l' : stress || emph ? (lp > 1.12 ? 's' : 'm') : (lp > .95 ? 's' : 'm');
@@ -332,10 +348,11 @@
         if (x.filler) semis = -2 + lift;
         const rate = st2(semis), { pre, lenV } = sylLen(p, x.on, len);
         const gain = (x.filler ? .7 : emph ? 1 : stress ? .9 : .76) * (bang ? 1.08 : 1);
-        out.push({ v: x.v, on: x.on, len, rise, rate, gain, at: +at.toFixed(4), from: x.from, to: x.to });
-        /* the gap after it: word breaks, sentence breaks, and now and then a thinking pause */
+        out.push({ v: x.v, on: x.on, len, rise, rate, gain, at: +at.toFixed(4), from: x.from, to: x.to, word: x.word, sent: si });
+        /* the gap after it: word breaks, sentence breaks, and now and then a thinking pause. `wordGap` (default .05) is how
+           long the breath between two words is - long enough on the capybara that each word is heard as its own */
         const wordBreak = nextS && nextS.word !== x.word, pause = wordBreak && r() < .1 * tv ? .16 : 0;
-        at += (pre + lenV) / rate * .92 + ((last ? .2 : wordBreak ? .05 : 0) / p.speed / lp + pause) * gapK;
+        at += (pre + lenV) / rate * .92 + ((last ? .2 : wordBreak ? (p.wordGap ?? .05) : 0) / p.speed / lp + pause) * gapK;
       });
     }
     out.mood = mood.label;
@@ -355,7 +372,7 @@
   const CAPY = {
     /* round 7 - his "fat but soft mumbling ... the duke from resident evil village but inside the sim city or maybe esquie
        voice from expedition 33 but mumbling": the gentleman merchant, happy, never fewer than 3 sounds a line */
-    vidnatural: { label: 'Video mumble - natural', hint: 'your pick, made natural: the same person in every syllable, his own melody, no chopped ends - just a little lower and softer', shape: 'rec', rec: 'round', natural: true, moods: 'happy', f: 108, formant: .9, intonation: .9, jitter: .2, scoop: 0, bend: 0, speed: .9, cons: 0, vib: 0, breath: 0, maxSyl: 12, minSyl: 3, tempo: .5, drop: .5, emph: .5, fry: 0 },
+    vidnatural: { label: 'Video mumble - natural', hint: 'your pick, made natural: the same person in every syllable, his own melody, no chopped ends - just a little lower and softer', shape: 'rec', rec: 'round', natural: true, moods: 'happy', f: 108, formant: .9, intonation: .9, jitter: .2, scoop: 0, bend: 0, speed: .9, cons: 0, vib: 0, breath: 0, maxSyl: 12, minSyl: 3, tempo: .5, drop: .5, emph: .5, fry: 0, wordGap: .15 },
     vidmumble: { label: 'Video mumble - first try', hint: 'the first try: the real mumbles from your video, every syllable forced to one low pitch and darkened', shape: 'rec', rec: 'round', moods: 'happy', f: 118, formant: .7, intonation: 1.3, jitter: .3, scoop: 1, bend: 1.5, speed: .9, cons: 0, vib: 0, breath: 0, maxSyl: 12, minSyl: 3, tempo: .6, drop: .5, emph: .6, fry: 0 },
     duke:      { label: 'The Duke (fat, jolly)', hint: 'a big round jolly merchant mumbling - deep chest, soft lips, a happy bounce', shape: 'mumble', moods: 'happy', f: 92, formant: .82, intonation: 1.5, jitter: .3, scoop: 1.6, bend: 2, speed: .85, cons: .35, vib: .25, breath: .28, maxSyl: 12, minSyl: 3, tempo: .6, drop: .5, emph: .6, fry: .12 },
     esquie:    { label: 'Esquie (big, soft, bouncy)', hint: 'a gentle giant - a huge round body, airy and slow, every syllable slides up into a smile', shape: 'mumble', moods: 'happy', f: 125, formant: .74, intonation: 1.8, jitter: .3, scoop: 2.6, bend: 2.4, speed: .8, cons: .2, vib: .35, breath: .35, maxSyl: 11, minSyl: 3, tempo: .5, drop: .5, emph: .5, fry: 0 },
