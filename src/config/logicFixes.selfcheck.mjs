@@ -10853,5 +10853,25 @@ section('THE RECEIPT GOES TO THE SHOP\'S OWN WHATSAPP (2026-10-12) - his "is it 
      /shareReceipt\(text, receiptData\.shop, \(phone\) => updateDoc\(doc\(db, `artifacts\/\$\{appId\}\/users\/\$\{userId\}\/customers`, receiptData\.shop\.id\), \{ phone \}\)\)/.test(ms));
 }
 
+section('THE TUTORIAL BOOK ANSWERS EVERY PRESS (2026-10-12) - his "the ponder book is not responding on press ... i cant press the X button ... sometimes the page doesnt load and show this blank page instead"');
+{
+  const pb = code(read('src/ponder/PonderBook.jsx'));
+  /* (1) a button that transforms inside the 3D page stops being found under the pointer: the press started on the X and
+     ended on its parent row (event log, headless 1280), so no click fired. The look moves to an inner layer that takes
+     no pointer; the button itself never moves. */
+  const faces = pb.slice(pb.indexOf('const face = (pg) =>'), pb.indexOf('const near = []'));
+  /* each page button's OWN className (a `<button ...>` regex stops at the `=>` inside an onClick) */
+  const tags = [...faces.matchAll(/<button\b[\s\S]*?className=(?:"([^"]*)"|\{`([^`]*)`\})/g)].map((m) => m[1] ?? m[2]);
+  ok('every button on the book\'s pages (X, the two arrows, the tutorial cards) stays still under the finger - its press-shrink and hover-lift live on an inner layer that takes no pointer',
+     tags.length === 4 && tags.every((t) => !/active:scale|translate-y|transition-transform/.test(t) && /\bgroup\b/.test(t)) &&
+     (faces.match(/pointer-events-none[^"`]*group-active:scale-\[0\.97\]/g) || []).length === 3 && /pointer-events-none[^`]*group-hover:-translate-y-\[3px\] group-active:scale-\[0\.985\]/.test(faces),
+     tags.map((t) => (/active:scale|translate-y/.test(t) ? 'MOVES' : 'still')).join(' '));
+  /* (2) the opening unfold held every sheet under fill 'both' forever; a ribbon moves the sheets by style only, a held
+     animation outranks a style, so the left page stayed blank (exposed by 40f8df1, the ribbon's direct jump) */
+  const opening = pb.slice(pb.indexOf('const parts = foldables();'), pb.indexOf('shade(shadeFrontRef.current'));
+  ok('the opening unfold holds the sheets folded only BEFORE it plays (fill backwards) and lets go when it lands, so a ribbon jump can move them',
+     /fill: 'backwards'/.test(opening) && !/fill: 'both'/.test(opening));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

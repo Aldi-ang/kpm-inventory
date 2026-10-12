@@ -613,17 +613,24 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
        disagreement IS the intersection he saw.
 
        The block starts folded and unfolds with the cover, which makes the arrival a closed book.
-       `fill: 'both'` under a delay is what holds them folded for the whole flight — the sheets are
-       pinned at their FROM keyframe until their turn comes, so nothing has to be rendered folded
+       `fill: 'backwards'` under a delay is what holds them folded for the whole flight — the sheets
+       are pinned at their FROM keyframe until their turn comes, so nothing has to be rendered folded
        and nothing flickers when the animation takes over. Reverse stagger: the deepest sheet leads
-       going out, the top sheet leads coming back, which is how a stack opens. */
+       going out, the top sheet leads coming back, which is how a stack opens.
+
+       🔴 BACKWARDS, NOT BOTH: IT LETS GO WHEN IT LANDS. Aldi, 2026-10-12: *"sometimes the page doesnt
+       load and show this blank page instead"*. Under `fill: 'both'` these held every sheet at its
+       opening pose for the life of the book, and a held animation outranks a style - so a ribbon,
+       which moves the sheets by style alone (40f8df1), moved nothing: the left page stayed empty and
+       the old chapter stayed on the right. Their last keyframe IS each sheet's resting style, so
+       letting go at the end moves nothing on screen. */
     const parts = foldables();
     parts.forEach(({ el: part, z }, i) => {
       part?.animate(
         [{ transform: `translateZ(${z}px) ${foldTo}` },
          { transform: `translateZ(${z}px) rotateY(0deg)` }],
         { duration: T.leafOpen, delay: T.leafOpenDelay + (parts.length - 1 - i) * 14,
-          easing: HINGE, fill: 'both' },
+          easing: HINGE, fill: 'backwards' },
       );
     });
     shade(shadeFrontRef.current, [{ opacity: 0.62 }, { opacity: 0.62, offset: 0.35 }, { opacity: 0 }],
@@ -1022,11 +1029,17 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
             <h3 className="font-display text-2xl font-black uppercase tracking-[0.1em] leading-none mt-1 lg:hidden"
                 style={{ color: BOOK_INK }}>{s.label}</h3>
           </div>
-          <button type="button" onClick={shut} aria-label="Close" title="Close"
-            style={{ background: PAPER_2, color: BOOK_INK, borderColor: 'rgba(0,0,0,.2)' }}
-            className="shrink-0 h-9 w-9 rounded-lg border active:scale-[0.97]
-                       transition-transform duration-150 ease-out inline-flex items-center justify-center">
-            <X size={16} />
+          {/* 🔴 A BUTTON ON A PAGE NEVER MOVES ITSELF. Aldi, 2026-10-12: *"i cant press the X button"*. Inside
+              this 3D page a button that shrinks while pressed stops being found under the pointer: the
+              press started on the X and ended on the row behind it (event log, headless 1280), so no
+              click fired - the X, the arrows and the cards all lost their presses. The look is on an
+              inner layer that takes no pointer; the button, the thing the pointer hits, stays still. */}
+          <button type="button" onClick={shut} aria-label="Close" title="Close" className="group shrink-0 h-9 w-9">
+            <span style={{ background: PAPER_2, color: BOOK_INK, borderColor: 'rgba(0,0,0,.2)' }}
+              className="pointer-events-none h-full w-full rounded-lg border group-active:scale-[0.97]
+                         transition-transform duration-150 ease-out inline-flex items-center justify-center">
+              <X size={16} />
+            </span>
           </button>
         </div>
 
@@ -1039,10 +1052,11 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
                   /* A drag that began on a card is a page turn, not a pick. `movedRef` clears a tick
                      after the pointer goes up, which is after the click this suppresses. */
                   onClick={() => { if (movedRef.current) return; if (ready) onPick(e.sceneId); }}
-                  style={{ background: ready ? PAPER_2 : 'rgba(0,0,0,.04)',
-                           borderColor: ready ? 'rgba(0,0,0,.22)' : 'rgba(0,0,0,.12)' }}
-                  className={`text-left p-4 rounded-xl border transition-transform duration-200 ease-out
-                              ${ready ? 'hover:-translate-y-[3px] active:scale-[0.985] cursor-pointer' : 'cursor-not-allowed'}`}>
+                  className={`group block w-full text-left ${ready ? 'cursor-pointer' : 'cursor-not-allowed'}`}>
+                  <span style={{ background: ready ? PAPER_2 : 'rgba(0,0,0,.04)',
+                                 borderColor: ready ? 'rgba(0,0,0,.22)' : 'rgba(0,0,0,.12)' }}
+                    className={`pointer-events-none block h-full p-4 rounded-xl border transition-transform duration-200 ease-out
+                                ${ready ? 'group-hover:-translate-y-[3px] group-active:scale-[0.985]' : ''}`}>
                   <span className="h-10 w-10 rounded-lg border flex items-center justify-center"
                         style={{ background: PAPER, borderColor: 'rgba(0,0,0,.18)' }}>
                     {ready ? <Icon name={e.icon} size={17} style={{ color: '#8A5A12' }} />
@@ -1055,6 +1069,7 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
                     <span className="inline-block mt-3 font-mono text-[9px] uppercase tracking-widest border rounded px-1.5 py-0.5"
                           style={{ color: BOOK_DIM, borderColor: 'rgba(0,0,0,.2)' }}>belum ditulis</span>
                   )}
+                  </span>
                 </button>
               );
             })}
@@ -1064,21 +1079,23 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
         {/* The ‹ › run the same turn the drag does — for a mouse, and for anyone who cannot drag. */}
         <div className="flex items-center justify-between pt-4 mt-4 border-t" style={{ borderColor: 'rgba(0,0,0,.16)' }}>
           <button type="button" disabled={safeTurn <= 1} onClick={() => turn(-1)}
-            aria-label="Previous page"
-            style={{ background: PAPER_2, color: BOOK_INK, borderColor: 'rgba(0,0,0,.2)' }}
-            className="h-9 w-9 rounded-lg border disabled:opacity-35 disabled:cursor-not-allowed
-                       active:scale-[0.97] transition-transform duration-150 ease-out inline-flex items-center justify-center">
-            <ChevronLeft size={16} />
+            aria-label="Previous page" className="group h-9 w-9 disabled:opacity-35 disabled:cursor-not-allowed">
+            <span style={{ background: PAPER_2, color: BOOK_INK, borderColor: 'rgba(0,0,0,.2)' }}
+              className="pointer-events-none h-full w-full rounded-lg border group-active:scale-[0.97]
+                         transition-transform duration-150 ease-out inline-flex items-center justify-center">
+              <ChevronLeft size={16} />
+            </span>
           </button>
           <span className="font-mono text-[10px] uppercase tracking-widest tabular-nums" style={{ color: BOOK_DIM }}>
             {safeTurn} / {maxTurn}
           </span>
           <button type="button" disabled={safeTurn >= maxTurn} onClick={() => turn(1)}
-            aria-label="Next page"
-            style={{ background: PAPER_2, color: BOOK_INK, borderColor: 'rgba(0,0,0,.2)' }}
-            className="h-9 w-9 rounded-lg border disabled:opacity-35 disabled:cursor-not-allowed
-                       active:scale-[0.97] transition-transform duration-150 ease-out inline-flex items-center justify-center">
-            <ChevronRight size={16} />
+            aria-label="Next page" className="group h-9 w-9 disabled:opacity-35 disabled:cursor-not-allowed">
+            <span style={{ background: PAPER_2, color: BOOK_INK, borderColor: 'rgba(0,0,0,.2)' }}
+              className="pointer-events-none h-full w-full rounded-lg border group-active:scale-[0.97]
+                         transition-transform duration-150 ease-out inline-flex items-center justify-center">
+              <ChevronRight size={16} />
+            </span>
           </button>
         </div>
       </div>
