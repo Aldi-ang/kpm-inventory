@@ -3421,7 +3421,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     }
                                     text += `------------------------\n*TOTAL: ${receiptData.method === 'Retur/BS' ? '-' : ''}Rp ${new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}*\n\nThank you for your business!`;
                                     /* the shop it just sold to: its own chat; no number -> ask, and offer to keep it on the shop */
-                                    shareReceipt(text, receiptData.shop, (phone) => updateDoc(doc(db, `artifacts/${appId}/users/${userId}/customers`, receiptData.shop.id), { phone }));
+                                    shareReceipt(text, receiptData.shop, (phone) => updateDoc(doc(db, `artifacts/${appId}/users/${dataOwnerId}/customers`, receiptData.shop.id), { phone }));
                                 }} className="flex-1 !bg-[#25D366] !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-[#128C7E] transition-colors tracking-widest text-[10px] shadow-md active:scale-95">
                                     <MessageSquare size={14}/> WhatsApp Share
                                 </button>

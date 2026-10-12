@@ -10850,7 +10850,11 @@ section('THE RECEIPT GOES TO THE SHOP\'S OWN WHATSAPP (2026-10-12) - his "is it 
   const ms = read('src/MerchantSalesView.jsx');
   ok('the sales terminal hands the shop it just sold to, and offers to save a typed number on it (the rules already let a salesman update a shop)',
      /setReceiptData\(\{\s*customer: finalCust, shop: selectedCustomerInfo,/.test(ms) &&
-     /shareReceipt\(text, receiptData\.shop, \(phone\) => updateDoc\(doc\(db, `artifacts\/\$\{appId\}\/users\/\$\{userId\}\/customers`, receiptData\.shop\.id\), \{ phone \}\)\)/.test(ms));
+     /* `dataOwnerId`, NOT `userId`: in this file `userId` exists only as a const inside other handlers, so the first
+        build threw "userId is not defined" on Save (his screenshot, 2026-10-12 17:59) - the lab walk had swapped the real
+        saver for a fake, so the line itself never ran */
+     /shareReceipt\(text, receiptData\.shop, \(phone\) => updateDoc\(doc\(db, `artifacts\/\$\{appId\}\/users\/\$\{dataOwnerId\}\/customers`, receiptData\.shop\.id\), \{ phone \}\)\)/.test(ms) &&
+     /const dataOwnerId = /.test(ms));
 }
 
 section('THE TUTORIAL BOOK ANSWERS EVERY PRESS (2026-10-12) - his "the ponder book is not responding on press ... i cant press the X button ... sometimes the page doesnt load and show this blank page instead"');
