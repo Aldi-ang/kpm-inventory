@@ -10800,6 +10800,8 @@ section('THE DEMO FRONT DOOR + SWITCH BAR (2026-10-13) - his "A for phone B for 
   ok('Fleet & Roster: edit, delete, lock and vault-password reset answer "try it on Budi" on a demo login - all four, first thing each does, demo build only',
      fleet.includes('const isDemoLogin = (agent) => IS_DEMO && agent?.demoLogin === true;')
      && ['const handleEditClick = (e, agent) => {', 'const handleDeleteAgent = async (e, agent) => {', 'const handleResetVaultPassword = async (agent) => {', 'const handleLockAccount = async (agent, lock) => {'].every(guarded));
+  ok('the PC rail and the toasts start below --kpm-safe-top too (walked 2026-10-13: the rail\'s round button sat 12 px under the bar, a toast covered SWITCH) - 0 px on a desk in the real app, below the notch on an iPhone',
+     shell.includes('pt-[calc(1.25rem+var(--kpm-safe-top))] lg:pt-[var(--kpm-safe-top)]') && read('src/components/Toast.jsx').includes('pointer-events-none fixed inset-x-0 top-[var(--kpm-safe-top)] z-[10000]'));
   ok('the Master Vault gate prints the demo vault password, in the demo build only',
      read('src/App.jsx').includes('{IS_DEMO && <p className="mt-[11px] font-mono text-[10px] tracking-[0.14em] text-[var(--shell-ink-2)]">Demo vault password: <b className="text-[var(--shell-orange-ink)]">{VAULT_PASSWORD}</b></p>}'));
 }

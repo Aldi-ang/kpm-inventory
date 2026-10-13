@@ -115,7 +115,7 @@ export function ToastHost() {
     return (
         /* pointer-events-none on the column, auto on each strip: the toasts sit over the app,
            and a sale in progress underneath must stay clickable in the gaps between them. */
-        <div className="pointer-events-none fixed inset-x-0 top-0 z-[10000] flex flex-col items-center gap-2 p-3">
+        <div className="pointer-events-none fixed inset-x-0 top-[var(--kpm-safe-top)] z-[10000] flex flex-col items-center gap-2 p-3">
             {/* Kept local rather than added to theme.css: these two keyframes are useless to
                 anything but this file, and a strip that animates is worth nothing if the
                 stylesheet it depends on is ever split away from it.

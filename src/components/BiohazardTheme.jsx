@@ -667,7 +667,7 @@ export default function BiohazardTheme({
                    session never actually took effect on a desk. A source-string check had been
                    asserting the class was PRESENT, which is not the same as asserting it WINS.
                    One owner for this property now, and it is theme.css. */
-                className={`hide-on-print fixed inset-y-0 right-0 z-[90] bg-[#0b0a09]/97 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border-l lg:border-0 border-[#3e3226] flex flex-col pt-[calc(1.25rem+var(--kpm-safe-top))] lg:pt-0 px-0 overflow-hidden
+                className={`hide-on-print fixed inset-y-0 right-0 z-[90] bg-[#0b0a09]/97 lg:bg-transparent backdrop-blur-xl lg:backdrop-blur-none border-l lg:border-0 border-[#3e3226] flex flex-col pt-[calc(1.25rem+var(--kpm-safe-top))] lg:pt-[var(--kpm-safe-top)] px-0 overflow-hidden
                              transition-[transform,width,padding,opacity] duration-300 ease-[cubic-bezier(.22,1,.36,1)] lg:relative lg:translate-x-0 lg:opacity-100 lg:pointer-events-auto
                              ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
