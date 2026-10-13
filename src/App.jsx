@@ -150,7 +150,8 @@ import {
 
 // --- CONFIG & UTILITIES IMPORTS ---
 import { auth, db, storage, googleProvider, appId, IS_DEMO } from './config/firebase';
-import { VAULT_PASSWORD } from './config/demoLogins.js';   // demo build only - printed on the Master Vault gate
+import { VAULT_PASSWORD, OWNER_UID } from './config/demoLogins.js';   // demo build only - printed on the Master Vault gate; the demo company's folder
+import { DemoPick } from './components/DemoFrontDoor.jsx';   // demo build only - the invite check + "pick who to be"
 import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines, eodReportParts, eodNightMessage, EOD_PART_LABELS, absentForSure } from './utils/helpers';
 import { isLowStock } from './utils/stockThreshold';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES, DEFAULT_RANKS } from './config/career';
@@ -2763,12 +2764,15 @@ const handleGitHubMirror = async () => {
                     setIsSystemOwner(true);
                     setBossUid(null);
                     setProfileName([uidSnap, emailSnap].map(s => s.exists() && (s.data().name || s.data().agentName)).find(Boolean) || null);
-                    setUserRole('ADMIN'); 
+                    setUserRole('ADMIN');
                     setAgentProfileId(null);
-                    setUser(currentUser);
-                    setIsAdmin(false); 
-                    setShowAdminLogin(true); 
-                    return; 
+                    /* THE DEMO: his Gmail reads the demo company as T1 (his 2026-10-13 "see the same data as tier 2 and
+                       below ... without changing the tier personality"). His own folder there is empty - the company
+                       lives under the demo owner - so the folder id is the owner's, the way a salesman's is his boss's. */
+                    setUser(IS_DEMO ? { uid: OWNER_UID, realUid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName, photoURL: currentUser.photoURL } : currentUser);
+                    setIsAdmin(false);
+                    setShowAdminLogin(true);
+                    return;
                 }
 
                 setIsSystemOwner(false);
@@ -4842,7 +4846,7 @@ const handleGitHubMirror = async () => {
             />
         )}
         {/* 🚀 THE HARD STOP: Blocks any email not found in the KPM Employee Directory */}
-        {userRole === 'UNAUTHORIZED' ? (
+        {userRole === 'UNAUTHORIZED' ? (IS_DEMO ? <DemoPick /> : (
             <div className="kpm-dark-island fixed inset-0 z-[9999] bg-[var(--duke-scrim-hi)] flex flex-col items-center justify-center text-center p-6 font-mono">
                 <ShieldAlert size={64} className="text-red-600 mb-6 animate-pulse" />
                 <h2 className="text-3xl font-black text-[var(--duke-ink-hi)] uppercase tracking-[0.25em] mb-2">Access Denied</h2>
@@ -4853,7 +4857,7 @@ const handleGitHubMirror = async () => {
                     Disconnect Session
                 </button>
             </div>
-        ) : userRole === 'OFFLINE_UNVERIFIED' ? (
+        )) : userRole === 'OFFLINE_UNVERIFIED' ? (
             // 🚀 THE FIX: An honest, DIFFERENT message from Access Denied — this fires
             // only when we genuinely couldn't check (offline, and this device has never
             // cached this account before), never when the server actually said no.

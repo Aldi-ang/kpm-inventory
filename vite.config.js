@@ -75,7 +75,8 @@ return {
   /* the lab build (tools/ponder-lab.config.mjs) rewrites dist-ponderlab/ inside this tree, and `npm run build` rewrites
      dist/; watching them killed this dev server mid-session (EBUSY on dist-ponderlab/Bit_Capybara_Fortnite_Dance_Video.mp4,
      2026-10-05 07:19). The dev server serves neither */
-  server: { https: !httpDev, host: true, watch: { ignored: ['**/dist/**', '**/dist-ponderlab/**'] } },
+  /* httpdev only: the demo's /api functions on this machine (tools/demo-api-emulator.mjs) - Vercel serves them live */
+  server: { https: !httpDev, host: true, watch: { ignored: ['**/dist/**', '**/dist-ponderlab/**'] }, ...(httpDev ? { proxy: { '/api': 'http://127.0.0.1:5177' } } : {}) },
   plugins: [
     ...(httpDev ? [] : [basicSsl()]),
     react(),

@@ -31,9 +31,9 @@ import { FACES } from './_demoFaces.js';
 export const DEMO_PROJECT = 'kpm-demo-f4d74';
 export const APP_ID = 'cello-inventory-manager';          // the folder name inside the demo database, as in firebase.js
 export const T1_EMAIL = 'adikaryasukses99@gmail.com';     // his Gmail - the only caller allowed to press "Reset demo now"
-/* the five logins + their public passwords live in src/config/demoLogins.js - the demo's front door signs in with the same list */
-import { OWNER_UID, LOGIN_PASSWORD, VAULT_PASSWORD, LOGINS } from '../src/config/demoLogins.js';
-export { OWNER_UID, LOGIN_PASSWORD, VAULT_PASSWORD, LOGINS };
+/* the five logins + the public vault password live in src/config/demoLogins.js - the demo's picker lists the same people */
+import { OWNER_UID, VAULT_PASSWORD, LOGINS } from '../src/config/demoLogins.js';
+export { OWNER_UID, VAULT_PASSWORD, LOGINS };
 export const RECOVERY_WORD = 'demo';
 
 /* THE TWO TEAMS. A person's `location` is their team (the roster's tabs key on province + location -

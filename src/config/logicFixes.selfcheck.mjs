@@ -10897,16 +10897,16 @@ section('THE DEMO FRONT DOOR + SWITCH BAR (2026-10-13) - his "A for phone B for 
   let dl = null, dc = null;
   try { dl = await import('./demoLogins.js'); dc = await import('../../api/_demoCompany.js'); } catch (e) { console.log('  (demo logins not importable: ' + e.message.split('\n')[0] + ')'); }
   ok('ONE list: the reset writes the very logins the door signs in with (api/_demoCompany.js re-exports src/config/demoLogins.js - two copies would drift and a card would print a password the reset no longer sets)',
-     !!dl && !!dc && dc.LOGINS === dl.LOGINS && dc.LOGIN_PASSWORD === dl.LOGIN_PASSWORD && dc.VAULT_PASSWORD === dl.VAULT_PASSWORD && dc.OWNER_UID === dl.OWNER_UID);
+     !!dl && !!dc && dc.LOGINS === dl.LOGINS && dc.VAULT_PASSWORD === dl.VAULT_PASSWORD && dc.OWNER_UID === dl.OWNER_UID);
   ok('the switch offers exactly T2..T6, five different emails, never T1 (his Gmail is the only T1 and is not a demo login)',
      !!dl && !!dc && dl.LOGINS.map((l) => l.tier).join() === 'T2,T3,T4,T5,T6' && new Set(dl.LOGINS.map((l) => l.email)).size === 5 && !dl.LOGINS.some((l) => l.email === dc.T1_EMAIL));
   const door = read('src/components/DemoFrontDoor.jsx'), shell = read('src/components/BiohazardTheme.jsx'), th = read('src/styles/theme.css');
   ok('the door and the bar mount ONLY in the demo build (the real build drops them - demoBuild.check proves it on the bundle)',
      shell.includes('{IS_DEMO ? <DemoDoor ') && shell.includes('{IS_DEMO && user && <DemoBar ') && (shell.match(/<Demo(Door|Bar)\b/g) || []).length === 2);
-  ok('no password literal in the door - it prints and signs in with the shared constants',
-     !door.includes("'admin123'") && door.includes('signInWithEmailAndPassword(auth, p.email, LOGIN_PASSWORD)'));
-  ok('a failed sign-in or switch says "the demo is being reset", never a raw Firebase code (trap b of the brief)',
-     (door.match(/notify\(DEMO_DOWN\)/g) || []).length === 2 && !/notify\([^)]*e\.message/.test(door));
+  ok('no password literal in the door - the picker prints the shared vault constant',
+     !door.includes("'admin123'") && door.includes('<code>{VAULT_PASSWORD}</code>'));
+  ok('a failed sign-in or switch says "the demo is being reset", never a raw Firebase code (trap b of the brief) - one helper for the picker\'s keys, its badges and the bar',
+     (door.match(/notify\(DEMO_DOWN\)/g) || []).length === 1 && (door.match(/enterAs\(p, setBusy\)/g) || []).length === 3 && !/notify\([^)]*e\.message/.test(door));
   ok('phone = five keys (A), PC = five badges (B): Tailwind switches the two layouts, and the class sheet never sets display on them (it loads after Tailwind and would show both)',
      door.includes('kpm-demo-list lg:hidden') && door.includes('kpm-demo-grid hidden lg:grid') && !/\.kpm-demo-(list|grid)\s*\{[^}]*display\s*:/.test(th));
   ok('the bar takes its 37 px through --kpm-safe-top (the shell and the phone drawer already pad by it) and mounts outside the overflow-hidden root',
@@ -10924,6 +10924,38 @@ section('THE DEMO FRONT DOOR + SWITCH BAR (2026-10-13) - his "A for phone B for 
      shell.includes('pt-[calc(1.25rem+var(--kpm-safe-top))] lg:pt-[var(--kpm-safe-top)]') && read('src/components/Toast.jsx').includes('pointer-events-none fixed inset-x-0 top-[var(--kpm-safe-top)] z-[10000]'));
   ok('the Master Vault gate prints the demo vault password, in the demo build only',
      read('src/App.jsx').includes('{IS_DEMO && <p className="mt-[11px] font-mono text-[10px] tracking-[0.14em] text-[var(--shell-ink-2)]">Demo vault password: <b className="text-[var(--shell-orange-ink)]">{VAULT_PASSWORD}</b></p>}'));
+}
+
+section('THE INVITE-ONLY DEMO (2026-10-13) - his "i can registered other google account email so that they can access it and the app should block others if not registered"');
+{
+  let sw = null, dl = null;
+  try { sw = await import('../../api/demo-switch.js'); dl = await import('./demoLogins.js'); } catch (e) { console.log('  (demo switch not importable: ' + e.message.split('\n')[0] + ')'); }
+  const T1 = 'adikaryasukses99@gmail.com', INVITED = 'buyer@gmail.com', g = sw?.guestOf;
+  const invited = async (m) => m === INVITED;
+  const google = (email, v = true) => ({ uid: 'g-' + email, email, email_verified: v, firebase: { sign_in_provider: 'google.com' } });
+  const asRole = (uid, guest) => ({ uid, email: 'demo.canvas@example.com', email_verified: true, guest, firebase: { sign_in_provider: 'custom' } });
+  ok('a Google account he did not register is refused; one he registered gets in (capitals in the address do not matter)',
+     !!g && await g(google('stranger@gmail.com'), invited) === null && await g(google('Buyer@Gmail.com'), invited) === INVITED);
+  ok('an unverified Google address is refused even when it is on the list', !!g && await g(google(INVITED, false), invited) === null);
+  ok('his Gmail is always in; only HIS Google sign-in is T1 (not a demo person he switched into, not a guest)',
+     !!g && await g(google(T1), invited) === T1 && sw.isT1(google(T1)) && !sw.isT1(asRole('demo-canvas', T1)) && !sw.isT1(google(INVITED)));
+  ok('a switch from inside carries the Gmail they came in with and checks his list AGAIN - removed = no more switching',
+     !!g && await g(asRole('demo-canvas', INVITED), invited) === INVITED && await g(asRole('demo-canvas', 'removed@gmail.com'), invited) === null);
+  ok('a carried Gmail counts only on one of the five demo logins - never on another account, never on a password sign-in',
+     !!g && await g(asRole('someone-else', INVITED), invited) === null && await g({ ...asRole('demo-canvas', INVITED), firebase: { sign_in_provider: 'password' } }, invited) === null);
+  const reset = code(read('api/demo-reset.js'));
+  ok('🔴 THE TRAP: the five logins have no public password any more - every reset sets a random one nobody knows and ends every session, so the invite check is the only way in',
+     !!dl && !('LOGIN_PASSWORD' in dl) && /password: randomBytes\(\d+\)\.toString\('base64url'\)/.test(reset) && reset.includes('await auth.revokeRefreshTokens(l.uid)') && !read('api/_demoCompany.js').includes('LOGIN_PASSWORD'));
+  const door = code(read('src/components/DemoFrontDoor.jsx'));
+  ok('the door signs in with Google only; a person is entered through the server (a custom token), never with a typed password',
+     !door.includes('signInWithEmailAndPassword') && door.includes('await signInWithCustomToken(auth, j.token)') && door.includes("fetch('/api/demo-switch'"));
+  ok('not on his list -> told so, then signed out', door.includes("'This demo is invite-only - ask KPM for access.'") && /notify\(INVITE_ONLY\);\s*await signOut\(auth\)/.test(door));
+  const app = code(read('src/App.jsx'));
+  ok('his Gmail in the demo reads the demo company (the owner\'s folder) as T1 - not an empty folder of his own (his 18:08 screenshot)',
+     app.includes('setUser(IS_DEMO ? { uid: OWNER_UID, realUid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName, photoURL: currentUser.photoURL } : currentUser)'));
+  ok('in the demo a signed-in Google guest meets the picker, not Access Denied', app.includes("userRole === 'UNAUTHORIZED' ? (IS_DEMO ? <DemoPick "));
+  ok('the invite list is server-side only, at the database root (a reset wipes only artifacts/), and only T1 changes it',
+     !!sw && /db\.doc\(`demo_invites\/\$\{/.test(read('api/demo-switch.js')) && /if \(!isT1\(t\)\) return res\.status\(403\)/.test(read('api/demo-switch.js')));
 }
 
 section('THE BELL SAYS THE DAY, THE DATE AND THE TIME (2026-10-12) - his "add dates and day and time inside the notification bell ... sunday, 10 february, 10.21 for example"');

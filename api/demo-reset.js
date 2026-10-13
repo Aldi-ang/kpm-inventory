@@ -9,17 +9,17 @@
    Firebase is even started. The key is set only in the demo's Vercel project (his step).
 
    What one reset does (design: A-Brain Brainstorm/2026-10-06_public-demo.md): wipe
-   artifacts/cello-inventory-manager, set the 5 switch logins back (password, name, enabled), then write
+   artifacts/cello-inventory-manager, set the 5 switch logins back (a random password, name, enabled), then write
    the company from api/_demoCompany.js. Proven against the Firebase emulator with the real rules:
    tools/demo-reset-emulator.mjs. */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual, randomBytes } from 'node:crypto';
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { hashSecret } from '../src/utils/secretHash.js';
-import { buildDemoCompany, DEMO_PROJECT, APP_ID, T1_EMAIL, LOGINS, LOGIN_PASSWORD, VAULT_PASSWORD, RECOVERY_WORD } from './_demoCompany.js';
+import { buildDemoCompany, DEMO_PROJECT, APP_ID, T1_EMAIL, LOGINS, VAULT_PASSWORD, RECOVERY_WORD } from './_demoCompany.js';
 
 /* the parsed service-account key, or null when it is missing, broken, or for another project */
 export const demoKey = (raw = process.env.DEMO_FIREBASE_KEY) => {
@@ -40,9 +40,11 @@ const callerOf = async (req, auth) => {
     } catch { return null; }
 };
 
-/* set a switch login back to its public password, freeing its email if someone else took it */
+/* set a switch login back, freeing its email if someone else took it. The password is RANDOM and thrown away: nobody
+   signs in with it (his 2026-10-13 invite-only demo - api/demo-switch.js hands out the sign-ins after the invite check),
+   and the reset ends every session, so an address he took off the list is out by the next reset at the latest. */
 const upsertLogin = async (auth, l) => {
-    const props = { email: l.email, password: LOGIN_PASSWORD, displayName: l.name, emailVerified: true, disabled: false };
+    const props = { email: l.email, password: randomBytes(24).toString('base64url'), displayName: l.name, emailVerified: true, disabled: false };
     try { await auth.updateUser(l.uid, props); return; } catch (e) { if (e.code !== 'auth/user-not-found') throw e; }
     try { await auth.createUser({ uid: l.uid, ...props }); } catch (e) {
         if (e.code !== 'auth/email-already-exists') throw e;
@@ -58,7 +60,7 @@ export async function resetDemo(db, auth, now = new Date()) {
     const company = buildDemoCompany(seed, now, vault);
 
     await db.recursiveDelete(db.doc(`artifacts/${APP_ID}`));
-    for (const l of LOGINS) await upsertLogin(auth, l);
+    for (const l of LOGINS) { await upsertLogin(auth, l); await auth.revokeRefreshTokens(l.uid); }
 
     let failed = 0;
     const w = db.bulkWriter();

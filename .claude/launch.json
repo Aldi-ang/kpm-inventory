@@ -113,6 +113,15 @@
       "url": "http://localhost:5176"
     },
     {
+      "name": "demo-api-emulator",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "tools/demo-api-emulator.mjs"
+      ],
+      "port": 5177,
+      "url": "http://127.0.0.1:5177"
+    },
+    {
       "name": "ponder-lab-built",
       "runtimeExecutable": "npx",
       "runtimeArgs": [

@@ -5733,6 +5733,11 @@ html.lite-mode .kpm-ench *, html.lite-mode .kpm-ench *::before, html.lite-mode .
 .kpm-demo-or { display: flex; align-items: center; gap: 10px; margin: 6px 0 8px; font: 700 9px/1 var(--font-mono); letter-spacing: .3em; color: #8a7048; }
 .kpm-demo-or::before, .kpm-demo-or::after { content: ''; flex: 1; height: 1px; background: rgba(231,112,15,.18); }
 .kpm-demo-note { margin: 8px auto 0; max-width: 34ch; font: 11px/1.5 var(--font-body); color: rgba(247,233,200,.55); text-align: center; }
+/* invite-only (2026-10-13): the door is one Google button; the picker's way back is a quiet text button */
+.kpm-demo-door-go { margin-top: 16px; }
+.kpm-demo-out { margin-top: 6px; min-height: 36px; padding: 0 8px; background: none; border: 0; font: 11px/1.5 var(--font-body);
+  color: rgba(247,233,200,.62); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; touch-action: manipulation; }
+.kpm-demo-out:disabled { opacity: .4; cursor: default; }
 @media (hover: hover) and (pointer: fine) {
   .kpm-demo-row:hover:not(:disabled), .kpm-demo-badge:hover { border-color: #E7700F; background: rgba(231,112,15,.09); }
 }
@@ -5769,6 +5774,21 @@ html.kpm-demo-on { --kpm-safe-top: calc(env(safe-area-inset-top, 0px) + 37px); }
 .kpm-demo-bar .row .tag { margin-left: auto; font: 700 9px/1 var(--font-mono); letter-spacing: .2em; color: var(--accent-ink); }
 .kpm-demo-bar .foot { padding: 10px 14px 12px; border-top: 1px solid var(--line); font: 11px/1.5 var(--font-body); color: var(--ink-dim); }
 .kpm-demo-bar .reset { margin: 0 14px 14px; width: calc(100% - 28px); }
+/* his invite list (T1): 16 px in the field - smaller makes iOS zoom the page on focus */
+.kpm-demo-bar .invites { border-top: 1px solid var(--line); padding-bottom: 12px; }
+.kpm-demo-bar .invites form { display: flex; gap: 8px; padding: 0 14px 8px; }
+.kpm-demo-bar .invites input { flex: 1; min-width: 0; height: 40px; padding: 0 10px; background: var(--inset); border: 1px solid var(--line-3);
+  font: 16px/1 var(--font-body); color: var(--ink); }
+.kpm-demo-bar .invites input:focus { outline: none; border-color: var(--accent-edge); }
+.kpm-demo-bar .invites .add { flex: none; height: 40px; padding: 0 14px; background: var(--plate); border: 1.5px solid var(--accent-edge);
+  font: 700 11px/1 var(--font-mono); letter-spacing: .16em; color: var(--ink); cursor: pointer; touch-action: manipulation; transition: transform 120ms ease-out; }
+.kpm-demo-bar .invites .add:active:not(:disabled) { transform: scale(.97); }
+.kpm-demo-bar .invites p { margin: 0; padding: 2px 14px 0; font: 11px/1.5 var(--font-body); color: var(--ink-dim); }
+.kpm-demo-bar .inv { display: flex; align-items: center; gap: 4px; min-height: 40px; padding-left: 14px; border-top: 1px solid var(--line);
+  font: 12px/1.2 var(--font-mono); color: var(--ink); }
+.kpm-demo-bar .inv span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kpm-demo-bar .inv button { flex: none; width: 44px; height: 40px; display: grid; place-items: center; background: none; border: 0; color: var(--ink-dim); cursor: pointer; }
+.kpm-demo-bar .inv button:disabled { opacity: .4; cursor: default; }
 @media (hover: hover) and (pointer: fine) { .kpm-demo-bar .row:hover:not(:disabled) { background: var(--raised); } }
 /* Fleet & Roster on a demo login: the four buttons that would break a shared login look switched off; a press still answers (FleetCanvasManager.jsx isDemoLogin) */
 .kpm-stage-acts button.demo-locked { opacity: .45; }

@@ -1,15 +1,16 @@
 /* THE DEMO'S FIVE LOGINS - one list, read by both sides.
-   api/_demoCompany.js writes them (the reset sets each back to these values) and the demo build's front
-   door + switch bar (src/components/DemoFrontDoor.jsx) sign in with them. Two copies would drift, and a
-   card that prints a password the reset no longer sets is a door that does not open.
+   api/_demoCompany.js writes them (the reset sets each back to these values), api/demo-switch.js signs an
+   invited visitor in as one of them, and the demo build's picker + switch bar (src/components/DemoFrontDoor.jsx)
+   list them. Two copies would drift, and a card for a person the reset no longer makes is a door that does not open.
    Only ever imported behind IS_DEMO: the real bundle must not carry one of these strings
    (src/config/demoBuild.check.mjs reads the built bundles to prove it). */
 
 export const OWNER_UID = 'demo-owner';
-/* Public by design: the front door prints them, and every reset sets them back. One easy word for both - his
-   2026-10-13 "i want easier password bruh like admin123". The vault's strength rule only runs when a person SETS a
-   vault password in the app (App.jsx calculateStrength); the reset writes the hash itself, and unlock only compares. */
-export const LOGIN_PASSWORD = 'admin123';
+/* The vault password is public by design: the picker and the vault gate print it - his 2026-10-13 "i want easier
+   password bruh like admin123". It opens the vault only AFTER a sign-in, and the five sign-ins have no public password
+   any more (his invite-only demo, 2026-10-13): api/demo-switch.js hands them out to invited Google accounts only.
+   The vault's strength rule only runs when a person SETS a vault password in the app (App.jsx calculateStrength);
+   the reset writes the hash itself, and unlock only compares. */
 export const VAULT_PASSWORD = 'admin123';
 
 /* The five switch logins (T2..T6) - never T1. TWO TEAMS (his 2026-10-13 "just make 2 teams, and make the muntilan inside
