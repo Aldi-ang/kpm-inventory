@@ -785,7 +785,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     <span className="tier">
                         {/* HIS WORD FOR THE TIER, not the code's. `tierWord` reads the labels he set in Settings, so a
                             rename shows up here without anyone editing this line. */}
-                        {m.userRole === 'ADMIN' ? 'Master Admin (Global)' : m.userRole === 'AREA_ADMIN' ? `${tierWord('AREA_ADMIN') || 'HQ Sales Manager'} (${m.location})` : `${m.role || ''}${m.vehicle ? ` • ${m.vehicle}` : ''}`}
+                        {m.userRole === 'ADMIN' ? 'Master Admin (Global)' : (m.userRole === 'AREA_ADMIN' || m.userRole === 'FLEET_CAPTAIN') ? `${tierWord(m.userRole) || (m.userRole === 'AREA_ADMIN' ? 'HQ Sales Manager' : 'Regional Admin')} (${m.location})` : `${m.role || ''}${m.vehicle ? ` • ${m.vehicle}` : ''}`}
                     </span>
                     <span className="load"><i className={bks > 0 ? 'on' : ''} aria-hidden="true" />{bks > 0 ? `${bks.toLocaleString('id-ID')} Bks · ${items} ${items === 1 ? 'item' : 'items'}` : 'Van empty'}</span>
                     <span className={`kpm-read ${bks > 0 ? 'on' : ''}`}>{bks > 0 ? 'Loaded' : 'Empty'}</span>

@@ -3337,7 +3337,7 @@ section('U · His tier names are the default, and the ids underneath never moved
   /* The roster card was the one that showed it to him. It reads the label now, so a rename
      in Settings reaches this line without anyone editing it. */
   ok('the fleet roster card asks for his word rather than printing one of its own',
-     /tierWord\('AREA_ADMIN'\)/.test(stripComments(read('src/FleetCanvasManager.jsx'))));
+     /tierWord\(m\.userRole\)/.test(stripComments(read('src/FleetCanvasManager.jsx'))));
 
   /* ---- PALETTE LAW rides along, because these five lines were rewritten anyway ---- */
   ok('no banned colour survives in the tier list - it is read live by the profile chip',
@@ -8390,7 +8390,7 @@ section('THE ROSTER, REDRAWN WITH EVERY DOOR KEPT (2026-09-24)');
      /onClick=\{\(\) => toggle\('wh', !open\.wh\)\}/.test(code(read('src/components/LoadingBay.jsx'))) &&
      /onClick=\{\(\) => toggle\('van', !open\.van\)\}/.test(code(read('src/components/LoadingBay.jsx'))) && !/knock/.test(code(read('src/components/LoadingBay.jsx'))));
   ok('a card names the tier in his words and says what the van holds, in packs',
-     /tierWord\('AREA_ADMIN'\)/.test(rowFn) && /const bks = Math\.round\(loadOf\(m\)\);/.test(rowFn) && /convertToBks\(r\.qty, r\.unit, inventory\.find/.test(fl) && /Bks · \$\{items\}/.test(rowFn));
+     /tierWord\(m\.userRole\)/.test(rowFn) && /const bks = Math\.round\(loadOf\(m\)\);/.test(rowFn) && /convertToBks\(r\.qty, r\.unit, inventory\.find/.test(fl) && /Bks · \$\{items\}/.test(rowFn));
   ok('picking a card goes through the muatan guard, by pointer or by key', /onClick=\{\(\) => pickAgent\(m\)\}/.test(rowFn) && /e\.key === 'Enter' \|\| e\.key === ' '/.test(rowFn) && /const pickAgent = async \(m\) => \{\s*if \(bayLines > 0/.test(fl));
   const stageCss = read('src/styles/theme.css').slice(read('src/styles/theme.css').indexOf('/* ── THE ROSTER STAGE'), read('src/styles/theme.css').indexOf('/* ── END OF THE ROSTER STAGE'));
   ok('a card is visible at rest and lifts only on a pointer or a key (Lite Mode keeps it all)',
@@ -10792,14 +10792,17 @@ section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual 
      !!a && tabs.join('|') === 'JAWA BARAT › BANDUNG|JAWA TENGAH › HEADQUARTERS' && roster.some((m) => m.docId === 'ADMIN_VEHICLE')
      && fleet.includes("const prov = String(a.province || 'CENTRAL JAVA').trim().toUpperCase();") && fleet.includes("const loc = String(a.location || 'UNASSIGNED AREA').trim().toUpperCase();"));
   const sellsToday = (m) => todays.some((s) => s.data.agentId === m.id);
-  ok('his rule (09:31): each team has its own regional admin, at least one sales canvas and one sales motorist, and every canvas and motorist sells today',
+  /* his rule, restated 2026-10-13 18:1x: "each team should contain at least regional admin tier 4 and motorist tier 6,
+     sales canvas tier 5 is optional" */
+  ok('his rule: each team has at least one T4 regional admin (FLEET_CAPTAIN) and one T6 sales motorist (ROOKIE); a T5 canvas is optional; every field salesman sells today',
      !!a && ['Headquarters', 'BANDUNG'].every((loc) => {
        const team = roster.filter((m) => m.location === loc);
        return team.some((m) => m.userRole === 'FLEET_CAPTAIN')
-         && team.some((m) => m.role === 'Canvas' && ['FIELD_OPERATIVE', 'ROOKIE'].includes(m.userRole) && sellsToday(m))
-         && team.some((m) => m.role === 'Motorist' && sellsToday(m))
+         && team.some((m) => m.userRole === 'ROOKIE' && sellsToday(m))
          && team.filter((m) => ['FIELD_OPERATIVE', 'ROOKIE'].includes(m.userRole)).every(sellsToday);
      }));
+  ok('the roster card NAMES a T4: "REGIONAL ADMIN (<place>)" like a T3\'s "HQ SALES MANAGER (<place>)" - it printed "Canvas • Van", so the regional admins read as plain canvas salesmen (his 18:1x "there is no tier 4 or regional admin")',
+     /\(m\.userRole === 'AREA_ADMIN' \|\| m\.userRole === 'FLEET_CAPTAIN'\) \? `\$\{tierWord\(m\.userRole\)/.test(fleet));
   const hendra = roster.find((m) => m.id === 'demo-agent-7'), dewi = roster.find((m) => m.id === 'demo-agent-5');
   ok('each regional admin approves hand-offs into his own team only (permissions.js canApproveHandoffFrom, run on the records the reset writes)',
      !!hendra && !!dewi && canApproveHandoffFrom(hendra, 'Headquarters', roster) && !canApproveHandoffFrom(hendra, 'BANDUNG', roster)
