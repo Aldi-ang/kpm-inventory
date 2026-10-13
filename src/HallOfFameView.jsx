@@ -17,23 +17,21 @@ export default function HallOfFameView({ motorists = [], transactions = [], rpgD
             }
         });
 
-        // 🚀 Phase 4, behind the same flag as AgentProfileView: flag OFF keeps this transaction
-        // scan byte-identical to before. Flag ON skips it entirely — career doc's `collected`
-        // already IS the sum, no scan needed.
-        if (!useCareerLedger) {
-            /* Omset is money collected, not goods handed over — Aldi, 2026-09-09. A salesman who
-               spends the month dropping Titip stock no longer outranks one who came back with cash;
-               his consignment counts when the store audit collects it. `revenueOf` is the shared
-               rule (utils/salesRollup), which is also why `trx.totalAmount` is gone from this line:
-               it was a fallback for a field nothing in this app has ever written. */
-            transactions.forEach(trx => {
-                const money = revenueOf(trx);
-                if (money && statsMap[trx.agentId]) {
-                    statsMap[trx.agentId].totalTransactions += 1;
-                    statsMap[trx.agentId].totalOmset += money;
-                }
-            });
-        }
+        // 🚀 Phase 4: the career ledger flag changes the XP only (below). The scan runs in both modes,
+        // because the card prints its Total Omset and closed count - skipping it under the ledger left
+        // every card at "Rp 0 / 0 closed" (found on the demo walk, 2026-10-13).
+        /* Omset is money collected, not goods handed over — Aldi, 2026-09-09. A salesman who
+           spends the month dropping Titip stock no longer outranks one who came back with cash;
+           his consignment counts when the store audit collects it. `revenueOf` is the shared
+           rule (utils/salesRollup), which is also why `trx.totalAmount` is gone from this line:
+           it was a fallback for a field nothing in this app has ever written. */
+        transactions.forEach(trx => {
+            const money = revenueOf(trx);
+            if (money && statsMap[trx.agentId]) {
+                statsMap[trx.agentId].totalTransactions += 1;
+                statsMap[trx.agentId].totalOmset += money;
+            }
+        });
 
         const sortedRanks = [...(rpgData.ranks || [])].sort((a,b) => Number(a.min) - Number(b.min));
 

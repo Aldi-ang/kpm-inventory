@@ -303,8 +303,12 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
     const getCorporateIdentity = (agent) => {
         const role = agent?.userRole || agent?.role || 'FIELD_OPERATIVE';
         const isMaster = agent?.id === 'master_owner';
-        
-        if (isMaster || role === 'DEVELOPER' || role === 'ADMIN') return { stars: 6, title: 'SYSTEM ARCHITECT', tier: 'TIER 1', color: 'text-danger-text', bg: 'bg-danger-well/30', border: 'border-danger/50' };
+        /* the owner's place, as his own record words it (App.jsx's location ping writes 'T1 · OVERSEER' or 'T2 · OWNER'):
+           an owner who is not the system architect - the public demo's - is T2, not "TIER 1 : SYSTEM ARCHITECT".
+           A record without a title keeps the old T1 label. */
+        const masterIsT2 = isMaster && String(agent?.title || '').startsWith('T2');
+
+        if ((isMaster && !masterIsT2) || role === 'DEVELOPER' || role === 'ADMIN') return { stars: 6, title: 'SYSTEM ARCHITECT', tier: 'TIER 1', color: 'text-danger-text', bg: 'bg-danger-well/30', border: 'border-danger/50' };
         
         // Magically syncs with whatever you name them in Settings!
         const foundTier = DYNAMIC_TIERS.find(t => t.id === role);

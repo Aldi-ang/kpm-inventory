@@ -1133,7 +1133,7 @@ section('S38. Minimal kirim: the floor HQ sees, keyed on the Tujuan it is sendin
      A column that assumed the field would crash the tutorial, which is a worse bug than the
      column is a feature — so every cell falls back rather than reading through. */
   ok('the appSettings the cushion comes from is in the memo dep list, or the column goes stale',
-     /\[isAdmin, motorists, transactions, branchStockMap, globalInventory, requests, appSettings\]/.test(bwm));
+     /\[isAdmin, atHq, motorists, transactions, branchStockMap, globalInventory, requests, appSettings\]/.test(bwm));
 
   /* ---- RENCANA KIRIM — the same floors, turned on their side (2026-08-30) ----
      One row per product, one column per cabang. It answers the question Sebaran Stok cannot:
@@ -11140,6 +11140,28 @@ section('THE CAPYBARA SAYS 3 WORDS A SENTENCE AND YOU CAN HEAR THEM (2026-10-12)
   for (const t of lines) for (const s of [1, 2, 3]) for (const b of heard(t, s)) { heardS++; if (b < 3) { heardShort++; if (heardEx.length < 3) heardEx.push(`${JSON.stringify(t)} #${s}: ${b}`); } }
   ok(`every sentence is HEARD as 3+ words on the phone's files (${heardS} sentences, ${heardShort} heard short${heardEx.length ? ': ' + heardEx.join(' | ') : ''})`, heardS > 300 && heardShort === 0);
   ok('his voice keeps the 3-word minimum and the audible word gap (capyVoice.js minSyl 3, wordGap .15)', /minSyl: 3,/.test(read('src/config/capyVoice.js')) && /wordGap: \.15/.test(read('src/config/capyVoice.js')));
+}
+
+section('THE DEMO WALK FINDINGS (2026-10-13) - his "fix it all whatever the order"');
+{
+  const hof = read('src/HallOfFameView.jsx'), bwm = read('src/components/BranchWarehouseManager.jsx'), rules = read('firestore.rules');
+  ok('1. leaderboard: each card\'s omset + closed count come from the week\'s sales in BOTH modes; the career ledger changes only the XP (the scan was skipped in ledger mode and every card read Rp 0 / 0 closed)',
+     !hof.includes('if (!useCareerLedger) {') && /transactions\.forEach\(trx => \{\s*const money = revenueOf\(trx\);/.test(hof)
+     && /const lifetimeEXP = useCareerLedger\s*\? careerXP\(/.test(hof));
+  ok('2. Fleet & Canvas shows the owner ONCE: his profile record (master_owner) is not a van - the stage lists his van (ADMIN_VEHICLE), like the EOD and Stock Opname pickers already do',
+     /const vans = activeMotorists\.filter\(m => m\.id !== TIER_ONE_ID\);/.test(fleet) && /if \(isAreaAdmin\) \{\s*return vans\.filter\(/.test(fleet));
+  let dc = null; try { dc = await import('../../api/_demoCompany.js'); } catch { /* red below */ }
+  const owner = dc ? dc.buildDemoCompany(JSON.parse(read('demo/seed.json')), new Date('2026-10-11T03:00:00Z'), { pin: 'p', recoveryHash: 'r' }).docs.find((d) => d.path.endsWith('/motorists/master_owner'))?.data : null;
+  ok('3. the owner\'s profile reads his place from his own record (the title App.jsx\'s location ping writes, "T2 · OWNER"): a T2 owner is "T2: OWNER", never "TIER 1 : SYSTEM ARCHITECT"; a record with no title keeps the old T1 label',
+     /const masterIsT2 = isMaster && String\(agent\?\.title \|\| ''\)\.startsWith\('T2'\);/.test(profile) && /if \(\(isMaster && !masterIsT2\) \|\| role === 'DEVELOPER' \|\| role === 'ADMIN'\)/.test(profile)
+     && owner?.title === 'T2 · OWNER' && owner?.userRole === 'COMPANY_OWNER');
+  ok('4. a non-admin placed at Headquarters gets no fake "Gudang Headquarters" branch desk - HQ is not a branch - and reads the company\'s Stock by Warehouse table instead',
+     normalizeRegion('Headquarters') === 'HEADQUARTERS' && /const atHq = isAreaAdmin && normalizeRegion\(branchLocation\) === 'HEADQUARTERS';/.test(bwm)
+     && bwm.includes('{isAreaAdmin && !atHq && (') && bwm.includes('if (!isAdmin && !atHq) return [];') && bwm.includes('{(isAdmin || atHq) && logistics.length > 0 && (() => {'));
+  ok('5. a staff sign-in no longer tries to copy his login record to employee_directory/<uid> - the rules refuse it (only the boss or an admin may create a record in a company), it threw "Uncaught (in promise) PERMISSION_DENIED" on every staff sign-in, and nothing reads that copy but the sign-in itself, after the email record',
+     !app.includes('setDoc(uidRef, { ...activeData, uid: currentUser.uid, updatedAt: serverTimestamp() }, { merge: true });')
+     && /allow create: if isAuthenticated\(\) && \(\s*request\.resource\.data\.bossUid == request\.auth\.uid \|\|/.test(rules)
+     && /let empDoc = get\(\/databases\/\$\(database\)\/documents\/artifacts\/cello-inventory-manager\/employee_directory\/\$\(safeEmail\)\);/.test(rules));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

@@ -2796,8 +2796,11 @@ const handleGitHubMirror = async () => {
                             freshEmailData.agentId = null; 
                         }
                         
+                        /* No copy to employee_directory/<uid> any more: the rules refuse it (only the boss or an admin may
+                           create a record in a company), so it threw "Uncaught (in promise) PERMISSION_DENIED" on every staff
+                           sign-in (demo walk, 2026-10-13). The rules read a person by EMAIL, and this sign-in reads the email
+                           record last and lets it win - the uid copy was read nowhere else. */
                         activeData = { ...activeData, ...freshEmailData };
-                        setDoc(uidRef, { ...activeData, uid: currentUser.uid, updatedAt: serverTimestamp() }, { merge: true });
                     }
                 }
 

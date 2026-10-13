@@ -10,7 +10,7 @@ import { txSeconds } from '../utils/dayStats.js';
    cannot drift into two different answers — which is the whole reason it lives in utils. His ask
    was literally *"just like what we have on the dashboard"*. */
 import { supplyByProduct, warehouseList, MASTER, bufferDays } from '../utils/supply.js';
-import { canManageRegistry } from '../config/permissions';
+import { canManageRegistry, normalizeRegion } from '../config/permissions';
 /* the SAME status dot the Master Vault desk wears, not a lookalike */
 /* the nav strip is its own component so the Ponder scene mounts the REAL one */
 import WarehouseDeskNav from './WarehouseDeskNav.jsx';
@@ -283,6 +283,10 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
     
     const isAreaAdmin = !isAdmin; // 🚀 THE FIX: Dynamically adapts to any custom Tier rank
     const branchLocation = userLocation || 'UNASSIGNED';
+    /* HQ is not a branch. A non-admin placed at Headquarters (the demo's T3 "HQ Sales Manager") got a desk for a
+       "Gudang Headquarters" that has no shelf and nobody to ship to (demo walk, 2026-10-13). They read the company's
+       Stock by Warehouse table instead; the main warehouse itself is run from the Master Vault desk above. */
+    const atHq = isAreaAdmin && normalizeRegion(branchLocation) === 'HEADQUARTERS';
 
     const [requests, setRequests] = useState([]);
     const [branchStock, setBranchStock] = useState([]);
@@ -358,7 +362,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
        a comparison between warehouses, and three open drawers is no longer a comparison. */
     const [openGudang, setOpenGudang] = useState(null);
     const logistics = useMemo(() => {
-        if (!isAdmin) return [];
+        if (!isAdmin && !atHq) return [];
         const since = new Date(Date.now() - SEVEN_DAYS * 86400000);
         /* narrowed to the warehouses the roster still lists — a branch that was removed keeps its
            last snapshot in the sync map, and counting it would quietly inflate every total. The
@@ -485,7 +489,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
 
             return { name, shelf, transit, field, sold, perMonth, minimum, detail };
         });
-    }, [isAdmin, motorists, transactions, branchStockMap, globalInventory, requests, appSettings]);
+    }, [isAdmin, atHq, motorists, transactions, branchStockMap, globalInventory, requests, appSettings]);
 
     const gTotal = (k) => logistics.reduce((s, r) => s + (Number(r[k]) || 0), 0);
 
@@ -1258,7 +1262,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 Tab order is the order the questions get asked: has my stock arrived, do I need
                 more, what is on the shelf, what happened before, who and where are we shipping
                 between. */}
-            {isAreaAdmin && (
+            {isAreaAdmin && !atHq && (
                 <section className="mb-6 flex flex-col bg-ground border border-line-2 rounded-2xl overflow-hidden shadow-[0_1px_1px_rgba(0,0,0,0.20),0_18px_40px_-28px_rgba(0,0,0,0.85)]">
 
                     <WarehouseDeskNav title={deskHead.title} sub={deskHead.sub}
@@ -1513,7 +1517,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                 transitioned from `auto`, and a <tr> cannot be transitioned at all, which is why
                 the first version simply appeared. This costs one wrapper and needs no measured
                 pixel height, so it stays smooth whatever the drawer contains. */}
-            {isAdmin && logistics.length > 0 && (() => {
+            {(isAdmin || atHq) && logistics.length > 0 && (() => {
                 /* The columns, the rows, the drawer and the total now live in
                    `ponder/stages/StockByWarehouseTable.jsx`. Only the maths stayed here. The
                    tutorial renders that same component against a fixed demo world, which is the

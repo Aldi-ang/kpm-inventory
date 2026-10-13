@@ -109,11 +109,15 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
        config/permissions.js and answers to the same matrix as every other permission. */
     const canEditFleet = canEditFleetRoster(userRole);
 
+    /* the owner's profile record (master_owner, written by App.jsx's location ping and his Agent Profile) is not a
+       van - his van is ADMIN_VEHICLE. Listing both put him on the stage twice (demo walk, 2026-10-13); the EOD and
+       Stock Opname pickers already leave master_owner out the same way. */
     const agents = useMemo(() => {
+        const vans = activeMotorists.filter(m => m.id !== TIER_ONE_ID);
         if (isAreaAdmin) {
-            return activeMotorists.filter(m => String(m.location || '').trim().toLowerCase() === searchLocation);
+            return vans.filter(m => String(m.location || '').trim().toLowerCase() === searchLocation);
         }
-        return activeMotorists;
+        return vans;
     }, [activeMotorists, isAreaAdmin, searchLocation]);
     
     const [selectedAgent, setSelectedAgent] = useState(null);

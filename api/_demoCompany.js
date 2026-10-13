@@ -295,7 +295,8 @@ export function buildDemoCompany(seed, now, vault) {
 
     /* the owner's own profile (Agent Profile reads motorists/master_owner) and his van, which the app would otherwise
        create on first open with no place - the third "UNASSIGNED AREA" tab on the roster (useDatabaseSync.js) */
-    put(`${home}/motorists/master_owner`, { id: 'master_owner', name: owner.name, email: owner.email, userRole: 'COMPANY_OWNER',
+    /* title = his place in App.jsx's location-ping words: the demo's owner is T2 (T1 is his Gmail only) */
+    put(`${home}/motorists/master_owner`, { id: 'master_owner', name: owner.name, email: owner.email, userRole: 'COMPANY_OWNER', title: 'T2 · OWNER',
         location: 'Headquarters', province: hq.province, status: 'Active', allowedPayments: ['Cash', 'Titip', 'Transfer'], allowedTiers: ['Grosir', 'Retail'],
         canEditRoster: true, allowRetur: true, ...look('master_owner') });
     put(`${home}/motorists/ADMIN_VEHICLE`, { name: 'Admin (Boss Vehicle)', role: 'Canvas', status: 'Active', email: owner.email, activeCanvas: [],
