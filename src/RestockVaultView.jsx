@@ -1718,7 +1718,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                         {viewMode === 'req' && po.status === 'PENDING' && (
                                             <button
                                                 onClick={() => handleStartFulfillment(po)}
-                                                className="shrink-0 px-3.5 bg-orange hover:bg-orange/90 text-orange-ink font-display font-bold uppercase tracking-widest text-[10px] flex items-center gap-1.5 transition-transform active:scale-[0.97]"
+                                                className="kpm-edgebtn shrink-0 px-3.5 font-display font-bold uppercase tracking-widest text-[10px] flex items-center gap-1.5"
                                             >
                                                 <Truck size={13}/> <span className="hidden sm:inline">Siapkan</span>
                                             </button>

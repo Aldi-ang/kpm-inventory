@@ -10962,6 +10962,17 @@ section('THE AMBER BUTTONS GET A GOLD EDGE (2026-10-12) - his "the yellow backgr
   ok('the class is ONE rule in theme.css on the theme tokens: the dark plate, a 1.5 px gold edge, the word in the app ink, the icon in gold; the press lights it from inside - and the light theme gets the brown edge + dark ink from the same tokens',
      /\.kpm-edgebtn \{ background: var\(--plate\); border: 1\.5px solid var\(--accent-edge\); color: var\(--ink\);/.test(th) && /\.kpm-edgebtn > svg \{ color: var\(--accent-ink\); \}/.test(th) &&
      /\.kpm-edgebtn:active \{ background: color-mix\(in srgb, var\(--accent-edge\) 22%, var\(--plate\)\); \}/.test(th) && !/\.kpm-edgebtn[^{]*\{[^}]*(?:(?:background|color): var\(--gold\)|shadow)/.test(th));
+  /* his 2026-10-13 18:3x: "this siapkan button is bad coloured i want u to change this and also add some animation on the
+     button, especially when press and when hovered" */
+  const rv = read('src/RestockVaultView.jsx'), sTag = rv.slice(rv.lastIndexOf('<button', rv.indexOf('onClick={() => handleStartFulfillment(po)}')), rv.indexOf('<Truck size={13}/> <span className="hidden sm:inline">Siapkan</span>'));
+  ok('Siapkan (Restock Vault, a waiting branch request) wears the gold-edge class - the solid orange slab is gone',
+     /\bkpm-edgebtn\b/.test(sTag) && !/bg-orange|text-orange-ink/.test(sTag), sTag.replace(/\s+/g, ' ').slice(0, 160));
+  ok('the gold-edge button MOVES: the press sinks it (1 px down, scale .97) under the warm fill; hover draws a gold line under the word and nudges the icon - nothing lifts (his 2026-09-03 "dont make the button floating"); Lite Mode and reduce-motion keep it still',
+     /\.kpm-edgebtn:active \{ transform: translateY\(1px\) scale\(0\.97\); \}/.test(th) && /\.kpm-edgebtn::after \{[^}]*transform: scaleX\(0\);/.test(th)
+     && /\.kpm-edgebtn:hover::after \{ transform: scaleX\(1\); \}/.test(th) && /\.kpm-edgebtn:hover > svg \{ transform: translateX\(2px\); \}/.test(th)
+     && !/\.kpm-edgebtn:hover[^{]*\{[^}]*translateY\(-/.test(th) && /html\.lite-mode \.kpm-edgebtn, html\.lite-mode \.kpm-edgebtn::after, html\.lite-mode \.kpm-edgebtn > svg \{ transition: none; \}/.test(th)
+     && /@media \(prefers-reduced-motion: reduce\) \{ \.kpm-edgebtn:active, \.kpm-edgebtn:hover > svg \{ transform: none; \} \}/.test(th)
+     && /:where\(\.kpm-edgebtn\) \{ position: relative; \}/.test(th));
 }
 
 section('THE MASUK ROUTE CAPTION NO LONGER SITS ON PENGIRIM (2026-10-12) - his "these malang 1 is also almost collapsing with the other textbox ... inside the restock vault \\"masuk\\" panel"');

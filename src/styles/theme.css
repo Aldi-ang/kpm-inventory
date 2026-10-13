@@ -3184,10 +3184,27 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
    the app ink; the press lights it from inside (a warm fill, not a glow - Lite Mode deletes shadows). Light theme: the
    same tokens give a brown edge and dark ink (gold is never text on light). Size and type stay on each button. */
 .kpm-edgebtn { background: var(--plate); border: 1.5px solid var(--accent-edge); color: var(--ink);
-  transition: background-color 120ms ease-out; }
+  transition: background-color 120ms ease-out, transform 160ms cubic-bezier(.23, 1, .32, 1); }
 .kpm-edgebtn > svg { color: var(--accent-ink); }
 .kpm-edgebtn:active { background: color-mix(in srgb, var(--accent-edge) 22%, var(--plate)); }
 @media (hover: hover) and (pointer: fine) { .kpm-edgebtn:hover { background: var(--raised); } }
+/* THE MOTION, his 2026-10-13 "add some animation on the button, especially when press and when hovered" (the Siapkan
+   button). Physical, never floating - his 2026-09-03 "dont make the button floating": the PRESS sinks the cap (1 px down,
+   .97) under the warm fill above; the HOVER draws a gold line under the word, left to right, and nudges the icon forward.
+   Nothing lifts. A separate layer (::after), because the hover/press rules above set the `background` shorthand and would
+   wipe a line drawn in background-image. :where() = zero weight, so a button that is `absolute` stays absolute. */
+:where(.kpm-edgebtn) { position: relative; }
+.kpm-edgebtn::after { content: ''; position: absolute; left: 12%; right: 12%; bottom: 3px; height: 2px; border-radius: 2px;
+  background: var(--accent-ink); transform: scaleX(0); transform-origin: left; pointer-events: none;
+  transition: transform 220ms cubic-bezier(.23, 1, .32, 1); }
+.kpm-edgebtn > svg { transition: transform 220ms cubic-bezier(.23, 1, .32, 1); }
+.kpm-edgebtn:active { transform: translateY(1px) scale(0.97); }
+@media (hover: hover) and (pointer: fine) {
+  .kpm-edgebtn:hover::after { transform: scaleX(1); }
+  .kpm-edgebtn:hover > svg { transform: translateX(2px); }
+}
+html.lite-mode .kpm-edgebtn, html.lite-mode .kpm-edgebtn::after, html.lite-mode .kpm-edgebtn > svg { transition: none; }
+@media (prefers-reduced-motion: reduce) { .kpm-edgebtn:active, .kpm-edgebtn:hover > svg { transform: none; } }
 
 /* ============================================================================
    A BUTTON THAT IS ONLY GOLD ON HOVER MUST STILL BE READABLE BEFORE YOU HOVER IT.
