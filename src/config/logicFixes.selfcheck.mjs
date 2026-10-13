@@ -10784,7 +10784,7 @@ section('THE DEMO FRONT DOOR + SWITCH BAR (2026-10-13) - his "A for phone B for 
   ok('the door and the bar mount ONLY in the demo build (the real build drops them - demoBuild.check proves it on the bundle)',
      shell.includes('{IS_DEMO ? <DemoDoor ') && shell.includes('{IS_DEMO && user && <DemoBar ') && (shell.match(/<Demo(Door|Bar)\b/g) || []).length === 2);
   ok('no password literal in the door - it prints and signs in with the shared constants',
-     !door.includes("'kpm-demo-2026'") && !door.includes("'Demo-Vault-1!'") && door.includes('signInWithEmailAndPassword(auth, p.email, LOGIN_PASSWORD)'));
+     !door.includes("'admin123'") && door.includes('signInWithEmailAndPassword(auth, p.email, LOGIN_PASSWORD)'));
   ok('a failed sign-in or switch says "the demo is being reset", never a raw Firebase code (trap b of the brief)',
      (door.match(/notify\(DEMO_DOWN\)/g) || []).length === 2 && !/notify\([^)]*e\.message/.test(door));
   ok('phone = five keys (A), PC = five badges (B): Tailwind switches the two layouts, and the class sheet never sets display on them (it loads after Tailwind and would show both)',

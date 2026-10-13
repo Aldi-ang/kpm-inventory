@@ -6,9 +6,11 @@
    (src/config/demoBuild.check.mjs reads the built bundles to prove it). */
 
 export const OWNER_UID = 'demo-owner';
-/* Public by design: the front door prints them, and every reset sets them back. */
-export const LOGIN_PASSWORD = 'kpm-demo-2026';
-export const VAULT_PASSWORD = 'Demo-Vault-1!';            // passes the vault's strength rule: 8+, upper, lower, number, symbol
+/* Public by design: the front door prints them, and every reset sets them back. One easy word for both - his
+   2026-10-13 "i want easier password bruh like admin123". The vault's strength rule only runs when a person SETS a
+   vault password in the app (App.jsx calculateStrength); the reset writes the hash itself, and unlock only compares. */
+export const LOGIN_PASSWORD = 'admin123';
+export const VAULT_PASSWORD = 'admin123';
 
 /* The five switch logins (T2..T6) - never T1. T5 and T6 take the two seed salesmen with shops. */
 export const LOGINS = [
