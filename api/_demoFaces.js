@@ -1,66 +1,53 @@
-/* THE DEMO PEOPLE'S FACES - anime-style drawings made here, never a photo of a real person (his 2026-10-13 "sure
-   cartoon face that u make is also fine", then "can u do anime style for the character"). Each face is a small SVG
-   written straight into the motorist record's `profileImage`, the same field the app's own photo upload fills with a
-   base64 picture when photo storage is off - so nothing is uploaded to Cloud Storage (the demo's free plan may not have it).
+/* THE DEMO PEOPLE'S FACES - cartoon drawings made here, never a photo of a real person (his 2026-10-13 "sure cartoon
+   face that u make is also fine"; an anime set was tried the same day and he turned it down: "i dont like the anime
+   face model just switch back to cartoon like before"). Each face is a small SVG written straight into the motorist
+   record's `profileImage`, the same field the app's own photo upload fills with a base64 picture when photo storage is
+   off - so nothing has to be uploaded to Cloud Storage (which the demo's free plan may not have).
 
-   Palette law: slate + the app's gold (--gold #D08A2E), skin, hair and warm eye tones; no blue, no green
+   Palette law: slate + the app's gold (--gold #D08A2E), skin and hair tones; no blue, no green
    (logicFixes "palette law on the faces" reads every colour in here). */
 
-const SKIN = { light: ['#F2C9A6', '#D9A07E'], tan: ['#D9A378', '#B97E57'], brown: ['#B57A4F', '#935C38'] };
+const SKIN = { light: ['#E8B98F', '#C98F66'], tan: ['#C98B5E', '#A86F47'], brown: ['#A9714A', '#86563A'] };
 const BG = ['#1E2229', '#262B33', '#2E333C'];
-const GOLD = '#D08A2E', INK = '#140E0A';
+const GOLD = '#D08A2E';
 
-/* front hair (bangs) - drawn over the forehead; each a closed anime shape with spikes */
-const BANGS = {
-    spiky: 'M27 45Q23 21 46 17Q71 15 69 43L66 35L63 41L60 30L56 39L52 28L48 37L44 27L40 38L36 29L33 40L30 33Z',
-    neat: 'M28 44Q25 19 48 18Q71 19 68 44L66 35Q61 28 51 29L55 24Q44 32 35 30L33 39L30 33Z',
-    messy: 'M28 43Q26 22 47 19Q69 18 68 42L65 36L62 39L60 31L55 36L53 29L48 35L45 29L41 36L38 30L34 38L31 34Z',
-    swept: 'M27 46Q24 19 49 18Q70 19 69 40L67 34Q60 33 54 39L57 31Q47 36 38 43L40 33L33 42L31 35Z',
-    back: 'M29 38Q28 18 48 17Q68 18 67 38Q60 25 48 26Q36 25 29 38Z',
+const HAIR = {
+    short: (c) => `<path d="M29 41c0-15 8-23 19-23s19 8 19 23c-3-7-9-11-19-11s-16 4-19 11z" fill="${c}"/>`,
+    side: (c) => `<path d="M28 43c-2-17 9-25 21-25 11 0 19 7 19 21-7-7-15-9-25-7-7 2-11 6-15 11z" fill="${c}"/>`,
+    crew: (c) => `<path d="M30 37c2-11 9-17 18-17s16 6 18 17c-5-4-11-6-18-6s-13 2-18 6z" fill="${c}"/>`,
+    wavy: (c) => `<path d="M28 44c-3-16 6-26 20-26s23 10 20 26c-2-5-4-8-7-9 1 3 0 5-2 6-1-4-4-7-11-7s-10 3-11 7c-2-1-3-3-2-6-3 1-5 4-7 9z" fill="${c}"/>`,
 };
 
-const eye = (x, iris, lash) => `<ellipse cx="${x}" cy="47" rx="5" ry="6.2" fill="#FFF"/><ellipse cx="${x}" cy="48" rx="4" ry="5.3" fill="${iris}"/>`
-    + `<ellipse cx="${x}" cy="48.8" rx="2" ry="2.8" fill="${INK}"/><circle cx="${x - 1.6}" cy="45.6" r="1.7" fill="#FFF"/><circle cx="${x + 1.5}" cy="50.8" r=".8" fill="#FFF" opacity=".85"/>`
-    + `<path d="M${x - 5.8} 44.8Q${x} 39.4 ${x + 5.8} 44.8" stroke="${INK}" stroke-width="2.3" fill="none" stroke-linecap="round"/>`
-    + (lash ? `<path d="M${x + (x < 48 ? -5.4 : 5.4)} 44.4l${x < 48 ? -2.2 : 2.2} -1.8" stroke="${INK}" stroke-width="1.6" stroke-linecap="round"/>` : '');
-
-/* one face: { skin, hair, cut, shirt, bg, iris, hijab, glasses, moustache, peci, lash } */
-const face = ({ skin = 'tan', hair = '#1A1410', cut = 'neat', shirt = '#3A404B', bg = 0, iris = '#6B3E1F', hijab, glasses, moustache, peci, lash }) => {
+/* one face: { skin, hair, cut, shirt, bg, hijab, glasses, moustache, peci } */
+const face = ({ skin = 'tan', hair = '#17120E', cut = 'short', shirt = '#3A404B', bg = 0, hijab, glasses, moustache, peci }) => {
     const [s, shade] = SKIN[skin];
-    const body = hijab
-        ? `<path d="M48 13Q22 13 22 45Q22 62 31 70L20 96H76L65 70Q74 62 74 45Q74 13 48 13Z" fill="${hijab}"/>`
-          + `<path d="M31 70Q48 80 65 70L60 66Q48 73 36 66Z" fill="#000" opacity=".18"/>`
-        : `<path d="M12 96c3-17 17-24 36-24s33 7 36 24z" fill="${shirt}"/><path d="M41 73l7 9 7-9" fill="none" stroke="${GOLD}" stroke-width="3" stroke-linejoin="round"/>`;
-    const head = `<path d="M42 60h12v13q-6 4-12 0z" fill="${s}"/><path d="M42 62h12v5q-6 3.5-12 0z" fill="${shade}"/>`
-        + (hijab ? '' : `<path d="M29.5 44q-4.5-.5-3.5 5t4.5 4.5zM66.5 44q4.5-.5 3.5 5t-4.5 4.5z" fill="${s}"/>`)
-        + `<path d="M29 40Q29 21 48 21T67 40Q67 49 64 55Q59 67 48 70Q37 67 32 55Q29 49 29 40Z" fill="${s}"/>`
-        + `<path d="M31 37Q48 44 65 37L65 41Q48 48 31 41Z" fill="${shade}" opacity=".45"/>`;
-    const top = hijab
-        ? `<path d="M28 42Q29 21 48 21Q67 21 68 42Q61 29 48 29Q35 29 28 42Z" fill="${hijab}"/><path d="M30 37Q48 25 66 37" stroke="#000" stroke-opacity=".22" stroke-width="2.4" fill="none"/>`
-        : peci
-            ? `<path d="M28 44Q27 30 33 28L35 40Q31 40 28 44ZM68 44Q69 30 63 28L61 40Q65 40 68 44Z" fill="${hair}"/><path d="M29 32L31 15Q48 10 65 15L67 32Q48 27 29 32Z" fill="#15120F"/><path d="M33 18Q48 14 63 18" stroke="#FFF" stroke-opacity=".18" stroke-width="1.6" fill="none"/>`
-            : `<path d="${BANGS[cut]}" fill="${hair}"/><path d="M38 22Q46 19 54 21" stroke="#FFF" stroke-opacity=".22" stroke-width="2" fill="none" stroke-linecap="round"/>`;
-    const brow = hijab ? hijab : hair;
-    const feat = eye(40, iris, lash) + eye(56, iris, lash)
-        + `<path d="M35.5 39.4q4.5-2.2 9 0M51.5 39.4q4.5-2.2 9 0" stroke="${brow === hair ? hair : INK}" stroke-width="1.4" fill="none" stroke-linecap="round"/>`
-        + `<path d="M48.8 53.6l-1.1 1.7" stroke="${shade}" stroke-width="1.3" stroke-linecap="round"/>`
-        + `<ellipse cx="35.5" cy="54" rx="3.4" ry="1.7" fill="#E07A6A" opacity=".35"/><ellipse cx="60.5" cy="54" rx="3.4" ry="1.7" fill="#E07A6A" opacity=".35"/>`
-        + (moustache ? `<path d="M43 57.4q2.5-1.7 5 0q2.5-1.7 5 0q-2.5 1.3-5 .5q-2.5.8-5-.5z" fill="${hair}"/>` : '')
-        + `<path d="M44.2 59.4Q48 63.6 51.8 59.4Z" fill="#7A3328"/>`
-        + (glasses ? `<g fill="none" stroke="#2A211B" stroke-width="1.3"><rect x="33.4" y="41" width="13.2" height="13" rx="4"/><rect x="49.4" y="41" width="13.2" height="13" rx="4"/><path d="M46.6 46.5h2.8"/></g>` : '');
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" fill="${BG[bg]}"/>`
-        + `<circle cx="48" cy="48" r="44" fill="none" stroke="${GOLD}" stroke-opacity=".22" stroke-width="2"/>${body}${head}${top}${feat}</svg>`;
+    const head = hijab
+        ? `<path d="M20 96c0-17 11-29 28-29s28 12 28 29z" fill="${hijab}"/><path d="M48 15c-15 0-25 11-25 27 0 11 4 19 9 25h32c5-6 9-14 9-25 0-16-10-27-25-27z" fill="${hijab}"/>`
+          + `<ellipse cx="48" cy="44" rx="16" ry="19" fill="${s}"/><path d="M32 33c4-6 9-9 16-9s12 3 16 9c-5-3-10-4-16-4s-11 1-16 4z" fill="${hijab}" opacity=".85"/>`
+        : `<path d="M14 96c2-18 16-26 34-26s32 8 34 26z" fill="${shirt}"/><path d="M40 72l8 10 8-10" fill="none" stroke="${GOLD}" stroke-width="3" stroke-linejoin="round"/>`
+          + `<rect x="42" y="58" width="12" height="14" rx="4" fill="${shade}"/><circle cx="29" cy="45" r="4" fill="${shade}"/><circle cx="67" cy="45" r="4" fill="${shade}"/>`
+          + `<ellipse cx="48" cy="42" rx="19" ry="22" fill="${s}"/>${peci ? '' : HAIR[cut](hair)}`
+          + (peci ? `<path d="M29 33l2-15q17-5 34 0l2 15q-19-4-38 0z" fill="#15120F"/>` : '');
+    const eyeY = hijab ? 45 : 44;
+    const feat = `<path d="M37 ${eyeY - 6}q4-2 7 0M52 ${eyeY - 6}q4-2 7 0" stroke="#1B1410" stroke-width="1.8" fill="none" stroke-linecap="round"/>`
+        + `<ellipse cx="40.5" cy="${eyeY}" rx="2.2" ry="2.6" fill="#1B1410"/><ellipse cx="55.5" cy="${eyeY}" rx="2.2" ry="2.6" fill="#1B1410"/>`
+        + `<path d="M47 ${eyeY + 3}q1.5 4 -1 5" stroke="${shade}" stroke-width="1.6" fill="none" stroke-linecap="round"/>`
+        + (moustache ? `<path d="M40 ${eyeY + 10}q8-4 16 0q-8 2-16 0z" fill="${hair}"/>` : '')
+        + `<path d="M41 ${eyeY + 12}q7 6 14 0" stroke="#6E3328" stroke-width="2.2" fill="none" stroke-linecap="round"/>`
+        + `<circle cx="36" cy="${eyeY + 8}" r="3" fill="#C2554A" opacity=".18"/><circle cx="60" cy="${eyeY + 8}" r="3" fill="#C2554A" opacity=".18"/>`
+        + (glasses ? `<g fill="none" stroke="#1B1410" stroke-width="1.8"><rect x="33.5" y="${eyeY - 4.5}" width="13" height="9" rx="3"/><rect x="49.5" y="${eyeY - 4.5}" width="13" height="9" rx="3"/><path d="M46.5 ${eyeY - 1}h3"/></g>` : '');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" fill="${BG[bg]}"/><circle cx="48" cy="48" r="44" fill="none" stroke="${GOLD}" stroke-opacity=".22" stroke-width="2"/>${head}${feat}</svg>`;
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 };
 
 /* keyed by the person's record id (motorists/<id>); master_owner = the owner's own profile */
 export const FACES = {
-    master_owner: face({ skin: 'tan', hair: '#8F877C', cut: 'back', shirt: '#1A1D22', bg: 2, glasses: true, moustache: true, iris: '#4A2C17' }),
-    'demo-agent-6': face({ skin: 'light', hijab: '#7A3E3A', bg: 1, iris: '#8A5527', lash: true }),          /* Rina - HQ sales manager */
-    'demo-agent-7': face({ skin: 'brown', peci: true, hair: '#1A1410', shirt: '#2F343D', moustache: true, bg: 0, iris: '#4A2C17' }), /* Hendra - HQ regional admin */
-    'demo-agent-1': face({ skin: 'tan', cut: 'spiky', shirt: '#454B57', bg: 1, iris: '#A0662E' }),             /* Agus - Bandung canvas */
-    'demo-agent-2': face({ skin: 'brown', cut: 'messy', shirt: '#3A404B', bg: 2, iris: '#6B3E1F' }),           /* Dika - HQ motorist */
-    'demo-agent-3': face({ skin: 'tan', cut: 'neat', hair: '#2B1D14', shirt: '#2F343D', glasses: true, bg: 0, iris: '#5A3319' }), /* Budi - HQ canvas */
-    'demo-agent-4': face({ skin: 'light', cut: 'swept', shirt: '#454B57', bg: 2, iris: '#8A5527' }),           /* Ari - Bandung motorist */
-    'demo-agent-5': face({ skin: 'tan', hijab: '#A0703A', bg: 0, iris: '#6B3E1F', lash: true }),               /* Dewi - Bandung regional admin */
+    master_owner: face({ skin: 'tan', hair: '#8C8478', cut: 'side', shirt: '#1A1D22', bg: 2, glasses: true, moustache: true }),
+    'demo-agent-6': face({ skin: 'light', hijab: '#7A3E3A', bg: 1 }),                       /* Rina - HQ sales manager */
+    'demo-agent-7': face({ skin: 'brown', peci: true, shirt: '#2F343D', moustache: true, hair: '#17120E', bg: 0 }), /* Hendra - HQ regional admin */
+    'demo-agent-1': face({ skin: 'tan', cut: 'wavy', shirt: '#454B57', bg: 1 }),             /* Agus - Bandung canvas */
+    'demo-agent-2': face({ skin: 'brown', cut: 'crew', shirt: '#3A404B', bg: 2 }),           /* Dika - HQ motorist */
+    'demo-agent-3': face({ skin: 'tan', cut: 'short', shirt: '#2F343D', glasses: true, bg: 0 }), /* Budi - HQ canvas */
+    'demo-agent-4': face({ skin: 'light', cut: 'side', shirt: '#454B57', bg: 2 }),           /* Ari - Bandung motorist */
+    'demo-agent-5': face({ skin: 'tan', hijab: '#A0703A', bg: 0 }),                          /* Dewi - Bandung regional admin */
 };
