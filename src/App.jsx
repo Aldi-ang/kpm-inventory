@@ -149,6 +149,7 @@ import {
 
 // --- CONFIG & UTILITIES IMPORTS ---
 import { auth, db, storage, googleProvider, appId, IS_DEMO } from './config/firebase';
+import { VAULT_PASSWORD } from './config/demoLogins.js';   // demo build only - printed on the Master Vault gate
 import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines, eodReportParts, eodNightMessage, EOD_PART_LABELS, absentForSure } from './utils/helpers';
 import { isLowStock } from './utils/stockThreshold';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES, DEFAULT_RANKS } from './config/career';
@@ -4780,6 +4781,9 @@ const handleGitHubMirror = async () => {
                         ? <span className="inline-flex items-center justify-center gap-2"><RefreshCcw size={12} className="animate-spin" /> Checking…</span>
                         : 'Open the vault'}
                 </button>
+
+                {/* the demo's door printed this password, but the door is gone by the time the vault asks for it */}
+                {IS_DEMO && <p className="mt-[11px] font-mono text-[10px] tracking-[0.14em] text-[var(--shell-ink-2)]">Demo vault password: <b className="text-[var(--shell-orange-ink)]">{VAULT_PASSWORD}</b></p>}
 
                 {/* type="button" on BOTH, or they inherit type=submit inside the form and a tap
                     on either would try the password instead — spending one of his five tries. */}

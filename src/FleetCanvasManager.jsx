@@ -12,6 +12,7 @@ import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems, nameInitia
 import { normalizeRegion } from './config/permissions';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
+import { IS_DEMO } from './config/firebase';
 import LoadingBay from './components/LoadingBay.jsx';
 import { damagedInVan, titipOf, quarantineOf } from './utils/vanBay';
 
@@ -387,8 +388,16 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         } catch (e) { notify("Firebase Blocked the Save: " + e.message); }
     };
 
+    /* THE DEMO'S LOGINS ARE SHARED BY EVERY VISITOR (his C, 2026-10-10: "make sure that the users wont broke anything
+       or edit anything"). In the demo build a record marked demoLogin cannot be edited, deleted, locked or have its
+       vault password wiped - the press answers instead of going grey and silent; Budi, Ari and Dewi are the practice
+       staff for all of that. The real build drops all of it (IS_DEMO is false there, demoBuild.check reads the bundle). */
+    const isDemoLogin = (agent) => IS_DEMO && agent?.demoLogin === true;
+    const DEMO_LOGIN_MSG = 'This is a demo login - try it on Budi.';
+
     const handleEditClick = (e, agent) => {
         e.stopPropagation();
+        if (isDemoLogin(agent)) return notify(DEMO_LOGIN_MSG);
         setNewAgent({
             name: agent.name, phone: agent.phone || '', vehicle: agent.vehicle || '', role: agent.role || 'Motorist', email: agent.email || '',
             allowedPayments: agent.allowedPayments || ['Cash'], allowedTiers: agent.allowedTiers || ['Retail', 'Ecer'],
@@ -419,6 +428,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
     const handleDeleteAgent = async (e, agent) => {
         e.stopPropagation();
+        if (isDemoLogin(agent)) return notify(DEMO_LOGIN_MSG);
         if (!await confirmAction(`TERMINATION WARNING: Are you sure you want to remove ${agent.name}? This will instantly revoke their login access.`)) return;
         try {
             const batch = writeBatch(db);
@@ -454,6 +464,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
        doc, so their next vault visit is the setup screen and THEY make the new one; nobody else ever sees it. On a lost
        phone, lock the account first: a reset alone lets whoever holds the phone make the new password. */
     const handleResetVaultPassword = async (agent) => {
+        if (isDemoLogin(agent)) return notify(DEMO_LOGIN_MSG);
         const typed = await promptAction(`Reset ${agent.name}'s vault password? They make a new one the next time they open the vault. Type confirm and press Enter.`, '', 'Reset');
         if (typed === null) return;
         if (typed.trim().toLowerCase() !== 'confirm') return notify(`Not reset: you typed "${typed}", not "confirm".`);
@@ -473,6 +484,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
        login at all". One flag on the person's login record (employee_directory/<email>): the app signs them out, open
        or not, and the rules draft refuses every read and write from that account. Unlock clears the flag. */
     const handleLockAccount = async (agent, lock) => {
+        if (isDemoLogin(agent)) return notify(DEMO_LOGIN_MSG);
         if (lock && !await confirmAction(`Lock ${agent.name}'s account? ${agent.email} is signed out at once and cannot sign in or read any company data until you unlock it.`)) return;
         try {
             await updateDoc(doc(db, `artifacts/${appId}/employee_directory`, agent.email.toLowerCase().trim()),
@@ -1333,8 +1345,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                     <button type="button" onClick={(e) => handleViewClick(e, sel)}><User size={14}/> <span>Details</span></button>
                                                     {canEditFleet && (
                                                         <>
-                                                            <button type="button" onClick={(e) => handleEditClick(e, sel)}><Pencil size={14}/> <span>Edit</span></button>
-                                                            <button data-kpm-del data-label="Delete" type="button" onClick={(e) => handleDeleteAgent(e, sel)} aria-label={`Remove ${sel.name}`}><Trash2 size={15}/></button>
+                                                            <button type="button" className={isDemoLogin(sel) ? 'demo-locked' : undefined} onClick={(e) => handleEditClick(e, sel)}><Pencil size={14}/> <span>Edit</span></button>
+                                                            <button data-kpm-del data-label="Delete" type="button" className={isDemoLogin(sel) ? 'demo-locked' : undefined} onClick={(e) => handleDeleteAgent(e, sel)} aria-label={`Remove ${sel.name}`}><Trash2 size={15}/></button>
                                                         </>
                                                     )}
                                                     {/* T1/T2 only; never on your own card, never on the owner's (the landlord resets that one) */}
@@ -1343,11 +1355,11 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                                             {hasClearance(sel.userRole, 'view_master_vault') && (
                                                                 <>
                                                                     <button type="button" onClick={() => handleResetVaultTries(sel)} title="Set this person's wrong vault-password tries back to 0 and lift a lock"><RotateCcw size={14}/> <span>Reset vault tries</span></button>
-                                                                    <button type="button" onClick={() => handleResetVaultPassword(sel)} title="Wipe this person's vault password - they make a new one themselves"><KeyRound size={14}/> <span>Reset vault password</span></button>
+                                                                    <button type="button" className={isDemoLogin(sel) ? 'demo-locked' : undefined} onClick={() => handleResetVaultPassword(sel)} title="Wipe this person's vault password - they make a new one themselves"><KeyRound size={14}/> <span>Reset vault password</span></button>
                                                                 </>
                                                             )}
                                                             {sel.email && (
-                                                                <button type="button" onClick={() => handleLockAccount(sel, !selLocked)} title={selLocked ? 'Let this email sign in again' : 'Sign this email out and keep it out (lost or hacked phone)'}>
+                                                                <button type="button" className={isDemoLogin(sel) ? 'demo-locked' : undefined} onClick={() => handleLockAccount(sel, !selLocked)} title={selLocked ? 'Let this email sign in again' : 'Sign this email out and keep it out (lost or hacked phone)'}>
                                                                     {selLocked ? <Unlock size={14}/> : <Lock size={14}/>} <span>{selLocked ? 'Unlock account' : 'Lock account'}</span>
                                                                 </button>
                                                             )}

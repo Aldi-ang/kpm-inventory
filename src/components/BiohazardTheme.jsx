@@ -4,7 +4,8 @@ import { Lock, LogOut, LogIn, ArrowRight, Trophy, Sun, Moon,
          User, LayoutGrid, Map, Route, Truck, Package, Boxes, PackagePlus, Store,
          Receipt, Wallet, ClipboardList, Users, Gift, BarChart3, ScrollText, Settings } from 'lucide-react';
 import { signOut } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { auth, IS_DEMO } from '../config/firebase';
+import { DemoDoor, DemoBar } from './DemoFrontDoor.jsx';
 import { clearGrace } from '../utils/vaultGrace.js';
 import NotificationBell from './NotificationBell';
 /* the dot field from the Master Vault gate — reused, not re-drawn, so the two locked screens
@@ -426,6 +427,10 @@ export default function BiohazardTheme({
             approved has no wrapper, so transparent is what he actually signed off on.
             ⚠️ `text-gray-300` went with it — a cold grey default ink, unreadable on cream, and
             slate-adjacent besides. */
+        <>
+        {/* THE DEMO BAR (his 2026-10-13 pick A): outside this root on purpose - the root is overflow-hidden, and iOS
+            WebKit clips a fixed child of an overflow ancestor (the capybara's cut bubble, CapybaraMascot.jsx). */}
+        {IS_DEMO && user && <DemoBar user={user} />}
         <div className="print-reset h-[100dvh] w-full bg-transparent text-[var(--ink-muted)] font-sans tracking-wide overflow-hidden flex relative pt-[var(--kpm-safe-top)]">
             <style>{`
                 @keyframes reRequiem {
@@ -549,6 +554,8 @@ export default function BiohazardTheme({
                    so Lite Mode drops the canvas here exactly as it does there. */
                 <div className="hide-on-print fixed inset-0 z-[80] flex items-center justify-center px-4 bg-[#050403]">
                     {gateCanvasOn() && <VaultGate playing={false} />}
+                    {/* the demo build swaps only the card: same stage, same dot field (his 2026-10-13 "A for phone B for pc") */}
+                    {IS_DEMO ? <DemoDoor companyName={appSettings?.companyName} onGoogle={onLogin} /> : (
                     <div className="kpm-mod gate arrive w-full relative z-10">
                         <div className="kpm-head">
                             <span className="slot">{appSettings?.companyName || 'KPM Inventory'}</span>
@@ -570,7 +577,7 @@ export default function BiohazardTheme({
                             </button>
                         </div>
                         <UpdateStatus className="mt-4 font-mono text-[10px] tracking-[0.12em] text-[var(--ink-muted)]" />
-                    </div>
+                    </div>)}
                 </div>
             )}
 
@@ -1117,5 +1124,6 @@ export default function BiohazardTheme({
                 }
             `}</style>
         </div>
+        </>
     );
 }

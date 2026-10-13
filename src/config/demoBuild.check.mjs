@@ -41,5 +41,12 @@ const OFF = ['recovery emails are switched off', 'DEMO: EMAILS ARE SWITCHED OFF'
 check(has(demo, OFF).length === OFF.length, `the demo build stops both email sends before his EmailJS account (${has(demo, OFF).length}/${OFF.length} guards)`);
 check(has(real, OFF).length === 0 && has(real, EMAIL).length === EMAIL.length, 'the real build still sends the vault-recovery email, no demo guard in it');
 
+/* THE FRONT DOOR (his picks 2026-10-13: "A for phone B for pc", bar "A"): the five sign-in cards, the switch
+   list, the public passwords and the T1 reset button live in the demo bundle ONLY. A stranger reading the
+   real site's JavaScript must not find a demo login, and his salesmen must never see a "pick who to be". */
+const DOOR = ['PICK WHO TO BE', 'TRY ANOTHER PERSON', 'kpm-demo-2026', 'Demo-Vault-1!', 'demo.owner@example.com', 'demo.motorist@example.com', 'Reset demo now'];
+check(has(demo, DOOR).length === DOOR.length, `the demo build carries the front door, the switch and the reset (${has(demo, DOOR).length}/${DOOR.length}: missing ${DOOR.filter((m) => !demo.includes(m)).join(', ') || 'none'})`);
+check(has(real, DOOR).length === 0, `the real build carries none of the front door (found: ${has(real, DOOR).join(', ') || 'none'})`);
+
 console.log(fails ? `\n${fails} FAILED` : '\nall pass');
 process.exit(fails ? 1 : 0);

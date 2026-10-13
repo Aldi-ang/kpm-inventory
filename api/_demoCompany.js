@@ -19,21 +19,10 @@ import { salesDelta } from '../src/utils/salesRollup.js';
 export const DEMO_PROJECT = 'kpm-demo-f4d74';
 export const APP_ID = 'cello-inventory-manager';          // the folder name inside the demo database, as in firebase.js
 export const T1_EMAIL = 'adikaryasukses99@gmail.com';     // his Gmail - the only caller allowed to press "Reset demo now"
-export const OWNER_UID = 'demo-owner';
-/* Public by design: the front door prints them, and every reset sets them back. */
-export const LOGIN_PASSWORD = 'kpm-demo-2026';
-export const VAULT_PASSWORD = 'Demo-Vault-1!';            // passes the vault's strength rule: 8+, upper, lower, number, symbol
+/* the five logins + their public passwords live in src/config/demoLogins.js - the demo's front door signs in with the same list */
+import { OWNER_UID, LOGIN_PASSWORD, VAULT_PASSWORD, LOGINS } from '../src/config/demoLogins.js';
+export { OWNER_UID, LOGIN_PASSWORD, VAULT_PASSWORD, LOGINS };
 export const RECOVERY_WORD = 'demo';
-
-/* The five switch logins (T2..T6) - never T1. T5 and T6 take the two seed salesmen with shops. */
-export const LOGINS = [
-    { tier: 'T2', uid: OWNER_UID, email: 'demo.owner@example.com', name: 'DEMO OWNER' },
-    { tier: 'T3', uid: 'demo-hq', email: 'demo.hq@example.com', name: 'RINA WIJAYA', agentId: 'demo-agent-6', userRole: 'AREA_ADMIN', role: 'Canvas', location: 'Headquarters' },
-    /* the rules give a Regional Admin the shops whose `region` equals their `location` (isOwnRegionMatch) */
-    { tier: 'T4', uid: 'demo-regional', email: 'demo.regional@example.com', name: 'HENDRA GUNAWAN', agentId: 'demo-agent-7', userRole: 'FLEET_CAPTAIN', role: 'Canvas', location: 'MAGELANG', approvalRegions: ['MAGELANG'] },
-    { tier: 'T5', uid: 'demo-canvas', email: 'demo.canvas@example.com', name: 'AGUS PRASETYO', agentId: 'demo-agent-1', userRole: 'FIELD_OPERATIVE', role: 'Canvas', location: 'Headquarters' },
-    { tier: 'T6', uid: 'demo-motorist', email: 'demo.motorist@example.com', name: 'DIKA SAPUTRA', agentId: 'demo-agent-2', userRole: 'ROOKIE', role: 'Motorist', location: 'MAGELANG' },
-];
 /* Practice staff (his "c is good"): visitors may lock, move and edit these freely - no sign-in of their own. */
 export const PRACTICE = [
     { agentId: 'demo-agent-3', email: 'budi.demo@example.com', name: 'BUDI SANTOSO', userRole: 'FIELD_OPERATIVE', role: 'Motorist', location: 'MAGELANG' },

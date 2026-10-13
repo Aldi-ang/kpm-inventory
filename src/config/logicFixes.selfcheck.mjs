@@ -8374,7 +8374,7 @@ section('THE ROSTER, REDRAWN WITH EVERY DOOR KEPT (2026-09-24)');
      !/\b(bg|text|border)-(blue|emerald|green|purple|orange|indigo|amber|red|slate)-\d/.test(left + rowFn + right));
   ok('view for everyone; edit and remove only behind the fleet gate, remove still wears data-kpm-del',
      /onClick=\{\(e\) => handleViewClick\(e, sel\)\}/.test(left) &&
-     /\{canEditFleet && \(\s*<>\s*<button type="button" onClick=\{\(e\) => handleEditClick\(e, sel\)\}[\s\S]{0,300}<button data-kpm-del data-label="Delete" type="button" onClick=\{\(e\) => handleDeleteAgent\(e, sel\)\}/.test(left));
+     /\{canEditFleet && \(\s*<>\s*<button type="button"(?: className=\{isDemoLogin\(sel\) \? 'demo-locked' : undefined\})? onClick=\{\(e\) => handleEditClick\(e, sel\)\}[\s\S]{0,300}<button data-kpm-del data-label="Delete" type="button"(?: className=\{isDemoLogin\(sel\) \? 'demo-locked' : undefined\})? onClick=\{\(e\) => handleDeleteAgent\(e, sel\)\}/.test(left));
   ok('the add key is behind the same gate and still resets the form', /\{canEditFleet && \(\s*<button onClick=\{\(\) => \{ setIsAddingAgent\(!isAddingAgent\); setEditingAgentId\(null\); setNewAgent\(defaultAgentState\); setIsReadOnlyMode\(false\); \}\}/.test(left));
   ok('the search reads the same five fields', /a\.name\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.email\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.userRole\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.location\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.province\?\.toLowerCase\(\)\.includes\(term\)/.test(left));
   ok('people keep their rank order (admin, area admin, agent)', /const rank = \{ 'ADMIN': 3, 'AREA_ADMIN': 2, 'AGENT': 1 \};/.test(left) && /const cast = byRank\(term \? shown : \(places\[place\]\?\.people \|\| \[\]\)\);/.test(left));
@@ -10770,6 +10770,38 @@ section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual 
   ok('run twice on the same day = the same company, byte for byte (nothing doubles)', !!a && JSON.stringify(a) === JSON.stringify(b));
   const vj = read('vercel.json');
   ok('Vercel calls it once a day (00:05 WIB = 17:05 UTC)', /"crons"/.test(vj) && /"path": "\/api\/demo-reset"/.test(vj) && /"schedule": "5 17 \* \* \*"/.test(vj));
+}
+
+section('THE DEMO FRONT DOOR + SWITCH BAR (2026-10-13) - his "A for phone B for pc for decide 1, decide 2 is A"');
+{
+  let dl = null, dc = null;
+  try { dl = await import('./demoLogins.js'); dc = await import('../../api/_demoCompany.js'); } catch (e) { console.log('  (demo logins not importable: ' + e.message.split('\n')[0] + ')'); }
+  ok('ONE list: the reset writes the very logins the door signs in with (api/_demoCompany.js re-exports src/config/demoLogins.js - two copies would drift and a card would print a password the reset no longer sets)',
+     !!dl && !!dc && dc.LOGINS === dl.LOGINS && dc.LOGIN_PASSWORD === dl.LOGIN_PASSWORD && dc.VAULT_PASSWORD === dl.VAULT_PASSWORD && dc.OWNER_UID === dl.OWNER_UID);
+  ok('the switch offers exactly T2..T6, five different emails, never T1 (his Gmail is the only T1 and is not a demo login)',
+     !!dl && !!dc && dl.LOGINS.map((l) => l.tier).join() === 'T2,T3,T4,T5,T6' && new Set(dl.LOGINS.map((l) => l.email)).size === 5 && !dl.LOGINS.some((l) => l.email === dc.T1_EMAIL));
+  const door = read('src/components/DemoFrontDoor.jsx'), shell = read('src/components/BiohazardTheme.jsx'), th = read('src/styles/theme.css');
+  ok('the door and the bar mount ONLY in the demo build (the real build drops them - demoBuild.check proves it on the bundle)',
+     shell.includes('{IS_DEMO ? <DemoDoor ') && shell.includes('{IS_DEMO && user && <DemoBar ') && (shell.match(/<Demo(Door|Bar)\b/g) || []).length === 2);
+  ok('no password literal in the door - it prints and signs in with the shared constants',
+     !door.includes("'kpm-demo-2026'") && !door.includes("'Demo-Vault-1!'") && door.includes('signInWithEmailAndPassword(auth, p.email, LOGIN_PASSWORD)'));
+  ok('a failed sign-in or switch says "the demo is being reset", never a raw Firebase code (trap b of the brief)',
+     (door.match(/notify\(DEMO_DOWN\)/g) || []).length === 2 && !/notify\([^)]*e\.message/.test(door));
+  ok('phone = five keys (A), PC = five badges (B): Tailwind switches the two layouts, and the class sheet never sets display on them (it loads after Tailwind and would show both)',
+     door.includes('kpm-demo-list lg:hidden') && door.includes('kpm-demo-grid hidden lg:grid') && !/\.kpm-demo-(list|grid)\s*\{[^}]*display\s*:/.test(th));
+  ok('the bar takes its 37 px through --kpm-safe-top (the shell and the phone drawer already pad by it) and mounts outside the overflow-hidden root',
+     th.includes('html.kpm-demo-on { --kpm-safe-top: calc(env(safe-area-inset-top, 0px) + 37px); }')
+     && shell.indexOf('<DemoBar') > 0 && shell.indexOf('<DemoBar') < shell.indexOf('<div className="print-reset h-[100dvh]'));
+  ok('the T1 reset shows for his Gmail only and goes through the server, which checks the token again (api/demo-reset.js callerOf)',
+     door.includes('const isT1 = email === POV_OWNER_EMAIL') && door.includes('{isT1 && (')
+     && door.includes("fetch('/api/demo-reset', { method: 'POST', headers: { Authorization: 'Bearer ' + await auth.currentUser.getIdToken() } })"));
+  const fleet = read('src/FleetCanvasManager.jsx');
+  const guarded = (sig) => { const i = fleet.indexOf(sig); return i > 0 && fleet.slice(i, i + 160).includes('if (isDemoLogin(agent)) return notify(DEMO_LOGIN_MSG);'); };
+  ok('Fleet & Roster: edit, delete, lock and vault-password reset answer "try it on Budi" on a demo login - all four, first thing each does, demo build only',
+     fleet.includes('const isDemoLogin = (agent) => IS_DEMO && agent?.demoLogin === true;')
+     && ['const handleEditClick = (e, agent) => {', 'const handleDeleteAgent = async (e, agent) => {', 'const handleResetVaultPassword = async (agent) => {', 'const handleLockAccount = async (agent, lock) => {'].every(guarded));
+  ok('the Master Vault gate prints the demo vault password, in the demo build only',
+     read('src/App.jsx').includes('{IS_DEMO && <p className="mt-[11px] font-mono text-[10px] tracking-[0.14em] text-[var(--shell-ink-2)]">Demo vault password: <b className="text-[var(--shell-orange-ink)]">{VAULT_PASSWORD}</b></p>}'));
 }
 
 section('THE BELL SAYS THE DAY, THE DATE AND THE TIME (2026-10-12) - his "add dates and day and time inside the notification bell ... sunday, 10 february, 10.21 for example"');

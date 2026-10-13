@@ -5676,3 +5676,82 @@ html.lite-mode .kpm-ench *, html.lite-mode .kpm-ench *::before, html.lite-mode .
   :root:not(.lite-mode) .kpm-inspect-spin { animation: kpmInspectSpin 20s linear infinite !important; }
   :root:not(.lite-mode) .kpm-inspect-spin.held { animation-play-state: paused !important; }
 }
+
+/* ── THE DEMO FRONT DOOR + SWITCH BAR (components/DemoFrontDoor.jsx, demo build only) ───────────────────────────────
+   His picks 2026-10-13 from A-Brain Raw/2026-10-13-demo-door/ (door.html / chrome.html are the drawings these lift):
+   *"A for phone B for pc for decide 1, decide 2 is A"*. The door sits on the gate card, so it keeps the gate's LITERAL
+   colours (a dark island in both themes, see .kpm-mod.gate above); the bar is app chrome, so it rides the tokens and
+   flips with html.light. Amber is an edge and an ink here, never a slab.
+   ⚠️ .kpm-demo-list / .kpm-demo-grid carry Tailwind's `lg:hidden` / `hidden lg:grid` - no `display` in these rules,
+   or this sheet (loaded after Tailwind) wins and both layouts show at once. */
+.kpm-mod.gate.kpm-demo-door { max-height: calc(100dvh - 32px); overflow-y: auto; }
+@media (min-width: 1024px) { .kpm-mod.gate.kpm-demo-door { max-width: 1040px; } }
+.kpm-demo-door code { font-family: var(--font-mono); font-weight: 700; letter-spacing: .06em; color: #ffb066; }
+.kpm-demo-tier { flex: none; display: inline-grid; place-items: center; width: 30px; height: 22px; border: 1px solid rgba(231,112,15,.45);
+  font: 700 11px/1 var(--font-mono); letter-spacing: .06em; color: #ffb066; }
+.kpm-demo-list { margin-top: 15px; text-align: left; }
+.kpm-demo-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 58px; padding: 9px 12px; box-sizing: border-box;
+  background: transparent; border: 1px solid rgba(231,112,15,.22); color: #f7e9c8; text-align: left; cursor: pointer;
+  touch-action: manipulation; transition: transform 120ms ease-out, background-color 120ms ease-out, border-color 120ms ease-out; }
+.kpm-demo-row + .kpm-demo-row { margin-top: 6px; }
+.kpm-demo-row .grow { flex: 1; min-width: 0; }
+.kpm-demo-row b { display: block; font: 700 13px/1.15 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+.kpm-demo-row em { display: block; margin-top: 3px; font: 12px/1.35 var(--font-body); font-style: normal; color: rgba(247,233,200,.62); }
+.kpm-demo-row .go { flex: none; font: 700 16px/1 var(--font-mono); color: rgba(231,112,15,.7); }
+.kpm-demo-row:active:not(:disabled) { transform: scale(.98); border-color: #E7700F; background: rgba(231,112,15,.09); }
+.kpm-demo-row:disabled { cursor: default; opacity: .55; }
+.kpm-demo-row[aria-busy="true"] { opacity: 1; border-color: #E7700F; }
+.kpm-demo-grid { margin-top: 15px; grid-template-columns: repeat(5, 1fr); gap: 10px; text-align: left; }
+.kpm-demo-badge { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid rgba(231,112,15,.22); background: rgba(10,8,6,.6); color: #f7e9c8; }
+.kpm-demo-badge .top { display: flex; align-items: center; justify-content: space-between; }
+.kpm-demo-badge .mono { width: 46px; height: 46px; display: grid; place-items: center; border: 1px solid rgba(231,112,15,.35);
+  font: 700 18px/1 var(--font-mono); letter-spacing: .08em; color: #f7e9c8; }
+.kpm-demo-badge b { font: 700 14px/1.1 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+.kpm-demo-badge .role { font: 600 10px/1.2 var(--font-mono); letter-spacing: .16em; text-transform: uppercase; color: #8a7048; }
+.kpm-demo-badge em { flex: 1; font: 12px/1.4 var(--font-body); font-style: normal; color: rgba(247,233,200,.62); }
+.kpm-demo-badge .kpm-btn.key { min-height: 36px; }
+.kpm-demo-foot { margin-top: 12px; text-align: center; }
+@media (min-width: 1024px) { .kpm-demo-foot { display: grid; grid-template-columns: 1fr 260px; gap: 14px; align-items: center; margin-top: 14px; text-align: left; } }
+.kpm-demo-keys { margin: 0 0 4px; font: 11px/1.7 var(--font-body); color: rgba(247,233,200,.62); }
+.kpm-demo-or { display: flex; align-items: center; gap: 10px; margin: 6px 0 8px; font: 700 9px/1 var(--font-mono); letter-spacing: .3em; color: #8a7048; }
+.kpm-demo-or::before, .kpm-demo-or::after { content: ''; flex: 1; height: 1px; background: rgba(231,112,15,.18); }
+.kpm-demo-note { margin: 8px auto 0; max-width: 34ch; font: 11px/1.5 var(--font-body); color: rgba(247,233,200,.55); text-align: center; }
+@media (hover: hover) and (pointer: fine) {
+  .kpm-demo-row:hover:not(:disabled), .kpm-demo-badge:hover { border-color: #E7700F; background: rgba(231,112,15,.09); }
+}
+
+/* the bar: fixed above the whole shell, 34 px + a 3 px hazard edge, under the notch. While it is up, html carries
+   .kpm-demo-on and --kpm-safe-top grows by its height - the shell and the phone drawer already pad by that variable,
+   so everything moves down together instead of each screen learning about the bar. */
+html.kpm-demo-on { --kpm-safe-top: calc(env(safe-area-inset-top, 0px) + 37px); }
+.kpm-demo-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 95; padding-top: env(safe-area-inset-top, 0px); background: var(--inset); }
+.kpm-demo-bar .in { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 12px; }
+.kpm-demo-bar .stamp { flex: none; padding: 3px 6px; border: 1px solid var(--accent-edge); font: 700 10px/1 var(--font-mono); letter-spacing: .22em; color: var(--accent-ink); }
+.kpm-demo-bar .who { min-width: 0; font: 600 12px/1.2 var(--font-mono); letter-spacing: .1em; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpm-demo-bar .who span { color: var(--ink-dim); }
+.kpm-demo-bar .key { flex: none; margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; background: var(--plate);
+  border: 1.5px solid var(--accent-edge); font: 700 11px/1 var(--font-mono); letter-spacing: .16em; color: var(--ink); cursor: pointer; touch-action: manipulation;
+  transition: transform 120ms ease-out; }
+.kpm-demo-bar .key::after { content: ''; border: 4px solid transparent; border-top-color: var(--accent-ink); margin-top: 4px; }
+.kpm-demo-bar .key:active { transform: scale(.97); }
+.kpm-demo-bar .tape { height: 3px; background-image: repeating-linear-gradient(135deg, var(--accent-edge) 0 6px, transparent 6px 12px); }
+.kpm-demo-bar .scrim { position: fixed; inset: 0; z-index: 0; background: transparent; border: 0; cursor: default; }
+.kpm-demo-bar .sheet { position: absolute; z-index: 1; right: 8px; top: 100%; width: 340px; max-height: calc(100dvh - 60px); overflow-y: auto;
+  background: var(--panel); border: 1px solid var(--line-3); }
+@media (max-width: 600px) { .kpm-demo-bar .sheet { left: 8px; width: auto; } }
+.kpm-demo-bar .sheet h4 { margin: 0; padding: 12px 14px 8px; font: 700 11px/1 var(--font-mono); letter-spacing: .24em; color: var(--ink-dim); }
+.kpm-demo-bar .row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; padding: 0 14px; border: 0; border-top: 1px solid var(--line);
+  background: transparent; text-align: left; cursor: pointer; touch-action: manipulation; }
+.kpm-demo-bar .row:disabled { cursor: default; opacity: .6; }
+.kpm-demo-bar .row .t { flex: none; width: 28px; height: 20px; display: grid; place-items: center; border: 1px solid var(--line-3);
+  font: 700 11px/1 var(--font-mono); color: var(--ink-muted); }
+.kpm-demo-bar .row b { display: block; font: 700 12px/1.15 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink); }
+.kpm-demo-bar .row i { font-style: normal; font: 11px/1.2 var(--font-body); color: var(--ink-dim); }
+.kpm-demo-bar .row.you { border-left: 3px solid var(--accent-edge); padding-left: 11px; background: var(--raised); }   /* an edge, not a shadow: Lite Mode keeps borders */
+.kpm-demo-bar .row.you .t { border-color: var(--accent-edge); color: var(--accent-ink); }
+.kpm-demo-bar .row .tag { margin-left: auto; font: 700 9px/1 var(--font-mono); letter-spacing: .2em; color: var(--accent-ink); }
+.kpm-demo-bar .foot { padding: 10px 14px 12px; border-top: 1px solid var(--line); font: 11px/1.5 var(--font-body); color: var(--ink-dim); }
+.kpm-demo-bar .reset { margin: 0 14px 14px; width: calc(100% - 28px); }
+@media (hover: hover) and (pointer: fine) { .kpm-demo-bar .row:hover:not(:disabled) { background: var(--raised); } }
+/* Fleet & Roster on a demo login: the four buttons that would break a shared login look switched off; a press still answers (FleetCanvasManager.jsx isDemoLogin) */
+.kpm-stage-acts button.demo-locked { opacity: .45; }
