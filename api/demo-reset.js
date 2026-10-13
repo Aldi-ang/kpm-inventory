@@ -1,10 +1,8 @@
 /* RESET THE DEMO — one Vercel function, two callers.
 
    1. Vercel's daily cron (vercel.json "crons", 00:05 WIB), carrying `Authorization: Bearer <CRON_SECRET>`.
-   2. The "Reset demo" button on the front door and in the SWITCH sheet: a POST carrying a password, checked
-      here against DEMO_RESET_PASSWORD - a secret set only in the demo's Vercel project, never in the app's
-      code (anyone can read that). His 2026-10-13 "just replace it": no Google sign-in needed to reset.
-      Unset = this path is closed. One password reset every 10 minutes and 12 a day (gate() below).
+   2. His T1 "Reset demo now" button: a POST carrying his Firebase sign-in token; the token's email must
+      be his Gmail (T1_EMAIL) and verified. Nobody else - visitors are T2..T6.
 
    🔴 THE SAME FILE DEPLOYS ON THE REAL VERCEL PROJECT. It must do nothing there, fast: without
    DEMO_FIREBASE_KEY, or with a key for any project but kpm-demo-f4d74, it answers 404 before
@@ -21,7 +19,7 @@ import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { hashSecret } from '../src/utils/secretHash.js';
-import { buildDemoCompany, wibDay, DEMO_PROJECT, APP_ID, LOGINS, LOGIN_PASSWORD, VAULT_PASSWORD, RECOVERY_WORD } from './_demoCompany.js';
+import { buildDemoCompany, DEMO_PROJECT, APP_ID, T1_EMAIL, LOGINS, LOGIN_PASSWORD, VAULT_PASSWORD, RECOVERY_WORD } from './_demoCompany.js';
 
 /* the parsed service-account key, or null when it is missing, broken, or for another project */
 export const demoKey = (raw = process.env.DEMO_FIREBASE_KEY) => {
@@ -30,27 +28,16 @@ export const demoKey = (raw = process.env.DEMO_FIREBASE_KEY) => {
 
 const same = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && timingSafeEqual(x, y); };
 
-/* 'cron', 'password', or null */
-const callerOf = (req) => {
+/* 'cron', 'T1', or null */
+const callerOf = async (req, auth) => {
     const bearer = String(req.headers?.authorization || '').replace(/^Bearer\s+/i, '');
-    if (bearer && process.env.CRON_SECRET && same(bearer, process.env.CRON_SECRET)) return 'cron';
+    if (!bearer) return null;
+    if (process.env.CRON_SECRET && same(bearer, process.env.CRON_SECRET)) return 'cron';
     if (req.method !== 'POST') return null;
-    const pw = String((req.body && typeof req.body === 'object' && req.body.password) || '');
-    return process.env.DEMO_RESET_PASSWORD && pw && same(pw, process.env.DEMO_RESET_PASSWORD) ? 'password' : null;
-};
-
-/* A password can leak. Each reset is ~900 writes + ~900 deletes and the free plan allows 20.000 of each a day, so
-   without a cap one stranger could stop the demo until midnight. Kept OUTSIDE artifacts/, which every reset wipes.
-   The nightly timer is never held back. */
-const COOLDOWN_MIN = 10, DAILY_CAP = 12;
-const gate = async (db, now) => {
-    const ref = db.doc('demo_meta/reset');
-    const s = (await ref.get()).data() || {};
-    const day = wibDay(now), count = s.day === day ? s.count || 0 : 0;
-    const wait = Math.ceil(((s.at || 0) + COOLDOWN_MIN * 60e3 - now.getTime()) / 60e3);
-    if (wait > 0) return { stop: `the demo was reset a moment ago - try again in ${wait} minute${wait > 1 ? 's' : ''}` };
-    if (count >= DAILY_CAP) return { stop: `the demo was already reset ${DAILY_CAP} times today - it resets by itself at 00:05 WIB` };
-    return { done: () => ref.set({ at: now.getTime(), day, count: count + 1 }) };
+    try {
+        const t = await auth.verifyIdToken(bearer);
+        return t.email_verified && String(t.email || '').toLowerCase() === T1_EMAIL ? 'T1' : null;
+    } catch { return null; }
 };
 
 /* set a switch login back to its public password, freeing its email if someone else took it */
@@ -86,18 +73,10 @@ export default async function handler(req, res) {
     const key = demoKey();
     if (!key) return res.status(404).json({ ok: false, reason: 'not the demo project' });
     const app = getApps()[0] || initializeApp({ credential: cert(key), projectId: DEMO_PROJECT });
-    const by = callerOf(req);
-    if (!by) return res.status(401).json({ ok: false, reason: req.method === 'POST' ? 'wrong password' : 'only the daily timer or the reset password can reset the demo' });
+    const by = await callerOf(req, getAuth(app));
+    if (!by) return res.status(401).json({ ok: false, reason: 'only the daily timer or the T1 account can reset the demo' });
     try {
-        const now = new Date();
-        let g = null;
-        if (by === 'password') {
-            g = await gate(getFirestore(app), now);
-            if (g.stop) return res.status(429).json({ ok: false, reason: g.stop });
-        }
-        const result = await resetDemo(getFirestore(app), getAuth(app), now);
-        if (g) await g.done();
-        return res.status(200).json({ ok: true, by, ...result });
+        return res.status(200).json({ ok: true, by, ...(await resetDemo(getFirestore(app), getAuth(app))) });
     } catch (e) {
         console.error('demo reset failed', e);
         return res.status(500).json({ ok: false, reason: e.message });

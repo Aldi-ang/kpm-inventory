@@ -8,11 +8,13 @@
    Every string here is demo-only: src/config/demoBuild.check.mjs proves the real bundle carries none of it. */
 import React, { useEffect, useState } from 'react';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { LogIn } from 'lucide-react';
 import { auth } from '../config/firebase';
 import { LOGINS, LOGIN_PASSWORD, VAULT_PASSWORD } from '../config/demoLogins.js';
 import { POV_OWNER_EMAIL } from '../config/povPreview.js';
 import { clearGrace } from '../utils/vaultGrace.js';
 import { notify } from './Toast.jsx';
+import { confirmAction } from './ConfirmGate.jsx';
 
 /* what each person is for, one line each - the wording he saw on the 2026-10-13 board */
 const CARD = {
@@ -29,39 +31,7 @@ const people = () => LOGINS.map((l) => ({ ...l, ...CARD[l.tier], initials: l.nam
 /* trap (b) of the brief: a sign-in that fails while the nightly reset rewrites the logins must not show a raw Firebase code */
 const DEMO_DOWN = 'The demo is being reset. Try again in a minute.';
 
-/* RESET WITH A PASSWORD, no sign-in (his 2026-10-13 "yeah just replace it"). The SERVER checks it against
-   DEMO_RESET_PASSWORD, set only in the demo's Vercel project - this code is readable by anyone, so it never holds
-   the password - and allows one reset every 10 minutes, 12 a day (api/demo-reset.js gate). One box, two places:
-   the front door and the SWITCH sheet. */
-function ResetBox({ disabled }) {
-    const [open, setOpen] = useState(false);
-    const [password, setPassword] = useState('');
-    const [busy, setBusy] = useState(false);
-    if (!open) return <button type="button" className="kpm-demo-resetlink" disabled={disabled} onClick={() => setOpen(true)}>Reset demo</button>;
-    const go = async (e) => {
-        e.preventDefault();
-        if (!password) return notify('Type the reset password first.');
-        setBusy(true);
-        try {
-            const r = await fetch('/api/demo-reset', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
-            const j = await r.json().catch(() => ({}));
-            notify(j.ok ? `Demo reset done: the company is back to the start (${j.wrote} records, ${j.day}).` : `Demo reset failed: ${j.reason || 'the server answered ' + r.status}.`);
-            if (j.ok) { setPassword(''); setOpen(false); }
-        } catch (err) {
-            console.error('demo reset failed', err);
-            notify('Demo reset failed: the server did not answer.');
-        }
-        setBusy(false);
-    };
-    return (
-        <form className="kpm-demo-resetbox" onSubmit={go}>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Reset password" aria-label="Reset password" autoComplete="off" />
-            <button type="submit" className="kpm-btn hazard" disabled={busy}>{busy ? 'Resetting…' : 'Reset demo'}</button>
-        </form>
-    );
-}
-
-export function DemoDoor({ companyName }) {
+export function DemoDoor({ companyName, onGoogle }) {
     const [busy, setBusy] = useState(null);
     const PEOPLE = people();
     const enter = async (p) => {
@@ -111,9 +81,9 @@ export function DemoDoor({ companyName }) {
             <div className="kpm-demo-foot">
                 <p className="kpm-demo-keys">Password for all five <code>{LOGIN_PASSWORD}</code><br />Master Vault password <code>{VAULT_PASSWORD}</code></p>
                 <div>
-                    <div className="kpm-demo-or">OWNER OF THE DEMO</div>
-                    <ResetBox disabled={!!busy} />
-                    <p className="kpm-demo-note">Puts every record back to the start. Needs the reset password.</p>
+                    <div className="kpm-demo-or">OR</div>
+                    <button type="button" onClick={onGoogle} disabled={!!busy} className="kpm-btn key block"><LogIn size={15} /> Sign in with Google</button>
+                    <p className="kpm-demo-note">Google opens the app with no role. Use a card above to try it.</p>
                 </div>
             </div>
         </div>
@@ -149,6 +119,20 @@ export function DemoBar({ user }) {
         }
     };
 
+    const reset = async () => {
+        if (!await confirmAction('Reset the demo now? Every change visitors made today goes back to the start.')) return;
+        setBusy('reset');
+        try {
+            const r = await fetch('/api/demo-reset', { method: 'POST', headers: { Authorization: 'Bearer ' + await auth.currentUser.getIdToken() } });
+            const j = await r.json().catch(() => ({}));
+            notify(j.ok ? `Demo reset done: the company is back to the start (${j.wrote} records, ${j.day}).` : `Demo reset failed: ${j.reason || 'the server answered ' + r.status}.`);
+        } catch (e) {
+            console.error('demo reset failed', e);
+            notify('Demo reset failed: the server did not answer.');
+        }
+        setBusy(null);
+    };
+
     const who = me ? me.name : email;
     const what = me ? `${me.role} (${me.tier})` : isT1 ? 'T1' : 'no role - pick a person under SWITCH';
     return (
@@ -172,7 +156,11 @@ export function DemoBar({ user }) {
                         </button>
                     ))}
                     <div className="foot">A press signs you out, then in as that person. Everything goes back to the start every night at 00:05 WIB.</div>
-                    <ResetBox disabled={!!busy} />
+                    {isT1 && (
+                        <button type="button" className="kpm-btn hazard block reset" disabled={!!busy} onClick={reset}>
+                            {busy === 'reset' ? 'Resetting…' : 'Reset demo now'}
+                        </button>
+                    )}
                 </div>
             </>)}
         </div>
