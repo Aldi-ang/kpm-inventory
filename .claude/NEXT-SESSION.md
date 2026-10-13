@@ -2,6 +2,8 @@
 
 **Paste this to start:** `/alucard Do the ONE JOB at the top of .claude/NEXT-SESSION.md`
 
+**2026-10-13 09:18 UPDATE - the demo IS live and filled:** kpm-demo-one.vercel.app (Vercel project kpm-demo, Production Branch phase0-solid-ground), his 5 steps DONE + IAM "Cloud Datastore User" added, first reset 211 records. What is left of this job: read PROGRESS.md 09:18 for his ✅ T2 / T5 test; a failure there goes first. If he said yes to the reset message fix: in api/demo-reset.js make the 500 reason carry the cause (the error's code + the last "Caused by:" line of e.stack - Firestore's recursiveDelete leaves e.message ending in "failed with: "), a logicFixes guard, push on his word. Then the queue's first line (the T2 rules draft).
+
 **2026-10-13 08:09 — THE ONE JOB: THE DEMO GOES LIVE.** The front door is BUILT and walked on the emulator (kpm `914d17d` door + bar + vault hint + Fleet guards, `7394c6b` rail + toasts below the bar; local, NOT pushed). His picks: phone = five keys, PC = five badges, bar = A.
 
 **Step 0.** `git fetch origin; git rev-list --count origin/phase0-solid-ground..HEAD` (0-1 expected: the code is PUSHED + LIVE 08:41 `024bc5a..9464327`, only notes after it). Read PROGRESS.md (08:09 entry) for his answers: "push", and which of his 5 console steps are done (Vercel demo project with VITE_DEMO=1 + DEMO_FIREBASE_KEY + CRON_SECRET; the service-account key; firestore.rules published in kpm-demo-f4d74; the demo domain in Firebase Auth authorized domains; his first "Reset demo now"). NOTHING done and no "push" -> do the queue's first line instead (the T2 rules draft, step 4 of the 20:05 block) and re-ask the steps once.
