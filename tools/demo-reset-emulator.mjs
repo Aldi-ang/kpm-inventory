@@ -40,14 +40,24 @@ let pass = 0, fail = 0;
 const ok = (name, cond, got = '') => { cond ? pass++ : fail++; console.log(`  ${cond ? 'ok  ' : 'FAIL'} ${name}${got !== '' ? '  -> ' + got : ''}`); };
 
 const home = `artifacts/${APP_ID}/users/${OWNER_UID}`;
+/* the company's own folders (motorists now includes master_owner + ADMIN_VEHICLE - the reset writes the owner's van,
+   so the app never makes one with no place) */
+const COLS = ['products', 'customers', 'transactions', 'vault_keys', 'settings', 'sales_stats', 'motorists', 'eod_reports', 'career', 'procurement', 'stock_requests', 'audit_logs'];
 const counts = async (db) => {
     const out = {};
-    for (const c of ['products', 'customers', 'transactions', 'vault_keys', 'settings', 'sales_stats']) out[c] = (await db.collection(`${home}/${c}`).count().get()).data().count;
-    /* the demo staff only: an owner signed in to the app re-creates its own ADMIN_VEHICLE right after a wipe */
-    out.motorists = (await db.collection(`${home}/motorists`).listDocuments()).filter((d) => d.id.startsWith('demo-agent-')).length;
+    for (const c of COLS) out[c] = (await db.collection(`${home}/${c}`).count().get()).data().count;
     out.employee_directory = (await db.collection(`artifacts/${APP_ID}/employee_directory`).count().get()).data().count;
     return out;
 };
+/* what one reset should leave, from the very builder the function runs (same seed, same day) - not numbers typed here */
+const { buildDemoCompany } = await import('../api/_demoCompany.js');
+const { readFileSync } = await import('node:fs');
+const built = buildDemoCompany(JSON.parse(readFileSync('demo/seed.json', 'utf8')), new Date(), { pin: 'p', recoveryHash: 'r' });
+const expected = Object.fromEntries([...COLS, 'employee_directory'].map((c) => [c, built.docs.filter((d) => {
+    const rest = c === 'employee_directory' ? d.path.replace(`artifacts/${APP_ID}/`, '') : d.path.startsWith(`${home}/`) ? d.path.slice(home.length + 1) : '';
+    const parts = rest.split('/');
+    return parts.length === 2 && parts[0] === c;
+}).length]));
 
 const r0 = await call('GET', 'wrong-secret');
 ok('a wrong timer secret is refused', r0.code === 401, r0.code);
@@ -57,8 +67,8 @@ ok('the daily timer resets the demo', r1.code === 200 && r1.body.ok && r1.body.f
 const db = getFirestore(getApps()[0]), auth = getAuth(getApps()[0]);
 const c1 = await counts(db);
 console.log('  counts after reset 1:', JSON.stringify(c1));
-ok('6 products, 152 shops, 7 staff, 23 sales, 4 staff vaults, 3 settings, 1 month tally, 9 login records',
-   c1.products === 6 && c1.customers === 152 && c1.motorists === 7 && c1.transactions === 23 && c1.vault_keys === 4 && c1.settings === 3 && c1.sales_stats === 1 && c1.employee_directory === 9);
+ok(`every folder holds what the builder wrote (${built.docs.length} docs in all): ${JSON.stringify(expected)}`,
+   JSON.stringify(c1) === JSON.stringify(expected) && r1.body.wrote === built.docs.length);
 for (const l of LOGINS) ok(`${l.tier} login signs in with the public password`, !!(await token(l.email, LOGIN_PASSWORD)));
 
 /* what a visitor might do during the day: a sale of their own, a locked switch login, a changed password */

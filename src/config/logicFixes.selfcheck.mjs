@@ -10839,13 +10839,13 @@ section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual 
   ok(`ranks spread over the ladder (${cr && a ? people.map((m) => rankOf(m).currentTier.name).join(', ') : '?'}) and every XP sits 500+ from a rank line, so nobody's rank flips during the demo day`,
      !!cr && new Set(people.map((m) => rankOf(m).currentTier.name)).size >= 5 && xps.every((x) => gap(x) >= 500));
   ok('badges: each career record\'s unlocks are exactly the app\'s own checkBadges over it; everyone has one, the newest still have some to earn',
-     !!cr && people.every((m) => { const c = careerOf(m.id); return JSON.stringify(c.unlocks) === JSON.stringify(cr.checkBadges(cr.DEFAULT_BADGES, { ...c, unlocks: [] })) && c.unlocks.length >= 1; })
-     && people.some((m) => careerOf(m.id).unlocks.length < cr.DEFAULT_BADGES.length));
+     !!cr && people.every((m) => { const c = careerOf(m.id); return !!c?.unlocks && JSON.stringify(c.unlocks) === JSON.stringify(cr.checkBadges(cr.DEFAULT_BADGES, { ...c, unlocks: [] })) && c.unlocks.length >= 1; })
+     && people.some((m) => (careerOf(m.id)?.unlocks || []).length < cr.DEFAULT_BADGES.length));
   const awards = a ? a.docs.filter((d) => /\/career\/[^/]+\/awards\//.test(d.path)) : [];
   ok('awards: each one is a career/<id>/awards doc in AgentProfileView\'s grant shape, and the record\'s bonusXP / awardCount add them up',
      !!a && awards.length >= 4 && awards.every((d) => d.data.title && d.data.reason && d.data.xp > 0 && d.data.grantedBy === dc.OWNER_UID && d.data.grantedAt instanceof Date)
      && people.every((m) => { const mine = awards.filter((d) => d.path.includes(`/career/${m.id}/awards/`)), c = careerOf(m.id);
-       return (c.bonusXP || 0) === mine.reduce((s, d) => s + d.data.xp, 0) && (c.awardCount || 0) === mine.length; }));
+       return !!c && (c.bonusXP || 0) === mine.reduce((s, d) => s + d.data.xp, 0) && (c.awardCount || 0) === mine.length; }));
   /* palette law on the faces: no blue, no green - any saturated colour must be warm (hue < 60 or > 300) */
   const hues = a ? [...new Set(people.flatMap((m) => decodeURIComponent(m.profileImage).match(/#[0-9A-Fa-f]{6}/g) || []))] : [];
   const coldHex = hues.filter((h) => { const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255), mx = Math.max(r, g, b), mn = Math.min(r, g, b);
@@ -10865,7 +10865,7 @@ section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual 
   ok('the career record\'s live part is exactly those verified reports (money, days, a credited key each) - verifying the two waiting ones credits them once, never a day twice',
      !!a && ['demo-agent-1', 'demo-agent-2', 'demo-agent-3', 'demo-agent-4'].every((id) => {
        const mine = eods.filter((e) => e.agentId === id && e.status === 'VERIFIED'), c = careerOf(id);
-       return c.live.collected === mine.reduce((s, e) => s + e.cash, 0) && c.live.daysVerified === mine.length
+       return !!c?.live && c.live.collected === mine.reduce((s, e) => s + e.cash, 0) && c.live.daysVerified === mine.length
          && Object.keys(c.credited).sort().join() === mine.map((e) => `${e.dayKey}:CASH_STOCK`).sort().join(); }));
   const pastDay = window6[0], agus = roster.find((m) => m.id === 'demo-agent-1');
   const logsThatDay = a ? a.docs.filter((d) => d.path.includes(`/audit_vault/${pastDay}/logs/`)).map((d) => d.data) : [];
