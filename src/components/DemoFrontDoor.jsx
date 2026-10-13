@@ -20,8 +20,8 @@ import { confirmAction } from './ConfirmGate.jsx';
 const CARD = {
     T2: { role: 'Owner', what: 'Sees the whole company: money, stock and every salesman.' },
     T3: { role: 'HQ Sales Manager', what: 'Runs the sales team across every region.' },
-    T4: { role: 'Regional Admin', what: 'Runs one region (Magelang): its shops, staff and approvals.' },
-    T5: { role: 'Sales Canvas', what: 'Sells from the van: shops, sales and the receipt.' },
+    T4: { role: 'Regional Admin', what: 'Runs the Muntilan HQ team: its shops, staff and approvals.' },
+    T5: { role: 'Sales Canvas', what: 'Sells from the van in Bandung: shops, sales and the receipt.' },
     T6: { role: 'Sales Motorist', what: 'Visits shops by motorbike: his route, sales and end of day.' },
 };
 /* built when a demo screen draws, never at import: a top-level call keeps this module - and every demo email - in the

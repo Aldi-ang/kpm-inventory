@@ -14,6 +14,7 @@
    - activity log: dropped (real people's actions). Company name: "KPM Demo".
    The seed's safety is re-checked on every run of src/config/logicFixes.selfcheck.mjs ("The demo seed"). */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { restorableBorders } from '../src/utils/mapBorders.js';
 
 const src = process.argv[2];
 if (!src) { console.error('usage: node tools/demo-seed-from-backup.mjs <FOLDER_RECOVERY--SAFE_*.json>'); process.exit(1); }
@@ -56,14 +57,22 @@ const shops = backup.customers.map((c) => {
     return out;
 });
 
+/* his map borders (2026-10-13, his "just use 2 area that i insert on the map system"): the shapes he drew are public
+   geography, kept with the keys the Map System draws from. A backup made before the backup fix has none. */
+const BORDER_KEYS = ['id', 'name', 'level', 'folderName', 'color', 'isHidden', 'geometryString'];
+const mapBorders = restorableBorders(backup).map((b) => pick(b, BORDER_KEYS));
+const droppedKeys = [...new Set(restorableBorders(backup).flatMap((b) => Object.keys(b).filter((k) => !BORDER_KEYS.includes(k))))];
+
 const seed = {
     meta: { type: 'DEMO_SEED', from: backup.meta.ts, note: 'made by tools/demo-seed-from-backup.mjs - no phones, addresses, photos, notes or exact pins' },
     appSettings: { companyName: 'KPM Demo' },
     tierSettings: backup.tierSettings,
     inventory: products,
     customers: shops,
+    mapBorders,
 };
 mkdirSync('demo', { recursive: true });
 writeFileSync('demo/seed.json', JSON.stringify(seed, null, 1));
 console.log(`demo/seed.json: ${products.length} products, ${shops.length} shops (${agents.length} salesmen -> demo-agent-1..${agents.length}, ${folders.length} map folders), pins moved ${Math.round(minMove)}-${Math.round(maxMove)} m`);
+console.log(`  ${mapBorders.length} map borders${mapBorders.length ? ': ' + mapBorders.map((b) => `${b.name} (${b.level})`).join(', ') : ' - the backup was made before the backup fix, make a fresh one'}${droppedKeys.length ? `; border keys left out: ${droppedKeys.join(', ')}` : ''}`);
 products.forEach((p, i) => console.log(`  ${p.name}: ${PRICES.map((k) => backup.inventory[i][k]).join(' / ')}  ->  ${PRICES.map((k) => p[k]).join(' / ')}`));

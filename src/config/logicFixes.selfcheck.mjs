@@ -10754,12 +10754,16 @@ section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual 
      !!a && a.logins.map((l) => l.tier).join() === 'T2,T3,T4,T5,T6' && a.logins[0].uid === dc.OWNER_UID
      && a.logins.slice(1).map((l) => l.userRole).join() === 'AREA_ADMIN,FLEET_CAPTAIN,FIELD_OPERATIVE,ROOKIE');
   ok('every write is inside artifacts/cello-inventory-manager - nothing else in the demo database is touched', !!a && paths.every((p) => p.startsWith('artifacts/cello-inventory-manager/')));
-  ok('the whole seed goes in: 6 products, 152 shops, his company name, the 5 tier pictures',
-     !!a && under('products').length === 6 && under('customers').length === 152
-     && a.docs.find((d) => d.path.endsWith('/settings/general'))?.data.companyName === 'KPM Demo' && a.docs.find((d) => d.path.endsWith('/settings/tiers'))?.data.list.length === 5);
-  ok('the seed\'s exported timestamps become real dates (an object with seconds would show as "Invalid Date"); the 7 text dates stay text, as the app saved them',
+  /* his 2026-10-13 "only bandung and muntilan team for now ... yogyakarta is not included" */
+  const teamShops = seed.customers.filter((c) => c.region === 'MAGELANG' || c.province === 'JAWA BARAT');
+  ok('the seed goes in, two places only: 6 products, the 148 shops of Kabupaten Magelang + Bandung (no Yogyakarta, none without a region), his company name, the 5 tier pictures, rank read from the career record',
+     !!a && under('products').length === 6 && teamShops.length === 148 && under('customers').length === 148
+     && under('customers').every((d) => d.data.region === 'MAGELANG' || d.data.province === 'JAWA BARAT')
+     && a.docs.find((d) => d.path.endsWith('/settings/general'))?.data.companyName === 'KPM Demo' && a.docs.find((d) => d.path.endsWith('/settings/general'))?.data.useCareerLedger === true
+     && a.docs.find((d) => d.path.endsWith('/settings/tiers'))?.data.list.length === 5);
+  ok('the seed\'s exported timestamps become real dates (an object with seconds would show as "Invalid Date"); the text dates stay text, as the app saved them',
      !!a && !JSON.stringify(a.docs).includes('firestore/timestamp/1.0') && under('products').every((d) => d.data.updatedAt instanceof Date)
-     && under('customers').filter((d) => typeof d.data.createdAt === 'string').length === seed.customers.filter((c) => typeof c.createdAt === 'string').length);
+     && under('customers').filter((d) => typeof d.data.createdAt === 'string').length === teamShops.filter((c) => typeof c.createdAt === 'string').length);
   ok('each switch login has its login record (bossUid = the owner, demoLogin) and every staff login a vault; the owner\'s vault is settings/admin',
      !!a && a.logins.slice(1).every((l) => { const e = a.docs.find((d) => d.path.endsWith('/employee_directory/' + l.email)); return e && e.data.bossUid === dc.OWNER_UID && e.data.agentId === l.agentId && e.data.demoLogin === true && e.data.locked === false; })
      && a.logins.slice(1).every((l) => paths.includes(`artifacts/cello-inventory-manager/users/${dc.OWNER_UID}/vault_keys/${l.agentId}`))
@@ -10769,31 +10773,117 @@ section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual 
   ok('a staff vault says whose it is - uid + email of that login, as App.jsx\'s vault setup writes it (the vault_keys rule reads resource.data.uid; without it the T6 vault would not open on the emulator)',
      !!a && a.logins.slice(1).every((l) => { const v = a.docs.find((d) => d.path.endsWith('/vault_keys/' + l.agentId))?.data; return v?.uid === l.uid && v?.email === l.email; }));
   const staffNames = a ? under('motorists').map((d) => d.data.name) : [];
-  ok('a shop\'s assignedAgent is a NAME on the roster, as JourneyView compares it (agentsList = names) - never the seed\'s demo-agent-N (the emulator said "91 stores are assigned to a name not on the roster")',
-     !!a && under('customers').filter((d) => d.data.assignedAgent && d.data.assignedAgent !== 'Unassigned').length === seed.customers.filter((c) => c.assignedAgent).length
-     && under('customers').every((d) => !d.data.assignedAgent || d.data.assignedAgent === 'Unassigned' || staffNames.includes(d.data.assignedAgent)));
-  ok('every seller is ON the map today: currentLocation = his last sale\'s shop at its time, pathHistory = one point per sale (expedition() lists only men with currentLocation - without it the emulator showed no team and no Replay)',
-     !!a && under('motorists').every((d) => {
-       const mine = sales.filter((s) => s.data.agentId === d.data.id).sort((x, y) => x.data.timestamp - y.data.timestamp);
-       if (!mine.length) return !d.data.currentLocation;
+  const roster = a ? under('motorists').map((d) => ({ ...d.data, docId: d.path.split('/').pop() })) : [];
+  const placeOfName = Object.fromEntries(roster.map((m) => [m.name, m.location]));
+  ok('a shop\'s salesman is a NAME on the roster (JourneyView compares names - the emulator once said "91 stores are assigned to a name not on the roster") and on the shop\'s own team: Bandung shops -> a Bandung salesman, Magelang -> an HQ one; only the 11 with no kecamatan wait for one',
+     !!a && under('customers').every((d) => !d.data.assignedAgent || (staffNames.includes(d.data.assignedAgent) && placeOfName[d.data.assignedAgent] === (d.data.province === 'JAWA BARAT' ? 'BANDUNG' : 'Headquarters')))
+     && under('customers').filter((d) => !d.data.assignedAgent).length === 11);
+  const todays = sales.filter((s) => s.data.date === a?.day);
+  ok('every seller is ON the map today: currentLocation = his last sale\'s shop TODAY at its time, pathHistory = one point per sale today, never an older day (App.jsx keeps today\'s points only; expedition() lists only men with currentLocation)',
+     !!a && roster.every((m) => {
+       const mine = todays.filter((s) => s.data.agentId === m.id).sort((x, y) => x.data.timestamp - y.data.timestamp);
+       if (!mine.length) return !m.currentLocation;
        const last = mine[mine.length - 1], shop = seed.customers.find((c) => c.name === last.data.customerName);
-       return d.data.currentLocation?.lat === shop.latitude && d.data.currentLocation?.timestamp === last.data.timestamp.toISOString() && d.data.pathHistory?.length === mine.length;
+       return m.currentLocation?.lat === shop.latitude && m.currentLocation?.timestamp === last.data.timestamp.toISOString() && m.pathHistory?.length === mine.length;
      }));
-  const t4 = a ? a.logins[2] : null, t4Team = a ? under('motorists').filter((d) => d.data.location === t4.location && d.data.id !== t4.agentId) : [];
-  const branchRows = a ? a.docs.filter((d) => d.path.includes(`/branches/${t4.location}/inventory/`)) : [];
-  ok('the Regional Admin has a team to run (visibleTeam = same location) - all of them sell today; their warehouse (branches/<place>/inventory, where a field man outside HQ loads from) holds every product',
-     !!a && t4Team.length >= 2 && t4Team.every((d) => sales.some((s) => s.data.agentId === d.data.id))
-     && branchRows.length === 6 && branchRows.every((d) => d.data.stock > 0 && d.data.name));
-  ok('the Regional Admin\'s place matches shops in the seed (the rules compare location to the shop region)',
-     !!a && seed.customers.some((c) => String(c.region).toLowerCase() === String(a.logins[2].location).toLowerCase()));
-  ok('B: today\'s sales are dated by the WIB day of the run, 08:00-17:00 WIB, every seller with shops sells',
-     !!a && sales.length > 0 && sales.every((d) => d.data.date === '2026-10-11' && d.data.timestamp.getUTCHours() >= 1 && d.data.timestamp.getUTCHours() < 10)
-     && new Set(sales.map((d) => d.data.agentId)).size === new Set(seed.customers.map((c) => c.assignedAgent).filter(Boolean)).size);
+  /* TWO TEAMS - the roster's tabs, keyed exactly as FleetCanvasManager placeOf keys them */
+  const tabs = [...new Set(roster.map((m) => `${String(m.province || 'CENTRAL JAVA').trim().toUpperCase()} › ${String(m.location || 'UNASSIGNED AREA').trim().toUpperCase()}`))].sort();
+  ok(`exactly two roster tabs (${tabs.join(' | ')}): Muntilan is the Headquarters; the owner's van is written with HQ's place, so the app never makes it on first open with none (the old third "UNASSIGNED AREA" tab, useDatabaseSync.js)`,
+     !!a && tabs.join('|') === 'JAWA BARAT › BANDUNG|JAWA TENGAH › HEADQUARTERS' && roster.some((m) => m.docId === 'ADMIN_VEHICLE')
+     && fleet.includes("const prov = String(a.province || 'CENTRAL JAVA').trim().toUpperCase();") && fleet.includes("const loc = String(a.location || 'UNASSIGNED AREA').trim().toUpperCase();"));
+  const sellsToday = (m) => todays.some((s) => s.data.agentId === m.id);
+  ok('his rule (09:31): each team has its own regional admin, at least one sales canvas and one sales motorist, and every canvas and motorist sells today',
+     !!a && ['Headquarters', 'BANDUNG'].every((loc) => {
+       const team = roster.filter((m) => m.location === loc);
+       return team.some((m) => m.userRole === 'FLEET_CAPTAIN')
+         && team.some((m) => m.role === 'Canvas' && ['FIELD_OPERATIVE', 'ROOKIE'].includes(m.userRole) && sellsToday(m))
+         && team.some((m) => m.role === 'Motorist' && sellsToday(m))
+         && team.filter((m) => ['FIELD_OPERATIVE', 'ROOKIE'].includes(m.userRole)).every(sellsToday);
+     }));
+  const hendra = roster.find((m) => m.id === 'demo-agent-7'), dewi = roster.find((m) => m.id === 'demo-agent-5');
+  ok('each regional admin approves hand-offs into his own team only (permissions.js canApproveHandoffFrom, run on the records the reset writes)',
+     !!hendra && !!dewi && canApproveHandoffFrom(hendra, 'Headquarters', roster) && !canApproveHandoffFrom(hendra, 'BANDUNG', roster)
+     && canApproveHandoffFrom(dewi, 'BANDUNG', roster) && !canApproveHandoffFrom(dewi, 'Headquarters', roster));
+  const branchRows = a ? a.docs.filter((d) => d.path.includes('/branches/')) : [];
+  ok('Bandung loads its vans from its own warehouse (branches/BANDUNG/inventory holds every product); HQ loads from the main one - no other branch',
+     !!a && branchRows.length === 6 && branchRows.every((d) => d.path.includes('/branches/BANDUNG/inventory/') && d.data.stock > 0 && d.data.name));
+  const wibDate = (t) => new Date(t.getTime() + 7 * 3600e3).toISOString().slice(0, 10);
+  const saleDays = [...new Set(sales.map((d) => d.data.date))].sort();
+  ok(`B + four weeks: the sample day carries the run's date, the ${saleDays.length - 1} days behind it are Monday-Saturday back to 28 days ago, every sale 08:00-17:00 WIB on its own day; all 4 sellers sell today`,
+     !!a && sales.every((d) => wibDate(d.data.timestamp) === d.data.date && d.data.timestamp.getUTCHours() >= 1 && d.data.timestamp.getUTCHours() < 10)
+     && saleDays[saleDays.length - 1] === '2026-10-11' && saleDays[0] === '2026-09-14' && saleDays.slice(0, -1).every((d) => new Date(`${d}T00:00:00Z`).getUTCDay() !== 0)
+     && new Set(todays.map((d) => d.data.agentId)).size === 4);
   ok('a sale names a real seed shop and prices each line at that shop\'s price level',
      !!a && sales.every((d) => seed.customers.some((c) => c.name === d.data.customerName) && d.data.total === d.data.items.reduce((s, i) => s + i.qty * i.calculatedPrice, 0)));
   const stats = a ? under('sales_stats') : [];
   const statRev = stats.reduce((s, d) => s + Object.values(d.data.byProduct).reduce((t, v) => t + v.revenue, 0), 0);
-  ok('the month tally (Reports) is the app\'s own salesDelta over those sales - it equals the cash total', !!a && stats.length === 1 && statRev === sales.reduce((s, d) => s + d.data.total, 0));
+  ok('the month tallies (Reports) are the app\'s own salesDelta over those sales, one per month (September + October) - together they equal the cash total',
+     !!a && stats.map((d) => d.data.month).join() === '2026-09,2026-10' && statRev === sales.reduce((s, d) => s + d.data.total, 0));
+
+  /* PROFILES - his "add some profile picture and level on the agent profile ... border equipped ... achievement filled ... decription" */
+  let cr = null, hp = null, dl = null;
+  try { cr = await import('./career.js'); hp = await import('../utils/helpers.js'); dl = await import('../utils/dayLog.js'); } catch (e) { console.log('  (career / helpers / dayLog not importable: ' + e.message.split('\n')[0] + ')'); }
+  const careerOf = (id) => under('career').find((d) => d.path.endsWith('/career/' + id))?.data;
+  const people = roster.filter((m) => m.docId !== 'ADMIN_VEHICLE');
+  const MATERIALS = ['bronze', 'silver', 'gold', 'platinum', 'diamond', 'mythic'];   /* rankBorders.jsx RANK_BORDERS, bottom to top */
+  const rankOf = (m) => cr.rankLadder(cr.careerXP(careerOf(m.id)), cr.DEFAULT_RANKS);
+  ok('every person (the owner + 7 staff) has a drawn face (an SVG in profileImage - no photo, no Storage upload), a bio, a career record, and wears a frame his rank has unlocked, stamped with that rank so the profile\'s rank-up switch leaves it alone',
+     !!a && !!cr && people.length === 8 && people.every((m) => {
+       if (!careerOf(m.id)) return false;
+       const { currentTier, tierIndex } = rankOf(m);
+       return String(m.profileImage).startsWith('data:image/svg+xml') && String(m.bio).length > 40 && m.borderTier === currentTier.id
+         && MATERIALS.indexOf(m.borderStyle) >= 0 && MATERIALS.indexOf(m.borderStyle) <= tierIndex && m.joinDate && m.createdAt instanceof Date;
+     }));
+  const xps = cr && a ? people.map((m) => cr.careerXP(careerOf(m.id))) : [];
+  const gap = (xp) => Math.min(...cr.DEFAULT_RANKS.map((r) => Math.abs(xp - r.min)).filter((g) => g > 0));
+  ok(`ranks spread over the ladder (${cr && a ? people.map((m) => rankOf(m).currentTier.name).join(', ') : '?'}) and every XP sits 500+ from a rank line, so nobody's rank flips during the demo day`,
+     !!cr && new Set(people.map((m) => rankOf(m).currentTier.name)).size >= 5 && xps.every((x) => gap(x) >= 500));
+  ok('badges: each career record\'s unlocks are exactly the app\'s own checkBadges over it; everyone has one, the newest still have some to earn',
+     !!cr && people.every((m) => { const c = careerOf(m.id); return JSON.stringify(c.unlocks) === JSON.stringify(cr.checkBadges(cr.DEFAULT_BADGES, { ...c, unlocks: [] })) && c.unlocks.length >= 1; })
+     && people.some((m) => careerOf(m.id).unlocks.length < cr.DEFAULT_BADGES.length));
+  const awards = a ? a.docs.filter((d) => /\/career\/[^/]+\/awards\//.test(d.path)) : [];
+  ok('awards: each one is a career/<id>/awards doc in AgentProfileView\'s grant shape, and the record\'s bonusXP / awardCount add them up',
+     !!a && awards.length >= 4 && awards.every((d) => d.data.title && d.data.reason && d.data.xp > 0 && d.data.grantedBy === dc.OWNER_UID && d.data.grantedAt instanceof Date)
+     && people.every((m) => { const mine = awards.filter((d) => d.path.includes(`/career/${m.id}/awards/`)), c = careerOf(m.id);
+       return (c.bonusXP || 0) === mine.reduce((s, d) => s + d.data.xp, 0) && (c.awardCount || 0) === mine.length; }));
+  /* palette law on the faces: no blue, no green - any saturated colour must be warm (hue < 60 or > 300) */
+  const hues = a ? [...new Set(people.flatMap((m) => decodeURIComponent(m.profileImage).match(/#[0-9A-Fa-f]{6}/g) || []))] : [];
+  const coldHex = hues.filter((h) => { const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255), mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+    if (mx === mn || (mx - mn) / (mx + mn > 1 ? 2 - mx - mn : mx + mn) < 0.2) return false;
+    const hue = mx === r ? ((g - b) / (mx - mn) + 6) % 6 * 60 : mx === g ? ((b - r) / (mx - mn) + 2) * 60 : ((r - g) / (mx - mn) + 4) * 60;
+    return hue >= 60 && hue <= 300; });
+  ok(`palette law on the faces: ${hues.length} colours, none of them blue or green${coldHex.length ? ' (found: ' + coldHex.join(', ') + ')' : ''}`, !!a && hues.length > 5 && coldHex.length === 0);
+
+  /* HISTORY - his "make sure that the history and everything is in there so that they are be able to be reviewed" */
+  const eods = a ? under('eod_reports').map((d) => d.data) : [];
+  const window6 = saleDays.filter((d) => d < '2026-10-11' && d > '2026-10-04');
+  ok(`end of day: one CASH & STOCK report per seller per working day of the last 6 (${window6.length} days - the app reads 7); each verified one has every part approved (eodReportParts) and the day's own XP (computeDayXP); the newest of Agus (Bandung) and Dika (HQ) wait for the boss`,
+     !!hp && !!cr && eods.length === window6.length * 4 && eods.every((e) => window6.includes(e.dayKey) && e.timestamp instanceof Date)
+     && eods.filter((e) => e.status === 'PENDING').map((e) => `${e.dayKey}|${e.agentId}`).sort().join() === `${window6[window6.length - 1]}|demo-agent-1,${window6[window6.length - 1]}|demo-agent-2`
+     && eods.filter((e) => e.status === 'VERIFIED').every((e) => hp.eodReportParts(e, seed.inventory).every((p) => e.verified[p] === true) && e.dayXP === cr.computeDayXP(e, {}).total
+       && e.cash === sales.filter((s) => s.data.date === e.dayKey && s.data.agentId === e.agentId).reduce((t, s) => t + s.data.total, 0)));
+  ok('the career record\'s live part is exactly those verified reports (money, days, a credited key each) - verifying the two waiting ones credits them once, never a day twice',
+     !!a && ['demo-agent-1', 'demo-agent-2', 'demo-agent-3', 'demo-agent-4'].every((id) => {
+       const mine = eods.filter((e) => e.agentId === id && e.status === 'VERIFIED'), c = careerOf(id);
+       return c.live.collected === mine.reduce((s, e) => s + e.cash, 0) && c.live.daysVerified === mine.length
+         && Object.keys(c.credited).sort().join() === mine.map((e) => `${e.dayKey}:CASH_STOCK`).sort().join(); }));
+  const pastDay = window6[0], agus = roster.find((m) => m.id === 'demo-agent-1');
+  const logsThatDay = a ? a.docs.filter((d) => d.path.includes(`/audit_vault/${pastDay}/logs/`)).map((d) => d.data) : [];
+  /* the admin SDK stores a Date as a Timestamp; the client reads it back as { seconds } - feed dayLog that shape */
+  const asRead = (o) => ({ ...o, timestamp: { seconds: o.timestamp.getTime() / 1000 } });
+  const replay = dl && agus ? dl.dayLog({ man: agus, day: pastDay, transactions: sales.map((s) => asRead(s.data)), logs: logsThatDay.map(asRead), customers: under('customers').map((d) => d.data) }) : null;
+  ok(`Day Replay on a past day (${pastDay}, Agus): the app's own dayLog finds his sales AND his visit report, each on a pinned shop, in route order from 08:30`,
+     !!replay && replay.events.some((e) => e.kind === 'sold') && replay.events.some((e) => e.source === 'report' && e.tag) && replay.events.every((e) => e.lat && e.lng)
+     && replay.events[0].time >= '08:30' && replay.events[replay.events.length - 1].source === 'report');
+  const visitShops = a ? under('customers').filter((d) => d.data.lastVisit) : [];
+  ok('a visited shop keeps its latest report (lastVisit / tag / note / by, as JourneyView writes them), and a fresh New Request stays open on it',
+     !!a && visitShops.length >= 40 && visitShops.every((d) => d.data.lastVisitNote.startsWith(`[${d.data.lastVisitTag}] `) && staffNames.includes(d.data.lastVisitedBy))
+     && under('customers').filter((d) => d.data.openRequest).every((d) => d.data.lastVisitTag.includes('📝')));
+  const pos = a ? under('procurement').map((d) => d.data) : [], reqs = a ? under('stock_requests').map((d) => d.data) : [];
+  ok('goods in: three surat jalan into the Muntilan HQ warehouse, each total = its lines; the Bandung branch has one request on the road and one waiting for HQ',
+     !!a && pos.length === 3 && pos.every((p) => p.destination === 'Gudang Pusat (Master Vault)' && p.items.length && p.totalBasePrice === p.items.reduce((s, i) => s + i.qtyReceived * i.basePrice, 0))
+     && reqs.map((r) => r.status).sort().join() === 'IN_TRANSIT,PENDING' && reqs.every((r) => r.branch === 'BANDUNG' && r.requestedItems.length));
+  ok(`one reset writes ${a ? a.docs.length : '?'} documents - the nightly one plus manual ones stay far under the free plan's 20.000 writes a day`, !!a && a.docs.length < 1000);
   ok('run twice on the same day = the same company, byte for byte (nothing doubles)', !!a && JSON.stringify(a) === JSON.stringify(b));
   const vj = read('vercel.json');
   ok('Vercel calls it once a day (00:05 WIB = 17:05 UTC)', /"crons"/.test(vj) && /"path": "\/api\/demo-reset"/.test(vj) && /"schedule": "5 17 \* \* \*"/.test(vj));
