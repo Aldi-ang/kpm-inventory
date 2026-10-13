@@ -10703,6 +10703,33 @@ section('THE CORNER CAPYBARA TALKS TOO (2026-10-11) - his pick A after "the capy
      (capy.match(/speakMumble\(/g) || []).length === 2);
 }
 
+section('BACKUPS CARRY HIS MAP BORDERS (2026-10-13) - his "yes fix the backup": the Map System keeps a border at mapSettings/bnd_<id>; both backups read a mapBorders folder nothing writes, so no backup ever held one');
+{
+  let mb = null;
+  try { mb = await import('../utils/mapBorders.js'); } catch (e) { console.log('  (src/utils/mapBorders.js not importable: ' + e.message.split('\n')[0] + ')'); }
+  ok('the Map System saves a border as mapSettings/bnd_<its id> and loads only the bnd_ docs - the place a backup must read',
+     map.includes("setDoc(doc(db, `artifacts/${appId}/users/${currentUserId}/mapSettings`, `bnd_${boundary.id}`), boundaryToSave)")
+     && map.includes("getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapSettings`))") && map.includes("if (doc.id.startsWith('bnd_')) {"));
+  ok('no backup, restore or share import touches a mapBorders FOLDER any more (nothing in the app writes one)',
+     !/users\/\$\{(userId|user\.uid)\}\/mapBorders`/.test(app));
+  ok('both backups read through ONE reader (bordersFromDocs over mapSettings) and file the result as mapBorders',
+     imports(app, 'bordersFromDocs') && (app.match(/bordersFromDocs\(\(await getDocs\(collection\(db, `artifacts\/\$\{appId\}\/users\/\$\{userId\}\/mapSettings`\)\)\)\.docs\)/g) || []).length === 2
+     && /inventory, transactions, customers: deepCustomers, samplings, auditLogs, procurements, appSettings, tierSettings, mapBorders/.test(app) && app.includes('exportData.mapBorders = '));
+  ok('the restore and the share import write each border back through ONE writer (borderDocId -> mapSettings/bnd_<id>), no other map write',
+     imports(app, 'borderDocId') && imports(app, 'restorableBorders') && (app.match(/restorableBorders\(data\)/g) || []).length === 2
+     && (app.match(/\/mapSettings`, borderDocId\(b\)\)/g) || []).length === 3);
+  /* behaviour: a border saved the Map System's way survives backup -> file -> restore at the same doc, same data */
+  const saved = [{ id: 'bnd_17', data: () => ({ id: '17', name: 'KABUPATEN MAGELANG', level: 'Kabupaten', geometryString: '{"type":"Polygon"}' }) },
+                 { id: 'agentColors', data: () => ({ colors: {} }) }];
+  const file = mb ? JSON.parse(JSON.stringify({ mapBorders: mb.bordersFromDocs(saved) })) : null;
+  const back = mb ? mb.restorableBorders(file) : [];
+  ok('round trip: the bnd_17 border comes back as bnd_17 with its own id 17 and its shape; agentColors is not a border',
+     !!mb && back.length === 1 && mb.borderDocId(back[0]) === 'bnd_17' && back[0].id === '17' && back[0].geometryString === '{"type":"Polygon"}');
+  ok('a file from before the mapBorders era (key mapSettings, id = the border id) still restores; a backup with no borders writes none',
+     !!mb && mb.restorableBorders({ mapSettings: [{ id: '9', geometryString: 'x' }, { id: 'agentColors' }] }).map(mb.borderDocId).join() === 'bnd_9'
+     && mb.restorableBorders({ mapBorders: [] }).length === 0 && mb.restorableBorders({}).length === 0);
+}
+
 section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual reset im expecting tier 1 account to be able to do that ... visitor is tier2 and below"');
 {
   let dc = null, handler = null, demoKey = null;
