@@ -19,16 +19,17 @@ const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048, private
 const KEY = JSON.stringify({ type: 'service_account', project_id: 'kpm-demo-f4d74', client_email: 'emulator@kpm-demo-f4d74.iam.gserviceaccount.com', private_key: privateKey });
 process.env.DEMO_FIREBASE_KEY = KEY;
 process.env.CRON_SECRET = 'emulator-cron';
+process.env.DEMO_RESET_PASSWORD = 'emulator-reset';
 
 const { default: handler } = await import('../api/demo-reset.js');
 const { getFirestore } = await import('firebase-admin/firestore');
 const { getAuth } = await import('firebase-admin/auth');
 const { getApps } = await import('firebase-admin/app');
-const { APP_ID, OWNER_UID, T1_EMAIL, LOGINS, LOGIN_PASSWORD } = await import('../api/_demoCompany.js');
+const { APP_ID, OWNER_UID, LOGINS, LOGIN_PASSWORD } = await import('../api/_demoCompany.js');
 
-const call = async (method, bearer) => {
+const call = async (method, bearer, body) => {
     const r = { code: 0, body: null, status(c) { this.code = c; return this; }, json(o) { this.body = o; return this; } };
-    await handler({ method, headers: bearer ? { authorization: `Bearer ${bearer}` } : {} }, r);
+    await handler({ method, headers: bearer ? { authorization: `Bearer ${bearer}` } : {}, body }, r);
     return r;
 };
 const token = async (email, password) => {
@@ -83,14 +84,23 @@ ok('the visitor\'s sale is gone', !(await db.doc(`${home}/transactions/visitor-s
 ok('the locked switch login is unlocked again', (await db.doc(`artifacts/${APP_ID}/employee_directory/${LOGINS[4].email}`).get()).data()?.locked === false);
 ok('the changed password is back to the public one', !!(await token(LOGINS[3].email, LOGIN_PASSWORD)));
 
-/* the T1 "Reset demo now" button: his Gmail only, and only by POST */
-try { await auth.createUser({ email: T1_EMAIL, password: 'emulator-t1', emailVerified: true }); } catch { /* already there from a previous run */ }
-const t1 = await token(T1_EMAIL, 'emulator-t1');
-const r3 = await call('POST', t1);
-ok('his T1 account can reset (POST with his sign-in token)', r3.code === 200 && r3.body.by === 'T1', JSON.stringify(r3.body));
-const r4 = await call('POST', await token(LOGINS[0].email, LOGIN_PASSWORD));
-ok('a visitor on the T2 Owner login cannot', r4.code === 401, r4.code);
-ok('a GET with his token cannot (the button POSTs)', (await call('GET', t1)).code === 401);
+/* the "Reset demo" button: a password, checked on the server, and only by POST (his 2026-10-13 "just replace it") */
+await db.doc('demo_meta/reset').delete();   // a previous run's cooldown must not decide this one
+const r3 = await call('POST', null, { password: 'wrong' });
+ok('a wrong password is refused, and says so', r3.code === 401 && r3.body.reason === 'wrong password', JSON.stringify(r3.body));
+const r4 = await call('POST', null, { password: 'emulator-reset' });
+ok('the right password resets (POST, no sign-in)', r4.code === 200 && r4.body.by === 'password' && r4.body.failed === 0, JSON.stringify(r4.body));
+const r5b = await call('POST', null, { password: 'emulator-reset' });
+ok('a second password reset within 10 minutes waits, and says how long', r5b.code === 429 && /try again in 10 minutes/.test(r5b.body.reason), JSON.stringify(r5b.body));
+ok('the nightly timer is never held back by that wait', (await call('GET', 'emulator-cron')).code === 200);
+await db.doc('demo_meta/reset').set({ at: 0, day: (await import('../api/_demoCompany.js')).wibDay(new Date()), count: 12 });
+const r6 = await call('POST', null, { password: 'emulator-reset' });
+ok('the 13th password reset of a day is refused', r6.code === 429 && /12 times today/.test(r6.body.reason), JSON.stringify(r6.body));
+await db.doc('demo_meta/reset').delete();
+ok('a sign-in token is not a password: the T2 Owner\'s token cannot reset', (await call('POST', await token(LOGINS[0].email, LOGIN_PASSWORD))).code === 401);
+ok('a GET with the password cannot (the button POSTs)', (await call('GET', null, { password: 'emulator-reset' })).code === 401);
+delete process.env.DEMO_RESET_PASSWORD;
+ok('no password set in Vercel = the button path is closed', (await call('POST', null, { password: '' })).code === 401);
 
 process.env.DEMO_FIREBASE_KEY = JSON.stringify({ ...JSON.parse(KEY), project_id: 'cello-inventory-manager' });
 const r5 = await call('GET', 'emulator-cron');

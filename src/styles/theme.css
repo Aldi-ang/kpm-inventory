@@ -5716,6 +5716,16 @@ html.lite-mode .kpm-ench *, html.lite-mode .kpm-ench *::before, html.lite-mode .
 .kpm-demo-or { display: flex; align-items: center; gap: 10px; margin: 6px 0 8px; font: 700 9px/1 var(--font-mono); letter-spacing: .3em; color: #8a7048; }
 .kpm-demo-or::before, .kpm-demo-or::after { content: ''; flex: 1; height: 1px; background: rgba(231,112,15,.18); }
 .kpm-demo-note { margin: 8px auto 0; max-width: 34ch; font: 11px/1.5 var(--font-body); color: rgba(247,233,200,.55); text-align: center; }
+/* the reset-with-a-password box (DemoFrontDoor.jsx ResetBox): a quiet link until pressed, then a password field + the hazard button.
+   Theme tokens by default (the SWITCH sheet flips with light mode); the door is a dark island in both themes, so it keeps literal ink. */
+.kpm-demo-resetlink { display: block; margin: 4px auto 0; padding: 6px 10px; background: none; border: 0; font: 700 10px/1 var(--font-mono); letter-spacing: .22em; text-transform: uppercase; color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.kpm-demo-resetbox { display: flex; gap: 8px; }
+.kpm-demo-resetbox input { flex: 1; min-width: 0; padding: 9px 11px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--inset); color: var(--ink); font: 13px/1.2 var(--font-body); outline: none; }
+.kpm-demo-resetbox input:focus { border-color: var(--accent-edge); }
+.kpm-demo-door .kpm-demo-resetlink { color: #d08a2e; }
+.kpm-demo-door .kpm-demo-resetbox input { border-color: rgba(231,112,15,.28); background: rgba(0,0,0,.35); color: #f7e9c8; }
+.kpm-demo-door .kpm-demo-resetbox input:focus { border-color: #e7700f; }
+.kpm-demo-bar .sheet > .kpm-demo-resetlink, .kpm-demo-bar .sheet > .kpm-demo-resetbox { margin: 0 14px 14px; }
 @media (hover: hover) and (pointer: fine) {
   .kpm-demo-row:hover:not(:disabled), .kpm-demo-badge:hover { border-color: #E7700F; background: rgba(231,112,15,.09); }
 }

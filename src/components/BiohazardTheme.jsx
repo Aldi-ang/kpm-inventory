@@ -555,7 +555,7 @@ export default function BiohazardTheme({
                 <div className="hide-on-print fixed inset-0 z-[80] flex items-center justify-center px-4 bg-[#050403]">
                     {gateCanvasOn() && <VaultGate playing={false} />}
                     {/* the demo build swaps only the card: same stage, same dot field (his 2026-10-13 "A for phone B for pc") */}
-                    {IS_DEMO ? <DemoDoor companyName={appSettings?.companyName} onGoogle={onLogin} /> : (
+                    {IS_DEMO ? <DemoDoor companyName={appSettings?.companyName} /> : (
                     <div className="kpm-mod gate arrive w-full relative z-10">
                         <div className="kpm-head">
                             <span className="slot">{appSettings?.companyName || 'KPM Inventory'}</span>

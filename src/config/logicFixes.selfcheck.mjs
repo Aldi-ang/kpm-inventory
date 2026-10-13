@@ -10912,9 +10912,14 @@ section('THE DEMO FRONT DOOR + SWITCH BAR (2026-10-13) - his "A for phone B for 
   ok('the bar takes its 37 px through --kpm-safe-top (the shell and the phone drawer already pad by it) and mounts outside the overflow-hidden root',
      th.includes('html.kpm-demo-on { --kpm-safe-top: calc(env(safe-area-inset-top, 0px) + 37px); }')
      && shell.indexOf('<DemoBar') > 0 && shell.indexOf('<DemoBar') < shell.indexOf('<div className="print-reset h-[100dvh]'));
-  ok('the T1 reset shows for his Gmail only and goes through the server, which checks the token again (api/demo-reset.js callerOf)',
-     door.includes('const isT1 = email === POV_OWNER_EMAIL') && door.includes('{isT1 && (')
-     && door.includes("fetch('/api/demo-reset', { method: 'POST', headers: { Authorization: 'Bearer ' + await auth.currentUser.getIdToken() } })"));
+  /* his 2026-10-13 18:2x "yeah just replace it": no Google button, a Reset demo button that asks a password */
+  const api = read('api/demo-reset.js');
+  ok('the reset asks a PASSWORD that only the server knows (DEMO_RESET_PASSWORD, set in the demo\'s Vercel project - never in the app\'s code, which anyone can read); the door and the SWITCH sheet share one ResetBox; no Google button and no Google token path left',
+     !door.includes('Sign in with Google') && !door.includes('getIdToken') && (door.match(/<ResetBox /g) || []).length === 2
+     && door.includes("body: JSON.stringify({ password })") && !/DEMO_RESET_PASSWORD/.test(stripComments(door))
+     && /process\.env\.DEMO_RESET_PASSWORD && pw && same\(pw, process\.env\.DEMO_RESET_PASSWORD\) \? 'password' : null/.test(api) && !api.includes('verifyIdToken'));
+  ok('a leaked password cannot burn the free plan: one password reset every 10 minutes and 12 a day, kept outside artifacts/ (every reset wipes that); the nightly timer is never held back',
+     /const COOLDOWN_MIN = 10, DAILY_CAP = 12;/.test(api) && api.includes("db.doc('demo_meta/reset')") && /if \(by === 'password'\) \{/.test(api));
   const fleet = read('src/FleetCanvasManager.jsx');
   const guarded = (sig) => { const i = fleet.indexOf(sig); return i > 0 && fleet.slice(i, i + 160).includes('if (isDemoLogin(agent)) return notify(DEMO_LOGIN_MSG);'); };
   ok('Fleet & Roster: edit, delete, lock and vault-password reset answer "try it on Budi" on a demo login - all four, first thing each does, demo build only',
