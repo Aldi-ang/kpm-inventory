@@ -19,7 +19,7 @@ export default defineConfig({
       { find: 'firebase/firestore', replacement: fileURLToPath(new URL('./lab-firestore-stub.js', import.meta.url)) },
       /* `?shell` mounts the app shell, which imports `../config/firebase` for `auth`. That module
          boots Firebase on import and needs firestore factories the stub above does not have. */
-      { find: /^(\.\.\/)+config\/firebase(\.js)?$/, replacement: fileURLToPath(new URL('./lab-firebase-stub.js', import.meta.url)) },
+      { find: /^(\.\.?\/)+config\/firebase(\.js)?$/, replacement: fileURLToPath(new URL('./lab-firebase-stub.js', import.meta.url)) },
     ],
   },
   /* `npm run build` rewrites dist/ while the lab is up, and vite's watcher dies on the busy file

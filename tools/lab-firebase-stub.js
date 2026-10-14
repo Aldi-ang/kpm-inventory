@@ -10,4 +10,6 @@ export const db = {};
 export const storage = {};
 export const googleProvider = {};
 export const PROXIED_AUTH_HOSTS = [];
+export const appId = 'lab';
+export const IS_DEMO = false;   // App.jsx + FleetCanvasManager read it since the demo (2026-10-13)
 export default {};
