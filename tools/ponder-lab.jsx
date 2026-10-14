@@ -320,10 +320,10 @@ function NotaLab() {
    ABOVE the line and someone below it, or the Orang list would look right while the check was
    wrong in either direction. Adi (T4) and Rina (T3) must appear; Budi and Cahyo must not. */
 const LAB_MOTORISTS = [
-  { id: 'm1', name: 'Adi Nugroho', location: 'BANDUNG', userRole: 'FLEET_CAPTAIN' },
+  { id: 'm1', name: 'Adi Nugroho', location: 'BANDUNG', userRole: 'FLEET_CAPTAIN', borderStyle: 'gold' },
   { id: 'm2', name: 'Budi Santoso', location: 'MUNTILAN', userRole: 'FIELD_OPERATIVE' },
-  { id: 'm3', name: 'Cahyo Putra', location: 'SEMARANG', userRole: 'ROOKIE' },
-  { id: 'm4', name: 'Rina Wijaya', location: 'SEMARANG', userRole: 'AREA_ADMIN' },
+  { id: 'm3', name: 'Cahyo Putra', location: 'SEMARANG', userRole: 'ROOKIE', borderStyle: 'diamond' },
+  { id: 'm4', name: 'Rina Wijaya', location: 'SEMARANG', userRole: 'AREA_ADMIN', borderStyle: 'mythic' },
 ];
 const LAB_PROCUREMENTS = [
   { id: 'p1', poNumber: 'SJ-185108', date: '2026-08-27', supplierName: 'Pabrik Kudus', destination: 'Gudang Pusat (Master Vault)', items: [] },

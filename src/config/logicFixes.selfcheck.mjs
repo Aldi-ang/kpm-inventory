@@ -11247,5 +11247,15 @@ section('THE CAPYBARA IN A BACKGROUND TAB (2026-10-14) - his "delete the SFX tha
   u.__reset();
 }
 
+section('AGENT DIRECTORY ROWS WEAR THEIR FRAME (2026-10-14) - his "show the border on the side profile as well"');
+{
+  const prof = read('src/AgentProfileView.jsx').replace(/\r/g, '');
+  const row = (prof.match(/filteredMotorists\.map\(agent => \([\s\S]*?<\/button>/) || [''])[0];
+  ok('each directory row draws the agent\'s own frame (his pick, else classic) around the photo - the player card\'s 128 px frame parts, scaled whole',
+     /<div className="pc-avatar origin-top-left scale-\[\.4375\]">/.test(row) && /<RankBorder styleId=\{agent\.borderStyle \|\| 'classic'\} \/>/.test(row)
+     && /<div className="pc-photo">\{agent\.profileImage \? <img src=\{agent\.profileImage\}/.test(row) && /<div className="w-14 h-14 shrink-0 relative">/.test(row));
+  ok('the frame keyframes + SVG filters the frames need are mounted once by the same screen', /<style>\{BORDER_KEYFRAMES\}<\/style>/.test(prof) && /<FrameFilters \/>/.test(prof));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

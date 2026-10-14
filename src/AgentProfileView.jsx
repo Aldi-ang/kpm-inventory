@@ -956,8 +956,14 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                         className={`w-full text-left p-3 rounded-xl border transition-all duration-300 flex items-center gap-3 group relative overflow-hidden ${selectedId === agent.id ? 'bg-sunk/20 border-line-3/50 shadow-[0_0_15px_rgba(212,175,55,0.15)] translate-x-1' : 'bg-sunk/50 border-line/50 hover:border-line-3 hover:bg-panel'}`}
                                     >
                                         {selectedId === agent.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-gold shadow-[0_0_10px_#3b82f6]"></div>}
-                                        <div className={`w-10 h-10 rounded-full border ${selectedId === agent.id ? 'border-line-2 text-ink-muted' : 'border-line-2 text-ink-muted bg-black'} flex items-center justify-center shrink-0 overflow-hidden`}>
-                                            {agent.profileImage ? <img src={agent.profileImage} className="w-full h-full object-cover"/> : <User size={18}/>}
+                                        {/* his "show the border on the side profile as well" (2026-10-14): the player card's 128 px frame
+                                            parts, scaled whole to 56 px. ponytail: his pick is trusted, like the card - the profile also
+                                            falls back when a ladder reshuffle locks the pick; add the unlock slice if a stale one shows. */}
+                                        <div className="w-14 h-14 shrink-0 relative">
+                                            <div className="pc-avatar origin-top-left scale-[.4375]">
+                                                <div className="pc-photo">{agent.profileImage ? <img src={agent.profileImage} className="w-full h-full object-cover" alt=""/> : <User size={40}/>}</div>
+                                                <RankBorder styleId={agent.borderStyle || 'classic'} />
+                                            </div>
                                         </div>
                                         <div className="overflow-hidden">
                                             <p className={`font-bold text-sm truncate transition-colors flex items-center gap-1 ${selectedId === agent.id ? 'text-white' : 'text-ink-muted group-hover:text-ink'}`}>{agent.name} {agent.id === 'master_owner' && <ShieldCheck size={12} className="text-gold"/>}</p>
