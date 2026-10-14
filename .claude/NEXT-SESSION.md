@@ -2,6 +2,7 @@
 
 **Paste this to start:** `/alucard Do the ONE JOB at the top of .claude/NEXT-SESSION.md`
 
+**2026-10-14 20:51 UPDATE: PUSHED + LIVE on his "push it first"** - `51ee975..d2261c8` (8 commits, firestore.rules 0 lines); Vercel "Deployment has completed" for both projects 20:51; one live read: kpm-ang entry `assets/index-gVMTruLk.js` carries the hidden-tab guard (its only source is useSound.js:273). So Step 0's push is DONE - the job is his PC test below.
 **2026-10-14 20:15 — THE ONE JOB: PUSH on his word, then his ✅ PC test of the capybara voice.** Local, not pushed: `34f6722` (leaderboard XP, ledger off: Rp 100.000 = 1 XP) and `9ad5d33` (the capybara says nothing while the tab is hidden). Proven: logicFixes 2376/0, useSound 7/7, audit 722/0, build ok.
 **Why 9ad5d33:** his *"i hear it when i use my pc ... delete the SFX that contained 1 or 2 words"*. Measured (vault `Brainstorm/2026-10-14_voice-without-mascot.md`, scripts `Raw/2026-10-14-voice/`): the plan was right (0 of 51,300 plans short); a background Chrome tab quiet for 30 s held the syllable timers and fired them together (4/4 lines heard as 2 sounds). Fix = `speakMumble` returns 0 while `document.visibilityState === 'hidden'` and drops a syllable whose timer fires after the tab hid.
 **Step 0:** `git fetch origin; git rev-list --count origin/phase0-solid-ground..HEAD`. His word "push" -> push -> GitHub status for both Vercel projects -> one live read. No word -> ask once.
