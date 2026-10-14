@@ -11210,5 +11210,23 @@ section('THE DEMO WALK FINDINGS (2026-10-13) - his "fix it all whatever the orde
      && /let empDoc = get\(\/databases\/\$\(database\)\/documents\/artifacts\/cello-inventory-manager\/employee_directory\/\$\(safeEmail\)\);/.test(rules));
 }
 
+section('LEADERBOARD XP WITH THE CAREER LEDGER OFF (2026-10-14) - his "yes fix the problem"');
+{
+  const hof = read('src/HallOfFameView.jsx').replace(/\r/g, ''), prof = read('src/AgentProfileView.jsx').replace(/\r/g, '');
+  const { DEFAULT_XP } = await import('./career.js');
+  const hofExpr = (hof.match(/const lifetimeEXP = useCareerLedger\s*\?[^:]*:\s*([^;]+);/) || [])[1];
+  const profExpr = (prof.match(/:\s*(\(Math\.floor\(lifetimeOmset \/ DEFAULT_XP\.rupiahPerXp\)[^;]+);/) || [])[1];
+  const hofXP = (omset, mult, manual) => { try { return new Function('agent', 'rpgData', 'DEFAULT_XP', `return ${hofExpr};`)({ totalOmset: omset, manualExp: manual }, { expMultiplier: mult }, DEFAULT_XP); } catch { return NaN; } };
+  const profXP = (omset, mult, manual) => { try { return new Function('lifetimeOmset', 'activeAgent', 'rpgData', 'DEFAULT_XP', `return ${profExpr};`)(omset, { manualExp: manual }, { expMultiplier: mult }, DEFAULT_XP); } catch { return NaN; } };
+  ok('the leaderboard turns Rupiah into XP like the profile and the player card (Rp 100.000 = 1 XP), never Rupiah as XP',
+     !!hofExpr && /Math\.floor\(agent\.totalOmset \/ DEFAULT_XP\.rupiahPerXp\)/.test(hofExpr),
+     'Rp 20.000.000 read as 20.000.000 XP (Mythic) on the leaderboard, 200 XP (Bronze) on his own profile');
+  ok('behaviour: Rp 20.000.000 = 200 XP; x2 multiplier + 50 manual = 450; Rp 150.000 = 1 (rounded down)',
+     hofXP(20000000, undefined, undefined) === 200 && hofXP(20000000, 2, 50) === 450 && hofXP(150000, 1, 0) === 1,
+     `got ${hofXP(20000000, undefined, undefined)} / ${hofXP(20000000, 2, 50)} / ${hofXP(150000, 1, 0)}`);
+  ok('same omset -> the same XP on the leaderboard and on the Agent Profile',
+     !!profExpr && [[20000000, 1, 0], [7350000, 1.5, 12], [99999, 1, 3]].every(([o, m, x]) => hofXP(o, m, x) === profXP(o, m, x)));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

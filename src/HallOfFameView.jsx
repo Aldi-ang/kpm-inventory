@@ -38,7 +38,7 @@ export default function HallOfFameView({ motorists = [], transactions = [], rpgD
         return Object.values(statsMap).map(agent => {
             const lifetimeEXP = useCareerLedger
                 ? careerXP(career?.[agent.id] || {}, DEFAULT_XP)
-                : (agent.totalOmset * (rpgData.expMultiplier || 1)) + (agent.manualExp || 0);
+                : (Math.floor(agent.totalOmset / DEFAULT_XP.rupiahPerXp) * (rpgData.expMultiplier || 1)) + (agent.manualExp || 0);
 
             let currentTier = sortedRanks[0] || { name: 'Unranked', hex: '#64748b', min: 0 };
             let nextTier = sortedRanks[1] || null;
