@@ -54,6 +54,18 @@ assert.equal(playSound('nope', ctx(false)), false);
   assert.ok(n2 >= 1 && n2 <= 16, 'a 300-letter line is still capped');
   assert.equal(speakMumble('', { ...ctx(false), timer }), 0, 'empty line is silent');
   assert.equal(speakMumble('anything', { ...ctx(true), timer }), 0, 'Lite Mode is silent');
+  /* his "1 or 2 words" (2026-10-14): a background tab quiet for a while has its timers held to a once-a-second wake-up
+     (measured in real Chrome: syllables planned at 0 / 350 / 595 ms fired at 0 / 1247 / 1247), so the line came out as
+     2 sounds. Silent when the page is hidden - and a tab hidden mid-line drops the rest instead of bunching it. */
+  const hidden = { ...makeDoc(false), visibilityState: 'hidden' };
+  played.length = 0;
+  assert.equal(speakMumble('Good pick.', { AudioImpl: StubAudio, doc: hidden, timer, seed: 1 }), 0, 'a hidden page says nothing');
+  assert.equal(played.length, 0, 'and plays no syllable');
+  const later = [], page = { ...makeDoc(false), visibilityState: 'visible' };
+  const n3 = speakMumble('Good pick.', { AudioImpl: StubAudio, doc: page, timer: (fn) => later.push(fn), seed: 1 });
+  assert.ok(n3 >= 3, 'a visible page schedules the whole line');
+  later.shift()(); page.visibilityState = 'hidden'; later.forEach((fn) => fn());
+  assert.equal(played.length, 1, `hidden after the first syllable: the rest must not play (played ${played.length})`);
 }
 
 /* 7. a rate is a PITCH: the chest's landing pop rises box by box into the van and falls box by box

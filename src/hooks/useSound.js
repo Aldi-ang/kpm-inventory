@@ -268,9 +268,13 @@ export function unlockSounds({ AudioImpl, doc } = {}) {
 export function speakMumble(text, { AudioImpl, doc, timer = setTimeout, seed } = {}) {
   if (!(text || '').replace(/\s+/g, '').length) return 0;
   if (liteModeOn(doc) || !unlocked) return 0;
+  /* his "1 or 2 words" (2026-10-14): a background tab holds timers to a once-a-second wake-up, so every syllable after
+     the first landed at the same instant and the line was heard as 2 sounds. Nobody can see him then - say nothing. */
+  const hidden = () => (doc || globalThis.document)?.visibilityState === 'hidden';
+  if (hidden()) return 0;
   /* the studio's own plan, a fresh seed each call: another mood, syllable count and pace every time he talks */
   const steps = voicePlan(text, seed ?? (Math.random() * 4294967296) >>> 0);
-  for (const x of steps) timer(() => playSound(capyFile(x.on, x.v, x.len, x.rise), { AudioImpl, doc, rate: x.rate, gain: x.gain }), x.at * 1000);
+  for (const x of steps) timer(() => { if (!hidden()) playSound(capyFile(x.on, x.v, x.len, x.rise), { AudioImpl, doc, rate: x.rate, gain: x.gain }); }, x.at * 1000);
   return steps.length;
 }
 

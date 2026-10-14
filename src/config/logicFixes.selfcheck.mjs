@@ -11228,5 +11228,24 @@ section('LEADERBOARD XP WITH THE CAREER LEDGER OFF (2026-10-14) - his "yes fix t
      !!profExpr && [[20000000, 1, 0], [7350000, 1.5, 12], [99999, 1, 3]].every(([o, m, x]) => hofXP(o, m, x) === profXP(o, m, x)));
 }
 
+section('THE CAPYBARA IN A BACKGROUND TAB (2026-10-14) - his "delete the SFX that contained 1 or 2 words"');
+{
+  const snd = read('src/hooks/useSound.js').replace(/\r/g, '');
+  ok('speakMumble says nothing while the page is hidden, and a syllable whose timer fires after the tab was hidden does not play',
+     /const hidden = \(\) => \(doc \|\| globalThis\.document\)\?\.visibilityState === 'hidden';\s*if \(hidden\(\)\) return 0;/.test(snd)
+     && /timer\(\(\) => \{ if \(!hidden\(\)\) playSound\(capyFile\(/.test(snd),
+     'measured in real Chrome: a background tab quiet for 30 s fired syllables planned at 0 / 350 / 595 ms at 0 / 1247 / 1247 - heard as 2 sounds');
+  const u = await import('../hooks/useSound.js');
+  let plays = 0;
+  class A { constructor() { this.currentTime = 0; this.volume = 1; } play() { plays++; return Promise.resolve(); } pause() {} }
+  const doc = (v) => ({ documentElement: { classList: { contains: () => false } }, visibilityState: v });
+  u.__reset(); await u.unlockSounds({ AudioImpl: A, doc: doc('visible') }); plays = 0;
+  const hid = u.speakMumble('Good pick.', { AudioImpl: A, doc: doc('hidden'), timer: (fn) => fn(), seed: 1 }), hidPlays = plays;
+  const vis = u.speakMumble('Good pick.', { AudioImpl: A, doc: doc('visible'), timer: (fn) => fn(), seed: 1 });
+  ok('behaviour: hidden -> 0 syllables, 0 plays; visible -> the whole line (3+ words, every syllable played)',
+     hid === 0 && hidPlays === 0 && vis >= 3 && plays === vis, `hidden ${hid}/${hidPlays}, visible ${vis}/${plays}`);
+  u.__reset();
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
