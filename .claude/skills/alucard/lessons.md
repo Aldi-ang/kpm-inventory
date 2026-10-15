@@ -823,6 +823,7 @@ Fired: 2026-09-26 (three new shooters - round5b, sale-lines, eod-draft - built o
 Fired: 2026-10-03 (shoot.mjs uses fileURLToPath(import.meta.url))
 Fired: 2026-10-04 (test-journey.mjs + make-board.mjs on fileURLToPath; every frame landed in built8/)
 Fired: 2026-10-11 07:25 (sfx-bake's new KENNEY path goes through fileURLToPath; msg-*.mp3 landed in public/sounds, no %20 tree (checked with ls))
+Fired: 2026-10-15 07:40 (7 vault scripts + vault-push now find A-Brain via fileURLToPath(import.meta.url); every hook printed the same output from "D:\APP DEVELOPMENT\..." paths)
 
 ### 2026-09-17 — a TODAY frame shot wider than the phone hides the very defect the board exists to show
 **Status:** LIVE
@@ -1041,14 +1042,6 @@ Fired: 2026-10-04 (Journey test: 4 moment frames frozen on window.__frozen with 
 Fired: 2026-10-04 (signs moments sheet: every act paused at its currentTime on a held element, isConnected true, 0 running)
 Fired: 2026-10-05 (every replay frame frozen through the replay clock (seek + paused animations), and the seek now reads its clock back)
 
-### 2026-09-30 — a position read from an element still under its own animation is off by that animation
-**Status:** RETIRED (2026-10-14) — never fired in 14 days; too narrow (one prototype's FLIP swap), cannot be made a check outside that prototype
-**Trigger:** before computing a transform-origin, an offset or a FLIP start point from getBoundingClientRect in the middle of an animation sequence (a box shrinking into one chest and growing out of another, a panel re-parented mid-flight).
-**Lesson:** cancel (or finish) the element's running animation FIRST, then read the rect, then start the next animation in the same task. A fill-forwards animation still holds its end transform while a .then callback runs, so the rect is the transformed one.
-**Would have prevented:** 2026-09-30, prototype v24's Stock Opname crate swap: the new crate's origin was measured while the box was still held at scale .08 by the shrink's fill-forwards, so the box grew out of the wrong place and was clipped at the vault's left edge - found only by a frozen frame, one more render round. Fix: `a.cancel()` before `ox(so.fac)`.
-Seen: 2026-09-30
-Fired:
-
 ### 2026-09-30 — a thing drawn "in the middle" is measured against the middle before he sees it
 **Status:** LIVE
 **Trigger:** before publishing or sending any frame with a seal, a seam, a logo or a split meant to sit on a container's centre line.
@@ -1067,7 +1060,7 @@ Fired: 2026-10-01 (item 6 re-measured before building: the pulse badges were wor
 Fired: 2026-10-12 (sidebar drag: the blur was switched off and re-measured, 3 interleaved runs - no main-thread drop)
 
 ### 2026-10-01 — a service-worker routing test needs a server answer that differs from the worker's
-**Status:** LIKELY
+**Status:** RETIRED (2026-10-15) — never fired in 14 days; no service-worker routing test since 2026-10-01, and it cannot become a check until one is written
 **Trigger:** before trusting any test of what the offline helper (service worker) answers for a URL - the moment the result is read.
 **Lesson:** a local preview server falls back to index.html for unknown paths exactly like the worker does, so "it loaded the app" proves nothing about the worker. Put a distinguishable stand-in file at that path on the server first, then compare old worker vs new.
 **Would have prevented:** 2026-10-01, the sign-in fix: the first "reproduced" result (handler loads the app) and the first "fixed" check both read the preview server's own SPA fallback - one wrong red and one false fail; caught only because the fixed build still showed the app.
@@ -1091,12 +1084,12 @@ Fired: 2026-10-14 20:51 (d2261c8: GitHub status every 20 s until both completed,
 Fired: 2026-10-14 21:06 (ff5b97b: GitHub status until both completed, then one read of index + the AgentProfileView chunk - the 56 px frame class found, no checkpoint)
 
 ### 2026-10-01 — a line that holds a regex literal is edited with Edit, never with sed
-**Status:** LIKELY
+**Status:** LIVE
 **Trigger:** before a mutating action on a check file (`*.selfcheck.mjs`, `integration.audit.mjs`) or any line holding a `/.../` literal with escaped brackets or `\s` - the moment a `sed -i` replace is about to be typed for it.
 **Lesson:** sed reads the backslashes in its PATTERN as its own escapes, so a "retarget the dependency list" replace matched the `\s*` instead of the bracket and rewrote `\{\s*const` into `\{[gateUp, vaultPath]*const` - a check that still parses and now tests something else. Use Edit with the exact old line, then grep the edited line back before running the checks.
 **Would have prevented:** 2026-10-01 12:00, the T3-T6 entry-lock retargets: one logicFixes check garbled by sed and a second sed in the same command silently changed nothing - an extra build-and-check round to find both.
 Seen: 2026-10-01
-Fired:
+Fired: 2026-10-15 07:40 (cloud build: skill-index's `/\\/g` and cloud-start's `why()` regex lines written with Edit, not a script; both ran green in the fake-cloud test)
 
 ### 2026-10-02 — a lab probe never deletes or rewrites a node the app drew
 **Status:** LIVE
