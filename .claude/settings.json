@@ -1,7 +1,9 @@
 {
-  "env": {
-    "ANTHROPIC_BASE_URL": "http://localhost:20128/v1",
-    "ANTHROPIC_MODEL": "cc/claude-opus-5"
+  "permissions": {
+    "ask": [
+      "Edit(**/.claude/skills/alucard/SKILL.md)",
+      "Write(**/.claude/skills/alucard/SKILL.md)"
+    ]
   },
   "hooks": {
     "SessionStart": [
@@ -10,27 +12,25 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cat \"D:/APP DEVELOPMENT/kpm inventory main FILES/kpm-inventory-main/.claude/PROGRESS.md\"",
-            "commandWindows": "Get-Content \"D:\\APP DEVELOPMENT\\kpm inventory main FILES\\kpm-inventory-main\\.claude\\PROGRESS.md\" -Raw -Encoding UTF8",
+            "command": "cat \"${CLAUDE_PROJECT_DIR}/.claude/PROGRESS.md\"",
             "timeout": 5,
             "statusMessage": "Reading where we left off..."
           },
           {
             "type": "command",
-            "command": "cat \"D:/APP DEVELOPMENT/kpm inventory main FILES/kpm-inventory-main/.claude/session-start-context.md\"",
-            "commandWindows": "Get-Content \"D:\\APP DEVELOPMENT\\kpm inventory main FILES\\kpm-inventory-main\\.claude\\session-start-context.md\" -Raw -Encoding UTF8",
+            "command": "cat \"${CLAUDE_PROJECT_DIR}/.claude/session-start-context.md\"",
             "timeout": 5,
             "statusMessage": "Loading KPM standing context (Caveman + Karpathy + A-Brain)..."
           },
           {
             "type": "command",
-            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/vault-gap.mjs\"",
+            "command": "[ -d \"${CLAUDE_PROJECT_DIR}/../A-Brain\" ] || exit 0; node \"${CLAUDE_PROJECT_DIR}/../A-Brain/automation/vault-gap.mjs\"",
             "timeout": 15,
             "statusMessage": "Checking the vault is not falling behind the code..."
           },
           {
             "type": "command",
-            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/lessons-health.mjs\"",
+            "command": "[ -d \"${CLAUDE_PROJECT_DIR}/../A-Brain\" ] || exit 0; node \"${CLAUDE_PROJECT_DIR}/../A-Brain/automation/lessons-health.mjs\"",
             "timeout": 15,
             "statusMessage": "Checking Alucard can still learn..."
           }
@@ -43,8 +43,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cat \"D:/APP DEVELOPMENT/kpm inventory main FILES/kpm-inventory-main/.claude/pre-compact-context.md\"",
-            "commandWindows": "Get-Content \"D:\\APP DEVELOPMENT\\kpm inventory main FILES\\kpm-inventory-main\\.claude\\pre-compact-context.md\" -Raw -Encoding UTF8",
+            "command": "cat \"${CLAUDE_PROJECT_DIR}/.claude/pre-compact-context.md\"",
             "timeout": 5,
             "statusMessage": "Telling the summariser what to keep..."
           }
@@ -56,13 +55,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/kpm-inventory-main/.claude/context-watch.mjs\"",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/context-watch.mjs\"",
             "timeout": 15,
             "statusMessage": "Measuring how full the context is..."
           },
           {
             "type": "command",
-            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/kpm-inventory-main/.claude/plan-quota.mjs\"",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/plan-quota.mjs\"",
             "timeout": 15,
             "statusMessage": "Measuring how full the context is..."
           }
@@ -74,19 +73,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/kpm-inventory-main/.claude/check-progress.mjs\" \"D:/APP DEVELOPMENT/kpm inventory main FILES/kpm-inventory-main\"",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/check-progress.mjs\" \"${CLAUDE_PROJECT_DIR}\"",
             "timeout": 15,
             "statusMessage": "Checking the progress note is current..."
           },
           {
             "type": "command",
-            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/lessons-flush.mjs\"",
+            "command": "[ -d \"${CLAUDE_PROJECT_DIR}/../A-Brain\" ] || exit 0; node \"${CLAUDE_PROJECT_DIR}/../A-Brain/automation/lessons-flush.mjs\"",
             "timeout": 15,
             "statusMessage": "Checking a lesson was written..."
           },
           {
             "type": "command",
-            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/wiki-graph-refresh.mjs\"",
+            "command": "[ -d \"${CLAUDE_PROJECT_DIR}/../A-Brain\" ] || exit 0; node \"${CLAUDE_PROJECT_DIR}/../A-Brain/automation/wiki-graph-refresh.mjs\"",
             "timeout": 120,
             "statusMessage": "Keeping the vault's recall graph current..."
           }
@@ -99,7 +98,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/fanout-gate.mjs\"",
+            "command": "[ -d \"${CLAUDE_PROJECT_DIR}/../A-Brain\" ] || exit 0; node \"${CLAUDE_PROJECT_DIR}/../A-Brain/automation/fanout-gate.mjs\"",
             "timeout": 10
           }
         ]
@@ -109,7 +108,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/heredoc-gate.mjs\"",
+            "command": "[ -d \"${CLAUDE_PROJECT_DIR}/../A-Brain\" ] || exit 0; node \"${CLAUDE_PROJECT_DIR}/../A-Brain/automation/heredoc-gate.mjs\"",
             "timeout": 10
           }
         ]
@@ -119,7 +118,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/graphify-answer-hook.mjs\" search",
+            "command": "[ -d \"${CLAUDE_PROJECT_DIR}/../A-Brain\" ] || exit 0; node \"${CLAUDE_PROJECT_DIR}/../A-Brain/automation/graphify-answer-hook.mjs\" search",
             "timeout": 15
           }
         ]
@@ -129,7 +128,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/graphify-answer-hook.mjs\" read",
+            "command": "[ -d \"${CLAUDE_PROJECT_DIR}/../A-Brain\" ] || exit 0; node \"${CLAUDE_PROJECT_DIR}/../A-Brain/automation/graphify-answer-hook.mjs\" read",
             "timeout": 15
           }
         ]
