@@ -94,6 +94,12 @@
             "command": "[ -d \"${CLAUDE_PROJECT_DIR}/../A-Brain\" ] || exit 0; node \"${CLAUDE_PROJECT_DIR}/../A-Brain/automation/wiki-graph-refresh.mjs\"",
             "timeout": 120,
             "statusMessage": "Keeping the vault's recall graph current..."
+          },
+          {
+            "type": "command",
+            "command": "[ -d \"${CLAUDE_PROJECT_DIR}/../A-Brain\" ] || exit 0; node \"${CLAUDE_PROJECT_DIR}/../A-Brain/automation/vault-push.mjs\"",
+            "timeout": 90,
+            "statusMessage": "Uploading new A-Brain notes to GitHub..."
           }
         ]
       }
