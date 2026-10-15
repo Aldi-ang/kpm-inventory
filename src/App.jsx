@@ -160,6 +160,7 @@ import { notify } from './components/Toast.jsx';
 import VaultGate, { gateHoldMs, gateIsRich, gateCanvasOn } from './components/VaultGate.jsx';
 import UpdateStatus from './components/UpdateStatus.jsx';
 import { readGrace, touchGrace, clearGrace } from './utils/vaultGrace.js';
+import { writeLiteMode } from './utils/liteMode.js';
 import { VAULT_TRIES, VAULT_LOCK_MS, lockLeftMs, strikeUpdate, untilText } from './utils/vaultLock.js';
 import { vaultDocPath } from './utils/vaultDoc.js';
 
@@ -4398,6 +4399,10 @@ const handleGitHubMirror = async () => {
              matrixTick={matrixTick} /* 🚀 CATCH THE PULSE AND REDRAW UI */
             darkMode={darkMode}
             setDarkMode={setDarkMode}
+            /* The status line in the top bar is a Lite switch too (his pick C, 2026-10-15);
+               it calls the same writer as Settings, so both say the same words. */
+            isLiteMode={isLiteMode}
+            onToggleLite={() => writeLiteMode(!isLiteMode, { setIsLiteMode, triggerCapy })}
             /* The face in the panel is the agent's own, the one they set on Agent Profile.
                Google's account picture is the fallback; the dicebear robot is gone. */
             /* `|| 'master_owner'` — his report, 2026-08-14: *"the profile picture is not even

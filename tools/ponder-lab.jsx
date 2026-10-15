@@ -896,6 +896,10 @@ const labBreakShops = (cs) => cs.map((c) => (q.has('nopin') && (c.id === 'c-0-2'
 
 function ShellLab() {
   const [dark, setDark] = React.useState(!q.has('light'));
+  /* The status line is the Lite switch (2026-10-15). The lab flips the same html class App does,
+     so the shell can be looked at in both states without signing in. */
+  const [lite, setLite] = React.useState(q.has('lite'));
+  React.useEffect(() => { document.documentElement.classList.toggle('lite-mode', lite); }, [lite]);
   /* ?shell&agent&tick — every 2.5 s a second RETUR (5 pcs) joins and leaves today's transactions,
      so the Quarantine count rolls 10 → 15 → 10 and the odometer can be watched and sampled
      (`el.getAnimations()`) instead of described. Off unless asked for. */
@@ -986,6 +990,7 @@ function ShellLab() {
       appSettings={{}} isAdmin userRole="ADMIN" agentSettings={{}}
       notifications={q.has('bell') ? LAB_BELL_NEEDS : []} onNotificationClick={() => {}} appVersion="lab"
       darkMode={dark} setDarkMode={setDark}
+      isLiteMode={lite} onToggleLite={() => setLite(v => !v)}
       onOpenPov={null} povActive={false}
       syncIndicator={(
         <button onClick={() => {}} className="kpm-chip relative ">

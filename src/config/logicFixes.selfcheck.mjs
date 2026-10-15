@@ -11257,5 +11257,40 @@ section('AGENT DIRECTORY ROWS WEAR THEIR FRAME (2026-10-14) - his "show the bord
   ok('the frame keyframes + SVG filters the frames need are mounted once by the same screen', /<style>\{BORDER_KEYFRAMES\}<\/style>/.test(prof) && /<FrameFilters \/>/.test(prof));
 }
 
+section('THE STATUS LINE IS THE LITE SWITCH (2026-10-15) - his pick C, "hidden somehow but have some animation to show it"');
+{
+  const bio = read('src/components/BiohazardTheme.jsx').replace(/\r/g, '');
+  const app = read('src/App.jsx').replace(/\r/g, '');
+  const set = read('src/components/SettingsView.jsx').replace(/\r/g, '');
+  const line = (bio.match(/function LiteStatusLine\([\s\S]*?\n}\n/) || [''])[0];
+  ok('the top bar renders the switch, and the switch is a real button that flips Lite and says which state it is in',
+     /<LiteStatusLine user=\{user\} isLiteMode=\{isLiteMode\} onToggleLite=\{onToggleLite\} \/>/.test(bio)
+     && /<button type="button" onClick=\{onToggleLite\} aria-pressed=\{!!isLiteMode\}/.test(line)
+     && /isLiteMode \? 'System Active · Lite' : 'System Active'/.test(line));
+  ok('Lite skips the decode (JavaScript the CSS kill cannot reach) and the words, not an animation, carry the state',
+     /if \(isLiteMode \|\| window\.matchMedia\?\.\('\(prefers-reduced-motion: reduce\)'\)\.matches\) \{ setText\(to\); return; \}/.test(line)
+     && !/opacity-0|forwards/.test(line),
+     'a button that only appeared by animating would vanish the moment Lite is on - the one time he needs it');
+  ok('the peek waits for a visible tab, runs once a day, and its effect does not re-run on every App render',
+     /if \(document\.visibilityState !== 'visible'\) return;/.test(line) && /localStorage\.getItem\(PEEK_DAY_KEY\) === today/.test(line)
+     && /\}, \[hasUser, isLiteMode, canToggle\]\);/.test(line),
+     'App passes a fresh arrow each render: with the function as a dependency the peek cut its own timers mid-decode');
+  ok('ONE writer: Settings and the status line both call utils/liteMode.js writeLiteMode, and no copy is left in Settings',
+     /import \{ writeLiteMode \} from '\.\.\/utils\/liteMode\.js';/.test(set) && !/const writeLiteMode =/.test(set)
+     && /onToggleLite=\{\(\) => writeLiteMode\(!isLiteMode, \{ setIsLiteMode, triggerCapy \}\)\}/.test(app));
+  const lm = await import('../utils/liteMode.js');
+  const a = 'System Active', b = 'Lite Mode · Off · Tap';
+  const frames = [...Array(lm.decodeFrames(a, b) + 1).keys()].map(f => lm.decodeFrame(a, b, f));
+  ok('behaviour: the decode starts on the old words, ends on the new ones, both ways, never longer than the longer line',
+     frames[0] === a && frames.at(-1) === b && lm.decodeFrame(b, a, lm.decodeFrames(b, a)) === a
+     && frames.every(t => t.length <= b.length), `first "${frames[0]}" last "${frames.at(-1)}"`);
+  const calls = [];
+  lm.writeLiteMode(true, { setIsLiteMode: v => calls.push(['set', v]), triggerCapy: m => calls.push(['capy', m]) });
+  lm.writeLiteMode(false, { setIsLiteMode: v => calls.push(['set', v]), triggerCapy: m => calls.push(['capy', m]) });
+  ok('behaviour: every flip reports through the capybara (his law: every action must report)',
+     calls.length === 4 && calls[0][1] === true && /Lite mode on/.test(calls[1][1]) && calls[2][1] === false && /Full graphics restored/.test(calls[3][1]),
+     JSON.stringify(calls));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

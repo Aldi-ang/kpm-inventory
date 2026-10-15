@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 /* `Menu` and `X` went with the three-line square — nothing else in this file drew either. */
-import { Lock, LogOut, LogIn, ArrowRight, Trophy, Sun, Moon,
+import { Lock, LogOut, LogIn, ArrowRight, Trophy, Sun, Moon, Zap,
          User, LayoutGrid, Map, Route, Truck, Package, Boxes, PackagePlus, Store,
          Receipt, Wallet, ClipboardList, Users, Gift, BarChart3, ScrollText, Settings } from 'lucide-react';
 import { signOut } from 'firebase/auth';
@@ -20,6 +20,7 @@ import { confirmAction } from './ConfirmGate.jsx';
 /* The tutorial book. It lives in the top bar because that bar is on EVERY screen, which is what
    he asked for: *"i want the tutorial book on the very top of the screen for every components"*. */
 import PonderBookButton from '../ponder/PonderBook.jsx';
+import { decodeFrame, decodeFrames } from '../utils/liteMode.js';
 
 /* ── THE SLIDING CLOCK ───────────────────────────────────────────────────────
    His ask, 2026-08-16: the 21st.dev / motion-primitives `SlidingNumber` look.
@@ -147,11 +148,100 @@ function ShellClock() {
     );
 }
 
+/* THE LITE SWITCH IS THE STATUS LINE — his pick C, 2026-10-15: *"i want the lite mode button to be
+   available on the main panel on top but i want this button to be hidden somehow but have some
+   animation to show it for a few second and hides again"*. It costs the bar no space: the
+   "SYSTEM ACTIVE" line above the title is the button. On the first open of each day it decodes
+   into "LITE MODE · OFF · TAP" for 3 s and back — the peek that says the button is there.
+   🔴 THE WORDS CARRY THE STATE, NEVER THE MOTION. Lite kills animation, and a button that only
+   showed itself by animating would vanish exactly when he needs it to switch back. In Lite the line
+   simply reads "SYSTEM ACTIVE · LITE" in amber, and the decode (JavaScript, which the CSS kill
+   cannot reach) is skipped — his law: Lite freezes everything heavy, CSS or not.
+   Its own component so the ~25 decode frames re-render one line, not the whole shell. */
+const PEEK_TEXT = 'Lite Mode · Off · Tap';
+const PEEK_DAY_KEY = 'kpm_lite_peek_day';
+function LiteStatusLine({ user, isLiteMode, onToggleLite }) {
+    const rest = user ? (isLiteMode ? 'System Active · Lite' : 'System Active') : 'Disconnected';
+    const [text, setText] = useState(rest);
+    const [peeking, setPeeking] = useState(false);
+    const decodeT = useRef(null);
+    const hasUser = !!user;
+    /* A boolean, not the function: App hands a fresh arrow on every render, and the peek effect
+       below would re-run (and cut its own timers) each time App re-rendered. */
+    const canToggle = !!onToggleLite;
+
+    const decodeTo = (from, to) => {
+        clearInterval(decodeT.current);
+        if (isLiteMode || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { setText(to); return; }
+        const last = decodeFrames(from, to);
+        let frame = 0;
+        decodeT.current = setInterval(() => {
+            frame += 1;
+            setText(decodeFrame(from, to, frame));
+            if (frame >= last) clearInterval(decodeT.current);
+        }, 28);
+    };
+
+    // A switch flipped mid-peek ends the peek: the line shows the state it is now in.
+    useEffect(() => { clearInterval(decodeT.current); setPeeking(false); setText(rest); }, [rest]);
+
+    useEffect(() => {
+        if (!hasUser || isLiteMode || !canToggle) return;
+        const today = new Date().toLocaleDateString('sv-SE');
+        try { if (localStorage.getItem(PEEK_DAY_KEY) === today) return; } catch { return; }
+        let startT, holdT;
+        /* Only once he can see it: an app restored into a hidden tab would spend the day's one
+           peek where nobody is looking (the capybara's hidden-tab lesson, 2026-10-14). */
+        const start = () => {
+            if (document.visibilityState !== 'visible') return;
+            document.removeEventListener('visibilitychange', start);
+            try { localStorage.setItem(PEEK_DAY_KEY, today); } catch { /* still peek */ }
+            startT = setTimeout(() => {
+                setPeeking(true); decodeTo('System Active', PEEK_TEXT);
+                holdT = setTimeout(() => { setPeeking(false); decodeTo(PEEK_TEXT, 'System Active'); }, 3000);
+            }, 1200);
+        };
+        document.addEventListener('visibilitychange', start);
+        start();
+        return () => {
+            document.removeEventListener('visibilitychange', start);
+            clearTimeout(startT); clearTimeout(holdT); clearInterval(decodeT.current);
+        };
+    // decodeTo reads isLiteMode, which is already a dependency
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hasUser, isLiteMode, canToggle]);
+
+    const lit = peeking || isLiteMode;
+    const ink = !user ? 'text-[var(--danger-ink)]' : lit ? 'text-[var(--duke-amber-ink)]' : 'text-[var(--ink-dim)]';
+    /* Was a green pinging dot. Green is against the palette law, and the ping looped forever to
+       report a state that never changes while you are looking at it. Calm cream when connected;
+       red still earns attention when it is not. */
+    const dot = <div className={`h-1.5 w-1.5 rounded-full ${user ? 'bg-[#f0e2c0]' : 'bg-red-500 animate-pulse'}`}></div>;
+    /* ⚠️ The ink WAS `text-[#f0e2c0]/70` — cream at 70%, invisible on a cream header. His report:
+       *"system active button on top is not visible on light mode"*. Tokens only. */
+    const words = <span className={`text-[11px] font-mono uppercase ${ink}`}>{text}</span>;
+
+    // The lab renders the shell without a writer — a button that did nothing would break "every action must report".
+    if (!onToggleLite) return <div className="flex items-center gap-2 mb-0.5">{dot}{words}</div>;
+    /* py-3 + -mt-3/-mb-2.5: a ~40px tap target with the line's own 2px bottom gap, so the header
+       does not grow by a pixel (it is sized by this text stack — see .kpm-chip in theme.css). */
+    return (
+        <button type="button" onClick={onToggleLite} aria-pressed={!!isLiteMode}
+            aria-label={isLiteMode ? 'Lite Mode is on. Tap to turn it off' : 'Turn Lite Mode on'}
+            title={isLiteMode ? 'Lite Mode on - tap to turn it off' : 'Lite Mode off - tap to turn it on'}
+            className="flex items-center gap-2 py-3 -mt-3 -mb-2.5 pr-3 bg-transparent border-0 cursor-pointer rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--duke-edge-5)]">
+            {dot}
+            <Zap size={11} aria-hidden="true" className={`shrink-0 text-[var(--duke-amber-ink)] ${lit ? '' : 'opacity-60'}`} />
+            {words}
+        </button>
+    );
+}
+
 export default function BiohazardTheme({
     activeTab, setActiveTab, children, user, appSettings,
     isAdmin, onLogin, userRole, setShowAdminLogin, showAdminLogin, agentSettings,
     notifications, onNotificationClick, appVersion,
-    darkMode, setDarkMode, syncIndicator, agentPhoto,
+    darkMode, setDarkMode, syncIndicator, agentPhoto, isLiteMode, onToggleLite,
     /* null for everyone except the owner's own signed-in account — see the note at
        the call site in App.jsx. When it is null the face below is a plain <img>. */
     onOpenPov, povActive
@@ -986,18 +1076,8 @@ export default function BiohazardTheme({
                     />
 
                     <div>
-                        <div className="flex items-center gap-2 mb-0.5">
-                            {/* Was a green pinging dot. Green is against the palette law, and the
-                                ping looped forever to report a state that never changes while you
-                                are looking at it. Calm cream when connected; red still earns
-                                attention when it is not. */}
-                            <div className={`h-1.5 w-1.5 rounded-full ${user ? 'bg-[#f0e2c0]' : 'bg-red-500 animate-pulse'}`}></div>
-                            {/* ⚠️ WAS `text-[#f0e2c0]/70` — cream at 70%, which is invisible on a
-                                cream header. His report: *"system active button on top is not
-                                visible on light mode"*. A hex with an alpha DOES compile, so
-                                nothing errored; it just printed cream on cream. */}
-                            <span className={`text-[11px] font-mono uppercase ${user ? 'text-[var(--ink-dim)]' : 'text-[var(--danger-ink)]'}`}>{user ? "System Active" : "Disconnected"}</span>
-                        </div>
+                        {/* The status line is the Lite switch — see LiteStatusLine above. */}
+                        <LiteStatusLine user={user} isLiteMode={isLiteMode} onToggleLite={onToggleLite} />
                         {/* `text-shadow-glow` is gone: a white blur around white letterforms is
                             the one 2015 thing left in this row, and it softens the very edges the
                             letter-spacing exists to sharpen. The gold rule under the title already

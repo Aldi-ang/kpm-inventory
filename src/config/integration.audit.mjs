@@ -2308,10 +2308,16 @@ check(G34, 'every module declares its kind and prints its slot',
   (gen.match(/<span className="slot">/g) || []).length >= 6,
   'a module with no kind is a generic card again');
 /* ⚠️ ONE WRITER, THIRD TIME. Lite mode is device-local so there is no Firestore write to drift —
-   but two copies of any write drift, and the copy that drifts is the one nobody tests. */
+   but two copies of any write drift, and the copy that drifts is the one nobody tests.
+   2026-10-15: the writer moved to utils/liteMode.js when the top bar's status line became a
+   second Lite switch (App cannot import from the lazy Settings chunk). Still exactly one writer:
+   defined once there, imported here, never re-declared. */
+const liteModeSrc = fs.readFileSync('src/utils/liteMode.js', 'utf8');
 check(G34, 'graphics mode has exactly one writer and both positions drawn',
   (gen.match(/writeLiteMode\(/g) || []).length === 2 &&
-  /^const writeLiteMode = /m.test(settingsSrc) &&
+  (liteModeSrc.match(/^export const writeLiteMode = /gm) || []).length === 1 &&
+  /import \{ writeLiteMode \} from '\.\.\/utils\/liteMode\.js';/.test(settingsSrc) &&
+  !/^const writeLiteMode = /m.test(settingsSrc) &&
   !/setIsLiteMode\(!isLiteMode\)/.test(gen),
   'the old control was a single toggle that asked him to remember which way "on" pointed, on the ' +
   'one setting whose whole audience is someone whose phone is already struggling');

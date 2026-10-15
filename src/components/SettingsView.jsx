@@ -28,6 +28,7 @@ import AuthoritySelect from './AuthoritySelect';
 import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS, FLEET_EDIT_PERMS, defaultFleetAccess } from '../config/permissions';
 import { confirmAction, promptAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
+import { writeLiteMode } from '../utils/liteMode.js';
 
 export default function SettingsView({
     user, userId, db, appId, isAdmin, isSystemOwner, userRole,
@@ -1481,15 +1482,8 @@ const writePhotoStorage = (newVal, { db, appId, user, setAppSettings, triggerCap
         : "Photos will save straight into the database. Works on any plan.");
 };
 
-/* ONE WRITER for the graphics mode. Device-local, so there is no Firestore write here — but the
-   two-position switch still needs a single function behind both buttons for the same reason as the
-   others: two copies of a write drift, and the one that drifts is always the one nobody tests. */
-const writeLiteMode = (newVal, { setIsLiteMode, triggerCapy }) => {
-    setIsLiteMode(newVal);
-    triggerCapy(newVal
-        ? "Lite mode on. Blur and animation off, battery saved. ⚡"
-        : "Full graphics restored.");
-};
+/* The graphics-mode writer lives in utils/liteMode.js now: the top bar's status line switches
+   Lite too (2026-10-15), and both switches must call the same writer. */
 
 /* ONE WRITER for the rank source, same shape as writePhotoStorage above and for the same reason:
    the two-position switch has a button per position, and a copy of this write behind each is how a
