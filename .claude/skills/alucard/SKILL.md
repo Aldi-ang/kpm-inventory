@@ -66,7 +66,9 @@ folder for exactly this cost Aldi 60% of a budget once. Not printed (hook off, o
 -> read `.claude/PROGRESS.md` directly, one path, no search. Disagrees with the repo -> repo
 wins, and fixing the file is the first job.
 
-A-Brain: `D:\APP DEVELOPMENT\kpm inventory main FILES\A-Brain`. Missing -> say so, stop. Never
+A-Brain: the `A-Brain` folder next to the app folder (`<app folder>/../A-Brain`). On the PC that
+is `D:\APP DEVELOPMENT\kpm inventory main FILES\A-Brain`; in a cloud session
+`.claude/cloud-start.mjs` clones it there. Missing -> say so, stop. Never
 guess a path; a wrong one silently makes an empty folder instead of erroring.
 
 Trivial question -> load nothing. Else read `Personal-Context.md`, then ONLY:
@@ -93,7 +95,7 @@ would cost roughly a quarter of a million tokens per session if installed.
 that sounds like a specialty (a security review, a pentest, a spec, a debugging trace, a design
 exploration, a deploy checklist), run this BEFORE starting the work:
 
-    node "D:/APP DEVELOPMENT/kpm inventory main FILES/A-Brain/automation/skill-find.mjs" <words>
+    node ../A-Brain/automation/skill-find.mjs <words>        (run from the app folder)
 
 Then:
 
