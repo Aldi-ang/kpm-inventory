@@ -47,3 +47,6 @@ dist-demo
 # Draft SFX renders — regenerate with `node tools/sfx-draft.mjs`. The generator is the source
 # of truth; the audio is output, and it does not belong in history until a sound is chosen.
 tools/sfx-draft/
+
+# Alucard's own old backup of his skill file; the live SKILL.md is versioned
+.claude/skills/alucard/*.bak

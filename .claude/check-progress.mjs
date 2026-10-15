@@ -50,12 +50,16 @@ const stale = fs.statSync(note).mtimeMs < fs.statSync(brief).mtimeMs
 /* Newest touched file anywhere that matters. dist/ and node_modules are build output —
    a build must not count as a change worth writing down. */
 const SKIP = new Set(['node_modules', 'dist', '.git', 'graphify-out', 'coverage']);
+/* Alucard's skill, Lancelot and the CC memory live here so a cloud session gets them
+   (2026-10-15). A lessons stamp or a memory write is bookkeeping, not work to write down —
+   counting them would block every turn. */
+const PERSONAL = new Set(['.claude/skills', '.claude/agents', '.claude/memory']);
 let newest = 0, newestFile = '';
 const walk = (p) => {
   let st;
   try { st = fs.statSync(p); } catch { return; }
   if (st.isDirectory()) {
-    if (SKIP.has(path.basename(p))) return;
+    if (SKIP.has(path.basename(p)) || PERSONAL.has(path.relative(root, p).replace(/\\/g, '/'))) return;
     for (const e of fs.readdirSync(p)) walk(path.join(p, e));
   } else if (p !== note && p !== brief && st.mtimeMs > newest) {
     newest = st.mtimeMs;
