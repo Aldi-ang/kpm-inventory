@@ -12,6 +12,12 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/cloud-start.mjs\"",
+            "timeout": 480,
+            "statusMessage": "Cloud only: fetching A-Brain, graphify, memory..."
+          },
+          {
+            "type": "command",
             "command": "cat \"${CLAUDE_PROJECT_DIR}/.claude/PROGRESS.md\"",
             "timeout": 5,
             "statusMessage": "Reading where we left off..."
