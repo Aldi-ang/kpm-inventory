@@ -118,6 +118,7 @@ Fired: 2026-10-01 21:18 (version line: the first frames showed the sign-in line 
 Fired: 2026-10-02 (showcase hero: three looks shot headless at a real 390 dpr 2 and at 1440, every frame Read before the boards went out; the first look found the copy pushed off-screen while docW still read 390)
 Fired: 2026-10-03 (rajangan research page: artifact link needs sign-in in the browser pane, so it was served through a temporary vite lab entry and looked at 390 px, dark and light, before the claim)
 Fired: 2026-10-13 (demo door boards shot headless + Read before the ask; the first read caught the fonts falling back)
+Fired: 2026-10-16 (presentation v7: twelve headless frames at 390 + 1440 Read before the publish; the first 1440 read showed every 3D floor spilling over the text under it - fixed by measuring the turned floor, re-shot)
 
 ### 2026-08-24 — a handoff that promises a fix must be run against the check that governs it
 **Status:** LIVE
