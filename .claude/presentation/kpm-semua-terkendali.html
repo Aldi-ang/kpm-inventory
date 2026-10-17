@@ -736,13 +736,25 @@ details.ev .pop b { color: var(--ink); }
 .cl3 .g::before { content: ""; position: absolute; left: 9px; top: -9px; width: 18px; height: 18px; border: 2px solid var(--gold); border-bottom: 0; border-radius: 50%; background: var(--raised); }
 .cl3.hit .g, .cl3.hit .g::before { border-color: var(--gold-2); background: #2a2010; }
 .pkt { width: 12px; height: 12px; border-radius: 50%; background: radial-gradient(circle, #fff 0 2px, var(--gold-2) 3px); box-shadow: 0 0 10px var(--gold-2); pointer-events: none; }
+/* EOD shortfall: the check rows, and the amount that flies to the WANTED board */
+.srow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px 12px; align-items: center; padding: 9px 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--inset);
+  font: 700 13px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; transition: border-color 200ms; }
+.srow.head { background: none; border: 0; padding: 0 12px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-dim); }
+.srow .sk { font: 800 15px/1.1 var(--font-display); letter-spacing: .04em; text-transform: uppercase; }
+.srow .sv { color: var(--ink-muted); text-align: right; } .srow .got { color: var(--ink); }
+.srow .sst { grid-column: 1 / -1; }
+.srow.ok { border-color: var(--gold); } .srow.bad { border-color: color-mix(in srgb, var(--led-crit) 60%, var(--line-2)); }
+#selVis { display: grid; gap: 12px; }
+#selLines { margin-top: 0; min-height: 184px; align-content: start; }
+.selchip { position: absolute; left: 0; top: 0; z-index: 6; pointer-events: none; white-space: nowrap; font: 700 13px/1 var(--font-mono); font-variant-numeric: tabular-nums;
+  padding: 8px 10px; border: 1px solid var(--led-crit); border-radius: 6px; background: var(--raised); color: var(--danger-ink); box-shadow: 0 6px 18px rgba(0,0,0,.5); }
 .feed { display: grid; gap: 0; margin-top: 10px; max-width: 520px; min-height: 152px; align-content: start; }
 @media (min-width: 1024px) { .feed { margin-inline: auto; } }
 </style>
 
 <header class="bar"><div class="in">
   <span class="brand"><i></i>KPM</span>
-  <span class="now"><b id="sn">01</b> / 22 · <span id="sname">Peta Perjalanan</span></span>
+  <span class="now"><b id="sn">01</b> / 23 · <span id="sname">Peta Perjalanan</span></span>
   <button type="button" class="mv" id="mv" aria-pressed="true"><i></i>Gerak</button>
 </div><div class="prog" id="prog"></div></header>
 
@@ -1168,36 +1180,55 @@ details.ev .pop b { color: var(--ink); }
 </section>
 
 <!-- 17 -->
-<section class="scene" id="uang" data-name="Piutang dan Utang">
+<section class="scene" id="selisih" data-name="Selisih EOD">
   <div class="copy">
-    <div class="eyebrow">17 · Piutang dan Utang <span class="aud">Untuk pimpinan</span></div>
-    <h2>Piutang dan Utang dalam Kendali Penuh.</h2>
-    <p class="lead">Penjualan titip menjadi piutang toko dengan tempo pembayaran, 7 hari bila tidak diatur lain. Aplikasi memilah piutang menjadi tiga kelompok: aman, segera jatuh tempo, dan lewat jatuh tempo, sehingga yang harus ditagih hari ini langsung terlihat. Kekurangan pada EOD (End of Day Reconciliation) dan denda barang rusak dicatat sebagai utang atas nama salesperson, lengkap dengan alasan dan tanggalnya.</p>
-    <ul class="also"><li><span><b>Pindah tangan toko dengan persetujuan.</b> Saat toko titip berpindah ke salesperson lain, penerima dan pemberi persetujuan sama-sama melihat stok di toko dan utangnya.</span></li></ul>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Tiga kelompok piutang: <b>src/ConsignmentFinanceView.jsx:217-222</b> (tempo bawaan <b>7</b> hari; lewat jatuh tempo bila sisa hari di bawah 0, segera bila 3 hari atau kurang). Utang dari EOD (End of Day Reconciliation) (tunai kurang, transfer kurang, barang kurang dihargai sesuai tingkat harga): <b>eodBountyLines()</b> di <b>src/utils/helpers.js:716</b>. Alasan dan tanggal setiap utang: <b>bountyItems()</b> di <b>src/utils/helpers.js:790</b>, satu sumber untuk papan WANTED dan peti motor sehingga keduanya selalu sama. Pindah tangan toko: <b>HandoffOffer</b> di <b>src/ConsignmentFinanceView.jsx:17</b>, satu kartu yang sama untuk penerima dan pemberi persetujuan. Toko, nama, dan angka di sini contoh.</div></details>
+    <div class="eyebrow">17 · Selisih EOD <span class="aud">Untuk pimpinan</span></div>
+    <h2>Selisih EOD Langsung Menjadi Utang Salesperson.</h2>
+    <p class="lead">Saat EOD (End of Day Reconciliation) diperiksa, setiap selisih langsung dihitung: uang tunai yang kurang, transfer yang kurang, dan barang yang kurang, yang dihargai sesuai tingkat harganya. Selisih itu, bersama denda barang rusak, dicatat sebagai utang atas nama salesperson, lengkap dengan alasan dan tanggalnya, dan tampil di papan WANTED. Tidak ada kekurangan yang hilang tanpa jejak.</p>
+    <div class="evs"><details class="ev"><summary>Bukti</summary><div class="pop">Selisih EOD menjadi utang (tunai kurang, transfer kurang, barang kurang dihargai sesuai tingkat harga): <b>eodBountyLines()</b> di <b>src/utils/helpers.js:716</b>. Alasan dan tanggal setiap utang: <b>bountyItems()</b> di <b>src/utils/helpers.js:790</b>, satu sumber untuk papan WANTED dan peti motor sehingga keduanya selalu sama. Catatan EOD: <b>eodRecord</b> self-check 12/12 lulus. Nama dan angka di sini contoh.</div></details></div>
+  </div>
+  <div class="vis duo rise" id="selVis">
+    <div class="box3" id="selChk">
+      <div class="hd3"><span class="stamp">Pemeriksaan EOD · Kam 2 Okt</span><span class="contoh">Data contoh</span></div>
+      <div class="srow head"><span></span><span>Seharusnya</span><span>Disetor</span></div>
+      <div class="srow"><span class="sk">Tunai</span><span class="sv">Rp 1.250.000</span><span class="sv got">Rp 1.225.000</span><span class="sst kpm-led-line"><i aria-hidden="true"></i><span>Diperiksa</span></span></div>
+      <div class="srow"><span class="sk">Transfer</span><span class="sv">Rp 425.000</span><span class="sv got">Rp 425.000</span><span class="sst kpm-led-line"><i aria-hidden="true"></i><span>Diperiksa</span></span></div>
+      <div class="srow"><span class="sk">Sisa barang</span><span class="sv">12 bks</span><span class="sv got">10 bks</span><span class="sst kpm-led-line"><i aria-hidden="true"></i><span>Diperiksa</span></span></div>
+      <div class="srow"><span class="sk">Barang rusak</span><span class="sv">0 bks</span><span class="sv got">1 bks</span><span class="sst kpm-led-line"><i aria-hidden="true"></i><span>Diperiksa</span></span></div>
+    </div>
+    <div class="box3" id="selDebt">
+      <div class="hd3"><span class="stamp">Papan WANTED · Budi Santoso</span></div>
+      <div class="debts" id="selLines"></div>
+      <div class="line tot"><span class="cap">Total utang</span><span class="v"><span class="mono" style="color:var(--ink-dim);margin-right:6px">Rp</span><span class="kpm-nixie" id="selNx"></span></span></div>
     </div>
   </div>
-  <div class="vis duo rise">
+</section>
+
+<!-- 18 -->
+<section class="scene" id="uang" data-name="Consignment &amp; Reconciliation">
+  <div class="copy">
+    <div class="eyebrow">18 · Consignment &amp; Reconciliation <span class="aud">Untuk pimpinan</span></div>
+    <h2>Piutang dan Utang dalam Kendali Penuh.</h2>
+    <p class="lead">Utang piutang (consignment and reconciliation) memungkinkan toko membayar produk dalam waktu tempo, 7 hari bila tidak diatur lain. Aplikasi memantau status tempo setiap pelanggan dan mengelompokkannya menurut urgensinya: aman, segera jatuh tempo, dan lewat jatuh tempo. Dengan begitu setiap pembayaran berjalan disiplin, tagihan hari ini langsung terlihat, dan arus kas perusahaan dapat diprediksi.</p>
+    <ul class="also"><li><span><b>Penanggung jawab toko dapat berpindah tangan.</b> Tanggung jawab atas utang piutang sebuah toko dapat dialihkan ke rekan satu tim dengan persetujuan pihak ketiga, yaitu admin daerah (regional admin), sehingga tim daerah lebih fleksibel dan saling bekerja sama. Penerima dan pemberi persetujuan sama-sama melihat stok di toko dan utangnya sebelum memutuskan.</span></li></ul>
+    <div class="evs">
+      <details class="ev"><summary>Bukti</summary><div class="pop">Tiga kelompok piutang: <b>src/ConsignmentFinanceView.jsx:217-222</b> (tempo bawaan <b>7</b> hari; lewat jatuh tempo bila sisa hari di bawah 0, segera bila 3 hari atau kurang). Pindah tangan toko: kartu <b>HandoffOffer</b> di <b>src/ConsignmentFinanceView.jsx:18</b>, sama untuk penerima dan pemberi persetujuan; yang boleh menyetujui hanya approver cabang itu: <b>canApproveHandoffFrom()</b> di <b>src/config/permissions.js</b>, dipakai di <b>src/ConsignmentFinanceView.jsx:476</b>. Toko, nama, dan angka di sini contoh.</div></details>
+    </div>
+  </div>
+  <div class="vis rise">
     <div class="box3" id="ar">
       <div class="hd3"><span class="stamp">Piutang titip · Cabang Utara</span><span class="day3">Hari ke-<b id="arDay">1</b> · tempo 7</span></div>
       <div class="lane"><span class="kpm-led-line on"><i aria-hidden="true"></i>Aman</span><div class="chips"><span class="chip">Warung Pojok · Rp 312.000</span><span class="chip">Toko Lancar · Rp 588.000</span></div></div>
       <div class="lane"><span class="kpm-led-line warn"><i aria-hidden="true"></i>Segera jatuh tempo</span><div class="chips"><span class="chip">Warung Barokah · Rp 205.000</span></div></div>
       <div class="lane r"><span class="kpm-led-line crit"><i aria-hidden="true"></i>Lewat jatuh tempo</span><div class="chips"><span class="chip">Toko Sinar Abadi · Rp 410.000</span></div></div>
     </div>
-    <div class="debts">
-      <div class="line debt"><span class="kpm-led-line crit"><i aria-hidden="true"></i>Tunai kurang</span><span class="cap">2 Okt</span><span class="v">Rp 25.000</span></div>
-      <div class="line debt"><span class="kpm-led-line crit"><i aria-hidden="true"></i>Barang kurang</span><span class="cap">3 Okt</span><span class="v">Rp 52.000</span></div>
-      <div class="line debt"><span class="kpm-led-line crit"><i aria-hidden="true"></i>Barang rusak</span><span class="cap">4 Okt</span><span class="v">Rp 18.000</span></div>
-      <div class="line tot"><span class="cap">Utang Budi Santoso</span><span class="v">Rp 95.000</span></div>
-    </div>
   </div>
 </section>
 
-<!-- 18 -->
+<!-- 19 -->
 <section class="scene" id="kartu" data-name="Kartu Pemain">
   <div class="copy">
-    <div class="eyebrow">18 · Kartu Pemain <span class="aud">Untuk salesperson</span></div>
+    <div class="eyebrow">19 · Kartu Pemain <span class="aud">Untuk salesperson</span></div>
     <h2>Kinerja Terukur, Prestasi Terlihat.</h2>
     <p class="lead">Poin pengalaman (XP) diperoleh dari setoran yang lolos pemeriksaan, toko yang dilayani, dan tagihan yang berhasil ditagih. Pangkatnya berjenjang dari Bronze sampai Mythic dan ditandai bingkai di sekeliling foto. Salesperson melihat kemajuannya sendiri, pimpinan melihat siapa yang paling aktif.</p>
     <ul class="also"><li><span><b>Cara menghitung pangkat dipilih pimpinan.</b> Dari seluruh riwayat kerja, sehingga satu minggu sepi tidak menurunkan pangkat, atau dari penjualan 7 hari terakhir.</span></li></ul>
@@ -1224,10 +1255,10 @@ details.ev .pop b { color: var(--ink); }
   </div>
 </section>
 
-<!-- 19 -->
+<!-- 20 -->
 <section class="scene" id="stok" data-name="Stok Menipis">
   <div class="copy">
-    <div class="eyebrow">19 · Stok Menipis <span class="aud">Untuk pimpinan</span></div>
+    <div class="eyebrow">20 · Stok Menipis <span class="aud">Untuk pimpinan</span></div>
     <h2>Early Warning untuk Stok Menipis.</h2>
     <p class="lead">Setiap produk punya batas stok minimum yang boleh ditulis dalam bal, karton, slop, atau bungkus. Begitu stok turun di bawah batas itu, aplikasi menandainya. Aplikasi juga menghitung berapa hari lagi stok tersebut cukup berdasarkan penjualan hariannya, sehingga barang dapat dipesan sebelum kosong.</p>
     <ul class="also">
@@ -1252,10 +1283,10 @@ details.ev .pop b { color: var(--ink); }
   </div>
 </section>
 
-<!-- 20 -->
+<!-- 21 -->
 <section class="scene" id="opname" data-name="Stock Opname">
   <div class="copy">
-    <div class="eyebrow">20 · Stock Opname <span class="aud">Untuk pimpinan</span></div>
+    <div class="eyebrow">21 · Stock Opname <span class="aud">Untuk pimpinan</span></div>
     <h2>Stock Opname Anti-Manipulasi.</h2>
     <p class="lead">Admin wilayah dan salesperson menghitung stok tanpa melihat angka sistem, jadi tidak bisa sekadar menyalin. Selisih wajib dihitung ulang sebelum dikirim ke pusat. Jika tetap berbeda, harus diberi alasan: salah hitung, penjualan tidak tercatat, rusak, dicuri, atau tidak diketahui. Barang rusak wajib disebut jenis kerusakannya. Selisih di bawah satu bungkus diabaikan, dan produk yang berulang kali kurang ditandai sebagai kebocoran.</p>
     <ul class="also"><li><span><b>Angka acuan dibekukan.</b> Begitu sebuah baris mulai dihitung, angka sistemnya dikunci, jadi penjualan di tengah penghitungan tidak mengacaukan selisih.</span></li></ul>
@@ -1279,10 +1310,10 @@ details.ev .pop b { color: var(--ink); }
   </div>
 </section>
 
-<!-- 21 -->
+<!-- 22 -->
 <section class="scene" id="karantina" data-name="Karantina">
   <div class="copy">
-    <div class="eyebrow">21 · Karantina <span class="aud">Untuk pimpinan</span></div>
+    <div class="eyebrow">22 · Karantina <span class="aud">Untuk pimpinan</span></div>
     <h2>Karantina Barang hingga Disetujui Pusat.</h2>
     <p class="lead">Hasil hitung stok yang tidak sesuai tidak langsung diterima. Barang rusak atau selisih dipindahkan ke karantina dan dikunci sampai kantor pusat memberi keputusan. Tidak ada barang yang hilang tanpa catatan.</p>
     <div class="evs">
@@ -1304,10 +1335,10 @@ details.ev .pop b { color: var(--ink); }
   </div>
 </section>
 
-<!-- 22 -->
+<!-- 23 -->
 <section class="scene s10" id="angka" data-name="Semua Terkendali">
   <div class="copy">
-    <div class="eyebrow">22 · Semua Terkendali <span class="aud">Untuk pimpinan dan salesperson</span></div>
+    <div class="eyebrow">23 · Semua Terkendali <span class="aud">Untuk pimpinan dan salesperson</span></div>
     <h2>Keputusan Berbasis Data, Bukan Asumsi.</h2>
     <p class="lead">Seluruh angka diukur dari kode aplikasi pada 6 Oktober 2026. Pemeriksaan otomatisnya dapat dijalankan di hadapan siapa pun.</p>
   </div>
@@ -1910,7 +1941,32 @@ function opRun() {
   if (still || !live.has('opname')) { opSet(OP_END); return; }
   const [s, ms] = OP_PLAN[oStep]; opSet(s); oStep = (oStep + 1) % OP_PLAN.length; oTimer = wait(ms, opRun);
 }
-const round3 = () => { custRun(); arRun(); stockRun(); ledgerRun(); secRun(); paceRun(); smpRun(); geoRun(); opRun(); rmRun(); p3Run(); };
+/* EOD shortfall -> the salesperson's debt (his 2026-10-17 ask: its own point, its own motion). Each row is checked; a short
+   one sends its amount flying to the WANTED board and the total rolls up (helpers.js:716 eodBountyLines, :790 bountyItems) */
+const SEL = [{ k: 'Tunai kurang', v: 25000 }, null, { k: 'Barang kurang', v: 52000 }, { k: 'Barang rusak', v: 18000 }];
+const SEL_ST = ['Kurang Rp 25.000', 'Cocok', 'Kurang 2 bks · Rp 52.000', 'Rusak 1 bks · denda Rp 18.000'];
+const selRows = $$('#selChk .srow:not(.head)'), selLines = $('#selLines'), selNx = $('#selNx'), selVis = $('#selVis');
+let selTimer = 0, selStep = 0, selSum = 0;
+const selLine = (x) => el('div', 'line debt', `<span class="kpm-led-line crit"><i aria-hidden="true"></i>${x.k}</span><span class="cap">2 Okt</span><span class="v">Rp ${fmt(x.v)}</span>`);
+function selMark(i) { const r = selRows[i], bad = !!SEL[i]; r.classList.add(bad ? 'bad' : 'ok'); const st = r.querySelector('.sst'); st.className = 'sst kpm-led-line ' + (bad ? 'crit' : 'on'); st.lastChild.textContent = SEL_ST[i]; }
+function selReset() { selRows.forEach((r) => { r.classList.remove('ok', 'bad'); const st = r.querySelector('.sst'); st.className = 'sst kpm-led-line'; st.lastChild.textContent = 'Diperiksa'; }); selLines.innerHTML = ''; selSum = 0; nixie(selNx, '00.000'); }
+function selEnd() { selReset(); SEL.forEach((x, i) => { selMark(i); if (x) { selLines.append(selLine(x)); selSum += x.v; } }); nixie(selNx, fmt(selSum)); }
+function selRun() {
+  clearTimeout(selTimer);
+  if (still || !live.has('selisih')) { selEnd(); return; }
+  if (selStep === 0) selReset();
+  if (selStep >= SEL.length) { selStep = 0; selTimer = wait(3200, selRun); return; }
+  const i = selStep++, x = SEL[i]; selMark(i);
+  if (!x) { selTimer = wait(900, selRun); return; }
+  const vr = selVis.getBoundingClientRect(), a = selRows[i].getBoundingClientRect(), b = selLines.getBoundingClientRect();
+  const chip = el('div', 'selchip', `Rp ${fmt(x.v)}`); selVis.append(chip);
+  const x0 = a.right - vr.left - 130, y0 = a.top - vr.top + 8, x1 = b.left - vr.left + 14, y1 = b.top - vr.top + 10 + selLines.children.length * 56;
+  chip.animate([{ transform: `translate(${x0}px, ${y0}px) scale(1.08)`, opacity: 0 }, { opacity: 1, offset: .15 }, { transform: `translate(${x1}px, ${y1}px) scale(.94)`, opacity: 1 }],
+    { duration: 950, easing: 'cubic-bezier(.3,.7,.4,1)', fill: 'forwards' }).onfinish = () => {
+    chip.remove(); const ln = selLine(x); selLines.append(ln); replay(ln); selSum += x.v; nixie(selNx, fmt(selSum)); selTimer = wait(700, selRun);
+  };
+}
+const round3 = () => { custRun(); arRun(); stockRun(); ledgerRun(); secRun(); paceRun(); smpRun(); geoRun(); opRun(); rmRun(); p3Run(); selRun(); };
 
 /* ---- numbers: the nixies start at zero and roll to their value when their scene first shows ---- */
 const nx5 = $('#nx5'), tiles = $$('.tile .kpm-nixie');
@@ -2052,7 +2108,7 @@ const io = new IntersectionObserver((es) => {
       if (id === 'pelanggan') { vStep = 0; custRun(); } if (id === 'uang') { aDay = 0; arRun(); } if (id === 'stok') { sQty = 60; stockRun(); }
       if (id === 'catatan') { lStep = 0; ledgerRun(); } if (id === 'keamanan') { kStep = 0; secRun(); }
       if (id === 'target') { paceSet('bulan'); paceRun(); } if (id === 'sampel') { sN = 0; smpRun(); } if (id === 'lokasi') { gStep = 0; geoRun(); } if (id === 'opname') { oStep = 0; opRun(); }
-      if (id === 'dimana') { rmEv = 0; rmRun(); } if (id === 'produk') p3Run();
+      if (id === 'dimana') { rmEv = 0; rmRun(); } if (id === 'selisih') { selStep = 0; selRun(); } if (id === 'produk') p3Run();
       kick();
     } else { live.delete(id); e.target.classList.remove('live'); }
   }
