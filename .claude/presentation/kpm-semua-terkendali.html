@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>KPM Kendali Penuh</title>
+<title>KPM Inventory Suite</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap">
@@ -789,7 +789,6 @@ details.ev .pop b { color: var(--ink); }
     <h1>Satu Peta untuk Seluruh Armada Penjualan.</h1>
     <p class="lead">Rute setiap salesperson, omzet setiap wilayah, dan perjalanan barang dari gudang ke toko ditampilkan pada satu peta. Pimpinan dapat memantaunya langsung dari aplikasi.</p>
     <div class="where">Di aplikasi: <b>Journey Plan</b> dan <b>Map System</b>, yang saling terhubung.</div>
-    <div class="evs"><details class="ev"><summary>Bukti</summary><div class="pop"><b>src/JourneyView.jsx</b> menggambar rute tiap sales dan urutan tokonya; <b>src/MapMissionControl.jsx</b> menggambar pin toko, omzet per wilayah (kunci "Sales heat", baris 2096) dan jalur barang yang mengalir (<b>animated-supply-line</b>). Peta di halaman ini gambar contoh, bukan data pelanggan.</div></details></div>
   </div>
   <div class="stage" id="stage1"><div class="rig" id="rig1"></div></div>
   <span class="contoh">Data contoh</span>
@@ -803,9 +802,6 @@ details.ev .pop b { color: var(--ink); }
     <div class="eyebrow">02 · Rute Hari Ini <span class="aud">Untuk salesperson</span></div>
     <h2>Rute Harian Tersusun Otomatis.</h2>
     <p class="lead">Setiap pagi, rute kunjungan sudah tersusun. Kartu toko menandai hal yang perlu didahulukan: tagihan yang melewati jatuh tempo menyala merah, kunjungan hari ini menyala kuning. Lampu yang padam berarti tidak ada yang perlu ditindaklanjuti.</p>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Kartu toko Journey Plan, commit <b>0743a17</b> (19 September 2026); lampu dan tepi merah <b>theme.css .kpm-led-line, .kpm-crit</b> (bernapas 3,2 detik); peta strip 160 px di telepon, commit <b>73d9eb9</b>. Urutan toko berikutnya: <b>nextStop</b> self-check 9/9 lulus (6 Oktober 2026).</div></details>
-    </div>
   </div>
   <div class="vis">
     <div class="strip"><svg id="strip" viewBox="0 0 1000 320" aria-hidden="true"></svg></div>
@@ -824,7 +820,6 @@ details.ev .pop b { color: var(--ink); }
     <h2>Day Replay: Jejak Kunjungan Terekam Utuh.</h2>
     <p class="lead">Pilih salesperson dan tanggalnya, lalu perjalanan hari itu diputar ulang di peta, toko demi toko. Setiap toko menampilkan hasil kunjungannya: penjualan, pesanan ulang, produk pesaing, atau toko tutup. Pemutaran dapat dijeda, digeser, dan dipercepat, dan setiap peti dapat ditekan untuk melihat rinciannya.</p>
     <div class="where">Di aplikasi: <b>Journey Plan</b>, pilih salesperson, lalu tekan <b>Replay his day</b>. Tersedia juga dalam layar penuh.</div>
-    <div class="evs"><details class="ev"><summary>Bukti</summary><div class="pop">Putar ulang <b>src/components/DayReplay.jsx</b> (commit <b>a4afcf2</b>; layar penuh dan ganti sales: <b>50d98a9</b>). Urutan hari disusun dari penjualan dan Visit Report oleh <b>dayLog()</b> di <b>src/utils/dayLog.js</b>, self-check 21/21 lulus (6 Oktober 2026). Diuji dengan tekan sungguhan di layar 1440 dan 390 px: 32/32. Peti, koin dan papan tanda di sini gambar yang sama dengan aplikasi (<b>src/utils/mapSprites.js</b>); orang, toko dan jamnya contoh.</div></details></div>
   </div>
   <div class="vis">
     <div class="drmap" id="drmap">
@@ -861,9 +856,6 @@ details.ev .pop b { color: var(--ink); }
     <div class="eyebrow">04 · Keamanan Data <span class="aud">Untuk pimpinan</span></div>
     <h2>Multi-Layer Security untuk Data Perusahaan.</h2>
     <p class="lead">Semua pengguna masuk dengan akun Google, dan setiap penyimpanan diperiksa ulang oleh server, bukan hanya oleh aplikasi di telepon. Ada lima jabatan, dari pemilik sampai sales motoris, dan admin wilayah hanya mengelola wilayahnya sendiri. Brankas pemilik dijaga kata sandi induk; setelah lima kali salah, brankas terkunci 15 menit, dan pemulihannya memakai kode enam angka yang dikirim lewat email. Data setiap perusahaan disimpan terpisah dan dienkripsi, saat dikirim maupun saat disimpan.</p>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Jabatan: <b>CORPORATE_TIERS</b> di <b>src/config/permissions.js:2-9</b> (lima jabatan perusahaan, ditambah satu akses pengembang untuk kami) dan namanya di baris 44-48; pengelola armada hanya T2 sampai T4: <b>isFleetManagementTier()</b> baris 90. Kunci wilayah: data salesperson hanya bisa diubah admin dari wilayah yang sama, <b>firestore.rules:599</b>. Masuk dengan Google: <b>src/config/firebase.js:81</b>. Kata sandi induk PBKDF2, <b>ITERATIONS = 600000</b>: <b>src/utils/secretHash.js:19</b>; lima kali salah, kunci 15 menit: <b>src/utils/vaultLock.js:10-11</b>; kode pemulihan enam angka lewat email: <b>src/App.jsx:1332-1342</b>. Data tiap perusahaan di bawah akun pemiliknya sendiri: <b>firestore.rules:339</b>. Kunci akun dari Fleet &amp; Roster: <b>src/FleetCanvasManager.jsx:479</b>, ditegakkan saat masuk: <b>src/App.jsx:508</b>. Sidik jari atau wajah: <b>src/App.jsx:505, 1472</b>. Pindah kepemilikan dengan PIN lalu frasa rahasia: <b>src/components/CrownTransferProtocol.jsx:28, 48</b>. Pengatur hak akses per jabatan, hanya untuk pemilik: <b>PermissionMatrixEditor</b> di <b>src/components/SettingsView.jsx:1507</b>; nama jabatan disimpan di Pengaturan: baris 1510. Aturan keamanan <b>firestore.rules</b> dijalankan server Google pada setiap baca dan tulis, jadi aplikasi yang diakali tetap ditolak. Enkripsi saat dikirim (HTTPS) dan saat disimpan adalah bawaan Google Cloud Firestore, menurut dokumentasi Google Cloud.</div></details>
-    </div>
   </div>
   <div class="vis duo rise">
     <div class="orb" id="secOrb" style="--oh:260px"><div class="rig" id="secRig"><div class="fl3" id="secFl"></div></div><span class="hint">Geser · tekan jabatan</span></div>
@@ -895,9 +887,6 @@ details.ev .pop b { color: var(--ink); }
     <div class="eyebrow">05 · Catatan dan Laporan <span class="aud">Untuk pimpinan</span></div>
     <h2>Riwayat Transaksi yang Tidak Dapat Dimanipulasi.</h2>
     <p class="lead">Transaksi penjualan, laporan EOD (End of Day Reconciliation), dan catatan aktivitas harian hanya bisa ditambah. Salesperson dan admin tidak dapat mengubah atau menghapusnya; hak itu hanya ada pada akun pemilik perusahaan. Dari catatan harian inilah Putar Ulang Hari disusun, dan laporan penjualan bisa dicetak kapan saja dengan nota yang sama seperti di toko.</p>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Aturan server <b>allow update, delete: if false</b> untuk transaksi, laporan setoran, dan catatan aktivitas: <b>firestore.rules:557, 650, 712, 717</b>; hak penuh atas data perusahaan hanya untuk akun pemilik: <b>firestore.rules:343-346</b>. Tidak ada satu pun perintah ubah atau hapus transaksi di kode aplikasi (diperiksa 6 Oktober 2026). Catatan harian per tanggal <b>audit_vault</b> dibaca Putar Ulang Hari: <b>src/hooks/useDayReplay.js</b>. Laporan dicetak dari <b>src/components/HistoryReportView.jsx:469</b>; nota <b>src/components/SaleReceipt.jsx</b>. Nama dan angka di sini contoh.</div></details>
-    </div>
   </div>
   <div class="vis rise">
     <div class="box3" id="ledger">
@@ -928,7 +917,6 @@ details.ev .pop b { color: var(--ink); }
       <li><span><b>Satu akun, perangkat apa pun.</b> Masuk dengan akun Google yang sama di telepon atau di komputer kantor, dan datanya sama.</span></li>
       <li><span><b>Pembaruan sampai sendiri.</b> Versi baru terpasang sendiri di setiap perangkat, jadi tidak ada yang perlu dipasang ulang di cabang.</span></li>
     </ul>
-    <div class="evs"><details class="ev"><summary>Bukti</summary><div class="pop">Aplikasi web yang dapat dipasang (PWA) dan terbuka layar penuh: <b>VitePWA</b> di <b>vite.config.js:83</b>, <b>display: 'standalone'</b> baris 115. Pembaruan sendiri: <b>registerType: 'autoUpdate'</b> baris 84, diperiksa setiap jam: <b>src/main.jsx:22</b>. Data mengalir dari server ke layar tanpa dimuat ulang: <b>onSnapshot</b>, 39 pemanggilan di <b>src/</b> (contoh <b>src/App.jsx:535</b>). Data di Google Firebase: <b>src/config/firebase.js</b>. Kota, orang, dan angka di sini contoh.</div></details></div>
   </div>
   <div class="vis">
     <div class="orb" id="netOrb" style="--oh:340px"><div class="rig" id="netRig"><div class="fl3" id="netFl"></div></div><span class="hint">Geser untuk memutar</span><span class="contoh">Data contoh</span></div>
@@ -948,9 +936,6 @@ details.ev .pop b { color: var(--ink); }
       <li><span><b>Lite Mode untuk performa maksimal.</b> Animasi dan efek dibuat lebih ringan, semua fungsi tetap sama.</span></li>
       <li><span><b>Ponder Book, panduan interaktif di dalam aplikasi.</b> Isinya mengikuti menu samping dan langsung terbuka di layar yang sedang dipakai, sehingga karyawan baru bisa belajar sendiri.</span></li>
     </ul>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Dipasang seperti aplikasi dan jalan tanpa internet: <b>registerSW</b> di <b>src/main.jsx:13</b>. Catatan disimpan dulu di telepon lalu terkirim sendiri saat sinyal kembali: <b>persistentLocalCache</b> di <b>src/config/firebase.js:50</b>. Daftar yang terlewat, 7 hari dan 100 terbaru: <b>src/utils/missedLog.js:26</b>, Notification Bell <b>src/components/NotificationBell.jsx:1</b>. Pemeriksaan versi: <b>src/utils/updateCheck.js:1</b>. Lite Mode: <b>src/App.jsx:3104</b>. Ponder Book: <b>src/ponder/PonderBook.jsx:1</b>; daftar isinya mengikuti menu samping dan terbuka di bagian yang sedang dibuka: <b>src/ponder/sections.js:1</b>.</div></details>
-    </div>
   </div>
   <div class="vis rise">
     <div class="ph9" id="ph9">
@@ -969,9 +954,6 @@ details.ev .pop b { color: var(--ink); }
     <h2>Peta Omzet dan Peringkat Kinerja Sales.</h2>
     <p class="lead">Setiap wilayah diberi warna sesuai omzetnya. Semakin terang warnanya, semakin tinggi penjualannya. Papan peringkat menyusun salesperson berdasarkan transaksi yang tercatat, bukan laporan lisan.</p>
     <ul class="also"><li><span><b>Kinerja per produk.</b> Pilih rentang waktu mana pun, penjualan setiap produk tampil per bulan.</span></li></ul>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Kunci "Sales heat" di <b>src/MapMissionControl.jsx:2096</b>; apa yang dihitung sebagai omzet diputuskan satu aturan, <b>countsAsRevenue()</b> di <b>src/utils/revenueRule.js:39</b>; papan peringkat <b>src/HallOfFameView.jsx</b>. Kinerja per produk: <b>src/components/ProductPerformancePanel.jsx:1</b>.</div></details>
-    </div>
   </div>
   <div class="vis">
     <div class="stage" id="stage3"><div class="rig" id="rig3"></div></div>
@@ -986,7 +968,6 @@ details.ev .pop b { color: var(--ink); }
     <div class="eyebrow">09 · Kinerja Produk <span class="aud">Untuk pimpinan</span></div>
     <h2>Product Performance, Harian hingga Tahunan.</h2>
     <p class="lead">Untuk hari ini, minggu ini, bulan ini, atau tahun ini, aplikasi menghitung berapa bungkus setiap produk terjual dari semua wilayah, berapa rupiahnya, dan berapa bagiannya dari seluruh penjualan periode itu. Di halaman ini angkanya berdiri sebagai batang tiga dimensi: putar dengan menggeser, tekan batang untuk membaca angkanya.</p>
-    <div class="evs"><details class="ev"><summary>Bukti</summary><div class="pop">Panel Kinerja Produk: <b>src/components/ProductPerformancePanel.jsx:1</b>, pilihan Today, This week, This month, This year; satu baris per produk dengan kolom Sold (Bks), Revenue, dan Share: <b>src/ponder/stages/ProductPerformanceTable.jsx:55-58</b>. Tinggi batang di sini sama artinya dengan batang di aplikasi: bagian dari yang terjual pada periode itu, bukan target. Di aplikasi angkanya berupa tabel; bentuk tiga dimensi hanya untuk presentasi ini. Produk dan angka di sini contoh.</div></details></div>
   </div>
   <div class="vis">
     <div class="box3 p3">
@@ -1009,9 +990,6 @@ details.ev .pop b { color: var(--ink); }
     <div class="eyebrow">10 · Target dan Laju <span class="aud">Untuk pimpinan</span></div>
     <h2>Proyeksi Target Sejak Pertengahan Bulan.</h2>
     <p class="lead">Pimpinan menetapkan target bulanan dan harian, dalam rupiah dan dalam bal. Target mingguan dan tahunan dihitung otomatis dari target bulanan, tetapi tetap bisa diubah. Grafik menunjukkan uang yang sudah masuk terhadap garis lurus menuju target, sehingga sejak pertengahan bulan sudah terlihat apakah target akan tercapai. Grafik yang sama tersedia untuk setiap wilayah.</p>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Panel target hari, minggu, bulan, tahun: <b>src/components/DashboardBenchmarks.jsx:12</b>; minggu dan tahun dihitung dari target bulan kecuali diisi sendiri: <b>revTarget()</b>, baris 70. Grafik kumulatif terhadap garis target, dipakai untuk seluruh bisnis dan untuk tiap wilayah: <b>src/components/PaceChart.jsx:4</b>. Angka di sini contoh.</div></details>
-    </div>
   </div>
   <div class="vis rise">
     <div class="box3" id="pace">
@@ -1041,9 +1019,6 @@ details.ev .pop b { color: var(--ink); }
       <li><span><b>Stok setiap gudang cabang terpantau.</b> Jumlah setiap produk di setiap gudang cabang terlihat, dan kekurangan produk langsung teridentifikasi, sehingga stok yang terbatas dapat dibagi dengan tepat.</span></li>
       <li><span><b>Agent Inventory terpantau penuh.</b> Isi bagasi setiap motorist dan sales canvas, beserta buku penjualan dan sampel hari itu, dapat dipantau sepenuhnya dari aplikasi.</span></li>
     </ul>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Gudang pusat bernama <b>'Gudang Pusat (Master Vault)'</b> di <b>src/utils/supply.js:42</b>; stok per produk per gudang <b>supplyByProduct()</b>; pemindai barcode <b>src/components/ArrivalScanner.jsx:44</b> (code_128); surat jalan dua arah: pemeriksaan 53 di <b>integration.audit.mjs</b>; satuan campuran: self-check 12/12 lulus (6 Oktober 2026). Label kotak berbarcode: <b>src/components/ShipmentLabel.jsx:5</b>; surat jalan cetak: <b>src/components/AcceptanceReceipt.jsx:1</b>; muat motor: <b>src/components/LoadingBay.jsx:1</b> (seret tidak menyimpan apa pun, stok berpindah sekali saat Muat Van). Rencana kirim per produk per cabang dan kekurangannya: <b>src/components/BranchWarehouseManager.jsx:492, 1566</b>. Isi motor dan buku hari itu: <b>src/AgentInventoryView.jsx</b>, <b>src/components/TodayBook.jsx:1</b>.</div></details>
-    </div>
   </div>
   <div class="vis">
     <div class="chain">
@@ -1068,9 +1043,6 @@ details.ev .pop b { color: var(--ink); }
       <li><span><b>Pencatatan penjualan real-time dengan bukti foto.</b> Setiap transaksi tercatat saat itu juga, disertai foto langsung dari kamera, bukan dari galeri.</span></li>
       <li><span><b>Price lock untuk setiap level pelanggan.</b> Empat tingkat harga per produk (Retail, Grosir, Ecer, Distributor), dan harga untuk setiap toko terkunci otomatis sesuai level pelanggannya.</span></li>
     </ul>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Terminal penjualan <b>src/MerchantSalesView.jsx</b>; nota cetak <b>print-receipt</b> di <b>src/components/SaleReceipt.jsx</b> (satu nota untuk Laporan dan Putar Ulang Hari), tetap biru perusahaan karena nota itu kertas, bukan layar aplikasi. Satu penjualan 3 baris disimpan dalam 610 byte: <b>txSize</b> self-check 6/6 lulus (6 Oktober 2026). Kamera langsung: <b>src/components/ProofCamera.jsx:29</b>; galeri hanya untuk T2 dan T3: <b>canPickFromGallery()</b> di <b>src/config/permissions.js:118</b>. Harga terkunci sesuai level toko: <b>setLockedTier</b> di <b>src/MerchantSalesView.jsx:619</b>. Tingkat harga: <b>PRICE_TIERS</b> di <b>src/utils/helpers.js:709</b>. Nama barang dan harga di sini contoh.</div></details>
-    </div>
   </div>
   <div class="vis term">
     <div class="tray">
@@ -1100,9 +1072,6 @@ details.ev .pop b { color: var(--ink); }
     <div class="eyebrow">13 · Cek Lokasi <span class="aud">Untuk pimpinan</span></div>
     <h2>Validasi GPS di Setiap Transaksi.</h2>
     <p class="lead">Saat mencatat penjualan, posisi salesperson diperiksa dengan GPS, dan penjualan hanya dapat dicatat dalam radius 100 meter dari toko. Bila perlu menjual di luar radius itu, misalnya saat sinyal GPS lemah, salesperson mengajukan izin, lalu admin tim daerah menyetujui atau menolaknya dengan melihat jaraknya. Auto locator mengenali toko terdaftar di sekitar posisi GPS, dan penjualan di toko milik salesperson lain diberi tanda.</p>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Pemeriksaan lokasi: <b>verifyLocation()</b> di <b>src/MerchantSalesView.jsx:348</b>. Permintaan izin di luar 100 m, dengan jaraknya, ke <b>gps_bypasses</b> dan pemberitahuan kantor: baris 853-859. Toko terdaftar di dalam radius dikenali sendiri, terdekat lebih dulu: <b>nearbyStores</b>, baris 221 dan 368-379. Izin disetujui atau ditolak admin: <b>src/FleetCanvasManager.jsx:1422, 1433</b>. Tanda toko milik sales lain (<b>territoryOverride</b>): baris 223-226. Nama dan jarak di sini contoh.</div></details>
-    </div>
   </div>
   <div class="vis rise">
     <div class="box3" id="geo">
@@ -1120,9 +1089,6 @@ details.ev .pop b { color: var(--ink); }
     <div class="eyebrow">14 · Sampel Produk <span class="aud">Untuk pimpinan</span></div>
     <h2>Sampel Tercatat, Terpisah dari Omzet.</h2>
     <p class="lead">Sampel gratis yang dibagikan ke toko dicatat terpisah dari penjualan, sampai hitungan batang, dan tidak pernah masuk ke angka omzet. Pimpinan melihat jumlah sampel per minggu atau per bulan, nilainya pada setiap tingkat harga, lima produk teratas, toko yang paling banyak menerima, dan berapa pita cukai yang terbuka.</p>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Analitik sampel mingguan dan bulanan: <b>SamplingAnalyticsView</b> di <b>src/components/SamplingManager.jsx:20</b> (jumlah bks dan batang, nilai Distributor, Retail, Grosir, Ecer, lima produk teratas, lokasi teratas); pita cukai yang terbuka: baris 111. Sampel bukan omzet: <b>src/utils/salesRollup.js:43</b>. Angka di sini contoh.</div></details>
-    </div>
   </div>
   <div class="vis rise">
     <div class="box3" id="smp">
@@ -1150,9 +1116,6 @@ details.ev .pop b { color: var(--ink); }
       <li><span><b>NOO (New Open Outlet) dengan verifikasi.</b> Toko baru hanya dapat diregistrasi dengan foto depan toko dan titik GPS, lalu aktif setelah dikonfirmasi admin daerah.</span></li>
       <li><span><b>Navigasi ke toko yang belum pernah dikunjungi.</b> Integrasi Google Maps dan Street View menuntun salesperson menemukan toko baru dengan mudah.</span></li>
     </ul>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Ringkasan di pintu toko (pesanan terakhir, barang, total): <b>src/utils/customerBrief.js:64</b>, <b>customerBrief</b> self-check 9/9 lulus. Lima pilihan Laporan Kunjungan: <b>QUICK_TAGS</b> di <b>src/JourneyView.jsx:959</b>. Tanda "!" hanya hilang lewat tombol Request done: <b>src/JourneyView.jsx:910</b>. Hak atas daftar pelanggan per jabatan (lihat saja, wilayah sendiri, semua): <b>src/components/CustomerManager.jsx:220</b>. Toko ganda dari nama dan jarak, radius 40 m, ditandai tanpa dihapus: <b>src/components/CustomerManager.jsx:740</b>, <b>src/utils/findDuplicates.js:1</b>, self-check 26/26 lulus. Catatan pesaing per toko (merek, produk, harga, catatan, tingkat laku): <b>src/components/CustomerManager.jsx:45-60</b>. Toko baru dengan foto depan dan GPS: <b>src/MerchantSalesView.jsx:314, 924</b>. Street View toko: <b>src/components/CustomerManager.jsx:82</b>; rute Google Maps: <b>src/MapMissionControl.jsx:1296</b>. NOO aktif setelah disetujui admin: <b>handleApproveNOO</b> di <b>src/components/CustomerManager.jsx:1125</b>. Toko dan barang di sini contoh.</div></details>
-    </div>
   </div>
   <div class="vis rise">
     <div class="box3" id="cust">
@@ -1185,9 +1148,6 @@ details.ev .pop b { color: var(--ink); }
     <h2>EOD Reconciliation: Setiap Rupiah Terverifikasi.</h2>
     <p class="lead">Setiap akhir hari, melalui EOD (End of Day Reconciliation), salesperson menyetorkan uang tunai, bukti transfer, sisa barang, dan pita cukai. Admin wilayah memeriksanya baris demi baris. Jika ada kekurangan, selisihnya dicatat sebagai utang atas nama salesperson tersebut.</p>
     <ul class="also"><li><span><b>EOD dipandu untuk salesperson.</b> Empat kartu dihitung satu per satu, lalu masuk ke surat digital beranimasi yang dikirim ke admin dan menunggu persetujuannya.</span></li></ul>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Setoran salesperson: kartu <b>src/components/EODCardDeck.jsx</b> dan surat yang disegel <b>src/components/EODLetter.jsx:1</b>. Layar verifikasi <b>src/EODReconciliationView.jsx</b> (commit <b>64f6505</b>); setuju per baris, commit <b>20aac21</b>; selisih jadi utang: <b>eodBountyLines()</b> di <b>src/utils/helpers.js:716</b>; catatan setoran: <b>eodRecord</b> self-check 12/12 lulus (6 Oktober 2026). Garis pindai dan cap: <b>theme.css</b> blok THE DOCKET.</div></details>
-    </div>
   </div>
   <div class="vis">
     <div class="docket" id="docket">
@@ -1208,7 +1168,6 @@ details.ev .pop b { color: var(--ink); }
     <div class="eyebrow">17 · Selisih EOD <span class="aud">Untuk pimpinan</span></div>
     <h2>Selisih EOD Langsung Menjadi Utang Salesperson.</h2>
     <p class="lead">Saat EOD (End of Day Reconciliation) diperiksa, setiap selisih langsung dihitung: uang tunai yang kurang, transfer yang kurang, dan barang yang kurang, yang dihargai sesuai tingkat harganya. Selisih itu, bersama denda barang rusak, dicatat sebagai utang atas nama salesperson, lengkap dengan alasan dan tanggalnya, dan tampil di papan WANTED. Tidak ada kekurangan yang hilang tanpa jejak.</p>
-    <div class="evs"><details class="ev"><summary>Bukti</summary><div class="pop">Selisih EOD menjadi utang (tunai kurang, transfer kurang, barang kurang dihargai sesuai tingkat harga): <b>eodBountyLines()</b> di <b>src/utils/helpers.js:716</b>. Alasan dan tanggal setiap utang: <b>bountyItems()</b> di <b>src/utils/helpers.js:790</b>, satu sumber untuk papan WANTED dan peti motor sehingga keduanya selalu sama. Catatan EOD: <b>eodRecord</b> self-check 12/12 lulus. Nama dan angka di sini contoh.</div></details></div>
   </div>
   <div class="vis duo rise" id="selVis">
     <div class="box3" id="selChk">
@@ -1234,9 +1193,6 @@ details.ev .pop b { color: var(--ink); }
     <h2>Piutang dan Utang dalam Kendali Penuh.</h2>
     <p class="lead">Utang piutang (consignment and reconciliation) memungkinkan toko membayar produk dalam waktu tempo, 7 hari bila tidak diatur lain. Aplikasi memantau status tempo setiap pelanggan dan mengelompokkannya menurut urgensinya: aman, segera jatuh tempo, dan lewat jatuh tempo. Dengan begitu setiap pembayaran berjalan disiplin, tagihan hari ini langsung terlihat, dan arus kas perusahaan dapat diprediksi.</p>
     <ul class="also"><li><span><b>Penanggung jawab toko dapat berpindah tangan.</b> Tanggung jawab atas utang piutang sebuah toko dapat dialihkan ke rekan satu tim dengan persetujuan pihak ketiga, yaitu admin daerah (regional admin), sehingga tim daerah lebih fleksibel dan saling bekerja sama. Penerima dan pemberi persetujuan sama-sama melihat stok di toko dan utangnya sebelum memutuskan.</span></li></ul>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Tiga kelompok piutang: <b>src/ConsignmentFinanceView.jsx:217-222</b> (tempo bawaan <b>7</b> hari; lewat jatuh tempo bila sisa hari di bawah 0, segera bila 3 hari atau kurang). Pindah tangan toko: kartu <b>HandoffOffer</b> di <b>src/ConsignmentFinanceView.jsx:18</b>, sama untuk penerima dan pemberi persetujuan; yang boleh menyetujui hanya approver cabang itu: <b>canApproveHandoffFrom()</b> di <b>src/config/permissions.js</b>, dipakai di <b>src/ConsignmentFinanceView.jsx:476</b>. Toko, nama, dan angka di sini contoh.</div></details>
-    </div>
   </div>
   <div class="vis rise">
     <div class="box3" id="ar">
@@ -1266,9 +1222,6 @@ details.ev .pop b { color: var(--ink); }
     <h2>Kinerja Terukur, Prestasi Terlihat.</h2>
     <p class="lead">Poin pengalaman (XP) diperoleh dari setoran yang lolos pemeriksaan, toko yang dilayani, dan tagihan yang berhasil ditagih. Pangkatnya berjenjang dari Bronze sampai Mythic dan ditandai bingkai di sekeliling foto. Salesperson melihat kemajuannya sendiri, pimpinan melihat siapa yang paling aktif.</p>
     <ul class="also"><li><span><b>Cara menghitung pangkat dipilih pimpinan.</b> Dari seluruh riwayat kerja, sehingga satu minggu sepi tidak menurunkan pangkat, atau dari penjualan 7 hari terakhir.</span></li></ul>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Kartu <b>src/components/PlayerCard.jsx</b>; XP <b>careerXP()</b> dan <b>computeDayXP()</b> di <b>src/config/career.js:83, 119</b>; bingkai pangkat <b>src/config/rankBorders.jsx</b>; di Lite Mode bingkai Platinum dan Mythic berhenti berputar, commit <b>c64de8b</b>. Pilihan cara menghitung pangkat: <b>src/components/SettingsView.jsx:1500-1502</b>. Orang dan angka di kartu ini contoh.</div></details>
-    </div>
   </div>
   <div class="vis">
     <div class="pc" id="pc">
@@ -1294,15 +1247,12 @@ details.ev .pop b { color: var(--ink); }
   <div class="copy">
     <div class="eyebrow">20 · Stok Menipis <span class="aud">Untuk pimpinan</span></div>
     <h2>Early Warning untuk Stok Menipis.</h2>
-    <p class="lead">Setiap produk punya batas stok minimum yang boleh ditulis dalam bal, karton, slop, atau bungkus. Begitu stok turun di bawah batas itu, aplikasi menandainya. Aplikasi juga menghitung berapa hari lagi stok tersebut cukup berdasarkan penjualan hariannya, sehingga barang dapat dipesan sebelum kosong.</p>
+    <p class="lead">Setiap produk memiliki batas stok minimum yang bisa ditulis dalam bal, karton, slop, atau bungkus. Begitu stok turun di bawah batas minimum, aplikasi otomatis mengirim notifikasi dan memberi tanda kepada admin cabang untuk mengajukan permintaan stok baru ke Gudang Pusat. Aplikasi juga menghitung berapa hari lagi stok tersebut cukup berdasarkan penjualan hariannya, sehingga barang dapat dipesan sebelum kosong.</p>
     <ul class="also">
       <li><span><b>Permintaan stok cabang.</b> Cabang mengajukan permintaan barang berdasarkan batas minimumnya, dan gudang menerimanya di layar yang sama.</span></li>
-      <li><span><b>Foto nota kertas dirapikan sendiri.</b> Nota yang difoto miring dicari tepinya dan diluruskan sebelum disimpan.</span></li>
-      <li><span><b>Harga pokok per produk.</b> Barang masuk dicatat dengan ongkos kirim, ongkos bongkar, dan cukai, dan aplikasi memberi tahu jika harganya naik dari kiriman sebelumnya.</span></li>
+      <li><span><b>Scan nota untuk bukti pengiriman.</b> Foto nota otomatis diluruskan dan diperkecil ukurannya tanpa kehilangan kejelasan, sehingga bukti pengiriman yang dikirim selalu jelas dan ringan.</span></li>
+      <li><span><b>Ongkos tercatat jelas di Restock Vault.</b> Ongkos kirim, ongkos bongkar, dan cukai setiap barang masuk tercatat dengan jelas untuk laporan keuangan yang lebih rapi, dan aplikasi memberi tahu jika harga pokok naik dari kiriman sebelumnya.</span></li>
     </ul>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Batas bawaan <b>3 Bal</b>, satuan Bal, Karton, Slop, Bks: <b>src/utils/stockThreshold.js:33-35</b>; stok di bawah batas: <b>isLowStock()</b> baris 50; sisa hari: <b>daysOfCover()</b> baris 59, ditampilkan di dasbor <b>src/components/DashboardView.jsx:100</b>. <b>stockThreshold</b> self-check 36/36 dan <b>mixedUnits</b> 12/12 lulus (6 Oktober 2026). Permintaan stok cabang: <b>stock_requests</b> di <b>src/RestockVaultView.jsx:268</b>. Nota dirapikan: tepi kertas dicari lalu ditarik lurus, <b>src/utils/helpers.js:398, 422, 585</b>, dipakai di <b>src/RestockVaultView.jsx:608</b>; <b>notaScan</b> self-check 22/22 lulus. Harga pokok dengan ongkos kirim, bongkar, dan cukai, dibandingkan dengan kiriman terakhir: <b>src/RestockVaultView.jsx:374-382</b>. Produk dan angka di sini contoh.</div></details>
-    </div>
   </div>
   <div class="vis rise">
     <div class="box3" id="stk">
@@ -1322,11 +1272,8 @@ details.ev .pop b { color: var(--ink); }
   <div class="copy">
     <div class="eyebrow">21 · Stock Opname <span class="aud">Untuk pimpinan</span></div>
     <h2>Stock Opname Anti-Manipulasi.</h2>
-    <p class="lead">Admin wilayah dan salesperson menghitung stok tanpa melihat angka sistem, jadi tidak bisa sekadar menyalin. Selisih wajib dihitung ulang sebelum dikirim ke pusat. Jika tetap berbeda, harus diberi alasan: salah hitung, penjualan tidak tercatat, rusak, dicuri, atau tidak diketahui. Barang rusak wajib disebut jenis kerusakannya. Selisih di bawah satu bungkus diabaikan, dan produk yang berulang kali kurang ditandai sebagai kebocoran.</p>
+    <p class="lead">Sistem blind count mendorong salesperson dan admin cabang untuk menghitung dan memeriksa ulang stok di gudang cabang tanpa melihat angka sistem, sebelum melapor ke kantor pusat, sehingga stok tidak bisa dimanipulasi. Setiap perbedaan hitungan wajib dilaporkan sesuai statusnya, misalnya barang rusak, salah hitung, penjualan tidak tercatat, atau dicuri. Dengan begitu kebocoran dan manipulasi stok di kantor cabang cepat terdeteksi, sebelum kerugian akibat stok yang hilang terus menumpuk (snowball effect).</p>
     <ul class="also"><li><span><b>Angka acuan dibekukan.</b> Begitu sebuah baris mulai dihitung, angka sistemnya dikunci, jadi penjualan di tengah penghitungan tidak mengacaukan selisih.</span></li></ul>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Hitung buta untuk T4 ke bawah, angka sistem baru muncul setelah diketik: <b>src/StockOpnameView.jsx:208</b>. Selisih dihitung dua kali sebelum ke pusat: baris 78, 512. Lima alasan selisih (Miscount, Unrecorded sale, Breakage, Theft, Cause unknown): baris 29-58, wajib diisi: baris 522. Rusak wajib jenisnya: baris 21, 501. Batas satu bungkus: baris 96. Kebocoran = minimal tiga hitungan dan kurang di dua di antaranya: <b>isLeak()</b> baris 168. Angka acuan dibekukan: baris 358. Menunggu pusat: <b>PENDING_HQ_APPROVAL</b>, baris 546. Angka di sini contoh.</div></details>
-    </div>
   </div>
   <div class="vis rise">
     <div class="box3" id="opn">
@@ -1350,9 +1297,6 @@ details.ev .pop b { color: var(--ink); }
     <div class="eyebrow">22 · Karantina <span class="aud">Untuk pimpinan</span></div>
     <h2>Karantina Barang hingga Disetujui Pusat.</h2>
     <p class="lead">Hasil hitung stok yang tidak sesuai tidak langsung diterima. Barang rusak atau selisih dipindahkan ke karantina dan dikunci sampai kantor pusat memberi keputusan. Tidak ada barang yang hilang tanpa catatan.</p>
-    <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Pintu karantina <b>BlastDoors</b> di <b>src/components/QuarantineSwitch.jsx</b> dan <b>theme.css</b> blok THE QUARANTINE SWITCH; hitungan menunggu pusat: status <b>PENDING_HQ_APPROVAL</b> di <b>src/StockOpnameView.jsx:280</b>.</div></details>
-    </div>
   </div>
   <div class="vis">
     <div class="qbox">
@@ -1374,20 +1318,20 @@ details.ev .pop b { color: var(--ink); }
   <div class="copy">
     <div class="eyebrow">23 · Semua Terkendali <span class="aud">Untuk pimpinan dan salesperson</span></div>
     <h2>Keputusan Berbasis Data, Bukan Asumsi.</h2>
-    <p class="lead">Seluruh angka diukur dari kode aplikasi pada 6 Oktober 2026. Pemeriksaan otomatisnya dapat dijalankan di hadapan siapa pun.</p>
+    <p class="lead">Setiap fitur diuji secara otomatis sebelum sampai ke tangan pengguna, dan pengujian itu dapat dijalankan ulang di hadapan siapa pun.</p>
   </div>
   <div class="vis">
     <div class="tiles">
-      <div class="tile"><span class="kpm-nixie" data-v="3.189"></span><div class="l">pemeriksaan otomatis lulus</div><details class="ev"><summary>Bukti</summary><div class="pop">16 rangkaian: logicFixes <b>2.234</b>, integration audit <b>722</b> (memeriksa hasil build), toastSeverity 48, stockThreshold 36, findDuplicates 26, notaScan 22, dayLog 21, eodRecord 12, mixedUnits 12, vaultGrace 10, customerBrief 9, nextStop 9, docChanges 8, dayStats 7, useSound 7, txSize 6. Ditambah semua pasangan warna lolos uji kontras.</div></details></div>
-      <div class="tile"><span class="kpm-nixie" data-v="0"></span><div class="l">yang gagal</div><details class="ev"><summary>Bukti</summary><div class="pop">Setiap rangkaian di atas: 0 gagal. Perintahnya: <b>npm run build; node src/config/integration.audit.mjs</b>, lalu tiap <b>*.selfcheck.mjs</b>.</div></details></div>
-      <div class="tile"><span class="kpm-nixie" data-v="53.795"></span><div class="l">baris kode aplikasi</div><details class="ev"><summary>Bukti</summary><div class="pop">Semua berkas <b>.js/.jsx</b> di <b>src/</b> tanpa berkas pemeriksaan: 133 berkas, <b>wc -l</b> → 53.795.</div></details></div>
-      <div class="tile"><span class="kpm-nixie" data-v="2.090"></span><div class="l">commit tercatat</div><details class="ev"><summary>Bukti</summary><div class="pop"><b>git rev-list --count HEAD</b> → 2.090. Commit terakhir <b>4a5ae66</b>, 6 Oktober 2026; kode aplikasi tidak berubah sejak <b>8abbf30</b>, jadi angka pemeriksaan dan baris kode diukur ulang dan tetap sama.</div></details></div>
+      <div class="tile"><span class="kpm-nixie" data-v="3.189"></span><div class="l">uji otomatis lulus</div></div>
+      <div class="tile"><span class="kpm-nixie" data-v="0"></span><div class="l">uji yang gagal</div></div>
+      <div class="tile"><span class="kpm-nixie" data-v="53.795"></span><div class="l">baris kode aplikasi</div></div>
+      <div class="tile"><span class="kpm-nixie" data-v="2.090"></span><div class="l">pembaruan tercatat</div></div>
     </div>
     <div class="close">
       <span class="cap">Semua yang ada di dalam satu aplikasi</span>
       <nav class="recap" id="recap" aria-label="Semua adegan"></nav>
-      <div class="big">Kendali penuh, <span>di tangan Anda.</span></div>
-      <div class="foot">KPM · PT Karyamega Putera Mandiri<br>Diukur 6 Oktober 2026 dari commit 4a5ae66.</div>
+      <div class="big">Satu aplikasi. <span>Seluruh distribusi.</span></div>
+      <div class="foot">KPM · PT Karyamega Putera Mandiri<br>Diukur 6 Oktober 2026.</div>
     </div>
   </div>
 </section>
