@@ -999,12 +999,12 @@ details.ev .pop b { color: var(--ink); }
   <div class="copy">
     <div class="eyebrow">11 · Jalur Barang <span class="aud">Untuk pimpinan</span></div>
     <h2>Traceability Barang dari Gudang hingga Toko.</h2>
-    <p class="lead">Barang tercatat sejak keluar dari Gudang Pusat, masuk ke gudang cabang, dibawa motor tenaga penjual, sampai tiba di toko, termasuk saat dikembalikan. Barang yang datang diperiksa dengan memindai barcode melalui kamera telepon. Aplikasi menghitung sendiri konversi bal, slop, dan bungkus.</p>
+    <p class="lead">Pergerakan barang terlacak sejak masuk dari pabrik ke Gudang Pusat, dikirim ke gudang cabang, dibawa di bagasi motorist dan sales canvas, hingga sampai ke konsumen terakhir, termasuk produk retur. Barang yang datang diperiksa dengan memindai barcode melalui kamera telepon, dan aplikasi menghitung sendiri konversi bal, slop, dan bungkus.</p>
     <ul class="also">
-      <li><span><b>Surat jalan dan label tercetak.</b> Setiap kotak membawa label berbarcode yang dipindai cabang saat barang tiba.</span></li>
-      <li><span><b>Muat motor dengan menyeret kotak.</b> Stok baru berpindah saat Muat Van ditekan, sekali, lengkap dengan surat jalan dan bukti kembali.</span></li>
-      <li><span><b>Rencana kirim per cabang.</b> Satu baris per produk, satu kolom per cabang: berapa yang dibutuhkan tiap cabang dan berapa yang tidak cukup dari gudang pusat, sehingga stok yang terbatas bisa dibagi.</span></li>
-      <li><span><b>Isi motor setiap tenaga penjual terlihat.</b> Admin wilayah melihat stok di motor dan buku penjualan serta sampel hari itu.</span></li>
+      <li><span><b>Barcode yang dapat dicetak.</b> Setiap kotak membawa label barcode yang dicetak dari aplikasi, lengkap dengan surat jalan, dan dipindai cabang saat barang tiba.</span></li>
+      <li><span><b>Muat barang yang interaktif dan ergonomis.</b> Barang dari gudang dimuat ke bagasi motorist dan sales canvas cukup dengan menyeret kotak. Stok berpindah sekali saat Muat Van ditekan, lengkap dengan surat jalan dan bukti kembali.</span></li>
+      <li><span><b>Stok setiap gudang cabang terpantau.</b> Jumlah setiap produk di setiap gudang cabang terlihat, dan kekurangan produk langsung teridentifikasi, sehingga stok yang terbatas dapat dibagi dengan tepat.</span></li>
+      <li><span><b>Agent Inventory terpantau penuh.</b> Isi bagasi setiap motorist dan sales canvas, beserta buku penjualan dan sampel hari itu, dapat dipantau sepenuhnya dari aplikasi.</span></li>
     </ul>
     <div class="evs">
       <details class="ev"><summary>Bukti</summary><div class="pop">Gudang pusat bernama <b>'Gudang Pusat (Master Vault)'</b> di <b>src/utils/supply.js:42</b>; stok per produk per gudang <b>supplyByProduct()</b>; pemindai barcode <b>src/components/ArrivalScanner.jsx:44</b> (code_128); surat jalan dua arah: pemeriksaan 53 di <b>integration.audit.mjs</b>; satuan campuran: self-check 12/12 lulus (6 Oktober 2026). Label kotak berbarcode: <b>src/components/ShipmentLabel.jsx:5</b>; surat jalan cetak: <b>src/components/AcceptanceReceipt.jsx:1</b>; muat motor: <b>src/components/LoadingBay.jsx:1</b> (seret tidak menyimpan apa pun, stok berpindah sekali saat Muat Van). Rencana kirim per produk per cabang dan kekurangannya: <b>src/components/BranchWarehouseManager.jsx:492, 1566</b>. Isi motor dan buku hari itu: <b>src/AgentInventoryView.jsx</b>, <b>src/components/TodayBook.jsx:1</b>.</div></details>
@@ -1030,11 +1030,11 @@ details.ev .pop b { color: var(--ink); }
     <h2>Transaksi di Lokasi, Nota Tercetak Seketika.</h2>
     <p class="lead">Tenaga penjual memilih barang, jumlah, dan cara pembayaran. Stok di motornya berkurang saat itu juga dan nota langsung dicetak. Pada malam hari tidak ada catatan yang perlu disalin ulang ke buku.</p>
     <ul class="also">
-      <li><span><b>Foto bukti dari kamera langsung.</b> Admin wilayah dan tenaga penjual wajib memotret saat itu juga, bukan memilih dari galeri.</span></li>
-      <li><span><b>Empat tingkat harga.</b> Retail, Grosir, Ecer, dan Distributor untuk setiap produk.</span></li>
+      <li><span><b>Pencatatan penjualan real-time dengan bukti foto.</b> Setiap transaksi tercatat saat itu juga, disertai foto langsung dari kamera, bukan dari galeri.</span></li>
+      <li><span><b>Price lock untuk setiap level pelanggan.</b> Empat tingkat harga per produk (Retail, Grosir, Ecer, Distributor), dan harga untuk setiap toko terkunci otomatis sesuai level pelanggannya.</span></li>
     </ul>
     <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Terminal penjualan <b>src/MerchantSalesView.jsx</b>; nota cetak <b>print-receipt</b> di <b>src/components/SaleReceipt.jsx</b> (satu nota untuk Laporan dan Putar Ulang Hari), tetap biru perusahaan karena nota itu kertas, bukan layar aplikasi. Satu penjualan 3 baris disimpan dalam 610 byte: <b>txSize</b> self-check 6/6 lulus (6 Oktober 2026). Kamera langsung: <b>src/components/ProofCamera.jsx:29</b>; galeri hanya untuk T2 dan T3: <b>canPickFromGallery()</b> di <b>src/config/permissions.js:118</b>. Tingkat harga: <b>PRICE_TIERS</b> di <b>src/utils/helpers.js:709</b>. Nama barang dan harga di sini contoh.</div></details>
+      <details class="ev"><summary>Bukti</summary><div class="pop">Terminal penjualan <b>src/MerchantSalesView.jsx</b>; nota cetak <b>print-receipt</b> di <b>src/components/SaleReceipt.jsx</b> (satu nota untuk Laporan dan Putar Ulang Hari), tetap biru perusahaan karena nota itu kertas, bukan layar aplikasi. Satu penjualan 3 baris disimpan dalam 610 byte: <b>txSize</b> self-check 6/6 lulus (6 Oktober 2026). Kamera langsung: <b>src/components/ProofCamera.jsx:29</b>; galeri hanya untuk T2 dan T3: <b>canPickFromGallery()</b> di <b>src/config/permissions.js:118</b>. Harga terkunci sesuai level toko: <b>setLockedTier</b> di <b>src/MerchantSalesView.jsx:619</b>. Tingkat harga: <b>PRICE_TIERS</b> di <b>src/utils/helpers.js:709</b>. Nama barang dan harga di sini contoh.</div></details>
     </div>
   </div>
   <div class="vis term">
@@ -1064,9 +1064,9 @@ details.ev .pop b { color: var(--ink); }
   <div class="copy">
     <div class="eyebrow">13 · Cek Lokasi <span class="aud">Untuk pimpinan</span></div>
     <h2>Validasi GPS di Setiap Transaksi.</h2>
-    <p class="lead">Saat mencatat penjualan, posisi tenaga penjual diperiksa dengan GPS. Ia harus berada dalam radius 100 meter dari toko. Di luar itu ia harus meminta izin, dan permintaannya langsung masuk ke kantor lengkap dengan jaraknya. Toko yang sudah dikunjungi hari ini memberi tahu siapa yang datang, dan penjualan di toko milik tenaga penjual lain diberi tanda.</p>
+    <p class="lead">Saat mencatat penjualan, posisi salesperson diperiksa dengan GPS, dan penjualan hanya dapat dicatat dalam radius 100 meter dari toko. Bila perlu menjual di luar radius itu, misalnya saat sinyal GPS lemah, salesperson mengajukan izin, lalu admin tim daerah menyetujui atau menolaknya dengan melihat jaraknya. Auto locator mengenali toko terdaftar di sekitar posisi GPS, dan penjualan di toko milik salesperson lain diberi tanda.</p>
     <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Pemeriksaan lokasi: <b>verifyLocation()</b> di <b>src/MerchantSalesView.jsx:348</b>. Permintaan izin di luar 100 m, dengan jaraknya, ke <b>gps_bypasses</b> dan pemberitahuan kantor: baris 853-859. Toko yang sudah dikunjungi hari ini dan tanda toko milik sales lain (<b>territoryOverride</b>): baris 223-226. Nama dan jarak di sini contoh.</div></details>
+      <details class="ev"><summary>Bukti</summary><div class="pop">Pemeriksaan lokasi: <b>verifyLocation()</b> di <b>src/MerchantSalesView.jsx:348</b>. Permintaan izin di luar 100 m, dengan jaraknya, ke <b>gps_bypasses</b> dan pemberitahuan kantor: baris 853-859. Toko terdaftar di dalam radius dikenali sendiri, terdekat lebih dulu: <b>nearbyStores</b>, baris 221 dan 368-379. Izin disetujui atau ditolak admin: <b>src/FleetCanvasManager.jsx:1422, 1433</b>. Tanda toko milik sales lain (<b>territoryOverride</b>): baris 223-226. Nama dan jarak di sini contoh.</div></details>
     </div>
   </div>
   <div class="vis rise">
@@ -1074,7 +1074,7 @@ details.ev .pop b { color: var(--ink); }
       <div class="hd3"><span class="stamp">Cek lokasi · Toko Makmur</span><span class="contoh">Data contoh</span></div>
       <div class="radar"><i class="ping"></i><i class="ring"></i><span class="shopdot" aria-hidden="true"></span><span class="rlab">100 m</span><span class="mdot" id="mdot">BS</span></div>
       <span class="kpm-led-line crit" id="geoLed"><i aria-hidden="true"></i><span id="geoTxt">182 m · di luar 100 m</span></span>
-      <div class="req2" id="geoReq"><span>Izin jual dari 182 m · Budi Santoso</span><span class="kpm-led-line warn" id="geoReqLed"><i aria-hidden="true"></i><span>Menunggu kantor</span></span></div>
+      <div class="req2" id="geoReq"><span>Izin jual dari 182 m · Budi Santoso</span><span class="kpm-led-line warn" id="geoReqLed"><i aria-hidden="true"></i><span>Menunggu admin</span></span></div>
     </div>
   </div>
 </section>
@@ -1110,13 +1110,13 @@ details.ev .pop b { color: var(--ink); }
     <h2>Customer Insight Sebelum Kunjungan.</h2>
     <p class="lead">Sebelum masuk toko, tenaga penjual melihat kapan toko itu terakhir memesan, barang apa yang dibeli, dan berapa nilainya. Selesai berkunjung, ia mengirim Laporan Kunjungan cukup dengan satu tekanan. Permintaan baru dari toko ditandai "!" dan tanda itu baru hilang setelah ada yang menyelesaikannya, jadi tidak ada permintaan yang terlupa.</p>
     <ul class="also">
-      <li><span><b>Toko ganda ketahuan.</b> Toko yang tercatat dua kali dikenali dari nama dan jaraknya.</span></li>
-      <li><span><b>Harga pesaing per toko.</b> Merek, produk, harga, dan seberapa laku produk pesaing dicatat di setiap toko.</span></li>
-      <li><span><b>Toko baru dengan foto dan titik GPS.</b> Tenaga penjual mendaftarkan toko baru di tempat, lengkap dengan foto depan toko.</span></li>
-      <li><span><b>Lihat jalan menuju toko.</b> Setiap toko dapat dilihat lewat Street View sebelum dikunjungi.</span></li>
+      <li><span><b>Toko ganda terdeteksi.</b> Bila satu toko terdaftar dua kali, misalnya dengan nama yang mirip dan lokasi berdekatan (di bawah 40 meter), aplikasi menandainya untuk diperiksa admin, sehingga riwayat penjualan dan piutang toko tidak terpecah.</span></li>
+      <li><span><b>Status dan performa kompetitor per toko.</b> Merek, produk, harga, dan seberapa laku produk kompetitor dicatat di profil setiap toko sebagai bahan strategi penjualan lanjutan.</span></li>
+      <li><span><b>NOO (New Open Outlet) dengan verifikasi.</b> Toko baru hanya dapat diregistrasi dengan foto depan toko dan titik GPS, lalu aktif setelah dikonfirmasi admin daerah.</span></li>
+      <li><span><b>Navigasi ke toko yang belum pernah dikunjungi.</b> Integrasi Google Maps dan Street View menuntun salesperson menemukan toko baru dengan mudah.</span></li>
     </ul>
     <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Ringkasan di pintu toko (pesanan terakhir, barang, total): <b>src/utils/customerBrief.js:64</b>, <b>customerBrief</b> self-check 9/9 lulus. Lima pilihan Laporan Kunjungan: <b>QUICK_TAGS</b> di <b>src/JourneyView.jsx:959</b>. Tanda "!" hanya hilang lewat tombol Request done: <b>src/JourneyView.jsx:910</b>. Hak atas daftar pelanggan per jabatan (lihat saja, wilayah sendiri, semua): <b>src/components/CustomerManager.jsx:220</b>. Toko ganda dari nama dan jarak: <b>src/utils/findDuplicates.js:1</b>, self-check 26/26 lulus. Catatan pesaing per toko (merek, produk, harga, catatan, tingkat laku): <b>src/components/CustomerManager.jsx:45-60</b>. Toko baru dengan foto depan dan GPS: <b>src/MerchantSalesView.jsx:314, 924</b>. Street View toko: <b>src/components/CustomerManager.jsx:82</b>. Toko dan barang di sini contoh.</div></details>
+      <details class="ev"><summary>Bukti</summary><div class="pop">Ringkasan di pintu toko (pesanan terakhir, barang, total): <b>src/utils/customerBrief.js:64</b>, <b>customerBrief</b> self-check 9/9 lulus. Lima pilihan Laporan Kunjungan: <b>QUICK_TAGS</b> di <b>src/JourneyView.jsx:959</b>. Tanda "!" hanya hilang lewat tombol Request done: <b>src/JourneyView.jsx:910</b>. Hak atas daftar pelanggan per jabatan (lihat saja, wilayah sendiri, semua): <b>src/components/CustomerManager.jsx:220</b>. Toko ganda dari nama dan jarak, radius 40 m, ditandai tanpa dihapus: <b>src/components/CustomerManager.jsx:740</b>, <b>src/utils/findDuplicates.js:1</b>, self-check 26/26 lulus. Catatan pesaing per toko (merek, produk, harga, catatan, tingkat laku): <b>src/components/CustomerManager.jsx:45-60</b>. Toko baru dengan foto depan dan GPS: <b>src/MerchantSalesView.jsx:314, 924</b>. Street View toko: <b>src/components/CustomerManager.jsx:82</b>; rute Google Maps: <b>src/MapMissionControl.jsx:1296</b>. NOO aktif setelah disetujui admin: <b>handleApproveNOO</b> di <b>src/components/CustomerManager.jsx:1125</b>. Toko dan barang di sini contoh.</div></details>
     </div>
   </div>
   <div class="vis rise">
@@ -1149,7 +1149,7 @@ details.ev .pop b { color: var(--ink); }
     <div class="eyebrow">16 · EOD Reconciliation <span class="aud">Untuk pimpinan</span></div>
     <h2>EOD Reconciliation: Setiap Rupiah Terverifikasi.</h2>
     <p class="lead">Setiap akhir hari, melalui EOD (End of Day Reconciliation), tenaga penjual menyetorkan uang tunai, bukti transfer, sisa barang, dan pita cukai. Admin wilayah memeriksanya baris demi baris. Jika ada kekurangan, selisihnya dicatat sebagai utang atas nama tenaga penjual tersebut.</p>
-    <ul class="also"><li><span><b>EOD dipandu untuk tenaga penjual.</b> Empat kartu dihitung satu per satu, lalu masuk ke satu surat yang disegel dan dikirim.</span></li></ul>
+    <ul class="also"><li><span><b>EOD dipandu untuk tenaga penjual.</b> Empat kartu dihitung satu per satu, lalu masuk ke surat digital beranimasi yang dikirim ke admin dan menunggu persetujuannya.</span></li></ul>
     <div class="evs">
       <details class="ev"><summary>Bukti</summary><div class="pop">Setoran tenaga penjual: kartu <b>src/components/EODCardDeck.jsx</b> dan surat yang disegel <b>src/components/EODLetter.jsx:1</b>. Layar verifikasi <b>src/EODReconciliationView.jsx</b> (commit <b>64f6505</b>); setuju per baris, commit <b>20aac21</b>; selisih jadi utang: <b>eodBountyLines()</b> di <b>src/utils/helpers.js:716</b>; catatan setoran: <b>eodRecord</b> self-check 12/12 lulus (6 Oktober 2026). Garis pindai dan cap: <b>theme.css</b> blok THE DOCKET.</div></details>
     </div>
@@ -1878,7 +1878,7 @@ function geoSet(i, req) {
   mdot.style.left = p[0] + '%'; mdot.style.top = p[1] + '%'; mdot.classList.toggle('in', inside);
   geoLed.className = 'kpm-led-line ' + (inside ? 'on' : 'crit'); geoTxt.textContent = inside ? `${m} m · boleh mencatat penjualan` : `${m} m · di luar 100 m`;
   geoReq.classList.toggle('hide', !req);
-  if (req) { geoReq.firstChild.textContent = `Izin jual dari ${m} m · Budi Santoso`; geoReqLed.className = 'kpm-led-line ' + (req === 'ok' ? 'on' : 'warn'); geoReqLed.lastChild.textContent = req === 'ok' ? 'Disetujui kantor' : 'Menunggu kantor'; }
+  if (req) { geoReq.firstChild.textContent = `Izin jual dari ${m} m · Budi Santoso`; geoReqLed.className = 'kpm-led-line ' + (req === 'ok' ? 'on' : 'warn'); geoReqLed.lastChild.textContent = req === 'ok' ? 'Disetujui admin' : 'Menunggu admin'; }
 }
 const GEO_PLAN = [[0, null, 900], [1, null, 900], [2, null, 2000], [3, null, 1100], [3, 'wait', 1600], [3, 'ok', 2400]];
 function geoRun() {
