@@ -748,6 +748,29 @@ details.ev .pop b { color: var(--ink); }
 #selLines { margin-top: 0; min-height: 184px; align-content: start; }
 .selchip { position: absolute; left: 0; top: 0; z-index: 6; pointer-events: none; white-space: nowrap; font: 700 13px/1 var(--font-mono); font-variant-numeric: tabular-nums;
   padding: 8px 10px; border: 1px solid var(--led-crit); border-radius: 6px; background: var(--raised); color: var(--danger-ink); box-shadow: 0 6px 18px rgba(0,0,0,.5); }
+/* hand-over: two salespeople, the shop's card travels from one to the other through the regional admin's approval */
+#uang .vis { display: grid; gap: 12px; }
+.hostage { position: relative; height: 230px; margin-top: 4px; }
+.hop { position: absolute; bottom: 4px; width: 84px; display: grid; justify-items: center; gap: 3px; transition: opacity 300ms; }
+.hop.a { left: 0; } .hop.b { right: 0; } .hop.dim { opacity: .45; }
+.hop .who svg { display: block; width: 45px; height: 63px; shape-rendering: crispEdges; }
+.hop.b .who { transform: scaleX(-1); filter: sepia(.55) saturate(1.3); }
+.hop b { font: 800 15px/1.1 var(--font-display); letter-spacing: .05em; text-transform: uppercase; }
+.hop small { font: 700 11px/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); }
+.hoadm { position: absolute; left: 50%; top: 0; translate: -50% 0; display: grid; justify-items: center; gap: 6px; padding: 8px 12px; border: 1px dashed var(--line-3); border-radius: 10px; background: var(--inset); transition: border-color 200ms; }
+.hoadm.warn { border-color: var(--led-warn); border-style: solid; } .hoadm.on { border-color: var(--gold); border-style: solid; }
+.hobadge { font: 800 13px/1 var(--font-display); letter-spacing: .1em; text-transform: uppercase; }
+.hocard { position: absolute; width: 132px; display: grid; gap: 3px; padding: 8px 10px; border: 1px solid var(--gold); border-radius: 8px; background: var(--raised); font: 700 12px/1.2 var(--font-mono); color: var(--ink-muted);
+  box-shadow: 0 8px 20px rgba(0,0,0,.5); transition: left 900ms cubic-bezier(.65,0,.35,1), top 900ms cubic-bezier(.65,0,.35,1), transform 900ms cubic-bezier(.65,0,.35,1); }
+.hocard b { font: 800 14px/1.1 var(--font-display); letter-spacing: .04em; text-transform: uppercase; color: var(--ink); }
+.hocard.at-a { left: 64px; top: 104px; transform: rotate(-4deg); }
+.hocard.at-mid { left: calc(50% - 66px); top: 70px; transform: rotate(0deg) scale(1.05); }
+.hocard.at-b { left: calc(100% - 196px); top: 104px; transform: rotate(4deg); }
+.hostamp { position: absolute; left: 50%; top: 100px; z-index: 3; opacity: 0; pointer-events: none; padding: 6px 10px; border: 3px solid var(--gold); border-radius: 8px; background: color-mix(in srgb, var(--ground) 72%, transparent);
+  font: 900 18px/1 var(--font-mono); letter-spacing: .24em; color: var(--gold-2); font-style: normal; transform: translate(-50%, -50%) rotate(-8deg); }
+.hostamp.on { opacity: 1; }
+.moving .hostamp.on { animation: lockSlam 340ms cubic-bezier(.2,.8,.3,1) both; }
+.still .hocard, .still .hop { transition: none; }
 .feed { display: grid; gap: 0; margin-top: 10px; max-width: 520px; min-height: 152px; align-content: start; }
 @media (min-width: 1024px) { .feed { margin-inline: auto; } }
 </style>
@@ -1222,6 +1245,17 @@ details.ev .pop b { color: var(--ink); }
       <div class="lane"><span class="kpm-led-line warn"><i aria-hidden="true"></i>Segera jatuh tempo</span><div class="chips"><span class="chip">Warung Barokah · Rp 205.000</span></div></div>
       <div class="lane r"><span class="kpm-led-line crit"><i aria-hidden="true"></i>Lewat jatuh tempo</span><div class="chips"><span class="chip">Toko Sinar Abadi · Rp 410.000</span></div></div>
     </div>
+    <div class="box3" id="ho">
+      <div class="hd3"><span class="stamp">Pindah tangan toko · Cabang Utara</span><span class="contoh">Data contoh</span></div>
+      <div class="hostage" id="hoStage">
+        <div class="hop a"><div class="who"></div><b>Budi</b><small>Pemberi</small></div>
+        <div class="hoadm" id="hoAdm"><span class="hobadge">Admin daerah</span><span class="kpm-led-line" id="hoLed"><i aria-hidden="true"></i><span>Belum diajukan</span></span></div>
+        <div class="hop b dim"><div class="who"></div><b>Andi</b><small>Penerima</small></div>
+        <div class="hocard at-a" id="hoCard"><b>Toko Makmur</b><span>Stok 24 bks</span><span>Utang Rp 640.000</span></div>
+        <i class="hostamp" id="hoStamp" aria-hidden="true">DISETUJUI</i>
+      </div>
+      <span class="kpm-led-line" id="hoChain"><i aria-hidden="true"></i><span>Penanggung jawab: Budi Santoso</span></span>
+</div>
   </div>
 </section>
 
@@ -1966,7 +2000,7 @@ function selRun() {
     chip.remove(); const ln = selLine(x); selLines.append(ln); replay(ln); selSum += x.v; nixie(selNx, fmt(selSum)); selTimer = wait(700, selRun);
   };
 }
-const round3 = () => { custRun(); arRun(); stockRun(); ledgerRun(); secRun(); paceRun(); smpRun(); geoRun(); opRun(); rmRun(); p3Run(); selRun(); };
+const round3 = () => { custRun(); arRun(); stockRun(); ledgerRun(); secRun(); paceRun(); smpRun(); geoRun(); opRun(); rmRun(); p3Run(); selRun(); hoRun(); };
 
 /* ---- numbers: the nixies start at zero and roll to their value when their scene first shows ---- */
 const nx5 = $('#nx5'), tiles = $$('.tile .kpm-nixie');
@@ -1980,6 +2014,28 @@ function numbersStill() { nixie(nx5, fmt(910000)); tiles.forEach((t) => nixie(t,
    chests, the bar and the card all read it. Lite / still: the frame stands at stop 5, and Play cuts between still pictures
    (the man jumps, nothing animates) - the app's own Lite rule. Every key does something you can see. ---- */
 const DR_PERSON = "<svg class=\"px\" viewBox=\"0 0 10 14\" width=\"30\" height=\"42\"><g class=\"legsA\"><rect x=\"1\" y=\"10\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"2\" y=\"10\" width=\"2\" height=\"1\" fill=\"#3A3530\"/><rect x=\"4\" y=\"10\" width=\"2\" height=\"1\" fill=\"#0A0908\"/><rect x=\"6\" y=\"10\" width=\"2\" height=\"1\" fill=\"#3A3530\"/><rect x=\"8\" y=\"10\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"1\" y=\"11\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"2\" y=\"11\" width=\"2\" height=\"1\" fill=\"#3A3530\"/><rect x=\"4\" y=\"11\" width=\"2\" height=\"1\" fill=\"#0A0908\"/><rect x=\"6\" y=\"11\" width=\"2\" height=\"1\" fill=\"#17130F\"/><rect x=\"8\" y=\"11\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"1\" y=\"12\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"2\" y=\"12\" width=\"2\" height=\"1\" fill=\"#17130F\"/><rect x=\"4\" y=\"12\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"6\" y=\"12\" width=\"2\" height=\"1\" fill=\"#0A0908\"/><rect x=\"1\" y=\"13\" width=\"4\" height=\"1\" fill=\"#0A0908\"/></g><g class=\"legsB\"><rect x=\"1\" y=\"10\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"2\" y=\"10\" width=\"2\" height=\"1\" fill=\"#3A3530\"/><rect x=\"4\" y=\"10\" width=\"2\" height=\"1\" fill=\"#0A0908\"/><rect x=\"6\" y=\"10\" width=\"2\" height=\"1\" fill=\"#3A3530\"/><rect x=\"8\" y=\"10\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"1\" y=\"11\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"2\" y=\"11\" width=\"2\" height=\"1\" fill=\"#17130F\"/><rect x=\"4\" y=\"11\" width=\"2\" height=\"1\" fill=\"#0A0908\"/><rect x=\"6\" y=\"11\" width=\"2\" height=\"1\" fill=\"#3A3530\"/><rect x=\"8\" y=\"11\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"2\" y=\"12\" width=\"2\" height=\"1\" fill=\"#0A0908\"/><rect x=\"5\" y=\"12\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"6\" y=\"12\" width=\"2\" height=\"1\" fill=\"#17130F\"/><rect x=\"8\" y=\"12\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"5\" y=\"13\" width=\"4\" height=\"1\" fill=\"#0A0908\"/></g><g><rect x=\"2\" y=\"0\" width=\"6\" height=\"1\" fill=\"#0A0908\"/><rect x=\"1\" y=\"1\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"2\" y=\"1\" width=\"6\" height=\"1\" fill=\"#2B1A0E\"/><rect x=\"8\" y=\"1\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"1\" y=\"2\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"2\" y=\"2\" width=\"1\" height=\"1\" fill=\"#2B1A0E\"/><rect x=\"3\" y=\"2\" width=\"4\" height=\"1\" fill=\"#E2AE80\"/><rect x=\"7\" y=\"2\" width=\"1\" height=\"1\" fill=\"#2B1A0E\"/><rect x=\"8\" y=\"2\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"1\" y=\"3\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"2\" y=\"3\" width=\"1\" height=\"1\" fill=\"#E2AE80\"/><rect x=\"3\" y=\"3\" width=\"1\" height=\"1\" fill=\"#2A1A10\"/><rect x=\"4\" y=\"3\" width=\"2\" height=\"1\" fill=\"#E2AE80\"/><rect x=\"6\" y=\"3\" width=\"1\" height=\"1\" fill=\"#2A1A10\"/><rect x=\"7\" y=\"3\" width=\"1\" height=\"1\" fill=\"#E2AE80\"/><rect x=\"8\" y=\"3\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"1\" y=\"4\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"2\" y=\"4\" width=\"2\" height=\"1\" fill=\"#E2AE80\"/><rect x=\"4\" y=\"4\" width=\"2\" height=\"1\" fill=\"#C48C5E\"/><rect x=\"6\" y=\"4\" width=\"2\" height=\"1\" fill=\"#E2AE80\"/><rect x=\"8\" y=\"4\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"0\" y=\"5\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"1\" y=\"5\" width=\"8\" height=\"1\" fill=\"#E8E4DE\"/><rect x=\"9\" y=\"5\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"0\" y=\"6\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"1\" y=\"6\" width=\"1\" height=\"1\" fill=\"#E8E4DE\"/><rect x=\"2\" y=\"6\" width=\"1\" height=\"1\" fill=\"#a2a09b\"/><rect x=\"3\" y=\"6\" width=\"4\" height=\"1\" fill=\"#E8E4DE\"/><rect x=\"7\" y=\"6\" width=\"1\" height=\"1\" fill=\"#a2a09b\"/><rect x=\"8\" y=\"6\" width=\"1\" height=\"1\" fill=\"#E8E4DE\"/><rect x=\"9\" y=\"6\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"0\" y=\"7\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"1\" y=\"7\" width=\"1\" height=\"1\" fill=\"#E8E4DE\"/><rect x=\"2\" y=\"7\" width=\"1\" height=\"1\" fill=\"#a2a09b\"/><rect x=\"3\" y=\"7\" width=\"4\" height=\"1\" fill=\"#E8E4DE\"/><rect x=\"7\" y=\"7\" width=\"1\" height=\"1\" fill=\"#a2a09b\"/><rect x=\"8\" y=\"7\" width=\"1\" height=\"1\" fill=\"#E8E4DE\"/><rect x=\"9\" y=\"7\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"0\" y=\"8\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"1\" y=\"8\" width=\"1\" height=\"1\" fill=\"#E2AE80\"/><rect x=\"2\" y=\"8\" width=\"1\" height=\"1\" fill=\"#a2a09b\"/><rect x=\"3\" y=\"8\" width=\"4\" height=\"1\" fill=\"#E8E4DE\"/><rect x=\"7\" y=\"8\" width=\"1\" height=\"1\" fill=\"#a2a09b\"/><rect x=\"8\" y=\"8\" width=\"1\" height=\"1\" fill=\"#E2AE80\"/><rect x=\"9\" y=\"8\" width=\"1\" height=\"1\" fill=\"#0A0908\"/><rect x=\"0\" y=\"9\" width=\"2\" height=\"1\" fill=\"#0A0908\"/><rect x=\"2\" y=\"9\" width=\"6\" height=\"1\" fill=\"#3A3530\"/><rect x=\"8\" y=\"9\" width=\"2\" height=\"1\" fill=\"#0A0908\"/></g></svg>";
+/* hand-over (his 2026-10-17 ask: "2 people ... giving their store responsibility"): the shop's card leaves Budi, waits at the
+   regional admin (the stock and the debt on it, as HandoffOffer shows both sides), is approved, and lands with Andi */
+const hoCard = $('#hoCard'), hoAdm = $('#hoAdm'), hoLed = $('#hoLed'), hoStamp = $('#hoStamp'), hoChain = $('#hoChain'), hoA = $('#hoStage .hop.a'), hoB = $('#hoStage .hop.b');
+$$('#hoStage .who').forEach((w) => { w.innerHTML = DR_PERSON; });
+const HO = [
+  { card: 'a', adm: '', led: ['', 'Belum diajukan'], stamp: false, b: false, chain: ['', 'Penanggung jawab: Budi Santoso'], ms: 1200 },
+  { card: 'mid', adm: 'warn', led: ['warn', 'Menunggu persetujuan'], stamp: false, b: false, chain: ['warn', 'Budi mengajukan pindah tangan ke Andi'], ms: 1800 },
+  { card: 'mid', adm: 'on', led: ['on', 'Disetujui'], stamp: true, b: false, chain: ['on', 'Admin memeriksa stok dan utang, lalu menyetujui'], ms: 1200 },
+  { card: 'b', adm: 'on', led: ['on', 'Disetujui'], stamp: false, b: true, chain: ['on', 'Budi Santoso → Andi Pratama · 17 Okt'], ms: 2800 },
+];
+let hoTimer = 0, hoStep = 0;
+function hoSet(st) {
+  hoCard.className = 'hocard at-' + st.card; hoAdm.className = 'hoadm ' + st.adm;
+  hoLed.className = 'kpm-led-line ' + st.led[0]; hoLed.lastChild.textContent = st.led[1];
+  hoStamp.classList.toggle('on', st.stamp); hoB.classList.toggle('dim', !st.b); hoA.classList.toggle('dim', st.b);
+  hoChain.className = 'kpm-led-line ' + st.chain[0]; hoChain.lastChild.textContent = st.chain[1];
+}
+function hoRun() {
+  clearTimeout(hoTimer);
+  if (still || !live.has('uang')) { hoSet(HO[3]); return; }
+  const st = HO[hoStep]; hoSet(st); hoStep = (hoStep + 1) % HO.length; hoTimer = wait(st.ms, hoRun);
+}
 const DR = [
   { t: '08:10', k: 'start', x: 8, y: 88 },
   { t: '08:24', k: 'sold', x: 20, y: 70, n: 'Toko Berkah Jaya', v: 'Sale · Rp 250.000' },
@@ -2105,7 +2161,7 @@ const io = new IntersectionObserver((es) => {
     if (e.isIntersecting) { live.add(id); e.target.classList.add('live');
       if (!seen.has(id)) { seen.add(id); e.target.classList.add('seen'); if (!still) { numbers(id); orbs.forEach((o) => { if (o.id === id) o.spin(); }); if (id === 'produk') p3Bars.forEach((row, ri) => row.forEach((b, pi) => regrow(b, p3F(ri, pi), ri * 90 + pi * 60))); } }
       if (id === 'setoran') { dStep = 0; docketRun(); } if (id === 'karantina') doorsRun(true); if (id === 'aman') { nStep = 0; netRun(); } if (id === 'ulang') drGo();
-      if (id === 'pelanggan') { vStep = 0; custRun(); } if (id === 'uang') { aDay = 0; arRun(); } if (id === 'stok') { sQty = 60; stockRun(); }
+      if (id === 'pelanggan') { vStep = 0; custRun(); } if (id === 'uang') { aDay = 0; arRun(); hoStep = 0; hoRun(); } if (id === 'stok') { sQty = 60; stockRun(); }
       if (id === 'catatan') { lStep = 0; ledgerRun(); } if (id === 'keamanan') { kStep = 0; secRun(); }
       if (id === 'target') { paceSet('bulan'); paceRun(); } if (id === 'sampel') { sN = 0; smpRun(); } if (id === 'lokasi') { gStep = 0; geoRun(); } if (id === 'opname') { oStep = 0; opRun(); }
       if (id === 'dimana') { rmEv = 0; rmRun(); } if (id === 'selisih') { selStep = 0; selRun(); } if (id === 'produk') p3Run();
