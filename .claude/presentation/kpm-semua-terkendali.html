@@ -120,6 +120,9 @@ details.ev .pop b { color: var(--ink); }
   border: 1px solid var(--line-3); border-radius: 4px; padding: 5px 7px; white-space: nowrap; }
 .tag.hq { color: var(--gold-2); border-color: var(--gold); }
 .tag.rp { color: var(--gold-2); }
+.tag.ar { font-size: 11px; letter-spacing: .1em; padding: 3px 5px; color: var(--ink-muted); background: rgba(27,25,23,.88); text-align: center; line-height: 1.25; }
+.tag.ar b { display: block; color: var(--gold-2); font-weight: 700; }
+.tag.rp.ar { color: var(--ink); border-color: var(--gold); }
 .man { display: grid; justify-items: center; }
 .man b { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--raised); border: 2px solid var(--gold-2); font: 800 11px/1 var(--font-mono); color: var(--ink); }
 .man i { width: 2px; height: 10px; background: linear-gradient(var(--gold-2), transparent); }
@@ -905,13 +908,13 @@ details.ev .pop b { color: var(--ink); }
     <h2>Offline-Ready: Tetap Beroperasi Tanpa Sinyal.</h2>
     <p class="lead">Di daerah tanpa sinyal, penjualan tetap tercatat dengan aturan yang sama. Setelah sinyal kembali, data terkirim dengan sendirinya. Data disimpan di server Google, dan data setiap perusahaan dipisahkan.</p>
     <ul class="also">
-      <li><span><b>Tidak ada pemberitahuan yang terlewat.</b> Lonceng menyimpan daftar pemberitahuan yang terlewat selama 7 hari.</span></li>
-      <li><span><b>Selalu versi terbaru.</b> Saat masuk, aplikasi menyebut versinya sudah terbaru atau sedang memperbarui diri, tanpa toko aplikasi.</span></li>
-      <li><span><b>Mode Ringan untuk telepon murah.</b> Bayangan dan gerakan dimatikan, semua fungsi tetap sama.</span></li>
-      <li><span><b>Buku panduan di dalam aplikasi.</b> Bagian-bagiannya sama dengan menu samping, dan buku langsung terbuka di layar yang sedang dipakai. Karyawan baru bisa belajar sendiri.</span></li>
+      <li><span><b>Tidak ada pemberitahuan yang terlewat.</b> Notification Bell menyimpan daftar pemberitahuan yang terlewat selama 7 hari.</span></li>
+      <li><span><b>Auto Update ke versi terbaru.</b> Saat masuk, aplikasi memeriksa versinya dan memperbarui diri secara otomatis, tanpa toko aplikasi.</span></li>
+      <li><span><b>Lite Mode untuk performa maksimal.</b> Animasi dan efek dibuat lebih ringan, semua fungsi tetap sama.</span></li>
+      <li><span><b>Ponder Book, panduan interaktif di dalam aplikasi.</b> Isinya mengikuti menu samping dan langsung terbuka di layar yang sedang dipakai, sehingga karyawan baru bisa belajar sendiri.</span></li>
     </ul>
     <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Dipasang seperti aplikasi dan jalan tanpa internet: <b>registerSW</b> di <b>src/main.jsx:13</b>. Catatan disimpan dulu di telepon lalu terkirim sendiri saat sinyal kembali: <b>persistentLocalCache</b> di <b>src/config/firebase.js:50</b>. Daftar yang terlewat, 7 hari dan 100 terbaru: <b>src/utils/missedLog.js:26</b>, lonceng <b>src/components/NotificationBell.jsx:1</b>. Pemeriksaan versi: <b>src/utils/updateCheck.js:1</b>. Mode Ringan: <b>src/App.jsx:3104</b>. Buku panduan: <b>src/ponder/PonderBook.jsx:1</b>; daftar isinya mengikuti menu samping dan terbuka di bagian yang sedang dibuka: <b>src/ponder/sections.js:1</b>.</div></details>
+      <details class="ev"><summary>Bukti</summary><div class="pop">Dipasang seperti aplikasi dan jalan tanpa internet: <b>registerSW</b> di <b>src/main.jsx:13</b>. Catatan disimpan dulu di telepon lalu terkirim sendiri saat sinyal kembali: <b>persistentLocalCache</b> di <b>src/config/firebase.js:50</b>. Daftar yang terlewat, 7 hari dan 100 terbaru: <b>src/utils/missedLog.js:26</b>, Notification Bell <b>src/components/NotificationBell.jsx:1</b>. Pemeriksaan versi: <b>src/utils/updateCheck.js:1</b>. Lite Mode: <b>src/App.jsx:3104</b>. Ponder Book: <b>src/ponder/PonderBook.jsx:1</b>; daftar isinya mengikuti menu samping dan terbuka di bagian yang sedang dibuka: <b>src/ponder/sections.js:1</b>.</div></details>
     </div>
   </div>
   <div class="vis rise">
@@ -1199,7 +1202,7 @@ details.ev .pop b { color: var(--ink); }
     <p class="lead">Poin pengalaman (XP) diperoleh dari setoran yang lolos pemeriksaan, toko yang dilayani, dan tagihan yang berhasil ditagih. Pangkatnya berjenjang dari Bronze sampai Mythic dan ditandai bingkai di sekeliling foto. Tenaga penjual melihat kemajuannya sendiri, pimpinan melihat siapa yang paling aktif.</p>
     <ul class="also"><li><span><b>Cara menghitung pangkat dipilih pimpinan.</b> Dari seluruh riwayat kerja, sehingga satu minggu sepi tidak menurunkan pangkat, atau dari penjualan 7 hari terakhir.</span></li></ul>
     <div class="evs">
-      <details class="ev"><summary>Bukti</summary><div class="pop">Kartu <b>src/components/PlayerCard.jsx</b>; XP <b>careerXP()</b> dan <b>computeDayXP()</b> di <b>src/config/career.js:83, 119</b>; bingkai pangkat <b>src/config/rankBorders.jsx</b>; di Mode Ringan bingkai Platinum dan Mythic berhenti berputar, commit <b>c64de8b</b>. Pilihan cara menghitung pangkat: <b>src/components/SettingsView.jsx:1500-1502</b>. Orang dan angka di kartu ini contoh.</div></details>
+      <details class="ev"><summary>Bukti</summary><div class="pop">Kartu <b>src/components/PlayerCard.jsx</b>; XP <b>careerXP()</b> dan <b>computeDayXP()</b> di <b>src/config/career.js:83, 119</b>; bingkai pangkat <b>src/config/rankBorders.jsx</b>; di Lite Mode bingkai Platinum dan Mythic berhenti berputar, commit <b>c64de8b</b>. Pilihan cara menghitung pangkat: <b>src/components/SettingsView.jsx:1500-1502</b>. Orang dan angka di kartu ini contoh.</div></details>
     </div>
   </div>
   <div class="vis">
@@ -1367,6 +1370,7 @@ for (const s of SALES) {
   s.omzet = s.stores.reduce((a, st) => a + st.sold * PRICE, 0);
 }
 /* areas: a Voronoi split of the square; an area's sales = the shops nearest its seed */
+const AREAS = ['Pusat Kota', 'Utara', 'Timur', 'Selatan', 'Barat Laut', 'Timur Laut', 'Barat', 'Tenggara', 'Pesisir', 'Barat Daya', 'Hulu'];
 const SEEDS = [HQ, ...BR, { x: 90, y: 80 }, { x: 930, y: 90 }, { x: 80, y: 600 }, { x: 930, y: 720 }, { x: 760, y: 950 }, { x: 140, y: 960 }, { x: 560, y: 120 }];
 function clip(poly, a, b) {
   const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, nx = b.x - a.x, ny = b.y - a.y, side = (p) => (p.x - mx) * nx + (p.y - my) * ny, out = [];
@@ -1428,7 +1432,9 @@ function plate(layers, opts = {}) {
     tag('Gudang Pusat', 'hq', HQ.x, HQ.y, 'calc(var(--u) * 78)');
     BR.forEach((b) => tag(b.n, '', b.x, b.y, 'calc(var(--u) * 54)'));
   }
-  if (opts.areas) [...CELLS].sort((a, b) => b.rev - a.rev).slice(0, 3).forEach((c) => tag(`Rp ${(c.rev * PRICE / 1e6).toFixed(1).replace('.', ',')} jt`, 'rp', c.cx, c.cy, '2px'));
+  /* his 2026-10-17 ask: the areas carry their names (example names, one per Voronoi seed); the top three keep their money */
+  if (opts.areas) { const top = [...CELLS].sort((a, b) => b.rev - a.rev).slice(0, 3);
+    CELLS.forEach((c, i) => tag(top.includes(c) ? `${AREAS[i]}<b>Rp ${(c.rev * PRICE / 1e6).toFixed(1).replace('.', ',')} jt</b>` : AREAS[i], top.includes(c) ? 'rp ar' : 'ar', c.cx, c.cy, '2px')); }
   for (const r of refs) {
     r.bars = r.s.stores.map((st) => { const b = el('div', 'bb bar3d L-heat', '<i></i>'); b.style.setProperty('--h', st.sold); return at(b, st.x, st.y); });
     r.man = at(el('div', 'bb man L-route', `<b>${r.s.ini}</b><i></i>`), r.s.stores[0].x, r.s.stores[0].y);
