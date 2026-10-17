@@ -682,9 +682,11 @@ details.ev .pop b { color: var(--ink); }
 .orb > .rig { width: var(--fw, 300px); height: var(--fd, 220px); margin-top: var(--mt, 60px); }
 .fl3 { position: absolute; inset: 0; transform-style: preserve-3d; transform: rotateX(var(--t)) rotateZ(var(--rz)); border: 1px solid var(--line-2); border-radius: 6px;
   background: repeating-linear-gradient(0deg, rgba(232,228,222,.05) 0 1px, transparent 1px 24px), repeating-linear-gradient(90deg, rgba(232,228,222,.05) 0 1px, transparent 1px 24px), var(--panel); }
-.hint { position: absolute; left: 0; bottom: 4px; z-index: 3; display: flex; align-items: center; gap: 6px; pointer-events: none;
-  font: 700 12px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); }
-.hint::before { content: ""; width: 16px; height: 8px; border: 2px solid var(--gold-2); border-top-color: transparent; border-radius: 50%; }
+/* the drag hint: a small pill in the picture's top-left corner, clear of the floor and of the panels under it (his 2026-10-17 shot) */
+.hint { position: absolute; left: 0; top: 0; z-index: 3; display: inline-flex; align-items: center; gap: 8px; pointer-events: none; padding: 6px 10px 6px 8px;
+  border: 1px solid var(--line-2); border-radius: 999px; background: rgba(14,13,12,.88);
+  font: 700 12px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); }
+.hint::before { content: "\2194"; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--gold-2); color: var(--gold-ink); font: 700 13px/1 system-ui, sans-serif; letter-spacing: 0; }
 .orb > .contoh { position: absolute; right: 0; top: 0; z-index: 3; }
 .flab { position: absolute; translate: -50% -50%; font: 700 12px/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); white-space: nowrap; pointer-events: none; }
 .flab.on { color: var(--gold-2); }
