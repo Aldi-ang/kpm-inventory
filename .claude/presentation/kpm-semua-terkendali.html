@@ -749,7 +749,7 @@ details.ev .pop b { color: var(--ink); }
   <div class="copy">
     <div class="eyebrow">01 · Peta Perjalanan <span class="aud">Untuk pimpinan</span></div>
     <h1>Semua sales. Semua toko. Satu peta.</h1>
-    <p class="lead">Rute setiap tenaga penjual, omzet setiap wilayah, dan perjalanan barang dari gudang ke toko tampil pada satu peta. Pimpinan dapat memantaunya langsung dari telepon.</p>
+    <p class="lead">Rute setiap tenaga penjual, omzet setiap wilayah, dan perjalanan barang dari gudang ke toko ditampilkan pada satu peta. Pimpinan dapat memantaunya langsung dari aplikasi.</p>
     <div class="where">Di aplikasi: <b>Journey Plan</b> dan <b>Map System</b>, yang saling terhubung.</div>
     <div class="evs"><details class="ev"><summary>Bukti</summary><div class="pop"><b>src/JourneyView.jsx</b> menggambar rute tiap sales dan urutan tokonya; <b>src/MapMissionControl.jsx</b> menggambar pin toko, omzet per wilayah (kunci "Sales heat", baris 2096) dan jalur barang yang mengalir (<b>animated-supply-line</b>). Peta di halaman ini gambar contoh, bukan data pelanggan.</div></details></div>
   </div>
@@ -764,7 +764,7 @@ details.ev .pop b { color: var(--ink); }
   <div class="copy">
     <div class="eyebrow">02 · Rute Hari Ini <span class="aud">Untuk tenaga penjual</span></div>
     <h2>Sales tahu harus ke mana.</h2>
-    <p class="lead">Setiap pagi, urutan kunjungan sudah tersusun. Kartu toko menandai hal yang perlu didahulukan: tagihan yang melewati jatuh tempo menyala merah, kunjungan hari ini menyala kuning. Lampu yang padam berarti tidak ada yang perlu ditindaklanjuti.</p>
+    <p class="lead">Setiap pagi, rute kunjungan sudah tersusun. Kartu toko menandai hal yang perlu didahulukan: tagihan yang melewati jatuh tempo menyala merah, kunjungan hari ini menyala kuning. Lampu yang padam berarti tidak ada yang perlu ditindaklanjuti.</p>
     <div class="evs">
       <details class="ev"><summary>Bukti</summary><div class="pop">Kartu toko Journey Plan, commit <b>0743a17</b> (19 September 2026); lampu dan tepi merah <b>theme.css .kpm-led-line, .kpm-crit</b> (bernapas 3,2 detik); peta strip 160 px di telepon, commit <b>73d9eb9</b>. Urutan toko berikutnya: <b>nextStop</b> self-check 9/9 lulus (6 Oktober 2026).</div></details>
     </div>
@@ -841,7 +841,7 @@ details.ev .pop b { color: var(--ink); }
       <div><span class="lock"></span><span><b>Server memeriksa setiap penyimpanan.</b> Aturan keamanan berjalan di server Google, jadi aplikasi yang diakali tetap ditolak.</span></div>
       <div><span class="lock"></span><span><b>Dienkripsi saat dikirim dan saat disimpan.</b> Data tidak pernah berjalan terbuka di internet.</span></div>
       <div><span class="lock"></span><span><b>Masuk menggunakan akun Google.</b> Aplikasi tidak menyimpan kata sandi login pengguna.</span></div>
-      <div><span class="lock"></span><span><b>Kata sandi induk diamankan dengan 600.000 putaran.</b> Setiap tebakan sama mahalnya dengan satu kali masuk.</span></div>
+      <div><span class="lock"></span><span><b>Kata sandi induk tidak bisa dibobol dengan coba-coba.</b> Sebelum disimpan, kata sandi diacak 600.000 kali, sehingga setiap percobaan menebak menjadi sangat lambat.</span></div>
       <div><span class="lock"></span><span><b>Data setiap perusahaan terpisah.</b> Perusahaan lain tidak dapat membacanya.</span></div>
       <div><span class="lock"></span><span><b>Akun dapat dikunci seketika.</b> Telepon hilang atau karyawan keluar: satu tekan di Fleet &amp; Roster.</span></div>
       <div><span class="lock"></span><span><b>Sidik jari atau wajah.</b> Brankas dapat dibuka dengan pengenal di telepon itu sendiri.</span></div>
@@ -856,7 +856,7 @@ details.ev .pop b { color: var(--ink); }
   <div class="copy">
     <div class="eyebrow">05 · Catatan dan Laporan <span class="aud">Untuk pimpinan</span></div>
     <h2>Yang sudah tercatat tidak bisa diubah.</h2>
-    <p class="lead">Transaksi penjualan, laporan setoran malam, dan catatan aktivitas harian hanya bisa ditambah. Tenaga penjual dan admin tidak dapat mengubah atau menghapusnya; hak itu hanya ada pada akun pemilik perusahaan. Dari catatan harian inilah Putar Ulang Hari disusun, dan laporan penjualan bisa dicetak kapan saja dengan nota yang sama seperti di toko.</p>
+    <p class="lead">Transaksi penjualan, laporan EOD (End of Day Reconciliation), dan catatan aktivitas harian hanya bisa ditambah. Tenaga penjual dan admin tidak dapat mengubah atau menghapusnya; hak itu hanya ada pada akun pemilik perusahaan. Dari catatan harian inilah Putar Ulang Hari disusun, dan laporan penjualan bisa dicetak kapan saja dengan nota yang sama seperti di toko.</p>
     <div class="evs">
       <details class="ev"><summary>Bukti</summary><div class="pop">Aturan server <b>allow update, delete: if false</b> untuk transaksi, laporan setoran, dan catatan aktivitas: <b>firestore.rules:557, 650, 712, 717</b>; hak penuh atas data perusahaan hanya untuk akun pemilik: <b>firestore.rules:343-346</b>. Tidak ada satu pun perintah ubah atau hapus transaksi di kode aplikasi (diperiksa 6 Oktober 2026). Catatan harian per tanggal <b>audit_vault</b> dibaca Putar Ulang Hari: <b>src/hooks/useDayReplay.js</b>. Laporan dicetak dari <b>src/components/HistoryReportView.jsx:469</b>; nota <b>src/components/SaleReceipt.jsx</b>. Nama dan angka di sini contoh.</div></details>
     </div>
@@ -873,7 +873,7 @@ details.ev .pop b { color: var(--ink); }
       <div class="deny" id="deny"><span>Admin wilayah mencoba mengubah catatan 08:41</span><span class="kpm-led-line crit"><i aria-hidden="true"></i>Ditolak</span></div>
     </div>
     <div class="trust trust3">
-      <div><span class="lock"></span><span><b>Setiap tindakan memberi laporan.</b> Penyimpanan yang gagal selalu diberitahukan, tidak pernah diam.</span></div>
+      <div><span class="lock"></span><span><b>Setiap aktivitas tercatat di dalam histori.</b> Penyimpanan yang gagal selalu diberitahukan, tidak pernah diam.</span></div>
     </div>
   </div>
 </section>
