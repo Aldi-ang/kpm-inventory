@@ -775,6 +775,44 @@ details.ev .pop b { color: var(--ink); }
 .still .hocard, .still .hop { transition: none; }
 .feed { display: grid; gap: 0; margin-top: 10px; max-width: 520px; min-height: 152px; align-content: start; }
 @media (min-width: 1024px) { .feed { margin-inline: auto; } }
+/* ================= the feature wheel (his 2026-10-18 ask: "23 slides in one carousel ... press each of the carousel to show the
+   features in full picture with the 3D animation"). Vanilla port of the 3D wheel carousel he sent (drag, auto-rotate, keys,
+   depth, reduced motion): 22 drawn cards on a ring; a side card comes to the front on a tap, the front card flies to full
+   screen and opens its slide. Transforms + opacity only, and the loop runs only while the wheel is on screen. */
+.hubsec { position: relative; min-height: 100svh; display: grid; align-content: center; gap: 14px; padding: 76px 0 36px; overflow: hidden;
+  background: radial-gradient(70% 45% at 50% 55%, rgba(208,138,46,.10), transparent 70%), var(--ground); }
+.hubsec .copy { padding-inline: 16px; justify-items: center; text-align: center; }
+.hubsec .lead { margin-inline: auto; }
+.wheel { position: relative; height: var(--wh, 330px); perspective: 1300px; perspective-origin: 50% 40%; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; outline: none; }
+.wheel.grab { cursor: grabbing; }
+.wheel:focus-visible { box-shadow: inset 0 0 0 2px var(--gold-2); }
+.ring { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform-style: preserve-3d; }
+.wcard { position: absolute; left: calc(var(--cw) / -2); top: calc(var(--ch) / -2); width: var(--cw); height: var(--ch); padding: 14px 12px 12px; display: grid; grid-template-rows: auto 1fr auto auto auto; gap: 6px;
+  text-align: left; border: 1px solid var(--line-2); border-radius: 16px; color: var(--ink); cursor: pointer; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  background: linear-gradient(170deg, var(--raised), var(--sunk) 75%); box-shadow: 0 18px 40px rgba(0,0,0,.55); transform: rotateY(var(--a)) translateZ(var(--r)); font: inherit; -webkit-tap-highlight-color: transparent; }
+.wcard.front { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 22px 50px rgba(0,0,0,.6), 0 0 40px rgba(208,138,46,.25); }
+.wcard .wn { font: 800 13px/1 var(--font-mono); letter-spacing: .14em; color: var(--gold-2); }
+.wcard .wi { display: grid; place-items: center; }
+.wcard .wi svg { width: 46%; max-width: 64px; height: auto; fill: none; stroke: var(--gold-2); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 10px rgba(228,176,74,.35)); }
+.wcard b { font: 900 17px/1 var(--font-display); letter-spacing: .04em; text-transform: uppercase; }
+.wcard small { font-size: 12px; line-height: 1.3; color: var(--ink-muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.wcard i { font: 700 10px/1 var(--font-mono); font-style: normal; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-dim); border-top: 1px solid var(--line-2); padding-top: 8px; }
+.wcard.front i { color: var(--gold-2); }
+.wbar { display: flex; align-items: center; justify-content: center; gap: 10px; padding-inline: 16px; }
+.wbar button { min-width: 44px; min-height: 44px; border-radius: 10px; border: 1px solid var(--line-3); background: var(--raised); color: var(--ink); font: 800 18px/1 var(--font-display); cursor: pointer; }
+.wbar button:active { transform: scale(.96); }
+.wbar .wopen { flex: none; padding: 0 16px; border-color: var(--gold); background: var(--gold); color: var(--gold-ink); font-size: 13px; letter-spacing: .2em; text-transform: uppercase; }
+.wnow { min-width: 0; flex: 1 1 0; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font: 700 12px/1.3 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); }
+.wnow b { color: var(--gold-2); }
+.wzoom { position: fixed; z-index: 90; left: 0; top: 0; width: 100vw; height: 100vh; display: grid; place-items: center; align-content: center; gap: 14px; pointer-events: none; transform-origin: 0 0;
+  border: 1px solid var(--gold); border-radius: 16px; background: radial-gradient(60% 50% at 50% 45%, rgba(208,138,46,.18), transparent 70%), linear-gradient(170deg, var(--raised), var(--ground)); }
+.wzoom svg { width: 120px; fill: none; stroke: var(--gold-2); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 22px rgba(228,176,74,.45)); }
+.wzoom .wn { font: 800 16px/1 var(--font-mono); letter-spacing: .2em; color: var(--gold-2); }
+.wzoom b { font: 900 clamp(34px, 8vw, 64px)/.95 var(--font-display); text-transform: uppercase; letter-spacing: .02em; text-align: center; padding-inline: 16px; }
+.mv.hubbtn { text-decoration: none; }
+@media (max-width: 359px) { .wbar { gap: 6px; } .wbar button { min-width: 40px; } .wbar .wopen { padding: 0 10px; letter-spacing: .12em; } }
+@media (min-width: 1024px) { .hubsec { padding: 92px 0 48px; } .hubsec .copy { padding-inline: 56px; } .wcard { padding: 18px 16px 14px; } .wcard b { font-size: 20px; } .wcard small { font-size: 13px; } }
+
 /* ================= the opening (his 2026-10-17 ask: "opening pressable intro animation before viewing all of this") =================
    A route draws itself across a dark map, the shops on it light up, three cartons drop onto the floor, DSM rises letter by
    letter, the counter rolls, and a gold plate waits to be pressed. The press slams the blast doors shut (the app's own
@@ -855,6 +893,7 @@ html.intro-on { overflow: hidden; }
 <header class="bar"><div class="in">
   <span class="brand"><i></i>DSM</span>
   <span class="now"><b id="sn">01</b> / 23 · <span id="sname">Peta Perjalanan</span></span>
+  <a class="mv hubbtn" href="#fitur" id="hubBtn" aria-label="Semua fitur"><i></i>Fitur</a>
   <button type="button" class="mv" id="mv" aria-pressed="true"><i></i>Gerak</button>
 </div><div class="prog" id="prog"></div></header>
 
@@ -883,6 +922,15 @@ html.intro-on { overflow: hidden; }
 </div>
 
 <main>
+<section class="hubsec" id="fitur" data-name="Semua Fitur" aria-label="Semua fitur">
+  <div class="copy">
+    <div class="eyebrow">Semua Fitur <span class="aud">Tekan kartu untuk membuka</span></div>
+    <h2>22 Fitur dalam Satu Aplikasi.</h2>
+    <p class="lead">Putar roda dengan menggeser, tekan kartu di samping untuk membawanya ke depan, lalu tekan kartu depan untuk membuka fiturnya.</p>
+  </div>
+  <div class="wheel" id="wheel" tabindex="0" role="listbox" aria-label="Roda fitur, gunakan panah kiri dan kanan"><div class="ring" id="ring"></div></div>
+  <div class="wbar"><button type="button" id="wPrev" aria-label="Fitur sebelumnya">‹</button><span class="wnow" id="wNow"></span><button type="button" id="wNext" aria-label="Fitur berikutnya">›</button><button type="button" class="wopen" id="wOpen">Buka</button></div>
+</section>
 <!-- 01 -->
 <section class="scene s1" id="peta" data-name="Peta Perjalanan">
   <div class="copy">
@@ -2229,6 +2277,117 @@ $('#mv').onclick = () => { still = !still; applyMode(); };
 addEventListener('resize', fit);
 setMode(); numbersStill(); fit(); applyMode();
 document.fonts?.ready.then(fit);
+
+/* ---- the feature wheel ---- */
+const WICON = {
+  peta: '<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/>',
+  rute: '<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3.5 3.5 0 0 0 0-7h-4a3.5 3.5 0 0 1 0-7h6"/>',
+  ulang: '<path d="M4 12a8 8 0 1 0 3-6.2"/><path d="M4 4v4h4"/><path d="M11 8v4l3 2"/>',
+  keamanan: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  catatan: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
+  dimana: '<path d="M7 18h10a4 4 0 0 0 .6-8A6 6 0 0 0 6.2 9 4.5 4.5 0 0 0 7 18z"/>',
+  aman: '<path d="M3 3l18 18M8.5 16.5a5 5 0 0 1 7 0M5 12.5a10 10 0 0 1 4-2.4M19 12.5a10 10 0 0 0-3-2M12 20h.01"/>',
+  omzet: '<path d="M12 3v9h9a9 9 0 1 1-9-9z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"/>',
+  produk: '<path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".6"/>',
+  barang: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+  terminal: '<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/>',
+  lokasi: '<path d="M12 22s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>',
+  sampel: '<path d="M4 10h16v11H4zM2 6h20v4H2zM12 6v15"/><path d="M12 6c-2-4-6-3-5 0M12 6c2-4 6-3 5 0"/>',
+  pelanggan: '<path d="M3 9l2-5h14l2 5M4 9v11h16V9M9 20v-6h6v6M3 9h18"/>',
+  setoran: '<path d="M20 14A8 8 0 1 1 10 4a6 6 0 0 0 10 10z"/>',
+  selisih: '<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>',
+  uang: '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>',
+  kartu: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+  stok: '<path d="M4 4v16h16"/><path d="M7 8l4 4 3-3 5 6"/>',
+  opname: '<path d="M8 3h8v3H8z"/><path d="M7 4.5H5V21h14V4.5h-2M9 14l2 2 4-4"/>',
+  karantina: '<path d="M5 11h14v10H5z"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+};
+const wheelEl = $('#wheel'), ring = $('#ring'), wNow = $('#wNow');
+const feats = scenes.filter((x) => x.id !== 'angka');
+const WN = feats.length, WSTEP = 360 / WN;
+const wcards = feats.map((sc, i) => {
+  const no = $('.eyebrow', sc).textContent.trim().slice(0, 2), name = sc.dataset.name, title = $('h1, h2', sc).textContent.trim();
+  const b = el('button', 'wcard', `<span class="wn">${no}</span><span class="wi"><svg viewBox="0 0 24 24" aria-hidden="true">${WICON[sc.id] || ''}</svg></span><b>${name}</b><small>${title}</small><i>Tekan untuk membuka</i>`);
+  b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-label', `${no} ${name}`); b.tabIndex = -1;
+  b.style.setProperty('--a', i * WSTEP + 'deg'); ring.append(b); return b;
+});
+let wTheta = 0, wVel = 0, wDrag = null, wHover = false, wRaf = 0, wTween = 0, wLast = 0, wFront = -1, wBusy = false;
+const wNorm = (a) => ((a % 360) + 540) % 360 - 180;
+const wIndex = () => ((Math.round(-wTheta / WSTEP) % WN) + WN) % WN;
+function wFit() {
+  const phone = innerWidth < 1024, cw = phone ? 150 : 200, ch = Math.round(cw * 1.36);
+  const r = Math.round(cw / 2 / Math.tan(Math.PI / WN) + cw * .18);
+  wheelEl.style.setProperty('--cw', cw + 'px'); wheelEl.style.setProperty('--ch', ch + 'px'); wheelEl.style.setProperty('--r', r + 'px'); wheelEl.style.setProperty('--wh', ch + 70 + 'px');
+  ring.dataset.r = r; wDraw();
+}
+function wDraw() {
+  ring.style.transform = `translateZ(${-ring.dataset.r}px) rotateY(${wTheta.toFixed(2)}deg)`;
+  wcards.forEach((c, i) => { const rel = Math.abs(wNorm(i * WSTEP + wTheta)); c.style.opacity = (rel > 95 ? 0 : Math.max(.18, Math.cos(rel * Math.PI / 180) ** 1.4)).toFixed(3); c.style.pointerEvents = rel > 70 ? 'none' : ''; });
+  const f = wIndex();
+  if (f !== wFront) { if (wcards[wFront]) wcards[wFront].classList.remove('front'); wFront = f; wcards[f].classList.add('front'); wheelEl.setAttribute('aria-activedescendant', ''); wNow.innerHTML = `<b>${$('.wn', wcards[f]).textContent}</b> · ${feats[f].dataset.name}`; }
+}
+function wTo(target, ms = 520, then) {
+  cancelAnimationFrame(wTween); const from = wTheta, t0 = performance.now(); wVel = 0;
+  if (still) { wTheta = target; wDraw(); if (then) then(); return; }
+  const step = (now) => { const u = Math.min(1, (now - t0) / ms); wTheta = from + (target - from) * (1 - Math.pow(1 - u, 3)); wDraw(); if (u < 1) wTween = requestAnimationFrame(step); else { wTween = 0; if (then) then(); } };
+  wTween = requestAnimationFrame(step);
+}
+const wSnap = (k) => -k * WSTEP;
+function wGoIndex(i, then) { const cur = wIndex(); let d = ((i - cur) % WN + WN) % WN; if (d > WN / 2) d -= WN; wTo(wTheta + wNorm(wSnap(cur + d) - wTheta), 520, then); }
+function wLoop(now) {
+  const dt = wLast ? Math.min(.05, (now - wLast) / 1000) : 0; wLast = now;
+  if (!wDrag && !wTween && !wBusy) {
+    if (Math.abs(wVel) > .5) { wTheta += wVel * dt; wVel *= Math.pow(.04, dt); if (Math.abs(wVel) <= .5) { wVel = 0; wGoIndex(wIndex()); } }
+    else if (!wHover && !still) wTheta -= 10 * dt;   /* auto-rotate, 10 deg a second like the original */
+    wDraw();
+  }
+  wRaf = requestAnimationFrame(wLoop);
+}
+const wStart = () => { if (!wRaf) { wLast = 0; wRaf = requestAnimationFrame(wLoop); } };
+const wStop = () => { cancelAnimationFrame(wRaf); wRaf = 0; };
+wheelEl.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') wHover = true; });
+wheelEl.addEventListener('pointerleave', () => { wHover = false; });
+wheelEl.addEventListener('pointerdown', (e) => { if (e.button > 0) return; cancelAnimationFrame(wTween); wTween = 0; wDrag = { x: e.clientX, th: wTheta, on: false, lx: e.clientX, lt: performance.now(), v: 0 }; });
+wheelEl.addEventListener('pointermove', (e) => {
+  if (!wDrag) return; const dx = e.clientX - wDrag.x;
+  if (!wDrag.on) { if (Math.abs(dx) < 6) return; wDrag.on = true; try { wheelEl.setPointerCapture(e.pointerId); } catch (_) { /* gone */ } wheelEl.classList.add('grab'); }
+  const now = performance.now(); wDrag.v = (e.clientX - wDrag.lx) / Math.max(1, now - wDrag.lt) * 1000 * .3; wDrag.lx = e.clientX; wDrag.lt = now;
+  wTheta = wDrag.th + dx * .3; wDraw();
+});
+const wUp = () => { if (!wDrag) return; const was = wDrag; wDrag = null; wheelEl.classList.remove('grab'); if (was.on) { wheelEl.dataset.dragEnd = performance.now(); if (Math.abs(was.v) > 40) wVel = was.v; else wGoIndex(wIndex()); } };
+wheelEl.addEventListener('pointerup', wUp); wheelEl.addEventListener('pointercancel', wUp);
+wheelEl.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowLeft') { e.preventDefault(); wGoIndex((wIndex() - 1 + WN) % WN); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); wGoIndex((wIndex() + 1) % WN); }
+  else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); wOpen(wIndex()); }
+});
+$('#wPrev').onclick = () => wGoIndex((wIndex() - 1 + WN) % WN);
+$('#wNext').onclick = () => wGoIndex((wIndex() + 1) % WN);
+$('#wOpen').onclick = () => wOpen(wIndex());
+wcards.forEach((c, i) => { c.onclick = () => { if (performance.now() - (+wheelEl.dataset.dragEnd || 0) < 250) return; if (i === wIndex()) wOpen(i); else wGoIndex(i); }; });
+/* the front card flies to full screen in 3D, the slide is put behind it, the card fades away */
+function wOpen(i) {
+  if (wBusy) return; const sc = feats[i], card = wcards[i];
+  if (still) { sc.scrollIntoView({ behavior: 'auto' }); return; }
+  wBusy = true; const r = card.getBoundingClientRect(), W = innerWidth, Hh = innerHeight;
+  const z = el('div', 'wzoom', `<span class="wn">${$('.wn', card).textContent}</span><svg viewBox="0 0 24 24" aria-hidden="true">${WICON[sc.id] || ''}</svg><b>${sc.dataset.name}</b>`); document.body.append(z);
+  const sx = r.width / W, sy = r.height / Hh;
+  z.animate([
+    { transform: `translate(${r.left}px, ${r.top}px) scale(${sx}, ${sy})`, borderRadius: '16px', opacity: 1 },
+    { transform: `translate(${r.left * .4}px, ${r.top * .4}px) scale(${.4 + sx * .6}, ${.4 + sy * .6}) perspective(900px) rotateY(-14deg) rotateX(6deg)`, offset: .55, borderRadius: '24px' },
+    { transform: 'translate(0, 0) scale(1, 1)', borderRadius: '0px', opacity: 1 }], { duration: 720, easing: 'cubic-bezier(.65,0,.35,1)', fill: 'forwards' })
+    .onfinish = () => {
+      sc.scrollIntoView({ behavior: 'auto' });
+      setTimeout(() => { z.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(1.06)' }], { duration: 420, easing: 'ease-out', fill: 'forwards' }).onfinish = () => { z.remove(); wBusy = false; }; }, 120);
+    };
+}
+new IntersectionObserver((es) => { for (const e of es) { if (e.isIntersecting) wStart(); else wStop(); } }, { threshold: .1 }).observe($('#fitur'));
+/* the top bar names the wheel while it is the thing on screen */
+new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) { $('#sn').textContent = '00'; $('#sname').textContent = 'Semua Fitur'; } }, { rootMargin: '-45% 0px -50% 0px' }).observe($('#fitur'));
+$('#hubBtn').addEventListener('click', (e) => { e.preventDefault(); $('#fitur').scrollIntoView({ behavior: still ? 'auto' : 'smooth' }); });
+addEventListener('resize', wFit);
+wFit();
 
 /* ---- the opening: built once, pressed once. #shot / #nointro skip it (screenshots, tests). ---- */
 { const intro = $('#intro');
