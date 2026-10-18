@@ -1060,14 +1060,6 @@ Seen: 2026-09-30
 Fired: 2026-10-01 (item 6 re-measured before building: the pulse badges were worth 2 points after fixes 1-5, so skipped; the same run found the coin spin, 30% -> 9%, hidden behind the sign pulse)
 Fired: 2026-10-12 (sidebar drag: the blur was switched off and re-measured, 3 interleaved runs - no main-thread drop)
 
-### 2026-10-01 — a service-worker routing test needs a server answer that differs from the worker's
-**Status:** RETIRED (2026-10-15) — never fired in 14 days; no service-worker routing test since 2026-10-01, and it cannot become a check until one is written
-**Trigger:** before trusting any test of what the offline helper (service worker) answers for a URL - the moment the result is read.
-**Lesson:** a local preview server falls back to index.html for unknown paths exactly like the worker does, so "it loaded the app" proves nothing about the worker. Put a distinguishable stand-in file at that path on the server first, then compare old worker vs new.
-**Would have prevented:** 2026-10-01, the sign-in fix: the first "reproduced" result (handler loads the app) and the first "fixed" check both read the preview server's own SPA fallback - one wrong red and one false fail; caught only because the fixed build still showed the app.
-Seen: 2026-10-01
-Fired:
-
 ### 2026-10-01 — never poll the live site in a loop; read the deploy status instead
 **Status:** LIVE
 **Trigger:** after a push, the moment you are about to check that the live site carries the new build.
@@ -1101,7 +1093,7 @@ Seen: 2026-10-02
 Fired: 2026-10-02 (phone sweep: the low-stock strip over the Command Center frame was left alone and shot around, no node touched)
 
 ### 2026-10-02 — inline Python on this machine is `py -3` or node, never bare `python`
-**Status:** LIKELY
+**Status:** RETIRED (2026-10-18) — never fired in 14 days; no inline Python run since 2026-10-02; node one-liners and Edit took its place
 **Trigger:** before a mutating action run as inline Python through Bash (`python - <<EOF`, `python -c`) - a splice, a rewrite, a config edit.
 **Lesson:** bare `python` here can resolve to the Windows Store alias, which waits for input instead of running, and an `||` fallback never fires because nothing fails. Use `py -3`, a `node -e` one-liner, or the Edit tool (two anchored Edits beat any script for a config splice).
 **Would have prevented:** 2026-10-02, the lab Tailwind splice: `python - <<'EOF' ... || py -3 - <<'EOF2'` hung the full 120 s, went to the background, needed a TaskStop, and the edit was then done with two Edits anyway.
@@ -1109,7 +1101,7 @@ Seen: 2026-10-02
 Fired:
 
 ### 2026-10-02 — a caption that says what a tap DOES comes from the handler, not from the size
-**Status:** LIKELY
+**Status:** RETIRED (2026-10-18) — never fired in 14 days; no board captioned a tap consequence since; purpose cannot be measured, so it cannot become a check
 **Trigger:** before sending a board or a ranking whose caption names the consequence of pressing a control ("easy to tap the wrong one", "loses the sale", "opens X").
 **Lesson:** the audit measures size, never purpose. Read the control's handler first (one grep for its `onClick`/`onPointerDown`) and write the consequence from that code; an info lamp, a hint and an action button at the same 32 px are three different faults.
 **Would have prevented:** 2026-10-02, phone sweep board #3: "easy to tap the wrong one" on the Cloud / USB / Save point lamps, which only show a hint (`SafetyStatus.jsx:80`). Caught after sending - a corrected board re-sent, a second vault commit, and the caption and note rewritten before he answered.
@@ -1117,7 +1109,7 @@ Seen: 2026-10-02
 Fired:
 
 ### 2026-10-03 — "not found online" is not "the other source invented it"
-**Status:** LIKELY
+**Status:** RETIRED (2026-10-18) — never fired in 14 days; one-off (the Gemini fact-check page); a platitude as written
 **Trigger:** before a completion claim that says where a term, definition or fact came from - the moment a reply is about to say another AI, a website or a person "made it up".
 **Lesson:** say only what was checked ("not found online") and ask whose word it is. A trade term that matches his vocabulary may have come from him, earlier in the very chat being checked.
 **Would have prevented:** 2026-10-03, Gemini fact-check page v1: I told Aldi Gemini made up "keluwasen" and "ngrapak"; he answered *"its not gemini own meaning"* - the meanings matched his. One correction round, and a wrong verdict ("belum dicek") shipped on the page.
@@ -1175,7 +1167,7 @@ Fired: 2026-10-04 (signs brightness at deviceScaleFactor 2: crop scaled by natur
 
 
 ### 2026-10-04 — a frozen-frame sheet whose sprites overflow their cells shows the neighbour's motion
-**Status:** LIKELY
+**Status:** RETIRED (2026-10-18) — never fired in 14 days; no sprite sheet shot since 2026-10-04; too narrow to become a check
 **Trigger:** before calling an animation wrong (its direction, side or place) from a sheet of frozen frames laid side by side.
 **Lesson:** a part that travels outside its own box (`overflow: visible`) lands in the NEXT cell, where it reads as that frame's part on the wrong side. Give each cell room for the part's whole travel (or clip each cell), and read the moving element's rect against its own svg before naming a bug.
 **Would have prevented:** 2026-10-04, visit signs: the first moments sheet (54 px cells) showed Stock Full's bounced pack on the RIGHT of the shelf, and the act was about to be "fixed". One probe read the pack at x = -7 units (left, correct); the sheet was the fault. One extra probe + shooter run, and a near-miss wrong edit to a correct act.
@@ -1321,3 +1313,10 @@ Fired:
 **Lesson:** his approvals are per action. A yes to a future mechanism ("A-Brain uploads itself at the end of every session", a Stop hook not built yet) or to one planned push (build step 7) does not cover an extra push mid-session. No sentence of his names this push -> commit locally, ask, push only on his word.
 **Would have prevented:** 2026-10-14 23:14, a second A-Brain push of my own note (53031e4) started right after the approved step-7 push; it hung on a GitHub approval window on his screen, which he declined - *"i havent approve the second github upload"*.
 Seen: 2026-10-15
+
+### 2026-10-18 — a read-back that prints the inserted line must GATE the commit, not ride in the same command
+**Status:** LIKELY
+**Trigger:** before a mutating action that inserts text into a vault or repo file with sed/awk and commits it - the moment the insert and `git commit` are about to share one `&&` chain.
+**Lesson:** `sed "174a\\$L"` in double quotes hands sed a literal `$L` (the backslash escapes the `$`). Insert with Edit (or `awk -v`), read the line back in its own call, and commit only after reading it.
+**Would have prevented:** 2026-10-18 14:57, A-Brain `223f56a` shipped two index lines reading `$L`; the read-back printed it, but the commit had already run in the same chain - fix commit `5733ca4`.
+Seen: 2026-10-18
