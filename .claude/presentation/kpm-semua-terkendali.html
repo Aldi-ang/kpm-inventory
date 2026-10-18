@@ -810,6 +810,19 @@ details.ev .pop b { color: var(--ink); }
 .wzoom .wn { font: 800 16px/1 var(--font-mono); letter-spacing: .2em; color: var(--gold-2); }
 .wzoom b { font: 900 clamp(34px, 8vw, 64px)/.95 var(--font-display); text-transform: uppercase; letter-spacing: .02em; text-align: center; padding-inline: 16px; }
 .mv.hubbtn { text-decoration: none; }
+/* one slide at a time (his 2026-10-18 ask): the wheel is the home; a card opens ONLY its slide; the floating plate goes back.
+   #all shows every slide stacked (tests, and a way to scroll the whole deck). */
+html:not(.solo):not(.showall) main > .scene { display: none; }
+html.solo .hubsec { display: none; }
+html.solo main > .scene:not(.solo-on) { display: none; }
+.soloback { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 45; translate: -50% 0; display: none; align-items: center; gap: 10px; min-height: 52px; padding: 0 22px 0 16px;
+  border-radius: 999px; border: 1px solid var(--gold); background: var(--gold); color: var(--gold-ink); font: 900 14px/1 var(--font-display); letter-spacing: .2em; text-transform: uppercase; cursor: pointer;
+  box-shadow: 0 4px 0 #6b4514, 0 10px 30px rgba(0,0,0,.6); -webkit-tap-highlight-color: transparent; transition: transform 120ms var(--ease-out), box-shadow 120ms var(--ease-out); }
+.soloback:active { transform: translateY(3px); box-shadow: 0 1px 0 #6b4514, 0 4px 14px rgba(0,0,0,.5); }
+.soloback svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+html.solo .soloback { display: inline-flex; }
+.moving.solo .soloback { animation: inFade 500ms 300ms var(--ease-out) both; }
+html.solo main > .scene.solo-on { padding-bottom: 96px; }
 @media (max-width: 359px) { .wbar { gap: 6px; } .wbar button { min-width: 40px; } .wbar .wopen { padding: 0 10px; letter-spacing: .12em; } }
 @media (min-width: 1024px) { .hubsec { padding: 92px 0 48px; } .hubsec .copy { padding-inline: 56px; } .wcard { padding: 18px 16px 14px; } .wcard b { font-size: 20px; } .wcard small { font-size: 13px; } }
 
@@ -1484,6 +1497,7 @@ html.intro-on { overflow: hidden; }
   </div>
 </section>
 </main>
+<button type="button" class="soloback" id="soloBack" aria-label="Kembali ke semua fitur"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Semua fitur</button>
 
 <script>
 const NS = 'http://www.w3.org/2000/svg';
@@ -2302,9 +2316,10 @@ const WICON = {
   stok: '<path d="M4 4v16h16"/><path d="M7 8l4 4 3-3 5 6"/>',
   opname: '<path d="M8 3h8v3H8z"/><path d="M7 4.5H5V21h14V4.5h-2M9 14l2 2 4-4"/>',
   karantina: '<path d="M5 11h14v10H5z"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  angka: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9"/>',
 };
 const wheelEl = $('#wheel'), ring = $('#ring'), wNow = $('#wNow');
-const feats = scenes.filter((x) => x.id !== 'angka');
+const feats = scenes;   /* all 23: the closing slide is the last card */
 const WN = feats.length, WSTEP = 360 / WN;
 const wcards = feats.map((sc, i) => {
   const no = $('.eyebrow', sc).textContent.trim().slice(0, 2), name = sc.dataset.name, title = $('h1, h2', sc).textContent.trim();
@@ -2369,7 +2384,7 @@ wcards.forEach((c, i) => { c.onclick = () => { if (performance.now() - (+wheelEl
 /* the front card flies to full screen in 3D, the slide is put behind it, the card fades away */
 function wOpen(i) {
   if (wBusy) return; const sc = feats[i], card = wcards[i];
-  if (still) { sc.scrollIntoView({ behavior: 'auto' }); return; }
+  if (still) { soloOn(sc); return; }
   wBusy = true; const r = card.getBoundingClientRect(), W = innerWidth, Hh = innerHeight;
   const z = el('div', 'wzoom', `<span class="wn">${$('.wn', card).textContent}</span><svg viewBox="0 0 24 24" aria-hidden="true">${WICON[sc.id] || ''}</svg><b>${sc.dataset.name}</b>`); document.body.append(z);
   const sx = r.width / W, sy = r.height / Hh;
@@ -2378,14 +2393,39 @@ function wOpen(i) {
     { transform: `translate(${r.left * .4}px, ${r.top * .4}px) scale(${.4 + sx * .6}, ${.4 + sy * .6}) perspective(900px) rotateY(-14deg) rotateX(6deg)`, offset: .55, borderRadius: '24px' },
     { transform: 'translate(0, 0) scale(1, 1)', borderRadius: '0px', opacity: 1 }], { duration: 720, easing: 'cubic-bezier(.65,0,.35,1)', fill: 'forwards' })
     .onfinish = () => {
-      sc.scrollIntoView({ behavior: 'auto' });
+      soloOn(sc);
       setTimeout(() => { z.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(1.06)' }], { duration: 420, easing: 'ease-out', fill: 'forwards' }).onfinish = () => { z.remove(); wBusy = false; }; }, 120);
     };
 }
 new IntersectionObserver((es) => { for (const e of es) { if (e.isIntersecting) wStart(); else wStop(); } }, { threshold: .1 }).observe($('#fitur'));
 /* the top bar names the wheel while it is the thing on screen */
 new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) { $('#sn').textContent = '00'; $('#sname').textContent = 'Semua Fitur'; } }, { rootMargin: '-45% 0px -50% 0px' }).observe($('#fitur'));
-$('#hubBtn').addEventListener('click', (e) => { e.preventDefault(); $('#fitur').scrollIntoView({ behavior: still ? 'auto' : 'smooth' }); });
+function soloOn(sc) {
+  root.classList.add('solo'); scenes.forEach((x) => x.classList.toggle('solo-on', x === sc));
+  scrollTo(0, 0); fit(); place(); kick(); orbs.forEach((o) => { if (o.id === sc.id) o.spin(); });
+  $('#sn').textContent = String(scenes.indexOf(sc) + 1).padStart(2, '0'); $('#sname').textContent = sc.dataset.name;
+}
+function soloOff() {
+  const sc = $('main > .scene.solo-on'); if (!sc || wBusy) return;
+  const i = feats.indexOf(sc);
+  root.classList.remove('solo'); sc.classList.remove('solo-on'); scrollTo(0, 0);
+  $('#sn').textContent = '00'; $('#sname').textContent = 'Semua Fitur';
+  wTheta = wTheta + wNorm(wSnap(i) - wTheta); wFit();   /* its card waits at the front */
+  if (still) return;
+  wBusy = true; const r = wcards[i].getBoundingClientRect(), W = innerWidth, Hh = innerHeight;
+  const z = el('div', 'wzoom', `<span class="wn">${$('.wn', wcards[i]).textContent}</span><svg viewBox="0 0 24 24" aria-hidden="true">${WICON[sc.id] || ''}</svg><b>${sc.dataset.name}</b>`); document.body.append(z);
+  z.animate([
+    { transform: 'translate(0, 0) scale(1, 1)', borderRadius: '0px', opacity: 1 },
+    { transform: `translate(${r.left * .4}px, ${r.top * .4}px) scale(${.4 + r.width / W * .6}, ${.4 + r.height / Hh * .6}) perspective(900px) rotateY(14deg) rotateX(6deg)`, offset: .45, borderRadius: '24px', opacity: 1 },
+    { transform: `translate(${r.left}px, ${r.top}px) scale(${r.width / W}, ${r.height / Hh})`, borderRadius: '16px', opacity: 0 }], { duration: 620, easing: 'cubic-bezier(.65,0,.35,1)', fill: 'forwards' })
+    .onfinish = () => { z.remove(); wBusy = false; };
+}
+$('#soloBack').addEventListener('click', soloOff);
+$('#hubBtn').addEventListener('click', (e) => { e.preventDefault(); if (root.classList.contains('solo')) soloOff(); else $('#fitur').scrollIntoView({ behavior: still ? 'auto' : 'smooth' }); });
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && root.classList.contains('solo') && !$('#intro')) soloOff(); });
+/* the closing slide's list jumps between slides: in one-slide mode it opens that slide instead */
+$('#recap').addEventListener('click', (e) => { const a = e.target.closest('a[href^="#"]'); if (!a || !root.classList.contains('solo')) return; const sc = document.getElementById(a.getAttribute('href').slice(1)); if (sc) { e.preventDefault(); soloOn(sc); } });
+if (H.includes('all')) root.classList.add('showall');
 addEventListener('resize', wFit);
 wFit();
 
