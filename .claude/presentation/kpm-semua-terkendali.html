@@ -815,13 +815,46 @@ details.ev .pop b { color: var(--ink); }
 html:not(.solo):not(.showall) main > .scene { display: none; }
 html.solo .hubsec { display: none; }
 html.solo main > .scene:not(.solo-on) { display: none; }
-.soloback { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 45; translate: -50% 0; display: none; align-items: center; gap: 10px; min-height: 52px; padding: 0 22px 0 16px;
-  border-radius: 999px; border: 1px solid var(--gold); background: var(--gold); color: var(--gold-ink); font: 900 14px/1 var(--font-display); letter-spacing: .2em; text-transform: uppercase; cursor: pointer;
-  box-shadow: 0 4px 0 #6b4514, 0 10px 30px rgba(0,0,0,.6); -webkit-tap-highlight-color: transparent; transition: transform 120ms var(--ease-out), box-shadow 120ms var(--ease-out); }
-.soloback:active { transform: translateY(3px); box-shadow: 0 1px 0 #6b4514, 0 4px 14px rgba(0,0,0,.5); }
-.soloback svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-html.solo .soloback { display: inline-flex; }
-.moving.solo .soloback { animation: inFade 500ms 300ms var(--ease-out) both; }
+/* the slide picker (his 2026-10-18 ask, from a framer-motion nav): a dot that shows the slide number; tap = it springs open into a strip
+   of all 23 slides that slides sideways; 2.5s untouched = it folds back into the dot. The pill opens from the centre like a curtain,
+   the chips ripple out from the current slide. Replaces the "Semua fitur" plate; the gold button at its left is that plate now. */
+.snav { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 45; translate: -50% 0; display: none;
+  --ow: min(calc(100vw - 24px), 760px); width: 56px; height: 56px; border-radius: 28px; overflow: hidden;
+  background: rgba(14,13,12,.94); border: 1px solid rgba(208,138,46,.55); box-shadow: 0 10px 30px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.05);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); transition: width 380ms cubic-bezier(.32,.72,0,1) 90ms, border-color 300ms; }
+html.solo .snav { display: block; }
+.moving.solo .snav { animation: inFade 500ms 300ms var(--ease-out) both; }
+.snav.open { width: var(--ow); border-color: rgba(208,138,46,.85); transition: width var(--spring-ms, 560ms) var(--spring, cubic-bezier(.34,1.36,.64,1)), border-color 300ms; }
+.snav-dot { position: absolute; top: 0; left: calc(50% - 27px); width: 54px; height: 54px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--gold-2); cursor: pointer;
+  display: grid; place-items: center; -webkit-tap-highlight-color: transparent; transition: opacity 260ms var(--ease-out) 200ms, scale 420ms cubic-bezier(.34,1.56,.64,1) 200ms; }
+.snav-dot b { font: 800 18px/1 var(--font-mono); letter-spacing: .04em; }
+.snav-dot svg { position: absolute; left: 4px; top: 4px; width: 46px; height: 46px; rotate: -90deg; }
+.snav-dot circle { fill: none; stroke-width: 3; }
+.snav-dot .tr { stroke: var(--line-2); }
+.snav-dot .pr { stroke: var(--gold); stroke-linecap: round; stroke-dasharray: 135.1; stroke-dashoffset: 135.1; transition: stroke-dashoffset 600ms var(--ease-out); }
+.snav.open .snav-dot { opacity: 0; scale: .5; pointer-events: none; transition: opacity 120ms, scale 200ms; }
+.snav-in { position: absolute; top: 0; left: 50%; translate: -50% 0; width: calc(var(--ow) - 2px); height: 54px; display: flex; align-items: center; gap: 4px; padding: 0 5px; visibility: hidden; transition: visibility 0s 300ms; }
+.snav.open .snav-in { visibility: visible; transition: none; }
+.snav-in > i { flex: none; width: 1px; height: 26px; background: var(--line-2); }
+.snav-home { flex: none; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: var(--gold); color: var(--gold-ink); display: grid; place-items: center; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  opacity: 0; rotate: -180deg; scale: .6; transition: opacity 160ms, rotate 160ms, scale 160ms; }
+.snav.open .snav-home { opacity: 1; rotate: 0deg; scale: 1; transition: opacity 300ms var(--ease-out) 120ms, rotate 560ms cubic-bezier(.34,1.4,.64,1) 120ms, scale 560ms cubic-bezier(.34,1.4,.64,1) 120ms; }
+.snav-home svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.snav-strip { position: relative; flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 6px; padding: 0 8px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; touch-action: pan-x;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--fl, 0px), #000 calc(100% - var(--fr, 0px)), transparent); mask-image: linear-gradient(90deg, transparent, #000 var(--fl, 0px), #000 calc(100% - var(--fr, 0px)), transparent); }
+.snav-strip::-webkit-scrollbar { display: none; }
+.snav-strip.drag { cursor: grabbing; }
+.snav-c { flex: none; display: inline-flex; align-items: center; gap: 7px; height: 40px; max-width: 170px; padding: 0 13px 0 10px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--raised); color: var(--ink);
+  font: 700 13px/1 var(--font-display); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  opacity: 0; translate: var(--x, -14px) 0; scale: .92; transition: opacity 120ms, translate 120ms, scale 120ms, background 200ms, border-color 200ms; }
+.snav-c b { font: 800 14px/1 var(--font-mono); color: var(--gold-2); letter-spacing: .04em; }
+.snav-c span { overflow: hidden; text-overflow: ellipsis; }
+.snav.open .snav-c { opacity: 1; translate: 0 0; scale: 1;
+  transition: opacity 320ms var(--ease-out) var(--d, 150ms), translate 520ms cubic-bezier(.34,1.4,.64,1) var(--d, 150ms), scale 520ms cubic-bezier(.34,1.4,.64,1) var(--d, 150ms), background 200ms, border-color 200ms; }
+.snav-c[aria-current="true"] { border-color: var(--gold); background: rgba(208,138,46,.18); }
+.snav-c[aria-current="true"] span { color: var(--gold-2); }
+@media (hover: hover) { .snav-c:hover { border-color: var(--line-3); } .snav-c[aria-current="true"]:hover { border-color: var(--gold-2); } }
+.still .snav, .still .snav * { transition: none !important; animation: none !important; }
 html.solo main > .scene.solo-on { padding-bottom: 96px; }
 @media (max-width: 359px) { .wbar { gap: 6px; } .wbar button { min-width: 40px; } .wbar .wopen { padding: 0 10px; letter-spacing: .12em; } }
 @media (min-width: 1024px) { .hubsec { padding: 92px 0 48px; } .hubsec .copy { padding-inline: 56px; } .wcard { padding: 18px 16px 14px; } .wcard b { font-size: 20px; } .wcard small { font-size: 13px; } }
@@ -1497,7 +1530,13 @@ html.intro-on { overflow: hidden; }
   </div>
 </section>
 </main>
-<button type="button" class="soloback" id="soloBack" aria-label="Kembali ke semua fitur"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Semua fitur</button>
+<nav class="snav" id="snav" aria-label="Pilih slide">
+  <button type="button" class="snav-dot" id="snavDot" aria-expanded="false" aria-controls="snavList"><svg viewBox="0 0 46 46" aria-hidden="true"><circle class="tr" cx="23" cy="23" r="21.5"/><circle class="pr" cx="23" cy="23" r="21.5"/></svg><b>01</b></button>
+  <div class="snav-in">
+    <button type="button" class="snav-home" id="snavHome" aria-label="Kembali ke semua fitur" title="Semua fitur"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button><i></i>
+    <div class="snav-strip" id="snavList"></div>
+  </div>
+</nav>
 
 <script>
 const NS = 'http://www.w3.org/2000/svg';
@@ -2404,9 +2443,12 @@ function soloOn(sc) {
   root.classList.add('solo'); scenes.forEach((x) => x.classList.toggle('solo-on', x === sc));
   scrollTo(0, 0); fit(); place(); kick(); orbs.forEach((o) => { if (o.id === sc.id) o.spin(); });
   $('#sn').textContent = String(scenes.indexOf(sc) + 1).padStart(2, '0'); $('#sname').textContent = sc.dataset.name;
+  sMark(); if (snav.classList.contains('open')) { sCenter(true); sArm(); }
+  else if (!sPeeked) { sPeeked = true; setTimeout(() => { if (root.classList.contains('solo')) sOpen(); }, 900); }   /* opens once by itself, so he sees what the dot is */
 }
 function soloOff() {
   const sc = $('main > .scene.solo-on'); if (!sc || wBusy) return;
+  sClose();
   const i = feats.indexOf(sc);
   root.classList.remove('solo'); sc.classList.remove('solo-on'); scrollTo(0, 0);
   $('#sn').textContent = '00'; $('#sname').textContent = 'Semua Fitur';
@@ -2420,9 +2462,63 @@ function soloOff() {
     { transform: `translate(${r.left}px, ${r.top}px) scale(${r.width / W}, ${r.height / Hh})`, borderRadius: '16px', opacity: 0 }], { duration: 620, easing: 'cubic-bezier(.65,0,.35,1)', fill: 'forwards' })
     .onfinish = () => { z.remove(); wBusy = false; };
 }
-$('#soloBack').addEventListener('click', soloOff);
+/* ---- the slide picker: the dot shows where he is; tap = the strip of all slides; 2.5s untouched = back to the dot ---- */
+const snav = $('#snav'), sStrip = $('#snavList'), sDot = $('#snavDot'), SN = scenes.length;
+let sIdle = 0, sPeeked = false, sHover = false, sDrag = null, sDragged = false;
+scenes.forEach((sc, i) => { const c = el('button', 'snav-c', `<b>${String(i + 1).padStart(2, '0')}</b><span></span>`); c.type = 'button'; c.title = sc.dataset.name; $('span', c).textContent = sc.dataset.name; c.onclick = () => { if (!sDragged) sGo(i); }; sStrip.append(c); });
+const sChips = $$('.snav-c', sStrip);
+const sCur = () => scenes.indexOf($('main > .scene.solo-on'));
+function sMark() {
+  const cur = sCur(); if (cur < 0) return;
+  $('b', sDot).textContent = String(cur + 1).padStart(2, '0');
+  $('.pr', sDot).style.strokeDashoffset = (135.1 * (1 - (cur + 1) / SN)).toFixed(1);
+  sDot.setAttribute('aria-label', `Slide ${cur + 1} dari ${SN}. Buka daftar slide`);
+  sChips.forEach((c, i) => { c.setAttribute('aria-current', i === cur ? 'true' : 'false');
+    c.style.setProperty('--d', (150 + Math.min(Math.abs(i - cur), 7) * 45) + 'ms');   /* the ripple: nearest chips first */
+    c.style.setProperty('--x', (i < cur ? 14 : i > cur ? -14 : 0) + 'px'); });       /* and they spread outwards */
+}
+function sEdges() { const m = sStrip.scrollWidth - sStrip.clientWidth; sStrip.style.setProperty('--fl', sStrip.scrollLeft > 2 ? '22px' : '0px'); sStrip.style.setProperty('--fr', sStrip.scrollLeft < m - 2 ? '22px' : '0px'); }
+function sCenter(smooth) { const c = sChips[sCur()]; if (c) sStrip.scrollTo({ left: c.offsetLeft - (sStrip.clientWidth - c.offsetWidth) / 2, behavior: smooth && !still ? 'smooth' : 'auto' }); }
+function sArm() {
+  clearTimeout(sIdle);
+  sIdle = setTimeout(() => { const a = document.activeElement; if (sHover || sDrag || (snav.contains(a) && a.matches(':focus-visible'))) sArm(); else sClose(); }, 2500);
+}
+function sOpen() { if (!snav.classList.contains('open')) { sMark(); sCenter(false); snav.classList.add('open'); sDot.setAttribute('aria-expanded', 'true'); sEdges(); } sArm(); }
+function sClose(focusDot) {
+  clearTimeout(sIdle); if (!snav.classList.contains('open')) return;
+  const back = snav.contains(document.activeElement); snav.classList.remove('open'); sDot.setAttribute('aria-expanded', 'false');
+  if (back) { if (focusDot) sDot.focus(); else document.activeElement.blur(); }
+}
+/* a chip: that slide, sliding in from the side it sits on */
+function sGo(i) {
+  const cur = sCur(), sc = scenes[i]; if (!sc || wBusy) return;
+  if (i === cur) { sArm(); return; }
+  soloOn(sc);
+  if (!still) sc.animate([{ opacity: 0, transform: `translateX(${i > cur ? 48 : -48}px)` }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.23,1,.32,1)' });
+}
+sDot.addEventListener('click', (e) => { sOpen(); if (!e.detail) sChips[sCur()]?.focus({ preventScroll: true }); });
+$('#snavHome').addEventListener('click', soloOff);
+sStrip.addEventListener('scroll', () => { sEdges(); if (snav.classList.contains('open')) sArm(); }, { passive: true });
+sStrip.addEventListener('wheel', (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { e.preventDefault(); sStrip.scrollLeft += e.deltaY; } }, { passive: false });
+snav.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') sHover = true; });
+snav.addEventListener('pointerleave', () => { sHover = false; if (snav.classList.contains('open')) sArm(); });
+snav.addEventListener('focusin', () => { if (snav.classList.contains('open')) sArm(); });
+/* mouse: drag the strip sideways (fingers scroll it natively) */
+sStrip.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse' && !e.button) { sDrag = { x: e.clientX, l: sStrip.scrollLeft }; sDragged = false; } });
+addEventListener('pointermove', (e) => { if (!sDrag) return; const dx = e.clientX - sDrag.x; if (!sDragged && Math.abs(dx) > 5) { sDragged = true; sStrip.classList.add('drag'); } if (sDragged) sStrip.scrollLeft = sDrag.l - dx; });
+addEventListener('pointerup', () => { if (!sDrag) return; sDrag = null; sStrip.classList.remove('drag'); setTimeout(() => { sDragged = false; }, 0); });
+/* a tap anywhere else folds it at once */
+document.addEventListener('pointerdown', (e) => { if (snav.classList.contains('open') && !snav.contains(e.target)) sClose(); }, true);
+addEventListener('resize', () => { if (snav.classList.contains('open')) { sCenter(false); sEdges(); } });
+/* his reference's spring (stiffness 300, damping 20) baked into a CSS curve, so the pill overshoots a little and settles */
+{ let x = 0, v = 0, t = 0; const pts = [], dt = 1 / 120;
+  while (t < 2 && !(t > .1 && Math.abs(1 - x) < .001 && Math.abs(v) < .01)) { v += (300 * (1 - x) - 20 * v) * dt; x += v * dt; t += dt; pts.push(x); }
+  if (CSS.supports('transition-timing-function', 'linear(0, 1)')) {
+    const k = Math.max(1, Math.round(pts.length / 48)), s = ['0']; for (let j = k; j < pts.length - 1; j += k) s.push(pts[j].toFixed(3)); s.push('1');
+    root.style.setProperty('--spring', `linear(${s.join(', ')})`); root.style.setProperty('--spring-ms', Math.round(t * 1000) + 'ms');
+  } }
 $('#hubBtn').addEventListener('click', (e) => { e.preventDefault(); if (root.classList.contains('solo')) soloOff(); else $('#fitur').scrollIntoView({ behavior: still ? 'auto' : 'smooth' }); });
-addEventListener('keydown', (e) => { if (e.key === 'Escape' && root.classList.contains('solo') && !$('#intro')) soloOff(); });
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && root.classList.contains('solo') && !$('#intro')) { if (snav.classList.contains('open')) sClose(true); else soloOff(); } });
 /* the closing slide's list jumps between slides: in one-slide mode it opens that slide instead */
 $('#recap').addEventListener('click', (e) => { const a = e.target.closest('a[href^="#"]'); if (!a || !root.classList.contains('solo')) return; const sc = document.getElementById(a.getAttribute('href').slice(1)); if (sc) { e.preventDefault(); soloOn(sc); } });
 if (H.includes('all')) root.classList.add('showall');
