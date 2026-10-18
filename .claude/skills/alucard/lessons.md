@@ -1320,3 +1320,4 @@ Seen: 2026-10-15
 **Lesson:** `sed "174a\\$L"` in double quotes hands sed a literal `$L` (the backslash escapes the `$`). Insert with Edit (or `awk -v`), read the line back in its own call, and commit only after reading it.
 **Would have prevented:** 2026-10-18 14:57, A-Brain `223f56a` shipped two index lines reading `$L`; the read-back printed it, but the commit had already run in the same chain - fix commit `5733ca4`.
 Seen: 2026-10-18
+Fired: 2026-10-18 15:17 (model-switcher links: `awk -v` insert, read back in its own call, commit `55be9dc` only after the three lines printed right)
