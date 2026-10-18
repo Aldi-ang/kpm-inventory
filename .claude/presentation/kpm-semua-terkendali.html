@@ -2410,7 +2410,7 @@ const wcards = feats.map((sc, i) => {
   b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-label', `${no} ${name}`); b.tabIndex = -1;
   b.style.setProperty('--a', i * WSTEP + 'deg'); ring.append(b); return b;
 });
-let wTheta = 0, wVel = 0, wDrag = null, wHover = false, wRaf = 0, wTween = 0, wLast = 0, wFront = -1, wBusy = false;
+let wTheta = 0, wVel = 0, wDrag = null, wHover = false, wRaf = 0, wTween = 0, wLast = 0, wFront = -1, wBusy = false, wAuto = 0;
 const wNorm = (a) => ((a % 360) + 540) % 360 - 180;
 const wIndex = () => ((Math.round(-wTheta / WSTEP) % WN) + WN) % WN;
 function wFit() {
@@ -2436,10 +2436,12 @@ function wGoIndex(i, then) { const cur = wIndex(); let d = ((i - cur) % WN + WN)
 function wLoop(now) {
   const dt = wLast ? Math.min(.05, (now - wLast) / 1000) : 0; wLast = now;
   if (!wDrag && !wTween && !wBusy) {
-    if (Math.abs(wVel) > .5) { wTheta += wVel * dt; wVel *= Math.pow(.04, dt); if (Math.abs(wVel) <= .5) { wVel = 0; wGoIndex(wIndex()); } }
-    else if (!wHover && !still) wTheta -= 10 * dt;   /* auto-rotate, 10 deg a second like the original */
+    if (Math.abs(wVel) > .5) { wTheta += wVel * dt; wVel *= Math.pow(.04, dt); wAuto = 0; if (Math.abs(wVel) <= .5) { wVel = 0; wGoIndex(wIndex()); } }
+    /* auto-rotate, 10 deg a second like the original. His 2026-10-19 ask: a mouse on it slows it to a quarter GRADUALLY instead
+       of stopping it dead, and it eases back up when the mouse leaves (0.45 s time constant, both ways) */
+    else { wAuto = still ? 0 : wAuto + ((wHover ? 2.5 : 10) - wAuto) * (1 - Math.exp(-dt / .45)); wTheta -= wAuto * dt; }
     wDraw();
-  }
+  } else wAuto = 0;   /* held, snapping or opening: the spin starts again from rest */
   wRaf = requestAnimationFrame(wLoop);
 }
 const wStart = () => { if (!wRaf) { wLast = 0; wRaf = requestAnimationFrame(wLoop); } };
