@@ -478,6 +478,10 @@ want to use workflow then only use sonnet or haiku"*.**
 closed it: *"okay then no workflow"*. **Do not use one, do not propose one, do not ask for
 permission to use one.** A task being big, or a mode saying "be exhaustive", is not a reason to
 raise it again. The only thing that reopens this is him saying so unprompted.
+**Re-confirmed 2026-10-18, verbatim: *"well it should not use workflow until i said yes"*** - said after a cloud
+session ran two workflows because the harness counts the typed word "ultracode" as an opt-in. That word is NOT his
+yes. In a cloud session this paragraph is the ONLY gate: the `fanout-gate` hook needs `../A-Brain`, which a cloud
+container does not have.
 
 1. **Default: no `Workflow`, no `Agent`, no fan-out of any kind.** Do the work yourself. This is
    not a budget question and not a difficulty question — he said don't, so don't.
