@@ -1,0 +1,114 @@
+<title>Slide Menu Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&display=swap">
+<style>
+/* layout: one reading column, the same dark-and-gold world as the presentation; problems grouped by where you would hit them */
+:root {
+  color-scheme: dark;
+  --ground: #0B0A09; --panel: #15130F; --line: #2B2722; --ink: #ECE7DF; --muted: #A69D91;
+  --gold: #D08A2E; --gold-2: #E4B04A; --slate: #6B7280; --slate-ink: #C9CCD1;
+  --display: "Rajdhani", "Arial Narrow", system-ui, sans-serif;
+  --body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+body { background: var(--ground); color: var(--ink); font: 400 16px/1.55 var(--body); }
+.wrap { max-width: 720px; margin: 0 auto; padding-block: 40px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 36px; }
+header { display: grid; gap: 10px; }
+.eyebrow { font: 700 13px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--gold-2); }
+h1 { margin: 0; font: 700 clamp(34px, 8vw, 52px)/1 var(--display); letter-spacing: .01em; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 60ch; }
+.lede b { color: var(--ink); font-weight: 600; }
+a { color: var(--gold-2); text-underline-offset: 3px; }
+a:focus-visible { outline: 2px solid var(--gold-2); outline-offset: 3px; border-radius: 4px; }
+.flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.flow div { background: var(--panel); padding: 14px 12px; display: grid; gap: 4px; align-content: start; }
+.flow b { font: 700 34px/1 var(--display); font-variant-numeric: tabular-nums; }
+.flow span { font-size: 13px; color: var(--muted); line-height: 1.3; }
+.flow div:last-child b { color: var(--gold-2); }
+@media (max-width: 520px) { .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+section { display: grid; gap: 14px; }
+h2 { margin: 0; font: 700 22px/1.1 var(--display); letter-spacing: .06em; text-transform: uppercase; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+h2 small { font: 400 14px/1.3 var(--body); letter-spacing: 0; text-transform: none; color: var(--muted); }
+ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+li { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 8px; min-width: 0; }
+.top { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; }
+.top h3 { margin: 0; font: 600 16px/1.35 var(--body); text-wrap: balance; min-width: 0; }
+.chips { display: flex; gap: 6px; flex: none; }
+.chip { font: 700 11px/1 var(--display); letter-spacing: .12em; text-transform: uppercase; padding: 5px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--slate-ink); white-space: nowrap; }
+.chip.med { border-color: var(--gold); color: var(--gold-2); }
+.row { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 4px 10px; font-size: 15px; }
+.row dt { font: 700 12px/1.9 var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.row dd { margin: 0; }
+.row dd.fixed::before { content: "✓ "; color: var(--gold-2); font-weight: 700; }
+.note { border-left: 2px solid var(--gold); padding-left: 14px; color: var(--muted); max-width: 62ch; }
+.note b { color: var(--ink); font-weight: 600; }
+footer { color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); padding-top: 16px; }
+@media (prefers-reduced-motion: no-preference) { li { transition: border-color 160ms; } li:hover { border-color: #3E3A35; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">DSM presentation · version 26 · 18 Oct 2026</span>
+    <h1>Slide Menu Review</h1>
+    <p class="lede">Four reviewers tried to break the new slide menu (the round button at the bottom of each slide). Four checkers then re-tested every report from scratch and tried to prove it wrong. <b>None were thrown out.</b> Several were the same problem seen from two or three sides, so it comes to 11 problems. <b>All 11 are fixed and live</b> in the <a href="https://claude.ai/artifact/AJQ36jBJr4jkkn6ZUnRN4A">presentation</a>.</p>
+  </header>
+
+  <div class="flow" role="list">
+    <div role="listitem"><b>17</b><span>reports from the 4 reviewers</span></div>
+    <div role="listitem"><b>11</b><span>different problems once the repeats are merged</span></div>
+    <div role="listitem"><b>0</b><span>thrown out by the checkers</span></div>
+    <div role="listitem"><b>11</b><span>fixed, each with its own test so it can't come back</span></div>
+  </div>
+
+  <section aria-labelledby="phone">
+    <h2 id="phone">On a phone <small>what you or a customer would actually hit</small></h2>
+    <ol>
+      <li><div class="top"><h3>Swiping up on the open menu didn't scroll the slide</h3><span class="chips"><span class="chip med">medium</span></span></div>
+        <dl class="row"><dt>What</dt><dd>With the menu open, a thumb on it swiping up to read further did nothing. The bottom of the screen was a dead zone until the menu folded.</dd><dt>Now</dt><dd class="fixed">The menu takes only sideways swipes. Up and down scroll the slide as normal.</dd></dl></li>
+      <li><div class="top"><h3>Tapping the dot just as the menu folds jumped to another slide</h3><span class="chips"><span class="chip">low</span><span class="chip">seen 2×</span></span></div>
+        <dl class="row"><dt>What</dt><dd>For about a third of a second while folding, the fading slide buttons still caught taps. A quick tap on the dot could open a different slide, or do nothing. It's hard to hit, but it happens on PC too.</dd><dt>Now</dt><dd class="fixed">The folding part ignores taps the moment it starts folding, so the tap always reaches the dot.</dd></dl></li>
+      <li><div class="top"><h3>The menu folded while a finger was still on it</h3><span class="chips"><span class="chip">low</span></span></div>
+        <dl class="row"><dt>What</dt><dd>A finger resting on the strip didn't count as touching, so it folded away under the finger.</dd><dt>Now</dt><dd class="fixed">It stays open while a finger is on it, then folds 2.5 seconds after the finger lifts.</dd></dl></li>
+      <li><div class="top"><h3>The opening bounce went past the screen edges on landscape phones</h3><span class="chips"><span class="chip">low</span><span class="chip">seen 2×</span></span></div>
+        <dl class="row"><dt>What</dt><dd>The spring overshoots by about 10%. Turned sideways, the menu poked 12 to 18 pixels off both edges for a moment.</dd><dt>Now</dt><dd class="fixed">The bounce keeps its feel but stops 4 pixels inside each edge.</dd></dl></li>
+      <li><div class="top"><h3>The menu opened by itself again after it was closed</h3><span class="chips"><span class="chip">low</span></span></div>
+        <dl class="row"><dt>What</dt><dd>On the very first slide, the one-time "peek" could reopen a menu that had just been closed.</dd><dt>Now</dt><dd class="fixed">Once the dot has been used, the peek is cancelled.</dd></dl></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="mouse">
+    <h2 id="mouse">With a mouse <small>presenting from the PC</small></h2>
+    <ol>
+      <li><div class="top"><h3>After clicking the menu, any key press kept it open forever</h3><span class="chips"><span class="chip">low</span></span></div>
+        <dl class="row"><dt>What</dt><dd>A click left focus in the menu. Pressing an arrow key or Page Down afterwards told the menu "someone is using the keyboard here", so it never folded.</dd><dt>Now</dt><dd class="fixed">Mouse clicks no longer leave focus in the menu. It folds as normal.</dd></dl></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="keys">
+    <h2 id="keys">With a keyboard <small>Tab, Enter and Esc users</small></h2>
+    <ol>
+      <li><div class="top"><h3>You couldn't see when the dot was selected</h3><span class="chips"><span class="chip med">medium</span><span class="chip">seen 3×</span></span></div>
+        <dl class="row"><dt>What</dt><dd>The gold selection ring was drawn outside the dot, where the menu cuts it off, so the ring was completely hidden.</dd><dt>Now</dt><dd class="fixed">The ring is drawn just inside the dot.</dd></dl></li>
+      <li><div class="top"><h3>Tab could land on the invisible dot while the menu was open</h3><span class="chips"><span class="chip">low</span><span class="chip">seen 2×</span></span></div>
+        <dl class="row"><dt>What</dt><dd>The dot fades out when the menu opens, but Tab could still reach it. Focus then vanished and the menu stayed open.</dd><dt>Now</dt><dd class="fixed">While the menu is open, Tab skips the dot.</dd></dl></li>
+      <li><div class="top"><h3>Leaving a slide with the keyboard lost your place</h3><span class="chips"><span class="chip">low</span><span class="chip">seen 2×</span></span></div>
+        <dl class="row"><dt>What</dt><dd>Going back to the wheel with Esc or the gold button dropped focus to the top of the page, so the arrow keys and Enter stopped working.</dd><dt>Now</dt><dd class="fixed">Focus lands on "Buka", so Enter opens the slide again.</dd></dl></li>
+      <li><div class="top"><h3>Tabbing through the slides left the selected one half-hidden</h3><span class="chips"><span class="chip">low</span></span></div>
+        <dl class="row"><dt>What</dt><dd>Every second or third slide button sat half under the faded edge, with its ring cut off.</dd><dt>Now</dt><dd class="fixed">The strip slides along so the selected button is always fully in view.</dd></dl></li>
+      <li><div class="top"><h3>Esc then a quick Tab landed on the vanishing home button</h3><span class="chips"><span class="chip">low</span></span></div>
+        <dl class="row"><dt>What</dt><dd>For a moment after folding, Tab could reach the gold button as it faded away, and then focus was lost.</dd><dt>Now</dt><dd class="fixed">The folded part can't be reached at all, even mid-fold.</dd></dl></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="tests">
+    <h2 id="tests">How it was proven</h2>
+    <p class="note">20 new automatic checks test exactly these 11 problems on a landscape phone, a normal phone and a PC, with real finger touches, mouse clicks and key presses. They pass twice in a row. <b>All the older checks still pass</b> too: the slide menu (55), the wheel (33), the slides (36), the opening (32), earlier fixes (15) and the terminal (7), plus the headline, button and overlap layout checks.</p>
+  </section>
+
+  <section aria-labelledby="alucard">
+    <h2 id="alucard">Alucard and workflows</h2>
+    <p class="note">A separate check read every Alucard rule about workflows. <b>Your rule stays as it is:</b> no workflow until you say yes. Your words from today are now written into it, so no future session will ask again.</p>
+  </section>
+
+  <footer>Checked and fixed in a cloud session, 18 October 2026. Your PC session gets everything with one pull.</footer>
+</div>

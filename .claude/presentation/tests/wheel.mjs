@@ -3,7 +3,7 @@ const url = 'file://' + process.cwd() + '/kpm-presentation.html';
 const b = await chromium.launch(); const R = []; const errs = [];
 const ok = (n, c, i = '') => R.push(`${c ? 'PASS' : 'FAIL'} ${n} ${i}`);
 const th = (pg) => pg.evaluate(() => document.getElementById('ring').style.transform);
-const back = async (pg) => { if (!await pg.evaluate(() => document.getElementById('snav').classList.contains('open'))) { await pg.click('#snavDot'); await pg.waitForTimeout(450); } await pg.click('#snavHome'); };
+const back = async (pg) => { if (!await pg.evaluate(() => document.getElementById('snav').classList.contains('open'))) { await pg.click('#snavDot'); await pg.waitForTimeout(450); } await pg.click('#snavHome'); const wb = await (await pg.$('#wheel')).boundingBox(); if (wb) await pg.mouse.move(wb.x + wb.width / 2, wb.y + wb.height / 2); };   /* a viewer's mouse rests on the wheel, which pauses its spin */
 const front = (pg) => pg.evaluate(() => document.querySelector('.wcard.front .wn').textContent);
 for (const [w, h] of [[390, 844], [1440, 900]]) {
   const pg = await b.newPage({ viewport: { width: w, height: h } }); pg.on('pageerror', (e) => errs.push(`${w}: ${e.message}`));
@@ -38,7 +38,7 @@ for (const [w, h] of [[390, 844], [1440, 900]]) {
   ok(t + ' slide picker visible on the slide', await pg.evaluate(() => { const r = document.getElementById('snav').getBoundingClientRect(); return r.width > 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; }));
   await pg.waitForTimeout(400); await pg.screenshot({ path: `shots/solo-${w}.png` });
   await back(pg); await pg.waitForTimeout(250); await pg.screenshot({ path: `shots/solo-back-${w}.png` }); await pg.waitForTimeout(700);
-  ok(t + ' back plate returns to the wheel, its card in front', await pg.evaluate((n) => !document.documentElement.classList.contains('solo') && getComputedStyle(document.getElementById('fitur')).display !== 'none' && document.querySelector('.wcard.front b').textContent === n && !document.querySelector('.wzoom') && [...document.querySelectorAll('main > .scene')].every((x) => getComputedStyle(x).display === 'none'), target));
+  ok(t + ' back plate returns to the wheel, its card in front', await pg.evaluate((n) => !document.documentElement.classList.contains('solo') && getComputedStyle(document.getElementById('fitur')).display !== 'none' && document.querySelector('.wcard.front b').textContent === n && !document.querySelector('.wzoom') && [...document.querySelectorAll('main > .scene')].every((x) => getComputedStyle(x).display === 'none'), target), await pg.evaluate(() => JSON.stringify({ solo: document.documentElement.classList.contains('solo'), front: document.querySelector('.wcard.front b')?.textContent, zoom: !!document.querySelector('.wzoom'), vis: [...document.querySelectorAll('main > .scene')].filter((x) => getComputedStyle(x).display !== 'none').map((x) => x.id), open: document.getElementById('snav').className })) + ' target=' + target);
   await pg.click('#wOpen'); await pg.waitForTimeout(1500); await pg.keyboard.press('Escape'); await pg.waitForTimeout(900);
   ok(t + ' Esc goes back too', await pg.evaluate(() => !document.documentElement.classList.contains('solo')));
   await pg.click('#wOpen'); await pg.waitForTimeout(1500); await pg.click('#hubBtn'); await pg.waitForTimeout(900);

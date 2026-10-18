@@ -819,7 +819,7 @@ html.solo main > .scene:not(.solo-on) { display: none; }
    of all 23 slides that slides sideways; 2.5s untouched = it folds back into the dot. The pill opens from the centre like a curtain,
    the chips ripple out from the current slide. Replaces the "Semua fitur" plate; the gold button at its left is that plate now. */
 .snav { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 45; translate: -50% 0; display: none;
-  --ow: min(calc(100vw - 24px), 760px); width: 56px; height: 56px; border-radius: 28px; overflow: hidden;
+  --ow: min(calc(100vw - 24px), 760px); width: 56px; max-width: calc(100vw - 8px); height: 56px; border-radius: 28px; overflow: hidden;
   background: rgba(14,13,12,.94); border: 1px solid rgba(208,138,46,.55); box-shadow: 0 10px 30px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.05);
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); transition: width 380ms cubic-bezier(.32,.72,0,1) 90ms, border-color 300ms; }
 html.solo .snav { display: block; }
@@ -833,6 +833,7 @@ html.solo .snav { display: block; }
 .snav-dot .tr { stroke: var(--line-2); }
 .snav-dot .pr { stroke: var(--gold); stroke-linecap: round; stroke-dasharray: 135.1; stroke-dashoffset: 135.1; transition: stroke-dashoffset 600ms var(--ease-out); }
 .snav.open .snav-dot { opacity: 0; scale: .5; pointer-events: none; transition: opacity 120ms, scale 200ms; }
+.snav-dot:focus-visible { outline-offset: -2px; }   /* the pill clips anything outside the dot, so the ring goes inside */
 .snav-in { position: absolute; top: 0; left: 50%; translate: -50% 0; width: calc(var(--ow) - 2px); height: 54px; display: flex; align-items: center; gap: 4px; padding: 0 5px; visibility: hidden; transition: visibility 0s 300ms; }
 .snav.open .snav-in { visibility: visible; transition: none; }
 .snav-in > i { flex: none; width: 1px; height: 26px; background: var(--line-2); }
@@ -840,7 +841,7 @@ html.solo .snav { display: block; }
   opacity: 0; rotate: -180deg; scale: .6; transition: opacity 160ms, rotate 160ms, scale 160ms; }
 .snav.open .snav-home { opacity: 1; rotate: 0deg; scale: 1; transition: opacity 300ms var(--ease-out) 120ms, rotate 560ms cubic-bezier(.34,1.4,.64,1) 120ms, scale 560ms cubic-bezier(.34,1.4,.64,1) 120ms; }
 .snav-home svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-.snav-strip { position: relative; flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 6px; padding: 0 8px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; touch-action: pan-x;
+.snav-strip { position: relative; flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 6px; padding: 0 8px; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--fl, 0px), #000 calc(100% - var(--fr, 0px)), transparent); mask-image: linear-gradient(90deg, transparent, #000 var(--fl, 0px), #000 calc(100% - var(--fr, 0px)), transparent); }
 .snav-strip::-webkit-scrollbar { display: none; }
 .snav-strip.drag { cursor: grabbing; }
@@ -1532,7 +1533,7 @@ html.intro-on { overflow: hidden; }
 </main>
 <nav class="snav" id="snav" aria-label="Pilih slide">
   <button type="button" class="snav-dot" id="snavDot" aria-expanded="false" aria-controls="snavList"><svg viewBox="0 0 46 46" aria-hidden="true"><circle class="tr" cx="23" cy="23" r="21.5"/><circle class="pr" cx="23" cy="23" r="21.5"/></svg><b>01</b></button>
-  <div class="snav-in">
+  <div class="snav-in" inert>
     <button type="button" class="snav-home" id="snavHome" aria-label="Kembali ke semua fitur" title="Semua fitur"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button><i></i>
     <div class="snav-strip" id="snavList"></div>
   </div>
@@ -2444,15 +2445,17 @@ function soloOn(sc) {
   scrollTo(0, 0); fit(); place(); kick(); orbs.forEach((o) => { if (o.id === sc.id) o.spin(); });
   $('#sn').textContent = String(scenes.indexOf(sc) + 1).padStart(2, '0'); $('#sname').textContent = sc.dataset.name;
   sMark(); if (snav.classList.contains('open')) { sCenter(true); sArm(); }
-  else if (!sPeeked) { sPeeked = true; setTimeout(() => { if (root.classList.contains('solo')) sOpen(); }, 900); }   /* opens once by itself, so he sees what the dot is */
+  else if (!sPeeked) setTimeout(() => { if (root.classList.contains('solo') && !sPeeked) { sPeeked = true; sOpen(); } }, 900);   /* opens once by itself, so he sees what the dot is */
 }
 function soloOff() {
   const sc = $('main > .scene.solo-on'); if (!sc || wBusy) return;
+  const kb = snav.contains(document.activeElement) && document.activeElement.matches(':focus-visible');
   sClose();
   const i = feats.indexOf(sc);
   root.classList.remove('solo'); sc.classList.remove('solo-on'); scrollTo(0, 0);
   $('#sn').textContent = '00'; $('#sname').textContent = 'Semua Fitur';
   wTheta = wTheta + wNorm(wSnap(i) - wTheta); wFit();   /* its card waits at the front */
+  if (kb) $('#wOpen').focus({ preventScroll: true });   /* keyboard users land on "Buka", so Enter reopens it */
   if (still) return;
   wBusy = true; const r = wcards[i].getBoundingClientRect(), W = innerWidth, Hh = innerHeight;
   const z = el('div', 'wzoom', `<span class="wn">${$('.wn', wcards[i]).textContent}</span><svg viewBox="0 0 24 24" aria-hidden="true">${WICON[sc.id] || ''}</svg><b>${sc.dataset.name}</b>`); document.body.append(z);
@@ -2464,7 +2467,8 @@ function soloOff() {
 }
 /* ---- the slide picker: the dot shows where he is; tap = the strip of all slides; 2.5s untouched = back to the dot ---- */
 const snav = $('#snav'), sStrip = $('#snavList'), sDot = $('#snavDot'), SN = scenes.length;
-let sIdle = 0, sPeeked = false, sHover = false, sDrag = null, sDragged = false;
+const sIn = $('.snav-in', snav);   /* inert while folded: no taps, no Tab, even during the fade */
+let sIdle = 0, sPeeked = false, sHover = false, sDrag = null, sDragged = false, sTouch = false;
 scenes.forEach((sc, i) => { const c = el('button', 'snav-c', `<b>${String(i + 1).padStart(2, '0')}</b><span></span>`); c.type = 'button'; c.title = sc.dataset.name; $('span', c).textContent = sc.dataset.name; c.onclick = () => { if (!sDragged) sGo(i); }; sStrip.append(c); });
 const sChips = $$('.snav-c', sStrip);
 const sCur = () => scenes.indexOf($('main > .scene.solo-on'));
@@ -2481,12 +2485,12 @@ function sEdges() { const m = sStrip.scrollWidth - sStrip.clientWidth; sStrip.st
 function sCenter(smooth) { const c = sChips[sCur()]; if (c) sStrip.scrollTo({ left: c.offsetLeft - (sStrip.clientWidth - c.offsetWidth) / 2, behavior: smooth && !still ? 'smooth' : 'auto' }); }
 function sArm() {
   clearTimeout(sIdle);
-  sIdle = setTimeout(() => { const a = document.activeElement; if (sHover || sDrag || (snav.contains(a) && a.matches(':focus-visible'))) sArm(); else sClose(); }, 2500);
+  sIdle = setTimeout(() => { const a = document.activeElement; if (sHover || sDrag || sTouch || (snav.contains(a) && a.matches(':focus-visible'))) sArm(); else sClose(); }, 2500);
 }
-function sOpen() { if (!snav.classList.contains('open')) { sMark(); sCenter(false); snav.classList.add('open'); sDot.setAttribute('aria-expanded', 'true'); sEdges(); } sArm(); }
+function sOpen() { if (!snav.classList.contains('open')) { sMark(); sCenter(false); sIn.inert = false; sDot.tabIndex = -1; snav.classList.add('open'); sDot.setAttribute('aria-expanded', 'true'); sEdges(); } sArm(); }
 function sClose(focusDot) {
   clearTimeout(sIdle); if (!snav.classList.contains('open')) return;
-  const back = snav.contains(document.activeElement); snav.classList.remove('open'); sDot.setAttribute('aria-expanded', 'false');
+  const back = snav.contains(document.activeElement); snav.classList.remove('open'); sDot.setAttribute('aria-expanded', 'false'); sIn.inert = true; sDot.tabIndex = 0;
   if (back) { if (focusDot) sDot.focus(); else document.activeElement.blur(); }
 }
 /* a chip: that slide, sliding in from the side it sits on */
@@ -2496,7 +2500,14 @@ function sGo(i) {
   soloOn(sc);
   if (!still) sc.animate([{ opacity: 0, transform: `translateX(${i > cur ? 48 : -48}px)` }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.23,1,.32,1)' });
 }
-sDot.addEventListener('click', (e) => { sOpen(); if (!e.detail) sChips[sCur()]?.focus({ preventScroll: true }); });
+sDot.addEventListener('click', (e) => { sPeeked = true; sOpen(); if (!e.detail) sChips[sCur()]?.focus({ preventScroll: true }); });
+snav.addEventListener('mousedown', (e) => e.preventDefault());   /* a mouse press never parks focus here (a later key press would pin it open) */
+/* a finger resting on it keeps it open; touch events, not pointer ones: pointercancel fires as soon as the strip scrolls */
+snav.addEventListener('touchstart', () => { sTouch = true; }, { passive: true });
+for (const t of ['touchend', 'touchcancel']) addEventListener(t, (e) => { if (sTouch && !e.touches.length) { sTouch = false; if (snav.classList.contains('open')) sArm(); } }, { passive: true });
+/* Tab through the chips: keep the focused one clear of the faded edges */
+sStrip.addEventListener('focusin', (e) => { const c = e.target; if (!c.matches(':focus-visible')) return; const m = 26, x = c.offsetLeft - sStrip.scrollLeft;
+  if (x < m) sStrip.scrollLeft += x - m; else if (x + c.offsetWidth > sStrip.clientWidth - m) sStrip.scrollLeft += x + c.offsetWidth - sStrip.clientWidth + m; });
 $('#snavHome').addEventListener('click', soloOff);
 sStrip.addEventListener('scroll', () => { sEdges(); if (snav.classList.contains('open')) sArm(); }, { passive: true });
 sStrip.addEventListener('wheel', (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { e.preventDefault(); sStrip.scrollLeft += e.deltaY; } }, { passive: false });
