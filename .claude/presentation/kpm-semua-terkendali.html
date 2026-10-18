@@ -2372,7 +2372,7 @@ const wNorm = (a) => ((a % 360) + 540) % 360 - 180;
 const wIndex = () => ((Math.round(-wTheta / WSTEP) % WN) + WN) % WN;
 function wFit() {
   const phone = innerWidth < 1024, cw = phone ? 150 : 200, ch = Math.round(cw * 1.36);
-  const r = Math.round(cw / 2 / Math.tan(Math.PI / WN) + cw * .18);
+  const r = Math.round(cw * 1.3 / 2 / Math.sin(Math.PI / WN));   /* his 2026-10-18 "some distance between the carousel": neighbours sit 30% of a card apart (was ~7 px) */
   wheelEl.style.setProperty('--cw', cw + 'px'); wheelEl.style.setProperty('--ch', ch + 'px'); wheelEl.style.setProperty('--r', r + 'px'); wheelEl.style.setProperty('--wh', ch + 70 + 'px');
   ring.dataset.r = r; wDraw();
 }
