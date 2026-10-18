@@ -2,6 +2,8 @@
 
 **Paste this to start (it downloads FIRST - the PC copy of this file is stale until the pull):** `/alucard First run in PowerShell: git status -sb; git pull origin phase0-solid-ground - if git refuses because of local changes, show me the list and stop. Then open the .claude/NEXT-SESSION.md you just pulled and do the ONE JOB at its top.`
 
+**2026-10-19 06:56 UPDATE: v32 is LIVE (artifact version 29 = kpm `b100c4b`)** - the wheel drags at half the rate (~100 px per card) and a lift glides at most two cards with no jump (his *"reduce the sensitivity on scrolling the carousel it is too sensitive and move too much"* + *"i want it to be slower and smoother"*). Probe: `node .claude/presentation/tests/pc-drag.mjs <file url> <out dir> 390 844` (touch) and `1440 900` (mouse) -> 4/4. The job below is the same, for v32: ask how it looks AND feels (drag on the phone).
+
 **2026-10-19 06:30 — THE ONE JOB: his verdict on v31, which is LIVE (https://claude.ai/artifact/AJQ36jBJr4jkkn6ZUnRN4A, artifact version 28 = kpm `7745a9f`).**
 - v31 = the wheel page as a containment platform (his pick C: floor rings + dotted floor lights under the cards, red light in the top corners, ceiling vent, fog), the wheel slows to a quarter under the mouse instead of stopping, the how-to line gone, slide 23 named "Kontrol Adalah Segalanya".
 - Step 0: read PROGRESS.md's top entry for his answer to ❓ *"how does v31 look on your phone and on the PC - the lab floor under the wheel, the red corner lights, and the slow-down when the mouse is on the wheel?"*. No answer -> ask it once, verbatim, build nothing.
