@@ -2,7 +2,16 @@
 
 **Paste this to start (it downloads FIRST - the PC copy of this file is stale until the pull):** `/alucard First run in PowerShell: git status -sb; git pull origin phase0-solid-ground - if git refuses because of local changes, show me the list and stop. Then open the .claude/NEXT-SESSION.md you just pulled and do the ONE JOB at its top.`
 
-**2026-10-18 20:55 — THE ONE JOB: put presentation v30 on the live link (v30 = v28 + v29 + v30, all committed on the PC, none live; the link still shows v26).**
+**2026-10-19 05:41 — THE ONE JOB: his verdict on v30, which is LIVE now (https://claude.ai/artifact/AJQ36jBJr4jkkn6ZUnRN4A, artifact version 27 = kpm `baea960`).**
+- Step 0: read PROGRESS.md's top entry for his answer to ❓ *"how does v30 look on your phone - the Pembuka button, the card opening into its slide, and the capybara walking, flying and landing?"*. No answer there -> ask it once, verbatim, and build nothing.
+- He is happy -> nothing to build; say so in one line and ask what is next (the presentation is finished unless he reopens it).
+- He asks for changes -> build them as v31 in `.claude/presentation/kpm-semua-terkendali.html` (design work: Alucard §1a stack; his capybara art = `public/sprites/merchant-idle.png` + `merchant-deal.png`, embedded as data URIs). Prove with `node .claude/presentation/tests/pc-flow.mjs <file url> <out dir> 390 844` plus `pc-capy`, `pc-fly`, `pc-land`, at 390 and 1440 (real clock, 0 script errors). Commit, then publish.
+- Publish trap: the read is bigger now - the live page is 434 KB (the sprites are base64), ~2,800 lines. Find the long lines first (`awk 'length>3000{print NR": "length}'` on the saved copy) and read those one or two at a time; the rest in ~300-line parts. Do the publish FIRST in a fresh session. Check it with `Artifact read` + `path: "index.html"` (saves the file, prints nothing big) and grep the new feature's class.
+- Known and harmless: the host swaps line 1 for its own wrapper and drops `class="intro-on"` from `<html>`; `show(false)` (line ~2650) adds it back at load, so the capybara still hides behind the opening.
+- kpm is 14 commits ahead of GitHub; push only on his word "push".
+- Then rewrite this file with the next single job.
+
+**2026-10-18 20:55 — DONE 2026-10-19 05:39 (live = artifact version 27, read-back holds `capy-rockbox` + `wBack`). Kept for the record: THE ONE JOB: put presentation v30 on the live link (v30 = v28 + v29 + v30, all committed on the PC, none live; the link still shows v26).**
 - What goes live: `.claude/presentation/kpm-semua-terkendali.html` at commit `baea960` (~425 KB; the capybara sprites are embedded). v28 `ada673e` = "‹ Pembuka" back to the opening + the card that opens INTO its slide + his capybara walking; v29 `7397055` = he also flies on the floating End-stone island; v30 `baea960` = the rock lands, he hops off and walks on.
 - Steps, in order, FIRST thing in the session (the read is ~110k tokens - that is why it did not fit the last one):
   1. `Artifact read` https://claude.ai/artifact/AJQ36jBJr4jkkn6ZUnRN4A (it saves the live copy to a file).

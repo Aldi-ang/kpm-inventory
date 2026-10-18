@@ -1199,7 +1199,7 @@ Fired: 2026-10-05 21:10 (walk-fullscreen.mjs: freeze() reads the seek back in th
 Fired: 2026-10-11 14:03 (?capy lab: play() wrap + idle-timer clamp read back in the same evaluate before the tap; lab bundle built after the last source edit)
 
 ### 2026-10-05 — a swap test switches to an input SMALLER than the one on screen
-**Status:** LIKELY
+**Status:** RETIRED (2026-10-19) — never fired in 14 days; no data-swap control was built since (presentation work only). Its walk lives on in the Day Replay fullscreen swap walk (Budi 11 -> Ari 3).
 **Trigger:** before a completion claim on any control that replaces the data a view shows (a man picker, a day picker, a tab that swaps a list) - the moment the walk's swap step is written.
 **Lesson:** swap to an input with FEWER items than the current one (fewer stops, fewer rows), not just a different one. State kept per position (a phase string 's8', a picked index, a scroll offset) survives the swap and is read against the new, shorter data before the next frame corrects it. Reset that state when its source changes (React's adjust-during-render), and make the walk prove it.
 **Would have prevented:** the Day Replay's date picker shipped in kpm `a4afcf2` (2026-10-05 16:20) with a latent crash - a day with fewer stops read `stops[8].kind` and blanked the whole page; its 38/38 walk never changed the day. Found only at 21:05 by the fullscreen swap walk (Budi 11 stops -> Ari 3), fixed in `50d98a9`.
@@ -1315,7 +1315,7 @@ Fired:
 Seen: 2026-10-15
 
 ### 2026-10-18 — a read-back that prints the inserted line must GATE the commit, not ride in the same command
-**Status:** LIKELY
+**Status:** LIVE
 **Trigger:** before a mutating action that inserts text into a vault or repo file with sed/awk and commits it - the moment the insert and `git commit` are about to share one `&&` chain.
 **Lesson:** `sed "174a\\$L"` in double quotes hands sed a literal `$L` (the backslash escapes the `$`). Insert with Edit (or `awk -v`), read the line back in its own call, and commit only after reading it.
 **Would have prevented:** 2026-10-18 14:57, A-Brain `223f56a` shipped two index lines reading `$L`; the read-back printed it, but the commit had already run in the same chain - fix commit `5733ca4`.
