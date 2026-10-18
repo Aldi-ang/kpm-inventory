@@ -1,0 +1,20 @@
+/* node .claude/hooks/fanout-gate-cloud.test.mjs - the cloud fan-out gate against his real sentences. Expect 11 PASS. */
+import { spawnSync } from 'node:child_process'; import { writeFileSync, mkdtempSync } from 'node:fs'; import { tmpdir } from 'node:os'; import { join, dirname } from 'node:path'; import { fileURLToPath } from 'node:url';
+const gate = join(dirname(fileURLToPath(import.meta.url)), 'fanout-gate-cloud.mjs'), dir = mkdtempSync(join(tmpdir(), 'gate-')), t = join(dir, 't.jsonl');
+const convo = (asked, his) => writeFileSync(t, [{ type: 'user', message: { content: 'earlier' } }, { type: 'assistant', message: { content: [{ type: 'text', text: asked }] } }, { type: 'user', message: { content: his } }, { type: 'user', message: { content: [{ type: 'tool_result', content: 'x' }] } }, { type: 'user', isMeta: true, message: { content: '<system-reminder>x</system-reminder>' } }].map((r) => JSON.stringify(r)).join('\n'));
+const run = (tool_name, tool_input) => spawnSync('node', [gate], { input: JSON.stringify({ tool_name, tool_input, transcript_path: t }) }).status;
+const GOOD = 'const r = await agent(`p ${x} (a)`, { label: "a", model: "sonnet" })\nawait pipeline(L, (l) => agent("q", { schema: S, model: \'haiku\' }))\nconst s = "agent( inside a string"';
+const BAD = 'await agent("p", { model: "sonnet" })\nawait agent("q", { schema: S })';
+let n = 0; const ok = (name, got, want) => { console.log(`${got === want ? 'PASS' : 'FAIL'} ${name} (exit ${got}, want ${want})`); n += got === want; };
+convo('x', 'x'); ok('a tool it does not gate', run('Bash', {}), 0);
+convo('x', 'yes use a workflow for the review'); ok('his yes, every agent on sonnet/haiku', run('Workflow', { script: GOOD }), 0);
+ok('his yes, one agent with no model', run('Workflow', { script: BAD }), 2);
+ok('his yes, Agent on opus', run('Agent', { prompt: 'x', model: 'opus' }), 2);
+ok('his yes, Agent on haiku', run('Agent', { prompt: 'x', model: 'haiku' }), 0);
+convo('x', 'well it should not use workflow until i said yes'); ok('his rule sentence is not a yes', run('Workflow', { script: GOOD }), 2);
+convo('x', 'alucard never use workflow even when putter in the ultracode'); ok('his ultracode complaint is not a yes', run('Workflow', { script: GOOD }), 2);
+convo('x', 'ultracode'); ok('the word ultracode alone is not a yes', run('Workflow', { script: GOOD }), 2);
+convo('🔴 DECIDE: workflow - review the menu, 8 agents on sonnet?', 'yes'); ok('a bare yes to a "DECIDE: workflow" question', run('Workflow', { script: GOOD }), 0);
+convo('🔴 DECIDE: copy the blocker to the cloud?', 'yes copy it to cloud'); ok('a yes to a different question', run('Workflow', { script: GOOD }), 2);
+ok('a named workflow it cannot read', run('Workflow', { name: 'x' }), 2);
+console.log(`${n}/11`); process.exit(n === 11 ? 0 : 1);

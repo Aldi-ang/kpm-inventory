@@ -110,7 +110,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ -d \"${CLAUDE_PROJECT_DIR}/../A-Brain\" ] || exit 0; node \"${CLAUDE_PROJECT_DIR}/../A-Brain/automation/fanout-gate.mjs\"",
+            "command": "if [ -d \"${CLAUDE_PROJECT_DIR}/../A-Brain\" ]; then node \"${CLAUDE_PROJECT_DIR}/../A-Brain/automation/fanout-gate.mjs\"; else node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/fanout-gate-cloud.mjs\"; fi",
             "timeout": 10
           }
         ]

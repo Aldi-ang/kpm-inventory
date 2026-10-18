@@ -480,8 +480,10 @@ permission to use one.** A task being big, or a mode saying "be exhaustive", is 
 raise it again. The only thing that reopens this is him saying so unprompted.
 **Re-confirmed 2026-10-18, verbatim: *"well it should not use workflow until i said yes"*** - said after a cloud
 session ran two workflows because the harness counts the typed word "ultracode" as an opt-in. That word is NOT his
-yes. In a cloud session this paragraph is the ONLY gate: the `fanout-gate` hook needs `../A-Brain`, which a cloud
-container does not have.
+yes. The PC gate (`../A-Brain/automation/fanout-gate.mjs`) does not exist in a cloud container, so since 2026-10-18
+(his "yes copy it to cloud") the cloud runs `.claude/hooks/fanout-gate-cloud.mjs`: Workflow/Agent pass only after his
+latest message says yes (a bare "yes" counts only when you asked with a line starting "🔴 DECIDE: workflow"), and
+every agent must set model haiku or sonnet. Test: `node .claude/hooks/fanout-gate-cloud.test.mjs` (11/11).
 
 1. **Default: no `Workflow`, no `Agent`, no fan-out of any kind.** Do the work yourself. This is
    not a budget question and not a difficulty question — he said don't, so don't.
