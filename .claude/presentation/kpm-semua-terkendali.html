@@ -945,7 +945,7 @@ html.intro-on { overflow: hidden; }
    sales terminal (painted sheets, src public/sprites), walking the bottom edge now and then. He stops only where no text is under him,
    walks off when the page scrolls, gives a thumbs-up when tapped, and is gone in Lite mode, in screenshots and behind the opening.
    The frames step with a transform on a wide strip, never background-position percentages (the app's rule: those tear). */
-.capy { --cs: 92px; position: fixed; left: 0; bottom: calc(4px + env(safe-area-inset-bottom, 0px)); z-index: 26; width: var(--cs); height: var(--cs); display: none; pointer-events: none; }
+.capy { --cs: 72px; position: fixed; left: 0; bottom: calc(4px + env(safe-area-inset-bottom, 0px)); z-index: 26; width: var(--cs); height: var(--cs); display: none; pointer-events: none; }
 .moving .capy.on { display: block; }
 html.intro-on .capy, .shot .capy { display: none !important; }
 .capy .sh { position: absolute; left: 24%; right: 24%; bottom: 1%; height: 7%; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.6), transparent); }
@@ -970,6 +970,8 @@ html.intro-on .capy, .shot .capy { display: none !important; }
   background: radial-gradient(circle at 30% 40%, #5F5B45 0 1.5px, transparent 2.1px) 0 0 / 20px 13px, repeating-linear-gradient(180deg, transparent 0 8px, rgba(24,12,34,.18) 8px 9px), linear-gradient(180deg, #8E8C64, #625A49 50%, #392D3C);
   clip-path: polygon(0 0, 100% 0, 100% 12%, 95% 12%, 95% 30%, 87% 30%, 87% 47%, 77% 47%, 77% 64%, 66% 64%, 66% 82%, 57% 82%, 57% 100%, 45% 100%, 45% 84%, 35% 84%, 35% 66%, 23% 66%, 23% 48%, 13% 48%, 13% 29%, 5% 29%, 5% 10%, 0 10%); }
 .capy-pb { position: fixed; z-index: 26; pointer-events: none; border-radius: 1px; background: linear-gradient(#8E8C64, #4B4438); }
+.capy.capy-rockbox { top: 0; bottom: auto; width: 0; height: 0; }   /* the empty rock after he hops off, on its own */
+.capy.capy-rockbox .isle { position: fixed; }
 .still .capy-pb, html.intro-on .capy-pb { display: none; }
 @media (min-width: 1024px) { .in-stack { height: 140px; } .in-tag { font-size: 17px; } }
 @media (max-height: 640px) { .in-stack { display: none; } }
@@ -2655,14 +2657,14 @@ wFit();
   capy.setAttribute('aria-hidden', 'true'); document.body.append(capy);
   const fig = $('.fig', capy), sh = $('.sh', capy), ride = $('.ride', capy), isle = $('.isle', capy);
   let x = 0, tx = 0, st = 'away', t0 = 0, ph = 0, last = 0, face = 1, vmax = 60, wait = 0, watch = 0, visits = 0;
-  let h = 0, vx = 0, vh = 0, rot = 0, tgx = 0, tgh = 0, pbT = 0, hoverEnd = 0;
+  let h = 0, vx = 0, vh = 0, rot = 0, tgx = 0, tgh = 0, pbT = 0, hoverEnd = 0, bobA = 1, flights = 0, hopDir = 1;
   const later = (f, ms) => { clearTimeout(wait); wait = setTimeout(f, ms); };
   const clear = (px, lift = 0, tall = 1) => {   /* no text under him at this spot (3 x 3 probes over his body, and his rock when flying) */
     const s = capy.offsetWidth, top = capy.getBoundingClientRect().top - lift;
     const cards = wcards.filter((c) => +c.style.opacity > .25).map((c) => c.getBoundingClientRect()).filter((r) => r.width);   /* 3D cards slip the hit test: test their outlines */
-    for (const fx of [.25, .5, .75]) for (const fy of [.2, .55, .85]) {
+    for (const fx of [.25, .5, .75]) for (const fy of [.06, .3, .55, .85]) {   /* .06: his hat, which first missed the button bar */
       const qx = px + s * fx, qy = top + s * tall * fy, t = document.elementsFromPoint(qx, qy).find((e) => !capy.contains(e) && !e.classList.contains('capy-pb'));
-      if (t && t.closest('p, h1, h2, h3, li, button, a, small, b, .tile, .nota, .kpm-led-line, .snav, .wbar, .copy')) return false;
+      if (t && t.closest('p, h1, h2, h3, li, button, a, small, b, .tile, .nota, .kpm-led-line, .snav, .wnow, .copy')) return false;   /* the button row's box spans the screen: test its buttons and label, not the row */
       if (cards.some((r) => qx >= r.left - 8 && qx <= r.right + 8 && qy >= r.top - 8 && qy <= r.bottom + 8)) return false; }
     return true; };
   function enter() {
@@ -2699,6 +2701,15 @@ wFit();
     const W = innerWidth, H = innerHeight, s = capy.offsetWidth, from = Math.random() < .5 ? -1 : 1;
     x = from < 0 ? -s * 1.6 : W + s * .6; h = H * (.32 + Math.random() * .18); vx = vh = rot = 0;
     const lo = s * .16 + 8, hi = W - s * 1.16 - 8, spots = [];   /* the whole rock stays on screen */
+    bobA = 1; t0 = performance.now(); last = 0;
+    /* every other flight LANDS (his "add the landing too"): the rock's tip settles on the floor, he hops off forward onto a clear
+       spot and walks on; the empty rock lifts and drifts away. The first flight is a landing, so the whole story is seen once. */
+    if (flights++ % 2 === 0) {
+      const hl = s * .59 + 2, dir = -from, hop = s * 1.15, land = [];
+      for (const f of [.15, .35, .55, .75]) { const px = lo + (hi - lo) * f, end = px + dir * hop; if (end >= 8 && end <= W - s - 8) land.push(px); }
+      const okL = land.filter((px) => clear(px, hl, 1.6) && clear(px + dir * hop)).sort((a, b) => Math.abs(a - x) - Math.abs(b - x));   /* near his side first */
+      if (okL.length) { tgx = okL[Math.random() < .7 ? 0 : Math.floor(Math.random() * okL.length)]; tgh = hl; hopDir = dir; st = 'land'; face = dir; requestAnimationFrame(flyTick); return; }
+    }
     for (const f of [0, .3, .7, 1]) for (const fh of [.12, .2, .3, .42]) spots.push([lo + (hi - lo) * f, H * fh]);
     const ok = spots.filter(([px, hh]) => clear(px, hh, 1.6)).sort(() => Math.random() - .5);
     if (ok.length) { [tgx, tgh] = ok[0]; st = 'in'; } else { tgx = from < 0 ? W + s * 2 : -s * 3; tgh = H * .4; st = 'out'; }   /* exits aim well past the edge: the steering slows near its target */
@@ -2706,20 +2717,29 @@ wFit();
   }
   function flyTick(now) {
     const W = innerWidth, s = capy.offsetWidth, t = now / 1000;
+    if (st === 'hop' || !capy.classList.contains('capy-fly')) return;   /* off the rock: the hop and the walk take over */
     if (still) { capy.classList.remove('on', 'capy-fly'); clearInterval(watch); st = 'away'; return later(enter, 30000); }
     const dt = last ? Math.min(.05, (now - last) / 1000) : 0; last = now;
-    const gx = tgx + (st === 'idle' ? Math.sin(t * .6) * 8 : 0), gh = tgh + Math.sin(t * .7) * (st === 'idle' ? 4 : 16);   /* never quite still */
+    const down = st === 'land' || st === 'landed';
+    const gx = tgx + (st === 'idle' ? Math.sin(t * .6) * 8 : 0), gh = tgh + (down ? 0 : Math.sin(t * .7) * (st === 'idle' ? 4 : 16));   /* never quite still, unless landing */
     const dx = gx - x, dh = gh - h, dist = Math.hypot(dx, dh) || 1, fast = W < 1024 ? 74 : 104;
-    const want = Math.min(fast, fast * dist / 150) * Math.min(1, (now - t0) / 900), r = 1 - Math.exp(-dt * 1.8);
+    const want = Math.min(fast, Math.max(st === 'land' ? 16 : 0, fast * dist / (down ? 90 : 150))) * Math.min(1, (now - t0) / 900), r = 1 - Math.exp(-dt * 1.8);   /* a landing keeps a little speed: it touches down instead of creeping the last pixels */
     vx += (dx / dist * want - vx) * r; vh += (dh / dist * want * .75 - vh) * r; x += vx * dt; h += vh * dt;
-    if (Math.abs(vx) > 6) face = Math.sign(vx);
-    rot += ((Math.max(-8, Math.min(8, vx * .07)) + Math.sin(t * 1.3) * 1.2) - rot) * (1 - Math.exp(-dt * 3));
-    const bob = Math.sin(t * 1.9) * 5, lag = Math.sin((t - .2) * 1.9) * 5 - bob;
+    if (down && h < tgh) { h = tgh; vh = Math.max(0, vh); }   /* the floor: no sinking through it */
+    if (Math.abs(vx) > 6 && !down) face = Math.sign(vx);
+    rot += ((st === 'landed' ? 0 : Math.max(-8, Math.min(8, vx * .07)) + Math.sin(t * 1.3) * 1.2) - rot) * (1 - Math.exp(-dt * 3));
+    bobA += ((st === 'landed' ? 0 : st === 'land' ? Math.min(1, dist / 80) : 1) - bobA) * (1 - Math.exp(-dt * 4));   /* the hover dies as it touches down */
+    const bob = Math.sin(t * 1.9) * 5 * bobA, lag = (Math.sin((t - .2) * 1.9) * 5 - Math.sin(t * 1.9) * 5) * bobA;
     ride.style.transform = `translateY(${(bob - h).toFixed(1)}px) rotate(${rot.toFixed(2)}deg)`;
     fig.style.transform = `translateY(${lag.toFixed(2)}px) scaleX(${face})`; capy.style.transform = `translateX(${x.toFixed(1)}px)`;
     const k = Math.max(0, 1 - h / (innerHeight * .75));
     sh.style.transform = `scaleX(${(.4 + .6 * k).toFixed(3)})`; sh.style.opacity = (.15 + .6 * k).toFixed(3);
-    if (now - pbT > (st === 'idle' ? 1300 : 420)) { pbT = now; if (Math.random() < .7) pebble(); }
+    if (st !== 'landed' && now - pbT > (st === 'idle' ? 1300 : 420)) { pbT = now; if (Math.random() < .7) pebble(); }
+    if (st === 'land' && Math.hypot(tgx - x, tgh - h) < 5 && Math.hypot(vx, vh) < 24) {
+      st = 'landed'; for (let i = 0; i < 6; i++) pebble(isle.getBoundingClientRect(), true);   /* a puff of grit where the tip touches */
+      setTimeout(hopOff, 900);
+    }
+    if (st === 'landed') { requestAnimationFrame(flyTick); return; }
     if (st === 'in' && Math.hypot(tgx - x, tgh - h) < 3 && Math.hypot(vx, vh) < 8) {
       st = 'idle'; hoverEnd = now + 4500 + Math.random() * 3000; if (Math.random() < .6) setTimeout(deal, 1500);
       watch = setInterval(() => { if (!clear(x, h, 1.6)) depart(); }, 800);   /* a slide opened or changed under him: he flies on */
@@ -2733,12 +2753,36 @@ wFit();
     if (st !== 'idle') return; clearInterval(watch); fig.classList.remove('deal');
     const W = innerWidth, s = capy.offsetWidth; tgx = face > 0 ? W + s * 2 : -s * 3; tgh = h + 60; st = 'out'; t0 = performance.now() - 300;
   }
-  function pebble() {
-    const r = isle.getBoundingClientRect(), p = el('i', 'capy-pb'), z = 3 + Math.random() * 3;
-    p.style.cssText = `left:${(r.left + r.width * (.3 + Math.random() * .4)).toFixed(1)}px;top:${(r.top + r.height * .5).toFixed(1)}px;width:${z.toFixed(1)}px;height:${z.toFixed(1)}px`;
+  function pebble(r = isle.getBoundingClientRect(), puff = false) {   /* puff: grit kicked sideways along the floor at touchdown */
+    const p = el('i', 'capy-pb'), z = 3 + Math.random() * 3, side = Math.random() < .5 ? -1 : 1;
+    p.style.cssText = `left:${(r.left + r.width * (puff ? .5 : .3 + Math.random() * .4)).toFixed(1)}px;top:${(r.top + r.height * (puff ? .92 : .5)).toFixed(1)}px;width:${z.toFixed(1)}px;height:${z.toFixed(1)}px`;
     document.body.append(p);
-    p.animate([{ transform: 'none', opacity: 1 }, { transform: `translate(${(-vx * .4).toFixed(1)}px, ${(80 + Math.random() * 70).toFixed(0)}px) rotate(${(Math.random() * 200).toFixed(0)}deg)`, opacity: 0 }],
-      { duration: 1000 + Math.random() * 400, easing: 'cubic-bezier(.5,0,.9,.6)' }).onfinish = () => p.remove();
+    const to = puff ? `translate(${(side * (30 + Math.random() * 50)).toFixed(0)}px, ${(-6 - Math.random() * 14).toFixed(0)}px)` : `translate(${(-vx * .4).toFixed(1)}px, ${(80 + Math.random() * 70).toFixed(0)}px)`;
+    p.animate([{ transform: 'none', opacity: 1 }, { transform: `${to} rotate(${(Math.random() * 200).toFixed(0)}deg)`, opacity: 0 }],
+      { duration: (puff ? 600 : 1000) + Math.random() * 400, easing: puff ? 'cubic-bezier(.2,.7,.3,1)' : 'cubic-bezier(.5,0,.9,.6)' }).onfinish = () => p.remove();
+  }
+  /* the hop: up and forward off the rock in a short arc, a squash as his feet hit the floor; the rock, left on its own, rises
+     with a small wobble and drifts back the way it came, fading out */
+  function hopOff() {
+    if (st !== 'landed') return; st = 'hop';
+    const W = innerWidth, H = innerHeight, s = capy.offsetWidth, r = isle.getBoundingClientRect(), dx = hopDir * s * 1.15;
+    const box = el('div', 'capy on capy-fly capy-rockbox'); box.setAttribute('aria-hidden', 'true');
+    const rock = isle.cloneNode(true); rock.style.cssText = `left:${r.left.toFixed(1)}px;top:${r.top.toFixed(1)}px;width:${r.width.toFixed(1)}px;height:${r.height.toFixed(1)}px`;
+    box.append(rock); document.body.append(box); capy.classList.remove('capy-fly');
+    ride.style.transform = ''; fig.style.transform = `scaleX(${hopDir})`; sh.style.opacity = ''; sh.style.transform = '';
+    const jump = ride.animate([{ transform: `translate(0px, ${(-h).toFixed(1)}px)`, easing: 'cubic-bezier(.2,.7,.4,1)' },
+      { transform: `translate(${(dx * .45).toFixed(1)}px, ${(-h - s * .3).toFixed(1)}px)`, offset: .42, easing: 'cubic-bezier(.6,0,.9,.5)' },
+      { transform: `translate(${dx.toFixed(1)}px, 0px)` }], { duration: 620 });
+    sh.animate([{ transform: 'scaleX(.5)', opacity: .3 }, { transform: `translateX(${dx.toFixed(1)}px) scaleX(1)`, opacity: 1 }], { duration: 620, easing: 'ease-in' });
+    rock.animate([{ transform: 'none', opacity: 1 }, { transform: `translate(${(-hopDir * 14).toFixed(0)}px, -26px) rotate(${-hopDir * 3}deg)`, offset: .25 },
+      { transform: `translate(${(-hopDir * W * .8).toFixed(0)}px, ${(-H * .42).toFixed(0)}px) rotate(${-hopDir * 9}deg)`, opacity: 0 }],
+      { duration: 3400, delay: 380, easing: 'cubic-bezier(.45,0,.7,.6)', fill: 'backwards' }).onfinish = () => box.remove();
+    jump.onfinish = () => {
+      x += dx; capy.style.transform = `translateX(${x.toFixed(1)}px)`; face = hopDir;
+      fig.animate([{ transform: `scaleX(${hopDir}) scaleY(.86)` }, { transform: `scaleX(${hopDir})` }], { duration: 260, easing: 'cubic-bezier(.2,.9,.3,1.3)' });
+      st = 'idle'; if (Math.random() < .6) setTimeout(deal, 1400); later(leave, 5000 + Math.random() * 3000);
+      watch = setInterval(() => { if (!clear(x)) leave(); }, 800);   /* now he is a walker again */
+    };
   }
   function deal() { if (st !== 'idle') return; fig.classList.add('deal'); setTimeout(() => fig.classList.remove('deal'), 1600); }
   function leave() {
