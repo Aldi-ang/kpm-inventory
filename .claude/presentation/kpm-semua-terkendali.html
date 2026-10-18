@@ -780,10 +780,29 @@ details.ev .pop b { color: var(--ink); }
    depth, reduced motion): 22 drawn cards on a ring; a side card comes to the front on a tap, the front card flies to full
    screen and opens its slide. Transforms + opacity only, and the loop runs only while the wheel is on screen. */
 .hubsec { position: relative; min-height: 100svh; display: grid; align-content: center; gap: 14px; padding: 76px 0 36px; overflow: hidden;
-  background: radial-gradient(70% 45% at 50% 55%, rgba(208,138,46,.10), transparent 70%), var(--ground); }
+  /* his 2026-10-19 pick "C": a containment platform in the Ark Lab. Red emergency light in the top corners, a framed ceiling
+     vent under the bar, low fog, a warm glow where the wheel stands (its floor ring is on .wheel::before/::after). Black, warm
+     white and amber; red only as the emergency accent. Nothing moves, so Lite Mode keeps all of it. */
+  background:
+    radial-gradient(clamp(150px, 24vw, 380px) 220px at 0 48px, rgba(255,59,75,.17), transparent 72%),
+    radial-gradient(clamp(150px, 24vw, 380px) 220px at 100% 48px, rgba(255,59,75,.09), transparent 72%),
+    radial-gradient(120% 40% at 50% 100%, rgba(232,228,222,.07), transparent 62%),
+    radial-gradient(60% 40% at 50% 58%, rgba(208,138,46,.09), transparent 70%),
+    linear-gradient(rgba(232,228,222,.10), rgba(232,228,222,.10)) 50% 58px / min(560px, 72%) 1px no-repeat,
+    linear-gradient(rgba(232,228,222,.10), rgba(232,228,222,.10)) 50% 83px / min(560px, 72%) 1px no-repeat,
+    repeating-linear-gradient(90deg, rgba(0,0,0,.7) 0 4px, rgba(232,228,222,.06) 4px 5px, transparent 5px 11px) 50% 59px / min(560px, 72%) 24px no-repeat,
+    linear-gradient(180deg, #13100d, #0a0908 55%, #040303); }
 .hubsec .copy { padding-inline: 16px; justify-items: center; text-align: center; }
 .wheel { position: relative; height: var(--wh, 330px); perspective: 1300px; perspective-origin: 50% 40%; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; outline: none; }
 .wheel.grab { cursor: grabbing; }
+/* the platform the wheel stands on: amber floor rings fading out, and a ring of dotted floor lights at the cards' feet.
+   z-index 0 on .wheel makes it the stacking context, so the -1 floor sits over the page and under the cards */
+.wheel { z-index: 0; }
+.wheel::before, .wheel::after { content: ""; position: absolute; z-index: -1; left: 50%; translate: -50% 0; pointer-events: none; }
+.wheel::after { bottom: -20px; width: min(1040px, 150vw); height: 170px;
+  background: repeating-radial-gradient(closest-side, transparent 0 17px, rgba(228,176,74,.2) 17px 18px), radial-gradient(closest-side, rgba(228,176,74,.2), rgba(228,176,74,.04) 70%, transparent);
+  -webkit-mask-image: radial-gradient(closest-side, #000 55%, transparent); mask-image: radial-gradient(closest-side, #000 55%, transparent); }
+.wheel::before { bottom: 2px; width: min(760px, 118vw); height: 108px; border-radius: 50%; border: 3px dotted rgba(244,196,96,.75); box-shadow: 0 0 24px rgba(228,176,74,.25); }
 .wheel:focus-visible { box-shadow: inset 0 0 0 2px var(--gold-2); }
 .ring { position: absolute; left: 50%; top: 50%; width: 0; height: 0; transform-style: preserve-3d; }
 .wcard { position: absolute; left: calc(var(--cw) / -2); top: calc(var(--ch) / -2); width: var(--cw); height: var(--ch); padding: 14px 12px 12px; display: grid; grid-template-rows: auto 1fr auto auto auto; gap: 6px;
