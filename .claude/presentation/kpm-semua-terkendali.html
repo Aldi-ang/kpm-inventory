@@ -2426,7 +2426,7 @@ const wcards = feats.map((sc, i) => {
   b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-label', `${no} ${name}`); b.tabIndex = -1;
   b.style.setProperty('--a', i * WSTEP + 'deg'); ring.append(b); return b;
 });
-let wTheta = 0, wVel = 0, wDrag = null, wHover = false, wRaf = 0, wTween = 0, wLast = 0, wFront = -1, wBusy = false, wAuto = 0;
+let wTheta = 0, wDrag = null, wHover = false, wRaf = 0, wTween = 0, wLast = 0, wFront = -1, wBusy = false, wAuto = 0;
 const wNorm = (a) => ((a % 360) + 540) % 360 - 180;
 const wIndex = () => ((Math.round(-wTheta / WSTEP) % WN) + WN) % WN;
 function wFit() {
@@ -2442,7 +2442,7 @@ function wDraw() {
   if (f !== wFront) { if (wcards[wFront]) wcards[wFront].classList.remove('front'); wFront = f; wcards[f].classList.add('front'); wheelEl.setAttribute('aria-activedescendant', ''); wNow.innerHTML = `<b>${$('.wn', wcards[f]).textContent}</b> · ${feats[f].dataset.name}`; }
 }
 function wTo(target, ms = 520, then) {
-  cancelAnimationFrame(wTween); const from = wTheta, t0 = performance.now(); wVel = 0;
+  cancelAnimationFrame(wTween); const from = wTheta, t0 = performance.now();
   if (still) { wTheta = target; wDraw(); if (then) then(); return; }
   const step = (now) => { const u = Math.min(1, (now - t0) / ms); wTheta = from + (target - from) * (1 - Math.pow(1 - u, 3)); wDraw(); if (u < 1) wTween = requestAnimationFrame(step); else { wTween = 0; if (then) then(); } };
   wTween = requestAnimationFrame(step);
@@ -2452,10 +2452,9 @@ function wGoIndex(i, then) { const cur = wIndex(); let d = ((i - cur) % WN + WN)
 function wLoop(now) {
   const dt = wLast ? Math.min(.05, (now - wLast) / 1000) : 0; wLast = now;
   if (!wDrag && !wTween && !wBusy) {
-    if (Math.abs(wVel) > .5) { wTheta += wVel * dt; wVel *= Math.pow(.04, dt); wAuto = 0; if (Math.abs(wVel) <= .5) { wVel = 0; wGoIndex(wIndex()); } }
     /* auto-rotate, 10 deg a second like the original. His 2026-10-19 ask: a mouse on it slows it to a quarter GRADUALLY instead
        of stopping it dead, and it eases back up when the mouse leaves (0.45 s time constant, both ways) */
-    else { wAuto = still ? 0 : wAuto + ((wHover ? 2.5 : 10) - wAuto) * (1 - Math.exp(-dt / .45)); wTheta -= wAuto * dt; }
+    wAuto = still ? 0 : wAuto + ((wHover ? 2.5 : 10) - wAuto) * (1 - Math.exp(-dt / .45)); wTheta -= wAuto * dt;
     wDraw();
   } else wAuto = 0;   /* held, snapping or opening: the spin starts again from rest */
   wRaf = requestAnimationFrame(wLoop);
@@ -2468,10 +2467,16 @@ wheelEl.addEventListener('pointerdown', (e) => { if (e.button > 0) return; cance
 wheelEl.addEventListener('pointermove', (e) => {
   if (!wDrag) return; const dx = e.clientX - wDrag.x;
   if (!wDrag.on) { if (Math.abs(dx) < 6) return; wDrag.on = true; try { wheelEl.setPointerCapture(e.pointerId); } catch (_) { /* gone */ } wheelEl.classList.add('grab'); }
-  const now = performance.now(); wDrag.v = (e.clientX - wDrag.lx) / Math.max(1, now - wDrag.lt) * 1000 * .3; wDrag.lx = e.clientX; wDrag.lt = now;
-  wTheta = wDrag.th + dx * .3; wDraw();
+  const now = performance.now(); wDrag.v = (e.clientX - wDrag.lx) / Math.max(1, now - wDrag.lt) * 1000 * .15; wDrag.lx = e.clientX; wDrag.lt = now;
+  wTheta = wDrag.th + dx * .15; wDraw();   /* his 2026-10-19 "too sensitive": half the old .3 - about 100 px of drag per card */
 });
-const wUp = () => { if (!wDrag) return; const was = wDrag; wDrag = null; wheelEl.classList.remove('grab'); if (was.on) { wheelEl.dataset.dragEnd = performance.now(); if (Math.abs(was.v) > 40) wVel = was.v; else wGoIndex(wIndex()); } };
+/* the lift (his "slower and smoother"): the finger's speed, capped at 90 deg/s, carries the wheel at most two cards on, and
+   the ease starts at that same speed, so nothing jumps; a finger that stopped before lifting adds nothing */
+const wUp = () => { if (!wDrag) return; const was = wDrag; wDrag = null; wheelEl.classList.remove('grab'); if (!was.on) return;
+  wheelEl.dataset.dragEnd = performance.now();
+  const v = performance.now() - was.lt > 80 ? 0 : Math.max(-90, Math.min(90, was.v)), k0 = Math.round(wTheta / WSTEP);
+  const k = Math.max(k0 - 2, Math.min(k0 + 2, Math.round((wTheta + v * .35) / WSTEP))), d = Math.abs(k * WSTEP - wTheta);
+  wTo(k * WSTEP, Math.abs(v) > 20 ? Math.max(450, Math.min(1100, 3 * d / Math.abs(v) * 1000)) : 600); };
 wheelEl.addEventListener('pointerup', wUp); wheelEl.addEventListener('pointercancel', wUp);
 wheelEl.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowLeft') { e.preventDefault(); wGoIndex((wIndex() - 1 + WN) % WN); }
