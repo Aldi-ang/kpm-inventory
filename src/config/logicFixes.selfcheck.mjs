@@ -832,6 +832,32 @@ ok('the day cannot close while offline sales wait (their money is not in the tot
   ok('an IOU line in a stored sale moves nothing',
      movesFromSale({ type: 'SALE', items: [{ productId: 'p1', qty: 2, unit: 'Bks', fulfillment: 'IOU' }] }, { p1: prod })[0].isPhysicallyGiven === false); }
 
+/* 2026-10-20: an ADMIN's VAULT sale made offline never lowered HQ stock. It waited with no flag and
+   the sync saved only the receipt + tally - phantom stock at the next opname. load-test section F. */
+ok('the offline path flags a van-less sale for HQ stock', /vaultPending: !currentAgentProfileId/.test(engine));
+ok('REGRESSION: the sync sends vaultPending sales to the transaction, not the plain receipt flush',
+   (app.match(/\(tx\.vanPending \|\| tx\.vaultPending\) && tx\.cloudId/g) || []).length === 2 &&
+   !/tx\.vanPending && tx\.cloudId/.test(app));
+ok('the sync reads HQ stock inside the transaction, writes it, and strips the flag from the receipt',
+   /if \(snap\.exists\(\)\) vaultStock\[m\.productId\] = Number\(snap\.data\(\)\.stock \|\| 0\)/.test(vanSync) &&
+   /delete payload\.vaultPending;/.test(vanSync) && /t\.update\(vaultRefs\[id\], \{ stock: vault\.stock\[id\] \}\)/.test(vanSync));
+ok('a vault that cannot cover a synced sale is REPORTED (every action reports)',
+   /logAudit\('VAULT_SYNC_SHORT'/.test(app) && /vaultShortfall: vault\.short/.test(vanSync));
+{ const { settleVault, movesFromSale } = await import('../utils/vanSync.js');
+  const prod = { packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 };
+  const line = (qty, unit, extra = {}) => ({ productId: 'p1', name: 'Rokok A', qty, unit, ...extra });
+  const sale = { type: 'SALE', items: [line(2, 'Slop'), line(10, 'Bks'), line(5, 'Bks', { fulfillment: 'IOU' })] };
+  ok('an offline vault sale of 30 takes HQ stock 100 -> 70 (2 Slop + 10 Bks net into one, the IOU moves nothing)',
+     settleVault({ p1: 100 }, movesFromSale(sale, { p1: prod })).stock.p1 === 70);
+  const retur = { type: 'RETUR', items: [line(10, 'Bks'), line(5, 'Bks', { condition: 'DAMAGED' })] };
+  ok('an offline buyback puts back the 10 resellable packs, not the 5 damaged',
+     settleVault({ p1: 100 }, movesFromSale(retur, { p1: prod })).stock.p1 === 110);
+  const short = settleVault({ p1: 5 }, movesFromSale({ type: 'SALE', items: [line(13, 'Bks')] }, { p1: prod }));
+  ok('a vault short by 8 drops to zero and names the gap instead of throwing',
+     short.stock.p1 === 0 && short.short[0]?.missingBks === 8);
+  ok('a product deleted since the sale is left alone',
+     Object.keys(settleVault({}, movesFromSale(sale, { p1: prod })).stock).length === 0); }
+
 /* ── S13 · a store registered offline landed in a status no screen knows ───────────────── */
 section('S13. An offline store syncs with the status the online path writes');
 

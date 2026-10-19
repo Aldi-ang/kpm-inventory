@@ -371,12 +371,13 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
                   // 2. Flush Offline Sales Receipts
                   /* A sale that still has to come off a van (`vanPending`, every offline sale since
-                     2026-10-19) is NOT in this list: it lands in its own transaction further down,
-                     against the van as the server holds it now (src/utils/vanSync.js). Anything
-                     queued by an older build already queued its own van write and stays here. */
-                  const vanSales = offlineTx.filter(tx => tx.vanPending && tx.cloudId);
+                     2026-10-19) or off HQ stock (`vaultPending`, an ADMIN's vault sale since
+                     2026-10-20) is NOT in this list: it lands in its own transaction further down,
+                     against the stock as the server holds it now (src/utils/vanSync.js). Anything
+                     queued by an older build carries neither flag and stays here. */
+                  const stockSales = offlineTx.filter(tx => (tx.vanPending || tx.vaultPending) && tx.cloudId);
                   for (const tx of offlineTx) {
-                      if (tx.vanPending && tx.cloudId) continue;
+                      if ((tx.vanPending || tx.vaultPending) && tx.cloudId) continue;
                       const localId = tx.localId;
                       const payload = { ...tx };
                       delete payload.localId;
@@ -424,16 +425,16 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                       }
                   });
 
-                  /* 3. Sales that move a van: receipt + tally + van in ONE transaction each, cleared
-                     from the queue only after it lands. A van that no longer holds what was sold
-                     still gets the receipt (the money is real) and the gap is REPORTED, never hidden. */
-                  const vanGaps = [];
-                  for (const tx of vanSales) {
+                  /* 3. Sales that move a van or HQ stock: receipt + tally + stock in ONE transaction
+                     each, cleared from the queue only after it lands. Stock that no longer holds what
+                     was sold still gets the receipt (the money is real) and the gap is REPORTED. */
+                  const vanGaps = [], vaultGaps = [];
+                  for (const tx of stockSales) {
                       const result = await syncOfflineSale(db, appId, userId, tx, productsById);
                       await clearProcessedItem('transactions', tx.localId);
                       secured++;
                       if (result.short.length) {
-                          vanGaps.push(`${tx.customerName}: ${result.short.map(s => `${s.name} short ${s.missingBks} Bks`).join(', ')}`);
+                          (tx.vaultPending ? vaultGaps : vanGaps).push(`${tx.customerName}: ${result.short.map(s => `${s.name} short ${s.missingBks} Bks`).join(', ')}`);
                       }
                   }
                   logSyncEvent(`✅ Auto-Sync Complete. ${totalItems} items secured in Master Vault.`, 'SUCCESS');
@@ -443,6 +444,12 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                       const gapText = `Van count did not cover ${vanGaps.length} offline sale(s) - ${vanGaps.join('; ')}. The sales are saved; recount the van.`;
                       logSyncEvent(`⚠️ ${gapText}`, 'ERROR');
                       logAudit('VAN_SYNC_SHORT', gapText);
+                      triggerCapy(`⚠️ ${gapText}`);
+                  }
+                  if (vaultGaps.length) {
+                      const gapText = `Vault stock did not cover ${vaultGaps.length} offline sale(s) - ${vaultGaps.join('; ')}. The sales are saved; recount the vault.`;
+                      logSyncEvent(`⚠️ ${gapText}`, 'ERROR');
+                      logAudit('VAULT_SYNC_SHORT', gapText);
                       triggerCapy(`⚠️ ${gapText}`);
                   }
               } catch (err) {

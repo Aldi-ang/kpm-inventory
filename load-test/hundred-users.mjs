@@ -14,6 +14,8 @@
 //      and the current code (src/utils/vanSync.js) keeps both (GREEN)
 //   E. row 3 - an HQ vault sale written from an earlier read erases a restock (legacy shape: RED);
 //      the transaction shape the sale now uses keeps both (GREEN)
+//   F. an HQ vault sale made offline never lowered HQ stock (legacy shape: RED); the sync now nets it
+//      off the stock it reads in one transaction, beside a restock made meanwhile (GREEN)
 // The emulator does not throttle a busy document (real Firestore: ~1 write/s sustained per doc),
 // so C proves nothing is LOST, not how fast the real service is.
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
@@ -285,6 +287,54 @@ await setStock('vaultE2', 1000);
     });
     const s = await stockOf('vaultE2');
     ok('transaction: both land (1470) - it noticed the restock and retried', s === 1470, `(stock says ${s}, ${attempts} attempts)`);
+}
+
+/* ── F. an HQ vault sale made WITHOUT signal ───────────────────────────────────────────────── */
+console.log('\nF. The boss sells 30 packs from the HQ vault WITHOUT signal while HQ receives 500:');
+const today = new Date().toISOString().slice(0, 10);
+const vaultSale = (cloudId, productId, items, extra = {}) => ({ cloudId, localId: 9, agentId: 'ADMIN', type: 'SALE', paymentType: 'Cash',
+    date: today, customerName: 'Toko 2', total: 300000, items: items.map(i => ({ productId, name: 'Product 2', calculatedPrice: 10000, ...i })), ...extra });
+const fProducts = { ...productsById, vaultF1: productsById.p2, vaultF2: productsById.p2, vaultF3: productsById.p2, vaultF4: productsById.p2, vaultF5: productsById.p2 };
+await setStock('vaultF1', 1000);
+{   // legacy shape - before 2026-10-20: the queued sale had no flag, and the sync saved only the receipt + tally
+    const legacy = vaultSale('offlineF1', 'vaultF1', [{ qty: 30, unit: 'Bks' }]);
+    const payload = { ...legacy }; delete payload.cloudId; delete payload.localId;
+    await setDoc(doc(phone(), `${BASE}/transactions/offlineF1`), payload);
+    const s = await stockOf('vaultF1');
+    red('legacy: HQ stock never comes down (should be 1000 - 30 = 970)', s !== 970, `(stock says ${s})`);
+}
+if (syncOfflineSale) {
+    await setStock('vaultF2', 1000);
+    const phoneDb = phone(), receiver = phone();
+    // 2 Slop (20) + 10 Bks of ONE product = 30 given; the IOU line hands nothing over today
+    const ghost = vaultSale('offlineF2', 'vaultF2', [{ qty: 2, unit: 'Slop' }, { qty: 10, unit: 'Bks' }, { qty: 5, unit: 'Bks', fulfillment: 'IOU' }],
+                            { vaultPending: true, vanPending: false });
+    await disableNetwork(phoneDb);
+    await updateDoc(doc(receiver, `${BASE}/products/vaultF2`), { stock: increment(500) });   // RestockVaultView's receive
+    await enableNetwork(phoneDb);
+    const r1 = await syncOfflineSale(phoneDb, APP, BOSS, ghost, fProducts);
+    ok('current code: HQ stock loses the 30 given AND keeps the 500 received (1470)', await stockOf('vaultF2') === 1470, `(stock says ${await stockOf('vaultF2')})`);
+    const saved2 = (await getDoc(doc(phone(), `${BASE}/transactions/offlineF2`))).data();
+    ok('the receipt landed under the id fixed when it was queued, without the queue flags',
+       r1.landed && saved2 && !('vaultPending' in saved2) && !('vanPending' in saved2));
+    const r2 = await syncOfflineSale(phone(), APP, BOSS, ghost, fProducts);
+    ok('a second sync of the same sale writes nothing (no double deduction)', !r2.landed && await stockOf('vaultF2') === 1470);
+
+    await setStock('vaultF3', 1000);
+    const buyback = vaultSale('offlineF3', 'vaultF3', [{ qty: 10, unit: 'Bks' }, { qty: 5, unit: 'Bks', condition: 'DAMAGED' }],
+                              { type: 'RETUR', vaultPending: true, vanPending: false });
+    await syncOfflineSale(phone(), APP, BOSS, buyback, fProducts);
+    ok('an offline buyback puts the 10 resellable packs back, not the 5 damaged (1010)', await stockOf('vaultF3') === 1010, `(stock says ${await stockOf('vaultF3')})`);
+
+    await setStock('vaultF4', 5);
+    const r4 = await syncOfflineSale(phone(), APP, BOSS, vaultSale('offlineF4', 'vaultF4', [{ qty: 10, unit: 'Bks' }], { vaultPending: true, vanPending: false }), fProducts);
+    const saved4 = (await getDoc(doc(phone(), `${BASE}/transactions/offlineF4`))).data();
+    ok('a vault short of stock still saves the sale and REPORTS the gap',
+       r4.landed && r4.short[0]?.missingBks === 5 && saved4.vaultShortfall?.[0]?.missingBks === 5 && await stockOf('vaultF4') === 0);
+
+    await setStock('vaultF5', 1000);
+    await syncOfflineSale(phone(), APP, BOSS, vaultSale('offlineF5', 'vaultF5', [{ qty: 30, unit: 'Bks' }]), fProducts);
+    ok('a sale with no flag (queued by an older build) moves no stock', await stockOf('vaultF5') === 1000);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

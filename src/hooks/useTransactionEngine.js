@@ -158,8 +158,11 @@ export default function useTransactionEngine({
                        on top of anything a captain loaded or unloaded while there was no signal (row 2
                        of the 2026-10-19 100-users check). This flag sends it to the sync, which moves
                        the van in one transaction against the server's copy (src/utils/vanSync.js),
-                       and until then the phone shows the van minus this sale (canvasWithPending). */
-                    vanPending: Boolean(currentAgentProfileId)
+                       and until then the phone shows the van minus this sale (canvasWithPending).
+                       No van (an ADMIN in VAULT mode) -> the goods leave HQ stock, and the same sync
+                       takes them off it; without this flag HQ stock never came down at all. */
+                    vanPending: Boolean(currentAgentProfileId),
+                    vaultPending: !currentAgentProfileId
                 };
 
                 await saveOfflineTransaction(transactionPayload);

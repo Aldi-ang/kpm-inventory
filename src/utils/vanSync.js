@@ -11,7 +11,13 @@
    So an offline sale no longer touches the van. It waits in the Ghost Ledger with
    `vanPending: true`, the phone shows the van minus those waiting sales (canvasWithPending), and
    the sync lands receipt + tally + van in ONE transaction against the server's current van
-   (syncOfflineSale). */
+   (syncOfflineSale).
+
+   An ADMIN selling in VAULT mode has no van - the goods leave HQ stock (`products/{id}.stock`).
+   Offline, that sale used to wait with no flag at all, and the sync saved only the receipt and the
+   tally: HQ stock never came down and the gap surfaced at the next opname as phantom stock. It now
+   waits with `vaultPending: true` and the same transaction nets it off the stock it reads
+   (settleVault). load-test/hundred-users.mjs section F. */
 import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { convertToBks } from './helpers.js';
 import { tallySale } from './salesRollupWrite.js';
@@ -45,6 +51,26 @@ export const settleSale = (canvas, moves) => {
     });
 
     return { canvas: updated.filter(row => row.qty > 0), short };
+};
+
+/* The same rule for the HQ vault. Every line of one product nets into ONE number (two lines used to
+   mean two writes from the same old stock, and the second won); resellable buyback packs come back.
+   A product the vault cannot cover drops to zero and is named in `short`, like the van. A product
+   missing from `stockById` (deleted since the sale) is left alone. */
+export const settleVault = (stockById, moves) => {
+    const stock = { ...stockById };
+    for (const m of moves) {
+        if (!(m.productId in stock)) continue;
+        if (m.isPhysicallyGiven) stock[m.productId] -= m.qtyInBks;
+        if (m.isReturnedToStock) stock[m.productId] += m.qtyInBks;
+    }
+    const short = [];
+    for (const id of Object.keys(stock)) {
+        if (stock[id] >= 0) continue;
+        short.push({ productId: id, name: moves.find(m => m.productId === id).name, missingBks: -stock[id] });
+        stock[id] = 0;
+    }
+    return { stock, short };
 };
 
 /* The online sale's form: a short van refuses the sale before anything is written. */
@@ -81,37 +107,52 @@ export const canvasWithPending = (canvas, pendingTxs, vanId, productsById) => {
     return out;
 };
 
-/* One sale made without signal, landed in ONE transaction: the receipt, its tally and the van,
-   against the van as the server holds it NOW. Safe to repeat - the receipt's id was fixed when it
-   was queued, so a second run finds it and writes nothing (transactions are create-only in the
-   rules anyway). Returns { landed, short }; a non-empty `short` is a gap the caller must report. */
+/* One sale made without signal, landed in ONE transaction: the receipt, its tally and the stock it
+   moved - the van (`vanPending`) or HQ stock (`vaultPending`) - against the server's copy NOW. A
+   sale with neither flag (queued by an older build) moves nothing here. Safe to repeat - the
+   receipt's id was fixed when it was queued, so a second run finds it and writes nothing
+   (transactions are create-only in the rules anyway). Returns { landed, short }; a non-empty
+   `short` is a gap the caller must report. */
 export const syncOfflineSale = (db, appId, userId, tx, productsById) => runTransaction(db, async (t) => {
     const basePath = `artifacts/${appId}/users/${userId}`;
     const txRef = doc(db, `${basePath}/transactions`, tx.cloudId);
-    const vanRef = doc(db, `${basePath}/motorists`, tx.agentId);
+    const vanRef = tx.vanPending ? doc(db, `${basePath}/motorists`, tx.agentId) : null;
+    const moves = movesFromSale(tx, productsById);
 
     const txSnap = await t.get(txRef);
     if (txSnap.exists()) return { landed: false, short: [] };
-    const vanSnap = await t.get(vanRef);
+    const vanSnap = vanRef ? await t.get(vanRef) : null;
+    // HQ stock of every product the sale moves, read inside the transaction
+    const vaultRefs = {}, vaultStock = {};
+    for (const m of tx.vaultPending ? moves : []) {
+        if (!(m.isPhysicallyGiven || m.isReturnedToStock) || m.productId in vaultRefs) continue;
+        vaultRefs[m.productId] = doc(db, `${basePath}/products`, m.productId);
+        const snap = await t.get(vaultRefs[m.productId]);
+        if (snap.exists()) vaultStock[m.productId] = Number(snap.data().stock || 0);
+    }
 
     const payload = { ...tx };
     delete payload.localId;
     delete payload.cloudId;    // the id is the document name, not a field
     delete payload.vanPending;
+    delete payload.vaultPending;
 
-    const settled = vanSnap.exists()
-        ? settleSale(vanSnap.data().activeCanvas, movesFromSale(tx, productsById))
+    const settled = vanSnap?.exists()
+        ? settleSale(vanSnap.data().activeCanvas, moves)
         : { canvas: null, short: [] };
+    const vault = settleVault(vaultStock, moves);
 
     t.set(txRef, {
         ...payload,
         timestamp: serverTimestamp(),   // true server time so it sorts into the reports
         syncedAt: serverTimestamp(),
         ...(settled.short.length ? { vanShortfall: settled.short } : {}),
+        ...(vault.short.length ? { vaultShortfall: vault.short } : {}),
     });
     // filed on the day the sale was MADE: the tally reads payload.date before the timestamp
     tallySale(t, db, appId, userId, payload, productsById, 1);
     if (settled.canvas) t.update(vanRef, { activeCanvas: settled.canvas });
+    for (const id of Object.keys(vault.stock)) t.update(vaultRefs[id], { stock: vault.stock[id] });
 
-    return { landed: true, short: settled.short };
+    return { landed: true, short: [...settled.short, ...vault.short] };
 });
