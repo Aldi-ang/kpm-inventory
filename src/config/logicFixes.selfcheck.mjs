@@ -9747,8 +9747,8 @@ for (const f of ['src/App.jsx', 'src/components/BiohazardTheme.jsx']) {
      /await signOut\(auth\);/.test(body) && body.indexOf('await signOut(auth)') < body.indexOf('window.location.reload()'));
   const a = code(read('src/App.jsx')).replace(/\r/g, '');
   const foot = a.slice(a.indexOf('Lost your key?') - 400, a.indexOf('Lost your key?') + 900);
-  ok('the Master Vault screen offers "Use another account", through the logout that waits',
-     /<button type="button" onClick=\{handleLogout\}[^>]*>\s*Use another account\s*<\/button>/.test(foot));
+  ok('the Master Vault screen offers "Log out" (his 2026-10-19 ask; first labelled "Use another account"), through the logout that waits',
+     /<button type="button" onClick=\{handleLogout\}[^>]*>\s*Log out\s*<\/button>/.test(foot));
 }
 
 /* ── POTATO 5: THE RESTOCK NOTICE BREATHES BY OPACITY (2026-10-01) ────────────────────────────────────────────────────
@@ -9871,8 +9871,8 @@ await (async () => {
   const m = read('src/main.jsx').replace(/\r/g, ''), us = code(read('src/components/UpdateStatus.jsx')).replace(/\r/g, '');
   ok('both doors show it: under Sign in with Google, and under the vault\'s Fingerprint row; main.jsx hands the helper over',
      /Sign in with Google\s*<\/button>\s*<\/div>\s*<UpdateStatus /.test(bt) &&
-     /* 2026-10-19 "Use another account" got its own line under the row; the version line sits under that */
-     /Lost your key\?\s*<\/button>\s*<\/div>[\s\S]{0,700}?Use another account\s*<\/button>\s*<UpdateStatus /.test(a) &&
+     /* 2026-10-19 the vault logout ("Log out") got its own line under the row; the version line sits under that */
+     /Lost your key\?\s*<\/button>\s*<\/div>[\s\S]{0,700}?Log out\s*<\/button>\s*<UpdateStatus /.test(a) &&
      /onRegisteredSW\(_url, r\) \{ if \(r\) \{ setRegistration\(r\);/.test(m));
   ok('the line asks for an update, reports a download that dies, is read out to screen readers, and never spins in Lite Mode',
      /await r\.update\(\)/.test(us) && /w\.state === 'redundant'\) say\('failed'\)/.test(us) && /role="status" aria-live="polite"/.test(us) &&
