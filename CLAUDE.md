@@ -21,3 +21,19 @@ Rules:
 
 Don't re-read the whole codebase or the whole vault by default — both are structured precisely
 so you don't have to.
+
+## Publishing (a push IS the live app)
+
+Aldi, 2026-10-19: *"actually i like it this way that u can push it yourself make sure the cloud session can do that too"*.
+Full workflow: A-Brain `Wiki/Concepts/Publishing a Fix.md`.
+
+- A push of `phase0-solid-ground` to GitHub is the live app: Vercel builds it. `main` is not live.
+- Push yourself when he says publish / push / "fix the publish". No approval window is needed, and none
+  should be added. Unasked, still commit locally and stop.
+- Before the push, after the LAST edit: `node src/config/logicFixes.selfcheck.mjs`, `npm run build`,
+  `node src/config/integration.audit.mjs`, all green; `git rev-list --count HEAD..origin/phase0-solid-ground` = 0.
+- After: `git fetch`, confirm `origin/phase0-solid-ground` is your commit, give him the hash (the vault
+  card shows "Latest version · <hash>").
+- Firestore rules are never part of a push. He publishes them in the Console; a rule the code needs goes first.
+- Cloud session: `git push origin HEAD:phase0-solid-ground`. If the cloud refuses (it may allow only its own
+  branch), push the session branch and tell him it is NOT live until the PC merges it.
