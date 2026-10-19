@@ -793,7 +793,7 @@ details.ev .pop b { color: var(--ink); }
     repeating-linear-gradient(90deg, rgba(0,0,0,.7) 0 4px, rgba(232,228,222,.06) 4px 5px, transparent 5px 11px) 50% 59px / min(560px, 72%) 24px no-repeat,
     linear-gradient(180deg, #13100d, #0a0908 55%, #040303); }
 .hubsec .copy { padding-inline: 16px; justify-items: center; text-align: center; }
-.wheel { position: relative; height: var(--wh, 330px); perspective: 1300px; perspective-origin: 50% 40%; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; outline: none; }
+.wheel { position: relative; height: var(--wh, 330px); perspective: 1300px; perspective-origin: 50% 40%; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; outline: none; }
 .wheel.grab { cursor: grabbing; }
 /* the platform the wheel stands on: amber floor rings fading out, and a ring of dotted floor lights at the cards' feet.
    z-index 0 on .wheel makes it the stacking context, so the -1 floor sits over the page and under the cards */
@@ -2452,9 +2452,10 @@ function wGoIndex(i, then) { const cur = wIndex(); let d = ((i - cur) % WN + WN)
 function wLoop(now) {
   const dt = wLast ? Math.min(.05, (now - wLast) / 1000) : 0; wLast = now;
   if (!wDrag && !wTween && !wBusy) {
-    /* auto-rotate, 10 deg a second like the original. His 2026-10-19 ask: a mouse on it slows it to a quarter GRADUALLY instead
+    /* auto-rotate, 5 deg a second (his 2026-10-19 "make the spin slower on default"; the original was 10). His other ask that
+       day: a mouse on it slows it to a quarter GRADUALLY instead
        of stopping it dead, and it eases back up when the mouse leaves (0.45 s time constant, both ways) */
-    wAuto = still ? 0 : wAuto + ((wHover ? 2.5 : 10) - wAuto) * (1 - Math.exp(-dt / .45)); wTheta -= wAuto * dt;
+    wAuto = still ? 0 : wAuto + ((wHover ? 1.25 : 5) - wAuto) * (1 - Math.exp(-dt / .45)); wTheta -= wAuto * dt;
     wDraw();
   } else wAuto = 0;   /* held, snapping or opening: the spin starts again from rest */
   wRaf = requestAnimationFrame(wLoop);
@@ -2467,14 +2468,14 @@ wheelEl.addEventListener('pointerdown', (e) => { if (e.button > 0) return; cance
 wheelEl.addEventListener('pointermove', (e) => {
   if (!wDrag) return; const dx = e.clientX - wDrag.x;
   if (!wDrag.on) { if (Math.abs(dx) < 6) return; wDrag.on = true; try { wheelEl.setPointerCapture(e.pointerId); } catch (_) { /* gone */ } wheelEl.classList.add('grab'); }
-  const now = performance.now(); wDrag.v = (e.clientX - wDrag.lx) / Math.max(1, now - wDrag.lt) * 1000 * .15; wDrag.lx = e.clientX; wDrag.lt = now;
-  wTheta = wDrag.th + dx * .15; wDraw();   /* his 2026-10-19 "too sensitive": half the old .3 - about 100 px of drag per card */
+  const now = performance.now(); wDrag.v = (e.clientX - wDrag.lx) / Math.max(1, now - wDrag.lt) * 1000 * .09; wDrag.lx = e.clientX; wDrag.lt = now;
+  wTheta = wDrag.th + dx * .09; wDraw();   /* his 2026-10-19 "too sensitive", then "more less sensitive": .3 -> .15 -> .09, about 175 px of drag per card */
 });
-/* the lift (his "slower and smoother"): the finger's speed, capped at 90 deg/s, carries the wheel at most two cards on, and
+/* the lift (his "slower and smoother"): the finger's speed, capped at 60 deg/s, carries the wheel at most two cards on, and
    the ease starts at that same speed, so nothing jumps; a finger that stopped before lifting adds nothing */
 const wUp = () => { if (!wDrag) return; const was = wDrag; wDrag = null; wheelEl.classList.remove('grab'); if (!was.on) return;
   wheelEl.dataset.dragEnd = performance.now();
-  const v = performance.now() - was.lt > 80 ? 0 : Math.max(-90, Math.min(90, was.v)), k0 = Math.round(wTheta / WSTEP);
+  const v = performance.now() - was.lt > 80 ? 0 : Math.max(-60, Math.min(60, was.v)), k0 = Math.round(wTheta / WSTEP);
   const k = Math.max(k0 - 2, Math.min(k0 + 2, Math.round((wTheta + v * .35) / WSTEP))), d = Math.abs(k * WSTEP - wTheta);
   wTo(k * WSTEP, Math.abs(v) > 20 ? Math.max(450, Math.min(1100, 3 * d / Math.abs(v) * 1000)) : 600); };
 wheelEl.addEventListener('pointerup', wUp); wheelEl.addEventListener('pointercancel', wUp);

@@ -1,4 +1,4 @@
-// Hover probe for the feature wheel (his 2026-10-19 ask): a mouse on it slows the spin GRADUALLY to a quarter, it never
+// Hover probe for the feature wheel (his 2026-10-19 asks; default spin 5 deg/s, a quarter of it under the mouse): a mouse on it slows the spin GRADUALLY to a quarter, it never
 // stops dead, and it speeds back up gradually when the mouse leaves. Real clock, headless Chrome over CDP, real mouse moves.
 // node pc-hover.mjs <file url> <out dir> [width] [height]
 import { spawn } from 'node:child_process';
@@ -31,11 +31,11 @@ await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: cx, y: 5 });   /
 const v3 = await speed(250); await sleep(1500); const v4 = await speed(500);
 let fails = 0;
 const ok = (name, pass, got) => { if (!pass) fails++; console.log((pass ? 'PASS ' : 'FAIL ') + name + '  (' + got + ')'); };
-ok('full speed before the mouse', v0 > 8 && v0 < 11.5, v0 + ' deg/s');
-ok('first 0.25 s on it: slowing, not stopped and not already slow', v1 > 3 && v1 < 9.8, v1 + ' deg/s');
-ok('settled under the mouse: slow, never stopped', v2 > 1.5 && v2 < 4, v2 + ' deg/s');
-ok('first 0.25 s after it leaves: speeding up, not a jump', v3 > 1.5 && v3 < 9, v3 + ' deg/s');
-ok('full speed again', v4 > 8 && v4 < 11.5, v4 + ' deg/s');
+ok('full speed before the mouse (5 deg/s)', v0 > 4 && v0 < 6, v0 + ' deg/s');
+ok('first 0.25 s on it: slowing, not stopped and not already slow', v1 > 1.6 && v1 < 4.8, v1 + ' deg/s');
+ok('settled under the mouse: slow, never stopped', v2 > .7 && v2 < 2, v2 + ' deg/s');
+ok('first 0.25 s after it leaves: speeding up, not a jump', v3 > 1.3 && v3 < 4.5, v3 + ' deg/s');
+ok('full speed again', v4 > 4 && v4 < 6, v4 + ' deg/s');
 ok('no script errors', !errors.length, errors.join(' | ') || 'none');
 console.log(`${w}x${h}: ${6 - fails}/6`);
 chrome.kill(); process.exit(fails ? 1 : 0);

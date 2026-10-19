@@ -44,11 +44,25 @@ async function gesture(dist, steps, gap, hold) {
 }
 const [slowCards, , slowDrag] = await gesture(120, 24, 16, 160);
 const [flickCards, flickStep] = await gesture(200, 5, 16, 0);
+/* "make the screen fixed when on the carousel" / "the sliding feels bad on the phone": a steep swipe that starts on the
+   wheel must leave the page where it is (touch only - a mouse drag never scrolls a page) */
+const lock = [await ev(`getComputedStyle(document.getElementById('wheel')).touchAction`), 0, await ev('document.documentElement.scrollHeight')];
+if (touch) {
+  await ev(`window.__pc = 0; document.getElementById('wheel').addEventListener('pointercancel', () => { window.__pc++; })`);
+  const y0 = await ev('scrollY + (visualViewport ? visualViewport.offsetTop : 0)');
+  await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: cx, y: cy }] });
+  for (let k = 1; k <= 12; k++) { await send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: cx - k * 3, y: cy - k * 14 }] }); await sleep(16); }
+  await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await sleep(900);
+  lock[1] = Math.round((await ev('scrollY + (visualViewport ? visualViewport.offsetTop : 0)')) - y0); lock[3] = await ev('window.__pc');
+}
 let fails = 0;
 const ok = (name, pass, got) => { if (!pass) fails++; console.log((pass ? 'PASS ' : 'FAIL ') + name + '  (' + got + ')'); };
-ok('slow 120 px drag turns the wheel about one card, not two', slowDrag >= .8 && slowDrag <= 1.4, slowDrag + ' cards under the finger, ' + slowCards + ' after it settles');
-ok('hard flick stays within four cards of the start', flickCards >= 1 && flickCards <= 4.5, flickCards + ' cards');
+ok('slow 120 px drag turns the wheel about two thirds of a card', slowDrag >= .5 && slowDrag <= .9, slowDrag + ' cards under the finger, ' + slowCards + ' after it settles');
+ok('hard flick stays within three cards of the start', flickCards >= .5 && flickCards <= 3.5, flickCards + ' cards');
 ok('after the lift it glides, no jumps (max step per frame)', flickStep <= 3, flickStep + ' deg');
+ok('touches on the wheel belong to the wheel (touch-action)', lock[0] === 'none', lock[0]);
+ok('a steep swipe on the wheel does not move the page', lock[1] === 0, `page moved ${lock[1]} px; page ${lock[2]} px tall, screen ${h}`);
+ok('a steep swipe is not taken from the wheel (no pointercancel)', !lock[3], (lock[3] ?? 'mouse, n/a') + ' cancels');
 ok('no script errors', !errors.length, errors.join(' | ') || 'none');
-console.log(`${w}x${h} ${touch ? 'touch' : 'mouse'}: ${4 - fails}/4`);
+console.log(`${w}x${h} ${touch ? 'touch' : 'mouse'}: ${7 - fails}/7`);
 chrome.kill(); process.exit(fails ? 1 : 0);
