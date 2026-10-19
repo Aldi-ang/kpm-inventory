@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder, Target, BadgeDollarSign, ShieldAlert } from 'lucide-react';
 import { formatRupiah, getLocalDayKey, storeKey, shortStockRows, eodBountyLines, bountyItems, groupPendingEOD, nightLabel, nightParts, dayTargets, EOD_PART_LABELS } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
+import { notify } from './components/Toast.jsx';
 import EODAgentFlow from './components/EODAgentFlow.jsx';
 import NixieCount from './components/NixieCount.jsx';
 import FolderCard from './components/FolderCard.jsx';
@@ -56,7 +57,7 @@ const XpGain = ({ total, breakdown, collected = 0, stores = 0 }) => {
     );
 };
 
-const EODReconciliationView = ({ samplings = [], transactions = [], inventory = [], agentCanvas = [], agentProfileId, motorists = [], eodReports = [], user, appSettings, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin, career = {}, ranks, customers = [] }) => {
+const EODReconciliationView = ({ samplings = [], transactions = [], inventory = [], agentCanvas = [], agentProfileId, motorists = [], eodReports = [], user, appSettings, onSubmitEOD, onVerifyEOD, onResetEOD, isAdmin, career = {}, ranks, customers = [], pendingOfflineSales = 0 }) => {
     
     // 🚀 VIEW & IDENTITY STATES
     const [viewMode, setViewMode] = useState(isAdmin ? 'review' : 'submit');
@@ -81,6 +82,13 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
     const [submitting, setSubmitting] = useState(false);
     const submit = async (...payloads) => {
         if (submitting) return;
+        /* Sales made without signal live only in this phone's Ghost Ledger until they sync: the day's
+           money totals here do not include them, and the van they come off is only settled by the
+           sync (src/utils/vanSync.js). Closing the day before that would hand the admin a wrong letter. */
+        if (pendingOfflineSales > 0) {
+            notify(`${pendingOfflineSales} sale(s) made without signal have not synced yet. Connect to the internet so they sync, then close the day.`);
+            return;
+        }
         setSubmitting(true);
         try { for (const p of payloads) await onSubmitEOD(p); }
         finally { setSubmitting(false); }

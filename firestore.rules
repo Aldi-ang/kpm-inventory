@@ -557,6 +557,20 @@ service cloud.firestore {
         allow update, delete: if false;
       }
 
+      // =====================================================================
+      // [CHANGE 15 — 2026-10-19, DRAFT, NOT DEPLOYED] sales_stats: the month's sales tally.
+      // Every sale writes it IN THE SAME WRITE as the receipt (src/utils/salesRollupWrite.js,
+      // since c0a510f 2026-08-30), so a salesman must be allowed to. With only the catch-all above
+      // covering it (owner / T1 / T2), the emulator refuses a salesman's whole sale - receipt, van
+      // and tally together. rules-test/test-sale-batch.mjs asserts every line.
+      // Read stays with the catch-all: the totals are an office screen.
+      // DEPLOY ORDER: before any build containing c0a510f reaches the live app (it is not on main
+      // as of 2026-10-19), or every salesman's sale is refused from that moment.
+      // =====================================================================
+      match /sales_stats/{month} {
+        allow create, update: if isSalesman(bossUid);
+      }
+
       match /motorists/{motoristId} {
         allow read: if isSalesman(bossUid);
         // The second clause is load-bearing: it lets a field agent update their OWN

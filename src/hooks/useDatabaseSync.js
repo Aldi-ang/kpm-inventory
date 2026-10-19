@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, doc, getDocs, onSnapshot, query, orderBy, setDoc, where } from 'firebase/firestore'; // 🚀 IMPORTED 'where'
 import { applyDocChanges } from '../utils/docChanges';
 
-export default function useDatabaseSync(db, appId, user, userId, userRole, agentProfileId) {
+export default function useDatabaseSync(db, appId, user, userId, userRole) {
     // Data States
     const [inventory, setInventory] = useState([]);
     const [customers, setCustomers] = useState([]); 
@@ -15,7 +15,6 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
     const [agentInventories, setAgentInventories] = useState({}); 
     const [eodReports, setEodReports] = useState([]);
     const [transferRequests, setTransferRequests] = useState([]);
-    const [notifications, setNotifications] = useState([]);
     const [adminCanvas, setAdminCanvas] = useState([]);
     const [branchStock, setBranchStock] = useState({});
     const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessages: [] });
@@ -96,28 +95,11 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
         const unsubEod = onSnapshot(query(collection(db, basePath, 'eod_reports'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setEodReports(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("EOD reports listener:", err.code));
         const unsubTransfers = onSnapshot(query(collection(db, basePath, 'account_transfers'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setTransferRequests(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Account transfers listener:", err.code));
 
-        /* 3. Notifications (Filtered + Time-Gated)
-
-           ⚠️ DO NOT server-side filter this on targetRole/targetId. Those fields DO NOT
-           EXIST on a notification document — every write in App.jsx sets `agentId` instead
-           (App :1470, :1500, :1513). A `where('targetId', ...)` query therefore matches
-           nothing at all, silently.
-
-           This was attempted in this session and reverted. The warning above the second
-           notification listener in App.jsx :300 records an earlier attempt that also
-           "dropped notifications it shouldn't have" — same root cause.
-
-           Filtering here IS still worth doing, but the write side has to agree on one field
-           name first, and old documents need that field backfilled. Until then, permissive
-           is correct: a missed hand-off request costs more than the reads do. */
-        const unsubNotifs = onSnapshot(query(collection(db, basePath, 'notifications'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => {
-            const myNotifs = snap.docs.map(d => ({id: d.id, ...d.data()})).filter(n => {
-                if (userRole === 'ADMIN' && n.targetRole === 'ADMIN') return true;
-                if (agentProfileId && n.targetId === agentProfileId) return true;
-                return false;
-            });
-            setNotifications(myNotifs);
-        }, (err) => console.warn("Notifications listener:", err.code));
+        /* 3. Notifications are NOT listened to here. App.jsx's own listener (systemNotifs) feeds
+           the bell. This one downloaded the same seven days a second time on every phone and then
+           filtered on targetRole/targetId - fields no notification carries - so it always came out
+           empty and nothing read it. 1,260 reads per app open at 100 users
+           (load-test/hundred-users.mjs, 2026-10-19). */
 
         // 4. Admin Vehicle Canvas
         const unsubAdminVeh = onSnapshot(doc(db, basePath, 'motorists', 'ADMIN_VEHICLE'), (snap) => {
@@ -139,9 +121,9 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
         return () => { 
             unsubSettings(); unsubInv(); unsubTrans(); unsubSamp(); 
             unsubLogs(); unsubCust(); unsubProc(); unsubMotorists(); unsubCareer();
-            unsubAdminVeh(); unsubEod(); unsubTransfers(); unsubNotifs();
+            unsubAdminVeh(); unsubEod(); unsubTransfers();
         };
-    }, [user, db, appId, userId, userRole, agentProfileId]);
+    }, [user, db, appId, userId, userRole]);
 
     /* ── EVERY REGIONAL WAREHOUSE'S SHELF ──────────────────────────────────────────────────
        Aldi, 2026-08-26: *"the data taken to make this panel actually should be the same with the
@@ -215,7 +197,6 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, agent
         agentInventories, setAgentInventories,
         eodReports, setEodReports,
         transferRequests, setTransferRequests,
-        notifications, setNotifications,
         adminCanvas, setAdminCanvas,
         branchStock,
         appSettings, setAppSettings,

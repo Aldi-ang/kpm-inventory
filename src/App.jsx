@@ -22,6 +22,7 @@ import { injectDynamicPermissions, isFieldLevelTier, hasClearance, handoffEligib
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch } from './config/povPreview';
 import { warehouseList } from './utils/supply';
 import { tallySaleOp, statsPath } from './utils/salesRollupWrite';
+import { syncOfflineSale, canvasWithPending } from './utils/vanSync';
 import { rebuildMonths } from './utils/salesRollup';
 import { hashSecret, verifySecret, needsRehash } from './utils/secretHash';
 import { settleProgression } from './utils/progressionHome';
@@ -369,7 +370,13 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                   }
 
                   // 2. Flush Offline Sales Receipts
+                  /* A sale that still has to come off a van (`vanPending`, every offline sale since
+                     2026-10-19) is NOT in this list: it lands in its own transaction further down,
+                     against the van as the server holds it now (src/utils/vanSync.js). Anything
+                     queued by an older build already queued its own van write and stays here. */
+                  const vanSales = offlineTx.filter(tx => tx.vanPending && tx.cloudId);
                   for (const tx of offlineTx) {
+                      if (tx.vanPending && tx.cloudId) continue;
                       const localId = tx.localId;
                       const payload = { ...tx };
                       delete payload.localId;
@@ -417,8 +424,27 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                       }
                   });
 
+                  /* 3. Sales that move a van: receipt + tally + van in ONE transaction each, cleared
+                     from the queue only after it lands. A van that no longer holds what was sold
+                     still gets the receipt (the money is real) and the gap is REPORTED, never hidden. */
+                  const vanGaps = [];
+                  for (const tx of vanSales) {
+                      const result = await syncOfflineSale(db, appId, userId, tx, productsById);
+                      await clearProcessedItem('transactions', tx.localId);
+                      secured++;
+                      if (result.short.length) {
+                          vanGaps.push(`${tx.customerName}: ${result.short.map(s => `${s.name} short ${s.missingBks} Bks`).join(', ')}`);
+                      }
+                  }
                   logSyncEvent(`✅ Auto-Sync Complete. ${totalItems} items secured in Master Vault.`, 'SUCCESS');
                   triggerCapy(`✅ Sync Complete! ${totalItems} items secured in Master Vault.`);
+                  // after the success line, so the warning is the one left on screen
+                  if (vanGaps.length) {
+                      const gapText = `Van count did not cover ${vanGaps.length} offline sale(s) - ${vanGaps.join('; ')}. The sales are saved; recount the van.`;
+                      logSyncEvent(`⚠️ ${gapText}`, 'ERROR');
+                      logAudit('VAN_SYNC_SHORT', gapText);
+                      triggerCapy(`⚠️ ${gapText}`);
+                  }
               } catch (err) {
                   console.error("Auto-Sync Failed:", err);
                   /* 🔴 SAY HOW MUCH IS SAFE. His law: every action reports. A part-finished sync
@@ -544,11 +570,11 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       inventory, setInventory, customers, transactions, setTransactions,
       samplings, setSamplings, auditLogs, setAuditLogs, procurements, setProcurements,
       motorists, setMotorists, agentInventories, setAgentInventories, eodReports, setEodReports,
-      transferRequests, setTransferRequests, notifications, setNotifications,
+      transferRequests, setTransferRequests,
       adminCanvas, setAdminCanvas, branchStock,
       career,
       appSettings, setAppSettings, editCompanyProfile, setEditCompanyProfile
-  } = useDatabaseSync(db, appId, user, userId, userRole, agentProfileId);
+  } = useDatabaseSync(db, appId, user, userId, userRole);
 
   // 🚀 Phase 5: badge config, read once so handleVerifyEOD's checkBadges() call respects
   // whatever targets the owner customized via the Achievement Config modal — same
@@ -4253,13 +4279,22 @@ const handleGitHubMirror = async () => {
   const totalStockValue = inventory.reduce((acc, i) => acc + (i.stock * (i.priceRetail || 0)), 0);
   const filteredInventory = inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
   
+  /* The van as THIS phone must show it: the server's list minus the sales still waiting in the
+     Ghost Ledger. An offline sale no longer writes the van itself (src/utils/vanSync.js), so without
+     this the terminal would offer packs that were already sold. */
+  const productsByIdNow = React.useMemo(() => Object.fromEntries((inventory || []).map(p => [p.id, p])), [inventory]);
+  const agentCanvasNow = React.useMemo(() => canvasWithPending(agentCanvas, pendingTxData, agentProfileId, productsByIdNow),
+      [agentCanvas, pendingTxData, agentProfileId, productsByIdNow]);
+  const adminCanvasNow = React.useMemo(() => canvasWithPending(adminCanvas, pendingTxData, 'ADMIN_VEHICLE', productsByIdNow),
+      [adminCanvas, pendingTxData, productsByIdNow]);
+
 // --- NEW: SAFE SALES TERMINAL INVENTORY ---
   const salesTerminalInventory = React.useMemo(() => {
       if (userRole === 'ADMIN') {
           if (adminSalesMode === 'VAULT') return filteredInventory;
           // Boss Vehicle Mode: Show ALL products, but map stock to vehicle
           return filteredInventory.map(p => {
-              const canvasItem = adminCanvas.find(c => c.productId === p.id);
+              const canvasItem = adminCanvasNow.find(c => c.productId === p.id);
               let trueStockInVehicle = 0;
               if (canvasItem) {
                   let multCanvas = 1;
@@ -4274,7 +4309,7 @@ const handleGitHubMirror = async () => {
       
       // Employee Mode: Show ALL products, but map stock to vehicle
       return filteredInventory.map(p => {
-          const canvasItem = agentCanvas.find(c => c.productId === p.id);
+          const canvasItem = agentCanvasNow.find(c => c.productId === p.id);
           let trueStockInVehicle = 0;
           if (canvasItem) {
               let multCanvas = 1;
@@ -4285,7 +4320,7 @@ const handleGitHubMirror = async () => {
           }
           return { ...p, stock: trueStockInVehicle };
       });
-  }, [userRole, filteredInventory, agentCanvas, adminSalesMode, adminCanvas]);
+  }, [userRole, filteredInventory, agentCanvasNow, adminSalesMode, adminCanvasNow]);
 
 // --- NEW: SAFE CUSTOMERS LOGIC FOR JOURNEY & MAP ---
   const permittedCustomers = React.useMemo(() => {
@@ -4495,6 +4530,7 @@ const handleGitHubMirror = async () => {
                userRole={userRole}     // regional admin and above see the van as the chest
                motorists={motorists}   // 🚀 FIX: Pass motorists list
                previewing={previewing} // 🎭 POV keeps his real email, so the screen's email lookup must stand down
+               pendingTxData={pendingTxData} // sales waiting in the Ghost Ledger come off the van on screen
            />
       )}
 
@@ -5309,7 +5345,7 @@ const handleGitHubMirror = async () => {
                   samplings={samplings} 
                   transactions={transactions} 
                   inventory={inventory} 
-                  agentCanvas={agentCanvas}
+                  agentCanvas={agentCanvasNow}
                   agentProfileId={agentProfileId}
                   motorists={motorists} 
                   eodReports={eodReports}
@@ -5321,6 +5357,7 @@ const handleGitHubMirror = async () => {
                   career={career}
                   ranks={progressionRanks}
                   customers={displayPermitted}
+                  pendingOfflineSales={pendingCount.transactions}
               />
 
           )}

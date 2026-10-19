@@ -10,6 +10,7 @@ import { isFleetManagementTier, canEditFleetRoster } from './config/permissions'
    WIB even after the shared helper was fixed. A second copy of a date rule is a second bug
    waiting for someone to fix only the first. */
 import { formatRupiah, getCurrentDate, saleLines } from './utils/helpers';
+import { canvasWithPending } from './utils/vanSync';
 
 // 🚀 ACCEPT 'samplings' PROP HERE
 /* AUTO-FIT MONEY. Aldi, 2026-08-19, with a screenshot: the three IF SOLD figures ran into each
@@ -26,8 +27,8 @@ const Money = ({ value, className = '' }) => {
 };
 
 
-const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], transactions = [], samplings = [], user, userRole, motorists = [], previewing = null }) => {
-    const [canvasItems, setCanvasItems] = useState([]);
+const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], transactions = [], samplings = [], user, userRole, motorists = [], pendingTxData = [], previewing = null }) => {
+    const [rawCanvasItems, setCanvasItems] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [liveProfileData, setLiveProfileData] = useState(null);
     const [openTx, setOpenTx] = useState(null);   // the sale row opened to its lines
@@ -70,6 +71,10 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
 
     // 4. Absolute True ID locks onto the correct profile
     const trueAgentId = safeAgentProfile?.id || agentProfileId;
+    // The van minus the sales still waiting in the Ghost Ledger (src/utils/vanSync.js) - an offline
+    // sale no longer writes the van itself, so this is what keeps the chest honest without signal.
+    const canvasItems = useMemo(() => canvasWithPending(rawCanvasItems, pendingTxData, trueAgentId,
+        Object.fromEntries(inventory.map(p => [p.id, p]))), [rawCanvasItems, pendingTxData, trueAgentId, inventory]);
 
     // 5. Dynamic Name generation entirely avoids React state-bleed across renders
     const agentName = liveProfileData?.name || safeAgentProfile?.name || user?.displayName || activeEmail.split('@')[0] || "Agent";

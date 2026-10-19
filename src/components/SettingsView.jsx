@@ -1731,7 +1731,10 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
 
             const payload = { matrix, tiers: fullTiers, updatedAt: new Date().toISOString() };
             await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings`, 'permission_matrix'), payload);
-            await setDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'permission_matrix'), payload, { merge: true });
+            /* The backup is a FULL replacement too, never a merge. A merge deep-merges `matrix`, so a
+               tier deleted here kept its permission row in the backup, and any read that falls back
+               to this copy brought the deleted tier's access back (Backlog, 2026-08-17). */
+            await setDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'permission_matrix'), payload);
             
             injectDynamicPermissions(matrix, fullTiers); 
             notify("✅ Matrix & Hierarchy Deployed to Global Server!");

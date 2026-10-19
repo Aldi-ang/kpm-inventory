@@ -1,4 +1,4 @@
-import { doc, collection, serverTimestamp, writeBatch, getDoc, addDoc, updateDoc } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, writeBatch, getDoc, addDoc, runTransaction, increment } from 'firebase/firestore';
 /* The running per-product tally. It rides in the SAME batch as the sale, because a counter
    updated separately from the thing it counts drifts the first time a phone loses signal
    between the two writes, and offline is the normal case out here. */
@@ -7,42 +7,9 @@ import { getCurrentDate, stripCartItemForStorage, convertToBks, storeKey } from 
 import { isLowStock } from '../utils/stockThreshold';
 import useOfflineEngine from './useOfflineEngine';
 
-/* 🚀 What a sale does to the van, in ONE place, called by the online path and the offline one.
-
-   It used to live only in the online path, so a sale made with no signal saved the receipt and
-   never touched the vehicle. The van still claimed 10 packs when the agent really had 6, so at
-   EOD the count came up short and the app treated the agent as having lost stock — and the
-   warehouse was credited at EOD with goods that had already been sold, growing the stock number
-   on paper every time somebody sold without signal.
-
-   `moves` carries only what this decision needs: productId, qtyInBks, the product's packing
-   data, and the two flags. Pricing and profit stay where they were — the offline path has no
-   business recomputing those to move stock. */
-const applySaleToCanvas = (canvas, moves) => {
-    const updated = (canvas || []).map(row => {
-        const given = moves.filter(m => m.productId === row.productId && m.isPhysicallyGiven);
-        if (given.length === 0) return row;
-
-        const rowSize = convertToBks(1, row.unit, given[0].prodData || {});
-        const remainingBks = (row.qty * rowSize) - given.reduce((sum, m) => sum + m.qtyInBks, 0);
-        if (remainingBks < 0) throw `Vehicle doesn't have enough ${given[0].name} left!`;
-
-        return { ...row, qty: remainingBks / rowSize };
-    });
-
-    // Buyback: resellable packs come back onto the van. New line if he was not carrying it.
-    moves.filter(m => m.isReturnedToStock).forEach(m => {
-        const idx = updated.findIndex(row => row.productId === m.productId);
-        if (idx >= 0) {
-            const row = updated[idx];
-            updated[idx] = { ...row, qty: row.qty + (m.qtyInBks / convertToBks(1, row.unit, m.prodData)) };
-        } else {
-            updated.push({ productId: m.productId, name: m.name, qty: m.qtyInBks, unit: 'Bks' });
-        }
-    });
-
-    return updated.filter(row => row.qty > 0);
-};
+/* What a sale does to the van lives in ONE place, src/utils/vanSync.js - the online sale below
+   and the offline sync (App.jsx) both call it, and load-test/hundred-users.mjs runs it. */
+import { applySaleToCanvas } from '../utils/vanSync.js';
 import { notify } from '../components/Toast.jsx';
 
 export default function useTransactionEngine({
@@ -186,7 +153,13 @@ export default function useTransactionEngine({
                         latitude: proofPayload.latitude,
                         longitude: proofPayload.longitude,
                         capturedAt: proofPayload.timestamp
-                    } : null
+                    } : null,
+                    /* The van is NOT touched here. A queued write of the whole cargo list would land
+                       on top of anything a captain loaded or unloaded while there was no signal (row 2
+                       of the 2026-10-19 100-users check). This flag sends it to the sync, which moves
+                       the van in one transaction against the server's copy (src/utils/vanSync.js),
+                       and until then the phone shows the van minus this sale (canvasWithPending). */
+                    vanPending: Boolean(currentAgentProfileId)
                 };
 
                 await saveOfflineTransaction(transactionPayload);
@@ -217,53 +190,6 @@ export default function useTransactionEngine({
                     await saveOfflineNOO(storePayload);
                 }
 
-                /* 🚀 FIX: take the goods off the van offline too. Firestore's persistent cache
-                   queues this write and applies it to the local copy immediately, so the agent's
-                   own screen tells the truth straight away and the change lands upstream when
-                   signal returns. Without it the van still claimed stock that had been sold: the
-                   agent came up short at his own EOD count and looked like he had lost goods,
-                   and the warehouse was credited at EOD for packs that no longer existed.
-
-                   The four facts the van needs are computed here rather than reusing the online
-                   loop, which also does pricing, profit and vault deductions — none of which
-                   belong on this path. */
-                if (currentAgentProfileId) {
-                    const canvasRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, currentAgentProfileId);
-                    try {
-                        const canvasDoc = await getDoc(canvasRef);
-                        if (canvasDoc.exists()) {
-                            const moves = activeCart.map(item => ({
-                                productId: item.productId,
-                                name: item.name,
-                                prodData: item.product || {},
-                                qtyInBks: convertToBks(item.qty, item.unit, item.product || {}),
-                                isPhysicallyGiven: !(proofPayload?.type === 'RETUR' || item.fulfillment === 'IOU'),
-                                isReturnedToStock: proofPayload?.type === 'RETUR' && item.condition !== 'DAMAGED'
-                            }));
-                            /* NOT AWAITED, and that is the entire point. MEASURED 2026-08-20 with
-                               Firestore's own disableNetwork(): setDoc and updateDoc are still
-                               pending after 4 seconds and never settle, because a write promise
-                               resolves only on a SERVER acknowledgement. getDoc resolves fine,
-                               from cache. Awaiting this line froze every offline sale made by an
-                               agent who has a vehicle - execution never reached the Ghost Ledger
-                               toast eleven lines below, never returned to the Sales Terminal, and
-                               the button sat on PROCESSING for good. Aldi did not hit it himself
-                               only because a plain ADMIN gets currentAgentProfileId = null and
-                               skips this block; his salesmen would have hit it every time.
-
-                               There is nothing to wait for: the local copy is updated the moment
-                               this is called and it syncs when signal returns. Pinned by S32. */
-                            updateDoc(canvasRef, { activeCanvas: applySaleToCanvas(canvasDoc.data().activeCanvas, moves) })
-                                .catch(e => notify("Sale saved offline, but the vehicle count could not be updated: " + (e.message || e)));
-                        }
-                    } catch (e) {
-                        /* Reported, never swallowed: the receipt is already safe in the Ghost
-                           Ledger, so the sale is not lost — but the van count is now stale and
-                           he has to know that, or he finds out at EOD as a shortage. */
-                        notify("Sale saved offline, but the vehicle count could not be updated: " + (e.message || e));
-                    }
-                }
-
                 if (!manualData && setCart) setCart([]);
                 triggerCapy("⚠️ Offline Mode: Sale recorded to Ghost Ledger! Will auto-sync when signal returns.");
                 window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
@@ -276,16 +202,20 @@ export default function useTransactionEngine({
         }
 
 
-        // 🌐 ONLINE MODE: Standard Firebase Processing
-        try { 
-            const batch = writeBatch(db);
-            const updatesToPerform = [];
-            const transactionItems = []; 
-            let totalProfit = 0; 
-            const lowStockAlerts = [];
+        /* 🌐 ONLINE MODE: ONE TRANSACTION. The van and the HQ vault stock are read and written
+           inside it, so a captain's load or an HQ restock that lands in between makes it re-read
+           instead of being overwritten. It used to read with getDoc and write a fixed number in a
+           batch: two HQ users at once and the received packs vanished; a load during a sale and the
+           load vanished (rows 2-3 of the 2026-10-19 100-users check, load-test/hundred-users.mjs). */
+        try {
+            const vaultMoves = [];   // HQ vault stock to move, applied to the stock read INSIDE the transaction
+            const transactionItems = [];
+            let totalProfit = 0;
+            let lowStockAlerts = [];
 
-            // 📖 PHASE 1: READS 
-            for (const item of activeCart) { 
+            // 📖 PHASE 1: pack sizes and prices. These rarely change, so a plain read is enough;
+            // only the stock numbers have to be read inside the transaction.
+            for (const item of activeCart) {
                 const prodRef = doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId); 
                 const prodDoc = await getDoc(prodRef); 
                 
@@ -312,20 +242,14 @@ export default function useTransactionEngine({
                 // an admin sale); route to HQ instead if that becomes the policy.
                 const isReturnedToStock = proofPayload?.type === 'RETUR' && item.condition !== 'DAMAGED';
 
-                // If Admin Vault is processing, deduct from Master Vault
+                // If Admin Vault is processing, deduct from Master Vault (checked against the fresh stock below)
                 if (!currentAgentProfileId && isPhysicallyGiven) {
-                    if(prodData.stock < qtyInBks) throw `Not enough stock in Vault for ${item.name}`;
-                    const newStock = prodData.stock - qtyInBks;
-                    updatesToPerform.push({ ref: prodRef, newStock });
-                    // 🔔 NEW: Flag if this sale just pushed the product below its minimum
-                    if (isLowStock({ ...prodData, stock: newStock }, appSettings)) {
-                        lowStockAlerts.push(`${prodData.name || item.name} (${newStock} Bks left)`);
-                    }
+                    vaultMoves.push({ ref: prodRef, delta: -qtyInBks, name: prodData.name || item.name, prodData });
                 }
 
                 // Admin Vault buyback: put it straight back in the Master Vault.
                 if (!currentAgentProfileId && isReturnedToStock) {
-                    updatesToPerform.push({ ref: prodRef, newStock: (prodData.stock || 0) + qtyInBks });
+                    vaultMoves.push({ ref: prodRef, delta: qtyInBks, name: prodData.name || item.name, prodData });
                 }
 
                 // 🛑 DELETED: The illegal badStock Master Vault write that caused Permission Denied for Tier 6!
@@ -352,115 +276,131 @@ export default function useTransactionEngine({
                 }); 
             } 
 
-            let agentDoc = null;
-            let agentRef = null;
-            
-            if (currentAgentProfileId) {
-                agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, currentAgentProfileId);
-                agentDoc = await getDoc(agentRef);
-                // 🚀 FIX: Receipts were showing the logged-in Google account's own name
-                // (e.g. whoever is signed in) instead of the identity actually making the sale
-                // (e.g. "Admin (Boss Vehicle)" as registered in Fleet & Roster).
-                if (agentDoc.exists() && agentDoc.data().name) {
-                    finalAgentName = agentDoc.data().name;
-                }
-            }
-
-            // ✍️ PHASE 2: WRITES 
-            for (const update of updatesToPerform) {
-                batch.update(update.ref, { stock: update.newStock });
-            }
-            
-            // 🚀 SMART AGENT INVENTORY DEDUCTION
-            if (agentDoc && agentDoc.exists()) {
-                batch.update(agentRef, { activeCanvas: applySaleToCanvas(agentDoc.data().activeCanvas, transactionItems) });
-            }
-
             // Clean up the temporary tracking flags AND the embedded master product before
             // saving to DB — see stripCartItemForStorage for why the product is the one that
             // actually mattered.
             const finalTransItems = transactionItems.map(stripCartItemForStorage);
-
-            // 📖 PHASE 3: RECEIPT GENERATION (Source of Truth)
-            const transRef = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`)); 
-            batch.set(transRef, { 
-                date: getCurrentDate(), 
-                customerName, 
-                paymentType, 
-                items: finalTransItems, 
-                total: totalRevenue, 
-                totalProfit: totalProfit, 
-                type: proofPayload?.type || 'SALE', 
-                timestamp: serverTimestamp(),
-                agentId: currentAgentProfileId || 'ADMIN',
-                agentName: finalAgentName,
-                tempoDays: proofPayload?.tempoDays || null,
-                // Whose store it really was, when the seller was not its assigned agent.
-                // Null on a normal sale. Must stay in step with the offline payload above —
-                // a sale made offline and one made online have to carry the same evidence.
-                territoryOverride: proofPayload?.territoryOverride || null,
-                forensicData: forensicData, // 🚀 Bind forensic root for real-time Firebase sync
-                deliveryProof: proofPayload ? {
-                    photo: proofPayload.photoData,
-                    latitude: proofPayload.latitude,
-                    longitude: proofPayload.longitude,
-                    capturedAt: proofPayload.timestamp
-                } : null
-            });
-
-            /* THE TALLY, in the same batch as the sale above.
-
-               `prodData` is already in hand from PHASE 1, so the pack sizes cost no extra read.
-               The tally converts each line to Bks through the shared helper, which is the only
-               reason a Slop cannot land in the totals as a single pack.
-
-               A sale that cannot be counted (no date, empty basket, not a SALE) writes nothing
-               and returns false. That is not an error and must not be treated as one.
-
-               🔴 `paymentType` MUST TRAVEL WITH THIS PAYLOAD. The tally is handed a fresh object
-               rather than the stored document, so any field left out is a field the rule cannot
-               see — and `salesRollup.isTitip` defaults a missing one to 'Cash'. Omitting it books
-               every consignment placement as income again, silently, which is the whole bug of
-               2026-09-09. The stored document at `transactionPayload` already carries it; these
-               two must stay in step. */
             const productsById = Object.fromEntries(
                 transactionItems.filter(i => i.productId).map(i => [i.productId, i.prodData]));
-            tallySale(batch, db, appId, userId, {
-                date: getCurrentDate(), type: proofPayload?.type || 'SALE', items: finalTransItems,
-                paymentType,
-            }, productsById, 1);
+            // ids fixed OUTSIDE the transaction, so a retry writes the same documents
+            const transRef = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`));
+            const custRef = newStoreData ? doc(collection(db, `artifacts/${appId}/users/${userId}/customers`)) : null;
+            const agentRef = currentAgentProfileId ? doc(db, `artifacts/${appId}/users/${userId}/motorists`, currentAgentProfileId) : null;
 
-            if (newStoreData) {
-                const custRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
-                if (newStoreData.isNooRegistration) {
-                    batch.set(custRef, {
-                        name: customerName,
-                        phone: newStoreData.phone,
-                        address: newStoreData.address,
-                        priceTier: newStoreData.requestedTier,
-                        latitude: newStoreData.latitude,
-                        longitude: newStoreData.longitude,
-                        status: 'NOO_ACTIVE',
-                        mappedBy: finalAgentName,
-                        mappedById: currentAgentProfileId || null,
-                        mappedAt: serverTimestamp(),
-                        hasPhotoProof: true,
-                        storeImage: newStoreData.photoUrl || ''
-                    });
-                } else {
-                    batch.set(custRef, {
-                        name: customerName,
-                        latitude: newStoreData.latitude || null,
-                        longitude: newStoreData.longitude || null,
-                        priceTier: 'Ecer',
-                        status: 'WALK_IN',
-                        mappedBy: finalAgentName,
-                        mappedAt: serverTimestamp()
-                    });
+            await runTransaction(db, async (t) => {
+                lowStockAlerts = [];   // the callback can run more than once
+
+                // 📖 READS FIRST - a transaction reads everything before it writes
+                const vaultStock = {};
+                for (const m of vaultMoves) {
+                    if (!(m.ref.path in vaultStock)) vaultStock[m.ref.path] = Number((await t.get(m.ref)).data()?.stock || 0);
                 }
-            }
+                const agentDoc = agentRef ? await t.get(agentRef) : null;
+                // 🚀 FIX: Receipts were showing the logged-in Google account's own name
+                // (e.g. whoever is signed in) instead of the identity actually making the sale
+                // (e.g. "Admin (Boss Vehicle)" as registered in Fleet & Roster).
+                if (agentDoc && agentDoc.exists() && agentDoc.data().name) {
+                    finalAgentName = agentDoc.data().name;
+                }
 
-            await batch.commit();
+                // ✍️ WRITES. Vault: every line of one product nets into ONE update - two lines of the same
+                // product used to write twice from the same old number, and the second one won.
+                for (const m of vaultMoves) {
+                    vaultStock[m.ref.path] += m.delta;
+                    if (m.delta < 0 && vaultStock[m.ref.path] < 0) throw `Not enough stock in Vault for ${m.name}`;
+                }
+                for (const m of vaultMoves) {
+                    if (!(m.ref.path in vaultStock)) continue;
+                    const newStock = vaultStock[m.ref.path];
+                    t.update(m.ref, { stock: newStock });
+                    // 🔔 Flag if this sale just pushed the product below its minimum
+                    if (vaultMoves.some(v => v.ref.path === m.ref.path && v.delta < 0) && isLowStock({ ...m.prodData, stock: newStock }, appSettings)) {
+                        lowStockAlerts.push(`${m.name} (${newStock} Bks left)`);
+                    }
+                    delete vaultStock[m.ref.path];
+                }
+
+                // 🚀 SMART AGENT INVENTORY DEDUCTION
+                if (agentDoc && agentDoc.exists()) {
+                    t.update(agentRef, { activeCanvas: applySaleToCanvas(agentDoc.data().activeCanvas, transactionItems) });
+                }
+
+                // 📖 RECEIPT GENERATION (Source of Truth)
+                t.set(transRef, {
+                    date: getCurrentDate(), 
+                    customerName, 
+                    paymentType, 
+                    items: finalTransItems, 
+                    total: totalRevenue, 
+                    totalProfit: totalProfit, 
+                    type: proofPayload?.type || 'SALE', 
+                    timestamp: serverTimestamp(),
+                    agentId: currentAgentProfileId || 'ADMIN',
+                    agentName: finalAgentName,
+                    tempoDays: proofPayload?.tempoDays || null,
+                    // Whose store it really was, when the seller was not its assigned agent.
+                    // Null on a normal sale. Must stay in step with the offline payload above —
+                    // a sale made offline and one made online have to carry the same evidence.
+                    territoryOverride: proofPayload?.territoryOverride || null,
+                    forensicData: forensicData, // 🚀 Bind forensic root for real-time Firebase sync
+                    deliveryProof: proofPayload ? {
+                        photo: proofPayload.photoData,
+                        latitude: proofPayload.latitude,
+                        longitude: proofPayload.longitude,
+                        capturedAt: proofPayload.timestamp
+                    } : null
+                });
+
+                /* THE TALLY, in the same transaction as the sale above.
+
+                   `prodData` is already in hand from PHASE 1, so the pack sizes cost no extra read.
+                   The tally converts each line to Bks through the shared helper, which is the only
+                   reason a Slop cannot land in the totals as a single pack.
+
+                   A sale that cannot be counted (no date, empty basket, not a SALE) writes nothing
+                   and returns false. That is not an error and must not be treated as one.
+
+                   🔴 `paymentType` MUST TRAVEL WITH THIS PAYLOAD. The tally is handed a fresh object
+                   rather than the stored document, so any field left out is a field the rule cannot
+                   see — and `salesRollup.isTitip` defaults a missing one to 'Cash'. Omitting it books
+                   every consignment placement as income again, silently, which is the whole bug of
+                   2026-09-09. The stored document at `transactionPayload` already carries it; these
+                   two must stay in step. */
+                tallySale(t, db, appId, userId, {
+                    date: getCurrentDate(), type: proofPayload?.type || 'SALE', items: finalTransItems,
+                    paymentType,
+                }, productsById, 1);
+
+                if (newStoreData) {
+                    if (newStoreData.isNooRegistration) {
+                        t.set(custRef, {
+                            name: customerName,
+                            phone: newStoreData.phone,
+                            address: newStoreData.address,
+                            priceTier: newStoreData.requestedTier,
+                            latitude: newStoreData.latitude,
+                            longitude: newStoreData.longitude,
+                            status: 'NOO_ACTIVE',
+                            mappedBy: finalAgentName,
+                            mappedById: currentAgentProfileId || null,
+                            mappedAt: serverTimestamp(),
+                            hasPhotoProof: true,
+                            storeImage: newStoreData.photoUrl || ''
+                        });
+                    } else {
+                        t.set(custRef, {
+                            name: customerName,
+                            latitude: newStoreData.latitude || null,
+                            longitude: newStoreData.longitude || null,
+                            priceTier: 'Ecer',
+                            status: 'WALK_IN',
+                            mappedBy: finalAgentName,
+                            mappedAt: serverTimestamp()
+                        });
+                    }
+                }
+
+            });
 
             // 🔔 NEW: One combined notification if this sale pushed anything below its minimum
             if (lowStockAlerts.length > 0) {
@@ -564,101 +504,100 @@ export default function useTransactionEngine({
                 };
             }
 
-            // 🌐 ONLINE MODE: Fire the batch
-            const batch = writeBatch(db);
-            
-            let agentRef = null;
-            let agentDoc = null;
-            let updatedCanvas = [];
-
-            if (currentAgentProfileId) {
-                agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, currentAgentProfileId);
-                agentDoc = await getDoc(agentRef);
-                if (agentDoc.exists()) updatedCanvas = [...(agentDoc.data().activeCanvas || [])];
+            // 🌐 ONLINE MODE: one transaction (below)
+            /* ONE TRANSACTION, same reason as the sale above: the van is read inside it, so a
+               captain's load that lands in between is re-read instead of overwritten. Vault returns
+               go in with increment(), so their stock number is never read at all. */
+            const returnedProducts = {};
+            for (const item of itemsReturned) {
+                const prodDoc = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId));
+                if (prodDoc.exists()) returnedProducts[item.productId] = prodDoc.data();
             }
-
-            for(const item of itemsReturned) { 
-                const prodRef = doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId); 
-                const prodDoc = await getDoc(prodRef); 
-                if (!prodDoc.exists()) continue;
-                
-                const pData = prodDoc.data();
-
-                if (currentAgentProfileId && agentDoc && agentDoc.exists()) {
-                    const canvasIdx = updatedCanvas.findIndex(c => c.productId === item.productId);
-                    /* 🚀 FIX: the ratio must come from the VAN ROW's unit, not the returned
-                       item's. This built it from item.unit and then applied it to cItem.qty, so
-                       a van row counted in Slop plus a return counted in packs had Slop numbers
-                       treated as pack numbers. The incoming quantity is converted with its OWN
-                       unit — the two are different questions and were being answered once. */
-                    if (canvasIdx > -1) {
-                        let cItem = updatedCanvas[canvasIdx];
-                        const mCanvas = convertToBks(1, cItem.unit, pData);
-                        const currentCanvasBks = cItem.qty * mCanvas;
-                        const returnedBks = convertToBks(item.qty, item.unit, pData);
-                        updatedCanvas[canvasIdx] = { ...cItem, qty: (currentCanvasBks + returnedBks) / mCanvas };
-                    } else {
-                        updatedCanvas.push({ productId: item.productId, name: item.name, qty: item.qty, unit: 'Bks', priceTier: item.priceTier || 'Retail', calculatedPrice: pData.priceRetail || 0 });
-                    }
-                } else {
-                    /* The warehouse counts in packs (the sale path above subtracts qtyInBks); a
-                       return counted in Slop was added as packs - 2 Slop became 2 packs, 18 lost on
-                       paper. Backlog 2026-08-17, fixed 2026-09-22. */
-                    batch.update(prodRef, { stock: pData.stock + convertToBks(item.qty, item.unit, pData) });
-                }
-            } 
-            
-            if (currentAgentProfileId && agentRef) {
-                batch.update(agentRef, { activeCanvas: updatedCanvas });
-            }
-            
-            if (currentAgentProfileId && agentDoc?.exists() && agentDoc.data().name) {
-                finalAgentName = agentDoc.data().name;
-            }
-
-            const transRef = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`)); 
+            const agentRef = currentAgentProfileId ? doc(db, `artifacts/${appId}/users/${userId}/motorists`, currentAgentProfileId) : null;
+            const transRef = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`));
             newDocId = transRef.id;
 
-            batch.set(transRef, { 
-                date: getCurrentDate(), 
-                customerName, 
-                paymentType: "Cash", 
-                itemsPaid,          
-                itemsReturned,      
-                itemsRemaining,     
-                amountPaid,         
-                returnTotal,        
-                type: 'CONSIGNMENT_PAYMENT', 
-                agentId: currentAgentProfileId || 'ADMIN',
-                agentName: finalAgentName,
-                timestamp: serverTimestamp() 
-            }); 
+            await runTransaction(db, async (t) => {
+                const agentDoc = agentRef ? await t.get(agentRef) : null;
+                const updatedCanvas = agentDoc && agentDoc.exists() ? [...(agentDoc.data().activeCanvas || [])] : [];
 
-            /* THE RETURNED GOODS COME BACK OUT OF THE MONTH'S REVENUE, IN THIS SAME BATCH.
+                for(const item of itemsReturned) {
+                    const prodRef = doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId);
+                    const pData = returnedProducts[item.productId];
+                    if (!pData) continue;
 
-               🔴 THIS IS WHERE CONSIGNMENT INCOME IS BOOKED NOW — `itemsPaid`, not `itemsReturned`.
-               Aldi, 2026-09-09: *"omset come after goods is sold and money is received"*, and for
-               the quantity beside it, *"A for the sold bks mean"*. The placement at the shop door
-               books nothing at all, so this audit is the FIRST and ONLY moment a consignment packet
-               enters Product Performance, and it enters for the part the shop actually sold.
+                    if (currentAgentProfileId && agentDoc && agentDoc.exists()) {
+                        const canvasIdx = updatedCanvas.findIndex(c => c.productId === item.productId);
+                        /* 🚀 FIX: the ratio must come from the VAN ROW's unit, not the returned
+                           item's. This built it from item.unit and then applied it to cItem.qty, so
+                           a van row counted in Slop plus a return counted in packs had Slop numbers
+                           treated as pack numbers. The incoming quantity is converted with its OWN
+                           unit — the two are different questions and were being answered once. */
+                        if (canvasIdx > -1) {
+                            let cItem = updatedCanvas[canvasIdx];
+                            const mCanvas = convertToBks(1, cItem.unit, pData);
+                            const currentCanvasBks = cItem.qty * mCanvas;
+                            const returnedBks = convertToBks(item.qty, item.unit, pData);
+                            updatedCanvas[canvasIdx] = { ...cItem, qty: (currentCanvasBks + returnedBks) / mCanvas };
+                        } else {
+                            updatedCanvas.push({ productId: item.productId, name: item.name, qty: item.qty, unit: 'Bks', priceTier: item.priceTier || 'Retail', calculatedPrice: pData.priceRetail || 0 });
+                        }
+                    } else {
+                        /* The warehouse counts in packs (the sale path above subtracts qtyInBks); a
+                           return counted in Slop was added as packs - 2 Slop became 2 packs, 18 lost on
+                           paper. Backlog 2026-08-17, fixed 2026-09-22. */
+                        t.update(prodRef, { stock: increment(convertToBks(item.qty, item.unit, pData)) });
+                    }
+                }
 
-               The line this replaced passed `itemsReturned` so salesDelta could subtract damaged
-               goods back off the placement. There is no placement to subtract from any more, and
-               passing it would drive the month negative by the value of every returned packet.
+                if (currentAgentProfileId && agentRef) {
+                    t.update(agentRef, { activeCanvas: updatedCanvas });
+                }
 
-               SAME BATCH, NOT AFTER IT - the rule the whole rollup is built on. A counter updated
-               separately from the thing it counts drifts the first time a phone loses signal
-               between the two calls, and offline is the normal case for these salesmen.
+                if (currentAgentProfileId && agentDoc?.exists() && agentDoc.data().name) {
+                    finalAgentName = agentDoc.data().name;
+                }
 
-               No product map is needed and passing one would be misleading: ConsignmentFinanceView
-               builds every paid line as `unit: 'Bks'` (the same `unit: 'Bks'` it gives the returned
-               and remaining ones), and convertToBks returns the quantity untouched for Bks whether
-               or not it is given the product. A self-check pins that unit so this stays true. */
-            tallySale(batch, db, appId, userId, {
-                date: getCurrentDate(), type: 'CONSIGNMENT_PAYMENT', itemsPaid,
-            }, {}, 1);
+                t.set(transRef, {
+                    date: getCurrentDate(), 
+                    customerName, 
+                    paymentType: "Cash", 
+                    itemsPaid,          
+                    itemsReturned,      
+                    itemsRemaining,     
+                    amountPaid,         
+                    returnTotal,        
+                    type: 'CONSIGNMENT_PAYMENT', 
+                    agentId: currentAgentProfileId || 'ADMIN',
+                    agentName: finalAgentName,
+                    timestamp: serverTimestamp() 
+                }); 
 
-            await batch.commit();
+                /* THE RETURNED GOODS COME BACK OUT OF THE MONTH'S REVENUE, IN THIS SAME TRANSACTION.
+
+                   🔴 THIS IS WHERE CONSIGNMENT INCOME IS BOOKED NOW — `itemsPaid`, not `itemsReturned`.
+                   Aldi, 2026-09-09: *"omset come after goods is sold and money is received"*, and for
+                   the quantity beside it, *"A for the sold bks mean"*. The placement at the shop door
+                   books nothing at all, so this audit is the FIRST and ONLY moment a consignment packet
+                   enters Product Performance, and it enters for the part the shop actually sold.
+
+                   The line this replaced passed `itemsReturned` so salesDelta could subtract damaged
+                   goods back off the placement. There is no placement to subtract from any more, and
+                   passing it would drive the month negative by the value of every returned packet.
+
+                   SAME BATCH, NOT AFTER IT - the rule the whole rollup is built on. A counter updated
+                   separately from the thing it counts drifts the first time a phone loses signal
+                   between the two calls, and offline is the normal case for these salesmen.
+
+                   No product map is needed and passing one would be misleading: ConsignmentFinanceView
+                   builds every paid line as `unit: 'Bks'` (the same `unit: 'Bks'` it gives the returned
+                   and remaining ones), and convertToBks returns the quantity untouched for Bks whether
+                   or not it is given the product. A self-check pins that unit so this stays true. */
+                tallySale(t, db, appId, userId, {
+                    date: getCurrentDate(), type: 'CONSIGNMENT_PAYMENT', itemsPaid,
+                }, {}, 1);
+
+            });
 
             triggerCapy("Store Audit successfully recorded!"); 
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
@@ -699,7 +638,9 @@ export default function useTransactionEngine({
             for(const item of itemsReturned) { 
                 const prodRef = doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId); 
                 const prodDoc = await getDoc(prodRef); 
-                if(prodDoc.exists()) batch.update(prodRef, { stock: prodDoc.data().stock + convertToBks(item.qty, item.unit, prodDoc.data()) });   /* packs, like every other stock write */
+                /* packs, like every other stock write - and increment(), never "the number I read plus
+                   this": a restock landing between the read and the write used to be erased */
+                if(prodDoc.exists()) batch.update(prodRef, { stock: increment(convertToBks(item.qty, item.unit, prodDoc.data())) });
             } 
             const returnRef = doc(collection(db, `artifacts/${appId}/users/${userId}/transactions`)); 
             batch.set(returnRef, { date: getCurrentDate(), customerName, items: itemsReturned, total: -refundValue, type: 'RETURN', timestamp: serverTimestamp() }); 

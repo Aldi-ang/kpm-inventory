@@ -31,6 +31,7 @@ const fleet    = read('src/FleetCanvasManager.jsx');
 const app      = read('src/App.jsx');
 const history  = read('src/components/HistoryReportView.jsx');
 const helpers  = read('src/utils/helpers.js');
+const vanSync  = read('src/utils/vanSync.js');
 
 /* Every helper a fix calls must be IMPORTED. Bug #24 here was a call to getDoc that was never
    imported: it threw into an empty catch and silently disabled the rank engine for months. The
@@ -65,15 +66,17 @@ ok('no cart.some(isIouFulfillment) survives anywhere',
 section('A3. A buyback returns resellable goods to stock');
 ok('isReturnedToStock exists and excludes damaged lines',
    /const isReturnedToStock = proofPayload\?\.type === 'RETUR' && item\.condition !== 'DAMAGED'/.test(engine));
+/* Repinned 2026-10-19: the vault move is now a delta applied to the stock read INSIDE the sale's
+   transaction (row 3 of the 100-users check), not a fixed number from an earlier read. */
 ok('the master vault is credited on an admin buyback',
-   /!currentAgentProfileId && isReturnedToStock[\s\S]{0,120}newStock: \(prodData\.stock \|\| 0\) \+ qtyInBks/.test(engine));
-/* Both of these moved INTO applySaleToCanvas when the canvas rule was extracted so the offline
-   path could share it (see S12). The behaviour is the same; only the variable names changed, so
-   they are repinned on the new shape rather than relaxed. */
+   /!currentAgentProfileId && isReturnedToStock[\s\S]{0,120}vaultMoves\.push\(\{ ref: prodRef, delta: qtyInBks/.test(engine));
+/* Both of these moved INTO the canvas rule when it was extracted so the offline path could share
+   it (see S12), and on 2026-10-19 the rule moved to src/utils/vanSync.js. Same behaviour, so they
+   are repinned on the new home rather than relaxed. */
 ok('the van gets a NEW canvas line when he was not carrying it',
-   /isReturnedToStock\)\.forEach[\s\S]{0,400}updated\.push\(/.test(engine));
+   /isReturnedToStock\)\.forEach[\s\S]{0,400}updated\.push\(/.test(vanSync));
 ok('the packing maths is reused, not re-inlined a fifth time',
-   /convertToBks\(1, row\.unit, m\.prodData\)/.test(engine));
+   /convertToBks\(1, row\.unit, m\.prodData\)/.test(vanSync));
 /* Was pinned to line 2 of the file and broke on 2026-08-30 the moment an import was added
    above it. A line INDEX is the most brittle form of the pin-the-literal fault: it does not
    survive an edit anywhere near it. What it guards is that the name is imported at all. */
@@ -760,36 +763,33 @@ ok('isOnline still comes from useOfflineEngine', /const \{ isOnline,[^}]*\} = us
 /* ── S12 · a sale made with no signal never came off the van ───────────────────────────── */
 section('S12. Offline sales move the van stock, through the same rule as online');
 
-ok('the canvas rule exists once, at module scope', /^const applySaleToCanvas = \(canvas, moves\) => \{/m.test(engine));
-ok('the online path calls it',
-   /batch\.update\(agentRef, \{ activeCanvas: applySaleToCanvas\(agentDoc\.data\(\)\.activeCanvas, transactionItems\) \}\)/.test(engine));
-ok('the offline path calls it too',
-   /updateDoc\(canvasRef, \{ activeCanvas: applySaleToCanvas\(canvasDoc\.data\(\)\.activeCanvas, moves\) \}\)/.test(engine));
+/* REPINNED 2026-10-19 (100-users check, row 2). The rule moved to src/utils/vanSync.js, and an
+   offline sale no longer writes the van at all: a queued write of the whole cargo list landed on
+   top of a captain's load made while there was no signal, and the load vanished from the books.
+   The sync moves the van instead, in one transaction with the receipt and the tally. */
+ok('the canvas rule exists once, in vanSync, and the engine imports it',
+   /^export const settleSale = \(canvas, moves\) => \{/m.test(vanSync) && imports(engine, 'applySaleToCanvas') &&
+   !/const applySaleToCanvas =/.test(engine));
+ok('the online path calls it, inside the transaction',
+   /t\.update\(agentRef, \{ activeCanvas: applySaleToCanvas\(agentDoc\.data\(\)\.activeCanvas, transactionItems\) \}\)/.test(engine));
+ok('REGRESSION: the offline path writes no van - the sale waits with vanPending for the sync',
+   !/updateDoc\(/.test(stripComments(engine)) && /vanPending: Boolean\(currentAgentProfileId\)/.test(engine));
 ok('the online path no longer keeps its own copy of the rule',
    !/const givenItems = transactionItems\.filter/.test(stripComments(engine)));
-ok('a failed offline canvas write is REPORTED, not swallowed',
-   /the vehicle count could not be updated/.test(engine));
-ok('updateDoc is imported', imports(engine, 'updateDoc'));
+ok('the sync lands receipt + tally + van in ONE transaction, and App uses it',
+   /export const syncOfflineSale = \(db, appId, userId, tx, productsById\) => runTransaction\(db,/.test(vanSync) &&
+   /await syncOfflineSale\(db, appId, userId, tx, productsById\)/.test(app));
+ok('a van that cannot cover a synced sale is REPORTED, not swallowed (every action reports)',
+   /logAudit\('VAN_SYNC_SHORT'/.test(app) && /vanShortfall: settled\.short/.test(vanSync));
+ok('the phone shows the van minus the waiting sales - terminal, EOD and the chest',
+   /canvasWithPending\(agentCanvas, pendingTxData, agentProfileId/.test(app) && /agentCanvas=\{agentCanvasNow\}/.test(app) &&
+   /canvasWithPending\(rawCanvasItems, pendingTxData, trueAgentId/.test(read('src/AgentInventoryView.jsx')));
+ok('the day cannot close while offline sales wait (their money is not in the totals yet)',
+   /if \(pendingOfflineSales > 0\)/.test(read('src/EODReconciliationView.jsx')) && /pendingOfflineSales=\{pendingCount\.transactions\}/.test(app));
 
 /* BEHAVIOUR — the real helper, imported. */
-{ const { convertToBks } = await import('../utils/helpers.js');
+{ const { applySaleToCanvas: apply, settleSale, canvasWithPending, movesFromSale } = await import('../utils/vanSync.js');
   const prod = { packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 };
-  /* Same shape as the engine's, kept in step by the guards above. */
-  const apply = (canvas, moves) => {
-    const updated = (canvas || []).map(row => {
-      const given = moves.filter(m => m.productId === row.productId && m.isPhysicallyGiven);
-      if (!given.length) return row;
-      const rowSize = convertToBks(1, row.unit, given[0].prodData || {});
-      const remaining = (row.qty * rowSize) - given.reduce((s, m) => s + m.qtyInBks, 0);
-      if (remaining < 0) throw new Error('short');
-      return { ...row, qty: remaining / rowSize };
-    });
-    moves.filter(m => m.isReturnedToStock).forEach(m => {
-      const i = updated.findIndex(r => r.productId === m.productId);
-      if (i >= 0) updated[i] = { ...updated[i], qty: updated[i].qty + (m.qtyInBks / convertToBks(1, updated[i].unit, m.prodData)) };
-      else updated.push({ productId: m.productId, name: m.name, qty: m.qtyInBks, unit: 'Bks' });
-    });
-    return updated.filter(r => r.qty > 0); };
 
   const van = [{ productId: 'p1', name: 'Rokok A', qty: 10, unit: 'Bks' }];
   const sold4 = [{ productId: 'p1', name: 'Rokok A', prodData: prod, qtyInBks: 4, isPhysicallyGiven: true, isReturnedToStock: false }];
@@ -814,7 +814,23 @@ ok('updateDoc is imported', imports(engine, 'updateDoc'));
      apply(van, buyback).find(r => r.productId === 'p2')?.qty === 5);
 
   ok('selling more than the van holds still refuses', (() => {
-     try { apply(van, [{ ...sold4[0], qtyInBks: 99 }]); return false; } catch { return true; } })()); }
+     try { apply(van, [{ ...sold4[0], qtyInBks: 99 }]); return false; } catch { return true; } })());
+
+  // The sync's form: a short van does not throw - it saves and names the gap.
+  const short = settleSale(van, [{ ...sold4[0], qtyInBks: 13 }]);
+  ok('the sync form names the gap (3 packs) instead of throwing, and empties that row',
+     short.short[0]?.missingBks === 3 && !short.canvas.some(r => r.productId === 'p1'));
+
+  // What the phone shows offline: the van minus the sales still waiting in the Ghost Ledger.
+  const waiting = { vanPending: true, agentId: 'v1', type: 'SALE', items: [{ productId: 'p1', name: 'Rokok A', qty: 4, unit: 'Bks' }] };
+  ok('a waiting offline sale comes off the van on screen', canvasWithPending(van, [waiting], 'v1', { p1: prod })[0].qty === 6);
+  ok('another van\'s waiting sale does not', canvasWithPending(van, [waiting], 'v2', { p1: prod })[0].qty === 10);
+  ok('a sale queued by an OLDER build (no vanPending) is not subtracted twice',
+     canvasWithPending(van, [{ ...waiting, vanPending: undefined }], 'v1', { p1: prod })[0].qty === 10);
+  ok('a stored Slop line converts with the products list (the stored copy has no product)',
+     movesFromSale({ type: 'SALE', items: [{ productId: 'p1', qty: 2, unit: 'Slop' }] }, { p1: prod })[0].qtyInBks === 20);
+  ok('an IOU line in a stored sale moves nothing',
+     movesFromSale({ type: 'SALE', items: [{ productId: 'p1', qty: 2, unit: 'Bks', fulfillment: 'IOU' }] }, { p1: prod })[0].isPhysicallyGiven === false); }
 
 /* ── S13 · a store registered offline landed in a status no screen knows ───────────────── */
 section('S13. An offline store syncs with the status the online path writes');
@@ -964,7 +980,7 @@ section('S39. Sales rollup: a cache that can always be rebuilt from the transact
   const rollupWrite = read('src/utils/salesRollupWrite.js');
 
   ok('the online sale tallies inside the SAME batch that writes the receipt',
-     /batch\.set\(transRef[\s\S]{0,2200}tallySale\(batch, db, appId, userId/.test(engine));
+     /t\.set\(transRef[\s\S]{0,2400}tallySale\(t, db, appId, userId/.test(engine));
   ok('and it converts with the pack sizes it already read, not a second lookup',
      /const productsById = Object\.fromEntries\(\s*transactionItems\.filter\(i => i\.productId\)\.map\(i => \[i\.productId, i\.prodData\]\)\)/.test(engine));
   ok('a sale made without signal is tallied when it drains, in the same commit',
@@ -1998,10 +2014,10 @@ section('S32. No offline branch waits for a write that can never finish');
   const found = branch.match(WRITES) || [];
   ok('it awaits NO Firestore write - reads are fine, writes never settle',
      found.length === 0, `found ${found.join(' / ')}`);
-  ok('the van-count write is still made, just not waited for',
-     /updateDoc\(canvasRef, \{ activeCanvas/.test(branch));
-  ok('and a failed one is reported rather than dropped',
-     /\.catch\(/.test(branch)); }
+  /* Since 2026-10-19 the branch makes NO van write at all (S12): the sale waits with vanPending
+     and the sync moves the van in a transaction. Nothing left to wait for, and nothing to drop. */
+  ok('the van is handed to the sync instead of written here',
+     /vanPending: Boolean\(currentAgentProfileId\)/.test(branch) && !/updateDoc\(/.test(stripComments(branch))); }
 
 /* BEHAVIOUR: the difference between awaiting a never-settling promise and firing it. */
 { const neverSettles = () => new Promise(() => {});
@@ -5174,16 +5190,17 @@ ok('handleConsignmentPayment was located',
    'anchor missed - the assertions below would pass vacuously');
 const payBody = uteSrc.slice(payFrom, payTo);
 ok('and the slice is that handler, not a neighbourhood',
-   payBody.length > 2000 && payBody.length < 9000,
+   payBody.length > 2000 && payBody.length < 11000,   // grew 2026-10-19: the transaction's own comment
    'got ' + payBody.length + ' chars');
 ok('the audit tallies itemsPaid, so consignment income lands live and not only on a rebuild',
-   /tallySale\(batch, db, appId, userId, \{[\s\S]{0,200}?itemsPaid,[\s\S]{0,80}?\}, \{\}, 1\)/.test(code(payBody)),
+   /tallySale\(t, db, appId, userId, \{[\s\S]{0,200}?itemsPaid,[\s\S]{0,80}?\}, \{\}, 1\)/.test(code(payBody)),
    'without this the report only becomes correct after somebody presses rebuild');
 ok('REGRESSION: it must not tally itemsReturned instead',
    !/tallySale\([\s\S]{0,240}?itemsReturned,/.test(code(payBody)),
    'that was the f46bc4a form. With no placement booked it subtracts from nothing and drives the month negative');
-ok('and it rides the SAME batch as the transaction it counts',
-   code(payBody).indexOf('tallySale(') < code(payBody).indexOf('await batch.commit()'),
+/* Since 2026-10-19 the audit is one runTransaction; `tallySale(t, ...)` can only exist inside it. */
+ok('and it rides the SAME write as the transaction it counts',
+   /await runTransaction\(db, async \(t\) => \{[\s\S]*tallySale\(t, db, appId, userId/.test(code(payBody)),
    'a counter committed separately from the thing it counts drifts the first time a phone loses signal between the two');
 ok('the paid lines are built in Bks, which is what lets the tally skip the product map',
    /paymentItems\.push\(\{ productId: item\.productId, name: item\.name, qty: sold, priceTier: item\.priceTier, calculatedPrice: item\.calculatedPrice, unit: 'Bks' \}\)/.test(read('src/ConsignmentFinanceView.jsx')),
@@ -5193,13 +5210,14 @@ ok('the paid lines are built in Bks, which is what lets the tally skip the produ
    stored document, so a field left out of that object is a field the rule cannot see - and
    `isTitip` defaults a missing `paymentType` to 'Cash'. Omit it and every consignment placement is
    booked as income again, with nothing on screen to say so. */
-const saleFrom = uteSrc.indexOf('const productsById = Object.fromEntries(');
+// re-anchored 2026-10-19: productsById moved above the transaction; the tally comment did not
+const saleFrom = uteSrc.indexOf('THE TALLY, in the same transaction as the sale above.');
 const saleTo   = uteSrc.indexOf('if (newStoreData) {', saleFrom);
 ok('the sale tally block was located',
    saleFrom > -1 && saleTo > saleFrom && (saleTo - saleFrom) > 200 && (saleTo - saleFrom) < 1500,
    'anchor missed or ran away - got ' + (saleTo - saleFrom) + ' chars, so the assertion below would pass vacuously');
 ok('the sale hands its paymentType to the tally, or the whole rule is invisible',
-   /tallySale\(batch, db, appId, userId, \{[\s\S]{0,300}?paymentType,/.test(code(uteSrc.slice(saleFrom, saleTo))),
+   /tallySale\(t, db, appId, userId, \{[\s\S]{0,300}?paymentType,/.test(code(uteSrc.slice(saleFrom, saleTo))),
    'without this field a Titip placement tallies as a cash sale and omzet lies again');
 
 section('Emulator: the dev door exists only behind the dev gate');
@@ -6349,7 +6367,7 @@ ok('processTransaction and its first write are both findable',
    ecStart > -1 && ecEnd > ecStart, `processTransaction ${ecStart}, first write ${ecEnd}`);
 const ecHead = engine.slice(ecStart, ecEnd);
 ok('and the slice stops at the first write rather than running the whole file',
-   ecHead.length > 400 && ecHead.length < 9000, `slice is ${ecHead.length} chars`);
+   ecHead.length > 400 && ecHead.length < 10000, `slice is ${ecHead.length} chars`);   // +vanPending note, 2026-10-19
 
 ok('the Ecer/Titip refusal stands BEFORE anything is written',
    /paymentType === 'Titip' && \(activeCart \|\| \[\]\)\.some\(i => i\.priceTier === 'Ecer'\)/.test(ecHead),
@@ -8126,8 +8144,10 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
 { const te = read('src/hooks/useTransactionEngine.js'); const tec = code(te);
   ok('REGRESSION: no warehouse stock write adds a raw item.qty - both return paths convert with the item\'s own unit',
      !/stock \+ \(item\.qty \* 1\)/.test(tec) && !/stock \+ item\.qty\b/.test(tec) &&
-     /batch\.update\(prodRef, \{ stock: pData\.stock \+ convertToBks\(item\.qty, item\.unit, pData\) \}\);/.test(te) &&
-     /batch\.update\(prodRef, \{ stock: prodDoc\.data\(\)\.stock \+ convertToBks\(item\.qty, item\.unit, prodDoc\.data\(\)\) \}\);/.test(te),
+     /* repinned 2026-10-19: same unit conversion, now inside increment() - "the number I read plus
+        this" erased any restock that landed in between (100-users check, row 3) */
+     /t\.update\(prodRef, \{ stock: increment\(convertToBks\(item\.qty, item\.unit, pData\)\) \}\);/.test(te) &&
+     /batch\.update\(prodRef, \{ stock: increment\(convertToBks\(item\.qty, item\.unit, prodDoc\.data\(\)\)\) \}\);/.test(te),
      'a 2 Slop return added 2 packs and lost 18 on paper');
   ok('and a failed return REPORTS, it does not swallow the error (every action must report)',
      /triggerCapy\("Return Processed!"\);\s*\r?\n\s*\} catch \(err\) \{ console\.error\(err\); notify\(`Return failed - nothing was saved: \$\{err\?\.message \|\| err\}`\); \}/.test(te),
@@ -11290,6 +11310,44 @@ section('THE STATUS LINE IS THE LITE SWITCH (2026-10-15) - his pick C, "hidden s
   ok('behaviour: every flip reports through the capybara (his law: every action must report)',
      calls.length === 4 && calls[0][1] === true && /Lite mode on/.test(calls[1][1]) && calls[2][1] === false && /Full graphics restored/.test(calls[3][1]),
      JSON.stringify(calls));
+}
+
+/* ─── 2026-10-19 — "100 PEOPLE AT ONCE" (A-Brain Brainstorm/2026-10-19_app-bugs-and-100-users-check) ───
+   Aldi: *"make sure again that everything works well even when there is 100 of people using the app
+   at once"*. load-test/hundred-users.mjs proves rows 2-3 on the emulator (legacy shape loses data,
+   current shape keeps it); these pin the source so the old shapes cannot come back. */
+section('100 USERS. Stock and van writes survive somebody else writing at the same moment');
+{ const te = code(read('src/hooks/useTransactionEngine.js'));
+  ok('REGRESSION (row 3): no HQ stock is written as a fixed number from an earlier read',
+     !/batch\.update\(update\.ref, \{ stock: update\.newStock \}\)/.test(te) && !/updatesToPerform/.test(te),
+     'getDoc then batch.update(stock: read - qty) erased a restock that landed in between: 1000 - 30 + 500 came out 970');
+  ok('the online sale reads the van and the vault stock INSIDE one transaction',
+     /await runTransaction\(db, async \(t\) => \{[\s\S]{0,400}await t\.get\(m\.ref\)[\s\S]{0,200}await t\.get\(agentRef\)/.test(te));
+  ok('two lines of the same product net into ONE vault update',
+     /vaultStock\[m\.ref\.path\] \+= m\.delta/.test(te) && /delete vaultStock\[m\.ref\.path\]/.test(te));
+  ok('the vault still refuses to go below zero, against the FRESH number',
+     /if \(m\.delta < 0 && vaultStock\[m\.ref\.path\] < 0\) throw `Not enough stock in Vault for \$\{m\.name\}`/.test(te));
+  ok('the consignment audit reads the van inside its transaction too',
+     /await runTransaction\(db, async \(t\) => \{\s*const agentDoc = agentRef \? await t\.get\(agentRef\) : null;/.test(te));
+  ok('REGRESSION: the engine writes van cargo ONLY inside a transaction (never batch / updateDoc)',
+     !/batch\.update\([^)]{0,40}\{ activeCanvas:/.test(te) && !/updateDoc\([^)]{0,40}\{ activeCanvas:/.test(te) &&
+     (te.match(/t\.update\(agentRef, \{ activeCanvas:/g) || []).length === 2,
+     'reading a van and writing its whole cargo list in a batch erased a captain\'s load that landed in between');
+}
+section('100 USERS. One notifications download per phone, not two (row 7)');
+{ const sync = code(read('src/hooks/useDatabaseSync.js'));
+  ok('REGRESSION: useDatabaseSync opens no notifications listener (App.jsx systemNotifs feeds the bell)',
+     !/collection\(db, basePath, 'notifications'\)/.test(sync) && !/setNotifications/.test(sync),
+     'it downloaded the same 7 days again on every phone, filtered on fields no notification has, and nothing read it');
+  ok('and App.jsx still has the one that feeds the bell',
+     /setSystemNotifs\(snap\.docs\.map/.test(app));
+}
+section('Permissions. The backup copy of the matrix is replaced, never merged (row 5)');
+{ const sv = code(read('src/components/SettingsView.jsx'));
+  ok('REGRESSION: the appSettings backup is written WITHOUT merge',
+     /setDoc\(doc\(db, `artifacts\/\$\{appId\}\/users\/\$\{userId\}\/appSettings`, 'permission_matrix'\), payload\);/.test(sv) &&
+     !/appSettings`, 'permission_matrix'\), payload, \{ merge: true \}\)/.test(sv),
+     'a merge deep-merges `matrix`, so a deleted tier kept its permissions in the backup');
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
