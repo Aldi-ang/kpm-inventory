@@ -2,9 +2,9 @@
 
 **Paste this to start (it downloads FIRST - the PC copy of this file is stale until the pull):** `/alucard First run in PowerShell: git status -sb; git pull origin phase0-solid-ground - if git refuses because of local changes, show me the list and stop. Then open the .claude/NEXT-SESSION.md you just pulled and do the ONE JOB at its top.`
 
-**2026-10-19 14:40 — THE ONE JOB: after he says the rules are published, sync the baseline; then build what his Blaze answer unlocks.**
+**2026-10-19 ~14:30 (rules published + baseline synced 14:43) — THE ONE JOB: the two offline gaps (Blaze waits until the app is rented).**
 - ANSWERED 14:50: Blaze = NO until the app is rented (so do the "Blaze no" line below: the two offline gaps); intake desk landed value = keep as notes (already display-only, nothing to change).
-- Step 0: PROGRESS.md top entry - has he published rules CHANGE 16 (`sales_stats` for salesmen)? If not said, ask once; the offline-gap work does not wait for it.
+- DONE 14:43: rules CHANGE 16 published by Aldi (~14:41) and `firestore.rules.deployed-baseline` synced. Step 0: PROGRESS.md top entry - did his salesman test sale go through? If he says no, that comes before the offline gaps.
 - Rules published -> copy `firestore.rules` over `firestore.rules.deployed-baseline`, update the header block at the top of both ("PUBLISHED <date> by Aldi ... + 16 (sales_stats)"), commit "Rules published by Aldi". Same as commit 0217969.
 - Blaze yes -> row 1: (a) turn `usePhotoStorage` on and check `storage.rules` exist (photos leave the sale docs: Rp 20.6 jt of the Rp 21.8 jt/month at 100 people); (b) a salesman's sales listener scoped to his own sales - composite index (agentId + timestamp) deployed by him FIRST, audit the 13 screens that receive `transactions`. Re-run `load-test/hundred-users.mjs` and update the numbers in `.claude/cost-sim/kpm-running-cost.html` (artifact https://claude.ai/artifact/H4ZyaEkJFyy1LTQDaaBEtd; republish from that file path, or with `url` from a new conversation after an Artifact read).
 - Blaze no -> say plainly: Spark cannot carry 100 people with any code (both fixes still need 1.99 M reads a day vs 50 k free); fix the two offline gaps instead (HQ vault sale offline never deducts HQ stock; offline consignment audit never returns goods to the van).
