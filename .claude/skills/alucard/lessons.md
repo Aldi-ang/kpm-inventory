@@ -253,6 +253,8 @@ Fired: 2026-10-05 (the brief said reuse useScenePlayer "where it fits" - read it
 Fired: 2026-10-10 (the handoff said "Journey Plan / Day Replay read today, his worry is real" - checked in code: the replay already has a date picker (DayReplay.jsx:303), so the worry is right for Journey and half right for the replay)
 
 Fired: 2026-10-13 (the brief said "restore at App.jsx:4153 already takes data.mapBorders || data.mapSettings" - read, it wrote borders into the unread mapBorders folder and `{ id: d.id, ...d.data() }` let the border's own id overwrite the bnd_ doc id; a round-trip check bnd_17 -> file -> bnd_17 was written instead of trusting it. Same session, a behaviour check fed dayLog raw Dates where the client reads timestamp.seconds and saw every sale at 07:00 - a fixture must carry the shape the app READS, not the shape the writer sent)
+Fired: 2026-10-20 06:46 (the brief's offline-vault diagnosis was re-proved RED before the fix: hundred-users section F failed 5 of 6 on the old code)
+
 ### 2026-08-30 — write NEXT-SESSION.md BEFORE PROGRESS.md, not after
 
 **Status:** LIVE
@@ -736,6 +738,8 @@ Fired: 2026-09-08 (fired on its own session: the sandbox-settings diff came back
 Fired: 2026-09-09 (the new canPickFromGallery behaviour checks call injectDynamicPermissions, which mutates ROLE_PERMISSIONS for everything after them — placed the block LAST in logicFixes.selfcheck.mjs and said so in a comment, so no later section inherits the injected matrix)
 Fired: 2026-10-13 08:10 (the shared-list check imports both real modules and compares identity, not a copy of the list)
 
+Fired: 2026-10-20 06:46 (settleVault + movesFromSale are pure - no module state, so section order cannot scope them)
+
 ### 2026-09-09 — a number or a selected-state read off a screenshot is not evidence, it is a guess
 **Status:** LIVE
 **Trigger:** before writing down any finding whose evidence is a digit, a total, or which control
@@ -808,6 +812,8 @@ Fired: 2026-10-05 (Day Replay brief read whole: 12:50 / 12:45 / 10:55 / 06:00 / 
 Fired: 2026-10-11 07:25 (the sound-bake brief read whole: its 22:26 block ("ASK, not build" for the capybara + intro) overrides the 22:05 block's capy1..4 + vault-intro bake - the later block won)
 Fired: 2026-10-12 (batch-2 brief read whole: the 18:10 / 18:12 / 18:20 blocks chained; item 5 listed as a pure bug turned out a design pick (App.jsx:4552), said so)
 Fired: 2026-10-13 (demo brief read whole: 20:05 block + queue agree; no test answers in PROGRESS, so design first)
+
+Fired: 2026-10-20 06:46 (NEXT-SESSION read top block first; the 14:30 block's "Blaze no" line names the same two gaps and is superseded by the 19:20 job)
 
 ### 2026-09-26 — an output path built from import.meta.url needs fileURLToPath, never URL.pathname
 **Status:** LIVE
@@ -1168,13 +1174,6 @@ Seen: 2026-10-05
 Fired: 2026-10-05 21:10 (walk-fullscreen.mjs: freeze() reads the seek back in the same evaluate; stale-bundle guard first - 4 rebuilds, never a stale run)
 Fired: 2026-10-11 14:03 (?capy lab: play() wrap + idle-timer clamp read back in the same evaluate before the tap; lab bundle built after the last source edit)
 
-### 2026-10-05 — a swap test switches to an input SMALLER than the one on screen
-**Status:** RETIRED (2026-10-19) — never fired in 14 days; no data-swap control was built since (presentation work only). Its walk lives on in the Day Replay fullscreen swap walk (Budi 11 -> Ari 3).
-**Trigger:** before a completion claim on any control that replaces the data a view shows (a man picker, a day picker, a tab that swaps a list) - the moment the walk's swap step is written.
-**Lesson:** swap to an input with FEWER items than the current one (fewer stops, fewer rows), not just a different one. State kept per position (a phase string 's8', a picked index, a scroll offset) survives the swap and is read against the new, shorter data before the next frame corrects it. Reset that state when its source changes (React's adjust-during-render), and make the walk prove it.
-**Would have prevented:** the Day Replay's date picker shipped in kpm `a4afcf2` (2026-10-05 16:20) with a latent crash - a day with fewer stops read `stops[8].kind` and blanked the whole page; its 38/38 walk never changed the day. Found only at 21:05 by the fullscreen swap walk (Budi 11 stops -> Ari 3), fixed in `50d98a9`.
-Seen: 2026-10-05
-
 ### 2026-10-06 — a test drag goes at finger speed, or the tap after it is testing a fling
 **Status:** LIVE
 **Trigger:** before writing a drag into a walk script (CDP `Input.dispatchTouchEvent` / `dispatchMouseEvent`) - the moment touchStart / touchMove / touchEnd are typed.
@@ -1184,7 +1183,7 @@ Seen: 2026-10-06
 Fired: 2026-10-12 (drag probe: 40 steps of 4 px with 8 ms gaps, held 120 ms before the end)
 
 ### 2026-10-06 — an `if false` under a catch-all is not a lock; read the parent match before quoting a rule as a guarantee
-**Status:** LIKELY
+**Status:** RETIRED (2026-10-20) — never fired in 14 days; no rules line has been quoted to Aldi or a customer page as a guarantee since. Platitude, not structural: a check cannot tell a quote from a citation.
 **Trigger:** before a completion claim — the moment a rules line (`allow ... if false`, a region check) is about to be quoted to Aldi or put on a customer page as "X cannot happen".
 **Lesson:** Firestore rules OR together. Walk up from the line to every enclosing `match`, above all a `/{document=**}` catch-all, and name who it lets through; the claim becomes "cannot, except <who>".
 **Would have prevented:** 2026-10-06, the round-3 brief (NEXT-SESSION 09:21) told the Cello presentation to say sales records "cannot be edited or deleted" from `firestore.rules:557`; the owner catch-all at :343 grants exactly that. A false Bukti nearly went onto a paying customer's page.
@@ -1201,6 +1200,8 @@ Fired: 2026-10-11 07:25 (every stamp in this session's vault + PROGRESS + NEXT-S
 Seen: 2026-10-11 19:48 (missed: round-8 notes stamped 19:55 / 19:58 from a guess while the clock said 19:48 - the date call ran only AFTER the commit; fixed in kpm f1fa3c4 + vault 8f08cb2)
 Seen: 2026-10-12 18:09 (missed again: PROGRESS + NEXT-SESSION stamped "18:20" and "18:05" from a guess, the clock said 18:09 / 18:03 - fixed in a follow-up notes commit. Fifth time: this wants a hook that rejects a typed future time in a stamp line, not more prose)
 
+Fired: 2026-10-20 06:46 (every stamp this session came from new Date() in Asia/Jakarta inside the writing script)
+
 ### 2026-10-10 — a vault commit names its files; never `commit -a`, and read what is already staged
 **Status:** LIVE
 **Trigger:** before a mutating action that commits in the A-Brain repo (a note, an index line) - the moment `git commit` is typed.
@@ -1208,6 +1209,8 @@ Seen: 2026-10-12 18:09 (missed again: PROGRESS + NEXT-SESSION stamped "18:20" an
 **Would have prevented:** 2026-10-10, the demo session: `git commit -qam` on a one-line stamp fix swept in `Raw/2026-10-05-map-system/built/pc-area.png`; the redo with `reset --soft` still carried `pc-card-tools.png`, which was already staged - two unrelated pictures in "my" commits, one of them still there (`60d0f57`).
 Seen: 2026-10-10
 Fired: 2026-10-11 07:25 (vault commit: the three notes added by name, `git diff --cached --stat` read before the commit)
+
+Fired: 2026-10-20 06:46 (vault commit adds the archive + brainstorm note by name, staged stat read first)
 
 ### 2026-10-11 — a studio that holds a DECIDED card has no button that resets every card
 **Status:** LIKELY
