@@ -21,7 +21,8 @@ const ev = async (expr) => { const r = await send('Runtime.evaluate', { expressi
   return r.result?.exceptionDetails ? 'EXC ' + (r.result.exceptionDetails.exception?.description || r.result.exceptionDetails.text) : r.result?.result?.value ?? r.result?.result?.unserializableValue; };
 await send('Page.enable'); await send('Runtime.enable');
 await send('Emulation.setDeviceMetricsOverride', { width: +w, height: +h, deviceScaleFactor: 1, mobile: touch });
-if (touch) await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+if (touch) { await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+  await send('Emulation.setEmulatedMedia', { features: [{ name: 'pointer', value: 'coarse' }, { name: 'hover', value: 'none' }] }); }
 await send('Page.navigate', { url: url + '?drag=' + w + '#nointro' }); await sleep(3000);
 /* the lift, read inside the page the moment it happens: the time and where the wheel stood (pointerup, capture phase) */
 await ev(`addEventListener('pointerup', () => { window.__up = performance.now(); window.__lift = wTheta; }, true)`);
@@ -55,8 +56,18 @@ if (touch) {
   await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] }); await sleep(900);
   lock[1] = Math.round((await ev('scrollY + (visualViewport ? visualViewport.offsetTop : 0)')) - y0); lock[3] = await ev('window.__pc');
 }
-let fails = 0;
-const ok = (name, pass, got) => { if (!pass) fails++; console.log((pass ? 'PASS ' : 'FAIL ') + name + '  (' + got + ')'); };
+/* his "on the phone the carousel screen is still not fixed ... make it fixed so that it is unslideable vertically": on a
+   touch phone held upright the wheel page itself is locked (no scroll, no bounce, from any touch); sideways it still
+   scrolls (the page is taller than the screen there); an open slide scrolls again */
+const pageLock = () => ev(`[getComputedStyle(document.documentElement).overflowY, getComputedStyle(document.querySelector('.hubsec')).touchAction].join(' ')`);
+const coarse = await ev(`matchMedia('(hover: none) and (pointer: coarse)').matches`);
+const lockHub = await pageLock();
+const lockSlide = touch ? await ev(`(async () => { soloOn(scenes[0]); await new Promise((r) => setTimeout(r, 300)); const v = getComputedStyle(document.documentElement).overflowY; soloOff(); await new Promise((r) => setTimeout(r, 900)); return v; })()`) : '';
+let fails = 0, total = 0;
+const ok = (name, pass, got) => { total++; if (!pass) fails++; console.log((pass ? 'PASS ' : 'FAIL ') + name + '  (' + got + ')'); };
+if (touch && +h > +w) ok('upright phone: the wheel page cannot slide at all', lockHub === 'hidden none', lockHub + '; touch media ' + coarse);
+if (touch && +w > +h) ok('sideways phone: the page still scrolls (taller than the screen)', !lockHub.startsWith('hidden'), lockHub);
+if (touch) ok('an open slide scrolls again', lockSlide !== 'hidden', lockSlide);
 ok('slow 120 px drag turns the wheel about two thirds of a card', slowDrag >= .5 && slowDrag <= .9, slowDrag + ' cards under the finger, ' + slowCards + ' after it settles');
 ok('hard flick stays within three cards of the start', flickCards >= .5 && flickCards <= 3.5, flickCards + ' cards');
 ok('after the lift it glides, no jumps (max step per frame)', flickStep <= 3, flickStep + ' deg');
@@ -64,5 +75,5 @@ ok('touches on the wheel belong to the wheel (touch-action)', lock[0] === 'none'
 ok('a steep swipe on the wheel does not move the page', lock[1] === 0, `page moved ${lock[1]} px; page ${lock[2]} px tall, screen ${h}`);
 ok('a steep swipe is not taken from the wheel (no pointercancel)', !lock[3], (lock[3] ?? 'mouse, n/a') + ' cancels');
 ok('no script errors', !errors.length, errors.join(' | ') || 'none');
-console.log(`${w}x${h} ${touch ? 'touch' : 'mouse'}: ${7 - fails}/7`);
+console.log(`${w}x${h} ${touch ? 'touch' : 'mouse'}: ${total - fails}/${total}`);
 chrome.kill(); process.exit(fails ? 1 : 0);

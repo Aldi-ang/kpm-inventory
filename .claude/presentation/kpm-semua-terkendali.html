@@ -837,6 +837,13 @@ html:not(.solo):not(.showall) #hubBtn, html.solo #wBack, html.showall #wBack { d
    #all shows every slide stacked (tests, and a way to scroll the whole deck). */
 html:not(.solo):not(.showall) main > .scene { display: none; }
 html.solo .hubsec { display: none; }
+/* his 2026-10-19 "on the phone the carousel screen is still not fixed ... make it fixed so that it is unslideable vertically":
+   on a touch phone held upright the wheel page does not scroll or bounce from ANY touch (the wheel's own touch-action only
+   covered swipes that start on it). Sideways the page is taller than the screen, so it keeps scrolling there; slides scroll. */
+@media (hover: none) and (pointer: coarse) and (orientation: portrait) {
+  html:not(.solo):not(.showall):not(.intro-on), html:not(.solo):not(.showall):not(.intro-on) body { overflow: hidden; overscroll-behavior: none; }
+  html:not(.solo):not(.showall) .hubsec, html:not(.solo):not(.showall) .bar { touch-action: none; }
+}
 html.solo main > .scene:not(.solo-on) { display: none; }
 /* the slide picker (his 2026-10-18 ask, from a framer-motion nav): a dot that shows the slide number; tap = it springs open into a strip
    of all 23 slides that slides sideways; 2.5s untouched = it folds back into the dot. The pill opens from the centre like a curtain,
