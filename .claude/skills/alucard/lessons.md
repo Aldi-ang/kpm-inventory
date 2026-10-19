@@ -1291,3 +1291,11 @@ Seen: 2026-10-15
 **Would have prevented:** 2026-10-18 14:57, A-Brain `223f56a` shipped two index lines reading `$L`; the read-back printed it, but the commit had already run in the same chain - fix commit `5733ca4`. 2026-10-19 06:55 and 07:00: two `node -e` edits of `tests/pc-drag.mjs` - one wrote `await ev();` (the backtick string ran as a command), one aborted the whole batch; 3 extra runs.
 Seen: 2026-10-18, 2026-10-19
 Fired: 2026-10-18 15:17 (model-switcher links: `awk -v` insert, read back in its own call, commit `55be9dc` only after the three lines printed right)
+
+### 2026-10-19 — a new rules CHANGE number comes from a grep of the file, not from memory
+**Status:** LIKELY
+**Trigger:** before writing a new commented block into firestore.rules (any "[CHANGE n" label) - grep "CHANGE [0-9]" in the file and take the highest plus one.
+**Lesson:** the rules draft numbers its changes, and a published change keeps its number in the live text. A number picked without looking can repeat one that is already live, and every note, commit and question that cites it then points at two different rules.
+**Would have prevented:** 2026-10-19, the sales_stats block shipped in kpm 363cea9 as "CHANGE 15" while the live Missed-list rule is already CHANGE 15; PROGRESS.md, the vault note and the commit message all said 15 before b43a9bb renumbered it to 16 - the 363cea9 message still says 15.
+Seen: 2026-10-19
+Fired:
