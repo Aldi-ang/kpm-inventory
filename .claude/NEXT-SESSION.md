@@ -2,7 +2,15 @@
 
 **Paste this to start (it downloads FIRST - the PC copy of this file is stale until the pull):** `/alucard First run in PowerShell: git status -sb; git pull origin phase0-solid-ground - if git refuses because of local changes, show me the list and stop. Then open the .claude/NEXT-SESSION.md you just pulled and do the ONE JOB at its top.`
 
-**2026-10-19 09:05 — THE ONE JOB: fix the row Aldi picked from the ranked table. Diagnosis is DONE - do not redo it.**
+**2026-10-19 09:45 — THE ONE JOB: read his answers, then do row 1 (or the two offline gaps). Rows 2, 3, 5, 7 are DONE in kpm `363cea9`; the 100-phone test is `load-test/hundred-users.mjs` (14/14).**
+- Step 0: PROGRESS.md top entry has his answers to: 🔴 Blaze yes/no; ❓ excise in cost (row 4); 🔴 deploy rules CHANGE 15 (sales_stats) before c0a510f reaches main. No answers -> ask those three once, build nothing.
+- Row 1 (only after Blaze): (a) turn on `usePhotoStorage` so proof photos leave the sale docs (Storage needs Blaze); (b) scope a salesman's transactions listener to his own sales - needs a composite index (agentId + timestamp) deployed by him first, and an audit of the 13 screens that receive `transactions` (Journey, Map, Receivables may read other agents' sales on purpose). Re-run the load test after.
+- Found, not fixed: an ADMIN vault sale made offline never deducts HQ stock (offline branch only handles a van); an offline consignment audit never puts returned goods back on the van. Both: useTransactionEngine offline branches + App.jsx drain.
+- Row 6 skipped on purpose: splitting the monthly tally per salesman multiplies READS on Spark; nothing is lost today (test C exact).
+- Run emulator tests with `npm i --no-save @firebase/rules-unit-testing@5` first (v6 needs firebase 13).
+- kpm is ~31 commits ahead of GitHub; push only on his word "push". Then rewrite this file.
+
+**2026-10-19 09:05 — DONE 09:45 (rows 2,3,5,7 in 363cea9). THE ONE JOB: fix the row Aldi picked from the ranked table. Diagnosis is DONE - do not redo it.**
 - Step 0: read PROGRESS.md's top entry for his pick. The table (7 rows, file:line per row, fix size, what is [certain] and what is [guessing]) is in A-Brain `Brainstorm/2026-10-19_app-bugs-and-100-users-check.md`. No pick there -> ask once, verbatim: 🔴 *"which row first - 1 (every phone downloads everyone's sales and photos), 2 (van cargo overwritten), 3 (HQ stock overwritten), or the emulator load test first?"* and build nothing.
 - Also unanswered: ❓ Spark or Blaze (Firebase console, bottom-left). Row 1's urgency depends on it: Spark = the whole company is locked out for the day at ~100 users; Blaze = a bill.
 - Row 3 is the small one: `useTransactionEngine.js:371` writes `stock: update.newStock` from a getDoc read; restock/opname write the same field with `increment()`. Fix = transaction, check stock inside it, write `increment(-qtyInBks)`. Same for the buyback line above it. Leave a regression line in `src/config/logicFixes.selfcheck.mjs`.

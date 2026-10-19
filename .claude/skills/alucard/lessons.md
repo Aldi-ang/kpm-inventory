@@ -1092,29 +1092,6 @@ Fired: 2026-10-15 07:40 (cloud build: skill-index's `/\\/g` and cloud-start's `w
 Seen: 2026-10-02
 Fired: 2026-10-02 (phone sweep: the low-stock strip over the Command Center frame was left alone and shot around, no node touched)
 
-### 2026-10-02 — inline Python on this machine is `py -3` or node, never bare `python`
-**Status:** RETIRED (2026-10-18) — never fired in 14 days; no inline Python run since 2026-10-02; node one-liners and Edit took its place
-**Trigger:** before a mutating action run as inline Python through Bash (`python - <<EOF`, `python -c`) - a splice, a rewrite, a config edit.
-**Lesson:** bare `python` here can resolve to the Windows Store alias, which waits for input instead of running, and an `||` fallback never fires because nothing fails. Use `py -3`, a `node -e` one-liner, or the Edit tool (two anchored Edits beat any script for a config splice).
-**Would have prevented:** 2026-10-02, the lab Tailwind splice: `python - <<'EOF' ... || py -3 - <<'EOF2'` hung the full 120 s, went to the background, needed a TaskStop, and the edit was then done with two Edits anyway.
-Seen: 2026-10-02
-Fired:
-
-### 2026-10-02 — a caption that says what a tap DOES comes from the handler, not from the size
-**Status:** RETIRED (2026-10-18) — never fired in 14 days; no board captioned a tap consequence since; purpose cannot be measured, so it cannot become a check
-**Trigger:** before sending a board or a ranking whose caption names the consequence of pressing a control ("easy to tap the wrong one", "loses the sale", "opens X").
-**Lesson:** the audit measures size, never purpose. Read the control's handler first (one grep for its `onClick`/`onPointerDown`) and write the consequence from that code; an info lamp, a hint and an action button at the same 32 px are three different faults.
-**Would have prevented:** 2026-10-02, phone sweep board #3: "easy to tap the wrong one" on the Cloud / USB / Save point lamps, which only show a hint (`SafetyStatus.jsx:80`). Caught after sending - a corrected board re-sent, a second vault commit, and the caption and note rewritten before he answered.
-Seen: 2026-10-02
-Fired:
-
-### 2026-10-03 — "not found online" is not "the other source invented it"
-**Status:** RETIRED (2026-10-18) — never fired in 14 days; one-off (the Gemini fact-check page); a platitude as written
-**Trigger:** before a completion claim that says where a term, definition or fact came from - the moment a reply is about to say another AI, a website or a person "made it up".
-**Lesson:** say only what was checked ("not found online") and ask whose word it is. A trade term that matches his vocabulary may have come from him, earlier in the very chat being checked.
-**Would have prevented:** 2026-10-03, Gemini fact-check page v1: I told Aldi Gemini made up "keluwasen" and "ngrapak"; he answered *"its not gemini own meaning"* - the meanings matched his. One correction round, and a wrong verdict ("belum dicek") shipped on the page.
-Seen: 2026-10-03
-
 ### 2026-10-03 — a motion sample's baseline is the rest state BEFORE the trigger, never the animation's own first frame
 **Status:** LIVE
 **Trigger:** before claiming a tap, hover or state-change animation is smooth or correct from frozen samples — the moment the sample loop is written.
@@ -1165,13 +1142,6 @@ Fired: 2026-10-05 (sign hold probe: every word count requires words > 0 in the D
 Seen: 2026-10-04
 Fired: 2026-10-04 (signs brightness at deviceScaleFactor 2: crop scaled by naturalWidth / 1440 before any pixel read)
 
-
-### 2026-10-04 — a frozen-frame sheet whose sprites overflow their cells shows the neighbour's motion
-**Status:** RETIRED (2026-10-18) — never fired in 14 days; no sprite sheet shot since 2026-10-04; too narrow to become a check
-**Trigger:** before calling an animation wrong (its direction, side or place) from a sheet of frozen frames laid side by side.
-**Lesson:** a part that travels outside its own box (`overflow: visible`) lands in the NEXT cell, where it reads as that frame's part on the wrong side. Give each cell room for the part's whole travel (or clip each cell), and read the moving element's rect against its own svg before naming a bug.
-**Would have prevented:** 2026-10-04, visit signs: the first moments sheet (54 px cells) showed Stock Full's bounced pack on the RIGHT of the shelf, and the act was about to be "fixed". One probe read the pack at x = -7 units (left, correct); the sheet was the fault. One extra probe + shooter run, and a near-miss wrong edit to a correct act.
-Seen: 2026-10-04
 
 ### 2026-10-05 — a Leaflet marker missing from the DOM is not a marker missing from the map
 **Status:** LIVE
