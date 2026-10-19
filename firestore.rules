@@ -558,7 +558,7 @@ service cloud.firestore {
       }
 
       // =====================================================================
-      // [CHANGE 15 — 2026-10-19, DRAFT, NOT DEPLOYED] sales_stats: the month's sales tally.
+      // [CHANGE 16 — 2026-10-19, DRAFT, NOT DEPLOYED] sales_stats: the month's sales tally.
       // Every sale writes it IN THE SAME WRITE as the receipt (src/utils/salesRollupWrite.js,
       // since c0a510f 2026-08-30), so a salesman must be allowed to. With only the catch-all above
       // covering it (owner / T1 / T2), the emulator refuses a salesman's whole sale - receipt, van

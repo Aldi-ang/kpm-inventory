@@ -50,3 +50,4 @@ tools/sfx-draft/
 
 # Alucard's own old backup of his skill file; the live SKILL.md is versioned
 .claude/skills/alucard/*.bak
+.claude/cost-sim/preview.html
