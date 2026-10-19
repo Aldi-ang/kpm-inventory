@@ -1317,7 +1317,7 @@ Seen: 2026-10-15
 ### 2026-10-18 — a read-back that prints the inserted line must GATE the commit, not ride in the same command
 **Status:** LIVE
 **Trigger:** before a mutating action that inserts text into a vault or repo file with sed/awk and commits it - the moment the insert and `git commit` are about to share one `&&` chain.
-**Lesson:** `sed "174a\\$L"` in double quotes hands sed a literal `$L` (the backslash escapes the `$`). Insert with Edit (or `awk -v`), read the line back in its own call, and commit only after reading it.
-**Would have prevented:** 2026-10-18 14:57, A-Brain `223f56a` shipped two index lines reading `$L`; the read-back printed it, but the commit had already run in the same chain - fix commit `5733ca4`.
-Seen: 2026-10-18
+**Lesson:** `sed "174a\\$L"` in double quotes hands sed a literal `$L` (the backslash escapes the `$`). Insert with Edit (or `awk -v`), read the line back in its own call, and commit only after reading it. Same family: never pass JS with template literals (backticks, `${}`) through a double-quoted `node -e "..."` - bash runs the backticks as command substitution. Code text goes in with Edit or a script file.
+**Would have prevented:** 2026-10-18 14:57, A-Brain `223f56a` shipped two index lines reading `$L`; the read-back printed it, but the commit had already run in the same chain - fix commit `5733ca4`. 2026-10-19 06:55 and 07:00: two `node -e` edits of `tests/pc-drag.mjs` - one wrote `await ev();` (the backtick string ran as a command), one aborted the whole batch; 3 extra runs.
+Seen: 2026-10-18, 2026-10-19
 Fired: 2026-10-18 15:17 (model-switcher links: `awk -v` insert, read back in its own call, commit `55be9dc` only after the three lines printed right)

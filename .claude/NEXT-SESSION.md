@@ -2,6 +2,8 @@
 
 **Paste this to start (it downloads FIRST - the PC copy of this file is stale until the pull):** `/alucard First run in PowerShell: git status -sb; git pull origin phase0-solid-ground - if git refuses because of local changes, show me the list and stop. Then open the .claude/NEXT-SESSION.md you just pulled and do the ONE JOB at its top.`
 
+**2026-10-19 07:07 UPDATE: v33 is LIVE (artifact version 30 = kpm `5608ab1`)** - drag .09 deg/px (~175 px per card), flick cap 60 deg/s, default spin 5 deg/s (1.25 under the mouse), and the wheel's `touch-action: none` so a swipe on it never scrolls the page or gets cancelled (his *"more less sensitive ... make the spin slower on default ... make the screen fixed when on the carousel"* + *"the sliding feels bad on the phone"*). `tests/pc-drag.mjs` 7/7 at 390 touch, 1440 mouse, 844x390 sideways; `pc-hover.mjs` 6/6. Ask how it FEELS on his phone now; if still too much, the knobs are the `.09` in the wheel's pointermove, the 60 cap in `wUp`, and `5` / `1.25` in `wLoop`.
+
 **2026-10-19 06:56 UPDATE: v32 is LIVE (artifact version 29 = kpm `b100c4b`)** - the wheel drags at half the rate (~100 px per card) and a lift glides at most two cards with no jump (his *"reduce the sensitivity on scrolling the carousel it is too sensitive and move too much"* + *"i want it to be slower and smoother"*). Probe: `node .claude/presentation/tests/pc-drag.mjs <file url> <out dir> 390 844` (touch) and `1440 900` (mouse) -> 4/4. The job below is the same, for v32: ask how it looks AND feels (drag on the phone).
 
 **2026-10-19 06:30 — THE ONE JOB: his verdict on v31, which is LIVE (https://claude.ai/artifact/AJQ36jBJr4jkkn6ZUnRN4A, artifact version 28 = kpm `7745a9f`).**
