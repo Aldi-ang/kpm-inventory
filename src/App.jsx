@@ -4835,6 +4835,12 @@ const handleGitHubMirror = async () => {
                         Lost your key?
                     </button>
                 </div>
+                {/* his 2026-10-19 "i cant even change account to my salesman account": this screen had no way
+                    out but the password. handleLogout ends the vault pass and waits for the sign-out. Its own
+                    line: beside the other two it overflowed the 320px card on a phone. */}
+                <button type="button" onClick={handleLogout} style={{ touchAction: 'manipulation' }} className="mt-[3px] py-1 text-[8.5px] tracking-[0.16em] text-[var(--shell-ink-3)] hover:text-[var(--shell-ink-2)] transition-colors">
+                    Use another account
+                </button>
                 <UpdateStatus className="mt-[7px] text-[8.5px] tracking-[0.16em] text-[var(--shell-ink-3)]" />
               </form>
             </div>

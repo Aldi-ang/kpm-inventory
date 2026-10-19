@@ -9737,6 +9737,19 @@ for (const f of ['src/App.jsx', 'src/components/BiohazardTheme.jsx']) {
      /import \{[^}]*\bclearGrace\b[^}]*\} from '[./]+utils\/vaultGrace(\.js)?';/.test(s) &&
      body.includes('signOut(auth)') && body.indexOf('clearGrace()') > -1 && body.indexOf('clearGrace()') < body.indexOf('signOut(auth)'));
 }
+/* 2026-10-19 his "when i logout it autolog me again i cant even change account to my salesman account": the side
+   menu reloaded the page without waiting for signOut, so the saved login survived the reload; and the Master Vault
+   screen had no way to another account at all. */
+{ const s = code(read('src/components/BiohazardTheme.jsx')).replace(/\r/g, '');
+  const h = s.slice(s.indexOf('const handleLogout = async () => {'));
+  const body = h.slice(0, h.indexOf('};') + 2);
+  ok('REGRESSION: the side-menu logout WAITS for signOut before it reloads the page',
+     /await signOut\(auth\);/.test(body) && body.indexOf('await signOut(auth)') < body.indexOf('window.location.reload()'));
+  const a = code(read('src/App.jsx')).replace(/\r/g, '');
+  const foot = a.slice(a.indexOf('Lost your key?') - 400, a.indexOf('Lost your key?') + 900);
+  ok('the Master Vault screen offers "Use another account", through the logout that waits',
+     /<button type="button" onClick=\{handleLogout\}[^>]*>\s*Use another account\s*<\/button>/.test(foot));
+}
 
 /* ── POTATO 5: THE RESTOCK NOTICE BREATHES BY OPACITY (2026-10-01) ────────────────────────────────────────────────────
    Animating border-color repainted the whole box every frame: Restock Vault 45% -> 4% idle CPU (6x-slow phone). The
@@ -9858,7 +9871,8 @@ await (async () => {
   const m = read('src/main.jsx').replace(/\r/g, ''), us = code(read('src/components/UpdateStatus.jsx')).replace(/\r/g, '');
   ok('both doors show it: under Sign in with Google, and under the vault\'s Fingerprint row; main.jsx hands the helper over',
      /Sign in with Google\s*<\/button>\s*<\/div>\s*<UpdateStatus /.test(bt) &&
-     /Lost your key\?\s*<\/button>\s*<\/div>\s*<UpdateStatus /.test(a) &&
+     /* 2026-10-19 "Use another account" got its own line under the row; the version line sits under that */
+     /Lost your key\?\s*<\/button>\s*<\/div>[\s\S]{0,700}?Use another account\s*<\/button>\s*<UpdateStatus /.test(a) &&
      /onRegisteredSW\(_url, r\) \{ if \(r\) \{ setRegistration\(r\);/.test(m));
   ok('the line asks for an update, reports a download that dies, is read out to screen readers, and never spins in Lite Mode',
      /await r\.update\(\)/.test(us) && /w\.state === 'redundant'\) say\('failed'\)/.test(us) && /role="status" aria-live="polite"/.test(us) &&

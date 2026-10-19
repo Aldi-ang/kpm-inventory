@@ -285,7 +285,10 @@ export default function BiohazardTheme({
     const handleLogout = async () => {
         if(await confirmAction("Terminate Session?")) {
             clearGrace();   // the 5-minute vault pass ends with the session - or signing back in skips the vault
-            signOut(auth);
+            /* WAIT for it. signOut removes the saved login from the browser's storage, and a reload fired
+               before that finishes keeps it - the page came back signed in as the same account (his
+               2026-10-19 "when i logout it autolog me again"). */
+            await signOut(auth);
             window.location.reload();
         }
     };
