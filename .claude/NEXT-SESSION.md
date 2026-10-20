@@ -7,7 +7,7 @@
 - The grant unit is the KECAMATAN (his answer 2), so P1 must leave every pinned shop with a canonical Provinsi / Kabupaten / Kecamatan - not only a Kabupaten.
 - P1 = (a) one spelling per area (uppercase, the directory form's own SSOT rule, `CustomerManager.jsx` handleSubmit ~line 978) so "JAWA TENGAH" and "Jawa Tengah" are one folder; (b) every new shop gets Provinsi / Kabupaten / Kecamatan from its GPS pin + the map borders when saved - the terminal's new-outlet form (`MerchantSalesView.jsx` ~930 and ~956) and the offline/online storePayload in `useTransactionEngine.js` carry NONE today; reuse `checkPointInGeoJSON` + `sortedBorders` from CustomerManager.jsx (~19, ~378) - move them to a util both can import, do not copy; (c) a Tier 1 button that fills only EMPTY / unknown areas of old shops, shows the list first, and lists (never overwrites) a typed area the borders disagree with.
 - Traps: borders live in Firestore (`mapBorders` state, CustomerManager ~312) - the terminal does not load them yet; a shop with no pin keeps its typed area; P2's rule will deny a WHOLE query that could return one forbidden shop, so P1 must leave every shop with a canonical Kabupaten.
-- Also built and not pushed: `f39207c` (offline vault sale) + `a2bf766` (card count, shop price, WhatsApp number). Push only on his word.
+- Nothing waits to be pushed: `f39207c` (offline vault sale) through `1a62f01` (card count flips like the clock) are LIVE as `1e5fbdc` (pushed 2026-10-20 08:09). Push the P1 work only on his word.
 - Queue after P1: P2 access settings + rules (he publishes rules first), P3 NOO confirm, P4 change history, then the offline consignment audit/return job below.
 - Then rewrite this file with the next single job.
 
