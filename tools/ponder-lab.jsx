@@ -1277,6 +1277,38 @@ function CapyLab() {
   );
 }
 
+/* ?controls - every Settings control that wore an amber fill, with the real classes, both states side by side:
+   his 2026-10-20 "can u fix all the buttons so that it look like that new button u just made". */
+function ControlsLab() {
+  const [a, setA] = React.useState(true), [b, setB] = React.useState(false), [sw, setSw] = React.useState(1);
+  return (
+    <div className="max-w-3xl mx-auto p-4">
+      <div className="kpm-mod live">
+        <div className="kpm-head"><span className="slot">Lab · 01</span>
+          <div className="line"><h3>Status badges</h3><span className="kpm-read on">On</span> <span className="kpm-read">Off</span> <span className="kpm-read on">6 defined</span></div>
+        </div>
+        <div className="kpm-shelf">
+          <div className="flex items-center gap-4">
+            <button type="button" className="kpm-toggle" aria-pressed={a} aria-label="lab on" onClick={() => setA(v => !v)}><span className="kpm-sw" aria-hidden="true" /></button>
+            <button type="button" className="kpm-toggle" aria-pressed={b} aria-label="lab off" onClick={() => setB(v => !v)}><span className="kpm-sw" aria-hidden="true" /></button>
+            <span className="kpm-desc">pill switches: on / off</span>
+          </div>
+          <ul className="kpm-picklist" role="listbox" style={{ position: 'static', width: '100%' }}>
+            <li role="option" aria-selected="false">T4: REGIONAL ADMIN</li>
+            <li role="option" aria-selected="true">T5: SALES CANVAS</li>
+            <li role="option" aria-selected="false" className="at">T6: SALES MOTORIST</li>
+          </ul>
+          <div className="kpm-switch" role="group" aria-label="lab switch">
+            <button type="button" aria-pressed={sw === 0} onClick={() => setSw(0)}>View only</button>
+            <button type="button" aria-pressed={sw === 1} onClick={() => setSw(1)}>View and edit</button>
+          </div>
+          <div className="kpm-acts"><button type="button" className="kpm-btn">Cancel</button><button type="button" className="kpm-btn key">Save</button></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ?shell&gate - the vault screen up INSIDE the real shell (App.jsx puts it in the shell's children, before the page),
    then a layer as high as it LATER in the page - where JourneyView's map keys sit - and a box drawn straight onto
    <body>, where the bell panel and the music player go. The probe asks the browser what is on top at each spot.
@@ -1333,6 +1365,7 @@ function AccessLab() {
 }
 
 createRoot(document.getElementById('root')).render(
+  q.has('controls') ? <ControlsLab /> :
   q.has('access') ? <><AccessLab /><ConfirmHost /><ToastHost /></> :
   q.has('capy') ? <CapyLab /> :
   q.has('share') ? <><ShareLab /><ConfirmHost /><ToastHost /></> :

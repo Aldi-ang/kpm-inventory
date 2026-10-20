@@ -164,7 +164,7 @@ export default function AuthoritySelect({ value, options, onChange, label }) {
                     style={{ left: box.left, width: box.width, top: box.top, bottom: box.bottom }}
                 >
                     {options.map((o, i) => (
-                        /* the tick is the state WITHOUT colour — the amber fill says the same thing
+                        /* the tick is the state WITHOUT colour — the gold word and rail say the same thing
                            to an eye that has it, and neither is load-bearing alone */
                         <li
                             key={o.value} id={`${id}-opt-${i}`} role="option"

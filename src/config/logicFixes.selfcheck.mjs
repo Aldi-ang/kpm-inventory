@@ -11624,5 +11624,19 @@ section('Switches: no amber slab, a sliding gold bar (his 2026-10-20 "i dont lik
      css.indexOf('.kpm-btn.key:disabled, .kpm-btn.key:disabled:hover') > css.indexOf('.kpm-btn.key:hover'));
 }
 
+section('Every Settings control matches the new switch - no amber slab (his 2026-10-20 "fix all the buttons so that it look like that new button")');
+{ const css = read('src/styles/theme.css');
+  ok('status badges (.kpm-read.on): dark plate, gold rim, gold word',
+     /\.kpm-read\.on\s+\{ color: var\(--accent-ink\); background: var\(--raised\); border-color: var\(--accent-edge\); \}/.test(css));
+  ok('the dropdown\'s chosen row (.kpm-picklist): dark row, gold word, gold rail - both selected rules',
+     (css.match(/li(?:\.at)?\[aria-selected="true"\] \{ background: var\(--raised\); color: var\(--accent-ink\);\s+border-left-color: var\(--accent-edge\); \}/g) || []).length === 2);
+  ok('pill switches (.kpm-sw): the track lifts to --raised (no gold flood) and the ON knob is the gold disc',
+     /\.kpm-sw::before \{[\s\S]{0,1200}?background: var\(--raised\);\s+clip-path: inset\(0 100% 0 0\);/.test(css) &&
+     /\[aria-pressed="true"\] > \.kpm-sw::after \{ transform: translateX\(18px\);\s+background: var\(--gold\);/.test(css));
+  ok('REGRESSION: none of the four Settings controls is a --gold fill any more',
+     !/\.kpm-read\.on\s+\{[^}]*background: var\(--gold\)/.test(css) && !/kpm-picklist > li[^{]*\{ background: var\(--gold\)/.test(css) &&
+     !/\.kpm-switch > button\[aria-pressed="true"\] \{ background: var\(--gold\)/.test(css));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

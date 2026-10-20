@@ -3146,7 +3146,9 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
 .kpm-read { font-family: var(--font-mono); font-size: 10px; letter-spacing: .14em;
   text-transform: uppercase; padding: 3px 7px; border: 1px solid var(--line-2);
   color: var(--ink-muted); white-space: nowrap; }
-.kpm-read.on     { color: var(--gold-ink); background: var(--gold); border-color: var(--accent-edge); }
+/* 2026-10-20 his "can u fix all the buttons so that it look like that new button": a dark plate with a gold rim
+   and the gold word, like the switch's chosen side - in the dark theme --gold is an amber slab */
+.kpm-read.on     { color: var(--accent-ink); background: var(--raised); border-color: var(--accent-edge); }
 .kpm-read.alert  { color: var(--danger-plate-ink); background: var(--danger-plate);
                    border-color: var(--danger); }
 
@@ -3446,15 +3448,15 @@ html.light [class~="hover:bg-[var(--gold)]"][class~="text-[var(--gold-ink)]"]:no
 .kpm-picklist > li > svg { flex: none; opacity: 0; }
 /* a MARK. The left rail is the rim here - the row is full width, so an outline all round
    would draw a box inside a list instead of marking one row of it. */
-.kpm-picklist > li[aria-selected="true"] { background: var(--gold); color: var(--gold-ink);
-  border-left-color: var(--gold); }
+.kpm-picklist > li[aria-selected="true"] { background: var(--raised); color: var(--accent-ink);
+  border-left-color: var(--accent-edge); }
 .kpm-picklist > li[aria-selected="true"] > svg { opacity: 1; }
 /* the ARROW-KEY cursor is a rail, not a fill — it has to stay legible ON the
    amber row, where a second background would say nothing */
 .kpm-picklist > li.at { background: var(--raised); color: var(--ink);
   border-left-color: var(--ink); }
-.kpm-picklist > li.at[aria-selected="true"] { background: var(--gold); color: var(--gold-ink);
-  border-left-color: var(--gold-ink); }
+.kpm-picklist > li.at[aria-selected="true"] { background: var(--raised); color: var(--accent-ink);
+  border-left-color: var(--accent-edge); }
 /* ⚠️ a range input takes NONE of .kpm-field's box — it needs its own track, and `accent-color` is
    the only property that recolours the thumb without rebuilding the control per browser. */
 .kpm-field > input.kpm-slider { min-height: 44px; padding: 0; border: 0; background: none;
@@ -3656,7 +3658,9 @@ html.kpm-gate-up body > :not(#root) { visibility: hidden; }
   /* --gold again. This briefly took its own --sw-on token, for the two commits when --gold was
      a PALE plate: a pale fill on this mid-tone track is 1,68:1 and the switch read the same ON
      as OFF. The stencil plate is 9,39:1 here, so the special case is gone and so is the token. */
-  background: var(--gold);
+  /* 2026-10-20: the lifted surface, not --gold - his "i dont like this full amber fill" and "make all the buttons
+     look like that new button". ON still reads at a glance: the gold rim, the knob over on the right, gold. */
+  background: var(--raised);
   clip-path: inset(0 100% 0 0);
   transition: clip-path 220ms cubic-bezier(.22, 1, .36, 1); }
 [aria-pressed="true"] > .kpm-sw { border-color: var(--accent-edge); }
@@ -3693,7 +3697,7 @@ html.kpm-gate-up body > :not(#root) { visibility: hidden; }
    invisible the moment the light track became a DARK amber plate. Its dark value is `--ink`'s
    old one to the digit, so the switch he approved has not moved. */
 [aria-pressed="true"] > .kpm-sw::after { transform: translateX(18px);
-  background: var(--knob-on); border-color: var(--accent-edge);
+  background: var(--gold); border-color: var(--accent-edge);   /* gold disc: --knob-on was pale for the amber flood, and pale on --raised vanishes in light */
   box-shadow: 0 0 0 1px rgba(208, 138, 46, .55), 0 0 12px 3px rgba(208, 138, 46, .40); }
 @media (hover: hover) and (pointer: fine) {
   .kpm-toggle:hover > .kpm-sw::after { background: var(--ink); }
