@@ -11608,5 +11608,21 @@ section('The confirm box is big enough to read (his 2026-10-20 "make it bigger b
   ok('the box is max-w-xl (576px) on the desk, full width minus the margin on a phone', /className="w-full max-w-xl border/.test(gate));
 }
 
+section('Switches: no amber slab, a sliding gold bar (his 2026-10-20 "i dont like this full amber fill the panel")');
+{ const css = read('src/styles/theme.css'), panel = read('src/components/CustomerAccessPanel.jsx');
+  ok('REGRESSION: the chosen side of a switch is not a gold fill - it lifts to --raised with the gold word',
+     /\.kpm-switch > button\[aria-pressed="true"\] \{ background: var\(--raised\); color: var\(--accent-ink\); \}/.test(css) &&
+     !/\.kpm-switch > button\[aria-pressed="true"\] \{ background: var\(--gold\)/.test(css));
+  ok('the gold bar slides to the chosen side (220ms) and still sits right when motion is off',
+     /\.kpm-switch::after \{[^}]*height: 3px;[^}]*transition: transform 220ms/.test(css) &&
+     /\.kpm-switch:has\(> button:nth-child\(2\)\[aria-pressed="true"\]\)::after \{ transform: translateX\(100%\); \}/.test(css) &&
+     /prefers-reduced-motion: reduce\) \{ \.kpm-switch::after \{ transition: none; \} \}/.test(css));
+  ok('"not saved yet" is amber ink with no plate; Save says Saved when there is nothing to save',
+     /\{dirty && <span className="kpm-unsaved">Not saved yet<\/span>\}/.test(panel) && !/kpm-read alert">Not saved/.test(panel) &&
+     /\{dirty \? 'Save' : 'Saved'\}/.test(panel));
+  ok('a disabled gold button looks disabled (the rule comes after the gold hover fill)',
+     css.indexOf('.kpm-btn.key:disabled, .kpm-btn.key:disabled:hover') > css.indexOf('.kpm-btn.key:hover'));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

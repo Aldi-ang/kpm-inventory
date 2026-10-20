@@ -256,8 +256,8 @@ export default function CustomerAccessPanel({ db, appId, userId, user, customers
                         </p>
 
                         <div className="kpm-acts">
-                            {dirty && <span className="kpm-read alert">Not saved</span>}
-                            <button type="button" className="kpm-btn key" disabled={busy || !dirty} onClick={save}>Save</button>
+                            {dirty && <span className="kpm-unsaved">Not saved yet</span>}
+                            <button type="button" className="kpm-btn key" disabled={busy || !dirty} onClick={save}>{dirty ? 'Save' : 'Saved'}</button>
                         </div>
                     </div>
                 )}

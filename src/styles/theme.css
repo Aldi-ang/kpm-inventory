@@ -3170,7 +3170,13 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
   background: transparent; color: var(--ink-muted);
   font-family: var(--font-display); font-weight: 700; font-size: 12px;
   letter-spacing: .12em; text-transform: uppercase; cursor: pointer;
-  transition: background-color 120ms ease-out, color 120ms ease-out, border-color 120ms ease-out; }
+  transition: background-color 120ms ease-out, color 120ms ease-out, border-color 120ms ease-out, transform 90ms ease-out; }
+.kpm-btn:not(:disabled):active { transform: scale(.97); }
+/* "not saved yet" beside a Save: amber INK, no plate (his 2026-10-20 "i dont like this full amber fill"); it
+   fades in when the first change is made */
+.kpm-unsaved { align-self: center; font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--accent-ink); animation: kpm-unsaved-in 200ms ease-out; }
+@keyframes kpm-unsaved-in { from { opacity: 0; transform: translateX(6px); } to { opacity: 1; transform: none; } }
 /* the action row: acts hug their word and settle to the right, where the eye finishes reading.
    A module's controls now cost one row instead of one row EACH. */
 .kpm-acts { display: flex; flex-wrap: wrap; gap: var(--s2); justify-content: flex-end; }
@@ -3193,6 +3199,9 @@ html.lite-mode .kpm-title-rule { animation: none; width: 100%; }
                           background-image: none; }
 }
 .kpm-btn:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -4px; }
+/* a disabled gold button looks disabled: .kpm-btn.key came after .kpm-btn:disabled at the same weight, so a
+   "Saved" with nothing to save still wore the gold edge and word, and filled gold on hover (2026-10-20) */
+.kpm-btn.key:disabled, .kpm-btn.key:disabled:hover { background: transparent; border-color: var(--line); color: var(--ink-disabled); }
 
 /* 🔑 his pick A, 2026-10-12 ("buttons = A"), for the solid amber buttons he said "hurt the eye" (Customer Directory,
    Sampling): a gold EDGE on the dark plate, never an amber fill - his own rule from the hub pin. Icon in gold, word in
@@ -3317,10 +3326,21 @@ html.light [class~="hover:bg-[var(--gold)]"][class~="text-[var(--gold-ink)]"]:no
 
 /* ---- SWITCH: both positions always visible, so the choice is readable without
    remembering which way "on" points. */
-.kpm-switch { display: flex; border: 1px solid var(--line-3); }
+.kpm-switch { position: relative; display: flex; border: 1px solid var(--line-3); background: var(--inset); }
 .kpm-switch > button { flex: 1; min-height: 44px; background: transparent; color: var(--ink-muted);
   font-family: var(--font-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
-  border: 0; cursor: pointer; }
+  border: 0; cursor: pointer;
+  transition: background-color 180ms ease-out, color 180ms ease-out, transform 90ms ease-out; }
+.kpm-switch > button:active { transform: scale(.98); }
+/* the slider: a 3px gold MARK under the chosen side that travels to the new side on a press. Every switch
+   in the app has two positions; :has picks the side. Lite Mode stills it (html.lite-mode *), the state
+   still reads from the surface and the gold word. */
+.kpm-switch::after { content: ''; position: absolute; left: 0; bottom: 0; width: 50%; height: 3px;
+  background: var(--accent-edge); pointer-events: none; transform: translateX(0);
+  transition: transform 220ms cubic-bezier(.2, .8, .2, 1); }
+.kpm-switch:has(> button:nth-child(2)[aria-pressed="true"])::after { transform: translateX(100%); }
+.kpm-switch:not(:has(> button[aria-pressed="true"]))::after { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .kpm-switch::after { transition: none; } }
 .kpm-switch > button + button { border-left: 1px solid var(--line-3); }
 /* a MARK, so it keeps amber - and it gets the rim it never had. A bare `border: 0` on the base
    meant a pale plate here would have had nothing at all holding it off the panel. */
@@ -3332,7 +3352,11 @@ html.light [class~="hover:bg-[var(--gold)]"][class~="text-[var(--gold-ink)]"]:no
    a SLAB, which his 2026-08-21 law keeps amber out of.
    No rim needed either: the plate carries itself. The rim that lived here was deleted with the
    pale plate, not forgotten. */
-.kpm-switch > button[aria-pressed="true"] { background: var(--gold); color: var(--gold-ink); }
+/* 2026-10-20, his words on the Customer access switches: "i dont like this full amber fill the panel". In the dark
+   theme --gold IS amber, so the plate above was a button-sized amber slab - his law is amber as an EDGE and an INK,
+   never a slab ("a dark surface with gold at the EDGES"). The chosen side now lifts to --raised, takes the gold
+   word, and the sliding bar (::after above) is its edge. */
+.kpm-switch > button[aria-pressed="true"] { background: var(--raised); color: var(--accent-ink); }
 
 /* ---- RECORD: one row of a registry. Identity above, actions below — at 375px a
    side-by-side row cannot hold three word buttons without shrinking them. */
