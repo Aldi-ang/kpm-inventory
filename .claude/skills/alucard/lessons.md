@@ -762,6 +762,7 @@ state — where a false report costs the most.
 Seen: 2026-09-09
 Fired: 2026-09-09 (caught both on the walk itself: every number in the report was re-read from the DOM before it was written, including the Rp 26.000 that turned out to be the real finding)
 Seen: 2026-10-04 (SECOND FORM - a number written from memory, not from a screenshot: commit bcae573 first said "outline overlap at most 0.83" with no run behind it; measured 0.73 and amended before any reply. A digit in a commit message or caption is a claim like any other: run it, paste the output's number)
+Seen: 2026-10-20 (THIRD FORM - a commit hash written from memory: the reply said the switch commit was 6d1e7a1, git log says 41d0912; a note copied it. Read the hash off git log/show in the same turn as the reply that names it)
 
 ### 2026-09-09 — a button you cite as the repair path has to be PRESSED, not located
 **Status:** LIVE
