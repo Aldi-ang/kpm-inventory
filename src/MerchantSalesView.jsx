@@ -658,25 +658,37 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         // red bar and the territoryOverride stamp survive onto a hand-typed walk-in.
         setTerritoryClaim(null);
 
-        /* H2a — his report: "if i dont press anything from the dropdown then the stores wont be
-           selected and it will just focused on that namebar". Selecting used to require a CLICK,
-           so a salesman who typed a store's name in full still had no store chosen, and the rail
-           fell back to the default dashboard because `customerSettled` needs selectedCustomerInfo.
+        // A typed full name picks its store when he FINISHES typing - finishCustomerTyping, below.
+    };
 
-           Typing the whole name now picks the store, through the SAME handler the dropdown uses
-           so the tier, territory bar, GPS lock and telemetry ping all still happen — a second
-           selection path that skipped any of those is how the pricingTier bug got in.
+    /* H2a — his report: "if i dont press anything from the dropdown then the stores wont be
+       selected and it will just focused on that namebar". Selecting used to require a CLICK,
+       so a salesman who typed a store's name in full still had no store chosen, and the rail
+       fell back to the default dashboard because `customerSettled` needs selectedCustomerInfo.
 
-           ONLY on exactly one match, and that is the important half. His book has three shops
-           called "warung sembako sumber rejeki" 14.5 km apart; auto-picking the first would bill
-           the wrong shop, which is real money and unpickable afterwards. Several matches means
-           the dropdown stays open and he chooses. */
-        /* 🚀 Compared through storeKey now, so typing the clean name also finds a shop saved
-           under the legacy "(Retail)" naming. The `exact.length === 1` rule below is NOT a
-           convenience — it is the guard, and it is untouched. Normalising makes MORE names
-           collide, not fewer, so if two customer documents reduce to the same key the count is
-           2, nothing is auto-picked, and the dropdown stays open for Aldi to choose. */
-        const needle = storeKey(typed);
+       Typing the whole name picks the store, through the SAME handler the dropdown uses so the
+       tier, territory bar, GPS lock and telemetry ping all still happen — a second selection
+       path that skipped any of those is how the pricingTier bug got in.
+
+       ⚠️ WHEN HE FINISHES, NOT ON EVERY KEYSTROKE (2026-10-20). His report: "when i have similar
+       customer name for example HQ DEKET, then im trying to type HQ DEKET 1, on the moment i press
+       HQ DEKET it suddently go out from the keyboard". The pick ran inside onChange, and picking
+       closes this box - so the moment the text equalled one shop's name the box and its keyboard
+       vanished and "HQ DEKET 1" could never be typed. Done, Enter and a tap outside the box all
+       end the typing; the pick happens there.
+
+       ONLY on exactly one match, and that is the important half. His book has three shops
+       called "warung sembako sumber rejeki" 14.5 km apart; auto-picking the first would bill
+       the wrong shop, which is real money and unpickable afterwards. Several matches means
+       the dropdown stays open and he chooses. */
+    /* 🚀 Compared through storeKey, so typing the clean name also finds a shop saved under the
+       legacy "(Retail)" naming. The `exact.length === 1` rule below is NOT a convenience — it is
+       the guard. Normalising makes MORE names collide, not fewer, so if two customer documents
+       reduce to the same key the count is 2, nothing is auto-picked, and he chooses. */
+    const finishCustomerTyping = () => {
+        setShowCustomerDropdown(false);
+        if (selectedCustomerInfo) return;   // already chosen from the list
+        const needle = storeKey(customerName);
         if (needle) {
             const exact = customers.filter(c => storeKey(c.name) === needle);
             if (exact.length === 1) handleCustomerSelect(exact[0]);
@@ -1711,7 +1723,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 which would bury the suggestions the sheet exists to show. */}
             {showCustomerDropdown && createPortal(
                 <div className="manifest-dropdown-area hide-on-print fixed inset-0 z-[300] flex items-start justify-center">
-                    <div className="absolute inset-0 bg-[var(--duke-scrim)] backdrop-blur-sm" onClick={() => setShowCustomerDropdown(false)}></div>
+                    <div className="absolute inset-0 bg-[var(--duke-scrim)] backdrop-blur-sm" onClick={finishCustomerTyping}></div>
 
                     <div className="relative w-full lg:max-w-md lg:mt-16 max-h-[70vh] flex flex-col bg-[var(--duke-fill-deep)] border-b-4 lg:border-4 border-[var(--duke-edge-1)] shadow-[0_10px_40px_rgba(0,0,0,0.7)]">
                         <div className="shrink-0 flex items-center gap-2 px-4 py-3 border-b border-[var(--duke-edge-1)]">
@@ -1721,7 +1733,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 is never in the book, and an X on the way out of that reads as
                                 "throw the name away". */}
                             <button
-                                onClick={() => setShowCustomerDropdown(false)}
+                                onClick={finishCustomerTyping}
                                 className="kpm-hover shrink-0 px-3 py-1.5 min-h-[44px] lg:min-h-0 border border-[var(--duke-edge-5)] rounded text-[11px] lg:text-[10px] font-black uppercase tracking-widest text-[var(--duke-paper-ink)]"
                             >Done</button>
                         </div>
@@ -1733,6 +1745,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 autoFocus
                                 value={customerName}
                                 onChange={handleManualCustomerType}
+                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); finishCustomerTyping(); } }}
                                 placeholder="Type the shop name"
                                 aria-label="Customer name"
                                 className="w-full bg-[var(--duke-well)] border-2 border-[var(--duke-edge-ctl)] focus:border-[var(--duke-amber-edge)] rounded-lg px-3 py-3 text-base font-bold uppercase text-[var(--duke-paper-ink)] placeholder-[var(--duke-ink-6)] outline-none transition-colors"

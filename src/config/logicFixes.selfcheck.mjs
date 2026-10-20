@@ -11488,5 +11488,28 @@ section('Customer access P1: a shop is filed under its area from its pin, one sp
      same(areaFromPin(2, 2, undefined), { province: '', region: '', city: '' }));
 }
 
+section('Typing a shop name: the pick waits until he finishes (his 2026-10-20 "HQ DEKET 1" report)');
+{ const msv = code(read('src/MerchantSalesView.jsx'));
+  const a = msv.indexOf('const handleManualCustomerType'), b = msv.indexOf('const updateCartPricing', a);
+  const typing = a < 0 || b < 0 ? '' : msv.slice(a, b);
+  ok('REGRESSION: no pick on a keystroke - the box (and the phone keyboard) stays while he types',
+     typing.length > 300 && typing.length < 4000 && !/handleCustomerSelect\(/.test(typing.slice(0, typing.indexOf('const finishCustomerTyping'))),
+     `typing slice ${typing.length} chars`);
+  ok('Done, Enter and a tap outside the box all finish the typing (and pick a single exact match)',
+     /const finishCustomerTyping = \(\) => \{/.test(msv) &&
+     /onClick=\{finishCustomerTyping\}/.test(msv) && (msv.match(/onClick=\{finishCustomerTyping\}/g) || []).length === 2 &&
+     /onKeyDown=\{\(e\) => \{ if \(e\.key === 'Enter'\) \{ e\.preventDefault\(\); finishCustomerTyping\(\); \} \}\}/.test(msv) &&
+     /if \(selectedCustomerInfo\) return;   \/\/ already chosen from the list/.test(msv));
+  /* BEHAVIOUR — the same rule as the code, run over his case keystroke by keystroke */
+  const key = (n) => String(n ?? '').trim().toLowerCase();
+  const finish = (book, typed) => { const ex = book.filter(c => key(c.name) === key(typed)); return ex.length === 1 ? ex[0].id : null; };
+  const book = [{ id: 'deket', name: 'HQ DEKET' }];
+  ok('his case: "HQ DEKET 1" can be finished, and it is NOT billed to HQ DEKET', finish(book, 'HQ DEKET 1') === null);
+  ok('finishing on exactly "HQ DEKET" still picks it (H2a stays)', finish(book, 'HQ DEKET') === 'deket');
+  ok('once "HQ DEKET 1" is in the book too, each name picks its own shop',
+     finish([...book, { id: 'deket1', name: 'HQ DEKET 1' }], 'HQ DEKET 1') === 'deket1' &&
+     finish([...book, { id: 'deket1', name: 'HQ DEKET 1' }], 'HQ DEKET') === 'deket');
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
