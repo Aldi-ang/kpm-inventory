@@ -514,6 +514,7 @@ dropped the tile entity and saved the emptied chunk two minutes later. Aldi lost
 resource and every mod stored in his forge, permanently. An earlier removal in the same session had
 already turned a placed block into a different mod's block by shifting block IDs - the same class of
 mistake, and the first one should have been the warning.
+Fired: 2026-10-20 14:40 (the sliding switch bar: samples in the HIDDEN pane read 0 at 40/90/150/400ms although aria-pressed had flipped - transitions do not tick in a background page; settled by getAnimations(), each paused and stepped to half and full duration: bar 0 -> 516 -> 546px. A separate headless browser hung 30 min and was dropped)
 
 ### 2026-09-03 — derive the coordinate model from the file's own working layouts first
 **Status:** LIVE
@@ -1006,7 +1007,7 @@ Seen: 2026-10-11 09:20 (a second form: under mobile emulation a too-wide card ma
 Seen: 2026-10-02
 Fired: 2026-10-04 (Day Replay: page + ground.jpg + coin-sprite.png copied to one scratchpad folder, published with files on the first try)
 
-Last checked: 2026-10-14 — no lesson (auto, 45-turn session)
+Last checked: 2026-10-20 — no new lesson (736-turn session; two entries added earlier today, the motion lesson fired again)
 Fired: 2026-10-03 (map-keys prototype + ground.jpg published from scratchpad/mapkeys)
 Fired: 2026-10-03 (round 6 crowd + selling scenes: page + ground.jpg copied to scratchpad/r6, published on the first try)
 Fired: 2026-10-04 (Day Replay v3: page + ground.jpg + coin-sprite.png from scratchpad/replay3, first try)
