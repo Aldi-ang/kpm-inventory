@@ -4,7 +4,8 @@ import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSqu
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
 import { hasClearance, canPickFromGallery } from './config/permissions';
 import ProofCamera from './components/ProofCamera.jsx';
-import { savePhotoAndGetReference, convertToBks, splitToUnits, paymentLabel, storeKey, getLocalDayKey} from './utils/helpers';
+import { savePhotoAndGetReference, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey} from './utils/helpers';
+import { waNumber } from './utils/whatsapp.js';
 import { debtCredit } from './utils/revenueRule';
 import { isLowStock } from './utils/stockThreshold';
 import { dayStats, agoLabel } from './utils/dayStats';
@@ -104,7 +105,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const [isProcessingSale, setIsProcessingSale] = useState(false); 
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [receiptData, setReceiptData] = useState(null); 
-    const [lockedTier, setLockedTier] = useState(draft?.lockedTier ?? null); 
+    const [lockedTier, setLockedTier] = useState(draft?.lockedTier ?? null);
+    // the product card's price: the picked shop's tier, Ecer until a shop is picked
+    const cardPriceOf = (p) => ({ Retail: p.priceRetail, Grosir: p.priceGrosir }[lockedTier] ?? p.priceEcer) || 0;
     const [tempoDays, setTempoDays] = useState(draft?.tempoDays ?? appSettings?.defaultTempoDays ?? 7); 
     const [printFormat, setPrintFormat] = useState('thermal'); 
 
@@ -891,6 +894,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
     const validateNoo = () => {
         if (!nooForm.phone || !nooForm.photoUrl) return notify("Phone number and Photo are required to register a new outlet!");
+        // the receipt goes to this number on WhatsApp - a number WhatsApp cannot open is not saved (his 2026-10-20 "a must")
+        if (!waNumber(nooForm.phone)) return notify(`"${nooForm.phone}" is not a WhatsApp number. Type the owner's mobile number, for example 0812 3456 7890.`);
         if (customers.find(c => c.name.toLowerCase().trim() === customerName.toLowerCase().trim())) return notify("DUPLICATE DETECTED!\n\nA store with this name is already in the database.");
         
         let tooClose = null; let tooCloseDistance = Infinity;
@@ -2486,16 +2491,25 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                             housekeeping; dropping every stock signal would be a regression —
                                             a salesman has to see an empty ware without hovering it, because
                                             he will never hover the one he was not already thinking about. */}
+                                        {/* 2026-10-20 THE COUNT IS BACK, his pick B: *"agent inventory detected 16 mrapi
+                                            cigarette but on the sales terminal there is no information regarding its
+                                            quantity"*. The rail above only exists at 1280 px and up, behind a press, so below
+                                            that the terminal showed no count at all. Written as he says it: "1 Slop 6 Bks".
+                                            LOW keeps its amber, now with the count inside it. */}
                                         <div className="flex flex-col gap-0.5 lg:gap-1">
                                             {item.stock <= 0 ? (
                                                 <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-red-900/20 text-red-500 border-red-900/50">EMPTY</span>
                                             ) : isLowStock(item, appSettings) ? (
-                                                <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-brass-4)] text-[var(--duke-amber-ink)] border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)]">LOW</span>
-                                            ) : null}
+                                                <span className="kpm-card-count text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-brass-4)] text-[var(--duke-amber-ink)] border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)]">LOW · {unitsText(item.stock, item)}</span>
+                                            ) : (
+                                                <span className="kpm-card-count text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-badge)] text-[var(--duke-ink-3)] border-[var(--duke-edge-1)]">{unitsText(item.stock, item)}</span>
+                                            )}
                                         </div>
+                                        {/* the price THIS shop pays (his 2026-10-20: "the price shown on the card should be
+                                            depending on the stores type that we are selling on"); Ecer until a shop is picked */}
                                         <div className="text-left lg:text-right lg:w-auto lg:mt-0 lg:pt-0 lg:border-none">
-                                            <span className="hidden lg:block text-[11px] text-[var(--duke-ink-6)] font-bold uppercase tracking-widest mb-1">Ecer Price</span>
-                                            <span className="text-[15px] lg:text-2xl font-black text-[var(--duke-amber-ink)] lg:text-[var(--duke-price-ink)] leading-none drop-shadow-[0_2px_4px_var(--duke-text-shade)]">{new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(item.priceEcer || 0)}</span>
+                                            <span className="hidden lg:block text-[11px] text-[var(--duke-ink-6)] font-bold uppercase tracking-widest mb-1">{lockedTier || 'Ecer'} Price</span>
+                                            <span className="text-[15px] lg:text-2xl font-black text-[var(--duke-amber-ink)] lg:text-[var(--duke-price-ink)] leading-none drop-shadow-[0_2px_4px_var(--duke-text-shade)]">{new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(cardPriceOf(item))}</span>
                                         </div>
                                     </div>
                                 </div>

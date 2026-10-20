@@ -10,7 +10,12 @@ export async function shareReceipt(text, shop, savePhone) {
     const known = waNumber(shop?.phone);
     if (known) { window.open(waUrl(known, text), '_blank'); return; }
     const name = shop?.name || 'this shop';
-    const typed = await promptAction(`WhatsApp number for ${name}? (for example 0812 3456 7890)\nLeave it empty to pick a chat yourself.`, '', 'Open WhatsApp');
+    /* a number IS saved but WhatsApp cannot open it (saved before the directory checked numbers) - say so and put it
+       in the box to fix, instead of asking as if the shop had none */
+    const saved = String(shop?.phone || '').trim();
+    const typed = await promptAction(saved
+        ? `${name}'s saved number "${saved}" is not a WhatsApp number. Fix it below (for example 0812 3456 7890).\nLeave it empty to pick a chat yourself.`
+        : `WhatsApp number for ${name}? (for example 0812 3456 7890)\nLeave it empty to pick a chat yourself.`, saved, 'Open WhatsApp');
     if (typed === null) return;
     const num = waNumber(typed);
     if (typed.trim() && !num) { notify(`"${typed.trim()}" is not a phone number - the receipt was not sent.`); return; }

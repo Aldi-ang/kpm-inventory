@@ -196,6 +196,14 @@ export const splitToUnits = (totalBks, product) => {
     return out;
 };
 
+/* "1 Slop 6 Bks" - the split as he says it out loud, largest unit first, zero units left out (his pick B for the
+   sales terminal card, 2026-10-20). A no-break space holds each number to its unit, so a narrow phone card wraps
+   "10 Karton / 2 Bal", never "10 Karton 2 / Bal". */
+export const unitsText = (totalBks, product) => {
+    const u = splitToUnits(totalBks, product);
+    return ['Karton', 'Bal', 'Slop', 'Bks'].filter(k => u[k]).map(k => `${u[k]} ${k}`).join(' ') || '0 Bks';
+};
+
 /* A cart line carries the whole master product on `item.product` so pricing and the stock
    guard can read it while the basket is open. That object holds up to six per-face photos
    as base64 data URIs, and writing it into the transaction blew straight past Firestore's

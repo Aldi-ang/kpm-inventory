@@ -11390,5 +11390,40 @@ section('Permissions. The backup copy of the matrix is replaced, never merged (r
      'a merge deep-merges `matrix`, so a deleted tier kept its permissions in the backup');
 }
 
+section('Sales terminal card: the count is back, the price follows the shop (his 2026-10-20, pick B)');
+{ const msv = code(read('src/MerchantSalesView.jsx'));
+  ok('the card shows the count as he says it, plain and inside LOW',
+     (msv.match(/\{unitsText\(item\.stock, item\)\}/g) || []).length === 2 && imports(msv, 'unitsText'));
+  ok('REGRESSION: the card price is no longer always the Ecer price',
+     !/format\(item\.priceEcer \|\| 0\)/.test(msv) && /format\(cardPriceOf\(item\)\)/.test(msv) &&
+     /\{lockedTier \|\| 'Ecer'\} Price/.test(msv) &&
+     /const cardPriceOf = \(p\) => \(\{ Retail: p\.priceRetail, Grosir: p\.priceGrosir \}\[lockedTier\] \?\? p\.priceEcer\) \|\| 0;/.test(msv));
+  const { unitsText } = await import('../utils/helpers.js');
+  ok('16 packs at 10 a slop reads "1 Slop 6 Bks"', unitsText(16, { packsPerSlop: 10 }) === '1\u00a0Slop 6\u00a0Bks');
+  ok('1650 packs (default packing) reads "2 Karton 5 Slop" - zero units left out', unitsText(1650, {}) === '2\u00a0Karton 5\u00a0Slop', unitsText(1650, {}));
+  ok('nothing left reads "0 Bks", never an empty chip', unitsText(0, {}) === '0\u00a0Bks');
+}
+
+section('A shop number WhatsApp cannot open is never saved again (his 2026-10-20 "this is a must")');
+{ const cm = code(read('src/components/CustomerManager.jsx'));
+  const msv = code(read('src/MerchantSalesView.jsx'));
+  const share = code(read('src/components/shareReceipt.js'));
+  ok('Customer Directory save refuses a number WhatsApp cannot open (empty still allowed)',
+     /if \(String\(formData\.phone \|\| ''\)\.trim\(\) && !waNumber\(formData\.phone\)\)/.test(cm) && imports(cm, 'waNumber'));
+  ok('the sale screen NOO form refuses it too', /if \(!waNumber\(nooForm\.phone\)\) return notify\(/.test(msv) && imports(msv, 'waNumber'));
+  ok('REGRESSION: a saved-but-wrong number is shown in the box to fix, not an empty box',
+     /, saved, 'Open WhatsApp'\);/.test(share) && /is not a WhatsApp number\. Fix it below/.test(share));
+  const { waNumber } = await import('../utils/whatsapp.js');
+  ok('a random short number is refused, a real mobile number is kept',
+     waNumber('12345') === '' && waNumber('0812 3456 7890') === '6281234567890');
+  /* "immune to any updates": no write REPLACES a shop document - a setDoc without merge wipes every field it does not
+     list (phone, tier, area). Every customer write today is updateDoc / addDoc; keep it that way. */
+  const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap(e => e.isDirectory() ? walk(`${dir}/${e.name}`)
+      : /\.(jsx?|mjs)$/.test(e.name) && !/selfcheck|audit/.test(e.name) ? [`${dir}/${e.name}`] : []);
+  const replacing = walk('src').flatMap(f => (code(read(f)).match(/setDoc\(\s*doc\([^;]*?customers[^;]*?\);/g) || [])
+      .filter(m => !/merge:\s*true/.test(m)).map(m => `${f}: ${m.slice(0, 70)}`));
+  ok('REGRESSION: no setDoc replaces a whole customers document', replacing.length === 0, replacing.join(' | '));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

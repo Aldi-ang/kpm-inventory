@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc, getDocs, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 import { commitInChunks } from '../utils/helpers';
+import { waNumber } from '../utils/whatsapp.js';
 import { findDuplicates, createdMillis, groupKey } from '../utils/findDuplicates';
 import { loadBorderCache, saveBorderCache } from '../utils/borderCache';
 import { getCustomerAccessLevel } from '../config/permissions';
@@ -982,6 +983,14 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
         if (!safeName) {
             notify("⚠️ This outlet has no name. Type the shop's name before saving.");
+            return;
+        }
+
+        /* The receipt's WhatsApp button goes straight to this number (shareReceipt.js). A number WhatsApp cannot open
+           was saved anyway before 2026-10-20, so the button asked for one as if none existed - his TEST 2. Empty is
+           still allowed; a wrong one is not. */
+        if (String(formData.phone || '').trim() && !waNumber(formData.phone)) {
+            notify(`⚠️ "${String(formData.phone).trim()}" is not a WhatsApp number. Type the owner's mobile number, for example 0812 3456 7890, or leave Phone empty.`);
             return;
         }
 
