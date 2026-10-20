@@ -405,6 +405,8 @@ Fired: 2026-10-04 18:20 (visit signs: Today / A / B / C drawn on the live page a
 Fired: 2026-10-10 (demo freeze-time: No fix / A / B / C drawn as a grid of Day 1 / Day 2 / a visitor's sale, gold = works, red = breaks, sent inline before the question)
 Fired: 2026-10-13 (demo front door + switch: two boards, TODAY beside A/B/C, sent before the question)
 
+Fired: 2026-10-20 07:59 (card count A/B drawn side by side before asking; the built card then shown as real lab frames at 390 + 1440 before the push)
+
 ### 2026-09-01 — never rename or move files inside a directory a package manager owns
 **Status:** LIVE
 **Trigger:** before renaming, moving or deleting anything inside a folder that a manager deploys
@@ -1281,11 +1283,13 @@ Seen: 2026-10-14
 Fired:
 
 ### 2026-10-15 — a yes to an automatic push is not a yes to a push now
-**Status:** LIKELY
+**Status:** LIVE
 **Trigger:** before a mutating action that pushes any repo (`git push` typed for kpm or A-Brain) - name the sentence of his that covers THIS push, this time.
 **Lesson:** his approvals are per action. A yes to a future mechanism ("A-Brain uploads itself at the end of every session", a Stop hook not built yet) or to one planned push (build step 7) does not cover an extra push mid-session. No sentence of his names this push -> commit locally, ask, push only on his word.
 **Would have prevented:** 2026-10-14 23:14, a second A-Brain push of my own note (53031e4) started right after the approved step-7 push; it hung on a GitHub approval window on his screen, which he declined - *"i havent approve the second github upload"*.
 Seen: 2026-10-15
+
+Fired: 2026-10-20 07:59 (push of f39207c..e31c310 covered by his "u can push now or later its up to u", said in the turn that asked about these commits)
 
 ### 2026-10-18 — a read-back that prints the inserted line must GATE the commit, not ride in the same command
 **Status:** LIVE
@@ -1302,3 +1306,10 @@ Fired: 2026-10-18 15:17 (model-switcher links: `awk -v` insert, read back in its
 **Would have prevented:** 2026-10-19, the sales_stats block shipped in kpm 363cea9 as "CHANGE 15" while the live Missed-list rule is already CHANGE 15; PROGRESS.md, the vault note and the commit message all said 15 before b43a9bb renumbered it to 16 - the 363cea9 message still says 15.
 Seen: 2026-10-19
 Fired:
+
+### 2026-10-20 — an escape typed into an editor's new text lands as the raw character
+**Status:** LIKELY
+**Trigger:** before a mutating action - an Edit whose new text holds a `\u` escape (`\u00a0`, `\u2014`) that must stay an escape in the source.
+**Lesson:** the editor writes the decoded character (an invisible no-break space), not the six-character escape. Write such a line through a small script that emits the escape, or run `grep -n <line> | cat -A` right after the edit and fix any `M-BM-`.
+**Would have prevented:** 2026-10-20, the terminal count chip: raw no-break spaces landed in helpers.js, MerchantSalesView.jsx and the check file; a check written with the escape failed against the raw character (one failed run, one fix pass), and the invisible character shipped in kpm a2bf766 until e31c310.
+Seen: 2026-10-20
