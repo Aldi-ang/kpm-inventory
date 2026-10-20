@@ -264,6 +264,17 @@ export default function BiohazardTheme({
         root.classList.toggle('kpm-nav-open', isMobileMenuOpen);
         return () => root.classList.remove('kpm-nav-open');
     }, [isMobileMenuOpen]);
+
+    /* THE VAULT SCREEN HIDES THE PAGE BEHIND IT - his report 2026-10-20, "i found bug look at this": the Journey
+       Plan's map keys stood on the Master Vault screen. The gate and the page share the content div's stacking
+       context (see below), so a page layer as high as the gate's 9999 won by coming later in the page, and a popup
+       drawn straight onto <body> (bell panel, music player, tutorial book) sits outside it altogether. His pick A:
+       while the gate is up, html.kpm-gate-up hides all of it (theme.css) - still mounted, data keeps loading. */
+    useEffect(() => {
+        const root = document.documentElement;
+        root.classList.toggle('kpm-gate-up', !!showAdminLogin);
+        return () => root.classList.remove('kpm-gate-up');
+    }, [showAdminLogin]);
     
     /* 🔑 AND NOT OVER THE LOCKOUT SCREENS — his report from the phone, 2026-09-01:
        *"i was on access denied for around 15 second then back to the normal login screen, and

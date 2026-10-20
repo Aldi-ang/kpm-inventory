@@ -988,7 +988,7 @@ function ShellLab() {
     <BiohazardTheme
       activeTab={q.has('map') ? 'map_war_room' : 'command_center'} setActiveTab={() => {}}
       user={{ displayName: 'Lab', email: 'lab@example.com' }}
-      appSettings={{}} isAdmin userRole="ADMIN" agentSettings={{}}
+      appSettings={{}} isAdmin userRole="ADMIN" agentSettings={{}} showAdminLogin={q.has('gate')}
       notifications={q.has('bell') ? LAB_BELL_NEEDS : []} onNotificationClick={() => {}} appVersion="lab"
       darkMode={dark} setDarkMode={setDark}
       isLiteMode={lite} onToggleLite={() => setLite(v => !v)}
@@ -1000,6 +1000,7 @@ function ShellLab() {
         </button>
       )}
     >
+      {q.has('gate') && <GateCoverLab />}
       {q.has('profile') ? (
         /* ?shell&profile — the Agent Profile INSIDE the real shell exactly as App.jsx:4725 mounts it: no
            wrapper. T5 Budi (m2) sees his own page; `&admin` mounts the boss's view (the agent list, the
@@ -1273,6 +1274,31 @@ function CapyLab() {
     <button style={{ margin: 40, padding: 16, color: '#fff', border: '1px solid #fff' }} onClick={() => { unlockSounds(); setOn(true); }}>
       Tap: unlock sound + mount the capybara
     </button>
+  );
+}
+
+/* ?shell&gate - the vault screen up INSIDE the real shell (App.jsx puts it in the shell's children, before the page),
+   then a layer as high as it LATER in the page - where JourneyView's map keys sit - and a box drawn straight onto
+   <body>, where the bell panel and the music player go. The probe asks the browser what is on top at each spot.
+   His report 2026-10-20: "i found bug look at this" (the Journey keys over the Master Vault screen). */
+function GateCoverLab() {
+  React.useEffect(() => {
+    const el = document.createElement('div');
+    el.id = 'lab-portal';
+    el.style.cssText = 'position:fixed;left:24px;bottom:24px;width:140px;height:60px;z-index:999999;background:#7a2a12';
+    document.body.appendChild(el);
+    return () => el.remove();
+  }, []);
+  return (
+    <>
+      <div id="lab-gate" className="kpm-gate kpm-dark-island fixed inset-0 z-[9999] bg-[var(--duke-well-solid)] flex items-center justify-center">
+        <span className="text-[var(--ink)] font-mono tracking-widest">MASTER VAULT</span>
+      </div>
+      <div id="lab-keys" className="kx-keys absolute top-4 right-4 z-[9999] flex flex-col gap-3">
+        <button type="button" className="kx-mapkey">Fullscreen</button>
+        <button type="button" className="kx-mapkey">Borders</button>
+      </div>
+    </>
   );
 }
 

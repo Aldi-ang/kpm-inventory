@@ -4561,7 +4561,7 @@ const handleGitHubMirror = async () => {
         /* `kpm-dark-island` is not decoration — it is what keeps this screen black. See the block
            of the same name in theme.css: the gate is a THEME ISLAND, because a card that is
            near-black in both themes cannot be painted with inks that flip. */
-        <div className="kpm-dark-island fixed inset-0 z-[9999] bg-[var(--duke-well-solid)] flex items-center justify-center p-4 font-mono">
+        <div className="kpm-gate kpm-dark-island fixed inset-0 z-[9999] bg-[var(--duke-well-solid)] flex items-center justify-center p-4 font-mono">
           {/* The dot field is the gate's background for ALL FIVE modes, not just the unlock:
               dark until the pointer — or a finger press, phones have no hover — reveals it.
               On unlock the card collapses and the same field carries his name.

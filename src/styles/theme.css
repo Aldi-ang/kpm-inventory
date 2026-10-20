@@ -3581,6 +3581,15 @@ html.light [class~="hover:bg-[var(--gold)]"][class~="text-[var(--gold-ink)]"]:no
   background: linear-gradient(to top, var(--gold) 50%, transparent 50%); }
 .kpm-tick:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -8px; }
 
+/* THE VAULT SCREEN COVERS EVERYTHING (his pick A, 2026-10-20, after the Journey map keys stood on it). The gate
+   lives inside .biohazard-content with the page, so a page layer as high as its 9999 could win; a popup drawn onto
+   <body> was outside it altogether. While BiohazardTheme marks html.kpm-gate-up, the page and those popups are not
+   drawn and cannot take focus - still mounted, so data keeps loading - and the gate alone is. The confirm box and the
+   toasts live in #root beside the app, so they still show over the gate. */
+html.kpm-gate-up .biohazard-content { visibility: hidden; }
+html.kpm-gate-up .biohazard-content .kpm-gate { visibility: visible; }
+html.kpm-gate-up body > :not(#root) { visibility: hidden; }
+
 /* one permission. The button is only the 44px target and the focus ring; the switch
    inside it carries the state. */
 .kpm-toggle { display: inline-flex; align-items: center; justify-content: center;

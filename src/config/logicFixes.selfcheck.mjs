@@ -11582,5 +11582,21 @@ section('Customer access by folder - P2 (his 2026-10-20 "bandung team may only s
   ok('tick states: none / some / all', ca.tickState(0, 5) === 'none' && ca.tickState(2, 5) === 'some' && ca.tickState(5, 5) === 'all');
 }
 
+section('The vault screen covers everything (his 2026-10-20 "i found bug look at this" - Journey map keys on it)');
+{ const shell = code(read('src/components/BiohazardTheme.jsx'));
+  const css = read('src/styles/theme.css');
+  const appGate = code(read('src/App.jsx')).match(/\{gateUp && \([\s\S]{0,600}?<div className="([^"]*)"/);
+  ok('the shell marks <html> while the gate is up, and clears it after',
+     /root\.classList\.toggle\('kpm-gate-up', !!showAdminLogin\);/.test(shell) && /root\.classList\.remove\('kpm-gate-up'\)/.test(shell) && /\}, \[showAdminLogin\]\);/.test(shell));
+  ok('the gate itself carries kpm-gate (the one thing left visible)', !!appGate && /(^|\s)kpm-gate(\s|$)/.test(appGate[1]), appGate ? appGate[1] : 'gate div not found');
+  ok('while marked: the page and every body-level popup are hidden, the gate is shown',
+     /html\.kpm-gate-up \.biohazard-content \{ visibility: hidden; \}/.test(css) &&
+     /html\.kpm-gate-up \.biohazard-content \.kpm-gate \{ visibility: visible; \}/.test(css) &&
+     /html\.kpm-gate-up body > :not\(#root\) \{ visibility: hidden; \}/.test(css));
+  ok('the confirm box and the toasts still mount in #root beside the app (so they show over the gate)',
+     /<ConfirmHost \/>/.test(read('src/main.jsx')) && /<ToastHost \/>/.test(read('src/main.jsx')) &&
+     !/createPortal/.test(read('src/components/ConfirmGate.jsx')) && !/createPortal/.test(read('src/components/Toast.jsx')));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
