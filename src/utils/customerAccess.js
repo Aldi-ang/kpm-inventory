@@ -19,9 +19,12 @@ import { normalizeRegion } from '../config/permissions.js';
 export const ACCESS_DOC_ID = 'customer_access';
 export const IN_LIMIT = 30;
 
-/* the roles the rules never limit: the owner's and the old admin tag ('ADMIN'), the other T1 tag, and a T2 */
-export const seesEveryShop = (userRole) => ['ADMIN', 'DEVELOPER', 'COMPANY_OWNER'].includes(userRole);
-/* T3 and T4 lead their branch: the "regional admin" switch is theirs, T5/T6 follow the "team" switch */
+/* Tier 1/2: the owner's and the old admin tag ('ADMIN'), the other T1 tag, and a T2 - the only ones the rules let write the ticks */
+export const isTopTier = (userRole) => ['ADMIN', 'DEVELOPER', 'COMPANY_OWNER'].includes(userRole);
+/* never limited by folder: Tier 1/2, and Tier 3 - his 2026-10-20 "tier 3 should be able to see evrything on default
+   actually same like tier 1 and 2" */
+export const seesEveryShop = (userRole) => isTopTier(userRole) || userRole === 'AREA_ADMIN';
+/* the branch admin: the "regional admin" switch is his, T5/T6 follow the "team" switch (T3 is never limited now) */
 export const isTeamAdminRole = (userRole) => userRole === 'AREA_ADMIN' || userRole === 'FLEET_CAPTAIN';
 /* the rules key a team the same way: trimmed, capitals, '' -> UNASSIGNED */
 export const teamOf = (location) => normalizeRegion(location);

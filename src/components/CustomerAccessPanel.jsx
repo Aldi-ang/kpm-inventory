@@ -118,7 +118,7 @@ export default function CustomerAccessPanel({ db, appId, userId, user, customers
         if (on) {
             const empty = teams.filter(t => kecCount(saved.teams?.[t.team]) === 0).map(t => t.team);
             const lines = [
-                'Turn folders ON? From now on each regional team sees only its ticked folders - in Customer Directory, the Sales Terminal and the map. You and Tier 2 still see every shop.',
+                'Turn folders ON? From now on each regional team sees only its ticked folders - in Customer Directory, the Sales Terminal and the map. Tier 1, 2 and 3 still see every shop.',
                 empty.length ? `\n${empty.length} team${empty.length === 1 ? '' : 's'} with NO folders will see no shops: ${empty.join(', ')}.` : '',
                 unfiled ? `\n${unfiled} shop${unfiled === 1 ? ' is' : 's are'} not in any folder yet (no Kecamatan, or not in capitals) - no team will see ${unfiled === 1 ? 'it' : 'them'} until you press Data Scrub in Customer Directory.` : '',
             ];
@@ -146,7 +146,7 @@ export default function CustomerAccessPanel({ db, appId, userId, user, customers
                     </div>
                     <p className="kpm-desc">
                         When <b>On</b>, each regional team sees only the folders ticked for it below - in Customer Directory,
-                        the Sales Terminal and the map. You and Tier 2 always see every shop.
+                        the Sales Terminal and the map. Tier 1, 2 and 3 always see every shop.
                     </p>
                     {unfiled > 0 && (
                         <p className="kpm-desc">
@@ -244,6 +244,7 @@ export default function CustomerAccessPanel({ db, appId, userId, user, customers
                         </div>
                         <div className="kpm-field">
                             <span>Team · Tier 5 and 6 · {teamSize} {teamSize === 1 ? 'person' : 'people'}</span>
+                            {/* (Tier 3 never appears here: it sees every shop, his 2026-10-20 call) */}
                             <div className="kpm-switch" role="group" aria-label="Team can">
                                 <button type="button" aria-pressed={!grant.teamEdit} onClick={() => setGrant({ teamEdit: false })}>View only</button>
                                 <button type="button" aria-pressed={!!grant.teamEdit} onClick={() => setGrant({ teamEdit: true })}>View and edit</button>

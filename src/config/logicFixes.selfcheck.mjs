@@ -11526,9 +11526,12 @@ section('Customer access by folder - P2 (his 2026-10-20 "bandung team may only s
      /allow update: if isSalesman\(bossUid\) && folderLimited\(bossUid\) && folderEditOk\(bossUid\);/.test(custBlock));
   /* the rules and the app must agree on WHO is never limited, or a T1/T2 phone asks for every shop and is refused */
   const exempt = rules.slice(rules.indexOf('function folderLimited'), rules.indexOf('function folderReadOk'));
-  ok('never limited, both sides: ADMIN, DEVELOPER (isT1Tag) and COMPANY_OWNER',
-     /!isT1Tag\(role\) && role != 'COMPANY_OWNER'/.test(exempt) && /role == 'ADMIN' \|\| role == 'DEVELOPER'/.test(rules) &&
-     ['ADMIN', 'DEVELOPER', 'COMPANY_OWNER'].every(r => ca.seesEveryShop(r)) && !['AREA_ADMIN', 'FLEET_CAPTAIN', 'FIELD_OPERATIVE', 'ROOKIE'].some(r => ca.seesEveryShop(r)));
+  /* his 2026-10-20 "tier 3 should be able to see evrything on default actually same like tier 1 and 2" */
+  ok('never limited, both sides: ADMIN, DEVELOPER (isT1Tag), COMPANY_OWNER and Tier 3 AREA_ADMIN',
+     /!isT1Tag\(role\) && role != 'COMPANY_OWNER' && role != 'AREA_ADMIN'/.test(exempt) && /role == 'ADMIN' \|\| role == 'DEVELOPER'/.test(rules) &&
+     ['ADMIN', 'DEVELOPER', 'COMPANY_OWNER', 'AREA_ADMIN'].every(r => ca.seesEveryShop(r)) && !['FLEET_CAPTAIN', 'FIELD_OPERATIVE', 'ROOKIE'].some(r => ca.seesEveryShop(r)));
+  ok('the folder read line exempts the same four (no Tier 3 phone asks for every shop and is refused)',
+     /!isT1Tag\(role\) && role != 'COMPANY_OWNER' && role != 'AREA_ADMIN' && \(/.test(rules.slice(rules.indexOf('function folderReadOk'), rules.indexOf('function folderEditOk'))));
   ok('a team is named the same way on both sides (trim, capitals, empty -> UNASSIGNED)',
      /loc\.trim\(\)\.upper\(\) : 'UNASSIGNED'/.test(rules) && ca.teamOf(' Muntilan ') === 'MUNTILAN' && ca.teamOf('') === 'UNASSIGNED');
   /* UI says yes, server says no: every field a Journey check-in writes must be a "visit" field, or view-only kills check-ins */
@@ -11548,7 +11551,9 @@ section('Customer access by folder - P2 (his 2026-10-20 "bandung team may only s
      /if \(admin\) queries\.push\(query\(ref, where\('holdTeam', '==', team\)\)\)/.test(sync));
   ok('the directory\'s Edit follows the folder switch while folders are on',
      /if \(customerScope\) return canEditShop\(customerScope, c\);/.test(code(read('src/components/CustomerManager.jsx'))));
-  ok('the Customer access tab is Tier 1/2 only', /if \(isSystemOwner \|\| seesEveryShop\(userRole\)\) navTabs\.splice/.test(code(read('src/components/SettingsView.jsx'))));
+  /* only T1/T2 may WRITE the ticks (the rules' catch-all) - a Tier 3 who sees every shop must not get a Save that fails */
+  ok('the Customer access tab is Tier 1/2 only (not Tier 3)', /if \(isSystemOwner \|\| isTopTier\(userRole\)\) navTabs\.splice/.test(code(read('src/components/SettingsView.jsx'))) &&
+     ['ADMIN', 'DEVELOPER', 'COMPANY_OWNER'].every(r => ca.isTopTier(r)) && !ca.isTopTier('AREA_ADMIN'));
   /* BEHAVIOUR - the helpers, on his folders */
   const kecs31 = Array.from({ length: 31 }, (_, i) => `KEC ${String(i).padStart(2, '0')}`);
   const qs = ca.grantQueries({ areas: { 'JAWA TENGAH|MAGELANG': kecs31, 'JAWA BARAT|BANDUNG': ['CICENDO', 'CICENDO'] } });

@@ -24,7 +24,7 @@ import HoldButton from './HoldButton';
 import ReceiptPreview from './ReceiptPreview';
 import AuthoritySelect from './AuthoritySelect';
 import CustomerAccessPanel from './CustomerAccessPanel.jsx';
-import { seesEveryShop } from '../utils/customerAccess.js';
+import { isTopTier } from '../utils/customerAccess.js';
 
 // 🚀 IMPORT THE MATRIX BRAIN
 import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS, FLEET_EDIT_PERMS, defaultFleetAccess } from '../config/permissions';
@@ -219,7 +219,7 @@ export default function SettingsView({
     ];
     /* beside Tiers & Logic, Tier 1/2 only - his 2026-10-20 "i think it should be inside the setting" (rules CHANGE 17 lets
        only them write it either way) */
-    if (isSystemOwner || seesEveryShop(userRole)) navTabs.splice(2, 0, { id: 'access', label: 'Customer access', icon: <Users size={18} /> });
+    if (isSystemOwner || isTopTier(userRole)) navTabs.splice(2, 0, { id: 'access', label: 'Customer access', icon: <Users size={18} /> });
     
     if (isSystemOwner) {
         navTabs.push({ id: 'architect', label: 'Architect (Tier 1)', icon: <Lock size={18} /> });
@@ -1015,7 +1015,7 @@ export default function SettingsView({
                       </div>
                   )}
 
-                  {activeTab === 'access' && (isSystemOwner || seesEveryShop(userRole)) && (
+                  {activeTab === 'access' && (isSystemOwner || isTopTier(userRole)) && (
                       <CustomerAccessPanel db={db} appId={appId} userId={userId} user={user} customers={customers}
                           motorists={motorists} access={customerAccess} triggerCapy={triggerCapy} />
                   )}

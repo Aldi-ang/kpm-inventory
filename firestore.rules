@@ -201,7 +201,8 @@ service cloud.firestore {
     // users/{bossUid}/settings/customer_access:
     //   { on, teams: { MUNTILAN: { areas: { 'JAWA TENGAH|MAGELANG': ['MUNTILAN', ...] }, adminEdit, teamEdit } } }
     // Nothing changes until he switches `on`: until then every line below is the old one.
-    // T1/T2 (owner, 'ADMIN', 'DEVELOPER', 'COMPANY_OWNER') are never limited. T3/T4 are the team's admin
+    // T1/T2/T3 (owner, 'ADMIN', 'DEVELOPER', 'COMPANY_OWNER', 'AREA_ADMIN') are never limited - T3 by his word:
+    // "tier 3 should be able to see evrything on default actually same like tier 1 and 2". T4 is the team's admin
     // (adminEdit), T5/T6 its team (teamEdit). A shop is in a folder when its province|region|city match a tick
     // EXACTLY - capitals, as Data Scrub writes them. Each team admin also sees his team's temporary folder:
     // shops carrying holdTeam == his branch (new shops waiting for him to place them).
@@ -220,7 +221,7 @@ service cloud.firestore {
       let acc = customerAccessDoc(bossUid);
       let profile = getEmployeeProfile();
       let role = profile != null ? profile.get('userRole', 'NONE') : 'NONE';
-      return acc != null && acc.get('on', false) == true && !isT1Tag(role) && role != 'COMPANY_OWNER';
+      return acc != null && acc.get('on', false) == true && !isT1Tag(role) && role != 'COMPANY_OWNER' && role != 'AREA_ADMIN';
     }
     // a shop in one of his team's ticked Kecamatan, or (team admin only) in his team's temporary folder
     function folderReadOk(bossUid, shop) {
@@ -230,7 +231,7 @@ service cloud.firestore {
       let team = loc is string && loc.trim() != '' ? loc.trim().upper() : 'UNASSIGNED';
       let acc = customerAccessDoc(bossUid);
       let areas = acc.get('teams', {}).get(team, {}).get('areas', {});
-      return profile.bossUid == bossUid && acc.get('on', false) == true && !isT1Tag(role) && role != 'COMPANY_OWNER' && (
+      return profile.bossUid == bossUid && acc.get('on', false) == true && !isT1Tag(role) && role != 'COMPANY_OWNER' && role != 'AREA_ADMIN' && (
         (shop.city in areas.get(shop.province + '|' + shop.region, [])) ||
         ((role == 'AREA_ADMIN' || role == 'FLEET_CAPTAIN') && shop.get('holdTeam', '') == team));
     }

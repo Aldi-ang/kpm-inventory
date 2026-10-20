@@ -58,7 +58,7 @@ const seed = (access) => testEnv.withSecurityRulesDisabled(async (ctx) => {
   if (access) await setDoc(doc(db, A('settings'), 'customer_access'), access);
 });
 await testEnv.clearFirestore();
-await seed(ACCESS(false));
+await seed(null);   // no customer_access doc at all - his company the moment he publishes CHANGE 17
 
 const as = (uid, email) => testEnv.authenticatedContext(uid, { email }).firestore();
 const owner = as('ownerA', 'owner-a@test.com'), t2 = as('u-t2', 't2@test.com'), legacy = as('u-l', 'legacy@test.com');
@@ -69,6 +69,13 @@ const kabQuery = (db, province, region, cities) => query(shops(db), where('provi
 const holdQuery = (db, team) => query(shops(db), where('holdTeam', '==', team));
 const visit = { lastVisit: '2026-10-20', lastVisitNote: '[✅] ok', lastVisitTag: '✅', lastVisitedBy: 'Budi', updatedAt: 1 };
 
+console.log('NO ACCESS DOC (live, the moment he publishes) - every line as before:');
+await expect('T5 Muntilan reads every shop', getDocs(shops(t5m)), true);
+await expect('Alex (T4) reads every shop', getDocs(shops(alex)), true);
+await expect('T5 Muntilan edits a Bandung shop (old default "edit all")', updateDoc(doc(t5m, A('customers'), 'b1'), { phone: '0' }), true);
+await expect('T5 Muntilan records a visit', updateDoc(doc(t5m, A('customers'), 'm1'), visit), true);
+
+await seed(ACCESS(false));
 console.log('OFF - nothing changes until he switches it on:');
 await expect('T5 Muntilan reads EVERY shop (one plain query, as today)', getDocs(shops(t5m)), true);
 // KNOWN GAP, NOT THIS CHANGE: the live catch-all (CHANGE 14 #6) reads document[0], which a LIST leaves unbound, so an owner
@@ -92,7 +99,9 @@ await expect('Alex: the old "every shop" query -> DENIED (rules are not filters)
 await expect('Alex: a folder query that slips in an unticked Kecamatan -> DENIED', getDocs(kabQuery(alex, 'JAWA TENGAH', 'MAGELANG', ['MUNTILAN', 'MERTOYUDAN'])), false);
 await expect('Alex: a query for Bandung\'s folder -> DENIED', getDocs(kabQuery(alex, 'JAWA BARAT', 'BANDUNG', ['CICENDO'])), false);
 await expect('Alex reads his team\'s temporary folder (holdTeam MUNTILAN)', getDocs(holdQuery(alex, 'MUNTILAN')), true);
-await expect('T3 Muntilan (also a team admin) reads the temporary folder', getDocs(holdQuery(t3m, 'MUNTILAN')), true);
+await expect('T3 (HQ sales manager) reads EVERY shop - his "same like tier 1 and 2"', getDocs(shops(t3m)), true);
+await expect('T3 reads a Bandung shop', getDoc(doc(t3m, A('customers'), 'b1')), true);
+await expect('T3 edits a Bandung shop (old default "edit all")', updateDoc(doc(t3m, A('customers'), 'b1'), { phone: '1' }), true);
 await expect('Bandung\'s admin cannot read Muntilan\'s temporary folder', getDocs(holdQuery(t4b, 'MUNTILAN')), false);
 await expect('a T5 cannot read the temporary folder (admin only)', getDocs(holdQuery(t5m, 'MUNTILAN')), false);
 await expect('Bandung\'s admin reads Bandung\'s shop', getDocs(kabQuery(t4b, 'JAWA BARAT', 'BANDUNG', ['CICENDO'])), true);
