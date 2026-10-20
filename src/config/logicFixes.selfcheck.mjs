@@ -11392,9 +11392,18 @@ section('Permissions. The backup copy of the matrix is replaced, never merged (r
 
 section('Sales terminal card: the count is back, the price follows the shop (his 2026-10-20, pick B)');
 { const msv = code(read('src/MerchantSalesView.jsx'));
-  ok('the card shows the count as he says it, plain and inside LOW, on a button',
-     (msv.match(/\{countLabel\(item\)\}<\/button>/g) || []).length === 2 && imports(msv, 'unitsText') &&
-     /const countLabel = \(p\) => \(flatCountId === p\.id \? `\$\{new Intl\.NumberFormat\('id-ID'\)\.format\(p\.stock\)\}\\u00a0Bks` : unitsText\(p\.stock, p\)\);/.test(msv));
+  ok('the card shows the count as he says it, plain and inside LOW, on a button with both faces',
+     (msv.match(/\{countFaces\(item\)\}<\/button>/g) || []).length === 2 && imports(msv, 'unitsText') &&
+     /<span className="kpm-flip-face" aria-hidden=\{flatCountId === p\.id\}>\{unitsText\(p\.stock, p\)\}<\/span>/.test(msv) &&
+     msv.includes("<span className=\"kpm-flip-face\" aria-hidden={flatCountId !== p.id}>{`${new Intl.NumberFormat('id-ID').format(p.stock)}\\u00a0Bks`}</span>") &&
+     (msv.match(/className=\{`kpm-card-count \$\{flatCountId === item\.id \? 'is-flat ' : ''\}/g) || []).length === 2);
+  { const css = code(read('src/styles/theme.css'));
+    const tr = (sel) => (css.match(new RegExp(sel + '\\s*\\{[^}]*transition:\\s*([^;]+);')) || [])[1];
+    ok('it flips like the header clock: same transition, units leave upward, Bks rises from below (his 2026-10-20)',
+       !!tr('\\.kpm-clock-face') && tr('\\.kpm-clock-face') === tr('\\.kpm-flip-face') &&
+       /\.is-flat \.kpm-flip-face:nth-child\(1\) \{ transform: translateY\(-100%\); opacity: 0; \}/.test(css) &&
+       /\.kpm-flip-face:nth-child\(2\) \{ transform: translateY\(100%\); opacity: 0; \}/.test(css),
+       `clock ${tr('\\.kpm-clock-face')} / chip ${tr('\\.kpm-flip-face')}`); }
   ok('a press flips it to the flat Bks total and it flips back by itself (the clock\'s 5 s)',
      /setTimeout\(\(\) => setFlatCountId\(null\), 5000\)/.test(msv) &&
      (msv.match(/onClick=\{\(e\) => flipCount\(e, item\)\}/g) || []).length === 2);

@@ -118,7 +118,15 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         const t = setTimeout(() => setFlatCountId(null), 5000);
         return () => clearTimeout(t);
     }, [flatCountId]);
-    const countLabel = (p) => (flatCountId === p.id ? `${new Intl.NumberFormat('id-ID').format(p.stock)}\u00a0Bks` : unitsText(p.stock, p));
+    /* both readings are always rendered, stacked in one window, and the chip's `is-flat` slides one out and the other
+       in - the header clock's own flip (theme.css .kpm-flip-*), his 2026-10-20 "i want the animation to be like this
+       clock". aria-hidden follows the flip, as on the clock, so a reader hears only the face on show. */
+    const countFaces = (p) => (
+        <span className="kpm-flip-win">
+            <span className="kpm-flip-face" aria-hidden={flatCountId === p.id}>{unitsText(p.stock, p)}</span>
+            <span className="kpm-flip-face" aria-hidden={flatCountId !== p.id}>{`${new Intl.NumberFormat('id-ID').format(p.stock)}\u00a0Bks`}</span>
+        </span>
+    );
     const flipCount = (e, p) => { e.stopPropagation(); setFlatCountId((id) => (id === p.id ? null : p.id)); };   // the card's own press adds to the cart
     const [tempoDays, setTempoDays] = useState(draft?.tempoDays ?? appSettings?.defaultTempoDays ?? 7); 
     const [printFormat, setPrintFormat] = useState('thermal'); 
@@ -2512,9 +2520,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                             {item.stock <= 0 ? (
                                                 <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-red-900/20 text-red-500 border-red-900/50">EMPTY</span>
                                             ) : isLowStock(item, appSettings) ? (
-                                                <button type="button" onClick={(e) => flipCount(e, item)} title={COUNT_FLIP_TITLE} className="kpm-card-count relative before:absolute before:-inset-x-1 before:-inset-y-3 before:content-[''] cursor-pointer text-left text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-brass-4)] text-[var(--duke-amber-ink)] border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)]">LOW · {countLabel(item)}</button>
+                                                <button type="button" onClick={(e) => flipCount(e, item)} title={COUNT_FLIP_TITLE} className={`kpm-card-count ${flatCountId === item.id ? 'is-flat ' : ''}relative before:absolute before:-inset-x-1 before:-inset-y-3 before:content-[''] cursor-pointer text-left text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-brass-4)] text-[var(--duke-amber-ink)] border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)]`}>LOW · {countFaces(item)}</button>
                                             ) : (
-                                                <button type="button" onClick={(e) => flipCount(e, item)} title={COUNT_FLIP_TITLE} className="kpm-card-count relative before:absolute before:-inset-x-1 before:-inset-y-3 before:content-[''] cursor-pointer text-left text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-badge)] text-[var(--duke-ink-3)] border-[var(--duke-edge-1)]">{countLabel(item)}</button>
+                                                <button type="button" onClick={(e) => flipCount(e, item)} title={COUNT_FLIP_TITLE} className={`kpm-card-count ${flatCountId === item.id ? 'is-flat ' : ''}relative before:absolute before:-inset-x-1 before:-inset-y-3 before:content-[''] cursor-pointer text-left text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-badge)] text-[var(--duke-ink-3)] border-[var(--duke-edge-1)]`}>{countFaces(item)}</button>
                                             )}
                                         </div>
                                         {/* the price THIS shop pays (his 2026-10-20: "the price shown on the card should be

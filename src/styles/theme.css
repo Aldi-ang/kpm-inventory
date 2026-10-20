@@ -1708,6 +1708,21 @@ html.lite-mode .kpm-topbar-ghost { opacity: .04; }
 .kpm-clock-long { font-size: 16px; font-weight: 700; color: var(--shell-ink-2);
                   letter-spacing: .01em; white-space: nowrap; text-transform: none; }
 @media (prefers-reduced-motion: reduce) { .kpm-clock-face { transition: none; } }
+/* THE CARD COUNT FLIPS LIKE THE CLOCK. Aldi, 2026-10-20, pointing at this clock: "i want the animation to be like this
+   clock for that switch up bks format we press and its switch". The sales terminal's count chip ("1 Slop 6 Bks" <->
+   "16 Bks") is the clock's own mechanism: one window sized to the wider face, both faces in one grid cell, the units
+   leave UPWARD and the flat total rises from below, on the clock's curve and timing. Copied, not shared through a
+   selector list, because integration.audit pins the clock's selectors one by one; logicFixes checks that the two
+   transitions stay identical. */
+.kpm-flip-win { display: inline-grid; overflow: hidden; }
+.kpm-flip-face {
+  grid-area: 1 / 1; align-self: center;
+  transition: transform 320ms cubic-bezier(.2, .9, .2, 1), opacity 180ms linear;
+}
+.kpm-flip-face:nth-child(2) { transform: translateY(100%); opacity: 0; }
+.is-flat .kpm-flip-face:nth-child(1) { transform: translateY(-100%); opacity: 0; }
+.is-flat .kpm-flip-face:nth-child(2) { transform: translateY(0); opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .kpm-flip-face { transition: none; } }
 /* `.kpm-clock-date` was the 9px line above each face and is DELETED, not hidden — it has no
    markup left to style. A rule kept "just in case" is the thing that makes the next person think
    the small line is still a state this control can enter. */
