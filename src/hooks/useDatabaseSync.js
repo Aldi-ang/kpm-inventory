@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react';
 import { collection, doc, getDocs, onSnapshot, query, orderBy, setDoc, where } from 'firebase/firestore'; // 🚀 IMPORTED 'where'
 import { applyDocChanges } from '../utils/docChanges';
+import { ACCESS_DOC_ID, accessFor, grantQueries, seesEveryShop } from '../utils/customerAccess.js';
+import { notify } from '../components/Toast.jsx';
 
-export default function useDatabaseSync(db, appId, user, userId, userRole) {
+const NO_SHOPS = [];   // one stable empty list, so screens keyed on `customers` do not re-run every render
+
+export default function useDatabaseSync(db, appId, user, userId, userRole, location) {
     // Data States
     const [inventory, setInventory] = useState([]);
     const [customers, setCustomers] = useState([]); 
@@ -59,11 +63,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole) {
            subscription is still a full re-map (which costs the same, since everything is new),
            and only the snapshots after it are incremental. The flag lives in the effect closure,
            so each subscription gets its own. */
-        let custFirst = true;
-        const unsubCust = onSnapshot(query(collection(db, basePath, 'customers'), orderBy('name', 'asc')), (snap) => {
-            if (custFirst) { custFirst = false; setCustomers(snap.docs.map(d => ({id: d.id, ...d.data()}))); return; }
-            setCustomers(prev => applyDocChanges(prev, snap.docChanges()));
-        }, (err) => console.warn("Customers listener:", err.code));
+        /* (the customers listener moved to its own effect below - it waits for the customer access doc) */
         const unsubMotorists = onSnapshot(collection(db, basePath, 'motorists'), (snap) => setMotorists(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Motorists listener:", err.code));
         // 🚀 CAREER LEDGER (Phase 2): no time gate — bounded by headcount, not history.
         const unsubCareer = onSnapshot(collection(db, basePath, 'career'), (snap) => setCareer(Object.fromEntries(snap.docs.map(d => [d.id, d.data()]))), (err) => console.warn("Career listener:", err.code));
@@ -120,10 +120,62 @@ export default function useDatabaseSync(db, appId, user, userId, userRole) {
 
         return () => { 
             unsubSettings(); unsubInv(); unsubTrans(); unsubSamp(); 
-            unsubLogs(); unsubCust(); unsubProc(); unsubMotorists(); unsubCareer();
+            unsubLogs(); unsubProc(); unsubMotorists(); unsubCareer();
             unsubAdminVeh(); unsubEod(); unsubTransfers();
         };
     }, [user, db, appId, userId, userRole]);
+
+    /* ── CUSTOMERS, LIMITED BY FOLDER (P2) ──────────────────────────────────────────────────
+       Aldi, 2026-10-20: *"bandung team may only see bandung's customer and not muntilan one"*. While
+       settings/customer_access is `on`, firestore.rules CHANGE 17 hands T3-T6 only the shops in their
+       team's ticked Kecamatan - and refuses the whole every-shop query, because rules are not filters.
+       So a limited phone asks one Kabupaten at a time (`city in`, max 30), plus, for the team's admin,
+       his team's temporary folder; the pieces are merged by id. T1/T2 and "off" keep the one query.
+       Nothing subscribes until the access doc has answered: asking for every shop first would be
+       refused, and the refusal kills that listener for good. */
+    const [customerAccess, setCustomerAccess] = useState(undefined);   // undefined = not read yet, null = no doc
+    useEffect(() => {
+        if (!user || !userId || userId === 'default') return;
+        return onSnapshot(doc(db, `artifacts/${appId}/users/${userId}/settings`, ACCESS_DOC_ID),
+            (snap) => setCustomerAccess(snap.exists() ? snap.data() : null),
+            (err) => { console.warn("Customer access listener:", err.code); setCustomerAccess(null); });
+    }, [user, db, appId, userId]);
+    const scope = accessFor(customerAccess, userRole, location);
+    const custKey = seesEveryShop(userRole) || customerAccess === null || (customerAccess && !scope) ? 'all'
+        : customerAccess === undefined ? ''
+        : JSON.stringify({ team: scope.team, admin: scope.admin, q: grantQueries(scope.grant) });
+    /* a team with no ticks and no temporary folder asks nothing - and the list left from before the switch must not show */
+    const noFolders = !!scope && !scope.admin && grantQueries(scope.grant).length === 0;
+
+    useEffect(() => {
+        if (!user || !userId || userId === 'default' || !custKey) return;
+        const ref = collection(db, `artifacts/${appId}/users/${userId}/customers`);
+        const fail = (err) => {
+            console.warn("Customers listener:", err.code);
+            if (custKey !== 'all') notify(`Your shop list could not load (${err.code}). Tell your admin.`);
+        };
+        if (custKey === 'all') {
+            /* `custFirst` is load-bearing - see the comment above the customers state's old home. */
+            let custFirst = true;
+            return onSnapshot(query(ref, orderBy('name', 'asc')), (snap) => {
+                if (custFirst) { custFirst = false; setCustomers(snap.docs.map(d => ({id: d.id, ...d.data()}))); return; }
+                setCustomers(prev => applyDocChanges(prev, snap.docChanges()));
+            }, fail);
+        }
+        const { team, admin, q } = JSON.parse(custKey);
+        const queries = q.map(g => query(ref, where('province', '==', g.province), where('region', '==', g.region), where('city', 'in', g.cities)));
+        if (admin) queries.push(query(ref, where('holdTeam', '==', team)));
+        if (queries.length === 0) return;   // a team with no ticks: `noFolders` below hands out an empty list
+        const parts = queries.map(() => []);
+        const unsubs = queries.map((qq, i) => onSnapshot(qq, (snap) => {
+            parts[i] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const byId = new Map();
+            for (const c of parts.flat()) byId.set(c.id, c);
+            /* orderBy('name') used to sort AND drop a shop with no name field; same here */
+            setCustomers([...byId.values()].filter(c => c.name !== undefined).sort((a, b) => String(a.name).localeCompare(String(b.name))));
+        }, fail));
+        return () => unsubs.forEach(u => u());
+    }, [db, appId, user, userId, custKey]);
 
     /* ── EVERY REGIONAL WAREHOUSE'S SHELF ──────────────────────────────────────────────────
        Aldi, 2026-08-26: *"the data taken to make this panel actually should be the same with the
@@ -187,7 +239,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole) {
     return {
         fetchHistoricalTransactions, // 🚀 EXPORT THE ENGINE
         inventory, setInventory,
-        customers, setCustomers,
+        customers: noFolders ? NO_SHOPS : customers, setCustomers, customerAccess,
         transactions, setTransactions,
         samplings, setSamplings,
         auditLogs, setAuditLogs,

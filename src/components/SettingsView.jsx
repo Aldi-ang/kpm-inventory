@@ -13,7 +13,7 @@ let capyPeekTimer = null;
 /* `TrendingUp` and `Package` went with the tiers conversion: they were the two glyphs stuffed
    inside the old omset/volume select, which is a labelled field now. Removed because THIS change
    orphaned them — no other dead import in this file was touched. */
-import { Lock, ShieldCheck, ShieldAlert, UploadCloud, Copy, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, Edit, Save, X, Music, ChevronLeft, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight, BarChart2, Store, Truck } from 'lucide-react';
+import { Lock, Users, ShieldCheck, ShieldAlert, UploadCloud, Copy, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, Edit, Save, X, Music, ChevronLeft, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight, BarChart2, Store, Truck } from 'lucide-react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 import LandlordDashboard from './LandlordDashboard';
@@ -23,6 +23,8 @@ import CareerDevTools from './CareerDevTools';
 import HoldButton from './HoldButton';
 import ReceiptPreview from './ReceiptPreview';
 import AuthoritySelect from './AuthoritySelect';
+import CustomerAccessPanel from './CustomerAccessPanel.jsx';
+import { seesEveryShop } from '../utils/customerAccess.js';
 
 // 🚀 IMPORT THE MATRIX BRAIN
 import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS, FLEET_EDIT_PERMS, defaultFleetAccess } from '../config/permissions';
@@ -39,7 +41,7 @@ export default function SettingsView({
     currentUserEmail, handleChangePin, handleAdminLogout,
     handleRegisterPasskey, registeredPasskeys, handleRemovePasskey,
     tierSettings, setTierSettings, handleSaveTiers, handleExportTiers, handleImportTiers, handleTierIconSelect,
-    appSettings, setAppSettings, motorists = [],
+    appSettings, setAppSettings, motorists = [], customers = [], customerAccess = null,
     handleRebuildSalesStats, isRebuildingStats,
     editCompanyProfile, setEditCompanyProfile, handleSaveCompanyProfile,
     handleMascotSelect, newMascotMessage, setNewMascotMessage, handleAddMascotMessage,
@@ -215,6 +217,9 @@ export default function SettingsView({
         { id: 'tiers', label: 'Tiers & Logic', icon: <Tag size={18} /> },
         { id: 'security', label: 'Security & Data', icon: <ShieldCheck size={18} /> },
     ];
+    /* beside Tiers & Logic, Tier 1/2 only - his 2026-10-20 "i think it should be inside the setting" (rules CHANGE 17 lets
+       only them write it either way) */
+    if (isSystemOwner || seesEveryShop(userRole)) navTabs.splice(2, 0, { id: 'access', label: 'Customer access', icon: <Users size={18} /> });
     
     if (isSystemOwner) {
         navTabs.push({ id: 'architect', label: 'Architect (Tier 1)', icon: <Lock size={18} /> });
@@ -1008,6 +1013,11 @@ export default function SettingsView({
                               </>
                           )}
                       </div>
+                  )}
+
+                  {activeTab === 'access' && (isSystemOwner || seesEveryShop(userRole)) && (
+                      <CustomerAccessPanel db={db} appId={appId} userId={userId} user={user} customers={customers}
+                          motorists={motorists} access={customerAccess} triggerCapy={triggerCapy} />
                   )}
 
                   {/* ---------------------------------------------------- */}

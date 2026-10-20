@@ -21,6 +21,7 @@ import MusicPlayer from './MusicPlayer';
 import { injectDynamicPermissions, isFieldLevelTier, hasClearance, handoffEligibility, canApproveHandoffFrom, handoffApprovers } from './config/permissions';
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch } from './config/povPreview';
 import { warehouseList } from './utils/supply';
+import { accessFor } from './utils/customerAccess.js';
 import { tallySaleOp, statsPath } from './utils/salesRollupWrite';
 import { syncOfflineSale, canvasWithPending } from './utils/vanSync';
 import { rebuildMonths } from './utils/salesRollup';
@@ -574,14 +575,16 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   // --- DATABASE SYNC ENGINE (MOVED HERE!) ---
   const {
       fetchHistoricalTransactions, // 🚀 THE TIME MACHINE ENGINE PLUGGED IN
-      inventory, setInventory, customers, transactions, setTransactions,
+      inventory, setInventory, customers, customerAccess, transactions, setTransactions,
       samplings, setSamplings, auditLogs, setAuditLogs, procurements, setProcurements,
       motorists, setMotorists, agentInventories, setAgentInventories, eodReports, setEodReports,
       transferRequests, setTransferRequests,
       adminCanvas, setAdminCanvas, branchStock,
       career,
       appSettings, setAppSettings, editCompanyProfile, setEditCompanyProfile
-  } = useDatabaseSync(db, appId, user, userId, userRole);
+  } = useDatabaseSync(db, appId, user, userId, userRole, user?.location);
+  /* null = not limited by folder (off, or T1/T2); else his team, its ticks and his one edit switch - utils/customerAccess.js */
+  const customerScope = React.useMemo(() => accessFor(customerAccess, userRole, user?.location), [customerAccess, userRole, user?.location]);
 
   // 🚀 Phase 5: badge config, read once so handleVerifyEOD's checkBadges() call respects
   // whatever targets the owner customized via the Achievement Config modal — same
@@ -5387,6 +5390,7 @@ const handleGitHubMirror = async () => {
                   isAdmin={isAdmin}
                   userRole={userRole}
                   employeeRegion={user?.location || (agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : '')}
+                  customerScope={customerScope}
                   tierSettings={tierSettings}
                   onNavigateToMap={() => setActiveTab('map_war_room')}
                   onRequestCrop={(file) => {
@@ -5503,6 +5507,7 @@ const handleGitHubMirror = async () => {
                   /* the roster is the only registry of cabang there is — Settings needs it to offer
                      one spare-days box per warehouse, same source as the Tujuan picker */
                   motorists={motorists}
+                  customers={customers} customerAccess={customerAccess}   /* Customer access tab: the folders come from the shops */
                   editCompanyProfile={editCompanyProfile} setEditCompanyProfile={setEditCompanyProfile} handleSaveCompanyProfile={handleSaveCompanyProfile}
                   handleMascotSelect={handleMascotSelect} newMascotMessage={newMascotMessage} setNewMascotMessage={setNewMascotMessage} handleAddMascotMessage={handleAddMascotMessage}
                   activeMessages={activeMessages} editingMsgIndex={editingMsgIndex} setEditingMsgIndex={setEditingMsgIndex} editMsgText={editMsgText} setEditMsgText={setEditMsgText} handleSaveEditedMessage={handleSaveEditedMessage} handleDeleteMascotMessage={handleDeleteMascotMessage}

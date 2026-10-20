@@ -27,6 +27,7 @@ import CapybaraMascot from '../src/components/CapybaraMascot.jsx';
 import { unlockSounds } from '../src/hooks/useSound.js';
 import PonderBookButton from '../src/ponder/PonderBook.jsx';
 import TierPovSwitch from '../src/components/TierPovSwitch.jsx';
+import CustomerAccessPanel from '../src/components/CustomerAccessPanel.jsx';
 import StockByWarehouseTable from '../src/ponder/stages/StockByWarehouseTable.jsx';
 import ShipmentPlanTable from '../src/ponder/stages/ShipmentPlanTable.jsx';
 import ProductPerformancePanel from '../src/components/ProductPerformancePanel.jsx';
@@ -1275,7 +1276,38 @@ function CapyLab() {
   );
 }
 
+/* ?access MOUNTS Settings > Customer access (P2, 2026-10-20): three teams, two provinces, a few shops not filed yet,
+   one shop waiting in Muntilan's temporary folder. Muntilan already has two Kecamatan of MAGELANG ticked. */
+const LAB_ACCESS = (() => {
+  const shops = [];
+  const add = (n, province, region, city, extra = {}) => { for (let i = 0; i < n; i++) shops.push({ id: `${city}-${i}`, name: `TOKO ${city} ${i + 1}`, province, region, city, ...extra }); };
+  add(12, 'JAWA TENGAH', 'MAGELANG', 'MUNTILAN'); add(8, 'JAWA TENGAH', 'MAGELANG', 'MERTOYUDAN');
+  add(5, 'JAWA TENGAH', 'MAGELANG', 'SAWANGAN'); add(3, 'JAWA TENGAH', 'MAGELANG', 'SALAM');
+  add(4, 'JAWA TENGAH', 'KOTA MAGELANG', 'MAGELANG UTARA'); add(6, 'JAWA TENGAH', 'SEMARANG', 'BANYUMANIK');
+  add(7, 'JAWA BARAT', 'BANDUNG', 'CICENDO'); add(5, 'JAWA BARAT', 'BANDUNG', 'COBLONG');
+  add(3, 'Jawa Tengah', 'Magelang', 'Muntilan'); add(2, 'UNMAPPED PROVINSI', 'UNMAPPED KABUPATEN', 'UNMAPPED KECAMATAN');
+  add(1, 'JAWA TENGAH', 'MAGELANG', 'DUKUN', { holdTeam: 'MUNTILAN' });
+  const m = (id, name, userRole, location) => ({ id, name, userRole, location });
+  return {
+    customers: shops,
+    motorists: [m('master_owner', 'Aldi', 'DEVELOPER', 'Headquarters'), m('ADMIN_VEHICLE', 'Admin (Boss Vehicle)', undefined, undefined),
+      m('a1', 'Alex', 'FLEET_CAPTAIN', 'MUNTILAN'), m('a2', 'Budi', 'FIELD_OPERATIVE', 'MUNTILAN'), m('a3', 'Candra', 'FIELD_OPERATIVE', 'MUNTILAN'),
+      m('a4', 'Eka', 'ROOKIE', 'MUNTILAN'), m('b1', 'Kaldi', 'FLEET_CAPTAIN', 'BANDUNG'), m('b2', 'Fajar', 'FIELD_OPERATIVE', 'BANDUNG'),
+      m('s1', 'Gita', 'FIELD_OPERATIVE', 'Semarang'), m('h1', 'Hadi', 'AREA_ADMIN', 'Headquarters')],
+    access: { on: q.has('on'), teams: { MUNTILAN: { areas: { 'JAWA TENGAH|MAGELANG': ['MERTOYUDAN', 'MUNTILAN'] }, adminEdit: true, teamEdit: false } } },
+  };
+})();
+function AccessLab() {
+  return (
+    <div className="max-w-6xl mx-auto p-4">
+      <CustomerAccessPanel db={null} appId="lab" userId="lab" user={{ displayName: 'Aldi' }} customers={LAB_ACCESS.customers}
+        motorists={LAB_ACCESS.motorists} access={LAB_ACCESS.access} triggerCapy={() => {}} />
+    </div>
+  );
+}
+
 createRoot(document.getElementById('root')).render(
+  q.has('access') ? <><AccessLab /><ConfirmHost /><ToastHost /></> :
   q.has('capy') ? <CapyLab /> :
   q.has('share') ? <><ShareLab /><ConfirmHost /><ToastHost /></> :
   q.has('vault3d') ? <Vault3DLab /> :

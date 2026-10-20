@@ -3556,6 +3556,31 @@ html.light [class~="hover:bg-[var(--gold)]"][class~="text-[var(--gold-ink)]"]:no
   border-color: var(--line); border-bottom-color: var(--accent-edge); }
 .kpm-chips > button:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -3px; }
 
+/* CUSTOMER ACCESS (Settings): the folder tree a team is given. A row = tick · name · count; each
+   level steps in one notch. A part-ticked parent is half filled - his drawn screen, 2026-10-20. */
+.kpm-tree { border: 1px solid var(--line-2); background: var(--inset); }
+.kpm-tree .row { display: flex; align-items: center; gap: var(--s1); min-height: 44px;
+  padding-right: var(--s3); border-top: 1px solid var(--line); }
+.kpm-tree > div:first-child > .row:first-child { border-top: 0; }
+.kpm-tree .lvl2 { padding-left: var(--s4); }
+.kpm-tree .lvl3 { padding-left: var(--s8); }
+.kpm-tree .name { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: flex-start; gap: var(--s1);
+  min-height: 44px; padding: 0; background: transparent; border: 0; text-align: left;
+  color: var(--ink); font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  letter-spacing: .08em; overflow-wrap: anywhere; cursor: pointer; }
+.kpm-tree span.name { color: var(--ink-muted); font-weight: 600; cursor: default; }
+.kpm-tree .name .rot { transform: rotate(90deg); }
+.kpm-tree .count { font-family: var(--font-mono); font-size: 11px; color: var(--ink-dim); white-space: nowrap; }
+.kpm-tick { display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 44px; height: 44px; padding: 0; background: transparent; border: 0; cursor: pointer; }
+.kpm-tick > span { position: relative; width: 18px; height: 18px; border: 2px solid var(--line-3); }
+.kpm-tick > span[data-state="all"] { background: var(--gold); border-color: var(--accent-edge); }
+.kpm-tick > span[data-state="all"]::after { content: ''; position: absolute; left: 4px; top: 0;
+  width: 5px; height: 10px; border: solid var(--gold-ink); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.kpm-tick > span[data-state="some"] { border-color: var(--accent-edge);
+  background: linear-gradient(to top, var(--gold) 50%, transparent 50%); }
+.kpm-tick:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -8px; }
+
 /* one permission. The button is only the 44px target and the focus ring; the switch
    inside it carries the state. */
 .kpm-toggle { display: inline-flex; align-items: center; justify-content: center;

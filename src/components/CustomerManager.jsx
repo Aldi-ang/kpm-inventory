@@ -4,6 +4,7 @@ import { commitInChunks } from '../utils/helpers';
 import { waNumber } from '../utils/whatsapp.js';
 import { findDuplicates, createdMillis, groupKey } from '../utils/findDuplicates';
 import { getCustomerAccessLevel } from '../config/permissions';
+import { canEditShop } from '../utils/customerAccess.js';
 
 // 🚀 GEOSPATIAL MATH ENGINE: the CRM Directory reads Map Borders through ../utils/areaFromPin.js (shared with the
 // Sales Terminal's new-outlet form since 2026-10-20, so both file a shop under the same area)
@@ -184,7 +185,7 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
 };          
 
 // --- UPGRADED: CUSTOMER MANAGEMENT ---
-export const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, userRole, employeeRegion, tierSettings, onRequestCrop, croppedImage, onClearCroppedImage, onNavigateToMap }) => {
+export const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, userRole, employeeRegion, customerScope = null, tierSettings, onRequestCrop, croppedImage, onClearCroppedImage, onNavigateToMap }) => {
     const [viewMode, setViewMode] = useState('list');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     /* PHONE: the registration form is folded behind one button until he wants it. His YES
@@ -212,6 +213,8 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     // stranding it until someone with global access happens to fix it. See PR notes.
     const canEditCustomer = (c) => {
         if (isAdmin) return true;
+        /* folders on (Settings > Customer access): his team's switch decides, not the tier option - rules CHANGE 17 */
+        if (customerScope) return canEditShop(customerScope, c);
         if (customerAccessLevel === 'view_only') return false;
         if (customerAccessLevel === 'own_region') {
             if (isRegionUnclassified(c.region)) return true;
@@ -1701,7 +1704,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     {/* 🚀 CUSTOMER DIRECTORY PERMISSION TIER: real (non-PIN-admin) Edit access,
                                         gated by view_only / own_region / global. Delete/Verify/Move/DataScrub
                                         stay boss-mode-only above — those are separate, stronger powers. */}
-                                    {!isAdmin && customerAccessLevel !== 'view_only' && (
+                                    {!isAdmin && (customerScope ? customerScope.canEdit : customerAccessLevel !== 'view_only') && (
                                         <div className="flex justify-end items-center mt-auto pt-3 border-t border-[var(--line)]">
                                             {canEditCustomer(c) ? (
                                                 <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 min-h-[44px] lg:min-h-0 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--inset)] text-[var(--ink-dim)] transition-colors">Edit</button>

@@ -11511,5 +11511,71 @@ section('Typing a shop name: the pick waits until he finishes (his 2026-10-20 "H
      finish([...book, { id: 'deket1', name: 'HQ DEKET 1' }], 'HQ DEKET') === 'deket');
 }
 
+section('Customer access by folder - P2 (his 2026-10-20 "bandung team may only see bandung\'s customer")');
+{ const ca = await import('../utils/customerAccess.js');
+  const sync = code(read('src/hooks/useDatabaseSync.js'));
+  const rules = read('firestore.rules');
+  /* comments stripped: the CHANGE 17 note quotes the old read line it replaced */
+  const custBlock = code(rules.slice(rules.indexOf('match /customers/{customerId} {'), rules.indexOf('match /benchmarks/{benchmarkId}')));
+  /* REGRESSION - the server side */
+  ok('REGRESSION: the customers read is no longer "every employee, always"',
+     custBlock.length > 100 && !/allow read: if isSalesman\(bossUid\);/.test(custBlock) &&
+     /allow read: if isSalesman\(bossUid\) && !folderLimited\(bossUid\);/.test(custBlock) && /allow read: if folderReadOk\(bossUid, resource\.data\);/.test(custBlock));
+  ok('the old update line holds only while folders are off; the folder line decides while on',
+     /allow update: if isSalesman\(bossUid\) && !folderLimited\(bossUid\) && customerAccessLevel/.test(custBlock) &&
+     /allow update: if isSalesman\(bossUid\) && folderLimited\(bossUid\) && folderEditOk\(bossUid\);/.test(custBlock));
+  /* the rules and the app must agree on WHO is never limited, or a T1/T2 phone asks for every shop and is refused */
+  const exempt = rules.slice(rules.indexOf('function folderLimited'), rules.indexOf('function folderReadOk'));
+  ok('never limited, both sides: ADMIN, DEVELOPER (isT1Tag) and COMPANY_OWNER',
+     /!isT1Tag\(role\) && role != 'COMPANY_OWNER'/.test(exempt) && /role == 'ADMIN' \|\| role == 'DEVELOPER'/.test(rules) &&
+     ['ADMIN', 'DEVELOPER', 'COMPANY_OWNER'].every(r => ca.seesEveryShop(r)) && !['AREA_ADMIN', 'FLEET_CAPTAIN', 'FIELD_OPERATIVE', 'ROOKIE'].some(r => ca.seesEveryShop(r)));
+  ok('a team is named the same way on both sides (trim, capitals, empty -> UNASSIGNED)',
+     /loc\.trim\(\)\.upper\(\) : 'UNASSIGNED'/.test(rules) && ca.teamOf(' Muntilan ') === 'MUNTILAN' && ca.teamOf('') === 'UNASSIGNED');
+  /* UI says yes, server says no: every field a Journey check-in writes must be a "visit" field, or view-only kills check-ins */
+  { const jv = code(read('src/JourneyView.jsx'));
+    const a = jv.indexOf('const confirmCheckIn'), b = jv.indexOf('updatedAt', a);
+    const body = a < 0 || b < 0 ? '' : jv.slice(jv.indexOf('updateDoc(customerRef, {', a), b + 9);
+    const keys = [...body.matchAll(/^\s*(?:\.\.\.\(.*?\{ )?([a-zA-Z]+):/gm)].map(m => m[1]);
+    const visit = (rules.match(/hasOnly\(\['lastVisit'[^\]]*\]/) || [''])[0];
+    ok('every field the Journey check-in writes is allowed under "view only"',
+       keys.length >= 5 && keys.every(k => visit.includes(`'${k}'`)), `check-in writes ${keys.join(',')} vs rules ${visit}`);
+  }
+  /* REGRESSION - the app side */
+  ok('the listener waits for the access doc (an early every-shop query would be refused, and the refusal kills it)',
+     /if \(!user \|\| !userId \|\| userId === 'default' \|\| !custKey\) return;/.test(sync) && /: customerAccess === undefined \? ''/.test(sync));
+  ok('a limited phone asks Kabupaten by Kabupaten (city in, max 30) + the admin\'s temporary folder',
+     /where\('province', '==', g\.province\), where\('region', '==', g\.region\), where\('city', 'in', g\.cities\)/.test(sync) &&
+     /if \(admin\) queries\.push\(query\(ref, where\('holdTeam', '==', team\)\)\)/.test(sync));
+  ok('the directory\'s Edit follows the folder switch while folders are on',
+     /if \(customerScope\) return canEditShop\(customerScope, c\);/.test(code(read('src/components/CustomerManager.jsx'))));
+  ok('the Customer access tab is Tier 1/2 only', /if \(isSystemOwner \|\| seesEveryShop\(userRole\)\) navTabs\.splice/.test(code(read('src/components/SettingsView.jsx'))));
+  /* BEHAVIOUR - the helpers, on his folders */
+  const kecs31 = Array.from({ length: 31 }, (_, i) => `KEC ${String(i).padStart(2, '0')}`);
+  const qs = ca.grantQueries({ areas: { 'JAWA TENGAH|MAGELANG': kecs31, 'JAWA BARAT|BANDUNG': ['CICENDO', 'CICENDO'] } });
+  ok('31 Kecamatan in one Kabupaten -> two queries of 30 + 1 (Firestore in-limit); a repeated tick asked once',
+     qs.length === 3 && qs[0].cities.length === 30 && qs[1].cities.length === 1 && qs[2].cities.length === 1 &&
+     qs[0].province === 'JAWA TENGAH' && qs[0].region === 'MAGELANG' && qs[2].region === 'BANDUNG', JSON.stringify(qs.map(q => q.cities.length)));
+  ok('a shop is filed only in exact capitals with no unknown level',
+     ca.filedArea({ province: 'JAWA TENGAH', region: 'MAGELANG', city: 'MUNTILAN' }) !== null &&
+     ca.filedArea({ province: 'Jawa Tengah', region: 'MAGELANG', city: 'MUNTILAN' }) === null &&
+     ca.filedArea({ province: 'JAWA TENGAH', region: 'UNMAPPED KABUPATEN', city: 'MUNTILAN' }) === null &&
+     ca.filedArea({ province: 'JAWA TENGAH', region: 'MAGELANG' }) === null);
+  const { tree, unfiled } = ca.folderTree([
+    { province: 'JAWA TENGAH', region: 'MAGELANG', city: 'MUNTILAN' }, { province: 'JAWA TENGAH', region: 'MAGELANG', city: 'MUNTILAN' },
+    { province: 'JAWA BARAT', region: 'BANDUNG', city: 'CICENDO' }, { province: 'Jawa Tengah', region: 'Magelang', city: 'Muntilan' }]);
+  ok('the folder tree counts shops per Kecamatan and sets the unfiled aside',
+     tree['JAWA TENGAH'].MAGELANG.MUNTILAN === 2 && tree['JAWA BARAT'].BANDUNG.CICENDO === 1 && unfiled === 1);
+  const access = { on: true, teams: { MUNTILAN: { areas: { 'JAWA TENGAH|MAGELANG': ['MUNTILAN'] }, adminEdit: true, teamEdit: false } } };
+  const alex = ca.accessFor(access, 'FLEET_CAPTAIN', 'MUNTILAN'), budi = ca.accessFor(access, 'FIELD_OPERATIVE', ' muntilan ');
+  const m1 = { province: 'JAWA TENGAH', region: 'MAGELANG', city: 'MUNTILAN' }, b1 = { province: 'JAWA BARAT', region: 'BANDUNG', city: 'CICENDO' };
+  const held = { province: 'JAWA TENGAH', region: 'MAGELANG', city: 'DUKUN', holdTeam: 'MUNTILAN' };
+  ok('off, or a T2: not limited at all', ca.accessFor({ ...access, on: false }, 'FIELD_OPERATIVE', 'MUNTILAN') === null && ca.accessFor(access, 'COMPANY_OWNER', 'X') === null);
+  ok('Alex (T4) sees and edits Muntilan, not Bandung', ca.canSeeShop(alex, m1) && ca.canEditShop(alex, m1) && !ca.canSeeShop(alex, b1) && !ca.canEditShop(alex, b1));
+  ok('Budi (T5, " muntilan ") sees Muntilan, view only', budi.team === 'MUNTILAN' && ca.canSeeShop(budi, m1) && !ca.canEditShop(budi, m1));
+  ok('the temporary folder: Alex sees it, Budi does not', ca.canSeeShop(alex, held) && !ca.canSeeShop(budi, held));
+  ok('a team nobody ticked sees nothing', !ca.canSeeShop(ca.accessFor(access, 'FIELD_OPERATIVE', 'SEMARANG'), m1));
+  ok('tick states: none / some / all', ca.tickState(0, 5) === 'none' && ca.tickState(2, 5) === 'some' && ca.tickState(5, 5) === 'all');
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
