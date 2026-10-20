@@ -11598,5 +11598,15 @@ section('The vault screen covers everything (his 2026-10-20 "i found bug look at
      !/createPortal/.test(read('src/components/ConfirmGate.jsx')) && !/createPortal/.test(read('src/components/Toast.jsx')));
 }
 
+section('The confirm box is big enough to read (his 2026-10-20 "make it bigger because it is too small hard to read")');
+{ const gate = read('src/components/ConfirmGate.jsx');
+  const px = (re) => Number((gate.match(re) || [])[1] || 0);
+  const msg = px(/whitespace-pre-line font-mono text-\[(\d+(?:\.\d+)?)px\]/), title = px(/mb-3 font-mono text-\[(\d+(?:\.\d+)?)px\] font-black uppercase/);
+  const btns = [...gate.matchAll(/min-h-\[(\d+)px\] flex-1[^"]*text-\[(\d+)px\]/g)];
+  ok('REGRESSION: the message is 15px or more (was 11px), the title 12px or more (was 9.5px)', msg >= 15 && title >= 12, `message ${msg}px, title ${title}px`);
+  ok('both buttons: 14px text or more, 52px tall or more (were 11px / 44px)', btns.length === 2 && btns.every(m => Number(m[1]) >= 52 && Number(m[2]) >= 14), btns.map(m => m[0].slice(0, 30)).join(' | '));
+  ok('the box is max-w-xl (576px) on the desk, full width minus the margin on a phone', /className="w-full max-w-xl border/.test(gate));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

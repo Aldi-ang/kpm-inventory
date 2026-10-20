@@ -136,18 +136,18 @@ export function ConfirmHost() {
                 tabIndex={-1}
                 role="alertdialog"
                 aria-modal="true"
-                className="w-full max-w-md border border-[#a89070] bg-[#14100e] shadow-[0_0_40px_rgba(0,0,0,0.8)] outline-none"
+                className="w-full max-w-xl border border-[#a89070] bg-[#14100e] shadow-[0_0_40px_rgba(0,0,0,0.8)] outline-none"
             >
-                <div className="border-l-[3px] px-4 py-3" style={{ borderColor: accent }}>
+                <div className="border-l-[3px] px-6 py-5" style={{ borderColor: accent }}>
                     <div
-                        className="mb-2 font-mono text-[9.5px] font-black uppercase tracking-[0.16em]"
+                        className="mb-3 font-mono text-[12px] font-black uppercase tracking-[0.16em]"
                         style={{ color: accent }}
                     >
                         {heading}
                     </div>
                     {/* pre-line: many of these messages were written with \n\n paragraph breaks
                         back when a browser dialog was rendering them. */}
-                    <div className="whitespace-pre-line font-mono text-[11px] leading-relaxed text-[#cfc6ba]">
+                    <div className="whitespace-pre-line font-mono text-[15px] leading-relaxed text-[#cfc6ba]">
                         {pending.message}
                     </div>
                     {isPrompt && (
@@ -155,23 +155,23 @@ export function ConfirmHost() {
                             ref={inputRef}
                             type="text"
                             defaultValue={pending.defaultValue}
-                            className="mt-3 w-full border border-[#a89070] bg-[#0d0a09] px-3 py-2 font-mono text-[12px] text-[#f5e6c8] outline-none focus:border-[#ff9d00]"
+                            className="mt-4 w-full border border-[#a89070] bg-[#0d0a09] px-3 py-3 font-mono text-[15px] text-[#f5e6c8] outline-none focus:border-[#ff9d00]"
                         />
                     )}
                 </div>
 
-                <div className="flex gap-2 border-t border-[#3a3128] p-3">
+                <div className="flex gap-3 border-t border-[#3a3128] p-4">
                     <button
                         type="button"
                         onClick={() => close(false)}
-                        className="min-h-[44px] flex-1 border border-[#a89070] px-3 font-mono text-[11px] font-black uppercase tracking-wider text-[#cfc6ba] transition-colors hover:bg-[#241d18]"
+                        className="min-h-[52px] flex-1 border border-[#a89070] px-3 font-mono text-[14px] font-black uppercase tracking-wider text-[#cfc6ba] transition-colors hover:bg-[#241d18]"
                     >
                         Cancel
                     </button>
                     <button
                         type="button"
                         onClick={() => close(true)}
-                        className="min-h-[44px] flex-1 px-3 font-mono text-[11px] font-black uppercase tracking-wider text-[#14100e] transition-opacity hover:opacity-85"
+                        className="min-h-[52px] flex-1 px-3 font-mono text-[14px] font-black uppercase tracking-wider text-[#14100e] transition-opacity hover:opacity-85"
                         style={{ backgroundColor: accent }}
                     >
                         {acceptLabel}
