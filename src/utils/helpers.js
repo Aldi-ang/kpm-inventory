@@ -201,7 +201,7 @@ export const splitToUnits = (totalBks, product) => {
    "10 Karton / 2 Bal", never "10 Karton 2 / Bal". */
 export const unitsText = (totalBks, product) => {
     const u = splitToUnits(totalBks, product);
-    return ['Karton', 'Bal', 'Slop', 'Bks'].filter(k => u[k]).map(k => `${u[k]} ${k}`).join(' ') || '0 Bks';
+    return ['Karton', 'Bal', 'Slop', 'Bks'].filter(k => u[k]).map(k => `${u[k]}\u00a0${k}`).join(' ') || '0\u00a0Bks';
 };
 
 /* A cart line carries the whole master product on `item.product` so pricing and the stock

@@ -11392,8 +11392,14 @@ section('Permissions. The backup copy of the matrix is replaced, never merged (r
 
 section('Sales terminal card: the count is back, the price follows the shop (his 2026-10-20, pick B)');
 { const msv = code(read('src/MerchantSalesView.jsx'));
-  ok('the card shows the count as he says it, plain and inside LOW',
-     (msv.match(/\{unitsText\(item\.stock, item\)\}/g) || []).length === 2 && imports(msv, 'unitsText'));
+  ok('the card shows the count as he says it, plain and inside LOW, on a button',
+     (msv.match(/\{countLabel\(item\)\}<\/button>/g) || []).length === 2 && imports(msv, 'unitsText') &&
+     /const countLabel = \(p\) => \(flatCountId === p\.id \? `\$\{new Intl\.NumberFormat\('id-ID'\)\.format\(p\.stock\)\}\\u00a0Bks` : unitsText\(p\.stock, p\)\);/.test(msv));
+  ok('a press flips it to the flat Bks total and it flips back by itself (the clock\'s 5 s)',
+     /setTimeout\(\(\) => setFlatCountId\(null\), 5000\)/.test(msv) &&
+     (msv.match(/onClick=\{\(e\) => flipCount\(e, item\)\}/g) || []).length === 2);
+  ok('REGRESSION: pressing the count does not also add the ware to the cart (the card\'s own press)',
+     /const flipCount = \(e, p\) => \{ e\.stopPropagation\(\);/.test(msv));
   ok('REGRESSION: the card price is no longer always the Ecer price',
      !/format\(item\.priceEcer \|\| 0\)/.test(msv) && /format\(cardPriceOf\(item\)\)/.test(msv) &&
      /\{lockedTier \|\| 'Ecer'\} Price/.test(msv) &&

@@ -27,6 +27,7 @@ import { shareReceipt } from './components/shareReceipt.js';
    new sale, which is the same class of bug as the previous customer's territoryOverride leaking
    into an innocent walk-in (see resetTerminalAfterDeal). */
 const DRAFT_KEY = 'kpm_sales_draft_v1';
+const COUNT_FLIP_TITLE = 'Press to see the total in Bks';
 /* A draft must not survive into the next selling day: it carries price snapshots taken when the
    basket was built, and yesterday's price is a wrong sale, not a saved one.
    ⚠️ This is an AGE CAP, not a day boundary — twelve hours from when the basket was saved, which
@@ -108,6 +109,17 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const [lockedTier, setLockedTier] = useState(draft?.lockedTier ?? null);
     // the product card's price: the picked shop's tier, Ecer until a shop is picked
     const cardPriceOf = (p) => ({ Retail: p.priceRetail, Grosir: p.priceGrosir }[lockedTier] ?? p.priceEcer) || 0;
+    /* The card's count reads "1 Slop 6 Bks"; a press shows the flat "16 Bks" and it flips back by itself, like the
+       header clock and its date (his 2026-10-20: "i want bks also included there ... pressable button like the clock
+       button to show both format"). One card at a time, same 5 s hold as the clock. */
+    const [flatCountId, setFlatCountId] = useState(null);
+    useEffect(() => {
+        if (!flatCountId) return undefined;
+        const t = setTimeout(() => setFlatCountId(null), 5000);
+        return () => clearTimeout(t);
+    }, [flatCountId]);
+    const countLabel = (p) => (flatCountId === p.id ? `${new Intl.NumberFormat('id-ID').format(p.stock)}\u00a0Bks` : unitsText(p.stock, p));
+    const flipCount = (e, p) => { e.stopPropagation(); setFlatCountId((id) => (id === p.id ? null : p.id)); };   // the card's own press adds to the cart
     const [tempoDays, setTempoDays] = useState(draft?.tempoDays ?? appSettings?.defaultTempoDays ?? 7); 
     const [printFormat, setPrintFormat] = useState('thermal'); 
 
@@ -2500,9 +2512,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                             {item.stock <= 0 ? (
                                                 <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-red-900/20 text-red-500 border-red-900/50">EMPTY</span>
                                             ) : isLowStock(item, appSettings) ? (
-                                                <span className="kpm-card-count text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-brass-4)] text-[var(--duke-amber-ink)] border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)]">LOW · {unitsText(item.stock, item)}</span>
+                                                <button type="button" onClick={(e) => flipCount(e, item)} title={COUNT_FLIP_TITLE} className="kpm-card-count relative before:absolute before:-inset-x-1 before:-inset-y-3 before:content-[''] cursor-pointer text-left text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-brass-4)] text-[var(--duke-amber-ink)] border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)]">LOW · {countLabel(item)}</button>
                                             ) : (
-                                                <span className="kpm-card-count text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-badge)] text-[var(--duke-ink-3)] border-[var(--duke-edge-1)]">{unitsText(item.stock, item)}</span>
+                                                <button type="button" onClick={(e) => flipCount(e, item)} title={COUNT_FLIP_TITLE} className="kpm-card-count relative before:absolute before:-inset-x-1 before:-inset-y-3 before:content-[''] cursor-pointer text-left text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-badge)] text-[var(--duke-ink-3)] border-[var(--duke-edge-1)]">{countLabel(item)}</button>
                                             )}
                                         </div>
                                         {/* the price THIS shop pays (his 2026-10-20: "the price shown on the card should be
