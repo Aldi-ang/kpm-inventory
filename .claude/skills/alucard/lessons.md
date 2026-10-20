@@ -165,6 +165,7 @@ Fired: 2026-09-09 (twice in one turn on the Titip revenue rule. A regression che
 Fired: 2026-09-29 (the new resource==null guard tests code(rules), so the CHANGE 12 comment quoting the old `email == request.auth.token.email ||` cannot satisfy or break it)
 Fired: 2026-10-02 (bell self-check: !/isSticky/ went red on the toastSeverity.js header comment; wrapped in code() before trusting it)
 Fired: 2026-10-11 07:25 (the message-strip guards read Toast.jsx and useSound.js through code() - both new comments name `commit` and `tap`)
+Seen: 2026-10-20 (the new P2 guard matched the CHANGE 17 comment that quotes the old read line; caught on the first run, fixed by code() over the rules block before the RED trial)
 
 
 ### 2026-08-27 — a check anchored on display copy fires on every wording change
@@ -729,6 +730,7 @@ grep found all four. The guard shipped as a `WALK_IN` refusal instead.
 Seen: 2026-09-08
 Fired: 2026-09-08 (caught before the line was written, by grepping the writers rather than trusting
   the two status names already in front of me)
+Fired: 2026-10-20 09:50 ("view only" for the team: every writer of a customer doc listed first - the Journey check-in fields stay allowed, or view only would have killed check-ins)
 
 ### 2026-09-08 — a check that calls a function reading module state is scoped by SECTION ORDER, not by its own arguments
 **Status:** LIVE
@@ -816,6 +818,7 @@ Fired: 2026-10-12 (batch-2 brief read whole: the 18:10 / 18:12 / 18:20 blocks ch
 Fired: 2026-10-13 (demo brief read whole: 20:05 block + queue agree; no test answers in PROGRESS, so design first)
 
 Fired: 2026-10-20 06:46 (NEXT-SESSION read top block first; the 14:30 block's "Blaze no" line names the same two gaps and is superseded by the 19:20 job)
+Fired: 2026-10-20 09:36 (P2 brief read whole: the 09:29 "Settings screen: DECIDED B" line amends the 08:21 block; no contradiction)
 
 ### 2026-09-26 — an output path built from import.meta.url needs fileURLToPath, never URL.pathname
 **Status:** LIVE
@@ -1300,12 +1303,13 @@ Seen: 2026-10-18, 2026-10-19
 Fired: 2026-10-18 15:17 (model-switcher links: `awk -v` insert, read back in its own call, commit `55be9dc` only after the three lines printed right)
 
 ### 2026-10-19 — a new rules CHANGE number comes from a grep of the file, not from memory
-**Status:** LIKELY
+**Status:** LIVE
 **Trigger:** before writing a new commented block into firestore.rules (any "[CHANGE n" label) - grep "CHANGE [0-9]" in the file and take the highest plus one.
 **Lesson:** the rules draft numbers its changes, and a published change keeps its number in the live text. A number picked without looking can repeat one that is already live, and every note, commit and question that cites it then points at two different rules.
 **Would have prevented:** 2026-10-19, the sales_stats block shipped in kpm 363cea9 as "CHANGE 15" while the live Missed-list rule is already CHANGE 15; PROGRESS.md, the vault note and the commit message all said 15 before b43a9bb renumbered it to 16 - the 363cea9 message still says 15.
 Seen: 2026-10-19
 Fired:
+Fired: 2026-10-20 09:40 (grep "CHANGE [0-9]" -> highest 16 -> the customer-access block is CHANGE 17)
 
 ### 2026-10-20 — an escape typed into an editor's new text lands as the raw character
 **Status:** LIKELY
