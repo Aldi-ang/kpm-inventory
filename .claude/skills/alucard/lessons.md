@@ -1317,3 +1317,10 @@ Fired: 2026-10-20 09:40 (grep "CHANGE [0-9]" -> highest 16 -> the customer-acces
 **Lesson:** the editor writes the decoded character (an invisible no-break space), not the six-character escape. Write such a line through a small script that emits the escape, or run `grep -n <line> | cat -A` right after the edit and fix any `M-BM-`.
 **Would have prevented:** 2026-10-20, the terminal count chip: raw no-break spaces landed in helpers.js, MerchantSalesView.jsx and the check file; a check written with the escape failed against the raw character (one failed run, one fix pass), and the invisible character shipped in kpm a2bf766 until e31c310.
 Seen: 2026-10-20
+
+### 2026-10-20 — never `git commit -a` in kpm: graphify-out is tracked and always dirty
+**Status:** LIKELY
+**Trigger:** before a mutating action - the moment `git commit` is typed with `-a` or `-am` in the kpm repo.
+**Lesson:** stage by path (`git add <files>`), then commit. `graphify-out/` is tracked and rewritten by every `graphify update`, so `-a` silently adds tens of thousands of lines of graph churn to a commit whose message says something else.
+**Would have prevented:** 2026-10-20, the "clock read" notes commit took 5 graphify-out files (+55,801 / -34,713) along with two 4-line notes; caught by `git show --stat`, redone with `reset --soft` before any push.
+Seen: 2026-10-20
