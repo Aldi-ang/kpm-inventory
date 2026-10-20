@@ -7235,18 +7235,25 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
    mode. Read from the raw file: code() strips a block-comment span in this file too. */
 {
   const c = read('src/components/CustomerManager.jsx');
-  ok('the form is folded on the phone and always open on the desk — one state, seeded from the width',
-     /const \[showForm, setShowForm\] = useState\(\(\) => typeof window !== 'undefined' && window\.innerWidth >= 1024\);/.test(c) &&
-     /className=\{`bg-\[var\(--raised\)\] p-6 rounded-2xl shadow-sm border border-\[var\(--line\)\] \$\{showForm \? '' : 'hidden lg:block'\}`\}/.test(c),
-     'his YES to board 1: 1,100 px of form sat above the search box and the shop list on every lookup');
-  ok('the button that opens it is phone-only, 48 tall, and its icon is not the only element child (index.css button:has(> svg:only-child) would force it visible on the desk)',
-     /className="kpm-plate lg:hidden w-full min-h-\[48px\] rounded-xl bg-\[var\(--gold\)\] text-\[var\(--gold-ink\)\]/.test(c) &&
-     /<span>\{showForm \? 'Hide the form' : 'Add new customer'\}<\/span>/.test(c),
-     'measured: with the icon as the only element child the button was inline-flex at 1280 and 44 tall instead of 48');
-  ok('BEHAVIOUR: Edit opens the folded form; a successful save on the phone folds it again',
+  /* 2026-10-20 his "i want this panel to be standalone panel that shows up when we press the edit button only" REPLACES
+     the 2026-09-17 "always open on the desk": the form is a panel over the directory on every width. */
+  ok('the form is a standalone panel, closed on every width until Edit or "Add new customer" opens it',
+     /const \[showForm, setShowForm\] = useState\(false\);/.test(c) &&
+     /\{canAddOrEditAnything && showForm && createPortal\(/.test(c) && /<\/div>, document\.body\)\}/.test(c) &&
+     /import \{ createPortal \} from 'react-dom';/.test(c),
+     'drawn onto <body>: inside the page the side menu would paint over it (the vault-gate trap)');
+  ok('the panel sits above the menu and below the confirm box and the toasts, and a tap outside does not close it',
+     /className="kpm-cust-sheet fixed inset-0 z-\[9000\] bg-black\/75 overflow-y-auto lg:p-8"(?![^>]*onClick)/.test(c),
+     'a refused save must still report over it; a half-typed shop must not be lost to a stray tap');
+  ok('the button that opens it shows on every width, 48 tall, gold edge + gold word (no amber fill), its icon not the only element child',
+     /className="kpm-plate w-full min-h-\[48px\] rounded-xl border border-\[var\(--accent-edge\)\] bg-transparent text-\[var\(--accent-ink\)\]/.test(c) &&
+     /<Plus size=\{16\} \/><span>Add new customer<\/span>/.test(c),
+     'index.css button:has(> svg:only-child) would force inline-flex at 44 tall');
+  ok('BEHAVIOUR: Edit opens the panel; a save closes it on every width; the ✕ drops an edit but keeps a new shop\'s typing',
      /setEditingId\(c\.id\);\s*\/\*[^*]*\*\/\s*setShowForm\(true\);/.test(c) &&
-     /setCoordInput\(""\);\s*\/\*[^*]*\*\/\s*if \(window\.innerWidth < 1024\) setShowForm\(false\);/.test(c),
-     'a folded form that Edit cannot open is a dead Edit button');
+     /setCoordInput\(""\);\s*\/\*[^*]*\*\/\s*setShowForm\(false\);/.test(c) &&
+     /const closeForm = \(\) => \{\s*if \(editingId\) \{[\s\S]{0,400}?\}\s*setShowForm\(false\);\s*\};/.test(c) && /onClick=\{closeForm\}/.test(c),
+     'a panel that Edit cannot open is a dead Edit button');
   ok('REGRESSION: no white box in dark mode — every form input carries a surface token, the name/phone boxes inset on the raised card, the rest raised in their inset blocks',
      (c.match(/className="w-full p-2 min-h-\[44px\] lg:min-h-0 border rounded border-\[var\(--line\)\] bg-\[var\(--inset\)\] text-\[var\(--ink\)\]"/g) || []).length === 2 &&
      (c.match(/h-11 lg:h-10 px-2 text-sm border rounded[^"]*bg-\[var\(--raised\)\]/g) || []).length === 4 &&
@@ -7340,7 +7347,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   ok('the counts are printed stamps, the level header is a rule not a card, ADD is the plate, search is a well',
      (c.match(/className="kpm-stamp text-\[11px\] lg:text-\[10px\]/g) || []).length === 1 && (c.match(/countText: `\$\{data\.count\} (Total Stores|Registered)`/g) || []).length === 3 &&
      (c.match(/<div className="flex justify-between items-center px-1 py-2 border-b border-\[var\(--line-2\)\]">/g) || []).length === 3 &&
-     /className="kpm-plate lg:hidden w-full min-h-\[48px\] rounded-xl bg-\[var\(--gold\)\]/.test(c) &&
+     /className="kpm-plate w-full min-h-\[48px\] rounded-xl border border-\[var\(--accent-edge\)\]/.test(c) &&   /* 2026-10-20: gold edge, no amber fill */
      /py-3 bg-\[var\(--inset\)\] border border-\[var\(--line-2\)\] rounded-xl text-\[var\(--ink\)\] focus:border-\[var\(--accent-edge\)\] outline-none shadow-\[inset_0_2px_6px_rgba\(0,0,0,\.4\)\] transition-colors/.test(c));
   ok('REGRESSION: the competitor table never scrolls sideways under lg — the box, the table, the head, the rows',
      /<div className="flex-1 overflow-y-auto lg:overflow-x-auto pb-2">/.test(c) &&
@@ -7480,7 +7487,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/<div className="flex gap-2">\s*\{\/\*/.test(code(c)),
      'measured 2026-09-18 as tier 1: the Import Map label\'s right edge at 521 in a 375 viewport, shell scrollWidth 521');
   ok('the phone fold sits AFTER the ADD NEW CUSTOMER bar and uses the same grid-template-rows fold as the ponder overlay',
-     /kpm-plate lg:hidden[\s\S]{0,900}?\{isAdmin && \(\s*<div className="lg:hidden" data-acts>/.test(c) &&
+     /kpm-plate w-full[\s\S]{0,900}?\{isAdmin && \(\s*<div className="lg:hidden" data-acts>/.test(c) &&
      /style=\{\{ gridTemplateRows: showTools \? '1fr' : '0fr' \}\}/.test(c));
   ok('the phone labels are short and the desk labels are exactly what they were',
      /\{phone \? 'Import map' : 'Import Map Marker \(KML\)'\}/.test(c) && /'Find Duplicates'/.test(c) && /Data Scrub\s*<\/button>/.test(c));

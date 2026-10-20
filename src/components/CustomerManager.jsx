@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc, getDocs, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 import { commitInChunks } from '../utils/helpers';
 import { waNumber } from '../utils/whatsapp.js';
@@ -193,7 +194,10 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
        list, so every lookup scrolled past every field. The desk keeps its order — the card is
        always shown at lg (the class below), this flag only matters under it. Editing a shop
        opens it (handleEdit), a successful save on the phone closes it again. */
-    const [showForm, setShowForm] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
+    /* 2026-10-20 his "i want this panel to be standalone panel that shows up when we press the edit button only ...
+       to save some spaces": the form is a panel over the directory on EVERY width now, closed until Edit or
+       "Add new customer" opens it (the desk used to keep it open above the list). */
+    const [showForm, setShowForm] = useState(false);
     const formCardRef = useRef(null);
 
     // 🚀 CUSTOMER DIRECTORY PERMISSION TIER: view_only / own_region / global.
@@ -1037,8 +1041,8 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             } 
             setFormData({ name: '', phone: '', province: '', region: '', city: '', address: '', gmapsUrl: '', embedHtml: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: '', picName: '', description: '', mapFolder: '' });
             setCoordInput("");
-            /* saved: the phone folds the form away so the directory he just added to is in view */
-            if (window.innerWidth < 1024) setShowForm(false);
+            /* saved: the panel closes so the directory he just added to is in view */
+            setShowForm(false);
         } catch (err) {
             console.error(err);
             // 🚀 Surface the region-lock instead of failing silently — this is the ONE case
@@ -1061,9 +1065,17 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         }); 
         setCoordInput(c.latitude && c.longitude ? `${c.latitude}, ${c.longitude}` : "");
         setEditingId(c.id); 
-        /* the phone keeps the form folded until it is needed — an Edit press is exactly that */
+        /* the panel stays closed until it is needed — an Edit press is exactly that */
         setShowForm(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' }); 
+    };
+    /* the panel's ✕: an edit is dropped (what "Cancel Edit" did), a new shop's typing is kept for when it reopens */
+    const closeForm = () => {
+        if (editingId) {
+            setEditingId(null);
+            setFormData({name:'', phone:'', province:'', region:'', city:'', address:'', gmapsUrl:'', embedHtml: '', latitude: '', longitude: '', storeImage:'', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: '', picName: '', description: '', mapFolder: ''});
+            setCoordInput("");
+        }
+        setShowForm(false);
     };
 
     const handleDelete = async (id, name) => { if (await confirmAction("Delete profile?")) { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id)); logAudit("CUSTOMER_DELETE", `Deleted ${name}`); } };
@@ -1313,12 +1325,12 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 </div>
             )}
             {canAddOrEditAnything && (
-                <button type="button" onClick={() => setShowForm((v) => !v)} aria-expanded={showForm}
-                    className="kpm-plate lg:hidden w-full min-h-[48px] rounded-xl bg-[var(--gold)] text-[var(--gold-ink)] font-bold text-[13px] uppercase tracking-[0.12em] flex items-center justify-center gap-2">
+                <button type="button" onClick={() => { if (editingId) closeForm(); setShowForm(true); }} aria-expanded={showForm}
+                    className="kpm-plate w-full min-h-[48px] rounded-xl border border-[var(--accent-edge)] bg-transparent text-[var(--accent-ink)] font-bold text-[13px] uppercase tracking-[0.12em] flex items-center justify-center gap-2">
                     {/* the label is a span so the icon is not the button's only element child —
                         index.css's `button:has(> svg:only-child)` would otherwise force
                         inline-flex over `lg:hidden` and pin the height at 44 */}
-                    {showForm ? <X size={16} /> : <Plus size={16} />}<span>{showForm ? 'Hide the form' : 'Add new customer'}</span>
+                    <Plus size={16} /><span>Add new customer</span>
                 </button>
             )}
             {isAdmin && (
@@ -1335,14 +1347,19 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     </div>
                 </div>
             )}
-            {canAddOrEditAnything && (
-            <div ref={formCardRef} className={`bg-[var(--raised)] p-6 rounded-2xl shadow-sm border border-[var(--line)] ${showForm ? '' : 'hidden lg:block'}`}>
+            {/* THE PANEL - drawn onto <body> (createPortal): inside the page it would sit under the side menu, whose
+                layer beats the whole content box (the vault-gate trap, BiohazardTheme). Above the menu, below the
+                confirm box (10001) and the toasts (10000), so a refused save still reports over it. A tap outside
+                does NOT close it - a half-typed shop would be lost; the ✕ and a save do. */}
+            {canAddOrEditAnything && showForm && createPortal(
+            <div className="kpm-cust-sheet fixed inset-0 z-[9000] bg-black/75 overflow-y-auto lg:p-8" role="dialog" aria-modal="true" aria-label={editingId ? 'Edit customer' : 'Add new customer'}>
+            <div ref={formCardRef} className="animate-fade-in w-full max-w-5xl mx-auto min-h-full lg:min-h-0 bg-[var(--raised)] p-6 lg:rounded-2xl shadow-sm border border-[var(--line)]">
                 {/* noValidate: the browser's own "Please fill out this field." bubble used to
                     speak first, in the browser's voice, and handleSubmit's refusal never ran.
                     The strip is the app's one reporting channel; every refusal on this form
                     lives in handleSubmit, so the form has to reach it. His test, 2026-09-13. */}
                 <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-[var(--ink-dim)] uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>{editingId && <button type="button" onClick={() => { setEditingId(null); setFormData({name:'', phone:'', province:'', region:'', city:'', address:'', gmapsUrl:'', embedHtml: '', latitude: '', longitude: '', storeImage:'', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: '', picName: '', description: '', mapFolder: ''}); setCoordInput(""); }} className="text-xs text-[var(--danger-ink)] hover:underline">Cancel Edit</button>}</div>
+                    <div className="flex justify-between items-center mb-2"><h3 className="font-bold text-sm text-[var(--ink-dim)] uppercase">{editingId ? 'Edit Customer' : 'Add New Customer'}</h3><button type="button" onClick={closeForm} aria-label={editingId ? 'Cancel the edit and close' : 'Close the form'} className="kpm-btn min-w-[44px] px-3"><X size={16} /><span>{editingId ? 'Cancel edit' : 'Close'}</span></button></div>
                     
                     <div className="flex flex-col md:flex-row gap-4">
                         <div className="flex-1"><label className="text-xs font-bold text-[var(--ink-dim)] uppercase">Store Name</label><input value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} className="w-full p-2 min-h-[44px] lg:min-h-0 border rounded border-[var(--line)] bg-[var(--inset)] text-[var(--ink)]" required/></div>
@@ -1519,7 +1536,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                     </div>
                 </form>
             </div>
-            )}
+            </div>, document.body)}
 
             {/* 🚀 GLOBAL SEARCH BAR */}
             <div className="relative mb-6">
