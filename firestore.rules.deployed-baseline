@@ -1,10 +1,12 @@
 // =============================================================================
-// PUBLISHED 2026-10-02 ~07:38 WIB by Aldi from the Firebase Console (the text of commit de33030, pasted
-//   whole from the clipboard). firestore.rules.deployed-baseline is that exact text - the instant rollback
-//   copy. Live = the 2026-07-28 rules + the shared rank/badge path closed, + CHANGE 11/11b (a vault
-//   password per person), 12 (lock an account), 13 (T1/T2 move a person to a new Gmail), 14 (the eight
-//   holes found reviewing the live rules), 15 (the bell's Missed list, one per person). Before this:
-//   2026-09-29 ~10:50 (commit 788692f, without 15). Any change below this line is a DRAFT again.
+// PUBLISHED 2026-10-20 ~10:30 WIB by Aldi from the Firebase Console (this file as of kpm f24f2bf, sent to him
+//   as a file and pasted whole; his "btw i already publish the rules"). firestore.rules.deployed-baseline is
+//   that text - the instant rollback copy. Live = the 2026-07-28 rules + the shared rank/badge path closed,
+//   + CHANGE 11/11b (a vault password per person), 12 (lock an account), 13 (T1/T2 move a person to a new
+//   Gmail), 14 (the eight holes found reviewing the live rules), 15 (the bell's Missed list, one per person),
+//   16 (a salesman's sale may add to the month's sales tally), 17 (customer access by folder; Tier 3 never
+//   limited). Before this: 2026-10-19 ~14:41 (commit 13fffe1, without 17). Any change below this line is a
+//   DRAFT again.
 //
 // Everything except the marked [CHANGE N] / [ADDED] / [FLAGGED] blocks below is
 // intentionally byte-for-byte the rules that were live before 2026-07-23. An
@@ -190,6 +192,71 @@ service cloud.firestore {
       let theirRegionRaw = resource.data.get('region', '');
       let theirRegion = theirRegionRaw is string ? theirRegionRaw.lower().trim() : '';
       return myRegion != '' && myRegion == theirRegion;
+    }
+
+    // =====================================================================
+    // [CHANGE 17 — 2026-10-20, PUBLISHED by Aldi 2026-10-20 ~10:30 WIB] CUSTOMER ACCESS BY FOLDER.
+    // His words: "as tier 1 i want option so that alex be able to see the customer inside which folder" -
+    // "bandung team may only see bandung's customer and not muntilan one". Tier 1/2 tick, per Fleet & Roster
+    // branch (a TEAM), the Kecamatan its people may see, in Settings > Customer access. The ticks live in ONE doc,
+    // users/{bossUid}/settings/customer_access:
+    //   { on, teams: { MUNTILAN: { areas: { 'JAWA TENGAH|MAGELANG': ['MUNTILAN', ...] }, adminEdit, teamEdit } } }
+    // Nothing changes until he switches `on`: until then every line below is the old one.
+    // T1/T2/T3 (owner, 'ADMIN', 'DEVELOPER', 'COMPANY_OWNER', 'AREA_ADMIN') are never limited - T3 by his word:
+    // "tier 3 should be able to see evrything on default actually same like tier 1 and 2". T4 is the team's admin
+    // (adminEdit), T5/T6 its team (teamEdit). A shop is in a folder when its province|region|city match a tick
+    // EXACTLY - capitals, as Data Scrub writes them. Each team admin also sees his team's temporary folder:
+    // shops carrying holdTeam == his branch (new shops waiting for him to place them).
+    // View only still lets anyone who sees a shop record a visit (Journey check-in / undo / request done).
+    // Replaces the tier-level "own region" option (CHANGE 6) while on - that one compared a branch name with a
+    // Kabupaten name and never matched his data. rules-test/test-customer-access.mjs asserts every case.
+    // =====================================================================
+    function customerAccessDoc(bossUid) {
+      let snap = get(/databases/$(database)/documents/artifacts/cello-inventory-manager/users/$(bossUid)/settings/customer_access);
+      return snap != null ? snap.data : null;
+    }
+    // Each check below reads the profile ONCE. The rules engine stops at 1000 steps for the WHOLE request - every
+    // allow line it tries counts - and small helpers that each re-read the profile ran a team admin's
+    // temporary-folder query and every allowed edit past it (refused, rules-test 2026-10-20).
+    function folderLimited(bossUid) {
+      let acc = customerAccessDoc(bossUid);
+      let profile = getEmployeeProfile();
+      let role = profile != null ? profile.get('userRole', 'NONE') : 'NONE';
+      return acc != null && acc.get('on', false) == true && !isT1Tag(role) && role != 'COMPANY_OWNER' && role != 'AREA_ADMIN';
+    }
+    // a shop in one of his team's ticked Kecamatan, or (team admin only) in his team's temporary folder
+    function folderReadOk(bossUid, shop) {
+      let profile = getEmployeeProfile();
+      let role = profile.get('userRole', 'NONE');
+      let loc = profile.get('location', '');
+      let team = loc is string && loc.trim() != '' ? loc.trim().upper() : 'UNASSIGNED';
+      let acc = customerAccessDoc(bossUid);
+      let areas = acc.get('teams', {}).get(team, {}).get('areas', {});
+      return profile.bossUid == bossUid && acc.get('on', false) == true && !isT1Tag(role) && role != 'COMPANY_OWNER' && role != 'AREA_ADMIN' && (
+        (shop.city in areas.get(shop.province + '|' + shop.region, [])) ||
+        ((role == 'AREA_ADMIN' || role == 'FLEET_CAPTAIN') && shop.get('holdTeam', '') == team));
+    }
+    // The edit check computes each value ONCE. Spread over small helpers that each re-read the profile, it ran
+    // past the rules engine's 1000-step limit on every allowed edit (rules-test, 2026-10-20) - an edit that should
+    // pass was refused. View only still lets anyone who sees the shop record a visit.
+    function folderEditOk(bossUid) {
+      let profile = getEmployeeProfile();
+      let role = profile.get('userRole', 'NONE');
+      let loc = profile.get('location', '');
+      let team = loc is string && loc.trim() != '' ? loc.trim().upper() : 'UNASSIGNED';
+      let admin = role == 'AREA_ADMIN' || role == 'FLEET_CAPTAIN';
+      let grant = customerAccessDoc(bossUid).get('teams', {}).get(team, {});
+      let areas = grant.get('areas', {});
+      let was = resource.data;
+      let now = request.resource.data;
+      let changed = now.diff(was).affectedKeys();
+      return ((was.get('city', '') in areas.get(was.get('province', '') + '|' + was.get('region', ''), [])) ||
+              (admin && was.get('holdTeam', '') == team)) && (
+        changed.hasOnly(['lastVisit', 'lastVisitNote', 'lastVisitTag', 'lastVisitedBy', 'openRequest', 'updatedAt']) ||
+        (grant.get(admin ? 'adminEdit' : 'teamEdit', false) == true && (
+          (now.get('city', '') in areas.get(now.get('province', '') + '|' + now.get('region', ''), [])) ||
+          (admin && now.get('holdTeam', '') == team && !changed.hasAny(['province', 'region', 'city']))))
+      );
     }
 
     match /system_admins/{uid} {
@@ -529,13 +596,20 @@ service cloud.firestore {
       //    users/{bossUid} catch-all regardless of this tier
       // =====================================================================
       match /customers/{customerId} {
-        allow read: if isSalesman(bossUid);
+        // [CHANGE 17] was `allow read: if isSalesman(bossUid);` - now that line holds only while folders are off
+        // (or for T1/T2); the second line is everyone else while folders are on.
+        allow read: if isSalesman(bossUid) && !folderLimited(bossUid);
+        allow read: if folderReadOk(bossUid, resource.data);
         allow create: if isSalesman(bossUid) && customerAccessLevel(bossUid) != 'view_only';
-        allow update: if isSalesman(bossUid) && customerAccessLevel(bossUid) != 'view_only' && (
+        // [CHANGE 17] the old update line, now only while folders are off (or for T1/T2) ...
+        allow update: if isSalesman(bossUid) && !folderLimited(bossUid) && customerAccessLevel(bossUid) != 'view_only' && (
           customerAccessLevel(bossUid) != 'own_region' ||
           isUnclassifiedRegion(resource.data.get('region', '')) ||
           isOwnRegionMatch(bossUid)
         );
+        // ... and while on: a shop he can see; a visit by anyone, a real edit only with his switch on, and the
+        // shop may land only in his own folders (from his temporary folder, or between his folders).
+        allow update: if isSalesman(bossUid) && folderLimited(bossUid) && folderEditOk(bossUid);
         allow delete: if false;
         match /benchmarks/{benchmarkId} {
           allow read, write: if isSalesman(bossUid);
@@ -558,7 +632,7 @@ service cloud.firestore {
       }
 
       // =====================================================================
-      // [CHANGE 16 — 2026-10-19, DRAFT, NOT DEPLOYED] sales_stats: the month's sales tally.
+      // [CHANGE 16 — 2026-10-19, PUBLISHED by Aldi 2026-10-19 ~14:41 WIB] sales_stats: the month's sales tally.
       // Every sale writes it IN THE SAME WRITE as the receipt (src/utils/salesRollupWrite.js,
       // since c0a510f 2026-08-30), so a salesman must be allowed to. With only the catch-all above
       // covering it (owner / T1 / T2), the emulator refuses a salesman's whole sale - receipt, van
