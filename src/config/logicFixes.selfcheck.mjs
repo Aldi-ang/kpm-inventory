@@ -11440,5 +11440,53 @@ section('A shop number WhatsApp cannot open is never saved again (his 2026-10-20
   ok('REGRESSION: no setDoc replaces a whole customers document', replacing.length === 0, replacing.join(' | '));
 }
 
+section('Customer access P1: a shop is filed under its area from its pin, one spelling per folder (2026-10-20)');
+{ const cm = code(read('src/components/CustomerManager.jsx'));
+  const msv = code(read('src/MerchantSalesView.jsx'));
+  ok('the point-in-border test lives once, in utils/areaFromPin.js - the directory has no copy left',
+     imports(cm, 'areaFromPin') && imports(cm, 'watchBorders') && !/const (checkPointInGeoJSON|isPointInPolygon) =/.test(cm));
+  ok('REGRESSION: both terminal new-outlet saves carry the area from the salesman\'s pin',
+     (msv.match(/\.\.\.areaFromPin\(agentLocation\?\.latitude, agentLocation\?\.longitude, mapBorders\)/g) || []).length === 2 &&
+     /watchBorders\(db, appId, dataOwnerId, setMapBorders\)/.test(msv) &&
+     (msv.match(/\$\{areaText\(newStoreData\)\}/g) || []).length === 2);
+  ok('REGRESSION: folders group in capitals - "Jawa Tengah" and "JAWA TENGAH" are one folder',
+     /prov = prov\.toUpperCase\(\); kab = kab\.toUpperCase\(\); kec = kec\.toUpperCase\(\);/.test(cm) &&
+     /customProv\.forEach\(p => \{ if \(!structure\[up\(p\)\]\)/.test(cm));
+  ok('the directory save form fills an EMPTY level from the pin, a typed one wins',
+     /const safeKec = String\(formData\.city \|\| pinArea\.city \|\| ''\)\.trim\(\)\.toUpperCase\(\);/.test(cm) &&
+     /if \(filledFromPin\.length\) notify\(/.test(cm));
+  { const a = cm.indexOf('const handleEnterpriseDataScrub'), b = cm.indexOf('const handleSubmit', a);
+    const scrub = a < 0 || b < 0 ? '' : cm.slice(a, b);
+    ok('the Data Scrub works out its plan and SAYS it before writing anything',
+       scrub.length > 1500 && scrub.length < 8000 && scrub.indexOf('confirmAction(') > 0 &&
+       scrub.indexOf('confirmAction(') < scrub.indexOf('commitInChunks(') && /get their area from their map pin/.test(scrub) &&
+       scrub.indexOf('customers.forEach') < scrub.indexOf('confirmAction('), `scrub slice ${scrub.length} chars`); }
+
+  const { areaFromPin } = await import('../utils/areaFromPin.js');
+  const sq = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]];
+  const borders = [
+    { level: 'Desa', name: 'Desa X', geometry: { type: 'Polygon', coordinates: [sq(1.5, 1.5, 2.5, 2.5)] } },
+    { level: 'Kecamatan', name: 'Muntilan', geometry: { type: 'Polygon', coordinates: [sq(1, 1, 3, 3)] } },
+    { level: 'Kecamatan', name: 'Mertoyudan', geometry: { type: 'MultiPolygon', coordinates: [[sq(3.5, 3.5, 4, 4)], [sq(4.2, 0.5, 4.8, 1)]] } },
+    { level: 'Kabupaten', name: 'Kabupaten Magelang', geometry: { type: 'Polygon', coordinates: [sq(0, 0, 5, 5)] } },
+    { level: 'Provinsi', name: 'Jawa Tengah', geometry: { type: 'Polygon', coordinates: [sq(-1, -1, 10, 10)] } },
+  ];
+  const same = (got, want) => JSON.stringify(got) === JSON.stringify(want);
+  ok('a pin inside all three levels gets all three, in capitals (lat = y, lng = x)',
+     same(areaFromPin(2, 2, borders), { province: 'JAWA TENGAH', region: 'KABUPATEN MAGELANG', city: 'MUNTILAN' }), JSON.stringify(areaFromPin(2, 2, borders)));
+  ok('the second ring of a MultiPolygon counts', areaFromPin(0.7, 4.5, borders).city === 'MERTOYUDAN');
+  ok('a pin outside every Kecamatan keeps its Kabupaten and Provinsi, city stays empty',
+     same(areaFromPin(4.5, 2.5, borders), { province: 'JAWA TENGAH', region: 'KABUPATEN MAGELANG', city: '' }));
+  ok('outside every border: all empty (the shop waits for a person to place it)',
+     same(areaFromPin(50, 50, borders), { province: '', region: '', city: '' }));
+  ok('no pin, or the 0,0 of a zeroed record, files nothing',
+     same(areaFromPin(null, null, borders), { province: '', region: '', city: '' }) &&
+     same(areaFromPin(0, 0, borders), { province: '', region: '', city: '' }) &&
+     same(areaFromPin('', '', borders), { province: '', region: '', city: '' }));
+  ok('a pin stored as text still works', areaFromPin('2', '2', borders).city === 'MUNTILAN');
+  ok('no borders loaded yet: nothing filed, nothing thrown', same(areaFromPin(2, 2, []), { province: '', region: '', city: '' }) &&
+     same(areaFromPin(2, 2, undefined), { province: '', region: '', city: '' }));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -3,34 +3,11 @@ import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverT
 import { commitInChunks } from '../utils/helpers';
 import { waNumber } from '../utils/whatsapp.js';
 import { findDuplicates, createdMillis, groupKey } from '../utils/findDuplicates';
-import { loadBorderCache, saveBorderCache } from '../utils/borderCache';
 import { getCustomerAccessLevel } from '../config/permissions';
 
-// 🚀 GEOSPATIAL MATH ENGINE: Allows the CRM Directory to read Map Borders!
-const isPointInPolygon = (point, polygon) => {
-    let inside = false;
-    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-        let xi = polygon[i][0], yi = polygon[i][1], xj = polygon[j][0], yj = polygon[j][1];
-        let intersect = ((yi > point[1]) !== (yj > point[1])) && (point[0] < (xj - xi) * (point[1] - yi) / (yj - yi) + xi);
-        if (intersect) inside = !inside;
-    }
-    return inside;
-};
-
-const checkPointInGeoJSON = (lng, lat, geometry) => {
-    if (!geometry || !geometry.coordinates) return false;
-    const point = [lng, lat];
-    try {
-        if (geometry.type === 'Polygon') return isPointInPolygon(point, geometry.coordinates[0]);
-        if (geometry.type === 'MultiPolygon') {
-            for (let poly of geometry.coordinates) {
-                const ring = Array.isArray(poly[0][0]) && typeof poly[0][0][0] === 'number' ? poly[0] : poly;
-                if (isPointInPolygon(point, ring)) return true;
-            }
-        }
-    } catch(e) { }
-    return false;
-};
+// 🚀 GEOSPATIAL MATH ENGINE: the CRM Directory reads Map Borders through ../utils/areaFromPin.js (shared with the
+// Sales Terminal's new-outlet form since 2026-10-20, so both file a shop under the same area)
+import { areaFromPin, watchBorders } from '../utils/areaFromPin.js';
 import { ArrowRight, MapPin, Phone, User, ShieldAlert, Trash2, Store, Camera, X, RefreshCcw, Search, Folder, Pencil, Plus, Globe, Wrench } from 'lucide-react';
 
 /* 📱 THE ⋯ KEY (Customers round two, 2026-09-18, his board 2 = A) lives in ./MoreKey.jsx since
@@ -312,37 +289,10 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     // 🚀 MAP BORDER INTEGRATION: Fetch your custom map zones into the CRM
     const [mapBorders, setMapBorders] = useState([]);
     useEffect(() => {
-        const loadBorders = async () => {
-            // 🗄️ Instant paint from IndexedDB cache (no localStorage quota limits)
-            try {
-                const cached = await loadBorderCache(appId);
-                if (cached.length > 0) setMapBorders(cached);
-            } catch(e) {}
-
-            // 🚀 STALE-CACHE FIX: ALWAYS refresh from Firestore afterwards (same as the map
-            // view). The old cache-first-only logic froze the CRM on an outdated border list,
-            // which is why newly uploaded borders (e.g. Kota Magelang) never reached the
-            // geospatial auto-detection and customers stayed UNMAPPED.
-            if (db && appId && userId !== 'default') {
-                try {
-                    const borders = [];
-                    const snap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/mapSettings`));
-                    snap.forEach(d => {
-                        if (d.id.startsWith('bnd_')) {
-                            const data = d.data();
-                            if (data && data.geometryString) {
-                                try { data.geometry = JSON.parse(data.geometryString); borders.push(data); } catch(e) {}
-                            }
-                        }
-                    });
-                    if (borders.length > 0) {
-                        setMapBorders(borders);
-                        saveBorderCache(appId, borders);
-                    }
-                } catch(e) {}
-            }
-        };
-        loadBorders();
+        // 🗄️ cached copy first (instant, offline), then ALWAYS the server copy - the old cache-first-only logic froze
+        // the CRM on an outdated border list (Kota Magelang never reached the auto-detection). One loader for the
+        // directory and the Sales Terminal: utils/areaFromPin.js watchBorders.
+        watchBorders(db, appId, userId, setMapBorders);
     }, [db, appId, userId]);
 
     // 🧠 SMART DICTIONARY (DEEP SCAN)
@@ -408,15 +358,11 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             const isUnknown = (str) => !str || str.toLowerCase().includes('unknown') || str.toLowerCase().includes('unmapped') || str.toLowerCase().includes('uncategorized');
 
             // 📍 1. GEOSPATIAL AUTO-DETECTION: Checks Map Borders even if text says "Unknown"!
-            if ((isUnknown(prov) || isUnknown(kab) || isUnknown(kec)) && c.latitude && c.longitude && sortedBorders.length > 0) {
-                for (const border of sortedBorders) {
-                    const geo = border.feature || border.geometry;
-                    if (checkPointInGeoJSON(c.longitude, c.latitude, geo)) {
-                        if (border.level === 'Provinsi' && isUnknown(prov)) prov = border.name;
-                        if (border.level === 'Kabupaten' && isUnknown(kab)) kab = border.name;
-                        if (border.level === 'Kecamatan' && isUnknown(kec)) kec = border.name;
-                    }
-                }
+            if (isUnknown(prov) || isUnknown(kab) || isUnknown(kec)) {
+                const pin = areaFromPin(c.latitude, c.longitude, sortedBorders);
+                if (isUnknown(prov) && pin.province) prov = pin.province;
+                if (isUnknown(kab) && pin.region) kab = pin.region;
+                if (isUnknown(kec) && pin.city) kec = pin.city;
             }
 
             // 🧠 2. SMART TEXT DICTIONARY: Scans addresses for clues
@@ -426,6 +372,10 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             if (isUnknown(kec)) kec = guessKecamatan(searchText) || kec;
             if (isUnknown(kab)) kab = guessKabupaten(searchText) || kab;
             if (isUnknown(prov)) prov = guessProvince(searchText) || prov;
+
+            /* ONE SPELLING PER FOLDER (2026-10-20): his screenshot had "JAWA TENGAH" (76) beside "Jawa Tengah" (1) -
+               a typed area is saved in capitals, a border name was not. Folders group in capitals, the saved rule. */
+            prov = prov.toUpperCase(); kab = kab.toUpperCase(); kec = kec.toUpperCase();
 
             // 🛡️ 3. ABSOLUTE FALLBACK
             if (!prov) prov = 'Unknown Provinsi';
@@ -449,15 +399,16 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             structure[prov].regions[kab].cities[kec].stores.push(c);
         });
 
-        // 🚀 INJECT CUSTOM EMPTY FOLDERS
-        customProv.forEach(p => { if (!structure[p]) structure[p] = { count: 0, pending: 0, regions: {} }; });
+        // 🚀 INJECT CUSTOM EMPTY FOLDERS (in capitals, like every other folder name)
+        const up = (v) => String(v).toUpperCase();
+        customProv.forEach(p => { if (!structure[up(p)]) structure[up(p)] = { count: 0, pending: 0, regions: {} }; });
         Object.entries(customKab).forEach(([p, kabs]) => {
-            if (structure[p]) kabs.forEach(k => { if (!structure[p].regions[k]) structure[p].regions[k] = { count: 0, pending: 0, cities: {} }; });
+            if (structure[up(p)]) kabs.forEach(k => { if (!structure[up(p)].regions[up(k)]) structure[up(p)].regions[up(k)] = { count: 0, pending: 0, cities: {} }; });
         });
         Object.entries(customKec).forEach(([k, kecs]) => {
             Object.values(structure).forEach(provData => {
-                if (provData.regions[k]) {
-                    kecs.forEach(c => { if (!provData.regions[k].cities[c]) provData.regions[k].cities[c] = { count: 0, pending: 0, stores: [] }; });
+                if (provData.regions[up(k)]) {
+                    kecs.forEach(c => { if (!provData.regions[up(k)].cities[up(c)]) provData.regions[up(k)].cities[up(c)] = { count: 0, pending: 0, stores: [] }; });
                 }
             });
         });
@@ -893,78 +844,75 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         }
     };
 
-    // 🚀 ONE-TIME ENTERPRISE DATA SCRUB (MIGRATION ENGINE)
+    // 🚀 ENTERPRISE DATA SCRUB (MIGRATION ENGINE)
+    /* 2026-10-20: the plan is worked out FIRST and the confirm says what it will do - how many shops get their area
+       from their pin, how many from address words, how many stay UNMAPPED. A typed area is never replaced, only
+       written in capitals. The pin answer comes from utils/areaFromPin.js, the same one new shops use. */
     const handleEnterpriseDataScrub = async () => {
-        if (!await confirmAction("⚠️ INITIATE ENTERPRISE DATA SCRUB?\n\nThis will scan all customers and permanently hard-write their exact Matrix Location (Provinsi, Kabupaten, Kecamatan) into the Firebase database to establish a Single Source of Truth.")) return;
+        const batchWrites = [];
+        let fromPin = 0, fromWords = 0, stillUnmapped = 0;
+        const isUnknown = (str) => !str || str.toLowerCase().includes('unknown') || str.toLowerCase().includes('unmapped') || str.toLowerCase().includes('uncategorized');
 
-        if (triggerCapy) triggerCapy("Initiating Great Scrub... Please wait. ⚙️");
+        customers.forEach(c => {
+            let prov = String(c.province || '').trim();
+            let kab = String(c.region || '').trim();
+            let kec = String(c.city || '').trim();
+            let byPin = false, byWords = false;
 
-        try {
-            const batchWrites = [];
-            let scrubCount = 0;
-
-            customers.forEach(c => {
-                let prov = String(c.province || '').trim();
-                let kab = String(c.region || '').trim();
-                let kec = String(c.city || '').trim();
-
-                const isUnknown = (str) => !str || str.toLowerCase().includes('unknown') || str.toLowerCase().includes('unmapped') || str.toLowerCase().includes('uncategorized');
-
-                let needsUpdate = false;
-
-                // 📍 1. GEOSPATIAL OVERRIDE
-                if ((isUnknown(prov) || isUnknown(kab) || isUnknown(kec)) && c.latitude && c.longitude && sortedBorders.length > 0) {
-                    for (const border of sortedBorders) {
-                        const geo = border.feature || border.geometry;
-                        if (checkPointInGeoJSON(c.longitude, c.latitude, geo)) {
-                            if (border.level === 'Provinsi' && isUnknown(prov)) { prov = border.name; needsUpdate = true; }
-                            if (border.level === 'Kabupaten' && isUnknown(kab)) { kab = border.name; needsUpdate = true; }
-                            if (border.level === 'Kecamatan' && isUnknown(kec)) { kec = border.name; needsUpdate = true; }
-                        }
-                    }
-                }
-
-                // 🧠 2. SMART DICTIONARY OVERRIDE
-                const searchText = `${c.address || ''} ${c.name || ''} ${kab} ${kec}`.toLowerCase();
-                if (isUnknown(kec)) { const g = guessKecamatan(searchText); if (g) { kec = g; needsUpdate = true; } }
-                if (isUnknown(kab)) { const g = guessKabupaten(searchText); if (g) { kab = g; needsUpdate = true; } }
-                if (isUnknown(prov)) { const g = guessProvince(searchText); if (g) { prov = g; needsUpdate = true; } }
-
-                // 🛡️ 3. FINAL FALLBACK & FORMATTING
-                if (isUnknown(prov)) prov = 'UNMAPPED PROVINSI';
-                if (isUnknown(kab)) kab = 'UNMAPPED KABUPATEN';
-                if (isUnknown(kec)) kec = 'UNMAPPED KECAMATAN';
-
-                // If the scrubbed data differs from what is in the database, schedule a write!
-                if (needsUpdate || c.province !== prov.toUpperCase() || c.region !== kab.toUpperCase() || c.city !== kec.toUpperCase()) {
-                    const ref = doc(db, 'artifacts', appId, 'users', user.uid, 'customers', c.id);
-                    batchWrites.push({
-                        ref,
-                        data: {
-                            province: prov.toUpperCase(),
-                            region: kab.toUpperCase(),
-                            city: kec.toUpperCase(),
-                            updatedAt: serverTimestamp()
-                        }
-                    });
-                    scrubCount++;
-                }
-            });
-
-            if (scrubCount === 0) {
-                if (triggerCapy) triggerCapy("Database is already perfectly clean! ✅");
-                return;
+            // 📍 1. GEOSPATIAL: only the levels that are still unknown
+            if (isUnknown(prov) || isUnknown(kab) || isUnknown(kec)) {
+                const pin = areaFromPin(c.latitude, c.longitude, sortedBorders);
+                if (isUnknown(prov) && pin.province) { prov = pin.province; byPin = true; }
+                if (isUnknown(kab) && pin.region) { kab = pin.region; byPin = true; }
+                if (isUnknown(kec) && pin.city) { kec = pin.city; byPin = true; }
             }
 
+            // 🧠 2. SMART DICTIONARY: address words, for what the pin could not answer
+            const searchText = `${c.address || ''} ${c.name || ''} ${kab} ${kec}`.toLowerCase();
+            if (isUnknown(kec)) { const g = guessKecamatan(searchText); if (g) { kec = g; byWords = true; } }
+            if (isUnknown(kab)) { const g = guessKabupaten(searchText); if (g) { kab = g; byWords = true; } }
+            if (isUnknown(prov)) { const g = guessProvince(searchText); if (g) { prov = g; byWords = true; } }
+
+            // 🛡️ 3. FINAL FALLBACK & FORMATTING
+            const unmapped = isUnknown(prov) || isUnknown(kab) || isUnknown(kec);
+            if (isUnknown(prov)) prov = 'UNMAPPED PROVINSI';
+            if (isUnknown(kab)) kab = 'UNMAPPED KABUPATEN';
+            if (isUnknown(kec)) kec = 'UNMAPPED KECAMATAN';
+
+            if (c.province !== prov.toUpperCase() || c.region !== kab.toUpperCase() || c.city !== kec.toUpperCase()) {
+                batchWrites.push({
+                    ref: doc(db, 'artifacts', appId, 'users', user.uid, 'customers', c.id),
+                    data: { province: prov.toUpperCase(), region: kab.toUpperCase(), city: kec.toUpperCase(), updatedAt: serverTimestamp() }
+                });
+                if (byPin) fromPin++;
+                if (byWords) fromWords++;
+                if (unmapped) stillUnmapped++;
+            }
+        });
+
+        if (batchWrites.length === 0) {
+            if (triggerCapy) triggerCapy("Database is already perfectly clean! ✅");
+            return;
+        }
+        const capitalsOnly = batchWrites.length - fromPin - fromWords - stillUnmapped;
+        if (!await confirmAction(`⚠️ DATA SCRUB will update ${batchWrites.length} shops:\n\n` +
+            `• ${fromPin} get their area from their map pin\n` +
+            `• ${fromWords} get it guessed from their address words\n` +
+            `• ${stillUnmapped} stay UNMAPPED (no pin inside a border, no address match)\n` +
+            (capitalsOnly > 0 ? `• ${capitalsOnly} only change to capital letters\n` : '') +
+            `\nA typed area is never replaced.`)) return;
+
+        if (triggerCapy) triggerCapy("Initiating Great Scrub... Please wait. ⚙️");
+        try {
             // 🚀 Same safe sequential chunking as everywhere else in the app (see
             // commitInChunks in utils/helpers.js) instead of firing every chunk's
             // batch.commit() at once via Promise.all, which risks write-stream overload.
             const operations = batchWrites.map(w => ({ type: 'update', ref: w.ref, data: w.data }));
             await commitInChunks(db, writeBatch, operations);
 
-            if (logAudit) logAudit("ENTERPRISE_DATA_SCRUB", `Permanently hard-mapped ${scrubCount} unmapped stores.`);
-            if (triggerCapy) triggerCapy(`Great Scrub Complete! ${scrubCount} targets permanently mapped. 🚀`);
-
+            const summary = `${batchWrites.length} shops updated: ${fromPin} from their pin, ${fromWords} from address words, ${stillUnmapped} still unmapped.`;
+            if (logAudit) logAudit("ENTERPRISE_DATA_SCRUB", summary);
+            if (triggerCapy) triggerCapy(`Great Scrub Complete! ${summary} 🚀`);
         } catch (error) {
             console.error("Scrub Error:", error);
             notify("Data Scrub Failed: " + error.message);
@@ -976,9 +924,13 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         
         // 🚀 PHASE 3: SECURE THE GATES (SSOT VALIDATION)
         // Coerce raw inputs into strict, clean strings before Firebase evaluation
-        const safeProv = String(formData.province || '').trim().toUpperCase();
-        const safeKab = String(formData.region || '').trim().toUpperCase();
-        const safeKec = String(formData.city || '').trim().toUpperCase();
+        // an empty level is filled from the pin + his map borders (2026-10-20), a typed one always wins
+        const pinArea = areaFromPin(formData.latitude, formData.longitude, sortedBorders);
+        const safeProv = String(formData.province || pinArea.province || '').trim().toUpperCase();
+        const safeKab = String(formData.region || pinArea.region || '').trim().toUpperCase();
+        const safeKec = String(formData.city || pinArea.city || '').trim().toUpperCase();
+        const filledFromPin = [!String(formData.city || '').trim() && pinArea.city, !String(formData.region || '').trim() && pinArea.region,
+                               !String(formData.province || '').trim() && pinArea.province].filter(Boolean);
         const safeName = String(formData.name || '').trim();
 
         if (!safeName) {
@@ -996,9 +948,10 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
 
         // 🛑 Hard Block: Prevent any new UNMAPPED edge cases from entering the database
         if (!safeProv || !safeKab || !safeKec) {
-            notify("⚠️ This outlet has no location. Pick the Provinsi, Kabupaten and Kecamatan before saving — the shop cannot be routed without them.");
+            notify("⚠️ This outlet has no location. Pick the Provinsi, Kabupaten and Kecamatan, or drop its pin inside a map border, before saving — the shop cannot be routed without them.");
             return;
         }
+        if (filledFromPin.length) notify(`📍 Area filled from the map pin: ${filledFromPin.join(', ')}.`);
 
         /* 📍 A PIN IS COMPULSORY NOW. Aldi, 2026-09-07: *"damn make it compulsory then"*, after
            being told that his belief — *"on the NOO GPS is compulsary where adress do not

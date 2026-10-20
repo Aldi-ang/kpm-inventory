@@ -6,6 +6,7 @@ import { hasClearance, canPickFromGallery } from './config/permissions';
 import ProofCamera from './components/ProofCamera.jsx';
 import { savePhotoAndGetReference, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey} from './utils/helpers';
 import { waNumber } from './utils/whatsapp.js';
+import { areaFromPin, watchBorders } from './utils/areaFromPin.js';
 import { debtCredit } from './utils/revenueRule';
 import { isLowStock } from './utils/stockThreshold';
 import { dayStats, agoLabel } from './utils/dayStats';
@@ -65,6 +66,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
        with a much larger blast radius — stock writes work for him today, and `:958` records that
        someone already hit a rules wall writing motorists to another vault. */
     const dataOwnerId = masterUserId || user?.uid || user?.id || 'default';
+    /* His map borders, so a new outlet is filed under its Kecamatan / Kabupaten / Provinsi from the salesman's GPS
+       pin (2026-10-20: "i want the stores to be automatically autofilled ... according to their location"). It
+       used to save the pin and NO area, and landed in the directory's Unknown folder. utils/areaFromPin.js. */
+    const [mapBorders, setMapBorders] = useState([]);
+    useEffect(() => { watchBorders(db, appId, dataOwnerId, setMapBorders); }, [db, appId, dataOwnerId]);
+    const areaText = (a) => [a.city, a.region].filter(Boolean).join(', ') || 'no map border here - it waits in the Unknown folder';
     /* Phase A items 1-2: the two-tab bar is gone. The manifest is a bottom drawer that
        is dragged between three snap points, so the wares list never has to be left. */
     /* Read ONCE, on the mount that restores it - not on every render. */
@@ -949,11 +956,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             const newStoreData = {
                 id: newRef.id, name: customerName.toUpperCase().trim(), phone: nooForm.phone, address: nooForm.address || "GPS Locked via NOO Form",
                 tier: 'UNRANKED', priceTier: nooForm.requestedTier, storeType: 'Retailer', latitude: agentLocation?.latitude, longitude: agentLocation?.longitude,
-                status: 'Active', visitFreq: 7, storeImage: nooForm.photoUrl, createdAt: new Date().toISOString()
+                status: 'Active', visitFreq: 7, storeImage: nooForm.photoUrl, createdAt: new Date().toISOString(),
+                ...areaFromPin(agentLocation?.latitude, agentLocation?.longitude, mapBorders)   // province / region / city, in capitals
             };
             await setDoc(newRef, newStoreData);
             if (logAudit) logAudit("NOO_REGISTERED_DIRECT", `Registered new NOO outlet: ${customerName}`);
-            if (triggerCapy) triggerCapy(`Target Data Secured! 📍`);
+            if (triggerCapy) triggerCapy(`Target Data Secured! 📍 ${areaText(newStoreData)}`);
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
             setSelectedCustomerInfo(newStoreData); setLockedTier(nooForm.requestedTier); updateCartPricing(nooForm.requestedTier);
@@ -978,11 +986,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             const newStoreData = {
                 id: newRef.id, name: customerName.toUpperCase().trim(), phone: nooForm.phone, address: nooForm.address || "GPS Locked via NOO Form",
                 tier: 'UNRANKED', priceTier: nooForm.requestedTier, storeType: 'Retailer', latitude: agentLocation?.latitude, longitude: agentLocation?.longitude,
-                status: 'Active', visitFreq: 7, storeImage: nooForm.photoUrl, createdAt: new Date().toISOString()
+                status: 'Active', visitFreq: 7, storeImage: nooForm.photoUrl, createdAt: new Date().toISOString(),
+                ...areaFromPin(agentLocation?.latitude, agentLocation?.longitude, mapBorders)   // province / region / city, in capitals
             };
             await setDoc(newRef, newStoreData);
             if (logAudit) logAudit("NOO_REGISTERED_ONLY", `Registered new NOO outlet (no sale this visit): ${customerName}`);
-            if (triggerCapy) triggerCapy(`Outlet registered! No sale this visit. 📍`);
+            if (triggerCapy) triggerCapy(`Outlet registered! No sale this visit. 📍 ${areaText(newStoreData)}`);
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
             setShowNooModal(false);
