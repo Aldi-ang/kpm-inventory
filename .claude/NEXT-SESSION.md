@@ -3,6 +3,7 @@
 **Paste this to start (it downloads FIRST - the PC copy of this file is stale until the pull):** `/alucard First run in PowerShell: git status -sb; git pull origin phase0-solid-ground - if git refuses because of local changes, show me the list and stop. Then open the .claude/NEXT-SESSION.md you just pulled and do the ONE JOB at its top.`
 
 **2026-10-20 10:00 — THE ONE JOB: customer access by folder, step P3 - a new shop registered by Tier 5/6 waits in its team's temporary folder, and the team's admin places it into one of HIS ticked folders.**
+- 18:10: Customer Directory's add/edit form is a standalone panel (`5bed35a`, his "standalone panel that shows up when we press the edit button only") - NOT pushed. He wants "the same similar to this on the fleet and roster": queued right AFTER P3 (A-Brain Aldi's Design Taste, "Forms become standalone panels"). P3's admin "Place into..." UI belongs INSIDE this panel's world - a waiting shop opens in the same panel. Job below unchanged.
 - 15:21: every Settings control moved to the new switch look (d1398cf: badges, pill switches, dropdown row) - NOT pushed, goes with the next push. Job below unchanged.
 - 14:50: switches lose the amber slab + a sliding gold bar (41d0912, his "i dont like this full amber fill the panel") - NOT pushed, goes with the next push. Job below unchanged.
 - 14:14: the shared confirm box is bigger (`6dd00d3`, his "make it bigger because it is too small hard to read") - NOT pushed; push it with P3 on his word, nothing else to do there. The ONE job below is unchanged.
