@@ -1318,3 +1318,10 @@ Seen: 2026-10-20
 **Lesson:** stage by path (`git add <files>`), then commit. `graphify-out/` is tracked and rewritten by every `graphify update`, so `-a` silently adds tens of thousands of lines of graph churn to a commit whose message says something else.
 **Would have prevented:** 2026-10-20, the "clock read" notes commit took 5 graphify-out files (+55,801 / -34,713) along with two 4-line notes; caught by `git show --stat`, redone with `reset --soft` before any push.
 Seen: 2026-10-20
+
+### 2026-10-21 — a refusal notify() needs a failure word, or it is painted as good news
+**Status:** LIKELY
+**Trigger:** before a completion claim - a change that adds a `notify(...)` for a refusal (a guard that ends in `return;`).
+**Lesson:** the strip's colour and sound come from `isFailure()` in `src/utils/toastSeverity.js`, a word list (cannot, failed, denied, not saved...). A polite refusal ("X is only for Y. Do Z.") matches none and shows as ordinary news. Run each new refusal string through `isFailure` and put a guard in logicFixes that it stays red.
+**Would have prevented:** 2026-10-21, P3: the sale engine's Grosir refusal ("Grosir prices are only for a shop registered as Grosir...") tested plain; it would have shipped as news on every refused sale. Caught by a 4-string probe after the build; cost one rewording, a second build and a re-run of every gate.
+Seen: 2026-10-21
