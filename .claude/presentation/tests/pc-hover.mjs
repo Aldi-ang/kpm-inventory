@@ -1,5 +1,7 @@
-// Hover probe for the feature wheel (his 2026-10-19 asks; default spin 5 deg/s, a quarter of it under the mouse): a mouse on it slows the spin GRADUALLY to a quarter, it never
-// stops dead, and it speeds back up gradually when the mouse leaves. Real clock, headless Chrome over CDP, real mouse moves.
+// Still-wheel probe (his v37 ask, 2026-10-22, reversing the 2026-10-19 spin): the feature wheel never turns by itself. Card 01 is
+// at the front from the first frame, under the opening and after it closes; a mouse resting on it moves nothing; the only turn
+// it makes alone is on the way back from a slide (to the next unseen card), and then it stays there. Real clock, headless
+// Chrome over CDP, real mouse moves.
 // node pc-hover.mjs <file url> <out dir> [width] [height]
 import { spawn } from 'node:child_process';
 const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
@@ -19,24 +21,26 @@ const ev = async (expr) => { const r = await send('Runtime.evaluate', { expressi
   return r.result?.exceptionDetails ? 'EXC ' + (r.result.exceptionDetails.exception?.description || r.result.exceptionDetails.text) : r.result?.result?.value ?? r.result?.result?.unserializableValue; };
 await send('Page.enable'); await send('Runtime.enable');
 await send('Emulation.setDeviceMetricsOverride', { width: +w, height: +h, deviceScaleFactor: 1, mobile: +w < 1024 });
-await send('Page.navigate', { url }); await sleep(3000);
-await ev(`document.getElementById('introGo').click()`); await sleep(3500);   /* opening gone */
-await ev(`wHold > performance.now()`) || console.log('NOTE the v36 hold did not start'); await sleep(7500);   /* v36: "Mulai di sini" holds card 01 still for 6 s, then the wheel comes up to full speed */
-/* degrees a second, measured in the page: how far wTheta turned over ms */
-const speed = async (ms) => +Number(await ev(`(async () => { const a = wTheta, t = performance.now(); await new Promise((r) => setTimeout(r, ${ms})); return -(wTheta - a) / ((performance.now() - t) / 1000); })()`)).toFixed(2);
+await send('Page.navigate', { url }); await sleep(300);
+/* how far the wheel turned over ms, in degrees, and the front card's number (1-based) at the end */
+const drift = async (ms) => JSON.parse(await ev(`(async () => { const a = wTheta; await new Promise((r) => setTimeout(r, ${ms})); return JSON.stringify([+Math.abs(wTheta - a).toFixed(2), wIndex() + 1]); })()`));
+const [d0, f0] = await drift(2500);   /* the opening is up: the wheel sits behind it */
+await ev(`document.getElementById('introGo').click()`); await sleep(2000);
+const [d1, f1] = await drift(6000);   /* the old spin was 5 deg/s here, after a 6 s hold */
 const [cx, cy] = await ev(`(() => { const r = document.getElementById('wheel').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()`);
-const v0 = await speed(500);
 await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: cx, y: cy });
-const v1 = await speed(250); await sleep(1500); const v2 = await speed(500);
-await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: cx, y: 5 });   /* off the wheel, onto the top bar */
-const v3 = await speed(250); await sleep(1500); const v4 = await speed(500);
+const [d2] = await drift(2000);
+await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: cx, y: 5 });
+await ev(`wOpen(0)`); await sleep(1500); await ev(`soloOff()`);
+const [d3, f3] = await drift(1500);   /* the way back: turns from 01 to the next unseen card */
+const [d4, f4] = await drift(8000);
 let fails = 0;
 const ok = (name, pass, got) => { if (!pass) fails++; console.log((pass ? 'PASS ' : 'FAIL ') + name + '  (' + got + ')'); };
-ok('full speed before the mouse (5 deg/s)', v0 > 4 && v0 < 6, v0 + ' deg/s');
-ok('first 0.25 s on it: slowing, not stopped and not already slow', v1 > 1.6 && v1 < 4.8, v1 + ' deg/s');
-ok('settled under the mouse: slow, never stopped', v2 > .7 && v2 < 2, v2 + ' deg/s');
-ok('first 0.25 s after it leaves: speeding up, not a jump', v3 > 1.3 && v3 < 4.5, v3 + ' deg/s');
-ok('full speed again', v4 > 4 && v4 < 6, v4 + ' deg/s');
+ok('under the opening: still, card 01 in front', d0 === 0 && f0 === 1, `${d0} deg, front ${f0}`);
+ok('opening closed: still for 6 s, card 01 in front', d1 === 0 && f1 === 1, `${d1} deg, front ${f1}`);
+ok('a mouse resting on it moves nothing', d2 === 0, `${d2} deg`);
+ok('back from slide 01: turns once, to card 02', d3 > 0 && f3 === 2, `${d3} deg, front ${f3}`);
+ok('then stays there 8 s', d4 === 0 && f4 === 2, `${d4} deg, front ${f4}`);
 ok('no script errors', !errors.length, errors.join(' | ') || 'none');
 console.log(`${w}x${h}: ${6 - fails}/6`);
 chrome.kill(); process.exit(fails ? 1 : 0);

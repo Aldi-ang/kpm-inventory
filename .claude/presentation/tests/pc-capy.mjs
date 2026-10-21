@@ -36,7 +36,7 @@ await at('capy-0', 'wheel, 5 s after load: not yet');
 for (let k = 1; k <= 8; k++) { await sleep(1500); await at('capy-' + k, `wheel, +${(k * 1.5).toFixed(1)} s`); }
 await ev(`(() => { const f = document.querySelector('.capy .fig'); if (getComputedStyle(document.querySelector('.capy')).display !== 'none') f.click(); })()`);
 await sleep(400); await at('capy-tap', 'tapped: thumbs-up?');
-await ev(`wHover = true; wTheta = 0; wDraw(); wOpen(0)`); await sleep(1200); await at('capy-slide', 'a slide opened while he is out');
+await ev(`wTheta = 0; wDraw(); wOpen(0)`); await sleep(1200); await at('capy-slide', 'a slide opened while he is out');
 await ev(`scrollTo(0, 400)`); await sleep(1500); await at('capy-scroll', 'after a scroll: he walks off');
 await ev(`still = true; setMode()`); await sleep(500); await at('capy-lite', 'Lite on: gone');
 writeFileSync(`${out}/${w}-log.json`, JSON.stringify({ log, errors, shots }, null, 1));

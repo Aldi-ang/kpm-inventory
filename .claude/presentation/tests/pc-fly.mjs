@@ -33,7 +33,7 @@ const CAPY = `(() => { const c = document.querySelector('.capy'); if (!c) return
 const log = [];
 const at = async (name, cap) => { log.push(name + ': ' + await ev(CAPY)); await shot(name, cap); };
 await ev(`document.getElementById('introGo').click()`); await sleep(2200);
-for (let k = 0; k <= 13; k++) { if (k === 7) await ev('wHover = true; wTheta = 0; wDraw(); wOpen(0)'); await at('fly-' + String(k).padStart(2, '0'), `+${(k * 1.2).toFixed(1)} s`); await sleep(1200); }
+for (let k = 0; k <= 13; k++) { if (k === 7) await ev('wTheta = 0; wDraw(); wOpen(0)'); await at('fly-' + String(k).padStart(2, '0'), `+${(k * 1.2).toFixed(1)} s`); await sleep(1200); }
 writeFileSync(`${out}/${w}-log.json`, JSON.stringify({ log, errors, shots }, null, 1));
 console.log(log.join('\n') + '\nerrors: ' + (errors.length ? errors.join(' | ') : 'none'));
 ws.close(); chrome.kill();

@@ -31,7 +31,7 @@ const STATE = `(() => { const d = document, r = d.documentElement, sc = d.queryS
     + ' plate=' + (getComputedStyle(g).display === 'none' ? 'hidden' : JSON.stringify(g.textContent.trim()) + '@' + (+getComputedStyle(g).opacity).toFixed(2) + ' to=' + g.dataset.to
       + ' box=' + [gb.left, gb.top, gb.width, gb.height].map(Math.round).join(',') + ' overDot=' + (gb.left < db.right && gb.right > db.left && gb.top < db.bottom && gb.bottom > db.top))
     + ' picker=' + (d.getElementById('snav').classList.contains('open') ? 'open' : 'dot')
-    + ' chev=' + [...d.querySelectorAll((r.classList.contains('solo') ? '.guide' : '.wguide') + ' .chev > span')].map((s) => (+getComputedStyle(s).opacity).toFixed(2)).join('/') + ' done=' + [...d.querySelectorAll('.wcard.wdone .wn')].map((n) => n.textContent.slice(0, 2)).join(',') + ' hold=' + (wHold > performance.now()) + ' busy=' + wBusy; })()`;
+    + ' chev=' + [...d.querySelectorAll((r.classList.contains('solo') ? '.guide' : '.wguide') + ' .chev > span')].map((s) => (+getComputedStyle(s).opacity).toFixed(2)).join('/') + ' done=' + [...d.querySelectorAll('.wcard.wdone .wn')].map((n) => n.textContent.slice(0, 2)).join(',') + ' busy=' + wBusy; })()`;
 const log = [];
 const step = async (name) => log.push(name + ': ' + await ev(STATE));
 await step('load (opening up)');
@@ -42,7 +42,7 @@ await ev(`document.querySelector('.guide').click()`); await sleep(1600); await s
 await ev(`sGo(22)`); await sleep(1600); await step('jumped to 23 (closing)'); await shot('d-close', 'closing: first unseen');
 await ev(`document.querySelector('.guide').click()`); await sleep(1600); await step('closing plate pressed');
 await ev(`soloOff()`); await sleep(1500); await step('back to the wheel'); await shot('e-back', 'wheel turned to the next unseen');
-await sleep(5200); await step('6 s later (spin resumes)');
+await sleep(5200); await step('6 s later (the wheel has not moved)');
 writeFileSync(`${out}/${w}-guide.json`, JSON.stringify({ log, errors, shots }, null, 1));
 console.log(log.join('\n') + '\nerrors: ' + (errors.length ? errors.join(' | ') : 'none'));
 ws.close(); chrome.kill();

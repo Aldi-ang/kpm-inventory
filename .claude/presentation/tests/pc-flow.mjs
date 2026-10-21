@@ -30,7 +30,7 @@ const log = [];
 const step = async (name) => log.push(name + ': ' + await ev(STATE));
 await step('load');
 await ev(`document.getElementById('introGo').click()`); await sleep(1900); await step('pressed opening'); await shot('a-wheel', 'wheel after the opening');
-await ev(`wHover = true; wTheta = 0; wDraw(); wOpen(0)`);
+await ev(`wTheta = 0; wDraw(); wOpen(0)`);
 await sleep(140); await shot('b-open1', 'open ~150 ms'); await sleep(140); await shot('b-open2', 'open ~330 ms'); await sleep(160); await shot('b-open3', 'open ~520 ms');
 await sleep(700); await step('opened 01'); await shot('b-open4', 'open done');
 await ev(`sGo(1)`); await sleep(110); await shot('c-chip1', 'chip 01->02 ~120 ms'); await sleep(700); await step('chip to 02'); await shot('c-chip2', 'chip done');

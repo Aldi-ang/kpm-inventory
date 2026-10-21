@@ -170,7 +170,7 @@ details.ev .pop b { color: var(--ink); }
 
 /* ================= 03 · money per area + the leaderboard ================= */
 .s3 .stage { min-height: 0; place-items: start center; perspective-origin: 50% 0%; }
-.lb { display: grid; gap: 8px; margin-top: 8px; }
+.lb { display: grid; gap: 8px; margin-top: 8px; position: relative; z-index: 2; }   /* v37: a map turned by hand passes UNDER the names, never over */
 .lb .row { display: grid; grid-template-columns: 26px 40px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 54px; padding: 8px 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--inset); }
 .lb .rk { font: 900 22px/1 var(--font-display); color: var(--ink-dim); }
 .lb .row:first-child .rk { color: var(--gold-2); }
@@ -653,6 +653,10 @@ details.ev .pop b { color: var(--ink); }
 }
 /* the card of the stop on screen or the chest pressed (DayReplay.jsx .kx-rp-card) */
 .drcard { margin-top: 10px; display: grid; gap: 6px; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 12px; background: var(--inset); grid-template-columns: minmax(0, 1fr); }
+/* v37 "the paragraph and format won't flicker": every card it can show sits invisibly in the same cell, so the box is always
+   as tall as the longest one and nothing on the slide moves at a stop */
+.drcard > * { grid-area: 1 / 1; display: grid; gap: 6px; align-content: start; min-width: 0; }
+.drcard > .drghost { visibility: hidden; }
 .drcard.pick { border-color: #E4B04A; }
 .drcard .top { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .drcard .pic { flex: none; width: 24px; height: 24px; display: grid; place-items: center; }
@@ -1144,7 +1148,7 @@ html.intro-on .capy, .shot .capy { display: none !important; }
         <b class="clk" id="drClock">08:10</b>
       </div>
     </div>
-    <div class="drcard" id="drcard" aria-live="polite"></div>
+    <div class="drcard" id="drcard"><div class="drnow" aria-live="polite"></div></div>
     <p class="drnote">Jalan di antara toko digambar, bukan dilacak.</p>
   </div>
 </section>
@@ -1775,17 +1779,25 @@ function orbit(id, stage, rig, o) {
   stage.addEventListener('pointermove', (e) => {
     if (!d) return;
     const dx = e.clientX - d.x, dy = e.clientY - d.y;
-    if (!d.on) { if (Math.hypot(dx, dy) < 6) return; d.on = true; cancelAnimationFrame(spinning); try { stage.setPointerCapture(e.pointerId); } catch (_) { /* gone */ } stage.classList.add('grab'); }
+    if (!d.on) { if (Math.hypot(dx, dy) < 6) return; d.on = true; cancelAnimationFrame(spinning); spinning = 0; try { stage.setPointerCapture(e.pointerId); } catch (_) { /* gone */ } stage.classList.add('grab'); }
     s.rz = d.rz - dx * .45;
     if (e.pointerType === 'mouse') s.t = Math.max(o.tMin, Math.min(o.tMax, d.t - dy * .3));
     set();
   });
   const up = () => { if (d && d.on) s.end = performance.now(); d = null; stage.classList.remove('grab'); };
   stage.addEventListener('pointerup', up); stage.addEventListener('pointercancel', up);
+  /* v37: the spin-in always lands on the rig's own angle. It took the CURRENT angle as its end, and a slide opened from the
+     wheel calls it twice (soloOn + the first look), so the second spin ended 50 deg off: the 08 map stood as a diamond over
+     the names under it */
+  let idleRaf = 0, idleLast = 0;
+  const idle = (now) => { if (still || !live.has(id)) { idleRaf = 0; return; }
+    if (!(d && d.on) && !spinning) { s.rz += o.turn * Math.min(.05, (now - idleLast) / 1000); set(); }
+    idleLast = now; idleRaf = requestAnimationFrame(idle); };
   const it = { id, set, dragged: () => performance.now() - s.end < 300,
-    spin() { if (still) return; const to = s.rz, from = to - 50, t0 = performance.now();
-      const step = (now) => { const u = Math.min(1, (now - t0) / 1500); s.rz = from + (to - from) * (1 - Math.pow(1 - u, 3)); set(); if (u < 1) spinning = requestAnimationFrame(step); };
-      cancelAnimationFrame(spinning); spinning = requestAnimationFrame(step); } };
+    spin() { if (still) return; const to = o.rz, from = to - 50, t0 = performance.now();
+      const step = (now) => { const u = Math.min(1, (now - t0) / 1500); s.rz = from + (to - from) * (1 - Math.pow(1 - u, 3)); set(); spinning = u < 1 ? requestAnimationFrame(step) : 0; };
+      cancelAnimationFrame(spinning); spinning = requestAnimationFrame(step); },
+    idle() { if (o.turn && !idleRaf) { idleLast = performance.now(); idleRaf = requestAnimationFrame(idle); } } };   /* o.turn: deg a second while its slide is on screen */
   set(); orbs.push(it); return it;
 }
 function bar3(fl, x, y, w, d, cls, extra = '') {
@@ -1819,7 +1831,7 @@ stkBars[1].id = 'colB';
 orbit('stok', $('#stkOrb'), $('#stkRig'), { t: 58, rz: -24, tMin: 30, tMax: 72 });
 
 /* security: the jobs as a stepped tower - the owner's stands highest; the lit one lifts (secOn, used by secRun) */
-const secOrb = orbit('keamanan', $('#secOrb'), $('#secRig'), { t: 58, rz: -28, tMin: 30, tMax: 72 });
+const secOrb = orbit('keamanan', $('#secOrb'), $('#secRig'), { t: 58, rz: -28, tMin: 30, tMax: 72, turn: 3 });   /* his v37 "rotate very slowly": 3 deg/s, two minutes a turn */
 const towers = [['T2', 4], ['T3', 3], ['T4', 2.1], ['T5/6', 1.3]].map(([n, h], i) => {
   const b = bar3($('#secFl'), 17 + i * 22, 50, .14, .14, 'dim', `<span class="val">${n}</span>`);
   b.dataset.h = h; bh(b, h * .07);
@@ -2333,7 +2345,9 @@ const drTicks = DR.map((d, k) => { const b = el('button', 'tick ' + (DR_TICK[d.k
 
 /* the state the clock is drawn from */
 let drT = 0, drPlaying = false, drSpeed = 1, drRaf = 0, drPrev = null, drHoldUntil = 0, drPicked = null, drKey = '';
-const drCard = document.getElementById('drcard');
+const drCard = document.getElementById('drcard'), drNow = drCard.firstElementChild;
+drCard.insertAdjacentHTML('beforeend', DR.flatMap((_, k) => (k ? [false, true] : [false])
+  .map((p) => `<div class="drghost" aria-hidden="true" inert>${drCardHtml(k, p).replace(/ id="[^"]*"/g, '')}</div>`)).join(''));   /* the invisible sizers (.drghost) */
 function drCardHtml(k, picked) {
   const d = DR[k];
   if (k === 0) return `<div class="top"><span class="pic"><i class="drstart" style="position:static;translate:none;display:block"></i></span><div style="min-width:0"><b>Budi Santoso</b><small>${d.t} · Day starts</small></div></div><p class="by">His first position of the day.</p>`;
@@ -2366,7 +2380,7 @@ function drRender() {
   drTicks.forEach((b, k) => b.classList.toggle('now', k === (drPicked ?? s.cur)));
   const ck = drPicked ?? s.cur;
   drCard.classList.toggle('pick', drPicked != null);
-  drCard.innerHTML = drCardHtml(ck, drPicked != null);
+  drNow.innerHTML = drCardHtml(ck, drPicked != null);
   const x = document.getElementById('drX'); if (x) x.onclick = () => { drPicked = null; drRender(); };
   const f = document.getElementById('drFrom'); if (f) f.onclick = () => { const k = drPicked; drPicked = null; drT = (k - 1) * DR_SEG + DR_WALK; drPlay(true); };
   /* the key's picture changes ONLY when play/pause changes: rebuilt on every chest, it pulled the tapped node out from
@@ -2411,7 +2425,7 @@ const io = new IntersectionObserver((es) => {
       if (!seen.has(id)) { seen.add(id); e.target.classList.add('seen'); if (!still) { numbers(id); orbs.forEach((o) => { if (o.id === id) o.spin(); }); if (id === 'produk') p3Bars.forEach((row, ri) => row.forEach((b, pi) => regrow(b, p3F(ri, pi), ri * 90 + pi * 60))); } }
       if (id === 'setoran') { dStep = 0; docketRun(); } if (id === 'karantina') doorsRun(true); if (id === 'aman') { nStep = 0; netRun(); } if (id === 'ulang') drGo();
       if (id === 'pelanggan') { vStep = 0; custRun(); } if (id === 'uang') { aDay = 0; arRun(); hoStep = 0; hoRun(); } if (id === 'stok') { sQty = 60; stockRun(); }
-      if (id === 'catatan') { lStep = 0; ledgerRun(); } if (id === 'keamanan') { kStep = 0; secRun(); }
+      if (id === 'catatan') { lStep = 0; ledgerRun(); } if (id === 'keamanan') { kStep = 0; secRun(); secOrb.idle(); }
       if (id === 'target') { paceSet('bulan'); paceRun(); } if (id === 'sampel') { sN = 0; smpRun(); } if (id === 'lokasi') { gStep = 0; geoRun(); } if (id === 'opname') { oStep = 0; opRun(); }
       if (id === 'dimana') { rmEv = 0; rmRun(); } if (id === 'selisih') { selStep = 0; selRun(); } if (id === 'produk') p3Run();
       kick();
@@ -2426,7 +2440,7 @@ addEventListener('scroll', () => { const m = document.documentElement.scrollHeig
 function applyMode() {
   setMode(); cancelAnimationFrame(raf); raf = 0; drMode();
   if (still) { scenes.forEach((s) => s.classList.add('seen')); numbersStill(); docketEnd(); doorsRun(true); netRun(); round3(); frame(); }
-  else { t0 = performance.now(); docketRun(); doorsRun(true); netRun(); round3(); kick(); }
+  else { t0 = performance.now(); docketRun(); doorsRun(true); netRun(); round3(); kick(); orbs.forEach((o) => o.idle()); }
 }
 /* the close lists every scene once more (built from the page, so the spliced replay is in it too) */
 $('#recap').append(...scenes.filter((s) => s.id !== 'angka').map((s, i) => el('a', '', `<b>${String(i + 1).padStart(2, '0')}</b>${s.dataset.name}`)).map((a, i) => (a.href = '#' + scenes[i].id, a)));
@@ -2470,7 +2484,7 @@ const wcards = feats.map((sc, i) => {
   b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-label', `${no} ${name}`); b.tabIndex = -1;
   b.style.setProperty('--a', i * WSTEP + 'deg'); ring.append(b); return b;
 });
-let wTheta = 0, wDrag = null, wHover = false, wRaf = 0, wTween = 0, wLast = 0, wFront = -1, wBusy = false, wAuto = 0, wHold = 0;   /* wHold: the spin waits until then (the "this way" tag has just turned the next card to the front) */
+let wTheta = 0, wDrag = null, wTween = 0, wFront = -1, wBusy = false;   /* v37: the wheel never turns by itself - card 01 waits at the front; only a hand or the way back from a slide moves it */
 const wNorm = (a) => ((a % 360) + 540) % 360 - 180;
 const wIndex = () => ((Math.round(-wTheta / WSTEP) % WN) + WN) % WN;
 function wFit() {
@@ -2493,22 +2507,7 @@ function wTo(target, ms = 520, then) {
 }
 const wSnap = (k) => -k * WSTEP;
 function wGoIndex(i, then) { const cur = wIndex(); let d = ((i - cur) % WN + WN) % WN; if (d > WN / 2) d -= WN; wTo(wTheta + wNorm(wSnap(cur + d) - wTheta), 520, then); }
-function wLoop(now) {
-  const dt = wLast ? Math.min(.05, (now - wLast) / 1000) : 0; wLast = now;
-  if (!wDrag && !wTween && !wBusy && now > wHold) {
-    /* auto-rotate, 5 deg a second (his 2026-10-19 "make the spin slower on default"; the original was 10). His other ask that
-       day: a mouse on it slows it to a quarter GRADUALLY instead
-       of stopping it dead, and it eases back up when the mouse leaves (0.45 s time constant, both ways) */
-    wAuto = still ? 0 : wAuto + ((wHover ? 1.25 : 5) - wAuto) * (1 - Math.exp(-dt / .45)); wTheta -= wAuto * dt;
-    wDraw();
-  } else wAuto = 0;   /* held, snapping or opening: the spin starts again from rest */
-  wRaf = requestAnimationFrame(wLoop);
-}
-const wStart = () => { if (!wRaf) { wLast = 0; wRaf = requestAnimationFrame(wLoop); } };
-const wStop = () => { cancelAnimationFrame(wRaf); wRaf = 0; };
-wheelEl.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') wHover = true; });
-wheelEl.addEventListener('pointerleave', () => { wHover = false; });
-wheelEl.addEventListener('pointerdown', (e) => { if (e.button > 0) return; cancelAnimationFrame(wTween); wTween = 0; wHold = 0; wDrag = { x: e.clientX, th: wTheta, on: false, lx: e.clientX, lt: performance.now(), v: 0 }; });
+wheelEl.addEventListener('pointerdown', (e) => { if (e.button > 0) return; cancelAnimationFrame(wTween); wTween = 0; wDrag = { x: e.clientX, th: wTheta, on: false, lx: e.clientX, lt: performance.now(), v: 0 }; });
 wheelEl.addEventListener('pointermove', (e) => {
   if (!wDrag) return; const dx = e.clientX - wDrag.x;
   if (!wDrag.on) { if (Math.abs(dx) < 6) return; wDrag.on = true; try { wheelEl.setPointerCapture(e.pointerId); } catch (_) { /* gone */ } wheelEl.classList.add('grab'); }
@@ -2563,7 +2562,6 @@ function wOpen(i) {
   const sink = hub.animate([{ transform: 'none', opacity: 1 }, { transform: 'scale(.92)', opacity: .2 }], { duration: 680, easing: WEASE, fill: 'forwards' });
   win.onfinish = () => { cv.remove(); sc.classList.remove('wfly'); root.classList.remove('wlift'); sink.cancel(); wBusy = false; };
 }
-new IntersectionObserver((es) => { for (const e of es) { if (e.isIntersecting) wStart(); else wStop(); } }, { threshold: .1 }).observe($('#fitur'));
 /* the top bar names the wheel while it is the thing on screen */
 new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) { $('#sn').textContent = '00'; $('#sname').textContent = 'Semua Fitur'; } }, { rootMargin: '-45% 0px -50% 0px' }).observe($('#fitur'));
 function soloOn(sc) {
@@ -2607,7 +2605,7 @@ const sChips = $$('.snav-c', sStrip);
 const sCur = () => scenes.indexOf($('main > .scene.solo-on'));
 /* ---- THIS WAY (v36): the order is the slides' own order, 01 to 23. A slide's plate goes to the next one; the closing slide sends
    the viewer to the first slide still unseen, or back to the wheel once every slide was seen. The wheel's tag sits on the first
-   unseen card, and coming back to the wheel turns that card to the front and holds the spin for 6 s so it can be read. ---- */
+   unseen card, and coming back to the wheel turns that card to the front (the only time the wheel turns by itself). ---- */
 const gSeen = new Set(), CHEV = '<span class="chev" aria-hidden="true"><span></span><span></span><span></span></span>';
 const gUnseen = () => feats.findIndex((_, i) => !gSeen.has(i));
 const guide = el('button', 'guide'); guide.type = 'button'; snav.after(guide);   /* after the picker: an open picker hides it (.snav.open + .guide) */
@@ -2630,7 +2628,7 @@ function guideWheel(turn) {
   const t = gUnseen(); if (t < 0) return;
   wcards[t].append(el('span', 'wguide', `<b>${gSeen.size ? 'Berikutnya' : 'Mulai di sini'}</b>${CHEV}`));
   $('.wguide', ring).setAttribute('aria-hidden', 'true');
-  if (turn) { wHold = performance.now() + 6000; wGoIndex(t); }
+  if (turn) wGoIndex(t);
 }
 function sMark() {
   const cur = sCur(); if (cur < 0) return;
