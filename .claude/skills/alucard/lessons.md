@@ -391,7 +391,7 @@ or image or anything to show me what is the recommended changes instead of telli
 technical AI sentence that i wont understand". One turn wasted, the third time he has had to ask
 for plain terms, and the rendering that finally worked (four iframes, one PNG) took one turn.
 Seen: 2026-09-14
-Fired: 2026-09-14 (the same session — tabs-options.png, four real renders through the new ?css= switch, A marked, sent before the question was asked again) · 2026-09-15 (re-asked the letter with tabs-options.png re-sent, not described); 2026-09-22 09:30 (two PC boards shot headless at his 2000×1000, TODAY beside A and B, his own screenshot as board 2's TODAY)
+Fired: 2026-09-14 (the same session — tabs-options.png, four real renders through the new ?css= switch, A marked, sent before the question was asked again) · 2026-09-15 (re-asked the letter with tabs-options.png re-sent, not described); 2026-09-22 09:30 (two PC boards shot headless at his 2000×1000, TODAY beside A and B, his own screenshot as board 2's TODAY), 2026-10-21
 Fired: 2026-09-17 (every Sales Terminal fix goes to him as a TODAY/AFTER frame pair rendered through ?css= at a measured 375, never as a table)
 Fired: 2026-09-18 (EOD Setoran on the phone — two boards, five frames rendered through ?look= at a pinned 375 inside the shell, TODAY beside each fix, sent as one PNG before the question was asked; no product code changed)
 Fired: 2026-09-18 (Customers round two — three boards, ten frames through seven ?look= entries at a pinned 375 as tier 1, TODAY beside each option, one PNG; the hold offered as live links on his phone because a still cannot show motion)
@@ -855,7 +855,7 @@ wrong, not the measurement.
 a 98 px name column and a two-line wrap. Caught by looking before composing; without the pin the
 board would have asked Aldi to fix a wrap he could not see.
 Seen: 2026-09-17
-Fired:2026-09-18 · 2026-09-19 (the store card boards: the first `today` PNG after a cold vite start was caught mid fade — the whole card dim beside a bright A; read back before sending, one frame reshot) 2026-09-22, 2026-10-06
+Fired:2026-09-18 · 2026-09-19 (the store card boards: the first `today` PNG after a cold vite start was caught mid fade — the whole card dim beside a bright A; read back before sending, one frame reshot) 2026-09-22, 2026-10-06, 2026-10-21
 Fired: 2026-10-02 (bell TODAY shot through CDP device metrics at a real 390, not a window crop)
 Fired: 2026-10-02 (phone sweep, last five screens: every TODAY frame at CDP 390 + touch, 1440 separately)
 Fired: 2026-10-02 (phone sweep 1-4: TODAY and AFTER both at CDP 390, never a crop)
@@ -944,7 +944,7 @@ arrives as the previous version is a decision made on the wrong picture, and the
 frame does not show. The same silent no-op hit board-phone.png in the next run, and again through a `dir` parameter in
 `page()` that shadowed the directory variable, so the delete landed in a folder named "row".
 Seen: 2026-09-22
-Fired: 2026-09-27 (the chest shooter deletes every old png before it shoots), 2026-10-06
+Fired: 2026-09-27 (the chest shooter deletes every old png before it shoots), 2026-10-06, 2026-10-21
 Fired: 2026-09-30 (shoot-isle.mjs rmSync-es each png before the capture)
 Fired: 2026-10-02 (shoot-bell.mjs rmSync-es each png before the capture; mtimes read after)
 Fired: 2026-10-02 (phone sweep: ps-measure + board.mjs rmSync every png first; board mtime printed and read back)
@@ -1188,14 +1188,6 @@ Fired: 2026-10-11 14:03 (?capy lab: play() wrap + idle-timer clamp read back in 
 **Would have prevented:** 2026-10-06 showcase scene 03 - "Play after a drag does nothing on the phone" cost two wrong fixes (a redraw guard, `touch-action: manipulation`) before a 30-line event probe showed pointerdown + pointerup with no click, and a slow drag clicked fine.
 Seen: 2026-10-06
 Fired: 2026-10-12 (drag probe: 40 steps of 4 px with 8 ms gaps, held 120 ms before the end)
-
-### 2026-10-06 — an `if false` under a catch-all is not a lock; read the parent match before quoting a rule as a guarantee
-**Status:** RETIRED (2026-10-20) — never fired in 14 days; no rules line has been quoted to Aldi or a customer page as a guarantee since. Platitude, not structural: a check cannot tell a quote from a citation.
-**Trigger:** before a completion claim — the moment a rules line (`allow ... if false`, a region check) is about to be quoted to Aldi or put on a customer page as "X cannot happen".
-**Lesson:** Firestore rules OR together. Walk up from the line to every enclosing `match`, above all a `/{document=**}` catch-all, and name who it lets through; the claim becomes "cannot, except <who>".
-**Would have prevented:** 2026-10-06, the round-3 brief (NEXT-SESSION 09:21) told the Cello presentation to say sales records "cannot be edited or deleted" from `firestore.rules:557`; the owner catch-all at :343 grants exactly that. A false Bukti nearly went onto a paying customer's page.
-Seen: 2026-10-06
-Fired:
 
 ### 2026-10-10 — a time stamp in a note is written by `date`, never typed
 **Status:** LIVE
