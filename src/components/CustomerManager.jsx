@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc, getDocs, getDoc, setDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc, getDocs, getDoc, setDoc, writeBatch, deleteField } from 'firebase/firestore';
 import { commitInChunks } from '../utils/helpers';
 import { waNumber } from '../utils/whatsapp.js';
 import { findDuplicates, createdMillis, groupKey } from '../utils/findDuplicates';
 import { getCustomerAccessLevel } from '../config/permissions';
-import { canEditShop } from '../utils/customerAccess.js';
+import { canEditShop, canConfirmGrosir, priceLevelOf, grosirRequestNotice } from '../utils/customerAccess.js';
 
 // 🚀 GEOSPATIAL MATH ENGINE: the CRM Directory reads Map Borders through ../utils/areaFromPin.js (shared with the
 // Sales Terminal's new-outlet form since 2026-10-20, so both file a shop under the same area)
@@ -227,7 +227,24 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
         return true; // 'global'
     };
     const canAddOrEditAnything = isAdmin || customerAccessLevel !== 'view_only';
-    
+    /* Grosir: who may grant it (Tier 1-4 or the boss's unlock), and the shops a salesman asked it for (P3, 2026-10-21) */
+    const grantsGrosir = isAdmin || canConfirmGrosir(userRole);
+    const grosirAsks = useMemo(() => (customers || []).filter(c => c.requestedTier === 'Grosir'), [customers]);
+    const decideGrosir = async (c, yes) => {
+        const now = c.priceTier || 'Retail';
+        if (!await confirmAction(yes ? `Confirm Grosir for ${c.name}? From its next sale it sells at Grosir prices.` : `Keep ${c.name} at ${now}? The Grosir request is closed.`)) return;
+        const who = user.displayName || user.email?.split('@')[0] || 'Admin';
+        try {
+            await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', c.id), yes
+                ? { priceTier: 'Grosir', requestedTier: deleteField(), grosirConfirmedBy: who, grosirConfirmedAt: serverTimestamp() }
+                : { requestedTier: deleteField(), grosirRefusedBy: who, grosirRefusedAt: serverTimestamp() });
+            logAudit(yes ? 'GROSIR_CONFIRMED' : 'GROSIR_REFUSED', `${yes ? 'Confirmed' : 'Refused'} Grosir for ${c.name}`);
+            triggerCapy(yes ? `${c.name} sells at Grosir from its next sale.` : `${c.name} stays at ${now}.`);
+        } catch (err) {
+            notify(`The Grosir decision for ${c.name} was NOT saved: ${err?.code === 'permission-denied' ? 'your access to this shop is view only - ask Tier 1' : err?.message}`);
+        }
+    };
+
     // 🚀 NEW: Tactical Dashboard State
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedProvince, setSelectedProvince] = useState(null); // PROVINSI
@@ -994,51 +1011,43 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             nooAgentName: user.displayName || user.email.split('@')[0],
             nooAgentId: user.uid
         };
-        
+
+        /* 💰 GROSIR WAITS FOR AN ADMIN, THE SHOP DOES NOT. Aldi, 2026-10-21: *"all store registration should be
+           automatically can be seen by every team member but to unlock the proce level of grosir, it needs
+           confirmation from the regional admin"*, then *"A"* (it sells at Retail until confirmed). A salesman's
+           Grosir is saved as requestedTier on a shop that keeps its old price; an admin's Grosir clears the request.
+           firestore.rules CHANGE 18 refuses the Grosir write itself, so this is the polite half of the rule. */
+        const was = editingId ? (customers || []).find(c => c.id === editingId) : null;
+        const held = !grantsGrosir && cleanData.priceTier === 'Grosir' && priceLevelOf(was) !== 'Grosir';
+        if (held) { cleanData.priceTier = was?.priceTier || 'Retail'; cleanData.requestedTier = 'Grosir'; }
+        else if (was?.requestedTier && cleanData.priceTier !== (was.priceTier || 'Retail')) cleanData.requestedTier = deleteField();
+        const newAsk = held && !was?.requestedTier;
+        const agentName = user.displayName || user.email.split('@')[0];
+
         try {
-            if (editingId) { 
-                await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', editingId), cleanData); 
-                await logAudit("CUSTOMER_UPDATE", `Updated: ${formData.name}`); 
-                triggerCapy("Customer updated!"); 
-                setEditingId(null); 
-            } else { 
-                // 🚀 ANTI-FRAUD QUARANTINE 🚀
-                // Admin bypasses the lock. Field Agents get locked as PENDING.
-                const initialStatus = isAdmin ? 'APPROVED' : 'PENDING';
-                
+            if (editingId) {
+                await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', editingId), cleanData);
+                await logAudit("CUSTOMER_UPDATE", `Updated: ${formData.name}`);
+                triggerCapy(held ? `${formData.name} saved - it stays at ${cleanData.priceTier} until an admin confirms Grosir.` : "Customer updated!");
+                setEditingId(null);
+            } else {
+                /* no more quarantine: a salesman's new shop is 'Active' and seen by his team at once (his 2026-10-21
+                   rule) - the old PENDING hid it from every agent until an admin pressed Verify */
+                const initialStatus = isAdmin ? 'APPROVED' : 'Active';
+
                 await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'customers'), {
                     ...cleanData,
                     status: initialStatus,
                     createdAt: serverTimestamp()
-                }); 
-                
-                await logAudit("CUSTOMER_ADD", `Added: ${formData.name} (${initialStatus})`); 
-                
-                // 🔔 TRIGGER ADMIN NOTIFICATION BELL
-                if (initialStatus === 'PENDING') {
-                    const agentName = user.displayName || user.email.split('@')[0];
-                    await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/notifications`), {
-                        title: "🏪 NOO Verification Required",
-                        message: `${agentName} submitted a new outlet: ${formData.name}.`,
-                        type: "NOO_APPROVAL",
-                        isRead: false,
-                        timestamp: serverTimestamp(),
-                        // 🚀 FIX: This was missing agentId entirely, unlike every other admin-directed
-                        // notification (EOD_APPROVAL, AUDIT_PENDING, TRANSFER_APPROVAL, GPS_BYPASS, etc.
-                        // all use agentId: 'ADMIN'). It only ever "worked" by accident, via
-                        // combinedNotifications' `!n.agentId` fallback in App.jsx — which silently
-                        // routes anything missing agentId to admins. The actual approver here is
-                        // whoever can see/click the "Verify" button in handleApproveNOO below, which
-                        // is gated behind the same `isAdmin` unlock as every other approval action —
-                        // the same population 'ADMIN' already targets everywhere else.
-                        agentId: 'ADMIN',
-                        linkToTab: "customers" // Clicking the bell takes you straight here!
-                    });
-                    triggerCapy("New Outlet submitted! Waiting for Admin verification.");
-                } else {
-                    triggerCapy("Customer added and approved!"); 
-                }
-            } 
+                });
+
+                await logAudit("CUSTOMER_ADD", `Added: ${formData.name} (${initialStatus})`);
+                triggerCapy(held ? `${formData.name} added at Retail - Grosir waits for an admin to confirm.` : "Customer added!");
+            }
+            /* the admins' bell (agentId 'ADMIN', like every other approval); the shop is already saved, so a failed
+               bell says so instead of reading as a failed save */
+            if (newAsk) await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/notifications`), { ...grosirRequestNotice(agentName, formData.name), timestamp: serverTimestamp() })
+                .catch(() => notify(`${formData.name} is saved, but the admin's bell could not be rung. Tell your admin to look at Grosir requests.`));
             setFormData({ name: '', phone: '', province: '', region: '', city: '', address: '', gmapsUrl: '', embedHtml: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: '', picName: '', description: '', mapFolder: '' });
             setCoordInput("");
             /* saved: the panel closes so the directory he just added to is in view */
@@ -1101,14 +1110,14 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
     // 🚀 ADMIN NOO APPROVAL PROTOCOL
     const handleApproveNOO = async (e, id, name) => {
         e.stopPropagation();
-        if (!await confirmAction(`Approve NOO for ${name}? This will permanently unlock the store for Field Agents.`)) return;
+        if (!await confirmAction(`Mark ${name} as a verified NOO?`)) return;   // the shop is already seen by its team (2026-10-21); this only stamps it checked
         try {
             await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id), {
                 status: 'APPROVED',
                 verifiedAt: serverTimestamp()
             });
             logAudit("NOO_APPROVED", `Verified and approved NOO: ${name}`);
-            triggerCapy(`${name} is now unlocked and live! 🟢`);
+            triggerCapy(`${name} is verified. 🟢`);
         } catch(err) { console.error(err); notify("Failed to approve: " + err.message); }
     };
 
@@ -1377,7 +1386,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                         <div>
                             <label className="text-[10px] font-bold text-[var(--accent-ink)] uppercase mb-1 block">Pricing Type</label>
                             <select value={formData.priceTier} onChange={e=>setFormData({...formData, priceTier: e.target.value})} className="w-full h-11 lg:h-10 px-2 text-sm border rounded font-bold outline-none text-[var(--accent-ink)] border-[var(--line)] bg-[var(--raised)]">
-                                <option value="Grosir">Grosir (Wholesale)</option>
+                                <option value="Grosir">{grantsGrosir ? 'Grosir (Wholesale)' : 'Grosir (Wholesale) - an admin confirms first'}</option>
                                 <option value="Retail">Retail</option>
                                 <option value="Ecer">Ecer (Individual)</option>
                             </select>
@@ -1550,6 +1559,26 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 />
             </div>
 
+            {/* 💰 GROSIR REQUESTS (P3, 2026-10-21) - only for those who may grant it. A salesman's Grosir waits here;
+                the shop itself is already in its folder and sells at its current price until an admin decides. */}
+            {grantsGrosir && grosirAsks.length > 0 && (
+                <section aria-label="Grosir requests" className="mb-6 rounded-xl border border-[var(--accent-edge)] bg-[var(--raised)] overflow-hidden">
+                    <h4 className="px-3 lg:px-4 py-2 bg-[var(--inset)] border-b border-[var(--line-3)] text-[11px] lg:text-[10px] uppercase tracking-widest font-bold text-[var(--accent-ink)]">Grosir requests · {grosirAsks.length} waiting</h4>
+                    {grosirAsks.map(c => (
+                        <div key={c.id} className="flex flex-wrap items-center gap-2 px-3 lg:px-4 py-2.5 border-b border-[var(--line-2)] last:border-b-0">
+                            <div className="min-w-0 flex-1 basis-48">
+                                <p className="text-[15px] leading-5 font-bold text-[var(--ink)] truncate">{c.name}</p>
+                                <p className="text-[11px] text-[var(--ink-dim)] lg:truncate">{[c.city, c.region].filter(Boolean).join(' · ') || 'No area yet'} · asked by {c.nooAgentName || c.mappedBy || 'a salesman'} · sells at {c.priceTier || 'Retail'} now</p>
+                            </div>
+                            <div className="flex gap-2 shrink-0">
+                                <button onClick={() => decideGrosir(c, false)} className="kpm-btn rounded min-h-[44px] lg:min-h-0"><span>Keep {c.priceTier || 'Retail'}</span></button>
+                                <button onClick={() => decideGrosir(c, true)} className="kpm-btn key rounded min-h-[44px] lg:min-h-0"><span>Confirm Grosir</span></button>
+                            </div>
+                        </div>
+                    ))}
+                </section>
+            )}
+
             {/* 🚀 TACTICAL FOLDER DASHBOARD (CRASH-PROOFED) */}
             <div className="animate-fade-in relative z-10">
                 {/* BREADCRUMB NAVIGATION */}
@@ -1653,15 +1682,18 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                             )}
                                             <div className="min-w-0 pr-2">
                                                 <h3 className="font-bold text-lg leading-tight group-hover:text-[var(--accent-ink)] transition-colors truncate">{c.name}</h3>
-                                                <div className="flex gap-2 items-center mt-1.5">
+                                                <div className="flex flex-wrap gap-x-2 gap-y-1 items-center mt-1.5">
                                                     {tierDef ? (
-                                                        <span className="text-[11px] lg:text-[10px] px-2 py-0.5 rounded-md border flex items-center gap-1 font-bold w-fit border-[var(--line)]" style={{ borderColor: tierDef.color, backgroundColor: `${tierDef.color}15`, color: tierDef.color }}>
+                                                        <span className="text-[11px] lg:text-[10px] px-2 py-0.5 rounded-md border flex items-center gap-1 font-bold w-fit whitespace-nowrap border-[var(--line)]" style={{ borderColor: tierDef.color, backgroundColor: `${tierDef.color}15`, color: tierDef.color }}>
                                                             {tierDef.iconType === 'image' ? <img src={tierDef.value} className="w-3 h-3 object-contain"/> : tierDef.value} {tierDef.label}
                                                         </span>
                                                     ) : ( <span className="text-[11px] lg:text-[10px] px-2 py-0.5 rounded-md border bg-[var(--inset)] text-[var(--ink-dim)] border-[var(--line)]">{c.tier}</span> )}
                                                     <span className={`text-[11px] px-2 py-0.5 rounded-md border font-bold uppercase tracking-widest border-[var(--line)] ${c.priceTier === 'Grosir' ? 'bg-[var(--inset)] text-[var(--ink)] border-[var(--line)]' : c.priceTier === 'Ecer' ? 'bg-[var(--inset)] text-[var(--accent-ink)] border-[var(--line)]' : 'bg-[var(--inset)] text-[var(--ink)] border-[var(--line)]'} `}>
                                                         {c.priceTier || 'Retail'}
                                                     </span>
+                                                    {c.requestedTier === 'Grosir' && (
+                                                        <span title="A salesman asked for Grosir - it sells at its current price until an admin confirms" className="text-[11px] px-2 py-0.5 rounded-md border font-bold uppercase tracking-widest border-[var(--accent-edge)] text-[var(--accent-ink)] bg-[var(--inset)] whitespace-nowrap">Grosir?</span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

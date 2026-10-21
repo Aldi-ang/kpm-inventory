@@ -6393,7 +6393,7 @@ ok('processTransaction and its first write are both findable',
    ecStart > -1 && ecEnd > ecStart, `processTransaction ${ecStart}, first write ${ecEnd}`);
 const ecHead = engine.slice(ecStart, ecEnd);
 ok('and the slice stops at the first write rather than running the whole file',
-   ecHead.length > 400 && ecHead.length < 10000, `slice is ${ecHead.length} chars`);   // +vanPending note, 2026-10-19
+   ecHead.length > 400 && ecHead.length < 12000, `slice is ${ecHead.length} chars`);   // +vanPending note, 2026-10-19; +the Grosir guard, 2026-10-21
 
 ok('the Ecer/Titip refusal stands BEFORE anything is written',
    /paymentType === 'Titip' && \(activeCart \|\| \[\]\)\.some\(i => i\.priceTier === 'Ecer'\)/.test(ecHead),
@@ -11455,7 +11455,7 @@ section('Customer access P1: a shop is filed under its area from its pin, one sp
   ok('REGRESSION: both terminal new-outlet saves carry the area from the salesman\'s pin',
      (msv.match(/\.\.\.areaFromPin\(agentLocation\?\.latitude, agentLocation\?\.longitude, mapBorders\)/g) || []).length === 2 &&
      /watchBorders\(db, appId, dataOwnerId, setMapBorders\)/.test(msv) &&
-     (msv.match(/\$\{areaText\(newStoreData\)\}/g) || []).length === 2);
+     (msv.match(/\$\{areaText\(newStoreData\)\}/g) || []).length === 4);   // 2 saves x (held Grosir line + plain line), 2026-10-21
   ok('REGRESSION: folders group in capitals - "Jawa Tengah" and "JAWA TENGAH" are one folder',
      /prov = prov\.toUpperCase\(\); kab = kab\.toUpperCase\(\); kec = kec\.toUpperCase\(\);/.test(cm) &&
      /customProv\.forEach\(p => \{ if \(!structure\[up\(p\)\]\)/.test(cm));
@@ -11530,7 +11530,7 @@ section('Customer access by folder - P2 (his 2026-10-20 "bandung team may only s
      /allow read: if isSalesman\(bossUid\) && !folderLimited\(bossUid\);/.test(custBlock) && /allow read: if folderReadOk\(bossUid, resource\.data\);/.test(custBlock));
   ok('the old update line holds only while folders are off; the folder line decides while on',
      /allow update: if isSalesman\(bossUid\) && !folderLimited\(bossUid\) && customerAccessLevel/.test(custBlock) &&
-     /allow update: if isSalesman\(bossUid\) && folderLimited\(bossUid\) && folderEditOk\(bossUid\);/.test(custBlock));
+     /allow update: if isSalesman\(bossUid\) && folderLimited\(bossUid\) && folderEditOk\(bossUid\)( && grosirUpdateOk\(\))?;/.test(custBlock));
   /* the rules and the app must agree on WHO is never limited, or a T1/T2 phone asks for every shop and is refused */
   const exempt = rules.slice(rules.indexOf('function folderLimited'), rules.indexOf('function folderReadOk'));
   /* his 2026-10-20 "tier 3 should be able to see evrything on default actually same like tier 1 and 2" */
@@ -11667,6 +11667,66 @@ section('Shop cards get clear lines - board A, bands (his 2026-10-21 "A look oka
   const r = [dark, light].flatMap((b) => [ratio(tok(b, 'line-3'), tok(b, 'raised')), ratio(tok(b, 'line-3'), tok(b, 'inset')), ratio(tok(b, 'line'), tok(b, 'raised'))]);
   ok(`BEHAVIOUR: the new rule stands off the card and the band on both grounds (dark ${r[0].toFixed(2)} / ${r[1].toFixed(2)}, light ${r[3].toFixed(2)} / ${r[4].toFixed(2)}), at least twice the old dark --line (${r[2].toFixed(2)})`,
      r.every((v) => v > 0) && r[0] >= 2.5 && r[1] >= 2.5 && r[3] >= 2.5 && r[4] >= 2.5 && r[0] >= 2 * r[2]);
+}
+
+section('P3: a new shop is seen by its team at once; Grosir waits for the regional admin (his 2026-10-21 "A, grosir only available for the grosir registered store only")');
+{ const ca = await import('../utils/customerAccess.js');
+  const engine = read('src/hooks/useTransactionEngine.js'), msv = code(read('src/MerchantSalesView.jsx'));
+  const cm = code(read('src/components/CustomerManager.jsx')), app = code(read('src/App.jsx')), rules = read('firestore.rules');
+  /* BEHAVIOUR - the hold and the price mapping on real values */
+  ok('BEHAVIOUR: a T5/T6 asking Grosir is saved at Retail with the request; T1-T4 get Grosir at once; any other price is saved as asked',
+     JSON.stringify(ca.grosirHold('Grosir', 'FIELD_OPERATIVE')) === '{"priceTier":"Retail","requestedTier":"Grosir"}' &&
+     JSON.stringify(ca.grosirHold('Grosir', 'ROOKIE')) === '{"priceTier":"Retail","requestedTier":"Grosir"}' &&
+     ['ADMIN', 'DEVELOPER', 'COMPANY_OWNER', 'AREA_ADMIN', 'FLEET_CAPTAIN'].every(r => ca.grosirHold('Grosir', r).priceTier === 'Grosir' && !('requestedTier' in ca.grosirHold('Grosir', r))) &&
+     JSON.stringify(ca.grosirHold('Ecer', 'FIELD_OPERATIVE')) === '{"priceTier":"Ecer"}');
+  ok('BEHAVIOUR: the selling price - priceTier first, the rank only when no price was saved (the rules mirror it)',
+     ca.priceLevelOf({ priceTier: 'Grosir' }) === 'Grosir' && ca.priceLevelOf({ priceTier: 'Retail', requestedTier: 'Grosir' }) === 'Retail' &&
+     ca.priceLevelOf({ priceTier: 'Retail', tier: 'Gold' }) === 'Retail' && ca.priceLevelOf({ tier: 'Gold' }) === 'Grosir' &&
+     ca.priceLevelOf({ priceTier: 'Ecer' }) === 'Ecer' && ca.priceLevelOf({}) === 'Retail' && ca.priceLevelOf(null) === 'Retail');
+  /* REGRESSION - the sale engine, before anything is written */
+  const gStart = engine.indexOf('const processTransaction = async'), gEnd = engine.indexOf('await saveOfflineTransaction', gStart);
+  const gHead = engine.slice(gStart, gEnd);
+  ok('REGRESSION: the engine refuses a Grosir line for a shop that is not Grosir, BEFORE the first write (debt lines exempt)',
+     gStart > -1 && gEnd > gStart && /i\.priceTier === 'Grosir' && !i\.isIouFulfillment/.test(gHead) &&
+     /if \(!named\.some\(c => priceLevelOf\(c\) === 'Grosir'\)\)/.test(gHead) && /Grosir prices cannot be used for[^`]*Sell these lines at Retail\.`\);\s*return;/.test(gHead));
+  /* "cannot" is what makes the strip red (utils/toastSeverity.js); the first wording read as plain news */
+  const { isFailure } = await import('../utils/toastSeverity.js');
+  ok('BEHAVIOUR: the three Grosir refusals are painted as failures, not as news',
+     isFailure('Grosir prices cannot be used for "Toko A" - only a shop registered as Grosir gets them. Sell these lines at Retail.') &&
+     isFailure('The Grosir decision for Toko A was NOT saved: x') && isFailure("Toko A is saved, but the admin's bell could not be rung."));
+  ok('REGRESSION: every new-shop write goes through grosirHold - the terminal\'s two saves and the engine\'s two payloads',
+     (msv.match(/\.\.\.grosirHold\(nooForm\.requestedTier, userRole\)/g) || []).length === 2 && !/priceTier: nooForm\.requestedTier/.test(msv) &&
+     /\.\.\.\(newStoreData\.isNooRegistration \? grosirHold\(newStoreData\.requestedTier, userRole\) : \{ priceTier: 'Ecer' \}\)/.test(engine) &&
+     /\.\.\.grosirHold\(newStoreData\.requestedTier, userRole\),/.test(engine) && !/priceTier: newStoreData\.requestedTier/.test(code(engine)));
+  ok('the sale that follows a registration is priced at what was SAVED (Retail while Grosir waits), not what was asked',
+     /setLockedTier\(newStoreData\.priceTier\); updateCartPricing\(newStoreData\.priceTier\);/.test(msv) && !/setLockedTier\(nooForm\.requestedTier\)/.test(msv));
+  ok('the terminal offers Grosir on a line only when the picked shop is Grosir; a default line never starts at Grosir; a new shop never defaults to asking',
+     /new Set\(allowedTiers\.filter\(t => t !== 'Grosir' \|\| lockedTier === 'Grosir'\)\)/.test(msv) &&
+     (msv.match(/allowedTiers\.find\(t => t !== 'Grosir'\)/g) || []).length === 2 &&
+     /const defaultNooTier = \[\.\.\.allowedTiers\]\.reverse\(\)\.find\(t => t !== 'Grosir' \|\| canConfirmGrosir\(userRole\)\)/.test(msv));
+  /* REGRESSION - the shop is no longer quarantined */
+  ok('REGRESSION: no screen hides a PENDING shop from the team any more (App, terminal proximity, next stop, expedition)',
+     !/if \(c\.status === 'PENDING'\) return false;/.test(app) && !/c\.status !== 'PENDING'\)/.test(msv) &&
+     !/status === 'PENDING'/.test(code(read('src/utils/nextStop.js'))) && !/status !== 'PENDING'/.test(code(read('src/utils/expedition.js'))) &&
+     /const initialStatus = isAdmin \? 'APPROVED' : 'Active';/.test(cm));
+  /* the directory: the salesman's Grosir held, the admin's list, every press reports */
+  ok('the directory holds a salesman\'s Grosir (old price kept + requestedTier) and an admin\'s price change clears the request',
+     /const held = !grantsGrosir && cleanData\.priceTier === 'Grosir' && priceLevelOf\(was\) !== 'Grosir';/.test(cm) &&
+     /if \(held\) \{ cleanData\.priceTier = was\?\.priceTier \|\| 'Retail'; cleanData\.requestedTier = 'Grosir'; \}/.test(cm) &&
+     /cleanData\.requestedTier = deleteField\(\);/.test(cm));
+  ok('admins (T1-T4 or the boss unlock) get "Grosir requests" with Confirm / Keep, a confirm first, and both outcomes report',
+     /const grantsGrosir = isAdmin \|\| canConfirmGrosir\(userRole\);/.test(cm) && /\{grantsGrosir && grosirAsks\.length > 0 && \(/.test(cm) &&
+     /onClick=\{\(\) => decideGrosir\(c, true\)\}/.test(cm) && /onClick=\{\(\) => decideGrosir\(c, false\)\}/.test(cm) &&
+     /if \(!await confirmAction\(yes \?/.test(cm) && /was NOT saved/.test(cm) && /sells at Grosir from its next sale/.test(cm));
+  ok('a salesman\'s Grosir ask rings the admins\' bell, and a failed bell is reported as a bell, not a failed save',
+     /type: 'GROSIR_REQUEST'/.test(read('src/utils/customerAccess.js')) && /grosirRequestNotice\(/.test(cm) && /grosirRequestNotice\(/.test(msv) &&
+     /could not be rung/.test(cm) && /could not be rung/.test(msv));
+  /* REGRESSION - the server side (CHANGE 18; rules-test/test-customer-access.mjs runs it) */
+  const custBlock = code(rules.slice(rules.indexOf('match /customers/{customerId} {'), rules.indexOf('match /benchmarks/{benchmarkId}')));
+  ok('REGRESSION: rules CHANGE 18 - create and BOTH update lines end in the Grosir check',
+     /allow create: if isSalesman\(bossUid\) && customerAccessLevel\(bossUid\) != 'view_only' && grosirCreateOk\(\);/.test(custBlock) &&
+     (custBlock.match(/&& grosirUpdateOk\(\);/g) || []).length === 2 &&
+     /function grosirAdmin\(\)[\s\S]{0,300}role == 'AREA_ADMIN' \|\| role == 'FLEET_CAPTAIN'/.test(rules));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

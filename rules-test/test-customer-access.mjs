@@ -145,6 +145,31 @@ await seed(ACCESS(false));
 console.log('switched OFF again - the old behaviour comes back:');
 await expect('T5 Muntilan reads every shop again', getDocs(shops(t5m)), true);
 
+// [CHANGE 18] GROSIR IS UNLOCKED BY AN ADMIN (his 2026-10-21 "A, grosir only available for the grosir registered
+// store only"). RED on the rules before CHANGE 18: every "cannot" below succeeds there.
+console.log('CHANGE 18, folders OFF - only T1-T4 make a shop Grosir:');
+await expect('T5 cannot register a new shop at Grosir', addDoc(shops(t5m), { name: 'TOKO G1', priceTier: 'Grosir' }), false);
+await expect('T5 cannot reach Grosir through the rank (no price saved, tier GOLD)', addDoc(shops(t5m), { name: 'TOKO G2', tier: 'Gold' }), false);
+await expect('T5 registers it at Retail with Grosir requested (what the app writes)', addDoc(shops(t5m), { name: 'TOKO G3', priceTier: 'Retail', requestedTier: 'Grosir' }), true);
+await expect('T5 cannot turn a Retail shop into Grosir', updateDoc(doc(t5m, A('customers'), 'm1'), { priceTier: 'Grosir' }), false);
+await expect('T5 cannot write it in capitals either', updateDoc(doc(t5m, A('customers'), 'm1'), { priceTier: 'WHOLESALE' }), false);
+await expect('T5 may ASK: requestedTier Grosir on a Retail shop', updateDoc(doc(t5m, A('customers'), 'm1'), { requestedTier: 'Grosir' }), true);
+await expect('Alex (T4) confirms Grosir', updateDoc(doc(alex, A('customers'), 'm1'), { priceTier: 'Grosir', requestedTier: deleteField(), grosirConfirmedBy: 'Alex', grosirConfirmedAt: 1 }), true);
+await expect('T5 still records a visit at the Grosir shop', updateDoc(doc(t5m, A('customers'), 'm1'), visit), true);
+await expect('T5 still edits the Grosir shop\'s phone (it was Grosir already)', updateDoc(doc(t5m, A('customers'), 'm1'), { phone: '3' }), true);
+await expect('T5 may move a Grosir shop DOWN to Retail', updateDoc(doc(t5m, A('customers'), 'm1'), { priceTier: 'Retail' }), true);
+await expect('T3 creates a shop at Grosir', addDoc(shops(t3m), { name: 'TOKO T3G', priceTier: 'Grosir' }), true);
+await expect('T2 creates a shop at Grosir', addDoc(shops(t2), { name: 'TOKO T2G', priceTier: 'Grosir' }), true);
+await expect('the owner creates a shop at Grosir', addDoc(shops(owner), { name: 'TOKO OWNG', priceTier: 'Grosir' }), true);
+
+await seed(ACCESS(true, true));
+console.log('CHANGE 18, folders ON (team switch "view and edit"):');
+await expect('T5 Muntilan (may edit) still cannot make his shop Grosir', updateDoc(doc(t5m, A('customers'), 'm1'), { priceTier: 'Grosir' }), false);
+await expect('T5 Muntilan may ask for it', updateDoc(doc(t5m, A('customers'), 'm1'), { requestedTier: 'Grosir' }), true);
+await expect('Alex confirms Grosir inside his folder (stays under the 1000-step limit)', updateDoc(doc(alex, A('customers'), 'm1'), { priceTier: 'Grosir', requestedTier: deleteField(), grosirConfirmedBy: 'Alex', grosirConfirmedAt: 1 }), true);
+await expect('Bandung\'s admin (his switch OFF) cannot confirm Grosir', updateDoc(doc(t4b, A('customers'), 'b1'), { priceTier: 'Grosir' }), false);
+await expect('Alex cannot confirm Grosir on a Bandung shop', updateDoc(doc(alex, A('customers'), 'b1'), { priceTier: 'Grosir' }), false);
+
 await testEnv.cleanup();
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

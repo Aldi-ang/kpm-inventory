@@ -73,11 +73,13 @@ assert.equal(nextStop([theirs, blank], HERE, 'Ali', NOW).customer.name, 'Blank')
 assert.equal(nextStop([store('Mine', 0.001, { assignedAgent: 'ali' })], HERE, 'Ali Kurniawan', NOW)
   .customer.name, 'Mine');
 
-/* 4. unusable or quarantined records are skipped rather than crashing */
+/* 4. unusable records are skipped rather than crashing. A PENDING shop is NOT skipped any more - Aldi 2026-10-21:
+      "all store registration should be automatically can be seen by every team member" (only its Grosir waits). */
 const noCoords = { id: 'x', name: 'No Coords', assignedAgent: 'Ali' };
 const pending  = store('Pending', 0.001, { status: 'PENDING' });
-assert.equal(nextStop([noCoords, pending, near], HERE, 'Ali', NOW).customer.name, 'Near');
-assert.equal(nextStop([noCoords, pending], HERE, 'Ali', NOW), null);
+assert.equal(nextStop([noCoords, near], HERE, 'Ali', NOW).customer.name, 'Near');
+assert.equal(nextStop([noCoords], HERE, 'Ali', NOW), null);
+assert.equal(nextStop([noCoords, pending], HERE, 'Ali', NOW)?.customer.name, 'Pending', 'a new shop is a stop on his round');
 
 /* 5. null, not a guess, when there is nothing to say. No GPS fix means no distances, and a
       finished round means nothing is left — both must be silent rather than wrong. */

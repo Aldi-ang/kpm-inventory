@@ -16,7 +16,7 @@
 - [Flag decisions with emoji](feedback_flag_decisions_with_emoji.md) — 🔴 DECIDE / ❓ ANSWER / ✅ TEST markers on every ask, not just the first
 - [User: KPM project owner](user_kpm_project.md) — **24** (not 14 — he corrected it 2026-09-09), owns the app; plain-English reports with test checklists
 - [Verify before claiming committed](feedback_verify_before_claiming_committed.md) — always git add+commit+show --stat before saying "done"
-- [Don't push every update](feedback_kpm_dont_push_every_update.md) — commit locally, work on `npm run dev`; a push is a separate thing he asks for by name (his call 2026-09-06, after a 17-commit deploy); when he asks, push it yourself with no window (his 2026-10-19)
+- [Push every finished job yourself](feedback_kpm_dont_push_every_update.md) — unasked, at the end of every FINISHED job once the gates are green (his 2026-10-21 "u dont need my permission"); half-done work and boards waiting on his pick stay local
 - [Caveman mode scope](feedback_caveman_mode_scope.md) — always-on here; ask before enabling elsewhere
 - [9Router delegation](feedback_9router_subordinate_delegation.md) — delegate cheap high-output subtasks to localhost:20128, free tier kr/*+OpenCode+Vertex
 - [Alucard delegation autonomy](feedback_alucard_delegation_autonomy.md) — delegates heavy-output/low-judgment work, reports what and why

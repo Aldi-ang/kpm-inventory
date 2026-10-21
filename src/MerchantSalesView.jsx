@@ -7,6 +7,7 @@ import ProofCamera from './components/ProofCamera.jsx';
 import { savePhotoAndGetReference, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey} from './utils/helpers';
 import { waNumber } from './utils/whatsapp.js';
 import { areaFromPin, watchBorders } from './utils/areaFromPin.js';
+import { grosirHold, priceLevelOf, canConfirmGrosir, grosirRequestNotice } from './utils/customerAccess.js';
 import { debtCredit } from './utils/revenueRule';
 import { isLowStock } from './utils/stockThreshold';
 import { dayStats, agoLabel } from './utils/dayStats';
@@ -268,7 +269,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const [showSampleModal, setShowSampleModal] = useState(false);
     const [sampleForm, setSampleForm] = useState({ productId: '', qtyBks: 0, qtyBatang: 0 });
     
-    const defaultNooTier = allowedTiers[allowedTiers.length - 1] || 'Retail';
+    /* never Grosir by default for a salesman: it is an ask an admin must answer (2026-10-21), so it has to be picked on purpose */
+    const defaultNooTier = [...allowedTiers].reverse().find(t => t !== 'Grosir' || canConfirmGrosir(userRole)) || 'Retail';
     const [nooForm, setNooForm] = useState(draft?.nooForm || { phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
     const fileInputRef = useRef(null);
 
@@ -401,7 +403,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                            wrong store. Capped at TWO by Aldi's call: two is a real situation,
                            three is a menu, and beyond that he should search instead. */
                         const inRange = customers
-                            .filter(c => c.latitude && c.longitude && c.status !== 'PENDING')
+                            .filter(c => c.latitude && c.longitude)   // a new shop is seen by the team at once (his 2026-10-21 rule); only its Grosir waits
                             .map(c => ({ c, dist: calculateDistance(lat, lon, c.latitude, c.longitude) }))
                             .filter(x => x.dist <= 50)
                             .sort((a, b) => a.dist - b.dist);
@@ -458,12 +460,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
     const suggestedCustomers = customers.filter(c => {
         if (!c.name.toLowerCase().includes(customerName.toLowerCase())) return false;
-        const tierUpper = (c.priceTier || c.tier || c.pricingTier || '').toUpperCase();
-        let mappedTier = 'Retail'; 
-        if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
-        else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';
-        else if (tierUpper.includes('ECER') || tierUpper.includes('BRONZE')) mappedTier = 'Ecer';
-        return allowedTiers.includes(mappedTier);
+        return allowedTiers.includes(priceLevelOf(c));
     }).slice(0, 5);
 
     /* The merchant no longer speaks on add-to-cart - Aldi's call 2026-08-02, he appears on
@@ -640,11 +637,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
         if (autoLockedDistance !== null) { setDistanceToStore(autoLockedDistance); setGpsStatus('verified'); }
 
-        const tierUpper = (cust.priceTier || cust.tier || cust.pricingTier || '').toUpperCase();
-        let mappedTier = 'Retail'; 
-        if (tierUpper.includes('GROSIR') || tierUpper.includes('GOLD') || tierUpper.includes('WHOLESALE')) mappedTier = 'Grosir';
-        else if (tierUpper.includes('RETAIL') || tierUpper.includes('SILVER')) mappedTier = 'Retail';
-        else if (tierUpper.includes('ECER') || tierUpper.includes('BRONZE')) mappedTier = 'Ecer';
+        const mappedTier = priceLevelOf(cust);   // the same mapping the sale engine checks a Grosir line against
 
         setLockedTier(mappedTier);
         updateCartPricing(mappedTier);
@@ -759,7 +752,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             }
             
             triggerMerchantSpeak((product.priceEcer || 0) > 100000 ? 'expensive' : 'add');
-            const tierToUse = lockedTier || (allowedTiers.includes('Retail') ? 'Retail' : (allowedTiers[0] || 'Retail'));
+            const tierToUse = lockedTier || (allowedTiers.includes('Retail') ? 'Retail' : (allowedTiers.find(t => t !== 'Grosir') || 'Retail'));
             
             let basePrice = product.priceRetail || 0;
             if (tierToUse === 'Ecer') basePrice = product.priceEcer || 0;
@@ -960,6 +953,11 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         return true;
     };
 
+    /* rings the admins' bell for a held Grosir; the shop is already saved, so a failed bell says so and is not a failed save */
+    const askGrosir = (shopName, ownerId) =>
+        addDoc(collection(db, `artifacts/${appId}/users/${ownerId}/notifications`), { ...grosirRequestNotice(myName || 'A salesman', shopName), timestamp: serverTimestamp() })
+            .catch(() => notify(`${shopName} is saved, but the admin's bell could not be rung. Tell your admin to look at Grosir requests in Customer Directory.`));
+
     const submitNooRegistration = async () => {
         if (!validateNoo()) return;
         try {
@@ -967,16 +965,18 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             const newRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
             const newStoreData = {
                 id: newRef.id, name: customerName.toUpperCase().trim(), phone: nooForm.phone, address: nooForm.address || "GPS Locked via NOO Form",
-                tier: 'UNRANKED', priceTier: nooForm.requestedTier, storeType: 'Retailer', latitude: agentLocation?.latitude, longitude: agentLocation?.longitude,
+                tier: 'UNRANKED', ...grosirHold(nooForm.requestedTier, userRole), storeType: 'Retailer', latitude: agentLocation?.latitude, longitude: agentLocation?.longitude,
                 status: 'Active', visitFreq: 7, storeImage: nooForm.photoUrl, createdAt: new Date().toISOString(),
                 ...areaFromPin(agentLocation?.latitude, agentLocation?.longitude, mapBorders)   // province / region / city, in capitals
             };
             await setDoc(newRef, newStoreData);
+            if (newStoreData.requestedTier) askGrosir(newStoreData.name, userId);
             if (logAudit) logAudit("NOO_REGISTERED_DIRECT", `Registered new NOO outlet: ${customerName}`);
-            if (triggerCapy) triggerCapy(`Target Data Secured! 📍 ${areaText(newStoreData)}`);
+            if (triggerCapy) triggerCapy(newStoreData.requestedTier ? `Registered at Retail - this sale is Retail, Grosir waits for an admin to confirm. 📍 ${areaText(newStoreData)}` : `Target Data Secured! 📍 ${areaText(newStoreData)}`);
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
-            setSelectedCustomerInfo(newStoreData); setLockedTier(nooForm.requestedTier); updateCartPricing(nooForm.requestedTier);
+            /* the price it was SAVED at, not the one asked for: a held Grosir sells at Retail (his 2026-10-21 "A") */
+            setSelectedCustomerInfo(newStoreData); setLockedTier(newStoreData.priceTier); updateCartPricing(newStoreData.priceTier);
             setShowNooModal(false); setGpsStatus('verified'); triggerMerchantSpeak('expensive');
             /* HIS ASK (G6): "maybe add some conveniency after we register new NOO, like close the
                manifest paper for example". The outlet is registered and the next thing he does is
@@ -997,13 +997,14 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             const newRef = doc(collection(db, `artifacts/${appId}/users/${userId}/customers`));
             const newStoreData = {
                 id: newRef.id, name: customerName.toUpperCase().trim(), phone: nooForm.phone, address: nooForm.address || "GPS Locked via NOO Form",
-                tier: 'UNRANKED', priceTier: nooForm.requestedTier, storeType: 'Retailer', latitude: agentLocation?.latitude, longitude: agentLocation?.longitude,
+                tier: 'UNRANKED', ...grosirHold(nooForm.requestedTier, userRole), storeType: 'Retailer', latitude: agentLocation?.latitude, longitude: agentLocation?.longitude,
                 status: 'Active', visitFreq: 7, storeImage: nooForm.photoUrl, createdAt: new Date().toISOString(),
                 ...areaFromPin(agentLocation?.latitude, agentLocation?.longitude, mapBorders)   // province / region / city, in capitals
             };
             await setDoc(newRef, newStoreData);
+            if (newStoreData.requestedTier) askGrosir(newStoreData.name, userId);
             if (logAudit) logAudit("NOO_REGISTERED_ONLY", `Registered new NOO outlet (no sale this visit): ${customerName}`);
-            if (triggerCapy) triggerCapy(`Outlet registered! No sale this visit. 📍 ${areaText(newStoreData)}`);
+            if (triggerCapy) triggerCapy(newStoreData.requestedTier ? `Outlet registered at Retail - Grosir waits for an admin to confirm. 📍 ${areaText(newStoreData)}` : `Outlet registered! No sale this visit. 📍 ${areaText(newStoreData)}`);
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
             setShowNooModal(false);
@@ -1607,7 +1608,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             return;
         }
 
-        const tierToUse = lockedTier || (allowedTiers.includes('Retail') ? 'Retail' : (allowedTiers[0] || 'Retail'));
+        const tierToUse = lockedTier || (allowedTiers.includes('Retail') ? 'Retail' : (allowedTiers.find(t => t !== 'Grosir') || 'Retail'));
         setCart(lines.map(({ product, qty, unit }) => {
             let base = product.priceRetail || 0;
             if (tierToUse === 'Ecer') base = product.priceEcer || 0;
@@ -1999,7 +2000,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     <div className="text-center opacity-50 mt-8 font-bold uppercase text-xs md:text-sm">Manifest Empty</div>
                 ) : (
                     cart.map((item, idx) => {
-                        const mergedTiers = new Set(allowedTiers);
+                        /* Grosir is offered only on a shop registered as Grosir (his 2026-10-21 "grosir only available for
+                           the grosir registered store only") - never on a walk-in, never by hand; the engine refuses it too */
+                        const mergedTiers = new Set(allowedTiers.filter(t => t !== 'Grosir' || lockedTier === 'Grosir'));
                         if (lockedTier) mergedTiers.add(lockedTier);
                         return (
                         <div key={idx} className={`kpm-row-in flex flex-col border-b-2 border-dashed border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)] p-3 md:p-4 mb-1 rounded border shadow-sm ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[var(--duke-paper-3)] border-[var(--duke-brass-edge-2)]' : 'bg-[var(--duke-paper-7)] border-[var(--duke-danger-edge)]') : 'bg-[var(--duke-paper)] border-[color-mix(in_srgb,var(--duke-edge-on-paper)_50%,transparent)]'}`}>
@@ -3017,7 +3020,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             <div>
                                 <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">Requested Pricing Tier <span className="text-red-500">*</span></label>
                                 <select value={nooForm.requestedTier} onChange={e => setNooForm({...nooForm, requestedTier: e.target.value})} className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-ctl)] focus:border-orange-500 outline-none text-[var(--duke-ink-hi)] p-3 rounded font-bold uppercase">
-                                    {allowedTiers.map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
+                                    {allowedTiers.map(tier => ( <option key={tier} value={tier}>{tier === 'Grosir' && !canConfirmGrosir(userRole) ? 'Grosir (admin confirms first - sells at Retail till then)' : tier}</option> ))}
                                 </select>
                             </div>
 

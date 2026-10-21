@@ -88,3 +88,29 @@ export const canEditShop = (scope, shop) => !scope || (scope.canEdit && canSeeSh
 
 /* tick state of a Kabupaten or Provinsi for the tree: 'all' | 'some' | 'none' */
 export const tickState = (picked, total) => picked === 0 ? 'none' : picked >= total ? 'all' : 'some';
+
+/* GROSIR IS UNLOCKED BY THE REGIONAL ADMIN (P3, 2026-10-21). Aldi: *"all store registration should be automatically
+   can be seen by every team member but to unlock the proce level of grosir, it needs confirmation from the regional
+   admin, to avoid salesman selling at retail price while the system recognize the sales as grosir"*, then *"A, grosir
+   only available for the grosir registered store only"*. A shop a salesman asks Grosir for is saved at Retail with
+   requestedTier 'Grosir' and sells at Retail until an admin confirms. firestore.rules CHANGE 18 is the guard on the
+   shop; the sale engine refuses a Grosir line for any shop that is not Grosir. */
+export const canConfirmGrosir = (userRole) => seesEveryShop(userRole) || isTeamAdminRole(userRole);
+/* what a new or edited shop is SAVED with when someone asks for `asked`: requestedTier only while Grosir is held */
+export const grosirHold = (asked, userRole) =>
+    asked === 'Grosir' && !canConfirmGrosir(userRole) ? { priceTier: 'Retail', requestedTier: 'Grosir' } : { priceTier: asked };
+/* the price a shop SELLS at - the terminal's old mapping in one place, so the sale screen, the sale engine and the
+   rules (CHANGE 18 levelOf) agree: priceTier first; a rank (GOLD / SILVER / BRONZE) only when no price was saved */
+export const priceLevelOf = (c) => {
+    const t = String(c?.priceTier || c?.tier || c?.pricingTier || '').toUpperCase();
+    if (t.includes('GROSIR') || t.includes('GOLD') || t.includes('WHOLESALE')) return 'Grosir';
+    if (t.includes('RETAIL') || t.includes('SILVER')) return 'Retail';
+    if (t.includes('ECER') || t.includes('BRONZE')) return 'Ecer';
+    return 'Retail';
+};
+/* the bell line an admin gets when a salesman asks for Grosir (the caller adds the timestamp) */
+export const grosirRequestNotice = (who, shopName) => ({
+    title: '💰 Grosir confirmation needed',
+    message: `${who} asked for Grosir on ${shopName}. It sells at Retail until an admin confirms it in Customer Directory.`,
+    type: 'GROSIR_REQUEST', isRead: false, agentId: 'ADMIN', linkToTab: 'customers',
+});

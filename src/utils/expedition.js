@@ -90,7 +90,8 @@ export function expedition(motorists = [], customers = [], transactions = [], no
             /* the round still ahead, nearest-first from where he was last seen; a shop with no pin still counts, last */
             /* a missing visitFreq is 7 (every day), exactly as Journey Plan's sanitizer reads it - or a press hides shops Journey
                Plan itself lists as due today (test 2026-10-04) */
-            const round = customers.filter((c) => his(c, m.name) && c.status !== 'PENDING' && ((parseInt(c.visitFreq) || 7) === 7 || c.visitDay === weekday));
+            /* PENDING shops count too since 2026-10-21 (his "all store registration should be automatically can be seen by every team member") */
+            const round = customers.filter((c) => his(c, m.name) && ((parseInt(c.visitFreq) || 7) === 7 || c.visitDay === weekday));
             const left = round.filter((c) => !done.some((d) => d.key === storeKey(c.name)));
             const ahead = [];
             let from = at;

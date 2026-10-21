@@ -1,32 +1,30 @@
 ---
 name: feedback_kpm_dont_push_every_update
-description: Work on localhost and commit locally; never offer or run a push unless Aldi asks for one
-metadata: 
+description: Push yourself, unasked, at the end of every FINISHED job once the gates are green (his 2026-10-21 call, reverses 2026-09-06); half-done work and boards waiting on his pick stay local
+metadata:
   node_type: memory
   type: feedback
   originSessionId: 746db1d4-1dfd-49f8-8c7e-4bcc66b26f9c
-  modified: 2026-10-19T12:54:15.332Z
+  modified: 2026-10-21T01:39:47.480Z
 ---
 
-**Updated 2026-10-19:** when he DOES ask ("publish", "push", "fix the publish"), push it yourself, no
-approval window - his *"actually i like it this way that u can push it yourself make sure the cloud
-session can do that too"*, said when offered a confirm-every-push prompt. Workflow and the cloud
-caveat: A-Brain `Wiki/Concepts/Publishing a Fix.md`; short form in the repo's CLAUDE.md "Publishing".
-Unasked, the rule below still holds.
+**Current rule (2026-10-21):** push to `phase0-solid-ground` yourself at the end of every finished job -
+no "say push", no approval window. His words, after a finished job sat waiting on his word:
+*"can u push it automatically next time u dont need my permission for that becuase its nothing to lose,
+put that  in automation workflow as well"*.
 
-Aldi, 2026-09-06, right after the first real deploy of the day: *"well now we'll start working on
-localhost again dont need to push the update everytime"*.
+**Why:** waiting on his "push" cost a round-trip on every job, and he judged the downside small
+("nothing to lose" - Vercel keeps the previous deployment to roll back to).
 
-Default is **commit locally, do not push**. Testing happens on `npm run dev`. A push is a separate
-thing he asks for by name, usually because he wants to show somebody the live link.
+**How to apply:** after the LAST edit run the three gates (selfcheck, build, audit), confirm
+`git rev-list --count HEAD..origin/phase0-solid-ground` = 0, push, `git fetch`, confirm origin is your
+commit, give him the hash. Stays local (not finished): a half-done job, a lab-only board waiting on
+his pick, a red gate, code that needs a rule he has not published. Firestore rules are never pushed -
+he publishes them in the Console. Full workflow: A-Brain `Wiki/Concepts/Publishing a Fix.md`; short
+form in the repo's CLAUDE.md "Publishing".
 
-**Why:** every push triggers a Vercel rebuild and puts unverified work in front of whoever has the
-link. The 2026-09-06 push carried 17 commits, several of them screens nobody had looked at yet.
-He wants that to be a deliberate act, not the tail end of every task.
+History: 2026-09-06 *"dont need to push the update everytime"* (after a 17-commit deploy) made the
+default local-only; 2026-10-19 removed the approval window when he asked; 2026-10-21 removed the ask.
 
-**How to apply:** finish a task with `git commit` and stop there. Do not end a reply with "say go
-and I'll push". If a change only matters once deployed — anything touching hosting, the auth
-domain, or `vercel.json` — say so in one line and let him decide when.
-
-Related: [[feedback_verify_before_claiming_committed]] — committing is still verified the same way,
-with `git show --stat`. This changes what happens *after* the commit, not the commit itself.
+Related: [[feedback_verify_before_claiming_committed]] - a push is claimed only after `git fetch`
+shows origin at the new commit.

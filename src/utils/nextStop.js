@@ -49,7 +49,7 @@ export function nextStop(customers = [], agentLocation = null, agentName = '', n
 
     for (const c of customers) {
         if (!c?.latitude || !c?.longitude) continue;      // cannot navigate to it
-        if (c.status === 'PENDING') continue;             // quarantined, same as everywhere else
+        // a PENDING shop is a real stop now - his 2026-10-21 rule: every registration is seen by the team; only Grosir waits
         if (visitedWithinCycle(c, now)) continue;         // done this cycle
         if (!mine(c, agentName)) continue;                // someone else's territory
         open.push({

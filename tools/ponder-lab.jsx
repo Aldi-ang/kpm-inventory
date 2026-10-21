@@ -1141,7 +1141,9 @@ function ShellLab() {
            app's DEFAULT_TIERS shape. onRequestCrop records to window.__crop. db is the stub so the
            borders read resolves empty instead of throwing. */
         <CustomerManagement
-          customers={LAB_CUSTOMERS.map((c) => ({ ...c, region: 'BANDUNG', city: 'Bandung', tier: 'Bronze', phone: '0812-3456-7890', visitFreq: 7 }))}
+          customers={LAB_CUSTOMERS.map((c) => ({ ...c, region: 'BANDUNG', city: 'Bandung', tier: 'Bronze', phone: '0812-3456-7890', visitFreq: 7,
+            /* &grosirask - a salesman asked Grosir for Kios Maju Mundur and it waits (P3, 2026-10-21): the boss sees the list */
+            ...(q.has('grosirask') && c.id === 'c-maju' ? { requestedTier: 'Grosir', nooAgentName: 'Budi Santoso' } : {}) }))}
           db={{}} appId="lab"
           user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com', location: 'BANDUNG' }}
           logAudit={() => {}} triggerCapy={() => {}}

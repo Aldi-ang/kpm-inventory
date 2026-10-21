@@ -4341,8 +4341,10 @@ const handleGitHubMirror = async () => {
       
       // Filter customers strictly based on the agent's authorized tiers
       return customers.filter(c => {
-          // 🚀 ANTI-FRAUD QUARANTINE: Strictly hide PENDING stores from Agents!
-          if (c.status === 'PENDING') return false;
+          /* A PENDING shop is NOT hidden any more. Aldi, 2026-10-21: *"all store registration should be
+             automatically can be seen by every team member but to unlock the proce level of grosir, it
+             needs confirmation from the regional admin"* - the quarantine moved from the shop to its
+             Grosir price (utils/customerAccess.js grosirHold, firestore.rules CHANGE 18). */
 
           /* `pricingTier` is the SAME field under a second spelling. useTransactionEngine wrote
              it that way for every store registered during a sale, while this filter only looked

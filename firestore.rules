@@ -259,6 +259,30 @@ service cloud.firestore {
       );
     }
 
+    // [CHANGE 18 — 2026-10-21, DRAFT] GROSIR IS UNLOCKED BY AN ADMIN. His words: "all store registration should be
+    // automatically can be seen by every team member but to unlock the proce level of grosir, it needs confirmation
+    // from the regional admin, to avoid salesman selling at retail price while the system recognize the sales as
+    // grosir", then "A, grosir only available for the grosir registered store only". A T5/T6 may not create a shop
+    // at Grosir nor move one TO Grosir; T1-T4 may (the app's Confirm Grosir). isGrosirLevel mirrors the app's
+    // priceLevelOf (src/utils/customerAccess.js): priceTier first, a rank (GOLD) only when no price was saved - so a
+    // salesman cannot reach Grosir through the rank either. Each check stops before the profile read when the shop
+    // is not becoming Grosir, so a visit or an ordinary edit costs no extra steps. The app works under the rules
+    // before this one too (it never writes a salesman's Grosir): publish AFTER the app is live, or an old phone's
+    // Grosir new-shop is refused. rules-test/test-customer-access.mjs asserts every case.
+    function isGrosirLevel(d) {
+      let p = d.get('priceTier', '');
+      let r = d.get('tier', '');
+      let t = p != null && p != '' ? p : (r != null && r != '' ? r : d.get('pricingTier', ''));
+      return t is string && t.upper().matches('.*(GROSIR|GOLD|WHOLESALE).*');
+    }
+    function grosirAdmin() {
+      let profile = getEmployeeProfile();
+      let role = profile != null ? profile.get('userRole', 'NONE') : 'NONE';
+      return isT1Tag(role) || role == 'COMPANY_OWNER' || role == 'AREA_ADMIN' || role == 'FLEET_CAPTAIN';
+    }
+    function grosirCreateOk() { return !isGrosirLevel(request.resource.data) || grosirAdmin(); }
+    function grosirUpdateOk() { return !isGrosirLevel(request.resource.data) || isGrosirLevel(resource.data) || grosirAdmin(); }
+
     match /system_admins/{uid} {
       allow read: if isAuthenticated() && request.auth.uid == uid;
       allow create: if isAuthenticated() && request.auth.uid == uid && exists(/databases/$(database)/documents/system_admins_invites/$(request.auth.token.email));
@@ -600,16 +624,17 @@ service cloud.firestore {
         // (or for T1/T2); the second line is everyone else while folders are on.
         allow read: if isSalesman(bossUid) && !folderLimited(bossUid);
         allow read: if folderReadOk(bossUid, resource.data);
-        allow create: if isSalesman(bossUid) && customerAccessLevel(bossUid) != 'view_only';
+        // [CHANGE 18] each of the three lines below also ends in a Grosir check (only T1-T4 make a shop Grosir)
+        allow create: if isSalesman(bossUid) && customerAccessLevel(bossUid) != 'view_only' && grosirCreateOk();
         // [CHANGE 17] the old update line, now only while folders are off (or for T1/T2) ...
         allow update: if isSalesman(bossUid) && !folderLimited(bossUid) && customerAccessLevel(bossUid) != 'view_only' && (
           customerAccessLevel(bossUid) != 'own_region' ||
           isUnclassifiedRegion(resource.data.get('region', '')) ||
           isOwnRegionMatch(bossUid)
-        );
+        ) && grosirUpdateOk();
         // ... and while on: a shop he can see; a visit by anyone, a real edit only with his switch on, and the
         // shop may land only in his own folders (from his temporary folder, or between his folders).
-        allow update: if isSalesman(bossUid) && folderLimited(bossUid) && folderEditOk(bossUid);
+        allow update: if isSalesman(bossUid) && folderLimited(bossUid) && folderEditOk(bossUid) && grosirUpdateOk();
         allow delete: if false;
         match /benchmarks/{benchmarkId} {
           allow read, write: if isSalesman(bossUid);

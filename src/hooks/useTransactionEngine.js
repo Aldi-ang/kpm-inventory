@@ -4,6 +4,7 @@ import { doc, collection, serverTimestamp, writeBatch, getDoc, addDoc, runTransa
    between the two writes, and offline is the normal case out here. */
 import { tallySale } from '../utils/salesRollupWrite.js';
 import { getCurrentDate, stripCartItemForStorage, convertToBks, storeKey } from '../utils/helpers';
+import { priceLevelOf, grosirHold } from '../utils/customerAccess.js';
 import { isLowStock } from '../utils/stockThreshold';
 import useOfflineEngine from './useOfflineEngine';
 
@@ -58,6 +59,21 @@ export default function useTransactionEngine({
         if (paymentType === 'Titip' && (activeCart || []).some(i => i.priceTier === 'Ecer')) {
             notify("Ecer is an individual sale, not a store - it cannot be a consignment. Take Cash, QRIS or Transfer, or move those lines to Retail or Grosir.");
             return;
+        }
+
+        /* 💰 GROSIR IS A SHOP'S PRICE, NOT THE SALESMAN'S PICK. Aldi, 2026-10-21: *"A, grosir only available for
+           the grosir registered store only"*. A Grosir line on a walk-in, or on a shop whose Grosir still waits for
+           an admin (requestedTier), is the trick he named: the customer pays Retail, the books say Grosir, the
+           salesman keeps the gap. The terminal stops offering it; this is the same rule where the sale is written.
+           `some` over every shop of that name, so a shop that shares its name with a Grosir shop is never the reason
+           a real Grosir sale is refused. A debt line (Utang Barang) keeps the price it was owed at. */
+        if ((activeCart || []).some(i => i.priceTier === 'Grosir' && !i.isIouFulfillment)) {
+            const named = (customers || []).filter(c => storeKey(c.name) === storeKey(customerName));
+            if (!named.some(c => priceLevelOf(c) === 'Grosir')) {
+                const waiting = named.some(c => c.requestedTier === 'Grosir');
+                notify(`Grosir prices cannot be used for "${customerName}" - only a shop registered as Grosir gets them${waiting ? ' (its Grosir is still waiting for an admin to confirm)' : ''}. Sell these lines at Retail.`);
+                return;
+            }
         }
 
         /* 🏪 AND THE OTHER HALF OF THE SAME SENTENCE: *"consignment is only for registered
@@ -177,7 +193,7 @@ export default function useTransactionEngine({
                            reads priceTier — so a store made during a sale was invisible to the
                            agent who made it. Both payloads below must stay in step: this offline
                            one and the online batch.set. */
-                        priceTier: newStoreData.isNooRegistration ? newStoreData.requestedTier : 'Ecer',
+                        ...(newStoreData.isNooRegistration ? grosirHold(newStoreData.requestedTier, userRole) : { priceTier: 'Ecer' }),
                         latitude: newStoreData.latitude || null,
                         longitude: newStoreData.longitude || null,
                         status: newStoreData.isNooRegistration ? 'NOO_ACTIVE' : 'WALK_IN',
@@ -380,7 +396,7 @@ export default function useTransactionEngine({
                             name: customerName,
                             phone: newStoreData.phone,
                             address: newStoreData.address,
-                            priceTier: newStoreData.requestedTier,
+                            ...grosirHold(newStoreData.requestedTier, userRole),   // CHANGE 18 refuses a salesman's Grosir - and with it the whole sale
                             latitude: newStoreData.latitude,
                             longitude: newStoreData.longitude,
                             status: 'NOO_ACTIVE',
