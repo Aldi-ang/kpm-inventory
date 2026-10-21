@@ -821,6 +821,44 @@ details.ev .pop b { color: var(--ink); }
 .wbar .wopen { flex: none; padding: 0 16px; border-color: var(--gold); background: var(--gold); color: var(--gold-ink); font-size: 13px; letter-spacing: .2em; text-transform: uppercase; }
 .wnow { min-width: 0; flex: 1 1 0; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; font: 700 12px/1.3 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); }
 .wnow b { color: var(--gold-2); }
+/* THIS WAY (v36, his 2026-10-21 "redirect the viewer to follow the step to see all the presentation slides with smooth and cool
+   animation ... basically make a 'this way' sign but animated"). One sign, two places, one motion: three chevrons that light up
+   one after another in the direction to go, like the floor guide lights of a lab corridor (linear, 1.2 s a sweep). On the wheel a
+   tag rides ON the next card, so it turns with the wheel and can never point at the wrong card; inside a slide a plate in the
+   bottom-right corner goes straight to the next slide. Still mode: the chevrons stand lit and nothing bobs. */
+.chev { display: inline-flex; gap: 2px; color: var(--gold-2); flex: none; }
+.chev > span { display: block; width: 8px; height: 13px; background: currentColor; clip-path: polygon(0 0, 42% 0, 100% 50%, 42% 100%, 0 100%, 58% 50%); }
+.moving .chev > span { opacity: .3; animation: chev 1.2s linear infinite; }
+.moving .chev > span:nth-child(2) { animation-delay: .15s; }
+.moving .chev > span:nth-child(3) { animation-delay: .3s; }
+@keyframes chev { 0%, 45%, 100% { opacity: .3; } 18% { opacity: 1; } }
+.wguide { position: absolute; left: 50%; bottom: calc(100% + 6px); translate: -50% 0; display: flex; flex-direction: column; align-items: center; gap: 3px; pointer-events: none; }
+.wguide b { padding: 5px 9px; border: 1px solid var(--gold); border-radius: 6px; background: rgba(14,13,12,.94); font: 800 11px/1 var(--font-mono); letter-spacing: .2em; text-transform: uppercase; color: var(--gold-2); white-space: nowrap; }
+.wguide .chev { rotate: 90deg; margin-block: 2px; }
+.wguide .chev > span { width: 10px; height: 16px; }
+.moving .wguide { animation: wbob 1.6s cubic-bezier(.77, 0, .175, 1) infinite alternate; }
+@keyframes wbob { from { translate: -50% 0; } to { translate: -50% 5px; } }
+.wcard.wdone .wn::after { content: " ✓"; color: var(--ink-muted); }
+.guide { position: fixed; right: 16px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 44; display: none; align-items: center; gap: 12px;
+  min-height: 56px; max-width: min(340px, calc(50vw - 44px)); padding: 0 14px 0 16px; border: 1px solid var(--gold); border-radius: 14px; cursor: pointer;
+  background: rgba(14,13,12,.96); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);   /* the slide's own keys pass under it: blurred, never read through */
+  color: var(--ink); text-align: left; font: inherit; box-shadow: 0 10px 30px rgba(0,0,0,.6); -webkit-tap-highlight-color: transparent;
+  transition: opacity 240ms var(--ease-out), scale 120ms var(--ease-out), border-color 200ms ease; }
+html.solo .guide { display: flex; }
+/* the picker open (its one-time peek, or a tap on the dot) covers the corner on a phone: the plate steps aside until it folds */
+.snav.open + .guide { opacity: 0; pointer-events: none; transition-duration: 120ms; }
+.guide:active { scale: .97; }
+.guide .g-t { display: grid; gap: 5px; min-width: 0; }
+.guide .g-k { font: 800 11px/1 var(--font-mono); letter-spacing: .2em; text-transform: uppercase; color: var(--gold-2); white-space: nowrap; }
+.guide .g-n { font: 800 15px/1.15 var(--font-display); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.guide .g-n b { color: var(--gold-2); margin-right: 6px; }
+@media (hover: hover) and (pointer: fine) {
+  .guide:hover { border-color: var(--gold-2); }
+  .guide .chev { transition: translate 200ms var(--ease-out); }
+  .guide:hover .chev { translate: 3px 0; }
+}
+/* the phone: the slide picker's dot sits in the middle, so the plate keeps to the right of it and names the next slide by number */
+@media (max-width: 640px) { .guide { right: 12px; max-width: calc(50vw - 42px); padding: 0 10px 0 12px; gap: 8px; } .guide .g-name { display: none; } }
 /* v28, his "better animation when entering the slides ... natural and smooth and high quality": the slide is seen through a window
    that grows out of the pressed card (clip-path), the card's face rides it and dissolves, the wheel sinks back. Nothing is stretched. */
 html.wlift .hubsec { display: grid !important; }
@@ -2432,7 +2470,7 @@ const wcards = feats.map((sc, i) => {
   b.type = 'button'; b.setAttribute('role', 'option'); b.setAttribute('aria-label', `${no} ${name}`); b.tabIndex = -1;
   b.style.setProperty('--a', i * WSTEP + 'deg'); ring.append(b); return b;
 });
-let wTheta = 0, wDrag = null, wHover = false, wRaf = 0, wTween = 0, wLast = 0, wFront = -1, wBusy = false, wAuto = 0;
+let wTheta = 0, wDrag = null, wHover = false, wRaf = 0, wTween = 0, wLast = 0, wFront = -1, wBusy = false, wAuto = 0, wHold = 0;   /* wHold: the spin waits until then (the "this way" tag has just turned the next card to the front) */
 const wNorm = (a) => ((a % 360) + 540) % 360 - 180;
 const wIndex = () => ((Math.round(-wTheta / WSTEP) % WN) + WN) % WN;
 function wFit() {
@@ -2457,7 +2495,7 @@ const wSnap = (k) => -k * WSTEP;
 function wGoIndex(i, then) { const cur = wIndex(); let d = ((i - cur) % WN + WN) % WN; if (d > WN / 2) d -= WN; wTo(wTheta + wNorm(wSnap(cur + d) - wTheta), 520, then); }
 function wLoop(now) {
   const dt = wLast ? Math.min(.05, (now - wLast) / 1000) : 0; wLast = now;
-  if (!wDrag && !wTween && !wBusy) {
+  if (!wDrag && !wTween && !wBusy && now > wHold) {
     /* auto-rotate, 5 deg a second (his 2026-10-19 "make the spin slower on default"; the original was 10). His other ask that
        day: a mouse on it slows it to a quarter GRADUALLY instead
        of stopping it dead, and it eases back up when the mouse leaves (0.45 s time constant, both ways) */
@@ -2470,7 +2508,7 @@ const wStart = () => { if (!wRaf) { wLast = 0; wRaf = requestAnimationFrame(wLoo
 const wStop = () => { cancelAnimationFrame(wRaf); wRaf = 0; };
 wheelEl.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') wHover = true; });
 wheelEl.addEventListener('pointerleave', () => { wHover = false; });
-wheelEl.addEventListener('pointerdown', (e) => { if (e.button > 0) return; cancelAnimationFrame(wTween); wTween = 0; wDrag = { x: e.clientX, th: wTheta, on: false, lx: e.clientX, lt: performance.now(), v: 0 }; });
+wheelEl.addEventListener('pointerdown', (e) => { if (e.button > 0) return; cancelAnimationFrame(wTween); wTween = 0; wHold = 0; wDrag = { x: e.clientX, th: wTheta, on: false, lx: e.clientX, lt: performance.now(), v: 0 }; });
 wheelEl.addEventListener('pointermove', (e) => {
   if (!wDrag) return; const dx = e.clientX - wDrag.x;
   if (!wDrag.on) { if (Math.abs(dx) < 6) return; wDrag.on = true; try { wheelEl.setPointerCapture(e.pointerId); } catch (_) { /* gone */ } wheelEl.classList.add('grab'); }
@@ -2503,7 +2541,7 @@ function wClip(sc, q) {   /* a screen rectangle as a clip-path inset in the slid
 }
 function wCover(sc, card, r) {   /* a layer over the slide holding a flat copy of the card's face, exactly where the card is */
   const cv = el('div', 'wcover'); cv.setAttribute('aria-hidden', 'true'); cv.style.top = -sc.getBoundingClientRect().top + 'px';
-  const face = card.cloneNode(true); face.className = 'wcard front'; face.removeAttribute('role'); face.tabIndex = -1;
+  const face = card.cloneNode(true); face.className = 'wcard front'; face.removeAttribute('role'); face.tabIndex = -1; $('.wguide', face)?.remove();
   face.style.cssText = `left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;transform:none;opacity:1;pointer-events:none`;
   cv.append(face); sc.append(cv); return [cv, face];
 }
@@ -2534,6 +2572,7 @@ function soloOn(sc) {
   $('#sn').textContent = String(scenes.indexOf(sc) + 1).padStart(2, '0'); $('#sname').textContent = sc.dataset.name;
   sMark(); if (snav.classList.contains('open')) { sCenter(true); sArm(); }
   else if (!sPeeked) setTimeout(() => { if (root.classList.contains('solo') && !sPeeked) { sPeeked = true; sOpen(); } }, 900);   /* opens once by itself, so he sees what the dot is */
+  guideSlide();
 }
 function soloOff() {
   const sc = $('main > .scene.solo-on'); if (!sc || wBusy) return;
@@ -2542,7 +2581,7 @@ function soloOff() {
   const i = feats.indexOf(sc), sy = scrollY;
   $('#sn').textContent = '00'; $('#sname').textContent = 'Semua Fitur';
   wTheta = wTheta + wNorm(wSnap(i) - wTheta);   /* its card waits at the front */
-  if (still) { root.classList.remove('solo'); sc.classList.remove('solo-on'); scrollTo(0, 0); wFit(); if (kb) $('#wOpen').focus({ preventScroll: true }); return; }
+  if (still) { root.classList.remove('solo'); sc.classList.remove('solo-on'); scrollTo(0, 0); wFit(); if (kb) $('#wOpen').focus({ preventScroll: true }); guideWheel(true); return; }
   /* the reverse of wOpen: the slide stays where it was, shrinks back into its card through the same window, the wheel rises */
   wBusy = true; sc.style.setProperty('--fy', -sy + 'px'); sc.classList.add('wfly'); root.classList.add('wlift'); root.classList.remove('solo'); scrollTo(0, 0); wFit();
   if (kb) $('#wOpen').focus({ preventScroll: true });   /* keyboard users land on "Buka", so Enter reopens it */
@@ -2557,7 +2596,7 @@ function soloOff() {
   face.animate([{ opacity: 0, filter: 'blur(8px)' }, { opacity: 1, filter: 'blur(0px)' }], { duration: 300, delay: 140, easing: 'ease-out', fill: 'both' });
   const rise = hub.animate([{ transform: 'scale(.92)', opacity: .2 }, { transform: 'none', opacity: 1 }], { duration: 560, easing: WEASE });
   win.onfinish = () => { cv.remove(); parts.forEach((p) => p.getAnimations().forEach((a) => a.cancel())); win.cancel(); rise.cancel();
-    sc.classList.remove('wfly', 'solo-on'); root.classList.remove('wlift'); wBusy = false; };
+    sc.classList.remove('wfly', 'solo-on'); root.classList.remove('wlift'); wBusy = false; guideWheel(true); };
 }
 /* ---- the slide picker: the dot shows where he is; tap = the strip of all slides; 2.5s untouched = back to the dot ---- */
 const snav = $('#snav'), sStrip = $('#snavList'), sDot = $('#snavDot'), SN = scenes.length;
@@ -2566,6 +2605,33 @@ let sIdle = 0, sPeeked = false, sHover = false, sDrag = null, sDragged = false, 
 scenes.forEach((sc, i) => { const c = el('button', 'snav-c', `<b>${String(i + 1).padStart(2, '0')}</b><span></span>`); c.type = 'button'; c.title = sc.dataset.name; $('span', c).textContent = sc.dataset.name; c.onclick = () => { if (!sDragged) sGo(i); }; sStrip.append(c); });
 const sChips = $$('.snav-c', sStrip);
 const sCur = () => scenes.indexOf($('main > .scene.solo-on'));
+/* ---- THIS WAY (v36): the order is the slides' own order, 01 to 23. A slide's plate goes to the next one; the closing slide sends
+   the viewer to the first slide still unseen, or back to the wheel once every slide was seen. The wheel's tag sits on the first
+   unseen card, and coming back to the wheel turns that card to the front and holds the spin for 6 s so it can be read. ---- */
+const gSeen = new Set(), CHEV = '<span class="chev" aria-hidden="true"><span></span><span></span><span></span></span>';
+const gUnseen = () => feats.findIndex((_, i) => !gSeen.has(i));
+const guide = el('button', 'guide'); guide.type = 'button'; snav.after(guide);   /* after the picker: an open picker hides it (.snav.open + .guide) */
+guide.onclick = () => { const to = +guide.dataset.to; if (to < 0) soloOff(); else sGo(to); };
+function guideSlide() {
+  const cur = sCur(); if (cur < 0) return;
+  gSeen.add(cur); wcards[cur].classList.add('wdone');
+  let to = cur + 1 < WN ? cur + 1 : gUnseen(), key = cur + 1 < WN ? 'Berikutnya' : 'Terlewat';   /* "Belum dilihat" wrapped on a phone */
+  const no = (i) => String(i + 1).padStart(2, '0');
+  guide.dataset.to = to;
+  guide.innerHTML = to < 0 ? `<span class="g-t"><span class="g-k">Selesai</span><span class="g-n">Semua fitur</span></span>${CHEV}`
+    : `<span class="g-t"><span class="g-k">${key}</span><span class="g-n"><b>${no(to)}</b><span class="g-name">${feats[to].dataset.name}</span></span></span>${CHEV}`;
+  guide.setAttribute('aria-label', to < 0 ? 'Selesai, kembali ke semua fitur' : `${key}: ${no(to)} ${feats[to].dataset.name}`);
+  /* every slide: the sign leaves at once and comes back with the new destination once the slide's parts have settled (they land
+     by ~800 ms), sliding in from the side it points to. Still mode: it is simply there. */
+  if (!still) guide.animate([{ opacity: 0, transform: 'translateX(16px)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: 650, easing: 'cubic-bezier(.23,1,.32,1)', fill: 'backwards' });
+}
+function guideWheel(turn) {
+  $('.wguide', ring)?.remove();
+  const t = gUnseen(); if (t < 0) return;
+  wcards[t].append(el('span', 'wguide', `<b>${gSeen.size ? 'Berikutnya' : 'Mulai di sini'}</b>${CHEV}`));
+  $('.wguide', ring).setAttribute('aria-hidden', 'true');
+  if (turn) { wHold = performance.now() + 6000; wGoIndex(t); }
+}
 function sMark() {
   const cur = sCur(); if (cur < 0) return;
   $('b', sDot).textContent = String(cur + 1).padStart(2, '0');
@@ -2636,6 +2702,7 @@ $('#recap').addEventListener('click', (e) => { const a = e.target.closest('a[hre
 if (H.includes('all')) root.classList.add('showall');
 addEventListener('resize', wFit);
 wFit();
+guideWheel(false);   /* the first card carries "Mulai di sini" from the start; closing the opening turns the wheel to it */
 
 /* ---- the opening: shown on load (#shot / #nointro skip it, for screenshots and tests) and again from the wheel's "Pembuka"
    button (v28, his "add back button to the first intro" -> "on the carousel page"). It is taken out of the page, never deleted. ---- */
@@ -2653,7 +2720,7 @@ wFit();
   const count = () => { nixie(nx, '00'); if (still) nixie(nx, n); else later(() => nixie(nx, n), 1700); };
   const close = () => {
     if (gone || intro.classList.contains('back')) return; gone = true; go.classList.add('down');
-    const done = () => { intro.remove(); intro.classList.remove('shut', 'open'); behind.forEach((e) => { e.inert = false; }); root.classList.remove('intro-on'); scrollTo(0, 0); fit(); kick(); };   /* fit: the scrollbar may have just come back */
+    const done = () => { intro.remove(); intro.classList.remove('shut', 'open'); behind.forEach((e) => { e.inert = false; }); root.classList.remove('intro-on'); scrollTo(0, 0); fit(); kick(); guideWheel(true); };   /* fit: the scrollbar may have just come back */
     if (still) { done(); return; }
     intro.classList.add('shut');
     later(() => { intro.classList.add('open'); orbs.forEach((o) => { if (o.id === 'peta') o.spin(); }); }, 620);   /* the map spins in as the doors part */

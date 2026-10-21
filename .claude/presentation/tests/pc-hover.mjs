@@ -20,7 +20,8 @@ const ev = async (expr) => { const r = await send('Runtime.evaluate', { expressi
 await send('Page.enable'); await send('Runtime.enable');
 await send('Emulation.setDeviceMetricsOverride', { width: +w, height: +h, deviceScaleFactor: 1, mobile: +w < 1024 });
 await send('Page.navigate', { url }); await sleep(3000);
-await ev(`document.getElementById('introGo').click()`); await sleep(3500);   /* opening gone, the wheel up to full speed */
+await ev(`document.getElementById('introGo').click()`); await sleep(3500);   /* opening gone */
+await ev(`wHold > performance.now()`) || console.log('NOTE the v36 hold did not start'); await sleep(7500);   /* v36: "Mulai di sini" holds card 01 still for 6 s, then the wheel comes up to full speed */
 /* degrees a second, measured in the page: how far wTheta turned over ms */
 const speed = async (ms) => +Number(await ev(`(async () => { const a = wTheta, t = performance.now(); await new Promise((r) => setTimeout(r, ${ms})); return -(wTheta - a) / ((performance.now() - t) / 1000); })()`)).toFixed(2);
 const [cx, cy] = await ev(`(() => { const r = document.getElementById('wheel').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()`);
