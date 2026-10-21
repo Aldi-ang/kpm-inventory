@@ -1639,9 +1639,11 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             return (
                                 <div key={c.id} onClick={() => openDetail(c)} className={`kpm-key kpm-hot bg-[var(--raised)] p-3 lg:p-5 rounded-xl border flex flex-col justify-between cursor-pointer hover:border-[var(--accent-edge)] group ${editingId === c.id ? 'border-[var(--lamp-on)]' : ''} `}>
                                     
-                                    {/* TOP: Store Header */}
-                                    <div className="flex justify-between items-start mb-2 lg:mb-4 pb-2 lg:pb-4 border-b border-[var(--line)]">
-                                        <div className="flex items-center gap-3">
+                                    {/* TOP: Store Header — on its own inset band under a --line-3 rule (his "A look okay",
+                                        2026-10-21: --line is 1,3:1 and the card read as one smooth slab). min-w-0 lets a
+                                        long name truncate instead of pushing the ⋯ key out of the card at 375. */}
+                                    <div className="flex justify-between items-start -mx-3 -mt-3 lg:-mx-5 lg:-mt-5 p-3 lg:px-5 lg:py-4 bg-[var(--inset)] border-b border-[var(--line-3)]">
+                                        <div className="flex items-center gap-3 min-w-0 flex-1">
                                             {c.storeImage ? (
                                                 <img src={c.storeImage} className="w-14 h-14 rounded-lg object-cover border border-[var(--line)] shrink-0 shadow-sm" alt={c.name} />
                                             ) : (
@@ -1670,23 +1672,23 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                     </div>
 
                                     {/* MIDDLE: Accountability Block */}
-                                    <div className="grid grid-cols-2 gap-2 lg:gap-4 mb-2 lg:mb-4">
-                                        <div>
+                                    <div className="grid grid-cols-2 mt-3 lg:mt-4 mb-1 lg:mb-4">
+                                        <div className="min-w-0">
                                             <p className="text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-0.5">T3/T4 PIC</p>
-                                            <p className="text-xs font-bold text-[var(--ink)] truncate">{c.picName || 'Unassigned'}</p>
+                                            <p className="text-[15px] leading-5 font-bold text-[var(--ink)] truncate">{c.picName || 'Unassigned'}</p>
                                         </div>
-                                        <div>
+                                        <div className="min-w-0 border-l border-[var(--line-2)] pl-3">
                                             <p className="text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-0.5">NOO By</p>
-                                            <p className="text-xs font-bold text-[var(--ink)] truncate">{c.nooAgentName || 'Admin'}</p>
+                                            <p className="text-[15px] leading-5 font-bold text-[var(--ink)] truncate">{c.nooAgentName || 'Admin'}</p>
                                         </div>
                                     </div>
 
                                    {/* BOTTOM: Admin Actions */}
                                    {isAdmin && (
                                         <div data-acts onClick={e => e.stopPropagation()}
-                                            className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out mt-auto lg:flex lg:gap-2 lg:justify-end lg:items-center lg:pt-3 lg:border-t lg:border-[var(--line)] lg:flex-wrap ${actsOpen === `store:${c.id}` ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}
+                                            className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out mt-auto lg:flex lg:gap-2 lg:justify-end lg:items-center lg:-mx-5 lg:-mb-5 lg:px-5 lg:py-3 lg:border-t lg:border-[var(--line-3)] lg:flex-wrap ${actsOpen === `store:${c.id}` ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`}
                                             style={{ gridTemplateRows: actsOpen === `store:${c.id}` ? '1fr' : '0fr' }}>
-                                        <div className="overflow-hidden lg:contents"><div className="flex gap-2 justify-end items-center pt-3 mt-3 border-t border-[var(--line)] flex-wrap lg:contents">
+                                        <div className="overflow-hidden lg:contents"><div className="flex gap-2 justify-end items-center pt-3 mt-3 border-t border-[var(--line-3)] flex-wrap lg:contents">
                                             <select
                                                 value={c.city || 'Unknown Kecamatan'}
                                                 onChange={(e) => handleFastStoreMove(c.id, e.target.value, selectedRegion)}
@@ -1722,7 +1724,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                         gated by view_only / own_region / global. Delete/Verify/Move/DataScrub
                                         stay boss-mode-only above — those are separate, stronger powers. */}
                                     {!isAdmin && (customerScope ? customerScope.canEdit : customerAccessLevel !== 'view_only') && (
-                                        <div className="flex justify-end items-center mt-auto pt-3 border-t border-[var(--line)]">
+                                        <div className="flex justify-end items-center mt-3 lg:mt-auto pt-3 border-t border-[var(--line-3)] lg:-mx-5 lg:-mb-5 lg:px-5 lg:py-3">
                                             {canEditCustomer(c) ? (
                                                 <button onClick={(e) => { e.stopPropagation(); handleEdit(c); }} className="px-3 py-1.5 min-h-[44px] lg:min-h-0 text-xs font-bold bg-[var(--inset)] border border-[var(--line)] rounded-lg hover:bg-[var(--inset)] text-[var(--ink-dim)] transition-colors">Edit</button>
                                             ) : (

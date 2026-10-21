@@ -7506,7 +7506,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /handleDelete\(c\.id, c\.name\); \}\} className="flex-1 lg:flex-none justify-center px-3 py-1\.5 min-h-\[44px\] lg:min-h-0 text-xs font-bold bg-\[var\(--inset\)\] border border-\[var\(--danger\)\] lg:border-\[var\(--line\)\]/.test(c));
   ok('the shop card: a ⋯ key beside the map pin on the phone, the admin row folds, the desk row is what it was',
      /<MoreKey id=\{`store:\$\{c\.id\}`\}/.test(c) &&
-     /grid transition-\[grid-template-rows,opacity\] duration-200 ease-out mt-auto lg:flex lg:gap-2 lg:justify-end lg:items-center lg:pt-3 lg:border-t lg:border-\[var\(--line\)\] lg:flex-wrap/.test(c) &&
+     /grid transition-\[grid-template-rows,opacity\] duration-200 ease-out mt-auto lg:flex lg:gap-2 lg:justify-end lg:items-center lg:-mx-5 lg:-mb-5 lg:px-5 lg:py-3 lg:border-t lg:border-\[var\(--line-3\)\] lg:flex-wrap/.test(c) &&
      !/<div className="flex gap-2 justify-end items-center mt-auto pt-3 border-t border-\[var\(--line\)\] flex-wrap">/.test(code(c)));
   ok('one strip at a time, and a tap anywhere outside folds it',
      /const \[actsOpen, setActsOpen\] = useState\(null\);/.test(c) &&
@@ -11643,6 +11643,30 @@ section('Every Settings control matches the new switch - no amber slab (his 2026
   ok('REGRESSION: none of the four Settings controls is a --gold fill any more',
      !/\.kpm-read\.on\s+\{[^}]*background: var\(--gold\)/.test(css) && !/kpm-picklist > li[^{]*\{ background: var\(--gold\)/.test(css) &&
      !/\.kpm-switch > button\[aria-pressed="true"\] \{ background: var\(--gold\)/.test(css));
+}
+
+section('Shop cards get clear lines - board A, bands (his 2026-10-21 "A look okay u can do that")');
+{ const c = read('src/components/CustomerManager.jsx'), css = read('src/styles/theme.css');
+  const card = c.slice(c.indexOf('{/* LEVEL 3: STORES */}'), c.indexOf('Outside your region'));
+  ok('the head sits on its own inset band, edge to edge, over a --line-3 rule; a long name truncates instead of pushing the ⋯ key out at 375',
+     card.includes('className="flex justify-between items-start -mx-3 -mt-3 lg:-mx-5 lg:-mt-5 p-3 lg:px-5 lg:py-4 bg-[var(--inset)] border-b border-[var(--line-3)]"') &&
+     card.includes('<div className="flex items-center gap-3 min-w-0 flex-1">'),
+     'without min-w-0 the name\'s truncate never fires ("Warung Sumber Rejeki" put the key 18 px past the edge)');
+  ok('the two facts are split by a column rule and read at 15 px',
+     card.includes('<div className="min-w-0 border-l border-[var(--line-2)] pl-3">') &&
+     (card.match(/<p className="text-\[15px\] leading-5 font-bold text-\[var\(--ink\)\] truncate">/g) || []).length === 2);
+  ok('both key rows (the boss strip on both widths, the Edit row below Tier 1) open under a --line-3 rule',
+     card.includes('pt-3 mt-3 border-t border-[var(--line-3)] flex-wrap lg:contents') &&
+     card.includes('mt-3 lg:mt-auto pt-3 border-t border-[var(--line-3)] lg:-mx-5 lg:-mb-5 lg:px-5 lg:py-3'));
+  ok('REGRESSION: no rule across the shop card is the invisible --line (1,3:1) any more',
+     card.length > 2000 && !/border-[tbl] (?:lg:)?border-\[var\(--line\)\]/.test(code(card)) && !/lg:border-t lg:border-\[var\(--line\)\]/.test(code(card)));
+  const tok = (block, name) => (block.match(new RegExp(`--${name}:\\s*(#[0-9A-Fa-f]{6})`)) || [])[1];
+  const lum = (h) => { const ch = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((v) => (v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4)); return .2126 * ch[0] + .7152 * ch[1] + .0722 * ch[2]; };
+  const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
+  const dark = css.slice(css.indexOf(':root,'), css.indexOf(':root.light')), light = css.slice(css.indexOf(':root.light'));
+  const r = [dark, light].flatMap((b) => [ratio(tok(b, 'line-3'), tok(b, 'raised')), ratio(tok(b, 'line-3'), tok(b, 'inset')), ratio(tok(b, 'line'), tok(b, 'raised'))]);
+  ok(`BEHAVIOUR: the new rule stands off the card and the band on both grounds (dark ${r[0].toFixed(2)} / ${r[1].toFixed(2)}, light ${r[3].toFixed(2)} / ${r[4].toFixed(2)}), at least twice the old dark --line (${r[2].toFixed(2)})`,
+     r.every((v) => v > 0) && r[0] >= 2.5 && r[1] >= 2.5 && r[3] >= 2.5 && r[4] >= 2.5 && r[0] >= 2 * r[2]);
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

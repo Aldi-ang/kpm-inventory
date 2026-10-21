@@ -57,27 +57,7 @@ export const PIN = '#root{width:375px}';
    the format be the same with other text beside it" — and the plain red figure shipped into StockOpnameView.jsx + theme.css
    (THE VERDICT FIGURE). Gone. `?shell&opname&light&tab=count:400/3,3%20damaged` opens the real card (phone CSS fires
    below 1024 — shoot at 518, `look=pin` is not a phone for this screen). */
-/* 2026-10-21: the shop card's lines (his "add line and well format ... not even the lines toseparate the information").
-   Today's rules are --line (1,3:1), there and invisible. card-a = bands: the head on its own inset band, a --line-3 rule
-   under it and over the keys, the two facts split by a column rule. card-b = a spec sheet: one hairline row per fact,
-   label left, value right. Both: values 15 px, and the head's left group gets min-width:0 so a long name truncates
-   instead of pushing the ⋯ key out of the card at 375 (a bug, not an option). Delete when he decides. */
-const CARD = '.kpm-arrive>.kpm-key';
-const CARD_FIX = `${CARD}>div:first-child>div:first-child{min-width:0;flex:1 1 auto}${CARD}>div:nth-child(2) p+p{font-size:15px;line-height:20px}`;
-export const LOOKS = { pin: PIN,
-  'card-a': CARD_FIX
-    + `${CARD}>div:first-child{margin:-12px -12px 0;padding:12px;background:var(--inset);border-radius:11px 11px 0 0;border-bottom:1px solid var(--line-3)!important}`
-    + `${CARD}>div:nth-child(2){gap:0!important;margin:12px 0 4px!important}`
-    + `${CARD}>div:nth-child(2)>div+div{border-left:1px solid var(--line-2);padding-left:12px}`
-    + `${CARD} [data-acts]>div>div{border-top:1px solid var(--line-3)!important}`
-    + `@media(min-width:1024px){${CARD}>div:first-child{margin:-20px -20px 0;padding:16px 20px}${CARD}>div:nth-child(2){margin-top:16px!important}`
-    + `${CARD} [data-acts]{border-top:1px solid var(--line-3)!important;margin:12px -20px -20px;padding:12px 20px}}`,
-  'card-b': CARD_FIX
-    + `${CARD}>div:first-child{border-bottom:1px solid var(--line-3)!important;margin-bottom:0!important}`
-    + `${CARD}>div:nth-child(2){display:block!important;margin-bottom:0!important}`
-    + `${CARD}>div:nth-child(2)>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line-2)}`
-    + `${CARD}>div:nth-child(2)>div:last-child{border-bottom:0}`
-    + `${CARD}>div:nth-child(2) p{margin:0!important}${CARD}>div:nth-child(2) p+p{min-width:0;text-align:right}`
-    + `${CARD} [data-acts]>div>div{border-top:1px solid var(--line-3)!important}`
-    + `@media(min-width:1024px){${CARD} [data-acts]{border-top:1px solid var(--line-3)!important}}`,
-};
+/* 2026-10-21 08:20: the shop card looks (card-a bands / card-b spec sheet) were decided A ("A look okay u can do that")
+   and shipped into CustomerManager.jsx. Gone. `?shell&customers&admin&tab=unknown%20provinsi,bandung,bandung4` opens the
+   real cards (`bandung4` = the Kecamatan folder's button text; a plain third `bandung` presses the breadcrumb). */
+export const LOOKS = { pin: PIN };
