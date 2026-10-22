@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Presentasi v37 Pilihan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap">
+<style>
+/* the presentation's own tokens (kpm-semua-terkendali.html :root) - dark only, like the page it feeds */
+:root {
+  color-scheme: dark;
+  --ground: #0A0908; --sunk: #050403; --panel: #121110; --raised: #1B1917; --inset: #0E0D0C;
+  --line: #26231F; --line-2: #3E3A35; --line-3: #6A645C;
+  --ink: #E8E4DE; --ink-muted: #A39B90; --ink-dim: #928B81;
+  --gold: #D08A2E; --gold-2: #E4B04A; --gold-ink: #0A0908;
+  --crit: #FF3B4B; --warn: #FFB020; --danger-ink: #E08C82;
+  --fd: "Rajdhani", "Arial Narrow", system-ui, sans-serif;
+  --fb: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --eo: cubic-bezier(.23, 1, .32, 1); --eio: cubic-bezier(.77, 0, .175, 1);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ground); color: var(--ink); font: 400 15px/1.5 var(--fb); -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--gold-2); outline-offset: 2px; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 28px 16px 96px; }
+.top h1 { margin: 0; font: 700 clamp(32px, 6vw, 54px)/.95 var(--fd); text-transform: uppercase; letter-spacing: .01em; }
+.top p { margin: 10px 0 0; color: var(--ink-muted); max-width: 68ch; }
+.top p b { color: var(--ink); }
+.sec { margin-top: 44px; padding-top: 22px; border-top: 1px solid var(--line-2); }
+.sec > h2 { margin: 0; display: flex; align-items: baseline; gap: 12px; font: 700 28px/1 var(--fd); text-transform: uppercase; letter-spacing: .02em; }
+.sec > h2 .no { font-size: 15px; letter-spacing: .18em; color: var(--gold-2); }
+.said { margin: 10px 0 16px; padding-left: 12px; border-left: 2px solid var(--line-3); color: var(--ink-muted); font-size: 14px; max-width: 80ch; }
+.said i { color: var(--ink); }
+.opts { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 540px), 1fr)); }
+.opt { min-width: 0; border: 1px solid var(--line-2); border-radius: 14px; background: var(--panel); overflow: hidden; display: grid; grid-template-rows: auto 1fr auto; }
+.opt.rec { border-color: var(--gold); }
+.opt > header { display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 14px; border-bottom: 1px solid var(--line); }
+.opt > header .l { flex: none; width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; font: 700 17px/1 var(--fd); border: 1px solid var(--line-3); }
+.opt.rec > header .l { border-color: var(--gold); color: var(--gold-2); }
+.opt > header b { font: 700 18px/1.1 var(--fd); letter-spacing: .06em; text-transform: uppercase; }
+header .badge { margin-left: auto; font: 700 12px/1 var(--fd); letter-spacing: .16em; text-transform: uppercase; color: var(--gold-2); border: 1px solid var(--gold); border-radius: 4px; padding: 4px 7px; }
+.replay { margin-left: auto; min-height: 34px; padding: 0 10px; border: 1px solid var(--line-3); border-radius: 8px; background: var(--raised); font: 700 12px/1 var(--fd); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); cursor: pointer; transition: transform 140ms var(--eo); }
+.badge + .replay { margin-left: 8px; }
+.replay:active { transform: scale(.97); }
+.cap { padding: 12px 14px 14px; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-muted); }
+.cap b { color: var(--ink); font-weight: 600; }
+.cap .cost { display: block; margin-top: 6px; font: 600 13px/1.4 var(--fd); letter-spacing: .06em; color: var(--ink-dim); }
+.stage { position: relative; min-width: 0; container-type: inline-size; background: radial-gradient(90% 60% at 0% 0%, rgba(208,138,46,.06), transparent 60%), var(--ground); overflow: hidden; }
+.keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.key { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; border: 1px solid var(--line-3); border-radius: 8px; background: var(--raised); color: var(--ink-muted); font: 700 12px/1 var(--fd); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; transition: transform 140ms var(--eo); }
+.key:active { transform: scale(.97); }
+.key i { width: 9px; height: 9px; border-radius: 50%; background: #000; border: 1px solid var(--line-3); }
+.key[aria-pressed="true"] { background: var(--inset); color: var(--ink); border-color: var(--gold); }
+.key[aria-pressed="true"] i { background: radial-gradient(circle, #fff 0 1px, var(--gold-2) 2px); border-color: var(--gold); }
+.led { display: inline-flex; align-items: center; gap: 8px; font: 700 13px/1.2 var(--fd); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); }
+.led > i { flex: 0 0 10px; width: 10px; height: 10px; border-radius: 50%; background: #000; border: 1px solid var(--line-3); }
+.led.on { color: var(--gold-2); } .led.on > i { border-color: var(--gold); background: radial-gradient(circle, #fff 0 1px, var(--gold-2) 2px); box-shadow: 0 0 8px rgba(228,176,74,.6); }
+.led.crit { color: var(--crit); } .led.crit > i { border-color: var(--crit); background: radial-gradient(circle, #fff 0 1px, var(--crit) 2px); box-shadow: 0 0 10px rgba(255,59,75,.7); }
+.led.warn { color: var(--warn); } .led.warn > i { border-color: var(--warn); background: radial-gradient(circle, #fff 0 1px, var(--warn) 2px); }
+.toast { position: absolute; left: 50%; bottom: 12px; translate: -50% 0; padding: 8px 12px; border: 1px solid var(--gold); border-radius: 8px; background: var(--raised); font: 700 13px/1.2 var(--fd); letter-spacing: .08em; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 200ms, translate 260ms var(--eo); }
+.toast.on { opacity: 1; translate: -50% -4px; }
+
+/* ---- the capybara (his sprite: a 10-frame idle strip + the "deal" pose), turned into workers ---- */
+.cy { position: absolute; width: var(--cs, 56px); height: var(--cs, 56px); pointer-events: none; }
+.cy .fig { position: absolute; inset: 0; overflow: hidden; transform-origin: 50% 92%; }
+.cy .fig::before { content: ""; position: absolute; left: 0; top: 0; width: calc(var(--cs, 56px) * 10); height: var(--cs, 56px); background: url("merchant-idle.png") 0 0 / 100% 100% no-repeat; image-rendering: pixelated; animation: cyIdle 3s steps(10, end) infinite; }
+.cy.deal .fig::before { width: var(--cs, 56px); background-image: url("merchant-deal.png"); animation: none; }
+.cy.flip .fig { scale: -1 1; }
+.cy.walk .fig { animation: cyBob .34s ease-in-out infinite alternate; }
+.cy::after { content: ""; position: absolute; left: 22%; right: 22%; bottom: 2%; height: 7%; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,0,0,.65), transparent); z-index: -1; }
+.cy .tagn { position: absolute; left: 50%; top: 100%; translate: -50% 2px; font: 700 12px/1 var(--fd); letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; color: var(--ink); background: var(--raised); border: 1px solid var(--line-3); border-radius: 4px; padding: 3px 6px; }
+.cy .tagn small { display: block; margin-top: 2px; font-size: 10px; color: var(--ink-dim); letter-spacing: .1em; }
+@keyframes cyIdle { to { transform: translateX(calc(var(--cs, 56px) * -10)); } }
+@keyframes cyBob { to { translate: 0 -3px; rotate: 2deg; } }
+/* a carton (slop/bal) a worker carries */
+.ct { position: absolute; width: var(--cw, 30px); height: calc(var(--cw, 30px) * .72); border: 1px solid #5c3a1a; border-radius: 2px; background: linear-gradient(90deg, transparent 42%, #7A4E24 42% 58%, transparent 58%), linear-gradient(#D79A58, #B57B40); box-shadow: inset 0 -3px 0 rgba(0,0,0,.18); }
+.ct::after { content: "B"; position: absolute; inset: 0; display: grid; place-items: center; font: 700 calc(var(--cw, 30px) * .36)/1 var(--fd); color: #2A1A0C; }
+
+/* ================= E · the top bar ================= */
+.bars { display: grid; gap: 16px; }
+.bopt { border: 1px solid var(--line-2); border-radius: 14px; background: var(--panel); overflow: hidden; }
+.bopt.rec { border-color: var(--gold); }
+.bopt > header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.bopt .pair { display: grid; gap: 14px; padding: 14px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .bopt .pair { grid-template-columns: 390px minmax(0, 1fr); align-items: start; } }
+.pair figure { margin: 0; display: grid; gap: 6px; }
+.pair figcaption { font: 700 12px/1 var(--fd); letter-spacing: .16em; text-transform: uppercase; color: var(--ink-dim); }
+.mock { position: relative; container-type: inline-size; border: 1px solid var(--line-2); border-radius: 10px; overflow: hidden; background: var(--ground); }
+.mock .bar { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 12px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--ground) 94%, transparent); }
+.mock .brand { flex: none; font: 700 17px/1 var(--fd); letter-spacing: .18em; }
+.mock .brand i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--gold-2); margin-right: 7px; vertical-align: 2px; }
+.mock .now { flex: 1; min-width: 0; font: 700 12px/1 var(--fd); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mock .now b { color: var(--gold-2); }
+.mock .slide { padding: 18px 16px 22px; display: grid; gap: 8px; }
+.mock .slide .eb { font: 700 12px/1 var(--fd); letter-spacing: .2em; text-transform: uppercase; color: var(--gold-2); }
+.mock .slide .h { font: 700 clamp(22px, 7cqw, 40px)/.95 var(--fd); text-transform: uppercase; color: var(--ink); opacity: .9; }
+.mock .slide .ln { height: 8px; width: 70%; border-radius: 4px; background: var(--raised); } .mock .slide .ln + .ln { width: 52%; }
+@container (min-width: 700px) { .mock .bar { height: 56px; padding: 0 22px; gap: 14px; } .mock .slide { padding: 26px 22px 30px; } }
+/* back, option A: top-left, an arrow in its own well + the words */
+.bk { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px 0 4px; border: 1px solid var(--gold); border-radius: 10px; background: var(--raised); color: var(--ink); font: 700 13px/1 var(--fd); letter-spacing: .1em; text-transform: uppercase; cursor: pointer; transition: transform 140ms var(--eo), background-color 160ms; }
+.bk:active { transform: scale(.97); }
+@media (hover: hover) and (pointer: fine) { .bk:hover { background: var(--inset); } .bk:hover .ar { translate: -2px 0; } }
+.bk .ar { width: 32px; height: 32px; border-radius: 7px; display: grid; place-items: center; background: var(--gold-2); transition: translate 160ms var(--eo); }
+.bk .ar svg { width: 18px; height: 18px; fill: none; stroke: var(--gold-ink); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.bk .w2 { display: none; }
+@container (min-width: 700px) { .bk .w2 { display: inline; } .bk .w1 { display: none; } }
+/* back, option B: stays on the right, a plain arrow + the words */
+.bk.b { padding: 0 12px; gap: 6px; border-color: var(--line-3); }
+.bk.b .ar { width: auto; height: auto; background: none; }
+.bk.b .ar svg { stroke: var(--gold-2); }
+/* motion, option A: a switch that says its state */
+.sw { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 10px; border: 1px solid var(--line-3); border-radius: 10px; background: var(--raised); color: var(--ink-muted); font: 700 12px/1 var(--fd); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; transition: transform 140ms var(--eo); }
+.sw:active { transform: scale(.97); }
+.sw .trk { position: relative; width: 34px; height: 18px; border-radius: 99px; background: #000; border: 1px solid var(--line-3); transition: border-color 200ms; }
+.sw .trk::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: var(--line-3); transition: translate 220ms var(--eo), background-color 200ms; }
+.sw[aria-pressed="true"] { color: var(--ink); }
+.sw[aria-pressed="true"] .trk { border-color: var(--gold); }
+.sw[aria-pressed="true"] .trk::after { translate: 16px 0; background: var(--gold-2); box-shadow: 0 0 8px rgba(228,176,74,.6); }
+.sw .st { min-width: 3.2em; text-align: left; }
+.sw .wd { display: none; }
+@container (min-width: 700px) { .sw .wd { display: inline; } }
+/* motion, option B: the old pill with the new words */
+.mv2 { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border: 1px solid var(--line-3); border-radius: 10px; background: var(--raised); color: var(--ink-muted); font: 700 12px/1 var(--fd); letter-spacing: .12em; text-transform: uppercase; cursor: pointer; }
+.mv2 i { width: 8px; height: 8px; border-radius: 50%; background: #000; border: 1px solid var(--line-3); }
+.mv2[aria-pressed="true"] { border-color: var(--gold); color: var(--ink); }
+.mv2[aria-pressed="true"] i { background: radial-gradient(circle, #fff 0 1px, var(--gold-2) 2px); border-color: var(--gold); }
+
+/* ================= F · slide 09, A: the race ================= */
+.race { padding: 14px; display: grid; gap: 12px; }
+.lanes { display: grid; gap: 8px; }
+.lane { display: grid; grid-template-columns: 74px minmax(0, 1fr) 96px; align-items: center; gap: 10px; min-height: 58px; padding: 4px 10px 4px 12px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--inset); transition: border-color 240ms; }
+.lane.win { border-color: var(--gold); }
+.lane .ln { font: 700 15px/1.05 var(--fd); letter-spacing: .06em; text-transform: uppercase; }
+.lane .ln small { display: block; margin-top: 3px; font-size: 12px; letter-spacing: .1em; color: var(--ink-dim); min-height: 1em; }
+.lane .trk { position: relative; height: 50px; border-bottom: 1px dashed var(--line-2); }
+.lane .fin { position: absolute; right: 0; top: 2px; bottom: -1px; width: 6px; background: repeating-linear-gradient(180deg, var(--gold-2) 0 6px, var(--sunk) 6px 12px); opacity: .7; }
+.lane .runner { position: absolute; left: 0; bottom: 0; width: 48px; height: 48px; }
+.lane .runner .cy { --cs: 48px; left: 0; top: 0; }
+.lane .runner .pk { position: absolute; right: -2px; top: 18px; width: 12px; height: 18px; border-radius: 2px; background: var(--c); border: 1px solid rgba(0,0,0,.5); rotate: 12deg; box-shadow: inset 0 5px 0 rgba(0,0,0,.25); z-index: 2; }
+.lane .runner .pl { position: absolute; left: 50%; top: -4px; translate: -50% -100%; font: 700 13px/1 var(--fd); letter-spacing: .06em; color: var(--ink-muted); }
+.lane.win .runner .pl { color: var(--gold-ink); background: var(--gold-2); border-radius: 4px; padding: 3px 5px; }
+.lane .res { text-align: right; font: 700 14px/1.15 var(--fd); color: var(--gold-2); font-variant-numeric: tabular-nums; }
+.lane .res em { display: block; font-style: normal; font-size: 12px; color: var(--ink-dim); letter-spacing: .08em; }
+.lane .res:empty::before { content: "…"; color: var(--line-3); }
+
+/* ================= F · slide 09, B: the bubbles ================= */
+.bubs { padding: 14px; display: grid; gap: 12px; }
+.bubbox { position: relative; height: 330px; border: 1px solid var(--line-2); border-radius: 12px; background: var(--inset); overflow: hidden; }
+.bb { position: absolute; left: 0; top: 0; width: 200px; height: 200px; margin: -100px 0 0 -100px; border-radius: 50%; display: grid; place-content: center; text-align: center; gap: 2px;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--c) 34%, transparent), color-mix(in srgb, var(--c) 12%, var(--panel)) 70%); border: 2px solid color-mix(in srgb, var(--c) 70%, transparent); will-change: transform; }
+.bb.top { border-color: var(--gold-2); box-shadow: 0 0 0 4px rgba(228,176,74,.16); }
+.bb b { font: 700 64px/1 var(--fd); color: var(--ink); }
+.bb span { font: 700 22px/1 var(--fd); color: var(--gold-2); }
+.bb em { font: 700 18px/1 var(--fd); font-style: normal; color: var(--ink-muted); }
+
+/* ================= G · slide 18, the hand-over in three steps ================= */
+.ho { padding: 14px; display: grid; gap: 12px; }
+.rail { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.rail button { display: grid; gap: 4px; justify-items: start; text-align: left; min-height: 56px; padding: 8px 10px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--inset); color: var(--ink-dim); cursor: pointer; transition: border-color 220ms, color 220ms, transform 140ms var(--eo); }
+.rail button:active { transform: scale(.98); }
+.rail b { font: 700 13px/1 var(--fd); letter-spacing: .16em; text-transform: uppercase; }
+.rail span { font: 700 14px/1.1 var(--fd); letter-spacing: .04em; text-transform: uppercase; }
+.rail button.now { border-color: var(--gold); color: var(--ink); }
+.rail button.now b { color: var(--gold-2); }
+.rail button.done { color: var(--ink-muted); }
+.rail button.done b::after { content: " ✓"; color: var(--gold-2); }
+.say { min-height: 3em; font: 600 17px/1.35 var(--fb); color: var(--ink); }
+.say small { display: block; font: 700 12px/1 var(--fd); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 4px; }
+.hostage { position: relative; aspect-ratio: 16 / 10; border: 1px solid var(--line-2); border-radius: 12px; background: var(--inset); overflow: hidden; }
+@container (min-width: 900px) { .hostage { aspect-ratio: 16 / 7; } }
+@container (max-width: 560px) { .hostage { aspect-ratio: 4 / 5.2; } .hostage .stamp { font-size: 13px; border-width: 2px; padding: 3px 7px; } .hostage .shop { min-width: 0; padding: 5px 7px; } .hostage .shop b { font-size: 13px; } .hostage .shop span { font-size: 11px; } }
+.hostage svg.paths { position: absolute; inset: 0; width: 100%; height: 100%; }
+.hostage .p { fill: none; stroke: var(--line-3); stroke-width: 2; stroke-dasharray: 2 7; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.hostage .p.on { stroke: var(--gold-2); }
+.hostage .cy { --cs: clamp(54px, 13cqw, 92px); translate: -50% -100%; }
+.hostage .cy.dim { opacity: .45; filter: grayscale(.6); transition: opacity 300ms, filter 300ms; }
+.hostage .cy:not(.dim) { transition: opacity 300ms, filter 300ms; }
+.desk { position: absolute; left: 50%; top: 25%; translate: -50% 0; display: grid; justify-items: center; gap: 4px; }
+.slip, .shop { position: absolute; translate: -50% -50%; border-radius: 8px; background: var(--raised); border: 1px solid var(--line-3); padding: 7px 9px; display: grid; gap: 2px; text-align: left; white-space: nowrap; box-shadow: 0 8px 18px rgba(0,0,0,.45); }
+.slip { border-color: var(--gold); font: 700 12px/1.2 var(--fd); letter-spacing: .06em; text-transform: uppercase; opacity: 0; }
+.slip b { color: var(--gold-2); font-size: 11px; letter-spacing: .16em; }
+.shop { min-width: 142px; }
+.shop b { font: 700 15px/1.1 var(--fd); letter-spacing: .06em; text-transform: uppercase; }
+.shop span { font: 600 12px/1.25 var(--fd); letter-spacing: .06em; color: var(--ink-muted); }
+.shop .own { margin-top: 3px; padding-top: 4px; border-top: 1px solid var(--line-2); color: var(--gold-2); font-weight: 700; }
+@container (max-width: 560px) { .slip { white-space: normal; max-width: 36cqw; } }
+.stamp { position: absolute; translate: -50% -50%; rotate: -10deg; padding: 4px 10px; border: 3px solid var(--gold-2); border-radius: 6px; font: 700 20px/1 var(--fd); letter-spacing: .2em; color: var(--gold-2); background: rgba(10,9,8,.7); opacity: 0; }
+
+/* ================= H · slide 19, the level-up ================= */
+.lv { padding: 14px; display: grid; gap: 14px; }
+.pcard { position: relative; border: 1px solid var(--line-2); border-radius: 16px; background: linear-gradient(180deg, var(--raised), var(--sunk)); padding: 16px; display: grid; grid-template-columns: 128px minmax(0, 1fr); gap: 18px; align-items: center; overflow: hidden; }
+.pcard.burst { animation: cardBurst 900ms var(--eo); }
+@keyframes cardBurst { 0% { box-shadow: 0 0 0 0 rgba(228,176,74,.0); border-color: var(--line-2); } 25% { box-shadow: 0 0 0 6px rgba(228,176,74,.25), 0 0 40px rgba(228,176,74,.25); border-color: var(--gold-2); } 100% { box-shadow: 0 0 0 0 rgba(228,176,74,0); border-color: var(--line-2); } }
+.fwell { position: relative; width: 128px; height: 128px; }
+.fwell .sframe { position: absolute; left: 0; top: 0; }
+.fwell .av { display: grid; place-items: center; font: 700 30px/1 var(--fd); color: #2a1d08; background: linear-gradient(160deg, #E4C98E, #B8893A) !important; }
+.fwell .av::after { display: none !important; }
+.sweep { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 35%, rgba(255,240,210,.22) 48%, transparent 60%); translate: -110% 0; }
+.pname { font: 700 22px/1.05 var(--fd); letter-spacing: .06em; text-transform: uppercase; }
+.prank { position: relative; height: 34px; margin-top: 6px; overflow: hidden; }
+.prank > div { position: absolute; inset: 0; display: flex; align-items: baseline; gap: 10px; }
+.prank b { font: 700 30px/1 var(--fd); letter-spacing: .06em; text-transform: uppercase; color: var(--gold-2); }
+.prank span { font: 600 13px/1 var(--fd); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-muted); }
+.pxp { margin-top: 8px; display: flex; align-items: baseline; gap: 8px; font: 700 18px/1 var(--fd); font-variant-numeric: tabular-nums; }
+.pxp small { font-size: 13px; color: var(--ink-dim); letter-spacing: .08em; }
+.pbar { position: relative; height: 8px; margin-top: 8px; border-radius: 99px; background: var(--inset); border: 1px solid var(--line-2); overflow: hidden; }
+.pbar i { position: absolute; inset: 0; transform-origin: 0 50%; scale: 0 1; background: linear-gradient(90deg, var(--gold), var(--gold-2)); }
+.pbar.full i { background: linear-gradient(90deg, var(--gold-2), #fff3d6); }
+.pnext { margin-top: 6px; font: 600 13px/1.2 var(--fd); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); }
+.chips { position: absolute; right: 14px; top: 12px; display: grid; justify-items: end; gap: 4px; pointer-events: none; }
+.chip { font: 700 13px/1 var(--fd); letter-spacing: .06em; color: var(--gold-2); background: var(--inset); border: 1px solid var(--line-2); border-radius: 4px; padding: 4px 6px; }
+.lvban { position: absolute; left: 0; right: 0; top: 50%; translate: 0 -50%; display: grid; justify-items: center; gap: 2px; padding: 10px; background: linear-gradient(90deg, transparent, rgba(10,9,8,.92) 18%, rgba(10,9,8,.92) 82%, transparent); border-block: 1px solid var(--gold); opacity: 0; pointer-events: none; z-index: 5; }
+.lvban small { font: 700 13px/1 var(--fd); letter-spacing: .3em; text-transform: uppercase; color: var(--ink-muted); }
+.lvban b { font: 700 34px/1 var(--fd); letter-spacing: .14em; text-transform: uppercase; color: var(--gold-2); }
+.ladder { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.rung { display: grid; justify-items: center; gap: 4px; padding: 8px 2px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--inset); opacity: .5; transition: opacity 300ms, border-color 300ms; }
+.rung.past { opacity: .85; }
+.rung.now { opacity: 1; border-color: var(--gold); }
+.rung .mini { position: relative; width: 52px; height: 52px; }
+.rung .mini .sframe { position: absolute; left: 0; top: 0; transform-origin: 0 0; scale: .40625; }
+.rung b { font: 700 12px/1 var(--fd); letter-spacing: .08em; text-transform: uppercase; }
+.rung small { font: 600 11px/1 var(--fd); color: var(--ink-dim); letter-spacing: .04em; }
+@container (max-width: 560px) { .prank span { display: none; } .pcard { grid-template-columns: 1fr; justify-items: center; text-align: center; } .pxp, .prank > div { justify-content: center; } .chips { right: 8px; top: 8px; } .rung .mini { width: 40px; height: 40px; } .rung .mini .sframe { scale: .3125; } .rung small { display: none; } }
+
+/* ================= I · slide 20, the warehouse ================= */
+.gd { padding: 14px; display: grid; gap: 12px; }
+.gdhd { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 14px; }
+.gdhd .cnt { font: 700 22px/1 var(--fd); font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.gdhd .cnt small { font-size: 13px; color: var(--ink-dim); letter-spacing: .1em; text-transform: uppercase; margin-left: 6px; }
+.room { position: relative; aspect-ratio: 16 / 10; border: 1px solid var(--line-2); border-radius: 12px; background: linear-gradient(180deg, #11100e 0 78%, #1a1714 78%); overflow: hidden; }
+@container (max-width: 560px) { .room { aspect-ratio: 4 / 3.6; } }
+.room .floor { position: absolute; left: 0; right: 0; top: 78%; height: 1px; background: var(--line-2); }
+.rack { position: absolute; left: 7%; top: 18%; width: 46%; height: 60%; border-left: 4px solid #4b4438; border-right: 4px solid #4b4438; }
+.rack .sh { position: absolute; left: 0; right: 0; height: 5px; background: linear-gradient(#6a5f4d, #3a342b); }
+.rack .slot { position: absolute; border: 1px dashed rgba(146,139,129,.28); border-radius: 2px; }
+.rack .ct { --cw: 100%; position: absolute; width: auto; height: auto; transition: opacity 200ms; }
+.rack .min { position: absolute; left: -10px; right: -10px; height: 0; border-top: 2px dashed var(--crit); opacity: .85; }
+.rack .min span { position: absolute; right: 0; top: -20px; font: 700 11px/1 var(--fd); letter-spacing: .14em; text-transform: uppercase; color: var(--crit); background: var(--ground); padding: 2px 4px; white-space: nowrap; }
+.beacon { position: absolute; left: calc(7% + 23%); top: 9%; translate: -50% 0; width: 22px; height: 14px; border-radius: 11px 11px 2px 2px; background: #3a1418; border: 1px solid #5a2228; }
+.room.alarm .beacon { background: var(--crit); box-shadow: 0 0 22px 8px rgba(255,59,75,.45); animation: beacon .7s steps(2, jump-none) infinite; }
+@keyframes beacon { 50% { background: #5a1d22; box-shadow: none; } }
+.room.alarm .rack { border-color: #6b2a2f; }
+.empty-word { position: absolute; left: calc(7% + 23%); top: 46%; translate: -50% -50%; rotate: -8deg; padding: 6px 14px; border: 4px solid var(--crit); border-radius: 6px; font: 700 clamp(22px, 6cqw, 40px)/1 var(--fd); letter-spacing: .24em; color: var(--crit); background: rgba(10,9,8,.75); opacity: 0; }
+.door { position: absolute; right: 0; top: 30%; width: 4%; height: 48%; background: #050403; border-left: 1px solid var(--line-2); }
+.note { position: absolute; right: 3%; top: 4%; width: min(260px, 52%); border: 1px solid var(--crit); border-radius: 10px; background: var(--raised); padding: 9px 10px; display: grid; gap: 6px; box-shadow: 0 10px 24px rgba(0,0,0,.5); opacity: 0; translate: 0 -12px; transition: opacity 260ms, translate 320ms var(--eo), border-color 300ms; }
+.note.on { opacity: 1; translate: 0 0; }
+.note.ok { border-color: var(--gold); }
+.note b { font: 700 13px/1.15 var(--fd); letter-spacing: .08em; text-transform: uppercase; }
+.note p { margin: 0; font: 600 12px/1.3 var(--fb); color: var(--ink-muted); }
+.note .go { justify-self: start; min-height: 30px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--gold); background: var(--inset); font: 700 12px/1 var(--fd); letter-spacing: .14em; text-transform: uppercase; color: var(--ink); transition: transform 120ms var(--eo), background-color 160ms; }
+.note .go.press { transform: scale(.94); background: var(--gold-2); color: var(--gold-ink); }
+.truck { position: absolute; left: 100%; top: 52%; width: 38%; height: 26%; }
+.truck .box { position: absolute; left: 0; top: 0; width: 72%; height: 78%; border-radius: 4px; background: linear-gradient(#2a2622, #1b1916); border: 1px solid var(--line-3); display: grid; place-items: center; font: 700 clamp(10px, 2.2cqw, 15px)/1 var(--fd); letter-spacing: .14em; color: var(--gold-2); text-transform: uppercase; }
+.truck .cab { position: absolute; left: 73%; top: 26%; width: 25%; height: 52%; border-radius: 4px 10px 3px 3px; background: linear-gradient(#3a342b, #24201b); border: 1px solid var(--line-3); }
+.truck .cab::before { content: ""; position: absolute; left: 26%; right: 10%; top: 12%; height: 34%; border-radius: 2px 7px 2px 2px; background: #6a645c; }
+.truck .wh { position: absolute; bottom: 0; width: 14%; aspect-ratio: 1; translate: 0 45%; border-radius: 50%; background: radial-gradient(circle, #6a645c 0 26%, #050403 30%); border: 2px solid #26231f; }
+.gd .cy { --cs: clamp(48px, 11cqw, 80px); translate: -50% -100%; z-index: 3; }
+.gd .cy .ct { --cw: 56%; left: 22%; top: -24%; }
+.twin { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.twin > div { display: grid; gap: 6px; align-content: start; }
+.twin .hd2 { font: 700 13px/1.1 var(--fd); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-muted); }
+.twin .hd2 b { color: var(--ink); }
+.twin .room { aspect-ratio: 4 / 4.4; }
+.twin .rack { left: 6%; width: 52%; top: 20%; height: 58%; }
+.twin .beacon { left: calc(6% + 26%); }
+.twin .empty-word { left: calc(6% + 26%); font-size: clamp(16px, 4cqw, 26px); }
+.twin .note { left: auto; right: 3%; top: 3%; width: 64%; padding: 6px 8px; gap: 4px; }
+.twin .note p { display: none; }
+.twin .note b { font-size: 11px; }
+.twin .truck { width: 40%; height: 20%; top: 60%; }
+.rc { position: absolute; left: 4%; top: 4%; font: 700 16px/1 var(--fd); letter-spacing: .06em; font-variant-numeric: tabular-nums; }
+.rack .ct::after, .gd .cy .ct::after, .room > .ct::after { font-size: clamp(9px, 2.2cqw, 15px); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Presentasi v37 · pilihan</h1>
+    <p><b>Batch 1 is live</b> (still wheel, slide 03 steady, 04 turns slowly, 08 upright). These are the five things that needed your eye first. <b>Everything below plays live</b> - press the keys, press Replay. Gold border = my pick. Each row is its own choice.</p>
+  </header>
+
+  <!-- ===================== E ===================== -->
+  <section class="sec" id="e">
+    <h2><span class="no">E</span>Back button + the "Gerak" switch</h2>
+    <p class="said">You: <i>"no one will realise that it is a back button and also the gerak button is a vague description"</i>. Inside a slide the top bar now says FITUR and GERAK. Each option is shown at phone width and PC width. Press them.</p>
+    <div class="bars">
+      <article class="bopt rec" id="eA">
+        <header><b style="font:700 18px/1 var(--fd);letter-spacing:.06em;text-transform:uppercase">A · Back on the top-left, motion as a switch</b><span class="badge" style="margin-left:auto">My pick</span></header>
+        <div class="pair">
+          <figure><figcaption>Phone 390</figcaption><div class="mock" style="width:100%;max-width:390px" data-opt="A"></div></figure>
+          <figure><figcaption>PC</figcaption><div class="mock" data-opt="A"></div></figure>
+        </div>
+        <div class="cap"><b>Where every phone app puts "back": top-left, a gold arrow tile + the word.</b> Phone says <b>Kembali</b>, PC says <b>Kembali ke semua fitur</b>. The motion button becomes <b>Animasi</b> with a switch and the word <b>Nyala / Mati</b>, so its state is read, not guessed.<span class="cost">Cost: the brand moves right by one button; nothing else on the slides changes.</span></div>
+      </article>
+      <article class="bopt" id="eB">
+        <header><b style="font:700 18px/1 var(--fd);letter-spacing:.06em;text-transform:uppercase">B · Same places, clearer words</b></header>
+        <div class="pair">
+          <figure><figcaption>Phone 390</figcaption><div class="mock" style="width:100%;max-width:390px" data-opt="B"></div></figure>
+          <figure><figcaption>PC</figcaption><div class="mock" data-opt="B"></div></figure>
+        </div>
+        <div class="cap"><b>Both buttons stay on the right, where they are now.</b> FITUR becomes an arrow + <b>Kembali</b>; GERAK becomes <b>Animasi: Nyala</b>. Smallest change.<span class="cost">Cost: top-right is where people look for "close" or "menu", not "back" - the reason it was missed.</span></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ===================== F ===================== -->
+  <section class="sec" id="f">
+    <h2><span class="no">F</span>Slide 09 · Kinerja Produk</h2>
+    <p class="said">You: <i>"too standardised and used too many times can u think of other graph model to show this that is animated?"</i> Same numbers as the slide now (products A to E, Hari / Minggu / Bulan / Tahun).</p>
+    <div class="opts">
+      <article class="opt rec" id="fA">
+        <header><span class="l">A</span><b>The race</b><span class="badge">My pick</span><button class="replay" type="button">Replay</button></header>
+        <div class="stage race"><div class="keys"></div><div class="lanes"></div></div>
+        <div class="cap"><b>Each product is a capybara runner carrying its pack.</b> They all run for the same time; the one that sold the most rupiah reaches the flag. At the end each lane shows packs sold, rupiah and share. Change the period and they race again.<span class="cost">Cost: rank is instant to read; exact small differences (D vs E) read from the numbers, not the distance.</span></div>
+      </article>
+      <article class="opt" id="fB">
+        <header><span class="l">B</span><b>The bubbles</b><button class="replay" type="button">Replay</button></header>
+        <div class="stage bubs"><div class="keys"></div><div class="bubbox"></div></div>
+        <div class="cap"><b>Each product is a bubble; its size is its rupiah.</b> Change the period and the bubbles grow, shrink and push each other into place. The biggest gets the gold ring.<span class="cost">Cost: calmer and more "boardroom"; sizes are harder to compare than distances.</span></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ===================== G ===================== -->
+  <section class="sec" id="g">
+    <h2><span class="no">G</span>Slide 18 · Pindah tangan</h2>
+    <p class="said">You: <i>"clearer animation for the slide 18 pindah tangan animation those flying card just too vague to explain with"</i>.</p>
+    <div class="opts">
+      <article class="opt rec" id="gA" style="grid-column:1/-1">
+        <header><span class="l">A</span><b>Three numbered steps, each one said out loud</b><span class="badge">My pick</span><button class="replay" type="button">Replay</button></header>
+        <div class="stage ho">
+          <div class="rail">
+            <button type="button" data-s="0"><b>Langkah 1</b><span>Budi mengajukan</span></button>
+            <button type="button" data-s="1"><b>Langkah 2</b><span>Admin menyetujui</span></button>
+            <button type="button" data-s="2"><b>Langkah 3</b><span>Andi menerima</span></button>
+          </div>
+          <p class="say"></p>
+          <div class="hostage">
+            <svg class="paths" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="p up" d="M25,50 C26,36 29,26 34,22"/><path class="p down" d="M27,81 C42,92 58,92 73,81"/></svg>
+          </div>
+        </div>
+        <div class="cap"><b>The story is told by the steps, not by a flying card.</b> A numbered rail on top lights each step and one sentence says what happens. The request is a labelled slip that goes up to the admin; the stamp lands on it; only then does the shop card walk over to Andi, carrying its stock and debt, and the "penanggung jawab" line changes name. Press a step to jump to it.<span class="cost">Cost: about 12 s per loop (was ~6); the box gets taller by the rail and one sentence.</span></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ===================== H ===================== -->
+  <section class="sec" id="h">
+    <h2><span class="no">H</span>Slide 19 · Naik pangkat</h2>
+    <p class="said">You: <i>"simulate what happen when level up animation and also change the border each time depending on the real level that we design on the app and also the real borders"</i>. Ranks and XP are the app's own (Bronze 0 · Silver 5.000 · Gold 20.000 · Platinum 50.000 · Diamond 100.000 · Mythic 250.000). The frames are the app's real frames, copied from the code.</p>
+    <div class="opts">
+      <article class="opt rec" id="hA" style="grid-column:1/-1">
+        <header><span class="l">A</span><b>XP fills, the frame changes, the rank is announced</b><span class="badge">My pick</span><button class="replay" type="button">Replay</button></header>
+        <div class="stage lv">
+          <div class="pcard">
+            <div class="fwell"></div>
+            <div style="min-width:0">
+              <div class="pname">Budi Santoso</div>
+              <div class="prank"></div>
+              <div class="pxp"><span class="xpn">0</span><small>XP</small></div>
+              <div class="pbar"><i></i></div>
+              <div class="pnext"></div>
+            </div>
+            <div class="chips"></div>
+            <div class="sweep"></div>
+            <div class="lvban"><small>Naik pangkat</small><b></b></div>
+          </div>
+          <div class="ladder"></div>
+        </div>
+        <div class="cap"><b>XP comes in from real sources</b> (setoran lolos, toko dilayani, tagihan tertagih), the bar fills, and at the line: the card flashes, <b>NAIK PANGKAT</b> crosses it, the old frame breaks away and the new rank's real frame lands. The ladder under it shows all six frames and where Budi is. It climbs Bronze to Mythic, then starts again.<span class="cost">Cost: the real frames add ~45 KB to the page; Platinum, Diamond and Mythic are the app's "medium" load frames.</span></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ===================== I ===================== -->
+  <section class="sec" id="i">
+    <h2><span class="no">I</span>Slide 20 · Stok menipis</h2>
+    <p class="said">You: <i>"doesnt have to be 3D but i just want cool animation to really show that the stock is empty, u can use the capybara model and remake it into some workers"</i>.</p>
+    <div class="opts">
+      <article class="opt rec" id="iA">
+        <header><span class="l">A</span><b>The warehouse empties</b><span class="badge">My pick</span><button class="replay" type="button">Replay</button></header>
+        <div class="stage gd">
+          <div class="gdhd"><span class="cnt"><span class="n">60</span><small>bks · Produk B</small></span><span class="led on"><i></i><span>Aman</span></span></div>
+          <div class="room"></div>
+        </div>
+        <div class="cap"><b>Capybara workers carry cartons out, one sale at a time.</b> The shelf empties slot by slot (the empty slots stay outlined, so you SEE what is missing). When it passes the red minimum line the beacon goes off and the app's warning appears; the admin presses <b>Ajukan</b>, and the Gudang Pusat truck arrives before the last carton is gone.<span class="cost">Cost: ~16 s per loop; the 3D bars on this slide go away.</span></div>
+      </article>
+      <article class="opt" id="iB">
+        <header><span class="l">B</span><b>With and without the warning</b><button class="replay" type="button">Replay</button></header>
+        <div class="stage gd">
+          <div class="twin">
+            <div><span class="hd2"><b>Tanpa peringatan</b></span><div class="room r0"></div></div>
+            <div><span class="hd2"><b>Dengan DSM</b></span><div class="room r1"></div></div>
+          </div>
+        </div>
+        <div class="cap"><b>Two warehouses, same sales.</b> Left: nobody is told, the shelf runs to zero and <b>KOSONG</b> is stamped on it. Right: the warning fires at the minimum and the truck refills it in time.<span class="cost">Cost: shows "empty" literally, and why the feature matters; each warehouse is half as big.</span></div>
+      </article>
+    </div>
+  </section>
+</div>
+<script src="frames.js"></script>
+<script src="board.js"></script>
+</body>
+</html>
