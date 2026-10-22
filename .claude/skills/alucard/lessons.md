@@ -522,6 +522,7 @@ Fired: 2026-10-20 14:40 (the sliding switch bar: samples in the HIDDEN pane read
 cannot render — XUi, SVG, canvas, absolute-positioned CSS.
 **Lesson:** pick the coordinate model by checking it explains a layout in that same file that
 already works, then place. Write the geometry check before the edit, not after.
+Fired: 2026-10-22 (v37: wheel theta, tower --rz and map --rz sampled on the live page over 1.5-8 s, before AND after the edit - the map read -50.5deg before, 0deg after)
 **Would have prevented:** assumed a grid's `pos` was its top-left corner and put the skill
 window's search box at y=-43, inside icons that actually run to -44.5. The model was refutable
 from the file itself: `windowTrader` fits 15 x 43px cells at x=23 in a 645px window, which
@@ -577,6 +578,7 @@ Fired: 2026-10-04 (Day Replay v3: read the url, diffed to the last vault commit 
 disable something permanently, or tell Aldi a mod is incompatible.
 **Lesson:** state the MECHANISM in one sentence — this thing does that, which produces this exact
 error — before the verdict. No mechanism means it is still a hypothesis, so say "correlates with"
+Fired: 2026-10-22 (v34: `Artifact read` on the url first - "counts as viewed" - then cmp of its saved file vs kpm 58cb87a from line 2 before the publish, and a read-back cmp after)
 and name the test that separates it. Sample count does not substitute: two candidates that move
 together produce a perfect correlation for whichever one you happened to toggle.
 **Would have prevented:** 7DTD, `EModelBase.CrouchUpdate` NPE. Four sessions matched
