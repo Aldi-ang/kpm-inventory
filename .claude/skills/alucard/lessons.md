@@ -879,6 +879,7 @@ Fired: 2026-09-19 20:20 ("✅ TEST d7f2193 stands as written, at the new address
 Fired: 2026-09-23 (the prototype ✅ TEST written as six steps, after the same six were run with real drags)
 Fired: 2026-09-24 (MUAT VAN pick written as tap-by-tap steps, not a pointer to the card)
 Fired: 2026-09-24 (the bay test written as four steps in his words, with the warning that steps 3-4 move real stock)
+Fired: 2026-10-22 13:41 (v37 batch 2 reply: the TEST line lists what to open and what each of the five rows should show, in plain words)
 
 ### 2026-09-20 — a synthetic drill does not walk the finger path; a tap or hold mechanic gets one REAL tap before its ✅ TEST
 **Status:** LIVE
