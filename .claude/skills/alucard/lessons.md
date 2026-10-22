@@ -1328,3 +1328,10 @@ Seen: 2026-10-20
 **Lesson:** the strip's colour and sound come from `isFailure()` in `src/utils/toastSeverity.js`, a word list (cannot, failed, denied, not saved...). A polite refusal ("X is only for Y. Do Z.") matches none and shows as ordinary news. Run each new refusal string through `isFailure` and put a guard in logicFixes that it stays red.
 **Would have prevented:** 2026-10-21, P3: the sale engine's Grosir refusal ("Grosir prices are only for a shop registered as Grosir...") tested plain; it would have shipped as news on every refused sale. Caught by a 4-string probe after the build; cost one rewording, a second build and a re-run of every gate.
 Seen: 2026-10-21
+### 2026-10-22 — a changed character or asset is "done" only with the list of every place it appears
+**Status:** LIKELY
+**Trigger:** before a completion claim about a changed recurring asset (a character, a pose set, an icon, a colour) that appears in more than one place on the page or in the app.
+**Lesson:** list every place the asset shows, mark which ones changed, and say the unchanged ones out loud in the reply. The place he looks at first is usually the most visible copy, not the one the brief named.
+**Would have prevented:** 2026-10-22 15:30, presentation v35: the reply said "all 11 capybara poses are in the presentation"; the new poses were only inside slides 09/18/20, while the flying island capybara he sees on every slide was unchanged. He answered *"okay but where is the updated capybara?"* - one round trip, plus two proof images to explain it.
+Seen: 2026-10-22
+Fired:
