@@ -1,0 +1,12 @@
+# new outfits for the same capybara (palette law: no blue, no green); each from his merchant sprite, only the clothes change
+K="Keep the identical face, fur colour, body proportions, line art and cartoon style of this exact same capybara character. Full body, standing, centred, plain white background, no shadow."
+g() { [ -s "$1.png" ] && return 0; node gen.mjs ref-deal.png "$1.png" 7 "$2 $K" 2>&1 | tail -1 | sed "s/^/$(date +%H:%M) $1: /"; }
+g o-sales "Change only the clothes: a crisp white shirt with a dark maroon tie, black trousers, black shoes, a gold name badge on the chest, holding a small brown sample case in one hand and waving with the other, no hat."
+g o-driver "Change only the clothes: a delivery driver outfit - a brown cap, a tan work jacket with a gold logo patch, dark brown trousers, boots, carrying a cardboard parcel in both arms, no fedora."
+g o-office "Change only the clothes: an office manager outfit - round glasses, a cream cardigan over a white shirt, brown trousers, holding a clipboard and a pen, pointing at the clipboard, no hat."
+g o-guard "Change only the clothes: a security guard outfit - a black peaked cap with a gold badge, a black uniform shirt with gold shoulder marks, black trousers, boots, standing proud with a thumbs up, no fedora."
+g o-cashier "Change only the clothes: a cashier outfit - a maroon apron over a cream shirt, a gold name tag, holding a stack of banknotes in one hand and giving a thumbs up with the other, no hat."
+g o-chef "Change only the clothes: a warung owner outfit - a cream batik-pattern shirt in brown and gold, a black peci cap instead of the fedora, brown trousers, sandals, both hands open in a welcoming gesture."
+g m-think "Make this exact same capybara character think, one hand on his chin, eyes looking up, curious smile. Keep the identical face, fur colour, brown fedora hat, brown coat, fingerless gloves, cream shirt, belt with gold buckle, shoulder bag, body proportions, line art and cartoon style. Full body, centred, plain white background, no shadow."
+g m-sit "Make this exact same capybara character sit down cross-legged and relax, waving one hand, happy face. Keep the identical face, fur colour, brown fedora hat, brown coat, fingerless gloves, cream shirt, belt with gold buckle, shoulder bag, body proportions, line art and cartoon style. Full body, centred, plain white background, no shadow."
+echo "$(date +%H:%M) outfits done"

@@ -3,7 +3,9 @@
 // node .claude/presentation/capy-poses/tools/swap.mjs        (from the repo root)
 import { readFileSync, existsSync, writeFileSync } from 'node:fs';
 const P = '.claude/presentation', PAGE = `${P}/kpm-semua-terkendali.html`, CUT = `${P}/capy-poses/cut`;
-const want = { wave: 'm-wave', point: 'm-point', give: 'm-give', run: 'm-run', stamp: 'm-stamp', receive: 'm-receive', cheer: 'm-cheer', wstand: 'w-stand', wcarry: 'w-carry', wshock: 'w-shock', wwave: 'w-wave' };
+const want = { wave: 'm-wave', point: 'm-point', give: 'm-give', run: 'm-run', stamp: 'm-stamp', receive: 'm-receive', cheer: 'm-cheer', wstand: 'w-stand', wcarry: 'w-carry', wshock: 'w-shock', wwave: 'w-wave',
+  /* the flying cameo's extra looks (outfits.sh); missing ones have no fallback, the cameo just skips them */
+  think: 'm-think', sit: 'm-sit', osales: 'o-sales', odriver: 'o-driver', ooffice: 'o-office', oguard: 'o-guard', ocashier: 'o-cashier', ochef: 'o-chef' };
 const fall = { run: 'point', stamp: 'deal', receive: 'wave', cheer: 'deal', wstand: 'point', wcarry: 'wave', wshock: 'point', wwave: 'wave' };
 const uri = (f) => 'data:image/png;base64,' + readFileSync(f).toString('base64');
 const has = { deal: 1 }, map = { deal: uri('public/sprites/merchant-deal.png') };

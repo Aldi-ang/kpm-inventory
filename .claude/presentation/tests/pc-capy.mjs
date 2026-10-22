@@ -28,7 +28,7 @@ await send('Page.navigate', { url }); await sleep(3000);
 const CAPY = `(() => { const c = document.querySelector('.capy'); if (!c) return 'no capy';
   const r = c.getBoundingClientRect(), f = c.querySelector('.fig');
   return 'shown=' + (getComputedStyle(c).display !== 'none') + ' x=' + Math.round(r.left) + '..' + Math.round(r.right) + ' y=' + Math.round(r.top) + '..' + Math.round(r.bottom)
-    + ' deal=' + f.classList.contains('deal') + ' fig=' + f.style.transform; })()`;
+    + ' gesture=' + (f.classList.contains('pose') || f.classList.contains('deal')) + ' look=' + (f.classList.contains('base') ? 'outfit' : 'merchant') + ' fig=' + f.style.transform; })()`;   /* v37: a pause shows a .pose (was .deal) */
 const log = [];
 const at = async (name, cap) => { log.push(name + ': ' + await ev(CAPY)); await shot(name, cap); };
 await ev(`document.getElementById('introGo').click()`); await sleep(2000);
