@@ -1011,6 +1011,7 @@ Seen: 2026-10-02
 Fired: 2026-10-04 (Day Replay: page + ground.jpg + coin-sprite.png copied to one scratchpad folder, published with files on the first try)
 
 Last checked: 2026-10-23 — no new lesson since the 2026-10-22 asset entry (671-turn session; that entry, the TEST-line and the republish lessons fired)
+Fired: 2026-10-03 (map-keys prototype + ground.jpg published from scratchpad/mapkeys)
 Fired: 2026-10-03 (round 6 crowd + selling scenes: page + ground.jpg copied to scratchpad/r6, published on the first try)
 Fired: 2026-10-04 (Day Replay v3: page + ground.jpg + coin-sprite.png from scratchpad/replay3, first try)
 
