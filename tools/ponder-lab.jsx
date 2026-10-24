@@ -38,6 +38,7 @@ import RestockVaultView from '../src/RestockVaultView.jsx';
 import MerchantSalesView from '../src/MerchantSalesView.jsx';
 import { CustomerManagement } from '../src/components/CustomerManager.jsx';
 import AgentInventoryView from '../src/AgentInventoryView.jsx';
+import MissionDraft from './mission-draft.jsx';   /* ?shell&places&mission=a|b - the demo's step card drafts (2026-10-24) */
 import EODReconciliationView from '../src/EODReconciliationView.jsx';
 import AgentProfileView from '../src/AgentProfileView.jsx';
 import StockOpnameView from '../src/StockOpnameView.jsx';
@@ -1001,6 +1002,7 @@ function ShellLab() {
       )}
     >
       {q.has('gate') && <GateCoverLab />}
+      {q.has('mission') && <MissionDraft look={q.get('mission')} />}
       {q.has('profile') ? (
         /* ?shell&profile — the Agent Profile INSIDE the real shell exactly as App.jsx:4725 mounts it: no
            wrapper. T5 Budi (m2) sees his own page; `&admin` mounts the boss's view (the agent list, the
