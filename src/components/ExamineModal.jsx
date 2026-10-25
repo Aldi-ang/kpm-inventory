@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, ZoomOut, Lock, Unlock, ZoomIn, RefreshCcw, Package } from 'lucide-react';
-import { isPromo } from '../utils/helpers';
+import { X, ZoomOut, Lock, Unlock, ZoomIn, RefreshCcw } from 'lucide-react';
+import { isPromo, promoSkin } from '../utils/helpers';
 
 const START_ROTATION = { x: -15, y: 25 };
 const START_SCALE = 2.8;
@@ -60,8 +60,8 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
   const renderFace = (imageSrc, defaultColor = "bg-white") => { if (imageSrc) return <img src={imageSrc} className="w-full h-full object-cover" alt="texture" />; return <div className={`w-full h-full ${defaultColor} border border-[#5c4b3a] opacity-90`}></div>; };
   
   const images = product.images || {};
-  const frontImage = images.front || product.image;
-  const backImage = product.useFrontForBack ? frontImage : images.back;
+  const frontImage = images.front || product.image || (isPromo(product) ? promoSkin(product, 'front') : null);
+  const backImage = product.useFrontForBack ? frontImage : images.back || (isPromo(product) ? promoSkin(product, 'back') : null);
   
   return (
     /* kpm-examine-in: the ground fades, the object scales up from .94. It used to appear
@@ -102,7 +102,7 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
         {/* No `transition` here on purpose. The rAF loop writes this node's transform every
             frame, and a transition would restart on each write — that is the flicker. */}
         <div ref={boxRef} className="relative preserve-3d" style={{ width: `${w}px`, height: `${h}px`, transformStyle: 'preserve-3d' }}>
-          <div className="absolute inset-0 bg-white backface-hidden flex items-center justify-center border border-[#5c4b3a]" style={{ width: w, height: h, transform: `translateZ(${d / 2}px)` }}>{frontImage ? <img src={frontImage} className="w-full h-full object-cover"/> : isPromo(product) ? <Package size={40} className="text-[#5c4b3a]"/> : <span className="text-4xl">🚬</span>}<div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none"></div></div>
+          <div className="absolute inset-0 bg-white backface-hidden flex items-center justify-center border border-[#5c4b3a]" style={{ width: w, height: h, transform: `translateZ(${d / 2}px)` }}>{frontImage ? <img src={frontImage} className="w-full h-full object-cover"/> : <span className="text-4xl">🚬</span>}<div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none"></div></div>
           <div className="absolute inset-0 bg-[#1a1815] backface-hidden flex items-center justify-center border border-[#3e3226]" style={{ width: w, height: h, transform: `rotateY(180deg) translateZ(${d / 2}px)` }}>{renderFace(backImage, "bg-[#1a1815]")}</div>
           <div className="absolute" style={{ width: d, height: h, transform: `rotateY(90deg) translateZ(${w / 2}px)`, left: (w - d)/2 }}>{renderFace(images.right, "bg-[#d4c5a3]")}</div>
           <div className="absolute" style={{ width: d, height: h, transform: `rotateY(-90deg) translateZ(${w / 2}px)`, left: (w - d)/2 }}>{renderFace(images.left, "bg-[#d4c5a3]")}</div>

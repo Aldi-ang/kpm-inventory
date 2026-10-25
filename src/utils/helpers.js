@@ -251,6 +251,21 @@ export const absentForSure = (snap) =>
    no price. useDatabaseSync keeps them OUT of `inventory`, which every cigarette screen reads. */
 export const isPromo = (product) => product?.kind === 'promo';
 
+/* The default skin of a promo item with no photo (his 2026-10-26 "default skin for the 3D promo item like on the
+   preview"): the lab's T-shirt card - cream, a black shape, a gold word ON the black (gold never as text on light).
+   A shirt by its name gets the shirt and the rest of the name ("T-shirt Cello" -> CELLO); anything else a black label
+   with its name. The back says KPM. Drawn, never saved: an uploaded FRONT / BACK replaces it. */
+const SHIRT_WORDS = /t-?shirt|kaos|baju|jersey|jaket|jacket|hoodie|sweater/i;
+export const promoSkin = (product, side) => {
+    const name = String(product?.name || ''), shirt = SHIRT_WORDS.test(name);
+    const word = (side === 'back' ? 'KPM' : (shirt ? name.replace(SHIRT_WORDS, '') : name).replace(/^[\s\-:]+|[\s\-:]+$/g, '') || 'KPM').toUpperCase();
+    const size = Math.min(12, (shirt ? 38 : 62) / (word.length * 0.68)).toFixed(1);
+    const shape = shirt ? '<path d="M31 13 L18 17 L6 31 L16 41 L24 35 L24 91 L66 91 L66 35 L74 41 L84 31 L72 17 L59 13 Q45 25 31 13 Z" fill="#1c1814"/>'
+                        : '<rect x="10" y="36" width="70" height="28" rx="4" fill="#1c1814"/>';
+    const text = word.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    return 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 100"><rect width="90" height="100" fill="#efe9df"/>${shape}<text x="45" y="${shirt ? 58 : 50}" dominant-baseline="central" font-family="sans-serif" font-size="${size}" font-weight="700" fill="#d4a017" text-anchor="middle">${text}</text></svg>`);
+};
+
 export const convertToBks = (qty, unit, product) => {
     if (!product || isPromo(product)) return qty;
     const packsPerSlop = product.packsPerSlop || 10;

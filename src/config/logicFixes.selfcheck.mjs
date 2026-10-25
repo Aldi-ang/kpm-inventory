@@ -11853,7 +11853,7 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
 
 section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only counts them (his 2026-10-25 "1a,2b,3b,4a,5 no limit ..., 6 dont need for cost price")');
 {
-  const { convertToBks, isPromo } = await import('../utils/helpers.js');
+  const { convertToBks, isPromo, promoSkin } = await import('../utils/helpers.js');
   const sync = read('src/hooks/useDatabaseSync.js'), rei = read('src/components/ResidentEvilInventory.jsx');
   const save = app.slice(app.indexOf('const handleSaveProduct'), app.indexOf('const handleUpdateProduct'));
   const form = app.slice(app.indexOf('<form onSubmit={handleSaveProduct}'), app.indexOf("{savingProduct ? 'Saving…' : 'Update Database'}"));
@@ -11907,9 +11907,21 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      form.includes("grid ${isPromo(editingProduct) ? 'grid-cols-2' : 'grid-cols-3'} gap-2") &&
      form.includes('setBoxDimensions(on ? { w: 90, h: 100, d: 3 } : { w: 55, h: 90, d: 22 });'));
   const exam = read('src/components/ExamineModal.jsx');
-  ok('REGRESSION: the fullscreen viewer says nothing cigarette about a promo item - no 🚬, no CUKAI line, no "standard pack of cigarettes"',
-     exam.includes('isPromo(product) ? <Package') && exam.includes("{!isPromo(product) && <span>CUKAI: {product.taxStamp || 'Standard'}</span>}") &&
-     exam.includes("isPromo(product) ? 'A promo item - given free together with a sale.' : 'A standard pack of cigarettes.") && imports(exam, 'Package'));
+  ok('REGRESSION: the fullscreen viewer says nothing cigarette about a promo item - no 🚬 (it draws the default skin), no CUKAI line, no "standard pack of cigarettes"',
+     exam.includes("const frontImage = images.front || product.image || (isPromo(product) ? promoSkin(product, 'front') : null);") && exam.includes("{!isPromo(product) && <span>CUKAI: {product.taxStamp || 'Standard'}</span>}") &&
+     exam.includes("isPromo(product) ? 'A promo item - given free together with a sale.' : 'A standard pack of cigarettes."));
+  /* His 2026-10-26 "can u give it like default skin for the 3D promo item like on the preview u gave me earlier": a promo
+     item with no photo draws the lab's T-shirt card (tools/ponder-lab.jsx labShirtPic). Drawn, never saved. */
+  const skin = (p, side) => decodeURIComponent(String(promoSkin?.(p, side)).replace('data:image/svg+xml,', ''));
+  ok('BEHAVIOUR: a promo item with no photo gets the default skin - a shirt by its name gets the shirt with the rest of the name on it ("T-shirt Cello" -> CELLO, back KPM); a lighter gets the black label; a name with & stays a valid picture',
+     skin({ name: 'T-shirt Cello' }, 'front').includes('M31 13') && skin({ name: 'T-shirt Cello' }, 'front').includes('>CELLO</text>') &&
+     skin({ name: 'Kaos - Cello' }, 'front').includes('>CELLO</text>') && skin({ name: 'T-shirt Cello' }, 'back').includes('>KPM</text>') &&
+     skin({ name: 'Lighter' }, 'front').includes('>LIGHTER</text>') && !skin({ name: 'Lighter' }, 'front').includes('M31 13') &&
+     skin({ name: 'Poster A&B' }, 'front').includes('>POSTER A&amp;B</text>') && skin({ name: 'Hat' }, 'front').includes('fill="#d4a017"'));
+  ok('REGRESSION: the default skin is drawn wherever a promo item shows a face - the Master Vault box (front and back), its list picture, and the fullscreen viewer',
+     rei.includes("const front = images.front || product.image || (isPromo(product) ? promoSkin(product, 'front') : null);") &&
+     rei.includes("images.back || (isPromo(product) ? promoSkin(product, 'back') : null)") && rei.includes("promoSkin(item, 'front')") && imports(rei, 'promoSkin') &&
+     exam.includes("images.back || (isPromo(product) ? promoSkin(product, 'back') : null)") && imports(exam, 'promoSkin'));
   ok('REGRESSION: the Master Vault list counts a promo item in pcs, never Bks / Slop / Bal, and shows it no price grid (Rp 0 x4)',
      rei.includes('if (isPromo(item)) return') && rei.includes('VAULT: {item.stock || 0} pcs') && rei.includes('`${product.stock || 0} pcs`') && imports(rei, 'isPromo') &&
      rei.indexOf('{!isPromo(product) && (') > 0 && rei.indexOf('{!isPromo(product) && (') < rei.indexOf('{formatRupiah(product.priceDistributor)}') &&
