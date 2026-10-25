@@ -66,7 +66,7 @@ const BEFORE = {
     8: 'Mantap',
 };
 const GO = {
-    1: [{ face: 'think', text: 'Langkah pertama: buka Restock Vault, tekan MASUK, isi barang dari pabrik, lalu simpan surat jalannya.' }],
+    1: [{ face: 'think', text: 'Langkah pertama: buka Restock Vault, tekan MASUK, pilih Asal: Produksi Pusat dan Tujuan: Gudang Pusat (Master Vault), isi barangnya, lalu simpan surat jalannya.' }],
     2: [{ face: 'think', text: 'Sekarang barang itu perlu dikirim ke gudang wilayah lewat surat jalan.' },
         { face: 'talk', text: 'Di Restock Vault, tekan KIRIM, pilih gudang tujuan dan jumlahnya, lalu kirim.' }],
     3: [{ face: 'think', text: 'Buka Fleet & Canvas, pilih DIKA SAPUTRA, lalu muat barang dari gudang ke tasnya.' }],

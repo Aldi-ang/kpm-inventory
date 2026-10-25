@@ -324,7 +324,12 @@ export function buildDemoCompany(seed, now, vault) {
         if (m.demoLogin) put(`${home}/vault_keys/${m.agentId}`, { ...vault, failedRecoveryAttempts: 0, lockoutStatus: 'NONE', lockedUntil: 0, uid: m.uid, email: m.email });
     }
 
-    /* GOODS IN at the Muntilan HQ warehouse (Restock Vault's surat jalan book) - three deliveries from the factory */
+    /* GOODS IN at the Muntilan HQ warehouse (Restock Vault's surat jalan book) - three deliveries from the factory.
+       The factory is a registered place too (kind 'pabrik', as Data Induk saves it): MASUK's Asal lists only those, so
+       without it a visitor found Asal empty and could not finish mission step 1 (his 2026-10-25 "add option for the asal
+       like for example segment produksi pusat or something and tujuan is master vault") */
+    const FACTORY = { name: 'Produksi Pusat', address: 'Malang, Jawa Timur' };
+    put(`${home}/places/produksi-pusat`, { ...FACTORY, kind: 'pabrik', updatedAt: atWib(days[0], 8 * 60) });
     const hendra = LOGINS.find((l) => l.tier === 'T4').name;
     const past = days.slice(0, -1);
     [12, 5, 2].map((n) => past[past.length - n]).forEach((d, k) => {
@@ -332,11 +337,11 @@ export function buildDemoCompany(seed, now, vault) {
             cartId: k * 10 + i + 1, id: p.id, name: p.name, batchNo: `B${d.replace(/-/g, '').slice(2)}-${i + 1}`, qtyReceived: 1000 + 500 * ((i + k) % 3), basePrice: p.priceDistributor || 0, unit: 'Bks' }));
         const totalBasePrice = items.reduce((s, i) => s + i.qtyReceived * i.basePrice, 0), shippingCost = 350000, laborCost = 150000;
         put(`${home}/procurement/sj-${d}`, {
-            batchId: `BATCH-${d.replace(/-/g, '')}`, supplierName: 'Supplier - Malang', deliveredBy: 'Factory driver', receivedBy: hendra, destination: MASTER,
+            batchId: `BATCH-${d.replace(/-/g, '')}`, supplierName: FACTORY.name, deliveredBy: 'Factory driver', receivedBy: hendra, destination: MASTER,
             poNumber: `SJ-${d.replace(/-/g, '').slice(2)}`, supplierSjNo: `MLG/${d.slice(5, 7)}/${100 + k * 7}`, poDate: d, shippingCost, exciseTax: 0, laborCost,
             expiryDate: '', courier: 'Factory truck', items, totalBasePrice, trueLandedTotal: totalBasePrice + shippingCost + laborCost,
             timestamp: atWib(d, 9 * 60 + 15), date: d, hasReceipt: false, receiptUrl: null, packagePhotoUrl: null, recordedBy: hendra,
-            originAddress: 'Malang, Jawa Timur', destinationAddress: hq.town, incomplete: null,
+            originAddress: FACTORY.address, destinationAddress: hq.town, incomplete: null,
         });
     });
 

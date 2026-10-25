@@ -10953,6 +10953,9 @@ section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual 
   ok('goods in: three surat jalan into the Muntilan HQ warehouse, each total = its lines; the Bandung branch has one request on the road and one waiting for HQ',
      !!a && pos.length === 3 && pos.every((p) => p.destination === 'Gudang Pusat (Master Vault)' && p.items.length && p.totalBasePrice === p.items.reduce((s, i) => s + i.qtyReceived * i.basePrice, 0))
      && reqs.map((r) => r.status).sort().join() === 'IN_TRANSIT,PENDING' && reqs.every((r) => r.branch === 'BANDUNG' && r.requestedItems.length));
+  const pabrik = a ? under('places').map((d) => d.data).filter((p) => p.kind === 'pabrik') : [];
+  ok('REGRESSION: MASUK\'s Asal is never empty in the demo - one registered factory, Produksi Pusat, and every past surat jalan came from it (his 2026-10-25 "add option for the asal ... produksi pusat")',
+     !!a && pabrik.length === 1 && pabrik[0].name === 'Produksi Pusat' && pos.every((p) => p.supplierName === pabrik[0].name));
   ok(`one reset writes ${a ? a.docs.length : '?'} documents - the nightly one plus manual ones stay far under the free plan's 20.000 writes a day`, !!a && a.docs.length < 1000);
   ok('run twice on the same day = the same company, byte for byte (nothing doubles)', !!a && JSON.stringify(a) === JSON.stringify(b));
   const vj = read('vercel.json');
