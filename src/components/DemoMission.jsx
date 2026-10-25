@@ -97,7 +97,7 @@ function linesFor(n, done, mine, doer) {
 const first = (name) => String(name || '').split(' ')[0].toLowerCase().replace(/^./, (c) => c.toUpperCase());
 function greet(n, done, mine, doer, me) {
     const hello = !Object.keys(done).length ? [
-        { face: 'happy', text: 'Halo, selamat datang di KPM! Saya Kapibara, pemandu Anda di demo ini.' },
+        { face: 'happy', text: 'Halo, selamat datang di KPM! Saya Agent Capybara, pemandu Anda di demo ini.' },
         { face: 'talk', text: `Kita akan menjalankan satu putaran barang dalam ${LAST} langkah: dari pabrik ke Master Vault, ke gudang wilayah, ke tas salesman, ke toko, lalu sisa barang dan barang rusak kembali ke gudang dan stoknya dihitung.` },
     ] : [{ face: 'happy', text: me ? `Halo, ${first(me.name)}! Anda masuk sebagai ${me.role}.` : 'Halo, selamat datang kembali!' }];
     return [...hello, ...linesFor(n, done, mine, doer)];
@@ -110,26 +110,32 @@ function CapyTalk({ lines, onShow, onClose }) {
     const last = i >= lines.length - 1;
     const next = () => (last ? onClose() : setI(i + 1));
     useEffect(() => {
-        const k = (e) => { if (e.key === 'Escape') onClose(); };
+        /* the answers carry the numbers 1 and 2, so the keys pick them too */
+        const k = (e) => {
+            if (e.key === 'Escape') onClose();
+            else if (L.choices && e.key === '1') onShow();
+            else if (L.choices && e.key === '2') onClose();
+        };
         window.addEventListener('keydown', k);
         return () => window.removeEventListener('keydown', k);
-    }, [onClose]);
+    }, [onClose, onShow, L.choices]);
     /* every face of the scene is in the page from the first line, so a snap never waits for a download */
     const faces = [...new Set(lines.map((l) => l.face))];
     return (
         <>
             <div className="kpm-ct-veil hide-on-print" onClick={L.choices ? undefined : next} />
-            <div className="kpm-ct hide-on-print" role="dialog" aria-label="Kapibara">
+            <div className="kpm-ct hide-on-print" role="dialog" aria-label="Agent Capybara">
                 {faces.map((f) => <img key={f} className="face" src={FACE[f]} alt="" hidden={f !== L.face} />)}
                 <div className="box" onClick={L.choices ? undefined : next}>
-                    <span className="name"><b>KAPIBARA</b></span>
+                    <span className="name"><b>AGENT CAPYBARA</b></span>
                     <p>{L.text}</p>
                     {!L.choices && <button type="button" className="next">{last ? 'TUTUP' : 'LANJUT'} ▼</button>}
                 </div>
                 {L.choices && (
-                    <div className="choices">
-                        <button type="button" onClick={onShow}>Tunjukkan tempatnya</button>
-                        <button type="button" onClick={onClose}>Saya coba sendiri</button>
+                    <div className="choices" role="group" aria-label="Pilih jawaban">
+                        <span className="ask">PILIH JAWABAN</span>
+                        <button type="button" onClick={onShow}><b>1</b>Tunjukkan tempatnya<i>▶</i></button>
+                        <button type="button" onClick={onClose}><b>2</b>Saya coba sendiri<i>▶</i></button>
                     </div>
                 )}
             </div>

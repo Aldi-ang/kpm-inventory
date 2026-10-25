@@ -49,7 +49,7 @@ const DOOR = ['PICK WHO TO BE', 'TRY ANOTHER PERSON', 'admin123', 'demo.owner@ex
     'This demo is invite-only', '/api/demo-switch', 'their Google email',
     /* the mission line + the capybara (2026-10-25): its words, and the event the three real saves send - in the real
        build the sends sit behind IS_DEMO and compile out, so 'kpm-mission' found there = a send that leaked */
-    'PETUNJUK', 'Tunjukkan tempatnya', 'Saya Kapibara, pemandu Anda', 'kpm-mission',
+    'PETUNJUK', 'Tunjukkan tempatnya', 'Saya Agent Capybara, pemandu Anda', 'kpm-mission',
     'FOTO SERAH TERIMA', 'Auto handover photo (demo)', 'Out of range, allowed in the demo'];
 check(has(demo, DOOR).length === DOOR.length, `the demo build carries the front door, the switch and the reset (${has(demo, DOOR).length}/${DOOR.length}: missing ${DOOR.filter((m) => !demo.includes(m)).join(', ') || 'none'})`);
 check(has(real, DOOR).length === 0, `the real build carries none of the front door (found: ${has(real, DOOR).join(', ') || 'none'})`);

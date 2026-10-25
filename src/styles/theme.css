@@ -5915,9 +5915,16 @@ html.lite-mode .kpm-ct-veil { background: rgba(5, 4, 3, .8); backdrop-filter: no
 .kpm-ct .box p { position: relative; margin: 0; font: 600 17px/1.45 var(--font-body); color: var(--ink); }
 .kpm-ct .next { position: absolute; right: 6px; bottom: 2px; min-height: 32px; padding: 0 8px; background: none; border: 0;
   font: 700 11px/1 var(--font-mono); letter-spacing: .18em; color: var(--accent-ink); cursor: pointer; }
-.kpm-ct .choices { align-self: flex-end; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; order: -1; }
-.kpm-ct .choices button { min-height: 44px; padding: 0 16px; background: var(--plate); border: 1.5px solid var(--accent-edge); font: 700 15px/1 var(--font-body);
-  color: var(--ink); text-align: left; cursor: pointer; touch-action: manipulation; }
+/* the answers read as a game's answer menu: a title, a numbered gold key, an arrow, and a full gold fill under the pointer */
+.kpm-ct .choices { align-self: flex-end; display: flex; flex-direction: column; gap: 8px; min-width: 270px; margin: 0 8px 10px; order: -1; }
+.kpm-ct .choices .ask { font: 700 11px/1 var(--font-mono); letter-spacing: .22em; color: var(--accent-ink); padding: 0 2px 2px; }
+.kpm-ct .choices button { display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 0 14px 0 10px; background: var(--plate);
+  border: 2px solid var(--accent-edge); font: 700 15px/1 var(--font-body); color: var(--ink); text-align: left; cursor: pointer; touch-action: manipulation; }
+.kpm-ct .choices button b { flex: none; display: grid; place-items: center; width: 28px; height: 28px; background: var(--gold); color: var(--gold-ink); font: 800 14px/1 var(--font-mono); }
+.kpm-ct .choices button i { margin-left: auto; padding-left: 10px; font: normal 12px/1 var(--font-mono); color: var(--accent-ink); }
+.kpm-ct .choices button:hover, .kpm-ct .choices button:focus-visible { background: var(--gold); color: var(--gold-ink); outline: none; }
+.kpm-ct .choices button:hover b, .kpm-ct .choices button:focus-visible b { background: var(--gold-ink); color: var(--accent-ink); }
+.kpm-ct .choices button:hover i, .kpm-ct .choices button:focus-visible i { color: var(--gold-ink); }
 @media (min-width: 1024px) {
   .kpm-ct { flex-direction: row; align-items: flex-end; max-width: 980px; margin: 0 auto; padding-bottom: 24px; }
   .kpm-ct .face { width: 300px; height: 300px; margin: 0 -70px 0 0; }

@@ -11778,6 +11778,10 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
   ok('REGRESSION: only the live step ticks - once and in order (a van return before the sale must not tick step 5)',
      /if \(!STEPS\[s - 1\] \|\| liveStep\(doneRef\.current\) !== s\) return;/.test(dm));
   ok('the capybara says saya / Anda, never aku / kamu (his 2026-10-25 call)', !/\b(aku|kamu)\b/i.test(code(dm)) && /saya/.test(dm) && /Anda/.test(dm));
+  ok('REGRESSION: he is AGENT CAPYBARA, and his two answers read as answers - a PILIH JAWABAN title, numbered 1 / 2, and the keys 1 / 2 pick them (his 2026-10-25 "change its name into agent capybara", "even more clear answer option")',
+     /<b>AGENT CAPYBARA<\/b>/.test(dm) && !/Kapibara/.test(dm) && /<span className="ask">PILIH JAWABAN<\/span>/.test(dm) &&
+     /<b>1<\/b>Tunjukkan tempatnya/.test(dm) && /<b>2<\/b>Saya coba sendiri/.test(dm) &&
+     /L\.choices && e\.key === '1'\) onShow\(\);/.test(dm) && /L\.choices && e\.key === '2'\) onClose\(\);/.test(dm));
   ok('Lite Mode keeps the dim without the blur on both layers (.8, his 2026-10-24 frame)',
      /html\.lite-mode \.kpm-mx-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(read('src/styles/theme.css')) &&
      /html\.lite-mode \.kpm-ct-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(read('src/styles/theme.css')));
