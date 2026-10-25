@@ -7,6 +7,7 @@
 import React from 'react';
 import { Lightbulb } from 'lucide-react';
 import { DemoBar } from '../src/components/DemoFrontDoor.jsx';
+import CapyTalk from './capy-talk-draft.jsx';
 
 const STEPS = [
     { n: 1, todo: 'Terima hasil produksi di Master Vault', done: '120 Bks masuk ke Master Vault', who: 'Owner' },
@@ -81,7 +82,9 @@ function Hint({ text }) {
 }
 
 export default function MissionDraft() {
-    const [hint, setHint] = React.useState(new URLSearchParams(window.location.search).has('hint'));
+    const qs = new URLSearchParams(window.location.search);
+    const [hint, setHint] = React.useState(qs.has('hint'));
+    const [talkScene, setTalkScene] = React.useState(qs.get('talk'));
     React.useEffect(() => {
         document.documentElement.classList.add('mx-b');
         return () => document.documentElement.classList.remove('mx-b');
@@ -108,6 +111,7 @@ export default function MissionDraft() {
                 </button>
             </div>
             {hint && <Hint text={now.hint} />}
+            {talkScene && <CapyTalk scene={talkScene} line={Number(qs.get('line') || 0)} onDone={() => setTalkScene(null)} />}
         </>
     );
 }
