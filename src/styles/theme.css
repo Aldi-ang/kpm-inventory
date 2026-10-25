@@ -5869,3 +5869,60 @@ html.kpm-demo-on { --kpm-safe-top: calc(env(safe-area-inset-top, 0px) + 37px); }
 @media (hover: hover) and (pointer: fine) { .kpm-demo-bar .row:hover:not(:disabled) { background: var(--raised); } }
 /* Fleet & Roster on a demo login: the four buttons that would break a shared login look switched off; a press still answers (FleetCanvasManager.jsx isDemoLogin) */
 .kpm-stage-acts button.demo-locked { opacity: .45; }
+
+/* THE MISSION LINE (DemoMission.jsx, his pick B 2026-10-24): one more 34 px line under the bar, so the shell moves down
+   by that much too. z 96 = over the hint's dim panels (z 95), so the line and its PETUNJUK key stay readable. */
+html.kpm-demo-on.kpm-mission-on { --kpm-safe-top: calc(env(safe-area-inset-top, 0px) + 37px + 34px); }
+.kpm-mission { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 37px); left: 0; right: 0; z-index: 96; height: 34px; display: flex; align-items: center; gap: 10px;
+  padding: 0 8px 0 12px; background: var(--inset); border-bottom: 1px solid var(--line-3); font-family: var(--font-mono); color: var(--ink); }
+.kpm-mission .tag { flex: none; font: 700 10px/1 var(--font-mono); letter-spacing: .22em; color: var(--ink-dim); }
+.kpm-mission .tag b, .kpm-mission .tick { color: var(--accent-ink); font-weight: 700; }
+.kpm-mission .now { min-width: 0; flex: 1; font: 600 14px/1.2 var(--font-mono); letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpm-mission .hintkey { position: relative; flex: none; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 8px; background: var(--plate);
+  border: 1.5px solid var(--accent-edge); font: 700 10px/1 var(--font-mono); letter-spacing: .14em; color: var(--ink); cursor: pointer; touch-action: manipulation; }
+.kpm-mission .hintkey::after { content: ''; position: absolute; inset: -4px -6px; }   /* the whole 34 px line height is the finger's target */
+.kpm-mission .hintkey[aria-pressed="true"] { color: var(--accent-ink); }
+.kpm-mission ol { display: none; }
+@media (min-width: 1024px) {
+  .kpm-mission .now { display: none; }
+  .kpm-mission ol { display: flex; flex: 1; min-width: 0; margin: 0; padding: 0; list-style: none; overflow: hidden; }
+  .kpm-mission li { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 0 16px; height: 34px; font: 600 14px/1 var(--font-mono); letter-spacing: .02em;
+    color: var(--ink-dim); border-left: 1px solid var(--line-3); border-bottom: 2px solid transparent; white-space: nowrap; }
+  .kpm-mission li.on { color: var(--ink); border-bottom-color: var(--accent-edge); }
+  .kpm-mission li .n { font-weight: 700; }
+  .kpm-mission li.on .n { color: var(--accent-ink); }
+  .kpm-mission li em { font-style: normal; color: var(--ink-dim); font-weight: 500; }
+}
+/* the hint: everything outside the square dimmed and blurred. No blur in Lite Mode, so the dim alone carries it: .55 read
+   as no dim at all on the 2026-10-24 frame, .8 reads */
+.kpm-mx-veil { position: fixed; z-index: 95; background: rgba(5, 4, 3, .55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); pointer-events: none; }
+html.lite-mode .kpm-mx-veil { background: rgba(5, 4, 3, .8); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.kpm-mx-ring { position: fixed; z-index: 95; border: 2px solid var(--accent-edge); pointer-events: none; }
+.kpm-mx-tip { position: fixed; z-index: 97; max-width: 260px;   /* over the line: on step 3 the square is SWITCH, so the tip lands on it */ padding: 8px 10px; background: var(--panel); border: 1px solid var(--accent-edge);
+  font: 600 14px/1.3 var(--font-mono); color: var(--ink); pointer-events: none; }
+/* the capybara's dialogue (his 2026-10-25 ask): the face stands over the box's edge, a slanted name plate, LANJUT in the
+   corner, choices above the box. Nothing moves - the face snaps. */
+.kpm-ct-veil { position: fixed; inset: 0; z-index: 98; background: rgba(5, 4, 3, .55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+html.lite-mode .kpm-ct-veil { background: rgba(5, 4, 3, .8); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.kpm-ct { position: fixed; left: 0; right: 0; bottom: 0; z-index: 99; display: flex; flex-direction: column; align-items: flex-start;
+  padding: 0 10px calc(env(safe-area-inset-bottom, 0px) + 10px); pointer-events: none; }
+.kpm-ct > * { pointer-events: auto; }
+.kpm-ct .face { width: 150px; height: 150px; object-fit: contain; object-position: bottom; margin: 0 0 -26px 6px; position: relative; z-index: 2; }
+.kpm-ct .box { position: relative; width: 100%; min-height: 128px; padding: 26px 16px 34px; background: var(--panel); border: 1px solid var(--line-3); cursor: pointer; }
+.kpm-ct .box::before { content: ''; position: absolute; inset: 4px; border: 1px solid var(--line-2); pointer-events: none; }
+.kpm-ct .name { position: absolute; top: -15px; left: 150px; padding: 6px 14px; background: var(--inset); border: 1px solid var(--accent-edge); transform: skewX(-14deg); }
+.kpm-ct .name b { display: inline-block; transform: skewX(14deg); font: 700 12px/1 var(--font-mono); letter-spacing: .22em; color: var(--accent-ink); }
+.kpm-ct .box p { position: relative; margin: 0; font: 600 17px/1.45 var(--font-body); color: var(--ink); }
+.kpm-ct .next { position: absolute; right: 6px; bottom: 2px; min-height: 32px; padding: 0 8px; background: none; border: 0;
+  font: 700 11px/1 var(--font-mono); letter-spacing: .18em; color: var(--accent-ink); cursor: pointer; }
+.kpm-ct .choices { align-self: flex-end; display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; order: -1; }
+.kpm-ct .choices button { min-height: 44px; padding: 0 16px; background: var(--plate); border: 1.5px solid var(--accent-edge); font: 700 15px/1 var(--font-body);
+  color: var(--ink); text-align: left; cursor: pointer; touch-action: manipulation; }
+@media (min-width: 1024px) {
+  .kpm-ct { flex-direction: row; align-items: flex-end; max-width: 980px; margin: 0 auto; padding-bottom: 24px; }
+  .kpm-ct .face { width: 300px; height: 300px; margin: 0 -70px 0 0; }
+  .kpm-ct .box { flex: 1; min-height: 150px; padding: 30px 28px 38px 90px; }
+  .kpm-ct .name { left: 80px; }
+  .kpm-ct .box p { font-size: 20px; }
+  .kpm-ct .choices { position: absolute; right: 0; bottom: calc(100% + 10px); margin: 0; }
+}

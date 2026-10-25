@@ -2022,7 +2022,11 @@ const SHADOW_EXEMPT = /\[aria-pressed="true"\] > \.kpm-sw::after \{[^}]*\}/g;
    twice over without the blur — the body's row height (0fr → 1fr) and its opacity (0 → 1) — so
    Lite Mode dropping the filter costs the sharpening and no meaning. The check below asserts both
    carriers are still in the rule; the exemption dies with them. */
-const BLUR_EXEMPT = /\.pc-inner \{[^}]*\}|\.pc\.open \.pc-inner \{[^}]*\}/g;
+const BLUR_EXEMPT = /\.pc-inner \{[^}]*\}|\.pc\.open \.pc-inner \{[^}]*\}|\.kpm-mx-veil \{[^}]*\}|\.kpm-ct-veil \{[^}]*\}/g;
+/* THE THIRD, 2026-10-25: the demo mission's two veils (DemoMission.jsx) blur what is behind them - asked for in words twice:
+   *"blur other outside of the box"* (the hint, 2026-10-24) and *"blur everything behind it"* (the capybara, 2026-10-25).
+   The dim carries the meaning without the blur: Lite Mode drops the filter and raises the dim to .8 (.55 alone read as
+   no dim on the 2026-10-24 frame). The check below asserts both Lite rules; the exemption dies with them. */
 /* ⚠️ `transition:` DECLARATIONS ARE STRIPPED FIRST, and that is a sharpening rather than a
    loosening. A transition list PAINTS NOTHING — naming `box-shadow` in one only says how a
    shadow would arrive if some other rule created it. Leaving them in made this check fail on the
@@ -2033,7 +2037,9 @@ check(G30, 'nothing in the system depends on a shadow, a blur or a filter',
   !/box-shadow|backdrop-filter|filter:|text-shadow/.test(paintOnly(systemBlock)) &&
   /\[aria-pressed="true"\] > \.kpm-sw::after \{[^}]*transform: translateX\(18px\)/.test(themeCss) &&
   /\.pc-inner \{[^}]*opacity: 0;[^}]*\}/.test(themeCss) && /\.pc\.open \.pc-inner \{[^}]*opacity: 1;[^}]*\}/.test(themeCss) &&
-  /\.pc-body \{[^}]*grid-template-rows: 0fr;/.test(themeCss) && /\.pc\.open \.pc-body \{ grid-template-rows: 1fr; \}/.test(themeCss),
+  /\.pc-body \{[^}]*grid-template-rows: 0fr;/.test(themeCss) && /\.pc\.open \.pc-body \{ grid-template-rows: 1fr; \}/.test(themeCss) &&
+  /html\.lite-mode \.kpm-mx-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(themeCss) &&
+  /html\.lite-mode \.kpm-ct-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(themeCss),
   'Lite Mode deletes all four — the old tab put every separation into shadows, so on a cheap ' +
   'Android the six panels collapsed into one undifferentiated column. The switch glow is the one ' +
   'exemption and it only holds while position + fill still carry the state without it');

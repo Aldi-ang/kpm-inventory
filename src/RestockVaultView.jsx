@@ -6,6 +6,7 @@ import { confirmAction } from './components/ConfirmGate.jsx';
 import AcceptanceReceipt from './components/AcceptanceReceipt.jsx';
 import ShipmentLabel from './components/ShipmentLabel.jsx';
 import { notify } from './components/Toast.jsx';
+import { IS_DEMO } from './config/firebase';
 import { canPickFromGallery, canHandleDelivery, canManageRegistry, tierWord } from './config/permissions';
 import Lamp from './components/Lamp.jsx';
 import PhotoField from './components/PhotoField.jsx';
@@ -651,6 +652,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
 
             batch.set(poRef, poRecord);
             await batch.commit();
+            /* the demo's mission line ticks on the SAVED write, never on the press (DemoMission.jsx) */
+            if (IS_DEMO) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 1, qty: totalItemsReceived } }));
 
             if (logAudit) await logAudit("RESTOCK_VAULT", `Produced ${totalItemsReceived} units under ${poData.poNumber}`);
             if (triggerCapy) triggerCapy(`Surat jalan ${poData.poNumber} tersimpan. ${num(totalItemsReceived)} Bks masuk Master Vault.`);
@@ -735,6 +738,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
             });
 
             await batch.commit();
+            if (IS_DEMO) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 2, qty: totalItemsReceived, to: poData.destination } }));
 
             if (logAudit) await logAudit("STOCK_HQ_PUSH", `HQ pushed ${totalItemsReceived} units to ${poData.destination} as ${orderId}`);
             if (triggerCapy) triggerCapy(`Terkirim ke ${poData.destination}. Menunggu cabang menghitung. 🚚`);
@@ -1485,6 +1489,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                         {tabs.map(t => (
                             <button
                                 key={t.id}
+                                data-mission={t.id === 'in' ? '1' : t.id === 'out' ? '2' : undefined}
                                 onClick={() => (t.id === 'book' || t.id === 'req' || t.id === 'place') ? setViewMode(t.id) : setDirection(t.id)}
                                 aria-selected={viewMode === t.id}
                                 className={`flex-auto lg:flex-none min-h-[44px] text-[11px] font-display font-bold uppercase tracking-[0.16em] px-4 py-3 border-l border-line-2 border-b-2 transition-colors ${

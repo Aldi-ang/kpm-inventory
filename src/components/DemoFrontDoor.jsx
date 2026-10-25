@@ -23,6 +23,7 @@ import { clearGrace } from '../utils/vaultGrace.js';
 import VaultGate, { gateCanvasOn } from './VaultGate.jsx';
 import { notify } from './Toast.jsx';
 import { confirmAction } from './ConfirmGate.jsx';
+import DemoMission from './DemoMission.jsx';
 
 /* what each person is for, one line each - the wording he saw on the 2026-10-13 board */
 const CARD = {
@@ -220,13 +221,13 @@ export function DemoBar({ user }) {
 
     const who = me ? me.name : email;
     const what = me ? `${me.role} (${me.tier})` : isT1 ? 'T1' : 'no role - pick a person under SWITCH';
-    return (
+    return (<>
         <div className="kpm-demo-bar hide-on-print">
             <div className="in">
                 <span className="stamp">DEMO</span>
                 <span className="who hidden sm:block">You are {who} <span>· {what} · resets every night at 00:05 WIB</span></span>
                 <span className="who sm:hidden">{me ? me.tier : isT1 ? 'T1' : 'No role'} <span>· {me ? me.role : 'tap SWITCH'}</span></span>
-                <button type="button" className="key" aria-expanded={open} onClick={() => setOpen((v) => !v)}>SWITCH</button>
+                <button type="button" className="key" data-mission="switch" aria-expanded={open} onClick={() => setOpen((v) => !v)}>SWITCH</button>
             </div>
             <div className="tape" />
             {open && (<>
@@ -250,5 +251,7 @@ export function DemoBar({ user }) {
                 </div>
             </>)}
         </div>
-    );
+        {/* the guided mission under this bar (his pick B + the capybara, 2026-10-24/25) */}
+        <DemoMission me={me} isT1={isT1} people={PEOPLE} />
+    </>);
 }

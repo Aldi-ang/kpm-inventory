@@ -38,7 +38,7 @@ import RestockVaultView from '../src/RestockVaultView.jsx';
 import MerchantSalesView from '../src/MerchantSalesView.jsx';
 import { CustomerManagement } from '../src/components/CustomerManager.jsx';
 import AgentInventoryView from '../src/AgentInventoryView.jsx';
-import MissionDraft from './mission-draft.jsx';   /* ?shell&places&tab=kirim&mission=b[&hint] - the demo's mission line draft (2026-10-24) */
+import MissionDraft from './mission-draft.jsx';   /* ?shell&places&tab=kirim&mission[&done=1][&as=T4] - the REAL demo mission line + capybara (2026-10-25) */
 import EODReconciliationView from '../src/EODReconciliationView.jsx';
 import AgentProfileView from '../src/AgentProfileView.jsx';
 import StockOpnameView from '../src/StockOpnameView.jsx';

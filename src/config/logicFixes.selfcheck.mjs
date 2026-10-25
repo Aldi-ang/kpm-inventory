@@ -11729,5 +11729,37 @@ section('P3: a new shop is seen by its team at once; Grosir waits for the region
      /function grosirAdmin\(\)[\s\S]{0,300}role == 'AREA_ADMIN' \|\| role == 'FLEET_CAPTAIN'/.test(rules));
 }
 
+/* ── THE DEMO MISSION LINE + THE CAPYBARA (his picks 2026-10-24 "b" + PETUNJUK, 2026-10-25 the RPG dialogue) ──────── */
+section('DEMO MISSION. A step ticks on the saved write only; the line resets with the demo; the capybara never says aku/kamu');
+{
+  const { STEPS, missionDay, liveStep, fmt } = await import('./demoMission.js');
+  const rv = read('src/RestockVaultView.jsx'), dm = read('src/components/DemoMission.jsx'), door = read('src/components/DemoFrontDoor.jsx');
+  const send = (n) => `if (IS_DEMO) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: ${n},`;
+  const masuk = rv.slice(rv.indexOf('const handleProcessRestock'), rv.indexOf('const handleHQPush'));
+  const kirim = rv.slice(rv.indexOf('const handleHQPush'), rv.indexOf('const handleSaveTarget'));
+  const load = fleet.slice(fleet.indexOf('const handleLoadCanvas'), fleet.indexOf('const handleClearCanvas'));
+  ok('REGRESSION: each of the three sends sits AFTER its commit and behind IS_DEMO (MASUK, KIRIM, the van-loading bay)',
+     masuk.indexOf('await batch.commit();') > 0 && masuk.indexOf(send(1)) > masuk.indexOf('await batch.commit();') &&
+     kirim.indexOf('await batch.commit();') > 0 && kirim.indexOf(send(2)) > kirim.indexOf('await batch.commit();') &&
+     load.indexOf('await runTransaction(db') > 0 && load.indexOf(send(3)) > load.indexOf('t.update(agentRef, { activeCanvas: updatedCanvas });') &&
+     imports(rv, 'IS_DEMO') && imports(fleet, 'IS_DEMO'));
+  ok('REGRESSION: no send anywhere without IS_DEMO in front of it (the real build must compile every one out)',
+     [rv, fleet].every((s) => (s.match(/new CustomEvent\('kpm-mission'/g) || []).length === (s.match(/if \(IS_DEMO\) window\.dispatchEvent\(new CustomEvent\('kpm-mission'/g) || []).length));
+  ok('the hint keys exist: MASUK = 1, KIRIM = 2, the loading bay = 3, SWITCH = switch; DemoBar renders the mission',
+     /data-mission=\{t\.id === 'in' \? '1' : t\.id === 'out' \? '2' : undefined\}/.test(rv) && /data-mission="3"/.test(fleet) &&
+     /data-mission="switch"/.test(door) && /<DemoMission me=\{me\} isT1=\{isT1\} people=\{PEOPLE\} \/>/.test(door));
+  ok('the capybara says saya / Anda, never aku / kamu (his 2026-10-25 call)', !/\b(aku|kamu)\b/i.test(code(dm)) && /saya/.test(dm) && /Anda/.test(dm));
+  ok('Lite Mode keeps the dim without the blur on both layers (.8, his 2026-10-24 frame)',
+     /html\.lite-mode \.kpm-mx-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(read('src/styles/theme.css')) &&
+     /html\.lite-mode \.kpm-ct-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(read('src/styles/theme.css')));
+  /* BEHAVIOUR - the 00:05 WIB reset, the live step, the done line's real number */
+  ok('BEHAVIOUR: 00:04 WIB still belongs to yesterday, 00:06 WIB is the new day (the reset runs at 00:05)',
+     missionDay(Date.parse('2026-10-24T17:04:00Z')) === '2026-10-24' && missionDay(Date.parse('2026-10-24T17:06:00Z')) === '2026-10-25');
+  ok('BEHAVIOUR: the live step is the first one not done; 0 when all three are',
+     liveStep({}) === 1 && liveStep({ 1: {} }) === 2 && liveStep({ 1: {}, 2: {} }) === 3 && liveStep({ 1: {}, 2: {}, 3: {} }) === 0 && liveStep({ 2: {} }) === 1);
+  ok('BEHAVIOUR: the done lines carry the real numbers', STEPS[0].done({ qty: 1200 }) === '1.200 Bks masuk ke Master Vault' &&
+     STEPS[1].done({ qty: 120, to: 'BANDUNG' }) === '120 Bks dikirim ke BANDUNG' && STEPS[2].done({ qty: 40, who: 'DIKA SAPUTRA' }) === '40 Bks masuk ke tas DIKA SAPUTRA' && fmt('x') === '0');
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

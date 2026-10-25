@@ -582,6 +582,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
                 t.update(agentRef, { activeCanvas: updatedCanvas });
             });
+            /* the demo's mission line ticks on the SAVED load, never on the press (DemoMission.jsx) */
+            if (IS_DEMO) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 3, qty: qtyToLoad, who: selectedAgent.name } }));
 
             /* the bay reports the whole press in ONE line, so the per-product mascot line is gone;
                the audit log keeps one entry per movement */
@@ -1452,7 +1454,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             
                             {/* THE VAN-LOADING BAY — his two chests (components/LoadingBay.jsx). Keyed by the
                                 salesman, so a switch starts a fresh muatan; the roster asks first. */}
-                            <div className="mb-6">
+                            <div className="mb-6" data-mission="3">
                                 <LoadingBay
                                     key={selectedAgent.id}
                                     agent={selectedAgent}
