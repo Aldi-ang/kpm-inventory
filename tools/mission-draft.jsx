@@ -7,7 +7,8 @@ import React from 'react';
 import { DemoBar } from '../src/components/DemoFrontDoor.jsx';
 import { missionDay } from '../src/config/demoMission.js';
 
-const SAVED = { 1: { qty: 120 }, 2: { qty: 120, to: 'BANDUNG' }, 3: { qty: 40, who: 'DIKA SAPUTRA' } };
+const SAVED = { 1: { qty: 120 }, 2: { qty: 120, to: 'BANDUNG' }, 3: { qty: 40, who: 'DIKA SAPUTRA' },
+    4: { total: 150000, to: 'TOKO MAJU' }, 5: { qty: 12, who: 'DIKA SAPUTRA' }, 6: { items: 3 } };
 const EMAIL = { T2: 'demo.owner@example.com', T4: 'demo.regional@example.com', T6: 'demo.motorist@example.com' };
 
 export default function MissionDraft() {

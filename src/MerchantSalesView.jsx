@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check, Eye } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
 import { hasClearance, canPickFromGallery } from './config/permissions';
+import { IS_DEMO } from './config/firebase';
 import ProofCamera from './components/ProofCamera.jsx';
 import { savePhotoAndGetReference, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey} from './utils/helpers';
 import { waNumber } from './utils/whatsapp.js';
@@ -1158,6 +1159,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
             const trueAgentName = await onProcessSale(finalCust, dbMethod, finalCart, newStorePayload, proofPayload);
             committed = true;   // everything past this point is POST-commit: the sale already exists
+            /* the demo's mission line ticks on the SAVED sale, never on a retur (DemoMission.jsx) */
+            if (IS_DEMO && !isReturMode) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 4, total: finalTotal, to: finalCust } }));
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (myName || 'Admin');
 
             /* THE RECEIPT COMES FIRST, and the button is released with it. Everything below this
@@ -2298,6 +2301,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     the old footer on purpose: this bar is height taken from the product list. */}
                 <div className="kpm-parchment px-4 py-2 md:p-6 border-t-2 border-[var(--duke-edge-4)] flex flex-col shrink-0 z-20 shadow-[0_-6px_14px_rgba(110,84,44,0.18)]">
                     <button
+                        data-mission="4"
                         onClick={handleFinalDeal}
                         disabled={!canSubmitSale || isProcessingSale}
                         className={`kpm-hover py-2.5 md:py-4 border-2 text-base md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-[var(--duke-brass-2)] to-[var(--duke-brass-3)] border-[var(--duke-brass-edge)] text-[var(--duke-on-plate)] hover:from-[var(--duke-brass)] hover:to-[var(--duke-brass-6)] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-[var(--duke-on-fill)] hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[var(--duke-amber)] to-[var(--duke-amber-2)] border-[var(--duke-brass-edge-3)] text-black hover:from-[var(--duke-brass-5)] hover:to-[var(--duke-amber)]') : 'bg-transparent text-[var(--duke-ink-3)] border-[var(--duke-edge-4)] cursor-not-allowed'}`}

@@ -11738,19 +11738,34 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
   const masuk = rv.slice(rv.indexOf('const handleProcessRestock'), rv.indexOf('const handleHQPush'));
   const kirim = rv.slice(rv.indexOf('const handleHQPush'), rv.indexOf('const handleSaveTarget'));
   const load = fleet.slice(fleet.indexOf('const handleLoadCanvas'), fleet.indexOf('const handleClearCanvas'));
+  const sales = read('src/MerchantSalesView.jsx'), op = read('src/StockOpnameView.jsx');
+  const deal = sales.slice(sales.indexOf('const handleFinalDeal'), sales.indexOf('const agentFallback'));
+  const back = fleet.slice(fleet.indexOf('const handleReturnToWarehouse'), fleet.indexOf('const handleSaveLayout'));
+  const count = op.slice(op.indexOf('const handleCommit'), op.indexOf('const handleApproveAudit'));
   ok('REGRESSION: each of the three sends sits AFTER its commit and behind IS_DEMO (MASUK, KIRIM, the van-loading bay)',
      masuk.indexOf('await batch.commit();') > 0 && masuk.indexOf(send(1)) > masuk.indexOf('await batch.commit();') &&
      kirim.indexOf('await batch.commit();') > 0 && kirim.indexOf(send(2)) > kirim.indexOf('await batch.commit();') &&
      load.indexOf('await runTransaction(db') > 0 && load.indexOf(send(3)) > load.indexOf('t.update(agentRef, { activeCanvas: updatedCanvas });') &&
      imports(rv, 'IS_DEMO') && imports(fleet, 'IS_DEMO'));
+  ok('REGRESSION: the three sends of 2026-10-25 sit AFTER their commit too: the SAVED sale and never a retur (4), the van return (5), the submitted count (6)',
+     deal.indexOf('committed = true;') > 0 && deal.indexOf("if (IS_DEMO && !isReturMode) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 4,") > deal.indexOf('committed = true;') &&
+     back.indexOf('t.update(agentRef, { activeCanvas: updated });') > 0 && back.indexOf(send(5)) > back.indexOf('t.update(agentRef, { activeCanvas: updated });') &&
+     count.indexOf('/pending_audits`), auditPayload);') > 0 && count.indexOf(send(6)) > count.indexOf('/pending_audits`), auditPayload);') &&
+     imports(sales, 'IS_DEMO') && imports(op, 'IS_DEMO'));
   ok('REGRESSION: no send anywhere without IS_DEMO in front of it (the real build must compile every one out)',
-     [rv, fleet].every((s) => (s.match(/new CustomEvent\('kpm-mission'/g) || []).length === (s.match(/if \(IS_DEMO\) window\.dispatchEvent\(new CustomEvent\('kpm-mission'/g) || []).length));
-  ok('the hint keys exist: MASUK = 1, KIRIM = 2, the loading bay = 3, SWITCH = switch; DemoBar renders the mission',
+     [rv, fleet, sales, op].every((s) => (s.match(/new CustomEvent\('kpm-mission'/g) || []).length === (s.match(/if \(IS_DEMO( && !isReturMode)?\) window\.dispatchEvent\(new CustomEvent\('kpm-mission'/g) || []).length));
+  ok('the hint keys exist: MASUK = 1, KIRIM = 2, the loading bay = 3 (and 5), MAKE DEAL = 4, New Count = 6, SWITCH = switch; DemoBar renders the mission',
      /data-mission=\{t\.id === 'in' \? '1' : t\.id === 'out' \? '2' : undefined\}/.test(rv) && /data-mission="3"/.test(fleet) &&
+     /data-mission="4"\s+onClick=\{handleFinalDeal\}/.test(sales) && /data-mission="6" onClick=\{\(\) => setViewMode\('count'\)\}/.test(op) &&
      /data-mission="switch"/.test(door) && /\{inside && <DemoMission me=\{me\} isT1=\{isT1\} people=\{PEOPLE\} \/>\}/.test(door));
   ok('REGRESSION: the mission waits until the visitor is inside - not on the vault password screen, not on "pick who to be" (his 2026-10-25 "shouldnt be there when user even not login yet")',
      /<DemoBar user=\{user\} inside=\{!showAdminLogin && !!userRole && userRole !== 'UNAUTHORIZED'\} \/>/.test(read('src/components/BiohazardTheme.jsx')) &&
      /export function DemoBar\(\{ user, inside = true \}\)/.test(door));
+  ok('REGRESSION: the capybara greets first and the line waits for him - hidden, and the shell not moved down, until the greeting ends (his 2026-10-25 "hide the mission and let the dialogue starts first")',
+     /useState\(\(\) => \(greeted \? null : greet\(n, done, mine, doer, me\)\)\)/.test(dm) && /\{!greeting && \(\s*<div className="kpm-mission/.test(dm) &&
+     /if \(greeting\) return undefined;\s*document\.documentElement\.classList\.add\('kpm-mission-on'\)/.test(dm));
+  ok('REGRESSION: only the live step ticks - once and in order (a van return before the sale must not tick step 5)',
+     /if \(!STEPS\[s - 1\] \|\| liveStep\(doneRef\.current\) !== s\) return;/.test(dm));
   ok('the capybara says saya / Anda, never aku / kamu (his 2026-10-25 call)', !/\b(aku|kamu)\b/i.test(code(dm)) && /saya/.test(dm) && /Anda/.test(dm));
   ok('Lite Mode keeps the dim without the blur on both layers (.8, his 2026-10-24 frame)',
      /html\.lite-mode \.kpm-mx-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(read('src/styles/theme.css')) &&
@@ -11758,10 +11773,13 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
   /* BEHAVIOUR - the 00:05 WIB reset, the live step, the done line's real number */
   ok('BEHAVIOUR: 00:04 WIB still belongs to yesterday, 00:06 WIB is the new day (the reset runs at 00:05)',
      missionDay(Date.parse('2026-10-24T17:04:00Z')) === '2026-10-24' && missionDay(Date.parse('2026-10-24T17:06:00Z')) === '2026-10-25');
-  ok('BEHAVIOUR: the live step is the first one not done; 0 when all three are',
-     liveStep({}) === 1 && liveStep({ 1: {} }) === 2 && liveStep({ 1: {}, 2: {} }) === 3 && liveStep({ 1: {}, 2: {}, 3: {} }) === 0 && liveStep({ 2: {} }) === 1);
+  ok('BEHAVIOUR: six steps, from the factory into the Master Vault to the count of it; the live step is the first one not done, 0 when all six are',
+     STEPS.length === 6 && STEPS.map((s) => s.who).join() === 'T2,T2,T4,T6,T4,T2' &&
+     liveStep({}) === 1 && liveStep({ 1: {} }) === 2 && liveStep({ 1: {}, 2: {}, 3: {} }) === 4 && liveStep({ 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {} }) === 0 && liveStep({ 2: {} }) === 1);
   ok('BEHAVIOUR: the done lines carry the real numbers', STEPS[0].done({ qty: 1200 }) === '1.200 Bks masuk ke Master Vault' &&
-     STEPS[1].done({ qty: 120, to: 'BANDUNG' }) === '120 Bks dikirim ke BANDUNG' && STEPS[2].done({ qty: 40, who: 'DIKA SAPUTRA' }) === '40 Bks masuk ke tas DIKA SAPUTRA' && fmt('x') === '0');
+     STEPS[1].done({ qty: 120, to: 'BANDUNG' }) === '120 Bks dikirim ke BANDUNG' && STEPS[2].done({ qty: 40, who: 'DIKA SAPUTRA' }) === '40 Bks masuk ke tas DIKA SAPUTRA' && fmt('x') === '0' &&
+     STEPS[3].done({ total: 150000, to: 'TOKO MAJU' }) === 'Terjual Rp 150.000 ke TOKO MAJU' && STEPS[4].done({ qty: 12, who: 'DIKA SAPUTRA' }) === '12 Bks dari tas DIKA SAPUTRA kembali ke gudang' &&
+     STEPS[5].done({ items: 3 }) === '3 barang dihitung dan dikirim ke HQ');
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
