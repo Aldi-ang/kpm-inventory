@@ -7197,7 +7197,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      'the bar itself is the drawer grip with a no-op tap; a thumb that missed the 16 px button did nothing');
   ok('EXAMINE on the picture and the camera-button label read at 11 px on the phone, 9 / 10 on the desk',
      /text-\[11px\] lg:text-\[9px\] font-black font-mono tracking-widest text-\[var\(--duke-amber-ink\)\]">EXAMINE</.test(m) &&
-     /text-\[11px\] lg:text-\[10px\] uppercase tracking-widest font-bold">\{galleryOk/.test(r));
+     /text-\[11px\] lg:text-\[10px\] uppercase tracking-widest font-bold">\{(IS_DEMO \? 'Auto handover photo \(demo\)' : )?galleryOk/.test(r));
   ok('TRAP (a) holds: the T4–T6 proof camera still has no file picker — galleryOk alone decides',
      /galleryOk \? document\.getElementById\('txProof'\)\.click\(\) : setShowProofCamera\(true\)/.test(r));
 }
@@ -11740,23 +11740,34 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
   const load = fleet.slice(fleet.indexOf('const handleLoadCanvas'), fleet.indexOf('const handleClearCanvas'));
   const sales = read('src/MerchantSalesView.jsx'), op = read('src/StockOpnameView.jsx');
   const deal = sales.slice(sales.indexOf('const handleFinalDeal'), sales.indexOf('const agentFallback'));
-  const back = fleet.slice(fleet.indexOf('const handleReturnToWarehouse'), fleet.indexOf('const handleSaveLayout'));
   const count = op.slice(op.indexOf('const handleCommit'), op.indexOf('const handleApproveAudit'));
+  const app = read('src/App.jsx'), eodView = read('src/EODReconciliationView.jsx'), eodFlow = read('src/components/EODAgentFlow.jsx');
+  const eodSend = app.slice(app.indexOf('const handleSubmitEOD'), app.indexOf('const handleVerifyEOD'));
+  const eodOk = app.slice(app.indexOf('const handleVerifyEOD'), app.indexOf('const handleResetEOD'));
   ok('REGRESSION: each of the three sends sits AFTER its commit and behind IS_DEMO (MASUK, KIRIM, the van-loading bay)',
      masuk.indexOf('await batch.commit();') > 0 && masuk.indexOf(send(1)) > masuk.indexOf('await batch.commit();') &&
      kirim.indexOf('await batch.commit();') > 0 && kirim.indexOf(send(2)) > kirim.indexOf('await batch.commit();') &&
      load.indexOf('await runTransaction(db') > 0 && load.indexOf(send(3)) > load.indexOf('t.update(agentRef, { activeCanvas: updatedCanvas });') &&
      imports(rv, 'IS_DEMO') && imports(fleet, 'IS_DEMO'));
-  ok('REGRESSION: the three sends of 2026-10-25 sit AFTER their commit too: the SAVED sale and never a retur (4), the van return (5), the submitted count (6)',
+  ok('REGRESSION: the sends of 2026-10-25 sit AFTER their commit too: the SAVED sale (4) and a retur with a damaged pack (5), the cash & stock EOD sent (6), TODAY\'s EOD fully approved (7), the submitted count (8)',
      deal.indexOf('committed = true;') > 0 && deal.indexOf("if (IS_DEMO && !isReturMode) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 4,") > deal.indexOf('committed = true;') &&
-     back.indexOf('t.update(agentRef, { activeCanvas: updated });') > 0 && back.indexOf(send(5)) > back.indexOf('t.update(agentRef, { activeCanvas: updated });') &&
-     count.indexOf('/pending_audits`), auditPayload);') > 0 && count.indexOf(send(6)) > count.indexOf('/pending_audits`), auditPayload);') &&
-     imports(sales, 'IS_DEMO') && imports(op, 'IS_DEMO'));
+     deal.indexOf("if (IS_DEMO && isReturMode && finalCart.some(i => i.condition === 'DAMAGED')) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 5,") > deal.indexOf('committed = true;') &&
+     eodSend.indexOf('/eod_reports`), {') > 0 && eodSend.indexOf("if (IS_DEMO && reportData.reportType === 'CASH_STOCK') window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 6,") > eodSend.indexOf('/eod_reports`), {') &&
+     eodOk.indexOf('await runTransaction(db') > 0 && eodOk.indexOf("if (IS_DEMO && sealed && report.reportType === 'CASH_STOCK' && report.dayKey === getLocalDayKey()) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 7,") > eodOk.indexOf("status: 'VERIFIED', verifiedAt: serverTimestamp() });\n          });") &&
+     count.indexOf('/pending_audits`), auditPayload);') > 0 && count.indexOf(send(8)) > count.indexOf('/pending_audits`), auditPayload);') &&
+     imports(sales, 'IS_DEMO') && imports(op, 'IS_DEMO') && imports(app, 'IS_DEMO'));
+  ok('REGRESSION: the van-loading bay sends only step 3 - "goods returning" is the EOD, not the bay (his 2026-10-25 "good returning means EOD and also give back the quarantine item to the main warehouse")',
+     (fleet.match(/new CustomEvent\('kpm-mission'/g) || []).length === 1);
   ok('REGRESSION: no send anywhere without IS_DEMO in front of it (the real build must compile every one out)',
-     [rv, fleet, sales, op].every((s) => (s.match(/new CustomEvent\('kpm-mission'/g) || []).length === (s.match(/if \(IS_DEMO( && !isReturMode)?\) window\.dispatchEvent\(new CustomEvent\('kpm-mission'/g) || []).length));
-  ok('the hint keys exist: MASUK = 1, KIRIM = 2, the loading bay = 3 (and 5), MAKE DEAL = 4, New Count = 6, SWITCH = switch; DemoBar renders the mission',
+     [rv, fleet, sales, op, app].every((s) => (s.match(/new CustomEvent\('kpm-mission'/g) || []).length === (s.match(/if \(IS_DEMO\b[^\n]*\) window\.dispatchEvent\(new CustomEvent\('kpm-mission'/g) || []).length));
+  ok('REGRESSION: the demo lets Dika finish the round - out-of-range sales pass (every visitor is far from Muntilan), the handover photo fills itself (his "yes auto pick photo is better"), and the nightly reset gives Dika alone the retur',
+     /const canOverrideGps = IS_DEMO \|\| isAdmin === true/.test(sales) && /IS_DEMO \? demoPhoto\(\)\.then\(setTxProofPhoto\) : galleryOk/.test(sales) &&
+     /allowRetur: m\.agentId === 'demo-agent-2', allowCashRefund: false,/.test(read('api/_demoCompany.js')));
+  ok('the hint keys exist: MASUK = 1, KIRIM = 2, the loading bay = 3, MAKE DEAL = 4, RETUR = 5, the EOD letter = 6, the pending EOD list = 7, New Count = 8, SWITCH = switch; DemoBar renders the mission',
      /data-mission=\{t\.id === 'in' \? '1' : t\.id === 'out' \? '2' : undefined\}/.test(rv) && /data-mission="3"/.test(fleet) &&
-     /data-mission="4"\s+onClick=\{handleFinalDeal\}/.test(sales) && /data-mission="6" onClick=\{\(\) => setViewMode\('count'\)\}/.test(op) &&
+     /data-mission="4"\s+onClick=\{handleFinalDeal\}/.test(sales) && /<button data-mission="5" onClick=\{\(\) => \{\s*if \(!allowRetur\)/.test(sales) &&
+     /<div className="w-full" data-mission="6">/.test(eodFlow) && /LEFT: PENDING REPORTS \*\/\}\s*<div data-mission="7">/.test(eodView) &&
+     /data-mission="8" onClick=\{\(\) => setViewMode\('count'\)\}/.test(op) &&
      /data-mission="switch"/.test(door) && /\{inside && <DemoMission me=\{me\} isT1=\{isT1\} people=\{PEOPLE\} \/>\}/.test(door));
   ok('REGRESSION: the mission waits until the visitor is inside - not on the vault password screen, not on "pick who to be" (his 2026-10-25 "shouldnt be there when user even not login yet")',
      /<DemoBar user=\{user\} inside=\{!showAdminLogin && !!userRole && userRole !== 'UNAUTHORIZED'\} \/>/.test(read('src/components/BiohazardTheme.jsx')) &&
@@ -11773,13 +11784,18 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
   /* BEHAVIOUR - the 00:05 WIB reset, the live step, the done line's real number */
   ok('BEHAVIOUR: 00:04 WIB still belongs to yesterday, 00:06 WIB is the new day (the reset runs at 00:05)',
      missionDay(Date.parse('2026-10-24T17:04:00Z')) === '2026-10-24' && missionDay(Date.parse('2026-10-24T17:06:00Z')) === '2026-10-25');
-  ok('BEHAVIOUR: six steps, from the factory into the Master Vault to the count of it; the live step is the first one not done, 0 when all six are',
-     STEPS.length === 6 && STEPS.map((s) => s.who).join() === 'T2,T2,T4,T6,T4,T2' &&
-     liveStep({}) === 1 && liveStep({ 1: {} }) === 2 && liveStep({ 1: {}, 2: {}, 3: {} }) === 4 && liveStep({ 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {} }) === 0 && liveStep({ 2: {} }) === 1);
+  ok('BEHAVIOUR: eight steps, from the factory into the Master Vault, through the EOD, to the count of it; the live step is the first one not done, 0 when all eight are',
+     STEPS.length === 8 && STEPS.map((s) => s.who).join() === 'T2,T2,T4,T6,T6,T6,T2,T2' &&
+     liveStep({}) === 1 && liveStep({ 1: {} }) === 2 && liveStep({ 1: {}, 2: {}, 3: {} }) === 4 &&
+     liveStep({ 1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {}, 7: {}, 8: {} }) === 0 && liveStep({ 2: {} }) === 1);
   ok('BEHAVIOUR: the done lines carry the real numbers', STEPS[0].done({ qty: 1200 }) === '1.200 Bks masuk ke Master Vault' &&
      STEPS[1].done({ qty: 120, to: 'BANDUNG' }) === '120 Bks dikirim ke BANDUNG' && STEPS[2].done({ qty: 40, who: 'DIKA SAPUTRA' }) === '40 Bks masuk ke tas DIKA SAPUTRA' && fmt('x') === '0' &&
-     STEPS[3].done({ total: 150000, to: 'TOKO MAJU' }) === 'Terjual Rp 150.000 ke TOKO MAJU' && STEPS[4].done({ qty: 12, who: 'DIKA SAPUTRA' }) === '12 Bks dari tas DIKA SAPUTRA kembali ke gudang' &&
-     STEPS[5].done({ items: 3 }) === '3 barang dihitung dan dikirim ke HQ');
+     STEPS[3].done({ total: 150000, to: 'TOKO MAJU' }) === 'Terjual Rp 150.000 ke TOKO MAJU' &&
+     STEPS[4].done({ bks: 2, to: 'TOKO MAJU' }) === '2 Bks barang rusak dari TOKO MAJU masuk karantina tas' &&
+     STEPS[5].done({ who: 'DIKA SAPUTRA' }) === 'Laporan akhir hari DIKA SAPUTRA terkirim' &&
+     STEPS[6].done({ who: 'DIKA SAPUTRA', damaged: 2 }) === 'EOD DIKA SAPUTRA disetujui, sisa barang dan 2 Bks barang rusak kembali ke Master Vault' &&
+     STEPS[6].done({ who: 'DIKA SAPUTRA', damaged: 0 }) === 'EOD DIKA SAPUTRA disetujui, sisa barang kembali ke Master Vault' &&
+     STEPS[7].done({ items: 3 }) === '3 barang dihitung dan dikirim ke HQ');
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

@@ -310,7 +310,9 @@ export function buildDemoCompany(seed, now, vault) {
         const path = today.filter((s) => s.data.agentId === m.agentId).map((s) => ({ lat: s.shop.latitude, lng: s.shop.longitude, timestamp: s.data.timestamp.toISOString() }));
         put(`${home}/motorists/${m.agentId}`, {
             id: m.agentId, name: m.name, email: m.email, phone: '', vehicle: m.role === 'Canvas' ? 'Van' : 'Motor', role: m.role, userRole: m.userRole,
-            location: m.location, province: teamOf(m.location).province, allowedPayments: ['Cash'], allowedTiers: ['Retail', 'Ecer', 'Grosir'], allowRetur: false, allowCashRefund: false,
+            location: m.location, province: teamOf(m.location).province, allowedPayments: ['Cash'], allowedTiers: ['Retail', 'Ecer', 'Grosir'],
+            /* Dika may take a retur: the mission's step 5 is a shop handing him a damaged pack (src/config/demoMission.js) */
+            allowRetur: m.agentId === 'demo-agent-2', allowCashRefund: false,
             status: 'Active', activeCanvas: canvas, approvalRegions: m.approvalRegions || null, demoLogin: m.demoLogin, ...look(m.agentId),
             ...(path.length ? { currentLocation: path[path.length - 1], pathHistory: path } : {}),
         });

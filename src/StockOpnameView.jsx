@@ -590,7 +590,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
 
             await addDoc(collection(db, `artifacts/${appId}/users/${masterId}/pending_audits`), auditPayload);
             /* the demo's mission line ticks on the SAVED count (DemoMission.jsx) */
-            if (IS_DEMO) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 6, items: countedItems.length } }));
+            if (IS_DEMO) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 8, items: countedItems.length } }));
 
             // 🔔 NEW: Ping HQ the moment a count comes in, so it doesn't sit unnoticed
             await addDoc(collection(db, `artifacts/${appId}/users/${masterId}/notifications`), {
@@ -993,7 +993,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         <button onClick={() => setViewMode('quarantine')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <Biohazard size={14}/> Quarantine
                         </button>
-                        <button data-mission="6" onClick={() => setViewMode('count')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'count' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                        <button data-mission="8" onClick={() => setViewMode('count')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'count' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <ClipboardList size={14}/> New Count
                         </button>
                     </div>

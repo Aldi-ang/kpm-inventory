@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1792583792.9551437,
-    "ast_hash": "daf1d20334a552b37405e0594331d6c1",
+    "mtime": 1792919965.4939995,
+    "ast_hash": "67b44a907e3c31f73d56b755935efe1f",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -60,13 +60,13 @@
     "semantic_hash": ""
   },
   "src/EODReconciliationView.jsx": {
-    "mtime": 1792377138.6978714,
-    "ast_hash": "7e542b490d337d202b3edb16360972b1",
+    "mtime": 1792919965.8293428,
+    "ast_hash": "5d94e53865404501e9e922b2ea28ab00",
     "semantic_hash": ""
   },
   "src/FleetCanvasManager.jsx": {
-    "mtime": 1792918024.0300303,
-    "ast_hash": "3936738a26c88a1e3c70892502cc594a",
+    "mtime": 1792919965.2041123,
+    "ast_hash": "c3ab5ac5758a4385730d476aaefd0350",
     "semantic_hash": ""
   },
   "src/HallOfFameView.jsx": {
@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "src/MerchantSalesView.jsx": {
-    "mtime": 1792918023.8275769,
-    "ast_hash": "50d1e820784fee6e8ec0b6d54ac70daa",
+    "mtime": 1792919946.1139457,
+    "ast_hash": "2da77a1d62a344e5f1efabac88271908",
     "semantic_hash": ""
   },
   "src/MusicPlayer.jsx": {
@@ -100,8 +100,8 @@
     "semantic_hash": ""
   },
   "src/StockOpnameView.jsx": {
-    "mtime": 1792918024.3812523,
-    "ast_hash": "49ebcfc7be5555efaf0705af8160fb94",
+    "mtime": 1792919966.028931,
+    "ast_hash": "cb3d5cac34ed1c1066f938e71b437bf3",
     "semantic_hash": ""
   },
   "src/components/AuditVaultView.jsx": {
@@ -550,8 +550,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1792912302.7032707,
-    "ast_hash": "c3c1e863010f9164e6f1a7759313ab63",
+    "mtime": 1792918420.3017673,
+    "ast_hash": "4efaff51c82e9278148535b4647bcc71",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -705,8 +705,8 @@
     "semantic_hash": ""
   },
   "src/components/EODAgentFlow.jsx": {
-    "mtime": 1790385805.0932693,
-    "ast_hash": "80f1914c8076b6c49adb4288f00a9b32",
+    "mtime": 1792919965.6696413,
+    "ast_hash": "a760085a33734ed90a3a523c2b8a64c9",
     "semantic_hash": ""
   },
   "src/components/EODCardDeck.jsx": {
@@ -730,13 +730,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1792918128.576542,
-    "ast_hash": "fed79c3cd830458ba92a7a7f6c53c257",
+    "mtime": 1792920099.9832191,
+    "ast_hash": "6fe1977af0c2bcd00a675114ac8acd96",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1792912291.903928,
-    "ast_hash": "805332eb13c45a1e09e57d9233a206cb",
+    "mtime": 1792918409.4039931,
+    "ast_hash": "cc02154c5f24c017798c55ae897d711e",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -1295,8 +1295,8 @@
     "semantic_hash": ""
   },
   "src/config/demoBuild.check.mjs": {
-    "mtime": 1792918151.726112,
-    "ast_hash": "3fad83b8cb4112f905b71ca59c532c43",
+    "mtime": 1792920014.3092494,
+    "ast_hash": "cd51e43ba4ccd11a50df78c9d9019da6",
     "semantic_hash": ""
   },
   "demo/seed.json": {
@@ -1650,8 +1650,8 @@
     "semantic_hash": ""
   },
   "api/_demoCompany.js": {
-    "mtime": 1791892299.4442384,
-    "ast_hash": "8340daa1c4d3b42daf708ac0494a9726",
+    "mtime": 1792919966.1642241,
+    "ast_hash": "1ff4e45108b00489f525942b18f1bc52",
     "semantic_hash": ""
   },
   "api/demo-reset.js": {
@@ -1935,8 +1935,8 @@
     "semantic_hash": ""
   },
   "tools/mission-draft.jsx": {
-    "mtime": 1792918161.700529,
-    "ast_hash": "9319e29385f6a2860b8a7d58d3f898c7",
+    "mtime": 1792920065.118381,
+    "ast_hash": "e5aa82c1433df20d2c8224216ab3d777",
     "semantic_hash": ""
   },
   ".claude/presentation/v37-board/index.html": {
@@ -2110,13 +2110,13 @@
     "semantic_hash": ""
   },
   "src/components/DemoMission.jsx": {
-    "mtime": 1792918237.0369413,
-    "ast_hash": "ddae1739bbfa481dba37c2c2d3bde87e",
+    "mtime": 1792920099.7148356,
+    "ast_hash": "8bef1c602da8e1f87ae6e78951902352",
     "semantic_hash": ""
   },
   "src/config/demoMission.js": {
-    "mtime": 1792917765.4393163,
-    "ast_hash": "052f1363beb5d806b90e035c62a085c3",
+    "mtime": 1792920099.8300319,
+    "ast_hash": "36c251c31c010a24a7e3783de8c7b255",
     "semantic_hash": ""
   },
   "src/assets/capy-talk/e-angry.webp": {
@@ -2147,6 +2147,11 @@
   "src/assets/capy-talk/e-think.webp": {
     "mtime": 1792900498.7756844,
     "ast_hash": "4d4c0e7fa2837da173d7fd9cf4e3ebc0",
+    "semantic_hash": ""
+  },
+  "src/config/demoPhoto.js": {
+    "mtime": 1792919945.2920847,
+    "ast_hash": "de5709307fb6d5b74de73aa59c20d913",
     "semantic_hash": ""
   }
 }

@@ -114,7 +114,7 @@ export default function EODAgentFlow({
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full" data-mission="6">
       {/* the three acts, so the agent can always see that sealing is not finishing */}
       <ol className="flex gap-2 mb-4 list-none p-0 m-0">
         {[

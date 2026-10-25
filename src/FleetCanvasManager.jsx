@@ -705,7 +705,6 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 }
                 t.update(agentRef, { activeCanvas: updated });
             });
-            if (IS_DEMO) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 5, qty: qtyBks, who: selectedAgent.name } }));
             logAudit("CANVAS_RETURN", `Returned ${qtyBks} Bks ${product.name} from ${selectedAgent.name} → ${destinationLabel}`);
             return { ok: true };
         } catch (e) {

@@ -888,7 +888,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in">
                     
                     {/* LEFT: PENDING REPORTS */}
-                    <div>
+                    <div data-mission="7">
                         <h3 className="font-black text-[var(--ink)] uppercase tracking-widest flex items-center gap-2 mb-4"><AlertCircle className="text-[var(--accent-ink)]"/> Pending Verification ({pendingTonight.length})</h3>
                         {(() => {
                             /* the rank frames' CSS + the marble / violet filters, once for every card on the list */

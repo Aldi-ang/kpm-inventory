@@ -4,6 +4,7 @@ import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSqu
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
 import { hasClearance, canPickFromGallery } from './config/permissions';
 import { IS_DEMO } from './config/firebase';
+import { demoPhoto } from './config/demoPhoto.js';
 import ProofCamera from './components/ProofCamera.jsx';
 import { savePhotoAndGetReference, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey} from './utils/helpers';
 import { waNumber } from './utils/whatsapp.js';
@@ -140,7 +141,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const [tempoDays, setTempoDays] = useState(draft?.tempoDays ?? appSettings?.defaultTempoDays ?? 7); 
     const [printFormat, setPrintFormat] = useState('thermal'); 
 
-    const canOverrideGps = isAdmin === true || user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin' || user?.isAdmin === true;
+    /* the demo lets a sale through out of range: every visitor stands far from the demo's Muntilan shops, so the 50 m
+       fence would lock the mission's sale for all of them. The chip still says how far (the demo text below). */
+    const canOverrideGps = IS_DEMO || isAdmin === true || user?.tier === 1 || user?.tier === 2 || user?.tier === '1' || user?.tier === '2' || user?.role?.toLowerCase() === 'admin' || user?.isAdmin === true;
 
     // 🚀 PRICE RECALCULATION ENGINE
     useEffect(() => {
@@ -1159,8 +1162,11 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
             const trueAgentName = await onProcessSale(finalCust, dbMethod, finalCart, newStorePayload, proofPayload);
             committed = true;   // everything past this point is POST-commit: the sale already exists
-            /* the demo's mission line ticks on the SAVED sale, never on a retur (DemoMission.jsx) */
+            /* the demo's mission line ticks on the SAVED deal (DemoMission.jsx): a sale is step 4; a retur carrying a damaged
+               pack is step 5 - the pack that rides in the van's quarantine until the EOD takes it to the Master Vault */
             if (IS_DEMO && !isReturMode) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 4, total: finalTotal, to: finalCust } }));
+            if (IS_DEMO && isReturMode && finalCart.some(i => i.condition === 'DAMAGED')) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 5, to: finalCust,
+                bks: finalCart.filter(i => i.condition === 'DAMAGED').reduce((s, i) => s + convertToBks(i.qty, i.unit, i.product), 0) } }));
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (myName || 'Admin');
 
             /* THE RECEIPT COMES FIRST, and the button is released with it. Everything below this
@@ -1792,7 +1798,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 {/* --- 🚀 DUAL MODE TOGGLE (SALE VS RETUR) --- */}
                 <div className="flex bg-[var(--duke-fill-ground)] rounded border border-[var(--duke-edge-2)] p-1 mb-2">
                     <button onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`kpm-hover flex-1 py-1.5 min-h-[44px] lg:min-h-0 text-[11px] lg:text-[10px] font-black uppercase tracking-widest rounded ${!isReturMode ? 'bg-[var(--duke-brass-2)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Sale Mode</button>
-                    <button onClick={() => {
+                    <button data-mission="5" onClick={() => {
                         if (!allowRetur) return notify("You do not have clearance to process returns.");
                         setIsReturMode(true);
                     }} className={`kpm-hover flex-1 py-1.5 min-h-[44px] lg:min-h-0 text-[11px] lg:text-[10px] font-black uppercase tracking-widest rounded ${isReturMode ? 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Retur Mode</button>
@@ -1893,7 +1899,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                                 <div className="flex items-center gap-2 w-full">
                                                     {canOverrideGps ? (
                                                         <span className="text-yellow-600 flex items-center gap-1 bg-yellow-900/20 px-2 py-1 rounded border border-yellow-600/50">
-                                                            <AlertCircle size={12}/> Out of Range: Tier {user?.tier || 1} Auth ({distanceToStore}m)
+                                                            <AlertCircle size={12}/> {IS_DEMO ? 'Out of range, allowed in the demo' : `Out of Range: Tier ${user?.tier || 1} Auth`} ({distanceToStore}m)
                                                         </span>
                                                     ) : (
                                                         <span className="text-red-500 flex items-center gap-1 bg-red-900/20 px-2 py-1 rounded border border-red-600/50">
@@ -2263,9 +2269,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-[var(--duke-on-fill)] p-1.5 rounded-md shadow-md"><X size={14}/></button>
                             </div>
                         ) : (
-                            <button onClick={() => galleryOk ? document.getElementById('txProof').click() : setShowProofCamera(true)} className="kpm-hover w-full py-2 min-h-[44px] lg:min-h-0 border border-dashed border-[var(--duke-edge-4)] hover:border-[var(--duke-amber-edge-2)] text-[var(--duke-ink-4)] hover:text-[var(--duke-amber-ink-2)] bg-transparent rounded flex items-center justify-center gap-2">
+                            <button onClick={() => IS_DEMO ? demoPhoto().then(setTxProofPhoto) : galleryOk ? document.getElementById('txProof').click() : setShowProofCamera(true)} className="kpm-hover w-full py-2 min-h-[44px] lg:min-h-0 border border-dashed border-[var(--duke-edge-4)] hover:border-[var(--duke-amber-edge-2)] text-[var(--duke-ink-4)] hover:text-[var(--duke-amber-ink-2)] bg-transparent rounded flex items-center justify-center gap-2">
                                 <Camera size={14} />
-                                <span className="text-[11px] lg:text-[10px] uppercase tracking-widest font-bold">{galleryOk ? 'Capture or choose photo' : 'Open camera for handover photo'}</span>
+                                <span className="text-[11px] lg:text-[10px] uppercase tracking-widest font-bold">{IS_DEMO ? 'Auto handover photo (demo)' : galleryOk ? 'Capture or choose photo' : 'Open camera for handover photo'}</span>
                             </button>
                         )}
 

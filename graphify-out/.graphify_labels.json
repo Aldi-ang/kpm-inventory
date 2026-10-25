@@ -154,8 +154,10 @@
   "152": "wbar.mjs",
   "153": "jsbarcode",
   "154": "mkcyi.mjs",
+  "155": "StockByWarehouseTable.jsx",
   "156": "cdp.mjs",
   "157": "@eslint/js",
+  "158": "@fontsource/rajdhani",
   "159": "serve.mjs",
   "160": "outfits.sh",
   "161": "retry.sh",
@@ -163,6 +165,5 @@
   "163": "@vitejs/plugin-basic-ssl",
   "164": "gen.mjs",
   "165": "frames.js",
-  "167": "nav.mjs",
   "172": "cross-env"
 }

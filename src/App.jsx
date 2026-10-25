@@ -2241,8 +2241,10 @@ const handleGitHubMirror = async () => {
               agentId: effectiveAgentId,
               timestamp: serverTimestamp(),
               status: 'PENDING',
-              ...reportData 
+              ...reportData
           });
+          /* the demo's mission line ticks on the SAVED cash & stock report (DemoMission.jsx) */
+          if (IS_DEMO && reportData.reportType === 'CASH_STOCK') window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 6, who: reportData.agentName } }));
 
           if (!isAdmin) {
               await addDoc(collection(db, `artifacts/${appId}/users/${userId}/notifications`), {
@@ -2628,6 +2630,10 @@ const handleGitHubMirror = async () => {
               }
               t.update(eodRef, { ...stamp, status: 'VERIFIED', verifiedAt: serverTimestamp() });
           });
+          /* the demo's mission line ticks when TODAY's cash & stock report is fully approved - the approval that moved the
+             leftover stock and the quarantine packs into the vault (DemoMission.jsx). Yesterday's seeded report does not count. */
+          if (IS_DEMO && sealed && report.reportType === 'CASH_STOCK' && report.dayKey === getLocalDayKey()) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 7, who: report.agentName,
+              damaged: (report.damagedStockToReturn || []).reduce((s, i) => s + convertToBks(Number(i.qty) || 0, i.unit, inventory.find(p => p.id === i.productId)), 0) } }));
 
           const returned = Object.keys(askedReject).map(p => EOD_PART_LABELS[p].toLowerCase()).join(', ');
           await logAudit(sealed ? "EOD_VERIFIED" : "EOD_PART", `${sealed ? 'Verified' : `Approved ${partList || 'nothing'} of`} ${report.reportType || 'EOD'} for ${report.agentName}${returned ? ` (sent back: ${returned})` : ''}`);

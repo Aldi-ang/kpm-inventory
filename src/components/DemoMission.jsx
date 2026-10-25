@@ -6,9 +6,10 @@
    Same day: *"im expecting a greeting from the capybara when entering the demo app ... hide the mission and let the
    dialogue starts first"* - so he greets once per page load (a SWITCH reloads it) and the line waits until he is done.
    A step ticks only when its REAL write was saved, and only when it is the live step: Restock Vault MASUK / KIRIM, the
-   van-loading bay (the load, later the return), the sales terminal's MAKE DEAL and Stock Opname's Submit send
-   'kpm-mission' after their commit (behind IS_DEMO - the real build compiles the send out). Progress lives in this
-   browser, so a SWITCH keeps it and the nightly reset (00:05 WIB) starts it again. */
+   van-loading bay's load, the sales terminal's MAKE DEAL (a sale, then a retur with a damaged pack), the EOD sent and
+   the EOD approved (App.jsx), and Stock Opname's Submit send 'kpm-mission' after their commit (behind IS_DEMO - the
+   real build compiles the send out). Progress lives in this browser, so a SWITCH keeps it and the nightly reset
+   (00:05 WIB) starts it again. */
 import React, { useEffect, useRef, useState } from 'react';
 import { Lightbulb } from 'lucide-react';
 import { notify } from './Toast.jsx';
@@ -42,13 +43,16 @@ const save = (done) => {
 
 /* where each step is done and what the hint says there */
 const BAY_LOST = 'Tasnya tidak ada di layar ini. Buka Fleet & Canvas, pilih DIKA SAPUTRA, lalu tekan PETUNJUK lagi.';
+const SALES_LOST = 'Tombolnya tidak ada di layar ini. Buka Sales Terminal dulu, lalu tekan PETUNJUK lagi.';
 const PLACE = {
     1: { sel: '[data-mission="1"]', tip: 'Tekan MASUK, isi barang dari pabrik, lalu simpan', lost: 'Tombolnya tidak ada di layar ini. Buka Restock Vault dulu, lalu tekan PETUNJUK lagi.' },
     2: { sel: '[data-mission="2"]', tip: 'Tekan KIRIM, pilih gudang tujuan, lalu kirim', lost: 'Tombolnya tidak ada di layar ini. Buka Restock Vault dulu, lalu tekan PETUNJUK lagi.' },
     3: { sel: '[data-mission="3"]', tip: 'Muat barang dari gudang ke tas Dika di sini', lost: BAY_LOST },
-    4: { sel: '[data-mission="4"]', tip: 'Pilih toko, isi keranjang, ambil foto serah terima, lalu tekan di sini', lost: 'Tombolnya tidak ada di layar ini. Buka Sales Terminal dulu, lalu tekan PETUNJUK lagi.' },
-    5: { sel: '[data-mission="3"]', tip: 'Tarik barang dari van ke gudang, lalu tekan MUAT VAN', lost: BAY_LOST },
-    6: { sel: '[data-mission="6"]', tip: 'Tekan New Count, isi jumlah fisiknya, lalu tekan Submit to HQ', lost: 'Tombolnya tidak ada di layar ini. Buka Stock Opname dulu, lalu tekan PETUNJUK lagi.' },
+    4: { sel: '[data-mission="4"]', tip: 'Pilih toko, isi keranjang, ambil foto serah terima, lalu tekan di sini', lost: SALES_LOST },
+    5: { sel: '[data-mission="5"]', tip: 'Tekan RETUR, pilih toko, tandai barangnya Damaged dan alasannya, ambil foto, lalu proses', lost: SALES_LOST },
+    6: { sel: '[data-mission="6"]', tip: 'Hitung uang dan barang yang tersisa, lalu segel dan kirim laporannya', lost: 'Laporannya tidak ada di layar ini. Buka EOD dulu, lalu tekan PETUNJUK lagi.' },
+    7: { sel: '[data-mission="7"]', tip: 'Buka laporan Dika hari ini dan setujui semua bagiannya', lost: 'Daftarnya tidak ada di layar ini. Buka EOD dulu, lalu tekan PETUNJUK lagi.' },
+    8: { sel: '[data-mission="8"]', tip: 'Tekan New Count, isi jumlah fisiknya, lalu tekan Submit to HQ', lost: 'Tombolnya tidak ada di layar ini. Buka Stock Opname dulu, lalu tekan PETUNJUK lagi.' },
 };
 
 /* what he says on each live step: first what the step before it left behind, then where to go */
@@ -57,7 +61,9 @@ const BEFORE = {
     3: 'Barang sudah berangkat',
     4: 'Tas Dika sudah terisi',
     5: 'Penjualan sudah tercatat',
-    6: 'Sisa barang sudah kembali',
+    6: 'Retur tercatat',
+    7: 'Dika sudah menutup harinya',
+    8: 'Mantap',
 };
 const GO = {
     1: [{ face: 'think', text: 'Langkah pertama: buka Restock Vault, tekan MASUK, isi barang dari pabrik, lalu simpan surat jalannya.' }],
@@ -65,9 +71,13 @@ const GO = {
         { face: 'talk', text: 'Di Restock Vault, tekan KIRIM, pilih gudang tujuan dan jumlahnya, lalu kirim.' }],
     3: [{ face: 'think', text: 'Buka Fleet & Canvas, pilih DIKA SAPUTRA, lalu muat barang dari gudang ke tasnya.' }],
     4: [{ face: 'think', text: 'Sekarang saatnya berjualan. Buka Sales Terminal, pilih toko, isi keranjang, ambil foto serah terima, lalu tekan MAKE DEAL.' }],
-    5: [{ face: 'think', text: 'Sore hari, sisa barang di tas Dika kembali ke gudang.' },
-        { face: 'talk', text: 'Buka Fleet & Canvas, pilih DIKA SAPUTRA, tarik barang dari van ke gudang, lalu tekan MUAT VAN.' }],
-    6: [{ face: 'think', text: 'Terakhir, hitung stok Master Vault. Buka Stock Opname, tekan New Count, isi jumlah fisiknya, lalu tekan Submit to HQ.' }],
+    5: [{ face: 'think', text: 'Ada toko yang mengembalikan barang rusak. Barang itu tidak boleh dijual lagi, jadi masuk karantina di tas.' },
+        { face: 'talk', text: 'Di Sales Terminal, tekan RETUR, pilih tokonya, tandai barangnya Damaged dan pilih alasannya, ambil foto, lalu proses.' }],
+    6: [{ face: 'think', text: 'Sore hari, Dika menutup harinya: hitung uang dan sisa barang di tas.' },
+        { face: 'talk', text: 'Buka EOD, isi hitungannya, lalu segel dan kirim laporannya ke Owner.' }],
+    7: [{ face: 'think', text: 'Saat Owner menyetujui EOD, sisa barang kembali ke Master Vault dan barang rusak masuk karantina Master Vault.' },
+        { face: 'talk', text: 'Buka EOD, cari laporan Dika hari ini, lalu setujui semua bagiannya.' }],
+    8: [{ face: 'think', text: 'Terakhir, hitung stok Master Vault. Buka Stock Opname, tekan New Count, isi jumlah fisiknya, lalu tekan Submit to HQ.' }],
 };
 
 /* the capybara's lines for the live step; `mine` = this login is the one who does it */
@@ -88,7 +98,7 @@ const first = (name) => String(name || '').split(' ')[0].toLowerCase().replace(/
 function greet(n, done, mine, doer, me) {
     const hello = !Object.keys(done).length ? [
         { face: 'happy', text: 'Halo, selamat datang di KPM! Saya Kapibara, pemandu Anda di demo ini.' },
-        { face: 'talk', text: `Kita akan menjalankan satu putaran barang dalam ${LAST} langkah: dari pabrik ke Master Vault, ke gudang wilayah, ke tas salesman, ke toko, lalu sisanya kembali ke gudang dan stoknya dihitung.` },
+        { face: 'talk', text: `Kita akan menjalankan satu putaran barang dalam ${LAST} langkah: dari pabrik ke Master Vault, ke gudang wilayah, ke tas salesman, ke toko, lalu sisa barang dan barang rusak kembali ke gudang dan stoknya dihitung.` },
     ] : [{ face: 'happy', text: me ? `Halo, ${first(me.name)}! Anda masuk sebagai ${me.role}.` : 'Halo, selamat datang kembali!' }];
     return [...hello, ...linesFor(n, done, mine, doer)];
 }
