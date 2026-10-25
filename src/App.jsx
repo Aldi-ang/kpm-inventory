@@ -37,6 +37,7 @@ import SafetyStatus from './components/SafetyStatus';
 import CapybaraMascot from './components/CapybaraMascot';
 import ImageCropper from './components/ImageCropper';
 import ExamineModal from './components/ExamineModal';
+import PromoLookFields from './components/PromoLookFields';
 import LandlordDashboard from './components/LandlordDashboard'; 
 import CrownTransferProtocol from './components/CrownTransferProtocol'; 
 import BiohazardTheme from './components/BiohazardTheme';
@@ -154,7 +155,7 @@ import {
 import { auth, db, storage, googleProvider, appId, IS_DEMO } from './config/firebase';
 import { VAULT_PASSWORD, OWNER_UID } from './config/demoLogins.js';   // demo build only - printed on the Master Vault gate; the demo company's folder
 import { DemoPick } from './components/DemoFrontDoor.jsx';   // demo build only - the invite check + "pick who to be"
-import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines, eodReportParts, eodNightMessage, EOD_PART_LABELS, absentForSure, isPromo, PROMO_GOODS, promoGoods } from './utils/helpers';
+import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines, eodReportParts, eodNightMessage, EOD_PART_LABELS, absentForSure, isPromo, PROMO_GOODS, promoGoods, GOODS_LOOK } from './utils/helpers';
 import { isLowStock } from './utils/stockThreshold';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES, DEFAULT_RANKS } from './config/career';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
@@ -1680,6 +1681,7 @@ const handleGitHubMirror = async () => {
 
   // UI States
   const [editingProduct, setEditingProduct] = useState(null);
+  const goodsPreviewRef = useRef(null);   // the promo look's 3D preview: the save takes the list picture from it
   const [savingProduct, setSavingProduct] = useState(false);
   const [examiningProduct, setExaminingProduct] = useState(null);
   const [tempImages, setTempImages] = useState({}); 
@@ -3622,6 +3624,17 @@ const handleGitHubMirror = async () => {
           if (promo) Object.assign(data, { kind: 'promo', unit: 'pcs', type: 'PROMO' });
           /* the goods type (his 2026-10-26 "there is no product type"): one of the six, or not saved at all */
           if (promo && !PROMO_GOODS.some(([id]) => id === data.goods)) delete data.goods;
+          /* the look (his 2026-10-26 "edit the color appearance ... and change the name on it"): only when the form showed
+             it (no FRONT photo). A default colour is stored as '' so a later TYPE change takes the new type's default. */
+          if (promo && 'goodsColor' in data) {
+              const def = GOODS_LOOK[data.goods] || {};
+              const hex = (v) => (/^#[0-9a-f]{6}$/i.test(v || '') ? v.toLowerCase() : '');
+              data.goodsColor = hex(data.goodsColor) === def.body ? '' : hex(data.goodsColor);
+              data.printColor = hex(data.printColor) === def.ink ? '' : hex(data.printColor);
+              data.printText = String(data.printText || '').trim().slice(0, 18);
+              const thumb = goodsPreviewRef.current?.snapshot?.();
+              if (thumb) data.thumb = thumb;   // the Master Vault list picture, in this item's colours
+          }
 
           /* Packing is deliberately NOT in numFields. That list coerces empty to 0, and a 0
              here is a multiplier — a Bal priced at 0 Bks would charge nothing and deduct
@@ -5108,7 +5121,7 @@ const handleGitHubMirror = async () => {
                                 move them into the right half it empties. A phone still reads fields, pictures, prices. */}
                             <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
                                 <div className={`space-y-4 md:col-start-1 md:row-start-1 ${isPromo(editingProduct) ? 'md:row-span-2' : ''}`}>
-                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">PRODUCT NAME</label><input name="name" defaultValue={editingProduct.name} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none"/></div>
+                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">PRODUCT NAME</label><input name="name" defaultValue={editingProduct.name} onBlur={(e) => { const name = e.target.value; if (isPromo(editingProduct)) setEditingProduct(p => ({ ...p, name })); }} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none"/></div>
                                     {/* the description shows in the fullscreen viewer (ExamineModal); handleSaveProduct takes it from the form like every other field (his 2026-10-10 "the description editor for each product is gone") */}
                                     <div><label className="text-[var(--duke-ink-8)] block mb-1">DESCRIPTION</label><textarea name="description" defaultValue={editingProduct.description || ''} rows={3} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none resize-y"/></div>
 
@@ -5124,7 +5137,7 @@ const handleGitHubMirror = async () => {
                                         when no photo is uploaded. TYPE, as the cigarette form names its own type field. */}
                                     {isPromo(editingProduct) && (
                                         <div><label htmlFor="goods" className="text-[var(--duke-ink-8)] block mb-1">TYPE</label>
-                                            <select name="goods" defaultValue={promoGoods(editingProduct) || ''} required id="goods" className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none">
+                                            <select name="goods" defaultValue={promoGoods(editingProduct) || ''} required id="goods" onChange={(e) => setEditingProduct(p => ({ ...p, goods: e.target.value }))} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none">
                                                 <option value="" disabled>Pick what it is</option>
                                                 {PROMO_GOODS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
                                             </select>
@@ -5210,6 +5223,11 @@ const handleGitHubMirror = async () => {
                                 </div>
                                 <div className={`space-y-4 mt-4 md:mt-0 md:col-start-2 md:row-start-1 ${isPromo(editingProduct) ? '' : 'md:row-span-2'}`}>
                                     {isPromo(editingProduct) && <p className="text-[var(--duke-ink-8)] leading-relaxed">PROMO ITEM - given free together with a sale. No price and no packing: it is counted in pcs.</p>}
+                                    {/* THE LOOK (his 2026-10-26 "edit the color appearance on the 3D design, and change the name on it
+                                        when press edit"): only while there is no FRONT photo - a photo is the flat card, it has no paint */}
+                                    {isPromo(editingProduct) && ((tempImages.front || editingProduct.images?.front)
+                                        ? <p className="text-[var(--duke-ink-8)] leading-relaxed">A FRONT photo is set, so the vault shows the photo card, not the 3D model.</p>
+                                        : <PromoLookFields key={editingProduct.id || 'new'} product={editingProduct} previewRef={goodsPreviewRef} />)}
                                     {!isPromo(editingProduct) && (<>
                                     <h3 className="text-[var(--duke-ink-hi)] border-b border-[var(--duke-veil-edge)] pb-1 mb-2">PRICING ENGINE</h3>
                                     <div><label className="text-[var(--duke-ink-8)] block mb-1">DISTRIBUTOR (MODAL)</label><input name="priceDistributor" type="number" step="any" defaultValue={editingProduct.priceDistributor} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-danger-edge)] text-[var(--duke-danger-ink)] focus:border-[var(--duke-danger-edge)] outline-none"/></div>

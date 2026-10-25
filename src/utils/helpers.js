@@ -267,11 +267,27 @@ export const promoGoods = (product) => {
     const picked = PROMO_GOODS.find(([id]) => id === product?.goods);
     return (picked || PROMO_GOODS.find(([, , words]) => words.test(String(product?.name || ''))))?.[0] || null;
 };
-/* the word printed on the goods: the name without the goods' own word ("T SHIRT TAWANG" -> TAWANG), or KPM */
+/* the word printed on the goods: his PRINTED TEXT if he typed one, else the name without the goods' own word
+   ("T SHIRT TAWANG" -> TAWANG), or KPM */
 export const promoWord = (product) => {
+    const own = String(product?.printText || '').trim();
+    if (own) return own.toUpperCase().slice(0, 18);
     const words = PROMO_GOODS.find(([id]) => id === promoGoods(product))?.[2];
     const left = String(product?.name || '').replace(words || /$^/, '').replace(/^[\s\-:]+|[\s\-:]+$/g, '');
     return (left || 'KPM').toUpperCase();
+};
+
+/* THE LOOK of the 3D goods (his 2026-10-26 "edit the color appearance on the 3D design, and change the name on it when
+   press edit"): body = the goods' own colour, ink = the print and the gold parts. Saved per item as goodsColor /
+   printColor, '' = this type's default below (what tools/promo-goods/goods.py modelled). */
+export const GOODS_LOOK = {
+    tshirt: { body: '#1c1814', ink: '#d4a017' }, poster: { body: '#efe9df', ink: '#d4a017' }, hat: { body: '#1c1814', ink: '#d4a017' },
+    lighter: { body: '#1c1814', ink: '#d4a017' }, ashtray: { body: '#1c1814', ink: '#d4a017' }, mug: { body: '#efe9df', ink: '#d4a017' },
+};
+export const promoLook = (product) => {
+    const def = GOODS_LOOK[promoGoods(product)] || GOODS_LOOK.tshirt;
+    const hex = (v) => (/^#[0-9a-f]{6}$/i.test(v || '') ? v.toLowerCase() : null);
+    return { body: hex(product?.goodsColor) || def.body, ink: hex(product?.printColor) || def.ink, word: promoWord(product) };
 };
 
 /* The flat picture of a promo item with no photo (his 2026-10-26 "default skin for the 3D promo item like on the

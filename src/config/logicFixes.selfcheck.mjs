@@ -11957,12 +11957,37 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      read('src/App.jsx').includes('if (promo && !PROMO_GOODS.some(([id]) => id === data.goods)) delete data.goods;'));
   ok('REGRESSION: no photo -> the 3D goods in the Master Vault (spinning, tap opens fullscreen) and in the fullscreen viewer (the finger turns it); a FRONT photo keeps the flat card; the list shows the goods picture',
      rei.includes('const goods3d = isPromo(product) && !front0 && promoGoods(product);') && rei.includes('<PromoGoods3D product={product} className="absolute inset-0" />') &&
-     rei.includes("promoGoods(item) ? `/promo/${promoGoods(item)}.png`") && imports(rei, 'promoGoods') &&
+     rei.includes("promoGoods(item) ? item.thumb || `/promo/${promoGoods(item)}.png`") && imports(rei, 'promoGoods') &&
      exam.includes('const goods3d = isPromo(product) && !(images.front || product.image) && promoGoods(product);') && exam.includes('<PromoGoods3D product={product} drag className="w-full h-full" />'));
   ok('REGRESSION: three.js loads only when a 3D goods item is on screen (its own chunk), Lite Mode stops the spin, and a failed load falls back to the flat picture',
      pgc.includes("import('../utils/promoGoods3d.js')") && !/from 'three'/.test(pgc) && !/from 'three'/.test(rei) && !/from 'three'/.test(exam) && !/from 'three'/.test(read('src/App.jsx')) &&
      pg3.includes("document.documentElement.classList.contains('lite-mode')") && pg3.includes('`/promo/${goods}.glb`') &&
      pgc.includes("if (!goods || failed) return <img src={promoSkin(product, 'front')}"));
+  /* THE LOOK (his 2026-10-26 "edit the color appearance on the 3D design, and change the name on it when press edit"):
+     a main colour, a print colour and the printed text, per item; a default colour is stored as '' so a later TYPE
+     change gets the new type's default instead of the old one's. */
+  const { GOODS_LOOK, promoLook } = await import('../utils/helpers.js');
+  const lk = (p) => promoLook?.(p) || {};
+  ok('BEHAVIOUR: the look - six defaults, a saved colour beats the default (any case), a broken colour falls back, the printed text beats the name (upper case, 18 at most), empty text -> the name',
+     !!GOODS_LOOK && PROMO_GOODS.every(([id]) => /^#[0-9a-f]{6}$/.test(GOODS_LOOK[id]?.body) && /^#[0-9a-f]{6}$/.test(GOODS_LOOK[id]?.ink)) &&
+     lk({ goods: 'mug' }).body === '#efe9df' && lk({ goods: 'tshirt' }).body === '#1c1814' && lk({ goods: 'mug' }).ink === '#d4a017' &&
+     lk({ goods: 'tshirt', goodsColor: '#AA0000' }).body === '#aa0000' && lk({ goods: 'tshirt', goodsColor: 'red' }).body === '#1c1814' &&
+     lk({ goods: 'hat', printColor: '#ffffff' }).ink === '#ffffff' &&
+     lk({ goods: 'mug', name: 'Mug Cello', printText: ' djarum ' }).word === 'DJARUM' && lk({ goods: 'mug', name: 'Mug Cello', printText: '' }).word === 'CELLO' &&
+     promoWord({ name: 'x', printText: 'abcdefghijklmnopqrstuvwxyz' }) === 'ABCDEFGHIJKLMNOPQR');
+  const looks = read('src/components/PromoLookFields.jsx'), app2 = read('src/App.jsx');
+  ok('REGRESSION: EDIT on a promo item without a FRONT photo shows the look - a live 3D preview, PRINTED TEXT, COLOR, PRINT COLOR, Default colors; TYPE switches the preview',
+     form.includes('<PromoLookFields key={editingProduct.id || \'new\'} product={editingProduct} previewRef={goodsPreviewRef} />') &&
+     form.includes("onChange={(e) => setEditingProduct(p => ({ ...p, goods: e.target.value }))}") &&
+     looks.includes('name="printText"') && looks.includes('type="color" name="goodsColor"') && looks.includes('type="color" name="printColor"') &&
+     looks.includes('Default colors') && looks.includes('<PromoGoods3D ref={previewRef}'));
+  ok('REGRESSION: the save keeps the look - a default colour is stored as \'\', the text trimmed to 18, and the list picture is taken from the preview',
+     app2.includes("if (promo && 'goodsColor' in data) {") && app2.includes('data.goodsColor = hex(data.goodsColor) === def.body ? \'\' : hex(data.goodsColor);') &&
+     app2.includes("data.printText = String(data.printText || '').trim().slice(0, 18);") && app2.includes('const thumb = goodsPreviewRef.current?.snapshot?.();') &&
+     rei.includes('item.thumb || `/promo/${promoGoods(item)}.png`'));
+  ok('REGRESSION: the 3D view paints the look - body parts take COLOR, the gold parts and the print take PRINT COLOR, and it can change colour without reloading the model',
+     pg3.includes("const BODY = new Set(['fabric', 'black', 'cream', 'paper']);") && pg3.includes("else if (o.material.name === 'gold') o.material.color.set(current.ink);") &&
+     pg3.includes('unmount.set = (next) =>') && pg3.includes('unmount.snapshot = (size = 128) =>') && glb('lighter').includes('"style":"ink"'));
   const seedJ = JSON.parse(read('demo/seed.json'));
   ok('REGRESSION: the demo vault holds one of each goods (seed.promo, written as products only); the made-up demo sales and stock stay cigarette-only',
      (seedJ.promo || []).map((p) => p.goods).join() === 'tshirt,poster,hat,lighter,ashtray,mug' && seedJ.promo.every((p) => p.kind === 'promo' && p.unit === 'pcs') &&

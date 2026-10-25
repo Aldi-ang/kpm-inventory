@@ -273,7 +273,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                             <div key={item.id} id={`mv-row-${item.id}`} onClick={() => openProduct(item.id)} className={`p-3 md:p-4 cursor-pointer border mb-2 flex items-center gap-4 transition-all relative ${selectedId === item.id ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_15px_rgba(217,164,65,0.15)]' : 'border-transparent'}`}>
                                 {isLowStock && isAdmin && (<div className="absolute left-0 top-0 bottom-0 w-1.5 bg-rose-600 shadow-[0_0_12px_rgba(220,38,38,1)] z-10"></div>)}
                                 <div className={`w-12 h-12 shrink-0 border flex items-center justify-center bg-black relative ${selectedId === item.id ? 'border-amber-500' : isLowStock && isAdmin ? 'border-rose-500' : 'border-amber-900/30'}`}>
-                                    {item.images?.front || isPromo(item) ? <img src={item.images?.front || (promoGoods(item) ? `/promo/${promoGoods(item)}.png` : promoSkin(item, 'front'))} className="w-full h-full object-cover" /> : <Package size={20} className="text-amber-900/60"/>}
+                                    {item.images?.front || isPromo(item) ? <img src={item.images?.front || (promoGoods(item) ? item.thumb || `/promo/${promoGoods(item)}.png` : promoSkin(item, 'front'))} className="w-full h-full object-cover" /> : <Package size={20} className="text-amber-900/60"/>}
                                     {isLowStock && isAdmin && <AlertCircle size={14} className="absolute -top-1.5 -right-1.5 text-rose-500 bg-black rounded-full shadow-[0_0_5px_red]" />}
                                 </div>
                                 <div className="flex-1 min-w-0">

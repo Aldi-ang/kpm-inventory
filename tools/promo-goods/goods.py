@@ -160,7 +160,7 @@ def lighter():
     hood = rbox('lighter_hood', (0.37, 0.21, 0.17), (0, 0, 0.815), 0.025, SILVER, 4)
     wheel = cyl('lighter_wheel', 0.065, 0.14, Matrix.Translation((-0.06, 0, 0.94)) @ RX90, STEEL, 24)
     lever = rbox('lighter_lever', (0.13, 0.15, 0.05), (0.085, 0, 0.925), 0.015, BLACK, 3)
-    label = flat_print('print_front', 0.22, 0.54, (0, -0.1125, 0.37))
+    label = flat_print('print_front', 0.22, 0.54, (0, -0.1125, 0.37), style='ink')   # the word alone: the body colour shows through
     return [body, hood, wheel, lever, label]
 
 def hat():
