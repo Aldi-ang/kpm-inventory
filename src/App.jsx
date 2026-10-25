@@ -154,7 +154,7 @@ import {
 import { auth, db, storage, googleProvider, appId, IS_DEMO } from './config/firebase';
 import { VAULT_PASSWORD, OWNER_UID } from './config/demoLogins.js';   // demo build only - printed on the Master Vault gate; the demo company's folder
 import { DemoPick } from './components/DemoFrontDoor.jsx';   // demo build only - the invite check + "pick who to be"
-import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines, eodReportParts, eodNightMessage, EOD_PART_LABELS, absentForSure } from './utils/helpers';
+import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines, eodReportParts, eodNightMessage, EOD_PART_LABELS, absentForSure, isPromo } from './utils/helpers';
 import { isLowStock } from './utils/stockThreshold';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES, DEFAULT_RANKS } from './config/career';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
@@ -575,7 +575,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   // --- DATABASE SYNC ENGINE (MOVED HERE!) ---
   const {
       fetchHistoricalTransactions, // 🚀 THE TIME MACHINE ENGINE PLUGGED IN
-      inventory, setInventory, customers, customerAccess, transactions, setTransactions,
+      inventory, setInventory, promoItems, customers, customerAccess, transactions, setTransactions,
       samplings, setSamplings, auditLogs, setAuditLogs, procurements, setProcurements,
       motorists, setMotorists, agentInventories, setAgentInventories, eodReports, setEodReports,
       transferRequests, setTransferRequests,
@@ -903,7 +903,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     };
 
     if (type === 'products' || type === 'both') {
-        exportData.inventory = inventory; 
+        exportData.inventory = [...inventory, ...promoItems];   // the promo items are products too - a backup without them loses them
         exportData.appSettings = appSettings; 
     }
     
@@ -3613,16 +3613,20 @@ const handleGitHubMirror = async () => {
       try { 
           const formData = new FormData(e.target); 
           const data = Object.fromEntries(formData.entries());
+          /* A promo item (T-shirt, poster, hat, lighter) is counted in pcs and has no sticks, packing or price - the form
+             does not even show those. The kind comes from the entry, never the form: only a NEW entry can choose it. */
+          const promo = isPromo(editingProduct);
           // 🚀 ADDED 'sticksPerPack' TO THE NUMBER CONVERSION ARRAY
-          const numFields = ['stock', 'minStock', 'sticksPerPack', 'priceDistributor', 'priceRetail', 'priceGrosir', 'priceEcer'];
+          const numFields = promo ? ['stock', 'minStock'] : ['stock', 'minStock', 'sticksPerPack', 'priceDistributor', 'priceRetail', 'priceGrosir', 'priceEcer'];
           numFields.forEach(field => data[field] = Number(data[field]) || 0);
+          if (promo) Object.assign(data, { kind: 'promo', unit: 'pcs', type: 'PROMO' });
 
           /* Packing is deliberately NOT in numFields. That list coerces empty to 0, and a 0
              here is a multiplier — a Bal priced at 0 Bks would charge nothing and deduct
              nothing. Blank or nonsense falls back to the same defaults every read site in
              the app already assumes, so a half-filled form can never produce a free sale. */
           const packing = { packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 };
-          Object.entries(packing).forEach(([field, fallback]) => {
+          if (!promo) Object.entries(packing).forEach(([field, fallback]) => {
               const n = Number(data[field]);
               data[field] = (Number.isFinite(n) && n > 0) ? n : fallback;
           });
@@ -3671,9 +3675,10 @@ const handleGitHubMirror = async () => {
              read a message about packing, and reasonably read that as the app confirming the
              wrong thing. */
           const perBal = data.slopsPerBal * data.packsPerSlop;
+          const counted = promo ? `Stock ${data.stock} pcs.` : `Stock ${data.stock} Bks · 1 Karton = ${data.balsPerCarton * perBal} Bks · 1 Bal = ${perBal} Bks.`;
           notify(acked
-              ? `${data.name} saved.\nStock ${data.stock} Bks · 1 Karton = ${data.balsPerCarton * perBal} Bks · 1 Bal = ${perBal} Bks.`
-              : `${data.name} is on this device only — it has NOT reached the server yet, and will sync when the connection returns.\nStock ${data.stock} Bks · 1 Karton = ${data.balsPerCarton * perBal} Bks · 1 Bal = ${perBal} Bks.`);
+              ? `${data.name} saved.\n${counted}`
+              : `${data.name} is on this device only — it has NOT reached the server yet, and will sync when the connection returns.\n${counted}`);
 
           setEditingProduct(null);
           setTempImages({});
@@ -4294,6 +4299,8 @@ const handleGitHubMirror = async () => {
 
   const totalStockValue = inventory.reduce((acc, i) => acc + (i.stock * (i.priceRetail || 0)), 0);
   const filteredInventory = inventory.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  // the Master Vault's list also holds the promo items, so the owner can make and edit them; the terminal reads filteredInventory only
+  const vaultList = [...filteredInventory, ...promoItems.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()))];
   
   /* The van as THIS phone must show it: the server's list minus the sales still waiting in the
      Ghost Ledger. An offline sale no longer writes the van itself (src/utils/vanSync.js), so without
@@ -5046,7 +5053,7 @@ const handleGitHubMirror = async () => {
               <ResidentEvilInventory
                   searchTerm={searchTerm}
                   onSearch={setSearchTerm}
-                  inventory={filteredInventory}
+                  inventory={vaultList}
                   onInspect={(item) => setExaminingProduct(item)}
                   motorists={motorists}
                   transactions={transactions}
@@ -5101,24 +5108,37 @@ const handleGitHubMirror = async () => {
                                     {/* the description shows in the fullscreen viewer (ExamineModal); handleSaveProduct takes it from the form like every other field (his 2026-10-10 "the description editor for each product is gone") */}
                                     <div><label className="text-[var(--duke-ink-8)] block mb-1">DESCRIPTION</label><textarea name="description" defaultValue={editingProduct.description || ''} rows={3} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none resize-y"/></div>
 
+                                    {/* PROMO ITEM (stage 1 of 4, his 2026-10-25 answers): chosen on a NEW entry only - flipping a
+                                        cigarette later would re-read its past Bal sales as pieces. An edit shows the kind, never changes it. */}
+                                    {editingProduct.id ? (isPromo(editingProduct) && <p className="text-[var(--duke-brass-ink)] tracking-widest">PROMO ITEM · COUNTED IN PCS</p>) : (
+                                        <div className="flex items-center gap-2">
+                                            <input type="checkbox" id="isPromo" checked={isPromo(editingProduct)} onChange={(e) => setEditingProduct(p => ({ ...p, kind: e.target.checked ? 'promo' : undefined }))} className="accent-orange-500 w-4 h-4"/>
+                                            <label htmlFor="isPromo" className="text-[var(--duke-ink-hi)] text-xs cursor-pointer select-none">Promo item (T-shirt, poster, hat, lighter) - counted in pcs, no price</label>
+                                        </div>
+                                    )}
+
                                   {/* --- PINPOINT: Edit Product Modal --- */}
-                                    <div className="grid grid-cols-4 gap-2">
-                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">STOCK</label><input name="stock" type="number" step="any" defaultValue={editingProduct.stock} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
-                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">MIN. ALERT (BKS)</label><input name="minStock" type="number" step="any" defaultValue={editingProduct.minStock || ''} placeholder={`pakai batas perusahaan (${appSettings?.defaultMinStockQty || 3} ${appSettings?.defaultMinStockUnit || 'Bal'})`} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-danger-edge)] text-[var(--duke-danger-ink)] focus:border-[var(--duke-danger-edge)] outline-none"/></div>
+                                    <div className={`grid ${isPromo(editingProduct) ? 'grid-cols-2' : 'grid-cols-4'} gap-2`}>
+                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">{isPromo(editingProduct) ? 'STOCK (PCS)' : 'STOCK'}</label><input name="stock" type="number" step="any" defaultValue={editingProduct.stock} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
+                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">{isPromo(editingProduct) ? 'MIN. ALERT (PCS)' : 'MIN. ALERT (BKS)'}</label><input name="minStock" type="number" step="any" defaultValue={editingProduct.minStock || ''} placeholder={`pakai batas perusahaan (${appSettings?.defaultMinStockQty || 3} ${isPromo(editingProduct) ? 'pcs' : (appSettings?.defaultMinStockUnit || 'Bal')})`} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-danger-edge)] text-[var(--duke-danger-ink)] focus:border-[var(--duke-danger-edge)] outline-none"/></div>
+                                        {!isPromo(editingProduct) && (<>
                                         {/* 🚀 NEW: STICKS PER PACK INPUT */}
                                         <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">STICKS / BKS</label><input name="sticksPerPack" type="number" step="any" defaultValue={editingProduct.sticksPerPack || 16} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
                                         <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">TYPE</label><input name="type" defaultValue={editingProduct.type} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-veil-edge-3)] outline-none"/></div>
+                                        </>)}
                                     </div>
 
                                     {/* PACKING. Every sale in Bal or Karton multiplies by these, and until now
                                         nothing wrote them — eight read sites across the app were all falling back
                                         to 10/20/4 for every product. Aldi's real stock varies (a Bal can be 100 or
                                         200 Bks, a Karton 4 or 5 Bal), so they have to be per product. */}
+                                    {!isPromo(editingProduct) && (
                                     <div className="grid grid-cols-3 gap-2">
                                         <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">BKS / SLOP</label><input name="packsPerSlop" type="number" step="any" defaultValue={editingProduct.packsPerSlop || 10} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-brass-edge)] text-[var(--duke-brass-ink)] focus:border-[var(--duke-brass-edge)] outline-none"/></div>
                                         <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">SLOP / BAL</label><input name="slopsPerBal" type="number" step="any" defaultValue={editingProduct.slopsPerBal || 20} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-brass-edge)] text-[var(--duke-brass-ink)] focus:border-[var(--duke-brass-edge)] outline-none"/></div>
                                         <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">BAL / KARTON</label><input name="balsPerCarton" type="number" step="any" defaultValue={editingProduct.balsPerCarton || 4} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-brass-edge)] text-[var(--duke-brass-ink)] focus:border-[var(--duke-brass-edge)] outline-none"/></div>
                                     </div>
+                                    )}
 
                                     {/* RESTORED: FRONT = BACK TOGGLE */}
                                     <div className="flex items-center gap-2">
@@ -5171,11 +5191,14 @@ const handleGitHubMirror = async () => {
                                     </div>
                                 </div>
                                 <div className="space-y-4">
+                                    {isPromo(editingProduct) && <p className="text-[var(--duke-ink-8)] leading-relaxed">PROMO ITEM - given free together with a sale. No price and no packing: it is counted in pcs.</p>}
+                                    {!isPromo(editingProduct) && (<>
                                     <h3 className="text-[var(--duke-ink-hi)] border-b border-[var(--duke-veil-edge)] pb-1 mb-2">PRICING ENGINE</h3>
                                     <div><label className="text-[var(--duke-ink-8)] block mb-1">DISTRIBUTOR (MODAL)</label><input name="priceDistributor" type="number" step="any" defaultValue={editingProduct.priceDistributor} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-danger-edge)] text-[var(--duke-danger-ink)] focus:border-[var(--duke-danger-edge)] outline-none"/></div>
                                     <div><label className="text-[var(--duke-ink-8)] block mb-1">RETAIL PRICE</label><input name="priceRetail" type="number" step="any" defaultValue={editingProduct.priceRetail} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
                                     <div><label className="text-[var(--duke-ink-8)] block mb-1">GROSIR PRICE</label><input name="priceGrosir" type="number" step="any" defaultValue={editingProduct.priceGrosir} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
                                     <div><label className="text-[var(--duke-ink-8)] block mb-1">ECER PRICE</label><input name="priceEcer" type="number" step="any" defaultValue={editingProduct.priceEcer} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-brass-edge)] text-[var(--duke-brass-ink)] focus:border-[var(--duke-brass-edge)] outline-none"/></div>
+                                    </>)}
                                 </div>
                             </div>
                             {/* type is explicit: this submits handleSaveProduct. It was relying on

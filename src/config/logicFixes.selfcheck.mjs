@@ -11851,5 +11851,55 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
      STEPS[7].done({ items: 3 }) === '3 barang dihitung dan dikirim ke HQ');
 }
 
+section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only counts them (his 2026-10-25 "1a,2b,3b,4a,5 no limit ..., 6 dont need for cost price")');
+{
+  const { convertToBks, isPromo } = await import('../utils/helpers.js');
+  const sync = read('src/hooks/useDatabaseSync.js'), rei = read('src/components/ResidentEvilInventory.jsx');
+  const save = app.slice(app.indexOf('const handleSaveProduct'), app.indexOf('const handleUpdateProduct'));
+  const form = app.slice(app.indexOf('<form onSubmit={handleSaveProduct}'), app.indexOf("{savingProduct ? 'Saving…' : 'Update Database'}"));
+  /* The skip list is ONE place. Every cigarette-only path - bks/slop/bal/karton, revenue, price tiers, sales targets, the
+     terminal's pita cukai debt, valuation, low stock - reads `inventory`, and `inventory` is cut from the one products
+     listener. A second reader of the list would hand a T-shirt to a cigarette screen as Rp 0 / 1 Bks with no error, so the
+     number of readers IS the guard. */
+  const readers = appFiles.filter(f => /(onSnapshot|getDocs|query)\(\s*collection\(db,[^)]*products['`]\s*\)/.test(read(f)));
+  ok('REGRESSION: ONE reader of the products list in the whole app (useDatabaseSync), so every screen gets it already split',
+     readers.length === 1 && readers[0] === 'src/hooks/useDatabaseSync.js', readers.join(', ') || 'none found');
+  ok('REGRESSION: the split - the listener fills `products`; `inventory` is products minus promo; promoItems the rest; setInventory still writes the whole list',
+     sync.includes("onSnapshot(collection(db, basePath, 'products'), (snap) => setProducts(") &&
+     sync.includes('const inventory = useMemo(() => products.filter((p) => !isPromo(p)), [products]);') &&
+     sync.includes('const promoItems = useMemo(() => products.filter(isPromo), [products]);') &&
+     sync.includes('inventory, setInventory: setProducts, promoItems,') && imports(sync, 'isPromo') && imports(sync, 'useMemo'));
+  /* Stage 1: promoItems reaches the Master Vault's list (so the owner can make and edit them) and the backup file, nothing
+     else. Stage 2 (the dial), 3 (the van) and 4 (giving) widen this on purpose and change this pin when they do. */
+  const promoLines = app.split('\n').filter(l => l.includes('promoItems'));
+  ok('REGRESSION: promoItems reaches only the Master Vault list and the backup - never the Sales Terminal (no sale at Rp 0, no pita cukai debt for a T-shirt), never a sum',
+     promoLines.length === 3 && app.split('promoItems').length - 1 === 3 &&
+     app.includes('exportData.inventory = [...inventory, ...promoItems];') &&
+     app.includes('const vaultList = [...filteredInventory, ...promoItems.filter(') && app.includes('inventory={vaultList}') &&
+     appFiles.filter(f => read(f).includes('promoItems')).sort().join() === 'src/App.jsx,src/hooks/useDatabaseSync.js',
+     promoLines.map(l => l.trim().slice(0, 70)).join(' | '));
+  ok('REGRESSION: the save keeps a promo item free of every cigarette field - kind from the entry, not the form; no packing default forced on it; unit pcs',
+     save.includes('const promo = isPromo(editingProduct);') &&
+     save.includes("if (promo) Object.assign(data, { kind: 'promo', unit: 'pcs', type: 'PROMO' });") &&
+     save.includes('if (!promo) Object.entries(packing).forEach(') && imports(app, 'isPromo'));
+  ok('REGRESSION: a product becomes a promo item only on a NEW entry - flipping a cigarette later would re-read its past Bal sales as pieces (one-way door)',
+     /editingProduct\.id \?[^:]{0,400}: \([\s\S]{0,300}id="isPromo"/.test(form) && form.includes("kind: e.target.checked ? 'promo' : undefined"));
+  ok('REGRESSION: the promo form has no sticks, no packing row, no price inputs',
+     form.split('{!isPromo(editingProduct) && ').length - 1 === 3 &&
+     form.indexOf('name="sticksPerPack"') > form.indexOf('{!isPromo(editingProduct) && ') &&
+     form.lastIndexOf('{!isPromo(editingProduct) && ') < form.indexOf('name="priceDistributor"'));
+  ok('REGRESSION: the Master Vault list counts a promo item in pcs, never Bks / Slop / Bal, and shows it no price grid (Rp 0 x4)',
+     rei.includes('if (isPromo(item)) return') && rei.includes('VAULT: {item.stock || 0} pcs') && rei.includes('`${product.stock || 0} pcs`') && imports(rei, 'isPromo') &&
+     rei.indexOf('{!isPromo(product) && (') > 0 && rei.indexOf('{!isPromo(product) && (') < rei.indexOf('{formatRupiah(product.priceDistributor)}') &&
+     read('src/components/ExamineModal.jsx').includes("`STOCK: ${product.stock} ${isPromo(product) ? 'pcs' : 'Bks'}`"));
+  ok('BEHAVIOUR: a promo item converts to its own count in every unit; a cigarette still multiplies (1 Bal = 200 Bks, 1 Karton = 800 by the defaults)',
+     convertToBks(3, 'Bal', { kind: 'promo' }) === 3 && convertToBks(2, 'Karton', { kind: 'promo' }) === 2 && convertToBks(5, 'Slop', { kind: 'promo' }) === 5 &&
+     convertToBks(1, 'Bal', {}) === 200 && convertToBks(1, 'Karton', { packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 }) === 800);
+  const list = [{ id: 'a', name: 'Cello Green 16' }, { id: 'b', name: 'Djarum Coklat 12' }, { id: 't', name: 'T-shirt', kind: 'promo' }];
+  ok('BEHAVIOUR: kind absent = cigarette (no old document changes); two cigarettes and a T-shirt -> the terminal sees two, the promo list one',
+     isPromo({ kind: 'promo' }) && !isPromo({}) && !isPromo({ kind: 'Promo' }) && !isPromo(undefined) && !isPromo(null) &&
+     list.filter((p) => !isPromo(p)).map(p => p.id).join() === 'a,b' && list.filter(isPromo).map(p => p.id).join() === 't');
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

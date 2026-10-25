@@ -1,14 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { collection, doc, getDocs, onSnapshot, query, orderBy, setDoc, where } from 'firebase/firestore'; // 🚀 IMPORTED 'where'
 import { applyDocChanges } from '../utils/docChanges';
 import { ACCESS_DOC_ID, accessFor, grantQueries, seesEveryShop } from '../utils/customerAccess.js';
 import { notify } from '../components/Toast.jsx';
+import { isPromo } from '../utils/helpers';
 
 const NO_SHOPS = [];   // one stable empty list, so screens keyed on `customers` do not re-run every render
 
 export default function useDatabaseSync(db, appId, user, userId, userRole, location) {
     // Data States
-    const [inventory, setInventory] = useState([]);
+    /* `products` is the whole collection. `inventory` - what every cigarette screen, sum and the Sales Terminal reads -
+       never holds a promo item, so no Bks / revenue / price-tier / pita cukai path can count one; promoItems go only
+       where a screen asks for them (logicFixes "PROMO ITEMS"). */
+    const [products, setProducts] = useState([]);
+    const inventory = useMemo(() => products.filter((p) => !isPromo(p)), [products]);
+    const promoItems = useMemo(() => products.filter(isPromo), [products]);
     const [customers, setCustomers] = useState([]); 
     const [transactions, setTransactions] = useState([]);
     const [samplings, setSamplings] = useState([]);
@@ -48,7 +54,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
         // 2. Core Collections (Static data like Inventory and Customers load fully)
-        const unsubInv = onSnapshot(collection(db, basePath, 'products'), (snap) => setInventory(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Inventory listener:", err.code));
+        const unsubInv = onSnapshot(collection(db, basePath, 'products'), (snap) => setProducts(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Inventory listener:", err.code));
         /* CUSTOMERS IS THE ONE COLLECTION THAT CANNOT AFFORD A FULL RE-MAP, and that is not a
            style preference — see docChanges.js. Every outlet carries its store photo as base64
            INSIDE the document, so re-running `d.data()` over ~100 outlets rebuilds several
@@ -238,7 +244,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
 
     return {
         fetchHistoricalTransactions, // 🚀 EXPORT THE ENGINE
-        inventory, setInventory,
+        inventory, setInventory: setProducts, promoItems,
         customers: noFolders ? NO_SHOPS : customers, setCustomers, customerAccess,
         transactions, setTransactions,
         samplings, setSamplings,

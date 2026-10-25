@@ -31,7 +31,7 @@ import CustomerAccessPanel from '../src/components/CustomerAccessPanel.jsx';
 import StockByWarehouseTable from '../src/ponder/stages/StockByWarehouseTable.jsx';
 import ShipmentPlanTable from '../src/ponder/stages/ShipmentPlanTable.jsx';
 import ProductPerformancePanel from '../src/components/ProductPerformancePanel.jsx';
-import { ItemInspector } from '../src/components/ResidentEvilInventory.jsx';
+import ResidentEvilInventory, { ItemInspector } from '../src/components/ResidentEvilInventory.jsx';
 import ExamineModal from '../src/components/ExamineModal.jsx';
 import AcceptanceReceipt from '../src/components/AcceptanceReceipt.jsx';
 import RestockVaultView from '../src/RestockVaultView.jsx';
@@ -1135,6 +1135,17 @@ function ShellLab() {
           userRole={q.get('tier') || (q.has('admin') ? 'FLEET_CAPTAIN' : 'FIELD_OPERATIVE')}   /* ?shell&agent&admin: the regional admin's chest; &tier=<id> any tier */
           motorists={LAB_MOTORISTS} previewing={null}
         />
+      ) : q.has('vaultlist') ? (
+        /* ?shell&vaultlist — the Master Vault's product list as App.jsx's inventory tab mounts it (same wrapper), the two
+           lab cigarettes plus the four promo items of stage 1 (kind 'promo', type PROMO, pcs). &tab=promo opens their group. */
+        <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col">
+          <ResidentEvilInventory
+            inventory={[...LAB_PRODUCTS, ...[['p-tee', 'T-shirt', 40], ['p-poster', 'Poster', 120], ['p-hat', 'Hat', 2], ['p-lighter', 'Lighter', 300]]
+              .map(([id, name, stock]) => ({ id, name, stock, kind: 'promo', unit: 'pcs', type: 'PROMO' }))]}
+            searchTerm="" onSearch={() => {}} motorists={LAB_MOTORISTS} transactions={[]} isAdmin appSettings={{}}
+            onInspect={() => {}} onEdit={() => {}} onDelete={() => {}} onAddNew={() => {}} onUpdateProduct={() => {}} onUploadBg={() => {}}
+          />
+        </div>
       ) : q.has('customers') ? (
         /* ?shell&customers — the Customers screen INSIDE the real shell, exactly as App.jsx:5041
            mounts it: no wrapper at all, a direct child of the shell's biohazard-content. T5 again

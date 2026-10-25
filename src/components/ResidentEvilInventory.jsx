@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Plus, Package, AlertCircle, ImageIcon, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatRupiah, convertToBks, getLocalDayKey} from '../utils/helpers';
+import { formatRupiah, convertToBks, getLocalDayKey, isPromo } from '../utils/helpers';
 import * as threshold from '../utils/stockThreshold';
 
 // 🚀 NEW: ADVANCED STOCK FORMATTER (Handles Batang, Slops, and Bal)
@@ -142,10 +142,10 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                         <h2 className="text-xl md:text-3xl text-transparent bg-clip-text bg-gradient-to-b from-amber-200 to-amber-500 font-serif tracking-widest uppercase mb-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{product.name}</h2>
                         <div className="flex items-center gap-3 flex-wrap">
                             <span className="bg-amber-900/20 px-3 py-1 rounded border border-amber-500/40 text-amber-300 text-sm md:text-base font-mono font-bold tracking-widest">
-                                STOCK: {isAdmin ? (() => {
+                                STOCK: {isAdmin ? (isPromo(product) ? `${product.stock || 0} pcs` : (() => {
                                     const info = formatAdvancedStock(product.stock, product);
                                     return `${info.bks} / ${info.slop} / ${info.bal}`;
-                                })() : "**"}
+                                })()) : "**"}
                             </span>
                             {isAdmin && (product.damagedStock || 0) > 0 && (
                                 <span className="bg-rose-950/40 px-3 py-1 rounded border border-rose-700/60 text-rose-400 text-sm md:text-base font-mono font-bold tracking-widest">
@@ -164,6 +164,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                     )}
                 </div>
 
+                {!isPromo(product) && (   /* a promo item has no price: given free with a sale (his 2026-10-25 answer 6) */
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono border-t border-amber-500/10 pt-5 mt-2">
                     <div className="bg-white/5 p-3 border-l-4 border-rose-600">
                         <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Dist</p>
@@ -182,6 +183,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                         <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceEcer)}</p>
                     </div>
                 </div>
+                )}
 
                 {isAdmin && (
                     <details className="lg:hidden mt-4 border border-amber-500/20 controls-panel group">
@@ -272,6 +274,8 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                         {(() => {
                                             if (!isAdmin) return <p className="text-sm font-mono text-slate-400 font-bold">STK: **</p>;
+                                            /* a promo item is counted in pcs; nothing is in the field or sold yet (stages 3-4) */
+                                            if (isPromo(item)) return <p className={`text-[10px] md:text-xs font-mono font-bold ${isLowStock ? 'text-rose-500' : 'text-amber-200'}`}>VAULT: {item.stock || 0} pcs</p>;
                                             const todayStr = getLocalDayKey();
                                             let fieldBks = 0;
                                             motorists.forEach(m => {

@@ -1091,7 +1091,7 @@ check(G24, 'the first snapshot of a subscription is still a full re-map', /custF
   'splices one company\'s outlets into another\'s');
 check(G24, 'only the customers listener was changed',
   (syncSrc.match(/applyDocChanges\(/g) || []).length === 1 &&   // the import has no paren
-  /setInventory\(snap\.docs\.map/.test(syncSrc) && /setMotorists\(snap\.docs\.map/.test(syncSrc),
+  /setProducts\(snap\.docs\.map/.test(syncSrc) && /setMotorists\(snap\.docs\.map/.test(syncSrc),   // setProducts: the products list, split into inventory + promoItems after (2026-10-25)
   'inventory and motorists documents are small — converting them adds risk and buys nothing');
 check(G24, 'the reducer has its own runnable proof',
   fs.existsSync('src/utils/docChanges.selfcheck.mjs'),

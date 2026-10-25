@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, ZoomOut, Lock, Unlock, ZoomIn, RefreshCcw } from 'lucide-react';
+import { isPromo } from '../utils/helpers';
 
 const START_ROTATION = { x: -15, y: 25 };
 const START_SCALE = 2.8;
@@ -112,7 +113,7 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
 
       <div className="mt-8 w-full max-w-2xl bg-black/60 border-t border-b border-orange-500/50 p-6 backdrop-blur-md pointer-events-none select-none">
         <div className="flex justify-between items-start mb-2 font-mono text-xs text-[#ff9d00]">
-           <span>{isAdmin ? `STOCK: ${product.stock} Bks` : "3D VISUALIZATION"}</span>
+           <span>{isAdmin ? `STOCK: ${product.stock} ${isPromo(product) ? 'pcs' : 'Bks'}` : "3D VISUALIZATION"}</span>
            <span>TYPE: {product.type}</span>
            <span>CUKAI: {product.taxStamp || 'Standard'}</span>
         </div>

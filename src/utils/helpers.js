@@ -246,8 +246,13 @@ export const stripCartItemForStorage = (item) => {
 export const absentForSure = (snap) =>
     !!snap && typeof snap.exists === 'function' && !snap.exists() && snap.metadata?.fromCache !== true;
 
+/* PROMO ITEMS (his 2026-10-25 "1a,2b,3b,4a,5 no limit"): a T-shirt, poster, hat or lighter given with a sale. Same
+   products collection, `kind: 'promo'`; absent = cigarette, so no old document changes. Counted in pcs: no packing,
+   no price. useDatabaseSync keeps them OUT of `inventory`, which every cigarette screen reads. */
+export const isPromo = (product) => product?.kind === 'promo';
+
 export const convertToBks = (qty, unit, product) => {
-    if (!product) return qty;
+    if (!product || isPromo(product)) return qty;
     const packsPerSlop = product.packsPerSlop || 10;
     const slopsPerBal = product.slopsPerBal || 20;
     const balsPerCarton = product.balsPerCarton || 4;
