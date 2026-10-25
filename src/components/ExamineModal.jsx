@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, ZoomOut, Lock, Unlock, ZoomIn, RefreshCcw } from 'lucide-react';
+import { X, ZoomOut, Lock, Unlock, ZoomIn, RefreshCcw, Package } from 'lucide-react';
 import { isPromo } from '../utils/helpers';
 
 const START_ROTATION = { x: -15, y: 25 };
@@ -102,7 +102,7 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
         {/* No `transition` here on purpose. The rAF loop writes this node's transform every
             frame, and a transition would restart on each write — that is the flicker. */}
         <div ref={boxRef} className="relative preserve-3d" style={{ width: `${w}px`, height: `${h}px`, transformStyle: 'preserve-3d' }}>
-          <div className="absolute inset-0 bg-white backface-hidden flex items-center justify-center border border-[#5c4b3a]" style={{ width: w, height: h, transform: `translateZ(${d / 2}px)` }}>{frontImage ? <img src={frontImage} className="w-full h-full object-cover"/> : <span className="text-4xl">🚬</span>}<div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none"></div></div>
+          <div className="absolute inset-0 bg-white backface-hidden flex items-center justify-center border border-[#5c4b3a]" style={{ width: w, height: h, transform: `translateZ(${d / 2}px)` }}>{frontImage ? <img src={frontImage} className="w-full h-full object-cover"/> : isPromo(product) ? <Package size={40} className="text-[#5c4b3a]"/> : <span className="text-4xl">🚬</span>}<div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none"></div></div>
           <div className="absolute inset-0 bg-[#1a1815] backface-hidden flex items-center justify-center border border-[#3e3226]" style={{ width: w, height: h, transform: `rotateY(180deg) translateZ(${d / 2}px)` }}>{renderFace(backImage, "bg-[#1a1815]")}</div>
           <div className="absolute" style={{ width: d, height: h, transform: `rotateY(90deg) translateZ(${w / 2}px)`, left: (w - d)/2 }}>{renderFace(images.right, "bg-[#d4c5a3]")}</div>
           <div className="absolute" style={{ width: d, height: h, transform: `rotateY(-90deg) translateZ(${w / 2}px)`, left: (w - d)/2 }}>{renderFace(images.left, "bg-[#d4c5a3]")}</div>
@@ -115,9 +115,9 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
         <div className="flex justify-between items-start mb-2 font-mono text-xs text-[#ff9d00]">
            <span>{isAdmin ? `STOCK: ${product.stock} ${isPromo(product) ? 'pcs' : 'Bks'}` : "3D VISUALIZATION"}</span>
            <span>TYPE: {product.type}</span>
-           <span>CUKAI: {product.taxStamp || 'Standard'}</span>
+           {!isPromo(product) && <span>CUKAI: {product.taxStamp || 'Standard'}</span>}
         </div>
-        <p className="text-white font-serif text-lg leading-relaxed text-center shadow-black drop-shadow-md">"{product.description || "A standard pack of cigarettes. No unusual properties detected."}"</p>
+        <p className="text-white font-serif text-lg leading-relaxed text-center shadow-black drop-shadow-md">"{product.description || (isPromo(product) ? 'A promo item - given free together with a sale.' : 'A standard pack of cigarettes. No unusual properties detected.')}"</p>
       </div>
     </div>
   );

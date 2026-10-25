@@ -5114,7 +5114,7 @@ const handleGitHubMirror = async () => {
                                         cigarette later would re-read its past Bal sales as pieces. An edit shows the kind, never changes it. */}
                                     {editingProduct.id ? (isPromo(editingProduct) && <p className="text-[var(--duke-brass-ink)] tracking-widest">PROMO ITEM · COUNTED IN PCS</p>) : (
                                         <div className="flex items-center gap-2">
-                                            <input type="checkbox" id="isPromo" checked={isPromo(editingProduct)} onChange={(e) => setEditingProduct(p => ({ ...p, kind: e.target.checked ? 'promo' : undefined }))} className="accent-orange-500 w-4 h-4"/>
+                                            <input type="checkbox" id="isPromo" checked={isPromo(editingProduct)} onChange={(e) => { const on = e.target.checked; setEditingProduct(p => ({ ...p, kind: on ? 'promo' : undefined })); setBoxDimensions(on ? { w: 90, h: 100, d: 3 } : { w: 55, h: 90, d: 22 }); }} className="accent-orange-500 w-4 h-4"/>
                                             <label htmlFor="isPromo" className="text-[var(--duke-ink-hi)] text-xs cursor-pointer select-none">Promo item (T-shirt, poster, hat, lighter) - counted in pcs, no price</label>
                                         </div>
                                     )}
@@ -5156,11 +5156,13 @@ const handleGitHubMirror = async () => {
                                         <label htmlFor="useFront" className="text-[var(--duke-ink-hi)] text-xs cursor-pointer select-none">Use Front Image for Back</label>
                                     </div>
 
-                                    {/* TEXTURE ASSETS (WITH PREVIEWS & EDIT BTN) */}
+                                    {/* TEXTURE ASSETS (WITH PREVIEWS & EDIT BTN). A promo item is a photo card (his pick A, 2026-10-25):
+                                        FRONT + BACK only, because the tick above makes it 3 deep and the cropper cuts each face to the
+                                        box's own shape - a side face would be a 3x100 sliver. */}
                                     <div className="p-3 border border-dashed border-[var(--duke-veil-edge-3)] text-center bg-[var(--duke-veil)]">
                                         <p className="text-[var(--shell-orange-ink)] font-bold mb-2">TEXTURE ASSETS</p>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {['front', 'back', 'left', 'right', 'top', 'bottom'].map(face => {
+                                        <div className={`grid ${isPromo(editingProduct) ? 'grid-cols-2' : 'grid-cols-3'} gap-2`}>
+                                            {(isPromo(editingProduct) ? ['front', 'back'] : ['front', 'back', 'left', 'right', 'top', 'bottom']).map(face => {
                                                 const hasImg = tempImages[face] || (editingProduct.images && editingProduct.images[face]);
                                                 return (
                                                     <div 

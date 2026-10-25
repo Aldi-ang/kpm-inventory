@@ -11883,7 +11883,7 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      save.includes("if (promo) Object.assign(data, { kind: 'promo', unit: 'pcs', type: 'PROMO' });") &&
      save.includes('if (!promo) Object.entries(packing).forEach(') && imports(app, 'isPromo'));
   ok('REGRESSION: a product becomes a promo item only on a NEW entry - flipping a cigarette later would re-read its past Bal sales as pieces (one-way door)',
-     /editingProduct\.id \?[^:]{0,400}: \([\s\S]{0,300}id="isPromo"/.test(form) && form.includes("kind: e.target.checked ? 'promo' : undefined"));
+     /editingProduct\.id \?[^:]{0,400}: \([\s\S]{0,300}id="isPromo"/.test(form) && form.includes("const on = e.target.checked; setEditingProduct(p => ({ ...p, kind: on ? 'promo' : undefined }));"));
   ok('REGRESSION: the promo form has no sticks, no packing row, no price inputs',
      form.split('{!isPromo(editingProduct) && ').length - 1 === 3 &&
      form.indexOf('name="sticksPerPack"') > form.indexOf('{!isPromo(editingProduct) && ') &&
@@ -11899,6 +11899,17 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      cell("space-y-4 md:row-start-2 ${isPromo(editingProduct) ? 'md:col-start-2' : 'md:col-start-1'}") < cell('TEXTURE ASSETS') &&
      cell("space-y-4 mt-4 md:mt-0 md:col-start-2 md:row-start-1 ${isPromo(editingProduct) ? '' : 'md:row-span-2'}") > cell('TEXTURE ASSETS') &&
      cell("space-y-4 mt-4 md:mt-0 md:col-start-2 md:row-start-1 ${isPromo(editingProduct) ? '' : 'md:row-span-2'}") < cell('PRICING ENGINE'));
+  /* His pick A, 2026-10-25 ("A looks simple and light i guess we could do that"): a promo item is a photo card - FRONT +
+     BACK only, starting thin. Not a style choice: the cropper shapes each crop from the size (ImageCropper.jsx:40), so a
+     LEFT / RIGHT face on a 3-deep card would crop as a 3x100 sliver. */
+  ok('REGRESSION: a promo item is a photo card - the form asks FRONT + BACK only, and ticking "Promo item" starts it thin (unticking gives the pack size back)',
+     form.includes("(isPromo(editingProduct) ? ['front', 'back'] : ['front', 'back', 'left', 'right', 'top', 'bottom']).map(") &&
+     form.includes("grid ${isPromo(editingProduct) ? 'grid-cols-2' : 'grid-cols-3'} gap-2") &&
+     form.includes('setBoxDimensions(on ? { w: 90, h: 100, d: 3 } : { w: 55, h: 90, d: 22 });'));
+  const exam = read('src/components/ExamineModal.jsx');
+  ok('REGRESSION: the fullscreen viewer says nothing cigarette about a promo item - no 🚬, no CUKAI line, no "standard pack of cigarettes"',
+     exam.includes('isPromo(product) ? <Package') && exam.includes("{!isPromo(product) && <span>CUKAI: {product.taxStamp || 'Standard'}</span>}") &&
+     exam.includes("isPromo(product) ? 'A promo item - given free together with a sale.' : 'A standard pack of cigarettes.") && imports(exam, 'Package'));
   ok('REGRESSION: the Master Vault list counts a promo item in pcs, never Bks / Slop / Bal, and shows it no price grid (Rp 0 x4)',
      rei.includes('if (isPromo(item)) return') && rei.includes('VAULT: {item.stock || 0} pcs') && rei.includes('`${product.stock || 0} pcs`') && imports(rei, 'isPromo') &&
      rei.indexOf('{!isPromo(product) && (') > 0 && rei.indexOf('{!isPromo(product) && (') < rei.indexOf('{formatRupiah(product.priceDistributor)}') &&
