@@ -1313,9 +1313,16 @@ Seen: 2026-10-20
 **Would have prevented:** 2026-10-21, P3: the sale engine's Grosir refusal ("Grosir prices are only for a shop registered as Grosir...") tested plain; it would have shipped as news on every refused sale. Caught by a 4-string probe after the build; cost one rewording, a second build and a re-run of every gate.
 Seen: 2026-10-21
 ### 2026-10-22 — a changed character or asset is "done" only with the list of every place it appears
-**Status:** LIKELY
+**Status:** LIVE
 **Trigger:** before a completion claim about a changed recurring asset (a character, a pose set, an icon, a colour) that appears in more than one place on the page or in the app.
 **Lesson:** list every place the asset shows, mark which ones changed, and say the unchanged ones out loud in the reply. The place he looks at first is usually the most visible copy, not the one the brief named.
 **Would have prevented:** 2026-10-22 15:30, presentation v35: the reply said "all 11 capybara poses are in the presentation"; the new poses were only inside slides 09/18/20, while the flying island capybara he sees on every slide was unchanged. He answered *"okay but where is the updated capybara?"* - one round trip, plus two proof images to explain it.
 Seen: 2026-10-22
 Fired: 2026-10-25 (the six Dreamina faces: lab tools/capy-portraits, app src/assets/capy-talk, vault Raw - all three named in the vault note)
+
+### 2026-10-25 — a Bash line with a reader and no input hangs the tool for the full timeout
+**Status:** LIKELY
+**Trigger:** before a mutating action - a Bash command holding `cat >`, `tee` or any program that reads stdin, with no heredoc or pipe feeding THAT program (a heredoc further along the line feeds only its own command).
+**Lesson:** the Bash tool has no terminal to send end-of-input, so the reader waits until the 120 s timeout. To write a file use the Write tool; to run a script, Write it to the scratchpad and run the file. Never chain a stray reader in front of the real command.
+**Would have prevented:** 2026-10-25 ~15:20, the DemoMission header rewrite: `cat > "$TMPDIR/dm.py" 2>/dev/null; python - <<'EOF'` blocked on the `cat`, hit the 120 s timeout, went to the background, and cost a TaskStop, a check that the file was untouched, and a redo through Write.
+Seen: 2026-10-25
