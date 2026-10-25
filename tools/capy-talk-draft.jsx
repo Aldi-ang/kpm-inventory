@@ -3,8 +3,9 @@
      ?shell&places&tab=kirim&mission=b&talk=step2[&line=2]   (also talk=step3 / error / done)
    The video's layout: a big portrait at the bottom left standing over the box's edge, a slanted name plate on the box,
    a "more" mark in the corner, expressions per line, choices when the story branches.
-   The lines follow his 2026-08-30 rule for tutorial copy (audit G56): no aku / kamu / Anda / kita - the subject is the
-   factory, the warehouse, the shipment or the app. */
+   The capybara speaks as "saya" and calls the viewer "Anda" - his 2026-10-25 call for THIS dialogue: *"dont use aku kamu
+   on the dialogue, use anda dan saya instead"*. His 2026-08-30 rule (no second person, audit G56) still holds for the
+   Ponder book; a character in a conversation is the one exception. Never aku / kamu. */
 import React from 'react';
 import talk from './capy-portraits/e-talk.png';
 import happy from './capy-portraits/e-happy.png';
@@ -16,18 +17,23 @@ import angry from './capy-portraits/e-angry.png';
 const FACE = { talk, happy, shock, think, sad, angry };
 
 export const SCENES = {
+    intro: [
+        { face: 'happy', text: 'Halo, saya Kapibara. Saya akan menemani Anda menjalankan satu putaran barang di pabrik ini.' },
+        { face: 'talk', text: 'Ada tiga langkah: terima hasil produksi, kirim ke gudang wilayah, lalu isi tas salesman.' },
+        { face: 'think', text: 'Kalau Anda bingung, tekan tombol lampu di atas. Saya tunjukkan tempatnya.' },
+    ],
     step2: [
-        { face: 'talk', text: 'Hasil produksi sudah tercatat di Master Vault: 120 Bks Cello Green 16.' },
-        { face: 'think', text: 'Langkah berikutnya: barang itu dikirim ke gudang wilayah Bandung lewat surat jalan.' },
-        { face: 'talk', text: 'Tombol + di samping nama barang memasukkan barang ke surat jalan.', choices: ['Tunjukkan tempatnya', 'Lanjut sendiri'] },
+        { face: 'talk', text: 'Hasil produksi Anda sudah tercatat di Master Vault: 120 Bks Cello Green 16.' },
+        { face: 'think', text: 'Sekarang barang itu perlu dikirim ke gudang wilayah Bandung lewat surat jalan.' },
+        { face: 'talk', text: 'Tekan tombol + di samping nama barang untuk memasukkannya ke surat jalan.', choices: ['Tunjukkan tempatnya', 'Saya coba sendiri'] },
     ],
     step3: [
-        { face: 'shock', text: 'Langkah ini bukan tugas Owner.' },
-        { face: 'talk', text: 'Isi tas Dika dikerjakan Admin Wilayah, Hendra Gunawan. Tombol SWITCH di pojok atas memindahkan akun.' },
+        { face: 'shock', text: 'Eits! Langkah ini bukan tugas Owner.' },
+        { face: 'talk', text: 'Silakan tekan SWITCH di pojok atas dan masuk sebagai Admin Wilayah, Hendra Gunawan. Beliau yang mengisi tas Dika.' },
     ],
-    error: [{ face: 'angry', text: 'Jumlah kirim masih kosong. Surat jalan belum bisa dibuat.' }],
-    worry: [{ face: 'sad', text: 'Stok Bandung tinggal 3 Bks. Salesman besok berangkat dengan tas hampir kosong.' }],
-    done: [{ face: 'happy', text: 'Misi selesai. 120 Bks sudah ada di tas Dika, siap dijual hari ini.' }],
+    error: [{ face: 'angry', text: 'Jumlah kirim masih kosong. Isi jumlahnya dulu, baru surat jalan bisa dibuat.' }],
+    worry: [{ face: 'sad', text: 'Stok Bandung tinggal 3 Bks. Besok salesman berangkat dengan tas hampir kosong.' }],
+    done: [{ face: 'happy', text: 'Mantap! 120 Bks sudah ada di tas Dika. Misi selesai, terima kasih sudah mencoba.' }],
 };
 
 const CSS = `
