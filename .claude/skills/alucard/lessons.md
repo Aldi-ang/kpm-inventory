@@ -1091,6 +1091,7 @@ Fired: 2026-10-11 14:33 (3827f75: GitHub status every 20 s until Deployment has 
 Fired: 2026-10-14 05:45 (51ee975: GitHub status every 20 s until both projects completed, then one POST per site - real 404 "not the demo project", demo 401 "sign in with Google first", no checkpoint)
 Fired: 2026-10-14 20:51 (d2261c8: GitHub status every 20 s until both completed, then one read of index + entry - the hidden-tab guard found, no checkpoint)
 Fired: 2026-10-14 21:06 (ff5b97b: GitHub status until both completed, then one read of index + the AgentProfileView chunk - the 56 px frame class found, no checkpoint)
+Fired: 2026-10-25 (his 14:08 frame said 116b8ce; the live demo bundle carried b482d40 + the inside condition at 14:11 - read from kpm-demo-one.vercel.app, not assumed)
 
 ### 2026-10-01 — a line that holds a regex literal is edited with Edit, never with sed
 **Status:** LIVE
