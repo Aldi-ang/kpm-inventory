@@ -118,6 +118,7 @@ Fired: 2026-10-01 21:18 (version line: the first frames showed the sign-in line 
 Fired: 2026-10-02 (showcase hero: three looks shot headless at a real 390 dpr 2 and at 1440, every frame Read before the boards went out; the first look found the copy pushed off-screen while docW still read 390)
 Fired: 2026-10-03 (rajangan research page: artifact link needs sign-in in the browser pane, so it was served through a temporary vite lab entry and looked at 390 px, dark and light, before the claim)
 Fired: 2026-10-13 (demo door boards shot headless + Read before the ask; the first read caught the fonts falling back)
+Fired: 2026-10-25 (promo chest board: Chrome --window-size=390 still laid the page out wider than 390 - its window has a minimum width - so the first phone frame was a crop of a wider page; a 390px iframe wrapper gave the true phone layout, which showed the table forcing its section wide; fixed before the link went out)
 Fired: 2026-10-16 (presentation v7: twelve headless frames at 390 + 1440 Read before the publish; the first 1440 read showed every 3D floor spilling over the text under it - fixed by measuring the turned floor, re-shot)
 
 ### 2026-08-24 — a handoff that promises a fix must be run against the check that governs it
@@ -1325,4 +1326,18 @@ Fired: 2026-10-25 (the six Dreamina faces: lab tools/capy-portraits, app src/ass
 **Trigger:** before a mutating action - a Bash command holding `cat >`, `tee` or any program that reads stdin, with no heredoc or pipe feeding THAT program (a heredoc further along the line feeds only its own command).
 **Lesson:** the Bash tool has no terminal to send end-of-input, so the reader waits until the 120 s timeout. To write a file use the Write tool; to run a script, Write it to the scratchpad and run the file. Never chain a stray reader in front of the real command.
 **Would have prevented:** 2026-10-25 ~15:20, the DemoMission header rewrite: `cat > "$TMPDIR/dm.py" 2>/dev/null; python - <<'EOF'` blocked on the `cat`, hit the 120 s timeout, went to the background, and cost a TaskStop, a check that the file was untouched, and a redo through Write.
+Seen: 2026-10-25
+
+### 2026-10-25 — demoBuild.check reads dist-demo/, so a demo change is checked only after the demo build is rebuilt
+**Status:** LIKELY
+**Trigger:** before a completion claim - a change to anything the demo build carries (a DOOR string, DemoMission, a demo-only text) followed by `node src/config/demoBuild.check.mjs`.
+**Lesson:** the check reads the BUILT `dist-demo/`, and `npm run build` only rebuilds `dist/`. Run `npx cross-env VITE_DEMO=1 vite build --outDir dist-demo` first, every time. A stale dist-demo fails when a checked string changed, and it can PASS on old code when the change is something the check does not name.
+**Would have prevented:** 2026-10-25 ~17:30, the Agent Capybara rename: demoBuild.check failed "missing Saya Agent Capybara, pemandu Anda" against the old dist-demo; cost one red gate and a second full gate run.
+Seen: 2026-10-25
+
+### 2026-10-25 — animation frames: a hidden pane and virtual time both freeze the animation clock
+**Status:** LIKELY
+**Trigger:** before a completion claim about MOTION (a transition, a wipe, a settle) proven by a frame from the Browser pane or from headless Chrome `--screenshot`.
+**Lesson:** check `document.timeline.currentTime` first. In the pane it reads 0 while the Claude window is hidden - every animation sits at its first keyframe while timers keep running. Headless `--virtual-time-budget` advances timers but not the animations either, and `--timeout` shoots before the page acts. What works: headless Chrome over CDP in REAL time (`Page.navigate`, `Runtime.evaluate` to start the turn, real wait, pause every animation AND hold the page's timers, `Page.captureScreenshot`), one fresh turn per frame - the script is `scratchpad/promo-chest/shoot.mjs` of session 4545991b (copy it, it is short).
+**Would have prevented:** 2026-10-25 ~19:50, the promo dial round 2: six wasted renders (pane freezes, three virtual-time shots, three `--timeout` shots) and a near-claim that the scan was broken, before the CDP real-time shot showed it working.
 Seen: 2026-10-25
