@@ -1141,7 +1141,7 @@ function ShellLab() {
         <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col">
           <ResidentEvilInventory
             inventory={[...LAB_PRODUCTS, ...[['p-tee', 'T-shirt', 40], ['p-poster', 'Poster', 120], ['p-hat', 'Hat', 2], ['p-lighter', 'Lighter', 300]]
-              .map(([id, name, stock]) => ({ id, name, stock, kind: 'promo', unit: 'pcs', type: 'PROMO' }))]}
+              .map(([id, name, stock]) => ({ id, name, stock, kind: 'promo', unit: 'pcs', type: 'PROMO', ...(id === 'p-tee' ? labShirt : {}) }))]}
             searchTerm="" onSearch={() => {}} motorists={LAB_MOTORISTS} transactions={[]} isAdmin appSettings={{}}
             onInspect={() => {}} onEdit={() => {}} onDelete={() => {}} onAddNew={() => {}} onUpdateProduct={() => {}} onUploadBg={() => {}}
           />
@@ -1267,6 +1267,12 @@ function ShellLab() {
 /* ?vault3d - the Master Vault's small 3D box inside a page that scrolls, with the fullscreen viewer it opens (2026-10-10,
    his pick A + "add the view in fullscreen button"): a drag on the small box must scroll the page, a tap or the button must
    open ExamineModal. */
+/* &shirt=box|card on ?shell&vaultlist (2026-10-25, his "upload the model for the promotional item"): the T-shirt gets a
+   stand-in front/back picture. box = today's default size (a cigarette pack, 55x90x22); card = thin (90x100x3), the same
+   six-face box with the side faces almost gone - what FRONT + BACK alone can already draw. */
+const labShirtPic = (word) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 100"><rect width="90" height="100" fill="#efe9df"/><path d="M31 13 L18 17 L6 31 L16 41 L24 35 L24 91 L66 91 L66 35 L74 41 L84 31 L72 17 L59 13 Q45 25 31 13 Z" fill="#1c1814"/><text x="45" y="62" font-family="sans-serif" font-size="12" font-weight="700" fill="#d4a017" text-anchor="middle">${word}</text></svg>`);
+const labShirt = !q.get('shirt') ? {} : { images: { front: labShirtPic('CELLO'), back: labShirtPic('KPM') },
+  ...(q.get('shirt') === 'card' ? { dimensions: { w: 90, h: 100, d: 3 }, defaultZoom: 2.6 } : {}) };
 const LAB_PRODUCT = { id: 'p_lab', name: 'PRODUK C', stock: 120, description: 'Kretek 16 batang, rasa manis.', dimensions: { w: 55, h: 90, d: 22 }, images: {} };
 function Vault3DLab() {
   const [open, setOpen] = React.useState(null);

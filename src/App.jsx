@@ -5102,8 +5102,10 @@ const handleGitHubMirror = async () => {
                         </h2>
                         
                         <form onSubmit={handleSaveProduct} className="space-y-6 font-mono text-xs">
-                            <div className="grid md:grid-cols-2 gap-8">
-                                <div className="space-y-4">
+                            {/* three cells, not two columns: the pictures are a cell of their own, so a promo item (no prices) can
+                                move them into the right half it empties. A phone still reads fields, pictures, prices. */}
+                            <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
+                                <div className={`space-y-4 md:col-start-1 md:row-start-1 ${isPromo(editingProduct) ? 'md:row-span-2' : ''}`}>
                                     <div><label className="text-[var(--duke-ink-8)] block mb-1">PRODUCT NAME</label><input name="name" defaultValue={editingProduct.name} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none"/></div>
                                     {/* the description shows in the fullscreen viewer (ExamineModal); handleSaveProduct takes it from the form like every other field (his 2026-10-10 "the description editor for each product is gone") */}
                                     <div><label className="text-[var(--duke-ink-8)] block mb-1">DESCRIPTION</label><textarea name="description" defaultValue={editingProduct.description || ''} rows={3} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none resize-y"/></div>
@@ -5139,7 +5141,9 @@ const handleGitHubMirror = async () => {
                                         <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">BAL / KARTON</label><input name="balsPerCarton" type="number" step="any" defaultValue={editingProduct.balsPerCarton || 4} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-brass-edge)] text-[var(--duke-brass-ink)] focus:border-[var(--duke-brass-edge)] outline-none"/></div>
                                     </div>
                                     )}
+                                </div>
 
+                                <div className={`space-y-4 md:row-start-2 ${isPromo(editingProduct) ? 'md:col-start-2' : 'md:col-start-1'}`}>
                                     {/* RESTORED: FRONT = BACK TOGGLE */}
                                     <div className="flex items-center gap-2">
                                         <input 
@@ -5190,7 +5194,7 @@ const handleGitHubMirror = async () => {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="space-y-4">
+                                <div className={`space-y-4 mt-4 md:mt-0 md:col-start-2 md:row-start-1 ${isPromo(editingProduct) ? '' : 'md:row-span-2'}`}>
                                     {isPromo(editingProduct) && <p className="text-[var(--duke-ink-8)] leading-relaxed">PROMO ITEM - given free together with a sale. No price and no packing: it is counted in pcs.</p>}
                                     {!isPromo(editingProduct) && (<>
                                     <h3 className="text-[var(--duke-ink-hi)] border-b border-[var(--duke-veil-edge)] pb-1 mb-2">PRICING ENGINE</h3>
