@@ -110,8 +110,8 @@
     "semantic_hash": ""
   },
   "src/components/BiohazardTheme.jsx": {
-    "mtime": 1792470826.0264778,
-    "ast_hash": "9dd8df4ab00cb7b0a6d0f5619bd3e467",
+    "mtime": 1792911913.2198498,
+    "ast_hash": "88d002345d8f127cae7ec92ce93f0e95",
     "semantic_hash": ""
   },
   "src/components/BranchWarehouseManager.jsx": {
@@ -550,8 +550,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1792901271.9173496,
-    "ast_hash": "d5447bf6ce9607f6ba89876ba8951255",
+    "mtime": 1792912006.9113965,
+    "ast_hash": "836d340ed59d000405f26156fc0276bb",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -730,13 +730,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1792900642.8461285,
-    "ast_hash": "c3306409041afb17c318ae87e8c8be9e",
+    "mtime": 1792911913.6150975,
+    "ast_hash": "ba40156f26cb4177c90fb1f0f06f067d",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1792901252.3673694,
-    "ast_hash": "70132f0d0d906768e0e5181394985c76",
+    "mtime": 1792912006.7204807,
+    "ast_hash": "c33cd9f8546affd6bfceeb0dee7f8290",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -1680,8 +1680,8 @@
     "semantic_hash": ""
   },
   "src/components/DemoFrontDoor.jsx": {
-    "mtime": 1792900573.999499,
-    "ast_hash": "4952bee0a6552f5d720d3fe3c8c94419",
+    "mtime": 1792911913.402773,
+    "ast_hash": "1120e197584311ccfc288683759d8493",
     "semantic_hash": ""
   },
   "src/config/demoLogins.js": {
@@ -1935,8 +1935,8 @@
     "semantic_hash": ""
   },
   "tools/mission-draft.jsx": {
-    "mtime": 1792901015.8281026,
-    "ast_hash": "5f707cce49b620f35ce4ffda472568ea",
+    "mtime": 1792911923.5008912,
+    "ast_hash": "1ddbe2b7c78024eb2f3b10a8eed614e3",
     "semantic_hash": ""
   },
   ".claude/presentation/v37-board/index.html": {
@@ -2100,8 +2100,8 @@
     "semantic_hash": ""
   },
   "tools/capy-portraits/e-talk.png": {
-    "mtime": 1792900247.5949402,
-    "ast_hash": "2427349ad5778127c149ff0f1e0fa4c0",
+    "mtime": 1792902416.838158,
+    "ast_hash": "d384ff74e3a763b96386659da8b6b1e8",
     "semantic_hash": ""
   },
   "tools/capy-portraits/e-think.png": {
@@ -2140,8 +2140,8 @@
     "semantic_hash": ""
   },
   "src/assets/capy-talk/e-talk.webp": {
-    "mtime": 1792900498.509882,
-    "ast_hash": "a8643bdf3c88ed1f7ff4629cf284919c",
+    "mtime": 1792902416.9359918,
+    "ast_hash": "323392b46e890c1fd26cde23e4df13ee",
     "semantic_hash": ""
   },
   "src/assets/capy-talk/e-think.webp": {

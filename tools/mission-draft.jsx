@@ -15,5 +15,6 @@ export default function MissionDraft() {
     /* written before the mission mounts, so its first read sees this day's fixture */
     const done = Object.fromEntries((qs.get('done') || '').split(',').filter((n) => SAVED[n]).map((n) => [n, SAVED[n]]));
     if (qs.has('done')) try { localStorage.setItem('kpm-demo-mission', JSON.stringify({ day: missionDay(Date.now()), done })); } catch { /* lab */ }
-    return <DemoBar user={{ email: EMAIL[qs.get('as') || 'T2'] }} />;
+    /* &gate = the Master Vault password screen is still up: the bar shows, the mission must not */
+    return <DemoBar user={{ email: EMAIL[qs.get('as') || 'T2'] }} inside={!qs.has('gate')} />;
 }

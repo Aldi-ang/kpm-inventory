@@ -534,7 +534,9 @@ export default function BiohazardTheme({
         <>
         {/* THE DEMO BAR (his 2026-10-13 pick A): outside this root on purpose - the root is overflow-hidden, and iOS
             WebKit clips a fixed child of an overflow ancestor (the capybara's cut bubble, CapybaraMascot.jsx). */}
-        {IS_DEMO && user && <DemoBar user={user} />}
+        {/* `inside` = past the Master Vault password and signed in as one of the people: the mission line waits for that
+            (his 2026-10-25 "this mission shouldnt be there when user even not login yet") */}
+        {IS_DEMO && user && <DemoBar user={user} inside={!showAdminLogin && !!userRole && userRole !== 'UNAUTHORIZED'} />}
         <div className="print-reset h-[100dvh] w-full bg-transparent text-[var(--ink-muted)] font-sans tracking-wide overflow-hidden flex relative pt-[var(--kpm-safe-top)]">
             <style>{`
                 @keyframes reRequiem {

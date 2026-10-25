@@ -186,7 +186,7 @@ function Invites() {
     );
 }
 
-export function DemoBar({ user }) {
+export function DemoBar({ user, inside = true }) {
     const [open, setOpen] = useState(false);
     const [busy, setBusy] = useState(null);
     const PEOPLE = people();
@@ -251,7 +251,7 @@ export function DemoBar({ user }) {
                 </div>
             </>)}
         </div>
-        {/* the guided mission under this bar (his pick B + the capybara, 2026-10-24/25) */}
-        <DemoMission me={me} isT1={isT1} people={PEOPLE} />
+        {/* the guided mission under this bar (his pick B + the capybara, 2026-10-24/25) - only once inside the app */}
+        {inside && <DemoMission me={me} isT1={isT1} people={PEOPLE} />}
     </>);
 }

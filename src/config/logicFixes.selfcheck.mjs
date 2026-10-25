@@ -11747,7 +11747,10 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
      [rv, fleet].every((s) => (s.match(/new CustomEvent\('kpm-mission'/g) || []).length === (s.match(/if \(IS_DEMO\) window\.dispatchEvent\(new CustomEvent\('kpm-mission'/g) || []).length));
   ok('the hint keys exist: MASUK = 1, KIRIM = 2, the loading bay = 3, SWITCH = switch; DemoBar renders the mission',
      /data-mission=\{t\.id === 'in' \? '1' : t\.id === 'out' \? '2' : undefined\}/.test(rv) && /data-mission="3"/.test(fleet) &&
-     /data-mission="switch"/.test(door) && /<DemoMission me=\{me\} isT1=\{isT1\} people=\{PEOPLE\} \/>/.test(door));
+     /data-mission="switch"/.test(door) && /\{inside && <DemoMission me=\{me\} isT1=\{isT1\} people=\{PEOPLE\} \/>\}/.test(door));
+  ok('REGRESSION: the mission waits until the visitor is inside - not on the vault password screen, not on "pick who to be" (his 2026-10-25 "shouldnt be there when user even not login yet")',
+     /<DemoBar user=\{user\} inside=\{!showAdminLogin && !!userRole && userRole !== 'UNAUTHORIZED'\} \/>/.test(read('src/components/BiohazardTheme.jsx')) &&
+     /export function DemoBar\(\{ user, inside = true \}\)/.test(door));
   ok('the capybara says saya / Anda, never aku / kamu (his 2026-10-25 call)', !/\b(aku|kamu)\b/i.test(code(dm)) && /saya/.test(dm) && /Anda/.test(dm));
   ok('Lite Mode keeps the dim without the blur on both layers (.8, his 2026-10-24 frame)',
      /html\.lite-mode \.kpm-mx-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(read('src/styles/theme.css')) &&
