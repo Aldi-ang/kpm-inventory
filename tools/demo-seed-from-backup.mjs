@@ -37,7 +37,15 @@ const products = backup.inventory.map((p) => {
     return out;
 });
 
-const SHOP_KEYS = ['id', 'name', 'city', 'province', 'region', 'storeType', 'tier', 'priceTier', 'pricingTier', 'status', 'visitFreq',
+/* PROMO GOODS (2026-10-26, his "make sure the new master vault is uploaded in the demo"): one of each goods type, so
+   the demo's Master Vault shows the 3D goods. Their own key, never `inventory`: everything that reads that list (the
+   made-up sales, the branch stock, the canvases in api/_demoCompany.js) is cigarette-only. */
+const promo = [['tshirt', 'T-shirt Cello', 40], ['poster', 'Poster Cello', 120], ['hat', 'Hat Cello', 25], ['lighter', 'Lighter Cello', 300],
+    ['ashtray', 'Ashtray Cello', 60], ['mug', 'Mug Cello', 30]]
+    .map(([goods, name, stock]) => ({ id: `demo-promo-${goods}`, name, kind: 'promo', unit: 'pcs', type: 'PROMO', goods, stock, minStock: 5,
+        images: {}, dimensions: { w: 90, h: 100, d: 3 } }));
+
+const SHOP_KEYS =['id', 'name', 'city', 'province', 'region', 'storeType', 'tier', 'priceTier', 'pricingTier', 'status', 'visitFreq',
     'catchmentScale', 'lifetimeXP', 'seasonXP', 'lastXPUpdate', 'createdAt', 'updatedAt'];
 const folders = [...new Set(backup.customers.map((c) => c.mapFolder).filter(Boolean))];
 const agents = [...new Set(backup.customers.map((c) => c.assignedAgent).filter(Boolean))];
@@ -68,6 +76,7 @@ const seed = {
     appSettings: { companyName: 'KPM Demo' },
     tierSettings: backup.tierSettings,
     inventory: products,
+    promo,
     customers: shops,
     mapBorders,
 };

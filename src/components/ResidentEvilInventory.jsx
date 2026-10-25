@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Plus, Package, AlertCircle, ImageIcon, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatRupiah, convertToBks, getLocalDayKey, isPromo, promoSkin } from '../utils/helpers';
+import { formatRupiah, convertToBks, getLocalDayKey, isPromo, promoSkin, promoGoods } from '../utils/helpers';
+import PromoGoods3D from './PromoGoods3D';
 import * as threshold from '../utils/stockThreshold';
 
 // 🚀 NEW: ADVANCED STOCK FORMATTER (Handles Batang, Slops, and Bal)
@@ -79,7 +80,11 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
 
     const renderFace = (img, fallbackColor) => img ? <img src={img} className="w-full h-full object-cover" /> : <div className={`w-full h-full ${fallbackColor} border border-white/10`}></div>;
     const images = product.images || {};
-    const front = images.front || product.image || (isPromo(product) ? promoSkin(product, 'front') : null);
+    const front0 = images.front || product.image;
+    /* no FRONT photo -> the 3D goods (PromoGoods3D); a photo keeps the flat card below (his 2026-10-26 "the uploaded
+       photo will be these flat card") */
+    const goods3d = isPromo(product) && !front0 && promoGoods(product);
+    const front = front0 || (isPromo(product) ? promoSkin(product, 'front') : null);
     const back = product.useFrontForBack ? front : images.back || (isPromo(product) ? promoSkin(product, 'back') : null);
 
     /* the 3D size controls: a floating panel on the desk (top-right button), a fold under the prices on the phone */
@@ -92,7 +97,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
 
     return (
         <div className="lg:h-full flex flex-col relative animate-fade-in select-none bg-gradient-to-b from-black via-stone-900/30 to-black overflow-hidden">
-            {isAdmin && (
+            {isAdmin && !goods3d && (   /* the size sliders shape the flat card; a 3D goods model has its own shape */
                 <div className="absolute top-4 right-4 z-[100] hidden lg:flex flex-col items-end gap-2 controls-panel">
                     <button onClick={() => setShowControls(!showControls)} className={`w-11 h-11 flex items-center justify-center rounded-full border ${showControls ? 'bg-amber-500 border-amber-300 text-black shadow-[0_0_12px_rgba(217,164,65,0.6)]' : 'bg-black/50 border-amber-500/20 text-amber-200/70'}`}>
                         <Maximize2 size={16}/>
@@ -116,10 +121,11 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                         <Maximize2 size={14} aria-hidden="true" />View in fullscreen
                     </button>
                 )}
-                <div 
-                    className="relative" 
-                    style={{ 
-                        width: w, height: h, 
+                {goods3d ? <PromoGoods3D product={product} className="absolute inset-0" /> : (
+                <div
+                    className="relative"
+                    style={{
+                        width: w, height: h,
                         transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
                         transformStyle: 'preserve-3d', 
                         willChange: 'transform' 
@@ -134,6 +140,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                     <div className="absolute" style={{ width: w, height: d, transform: `rotateX(-90deg) translateZ(${h/2}px)`, top: (h-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.bottom, "bg-slate-500")}</div>
                     </div>
                 </div>
+                )}
             </div>
 
             <div className="bg-black/90 border-t-2 border-amber-600/80 p-6 md:p-8 relative z-20 backdrop-blur-xl shadow-[0_-10px_30px_rgba(0,0,0,0.6)]">
@@ -185,7 +192,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                 </div>
                 )}
 
-                {isAdmin && (
+                {isAdmin && !goods3d && (
                     <details className="lg:hidden mt-4 border border-amber-500/20 controls-panel group">
                         <summary className="min-h-11 px-3 flex items-center cursor-pointer list-none text-[11px] font-mono text-stone-300">
                             3D size {dims.w} × {dims.h} × {dims.d} mm<ChevronRight size={14} className="ml-auto text-amber-500/60 group-open:rotate-90 transition-transform"/>
@@ -266,7 +273,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                             <div key={item.id} id={`mv-row-${item.id}`} onClick={() => openProduct(item.id)} className={`p-3 md:p-4 cursor-pointer border mb-2 flex items-center gap-4 transition-all relative ${selectedId === item.id ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_15px_rgba(217,164,65,0.15)]' : 'border-transparent'}`}>
                                 {isLowStock && isAdmin && (<div className="absolute left-0 top-0 bottom-0 w-1.5 bg-rose-600 shadow-[0_0_12px_rgba(220,38,38,1)] z-10"></div>)}
                                 <div className={`w-12 h-12 shrink-0 border flex items-center justify-center bg-black relative ${selectedId === item.id ? 'border-amber-500' : isLowStock && isAdmin ? 'border-rose-500' : 'border-amber-900/30'}`}>
-                                    {item.images?.front || isPromo(item) ? <img src={item.images?.front || promoSkin(item, 'front')} className="w-full h-full object-cover" /> : <Package size={20} className="text-amber-900/60"/>}
+                                    {item.images?.front || isPromo(item) ? <img src={item.images?.front || (promoGoods(item) ? `/promo/${promoGoods(item)}.png` : promoSkin(item, 'front'))} className="w-full h-full object-cover" /> : <Package size={20} className="text-amber-900/60"/>}
                                     {isLowStock && isAdmin && <AlertCircle size={14} className="absolute -top-1.5 -right-1.5 text-rose-500 bg-black rounded-full shadow-[0_0_5px_red]" />}
                                 </div>
                                 <div className="flex-1 min-w-0">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, ZoomOut, Lock, Unlock, ZoomIn, RefreshCcw } from 'lucide-react';
-import { isPromo, promoSkin } from '../utils/helpers';
+import { isPromo, promoSkin, promoGoods } from '../utils/helpers';
+import PromoGoods3D from './PromoGoods3D';
 
 const START_ROTATION = { x: -15, y: 25 };
 const START_SCALE = 2.8;
@@ -62,6 +63,8 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
   const images = product.images || {};
   const frontImage = images.front || product.image || (isPromo(product) ? promoSkin(product, 'front') : null);
   const backImage = product.useFrontForBack ? frontImage : images.back || (isPromo(product) ? promoSkin(product, 'back') : null);
+  /* no FRONT photo -> the 3D goods, turned by the finger; a photo keeps the flat card (his 2026-10-26) */
+  const goods3d = isPromo(product) && !(images.front || product.image) && promoGoods(product);
   
   return (
     /* kpm-examine-in: the ground fades, the object scales up from .94. It used to appear
@@ -84,12 +87,14 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
           which is what writes `product.dimensions` in the first place. This screen only READS
           them now, so it no longer needs onUpdateProduct at all.
           Reset moved in here because it was living inside that panel and is worth keeping. */}
+      {!goods3d && (   /* zoom, lock and reset size the flat card; the 3D goods fit themselves */
       <div className="absolute top-8 right-24 z-50 flex gap-2" onPointerDown={(e) => e.stopPropagation()}>
          <button onClick={() => handleZoom(-0.2)} className="p-2 bg-black/60 text-white rounded-full hover:bg-white/20"><ZoomOut size={18}/></button>
          <button onClick={() => setIsScaleLocked(!isScaleLocked)} className={`p-2 rounded-full hover:bg-white/20 ${isScaleLocked ? 'bg-orange-600 text-white' : 'bg-black/60 text-white'}`}>{isScaleLocked ? <Lock size={18}/> : <Unlock size={18}/>}</button>
          <button onClick={() => handleZoom(0.2)} className="p-2 bg-black/60 text-white rounded-full hover:bg-white/20"><ZoomIn size={18}/></button>
          <button onClick={handleReset} className="p-2 bg-black/60 text-white rounded-full hover:bg-white/20"><RefreshCcw size={18}/></button>
       </div>
+      )}
 
       <div className="text-white mb-12 text-center font-mono pointer-events-none select-none mt-20 md:mt-0">
           <h2 className="text-3xl font-bold tracking-[0.2em] uppercase text-orange-500 drop-shadow-lg">{product.name}</h2>
@@ -101,6 +106,7 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
       <div className="kpm-examine-object relative w-full max-w-md h-[400px] flex items-center justify-center perspective-1000 cursor-move">
         {/* No `transition` here on purpose. The rAF loop writes this node's transform every
             frame, and a transition would restart on each write — that is the flicker. */}
+        {goods3d ? <PromoGoods3D product={product} drag className="w-full h-full" /> : (
         <div ref={boxRef} className="relative preserve-3d" style={{ width: `${w}px`, height: `${h}px`, transformStyle: 'preserve-3d' }}>
           <div className="absolute inset-0 bg-white backface-hidden flex items-center justify-center border border-[#5c4b3a]" style={{ width: w, height: h, transform: `translateZ(${d / 2}px)` }}>{frontImage ? <img src={frontImage} className="w-full h-full object-cover"/> : <span className="text-4xl">🚬</span>}<div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none"></div></div>
           <div className="absolute inset-0 bg-[#1a1815] backface-hidden flex items-center justify-center border border-[#3e3226]" style={{ width: w, height: h, transform: `rotateY(180deg) translateZ(${d / 2}px)` }}>{renderFace(backImage, "bg-[#1a1815]")}</div>
@@ -109,6 +115,7 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
           <div className="absolute" style={{ width: w, height: d, transform: `rotateX(90deg) translateZ(${h / 2}px)`, top: (h - d)/2 }}>{renderFace(images.top, "bg-[#a89070]")}</div>
           <div className="absolute" style={{ width: w, height: d, transform: `rotateX(-90deg) translateZ(${h / 2}px)`, top: (h - d)/2 }}>{renderFace(images.bottom, "bg-[#a89070]")}</div>
         </div>
+        )}
       </div>
 
       <div className="mt-8 w-full max-w-2xl bg-black/60 border-t border-b border-orange-500/50 p-6 backdrop-blur-md pointer-events-none select-none">

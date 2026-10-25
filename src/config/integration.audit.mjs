@@ -5420,6 +5420,19 @@ check(G60, 'the section ribbons are on the phone, because they are the only way 
   'the leather has to follow the ribbon column\'s width or the ribbons stop reading as tabs cut ' +
   'into its edge');
 
+/* THE 3D PROMO GOODS (his 2026-10-26 "design 3D default for all the goods"). three.js is ~150 KB zipped: it must sit in
+   one chunk of its own, fetched when a promo item without a photo is on screen - never in the entry script every phone
+   runs at sign-in. "THREE.WebGLRenderer" is a string in three's own messages, so the minifier keeps it. */
+const G61 = 'Promo goods 3D';
+const entryName = (fs.readFileSync('dist/index.html', 'utf8').match(/src="\/assets\/(index-[^"]+\.js)"/) || [])[1];
+const threeFiles = files.filter(f => f.endsWith('.js') && fs.readFileSync(D + f, 'utf8').includes('THREE.WebGLRenderer'));
+check(G61, 'three.js is in one chunk of its own, not in the entry script',
+  !!entryName && threeFiles.length === 1 && threeFiles[0] !== entryName && !/^(react|firebase)-/.test(threeFiles[0]),
+  `entry ${entryName}, three in [${threeFiles.join(', ')}]`);
+check(G61, 'the six goods models and list pictures are in the build',
+  ['tshirt', 'poster', 'hat', 'lighter', 'ashtray', 'mug'].every(id => fs.existsSync(`dist/promo/${id}.glb`) && fs.existsSync(`dist/promo/${id}.png`)),
+  'public/promo/ is copied into dist/promo/ by vite');
+
 let last = '';
 for (const r of results) {
   if (r.group !== last) { console.log('\n' + r.group); last = r.group; }

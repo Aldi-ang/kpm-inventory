@@ -283,6 +283,104 @@
    "priceEcer": 9500
   }
  ],
+ "promo": [
+  {
+   "id": "demo-promo-tshirt",
+   "name": "T-shirt Cello",
+   "kind": "promo",
+   "unit": "pcs",
+   "type": "PROMO",
+   "goods": "tshirt",
+   "stock": 40,
+   "minStock": 5,
+   "images": {},
+   "dimensions": {
+    "w": 90,
+    "h": 100,
+    "d": 3
+   }
+  },
+  {
+   "id": "demo-promo-poster",
+   "name": "Poster Cello",
+   "kind": "promo",
+   "unit": "pcs",
+   "type": "PROMO",
+   "goods": "poster",
+   "stock": 120,
+   "minStock": 5,
+   "images": {},
+   "dimensions": {
+    "w": 90,
+    "h": 100,
+    "d": 3
+   }
+  },
+  {
+   "id": "demo-promo-hat",
+   "name": "Hat Cello",
+   "kind": "promo",
+   "unit": "pcs",
+   "type": "PROMO",
+   "goods": "hat",
+   "stock": 25,
+   "minStock": 5,
+   "images": {},
+   "dimensions": {
+    "w": 90,
+    "h": 100,
+    "d": 3
+   }
+  },
+  {
+   "id": "demo-promo-lighter",
+   "name": "Lighter Cello",
+   "kind": "promo",
+   "unit": "pcs",
+   "type": "PROMO",
+   "goods": "lighter",
+   "stock": 300,
+   "minStock": 5,
+   "images": {},
+   "dimensions": {
+    "w": 90,
+    "h": 100,
+    "d": 3
+   }
+  },
+  {
+   "id": "demo-promo-ashtray",
+   "name": "Ashtray Cello",
+   "kind": "promo",
+   "unit": "pcs",
+   "type": "PROMO",
+   "goods": "ashtray",
+   "stock": 60,
+   "minStock": 5,
+   "images": {},
+   "dimensions": {
+    "w": 90,
+    "h": 100,
+    "d": 3
+   }
+  },
+  {
+   "id": "demo-promo-mug",
+   "name": "Mug Cello",
+   "kind": "promo",
+   "unit": "pcs",
+   "type": "PROMO",
+   "goods": "mug",
+   "stock": 30,
+   "minStock": 5,
+   "images": {},
+   "dimensions": {
+    "w": 90,
+    "h": 100,
+    "d": 3
+   }
+  }
+ ],
  "customers": [
   {
    "id": "BXJWoAQmUEb7WAvX9K5y",

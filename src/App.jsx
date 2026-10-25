@@ -154,7 +154,7 @@ import {
 import { auth, db, storage, googleProvider, appId, IS_DEMO } from './config/firebase';
 import { VAULT_PASSWORD, OWNER_UID } from './config/demoLogins.js';   // demo build only - printed on the Master Vault gate; the demo company's folder
 import { DemoPick } from './components/DemoFrontDoor.jsx';   // demo build only - the invite check + "pick who to be"
-import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines, eodReportParts, eodNightMessage, EOD_PART_LABELS, absentForSure, isPromo } from './utils/helpers';
+import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, storeKey, storeLabel, eodBountyLines, eodReportParts, eodNightMessage, EOD_PART_LABELS, absentForSure, isPromo, PROMO_GOODS, promoGoods } from './utils/helpers';
 import { isLowStock } from './utils/stockThreshold';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES, DEFAULT_RANKS } from './config/career';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
@@ -3620,6 +3620,8 @@ const handleGitHubMirror = async () => {
           const numFields = promo ? ['stock', 'minStock'] : ['stock', 'minStock', 'sticksPerPack', 'priceDistributor', 'priceRetail', 'priceGrosir', 'priceEcer'];
           numFields.forEach(field => data[field] = Number(data[field]) || 0);
           if (promo) Object.assign(data, { kind: 'promo', unit: 'pcs', type: 'PROMO' });
+          /* the goods type (his 2026-10-26 "there is no product type"): one of the six, or not saved at all */
+          if (promo && !PROMO_GOODS.some(([id]) => id === data.goods)) delete data.goods;
 
           /* Packing is deliberately NOT in numFields. That list coerces empty to 0, and a 0
              here is a multiplier — a Bal priced at 0 Bks would charge nothing and deduct
@@ -5115,7 +5117,17 @@ const handleGitHubMirror = async () => {
                                     {editingProduct.id ? (isPromo(editingProduct) && <p className="text-[var(--duke-brass-ink)] tracking-widest">PROMO ITEM · COUNTED IN PCS</p>) : (
                                         <div className="flex items-center gap-2">
                                             <input type="checkbox" id="isPromo" checked={isPromo(editingProduct)} onChange={(e) => { const on = e.target.checked; setEditingProduct(p => ({ ...p, kind: on ? 'promo' : undefined })); setBoxDimensions(on ? { w: 90, h: 100, d: 3 } : { w: 55, h: 90, d: 22 }); }} className="accent-orange-500 w-4 h-4"/>
-                                            <label htmlFor="isPromo" className="text-[var(--duke-ink-hi)] text-xs cursor-pointer select-none">Promo item (T-shirt, poster, hat, lighter) - counted in pcs, no price</label>
+                                            <label htmlFor="isPromo" className="text-[var(--duke-ink-hi)] text-xs cursor-pointer select-none">Promo item (T-shirt, poster, hat, lighter, ashtray, mug) - counted in pcs, no price</label>
+                                        </div>
+                                    )}
+                                    {/* WHAT IT IS (his 2026-10-26 "there is no product type"): picks the 3D goods the vault shows
+                                        when no photo is uploaded. TYPE, as the cigarette form names its own type field. */}
+                                    {isPromo(editingProduct) && (
+                                        <div><label htmlFor="goods" className="text-[var(--duke-ink-8)] block mb-1">TYPE</label>
+                                            <select name="goods" defaultValue={promoGoods(editingProduct) || ''} required id="goods" className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none">
+                                                <option value="" disabled>Pick what it is</option>
+                                                {PROMO_GOODS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                                            </select>
                                         </div>
                                     )}
 

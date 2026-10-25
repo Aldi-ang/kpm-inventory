@@ -251,14 +251,36 @@ export const absentForSure = (snap) =>
    no price. useDatabaseSync keeps them OUT of `inventory`, which every cigarette screen reads. */
 export const isPromo = (product) => product?.kind === 'promo';
 
-/* The default skin of a promo item with no photo (his 2026-10-26 "default skin for the 3D promo item like on the
+/* WHAT A PROMO ITEM IS (his 2026-10-26 "there is no product type ... add ashtray and mug"): picked in the product form,
+   saved as `goods`. It picks the 3D model the vault shows when no photo is uploaded (public/promo/<id>.glb + .png, made
+   in Blender by tools/promo-goods/goods.py). An item saved before the picker has no `goods`, so its name is read with
+   the same words - his "T SHIRT TAWANG" got the label instead of the shirt because only "T-shirt" was looked for. */
+export const PROMO_GOODS = [
+    ['tshirt', 'T-shirt', /t[\s-]?shirt|kaos|baju|jersey|jaket|jacket|hoodie|sweater/i],
+    ['poster', 'Poster', /poster|banner|spanduk/i],
+    ['hat', 'Hat', /\b(topi|hat|cap)\b/i],
+    ['lighter', 'Lighter', /korek|lighter|mancis/i],
+    ['ashtray', 'Ashtray', /asbak|ashtray/i],
+    ['mug', 'Mug', /\bmug\b|gelas|cangkir/i],
+];
+export const promoGoods = (product) => {
+    const picked = PROMO_GOODS.find(([id]) => id === product?.goods);
+    return (picked || PROMO_GOODS.find(([, , words]) => words.test(String(product?.name || ''))))?.[0] || null;
+};
+/* the word printed on the goods: the name without the goods' own word ("T SHIRT TAWANG" -> TAWANG), or KPM */
+export const promoWord = (product) => {
+    const words = PROMO_GOODS.find(([id]) => id === promoGoods(product))?.[2];
+    const left = String(product?.name || '').replace(words || /$^/, '').replace(/^[\s\-:]+|[\s\-:]+$/g, '');
+    return (left || 'KPM').toUpperCase();
+};
+
+/* The flat picture of a promo item with no photo (his 2026-10-26 "default skin for the 3D promo item like on the
    preview"): the lab's T-shirt card - cream, a black shape, a gold word ON the black (gold never as text on light).
-   A shirt by its name gets the shirt and the rest of the name ("T-shirt Cello" -> CELLO); anything else a black label
-   with its name. The back says KPM. Drawn, never saved: an uploaded FRONT / BACK replaces it. */
-const SHIRT_WORDS = /t-?shirt|kaos|baju|jersey|jaket|jacket|hoodie|sweater/i;
+   A T-shirt gets the shirt, anything else a black label with its word; the back says KPM. Drawn, never saved. Since
+   the 3D goods it is the fallback: an item no goods type fits, or a phone where the 3D model cannot load. */
 export const promoSkin = (product, side) => {
-    const name = String(product?.name || ''), shirt = SHIRT_WORDS.test(name);
-    const word = (side === 'back' ? 'KPM' : (shirt ? name.replace(SHIRT_WORDS, '') : name).replace(/^[\s\-:]+|[\s\-:]+$/g, '') || 'KPM').toUpperCase();
+    const shirt = promoGoods(product) === 'tshirt';
+    const word = side === 'back' ? 'KPM' : promoWord(product);
     const size = Math.min(12, (shirt ? 38 : 62) / (word.length * 0.68)).toFixed(1);
     const shape = shirt ? '<path d="M31 13 L18 17 L6 31 L16 41 L24 35 L24 91 L66 91 L66 35 L74 41 L84 31 L72 17 L59 13 Q45 25 31 13 Z" fill="#1c1814"/>'
                         : '<rect x="10" y="36" width="70" height="28" rx="4" fill="#1c1814"/>';

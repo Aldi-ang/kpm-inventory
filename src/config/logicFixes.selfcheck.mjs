@@ -10823,13 +10823,13 @@ section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual 
   ok('every write is inside artifacts/cello-inventory-manager - nothing else in the demo database is touched', !!a && paths.every((p) => p.startsWith('artifacts/cello-inventory-manager/')));
   /* his 2026-10-13 "only bandung and muntilan team for now ... yogyakarta is not included" */
   const teamShops = seed.customers.filter((c) => c.region === 'MAGELANG' || c.province === 'JAWA BARAT');
-  ok('the seed goes in, two places only: 6 products, the 148 shops of Kabupaten Magelang + Bandung (no Yogyakarta, none without a region), his company name, the 5 tier pictures, rank read from the career record',
-     !!a && under('products').length === 6 && teamShops.length === 148 && under('customers').length === 148
+  ok('the seed goes in, two places only: 6 products + the 6 promo goods, the 148 shops of Kabupaten Magelang + Bandung (no Yogyakarta, none without a region), his company name, the 5 tier pictures, rank read from the career record',
+     !!a && under('products').length === 12 && seed.inventory.length === 6 && (seed.promo || []).length === 6 && teamShops.length === 148 && under('customers').length === 148
      && under('customers').every((d) => d.data.region === 'MAGELANG' || d.data.province === 'JAWA BARAT')
      && a.docs.find((d) => d.path.endsWith('/settings/general'))?.data.companyName === 'KPM Demo' && a.docs.find((d) => d.path.endsWith('/settings/general'))?.data.useCareerLedger === true
      && a.docs.find((d) => d.path.endsWith('/settings/tiers'))?.data.list.length === 5);
   ok('the seed\'s exported timestamps become real dates (an object with seconds would show as "Invalid Date"); the text dates stay text, as the app saved them',
-     !!a && !JSON.stringify(a.docs).includes('firestore/timestamp/1.0') && under('products').every((d) => d.data.updatedAt instanceof Date)
+     !!a && !JSON.stringify(a.docs).includes('firestore/timestamp/1.0') && under('products').filter((d) => d.data.kind !== 'promo').every((d) => d.data.updatedAt instanceof Date)
      && under('customers').filter((d) => typeof d.data.createdAt === 'string').length === teamShops.filter((c) => typeof c.createdAt === 'string').length);
   ok('each switch login has its login record (bossUid = the owner, demoLogin) and every staff login a vault; the owner\'s vault is settings/admin',
      !!a && a.logins.slice(1).every((l) => { const e = a.docs.find((d) => d.path.endsWith('/employee_directory/' + l.email)); return e && e.data.bossUid === dc.OWNER_UID && e.data.agentId === l.agentId && e.data.demoLogin === true && e.data.locked === false; })
@@ -11916,10 +11916,10 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
   ok('BEHAVIOUR: a promo item with no photo gets the default skin - a shirt by its name gets the shirt with the rest of the name on it ("T-shirt Cello" -> CELLO, back KPM); a lighter gets the black label; a name with & stays a valid picture',
      skin({ name: 'T-shirt Cello' }, 'front').includes('M31 13') && skin({ name: 'T-shirt Cello' }, 'front').includes('>CELLO</text>') &&
      skin({ name: 'Kaos - Cello' }, 'front').includes('>CELLO</text>') && skin({ name: 'T-shirt Cello' }, 'back').includes('>KPM</text>') &&
-     skin({ name: 'Lighter' }, 'front').includes('>LIGHTER</text>') && !skin({ name: 'Lighter' }, 'front').includes('M31 13') &&
-     skin({ name: 'Poster A&B' }, 'front').includes('>POSTER A&amp;B</text>') && skin({ name: 'Hat' }, 'front').includes('fill="#d4a017"'));
+     skin({ name: 'Lighter' }, 'front').includes('>KPM</text>') && !skin({ name: 'Lighter' }, 'front').includes('M31 13') &&
+     skin({ name: 'Poster A&B' }, 'front').includes('>A&amp;B</text>') && skin({ name: 'Hat' }, 'front').includes('fill="#d4a017"'));
   ok('REGRESSION: the default skin is drawn wherever a promo item shows a face - the Master Vault box (front and back), its list picture, and the fullscreen viewer',
-     rei.includes("const front = images.front || product.image || (isPromo(product) ? promoSkin(product, 'front') : null);") &&
+     rei.includes("const front = front0 || (isPromo(product) ? promoSkin(product, 'front') : null);") && rei.includes('const front0 = images.front || product.image;') &&
      rei.includes("images.back || (isPromo(product) ? promoSkin(product, 'back') : null)") && rei.includes("promoSkin(item, 'front')") && imports(rei, 'promoSkin') &&
      exam.includes("images.back || (isPromo(product) ? promoSkin(product, 'back') : null)") && imports(exam, 'promoSkin'));
   ok('REGRESSION: the Master Vault list counts a promo item in pcs, never Bks / Slop / Bal, and shows it no price grid (Rp 0 x4)',
@@ -11933,6 +11933,41 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
   ok('BEHAVIOUR: kind absent = cigarette (no old document changes); two cigarettes and a T-shirt -> the terminal sees two, the promo list one',
      isPromo({ kind: 'promo' }) && !isPromo({}) && !isPromo({ kind: 'Promo' }) && !isPromo(undefined) && !isPromo(null) &&
      list.filter((p) => !isPromo(p)).map(p => p.id).join() === 'a,b' && list.filter(isPromo).map(p => p.id).join() === 't');
+
+  /* THE GOODS TYPE + THE 3D GOODS (his 2026-10-26 "there is no product type ... add ashtray and mug ... design 3D
+     default for all the goods ... the uploaded photo will be these flat card"). His own "T SHIRT TAWANG" got the label,
+     not the shirt: the name was the only clue and its space was not a dash. The type is picked now; the name is read
+     only for an item saved before the picker. */
+  const { PROMO_GOODS, promoGoods, promoWord } = await import('../utils/helpers.js');
+  ok('BEHAVIOUR: the goods type - six of them, a picked type beats the name, an old item is read from its name ("T SHIRT TAWANG" -> T-shirt, TAWANG on it), nothing recognisable -> none',
+     (PROMO_GOODS || []).map(([id]) => id).join() === 'tshirt,poster,hat,lighter,ashtray,mug' &&
+     promoGoods({ goods: 'mug', name: 'T-shirt Cello' }) === 'mug' && promoGoods({ goods: 'banana', name: 'Topi' }) === 'hat' &&
+     promoGoods({ name: 'T SHIRT TAWANG' }) === 'tshirt' && promoWord({ name: 'T SHIRT TAWANG' }) === 'TAWANG' &&
+     promoGoods({ name: 'Asbak Cello' }) === 'ashtray' && promoGoods({ name: 'Korek Gas' }) === 'lighter' && promoGoods({ name: 'Gelas KPM' }) === 'mug' &&
+     promoWord({ name: 'Mug Cello', goods: 'mug' }) === 'CELLO' && promoWord({ name: 'Mug', goods: 'mug' }) === 'KPM' &&
+     promoGoods({ name: 'Gantungan kunci' }) === null && promoGoods({ name: 'Captain Black' }) === null &&
+     skin({ name: 'T SHIRT TAWANG' }, 'front').includes('M31 13') && skin({ name: 'T SHIRT TAWANG' }, 'front').includes('>TAWANG</text>'));
+  const glb = (id) => { try { return fs.readFileSync(`public/promo/${id}.glb`).toString('latin1'); } catch { return ''; } };
+  ok('REGRESSION: every goods type has its model (a .glb with a printed area for the name) and its list picture in public/promo',
+     (PROMO_GOODS || []).length === 6 && PROMO_GOODS.every(([id]) => glb(id).startsWith('glTF') && glb(id).includes('"print":"front"') && fs.existsSync(`public/promo/${id}.png`)));
+  const pg3 = read('src/utils/promoGoods3d.js'), pgc = read('src/components/PromoGoods3D.jsx');
+  ok('REGRESSION: the form picks the type - a required TYPE list of the six on every promo item, saved only when it is one of them',
+     form.includes('<select name="goods" defaultValue={promoGoods(editingProduct) || \'\'} required') && form.includes('{PROMO_GOODS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}') &&
+     form.includes('Promo item (T-shirt, poster, hat, lighter, ashtray, mug)') &&
+     read('src/App.jsx').includes('if (promo && !PROMO_GOODS.some(([id]) => id === data.goods)) delete data.goods;'));
+  ok('REGRESSION: no photo -> the 3D goods in the Master Vault (spinning, tap opens fullscreen) and in the fullscreen viewer (the finger turns it); a FRONT photo keeps the flat card; the list shows the goods picture',
+     rei.includes('const goods3d = isPromo(product) && !front0 && promoGoods(product);') && rei.includes('<PromoGoods3D product={product} className="absolute inset-0" />') &&
+     rei.includes("promoGoods(item) ? `/promo/${promoGoods(item)}.png`") && imports(rei, 'promoGoods') &&
+     exam.includes('const goods3d = isPromo(product) && !(images.front || product.image) && promoGoods(product);') && exam.includes('<PromoGoods3D product={product} drag className="w-full h-full" />'));
+  ok('REGRESSION: three.js loads only when a 3D goods item is on screen (its own chunk), Lite Mode stops the spin, and a failed load falls back to the flat picture',
+     pgc.includes("import('../utils/promoGoods3d.js')") && !/from 'three'/.test(pgc) && !/from 'three'/.test(rei) && !/from 'three'/.test(exam) && !/from 'three'/.test(read('src/App.jsx')) &&
+     pg3.includes("document.documentElement.classList.contains('lite-mode')") && pg3.includes('`/promo/${goods}.glb`') &&
+     pgc.includes("if (!goods || failed) return <img src={promoSkin(product, 'front')}"));
+  const seedJ = JSON.parse(read('demo/seed.json'));
+  ok('REGRESSION: the demo vault holds one of each goods (seed.promo, written as products only); the made-up demo sales and stock stay cigarette-only',
+     (seedJ.promo || []).map((p) => p.goods).join() === 'tshirt,poster,hat,lighter,ashtray,mug' && seedJ.promo.every((p) => p.kind === 'promo' && p.unit === 'pcs') &&
+     !seedJ.inventory.some((p) => p.kind === 'promo') && read('api/_demoCompany.js').includes('for (const p of (seed.promo || []).map(revive)) put(`${home}/products/${p.id}`, p);') &&
+     read('tools/demo-seed-from-backup.mjs').includes('    inventory: products,\n    promo,'));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

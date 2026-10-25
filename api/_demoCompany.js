@@ -197,6 +197,8 @@ export function buildDemoCompany(seed, now, vault) {
     const nameOf = Object.fromEntries(staff.map((m) => [m.agentId, m.name]));
 
     for (const p of products) put(`${home}/products/${p.id}`, p);
+    /* the promo goods: products too, but only here - `products` above feeds the made-up sales and stock, cigarette-only */
+    for (const p of (seed.promo || []).map(revive)) put(`${home}/products/${p.id}`, p);
     /* a field man outside Headquarters loads his van from his branch warehouse (FleetCanvasManager's
        selectedAgentUsesBranch); an empty one would show the Bandung team 0 of everything */
     for (const place of new Set(staff.map((m) => m.location).filter((l) => l !== 'Headquarters'))) {

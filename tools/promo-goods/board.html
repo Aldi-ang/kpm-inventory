@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Promo Goods 3D</title>
+<style>
+  :root {
+    --bg: #f3eee6; --panel: #e8e1d6; --ink: #1c1814; --dim: #5c4b3a; --line: #cfc5b6;
+    --stage: #0d0b09; --gold: #d4a017; --gold-ink: #8a6a0f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #0a0908; --panel: #15120f; --ink: #efe9df; --dim: #a8977f; --line: #2c241c; --gold-ink: #d4a017; color-scheme: dark; }
+  }
+  :root[data-theme="dark"] { --bg: #0a0908; --panel: #15120f; --ink: #efe9df; --dim: #a8977f; --line: #2c241c; --gold-ink: #d4a017; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding-block: 20px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  h1 { font-size: 22px; margin: 0 0 4px; letter-spacing: .02em; }
+  p.sub { margin: 0 0 16px; color: var(--dim); }
+  label.name { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; font-weight: 600; }
+  label.name input { font: inherit; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 8px 12px;
+    border: 1px solid var(--line); background: var(--panel); color: var(--ink); border-radius: 8px; width: 180px; }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  figure { margin: 0; background: var(--stage); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  canvas { display: block; width: 100%; aspect-ratio: 1; touch-action: none; cursor: grab; }
+  figcaption { padding: 8px 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 13px;
+    color: #d4a017; background: #15120f; border-top: 1px solid #2c241c; }
+  figcaption span { color: #a8977f; font-weight: 500; letter-spacing: 0; text-transform: none; }
+  .err { color: #c0392b; padding: 12px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Promo goods: the default 3D</h1>
+  <p class="sub">Each item shows this when no photo is uploaded. Drag any item to turn it. An item with a photo stays the flat photo card.</p>
+  <label class="name">Name printed on the goods <input id="word" value="CELLO" maxlength="18"></label>
+  <div class="grid" id="grid"></div>
+</main>
+<script type="module">
+/* jsDelivr's +esm builds: the addons' own `import 'three'` is rewritten to the same /npm/three@0.160.0/+esm URL, so
+   one three.js instance and no import map (the lab's vite does not read one) */
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/+esm';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js/+esm';
+import { RoomEnvironment } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/environments/RoomEnvironment.js/+esm';
+
+/* [id, name, tilt toward the viewer]: the ashtray and the hat are looked at from above, or their print hides */
+const GOODS = [['tshirt', 'T-shirt', 0.12], ['poster', 'Poster', 0.12], ['hat', 'Hat', 0.3], ['lighter', 'Lighter', 0.12], ['ashtray', 'Ashtray', 0.6], ['mug', 'Mug', 0.12]];
+const CREAM = '#efe9df', BLACK = '#1c1814', GOLD = '#d4a017';
+
+/* The printed area of a goods model: black with the word in gold (gold only on black - the palette law); 'ink' is the
+   word alone on black fabric; a poster is cream with a black block; the ashtray floor is a round print. Portrait areas
+   (the lighter) run the word upward. */
+function drawPrint(word, aspect, style) {
+  const W = aspect >= 1 ? 1024 : Math.round(1024 * aspect), H = aspect >= 1 ? Math.round(1024 / aspect) : 1024;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const fit = (text, x, y, maxW, maxH, color) => {
+    let size = maxH; g.font = `900 ${size}px "Arial Black", Arial, sans-serif`;
+    const w = g.measureText(text).width; if (w > maxW) { size *= maxW / w; g.font = `900 ${size}px "Arial Black", Arial, sans-serif`; }
+    g.fillStyle = color; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, x, y);
+  };
+  if (style === 'poster') {
+    g.fillStyle = CREAM; g.fillRect(0, 0, W, H);
+    const bw = W * 0.84, bh = H * 0.26, bx = (W - bw) / 2, by = H * 0.30;
+    g.fillStyle = BLACK; g.beginPath(); g.roundRect(bx, by, bw, bh, W * 0.04); g.fill();
+    fit(word, W / 2, by + bh / 2, bw * 0.84, bh * 0.56, GOLD);
+    fit('KPM', W / 2, H * 0.84, W * 0.36, H * 0.07, BLACK);
+  } else if (style === 'round') {
+    g.fillStyle = BLACK; g.beginPath(); g.arc(W / 2, H / 2, W / 2, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = GOLD; g.lineWidth = W * 0.014; g.beginPath(); g.arc(W / 2, H / 2, W * 0.44, 0, Math.PI * 2); g.stroke();
+    fit(word, W / 2, H / 2, W * 0.66, H * 0.2, GOLD);
+  } else {
+    if (style !== 'ink') { g.fillStyle = BLACK; g.fillRect(0, 0, W, H); }   // ink = the word alone, printed on fabric
+    if (aspect < 1) { g.translate(W / 2, H / 2); g.rotate(-Math.PI / 2); fit(word, 0, 0, H * 0.84, W * 0.56, GOLD); }
+    else fit(word, W / 2, H / 2, W * 0.84, H * 0.56, GOLD);
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.flipY = false; t.anisotropy = 8;
+  return t;
+}
+
+const loader = new GLTFLoader();
+const load = (id) => new Promise((ok, bad) => {
+  const b64 = window.GOODS_DATA?.[id];
+  if (b64) { const bin = Uint8Array.from(atob(b64), (ch) => ch.charCodeAt(0)); loader.parse(bin.buffer, '', ok, bad); }
+  else loader.load(`/promo/${id}.glb`, ok, undefined, bad);   // public/promo, where goods.py writes
+});
+
+const cards = [];
+const word = () => (document.getElementById('word').value.trim() || 'KPM').toUpperCase();
+function paint(card) {
+  card.prints.forEach(({ mesh }) => {
+    const d = mesh.userData, text = d.print === 'back' ? 'KPM' : word();
+    mesh.material.map?.dispose();
+    mesh.material.map = drawPrint(text, d.aspect, d.style); mesh.material.needsUpdate = true;
+  });
+}
+
+for (const [id, title, tilt] of GOODS) {
+  const fig = document.createElement('figure');
+  fig.innerHTML = `<canvas></canvas><figcaption>${title}</figcaption>`;
+  document.getElementById('grid').append(fig);
+  const canvas = fig.querySelector('canvas');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const scene = new THREE.Scene();
+  scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(renderer), 0.04).texture;
+  const key = new THREE.DirectionalLight(0xfff2dc, 1.4); key.position.set(2, 3, 4); scene.add(key);
+  scene.add(new THREE.HemisphereLight(0xfff6e8, 0x1a1410, 0.5));
+  const cam = new THREE.PerspectiveCamera(30, 1, 0.1, 50); cam.position.set(0, 0.55, 4.3); cam.lookAt(0, 0, 0);
+  const pivot = new THREE.Group(); pivot.rotation.x = tilt; scene.add(pivot);
+  const still = new URLSearchParams(location.search).get('still');   // ?still=<radians>: a fixed angle, for frames
+  if (still !== null) pivot.rotation.y = +still;
+  const card = { id, renderer, scene, cam, pivot, canvas, prints: [], spin: still !== null ? 0 : 0.5, drag: null };
+  cards.push(card);
+  canvas.addEventListener('pointerdown', (e) => { card.drag = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!card.drag) return;
+    pivot.rotation.y += (e.clientX - card.drag.x) * 0.012;
+    pivot.rotation.x = Math.max(-0.9, Math.min(0.9, pivot.rotation.x + (e.clientY - card.drag.y) * 0.008));
+    card.drag = { x: e.clientX, y: e.clientY };
+  });
+  const up = () => { card.drag = null; }; canvas.addEventListener('pointerup', up); canvas.addEventListener('pointercancel', up);
+  load(id).then((gltf) => {
+    const model = gltf.scene;
+    model.traverse((o) => { if (o.isMesh && o.userData.print) { o.material = new THREE.MeshStandardMaterial({ roughness: 0.4, alphaTest: 0.5 }); card.prints.push({ mesh: o }); } });
+    const box = new THREE.Box3().setFromObject(model), size = box.getSize(new THREE.Vector3());
+    model.position.sub(box.getCenter(new THREE.Vector3()));
+    const holder = new THREE.Group(); holder.add(model); holder.scale.setScalar(1.55 / Math.max(size.x, size.y, size.z));
+    pivot.add(holder); paint(card);
+  }).catch((err) => { fig.insertAdjacentHTML('beforeend', `<div class="err">${title}: ${err.message || err}</div>`); });
+}
+document.getElementById('word').addEventListener('input', () => cards.forEach(paint));
+
+let last = performance.now();
+(function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  for (const c of cards) {
+    const w = c.canvas.clientWidth, h = c.canvas.clientHeight;
+    if (c.canvas.width !== Math.round(w * c.renderer.getPixelRatio())) c.renderer.setSize(w, h, false);
+    if (!c.drag) c.pivot.rotation.y += c.spin * dt;
+    c.renderer.render(c.scene, c.cam);
+  }
+  requestAnimationFrame(frame);
+})(last);
+</script>
+</body>
+</html>
