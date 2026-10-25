@@ -1452,7 +1452,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             {/* VIEW MODE 2: THE COUNT WORKSHEET (BLIND THEN REVEAL)     */}
             {/* ======================================================== */}
             {viewMode === 'count' && (
-                <div className="flex-1 bg-[var(--sunk)] rounded-xl border border-[var(--line)] shadow-inner overflow-hidden flex flex-col relative animate-fade-in z-10">
+                <div data-guide="count" className="flex-1 bg-[var(--sunk)] rounded-xl border border-[var(--line)] shadow-inner overflow-hidden flex flex-col relative animate-fade-in z-10">
                     <div className="p-3 border-b border-[var(--line)] bg-[var(--sunk)] relative">
                         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Scan or Search Product..." className="bg-[var(--sunk)] border border-[var(--line)] pl-9 pr-4 py-3 rounded-lg text-sm w-full focus:border-[var(--accent-edge)] outline-none text-[var(--ink)] placeholder:text-[var(--ink-dim)] font-mono"/>
                         <Search size={16} className="absolute left-6 top-6 text-[var(--ink-dim)]"/>
@@ -1512,7 +1512,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                             <div className="grid grid-cols-2 gap-3 w-full md:w-auto md:shrink-0">
                                                 <label className="flex flex-col gap-1 min-w-0">
                                                     <span className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Good stock</span>
-                                                    <input type="number" inputMode="numeric" min="0" placeholder="0" value={goodVal} onChange={(e) => handleCountChange(item.id, 'good', e.target.value)} className="w-full md:w-28 text-center py-2.5 rounded-lg border border-[var(--line)] bg-[var(--sunk)] text-[var(--ink)] focus:border-[var(--accent-edge)] outline-none font-black text-lg font-mono tabular-nums placeholder:text-[var(--ink-dim)]"/>
+                                                    <input data-guide="good" type="number" inputMode="numeric" min="0" placeholder="0" value={goodVal} onChange={(e) => handleCountChange(item.id, 'good', e.target.value)} className="w-full md:w-28 text-center py-2.5 rounded-lg border border-[var(--line)] bg-[var(--sunk)] text-[var(--ink)] focus:border-[var(--accent-edge)] outline-none font-black text-lg font-mono tabular-nums placeholder:text-[var(--ink-dim)]"/>
                                                 </label>
                                                 <label className="flex flex-col gap-1 min-w-0">
                                                     <span className="text-[11px] lg:text-[10px] text-[var(--accent-ink)] font-bold uppercase tracking-widest whitespace-nowrap">Damaged</span>
@@ -1737,7 +1737,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                         <div className="text-xs text-[var(--ink-dim)] font-bold uppercase w-full md:w-auto text-center md:text-left tracking-widest">{Object.keys(counts).length} Wares Counted</div>
                         <div className="flex w-full md:w-auto gap-3">
                             <button onClick={() => setCounts({})} className="flex-none justify-center px-4 py-3 md:py-2 text-[var(--ink-dim)] hover:text-[var(--ink)] font-bold text-xs flex items-center gap-2 transition-colors bg-[var(--raised)] border border-[var(--line)] rounded-lg"><RefreshCcw size={14}/> Reset</button>
-                            <button onClick={handleCommit} disabled={isSubmitting || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] disabled:bg-[var(--sunk)] disabled:text-[var(--ink-dim)] disabled:border disabled:border-[var(--line)] disabled:shadow-none disabled:cursor-not-allowed px-4 lg:px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} Submit to HQ</button>
+                            <button data-guide="submit-count" onClick={handleCommit} disabled={isSubmitting || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] disabled:bg-[var(--sunk)] disabled:text-[var(--ink-dim)] disabled:border disabled:border-[var(--line)] disabled:shadow-none disabled:cursor-not-allowed px-4 lg:px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} Submit to HQ</button>
                         </div>
                     </div>
                 </div>

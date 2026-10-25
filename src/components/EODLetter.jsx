@@ -189,6 +189,7 @@ export default function EODLetter({ counted = {}, stage = 'open', mouthRef, onSe
       {(stage === 'sealed' || stage === 'launching') && (
         <button
           type="button"
+          data-guide="send"
           onClick={onSend}
           disabled={disabled || stage === 'launching'}
           className="w-full py-3.5 rounded-xl font-black flex items-center justify-center gap-2 bg-[var(--gold)] text-[var(--gold-ink)] border border-[var(--accent-edge)] shadow-md transition-transform active:scale-[.98] disabled:opacity-40"

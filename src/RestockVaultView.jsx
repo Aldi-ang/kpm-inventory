@@ -55,7 +55,7 @@ const num = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
    when a real option is chosen, and leaving the box with an unmatched query snaps the text back
    to whatever was actually selected. Registration lives in the Data Induk tab, where an address can
    be asked for — a name without an address is the thing being fixed. */
-const RouteCombo = ({ label, value, onChange, options, placeholder, hint }) => {
+const RouteCombo = ({ label, value, onChange, options, placeholder, hint, guide }) => {
     const [open, setOpen] = useState(false);
     const [hi, setHi] = useState(-1);
     const [query, setQuery] = useState(null);   // null = showing the chosen value
@@ -82,7 +82,8 @@ const RouteCombo = ({ label, value, onChange, options, placeholder, hint }) => {
     const pick = (name) => { onChange(name); setQuery(null); setOpen(false); setHi(-1); };
 
     return (
-        <div className="relative min-w-0" ref={boxRef}>
+        /* data-guide / data-ok: the demo mission's guide reads which field this is and whether it is filled */
+        <div className="relative min-w-0" ref={boxRef} data-guide={guide} data-ok={value ? '' : undefined}>
             <label className="text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-1 block">
                 {label}
             </label>
@@ -1831,7 +1832,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                 /* ═══════════ THE FORM — Masuk and Kirim are the same document ═══════════ */
                 <div className="flex-1 grid grid-cols-1 lg:grid-cols-[262px_1fr] min-h-0">
 
-                    <aside className="border-b lg:border-b-0 lg:border-r border-line-2 bg-panel flex flex-col min-h-0">
+                    <aside data-guide="goods" className="border-b lg:border-b-0 lg:border-r border-line-2 bg-panel flex flex-col min-h-0">
                         <div className="p-2.5 border-b border-line-2">
                             <div className="relative">
                                 <Search size={15} className="absolute left-2.5 top-2.5 text-ink-muted" />
@@ -1926,7 +1927,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                     vault. Either way Asal is never a free list of everything —
                                     that is how a delivery could once run factory → factory. */}
                                 <RouteCombo
-                                    label="Asal" value={poData.supplierName}
+                                    label="Asal" value={poData.supplierName} guide="asal"
                                     onChange={v => setPoData({ ...poData, supplierName: v })}
                                     options={isOut ? warehouseOptions : factoryOptions}
                                     placeholder="cari..."
@@ -1940,7 +1941,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                     one. His words: "can be sent to master vault or regional
                                     warehouse directly". */}
                                 <RouteCombo
-                                    label="Tujuan" value={poData.destination}
+                                    label="Tujuan" value={poData.destination} guide="tujuan"
                                     onChange={v => setPoData({ ...poData, destination: v })}
                                     options={warehouseOptions}
                                     placeholder="cari gudang..."
@@ -1991,7 +1992,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                 clear 1px border, so the table sits exactly where it did. */}
                             <div className={cart.length === 0 ? 'kpm-notice rounded-lg' : undefined}>
                             <div className={`overflow-x-auto rounded-lg ${cart.length === 0 ? 'border border-transparent bg-transparent' : 'border border-line-2 bg-panel'}`}>
-                                <table className="w-full text-sm sm:min-w-[780px] kpm-stack-rows">
+                                <table className="w-full text-sm sm:min-w-[780px] kpm-stack-rows" data-guide="cart" data-n={cart.length || undefined}
+                                    data-qty={cart.length && cart.every(c => Number(c.qtyReceived) > 0) ? '' : undefined}>
                                     <thead>
                                         <tr className="bg-raised">
                                             <th className="text-left text-[10px] font-bold text-ink-muted uppercase tracking-widest px-3 py-2 border-b border-line-2">Barang</th>
@@ -2168,6 +2170,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                 </div>
                                 <span className="font-mono text-[13px] font-bold text-ink w-11 text-right">{donePct}%</span>
                                 <button
+                                    data-guide="save"
                                     onClick={isOut ? handleHQPush : handleProcessRestock}
                                     disabled={isSubmitting || cart.length === 0}
                                     className={`font-display font-bold uppercase tracking-widest text-[11px] px-4 py-2 rounded border transition-transform active:scale-[0.97] flex items-center gap-2 ${

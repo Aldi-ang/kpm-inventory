@@ -776,7 +776,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         const Icon = m.userRole === 'ADMIN' ? ShieldCheck : m.userRole === 'AREA_ADMIN' ? Globe : m.role === 'Canvas' ? Truck : Activity;
         const initials = nameInitials(m.name);
         return (
-            <div key={m.id} role="option" aria-selected={on} tabIndex={0} onClick={() => pickAgent(m)}
+            <div key={m.id} data-agent={m.id} role="option" aria-selected={on} tabIndex={0} onClick={() => pickAgent(m)}
                 onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); pickAgent(m); } }}
                 className={`kpm-actor${on ? ' on' : ''}${leader ? ' leader' : ''}`}>
                 <span className="kpm-actor-name">{m.name}</span>

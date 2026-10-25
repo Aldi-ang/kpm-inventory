@@ -11735,7 +11735,7 @@ section('P3: a new shop is seen by its team at once; Grosir waits for the region
 /* ── THE DEMO MISSION LINE + THE CAPYBARA (his picks 2026-10-24 "b" + PETUNJUK, 2026-10-25 the RPG dialogue) ──────── */
 section('DEMO MISSION. A step ticks on the saved write only; the line resets with the demo; the capybara never says aku/kamu');
 {
-  const { STEPS, missionDay, liveStep, fmt } = await import('./demoMission.js');
+  const { STEPS, GUIDE, missionDay, liveStep, liveBeat, fmt } = await import('./demoMission.js');
   const rv = read('src/RestockVaultView.jsx'), dm = read('src/components/DemoMission.jsx'), door = read('src/components/DemoFrontDoor.jsx');
   const send = (n) => `if (IS_DEMO) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: ${n},`;
   const masuk = rv.slice(rv.indexOf('const handleProcessRestock'), rv.indexOf('const handleHQPush'));
@@ -11768,8 +11768,8 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
      /allowRetur: m\.agentId === 'demo-agent-2', allowCashRefund: false,/.test(read('api/_demoCompany.js')));
   ok('the hint keys exist: MASUK = 1, KIRIM = 2, the loading bay = 3, MAKE DEAL = 4, RETUR = 5, the EOD letter = 6, the pending EOD list = 7, New Count = 8, SWITCH = switch; DemoBar renders the mission',
      /data-mission=\{t\.id === 'in' \? '1' : t\.id === 'out' \? '2' : undefined\}/.test(rv) && /data-mission="3"/.test(fleet) &&
-     /data-mission="4"\s+onClick=\{handleFinalDeal\}/.test(sales) && /<button data-mission="5" onClick=\{\(\) => \{\s*if \(!allowRetur\)/.test(sales) &&
-     /<div className="w-full" data-mission="6">/.test(eodFlow) && /LEFT: PENDING REPORTS \*\/\}\s*<div data-mission="7">/.test(eodView) &&
+     /data-mission="4"[\s\S]{0,900}?onClick=\{handleFinalDeal\}/.test(sales) && /<button data-mission="5" onClick=\{\(\) => \{\s*if \(!allowRetur\)/.test(sales) &&
+     /<div className="w-full" data-mission="6" data-stage=\{stage\}>/.test(eodFlow) && /LEFT: PENDING REPORTS \*\/\}\s*<div data-mission="7">/.test(eodView) &&
      /data-mission="8" onClick=\{\(\) => setViewMode\('count'\)\}/.test(op) &&
      /data-mission="switch"/.test(door) && /\{inside && <DemoMission me=\{me\} isT1=\{isT1\} people=\{PEOPLE\} \/>\}/.test(door));
   ok('REGRESSION: the mission waits until the visitor is inside - not on the vault password screen, not on "pick who to be" (his 2026-10-25 "shouldnt be there when user even not login yet")',
@@ -11783,8 +11783,54 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
   ok('the capybara says saya / Anda, never aku / kamu (his 2026-10-25 call)', !/\b(aku|kamu)\b/i.test(code(dm)) && /saya/.test(dm) && /Anda/.test(dm));
   ok('REGRESSION: he is AGENT CAPYBARA, and his two answers read as answers - a PILIH JAWABAN title, numbered 1 / 2, and the keys 1 / 2 pick them (his 2026-10-25 "change its name into agent capybara", "even more clear answer option")',
      /<b>AGENT CAPYBARA<\/b>/.test(dm) && !/Kapibara/.test(dm) && /<span className="ask">PILIH JAWABAN<\/span>/.test(dm) &&
-     /<b>1<\/b>Tunjukkan tempatnya/.test(dm) && /<b>2<\/b>Saya coba sendiri/.test(dm) &&
+     /<b>1<\/b>Pandu saya langkah demi langkah/.test(dm) && /<b>2<\/b>Saya coba sendiri/.test(dm) &&
      /L\.choices && e\.key === '1'\) onShow\(\);/.test(dm) && /L\.choices && e\.key === '2'\) onClose\(\);/.test(dm));
+  /* THE STEP-BY-STEP GUIDE - his pick B, 2026-10-25 ("easier to understand and see if the guide is just infront of them face
+     without too many buttons"). Its beats are selectors on the real screens, so a renamed mark would leave the ring with
+     nothing to go round and nothing would say so: every mark a beat names must still be in the source. */
+  const guideSrc = [rv, fleet, sales, op, app, eodView, eodFlow, door, read('src/components/LoadingBay.jsx'), read('src/components/PlayerCard.jsx'),
+    read('src/components/EODLetter.jsx'), read('src/components/BiohazardTheme.jsx')].join('\n');
+  const sels = Object.values(GUIDE).flat().flatMap((b) => [...[].concat(b.at), ...(b.done ? [b.done] : [])]);
+  const lostMarks = [...new Set(sels.flatMap((s) => {
+    const out = [];
+    for (const [, name, val] of s.matchAll(/\[([\w-]+)\^?(?:="([^"]*)")?\]/g)) {
+      if (name === 'data-guide') { if (!guideSrc.includes(`data-guide="${val}"`) && !guideSrc.includes(`guide="${val}"`)) out.push(`data-guide="${val}"`); }
+      else if (name === 'aria-label') { if (!guideSrc.includes(`aria-label="${val}`) && !guideSrc.includes(`'${val}'`) && !guideSrc.includes(`\`${val}`)) out.push(`aria-label "${val}"`); }
+      else if (name === 'data-ponder' || name === 'data-mission') { if (!guideSrc.includes(`${name}="${val}"`) && !(name === 'data-mission' && /^[12]$/.test(val))) out.push(`${name}="${val}"`); }
+      else if (name === 'data-mark') { if (!new RegExp(`id: '${val}', label:`).test(guideSrc)) out.push(`menu id ${val}`); }
+      else if (!['role', 'aria-selected', 'aria-pressed'].includes(name) && !guideSrc.includes(`${name}=`)) out.push(name);
+    }
+    for (const [, c] of s.matchAll(/\.([a-z][\w-]*)/g)) if (!new RegExp(`[\\s'"\`]${c}[\\s'"\`$]`).test(guideSrc)) out.push(`.${c}`);
+    return out;
+  }))];
+  ok(`REGRESSION: the guide walks all eight steps, each beat but the last has the mark that proves it done, and every mark a beat names is still on the real screens (missing: ${lostMarks.join(', ') || 'none'})`,
+     [1, 2, 3, 4, 5, 6, 7, 8].every((n) => GUIDE[n]?.length >= 2 && !GUIDE[n].at(-1).done && GUIDE[n].slice(0, -1).every((b) => b.done)
+       && GUIDE[n].every((b) => [].concat(b.say).length === [].concat(b.at).length && [].concat(b.say).every((t) => t && !/\b(aku|kamu)\b/i.test(t))))
+     && lostMarks.length === 0);
+  ok('REGRESSION: the guide reads the page through liveBeat, steps aside while the dialog gate asks, shows only while on, outside the dialogue and before the round is done, and the "Pandu saya" answer turns it on',
+     /const i = liveBeat\(beats, \(s\) => !!qs\(s\)\);/.test(dm) && /if \(qs\('\[role="alertdialog"\]'\)\) \{ setV\(null\); return; \}/.test(dm) &&
+     /\{guide && n > 0 && !talking && beats && <Walk /.test(dm) && /const show = \(\) => \{ endGreeting\(\); setTalking\(null\); setGuide\(true\); \};/.test(dm) &&
+     !/\bPLACE\b|<Hint\b/.test(code(dm)));
+  ok('REGRESSION (found in the lab, 2026-10-25): the guide is drawn on the page root - inside the demo bar its z 400 lost to the phone menu (z 90) - reads the page without waiting for a frame, picks the copy of a control that is on screen, and neither scrolls nor dims while he types in a box',
+     /return createPortal\(/.test(dm) && /document\.body\s*\);/.test(dm) && !/requestAnimationFrame/.test(code(dm)) &&
+     /all\.find\(shows\) \|\| all\[0\]/.test(dm) &&
+     /if \(el && el !== seen\.current && !typing\) \{ el\.scrollIntoView/.test(dm) && /const panels = r && !off && !v\.typing \?/.test(dm));
+  ok('the guide sits over the sales terminal\'s shop picker (z 300) and the bay\'s sheet (z 80), under the dialog gate (z 10001)',
+     /\.kpm-mx-veil \{ position: fixed; z-index: 400;/.test(read('src/styles/theme.css')) && /\.kpm-mx-cap \{ position: fixed; z-index: 401;/.test(read('src/styles/theme.css')) &&
+     /fixed inset-0 z-\[300\]/.test(sales) && /\.kpm-bay-sheet \{ position: fixed; z-index: 80;/.test(read('src/styles/theme.css')) && /z-\[10001\]/.test(read('src/components/ConfirmGate.jsx')));
+  /* BEHAVIOUR - the live beat on pretend pages: `on` = the selectors present */
+  const pageWith = (...on) => (s) => s.split(/,\s*/).some((p) => on.includes(p));
+  const g1 = GUIDE[1], g3 = GUIDE[3], g7 = GUIDE[7];
+  ok('BEHAVIOUR: the live beat follows the page - nothing open = the menu; Restock Vault open = MASUK; MASUK open = Asal; Asal and Tujuan filled = the goods; goods + amount = Simpan; and back to the menu when he walks away',
+     liveBeat(g1, pageWith()) === 0 && liveBeat(g1, pageWith('[data-mission="1"]')) === 1 &&
+     liveBeat(g1, pageWith('[data-mission="1"]', '[data-mission="1"][aria-selected="true"]')) === 2 &&
+     liveBeat(g1, pageWith('[data-mission="1"]', '[data-mission="1"][aria-selected="true"]', '[data-guide="asal"][data-ok]', '[data-guide="tujuan"][data-ok]')) === 4 &&
+     liveBeat(g1, pageWith('[data-mission="1"]', '[data-mission="1"][aria-selected="true"]', '[data-guide="asal"][data-ok]', '[data-guide="tujuan"][data-ok]', '[data-guide="cart"][data-n]', '[data-guide="cart"][data-qty]')) === g1.length - 1 &&
+     liveBeat(g1, pageWith('[data-guide="asal"][data-ok]', '[data-guide="cart"][data-n]')) === 0);
+  ok('BEHAVIOUR: the loading bay - Dika picked and the HOW MANY sheet open = "isi jumlahnya"; a line in the muatan = Muat van; the EOD approval skips straight to Dika\'s card when the pending list is already up',
+     liveBeat(g3, pageWith('.kpm-actor[data-agent]', '.kpm-actor.on[data-agent="demo-agent-2"]', '.kpm-bay-sheet')) === 4 &&
+     liveBeat(g3, pageWith('.kpm-actor[data-agent]', '.kpm-actor.on[data-agent="demo-agent-2"]', '[data-mission="3"] [data-ponder="go"]:not(:disabled)')) === g3.length - 1 &&
+     liveBeat(g7, pageWith('[data-mission="7"]')) === 2);
   ok('Lite Mode keeps the dim without the blur on both layers (.8, his 2026-10-24 frame)',
      /html\.lite-mode \.kpm-mx-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(read('src/styles/theme.css')) &&
      /html\.lite-mode \.kpm-ct-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(read('src/styles/theme.css')));

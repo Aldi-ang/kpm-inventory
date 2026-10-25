@@ -221,7 +221,10 @@ const PlayerCard = ({ group, late = false, motorist, career, useCareerLedger = f
     );
     const photo = motorist?.profileImage;
     return (
-        <div className={`pc ${open ? 'open' : ''}`}>
+        /* data-agent / data-late / data-all: the demo mission's guide finds tonight's card for one salesman and reads
+           whether every open line is ticked */
+        <div className={`pc ${open ? 'open' : ''}`} data-agent={group.agent} data-late={late ? '' : undefined}
+            data-all={pending.length && pending.every(l => checked[l.key]) ? '' : undefined}>
             <PlayerCardHead name={group.agentName} photo={photo} currentTier={currentTier} nextTier={nextTier} progressPercent={progressPercent} xp={xp} gain={gain} frame={frame}
                 closed={closed} night={late ? nightLabel(group.night) : null} diode={diode} diodeText={diodeText} onTap={() => setOpen(v => !v)} />
             <div className="pc-body">
@@ -266,7 +269,7 @@ const PlayerCard = ({ group, late = false, motorist, career, useCareerLedger = f
                             })}
                         </div>
                     )}
-                    <button type="button" onClick={approve} disabled={busy || nChecked + nReturn === 0} style={{ minHeight: 52 }} className={`kpm-plate w-full mt-3 rounded-xl border font-black uppercase tracking-[.2em] flex items-center justify-center gap-2 disabled:opacity-60 ${hot ? 'bg-[var(--danger-plate)] border-[var(--danger)] text-[var(--danger-plate-ink)]' : 'bg-[var(--gold)] border-[var(--accent-edge)] text-[var(--gold-ink)]'}`}>
+                    <button type="button" data-guide="approve-night" onClick={approve} disabled={busy || nChecked + nReturn === 0} style={{ minHeight: 52 }} className={`kpm-plate w-full mt-3 rounded-xl border font-black uppercase tracking-[.2em] flex items-center justify-center gap-2 disabled:opacity-60 ${hot ? 'bg-[var(--danger-plate)] border-[var(--danger)] text-[var(--danger-plate-ink)]' : 'bg-[var(--gold)] border-[var(--accent-edge)] text-[var(--gold-ink)]'}`}>
                         <CheckCircle size={18} /> <span>{nChecked > 0 && nReturn > 0 ? `Approve ${nChecked} · return ${nReturn}` : nReturn > 0 ? `Return ${nReturn}` : nChecked > 0 ? `Approve ${hot ? 'short' : 'checked'} (${nChecked})` : 'Approve checked'}</span>
                     </button>
                     {onReset && (

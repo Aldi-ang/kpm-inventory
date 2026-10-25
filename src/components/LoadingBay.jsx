@@ -851,7 +851,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
               })}
             </div>
           ) : (
-          <div className="grid" key={'wh' + whPageNow} ref={refs.whGrid} onPointerDown={(e) => startDrag(e, 'wh')} onKeyDown={(e) => keyBox(e, 'wh')}>
+          <div className="grid" data-guide="wh" key={'wh' + whPageNow} ref={refs.whGrid} onPointerDown={(e) => startDrag(e, 'wh')} onKeyDown={(e) => keyBox(e, 'wh')}>
             {Array.from({ length: per }, (_, i) => {
               const p = whList[whPageNow * per + i], style = { '--d': 120 + i * 50 + 'ms' };
               if (!p) return <div key={'e' + i} className="slot" style={style} />;
@@ -900,7 +900,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
             <span className="count">{fmt(vanHave)} Bks{plus ? <> <b>+{fmt(plus)}</b></> : null}{minus ? <> <b>−{fmt(minus)}</b></> : null}</span>
           </p>
           {open.van !== false ? sayEl('van') : <span className="say" aria-hidden="true" />}
-          <div className="grid" key={'van' + vanPage} ref={refs.vanGrid} onPointerDown={(e) => startDrag(e, 'van')} onKeyDown={(e) => keyBox(e, 'van')} onClick={tapVan}>
+          <div className="grid" data-guide="van" key={'van' + vanPage} ref={refs.vanGrid} onPointerDown={(e) => startDrag(e, 'van')} onKeyDown={(e) => keyBox(e, 'van')} onClick={tapVan}>
             {Array.from({ length: per }, (_, i) => {
               const c = vanPage * per + i, id = cells[c], p = id ? P[id] : null, style = { '--d': 120 + i * 50 + 'ms' };
               if (!p) return <div key={'e' + c} className="slot" data-i={c} style={style} />;

@@ -11,9 +11,10 @@
    real build compiles the send out). Progress lives in this browser, so a SWITCH keeps it and the nightly reset
    (00:05 WIB) starts it again. */
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Lightbulb } from 'lucide-react';
 import { notify } from './Toast.jsx';
-import { STEPS, missionDay, liveStep } from '../config/demoMission.js';
+import { STEPS, GUIDE, missionDay, liveStep, liveBeat } from '../config/demoMission.js';
 import talk from '../assets/capy-talk/e-talk.webp';
 import happy from '../assets/capy-talk/e-happy.webp';
 import shock from '../assets/capy-talk/e-shock.webp';
@@ -39,20 +40,6 @@ const load = () => {
 };
 const save = (done) => {
     try { localStorage.setItem(KEY, JSON.stringify({ day: missionDay(Date.now()), done })); } catch { /* blocked */ }
-};
-
-/* where each step is done and what the hint says there */
-const BAY_LOST = 'Tasnya tidak ada di layar ini. Buka Fleet & Canvas, pilih DIKA SAPUTRA, lalu tekan PETUNJUK lagi.';
-const SALES_LOST = 'Tombolnya tidak ada di layar ini. Buka Sales Terminal dulu, lalu tekan PETUNJUK lagi.';
-const PLACE = {
-    1: { sel: '[data-mission="1"]', tip: 'Tekan MASUK, isi barang dari pabrik, lalu simpan', lost: 'Tombolnya tidak ada di layar ini. Buka Restock Vault dulu, lalu tekan PETUNJUK lagi.' },
-    2: { sel: '[data-mission="2"]', tip: 'Tekan KIRIM, pilih gudang tujuan, lalu kirim', lost: 'Tombolnya tidak ada di layar ini. Buka Restock Vault dulu, lalu tekan PETUNJUK lagi.' },
-    3: { sel: '[data-mission="3"]', tip: 'Muat barang dari gudang ke tas Dika di sini', lost: BAY_LOST },
-    4: { sel: '[data-mission="4"]', tip: 'Pilih toko, isi keranjang, ambil foto serah terima, lalu tekan di sini', lost: SALES_LOST },
-    5: { sel: '[data-mission="5"]', tip: 'Tekan RETUR, pilih toko, tandai barangnya Damaged dan alasannya, ambil foto, lalu proses', lost: SALES_LOST },
-    6: { sel: '[data-mission="6"]', tip: 'Hitung uang dan barang yang tersisa, lalu segel dan kirim laporannya', lost: 'Laporannya tidak ada di layar ini. Buka EOD dulu, lalu tekan PETUNJUK lagi.' },
-    7: { sel: '[data-mission="7"]', tip: 'Buka laporan Dika hari ini dan setujui semua bagiannya', lost: 'Daftarnya tidak ada di layar ini. Buka EOD dulu, lalu tekan PETUNJUK lagi.' },
-    8: { sel: '[data-mission="8"]', tip: 'Tekan New Count, isi jumlah fisiknya, lalu tekan Submit to HQ', lost: 'Tombolnya tidak ada di layar ini. Buka Stock Opname dulu, lalu tekan PETUNJUK lagi.' },
 };
 
 /* what he says on each live step: first what the step before it left behind, then where to go */
@@ -134,7 +121,7 @@ function CapyTalk({ lines, onShow, onClose }) {
                 {L.choices && (
                     <div className="choices" role="group" aria-label="Pilih jawaban">
                         <span className="ask">PILIH JAWABAN</span>
-                        <button type="button" onClick={onShow}><b>1</b>Tunjukkan tempatnya<i>▶</i></button>
+                        <button type="button" onClick={onShow}><b>1</b>Pandu saya langkah demi langkah<i>▶</i></button>
                         <button type="button" onClick={onClose}><b>2</b>Saya coba sendiri<i>▶</i></button>
                     </div>
                 )}
@@ -143,46 +130,106 @@ function CapyTalk({ lines, onShow, onClose }) {
     );
 }
 
-/* the hint: a square around what to press, four dim panels around it (blurred; Lite Mode keeps only the dim). A press
-   anywhere - the panels let it through - or the target leaving the screen ends it. Anywhere, not only the target, since
-   2026-10-25: MAKE DEAL stays disabled until the cart is ready, a disabled button gets no press, and the square sat on. */
-function Hint({ sel, tip, onEnd }) {
-    const [r, setR] = useState(null);
+/* THE GUIDE (his pick B, 2026-10-25): the step's beats (GUIDE in demoMission.js) walk the real screen - a square round
+   what to press, four dim panels around it (blurred; Lite Mode keeps only the dim) that let every press through, and a
+   Ponder-style box beside the square with the step, a notch per beat and one sentence. No timer and no buttons but the
+   close: it reads the page every 300 ms and after every press, so the square moves on the moment the visitor does the
+   thing, goes back if they leave, and skips a beat the form already had filled in. */
+const qs = (s) => { try { return document.querySelector(s); } catch { return null; } };
+const shows = (el) => {
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < window.innerWidth && r.top < window.innerHeight;
+};
+/* the live beat, and which of its targets is on screen (the menu item, or the phone's menu key while the menu is shut) */
+function aim(beats) {
+    const i = liveBeat(beats, (s) => !!qs(s));
+    const at = [].concat(beats[i].at), say = [].concat(beats[i].say);
+    /* a screen can hold one control twice (the terminal's phone and desk layouts): the copy on screen wins */
+    const els = at.map((s) => { let all = []; try { all = [...document.querySelectorAll(s)]; } catch { /* bad selector */ } return all.find(shows) || all[0] || null; });
+    let k = els.findIndex((el) => el && shows(el));
+    if (k < 0) k = els.findIndex(Boolean);
+    return { i, el: els[k] || null, say: say[Math.max(0, k)] ?? say[0] };
+}
+/* a picker's list hangs outside its box, so `open` beats take the union of everything inside - the list stays bright */
+function boxOf(el, open) {
+    const r = el.getBoundingClientRect();
+    const b = { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+    if (open) for (const c of el.querySelectorAll('*')) {
+        const q = c.getBoundingClientRect();
+        if (!q.width || !q.height) continue;
+        b.left = Math.min(b.left, q.left); b.top = Math.min(b.top, q.top); b.right = Math.max(b.right, q.right); b.bottom = Math.max(b.bottom, q.bottom);
+    }
+    return { left: Math.round(b.left), top: Math.round(b.top), right: Math.round(b.right), bottom: Math.round(b.bottom) };
+}
+const same = (a, b) => (!a && !b) || (a && b && a.i === b.i && a.say === b.say && a.typing === b.typing && JSON.stringify(a.r) === JSON.stringify(b.r));
+
+function Walk({ n, beats, onClose }) {
+    const [v, setV] = useState(null);   // { i, say, r } - r null = the target is not on the page
+    const seen = useRef(null);
     useEffect(() => {
-        const el = document.querySelector(sel);
-        if (!el) { onEnd(); return undefined; }
-        el.scrollIntoView({ block: 'nearest' });
-        let raf = 0;
-        const measure = () => {
-            cancelAnimationFrame(raf);
-            raf = requestAnimationFrame(() => (el.isConnected ? setR(el.getBoundingClientRect()) : onEnd()));
+        /* read straight away, not on the next frame: a few selectors and one rect, and a frame that never comes (a
+           background tab, a pane that does not paint) must not freeze the square on the last beat */
+        const look = () => {
+            /* the dialog gate is asking now ("Kirim ...?", "Approve ...?"): it is the next press, so step aside */
+            if (qs('[role="alertdialog"]')) { setV(null); return; }
+            const { i, el, say } = aim(beats);
+            /* never scroll while he is typing in a box: the first digit already moves the guide on, and the page jumping
+               away under the second digit reads as the app eating the number. The scroll waits until he leaves the box. */
+            const typing = document.activeElement?.matches?.('input, textarea, select') && !el?.contains(document.activeElement);
+            if (el && el !== seen.current && !typing) { el.scrollIntoView({ block: 'nearest' }); seen.current = el; }
+            const next = { i, say, r: el ? boxOf(el, beats[i].open) : null, typing: !!typing };
+            setV((p) => (same(p, next) ? p : next));
         };
-        measure();
-        window.addEventListener('pointerdown', onEnd, true);
-        window.addEventListener('resize', measure);
-        window.addEventListener('scroll', measure, true);
+        look();
+        const t = setInterval(look, 300);
+        window.addEventListener('resize', look);
+        window.addEventListener('scroll', look, true);
+        window.addEventListener('pointerup', look, true);
+        window.addEventListener('keyup', look, true);
         return () => {
-            cancelAnimationFrame(raf);
-            window.removeEventListener('pointerdown', onEnd, true);
-            window.removeEventListener('resize', measure);
-            window.removeEventListener('scroll', measure, true);
+            clearInterval(t);
+            window.removeEventListener('resize', look);
+            window.removeEventListener('scroll', look, true);
+            window.removeEventListener('pointerup', look, true);
+            window.removeEventListener('keyup', look, true);
         };
-    }, [sel, onEnd]);
-    if (!r) return null;
-    const x1 = r.left - PAD, y1 = r.top - PAD, x2 = r.right + PAD, y2 = r.bottom + PAD;
+    }, [beats]);
+    if (!v) return null;
+    const W = Math.min(340, window.innerWidth - 24), H = window.innerHeight;
+    const r = v.r && { left: v.r.left - PAD, top: v.r.top - PAD, right: v.r.right + PAD, bottom: v.r.bottom + PAD };
+    /* the box goes under the square, else over it, else (a square that fills the screen, or one off screen while he types)
+       it docks at the bottom - and an off-screen square dims nothing, so the box he is typing in stays clear */
+    const off = r && (r.bottom < 0 || r.top > H);
+    const below = r && !off && r.bottom + 150 < H, above = r && !off && !below && r.top > 150;
+    const left = r && (below || above) ? Math.max(12, Math.min(r.left, window.innerWidth - W - 12)) : (window.innerWidth - W) / 2;
+    const tail = r && (below || above) ? Math.max(14, Math.min(r.left + Math.min((r.right - r.left) / 2, 28) - left, W - 26)) : null;
+    const place = below ? { top: r.bottom + 12 } : above ? { top: r.top - 12, transform: 'translateY(-100%)' } : { bottom: 16 };
     /* four boxes, not one box with a hole: a clip-path hole painted nothing once Lite Mode took the blur away (2026-10-24) */
-    const panels = [
-        { left: 0, top: 0, right: 0, height: Math.max(0, y1) },
-        { left: 0, top: y2, right: 0, bottom: 0 },
-        { left: 0, top: y1, width: Math.max(0, x1), height: y2 - y1 },
-        { left: x2, top: y1, right: 0, height: y2 - y1 },
-    ];
-    return (
+    /* no dim while he types: the box under his fingers must stay sharp even when the square has moved on */
+    const panels = r && !off && !v.typing ? [
+        { left: 0, top: 0, right: 0, height: Math.max(0, r.top) },
+        { left: 0, top: r.bottom, right: 0, bottom: 0 },
+        { left: 0, top: r.top, width: Math.max(0, r.left), height: r.bottom - r.top },
+        { left: r.right, top: r.top, right: 0, height: r.bottom - r.top },
+    ] : [];
+    /* on the page root: inside the demo bar its z 400 counted only within the bar, and the phone menu (z 90) covered it */
+    return createPortal(
         <>
-            {panels.map((p, i) => <div key={i} className="kpm-mx-veil hide-on-print" style={p} />)}
-            <div className="kpm-mx-ring hide-on-print" style={{ left: x1, top: y1, width: x2 - x1, height: y2 - y1 }} />
-            <div className="kpm-mx-tip hide-on-print" style={{ left: Math.max(8, Math.min(x1, window.innerWidth - 268)), top: Math.min(y2 + 8, window.innerHeight - 64) }}>{tip}</div>
-        </>
+            {panels.map((p, k) => <div key={k} className="kpm-mx-veil hide-on-print" style={p} />)}
+            {r && <div className="kpm-mx-ring hide-on-print" style={{ left: r.left, top: r.top, width: r.right - r.left, height: r.bottom - r.top }} />}
+            <div className="kpm-mx-cap hide-on-print" role="status" style={{ left, width: W, ...place }}>
+                {tail !== null && <span className={`tail ${below ? 'up' : 'down'}`} style={{ left: tail }} />}
+                <div className="head">
+                    <b>LANGKAH {n}/{LAST}</b>
+                    <span className="notch" aria-label={`bagian ${v.i + 1} dari ${beats.length}`}>
+                        {beats.map((_, k) => <i key={k} className={k < v.i ? 'done' : k === v.i ? 'on' : ''} />)}
+                    </span>
+                    <button type="button" className="x" aria-label="Tutup petunjuk" onClick={onClose}>✕</button>
+                </div>
+                <p>{v.say}</p>
+            </div>
+        </>,
+        document.body
     );
 }
 
@@ -195,7 +242,7 @@ export default function DemoMission({ me, isT1, people }) {
     const mine = isT1 || me?.tier === step.who;
     const [greeting, setGreeting] = useState(!greeted);   // the line stays hidden until he has said hello
     const [talking, setTalking] = useState(() => (greeted ? null : greet(n, done, mine, doer, me)));
-    const [hint, setHint] = useState(null);         // { sel, tip } while the square is up
+    const [guide, setGuide] = useState(false);      // the step-by-step guide, on until closed or the round is done
 
     /* the 34 px the shell moves down for the line, only once the line is there */
     useEffect(() => {
@@ -213,7 +260,6 @@ export default function DemoMission({ me, isT1, people }) {
             doneRef.current = next;
             save(next);
             setDone(next);
-            setHint(null);
             notify(`MISI ${s}/${LAST} SELESAI: ${STEPS[s - 1].done(d)}.`);
         };
         window.addEventListener('kpm-mission', tick);
@@ -221,19 +267,17 @@ export default function DemoMission({ me, isT1, people }) {
     }, []);
 
     const endGreeting = () => { greeted = true; setGreeting(false); };
-    const endHint = React.useCallback(() => setHint(null), []);
+    const endGuide = React.useCallback(() => setGuide(false), []);
     const closeTalk = React.useCallback(() => { setTalking(null); greeted = true; setGreeting(false); }, []);
     const press = () => {
-        if (talking || hint) { setTalking(null); setHint(null); return; }
+        if (talking || guide) { setTalking(null); setGuide(false); return; }
         setTalking(linesFor(n, done, mine, doer));
     };
-    /* "Tunjukkan tempatnya": the square goes round the live step's key - or SWITCH when this login is the wrong person */
-    const show = () => {
-        endGreeting();
-        const place = mine ? PLACE[n] : { sel: '[data-mission="switch"]', tip: `Tekan SWITCH, lalu pilih ${doer.role}` };
-        if (document.querySelector(place.sel)) { setTalking(null); setHint(place); }
-        else setTalking([{ face: 'sad', text: place.lost }]);
-    };
+    /* "Pandu saya": the guide walks the live step - or points at SWITCH when this login is the wrong person - and stays on
+       through the next steps, so the visitor is led from the first press to the last */
+    const show = () => { endGreeting(); setTalking(null); setGuide(true); };
+    const beats = React.useMemo(() => (mine ? GUIDE[n] : [{ at: '[data-mission="switch"]', say: `Langkah ini untuk ${doer.role}. Tekan SWITCH, lalu pilih ${doer.name || doer.role}.` }]),
+        [n, mine, doer.role, doer.name]);
 
     return (
         <>
@@ -251,12 +295,12 @@ export default function DemoMission({ me, isT1, people }) {
                             </li>
                         ))}
                     </ol>
-                    <button type="button" className="hintkey" aria-pressed={!!(talking || hint)} aria-label="Petunjuk" onClick={press}>
+                    <button type="button" className="hintkey" aria-pressed={!!(talking || guide)} aria-label="Petunjuk" onClick={press}>
                         <Lightbulb size={14} /><span className="hidden lg:inline">PETUNJUK</span>
                     </button>
                 </div>
             )}
-            {hint && <Hint sel={hint.sel} tip={hint.tip} onEnd={endHint} />}
+            {guide && n > 0 && !talking && beats && <Walk key={`${n}-${mine}`} n={n} beats={beats} onClose={endGuide} />}
             {talking && <CapyTalk lines={talking} onShow={show} onClose={closeTalk} />}
         </>
     );

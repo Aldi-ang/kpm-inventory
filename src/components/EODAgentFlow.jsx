@@ -114,7 +114,7 @@ export default function EODAgentFlow({
   };
 
   return (
-    <div className="w-full" data-mission="6">
+    <div className="w-full" data-mission="6" data-stage={stage}>
       {/* the three acts, so the agent can always see that sealing is not finishing */}
       <ol className="flex gap-2 mb-4 list-none p-0 m-0">
         {[
@@ -159,6 +159,7 @@ export default function EODAgentFlow({
           touched this wrapper. A comment asserting a guarantee the code does not provide is worse
           than no comment, because it stops the next reader from checking. */}
       <div
+        data-guide="deck"
         className="transition-all duration-500 ease-out"
         style={{
           maxHeight: stage === 'open' ? 760 : 0,

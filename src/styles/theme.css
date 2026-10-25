@@ -5895,11 +5895,26 @@ html.kpm-demo-on.kpm-mission-on { --kpm-safe-top: calc(env(safe-area-inset-top, 
 }
 /* the hint: everything outside the square dimmed and blurred. No blur in Lite Mode, so the dim alone carries it: .55 read
    as no dim at all on the 2026-10-24 frame, .8 reads */
-.kpm-mx-veil { position: fixed; z-index: 95; background: rgba(5, 4, 3, .55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); pointer-events: none; }
+/* z 400: over the sales terminal's shop picker (300) and the loading bay's sheet (80), which the guide points INTO;
+   under the dialog gate (10001), which it steps aside for */
+.kpm-mx-veil { position: fixed; z-index: 400; background: rgba(5, 4, 3, .55); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); pointer-events: none; }
 html.lite-mode .kpm-mx-veil { background: rgba(5, 4, 3, .8); backdrop-filter: none; -webkit-backdrop-filter: none; }
-.kpm-mx-ring { position: fixed; z-index: 95; border: 2px solid var(--accent-edge); pointer-events: none; }
-.kpm-mx-tip { position: fixed; z-index: 97; max-width: 260px;   /* over the line: on step 3 the square is SWITCH, so the tip lands on it */ padding: 8px 10px; background: var(--panel); border: 1px solid var(--accent-edge);
-  font: 600 14px/1.3 var(--font-mono); color: var(--ink); pointer-events: none; }
+.kpm-mx-ring { position: fixed; z-index: 400; border: 2px solid var(--accent-edge); border-radius: 6px; pointer-events: none; }
+/* the guide's box, Ponder's caption beside its subject (his pick B): the step, a notch per beat, one sentence, a close */
+/* presses go through the box to whatever it sits on (a menu row, the next field); only its ✕ takes one */
+.kpm-mx-cap { position: fixed; z-index: 401; padding: 10px 14px 14px; background: var(--raised); border: 1px solid var(--accent-edge); border-radius: 10px;
+  color: var(--ink); pointer-events: none; }   /* no shadow: Lite Mode drops them, so the gold edge and the dim behind it carry the box */
+.kpm-mx-cap .tail { position: absolute; width: 12px; height: 12px; background: var(--raised); transform: rotate(45deg); }
+.kpm-mx-cap .tail.up { top: -7px; border-left: 1px solid var(--accent-edge); border-top: 1px solid var(--accent-edge); }
+.kpm-mx-cap .tail.down { bottom: -7px; border-right: 1px solid var(--accent-edge); border-bottom: 1px solid var(--accent-edge); }
+.kpm-mx-cap .head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.kpm-mx-cap .head b { font: 700 11px/1 var(--font-mono); letter-spacing: .2em; color: var(--accent-ink); white-space: nowrap; }
+.kpm-mx-cap .notch { display: flex; gap: 4px; flex: 1; min-width: 0; }
+.kpm-mx-cap .notch i { flex: 0 1 16px; height: 3px; background: var(--line-3); }
+.kpm-mx-cap .notch i.done { background: var(--accent-edge); opacity: .45; }
+.kpm-mx-cap .notch i.on { background: var(--accent-edge); }
+.kpm-mx-cap .x { flex: none; min-width: 36px; min-height: 36px; margin: -6px -8px -6px 0; background: none; border: 0; color: var(--ink-muted); font-size: 14px; cursor: pointer; touch-action: manipulation; pointer-events: auto; }
+.kpm-mx-cap p { margin: 0; font: 600 15px/1.45 var(--font-body); }
 /* the capybara's dialogue (his 2026-10-25 ask): the face stands over the box's edge, a slanted name plate, LANJUT in the
    corner, choices above the box. Nothing moves - the face snaps. */
 .kpm-ct-veil { position: fixed; inset: 0; z-index: 98; background: rgba(5, 4, 3, .55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }

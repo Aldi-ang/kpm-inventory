@@ -2,7 +2,7 @@
    picks) over the real shell, for frames. Nothing here ships.
      ?shell&places&tab=kirim&mission[&done=1,2][&as=T4]
    done = the steps already saved today (fixture numbers), as = which demo person is signed in (T2 default). Press
-   PETUNJUK for the capybara, then "Tunjukkan tempatnya" for the square. */
+   PETUNJUK for the capybara, then "Pandu saya langkah demi langkah" for the step-by-step guide. */
 import React from 'react';
 import { DemoBar } from '../src/components/DemoFrontDoor.jsx';
 import { missionDay } from '../src/config/demoMission.js';

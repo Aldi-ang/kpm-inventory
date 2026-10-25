@@ -1735,7 +1735,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 <div className="manifest-dropdown-area hide-on-print fixed inset-0 z-[300] flex items-start justify-center">
                     <div className="absolute inset-0 bg-[var(--duke-scrim)] backdrop-blur-sm" onClick={finishCustomerTyping}></div>
 
-                    <div className="relative w-full lg:max-w-md lg:mt-16 max-h-[70vh] flex flex-col bg-[var(--duke-fill-deep)] border-b-4 lg:border-4 border-[var(--duke-edge-1)] shadow-[0_10px_40px_rgba(0,0,0,0.7)]">
+                    <div data-guide="shops" className="relative w-full lg:max-w-md lg:mt-16 max-h-[70vh] flex flex-col bg-[var(--duke-fill-deep)] border-b-4 lg:border-4 border-[var(--duke-edge-1)] shadow-[0_10px_40px_rgba(0,0,0,0.7)]">
                         <div className="shrink-0 flex items-center gap-2 px-4 py-3 border-b border-[var(--duke-edge-1)]">
                             <Store size={16} className="shrink-0 text-[var(--duke-ink-3)]" />
                             <span className="flex-1 text-xs font-black uppercase tracking-widest text-[var(--duke-ink-3)]">Who is buying?</span>
@@ -1797,7 +1797,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
                 {/* --- 🚀 DUAL MODE TOGGLE (SALE VS RETUR) --- */}
                 <div className="flex bg-[var(--duke-fill-ground)] rounded border border-[var(--duke-edge-2)] p-1 mb-2">
-                    <button onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`kpm-hover flex-1 py-1.5 min-h-[44px] lg:min-h-0 text-[11px] lg:text-[10px] font-black uppercase tracking-widest rounded ${!isReturMode ? 'bg-[var(--duke-brass-2)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Sale Mode</button>
+                    <button data-guide="sale-mode" onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`kpm-hover flex-1 py-1.5 min-h-[44px] lg:min-h-0 text-[11px] lg:text-[10px] font-black uppercase tracking-widest rounded ${!isReturMode ? 'bg-[var(--duke-brass-2)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Sale Mode</button>
                     <button data-mission="5" onClick={() => {
                         if (!allowRetur) return notify("You do not have clearance to process returns.");
                         setIsReturMode(true);
@@ -2071,8 +2071,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             {isReturMode && !item.isIouFulfillment && (
                                 <div className={`mt-2 pt-2 border-t flex flex-col gap-2 ${returType === 'EXCHANGE' ? 'border-[color-mix(in_srgb,var(--duke-brass-edge-2)_50%,transparent)]' : 'border-red-300/50'}`}>
                                     <div className="flex gap-2">
-                                        <select 
-                                            value={item.condition || 'GOOD'} 
+                                        <select
+                                            data-guide="cond"
+                                            value={item.condition || 'GOOD'}
                                             onChange={(e) => updateCartItem(item.productId, 'condition', e.target.value)}
                                             className={`text-[11px] font-bold uppercase p-1.5 rounded outline-none border flex-1 ${item.condition === 'DAMAGED' ? 'bg-red-900/30 border-red-500 text-red-700' : 'bg-[var(--duke-paper-3)] border-[var(--duke-edge-on-paper)] text-[var(--duke-ink-7)]'}`}
                                         >
@@ -2081,7 +2082,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                         </select>
 
                                         {item.condition === 'DAMAGED' && (
-                                            <select 
+                                            <select
+                                                data-guide="reason"
                                                 value={item.returnReason || ''}
                                                 onChange={(e) => updateCartItem(item.productId, 'returnReason', e.target.value)}
                                                 className="text-[11px] font-bold uppercase p-1.5 rounded outline-none border bg-white border-red-400 text-red-800 flex-1"
@@ -2269,7 +2271,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-[var(--duke-on-fill)] p-1.5 rounded-md shadow-md"><X size={14}/></button>
                             </div>
                         ) : (
-                            <button onClick={() => IS_DEMO ? demoPhoto().then(setTxProofPhoto) : galleryOk ? document.getElementById('txProof').click() : setShowProofCamera(true)} className="kpm-hover w-full py-2 min-h-[44px] lg:min-h-0 border border-dashed border-[var(--duke-edge-4)] hover:border-[var(--duke-amber-edge-2)] text-[var(--duke-ink-4)] hover:text-[var(--duke-amber-ink-2)] bg-transparent rounded flex items-center justify-center gap-2">
+                            <button data-guide="photo" onClick={() => IS_DEMO ? demoPhoto().then(setTxProofPhoto) : galleryOk ? document.getElementById('txProof').click() : setShowProofCamera(true)} className="kpm-hover w-full py-2 min-h-[44px] lg:min-h-0 border border-dashed border-[var(--duke-edge-4)] hover:border-[var(--duke-amber-edge-2)] text-[var(--duke-ink-4)] hover:text-[var(--duke-amber-ink-2)] bg-transparent rounded flex items-center justify-center gap-2">
                                 <Camera size={14} />
                                 <span className="text-[11px] lg:text-[10px] uppercase tracking-widest font-bold">{IS_DEMO ? 'Auto handover photo (demo)' : galleryOk ? 'Capture or choose photo' : 'Open camera for handover photo'}</span>
                             </button>
@@ -2308,6 +2310,13 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 <div className="kpm-parchment px-4 py-2 md:p-6 border-t-2 border-[var(--duke-edge-4)] flex flex-col shrink-0 z-20 shadow-[0_-6px_14px_rgba(110,84,44,0.18)]">
                     <button
                         data-mission="4"
+                        /* what the demo mission's guide reads to know which press comes next: shop chosen (and its list
+                           shut), cart, photo, every damaged pack's reason, retur mode */
+                        data-cust={customerName.trim() && !showCustomerDropdown ? '' : undefined}
+                        data-cart={cart.length ? '' : undefined}
+                        data-photo={txProofPhoto ? '' : undefined}
+                        data-reasons={cart.some(i => i.condition === 'DAMAGED') && !hasInvalidDamagedItems ? '' : undefined}
+                        data-retur={isReturMode ? '' : undefined}
                         onClick={handleFinalDeal}
                         disabled={!canSubmitSale || isProcessingSale}
                         className={`kpm-hover py-2.5 md:py-4 border-2 text-base md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-[var(--duke-brass-2)] to-[var(--duke-brass-3)] border-[var(--duke-brass-edge)] text-[var(--duke-on-plate)] hover:from-[var(--duke-brass)] hover:to-[var(--duke-brass-6)] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-[var(--duke-on-fill)] hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[var(--duke-amber)] to-[var(--duke-amber-2)] border-[var(--duke-brass-edge-3)] text-black hover:from-[var(--duke-brass-5)] hover:to-[var(--duke-amber)]') : 'bg-transparent text-[var(--duke-ink-3)] border-[var(--duke-edge-4)] cursor-not-allowed'}`}
@@ -2484,7 +2493,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     panel unreachable — you cannot walk to a thing that disappears when you set
                     off towards it. Press the picture again, or another, to change it. */}
                 <div className="flex-1 min-h-0 flex overflow-hidden">
-                <div className="kpm-wares-3up flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-3 pb-4 lg:p-6 lg:pb-8 flex flex-col lg:grid lg:grid-cols-2 [@media(min-width:1400px)]:grid-cols-3 lg:content-start gap-3 lg:gap-6 scrollbar-hide items-stretch lg:items-start bg-[var(--duke-fill-ground)] relative scroll-smooth" ref={scrollContainerRef}>
+                <div data-guide="products" className="kpm-wares-3up flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-3 pb-4 lg:p-6 lg:pb-8 flex flex-col lg:grid lg:grid-cols-2 [@media(min-width:1400px)]:grid-cols-3 lg:content-start gap-3 lg:gap-6 scrollbar-hide items-stretch lg:items-start bg-[var(--duke-fill-ground)] relative scroll-smooth" ref={scrollContainerRef}>
                     <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px)' }}></div>
                     {filteredItems.map(item => (
                         /* Hover no longer drives the rail. Aldi's problem was concrete and
