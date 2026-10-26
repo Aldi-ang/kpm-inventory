@@ -24,6 +24,7 @@ import { warehouseList } from './utils/supply';
 import { accessFor } from './utils/customerAccess.js';
 import { tallySaleOp, statsPath } from './utils/salesRollupWrite';
 import { syncOfflineSale, canvasWithPending } from './utils/vanSync';
+import { promoWithPending } from './utils/vanBay';
 import { rebuildMonths } from './utils/salesRollup';
 import { hashSecret, verifySecret, needsRehash } from './utils/secretHash';
 import { settleProgression } from './utils/progressionHome';
@@ -436,7 +437,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
                       await clearProcessedItem('transactions', tx.localId);
                       secured++;
                       if (result.short.length) {
-                          (tx.vaultPending ? vaultGaps : vanGaps).push(`${tx.customerName}: ${result.short.map(s => `${s.name} short ${s.missingBks} Bks`).join(', ')}`);
+                          (tx.vaultPending ? vaultGaps : vanGaps).push(`${tx.customerName}: ${result.short.map(s => `${s.name} short ${s.missingPcs != null ? `${s.missingPcs} pcs` : `${s.missingBks} Bks`}`).join(', ')}`);
                       }
                   }
                   logSyncEvent(`✅ Auto-Sync Complete. ${totalItems} items secured in Master Vault.`, 'SUCCESS');
@@ -484,7 +485,8 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
      Employees already carry it in user.displayName (the hijacked user); owners did not. */
   const [profileName, setProfileName] = useState(null);
   const [agentCanvas, setAgentCanvas] = useState([]);
- 
+  const [agentPromo, setAgentPromo] = useState([]);   // the van's promo goods, pcs (motorists/<id>.promoCanvas) - the terminal's give row
+
   const [adminSalesMode, setAdminSalesMode] = useState('VAULT'); // 'VAULT' or 'VEHICLE'
   
   // NEW: Agent Permissions State
@@ -580,7 +582,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       samplings, setSamplings, auditLogs, setAuditLogs, procurements, setProcurements,
       motorists, setMotorists, agentInventories, setAgentInventories, eodReports, setEodReports,
       transferRequests, setTransferRequests,
-      adminCanvas, setAdminCanvas, branchStock,
+      adminCanvas, setAdminCanvas, adminPromo, branchStock,
       career,
       appSettings, setAppSettings, editCompanyProfile, setEditCompanyProfile
   } = useDatabaseSync(db, appId, user, userId, userRole, user?.location);
@@ -1773,7 +1775,8 @@ const handleGitHubMirror = async () => {
               if (docSnap.exists()) {
                   const data = docSnap.data();
                   setAgentCanvas(data.activeCanvas || []);
-                  
+                  setAgentPromo(data.promoCanvas || []);
+
                   // 🚀 FIX: Map the allowRetur permission securely
                   setAgentSettings({
                       allowedPayments: data.allowedPayments || ['Cash'],
@@ -4347,6 +4350,14 @@ const handleGitHubMirror = async () => {
       [agentCanvas, pendingTxData, agentProfileId, productsByIdNow]);
   const adminCanvasNow = React.useMemo(() => canvasWithPending(adminCanvas, pendingTxData, 'ADMIN_VEHICLE', productsByIdNow),
       [adminCanvas, pendingTxData, productsByIdNow]);
+  /* THE VAN'S PROMO GOODS for the terminal's give row (stage 4): the salesman's own van, or the boss's vehicle in VEHICLE
+     mode (VAULT mode has no van - nothing to give), minus the gives still waiting in the Ghost Ledger. Each line gets its
+     product for the picture; the terminal itself never receives the promo product list. */
+  const promoVanNow = React.useMemo(() => (userRole === 'ADMIN'
+      ? (adminSalesMode === 'VEHICLE' ? promoWithPending(adminPromo, pendingTxData, 'ADMIN_VEHICLE') : [])
+      : promoWithPending(agentPromo, pendingTxData, agentProfileId)
+  ).map(l => ({ ...l, product: promoItems.find(p => p.id === l.productId) })),   // picture only - never a sum, never a sale line
+      [userRole, adminSalesMode, adminPromo, agentPromo, pendingTxData, agentProfileId, promoItems]);
 
 // --- NEW: SAFE SALES TERMINAL INVENTORY ---
   const salesTerminalInventory = React.useMemo(() => {
@@ -5410,7 +5421,8 @@ const handleGitHubMirror = async () => {
                              button was still there; only opening Retur Mode in the browser showed it. */
                           allowCashRefund={agentSettings.allowCashRefund || false}
                           onProcessSale={handleMerchantSale}
-                          onInspect={(item) => setExaminingProduct(item)} 
+                          promoVan={promoVanNow}
+                          onInspect={(item) => setExaminingProduct(item)}
                           // 🚀 FIXED: Plugged in ALL missing database and RPG engine connections!
                           db={db}
                           appId={appId}

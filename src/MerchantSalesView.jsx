@@ -6,7 +6,8 @@ import { hasClearance, canPickFromGallery } from './config/permissions';
 import { IS_DEMO } from './config/firebase';
 import { demoPhoto } from './config/demoPhoto.js';
 import ProofCamera from './components/ProofCamera.jsx';
-import { savePhotoAndGetReference, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey} from './utils/helpers';
+import { savePhotoAndGetReference, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey, promoPic } from './utils/helpers';
+import { giveLines } from './utils/vanBay';
 import { waNumber } from './utils/whatsapp.js';
 import { areaFromPin, watchBorders } from './utils/areaFromPin.js';
 import { grosirHold, priceLevelOf, canConfirmGrosir, grosirRequestNotice } from './utils/customerAccess.js';
@@ -47,7 +48,7 @@ const readDraft = (uid) => {
     } catch { return null; }
 };
 
-const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine }) => {
+const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine, promoVan = [] }) => {
     /* WHOSE VAULT THE CUSTOMER RECORDS LIVE IN — and the answer must be the same one App used to
        fetch them, or a write lands in a document nobody reads.
 
@@ -115,7 +116,13 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const [paymentMethod, setPaymentMethod] = useState(draft?.paymentMethod || allowedPayments[0] || "Cash");
     const [isProcessingSale, setIsProcessingSale] = useState(false); 
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
-    const [receiptData, setReceiptData] = useState(null); 
+    const [receiptData, setReceiptData] = useState(null);
+    /* PROMO GOODS GIVEN WITH THIS SALE (stage 4): pieces per product, off the van's promoCanvas (promoVan). Offered only
+       while the cart holds something the shop BUYS - his 1a, a promo item never goes out alone - and never in Retur.
+       Capped at what the van holds now; the engine refuses a give the van cannot cover. */
+    const [give, setGive] = useState({});
+    const canGive = !isReturMode && cart.some(i => !i.isIouFulfillment) && promoVan.length > 0;
+    const givenLines = canGive ? giveLines(promoVan.map(l => ({ productId: l.productId, name: l.name, qty: Math.min(give[l.productId] || 0, l.qty) }))) : [];
     const [lockedTier, setLockedTier] = useState(draft?.lockedTier ?? null);
     // the product card's price: the picked shop's tier, Ecer until a shop is picked
     const cardPriceOf = (p) => ({ Retail: p.priceRetail, Grosir: p.priceGrosir }[lockedTier] ?? p.priceEcer) || 0;
@@ -1084,6 +1091,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
        "Transaction Failed", and he presses MAKE DEAL again on a sale that already went through. */
     const resetTerminalAfterDeal = () => {
         setCart([]); setCustomerName(""); setLockedTier(null); setSelectedCustomerInfo(null);
+        setGive({});
         setGpsStatus('idle'); setAgentLocation(null); setTxProofPhoto(null);
         setIsReturMode(false); setManualOverride(false); setReturType('EXCHANGE');
         setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
@@ -1099,6 +1107,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         
         const finalCust = customerName.trim();
         const finalCart = [...cart];
+        const finalGive = givenLines;
         const finalTotal = isReturMode && returType === 'EXCHANGE' ? 0 : cartTotal;
 
         let committed = false;   // see the catch: a post-commit failure must not read as "failed"
@@ -1160,7 +1169,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 territoryOverride: territoryClaim || null
             };
 
-            const trueAgentName = await onProcessSale(finalCust, dbMethod, finalCart, newStorePayload, proofPayload);
+            const trueAgentName = await onProcessSale(finalCust, dbMethod, finalCart, newStorePayload, proofPayload, finalGive);
             committed = true;   // everything past this point is POST-commit: the sale already exists
             /* the demo's mission line ticks on the SAVED deal (DemoMission.jsx): a sale is step 4; a retur carrying a damaged
                pack is step 5 - the pack that rides in the van's quarantine until the EOD takes it to the Master Vault */
@@ -1179,7 +1188,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                handler was created, so resetTerminalAfterDeal() cannot pull them out from under
                the bookkeeping that still has to run. */
             setReceiptData({
-                customer: finalCust, shop: selectedCustomerInfo, method: paymentLabel(displayMethod), items: finalCart, total: finalTotal,
+                customer: finalCust, shop: selectedCustomerInfo, method: paymentLabel(displayMethod), items: finalCart, given: finalGive, total: finalTotal,
                 date: new Date().toLocaleString('id-ID'), agentName: agentFallback 
             });
 
@@ -2124,6 +2133,32 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             </div>
                         </div>
                     )})
+                )}
+                {/* PROMO GOODS, given free with this sale (stage 4). It grows inside the cart paper and scrolls with it -
+                    the same function as a cart line, so the same control (his "one function, one control"). No price
+                    anywhere: it never joins the cart, the total or the nota's sum. */}
+                {canGive && (
+                    <div data-guide="promo-give" className="flex flex-col p-3 md:p-4 mb-1 rounded border border-dashed border-[var(--duke-brass-edge-2)] bg-[var(--duke-paper)] shadow-sm">
+                        <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[var(--duke-ink-7)]">Promo · given free</span>
+                        {promoVan.map(l => (
+                            <div key={l.productId} className="flex items-center gap-2 md:gap-3 mt-2">
+                                <img alt="" src={promoPic(l.product || { kind: 'promo', name: l.name })} className="w-10 h-10 object-contain shrink-0 rounded border border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)] bg-[var(--duke-paper-2)]" />
+                                <span className="flex-1 min-w-0 text-[11px] md:text-xs font-black uppercase leading-tight break-words text-[var(--duke-ink-7)]">
+                                    {l.name}
+                                    <span className="block mt-0.5 text-[10px] font-bold normal-case tracking-normal text-[var(--duke-on-paper-dim)] tabular-nums">{l.qty} pcs in the van</span>
+                                </span>
+                                <input type="number" inputMode="numeric" min="0" placeholder="0" aria-label={`${l.name}: pieces to give`}
+                                    value={give[l.productId] || ''}
+                                    onChange={(e) => {
+                                        const n = Math.max(0, parseInt(e.target.value, 10) || 0);
+                                        if (n > l.qty) notify(`Only ${l.qty} pcs of ${l.name} in the van - not enough for ${n}.`);
+                                        setGive(g => ({ ...g, [l.productId]: Math.min(n, l.qty) }));
+                                    }}
+                                    className="w-20 md:w-24 min-h-[44px] lg:min-h-0 bg-white border border-[var(--duke-edge-3)] text-center text-base md:text-sm font-bold tabular-nums outline-none focus:border-[var(--duke-amber-edge)] rounded p-1 text-[var(--duke-ink-7)]" />
+                                <span className="text-sm font-bold uppercase text-[var(--duke-ink-7)]">pcs</span>
+                            </div>
+                        ))}
+                    </div>
                 )}
             </div>
         </div>
@@ -3275,6 +3310,16 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                                         </td>
                                                     </tr>
                                                 )) : <tr><td colSpan="2" className="text-center py-4 text-[10px] italic !text-slate-400">No Itemized Data</td></tr>}
+                                                {/* promo goods given with the sale (stage 4): a line each, no price */}
+                                                {(receiptData.given || []).map((g, i) => (
+                                                    <tr key={`given-${i}`}>
+                                                        <td className="py-1 pr-2">
+                                                            <div className="font-bold uppercase break-words leading-tight">{g.name}</div>
+                                                            <div className="text-[10px] !text-slate-400 mt-0.5">{g.qty} pcs · BONUS</div>
+                                                        </td>
+                                                        <td className="py-1 text-right font-black whitespace-nowrap">-</td>
+                                                    </tr>
+                                                ))}
                                             </tbody>
                                         </table>
                                     </div>
@@ -3339,6 +3384,16 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                                         <td className="border-2 !border-slate-800 p-2 text-right font-mono !text-slate-700">{new Intl.NumberFormat('id-ID').format(item.displayPrice)}</td>
                                                         <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700">{item.displayQty > 0 ? Number(item.displayQty.toFixed(2)) : ''}</td>
                                                         <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900">{item.total > 0 ? (receiptData.method === 'Retur/BS' ? '-' : '') + new Intl.NumberFormat('id-ID').format(item.total) : ''}</td>
+                                                    </tr>
+                                                ))}
+                                                {/* promo goods given with the sale (stage 4): a line each, no price */}
+                                                {(receiptData.given || []).map((g, i) => (
+                                                    <tr key={`given-${i}`}>
+                                                        <td className="border-2 !border-slate-800 p-2 text-center !text-slate-400 font-bold">{catalogRows.length + i + 1}</td>
+                                                        <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase">{g.name} <span className="!text-slate-400">(BONUS)</span></td>
+                                                        <td className="border-2 !border-slate-800 p-2 text-right font-mono !text-slate-700">-</td>
+                                                        <td className="border-2 !border-slate-800 p-2 text-center font-black text-lg !text-blue-700">{g.qty} pcs</td>
+                                                        <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-slate-900">-</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -3497,6 +3552,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     if (receiptData.items && receiptData.items.length > 0) {
                                         receiptData.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
                                     }
+                                    (receiptData.given || []).forEach(g => { text += `${g.qty} pcs ${g.name} [BONUS]\n`; });
                                     text += `------------------------\n*TOTAL: ${receiptData.method === 'Retur/BS' ? '-' : ''}Rp ${new Intl.NumberFormat('id-ID').format(receiptData.total || 0)}*\n\nThank you for your business!`;
                                     /* the shop it just sold to: its own chat; no number -> ask, and offer to keep it on the shop */
                                     shareReceipt(text, receiptData.shop, (phone) => updateDoc(doc(db, `artifacts/${appId}/users/${dataOwnerId}/customers`, receiptData.shop.id), { phone }));

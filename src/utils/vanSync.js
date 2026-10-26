@@ -21,6 +21,7 @@
 import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { convertToBks } from './helpers.js';
 import { tallySale } from './salesRollupWrite.js';
+import { settlePromo } from './vanBay.js';
 
 /* The rule itself. `short` lists every product the van did not hold enough of; that row drops
    to zero instead of throwing, so the sync can still save the money and REPORT the gap. */
@@ -140,6 +141,10 @@ export const syncOfflineSale = (db, appId, userId, tx, productsById) => runTrans
     const settled = vanSnap?.exists()
         ? settleSale(vanSnap.data().activeCanvas, moves)
         : { canvas: null, short: [] };
+    // the promo goods the sale gave away (stage 4) leave the van's promoCanvas in the same write as its cigarettes
+    const promo = vanSnap?.exists() && tx.promoGiven?.length
+        ? settlePromo(vanSnap.data().promoCanvas, tx.promoGiven)
+        : { canvas: null, short: [] };
     const vault = settleVault(vaultStock, moves);
 
     t.set(txRef, {
@@ -147,12 +152,13 @@ export const syncOfflineSale = (db, appId, userId, tx, productsById) => runTrans
         timestamp: serverTimestamp(),   // true server time so it sorts into the reports
         syncedAt: serverTimestamp(),
         ...(settled.short.length ? { vanShortfall: settled.short } : {}),
+        ...(promo.short.length ? { promoShortfall: promo.short } : {}),
         ...(vault.short.length ? { vaultShortfall: vault.short } : {}),
     });
     // filed on the day the sale was MADE: the tally reads payload.date before the timestamp
     tallySale(t, db, appId, userId, payload, productsById, 1);
-    if (settled.canvas) t.update(vanRef, { activeCanvas: settled.canvas });
+    if (settled.canvas) t.update(vanRef, { activeCanvas: settled.canvas, ...(promo.canvas ? { promoCanvas: promo.canvas } : {}) });
     for (const id of Object.keys(vault.stock)) t.update(vaultRefs[id], { stock: vault.stock[id] });
 
-    return { landed: true, short: [...settled.short, ...vault.short] };
+    return { landed: true, short: [...settled.short, ...promo.short, ...vault.short] };
 });

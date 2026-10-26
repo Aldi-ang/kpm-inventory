@@ -653,7 +653,9 @@ function NotaScanLab() {
 function ShareLab() {
   window.open = (url) => { (window.__opened = window.__opened || []).push(url); return null; };
   const shop = { id: 'c1', name: 'Toko Jaya', ...(q.has('phone') ? { phone: '0812-3456-7890' } : {}) };
-  const tx = { customerName: 'Toko Jaya', paymentType: 'Cash', total: 52000, date: '12/10/2026, 07.00.00', items: [{ name: 'Cello Chocolate', qty: 2, unit: 'Bks', calculatedPrice: 26000 }] };
+  const tx = { customerName: 'Toko Jaya', paymentType: 'Cash', total: 52000, date: '12/10/2026, 07.00.00', items: [{ name: 'Cello Chocolate', qty: 2, unit: 'Bks', calculatedPrice: 26000 }],
+    /* &promo (stage 4): the promo goods given with the sale print as their own lines, no price */
+    ...(q.has('promo') ? { promoGiven: [{ productId: 'p-tee', name: 'T-shirt', qty: 4 }, { productId: 'p-hat', name: 'Hat', qty: 2 }] } : {}) };
   return q.has('save')
     ? <button id="lab-share" onClick={() => shareReceipt('receipt', shop, async (p) => { window.__saved = p; })}>Share</button>
     : <SaleReceipt tx={tx} appSettings={{}} onClose={() => {}} shop={shop} />;
@@ -1207,7 +1209,10 @@ function ShellLab() {
             user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
             userRole="FIELD_OPERATIVE" isAdmin={false}
             logAudit={() => {}} triggerCapy={() => {}}
-            onProcessSale={async (sale) => { window.__sale = sale; return { ok: true }; }}
+            onProcessSale={async (sale, ...rest) => { window.__sale = sale; window.__give = rest[4]; return { ok: true }; }}
+            /* &promo (stage 4): the van holds 6 T-shirts + 2 hats, so the cart's give row shows once a ware is in it */
+            promoVan={q.has('promo') ? [['p-tee', 'T-shirt', 6], ['p-hat', 'Hat', 2]].map(([productId, name, qty]) =>
+              ({ productId, name, qty, unit: 'pcs', promo: true, product: { id: productId, name, kind: 'promo' } })) : []}
             onInspect={() => {}}
             appSettings={{ companyName: 'KPM INVENTORY' }}
             customers={LAB_CUSTOMERS}

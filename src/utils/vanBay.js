@@ -23,6 +23,40 @@ export function movePromo(canvas, product, delta) {
   return list.filter(l => l.qty > 0);
 }
 
+/* GIVING (stage 4, his answers 1a "only with a sale" and 5 "they buy more = receive more"): what a sale hands over is its
+   own list, `promoGiven` on the receipt, never a line of `items` - every revenue, target and pita cukai sum reads items.
+   Whole pieces only; nothing at zero. */
+export const giveLines = (give) => (give || [])
+  .map(g => ({ productId: g?.productId, name: g?.name, qty: Math.floor(Number(g?.qty) || 0) }))
+  .filter(g => g.productId && g.qty > 0);
+
+/* The given pieces off the van's promoCanvas. A give the van cannot cover takes what is there and is named in `short`
+   (missingPcs) - the offline replay keeps the money and reports the gap, like settleSale. */
+export function settlePromo(canvas, given) {
+  let list = canvas || [];
+  const short = [];
+  for (const g of given || []) {
+    const have = Number(list.find(l => l.productId === g.productId)?.qty) || 0;
+    const take = Math.min(have, g.qty);
+    if (take < g.qty) short.push({ productId: g.productId, name: g.name, missingPcs: g.qty - take });
+    if (take > 0) list = movePromo(list, { id: g.productId, name: g.name }, -take);
+  }
+  return { canvas: list.map(l => ({ ...l })), short };
+}
+
+/* The online sale's form: a short van refuses the whole sale before anything is written. */
+export const applyGiveToPromo = (canvas, given) => {
+  const { canvas: left, short } = settlePromo(canvas, given);
+  if (short.length) throw `Not enough ${short[0].name} in the van to give (${short[0].missingPcs} pcs short)!`;
+  return left;
+};
+
+/* What the van holds on THIS phone: the server's promoCanvas minus this van's gives still waiting in the Ghost Ledger
+   (the promo twin of vanSync's canvasWithPending). */
+export const promoWithPending = (canvas, pendingTxs, vanId) => (pendingTxs || [])
+  .filter(tx => tx.vanPending && vanId && tx.agentId === vanId && tx.promoGiven?.length)
+  .reduce((list, tx) => settlePromo(list, tx.promoGiven).canvas, canvas || []);
+
 /* ONE LINE PER PRODUCT, SIGNED: dir +1 goes into the van, dir -1 back to the warehouse. */
 export const lineBks = (line, product) => convertToBks(line.qty, line.unit, product);
 export const netBks = (lines, id, product) => {

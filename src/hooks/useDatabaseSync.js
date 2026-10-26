@@ -26,6 +26,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
     const [eodReports, setEodReports] = useState([]);
     const [transferRequests, setTransferRequests] = useState([]);
     const [adminCanvas, setAdminCanvas] = useState([]);
+    const [adminPromo, setAdminPromo] = useState([]);   // the boss vehicle's promo goods, pcs - the terminal's give row (stage 4)
     const [branchStock, setBranchStock] = useState({});
     const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessages: [] });
     const [editCompanyProfile, setEditCompanyProfile] = useState({ name: "", address: "", phone: "" });
@@ -111,6 +112,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
         const unsubAdminVeh = onSnapshot(doc(db, basePath, 'motorists', 'ADMIN_VEHICLE'), (snap) => {
             if (snap.exists()) {
                 setAdminCanvas(snap.data().activeCanvas || []);
+                setAdminPromo(snap.data().promoCanvas || []);
             } else if (userRole === 'ADMIN') {
                 setDoc(doc(db, basePath, 'motorists', 'ADMIN_VEHICLE'), {
                     name: "Admin (Boss Vehicle)",
@@ -257,6 +259,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
         eodReports, setEodReports,
         transferRequests, setTransferRequests,
         adminCanvas, setAdminCanvas,
+        adminPromo,
         branchStock,
         appSettings, setAppSettings,
         editCompanyProfile, setEditCompanyProfile

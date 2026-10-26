@@ -771,8 +771,9 @@ section('S12. Offline sales move the van stock, through the same rule as online'
 ok('the canvas rule exists once, in vanSync, and the engine imports it',
    /^export const settleSale = \(canvas, moves\) => \{/m.test(vanSync) && imports(engine, 'applySaleToCanvas') &&
    !/const applySaleToCanvas =/.test(engine));
+/* widened ON PURPOSE by promo stage 4 (2026-10-26): the same t.update also takes the given promo pieces off promoCanvas */
 ok('the online path calls it, inside the transaction',
-   /t\.update\(agentRef, \{ activeCanvas: applySaleToCanvas\(agentDoc\.data\(\)\.activeCanvas, transactionItems\) \}\)/.test(engine));
+   /t\.update\(agentRef, \{ activeCanvas: applySaleToCanvas\(agentDoc\.data\(\)\.activeCanvas, transactionItems\)(?: \}\)|, \.\.\.\(promoGiven\.length)/.test(engine));
 ok('REGRESSION: the offline path writes no van - the sale waits with vanPending for the sync',
    !/updateDoc\(/.test(stripComments(engine)) && /vanPending: Boolean\(currentAgentProfileId\)/.test(engine));
 ok('the online path no longer keeps its own copy of the rule',
@@ -11891,7 +11892,10 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      chest's PROMO view) and Stock Opname (counted by the piece) - each named, so a fourth screen is a decision, not a leak */
   ok('REGRESSION: promoItems reaches the Master Vault list, the backup and the three stage-2 storage screens - never the Sales Terminal (no sale at Rp 0, no pita cukai debt for a T-shirt), never a sum',
      /* widened ON PURPOSE by stage 3 (2026-10-26): the van bay (Fleet & Roster) and Agent Inventory - pictures, names and pcs */
-     promoLines.length === 8 && app.split('promoItems').length - 1 === 13 &&
+     /* widened ON PURPOSE by stage 4 (2026-10-26): the terminal's give row gets each van line joined with its product for
+        the PICTURE only (promoVanNow) - the terminal itself still never receives promoItems (stage 4's own pin) */
+     promoLines.length === 10 && app.split('promoItems').length - 1 === 15 &&
+     app.includes('.map(l => ({ ...l, product: promoItems.find(p => p.id === l.productId) })),   // picture only - never a sum, never a sale line') &&
      app.includes('promoItems={promoItems}   /* the bay\'s PROMO view loads them into the van in pcs (stage 3) - never activeCanvas */') &&
      app.includes('promoItems={promoItems}   /* the van\'s promo goods in pcs (stage 3) - pictures and names only, never a sum */') &&
      app.includes('exportData.inventory = [...inventory, ...promoItems];') &&
@@ -12163,6 +12167,70 @@ section('PROMO ITEMS, stage 3 of 4 - the van: promo goods load in pcs, show in A
      verify.includes("t.set(promoRefs[index].ref, { productId: item.productId, name: item.name, kind: 'promo', unit: 'pcs', stock: (pSnap.exists() ? (pSnap.data().stock || 0) : 0) + item.qty }, { merge: true });") &&
      verify.includes("...(nowDoing('stock') && Array.isArray(report.promoRemaining) ? { promoCanvas: [] } : {})") &&
      verify.indexOf('const promoDocs = await Promise.all(') < verify.indexOf('PHASE 2: EXECUTE ALL WRITES LAST'));
+}
+
+section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH a sale, any number, off the van (his answers 1a and 5 "they buy more = receive more"; samples stay free - "we can just do trials for the new smokers and give them for free")');
+{
+  const vb = await import('../utils/vanBay.js');
+  const { giveLines, settlePromo, applyGiveToPromo, promoWithPending } = vb;
+  const eng = code(engine).replace(/\r/g, ''), vs = code(vanSync).replace(/\r/g, ''), ap = code(app).replace(/\r/g, '');
+  const ms = code(merchant).replace(/\r/g, ''), sr = code(read('src/components/SaleReceipt.jsx')).replace(/\r/g, ''), dbs = code(read('src/hooks/useDatabaseSync.js')).replace(/\r/g, '');
+  const van = [{ productId: 'tee', name: 'T-shirt KPM', qty: 6, unit: 'pcs', promo: true }, { productId: 'hat', name: 'Hat KPM', qty: 2, unit: 'pcs', promo: true }];
+  ok('BEHAVIOUR: a give list keeps whole pieces only - zero, negative, no product and fractions never reach the van',
+     typeof giveLines === 'function' && JSON.stringify(giveLines([{ productId: 'tee', name: 'T', qty: 4 }, { productId: 'hat', name: 'H', qty: 0 }, { productId: '', name: 'X', qty: 3 }, { productId: 'mug', name: 'M', qty: -2 }, { productId: 'cap', name: 'C', qty: '2.7' }])) ===
+       JSON.stringify([{ productId: 'tee', name: 'T', qty: 4 }, { productId: 'cap', name: 'C', qty: 2 }]) && giveLines(undefined).length === 0);
+  const four = typeof settlePromo === 'function' ? settlePromo(van, [{ productId: 'tee', name: 'T-shirt KPM', qty: 4 }]) : null;
+  const seven = typeof settlePromo === 'function' ? settlePromo(van, [{ productId: 'tee', name: 'T-shirt KPM', qty: 7 }, { productId: 'hat', name: 'Hat KPM', qty: 2 }]) : null;
+  ok('BEHAVIOUR: giving 4 of 6 T-shirts leaves 2 and the hats untouched; giving 7 takes the 6 there are and names 1 pcs short; giving all the hats removes the line; the van list is never mutated',
+     !!four && four.short.length === 0 && four.canvas.find(l => l.productId === 'tee').qty === 2 && four.canvas.find(l => l.productId === 'hat').qty === 2 &&
+     !!seven && !seven.canvas.some(l => l.productId === 'tee') && !seven.canvas.some(l => l.productId === 'hat') && seven.short.length === 1 &&
+     seven.short[0].productId === 'tee' && seven.short[0].missingPcs === 1 && van[0].qty === 6 && van.length === 2);
+  let refused = '';
+  try { applyGiveToPromo(van, [{ productId: 'tee', name: 'T-shirt KPM', qty: 7 }]); } catch (e) { refused = String(e); }
+  ok('BEHAVIOUR: ONLINE a give larger than the van is REFUSED (throws inside the transaction, so nothing is written) - and the refusal reads as a failure',
+     typeof applyGiveToPromo === 'function' && /not enough/i.test(refused) && refused.includes('T-shirt KPM') &&
+     applyGiveToPromo(van, [{ productId: 'hat', name: 'Hat KPM', qty: 1 }]).find(l => l.productId === 'hat').qty === 1, refused);
+  const pend = [{ vanPending: true, agentId: 'm2', promoGiven: [{ productId: 'tee', name: 'T', qty: 2 }] }, { vanPending: true, agentId: 'm2', promoGiven: [{ productId: 'tee', name: 'T', qty: 1 }] },
+                { vanPending: true, agentId: 'm9', promoGiven: [{ productId: 'tee', name: 'T', qty: 5 }] }, { agentId: 'm2', promoGiven: [{ productId: 'tee', name: 'T', qty: 5 }] }];
+  ok('BEHAVIOUR: OFFLINE the phone shows the van minus its OWN waiting gives (2 + 1 of 6 -> 3) - another van\'s, or a give with no vanPending, never counts',
+     typeof promoWithPending === 'function' && promoWithPending(van, pend, 'm2').find(l => l.productId === 'tee').qty === 3 && promoWithPending(van, pend, null).find(l => l.productId === 'tee').qty === 6 &&
+     promoWithPending(undefined, [], 'm2').length === 0);
+  /* TRAP 1 (money): t.items is read by revenue, targets, dayStats, the nota total, pita cukai and bounty pricing - a promo
+     line there is a Rp 0 sale. The given pieces travel in their OWN field, promoGiven, never inside items. */
+  ok('REGRESSION: the sale stores what was given as `promoGiven` - its own field, on BOTH the online receipt and the offline one - and no line ever builds items from it',
+     (eng.match(/\.\.\.\(promoGiven\.length \? \{ promoGiven \} : \{\}\)/g) || []).length === 2 &&
+     !eng.split('\n').some(l => /\bitems\b/.test(l) && /promoGiven/.test(l)) && eng.includes('items: finalTransItems,'));
+  ok('REGRESSION: ONLINE the van\'s promo comes off in the SAME t.update as its cigarettes (one transaction, read inside it)',
+     eng.includes('t.update(agentRef, { activeCanvas: applySaleToCanvas(agentDoc.data().activeCanvas, transactionItems), ...(promoGiven.length ? { promoCanvas: applyGiveToPromo(agentDoc.data().promoCanvas, promoGiven) } : {}) });') &&
+     imports(engine, 'applyGiveToPromo') && imports(engine, 'giveLines'));
+  const guard = eng.slice(eng.indexOf('const promoGiven = giveLines('), eng.indexOf('THE OFFLINE INTERCEPTOR'));
+  ok('REGRESSION: the engine refuses a give with no sale line, in Retur, or with no van - BEFORE the offline branch, so a refused give is never queued',
+     guard.includes("if (promoGiven.length && (proofPayload?.isRetur || proofPayload?.type === 'RETUR' || !activeCart.some(i => !i.isIouFulfillment))) {") &&
+     guard.includes('if (promoGiven.length && !currentAgentProfileId) {') && (guard.match(/notify\("[^"]*\b(cannot|not enough)\b/gi) || []).length === 2 &&
+     eng.includes('const handleMerchantSale = async (custName, payMethod, cartItems, newStoreData = null, proofPayload = null, promoGiven = []) => {') &&
+     eng.includes('return await processTransaction(null, { customerName: finalName, paymentType: payMethod, cart: cartItems, newStoreData, proofPayload, promoGiven });'));
+  const sync = vs.slice(vs.indexOf('export const syncOfflineSale'));
+  ok('REGRESSION: the OFFLINE replay deducts the given pieces ONCE - after the "already landed" return, in the same t.update as the van, and a short give is kept on the receipt and reported',
+     sync.indexOf('if (txSnap.exists()) return { landed: false, short: [] };') >= 0 &&
+     sync.indexOf('if (txSnap.exists()) return { landed: false, short: [] };') < sync.indexOf('settlePromo(vanSnap.data().promoCanvas, tx.promoGiven)') &&
+     sync.includes("if (settled.canvas) t.update(vanRef, { activeCanvas: settled.canvas, ...(promo.canvas ? { promoCanvas: promo.canvas } : {}) });") &&
+     sync.includes('...(promo.short.length ? { promoShortfall: promo.short } : {}),') && sync.includes('short: [...settled.short, ...promo.short, ...vault.short]') &&
+     ap.includes("s.missingPcs != null ? `${s.missingPcs} pcs` : `${s.missingBks} Bks`"));
+  ok('REGRESSION: App feeds the terminal the van\'s promo (salesman: his doc; boss: ADMIN_VEHICLE in VEHICLE mode only) minus the waiting gives - as promoVan, never as promoItems',
+     ap.includes('setAgentPromo(data.promoCanvas || []);') && dbs.includes('setAdminPromo(snap.data().promoCanvas || []);') && dbs.includes('adminPromo,') &&
+     ap.includes("? (adminSalesMode === 'VEHICLE' ? promoWithPending(adminPromo, pendingTxData, 'ADMIN_VEHICLE') : [])") &&
+     ap.includes(': promoWithPending(agentPromo, pendingTxData, agentProfileId)') && ap.includes('promoVan={promoVanNow}') && !ms.includes('promoItems'));
+  ok('REGRESSION: the terminal shows the give row only with a sale line (not Retur, not an IOU-only cart), caps it at the van, sends it as the 6th argument and clears it after the deal',
+     ms.includes('const canGive = !isReturMode && cart.some(i => !i.isIouFulfillment) && promoVan.length > 0;') &&
+     ms.includes('const givenLines = canGive ? giveLines(promoVan.map(l => ({ productId: l.productId, name: l.name, qty: Math.min(give[l.productId] || 0, l.qty) }))) : [];') &&
+     ms.includes('await onProcessSale(finalCust, dbMethod, finalCart, newStorePayload, proofPayload, finalGive);') && ms.includes('setGive({});') &&
+     ms.includes('{canGive && (') && ms.includes('data-guide="promo-give"'));
+  ok('REGRESSION: the nota prints the given pieces with NO price - the live receipt (thermal + A4) and the history reprint (thermal + A4 + WhatsApp)',
+     (ms.match(/\(receiptData\.given \|\| \[\]\)\.map\(/g) || []).length === 2 && ms.includes('given: finalGive') &&
+     (sr.match(/\(viewingReceipt\.promoGiven \|\| \[\]\)\.map\(/g) || []).length === 2 && sr.includes('(viewingReceipt.promoGiven || []).forEach('));
+  const samp = code(read('src/components/SamplingManager.jsx'));
+  ok('REGRESSION: a SAMPLE still needs no sale - the sampling screen knows nothing of the give rule (his "give them for free")',
+     !/promoGiven|giveLines|applyGiveToPromo|canGive/.test(samp));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

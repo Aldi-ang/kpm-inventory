@@ -74,6 +74,16 @@ export default function SaleReceipt({ tx: viewingReceipt, appSettings, onClose, 
                                                 </div>
                                             </div>
                                         )) : <div className="text-center py-4 text-[10px] italic !text-[var(--ink-muted)]">No Itemized Data</div>}
+                                        {/* promo goods given with the sale (stage 4): a line each, no price */}
+                                        {(viewingReceipt.promoGiven || []).map((g, i) => (
+                                            <div key={`given-${i}`} className="mb-2">
+                                                <div className="font-bold uppercase text-xs !text-[var(--ink)]">{g.name}</div>
+                                                <div className="flex justify-between text-xs mt-0.5">
+                                                    <span className="!text-[var(--ink-muted)]">{g.qty} pcs · BONUS</span>
+                                                    <span className="font-black !text-[var(--ink)]">-</span>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             )}
@@ -169,6 +179,15 @@ export default function SaleReceipt({ tx: viewingReceipt, appSettings, onClose, 
                                                 {isReturReceipt && item.calculatedPrice > 0 ? '-' : ''}{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
                                             </td>
                                         </tr>
+                                    ))}
+                                    {/* promo goods given with the sale (stage 4): a line each, no price */}
+                                    {(viewingReceipt.promoGiven || []).map((g, i) => (
+                                        <tr key={`given-${i}`}>
+                                            <td className="border-2 !border-slate-800 p-2 text-center !text-slate-400 font-bold align-top">{(viewingReceipt.items?.length || 0) + i + 1}</td>
+                                            <td className="border-2 !border-slate-800 p-2 font-bold !text-slate-900 uppercase align-top">{g.name} <span className="!text-slate-400">(BONUS)</span></td>
+                                            <td className="border-2 !border-slate-800 p-2 text-center font-black !text-slate-900 align-top">{g.qty} pcs</td>
+                                            <td className="border-2 !border-slate-800 p-2 text-right font-black !text-slate-900 align-top">-</td>
+                                        </tr>
                                     ))}</tbody>
                                     <tfoot><tr className="!bg-blue-100"><td colSpan="3" className="border-2 !border-slate-800 p-4 text-right font-black text-xl !text-blue-900 tracking-widest">GRAND TOTAL</td><td className={`border-2 !border-slate-800 p-4 text-right font-black text-2xl ${isReturReceipt && displayTotal > 0 ? '!text-red-700' : '!text-blue-900'}`}>{isReturReceipt && displayTotal > 0 ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(displayTotal)}</td></tr></tfoot>
                                 </table>
@@ -225,9 +244,10 @@ export default function SaleReceipt({ tx: viewingReceipt, appSettings, onClose, 
                                 if (item.condition === 'DAMAGED') text += ` [DAMAGED]`;
                                 if (item.fulfillment === 'IOU') text += ` [UTANG BARANG]`;
                                 if (item.isIouFulfillment) text += ` [IOU FULFILLED]`;
-                                text += `\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; 
+                                text += `\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`;
                             });
                         }
+                        (viewingReceipt.promoGiven || []).forEach(g => { text += `${g.qty} pcs ${g.name} [BONUS]\n`; });
                         if (viewingReceipt.itemsPaid && viewingReceipt.itemsPaid.length > 0) {
                             viewingReceipt.itemsPaid.forEach(item => { text += `[LAKU] ${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
                         }

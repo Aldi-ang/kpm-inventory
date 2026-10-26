@@ -11,6 +11,7 @@ import useOfflineEngine from './useOfflineEngine';
 /* What a sale does to the van lives in ONE place, src/utils/vanSync.js - the online sale below
    and the offline sync (App.jsx) both call it, and load-test/hundred-users.mjs runs it. */
 import { applySaleToCanvas } from '../utils/vanSync.js';
+import { giveLines, applyGiveToPromo } from '../utils/vanBay.js';
 import { notify } from '../components/Toast.jsx';
 
 export default function useTransactionEngine({
@@ -107,6 +108,19 @@ export default function useTransactionEngine({
         if (userRole === 'ADMIN' && adminSalesMode === 'VEHICLE') currentAgentProfileId = 'ADMIN_VEHICLE';
         else if (userRole === 'ADMIN') currentAgentProfileId = null;
 
+        /* PROMO GOODS GO OUT ONLY WITH A SALE (stage 4, his answer 1a) and only off a van - the terminal shows the give row
+           under those same conditions; this is the rule standing where the write happens. Checked before the offline
+           branch, so a refused give is never queued. A cigarette SAMPLE has no such rule (SamplingManager). */
+        const promoGiven = giveLines(manualData?.promoGiven);
+        if (promoGiven.length && (proofPayload?.isRetur || proofPayload?.type === 'RETUR' || !activeCart.some(i => !i.isIouFulfillment))) {
+            notify("Promo goods cannot go out without a sale - add what the shop buys, or take the promo pieces off.");
+            return;
+        }
+        if (promoGiven.length && !currentAgentProfileId) {
+            notify("Promo goods cannot be given from the Master Vault - load them into a van first (Fleet & Roster), then sell from it.");
+            return;
+        }
+
         /* the boss sells with no roster row (VAULT mode nulls agentProfileId), so his name
            is the one he typed in Settings — the field ReceiptPreview already prints — never
            the front half of his email. Roster below still wins for a real motorist. */
@@ -170,6 +184,7 @@ export default function useTransactionEngine({
                         longitude: proofPayload.longitude,
                         capturedAt: proofPayload.timestamp
                     } : null,
+                    ...(promoGiven.length ? { promoGiven } : {}),
                     /* The van is NOT touched here. A queued write of the whole cargo list would land
                        on top of anything a captain loaded or unloaded while there was no signal (row 2
                        of the 2026-10-19 100-users check). This flag sends it to the sync, which moves
@@ -341,8 +356,8 @@ export default function useTransactionEngine({
 
                 // 🚀 SMART AGENT INVENTORY DEDUCTION
                 if (agentDoc && agentDoc.exists()) {
-                    t.update(agentRef, { activeCanvas: applySaleToCanvas(agentDoc.data().activeCanvas, transactionItems) });
-                }
+                    t.update(agentRef, { activeCanvas: applySaleToCanvas(agentDoc.data().activeCanvas, transactionItems), ...(promoGiven.length ? { promoCanvas: applyGiveToPromo(agentDoc.data().promoCanvas, promoGiven) } : {}) });
+                } else if (promoGiven.length) throw `Vehicle not found - the promo goods were not given`;
 
                 // 📖 RECEIPT GENERATION (Source of Truth)
                 t.set(transRef, {
@@ -367,7 +382,8 @@ export default function useTransactionEngine({
                         latitude: proofPayload.latitude,
                         longitude: proofPayload.longitude,
                         capturedAt: proofPayload.timestamp
-                    } : null
+                    } : null,
+                    ...(promoGiven.length ? { promoGiven } : {})
                 });
 
                 /* THE TALLY, in the same transaction as the sale above.
@@ -448,7 +464,7 @@ export default function useTransactionEngine({
         } 
     };
 
-    const handleMerchantSale = async (custName, payMethod, cartItems, newStoreData = null, proofPayload = null) => { 
+    const handleMerchantSale = async (custName, payMethod, cartItems, newStoreData = null, proofPayload = null, promoGiven = []) => {
         /* 🚀 FIX A — EXACT match only, the same rule the sales screen already uses to auto-pick a
            store (MerchantSalesView's `exact.length === 1` guard). The old lookup also matched on
            a PART of the name, so an agent typing "SARI" for a walk-in booked the sale AND
@@ -469,7 +485,7 @@ export default function useTransactionEngine({
            already on every cart line as item.priceTier. */
         const finalName = existingProfile ? existingProfile.name : (custName || "Walk-in Customer").replace(/\b\w/g, l => l.toUpperCase());
 
-        return await processTransaction(null, { customerName: finalName, paymentType: payMethod, cart: cartItems, newStoreData, proofPayload });
+        return await processTransaction(null, { customerName: finalName, paymentType: payMethod, cart: cartItems, newStoreData, proofPayload, promoGiven });
     };
 
     const handleConsignmentPayment = async (customerName, itemsPaid, amountPaid, itemsReturned = [], returnTotal = 0, itemsRemaining = []) => { 
