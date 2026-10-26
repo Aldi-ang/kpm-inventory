@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { UploadCloud, FileText, Search, Save, X, RefreshCcw, History, ChevronDown, Printer, Pencil, Trash2, Image as ImageIcon, Target, PlusCircle, ArrowLeftRight, Send, Camera, Truck, AlertCircle, MapPin, Clock } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot, increment } from 'firebase/firestore';
-import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64, scanNotaToBase64, getLocalDayKey, convertToBks } from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64, scanNotaToBase64, getLocalDayKey, convertToBks, isPromo, bksOf, pcsOf } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import AcceptanceReceipt from './components/AcceptanceReceipt.jsx';
 import ShipmentLabel from './components/ShipmentLabel.jsx';
@@ -40,6 +40,8 @@ import { productArrivals, shipmentRhythm, inTransitQty, reorderAdvice } from './
 const HQ_NAME = MASTER;
 const rp = (n) => 'Rp ' + new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0));
 const num = (n) => new Intl.NumberFormat('id-ID').format(Number(n) || 0);
+/* a delivery's quantity in words: Bks and promo pcs are never added together (bksOf / pcsOf, helpers.js) */
+const qtyWords = (bks, pcs) => [bks > 0 && `${num(bks)} Bks`, pcs > 0 && `${num(pcs)} pcs promo`].filter(Boolean).join(' + ') || '0 Bks';
 
 /* Defined at module scope on purpose. A component declared inside the parent is a
    NEW type on every render, so React unmounts and remounts it — the input would
@@ -176,7 +178,7 @@ const Proses = ({ steps }) => (
    below IN_TRANSIT and the one state nobody goes looking for is the one buried at the bottom. */
 const REQ_RANK = { DISPUTED: 0, PENDING: 1, IN_TRANSIT: 2 };
 
-const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], branchStockMap = {}, db, storage, appId, user, isAdmin, userRole, logAudit, triggerCapy, appSettings, masterUserId }) => {
+const RestockVaultView = ({ inventory = [], promoItems = [], procurements = [], motorists = [], branchStockMap = {}, db, storage, appId, user, isAdmin, userRole, logAudit, triggerCapy, appSettings, masterUserId }) => {
     /* camera only, unless he is senior enough to re-file a photo that came in some other way */
     const galleryOk = canPickFromGallery(userRole);
     /* 'in' = surat jalan masuk · 'out' = surat jalan keluar (HQ push) · 'book' = buku besar */
@@ -379,11 +381,11 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
         const out = {};
         const sorted = [...procurements].sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
         for (const po of sorted) {
-            const qty = (po.items || []).reduce((s, i) => s + (Number(i.qtyReceived) || 0), 0);
+            const qty = bksOf(po.items || []);
             if (!qty) continue;
             const extra = (Number(po.shippingCost)||0) + (Number(po.laborCost)||0) + (Number(po.exciseTax)||0);
             for (const i of po.items || []) {
-                if (!i.id || out[i.id]) continue;
+                if (!i.id || i.promo || out[i.id]) continue;
                 out[i.id] = { unit: (Number(i.basePrice)||0) + extra / qty, batchNo: i.batchNo || po.poNumber };
             }
         }
@@ -400,6 +402,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
             qtyReceived: '',
             basePrice: product.priceDistributor || 0,
             unit: product.unit || 'Bks',
+            ...(isPromo(product) ? { promo: true } : {}),
         }]);
     };
 
@@ -442,10 +445,13 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
     const removeFromCart = (cartId) => setCart(cart.filter(item => item.cartId !== cartId));
     const updateCartItem = (cartId, field, value) => setCart(cart.map(item => item.cartId === cartId ? { ...item, [field]: value } : item));
 
-    const filteredInventory = inventory.filter(item => item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || item.sku?.toLowerCase().includes(searchTerm.toLowerCase()));
+    /* the picker and every stock check read the cigarettes AND the promo items; every money line still reads `inventory` */
+    const goods = useMemo(() => [...inventory, ...promoItems], [inventory, promoItems]);
+    const filteredInventory = goods.filter(item => item.name?.toLowerCase().includes(searchTerm.toLowerCase()) || item.sku?.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const totalBasePrice = cart.reduce((sum, item) => sum + (Number(item.qtyReceived || 0) * Number(item.basePrice || 0)), 0);
-    const totalItemsReceived = cart.reduce((sum, item) => sum + Number(item.qtyReceived || 0), 0);
+    const totalItemsReceived = bksOf(cart);   /* Bks only - landed cost, the Bks totals and the demo mission read this */
+    const promoPcs = pcsOf(cart);
 
     /* ═══════════ MINIMAL KIRIM — the least this cabang can be sent without running dry ═══════════
        Aldi, 2026-08-30: *"this recommended value should be different according to the 'tujuan' that
@@ -479,6 +485,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
             Number((branchStockMap[to] || []).find(s => (s.productId || s.id) === id)?.stock) || 0;
         const out = {};
         cart.forEach(c => {
+            if (c.promo) return;   /* a give-away has no selling speed to keep up with */
             out[c.id] = reorderAdvice(
                 productArrivals(stockRequests, to, c.id), shelfOf(c.id),
                 inTransitQty(stockRequests, to, c.id), rhythm, now, spare);
@@ -596,7 +603,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
     /* ═══ MASUK — factory production lands in the Master Vault ═══ */
     const handleProcessRestock = async () => {
         if (!user || !db || !activeUserId) return notify("System disconnected. Cannot save.");
-        if (cart.length === 0 || totalItemsReceived <= 0) return notify("Belum ada barang, atau jumlahnya masih kosong.");
+        if (cart.length === 0 || totalItemsReceived + promoPcs <= 0) return notify("Belum ada barang, atau jumlahnya masih kosong.");
 
         const batchId = `BCH-${new Date().toISOString().slice(2,10).replace(/-/g,'')}`;
 
@@ -656,8 +663,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
             /* the demo's mission line ticks on the SAVED write, never on the press (DemoMission.jsx) */
             if (IS_DEMO) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 1, qty: totalItemsReceived } }));
 
-            if (logAudit) await logAudit("RESTOCK_VAULT", `Produced ${totalItemsReceived} units under ${poData.poNumber}`);
-            if (triggerCapy) triggerCapy(`Surat jalan ${poData.poNumber} tersimpan. ${num(totalItemsReceived)} Bks masuk Master Vault.`);
+            if (logAudit) await logAudit("RESTOCK_VAULT", `Produced ${qtyWords(totalItemsReceived, promoPcs)} under ${poData.poNumber}`);
+            if (triggerCapy) triggerCapy(`Surat jalan ${poData.poNumber} tersimpan. ${qtyWords(totalItemsReceived, promoPcs)} masuk Master Vault.`);
 
             resetForm();
             setViewMode('book');
@@ -676,16 +683,16 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
     const handleHQPush = async () => {
         if (!user || !db || !activeUserId) return notify("System disconnected. Cannot send.");
         if (!poData.destination.trim()) return notify("Tujuan belum diisi. Barang tidak bisa dikirim ke mana-mana.");
-        if (cart.length === 0 || totalItemsReceived <= 0) return notify("Belum ada barang, atau jumlahnya masih kosong.");
+        if (cart.length === 0 || totalItemsReceived + promoPcs <= 0) return notify("Belum ada barang, atau jumlahnya masih kosong.");
 
         for (const item of cart) {
-            const hq = inventory.find(p => p.id === item.id);
+            const hq = goods.find(p => p.id === item.id);
             const want = Number(item.qtyReceived) || 0;
             if (!hq || (hq.stock || 0) < want) {
                 return notify(`STOK HQ TIDAK CUKUP!\n\n${item.name}: minta ${num(want)}, ada ${num(hq?.stock || 0)}.`);
             }
         }
-        if (!await confirmAction(`Kirim ${num(totalItemsReceived)} Bks ke ${poData.destination}?\n\nStok HQ langsung dipotong sekarang. Cabang baru bertambah setelah mereka menghitung barangnya.`)) return;
+        if (!await confirmAction(`Kirim ${qtyWords(totalItemsReceived, promoPcs)} ke ${poData.destination}?\n\nStok HQ langsung dipotong sekarang. Cabang baru bertambah setelah mereka menghitung barangnya.`)) return;
 
         setIsSubmitting(true);
         try {
@@ -702,6 +709,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                 qty: Number(i.qtyReceived) || 0,
                 unit: i.unit || 'Bks',
                 batchNo: String(i.batchNo || '').trim() || 'UNASSIGNED',
+                ...(i.promo ? { promo: true } : {}),   /* the branch counts it in pcs and shelves it as promo */
             }));
 
             const batch = writeBatch(db);
@@ -734,14 +742,14 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                 workflowTimeline: [{
                     status: 'IN_TRANSIT',
                     time: new Date().toISOString(),
-                    msg: `Dikirim HQ tanpa permintaan cabang, oleh ${getAdminName()}. ${num(totalItemsReceived)} Bks via ${poData.courier || 'Internal'} (Resi: ${poData.trackingNo || '-'}). Stok HQ sudah dipotong.`
+                    msg: `Dikirim HQ tanpa permintaan cabang, oleh ${getAdminName()}. ${qtyWords(totalItemsReceived, promoPcs)} via ${poData.courier || 'Internal'} (Resi: ${poData.trackingNo || '-'}). Stok HQ sudah dipotong.`
                 }],
             });
 
             await batch.commit();
             if (IS_DEMO) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 2, qty: totalItemsReceived, to: poData.destination } }));
 
-            if (logAudit) await logAudit("STOCK_HQ_PUSH", `HQ pushed ${totalItemsReceived} units to ${poData.destination} as ${orderId}`);
+            if (logAudit) await logAudit("STOCK_HQ_PUSH", `HQ pushed ${qtyWords(totalItemsReceived, promoPcs)} to ${poData.destination} as ${orderId}`);
             if (triggerCapy) triggerCapy(`Terkirim ke ${poData.destination}. Menunggu cabang menghitung. 🚚`);
 
             resetForm();
@@ -1056,18 +1064,18 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
         const dayOf = (r) => r.date || (r.timestamp?.seconds ? getLocalDayKey(new Date(r.timestamp.seconds * 1000)) : getLocalDayKey());
 
         const inbound = procurements.map(po => {
-            const qty = (po.items || []).reduce((s, i) => s + (Number(i.qtyReceived) || 0), 0);
+            const qty = bksOf(po.items || []);
             return {
                 key: `in_${po.id}`, dir: 'in', raw: po, id: po.poNumber || po.id,
                 from: po.supplierName || 'Pabrik Internal', to: po.destination || HQ_NAME,
-                qty, value: po.trueLandedTotal || po.totalBasePrice || 0,
+                qty, pcs: pcsOf(po.items || []), value: po.trueLandedTotal || po.totalBasePrice || 0,
                 day: dayOf(po), status: 'Diterima', tone: 'off',
             };
         });
 
         const outbound = stockRequests.map(req => {
             const lines = req.fulfilledItems || req.requestedItems || req.items || [];
-            const qty = lines.reduce((s, i) => s + (Number(i.qty) || 0), 0);
+            const qty = bksOf(lines), pcs = pcsOf(lines);
             const unitOf = (l) => Number(inventory.find(p => p.id === l.productId)?.priceDistributor) || 0;
             const value = lines.reduce((s, l) => s + (Number(l.qty) || 0) * unitOf(l), 0);
 
@@ -1093,7 +1101,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
             return {
                 key: `out_${req.id}`, dir: 'out', raw: req, id: req.id,
                 from: req.origin || HQ_NAME, to: req.branch || '—',
-                qty, value, day: dayOf(req), status, tone,
+                qty, pcs, value, day: dayOf(req), status, tone,
                 live: req.status === 'IN_TRANSIT', days,
             };
         });
@@ -1121,7 +1129,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
             const per = row.qty > 0 ? (po.trueLandedTotal || 0) / row.qty : 0;
             return [
                 { title: 'Dicatat di HQ', when: `${po.recordedBy || 'HQ'} · ${row.day}`, tone: 'on' },
-                { title: 'Barang dihitung', when: `${num(row.qty)} Bks${po.incomplete ? ` · belum lengkap: ${po.incomplete.join(', ')}` : ' · lengkap'}`, tone: po.incomplete ? 'bad' : 'on' },
+                { title: 'Barang dihitung', when: `${qtyWords(row.qty, row.pcs)}${po.incomplete ? ` · belum lengkap: ${po.incomplete.join(', ')}` : ' · lengkap'}`, tone: po.incomplete ? 'bad' : 'on' },
                 { title: 'Masuk ke Master Vault', when: `landed ${rp(per)} / Bks`, tone: 'on' },
             ];
         }
@@ -1137,7 +1145,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
         }];
         steps.push({
             title: 'Dikirim dari HQ',
-            when: seen('IN_TRANSIT') ? `${req.senderName || '—'} · ${num(row.qty)} Bks · ${at('IN_TRANSIT')}` : 'belum disiapkan',
+            when: seen('IN_TRANSIT') ? `${req.senderName || '—'} · ${qtyWords(row.qty, row.pcs)} · ${at('IN_TRANSIT')}` : 'belum disiapkan',
             tone: seen('IN_TRANSIT') ? 'on' : 'off',
         });
         if (req.status === 'DISPUTED') {
@@ -1710,7 +1718,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                             <span className="font-mono text-[15px] text-ink-muted w-4 text-center shrink-0">{row.dir === 'in' ? '↓' : '↑'}</span>
                                             <span className="flex-1 min-w-0 font-mono text-[13px] text-ink">
                                                 <span className="block truncate">{row.from} → {row.to}</span>
-                                                <span className="block text-[10px] text-ink-muted mt-0.5 truncate">{row.id} · {num(row.qty)} Bks · {rp(row.value)} · {row.day}</span>
+                                                <span className="block text-[10px] text-ink-muted mt-0.5 truncate">{row.id} · {qtyWords(row.qty, row.pcs)} · {rp(row.value)} · {row.day}</span>
                                             </span>
                                             <span className={`hidden sm:inline-flex items-center text-[10px] font-display font-bold uppercase tracking-widest border rounded px-2 py-1 whitespace-nowrap ${row.tone === 'bad' ? 'border-danger text-danger-text' : row.tone === 'on' ? 'border-orange text-ink' : 'border-line-2 text-ink-muted'}`}>{row.status}</span>
                                             <ChevronDown size={16} className={`text-ink-muted shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -1771,8 +1779,8 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                                                         <tr key={i} className="border-b border-line-2 last:border-b-0">
                                                                             <td className="px-3 py-2 text-ink font-bold">{l.name}</td>
                                                                             <td className="px-3 py-2 font-mono text-ink-muted">{l.batchNo || 'UNASSIGNED'}</td>
-                                                                            <td className="px-3 py-2 font-mono text-right text-ink">{num(q)}</td>
-                                                                            <td className="px-3 py-2 font-mono text-right text-ink">{rp(per)}</td>
+                                                                            <td className="px-3 py-2 font-mono text-right text-ink">{num(q)}{l.promo && ' pcs'}</td>
+                                                                            <td className="px-3 py-2 font-mono text-right text-ink">{l.promo ? '—' : rp(per)}</td>
                                                                         </tr>
                                                                     );
                                                                 })}
@@ -1847,9 +1855,15 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                         <div className="flex-1 overflow-y-auto custom-scrollbar max-h-[40vh] lg:max-h-none">
                             {filteredInventory.length === 0 ? (
                                 <div className="px-3 py-6 text-xs text-ink-muted">Tidak ada barang bernama itu.</div>
-                            ) : filteredInventory.map(item => {
+                            ) : filteredInventory.map((item, i) => {
                                 const inCart = cart.some(c => c.id === item.id);
+                                const promo = isPromo(item);
                                 return (
+                                    <React.Fragment key={item.id}>
+                                    {/* the promo items follow the cigarettes under their own heading - the option he asked for */}
+                                    {promo && !isPromo(filteredInventory[i - 1]) && (
+                                        <div className="px-3 pt-3 pb-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-accent-ink border-b border-line-2">Promo items · pcs</div>
+                                    )}
                                     <button
                                         key={item.id} onClick={() => addToCart(item)} type="button"
                                         className={`w-full flex items-center gap-2.5 text-left px-3 py-2.5 border-b border-line-2 border-l-2 transition-all hover:bg-raised hover:translate-x-0.5 active:scale-[0.99] ${inCart ? 'border-l-orange' : 'border-l-transparent hover:border-l-orange'}`}
@@ -1857,11 +1871,12 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                         <span className="flex-1 min-w-0">
                                             <span className="block text-[13.5px] font-bold text-ink leading-tight truncate">{item.name}</span>
                                             <span className="block font-mono text-[10.5px] text-ink-muted mt-0.5">
-                                                {isOut ? `di gudang ${num(item.stock)}` : `stok ${num(item.stock)} Bks · ${rp(item.priceDistributor)}`}
+                                                {promo ? `${isOut ? 'di gudang' : 'stok'} ${num(item.stock)} pcs` : isOut ? `di gudang ${num(item.stock)}` : `stok ${num(item.stock)} Bks · ${rp(item.priceDistributor)}`}
                                             </span>
                                         </span>
                                         <span className="text-[10.5px] font-display font-bold border border-line-2 rounded px-1.5 py-0.5 text-ink-muted">+</span>
                                     </button>
+                                    </React.Fragment>
                                 );
                             })}
                         </div>
@@ -2007,7 +2022,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                         {cart.length === 0 ? (
                                             <tr><td colSpan={5} data-label="" className="px-3 py-3 text-accent-ink font-mono text-[12px]"><span className="block text-[9px] font-black uppercase tracking-[0.18em] opacity-85 mb-1.5">Perlu diisi</span>Belum ada barang. Cari dan klik salah satu di daftar barang.</td></tr>
                                         ) : cart.map(item => {
-                                            const per = totalItemsReceived > 0 ? (Number(item.basePrice)||0) + extraCosts / totalItemsReceived : 0;
+                                            const per = !item.promo && totalItemsReceived > 0 ? (Number(item.basePrice)||0) + extraCosts / totalItemsReceived : 0;
                                             const prev = lastLanded[item.id];
                                             const drift = prev && prev.unit > 0 && per > 0 ? (per - prev.unit) / prev.unit * 100 : null;
                                             return (
@@ -2028,7 +2043,16 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                                         {/* TYPE IT THE WAY THE PAPER SAYS IT. The factory note counts in
                                                             karton and bal; retyping that as bks by hand is where a zero
                                                             goes missing. Same four boxes, same order and same rates line
-                                                            as the sales terminal — one arrangement to learn, not two. */}
+                                                            as the sales terminal — one arrangement to learn, not two.
+                                                            A promo line has no packing: one box, counted in pcs. */}
+                                                        {item.promo ? (
+                                                            <span className="flex items-center gap-1.5">
+                                                                <input type="text" inputMode="numeric" value={item.qtyReceived} aria-label={`${item.name} pcs`} placeholder="0"
+                                                                    onChange={e => updateCartItem(item.cartId, 'qtyReceived', e.target.value.replace(/\D/g, ''))}
+                                                                    className="flex-1 min-w-0 bg-inset border border-line-2 rounded p-1.5 text-xs text-ink font-mono text-right outline-none focus:border-orange transition-colors"/>
+                                                                <em className="not-italic text-[10px] font-black uppercase tracking-widest text-ink-muted">pcs promo</em>
+                                                            </span>
+                                                        ) : <>
                                                         <div className="flex items-center gap-1 flex-wrap mb-1.5">
                                                             {['Karton', 'Bal', 'Slop', 'Bks'].map(u => (
                                                                 <span key={u} className="flex items-center gap-1 border border-line-2 bg-raised px-1.5 py-1 rounded">
@@ -2061,6 +2085,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                                             })()}
                                                         </div>
                                                         <input type="number" min="0" value={item.qtyReceived} onChange={e => updateCartItem(item.cartId, 'qtyReceived', e.target.value)} placeholder="0" className="w-full bg-inset border border-line-2 rounded p-1.5 text-xs text-ink font-mono text-right outline-none focus:border-orange transition-colors"/>
+                                                        </>}
                                                         {(() => {
                                                             const adv = sendAdvice[item.id];
                                                             if (!adv) return null;
@@ -2151,7 +2176,7 @@ const RestockVaultView = ({ inventory = [], procurements = [], motorists = [], b
                                 <div className="flex-1 min-w-[158px] px-3 py-2.5 bg-raised">
                                     <span className="block text-[10px] font-bold text-ink-muted uppercase tracking-widest mb-0.5">Landed / Bks</span>
                                     <span className="block font-mono text-[22px] font-bold text-accent-ink whitespace-nowrap">{landedPerUnit > 0 ? rp(landedPerUnit) : '—'}</span>
-                                    <span className="block font-mono text-[10.5px] text-ink-muted">{num(totalItemsReceived)} Bks</span>
+                                    <span className="block font-mono text-[10.5px] text-ink-muted">{num(totalItemsReceived)} Bks{promoPcs > 0 && ` · +${num(promoPcs)} pcs promo`}</span>
                                 </div>
                             </div>
                         </div>

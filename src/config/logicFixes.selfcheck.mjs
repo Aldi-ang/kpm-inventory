@@ -9377,8 +9377,11 @@ section('FLEET & ROSTER: THE QUARANTINE SWITCH (2026-09-30)');
      /export function QuarantineHatch\(/.test(sw) && /export function BlastDoors\(/.test(sw) && /export function QuarantineBand\(/.test(sw) &&
      /export async function runSwitch\(/.test(sw) && imports(bay, 'QuarantineHatch') && imports(bay, 'BlastDoors') && imports(bay, 'runSwitch'));
   ok('the dome shows where the NEXT press goes and the label says it; the doors change it while they are shut',
-     /const skin = hold \|\| \(view === 'q' \? 'ok' : 'q'\);/.test(sw) && /\{skin === 'q' \? 'QUARANTINE' : 'HEALTHY'\}/.test(sw) &&
-     /setHold\(toQ \? 'ok' : 'q'\);/.test(sw) && /d\.dataset\.kind = toQ \? 'tape' : 'steel';/.test(sw));
+     /* stage 2 (2026-10-26) gave it an optional third stop - without `next` it is still the two-stop switch */
+     sw.includes("const after = (v) => (next ? next[v] : v === 'q' ? 'ok' : 'q');") && sw.includes('const skin = hold || after(view);') &&
+     sw.includes("const SKIN = { q: { lbl: 'QUARANTINE'") && sw.includes("ok: { lbl: 'HEALTHY'") && sw.includes('<span className="lbl">{SKIN[skin].lbl}</span>') &&
+     sw.includes('setHold(after(to));') && sw.includes("d.dataset.kind = { q: 'tape', ok: 'steel', p: 'gift' }[dest(toQ)];") &&
+     sw.includes("const dest = (to) => (to === true ? 'q' : to === false ? 'ok' : to);"));
   ok('the ender eye lives - a glance or a blink every 0.9-3.5 s - and stays still and open in Lite Mode',
      /900 \+ Math\.random\(\) \* 2600/.test(sw) && /if \(e && !still\(\)\)/.test(sw) && /classList\.contains\('lite-mode'\)/.test(sw));
   ok('Lite Mode / reduced motion: the switch swaps at once, no motion', /if \(still\(\)\) \{ swap\(\); return; \}/.test(sw));
@@ -9434,7 +9437,7 @@ section('THE REGIONAL WAREHOUSE\'S CHEST (2026-09-30)');
   const w0 = th.indexOf('/* ── THE WAREHOUSE CHESTS'), w1 = th.indexOf('/* ── END OF THE WAREHOUSE CHESTS'), whCss = w0 > -1 && w1 > w0 ? th.slice(w0, w1) : '';
   ok('the Stock tab is the chest: one WarehouseChest on the branch\'s shelf, and the old card grid is gone',
      imports(bw, 'shelfOf') && /import WarehouseChest from '\.\/WarehouseChest\.jsx';/.test(bw) &&
-     /<WarehouseChest rows=\{shelfOf\(globalInventory, branchStock\)\} warehouse=\{branchLocation\} ageOf=\{ageOf\} \/>/.test(bwc) && !/const stockCard =/.test(bwc));
+     bwc.includes('<WarehouseChest rows={shelfOf(globalInventory, branchStock)} promoRows={shelfOf(promoItems, branchPromo)} warehouse={branchLocation} ageOf={ageOf} />') && !/const stockCard =/.test(bwc));
   { const vb = await import('../utils/vanBay.js'), sOf = typeof vb.shelfOf === 'function' ? vb.shelfOf : null;
     const master = [{ id: 'p1', name: 'Cello 16', stock: 900, damagedStock: 50, images: { front: 'f.png' }, dimensions: { w: 55, h: 90, d: 22 } }];
     const shelf = sOf ? sOf(master, [{ id: 'p1', stock: 12 }, { id: 'p9', name: 'Loose row', stock: 3, damagedStock: 2 }]) : [];
@@ -9442,14 +9445,14 @@ section('THE REGIONAL WAREHOUSE\'S CHEST (2026-09-30)');
        shelf.length === 2 && shelf[0].stock === 12 && shelf[0].damagedStock === 0 && shelf[0].images?.front === 'f.png' && shelf[0].name === 'Cello 16' &&
        shelf[1].name === 'Loose row' && shelf[1].damagedStock === 2); }
   ok('the Quarantine view is the branch\'s damaged rows, in box A (the tape rim, no band); the healthy view keeps the ender band',
-     /const damaged = rows\.filter\(r => \(r\.damagedStock \|\| 0\) > 0\);/.test(wc) && /`sbx\$\{q \? ' lkA' : ''\}/.test(wc) && /\{!q && <QuarantineBand q=\{false\} \/>\}/.test(wc));
+     /const damaged = rows\.filter\(r => \(r\.damagedStock \|\| 0\) > 0\);/.test(wc) && /`sbx\$\{q \? ' lkA' : ''\}/.test(wc) && wc.includes('{!q && <QuarantineBand q={false} promo={p} />}'));
   ok('the shared hatch and doors, and every switch reports in the box\'s status line',
      imports(wc, 'QuarantineHatch') && imports(wc, 'BlastDoors') && imports(wc, 'runSwitch') &&
      /`Showing Quarantine · \$\{/.test(wc) && /`Showing healthy stock · \$\{/.test(wc));
   ok('look-and-tap: a square tells its line (damaged count / Bks + days on the shelf); the box writes nothing, nothing drags',
      /Bks damaged`/.test(wc) && /paling lama \$\{days\} hari/.test(wc) && !/firebase|onPointerDown|setDoc|updateDoc/.test(wc));
   ok('ONE height in both views: the Quarantine has no band, so it keeps the healthy view\'s height (lab: 326 -> 294 px without it)',
-     /setHoldH\(toQ \? stg\.current\?\.offsetHeight \|\| 0 : 0\);/.test(wc) && /style=\{holdH \? \{ minHeight: holdH \} : undefined\}/.test(wc));
+     wc.includes("setHoldH(view === 'ok' ? stg.current?.offsetHeight || 0 : to === 'ok' ? 0 : holdH);") && /style=\{holdH \? \{ minHeight: holdH \} : undefined\}/.test(wc));
   ok('the chest shuts its box into it and keeps its room (nothing below moves)',
      /onClick=\{\(\) => setOpen\(o => !o\)\}/.test(wc) && /\.kpm-wh2 \.sbx\.shut \{[^}]*visibility: hidden;/.test(whCss) && !/display: none/.test(whCss.slice(whCss.indexOf('.kpm-wh2 .sbx.shut'))));
   ok('the End island lives INSIDE the chest\'s 3D, and the chest + island float together; Lite Mode and reduced motion stop the scene',
@@ -11872,11 +11875,15 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
   /* Stage 1: promoItems reaches the Master Vault's list (so the owner can make and edit them) and the backup file, nothing
      else. Stage 2 (the dial), 3 (the van) and 4 (giving) widen this on purpose and change this pin when they do. */
   const promoLines = app.split('\n').filter(l => l.includes('promoItems'));
-  ok('REGRESSION: promoItems reaches only the Master Vault list and the backup - never the Sales Terminal (no sale at Rp 0, no pita cukai debt for a T-shirt), never a sum',
-     promoLines.length === 3 && app.split('promoItems').length - 1 === 3 &&
+  /* widened ON PURPOSE by stage 2 (2026-10-26): the Restock desk (picker + stock checks), the regional warehouse (the
+     chest's PROMO view) and Stock Opname (counted by the piece) - each named, so a fourth screen is a decision, not a leak */
+  ok('REGRESSION: promoItems reaches the Master Vault list, the backup and the three stage-2 storage screens - never the Sales Terminal (no sale at Rp 0, no pita cukai debt for a T-shirt), never a sum',
+     promoLines.length === 6 && app.split('promoItems').length - 1 === 9 &&
      app.includes('exportData.inventory = [...inventory, ...promoItems];') &&
      app.includes('const vaultList = [...filteredInventory, ...promoItems.filter(') && app.includes('inventory={vaultList}') &&
-     appFiles.filter(f => read(f).includes('promoItems')).sort().join() === 'src/App.jsx,src/hooks/useDatabaseSync.js',
+     app.includes('promoItems={promoItems}   /* MASUK / KIRIM carry promo lines in pcs') && app.includes("promoItems={promoItems}   /* the chest's PROMO view") &&
+     app.includes('promoItems={promoItems}   /* counted by the piece on the unit-free count card') &&
+     appFiles.filter(f => read(f).includes('promoItems')).sort().join() === 'src/App.jsx,src/RestockVaultView.jsx,src/StockOpnameView.jsx,src/components/BranchWarehouseManager.jsx,src/hooks/useDatabaseSync.js',
      promoLines.map(l => l.trim().slice(0, 70)).join(' | '));
   ok('REGRESSION: the save keeps a promo item free of every cigarette field - kind from the entry, not the form; no packing default forced on it; unit pcs',
      save.includes('const promo = isPromo(editingProduct);') &&
@@ -12016,12 +12023,49 @@ section('MASTER VAULT QUARANTINE - the damaged stock gets a tab on the same row 
      rei.includes("{sec === 'ALL' && isAdmin && (") && rei.includes('onClick={() => setActiveSection(QUARANTINE)}') &&
      rei.includes("const QUARANTINE = '__quarantine';") && imports(rei, 'inQuarantine'));
   ok('REGRESSION: a quarantine row shows its damaged Bks, the empty tab says so, and the tab says where it is settled',
-     rei.includes('if (inQ) return <p className="text-[10px] md:text-xs font-mono font-bold text-rose-400">QUARANTINE: {item.damagedStock} Bks</p>;') &&
+     rei.includes("if (inQ) return <p className=\"text-[10px] md:text-xs font-mono font-bold text-rose-400\">QUARANTINE: {item.damagedStock} {isPromo(item) ? 'pcs' : 'Bks'}</p>;") &&
      rei.includes("{inQ ? 'NO DAMAGED STOCK' : 'NO ITEMS FOUND'}") && rei.includes('Damaged stock waits here until Stock Opname settles it.'));
   /* the lab frame at 375 (2026-10-26): with QUARANTINE in the row the hidden sideways scroll put PROMO out of sight and
      squeezed the QUARANTINE label to "UARANTIN" - the row wraps now */
   ok('REGRESSION: the tab row wraps - no hidden sideways scroll that hides the last tabs',
      rei.includes('<div className="flex flex-wrap gap-1 min-w-0">') && !rei.includes('overflow-x-auto scrollbar-hide'));
+}
+
+section('PROMO ITEMS, stage 2 of 4 - MASUK / KIRIM carry promo lines in pcs, the regional warehouse shelves them, Stock Opname counts them by the piece (his 2026-10-26 "option to choose promotional items and send it to regional warehouse and also space for the regional warehouse to accept these promotional goods")');
+{
+  const { bksOf, pcsOf, isPromo } = await import('../utils/helpers.js');
+  const rv = code(read('src/RestockVaultView.jsx')).replace(/\r/g, ''), bw = code(read('src/components/BranchWarehouseManager.jsx')).replace(/\r/g, '');
+  const wc = code(read('src/components/WarehouseChest.jsx')).replace(/\r/g, ''), so = code(read('src/StockOpnameView.jsx')).replace(/\r/g, '');
+  /* the cart, the nota and the shipment all hold both kinds of line; a promo line must never join a Bks total */
+  const cart = [{ qtyReceived: 120 }, { qtyReceived: '40', promo: true }, { qty: 5 }, { qtyReceived: '' }, { qty: 3, promo: true }];
+  ok('BEHAVIOUR: a delivery of 125 Bks and 43 promo pcs reads 125 Bks and 43 pcs - never 168 of anything',
+     bksOf(cart) === 125 && pcsOf(cart) === 43 && bksOf([]) === 0 && pcsOf(undefined) === 0 && bksOf([null]) === 0);
+  ok('REGRESSION: the desk\'s Bks total, landed cost and saved totals read bksOf - the promo pcs ride beside them (qtyWords), never inside',
+     rv.includes('const totalItemsReceived = bksOf(cart);') && rv.includes('const promoPcs = pcsOf(cart);') &&
+     rv.includes('if (cart.length === 0 || totalItemsReceived + promoPcs <= 0)') && rv.split('qtyWords(totalItemsReceived, promoPcs)').length - 1 === 5 &&
+     rv.includes('const qty = bksOf(po.items || []);') && rv.includes('if (!i.id || i.promo || out[i.id]) continue;') &&
+     rv.includes('const per = !item.promo && totalItemsReceived > 0 ?'));
+  ok('REGRESSION: a promo item is picked under its own heading, carries `promo` on its line into the nota and the shipment, and the stock check finds it',
+     rv.includes('...(isPromo(product) ? { promo: true } : {}),') && rv.includes('...(i.promo ? { promo: true } : {}),') &&
+     rv.includes('const goods = useMemo(() => [...inventory, ...promoItems], [inventory, promoItems]);') && rv.includes('const hq = goods.find(p => p.id === item.id);') &&
+     rv.includes('Promo items · pcs') && rv.includes("if (c.promo) return;"));
+  ok('REGRESSION: the arrival check counts a promo line in pcs and shelves it with kind \'promo\' - the tag every shelf reader splits on',
+     bw.includes('...(item.promo ? { promo: true } : {}),') && bw.includes("...(line.promo ? { kind: 'promo', unit: 'pcs' } : {}),") &&
+     bw.includes("Diterima ({line.promo ? 'pcs' : 'Bks'})") && isPromo({ kind: 'promo', unit: 'pcs', stock: 40 }) && !isPromo({ stock: 40 }));
+  /* the stage-1 lesson again, for the branch shelves: every reader of branches/<b>/inventory sums Bks, so each one splits
+     the promo rows off at the listener - except Stock Opname's own count list, which counts them by the piece on purpose */
+  const readers = appFiles.flatMap(f => { const s = read(f).replace(/\r/g, ''); return [...s.matchAll(/collection\(db, `[^`]*branches\/\$\{[^}]+\}\/inventory`\)/g)].map(m => ({ f, after: s.slice(m.index, m.index + 900) })); });
+  const unsplit = readers.filter(r => !r.after.includes('isPromo')).map(r => r.f);
+  ok('REGRESSION: every listener on a branch shelf splits off the promo rows - the only one that keeps them is Stock Opname\'s count list',
+     readers.length >= 7 && unsplit.length === 1 && unsplit[0] === 'src/StockOpnameView.jsx' && so.includes('setBranchInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })));'),
+     `${readers.length} readers; not split: ${unsplit.join(', ')}`);
+  ok('REGRESSION: the regional warehouse chest has a third view - the hatch steps healthy -> Quarantine -> Promo, promo squares are pictures in pcs',
+     wc.includes("const NEXT = { ok: 'q', q: 'p', p: 'ok' };") && wc.includes('onPress={flip} next={NEXT} />') &&
+     wc.includes('const list = q ? damaged : p ? promoRows : rows;') && wc.includes("`${fmt(pTotal)} pcs · ${items(promoRows.length)}`") &&
+     wc.includes("p ? 'given away only · never sold'") && wc.includes('<img className="pimg"'));
+  ok('REGRESSION: Stock Opname counts the Master Vault\'s promo items by the piece; the Bks-only monitor and quarantine crates skip them',
+     so.includes('const activeInventory = isAreaAdmin ? (branchInventory || []) : [...safeInventory, ...promoItems];') &&
+     so.includes("{isPromo(item) ? 'PROMO · count in pcs' : `ID: ${item.id}`}") && so.split('.filter(r => !isPromo(r))').length - 1 === 3);
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

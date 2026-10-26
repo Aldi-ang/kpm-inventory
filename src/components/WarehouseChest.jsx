@@ -12,6 +12,7 @@ import { flushSync } from 'react-dom';
 import { HAZARD_SIGN } from '../utils/vanBay';
 import { Cube } from './LoadingBay.jsx';
 import { QuarantineHatch, BlastDoors, QuarantineBand, runSwitch, still } from './QuarantineSwitch.jsx';
+import { promoGoods, promoSkin } from '../utils/helpers';
 
 const fmt = (n) => Number(n).toLocaleString('id-ID');
 const items = (n) => `${fmt(n)} item${n === 1 ? '' : 's'}`;
@@ -34,9 +35,11 @@ function usePer(box) {
   return per;
 }
 
-/* rows: the branch's shelf, each joined with its master product (for the 3D box); ageOf(row) = days on the shelf or null */
-export default function WarehouseChest({ rows, warehouse, ageOf }) {
-  const [view, setView] = useState('ok');
+/* rows: the branch's shelf, each joined with its master product (for the 3D box); ageOf(row) = days on the shelf or null;
+   promoRows: the shelf's promo rows (pcs), joined with their promo product - the hatch's third view (stage 2) */
+const NEXT = { ok: 'q', q: 'p', p: 'ok' };
+export default function WarehouseChest({ rows, promoRows = [], warehouse, ageOf }) {
+  const [view, setView] = useState('ok');   // 'ok' healthy · 'q' Quarantine · 'p' Promo - one hatch steps through all three
   const [open, setOpen] = useState(true);
   const [page, setPage] = useState(0);
   const [said, setSaid] = useState('');
@@ -44,20 +47,23 @@ export default function WarehouseChest({ rows, warehouse, ageOf }) {
   const box = useRef(null), stg = useRef(null), hatch = useRef(null), doors = useRef(null), busy = useRef(false);
   const per = usePer(box);
 
-  const q = view === 'q';
+  const q = view === 'q', p = view === 'p';
   const damaged = rows.filter(r => (r.damagedStock || 0) > 0);
-  const list = q ? damaged : rows;
+  const list = q ? damaged : p ? promoRows : rows;
   const total = rows.reduce((a, r) => a + (r.stock || 0), 0), qTotal = damaged.reduce((a, r) => a + r.damagedStock, 0);
+  const pTotal = promoRows.reduce((a, r) => a + (r.stock || 0), 0);
   const pages = Math.max(1, Math.ceil(list.length / per)), pg = Math.min(page, pages - 1);
 
   const flip = () => {
     if (busy.current) return;
     busy.current = true;
-    const toQ = !q;
-    runSwitch(hatch.current, doors.current, toQ, () => {
-      setHoldH(toQ ? stg.current?.offsetHeight || 0 : 0);
-      setView(toQ ? 'q' : 'ok'); setPage(0);
-      setSaid(toQ ? `Showing Quarantine · ${items(damaged.length)}` : `Showing healthy stock · ${fmt(rows.length)} products`);
+    const to = NEXT[view];
+    runSwitch(hatch.current, doors.current, to, () => {
+      /* the Quarantine has no band: every view keeps the healthy view's height, so nothing below moves */
+      setHoldH(view === 'ok' ? stg.current?.offsetHeight || 0 : to === 'ok' ? 0 : holdH);
+      setView(to); setPage(0);
+      setSaid(to === 'q' ? `Showing Quarantine · ${items(damaged.length)}` : to === 'p' ? `Showing Promo · ${items(promoRows.length)} · ${fmt(pTotal)} pcs`
+        : `Showing healthy stock · ${fmt(rows.length)} products`);
     }).finally(() => { busy.current = false; });
   };
   const tell = (e) => {
@@ -65,8 +71,10 @@ export default function WarehouseChest({ rows, warehouse, ageOf }) {
     if (!s || (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ')) return;
     const r = list.find(x => x.id === s.dataset.id);
     if (!r) return;
-    const days = q ? null : ageOf(r);
-    setSaid(q ? `${r.name} · ${fmt(r.damagedStock)} Bks damaged` : `${r.name} · ${fmt(r.stock || 0)} Bks${days !== null ? ` · paling lama ${days} hari` : ''}`);
+    const days = q || p ? null : ageOf(r);
+    setSaid(q ? `${r.name} · ${fmt(r.damagedStock)} Bks damaged`
+      : p ? `${r.name} · ${fmt(r.stock || 0)} pcs${r.damagedStock ? ` · ${fmt(r.damagedStock)} damaged` : ''}`
+      : `${r.name} · ${fmt(r.stock || 0)} Bks${days !== null ? ` · paling lama ${days} hari` : ''}`);
   };
 
   return (
@@ -75,10 +83,10 @@ export default function WarehouseChest({ rows, warehouse, ageOf }) {
       <div ref={box} className={`sbx${q ? ' lkA' : ''}${open ? '' : ' shut'}`} aria-hidden={!open}>
         <div ref={stg} className={`stg${q ? ' isq' : ''}`} style={holdH ? { minHeight: holdH } : undefined}>
           <p className="stl">
-            <span className="tn">{q && <i>{SIGN}</i>}<span className="tx">{q ? `Quarantine · ${warehouse}` : `Gudang ${warehouse}`}</span></span>
-            <span className="ct">{q ? `${fmt(qTotal)} Bks · ${items(damaged.length)}` : `${fmt(rows.length)} products · ${fmt(total)} Bks`}</span>
+            <span className="tn">{q && <i>{SIGN}</i>}<span className="tx">{q ? `Quarantine · ${warehouse}` : p ? `Promo · ${warehouse}` : `Gudang ${warehouse}`}</span></span>
+            <span className="ct">{q ? `${fmt(qTotal)} Bks · ${items(damaged.length)}` : p ? `${fmt(pTotal)} pcs · ${items(promoRows.length)}` : `${fmt(rows.length)} products · ${fmt(total)} Bks`}</span>
           </p>
-          {!q && <QuarantineBand q={false} />}
+          {!q && <QuarantineBand q={false} promo={p} />}
           <span className="say" role="status" aria-live="polite">{said}</span>
           <div className="grid" style={{ '--per': per }} onClick={tell} onKeyDown={tell}>
             {Array.from({ length: per }, (_, i) => {
@@ -87,8 +95,9 @@ export default function WarehouseChest({ rows, warehouse, ageOf }) {
               const n = q ? r.damagedStock : (r.stock || 0);
               return (
                 <div key={r.id} className={`slot has${q ? ' qs' : ''}`} data-id={r.id} tabIndex={0} role="button"
-                  aria-label={q ? `${r.name}, ${fmt(n)} Bks damaged` : `${r.name}, ${fmt(n)} Bks`}>
-                  <Cube p={r} />
+                  aria-label={q ? `${r.name}, ${fmt(n)} Bks damaged` : `${r.name}, ${fmt(n)} ${p ? 'pcs' : 'Bks'}`}>
+                  {/* a promo item is its picture (the Master Vault's list picture), never a cigarette pack */}
+                  {p ? <img className="pimg" alt="" src={r.images?.front || (promoGoods(r) ? r.thumb || `/promo/${promoGoods(r)}.png` : promoSkin(r, 'front'))} /> : <Cube p={r} />}
                   <span className="n">{n ? fmt(n) : 'habis'}</span>
                   <span className="name">{r.name}</span>
                 </div>
@@ -103,8 +112,8 @@ export default function WarehouseChest({ rows, warehouse, ageOf }) {
               <button key={k} type="button" className={`pg${k === pg ? ' on' : ''}`} onClick={() => setPage(k)}>{k + 1}</button>
             ))}
           </span>
-          <QuarantineHatch ref={hatch} view={view} onPress={flip} />
-          <span className="of">{q ? 'fix in Stock Opname' : `${fmt(total)} Bks on the shelf`}</span>
+          <QuarantineHatch ref={hatch} view={view} onPress={flip} next={NEXT} />
+          <span className="of">{q ? 'fix in Stock Opname' : p ? 'given away only · never sold' : `${fmt(total)} Bks on the shelf`}</span>
         </div>
       </div>
       <button type="button" className={`kpm-chest${open ? ' on' : ''}`} aria-expanded={open} aria-label={`Ender chest Gudang ${warehouse} - open or close`}
@@ -116,7 +125,7 @@ export default function WarehouseChest({ rows, warehouse, ageOf }) {
             <span className="lid3"><i className="lf" /><i className="ll" /><i className="lr" /><i className="lt" /><i className="lu" /><i className="latch" /></span>
           </span>
         </span>
-        <span className="capt">Gudang {warehouse}<small>{fmt(total)} Bks · {fmt(qTotal)} in Quarantine</small></span>
+        <span className="capt">Gudang {warehouse}<small>{fmt(total)} Bks · {fmt(qTotal)} in Quarantine{pTotal > 0 && ` · ${fmt(pTotal)} pcs promo`}</small></span>
       </button>
     </div>
   );

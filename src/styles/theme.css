@@ -5190,6 +5190,16 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
     linear-gradient(180deg, #1C2E2F, #0C1415);
   background-size: 90px 100%; }
 .kpm-qband.tape { border-color: #141414; background: repeating-linear-gradient(-45deg, #F2C318 0 8px, #141414 8px 16px); }
+/* PROMO, the hatch's third stop (stage 2, his 2026-10-26 "space for the regional warehouse to accept these promotional
+   goods"): crimson and gold, the gift's own colours - an object, like the tape's yellow. Flat fills only (G30). */
+.kpm-qband.gift { border-color: #141414; background: linear-gradient(180deg, #8C1B23 0 38%, #E2B64A 38% 62%, #8C1B23 62%); }
+.kpm-hatch[data-skin="p"] .dome { background: radial-gradient(circle at 33% 27%, rgba(255, 255, 255, .85) 0 5%, rgba(255, 255, 255, .3) 10%, transparent 19%), radial-gradient(ellipse 70% 38% at 50% 94%, rgba(226, 182, 74, .4), transparent 72%),
+    radial-gradient(circle at 44% 38%, #D2404A 0 16%, #A3222B 46%, #6E1219 78%, #3A070B 100%); }
+.kpm-doors[data-kind="gift"] i { background: linear-gradient(180deg, transparent calc(50% - 7px), #E2B64A calc(50% - 7px) calc(50% + 7px), transparent calc(50% + 7px)), linear-gradient(90deg, #8C1B23, #B3242E 50%, #8C1B23); }
+.kpm-doors[data-kind="gift"] .dl::after, .kpm-doors[data-kind="gift"] .dr::after { content: ""; position: absolute; top: 0; bottom: 0; width: 8px; background: #E2B64A; }
+.kpm-doors[data-kind="gift"] .dl::after { right: 0; }
+.kpm-doors[data-kind="gift"] .dr::after { left: 0; }
+.kpm-sbox .slot .pimg { display: block; width: 72%; height: 72%; object-fit: contain; margin-top: -10%; }
 
 .kpm-hatch { all: unset; box-sizing: border-box; position: relative; display: block; width: 124px; height: 106px; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 .kpm-hatch:focus-visible { outline: 3px solid #F5D08A; outline-offset: 2px; }

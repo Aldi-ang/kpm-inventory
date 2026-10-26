@@ -119,7 +119,7 @@ export default function AcceptanceReceipt({ acceptance, onClose, companyName }) 
                 <tr key={idx} className="border-b border-gray-200 last:border-b-0">
                   <td className="py-2.5 pr-4 font-bold text-gray-900">{i.name}</td>
                   <td className="py-2.5 text-right font-mono tabular-nums text-xs text-gray-600 whitespace-nowrap">{i.batchNo || '—'}</td>
-                  <td className="py-2.5 pl-4 text-right font-mono tabular-nums font-bold whitespace-nowrap">{i.qtyReceived}</td>
+                  <td className="py-2.5 pl-4 text-right font-mono tabular-nums font-bold whitespace-nowrap">{i.qtyReceived}{i.promo && ' pcs'}</td>
                 </tr>
               ))}
             </tbody>

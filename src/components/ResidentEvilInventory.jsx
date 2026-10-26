@@ -292,7 +292,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                         {(() => {
                                             if (!isAdmin) return <p className="text-sm font-mono text-slate-400 font-bold">STK: **</p>;
-                                            if (inQ) return <p className="text-[10px] md:text-xs font-mono font-bold text-rose-400">QUARANTINE: {item.damagedStock} Bks</p>;
+                                            if (inQ) return <p className="text-[10px] md:text-xs font-mono font-bold text-rose-400">QUARANTINE: {item.damagedStock} {isPromo(item) ? 'pcs' : 'Bks'}</p>;
                                             /* a promo item is counted in pcs; nothing is in the field or sold yet (stages 3-4) */
                                             if (isPromo(item)) return <p className={`text-[10px] md:text-xs font-mono font-bold ${isLowStock ? 'text-rose-500' : 'text-amber-200'}`}>VAULT: {item.stock || 0} pcs</p>;
                                             const todayStr = getLocalDayKey();

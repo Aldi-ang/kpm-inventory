@@ -36,13 +36,21 @@ export const still = () => document.documentElement.classList.contains('lite-mod
 
 /* a band under the title in BOTH views - the tape in the Quarantine, the ender chest's own material in the healthy
    stock - so a switch never changes the box's height */
-export function QuarantineBand({ q }) {
-  return <i className={`kpm-qband${q ? ' tape' : ''}`} aria-hidden="true" />;
+export function QuarantineBand({ q, promo }) {
+  return <i className={`kpm-qband${q ? ' tape' : promo ? ' gift' : ''}`} aria-hidden="true" />;
 }
 
-export function QuarantineHatch({ ref, view, onPress }) {
+/* THE THIRD STOP (stage 2, his 2026-10-26 "space for the regional warehouse to accept these promotional goods" and "focus on
+   1 and improve it"): a screen that passes `next` gets a hatch that cycles its views - the regional warehouse's goes
+   healthy -> Quarantine -> Promo -> healthy. Without it the hatch is the two-stop switch it always was (the van bay). */
+const GIFT = <svg viewBox="-12 -12 24 24" aria-hidden="true"><rect x="-9" y="-4" width="18" height="13" fill="#A3222B" stroke="#1A0505" strokeWidth="1.5" /><rect x="-10" y="-7" width="20" height="5" fill="#C22D38" stroke="#1A0505" strokeWidth="1.5" /><rect x="-2" y="-7" width="4" height="16" fill="#E2B64A" /><path d="M0 -7C-6 -13 -9 -8 -3 -7M0 -7C6 -13 9 -8 3 -7" fill="none" stroke="#E2B64A" strokeWidth="2.2" /></svg>;
+const SKIN = { q: { lbl: 'QUARANTINE', say: 'the quarantine' }, ok: { lbl: 'HEALTHY', say: 'the healthy stock' }, p: { lbl: 'PROMO', say: 'the promo items' } };
+const dest = (to) => (to === true ? 'q' : to === false ? 'ok' : to);   // the van bay still passes a boolean
+
+export function QuarantineHatch({ ref, view, onPress, next }) {
   const [hold, setHold] = useState(null);   // the dome while a press runs; otherwise it follows the view
-  const skin = hold || (view === 'q' ? 'ok' : 'q');
+  const after = (v) => (next ? next[v] : v === 'q' ? 'ok' : 'q');   // where the press AFTER this view goes
+  const skin = hold || after(view);
   const el = useRef(null), eye = useRef(null);
   useImperativeHandle(ref, () => ({
     async press(toQ) {
@@ -50,7 +58,8 @@ export function QuarantineHatch({ ref, view, onPress }) {
       if (!b) return;
       const $ = (s) => b.querySelector(s), all = [];
       const A = (n, kf, o) => { const a = n.animate(kf, o); all.push(a); return a; };
-      setHold(toQ ? 'q' : 'ok');
+      const to = dest(toQ);
+      setHold(to);
       const push = A($('.dome'), [{ transform: 'scale(.97)' }, { transform: 'scale(.92)' }], { duration: 80, easing: OUT, fill: 'forwards' });
       const dark = A($('.dk'), [{ opacity: .1 }, { opacity: .32 }], { duration: 80, easing: OUT, fill: 'forwards' });
       await wait(130);
@@ -59,7 +68,7 @@ export function QuarantineHatch({ ref, view, onPress }) {
       A($('.d1'), [{ transform: 'translateX(-102%)' }, { transform: 'translateX(0)' }], { duration: 230, easing: IN, fill: 'forwards' });
       await done(A($('.d2'), [{ transform: 'translateX(102%)' }, { transform: 'translateX(0)' }], { duration: 230, easing: IN, fill: 'forwards' }), 230);
       A($('.hs'), [{ transform: 'translateY(0)' }, { transform: 'translateY(2px)' }, { transform: 'translateY(0)' }], { duration: 120 });
-      setHold(toQ ? 'ok' : 'q'); push.cancel(); dark.cancel();   // behind the shut doors: the other dome, up
+      setHold(after(to)); push.cancel(); dark.cancel();   // behind the shut doors: the next dome, up
       await wait(160);
       A($('.d1'), [{ transform: 'translateX(0)' }, { transform: 'translateX(-102%)' }], { duration: 300, easing: OUT, fill: 'forwards' });
       const o2 = A($('.d2'), [{ transform: 'translateX(0)' }, { transform: 'translateX(102%)' }], { duration: 300, easing: OUT, fill: 'forwards' });
@@ -88,7 +97,7 @@ export function QuarantineHatch({ ref, view, onPress }) {
     t = setTimeout(tick, 900 + Math.random() * 2600);
     return () => clearTimeout(t);
   }, [skin]);
-  const label = view === 'q' ? 'Show the healthy stock' : 'Show the quarantine';
+  const label = `Show ${SKIN[after(view)].say}`;
   return (
     <button ref={el} type="button" className="kpm-hatch" data-skin={skin} aria-label={label} title={label} onClick={onPress}>
       <span className="hs">
@@ -97,11 +106,11 @@ export function QuarantineHatch({ ref, view, onPress }) {
             <span className="plat" />
             <span className="bez">
               <span className="dome">
-                {skin === 'q' ? <i className="ico">{SIGN}</i> : <i className="ico eye" ref={eye}><i className="pupil" /><i className="lid" /></i>}
+                {skin === 'q' ? <i className="ico">{SIGN}</i> : skin === 'p' ? <i className="ico gift">{GIFT}</i> : <i className="ico eye" ref={eye}><i className="pupil" /><i className="lid" /></i>}
                 <i className="dk" />
               </span>
             </span>
-            <span className="lbl">{skin === 'q' ? 'QUARANTINE' : 'HEALTHY'}</span>
+            <span className="lbl">{SKIN[skin].lbl}</span>
           </span>
           <i className="dr d1" /><i className="dr d2" />
         </span>
@@ -118,7 +127,7 @@ export function BlastDoors({ ref }) {
       if (!d) { swap(); return; }
       const [L, R] = d.children, all = [];
       const A = (n, kf, o) => { const a = n.animate(kf, o); all.push(a); return a; };
-      d.dataset.kind = toQ ? 'tape' : 'steel';
+      d.dataset.kind = { q: 'tape', ok: 'steel', p: 'gift' }[dest(toQ)];
       /* each door rests past the edge by more than its stamp overhangs (lock 36 px, seal 23), so the stamp leaves with it */
       const OFF_L = 'translateX(calc(-101% - 44px))', OFF_R = 'translateX(calc(101% + 30px))';
       A(L, [{ transform: OFF_L }, { transform: 'translateX(0)' }], { duration: 240, easing: IN, fill: 'forwards' });

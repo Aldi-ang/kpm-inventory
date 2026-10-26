@@ -364,6 +364,13 @@ FIXTURES['branches/BANDUNG/inventory'] = [
   { id: 'p-sig',  name: 'Sigaret Kretek Tangan Premium', stock: 54 },
   { id: 'p-djar', name: 'Djarum Coklat 12', stock: 0 },
 ];
+/* PROMO ITEMS, stage 2 (2026-10-26): the Master Vault's promo products, and &promo puts two of them on the BANDUNG shelf
+   as the arrival check books them (kind 'promo', pcs) - the warehouse chest's third view. globalInventory never sees them. */
+const LAB_PROMO_ITEMS = [['p-tee', 'T-shirt', 40, 'tshirt'], ['p-hat', 'Hat', 25, 'hat'], ['p-lighter', 'Lighter', 300, 'lighter']]
+  .map(([id, name, stock, goods]) => ({ id, name, stock, goods, kind: 'promo', unit: 'pcs', type: 'PROMO' }));
+if (q.has('promo')) FIXTURES['branches/BANDUNG/inventory'] = [...FIXTURES['branches/BANDUNG/inventory'],
+  { id: 'p-tee', name: 'T-shirt', stock: 24, kind: 'promo', unit: 'pcs' }, { id: 'p-hat', name: 'Hat', stock: 10, kind: 'promo', unit: 'pcs' }];
+const LAB_SHELF_CIGS = FIXTURES['branches/BANDUNG/inventory'].filter((r) => r.kind !== 'promo');
 /* The registry the desk now READS. `gudang` carries this branch's fixed address — the reorder form
    cannot type one any more — and `pabrik`/`orang` fill the read-only Data Induk tab. */
 /* TWO PRODUCTS WITH DELIBERATELY DIFFERENT PACKING. One karton is 400 Bks for the first and 600
@@ -1077,7 +1084,7 @@ function ShellLab() {
           db={{}} storage={{}} appId="lab"
           /* one product carries damaged stock so the boss's QUARANTINE tab has a row with its
              three protocol keys instead of the empty-zone plate */
-          inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA].map((p) => (p.id === 'p-djar' ? { ...p, damagedStock: 12 } : p))} transactions={LAB_AGENT_TXNS}
+          inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA].map((p) => (p.id === 'p-djar' ? { ...p, damagedStock: 12 } : p))} promoItems={LAB_PROMO_ITEMS} transactions={LAB_AGENT_TXNS}
           motorists={LAB_MOTORISTS} appSettings={{}}
           userRole={q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE'} isAdmin={q.has('admin')}
           user={{ uid: 'lab-boss', displayName: q.has('admin') ? 'Lab Boss' : 'Lab Salesman', email: 'lab@example.com', location: 'BANDUNG', userRole: q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE' }}
@@ -1231,8 +1238,8 @@ function ShellLab() {
           <BranchWarehouseManager
             db={{}} storage={null} appId="lab" user={{ displayName: 'Rina Wijaya', email: 'rina@kpm.id', location: 'BANDUNG' }}
             userRole={q.get('tier') || 'FLEET_CAPTAIN'} userLocation="BANDUNG" isAdmin={false} masterUserId="lab"
-            globalInventory={FIXTURES['branches/BANDUNG/inventory']} motorists={[...LAB_MOTORISTS, ...LAB_FLEET]}
-            transactions={[]} branchStockMap={{ BANDUNG: FIXTURES['branches/BANDUNG/inventory'] }}
+            globalInventory={LAB_SHELF_CIGS} promoItems={LAB_PROMO_ITEMS} motorists={[...LAB_MOTORISTS, ...LAB_FLEET]}
+            transactions={[]} branchStockMap={{ BANDUNG: LAB_SHELF_CIGS }}
             triggerCapy={() => {}} logAudit={() => {}}
             appSettings={{ companyName: 'KPM INVENTORY', adminDisplayName: 'Rina Wijaya' }}
           />
@@ -1251,7 +1258,7 @@ function ShellLab() {
         <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-full w-full max-w-7xl mx-auto border-2 lg:border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col bg-[var(--duke-well-solid)] p-2 lg:p-4 overflow-y-auto custom-scrollbar">
           <div className="mb-12 pb-12 border-b-4 border-[var(--duke-edge-1)] border-dashed">
             <RestockVaultView
-              inventory={LAB_PRODUCTS} procurements={LAB_PROCUREMENTS} motorists={LAB_MOTORISTS} branchStockMap={{}}
+              inventory={LAB_PRODUCTS} promoItems={LAB_PROMO_ITEMS} procurements={LAB_PROCUREMENTS} motorists={LAB_MOTORISTS} branchStockMap={{}}
               db={null} storage={null} appId="lab" user={null} isAdmin userRole="DEVELOPER"
               appSettings={{ companyName: 'KPM INVENTORY' }} masterUserId="lab"
             />

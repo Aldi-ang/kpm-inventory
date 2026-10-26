@@ -7,7 +7,7 @@ import {
     Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
-import { savePhotoAndGetReference, deletePhotoFromStorage, commitInChunks, formatRupiah, formatNumber, compressImageToBase64, tierPrice, getLocalDayKey} from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, commitInChunks, formatRupiah, formatNumber, compressImageToBase64, tierPrice, getLocalDayKey, isPromo} from './utils/helpers';
 import * as threshold from './utils/stockThreshold';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
@@ -193,7 +193,7 @@ export const damageBlocked = (entry) => {
     return null;
 };
 
-const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId, user, userRole: liveRole, isAdmin, logAudit, triggerCapy, motorists = [], appSettings }) => {
+const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db, storage, appId, user, userRole: liveRole, isAdmin, logAudit, triggerCapy, motorists = [], appSettings }) => {
     
     const safeInventory = inventory || [];
     const safeTransactions = transactions || [];
@@ -240,7 +240,10 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
         }
     }, [isAreaAdmin, user, db, appId, masterId]);
 
-    const activeInventory = isAreaAdmin ? (branchInventory || []) : safeInventory;
+    /* PROMO ITEMS ARE COUNTED BY THE PIECE (stage 2): the count card is unit-free (Good / Damaged, whole numbers), so a
+       promo item joins the list as it is - the Master Vault's from `promoItems`, a branch's own promo rows (kind 'promo')
+       straight off its shelf. Every Bks-only view below (the monitor, the quarantine crates) still skips them. */
+    const activeInventory = isAreaAdmin ? (branchInventory || []) : [...safeInventory, ...promoItems];
 
     const [search, setSearch] = useState("");
     const [counts, setCounts] = useState({}); 
@@ -297,7 +300,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
         if (viewMode !== 'monitor' || monitorFacility === 'MASTER' || !db || !appId || !masterId) return;
         const branchRef = collection(db, `artifacts/${appId}/users/${masterId}/branches/${monitorFacility}/inventory`);
         const unsub = onSnapshot(branchRef, (snap) => {
-            setMonitorInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+            setMonitorInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => !isPromo(r)));
         }, (err) => console.warn("Monitor inventory listener:", err.code));
         return () => unsub();
     }, [viewMode, monitorFacility, db, appId, masterId]);
@@ -317,7 +320,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
             uniqueBranches.forEach(branch => {
                 const branchRef = collection(db, `artifacts/${appId}/users/${masterId}/branches/${branch}/inventory`);
                 const unsub = onSnapshot(branchRef, (snap) => {
-                    const bData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    const bData = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => !isPromo(r));
                     const enriched = bData.map(bItem => {
                         const match = safeInventory.find(m => m && m.id === bItem.id) || {};
                         return { ...match, ...bItem, damagedStock: bItem.damagedStock || 0, facility: branch };
@@ -341,7 +344,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
         else {
             const branchRef = collection(db, `artifacts/${appId}/users/${masterId}/branches/${quarantineFacility}/inventory`);
             const unsub = onSnapshot(branchRef, (snap) => {
-                const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const data = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => !isPromo(r));
                 const enrichedData = data.map(branchItem => {
                     const masterMatch = safeInventory.find(m => m && m.id === branchItem.id) || {};
                     return { ...masterMatch, ...branchItem, damagedStock: branchItem.damagedStock || 0, facility: quarantineFacility };
@@ -1507,7 +1510,7 @@ const StockOpnameView =({ inventory = [], transactions = [], db, storage, appId,
                                         <div className="pl-4 pr-3 py-3 md:py-4 flex flex-col md:flex-row md:items-end gap-3 md:gap-6">
                                             <div className="min-w-0 flex-1">
                                                 <div className="font-bold text-[var(--ink)] text-sm uppercase tracking-wide lg:truncate">{item.name}</div>
-                                                <div className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono mt-0.5 truncate">ID: {item.id}</div>
+                                                <div className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono mt-0.5 truncate">{isPromo(item) ? 'PROMO · count in pcs' : `ID: ${item.id}`}</div>
                                             </div>
                                             <div className="grid grid-cols-2 gap-3 w-full md:w-auto md:shrink-0">
                                                 <label className="flex flex-col gap-1 min-w-0">

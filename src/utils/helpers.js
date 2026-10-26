@@ -250,6 +250,12 @@ export const absentForSure = (snap) =>
    products collection, `kind: 'promo'`; absent = cigarette, so no old document changes. Counted in pcs: no packing,
    no price. useDatabaseSync keeps them OUT of `inventory`, which every cigarette screen reads. */
 export const isPromo = (product) => product?.kind === 'promo';
+/* PROMO LINES on a delivery (stage 2, his 2026-10-26 "option to choose promotional items and send it to regional
+   warehouse"): a line flagged `promo` counts pcs and carries no money (his "6 dont need for cost price") - it never joins
+   a Bks total, a landed cost or a value. Cart and nota lines count `qtyReceived`, shipment lines `qty`. */
+const lineQty = (l) => Number(l?.qtyReceived ?? l?.qty) || 0;
+export const bksOf = (lines = []) => lines.reduce((s, l) => s + (l?.promo ? 0 : lineQty(l)), 0);
+export const pcsOf = (lines = []) => lines.reduce((s, l) => s + (l?.promo ? lineQty(l) : 0), 0);
 /* in quarantine = holds damaged Bks (`damagedStock`, booked by the EOD and the arrival check; fixed in Stock Opname) */
 export const inQuarantine = (product) => (Number(product?.damagedStock) || 0) > 0;
 

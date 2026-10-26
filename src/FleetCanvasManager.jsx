@@ -8,7 +8,7 @@ import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc, writeBatch, runT
 import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord, hasClearance, TIER_ONE_ID, resolveTierOneId } from './config/permissions';
 import { vaultDocPath, VAULT_TRIES_RESET } from './utils/vaultDoc.js';
 import { lockLeftMs, untilText } from './utils/vaultLock.js';
-import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems, nameInitials } from './utils/helpers';
+import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems, nameInitials, isPromo } from './utils/helpers';
 import { normalizeRegion } from './config/permissions';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
@@ -148,7 +148,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             const safeBranchPath = selectedAgentLocation.replace(/\//g, '-');
             const stockRef = collection(db, `artifacts/${appId}/users/${userId}/branches/${safeBranchPath}/inventory`);
             const unsub = onSnapshot(stockRef, (snap) => {
-                setBranchStock(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                /* the shelf's promo rows (kind 'promo', pcs) never load into a van as cigarettes */
+                setBranchStock(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => !isPromo(r)));
             }, (err) => console.warn("Branch stock listener:", err.code));
             return () => unsub();
         } else {

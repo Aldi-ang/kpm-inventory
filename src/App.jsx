@@ -5285,6 +5285,7 @@ const handleGitHubMirror = async () => {
                       <div className="mb-12 pb-12 border-b-4 border-[var(--duke-edge-1)] border-dashed">
                           <RestockVaultView
                               inventory={inventory}
+                              promoItems={promoItems}   /* MASUK / KIRIM carry promo lines in pcs (stage 2) - picker and stock checks only, never a money line */
                               procurements={procurements}
                               motorists={motorists}
                               /* 🔴 THE BRANCH'S OWN SHELF, and the desk cannot compute a minimum
@@ -5317,7 +5318,8 @@ const handleGitHubMirror = async () => {
                       userLocation={user?.location || (agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : 'UNASSIGNED')} // 🚀 FIX: Read direct location
                       isAdmin={isAdmin} 
                       masterUserId={userId} 
-                      globalInventory={inventory} 
+                      globalInventory={inventory}
+                      promoItems={promoItems}   /* the chest's PROMO view joins the shelf's promo rows (pcs) with these - never a Bks sum */
                       motorists={motorists}
                       transactions={transactions}
                       branchStockMap={branchStock}
@@ -5482,6 +5484,7 @@ const handleGitHubMirror = async () => {
        note on <MerchantSalesView>; without this the owner counts as a field agent here */
     userRole={userRole}
     inventory={inventory}
+    promoItems={promoItems}   /* counted by the piece on the unit-free count card (stage 2) */
     db={db}
     storage={storage}
     appId={appId}

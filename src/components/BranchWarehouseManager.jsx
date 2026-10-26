@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Package, ArrowRight, CheckCircle, XCircle, AlertCircle, Clock, Send, Truck, Globe, MapPin, Pencil, MinusCircle, PlusCircle, User, FileText, Camera, ChevronUp, Check, Eye, Save, X } from 'lucide-react';
 import { collection, doc, onSnapshot, writeBatch, serverTimestamp, updateDoc, deleteDoc, runTransaction, increment } from 'firebase/firestore';
-import { savePhotoAndGetReference, compressImageToBase64 } from '../utils/helpers';
+import { savePhotoAndGetReference, compressImageToBase64, isPromo, bksOf, pcsOf } from '../utils/helpers';
 /* Reused rather than rewritten: a Firestore Timestamp, an offline `{seconds}` and an unresolved
    serverTimestamp() are three different shapes, and this already handles all three. */
 import { txSeconds } from '../utils/dayStats.js';
@@ -58,6 +58,7 @@ export const receiptLines = (items, counts) => (items || []).map(item => {
     return {
         productId: item.productId,
         name: item.name,
+        ...(item.promo ? { promo: true } : {}),   /* a promo line is counted in pcs and shelved as promo (stage 2) */
         shipped,
         counted: hasCount ? counted : null,
         damaged: Number.isFinite(damaged) ? damaged : 0,
@@ -279,7 +280,7 @@ export const reorderAdvice = (arrivals, onHand, inTransit, rhythm, nowSeconds, s
     return out;
 };
 
-export default function BranchWarehouseManager({ db, storage, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, triggerCapy, logAudit, appSettings, motorists = [], transactions = [], branchStockMap = {} }) {
+export default function BranchWarehouseManager({ db, storage, appId, user, userRole, userLocation, isAdmin, masterUserId, globalInventory, promoItems = [], triggerCapy, logAudit, appSettings, motorists = [], transactions = [], branchStockMap = {} }) {
     
     const isAreaAdmin = !isAdmin; // 🚀 THE FIX: Dynamically adapts to any custom Tier rank
     const branchLocation = userLocation || 'UNASSIGNED';
@@ -290,6 +291,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
 
     const [requests, setRequests] = useState([]);
     const [branchStock, setBranchStock] = useState([]);
+    const [branchPromo, setBranchPromo] = useState([]);   /* the shelf's promo rows (kind 'promo', pcs) - the chest's PROMO view only */
     const [isLoading, setIsLoading] = useState(true);
     
     const [requestCart, setRequestCart] = useState([]);
@@ -596,12 +598,15 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
         if (watching && watching !== 'UNASSIGNED') {
             const stockRef = collection(db, `artifacts/${appId}/users/${masterUserId}/branches/${watching}/inventory`);
             unsubStock = onSnapshot(stockRef, (snap) => {
-                setBranchStock(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+                const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                setBranchStock(rows.filter(r => !isPromo(r)));   /* every Bks reader on this desk keeps cigarettes only */
+                setBranchPromo(rows.filter(isPromo));
             }, (err) => console.warn("Branch inventory listener:", err.code));
         } else {
             /* Cleared, not left behind. Switching branch must never show the previous
                branch's shelf under the new branch's name. */
             setBranchStock([]);
+            setBranchPromo([]);
         }
 
         return () => { unsubReq(); unsubStock(); };
@@ -785,6 +790,8 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                         name: line.name,
                         stock: (current.stock || 0) + good,
                         damagedStock: (current.damagedStock || 0) + line.damaged,
+                        /* a promo row: every reader of this shelf splits it off by kind, so no cigarette sum ever meets it */
+                        ...(line.promo ? { kind: 'promo', unit: 'pcs' } : {}),
                         lastReceivedAt: serverTimestamp(),
                         lastReceivedFrom: order.id
                     }, { merge: true });
@@ -806,7 +813,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                     /* what actually arrived, line by line, kept beside what was sent.
                        This is the OS&D record — the evidence a claim is made from. */
                     receivedItems: lines.map(l => ({
-                        productId: l.productId, name: l.name,
+                        productId: l.productId, name: l.name, ...(l.promo ? { promo: true } : {}),
                         shipped: l.shipped, counted: l.counted, damaged: l.damaged, diff: l.diff
                     })),
                     receiptVariance: disputed,
@@ -1113,7 +1120,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                                 <p className="text-[11px] font-black text-ink uppercase tracking-wide mb-2.5 break-words">{line.name}</p>
                                                                 <div className="grid grid-cols-2 gap-2.5">
                                                                     <label className="block">
-                                                                        <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest block mb-1">Diterima (Bks)</span>
+                                                                        <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest block mb-1">Diterima ({line.promo ? 'pcs' : 'Bks'})</span>
                                                                         <input
                                                                             type="number" inputMode="numeric" min="0" placeholder="—"
                                                                             value={entry.counted ?? ''}
@@ -1122,7 +1129,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                                         />
                                                                     </label>
                                                                     <label className="block">
-                                                                        <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest block mb-1">Rusak (Bks)</span>
+                                                                        <span className="text-[9px] font-bold text-ink-muted uppercase tracking-widest block mb-1">Rusak ({line.promo ? 'pcs' : 'Bks'})</span>
                                                                         <input
                                                                             type="number" inputMode="numeric" min="0" placeholder="0"
                                                                             value={entry.damaged ?? ''}
@@ -1185,7 +1192,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <span className="font-bold text-accent-ink mr-1">📦 {itemsToProcess.reduce((sum,i)=>sum+Number(i.qty),0)} Bks:</span>
+                                                                    <span className="font-bold text-accent-ink mr-1">📦 {bksOf(itemsToProcess)} Bks{pcsOf(itemsToProcess) > 0 && ` + ${pcsOf(itemsToProcess)} pcs promo`}:</span>
                                                                     <span className="text-ink-muted">{itemsToProcess.map(i => `${i.qty} ${i.name}`).join(', ')}</span>
                                                                 </>
                                                             )}
@@ -1273,12 +1280,12 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
                         {isLoading ? (
                             <div className="text-center p-10 text-ink-muted animate-pulse italic text-xs uppercase tracking-widest">Loading Logistics Logs...</div>
                         ) : deskTab === 'stock' ? (
-                            branchStock.length === 0 ? (
+                            branchStock.length + branchPromo.length === 0 ? (
                                 <div className="text-center p-8 bg-sunk rounded-xl border border-dashed border-line-2 text-ink-muted text-xs uppercase tracking-widest">
                                     Warehouse is empty. Ask HQ for stock on the Request tab.
                                 </div>
                             ) : (
-                                <WarehouseChest rows={shelfOf(globalInventory, branchStock)} warehouse={branchLocation} ageOf={ageOf} />
+                                <WarehouseChest rows={shelfOf(globalInventory, branchStock)} promoRows={shelfOf(promoItems, branchPromo)} warehouse={branchLocation} ageOf={ageOf} />
                             )
 
                         ) : deskTab === 'request' ? (

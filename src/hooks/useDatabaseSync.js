@@ -216,7 +216,8 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
             collection(db, `artifacts/${appId}/users/${userId}/branches/${name}/inventory`),
             (snap) => setBranchStock(prev => ({
                 ...prev,
-                [name]: snap.docs.map(d => ({ id: d.id, ...d.data() })),
+                /* a branch shelf holds promo rows too (kind 'promo', pcs - stage 2); every reader of this map sums Bks */
+                [name]: snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => !isPromo(r)),
             })),
             (err) => console.warn(`Branch stock listener (${name}):`, err.code)
         ));
