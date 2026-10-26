@@ -1295,7 +1295,9 @@ function ShellLab() {
 const labShirtPic = (word) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 100"><rect width="90" height="100" fill="#efe9df"/><path d="M31 13 L18 17 L6 31 L16 41 L24 35 L24 91 L66 91 L66 35 L74 41 L84 31 L72 17 L59 13 Q45 25 31 13 Z" fill="#1c1814"/><text x="45" y="62" font-family="sans-serif" font-size="12" font-weight="700" fill="#d4a017" text-anchor="middle">${word}</text></svg>`);
 const labShirt = !q.get('shirt') ? {} : { images: { front: labShirtPic('CELLO'), back: labShirtPic('KPM') },
   ...(q.get('shirt') === 'card' ? { dimensions: { w: 90, h: 100, d: 3 }, defaultZoom: 2.6 } : {}) };
-const LAB_PRODUCT = { id: 'p_lab', name: 'PRODUK C', stock: 120, description: 'Kretek 16 batang, rasa manis.', dimensions: { w: 55, h: 90, d: 22 }, images: {} };
+const LAB_PRODUCT = q.has('promo')   /* &promo: a promo T-shirt with no photo - the 3D goods in the box and in fullscreen */
+  ? { id: 'p-tee', name: 'T-shirt KPM', stock: 40, kind: 'promo', unit: 'pcs', type: 'PROMO', goods: 'tshirt', images: {} }
+  : { id: 'p_lab', name: 'PRODUK C', stock: 120, description: 'Kretek 16 batang, rasa manis.', dimensions: { w: 55, h: 90, d: 22 }, images: {} };
 function Vault3DLab() {
   const [open, setOpen] = React.useState(null);
   return (

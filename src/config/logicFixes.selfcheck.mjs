@@ -11990,6 +11990,11 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      pgc.includes("import('../utils/promoGoods3d.js')") && !/from 'three'/.test(pgc) && !/from 'three'/.test(rei) && !/from 'three'/.test(exam) && !/from 'three'/.test(read('src/App.jsx')) &&
      pg3.includes("document.documentElement.classList.contains('lite-mode')") && pg3.includes('`/promo/${goods}.glb`') &&
      pgc.includes("if (!goods || failed) return <img src={promoSkin(product, 'front')}"));
+  /* his 2026-10-26 "the promo goods doesnt spin automatically when viewed in fullscreen": Lite froze the fullscreen viewer
+     too, under its own "AUTOMATIC ROTATION" line, while a cigarette pack there keeps turning in Lite. The viewer he opens
+     on purpose (drag) spins in Lite; the small Master Vault box stays still (his Lite "nothing rotates"). */
+  ok('REGRESSION: the fullscreen viewer (drag) spins even in Lite Mode; the small vault box still stops in Lite; a held finger still stops both',
+     pg3.replace(/\r/g, '').includes("if (!held && (drag || !document.documentElement.classList.contains('lite-mode'))) { pivot.rotation.y += 0.5 * dt; draw(); }"));
   /* THE LOOK (his 2026-10-26 "edit the color appearance on the 3D design, and change the name on it when press edit"):
      a main colour, a print colour and the printed text, per item; a default colour is stored as '' so a later TYPE
      change gets the new type's default instead of the old one's. */

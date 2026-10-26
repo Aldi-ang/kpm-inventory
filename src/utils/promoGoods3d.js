@@ -4,7 +4,9 @@
 
    The models are public/promo/<goods>.glb, made in Blender by tools/promo-goods/goods.py (lab: tools/promo-goods/
    board.html). Every printed area is a mesh with extras {print, aspect, style}; the item's word is drawn onto it here,
-   so one model serves every brand. Lite Mode: no idle spin (his "nothing rotates") - it draws once and on a drag.
+   so one model serves every brand. Lite Mode: no idle spin in the small vault box (his "nothing rotates") - it draws
+   once. The fullscreen viewer (drag) spins in Lite too: he opened it to look, it says "AUTOMATIC ROTATION", and a
+   cigarette pack there turns in Lite as well (his 2026-10-26 "doesnt spin automatically when viewed in fullscreen").
 
    THE LOOK (his same-day "edit the color appearance on the 3D design, and change the name on it"): look = {body, ink,
    word} from promoLook(). The modelled materials are named in goods.py: BODY ones take the body colour, 'gold' the ink;
@@ -116,7 +118,7 @@ export const mount = (el, { goods, look, drag = false, onFail }) => {
     let last = performance.now();
     const tick = (now) => {
         const dt = Math.min(0.05, (now - last) / 1000); last = now;
-        if (!held && !document.documentElement.classList.contains('lite-mode')) { pivot.rotation.y += 0.5 * dt; draw(); }
+        if (!held && (drag || !document.documentElement.classList.contains('lite-mode'))) { pivot.rotation.y += 0.5 * dt; draw(); }
         frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
