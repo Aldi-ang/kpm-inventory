@@ -371,6 +371,9 @@ const LAB_PROMO_ITEMS = [['p-tee', 'T-shirt', 40, 'tshirt'], ['p-hat', 'Hat', 25
   .map(([id, name, stock, goods]) => ({ id, name, stock, goods, kind: 'promo', unit: 'pcs', type: 'PROMO' }));
 if (q.has('promo')) FIXTURES['branches/BANDUNG/inventory'] = [...FIXTURES['branches/BANDUNG/inventory'],
   { id: 'p-tee', name: 'T-shirt', stock: 24, kind: 'promo', unit: 'pcs' }, { id: 'p-hat', name: 'Hat', stock: 10, kind: 'promo', unit: 'pcs' }];
+/* stage 3: the same two rows as DOCS, so the van bay's load transaction (one t.get per row) reads them - the stub answers a
+   doc read by its own path only */
+if (q.has('promo')) FIXTURES['branches/BANDUNG/inventory'].filter((r) => r.kind === 'promo').forEach((r) => { FIXTURES[`branches/BANDUNG/inventory/${r.id}`] = r; });
 const LAB_SHELF_CIGS = FIXTURES['branches/BANDUNG/inventory'].filter((r) => r.kind !== 'promo');
 /* The registry the desk now READS. `gudang` carries this branch's fixed address — the reorder form
    cannot type one any more — and `pabrik`/`orang` fill the read-only Data Induk tab. */
@@ -694,6 +697,8 @@ FIXTURES['motorists/m2'] = {
     { productId: 'p-gg12', name: 'Gudang Garam Surya 12', qty: 1, unit: 'Karton' },
     { productId: 'p-smp16', name: 'Sampoerna Mild 16', qty: 40, unit: 'Bks' },
   ],
+  /* &promo (stage 3): six T-shirts and two hats in the van, their own field in pcs */
+  ...(q.has('promo') ? { promoCanvas: [{ productId: 'p-tee', name: 'T-shirt', qty: 6, unit: 'pcs', promo: true }, { productId: 'p-hat', name: 'Hat', qty: 2, unit: 'pcs', promo: true }] } : {}),
   cukaiDebts: { 'p-cg16': 120, 'p-djar': 35, 'PENALTY_EOD_lab0_GOODS_p-cg16': 39000 },   /* + the fine tonight's bounty payment clears (2026-09-26) */
   cukaiDebtNotes: { 'PENALTY_EOD_lab0_GOODS_p-cg16': { label: 'Cello Green 16 5 Bks @ Retail', date: '2026-09-24' } },
 };
@@ -762,6 +767,8 @@ const LAB_FLEET = [
       { productId: 'p-djar', name: 'Djarum Coklat 12', qty: 12, unit: 'Slop' },
       { productId: 'p-smp16', name: 'Sampoerna Mild 16', qty: 40, unit: 'Bks' },
     ],
+    /* &promo (stage 3): six T-shirts already in the van, their own field in pcs */
+    ...(q.has('promo') ? { promoCanvas: [{ productId: 'p-tee', name: 'T-shirt', qty: 6, unit: 'pcs', promo: true }] } : {}),
     /* round 5: the van chest's BOUNTY tab - two noted fines from one night and an old quarantine charge */
     cukaiDebts: { PENALTY_EOD_lab1_CASH: 25000, 'PENALTY_EOD_lab1_GOODS_p-cg16': 55000, PENALTY_1758600000000: 40000, 'p-cg16': 12 },
     cukaiDebtNotes: { PENALTY_EOD_lab1_CASH: { label: 'Cash short', date: '2026-09-23' },
@@ -774,6 +781,8 @@ const LAB_FLEET = [
 ];
 /* Journey Plan reads the roster with getDocs(collection motorists) */
 FIXTURES['motorists'] = [...LAB_MOTORISTS.map((m) => ({ ...m })), ...LAB_FLEET];
+/* &promo (stage 3): Budi's van as a DOC too, so a return / clear transaction reads his live promoCanvas */
+if (q.has('promo')) FIXTURES['motorists/f-b1'] = LAB_FLEET.find((m) => m.id === 'f-b1');
 /* round 5: what Budi left at shops on titip (the van chest's TITIP tab) - one part-paid, one Dedi handed to him,
    one settled (so it stays off the tab). They reach the screen as props, like App passes them, not through a listener. */
 const labTs = (d) => ({ seconds: Math.floor(new Date(d + 'T10:00:00+07:00').getTime() / 1000) });
@@ -1141,7 +1150,7 @@ function ShellLab() {
           transactions={q.has('admin') ? agentTxns.map((t) => (t.id === 'tx3' ? { ...t, items: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 10, unit: 'Bks', condition: 'DAMAGED', returnReason: 'Rusak / Basah' }] } : t)) : agentTxns} samplings={[]}
           user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
           userRole={q.get('tier') || (q.has('admin') ? 'FLEET_CAPTAIN' : 'FIELD_OPERATIVE')}   /* ?shell&agent&admin: the regional admin's chest; &tier=<id> any tier */
-          motorists={LAB_MOTORISTS} previewing={null}
+          motorists={LAB_MOTORISTS} previewing={null} promoItems={LAB_PROMO_ITEMS}
         />
       ) : q.has('vaultlist') ? (
         /* ?shell&vaultlist — the Master Vault's product list as App.jsx's inventory tab mounts it (same wrapper), the two
@@ -1225,7 +1234,7 @@ function ShellLab() {
           agentProfileId="f-ra" previewing={null}
           user={{ uid: 'lab-ra', displayName: 'Rizky Aditama', email: 'rizky@kpm.example', location: 'BANDUNG' }}
           motorists={[...LAB_MOTORISTS, ...LAB_FLEET]}
-          inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]}
+          inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]} promoItems={LAB_PROMO_ITEMS}
           transactions={[...LAB_AGENT_TXNS.map((t) => ({ ...t, agentId: 'f-b1' })), ...LAB_FLEET_TITIP]}
           customers={LAB_FLEET_CUSTOMERS}
           appSettings={{ companyName: 'KPM INVENTORY' }}

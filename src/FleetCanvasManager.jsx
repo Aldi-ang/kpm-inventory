@@ -14,9 +14,9 @@ import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { IS_DEMO } from './config/firebase';
 import LoadingBay from './components/LoadingBay.jsx';
-import { damagedInVan, titipOf, quarantineOf } from './utils/vanBay';
+import { damagedInVan, titipOf, quarantineOf, movePromo } from './utils/vanBay';
 
-export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, transactions = [], customers = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, masterUserId = null }) {
+export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, promoItems = [], transactions = [], customers = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, masterUserId = null }) {
 
     const isGlobalAdmin = ['DEVELOPER', 'COMPANY_OWNER', 'ADMIN'].includes(userRole);
     const isAreaAdmin = !isGlobalAdmin;
@@ -135,6 +135,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     const [editingAgentId, setEditingAgentId] = useState(null); 
     
     const [branchStock, setBranchStock] = useState([]);
+    const [branchPromo, setBranchPromo] = useState([]);
 
     // 🚀 FIX: Follows the SELECTED AGENT's own warehouse, not the viewer's — same rule as
     // EOD, Clear Canvas, and Load Canvas, so the number shown here always matches reality.
@@ -148,12 +149,15 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             const safeBranchPath = selectedAgentLocation.replace(/\//g, '-');
             const stockRef = collection(db, `artifacts/${appId}/users/${userId}/branches/${safeBranchPath}/inventory`);
             const unsub = onSnapshot(stockRef, (snap) => {
-                /* the shelf's promo rows (kind 'promo', pcs) never load into a van as cigarettes */
-                setBranchStock(snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => !isPromo(r)));
+                /* the shelf's promo rows (kind 'promo', pcs) never load into a van as cigarettes - they are the bay's PROMO view */
+                const rows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                setBranchStock(rows.filter(r => !isPromo(r)));
+                setBranchPromo(rows.filter(isPromo));
             }, (err) => console.warn("Branch stock listener:", err.code));
             return () => unsub();
         } else {
             setBranchStock([]);
+            setBranchPromo([]);
         }
     }, [db, appId, userId, selectedAgentUsesBranch, selectedAgentLocation]);
 
@@ -164,6 +168,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             return { ...item, stock: bItem ? (bItem.stock || 0) : 0 };
         });
     }, [inventory, branchStock, selectedAgentUsesBranch]);
+    /* the bay's PROMO view (stage 3): each promo product with the pieces in the warehouse the van loads from - a branch's
+       own promo row, the Master Vault's own count for PUSAT */
+    const displayPromo = useMemo(() => promoItems.map(p => ({ ...p, stock: selectedAgentUsesBranch ? (branchPromo.find(b => b.id === p.id)?.stock || 0) : (p.stock || 0) })),
+        [promoItems, branchPromo, selectedAgentUsesBranch]);
     /* the bay's Quarantine view: the same rows the stock comes from - a branch's own damagedStock, HQ's for PUSAT */
     const whQuarantine = useMemo(() => quarantineOf(inventory, selectedAgentUsesBranch ? branchStock : null), [inventory, branchStock, selectedAgentUsesBranch]);
 
@@ -517,8 +525,9 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
         // Use the master product record for name/pricing/conversion metadata — always correct,
         // regardless of which warehouse the actual stock count comes from.
-        const masterProduct = inventory.find(p => p.id === productId);
+        const masterProduct = inventory.find(p => p.id === productId) || promoItems.find(p => p.id === productId);
         if (!masterProduct) return { ok: false, reason: 'Barang tidak ada di daftar produk' };
+        const promo = isPromo(masterProduct), unitWord = promo ? 'pcs' : 'Bks';
 
         const qtyToLoad = Number(qtyBks);
         const unitToLoad = 'Bks';
@@ -545,7 +554,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 const currentSourceStock = sourceSnap.exists() ? (sourceSnap.data().stock || 0) : 0;
 
                 if (currentSourceStock < loadInBks) {
-                    throw new Error(`INSUFFICIENT WAREHOUSE STOCK!\n\nYou are trying to load ${loadInBks} Bks, but the ${sourceLabel} Vault only has ${currentSourceStock} Bks available.`);
+                    throw new Error(`INSUFFICIENT WAREHOUSE STOCK!\n\nYou are trying to load ${loadInBks} ${unitWord}, but the ${sourceLabel} Vault only has ${currentSourceStock} ${unitWord} available.`);
                 }
 
                 const agentRef = doc(db, collPath, selectedAgent.id);
@@ -554,9 +563,14 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
                 // ✍️ PHASE 2: WRITES
                 if (useBranchWarehouse) {
-                    t.set(sourceRef, { productId: masterProduct.id, name: masterProduct.name, stock: currentSourceStock - loadInBks }, { merge: true });
+                    t.set(sourceRef, { productId: masterProduct.id, name: masterProduct.name, ...(promo ? { kind: 'promo', unit: 'pcs' } : {}), stock: currentSourceStock - loadInBks }, { merge: true });
                 } else {
                     t.set(sourceRef, { stock: currentSourceStock - loadInBks }, { merge: true });
+                }
+                /* a promo product rides in its own field, in pcs - never inside activeCanvas (vanBay movePromo) */
+                if (promo) {
+                    t.update(agentRef, { promoCanvas: movePromo((agentSnap.exists() ? agentSnap.data() : selectedAgent).promoCanvas, masterProduct, loadInBks) });
+                    return;
                 }
 
                 let updatedCanvas = JSON.parse(JSON.stringify(liveCanvas));
@@ -588,7 +602,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
             /* the bay reports the whole press in ONE line, so the per-product mascot line is gone;
                the audit log keeps one entry per movement */
-            logAudit("CANVAS_LOAD", `Loaded ${qtyToLoad} ${masterProduct.name} to ${selectedAgent.name} (from ${sourceLabel})`);
+            logAudit("CANVAS_LOAD", `Loaded ${qtyToLoad}${promo ? ' pcs' : ''} ${masterProduct.name} to ${selectedAgent.name} (from ${sourceLabel})`);
             return { ok: true };
         } catch (e) {
             console.error(e);
@@ -633,9 +647,12 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                    when somebody actually clears a vehicle. */
                 const agentSnap = await t.get(agentRef);
                 const liveCanvas = agentSnap.exists() ? (agentSnap.data().activeCanvas || []) : [];
-                const itemsToReturn = liveCanvas
-                    .map(item => ({ item, product: inventory.find(p => p.id === item.productId) }))
-                    .filter(x => x.product);
+                /* the van's promo goods (their own field, in pcs) go back with it - convertToBks returns their plain count */
+                const livePromo = agentSnap.exists() ? (agentSnap.data().promoCanvas || []) : [];
+                const itemsToReturn = [
+                    ...liveCanvas.map(item => ({ item, product: inventory.find(p => p.id === item.productId) })),
+                    ...livePromo.map(item => ({ item, product: promoItems.find(p => p.id === item.productId) }))
+                ].filter(x => x.product);
 
                 const destRefs = itemsToReturn.map(({ item, product }) => ({
                     item, product,
@@ -652,13 +669,13 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     const currentStock = dSnap.exists() ? (dSnap.data().stock || 0) : 0;
 
                     if (useBranchWarehouse) {
-                        t.set(r.ref, { productId: r.product.id, name: r.product.name, stock: currentStock + returnInBks }, { merge: true });
+                        t.set(r.ref, { productId: r.product.id, name: r.product.name, ...(isPromo(r.product) ? { kind: 'promo', unit: 'pcs' } : {}), stock: currentStock + returnInBks }, { merge: true });
                     } else {
                         t.set(r.ref, { stock: currentStock + returnInBks }, { merge: true });
                     }
                 });
 
-                t.update(agentRef, { activeCanvas: [] });
+                t.update(agentRef, { activeCanvas: [], promoCanvas: [] });
             });
 
             triggerCapy(`Vehicle cleared. All unsold stock returned to the ${destinationLabel}! 🧹`);
@@ -672,8 +689,9 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
        coming back, and the same warehouse Load and Clear use goes up by those packs. */
     const handleReturnToWarehouse = async (productId, qtyBks) => {
         if (!canEditFleet) return notify("VIEW ONLY: your tier cannot return a canvas. Ask an admin to change it in Settings › Permissions.");
-        const product = inventory.find(p => p.id === productId);
+        const product = inventory.find(p => p.id === productId) || promoItems.find(p => p.id === productId);
         if (!selectedAgent || !product || !(Number(qtyBks) > 0)) return { ok: false, reason: 'Jumlah tidak sah' };
+        const promo = isPromo(product);
 
         const agentIsFieldLevel = isFieldLevelTier(selectedAgent.userRole);
         const agentLocation = selectedAgent.location;
@@ -689,24 +707,28 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 // 📖 PHASE 1: READS — both before any write, which a transaction requires
                 const agentSnap = await t.get(agentRef);
                 const destSnap = await t.get(destRef);
+                /* a promo line comes off promoCanvas, in pcs - activeCanvas is never touched (stage 3) */
+                const left = promo ? movePromo(agentSnap.exists() ? agentSnap.data().promoCanvas : [], product, -qtyBks) : null;
+                if (promo && !left) throw new Error(`Van tidak punya ${qtyBks} pcs ${product.name} lagi`);
                 const liveCanvas = agentSnap.exists() ? (agentSnap.data().activeCanvas || []) : [];
                 const idx = liveCanvas.findIndex(item => item.productId === product.id);
                 const rowBks = idx >= 0 ? convertToBks(liveCanvas[idx].qty, liveCanvas[idx].unit, product) : 0;
-                if (rowBks < qtyBks) throw new Error(`Van tinggal ${rowBks} Bks ${product.name} — ada penjualan sejak ditarik`);
+                if (!promo && rowBks < qtyBks) throw new Error(`Van tinggal ${rowBks} Bks ${product.name} — ada penjualan sejak ditarik`);
 
                 // ✍️ PHASE 2: WRITES
-                const updated = JSON.parse(JSON.stringify(liveCanvas));
-                updated[idx].qty -= qtyBks / convertToBks(1, updated[idx].unit, product);
-                if (updated[idx].qty <= 1e-9) updated.splice(idx, 1);
                 const currentStock = destSnap.exists() ? (destSnap.data().stock || 0) : 0;
                 if (useBranchWarehouse) {
-                    t.set(destRef, { productId: product.id, name: product.name, stock: currentStock + qtyBks }, { merge: true });
+                    t.set(destRef, { productId: product.id, name: product.name, ...(promo ? { kind: 'promo', unit: 'pcs' } : {}), stock: currentStock + qtyBks }, { merge: true });
                 } else {
                     t.set(destRef, { stock: currentStock + qtyBks }, { merge: true });
                 }
+                if (promo) { t.update(agentRef, { promoCanvas: left }); return; }
+                const updated = JSON.parse(JSON.stringify(liveCanvas));
+                updated[idx].qty -= qtyBks / convertToBks(1, updated[idx].unit, product);
+                if (updated[idx].qty <= 1e-9) updated.splice(idx, 1);
                 t.update(agentRef, { activeCanvas: updated });
             });
-            logAudit("CANVAS_RETURN", `Returned ${qtyBks} Bks ${product.name} from ${selectedAgent.name} → ${destinationLabel}`);
+            logAudit("CANVAS_RETURN", `Returned ${qtyBks} ${promo ? 'pcs' : 'Bks'} ${product.name} from ${selectedAgent.name} → ${destinationLabel}`);
             return { ok: true };
         } catch (e) {
             console.error(e);
@@ -771,7 +793,9 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     };
     const stageCard = (m) => {
         const bks = Math.round(loadOf(m));
-        const items = (m.activeCanvas || []).filter(r => Number(r.qty) > 0).length;
+        /* the van's promo goods (their own field, pcs) count as items and light the card - a van of T-shirts is not empty */
+        const pcs = (m.promoCanvas || []).reduce((s, r) => s + (Number(r.qty) || 0), 0);
+        const items = (m.activeCanvas || []).filter(r => Number(r.qty) > 0).length + (m.promoCanvas || []).filter(r => Number(r.qty) > 0).length;
         const on = selectedAgent?.id === m.id;
         const leader = m.userRole === 'ADMIN' || m.userRole === 'AREA_ADMIN';
         const Icon = m.userRole === 'ADMIN' ? ShieldCheck : m.userRole === 'AREA_ADMIN' ? Globe : m.role === 'Canvas' ? Truck : Activity;
@@ -790,7 +814,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             rename shows up here without anyone editing this line. */}
                         {m.userRole === 'ADMIN' ? 'Master Admin (Global)' : (m.userRole === 'AREA_ADMIN' || m.userRole === 'FLEET_CAPTAIN') ? `${tierWord(m.userRole) || (m.userRole === 'AREA_ADMIN' ? 'HQ Sales Manager' : 'Regional Admin')} (${m.location})` : `${m.role || ''}${m.vehicle ? ` • ${m.vehicle}` : ''}`}
                     </span>
-                    <span className="load"><i className={bks > 0 ? 'on' : ''} aria-hidden="true" />{bks > 0 ? `${bks.toLocaleString('id-ID')} Bks · ${items} ${items === 1 ? 'item' : 'items'}` : 'Van empty'}</span>
+                    <span className="load"><i className={bks > 0 || pcs > 0 ? 'on' : ''} aria-hidden="true" />{bks > 0 || pcs > 0 ? `${bks.toLocaleString('id-ID')} Bks${pcs > 0 ? ` + ${pcs.toLocaleString('id-ID')} pcs` : ''} · ${items} ${items === 1 ? 'item' : 'items'}` : 'Van empty'}</span>
                     <span className={`kpm-read ${bks > 0 ? 'on' : ''}`}>{bks > 0 ? 'Loaded' : 'Empty'}</span>
                 </span>
                 <span className="kpm-actor-floor" aria-hidden="true">{leader && <Crown size={14} />}</span>
@@ -1461,6 +1485,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     agent={selectedAgent}
                                     warehouse={selectedAgentUsesBranch ? String(selectedAgentLocation).toUpperCase() : 'PUSAT'}
                                     stock={displayInventory || []}
+                                    promo={displayPromo}
                                     warehouseQ={whQuarantine}
                                     damaged={damagedInVan(agentSales, inventory)}
                                     canEdit={canEditFleet}

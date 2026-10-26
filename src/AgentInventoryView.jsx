@@ -9,7 +9,7 @@ import { isFleetManagementTier, canEditFleetRoster } from './config/permissions'
    `new Date().toISOString()`, the UTC one — so it stayed a day behind between midnight and 07:00
    WIB even after the shared helper was fixed. A second copy of a date rule is a second bug
    waiting for someone to fix only the first. */
-import { formatRupiah, getCurrentDate, saleLines } from './utils/helpers';
+import { formatRupiah, getCurrentDate, saleLines, promoPic } from './utils/helpers';
 import { canvasWithPending } from './utils/vanSync';
 
 // 🚀 ACCEPT 'samplings' PROP HERE
@@ -27,8 +27,9 @@ const Money = ({ value, className = '' }) => {
 };
 
 
-const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], transactions = [], samplings = [], user, userRole, motorists = [], pendingTxData = [], previewing = null }) => {
+const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], promoItems = [], transactions = [], samplings = [], user, userRole, motorists = [], pendingTxData = [], previewing = null }) => {
     const [rawCanvasItems, setCanvasItems] = useState([]);
+    const [promoCanvas, setPromoCanvas] = useState([]);   // the van's promo goods - their own field, in pcs (stage 3)
     const [isLoading, setIsLoading] = useState(true);
     const [liveProfileData, setLiveProfileData] = useState(null);
     const [openTx, setOpenTx] = useState(null);   // the sale row opened to its lines
@@ -86,6 +87,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                the same wrong-van symptom reached by a different door. The docSnap-missing branch
                below already clears; this one was the gap. */
             setCanvasItems([]);
+            setPromoCanvas([]);
             setLiveProfileData(null);
             setIsLoading(false);
             return;
@@ -98,9 +100,11 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 setCanvasItems(Array.isArray(data.activeCanvas) ? data.activeCanvas : []);
+                setPromoCanvas(Array.isArray(data.promoCanvas) ? data.promoCanvas : []);
                 setLiveProfileData(data); // Safely store the whole object, wiping old ghost data
             } else {
                 setCanvasItems([]);
+                setPromoCanvas([]);
                 setLiveProfileData(null); // Instantly erase Boss ghosting
             }
             setIsLoading(false);
@@ -333,7 +337,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                 <div className="p-4 relative z-10">
                     {isLoading ? syncing : (<>
                         <LoadingBay vanOnly key={trueAgentId || 'none'} agent={{ ...liveProfileData, id: trueAgentId, name: agentName }}
-                            stock={inventory} quarantine={quarantinedCargo}
+                            stock={inventory} promo={promoItems} quarantine={quarantinedCargo}
                             canEdit={canEditFleetRoster(userRole)} onLayout={saveLayout}
                             middle={<TodayBook table sales={todayTransactions} samples={todaySamplings} inventory={inventory} />} />
                     </>)}
@@ -374,7 +378,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                 {viewMode === 'HEALTHY' ? (
                     <>
                         {/* 1. PRODUCT MANIFEST LIST */}
-                        {isLoading ? syncing : canvasItems.length === 0 ? (
+                        {isLoading ? syncing : canvasItems.length === 0 && promoCanvas.length === 0 ? (
                             <div className="flex items-center justify-center h-40 opacity-30 flex-col">
                                 <Package size={48} className="mb-4 text-ink-dim"/>
                                 <p className="font-black text-lg tracking-widest uppercase text-ink-dim">Nothing Loaded</p>
@@ -440,6 +444,32 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                         </div>
                                     )
                                 })}
+                            </div>
+                        )}
+
+                        {/* 1b. THE VAN'S PROMO GOODS (stage 3): their own field, counted in pcs, no price - given away only, never sold */}
+                        {!isLoading && promoCanvas.length > 0 && (
+                            <div className="mb-8">
+                                <h3 className="text-ink-muted font-bold uppercase tracking-widest text-xs mb-3">Promo items · pcs</h3>
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                    {promoCanvas.map(item => (
+                                        <div key={item.productId} className="bg-panel border border-line-2 p-3 rounded-none flex items-center justify-between">
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <div className="w-10 h-10 rounded-none bg-ground border border-line-2 flex items-center justify-center shrink-0 shadow-inner">
+                                                    <img alt="" className="w-8 h-8 object-contain" src={promoPic(promoItems.find(p => p.id === item.productId) || { kind: 'promo', name: item.name })} />
+                                                </div>
+                                                <div className="min-w-0 flex flex-col">
+                                                    <h4 className="font-bold text-ink text-sm uppercase tracking-wide lg:truncate">{item.name}</h4>
+                                                    <p className="text-[11px] text-ink-dim uppercase tracking-widest">given away only · never sold</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-baseline gap-1.5 shrink-0 ml-4">
+                                                <p className="text-xl md:text-2xl font-black text-ink leading-none kpm-num">{new Intl.NumberFormat('id-ID').format(item.qty)}</p>
+                                                <p className="text-[11px] text-ink-dim font-bold uppercase tracking-widest">pcs</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
 

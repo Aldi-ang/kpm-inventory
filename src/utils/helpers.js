@@ -275,6 +275,9 @@ export const promoGoods = (product) => {
     const picked = PROMO_GOODS.find(([id]) => id === product?.goods);
     return (picked || PROMO_GOODS.find(([, , words]) => words.test(String(product?.name || ''))))?.[0] || null;
 };
+/* a promo item's list picture: an uploaded photo, else its type's render (or the snapshot of his colours), else the drawn
+   skin - the regional warehouse chest's rule, shared by the van bay and Agent Inventory (stage 3) */
+export const promoPic = (product) => product?.images?.front || (promoGoods(product) ? product.thumb || `/promo/${promoGoods(product)}.png` : promoSkin(product, 'front'));
 /* the word printed on the goods: his PRINTED TEXT if he typed one, else the name without the goods' own word
    ("T SHIRT TAWANG" -> TAWANG), or KPM */
 export const promoWord = (product) => {
@@ -947,6 +950,12 @@ export const eodNightMessage = (items = [], inventory = [], priceTier = 'Retail'
         msg += `\n\nThey are short Rp ${fmtRp(short)}:\n${bounty.map(l => `  • ${l.label} — Rp ${fmtRp(l.amount)}`).join('\n')}\n\nApproving records each of those as a bounty in their name, which they can repay from their own EOD screen.`;
     }
     if (wipes) msg += `\n\nThis also clears their inventory and returns it to the Vault.`;
+    /* the van's promo goods (stage 3) come back by the piece; one that did not is named, and costs nothing - no price */
+    const promo = items.filter(it => approvedOf(it).includes('stock')).map(it => it.report);
+    const promoBack = promo.flatMap(r => (r.promoRemaining || []).filter(l => Number(l.qty) > 0));
+    const promoShort = promo.flatMap(r => shortStockRows(r.promoExpected, r.promoRemaining));
+    if (promoBack.length) msg += `\n\nPromo items coming back: ${promoBack.map(l => `${l.name} ${l.qty} pcs`).join(', ')}.`;
+    if (promoShort.length) msg += `\nPromo short: ${promoShort.map(l => `${l.name} short ${l.short} pcs`).join(', ')} - no charge, promo items carry no price.`;
     if (returns.length) msg += `\n\nGoing back to them with a reason:\n${returns.join('\n')}`;
     return msg;
 };

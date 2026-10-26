@@ -262,7 +262,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         const cashStatus = (pendingCash || legacyPending) ? 'PENDING' : (verifiedCash || legacyVerified) ? 'VERIFIED' : 'READY';
         const cukaiStatus = (pendingCukai || legacyPending) ? 'PENDING' : (verifiedCukai || legacyVerified) ? 'VERIFIED' : 'READY';
 
-        return { expectedCash, expectedTransfer, expectedCukai, activeStock: resolvedCanvas, damagedItemsToReturn, todaysSamplings, cashStatus, cukaiStatus, rejected, storesServed, titipCollected, itemsBks, cukaiRemaining: expectedCukai, cashSources, transferSources,
+        return { expectedCash, expectedTransfer, expectedCukai, activeStock: resolvedCanvas, promoStock: agentProfile.promoCanvas || [], damagedItemsToReturn, todaysSamplings, cashStatus, cukaiStatus, rejected, storesServed, titipCollected, itemsBks, cukaiRemaining: expectedCukai, cashSources, transferSources,
             dayXP: verifiedCash?.dayXP, xpBreakdown: verifiedCash?.xpBreakdown,   // tonight's XP, written by the boss's last approval (XpGain)
             dayCollected: Number(verifiedCash?.cash || 0) + Number(verifiedCash?.transfer || 0), dayStores: Number(verifiedCash?.storesServed || 0) };
     }, [effectiveId, samplings, transactions, agentCanvas, eodReports, motorists, agentProfileId]);
@@ -598,7 +598,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                 }))
                                             }}
                                             lines={{
-                                                goods: (agentData.activeStock || []).map((item, n) => ({
+                                                /* the van's promo goods (stage 3) count on the same card, in pcs */
+                                                goods: [...(agentData.activeStock || []), ...(agentData.promoStock || [])].map((item, n) => ({
                                                     key: String(item.productId || `row-${n}`),
                                                     name: item.name,
                                                     unit: item.unit || 'Bks',
@@ -673,9 +674,16 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                     return pid in countedByProduct ? { ...item, qty: countedByProduct[pid] } : item;
                                                 });
 
+                                                /* the van's promo goods (stage 3) were counted on the same card and travel apart, in pcs.
+                                                   Nothing prices them: a short one flags the night and costs Rp 0. */
+                                                const countedPromo = (agentData.promoStock || []).map(item => {
+                                                    const pid = String(item.productId);
+                                                    return pid in countedByProduct ? { ...item, qty: countedByProduct[pid] } : item;
+                                                });
+
                                                 const cashVariance     = countedCash - Number(agentData.expectedCash || 0);
                                                 const transferVariance = countedTransfer - Number(agentData.expectedTransfer || 0);
-                                                const goodsShort = (agentData.activeStock || []).some(item => {
+                                                const goodsShort = [...(agentData.activeStock || []), ...(agentData.promoStock || [])].some(item => {
                                                     const pid = String(item.productId);
                                                     return pid in countedByProduct && countedByProduct[pid] < (Number(item.qty) || 0);
                                                 });
@@ -699,6 +707,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                     expectedCash: Number(agentData.expectedCash || 0),
                                                     expectedTransfer: Number(agentData.expectedTransfer || 0),
                                                     expectedStock: agentData.activeStock,
+                                                    promoRemaining: countedPromo,
+                                                    promoExpected: agentData.promoStock,
                                                     cashVariance,
                                                     transferVariance,
                                                     goodsShort,
@@ -989,7 +999,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                                     const cukaiRep = row.reports.find(r => r.reportType === 'CUKAI' || (!r.reportType && Number(r.cukai) > 0));
                                                                                                     const money = row.reports.reduce((sum, r) => sum + (r.reportType === 'CUKAI' ? 0 : (Number(r.cash) || 0) + (Number(r.transfer) || 0)), 0);
                                                                                                     const stamps = cukaiRep ? (cukaiRep.cukaiReturned !== undefined ? cukaiRep.cukaiReturned : (cukaiRep.cukai || 0)) : 0;
-                                                                                                    const stock = row.reports.flatMap(r => r.remainingStock || []);
+                                                                                                    const stock = row.reports.flatMap(r => [...(r.remainingStock || []), ...(r.promoRemaining || [])]);
                                                                                                     const damaged = row.reports.flatMap(r => r.damagedStockToReturn || []);
                                                                                                     const hasDamaged = damaged.length > 0;
                                                                                                     const earliest = Math.min(...row.reports.map(r => r.timestamp?.seconds || Infinity));

@@ -293,8 +293,11 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                                         {(() => {
                                             if (!isAdmin) return <p className="text-sm font-mono text-slate-400 font-bold">STK: **</p>;
                                             if (inQ) return <p className="text-[10px] md:text-xs font-mono font-bold text-rose-400">QUARANTINE: {item.damagedStock} {isPromo(item) ? 'pcs' : 'Bks'}</p>;
-                                            /* a promo item is counted in pcs; nothing is in the field or sold yet (stages 3-4) */
-                                            if (isPromo(item)) return <p className={`text-[10px] md:text-xs font-mono font-bold ${isLowStock ? 'text-rose-500' : 'text-amber-200'}`}>VAULT: {item.stock || 0} pcs</p>;
+                                            /* a promo item is counted in pcs; its FIELD is the vans' promo goods (promoCanvas, stage 3); nothing is sold (stage 4 gives) */
+                                            if (isPromo(item)) {
+                                                const fieldPcs = motorists.reduce((s, m) => s + (Number((m.promoCanvas || []).find(c => c.productId === item.id)?.qty) || 0), 0);
+                                                return <p className={`text-[10px] md:text-xs font-mono font-bold ${isLowStock ? 'text-rose-500' : 'text-amber-200'}`}>VAULT: {item.stock || 0} pcs{fieldPcs > 0 ? ` · FIELD: ${fieldPcs} pcs` : ''}</p>;
+                                            }
                                             const todayStr = getLocalDayKey();
                                             let fieldBks = 0;
                                             motorists.forEach(m => {

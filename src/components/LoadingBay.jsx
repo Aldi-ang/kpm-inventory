@@ -27,8 +27,8 @@
    damaged goods) take turns in one place. Four squares a page, in one row, at every width. */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal, flushSync } from 'react-dom';
-import { convertToBks, getLocalDayKey, formatRupiah } from '../utils/helpers';
-import { PER, lineBks, netBks, loadCap, backCap, foldLine, vanCells, landingCell, applyPreset, teamLoad, HAZARD_SIGN } from '../utils/vanBay';
+import { convertToBks, getLocalDayKey, formatRupiah, isPromo, promoPic } from '../utils/helpers';
+import { PER, lineBks, netBks, loadCap, backCap, foldLine, vanCells, landingCell, applyPreset, teamLoad, HAZARD_SIGN, unitOf } from '../utils/vanBay';
 import { playSound } from '../hooks/useSound';
 import { QuarantineHatch, BlastDoors, QuarantineBand, runSwitch } from './QuarantineSwitch.jsx';
 
@@ -36,6 +36,8 @@ const UNITS = ['Bks', 'Slop', 'Bal', 'Karton'];
 const fmt = (n) => Number(n).toLocaleString('id-ID');
 const signed = (n) => (n > 0 ? '+' : '−') + fmt(Math.abs(n));
 const items = (n) => `${fmt(n)} item${n === 1 ? '' : 's'}`;
+/* packs and promo pieces side by side, never added together (stage 3) */
+const qtyWords = (bks, pcs) => [bks > 0 && `${fmt(bks)} Bks`, pcs > 0 && `${fmt(pcs)} pcs`].filter(Boolean).join(' + ') || '0 Bks';
 const MOTE_COLORS = ['#B44CF0', '#8A2BE2', '#D98CFF', '#6A1FB0'];
 const rnd = (a, b) => a + Math.random() * (b - a);
 const jitter = () => 1 + (Math.random() - 0.5) * 0.02;
@@ -68,6 +70,9 @@ function center(el) { const r = el.getBoundingClientRect(); return { x: r.left +
 /* The app's own 3D box - the same faces as the sales terminal's renderCube (MerchantSalesView),
    without its EXAMINE label, which means nothing inside a chest. */
 export function Cube({ p }) {
+  /* a promo item is its picture (the warehouse chest's), never a cigarette pack - inside the same stage, so the ghost,
+     the flying boxes, the muatan and the HOW MANY panel carry it too */
+  if (isPromo(p)) return <span className="kpm-cube-stage"><img className="pimg" alt="" draggable={false} src={promoPic(p)} /></span>;
   const d = p?.dimensions || { w: 55, h: 90, d: 22 };
   const img = p?.images || {};
   const front = img.front || p?.image;
@@ -93,6 +98,8 @@ const CUT_WHY = {
 const BYPASS_WORD = { PENDING: 'menunggu', APPROVED: 'disetujui', REJECTED: 'ditolak' };
 const VIEW_ONLY = 'Hanya lihat — jabatan ini tidak bisa memuat van';
 const TIDY = 'Tarik ke kotak lain untuk menata susunan';
+/* THE THIRD STOP (stage 3): the warehouse box's hatch steps healthy -> Quarantine -> Promo, as the regional warehouse's chest */
+const NEXT = { ok: 'q', q: 'p', p: 'ok' };
 /* the quarantine crate's sign, drawn once (vanBay HAZARD_SIGN); its colour is the CSS's, so it can turn green and back */
 const SIGN = <svg viewBox="0 0 15 15" shapeRendering="crispEdges" aria-hidden="true">{HAZARD_SIGN.map(([x, y]) => <rect key={x + '-' + y} x={x} y={y} width="1.02" height="1.02" />)}</svg>;
 /* the crate's pulsing sign: a still black one under a green copy whose OPACITY pulses (theme.css kpmSignGlow) - the same
@@ -111,18 +118,18 @@ const c3 = (kind, face) => (
 
 /* `pose` is the ponder book's (ponder/stages/LoadingBayStage.jsx): a STARTING state only - the chests, the tabs and the
    muatan a beat wants on screen. It is read by useState and nowhere else, and Fleet & Roster never passes one. */
-export default function LoadingBay({ agent, warehouse, stock, damaged = [], canEdit, onLoad, onReturn, onLayout, onDirty, onPreset, team = [], bypasses = [], titip = [], bounties = [], pose, vanOnly = false, quarantine = [], warehouseQ = [], middle = null }) {
-  const P = useMemo(() => Object.fromEntries(stock.map(p => [p.id, p])), [stock]);
-  /* the van, in packs, from its live rows */
+export default function LoadingBay({ agent, warehouse, stock, promo = [], damaged = [], canEdit, onLoad, onReturn, onLayout, onDirty, onPreset, team = [], bypasses = [], titip = [], bounties = [], pose, vanOnly = false, quarantine = [], warehouseQ = [], middle = null }) {
+  const P = useMemo(() => Object.fromEntries([...stock, ...promo].map(p => [p.id, p])), [stock, promo]);
+  /* the van, in packs, from its live rows - and its promo goods in pcs, from their own field (vanBay movePromo) */
   const vanOf = useMemo(() => {
     const m = {};
-    for (const r of agent.activeCanvas || []) {
+    for (const r of [...(agent.activeCanvas || []), ...(agent.promoCanvas || [])]) {
       const p = P[r.productId];
       if (!p) continue;
       m[r.productId] = Math.round(((m[r.productId] || 0) + convertToBks(r.qty, r.unit, p)) * 1000) / 1000;
     }
     return m;
-  }, [agent.activeCanvas, P]);
+  }, [agent.activeCanvas, agent.promoCanvas, P]);
 
   const [lines, setLines] = useState(() => pose?.lines || []);
   const [layout, setLayout] = useState(() => agent.vanLayout || []);
@@ -148,7 +155,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   const per = vanOnly ? PER : 4;
   /* tap a product, then tap a van square (his 07:50 "press the product and press on the expty van space box") */
   const [picked, setPicked] = useState(null);
-  /* the warehouse box's view: 'ok' = the healthy stock, 'q' = this warehouse's Quarantine */
+  /* the warehouse box's view: 'ok' = the healthy stock, 'q' = this warehouse's Quarantine, 'p' = its promo goods (pcs) */
   const [whView, setWhView] = useState('ok');
   const [qwPage, setQwPage] = useState(0);
   const whViewRef = useRef('ok'), sw = useRef({ busy: false, next: null });
@@ -166,6 +173,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   const stockOf = (id) => P[id]?.stock || 0;
   const capLoad = (id) => loadCap(stockOf(id), net(id));
   const capBack = (id) => backCap(vanOf[id] || 0, net(id));
+  const uw = (id) => unitOf(P[id]);   // 'pcs' for a promo item, 'Bks' for a pack
 
   const keepOf = (ls) => {
     const ids = Object.keys(vanOf).filter(id => vanOf[id] > 0);
@@ -176,7 +184,9 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   const vanPageCount = cells.length / per;
 
   const q = query.trim().toLowerCase();
-  const whList = q ? stock.filter(p => (p.name || '').toLowerCase().includes(q)) : stock;
+  /* the draggable box holds the healthy stock or, on the hatch's third stop, the promo goods - both load the same way */
+  const isp = whView === 'p', whSet = isp ? promo : stock, pTotal = promo.reduce((a, p) => a + (p.stock || 0), 0);
+  const whList = q ? whSet.filter(p => (p.name || '').toLowerCase().includes(q)) : whSet;
   const whPages = Math.max(1, Math.ceil(whList.length / per));
   const whPageNow = Math.min(whPage, whPages - 1);
   const whPageOf = (id) => { const i = whList.findIndex(p => p.id === id); return i < 0 ? -1 : Math.floor(i / per); };
@@ -392,7 +402,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
       return openSheet({ mode: 'add', dir: 1, id: d.id, cell, ghost: d.ghost, home: d.home });
     }
     if (zone === 'wh') {
-      showWh('ok', true);   // a return always lands in the healthy stock
+      showWh(isPromo(P[d.id]) ? 'p' : 'ok', true);   // a return lands in its own view - the healthy stock, or the promo goods
       if (capBack(d.id) <= 0) { say('van', `Semua ${P[d.id]?.name} sudah direncanakan kembali`, true); playSound('chestRefuse'); return flyHome(d.ghost, d.home); }
       const ws = whSlotEl(d.id);
       park(d.ghost, center(ws || refs.whChest.current.querySelector('.chest')));
@@ -492,16 +502,18 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
      A press while one runs is ignored; a RETURN queues its switch back, so a box coming home always lands in the healthy
      stock. */
   function swapWh(next) {
+    const fromP = whViewRef.current === 'p';   // the healthy stock and the promo goods share the page keys
     whViewRef.current = next;
-    flushSync(() => { setWhView(next); setQuery(''); setAnim(a => ({ ...a, wh: false })); });
-    say('wh', next === 'q' ? `Showing Quarantine · ${items(warehouseQ.length)}` : `Showing healthy stock · ${items(stock.length)}`);
+    flushSync(() => { setWhView(next); setQuery(''); if (fromP || next === 'p') setWhPage(0); setAnim(a => ({ ...a, wh: false })); });
+    say('wh', next === 'q' ? `Showing Quarantine · ${items(warehouseQ.length)}` : next === 'p' ? `Showing Promo · ${items(promo.length)} · ${fmt(pTotal)} pcs`
+      : `Showing healthy stock · ${items(stock.length)}`);
   }
   async function showWh(next, queue) {
     if (sw.current.busy) { if (queue) sw.current.next = next; return; }
     if (next === whViewRef.current) return;
     sw.current.busy = true;
     playSound('chestPage');
-    try { await runSwitch(refs.hatch.current, refs.doors.current, next === 'q', () => swapWh(next)); }
+    try { await runSwitch(refs.hatch.current, refs.doors.current, next, () => swapWh(next)); }
     finally {
       sw.current.busy = false;
       const n = sw.current.next;
@@ -524,7 +536,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
       openSheet({ mode: 'add', dir: 1, id, cell, back: { grid: 'wh', id } });
     } else {
       if (capBack(id) <= 0) return say('van', `Semua ${P[id].name} sudah direncanakan kembali`, true);
-      showWh('ok', true);
+      showWh(isPromo(P[id]) ? 'p' : 'ok', true);
       openSheet({ mode: 'add', dir: -1, id, cell: +slot.dataset.i, back: { grid: 'van', id } });
     }
   }
@@ -535,24 +547,24 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     sheetGhost.current = o.ghost || null;
     sheetPrev.current = document.activeElement;
     setSheet({ mode: o.mode, dir: o.mode === 'edit' ? line.dir : o.dir, id: o.id, cell: o.cell, home: o.home, back: o.back,
-      unit: o.mode === 'edit' ? line.unit : 'Bks',          // the packs the stock is counted in — never a guessed amount
+      unit: o.mode === 'edit' ? line.unit : unitOf(P[o.id]),   // the packs (a promo item: pieces) the stock is counted in — never a guessed amount
       raw: o.mode === 'edit' ? String(line.qty) : '' });
     setTimeout(() => refs.qty.current?.focus(), 40);
     playSound('chestPage', { rate: 0.85 });
   }
   function calc(s) {
-    const p = P[s.id], raw = s.raw.trim(), n = /^\d+$/.test(raw) ? parseInt(raw, 10) : NaN;
+    const p = P[s.id], raw = s.raw.trim(), n = /^\d+$/.test(raw) ? parseInt(raw, 10) : NaN, w = unitOf(p);
     const bks = n > 0 ? convertToBks(n, s.unit, p) : 0;
     const line = lines.find(l => l.id === s.id), nt = net(s.id), have = vanOf[s.id] || 0, st = stockOf(s.id);
     const cap = s.mode === 'edit' ? (s.dir > 0 ? st : have) : (s.dir > 0 ? capLoad(s.id) : capBack(s.id));
     let ok = false, msg = '', err = false;
-    if (raw === '') msg = `${s.dir > 0 ? 'Sisa di gudang' : 'Isi van'} ${fmt(cap)} Bks.`;
+    if (raw === '') msg = `${s.dir > 0 ? 'Sisa di gudang' : 'Isi van'} ${fmt(cap)} ${w}.`;
     else if (!(n > 0)) { msg = 'Tulis angka bulat, lebih dari 0.'; err = true; }
-    else if (bks > cap) { msg = `Lebih dari ${s.dir > 0 ? 'sisa gudang' : 'isi van'}: ${fmt(cap)} Bks.`; err = true; }
+    else if (bks > cap) { msg = `Lebih dari ${s.dir > 0 ? 'sisa gudang' : 'isi van'}: ${fmt(cap)} ${w}.`; err = true; }
     else {
       ok = true;
       const after = s.mode === 'edit' ? s.dir * bks : nt + s.dir * bks;
-      msg = (s.mode === 'add' && line ? `Digabung dengan ${signed(nt)} Bks di muatan. ` : '') + `Gudang jadi ${fmt(st - after)} Bks · van jadi ${fmt(have + after)} Bks.`;
+      msg = (s.mode === 'add' && line ? `Digabung dengan ${signed(nt)} ${w} di muatan. ` : '') + `Gudang jadi ${fmt(st - after)} ${w} · van jadi ${fmt(have + after)} ${w}.`;
     }
     return { ok, n, bks, cap, msg, err };
   }
@@ -578,8 +590,8 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
     flushSync(() => { setLines(nextLines); setLayout(nextLayout); setSheet(null); if (vc >= 0) setVanPage(Math.floor(vc / per)); if (wp >= 0) setWhPage(wp); setAnim({ wh: false, van: false }); });
     settle(ghost);
     if (s.mode === 'add') transfer(p, c.n, s.dir, vc); else playSound('chestPage');
-    say(s.dir > 0 || s.mode === 'edit' ? 'van' : 'wh', s.mode === 'edit' ? `${p.name}: ${signed(netBks(nextLines, s.id, p))} Bks di muatan`
-      : (s.dir > 0 ? `+${fmt(c.bks)} Bks ${p.name} ke van` : `${fmt(c.bks)} Bks ${p.name} kembali ke gudang`) + ' — belum tercatat');
+    say(s.dir > 0 || s.mode === 'edit' ? 'van' : 'wh', s.mode === 'edit' ? `${p.name}: ${signed(netBks(nextLines, s.id, p))} ${unitOf(p)} di muatan`
+      : (s.dir > 0 ? `+${fmt(c.bks)} ${unitOf(p)} ${p.name} ke van` : `${fmt(c.bks)} ${unitOf(p)} ${p.name} kembali ke gudang`) + ' — belum tercatat');
     refocus(s);
   }
   function cancel() {
@@ -594,7 +606,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   function takeAll() {
     const c = calc(sheet);
     if (c.cap <= 0) return;
-    setSheet(s => ({ ...s, unit: 'Bks', raw: String(c.cap) }));
+    setSheet(s => ({ ...s, unit: uw(s.id), raw: String(c.cap) }));
   }
   function sheetKey(e) {
     if (e.key === 'Enter') { e.preventDefault(); confirm(); }
@@ -657,21 +669,21 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
       let r;
       try { r = await (l.dir > 0 ? onLoad(l.id, bks) : onReturn(l.id, bks)); }
       catch (err) { r = { ok: false, reason: err?.message }; }
-      const row = { id: l.id, name: p?.name || l.id, qty: l.qty, unit: l.unit, bks };
+      const row = { id: l.id, name: p?.name || l.id, qty: l.qty, unit: l.unit, bks, pcs: isPromo(p) };
       if (r && r.ok) (l.dir > 0 ? out : back).push(row);
       else failed.push({ ...l, reason: (r && r.reason) || 'Tidak tersimpan' });
       setDoneUpTo(i);
     }
-    const sum = (rows) => rows.reduce((a, x) => a + x.bks, 0);
+    const sum = (rows) => qtyWords(rows.reduce((a, x) => a + (x.pcs ? 0 : x.bks), 0), rows.reduce((a, x) => a + (x.pcs ? x.bks : 0), 0));
     const stamp = `${getLocalDayKey().replace(/-/g, '')}-${String(agent.id).slice(-4)}-${new Date().toTimeString().slice(0, 5).replace(':', '')}`;
     const docs = [], parts = [];
     if (out.length) {
       docs.push({ title: 'SURAT JALAN', no: 'SJ-' + stamp, sub: `Gudang ${warehouse} → ${agent.name} · ${agent.vehicle || '—'}`, rows: out, total: sum(out) });
-      parts.push(`${out.length} dimuat · ${fmt(sum(out))} Bks · SJ-${stamp}`);
+      parts.push(`${out.length} dimuat · ${sum(out)} · SJ-${stamp}`);
     }
     if (back.length) {
       docs.push({ title: 'BUKTI KEMBALI', no: 'BK-' + stamp, sub: `${agent.name} · ${agent.vehicle || '—'} → Gudang ${warehouse}`, rows: back, total: sum(back) });
-      parts.push(`${back.length} kembali · ${fmt(sum(back))} Bks · BK-${stamp}`);
+      parts.push(`${back.length} kembali · ${sum(back)} · BK-${stamp}`);
     }
     if (failed.length) parts.push(`${failed.length} gagal — alasannya di muatan`);
     setLines(failed);
@@ -722,9 +734,14 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
 
   /* ── drawing ── */
   const totalWh = stock.reduce((a, p) => a + (p.stock || 0), 0);
-  let vanHave = 0, plus = 0, minus = 0;
-  Object.values(vanOf).forEach(v => { vanHave += v; });
-  lines.forEach(l => { const b = lineBks(l, P[l.id]); if (l.dir > 0) plus += b; else minus += b; });
+  /* packs and promo pieces are counted apart - a T-shirt is never a Bks (stage 3) */
+  let vanHave = 0, plus = 0, minus = 0, vanPcs = 0, plusPcs = 0, minusPcs = 0;
+  Object.entries(vanOf).forEach(([id, v]) => { if (isPromo(P[id])) vanPcs += v; else vanHave += v; });
+  lines.forEach(l => {
+    const b = lineBks(l, P[l.id]), pc = isPromo(P[l.id]);
+    if (l.dir > 0) { if (pc) plusPcs += b; else plus += b; } else if (pc) minusPcs += b; else minus += b;
+  });
+  const tally = (a, b, w) => (a || b ? `${a ? '+' + fmt(a) : ''}${a && b ? ' / ' : ''}${b ? '−' + fmt(b) : ''} ${w}` : '');
   const dmgTotal = damaged.reduce((a, x) => a + x.bks, 0);
   const qTotal = quarantine.reduce((a, x) => a + (x.qty || 0), 0), qPages = Math.max(1, Math.ceil(qRows.length / per));
   const qwTotal = warehouseQ.reduce((a, p) => a + p.damagedStock, 0);
@@ -732,8 +749,10 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
   const goParts = [];
   if (plus) goParts.push(`${fmt(plus)} Bks masuk`);
   if (minus) goParts.push(`${fmt(minus)} Bks kembali`);
+  if (plusPcs) goParts.push(`${fmt(plusPcs)} pcs masuk`);
+  if (minusPcs) goParts.push(`${fmt(minusPcs)} pcs kembali`);
 
-  const sh = sheet && P[sheet.id] ? { s: sheet, p: P[sheet.id], c: calc(sheet) } : null;
+  const sh = sheet && P[sheet.id] ? { s: sheet, p: P[sheet.id], c: calc(sheet), w: unitOf(P[sheet.id]) } : null;
   /* what sits behind a closed chest */
   const teamRows = open.wh === false ? teamLoad(team, P) : [];
   const cutList = fillCut?.length ? (
@@ -784,7 +803,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
                 {preset.length ? (
                   <ul className="rows">
                     {preset.map(l => (
-                      <li key={l.id}><span>{P[l.id]?.name || 'Barang yang sudah tidak ada'}<small>gudang {fmt(stockOf(l.id))} Bks</small></span>
+                      <li key={l.id}><span>{P[l.id]?.name || 'Barang yang sudah tidak ada'}<small>gudang {fmt(stockOf(l.id))} {uw(l.id)}</small></span>
                         <b>{fmt(l.qty)} {l.unit}</b></li>
                     ))}
                   </ul>
@@ -819,19 +838,19 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
         <div ref={refs.whGui} className={`gui wh${anim.wh ? '' : ' noanim'}${isq ? ' isq' : ''}`} data-ponder="gui:wh">
           <div className="stage">
           <p className="title">
-            <span className="tname">{isq && <span className="tsign">{SIGN}</span>}<span className="tt">{isq ? `Quarantine · ${warehouse}` : `Gudang ${warehouse}`}</span></span>
-            <span className="count">{isq ? `${fmt(qwTotal)} Bks · ${items(warehouseQ.length)}` : `${stock.length} barang · ${fmt(totalWh)} Bks`}</span>
+            <span className="tname">{isq && <span className="tsign">{SIGN}</span>}<span className="tt">{isq ? `Quarantine · ${warehouse}` : isp ? `Promo · ${warehouse}` : `Gudang ${warehouse}`}</span></span>
+            <span className="count">{isq ? `${fmt(qwTotal)} Bks · ${items(warehouseQ.length)}` : isp ? `${fmt(pTotal)} pcs · ${items(promo.length)}` : `${stock.length} barang · ${fmt(totalWh)} Bks`}</span>
           </p>
-          <QuarantineBand q={isq} />
+          <QuarantineBand q={isq} promo={isp} />
           {open.wh !== false ? sayEl('wh') : <span className="say" aria-hidden="true" />}
           <label className="find">
             <span className="sr-only">{isq ? 'Search quarantine' : 'Cari barang di gudang'}</span>
-            <input type="search" value={query} placeholder={isq ? 'Search quarantine…' : 'Cari barang di gudang…'} autoComplete="off" enterKeyHint="search"
+            <input type="search" value={query} placeholder={isq ? 'Search quarantine…' : isp ? 'Search promo…' : 'Cari barang di gudang…'} autoComplete="off" enterKeyHint="search"
               onChange={(e) => {
                 const v = e.target.value;
                 setQuery(v); (isq ? setQwPage : setWhPage)(0); setAnim(a => ({ ...a, wh: false }));
                 const qq = v.trim().toLowerCase();
-                if (qq && !(isq ? warehouseQ : stock).some(p => (p.name || '').toLowerCase().includes(qq)))
+                if (qq && !(isq ? warehouseQ : whSet).some(p => (p.name || '').toLowerCase().includes(qq)))
                   say('wh', isq ? `No “${v.trim()}” in the Quarantine` : `Tidak ada “${v.trim()}” di Gudang ${warehouse}`, true);
               }} />
             {query && <button className="x" type="button" aria-label="Hapus pencarian" onClick={() => { setQuery(''); (isq ? setQwPage : setWhPage)(0); setAnim(a => ({ ...a, wh: false })); }}>×</button>}
@@ -858,7 +877,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
               const st = p.stock || 0, nt = net(p.id), out = capLoad(p.id) <= 0;
               return (
                 <div key={p.id} className={`slot has${out ? ' out' : ''}${lift === 'wh:' + p.id ? ' lift' : ''}${picked?.id === p.id ? ' picked' : ''}`} data-id={p.id} tabIndex={0} role="button" style={style}
-                  aria-label={`${p.name}, stok ${fmt(st)} Bks${nt ? `, ${signed(-nt)} Bks di muatan` : ''}`}>
+                  aria-label={`${p.name}, stok ${fmt(st)} ${uw(p.id)}${nt ? `, ${signed(-nt)} ${uw(p.id)} di muatan` : ''}`}>
                   <Cube p={p} />
                   <span className="n">{st ? fmt(st) : 'habis'}</span>
                   {nt ? <span className="chip">{signed(-nt)}</span> : null}
@@ -879,8 +898,8 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
                 </button>
               ))}
             </span>
-            <QuarantineHatch ref={refs.hatch} view={whView} onPress={() => showWh(isq ? 'ok' : 'q')} />
-            <span className="of">{isq ? 'fix in Stock Opname' : q ? `${whList.length} hasil` : `halaman ${whPageNow + 1}/${whPages}`}</span>
+            <QuarantineHatch ref={refs.hatch} view={whView} onPress={() => showWh(NEXT[whView])} next={NEXT} />
+            <span className="of">{isq ? 'fix in Stock Opname' : isp && !q ? 'given away only · never sold' : q ? `${whList.length} hasil` : `halaman ${whPageNow + 1}/${whPages}`}</span>
           </div>
         </div>
 
@@ -897,7 +916,8 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
         <div ref={refs.vanGui} className={`gui van${anim.van ? '' : ' noanim'}`} data-ponder="gui:van">
           <p className="title">
             <span>{agent.name} inventory</span>
-            <span className="count">{fmt(vanHave)} Bks{plus ? <> <b>+{fmt(plus)}</b></> : null}{minus ? <> <b>−{fmt(minus)}</b></> : null}</span>
+            <span className="count">{fmt(vanHave)} Bks{plus ? <> <b>+{fmt(plus)}</b></> : null}{minus ? <> <b>−{fmt(minus)}</b></> : null}
+              {vanPcs || plusPcs || minusPcs ? <> · {fmt(vanPcs)} pcs{plusPcs ? <> <b>+{fmt(plusPcs)}</b></> : null}{minusPcs ? <> <b>−{fmt(minusPcs)}</b></> : null}</> : null}</span>
           </p>
           {open.van !== false ? sayEl('van') : <span className="say" aria-hidden="true" />}
           <div className="grid" data-guide="van" key={'van' + vanPage} ref={refs.vanGrid} onPointerDown={(e) => startDrag(e, 'van')} onKeyDown={(e) => keyBox(e, 'van')} onClick={tapVan}>
@@ -907,7 +927,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
               const have = vanOf[id] || 0, nt = net(id);
               return (
                 <div key={id} className={`slot has${nt > 0 && !have ? ' new' : ''}${lift === 'van:' + c ? ' lift' : ''}`} data-i={c} data-id={id} tabIndex={0} role="button" title={p.name} style={style}
-                  aria-label={`${p.name}, di van ${fmt(have)} Bks${nt ? `, ${signed(nt)} Bks di muatan` : ''}`}>
+                  aria-label={`${p.name}, di van ${fmt(have)} ${uw(id)}${nt ? `, ${signed(nt)} ${uw(id)} di muatan` : ''}`}>
                   <Cube p={p} />
                   {have ? <span className="n">{fmt(have)}</span> : null}
                   {nt ? <span className="chip">{signed(nt)}</span> : null}
@@ -1039,19 +1059,19 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
         {canEdit && !vanOnly && (
           <aside className="man" aria-label="Muatan hari ini" data-ponder="man">
             <div className="manHead"><p className="lbl">Muatan · {agent.name}</p>
-              <span className="tally">{!lines.length ? '0 Bks' : `${plus ? '+' + fmt(plus) : ''}${plus && minus ? ' / ' : ''}${minus ? '−' + fmt(minus) : ''} Bks`}</span></div>
+              <span className="tally">{!lines.length ? '0 Bks' : [tally(plus, minus, 'Bks'), tally(plusPcs, minusPcs, 'pcs')].filter(Boolean).join(' · ')}</span></div>
             {!lines.length && <p className="empty">Muatan masih kosong.</p>}
             <ol className="lines">
               {lines.map((l, i) => {
                 const p = P[l.id], b = lineBks(l, p), have = vanOf[l.id] || 0;
-                const sub = l.dir > 0 ? `ke van · gudang tinggal ${fmt(stockOf(l.id) - b)} Bks` : `kembali ke gudang · van tinggal ${fmt(have - b)} Bks`;
+                const sub = l.dir > 0 ? `ke van · gudang tinggal ${fmt(stockOf(l.id) - b)} ${uw(l.id)}` : `kembali ke gudang · van tinggal ${fmt(have - b)} ${uw(l.id)}`;
                 return (
                   <li key={l.id} className={`${l.dir < 0 ? 'back' : ''}${l.reason ? ' failed' : ''}${busy && i <= doneUpTo ? ' done' : ''}`}>
                     <button type="button" className="ln" data-edit={l.id} aria-label={`Ubah jumlah ${p?.name || l.id}`} disabled={busy}
                       onClick={() => openSheet({ mode: 'edit', id: l.id, cell: cells.indexOf(l.id) })}>
                       <span className="mc"><Cube p={p} /></span>
                       <span className="nm">{p?.name || l.id}<small>{sub}</small>{l.reason ? <small className="why">Gagal: {l.reason}</small> : null}</span>
-                      <span className="q">{fmt(l.qty)} {l.unit}<b>= {l.dir > 0 ? '+' : '−'}{fmt(b)} Bks</b></span>
+                      <span className="q">{fmt(l.qty)} {l.unit}<b>= {l.dir > 0 ? '+' : '−'}{fmt(b)} {uw(l.id)}</b></span>
                     </button>
                     <button type="button" className="trash" aria-label={`Keluarkan ${p?.name || l.id} dari muatan`} disabled={busy} onClick={() => removeLine(l.id)}>×</button>
                   </li>
@@ -1069,8 +1089,8 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
               <div key={d.no} className="sj">
                 <p className="sjHead"><b>{d.title}</b><span>{d.no}</span></p>
                 <p className="sjSub">{d.sub}</p>
-                <ol>{d.rows.map(x => <li key={x.id}>{x.name} <span>— {fmt(x.qty)} {x.unit}{x.unit !== 'Bks' ? ` (${fmt(x.bks)} Bks)` : ''}</span></li>)}</ol>
-                <p className="sjTot"><span>Total</span><span>{fmt(d.total)} Bks · {d.rows.length} barang</span></p>
+                <ol>{d.rows.map(x => <li key={x.id}>{x.name} <span>— {fmt(x.qty)} {x.unit}{x.unit !== 'Bks' && !x.pcs ? ` (${fmt(x.bks)} Bks)` : ''}</span></li>)}</ol>
+                <p className="sjTot"><span>Total</span><span>{d.total} · {d.rows.length} barang</span></p>
               </div>
             ))}
           </aside>
@@ -1085,7 +1105,7 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
               <span className="mc"><Cube p={sh.p} /></span>
               <div>
                 <p className="shName">{sh.p.name}</p>
-                <p className="shSub">{sh.s.dir > 0 ? `Gudang ${warehouse} · stok ${fmt(stockOf(sh.s.id))} Bks` : `Van ${agent.name} · berisi ${fmt(vanOf[sh.s.id] || 0)} Bks`}
+                <p className="shSub">{sh.s.dir > 0 ? `Gudang ${warehouse} · stok ${fmt(stockOf(sh.s.id))} ${sh.w}` : `Van ${agent.name} · berisi ${fmt(vanOf[sh.s.id] || 0)} ${sh.w}`}
                   {sh.s.mode === 'add' && lines.some(l => l.id === sh.s.id) ? ` · ${signed(net(sh.s.id))} di muatan` : ''}</p>
               </div>
             </div>
@@ -1095,23 +1115,25 @@ export default function LoadingBay({ agent, warehouse, stock, damaged = [], canE
             <div className="qtyRow">
               <input id="kpm-bay-qty" ref={refs.qty} className="qty" type="text" inputMode="numeric" pattern="[0-9]*" autoComplete="off" placeholder="0"
                 aria-describedby="kpm-bay-sh-msg" value={sh.s.raw} onChange={(e) => { const v = e.target.value; setSheet(s => ({ ...s, raw: v })); }} />
-              <span className={`eq${sh.c.err ? ' err' : ''}`}>{sh.c.n > 0 ? `= ${fmt(sh.c.bks)} Bks` : '= — Bks'}</span>
+              <span className={`eq${sh.c.err ? ' err' : ''}`}>{sh.c.n > 0 ? `= ${fmt(sh.c.bks)} ${sh.w}` : `= — ${sh.w}`}</span>
             </div>
+            {/* a promo item is counted in pieces only - no Slop / Bal / Karton keys */}
+            {!isPromo(sh.p) && (
             <div className="units" role="group" aria-label="Satuan">
               {UNITS.map(u => (
                 <button key={u} type="button" className="key" aria-pressed={sh.s.unit === u} onClick={() => { setSheet(s => ({ ...s, unit: u })); refs.qty.current?.focus(); }}>
                   {u}<small>= {fmt(convertToBks(1, u, sh.p))} bks</small>
                 </button>
               ))}
-            </div>
+            </div>)}
             <button type="button" className="key all" disabled={sh.c.cap <= 0} onClick={takeAll}>
-              {sh.s.mode === 'edit' ? 'Semua' : sh.s.dir > 0 ? 'Ambil semua' : 'Kembalikan semua'} · {fmt(Math.max(0, sh.c.cap))} Bks
+              {sh.s.mode === 'edit' ? 'Semua' : sh.s.dir > 0 ? 'Ambil semua' : 'Kembalikan semua'} · {fmt(Math.max(0, sh.c.cap))} {sh.w}
             </button>
             <p className={`msg${sh.c.err ? ' err' : ''}`} id="kpm-bay-sh-msg" aria-live="polite">{sh.c.msg}</p>
             <div className="shKeys">
               <button type="button" className="key" onClick={cancel}>Batal</button>
               <button type="button" className="key ok" disabled={!sh.c.ok} onClick={confirm}>
-                {sh.c.ok ? `${sh.s.mode === 'edit' ? 'Simpan' : sh.s.dir > 0 ? 'Masukkan' : 'Kembalikan'} ${fmt(sh.c.bks)} Bks`
+                {sh.c.ok ? `${sh.s.mode === 'edit' ? 'Simpan' : sh.s.dir > 0 ? 'Masukkan' : 'Kembalikan'} ${fmt(sh.c.bks)} ${sh.w}`
                   : sh.s.mode === 'edit' ? 'Simpan' : sh.s.dir > 0 ? 'Masukkan ke van' : 'Kembalikan ke gudang'}
               </button>
             </div>

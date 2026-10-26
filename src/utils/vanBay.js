@@ -1,11 +1,27 @@
 /* The van-loading bay's arithmetic (components/LoadingBay.jsx), kept pure so the self-check can
    re-run it on real numbers. Everything is in packs (Bks) through the app's own convertToBks, so
    the "= N Bks" he reads in the HOW MANY panel is exactly what MUAT VAN moves. */
-import { convertToBks, storeKey, storeLabel } from './helpers.js';
+import { convertToBks, storeKey, storeLabel, isPromo } from './helpers.js';
 import { debtCredit, isTitip } from './revenueRule.js';
 
 export const PER = 6;          // squares on a page
 export const CELLS = 18;       // the van's layout: three pages, and a hole means something
+/* a promo item is counted in pieces (stage 3): convertToBks already returns its plain count, this is only the word */
+export const unitOf = (product) => (isPromo(product) ? 'pcs' : 'Bks');
+
+/* THE VAN'S PROMO GOODS (stage 3, his answer 3b "leftovers return to the Master Vault at EOD"): their own field on the
+   motorist doc, `promoCanvas`, never inside activeCanvas - fourteen screens and every sale read activeCanvas as Bks, and a
+   phone on an older build would sell a T-shirt from it at Rp 0. One line per product, in pcs, no price. A negative delta
+   takes pieces off; more than the van holds returns null. The list it is given is never changed. */
+export function movePromo(canvas, product, delta) {
+  const list = (canvas || []).map(l => ({ ...l }));
+  const i = list.findIndex(l => l.productId === product.id);
+  const have = i >= 0 ? Number(list[i].qty) || 0 : 0;
+  if (have + delta < 0) return null;
+  if (i < 0) list.push({ productId: product.id, name: product.name, qty: delta, unit: 'pcs', promo: true });
+  else list[i].qty = have + delta;
+  return list.filter(l => l.qty > 0);
+}
 
 /* ONE LINE PER PRODUCT, SIGNED: dir +1 goes into the van, dir -1 back to the warehouse. */
 export const lineBks = (line, product) => convertToBks(line.qty, line.unit, product);
@@ -27,7 +43,7 @@ export function foldLine(lines, { id, qty, unit, dir, bks }, product, mode = 'ad
   if (line.dir === dir && line.unit === unit) return lines.map(l => (l === line ? { ...l, qty: l.qty + qty, reason: undefined } : l));
   const net = line.dir * lineBks(line, product) + dir * bks;
   if (net === 0) return lines.filter(l => l !== line);
-  return lines.map(l => (l === line ? { id, dir: net > 0 ? 1 : -1, qty: Math.abs(net), unit: 'Bks' } : l));
+  return lines.map(l => (l === line ? { id, dir: net > 0 ? 1 : -1, qty: Math.abs(net), unit: unitOf(product) } : l));
 }
 
 /* The van's squares. The saved layout comes first, holes and all; a square whose product has left
@@ -80,7 +96,7 @@ export function applyPreset(lines, cells, preset, P, page = 0, per = PER) {
       if (c < 0) { cut.push({ id, want, got: 0, why: 'full' }); continue; }
       C[c] = id;
     }
-    L = foldLine(L, got < want ? { id, qty: got, unit: 'Bks', dir: 1, bks: got } : { id, qty, unit, dir: 1, bks: want }, p);
+    L = foldLine(L, got < want ? { id, qty: got, unit: unitOf(p), dir: 1, bks: got } : { id, qty, unit, dir: 1, bks: want }, p);
     if (got < want) cut.push({ id, want, got, why: 'short' });
   }
   return { lines: L, layout: C, cut };

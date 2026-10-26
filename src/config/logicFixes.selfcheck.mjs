@@ -726,7 +726,8 @@ ok('the canvas is read inside the clear transaction',
    /const agentSnap = await t\.get\(agentRef\);[\s\S]{0,160}activeCanvas \|\| \[\]/.test(clearBody));
 ok('the cached screen copy is no longer the source',
    !/const currentCanvas = selectedAgent\.activeCanvas \|\| \[\];/.test(clearBody));
-ok('the goods returned are built from the live list', /const itemsToReturn = liveCanvas/.test(clearBody));
+/* stage 3: the live promoCanvas joins the live activeCanvas - both read inside the same transaction */
+ok('the goods returned are built from the live list', /const itemsToReturn = \[\s*\.\.\.liveCanvas\.map\(/.test(clearBody) && /const livePromo = agentSnap\.exists\(\) \? \(agentSnap\.data\(\)\.promoCanvas \|\| \[\]\) : \[\];/.test(clearBody));
 /* Firestore forbids a read after a write in one transaction, and it fails at RUNTIME only. */
 { const readAt = clearBody.indexOf('await t.get(agentRef)');
   const firstWrite = Math.min(...['t.set(', 't.update('].map(w => { const i = clearBody.indexOf(w); return i < 0 ? Infinity : i; }));
@@ -6762,8 +6763,9 @@ section('TWO STOCK LABELS SAY WHERE AND WHAT (2026-09-13)');
      'the buttons say Master Vault and Boss Car; a third label sends him looking for a third place');
   /* 2026-09-24: the select picker became the van-loading bay's warehouse chest; the same rule moved with it */
   const bayCode = code(read('src/components/LoadingBay.jsx'));
+  /* stage 3: the word is unitOf(product) - pcs for a promo item, Bks for every pack - still never the product's own unit field */
   ok('the warehouse chest prints its stock in Bks and never reads a product unit',
-     /stok \$\{fmt\(st\)\} Bks/.test(bayCode) && /\{fmt\(totalWh\)\} Bks/.test(bayCode) && !/p\.unit\b/.test(bayCode),
+     /stok \$\{fmt\(st\)\} \$\{uw\(p\.id\)\}/.test(bayCode) && /const uw = \(id\) => unitOf\(P\[id\]\);/.test(bayCode) && /\{fmt\(totalWh\)\} Bks/.test(bayCode) && !/p\.unit\b/.test(bayCode),
      'a master product has no unit field, so `{item.unit}` printed "(Available: 100 )"'); }
 
 section('THE NOTA PRINTS THE BOSS\'S NAME, NOT HIS EMAIL (2026-09-13)');
@@ -8363,7 +8365,7 @@ section('THE VAN-LOADING BAY: TWO CHESTS, ONE PRESS (2026-09-24)');
      /const rowSize = convertToBks\(1, updatedCanvas\[existingItemIndex\]\.unit, masterProduct\);/.test(load));
   ok('a RETURN is its own per-product transaction: the van row read LIVE inside it, converted in the row\'s own unit, never an emptied van',
      ret.length > 400 && /runTransaction\(db, async \(t\) => \{\s*const agentSnap = await t\.get\(agentRef\);/.test(ret) &&
-     /convertToBks\(1, updated\[idx\]\.unit, product\)/.test(ret) && /if \(rowBks < qtyBks\) throw/.test(ret) && !/activeCanvas: \[\]/.test(ret));
+     /convertToBks\(1, updated\[idx\]\.unit, product\)/.test(ret) && /if \(!promo && rowBks < qtyBks\) throw/.test(ret) && !/activeCanvas: \[\]/.test(ret));
   ok('the layout is its own field, written on its own, never inside activeCanvas',
      /updateDoc\(doc\(db, collPath, selectedAgent\.id\), \{ vanLayout: cells \}\)/.test(flc) && !/activeCanvas/.test(bayc.replace(/agent\.activeCanvas/g, '')));
   ok('switching the salesman while the muatan has lines asks through the dialog gate', /bayLines > 0[\s\S]{0,200}await confirmAction\(/.test(flc));
@@ -8443,7 +8445,9 @@ section('THE ROSTER, REDRAWN WITH EVERY DOOR KEPT (2026-09-24)');
      /onClick=\{\(\) => toggle\('wh', !open\.wh\)\}/.test(code(read('src/components/LoadingBay.jsx'))) &&
      /onClick=\{\(\) => toggle\('van', !open\.van\)\}/.test(code(read('src/components/LoadingBay.jsx'))) && !/knock/.test(code(read('src/components/LoadingBay.jsx'))));
   ok('a card names the tier in his words and says what the van holds, in packs',
-     /tierWord\(m\.userRole\)/.test(rowFn) && /const bks = Math\.round\(loadOf\(m\)\);/.test(rowFn) && /convertToBks\(r\.qty, r\.unit, inventory\.find/.test(fl) && /Bks · \$\{items\}/.test(rowFn));
+     /tierWord\(m\.userRole\)/.test(rowFn) && /const bks = Math\.round\(loadOf\(m\)\);/.test(rowFn) && /convertToBks\(r\.qty, r\.unit, inventory\.find/.test(fl) &&
+     /* stage 3: the van's promo goods ride beside the packs (+ N pcs) and count as items - never added into the Bks */
+     rowFn.includes("Bks${pcs > 0 ? ` + ${pcs.toLocaleString('id-ID')} pcs` : ''} · ${items}") && rowFn.includes('const pcs = (m.promoCanvas || []).reduce('));
   ok('picking a card goes through the muatan guard, by pointer or by key', /onClick=\{\(\) => pickAgent\(m\)\}/.test(rowFn) && /e\.key === 'Enter' \|\| e\.key === ' '/.test(rowFn) && /const pickAgent = async \(m\) => \{\s*if \(bayLines > 0/.test(fl));
   const stageCss = read('src/styles/theme.css').slice(read('src/styles/theme.css').indexOf('/* ── THE ROSTER STAGE'), read('src/styles/theme.css').indexOf('/* ── END OF THE ROSTER STAGE'));
   ok('a card is visible at rest and lifts only on a pointer or a key (Lite Mode keeps it all)',
@@ -9242,10 +9246,16 @@ section('RULES CHANGE 14 - THE EIGHT HOLES IN THE LIVE RULES (2026-09-29)');
   ok('8 T3/T4 change a product\'s stock only - never its price',
      /allow update: if \(isAreaAdmin\(bossUid\) \|\| isFleetCaptain\(bossUid\)\) &&\s*request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\.hasOnly\(\['stock', 'damagedStock', 'name', 'productId'\]\);/.test(block('match /products/')));
   ok('8 behaviour: the fields the fleet and EOD flows write to a master product are exactly the four allowed',
-     ['FleetCanvasManager.jsx', 'App.jsx'].every(f => { const s = read('src/' + f);
+     ['FleetCanvasManager.jsx', 'App.jsx'].every(f => { const s = read('src/' + f)
+         /* stage 3: a BRANCH row a promo item lands on keeps its promo tag - the next check proves it is never a master product */
+         .replace(/\.\.\.\((?:promo|isPromo\(r\.product\)) \? \{ kind: 'promo', unit: 'pcs' \} : \{\}\), /g, '').replace(/kind: 'promo', unit: 'pcs', /g, '');
        const sets = [...s.matchAll(/t\.set\(\w+(?:\[\w+\])?(?:\.ref)?, \{([^}]*)\}, \{ merge: true \}\)/g)];
        return sets.length >= 2 && sets.every(m =>
          m[1].split(',').map(p => p.split(':')[0].trim()).filter(Boolean).every(k => ['stock', 'damagedStock', 'name', 'productId', 'activeCanvas'].includes(k))); }));
+  ok('8 behaviour (stage 3): the promo tag (kind, unit) is written on a branch row only - every set carrying it sits under `if (useBranchWarehouse)`',
+     ['FleetCanvasManager.jsx', 'App.jsx'].every(f => { const L = read('src/' + f).replace(/\r/g, '').split('\n');
+       const hits = L.map((l, i) => i).filter(i => /kind: 'promo', unit: 'pcs'/.test(L[i]) && /t\.set\(/.test(L[i]));
+       return hits.length > 0 && hits.every(i => /if \(useBranchWarehouse\)/.test(L[i] + L[i - 1])); }));
 }
 
 section('THE EYE ON THE NEW MASTER PASSWORD (2026-09-29)');
@@ -9353,8 +9363,9 @@ section('FLEET & ROSTER: THE QUARANTINE SWITCH (2026-09-30)');
      /warehouseQ=\{whQuarantine\}/.test(fl) && (fl.match(/onSnapshot\(/g) || []).length === 4);
 
   /* the box */
-  ok('ONE box, two views: healthy (the ender band) or the Quarantine (the tape band), a band in both so the height holds',
-     /const \[whView, setWhView\] = useState\('ok'\);/.test(bay) && /<QuarantineBand q=\{isq\} \/>/.test(bay) && /`Quarantine · \$\{warehouse\}`/.test(bay) &&
+  /* stage 3 widened it to three: the promo goods (the gift band) are the hatch's third stop */
+  ok('ONE box, three views: healthy (the ender band), the Quarantine (the tape band) or the promo goods (the gift band), a band in each so the height holds',
+     /const \[whView, setWhView\] = useState\('ok'\);/.test(bay) && /<QuarantineBand q=\{isq\} promo=\{isp\} \/>/.test(bay) && /`Quarantine · \$\{warehouse\}`/.test(bay) &&
      /\.kpm-bay \.gui\.isq \.title \.count \{ color: var\(--stone-bad\); \}/.test(bayCss));
   ok('the Quarantine squares only tell - a tap names the product and its damaged count; nothing drags out of them',
      /<div className="grid" key=\{'wq' \+ qwPageNow\} onClick=\{tellWhQ\} onKeyDown=\{tellWhQ\}>/.test(bay) && /Bks damaged`\);/.test(fnOf('tellWhQ')) &&
@@ -9367,8 +9378,9 @@ section('FLEET & ROSTER: THE QUARANTINE SWITCH (2026-09-30)');
      /\.kpm-bay \.gui\.wh \.title, \.kpm-bay \.gui\.q \.title \{ align-items: center; \}/.test(bayCss));
   ok('a press while a switch runs is ignored; only a RETURN queues its switch back',
      /if \(sw\.current\.busy\) \{ if \(queue\) sw\.current\.next = next; return; \}/.test(bay));
-  ok('a return always lands in the healthy stock: a drop on the ender chest, or Enter on a van box, switches back first',
-     /if \(zone === 'wh'\) \{\s*showWh\('ok', true\);/.test(endFn) && /showWh\('ok', true\);\s*openSheet\(\{ mode: 'add', dir: -1/.test(keyFn));
+  /* stage 3: a promo item's return lands in the promo goods, a pack's in the healthy stock */
+  ok('a return always lands in its own view: a drop on the ender chest, or Enter on a van box, switches there first',
+     /if \(zone === 'wh'\) \{\s*showWh\(isPromo\(P\[d\.id\]\) \? 'p' : 'ok', true\);/.test(endFn) && /showWh\(isPromo\(P\[id\]\) \? 'p' : 'ok', true\);\s*openSheet\(\{ mode: 'add', dir: -1/.test(keyFn));
   ok('four squares in ONE row on both widths (van-only keeps its six)',
      /const per = vanOnly \? PER : 4;/.test(bay) && !/ResizeObserver|setPer\b/.test(bay) && !/@container kpmbay \(min-width: 640px\) \{ \.kpm-bay \.grid \{/.test(bayCss));
 
@@ -11878,12 +11890,15 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
   /* widened ON PURPOSE by stage 2 (2026-10-26): the Restock desk (picker + stock checks), the regional warehouse (the
      chest's PROMO view) and Stock Opname (counted by the piece) - each named, so a fourth screen is a decision, not a leak */
   ok('REGRESSION: promoItems reaches the Master Vault list, the backup and the three stage-2 storage screens - never the Sales Terminal (no sale at Rp 0, no pita cukai debt for a T-shirt), never a sum',
-     promoLines.length === 6 && app.split('promoItems').length - 1 === 9 &&
+     /* widened ON PURPOSE by stage 3 (2026-10-26): the van bay (Fleet & Roster) and Agent Inventory - pictures, names and pcs */
+     promoLines.length === 8 && app.split('promoItems').length - 1 === 13 &&
+     app.includes('promoItems={promoItems}   /* the bay\'s PROMO view loads them into the van in pcs (stage 3) - never activeCanvas */') &&
+     app.includes('promoItems={promoItems}   /* the van\'s promo goods in pcs (stage 3) - pictures and names only, never a sum */') &&
      app.includes('exportData.inventory = [...inventory, ...promoItems];') &&
      app.includes('const vaultList = [...filteredInventory, ...promoItems.filter(') && app.includes('inventory={vaultList}') &&
      app.includes('promoItems={promoItems}   /* MASUK / KIRIM carry promo lines in pcs') && app.includes("promoItems={promoItems}   /* the chest's PROMO view") &&
      app.includes('promoItems={promoItems}   /* counted by the piece on the unit-free count card') &&
-     appFiles.filter(f => read(f).includes('promoItems')).sort().join() === 'src/App.jsx,src/RestockVaultView.jsx,src/StockOpnameView.jsx,src/components/BranchWarehouseManager.jsx,src/hooks/useDatabaseSync.js',
+     appFiles.filter(f => read(f).includes('promoItems')).sort().join() === 'src/AgentInventoryView.jsx,src/App.jsx,src/FleetCanvasManager.jsx,src/RestockVaultView.jsx,src/StockOpnameView.jsx,src/components/BranchWarehouseManager.jsx,src/hooks/useDatabaseSync.js',
      promoLines.map(l => l.trim().slice(0, 70)).join(' | '));
   ok('REGRESSION: the save keeps a promo item free of every cigarette field - kind from the entry, not the form; no packing default forced on it; unit pcs',
      save.includes('const promo = isPromo(editingProduct);') &&
@@ -11930,7 +11945,8 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      rei.includes("images.back || (isPromo(product) ? promoSkin(product, 'back') : null)") && rei.includes("promoSkin(item, 'front')") && imports(rei, 'promoSkin') &&
      exam.includes("images.back || (isPromo(product) ? promoSkin(product, 'back') : null)") && imports(exam, 'promoSkin'));
   ok('REGRESSION: the Master Vault list counts a promo item in pcs, never Bks / Slop / Bal, and shows it no price grid (Rp 0 x4)',
-     rei.includes('if (isPromo(item)) return') && rei.includes('VAULT: {item.stock || 0} pcs') && rei.includes('`${product.stock || 0} pcs`') && imports(rei, 'isPromo') &&
+     /* stage 3: its FIELD is the vans' promoCanvas, in pcs */
+     rei.includes('if (isPromo(item)) {') && rei.includes('VAULT: {item.stock || 0} pcs{fieldPcs > 0 ? ` · FIELD: ${fieldPcs} pcs` : \'\'}') && rei.includes('`${product.stock || 0} pcs`') && imports(rei, 'isPromo') &&
      rei.indexOf('{!isPromo(product) && (') > 0 && rei.indexOf('{!isPromo(product) && (') < rei.indexOf('{formatRupiah(product.priceDistributor)}') &&
      read('src/components/ExamineModal.jsx').includes("`STOCK: ${product.stock} ${isPromo(product) ? 'pcs' : 'Bks'}`"));
   ok('BEHAVIOUR: a promo item converts to its own count in every unit; a cigarette still multiplies (1 Bal = 200 Bks, 1 Karton = 800 by the defaults)',
@@ -12089,6 +12105,64 @@ section('PROMO ITEMS, stage 2 of 4 - MASUK / KIRIM carry promo lines in pcs, the
   ok('REGRESSION: Stock Opname counts the Master Vault\'s promo items by the piece; the Bks-only monitor and quarantine crates skip them',
      so.includes('const activeInventory = isAreaAdmin ? (branchInventory || []) : [...safeInventory, ...promoItems];') &&
      so.includes("{isPromo(item) ? 'PROMO · count in pcs' : `ID: ${item.id}`}") && so.split('.filter(r => !isPromo(r))').length - 1 === 3);
+}
+
+section('PROMO ITEMS, stage 3 of 4 - the van: promo goods load in pcs, show in Agent Inventory, and what is left comes back at EOD with no money (his 2026-10-25 answer 3b, "as well as the agent inventory, EOD")');
+{
+  const vb = await import('../utils/vanBay.js'), hp = await import('../utils/helpers.js');
+  const { movePromo, unitOf, foldLine, lineBks } = vb;
+  const fcm = code(read('src/FleetCanvasManager.jsx')).replace(/\r/g, ''), bay = code(read('src/components/LoadingBay.jsx')).replace(/\r/g, '');
+  const aiv = code(read('src/AgentInventoryView.jsx')).replace(/\r/g, ''), eod = code(read('src/EODReconciliationView.jsx')).replace(/\r/g, ''), ap = app.replace(/\r/g, '');
+  const shirt = { id: 'tee', name: 'T-shirt KPM', kind: 'promo', unit: 'pcs', stock: 40 }, pack = { id: 'cello', name: 'Cello', packsPerSlop: 10 };
+  /* The van's promo goods live in their OWN field, `promoCanvas`. activeCanvas is read as Bks by fourteen screens and
+     every sale (supply, Stock Opname, roster cards, the terminal, applySaleToCanvas...), and a phone on an older build
+     would sell a T-shirt from it at Rp 0 - a separate field is invisible to all of them, which is the whole skip list. */
+  const van0 = [{ productId: 'old', name: 'Mug', qty: 2, unit: 'pcs', promo: true }];
+  const up = typeof movePromo === 'function' ? movePromo(van0, shirt, 20) : null;
+  ok('BEHAVIOUR: loading 20 T-shirts adds a pcs line flagged promo; 5 more join it; taking all 25 back removes it; more than the van holds is refused; the old list is never mutated',
+     !!up && up.length === 2 && up[1].qty === 20 && up[1].unit === 'pcs' && up[1].promo === true && van0.length === 1 &&
+     movePromo(up, shirt, 5)[1].qty === 25 && movePromo(movePromo(up, shirt, 5), shirt, -25).length === 1 &&
+     movePromo(up, shirt, -21) === null && movePromo(undefined, shirt, 3).length === 1);
+  ok('BEHAVIOUR: a promo line counts pcs in the bay - unit pcs, no conversion, and a folded line keeps pcs (never relabelled Bks)',
+     typeof unitOf === 'function' && unitOf(shirt) === 'pcs' && unitOf(pack) === 'Bks' && lineBks({ qty: 7, unit: 'pcs' }, shirt) === 7 &&
+     foldLine([{ id: 'tee', qty: 10, unit: 'pcs', dir: 1 }], { id: 'tee', qty: 4, unit: 'pcs', dir: -1, bks: 4 }, shirt)[0].unit === 'pcs' &&
+     foldLine([{ id: 'cello', qty: 1, unit: 'Slop', dir: 1 }], { id: 'cello', qty: 3, unit: 'Bks', dir: 1, bks: 3 }, pack)[0].unit === 'Bks');
+  /* EOD: two T-shirts did not come back. A shortage like any stock (he flags it, the boss sees it), but Rp 0 - no bounty */
+  const night = { id: 'r1', reportType: 'CASH_STOCK', agentName: 'Dika', remainingStock: [], expectedStock: [], cashVariance: 0, transferVariance: 0,
+    promoExpected: [{ productId: 'tee', name: 'T-shirt KPM', qty: 10, unit: 'pcs', promo: true }], promoRemaining: [{ productId: 'tee', name: 'T-shirt KPM', qty: 8, unit: 'pcs', promo: true }] };
+  const msg = hp.eodNightMessage([{ report: night }], [pack, shirt]);
+  ok('BEHAVIOUR: a promo shortage at EOD mints no bounty and adds no part - and the approval names the 8 pcs coming back and the 2 short, at no charge',
+     hp.eodBountyLines(night, [pack, shirt]).length === 0 && hp.eodReportParts(night, [pack, shirt]).join() === 'cash,transfer,stock' &&
+     msg.includes('T-shirt KPM 8 pcs') && msg.includes('T-shirt KPM short 2 pcs') && msg.includes('no charge'), msg.split('\n').slice(-3).join(' / '));
+  ok('REGRESSION: the bay\'s shelf listener keeps the promo rows APART (never in the Bks list) and the bay gets them joined with their promo product',
+     fcm.includes('setBranchStock(rows.filter(r => !isPromo(r)));') && fcm.includes('setBranchPromo(rows.filter(isPromo));') &&
+     fcm.includes('const displayPromo = useMemo(() => promoItems.map(p => ({ ...p, stock: selectedAgentUsesBranch ? (branchPromo.find(b => b.id === p.id)?.stock || 0) : (p.stock || 0) })),') &&
+     fcm.includes('promo={displayPromo}'));
+  const load = fcm.slice(fcm.indexOf('const handleLoadCanvas'), fcm.indexOf('const handleClearCanvas'));
+  const clear = fcm.slice(fcm.indexOf('const handleClearCanvas'), fcm.indexOf('const handleReturnToWarehouse'));
+  const back = fcm.slice(fcm.indexOf('const handleReturnToWarehouse'), fcm.indexOf('const handleSaveLayout'));
+  ok('REGRESSION: LOAD - a promo product writes promoCanvas through movePromo BEFORE the activeCanvas code, and a branch row it writes keeps kind promo',
+     load.includes('|| promoItems.find(p => p.id === productId);') && load.includes('const promo = isPromo(masterProduct), unitWord') &&
+     load.includes("t.update(agentRef, { promoCanvas: movePromo(") && load.indexOf('promoCanvas: movePromo(') < load.indexOf('let updatedCanvas') &&
+     load.includes("...(promo ? { kind: 'promo', unit: 'pcs' } : {})"));
+  ok('REGRESSION: RECONCILE & CLEAR returns the promo lines too and empties both fields; RETURN takes a promo line off promoCanvas, never activeCanvas',
+     clear.includes('...livePromo.map(item => ({ item, product: promoItems.find(p => p.id === item.productId) }))') && clear.includes('t.update(agentRef, { activeCanvas: [], promoCanvas: [] });') &&
+     clear.includes("...(isPromo(r.product) ? { kind: 'promo', unit: 'pcs' } : {})") &&
+     back.includes('|| promoItems.find(p => p.id === productId);') && back.includes('t.update(agentRef, { promoCanvas: left });') && back.includes("...(promo ? { kind: 'promo', unit: 'pcs' } : {})"));
+  ok('REGRESSION: the bay\'s hatch gets the third stop (healthy -> Quarantine -> Promo), the van counts promoCanvas, a promo line has no unit keys',
+     bay.includes("const NEXT = { ok: 'q', q: 'p', p: 'ok' };") && bay.includes('next={NEXT}') && bay.includes('for (const r of [...(agent.activeCanvas || []), ...(agent.promoCanvas || [])])') &&
+     bay.includes('{!isPromo(sh.p) && (') && bay.includes("showWh(isPromo(P[d.id]) ? 'p' : 'ok', true)") && bay.includes("const whList = q ? whSet.filter("));
+  ok('REGRESSION: Agent Inventory shows the van\'s promo goods in pcs - the chest gets the promo products, the list its own group',
+     aiv.includes('setPromoCanvas(Array.isArray(data.promoCanvas) ? data.promoCanvas : []);') && aiv.includes('promo={promoItems}') && aiv.includes('Promo items · pcs'));
+  ok('REGRESSION: EOD - the goods card counts the promo lines, they travel as promoRemaining beside remainingStock, and a short one flags the night',
+     eod.includes('promoStock: agentProfile.promoCanvas || []') && eod.includes('promoRemaining: countedPromo,') && eod.includes('promoExpected: agentData.promoStock,') &&
+     eod.includes('const goodsShort = [...(agentData.activeStock || []), ...(agentData.promoStock || [])].some('));
+  const verify = ap.slice(ap.indexOf('const handleVerifyEOD'), ap.indexOf('// 2C. The verified / rejected maps first'));
+  ok('REGRESSION: the approval puts the promo leftovers back on the promo row / product, and empties promoCanvas ONLY for a report that carries promoRemaining (an old build\'s report keeps the van\'s promo for the next night)',
+     verify.includes("const promoBack = nowDoing('stock') && Array.isArray(report.promoRemaining) ? report.promoRemaining.filter(item => item.qty > 0) : [];") &&
+     verify.includes("t.set(promoRefs[index].ref, { productId: item.productId, name: item.name, kind: 'promo', unit: 'pcs', stock: (pSnap.exists() ? (pSnap.data().stock || 0) : 0) + item.qty }, { merge: true });") &&
+     verify.includes("...(nowDoing('stock') && Array.isArray(report.promoRemaining) ? { promoCanvas: [] } : {})") &&
+     verify.indexOf('const promoDocs = await Promise.all(') < verify.indexOf('PHASE 2: EXECUTE ALL WRITES LAST'));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

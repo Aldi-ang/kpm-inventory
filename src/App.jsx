@@ -2340,6 +2340,17 @@ const handleGitHubMirror = async () => {
                       : doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId)
               }));
               const productDocs = await Promise.all(productRefs.map(p => t.get(p.ref)));
+              /* the van's promo goods (stage 3) come back by the piece to the promo row / promo product - no price, no
+                 pita cukai. Only a report that carries promoRemaining (a new build's) moves them; an older build's
+                 report leaves the van's promo where it is, for the next night. */
+              const promoBack = nowDoing('stock') && Array.isArray(report.promoRemaining) ? report.promoRemaining.filter(item => item.qty > 0) : [];
+              const promoRefs = promoBack.map(item => ({
+                  itemData: item,
+                  ref: useBranchWarehouse
+                      ? doc(db, `artifacts/${appId}/users/${userId}/branches/${safeBranchPath}/inventory`, item.productId)
+                      : doc(db, `artifacts/${appId}/users/${userId}/products`, item.productId)
+              }));
+              const promoDocs = await Promise.all(promoRefs.map(p => t.get(p.ref)));
 
               // 🚀 NEW: Damaged goods reported today — read their current damagedStock count
               // at the same destination (branch or master), so we can safely increment it.
@@ -2398,6 +2409,13 @@ const handleGitHubMirror = async () => {
                   if (isLowStock({ ...(masterProduct || {}), stock: newStock }, appSettings)) {
                       lowStockAlerts.push(`${masterProduct?.name || item.name} (${newStock} Bks left)`);
                   }
+              });
+
+              /* 2A-bis. the promo leftovers, in pcs; a branch row keeps its promo tag, a deleted promo product is not re-made */
+              promoDocs.forEach((pSnap, index) => {
+                  const item = promoRefs[index].itemData;
+                  if (useBranchWarehouse) t.set(promoRefs[index].ref, { productId: item.productId, name: item.name, kind: 'promo', unit: 'pcs', stock: (pSnap.exists() ? (pSnap.data().stock || 0) : 0) + item.qty }, { merge: true });
+                  else if (pSnap.exists()) t.set(promoRefs[index].ref, { stock: (pSnap.data().stock || 0) + item.qty }, { merge: true });
               });
 
               // 🚀 NEW: Credit damagedStock at the correct destination (branch or master) —
@@ -2528,7 +2546,7 @@ const handleGitHubMirror = async () => {
                       // whose stock went back to the salesman keeps his canvas until the count is right.
                       const finalCanvas = nowDoing('stock') ? [] : currentCanvas;
 
-                      t.update(agentRef, { activeCanvas: finalCanvas, cukaiDebts: currentDebts, cukaiDebtNotes: currentNotes, cukaiDebt: 0 });
+                      t.update(agentRef, { activeCanvas: finalCanvas, ...(nowDoing('stock') && Array.isArray(report.promoRemaining) ? { promoCanvas: [] } : {}), cukaiDebts: currentDebts, cukaiDebtNotes: currentNotes, cukaiDebt: 0 });
                   }
               }
 
@@ -4568,6 +4586,7 @@ const handleGitHubMirror = async () => {
                userId={userId} 
                agentProfileId={agentProfileId} 
                inventory={inventory}
+               promoItems={promoItems}   /* the van's promo goods in pcs (stage 3) - pictures and names only, never a sum */
                transactions={transactions}
                samplings={samplings}   // 🚀 INJECTED: Pass the global sampling ledger
                user={user}             // 🚀 FIX: Pass the user profile to prevent 'blank' names
@@ -5031,6 +5050,7 @@ const handleGitHubMirror = async () => {
                 userRole={userRole}     // 🚀 NEW: Tell the manager who is looking
                 previewing={previewing} // 🎭 POV keeps his real email, so the branch lookup must stand down
                 inventory={inventory} 
+                promoItems={promoItems}   /* the bay's PROMO view loads them into the van in pcs (stage 3) - never activeCanvas */
                 transactions={transactions} 
                 customers={customers}   // the van chest's TITIP tab reads who holds a shop after a hand-off - no new listener
                 appSettings={appSettings}

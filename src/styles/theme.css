@@ -4932,6 +4932,8 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 /* the product is the app's own 3D box (.kpm-cube, the ware's true millimetres), sized per place */
 .kpm-bay .kpm-cube-stage, .kpm-bay-sheet .kpm-cube-stage, .kpm-bay-ghost .kpm-cube-stage, .kpm-bay-pack .kpm-cube-stage { perspective: 340px; width: 100%; height: 100%; pointer-events: none; }
 .kpm-bay .gui.wh .kpm-cube-stage, .kpm-bay .gui.van .kpm-cube-stage, .kpm-bay .gui.q .kpm-cube-stage { --kpm-slot-h: 42px; }
+/* a promo item is its picture, as tall as a pack would stand in the same place (stage 3) */
+.kpm-cube-stage > .pimg { display: block; height: var(--kpm-slot-h); max-width: 100%; object-fit: contain; }
 @container kpmbay (min-width: 640px) { .kpm-bay .gui.wh .kpm-cube-stage { --kpm-slot-h: 60px; } .kpm-bay .gui.van .kpm-cube-stage, .kpm-bay .gui.q .kpm-cube-stage { --kpm-slot-h: 54px; } }
 .kpm-bay-duo .ln .mc .kpm-cube-stage { --kpm-slot-h: 28px; }
 .kpm-bay-sheet .shHead .mc .kpm-cube-stage { --kpm-slot-h: 44px; }
