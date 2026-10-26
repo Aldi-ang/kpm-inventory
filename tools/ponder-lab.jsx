@@ -1325,6 +1325,9 @@ function PromoLookLab() {
     { id: 'l3', name: 'Mug', kind: 'promo', goods: 'mug', goodsColor: '#efe9df', trimColor: '#b3242e' },
     /* his 15:27 phone frame: an all-yellow TAWANG lighter (COLOR, PRINT COLOR and LEVER yellow) */
     { id: 'l4', name: 'Korek TAWANG', kind: 'promo', goods: 'lighter', printText: 'TAWANG', goodsColor: '#ffb000', printColor: '#ffb000', trimColor: '#ffb000' },
+    /* his 15:39 frame: the TAWANG poster - with his BOTTOM TEXT, and with none (no fixed KPM any more) */
+    { id: 'l5', name: 'TAWANG', kind: 'promo', goods: 'poster', printText: 'TAWANG ISI 16', subText: 'KRETEK PILIHAN' },
+    { id: 'l6', name: 'Poster TAWANG', kind: 'promo', goods: 'poster', goodsColor: '#b3242e' },
   ];
   return (
     <div style={{ background: '#0A0908', minHeight: '100vh', padding: 16, display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', fontSize: 13 }}>

@@ -310,12 +310,15 @@ export const promoLook = (product) => {
     const def = GOODS_LOOK[promoGoods(product)] || GOODS_LOOK.tshirt;
     const hex = (v) => (/^#[0-9a-f]{6}$/i.test(v || '') ? v.toLowerCase() : null);
     const body = hex(product?.goodsColor) || def.body, ink = hex(product?.printColor) || def.ink;
-    /* the back prints the text he typed; only an item with no printed text keeps KPM there (his "when i put the name on
-       the front here the back does have different name which is the default name") */
-    const own = String(product?.printText || '').trim();
+    /* THE SECOND TEXT is his too (his 2026-10-26 "both of the text should be editable weird if the other one is tawang but
+       the other text is kpm its a whole different company"): subText prints on the back (T-shirt, lighter) and as the
+       poster's bottom line. Empty: the back repeats the front word, the poster has no bottom line - never a fixed KPM. */
+    const sub = String(product?.subText || '').trim().toUpperCase().slice(0, 18);
     return { body, ink, trim: hex(product?.trimColor) || def.trim || body, accent: hex(product?.accentColor) || ink,
-        word: promoWord(product), back: own ? promoWord(product) : 'KPM' };
+        word: promoWord(product), back: sub || promoWord(product), sub };
 };
+/* where the second text prints, and the label the form gives it - a type without one gets no field */
+export const GOODS_SECOND = { tshirt: 'BACK TEXT', lighter: 'BACK TEXT', poster: 'BOTTOM TEXT' };
 
 /* The flat picture of a promo item with no photo (his 2026-10-26 "default skin for the 3D promo item like on the
    preview"): the lab's T-shirt card - cream, a black shape, a gold word ON the black (gold never as text on light).

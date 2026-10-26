@@ -277,12 +277,24 @@ def tshirt():
     return [body, front, back] + collars
 
 def poster():
-    W, H, bow = 0.70, 0.99, 0.035
-    front = sheet('print_front', 24, 1, lambda u, v: ((u - 0.5) * W, -bow * math.sin(math.pi * u), v * H),
+    """A poster on a hanger (his 2026-10-26 "redesign the poster to show that it is a poster" - the first one was a bare
+    curved sheet, which read as a card): the paper held by a bar at the top and the bottom, knobs on the bar ends, a cord
+    to hang it by. The paper is flat at the bars and bellies a little between them, like real poster paper."""
+    W, H, bow = 0.70, 0.99, 0.03
+    belly = lambda u, v: -bow * math.sin(math.pi * u) * math.sin(math.pi * v)
+    front = sheet('print_front', 16, 12, lambda u, v: ((u - 0.5) * W, belly(u, v), v * H),
                   mat('print_poster', '#efe9df', 0.8), {'print': 'front', 'aspect': W / H, 'style': 'poster'})
-    back = sheet('poster_back', 24, 1, lambda u, v: ((u - 0.5) * W, -bow * math.sin(math.pi * u) + 0.004, v * H),
-                 PAPER, reverse=True)
-    return [front, back]
+    back = sheet('poster_back', 16, 12, lambda u, v: ((u - 0.5) * W, belly(u, v) + 0.004, v * H), PAPER, reverse=True)
+    rail = mat('rail', '#2a211a', 0.55)
+    RY = Matrix.Rotation(math.pi / 2, 4, 'Y')
+    rails = [cyl(f'poster_rail_{side}', 0.022, W + 0.05, Matrix.Translation((0, 0.002, z)) @ RY, rail, 24)
+             for side, z in (('top', H + 0.006), ('bottom', -0.006))]
+    knobs = [sphere(f'poster_knob{i}', 0.03, (1, 1, 1), (x, 0.002, z), rail)
+             for i, (x, z) in enumerate(((-(W / 2 + 0.035), H + 0.006), (W / 2 + 0.035, H + 0.006),
+                                         (-(W / 2 + 0.035), -0.006), (W / 2 + 0.035, -0.006)))]
+    cord = tube('poster_cord', [(-(W / 2 - 0.03), 0.002, H + 0.02), (-0.12, 0.002, H + 0.14), (0, 0.002, H + 0.19),
+                                (0.12, 0.002, H + 0.14), (W / 2 - 0.03, 0.002, H + 0.02)], 0.006, mat('cord', '#1c1814', 0.7))
+    return [front, back, *rails, *knobs, cord]
 
 # ---------------------------------------------------------------- export
 

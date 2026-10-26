@@ -16,7 +16,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { GOODS_PARTS } from './helpers';
 
-const BLACK = '#1c1814', CREAM = '#efe9df';
+const BLACK = '#1c1814';
 const BODY = new Set(['fabric', 'black', 'cream', 'paper', 'clear']);   // clear = the lighter's see-through plastic
 const TILT = { ashtray: 0.6, hat: 0.3 };   // looked at from above, or their print hides
 
@@ -33,12 +33,28 @@ const drawPrint = (word, aspect, style, look) => {
         g.fillStyle = color; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, x, y);
     };
     if (style === 'poster') {
-        const light = new THREE.Color(look.body).getHSL({}).l > 0.5;
+        /* a printed promo poster (his 2026-10-26 "redesign the poster to show that it is a poster"): the paper colour, a
+           burst of rays behind the headline, a frame, the headline on a black block, and his BOTTOM TEXT on a black band.
+           Nothing is printed that he did not type ("weird if the other one is tawang but the other text is kpm"). */
         g.fillStyle = look.body; g.fillRect(0, 0, W, H);
-        const bw = W * 0.84, bh = H * 0.26, bx = (W - bw) / 2, by = H * 0.30;
+        const m = W * 0.05, cx = W / 2, cy = H * 0.42;
+        // the burst, kept inside the frame
+        g.save(); g.beginPath(); g.rect(m, m, W - 2 * m, H - 2 * m); g.clip();
+        g.fillStyle = look.ink; g.globalAlpha = 0.22;
+        for (let k = 0; k < 32; k += 2) {
+            g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, H, (k / 32) * Math.PI * 2, ((k + 1) / 32) * Math.PI * 2); g.closePath(); g.fill();
+        }
+        g.restore();
+        g.strokeStyle = look.ink; g.lineWidth = W * 0.014; g.strokeRect(m, m, W - 2 * m, H - 2 * m);
+        const bw = W * 0.8, bh = H * 0.22, bx = (W - bw) / 2, by = cy - bh / 2;
         g.fillStyle = BLACK; g.beginPath(); g.roundRect(bx, by, bw, bh, W * 0.04); g.fill();
-        fit(word, W / 2, by + bh / 2, bw * 0.84, bh * 0.56, look.ink);
-        fit('KPM', W / 2, H * 0.84, W * 0.36, H * 0.07, light ? BLACK : CREAM);
+        g.lineWidth = W * 0.008; g.stroke();
+        fit(word, cx, cy, bw * 0.84, bh * 0.56, look.ink);
+        if (look.sub) {
+            const sh = H * 0.1, sx = m + W * 0.04, sy = H - m - W * 0.04 - sh;
+            g.fillStyle = BLACK; g.fillRect(sx, sy, W - 2 * sx, sh);
+            fit(look.sub, cx, sy + sh / 2, (W - 2 * sx) * 0.86, sh * 0.6, look.ink);
+        }
     } else if (style === 'round') {
         g.fillStyle = look.body; g.beginPath(); g.arc(W / 2, H / 2, W / 2, 0, Math.PI * 2); g.fill();
         g.strokeStyle = look.ink; g.lineWidth = W * 0.014; g.beginPath(); g.arc(W / 2, H / 2, W * 0.44, 0, Math.PI * 2); g.stroke();

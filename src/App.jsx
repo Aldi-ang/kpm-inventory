@@ -3657,6 +3657,7 @@ const handleGitHubMirror = async () => {
               if ('trimColor' in data) data.trimColor = hex(data.trimColor) === trimDef ? '' : hex(data.trimColor);
               if ('accentColor' in data) data.accentColor = hex(data.accentColor) === ink ? '' : hex(data.accentColor);
               data.printText = String(data.printText || '').trim().slice(0, 18);
+              data.subText = String(data.subText || '').trim().slice(0, 18);   // the back / the poster's bottom line - '' = none of his
               const thumb = goodsPreviewRef.current?.snapshot?.();
               if (thumb) data.thumb = thumb;   // the Master Vault list picture, in this item's colours
           }

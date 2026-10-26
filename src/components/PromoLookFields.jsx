@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { promoGoods, promoLook, promoWord, GOODS_PARTS } from '../utils/helpers';
+import { promoGoods, promoLook, promoWord, GOODS_PARTS, GOODS_SECOND } from '../utils/helpers';
 import PromoGoods3D from './PromoGoods3D';
 
 /* THE LOOK, in the product form (his 2026-10-26 "edit the color appearance on the 3D design, and change the name on it
@@ -12,8 +12,10 @@ export default function PromoLookFields({ product, previewRef }) {
     const [ink, setInk] = useState(product.printColor || '');
     const [trim, setTrim] = useState(product.trimColor || '');
     const [accent, setAccent] = useState(product.accentColor || '');
+    const [sub, setSub] = useState(product.subText || '');
     if (!promoGoods(product)) return <p className="text-[var(--duke-ink-8)]">Pick a TYPE to see the 3D model.</p>;
-    const shown = { ...product, printText: text, goodsColor: body, printColor: ink, trimColor: trim, accentColor: accent };
+    const shown = { ...product, printText: text, subText: sub, goodsColor: body, printColor: ink, trimColor: trim, accentColor: accent };
+    const second = GOODS_SECOND[promoGoods(product)];
     const look = promoLook(shown), parts = GOODS_PARTS[promoGoods(product)] || {};
     const swatch = 'w-14 h-10 p-0.5 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] cursor-pointer';
     const field = 'w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none';
@@ -26,6 +28,10 @@ export default function PromoLookFields({ product, previewRef }) {
             <div><label htmlFor="printText" className="text-[var(--duke-ink-8)] block mb-1">PRINTED TEXT</label>
                 <input id="printText" name="printText" value={text} maxLength={18} onChange={(e) => setText(e.target.value)}
                     placeholder={`${promoWord({ ...product, printText: '' })} (from the name)`} className={`${field} uppercase`} /></div>
+            {GOODS_SECOND[promoGoods(product)] && (   /* the second text, only where it prints - his, never a fixed KPM */
+            <div><label htmlFor="subText" className="text-[var(--duke-ink-8)] block mb-1">{second}</label>
+                <input id="subText" name="subText" value={sub} maxLength={18} onChange={(e) => setSub(e.target.value)}
+                    placeholder={promoGoods(product) === 'poster' ? '(none)' : `${look.word} (same as the front)`} className={`${field} uppercase`} /></div>)}
             <div className="flex items-end gap-3 flex-wrap">
                 <label className="text-[var(--duke-ink-8)] flex flex-col gap-1">COLOR
                     <input type="color" name="goodsColor" value={look.body} onChange={(e) => setBody(e.target.value)} className="w-14 h-10 p-0.5 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] cursor-pointer" /></label>

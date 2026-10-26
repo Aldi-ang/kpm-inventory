@@ -11941,7 +11941,8 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
   const skin = (p, side) => decodeURIComponent(String(promoSkin?.(p, side)).replace('data:image/svg+xml,', ''));
   ok('BEHAVIOUR: a promo item with no photo gets the default skin - a shirt by its name gets the shirt with the rest of the name on it ("T-shirt Cello" -> CELLO, back KPM); a lighter gets the black label; a name with & stays a valid picture',
      skin({ name: 'T-shirt Cello' }, 'front').includes('M31 13') && skin({ name: 'T-shirt Cello' }, 'front').includes('>CELLO</text>') &&
-     skin({ name: 'Kaos - Cello' }, 'front').includes('>CELLO</text>') && skin({ name: 'T-shirt Cello' }, 'back').includes('>KPM</text>') &&
+     /* the back repeats the front word now - no fixed KPM (his 2026-10-26 "weird if the other one is tawang but the other text is kpm") */
+     skin({ name: 'Kaos - Cello' }, 'front').includes('>CELLO</text>') && skin({ name: 'T-shirt Cello' }, 'back').includes('>CELLO</text>') &&
      skin({ name: 'Lighter' }, 'front').includes('>KPM</text>') && !skin({ name: 'Lighter' }, 'front').includes('M31 13') &&
      skin({ name: 'Poster A&B' }, 'front').includes('>A&amp;B</text>') && skin({ name: 'Hat' }, 'front').includes('fill="#d4a017"'));
   ok('REGRESSION: the default skin is drawn wherever a promo item shows a face - the Master Vault box (front and back), its list picture, and the fullscreen viewer',
@@ -12101,13 +12102,31 @@ section('PROMO ITEMS, stage 2 of 4 - MASUK / KIRIM carry promo lines in pcs, the
     const pg = read('src/utils/promoGoods3d.js').replace(/\r/g, ''), lf = read('src/components/PromoLookFields.jsx').replace(/\r/g, ''), ap = read('src/App.jsx').replace(/\r/g, '');
     const typed = promoLook({ kind: 'promo', goods: 'tshirt', name: 'T SHIRT TAWANG', printText: 'tawang', goodsColor: '#FFE830' });
     const plain = promoLook({ kind: 'promo', goods: 'hat', name: 'Hat Cello' });
-    ok('BEHAVIOUR: the back prints the typed text; an item with no typed text keeps KPM on the back',
-       typed.word === 'TAWANG' && typed.back === 'TAWANG' && plain.word === 'CELLO' && plain.back === 'KPM' &&
+    ok('BEHAVIOUR: the back prints the typed text; an item with no typed text repeats its front word on the back (no fixed KPM)',
+       typed.word === 'TAWANG' && typed.back === 'TAWANG' && plain.word === 'CELLO' && plain.back === 'CELLO' &&
        decodeURIComponent(promoSkin({ kind: 'promo', goods: 'tshirt', name: 'T-shirt', printText: 'Tawang' }, 'back')).includes('>TAWANG<'));
     ok('BEHAVIOUR: TRIM follows COLOR and ACCENT follows PRINT COLOR until picked - an item saved before looks the same',
        typed.trim === '#ffe830' && typed.accent === typed.ink && plain.trim === plain.body &&
        promoLook({ kind: 'promo', goods: 'hat', trimColor: '#1C1814', accentColor: '#efe9df' }).trim === '#1c1814' &&
        promoLook({ kind: 'promo', goods: 'hat', accentColor: '#efe9df' }).accent === '#efe9df');
+    /* his 2026-10-26 15:39 "both of the text should be editable weird if the other one is tawang but the other text is kpm
+       its a whole different company": the SECOND text is his - the back of the T-shirt / lighter, the poster's bottom line */
+    const { GOODS_SECOND } = await import('../utils/helpers.js');
+    const sr = read('src/components/PromoGoods3D.jsx').replace(/\r/g, '');
+    const glb = (id) => { try { return fs.readFileSync(`public/promo/${id}.glb`).toString('latin1'); } catch { return ''; } };
+    ok('BEHAVIOUR: the second text is typed per item - the back prints it, empty = the front word again, the poster\'s bottom line is it or nothing; no fixed KPM left in the 3D print',
+       promoLook({ kind: 'promo', goods: 'tshirt', name: 'T-shirt Tawang', subText: ' gudang baru ' }).back === 'GUDANG BARU' &&
+       promoLook({ kind: 'promo', goods: 'poster', name: 'Poster Tawang', subText: 'isi 16' }).sub === 'ISI 16' &&
+       promoLook({ kind: 'promo', goods: 'poster', name: 'Poster Tawang' }).sub === '' && promoLook({ kind: 'promo', goods: 'lighter', name: 'Korek Tawang' }).back === 'TAWANG' &&
+       !pg.includes("fit('KPM'") && pg.includes('if (look.sub) {') && sr.includes('look.word, look.back, look.sub]'));
+    ok('REGRESSION: the form asks the second text only where it prints (BACK TEXT: T-shirt, lighter; BOTTOM TEXT: poster), and the save keeps it trimmed to 18',
+       JSON.stringify(GOODS_SECOND) === JSON.stringify({ tshirt: 'BACK TEXT', lighter: 'BACK TEXT', poster: 'BOTTOM TEXT' }) &&
+       lf.includes('name="subText"') && lf.includes('{GOODS_SECOND[promoGoods(product)] && (') &&
+       ap.includes("data.subText = String(data.subText || '').trim().slice(0, 18);") &&
+       ['tshirt', 'lighter'].every((g) => glb(g).includes('"print":"back"')));
+    ok('REGRESSION: the poster is a poster - paper on a hanger (top and bottom bars, a cord), its print a design with a frame and a burst',
+       glb('poster').includes('"name":"poster_rail_top"') && glb('poster').includes('"name":"poster_rail_bottom"') && glb('poster').includes('"name":"poster_cord"') &&
+       glb('poster').includes('"style":"poster"') && pg.includes('g.strokeRect(') && pg.includes('// the burst'));
     /* the lighter's lever is black on every body colour, like the korek gas in his photo ("just make it like this one");
        a picked LEVER colour still wins, and the save stores '' only when the pick IS that black */
     ok('BEHAVIOUR: the lighter LEVER defaults to black whatever COLOR is; a picked lever colour wins; the save compares against the type\'s own lever default',
