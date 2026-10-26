@@ -1011,7 +1011,7 @@ Seen: 2026-10-11 09:20 (a second form: under mobile emulation a too-wide card ma
 Seen: 2026-10-02
 Fired: 2026-10-04 (Day Replay: page + ground.jpg + coin-sprite.png copied to one scratchpad folder, published with files on the first try)
 
-Last checked: 2026-10-23 — no new lesson since the 2026-10-22 asset entry (671-turn session; that entry, the TEST-line and the republish lessons fired)
+Last checked: 2026-10-26 — no new lesson since this session's "behind the sign-in is not a wall" entry (533-turn session; it fired again: the default skin was seen on the emulator, not the lab)
 Fired: 2026-10-03 (map-keys prototype + ground.jpg published from scratchpad/mapkeys)
 Fired: 2026-10-03 (round 6 crowd + selling scenes: page + ground.jpg copied to scratchpad/r6, published on the first try)
 Fired: 2026-10-04 (Day Replay v3: page + ground.jpg + coin-sprite.png from scratchpad/replay3, first try)
@@ -1227,13 +1227,6 @@ Seen: 2026-10-11
 Fired: 2026-10-11 14:05 (✅ TEST names four roads, each checked in the built lab: idle line, string CAPY_COMMS, deal object silent, peek silent)
 Fired: 2026-10-25 (claimed the capybara talks only after the dialogue was rendered in the lab at 375 + 1440 + Lite, line by line read back)
 
-### 2026-10-12 — an Edit never ends on a space
-**Status:** LIKELY
-**Trigger:** before a mutating action - an Edit whose old or new text would end (or start) on whitespace, typically mid-way through a className line.
-**Lesson:** end the replaced text on a visible character (extend it to the next class or the closing quote). After any Edit on a class string, grep the commit's added lines for two classes glued together (a `]` followed straight by a letter) before committing.
-**Would have prevented:** 2026-10-12 kpm `6dd3cb7`: the WhatsApp Share edit ended on `text-[10px] ` and the space was dropped, shipping `text-[10px]shadow-md` (the button lost its size and shadow); found only by reading the commit diff, fixed in a second commit `7098386`.
-Seen: 2026-10-12
-
 ### 2026-10-12 — a walk that fakes the callback never ran the callback
 **Status:** LIVE
 **Trigger:** before a completion claim on code that hands a callback (a saver, an onDone, a writer) to a helper whose walk used a stand-in for it.
@@ -1241,14 +1234,6 @@ Seen: 2026-10-12
 **Would have prevented:** 2026-10-12 kpm `6dd3cb7` went live with `userId` (not in scope in MerchantSalesView) inside the WhatsApp saver - the 9/9 share walk used a fake saver; his Save on the live site failed ("userId is not defined"), fixed in `2490f5a`. undef.check flagged it but was not run (and is red on `__BUILD_ID__`, so nobody runs it).
 Seen: 2026-10-12
 Fired: 2026-10-12 (undef.check run after every edit of the three fixes, clean each time)
-
-### 2026-10-12 — one run of a speed A/B is noise until the variants are repeated, interleaved
-**Status:** LIKELY
-**Trigger:** before writing down or reporting that switching something off made a page faster or slower (a blur, an animation, a listener) - the moment a single before/after pair prints.
-**Lesson:** run each variant at least 3 times, interleaved (A B A B A B, not AAA BBB), and name a winner only when the ranges do not overlap. Also assert the page actually loaded (the element exists, the server answered 200) before reading any number - a dead page prints believable frame counts.
-**Would have prevented:** 2026-10-12 sidebar drag: the first real run showed the blur costing 26% (1470 vs 1094 ms busy) and it was about to go into PROGRESS as the cause; three interleaved runs gave 878-1139 vs 927-1259 - no difference, the real cost was the re-render. Before that, two probe runs read numbers off a page that never loaded (python missing, HTTP 000) and printed 171 frames anyway.
-Seen: 2026-10-12
-Fired:
 
 ### 2026-10-13 — a board page opened from file:// draws the app in the fallback font
 **Status:** LIKELY
@@ -1340,4 +1325,11 @@ Seen: 2026-10-25
 **Trigger:** before a completion claim about MOTION (a transition, a wipe, a settle) proven by a frame from the Browser pane or from headless Chrome `--screenshot`.
 **Lesson:** check `document.timeline.currentTime` first. In the pane it reads 0 while the Claude window is hidden - every animation sits at its first keyframe while timers keep running. Headless `--virtual-time-budget` advances timers but not the animations either, and `--timeout` shoots before the page acts. What works: headless Chrome over CDP in REAL time (`Page.navigate`, `Runtime.evaluate` to start the turn, real wait, pause every animation AND hold the page's timers, `Page.captureScreenshot`), one fresh turn per frame - the script is `scratchpad/promo-chest/shoot.mjs` of session 4545991b (copy it, it is short).
 **Would have prevented:** 2026-10-25 ~19:50, the promo dial round 2: six wasted renders (pane freezes, three virtual-time shots, three `--timeout` shots) and a near-claim that the scan was broken, before the CDP real-time shot showed it working.
+Seen: 2026-10-25
+
+### 2026-10-25 — "behind the sign-in" is not a wall: the emulator signs in without Google
+**Status:** LIKELY
+**Trigger:** before a completion claim that says a screen was NOT rendered because it needs a sign-in (any screen written inline in App.jsx: the product form, settings, modals).
+**Lesson:** launch `demo-emulator`, run `node tools/demo-reset-emulator.mjs`, launch `demo-app-emulator` (5176), then in the page `const { auth, credential, signIn } = window.__kpmEmulatorAuth; await signIn(auth, credential(JSON.stringify({ sub: 'g-demo-owner', email: 'demo.owner@example.com', email_verified: true })))` lands on uid demo-owner. Press "Saya coba sendiri" on the guide, vault password admin123 (src/config/demoLogins.js). About ten tool calls, and it is the REAL screen, not a lab copy. Stop all three servers before `npm run build`.
+**Would have prevented:** 2026-10-25 20:21, promo stage 1: the reply said "NOT rendered: the product form (behind the sign-in)" and shipped; Aldi found the empty right half and the scrolled-away save button himself and sent a frame ("i want u to fix the collapsing panel here"). The path was already written in NEXT-SESSION.md (2026-10-12 blocks).
 Seen: 2026-10-25
