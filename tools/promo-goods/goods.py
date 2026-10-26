@@ -155,13 +155,72 @@ def ashtray():
                   {'print': 'front', 'aspect': 1.0, 'style': 'round'}, reverse=False)
     return [body, ring, floor], cutters
 
+def squircle(a, b, n, t):
+    """A point on a superellipse (a rounded rectangle for n > 2) at angle t."""
+    c, s = math.cos(t), math.sin(t)
+    return a * math.copysign(abs(c) ** (2 / n), c), b * math.copysign(abs(s) ** (2 / n), s)
+
+def sprism(name, a, b, n, rings, material, cx=0.0, segs=64, sharp=40):
+    """A solid with a superellipse cross-section; rings = [(z, scale)] bottom to top, both ends capped."""
+    bm = bmesh.new()
+    R = [[bm.verts.new((cx + s * x, s * y, z)) for x, y in (squircle(a, b, n, TAU * k / segs) for k in range(segs))]
+         for z, s in rings]
+    for i in range(len(R) - 1):
+        for k in range(segs):
+            bm.faces.new((R[i][k], R[i][(k + 1) % segs], R[i + 1][(k + 1) % segs], R[i + 1][k]))
+    bm.faces.new(R[0][::-1]); bm.faces.new(R[-1])
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    return obj(name, bm, material, sharp)
+
+def side_profile(name, pts, depth, material, bevel=0.008):
+    """A flat outline in the XZ plane (x, z points), given thickness along Y, edges softened."""
+    bm = bmesh.new()
+    f = bm.faces.new([bm.verts.new((x, -depth / 2, z)) for x, z in pts])
+    ext = bmesh.ops.extrude_face_region(bm, geom=[f])
+    bmesh.ops.translate(bm, vec=(0, depth, 0), verts=[v for v in ext['geom'] if isinstance(v, bmesh.types.BMVert)])
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bmesh.ops.bevel(bm, geom=list(bm.edges), offset=bevel, offset_type='OFFSET', segments=3, profile=0.5,
+                    affect='EDGES', clamp_overlap=True)
+    return obj(name, bm, material, 35)
+
 def lighter():
-    body = rbox('lighter', (0.40, 0.22, 0.74), (0, 0, 0.37), 0.08, BLACK)
-    hood = rbox('lighter_hood', (0.37, 0.21, 0.17), (0, 0, 0.815), 0.025, SILVER, 4)
-    wheel = cyl('lighter_wheel', 0.065, 0.14, Matrix.Translation((-0.06, 0, 0.94)) @ RX90, STEEL, 24)
-    lever = rbox('lighter_lever', (0.13, 0.15, 0.05), (0.085, 0, 0.925), 0.015, BLACK, 3)
-    label = flat_print('print_front', 0.22, 0.54, (0, -0.1125, 0.37), style='ink')   # the word alone: the body colour shows through
-    return [body, hood, wheel, lever, label]
+    """The korek gas a shop gets (his 2026-10-26 "remake the lighter because it doesnt look like a 3D lighter" and the
+    photo he sent, "just make it like this one"): a flat see-through body with its insides showing (the centre tube and
+    the inner frame), a black collar, the stamped metal top with a round hole and a slot, and the black press-lever
+    sticking out on the right. The body takes COLOR; being see-through, any colour he picks reads like the photo."""
+    A, B, N, TOP = 0.18, 0.075, 6.0, 0.80
+    clear = bpy.data.materials.get('clear') or mat('clear', '#1c1814', 0.12)
+    bsdf = clear.node_tree.nodes.get('Principled BSDF'); bsdf.inputs['Alpha'].default_value = 0.62
+    clear.use_backface_culling = False   # see-through: the far wall shows too
+    try: clear.surface_render_method = 'BLENDED'
+    except Exception: clear.blend_method = 'BLEND'
+    body = sprism('lighter', A, B, N, [(0, 0.9), (0.008, 0.96), (0.025, 0.99), (0.05, 1.0), (TOP, 1.0)], clear)
+    # inside the plastic: the gas tube up the middle, and the inner frame (two walls and the shelf under the valve)
+    tube = cyl('lighter_tube', 0.011, TOP - 0.16, Matrix.Translation((-0.03, 0, 0.08 + (TOP - 0.16) / 2)), clear, 16)
+    frame = side_profile('lighter_frame', [(-0.125, 0.05), (-0.105, 0.05), (-0.105, 0.60), (0.105, 0.60), (0.105, 0.05),
+                                           (0.125, 0.05), (0.125, 0.625), (-0.125, 0.625)], 0.11, clear, 0.004)
+    dark = mat('collar', '#16130f', 0.45)
+    collar = sprism('lighter_collar', A, B, N, [(TOP - 0.004, 1.012), (TOP + 0.05, 1.012)], dark)
+    top = rbox('lighter_top', (0.24, 0.125, 0.16), (-0.045, 0, TOP + 0.05 + 0.08), 0.014, SILVER, 3)
+    cutters = []
+    for i, m in enumerate((Matrix.Translation((0.02, 0, TOP + 0.175)) @ RX90,)):   # the round hole near the top
+        c = cyl(f'cut{i}', 0.024, 0.3, m, SILVER, 24); c.hide_render = True; cutters.append(c)
+    slot = rbox('cut_slot', (0.04, 0.3, 0.03), (0.035, 0, TOP + 0.085), 0.002, SILVER, 1); slot.hide_render = True
+    cutters.append(slot)
+    for c in cutters:
+        mod = top.modifiers.new(c.name, 'BOOLEAN'); mod.operation = 'DIFFERENCE'; mod.object = c; mod.solver = 'EXACT'
+    lever = side_profile('lighter_lever', [(0.06, TOP + 0.05), (0.19, TOP + 0.05), (0.205, TOP + 0.065), (0.205, TOP + 0.11),
+                                           (0.19, TOP + 0.125), (0.16, TOP + 0.12), (0.11, TOP + 0.10), (0.06, TOP + 0.10)],
+                         0.085, BLACK, 0.006)
+    # the word alone on the flat front of the body; the back carries the second word
+    def face(u, v, back):
+        x = (u - 0.5) * 0.25
+        y = -(B * (1 - abs(x / A) ** N) ** (1 / N) + 0.0015)
+        return (-x, -y, 0.10 + 0.56 * v) if back else (x, y, 0.10 + 0.56 * v)
+    ink = mat('print', '#1c1814', 0.5)
+    front = sheet('print_front', 8, 1, lambda u, v: face(u, v, False), ink, {'print': 'front', 'aspect': 0.25 / 0.56, 'style': 'ink'})
+    back = sheet('print_back', 8, 1, lambda u, v: face(u, v, True), ink, {'print': 'back', 'aspect': 0.25 / 0.56, 'style': 'ink'})
+    return [body, tube, frame, collar, top, lever, front, back], cutters
 
 def hat():
     bm = bmesh.new()
@@ -232,6 +291,8 @@ TILT = {'ashtray': 1.0, 'hat': 0.55}   # looked at from above, or the print hide
 def thumb(name, keep, path):
     """The Master Vault list picture (48 px on screen): the same model, three-quarter view, transparent."""
     sc = bpy.context.scene
+    for o in keep:   # an 'ink' print is the word alone, drawn only in the app - here it would be a blank dark patch
+        if o.get('style') == 'ink': o.hide_render = True
     sc.render.engine = 'BLENDER_EEVEE'
     sc.render.resolution_x = sc.render.resolution_y = 192
     sc.render.film_transparent = True
@@ -263,7 +324,9 @@ def clear():
     for m in list(bpy.data.meshes): bpy.data.meshes.remove(m)
     for c in list(bpy.data.curves): bpy.data.curves.remove(c)
 
+ONLY = os.environ.get('GOODS')   # GOODS=lighter remakes one model and leaves the other files untouched
 for name, build in (('mug', mug), ('ashtray', ashtray), ('lighter', lighter), ('hat', hat), ('tshirt', tshirt), ('poster', poster)):
+    if ONLY and name != ONLY: continue
     clear()
     made = build()
     keep, helpers = (made if isinstance(made, tuple) else (made, []))

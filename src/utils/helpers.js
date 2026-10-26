@@ -293,7 +293,7 @@ export const promoWord = (product) => {
    printColor, '' = this type's default below (what tools/promo-goods/goods.py modelled). */
 export const GOODS_LOOK = {
     tshirt: { body: '#1c1814', ink: '#d4a017' }, poster: { body: '#efe9df', ink: '#d4a017' }, hat: { body: '#1c1814', ink: '#d4a017' },
-    lighter: { body: '#1c1814', ink: '#d4a017' }, ashtray: { body: '#1c1814', ink: '#d4a017' }, mug: { body: '#efe9df', ink: '#d4a017' },
+    lighter: { body: '#1c1814', ink: '#d4a017', trim: '#1c1814' /* the lever stays black on any body, like his korek gas photo */ }, ashtray: { body: '#1c1814', ink: '#d4a017' }, mug: { body: '#efe9df', ink: '#d4a017' },
 };
 /* MORE PAINT (his 2026-10-26 "we need more customizable color on this"): the parts each model can paint apart, by their
    mesh names in public/promo/<goods>.glb - TRIM (collar, seams, handle, lever) and ACCENT (the gold parts). Saved as
@@ -313,7 +313,7 @@ export const promoLook = (product) => {
     /* the back prints the text he typed; only an item with no printed text keeps KPM there (his "when i put the name on
        the front here the back does have different name which is the default name") */
     const own = String(product?.printText || '').trim();
-    return { body, ink, trim: hex(product?.trimColor) || body, accent: hex(product?.accentColor) || ink,
+    return { body, ink, trim: hex(product?.trimColor) || def.trim || body, accent: hex(product?.accentColor) || ink,
         word: promoWord(product), back: own ? promoWord(product) : 'KPM' };
 };
 

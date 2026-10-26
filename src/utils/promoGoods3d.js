@@ -17,7 +17,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { GOODS_PARTS } from './helpers';
 
 const BLACK = '#1c1814', CREAM = '#efe9df';
-const BODY = new Set(['fabric', 'black', 'cream', 'paper']);
+const BODY = new Set(['fabric', 'black', 'cream', 'paper', 'clear']);   // clear = the lighter's see-through plastic
 const TILT = { ashtray: 0.6, hat: 0.3 };   // looked at from above, or their print hides
 
 /* the word in the ink colour; 'ink' = the word alone (fabric, the lighter); 'label' = the mug's black band; a poster

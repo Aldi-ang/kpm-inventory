@@ -12024,8 +12024,15 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      app2.includes("data.printText = String(data.printText || '').trim().slice(0, 18);") && app2.includes('const thumb = goodsPreviewRef.current?.snapshot?.();') &&
      rei.includes('item.thumb || `/promo/${promoGoods(item)}.png`'));
   ok('REGRESSION: the 3D view paints the look - body parts take COLOR, the gold parts and the print take PRINT COLOR, and it can change colour without reloading the model',
-     pg3.includes("const BODY = new Set(['fabric', 'black', 'cream', 'paper']);") && pg3.includes("else if (o.material.name === 'gold') o.material.color.set(current.ink);") &&
+     /* 'clear' widened ON PURPOSE (2026-10-26): the remade lighter's see-through plastic takes COLOR too */
+     pg3.includes("const BODY = new Set(['fabric', 'black', 'cream', 'paper', 'clear']);") && pg3.includes("else if (o.material.name === 'gold') o.material.color.set(current.ink);") &&
      pg3.includes('unmount.set = (next) =>') && pg3.includes('unmount.snapshot = (size = 128) =>') && glb('lighter').includes('"style":"ink"'));
+  /* his 2026-10-26 "remake the lighter because it doesnt look like a 3D lighter" + the korek gas photo he sent ("just make
+     it like this one"): a flat see-through body with its insides showing, a black collar, a stamped metal top with a
+     hole, the black press-lever on the right. The first model was a black box with a silver box on it. */
+  ok('REGRESSION: the lighter is the korek-gas shape - see-through body (BLEND, material clear), the LEVER part still named for its picker, the word front AND back, none of the old box parts',
+     glb('lighter').includes('"alphaMode":"BLEND"') && glb('lighter').includes('"name":"clear"') && glb('lighter').includes('"name":"lighter_lever"') &&
+     glb('lighter').includes('"name":"lighter_collar"') && glb('lighter').includes('"print":"back"') && !glb('lighter').includes('lighter_wheel'));
   const seedJ = JSON.parse(read('demo/seed.json'));
   ok('REGRESSION: the demo vault holds one of each goods (seed.promo, written as products only); the made-up demo sales and stock stay cigarette-only',
      (seedJ.promo || []).map((p) => p.goods).join() === 'tshirt,poster,hat,lighter,ashtray,mug' && seedJ.promo.every((p) => p.kind === 'promo' && p.unit === 'pcs') &&
@@ -12101,6 +12108,13 @@ section('PROMO ITEMS, stage 2 of 4 - MASUK / KIRIM carry promo lines in pcs, the
        typed.trim === '#ffe830' && typed.accent === typed.ink && plain.trim === plain.body &&
        promoLook({ kind: 'promo', goods: 'hat', trimColor: '#1C1814', accentColor: '#efe9df' }).trim === '#1c1814' &&
        promoLook({ kind: 'promo', goods: 'hat', accentColor: '#efe9df' }).accent === '#efe9df');
+    /* the lighter's lever is black on every body colour, like the korek gas in his photo ("just make it like this one");
+       a picked LEVER colour still wins, and the save stores '' only when the pick IS that black */
+    ok('BEHAVIOUR: the lighter LEVER defaults to black whatever COLOR is; a picked lever colour wins; the save compares against the type\'s own lever default',
+       promoLook({ kind: 'promo', goods: 'lighter', goodsColor: '#c8501e' }).trim === '#1c1814' &&
+       promoLook({ kind: 'promo', goods: 'lighter', goodsColor: '#c8501e', trimColor: '#c8501e' }).trim === '#c8501e' &&
+       ap.includes("const body = data.goodsColor || def.body, ink = data.printColor || def.ink, trimDef = def.trim || body;") &&
+       ap.includes("if ('trimColor' in data) data.trimColor = hex(data.trimColor) === trimDef ? '' : hex(data.trimColor);"));
     ok('BEHAVIOUR: every part a picker names exists in its model (mesh names of public/promo/*.glb)',
        GOODS_PARTS.tshirt.trim[1].test('tshirt_collar1') && GOODS_PARTS.hat.trim[1].test('hat_seam5') && GOODS_PARTS.hat.accent[1].test('hat_brim_edge') &&
        GOODS_PARTS.mug.trim[1].test('mug_handle') && GOODS_PARTS.ashtray.accent[1].test('ashtray_line') && !GOODS_PARTS.hat.trim[1].test('hat_brim') &&
@@ -12109,7 +12123,8 @@ section('PROMO ITEMS, stage 2 of 4 - MASUK / KIRIM carry promo lines in pcs, the
        pg.includes("drawPrint(d.print === 'back' ? current.back : current.word,") && pg.includes('else if (parts.trim?.[1].test(o.name)) o.material.color.set(current.trim);') &&
        pg.indexOf('parts.accent?.[1].test(o.name)') < pg.indexOf('else if (BODY.has(o.material.name))') && !pg.includes("'back' ? 'KPM'") &&
        lf.includes('name="trimColor"') && lf.includes('name="accentColor"') && lf.includes("setTrim(''); setAccent('');") &&
-       ap.includes("if ('trimColor' in data) data.trimColor = hex(data.trimColor) === body ? '' : hex(data.trimColor);"));
+       /* widened ON PURPOSE 2026-10-26: TRIM compares against the type's own lever default (the lighter's black), else COLOR */
+       ap.includes("if ('trimColor' in data) data.trimColor = hex(data.trimColor) === trimDef ? '' : hex(data.trimColor);"));
   }
   ok('REGRESSION: Stock Opname counts the Master Vault\'s promo items by the piece; the Bks-only monitor and quarantine crates skip them',
      so.includes('const activeInventory = isAreaAdmin ? (branchInventory || []) : [...safeInventory, ...promoItems];') &&

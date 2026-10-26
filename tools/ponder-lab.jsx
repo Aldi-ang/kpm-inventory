@@ -1296,7 +1296,8 @@ const labShirtPic = (word) => 'data:image/svg+xml,' + encodeURIComponent(`<svg x
 const labShirt = !q.get('shirt') ? {} : { images: { front: labShirtPic('CELLO'), back: labShirtPic('KPM') },
   ...(q.get('shirt') === 'card' ? { dimensions: { w: 90, h: 100, d: 3 }, defaultZoom: 2.6 } : {}) };
 const LAB_PRODUCT = q.has('promo')   /* &promo: a promo T-shirt with no photo - the 3D goods in the box and in fullscreen */
-  ? { id: 'p-tee', name: 'T-shirt KPM', stock: 40, kind: 'promo', unit: 'pcs', type: 'PROMO', goods: 'tshirt', images: {} }
+  ? { id: 'p-tee', name: `${q.get('goods') || 'T-shirt'} KPM`, stock: 40, kind: 'promo', unit: 'pcs', type: 'PROMO', goods: q.get('goods') || 'tshirt',
+      images: {}, ...(q.get('color') ? { goodsColor: `#${q.get('color')}` } : {}) }   /* &goods=lighter&color=c8501e */
   : { id: 'p_lab', name: 'PRODUK C', stock: 120, description: 'Kretek 16 batang, rasa manis.', dimensions: { w: 55, h: 90, d: 22 }, images: {} };
 function Vault3DLab() {
   const [open, setOpen] = React.useState(null);
