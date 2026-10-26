@@ -916,6 +916,7 @@ Fired: 2026-09-30 (every height in the v22 brainstorm note - desk 453/427, crate
 Fired: 2026-10-02 (bell board: "switch keys 48 tall" was the plan; measure.json read 46, caption fixed before the send)
 Fired: 2026-10-03 ("58×58 each" in the board caption read from measure.json, not the plan)
 Fired: 2026-10-13 (captions fill their px from the rendered frames in-page (722/1098/650, 37/23/47))
+Fired: 2026-10-26 (promo dial placement board: captions typed from the shooter's DOM numbers: header 181->212, list 569->439)
 
 ### 2026-09-22 — a 🔴 DECIDE is written for someone who has never heard the word, or it is not a decision yet
 **Status:** LIVE
@@ -959,6 +960,7 @@ Fired: 2026-10-04 (test-journey.mjs rmSync-es every frame; board.png deleted fir
 Fired: 2026-10-04 (board-flash.png removed before the Chrome --screenshot, size read after)
 Fired: 2026-10-04 (shoot-signs.mjs rmSync-es every png before capture; mtimes listed after each run)
 Fired: 2026-10-13 (shoot.mjs rmSync-es both boards, mtime printed)
+Fired: 2026-10-26 (promo dial placement board: rmSync before every Page.captureScreenshot)
 
 ### 2026-09-22 — a listener on the thing being dragged dies when the drag re-draws the page
 **Status:** LIVE
@@ -1133,6 +1135,7 @@ Fired: 2026-10-04 (shoot-signs: touch + hover/pointer media sent, (hover: none) 
 Fired: 2026-10-05 (sign hold probe: touch + hover/pointer media sent, (hover: none) and (pointer: coarse) asserted at 390)
 Fired: 2026-10-05 (Day Replay shooter: touch + hover/pointer media sent, (hover: none) and (pointer: coarse) asserted at 390 before any phone number)
 Fired: 2026-10-12 (drag probe: touch + hover/pointer media sent, (hover: none) and (pointer: coarse) asserted before any number)
+Fired: 2026-10-26 (promo dial placement board: touch + hover:none emulated, pre-probe hover=false at 375)
 
 ### 2026-10-03 — an Artifact file opened locally has no viewport meta, so a headless "phone" lays it out at 980 px
 **Status:** LIVE
@@ -1236,12 +1239,13 @@ Seen: 2026-10-12
 Fired: 2026-10-12 (undef.check run after every edit of the three fixes, clean each time)
 
 ### 2026-10-13 — a board page opened from file:// draws the app in the fallback font
-**Status:** LIKELY
+**Status:** LIVE
 **Trigger:** before composing any board whose frames link the app's built CSS - the moment the shooter navigates to the page.
 **Lesson:** the built CSS loads Rajdhani from absolute `/assets/...` urls, and a file:// page (origin null) cannot fetch them from the lab server either - Chrome blocks cross-origin fonts. Serve the board pages from the lab itself (copy into `dist-ponderlab/<dir>/`, open `http://localhost:4187/<dir>/...`) and have the shooter print `document.fonts.check('700 13px Rajdhani')` per frame; `false` means the frame is not the app.
 **Would have prevented:** 2026-10-13 demo door: the first shoot of both boards came out in a Consolas-like fallback on every label; caught by `fonts.check` + the read-back, one extra shoot. The 2026-10-12 active-tabs board used the same file:// pattern.
 Seen: 2026-10-13
 Fired:
+Fired: 2026-10-26 (promo dial placement board: frames shot from the lab over http, fonts.check true on every frame)
 
 ### 2026-10-14 — a symptom he reports a second time means the last fix measured the wrong layer
 **Status:** LIKELY
