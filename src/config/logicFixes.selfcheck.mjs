@@ -11952,7 +11952,7 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      (PROMO_GOODS || []).length === 6 && PROMO_GOODS.every(([id]) => glb(id).startsWith('glTF') && glb(id).includes('"print":"front"') && fs.existsSync(`public/promo/${id}.png`)));
   const pg3 = read('src/utils/promoGoods3d.js'), pgc = read('src/components/PromoGoods3D.jsx');
   ok('REGRESSION: the form picks the type - a required TYPE list of the six on every promo item, saved only when it is one of them',
-     form.includes('<select name="goods" defaultValue={promoGoods(editingProduct) || \'\'} required') && form.includes('{PROMO_GOODS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}') &&
+     form.includes('<select name="goods" defaultValue={promoGoods(editingProduct) || \'\'} required') && form.includes('{PROMO_GOODS.map(([id, label]) => <option key={id} value={id} className=') &&
      form.includes('Promo item (T-shirt, poster, hat, lighter, ashtray, mug)') &&
      read('src/App.jsx').includes('if (promo && !PROMO_GOODS.some(([id]) => id === data.goods)) delete data.goods;'));
   ok('REGRESSION: no photo -> the 3D goods in the Master Vault (spinning, tap opens fullscreen) and in the fullscreen viewer (the finger turns it); a FRONT photo keeps the flat card; the list shows the goods picture',
@@ -11975,6 +11975,12 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      lk({ goods: 'hat', printColor: '#ffffff' }).ink === '#ffffff' &&
      lk({ goods: 'mug', name: 'Mug Cello', printText: ' djarum ' }).word === 'DJARUM' && lk({ goods: 'mug', name: 'Mug Cello', printText: '' }).word === 'CELLO' &&
      promoWord({ name: 'x', printText: 'abcdefghijklmnopqrstuvwxyz' }) === 'ABCDEFGHIJKLMNOPQR');
+  /* his 2026-10-26 screenshot, "change the background because it cant be read": the TYPE list opened white with the
+     form's light ink on it - an <option> takes the browser's white unless it is given its own colours (the same fix the
+     app's other lists carry, bg-[var(--sunk)]); here the form's own solid well + ink, which flip with light mode. */
+  ok('REGRESSION: the TYPE list is readable when it opens - every option has its own solid background and ink, never the browser\'s white under the form\'s light ink',
+     form.includes('<option value="" disabled className="bg-[var(--duke-well-solid)] text-[var(--duke-ink-hi)]">Pick what it is</option>') &&
+     form.includes('<option key={id} value={id} className="bg-[var(--duke-well-solid)] text-[var(--duke-ink-hi)]">{label}</option>'));
   const looks = read('src/components/PromoLookFields.jsx'), app2 = read('src/App.jsx');
   ok('REGRESSION: EDIT on a promo item without a FRONT photo shows the look - a live 3D preview, PRINTED TEXT, COLOR, PRINT COLOR, Default colors; TYPE switches the preview',
      form.includes('<PromoLookFields key={editingProduct.id || \'new\'} product={editingProduct} previewRef={goodsPreviewRef} />') &&

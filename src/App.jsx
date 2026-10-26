@@ -5138,8 +5138,9 @@ const handleGitHubMirror = async () => {
                                     {isPromo(editingProduct) && (
                                         <div><label htmlFor="goods" className="text-[var(--duke-ink-8)] block mb-1">TYPE</label>
                                             <select name="goods" defaultValue={promoGoods(editingProduct) || ''} required id="goods" onChange={(e) => setEditingProduct(p => ({ ...p, goods: e.target.value }))} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none">
-                                                <option value="" disabled>Pick what it is</option>
-                                                {PROMO_GOODS.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                                                {/* each option its own colours: left alone, the opened list is the browser's white under the form's white ink (his 2026-10-26 screenshot) */}
+                                                <option value="" disabled className="bg-[var(--duke-well-solid)] text-[var(--duke-ink-hi)]">Pick what it is</option>
+                                                {PROMO_GOODS.map(([id, label]) => <option key={id} value={id} className="bg-[var(--duke-well-solid)] text-[var(--duke-ink-hi)]">{label}</option>)}
                                             </select>
                                         </div>
                                     )}
