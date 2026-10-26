@@ -250,6 +250,8 @@ export const absentForSure = (snap) =>
    products collection, `kind: 'promo'`; absent = cigarette, so no old document changes. Counted in pcs: no packing,
    no price. useDatabaseSync keeps them OUT of `inventory`, which every cigarette screen reads. */
 export const isPromo = (product) => product?.kind === 'promo';
+/* in quarantine = holds damaged Bks (`damagedStock`, booked by the EOD and the arrival check; fixed in Stock Opname) */
+export const inQuarantine = (product) => (Number(product?.damagedStock) || 0) > 0;
 
 /* WHAT A PROMO ITEM IS (his 2026-10-26 "there is no product type ... add ashtray and mug"): picked in the product form,
    saved as `goods`. It picks the 3D model the vault shows when no photo is uploaded (public/promo/<id>.glb + .png, made

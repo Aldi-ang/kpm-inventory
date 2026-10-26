@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, Plus, Package, AlertCircle, ImageIcon, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatRupiah, convertToBks, getLocalDayKey, isPromo, promoSkin, promoGoods } from '../utils/helpers';
+import { Search, Plus, Package, AlertCircle, AlertTriangle, ImageIcon, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { formatRupiah, convertToBks, getLocalDayKey, isPromo, promoSkin, promoGoods, inQuarantine } from '../utils/helpers';
 import PromoGoods3D from './PromoGoods3D';
 import * as threshold from '../utils/stockThreshold';
 
@@ -212,6 +212,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
    was two (App's above, this one's inside); this one now drives App's searchTerm, which the Sales Terminal's product
    list reads too, so nothing that filtered before stops filtering. */
 const isPhone = () => window.matchMedia('(max-width: 1023px)').matches;
+const QUARANTINE = '__quarantine';   /* never a product type, so no type tab can collide with it */
 
 export default function ResidentEvilInventory({ inventory, motorists = [], transactions = [], isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct, onInspect, appSettings, searchTerm = '', onSearch }) {
     const [selectedId, setSelectedId] = useState(null);
@@ -244,7 +245,11 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
     }, [inventory]);
 
     const sectionKeys = Object.keys(sections).sort();
-    const currentList = sections[activeSection] || [];   /* a search can empty the chosen type: no group, no crash */
+    /* QUARANTINE (his 2026-10-26 "on the old master vault we dont have any method to view the quarantine"): one more tab on
+       the same row, not a second control - second in the row so a phone sees it without sliding the tabs */
+    const quarantine = inventory.filter(inQuarantine);
+    const inQ = activeSection === QUARANTINE;
+    const currentList = inQ ? quarantine : (sections[activeSection] || []);   /* a search can empty the chosen type: no group, no crash */
     const selectedItem = inventory.find(i => i.id === selectedId) || inventory[0];
 
     return (
@@ -256,17 +261,23 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                         <input value={searchTerm} onChange={e => onSearch?.(e.target.value)} placeholder="Search products..." className="w-full h-11 lg:h-9 bg-black/50 border border-amber-500/30 pl-9 pr-3 text-white text-xs font-mono outline-none focus:border-amber-400"/>
                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-500/50 pointer-events-none"/>
                     </div>
-                    <div className="flex gap-1 items-center">
-                        <div className="flex gap-1 overflow-x-auto scrollbar-hide">
-                            {sectionKeys.map(sec => (
-                                <button key={sec} onClick={() => setActiveSection(sec)} className={`h-11 lg:h-8 px-3 text-[11px] font-bold uppercase border whitespace-nowrap ${activeSection === sec ? 'bg-amber-500 text-black border-amber-400' : 'text-amber-200/40 border-amber-900/60'}`}>{sec}</button>
-                            ))}
+                    {/* the tabs WRAP: a hidden sideways scroll put the last tabs out of sight on a phone (and on the PC once
+                        QUARANTINE joined the row) - his rule, "sideways swipe is inconvenience for phone" */}
+                    <div className="flex gap-1 items-start">
+                        <div className="flex flex-wrap gap-1 min-w-0">
+                            {sectionKeys.map(sec => (<React.Fragment key={sec}>
+                                <button onClick={() => setActiveSection(sec)} className={`h-11 lg:h-8 px-3 text-[11px] font-bold uppercase border whitespace-nowrap ${activeSection === sec ? 'bg-amber-500 text-black border-amber-400' : 'text-amber-200/40 border-amber-900/60'}`}>{sec}</button>
+                                {sec === 'ALL' && isAdmin && (
+                                    <button onClick={() => setActiveSection(QUARANTINE)} className={`h-11 lg:h-8 px-3 flex items-center gap-1 text-[11px] font-bold uppercase border whitespace-nowrap ${inQ ? 'bg-amber-500 text-black border-amber-400' : quarantine.length ? 'text-rose-400 border-rose-900/70' : 'text-amber-200/40 border-amber-900/60'}`}><AlertTriangle size={12}/> Quarantine</button>
+                                )}
+                            </React.Fragment>))}
                         </div>
                         {isAdmin && <button onClick={onAddNew} className="ml-auto shrink-0 h-11 lg:h-8 px-3 flex items-center gap-1 border border-amber-500/50 text-amber-400 hover:text-amber-200 text-[11px] font-bold uppercase tracking-widest"><Plus size={14}/> Add</button>}
                     </div>
                 </div>
 
                 <div className="lg:flex-1 lg:overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-amber-900/40">
+                    {inQ && <p className="px-2 pt-1 pb-3 text-[11px] font-mono text-rose-300/80">Damaged stock waits here until Stock Opname settles it.</p>}
                     {currentList.map(item => {
                         const isLowStock = threshold.isLowStock(item, appSettings);
                         return (
@@ -281,6 +292,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                         {(() => {
                                             if (!isAdmin) return <p className="text-sm font-mono text-slate-400 font-bold">STK: **</p>;
+                                            if (inQ) return <p className="text-[10px] md:text-xs font-mono font-bold text-rose-400">QUARANTINE: {item.damagedStock} Bks</p>;
                                             /* a promo item is counted in pcs; nothing is in the field or sold yet (stages 3-4) */
                                             if (isPromo(item)) return <p className={`text-[10px] md:text-xs font-mono font-bold ${isLowStock ? 'text-rose-500' : 'text-amber-200'}`}>VAULT: {item.stock || 0} pcs</p>;
                                             const todayStr = getLocalDayKey();
@@ -320,7 +332,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                             </div>
                         );
                     })}
-                    {currentList.length === 0 && <p className="text-center text-[10px] text-slate-400 mt-10">NO ITEMS FOUND</p>}
+                    {currentList.length === 0 && <p className="text-center text-[10px] text-slate-400 mt-10">{inQ ? 'NO DAMAGED STOCK' : 'NO ITEMS FOUND'}</p>}
                 </div>
             </div>
 

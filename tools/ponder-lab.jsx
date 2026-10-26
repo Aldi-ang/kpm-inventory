@@ -1140,7 +1140,7 @@ function ShellLab() {
            lab cigarettes plus the four promo items of stage 1 (kind 'promo', type PROMO, pcs). &tab=promo opens their group. */
         <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col">
           <ResidentEvilInventory
-            inventory={[...LAB_PRODUCTS, ...[['p-tee', 'T-shirt', 40], ['p-poster', 'Poster', 120], ['p-hat', 'Hat', 2], ['p-lighter', 'Lighter', 300]]
+            inventory={[...LAB_PRODUCTS.map((p) => (p.id === 'p-djar' ? { ...p, damagedStock: 24 } : p)), ...[['p-tee', 'T-shirt', 40], ['p-poster', 'Poster', 120], ['p-hat', 'Hat', 2], ['p-lighter', 'Lighter', 300]]
               .map(([id, name, stock]) => ({ id, name, stock, kind: 'promo', unit: 'pcs', type: 'PROMO', ...(id === 'p-tee' ? labShirt : {}) }))]}
             searchTerm="" onSearch={() => {}} motorists={LAB_MOTORISTS} transactions={[]} isAdmin appSettings={{}}
             onInspect={() => {}} onEdit={() => {}} onDelete={() => {}} onAddNew={() => {}} onUpdateProduct={() => {}} onUploadBg={() => {}}

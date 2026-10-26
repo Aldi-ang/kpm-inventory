@@ -12001,5 +12001,28 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      read('tools/demo-seed-from-backup.mjs').includes('    inventory: products,\n    promo,'));
 }
 
+section('MASTER VAULT QUARANTINE - the damaged stock gets a tab on the same row (his 2026-10-26 "on the old master vault we dont have any method to view the quarantine")');
+{
+  const { inQuarantine } = await import('../utils/helpers.js');
+  const rei = code(read('src/components/ResidentEvilInventory.jsx')).replace(/\r/g, '');
+  ok('BEHAVIOUR: in quarantine = holds damaged Bks; none, 0, a stray string or a missing product are not',
+     inQuarantine({ damagedStock: 24 }) && inQuarantine({ damagedStock: '3' }) && !inQuarantine({ damagedStock: 0 }) &&
+     !inQuarantine({}) && !inQuarantine(undefined) && !inQuarantine({ damagedStock: 'x' }));
+  /* one control, his "focus on 1": no dial in the Master Vault - the chest is a tab, second in the row (a phone sees it
+     without sliding the tabs), admin only like every number on this list */
+  ok('REGRESSION: the QUARANTINE tab sits right after ALL, admin only, and its list is the products holding damaged Bks',
+     rei.includes('const quarantine = inventory.filter(inQuarantine);') &&
+     rei.includes("const currentList = inQ ? quarantine : (sections[activeSection] || []);") &&
+     rei.includes("{sec === 'ALL' && isAdmin && (") && rei.includes('onClick={() => setActiveSection(QUARANTINE)}') &&
+     rei.includes("const QUARANTINE = '__quarantine';") && imports(rei, 'inQuarantine'));
+  ok('REGRESSION: a quarantine row shows its damaged Bks, the empty tab says so, and the tab says where it is settled',
+     rei.includes('if (inQ) return <p className="text-[10px] md:text-xs font-mono font-bold text-rose-400">QUARANTINE: {item.damagedStock} Bks</p>;') &&
+     rei.includes("{inQ ? 'NO DAMAGED STOCK' : 'NO ITEMS FOUND'}") && rei.includes('Damaged stock waits here until Stock Opname settles it.'));
+  /* the lab frame at 375 (2026-10-26): with QUARANTINE in the row the hidden sideways scroll put PROMO out of sight and
+     squeezed the QUARANTINE label to "UARANTIN" - the row wraps now */
+  ok('REGRESSION: the tab row wraps - no hidden sideways scroll that hides the last tabs',
+     rei.includes('<div className="flex flex-wrap gap-1 min-w-0">') && !rei.includes('overflow-x-auto scrollbar-hide'));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
