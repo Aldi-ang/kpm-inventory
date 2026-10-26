@@ -12063,6 +12063,29 @@ section('PROMO ITEMS, stage 2 of 4 - MASUK / KIRIM carry promo lines in pcs, the
      wc.includes("const NEXT = { ok: 'q', q: 'p', p: 'ok' };") && wc.includes('onPress={flip} next={NEXT} />') &&
      wc.includes('const list = q ? damaged : p ? promoRows : rows;') && wc.includes("`${fmt(pTotal)} pcs · ${items(promoRows.length)}`") &&
      wc.includes("p ? 'given away only · never sold'") && wc.includes('<img className="pimg"'));
+  /* his 2026-10-26 frame (yellow TAWANG shirt): "we need more customizable color on this" and "when i put the name on the
+     front here the back does have different name which is the default name" */
+  { const { promoLook, promoSkin, GOODS_PARTS } = await import('../utils/helpers.js');
+    const pg = read('src/utils/promoGoods3d.js').replace(/\r/g, ''), lf = read('src/components/PromoLookFields.jsx').replace(/\r/g, ''), ap = read('src/App.jsx').replace(/\r/g, '');
+    const typed = promoLook({ kind: 'promo', goods: 'tshirt', name: 'T SHIRT TAWANG', printText: 'tawang', goodsColor: '#FFE830' });
+    const plain = promoLook({ kind: 'promo', goods: 'hat', name: 'Hat Cello' });
+    ok('BEHAVIOUR: the back prints the typed text; an item with no typed text keeps KPM on the back',
+       typed.word === 'TAWANG' && typed.back === 'TAWANG' && plain.word === 'CELLO' && plain.back === 'KPM' &&
+       decodeURIComponent(promoSkin({ kind: 'promo', goods: 'tshirt', name: 'T-shirt', printText: 'Tawang' }, 'back')).includes('>TAWANG<'));
+    ok('BEHAVIOUR: TRIM follows COLOR and ACCENT follows PRINT COLOR until picked - an item saved before looks the same',
+       typed.trim === '#ffe830' && typed.accent === typed.ink && plain.trim === plain.body &&
+       promoLook({ kind: 'promo', goods: 'hat', trimColor: '#1C1814', accentColor: '#efe9df' }).trim === '#1c1814' &&
+       promoLook({ kind: 'promo', goods: 'hat', accentColor: '#efe9df' }).accent === '#efe9df');
+    ok('BEHAVIOUR: every part a picker names exists in its model (mesh names of public/promo/*.glb)',
+       GOODS_PARTS.tshirt.trim[1].test('tshirt_collar1') && GOODS_PARTS.hat.trim[1].test('hat_seam5') && GOODS_PARTS.hat.accent[1].test('hat_brim_edge') &&
+       GOODS_PARTS.mug.trim[1].test('mug_handle') && GOODS_PARTS.ashtray.accent[1].test('ashtray_line') && !GOODS_PARTS.hat.trim[1].test('hat_brim') &&
+       read('public/promo/hat.glb', 'latin1').includes('"hat_brim_edge"') && read('public/promo/mug.glb', 'latin1').includes('"mug_handle"'));
+    ok('REGRESSION: the 3D paints TRIM / ACCENT parts by mesh name before the material rules, and the back print reads look.back',
+       pg.includes("drawPrint(d.print === 'back' ? current.back : current.word,") && pg.includes('else if (parts.trim?.[1].test(o.name)) o.material.color.set(current.trim);') &&
+       pg.indexOf('parts.accent?.[1].test(o.name)') < pg.indexOf('else if (BODY.has(o.material.name))') && !pg.includes("'back' ? 'KPM'") &&
+       lf.includes('name="trimColor"') && lf.includes('name="accentColor"') && lf.includes("setTrim(''); setAccent('');") &&
+       ap.includes("if ('trimColor' in data) data.trimColor = hex(data.trimColor) === body ? '' : hex(data.trimColor);"));
+  }
   ok('REGRESSION: Stock Opname counts the Master Vault\'s promo items by the piece; the Bks-only monitor and quarantine crates skip them',
      so.includes('const activeInventory = isAreaAdmin ? (branchInventory || []) : [...safeInventory, ...promoItems];') &&
      so.includes("{isPromo(item) ? 'PROMO · count in pcs' : `ID: ${item.id}`}") && so.split('.filter(r => !isPromo(r))').length - 1 === 3);

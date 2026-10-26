@@ -12,6 +12,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { GOODS_PARTS } from './helpers';
 
 const BLACK = '#1c1814', CREAM = '#efe9df';
 const BODY = new Set(['fabric', 'black', 'cream', 'paper']);
@@ -76,15 +77,18 @@ export const mount = (el, { goods, look, drag = false, onFail }) => {
     let alive = true, frame = 0, held = null, model = null, current = look;
 
     const draw = () => { if (alive) renderer.render(scene, cam); };
+    const parts = GOODS_PARTS[goods] || {};   // TRIM / ACCENT parts by mesh name - checked before the material rules
     const paint = () => {
         model?.traverse((o) => {
             if (!o.isMesh) return;
             if (o.userData.print) {
                 const d = o.userData;
                 o.material.map?.dispose();
-                o.material.map = drawPrint(d.print === 'back' ? 'KPM' : current.word, d.aspect, d.style, current);
+                o.material.map = drawPrint(d.print === 'back' ? current.back : current.word, d.aspect, d.style, current);
                 o.material.needsUpdate = true;
-            } else if (BODY.has(o.material.name)) o.material.color.set(current.body);
+            } else if (parts.trim?.[1].test(o.name)) o.material.color.set(current.trim);
+            else if (parts.accent?.[1].test(o.name)) o.material.color.set(current.accent);
+            else if (BODY.has(o.material.name)) o.material.color.set(current.body);
             else if (o.material.name === 'gold') o.material.color.set(current.ink);
         });
         draw();

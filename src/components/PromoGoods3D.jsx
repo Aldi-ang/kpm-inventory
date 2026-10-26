@@ -21,7 +21,7 @@ const PromoGoods3D = forwardRef(function PromoGoods3D({ product, drag = false, c
         return () => { live = false; handle.current?.(); handle.current = null; };
     }, [goods, drag, failed]);
 
-    useEffect(() => { handle.current?.set(look); }, [look.body, look.ink, look.word]);   // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => { handle.current?.set(look); }, [look.body, look.ink, look.trim, look.accent, look.word, look.back]);   // eslint-disable-line react-hooks/exhaustive-deps
 
     useImperativeHandle(ref, () => ({ snapshot: () => handle.current?.snapshot() || null }), []);
 

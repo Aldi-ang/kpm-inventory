@@ -292,10 +292,26 @@ export const GOODS_LOOK = {
     tshirt: { body: '#1c1814', ink: '#d4a017' }, poster: { body: '#efe9df', ink: '#d4a017' }, hat: { body: '#1c1814', ink: '#d4a017' },
     lighter: { body: '#1c1814', ink: '#d4a017' }, ashtray: { body: '#1c1814', ink: '#d4a017' }, mug: { body: '#efe9df', ink: '#d4a017' },
 };
+/* MORE PAINT (his 2026-10-26 "we need more customizable color on this"): the parts each model can paint apart, by their
+   mesh names in public/promo/<goods>.glb - TRIM (collar, seams, handle, lever) and ACCENT (the gold parts). Saved as
+   trimColor / accentColor; '' = TRIM follows COLOR and ACCENT follows PRINT COLOR, which is how every item looked before,
+   so nothing already saved changes. A type without a part shows no picker for it. */
+export const GOODS_PARTS = {
+    tshirt: { trim: ['COLLAR', /^tshirt_collar/] },
+    hat: { trim: ['SEAMS', /^hat_seam/], accent: ['BUTTON + EDGE', /^hat_(button|brim_edge)$/] },
+    mug: { trim: ['HANDLE', /^mug_handle$/] },
+    lighter: { trim: ['LEVER', /^lighter_lever$/] },
+    ashtray: { accent: ['RING', /^ashtray_line$/] },
+};
 export const promoLook = (product) => {
     const def = GOODS_LOOK[promoGoods(product)] || GOODS_LOOK.tshirt;
     const hex = (v) => (/^#[0-9a-f]{6}$/i.test(v || '') ? v.toLowerCase() : null);
-    return { body: hex(product?.goodsColor) || def.body, ink: hex(product?.printColor) || def.ink, word: promoWord(product) };
+    const body = hex(product?.goodsColor) || def.body, ink = hex(product?.printColor) || def.ink;
+    /* the back prints the text he typed; only an item with no printed text keeps KPM there (his "when i put the name on
+       the front here the back does have different name which is the default name") */
+    const own = String(product?.printText || '').trim();
+    return { body, ink, trim: hex(product?.trimColor) || body, accent: hex(product?.accentColor) || ink,
+        word: promoWord(product), back: own ? promoWord(product) : 'KPM' };
 };
 
 /* The flat picture of a promo item with no photo (his 2026-10-26 "default skin for the 3D promo item like on the
@@ -304,7 +320,7 @@ export const promoLook = (product) => {
    the 3D goods it is the fallback: an item no goods type fits, or a phone where the 3D model cannot load. */
 export const promoSkin = (product, side) => {
     const shirt = promoGoods(product) === 'tshirt';
-    const word = side === 'back' ? 'KPM' : promoWord(product);
+    const word = side === 'back' ? promoLook(product).back : promoWord(product);
     const size = Math.min(12, (shirt ? 38 : 62) / (word.length * 0.68)).toFixed(1);
     const shape = shirt ? '<path d="M31 13 L18 17 L6 31 L16 41 L24 35 L24 91 L66 91 L66 35 L74 41 L84 31 L72 17 L59 13 Q45 25 31 13 Z" fill="#1c1814"/>'
                         : '<rect x="10" y="36" width="70" height="28" rx="4" fill="#1c1814"/>';

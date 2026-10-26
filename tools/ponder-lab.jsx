@@ -33,6 +33,7 @@ import ShipmentPlanTable from '../src/ponder/stages/ShipmentPlanTable.jsx';
 import ProductPerformancePanel from '../src/components/ProductPerformancePanel.jsx';
 import ResidentEvilInventory, { ItemInspector } from '../src/components/ResidentEvilInventory.jsx';
 import ExamineModal from '../src/components/ExamineModal.jsx';
+import PromoLookFields from '../src/components/PromoLookFields.jsx';
 import AcceptanceReceipt from '../src/components/AcceptanceReceipt.jsx';
 import RestockVaultView from '../src/RestockVaultView.jsx';
 import MerchantSalesView from '../src/MerchantSalesView.jsx';
@@ -1296,6 +1297,23 @@ function Vault3DLab() {
 /* ?capy - the REAL corner capybara with the real voice (2026-10-11, his "the capy shows up and there is no voice tho").
    The tap unlocks sound exactly as main.jsx does, then mounts him; a CAPY_COMMS line or his idle line must fetch and play
    /sounds/capy-*.mp3. */
+/* ?promolook - the product form's real LOOK block for three goods (2026-10-26, his "we need more customizable color on
+   this" + "when i put the name on the front here the back does have different name"): his yellow TAWANG shirt with a
+   black collar, a hat with its own seams and gold parts, a mug with its own handle. The 3D turns, so a frame ~7 s in
+   shows the back. */
+function PromoLookLab() {
+  const items = [
+    { id: 'l1', name: 'T SHIRT TAWANG', kind: 'promo', goods: 'tshirt', printText: 'TAWANG', goodsColor: '#ffe830', printColor: '#1c1814', trimColor: '#1c1814' },
+    { id: 'l2', name: 'Hat', kind: 'promo', goods: 'hat', printText: 'CELLO', goodsColor: '#b3242e', trimColor: '#1c1814', accentColor: '#efe9df' },
+    { id: 'l3', name: 'Mug', kind: 'promo', goods: 'mug', goodsColor: '#efe9df', trimColor: '#b3242e' },
+  ];
+  return (
+    <div style={{ background: '#0A0908', minHeight: '100vh', padding: 16, display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', fontSize: 13 }}>
+      {items.map((p) => <form key={p.id} onSubmit={(e) => e.preventDefault()} style={{ border: '1px solid #3a322a', padding: 12 }}><PromoLookFields product={p} previewRef={{ current: null }} /></form>)}
+    </div>
+  );
+}
+
 function CapyLab() {
   const [on, setOn] = React.useState(false);
   return on ? <CapybaraMascot user={{ uid: 'lab' }} /> : (
@@ -1398,6 +1416,7 @@ createRoot(document.getElementById('root')).render(
   q.has('capy') ? <CapyLab /> :
   q.has('share') ? <><ShareLab /><ConfirmHost /><ToastHost /></> :
   q.has('vault3d') ? <Vault3DLab /> :
+  q.has('promolook') ? <PromoLookLab /> :
   /* the shell carries the dialog gate + the toast column as main.jsx does, so a screen that asks (the player card's ✕
      asks the reason through promptAction) is answered in the lab too instead of logging "not mounted" */
   q.has('shell') ? <><ShellLab /><ConfirmHost /><ToastHost /></> :

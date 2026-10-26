@@ -3631,6 +3631,10 @@ const handleGitHubMirror = async () => {
               const hex = (v) => (/^#[0-9a-f]{6}$/i.test(v || '') ? v.toLowerCase() : '');
               data.goodsColor = hex(data.goodsColor) === def.body ? '' : hex(data.goodsColor);
               data.printColor = hex(data.printColor) === def.ink ? '' : hex(data.printColor);
+              /* TRIM follows COLOR and ACCENT follows PRINT COLOR until picked apart (GOODS_PARTS) - stored '' while they do */
+              const body = data.goodsColor || def.body, ink = data.printColor || def.ink;
+              if ('trimColor' in data) data.trimColor = hex(data.trimColor) === body ? '' : hex(data.trimColor);
+              if ('accentColor' in data) data.accentColor = hex(data.accentColor) === ink ? '' : hex(data.accentColor);
               data.printText = String(data.printText || '').trim().slice(0, 18);
               const thumb = goodsPreviewRef.current?.snapshot?.();
               if (thumb) data.thumb = thumb;   // the Master Vault list picture, in this item's colours
