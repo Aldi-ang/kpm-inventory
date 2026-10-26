@@ -12126,7 +12126,10 @@ section('PROMO ITEMS, stage 2 of 4 - MASUK / KIRIM carry promo lines in pcs, the
        ['tshirt', 'lighter'].every((g) => glb(g).includes('"print":"back"')));
     ok('REGRESSION: the poster is a poster - paper on a hanger (top and bottom bars, a cord), its print a design with a frame and a burst',
        glb('poster').includes('"name":"poster_rail_top"') && glb('poster').includes('"name":"poster_rail_bottom"') && glb('poster').includes('"name":"poster_cord"') &&
-       glb('poster').includes('"style":"poster"') && pg.includes('g.strokeRect(') && pg.includes('// the burst'));
+       /* NO rays (his 16:00 "your poster is look like some japanese propaganda bruh change it" - a burst on a red sheet is the
+          rising-sun flag): a double frame instead, and nothing that radiates from the middle */
+       glb('poster').includes('"style":"poster"') && (pg.match(/g\.strokeRect\(/g) || []).length === 2 && pg.includes('// the inner rule') &&
+       !pg.includes('the burst') && !/g\.arc\(cx, cy, H/.test(pg));
     /* the lighter's lever is black on every body colour, like the korek gas in his photo ("just make it like this one");
        a picked LEVER colour still wins, and the save stores '' only when the pick IS that black */
     ok('BEHAVIOUR: the lighter LEVER defaults to black whatever COLOR is; a picked lever colour wins; the save compares against the type\'s own lever default',

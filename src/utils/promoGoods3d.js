@@ -34,18 +34,15 @@ const drawPrint = (word, aspect, style, look) => {
     };
     if (style === 'poster') {
         /* a printed promo poster (his 2026-10-26 "redesign the poster to show that it is a poster"): the paper colour, a
-           burst of rays behind the headline, a frame, the headline on a black block, and his BOTTOM TEXT on a black band.
+           double frame like a tobacco label, the headline on a black block, and his BOTTOM TEXT on a black band. No rays
+           from the middle - on a red sheet that was the rising-sun flag (his "look like some japanese propaganda").
            Nothing is printed that he did not type ("weird if the other one is tawang but the other text is kpm"). */
         g.fillStyle = look.body; g.fillRect(0, 0, W, H);
         const m = W * 0.05, cx = W / 2, cy = H * 0.42;
-        // the burst, kept inside the frame
-        g.save(); g.beginPath(); g.rect(m, m, W - 2 * m, H - 2 * m); g.clip();
-        g.fillStyle = look.ink; g.globalAlpha = 0.22;
-        for (let k = 0; k < 32; k += 2) {
-            g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, H, (k / 32) * Math.PI * 2, ((k + 1) / 32) * Math.PI * 2); g.closePath(); g.fill();
-        }
-        g.restore();
         g.strokeStyle = look.ink; g.lineWidth = W * 0.014; g.strokeRect(m, m, W - 2 * m, H - 2 * m);
+        // the inner rule: a thin second line just inside the frame
+        const r = m + W * 0.025;
+        g.lineWidth = W * 0.005; g.strokeRect(r, r, W - 2 * r, H - 2 * r);
         const bw = W * 0.8, bh = H * 0.22, bx = (W - bw) / 2, by = cy - bh / 2;
         g.fillStyle = BLACK; g.beginPath(); g.roundRect(bx, by, bw, bh, W * 0.04); g.fill();
         g.lineWidth = W * 0.008; g.stroke();
