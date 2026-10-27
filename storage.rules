@@ -1,7 +1,7 @@
 rules_version = '2';
 
 // =====================================================================
-// STORAGE RULES - DRAFT 2026-10-27, NOT PUBLISHED. Aldi publishes these himself in the Firebase Console
+// STORAGE RULES - PUBLISHED by Aldi 2026-10-27 ~18:42 WIB (pasted from this file). Aldi publishes these himself in the Firebase Console
 // (Storage -> Rules) on the day the project goes on Blaze; nothing deploys them from this repo.
 // Why they exist: fix A of the 100-user plan (his 2026-10-27 "use option A to minimize the cost") keeps
 // photos as Storage files instead of inside records. Without these rules every upload is refused and the
