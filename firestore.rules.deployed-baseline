@@ -1,12 +1,12 @@
 // =============================================================================
-// PUBLISHED 2026-10-20 ~10:30 WIB by Aldi from the Firebase Console (this file as of kpm f24f2bf, sent to him
-//   as a file and pasted whole; his "btw i already publish the rules"). firestore.rules.deployed-baseline is
+// PUBLISHED 2026-10-27 ~16:30 WIB by Aldi from the Firebase Console (this file as of kpm c1e113e, put on his
+//   clipboard and pasted whole; his "published already the rules"). firestore.rules.deployed-baseline is
 //   that text - the instant rollback copy. Live = the 2026-07-28 rules + the shared rank/badge path closed,
 //   + CHANGE 11/11b (a vault password per person), 12 (lock an account), 13 (T1/T2 move a person to a new
 //   Gmail), 14 (the eight holes found reviewing the live rules), 15 (the bell's Missed list, one per person),
 //   16 (a salesman's sale may add to the month's sales tally), 17 (customer access by folder; Tier 3 never
-//   limited). Before this: 2026-10-19 ~14:41 (commit 13fffe1, without 17). Any change below this line is a
-//   DRAFT again.
+//   limited), 18 (only T1-T4 make a shop Grosir), 19 (team offers: T1-T3 everywhere, T4 his own region).
+//   Before this: 2026-10-20 ~10:30 (f24f2bf, without 18 and 19). Any change below this line is a DRAFT again.
 //
 // Everything except the marked [CHANGE N] / [ADDED] / [FLAGGED] blocks below is
 // intentionally byte-for-byte the rules that were live before 2026-07-23. An
@@ -258,6 +258,30 @@ service cloud.firestore {
           (admin && now.get('holdTeam', '') == team && !changed.hasAny(['province', 'region', 'city']))))
       );
     }
+
+    // [CHANGE 18 — 2026-10-21, DRAFT] GROSIR IS UNLOCKED BY AN ADMIN. His words: "all store registration should be
+    // automatically can be seen by every team member but to unlock the proce level of grosir, it needs confirmation
+    // from the regional admin, to avoid salesman selling at retail price while the system recognize the sales as
+    // grosir", then "A, grosir only available for the grosir registered store only". A T5/T6 may not create a shop
+    // at Grosir nor move one TO Grosir; T1-T4 may (the app's Confirm Grosir). isGrosirLevel mirrors the app's
+    // priceLevelOf (src/utils/customerAccess.js): priceTier first, a rank (GOLD) only when no price was saved - so a
+    // salesman cannot reach Grosir through the rank either. Each check stops before the profile read when the shop
+    // is not becoming Grosir, so a visit or an ordinary edit costs no extra steps. The app works under the rules
+    // before this one too (it never writes a salesman's Grosir): publish AFTER the app is live, or an old phone's
+    // Grosir new-shop is refused. rules-test/test-customer-access.mjs asserts every case.
+    function isGrosirLevel(d) {
+      let p = d.get('priceTier', '');
+      let r = d.get('tier', '');
+      let t = p != null && p != '' ? p : (r != null && r != '' ? r : d.get('pricingTier', ''));
+      return t is string && t.upper().matches('.*(GROSIR|GOLD|WHOLESALE).*');
+    }
+    function grosirAdmin() {
+      let profile = getEmployeeProfile();
+      let role = profile != null ? profile.get('userRole', 'NONE') : 'NONE';
+      return isT1Tag(role) || role == 'COMPANY_OWNER' || role == 'AREA_ADMIN' || role == 'FLEET_CAPTAIN';
+    }
+    function grosirCreateOk() { return !isGrosirLevel(request.resource.data) || grosirAdmin(); }
+    function grosirUpdateOk() { return !isGrosirLevel(request.resource.data) || isGrosirLevel(resource.data) || grosirAdmin(); }
 
     match /system_admins/{uid} {
       allow read: if isAuthenticated() && request.auth.uid == uid;
@@ -600,16 +624,17 @@ service cloud.firestore {
         // (or for T1/T2); the second line is everyone else while folders are on.
         allow read: if isSalesman(bossUid) && !folderLimited(bossUid);
         allow read: if folderReadOk(bossUid, resource.data);
-        allow create: if isSalesman(bossUid) && customerAccessLevel(bossUid) != 'view_only';
+        // [CHANGE 18] each of the three lines below also ends in a Grosir check (only T1-T4 make a shop Grosir)
+        allow create: if isSalesman(bossUid) && customerAccessLevel(bossUid) != 'view_only' && grosirCreateOk();
         // [CHANGE 17] the old update line, now only while folders are off (or for T1/T2) ...
         allow update: if isSalesman(bossUid) && !folderLimited(bossUid) && customerAccessLevel(bossUid) != 'view_only' && (
           customerAccessLevel(bossUid) != 'own_region' ||
           isUnclassifiedRegion(resource.data.get('region', '')) ||
           isOwnRegionMatch(bossUid)
-        );
+        ) && grosirUpdateOk();
         // ... and while on: a shop he can see; a visit by anyone, a real edit only with his switch on, and the
         // shop may land only in his own folders (from his temporary folder, or between his folders).
-        allow update: if isSalesman(bossUid) && folderLimited(bossUid) && folderEditOk(bossUid);
+        allow update: if isSalesman(bossUid) && folderLimited(bossUid) && folderEditOk(bossUid) && grosirUpdateOk();
         allow delete: if false;
         match /benchmarks/{benchmarkId} {
           allow read, write: if isSalesman(bossUid);
@@ -752,6 +777,10 @@ service cloud.firestore {
         // employees have their own (vault_keys) since CHANGE 11.
         allow read: if isSalesman(bossUid) && docId != 'admin';
         allow write: if false;
+        // [CHANGE 19, with team offers] T2/T3 save the all-area offers on settings/general - that ONE field, nothing else
+        // on the doc (the owner keeps the rest via the catch-all). His "tier 3 and above can make offers bundle everywhere".
+        allow update: if docId == 'general' && (isAreaAdmin(bossUid) || isCompanyTopTier(bossUid)) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['promoBundles']) && request.resource.data.promoBundles is list;
       }
       // [ADDED — career ledger, Phase 2] READ: every employee — profile + leaderboard need it.
       // WRITE: deliberately nothing here. Falls through to the users/{bossUid} catch-all above
@@ -793,6 +822,23 @@ service cloud.firestore {
       match /mapSettings/{docId} {
         allow read: if isSalesman(bossUid);
         allow write: if isAreaAdmin(bossUid) || isFleetCaptain(bossUid);
+      }
+      // [CHANGE 19 — 2026-10-27, DRAFT] TEAM OFFERS. His words: "regional admin can make offers for his own as a team
+      // strategy as long as sales increasing". One doc per region, promoOffers/{REGION} = { bundles: [...] } - each a
+      // factory offer: buy these cigarettes, get this promo item free. Every employee reads them (the Sales Terminal's
+      // BUNDLES shows his own region's). A T4 REGIONAL ADMIN (FLEET_CAPTAIN) writes ONLY the doc named after his own
+      // location - capitals, spaces trimmed, the app's normalizeRegion - and only the `bundles` field; never a delete.
+      // The owner writes every region through the users/{bossUid} catch-all. The app takes the region from the doc id,
+      // never from a field inside an offer. rules-test/test-promo-offers.mjs asserts every case.
+      match /promoOffers/{region} {
+        function isOwnRegionDoc() {
+          let loc = getEmployeeProfile().get('location', '');
+          return loc is string && loc.trim() != '' && loc.trim().upper() == region;
+        }
+        allow read: if isSalesman(bossUid);
+        // T1-T3 write every region (his 2026-10-27 "tier 3 and above can make offers bundle everywhere"); T4 his own only
+        allow write: if (isAreaAdmin(bossUid) || isCompanyTopTier(bossUid) || (isFleetCaptain(bossUid) && isOwnRegionDoc())) &&
+          request.resource.data.keys().hasOnly(['bundles']) && request.resource.data.bundles is list;
       }
       match /audit_logs/{logId} {
         allow read: if isSalesman(bossUid);
