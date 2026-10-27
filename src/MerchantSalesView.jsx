@@ -127,6 +127,10 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     // where the given pieces come from: the boss on the Master Vault gives from its own promo stock (his 2026-10-27
     // "can u add so that tier 1 can give the item straight from the master vault?"), everyone else from a van
     const giveFrom = userRole === 'ADMIN' && adminSalesMode !== 'VEHICLE' ? 'the Master Vault' : 'the van';
+    // what the give box says when nothing can be given - it is never hidden (his 2026-10-27 "yes add that line and dont hide the button")
+    const giveEmpty = isReturMode ? 'No promo goods with a retur. Give them on a new deal.'
+        : giveFrom === 'the Master Vault' ? 'No promo goods in the Master Vault. Restock them in Restock Vault.'
+        : 'No promo goods in this van. Load them in Fleet & Canvas → PROMO.';
     const givenLines = canGive ? giveLines(promoVan.map(l => ({ productId: l.productId, name: l.name, qty: Math.min(give[l.productId] || 0, l.qty) }))) : [];
     const [lockedTier, setLockedTier] = useState(draft?.lockedTier ?? null);
     // the product card's price: the picked shop's tier, Ecer until a shop is picked
@@ -2209,10 +2213,10 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 {/* PROMO GOODS, given free with this sale (stage 4). It grows inside the cart paper and scrolls with it -
                     the same function as a cart line, so the same control (his "one function, one control"). No price
                     anywhere: it never joins the cart, the total or the nota's sum. */}
-                {canGive && (
-                    <div data-guide="promo-give" className="flex flex-col p-3 md:p-4 mb-1 rounded border border-dashed border-[var(--duke-brass-edge-2)] bg-[var(--duke-paper)] shadow-sm">
+                {/* never hidden (his 2026-10-27 "dont hide the button"): with nothing to give it says why */}
+                <div data-guide="promo-give" className="flex flex-col p-3 md:p-4 mb-1 rounded border border-dashed border-[var(--duke-brass-edge-2)] bg-[var(--duke-paper)] shadow-sm">
                         <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[var(--duke-ink-7)]">Promo · given free</span>
-                        {promoVan.map(l => (
+                        {canGive ? promoVan.map(l => (
                             <div key={l.productId} className="flex items-center gap-2 md:gap-3 mt-2">
                                 <img alt="" src={promoPic(l.product || { kind: 'promo', name: l.name })} className="w-10 h-10 object-contain shrink-0 rounded border border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)] bg-[var(--duke-paper-2)]" />
                                 <span className="flex-1 min-w-0 text-[11px] md:text-xs font-black uppercase leading-tight break-words text-[var(--duke-ink-7)]">
@@ -2229,9 +2233,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     className="w-20 md:w-24 min-h-[44px] lg:min-h-0 bg-white border border-[var(--duke-edge-3)] text-center text-base md:text-sm font-bold tabular-nums outline-none focus:border-[var(--duke-amber-edge)] rounded p-1 text-[var(--duke-ink-7)]" />
                                 <span className="text-sm font-bold uppercase text-[var(--duke-ink-7)]">pcs</span>
                             </div>
-                        ))}
-                    </div>
-                )}
+                        )) : <p data-guide="promo-give-empty" className="mt-1.5 text-[11px] md:text-xs font-bold text-[var(--duke-on-paper-dim)]">{giveEmpty}</p>}
+                </div>
             </div>
         </div>
     );

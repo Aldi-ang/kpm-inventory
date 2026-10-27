@@ -12279,7 +12279,14 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      ms.includes('const canGive = !isReturMode && promoVan.length > 0;') &&
      ms.includes('const givenLines = canGive ? giveLines(promoVan.map(l => ({ productId: l.productId, name: l.name, qty: Math.min(give[l.productId] || 0, l.qty) }))) : [];') &&
      ms.includes('await onProcessSale(finalCust, dbMethod, finalCart, newStorePayload, proofPayload, finalGive);') && ms.includes('setGive({});') &&
-     ms.includes('{canGive && (') && ms.includes('data-guide="promo-give"'));
+     ms.includes('data-guide="promo-give"'));
+  /* his 2026-10-27 "yes add that line and dont hide the button" - the box is always on screen; when nothing can be given
+     it SAYS why (his rule: every action must report), never an empty gap */
+  ok('REGRESSION: the "Promo · given free" box is never hidden - with nothing to give it names the reason: an empty van (load in Fleet & Canvas), an empty Master Vault (Restock Vault), or a retur',
+     !ms.includes('{canGive && (') && ms.includes('{canGive ? promoVan.map(l => (') && ms.includes('<p data-guide="promo-give-empty"') &&
+     ms.includes("const giveEmpty = isReturMode ? 'No promo goods with a retur. Give them on a new deal.'") &&
+     ms.includes(": giveFrom === 'the Master Vault' ? 'No promo goods in the Master Vault. Restock them in Restock Vault.'") &&
+     ms.includes(": 'No promo goods in this van. Load them in Fleet & Canvas → PROMO.';"));
   ok('REGRESSION: the nota prints the given pieces with NO price - the live receipt (thermal + A4) and the history reprint (thermal + A4 + WhatsApp)',
      (ms.match(/\(receiptData\.given \|\| \[\]\)\.map\(/g) || []).length === 2 && ms.includes('given: finalGive') &&
      (sr.match(/\(viewingReceipt\.promoGiven \|\| \[\]\)\.map\(/g) || []).length === 2 && sr.includes('(viewingReceipt.promoGiven || []).forEach('));
