@@ -34,6 +34,7 @@ import ProductPerformancePanel from '../src/components/ProductPerformancePanel.j
 import ResidentEvilInventory, { ItemInspector } from '../src/components/ResidentEvilInventory.jsx';
 import ExamineModal from '../src/components/ExamineModal.jsx';
 import PromoLookFields from '../src/components/PromoLookFields.jsx';
+import PromoBundleFields from '../src/components/PromoBundleFields.jsx';
 import AcceptanceReceipt from '../src/components/AcceptanceReceipt.jsx';
 import RestockVaultView from '../src/RestockVaultView.jsx';
 import MerchantSalesView from '../src/MerchantSalesView.jsx';
@@ -1215,7 +1216,10 @@ function ShellLab() {
             promoVan={q.has('promo') ? [['p-tee', 'T-shirt', 6], ['p-hat', 'Hat', 2]].map(([productId, name, qty]) =>
               ({ productId, name, qty, unit: 'pcs', promo: true, product: { id: productId, name, kind: 'promo' } })) : []}
             onInspect={() => {}}
-            appSettings={{ companyName: 'KPM INVENTORY' }}
+            /* &bundles: two factory offers under the BUNDLES chip - the hat one has only 2 hats in the van for 3, so it greys out */
+            appSettings={{ companyName: 'KPM INVENTORY', ...(q.has('bundles') ? { promoBundles: [
+              { id: 'b1', name: 'CELLO BUNDLE', lines: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 1, unit: 'Bal' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }] },
+              { id: 'b2', name: 'DJARUM HAT DEAL', lines: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 2, unit: 'Slop' }], gives: [{ productId: 'p-hat', name: 'Hat', qty: 3 }] }] } : {}) }}
             customers={LAB_CUSTOMERS}
             allowedPayments={['Cash', 'Transfer', 'IOU']} allowedTiers={['Retail', 'Ecer', 'Grosir']}
             transactions={[]} allowRetur allowCashRefund={false}
@@ -1337,6 +1341,21 @@ function PromoLookLab() {
   );
 }
 
+/* ?promobundles - the FACTORY OFFERS block of a promo item's edit panel (2026-10-27, his "buy 1 bal of our product and we
+   will give a t shirt for free"). Saves into this page's state; window.__bundles is what the boss's save would write.
+   The form around it submits to window.__submitted, so a stray Enter is visible. */
+function PromoBundlesLab() {
+  const tee = { id: 'p-tee', name: 'T-shirt', kind: 'promo' };
+  const [list, setList] = React.useState([{ id: 'b1', name: 'CELLO BUNDLE', lines: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 1, unit: 'Bal' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }] }]);
+  return (
+    <div style={{ background: '#0A0908', minHeight: '100vh', padding: 16, fontSize: 13, maxWidth: 420 }}>
+      <form onSubmit={(e) => { e.preventDefault(); window.__submitted = (window.__submitted || 0) + 1; }} style={{ border: '1px solid #3a322a', padding: 12 }}>
+        <PromoBundleFields promo={tee} bundles={list} products={LAB_PRODUCTS} onSave={async (l) => { window.__bundles = l; setList(l); return true; }} />
+      </form>
+    </div>
+  );
+}
+
 function CapyLab() {
   const [on, setOn] = React.useState(false);
   return on ? <CapybaraMascot user={{ uid: 'lab' }} /> : (
@@ -1440,6 +1459,7 @@ createRoot(document.getElementById('root')).render(
   q.has('share') ? <><ShareLab /><ConfirmHost /><ToastHost /></> :
   q.has('vault3d') ? <Vault3DLab /> :
   q.has('promolook') ? <PromoLookLab /> :
+  q.has('promobundles') ? <PromoBundlesLab /> :
   /* the shell carries the dialog gate + the toast column as main.jsx does, so a screen that asks (the player card's ✕
      asks the reason through promptAction) is answered in the lab too instead of logging "not mounted" */
   q.has('shell') ? <><ShellLab /><ConfirmHost /><ToastHost /></> :

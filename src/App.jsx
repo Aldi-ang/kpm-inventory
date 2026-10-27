@@ -39,6 +39,7 @@ import CapybaraMascot from './components/CapybaraMascot';
 import ImageCropper from './components/ImageCropper';
 import ExamineModal from './components/ExamineModal';
 import PromoLookFields from './components/PromoLookFields';
+import PromoBundleFields from './components/PromoBundleFields';
 import LandlordDashboard from './components/LandlordDashboard'; 
 import CrownTransferProtocol from './components/CrownTransferProtocol'; 
 import BiohazardTheme from './components/BiohazardTheme';
@@ -748,6 +749,20 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
           meta: { type, ts: getCurrentTimestamp(), user: user.email },
           inventory, transactions, customers: deepCustomers, samplings, auditLogs, procurements, appSettings, tierSettings, mapBorders
       };
+  };
+
+  /* FACTORY OFFERS (promo bundles): the whole list on settings/general - every salesman already reads that doc and only
+     the boss can write it, so no new collection and no new rule. Returns true when it landed. */
+  const handleSavePromoBundles = async (list) => {
+      try {
+          await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings/general`), { promoBundles: list }, { merge: true });
+          await logAudit("SETTINGS_UPDATE", `Factory offers: ${list.length} saved.`);
+          notify(`Factory offers saved - ${list.length} in BUNDLES now.`);
+          return true;
+      } catch (err) {
+          notify("Factory offer not saved: " + (err.code === 'permission-denied' ? 'only the boss can change offers.' : err.message));
+          return false;
+      }
   };
 
 // --- NEW: SAVE EXECUTIVE DASHBOARD TARGETS ---
@@ -5265,6 +5280,8 @@ const handleGitHubMirror = async () => {
                                     {isPromo(editingProduct) && ((tempImages.front || editingProduct.images?.front)
                                         ? <p className="text-[var(--duke-ink-8)] leading-relaxed">A FRONT photo is set, so the vault shows the photo card, not the 3D model.</p>
                                         : <PromoLookFields key={editingProduct.id || 'new'} product={editingProduct} previewRef={goodsPreviewRef} />)}
+                                    {isPromo(editingProduct) && editingProduct.id && (
+                                        <PromoBundleFields promo={editingProduct} bundles={appSettings?.promoBundles || []} products={inventory} onSave={handleSavePromoBundles} />)}
                                     {!isPromo(editingProduct) && (<>
                                     <h3 className="text-[var(--duke-ink-hi)] border-b border-[var(--duke-veil-edge)] pb-1 mb-2">PRICING ENGINE</h3>
                                     <div><label className="text-[var(--duke-ink-8)] block mb-1">DISTRIBUTOR (MODAL)</label><input name="priceDistributor" type="number" step="any" defaultValue={editingProduct.priceDistributor} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-danger-edge)] text-[var(--duke-danger-ink)] focus:border-[var(--duke-danger-edge)] outline-none"/></div>

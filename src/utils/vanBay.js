@@ -57,6 +57,34 @@ export const promoWithPending = (canvas, pendingTxs, vanId) => (pendingTxs || []
   .filter(tx => tx.vanPending && vanId && tx.agentId === vanId && tx.promoGiven?.length)
   .reduce((list, tx) => settlePromo(list, tx.promoGiven).canvas, canvas || []);
 
+/* A FACTORY OFFER - "buy 1 Bal, get 1 T-shirt" (his 2026-10-26: "price is only recorded from the cigarette price only and
+   the promotional goods is just for bonus"). A recipe on settings/general.promoBundles, `{ id, name, lines: [{ productId,
+   qty, unit }], gives: [{ productId, qty }] }`, with NO price of its own: the terminal turns it into ordinary cart lines at
+   the shop's tier plus pieces in the give box, so every money path stays as it was. Can THIS van cover it on top of what
+   the cart and the give box already hold? `why` names the first thing missing, in his words. */
+export function bundleCheck(bundle, inventory, promoVan, cart = [], give = {}) {
+  const lines = [], gives = [];
+  for (const l of bundle?.lines || []) {
+    const product = (inventory || []).find(p => p.id === l.productId);
+    if (!product) return { ok: false, why: `${bundle.name}: a product in it is not in this van's list any more.` };
+    const bks = convertToBks(Number(l.qty) || 0, l.unit || 'Bks', product);
+    const inCart = (cart || []).filter(i => i.productId === product.id).reduce((s, i) => s + convertToBks(i.qty, i.unit, i.product || product), 0);
+    if (inCart + bks > (Number(product.stock) || 0)) return { ok: false, why: `Not enough ${product.name} in the van for ${bundle.name} (needs ${bks} Bks).` };
+    lines.push({ product, qty: Number(l.qty) || 0, unit: l.unit || 'Bks', bks });
+  }
+  for (const g of bundle?.gives || []) {
+    const van = (promoVan || []).find(v => v.productId === g.productId);
+    const qty = Math.floor(Number(g.qty) || 0);
+    const left = (Number(van?.qty) || 0) - (Number(give?.[g.productId]) || 0);
+    if (qty > left) return { ok: false, why: left > 0
+      ? `Only ${left} pcs ${van.name} left in the van - ${bundle.name} gives ${qty}.`
+      : `No ${van?.name || g.name || 'promo piece'} left in the van for ${bundle.name}.` };
+    if (qty > 0) gives.push({ productId: g.productId, name: van.name, qty });   // van is set: qty > left above refuses a missing one
+  }
+  if (!lines.length) return { ok: false, why: `${bundle?.name || 'This bundle'} has no cigarettes in it.` };
+  return { ok: true, why: '', lines, gives };
+}
+
 /* ONE LINE PER PRODUCT, SIGNED: dir +1 goes into the van, dir -1 back to the warehouse. */
 export const lineBks = (line, product) => convertToBks(line.qty, line.unit, product);
 export const netBks = (lines, id, product) => {

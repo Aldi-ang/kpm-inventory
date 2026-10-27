@@ -12295,6 +12295,32 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   ok('REGRESSION: the boss on the Master Vault sees the one line "switch to Boss Car" instead of an empty give box; the history line lists the given pieces',
      ms.includes("const giveNeedsVan = !isReturMode && userRole === 'ADMIN' && adminSalesMode !== 'VEHICLE';") && ms.includes('Promo goods are given from a van - switch to Boss Car') &&
      code(read('src/components/HistoryReportView.jsx')).includes('.concat((t.promoGiven || []).map(g =>'));
+  /* FACTORY BUNDLES - "buy 1 Bal, get 1 T-shirt" (his 2026-10-26: "price is only recorded from the cigarette price only and
+     the promotional goods is just for bonus"). A recipe on settings/general, no price of its own: it fills the cart and the
+     give box, and the engine never sees the word bundle. */
+  const cello = { id: 'c', name: 'Cello', stock: 250, packsPerSlop: 10, slopsPerBal: 10, balsPerCarton: 4 };
+  const deal = { name: 'CELLO BUNDLE', lines: [{ productId: 'c', qty: 1, unit: 'Bal' }], gives: [{ productId: 'tee', qty: 1 }] };
+  const vanTee = [{ productId: 'tee', name: 'T-shirt', qty: 2 }];
+  const okB = vb.bundleCheck(deal, [cello], vanTee);
+  ok('BEHAVIOUR: a bundle the van covers -> 1 Bal = 100 Bks of the cigarette + 1 pcs T-shirt; on top of 200 Bks already in the cart (250 in the van) it is refused, named',
+     okB.ok && okB.lines[0].bks === 100 && okB.lines[0].unit === 'Bal' && okB.gives[0].qty === 1 && okB.gives[0].name === 'T-shirt' &&
+     !vb.bundleCheck(deal, [cello], vanTee, [{ productId: 'c', qty: 200, unit: 'Bks', product: cello }]).ok &&
+     /Not enough Cello in the van/.test(vb.bundleCheck(deal, [cello], vanTee, [{ productId: 'c', qty: 200, unit: 'Bks', product: cello }]).why));
+  ok('BEHAVIOUR: the promo half counts what the give box already holds - 2 given of 2 = none left; 1 given + a bundle of 2 = "Only 1 pcs"; a product gone from the van list is refused',
+     /No T-shirt left/.test(vb.bundleCheck(deal, [cello], vanTee, [], { tee: 2 }).why) &&
+     /Only 1 pcs T-shirt left/.test(vb.bundleCheck({ ...deal, gives: [{ productId: 'tee', qty: 2 }] }, [cello], vanTee, [], { tee: 1 }).why) &&
+     !vb.bundleCheck(deal, [], vanTee).ok && !vb.bundleCheck(deal, [cello], []).ok);
+  const pbf = code(read('src/components/PromoBundleFields.jsx'));
+  ok('REGRESSION: bundles live on settings/general (salesmen already read it, only the boss writes it - no new rule), the editor sits on a SAVED promo item, removing asks first, its inputs never join the product form',
+     ap.includes("/settings/general`), { promoBundles: list }, { merge: true });") &&
+     ap.includes('{isPromo(editingProduct) && editingProduct.id && (') && ap.includes('<PromoBundleFields promo={editingProduct} bundles={appSettings?.promoBundles || []} products={inventory} onSave={handleSavePromoBundles} />') &&
+     read('firestore.rules').includes("allow read: if isSalesman(bossUid) && docId != 'admin';") &&
+     pbf.includes('await confirmAction(') && !/<(input|select)[^>]*\sname=/.test(pbf) && pbf.includes("if (e.key === 'Enter') e.preventDefault();"));
+  ok('REGRESSION: the terminal turns a bundle into ORDINARY cart lines at the shop tier + give-box pieces, refuses it in Retur and on an Utang Barang line, and the engine never sees a bundle',
+     ms.includes('const bundles = appSettings?.promoBundles || [];') && ms.includes('...(bundles.length ? ["BUNDLES"] : [])') &&
+     ms.includes('const chk = bundleCheck(b, inventory, promoVan, cart, give);') && ms.includes('calculatedPrice: tierPrice(l.product, tier) * convertToBks(1, l.unit, l.product), product: l.product,') &&
+     ms.includes("if (isReturMode) return notify(`${b.name} is for a sale - switch Retur off first.`);") && ms.includes('const owed = cart.find(i => i.isIouFulfillment && chk.lines.some(l => l.product.id === i.productId));') &&
+     !/promoBundles|bundleCheck/.test(eng) && !/\bprice\b/.test(JSON.stringify(deal)));
   const samp = code(read('src/components/SamplingManager.jsx'));
   ok('REGRESSION: a SAMPLE still needs no sale - the sampling screen knows nothing of the give rule (his "give them for free")',
      !/promoGiven|giveLines|applyGiveToPromo|canGive/.test(samp));

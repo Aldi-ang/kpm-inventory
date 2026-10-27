@@ -7,7 +7,7 @@ import { IS_DEMO } from './config/firebase';
 import { demoPhoto } from './config/demoPhoto.js';
 import ProofCamera from './components/ProofCamera.jsx';
 import { savePhotoAndGetReference, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey, promoPic } from './utils/helpers';
-import { giveLines } from './utils/vanBay';
+import { giveLines, bundleCheck } from './utils/vanBay';
 import { waNumber } from './utils/whatsapp.js';
 import { areaFromPin, watchBorders } from './utils/areaFromPin.js';
 import { grosirHold, priceLevelOf, canConfirmGrosir, grosirRequestNotice } from './utils/customerAccess.js';
@@ -750,6 +750,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         );
     };
 
+    // the tier a NEW cart line starts at - a ware tap and a bundle share it, so the two can never price a pack differently
+    const newLineTier = () => lockedTier || (allowedTiers.includes('Retail') ? 'Retail' : (allowedTiers.find(t => t !== 'Grosir') || 'Retail'));
     const addToCart = (product) => {
         if (!isReturMode && product.stock <= 0) return notify(`OUT OF STOCK IN VEHICLE!\n\nYou cannot sell ${product.name} because you don't have any in your car.`);
 
@@ -765,8 +767,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             }
             
             triggerMerchantSpeak((product.priceEcer || 0) > 100000 ? 'expensive' : 'add');
-            const tierToUse = lockedTier || (allowedTiers.includes('Retail') ? 'Retail' : (allowedTiers.find(t => t !== 'Grosir') || 'Retail'));
-            
+            const tierToUse = newLineTier();
+
             let basePrice = product.priceRetail || 0;
             if (tierToUse === 'Ecer') basePrice = product.priceEcer || 0;
             if (tierToUse === 'Grosir') basePrice = product.priceGrosir || 0;
@@ -778,6 +780,30 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 returnReason: '', otherReasonDetail: '', fulfillment: 'NOW'
             }];
         });
+    };
+
+    /* A FACTORY BUNDLE (the BUNDLES chip): one press = its cigarettes as ordinary cart lines at the shop's tier, plus its
+       promo pieces in the give box. It has no price of its own (his "price is only recorded from the cigarette price only"),
+       so the cart, the total and the engine see a normal sale. A product already in the cart is summed in Bks. */
+    const tierPrice = (p, tier) => ({ Ecer: p.priceEcer, Grosir: p.priceGrosir }[tier] ?? p.priceRetail) || 0;
+    const applyBundle = (b) => {
+        if (isReturMode) return notify(`${b.name} is for a sale - switch Retur off first.`);
+        const chk = bundleCheck(b, inventory, promoVan, cart, give);
+        if (!chk.ok) return notify(chk.why);
+        // an Utang Barang line is priced Rp 0 - summing a bundle into it would hand the bundle's packs out free
+        const owed = cart.find(i => i.isIouFulfillment && chk.lines.some(l => l.product.id === i.productId));
+        if (owed) return notify(`${owed.name} is in the cart as Utang Barang - save that deal first, then add ${b.name}.`);
+        const tier = newLineTier();
+        setCart(prev => chk.lines.reduce((list, l) => {
+            const have = list.find(i => i.productId === l.product.id);
+            if (!have) return [...list, { productId: l.product.id, name: l.product.name, qty: l.qty, unit: l.unit, priceTier: tier,
+                calculatedPrice: tierPrice(l.product, tier) * convertToBks(1, l.unit, l.product), product: l.product,
+                condition: 'GOOD', returnReason: '', otherReasonDetail: '', fulfillment: 'NOW' }];
+            const bks = convertToBks(have.qty, have.unit, l.product) + l.bks;
+            return list.map(i => i === have ? { ...i, qty: bks, unit: 'Bks', mix: undefined, calculatedPrice: tierPrice(l.product, i.priceTier) } : i);
+        }, prev));
+        setGive(g => chk.gives.reduce((acc, x) => ({ ...acc, [x.productId]: (acc[x.productId] || 0) + x.qty }), g));
+        triggerMerchantSpeak('add');
     };
 
     /* MIXED UNITS — "2 karton, 3 slop, 17 bungkus" of one product.
@@ -1655,7 +1681,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     };
 
     const filteredItems = inventory.filter(i => (activeCategory === "ALL" || i.type === activeCategory) && i.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC"))];
+    const bundles = appSettings?.promoBundles || [];
+    const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC")), ...(bundles.length ? ["BUNDLES"] : [])];
 
     const isGpsRestricted = gpsStatus === 'manual_override' && !canOverrideGps;
     
@@ -2541,6 +2568,26 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 <div className="flex-1 min-h-0 flex overflow-hidden">
                 <div data-guide="products" className="kpm-wares-3up flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-3 pb-4 lg:p-6 lg:pb-8 flex flex-col lg:grid lg:grid-cols-2 [@media(min-width:1400px)]:grid-cols-3 lg:content-start gap-3 lg:gap-6 scrollbar-hide items-stretch lg:items-start bg-[var(--duke-fill-ground)] relative scroll-smooth" ref={scrollContainerRef}>
                     <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px), repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px)' }}></div>
+                    {/* FACTORY BUNDLES - one card each; the price is the cigarettes' own at this shop's tier, the promo is free */}
+                    {activeCategory === 'BUNDLES' && bundles.map(b => {
+                        const chk = bundleCheck(b, inventory, promoVan, cart, give);
+                        const price = (chk.lines || []).reduce((s, l) => s + tierPrice(l.product, newLineTier()) * l.bks, 0);
+                        return (
+                            <button key={b.id} type="button" data-guide="bundle-card" onClick={() => applyBundle(b)}
+                                className={`kpm-hover font-mono w-full shrink-0 text-left bg-[var(--duke-fill-well)] border-2 border-dashed rounded-lg p-3 lg:p-4 flex flex-col gap-1 transition-colors ${chk.ok ? 'border-[var(--duke-brass-edge-2)] hover:border-[var(--duke-amber-edge)]' : 'border-[var(--duke-edge-1)] opacity-60'}`}>
+                                <h4 className="text-[var(--duke-ink-1)] text-[12px] lg:text-sm font-black uppercase leading-tight">{b.name}</h4>
+                                {(b.lines || []).map((l, i) => (
+                                    <span key={`l${i}`} className="text-[11px] lg:text-xs font-bold text-[var(--duke-ink-3)] tabular-nums">{l.qty} {l.unit} · {inventory.find(p => p.id === l.productId)?.name || l.name}</span>
+                                ))}
+                                {(b.gives || []).map((g, i) => (
+                                    <span key={`g${i}`} className="text-[11px] lg:text-xs font-bold text-[var(--duke-amber-ink)] tabular-nums">+ {g.qty} pcs {g.name} · FREE</span>
+                                ))}
+                                <span className={`mt-1 text-[12px] lg:text-sm font-black ${chk.ok ? 'text-[var(--duke-amber-ink)] tabular-nums' : 'text-[var(--duke-ink-5)]'}`}>
+                                    {chk.ok ? `Rp ${new Intl.NumberFormat('id-ID').format(price)}` : chk.why}
+                                </span>
+                            </button>
+                        );
+                    })}
                     {filteredItems.map(item => (
                         /* Hover no longer drives the rail. Aldi's problem was concrete and
                            unanswerable by tuning: to reach the rail on the right he has to drag
