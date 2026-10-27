@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>DSM · Presentasi Sederhana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* The calm copy of kpm-semua-terkendali.html, for older viewers (Aldi, 2026-10-27): the same facts in the same
+   order, one idea per screen, nothing moves, nothing advances by itself. Every text is 20px or more on a phone.
+   Atkinson Hyperlegible was drawn for low-vision readers. Light (paper) and dark, switched by the button in the
+   top bar (his call: "both light and dark version inside the ppt to be toggle button"). Palette law: no blue, no
+   green, gold never as text on light - in light, gold is only an edge or a lamp. */
+:root {
+  --page: #EDE7D8; --card: #F7F3EA; --edge: #B9B0A0; --ink: #1A1714; --ink2: #4A443C; --rust: #8F1E18;
+  --gold: #D08A2E; --lampR: #B3261E; --lampY: #E4B04A; --btn: #1A1714; --btnInk: #F7F3EA;
+  color-scheme: light;
+}
+:root[data-tema="gelap"] {
+  --page: #121110; --card: #1B1917; --edge: #4A443C; --ink: #F2EEE4; --ink2: #CFC8BA; --rust: #E4B04A;
+  --btn: #F2EEE4; --btnInk: #121110;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--page); color: var(--ink); scroll-behavior: auto; }
+body { font: 22px/1.5 "Atkinson Hyperlegible", system-ui, "Segoe UI", Roboto, sans-serif; -webkit-text-size-adjust: 100%;
+  padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
+button { font: inherit; color: inherit; }
+button:focus-visible { outline: 4px solid var(--gold); outline-offset: 3px; }
+header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 16px;
+  padding-top: calc(10px + env(safe-area-inset-top, 0px)); border-bottom: 2px solid var(--edge); font-size: 20px; }
+header b { letter-spacing: .04em; font-size: 22px; }
+#tema { font-size: 20px; font-weight: 700; min-height: 52px; padding: 0 16px; border-radius: 12px; cursor: pointer;
+  background: var(--card); border: 2px solid var(--ink); }
+#bar { height: 4px; background: var(--edge); }
+#bar i { display: block; height: 100%; background: var(--rust); }
+main { padding: 24px 16px 8px; max-width: 1240px; margin: 0 auto; }
+.kick { color: var(--rust); font-weight: 700; font-size: 20px; margin: 0 0 2px; }
+.who { color: var(--ink2); font-size: 20px; margin: 0 0 12px; }
+h1 { font-size: 32px; line-height: 1.2; margin: 0 0 16px; text-wrap: balance; }
+h1:focus { outline: none; }
+.say p { margin: 0 0 14px; }
+.say .app { color: var(--ink2); border-top: 2px solid var(--edge); padding-top: 10px; font-size: 20px; }
+.say .app b { color: var(--ink); }
+.pic { margin-top: 20px; }
+.demo { color: var(--ink2); font-size: 20px; margin: 10px 0 0; }
+.card { background: var(--card); border: 2px solid var(--edge); border-radius: 14px; padding: 12px 16px; }
+.rows { display: grid; gap: 10px; }
+.row { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; }
+.row > div { min-width: 0; }
+.row b { display: block; }
+.row span { display: block; color: var(--ink2); }
+.row.on { border-color: var(--gold); border-width: 3px; }
+.lamp { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--ink); }
+.lamp.r { background: var(--lampR); } .lamp.y { background: var(--lampY); } .lamp.o { background: transparent; border-color: var(--edge); }
+.dot { width: 14px; height: 14px; background: var(--rust); border-radius: 3px; }
+.tier { min-width: 64px; text-align: center; font-weight: 700; border: 2px solid var(--ink); border-radius: 10px; padding: 4px 6px; }
+.num { font-weight: 700; font-variant-numeric: tabular-nums; }
+.row.in > div > b, .row.in > div > span { display: inline; }
+.row.in > div > span::before { content: ' · '; }
+.bar { display: block; height: 4px; background: var(--edge); border-radius: 2px; margin-top: 8px; }   /* a line whose length is the data: amber never fills */
+.bar i { display: block; height: 100%; background: var(--rust); border-radius: 2px; }
+.tab { display: grid; grid-template-columns: auto 1fr auto auto; gap: 4px 12px; align-items: baseline; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tab b { color: var(--ink2); }
+.tab .r { text-align: right; }
+.tab span:not(.bar) { font-weight: 700; padding-left: 2px; }
+.tab .bar { grid-column: 1 / -1; margin: 0 0 8px; }
+.nota { font-variant-numeric: tabular-nums; }
+.nota div { display: flex; justify-content: space-between; gap: 12px; }
+.nota .hd { font-weight: 700; border-bottom: 2px dashed var(--edge); padding-bottom: 6px; margin-bottom: 6px; display: block; }
+.nota .tot { font-weight: 700; border-top: 2px dashed var(--edge); padding-top: 6px; margin-top: 6px; }
+.big3 { display: grid; gap: 10px; }
+.big3 .card b { display: block; font-size: 36px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.big3 .card span { color: var(--ink2); }
+.cover { text-align: center; padding-top: 8px; }
+.cover img { width: 168px; height: 168px; }
+.cover .big { font-size: 72px; font-weight: 700; letter-spacing: .08em; line-height: 1; margin: 4px 0 6px; }
+.cover .sub { font-weight: 700; letter-spacing: .06em; margin: 0 0 18px; }
+.cover .lead { max-width: 30ch; margin: 0 auto 18px; }
+.cover .how { color: var(--ink2); max-width: 30ch; margin: 0 auto; }
+nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 12px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: var(--page); border-top: 2px solid var(--edge); }
+nav button { font-size: 22px; font-weight: 700; min-height: 72px; border-radius: 14px; cursor: pointer; white-space: nowrap; }
+#back { flex: 1; background: var(--card); color: var(--ink); border: 2px solid var(--ink); }
+#next { flex: 1.6; background: var(--btn); color: var(--btnInk); border: 0; border-bottom: 5px solid var(--gold); }
+#back[hidden] { display: none; }
+@media (min-width: 900px) {
+  body { font-size: 28px; padding-bottom: 128px; }
+  header { padding: 14px 40px; font-size: 22px; }
+  main { padding: 40px 40px 16px; min-height: calc(100vh - 210px); display: flex; align-items: center; }
+  main > div { width: 100%; }
+  .kick, .who, .say .app, .demo { font-size: 22px; }
+  h1 { font-size: 52px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+  .two .pic { margin-top: 0; }
+  .say { max-width: 32ch; }
+  .one .say { margin: 0 auto; max-width: 34ch; }
+  .card { padding: 16px 24px; }
+  .row, .nota { font-size: 26px; }
+  .big3 { grid-template-columns: 1fr 1fr; }
+  .big3 .card b { font-size: 48px; }
+  .cover img { width: 160px; height: 160px; }
+  .cover .big { font-size: 96px; }
+  .tab { font-size: 26px; }
+  nav { justify-content: center; padding: 16px 40px; }
+  nav button { min-height: 80px; font-size: 26px; }
+  #back { flex: 0 1 280px; } #next { flex: 0 1 480px; }
+}
+</style>
+</head>
+<body>
+<header><b>DSM</b><button id="tema" type="button"></button></header>
+<div id="bar"><i></i></div>
+<main id="main"></main>
+<nav><button id="back" type="button">‹ Kembali</button><button id="next" type="button">Lanjut ›</button></nav>
+<script>
+/* One screen = { f: slide number (1-23), t: title, p: [short sentences], pic, demo: sample data, app: where it is
+   in the app }. Order and names follow the original's 23 slides; a dense slide becomes several screens of the same
+   feature, and a fact the original says twice is said once. Sample figures are the original's own. */
+const FEAT = ['Peta Perjalanan', 'Rute Hari Ini', 'Putar Ulang Hari', 'Keamanan Data', 'Catatan dan Laporan', 'Dari Mana Saja',
+  'Aman, Tanpa Sinyal', 'Omzet Wilayah', 'Kinerja Produk', 'Target dan Laju', 'Jalur Barang', 'Terminal Penjualan', 'Cek Lokasi',
+  'Sampel Produk', 'Pelanggan', 'EOD Reconciliation', 'Selisih EOD', 'Consignment & Reconciliation', 'Kartu Pemain',
+  'Stok Menipis', 'Stock Opname', 'Karantina', 'Kontrol Adalah Segalanya'];
+const WHO = { p: 'Untuk pimpinan', s: 'Untuk salesperson', ps: 'Untuk pimpinan dan salesperson' };
+const row = (lead, b, s, cls = '') => `<div class="card row ${cls}">${lead}<div><b>${b}</b>${s ? `<span>${s}</span>` : ''}</div></div>`;
+const rows = (...r) => `<div class="rows">${r.join('')}</div>`;
+const lamp = (c) => `<i class="lamp ${c}" aria-hidden="true"></i>`;
+const tier = (t) => `<span class="tier">${t}</span>`;
+const dot = '<i class="dot" aria-hidden="true"></i>';
+const list = (...items) => rows(...items.map((x) => row(dot, x)));
+const steps = (...items) => rows(...items.map((x, i) => row(tier(i + 1), x)));
+const rp = (n) => 'Rp ' + n.toLocaleString('id-ID');
+/* slide 09's "Bulan ini": packs sold x price per pack, the original's P3B / P3P */
+const PROD = [['A', 2310, 24000], ['B', 1980, 30000], ['C', 1250, 26000], ['D', 960, 22000], ['E', 2410, 28000]]
+  .map(([n, b, p]) => ({ n, b, r: b * p })).sort((x, y) => y.r - x.r);
+const PSUM = PROD.reduce((a, x) => a + x.r, 0);
+const jt = (n) => 'Rp ' + (n / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt';
+
+const S = [
+  { cover: true },
+  /* 01 */
+  { f: 1, w: 'p', t: 'Satu peta untuk seluruh armada penjualan.', p: ['Yang tampil di satu peta:'],
+    pic: list('Rute setiap salesperson', 'Omzet setiap wilayah', 'Perjalanan barang dari gudang ke toko'),
+    app: 'Journey Plan dan Map System, yang saling terhubung' },
+  /* 02 */
+  { f: 2, w: 's', t: 'Rute harian tersusun otomatis.',
+    p: ['Setiap pagi, rute kunjungan sudah tersusun.', 'Lampu pada kartu toko menunjukkan apa yang harus didahulukan.'],
+    pic: rows(row(lamp('r'), '1. Toko Berkah Jaya', 'Merah: tagihan lewat 9 hari'), row(lamp('y'), '2. Warung Sumber Rejeki', 'Kuning: kunjungan hari ini'),
+      row(lamp('o'), '3. Toko Makmur', 'Padam: tidak ada yang perlu ditindaklanjuti')), demo: true },
+  /* 03 */
+  { f: 3, w: 'p', t: 'Perjalanan sales bisa diputar ulang.',
+    p: ['Pilih salesperson dan tanggalnya.', 'Perjalanan hari itu diputar ulang di peta, toko demi toko.'] },
+  { f: 3, w: 'p', t: 'Setiap toko menunjukkan hasil kunjungannya.', p: ['Tekan peti di toko untuk melihat rinciannya.'],
+    pic: list('Penjualan', 'Pesanan ulang', 'Produk pesaing', 'Toko tutup') },
+  { f: 3, w: 'p', t: 'Pemutaran bisa diatur.',
+    p: ['Bisa dijeda, digeser, dan dipercepat: 1x, 2x, atau 4x.', 'Tersedia juga dalam layar penuh.', 'Jalan di antara toko digambar, bukan dilacak.'],
+    app: 'Journey Plan, pilih salesperson, lalu tekan Replay his day' },
+  /* 04 */
+  { f: 4, w: 'p', t: 'Masuk dengan akun Google.',
+    p: ['Semua pengguna masuk memakai akun Google.', 'Aplikasi tidak menyimpan kata sandi login pengguna.'] },
+  { f: 4, w: 'p', t: 'Server memeriksa setiap penyimpanan.',
+    p: ['Pemeriksaan berjalan di server Google, bukan hanya di telepon.', 'Aplikasi yang diakali tetap ditolak.'] },
+  { f: 4, w: 'p', t: 'Lima jabatan, masing-masing dengan batasnya.',
+    p: ['Dari pemilik sampai sales motoris.', 'Admin wilayah hanya mengelola wilayahnya sendiri.'],
+    pic: rows(row(tier('T2'), 'Owner', 'Seluruh perusahaan dan brankas'), row(tier('T3'), 'HQ Sales Manager', 'Mengelola salesperson dan pelanggan'),
+      row(tier('T4'), 'Regional Admin', 'Mengelola armada di wilayahnya sendiri', 'on'), row(tier('T5/6'), 'Sales Canvas · Motorist', 'Menjual, menyetor, dan melaporkan kunjungan')) },
+  { f: 4, w: 'p', t: 'Hak akses diatur sendiri.',
+    p: ['Pemilik menentukan apa yang boleh dilakukan setiap jabatan.', 'Nama jabatannya pun bisa diganti.'] },
+  { f: 4, w: 'p', t: 'Brankas pemilik dijaga kata sandi induk.',
+    p: ['Lima kali salah, brankas terkunci 15 menit.', 'Untuk memulihkannya, kode enam angka dikirim lewat email.'] },
+  { f: 4, w: 'p', t: 'Kata sandi induk tidak bisa ditebak.',
+    p: ['Sebelum disimpan, kata sandi diacak 600.000 kali.', 'Karena itu, setiap percobaan menebak menjadi sangat lambat.'] },
+  { f: 4, w: 'p', t: 'Buka brankas dengan sidik jari atau wajah.',
+    p: ['Brankas dapat dibuka dengan pengenal di telepon itu sendiri.'] },
+  { f: 4, w: 'p', t: 'Data setiap perusahaan terpisah.',
+    p: ['Perusahaan lain tidak dapat membacanya.', 'Data dienkripsi saat dikirim dan saat disimpan, jadi tidak pernah terbuka di internet.'] },
+  { f: 4, w: 'p', t: 'Akun bisa dikunci seketika.',
+    p: ['Telepon hilang atau karyawan keluar?', 'Cukup satu tekan di Fleet & Roster.'] },
+  { f: 4, w: 'p', t: 'Pindah kepemilikan dijaga.',
+    p: ['Kepemilikan hanya berpindah dengan PIN dan frasa rahasia.'] },
+  /* 05 */
+  { f: 5, w: 'p', t: 'Catatan yang tidak dapat diubah.',
+    p: ['Penjualan, laporan EOD (setoran akhir hari), dan catatan aktivitas harian hanya bisa ditambah.', 'Salesperson dan admin tidak dapat mengubah atau menghapusnya. Hak itu hanya ada pada akun pemilik.'],
+    pic: rows(row(dot, '07:58 Mulai hari', '40 bks di motor'), row(dot, '08:41 Penjualan', 'Toko Berkah Jaya · Rp 480.000'),
+      row(dot, '20:10 EOD diperiksa', '4 baris disetujui'), row(lamp('r'), 'Admin wilayah mencoba mengubah catatan 08:41', 'Ditolak', 'on')), demo: true },
+  { f: 5, w: 'p', t: 'Setiap aktivitas tercatat.',
+    p: ['Dari catatan harian inilah Putar Ulang Hari disusun.', 'Laporan penjualan bisa dicetak kapan saja, dengan nota yang sama seperti di toko.', 'Penyimpanan yang gagal selalu diberitahukan, tidak pernah diam.'] },
+  /* 06 */
+  { f: 6, w: 'p', t: 'Pantau bisnis dari mana saja, kapan saja.',
+    p: ['DSM berjalan di peramban telepon, tablet, dan komputer.', 'Penjualan dari cabang muncul di telepon pimpinan dalam hitungan detik.'] },
+  { f: 6, w: 'p', t: 'Dipasang seperti aplikasi.',
+    p: ['Dari peramban, tambahkan ke layar utama.', 'DSM lalu terbuka layar penuh seperti aplikasi biasa, tanpa toko aplikasi.'] },
+  { f: 6, w: 'p', t: 'Tidak ada server di kantor.',
+    p: ['Tidak ada komputer server yang harus dijaga, dicadangkan, atau diperbaiki.', 'Data tersimpan di server Google.'] },
+  { f: 6, w: 'p', t: 'Satu akun, perangkat apa pun.',
+    p: ['Masuk dengan akun Google yang sama di telepon atau di komputer kantor.', 'Datanya tetap sama.'] },
+  { f: 6, w: 'p', t: 'Pembaruan sampai sendiri.',
+    p: ['Versi baru terpasang sendiri di setiap perangkat.', 'Tidak ada yang perlu dipasang ulang di cabang.'] },
+  /* 07 */
+  { f: 7, w: 'p', t: 'Tetap bekerja tanpa sinyal.',
+    p: ['Di daerah tanpa sinyal, penjualan tetap tercatat dengan aturan yang sama.', 'Setelah sinyal kembali, data terkirim dengan sendirinya.'],
+    pic: rows(row(dot, 'Warung Pojok · Rp 312.000', 'Tersimpan'), row(dot, 'Toko Lancar · Rp 588.000', 'Tersimpan'), row(dot, 'Warung Barokah · Rp 205.000', 'Tersimpan')), demo: true },
+  { f: 7, w: 'p', t: 'Tidak ada pemberitahuan yang terlewat.',
+    p: ['Notification Bell menyimpan pemberitahuan yang terlewat selama 7 hari.'] },
+  { f: 7, w: 'p', t: 'Memperbarui diri secara otomatis.',
+    p: ['Saat masuk, aplikasi memeriksa versinya.', 'Versi terbaru terpasang sendiri, tanpa toko aplikasi.'] },
+  { f: 7, w: 'p', t: 'Lite Mode untuk performa maksimal.',
+    p: ['Animasi dan efek dibuat lebih ringan.', 'Semua fungsi tetap sama.'] },
+  { f: 7, w: 'p', t: 'Ponder Book: panduan di dalam aplikasi.',
+    p: ['Isinya mengikuti menu samping dan langsung terbuka di layar yang sedang dipakai.', 'Karyawan baru bisa belajar sendiri.'] },
+  /* 08 */
+  { f: 8, w: 'p', t: 'Peta omzet setiap wilayah.',
+    p: ['Setiap wilayah diberi warna sesuai omzetnya.', 'Semakin terang warnanya, semakin tinggi penjualannya.'] },
+  { f: 8, w: 'p', t: 'Papan peringkat salesperson.',
+    p: ['Salesperson diurutkan berdasarkan transaksi yang tercatat, bukan laporan lisan.'] },
+  { f: 8, w: 'p', t: 'Kinerja setiap produk.',
+    p: ['Pilih rentang waktu mana pun.', 'Penjualan setiap produk tampil per bulan.'] },
+  /* 09 */
+  { f: 9, w: 'p', t: 'Kinerja produk, harian hingga tahunan.',
+    p: ['Untuk hari ini, minggu ini, bulan ini, atau tahun ini.', 'Dari semua wilayah, aplikasi menghitung bungkus terjual, rupiahnya, dan bagiannya dari seluruh penjualan.'],
+    pic: `<p class="who">Contoh: bulan ini</p><div class="card tab"><b>Produk</b><b class="r">Rupiah</b><b class="r">Bks</b><b class="r">%</b>` + PROD.map((x) =>
+      `<span>${x.n}</span><span class="r">${jt(x.r).slice(3)}</span><span class="r">${x.b.toLocaleString('id-ID')}</span><span class="r">${Math.round(x.r / PSUM * 100)}%</span>
+      <span class="bar"><i style="width:${(x.r / PROD[0].r * 100).toFixed(1)}%"></i></span>`).join('') + '</div>', demo: true },
+  /* 10 */
+  { f: 10, w: 'p', t: 'Target bulanan dan harian.',
+    p: ['Pimpinan menetapkan target dalam rupiah dan dalam bal.', 'Target mingguan dan tahunan dihitung otomatis dari target bulanan, tetapi tetap bisa diubah.'] },
+  { f: 10, w: 'p', t: 'Sejak pertengahan bulan, sudah terlihat.',
+    p: ['Grafik membandingkan uang yang sudah masuk dengan garis lurus menuju target.', 'Jadi terlihat lebih awal apakah target akan tercapai.', 'Grafik yang sama tersedia untuk setiap wilayah.'],
+    pic: `<div class="big3"><div class="card"><b>Rp 87 jt</b><span>sudah masuk</span><span class="bar"><i style="width:43.5%"></i></span></div>
+      <div class="card"><b>Rp 200 jt</b><span>target bulan ini · 400 bal</span></div></div>`, demo: true },
+  /* 11 */
+  { f: 11, w: 'p', t: 'Jejak barang dari gudang sampai toko.', p: ['Setiap perpindahan terlacak, termasuk produk retur.'],
+    pic: steps('Dari pabrik masuk ke Gudang Pusat (Master Vault)', 'Dikirim ke gudang cabang', 'Dibawa di bagasi motorist dan sales canvas', 'Sampai ke toko dan konsumen terakhir') },
+  { f: 11, w: 'p', t: 'Barang datang diperiksa dengan barcode.',
+    p: ['Barcode dipindai lewat kamera telepon.', 'Aplikasi menghitung sendiri konversi bal, slop, dan bungkus.'] },
+  { f: 11, w: 'p', t: 'Barcode yang dapat dicetak.',
+    p: ['Setiap kotak membawa label barcode yang dicetak dari aplikasi, lengkap dengan surat jalan.', 'Cabang memindainya saat barang tiba.'] },
+  { f: 11, w: 'p', t: 'Muat barang cukup dengan menyeret kotak.',
+    p: ['Barang dari gudang dimuat ke bagasi motorist dan sales canvas.', 'Stok berpindah sekali saat Muat Van ditekan, lengkap dengan surat jalan dan bukti kembali.'] },
+  { f: 11, w: 'p', t: 'Stok setiap gudang cabang terpantau.',
+    p: ['Jumlah setiap produk di setiap gudang cabang terlihat.', 'Kekurangan langsung ketahuan, sehingga stok yang terbatas dapat dibagi dengan tepat.'] },
+  { f: 11, w: 'p', t: 'Isi bagasi setiap sales terpantau.',
+    p: ['Isi bagasi motorist dan sales canvas, buku penjualan, dan sampel hari itu dapat dipantau sepenuhnya.'], app: 'Agent Inventory' },
+  /* 12 */
+  { f: 12, w: 's', t: 'Transaksi di toko, nota tercetak seketika.',
+    p: ['Salesperson memilih barang, jumlah, dan cara bayar: tunai, transfer, atau titip.', 'Stok di motornya langsung berkurang.'],
+    pic: `<div class="card nota"><span class="hd">NAMA PERUSAHAAN · NOTA PENJUALAN</span><div><span>Warung Sumber Rejeki</span><span>02/10/26</span></div>
+      <div><span>Produk A · 2 slop</span><span>480.000</span></div><div><span>Produk B · 1 slop</span><span>300.000</span></div>
+      <div><span>Produk C · 5 bks</span><span>130.000</span></div><div class="tot"><span>TOTAL</span><span>Rp 910.000</span></div><div><span>TUNAI · LUNAS</span></div></div>`, demo: true },
+  { f: 12, w: 's', t: 'Malam hari tidak ada yang perlu disalin.',
+    p: ['Setiap penjualan tercatat saat itu juga, tidak perlu disalin ke buku.', 'Disertai foto langsung dari kamera, bukan dari galeri.'] },
+  { f: 12, w: 's', t: 'Harga terkunci sesuai level pelanggan.',
+    p: ['Setiap produk punya empat tingkat harga.', 'Harga untuk setiap toko terkunci otomatis sesuai levelnya.'],
+    pic: list('Retail', 'Grosir', 'Ecer', 'Distributor') },
+  /* 13 */
+  { f: 13, w: 'p', t: 'Penjualan hanya dari dekat toko.',
+    p: ['Posisi salesperson diperiksa dengan GPS.', 'Penjualan hanya dapat dicatat dalam radius 100 meter dari toko.'] },
+  { f: 13, w: 'p', t: 'Di luar 100 meter, harus minta izin.',
+    p: ['Misalnya saat sinyal GPS lemah.', 'Admin daerah menyetujui atau menolak, dengan melihat jaraknya.'],
+    pic: rows(row(lamp('y'), 'Izin jual dari 182 m · Budi Santoso', 'Toko Makmur · menunggu admin')), demo: true },
+  { f: 13, w: 'p', t: 'Toko di sekitar dikenali otomatis.',
+    p: ['Auto locator mengenali toko terdaftar di sekitar posisi GPS.', 'Penjualan di toko milik salesperson lain diberi tanda.'] },
+  /* 14 */
+  { f: 14, w: 'p', t: 'Sampel tercatat, terpisah dari omzet.',
+    p: ['Sampel gratis untuk toko dicatat sampai hitungan batang.', 'Sampel tidak pernah masuk ke angka omzet.'],
+    pic: `<p class="who">Sampel · Oktober · Cabang Utara</p><div class="big3"><div class="card"><b>14 bks</b><span>sampel keluar</span></div>
+      <div class="card"><b>15</b><span>pita cukai terbuka</span></div><div class="card"><b>Rp 312.000</b><span>nilai harga distributor</span></div>
+      <div class="card"><b>4%</b><span>sampel, bukan omzet · 96% penjualan</span></div></div>`, demo: true },
+  { f: 14, w: 'p', t: 'Laporan sampel untuk pimpinan.', p: ['Per minggu atau per bulan, pimpinan melihat:'],
+    pic: list('Jumlah sampel dan nilainya di setiap tingkat harga', 'Lima produk teratas', 'Toko yang paling banyak menerima', 'Berapa pita cukai yang terbuka') },
+  /* 15 */
+  { f: 15, w: 's', t: 'Kenali toko sebelum masuk.',
+    p: ['Salesperson melihat kapan toko terakhir memesan, barang apa yang dibeli, dan berapa nilainya.'],
+    pic: rows(row(dot, 'Warung Bu Sri', 'Cabang Utara · Senin, Kamis'), row(dot, 'Pesanan terakhir', '3 hari lalu'), row(dot, 'Barang', 'Produk A · 2 slop · Rp 480.000')), demo: true },
+  { f: 15, w: 's', t: 'Laporan kunjungan dengan satu tekan.', p: ['Selesai berkunjung, salesperson memilih hasilnya:'],
+    pic: list('Repeat Order', 'Stock Full', 'Competitor Issue', 'New Request', 'Store Closed') },
+  { f: 15, w: 's', t: 'Permintaan toko tidak terlupa.',
+    p: ['Permintaan baru dari toko diberi tanda seru (!).', 'Tanda itu baru hilang setelah ada yang menyelesaikannya.'] },
+  { f: 15, w: 's', t: 'Toko ganda terdeteksi.',
+    p: ['Satu toko terdaftar dua kali? Misalnya namanya mirip dan lokasinya kurang dari 40 meter.', 'Aplikasi menandainya untuk diperiksa admin, sehingga riwayat penjualan dan piutang tidak terpecah.'] },
+  { f: 15, w: 's', t: 'Catatan produk pesaing di setiap toko.',
+    p: ['Merek, produk, harga, dan seberapa laku produk pesaing dicatat di profil toko.', 'Menjadi bahan strategi penjualan berikutnya.'] },
+  { f: 15, w: 's', t: 'Toko baru harus diverifikasi.',
+    p: ['Toko baru (NOO, New Open Outlet) didaftarkan dengan foto depan toko dan titik GPS.', 'Toko aktif setelah dikonfirmasi admin daerah.'] },
+  { f: 15, w: 's', t: 'Mudah menemukan toko baru.',
+    p: ['Google Maps dan Street View menuntun salesperson ke toko yang belum pernah dikunjungi.'] },
+  /* 16 */
+  { f: 16, w: 'p', t: 'Setiap rupiah diperiksa di akhir hari.',
+    p: ['Setiap akhir hari (EOD), salesperson menyetor uang tunai, bukti transfer, sisa barang, dan pita cukai.', 'Admin wilayah memeriksanya baris demi baris.'],
+    pic: `<p class="who">Budi Santoso · Kam 2 Okt · Cabang Utara</p>` + rows(row(dot, 'Tunai', 'Rp 1.250.000'), row(dot, 'Transfer', 'Rp 425.000'),
+      row(dot, 'Sisa barang', '12 bks'), row(dot, 'Pita cukai', '40 pcs')), demo: true },
+  { f: 16, w: 'p', t: 'Setoran dipandu langkah demi langkah.',
+    p: ['Empat kartu dihitung satu per satu.', 'Lalu dikirim sebagai surat digital ke admin, dan menunggu persetujuannya.'] },
+  /* 17 */
+  { f: 17, w: 'p', t: 'Selisih langsung dihitung.',
+    p: ['Saat EOD diperiksa, uang dan barang yang kurang langsung terlihat.', 'Barang yang kurang dihargai sesuai tingkat harganya.'],
+    pic: rows(row(lamp('r'), 'Tunai', 'Seharusnya Rp 1.250.000 · disetor Rp 1.225.000'), row(lamp('o'), 'Transfer', 'Seharusnya Rp 425.000 · disetor Rp 425.000'),
+      row(lamp('r'), 'Sisa barang', 'Seharusnya 12 bks · disetor 10 bks'), row(lamp('r'), 'Barang rusak', '1 bks')), demo: true },
+  { f: 17, w: 'p', t: 'Selisih menjadi utang salesperson.',
+    p: ['Selisih dan denda barang rusak dicatat sebagai utang atas nama salesperson.', 'Lengkap dengan alasan dan tanggalnya, dan tampil di papan WANTED.', 'Tidak ada kekurangan yang hilang tanpa jejak.'] },
+  /* 18 */
+  { f: 18, w: 'p', t: 'Toko boleh membayar belakangan.',
+    p: ['Dengan titip (consignment), toko membayar produk dalam waktu tempo.', 'Bila tidak diatur lain, temponya 7 hari.'] },
+  { f: 18, w: 'p', t: 'Tagihan dikelompokkan menurut urgensinya.',
+    p: ['Tagihan hari ini langsung terlihat.', 'Pembayaran berjalan disiplin, dan arus kas dapat diprediksi.'],
+    pic: rows(row(lamp('o'), 'Aman', 'Warung Pojok Rp 312.000 · Toko Lancar Rp 588.000'), row(lamp('y'), 'Segera jatuh tempo', 'Warung Barokah Rp 205.000'),
+      row(lamp('r'), 'Lewat jatuh tempo', 'Toko Sinar Abadi Rp 410.000')), demo: true },
+  { f: 18, w: 'p', t: 'Penanggung jawab toko dapat berpindah tangan.',
+    p: ['Utang piutang sebuah toko dapat dialihkan ke rekan satu tim, dengan persetujuan admin daerah.', 'Sebelum memutuskan, keduanya melihat stok di toko dan utangnya.'],
+    pic: steps('Budi mengajukan', 'Admin daerah menyetujui', 'Andi menerima'), demo: true },
+  /* 19 */
+  { f: 19, w: 's', t: 'Kinerja terukur, prestasi terlihat.', p: ['Salesperson mendapat poin pengalaman (XP) dari:'],
+    pic: list('Setoran yang lolos pemeriksaan', 'Toko yang dilayani', 'Tagihan yang berhasil ditagih') },
+  { f: 19, w: 's', t: 'Pangkat dari Bronze sampai Mythic.',
+    p: ['Pangkat ditandai bingkai di sekeliling foto.', 'Salesperson melihat kemajuannya sendiri. Pimpinan melihat siapa yang paling aktif.'],
+    pic: rows(...[['Bronze', 0], ['Silver', 5000], ['Gold', 20000], ['Platinum', 50000], ['Diamond', 100000], ['Mythic', 250000]]
+      .map(([n, x], i) => row(tier(i + 1), n, `mulai ${x.toLocaleString('id-ID')} XP`, 'in'))) },
+  { f: 19, w: 's', t: 'Cara menghitung pangkat dipilih pimpinan.', p: ['Ada dua pilihan:'],
+    pic: list('Dari seluruh riwayat kerja, jadi satu minggu sepi tidak menurunkan pangkat', 'Dari penjualan 7 hari terakhir') },
+  /* 20 */
+  { f: 20, w: 'p', t: 'Peringatan dini saat stok menipis.',
+    p: ['Setiap produk punya batas stok minimum, dalam bal, karton, slop, atau bungkus.', 'Begitu stok turun di bawah batas, admin cabang langsung diberi tahu untuk meminta stok ke Gudang Pusat.'] },
+  { f: 20, w: 'p', t: 'Tahu berapa hari lagi stok cukup.',
+    p: ['Aplikasi menghitungnya dari penjualan harian.', 'Barang dapat dipesan sebelum kosong.'] },
+  { f: 20, w: 'p', t: 'Permintaan stok cabang.',
+    p: ['Cabang mengajukan permintaan barang berdasarkan batas minimumnya.', 'Gudang menerimanya di layar yang sama.'] },
+  { f: 20, w: 'p', t: 'Scan nota untuk bukti pengiriman.',
+    p: ['Foto nota diluruskan dan diperkecil secara otomatis.', 'Bukti yang dikirim selalu jelas dan ringan.'] },
+  { f: 20, w: 'p', t: 'Ongkos tercatat jelas di Restock Vault.',
+    p: ['Ongkos kirim, ongkos bongkar, dan cukai setiap barang masuk tercatat untuk laporan keuangan.', 'Aplikasi memberi tahu jika harga pokok naik dari kiriman sebelumnya.'] },
+  /* 21 */
+  { f: 21, w: 'p', t: 'Hitung stok tanpa melihat angka sistem.',
+    p: ['Salesperson dan admin cabang menghitung stok gudang tanpa melihat angka sistem (blind count).', 'Jadi stok tidak bisa dimanipulasi sebelum dilaporkan ke kantor pusat.'],
+    pic: rows(row(lamp('o'), 'Produk A · 52', 'Cocok'), row(lamp('y'), 'Produk B', 'Sedang dihitung'), row(lamp('o'), 'Produk C · 30', 'Cocok')), demo: true },
+  { f: 21, w: 'p', t: 'Setiap selisih wajib diberi alasan.',
+    p: ['Kebocoran stok di cabang cepat ketahuan, sebelum kerugian terus menumpuk.'],
+    pic: list('Barang rusak (Breakage)', 'Salah hitung (Miscount)', 'Penjualan tidak tercatat (Unrecorded sale)', 'Dicuri (Theft)', 'Belum diketahui (Cause unknown)') },
+  { f: 21, w: 'p', t: 'Angka acuan dibekukan.',
+    p: ['Begitu sebuah baris mulai dihitung, angka sistemnya dikunci.', 'Penjualan di tengah penghitungan tidak mengacaukan selisih.'] },
+  /* 22 */
+  { f: 22, w: 'p', t: 'Karantina barang hingga disetujui pusat.',
+    p: ['Hasil hitung yang tidak sesuai tidak langsung diterima.', 'Barang rusak atau selisih dikunci di karantina sampai kantor pusat memutuskan.', 'Tidak ada barang yang hilang tanpa catatan.'],
+    pic: rows(row(lamp('y'), 'Karantina · Cabang Utara', '4 barang · menunggu keputusan pusat')), demo: true },
+  /* 23 */
+  { f: 23, w: 'ps', t: 'Keputusan berbasis data, bukan asumsi.',
+    p: ['Setiap fitur diuji otomatis sebelum sampai ke tangan pengguna.', 'Pengujian itu dapat dijalankan ulang di hadapan siapa pun.'],
+    pic: `<div class="big3"><div class="card"><b>3.189</b><span>uji otomatis lulus</span></div><div class="card"><b>0</b><span>uji yang gagal</span></div>
+      <div class="card"><b>53.795</b><span>baris kode aplikasi</span></div><div class="card"><b>2.090</b><span>pembaruan tercatat</span></div></div>
+      <p class="demo">Data per 6 Oktober 2026.</p>` },
+  { end: true },
+];
+const LAST = 23;
+const $ = (s) => document.querySelector(s);
+const idx = () => Math.max(0, Math.min(S.length - 1, parseInt(location.hash.slice(1), 10) || 0));
+function render() {
+  const i = idx(), s = S[i];
+  if (s.cover || s.end) {
+    $('#main').innerHTML = s.cover
+      ? `<div class="cover"><img src="capy-poses/cut/m-wave.png" alt="Maskot kapibara melambai">
+        <h1 class="big" tabindex="-1">DSM</h1><p class="sub">Distribution &amp; Sales Master</p>
+        <p class="lead">Satu aplikasi untuk seluruh distribusi dan penjualan, dari gudang pusat sampai ke toko.</p>
+        <p class="how">22 fitur, satu aplikasi. Tekan tombol <b>Mulai</b> di bawah untuk melihatnya satu per satu.</p></div>`
+      : `<div class="cover"><img src="capy-poses/cut/m-cheer.png" alt="Maskot kapibara bersorak">
+        <h1 tabindex="-1">Satu aplikasi. Seluruh distribusi.</h1>
+        <p class="lead">Semua yang tadi Anda lihat ada di dalam satu aplikasi: DSM.</p></div>`;
+  } else {
+    const same = S.filter((x) => x.f === s.f), part = same.indexOf(s) + 1;
+    const kick = s.f === LAST ? `Penutup · ${FEAT[s.f - 1]}` : `Fitur ${s.f} dari ${LAST - 1} · ${FEAT[s.f - 1]}`;
+    const who = WHO[s.w] + (same.length > 1 ? ` · bagian ${part} dari ${same.length}` : '');
+    $('#main').innerHTML = `<div class="${s.pic ? 'two' : 'one'}"><div class="say"><p class="kick">${kick}</p><p class="who">${who}</p>
+      <h1 tabindex="-1">${s.t}</h1>${s.p.map((x) => `<p>${x}</p>`).join('')}${s.app ? `<p class="app">Di aplikasi: <b>${s.app}</b></p>` : ''}</div>
+      ${s.pic ? `<div class="pic">${s.pic}${s.demo ? '<p class="demo">Data contoh</p>' : ''}</div>` : ''}</div>`;
+  }
+  $('#bar i').style.width = (s.cover ? 0 : s.end ? 100 : (s.f / LAST) * 100) + '%';
+  $('#back').hidden = i === 0;
+  $('#next').dataset.label = i === 0 ? 'Mulai ›' : s.end ? 'Kembali ke awal' : 'Lanjut ›';
+  scrollTo(0, 0); $('h1').focus({ preventScroll: true }); label();
+}
+/* A screen taller than the phone: the big button first shows the rest of it, so pressing it again and again
+   never skips anything. */
+const below = () => innerHeight - $('nav').offsetHeight < $('#main').getBoundingClientRect().bottom - 4;
+const label = () => { $('#next').textContent = below() ? 'Lanjut ke bawah ↓' : $('#next').dataset.label; };
+addEventListener('scroll', label, { passive: true });
+addEventListener('resize', label);
+const go = (d) => { const i = idx() + d; location.hash = d > 0 && i >= S.length ? '0' : String(Math.max(0, i)); };
+$('#next').onclick = () => { if (below()) scrollBy(0, innerHeight - $('nav').offsetHeight - 80); else go(1); };
+$('#back').onclick = () => go(-1);
+addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') go(1); if (e.key === 'ArrowLeft') go(-1); });
+addEventListener('hashchange', render);
+/* light or dark: the button names the look it switches TO; the choice is kept on this phone only */
+function setTema(t) {
+  document.documentElement.dataset.tema = t;
+  $('#tema').textContent = t === 'gelap' ? 'Layar terang' : 'Layar gelap';
+  try { localStorage.setItem('dsm-tema', t); } catch {}
+}
+let saved = 'terang'; try { saved = localStorage.getItem('dsm-tema') || saved; } catch {}
+setTema(new URLSearchParams(location.search).get('tema') || saved);
+$('#tema').onclick = () => setTema(document.documentElement.dataset.tema === 'gelap' ? 'terang' : 'gelap');
+render();
+</script>
+</body>
+</html>
