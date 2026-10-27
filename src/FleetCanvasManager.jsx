@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
     Truck, UserPlus, Save, Archive,
     MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
-    ShieldCheck, ChevronDown, ChevronUp, Crown, FileText, Printer, MessageSquare, Globe, Search, Plus, RotateCcw, KeyRound, Lock, Unlock
+    ShieldCheck, ChevronDown, ChevronUp, Crown, FileText, Printer, MessageSquare, Globe, Search, Plus, RotateCcw, KeyRound, Lock, Unlock, Gift
 } from 'lucide-react';
 import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord, hasClearance, TIER_ONE_ID, resolveTierOneId } from './config/permissions';
@@ -14,9 +14,10 @@ import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { IS_DEMO } from './config/firebase';
 import LoadingBay from './components/LoadingBay.jsx';
+import PromoBundleFields from './components/PromoBundleFields.jsx';
 import { damagedInVan, titipOf, quarantineOf, movePromo } from './utils/vanBay';
 
-export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, promoItems = [], transactions = [], customers = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, masterUserId = null }) {
+export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, promoItems = [], transactions = [], customers = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, regionOffers = [], onSavePromoBundles = null, masterUserId = null }) {
 
     const isGlobalAdmin = ['DEVELOPER', 'COMPANY_OWNER', 'ADMIN'].includes(userRole);
     const isAreaAdmin = !isGlobalAdmin;
@@ -108,6 +109,14 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
        a tier-1 preview of tier 5 keep powers tier 5 does not have. The rule now lives in
        config/permissions.js and answers to the same matrix as every other permission. */
     const canEditFleet = canEditFleetRoster(userRole);
+
+    /* TEAM OFFERS (his 2026-10-27 "regional admin can make offers for his own as a team strategy as long as sales
+       increasing"): T4 REGIONAL ADMIN only - rules CHANGE 19's isFleetCaptain, the same one tier on both sides - and only
+       for the region this screen already runs as (the "{branch} Roster" header). */
+    const offerRegion = userRole === 'FLEET_CAPTAIN' ? normalizeRegion(rawLocation) : '';
+    const canMakeOffers = offerRegion !== '' && offerRegion !== 'UNASSIGNED' && promoItems.length > 0 && !!onSavePromoBundles;
+    const [offersOpen, setOffersOpen] = useState(false);
+    const [offerPromoId, setOfferPromoId] = useState('');
 
     /* the owner's profile record (master_owner, written by App.jsx's location ping and his Agent Profile) is not a
        van - his van is ADMIN_VEHICLE. Listing both put him on the stage twice (demo walk, 2026-10-13); the EOD and
@@ -1066,14 +1075,36 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                             Active Personnel: {agents.length} · {agents.filter(m => loadOf(m) > 0).length} vans loaded
                         </p>
                     </div>
+                    <div className="flex gap-2 shrink-0">
+                    {canMakeOffers && (
+                        <button onClick={() => setOffersOpen(v => !v)} aria-pressed={offersOpen} className="kpm-btn shrink-0 inline-flex items-center gap-1.5" aria-label={offersOpen ? 'Close team offers' : 'Team offers'}>
+                            {offersOpen ? <X size={18}/> : <><Gift size={16}/> OFFERS</>}
+                        </button>
+                    )}
                     {canEditFleet && (
                         <button onClick={() => { setIsAddingAgent(!isAddingAgent); setEditingAgentId(null); setNewAgent(defaultAgentState); setIsReadOnlyMode(false); }} className="kpm-btn key shrink-0" aria-label={isAddingAgent && !isReadOnlyMode ? 'Close the form' : 'Add personnel'}>
                             {isAddingAgent && !isReadOnlyMode ? <X size={18}/> : <UserPlus size={18}/>}
                         </button>
                     )}
+                    </div>
                 </div>
 
                 <div className="p-4 space-y-3">
+                    {canMakeOffers && offersOpen && (() => {
+                        const promo = promoItems.find(p => p.id === offerPromoId) || promoItems[0];
+                        return (
+                            <div className="bg-[var(--raised)] p-4 rounded-xl border-2 border-dashed border-[var(--accent-edge)] space-y-3 text-xs lg:max-w-2xl" data-guide="team-offers">
+                                <p className="text-[var(--ink-muted)] leading-relaxed">TEAM OFFERS - only {offerRegion} salesmen see these, under BUNDLES in the Sales Terminal. The boss sees every offer and can remove any.</p>
+                                {promoItems.length > 1 && (
+                                    <div><label htmlFor="offerPromo" className="text-[var(--ink-muted)] block mb-1">PROMO GOODS GIVEN FREE</label>
+                                        <select id="offerPromo" value={promo.id} onChange={(e) => setOfferPromoId(e.target.value)} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] outline-none">
+                                            {promoItems.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                        </select></div>)}
+                                <PromoBundleFields key={promo.id} promo={promo} bundles={regionOffers.filter(b => normalizeRegion(b.region) === offerRegion)} products={inventory}
+                                    lockRegion={offerRegion} by={myProfile?.name || user?.displayName || ''} onSave={(list) => onSavePromoBundles(list, offerRegion)} />
+                            </div>
+                        );
+                    })()}
                     {isAddingAgent && (
                         <div className={`bg-[var(--raised)] p-4 rounded-xl border-2 border-dashed ${isReadOnlyMode ? 'border-[var(--accent-edge)]' : 'border-[var(--accent-edge)]'} mb-4 animate-slide-down`}>
                             <h3 className={`text-xs font-bold uppercase tracking-widest mb-3 ${isReadOnlyMode ? 'text-[var(--accent-ink)]' : 'text-[var(--accent-ink)]'}`}>

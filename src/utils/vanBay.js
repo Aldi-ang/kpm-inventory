@@ -92,6 +92,19 @@ export function bundleCheck(bundle, inventory, promoVan, cart = [], give = {}) {
 export const bundlesFor = (bundles, sellerRegion, seesAll) => (bundles || [])
   .filter(b => seesAll || !b.region || normalizeRegion(b.region) === normalizeRegion(sellerRegion));
 
+/* TEAM OFFERS (his 2026-10-27: "regional admin can make offers for his own as a team strategy as long as sales increasing").
+   A region's offers live on their own doc, promoOffers/{REGION}, so the rule can lock a regional admin to his one doc. The
+   doc id IS the region: a `region` typed inside an offer can never move it to another area. */
+export const offersFromDocs = (docs) => (docs || []).flatMap(d => (d.bundles || []).map(b => ({ ...b, region: d.id })));
+
+/* The boss's editor saves the WHOLE list: all-area offers to settings/general, each region's to its own doc. A region that
+   had offers and now has none is still written (an empty list), or the offer he removed would stay live. */
+export const offerWrites = (list, oldRegions = []) => {
+  const regions = [...new Set([...oldRegions, ...list.map(b => b.region)].filter(Boolean).map(normalizeRegion))];
+  return { general: list.filter(b => !b.region),
+    regions: Object.fromEntries(regions.map(r => [r, list.filter(b => b.region && normalizeRegion(b.region) === r)])) };
+};
+
 /* ONE LINE PER PRODUCT, SIGNED: dir +1 goes into the van, dir -1 back to the warehouse. */
 export const lineBks = (line, product) => convertToBks(line.qty, line.unit, product);
 export const netBks = (lines, id, product) => {

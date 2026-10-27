@@ -819,6 +819,22 @@ service cloud.firestore {
         allow read: if isSalesman(bossUid);
         allow write: if isAreaAdmin(bossUid) || isFleetCaptain(bossUid);
       }
+      // [CHANGE 19 — 2026-10-27, DRAFT] TEAM OFFERS. His words: "regional admin can make offers for his own as a team
+      // strategy as long as sales increasing". One doc per region, promoOffers/{REGION} = { bundles: [...] } - each a
+      // factory offer: buy these cigarettes, get this promo item free. Every employee reads them (the Sales Terminal's
+      // BUNDLES shows his own region's). A T4 REGIONAL ADMIN (FLEET_CAPTAIN) writes ONLY the doc named after his own
+      // location - capitals, spaces trimmed, the app's normalizeRegion - and only the `bundles` field; never a delete.
+      // The owner writes every region through the users/{bossUid} catch-all. The app takes the region from the doc id,
+      // never from a field inside an offer. rules-test/test-promo-offers.mjs asserts every case.
+      match /promoOffers/{region} {
+        function isOwnRegionDoc() {
+          let loc = getEmployeeProfile().get('location', '');
+          return loc is string && loc.trim() != '' && loc.trim().upper() == region;
+        }
+        allow read: if isSalesman(bossUid);
+        allow write: if isFleetCaptain(bossUid) && isOwnRegionDoc() &&
+          request.resource.data.keys().hasOnly(['bundles']) && request.resource.data.bundles is list;
+      }
       match /audit_logs/{logId} {
         allow read: if isSalesman(bossUid);
         allow create: if isSalesman(bossUid);

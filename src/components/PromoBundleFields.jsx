@@ -6,10 +6,12 @@ import { confirmAction } from './ConfirmGate';
    cigarettes, get this item free - and shows in the Sales Terminal under the BUNDLES chip. No price of its own: the
    cigarettes keep the shop's price, the promo is a bonus. One cigarette line per offer here; the stored shape takes more.
    WHERE (his 2026-10-27 "bundle that are special for the regional location"): all areas, or one region from the roster.
+   `lockRegion` (TEAM OFFERS, his 2026-10-27 "regional admin can make offers for his own"): WHERE is his region, no choice,
+   and `by` names him on the offer so the boss sees who made it.
    The inputs carry no `name` and Enter does not submit, so the product form around this never saves them. */
-export default function PromoBundleFields({ promo, bundles = [], products = [], regions = [], onSave }) {
+export default function PromoBundleFields({ promo, bundles = [], products = [], regions = [], lockRegion = '', by = '', onSave }) {
     const [name, setName] = useState('');
-    const [region, setRegion] = useState('');   // '' = every area; a region = only salesmen whose location is that region
+    const [region, setRegion] = useState(lockRegion);   // '' = every area; a region = only salesmen whose location is that region
     const [qty, setQty] = useState(1);
     const [unit, setUnit] = useState('Bal');
     const [productId, setProductId] = useState('');
@@ -23,10 +25,10 @@ export default function PromoBundleFields({ promo, bundles = [], products = [], 
     const add = async () => {
         const p = products.find(x => x.id === productId);
         if (!name.trim() || !p || !(qty > 0) || !(gives > 0)) return; // the button is disabled until all four are set
-        const offer = { id: `b_${Date.now()}`, name: name.trim().toUpperCase(), ...(region ? { region } : {}),
+        const offer = { id: `b_${Date.now()}`, name: name.trim().toUpperCase(), ...(region ? { region } : {}), ...(by ? { by } : {}),
             lines: [{ productId: p.id, name: p.name, qty: Math.floor(qty), unit }],
             gives: [{ productId: promo.id, name: promo.name, qty: Math.floor(gives) }] };
-        if (await save([...bundles, offer])) { setName(''); setQty(1); setGives(1); setProductId(''); setRegion(''); }
+        if (await save([...bundles, offer])) { setName(''); setQty(1); setGives(1); setProductId(''); setRegion(lockRegion); }
     };
     const remove = async (b) => {
         if (!(await confirmAction(`Remove the offer "${b.name}"? Salesmen stop seeing it in BUNDLES.`))) return;
@@ -40,7 +42,7 @@ export default function PromoBundleFields({ promo, bundles = [], products = [], 
             {mine.map(b => (
                 <div key={b.id} className="flex items-start gap-2 p-2 border border-[var(--duke-veil-edge-2)] bg-[var(--duke-veil)]">
                     <span className="flex-1 min-w-0 leading-snug text-[var(--duke-ink-hi)]">
-                        <span className="block font-bold">{b.name} <span className="font-normal text-[var(--duke-ink-8)]">· {b.region ? `${b.region} only` : 'all areas'}</span></span>
+                        <span className="block font-bold">{b.name} <span className="font-normal text-[var(--duke-ink-8)]">· {b.region ? `${b.region} only` : 'all areas'}{b.by ? ` · by ${b.by}` : ''}</span></span>
                         <span className="text-[var(--duke-ink-8)]">Buy {(b.lines || []).map(l => `${l.qty} ${l.unit} ${products.find(p => p.id === l.productId)?.name || l.name}`).join(' + ')} · get {(b.gives || []).map(g => `${g.qty} pcs ${g.name}`).join(' + ')} free</span>
                     </span>
                     <button type="button" disabled={busy} onClick={() => remove(b)} className="shrink-0 px-3 min-h-[44px] lg:min-h-0 lg:py-1 border border-red-500 text-red-400 font-bold hover:bg-red-500/10 disabled:opacity-50">REMOVE</button>
@@ -49,11 +51,12 @@ export default function PromoBundleFields({ promo, bundles = [], products = [], 
             <div className="space-y-2 p-2 border border-dashed border-[var(--duke-veil-edge-2)]">
                 <div><label htmlFor="bundleName" className="text-[var(--duke-ink-8)] block mb-1">OFFER NAME</label>
                     <input id="bundleName" value={name} maxLength={30} onKeyDown={noEnter} onChange={(e) => setName(e.target.value)} placeholder="TAWANG BUNDLE" className={`${field} uppercase`} /></div>
+                {lockRegion ? <p className="text-[var(--duke-ink-8)]">WHERE: <span className="text-[var(--duke-ink-hi)] font-bold">{lockRegion} only</span> - your team</p> : (
                 <div><label htmlFor="bundleRegion" className="text-[var(--duke-ink-8)] block mb-1">WHERE</label>
                     <select id="bundleRegion" value={region} onChange={(e) => setRegion(e.target.value)} className={field}>
                         <option value="">All areas (every salesman)</option>
                         {regions.map(r => <option key={r} value={r}>{r} only</option>)}
-                    </select></div>
+                    </select></div>)}
                 <div><span className="text-[var(--duke-ink-8)] block mb-1">THE SHOP BUYS</span>
                     <div className="flex gap-2">
                         <input type="number" inputMode="numeric" min="1" aria-label="How many" value={qty} onKeyDown={noEnter} onChange={(e) => setQty(Math.max(0, parseInt(e.target.value, 10) || 0))} className={`${field} !w-16 text-center tabular-nums`} />

@@ -4,6 +4,7 @@ import { applyDocChanges } from '../utils/docChanges';
 import { ACCESS_DOC_ID, accessFor, grantQueries, seesEveryShop } from '../utils/customerAccess.js';
 import { notify } from '../components/Toast.jsx';
 import { isPromo } from '../utils/helpers';
+import { offersFromDocs } from '../utils/vanBay';
 
 const NO_SHOPS = [];   // one stable empty list, so screens keyed on `customers` do not re-run every render
 
@@ -22,6 +23,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
     const [procurements, setProcurements] = useState([]); 
     const [motorists, setMotorists] = useState([]);
     const [career, setCareer] = useState({});
+    const [regionOffers, setRegionOffers] = useState([]);   // TEAM OFFERS: every promoOffers/{REGION} doc, flattened
     const [agentInventories, setAgentInventories] = useState({}); 
     const [eodReports, setEodReports] = useState([]);
     const [transferRequests, setTransferRequests] = useState([]);
@@ -74,6 +76,8 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
         const unsubMotorists = onSnapshot(collection(db, basePath, 'motorists'), (snap) => setMotorists(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Motorists listener:", err.code));
         // 🚀 CAREER LEDGER (Phase 2): no time gate — bounded by headcount, not history.
         const unsubCareer = onSnapshot(collection(db, basePath, 'career'), (snap) => setCareer(Object.fromEntries(snap.docs.map(d => [d.id, d.data()]))), (err) => console.warn("Career listener:", err.code));
+        // TEAM OFFERS: one small doc per region (rules CHANGE 19) - bounded by the number of regions, not by sales
+        const unsubOffers = onSnapshot(collection(db, basePath, 'promoOffers'), (snap) => setRegionOffers(offersFromDocs(snap.docs.map(d => ({ id: d.id, ...d.data() })))), (err) => console.warn("Promo offers listener:", err.code));
         
         // 🛡️ FIREWALL ACTIVE: All transaction/log data is strictly gated to the last 7 days!
         const unsubTrans = onSnapshot(query(collection(db, basePath, 'transactions'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Transactions listener:", err.code));
@@ -128,7 +132,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
 
         return () => { 
             unsubSettings(); unsubInv(); unsubTrans(); unsubSamp(); 
-            unsubLogs(); unsubProc(); unsubMotorists(); unsubCareer();
+            unsubLogs(); unsubProc(); unsubMotorists(); unsubCareer(); unsubOffers();
             unsubAdminVeh(); unsubEod(); unsubTransfers();
         };
     }, [user, db, appId, userId, userRole]);
@@ -253,7 +257,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
         samplings, setSamplings,
         auditLogs, setAuditLogs,
         procurements, setProcurements,
-        motorists, setMotorists,
+        motorists, setMotorists, regionOffers,
         career, setCareer,
         agentInventories, setAgentInventories,
         eodReports, setEodReports,

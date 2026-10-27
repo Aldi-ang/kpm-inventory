@@ -12311,13 +12311,13 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      /Only 1 pcs T-shirt left/.test(vb.bundleCheck({ ...deal, gives: [{ productId: 'tee', qty: 2 }] }, [cello], vanTee, [], { tee: 1 }).why) &&
      !vb.bundleCheck(deal, [], vanTee).ok && !vb.bundleCheck(deal, [cello], []).ok);
   const pbf = code(read('src/components/PromoBundleFields.jsx'));
-  ok('REGRESSION: bundles live on settings/general (salesmen already read it, only the boss writes it - no new rule), the editor sits on a SAVED promo item, removing asks first, its inputs never join the product form',
-     ap.includes("/settings/general`), { promoBundles: list }, { merge: true });") &&
-     ap.includes('{isPromo(editingProduct) && editingProduct.id && (') && ap.includes('<PromoBundleFields promo={editingProduct} bundles={appSettings?.promoBundles || []} products={inventory} onSave={handleSavePromoBundles}') &&
+  ok('REGRESSION: all-area bundles live on settings/general (salesmen already read it, only the boss writes it), the editor sits on a SAVED promo item and lists every offer incl. the regions\', removing asks first, its inputs never join the product form',
+     ap.includes("batch.set(doc(db, `${base}/settings/general`), { promoBundles: w.general }, { merge: true });") &&
+     ap.includes('{isPromo(editingProduct) && editingProduct.id && (') && ap.includes('<PromoBundleFields promo={editingProduct} bundles={[...(appSettings?.promoBundles || []), ...regionOffers]} products={inventory} onSave={(list) => handleSavePromoBundles(list)}') &&
      read('firestore.rules').includes("allow read: if isSalesman(bossUid) && docId != 'admin';") &&
      pbf.includes('await confirmAction(') && !/<(input|select)[^>]*\sname=/.test(pbf) && pbf.includes("if (e.key === 'Enter') e.preventDefault();"));
   ok('REGRESSION: the terminal turns a bundle into ORDINARY cart lines at the shop tier + give-box pieces, refuses it in Retur and on an Utang Barang line, and the engine never sees a bundle',
-     ms.includes("const bundles = bundlesFor(appSettings?.promoBundles, sellerRegion, userRole === 'ADMIN');") && ms.includes('...(bundles.length ? ["BUNDLES"] : [])') &&
+     ms.includes("const bundles = bundlesFor([...(appSettings?.promoBundles || []), ...regionOffers], sellerRegion, userRole === 'ADMIN');") && ms.includes('...(bundles.length ? ["BUNDLES"] : [])') &&
      ms.includes('const chk = bundleCheck(b, inventory, promoVan, cart, give);') && ms.includes('calculatedPrice: tierPrice(l.product, tier) * convertToBks(1, l.unit, l.product), product: l.product,') &&
      ms.includes("if (isReturMode) return notify(`${b.name} is for a sale - switch Retur off first.`);") && ms.includes('const owed = cart.find(i => i.isIouFulfillment && chk.lines.some(l => l.product.id === i.productId));') &&
      !/promoBundles|bundleCheck/.test(eng) && !/\bprice\b/.test(JSON.stringify(deal)));
@@ -12334,6 +12334,25 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      ap.includes("regions={[...new Set(motorists.map(m => normalizeRegion(m.location)))].filter(r => r !== 'UNASSIGNED').sort()} />") &&
      pbf.includes('...(region ? { region } : {}),') && pbf.includes('<option value="">All areas (every salesman)</option>') &&
      code(read('src/utils/vanBay.js')).includes('.filter(b => seesAll || !b.region || normalizeRegion(b.region) === normalizeRegion(sellerRegion));'));
+  /* TEAM OFFERS (his 2026-10-27: "regional admin can make offers for his own as a team strategy as long as sales increasing"):
+     promoOffers/{REGION}, one doc per region; the T4 writes his own, the boss all of them. */
+  const fromDocs = vb.offersFromDocs([{ id: 'BANDUNG', bundles: [{ id: 'k', region: 'JAKARTA' }, { id: 'k2' }] }, { id: 'JAKARTA' }]);
+  ok('BEHAVIOUR: a region doc\'s offers take the doc id as their region - an offer typed "JAKARTA" inside BANDUNG\'s doc is still BANDUNG\'s; a doc with no list adds nothing',
+     ids(fromDocs) === 'k,k2' && fromDocs.every(b => b.region === 'BANDUNG') && vb.offersFromDocs(undefined).length === 0 &&
+     ids(vb.bundlesFor([{ id: 'a' }, ...fromDocs], 'Jakarta', false)) === 'a');
+  const w = vb.offerWrites([{ id: 'a' }, { id: 'b', region: 'BANDUNG' }, { id: 'j', region: 'jakarta ' }], ['BANDUNG', 'SEMARANG']);
+  ok('BEHAVIOUR: the boss\'s save splits one list - all-area to settings/general, each region to its own doc, and a region whose last offer he removed (SEMARANG) is written EMPTY so it stops showing',
+     ids(w.general) === 'a' && Object.keys(w.regions).sort().join() === 'BANDUNG,JAKARTA,SEMARANG' &&
+     ids(w.regions.BANDUNG) === 'b' && ids(w.regions.JAKARTA) === 'j' && w.regions.SEMARANG.length === 0);
+  const fl = code(read('src/FleetCanvasManager.jsx')), rules = read('firestore.rules');
+  ok('REGRESSION: the OFFERS button is T4 REGIONAL ADMIN only, locked to the region the screen runs as, saving that one doc - and rules CHANGE 19 lets exactly that tier write exactly that doc (one tier on both sides, the UI-says-yes trap)',
+     fl.includes("const offerRegion = userRole === 'FLEET_CAPTAIN' ? normalizeRegion(rawLocation) : '';") &&
+     fl.includes('lockRegion={offerRegion}') && fl.includes('onSave={(list) => onSavePromoBundles(list, offerRegion)}') &&
+     ap.includes('if (region) await setDoc(doc(db, `${base}/promoOffers`, region), { bundles: list });') &&
+     rules.includes('match /promoOffers/{region} {') && rules.includes("allow write: if isFleetCaptain(bossUid) && isOwnRegionDoc() &&") &&
+     rules.includes("return loc is string && loc.trim() != '' && loc.trim().upper() == region;") &&
+     code(read('src/hooks/useDatabaseSync.js')).includes("onSnapshot(collection(db, basePath, 'promoOffers'), (snap) => setRegionOffers(offersFromDocs(") &&
+     pbf.includes('...(by ? { by } : {}),') && pbf.includes('setRegion(lockRegion);'));
   const samp = code(read('src/components/SamplingManager.jsx'));
   ok('REGRESSION: a SAMPLE still needs no sale - the sampling screen knows nothing of the give rule (his "give them for free")',
      !/promoGiven|giveLines|applyGiveToPromo|canGive/.test(samp));

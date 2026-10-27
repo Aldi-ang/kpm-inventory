@@ -24,7 +24,7 @@ import { warehouseList } from './utils/supply';
 import { accessFor } from './utils/customerAccess.js';
 import { tallySaleOp, statsPath } from './utils/salesRollupWrite';
 import { syncOfflineSale, canvasWithPending } from './utils/vanSync';
-import { promoWithPending } from './utils/vanBay';
+import { promoWithPending, offerWrites } from './utils/vanBay';
 import { rebuildMonths } from './utils/salesRollup';
 import { hashSecret, verifySecret, needsRehash } from './utils/secretHash';
 import { settleProgression } from './utils/progressionHome';
@@ -581,7 +581,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       fetchHistoricalTransactions, // 🚀 THE TIME MACHINE ENGINE PLUGGED IN
       inventory, setInventory, promoItems, customers, customerAccess, transactions, setTransactions,
       samplings, setSamplings, auditLogs, setAuditLogs, procurements, setProcurements,
-      motorists, setMotorists, agentInventories, setAgentInventories, eodReports, setEodReports,
+      motorists, setMotorists, regionOffers, agentInventories, setAgentInventories, eodReports, setEodReports,
       transferRequests, setTransferRequests,
       adminCanvas, setAdminCanvas, adminPromo, branchStock,
       career,
@@ -751,16 +751,26 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
       };
   };
 
-  /* FACTORY OFFERS (promo bundles): the whole list on settings/general - every salesman already reads that doc and only
-     the boss can write it, so no new collection and no new rule. Returns true when it landed. */
-  const handleSavePromoBundles = async (list) => {
+  /* FACTORY OFFERS (promo bundles). All-area offers live on settings/general; a region's on promoOffers/{REGION} (his
+     2026-10-27 "regional admin can make offers for his own"), the one doc rules CHANGE 19 lets that region's admin write.
+     `region` set = a regional admin saving his own region's list; unset = the boss saving the whole list, every doc it
+     touches in one batch. Returns true when it landed. */
+  const handleSavePromoBundles = async (list, region) => {
+      const base = `artifacts/${appId}/users/${userId}`;
       try {
-          await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings/general`), { promoBundles: list }, { merge: true });
-          await logAudit("SETTINGS_UPDATE", `Factory offers: ${list.length} saved.`);
+          if (region) await setDoc(doc(db, `${base}/promoOffers`, region), { bundles: list });
+          else {
+              const w = offerWrites(list, regionOffers.map(b => b.region));
+              const batch = writeBatch(db);
+              batch.set(doc(db, `${base}/settings/general`), { promoBundles: w.general }, { merge: true });
+              Object.entries(w.regions).forEach(([r, bundles]) => batch.set(doc(db, `${base}/promoOffers`, r), { bundles }));
+              await batch.commit();
+          }
+          await logAudit("SETTINGS_UPDATE", `Factory offers${region ? ` (${region})` : ''}: ${list.length} saved.`);
           notify(`Factory offers saved - ${list.length} in BUNDLES now.`);
           return true;
       } catch (err) {
-          notify("Factory offer not saved: " + (err.code === 'permission-denied' ? 'only the boss can change offers.' : err.message));
+          notify("Factory offer not saved: " + (err.code === 'permission-denied' ? (region ? `only ${region}'s regional admin can change ${region}'s offers.` : 'only the boss can change offers.') : err.message));
           return false;
       }
   };
@@ -5085,6 +5095,7 @@ const handleGitHubMirror = async () => {
                 triggerCapy={triggerCapy} 
                 isAdmin={isAdmin}
                 motorists={motorists}
+                regionOffers={regionOffers} onSavePromoBundles={handleSavePromoBundles}   /* TEAM OFFERS - the regional admin's own region */
                 masterUserId={userId}       // 🚀 `bossUid || user.uid` — see the note at the FleetCanvasManager signature
                 agentProfileId={agentProfileId}  // 🎭 THE FALLBACK THE POV STAND-DOWN LANDS ON. Never passed until 2026-09-09,
                                                  // so under POV `myProfile` was find(m => m.id === undefined) — always nothing.
@@ -5281,7 +5292,7 @@ const handleGitHubMirror = async () => {
                                         ? <p className="text-[var(--duke-ink-8)] leading-relaxed">A FRONT photo is set, so the vault shows the photo card, not the 3D model.</p>
                                         : <PromoLookFields key={editingProduct.id || 'new'} product={editingProduct} previewRef={goodsPreviewRef} />)}
                                     {isPromo(editingProduct) && editingProduct.id && (
-                                        <PromoBundleFields promo={editingProduct} bundles={appSettings?.promoBundles || []} products={inventory} onSave={handleSavePromoBundles}
+                                        <PromoBundleFields promo={editingProduct} bundles={[...(appSettings?.promoBundles || []), ...regionOffers]} products={inventory} onSave={(list) => handleSavePromoBundles(list)}
                                             regions={[...new Set(motorists.map(m => normalizeRegion(m.location)))].filter(r => r !== 'UNASSIGNED').sort()} />)}
                                     {!isPromo(editingProduct) && (<>
                                     <h3 className="text-[var(--duke-ink-hi)] border-b border-[var(--duke-veil-edge)] pb-1 mb-2">PRICING ENGINE</h3>
@@ -5414,6 +5425,7 @@ const handleGitHubMirror = async () => {
                              everything bro". */
                           userRole={userRole}
                           sellerRegion={user?.location || (agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : '')}
+                          regionOffers={regionOffers}
                           adminSalesMode={adminSalesMode}
                           onAdminSalesMode={userRole === 'ADMIN' ? setAdminSalesMode : undefined}
                           inventory={salesTerminalInventory} 

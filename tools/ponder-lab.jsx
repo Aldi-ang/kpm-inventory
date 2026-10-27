@@ -1223,6 +1223,8 @@ function ShellLab() {
               /* a JAKARTA-only offer: this BANDUNG salesman must NOT see it (&region=JAKARTA flips that) */
               { id: 'b3', name: 'JAKARTA SHIRT DEAL', region: 'JAKARTA', lines: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 2, unit: 'Slop' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }] }] } : {}) }}
             sellerRegion={q.get('region') || 'Bandung'}
+            /* a TEAM OFFER from the BANDUNG doc (promoOffers/BANDUNG) - the Bandung regional admin's own */
+            regionOffers={q.has('bundles') ? [{ id: 'r1', name: 'TEAM SLOP DEAL', region: 'BANDUNG', by: 'Rizky Aditama', lines: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 1, unit: 'Slop' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }] }] : []}
             customers={LAB_CUSTOMERS}
             allowedPayments={['Cash', 'Transfer', 'IOU']} allowedTiers={['Retail', 'Ecer', 'Grosir']}
             transactions={[]} allowRetur allowCashRefund={false}
@@ -1243,7 +1245,11 @@ function ShellLab() {
            touch, so the lab is for LOOKING at where they live, not for changing them. */
         <FleetCanvasManager
           db={{}} appId="lab" masterUserId="lab"
-          userRole={q.has('admin') ? 'ADMIN' : 'AREA_ADMIN'} isAdmin={q.has('admin')}
+          userRole={q.has('admin') ? 'ADMIN' : q.has('t4') ? 'FLEET_CAPTAIN' : 'AREA_ADMIN'} isAdmin={q.has('admin')}
+          /* &t4 - the T4 REGIONAL ADMIN: OFFERS in the header (TEAM OFFERS, 2026-10-27). window.__offers = what his save writes */
+          regionOffers={[{ id: 'r1', name: 'BANDUNG SLOP DEAL', region: 'BANDUNG', by: 'Rizky Aditama', lines: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 2, unit: 'Slop' }], gives: [{ productId: 'p-lighter', name: 'Lighter', qty: 1 }] },
+            { id: 'r2', name: 'JAKARTA DEAL', region: 'JAKARTA', lines: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 1, unit: 'Bal' }], gives: [{ productId: 'p-lighter', name: 'Lighter', qty: 2 }] }]}
+          onSavePromoBundles={async (list, region) => { window.__offers = { list, region }; return true; }}
           agentProfileId="f-ra" previewing={null}
           user={{ uid: 'lab-ra', displayName: 'Rizky Aditama', email: 'rizky@kpm.example', location: 'BANDUNG' }}
           motorists={[...LAB_MOTORISTS, ...LAB_FLEET]}
