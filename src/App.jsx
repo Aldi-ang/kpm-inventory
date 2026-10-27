@@ -18,7 +18,7 @@ import useTransactionEngine from './hooks/useTransactionEngine';
 import useDatabaseSync from './hooks/useDatabaseSync'; 
 import useOfflineEngine, { canReachInternet } from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
-import { injectDynamicPermissions, isFieldLevelTier, hasClearance, handoffEligibility, canApproveHandoffFrom, handoffApprovers } from './config/permissions';
+import { injectDynamicPermissions, isFieldLevelTier, hasClearance, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion } from './config/permissions';
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch } from './config/povPreview';
 import { warehouseList } from './utils/supply';
 import { accessFor } from './utils/customerAccess.js';
@@ -5281,7 +5281,8 @@ const handleGitHubMirror = async () => {
                                         ? <p className="text-[var(--duke-ink-8)] leading-relaxed">A FRONT photo is set, so the vault shows the photo card, not the 3D model.</p>
                                         : <PromoLookFields key={editingProduct.id || 'new'} product={editingProduct} previewRef={goodsPreviewRef} />)}
                                     {isPromo(editingProduct) && editingProduct.id && (
-                                        <PromoBundleFields promo={editingProduct} bundles={appSettings?.promoBundles || []} products={inventory} onSave={handleSavePromoBundles} />)}
+                                        <PromoBundleFields promo={editingProduct} bundles={appSettings?.promoBundles || []} products={inventory} onSave={handleSavePromoBundles}
+                                            regions={[...new Set(motorists.map(m => normalizeRegion(m.location)))].filter(r => r !== 'UNASSIGNED').sort()} />)}
                                     {!isPromo(editingProduct) && (<>
                                     <h3 className="text-[var(--duke-ink-hi)] border-b border-[var(--duke-veil-edge)] pb-1 mb-2">PRICING ENGINE</h3>
                                     <div><label className="text-[var(--duke-ink-8)] block mb-1">DISTRIBUTOR (MODAL)</label><input name="priceDistributor" type="number" step="any" defaultValue={editingProduct.priceDistributor} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-danger-edge)] text-[var(--duke-danger-ink)] focus:border-[var(--duke-danger-edge)] outline-none"/></div>
@@ -5412,6 +5413,7 @@ const handleGitHubMirror = async () => {
                              camera lock. His words, 2026-09-13: "tier 1 should be able to bypass
                              everything bro". */
                           userRole={userRole}
+                          sellerRegion={user?.location || (agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : '')}
                           adminSalesMode={adminSalesMode}
                           onAdminSalesMode={userRole === 'ADMIN' ? setAdminSalesMode : undefined}
                           inventory={salesTerminalInventory} 

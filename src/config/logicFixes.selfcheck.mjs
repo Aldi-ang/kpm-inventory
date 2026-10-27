@@ -12313,14 +12313,27 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   const pbf = code(read('src/components/PromoBundleFields.jsx'));
   ok('REGRESSION: bundles live on settings/general (salesmen already read it, only the boss writes it - no new rule), the editor sits on a SAVED promo item, removing asks first, its inputs never join the product form',
      ap.includes("/settings/general`), { promoBundles: list }, { merge: true });") &&
-     ap.includes('{isPromo(editingProduct) && editingProduct.id && (') && ap.includes('<PromoBundleFields promo={editingProduct} bundles={appSettings?.promoBundles || []} products={inventory} onSave={handleSavePromoBundles} />') &&
+     ap.includes('{isPromo(editingProduct) && editingProduct.id && (') && ap.includes('<PromoBundleFields promo={editingProduct} bundles={appSettings?.promoBundles || []} products={inventory} onSave={handleSavePromoBundles}') &&
      read('firestore.rules').includes("allow read: if isSalesman(bossUid) && docId != 'admin';") &&
      pbf.includes('await confirmAction(') && !/<(input|select)[^>]*\sname=/.test(pbf) && pbf.includes("if (e.key === 'Enter') e.preventDefault();"));
   ok('REGRESSION: the terminal turns a bundle into ORDINARY cart lines at the shop tier + give-box pieces, refuses it in Retur and on an Utang Barang line, and the engine never sees a bundle',
-     ms.includes('const bundles = appSettings?.promoBundles || [];') && ms.includes('...(bundles.length ? ["BUNDLES"] : [])') &&
+     ms.includes("const bundles = bundlesFor(appSettings?.promoBundles, sellerRegion, userRole === 'ADMIN');") && ms.includes('...(bundles.length ? ["BUNDLES"] : [])') &&
      ms.includes('const chk = bundleCheck(b, inventory, promoVan, cart, give);') && ms.includes('calculatedPrice: tierPrice(l.product, tier) * convertToBks(1, l.unit, l.product), product: l.product,') &&
      ms.includes("if (isReturMode) return notify(`${b.name} is for a sale - switch Retur off first.`);") && ms.includes('const owed = cart.find(i => i.isIouFulfillment && chk.lines.some(l => l.product.id === i.productId));') &&
      !/promoBundles|bundleCheck/.test(eng) && !/\bprice\b/.test(JSON.stringify(deal)));
+  /* REGIONAL OFFERS (his 2026-10-27: "offers differs for each of the regional area ... maybe bundle that are special for
+     the regional location"): no region = every area; a region = only salesmen whose location is that region; the boss sees all. */
+  const offers = [{ id: 'a' }, { id: 'b', region: 'BANDUNG' }, { id: 'j', region: 'jakarta ' }];
+  const ids = (l) => l.map(b => b.id).join(',');
+  ok('BEHAVIOUR: a Bandung salesman sees the all-area offer + Bandung\'s, never Jakarta\'s (case and spaces ignored); no location = all-area only; the boss sees all three',
+     ids(vb.bundlesFor(offers, 'Bandung', false)) === 'a,b' && ids(vb.bundlesFor(offers, 'JAKARTA', false)) === 'a,j' &&
+     ids(vb.bundlesFor(offers, '', false)) === 'a' && ids(vb.bundlesFor(offers, undefined, false)) === 'a' &&
+     ids(vb.bundlesFor(offers, 'Bandung', true)) === 'a,b,j' && vb.bundlesFor(undefined, 'X', false).length === 0);
+  ok('REGRESSION: App hands the terminal the seller\'s own location and the editor the region list built from the roster (the same normalizeRegion), and an offer stores `region` only when it is regional',
+     ap.includes("sellerRegion={user?.location || (agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : '')}") &&
+     ap.includes("regions={[...new Set(motorists.map(m => normalizeRegion(m.location)))].filter(r => r !== 'UNASSIGNED').sort()} />") &&
+     pbf.includes('...(region ? { region } : {}),') && pbf.includes('<option value="">All areas (every salesman)</option>') &&
+     code(read('src/utils/vanBay.js')).includes('.filter(b => seesAll || !b.region || normalizeRegion(b.region) === normalizeRegion(sellerRegion));'));
   const samp = code(read('src/components/SamplingManager.jsx'));
   ok('REGRESSION: a SAMPLE still needs no sale - the sampling screen knows nothing of the give rule (his "give them for free")',
      !/promoGiven|giveLines|applyGiveToPromo|canGive/.test(samp));

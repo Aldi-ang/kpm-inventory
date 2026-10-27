@@ -3,6 +3,7 @@
    the "= N Bks" he reads in the HOW MANY panel is exactly what MUAT VAN moves. */
 import { convertToBks, storeKey, storeLabel, isPromo } from './helpers.js';
 import { debtCredit, isTitip } from './revenueRule.js';
+import { normalizeRegion } from '../config/permissions.js';
 
 export const PER = 6;          // squares on a page
 export const CELLS = 18;       // the van's layout: three pages, and a hole means something
@@ -84,6 +85,12 @@ export function bundleCheck(bundle, inventory, promoVan, cart = [], give = {}) {
   if (!lines.length) return { ok: false, why: `${bundle?.name || 'This bundle'} has no cigarettes in it.` };
   return { ok: true, why: '', lines, gives };
 }
+
+/* WHICH OFFERS THIS SELLER SEES (his 2026-10-27: "offers differs for each of the regional area because some of them perform
+   better sales than others"). An offer with no `region` runs in every area; one with a region shows only to salesmen whose
+   `location` is that region (same normalizeRegion every region screen uses). The boss sees all of them. */
+export const bundlesFor = (bundles, sellerRegion, seesAll) => (bundles || [])
+  .filter(b => seesAll || !b.region || normalizeRegion(b.region) === normalizeRegion(sellerRegion));
 
 /* ONE LINE PER PRODUCT, SIGNED: dir +1 goes into the van, dir -1 back to the warehouse. */
 export const lineBks = (line, product) => convertToBks(line.qty, line.unit, product);

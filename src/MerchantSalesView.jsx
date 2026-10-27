@@ -7,7 +7,7 @@ import { IS_DEMO } from './config/firebase';
 import { demoPhoto } from './config/demoPhoto.js';
 import ProofCamera from './components/ProofCamera.jsx';
 import { savePhotoAndGetReference, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey, promoPic } from './utils/helpers';
-import { giveLines, bundleCheck } from './utils/vanBay';
+import { giveLines, bundleCheck, bundlesFor } from './utils/vanBay';
 import { waNumber } from './utils/whatsapp.js';
 import { areaFromPin, watchBorders } from './utils/areaFromPin.js';
 import { grosirHold, priceLevelOf, canConfirmGrosir, grosirRequestNotice } from './utils/customerAccess.js';
@@ -48,7 +48,7 @@ const readDraft = (uid) => {
     } catch { return null; }
 };
 
-const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine, promoVan = [] }) => {
+const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine, promoVan = [], sellerRegion = '' }) => {
     /* WHOSE VAULT THE CUSTOMER RECORDS LIVE IN — and the answer must be the same one App used to
        fetch them, or a write lands in a document nobody reads.
 
@@ -1681,7 +1681,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     };
 
     const filteredItems = inventory.filter(i => (activeCategory === "ALL" || i.type === activeCategory) && i.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    const bundles = appSettings?.promoBundles || [];
+    const bundles = bundlesFor(appSettings?.promoBundles, sellerRegion, userRole === 'ADMIN');   // all-area offers + his region's; the boss sees every one
     const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC")), ...(bundles.length ? ["BUNDLES"] : [])];
 
     const isGpsRestricted = gpsStatus === 'manual_override' && !canOverrideGps;
@@ -2575,7 +2575,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         return (
                             <button key={b.id} type="button" data-guide="bundle-card" onClick={() => applyBundle(b)}
                                 className={`kpm-hover font-mono w-full shrink-0 text-left bg-[var(--duke-fill-well)] border-2 border-dashed rounded-lg p-3 lg:p-4 flex flex-col gap-1 transition-colors ${chk.ok ? 'border-[var(--duke-brass-edge-2)] hover:border-[var(--duke-amber-edge)]' : 'border-[var(--duke-edge-1)] opacity-60'}`}>
-                                <h4 className="text-[var(--duke-ink-1)] text-[12px] lg:text-sm font-black uppercase leading-tight">{b.name}</h4>
+                                <h4 className="text-[var(--duke-ink-1)] text-[12px] lg:text-sm font-black uppercase leading-tight">{b.name}{b.region && <span className="ml-2 text-[10px] lg:text-xs font-bold tracking-widest text-[var(--duke-ink-5)]">· {b.region} ONLY</span>}</h4>
                                 {(b.lines || []).map((l, i) => (
                                     <span key={`l${i}`} className="text-[11px] lg:text-xs font-bold text-[var(--duke-ink-3)] tabular-nums">{l.qty} {l.unit} · {inventory.find(p => p.id === l.productId)?.name || l.name}</span>
                                 ))}

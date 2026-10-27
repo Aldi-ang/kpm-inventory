@@ -1219,7 +1219,10 @@ function ShellLab() {
             /* &bundles: two factory offers under the BUNDLES chip - the hat one has only 2 hats in the van for 3, so it greys out */
             appSettings={{ companyName: 'KPM INVENTORY', ...(q.has('bundles') ? { promoBundles: [
               { id: 'b1', name: 'CELLO BUNDLE', lines: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 1, unit: 'Bal' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }] },
-              { id: 'b2', name: 'DJARUM HAT DEAL', lines: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 2, unit: 'Slop' }], gives: [{ productId: 'p-hat', name: 'Hat', qty: 3 }] }] } : {}) }}
+              { id: 'b2', name: 'DJARUM HAT DEAL', region: 'BANDUNG', lines: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 2, unit: 'Slop' }], gives: [{ productId: 'p-hat', name: 'Hat', qty: 3 }] },
+              /* a JAKARTA-only offer: this BANDUNG salesman must NOT see it (&region=JAKARTA flips that) */
+              { id: 'b3', name: 'JAKARTA SHIRT DEAL', region: 'JAKARTA', lines: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 2, unit: 'Slop' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }] }] } : {}) }}
+            sellerRegion={q.get('region') || 'Bandung'}
             customers={LAB_CUSTOMERS}
             allowedPayments={['Cash', 'Transfer', 'IOU']} allowedTiers={['Retail', 'Ecer', 'Grosir']}
             transactions={[]} allowRetur allowCashRefund={false}
@@ -1350,7 +1353,7 @@ function PromoBundlesLab() {
   return (
     <div style={{ background: '#0A0908', minHeight: '100vh', padding: 16, fontSize: 13, maxWidth: 420 }}>
       <form onSubmit={(e) => { e.preventDefault(); window.__submitted = (window.__submitted || 0) + 1; }} style={{ border: '1px solid #3a322a', padding: 12 }}>
-        <PromoBundleFields promo={tee} bundles={list} products={LAB_PRODUCTS} onSave={async (l) => { window.__bundles = l; setList(l); return true; }} />
+        <PromoBundleFields promo={tee} bundles={list} products={LAB_PRODUCTS} regions={['BANDUNG', 'JAKARTA']} onSave={async (l) => { window.__bundles = l; setList(l); return true; }} />
       </form>
     </div>
   );
