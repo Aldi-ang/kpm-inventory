@@ -53,9 +53,10 @@ export const applyGiveToPromo = (canvas, given) => {
 };
 
 /* What the van holds on THIS phone: the server's promoCanvas minus this van's gives still waiting in the Ghost Ledger
-   (the promo twin of vanSync's canvasWithPending). */
+   (the promo twin of vanSync's canvasWithPending). vanId 'VAULT' = the Master Vault's promo stock minus the boss's
+   waiting vault gives (his 2026-10-27 "tier 1 can give the item straight from the master vault"). */
 export const promoWithPending = (canvas, pendingTxs, vanId) => (pendingTxs || [])
-  .filter(tx => tx.vanPending && vanId && tx.agentId === vanId && tx.promoGiven?.length)
+  .filter(tx => (vanId === 'VAULT' ? tx.vaultPending : tx.vanPending && vanId && tx.agentId === vanId) && tx.promoGiven?.length)
   .reduce((list, tx) => settlePromo(list, tx.promoGiven).canvas, canvas || []);
 
 /* A FACTORY OFFER - "buy 1 Bal, get 1 T-shirt" (his 2026-10-26: "price is only recorded from the cigarette price only and

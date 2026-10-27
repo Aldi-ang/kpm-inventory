@@ -131,6 +131,15 @@ export const syncOfflineSale = (db, appId, userId, tx, productsById) => runTrans
         const snap = await t.get(vaultRefs[m.productId]);
         if (snap.exists()) vaultStock[m.productId] = Number(snap.data().stock || 0);
     }
+    // a give from the Master Vault (the boss in VAULT mode, his 2026-10-27 "tier 1 can give the item straight from the
+    // master vault"): the promo product's own stock, in pieces, read here and settled like a van's promoCanvas
+    const promoRefs = {}, vaultPromo = [];
+    for (const g of tx.vaultPending ? (tx.promoGiven || []) : []) {
+        if (g.productId in promoRefs) continue;
+        promoRefs[g.productId] = doc(db, `${basePath}/products`, g.productId);
+        const snap = await t.get(promoRefs[g.productId]);
+        if (snap.exists()) vaultPromo.push({ productId: g.productId, name: g.name, qty: Number(snap.data().stock || 0) });
+    }
 
     const payload = { ...tx };
     delete payload.localId;
@@ -146,19 +155,21 @@ export const syncOfflineSale = (db, appId, userId, tx, productsById) => runTrans
         ? settlePromo(vanSnap.data().promoCanvas, tx.promoGiven)
         : { canvas: null, short: [] };
     const vault = settleVault(vaultStock, moves);
+    const vaultGive = tx.vaultPending && tx.promoGiven?.length ? settlePromo(vaultPromo, tx.promoGiven) : { canvas: [], short: [] };
 
     t.set(txRef, {
         ...payload,
         timestamp: serverTimestamp(),   // true server time so it sorts into the reports
         syncedAt: serverTimestamp(),
         ...(settled.short.length ? { vanShortfall: settled.short } : {}),
-        ...(promo.short.length ? { promoShortfall: promo.short } : {}),
+        ...(promo.short.length || vaultGive.short.length ? { promoShortfall: [...promo.short, ...vaultGive.short] } : {}),
         ...(vault.short.length ? { vaultShortfall: vault.short } : {}),
     });
     // filed on the day the sale was MADE: the tally reads payload.date before the timestamp
     tallySale(t, db, appId, userId, payload, productsById, 1);
     if (settled.canvas) t.update(vanRef, { activeCanvas: settled.canvas, ...(promo.canvas ? { promoCanvas: promo.canvas } : {}) });
     for (const id of Object.keys(vault.stock)) t.update(vaultRefs[id], { stock: vault.stock[id] });
+    for (const l of vaultPromo) t.update(promoRefs[l.productId], { stock: Number(vaultGive.canvas.find(c => c.productId === l.productId)?.qty) || 0 });
 
-    return { landed: true, short: [...settled.short, ...promo.short, ...vault.short] };
+    return { landed: true, short: [...settled.short, ...promo.short, ...vault.short, ...vaultGive.short] };
 });

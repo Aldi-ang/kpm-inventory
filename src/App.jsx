@@ -4392,10 +4392,12 @@ const handleGitHubMirror = async () => {
   const adminCanvasNow = React.useMemo(() => canvasWithPending(adminCanvas, pendingTxData, 'ADMIN_VEHICLE', productsByIdNow),
       [adminCanvas, pendingTxData, productsByIdNow]);
   /* THE VAN'S PROMO GOODS for the terminal's give row (stage 4): the salesman's own van, or the boss's vehicle in VEHICLE
-     mode (VAULT mode has no van - nothing to give), minus the gives still waiting in the Ghost Ledger. Each line gets its
-     product for the picture; the terminal itself never receives the promo product list. */
+     mode, or in VAULT mode the Master Vault's own promo stock (his 2026-10-27 "tier 1 can give the item straight from the
+     master vault"), minus the gives still waiting in the Ghost Ledger. Each line gets its product for the picture; the
+     terminal itself never receives the promo product list. */
   const promoVanNow = React.useMemo(() => (userRole === 'ADMIN'
-      ? (adminSalesMode === 'VEHICLE' ? promoWithPending(adminPromo, pendingTxData, 'ADMIN_VEHICLE') : [])
+      ? (adminSalesMode === 'VEHICLE' ? promoWithPending(adminPromo, pendingTxData, 'ADMIN_VEHICLE')
+          : promoWithPending(promoItems.filter(p => Number(p.stock) > 0).map(p => ({ productId: p.id, name: p.name, qty: Number(p.stock), unit: 'pcs', promo: true })), pendingTxData, 'VAULT'))
       : promoWithPending(agentPromo, pendingTxData, agentProfileId)
   ).map(l => ({ ...l, product: promoItems.find(p => p.id === l.productId) })),   // picture only - never a sum, never a sale line
       [userRole, adminSalesMode, adminPromo, agentPromo, pendingTxData, agentProfileId, promoItems]);

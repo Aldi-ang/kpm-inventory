@@ -11896,7 +11896,10 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
         the PICTURE only (promoVanNow) - the terminal itself still never receives promoItems (stage 4's own pin) */
      /* widened ON PURPOSE 2026-10-27 (his "add another product or promotional goods for the bundle"): the offer editor in
         Master Vault (and Fleet) gets the promo list to PICK extra gifts by name - PromoBundleFields, never a sum or a sale line */
-     promoLines.length === 11 && app.split('promoItems').length - 1 === 17 &&
+     /* widened ON PURPOSE 2026-10-27 (his "can u add so that tier 1 can give the item straight from the master vault?"):
+        promoVanNow in VAULT mode turns the Master Vault's promo products into give lines (id, name, pcs) - still never a
+        sale line, and the terminal still receives promoVan only */
+     promoLines.length === 12 && app.split('promoItems').length - 1 === 18 &&
      app.includes('promoItems={promoItems} canSetPrice={canSetBundlePrice(userRole)}   /* the offer\'s extra gifts: names to pick, never a sum */') &&
      app.includes('.map(l => ({ ...l, product: promoItems.find(p => p.id === l.productId) })),   // picture only - never a sum, never a sale line') &&
      app.includes('promoItems={promoItems}   /* the bay\'s PROMO view loads them into the van in pcs (stage 3) - never activeCanvas */') &&
@@ -12240,6 +12243,10 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   ok('BEHAVIOUR: OFFLINE the phone shows the van minus its OWN waiting gives (2 + 1 of 6 -> 3) - another van\'s, or a give with no vanPending, never counts',
      typeof promoWithPending === 'function' && promoWithPending(van, pend, 'm2').find(l => l.productId === 'tee').qty === 3 && promoWithPending(van, pend, null).find(l => l.productId === 'tee').qty === 6 &&
      promoWithPending(undefined, [], 'm2').length === 0);
+  /* his 2026-10-27 "can u add so that tier 1 can give the item straight from the master vault?" */
+  const vaultPend = [...pend, { vaultPending: true, agentId: 'ADMIN', promoGiven: [{ productId: 'tee', name: 'T', qty: 4 }] }];
+  ok('BEHAVIOUR: on the Master Vault the phone shows the vault\'s promo minus the boss\'s OWN waiting vault gives (6 - 4 -> 2) - a van\'s waiting gives never count there, and a van never counts a vault give',
+     promoWithPending(van, vaultPend, 'VAULT').find(l => l.productId === 'tee').qty === 2 && promoWithPending(van, vaultPend, 'm2').find(l => l.productId === 'tee').qty === 3);
   /* TRAP 1 (money): t.items is read by revenue, targets, dayStats, the nota total, pita cukai and bounty pricing - a promo
      line there is a Rp 0 sale. The given pieces travel in their OWN field, promoGiven, never inside items. */
   ok('REGRESSION: the sale stores what was given as `promoGiven` - its own field, on BOTH the online receipt and the offline one - and no line ever builds items from it',
@@ -12249,10 +12256,10 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      eng.includes('t.update(agentRef, { activeCanvas: applySaleToCanvas(agentDoc.data().activeCanvas, transactionItems), ...(promoGiven.length ? { promoCanvas: applyGiveToPromo(agentDoc.data().promoCanvas, promoGiven) } : {}) });') &&
      imports(engine, 'applyGiveToPromo') && imports(engine, 'giveLines'));
   const guard = eng.slice(eng.indexOf('const promoGiven = giveLines('), eng.indexOf('THE OFFLINE INTERCEPTOR'));
-  ok('REGRESSION: the engine refuses a give in Retur or with no van, and an empty deal - BEFORE the offline branch, so a refused give is never queued (a give with no sale line is a GIVEAWAY now, his 2026-10-26 yes)',
+  ok('REGRESSION: the engine refuses a give in Retur or with no van (the boss on the Master Vault excepted, his 2026-10-27 ask), and an empty deal - BEFORE the offline branch, so a refused give is never queued (a give with no sale line is a GIVEAWAY now, his 2026-10-26 yes)',
      guard.includes("if (promoGiven.length && (proofPayload?.isRetur || proofPayload?.type === 'RETUR')) {") && !guard.includes('isIouFulfillment') &&
      guard.includes('if (!activeCart.length && !promoGiven.length) {') &&
-     guard.includes('if (promoGiven.length && !currentAgentProfileId) {') && (guard.match(/notify\("[^"]*\b(cannot|not enough)\b/gi) || []).length === 2 &&
+     guard.includes("if (promoGiven.length && !currentAgentProfileId && userRole !== 'ADMIN') {") && (guard.match(/notify\("[^"]*\b(cannot|not enough)\b/gi) || []).length === 2 &&
      eng.includes('const handleMerchantSale = async (custName, payMethod, cartItems, newStoreData = null, proofPayload = null, promoGiven = []) => {') &&
      eng.includes('return await processTransaction(null, { customerName: finalName, paymentType: payMethod, cart: cartItems, newStoreData, proofPayload, promoGiven });'));
   const sync = vs.slice(vs.indexOf('export const syncOfflineSale'));
@@ -12260,11 +12267,13 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      sync.indexOf('if (txSnap.exists()) return { landed: false, short: [] };') >= 0 &&
      sync.indexOf('if (txSnap.exists()) return { landed: false, short: [] };') < sync.indexOf('settlePromo(vanSnap.data().promoCanvas, tx.promoGiven)') &&
      sync.includes("if (settled.canvas) t.update(vanRef, { activeCanvas: settled.canvas, ...(promo.canvas ? { promoCanvas: promo.canvas } : {}) });") &&
-     sync.includes('...(promo.short.length ? { promoShortfall: promo.short } : {}),') && sync.includes('short: [...settled.short, ...promo.short, ...vault.short]') &&
+     sync.includes('...(promo.short.length || vaultGive.short.length ? { promoShortfall: [...promo.short, ...vaultGive.short] } : {}),') &&
+     sync.includes('short: [...settled.short, ...promo.short, ...vault.short, ...vaultGive.short]') &&
      ap.includes("s.missingPcs != null ? `${s.missingPcs} pcs` : `${s.missingBks} Bks`"));
-  ok('REGRESSION: App feeds the terminal the van\'s promo (salesman: his doc; boss: ADMIN_VEHICLE in VEHICLE mode only) minus the waiting gives - as promoVan, never as promoItems',
+  ok('REGRESSION: App feeds the terminal the van\'s promo (salesman: his doc; boss: ADMIN_VEHICLE in VEHICLE mode, the Master Vault\'s promo stock in VAULT mode) minus the waiting gives - as promoVan, never as promoItems',
      ap.includes('setAgentPromo(data.promoCanvas || []);') && dbs.includes('setAdminPromo(snap.data().promoCanvas || []);') && dbs.includes('adminPromo,') &&
-     ap.includes("? (adminSalesMode === 'VEHICLE' ? promoWithPending(adminPromo, pendingTxData, 'ADMIN_VEHICLE') : [])") &&
+     ap.includes("? (adminSalesMode === 'VEHICLE' ? promoWithPending(adminPromo, pendingTxData, 'ADMIN_VEHICLE')") &&
+     ap.includes(": promoWithPending(promoItems.filter(p => Number(p.stock) > 0).map(p => ({ productId: p.id, name: p.name, qty: Number(p.stock), unit: 'pcs', promo: true })), pendingTxData, 'VAULT'))") &&
      ap.includes(': promoWithPending(agentPromo, pendingTxData, agentProfileId)') && ap.includes('promoVan={promoVanNow}') && !ms.includes('promoItems'));
   ok('REGRESSION: the terminal shows the give row whenever the van holds promo (never in Retur), caps it at the van, sends it as the 6th argument and clears it after the deal',
      ms.includes('const canGive = !isReturMode && promoVan.length > 0;') &&
@@ -12295,9 +12304,20 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   ok('REGRESSION: the readers that count sales count only type SALE - EOD cash + stores served, the agent profile - so a giveaway adds no money and no store',
      eodSrc.includes("if ((t.type === 'SALE' && method !== 'Titip') || t.type === 'CONSIGNMENT_PAYMENT') {") &&
      eodSrc.includes("todaysTrans.filter(t => t.type === 'SALE').map(t => storeKey(t.customerName))") && apv.includes("if (t.type === 'SALE') {"));
-  ok('REGRESSION: the boss on the Master Vault sees the one line "switch to Boss Car" instead of an empty give box; the history line lists the given pieces',
-     ms.includes("const giveNeedsVan = !isReturMode && userRole === 'ADMIN' && adminSalesMode !== 'VEHICLE';") && ms.includes('Promo goods are given from a van - switch to Boss Car') &&
+  /* his 2026-10-27 "can u add so that tier 1 can give the item straight from the master vault?" - the "switch to Boss
+     Car" line is gone ON PURPOSE: the give box now lists the Master Vault's promo stock in VAULT mode */
+  ok('REGRESSION: the boss on the Master Vault gets the give box (pieces "in the Master Vault"), no "switch to Boss Car" line; the history line lists the given pieces',
+     !ms.includes('giveNeedsVan') && !ms.includes('Promo goods are given from a van - switch to Boss Car') &&
+     ms.includes("const giveFrom = userRole === 'ADMIN' && adminSalesMode !== 'VEHICLE' ? 'the Master Vault' : 'the van';") &&
+     ms.includes('{l.qty} pcs in {giveFrom}') &&
      code(read('src/components/HistoryReportView.jsx')).includes('.concat((t.promoGiven || []).map(g =>'));
+  const engP = code(read('src/hooks/useTransactionEngine.js'));
+  ok('REGRESSION: the sale engine lets ONLY the boss give from the Master Vault - the pieces join the vault moves (one transaction with the sale, refused when short, no Bks low-stock line), a vanless salesman is still refused',
+     engP.includes("if (promoGiven.length && !currentAgentProfileId && userRole !== 'ADMIN') {") &&
+     engP.includes("if (!currentAgentProfileId) for (const g of promoGiven) vaultMoves.push({ ref: doc(db, `artifacts/${appId}/users/${userId}/products`, g.productId), delta: -g.qty, name: g.name, promo: true });") &&
+     engP.includes('if (!m.promo && vaultMoves.some(v => v.ref.path === m.ref.path && v.delta < 0) && isLowStock(') &&
+     engP.includes('} else if (promoGiven.length && currentAgentProfileId) throw `Vehicle not found - the promo goods were not given`;') &&
+     engP.includes('vaultPending: !currentAgentProfileId'));
   /* FACTORY BUNDLES - "buy 1 Bal, get 1 T-shirt" (his 2026-10-26: "price is only recorded from the cigarette price only and
      the promotional goods is just for bonus"). A recipe on settings/general, no price of its own: it fills the cart and the
      give box, and the engine never sees the word bundle. */

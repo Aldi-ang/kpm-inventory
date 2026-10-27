@@ -124,7 +124,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const [give, setGive] = useState({});
     const [bundleUse, setBundleUse] = useState({});   // OFFER RESULTS: the offers tapped into this deal, kept on the sale as `offers`
     const canGive = !isReturMode && promoVan.length > 0;
-    const giveNeedsVan = !isReturMode && userRole === 'ADMIN' && adminSalesMode !== 'VEHICLE';
+    // where the given pieces come from: the boss on the Master Vault gives from its own promo stock (his 2026-10-27
+    // "can u add so that tier 1 can give the item straight from the master vault?"), everyone else from a van
+    const giveFrom = userRole === 'ADMIN' && adminSalesMode !== 'VEHICLE' ? 'the Master Vault' : 'the van';
     const givenLines = canGive ? giveLines(promoVan.map(l => ({ productId: l.productId, name: l.name, qty: Math.min(give[l.productId] || 0, l.qty) }))) : [];
     const [lockedTier, setLockedTier] = useState(draft?.lockedTier ?? null);
     // the product card's price: the picked shop's tier, Ecer until a shop is picked
@@ -2215,24 +2217,19 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 <img alt="" src={promoPic(l.product || { kind: 'promo', name: l.name })} className="w-10 h-10 object-contain shrink-0 rounded border border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)] bg-[var(--duke-paper-2)]" />
                                 <span className="flex-1 min-w-0 text-[11px] md:text-xs font-black uppercase leading-tight break-words text-[var(--duke-ink-7)]">
                                     {l.name}
-                                    <span className="block mt-0.5 text-[10px] font-bold normal-case tracking-normal text-[var(--duke-on-paper-dim)] tabular-nums">{l.qty} pcs in the van</span>
+                                    <span className="block mt-0.5 text-[10px] font-bold normal-case tracking-normal text-[var(--duke-on-paper-dim)] tabular-nums">{l.qty} pcs in {giveFrom}</span>
                                 </span>
                                 <input type="number" inputMode="numeric" min="0" placeholder="0" aria-label={`${l.name}: pieces to give`}
                                     value={give[l.productId] || ''}
                                     onChange={(e) => {
                                         const n = Math.max(0, parseInt(e.target.value, 10) || 0);
-                                        if (n > l.qty) notify(`Only ${l.qty} pcs of ${l.name} in the van - not enough for ${n}.`);
+                                        if (n > l.qty) notify(`Only ${l.qty} pcs of ${l.name} in ${giveFrom} - not enough for ${n}.`);
                                         setGive(g => ({ ...g, [l.productId]: Math.min(n, l.qty) }));
                                     }}
                                     className="w-20 md:w-24 min-h-[44px] lg:min-h-0 bg-white border border-[var(--duke-edge-3)] text-center text-base md:text-sm font-bold tabular-nums outline-none focus:border-[var(--duke-amber-edge)] rounded p-1 text-[var(--duke-ink-7)]" />
                                 <span className="text-sm font-bold uppercase text-[var(--duke-ink-7)]">pcs</span>
                             </div>
                         ))}
-                    </div>
-                )}
-                {giveNeedsVan && (
-                    <div data-guide="promo-give-van" className="p-3 mb-1 rounded border border-dashed border-[var(--duke-edge-3)] bg-[var(--duke-paper)] text-[11px] md:text-xs font-bold text-[var(--duke-on-paper-dim)]">
-                        Promo goods are given from a van - switch to Boss Car
                     </div>
                 )}
             </div>

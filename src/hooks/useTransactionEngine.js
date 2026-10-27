@@ -120,8 +120,10 @@ export default function useTransactionEngine({
             return;
         }
         const txType = activeCart.length ? (proofPayload?.type || 'SALE') : 'GIVEAWAY';
-        if (promoGiven.length && !currentAgentProfileId) {
-            notify("Promo goods cannot be given from the Master Vault - load them into a van first (Fleet & Roster), then sell from it.");
+        /* the boss may give straight from the Master Vault (his 2026-10-27 "can u add so that tier 1 can give the item
+           straight from the master vault?"); anyone else with no van still cannot */
+        if (promoGiven.length && !currentAgentProfileId && userRole !== 'ADMIN') {
+            notify("Promo goods cannot be given without a van - load them into a van first (Fleet & Roster), then sell from it.");
             return;
         }
 
@@ -318,6 +320,10 @@ export default function useTransactionEngine({
             // Clean up the temporary tracking flags AND the embedded master product before
             // saving to DB — see stripCartItemForStorage for why the product is the one that
             // actually mattered.
+            // a give from the Master Vault (the boss, VAULT mode): the pieces leave the promo product's own stock, netted
+            // and checked against the fresh stock in the SAME transaction as the sale - too few refuses the whole deal
+            if (!currentAgentProfileId) for (const g of promoGiven) vaultMoves.push({ ref: doc(db, `artifacts/${appId}/users/${userId}/products`, g.productId), delta: -g.qty, name: g.name, promo: true });
+
             const finalTransItems = transactionItems.map(stripCartItemForStorage);
             const productsById = Object.fromEntries(
                 transactionItems.filter(i => i.productId).map(i => [i.productId, i.prodData]));
@@ -353,7 +359,7 @@ export default function useTransactionEngine({
                     const newStock = vaultStock[m.ref.path];
                     t.update(m.ref, { stock: newStock });
                     // 🔔 Flag if this sale just pushed the product below its minimum
-                    if (vaultMoves.some(v => v.ref.path === m.ref.path && v.delta < 0) && isLowStock({ ...m.prodData, stock: newStock }, appSettings)) {
+                    if (!m.promo && vaultMoves.some(v => v.ref.path === m.ref.path && v.delta < 0) && isLowStock({ ...m.prodData, stock: newStock }, appSettings)) {
                         lowStockAlerts.push(`${m.name} (${newStock} Bks left)`);
                     }
                     delete vaultStock[m.ref.path];
@@ -362,7 +368,7 @@ export default function useTransactionEngine({
                 // 🚀 SMART AGENT INVENTORY DEDUCTION
                 if (agentDoc && agentDoc.exists()) {
                     t.update(agentRef, { activeCanvas: applySaleToCanvas(agentDoc.data().activeCanvas, transactionItems), ...(promoGiven.length ? { promoCanvas: applyGiveToPromo(agentDoc.data().promoCanvas, promoGiven) } : {}) });
-                } else if (promoGiven.length) throw `Vehicle not found - the promo goods were not given`;
+                } else if (promoGiven.length && currentAgentProfileId) throw `Vehicle not found - the promo goods were not given`;
 
                 // 📖 RECEIPT GENERATION (Source of Truth)
                 t.set(transRef, {
