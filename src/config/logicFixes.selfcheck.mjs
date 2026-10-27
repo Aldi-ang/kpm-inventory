@@ -12369,13 +12369,14 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      res.o1.sales === 3 && res.o1.shops === 2 && res.o1.rp === 400000 && res.o2.sales === 1 && res.o2.rp === 50000 &&
      Object.keys(res).sort().join() === 'o1,o2' && Object.keys(vb.offerResults(undefined)).length === 0);
   const eng2 = code(read('src/hooks/useTransactionEngine.js'));
-  ok('REGRESSION: a deal remembers its offers on BOTH payloads (offline queue and online write), only the ones whose cigarettes are still in the cart, never on a retur; T1-T3 get the everywhere editor in Fleet with results',
+  ok('REGRESSION: a deal remembers its offers on BOTH payloads (offline queue and online write), only the ones whose cigarettes are still in the cart, never on a retur; T1-T3 get the everywhere editor in Fleet; results live in REPORTS (his "this panel is just for adding the bundle"), never in the editor',
      (eng2.match(/\.\.\.\(proofPayload\?\.offers\?\.length \? \{ offers: proofPayload\.offers \} : \{\}\)/g) || []).length === 2 &&
      ms.includes('offers: isReturMode ? [] : Object.values(bundleUse).filter(o => o.productIds.every(id => finalCart.some(i => i.productId === id)))') &&
      ms.includes('setGive({}); setBundleUse({});') &&
      fl.includes("const offersEverywhere = ['DEVELOPER', 'ADMIN', 'COMPANY_OWNER', 'AREA_ADMIN'].includes(userRole);") &&
-     fl.includes('regions={offerRegions}') && (fl.match(/loadResults=\{loadOfferResults\}/g) || []).length === 2 &&
-     ap.includes('const loadOfferResults = () => fetchHistoricalTransactions(new Date(Date.now() - 30 * 86400000), new Date());') &&
+     fl.includes('regions={offerRegions}') && !/loadResults|loadOfferResults|offerResults/.test(fl + ap + code(read('src/components/PromoBundleFields.jsx'))) &&
+     code(read('src/components/HistoryReportView.jsx')).includes('const offerStats = useMemo(() => Object.entries(offerResults(contextualTransactions))') &&
+     read('src/components/HistoryReportView.jsx').includes('data-guide="offer-performance"') &&
      rules.includes("allow update: if docId == 'general' && (isAreaAdmin(bossUid) || isCompanyTopTier(bossUid)) &&") &&
      rules.includes("request.resource.data.diff(resource.data).affectedKeys().hasOnly(['promoBundles'])"));
   /* BUNDLE PRICE + MANY ITEMS + FRONT PANELS + DARK DROPDOWNS (his 2026-10-27: "add another product or promotional goods

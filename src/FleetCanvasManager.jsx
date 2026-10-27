@@ -39,7 +39,7 @@ function FrontPanel({ label, onClose, children }) {
     );
 }
 
-export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, promoItems = [], transactions = [], customers = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, regionOffers = [], onSavePromoBundles = null, loadOfferResults = null, masterUserId = null }) {
+export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, promoItems = [], transactions = [], customers = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, regionOffers = [], onSavePromoBundles = null, masterUserId = null }) {
 
     const isGlobalAdmin = ['DEVELOPER', 'COMPANY_OWNER', 'ADMIN'].includes(userRole);
     const isAreaAdmin = !isGlobalAdmin;
@@ -1131,10 +1131,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         </select></div>)}
                                 {offersEverywhere
                                     ? <PromoBundleFields key={promo.id} promo={promo} bundles={[...(appSettings?.promoBundles || []), ...regionOffers]} products={inventory}
-                                        regions={offerRegions} by={myProfile?.name || user?.displayName || ''} onSave={(list) => onSavePromoBundles(list)} loadResults={loadOfferResults}
+                                        regions={offerRegions} by={myProfile?.name || user?.displayName || ''} onSave={(list) => onSavePromoBundles(list)}
                                         promoItems={promoItems} canSetPrice={canSetBundlePrice(userRole)} />
                                     : <PromoBundleFields key={promo.id} promo={promo} bundles={regionOffers.filter(b => normalizeRegion(b.region) === offerRegion)} products={inventory}
-                                        lockRegion={offerRegion} by={myProfile?.name || user?.displayName || ''} onSave={(list) => onSavePromoBundles(list, offerRegion)} loadResults={loadOfferResults}
+                                        lockRegion={offerRegion} by={myProfile?.name || user?.displayName || ''} onSave={(list) => onSavePromoBundles(list, offerRegion)}
                                         promoItems={promoItems} canSetPrice={canSetBundlePrice(userRole)} />}
                             </div>
                             </FrontPanel>

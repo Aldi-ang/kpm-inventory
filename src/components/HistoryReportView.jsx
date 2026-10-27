@@ -7,6 +7,7 @@ import { commitInChunks } from '../utils/helpers';
 import { tallySaleOp } from '../utils/salesRollupWrite';
 import { formatRupiah, convertToBks, getCurrentDate, storeKey } from '../utils/helpers';
 import { hasClearance } from '../config/permissions';
+import { offerResults } from '../utils/vanBay';
 import { notify } from './Toast.jsx';
 import SaleReceipt from './SaleReceipt.jsx';
 
@@ -255,6 +256,12 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         });
         return searchedTransactions; 
     }, [searchedTransactions, selectedRegion, selectedAgent, motorists]);
+
+    /* OFFER PERFORMANCE (his 2026-10-27 "the result dashboard should be somewhere else because this panel is just for adding
+       the bundle"): the same sales this report already shows - its period, its region/agent fence - counted per factory
+       offer, best first. No extra read: every deal carries its `offers`. */
+    const offerStats = useMemo(() => Object.entries(offerResults(contextualTransactions))
+        .map(([id, r]) => ({ id, ...r })).sort((a, b) => b.rp - a.rp), [contextualTransactions]);
 
     const stats = useMemo(() => {
         const totalRev = contextualTransactions.reduce((sum, t) => t.type === 'RETUR' ? sum - Math.abs(t.total || 0) : sum + (t.total || t.amountPaid || 0), 0);
@@ -510,6 +517,29 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                     </tbody>
                                  </table>
                              </div>
+                         </div>
+
+                         <div className="mb-8 print:mb-0" data-guide="offer-performance">
+                             <h3 className="font-bold text-lg print:text-sm mb-1 text-[var(--ink)] flex items-center gap-2"><Package size={20} className="print:w-4 print:h-4 text-[var(--accent-ink)]"/> Offer Performance</h3>
+                             <p className="text-xs text-[var(--ink-muted)] mb-4 print:mb-2">Sales that used a factory offer in this period. Revenue = that offer's cigarettes only, not the whole order.</p>
+                             {offerStats.length === 0 ? <p className="text-sm text-[var(--ink-muted)]">No factory offer was used in this period.</p> : (
+                             <div className="overflow-x-auto pb-2">
+                                 <table className="w-full text-sm print:text-[10px] text-left border-collapse">
+                                    <thead className="text-[var(--ink-muted)] border-b-2 border-[var(--line-2)]">
+                                        <tr><th className="py-2 print:py-1">Offer</th><th className="py-2 print:py-1 text-right pr-3">Sales</th><th className="py-2 print:py-1 text-right pr-3">Shops</th><th className="py-2 print:py-1 text-right">Revenue</th></tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-[var(--line)]">
+                                        {offerStats.map((o, i) => (
+                                            <tr key={o.id} className="hover:bg-[var(--raised)] transition-colors">
+                                                <td className="py-3 print:py-1.5 text-xs"><span className="font-bold text-[var(--ink)] uppercase">{o.name}</span>{i === 0 && <span className="ml-2 text-[10px] font-black text-[var(--accent-ink)]">BEST</span>}<span className="block text-[var(--ink-muted)]">{o.region ? `${o.region} only` : 'All areas'}</span></td>
+                                                <td className="py-3 print:py-1.5 text-right pr-3 font-mono text-[var(--ink-muted)]">{o.sales}</td>
+                                                <td className="py-3 print:py-1.5 text-right pr-3 font-mono text-[var(--ink-muted)]">{o.shops}</td>
+                                                <td className="py-3 print:py-1.5 text-right font-bold text-[var(--verified)]">{formatRupiah(o.rp)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                 </table>
+                             </div>)}
                          </div>
 
                          {/* MICRO VIEW: AGENT PERFORMANCE ROSTER */}

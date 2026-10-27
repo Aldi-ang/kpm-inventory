@@ -118,12 +118,12 @@ export const bundleUnitPrices = (price, lines) => {
 export const offerResults = (transactions) => {
   const out = {};
   (transactions || []).filter(t => (t.type || 'SALE') === 'SALE').forEach(t => (t.offers || []).forEach(o => {
-    const r = out[o.id] || (out[o.id] = { sales: 0, shops: new Set(), rp: 0 });
+    const r = out[o.id] || (out[o.id] = { name: o.name || o.id, region: o.region || '', sales: 0, shops: new Set(), rp: 0 });
     const ids = new Set(o.productIds || []);
     r.sales += 1; r.shops.add(storeKey(t.customerName));
     r.rp += (t.items || []).filter(i => ids.has(i.productId)).reduce((s, i) => s + (Number(i.calculatedPrice) || 0) * (Number(i.qty) || 0), 0);
   }));
-  return Object.fromEntries(Object.entries(out).map(([id, r]) => [id, { sales: r.sales, shops: r.shops.size, rp: r.rp }]));
+  return Object.fromEntries(Object.entries(out).map(([id, r]) => [id, { name: r.name, region: r.region, sales: r.sales, shops: r.shops.size, rp: r.rp }]));
 };
 
 /* The boss's editor saves the WHOLE list: all-area offers to settings/general, each region's to its own doc. A region that

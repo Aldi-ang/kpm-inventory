@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { confirmAction } from './ConfirmGate';
-import { offerResults } from '../utils/vanBay';
 
 /* FACTORY OFFERS on a promo item's edit panel (his 2026-10-26: "some strategy that factory offer is buy 1 bal of our
    product and we will give a t shirt for free"). Each offer is a recipe on settings/general.promoBundles - buy these
@@ -9,8 +8,8 @@ import { offerResults } from '../utils/vanBay';
    WHERE (his 2026-10-27 "bundle that are special for the regional location"): all areas, or one region from the roster.
    `lockRegion` (TEAM OFFERS, his 2026-10-27 "regional admin can make offers for his own"): WHERE is his region, no choice,
    and `by` names him on the offer so the boss sees who made it.
-   `loadResults` (his 2026-10-27 "sales record performance for the offer"): the last 30 days of sales, read only when
-   SEE RESULTS is pressed; each offer then shows its sales, shops and rupiah, best first.
+   Results are NOT here (his 2026-10-27 "the result dashboard should be somewhere else because this panel is just for
+   adding the bundle"): REPORTS -> Offer Performance.
    MORE THAN ONE OF EACH (his 2026-10-27 "add option to add another product or promotional goods for the bundle not just
    for 1 on 1 goods"): up to 4 cigarettes and every other promo item; this one is always the first gift, so the offer
    lists under it. `canSetPrice` (his "a power on setting the price for the bundle ... tier 3 and above as default, put
@@ -18,9 +17,7 @@ import { offerResults } from '../utils/vanBay';
    The inputs carry no `name` and Enter does not submit, so the product form around this never saves them. */
 const NEW_LINE = { productId: '', qty: 1, unit: 'Bal' };
 
-export default function PromoBundleFields({ promo, bundles = [], products = [], promoItems = [], regions = [], lockRegion = '', by = '', canSetPrice = false, onSave, loadResults = null }) {
-    const [results, setResults] = useState(null);   // null = not loaded yet
-    const [loading, setLoading] = useState(false);
+export default function PromoBundleFields({ promo, bundles = [], products = [], promoItems = [], regions = [], lockRegion = '', by = '', canSetPrice = false, onSave }) {
     const [name, setName] = useState('');
     const [region, setRegion] = useState(lockRegion);   // '' = every area; a region = only salesmen whose location is that region
     const [lines, setLines] = useState([NEW_LINE]);     // the cigarettes the shop buys
@@ -29,13 +26,7 @@ export default function PromoBundleFields({ promo, bundles = [], products = [], 
     const [price, setPrice] = useState('');
     const [busy, setBusy] = useState(false);
     const mine = bundles.filter(b => (b.gives || []).some(g => g.productId === promo.id));
-    const shown = results ? [...mine].sort((a, b) => (results[b.id]?.rp || 0) - (results[a.id]?.rp || 0)) : mine;
     const rp = (n) => `Rp ${new Intl.NumberFormat('id-ID').format(Math.round(n))}`;
-    const count = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
-    const seeResults = async () => {
-        setLoading(true);
-        try { setResults(offerResults(await loadResults())); } finally { setLoading(false); }
-    };
     const field = 'w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none';
     const rowBtn = 'w-full min-h-[40px] lg:min-h-0 lg:py-1.5 border border-dashed border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-8)] font-bold hover:text-[var(--duke-ink-hi)]';
     const dropBtn = 'shrink-0 w-10 border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-8)] hover:text-red-400';
@@ -67,19 +58,12 @@ export default function PromoBundleFields({ promo, bundles = [], products = [], 
         <div className="space-y-2" data-guide="promo-bundles">
             <p className="text-[var(--shell-orange-ink)] font-bold">FACTORY OFFERS · GIVE THIS FREE</p>
             {mine.length === 0 && <p className="text-[var(--duke-ink-8)] leading-relaxed">No offer yet. Example: TAWANG BUNDLE = buy 1 Bal TAWANG, get 1 {promo.name} free.</p>}
-            {loadResults && mine.length > 0 && (
-                <button type="button" onClick={seeResults} disabled={loading} className="w-full min-h-[44px] lg:min-h-0 lg:py-1.5 font-bold border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] hover:bg-[var(--duke-veil)] disabled:opacity-50">
-                    {loading ? 'LOADING SALES...' : results ? 'REFRESH RESULTS · LAST 30 DAYS' : 'SEE RESULTS · LAST 30 DAYS'}
-                </button>)}
-            {shown.map((b, i) => (
+            {mine.map(b => (
                 <div key={b.id} className="flex items-start gap-2 p-2 border border-[var(--duke-veil-edge-2)] bg-[var(--duke-veil)]">
                     <span className="flex-1 min-w-0 leading-snug text-[var(--duke-ink-hi)]">
                         <span className="block font-bold">{b.name} <span className="font-normal text-[var(--duke-ink-8)]">· {b.region ? `${b.region} only` : 'all areas'}{b.by ? ` · by ${b.by}` : ''}</span></span>
                         <span className="text-[var(--duke-ink-8)]">Buy {(b.lines || []).map(l => `${l.qty} ${l.unit} ${products.find(p => p.id === l.productId)?.name || l.name}`).join(' + ')} · get {(b.gives || []).map(g => `${g.qty} pcs ${g.name}`).join(' + ')} free</span>
                         {Number(b.price) > 0 && <span className="block font-bold text-[var(--duke-ink-hi)] tabular-nums">Bundle price {rp(b.price)}</span>}
-                        {results && <span className="block mt-1 font-bold text-[var(--shell-orange-ink)] tabular-nums" data-guide="offer-result">{results[b.id]
-                            ? `${i === 0 ? 'BEST · ' : ''}${count(results[b.id].sales, 'sale')} · ${count(results[b.id].shops, 'shop')} · ${rp(results[b.id].rp)}`
-                            : 'Not used in the last 30 days'}</span>}
                     </span>
                     <button type="button" disabled={busy} onClick={() => remove(b)} className="shrink-0 px-3 min-h-[44px] lg:min-h-0 lg:py-1 border border-red-500 text-red-400 font-bold hover:bg-red-500/10 disabled:opacity-50">REMOVE</button>
                 </div>
