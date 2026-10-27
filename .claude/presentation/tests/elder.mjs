@@ -46,6 +46,9 @@ const METRICS = `(() => {
   if (document.documentElement.dataset.tema !== 'gelap') for (const e of txt) { const c = hsl(getComputedStyle(e).color);
     if (c && c.h > 25 && c.h < 50 && c.s > .5 && c.l > .45) bad.push('gold text on light: ' + e.textContent.trim().slice(0, 30)); }
   for (const b of document.querySelectorAll('button')) if (b.getClientRects().length && b.getBoundingClientRect().height < 48) bad.push('small button ' + b.id);
+  /* names of screens and screen parts this page never shows: his 2026-10-27 "dont tell the viewer something u dont show" */
+  const tell = document.querySelector('main').innerText.match(/\\bpeti\\b|Di aplikasi|Putar Ulang|diputar ulang|Replay|Fleet & Roster|Notification Bell|Ponder|Lite Mode|Restock Vault|Master Vault|Agent Inventory|Muat Van|WANTED|Auto locator|blind count|menyeret|bingkai|brankas|kartu toko|layar yang sama/i);
+  if (tell) bad.push('tells what it does not show: "' + tell[0] + '"');
   return { min: Math.min(...txt.map((e) => parseFloat(getComputedStyle(e).fontSize))), wide: document.documentElement.scrollWidth > innerWidth,
     bad: [...new Set(bad)], kick: (document.querySelector('.kick') || document.querySelector('h1')).textContent.slice(0, 60) };
 })()`;
