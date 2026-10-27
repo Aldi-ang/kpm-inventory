@@ -1,0 +1,46 @@
+rules_version = '2';
+
+// =====================================================================
+// STORAGE RULES - DRAFT 2026-10-27, NOT PUBLISHED. Aldi publishes these himself in the Firebase Console
+// (Storage -> Rules) on the day the project goes on Blaze; nothing deploys them from this repo.
+// Why they exist: fix A of the 100-user plan (his 2026-10-27 "use option A to minimize the cost") keeps
+// photos as Storage files instead of inside records. Without these rules every upload is refused and the
+// app quietly keeps the photo inside the record (helpers.js fileOrKeepPhoto) - safe, but no saving.
+//
+// Every upload in the app writes to artifacts/{appId}/users/{folderOwner}/photos|images/{file}:
+//  - the signed-in user's OWN folder: sale photo, GPS-bypass photo, new-shop photo, offline sync
+//    (MerchantSalesView masterUid / shopPhoto, App.jsx flushOfflineData), product/customer images (App.jsx)
+//  - the BOSS's folder, written from an employee's phone: Restock Vault, Stock Opname, Agent Profile avatar
+// Membership is the same lookup firestore.rules uses (getEmployeeProfile): the email-keyed
+// employee_directory record, its bossUid, and a login a T1/T2 LOCKED counts as no profile.
+// The first publish asks to let Storage read Firestore - say yes, the membership check needs it.
+// Test: rules-test/test-storage-photos.mjs (emulator only).
+// =====================================================================
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function profile() {
+      let path = /databases/(default)/documents/artifacts/cello-inventory-manager/employee_directory/$(request.auth.token.email.lower());
+      return firestore.exists(path) ? firestore.get(path).data : null;
+    }
+
+    // the folder owner, or an unlocked employee of that owner's company
+    function inCompany(folderOwner) {
+      let p = profile();
+      return request.auth != null && (request.auth.uid == folderOwner
+        || (p != null && p.get('bossUid', '') == folderOwner && p.get('locked', false) != true));
+    }
+
+    match /artifacts/{appId}/users/{folderOwner}/{folder}/{file} {
+      // getDownloadURL right after an upload reads here; a picture shown in the app uses the
+      // link's own token, which these rules do not gate.
+      allow read: if inCompany(folderOwner);
+      allow create, update: if (folder == 'photos' || folder == 'images')
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*')
+        && inCompany(folderOwner);
+      // a replaced photo's old file (helpers.js deletePhotoFromStorage)
+      allow delete: if inCompany(folderOwner);
+    }
+  }
+}
