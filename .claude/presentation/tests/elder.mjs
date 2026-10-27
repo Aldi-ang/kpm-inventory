@@ -49,6 +49,10 @@ const METRICS = `(() => {
   /* names of screens and screen parts this page never shows: his 2026-10-27 "dont tell the viewer something u dont show" */
   const tell = document.querySelector('main').innerText.match(/\\bpeti\\b|Di aplikasi|Putar Ulang|diputar ulang|Replay|Fleet & Roster|Notification Bell|Ponder|Lite Mode|Restock Vault|Master Vault|Agent Inventory|Muat Van|WANTED|Auto locator|blind count|menyeret|bingkai|brankas|kartu toko|layar yang sama/i);
   if (tell) bad.push('tells what it does not show: "' + tell[0] + '"');
+  /* his next call, same day: "Data contoh" goes, and every screen carries a picture ("all text is overwhelming") */
+  if (/Data contoh/i.test(document.body.innerText)) bad.push('"Data contoh" is back');
+  if (document.querySelector('.say') && !document.querySelector('.pic')) bad.push('a screen with no picture');
+  for (const im of document.querySelectorAll('main img')) if (!im.complete || !im.naturalWidth) bad.push('picture did not load: ' + im.getAttribute('src'));
   return { min: Math.min(...txt.map((e) => parseFloat(getComputedStyle(e).fontSize))), wide: document.documentElement.scrollWidth > innerWidth,
     bad: [...new Set(bad)], kick: (document.querySelector('.kick') || document.querySelector('h1')).textContent.slice(0, 60) };
 })()`;
@@ -63,7 +67,8 @@ for (const [w, h] of [[375, 812], [1440, 900]]) {
     await ev('document.fonts.ready.then(() => document.fonts.check("700 22px \\"Atkinson Hyperlegible\\""))').then((ok) => { if (!ok) fails.push('font did not load'); });
     total = await ev('S.length');
     for (let i = 0; i < total; i++) {
-      const m = await ev(`(() => { location.hash = '${i}'; render(); return ${METRICS}; })()`);
+      const m = await ev(`(async () => { location.hash = '${i}'; render();
+        await Promise.all([...document.querySelectorAll('main img')].map((im) => im.decode().catch(() => {}))); return ${METRICS}; })()`);
       const tag = `${w} ${tema} #${i} (${m.kick})`;
       if (w < 768 && m.min < 20) fails.push(`${tag}: text ${m.min}px`);
       if (m.wide) fails.push(`${tag}: scrolls sideways`);

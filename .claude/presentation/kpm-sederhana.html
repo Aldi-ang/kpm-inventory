@@ -15,12 +15,12 @@
    green, gold never as text on light - in light, gold is only an edge or a lamp. */
 :root {
   --page: #EDE7D8; --card: #F7F3EA; --edge: #B9B0A0; --ink: #1A1714; --ink2: #4A443C; --rust: #8F1E18;
-  --gold: #D08A2E; --lampR: #B3261E; --lampY: #E4B04A; --btn: #1A1714; --btnInk: #F7F3EA;
+  --gold: #D08A2E; --lampR: #B3261E; --lampY: #E4B04A; --btn: #1A1714; --btnInk: #F7F3EA; --mark: #8F1E18;
   color-scheme: light;
 }
 :root[data-tema="gelap"] {
   --page: #121110; --card: #1B1917; --edge: #4A443C; --ink: #F2EEE4; --ink2: #CFC8BA; --rust: #E4B04A;
-  --btn: #F2EEE4; --btnInk: #121110;
+  --btn: #F2EEE4; --btnInk: #121110; --mark: #C46A3A;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -42,8 +42,54 @@ main { padding: 24px 16px 8px; max-width: 1240px; margin: 0 auto; }
 h1 { font-size: 32px; line-height: 1.2; margin: 0 0 16px; text-wrap: balance; }
 h1:focus { outline: none; }
 .say p { margin: 0 0 14px; }
-.pic { margin-top: 20px; }
+.pic { margin: 4px 0 18px; }
+.ic { padding: 10px 8px; }
+.ics .ic svg { width: 40px; height: 40px; }
+.shot img { max-height: 44vh; object-fit: cover; object-position: top; }
 .demo { color: var(--ink2); font-size: 20px; margin: 10px 0 0; }
+/* pictures: icon tiles, arrow flows, real app screens in a phone bezel, charts without numbers */
+.ics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.ic { background: var(--card); border: 2px solid var(--edge); border-radius: 14px; padding: 14px 10px; display: grid; justify-items: center;
+  align-content: start; gap: 8px; text-align: center; font-size: 20px; font-weight: 700; line-height: 1.3; }
+.ic svg, .rl, .stk .lg svg { width: 52px; height: 52px; fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.rl { width: 32px; height: 32px; }
+.ic.hot { border-color: var(--gold); border-width: 3px; }
+.ic.hot svg { stroke: var(--mark); }
+.ic.no { color: var(--ink2); border-style: dashed; }
+.ic.no svg { stroke: var(--ink2); }
+.flow { display: flex; flex-direction: column; align-items: stretch; gap: 6px; }
+.flow .ic { grid-template-columns: auto 1fr; justify-items: start; align-items: center; text-align: left; padding: 10px 14px; }
+.flow .ic svg { width: 44px; height: 44px; }
+.arr { width: 30px; height: 30px; align-self: center; transform: rotate(90deg); fill: none; stroke: var(--mark); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.shot { margin: 0 auto; width: min(290px, 100%); border: 8px solid #0A0908; border-radius: 26px; overflow: hidden; background: #0A0908; outline: 2px solid var(--edge); }
+.shot img { display: block; width: 100%; height: auto; }
+.shot figcaption { color: #CFC8BA; font-size: 20px; text-align: center; padding: 6px 0 2px; }
+.hb { display: grid; gap: 14px; }
+.hb i { display: block; height: 16px; margin-top: 6px; border-radius: 8px; background: var(--ink2); }
+.hb i.hot { background: var(--mark); }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart .ax { stroke: var(--edge); stroke-width: 2; fill: none; }
+.chart .tg { stroke: var(--ink2); stroke-width: 3; stroke-dasharray: 8 7; fill: none; }
+.chart .act { stroke: var(--mark); stroke-width: 5; fill: none; }
+.chart circle.act { fill: var(--mark); }
+.chart .now { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 3 5; fill: none; }
+.chart .zone { fill: var(--page); stroke: var(--ink2); stroke-width: 3; stroke-dasharray: 9 7; }
+.chart .r { stroke: var(--ink2); stroke-width: 2; }
+.chart .pin path, .chart .pin circle, .chart .pin rect { fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.chart .pin.ok path, .chart .pin.ok circle { stroke: var(--mark); stroke-width: 2.4; }
+.chart .pin.bad path, .chart .pin.bad circle { stroke: var(--ink2); }
+.lg { display: grid; gap: 6px; margin-top: 10px; font-size: 20px; }
+.lg span { display: flex; align-items: center; gap: 10px; }
+.lg i { flex: none; width: 28px; height: 0; border-top: 4px solid var(--ink2); }
+.lg i.tg { border-top-style: dashed; } .lg i.act, .lg i.ok { border-color: var(--mark); border-top-width: 5px; }
+.lg i.now { border-top: 2px dashed var(--ink); } .lg i.zone { border-top-style: dashed; } .lg i.bad { border-top-style: dotted; }
+.lg i.min { border-top: 3px dashed var(--ink); }
+.stk .cols { position: relative; height: 190px; display: flex; align-items: flex-end; gap: 10px; border-bottom: 2px solid var(--edge); }
+.stk .cols i { flex: 1; background: var(--ink2); border-radius: 6px 6px 0 0; }
+.stk .cols i.hot { background: var(--mark); }
+.stk .cols b { position: absolute; left: 0; right: 0; border-top: 3px dashed var(--ink); }
+.stk .mo { display: flex; gap: 10px; font-size: 20px; } .stk .mo span { flex: 1; text-align: center; }
+.stk .lg svg { width: 28px; height: 28px; }
 .card { background: var(--card); border: 2px solid var(--edge); border-radius: 14px; padding: 12px 16px; }
 .rows { display: grid; gap: 10px; }
 .row { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; }
@@ -91,17 +137,27 @@ nav button { font-size: 22px; font-weight: 700; min-height: 72px; border-radius:
   main > div { width: 100%; }
   .kick, .who, .demo { font-size: 22px; }
   h1 { font-size: 52px; }
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
-  .two .pic { margin-top: 0; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "hd pic" "tx pic"; column-gap: 56px; align-items: center; }
+  .two .hd { grid-area: hd; align-self: end; } .two .tx { grid-area: tx; align-self: start; }
+  .two .pic { grid-area: pic; margin: 0; }
   .say { max-width: 32ch; }
-  .one .say { margin: 0 auto; max-width: 34ch; }
+  .ics .ic svg { width: 56px; height: 56px; }
+  .ic { padding: 16px 10px; }
   .card { padding: 16px 24px; }
   .row, .nota { font-size: 26px; }
   .big3 { grid-template-columns: 1fr 1fr; }
-  .big3 .card b { font-size: 48px; }
+  .big3 .card b { font-size: 40px; white-space: nowrap; }
   .cover img { width: 160px; height: 160px; }
   .cover .big { font-size: 96px; }
   .tab { font-size: 26px; }
+  .ic, .lg, .stk .mo { font-size: 22px; }
+  .ic svg { width: 64px; height: 64px; }
+  .flow { flex-direction: row; align-items: center; }
+  .flow .ic { flex: 1 1 0; grid-template-columns: none; justify-items: center; text-align: center; padding: 16px 10px; }
+  .flow .ic svg { width: 56px; height: 56px; }
+  .arr { transform: none; flex: none; }
+  .shot { width: 300px; }
+  .shot img { max-height: calc(100vh - 330px); object-fit: cover; object-position: top; }
   nav { justify-content: center; padding: 16px 40px; }
   nav button { min-height: 80px; font-size: 26px; }
   #back { flex: 0 1 280px; } #next { flex: 0 1 480px; }
@@ -114,12 +170,14 @@ nav button { font-size: 22px; font-weight: 700; min-height: 72px; border-radius:
 <main id="main"></main>
 <nav><button id="back" type="button">‹ Kembali</button><button id="next" type="button">Lanjut ›</button></nav>
 <script>
-/* One screen = { f: slide number (1-23), t: title, p: [short sentences], pic, demo: sample data }. Order follows
-   the original's 23 slides; a dense slide becomes several screens of the same feature, and a fact the original says
-   twice is said once. Sample figures are the original's own.
-   His rule (2026-10-27): never TELL a viewer about a part of the app he cannot SEE here - "the newcoming wont know
-   what is that". A screen part (peti, lampu, kartu, a menu name) is named only when the picture on the same screen
-   shows it; otherwise the sentence says what it does for the business. tests/elder.mjs fails on the old words. */
+/* icons: lucide-react v0.562.0 (ISC), the set the app itself uses */
+const IC = {"smartphone":"<rect width=\"14\" height=\"20\" x=\"5\" y=\"2\" rx=\"2\" ry=\"2\"/><path d=\"M12 18h.01\"/>","tablet":"<rect width=\"16\" height=\"20\" x=\"4\" y=\"2\" rx=\"2\" ry=\"2\"/><line x1=\"12\" x2=\"12.01\" y1=\"18\" y2=\"18\"/>","laptop":"<path d=\"M18 5a2 2 0 0 1 2 2v8.526a2 2 0 0 0 .212.897l1.068 2.127a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45l1.068-2.127A2 2 0 0 0 4 15.526V7a2 2 0 0 1 2-2z\"/><path d=\"M20.054 15.987H3.946\"/>","server-off":"<path d=\"M7 2h13a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-5\"/><path d=\"M10 10 2.5 2.5C2 2 2 2.5 2 5v3a2 2 0 0 0 2 2h6z\"/><path d=\"M22 17v-1a2 2 0 0 0-2-2h-1\"/><path d=\"M4 14a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h16.5l1-.5.5.5-8-8H4z\"/><path d=\"M6 18h.01\"/><path d=\"m2 2 20 20\"/>","cloud":"<path d=\"M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z\"/>","user":"<path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/>","shield-check":"<path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\"/><path d=\"m9 12 2 2 4-4\"/>","database":"<ellipse cx=\"12\" cy=\"5\" rx=\"9\" ry=\"3\"/><path d=\"M3 5V19A9 3 0 0 0 21 19V5\"/><path d=\"M3 12A9 3 0 0 0 21 12\"/>","lock":"<rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"/><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"/>","key-round":"<path d=\"M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z\"/><circle cx=\"16.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"/>","fingerprint-pattern":"<path d=\"M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4\"/><path d=\"M14 13.12c0 2.38 0 6.38-1 8.88\"/><path d=\"M17.29 21.02c.12-.6.43-2.3.5-3.02\"/><path d=\"M2 12a10 10 0 0 1 18-6\"/><path d=\"M2 16h.01\"/><path d=\"M21.8 16c.2-2 .131-5.354 0-6\"/><path d=\"M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2\"/><path d=\"M8.65 22c.21-.66.45-1.32.57-2\"/><path d=\"M9 6.8a6 6 0 0 1 9 5.2v2\"/>","scan-face":"<path d=\"M3 7V5a2 2 0 0 1 2-2h2\"/><path d=\"M17 3h2a2 2 0 0 1 2 2v2\"/><path d=\"M21 17v2a2 2 0 0 1-2 2h-2\"/><path d=\"M7 21H5a2 2 0 0 1-2-2v-2\"/><path d=\"M8 14s1.5 2 4 2 4-2 4-2\"/><path d=\"M9 9h.01\"/><path d=\"M15 9h.01\"/>","building-2":"<path d=\"M10 12h4\"/><path d=\"M10 8h4\"/><path d=\"M14 21v-3a2 2 0 0 0-4 0v3\"/><path d=\"M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2\"/><path d=\"M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16\"/>","mail":"<path d=\"m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7\"/><rect x=\"2\" y=\"4\" width=\"20\" height=\"16\" rx=\"2\"/>","timer":"<line x1=\"10\" x2=\"14\" y1=\"2\" y2=\"2\"/><line x1=\"12\" x2=\"15\" y1=\"14\" y2=\"11\"/><circle cx=\"12\" cy=\"14\" r=\"8\"/>","shuffle":"<path d=\"m18 14 4 4-4 4\"/><path d=\"m18 2 4 4-4 4\"/><path d=\"M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22\"/><path d=\"M2 6h1.972a4 4 0 0 1 3.6 2.2\"/><path d=\"M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45\"/>","refresh-cw":"<path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\"/><path d=\"M21 3v5h-5\"/><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\"/><path d=\"M8 16H3v5\"/>","bell":"<path d=\"M10.268 21a2 2 0 0 0 3.464 0\"/><path d=\"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326\"/>","feather":"<path d=\"M12.67 19a2 2 0 0 0 1.416-.588l6.154-6.172a6 6 0 0 0-8.49-8.49L5.586 9.914A2 2 0 0 0 5 11.328V18a1 1 0 0 0 1 1z\"/><path d=\"M16 8 2 22\"/><path d=\"M17.5 15H9\"/>","map-pin":"<path d=\"M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0\"/><circle cx=\"12\" cy=\"10\" r=\"3\"/>","store":"<path d=\"M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5\"/><path d=\"M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244\"/><path d=\"M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05\"/>","truck":"<path d=\"M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2\"/><path d=\"M15 18H9\"/><path d=\"M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14\"/><circle cx=\"17\" cy=\"18\" r=\"2\"/><circle cx=\"7\" cy=\"18\" r=\"2\"/>","bike":"<circle cx=\"18.5\" cy=\"17.5\" r=\"3.5\"/><circle cx=\"5.5\" cy=\"17.5\" r=\"3.5\"/><circle cx=\"15\" cy=\"5\" r=\"1\"/><path d=\"M12 17.5V14l-3-3 4-3 2 3h2\"/>","warehouse":"<path d=\"M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11\"/><path d=\"M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 1.132-1.803l7.95-3.974a2 2 0 0 1 1.837 0l7.948 3.974A2 2 0 0 1 22 8z\"/><path d=\"M6 13h12\"/><path d=\"M6 17h12\"/>","file-text":"<path d=\"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z\"/><path d=\"M14 2v5a1 1 0 0 0 1 1h5\"/><path d=\"M10 9H8\"/><path d=\"M16 13H8\"/><path d=\"M16 17H8\"/>","message-square":"<path d=\"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z\"/>","circle-check":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m9 12 2 2 4-4\"/>","calculator":"<rect width=\"16\" height=\"20\" x=\"4\" y=\"2\" rx=\"2\"/><line x1=\"8\" x2=\"16\" y1=\"6\" y2=\"6\"/><line x1=\"16\" x2=\"16\" y1=\"14\" y2=\"18\"/><path d=\"M16 10h.01\"/><path d=\"M12 10h.01\"/><path d=\"M8 10h.01\"/><path d=\"M12 14h.01\"/><path d=\"M8 14h.01\"/><path d=\"M12 18h.01\"/><path d=\"M8 18h.01\"/>","send":"<path d=\"M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z\"/><path d=\"m21.854 2.147-10.94 10.939\"/>","calendar-days":"<path d=\"M8 2v4\"/><path d=\"M16 2v4\"/><rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\"/><path d=\"M3 10h18\"/><path d=\"M8 14h.01\"/><path d=\"M12 14h.01\"/><path d=\"M16 14h.01\"/><path d=\"M8 18h.01\"/><path d=\"M12 18h.01\"/><path d=\"M16 18h.01\"/>","camera":"<path d=\"M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z\"/><circle cx=\"12\" cy=\"13\" r=\"3\"/>","navigation":"<polygon points=\"3 11 22 2 13 21 11 13 3 11\"/>","tag":"<path d=\"M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z\"/><circle cx=\"7.5\" cy=\"7.5\" r=\".5\" fill=\"currentColor\"/>","package":"<path d=\"M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z\"/><path d=\"M12 22V12\"/><polyline points=\"3.29 7 12 12 20.71 7\"/><path d=\"m7.5 4.27 9 5.15\"/>","banknote":"<rect width=\"20\" height=\"12\" x=\"2\" y=\"6\" rx=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"2\"/><path d=\"M6 12h.01M18 12h.01\"/>","trending-up":"<path d=\"M16 7h6v6\"/><path d=\"m22 7-8.5 8.5-5-5L2 17\"/>","triangle-alert":"<path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\"/><path d=\"M12 9v4\"/><path d=\"M12 17h.01\"/>","users":"<path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><path d=\"M16 3.128a4 4 0 0 1 0 7.744\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/>","crown":"<path d=\"M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z\"/><path d=\"M5 21h14\"/>","circle-x":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"m15 9-6 6\"/><path d=\"m9 9 6 6\"/>","shopping-cart":"<circle cx=\"8\" cy=\"21\" r=\"1\"/><circle cx=\"19\" cy=\"21\" r=\"1\"/><path d=\"M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12\"/>","repeat":"<path d=\"m17 2 4 4-4 4\"/><path d=\"M3 11v-1a4 4 0 0 1 4-4h14\"/><path d=\"m7 22-4-4 4-4\"/><path d=\"M21 13v1a4 4 0 0 1-4 4H3\"/>","check":"<path d=\"M20 6 9 17l-5-5\"/>","x":"<path d=\"M18 6 6 18\"/><path d=\"m6 6 12 12\"/>","eye-off":"<path d=\"M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49\"/><path d=\"M14.084 14.158a3 3 0 0 1-4.242-4.242\"/><path d=\"M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143\"/><path d=\"m2 2 20 20\"/>","factory":"<path d=\"M12 16h.01\"/><path d=\"M16 16h.01\"/><path d=\"M3 19a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5a.5.5 0 0 0-.769-.422l-4.462 2.844A.5.5 0 0 1 15 10.5v-2a.5.5 0 0 0-.769-.422L9.77 10.922A.5.5 0 0 1 9 10.5V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z\"/><path d=\"M8 16h.01\"/>","receipt":"<path d=\"M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z\"/><path d=\"M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8\"/><path d=\"M12 17.5v-11\"/>","chart-no-axes-column":"<path d=\"M5 21v-6\"/><path d=\"M12 21V3\"/><path d=\"M19 21V9\"/>"};
+/* One screen = { f: slide number (1-23), t: title, p: [short sentences], pic }. Order follows the original's 23
+   slides; a dense slide becomes several screens of the same feature, and a fact the original says twice is said once.
+   His rules (2026-10-27): never TELL a viewer about a part of the app he cannot SEE here ("the newcoming wont know
+   what is that"), and every screen carries a picture - "all text is overwhelming": a real screen of the app (shot from
+   tools/ponder-lab on its made-up company, files in app-shots/), a chart, or a drawing made of the app's own icons.
+   tests/elder.mjs fails on the old words and on a screen with no picture. */
 const FEAT = ['Peta Perjalanan', 'Rute Hari Ini', 'Jejak Kunjungan', 'Keamanan Data', 'Catatan dan Laporan', 'Dari Mana Saja',
   'Aman, Tanpa Sinyal', 'Omzet Wilayah', 'Kinerja Produk', 'Target dan Laju', 'Jalur Barang', 'Terminal Penjualan', 'Cek Lokasi',
   'Sampel Produk', 'Pelanggan', 'Setoran Akhir Hari', 'Selisih Setoran', 'Piutang Titip', 'Prestasi Sales',
@@ -129,216 +187,284 @@ const row = (lead, b, s, cls = '') => `<div class="card row ${cls}">${lead}<div>
 const rows = (...r) => `<div class="rows">${r.join('')}</div>`;
 const lamp = (c) => `<i class="lamp ${c}" aria-hidden="true"></i>`;
 const tier = (t) => `<span class="tier">${t}</span>`;
-const dot = '<i class="dot" aria-hidden="true"></i>';
-const list = (...items) => rows(...items.map((x) => row(dot, x)));
-const steps = (...items) => rows(...items.map((x, i) => row(tier(i + 1), x)));
+const svg = (n, cls = '') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
+/* an icon tile; 'hot' marks the one that matters, 'no' a thing that is NOT there */
+const ic = (n, label, cls = '') => `<div class="ic ${cls}">${svg(n)}<span>${label}</span></div>`;
+const icons = (...t) => `<div class="ics">${t.join('')}</div>`;
+const flow = (...t) => `<div class="flow">${t.join('<svg class="arr" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>')}</div>`;
+const shot = (n, alt) => `<figure class="shot"><img src="app-shots/${n}.webp" alt="${alt}"><figcaption>Tampilan asli aplikasi</figcaption></figure>`;
+/* a bar chart with no numbers: the length is the point, the label says what it is */
+const hbars = (...r) => `<div class="card hb">${r.map(([l, v, hot]) => `<div><b>${l}</b><i class="${hot ? 'hot' : ''}" style="width:${v}%"></i></div>`).join('')}</div>`;
 /* slide 09's "Bulan ini": packs sold x price per pack, the original's P3B / P3P */
 const PROD = [['A', 2310, 24000], ['B', 1980, 30000], ['C', 1250, 26000], ['D', 960, 22000], ['E', 2410, 28000]]
   .map(([n, b, p]) => ({ n, b, r: b * p })).sort((x, y) => y.r - x.r);
 const PSUM = PROD.reduce((a, x) => a + x.r, 0);
 const jt = (n) => (n / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt';
+/* slide 10: day 15 of 30, Rp 87 jt in against a straight line to Rp 200 jt */
+const TARGET = `<div class="card chart"><svg viewBox="0 0 300 180" aria-hidden="true">
+    <path class="ax" d="M10 170H290M10 10V170"/><path class="tg" d="M10 170L290 14"/>
+    <path class="act" d="M10 170L46 160L82 146L118 131L150 121"/><circle class="act" cx="150" cy="121" r="6"/><path class="now" d="M150 10V170"/></svg>
+  <div class="lg"><span><i class="tg"></i>Garis menuju target Rp 200 jt</span><span><i class="act"></i>Uang masuk: Rp 87 jt</span><span><i class="now"></i>Hari ini, tanggal 15</span></div></div>`;
+/* slide 13: the 100 m circle around the shop; a sale inside counts, outside asks first */
+const GPS = `<div class="card chart"><svg viewBox="0 0 300 220" aria-hidden="true"><circle class="zone" cx="150" cy="110" r="90"/>
+    <g transform="translate(132 92) scale(1.5)" class="pin">${IC.store}</g><g transform="translate(176 124)" class="pin ok">${IC['map-pin']}</g>
+    <g transform="translate(262 26)" class="pin bad">${IC['map-pin']}</g><path class="r" d="M150 110H240"/></svg>
+  <div class="lg"><span><i class="zone"></i>100 meter dari toko</span><span><i class="ok"></i>Di dalam: penjualan bisa dicatat</span><span><i class="bad"></i>Di luar: harus minta izin</span></div></div>`;
+/* slide 20: stock falling past the minimum line */
+const STOCK = `<div class="card stk"><div class="cols">${[92, 78, 63, 49, 34, 22].map((h, i) => `<i class="${h < 40 ? 'hot' : ''}" style="height:${h}%"></i>`).join('')}<b style="bottom:40%"></b></div>
+  <div class="lg"><span><i class="min"></i>Batas minimum</span><span>${svg('bell')}Di bawah batas: admin diberi tahu</span></div></div>`;
+const MONTHS = `<div class="card stk"><div class="cols">${[55, 62, 48, 70, 84, 74].map((h) => `<i style="height:${h}%"></i>`).join('')}</div>
+  <div class="mo">${['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'].map((m) => `<span>${m}</span>`).join('')}</div></div>`;
 
 const S = [
   { cover: true },
   /* 01 */
-  { f: 1, w: 'p', t: 'Satu peta untuk seluruh armada penjualan.', p: ['Pimpinan memantau semuanya langsung dari aplikasi.'],
-    pic: list('Rute setiap salesperson', 'Omzet setiap wilayah', 'Perjalanan barang dari gudang sampai ke toko') },
+  { f: 1, w: 'p', t: 'Satu peta untuk seluruh armada penjualan.',
+    p: ['Rute setiap salesperson, omzet setiap wilayah, dan perjalanan barang terlihat di satu peta.', 'Pimpinan memantau semuanya langsung dari aplikasi.'],
+    pic: shot('journey', 'Peta toko dan sales di aplikasi') },
   /* 02 */
   { f: 2, w: 's', t: 'Rute harian tersusun otomatis.',
     p: ['Setiap pagi, daftar toko yang harus dikunjungi sudah tersusun.', 'Warna lampu menunjukkan toko mana yang harus didahulukan.'],
     pic: rows(row(lamp('r'), '1. Toko Berkah Jaya', 'Merah: tagihan lewat 9 hari'), row(lamp('y'), '2. Warung Sumber Rejeki', 'Kuning: kunjungan hari ini'),
-      row(lamp('o'), '3. Toko Makmur', 'Padam: tidak ada yang perlu ditindaklanjuti')), demo: true },
+      row(lamp('o'), '3. Toko Makmur', 'Padam: tidak ada yang perlu ditindaklanjuti')) },
   /* 03 */
   { f: 3, w: 'p', t: 'Perjalanan sales tercatat dan terdeteksi.',
     p: ['Setiap toko yang dikunjungi salesperson tercatat, lengkap dengan jamnya.', 'Pimpinan dapat memeriksa perjalanan salesperson pada tanggal mana pun.',
-      'Yang dicatat adalah kunjungan di toko, bukan pelacakan GPS sepanjang jalan.'] },
+      'Yang dicatat adalah kunjungan di toko, bukan pelacakan GPS sepanjang jalan.'],
+    pic: rows(row(svg('store', 'rl'), '08:41 · Toko Berkah Jaya', 'Penjualan'), row(svg('store', 'rl'), '09:15 · Warung Bu Sri', 'Stok masih penuh'),
+      row(svg('store', 'rl'), '11:02 · Toko Makmur', 'Penjualan titip')) },
   { f: 3, w: 'p', t: 'Hasil setiap kunjungan tercatat.',
-    p: ['Data histori penjualan, data kompetitor, dan repeat order setiap toko tercatat di dalam aplikasi.', 'Kunjungan ke toko yang sedang tutup pun tercatat.'] },
+    p: ['Data histori penjualan, data kompetitor, dan repeat order setiap toko tercatat di dalam aplikasi.', 'Kunjungan ke toko yang sedang tutup pun tercatat.'],
+    pic: icons(ic('shopping-cart', 'Penjualan'), ic('repeat', 'Repeat order'), ic('tag', 'Data kompetitor'), ic('store', 'Toko tutup')) },
   /* 04 */
   { f: 4, w: 'p', t: 'Masuk dengan akun Google.',
-    p: ['Semua pengguna masuk memakai akun Google.', 'Aplikasi tidak menyimpan kata sandi login pengguna.'] },
+    p: ['Semua pengguna masuk memakai akun Google.', 'Aplikasi tidak menyimpan kata sandi login pengguna.'],
+    pic: icons(ic('user', 'Masuk dengan akun Google', 'hot'), ic('eye-off', 'Kata sandi tidak disimpan DSM')) },
   { f: 4, w: 'p', t: 'Setiap data diperiksa ulang oleh server.',
-    p: ['Setiap kali data disimpan, server Google memeriksanya kembali.', 'Jadi, aplikasi yang diutak-atik pun tetap tidak bisa mengubah data tanpa izin.'] },
+    p: ['Setiap kali data disimpan, server Google memeriksanya kembali.', 'Jadi, aplikasi yang diutak-atik pun tetap tidak bisa mengubah data tanpa izin.'],
+    pic: flow(ic('smartphone', 'Data dari telepon'), ic('shield-check', 'Diperiksa server Google', 'hot'), ic('database', 'Baru disimpan')) },
   { f: 4, w: 'p', t: 'Lima jabatan, masing-masing dengan batasnya.',
     p: ['Dari pemilik sampai sales motoris.', 'Admin wilayah hanya dapat mengelola wilayahnya sendiri.'],
     pic: rows(row(tier('T2'), 'Owner', 'Seluruh perusahaan dan data khusus pemilik'), row(tier('T3'), 'HQ Sales Manager', 'Mengelola salesperson dan pelanggan'),
       row(tier('T4'), 'Regional Admin', 'Mengelola armada di wilayahnya sendiri', 'on'), row(tier('T5/6'), 'Sales Canvas · Motorist', 'Menjual, menyetor, dan melaporkan kunjungan')) },
   { f: 4, w: 'p', t: 'Hak akses diatur sendiri.',
-    p: ['Pemilik menentukan apa saja yang boleh dilakukan setiap jabatan.', 'Nama jabatannya pun dapat diganti.'] },
+    p: ['Pemilik menentukan apa saja yang boleh dilakukan setiap jabatan.', 'Nama jabatannya pun dapat diganti.'],
+    pic: flow(ic('crown', 'Pemilik', 'hot'), ic('users', 'Hak setiap jabatan'), ic('tag', 'Nama jabatan')) },
   { f: 4, w: 'p', t: 'Data khusus pemilik dijaga kata sandi tambahan.',
-    p: ['Lima kali salah memasukkan, aksesnya terkunci selama 15 menit.', 'Jika lupa, pemulihannya memakai kode enam angka yang dikirim ke email pemilik.'] },
+    p: ['Lima kali salah memasukkan, aksesnya terkunci selama 15 menit.', 'Jika lupa, pemulihannya memakai kode enam angka yang dikirim ke email pemilik.'],
+    pic: flow(ic('lock', 'Kata sandi tambahan'), ic('timer', '5 kali salah: terkunci 15 menit', 'hot'), ic('mail', 'Kode 6 angka lewat email')) },
   { f: 4, w: 'p', t: 'Kata sandi itu tidak bisa ditebak.',
-    p: ['Sebelum disimpan, kata sandi diacak sebanyak 600.000 kali.', 'Akibatnya, menebak dengan cara coba-coba menjadi sangat lambat.'] },
+    p: ['Sebelum disimpan, kata sandi diacak sebanyak 600.000 kali.', 'Akibatnya, menebak dengan cara coba-coba menjadi sangat lambat.'],
+    pic: flow(ic('key-round', 'Kata sandi'), ic('shuffle', 'Diacak 600.000 kali', 'hot'), ic('lock', 'Tidak bisa ditebak')) },
   { f: 4, w: 'p', t: 'Bisa dibuka dengan sidik jari atau wajah.',
-    p: ['Pemilik dapat membukanya dengan sidik jari atau pengenalan wajah di teleponnya sendiri.'] },
+    p: ['Pemilik dapat membukanya dengan sidik jari atau pengenalan wajah di teleponnya sendiri.'],
+    pic: icons(ic('fingerprint-pattern', 'Sidik jari', 'hot'), ic('scan-face', 'Wajah', 'hot')) },
   { f: 4, w: 'p', t: 'Data setiap perusahaan terpisah.',
-    p: ['Perusahaan lain tidak dapat membacanya.', 'Data juga dikunci (dienkripsi) saat dikirim dan saat disimpan, sehingga tidak terbuka di internet.'] },
+    p: ['Perusahaan lain tidak dapat membacanya.', 'Data juga dikunci (dienkripsi) saat dikirim dan saat disimpan, sehingga tidak terbuka di internet.'],
+    pic: icons(ic('building-2', 'Perusahaan Anda'), ic('lock', 'Terkunci dan terpisah', 'hot'), ic('building-2', 'Perusahaan lain', 'no')) },
   { f: 4, w: 'p', t: 'Akun karyawan bisa dikunci seketika.',
-    p: ['Telepon hilang atau karyawan berhenti bekerja?', 'Dengan satu tekan, akun itu langsung tidak bisa dipakai.'] },
+    p: ['Telepon hilang atau karyawan berhenti bekerja?', 'Dengan satu tekan, akun itu langsung tidak bisa dipakai.'],
+    pic: shot('fleet', 'Daftar tim di aplikasi') },
   { f: 4, w: 'p', t: 'Pindah kepemilikan dijaga.',
-    p: ['Kepemilikan perusahaan hanya bisa dipindahkan dengan PIN dan frasa rahasia.'] },
+    p: ['Kepemilikan perusahaan hanya bisa dipindahkan dengan PIN dan frasa rahasia.'],
+    pic: flow(ic('key-round', 'PIN'), ic('message-square', 'Frasa rahasia'), ic('crown', 'Baru pindah tangan', 'hot')) },
   /* 05 */
   { f: 5, w: 'p', t: 'Catatan yang tidak dapat diubah.',
     p: ['Penjualan, setoran akhir hari (EOD), dan catatan aktivitas harian hanya bisa ditambah.', 'Salesperson dan admin tidak dapat mengubah atau menghapusnya. Hak itu hanya dimiliki akun pemilik.'],
-    pic: rows(row(dot, '07:58 Mulai hari', '40 bks di motor'), row(dot, '08:41 Penjualan', 'Toko Berkah Jaya · Rp 480.000'),
-      row(dot, '20:10 Setoran diperiksa', '4 baris disetujui'), row(lamp('r'), 'Admin wilayah mencoba mengubah catatan 08:41', 'Ditolak', 'on')), demo: true },
+    pic: rows(row(svg('lock', 'rl'), '07:58 Mulai hari', '40 bks di motor'), row(svg('lock', 'rl'), '08:41 Penjualan', 'Toko Berkah Jaya · Rp 480.000'),
+      row(svg('lock', 'rl'), '20:10 Setoran diperiksa', '4 baris disetujui'), row(lamp('r'), 'Admin wilayah mencoba mengubah catatan 08:41', 'Ditolak', 'on')) },
   { f: 5, w: 'p', t: 'Setiap aktivitas tercatat.',
     p: ['Dari catatan inilah perjalanan setiap salesperson dapat diperiksa kembali.', 'Laporan penjualan bisa dicetak kapan saja, dengan nota yang sama seperti di toko.',
-      'Jika ada data yang gagal tersimpan, aplikasi selalu memberi tahu.'] },
+      'Jika ada data yang gagal tersimpan, aplikasi selalu memberi tahu.'],
+    pic: flow(ic('file-text', 'Catatan harian'), ic('receipt', 'Laporan dicetak kapan saja', 'hot'), ic('bell', 'Gagal simpan selalu diberi tahu')) },
   /* 06 */
   { f: 6, w: 'p', t: 'Pantau bisnis dari mana saja, kapan saja.',
-    p: ['DSM bisa dibuka di telepon, tablet, dan komputer.', 'Penjualan dari cabang muncul di telepon pimpinan dalam hitungan detik.'] },
+    p: ['DSM bisa dibuka di telepon, tablet, dan komputer.', 'Penjualan dari cabang muncul di telepon pimpinan dalam hitungan detik.'],
+    pic: icons(ic('smartphone', 'Telepon'), ic('tablet', 'Tablet'), ic('laptop', 'Komputer')) },
   { f: 6, w: 'p', t: 'Tidak perlu unduh dari toko aplikasi.',
-    p: ['DSM cukup ditambahkan ke layar utama telepon.', 'Setelah itu, DSM terbuka seperti aplikasi biasa.'] },
+    p: ['DSM cukup ditambahkan ke layar utama telepon.', 'Setelah itu, DSM terbuka seperti aplikasi biasa.'],
+    pic: flow(ic('smartphone', 'Tambahkan ke layar utama'), ic('circle-check', 'Terbuka seperti aplikasi biasa', 'hot')) },
   { f: 6, w: 'p', t: 'Tidak ada server di kantor.',
-    p: ['Tidak ada komputer server yang harus dijaga, dicadangkan, atau diperbaiki.', 'Semua data tersimpan di server Google.'] },
+    p: ['Tidak ada komputer server yang harus dijaga, dicadangkan, atau diperbaiki.', 'Semua data tersimpan di server Google.'],
+    pic: icons(ic('server-off', 'Tanpa server di kantor', 'no'), ic('cloud', 'Data di server Google', 'hot')) },
   { f: 6, w: 'p', t: 'Satu akun, perangkat apa pun.',
-    p: ['Masuk dengan akun Google yang sama di telepon atau di komputer kantor.', 'Datanya tetap sama.'] },
+    p: ['Masuk dengan akun Google yang sama di telepon atau di komputer kantor.', 'Datanya tetap sama.'],
+    pic: flow(ic('smartphone', 'Telepon'), ic('user', 'Satu akun', 'hot'), ic('laptop', 'Komputer kantor')) },
   { f: 6, w: 'p', t: 'Pembaruan terpasang sendiri.',
-    p: ['Saat aplikasi dibuka, versi terbaru langsung terpasang di setiap perangkat.', 'Tidak ada yang perlu dipasang ulang di cabang.'] },
+    p: ['Saat aplikasi dibuka, versi terbaru langsung terpasang di setiap perangkat.', 'Tidak ada yang perlu dipasang ulang di cabang.'],
+    pic: flow(ic('cloud', 'Versi baru'), ic('refresh-cw', 'Terpasang sendiri', 'hot'), ic('smartphone', 'Semua perangkat')) },
   /* 07 */
   { f: 7, w: 'p', t: 'Tetap bekerja tanpa sinyal.',
     p: ['Di daerah tanpa sinyal, penjualan tetap tercatat dengan aturan yang sama.', 'Begitu sinyal kembali, data terkirim dengan sendirinya.'],
-    pic: rows(row(dot, 'Warung Pojok · Rp 312.000', 'Tersimpan'), row(dot, 'Toko Lancar · Rp 588.000', 'Tersimpan'), row(dot, 'Warung Barokah · Rp 205.000', 'Tersimpan')), demo: true },
+    pic: rows(row(svg('circle-check', 'rl'), 'Warung Pojok · Rp 312.000', 'Tersimpan'), row(svg('circle-check', 'rl'), 'Toko Lancar · Rp 588.000', 'Tersimpan'),
+      row(svg('circle-check', 'rl'), 'Warung Barokah · Rp 205.000', 'Tersimpan')) },
   { f: 7, w: 'p', t: 'Tidak ada pemberitahuan yang terlewat.',
-    p: ['Pemberitahuan yang terlewat tetap tersimpan selama 7 hari, jadi bisa dibaca nanti.'] },
+    p: ['Pemberitahuan yang terlewat tetap tersimpan selama 7 hari, jadi bisa dibaca nanti.'],
+    pic: icons(ic('bell', 'Pemberitahuan', 'hot'), ic('calendar-days', 'Tersimpan 7 hari')) },
   { f: 7, w: 'p', t: 'Tetap lancar di telepon lama.',
-    p: ['Tersedia mode ringan: animasi dan efek dikurangi.', 'Semua fungsi tetap sama.'] },
+    p: ['Tersedia mode ringan: animasi dan efek dikurangi.', 'Semua fungsi tetap sama.'],
+    pic: icons(ic('feather', 'Mode ringan', 'hot'), ic('smartphone', 'Lancar di telepon lama')) },
   { f: 7, w: 'p', t: 'Panduan untuk karyawan baru.',
-    p: ['Setiap layar punya panduan yang menjelaskan cara memakainya.', 'Karyawan baru bisa belajar sendiri.'] },
+    p: ['Setiap layar punya panduan yang menjelaskan cara memakainya.', 'Karyawan baru bisa belajar sendiri.'],
+    pic: shot('book', 'Buku panduan di dalam aplikasi') },
   /* 08 */
   { f: 8, w: 'p', t: 'Omzet setiap wilayah terlihat jelas.',
-    p: ['Pimpinan langsung tahu wilayah mana yang penjualannya paling tinggi dan paling rendah.'] },
+    p: ['Pimpinan langsung tahu wilayah mana yang penjualannya paling tinggi dan paling rendah.'],
+    pic: hbars(['Wilayah A · tertinggi', 100, true], ['Wilayah B', 74], ['Wilayah C', 48], ['Wilayah D · terendah', 22]) },
   { f: 8, w: 'p', t: 'Peringkat salesperson berdasarkan data.',
-    p: ['Peringkat dihitung dari penjualan yang benar-benar tercatat, bukan dari laporan lisan.'] },
+    p: ['Peringkat dihitung dari penjualan yang benar-benar tercatat, bukan dari laporan lisan.'],
+    pic: hbars(['1. Budi Santoso', 100, true], ['2. Ari Rahman', 81], ['3. Dewi Wulandari', 63]) },
   { f: 8, w: 'p', t: 'Penjualan setiap produk per bulan.',
-    p: ['Untuk rentang waktu mana pun, penjualan setiap produk terlihat per bulan.'] },
+    p: ['Untuk rentang waktu mana pun, penjualan setiap produk terlihat per bulan.'], pic: MONTHS },
   /* 09 */
   { f: 9, w: 'p', t: 'Kinerja produk, harian hingga tahunan.',
     p: ['Untuk hari ini, minggu ini, bulan ini, atau tahun ini.', 'Dari semua wilayah, aplikasi menghitung berapa bungkus setiap produk terjual, berapa rupiahnya, dan berapa persen bagiannya.'],
     pic: `<p class="who">Contoh: bulan ini</p><div class="card tab"><b>Produk</b><b class="r">Rupiah</b><b class="r">Bks</b><b class="r">%</b>` + PROD.map((x) =>
       `<span>${x.n}</span><span class="r">${jt(x.r)}</span><span class="r">${x.b.toLocaleString('id-ID')}</span><span class="r">${Math.round(x.r / PSUM * 100)}%</span>
-      <span class="bar"><i style="width:${(x.r / PROD[0].r * 100).toFixed(1)}%"></i></span>`).join('') + '</div>', demo: true },
+      <span class="bar"><i style="width:${(x.r / PROD[0].r * 100).toFixed(1)}%"></i></span>`).join('') + '</div>' },
   /* 10 */
   { f: 10, w: 'p', t: 'Target bulanan dan harian.',
-    p: ['Pimpinan menetapkan target dalam rupiah dan dalam bal.', 'Target mingguan dan tahunan dihitung otomatis dari target bulanan, tetapi tetap bisa diubah.'] },
+    p: ['Pimpinan menetapkan target dalam rupiah dan dalam bal.', 'Target mingguan dan tahunan dihitung otomatis dari target bulanan, tetapi tetap bisa diubah.'],
+    pic: `<div class="big3"><div class="card"><b>Rp 200 jt</b><span>target bulan ini</span></div><div class="card"><b>400 bal</b><span>target bulan ini</span></div></div>` },
   { f: 10, w: 'p', t: 'Tahu lebih awal apakah target tercapai.',
     p: ['Aplikasi membandingkan uang yang sudah masuk dengan target bulan ini.', 'Sejak pertengahan bulan, sudah terlihat apakah target akan tercapai.', 'Perhitungan yang sama tersedia untuk setiap wilayah.'],
-    pic: `<div class="big3"><div class="card"><b>Rp 87 jt</b><span>sudah masuk</span><span class="bar"><i style="width:43.5%"></i></span></div>
-      <div class="card"><b>Rp 200 jt</b><span>target bulan ini · 400 bal</span></div></div>`, demo: true },
+    pic: TARGET },
   /* 11 */
   { f: 11, w: 'p', t: 'Jejak barang dari gudang sampai toko.', p: ['Setiap perpindahan barang tercatat, termasuk barang retur.'],
-    pic: steps('Dari pabrik masuk ke Gudang Pusat', 'Dikirim ke gudang cabang', 'Dibawa motorist dan sales canvas', 'Sampai ke toko dan konsumen terakhir') },
+    pic: flow(ic('factory', 'Pabrik'), ic('warehouse', 'Gudang Pusat'), ic('warehouse', 'Gudang cabang'), ic('bike', 'Sales'), ic('store', 'Toko', 'hot')) },
   { f: 11, w: 'p', t: 'Barang datang diperiksa dengan barcode.',
-    p: ['Barcode dipindai dengan kamera telepon.', 'Aplikasi menghitung sendiri konversi bal, slop, dan bungkus.'] },
+    p: ['Barcode dipindai dengan kamera telepon.', 'Aplikasi menghitung sendiri konversi bal, slop, dan bungkus.'],
+    pic: shot('gudang', 'Gudang cabang memindai barang yang sampai') },
   { f: 11, w: 'p', t: 'Label barcode dicetak dari aplikasi.',
-    p: ['Setiap kotak diberi label barcode, lengkap dengan surat jalan.', 'Cabang memindainya saat barang tiba.'] },
+    p: ['Setiap kotak diberi label barcode, lengkap dengan surat jalan.', 'Cabang memindainya saat barang tiba.'],
+    pic: shot('label', 'Label barcode pengiriman') },
   { f: 11, w: 'p', t: 'Barang yang dibawa sales tercatat.',
-    p: ['Saat barang dimuat ke motor atau mobil sales, stok gudang langsung berkurang.', 'Surat jalan dan bukti kembalinya dibuat otomatis.'] },
+    p: ['Saat barang dimuat ke motor atau mobil sales, stok gudang langsung berkurang.', 'Surat jalan dan bukti kembalinya dibuat otomatis.'],
+    pic: shot('nota', 'Surat jalan yang dibuat aplikasi') },
   { f: 11, w: 'p', t: 'Stok setiap gudang cabang terpantau.',
-    p: ['Jumlah setiap produk di setiap gudang cabang terlihat.', 'Kekurangan langsung ketahuan, sehingga stok yang terbatas bisa dibagi dengan tepat.'] },
+    p: ['Jumlah setiap produk di setiap gudang cabang terlihat.', 'Kekurangan langsung ketahuan, sehingga stok yang terbatas bisa dibagi dengan tepat.'],
+    pic: hbars(['Cabang Utara', 90], ['Cabang Selatan', 56], ['Cabang Timur · menipis', 17, true]) },
   { f: 11, w: 'p', t: 'Barang di tangan setiap sales terpantau.',
-    p: ['Pimpinan tahu barang apa saja yang sedang dibawa setiap sales hari itu, beserta penjualan dan sampelnya.'] },
+    p: ['Pimpinan tahu barang apa saja yang sedang dibawa setiap sales hari itu, beserta penjualan dan sampelnya.'],
+    pic: shot('agent', 'Bawaan seorang sales hari ini') },
   /* 12 */
   { f: 12, w: 's', t: 'Transaksi di toko, nota langsung tercetak.',
     p: ['Salesperson memilih barang, jumlah, dan cara bayar: tunai, transfer, atau titip.', 'Stok yang dibawanya langsung berkurang.'],
     pic: `<div class="card nota"><span class="hd">NAMA PERUSAHAAN · NOTA PENJUALAN</span><div><span>Warung Sumber Rejeki</span><span>02/10/26</span></div>
       <div><span>Produk A · 2 slop</span><span>480.000</span></div><div><span>Produk B · 1 slop</span><span>300.000</span></div>
-      <div><span>Produk C · 5 bks</span><span>130.000</span></div><div class="tot"><span>TOTAL</span><span>Rp 910.000</span></div><div><span>TUNAI · LUNAS</span></div></div>`, demo: true },
+      <div><span>Produk C · 5 bks</span><span>130.000</span></div><div class="tot"><span>TOTAL</span><span>Rp 910.000</span></div><div><span>TUNAI · LUNAS</span></div></div>` },
   { f: 12, w: 's', t: 'Tidak ada lagi menyalin ke buku.',
-    p: ['Setiap penjualan langsung tercatat saat itu juga.', 'Disertai foto yang diambil langsung dari kamera, bukan dari galeri.'] },
+    p: ['Setiap penjualan langsung tercatat saat itu juga.', 'Disertai foto yang diambil langsung dari kamera, bukan dari galeri.'],
+    pic: shot('terminal', 'Layar penjualan di telepon sales') },
   { f: 12, w: 's', t: 'Harga terkunci sesuai level pelanggan.',
     p: ['Setiap produk punya empat tingkat harga.', 'Harga untuk setiap toko otomatis mengikuti levelnya.'],
-    pic: list('Retail', 'Grosir', 'Ecer', 'Distributor') },
+    pic: icons(ic('tag', 'Retail'), ic('tag', 'Grosir'), ic('tag', 'Ecer'), ic('tag', 'Distributor')) },
   /* 13 */
   { f: 13, w: 'p', t: 'Penjualan hanya bisa dicatat di dekat toko.',
-    p: ['Posisi salesperson diperiksa dengan GPS.', 'Penjualan hanya bisa dicatat dalam jarak 100 meter dari toko.'] },
+    p: ['Posisi salesperson diperiksa dengan GPS.', 'Penjualan hanya bisa dicatat dalam jarak 100 meter dari toko.'], pic: GPS },
   { f: 13, w: 'p', t: 'Di luar 100 meter, harus minta izin.',
     p: ['Misalnya saat sinyal GPS lemah.', 'Admin daerah menyetujui atau menolaknya setelah melihat jaraknya.'],
-    pic: rows(row(lamp('y'), 'Izin jual dari 182 m · Budi Santoso', 'Toko Makmur · menunggu admin')), demo: true },
+    pic: rows(row(lamp('y'), 'Izin jual dari 182 m · Budi Santoso', 'Toko Makmur · menunggu admin')) },
   { f: 13, w: 'p', t: 'Toko terdekat dikenali otomatis.',
-    p: ['Aplikasi mengenali toko terdaftar di sekitar posisi salesperson.', 'Jika ia menjual di toko milik salesperson lain, penjualan itu diberi tanda.'] },
+    p: ['Aplikasi mengenali toko terdaftar di sekitar posisi salesperson.', 'Jika ia menjual di toko milik salesperson lain, penjualan itu diberi tanda.'],
+    pic: flow(ic('map-pin', 'Posisi sales'), ic('store', 'Toko terdekat dikenali', 'hot'), ic('triangle-alert', 'Toko milik sales lain: diberi tanda')) },
   /* 14 */
   { f: 14, w: 'p', t: 'Sampel dicatat terpisah dari omzet.',
     p: ['Sampel gratis untuk toko dicatat sampai hitungan batang.', 'Sampel tidak pernah dihitung sebagai omzet.'],
     pic: `<p class="who">Sampel · Oktober · Cabang Utara</p><div class="big3"><div class="card"><b>14 bks</b><span>sampel keluar</span></div>
       <div class="card"><b>15</b><span>pita cukai terbuka</span></div><div class="card"><b>Rp 312.000</b><span>nilai harga distributor</span></div>
-      <div class="card"><b>4%</b><span>sampel, bukan omzet · 96% penjualan</span></div></div>`, demo: true },
-  { f: 14, w: 'p', t: 'Laporan sampel untuk pimpinan.', p: ['Per minggu atau per bulan, pimpinan dapat melihat:'],
-    pic: list('Jumlah sampel dan nilainya di setiap tingkat harga', 'Lima produk teratas', 'Toko yang paling banyak menerima', 'Berapa pita cukai yang terbuka') },
+      <div class="card"><b>4%</b><span>sampel, bukan omzet · 96% penjualan</span></div></div>` },
+  { f: 14, w: 'p', t: 'Laporan sampel untuk pimpinan.', p: ['Per minggu atau per bulan, pimpinan dapat melihat semuanya.'],
+    pic: icons(ic('banknote', 'Jumlah dan nilai sampel'), ic('package', 'Lima produk teratas'), ic('store', 'Toko penerima terbanyak'), ic('receipt', 'Pita cukai terbuka')) },
   /* 15 */
   { f: 15, w: 's', t: 'Kenali toko sebelum masuk.',
     p: ['Sebelum masuk, salesperson melihat kapan toko itu terakhir memesan, barang apa yang dibeli, dan berapa nilainya.'],
-    pic: rows(row(dot, 'Warung Bu Sri', 'Cabang Utara · Senin, Kamis'), row(dot, 'Pesanan terakhir', '3 hari lalu'), row(dot, 'Barang', 'Produk A · 2 slop · Rp 480.000')), demo: true },
-  { f: 15, w: 's', t: 'Laporan kunjungan dengan satu tekan.', p: ['Selesai berkunjung, salesperson cukup memilih hasilnya:'],
-    pic: list('Repeat order', 'Stok masih penuh', 'Ada masalah dengan kompetitor', 'Ada permintaan baru', 'Toko tutup') },
+    pic: rows(row(svg('store', 'rl'), 'Warung Bu Sri', 'Cabang Utara · Senin, Kamis'), row(svg('calendar-days', 'rl'), 'Pesanan terakhir', '3 hari lalu'),
+      row(svg('package', 'rl'), 'Barang', 'Produk A · 2 slop · Rp 480.000')) },
+  { f: 15, w: 's', t: 'Laporan kunjungan dengan satu tekan.', p: ['Selesai berkunjung, salesperson cukup memilih hasilnya.'],
+    pic: icons(ic('repeat', 'Repeat order'), ic('package', 'Stok masih penuh'), ic('tag', 'Masalah kompetitor'), ic('message-square', 'Permintaan baru'), ic('store', 'Toko tutup')) },
   { f: 15, w: 's', t: 'Permintaan toko tidak terlupa.',
-    p: ['Setiap permintaan dari toko tetap tercatat sebagai belum selesai, sampai ada yang menyelesaikannya.'] },
+    p: ['Setiap permintaan dari toko tetap tercatat sebagai belum selesai, sampai ada yang menyelesaikannya.'],
+    pic: flow(ic('message-square', 'Permintaan toko'), ic('timer', 'Tetap tercatat', 'hot'), ic('circle-check', 'Sampai selesai')) },
   { f: 15, w: 's', t: 'Toko ganda terdeteksi.',
-    p: ['Jika satu toko terdaftar dua kali, misalnya namanya mirip dan letaknya kurang dari 40 meter, admin diberi tahu.', 'Dengan begitu, riwayat penjualan dan piutang toko tidak terpecah.'] },
+    p: ['Jika satu toko terdaftar dua kali, misalnya namanya mirip dan letaknya kurang dari 40 meter, admin diberi tahu.', 'Dengan begitu, riwayat penjualan dan piutang toko tidak terpecah.'],
+    pic: icons(ic('store', 'Toko Makmur'), ic('store', 'Toko Makmur Jaya'), ic('triangle-alert', 'Mirip dan kurang dari 40 m', 'hot')) },
   { f: 15, w: 's', t: 'Catatan kompetitor di setiap toko.',
-    p: ['Merek, produk, harga, dan seberapa laku produk kompetitor dicatat untuk setiap toko.', 'Catatan ini menjadi bahan strategi penjualan berikutnya.'] },
+    p: ['Merek, produk, harga, dan seberapa laku produk kompetitor dicatat untuk setiap toko.', 'Catatan ini menjadi bahan strategi penjualan berikutnya.'],
+    pic: icons(ic('tag', 'Merek'), ic('package', 'Produk'), ic('banknote', 'Harga'), ic('trending-up', 'Seberapa laku')) },
   { f: 15, w: 's', t: 'Toko baru harus diverifikasi.',
-    p: ['Toko baru didaftarkan dengan foto depan toko dan titik lokasinya.', 'Toko itu aktif setelah dikonfirmasi admin daerah.'] },
+    p: ['Toko baru didaftarkan dengan foto depan toko dan titik lokasinya.', 'Toko itu aktif setelah dikonfirmasi admin daerah.'],
+    pic: flow(ic('camera', 'Foto depan toko'), ic('map-pin', 'Titik lokasi'), ic('circle-check', 'Dikonfirmasi admin', 'hot')) },
   { f: 15, w: 's', t: 'Mudah menemukan toko baru.',
-    p: ['Google Maps dan Street View menuntun salesperson ke toko yang belum pernah dikunjunginya.'] },
+    p: ['Google Maps dan Street View menuntun salesperson ke toko yang belum pernah dikunjunginya.'],
+    pic: flow(ic('navigation', 'Google Maps dan Street View'), ic('store', 'Sampai di toko baru', 'hot')) },
   /* 16 */
   { f: 16, w: 'p', t: 'Setiap rupiah diperiksa di akhir hari.',
     p: ['Setiap akhir hari (EOD), salesperson menyetor uang tunai, bukti transfer, sisa barang, dan pita cukai.', 'Admin wilayah memeriksanya satu per satu.'],
-    pic: `<p class="who">Budi Santoso · Kam 2 Okt · Cabang Utara</p>` + rows(row(dot, 'Tunai', 'Rp 1.250.000'), row(dot, 'Transfer', 'Rp 425.000'),
-      row(dot, 'Sisa barang', '12 bks'), row(dot, 'Pita cukai', '40 pcs')), demo: true },
+    pic: `<p class="who">Budi Santoso · Kam 2 Okt · Cabang Utara</p>` + rows(row(svg('banknote', 'rl'), 'Tunai', 'Rp 1.250.000'), row(svg('send', 'rl'), 'Transfer', 'Rp 425.000'),
+      row(svg('package', 'rl'), 'Sisa barang', '12 bks'), row(svg('receipt', 'rl'), 'Pita cukai', '40 pcs')) },
   { f: 16, w: 'p', t: 'Setoran selesai setelah disetujui.',
-    p: ['Salesperson menghitung setorannya satu per satu, lalu mengirimkannya ke admin.', 'Setoran baru dianggap selesai setelah admin menyetujuinya.'] },
+    p: ['Salesperson menghitung setorannya satu per satu, lalu mengirimkannya ke admin.', 'Setoran baru dianggap selesai setelah admin menyetujuinya.'],
+    pic: flow(ic('calculator', 'Dihitung'), ic('send', 'Dikirim ke admin'), ic('circle-check', 'Disetujui', 'hot')) },
   /* 17 */
   { f: 17, w: 'p', t: 'Selisih langsung dihitung.',
     p: ['Saat setoran diperiksa, uang dan barang yang kurang langsung terlihat.', 'Barang yang kurang dihitung sesuai tingkat harganya.'],
     pic: rows(row(lamp('r'), 'Tunai', 'Seharusnya Rp 1.250.000 · disetor Rp 1.225.000'), row(lamp('o'), 'Transfer', 'Seharusnya Rp 425.000 · disetor Rp 425.000'),
-      row(lamp('r'), 'Sisa barang', 'Seharusnya 12 bks · disetor 10 bks'), row(lamp('r'), 'Barang rusak', '1 bks')), demo: true },
+      row(lamp('r'), 'Sisa barang', 'Seharusnya 12 bks · disetor 10 bks'), row(lamp('r'), 'Barang rusak', '1 bks')) },
   { f: 17, w: 'p', t: 'Selisih menjadi utang salesperson.',
-    p: ['Selisih dan denda barang rusak dicatat sebagai utang atas nama salesperson, lengkap dengan alasan dan tanggalnya.', 'Tidak ada kekurangan yang hilang tanpa jejak.'] },
+    p: ['Selisih dan denda barang rusak dicatat sebagai utang atas nama salesperson, lengkap dengan alasan dan tanggalnya.', 'Tidak ada kekurangan yang hilang tanpa jejak.'],
+    pic: shot('eod', 'Utang seorang sales tercatat di aplikasi') },
   /* 18 */
   { f: 18, w: 'p', t: 'Toko boleh membayar belakangan.',
-    p: ['Dengan sistem titip (consignment), toko membayar dalam waktu tempo.', 'Jika tidak diatur lain, temponya 7 hari.'] },
+    p: ['Dengan sistem titip (consignment), toko membayar dalam waktu tempo.', 'Jika tidak diatur lain, temponya 7 hari.'],
+    pic: flow(ic('package', 'Barang diterima toko'), ic('calendar-days', 'Tempo 7 hari', 'hot'), ic('banknote', 'Toko membayar')) },
   { f: 18, w: 'p', t: 'Tagihan dikelompokkan menurut urgensinya.',
     p: ['Tagihan yang harus ditagih hari ini langsung terlihat.', 'Pembayaran menjadi tertib, dan arus kas dapat diperkirakan.'],
     pic: rows(row(lamp('o'), 'Aman', 'Warung Pojok Rp 312.000 · Toko Lancar Rp 588.000'), row(lamp('y'), 'Segera jatuh tempo', 'Warung Barokah Rp 205.000'),
-      row(lamp('r'), 'Lewat jatuh tempo', 'Toko Sinar Abadi Rp 410.000')), demo: true },
+      row(lamp('r'), 'Lewat jatuh tempo', 'Toko Sinar Abadi Rp 410.000')) },
   { f: 18, w: 'p', t: 'Tanggung jawab toko bisa dialihkan.',
     p: ['Utang piutang sebuah toko dapat dialihkan ke rekan satu tim, dengan persetujuan admin daerah.', 'Sebelum memutuskan, keduanya melihat stok di toko dan jumlah utangnya.'],
-    pic: steps('Budi mengajukan', 'Admin daerah menyetujui', 'Andi menerima'), demo: true },
+    pic: flow(ic('user', 'Budi mengajukan'), ic('circle-check', 'Admin daerah menyetujui', 'hot'), ic('user', 'Andi menerima')) },
   /* 19 */
-  { f: 19, w: 's', t: 'Kinerja terukur, prestasi terlihat.', p: ['Salesperson mendapat poin (XP) dari:'],
-    pic: list('Setoran yang lolos pemeriksaan', 'Toko yang dilayani', 'Tagihan yang berhasil ditagih') },
+  { f: 19, w: 's', t: 'Kinerja terukur, prestasi terlihat.', p: ['Salesperson mendapat poin (XP) dari pekerjaan yang benar-benar selesai.'],
+    pic: icons(ic('circle-check', 'Setoran lolos pemeriksaan'), ic('store', 'Toko yang dilayani'), ic('banknote', 'Tagihan yang tertagih')) },
   { f: 19, w: 's', t: 'Pangkat dari Bronze sampai Mythic.',
-    p: ['Salesperson melihat kemajuannya sendiri.', 'Pimpinan melihat siapa yang paling aktif.'],
-    pic: rows(...[['Bronze', 0], ['Silver', 5000], ['Gold', 20000], ['Platinum', 50000], ['Diamond', 100000], ['Mythic', 250000]]
-      .map(([n, x], i) => row(tier(i + 1), n, `mulai ${x.toLocaleString('id-ID')} XP`, 'in'))) },
-  { f: 19, w: 's', t: 'Cara menghitung pangkat dipilih pimpinan.', p: ['Ada dua pilihan:'],
-    pic: list('Dari seluruh riwayat kerja, jadi satu minggu sepi tidak menurunkan pangkat', 'Dari penjualan 7 hari terakhir') },
+    p: ['Enam tingkat: Bronze, Silver, Gold, Platinum, Diamond, dan Mythic.', 'Salesperson melihat kemajuannya sendiri. Pimpinan melihat siapa yang paling aktif.'],
+    pic: shot('profile', 'Kartu prestasi seorang sales') },
+  { f: 19, w: 's', t: 'Cara menghitung pangkat dipilih pimpinan.',
+    p: ['Dari seluruh riwayat kerja, jadi satu minggu sepi tidak menurunkan pangkat.', 'Atau dari penjualan 7 hari terakhir.'],
+    pic: icons(ic('calendar-days', 'Seluruh riwayat kerja', 'hot'), ic('timer', '7 hari terakhir')) },
   /* 20 */
   { f: 20, w: 'p', t: 'Peringatan dini saat stok menipis.',
-    p: ['Setiap produk punya batas stok minimum, dalam bal, karton, slop, atau bungkus.', 'Begitu stok turun di bawah batas itu, admin cabang langsung diberi tahu untuk meminta stok ke Gudang Pusat.'] },
+    p: ['Setiap produk punya batas stok minimum, dalam bal, karton, slop, atau bungkus.', 'Begitu stok turun di bawah batas itu, admin cabang langsung diberi tahu untuk meminta stok ke Gudang Pusat.'],
+    pic: STOCK },
   { f: 20, w: 'p', t: 'Tahu berapa hari lagi stok cukup.',
-    p: ['Aplikasi menghitungnya dari penjualan harian.', 'Barang bisa dipesan sebelum habis.'] },
+    p: ['Aplikasi menghitungnya dari penjualan harian.', 'Barang bisa dipesan sebelum habis.'],
+    pic: flow(ic('trending-up', 'Penjualan harian'), ic('calendar-days', 'Berapa hari lagi stok cukup', 'hot'), ic('package', 'Pesan sebelum habis')) },
   { f: 20, w: 'p', t: 'Permintaan stok dari cabang.',
-    p: ['Cabang mengajukan permintaan barang sesuai batas minimumnya.', 'Gudang Pusat langsung menerimanya.'] },
+    p: ['Cabang mengajukan permintaan barang sesuai batas minimumnya.', 'Gudang Pusat langsung menerimanya.'],
+    pic: flow(ic('warehouse', 'Gudang cabang'), ic('send', 'Permintaan stok', 'hot'), ic('warehouse', 'Gudang Pusat')) },
   { f: 20, w: 'p', t: 'Foto nota yang jelas dan ringan.',
-    p: ['Foto nota bukti pengiriman otomatis diluruskan dan diperkecil.', 'Hasilnya tetap jelas dibaca.'] },
+    p: ['Foto nota bukti pengiriman otomatis diluruskan dan diperkecil.', 'Hasilnya tetap jelas dibaca.'],
+    pic: shot('notascan', 'Foto nota sebelum dan sesudah diluruskan') },
   { f: 20, w: 'p', t: 'Ongkos setiap barang masuk tercatat.',
-    p: ['Ongkos kirim, ongkos bongkar, dan cukai tercatat rapi untuk laporan keuangan.', 'Aplikasi memberi tahu jika harga pokok naik dari kiriman sebelumnya.'] },
+    p: ['Ongkos kirim, ongkos bongkar, dan cukai tercatat rapi untuk laporan keuangan.', 'Aplikasi memberi tahu jika harga pokok naik dari kiriman sebelumnya.'],
+    pic: rows(row(svg('truck', 'rl'), 'Ongkos kirim'), row(svg('package', 'rl'), 'Ongkos bongkar'), row(svg('receipt', 'rl'), 'Cukai'),
+      row(svg('triangle-alert', 'rl'), 'Harga pokok naik dari kiriman lalu', '', 'on')) },
   /* 21 */
   { f: 21, w: 'p', t: 'Hitung stok tanpa melihat angka sistem.',
     p: ['Salesperson dan admin cabang menghitung stok gudang tanpa melihat angka di sistem.', 'Jadi, hasil hitungan tidak bisa disesuaikan agar terlihat cocok.'],
-    pic: rows(row(lamp('o'), 'Produk A · 52', 'Cocok'), row(lamp('y'), 'Produk B', 'Sedang dihitung'), row(lamp('o'), 'Produk C · 30', 'Cocok')), demo: true },
+    pic: shot('opname', 'Lembar hitung stok di aplikasi') },
   { f: 21, w: 'p', t: 'Setiap selisih wajib diberi alasan.',
     p: ['Dengan begitu, kebocoran stok di cabang cepat ketahuan, sebelum kerugiannya terus menumpuk.'],
-    pic: list('Barang rusak', 'Salah hitung', 'Penjualan yang tidak tercatat', 'Dicuri', 'Belum diketahui') },
+    pic: icons(ic('package', 'Barang rusak'), ic('calculator', 'Salah hitung'), ic('shopping-cart', 'Penjualan tidak tercatat'), ic('triangle-alert', 'Dicuri', 'hot'), ic('circle-x', 'Belum diketahui')) },
   { f: 21, w: 'p', t: 'Penjualan saat menghitung tidak mengacaukan hasil.',
-    p: ['Begitu sebuah produk mulai dihitung, angka pembandingnya ditahan.', 'Penjualan yang terjadi di tengah penghitungan tidak menimbulkan selisih palsu.'] },
+    p: ['Begitu sebuah produk mulai dihitung, angka pembandingnya ditahan.', 'Penjualan yang terjadi di tengah penghitungan tidak menimbulkan selisih palsu.'],
+    pic: rows(row(lamp('o'), 'Produk A · 52', 'Cocok'), row(lamp('y'), 'Produk B', 'Sedang dihitung · angka pembanding ditahan'), row(lamp('o'), 'Produk C · 30', 'Cocok')) },
   /* 22 */
   { f: 22, w: 'p', t: 'Barang bermasalah ditahan sampai pusat memutuskan.',
     p: ['Hasil hitung yang tidak sesuai tidak langsung diterima.', 'Barang rusak atau selisih ditahan di karantina sampai kantor pusat memberi keputusan.', 'Tidak ada barang yang hilang tanpa catatan.'],
-    pic: rows(row(lamp('y'), 'Karantina · Cabang Utara', '4 barang · menunggu keputusan pusat')), demo: true },
+    pic: flow(ic('package', 'Barang rusak atau selisih'), ic('lock', 'Ditahan di karantina', 'hot'), ic('building-2', 'Kantor pusat memutuskan')) },
   /* 23 */
   { f: 23, w: 'ps', t: 'Keputusan berbasis data, bukan asumsi.',
     p: ['Setiap fitur diuji otomatis sebelum sampai ke tangan pengguna.', 'Pengujian itu dapat dijalankan ulang di hadapan siapa pun.'],
@@ -365,9 +491,9 @@ function render() {
     const same = S.filter((x) => x.f === s.f), part = same.indexOf(s) + 1;
     const kick = s.f === LAST ? `Penutup · ${FEAT[s.f - 1]}` : `Fitur ${s.f} dari ${LAST - 1} · ${FEAT[s.f - 1]}`;
     const who = WHO[s.w] + (same.length > 1 ? ` · bagian ${part} dari ${same.length}` : '');
-    $('#main').innerHTML = `<div class="${s.pic ? 'two' : 'one'}"><div class="say"><p class="kick">${kick}</p><p class="who">${who}</p>
-      <h1 tabindex="-1">${s.t}</h1>${s.p.map((x) => `<p>${x}</p>`).join('')}</div>
-      ${s.pic ? `<div class="pic">${s.pic}${s.demo ? '<p class="demo">Data contoh</p>' : ''}</div>` : ''}</div>`;
+    /* phone: title, then the picture, then the words - the picture is the first thing read; PC: words left, picture right */
+    $('#main').innerHTML = `<div class="two"><div class="say hd"><p class="kick">${kick}</p><p class="who">${who}</p><h1 tabindex="-1">${s.t}</h1></div>
+      <div class="pic">${s.pic}</div><div class="say tx">${s.p.map((x) => `<p>${x}</p>`).join('')}</div></div>`;
   }
   $('#bar i').style.width = (s.cover ? 0 : s.end ? 100 : (s.f / LAST) * 100) + '%';
   $('#back').hidden = i === 0;
