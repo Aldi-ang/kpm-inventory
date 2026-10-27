@@ -9,6 +9,7 @@
 - Do: render the rail in the lab as a T5 salesman with two salesmen's sales today (`tools/ponder-lab.html?shell&terminal...` - check the lab's scenes for one with several agents, or add the fixture) and read the numbers from the DOM (lesson: a number read off a frame is a guess). Then ONE ❓ to him with the frame: "is this on purpose?" He was asked once in words on 2026-10-27 17:44 and did not answer - a frame, not words, this time.
 - TRAP: the same `transactions` list feeds the boss's screens - a fix narrows `dayStats`'s INPUT on the salesman's terminal only (filter by agentId there), never `dayStats` itself or the listener; `dayStats.selfcheck.mjs` pins it - run before and after.
 - Rewrite this file again when done.
+- Not this job, already finished (2026-10-27 18:41): the elder presentation side session - `.claude/presentation/kpm-sederhana.html`, pushed `607c100`, check `node .claude/presentation/tests/elder.mjs`. Nothing owed on it but his look.
 
 <details><summary>Queue after this (promote one at a time)</summary>
 
