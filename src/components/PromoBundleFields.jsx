@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { confirmAction } from './ConfirmGate';
+import { offerResults } from '../utils/vanBay';
 
 /* FACTORY OFFERS on a promo item's edit panel (his 2026-10-26: "some strategy that factory offer is buy 1 bal of our
    product and we will give a t shirt for free"). Each offer is a recipe on settings/general.promoBundles - buy these
@@ -8,8 +9,12 @@ import { confirmAction } from './ConfirmGate';
    WHERE (his 2026-10-27 "bundle that are special for the regional location"): all areas, or one region from the roster.
    `lockRegion` (TEAM OFFERS, his 2026-10-27 "regional admin can make offers for his own"): WHERE is his region, no choice,
    and `by` names him on the offer so the boss sees who made it.
+   `loadResults` (his 2026-10-27 "sales record performance for the offer"): the last 30 days of sales, read only when
+   SEE RESULTS is pressed; each offer then shows its sales, shops and rupiah, best first.
    The inputs carry no `name` and Enter does not submit, so the product form around this never saves them. */
-export default function PromoBundleFields({ promo, bundles = [], products = [], regions = [], lockRegion = '', by = '', onSave }) {
+export default function PromoBundleFields({ promo, bundles = [], products = [], regions = [], lockRegion = '', by = '', onSave, loadResults = null }) {
+    const [results, setResults] = useState(null);   // null = not loaded yet
+    const [loading, setLoading] = useState(false);
     const [name, setName] = useState('');
     const [region, setRegion] = useState(lockRegion);   // '' = every area; a region = only salesmen whose location is that region
     const [qty, setQty] = useState(1);
@@ -18,6 +23,13 @@ export default function PromoBundleFields({ promo, bundles = [], products = [], 
     const [gives, setGives] = useState(1);
     const [busy, setBusy] = useState(false);
     const mine = bundles.filter(b => (b.gives || []).some(g => g.productId === promo.id));
+    const shown = results ? [...mine].sort((a, b) => (results[b.id]?.rp || 0) - (results[a.id]?.rp || 0)) : mine;
+    const rp = (n) => `Rp ${new Intl.NumberFormat('id-ID').format(Math.round(n))}`;
+    const count = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+    const seeResults = async () => {
+        setLoading(true);
+        try { setResults(offerResults(await loadResults())); } finally { setLoading(false); }
+    };
     const field = 'w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none';
     const noEnter = (e) => { if (e.key === 'Enter') e.preventDefault(); };
     const save = async (list) => { setBusy(true); try { return await onSave(list); } finally { setBusy(false); } };
@@ -39,11 +51,18 @@ export default function PromoBundleFields({ promo, bundles = [], products = [], 
         <div className="space-y-2" data-guide="promo-bundles">
             <p className="text-[var(--shell-orange-ink)] font-bold">FACTORY OFFERS · GIVE THIS FREE</p>
             {mine.length === 0 && <p className="text-[var(--duke-ink-8)] leading-relaxed">No offer yet. Example: TAWANG BUNDLE = buy 1 Bal TAWANG, get 1 {promo.name} free.</p>}
-            {mine.map(b => (
+            {loadResults && mine.length > 0 && (
+                <button type="button" onClick={seeResults} disabled={loading} className="w-full min-h-[44px] lg:min-h-0 lg:py-1.5 font-bold border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] hover:bg-[var(--duke-veil)] disabled:opacity-50">
+                    {loading ? 'LOADING SALES...' : results ? 'REFRESH RESULTS · LAST 30 DAYS' : 'SEE RESULTS · LAST 30 DAYS'}
+                </button>)}
+            {shown.map((b, i) => (
                 <div key={b.id} className="flex items-start gap-2 p-2 border border-[var(--duke-veil-edge-2)] bg-[var(--duke-veil)]">
                     <span className="flex-1 min-w-0 leading-snug text-[var(--duke-ink-hi)]">
                         <span className="block font-bold">{b.name} <span className="font-normal text-[var(--duke-ink-8)]">· {b.region ? `${b.region} only` : 'all areas'}{b.by ? ` · by ${b.by}` : ''}</span></span>
                         <span className="text-[var(--duke-ink-8)]">Buy {(b.lines || []).map(l => `${l.qty} ${l.unit} ${products.find(p => p.id === l.productId)?.name || l.name}`).join(' + ')} · get {(b.gives || []).map(g => `${g.qty} pcs ${g.name}`).join(' + ')} free</span>
+                        {results && <span className="block mt-1 font-bold text-[var(--shell-orange-ink)] tabular-nums" data-guide="offer-result">{results[b.id]
+                            ? `${i === 0 ? 'BEST · ' : ''}${count(results[b.id].sales, 'sale')} · ${count(results[b.id].shops, 'shop')} · ${rp(results[b.id].rp)}`
+                            : 'Not used in the last 30 days'}</span>}
                     </span>
                     <button type="button" disabled={busy} onClick={() => remove(b)} className="shrink-0 px-3 min-h-[44px] lg:min-h-0 lg:py-1 border border-red-500 text-red-400 font-bold hover:bg-red-500/10 disabled:opacity-50">REMOVE</button>
                 </div>

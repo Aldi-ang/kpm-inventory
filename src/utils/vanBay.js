@@ -97,6 +97,21 @@ export const bundlesFor = (bundles, sellerRegion, seesAll) => (bundles || [])
    doc id IS the region: a `region` typed inside an offer can never move it to another area. */
 export const offersFromDocs = (docs) => (docs || []).flatMap(d => (d.bundles || []).map(b => ({ ...b, region: d.id })));
 
+/* OFFER RESULTS (his 2026-10-27 "sales record performance for the offer ... check which strategy work best in the
+   market"). Per offer id, over the sales given: how many sales used it, at how many shops, and the rupiah of ITS
+   cigarettes in those sales - not the whole receipt, so one big order that also took a bundle does not crown it.
+   ponytail: two offers on the same cigarette in one sale both count that line; split it if he ever stacks offers. */
+export const offerResults = (transactions) => {
+  const out = {};
+  (transactions || []).filter(t => (t.type || 'SALE') === 'SALE').forEach(t => (t.offers || []).forEach(o => {
+    const r = out[o.id] || (out[o.id] = { sales: 0, shops: new Set(), rp: 0 });
+    const ids = new Set(o.productIds || []);
+    r.sales += 1; r.shops.add(storeKey(t.customerName));
+    r.rp += (t.items || []).filter(i => ids.has(i.productId)).reduce((s, i) => s + (Number(i.calculatedPrice) || 0) * (Number(i.qty) || 0), 0);
+  }));
+  return Object.fromEntries(Object.entries(out).map(([id, r]) => [id, { sales: r.sales, shops: r.shops.size, rp: r.rp }]));
+};
+
 /* The boss's editor saves the WHOLE list: all-area offers to settings/general, each region's to its own doc. A region that
    had offers and now has none is still written (an empty list), or the offer he removed would stay live. */
 export const offerWrites = (list, oldRegions = []) => {

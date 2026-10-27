@@ -1250,6 +1250,11 @@ function ShellLab() {
           regionOffers={[{ id: 'r1', name: 'BANDUNG SLOP DEAL', region: 'BANDUNG', by: 'Rizky Aditama', lines: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 2, unit: 'Slop' }], gives: [{ productId: 'p-lighter', name: 'Lighter', qty: 1 }] },
             { id: 'r2', name: 'JAKARTA DEAL', region: 'JAKARTA', lines: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 1, unit: 'Bal' }], gives: [{ productId: 'p-lighter', name: 'Lighter', qty: 2 }] }]}
           onSavePromoBundles={async (list, region) => { window.__offers = { list, region }; return true; }}
+          /* SEE RESULTS: three sales took r1 (two shops), one took r2 */
+          loadOfferResults={async () => [
+            { type: 'SALE', customerName: 'TOKO MAJU', offers: [{ id: 'r1', productIds: ['p-djar'] }], items: [{ productId: 'p-djar', qty: 2, calculatedPrice: 172500 }] },
+            { type: 'SALE', customerName: 'TOKO MAJU', offers: [{ id: 'r1', productIds: ['p-djar'] }], items: [{ productId: 'p-djar', qty: 4, calculatedPrice: 172500 }] },
+            { type: 'SALE', customerName: 'WARUNG SARI', offers: [{ id: 'r1', productIds: ['p-djar'] }, { id: 'r2', productIds: ['p-cg16'] }], items: [{ productId: 'p-djar', qty: 2, calculatedPrice: 172500 }, { productId: 'p-cg16', qty: 1, calculatedPrice: 1023500 }] }]}
           agentProfileId="f-ra" previewing={null}
           user={{ uid: 'lab-ra', displayName: 'Rizky Aditama', email: 'rizky@kpm.example', location: 'BANDUNG' }}
           motorists={[...LAB_MOTORISTS, ...LAB_FLEET]}

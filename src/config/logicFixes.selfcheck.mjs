@@ -12349,10 +12349,32 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      fl.includes("const offerRegion = userRole === 'FLEET_CAPTAIN' ? normalizeRegion(rawLocation) : '';") &&
      fl.includes('lockRegion={offerRegion}') && fl.includes('onSave={(list) => onSavePromoBundles(list, offerRegion)}') &&
      ap.includes('if (region) await setDoc(doc(db, `${base}/promoOffers`, region), { bundles: list });') &&
-     rules.includes('match /promoOffers/{region} {') && rules.includes("allow write: if isFleetCaptain(bossUid) && isOwnRegionDoc() &&") &&
+     rules.includes('match /promoOffers/{region} {') && rules.includes("allow write: if (isAreaAdmin(bossUid) || isCompanyTopTier(bossUid) || (isFleetCaptain(bossUid) && isOwnRegionDoc())) &&") &&
      rules.includes("return loc is string && loc.trim() != '' && loc.trim().upper() == region;") &&
      code(read('src/hooks/useDatabaseSync.js')).includes("onSnapshot(collection(db, basePath, 'promoOffers'), (snap) => setRegionOffers(offersFromDocs(") &&
      pbf.includes('...(by ? { by } : {}),') && pbf.includes('setRegion(lockRegion);'));
+  /* T1-T3 EVERYWHERE + OFFER RESULTS (his 2026-10-27: "tier 3 and above can make offers bundle everywhere, it is better if
+     sales record performance for the offer is available ... check which strategy work best in the market"). */
+  const sales = [
+    { type: 'SALE', customerName: 'Toko A', offers: [{ id: 'o1', productIds: ['c'] }], items: [{ productId: 'c', qty: 2, calculatedPrice: 100000 }, { productId: 'x', qty: 9, calculatedPrice: 50000 }] },
+    { type: 'SALE', customerName: 'TOKO A ', offers: [{ id: 'o1', productIds: ['c'] }], items: [{ productId: 'c', qty: 1, calculatedPrice: 100000 }] },
+    { type: 'SALE', customerName: 'Toko B', offers: [{ id: 'o1', productIds: ['c'] }, { id: 'o2', productIds: ['x'] }], items: [{ productId: 'c', qty: 1, calculatedPrice: 100000 }, { productId: 'x', qty: 1, calculatedPrice: 50000 }] },
+    { type: 'RETUR', customerName: 'Toko C', offers: [{ id: 'o1', productIds: ['c'] }], items: [{ productId: 'c', qty: 5, calculatedPrice: 100000 }] },
+    { type: 'SALE', customerName: 'Toko D', items: [{ productId: 'c', qty: 7, calculatedPrice: 100000 }] }];
+  const res = vb.offerResults(sales);
+  ok('BEHAVIOUR: offer results count only SALES that used the offer, shops once each (case and spaces ignored), and the rupiah of the OFFER\'s cigarettes only - the 9 other packs and the retur stay out',
+     res.o1.sales === 3 && res.o1.shops === 2 && res.o1.rp === 400000 && res.o2.sales === 1 && res.o2.rp === 50000 &&
+     Object.keys(res).sort().join() === 'o1,o2' && Object.keys(vb.offerResults(undefined)).length === 0);
+  const eng2 = code(read('src/hooks/useTransactionEngine.js'));
+  ok('REGRESSION: a deal remembers its offers on BOTH payloads (offline queue and online write), only the ones whose cigarettes are still in the cart, never on a retur; T1-T3 get the everywhere editor in Fleet with results',
+     (eng2.match(/\.\.\.\(proofPayload\?\.offers\?\.length \? \{ offers: proofPayload\.offers \} : \{\}\)/g) || []).length === 2 &&
+     ms.includes('offers: isReturMode ? [] : Object.values(bundleUse).filter(o => o.productIds.every(id => finalCart.some(i => i.productId === id)))') &&
+     ms.includes('setGive({}); setBundleUse({});') &&
+     fl.includes("const offersEverywhere = ['DEVELOPER', 'ADMIN', 'COMPANY_OWNER', 'AREA_ADMIN'].includes(userRole);") &&
+     fl.includes('regions={offerRegions}') && (fl.match(/loadResults=\{loadOfferResults\}/g) || []).length === 2 &&
+     ap.includes('const loadOfferResults = () => fetchHistoricalTransactions(new Date(Date.now() - 30 * 86400000), new Date());') &&
+     rules.includes("allow update: if docId == 'general' && (isAreaAdmin(bossUid) || isCompanyTopTier(bossUid)) &&") &&
+     rules.includes("request.resource.data.diff(resource.data).affectedKeys().hasOnly(['promoBundles'])"));
   const samp = code(read('src/components/SamplingManager.jsx'));
   ok('REGRESSION: a SAMPLE still needs no sale - the sampling screen knows nothing of the give rule (his "give them for free")',
      !/promoGiven|giveLines|applyGiveToPromo|canGive/.test(samp));

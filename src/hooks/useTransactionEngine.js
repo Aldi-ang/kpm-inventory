@@ -189,6 +189,7 @@ export default function useTransactionEngine({
                         capturedAt: proofPayload.timestamp
                     } : null,
                     ...(promoGiven.length ? { promoGiven } : {}),
+                    ...(proofPayload?.offers?.length ? { offers: proofPayload.offers } : {}),   // which factory offers filled this deal
                     /* The van is NOT touched here. A queued write of the whole cargo list would land
                        on top of anything a captain loaded or unloaded while there was no signal (row 2
                        of the 2026-10-19 100-users check). This flag sends it to the sync, which moves
@@ -387,7 +388,8 @@ export default function useTransactionEngine({
                         longitude: proofPayload.longitude,
                         capturedAt: proofPayload.timestamp
                     } : null,
-                    ...(promoGiven.length ? { promoGiven } : {})
+                    ...(promoGiven.length ? { promoGiven } : {}),
+                    ...(proofPayload?.offers?.length ? { offers: proofPayload.offers } : {})   // same as the offline payload above
                 });
 
                 /* THE TALLY, in the same transaction as the sale above.

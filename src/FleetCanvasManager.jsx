@@ -17,7 +17,7 @@ import LoadingBay from './components/LoadingBay.jsx';
 import PromoBundleFields from './components/PromoBundleFields.jsx';
 import { damagedInVan, titipOf, quarantineOf, movePromo } from './utils/vanBay';
 
-export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, promoItems = [], transactions = [], customers = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, regionOffers = [], onSavePromoBundles = null, masterUserId = null }) {
+export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, promoItems = [], transactions = [], customers = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, regionOffers = [], onSavePromoBundles = null, loadOfferResults = null, masterUserId = null }) {
 
     const isGlobalAdmin = ['DEVELOPER', 'COMPANY_OWNER', 'ADMIN'].includes(userRole);
     const isAreaAdmin = !isGlobalAdmin;
@@ -114,7 +114,11 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
        increasing"): T4 REGIONAL ADMIN only - rules CHANGE 19's isFleetCaptain, the same one tier on both sides - and only
        for the region this screen already runs as (the "{branch} Roster" header). */
     const offerRegion = userRole === 'FLEET_CAPTAIN' ? normalizeRegion(rawLocation) : '';
-    const canMakeOffers = offerRegion !== '' && offerRegion !== 'UNASSIGNED' && promoItems.length > 0 && !!onSavePromoBundles;
+    /* T1-T3 make offers EVERYWHERE (his 2026-10-27 "tier 3 and above can make offers bundle everywhere") - all areas or
+       any region, the whole list in one save; rules CHANGE 19 isAreaAdmin || isCompanyTopTier, the same tiers. */
+    const offersEverywhere = ['DEVELOPER', 'ADMIN', 'COMPANY_OWNER', 'AREA_ADMIN'].includes(userRole);
+    const canMakeOffers = (offersEverywhere || (offerRegion !== '' && offerRegion !== 'UNASSIGNED')) && promoItems.length > 0 && !!onSavePromoBundles;
+    const offerRegions = useMemo(() => [...new Set(motorists.map(m => normalizeRegion(m.location)))].filter(r => r !== 'UNASSIGNED').sort(), [motorists]);
     const [offersOpen, setOffersOpen] = useState(false);
     const [offerPromoId, setOfferPromoId] = useState('');
 
@@ -1094,14 +1098,19 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                         const promo = promoItems.find(p => p.id === offerPromoId) || promoItems[0];
                         return (
                             <div className="bg-[var(--raised)] p-4 rounded-xl border-2 border-dashed border-[var(--accent-edge)] space-y-3 text-xs lg:max-w-2xl" data-guide="team-offers">
-                                <p className="text-[var(--ink-muted)] leading-relaxed">TEAM OFFERS - only {offerRegion} salesmen see these, under BUNDLES in the Sales Terminal. The boss sees every offer and can remove any.</p>
+                                <p className="text-[var(--ink-muted)] leading-relaxed">{offersEverywhere
+                                    ? 'TEAM OFFERS - for every area or one region. Salesmen see them under BUNDLES in the Sales Terminal.'
+                                    : `TEAM OFFERS - only ${offerRegion} salesmen see these, under BUNDLES in the Sales Terminal. The boss sees every offer and can remove any.`}</p>
                                 {promoItems.length > 1 && (
                                     <div><label htmlFor="offerPromo" className="text-[var(--ink-muted)] block mb-1">PROMO GOODS GIVEN FREE</label>
                                         <select id="offerPromo" value={promo.id} onChange={(e) => setOfferPromoId(e.target.value)} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] outline-none">
                                             {promoItems.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                         </select></div>)}
-                                <PromoBundleFields key={promo.id} promo={promo} bundles={regionOffers.filter(b => normalizeRegion(b.region) === offerRegion)} products={inventory}
-                                    lockRegion={offerRegion} by={myProfile?.name || user?.displayName || ''} onSave={(list) => onSavePromoBundles(list, offerRegion)} />
+                                {offersEverywhere
+                                    ? <PromoBundleFields key={promo.id} promo={promo} bundles={[...(appSettings?.promoBundles || []), ...regionOffers]} products={inventory}
+                                        regions={offerRegions} by={myProfile?.name || user?.displayName || ''} onSave={(list) => onSavePromoBundles(list)} loadResults={loadOfferResults} />
+                                    : <PromoBundleFields key={promo.id} promo={promo} bundles={regionOffers.filter(b => normalizeRegion(b.region) === offerRegion)} products={inventory}
+                                        lockRegion={offerRegion} by={myProfile?.name || user?.displayName || ''} onSave={(list) => onSavePromoBundles(list, offerRegion)} loadResults={loadOfferResults} />}
                             </div>
                         );
                     })()}

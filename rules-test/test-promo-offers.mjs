@@ -25,6 +25,7 @@ const DIR = [
   ['t4none@test.com', { bossUid: 'ownerA', userRole: 'FLEET_CAPTAIN', agentId: 'AGT_T4N' }],                            // no location
   ['t4lock@test.com', { bossUid: 'ownerA', userRole: 'FLEET_CAPTAIN', agentId: 'AGT_T4K', location: 'BANDUNG', locked: true }],
   ['t3@test.com', { bossUid: 'ownerA', userRole: 'AREA_ADMIN', agentId: 'AGT_T3', location: 'BANDUNG' }],
+  ['t2@test.com', { bossUid: 'ownerA', userRole: 'COMPANY_OWNER', agentId: 'AGT_T2', location: 'Headquarters' }],
   ['t5b@test.com', { bossUid: 'ownerA', userRole: 'FIELD_OPERATIVE', agentId: 'AGT_T5B', location: 'BANDUNG' }],
   ['t4other@test.com', { bossUid: 'ownerB', userRole: 'FLEET_CAPTAIN', agentId: 'AGT_O', location: 'BANDUNG' }],         // another company
 ];
@@ -46,7 +47,7 @@ await testEnv.withSecurityRulesDisabled(async (ctx) => {
 const as = (uid, email) => testEnv.authenticatedContext(uid, { email }).firestore();
 const owner = as('ownerA', 'owner-a@test.com'), t4b = as('u-t4b', 't4b@test.com'), t4loose = as('u-t4l', 't4loose@test.com');
 const t4none = as('u-t4n', 't4none@test.com'), t4lock = as('u-t4k', 't4lock@test.com'), t3 = as('u-t3', 't3@test.com');
-const t5b = as('u-t5b', 't5b@test.com'), t4other = as('u-o', 't4other@test.com');
+const t5b = as('u-t5b', 't5b@test.com'), t4other = as('u-o', 't4other@test.com'), t2 = as('u-t2', 't2@test.com');
 const offers = (db, r) => doc(db, A('promoOffers'), r);
 
 console.log('THE REGIONAL ADMIN (T4) - his own region only:');
@@ -63,7 +64,20 @@ await expect('T4 locked account saves BANDUNG - REFUSED', setDoc(offers(t4lock, 
 await expect('T4 of ANOTHER company saves BANDUNG here - REFUSED', setDoc(offers(t4other, 'BANDUNG'), { bundles: [offer] }), false);
 
 console.log('EVERYONE ELSE:');
-await expect('T3 HQ Sales Manager saves BANDUNG - REFUSED (not in his answer)', setDoc(offers(t3, 'BANDUNG'), { bundles: [offer] }), false);
+console.log('T1-T3 - EVERYWHERE:');
+await expect('T3 saves BANDUNG\'s offers', setDoc(offers(t3, 'BANDUNG'), { bundles: [offer] }), true);
+await expect('T3 saves JAKARTA\'s offers', setDoc(offers(t3, 'JAKARTA'), { bundles: [offer] }), true);
+await expect('T2 saves JAKARTA\'s offers', setDoc(offers(t2, 'JAKARTA'), { bundles: [] }), true);
+const general = (db) => doc(db, A('settings'), 'general');
+await expect('the owner fills the company settings page (catch-all)', setDoc(general(owner), { companyName: 'KPM', promoBundles: [] }), true);
+await expect('T3 saves the all-area offers there', setDoc(general(t3), { promoBundles: [offer] }, { merge: true }), true);
+await expect('T2 saves the all-area offers there', setDoc(general(t2), { promoBundles: [] }, { merge: true }), true);
+await expect('T3 changes the company name there - REFUSED', setDoc(general(t3), { companyName: 'X' }, { merge: true }), false);
+await expect('T3 saves offers AND the company name in one write - REFUSED', setDoc(general(t3), { promoBundles: [], companyName: 'X' }, { merge: true }), false);
+await expect('T3 writes another settings doc - REFUSED', setDoc(doc(t3, A('settings'), 'permission_matrix'), { promoBundles: [] }, { merge: true }), false);
+await expect('T3 adds a second field to a region doc - REFUSED', setDoc(offers(t3, 'BANDUNG'), { bundles: [], on: true }), false);
+await expect('T4 saves the all-area offers there - REFUSED', setDoc(general(t4b), { promoBundles: [offer] }, { merge: true }), false);
+await expect('T5 saves the all-area offers there - REFUSED', setDoc(general(t5b), { promoBundles: [offer] }, { merge: true }), false);
 await expect('T5 salesman saves BANDUNG - REFUSED', setDoc(offers(t5b, 'BANDUNG'), { bundles: [offer] }), false);
 await expect('the owner saves JAKARTA (catch-all)', setDoc(offers(owner, 'JAKARTA'), { bundles: [offer] }), true);
 await expect('the owner saves BANDUNG (catch-all)', setDoc(offers(owner, 'BANDUNG'), { bundles: [offer] }), true);

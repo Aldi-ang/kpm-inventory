@@ -755,6 +755,8 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
      2026-10-27 "regional admin can make offers for his own"), the one doc rules CHANGE 19 lets that region's admin write.
      `region` set = a regional admin saving his own region's list; unset = the boss saving the whole list, every doc it
      touches in one batch. Returns true when it landed. */
+  /* OFFER RESULTS: the last 30 days of sales, read only when SEE RESULTS is pressed (vanBay offerResults counts them) */
+  const loadOfferResults = () => fetchHistoricalTransactions(new Date(Date.now() - 30 * 86400000), new Date());
   const handleSavePromoBundles = async (list, region) => {
       const base = `artifacts/${appId}/users/${userId}`;
       try {
@@ -770,7 +772,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
           notify(`Factory offers saved - ${list.length} in BUNDLES now.`);
           return true;
       } catch (err) {
-          notify("Factory offer not saved: " + (err.code === 'permission-denied' ? (region ? `only ${region}'s regional admin can change ${region}'s offers.` : 'only the boss can change offers.') : err.message));
+          notify("Factory offer not saved: " + (err.code === 'permission-denied' ? (region ? `only ${region}'s regional admin can change ${region}'s offers.` : 'only tier 1, 2 and 3 can change offers everywhere.') : err.message));
           return false;
       }
   };
@@ -5095,7 +5097,7 @@ const handleGitHubMirror = async () => {
                 triggerCapy={triggerCapy} 
                 isAdmin={isAdmin}
                 motorists={motorists}
-                regionOffers={regionOffers} onSavePromoBundles={handleSavePromoBundles}   /* TEAM OFFERS - the regional admin's own region */
+                regionOffers={regionOffers} onSavePromoBundles={handleSavePromoBundles} loadOfferResults={loadOfferResults}   /* TEAM OFFERS */
                 masterUserId={userId}       // 🚀 `bossUid || user.uid` — see the note at the FleetCanvasManager signature
                 agentProfileId={agentProfileId}  // 🎭 THE FALLBACK THE POV STAND-DOWN LANDS ON. Never passed until 2026-09-09,
                                                  // so under POV `myProfile` was find(m => m.id === undefined) — always nothing.
@@ -5292,7 +5294,7 @@ const handleGitHubMirror = async () => {
                                         ? <p className="text-[var(--duke-ink-8)] leading-relaxed">A FRONT photo is set, so the vault shows the photo card, not the 3D model.</p>
                                         : <PromoLookFields key={editingProduct.id || 'new'} product={editingProduct} previewRef={goodsPreviewRef} />)}
                                     {isPromo(editingProduct) && editingProduct.id && (
-                                        <PromoBundleFields promo={editingProduct} bundles={[...(appSettings?.promoBundles || []), ...regionOffers]} products={inventory} onSave={(list) => handleSavePromoBundles(list)}
+                                        <PromoBundleFields promo={editingProduct} bundles={[...(appSettings?.promoBundles || []), ...regionOffers]} products={inventory} onSave={(list) => handleSavePromoBundles(list)} loadResults={loadOfferResults}
                                             regions={[...new Set(motorists.map(m => normalizeRegion(m.location)))].filter(r => r !== 'UNASSIGNED').sort()} />)}
                                     {!isPromo(editingProduct) && (<>
                                     <h3 className="text-[var(--duke-ink-hi)] border-b border-[var(--duke-veil-edge)] pb-1 mb-2">PRICING ENGINE</h3>

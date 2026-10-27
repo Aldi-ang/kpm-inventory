@@ -122,6 +122,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
        be allowed but recorded as always"; the shop and the live photo are still required). Capped at what the van holds
        now; the engine refuses a give the van cannot cover. The boss on the Master Vault has no van: one line says so. */
     const [give, setGive] = useState({});
+    const [bundleUse, setBundleUse] = useState({});   // OFFER RESULTS: the offers tapped into this deal, kept on the sale as `offers`
     const canGive = !isReturMode && promoVan.length > 0;
     const giveNeedsVan = !isReturMode && userRole === 'ADMIN' && adminSalesMode !== 'VEHICLE';
     const givenLines = canGive ? giveLines(promoVan.map(l => ({ productId: l.productId, name: l.name, qty: Math.min(give[l.productId] || 0, l.qty) }))) : [];
@@ -803,6 +804,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             return list.map(i => i === have ? { ...i, qty: bks, unit: 'Bks', mix: undefined, calculatedPrice: tierPrice(l.product, i.priceTier) } : i);
         }, prev));
         setGive(g => chk.gives.reduce((acc, x) => ({ ...acc, [x.productId]: (acc[x.productId] || 0) + x.qty }), g));
+        setBundleUse(u => ({ ...u, [b.id]: { id: b.id, name: b.name, region: b.region || '', productIds: chk.lines.map(l => l.product.id), taps: (u[b.id]?.taps || 0) + 1 } }));
         triggerMerchantSpeak('add');
     };
 
@@ -1119,7 +1121,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
        "Transaction Failed", and he presses MAKE DEAL again on a sale that already went through. */
     const resetTerminalAfterDeal = () => {
         setCart([]); setCustomerName(""); setLockedTier(null); setSelectedCustomerInfo(null);
-        setGive({});
+        setGive({}); setBundleUse({});
         setGpsStatus('idle'); setAgentLocation(null); setTxProofPhoto(null);
         setIsReturMode(false); setManualOverride(false); setReturType('EXCHANGE');
         setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
@@ -1198,7 +1200,10 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 /* Whose store this really was, when it was not this salesman's. Null on a normal
                    sale. This single field replaced the territory block: nobody is stopped, but
                    every crossing is on the record permanently and can be listed later. */
-                territoryOverride: territoryClaim || null
+                territoryOverride: territoryClaim || null,
+                /* OFFER RESULTS (his 2026-10-27 "sales record performance for the offer ... check which strategy work best in
+                   the market"): the offers tapped into this deal whose cigarettes are still in the cart. */
+                offers: isReturMode ? [] : Object.values(bundleUse).filter(o => o.productIds.every(id => finalCart.some(i => i.productId === id)))
             };
 
             const trueAgentName = await onProcessSale(finalCust, dbMethod, finalCart, newStorePayload, proofPayload, finalGive);

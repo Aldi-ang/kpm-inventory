@@ -777,6 +777,10 @@ service cloud.firestore {
         // employees have their own (vault_keys) since CHANGE 11.
         allow read: if isSalesman(bossUid) && docId != 'admin';
         allow write: if false;
+        // [CHANGE 19, with team offers] T2/T3 save the all-area offers on settings/general - that ONE field, nothing else
+        // on the doc (the owner keeps the rest via the catch-all). His "tier 3 and above can make offers bundle everywhere".
+        allow update: if docId == 'general' && (isAreaAdmin(bossUid) || isCompanyTopTier(bossUid)) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['promoBundles']) && request.resource.data.promoBundles is list;
       }
       // [ADDED — career ledger, Phase 2] READ: every employee — profile + leaderboard need it.
       // WRITE: deliberately nothing here. Falls through to the users/{bossUid} catch-all above
@@ -832,7 +836,8 @@ service cloud.firestore {
           return loc is string && loc.trim() != '' && loc.trim().upper() == region;
         }
         allow read: if isSalesman(bossUid);
-        allow write: if isFleetCaptain(bossUid) && isOwnRegionDoc() &&
+        // T1-T3 write every region (his 2026-10-27 "tier 3 and above can make offers bundle everywhere"); T4 his own only
+        allow write: if (isAreaAdmin(bossUid) || isCompanyTopTier(bossUid) || (isFleetCaptain(bossUid) && isOwnRegionDoc())) &&
           request.resource.data.keys().hasOnly(['bundles']) && request.resource.data.bundles is list;
       }
       match /audit_logs/{logId} {
