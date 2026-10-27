@@ -1,4 +1,5 @@
 import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+import { MONTHS } from './period.js';
 
 /* A SHORT rupiah, for a place where the exact figure would only be noise — an axis label, a
    target, a "vs pace" delta. Indonesian shorthand: jt = juta, M = miliar. Never use it for a
@@ -428,12 +429,13 @@ export const savePhotoAndGetReference = async (storage, base64, path, usePhotoSt
     return await getDownloadURL(fileRef);
 };
 
-/* A photo file's name: the phone's own date and time, to the millisecond - 2026-10-27_18-50-35-770 - so the
+/* A photo file's name: the phone's own date and time, to the millisecond - 27-Okt-2026_18-50-35-770 - so the
    Storage folder reads like a diary, and two photos never share a name. His 2026-10-27 "can the picture name be
-   time and date instead so that its not a random jpg name" (it was Date.now()). */
+   time and date instead so that its not a random jpg name" (it was Date.now()), then "i want the format for date
+   is in indonesia and use feb, jan" - day first, the app's own month words (period.js). */
 export const photoStamp = (when = new Date()) => {
     const d = new Date(when), p = (n, w = 2) => String(n).padStart(w, '0');
-    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}-${p(d.getMilliseconds(), 3)}`;
+    return `${p(d.getDate())}-${MONTHS[d.getMonth()]}-${d.getFullYear()}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}-${p(d.getMilliseconds(), 3)}`;
 };
 
 /* A salesman's or shop's name made safe for a photo file name - "Toko Sinar Jaya" -> TOKO-SINAR-JAYA (letters, digits,

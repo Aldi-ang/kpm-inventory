@@ -17,7 +17,7 @@
    without printing it. On minggu the two are equal — a rolling window is always full.          */
 
 const DAY = 86400000;
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];   // also photo file names (helpers.js photoStamp)
 
 export const PERIODS = [
     { key: 'hari',   label: 'Hari',   title: 'Hari ini',        unit: 'jam' },

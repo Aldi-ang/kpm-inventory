@@ -12455,10 +12455,13 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      imports(apP, 'fileOrKeepPhoto') && imports(apP, 'photoStamp'));
   /* his 2026-10-27 "can the picture name be time and date instead so that its not a random jpg name" - the long number
      was Date.now() (milliseconds since 1970). Milliseconds stay in the name so two photos never share one. */
-  ok('BEHAVIOUR: photoStamp names a photo by the phone\'s own date and time, to the millisecond',
-     h.photoStamp(new Date(2026, 9, 27, 18, 50, 35, 770)) === '2026-10-27_18-50-35-770' &&
-     h.photoStamp(new Date(2026, 0, 5, 7, 4, 9, 8)) === '2026-01-05_07-04-09-008' &&
-     h.photoStamp(new Date(2026, 0, 5).toISOString()) === '2026-01-05_00-00-00-000');
+  /* his 2026-10-27 "i want the format for date is in indonesia and use feb, jan, instead just for easier reading" -
+     day first, the app's own month words (period.js MONTHS: Mei, Ags, Okt, Des) */
+  ok('BEHAVIOUR: photoStamp names a photo by the phone\'s own date (Indonesian: 27-Okt-2026) and time, to the millisecond',
+     h.photoStamp(new Date(2026, 9, 27, 18, 50, 35, 770)) === '27-Okt-2026_18-50-35-770' &&
+     h.photoStamp(new Date(2026, 0, 5, 7, 4, 9, 8)) === '05-Jan-2026_07-04-09-008' &&
+     h.photoStamp(new Date(2026, 7, 17).toISOString()) === '17-Ags-2026_00-00-00-000' &&
+     h.photoStamp(new Date(2026, 4, 1, 12)) === '01-Mei-2026_12-00-00-000');
   const photoFiles = ['src/MerchantSalesView.jsx', 'src/App.jsx', 'src/RestockVaultView.jsx', 'src/StockOpnameView.jsx', 'src/AgentProfileView.jsx'];
   const stale = photoFiles.filter(f => /\/(photos|images)\/[^`]*\$\{Date\.now\(\)\}/.test(read(f)));
   const stamped = photoFiles.filter(f => /\/(photos|images)\/[^`]*\$\{photoStamp\(\)\}/.test(read(f)) && imports(read(f), 'photoStamp'));
