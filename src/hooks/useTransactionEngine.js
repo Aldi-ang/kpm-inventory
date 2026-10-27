@@ -108,14 +108,18 @@ export default function useTransactionEngine({
         if (userRole === 'ADMIN' && adminSalesMode === 'VEHICLE') currentAgentProfileId = 'ADMIN_VEHICLE';
         else if (userRole === 'ADMIN') currentAgentProfileId = null;
 
-        /* PROMO GOODS GO OUT ONLY WITH A SALE (stage 4, his answer 1a) and only off a van - the terminal shows the give row
-           under those same conditions; this is the rule standing where the write happens. Checked before the offline
-           branch, so a refused give is never queued. A cigarette SAMPLE has no such rule (SamplingManager). */
+        /* PROMO GOODS GO OUT ONLY OFF A VAN, never with a retur (stage 4) - the terminal shows the give row under those same
+           conditions; this is the rule standing where the write happens. Checked before the offline branch, so a refused
+           give is never queued. A give with NOTHING bought is a GIVEAWAY (his 2026-10-26 "i want the giveaway to be allowed
+           but recorded as always and need a real time photo of course"): its own type, so every `type === 'SALE'` reader
+           (revenue, stores served, targets, tallySale) skips it - a free T-shirt is not a sale. */
         const promoGiven = giveLines(manualData?.promoGiven);
-        if (promoGiven.length && (proofPayload?.isRetur || proofPayload?.type === 'RETUR' || !activeCart.some(i => !i.isIouFulfillment))) {
-            notify("Promo goods cannot go out without a sale - add what the shop buys, or take the promo pieces off.");
+        if (!activeCart.length && !promoGiven.length) { notify("Nothing to record - add what the shop buys, or the promo pieces given."); return; }
+        if (promoGiven.length && (proofPayload?.isRetur || proofPayload?.type === 'RETUR')) {
+            notify("Promo goods cannot go out with a retur - save the retur first, then give them on a new deal.");
             return;
         }
+        const txType = activeCart.length ? (proofPayload?.type || 'SALE') : 'GIVEAWAY';
         if (promoGiven.length && !currentAgentProfileId) {
             notify("Promo goods cannot be given from the Master Vault - load them into a van first (Fleet & Roster), then sell from it.");
             return;
@@ -169,7 +173,7 @@ export default function useTransactionEngine({
                     items: finalTransItems,
                     total: totalRevenue,
                     totalProfit: totalProfit,
-                    type: proofPayload?.type || 'SALE', 
+                    type: txType, 
                     timestamp: { seconds: Math.floor(Date.now() / 1000) }, 
                     agentId: currentAgentProfileId || 'ADMIN',
                     agentName: finalAgentName,
@@ -367,7 +371,7 @@ export default function useTransactionEngine({
                     items: finalTransItems, 
                     total: totalRevenue, 
                     totalProfit: totalProfit, 
-                    type: proofPayload?.type || 'SALE', 
+                    type: txType, 
                     timestamp: serverTimestamp(),
                     agentId: currentAgentProfileId || 'ADMIN',
                     agentName: finalAgentName,
@@ -402,7 +406,7 @@ export default function useTransactionEngine({
                    2026-09-09. The stored document at `transactionPayload` already carries it; these
                    two must stay in step. */
                 tallySale(t, db, appId, userId, {
-                    date: getCurrentDate(), type: proofPayload?.type || 'SALE', items: finalTransItems,
+                    date: getCurrentDate(), type: txType, items: finalTransItems,
                     paymentType,
                 }, productsById, 1);
 

@@ -610,7 +610,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                                                                      if (i.fulfillment === 'IOU') lbl += ' [UTANG BARANG]';
                                                                                      if (i.isIouFulfillment) lbl += ' [FULFILLED]';
                                                                                      return lbl;
-                                                                                 }).join(", ") : 'N/A'}
+                                                                                 }).concat((t.promoGiven || []).map(g => `${g.qty} pcs ${g.name} [BONUS]`)).join(", ") : 'N/A'}
                                                                              </p>
                                                                          </div>
                                                                      </div>

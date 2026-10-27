@@ -117,11 +117,13 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const [isProcessingSale, setIsProcessingSale] = useState(false); 
     const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
     const [receiptData, setReceiptData] = useState(null);
-    /* PROMO GOODS GIVEN WITH THIS SALE (stage 4): pieces per product, off the van's promoCanvas (promoVan). Offered only
-       while the cart holds something the shop BUYS - his 1a, a promo item never goes out alone - and never in Retur.
-       Capped at what the van holds now; the engine refuses a give the van cannot cover. */
+    /* PROMO GOODS GIVEN WITH THIS SALE (stage 4): pieces per product, off the van's promoCanvas (promoVan). Offered
+       whenever the van holds promo, never in Retur - an empty cart is a GIVEAWAY (his 2026-10-26 "i want the giveaway to
+       be allowed but recorded as always"; the shop and the live photo are still required). Capped at what the van holds
+       now; the engine refuses a give the van cannot cover. The boss on the Master Vault has no van: one line says so. */
     const [give, setGive] = useState({});
-    const canGive = !isReturMode && cart.some(i => !i.isIouFulfillment) && promoVan.length > 0;
+    const canGive = !isReturMode && promoVan.length > 0;
+    const giveNeedsVan = !isReturMode && userRole === 'ADMIN' && adminSalesMode !== 'VEHICLE';
     const givenLines = canGive ? giveLines(promoVan.map(l => ({ productId: l.productId, name: l.name, qty: Math.min(give[l.productId] || 0, l.qty) }))) : [];
     const [lockedTier, setLockedTier] = useState(draft?.lockedTier ?? null);
     // the product card's price: the picked shop's tier, Ecer until a shop is picked
@@ -1102,7 +1104,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     };
 
     const handleFinalDeal = async () => {
-        if (cart.length === 0 || !customerName.trim() || !txProofPhoto || isProcessingSale) return;
+        if ((cart.length === 0 && !givenLines.length) || !customerName.trim() || !txProofPhoto || isProcessingSale) return;
         setIsProcessingSale(true); 
         
         const finalCust = customerName.trim();
@@ -1119,12 +1121,16 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             return notify("You do not have clearance to refund cash. Use Exchange (Tukar), or ask an admin to grant Cash Refund in Fleet & Roster.");
         }
 
-        const displayMethod = isReturMode ? (returType === 'EXCHANGE' ? 'Tukar Ganti' : 'Retur/BS') : (cart.every(i => i.isIouFulfillment) ? 'IOU Fulfillment' : paymentMethod);
-        
+        const isGiveaway = cart.length === 0;   // promo pieces only - the engine saves it as type GIVEAWAY, Rp 0
+        const displayMethod = isGiveaway ? 'Promo Giveaway' : isReturMode ? (returType === 'EXCHANGE' ? 'Tukar Ganti' : 'Retur/BS') : (cart.every(i => i.isIouFulfillment) ? 'IOU Fulfillment' : paymentMethod);
+
         let dbMethod = paymentMethod;
         let txType = 'SALE';
 
-        if (isReturMode) {
+        if (isGiveaway) {
+            dbMethod = 'Promo Giveaway';
+            txType = 'GIVEAWAY';
+        } else if (isReturMode) {
             if (returType === 'EXCHANGE') {
                 dbMethod = 'Tukar Ganti'; 
                 txType = 'SALE';   
@@ -1173,7 +1179,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             committed = true;   // everything past this point is POST-commit: the sale already exists
             /* the demo's mission line ticks on the SAVED deal (DemoMission.jsx): a sale is step 4; a retur carrying a damaged
                pack is step 5 - the pack that rides in the van's quarantine until the EOD takes it to the Master Vault */
-            if (IS_DEMO && !isReturMode) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 4, total: finalTotal, to: finalCust } }));
+            if (IS_DEMO && !isReturMode && !isGiveaway) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 4, total: finalTotal, to: finalCust } }));
             if (IS_DEMO && isReturMode && finalCart.some(i => i.condition === 'DAMAGED')) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 5, to: finalCust,
                 bks: finalCart.filter(i => i.condition === 'DAMAGED').reduce((s, i) => s + convertToBks(i.qty, i.unit, i.product), 0) } }));
             const agentFallback = typeof trueAgentName === 'string' ? trueAgentName : (myName || 'Admin');
@@ -1253,7 +1259,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             // Forensic data is perfectly secured inside the transactions document layout.
             // Agent Inventory will dynamically read from the transaction ledger instead.
 
-            if (isOnline && !isReturMode && !finalCart.some(i => i.isIouFulfillment)) {
+            if (isOnline && !isReturMode && !isGiveaway && !finalCart.some(i => i.isIouFulfillment)) {
                 try {
                     const userId = dataOwnerId;   // see dataOwnerId — must match where `customers` was read from
                     let rules = null;
@@ -1664,7 +1670,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         return i.qty > maxStock;
     });
 
-    const canSubmitSale = cart.length > 0 && customerName.trim() && gpsStatus !== 'checking' && txProofPhoto && !isGpsRestricted && !isProcessingSale && !hasInvalidDamagedItems && !hasInsufficientStockForExchange;
+    const canSubmitSale = (cart.length > 0 || givenLines.length > 0) && customerName.trim() && gpsStatus !== 'checking' && txProofPhoto && !isGpsRestricted && !isProcessingSale && !hasInvalidDamagedItems && !hasInsufficientStockForExchange;
 
     /* HIS CALL, 2026-08-10: "what if we put the customer on top instead just near the strip?"
        The picker used to sit in the middle of the manifest paper, so the first question of every
@@ -2160,6 +2166,11 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         ))}
                     </div>
                 )}
+                {giveNeedsVan && (
+                    <div data-guide="promo-give-van" className="p-3 mb-1 rounded border border-dashed border-[var(--duke-edge-3)] bg-[var(--duke-paper)] text-[11px] md:text-xs font-bold text-[var(--duke-on-paper-dim)]">
+                        Promo goods are given from a van - switch to Boss Car
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -2242,7 +2253,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             Manifest ({cart.length})
                         </div>
                         <div className="text-[10px] font-mono text-[var(--duke-ink-6)] truncate leading-tight mt-0.5">
-                            {cart.length ? cart[cart.length - 1].name : 'Empty — tap a ware to add'}
+                            {cart.length ? cart[cart.length - 1].name : givenLines.length ? `Promo only: ${givenLines.reduce((s, g) => s + g.qty, 0)} pcs given free` : 'Empty — tap a ware to add'}
                         </div>
                     </div>
                     <span className={`text-lg font-black font-mono leading-none shrink-0 ${isReturMode && returType === 'BUYBACK' ? 'text-red-500' : 'text-[var(--duke-amber-ink)]'}`}>
@@ -2362,7 +2373,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                          !txProofPhoto && customerName.trim() ? <><Camera size={20}/> REQUIRE PROOF</> :
                          hasInvalidDamagedItems ? <><AlertTriangle size={20}/> REASON REQ.</> :
                          hasInsufficientStockForExchange ? <><AlertTriangle size={20}/> NO STOCK</> :
-                         customerName.trim() ? (isReturMode ? <><AlertCircle size={24} className="md:w-6 md:h-6"/> PULL RETUR</> : <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> MAKE DEAL</>) : "SIGN MANIFEST >"}
+                         customerName.trim() ? (isReturMode ? <><AlertCircle size={24} className="md:w-6 md:h-6"/> PULL RETUR</> : <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> {cart.length === 0 && givenLines.length ? 'GIVE PROMO' : 'MAKE DEAL'}</>) : "SIGN MANIFEST >"}
                     </button>
                 </div>
             </div>
@@ -3309,7 +3320,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                                             {receiptData.method === 'Retur/BS' ? '-' : ''}{new Intl.NumberFormat('id-ID').format((item.calculatedPrice || 0) * item.qty)}
                                                         </td>
                                                     </tr>
-                                                )) : <tr><td colSpan="2" className="text-center py-4 text-[10px] italic !text-slate-400">No Itemized Data</td></tr>}
+                                                )) : receiptData.given?.length ? null : <tr><td colSpan="2" className="text-center py-4 text-[10px] italic !text-slate-400">No Itemized Data</td></tr>}
                                                 {/* promo goods given with the sale (stage 4): a line each, no price */}
                                                 {(receiptData.given || []).map((g, i) => (
                                                     <tr key={`given-${i}`}>
@@ -3344,7 +3355,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                                 <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || "Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang"}</p>
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <h2 className="text-xl font-bold !text-blue-800 uppercase tracking-widest">NOTA {receiptData.method === 'Retur/BS' ? 'RETUR' : 'PENJUALAN'}</h2>
+                                                <h2 className="text-xl font-bold !text-blue-800 uppercase tracking-widest">NOTA {receiptData.method === 'Retur/BS' ? 'RETUR' : receiptData.method === 'Promo Giveaway' ? 'PROMO' : 'PENJUALAN'}</h2>
                                                 <p className="text-[10px] uppercase font-bold !text-slate-400 tracking-widest mt-1">CUSTOMER COPY</p>
                                             </div>
                                         </div>

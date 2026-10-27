@@ -1207,10 +1207,11 @@ function ShellLab() {
           <MerchantSalesView
             inventory={LAB_PRODUCTS.map((p) => ({ ...p, priceRetail: Math.round(p.priceDistributor * 1.15), priceEcer: Math.round(p.priceDistributor * 1.25), priceGrosir: Math.round(p.priceDistributor * 1.08) }))}
             user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
-            userRole="FIELD_OPERATIVE" isAdmin={false}
+            /* &vault: the boss selling from the Master Vault (no van) - the give box is one line, "switch to Boss Car" */
+            userRole={q.has('vault') ? 'ADMIN' : 'FIELD_OPERATIVE'} isAdmin={q.has('vault')} adminSalesMode={q.has('vault') ? 'VAULT' : undefined}
             logAudit={() => {}} triggerCapy={() => {}}
-            onProcessSale={async (sale, ...rest) => { window.__sale = sale; window.__give = rest[4]; return { ok: true }; }}
-            /* &promo (stage 4): the van holds 6 T-shirts + 2 hats, so the cart's give row shows once a ware is in it */
+            onProcessSale={async (sale, ...rest) => { window.__sale = { sale, rest }; window.__give = rest[4]; return { ok: true }; }}
+            /* &promo (stage 4): the van holds 6 T-shirts + 2 hats; the give row shows with an empty cart too (a GIVEAWAY) */
             promoVan={q.has('promo') ? [['p-tee', 'T-shirt', 6], ['p-hat', 'Hat', 2]].map(([productId, name, qty]) =>
               ({ productId, name, qty, unit: 'pcs', promo: true, product: { id: productId, name, kind: 'promo' } })) : []}
             onInspect={() => {}}

@@ -6395,7 +6395,7 @@ ok('processTransaction and its first write are both findable',
    ecStart > -1 && ecEnd > ecStart, `processTransaction ${ecStart}, first write ${ecEnd}`);
 const ecHead = engine.slice(ecStart, ecEnd);
 ok('and the slice stops at the first write rather than running the whole file',
-   ecHead.length > 400 && ecHead.length < 12000, `slice is ${ecHead.length} chars`);   // +vanPending note, 2026-10-19; +the Grosir guard, 2026-10-21
+   ecHead.length > 400 && ecHead.length < 12600, `slice is ${ecHead.length} chars`);   // +vanPending note, 2026-10-19; +the Grosir guard, 2026-10-21; +the GIVEAWAY type, 2026-10-27
 
 ok('the Ecer/Titip refusal stands BEFORE anything is written',
    /paymentType === 'Titip' && \(activeCart \|\| \[\]\)\.some\(i => i\.priceTier === 'Ecer'\)/.test(ecHead),
@@ -11769,7 +11769,7 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
      load.indexOf('await runTransaction(db') > 0 && load.indexOf(send(3)) > load.indexOf('t.update(agentRef, { activeCanvas: updatedCanvas });') &&
      imports(rv, 'IS_DEMO') && imports(fleet, 'IS_DEMO'));
   ok('REGRESSION: the sends of 2026-10-25 sit AFTER their commit too: the SAVED sale (4) and a retur with a damaged pack (5), the cash & stock EOD sent (6), TODAY\'s EOD fully approved (7), the submitted count (8)',
-     deal.indexOf('committed = true;') > 0 && deal.indexOf("if (IS_DEMO && !isReturMode) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 4,") > deal.indexOf('committed = true;') &&
+     deal.indexOf('committed = true;') > 0 && deal.indexOf("if (IS_DEMO && !isReturMode && !isGiveaway) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 4,") > deal.indexOf('committed = true;') &&
      deal.indexOf("if (IS_DEMO && isReturMode && finalCart.some(i => i.condition === 'DAMAGED')) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 5,") > deal.indexOf('committed = true;') &&
      eodSend.indexOf('/eod_reports`), {') > 0 && eodSend.indexOf("if (IS_DEMO && reportData.reportType === 'CASH_STOCK') window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 6,") > eodSend.indexOf('/eod_reports`), {') &&
      eodOk.indexOf('await runTransaction(db') > 0 && eodOk.indexOf("if (IS_DEMO && sealed && report.reportType === 'CASH_STOCK' && report.dayKey === getLocalDayKey()) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 7,") > eodOk.indexOf("status: 'VERIFIED', verifiedAt: serverTimestamp() });\n          });") &&
@@ -12246,8 +12246,9 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      eng.includes('t.update(agentRef, { activeCanvas: applySaleToCanvas(agentDoc.data().activeCanvas, transactionItems), ...(promoGiven.length ? { promoCanvas: applyGiveToPromo(agentDoc.data().promoCanvas, promoGiven) } : {}) });') &&
      imports(engine, 'applyGiveToPromo') && imports(engine, 'giveLines'));
   const guard = eng.slice(eng.indexOf('const promoGiven = giveLines('), eng.indexOf('THE OFFLINE INTERCEPTOR'));
-  ok('REGRESSION: the engine refuses a give with no sale line, in Retur, or with no van - BEFORE the offline branch, so a refused give is never queued',
-     guard.includes("if (promoGiven.length && (proofPayload?.isRetur || proofPayload?.type === 'RETUR' || !activeCart.some(i => !i.isIouFulfillment))) {") &&
+  ok('REGRESSION: the engine refuses a give in Retur or with no van, and an empty deal - BEFORE the offline branch, so a refused give is never queued (a give with no sale line is a GIVEAWAY now, his 2026-10-26 yes)',
+     guard.includes("if (promoGiven.length && (proofPayload?.isRetur || proofPayload?.type === 'RETUR')) {") && !guard.includes('isIouFulfillment') &&
+     guard.includes('if (!activeCart.length && !promoGiven.length) {') &&
      guard.includes('if (promoGiven.length && !currentAgentProfileId) {') && (guard.match(/notify\("[^"]*\b(cannot|not enough)\b/gi) || []).length === 2 &&
      eng.includes('const handleMerchantSale = async (custName, payMethod, cartItems, newStoreData = null, proofPayload = null, promoGiven = []) => {') &&
      eng.includes('return await processTransaction(null, { customerName: finalName, paymentType: payMethod, cart: cartItems, newStoreData, proofPayload, promoGiven });'));
@@ -12262,14 +12263,38 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      ap.includes('setAgentPromo(data.promoCanvas || []);') && dbs.includes('setAdminPromo(snap.data().promoCanvas || []);') && dbs.includes('adminPromo,') &&
      ap.includes("? (adminSalesMode === 'VEHICLE' ? promoWithPending(adminPromo, pendingTxData, 'ADMIN_VEHICLE') : [])") &&
      ap.includes(': promoWithPending(agentPromo, pendingTxData, agentProfileId)') && ap.includes('promoVan={promoVanNow}') && !ms.includes('promoItems'));
-  ok('REGRESSION: the terminal shows the give row only with a sale line (not Retur, not an IOU-only cart), caps it at the van, sends it as the 6th argument and clears it after the deal',
-     ms.includes('const canGive = !isReturMode && cart.some(i => !i.isIouFulfillment) && promoVan.length > 0;') &&
+  ok('REGRESSION: the terminal shows the give row whenever the van holds promo (never in Retur), caps it at the van, sends it as the 6th argument and clears it after the deal',
+     ms.includes('const canGive = !isReturMode && promoVan.length > 0;') &&
      ms.includes('const givenLines = canGive ? giveLines(promoVan.map(l => ({ productId: l.productId, name: l.name, qty: Math.min(give[l.productId] || 0, l.qty) }))) : [];') &&
      ms.includes('await onProcessSale(finalCust, dbMethod, finalCart, newStorePayload, proofPayload, finalGive);') && ms.includes('setGive({});') &&
      ms.includes('{canGive && (') && ms.includes('data-guide="promo-give"'));
   ok('REGRESSION: the nota prints the given pieces with NO price - the live receipt (thermal + A4) and the history reprint (thermal + A4 + WhatsApp)',
      (ms.match(/\(receiptData\.given \|\| \[\]\)\.map\(/g) || []).length === 2 && ms.includes('given: finalGive') &&
      (sr.match(/\(viewingReceipt\.promoGiven \|\| \[\]\)\.map\(/g) || []).length === 2 && sr.includes('(viewingReceipt.promoGiven || []).forEach('));
+  /* GIVEAWAY - promo goods with nothing bought (his 2026-10-26 "i want the giveaway to be allowed but recorded as always
+     and need a real time photo of course"). Its own type, so no sale reader counts a free T-shirt as a sale. */
+  const { isSale } = await import('../utils/salesRollup.js');
+  ok('BEHAVIOUR: a GIVEAWAY is not a sale to the tally (isSale), a SALE still is - and the type must be written, a missing one reads as SALE',
+     isSale({ type: 'GIVEAWAY', items: [] }) === false && isSale({ type: 'SALE' }) === true && isSale({}) === true);
+  const vsync = await import('../utils/vanSync.js');
+  ok('BEHAVIOUR: an OFFLINE giveaway (items []) still moves the van - settleSale with no moves hands back the cigarettes untouched as an array, so the replay\'s `if (settled.canvas)` write runs and takes the promo pieces off',
+     Array.isArray(vsync.settleSale([{ productId: 'a', qty: 3, unit: 'Bks' }], []).canvas) && vsync.settleSale([{ productId: 'a', qty: 3, unit: 'Bks' }], []).canvas[0].qty === 3 &&
+     Array.isArray(vsync.settleSale(undefined, []).canvas) && vsync.movesFromSale({ type: 'GIVEAWAY', items: [] }, {}).length === 0);
+  ok('REGRESSION: an empty cart with promo given saves as type GIVEAWAY on BOTH the online and the offline receipt and the tally - never as a Rp 0 SALE',
+     eng.includes("const txType = activeCart.length ? (proofPayload?.type || 'SALE') : 'GIVEAWAY';") &&
+     (eng.match(/type: txType,/g) || []).length === 3 && !eng.includes("type: proofPayload?.type || 'SALE'"));
+  ok('REGRESSION: the terminal commits a gift-only deal (MAKE DEAL gate + handler), still demands the shop and the live photo, and keeps it out of the tier promoter and the demo mission',
+     ms.includes('const canSubmitSale = (cart.length > 0 || givenLines.length > 0) && customerName.trim() && gpsStatus') && ms.includes('txProofPhoto && !isGpsRestricted') &&
+     ms.includes('if ((cart.length === 0 && !givenLines.length) || !customerName.trim() || !txProofPhoto || isProcessingSale) return;') &&
+     ms.includes("dbMethod = 'Promo Giveaway';") && ms.includes("txType = 'GIVEAWAY';") &&
+     ms.includes('if (isOnline && !isReturMode && !isGiveaway && !finalCart.some(i => i.isIouFulfillment)) {') && ms.includes('if (IS_DEMO && !isReturMode && !isGiveaway)'));
+  const eodSrc = code(read('src/EODReconciliationView.jsx')), apv = code(read('src/AgentProfileView.jsx'));
+  ok('REGRESSION: the readers that count sales count only type SALE - EOD cash + stores served, the agent profile - so a giveaway adds no money and no store',
+     eodSrc.includes("if ((t.type === 'SALE' && method !== 'Titip') || t.type === 'CONSIGNMENT_PAYMENT') {") &&
+     eodSrc.includes("todaysTrans.filter(t => t.type === 'SALE').map(t => storeKey(t.customerName))") && apv.includes("if (t.type === 'SALE') {"));
+  ok('REGRESSION: the boss on the Master Vault sees the one line "switch to Boss Car" instead of an empty give box; the history line lists the given pieces',
+     ms.includes("const giveNeedsVan = !isReturMode && userRole === 'ADMIN' && adminSalesMode !== 'VEHICLE';") && ms.includes('Promo goods are given from a van - switch to Boss Car') &&
+     code(read('src/components/HistoryReportView.jsx')).includes('.concat((t.promoGiven || []).map(g =>'));
   const samp = code(read('src/components/SamplingManager.jsx'));
   ok('REGRESSION: a SAMPLE still needs no sale - the sampling screen knows nothing of the give rule (his "give them for free")',
      !/promoGiven|giveLines|applyGiveToPromo|canGive/.test(samp));

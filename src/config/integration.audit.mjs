@@ -1768,9 +1768,11 @@ const G26 = '26. The sales terminal still behaves after the UI rework';
 /* THE GATE ON A SALE. Seven conditions, and every one of them is somebody's money or somebody's
    accountability: no empty sale, no unnamed customer, no sale while GPS is still deciding, no
    sale without handover proof, no double-submit, no damaged return without a reason, no exchange
-   the vehicle cannot cover. A UI tidy-up that drops one of these ships a hole in the ledger. */
+   the vehicle cannot cover. A UI tidy-up that drops one of these ships a hole in the ledger.
+   "No empty sale" since 2026-10-27 = no empty DEAL: a sale line, or promo pieces given (a GIVEAWAY, his
+   "i want the giveaway to be allowed but recorded as always and need a real time photo of course"). */
 check(G26, 'a sale still needs all seven of its gates',
-  /const canSubmitSale = cart\.length > 0 && customerName\.trim\(\) && gpsStatus !== 'checking' && txProofPhoto && !isGpsRestricted && !isProcessingSale && !hasInvalidDamagedItems && !hasInsufficientStockForExchange;/.test(termSrc),
+  /const canSubmitSale = \(cart\.length > 0 \|\| givenLines\.length > 0\) && customerName\.trim\(\) && gpsStatus !== 'checking' && txProofPhoto && !isGpsRestricted && !isProcessingSale && !hasInvalidDamagedItems && !hasInsufficientStockForExchange;/.test(termSrc),
   'this one line is the difference between a manifest and a hole in the ledger — if it was ' +
   'reformatted, re-read every clause before changing this check to match');
 check(G26, 'the deal still leaves through the one committed path',
