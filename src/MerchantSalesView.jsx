@@ -6,7 +6,7 @@ import { hasClearance, canPickFromGallery } from './config/permissions';
 import { IS_DEMO } from './config/firebase';
 import { demoPhoto } from './config/demoPhoto.js';
 import ProofCamera from './components/ProofCamera.jsx';
-import { savePhotoAndGetReference, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey, promoPic } from './utils/helpers';
+import { savePhotoAndGetReference, fileOrKeepPhoto, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey, promoPic } from './utils/helpers';
 import { giveLines, bundleCheck, bundlesFor, bundleUnitPrices } from './utils/vanBay';
 import { waNumber } from './utils/whatsapp.js';
 import { areaFromPin, watchBorders } from './utils/areaFromPin.js';
@@ -1023,6 +1023,11 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         addDoc(collection(db, `artifacts/${appId}/users/${ownerId}/notifications`), { ...grosirRequestNotice(myName || 'A salesman', shopName), timestamp: serverTimestamp() })
             .catch(() => notify(`${shopName} is saved, but the admin's bell could not be rung. Tell your admin to look at Grosir requests in Customer Directory.`));
 
+    /* the shop photo as a Storage file when the switch is on (fix A, his 2026-10-27 "use option A to minimize the cost"):
+       every phone downloads every shop record on every open, so a photo inside one is paid for on every open. Online
+       only - offline an upload would sit out its retries. A failed upload keeps the photo inside; the shop still saves. */
+    const shopPhoto = (id) => isOnline ? fileOrKeepPhoto(storage, nooForm.photoUrl, `artifacts/${appId}/users/${user?.uid || user?.id || 'default'}/photos/shop_${id}.jpg`, appSettings?.usePhotoStorage) : nooForm.photoUrl;
+
     const submitNooRegistration = async () => {
         if (!validateNoo()) return;
         try {
@@ -1031,7 +1036,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             const newStoreData = {
                 id: newRef.id, name: customerName.toUpperCase().trim(), phone: nooForm.phone, address: nooForm.address || "GPS Locked via NOO Form",
                 tier: 'UNRANKED', ...grosirHold(nooForm.requestedTier, userRole), storeType: 'Retailer', latitude: agentLocation?.latitude, longitude: agentLocation?.longitude,
-                status: 'Active', visitFreq: 7, storeImage: nooForm.photoUrl, createdAt: new Date().toISOString(),
+                status: 'Active', visitFreq: 7, storeImage: await shopPhoto(newRef.id), createdAt: new Date().toISOString(),
                 ...areaFromPin(agentLocation?.latitude, agentLocation?.longitude, mapBorders)   // province / region / city, in capitals
             };
             await setDoc(newRef, newStoreData);
@@ -1063,7 +1068,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             const newStoreData = {
                 id: newRef.id, name: customerName.toUpperCase().trim(), phone: nooForm.phone, address: nooForm.address || "GPS Locked via NOO Form",
                 tier: 'UNRANKED', ...grosirHold(nooForm.requestedTier, userRole), storeType: 'Retailer', latitude: agentLocation?.latitude, longitude: agentLocation?.longitude,
-                status: 'Active', visitFreq: 7, storeImage: nooForm.photoUrl, createdAt: new Date().toISOString(),
+                status: 'Active', visitFreq: 7, storeImage: await shopPhoto(newRef.id), createdAt: new Date().toISOString(),
                 ...areaFromPin(agentLocation?.latitude, agentLocation?.longitude, mapBorders)   // province / region / city, in capitals
             };
             await setDoc(newRef, newStoreData);

@@ -426,6 +426,15 @@ export const savePhotoAndGetReference = async (storage, base64, path, usePhotoSt
     return await getDownloadURL(fileRef);
 };
 
+/* A photo still INSIDE a record (a data: URL) becomes a Storage file and the record keeps its link - when the
+   switch is on. Switch off, already a link, empty, or a failed upload: the photo comes back untouched, so a save
+   never fails because of Storage. `save` is only swapped by logicFixes. (Fix A, his 2026-10-27 "use option A".) */
+export const fileOrKeepPhoto = async (storage, photo, path, usePhotoStorage, save = savePhotoAndGetReference) => {
+    if (!usePhotoStorage || typeof photo !== 'string' || !photo.startsWith('data:')) return photo;
+    try { return await save(storage, photo, path, true); }
+    catch (e) { console.warn('Photo upload failed, kept inside the record:', e); return photo; }
+};
+
 // Best-effort cleanup for when a photo is replaced — deletes the previously uploaded
 // file so replacing a photo doesn't leave the old one billing storage forever. Only
 // ever attempted when the previous value is actually a Storage download URL — a

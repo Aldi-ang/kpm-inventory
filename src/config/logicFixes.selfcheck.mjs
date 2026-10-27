@@ -12414,5 +12414,32 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      !/promoGiven|giveLines|applyGiveToPromo|canGive/.test(samp));
 }
 
+{
+  /* PHOTOS AS FILES - his 2026-10-27 "use option A to minimize the cost". A photo inside a record is downloaded by
+     every phone on every open; as a Storage file only its link is. Plan: A-Brain Brainstorm/2026-10-27_100-user-scale-fix-options.md */
+  section('PHOTOS AS FILES (fix A of the 100-user plan)');
+  const h = await import('../utils/helpers.js');
+  const pic = 'data:image/jpeg;base64,AAAA', link = 'https://firebasestorage.googleapis.com/v0/b/x/o/a.jpg';
+  const saved = [];
+  const fakeSave = async (s, p, path) => { saved.push(path); return link; };
+  const broken = async () => { throw new Error('no bucket'); };
+  ok('BEHAVIOUR: fileOrKeepPhoto - switch on -> the link; switch off, already a link, empty, or a failed upload -> the photo comes back untouched',
+     typeof h.fileOrKeepPhoto === 'function' &&
+     await h.fileOrKeepPhoto(null, pic, 'p/a.jpg', true, fakeSave) === link && saved.join() === 'p/a.jpg' &&
+     await h.fileOrKeepPhoto(null, pic, 'p/b.jpg', false, fakeSave) === pic &&
+     await h.fileOrKeepPhoto(null, link, 'p/c.jpg', true, fakeSave) === link &&
+     await h.fileOrKeepPhoto(null, '', 'p/d.jpg', true, fakeSave) === '' &&
+     await h.fileOrKeepPhoto(null, pic, 'p/e.jpg', true, broken) === pic && saved.length === 1);
+  const msP = code(read('src/MerchantSalesView.jsx')), apP = code(read('src/App.jsx'));
+  ok('REGRESSION: both "register new outlet" buttons in the Sales Terminal save the shop photo through the switch, online only, named by the shop id',
+     (msP.match(/storeImage: await shopPhoto\(newRef\.id\)/g) || []).length === 2 && !msP.includes('storeImage: nooForm.photoUrl') &&
+     msP.includes('const shopPhoto = (id) => isOnline ? fileOrKeepPhoto(storage, nooForm.photoUrl,') && imports(msP, 'fileOrKeepPhoto'));
+  ok('REGRESSION: the offline sync turns queued sale + shop photos into files BEFORE anything is written, named by the queue id so a retry overwrites the same file',
+     apP.includes('photo: await filePhoto(tx.deliveryProof.photo, `sale_${tx.cloudId || tx.localId}`)') &&
+     apP.includes('storeImage: await filePhoto(noo.storeImage, `shop_${noo.cloudId || noo.localId}`)') &&
+     apP.indexOf('const filePhoto = ') > 0 && apP.indexOf('const filePhoto = ') < apP.indexOf('for (const noo of offlineNoo) {') &&
+     imports(apP, 'fileOrKeepPhoto'));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
