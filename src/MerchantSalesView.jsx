@@ -6,7 +6,7 @@ import { hasClearance, canPickFromGallery } from './config/permissions';
 import { IS_DEMO } from './config/firebase';
 import { demoPhoto } from './config/demoPhoto.js';
 import ProofCamera from './components/ProofCamera.jsx';
-import { savePhotoAndGetReference, fileOrKeepPhoto, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey, promoPic } from './utils/helpers';
+import { savePhotoAndGetReference, fileOrKeepPhoto, photoStamp, nameTag, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey, promoPic } from './utils/helpers';
 import { giveLines, bundleCheck, bundlesFor, bundleUnitPrices } from './utils/vanBay';
 import { waNumber } from './utils/whatsapp.js';
 import { areaFromPin, watchBorders } from './utils/areaFromPin.js';
@@ -938,7 +938,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     // string unchanged. Unlike the sale-proof photo, this one is never
                     // bundled into a writeBatch with other business data, so there's no
                     // atomicity trade-off here.
-                    const storagePath = `artifacts/${appId}/users/${masterUid}/photos/bypass_${Date.now()}.jpg`;
+                    const storagePath = `artifacts/${appId}/users/${masterUid}/photos/bypass_${photoStamp()}_${nameTag(myName)}_${nameTag(selectedCustomerInfo?.name || customerName)}.jpg`;
                     const photoToSave = await savePhotoAndGetReference(storage, compressedDataUrl, storagePath, appSettings?.usePhotoStorage);
 
                     const payload = {
@@ -1026,7 +1026,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     /* the shop photo as a Storage file when the switch is on (fix A, his 2026-10-27 "use option A to minimize the cost"):
        every phone downloads every shop record on every open, so a photo inside one is paid for on every open. Online
        only - offline an upload would sit out its retries. A failed upload keeps the photo inside; the shop still saves. */
-    const shopPhoto = (id) => isOnline ? fileOrKeepPhoto(storage, nooForm.photoUrl, `artifacts/${appId}/users/${user?.uid || user?.id || 'default'}/photos/shop_${id}.jpg`, appSettings?.usePhotoStorage) : nooForm.photoUrl;
+    const shopPhoto = () => isOnline ? fileOrKeepPhoto(storage, nooForm.photoUrl, `artifacts/${appId}/users/${user?.uid || user?.id || 'default'}/photos/shop_${photoStamp()}_${nameTag(myName)}_${nameTag(customerName)}.jpg`, appSettings?.usePhotoStorage) : nooForm.photoUrl;
 
     const submitNooRegistration = async () => {
         if (!validateNoo()) return;
@@ -1036,7 +1036,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             const newStoreData = {
                 id: newRef.id, name: customerName.toUpperCase().trim(), phone: nooForm.phone, address: nooForm.address || "GPS Locked via NOO Form",
                 tier: 'UNRANKED', ...grosirHold(nooForm.requestedTier, userRole), storeType: 'Retailer', latitude: agentLocation?.latitude, longitude: agentLocation?.longitude,
-                status: 'Active', visitFreq: 7, storeImage: await shopPhoto(newRef.id), createdAt: new Date().toISOString(),
+                status: 'Active', visitFreq: 7, storeImage: await shopPhoto(), createdAt: new Date().toISOString(),
                 ...areaFromPin(agentLocation?.latitude, agentLocation?.longitude, mapBorders)   // province / region / city, in capitals
             };
             await setDoc(newRef, newStoreData);
@@ -1068,7 +1068,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             const newStoreData = {
                 id: newRef.id, name: customerName.toUpperCase().trim(), phone: nooForm.phone, address: nooForm.address || "GPS Locked via NOO Form",
                 tier: 'UNRANKED', ...grosirHold(nooForm.requestedTier, userRole), storeType: 'Retailer', latitude: agentLocation?.latitude, longitude: agentLocation?.longitude,
-                status: 'Active', visitFreq: 7, storeImage: await shopPhoto(newRef.id), createdAt: new Date().toISOString(),
+                status: 'Active', visitFreq: 7, storeImage: await shopPhoto(), createdAt: new Date().toISOString(),
                 ...areaFromPin(agentLocation?.latitude, agentLocation?.longitude, mapBorders)   // province / region / city, in capitals
             };
             await setDoc(newRef, newStoreData);
@@ -1214,7 +1214,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             if (isOnline) {
                 try {
                     const masterUid = user?.uid || user?.id || 'default';
-                    const storagePath = `artifacts/${appId}/users/${masterUid}/photos/sale_${Date.now()}.jpg`;
+                    const storagePath = `artifacts/${appId}/users/${masterUid}/photos/sale_${photoStamp()}_${nameTag(myName)}_${nameTag(customerName)}.jpg`;
                     finalPhotoData = await savePhotoAndGetReference(storage, txProofPhoto, storagePath, appSettings?.usePhotoStorage);
                 } catch (photoErr) {
                     console.warn("Sale-proof photo upload failed, falling back to base64:", photoErr);

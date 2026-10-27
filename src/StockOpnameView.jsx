@@ -7,7 +7,7 @@ import {
     Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
-import { savePhotoAndGetReference, deletePhotoFromStorage, commitInChunks, formatRupiah, formatNumber, compressImageToBase64, tierPrice, getLocalDayKey, isPromo} from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, photoStamp, commitInChunks, formatRupiah, formatNumber, compressImageToBase64, tierPrice, getLocalDayKey, isPromo} from './utils/helpers';
 import * as threshold from './utils/stockThreshold';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
@@ -460,7 +460,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
         try {
             const base64 = await compressImageToBase64(file);
             const previousUrl = counts[id]?.photo;
-            const path = `artifacts/${appId}/users/${masterId}/photos/stockopname_${id}_${Date.now()}.jpg`;
+            const path = `artifacts/${appId}/users/${masterId}/photos/stockopname_${id}_${photoStamp()}.jpg`;
             const photoUrl = await savePhotoAndGetReference(storage, base64, path, appSettings?.usePhotoStorage);
             // 🚀 Defensive cleanup: normally the retake flow already clears (and deletes)
             // the previous photo via handleClearPhoto before this runs, but this guards

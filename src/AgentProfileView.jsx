@@ -14,7 +14,7 @@ import { RankBorder, RANK_BORDERS, BORDER_KEYFRAMES, FrameFilters } from './conf
 import Cropper from 'react-easy-crop';
 import { hasClearance, DYNAMIC_TIERS, TIER_ONE_ID, TIER_ONE_ALIAS_IDS } from './config/permissions';
 import HallOfFameView from './HallOfFameView';
-import { savePhotoAndGetReference, deletePhotoFromStorage, formatNumber, parseGroupedNumber, storeKey, storeLabel, getLocalDayKey, dayTargets } from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, photoStamp, formatNumber, parseGroupedNumber, storeKey, storeLabel, getLocalDayKey, dayTargets } from './utils/helpers';
 import { PlayerCardHead } from './components/PlayerCard.jsx';
 import { careerXP, DEFAULT_XP, totals, DEFAULT_BADGES, DEFAULT_RANKS, rankLadder, STAT_LABELS, BADGE_SOURCES, statLabel } from './config/career';
 import { revenueOf, debtCredit } from './utils/salesRollup';
@@ -275,7 +275,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                 // behaves exactly as before — savePhotoAndGetReference just returns the
                 // base64 string unchanged.
                 const previousImage = activeAgent.profileImage;
-                const storagePath = `artifacts/${appId}/users/${userId}/photos/avatar_${activeAgent.id}_${Date.now()}.jpg`;
+                const storagePath = `artifacts/${appId}/users/${userId}/photos/avatar_${activeAgent.id}_${photoStamp()}.jpg`;
                 const finalImage = await savePhotoAndGetReference(storage, croppedImageBase64, storagePath, appSettings?.usePhotoStorage);
 
                 const agentRef = doc(db, `artifacts/${appId}/users/${userId}/motorists`, activeAgent.id);

@@ -422,9 +422,23 @@ export const commitInChunks = async (db, writeBatch, operations, onChunkCommitte
 export const savePhotoAndGetReference = async (storage, base64, path, usePhotoStorage) => {
     if (!usePhotoStorage) return base64; // Spark-safe: skip Storage entirely
     const fileRef = ref(storage, path);
-    await uploadString(fileRef, base64, 'data_url');
+    // a phone keeps the photo for a year, so one opened twice downloads once (his 2026-10-27 "minimize the cost
+    // for this storage as well"); the data: URL still sets the picture type, which storage.rules requires
+    await uploadString(fileRef, base64, 'data_url', { cacheControl: 'private, max-age=31536000' });
     return await getDownloadURL(fileRef);
 };
+
+/* A photo file's name: the phone's own date and time, to the millisecond - 2026-10-27_18-50-35-770 - so the
+   Storage folder reads like a diary, and two photos never share a name. His 2026-10-27 "can the picture name be
+   time and date instead so that its not a random jpg name" (it was Date.now()). */
+export const photoStamp = (when = new Date()) => {
+    const d = new Date(when), p = (n, w = 2) => String(n).padStart(w, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}-${p(d.getMilliseconds(), 3)}`;
+};
+
+/* A salesman's or shop's name made safe for a photo file name - "Toko Sinar Jaya" -> TOKO-SINAR-JAYA (letters, digits,
+   dashes, 30 at most). His 2026-10-27 "also put the agent name and store name in the uploaded jpg". */
+export const nameTag = (text) => String(text || '').trim().toUpperCase().replace(/[^A-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'NONAME';
 
 /* A photo still INSIDE a record (a data: URL) becomes a Storage file and the record keeps its link - when the
    switch is on. Switch off, already a link, empty, or a failed upload: the photo comes back untouched, so a save

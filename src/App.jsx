@@ -157,7 +157,7 @@ import {
 import { auth, db, storage, googleProvider, appId, IS_DEMO } from './config/firebase';
 import { VAULT_PASSWORD, OWNER_UID } from './config/demoLogins.js';   // demo build only - printed on the Master Vault gate; the demo company's folder
 import { DemoPick } from './components/DemoFrontDoor.jsx';   // demo build only - the invite check + "pick who to be"
-import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, fileOrKeepPhoto, storeKey, storeLabel, eodBountyLines, eodReportParts, eodNightMessage, EOD_PART_LABELS, absentForSure, isPromo, PROMO_GOODS, promoGoods, GOODS_LOOK } from './utils/helpers';
+import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, fileOrKeepPhoto, photoStamp, nameTag, storeKey, storeLabel, eodBountyLines, eodReportParts, eodNightMessage, EOD_PART_LABELS, absentForSure, isPromo, PROMO_GOODS, promoGoods, GOODS_LOOK } from './utils/helpers';
 import { isLowStock } from './utils/stockThreshold';
 import { computeDayXP, DEFAULT_XP, checkBadges, DEFAULT_BADGES, DEFAULT_RANKS } from './config/career';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
@@ -337,16 +337,18 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
 
               /* PHOTOS AS FILES (fix A, his 2026-10-27 "use option A to minimize the cost"): a sale or a shop made
                  without signal still holds its photo inside. With the switch on it becomes a Storage file here,
-                 before anything is written, so every path below writes the link. Named by the queue id, so a retry
-                 overwrites the same file. A failed upload keeps the photo inside and the record still lands.
+                 before anything is written, so every path below writes the link. Named by the time the sale was
+                 queued (never changes), so a retry overwrites the same file. A failed upload keeps the photo inside
+                 and the record still lands.
                  ponytail: all uploads at once and a setting not loaded yet keeps the photo inside; pace them or wait
                  for settings if a week's queue on a cheap phone proves slow. */
               const photoDir = `artifacts/${appId}/users/${user.uid}/photos`;
               const filePhoto = (photo, name) => fileOrKeepPhoto(storage, photo, `${photoDir}/${name}.jpg`, appSettings?.usePhotoStorage);
+              const photoName = (item) => item.offlineTimestamp ? photoStamp(item.offlineTimestamp) : (item.cloudId || item.localId);
               offlineTx = await Promise.all(offlineTx.map(async (tx) => tx.deliveryProof?.photo
-                  ? { ...tx, deliveryProof: { ...tx.deliveryProof, photo: await filePhoto(tx.deliveryProof.photo, `sale_${tx.cloudId || tx.localId}`) } } : tx));
+                  ? { ...tx, deliveryProof: { ...tx.deliveryProof, photo: await filePhoto(tx.deliveryProof.photo, `sale_${photoName(tx)}_${nameTag(tx.agentName)}_${nameTag(tx.customerName)}`) } } : tx));
               offlineNoo = await Promise.all(offlineNoo.map(async (noo) => noo.storeImage
-                  ? { ...noo, storeImage: await filePhoto(noo.storeImage, `shop_${noo.cloudId || noo.localId}`) } : noo));
+                  ? { ...noo, storeImage: await filePhoto(noo.storeImage, `shop_${photoName(noo)}_${nameTag(noo.mappedBy)}_${nameTag(noo.name)}`) } : noo));
 
               /* Declared OUTSIDE the try because the catch reports it. A count that only exists on
                  the happy path cannot tell him how much is safe when the sync stops halfway. */
@@ -3534,7 +3536,7 @@ const handleGitHubMirror = async () => {
       if (user && base64.startsWith('data:image')) {
           try {
               if (appSettings?.usePhotoStorage) triggerCapy("Uploading optimized asset to Cloud Storage... ⏳");
-              const storagePath = `artifacts/${appId}/users/${user.uid}/images/${activeCropContext.type}_${Date.now()}.png`;
+              const storagePath = `artifacts/${appId}/users/${user.uid}/images/${activeCropContext.type}_${photoStamp()}.png`;
               finalImageUrl = await savePhotoAndGetReference(storage, base64, storagePath, appSettings?.usePhotoStorage);
           } catch (uploadErr) {
               console.error("Storage Pipeline Error:", uploadErr);

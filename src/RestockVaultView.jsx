@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { UploadCloud, FileText, Search, Save, X, RefreshCcw, History, ChevronDown, Printer, Pencil, Trash2, Image as ImageIcon, Target, PlusCircle, ArrowLeftRight, Send, Camera, Truck, AlertCircle, MapPin, Clock } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, onSnapshot, increment } from 'firebase/firestore';
-import { savePhotoAndGetReference, deletePhotoFromStorage, compressImageToBase64, scanNotaToBase64, getLocalDayKey, convertToBks, isPromo, bksOf, pcsOf } from './utils/helpers';
+import { savePhotoAndGetReference, deletePhotoFromStorage, photoStamp, compressImageToBase64, scanNotaToBase64, getLocalDayKey, convertToBks, isPromo, bksOf, pcsOf } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import AcceptanceReceipt from './components/AcceptanceReceipt.jsx';
 import ShipmentLabel from './components/ShipmentLabel.jsx';
@@ -615,14 +615,14 @@ const RestockVaultView = ({ inventory = [], promoItems = [], procurements = [], 
                 /* the nota is SCANNED (paper white, ink black — helpers.scanPixels), not photographed;
                    the goods photo below stays a photo */
                 const compressed = receiptScan || await scanNotaToBase64(receiptFile);
-                const receiptPath = `artifacts/${appId}/users/${activeUserId}/photos/receipt_${batchId}_${Date.now()}.jpg`;
+                const receiptPath = `artifacts/${appId}/users/${activeUserId}/photos/receipt_${batchId}_${photoStamp()}.jpg`;
                 base64Receipt = await savePhotoAndGetReference(storage, compressed, receiptPath, appSettings?.usePhotoStorage);
             }
             let base64Package = null;
             if (packageFile) {
                 if(triggerCapy) triggerCapy("Compressing Shipment Photo... ⏳");
                 const compressed = await compressImageToBase64(packageFile);
-                const photoPath = `artifacts/${appId}/users/${activeUserId}/photos/inbound_${batchId}_${Date.now()}.jpg`;
+                const photoPath = `artifacts/${appId}/users/${activeUserId}/photos/inbound_${batchId}_${photoStamp()}.jpg`;
                 base64Package = await savePhotoAndGetReference(storage, compressed, photoPath, appSettings?.usePhotoStorage);
             }
 
@@ -700,7 +700,7 @@ const RestockVaultView = ({ inventory = [], promoItems = [], procurements = [], 
             if (packageFile) {
                 if(triggerCapy) triggerCapy("Compressing Shipment Photo... ⏳");
                 const compressed = await compressImageToBase64(packageFile);
-                const photoPath = `artifacts/${appId}/users/${activeUserId}/photos/hqpush_${Date.now()}.jpg`;
+                const photoPath = `artifacts/${appId}/users/${activeUserId}/photos/hqpush_${photoStamp()}.jpg`;
                 photoUrl = await savePhotoAndGetReference(storage, compressed, photoPath, appSettings?.usePhotoStorage);
             }
 
@@ -849,7 +849,7 @@ const RestockVaultView = ({ inventory = [], promoItems = [], procurements = [], 
             if (editReceiptFile) {
                 if(triggerCapy) triggerCapy("Compressing New Document... ⏳");
                 const compressed = await compressImageToBase64(editReceiptFile);
-                const receiptPath = `artifacts/${appId}/users/${activeUserId}/photos/receipt_edit_${editingPO.id}_${Date.now()}.jpg`;
+                const receiptPath = `artifacts/${appId}/users/${activeUserId}/photos/receipt_edit_${editingPO.id}_${photoStamp()}.jpg`;
                 newReceiptUrl = await savePhotoAndGetReference(storage, compressed, receiptPath, appSettings?.usePhotoStorage);
                 newHasReceipt = true;
             } else if (editingPO.receiptUrl === null) {
@@ -978,7 +978,7 @@ const RestockVaultView = ({ inventory = [], promoItems = [], procurements = [], 
 
             if (triggerCapy) triggerCapy("Kompres foto & sinkron database... ⏳");
             const base64 = await compressImageToBase64(shipPhotoFile);
-            const photoPath = `artifacts/${appId}/users/${activeUserId}/photos/shipment_${isFulfilling.id}_${Date.now()}.jpg`;
+            const photoPath = `artifacts/${appId}/users/${activeUserId}/photos/shipment_${isFulfilling.id}_${photoStamp()}.jpg`;
             const photoUrl = await savePhotoAndGetReference(storage, base64, photoPath, appSettings?.usePhotoStorage);
 
             /* 🚀 Deduct the DIFFERENCE server-side, never a recomputed total. The screen's copy of

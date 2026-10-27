@@ -12431,14 +12431,42 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      await h.fileOrKeepPhoto(null, '', 'p/d.jpg', true, fakeSave) === '' &&
      await h.fileOrKeepPhoto(null, pic, 'p/e.jpg', true, broken) === pic && saved.length === 1);
   const msP = code(read('src/MerchantSalesView.jsx')), apP = code(read('src/App.jsx'));
-  ok('REGRESSION: both "register new outlet" buttons in the Sales Terminal save the shop photo through the switch, online only, named by the shop id',
-     (msP.match(/storeImage: await shopPhoto\(newRef\.id\)/g) || []).length === 2 && !msP.includes('storeImage: nooForm.photoUrl') &&
-     msP.includes('const shopPhoto = (id) => isOnline ? fileOrKeepPhoto(storage, nooForm.photoUrl,') && imports(msP, 'fileOrKeepPhoto'));
-  ok('REGRESSION: the offline sync turns queued sale + shop photos into files BEFORE anything is written, named by the queue id so a retry overwrites the same file',
-     apP.includes('photo: await filePhoto(tx.deliveryProof.photo, `sale_${tx.cloudId || tx.localId}`)') &&
-     apP.includes('storeImage: await filePhoto(noo.storeImage, `shop_${noo.cloudId || noo.localId}`)') &&
+  ok('REGRESSION: both "register new outlet" buttons in the Sales Terminal save the shop photo through the switch, online only, named by date and time',
+     (msP.match(/storeImage: await shopPhoto\(\)/g) || []).length === 2 && !msP.includes('storeImage: nooForm.photoUrl') &&
+     msP.includes('const shopPhoto = () => isOnline ? fileOrKeepPhoto(storage, nooForm.photoUrl,') &&
+     msP.includes('/photos/shop_${photoStamp()}_${nameTag(myName)}_${nameTag(customerName)}.jpg`') &&
+     imports(msP, 'fileOrKeepPhoto') && imports(msP, 'photoStamp'));
+  /* his 2026-10-27 "also put the agent name and store name in the uploaded jpg so that we know the exact detail" */
+  ok('REGRESSION: a sale, bypass and new-shop photo file is named date-time + salesman + shop, online and offline (offline names never change between retries)',
+     msP.includes('/photos/sale_${photoStamp()}_${nameTag(myName)}_${nameTag(customerName)}.jpg`') &&
+     msP.includes('/photos/bypass_${photoStamp()}_${nameTag(myName)}_${nameTag(selectedCustomerInfo?.name || customerName)}.jpg`') &&
+     apP.includes('`sale_${photoName(tx)}_${nameTag(tx.agentName)}_${nameTag(tx.customerName)}`') &&
+     apP.includes('`shop_${photoName(noo)}_${nameTag(noo.mappedBy)}_${nameTag(noo.name)}`') &&
+     imports(msP, 'nameTag') && imports(apP, 'nameTag'));
+  ok('BEHAVIOUR: nameTag makes a name safe for a file name - capitals, dashes, no slashes, 30 at most, never empty',
+     h.nameTag('Toko Sinar Jaya') === 'TOKO-SINAR-JAYA' && h.nameTag('  budi / santoso  ') === 'BUDI-SANTOSO' &&
+     h.nameTag("Warung Bu Siti's #2") === 'WARUNG-BU-SITI-S-2' && h.nameTag('') === 'NONAME' && h.nameTag(undefined) === 'NONAME' &&
+     h.nameTag('x'.repeat(50)).length === 30);
+  ok('REGRESSION: the offline sync turns queued sale + shop photos into files BEFORE anything is written, named by the time the sale was queued so a retry overwrites the same file',
+     apP.includes('photo: await filePhoto(tx.deliveryProof.photo, `sale_${photoName(tx)}_') &&
+     apP.includes('storeImage: await filePhoto(noo.storeImage, `shop_${photoName(noo)}_') &&
+     apP.includes('const photoName = (item) => item.offlineTimestamp ? photoStamp(item.offlineTimestamp) : (item.cloudId || item.localId);') &&
      apP.indexOf('const filePhoto = ') > 0 && apP.indexOf('const filePhoto = ') < apP.indexOf('for (const noo of offlineNoo) {') &&
-     imports(apP, 'fileOrKeepPhoto'));
+     imports(apP, 'fileOrKeepPhoto') && imports(apP, 'photoStamp'));
+  /* his 2026-10-27 "can the picture name be time and date instead so that its not a random jpg name" - the long number
+     was Date.now() (milliseconds since 1970). Milliseconds stay in the name so two photos never share one. */
+  ok('BEHAVIOUR: photoStamp names a photo by the phone\'s own date and time, to the millisecond',
+     h.photoStamp(new Date(2026, 9, 27, 18, 50, 35, 770)) === '2026-10-27_18-50-35-770' &&
+     h.photoStamp(new Date(2026, 0, 5, 7, 4, 9, 8)) === '2026-01-05_07-04-09-008' &&
+     h.photoStamp(new Date(2026, 0, 5).toISOString()) === '2026-01-05_00-00-00-000');
+  const photoFiles = ['src/MerchantSalesView.jsx', 'src/App.jsx', 'src/RestockVaultView.jsx', 'src/StockOpnameView.jsx', 'src/AgentProfileView.jsx'];
+  const stale = photoFiles.filter(f => /\/(photos|images)\/[^`]*\$\{Date\.now\(\)\}/.test(read(f)));
+  const stamped = photoFiles.filter(f => /\/(photos|images)\/[^`]*\$\{photoStamp\(\)\}/.test(read(f)) && imports(read(f), 'photoStamp'));
+  ok('REGRESSION: no photo or image file in Storage is named by Date.now() any more - every upload path uses photoStamp()',
+     !stale.length && stamped.length === photoFiles.length, `stale: ${stale.join(', ') || 'none'}; stamped ${stamped.length}/${photoFiles.length}`);
+  ok('REGRESSION: every upload asks phones to keep the photo for a year (private cache), so a photo opened twice downloads once - and the data: URL still sets its picture type, which storage.rules requires',
+     /await uploadString\(fileRef, base64, 'data_url', \{ cacheControl: 'private, max-age=31536000' \}\);/.test(read('src/utils/helpers.js')) &&
+     !/contentType/.test(read('src/utils/helpers.js').split('export const savePhotoAndGetReference')[1].split('};')[0]));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
