@@ -5,7 +5,7 @@ import {
     ShieldCheck, ChevronDown, ChevronUp, Crown, FileText, Printer, MessageSquare, Globe, Search, Plus, RotateCcw, KeyRound, Lock, Unlock, Gift
 } from 'lucide-react';
 import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord, hasClearance, TIER_ONE_ID, resolveTierOneId } from './config/permissions';
+import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord, hasClearance, TIER_ONE_ID, resolveTierOneId, canSetBundlePrice } from './config/permissions';
 import { vaultDocPath, VAULT_TRIES_RESET } from './utils/vaultDoc.js';
 import { lockLeftMs, untilText } from './utils/vaultLock.js';
 import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems, nameInitials, isPromo } from './utils/helpers';
@@ -16,6 +16,28 @@ import { IS_DEMO } from './config/firebase';
 import LoadingBay from './components/LoadingBay.jsx';
 import PromoBundleFields from './components/PromoBundleFields.jsx';
 import { damagedInVan, titipOf, quarantineOf, movePromo } from './utils/vanBay';
+
+/* IN FRONT OF HIM (his 2026-10-27 "when i press detail and edit i want the panel to just shows up infront of myface and
+   blur other rather than i need to go up and see the updaten as well as the offer button"): DETAILS, EDIT, + and OFFERS
+   open over a blurred screen instead of at the top of the roster. Tap outside, the X or Escape closes. */
+function FrontPanel({ label, onClose, children }) {
+    useEffect(() => {
+        const key = (e) => { if (e.key === 'Escape') onClose(); };
+        window.addEventListener('keydown', key);
+        return () => window.removeEventListener('keydown', key);
+    }, [onClose]);
+    return (
+        <div className="fixed inset-0 z-[480] bg-black/60 backdrop-blur-md flex items-center justify-center p-3 lg:p-6" role="dialog" aria-modal="true" aria-label={label} onClick={onClose} data-guide="front-panel">
+            <div className="w-full max-w-2xl max-h-[92dvh] overflow-y-auto custom-scrollbar rounded-xl border border-[var(--accent-edge)] bg-[var(--raised)] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-4 py-3 bg-[var(--raised)] border-b border-[var(--line-2)]">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-[var(--accent-ink)] truncate">{label}</h3>
+                    <button type="button" onClick={onClose} aria-label={`Close ${label}`} className="kpm-btn shrink-0"><X size={18}/></button>
+                </div>
+                {children}
+            </div>
+        </div>
+    );
+}
 
 export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, promoItems = [], transactions = [], customers = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, regionOffers = [], onSavePromoBundles = null, loadOfferResults = null, masterUserId = null }) {
 
@@ -1097,10 +1119,11 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     {canMakeOffers && offersOpen && (() => {
                         const promo = promoItems.find(p => p.id === offerPromoId) || promoItems[0];
                         return (
-                            <div className="bg-[var(--raised)] p-4 rounded-xl border-2 border-dashed border-[var(--accent-edge)] space-y-3 text-xs lg:max-w-2xl" data-guide="team-offers">
+                            <FrontPanel label="Team offers" onClose={() => setOffersOpen(false)}>
+                            <div className="p-4 space-y-3 text-xs" data-guide="team-offers">
                                 <p className="text-[var(--ink-muted)] leading-relaxed">{offersEverywhere
-                                    ? 'TEAM OFFERS - for every area or one region. Salesmen see them under BUNDLES in the Sales Terminal.'
-                                    : `TEAM OFFERS - only ${offerRegion} salesmen see these, under BUNDLES in the Sales Terminal. The boss sees every offer and can remove any.`}</p>
+                                    ? 'For every area or one region. Salesmen see them under BUNDLES in the Sales Terminal.'
+                                    : `Only ${offerRegion} salesmen see these, under BUNDLES in the Sales Terminal. The boss sees every offer and can remove any.`}</p>
                                 {promoItems.length > 1 && (
                                     <div><label htmlFor="offerPromo" className="text-[var(--ink-muted)] block mb-1">PROMO GOODS GIVEN FREE</label>
                                         <select id="offerPromo" value={promo.id} onChange={(e) => setOfferPromoId(e.target.value)} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] outline-none">
@@ -1108,18 +1131,19 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                         </select></div>)}
                                 {offersEverywhere
                                     ? <PromoBundleFields key={promo.id} promo={promo} bundles={[...(appSettings?.promoBundles || []), ...regionOffers]} products={inventory}
-                                        regions={offerRegions} by={myProfile?.name || user?.displayName || ''} onSave={(list) => onSavePromoBundles(list)} loadResults={loadOfferResults} />
+                                        regions={offerRegions} by={myProfile?.name || user?.displayName || ''} onSave={(list) => onSavePromoBundles(list)} loadResults={loadOfferResults}
+                                        promoItems={promoItems} canSetPrice={canSetBundlePrice(userRole)} />
                                     : <PromoBundleFields key={promo.id} promo={promo} bundles={regionOffers.filter(b => normalizeRegion(b.region) === offerRegion)} products={inventory}
-                                        lockRegion={offerRegion} by={myProfile?.name || user?.displayName || ''} onSave={(list) => onSavePromoBundles(list, offerRegion)} loadResults={loadOfferResults} />}
+                                        lockRegion={offerRegion} by={myProfile?.name || user?.displayName || ''} onSave={(list) => onSavePromoBundles(list, offerRegion)} loadResults={loadOfferResults}
+                                        promoItems={promoItems} canSetPrice={canSetBundlePrice(userRole)} />}
                             </div>
+                            </FrontPanel>
                         );
                     })()}
                     {isAddingAgent && (
-                        <div className={`bg-[var(--raised)] p-4 rounded-xl border-2 border-dashed ${isReadOnlyMode ? 'border-[var(--accent-edge)]' : 'border-[var(--accent-edge)]'} mb-4 animate-slide-down`}>
-                            <h3 className={`text-xs font-bold uppercase tracking-widest mb-3 ${isReadOnlyMode ? 'text-[var(--accent-ink)]' : 'text-[var(--accent-ink)]'}`}>
-                                {isReadOnlyMode ? 'Profile Details' : editingAgentId ? 'Edit Profile' : 'Deploy New Personnel'}
-                            </h3>
-                            
+                        <FrontPanel label={isReadOnlyMode ? 'Profile Details' : editingAgentId ? 'Edit Profile' : 'Deploy New Personnel'} onClose={() => setIsAddingAgent(false)}>
+                        <div className="p-4">
+
                             <select disabled={isReadOnlyMode} value={newAgent.role} onChange={e => setNewAgent({...newAgent, role: e.target.value})} className={`w-full border border-[var(--line-2)] rounded p-2.5 text-xs text-[var(--ink)] mb-2 outline-none font-bold ${isReadOnlyMode ? 'bg-[var(--raised)] opacity-60 cursor-not-allowed' : 'bg-[var(--inset)] focus:border-[var(--accent-edge)]'}`}>
                                 <option value="Motorist">Sales Motorist (Motorbike)</option>
                                 <option value="Canvas">Sales Canvas (Car / Van)</option>
@@ -1276,6 +1300,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 </button>
                             )}
                         </div>
+                        </FrontPanel>
                     )}
 
                     {agents.length === 0 && !isAddingAgent ? (

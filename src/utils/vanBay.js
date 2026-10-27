@@ -97,6 +97,20 @@ export const bundlesFor = (bundles, sellerRegion, seesAll) => (bundles || [])
    doc id IS the region: a `region` typed inside an offer can never move it to another area. */
 export const offersFromDocs = (docs) => (docs || []).flatMap(d => (d.bundles || []).map(b => ({ ...b, region: d.id })));
 
+/* A BUNDLE'S OWN PRICE (his 2026-10-27 "a power on setting the price for the bundle"). The set price is spread over the
+   bundle's cigarette lines by their normal value at this shop's tier, so each product still carries its fair share of
+   the revenue, and the last line takes the rounding so the lines add up to EXACTLY the set price. `lines` =
+   [{ qty, value }] (value = the line's normal rupiah); returns the price per unit for each line. */
+export const bundleUnitPrices = (price, lines) => {
+  const total = lines.reduce((s, l) => s + l.value, 0);
+  let left = price;
+  return lines.map((l, i) => {
+    const share = i === lines.length - 1 ? left : Math.round(total > 0 ? price * l.value / total : price / lines.length);
+    left -= share;
+    return share / l.qty;
+  });
+};
+
 /* OFFER RESULTS (his 2026-10-27 "sales record performance for the offer ... check which strategy work best in the
    market"). Per offer id, over the sales given: how many sales used it, at how many shops, and the rupiah of ITS
    cigarettes in those sales - not the whole receipt, so one big order that also took a bundle does not crown it.

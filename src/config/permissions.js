@@ -125,6 +125,20 @@ export const canPickFromGallery = (userRole) => {
         || role === CORPORATE_TIERS.TIER_3;   // stops ABOVE FLEET_CAPTAIN — "tier 4 and lower" is field
 };
 
+/* MAY THIS TIER SET A BUNDLE'S OWN PRICE? His 2026-10-27: "a power on setting the price for the bundle and this is
+   only available on tier 3 and above as default, put this on the matrix as well". Same absence-means-tier-default
+   shape as canPickFromGallery above: until the key is in his saved matrix, tiers 1-3 may; after, his switch wins. */
+const BUNDLE_PRICE_KEY = 'set_bundle_price';
+export const canSetBundlePrice = (userRole) => {
+    const role = translateLegacyRole(userRole);
+    if (role === CORPORATE_TIERS.TIER_1) return true;
+    const matrixKnowsKey = Object.values(ROLE_PERMISSIONS)
+        .some(list => Array.isArray(list) && list.includes(BUNDLE_PRICE_KEY));
+    if (matrixKnowsKey) return hasClearance(userRole, BUNDLE_PRICE_KEY);
+    return role === CORPORATE_TIERS.TIER_2
+        || role === CORPORATE_TIERS.TIER_3;
+};
+
 export let ROLE_PERMISSIONS = {
     [CORPORATE_TIERS.TIER_1]: ['ALL_ACCESS'], 
     [CORPORATE_TIERS.TIER_2]: [ 

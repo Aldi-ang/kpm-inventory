@@ -18,7 +18,7 @@ import useTransactionEngine from './hooks/useTransactionEngine';
 import useDatabaseSync from './hooks/useDatabaseSync'; 
 import useOfflineEngine, { canReachInternet } from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
-import { injectDynamicPermissions, isFieldLevelTier, hasClearance, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion } from './config/permissions';
+import { injectDynamicPermissions, isFieldLevelTier, hasClearance, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion, canSetBundlePrice } from './config/permissions';
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch } from './config/povPreview';
 import { warehouseList } from './utils/supply';
 import { accessFor } from './utils/customerAccess.js';
@@ -5295,6 +5295,7 @@ const handleGitHubMirror = async () => {
                                         : <PromoLookFields key={editingProduct.id || 'new'} product={editingProduct} previewRef={goodsPreviewRef} />)}
                                     {isPromo(editingProduct) && editingProduct.id && (
                                         <PromoBundleFields promo={editingProduct} bundles={[...(appSettings?.promoBundles || []), ...regionOffers]} products={inventory} onSave={(list) => handleSavePromoBundles(list)} loadResults={loadOfferResults}
+                                            promoItems={promoItems} canSetPrice={canSetBundlePrice(userRole)}   /* the offer's extra gifts: names to pick, never a sum */
                                             regions={[...new Set(motorists.map(m => normalizeRegion(m.location)))].filter(r => r !== 'UNASSIGNED').sort()} />)}
                                     {!isPromo(editingProduct) && (<>
                                     <h3 className="text-[var(--duke-ink-hi)] border-b border-[var(--duke-veil-edge)] pb-1 mb-2">PRICING ENGINE</h3>

@@ -388,6 +388,15 @@ html.dark { color-scheme: dark; }
 :root.light,
 html.light { color-scheme: light; }
 
+/* NATIVE DROPDOWN LISTS (his 2026-10-27 "change the white background for all the dropdown menu"): the open list of a
+   <select> is drawn by the browser - white with a system highlight unless it is told the page is dark. Dark is the
+   default here with NO class on <html>, so the default needs the dark scheme on the select itself; the rows then take
+   the theme's own surface and ink in both themes. A phone opens its own picker, which this does not reach. */
+:root:not(.light) select { color-scheme: dark; }
+select option, select optgroup { background-color: var(--raised); color: var(--ink); }
+select option:checked { background-color: var(--line-2); color: var(--ink); }
+select option:disabled { color: var(--ink-muted); }
+
 /* ============================================================================
    THE DUKE'S LEDGER — the sales terminal's own palette
    ----------------------------------------------------------------------------

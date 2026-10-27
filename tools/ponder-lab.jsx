@@ -1221,7 +1221,9 @@ function ShellLab() {
               { id: 'b1', name: 'CELLO BUNDLE', lines: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 1, unit: 'Bal' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }] },
               { id: 'b2', name: 'DJARUM HAT DEAL', region: 'BANDUNG', lines: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 2, unit: 'Slop' }], gives: [{ productId: 'p-hat', name: 'Hat', qty: 3 }] },
               /* a JAKARTA-only offer: this BANDUNG salesman must NOT see it (&region=JAKARTA flips that) */
-              { id: 'b3', name: 'JAKARTA SHIRT DEAL', region: 'JAKARTA', lines: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 2, unit: 'Slop' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }] }] } : {}) }}
+              { id: 'b3', name: 'JAKARTA SHIRT DEAL', region: 'JAKARTA', lines: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 2, unit: 'Slop' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }] },
+              /* a BUNDLE PRICE (2026-10-27): 1 Bal Cello + 1 Slop Djarum + T-shirt + hat for Rp 1.100.000 flat */
+              { id: 'b4', name: 'PRICED COMBO', price: 1100000, lines: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 1, unit: 'Bal' }, { productId: 'p-djar', name: 'Djarum Coklat 12', qty: 1, unit: 'Slop' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }, { productId: 'p-hat', name: 'Hat', qty: 1 }] }] } : {}) }}
             sellerRegion={q.get('region') || 'Bandung'}
             /* a TEAM OFFER from the BANDUNG doc (promoOffers/BANDUNG) - the Bandung regional admin's own */
             regionOffers={q.has('bundles') ? [{ id: 'r1', name: 'TEAM SLOP DEAL', region: 'BANDUNG', by: 'Rizky Aditama', lines: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 1, unit: 'Slop' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }] }] : []}

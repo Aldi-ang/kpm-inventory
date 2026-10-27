@@ -7,7 +7,7 @@ import { IS_DEMO } from './config/firebase';
 import { demoPhoto } from './config/demoPhoto.js';
 import ProofCamera from './components/ProofCamera.jsx';
 import { savePhotoAndGetReference, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey, promoPic } from './utils/helpers';
-import { giveLines, bundleCheck, bundlesFor } from './utils/vanBay';
+import { giveLines, bundleCheck, bundlesFor, bundleUnitPrices } from './utils/vanBay';
 import { waNumber } from './utils/whatsapp.js';
 import { areaFromPin, watchBorders } from './utils/areaFromPin.js';
 import { grosirHold, priceLevelOf, canConfirmGrosir, grosirRequestNotice } from './utils/customerAccess.js';
@@ -705,7 +705,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const updateCartPricing = (tier) => {
         if (!tier) return;
         setCart(prev => prev.map(item => {
-            if (item.isIouFulfillment) return item;
+            if (item.isIouFulfillment || item.bundlePriced) return item;   // a bundle price is the price, whatever the shop's tier
             const prod = item.product;
             let base = prod.priceRetail || 0;
             if (tier === 'Ecer') base = prod.priceEcer || 0;
@@ -758,6 +758,10 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
         setCart(prev => {
             const existing = prev.find(i => i.productId === product.id);
+            if (existing?.bundlePriced) {   // one more pack on a bundle line would go out at the bundle price
+                notify(`${product.name} is in the cart at a bundle price - tap the bundle again for another, or save this deal first.`);
+                return prev;
+            }
             if (existing) {
                 if (!isReturMode && existing.qty >= product.stock) {
                     notify(`MAX STOCK REACHED!\n\nYou only have ${product.stock} units of ${product.name} in your vehicle.`);
@@ -784,8 +788,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     };
 
     /* A FACTORY BUNDLE (the BUNDLES chip): one press = its cigarettes as ordinary cart lines at the shop's tier, plus its
-       promo pieces in the give box. It has no price of its own (his "price is only recorded from the cigarette price only"),
-       so the cart, the total and the engine see a normal sale. A product already in the cart is summed in Bks. */
+       promo pieces in the give box. No price of its own (his "price is only recorded from the cigarette price only") unless
+       a T1-T3 set one - see `priced` below; the engine sees a normal sale either way. A product already in the cart is
+       summed in Bks. */
     const tierPrice = (p, tier) => ({ Ecer: p.priceEcer, Grosir: p.priceGrosir }[tier] ?? p.priceRetail) || 0;
     const applyBundle = (b) => {
         if (isReturMode) return notify(`${b.name} is for a sale - switch Retur off first.`);
@@ -795,8 +800,23 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         const owed = cart.find(i => i.isIouFulfillment && chk.lines.some(l => l.product.id === i.productId));
         if (owed) return notify(`${owed.name} is in the cart as Utang Barang - save that deal first, then add ${b.name}.`);
         const tier = newLineTier();
-        setCart(prev => chk.lines.reduce((list, l) => {
+        /* A BUNDLE PRICE (set by T1-T3, matrix key set_bundle_price): its cigarettes go in at that price, spread over the
+           lines by bundleUnitPrices, on lines marked `bundlePriced` that a tier change, a +1 or a qty edit leave alone.
+           One line per product is what every cart path assumes, so a priced bundle never merges into a normal line (or
+           the other way round) - the press says why instead. */
+        const priced = Number(b.price) > 0;
+        const clash = chk.lines.find(l => { const i = cart.find(c => c.productId === l.product.id);
+            return i && (priced ? !(i.bundlePriced === b.id && i.unit === l.unit) : i.bundlePriced); });
+        if (clash) return notify(priced
+            ? `${clash.product.name} is already in the cart at another price - save that deal first, then add ${b.name}.`
+            : `${clash.product.name} is in the cart at a bundle price - save that deal first, then add ${b.name}.`);
+        const unitPrices = priced ? bundleUnitPrices(Number(b.price), chk.lines.map(l => ({ qty: l.qty, value: tierPrice(l.product, tier) * l.bks }))) : [];
+        setCart(prev => chk.lines.reduce((list, l, n) => {
             const have = list.find(i => i.productId === l.product.id);
+            if (priced) return have ? list.map(i => i === have ? { ...i, qty: i.qty + l.qty } : i)
+                : [...list, { productId: l.product.id, name: l.product.name, qty: l.qty, unit: l.unit, priceTier: tier,
+                    calculatedPrice: unitPrices[n], bundlePriced: b.id, product: l.product,
+                    condition: 'GOOD', returnReason: '', otherReasonDetail: '', fulfillment: 'NOW' }];
             if (!have) return [...list, { productId: l.product.id, name: l.product.name, qty: l.qty, unit: l.unit, priceTier: tier,
                 calculatedPrice: tierPrice(l.product, tier) * convertToBks(1, l.unit, l.product), product: l.product,
                 condition: 'GOOD', returnReason: '', otherReasonDetail: '', fulfillment: 'NOW' }];
@@ -840,6 +860,10 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     };
 
     const updateCartItem = (id, field, val) => {
+        const priced = cart.find(i => i.productId === id && i.bundlePriced);
+        if (priced && ['qty', 'unit', 'priceTier'].includes(field)) {
+            return notify(`${priced.name} is at a bundle price - tap the bundle again for another, or remove the line.`);
+        }
         setCart(prev => prev.map(item => {
             if (item.productId === id) {
                 let finalVal = val;
@@ -2576,7 +2600,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     {/* FACTORY BUNDLES - one card each; the price is the cigarettes' own at this shop's tier, the promo is free */}
                     {activeCategory === 'BUNDLES' && bundles.map(b => {
                         const chk = bundleCheck(b, inventory, promoVan, cart, give);
-                        const price = (chk.lines || []).reduce((s, l) => s + tierPrice(l.product, newLineTier()) * l.bks, 0);
+                        const price = Number(b.price) > 0 ? Number(b.price) : (chk.lines || []).reduce((s, l) => s + tierPrice(l.product, newLineTier()) * l.bks, 0);
                         return (
                             <button key={b.id} type="button" data-guide="bundle-card" onClick={() => applyBundle(b)}
                                 className={`kpm-hover font-mono w-full shrink-0 text-left bg-[var(--duke-fill-well)] border-2 border-dashed rounded-lg p-3 lg:p-4 flex flex-col gap-1 transition-colors ${chk.ok ? 'border-[var(--duke-brass-edge-2)] hover:border-[var(--duke-amber-edge)]' : 'border-[var(--duke-edge-1)] opacity-60'}`}>
@@ -2588,7 +2612,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     <span key={`g${i}`} className="text-[11px] lg:text-xs font-bold text-[var(--duke-amber-ink)] tabular-nums">+ {g.qty} pcs {g.name} · FREE</span>
                                 ))}
                                 <span className={`mt-1 text-[12px] lg:text-sm font-black ${chk.ok ? 'text-[var(--duke-amber-ink)] tabular-nums' : 'text-[var(--duke-ink-5)]'}`}>
-                                    {chk.ok ? `Rp ${new Intl.NumberFormat('id-ID').format(price)}` : chk.why}
+                                    {chk.ok ? `Rp ${new Intl.NumberFormat('id-ID').format(price)}${Number(b.price) > 0 ? ' · BUNDLE PRICE' : ''}` : chk.why}
                                 </span>
                             </button>
                         );

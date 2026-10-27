@@ -11894,7 +11894,10 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      /* widened ON PURPOSE by stage 3 (2026-10-26): the van bay (Fleet & Roster) and Agent Inventory - pictures, names and pcs */
      /* widened ON PURPOSE by stage 4 (2026-10-26): the terminal's give row gets each van line joined with its product for
         the PICTURE only (promoVanNow) - the terminal itself still never receives promoItems (stage 4's own pin) */
-     promoLines.length === 10 && app.split('promoItems').length - 1 === 15 &&
+     /* widened ON PURPOSE 2026-10-27 (his "add another product or promotional goods for the bundle"): the offer editor in
+        Master Vault (and Fleet) gets the promo list to PICK extra gifts by name - PromoBundleFields, never a sum or a sale line */
+     promoLines.length === 11 && app.split('promoItems').length - 1 === 17 &&
+     app.includes('promoItems={promoItems} canSetPrice={canSetBundlePrice(userRole)}   /* the offer\'s extra gifts: names to pick, never a sum */') &&
      app.includes('.map(l => ({ ...l, product: promoItems.find(p => p.id === l.productId) })),   // picture only - never a sum, never a sale line') &&
      app.includes('promoItems={promoItems}   /* the bay\'s PROMO view loads them into the van in pcs (stage 3) - never activeCanvas */') &&
      app.includes('promoItems={promoItems}   /* the van\'s promo goods in pcs (stage 3) - pictures and names only, never a sum */') &&
@@ -11902,7 +11905,7 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      app.includes('const vaultList = [...filteredInventory, ...promoItems.filter(') && app.includes('inventory={vaultList}') &&
      app.includes('promoItems={promoItems}   /* MASUK / KIRIM carry promo lines in pcs') && app.includes("promoItems={promoItems}   /* the chest's PROMO view") &&
      app.includes('promoItems={promoItems}   /* counted by the piece on the unit-free count card') &&
-     appFiles.filter(f => read(f).includes('promoItems')).sort().join() === 'src/AgentInventoryView.jsx,src/App.jsx,src/FleetCanvasManager.jsx,src/RestockVaultView.jsx,src/StockOpnameView.jsx,src/components/BranchWarehouseManager.jsx,src/hooks/useDatabaseSync.js',
+     appFiles.filter(f => read(f).includes('promoItems')).sort().join() === 'src/AgentInventoryView.jsx,src/App.jsx,src/FleetCanvasManager.jsx,src/RestockVaultView.jsx,src/StockOpnameView.jsx,src/components/BranchWarehouseManager.jsx,src/components/PromoBundleFields.jsx,src/hooks/useDatabaseSync.js',
      promoLines.map(l => l.trim().slice(0, 70)).join(' | '));
   ok('REGRESSION: the save keeps a promo item free of every cigarette field - kind from the entry, not the form; no packing default forced on it; unit pcs',
      save.includes('const promo = isPromo(editingProduct);') &&
@@ -12375,6 +12378,36 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      ap.includes('const loadOfferResults = () => fetchHistoricalTransactions(new Date(Date.now() - 30 * 86400000), new Date());') &&
      rules.includes("allow update: if docId == 'general' && (isAreaAdmin(bossUid) || isCompanyTopTier(bossUid)) &&") &&
      rules.includes("request.resource.data.diff(resource.data).affectedKeys().hasOnly(['promoBundles'])"));
+  /* BUNDLE PRICE + MANY ITEMS + FRONT PANELS + DARK DROPDOWNS (his 2026-10-27: "add another product or promotional goods
+     for the bundle", "a power on setting the price for the bundle ... tier 3 and above as default, put this on the
+     matrix", "the panel to just shows up infront of myface and blur other", "change the white background for all the
+     dropdown menu"). */
+  const up = vb.bundleUnitPrices(1000000, [{ qty: 1, value: 1023500 }, { qty: 3, value: 517500 }]);
+  const upTotal = up[0] * 1 + up[1] * 3;
+  ok('BEHAVIOUR: a bundle price is spread by the lines\' normal value and adds up to EXACTLY the set price (1 Bal 1.023.500 + 3 Slop 517.500 -> Rp 1.000.000: 664.179 + 335.821); one line takes it all; no value splits evenly',
+     up[0] === 664179 && Math.abs(upTotal - 1000000) < 1e-6 && vb.bundleUnitPrices(950000, [{ qty: 2, value: 400000 }])[0] === 475000 &&
+     vb.bundleUnitPrices(100, [{ qty: 1, value: 0 }, { qty: 1, value: 0 }]).join() === '50,50');
+  const pm = await import('../config/permissions.js');
+  ok('BEHAVIOUR: set_bundle_price defaults to tiers 1-3 (T1 DEVELOPER/ADMIN, T2, T3) and never T4-T6 while the key is not in his saved matrix',
+     ['DEVELOPER', 'ADMIN', 'COMPANY_OWNER', 'AREA_ADMIN'].every(r => pm.canSetBundlePrice(r)) &&
+     ['FLEET_CAPTAIN', 'FIELD_OPERATIVE', 'ROOKIE'].every(r => !pm.canSetBundlePrice(r)) &&
+     read('src/components/SettingsView.jsx').includes("{ id: 'set_bundle_price', label: 'Factory offers: may set a bundle price' },"));
+  const pbf2 = code(read('src/components/PromoBundleFields.jsx')), th = read('src/styles/theme.css');
+  ok('REGRESSION: a priced bundle\'s lines are marked and left alone by a tier change, a +1 and a qty/unit/tier edit; it never merges with a normal line (either way); the editor takes many cigarettes and gifts and shows the price only to canSetPrice',
+     ms.includes('if (item.isIouFulfillment || item.bundlePriced) return item;') &&
+     ms.includes('if (existing?.bundlePriced) {') && ms.includes("if (priced && ['qty', 'unit', 'priceTier'].includes(field)) {") &&
+     ms.includes('return i && (priced ? !(i.bundlePriced === b.id && i.unit === l.unit) : i.bundlePriced); });') &&
+     ms.includes('calculatedPrice: unitPrices[n], bundlePriced: b.id, product: l.product,') &&
+     pbf2.includes('...(canSetPrice && Number(price) > 0 ? { price: Math.round(Number(price)) } : {}),') &&
+     pbf2.includes('{canSetPrice && (') && pbf2.includes('+ ANOTHER CIGARETTE') && pbf2.includes('+ ANOTHER PROMO ITEM') &&
+     pbf2.includes('gives: [{ productId: promo.id, name: promo.name, qty: Math.floor(gives) }, ...extras.map(') &&
+     ap.includes('promoItems={promoItems} canSetPrice={canSetBundlePrice(userRole)}') && (fl.match(/canSetPrice=\{canSetBundlePrice\(userRole\)\}/g) || []).length === 2);
+  ok('REGRESSION: DETAILS / EDIT / + and OFFERS open IN FRONT (a fixed, blurred FrontPanel) not at the top of the roster; the native dropdown list is dark by default and takes the theme surface',
+     /function FrontPanel\(\{ label, onClose, children \}\)/.test(fl) && fl.includes('fixed inset-0 z-[480] bg-black/60 backdrop-blur-md') &&
+     fl.includes('<FrontPanel label="Team offers" onClose={() => setOffersOpen(false)}>') &&
+     fl.includes("<FrontPanel label={isReadOnlyMode ? 'Profile Details' : editingAgentId ? 'Edit Profile' : 'Deploy New Personnel'} onClose={() => setIsAddingAgent(false)}>") &&
+     !fl.includes('mb-4 animate-slide-down') &&
+     th.includes(':root:not(.light) select { color-scheme: dark; }') && th.includes('select option, select optgroup { background-color: var(--raised); color: var(--ink); }'));
   const samp = code(read('src/components/SamplingManager.jsx'));
   ok('REGRESSION: a SAMPLE still needs no sale - the sampling screen knows nothing of the give rule (his "give them for free")',
      !/promoGiven|giveLines|applyGiveToPromo|canGive/.test(samp));
