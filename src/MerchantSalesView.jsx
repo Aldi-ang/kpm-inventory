@@ -48,7 +48,7 @@ const readDraft = (uid) => {
     } catch { return null; }
 };
 
-const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine, promoVan = [], sellerRegion = '', regionOffers = [] }) => {
+const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, motorists = [], storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine, promoVan = [], sellerRegion = '', regionOffers = [] }) => {
     /* WHOSE VAULT THE CUSTOMER RECORDS LIVE IN — and the answer must be the same one App used to
        fetch them, or a write lands in a document nobody reads.
 
@@ -573,6 +573,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
        the last resort, never the first. The nota read `ADIKARYASUKSES99` because it was. */
     const emailName = user?.email?.split('@')[0] || '';
     const myName = (isAdmin && appSettings?.adminDisplayName) || user?.displayName || emailName || '';
+    /* the salesman named in a photo file the way the sale record names him (useTransactionEngine finalAgentName): his
+       Fleet & Roster profile name, else myName. His 2026-10-27 "its not the agent name but the google name". */
+    const photoAgent = motorists.find(m => m.id === agentProfileId)?.name || myName;
 
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
         const localToday = new Date().toLocaleDateString('en-CA');
@@ -938,7 +941,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     // string unchanged. Unlike the sale-proof photo, this one is never
                     // bundled into a writeBatch with other business data, so there's no
                     // atomicity trade-off here.
-                    const storagePath = `artifacts/${appId}/users/${masterUid}/photos/bypass_${photoStamp()}_${nameTag(myName)}_${nameTag(selectedCustomerInfo?.name || customerName)}.jpg`;
+                    const storagePath = `artifacts/${appId}/users/${masterUid}/photos/bypass_${photoStamp()}_${nameTag(photoAgent)}_${nameTag(selectedCustomerInfo?.name || customerName)}.jpg`;
                     const photoToSave = await savePhotoAndGetReference(storage, compressedDataUrl, storagePath, appSettings?.usePhotoStorage);
 
                     const payload = {
@@ -1026,7 +1029,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     /* the shop photo as a Storage file when the switch is on (fix A, his 2026-10-27 "use option A to minimize the cost"):
        every phone downloads every shop record on every open, so a photo inside one is paid for on every open. Online
        only - offline an upload would sit out its retries. A failed upload keeps the photo inside; the shop still saves. */
-    const shopPhoto = () => isOnline ? fileOrKeepPhoto(storage, nooForm.photoUrl, `artifacts/${appId}/users/${user?.uid || user?.id || 'default'}/photos/shop_${photoStamp()}_${nameTag(myName)}_${nameTag(customerName)}.jpg`, appSettings?.usePhotoStorage) : nooForm.photoUrl;
+    const shopPhoto = () => isOnline ? fileOrKeepPhoto(storage, nooForm.photoUrl, `artifacts/${appId}/users/${user?.uid || user?.id || 'default'}/photos/shop_${photoStamp()}_${nameTag(photoAgent)}_${nameTag(customerName)}.jpg`, appSettings?.usePhotoStorage) : nooForm.photoUrl;
 
     const submitNooRegistration = async () => {
         if (!validateNoo()) return;
@@ -1214,7 +1217,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             if (isOnline) {
                 try {
                     const masterUid = user?.uid || user?.id || 'default';
-                    const storagePath = `artifacts/${appId}/users/${masterUid}/photos/sale_${photoStamp()}_${nameTag(myName)}_${nameTag(customerName)}.jpg`;
+                    const storagePath = `artifacts/${appId}/users/${masterUid}/photos/sale_${photoStamp()}_${nameTag(photoAgent)}_${nameTag(customerName)}.jpg`;
                     finalPhotoData = await savePhotoAndGetReference(storage, txProofPhoto, storagePath, appSettings?.usePhotoStorage);
                 } catch (photoErr) {
                     console.warn("Sale-proof photo upload failed, falling back to base64:", photoErr);

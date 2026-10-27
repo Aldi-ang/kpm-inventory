@@ -5457,6 +5457,7 @@ const handleGitHubMirror = async () => {
                              same id as `masterUserId` since it was written. */
                           masterUserId={userId}
                           agentProfileId={userRole === 'ADMIN' ? (adminSalesMode === 'VEHICLE' ? 'ADMIN_VEHICLE' : 'VAULT') : agentProfileId}
+                          motorists={motorists}
                           allowedPayments={agentSettings.allowedPayments}
                           allowedTiers={agentSettings.allowedTiers}
                           allowRetur={userRole === 'ADMIN' ? true : (agentSettings.allowRetur || false)}

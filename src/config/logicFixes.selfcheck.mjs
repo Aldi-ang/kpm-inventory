@@ -12434,12 +12434,19 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   ok('REGRESSION: both "register new outlet" buttons in the Sales Terminal save the shop photo through the switch, online only, named by date and time',
      (msP.match(/storeImage: await shopPhoto\(\)/g) || []).length === 2 && !msP.includes('storeImage: nooForm.photoUrl') &&
      msP.includes('const shopPhoto = () => isOnline ? fileOrKeepPhoto(storage, nooForm.photoUrl,') &&
-     msP.includes('/photos/shop_${photoStamp()}_${nameTag(myName)}_${nameTag(customerName)}.jpg`') &&
+     msP.includes('/photos/shop_${photoStamp()}_${nameTag(photoAgent)}_${nameTag(customerName)}.jpg`') &&
      imports(msP, 'fileOrKeepPhoto') && imports(msP, 'photoStamp'));
   /* his 2026-10-27 "also put the agent name and store name in the uploaded jpg so that we know the exact detail" */
+  /* his 2026-10-27 "looks like its not the agent name but the google name instead" - the photo now names the
+     salesman the way the sale record does (useTransactionEngine: the Fleet & Roster profile name, else the boss's
+     Settings name / Google name), from the roster App already holds - no extra read */
+  ok('REGRESSION: the photo file names the salesman by his roster profile name (same as the sale record and nota), not his Google name',
+     msP.includes('const photoAgent = motorists.find(m => m.id === agentProfileId)?.name || myName;') &&
+     !msP.includes('nameTag(myName)') && /agentProfileId, motorists = \[\],/.test(msP) &&
+     /agentProfileId=\{userRole === 'ADMIN' \? \(adminSalesMode === 'VEHICLE' \? 'ADMIN_VEHICLE' : 'VAULT'\) : agentProfileId\}\s*motorists=\{motorists\}/.test(apP));
   ok('REGRESSION: a sale, bypass and new-shop photo file is named date-time + salesman + shop, online and offline (offline names never change between retries)',
-     msP.includes('/photos/sale_${photoStamp()}_${nameTag(myName)}_${nameTag(customerName)}.jpg`') &&
-     msP.includes('/photos/bypass_${photoStamp()}_${nameTag(myName)}_${nameTag(selectedCustomerInfo?.name || customerName)}.jpg`') &&
+     msP.includes('/photos/sale_${photoStamp()}_${nameTag(photoAgent)}_${nameTag(customerName)}.jpg`') &&
+     msP.includes('/photos/bypass_${photoStamp()}_${nameTag(photoAgent)}_${nameTag(selectedCustomerInfo?.name || customerName)}.jpg`') &&
      apP.includes('`sale_${photoName(tx)}_${nameTag(tx.agentName)}_${nameTag(tx.customerName)}`') &&
      apP.includes('`shop_${photoName(noo)}_${nameTag(noo.mappedBy)}_${nameTag(noo.name)}`') &&
      imports(msP, 'nameTag') && imports(apP, 'nameTag'));
