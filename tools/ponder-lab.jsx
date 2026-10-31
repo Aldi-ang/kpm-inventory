@@ -439,6 +439,10 @@ const LAB_PRODUCTS = [
   { id: 'p-djar', name: 'Djarum Coklat 12', sku: 'DJ12', stock: 1800, priceDistributor: 12500,
     packsPerSlop: 12, slopsPerBal: 5,  balsPerCarton: 10 },
 ];
+/* &many (2026-10-31): six more wares, so a phone board shows a real shelf instead of two rows */
+if (q.has('many')) LAB_PRODUCTS.push(...[['p-ggs', 'Gudang Garam Surya 16', 21500], ['p-smild', 'Sampoerna Mild 16', 24800],
+  ['p-dss', 'Dji Sam Soe 12', 19900], ['p-lal', 'LA Lights 16', 22300], ['p-mag', 'Magnum Filter 12', 16400], ['p-ggf', 'Gudang Garam Filter 12', 18700]]
+  .map(([id, name, priceDistributor]) => ({ id, name, sku: id.slice(2).toUpperCase(), stock: 2400, priceDistributor, packsPerSlop: 10, slopsPerBal: 10, balsPerCarton: 4 })));
 
 FIXTURES['places'] = [
   { id: 'bandung', name: 'BANDUNG', kind: 'gudang', address: 'Jl. Soekarno Hatta No. 412, Kec. Batununggal, Kota Bandung, Jawa Barat 40266' },
