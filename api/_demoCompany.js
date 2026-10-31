@@ -87,7 +87,9 @@ const PROFILE = {
     'demo-agent-5': { join: '2022-08-01', collected: 2.2e9, days: 560, titip: 4.2e7, streak: 38,
         bio: 'Regional admin of the Bandung branch: the Bandung warehouse, the team\'s stock requests and their hand-offs.' },
 };
-const baseOf = (p) => ({ collected: p.collected, itemsBks: Math.round(p.collected / 12000), titipCollected: p.titip,
+/* `collected` in PROFILE = the career total THROUGH today, so the base gets what the seeded week (live) did not add: a
+   bigger or smaller week (qtyOf, 2026-10-31) then moves no one across a rank line */
+const baseOf = (p, live) => ({ collected: Math.max(0, p.collected - live.collected), itemsBks: Math.round(p.collected / 12000), titipCollected: p.titip,
     daysVerified: p.days, cleanCukaiDays: Math.round(p.days * 0.93), storesServed: p.days * 5 });
 
 /* the Visit Report tags (dayLog.js VISIT_TAGS = the form's default + JourneyView QUICK_TAGS) with a few true-to-life notes */
@@ -128,6 +130,13 @@ const line = (p, qty, tier) => {
     return { productId: p.id, name: p.name, qty, unit: 'Bks', priceTier: tier, calculatedPrice: price, distributorPriceSnapshot: dist, profitSnapshot: (price - dist) * qty };
 };
 
+/* HOW MUCH A SHOP TAKES - 2026-10-31, his "how better if we can add the total sales into milyar omset instead of just few
+   puluh juta": a warung orders in SLOP (5-30 slop = 50-300 Bks a brand), a grosir in BAL (3-10 bal = 300-1.000 Bks), the
+   import priced per piece a few. Four sellers x 25 days then land near Rp 1,5-2 miliar a month. One r() call either way,
+   so the routes and visit notes after it stay the same draw. */
+const qtyOf = (p, tier, r) => ((p[PRICE_FIELD[tier]] || p.priceRetail) > 50000 ? 1 + Math.floor(r() * 4)
+    : tier === 'Grosir' ? 100 * (3 + Math.floor(r() * 8)) : 10 * (5 + Math.floor(r() * 26)));
+
 /* one salesman's day: 4-6 of his shops as a short route (nearest next) from 08:30 WIB, each a sale, then one or
    two more shops on the way home that bought nothing - those get a Visit Report instead */
 const dayRound = (day, man, shops, products) => {
@@ -145,7 +154,7 @@ const dayRound = (day, man, shops, products) => {
     const sales = route.slice(0, stops).map((shop, i) => {
         const tier = PRICE_FIELD[shop.priceTier] ? shop.priceTier : 'Retail';
         const picks = [...products].sort(() => r() - 0.5).slice(0, 1 + Math.floor(r() * 3));
-        const items = picks.map((p) => line(p, 2 + Math.floor(r() * 9), tier));
+        const items = picks.map((p) => line(p, qtyOf(p, tier, r), tier));
         return {
             id: `demo-${day}-${man.agentId}-${i + 1}`, shop,
             data: {
@@ -182,7 +191,9 @@ export function buildDemoCompany(seed, now, vault) {
     put(`${root}/employee_directory/${owner.email}`, ownerRow);
     put(`${home}/settings/admin`, { ...vault, failedRecoveryAttempts: 0, lockoutStatus: 'NONE', lockedUntil: 0 });
     /* useCareerLedger: rank and badges come from the career record (Settings "Career history"), not from the last 7 days */
-    put(`${home}/settings/general`, { ...revive(seed.appSettings), useCareerLedger: true });
+    /* the Command Center's targets sized to the demo's own month (qtyOf): left blank, the app's defaults (Rp 500 jt,
+       50 bal a day) put the line at 310% and pinned it flat at the top from the 12th */
+    put(`${home}/settings/general`, { ...revive(seed.appSettings), useCareerLedger: true, targetMonthlyRevenue: 1500000000, targetDailyBal: 35 });
     put(`${home}/settings/tiers`, { list: revive(seed.tierSettings) });
     /* his own map borders, where the Map System reads them (the seed carries them once a real backup has them) */
     for (const b of seed.mapBorders || []) put(`${home}/mapSettings/${borderDocId(b)}`, b);
@@ -277,7 +288,7 @@ export function buildDemoCompany(seed, now, vault) {
         }
         const awards = p.awards || [];
         const c = {
-            base: baseOf(p), baseThrough: addDays(day, -7), live, credited, joinDate: p.join,
+            base: baseOf(p, live), baseThrough: addDays(day, -7), live, credited, joinDate: p.join,
             streakBest: Math.max(p.streak, streak), ...(last ? { lastVerifiedDay: last, streakCurrent: streak, season } : {}),
             ...(awards.length ? { bonusXP: awards.reduce((s, a) => s + a.xp, 0), awardCount: awards.length } : {}),
         };
@@ -306,7 +317,8 @@ export function buildDemoCompany(seed, now, vault) {
 
     const today = sales.filter((s) => s.data.date === day);
     for (const m of staff) {
-        const canvas = sellers.has(m.agentId) ? products.slice(0, 3).map((p) => ({ productId: p.id, name: p.name, qty: 40, unit: 'Bks', priceTier: 'Retail', calculatedPrice: p.priceRetail })) : [];
+        /* 3 bal a brand left in the van: a man who sells ~15 bal a day (qtyOf) does not drive home with 4 slop */
+        const canvas = sellers.has(m.agentId) ? products.slice(0, 3).map((p) => ({ productId: p.id, name: p.name, qty: 300, unit: 'Bks', priceTier: 'Retail', calculatedPrice: p.priceRetail })) : [];
         /* where his phone "was" at each sale TODAY, in App.jsx's location-ping shape (pathHistory = today's points only):
            expedition() puts only a man with a currentLocation on the map, and Day Replay starts his day from pathHistory */
         const path = today.filter((s) => s.data.agentId === m.agentId).map((s) => ({ lat: s.shop.latitude, lng: s.shop.longitude, timestamp: s.data.timestamp.toISOString() }));
@@ -336,7 +348,7 @@ export function buildDemoCompany(seed, now, vault) {
     const past = days.slice(0, -1);
     [12, 5, 2].map((n) => past[past.length - n]).forEach((d, k) => {
         const items = products.slice(1).filter((_, i) => (i + k) % 2 === 0).map((p, i) => ({
-            cartId: k * 10 + i + 1, id: p.id, name: p.name, batchNo: `B${d.replace(/-/g, '').slice(2)}-${i + 1}`, qtyReceived: 1000 + 500 * ((i + k) % 3), basePrice: p.priceDistributor || 0, unit: 'Bks' }));
+            cartId: k * 10 + i + 1, id: p.id, name: p.name, batchNo: `B${d.replace(/-/g, '').slice(2)}-${i + 1}`, qtyReceived: 10000 + 5000 * ((i + k) % 3), basePrice: p.priceDistributor || 0, unit: 'Bks' }));
         const totalBasePrice = items.reduce((s, i) => s + i.qtyReceived * i.basePrice, 0), shippingCost = 350000, laborCost = 150000;
         put(`${home}/procurement/sj-${d}`, {
             batchId: `BATCH-${d.replace(/-/g, '')}`, supplierName: FACTORY.name, deliveredBy: 'Factory driver', receivedBy: hendra, destination: MASTER,

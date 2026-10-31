@@ -10972,6 +10972,15 @@ section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual 
   const pabrik = a ? under('places').map((d) => d.data).filter((p) => p.kind === 'pabrik') : [];
   ok('REGRESSION: MASUK\'s Asal is never empty in the demo - one registered factory, Produksi Pusat, and every past surat jalan came from it (his 2026-10-25 "add option for the asal ... produksi pusat")',
      !!a && pabrik.length === 1 && pabrik[0].name === 'Produksi Pusat' && pos.every((p) => p.supplierName === pabrik[0].name));
+  /* 2026-10-31, his "how better if we can add the total sales into milyar omset instead of just few puluh juta" */
+  const omset = a ? under('transactions').reduce((s, d) => s + (d.data.total || 0), 0) : 0;
+  const lines = a ? under('transactions').flatMap((d) => d.data.items) : [];
+  ok(`BEHAVIOUR: the demo's four weeks of sales read in miliar (Rp ${(omset / 1e9).toFixed(2).replace('.', ',')} miliar), from orders a distributor really takes - every cigarette line whole slop, a grosir whole bal, the per-piece import only a few`,
+     !!a && omset >= 1e9 && omset <= 3e9 && lines.length > 0 &&
+     lines.every((i) => (i.calculatedPrice > 50000 ? i.qty >= 1 && i.qty <= 4 : i.qty % 10 === 0 && i.qty >= 50 && (i.priceTier !== 'Grosir' || i.qty % 100 === 0))));
+  const general = a ? under('settings').find((d) => d.path.endsWith('/settings/general'))?.data : null;
+  ok('REGRESSION: the demo\'s Command Center targets are sized to its own month - left blank, the app\'s Rp 500 jt default put the line at 310% and pinned it flat from the 12th',
+     !!general && general.targetMonthlyRevenue >= omset * 0.7 && general.targetMonthlyRevenue <= omset * 1.4 && general.targetDailyBal > 0);
   ok(`one reset writes ${a ? a.docs.length : '?'} documents - the nightly one plus manual ones stay far under the free plan's 20.000 writes a day`, !!a && a.docs.length < 1000);
   ok('run twice on the same day = the same company, byte for byte (nothing doubles)', !!a && JSON.stringify(a) === JSON.stringify(b));
   const vj = read('vercel.json');
