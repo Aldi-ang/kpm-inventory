@@ -10238,7 +10238,9 @@ section('Expedition map');
       const jv = code(jvr), ex = code(exc), cut = (re) => (jv.match(re) || [''])[0];
       const report = cut(/const confirmCheckIn = async[\s\S]*?\n    \};/), undo = cut(/const handleUndoCheckIn = async[\s\S]*?\n    \};/), done = cut(/const handleRequestDone = async[\s\S]*?\n    \};/);
       ok('Journey open request: a New Request report opens it, any other report leaves it alone, undoing today\'s request takes it back, and only a Request done press clears it - asking first, reporting, logged',
-         /\.\.\.\(String\(visitTag\)\.includes\('📝'\) \? \{ openRequest: \{ note: [^}]*day: todayDate, by: trueAgentName \} \} : \{\}\)/.test(report)
+         /* the write moved into dayLog.js visitReport on 2026-10-31 so the Sales Terminal's arrival sheet makes the same one */
+         /const report = visitReport\(checkInCustomer\.name, visitTag, visitNote, trueAgentName, todayDate\);/.test(report) && /\.\.\.report\.patch/.test(report)
+         && /\.\.\.\(String\(tag\)\.includes\('📝'\) \? \{ openRequest: \{ note: String\(note \|\| ''\), day, by \} \} : \{\}\)/.test(read('src/utils/dayLog.js'))
          && /openRequest: deleteField\(\)/.test(undo) && /customer\.openRequest\?\.day === todayDate/.test(undo)
          && /confirmAction\(/.test(done) && /openRequest: deleteField\(\)/.test(done) && /logAudit\("REQUEST_DONE"/.test(done) && /triggerCapy\(/.test(done)
          && (jv.match(/openRequest: deleteField\(\)/g) || []).length === 2 && /openRequest: c\.openRequest && typeof c\.openRequest === 'object'/.test(jv)
@@ -10620,7 +10622,8 @@ section('THE DAY REPLAY ON JOURNEY PLAN (2026-10-05) - his "this chain of events
   const css = read('src/styles/expedition.css'), rpCss = css.slice(css.indexOf('/* ===== THE DAY REPLAY'));
   /* regression guards */
   ok('a Visit Report saves the shop, the tag and the man as FIELDS beside the sentence (the replay matches a renamed shop by id)',
-     /logAudit\("VISIT_REPORT", `Visited \$\{checkInCustomer\.name\} - \$\{visitTag\}: \$\{visitNote\}`, false,\s*\{ storeId: checkInCustomer\.id, tag: visitTag, agentId: agentProfileId \|\| null \}\)/.test(jv));
+     /logAudit\("VISIT_REPORT", report\.sentence, false,\s*\{ storeId: checkInCustomer\.id, tag: visitTag, agentId: agentProfileId \|\| null \}\)/.test(jv)
+     && /sentence: `Visited \$\{shop\} - \$\{tag\}: \$\{note\}`/.test(read('src/utils/dayLog.js')));   // the sentence lives in dayLog.js visitReport since 2026-10-31
   ok('logAudit spreads those fields FIRST, so a field can never overwrite the action, the sentence, the user or the time',
      /const logAudit = async \(action, details, includeSnapshot = false, fields = \{\}\)[\s\S]{0,700}const logData = \{\s*\.\.\.fields,\s*action,\s*details,\s*user: user\.email,/.test(app));
   ok('the replay reads the RAW shops: the sanitizer gives a pinless shop a made-up pin (-7.5845), and he must not walk there',
@@ -11569,14 +11572,17 @@ section('Customer access by folder - P2 (his 2026-10-20 "bandung team may only s
      /!isT1Tag\(role\) && role != 'COMPANY_OWNER' && role != 'AREA_ADMIN' && \(/.test(rules.slice(rules.indexOf('function folderReadOk'), rules.indexOf('function folderEditOk'))));
   ok('a team is named the same way on both sides (trim, capitals, empty -> UNASSIGNED)',
      /loc\.trim\(\)\.upper\(\) : 'UNASSIGNED'/.test(rules) && ca.teamOf(' Muntilan ') === 'MUNTILAN' && ca.teamOf('') === 'UNASSIGNED');
-  /* UI says yes, server says no: every field a Journey check-in writes must be a "visit" field, or view-only kills check-ins */
-  { const jv = code(read('src/JourneyView.jsx'));
-    const a = jv.indexOf('const confirmCheckIn'), b = jv.indexOf('updatedAt', a);
-    const body = a < 0 || b < 0 ? '' : jv.slice(jv.indexOf('updateDoc(customerRef, {', a), b + 9);
-    const keys = [...body.matchAll(/^\s*(?:\.\.\.\(.*?\{ )?([a-zA-Z]+):/gm)].map(m => m[1]);
+  /* UI says yes, server says no: every field a visit report writes must be a "visit" field, or view-only kills check-ins.
+     Since 2026-10-31 the fields come from ONE place, dayLog.js visitReport, and two screens write them plus updatedAt:
+     Journey's check-in and the Sales Terminal's arrival sheet - so the real patch is asked for its keys, and both writes
+     must be exactly that patch */
+  { const { visitReport: vr } = await import('../utils/dayLog.js');
+    const keys = [...Object.keys(vr('S', 'New Request 📝', 'n', 'B', '2026-01-01').patch), 'updatedAt'];
     const visit = (rules.match(/hasOnly\(\['lastVisit'[^\]]*\]/) || [''])[0];
-    ok('every field the Journey check-in writes is allowed under "view only"',
-       keys.length >= 5 && keys.every(k => visit.includes(`'${k}'`)), `check-in writes ${keys.join(',')} vs rules ${visit}`);
+    const writers = [code(read('src/JourneyView.jsx')), code(read('src/MerchantSalesView.jsx'))]
+      .filter(s => /\{ \.\.\.report\.patch, updatedAt: serverTimestamp\(\) \}/.test(s)).length;
+    ok('every field a visit report writes (Journey check-in AND the terminal\'s arrival sheet) is allowed under "view only"',
+       keys.length >= 6 && keys.every(k => visit.includes(`'${k}'`)) && writers === 2, `writes ${keys.join(',')} from ${writers}/2 screens vs rules ${visit}`);
   }
   /* REGRESSION - the app side */
   ok('the listener waits for the access doc (an early every-shop query would be refused, and the refusal kills it)',
@@ -12513,6 +12519,47 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   ok('REGRESSION: every upload asks phones to keep the photo for a year (private cache), so a photo opened twice downloads once - and the data: URL still sets its picture type, which storage.rules requires',
      /await uploadString\(fileRef, base64, 'data_url', \{ cacheControl: 'private, max-age=31536000' \}\);/.test(read('src/utils/helpers.js')) &&
      !/contentType/.test(read('src/utils/helpers.js').split('export const savePhotoAndGetReference')[1].split('};')[0]));
+}
+
+/* HIS 2026-10-31 "whenever salesperson in range with the stores, it will have option to show the status to be updated ...
+   if order then show the salesperson terminal in full and the manifest panel need to be moved to the sidebar on the left",
+   and his yes on the board: "yes build that but change the fill color on the take order because it is too bright". */
+{
+  const dl = await import('../utils/dayLog.js');
+  const st = read('src/MerchantSalesView.jsx'), stc = code(st);
+  const req = dl.visitReport('Toko A', 'New Request 📝', 'minta menthol', 'Budi', '2026-10-31');
+  const full = dl.visitReport('Toko B', 'Stock Full (No Order) 🛑', '', 'Budi', '2026-10-31');
+  const back = dl.readReport(req.sentence), backFull = dl.readReport(full.sentence);
+  ok('BEHAVIOUR: a visit report from the arrival sheet reads back as the same shop, tag and note (the Day Replay\'s parser), and only a New Request opens a request',
+     back?.shop === 'Toko A' && back.tag === 'New Request 📝' && back.note === 'minta menthol' &&
+     backFull?.shop === 'Toko B' && backFull.tag === 'Stock Full (No Order) 🛑' && backFull.note === '' &&
+     req.patch.openRequest?.note === 'minta menthol' && req.patch.openRequest.day === '2026-10-31' && req.patch.openRequest.by === 'Budi' &&
+     !('openRequest' in full.patch) && full.patch.lastVisit === '2026-10-31' && full.patch.lastVisitNote === '[Stock Full (No Order) 🛑] ' &&
+     full.patch.lastVisitTag === 'Stock Full (No Order) 🛑' && full.patch.lastVisitedBy === 'Budi');
+  ok('REGRESSION: the arrival sheet asks with Journey\'s own tags (no second list), writes Journey\'s shape into the vault the terminal reads, logs VISIT_REPORT with the shop, tag and man, and reports both ways',
+     imports(st, 'VISIT_TAGS') && imports(st, 'visitReport') && !/Stock Full|Store Closed|Competitor Issue/.test(stc) &&
+     /visitReport\(shop\.name, tag, note, myName \|\| 'Salesman',/.test(stc) &&
+     /users\/\$\{dataOwnerId\}\/customers`, shop\.id\), \{ \.\.\.report\.patch, updatedAt: serverTimestamp\(\) \}/.test(stc) &&
+     /logAudit\('VISIT_REPORT', report\.sentence, false, \{ storeId: shop\.id, tag, agentId: agentProfileId \|\| null \}\)/.test(stc) &&
+     /notify\(`Visit NOT saved for/.test(stc) && /notify\(`Visit saved:/.test(stc));
+  ok('REGRESSION: the sheet asks once per shop per day - never after a report or a sale there today, never twice in a session - so a saved status cannot re-open it when the same shop locks again',
+     /if \(askedRef\.current\.has\(shop\.id\) \|\| shop\.lastVisit === new Date\(\)\.toLocaleDateString\('en-CA'\)\) return;/.test(stc) &&
+     /if \(arrival\) askedRef\.current\.add\(arrival\.shop\.id\);/.test(stc) && /const saveVisit = [\s\S]{0,260}?closeArrival\(\);/.test(stc));
+  ok('REGRESSION: GPS follows him while the terminal is open (cleared on leave, off in Lite Mode); a shop GPS picked is marked AFTER the pick, and let go only past twice the fence with nothing on the manifest',
+     /navigator\.geolocation\.watchPosition\(/.test(stc) && /return \(\) => navigator\.geolocation\.clearWatch\(id\);/.test(stc) &&
+     /classList\.contains\('lite-mode'\)\) return undefined;/.test(stc) &&
+     /const handleCustomerSelect = \(cust, autoLockedDistance = null\) => \{\s*autoLockRef\.current = null;/.test(stc) &&
+     /handleCustomerSelect\(inRange\[0\]\.c, Math\.round\(inRange\[0\]\.dist\)\);\s*autoLockRef\.current = inRange\[0\]\.c\.id;\s*openArrival\(/.test(stc) &&
+     /autoLockRef\.current === selectedCustomerInfo\.id && dist > dynamicThreshold \* 2 && !cart\.length && !givenLines\.length/.test(stc));
+  /* the words sit in a <span>: with the icon as the button's only element child, index.css's icon-button rule
+     (`button:has(> svg:only-child)`, min-height 44px) outranks min-h-[60px] - measured 44 in the lab before the span */
+  const orderBtn = (stc.match(/className="([^"]*)"><Zap size=\{18\}\/><span>Take order<\/span><\/button>/) || [])[1] || '';
+  ok('REGRESSION: TAKE ORDER is a dark plate with an amber edge and amber ink like the ware "+", never an amber fill (his "too bright")',
+     orderBtn.includes('min-h-[60px]') && orderBtn.includes('bg-[var(--duke-fill-plank)]') && orderBtn.includes('border-[var(--duke-amber-edge)]') && orderBtn.includes('text-[var(--duke-amber-ink)]') &&
+     !/(bg|from|to)-\[var\(--duke-amber/.test(orderBtn), orderBtn ? '' : 'TAKE ORDER button not found');
+  ok('REGRESSION: with the manifest tucked away each ware that goes in still reports itself - a flag with that ware and the new total for 2 s',
+     /if \(!grew \|\| manifestOpen\) \{ setFlag\(null\); return undefined; \}/.test(stc) && /setTimeout\(\(\) => setFlag\(null\), 2000\)/.test(stc) &&
+     /\.kpm-flag \{ animation: kpm-flag-out/.test(read('src/styles/theme.css')));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

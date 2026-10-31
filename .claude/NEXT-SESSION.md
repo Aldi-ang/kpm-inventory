@@ -3,7 +3,11 @@
 **Paste this to start (it downloads FIRST - the PC copy of this file is stale until the pull):** `/alucard First run in PowerShell: git status -sb; git pull origin phase0-solid-ground - if git refuses because of local changes, show me the list and stop. Then open the .claude/NEXT-SESSION.md you just pulled and do the ONE JOB at its top.`
 
 
-**2026-10-31 21:06 — THE ONE JOB: read his answer to the ARRIVAL-FLOW BOARD, then BUILD it.** The pictures are done and sent; the block under this one is the earlier brief they answered (kept for its verbatim words and traps).
+**2026-10-31 21:50 — THE ONE JOB: the SEAT LIMIT. His 3 answers are in; the whole brief is the "2026-10-28 08:18 — QUEUED" block further down - read it whole, its 08:30 answers are the latest word. Rules change FIRST (he publishes it in the Console), code after.**
+- Before writing a rules block: grep `CHANGE [0-9]` in `firestore.rules` and take the highest plus one (the brief says 20 - check, do not trust it).
+- Done = the brief's seat count works per company with no licence changing nothing, the rules drafted for him to publish, gates green, frames of the Fleet & Roster add-a-person path at 375 + 1440 read back. Rewrite this file again when done.
+
+**2026-10-31 21:06 — (DONE 21:50: BUILT and pushed, his "yes build that but change the fill color on the take order because it is too bright") the arrival-flow build.** TAKE ORDER became the ware "+" plate (dark fill, amber edge + ink). The re-lock trap (a) was solved without changing the auto-lock: the sheet asks once per shop per day (`lastVisit` today or already asked this session), and a GPS-picked shop is let go past twice the fence with an empty manifest. Built frames: A-Brain `Raw/2026-10-31-arrival-flow/built/`. His ✅ TEST is in PROGRESS. The brief as it was:
 - The board: A-Brain `Raw/2026-10-31-arrival-flow/board.png` (12 frames, real lab terminal). Every number, fact and rejected option: A-Brain `Brainstorm/2026-10-31_terminal-arrival-flow.md` - read it first. The shooter that drew it (`shoot.mjs` + `inject.js` there; lab `?shell&terminal&many`, GPS pinned on Toko Berkah Jaya over CDP, profile wiped per shot) is the AFTER-frame tool for the build.
 - His answer is in the chat / PROGRESS. "yes" -> build. A change -> redraw that frame with the shooter and ask again before code. No answer -> ask the one question again, do not build.
 - Build (phone = below lg; the PC keeps its left 420 px column untouched): (1) the arrival sheet when GPS locks a shop (`verifyLocation` in-range branch, `MerchantSalesView.jsx` ~425-435 -> `handleCustomerSelect`): TAKE ORDER closes it; Stock Full / Competitor Issue / Store Closed / Routine Check save in one tap; New Request asks one line. The save is Journey's `confirmCheckIn` shape exactly (`JourneyView.jsx` 938-951) - move it into ONE helper both screens call, do not copy it. Every tap reports. (2) A GPS watch while the terminal is open (today it checks ONCE, `MerchantSalesView.jsx:449-451`; copy Journey's `watchPosition` at `JourneyView.jsx:267`, cleared on unmount). (3) The drawer becomes a left panel: open/closed + translateX instead of `drawerH` / `drawerSnaps` / `DRAWER_CLOSED` drag; 20 px tab at the 25 % band with the count, riding the panel edge when open; a 2 s flag (ware + new total) out of the tab after each +.
@@ -21,7 +25,6 @@
 
 <details><summary>Queue after this (promote one at a time)</summary>
 
-- The SEAT LIMIT - his answers are in (block below, 2026-10-28 08:18): build it.
 - The salesman 'today' rail (block below, 2026-10-27 18:17).
 - Demo omset in miliar: sent to the demo session (local_a9be031a, "Demo mission: finish the step-by-step guide (B)") 2026-10-31 20:2x - check its PROGRESS line before redoing it.
 </details>

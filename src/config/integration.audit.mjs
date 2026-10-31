@@ -110,11 +110,11 @@ inJs (G3, 'stock in units he counts in',  'Bks total');
 inJs (G3, 'reorder guarded by stock',     'on the vehicle today');
 inJs (G3, 'next stop',                    'Next stop');
 inJs (G3, 'how many are left today',      'left today');
-/* nextStop.js has two importers since the expedition map (2026-10-02), so the bundler gives it its own chunk:
-   the URL counts when the terminal carries it OR imports the chunk that does */
-const stopChunk = files.find(f => f.startsWith('nextStop-'));
-check(G3, 'directions opens maps', term.includes('maps/dir/?api=1') ||
-  (!!stopChunk && term.includes(stopChunk) && fs.readFileSync(D + stopChunk, 'utf8').includes('maps/dir/?api=1')));
+/* nextStop.js has more than one importer, so the bundler puts it in a shared chunk - its own `nextStop-` one from
+   2026-10-02, folded into the mapSprites chunk once the terminal also imported dayLog.js (2026-10-31). Never pin the
+   chunk's name: the URL counts when the terminal carries it OR imports any chunk that does */
+const stopChunk = files.find(f => f.endsWith('.js') && term.includes(f) && fs.readFileSync(D + f, 'utf8').includes('maps/dir/?api=1'));
+check(G3, 'directions opens maps', term.includes('maps/dir/?api=1') || !!stopChunk);
 /* It leaves the app, and an app that leaves cannot finish a sale — so it must open in a new
    tab and must never carry primary weight. */
 check(G3, 'directions opens in a new tab', term.includes('noopener noreferrer'));
@@ -994,10 +994,10 @@ check(G22, 'the paper opens the same picker instead of telling you to go elsewhe
   (termSrc.match(/onClick=\{\(\) => setShowCustomerDropdown\(true\)\}/g) || []).length >= 2,
   'a manifest with no name on it is wrong, so the paper still states who the deal is with — ' +
   'but stating it and being unable to change it is what he reported');
-check(G22, 'the bar is rendered above the grip, not inside the paper',
+check(G22, 'the bar is the manifest\'s first row, above its header and the paper',
   termSrc.indexOf('renderCustomerBar()') > 0 &&
-  termSrc.indexOf('renderCustomerBar()') < termSrc.indexOf('startDrawerDrag}'),
-  'below the grip it is inside the collapsed-away region and is not "on top" of anything');
+  termSrc.indexOf('renderCustomerBar()') < termSrc.indexOf('onClick={() => setManifestOpen(false)}'),
+  'since 2026-10-31 the phone manifest is a side panel: opening it with no shop chosen must land on "who is buying?"');
 /* The list used to be a strip that opened up or down depending on how far the drawer was
    dragged, and it opened directly over the 12px field you were typing into. His report:
    "too small and sempit". It is a sheet now, so there is no direction to get wrong. */
@@ -1016,28 +1016,21 @@ check(G22, 'both halves of the picker are inside the click-outside sanctuary',
   'the document listener closes the picker for clicks outside .manifest-dropdown-area — ' +
   'drop it from the strip and tapping the strip opens and shuts the sheet in the same tick; ' +
   'drop it from the sheet and typing in the sheet closes it');
-check(G22, 'closed height, initial height and wares padding all say 104',
-  /const DRAWER_CLOSED = 104;/.test(termSrc) &&
-  /useState\(104\)/.test(termSrc) &&
-  /pb-\[104px\]/.test(termSrc),
-  '104 = 52 grip + 52 bar; if these three disagree the bar is covered or a dead gap appears');
-/* Two of his reports, and they only look like opposites: "the notification bell button is
-   collapsing infront of the manifest paper", then "i can pull the manifest panel until the top
-   of the app, so that the whole screen is full of manifest panel". The sheet goes all the way
-   up AND nothing draws on it, because the header is faded out while the sheet is in its band
-   rather than fought with for a z-index neither of them states. Both halves are checked: a
-   sheet that cannot reach the top fails the first line, a class that is never set fails the
-   rest, and the CSS that acts on it is asserted in its own file. */
-check(G22, 'the sheet can be pulled to the full height of the screen',
-  /const drawerMax = \(\) => window\.innerHeight;/.test(termSrc) &&
-  !/innerHeight \* 0\.92/.test(termSrc),
-  'his ask was the whole screen — any cap here silently takes it back');
-check(G22, 'the header is told to stand down while the sheet is in its band',
-  /const DRAWER_TOP_GAP = 84;/.test(termSrc) &&
-  /classList\.toggle\('kpm-sheet-over-header', covering\)/.test(termSrc) &&
-  /root\.classList\.remove\('kpm-sheet-over-header'\)/.test(termSrc),
-  'without the class the bell is back on the paper; without the cleanup, leaving the tab ' +
-  'mid-drag strands the app with no header at all');
+/* HIS 2026-10-31: "the manifest panel need to be moved to the sidebar on the left and can be pulled so that the sales
+   person can see the manifest just with a side slide instead of moving up and down to check". The bottom drawer's
+   104px closed height, its three snaps and its header-hiding class all went with it; these replace their checks. */
+check(G22, 'the phone manifest is a left panel, shut by default, and the wares keep the whole screen',
+  /const \[manifestOpen, setManifestOpen\] = useState\(false\);/.test(termSrc) &&
+  /fixed top-0 bottom-0 left-0 z-\[150\] w-\[min\(86vw,340px\)\]/.test(termSrc) &&
+  /lg:static lg:z-10 lg:h-full lg:w-\[420px\] lg:translate-x-0/.test(termSrc) &&
+  !/pb-\[104px\]/.test(termSrc),
+  'open by default covers the wares he came to sell; the lg classes are what keep the PC column; a 104px pad is a dead gap once the bottom bar is gone');
+check(G22, 'the tab opens it by a tap, the keyboard or a pull - never by a swipe from the screen edge',
+  /onClick=\{\(\) => setManifestOpen\(o => !o\)\}/.test(termSrc) &&
+  /onPointerDown=\{startManifestPull\}/.test(termSrc) &&
+  /aria-expanded=\{manifestOpen\}/.test(termSrc) &&
+  /window\.addEventListener\('pointerup', onEnd\);/.test(termSrc),
+  'Safari on an iPhone owns the swipe from the left edge ("back"); the tab is a real button so a tap and Enter both work, and the pull ends on window so a finger that leaves the tab still lets go');
 const themeCss = fs.readFileSync('src/styles/theme.css', 'utf8');
 /* ⚠️ STRIP COMMENTS BEFORE GREPPING CSS, and prefer this over the raw text for anything that
    measures DISTANCE inside a rule. Group 45 learned it one way (a regex matched the prose that
@@ -1053,11 +1046,11 @@ const noCmt = s => s.replace(/\/\*[\s\S]*?\*\//g, '');
    ground and the browser-chrome colours (scrollbar, caret, selection), so it is palette surface
    like any other file. */
 const indexCss = fs.readFileSync('src/index.css', 'utf8');
-check(G22, 'the rule that acts on that class exists in theme.css',
-  /html\.kpm-sheet-over-header \.kpm-topbar \{[^}]*opacity: 0/.test(themeCss) &&
-  /html\.kpm-sheet-over-header \.kpm-topbar \{[^}]*pointer-events: none/.test(themeCss),
-  'the class is set by JS and does nothing on its own — pointer-events matters as much as ' +
-  'opacity, or an invisible bell is still pressable through the paper');
+check(G22, 'the panel stands over the header by its own stacking, so no header-hiding class is left behind',
+  !/kpm-sheet-over-header/.test(termSrc) && !/kpm-sheet-over-header/.test(themeCss) &&
+  /fixed top-0 bottom-0 left-0 z-\[150\]/.test(termSrc),
+  'the bottom sheet faded the header out while it stood in its band; the side panel covers it from the top at z-150 ' +
+  '(seen in the lab, Raw/2026-10-31-arrival-flow/built) - a leftover class would be dead CSS that looks load-bearing');
 
 /* ── 23. registering an outlet hands the screen back ─────────────────────────
    His G6 report: "it freeze my phone for a while tho maybe add some conveniency after we register
@@ -1066,14 +1059,15 @@ check(G22, 'the rule that acts on that class exists in theme.css',
    drawer while the picker was still buried in the paper would hide the name he just registered,
    which is the "every action must report" law failing in a new place. Group 22 guards that. */
 const G23 = '23. Registering an outlet hands the screen back to the wares';
-const nooCollapses = (termSrc.match(/setDrawerH\(DRAWER_CLOSED\)/g) || []).length;
+/* the statement form `setManifestOpen(false);` is the NOO paths only - the header and the scrim pass it as an onClick */
+const nooCollapses = (termSrc.match(/setManifestOpen\(false\);/g) || []).length;
 
-check(G23, 'both NOO paths collapse the manifest', nooCollapses === 2,
-  `found ${nooCollapses} setDrawerH(DRAWER_CLOSED) calls, expected 2 — register-and-sell and register-only`);
-check(G23, 'register-and-sell collapses AFTER the customer is selected',
+check(G23, 'both NOO paths put the manifest away', nooCollapses === 2,
+  `found ${nooCollapses} setManifestOpen(false); calls, expected 2 — register-and-sell and register-only`);
+check(G23, 'register-and-sell puts it away AFTER the customer is selected',
   termSrc.indexOf('setSelectedCustomerInfo(newStoreData)') <
-  termSrc.indexOf('setDrawerH(DRAWER_CLOSED)'),
-  'collapsing before the selection lands would close the paper on a screen with no customer named');
+  termSrc.indexOf('setManifestOpen(false);'),
+  'putting it away before the selection lands would close the paper on a screen with no customer named');
 
 /* ── 24. the customer listener does not rebuild 100 outlets per write ────────
    His G6 freeze, narrowed by his own answer: "freeze after just after the NOO is successful, it
@@ -1779,20 +1773,17 @@ check(G26, 'the deal still leaves through the one committed path',
   /onClick=\{handleFinalDeal\}/.test(termSrc) && /disabled=\{!canSubmitSale \|\| isProcessingSale\}/.test(termSrc),
   'a second submit path would bypass the gate above');
 
-/* THE DRAWER. Both handles now, and the bar must pass an onTap or a tap on it toggles the
-   manifest instead of reaching the picker button inside it. */
-check(G26, 'the manifest can be dragged by the grip AND by the customer bar',
-  /onPointerDown=\{startDrawerDrag\}/.test(termSrc) &&
-  /onPointerDown=\{\(e\) => startDrawerDrag\(e, \(\) => \{\}\)\}/.test(termSrc) &&
-  /if \(d\.onTap\) \{ d\.onTap\(\); return; \}/.test(termSrc),
-  'without the onTap override a tap on the customer bar toggles the drawer, and the picker ' +
-  'button inside it becomes unreachable on a phone');
-check(G26, 'the clear-customer X does not start a drag',
-  /data-no-drag/.test(termSrc) && /e\.target\.closest\('\[data-no-drag\]'\)/.test(termSrc),
-  'it sits inside the drag surface — without the guard, clearing a customer drags the manifest');
-check(G26, 'the drawer still snaps closed, half and full',
-  /drawerSnaps\(\) = \(\) =>|const drawerSnaps = \(\) => \[DRAWER_CLOSED, Math\.round\(window\.innerHeight \* 0\.55\), drawerMax\(\)\]/.test(termSrc),
-  'the three snap points are what make it a drawer rather than a thing that flops open');
+/* THE PANEL (2026-10-31; it was a bottom drawer with two drag handles and three snaps). One handle now, the tab; the
+   customer bar is only the picker again, so it needs no tap override and its X no drag guard. */
+check(G26, 'the tab is the only handle; the customer bar is the picker and nothing else',
+  !/startDrawerDrag/.test(termSrc) && (termSrc.match(/onPointerDown=\{startManifestPull\}/g) || []).length === 1,
+  'a second drag surface over the picker is how a tap meant for "choose customer" moved the manifest instead');
+check(G26, 'a real pull still swallows the click that follows it',
+  /ghostUntilRef\.current = Date\.now\(\) \+ 120;/.test(termSrc) && /if \(Date\.now\(\) < ghostUntilRef\.current\)/.test(termSrc),
+  'the synthetic click after a pull lands on the ware under the finger - or on the tab, shutting what was just opened');
+check(G26, 'a pull settles open or shut by where it was let go',
+  /setManifestOpen\(ev\.type === 'pointercancel' \? wasOpen : at\(ev\.clientX\) > panelW \/ 2\);/.test(termSrc),
+  'past half way it opens, short of it it shuts; a cancelled pull goes back to where it started');
 
 /* THE STOCK SOURCE. The switch moved out of App's shell into the wares column; what must NOT
    have moved is which vault the terminal then reads and writes. */
@@ -1818,7 +1809,7 @@ check(G26, 'exactly one field can write the customer name, reachable from both o
   'two inputs fighting over one customerName is how the tier and the territory stamp drift ' +
   'apart; the sanctuary class is what stops the sheet closing as you type in it');
 check(G26, 'registering an outlet still hands the screen back to the wares',
-  (termSrc.match(/setDrawerH\(DRAWER_CLOSED\)/g) || []).length >= 2,
+  (termSrc.match(/setManifestOpen\(false\);/g) || []).length >= 2,
   'his G6 report — a NOO that leaves the paper open looks like a freeze');
 
 /* ── 27. THE ARCHITECT TAB ────────────────────────────────────────────────

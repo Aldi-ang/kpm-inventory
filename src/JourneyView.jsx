@@ -17,6 +17,7 @@ import { useWide } from './hooks/useWide';
 import { expedition, visibleTeam, roadStops, initials } from './utils/expedition';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
+import { visitReport } from './utils/dayLog.js';
 import { signFor, kindByShop, chestHtml, slotHtml, crowdHtml, HAIR } from './utils/mapSprites';
 
 // 🚀 SAFE LEAFLET ICON SETUP
@@ -935,19 +936,12 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         try {
             const trueAgentName = user.displayName || user.email.split('@')[0];
             const customerRef = doc(db, `artifacts/${appId}/users/${user.uid}/customers`, checkInCustomer.id);
-            await updateDoc(customerRef, {
-                lastVisit: todayDate,
-                lastVisitNote: `[${visitTag}] ${visitNote}`,
-                lastVisitTag: visitTag,
-                lastVisitedBy: trueAgentName,
-                /* his 2026-10-04 "for request since it is very important ... until order is fullfilled": a New Request stays
-                   open on the shop (the "!" on the map) until someone presses Request done; any other report leaves it alone */
-                ...(String(visitTag).includes('📝') ? { openRequest: { note: String(visitNote || ''), day: todayDate, by: trueAgentName } } : {}),
-                updatedAt: serverTimestamp()
-            });
+            /* the same write the Sales Terminal's arrival sheet makes (dayLog.js visitReport) */
+            const report = visitReport(checkInCustomer.name, visitTag, visitNote, trueAgentName, todayDate);
+            await updateDoc(customerRef, { ...report.patch, updatedAt: serverTimestamp() });
 
             /* the shop, the tag and the man as fields too (the Day Replay reads them; older entries are the sentence only) */
-            if (logAudit) await logAudit("VISIT_REPORT", `Visited ${checkInCustomer.name} - ${visitTag}: ${visitNote}`, false,
+            if (logAudit) await logAudit("VISIT_REPORT", report.sentence, false,
                 { storeId: checkInCustomer.id, tag: visitTag, agentId: agentProfileId || null });
             if (triggerCapy) triggerCapy(`Bounty Claimed! ✅`);
             

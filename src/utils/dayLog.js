@@ -20,6 +20,18 @@ import { signFor } from './mapSprites.js';
 /* the Visit Report's tags: the form's default + QUICK_TAGS in src/JourneyView.jsx (a check keeps the two lists equal) */
 export const VISIT_TAGS = ['Routine Check', 'Repeat Order 📦', 'Stock Full (No Order) 🛑', 'Competitor Issue ⚠️', 'New Request 📝', 'Store Closed 🔒'];
 
+/* The Visit Report's write - ONE shape for Journey and the Sales Terminal's arrival sheet (2026-10-31): the shop's fields
+   and the audit sentence readReport / DayReplay parse back. The caller adds updatedAt and does the write. */
+export const visitReport = (shop, tag, note, by, day) => ({
+    patch: {
+        lastVisit: day, lastVisitNote: `[${tag}] ${note}`, lastVisitTag: tag, lastVisitedBy: by,
+        /* his 2026-10-04 "for request since it is very important ... until order is fullfilled": a New Request stays
+           open on the shop (the "!" on the map) until someone presses Request done; any other report leaves it alone */
+        ...(String(tag).includes('📝') ? { openRequest: { note: String(note || ''), day, by } } : {}),
+    },
+    sentence: `Visited ${shop} - ${tag}: ${note}`,
+});
+
 const minutes = (d) => d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
 export const hm = (c) => `${String(Math.floor(c / 60)).padStart(2, '0')}:${String(Math.floor(c % 60)).padStart(2, '0')}`;
 const isRetur = (t) => t.type === 'RETUR' || t.paymentType === 'Retur/BS';

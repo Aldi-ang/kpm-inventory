@@ -16,6 +16,7 @@ import { isLowStock } from './utils/stockThreshold';
 import { dayStats, agoLabel } from './utils/dayStats';
 import { customerBrief, reorderFromLast } from './utils/customerBrief';
 import { nextStop, directionsUrl, metresLabel } from './utils/nextStop';
+import { VISIT_TAGS, visitReport } from './utils/dayLog';
 import { unlockSounds, speakMumble, playSound } from './hooks/useSound';
 import { notify } from './components/Toast.jsx';
 import { shareReceipt } from './components/shareReceipt.js';
@@ -76,13 +77,23 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const [mapBorders, setMapBorders] = useState([]);
     useEffect(() => { watchBorders(db, appId, dataOwnerId, setMapBorders); }, [db, appId, dataOwnerId]);
     const areaText = (a) => [a.city, a.region].filter(Boolean).join(', ') || 'no map border here - it waits in the Unknown folder';
-    /* Phase A items 1-2: the two-tab bar is gone. The manifest is a bottom drawer that
-       is dragged between three snap points, so the wares list never has to be left. */
     /* Read ONCE, on the mount that restores it - not on every render. */
     const [draft] = useState(() => readDraft(user?.uid));
 
-    const [drawerH, setDrawerH] = useState(104); // 52 grip + 52 customer bar — see DRAWER_CLOSED
-    const [isDragging, setIsDragging] = useState(false);
+    /* On a phone the Manifest is a panel that slides in from the LEFT, pulled by a tab on the edge - his 2026-10-31 "the
+       manifest panel need to be moved to the sidebar on the left and can be pulled so that the sales person can see the
+       manifest just with a side slide instead of moving up and down to check". Shut by default: the wares get the screen.
+       pullX is the panel's open width while a finger drags the tab, null otherwise. On the PC it is the left column. */
+    const [manifestOpen, setManifestOpen] = useState(false);
+    const [pullX, setPullX] = useState(null);
+    /* The arrival question (same 2026-10-31 flow): GPS locks a shop with no report today -> "what happened here?". TAKE ORDER
+       opens the terminal; any other status is one tap and the visit is done. requestNote is null for the status buttons, a
+       string while the New Request line is being typed. askedRef: shops answered or closed this session, never asked twice.
+       autoLockRef: the shop GPS picked rather than him - let go when he walks away with nothing on the manifest. */
+    const [arrival, setArrival] = useState(null);
+    const [requestNote, setRequestNote] = useState(null);
+    const askedRef = useRef(new Set());
+    const autoLockRef = useRef(null);
     const [searchTerm, setSearchTerm] = useState("");
     const [cart, setCart] = useState(draft?.cart || []);
     const [activeCategory, setActiveCategory] = useState("ALL");
@@ -402,41 +413,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         setGpsStatus('checking');
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    setAgentLocation({ latitude: lat, longitude: lon });
-
-                    if (selectedCustomerInfo) {
-                        if (selectedCustomerInfo.latitude && selectedCustomerInfo.longitude) {
-                            const dist = calculateDistance(lat, lon, selectedCustomerInfo.latitude, selectedCustomerInfo.longitude);
-                            setDistanceToStore(Math.round(dist));
-                            const dynamicThreshold = bypassState.status === 'approved' ? 100 : 50;
-                            setGpsStatus(dist <= dynamicThreshold ? 'verified' : 'manual_override');
-                        } else {
-                            setGpsStatus('bypass'); 
-                        }
-                    } else if (!manualOverride && customers.length > 0) {
-                        /* Everything inside the fence, nearest first — not just the single
-                           closest. Two shops share a wall often enough in a pasar that picking
-                           the nearer one and offering no way out is how a sale lands on the
-                           wrong store. Capped at TWO by Aldi's call: two is a real situation,
-                           three is a menu, and beyond that he should search instead. */
-                        const inRange = customers
-                            .filter(c => c.latitude && c.longitude)   // a new shop is seen by the team at once (his 2026-10-21 rule); only its Grosir waits
-                            .map(c => ({ c, dist: calculateDistance(lat, lon, c.latitude, c.longitude) }))
-                            .filter(x => x.dist <= 50)
-                            .sort((a, b) => a.dist - b.dist);
-
-                        setNearbyStores(inRange.slice(0, 2).map(x => ({ ...x.c, _metres: Math.round(x.dist) })));
-
-                        if (inRange.length) {
-                            setDistanceToStore(Math.round(inRange[0].dist));
-                            handleCustomerSelect(inRange[0].c, Math.round(inRange[0].dist));
-                        } else setGpsStatus('idle');
-                    } else if (customerName.trim().length > 0) setGpsStatus('walk_in'); 
-                    else setGpsStatus('idle');
-                },
+                /* through the ref: a fix can land after a render that changed the selection, and must judge the CURRENT one */
+                (position) => applyFixRef.current(position.coords.latitude, position.coords.longitude),
                 (error) => setGpsStatus('error'),
                 // 🚀 Phase 8: maximumAge 0 forced a fresh satellite lock on every call — reusing a
                 // fix from the last minute is exactly right for someone standing still at a shop.
@@ -444,6 +422,67 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             );
         } else setGpsStatus('error');
     };
+
+    /* One GPS fix, judged: from the one-shot check above, or from the watch below that follows him while the terminal is open. */
+    const applyFix = (lat, lon) => {
+        setAgentLocation({ latitude: lat, longitude: lon });
+
+        if (selectedCustomerInfo) {
+            if (selectedCustomerInfo.latitude && selectedCustomerInfo.longitude) {
+                const dist = calculateDistance(lat, lon, selectedCustomerInfo.latitude, selectedCustomerInfo.longitude);
+                setDistanceToStore(Math.round(dist));
+                const dynamicThreshold = bypassState.status === 'approved' ? 100 : 50;
+                /* he walked on from a shop GPS picked for him, with nothing on the manifest: let it go so the
+                   next shop can be found. Twice the fence, so drift while he stands in the doorway keeps it. */
+                if (autoLockRef.current === selectedCustomerInfo.id && dist > dynamicThreshold * 2 && !cart.length && !givenLines.length) {
+                    autoLockRef.current = null;
+                    setCustomerName(''); setSelectedCustomerInfo(null); setLockedTier(null); setNearbyStores([]); setGpsStatus('idle');
+                    return;
+                }
+                setGpsStatus(dist <= dynamicThreshold ? 'verified' : 'manual_override');
+            } else {
+                setGpsStatus('bypass'); 
+            }
+        } else if (!manualOverride && customers.length > 0) {
+            /* Everything inside the fence, nearest first — not just the single
+               closest. Two shops share a wall often enough in a pasar that picking
+               the nearer one and offering no way out is how a sale lands on the
+               wrong store. Capped at TWO by Aldi's call: two is a real situation,
+               three is a menu, and beyond that he should search instead. */
+            const inRange = customers
+                .filter(c => c.latitude && c.longitude)   // a new shop is seen by the team at once (his 2026-10-21 rule); only its Grosir waits
+                .map(c => ({ c, dist: calculateDistance(lat, lon, c.latitude, c.longitude) }))
+                .filter(x => x.dist <= 50)
+                .sort((a, b) => a.dist - b.dist);
+
+            setNearbyStores(inRange.slice(0, 2).map(x => ({ ...x.c, _metres: Math.round(x.dist) })));
+
+            if (inRange.length) {
+                setDistanceToStore(Math.round(inRange[0].dist));
+                handleCustomerSelect(inRange[0].c, Math.round(inRange[0].dist));
+                autoLockRef.current = inRange[0].c.id;
+                openArrival(inRange[0].c, Math.round(inRange[0].dist));
+            } else setGpsStatus('idle');
+        } else if (customerName.trim().length > 0) setGpsStatus('walk_in'); 
+        else setGpsStatus('idle');
+    };
+    const applyFixRef = useRef(applyFix);
+    applyFixRef.current = applyFix;
+
+    /* Arrival has to NOTICE he arrived (his "whenever salesperson in range with the stores"): while the terminal is open the
+       fix follows him - Journey's own watch (JourneyView.jsx) - and every 10 m he moves re-runs the fence check above. Off in
+       Lite Mode like Journey's: battery is what Lite Mode is for, and the one-shot check still runs there. */
+    useEffect(() => {
+        if (!('geolocation' in navigator) || document.documentElement.classList.contains('lite-mode')) return undefined;
+        let last = null;
+        const id = navigator.geolocation.watchPosition((p) => {
+            const { latitude: lat, longitude: lon } = p.coords;
+            if (last && calculateDistance(last.lat, last.lon, lat, lon) < 10) return;
+            last = { lat, lon };
+            applyFixRef.current(lat, lon);
+        }, () => {}, { enableHighAccuracy: true, maximumAge: 5000 });
+        return () => navigator.geolocation.clearWatch(id);
+    }, []);
 
     useEffect(() => { 
         if (selectedCustomerInfo) verifyLocation();
@@ -584,6 +623,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const photoAgent = motorists.find(m => m.id === agentProfileId)?.name || myName;
 
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
+        autoLockRef.current = null;   // his pick from here on; applyFix marks a GPS pick AFTER this call
         const localToday = new Date().toLocaleDateString('en-CA');
         /* every name I have ever been stamped under: stores visited before the Settings name
            existed carry the email or display name, and must still read as mine */
@@ -1060,9 +1100,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             /* HIS ASK (G6): "maybe add some conveniency after we register new NOO, like close the
                manifest paper for example". The outlet is registered and the next thing he does is
                pick wares, so hand the screen back to the wares list instead of leaving the paper
-               covering it. The customer bar stays on screen — it is inside DRAWER_CLOSED — so the
-               name he just registered is still visible, which is the whole reason this is safe. */
-            setDrawerH(DRAWER_CLOSED);
+               covering it. Safe because the wares column says who he is selling to, and the tab
+               carries the manifest's count. */
+            setManifestOpen(false);
         } catch (e) { notify("Failed to save NOO: " + e.message); }
     };
 
@@ -1088,7 +1128,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
             setShowNooModal(false);
             setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
-            setDrawerH(DRAWER_CLOSED);   // same convenience as the register-and-sell path above
+            setManifestOpen(false);   // same convenience as the register-and-sell path above
         } catch (e) { notify("Failed to save NOO: " + e.message); }
     };
 
@@ -1507,60 +1547,21 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     };
 
     /* ------------------------------------------------------------------
-       MANIFEST DRAWER — drag behaviour.
+       MANIFEST PANEL (phone) — pulled sideways by its tab, 2026-10-31.
 
-       Three rules here are not style preferences, they are fixes for bugs the
-       HTML prototype actually shipped (plan sections 6a, 6a-2, 6a-3):
-         - move/up/cancel bind to `window`, never to this component. Dragging
-           UP releases the pointer above the component, so a locally-bound
-           `pointerup` never fires and the gesture is stranded: tall panel,
-           no committed state, blank body.
-         - the drag aborts if the grip left the DOM mid-gesture instead of
-           writing a height into a dead node.
-         - a real drag arms a 120ms swallow for the synthetic click that
+       Two rules carried over from the bottom drawer it replaced, because they
+       were fixes for bugs the HTML prototype actually shipped:
+         - move/up/cancel bind to `window`, never to the tab: a finger that
+           leaves the tab mid-pull must still end the gesture.
+         - a real pull arms a 120ms swallow for the synthetic click that
            follows it, or that click lands on whatever ware sits under the
-           finger and opens it.
-       The body is mounted at all times; `overflow-hidden` plus this height is
-       the only thing hiding it, which is what makes the drag reveal content
-       continuously instead of at the end.
+           finger and opens it - and on the tab, toggling it straight back.
+       A press that never moved is left to the tab's own onClick, so a tap and
+       the keyboard both open and close it. Never a swipe from the screen edge:
+       Safari on an iPhone uses that one for "back".
        ------------------------------------------------------------------ */
-    /* 104, not 52: the 52px grip plus the 52px customer bar above it. The bar is only worth
-       moving to the top if it is on screen when the drawer is SHUT, so the closed height has
-       to include it. Keep this in sync with the useState default and the wares-list padding. */
-    const DRAWER_CLOSED = 104;
-    const gripRef = useRef(null);
-    const dragRef = useRef(null);
+    const gripRef = useRef(null);       // the panel: its width is how far a pull can open it
     const ghostUntilRef = useRef(0);
-
-    /* HIS REPORT, 2026-08-12: "the notification bell button is collapsing infront of the
-       manifest paper" — then, once the sheet stopped short of the header: "even more
-       convenience if i can pull the manifest panel until the top of the app, so that the whole
-       screen is full of manifest panel".
-
-       Both are true at once, and the only way to have both is to stop treating this as a
-       stacking argument. The bell belongs to the app header; the sheet is allowed all the way
-       to the top again — and while it is standing IN that header's band, the header is faded
-       out of the way instead of fought with. `kpm-sheet-over-header` on <html> is the switch;
-       the rule lives in theme.css beside the kpm-nav-open ones, which do the same job for the
-       sidebar. Nothing overlaps because by then there is nothing left to overlap.
-
-       84 = the header on a phone, with a little margin so it is already gone by the time the
-       paper arrives: pt-4 (16) + its two lines + the gold rule + pb-2. It was 112 while the
-       orange menu square still forced pt-16 up there; the ribbon on the edge replaced it. */
-    const DRAWER_TOP_GAP = 84;
-    const drawerMax = () => window.innerHeight;
-
-    const drawerSnaps = () => [DRAWER_CLOSED, Math.round(window.innerHeight * 0.55), drawerMax()];
-
-    /* Continuous, not only at the top snap: the header has to be gone BEFORE the sheet reaches
-       it, or it flickers back into view for the length of a drag. Cleaned up on unmount so
-       leaving the sales tab mid-drag cannot strand the app with no header. */
-    useEffect(() => {
-        const root = document.documentElement;
-        const covering = drawerH > window.innerHeight - DRAWER_TOP_GAP;
-        root.classList.toggle('kpm-sheet-over-header', covering);
-        return () => root.classList.remove('kpm-sheet-over-header');
-    }, [drawerH]);
 
     useEffect(() => {
         const swallowGhostClick = (e) => {
@@ -1570,54 +1571,68 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         return () => document.removeEventListener('click', swallowGhostClick, true);
     }, []);
 
-    /* `onTap` is what a press that never moved should do. The grip has no argument and keeps its
-       old behaviour — a tap toggles the drawer. The CUSTOMER BAR passes a no-op, because a tap
-       there belongs to the picker button inside it; without that override, tapping the customer
-       bar would toggle the manifest instead of choosing a shop.
-
-       HIS ASK: "the customer name textbox above the manifest drag button should also be use as
-       drag button". The grip is 52px of a phone screen and it is the only thing you could grab;
-       the bar above it doubles the target for the same gesture at no cost. */
-    const startDrawerDrag = (e, onTap) => {
-        if (dragRef.current) return;
-        /* the clear-customer X is inside the bar and must not start a drag */
-        if (e.target.closest && e.target.closest('[data-no-drag]')) return;
-        dragRef.current = { startY: e.clientY, startH: drawerH, moved: false, onTap };
-        setIsDragging(true);
-
+    const startManifestPull = (e) => {
+        const panelW = gripRef.current?.offsetWidth || 320;
+        const from = e.clientX, wasOpen = manifestOpen;
+        const at = (x) => Math.max(0, Math.min(panelW, (wasOpen ? panelW : 0) + x - from));
+        let moved = false;
         const onMove = (ev) => {
-            const d = dragRef.current;
-            if (!d) return;
-            if (!gripRef.current || !gripRef.current.isConnected) return onEnd();
-            if (Math.abs(ev.clientY - d.startY) > 4) d.moved = true;
-            const max = drawerMax();
-            setDrawerH(Math.max(DRAWER_CLOSED, Math.min(max, d.startH + (d.startY - ev.clientY))));
+            if (!moved && Math.abs(ev.clientX - from) < 6) return;
+            moved = true;
+            setPullX(at(ev.clientX));
         };
-
-        const onEnd = () => {
+        const onEnd = (ev) => {
             window.removeEventListener('pointermove', onMove);
             window.removeEventListener('pointerup', onEnd);
             window.removeEventListener('pointercancel', onEnd);
-            const d = dragRef.current;
-            dragRef.current = null;
-            setIsDragging(false);
-            if (!d) return;
-            if (!d.moved) {
-                // a tap, not a drag: closed -> half, anything else -> closed
-                if (d.onTap) { d.onTap(); return; }
-                setDrawerH(h => (h <= DRAWER_CLOSED + 8 ? drawerSnaps()[1] : DRAWER_CLOSED));
-                return;
-            }
+            if (!moved) return;
             ghostUntilRef.current = Date.now() + 120;
-            setDrawerH(h => drawerSnaps().reduce((best, s) => (Math.abs(s - h) < Math.abs(best - h) ? s : best)));
+            setPullX(null);
+            setManifestOpen(ev.type === 'pointercancel' ? wasOpen : at(ev.clientX) > panelW / 2);
         };
-
         window.addEventListener('pointermove', onMove);
         window.addEventListener('pointerup', onEnd);
         window.addEventListener('pointercancel', onEnd);
     };
 
+    /* THE ARRIVAL QUESTION - once per shop per day: not after a report or a sale there today (both stamp lastVisit), and
+       never twice in one session, so a shop he walks past and closes stays closed. */
+    const openArrival = (shop, metres) => {
+        if (askedRef.current.has(shop.id) || shop.lastVisit === new Date().toLocaleDateString('en-CA')) return;
+        setRequestNote(null);
+        setArrival({ shop, metres });
+    };
+    const closeArrival = () => {
+        if (arrival) askedRef.current.add(arrival.shop.id);
+        setArrival(null); setRequestNote(null);
+    };
+    /* Journey's Visit Report, written from here (dayLog.js visitReport - one shape, so the Day Replay and the map read both).
+       Not awaited: offline the write queues, and the sheet must not hang open until the signal comes back. */
+    const saveVisit = (tag, note = '') => {
+        const shop = arrival.shop;
+        const report = visitReport(shop.name, tag, note, myName || 'Salesman', new Date().toLocaleDateString('en-CA'));
+        closeArrival();
+        (async () => {
+            await updateDoc(doc(db, `artifacts/${appId}/users/${dataOwnerId}/customers`, shop.id), { ...report.patch, updatedAt: serverTimestamp() });
+            if (logAudit) await logAudit('VISIT_REPORT', report.sentence, false, { storeId: shop.id, tag, agentId: agentProfileId || null });
+        })().catch((err) => notify(`Visit NOT saved for ${shop.name}: ${err.message || 'network error'}`));
+        notify(`Visit saved: ${shop.name} - ${tag}`);
+    };
+
     const cartTotal = cart.reduce((sum, i) => sum + (i.calculatedPrice * i.qty), 0);
+    /* With the manifest tucked away its total is off the screen, so each ware that goes IN says so: a flag slides out of the
+       tab with that ware and the new total, 2 s, then folds back (phone only - the PC's manifest column is always in view). */
+    const [flag, setFlag] = useState(null);
+    const prevCartRef = useRef(cart);
+    useEffect(() => {
+        const before = prevCartRef.current;
+        prevCartRef.current = cart;
+        const grew = cart.find(i => { const b = before.find(x => x.productId === i.productId); return !b || i.qty > b.qty; });
+        if (!grew || manifestOpen) { setFlag(null); return undefined; }
+        setFlag({ name: grew.name, total: cartTotal });
+        const t = setTimeout(() => setFlag(null), 2000);
+        return () => clearTimeout(t);
+    }, [cart]);
     /* The rail's idle state. Recomputed only when the transaction list actually changes —
        it walks every transaction in the seven-day window, which is cheap but not free, and
        this component re-renders on every keystroke in the search box. */
@@ -1745,8 +1760,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     /* HIS CALL, 2026-08-10: "what if we put the customer on top instead just near the strip?"
        The picker used to sit in the middle of the manifest paper, so the first question of every
        sale — who is buying — could only be answered by opening the drawer and scrolling the sheet.
-       It is ONE bar now, pinned directly above the grip, which is why DRAWER_CLOSED grew from 52
-       to 104: a bar you cannot see while the drawer is shut has not moved to the top of anything.
+       It is ONE bar now, the first row of the manifest - the top of the phone's side panel since
+       2026-10-31, so opening the panel with no shop chosen lands on "who is buying?".
        ONE LINE, chosen or not — the top of a phone is scarce and that was the deal.
        There is still exactly ONE `customerName` input in the DOM; the paper echoes the chosen
        name as a read-only line and keeps everything else it had. */
@@ -1777,16 +1792,10 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
     const renderCustomerBar = () => (
         <>
-            {/* THIS BAR IS ALSO THE GRIP. His ask: "the customer name textbox above the manifest
-                drag button should also be use as drag button". A press that moves drags the
-                manifest; a press that does not is left to the picker button inside it, which is
-                what the no-op onTap buys. touchAction none for the same reason the grip needs it:
-                the browser claims a vertical drag as a page scroll before the first move event
-                lands otherwise. */}
+            {/* It was also the drawer's grip (his 2026-08 "should also be use as drag button"); the
+                panel is pulled by its tab now, so a press here is only ever the picker. */}
             <div
-                onPointerDown={(e) => startDrawerDrag(e, () => {})}
-                style={{ touchAction: 'none' }}
-                className="manifest-dropdown-area hide-on-print shrink-0 h-[52px] px-3 flex items-center gap-2.5 bg-[var(--duke-fill-panel)] border-b border-[var(--duke-edge-1)] relative z-[60] cursor-grab active:cursor-grabbing select-none"
+                className="manifest-dropdown-area hide-on-print shrink-0 h-[52px] px-3 flex items-center gap-2.5 bg-[var(--duke-fill-panel)] border-b border-[var(--duke-edge-1)] relative z-[60]"
             >
                 <Store size={16} className="shrink-0 text-[var(--duke-ink-3)]" />
                 <button
@@ -1807,7 +1816,6 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     <button
                         onClick={clearCustomer}
                         aria-label="Clear customer"
-                        data-no-drag
                         className="shrink-0 bg-red-600 hover:bg-red-500 text-[var(--duke-on-fill)] p-1.5 rounded shadow-md active:scale-90 transition-all"
                     ><X size={14} strokeWidth={3}/></button>
                 )}
@@ -2249,18 +2257,18 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         <div className="flex h-full w-full bg-[var(--duke-fill-ground)] text-[var(--duke-ink-1)] font-serif overflow-hidden relative border-4 border-[var(--duke-edge-1)] shadow-2xl">
             <div className="absolute inset-0 opacity-50 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,.025) 0 1px, transparent 1px 5px), repeating-linear-gradient(-45deg, rgba(0,0,0,.25) 0 1px, transparent 1px 5px)' }}></div>
             
-            {/* Below lg this element IS the drawer: fixed to the bottom, its height driven
-                by --drawer-h. At lg the media-query classes win over the base ones and it
-                reverts to the static 420px left column, so the desktop layout is untouched.
-                The height comes in as a CSS variable rather than an inline `height` on
-                purpose - an inline height would beat `lg:h-full` and follow us onto desktop. */}
+            {/* Below lg this element IS the side panel: fixed to the left edge at full height, slid
+                off by its own width while shut (pullX follows a finger on the tab). At lg the
+                media-query classes win over the base ones and it is the static 420px left column,
+                so the desktop layout is untouched. Lite Mode's `html.lite-mode *` kills the slide. */}
             <div
                 ref={gripRef}
-                style={{ '--drawer-h': `${drawerH}px` }}
-                className={`hide-on-print fixed bottom-0 inset-x-0 z-[150] h-[var(--drawer-h)] overflow-hidden border-t-4 shadow-[0_-10px_30px_rgba(0,0,0,0.6)]
-                            lg:static lg:z-10 lg:h-full lg:w-[420px] lg:border-t-0 lg:border-r-4 lg:shadow-none
+                style={pullX === null ? undefined : { transform: `translateX(calc(${pullX}px - 100%))` }}
+                className={`hide-on-print fixed top-0 bottom-0 left-0 z-[150] w-[min(86vw,340px)] overflow-hidden border-r-4
+                            lg:static lg:z-10 lg:h-full lg:w-[420px] lg:translate-x-0 lg:shadow-none
                             flex flex-col border-[var(--duke-edge-1)] bg-[var(--duke-fill-well)] shrink-0
-                            ${isDragging ? '' : 'transition-[height] duration-[340ms] ease-[cubic-bezier(.33,.78,.22,1)]'}`}
+                            ${manifestOpen ? 'translate-x-0 shadow-[10px_0_30px_rgba(0,0,0,0.6)]' : '-translate-x-full'}
+                            ${pullX === null ? 'transition-transform duration-[320ms] ease-[cubic-bezier(.32,.72,0,1)]' : ''}`}
             >
                 {/* THE ALCOVE — desktop only. On a phone he still only visits, via
                     CapybaraMascot on a committed deal; a phone screen has no room to give
@@ -2303,15 +2311,13 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
                 {renderCustomerBar()}
 
-                {/* The grip. Collapsed it is the drawer minus the customer bar, so it carries the running
-                    total, the item count and the LAST ITEM ADDED - that last one is what
-                    removes the need to open the manifest just to check it went in. */}
-                <div
-                    onPointerDown={startDrawerDrag}
-                    style={{ touchAction: 'none' }}
-                    className="lg:hidden h-[52px] shrink-0 px-4 flex items-center gap-3 cursor-grab active:cursor-grabbing select-none bg-[var(--duke-fill-panel)] border-b border-[var(--duke-edge-1)]"
+                {/* The panel's header on a phone: the running total, the item count and the LAST ITEM
+                    ADDED, as the closed bottom bar used to carry them. A tap puts the panel away. */}
+                <button
+                    type="button"
+                    onClick={() => setManifestOpen(false)}
+                    className="lg:hidden h-[52px] shrink-0 px-4 flex items-center gap-3 text-left bg-[var(--duke-fill-panel)] border-b border-[var(--duke-edge-1)]"
                 >
-                    <div className="w-10 h-1.5 rounded-full bg-[var(--duke-fill-plank-2)] shrink-0"></div>
                     <div className="flex-1 min-w-0">
                         <div className="text-[10px] font-black uppercase tracking-widest text-[var(--duke-ink-3)] leading-none">
                             Manifest ({cart.length})
@@ -2323,8 +2329,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     <span className={`text-lg font-black font-mono leading-none shrink-0 ${isReturMode && returType === 'BUYBACK' ? 'text-red-500' : 'text-[var(--duke-amber-ink)]'}`}>
                         {isReturMode && returType === 'BUYBACK' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}
                     </span>
-                    <ChevronDown size={18} className={`shrink-0 text-[var(--duke-ink-3)] transition-transform ${drawerH > DRAWER_CLOSED + 8 ? '' : 'rotate-180'}`} />
-                </div>
+                    <ChevronDown size={18} className="shrink-0 rotate-90 text-[var(--duke-ink-3)]" />
+                </button>
 
                 {/* Rendered at EVERY width now. It used to be lg:hidden with a second copy
                     further down for desktop, which meant two manifests in the DOM, duplicate
@@ -2442,11 +2448,80 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 </div>
             </div>
 
+            {/* THE TAB (phone): the Manifest's handle on the left edge, at the quarter mark where the menu
+                ribbon sits on the right. It rides the panel's edge when the panel is out, so the same tab
+                opens and closes it. A tap or the keyboard toggles it; a pull drags the panel along. */}
+            <button
+                type="button"
+                onClick={() => setManifestOpen(o => !o)}
+                onPointerDown={startManifestPull}
+                aria-expanded={manifestOpen}
+                aria-label={`Manifest, ${cart.length} ${cart.length === 1 ? 'line' : 'lines'}`}
+                style={{ touchAction: 'none', ...(pullX === null ? {} : { transform: `translateX(${pullX}px)` }) }}
+                className={`font-mono hide-on-print lg:hidden fixed left-0 top-[calc(25%-66px)] z-[151] w-5 h-[132px] py-1.5 flex flex-col items-center gap-1.5 rounded-r-[10px] border-2 border-l-0 border-[var(--duke-amber-edge)] bg-[var(--duke-fill-panel)] shadow-[4px_0_14px_rgba(0,0,0,0.5)]
+                            ${manifestOpen ? 'translate-x-[min(86vw,340px)]' : ''} ${pullX === null ? 'transition-transform duration-[320ms] ease-[cubic-bezier(.32,.72,0,1)]' : ''}`}
+            >
+                <span className="min-w-[16px] h-4 px-0.5 rounded-full border border-[var(--duke-amber-edge)] text-[10px] font-black leading-[14px] text-center text-[var(--duke-amber-ink)]">{cart.length}</span>
+                <span className="[writing-mode:vertical-rl] rotate-180 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--duke-amber-ink)]">Manifest</span>
+                <ChevronDown size={14} className={`mt-auto shrink-0 text-[var(--duke-ink-3)] ${manifestOpen ? 'rotate-90' : '-rotate-90'}`} />
+            </button>
+            {manifestOpen && <div aria-hidden="true" onClick={() => setManifestOpen(false)} className="hide-on-print lg:hidden fixed inset-0 z-[149] bg-[var(--duke-scrim)]"></div>}
+            {flag && !manifestOpen && (
+                <div role="status" className="kpm-flag font-mono hide-on-print lg:hidden pointer-events-none fixed left-5 top-[calc(25%-56px)] z-[151] max-w-[calc(100vw-44px)] px-3 py-2 rounded-r-[10px] border-2 border-l-0 border-[var(--duke-amber-edge)] bg-[var(--duke-fill-panel)] shadow-[4px_6px_18px_rgba(0,0,0,0.55)]">
+                    <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--duke-ink-6)]">Added · {cart.length} in manifest</p>
+                    <p className="mt-0.5 text-sm font-black uppercase tracking-wide text-[var(--duke-ink-1)] truncate">{flag.name}</p>
+                    <p className="mt-0.5 text-lg font-black font-mono leading-none text-[var(--duke-amber-ink)]">Rp {new Intl.NumberFormat('id-ID').format(flag.total)}</p>
+                </div>
+            )}
+
+            {/* THE ARRIVAL SHEET (his 2026-10-31 flow): GPS locked a shop, so the first thing asked is what
+                happened there. TAKE ORDER is the terminal - a dark plate with an amber edge, his "too bright" on
+                the board's filled one; every other answer is one tap and the visit is done, in Journey's own
+                tags (VISIT_TAGS) written the way Journey writes them. A portal like the shop picker: it must
+                out-rank the app header. */}
+            {arrival && createPortal(
+                <div role="dialog" aria-modal="true" aria-label={`Arrived at ${arrival.shop.name}`} className="hide-on-print fixed inset-0 z-[300] flex items-end lg:items-center justify-center">
+                    <div className="absolute inset-0 bg-[var(--duke-scrim)]" onClick={closeArrival}></div>
+                    <div data-guide="arrival" className="font-mono relative w-full lg:w-[520px] max-h-[90vh] overflow-y-auto p-4 pb-5 bg-[var(--duke-fill-panel)] text-[var(--duke-ink-1)] border-t-4 lg:border-4 border-[var(--duke-edge-1)] rounded-t-2xl lg:rounded-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.6)]">
+                        <div className="flex items-start gap-2.5">
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-ink-6)]">You are here · {arrival.metres} m · GPS ✓</p>
+                                <p className="mt-1.5 text-[22px] leading-tight font-black uppercase tracking-wide break-words">{arrival.shop.name}</p>
+                                {arrival.shop.address && <p className="mt-0.5 text-[13px] text-[var(--duke-ink-3)]">{arrival.shop.address}</p>}
+                            </div>
+                            <button type="button" onClick={closeArrival} aria-label="Close" className="kpm-press w-11 h-11 shrink-0 grid place-items-center rounded-lg border border-[var(--duke-edge-ctl)] text-[var(--duke-ink-3)]"><X size={20}/></button>
+                        </div>
+                        {requestNote === null ? (<>
+                            <button type="button" onClick={closeArrival} className="kpm-press kpm-hover mt-4 w-full min-h-[60px] rounded-lg border-2 border-[var(--duke-amber-edge)] bg-[var(--duke-fill-plank)] text-[var(--duke-amber-ink)] text-lg font-black uppercase tracking-[0.18em] flex items-center justify-center gap-2.5"><Zap size={18}/><span>Take order</span></button>
+                            <p className="mt-4 mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-ink-6)]">No order? One tap saves the visit</p>
+                            <div className="grid grid-cols-2 gap-2">
+                                {VISIT_TAGS.filter(t => t !== VISIT_TAGS[0] && !t.includes('📦')).map(tag => (
+                                    <button key={tag} type="button" onClick={() => (tag.includes('📝') ? setRequestNote('') : saveVisit(tag))}
+                                        className="kpm-press kpm-hover min-h-[56px] px-3 py-2 rounded-lg border-2 border-[var(--duke-edge-ctl)] bg-[var(--duke-fill-well)] text-[var(--duke-ink-1)] text-[13px] font-black uppercase tracking-[0.06em] leading-tight text-left">{tag}</button>
+                                ))}
+                                <button type="button" onClick={() => saveVisit(VISIT_TAGS[0])}
+                                    className="kpm-press kpm-hover col-span-2 min-h-[48px] px-3 py-2 rounded-lg border-2 border-[var(--duke-edge-ctl)] bg-[var(--duke-fill-well)] text-[var(--duke-ink-1)] text-[13px] font-black uppercase tracking-[0.06em]">{VISIT_TAGS[0]}</button>
+                            </div>
+                        </>) : (<>
+                            <label htmlFor="kpm-request-note" className="mt-4 mb-2 block text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-ink-6)]">New Request: what do they want?</label>
+                            {/* text-base = 16px, so iOS does not zoom the page into the field */}
+                            <textarea id="kpm-request-note" autoFocus rows={3} value={requestNote} onChange={(e) => setRequestNote(e.target.value)} placeholder="e.g. 2 slop Sampoerna Mild by Thursday"
+                                className="w-full p-3 rounded-lg border-2 border-[var(--duke-edge-ctl)] bg-[var(--duke-fill-well)] text-[var(--duke-ink-1)] text-base outline-none focus:border-[var(--duke-amber-edge)]" />
+                            <div className="mt-2 grid grid-cols-[auto_1fr] gap-2">
+                                <button type="button" onClick={() => setRequestNote(null)} className="kpm-press min-h-[48px] px-4 rounded-lg border-2 border-[var(--duke-edge-ctl)] text-[var(--duke-ink-3)] text-[13px] font-black uppercase tracking-[0.06em]">Back</button>
+                                <button type="button" disabled={!requestNote.trim()} onClick={() => saveVisit(VISIT_TAGS.find(t => t.includes('📝')), requestNote.trim())}
+                                    className="kpm-press kpm-hover min-h-[48px] rounded-lg border-2 border-[var(--duke-amber-edge)] bg-[var(--duke-fill-plank)] text-[var(--duke-amber-ink)] text-[13px] font-black uppercase tracking-[0.12em] disabled:opacity-40">Save request</button>
+                            </div>
+                        </>)}
+                    </div>
+                </div>,
+                document.body
+            )}
+
             {/* Always mounted now. It used to be hidden whenever the Merchant tab was open,
-                which is the ~2n tab switches per sale this phase exists to remove. The
-                bottom padding is the collapsed drawer's 104px (grip + customer bar), so the last
-                ware clears it. */}
-            <div className="hide-on-print flex-1 flex flex-col h-full lg:h-auto bg-[var(--duke-fill-deep)] pb-[104px] lg:pb-0 overflow-hidden">
+                which is the ~2n tab switches per sale this phase exists to remove. No bottom
+                padding since 2026-10-31: the manifest left the bottom of the phone for the side. */}
+            <div className="hide-on-print flex-1 flex flex-col h-full lg:h-auto bg-[var(--duke-fill-deep)] overflow-hidden">
                 {/* WHICH STOCK AM I SELLING FROM — the boss's only. This used to be a bar in the
                     app shell above the whole terminal, where the manifest drawer painted over it
                     (his G5 report, twice). It is a row of this column now because this column is

@@ -1641,15 +1641,6 @@ html.lite-mode .kpm-examine-object { animation: none; }
    desk screen, which is exactly what he was pointing at: *"i dont want this many spaces
    useless"*. Audit group 6 now asserts it stays gone. */
 
-/* ---------- THE HEADER GETS OUT OF THE SHEET'S WAY ----------
-   His ask: pull the manifest all the way up, "so that the whole screen is full of manifest
-   panel". His earlier bug: the notification bell drawing on top of that same paper. Those two
-   only look like opposites. The sheet is fixed to the viewport from a different branch of the
-   tree than this header, so which one paints on top is not something either of them states —
-   and that argument has cost two rounds already. It is not an argument any more: while the
-   sheet stands in the header's band the header is simply not there. Opacity, not display, so
-   it fades with the drag instead of vanishing at a threshold; pointer-events so a control you
-   cannot see cannot be pressed through the paper. MerchantSalesView owns the class. */
 /* ═══ THE HEADER BAND ═══ his ask, 2026-08-15: *"lets rework the top UI format ... i want it to
    be in theme with this app and also change the background"*.
    The diagnosis first, because it decides the shape: the dock is a floating capsule with a lit
@@ -1657,7 +1648,6 @@ html.lite-mode .kpm-examine-object { animation: none; }
    other was a line — that is the "not in theme with this app" he is pointing at. So the header
    becomes the dock's TWIN: same glass, same lit lip, inset from the edges, floating on the same
    ground. One rule for the whole shell — things float — instead of two unrelated ideas. */
-.kpm-topbar { transition: opacity 220ms ease-out; }
 /* the section's mark, ghosted into the corner. Low enough to be texture, never a second label. */
 .kpm-topbar-ghost {
   position: absolute; top: -18px; right: 10px; pointer-events: none; user-select: none;
@@ -1770,9 +1760,10 @@ html.lite-mode .kpm-topbar-ghost { opacity: .04; }
 /* the colon keeps the same line box as the reels or the row loses its baseline */
 .kpm-dig-sep { display: block; height: var(--row); line-height: var(--row); }
 @media (prefers-reduced-motion: reduce) { .kpm-dig-reel { transition: none; } }
-html.kpm-sheet-over-header .kpm-topbar { opacity: 0; pointer-events: none; }
-html.lite-mode .kpm-topbar { transition: none; }
-@media (prefers-reduced-motion: reduce) { .kpm-topbar { transition: none; } }
+/* The Sales Terminal's "+" flag (2026-10-31) slides out from under the Manifest tab on the phone's left edge.
+   Lite Mode and reduced motion stop it through their global rules: it just appears. */
+@keyframes kpm-flag-out { from { transform: translateX(-100%); opacity: 0; } }
+.kpm-flag { animation: kpm-flag-out 220ms cubic-bezier(.23, 1, .32, 1); }
 
 /* ---------- THE DESK RAIL SHRINKS, AND OPENS WHEN YOU POINT AT IT ----------
    His ask, 2026-08-14, with two screenshots: *"sidebar should shrink and opens up when hovered
