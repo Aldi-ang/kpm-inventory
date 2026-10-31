@@ -1445,3 +1445,5 @@ unanswered — the GPS-bypass approvals were among the nine paths `da71cbd` re-r
 before treating it as open.
 
 </details>
+
+- 2026-10-31 20:28 side note (not a job): demo omset in miliar is DONE and pushed (`4b6a6b3`, api/_demoCompany.js qtyOf + demo targets; lab tools/demo-omset-lab.html?at=<day>). The ONE job above is unchanged.
