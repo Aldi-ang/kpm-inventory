@@ -7,7 +7,7 @@ His *"how better if we can add the total sales into milyar omset instead of just
 
 ## 🟠 2026-10-31 20:18 WIB — KPM: Sales Terminal arrival flow + side Manifest = the new ONE job (no app code); demo + Distri sent to their sessions
 - His ask (verbatim in NEXT-SESSION): status on arrival (stock full / competitor / ...), ORDER opens the full terminal, Manifest becomes a LEFT slide-out panel. Reuse the Journey Visit Report tags (`VISIT_TAGS`). Also *"continue your work about the demo next, how better if we can add the total sales into milyar omset instead of just few puluh juta"* -> sent to the demo session (local_a9be031a). The Distri comparison session (local_bc840484) had died on the weekly limit; re-sent after the 19:00 reset.
-- WAITING ON ALDI (verbatim): *"❓ ANSWER: when you say "closing", do you mean the salesman CLOSES A DEAL (the shop orders, so the full terminal opens), or the SHOP IS SHUT today (it goes on the list like "Store Closed")?"* Seat-limit answers are in; it is queued behind the terminal.
+- ANSWERED 20:38 (*"its mean A"*: closing = the shop orders, the terminal opens). Was (verbatim): *"❓ ANSWER: when you say "closing", do you mean the salesman CLOSES A DEAL (the shop orders, so the full terminal opens), or the SHOP IS SHUT today (it goes on the list like "Store Closed")?"* Seat-limit answers are in; it is queued behind the terminal.
 
 ## 🟠 2026-10-28 08:18 WIB — KPM: seat limit planned + SimpliDOTS gaps ranked (no app code)
 - His ask: compare with SimpliDOTS, best price, and *"we need some subscription manager features just for the tier 1"*. Plan: A-Brain `Brainstorm/2026-10-28_seat-limit-and-simplidots-gaps.md`. Price NOT re-opened (his Rp 10 jt floor, 2026-10-25).
