@@ -1,6 +1,9 @@
 # The one job
 
-**Paste this to start (it downloads FIRST - the PC copy of this file is stale until the pull):** `/alucard First run in PowerShell: git status -sb; git pull origin phase0-solid-ground - if git refuses because of local changes, show me the list and stop. Then open the .claude/NEXT-SESSION.md you just pulled and do the ONE JOB at its top.`
+**After a quota reset, or any break longer than 1 hour - 3 steps:**
+1. **Do NOT type into the old session.** After 1 hour its saved copy expires, and your first message makes it re-read the WHOLE conversation at full price (2026-11-01: a 550k-token session ate 15% of the 5-hour quota on one "continue").
+2. **Open a New session** (or type `/clear` in the old one first).
+3. **Paste this line** (it downloads first - the PC copy of this file is stale until the pull): `/alucard First run in PowerShell: git status -sb; git pull origin phase0-solid-ground - if git refuses because of local changes, show me the list and stop. Then read ONLY the first 40 lines of .claude/NEXT-SESSION.md and do the ONE JOB at its top. Never read PROGRESS.md, lessons.md or the rest of NEXT-SESSION.md whole (374 KB / 160 KB / 608 KB) - grep them for the one line you need.`
 
 
 **2026-10-31 21:50 — THE ONE JOB: the SEAT LIMIT. His 3 answers are in; the whole brief is the "2026-10-28 08:18 — QUEUED" block further down - read it whole, its 08:30 answers are the latest word. Rules change FIRST (he publishes it in the Console), code after.**
