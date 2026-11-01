@@ -1635,8 +1635,15 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     }, [cart]);
     /* The rail's idle state. Recomputed only when the transaction list actually changes —
        it walks every transaction in the seven-day window, which is cheap but not free, and
-       this component re-renders on every keystroke in the search box. */
-    const today = React.useMemo(() => dayStats(transactions), [transactions]);
+       this component re-renders on every keystroke in the search box.
+       A salesman's rail counts HIS sales only (Aldi, 2026-11-02, "A"): the list is the whole
+       company's, so unfiltered a salesman paid Rp 750.000 was told Rp 4.780.000 and another man's
+       shop as his last customer. The boss keeps the company. Filter here, never in dayStats or
+       the listener - the same list feeds the boss's screens. */
+    const today = React.useMemo(
+        () => dayStats(userRole === 'ADMIN' ? transactions : transactions.filter(t => t.agentId === agentProfileId)),
+        [transactions, userRole, agentProfileId]
+    );
     const clockLabel = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
     /* The ware most likely to run out on this route. Zero is not "low", it is gone, and a

@@ -12616,5 +12616,31 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      !/document\[\d\]/.test(allow) && /\[CHANGE 21 /.test(rules));
 }
 
+/* A SALESMAN'S TODAY BOX COUNTS HIS OWN SALES (2026-11-02, Aldi: "A"). The rail ran dayStats over the company-wide
+   seven-day list, so in the lab a T5 whose shops paid him Rp 750.000 at 2 shops was told Rp 4.780.000, 5 stores, and
+   another salesman's shop as his last customer. The boss's terminal (userRole ADMIN) keeps the whole company.
+   The filter lives on the terminal's INPUT - dayStats and the listener feed the boss's screens too. */
+{ const { dayStats } = await import('../utils/dayStats.js');
+  const ms = read('src/MerchantSalesView.jsx');
+  const expr = (ms.match(/const today = React\.useMemo\(\s*\(\) => dayStats\(([\s\S]*?)\),\s*\[transactions, userRole, agentProfileId\]\s*\);/) || [])[1];
+  ok('REGRESSION: the terminal\'s Today rail never runs dayStats on the whole company list for a salesman again',
+     !!expr && !/dayStats\(transactions\)/.test(ms));
+  const now = new Date(2026, 10, 2, 15, 0);
+  const at = (h) => ({ seconds: Math.floor(new Date(2026, 10, 2, h, 0).getTime() / 1000) });
+  const tx = [
+    { agentId: 'lab-t5', type: 'SALE', paymentType: 'Cash', total: 450000, customerName: 'Toko Berkah Jaya', timestamp: at(9) },
+    { agentId: 'lab-t5', type: 'SALE', paymentType: 'Cash', total: 300000, customerName: 'Warung Bu Sri', timestamp: at(11) },
+    { agentId: 'm2', type: 'SALE', paymentType: 'Cash', total: 1850000, customerName: 'Toko Sumber Rejeki', timestamp: at(10) },
+    { agentId: 'm2', type: 'SALE', paymentType: 'Cash', total: 1200000, customerName: 'Kios Maju Mundur', timestamp: at(12) },
+    { agentId: 'm2', type: 'SALE', paymentType: 'Transfer', total: 980000, customerName: 'Toko Lancar', timestamp: at(14) },
+  ];
+  const input = expr ? new Function('transactions', 'userRole', 'agentProfileId', `return ${expr};`) : () => [];
+  const mine = dayStats(input(tx, 'FIELD_OPERATIVE', 'lab-t5'), now);
+  const boss = dayStats(input(tx, 'ADMIN', 'VAULT'), now);
+  ok('BEHAVIOUR: a salesman\'s box = his own day (Rp 750.000, 2 stores, last Warung Bu Sri); the boss\'s = the company (Rp 4.780.000, 5 stores)',
+     mine.today === 750000 && mine.stores === 2 && mine.last?.customerName === 'Warung Bu Sri' &&
+     boss.today === 4780000 && boss.stores === 5 && boss.last?.customerName === 'Toko Lancar');
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
