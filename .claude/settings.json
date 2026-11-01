@@ -18,7 +18,7 @@
           },
           {
             "type": "command",
-            "command": "cat \"${CLAUDE_PROJECT_DIR}/.claude/PROGRESS.md\"",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/progress-head.mjs\"",
             "timeout": 5,
             "statusMessage": "Reading where we left off..."
           },

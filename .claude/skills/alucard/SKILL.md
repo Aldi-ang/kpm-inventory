@@ -39,8 +39,11 @@ full sentences, and every reply still ends with what was just done.
 Aldi, 2026-08-24: *"i want when i ask for alucard in the sessions it runs everything
 automatically"*. So on every invocation, immediately after §0 and before the task:
 
-1. Read `~/.claude/skills/alucard/lessons.md`. Append `Fired: <date>` to any Trigger that matches
-   what you are about to do (§8).
+1. Grep the Trigger lines of `~/.claude/skills/alucard/lessons.md`
+   (`grep -n "^\*\*Trigger" ~/.claude/skills/alucard/lessons.md | cut -c1-220`) and read only the
+   entries whose trigger matches what you are about to do - never the whole file (160 KB, ~40k
+   tokens; Aldi, 2026-11-01: *"the model does not eat so much of the quota just to read everything
+   again"*). Append `Fired: <date>` to each matching entry (§8).
 2. Act on the session-start `LESSONS:` report without being asked. **All of it is bookkeeping,
    not a decision** — none of it needs Aldi:
    - `ARCHIVE DUE` -> move those entries to `A-Brain/Wiki/Lessons-Archive.md` now.
@@ -379,8 +382,9 @@ waive a security warning or an irreversible-action confirmation.
 
 ## 8. Lessons
 
-At plan time read `~/.claude/skills/alucard/lessons.md` once; append `Fired: <date>` to any
-Trigger line that matches what you're about to do. You may write to `lessons.md`. You may NEVER
+At plan time grep the Trigger lines of `~/.claude/skills/alucard/lessons.md` once (§0a step 1) and
+read only the matching entries, never the whole file; append `Fired: <date>` to any Trigger line
+that matches what you're about to do. You may write to `lessons.md`. You may NEVER
 edit this file on your own initiative — a settings `ask` rule stops every attempt and puts the
 decision in front of Aldi (his change, 2026-08-09: "deny edit except if Aldi give u permissions").
 Propose the exact new wording in chat and let him approve the prompt; never edit it as a side

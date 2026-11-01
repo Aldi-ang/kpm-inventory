@@ -11,6 +11,8 @@
    Test:  echo "{\"transcript_path\":\"<some>.jsonl\"}" | node .claude/context-watch.mjs
 */
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 let hook = {};
 try { hook = JSON.parse(fs.readFileSync(0, 'utf8')); } catch { process.exit(0); }
@@ -85,6 +87,36 @@ const used = real > 0 ? real : Math.round(chars / 4);
 const pct = Math.round((used / WINDOW) * 100);
 const left = Math.max(0, WINDOW - used);
 const k = (n) => Math.round(n / 1000) + 'k';
+
+/* THE COLD-SESSION GUARD - his 2026-11-01: "just now when i ask u to continue the work it suddently fill 15% of the
+   quota just to start a job". A conversation's prompt cache lives about an hour. Type into a big session after a longer
+   break and the WHOLE history is re-read at full price: a 550k-token session cost 15% of his 5-hour quota on one
+   "continue". So the first message into a big, idle session is stopped here, before it reaches the model, and he is
+   told what to do instead. Typing it again within 2 minutes sends it anyway - his call stays his. Built-in commands
+   pass: blocking /clear would lock him into the expensive path. Test: node .claude/startup-cost.test.mjs */
+const BIG = 200_000, IDLE_MIN = 60, AGAIN_MS = 2 * 60_000;
+let lastReply = 0;
+for (let i = lines.length - 1; i >= 0 && !lastReply; i--) {
+  if (!lines[i].includes('"type":"assistant"')) continue;
+  try { lastReply = Date.parse(JSON.parse(lines[i]).timestamp) || 0; } catch { /* not a line we can read */ }
+}
+const idleMin = lastReply ? (Date.now() - lastReply) / 60_000 : 0;
+const builtIn = /^\s*\/(clear|compact|exit|quit|resume|cost|context|model|config|help|status|login|logout|doctor)\b/;
+if (used >= BIG && idleMin >= IDLE_MIN && !builtIn.test(hook.prompt || '')) {
+  const mark = path.join(os.tmpdir(), `kpm-cold-guard-${hook.session_id || 'session'}`);
+  let warned = 0;
+  try { warned = Number(fs.readFileSync(mark, 'utf8')) || 0; } catch { /* first time */ }
+  if (Date.now() - warned > AGAIN_MS) {
+    fs.writeFileSync(mark, String(Date.now()));
+    const hours = idleMin >= 90 ? `${Math.round(idleMin / 60)} hours` : `${Math.round(idleMin)} minutes`;
+    console.log(JSON.stringify({ decision: 'block', reason:
+      `NOT SENT - this session is ${k(used)} tokens big and has been idle ${hours}. After 1 hour its saved copy ` +
+      `expires, so this message would re-read the whole conversation at full price (2026-11-01: a 550k session ate ` +
+      `15% of the 5-hour quota this way). Do this instead: open a New session (or type /clear) and paste the line at ` +
+      `the top of .claude/NEXT-SESSION.md. To send it here anyway, type your message again within 2 minutes.` }));
+    process.exit(0);
+  }
+}
 
 /* Under 55% there is nothing worth saying, and saying it would itself cost tokens. */
 if (pct < 55) process.exit(0);
