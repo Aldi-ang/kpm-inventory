@@ -855,6 +855,21 @@ const LAB_AGENT_TXNS = [
     forensicData: { quarantineCargo: [{ itemName: 'Cello Green 16', qty: 10, returnReason: 'Rusak / Basah' }] } },
 ];
 
+/* ?shell&terminal&team (2026-11-02) - TWO salesmen sold today: the lab salesman (lab-t5) twice, Budi
+   (m2) three times, Budi last. The list is company-wide, as useDatabaseSync hands it over, so the
+   Today rail shows what a T5 really sees. Times are fractions of the day so far, so always "today". */
+const labTeamToday = () => {
+  const mid = new Date(); mid.setHours(0, 0, 0, 0);
+  const at = (f) => ({ seconds: Math.floor((mid.getTime() + f * (Date.now() - mid.getTime())) / 1000) });
+  return [
+    { id: 'tm1', agentId: 'lab-t5', agentName: 'Lab Salesman', type: 'SALE', paymentType: 'Cash', total: 450000, customerName: 'Toko Berkah Jaya', timestamp: at(0.2) },
+    { id: 'tm2', agentId: 'lab-t5', agentName: 'Lab Salesman', type: 'SALE', paymentType: 'Cash', total: 300000, customerName: 'Warung Bu Sri', timestamp: at(0.5) },
+    { id: 'tm3', agentId: 'm2', agentName: 'Budi Santoso', type: 'SALE', paymentType: 'Cash', total: 1850000, customerName: 'Toko Sumber Rejeki', timestamp: at(0.3) },
+    { id: 'tm4', agentId: 'm2', agentName: 'Budi Santoso', type: 'SALE', paymentType: 'Cash', total: 1200000, customerName: 'Kios Maju Mundur', timestamp: at(0.6) },
+    { id: 'tm5', agentId: 'm2', agentName: 'Budi Santoso', type: 'SALE', paymentType: 'Transfer', total: 980000, customerName: 'Toko Lancar', timestamp: at(0.9) },
+  ];
+};
+
 /* ?shell&map — the Map System INSIDE the real shell, mounted exactly as App.jsx mounts it (no wrapper),
    with the expedition prototype's team (A-Brain Raw/2026-10-02-expedition/expedition.html) placed on
    the same real roads: the prototype's ground-image pixels turned back into lat/lng with the tile maths
@@ -1252,7 +1267,7 @@ function ShellLab() {
             regionOffers={q.has('bundles') ? [{ id: 'r1', name: 'TEAM SLOP DEAL', region: 'BANDUNG', by: 'Rizky Aditama', lines: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 1, unit: 'Slop' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }] }] : []}
             customers={LAB_CUSTOMERS}
             allowedPayments={['Cash', 'Transfer', 'IOU']} allowedTiers={['Retail', 'Ecer', 'Grosir']}
-            transactions={[]} allowRetur allowCashRefund={false}
+            transactions={q.has('team') ? labTeamToday() : []} allowRetur allowCashRefund={false}
             db={null} appId="lab" agentProfileId="lab-t5" storage={null} masterUserId="lab"
             isOnline
           />
