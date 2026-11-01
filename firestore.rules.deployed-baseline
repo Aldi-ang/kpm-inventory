@@ -1,12 +1,13 @@
 // =============================================================================
-// PUBLISHED 2026-10-27 ~16:30 WIB by Aldi from the Firebase Console (this file as of kpm c1e113e, put on his
-//   clipboard and pasted whole; his "published already the rules"). firestore.rules.deployed-baseline is
+// PUBLISHED 2026-11-01 ~18:36 WIB by Aldi from the Firebase Console (this file as of kpm 2f2eb69, put on his
+//   clipboard and pasted whole; his "published already"). firestore.rules.deployed-baseline is
 //   that text - the instant rollback copy. Live = the 2026-07-28 rules + the shared rank/badge path closed,
 //   + CHANGE 11/11b (a vault password per person), 12 (lock an account), 13 (T1/T2 move a person to a new
 //   Gmail), 14 (the eight holes found reviewing the live rules), 15 (the bell's Missed list, one per person),
 //   16 (a salesman's sale may add to the month's sales tally), 17 (customer access by folder; Tier 3 never
-//   limited), 18 (only T1-T4 make a shop Grosir), 19 (team offers: T1-T3 everywhere, T4 his own region).
-//   Before this: 2026-10-20 ~10:30 (f24f2bf, without 18 and 19). Any change below this line is a DRAFT again.
+//   limited), 18 (only T1-T4 make a shop Grosir), 19 (team offers: T1-T3 everywhere, T4 his own region),
+//   20 (the seat limit: a login under a licensed company holds a numbered seat).
+//   Before this: 2026-10-27 ~16:30 (c1e113e, without 20). Any change below this line is a DRAFT again.
 //
 // Everything except the marked [CHANGE N] / [ADDED] / [FLAGGED] blocks below is
 // intentionally byte-for-byte the rules that were live before 2026-07-23. An
@@ -296,6 +297,64 @@ service cloud.firestore {
     }
 
     // =====================================================================
+    // [CHANGE 20 — 2026-11-01, DRAFT until Aldi publishes it] THE SEAT LIMIT - his "subscription manager just for
+    // tier 1": "even when the company pays for 10 people they are freely be able to just add another one inside the
+    // fleet and roster without paying me". His 2026-10-28 answers: every login incl. the T2 owner is one seat, a
+    // locked login keeps its seat, an email change moves the same seat, only removing the person frees it.
+    //
+    // Rules cannot count documents, so each login HOLDS a numbered seat:
+    //   licenses/{bossUid}      { seats }              - written only by him (the isSuperAdmin catch-all), read by that company
+    //   seats/{bossUid}_{n}     { bossUid, n, login }  - login = the employee_directory doc id that holds it
+    // A number above the licence is refused, and a number already taken cannot be created again (a write to an
+    // existing doc is an update, and an update only MOVES a seat whose old login is gone).
+    // Seats live OUTSIDE users/{bossUid} on purpose: the owner's catch-all there could delete a seat doc and reuse its
+    // number while the first login still exists - two people, one seat.
+    // No licence = no limit: every company without one keeps working exactly as before.
+    // PUBLISH ORDER: publish this BEFORE setting the first licence. Under the old rules a company cannot read its
+    // licence, so the app treats it as unlimited - nothing breaks, but nothing is limited either.
+    // rules-test/test-seat-limit.mjs.
+    // =====================================================================
+    function seatAdmin(bossUid) {
+      return isVaultOwner(bossUid) || isDistributorAdmin(bossUid) || isAuthorizedAreaAdmin(bossUid) || isCompanyTopTier(bossUid);
+    }
+    function loginAfter(key) {
+      return getAfter(/databases/$(database)/documents/artifacts/cello-inventory-manager/employee_directory/$(key)).data;
+    }
+    // The one exemption: the owner's own uid-keyed record (App.jsx account migration) - one per owner, and nobody
+    // signs in through someone else's uid record.
+    function loginHoldsSeat(bossUid, key) {
+      return key == request.auth.uid ||
+        !exists(/databases/$(database)/documents/artifacts/cello-inventory-manager/licenses/$(bossUid)) ||
+        (request.resource.data.get('seat', 0) is int &&
+          getAfter(/databases/$(database)/documents/artifacts/cello-inventory-manager/seats/$(bossUid + '_' + string(request.resource.data.seat))).data.login == key);
+    }
+
+    match /artifacts/cello-inventory-manager/licenses/{bossUid} {
+      allow get: if isVaultOwner(bossUid) || isSalesman(bossUid);
+    }
+
+    match /artifacts/cello-inventory-manager/seats/{seatId} {
+      allow read: if isFleetTier(resource.data.bossUid);
+      allow create: if seatAdmin(request.resource.data.bossUid) &&
+        request.resource.data.keys().hasOnly(['bossUid', 'n', 'login']) &&
+        request.resource.data.n is int && request.resource.data.n >= 1 &&
+        seatId == request.resource.data.bossUid + '_' + string(request.resource.data.n) &&
+        request.resource.data.n <= get(/databases/$(database)/documents/artifacts/cello-inventory-manager/licenses/$(request.resource.data.bossUid)).data.seats &&
+        loginAfter(request.resource.data.login).bossUid == request.resource.data.bossUid &&
+        loginAfter(request.resource.data.login).get('seat', 0) == request.resource.data.n;
+      // An email change moves the seat to the new record - only once the old record is gone.
+      allow update: if seatAdmin(resource.data.bossUid) &&
+        request.resource.data.keys().hasOnly(['bossUid', 'n', 'login']) &&
+        request.resource.data.bossUid == resource.data.bossUid && request.resource.data.n == resource.data.n &&
+        !existsAfter(/databases/$(database)/documents/artifacts/cello-inventory-manager/employee_directory/$(resource.data.login)) &&
+        loginAfter(request.resource.data.login).bossUid == resource.data.bossUid &&
+        loginAfter(request.resource.data.login).get('seat', 0) == resource.data.n;
+      // Only removing the person frees the seat: its login record must be gone after the write.
+      allow delete: if seatAdmin(resource.data.bossUid) &&
+        !existsAfter(/databases/$(database)/documents/artifacts/cello-inventory-manager/employee_directory/$(resource.data.login));
+    }
+
+    // =====================================================================
     // [CHANGE 1] — THE ONLY BEHAVIOR CHANGE IN THIS FILE
     //
     // VULNERABILITY IN THE LIVE RULES (critical, cross-tenant privilege escalation):
@@ -336,7 +395,9 @@ service cloud.firestore {
         // [CHANGE 13 — 2026-09-29, DRAFT] a T1/T2 moves a person to a new Gmail (Fleet & Roster -> Edit -> email;
         // his "Tier 1 , tier 2 could also be able to do that"): the new login record, never with a T1 tag.
         (isCompanyTopTier(request.resource.data.bossUid) && !isT1Tag(request.resource.data.get('userRole', 'NONE')))
-      );
+      ) &&
+        // [CHANGE 20 — 2026-11-01, DRAFT] under a company with a licence, a new login record holds a seat (block above).
+        loginHoldsSeat(request.resource.data.bossUid, email);
 
       allow update: if isAuthenticated() && resource != null && (
         resource.data.bossUid == request.auth.uid ||

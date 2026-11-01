@@ -4,7 +4,7 @@
 // Fleet & Roster's add / email move / remove are replayed as the same batches FleetCanvasManager.jsx writes.
 // Run (emulator only, never the live project):
 //   npx firebase emulators:exec --only firestore --project demo-kpm-rules "node rules-test/test-seat-limit.mjs"
-// RED run: RULES_FILE=firestore.rules.deployed-baseline (the live rules) must fail the DENIED lines.
+// RED run: the rules before CHANGE 20 (`git show af78fc6:firestore.rules.deployed-baseline`) fail 11 lines.
 import { readFileSync } from 'fs';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, writeBatch, collection, query, where, getDocs } from 'firebase/firestore';
