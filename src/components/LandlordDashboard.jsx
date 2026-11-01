@@ -5,9 +5,14 @@ import { commitInChunks, isSafeDocIdEmail } from '../utils/helpers';
 import { lockLeftMs, untilText } from '../utils/vaultLock.js';
 import { confirmAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
+import { seatDocId, freeSeats, seatsUsedText } from '../utils/seats.js';
 
 export default function LandlordDashboard({ db, appId, user }) {
     const [tenants, setTenants] = useState([]);
+    /* THE SEAT LIMIT (utils/seats.js, rules CHANGE 20): his licence per company and how many seats its logins hold */
+    const [licences, setLicences] = useState({});
+    const [seatCounts, setSeatCounts] = useState({});
+    const [seatDraft, setSeatDraft] = useState({});
     
     // Provisioning State
     const [newEmail, setNewEmail] = useState('');
@@ -27,6 +32,54 @@ export default function LandlordDashboard({ db, appId, user }) {
         });
         return () => unsub();
     }, [db, appId, user]);
+
+    useEffect(() => {
+        if (!user) return;
+        const offL = onSnapshot(collection(db, `artifacts/${appId}/licenses`), (snap) =>
+            setLicences(Object.fromEntries(snap.docs.map(d => [d.id, Number(d.data().seats) || 0]))));
+        const offS = onSnapshot(collection(db, `artifacts/${appId}/seats`), (snap) => {
+            const counts = {};
+            snap.docs.forEach(d => { const b = d.data().bossUid; counts[b] = (counts[b] || 0) + 1; });
+            setSeatCounts(counts);
+        });
+        return () => { offL(); offS(); };
+    }, [db, appId, user]);
+
+    /* SAVE A COMPANY'S SEATS. His 2026-10-28: "every login incl. the owner = 1 seat ... 400k per people". Sets the
+       licence and gives every login that holds no seat yet the lowest free number - the company's existing people are
+       numbered here, once, by him (the super-admin rule covers it). Over the limit loses nobody; empty = no limit. */
+    const handleSaveSeats = async (tenant) => {
+        const who = tenant.name || tenant.email, boss = tenant.bossUid;
+        if (!boss || boss.includes('@')) return notify(`${who} has not signed in yet. Set seats after their first sign-in.`);
+        const raw = String(seatDraft[tenant.id] ?? licences[boss] ?? '').trim();
+        const limit = Number(raw);
+        if (raw && !(Number.isInteger(limit) && limit > 0)) return notify(`"${raw}" is not a seat count. Type a whole number, or leave it empty for no limit.`);
+        try {
+            if (!raw) {
+                await deleteDoc(doc(db, `artifacts/${appId}/licenses`, boss));
+                setSeatDraft(d => ({ ...d, [tenant.id]: undefined }));
+                return notify(`${who}: no seat limit. They can add as many people as they like.`);
+            }
+            const [logins, seats] = await Promise.all([
+                getDocs(query(collection(db, `artifacts/${appId}/employee_directory`), where('bossUid', '==', boss))),
+                getDocs(query(collection(db, `artifacts/${appId}/seats`), where('bossUid', '==', boss))),
+            ]);
+            /* a login = an email-keyed record, or the owner's own uid record. A staff uid-keyed copy (old sign-ins made
+               them) is the same person again, not another seat. */
+            const held = new Set(seats.docs.map(d => d.data().login));
+            const unseated = logins.docs.map(d => d.id).filter(id => (id.includes('@') || id === boss) && !held.has(id));
+            const nums = freeSeats(seats.docs.map(d => d.data().n), Infinity, unseated.length);
+            const ops = unseated.map((login, i) => ({ type: 'set', ref: doc(db, `artifacts/${appId}/seats`, seatDocId(boss, nums[i])), data: { bossUid: boss, n: nums[i], login } }));
+            ops.push({ type: 'set', ref: doc(db, `artifacts/${appId}/licenses`, boss), data: { seats: limit } });   // last: the limit lands after the numbers
+            await commitInChunks(db, writeBatch, ops);
+            const used = seats.docs.length + unseated.length;
+            setSeatDraft(d => ({ ...d, [tenant.id]: undefined }));
+            notify(`${who}: ${seatsUsedText(used, limit)}.${unseated.length ? ` ${unseated.length} existing login${unseated.length > 1 ? 's' : ''} numbered.` : ''}${used > limit ? ` ${used - limit} over the limit: nobody is removed, and they cannot add anyone until they are back under ${limit}.` : ''}`);
+        } catch (e) {
+            console.error(e);
+            notify(`Could not save seats for ${who}: ${e.message || 'unknown error'}`);
+        }
+    };
 
     // --- UPGRADED: DATABASE SWEEPER FOR PROVISIONING ---
     const handleCreateTenant = async (e) => {
@@ -280,7 +333,18 @@ export default function LandlordDashboard({ db, appId, user }) {
                                                 {t.tier === 1 ? <ShieldAlert size={10} className="inline mr-1"/> : <ShieldCheck size={10} className="inline mr-1"/>}
                                                 Tier {t.tier || 1}
                                             </span>
+                                            <span className="kpm-read" data-guide="tenant-seats">
+                                                {licences[t.bossUid] ? seatsUsedText(seatCounts[t.bossUid] || 0, licences[t.bossUid]) : 'No seat limit'}
+                                            </span>
                                         </div>
+                                        <form className="flex items-end gap-2 mt-2" onSubmit={(e) => { e.preventDefault(); handleSaveSeats(t); }}>
+                                            <div className="kpm-field flex-1 max-w-[220px]">
+                                                <span>Seats (empty = no limit)</span>
+                                                <input type="number" min="1" inputMode="numeric" value={seatDraft[t.id] ?? (licences[t.bossUid] || '')}
+                                                    onChange={e => setSeatDraft(d => ({ ...d, [t.id]: e.target.value }))} />
+                                            </div>
+                                            <button type="submit" className="kpm-btn shrink-0">Save seats</button>
+                                        </form>
                                     </div>
 
                                     <div className="acts">

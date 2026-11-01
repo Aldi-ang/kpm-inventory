@@ -8431,7 +8431,8 @@ section('THE ROSTER, REDRAWN WITH EVERY DOOR KEPT (2026-09-24)');
   ok('view for everyone; edit and remove only behind the fleet gate, remove still wears data-kpm-del',
      /onClick=\{\(e\) => handleViewClick\(e, sel\)\}/.test(left) &&
      /\{canEditFleet && \(\s*<>\s*<button type="button"(?: className=\{isDemoLogin\(sel\) \? 'demo-locked' : undefined\})? onClick=\{\(e\) => handleEditClick\(e, sel\)\}[\s\S]{0,300}<button data-kpm-del data-label="Delete" type="button"(?: className=\{isDemoLogin\(sel\) \? 'demo-locked' : undefined\})? onClick=\{\(e\) => handleDeleteAgent\(e, sel\)\}/.test(left));
-  ok('the add key is behind the same gate and still resets the form', /\{canEditFleet && \(\s*<button onClick=\{\(\) => \{ setIsAddingAgent\(!isAddingAgent\); setEditingAgentId\(null\); setNewAgent\(defaultAgentState\); setIsReadOnlyMode\(false\); \}\}/.test(left));
+  /* 2026-11-01 the seat limit: at the limit the key says so before it opens the form (SEAT LIMIT block at the end) */
+  ok('the add key is behind the same gate and still resets the form', /\{canEditFleet && \(\s*<button onClick=\{\(\) => \{\s*(?:\/\*[^*]*\*\/\s*)?if \(!isAddingAgent && seatsFull\) return notify\(seatsFullMsg\(seatDocs\.length, seatLimit\)\);\s*setIsAddingAgent\(!isAddingAgent\); setEditingAgentId\(null\); setNewAgent\(defaultAgentState\); setIsReadOnlyMode\(false\); \}\}/.test(left));
   ok('the search reads the same five fields', /a\.name\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.email\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.userRole\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.location\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.province\?\.toLowerCase\(\)\.includes\(term\)/.test(left));
   ok('people keep their rank order (admin, area admin, agent)', /const rank = \{ 'ADMIN': 3, 'AREA_ADMIN': 2, 'AGENT': 1 \};/.test(left) && /const cast = byRank\(term \? shown : \(places\[place\]\?\.people \|\| \[\]\)\);/.test(left));
   ok('areas become tabs over the stage only when more than one place is in view, and a search puts every match on it',
@@ -9361,7 +9362,8 @@ section('FLEET & ROSTER: THE QUARANTINE SWITCH (2026-09-30)');
      br.length === 1 && br[0].id === 'b' && br[0].damagedStock === 2 && br[0].name === 'Cello Merah 12');
   ok('Fleet & Roster reads it off rows it already listens to - no new listener, one prop',
      /const whQuarantine = useMemo\(\(\) => quarantineOf\(inventory, selectedAgentUsesBranch \? branchStock : null\)/.test(fl) &&
-     /warehouseQ=\{whQuarantine\}/.test(fl) && (fl.match(/onSnapshot\(/g) || []).length === 4);
+     /* 4 -> 6 on 2026-11-01: the seat limit's licence + seats listeners (SEAT LIMIT block at the end), none for this */
+     /warehouseQ=\{whQuarantine\}/.test(fl) && (fl.match(/onSnapshot\(/g) || []).length === 6);
 
   /* the box */
   /* stage 3 widened it to three: the promo goods (the gift band) are the hatch's third stop */
@@ -12560,6 +12562,38 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   ok('REGRESSION: with the manifest tucked away each ware that goes in still reports itself - a flag with that ware and the new total for 2 s',
      /if \(!grew \|\| manifestOpen\) \{ setFlag\(null\); return undefined; \}/.test(stc) && /setTimeout\(\(\) => setFlag\(null\), 2000\)/.test(stc) &&
      /\.kpm-flag \{ animation: kpm-flag-out/.test(read('src/styles/theme.css')));
+}
+
+/* THE SEAT LIMIT (2026-11-01) - his "subscription manager just for tier 1": "even when the company pays for 10 people
+   they are freely be able to just add another one inside the fleet and roster without paying me". Rules CHANGE 20 +
+   rules-test/test-seat-limit.mjs (27/27; the live rules fail 11). */
+{
+  const s = await import('../utils/seats.js');
+  const fl = code(fleet), ld = code(read('src/components/LandlordDashboard.jsx')), rules = read('firestore.rules').replace(/\r/g, '');
+  ok('BEHAVIOUR: the next seat is the lowest free number, a freed number is reused, a full or over-limit company gets none, the landlord numbers past any limit, and the limit sentence is his',
+     s.freeSeats([1, 2], 3)[0] === 3 && s.freeSeats([1, 3], 5)[0] === 2 && s.freeSeats([1, 2, 3], 3).length === 0 &&
+     s.freeSeats([1, 2, 3, 4, 5, 6], 5).length === 0 && s.freeSeats([4, 1], Infinity, 3).join() === '2,3,5' &&
+     s.seatDocId('u1', 3) === 'u1_3' && s.seatsFullMsg(25, 25) === '25 of 25 seats used. Ask KPM to add seats.');
+  ok('REGRESSION: under a licence both Fleet login writes (add, and an email change) carry the seat and claim it in the same batch; an email change MOVES the held seat; a self-proxy (no login) takes none',
+     (fl.match(/location: newAgent\.location \|\| 'Headquarters', \.\.\.\(seatN \? \{ seat: seatN \} : \{\}\),\s*\}(, \{ merge: true \})?\);\s*claimSeat\(batch\);/g) || []).length === 2 &&
+     /const needsSeat = licensed && !isSelfProxy && \(!editingAgentId \|\| oldEmailKey !== emailKey\);/.test(fl) &&
+     /if \(heldSeat\) batch\.update\(seatRef, \{ login: emailKey \}\);\s*else if \(seatN\) batch\.set\(seatRef, \{ bossUid: userId, n: seatN, login: emailKey \}\);/.test(fl) &&
+     /if \(needsSeat && !seatN\) return notify\(seatsFullMsg\(seatDocs\.length, seatLimit\)\);/.test(fl) && imports(fleet, 'freeSeats'));
+  ok('REGRESSION: removing a person frees the seat in the same batch as the login; at the limit the add control stays and says why; a licence the company cannot read (rules not published) means no limit',
+     /batch\.delete\(doc\(db, `artifacts\/\$\{appId\}\/employee_directory`, agent\.email\.toLowerCase\(\)\.trim\(\)\)\);\s*const freed = [^\n]*\n\s*if \(freed\) batch\.delete\(doc\(db, `artifacts\/\$\{appId\}\/seats`, seatDocId\(userId, freed\.n\)\)\);\s*await batch\.commit\(\);/.test(fl) &&
+     /if \(!isAddingAgent && seatsFull\) return notify\(seatsFullMsg\(seatDocs\.length, seatLimit\)\);/.test(fl) &&
+     /s\.exists\(\) \? Number\(s\.data\(\)\.seats\) \|\| 0 : null\),\s*\(\) => setSeatLimit\(null\)\);/.test(fl));
+  ok('REGRESSION: the landlord numbers every login (the owner\'s uid record too, never a staff uid copy), writes the licence LAST, and refuses an owner who has not signed in (bossUid still the email)',
+     /\.filter\(id => \(id\.includes\('@'\) \|\| id === boss\) && !held\.has\(id\)\)/.test(ld) &&
+     /ops\.push\(\{ type: 'set', ref: doc\(db, `artifacts\/\$\{appId\}\/licenses`, boss\), data: \{ seats: limit \} \}\);[^\n]*\n\s*await commitInChunks/.test(ld) &&
+     /if \(!boss \|\| boss\.includes\('@'\)\) return notify\(/.test(ld));
+  const seatsBlock = (rules.match(/match \/artifacts\/cello-inventory-manager\/seats\/\{seatId\} \{[\s\S]*?\n    \}/) || [''])[0];
+  const licBlock = (rules.match(/match \/artifacts\/cello-inventory-manager\/licenses\/\{bossUid\} \{[\s\S]*?\n    \}/) || [''])[0];
+  ok('REGRESSION: rules CHANGE 20 - a new login under a licence must hold a seat, seats live OUTSIDE users/{bossUid}, the licence has no write rule (his catch-all only), a seat is freed only when its login is gone',
+     /\[CHANGE 20 /.test(rules) && /\) &&\s*\/\/ \[CHANGE 20[^\n]*\n\s*loginHoldsSeat\(request\.resource\.data\.bossUid, email\);/.test(rules) &&
+     seatsBlock.includes("request.resource.data.n <= get(") && seatsBlock.includes("allow delete: if seatAdmin(resource.data.bossUid) &&\n        !existsAfter(") &&
+     licBlock.includes('allow get: if isVaultOwner(bossUid) || isSalesman(bossUid);') && !/allow (write|create|update|delete)/.test(licBlock) &&
+     rules.indexOf('match /artifacts/cello-inventory-manager/seats/') < rules.indexOf('match /artifacts/cello-inventory-manager/users/{bossUid} {'));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

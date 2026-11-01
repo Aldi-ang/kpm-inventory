@@ -48,6 +48,7 @@ import StockOpnameView from '../src/StockOpnameView.jsx';
 import JourneyView from '../src/JourneyView.jsx';
 import MapMissionControl from '../src/MapMissionControl.jsx';
 import FleetCanvasManager from '../src/FleetCanvasManager.jsx';
+import LandlordDashboard from '../src/components/LandlordDashboard.jsx';
 import ConsignmentFinanceView from '../src/ConsignmentFinanceView.jsx';
 import useTransactionEngine from '../src/hooks/useTransactionEngine.js';
 import { SamplingFolderView, SamplingAnalyticsView, SampleEntryModal } from '../src/components/SamplingManager.jsx';
@@ -789,6 +790,23 @@ const LAB_FLEET = [
 ];
 /* Journey Plan reads the roster with getDocs(collection motorists) */
 FIXTURES['motorists'] = [...LAB_MOTORISTS.map((m) => ({ ...m })), ...LAB_FLEET];
+/* &seats=N (the seat limit, 2026-11-01) - his licence of N seats for the company; four logins hold seats 1-4, so
+   &seats=5 shows "4 of 5 seats used" and &seats=4 the full company (the add key answers instead of opening) */
+if (q.has('seats')) {
+  FIXTURES['licenses/lab'] = { seats: Number(q.get('seats')) || 5 };
+  FIXTURES['seats'] = LAB_FLEET.map((m, i) => ({ id: `lab_${i + 1}`, bossUid: 'lab', n: i + 1, login: m.email }));
+}
+/* ?shell&landlord (the seat limit, 2026-11-01) - his T1 Tenant registry: Cello with a licence of 25 and 7 seats held,
+   and Toko Baru, whose owner has not signed in yet (bossUid still the email, so Save seats refuses). The stub ignores
+   `where`, so the employee_directory rows are the two owners only. */
+if (q.has('landlord')) {
+  FIXTURES['employee_directory'] = [
+    { id: 'uid-cello', bossUid: 'uid-cello', role: 'COMPANY_OWNER', name: 'CV Cello Jaya', email: 'owner@cello.example', tier: 2, subscriptionStatus: 'ACTIVE' },
+    { id: 'baru@toko.example', bossUid: 'baru@toko.example', role: 'COMPANY_OWNER', name: 'Toko Baru', email: 'baru@toko.example', tier: 2, subscriptionStatus: 'ACTIVE' },
+  ];
+  FIXTURES['licenses'] = [{ id: 'uid-cello', seats: 25 }];
+  FIXTURES['seats'] = Array.from({ length: 7 }, (_, i) => ({ id: `uid-cello_${i + 1}`, bossUid: 'uid-cello', n: i + 1, login: i ? `s${i}@cello.example` : 'uid-cello' }));
+}
 /* &promo (stage 3): Budi's van as a DOC too, so a return / clear transaction reads his live promoCanvas */
 if (q.has('promo')) FIXTURES['motorists/f-b1'] = LAB_FLEET.find((m) => m.id === 'f-b1');
 /* round 5: what Budi left at shops on titip (the van chest's TITIP tab) - one part-paid, one Dedi handed to him,
@@ -1239,6 +1257,9 @@ function ShellLab() {
             isOnline
           />
         </div>
+      ) : q.has('landlord') ? (
+        /* ?shell&landlord - the Tenant registry in the box SettingsView.jsx (~1401) mounts it in */
+        <div className="kpm-mod live"><LandlordDashboard db={{}} appId="lab" user={{ uid: 'lab-aldi', email: 'aldi@kpm.example' }} /></div>
       ) : q.has('fleet') ? (
         /* ?shell&fleet — FLEET & ROSTER INSIDE the real shell exactly as App.jsx:4693 mounts it: no
            wrapper, a direct child of biohazard-content. The viewer is the REGIONAL ADMIN, because he

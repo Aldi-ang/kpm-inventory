@@ -4,7 +4,8 @@ import {
     MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
     ShieldCheck, ChevronDown, ChevronUp, Crown, FileText, Printer, MessageSquare, Globe, Search, Plus, RotateCcw, KeyRound, Lock, Unlock, Gift
 } from 'lucide-react';
-import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp, query, where } from 'firebase/firestore';
+import { seatDocId, freeSeats, seatsUsedText, seatsFullMsg } from './utils/seats.js';
 import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord, hasClearance, TIER_ONE_ID, resolveTierOneId, canSetBundlePrice } from './config/permissions';
 import { vaultDocPath, VAULT_TRIES_RESET } from './utils/vaultDoc.js';
 import { lockLeftMs, untilText } from './utils/vaultLock.js';
@@ -165,6 +166,24 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         return onSnapshot(doc(db, `artifacts/${appId}/employee_directory`, email), (s) => setSelLocked(s.data()?.locked === true),
             (err) => console.warn("Account lock listener:", err.code));
     }, [selectedAgent?.email, isGlobalAdmin]);
+    /* THE SEAT LIMIT (utils/seats.js, rules CHANGE 20): his licence for this company and the seats its logins hold.
+       null = no licence = no limit - and that is also what a refused read gives (rules not published yet), so a
+       company is never blocked by a licence it cannot see. */
+    const [seatLimit, setSeatLimit] = useState(null);
+    const [seatDocs, setSeatDocs] = useState([]);
+    useEffect(() => {
+        if (!canEditFleet) return;
+        return onSnapshot(doc(db, `artifacts/${appId}/licenses`, userId), (s) => setSeatLimit(s.exists() ? Number(s.data().seats) || 0 : null),
+            () => setSeatLimit(null));
+    }, [userId, canEditFleet]);
+    const licensed = seatLimit !== null;
+    useEffect(() => {
+        setSeatDocs([]);
+        if (!licensed) return;
+        return onSnapshot(query(collection(db, `artifacts/${appId}/seats`), where('bossUid', '==', userId)), (s) => setSeatDocs(s.docs.map(d => d.data())),
+            (err) => console.warn("Seats listener:", err.code));
+    }, [userId, licensed]);
+    const seatsFull = licensed && !freeSeats(seatDocs.map(s => s.n), seatLimit).length;
     const [isAddingAgent, setIsAddingAgent] = useState(false);
     const [isReadOnlyMode, setIsReadOnlyMode] = useState(false); 
     const [editingAgentId, setEditingAgentId] = useState(null); 
@@ -377,13 +396,24 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         if (isDupName) return notify(`ACCESS DENIED!\n\nThe name "${newAgent.name}" is already registered.`);
         if (isDupPlate) return notify(`ACCESS DENIED!\n\nThe vehicle license plate "${newAgent.vehicle.toUpperCase()}" is already assigned.`);
 
+        const oldAgent = editingAgentId ? agents.find(a => a.id === editingAgentId) : null;
+        const oldEmailKey = oldAgent?.email?.toLowerCase().trim();
+        /* THE SEAT: a new login record holds one. An email change MOVES the seat the old address held (his "they can
+           change the email and everything but it will stays at 1 seat"); a locked or re-saved login keeps its own. */
+        const needsSeat = licensed && !isSelfProxy && (!editingAgentId || oldEmailKey !== emailKey);
+        const heldSeat = needsSeat && oldEmailKey ? seatDocs.find(s => s.login === oldEmailKey) : null;
+        const seatN = needsSeat ? (heldSeat?.n || freeSeats(seatDocs.map(s => s.n), seatLimit)[0]) : null;
+        if (needsSeat && !seatN) return notify(seatsFullMsg(seatDocs.length, seatLimit));
+        const seatRef = seatN ? doc(db, `artifacts/${appId}/seats`, seatDocId(userId, seatN)) : null;
+        const claimSeat = (batch) => {
+            if (heldSeat) batch.update(seatRef, { login: emailKey });
+            else if (seatN) batch.set(seatRef, { bossUid: userId, n: seatN, login: emailKey });
+        };
+
         try {
             const batch = writeBatch(db);
 
             if (editingAgentId) {
-                const oldAgent = agents.find(a => a.id === editingAgentId);
-                const oldEmailKey = oldAgent?.email?.toLowerCase().trim();
-
                 const agentRef = doc(db, collPath, editingAgentId);
                 batch.update(agentRef, {
                     name: newAgent.name, phone: newAgent.phone, vehicle: newAgent.vehicle, role: newAgent.role, email: emailKey,
@@ -403,8 +433,9 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 // No login mapping for a self-proxy — see isSelfProxy above.
                 if (!isSelfProxy) batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: editingAgentId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active',
-                    location: newAgent.location || 'Headquarters',
+                    location: newAgent.location || 'Headquarters', ...(seatN ? { seat: seatN } : {}),
                 }, { merge: true });
+                claimSeat(batch);
 
             } else {
                 const newId = `AGT_${Date.now()}`;
@@ -416,8 +447,9 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 // No login mapping for a self-proxy — see isSelfProxy above.
                 if (!isSelfProxy) batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: newId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active',
-                    location: newAgent.location || 'Headquarters',
+                    location: newAgent.location || 'Headquarters', ...(seatN ? { seat: seatN } : {}),
                 });
+                claimSeat(batch);
             }
 
             await batch.commit();
@@ -426,7 +458,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 triggerCapy(`Profile updated for ${newAgent.name}!`);
                 logAudit("FLEET_EDIT", `Updated profile for ${emailKey}`);
             } else {
-                triggerCapy(`${newAgent.name} added!`);
+                triggerCapy(seatN ? `${newAgent.name} added on seat ${seatN} of ${seatLimit}.` : `${newAgent.name} added!`);
                 logAudit("FLEET_ADD", `Created new ${newAgent.role} profile for ${emailKey}`);
             }
 
@@ -482,8 +514,11 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             const batch = writeBatch(db);
             batch.delete(doc(db, collPath, agent.id));
             if (agent.email) batch.delete(doc(db, `artifacts/${appId}/employee_directory`, agent.email.toLowerCase().trim()));
+            /* only removing the person frees the seat - in the same batch as the login (rules CHANGE 20) */
+            const freed = agent.email ? seatDocs.find(s => s.login === agent.email.toLowerCase().trim()) : null;
+            if (freed) batch.delete(doc(db, `artifacts/${appId}/seats`, seatDocId(userId, freed.n)));
             await batch.commit();
-            triggerCapy(`${agent.name} terminated. Access revoked. 🛑`);
+            triggerCapy(`${agent.name} terminated. Access revoked.${freed ? ` Seat ${freed.n} is free.` : ''} 🛑`);
             logAudit("FLEET_DELETE", `Terminated agent: ${agent.email}`);
             if (selectedAgent?.id === agent.id) setSelectedAgent(null);
         } catch (e) { notify("Firebase Blocked the Deletion: " + e.message); }
@@ -1100,6 +1135,11 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                         <p className="text-[10px] font-mono text-[var(--ink-muted)] uppercase tracking-widest mt-1">
                             Active Personnel: {agents.length} · {agents.filter(m => loadOf(m) > 0).length} vans loaded
                         </p>
+                        {licensed && canEditFleet && (
+                            <p data-guide="seats" className={`text-[10px] font-mono uppercase tracking-widest mt-0.5 ${seatsFull ? 'text-[var(--accent-ink)] font-bold' : 'text-[var(--ink-muted)]'}`}>
+                                {seatsUsedText(seatDocs.length, seatLimit)}
+                            </p>
+                        )}
                     </div>
                     <div className="flex gap-2 shrink-0">
                     {canMakeOffers && (
@@ -1108,7 +1148,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                         </button>
                     )}
                     {canEditFleet && (
-                        <button onClick={() => { setIsAddingAgent(!isAddingAgent); setEditingAgentId(null); setNewAgent(defaultAgentState); setIsReadOnlyMode(false); }} className="kpm-btn key shrink-0" aria-label={isAddingAgent && !isReadOnlyMode ? 'Close the form' : 'Add personnel'}>
+                        <button onClick={() => {
+                            /* at the limit the control stays and says why (his 2026-10-27 rule: never a silent grey button) */
+                            if (!isAddingAgent && seatsFull) return notify(seatsFullMsg(seatDocs.length, seatLimit));
+                            setIsAddingAgent(!isAddingAgent); setEditingAgentId(null); setNewAgent(defaultAgentState); setIsReadOnlyMode(false); }} className="kpm-btn key shrink-0" aria-label={isAddingAgent && !isReadOnlyMode ? 'Close the form' : 'Add personnel'}>
                             {isAddingAgent && !isReadOnlyMode ? <X size={18}/> : <UserPlus size={18}/>}
                         </button>
                     )}
