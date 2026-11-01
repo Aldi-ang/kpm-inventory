@@ -6,6 +6,9 @@
 The picked card already refreshes (`FleetCanvasManager.jsx:276-281`); it stayed stale only because the owner's roster could not load. Root cause, proven two ways: on the live rules a company owner (signed in with his own Gmail) can open one record but every LIST of his company is refused - products, roster, customers... Since CHANGE 11b (the `document[0]` check in the `users/{bossUid}` catch-all). His own Tier 1 account skips that rule, so he never saw it. No code changed (main.jsx test tweak put back, git diff empty).
 WAITING ON ALDI (verbatim): **🔴 DECIDE: should I draft the rules fix (CHANGE 21) for you to publish?** Brief: NEXT-SESSION.md top.
 
+## 🟠 2026-11-01 19:14 WIB — KPM: start-up cost cut, all 3 built (`87fd2c3`, his "build all 3")
+A: start shows `.claude/progress-head.mjs` (newest 10 entries, ~7.5 KB) instead of the 374 KB file. B: `context-watch.mjs` stops the first message into a session over 200k tokens idle 60+ min - type it again within 2 min to send anyway. C: Alucard greps lesson triggers (11.8 KB), never lessons.md whole. Test: `node .claude/startup-cost.test.mjs`.
+
 ## 🟠 2026-11-01 18:57 WIB — KPM: notes only - `src/main.jsx` was edited for the test and put back byte for byte (git diff empty); where work stands did not change
 WAITING ON ALDI (verbatim): **❓ ANSWER: should I fix the old-email bug below now? It's a small fix.** (NEXT-SESSION.md step 0 has the pointer.)
 
