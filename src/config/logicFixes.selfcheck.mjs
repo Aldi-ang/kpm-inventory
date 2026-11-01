@@ -9239,7 +9239,8 @@ section('RULES CHANGE 14 - THE EIGHT HOLES IN THE LIVE RULES (2026-09-29)');
   ok('5 the login list: one record at a time for anyone signed in, the whole list for nobody (the super admin keeps it)',
      /allow get: if isAuthenticated\(\);\s*allow list: if false;/.test(rules));
   ok("6 T2 joins the company catch-all - never a vault_keys doc, never the owner's settings/admin, roster cards by their own rule",
-     /\|\|\s*\(isCompanyTopTier\(bossUid\) && document\[0\] != 'vault_keys' && document\[0\] != 'motorists' && !\(document\[0\] == 'settings' && document\[1\] == 'admin'\)\)/.test(rules) &&
+     /* 2026-11-01 CHANGE 21: the same three exclusions as path-string matches (document[0] broke every LIST) */
+     /\|\|\s*\(isCompanyTopTier\(bossUid\) && !string\(document\)\.matches\('\/\?\(vault_keys\|motorists\)\/\.\*'\) && !string\(document\)\.matches\('\/\?settings\/admin'\)\)/.test(rules) &&
      /allow create: if \(isAuthorizedAreaAdmin\(bossUid\) &&\s*request\.resource\.data\.location == getEmployeeProfile\(\)\.location\) \|\|\s*\(isCompanyTopTier\(bossUid\) && !isT1Tag\(request\.resource\.data\.get\('userRole', 'NONE'\)\)\);/.test(rules) &&
      /allow delete: if \(isAuthorizedAreaAdmin\(bossUid\) &&\s*resource\.data\.location == getEmployeeProfile\(\)\.location\) \|\|\s*\(isCompanyTopTier\(bossUid\) && !isT1Tag\(resource\.data\.get\('userRole', 'NONE'\)\)\);/.test(rules));
   ok('7 a hand-over is never created APPROVED, and only T1-T4 set APPROVED',
@@ -12594,6 +12595,25 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      seatsBlock.includes("request.resource.data.n <= get(") && seatsBlock.includes("allow delete: if seatAdmin(resource.data.bossUid) &&\n        !existsAfter(") &&
      licBlock.includes('allow get: if isVaultOwner(bossUid) || isSalesman(bossUid);') && !/allow (write|create|update|delete)/.test(licBlock) &&
      rules.indexOf('match /artifacts/cello-inventory-manager/seats/') < rules.indexOf('match /artifacts/cello-inventory-manager/users/{bossUid} {'));
+}
+
+/* A COMPANY OWNER LOADS HIS OWN LISTS (2026-11-01, rules CHANGE 21). The users/{bossUid} catch-all indexed the path
+   (`document[0] != 'vault_keys'`), which a LIST leaves unbound: the owner opened one record but every list of his
+   company came back refused - found testing the seat limit (the picked card "kept the old email" because the roster
+   never loaded). rules-test/test-owner-lists.mjs: 14/14 on the draft, the live rules fail the 4 owner LIST lines. */
+{
+  const rules = read('firestore.rules').replace(/\r/g, '');
+  const catchAll = (rules.match(/match \/artifacts\/cello-inventory-manager\/users\/\{bossUid\} \{[\s\S]*?match \/\{document=\*\*\} \{([\s\S]*?)\n      \}/) || [])[1] || '';
+  const allow = catchAll.split('\n').filter(l => !l.trim().startsWith('//')).join('\n');
+  const pats = [...allow.matchAll(/matches\('([^']+)'\)/g)].map(m => new RegExp(`^(?:${m[1]})$`));   // rules `matches` = a whole-string match
+  const [vk, vkm, adm] = pats;
+  ok('BEHAVIOUR: the catch-all patterns keep out exactly what CHANGE 11b/14 #6 kept out - a vault password, a roster card for a T2, the owner\'s own vault record - and nothing else',
+     pats.length === 3 && vk.test('vault_keys/AGT_T5') && vk.test('/vault_keys/AGT_T5') && !vk.test('products/p1') && !vk.test('settings/vault_keys') &&
+     vkm.test('motorists/m1') && vkm.test('vault_keys/x') && !vkm.test('customers/c1') &&
+     adm.test('settings/admin') && adm.test('/settings/admin') && !adm.test('settings/general') && !adm.test('settings/admin2'));
+  ok('REGRESSION: the users/{bossUid} catch-all never indexes the path again (document[0] made every LIST fail for the owner)',
+     allow.includes('allow read, write: if (isVaultOwner(bossUid) || isDistributorAdmin(bossUid)) && !string(document).matches(') &&
+     !/document\[\d\]/.test(allow) && /\[CHANGE 21 /.test(rules));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

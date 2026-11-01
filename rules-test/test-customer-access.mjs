@@ -78,10 +78,9 @@ await expect('T5 Muntilan records a visit', updateDoc(doc(t5m, A('customers'), '
 await seed(ACCESS(false));
 console.log('OFF - nothing changes until he switches it on:');
 await expect('T5 Muntilan reads EVERY shop (one plain query, as today)', getDocs(shops(t5m)), true);
-// KNOWN GAP, NOT THIS CHANGE: the live catch-all (CHANGE 14 #6) reads document[0], which a LIST leaves unbound, so an owner
-// with no roster profile cannot list - same result on firestore.rules.deployed-baseline. Aldi's own email passes as super
-// admin. Asserted as it IS, so whoever fixes the catch-all sees this line flip.
-await expect("KNOWN GAP (live rules too): the owner's every-shop query is refused", getDocs(shops(owner)), false);
+// FIXED 2026-11-01 by CHANGE 21: the catch-all (CHANGE 14 #6) read document[0], which a LIST leaves unbound, so an owner
+// with no roster profile could not list. It now matches on the path string (rules-test/test-owner-lists.mjs).
+await expect("the owner's every-shop query (the old KNOWN GAP, CHANGE 21)", getDocs(shops(owner)), true);
 await expect('the owner reads one shop', getDoc(doc(owner, A('customers'), 'b1')), true);
 await expect('T5 Muntilan edits a Bandung shop (old default "edit all")', updateDoc(doc(t5m, A('customers'), 'b1'), { phone: '9' }), true);
 await expect('any employee reads the access doc', getDoc(doc(t5m, A('settings'), 'customer_access')), true);
@@ -131,7 +130,8 @@ await expect('Bandung\'s admin (his switch OFF) cannot edit his own shop', updat
 await expect('Bandung\'s admin still records a visit there', updateDoc(doc(t4b, A('customers'), 'b1'), visit), true);
 
 console.log('ON - Tier 1/2 keep the full list:');
-await expect('the owner reads one shop (his list: the KNOWN GAP above)', getDoc(doc(owner, A('customers'), 'b1')), true);
+await expect('the owner reads one shop', getDoc(doc(owner, A('customers'), 'b1')), true);
+await expect('the owner reads every shop (CHANGE 21)', getDocs(shops(owner)), true);
 await expect('a T2 (COMPANY_OWNER) reads every shop', getDocs(shops(t2)), true);
 await expect('the old ADMIN tag reads every shop', getDocs(shops(legacy)), true);
 await expect('a T2 edits a Bandung shop', updateDoc(doc(t2, A('customers'), 'b1'), { phone: '5' }), true);
