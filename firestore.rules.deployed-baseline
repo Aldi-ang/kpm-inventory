@@ -1,13 +1,14 @@
 // =============================================================================
-// PUBLISHED 2026-11-01 ~18:36 WIB by Aldi from the Firebase Console (this file as of kpm 2f2eb69, put on his
-//   clipboard and pasted whole; his "published already"). firestore.rules.deployed-baseline is
+// PUBLISHED 2026-11-01 ~19:24 WIB by Aldi from the Firebase Console (this file as of kpm 03acc89, put on his
+//   clipboard and pasted whole; his "i published it already"). firestore.rules.deployed-baseline is
 //   that text - the instant rollback copy. Live = the 2026-07-28 rules + the shared rank/badge path closed,
 //   + CHANGE 11/11b (a vault password per person), 12 (lock an account), 13 (T1/T2 move a person to a new
 //   Gmail), 14 (the eight holes found reviewing the live rules), 15 (the bell's Missed list, one per person),
 //   16 (a salesman's sale may add to the month's sales tally), 17 (customer access by folder; Tier 3 never
 //   limited), 18 (only T1-T4 make a shop Grosir), 19 (team offers: T1-T3 everywhere, T4 his own region),
-//   20 (the seat limit: a login under a licensed company holds a numbered seat).
-//   Before this: 2026-10-27 ~16:30 (c1e113e, without 20). Any change below this line is a DRAFT again.
+//   20 (the seat limit: a login under a licensed company holds a numbered seat), 21 (a company owner can
+//   load lists of his own company again). Before this: 2026-11-01 ~18:36 (2f2eb69, without 21).
+//   Any change below this line is a DRAFT again.
 //
 // Everything except the marked [CHANGE N] / [ADDED] / [FLAGGED] blocks below is
 // intentionally byte-for-byte the rules that were live before 2026-07-23. An
@@ -496,8 +497,13 @@ service cloud.firestore {
         // [CHANGE 14 #6] a T2 saved as 'COMPANY_OWNER' gets the old ADMIN tag's company powers - except a
         // vault_keys doc (CHANGE 11b), the owner's own vault record (settings/admin), and roster cards (the
         // motorists rules below, which refuse a Tier 1 tag).
-        allow read, write: if (isVaultOwner(bossUid) || isDistributorAdmin(bossUid)) && document[0] != 'vault_keys' ||
-          (isCompanyTopTier(bossUid) && document[0] != 'vault_keys' && document[0] != 'motorists' && !(document[0] == 'settings' && document[1] == 'admin'));
+        // [CHANGE 21 — 2026-11-01, DRAFT until Aldi publishes it] was `document[0] != 'vault_keys'` etc. Indexing
+        // the path made every LIST query fail: a company owner could open one record but no list of his own
+        // company (products, roster, customers... all empty; his Tier 1 account skips this rule, so it went unseen).
+        // The same exclusions, written as a match on the path string - the form the top catch-all already lists
+        // with. rules-test/test-owner-lists.mjs.
+        allow read, write: if (isVaultOwner(bossUid) || isDistributorAdmin(bossUid)) && !string(document).matches('/?vault_keys/.*') ||
+          (isCompanyTopTier(bossUid) && !string(document).matches('/?(vault_keys|motorists)/.*') && !string(document).matches('/?settings/admin'));
       }
 
       // =====================================================================

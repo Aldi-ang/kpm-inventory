@@ -5,7 +5,7 @@
 // CHANGE 11b's point must survive: the owner never reads or rewrites anyone's vault password.
 // Run (emulator only, never the live project):
 //   npx firebase emulators:exec --only firestore --project demo-kpm-rules "node rules-test/test-owner-lists.mjs"
-// RED run: RULES_FILE=firestore.rules.deployed-baseline (the live rules) must fail the owner LIST lines.
+// RED run: the rules before CHANGE 21 (`git show 9fac2d4:firestore.rules.deployed-baseline`) fail the 4 owner LIST lines.
 import { readFileSync } from 'fs';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
 import { doc, getDoc, setDoc, updateDoc, getDocs, collection } from 'firebase/firestore';
