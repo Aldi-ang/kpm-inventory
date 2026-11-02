@@ -991,13 +991,16 @@ check(G22, 'exactly ONE suggestion dropdown exists', custLists === 1,
 check(G22, 'the paper opens the same picker instead of telling you to go elsewhere',
   /Tap to choose the customer/.test(termSrc) &&
   !/Name the customer in the bar at the top/.test(termSrc) &&
-  (termSrc.match(/onClick=\{\(\) => setShowCustomerDropdown\(true\)\}/g) || []).length >= 2,
+  (termSrc.match(/onClick=\{\(\) => setShowCustomerDropdown\(true\)\}/g) || []).length === 1,
   'a manifest with no name on it is wrong, so the paper still states who the deal is with — ' +
   'but stating it and being unable to change it is what he reported');
-check(G22, 'the bar is the manifest\'s first row, above its header and the paper',
+/* His 2026-11-02 "we dont need 2 pelanggan textbox ... just erase the top pelanggan box": the strip that sat above the
+   manifest is gone; the paper's Nama Pelanggan box, three rows into the panel, is the one opener. renderCustomerBar()
+   still mounts - it draws the picker SHEET, which every opener needs. */
+check(G22, 'no customer strip above the manifest, and the picker sheet is still mounted',
   termSrc.indexOf('renderCustomerBar()') > 0 &&
-  termSrc.indexOf('renderCustomerBar()') < termSrc.indexOf('onClick={() => setManifestOpen(false)}'),
-  'since 2026-10-31 the phone manifest is a side panel: opening it with no shop chosen must land on "who is buying?"');
+  !/manifest-dropdown-area hide-on-print shrink-0 h-\[52px\]/.test(termSrc),
+  'a second customer box above the paper is the duplicate he asked to erase');
 /* The list used to be a strip that opened up or down depending on how far the drawer was
    dragged, and it opened directly over the 12px field you were typing into. His report:
    "too small and sempit". It is a sheet now, so there is no direction to get wrong. */
@@ -1011,10 +1014,10 @@ check(G22, 'the picker field is 16px so iOS cannot zoom the page on focus',
   /placeholder=\{tr\('Type the shop name'\)\}[\s\S]{0,400}?text-base/.test(termSrc),
   'text-xs/text-sm here re-introduces the focus zoom that made typing a customer feel broken');
 check(G22, 'both halves of the picker are inside the click-outside sanctuary',
-  /manifest-dropdown-area hide-on-print shrink-0 h-\[52px\]/.test(termSrc) &&
+  /space-y-3 md:space-y-4 manifest-dropdown-area"/.test(termSrc) &&
   /manifest-dropdown-area hide-on-print fixed inset-0/.test(termSrc),
   'the document listener closes the picker for clicks outside .manifest-dropdown-area — ' +
-  'drop it from the strip and tapping the strip opens and shuts the sheet in the same tick; ' +
+  'drop it from the paper\'s block and tapping its box opens and shuts the sheet in the same tick; ' +
   'drop it from the sheet and typing in the sheet closes it');
 /* HIS 2026-10-31: "the manifest panel need to be moved to the sidebar on the left and can be pulled so that the sales
    person can see the manifest just with a side slide instead of moving up and down to check". The bottom drawer's

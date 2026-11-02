@@ -134,6 +134,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
        be allowed but recorded as always"; the shop and the live photo are still required). Capped at what the van holds
        now; the engine refuses a give the van cannot cover. The boss on the Master Vault has no van: one line says so. */
     const [give, setGive] = useState({});
+    const [giveOpen, setGiveOpen] = useState(false);   // the promo list starts folded (his 2026-11-02 "hide the promo goods on default")
     const [bundleUse, setBundleUse] = useState({});   // OFFER RESULTS: the offers tapped into this deal, kept on the sale as `offers`
     const canGive = !isReturMode && promoVan.length > 0;
     // where the given pieces come from: the boss on the Master Vault gives from its own promo stock (his 2026-10-27
@@ -1200,7 +1201,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
        "Transaction Failed", and he presses MAKE DEAL again on a sale that already went through. */
     const resetTerminalAfterDeal = () => {
         setCart([]); setCustomerName(""); setLockedTier(null); setSelectedCustomerInfo(null);
-        setGive({}); setBundleUse({});
+        setGive({}); setBundleUse({}); setGiveOpen(false);
         setGpsStatus('idle'); setAgentLocation(null); setTxProofPhoto(null);
         setIsReturMode(false); setManualOverride(false); setReturType('EXCHANGE');
         setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
@@ -1800,34 +1801,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
     const renderCustomerBar = () => (
         <>
-            {/* It was also the drawer's grip (his 2026-08 "should also be use as drag button"); the
-                panel is pulled by its tab now, so a press here is only ever the picker. */}
-            <div
-                className="manifest-dropdown-area hide-on-print shrink-0 h-[52px] px-3 flex items-center gap-2.5 bg-[var(--duke-fill-panel)] border-b border-[var(--duke-edge-1)] relative z-[60]"
-            >
-                <Store size={16} className="shrink-0 text-[var(--duke-ink-3)]" />
-                <button
-                    onClick={() => setShowCustomerDropdown(true)}
-                    aria-label="Choose customer"
-                    className="flex-1 min-w-0 text-left min-h-[44px] flex flex-col justify-center"
-                >
-                    {customerName ? (
-                        <>
-                            <span className="block text-[11px] lg:text-[9px] font-black uppercase tracking-widest text-[var(--duke-ink-6)] leading-none">{tr('Customer')}</span>
-                            <span className="block text-sm font-black uppercase tracking-wide text-[var(--duke-paper-ink)] truncate leading-tight mt-1">{customerName}</span>
-                        </>
-                    ) : (
-                        <span className="block text-xs font-black uppercase tracking-widest text-[var(--duke-ink-3)]">{tr('Customer — tap to choose')}</span>
-                    )}
-                </button>
-                {customerName.length > 0 && (
-                    <button
-                        onClick={clearCustomer}
-                        aria-label="Clear customer"
-                        className="shrink-0 bg-red-600 hover:bg-red-500 text-[var(--duke-on-fill)] p-1.5 rounded shadow-md active:scale-90 transition-all"
-                    ><X size={14} strokeWidth={3}/></button>
-                )}
-            </div>
+            {/* The strip that sat above the manifest is gone (his 2026-11-02 "we dont need 2 pelanggan textbox since we
+                are be able to pull it from the side, just erase the top pelanggan box"). The paper's Nama Pelanggan box
+                opens this sheet and carries the ✕; this function now draws only the sheet. */}
 
             {/* Anchored to the TOP, not the bottom, and that is not a taste call: a bottom-
                 anchored sheet on iOS sits UNDER the keyboard the moment the field takes focus,
@@ -1962,13 +1938,23 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             SAME picker now; there is still exactly one `customerName` input in
                             the DOM, because that input lives in the picker sheet and this is a
                             button. Nothing here duplicates it. */}
+                        <div className="flex gap-2">
                         <button
                             onClick={() => setShowCustomerDropdown(true)}
                             aria-label={customerName ? `Customer: ${customerName}. Tap to change` : 'Choose customer'}
-                            className="kpm-hover w-full text-left bg-[var(--duke-paper-5)] border border-dashed border-[var(--duke-edge-on-paper)] text-[var(--duke-ink-7)] p-2 min-h-[44px] lg:min-h-0 text-[13px] md:text-sm font-black uppercase rounded truncate"
+                            className="kpm-hover flex-1 min-w-0 text-left bg-[var(--duke-paper-5)] border border-dashed border-[var(--duke-edge-on-paper)] text-[var(--duke-ink-7)] p-2 min-h-[44px] lg:min-h-0 text-[13px] md:text-sm font-black uppercase rounded truncate"
                         >
                             {customerName || <span className="text-[var(--duke-ink-7)] font-bold normal-case tracking-normal">{tr('Tap to choose the customer')}</span>}
                         </button>
+                        {/* the ✕ lived on the strip above the manifest; it moved here with the strip's removal (2026-11-02) */}
+                        {customerName.length > 0 && (
+                            <button
+                                onClick={clearCustomer}
+                                aria-label="Clear customer"
+                                className="shrink-0 w-11 lg:w-9 min-h-[44px] lg:min-h-0 flex items-center justify-center bg-red-600 hover:bg-red-500 text-[var(--duke-on-fill)] rounded shadow-md active:scale-90 transition-all"
+                            ><X size={16} strokeWidth={3}/></button>
+                        )}
+                        </div>
 
                         <div className="mt-2 min-h-[20px]">
                             {selectedCustomerInfo && !selectedCustomerInfo.isNooRegistration ? (
@@ -2229,10 +2215,18 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 {/* PROMO GOODS, given free with this sale (stage 4). It grows inside the cart paper and scrolls with it -
                     the same function as a cart line, so the same control (his "one function, one control"). No price
                     anywhere: it never joins the cart, the total or the nota's sum. */}
-                {/* never hidden (his 2026-10-27 "dont hide the button"): with nothing to give it says why */}
+                {/* never hidden (his 2026-10-27 "dont hide the button"): with nothing to give it says why. The LIST folds
+                    (his 2026-11-02 "hide the promo goods on default and press it to open the promo goods panel just to save
+                    some space"): the header is the press, and while shut it still shows the pcs already given. */}
                 <div data-guide="promo-give" className="flex flex-col p-3 md:p-4 mb-1 rounded border border-dashed border-[var(--duke-brass-edge-2)] bg-[var(--duke-paper)] shadow-sm">
-                        <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[var(--duke-ink-7)]">{tr('Promo · given free')}</span>
-                        {canGive ? promoVan.map(l => (
+                        {canGive ? (
+                            <button type="button" onClick={() => setGiveOpen(o => !o)} aria-expanded={giveOpen} className="kpm-hover -my-1 min-h-[44px] lg:min-h-[32px] flex items-center gap-2 text-left text-[var(--duke-ink-7)]">
+                                <span className="flex-1 text-[10px] md:text-xs font-black uppercase tracking-widest">{tr('Promo · given free')}</span>
+                                {givenLines.length > 0 && <span className="text-xs md:text-sm font-black tabular-nums">{givenLines.reduce((s, g) => s + g.qty, 0)} pcs</span>}
+                                <ChevronDown size={18} className={`shrink-0 ${giveOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                        ) : <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[var(--duke-ink-7)]">{tr('Promo · given free')}</span>}
+                        {canGive ? (giveOpen && promoVan.map(l => (
                             <div key={l.productId} className="flex items-center gap-2 md:gap-3 mt-2">
                                 <img alt="" src={promoPic(l.product || { kind: 'promo', name: l.name })} className="w-10 h-10 object-contain shrink-0 rounded border border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)] bg-[var(--duke-paper-2)]" />
                                 <span className="flex-1 min-w-0 text-[11px] md:text-xs font-black uppercase leading-tight break-words text-[var(--duke-ink-7)]">
@@ -2249,7 +2243,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     className="w-20 md:w-24 min-h-[44px] lg:min-h-0 bg-white border border-[var(--duke-edge-3)] text-center text-base md:text-sm font-bold tabular-nums outline-none focus:border-[var(--duke-amber-edge)] rounded p-1 text-[var(--duke-ink-7)]" />
                                 <span className="text-sm font-bold uppercase text-[var(--duke-ink-7)]">pcs</span>
                             </div>
-                        )) : <p data-guide="promo-give-empty" className="mt-1.5 text-[11px] md:text-xs font-bold text-[var(--duke-on-paper-dim)]">{giveEmpty}</p>}
+                        ))) : <p data-guide="promo-give-empty" className="mt-1.5 text-[11px] md:text-xs font-bold text-[var(--duke-on-paper-dim)]">{giveEmpty}</p>}
                 </div>
             </div>
         </div>
@@ -2395,9 +2389,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-[var(--duke-on-fill)] p-1.5 rounded-md shadow-md"><X size={14}/></button>
                             </div>
                         ) : (
-                            <button data-guide="photo" onClick={() => IS_DEMO ? demoPhoto().then(setTxProofPhoto) : galleryOk ? document.getElementById('txProof').click() : setShowProofCamera(true)} className="kpm-hover w-full py-2 min-h-[44px] lg:min-h-0 border border-dashed border-[var(--duke-edge-4)] hover:border-[var(--duke-amber-edge-2)] text-[var(--duke-ink-4)] hover:text-[var(--duke-amber-ink-2)] bg-transparent rounded flex items-center justify-center gap-2">
-                                <Camera size={14} />
-                                <span className="text-[11px] lg:text-[10px] uppercase tracking-widest font-bold">{IS_DEMO ? 'Auto handover photo (demo)' : galleryOk ? 'Capture or choose photo' : 'Open camera for handover photo'}</span>
+                            /* a solid brass plate, not a dashed ghost on the paper (his 2026-11-02 "it is camouflage with its
+                               background"): the dashed edge is his NOTICE look, and MAKE DEAL stays dim until this photo exists,
+                               so this is the one lit plate at this step */
+                            <button data-guide="photo" onClick={() => IS_DEMO ? demoPhoto().then(setTxProofPhoto) : galleryOk ? document.getElementById('txProof').click() : setShowProofCamera(true)} className="kpm-hover w-full py-2.5 min-h-[52px] lg:min-h-[40px] border-2 border-[var(--duke-brass-edge)] bg-[var(--duke-brass-2)] hover:bg-[var(--duke-brass)] text-[var(--duke-on-plate)] rounded shadow-md active:translate-y-px flex items-center justify-center gap-2">
+                                <Camera size={18} />
+                                <span className="text-[13px] lg:text-[11px] uppercase tracking-widest font-black">{IS_DEMO ? 'Auto handover photo (demo)' : galleryOk ? 'Capture or choose photo' : 'Open camera for handover photo'}</span>
                             </button>
                         )}
 

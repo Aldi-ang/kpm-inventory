@@ -7192,15 +7192,26 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /p-2 min-h-\[44px\] lg:min-h-0 text-\[13px\] md:text-sm font-bold uppercase outline-none rounded \$\{isReturMode/.test(r) &&
      /w-20 md:w-24 min-h-\[44px\] lg:min-h-0 bg-white/.test(m) &&
      (m.match(/bg-transparent min-h-\[44px\] lg:min-h-0 text-sm font-bold uppercase outline-none text-\[var\(--duke-ink-7\)\]/g) || []).length === 2 &&
-     /kpm-hover w-full py-2 min-h-\[44px\] lg:min-h-0 border border-dashed border-\[var\(--duke-edge-4\)\]/.test(r) &&
+     /kpm-hover w-full py-2\.5 min-h-\[52px\] lg:min-h-\[40px\] border-2 border-\[var\(--duke-brass-edge\)\] bg-\[var\(--duke-brass-2\)\]/.test(r) &&
      /shrink-0 px-3 py-1\.5 min-h-\[44px\] lg:min-h-0 border border-\[var\(--duke-edge-5\)\] rounded text-\[11px\] lg:text-\[10px\]/.test(m));
-  ok('the customer-bar button fills the 52 px bar instead of a 16 px strip inside it — a press anywhere on the name opens the picker',
-     /aria-label="Choose customer"\s+className="flex-1 min-w-0 text-left min-h-\[44px\] flex flex-col justify-center"/.test(m) &&
-     /text-\[11px\] lg:text-\[9px\] font-black uppercase tracking-widest text-\[var\(--duke-ink-6\)\] leading-none">\{tr\('Customer'\)\}</.test(m),
-     'the bar itself is the drawer grip with a no-op tap; a thumb that missed the 16 px button did nothing');
-  ok('EXAMINE on the picture and the camera-button label read at 11 px on the phone, 9 / 10 on the desk',
+  /* his 2026-11-02 "we dont need 2 pelanggan textbox since we are be able to pull it from the side, just erase the top
+     pelanggan box": the strip above the manifest is gone, the paper's Nama Pelanggan box is the one opener, and the ✕
+     that lived only on the strip moved beside it - without it a chosen shop could not be cleared */
+  ok('REGRESSION: no customer strip above the manifest - the paper box opens the picker and carries the one ✕',
+     !/manifest-dropdown-area hide-on-print shrink-0 h-\[52px\]/.test(m) && !/aria-label="Choose customer"\s+className="flex-1 min-w-0/.test(m) &&
+     /onClick=\{clearCustomer\}\s+aria-label="Clear customer"\s+className="shrink-0 w-11 lg:w-9 min-h-\[44px\] lg:min-h-0/.test(m) &&
+     (m.match(/onClick=\{clearCustomer\}/g) || []).length === 1 && /\{renderCustomerBar\(\)\}/.test(m),
+     'the strip held the only ✕; dropping it without moving the ✕ leaves no way to clear a chosen shop');
+  /* his 2026-11-02 "make sure that the capture button to be more visible because it is camouflage with its background":
+     the dashed ghost (ink 2.7:1 on the paper, measured) read as his NOTICE look, not a button. A brass plate with dark
+     ink, the same plate as the selected MODE JUAL - and the only lit plate until the photo exists, because MAKE DEAL is
+     dim until then. */
+  ok('REGRESSION: the handover-photo button is a solid brass plate, never the dashed ghost on the paper again',
+     /bg-\[var\(--duke-brass-2\)\] hover:bg-\[var\(--duke-brass\)\] text-\[var\(--duke-on-plate\)\]/.test(r) &&
+     !/border border-dashed border-\[var\(--duke-edge-4\)\] hover:border-\[var\(--duke-amber-edge-2\)\] text-\[var\(--duke-ink-4\)\]/.test(r));
+  ok('EXAMINE on the picture reads at 11 px on the phone, 9 on the desk; the camera-button label at 13 / 11',
      /text-\[11px\] lg:text-\[9px\] font-black font-mono tracking-widest text-\[var\(--duke-amber-ink\)\]">\{tr\('EXAMINE'\)\}</.test(m) &&
-     /text-\[11px\] lg:text-\[10px\] uppercase tracking-widest font-bold">\{(IS_DEMO \? 'Auto handover photo \(demo\)' : )?galleryOk/.test(r));
+     /text-\[13px\] lg:text-\[11px\] uppercase tracking-widest font-black">\{(IS_DEMO \? 'Auto handover photo \(demo\)' : )?galleryOk/.test(r));
   ok('TRAP (a) holds: the T4–T6 proof camera still has no file picker — galleryOk alone decides',
      /galleryOk \? document\.getElementById\('txProof'\)\.click\(\) : setShowProofCamera\(true\)/.test(r));
 }
@@ -12301,10 +12312,16 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   /* his 2026-10-27 "yes add that line and dont hide the button" - the box is always on screen; when nothing can be given
      it SAYS why (his rule: every action must report), never an empty gap */
   ok('REGRESSION: the "Promo · given free" box is never hidden - with nothing to give it names the reason: an empty van (load in Fleet & Canvas), an empty Master Vault (Restock Vault), or a retur',
-     !ms.includes('{canGive && (') && ms.includes('{canGive ? promoVan.map(l => (') && ms.includes('<p data-guide="promo-give-empty"') &&
+     !ms.includes('{canGive && (') && ms.includes('{canGive ? (giveOpen && promoVan.map(l => (') && ms.includes('<p data-guide="promo-give-empty"') &&
      ms.includes("const giveEmpty = isReturMode ? 'No promo goods with a retur. Give them on a new deal.'") &&
      ms.includes(": giveFrom === 'the Master Vault' ? 'No promo goods in the Master Vault. Restock them in Restock Vault.'") &&
      ms.includes(": 'No promo goods in this van. Load them in Fleet & Canvas → PROMO.';"));
+  /* his 2026-11-02 "hide the promo goods on default and press it to open the promo goods panel just to save some space":
+     the LIST folds, the header never does (his 10-27 "dont hide the button" still holds) - it is the press that opens it,
+     it shows the pcs already given while shut, and every new deal starts shut */
+  ok('REGRESSION: the promo goods start folded - the header is the press that opens them, shows what is given while shut, and a finished deal folds them again',
+     ms.includes('const [giveOpen, setGiveOpen] = useState(false);') && ms.includes('onClick={() => setGiveOpen(o => !o)} aria-expanded={giveOpen}') &&
+     ms.includes('{givenLines.length > 0 && <span') && ms.includes('setGive({}); setBundleUse({}); setGiveOpen(false);'));
   ok('REGRESSION: the nota prints the given pieces with NO price - the live receipt (thermal + A4) and the history reprint (thermal + A4 + WhatsApp)',
      (ms.match(/\(receiptData\.given \|\| \[\]\)\.map\(/g) || []).length === 2 && ms.includes('given: finalGive') &&
      (sr.match(/\(viewingReceipt\.promoGiven \|\| \[\]\)\.map\(/g) || []).length === 2 && sr.includes('(viewingReceipt.promoGiven || []).forEach('));

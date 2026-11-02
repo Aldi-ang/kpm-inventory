@@ -16,8 +16,6 @@ export const tr = (en) => (LANG === 'id' && ID[en]) || en;
 
 /* Round 1 = the Sales Terminal, words agreed with him 2026-11-02 (A-Brain Raw/2026-11-02-indonesian). Never "kamu". */
 export const ID = {
-    'Customer': 'Pelanggan',
-    'Customer — tap to choose': 'Pelanggan — ketuk untuk memilih',
     'Who is buying?': 'Siapa yang beli?',
     'Done': 'Selesai',
     'Profiled': 'Terdata',
