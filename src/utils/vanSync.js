@@ -57,13 +57,15 @@ export const settleSale = (canvas, moves) => {
 /* The same rule for the HQ vault. Every line of one product nets into ONE number (two lines used to
    mean two writes from the same old stock, and the second won); resellable buyback packs come back.
    A product the vault cannot cover drops to zero and is named in `short`, like the van. A product
-   missing from `stockById` (deleted since the sale) is left alone. */
-export const settleVault = (stockById, moves) => {
-    const stock = { ...stockById };
+   missing from `stockById` (deleted since the sale) is left alone. Damaged packs taken back (an exchange,
+   a damaged buyback) go into the Master Vault quarantine, `damagedById` - there is no EOD to carry them. */
+export const settleVault = (stockById, moves, damagedById = {}) => {
+    const stock = { ...stockById }, damaged = { ...damagedById };
     for (const m of moves) {
         if (!(m.productId in stock)) continue;
         if (m.isPhysicallyGiven) stock[m.productId] -= m.qtyInBks;
         if (m.isReturnedToStock) stock[m.productId] += m.qtyInBks;
+        if (m.isDamagedBack && m.productId in damaged) damaged[m.productId] += m.qtyInBks;
     }
     const short = [];
     for (const id of Object.keys(stock)) {
@@ -71,7 +73,7 @@ export const settleVault = (stockById, moves) => {
         short.push({ productId: id, name: moves.find(m => m.productId === id).name, missingBks: -stock[id] });
         stock[id] = 0;
     }
-    return { stock, short };
+    return { stock, short, damaged };
 };
 
 /* The online sale's form: a short van refuses the sale before anything is written. */
@@ -92,6 +94,7 @@ export const movesFromSale = (tx, productsById) => (tx.items || []).map(item => 
         qtyInBks: convertToBks(item.qty, item.unit, prodData),
         isPhysicallyGiven: !(tx.type === 'RETUR' || item.fulfillment === 'IOU'),
         isReturnedToStock: tx.type === 'RETUR' && item.condition !== 'DAMAGED',
+        isDamagedBack: item.condition === 'DAMAGED',
     };
 });
 
@@ -124,12 +127,15 @@ export const syncOfflineSale = (db, appId, userId, tx, productsById) => runTrans
     if (txSnap.exists()) return { landed: false, short: [] };
     const vanSnap = vanRef ? await t.get(vanRef) : null;
     // HQ stock of every product the sale moves, read inside the transaction
-    const vaultRefs = {}, vaultStock = {};
+    const vaultRefs = {}, vaultStock = {}, vaultDamaged = {};
     for (const m of tx.vaultPending ? moves : []) {
-        if (!(m.isPhysicallyGiven || m.isReturnedToStock) || m.productId in vaultRefs) continue;
+        if (!(m.isPhysicallyGiven || m.isReturnedToStock || m.isDamagedBack) || m.productId in vaultRefs) continue;
         vaultRefs[m.productId] = doc(db, `${basePath}/products`, m.productId);
         const snap = await t.get(vaultRefs[m.productId]);
-        if (snap.exists()) vaultStock[m.productId] = Number(snap.data().stock || 0);
+        if (snap.exists()) {
+            vaultStock[m.productId] = Number(snap.data().stock || 0);
+            vaultDamaged[m.productId] = Number(snap.data().damagedStock || 0);
+        }
     }
     // a give from the Master Vault (the boss in VAULT mode, his 2026-10-27 "tier 1 can give the item straight from the
     // master vault"): the promo product's own stock, in pieces, read here and settled like a van's promoCanvas
@@ -154,7 +160,9 @@ export const syncOfflineSale = (db, appId, userId, tx, productsById) => runTrans
     const promo = vanSnap?.exists() && tx.promoGiven?.length
         ? settlePromo(vanSnap.data().promoCanvas, tx.promoGiven)
         : { canvas: null, short: [] };
-    const vault = settleVault(vaultStock, moves);
+    const vault = settleVault(vaultStock, moves, vaultDamaged);
+    // its damaged packs are in the Master Vault quarantine now - the Boss Car EOD (it reads 'ADMIN' receipts too) skips them
+    if (tx.vaultPending && payload.forensicData?.quarantineCargo?.length) payload.forensicData = { ...payload.forensicData, eodCredited: true };
     const vaultGive = tx.vaultPending && tx.promoGiven?.length ? settlePromo(vaultPromo, tx.promoGiven) : { canvas: [], short: [] };
 
     t.set(txRef, {
@@ -168,7 +176,7 @@ export const syncOfflineSale = (db, appId, userId, tx, productsById) => runTrans
     // filed on the day the sale was MADE: the tally reads payload.date before the timestamp
     tallySale(t, db, appId, userId, payload, productsById, 1);
     if (settled.canvas) t.update(vanRef, { activeCanvas: settled.canvas, ...(promo.canvas ? { promoCanvas: promo.canvas } : {}) });
-    for (const id of Object.keys(vault.stock)) t.update(vaultRefs[id], { stock: vault.stock[id] });
+    for (const id of Object.keys(vault.stock)) t.update(vaultRefs[id], { stock: vault.stock[id], ...(vault.damaged[id] !== vaultDamaged[id] ? { damagedStock: vault.damaged[id] } : {}) });
     for (const l of vaultPromo) t.update(promoRefs[l.productId], { stock: Number(vaultGive.canvas.find(c => c.productId === l.productId)?.qty) || 0 });
 
     return { landed: true, short: [...settled.short, ...promo.short, ...vault.short, ...vaultGive.short] };

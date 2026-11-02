@@ -841,6 +841,7 @@ function LabPiutang({ q }) {
   });
   window.__labAudit = engine.handleConsignmentPayment;
   window.__labReturn = engine.handleConsignmentReturn;
+  window.__labSale = engine.handleMerchantSale;   // ?piutang&admin&novan = the boss selling from the Master Vault (2026-11-02 exchange)
   return (
     <ConsignmentFinanceView
       transactions={LAB_PIUTANG_TXNS} customers={LAB_CUSTOMERS} focusStore={null} onFocusStoreHandled={() => {}}

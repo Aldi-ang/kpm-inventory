@@ -841,8 +841,21 @@ ok('REGRESSION: the sync sends vaultPending sales to the transaction, not the pl
    (app.match(/\(tx\.vanPending \|\| tx\.vaultPending\) && tx\.cloudId/g) || []).length === 2 &&
    !/tx\.vanPending && tx\.cloudId/.test(app));
 ok('the sync reads HQ stock inside the transaction, writes it, and strips the flag from the receipt',
-   /if \(snap\.exists\(\)\) vaultStock\[m\.productId\] = Number\(snap\.data\(\)\.stock \|\| 0\)/.test(vanSync) &&
-   /delete payload\.vaultPending;/.test(vanSync) && /t\.update\(vaultRefs\[id\], \{ stock: vault\.stock\[id\] \}\)/.test(vanSync));
+   /vaultStock\[m\.productId\] = Number\(snap\.data\(\)\.stock \|\| 0\)/.test(vanSync) &&
+   /delete payload\.vaultPending;/.test(vanSync) && /t\.update\(vaultRefs\[id\], \{ stock: vault\.stock\[id\][,}]/.test(vanSync));
+/* 2026-11-02, his "tukar guling from goods taken from master vault and completed the transaction should go to the
+   master vault quarantine right now its just gone": a van-less exchange kept its damaged packs only as
+   forensicData.quarantineCargo on the receipt. A van's reach damagedStock through the EOD approval; the boss in VAULT
+   mode has no EOD. They go to damagedStock in the sale's own transaction now, and the receipt is marked eodCredited,
+   because the Boss Car EOD also reads agentId 'ADMIN' receipts and would count them a second time. */
+ok('REGRESSION: a van-less sale puts its DAMAGED lines into the Master Vault quarantine, in the same transaction',
+   /if \(!currentAgentProfileId && item\.condition === 'DAMAGED'\) vaultMoves\.push\(/.test(engine) &&
+   /damagedStock: vaultDamaged\[m\.ref\.path\]/.test(engine));
+ok('REGRESSION: that receipt is marked eodCredited (the Boss Car EOD skips it) - and the EOD still honours the mark',
+   /forensicData: forensicData && !currentAgentProfileId \? \{ \.\.\.forensicData, eodCredited: true \} : forensicData/.test(engine) &&
+   /t\.forensicData\.eodCredited\) return;/.test(eod));
+ok('REGRESSION: the offline sync does the same for a vaultPending sale',
+   /damagedStock: vault\.damaged\[id\]/.test(vanSync) && /eodCredited: true/.test(vanSync));
 ok('a vault that cannot cover a synced sale is REPORTED (every action reports)',
    /logAudit\('VAULT_SYNC_SHORT'/.test(app) && /vaultShortfall: vault\.short/.test(vanSync));
 { const { settleVault, movesFromSale } = await import('../utils/vanSync.js');
@@ -858,7 +871,14 @@ ok('a vault that cannot cover a synced sale is REPORTED (every action reports)',
   ok('a vault short by 8 drops to zero and names the gap instead of throwing',
      short.stock.p1 === 0 && short.short[0]?.missingBks === 8);
   ok('a product deleted since the sale is left alone',
-     Object.keys(settleVault({}, movesFromSale(sale, { p1: prod })).stock).length === 0); }
+     Object.keys(settleVault({}, movesFromSale(sale, { p1: prod })).stock).length === 0);
+  const tukar = { type: 'SALE', items: [line(5, 'Bks', { condition: 'DAMAGED' }), line(1, 'Slop', { condition: 'DAMAGED', fulfillment: 'IOU' })] };
+  const tk = settleVault({ p1: 100 }, movesFromSale(tukar, { p1: prod }), { p1: 4 });
+  ok('an offline vault exchange: 5 replacement packs leave stock 100 -> 95, and 5 + 10 (the IOU Slop came back too) damaged land in quarantine 4 -> 19',
+     tk.stock.p1 === 95 && tk.damaged?.p1 === 19);
+  ok('a damaged buyback lands its 5 in quarantine; a plain sale leaves quarantine alone',
+     settleVault({ p1: 100 }, movesFromSale(retur, { p1: prod }), { p1: 0 }).damaged?.p1 === 5 &&
+     settleVault({ p1: 100 }, movesFromSale(sale, { p1: prod }), { p1: 4 }).damaged?.p1 === 4); }
 
 /* ── S13 · a store registered offline landed in a status no screen knows ───────────────── */
 section('S13. An offline store syncs with the status the online path writes');
@@ -11452,7 +11472,7 @@ section('100 USERS. Stock and van writes survive somebody else writing at the sa
      !/batch\.update\(update\.ref, \{ stock: update\.newStock \}\)/.test(te) && !/updatesToPerform/.test(te),
      'getDoc then batch.update(stock: read - qty) erased a restock that landed in between: 1000 - 30 + 500 came out 970');
   ok('the online sale reads the van and the vault stock INSIDE one transaction',
-     /await runTransaction\(db, async \(t\) => \{[\s\S]{0,400}await t\.get\(m\.ref\)[\s\S]{0,200}await t\.get\(agentRef\)/.test(te));
+     /await runTransaction\(db, async \(t\) => \{[\s\S]{0,400}await t\.get\(m\.ref\)[\s\S]{0,300}await t\.get\(agentRef\)/.test(te));
   ok('two lines of the same product net into ONE vault update',
      /vaultStock\[m\.ref\.path\] \+= m\.delta/.test(te) && /delete vaultStock\[m\.ref\.path\]/.test(te));
   ok('the vault still refuses to go below zero, against the FRESH number',

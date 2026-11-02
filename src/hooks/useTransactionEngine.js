@@ -293,6 +293,10 @@ export default function useTransactionEngine({
                     vaultMoves.push({ ref: prodRef, delta: qtyInBks, name: prodData.name || item.name, prodData });
                 }
 
+                // Admin Vault exchange / damaged buyback: the damaged packs go into the Master Vault quarantine. A van's
+                // reach damagedStock through the EOD approval; with no van there is no EOD (his 2026-11-02 "its just gone").
+                if (!currentAgentProfileId && item.condition === 'DAMAGED') vaultMoves.push({ ref: prodRef, delta: 0, damaged: qtyInBks, name: prodData.name || item.name, prodData });
+
                 // 🛑 DELETED: The illegal badStock Master Vault write that caused Permission Denied for Tier 6!
                 
                 const distributorPrice = prodData.priceDistributor || 0; 
@@ -336,9 +340,12 @@ export default function useTransactionEngine({
                 lowStockAlerts = [];   // the callback can run more than once
 
                 // 📖 READS FIRST - a transaction reads everything before it writes
-                const vaultStock = {};
+                const vaultStock = {}, vaultDamaged = {};
                 for (const m of vaultMoves) {
-                    if (!(m.ref.path in vaultStock)) vaultStock[m.ref.path] = Number((await t.get(m.ref)).data()?.stock || 0);
+                    if (m.ref.path in vaultStock) continue;
+                    const d = (await t.get(m.ref)).data();
+                    vaultStock[m.ref.path] = Number(d?.stock || 0);
+                    vaultDamaged[m.ref.path] = Number(d?.damagedStock || 0);
                 }
                 const agentDoc = agentRef ? await t.get(agentRef) : null;
                 // 🚀 FIX: Receipts were showing the logged-in Google account's own name
@@ -352,12 +359,13 @@ export default function useTransactionEngine({
                 // product used to write twice from the same old number, and the second one won.
                 for (const m of vaultMoves) {
                     vaultStock[m.ref.path] += m.delta;
+                    vaultDamaged[m.ref.path] += m.damaged || 0;
                     if (m.delta < 0 && vaultStock[m.ref.path] < 0) throw `Not enough stock in Vault for ${m.name}`;
                 }
                 for (const m of vaultMoves) {
                     if (!(m.ref.path in vaultStock)) continue;
                     const newStock = vaultStock[m.ref.path];
-                    t.update(m.ref, { stock: newStock });
+                    t.update(m.ref, { stock: newStock, ...(vaultMoves.some(v => v.ref.path === m.ref.path && v.damaged) ? { damagedStock: vaultDamaged[m.ref.path] } : {}) });
                     // 🔔 Flag if this sale just pushed the product below its minimum
                     if (!m.promo && vaultMoves.some(v => v.ref.path === m.ref.path && v.delta < 0) && isLowStock({ ...m.prodData, stock: newStock }, appSettings)) {
                         lowStockAlerts.push(`${m.name} (${newStock} Bks left)`);
@@ -387,7 +395,9 @@ export default function useTransactionEngine({
                     // Null on a normal sale. Must stay in step with the offline payload above —
                     // a sale made offline and one made online have to carry the same evidence.
                     territoryOverride: proofPayload?.territoryOverride || null,
-                    forensicData: forensicData, // 🚀 Bind forensic root for real-time Firebase sync
+                    // 🚀 Bind forensic root for real-time Firebase sync. No van: its damaged packs were put in the Master Vault
+                    // quarantine above, so the Boss Car EOD (it reads 'ADMIN' receipts too) must not credit them again.
+                    forensicData: forensicData && !currentAgentProfileId ? { ...forensicData, eodCredited: true } : forensicData,
                     deliveryProof: proofPayload ? {
                         photo: proofPayload.photoData,
                         latitude: proofPayload.latitude,
