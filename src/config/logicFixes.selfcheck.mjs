@@ -7580,9 +7580,10 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/w-full md:w-auto overflow-x-auto custom-scrollbar">/.test(code(so)),
      'strip scrollWidth 331 in 325 at 375; QUARANTINE and NEW COUNT overlapped');
   ok('every picker on the screen is a 44 px target on the phone - the select itself, not its padded wrapper',
-     /* 4 since 2026-09-30: the Quarantine facility picker became the crates (CrateVault, his option B) */
-     (so.match(/<select .*?className="min-h-11 lg:min-h-0 /g) || []).length === 4 &&
-     (so.match(/<select /g) || []).length === 4,
+     /* 4 since 2026-09-30: the Quarantine facility picker became the crates (CrateVault, his option B); 5 since
+        2026-11-02: a Master Vault crate's Convert to Sample picks the regional warehouse (his "A and B") */
+     (so.match(/<select .*?className="min-h-11 lg:min-h-0 /g) || []).length === 5 &&
+     (so.match(/<select /g) || []).length === 5,
      'the region picker measured 17 px tall, the facility picker 19, the quarantine picker 38');
   ok('names wrap on the phone and truncate on the desk - the audit item and the counting card',
      /<span className="font-bold text-sm lg:text-xs text-\[var\(--ink\)\] uppercase lg:truncate">\{item\.name\}<\/span>/.test(so) &&
@@ -9505,6 +9506,22 @@ section('THE REGIONAL WAREHOUSE\'S CHEST (2026-09-30)');
      (sv.match(/setResolutionModal\(\{item, method: 'SAMPLING'\}\)/g) || []).length === 1 && (sv.match(/setResolutionModal\(\{item, method: 'PENALTY'\}\)/g) || []).length === 1 &&
      /actions=\{\(item\) => \(/.test(sv) && /quarantine_logs/.test(sv) && /PENDING_HQ_APPROVAL/.test(sv));
   ok('the sunk capital follows the open crate', /formatRupiah\(shownQuarantine\.reduce\(/.test(sv) && !/formatRupiah\(quarantineInventory\.reduce\(/.test(sv));
+  /* his 2026-11-02 "convert into the promotional goods inside the regional warehouse instead" (A: a promo item per
+     cigarette, B: a Master Vault crate picks the warehouse) + "when damaged good enter the master vault they should have
+     option to repair or convert it as sampling" */
+  ok('REGRESSION: quarantine "Convert to Sample" makes promo goods in a warehouse ("<NAME> · RUSAK", 1 Bks = 1 pcs) - no samplings row any more',
+     !/users\/\$\{masterId\}\/samplings`/.test(sv) &&
+     sv.includes("const promoId = `dmg-${resolutionModal.item.id}`, promoName = `${resolutionModal.item.name} · RUSAK`;") &&
+     sv.includes("kind: 'promo', unit: 'pcs', type: 'PROMO', stock: increment(0)") &&
+     sv.includes("branches/${toWh}/inventory`, promoId), { productId: promoId, name: promoName, kind: 'promo', unit: 'pcs', stock: increment(qtyToResolve) }") &&
+     sv.includes("const toWh = fromFac === 'MASTER' ? toWarehouse : fromFac;"));
+  ok('a Master Vault crate picks the regional warehouse; with none picked the press says so and writes nothing',
+     /<select name="toWarehouse"/.test(sv) && sv.includes("if (resolutionModal.method === 'SAMPLING' && fromFac === 'MASTER' && !toWarehouse) return notify("));
+  ok('REPAIR (Master Vault only): the damaged Bks go back to good stock in ONE write, the button only on a Master Vault crate, nothing liquidated',
+     sv.includes("batch.set(itemRef, { damagedStock: increment(-qtyToResolve), ...(resolutionModal.method === 'REPAIR' ? { stock: increment(qtyToResolve) } : {}) }, { merge: true });") &&
+     /\{item\.facility === 'MASTER' && \(\s*<button onClick=\{\(\) => setResolutionModal\(\{item, method: 'REPAIR'\}\)\}/.test(sv) &&
+     sv.includes("if (resolutionModal.method === 'REPAIR' && fromFac !== 'MASTER') return notify(") &&
+     sv.includes("const totalValue = resolutionModal.method === 'REPAIR' ? 0 : qtyToResolve * hpp;"));
   ok('switching crates: the box shrinks into the old crate (170 ms) and grows out of the new one (300 ms, the spring), the new origin read AFTER the shrink is cancelled; one crate is always open',
      /if \(k === fac \|\| busy\.current\) return;/.test(wc) && /duration: 170, easing: IN, fill: 'forwards'/.test(wc) && /a\.cancel\(\); h\.style\.transformOrigin = ox\(k\);/.test(wc) && /duration: 300, easing: SPRING/.test(wc) &&
      /if \(!h \|\| still\(\)\) \{ onPick\(k\);/.test(wc));

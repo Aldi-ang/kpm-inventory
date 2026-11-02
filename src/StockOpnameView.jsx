@@ -4,7 +4,7 @@ import {
     RefreshCcw, Box, EyeOff, Send, ShieldAlert, Check, X, 
     ChevronDown, ChevronUp, Clock, User, Database, ShieldCheck, 
     Camera, UploadCloud, Image as ImageIcon,
-    Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin
+    Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin, Wrench
 } from 'lucide-react';
 import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
 import { savePhotoAndGetReference, deletePhotoFromStorage, photoStamp, commitInChunks, formatRupiah, formatNumber, compressImageToBase64, tierPrice, getLocalDayKey, isPromo} from './utils/helpers';
@@ -695,8 +695,12 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
         const reason = formData.get('reason') || '';
         const rtvRefStr = formData.get('rtvRef') || '';
         const agentId = formData.get('agentId') || '';
+        const toWarehouse = formData.get('toWarehouse') || '';
+        const fromFac = resolutionModal.item.facility || quarantineFacility;
 
         if (qtyToResolve <= 0 || qtyToResolve > resolutionModal.item.damagedStock) return notify("Invalid quantity.");
+        if (resolutionModal.method === 'SAMPLING' && fromFac === 'MASTER' && !toWarehouse) return notify("Pick the regional warehouse that receives these packs as promo goods.");
+        if (resolutionModal.method === 'REPAIR' && fromFac !== 'MASTER') return notify("Repair is for the Master Vault's damaged goods only.");
         if (!await confirmAction(`Execute ${resolutionModal.method} protocol for ${qtyToResolve} Bks of ${resolutionModal.item.name}?`)) return;
 
         setIsProcessingAudit(true);
@@ -710,14 +714,16 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                store is resolved as SAMPLING or RTV and charges him nothing, which is his other
                rule and needed no code. */
             const hpp = tierPrice(resolutionModal.item, appSettings?.penaltyPriceTier);
-            const totalValue = qtyToResolve * hpp;
+            const totalValue = resolutionModal.method === 'REPAIR' ? 0 : qtyToResolve * hpp;   // a repaired pack is not lost
 
-            const targetFacility = resolutionModal.item.facility || quarantineFacility;
-            const itemRef = targetFacility === 'MASTER' 
+            const targetFacility = fromFac;
+            const itemRef = targetFacility === 'MASTER'
                 ? doc(db, `artifacts/${appId}/users/${masterId}/products`, resolutionModal.item.id)
                 : doc(db, `artifacts/${appId}/users/${masterId}/branches/${targetFacility}/inventory`, resolutionModal.item.id);
 
-            batch.set(itemRef, { damagedStock: increment(-qtyToResolve) }, { merge: true });
+            /* REPAIR (his 2026-11-02 "when damaged good enter the master vault they should have option to repair"): the
+               fixed packs go back on the shelf in the same write that takes them out of quarantine */
+            batch.set(itemRef, { damagedStock: increment(-qtyToResolve), ...(resolutionModal.method === 'REPAIR' ? { stock: increment(qtyToResolve) } : {}) }, { merge: true });
 
             const logRef = doc(collection(db, `artifacts/${appId}/users/${masterId}/quarantine_logs`));
             const logData = {
@@ -733,19 +739,25 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
             };
 
             if (resolutionModal.method === 'SAMPLING') {
-                logData.details = { reason };
-                batch.set(doc(collection(db, `artifacts/${appId}/users/${masterId}/samplings`)), {
-                    productId: resolutionModal.item.id,
-                    productName: resolutionModal.item.name,
-                    qty: qtyToResolve,
-                    unit: 'Bks',
-                    reason: `QUARANTINE CONVERSION: ${reason}`,
-                    sourceId: targetFacility === 'MASTER' ? 'VAULT' : targetFacility,
-                    date: getLocalDayKey(),
-                    timestamp: serverTimestamp()
-                });
-                if (logAudit) await logAudit("QUARANTINE_SAMPLING", `Converted ${qtyToResolve}x ${resolutionModal.item.name} to sampling.`);
-            
+                /* PROMO GOODS, not a sampling record (his 2026-11-02 "convert into the promotional goods inside the regional
+                   warehouse instead", picks A + B). 1 Bks = 1 pcs, in a promo item of the pack's own ("<NAME> · RUSAK",
+                   `dmg-<product>`, its picture), made in the Master Vault the first time - a warehouse lists only promo goods
+                   that have a Master Vault item (FleetCanvasManager displayPromo). A regional crate converts into ITS
+                   warehouse; a Master Vault crate into the one picked in the window. The Sampling screen was the only reader
+                   of the old `samplings` row; this log keeps the record. */
+                const toWh = fromFac === 'MASTER' ? toWarehouse : fromFac;
+                const promoId = `dmg-${resolutionModal.item.id}`, promoName = `${resolutionModal.item.name} · RUSAK`;
+                const front = resolutionModal.item.images?.front;
+                batch.set(doc(db, `artifacts/${appId}/users/${masterId}/products`, promoId),
+                    { name: promoName, kind: 'promo', unit: 'pcs', type: 'PROMO', stock: increment(0), damagedFrom: resolutionModal.item.id, ...(front ? { images: { front } } : {}) }, { merge: true });
+                batch.set(doc(db, `artifacts/${appId}/users/${masterId}/branches/${toWh}/inventory`, promoId), { productId: promoId, name: promoName, kind: 'promo', unit: 'pcs', stock: increment(qtyToResolve) }, { merge: true });
+                logData.details = { reason, to: toWh, promoId };
+                if (logAudit) await logAudit("QUARANTINE_SAMPLING", `Converted ${qtyToResolve}x ${resolutionModal.item.name} into ${qtyToResolve} pcs of promo goods "${promoName}" in ${toWh}.`);
+
+            } else if (resolutionModal.method === 'REPAIR') {
+                logData.details = { note: reason };
+                if (logAudit) await logAudit("QUARANTINE_REPAIR", `Repaired ${qtyToResolve}x ${resolutionModal.item.name}, back to good stock in the Master Vault.`);
+
             } else if (resolutionModal.method === 'RTV') {
                 logData.details = { rtvRef: rtvRefStr };
                 if (logAudit) await logAudit("QUARANTINE_RTV", `Returned ${qtyToResolve}x ${resolutionModal.item.name} to factory. Ref: ${rtvRefStr}`);
@@ -909,12 +921,13 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
 
             {resolutionModal && (
                 <div className="fixed inset-0 z-[400] bg-[var(--duke-scrim-hi)] backdrop-blur-md flex items-center justify-center p-4 animate-pop-in">
-                    <div className={`w-full max-w-md bg-[var(--panel)] rounded-2xl border-2 shadow-2xl flex flex-col overflow-hidden ${resolutionModal.method === 'SAMPLING' ? 'border-[var(--accent-edge)]' : resolutionModal.method === 'RTV' ? 'border-[var(--line)]' : 'border-[var(--danger)]'} `}>
-                        <div className={`p-4 border-b border-[var(--line)] flex justify-between items-center ${resolutionModal.method === 'SAMPLING' ? 'bg-[var(--sunk)] text-[var(--accent-ink)]' : resolutionModal.method === 'RTV' ? 'bg-[var(--sunk)] text-[var(--accent-ink)]' : 'bg-[var(--danger)] text-[var(--danger-ink)]'} `}>
+                    <div className={`w-full max-w-md bg-[var(--panel)] rounded-2xl border-2 shadow-2xl flex flex-col overflow-hidden ${['SAMPLING', 'REPAIR'].includes(resolutionModal.method) ?'border-[var(--accent-edge)]' : resolutionModal.method === 'RTV' ? 'border-[var(--line)]' : 'border-[var(--danger)]'} `}>
+                        <div className={`p-4 border-b border-[var(--line)] flex justify-between items-center ${['SAMPLING', 'REPAIR'].includes(resolutionModal.method) ?'bg-[var(--sunk)] text-[var(--accent-ink)]' : resolutionModal.method === 'RTV' ? 'bg-[var(--sunk)] text-[var(--accent-ink)]' : 'bg-[var(--danger)] text-[var(--danger-ink)]'} `}>
                             <h3 className="font-black uppercase tracking-widest flex items-center gap-2">
                                 {resolutionModal.method === 'SAMPLING' && <FlaskConical size={18}/>}
                                 {resolutionModal.method === 'RTV' && <Undo2 size={18}/>}
                                 {resolutionModal.method === 'PENALTY' && <BadgeDollarSign size={18}/>}
+                                {resolutionModal.method === 'REPAIR' && <Wrench size={18}/>}
                                 {resolutionModal.method} PROTOCOL
                             </h3>
                             <button onClick={() => setResolutionModal(null)} className="hover:text-[var(--ink)]"><X size={20}/></button>
@@ -931,10 +944,32 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                 <input name="qty" type="number" max={resolutionModal.item.damagedStock} min="1" defaultValue={resolutionModal.item.damagedStock} className="w-full bg-[var(--sunk)] border border-[var(--line)] p-3 rounded-lg text-[var(--ink)] font-mono text-lg font-black focus:border-[var(--accent-edge)] outline-none" required/>
                             </div>
 
-                            {resolutionModal.method === 'SAMPLING' && (
+                            {resolutionModal.method === 'SAMPLING' && (<>
+                                {/* where the packs go, said before the press (his rule: every action reports) */}
+                                <p className="text-[11px] text-[var(--ink-dim)] uppercase tracking-widest leading-relaxed">
+                                    Becomes promo goods: <span className="text-[var(--ink)] font-black">{resolutionModal.item.name} · RUSAK</span>, 1 Bks = 1 pcs,
+                                    {resolutionModal.item.facility === 'MASTER' ? ' in the regional warehouse you pick below.' : ` in ${resolutionModal.item.facility}.`}
+                                </p>
+                                {resolutionModal.item.facility === 'MASTER' && (uniqueBranches.length ? (
+                                    <div>
+                                        <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Send to Regional Warehouse</label>
+                                        <select name="toWarehouse" required className="min-h-11 lg:min-h-0 w-full bg-[var(--sunk)] border border-[var(--accent-edge)] p-3 rounded-lg text-[var(--ink)] outline-none uppercase tracking-widest text-xs font-bold">
+                                            <option value="" className="bg-[var(--sunk)]">-- SELECT WAREHOUSE --</option>
+                                            {uniqueBranches.map(b => <option key={b} value={b} className="bg-[var(--sunk)]">{b}</option>)}
+                                        </select>
+                                    </div>
+                                ) : <p className="text-[11px] text-[var(--danger-ink)] uppercase tracking-widest">No regional warehouse yet - put a salesman in a region in Fleet &amp; Canvas first.</p>)}
                                 <div>
-                                    <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Marketing Event / Reason</label>
-                                    <input name="reason" type="text" placeholder="e.g., Given to Event Staff" className="w-full bg-[var(--sunk)] border border-[var(--line)] p-3 rounded-lg text-[var(--ink)] focus:border-[var(--line)] outline-none" required/>
+                                    <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Reason</label>
+                                    <input name="reason" type="text" placeholder="e.g., Torn wrap, still sealed" className="w-full bg-[var(--sunk)] border border-[var(--line)] p-3 rounded-lg text-[var(--ink)] focus:border-[var(--line)] outline-none" required/>
+                                </div>
+                            </>)}
+
+                            {resolutionModal.method === 'REPAIR' && (
+                                <div>
+                                    <p className="text-[11px] text-[var(--ink-dim)] uppercase tracking-widest leading-relaxed mb-3">Goes back to good stock in the Master Vault, ready to sell. Nothing is written off.</p>
+                                    <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Repair note</label>
+                                    <input name="reason" type="text" placeholder="e.g., Re-wrapped, pita cukai intact" className="w-full bg-[var(--sunk)] border border-[var(--line)] p-3 rounded-lg text-[var(--ink)] focus:border-[var(--line)] outline-none"/>
                                 </div>
                             )}
 
@@ -960,7 +995,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                 </div>
                             )}
 
-                            <button type="submit" disabled={isProcessingAudit} className={`w-full py-4 rounded-xl font-black uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-all active:scale-95 ${resolutionModal.method === 'SAMPLING' ? 'bg-[color-mix(in_srgb,var(--gold)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] border border-[var(--accent-edge)] text-[var(--accent-ink)]' : resolutionModal.method === 'RTV' ? 'bg-[color-mix(in_srgb,var(--gold)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] border border-[var(--accent-edge)] text-[var(--accent-ink)]' : 'bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] hover:bg-[color-mix(in_srgb,var(--danger)_24%,transparent)] border border-[var(--danger)] text-[var(--danger-ink)]'} `}>
+                            <button type="submit" disabled={isProcessingAudit} className={`w-full py-4 rounded-xl font-black uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-all active:scale-95 ${['SAMPLING', 'REPAIR'].includes(resolutionModal.method) ?'bg-[color-mix(in_srgb,var(--gold)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] border border-[var(--accent-edge)] text-[var(--accent-ink)]' : resolutionModal.method === 'RTV' ? 'bg-[color-mix(in_srgb,var(--gold)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] border border-[var(--accent-edge)] text-[var(--accent-ink)]' : 'bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] hover:bg-[color-mix(in_srgb,var(--danger)_24%,transparent)] border border-[var(--danger)] text-[var(--danger-ink)]'} `}>
                                 {isProcessingAudit ? <RefreshCcw size={18} className="animate-spin"/> : <Check size={18}/>} Execute Protocol
                             </button>
                         </form>
@@ -1164,6 +1199,13 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                 <button onClick={() => setResolutionModal({item, method: 'PENALTY'})} className="kpm-rim-neon flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--danger)_14%,var(--raised))] border border-[var(--danger)] text-[var(--danger-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg">
                                     <BadgeDollarSign size={14}/> Penalty Charge
                                 </button>
+                                {/* Master Vault only (his 2026-11-02 "when damaged good enter the master vault they should have option
+                                    to repair or convert it as sampling") */}
+                                {item.facility === 'MASTER' && (
+                                <button onClick={() => setResolutionModal({item, method: 'REPAIR'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--ink)_8%,var(--raised))] border border-[var(--line)] text-[var(--ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
+                                    <Wrench size={14}/> Repair
+                                </button>
+                                )}
                                     </div>
                                 )} />
                         ) : (
@@ -1179,10 +1221,11 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                         <div key={log.id} className="bg-[var(--sunk)] border border-[var(--line)] rounded-xl p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1">
-                                                    <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center gap-1 ${log.method === 'SAMPLING' ? 'bg-[var(--sunk)] text-[var(--accent-ink)] border border-[var(--line)]' : log.method === 'RTV' ? 'bg-[var(--sunk)] text-[var(--accent-ink)] border border-[var(--line)]' : 'bg-[var(--danger)] text-[var(--danger-ink)] border border-[var(--danger)]'} `}>
+                                                    <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded flex items-center gap-1 ${['SAMPLING', 'REPAIR'].includes(log.method) ? 'bg-[var(--sunk)] text-[var(--accent-ink)] border border-[var(--line)]' : log.method === 'RTV' ? 'bg-[var(--sunk)] text-[var(--accent-ink)] border border-[var(--line)]' : 'bg-[var(--danger)] text-[var(--danger-ink)] border border-[var(--danger)]'} `}>
                                                         {log.method === 'SAMPLING' && <FlaskConical size={10}/>}
                                                         {log.method === 'RTV' && <Undo2 size={10}/>}
                                                         {log.method === 'PENALTY' && <BadgeDollarSign size={10}/>}
+                                                        {log.method === 'REPAIR' && <Wrench size={10}/>}
                                                         {log.method}
                                                     </span>
                                                     <span className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono">{timeStr}</span>
@@ -1191,7 +1234,8 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                 <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono mt-1">Facility: {log.facility} | Executed By: {log.resolvedBy?.toUpperCase()}</p>
                                                 
                                                 <div className="mt-2 text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono bg-[var(--sunk)] p-2 rounded border border-[var(--line)]">
-                                                    {log.method === 'SAMPLING' && `Reason: ${log.details?.reason}`}
+                                                    {log.method === 'SAMPLING' && `Reason: ${log.details?.reason}${log.details?.to ? ` · promo goods in ${log.details.to}` : ''}`}
+                                                    {log.method === 'REPAIR' && `Repaired, back to good stock${log.details?.note ? ` · ${log.details.note}` : ''}`}
                                                     {log.method === 'RTV' && `RTV Surat Jalan: ${log.details?.rtvRef}`}
                                                     {log.method === 'PENALTY' && `Bounty Charged To: ${log.details?.agentName} (Rp ${new Intl.NumberFormat('id-ID').format(log.totalValueHpp)})`}
                                                 </div>
