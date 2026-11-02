@@ -7196,10 +7196,10 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /shrink-0 px-3 py-1\.5 min-h-\[44px\] lg:min-h-0 border border-\[var\(--duke-edge-5\)\] rounded text-\[11px\] lg:text-\[10px\]/.test(m));
   ok('the customer-bar button fills the 52 px bar instead of a 16 px strip inside it — a press anywhere on the name opens the picker',
      /aria-label="Choose customer"\s+className="flex-1 min-w-0 text-left min-h-\[44px\] flex flex-col justify-center"/.test(m) &&
-     /text-\[11px\] lg:text-\[9px\] font-black uppercase tracking-widest text-\[var\(--duke-ink-6\)\] leading-none">Customer</.test(m),
+     /text-\[11px\] lg:text-\[9px\] font-black uppercase tracking-widest text-\[var\(--duke-ink-6\)\] leading-none">\{tr\('Customer'\)\}</.test(m),
      'the bar itself is the drawer grip with a no-op tap; a thumb that missed the 16 px button did nothing');
   ok('EXAMINE on the picture and the camera-button label read at 11 px on the phone, 9 / 10 on the desk',
-     /text-\[11px\] lg:text-\[9px\] font-black font-mono tracking-widest text-\[var\(--duke-amber-ink\)\]">EXAMINE</.test(m) &&
+     /text-\[11px\] lg:text-\[9px\] font-black font-mono tracking-widest text-\[var\(--duke-amber-ink\)\]">\{tr\('EXAMINE'\)\}</.test(m) &&
      /text-\[11px\] lg:text-\[10px\] uppercase tracking-widest font-bold">\{(IS_DEMO \? 'Auto handover photo \(demo\)' : )?galleryOk/.test(r));
   ok('TRAP (a) holds: the T4–T6 proof camera still has no file picker — galleryOk alone decides',
      /galleryOk \? document\.getElementById\('txProof'\)\.click\(\) : setShowProofCamera\(true\)/.test(r));
@@ -12556,7 +12556,7 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      /autoLockRef\.current === selectedCustomerInfo\.id && dist > dynamicThreshold \* 2 && !cart\.length && !givenLines\.length/.test(stc));
   /* the words sit in a <span>: with the icon as the button's only element child, index.css's icon-button rule
      (`button:has(> svg:only-child)`, min-height 44px) outranks min-h-[60px] - measured 44 in the lab before the span */
-  const orderBtn = (stc.match(/className="([^"]*)"><Zap size=\{18\}\/><span>Take order<\/span><\/button>/) || [])[1] || '';
+  const orderBtn = (stc.match(/className="([^"]*)"><Zap size=\{18\}\/><span>\{tr\('Take order'\)\}<\/span><\/button>/) || [])[1] || '';
   ok('REGRESSION: TAKE ORDER is a dark plate with an amber edge and amber ink like the ware "+", never an amber fill (his "too bright")',
      orderBtn.includes('min-h-[60px]') && orderBtn.includes('bg-[var(--duke-fill-plank)]') && orderBtn.includes('border-[var(--duke-amber-edge)]') && orderBtn.includes('text-[var(--duke-amber-ink)]') &&
      !/(bg|from|to)-\[var\(--duke-amber/.test(orderBtn), orderBtn ? '' : 'TAKE ORDER button not found');
@@ -12640,6 +12640,33 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   ok('BEHAVIOUR: a salesman\'s box = his own day (Rp 750.000, 2 stores, last Warung Bu Sri); the boss\'s = the company (Rp 4.780.000, 5 stores)',
      mine.today === 750000 && mine.stores === 2 && mine.last?.customerName === 'Warung Bu Sri' &&
      boss.today === 4780000 && boss.stores === 5 && boss.last?.customerName === 'Toko Lancar');
+}
+
+/* EN / ID PER PHONE (2026-11-02, Aldi: "we all can see indonesian just add language swapper on the setting, we should
+   make this setting that can be seen by every tiers"). tr() swaps what is SHOWN; a saved value that went through it
+   would split the data - Day Replay and the reports read paymentType, visit tags and return reasons back in English. */
+{ const ms = read('src/MerchantSalesView.jsx') + read('src/components/ProofCamera.jsx');
+  globalThis.localStorage = { getItem: (k) => (k === 'kpm_lang' ? 'id' : null), setItem() {} };
+  const { tr, ID } = await import('../config/lang.js?as=id');
+  delete globalThis.localStorage;
+  const { tr: trEn } = await import('../config/lang.js?as=en');
+  const used = [...ms.matchAll(/\btr\('([^']+)'\)/g)].map((x) => x[1]);
+  const missing = [...new Set(used)].filter((k) => !ID[k]);
+  ok(`every tr('...') on the Sales Terminal has its Indonesian word (${used.length} uses)`, used.length > 100 && !missing.length,
+     'missing: ' + missing.join(' | '));
+  ok('REGRESSION: no saved value goes through tr() - payment method, visit tag, return reason, option value stay English',
+     !/paymentType:\s*tr\(|setPaymentMethod\(tr\(|saveVisit\(tr\(|value=\{tr\(|onSalesMode\(tr\(/.test(ms) &&
+     /saveVisit\(tag\)/.test(ms) && /<option key=\{method\} value=\{method\}>/.test(ms));
+  ok('BEHAVIOUR: Indonesia on -> "Take order" reads "Ambil pesanan", "Cash" reads "Tunai"; a word not in the list stays English; English phone unchanged',
+     tr('Take order') === 'Ambil pesanan' && tr('Cash') === 'Tunai' && tr('Lab-only word') === 'Lab-only word' &&
+     trEn('Take order') === 'Take order' && trEn('Cash') === 'Cash');
+  ok('no Indonesian word says "kamu" or "Anda"', !Object.values(ID).some((v) => /\b(kamu|anda)\b/i.test(v)));
+  const theme = read('src/components/BiohazardTheme.jsx'), sv = read('src/components/SettingsView.jsx');
+  ok('every tier opens Settings and gets This device (Graphics + Language); the company tabs still need the vault lock',
+     /if \(item\.id === 'settings'\) return true;/.test(theme) &&
+     /if \(!isAdmin\) \{\s*return \(\s*<div[^>]*>\s*\{\/\*[^*]*\*\/\}\s*<DeviceBand /.test(sv) &&
+     /\{hasClearance\(userRole, 'view_settings'\) && \(/.test(sv) &&
+     /<button type="button" aria-pressed=\{lang === 'id'\} onClick=\{\(\) => setLang\('id'\)\}>Indonesia<\/button>/.test(sv));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

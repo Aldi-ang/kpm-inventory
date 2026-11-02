@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { tr } from './config/lang';
 import { createPortal } from 'react-dom';
 import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check, Eye } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
@@ -789,7 +790,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             <div className="kpm-cube">
                 <i className="f">
                     {front ? <img src={front} alt={prod?.name || ''} />
-                           : <span className="grid place-items-center w-full h-full text-[11px] lg:text-[9px] font-black font-mono tracking-widest text-[var(--duke-amber-ink)]">EXAMINE</span>}
+                           : <span className="grid place-items-center w-full h-full text-[11px] lg:text-[9px] font-black font-mono tracking-widest text-[var(--duke-amber-ink)]">{tr('EXAMINE')}</span>}
                 </i>
                 {face('bk', back)}
                 {face('l', img.left)}
@@ -1812,11 +1813,11 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 >
                     {customerName ? (
                         <>
-                            <span className="block text-[11px] lg:text-[9px] font-black uppercase tracking-widest text-[var(--duke-ink-6)] leading-none">Customer</span>
+                            <span className="block text-[11px] lg:text-[9px] font-black uppercase tracking-widest text-[var(--duke-ink-6)] leading-none">{tr('Customer')}</span>
                             <span className="block text-sm font-black uppercase tracking-wide text-[var(--duke-paper-ink)] truncate leading-tight mt-1">{customerName}</span>
                         </>
                     ) : (
-                        <span className="block text-xs font-black uppercase tracking-widest text-[var(--duke-ink-3)]">Customer — tap to choose</span>
+                        <span className="block text-xs font-black uppercase tracking-widest text-[var(--duke-ink-3)]">{tr('Customer — tap to choose')}</span>
                     )}
                 </button>
                 {customerName.length > 0 && (
@@ -1838,14 +1839,14 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     <div data-guide="shops" className="relative w-full lg:max-w-md lg:mt-16 max-h-[70vh] flex flex-col bg-[var(--duke-fill-deep)] border-b-4 lg:border-4 border-[var(--duke-edge-1)] shadow-[0_10px_40px_rgba(0,0,0,0.7)]">
                         <div className="shrink-0 flex items-center gap-2 px-4 py-3 border-b border-[var(--duke-edge-1)]">
                             <Store size={16} className="shrink-0 text-[var(--duke-ink-3)]" />
-                            <span className="flex-1 text-xs font-black uppercase tracking-widest text-[var(--duke-ink-3)]">Who is buying?</span>
+                            <span className="flex-1 text-xs font-black uppercase tracking-widest text-[var(--duke-ink-3)]">{tr('Who is buying?')}</span>
                             {/* Says DONE, not an X. Half of what gets typed here is a walk-in that
                                 is never in the book, and an X on the way out of that reads as
                                 "throw the name away". */}
                             <button
                                 onClick={finishCustomerTyping}
                                 className="kpm-hover shrink-0 px-3 py-1.5 min-h-[44px] lg:min-h-0 border border-[var(--duke-edge-5)] rounded text-[11px] lg:text-[10px] font-black uppercase tracking-widest text-[var(--duke-paper-ink)]"
-                            >Done</button>
+                            >{tr('Done')}</button>
                         </div>
 
                         <div className="shrink-0 p-3">
@@ -1856,7 +1857,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 value={customerName}
                                 onChange={handleManualCustomerType}
                                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); finishCustomerTyping(); } }}
-                                placeholder="Type the shop name"
+                                placeholder={tr('Type the shop name')}
                                 aria-label="Customer name"
                                 className="w-full bg-[var(--duke-well)] border-2 border-[var(--duke-edge-ctl)] focus:border-[var(--duke-amber-edge)] rounded-lg px-3 py-3 text-base font-bold uppercase text-[var(--duke-paper-ink)] placeholder-[var(--duke-ink-6)] outline-none transition-colors"
                             />
@@ -1870,7 +1871,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     className="w-full text-left px-4 py-3 border-b border-[var(--duke-edge-1)] flex items-center justify-between gap-3 hover:bg-[var(--duke-fill-panel)] active:bg-[var(--duke-fill-panel)] transition-colors"
                                 >
                                     <span className="text-sm font-bold uppercase text-[var(--duke-paper-ink)] truncate">{c.name}</span>
-                                    <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-[var(--duke-ink-3)]">Profiled</span>
+                                    <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-[var(--duke-ink-3)]">{tr('Profiled')}</span>
                                 </button>
                             )) : (
                                 <p className="px-4 py-6 text-center text-[11px] uppercase tracking-widest text-[var(--duke-ink-6)] leading-relaxed">
@@ -1890,18 +1891,18 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const renderManifestUI = (isMobile) => (
         <div className={`kpm-parchment text-[var(--duke-on-plate-2)] shadow-2xl relative flex flex-col border-[var(--duke-edge-3)] ${isMobile ? 'flex-1 border-t-2' : 'w-80 border-l-2'} shrink-0`}>
             {/* grain now comes from .kpm-parchment */}
-            <div className="p-3 md:p-4 border-b-2 border-dashed border-[var(--duke-edge-3)] relative z-10 text-center uppercase font-bold tracking-widest text-[var(--duke-ink-7)]">Manifest</div>
+            <div className="p-3 md:p-4 border-b-2 border-dashed border-[var(--duke-edge-3)] relative z-10 text-center uppercase font-bold tracking-widest text-[var(--duke-ink-7)]">{tr('Manifest')}</div>
             
             <div className="p-3 md:p-4 relative z-[60] border-b border-[var(--duke-edge-on-paper)] bg-[var(--duke-paper-2)] space-y-3 md:space-y-4 manifest-dropdown-area">
                 {/* the dropdown backdrop moved with the picker — it belongs to renderCustomerBar now */}
 
                 {/* --- 🚀 DUAL MODE TOGGLE (SALE VS RETUR) --- */}
                 <div className="flex bg-[var(--duke-fill-ground)] rounded border border-[var(--duke-edge-2)] p-1 mb-2">
-                    <button data-guide="sale-mode" onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`kpm-hover flex-1 py-1.5 min-h-[44px] lg:min-h-0 text-[11px] lg:text-[10px] font-black uppercase tracking-widest rounded ${!isReturMode ? 'bg-[var(--duke-brass-2)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Sale Mode</button>
+                    <button data-guide="sale-mode" onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`kpm-hover flex-1 py-1.5 min-h-[44px] lg:min-h-0 text-[11px] lg:text-[10px] font-black uppercase tracking-widest rounded ${!isReturMode ? 'bg-[var(--duke-brass-2)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>{tr('Sale Mode')}</button>
                     <button data-mission="5" onClick={() => {
                         if (!allowRetur) return notify("You do not have clearance to process returns.");
                         setIsReturMode(true);
-                    }} className={`kpm-hover flex-1 py-1.5 min-h-[44px] lg:min-h-0 text-[11px] lg:text-[10px] font-black uppercase tracking-widest rounded ${isReturMode ? 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Retur Mode</button>
+                    }} className={`kpm-hover flex-1 py-1.5 min-h-[44px] lg:min-h-0 text-[11px] lg:text-[10px] font-black uppercase tracking-widest rounded ${isReturMode ? 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>{tr('Retur Mode')}</button>
                 </div>
 
                 {/* --- 🚀 SUB MODE TOGGLE (BUYBACK VS EXCHANGE) --- */}
@@ -1911,8 +1912,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             a saturated orange and a bright gold shouting at each other was the
                             loudest thing on a screen whose whole point is a quiet ledger. Buyback
                             keeps the desaturated danger plate because it pays money OUT. */}
-                        <button onClick={() => setReturType('BUYBACK')} className={`kpm-hover flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded ${returType === 'BUYBACK' ? 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Buyback (Refund)</button>
-                        <button onClick={() => setReturType('EXCHANGE')} className={`kpm-hover flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded ${returType === 'EXCHANGE' ? 'bg-[var(--duke-brass-3)] text-[var(--duke-paper-ink)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Exchange (Tukar)</button>
+                        <button onClick={() => setReturType('BUYBACK')} className={`kpm-hover flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded ${returType === 'BUYBACK' ? 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>{tr('Buyback (Refund)')}</button>
+                        <button onClick={() => setReturType('EXCHANGE')} className={`kpm-hover flex-1 py-1 text-[11px] font-bold uppercase tracking-widest rounded ${returType === 'EXCHANGE' ? 'bg-[var(--duke-brass-3)] text-[var(--duke-paper-ink)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>{tr('Exchange (Tukar)')}</button>
                     </div>
                 )}
 
@@ -1926,10 +1927,10 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 <div key={i} className="flex justify-between items-center text-[11px] text-[var(--duke-ink-1)] mb-1 border-b border-[var(--duke-edge-2)] pb-1">
                                     <span>{iou.qty} {iou.unit} {iou.name} <br/><span className="text-[var(--duke-ink-3)] font-mono">By: {iou.agentName} | {new Date(iou.date).toLocaleDateString()}</span></span>
                                     {!isAlreadyInCart ? (
-                                        <button onClick={() => handleFulfillIOU(iou)} className="bg-[var(--duke-brass-2)] hover:bg-[var(--duke-brass)] text-[var(--duke-on-plate)] px-2 py-1 rounded font-bold uppercase transition-colors">Fulfill</button>
+                                        <button onClick={() => handleFulfillIOU(iou)} className="bg-[var(--duke-brass-2)] hover:bg-[var(--duke-brass)] text-[var(--duke-on-plate)] px-2 py-1 rounded font-bold uppercase transition-colors">{tr('Fulfill')}</button>
                                     ) : (
                                         /* palette law: "done" is never a hue. Gold plate + tick, same as everywhere else. */
-                                        <span className="text-[var(--duke-brass-ink)] font-bold uppercase px-2 py-1 border border-[color-mix(in_srgb,var(--duke-brass-edge)_50%,transparent)] rounded bg-[color-mix(in_srgb,var(--duke-brass)_10%,transparent)]"><Check size={10} className="inline mr-1"/> Added</span>
+                                        <span className="text-[var(--duke-brass-ink)] font-bold uppercase px-2 py-1 border border-[color-mix(in_srgb,var(--duke-brass-edge)_50%,transparent)] rounded bg-[color-mix(in_srgb,var(--duke-brass)_10%,transparent)]"><Check size={10} className="inline mr-1"/> {tr('Added')}</span>
                                     )}
                                 </div>
                             );
@@ -1941,17 +1942,17 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         <div className="bg-[var(--duke-fill-plank-2)] border-2 border-red-500/80 p-3 shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse rounded-sm relative z-[65] mb-4">
                             <div className="flex items-center gap-2 mb-1">
                                 <AlertCircle className="text-red-500 shrink-0" size={16}/>
-                                <h4 className="text-red-500 font-black uppercase tracking-widest text-[10px]">Warning: Jatuh Tempo!</h4>
+                                <h4 className="text-red-500 font-black uppercase tracking-widest text-[10px]">{tr('Warning: Jatuh Tempo!')}</h4>
                             </div>
                             <p className="text-[var(--duke-ink-1)] text-[11px] leading-relaxed uppercase tracking-widest mt-1">
                                 {customerName} OWES <span className="font-bold text-[var(--duke-ink-hi)] text-[10px]">Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}</span> FROM {debtInfo.ageDays} DAYS AGO.
                             </p>
-                            <div className="text-[var(--duke-ink-hi)] bg-red-600 px-1.5 py-0.5 mt-2 inline-block text-[11px] uppercase tracking-widest font-black shadow-md">Collect payment before issuing new Titip!</div>
+                            <div className="text-[var(--duke-ink-hi)] bg-red-600 px-1.5 py-0.5 mt-2 inline-block text-[11px] uppercase tracking-widest font-black shadow-md">{tr('Collect payment before issuing new Titip!')}</div>
                         </div>
                     )}
 
                     <div className="relative">
-                        <label className="text-[10px] font-bold uppercase tracking-widest block mb-1 text-[var(--duke-ink-7)]">Customer Name</label>
+                        <label className="text-[10px] font-bold uppercase tracking-widest block mb-1 text-[var(--duke-ink-7)]">{tr('Customer Name')}</label>
                         {/* Read-only echo. The picker is the bar at the top of this column now, but a
                             manifest with no name written on it is not a manifest, so the paper still
                             states who the deal is with. */}
@@ -1966,7 +1967,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             aria-label={customerName ? `Customer: ${customerName}. Tap to change` : 'Choose customer'}
                             className="kpm-hover w-full text-left bg-[var(--duke-paper-5)] border border-dashed border-[var(--duke-edge-on-paper)] text-[var(--duke-ink-7)] p-2 min-h-[44px] lg:min-h-0 text-[13px] md:text-sm font-black uppercase rounded truncate"
                         >
-                            {customerName || <span className="text-[var(--duke-ink-7)] font-bold normal-case tracking-normal">Tap to choose the customer</span>}
+                            {customerName || <span className="text-[var(--duke-ink-7)] font-bold normal-case tracking-normal">{tr('Tap to choose the customer')}</span>}
                         </button>
 
                         <div className="mt-2 min-h-[20px]">
@@ -1975,8 +1976,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold">
                                         {gpsStatus === 'checking' && (
                                             <div className="flex items-center justify-between w-full">
-                                                <span className="text-[var(--duke-amber-on-paper)] animate-pulse flex items-center gap-1"><MapPin size={12}/> Acquiring Satellites...</span>
-                                                <button onClick={() => verifyLocation(true)} className="text-[var(--duke-amber-on-paper)] hover:text-[var(--duke-on-paper)] underline text-[11px] ml-2">PC Fast Scan</button>
+                                                <span className="text-[var(--duke-amber-on-paper)] animate-pulse flex items-center gap-1"><MapPin size={12}/> {tr('Acquiring Satellites...')}</span>
+                                                <button onClick={() => verifyLocation(true)} className="text-[var(--duke-amber-on-paper)] hover:text-[var(--duke-on-paper)] underline text-[11px] ml-2">{tr('PC Fast Scan')}</button>
                                             </div>
                                         )}
                                         
@@ -1986,10 +1987,10 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                             read as a statement, with the distance and the store named. */}
                                         {gpsStatus === 'verified' && (
                                             <div className="w-full border-l-[3px] border-[var(--duke-amber-edge-2)] bg-[var(--duke-paper-6)] px-3 py-2 rounded-r">
-                                                <b className="block font-mono text-[9px] font-extrabold uppercase tracking-[0.16em] text-[var(--duke-amber-on-paper)] mb-1">Location verified</b>
+                                                <b className="block font-mono text-[9px] font-extrabold uppercase tracking-[0.16em] text-[var(--duke-amber-on-paper)] mb-1">{tr('Location verified')}</b>
                                                 <span className="block normal-case tracking-normal text-[12px] font-semibold text-[var(--duke-on-plate)] leading-snug">
-                                                    {distanceToStore}m from {selectedCustomerInfo.name}
-                                                    <i className="not-italic font-mono text-[8px] font-extrabold uppercase tracking-[0.1em] text-[var(--duke-on-paper-dim)] ml-2 align-middle">auto</i>
+                                                    {distanceToStore}{tr('m from')} {selectedCustomerInfo.name}
+                                                    <i className="not-italic font-mono text-[8px] font-extrabold uppercase tracking-[0.1em] text-[var(--duke-on-paper-dim)] ml-2 align-middle">{tr('auto')}</i>
                                                 </span>
                                             </div>
                                         )}
@@ -2012,12 +2013,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                                     <div className="mt-1">
                                                         {bypassState.status === 'idle' || bypassState.status === 'rejected' ? (
                                                             <button onClick={() => document.getElementById('bypassPhotoCapture').click()} className="text-[11px] w-fit bg-red-900/40 hover:bg-red-800 text-red-200 border border-red-500/50 px-2 py-1 rounded uppercase font-bold flex items-center gap-1 transition-colors shadow-sm active:scale-95">
-                                                                <Camera size={10}/> Request 100m HQ Bypass
+                                                                <Camera size={10}/> {tr('Request 100m HQ Bypass')}
                                                             </button>
                                                         ) : bypassState.status === 'uploading' ? (
-                                                            <span className="text-[11px] text-[var(--duke-amber-on-paper)] font-bold uppercase animate-pulse">Uploading Proof...</span>
+                                                            <span className="text-[11px] text-[var(--duke-amber-on-paper)] font-bold uppercase animate-pulse">{tr('Uploading Proof...')}</span>
                                                         ) : bypassState.status === 'pending' ? (
-                                                            <span className="text-[11px] text-yellow-400 font-bold uppercase animate-pulse bg-yellow-900/20 px-2 py-1 rounded border border-yellow-500/50 inline-block w-fit">Awaiting HQ Approval...</span>
+                                                            <span className="text-[11px] text-yellow-400 font-bold uppercase animate-pulse bg-yellow-900/20 px-2 py-1 rounded border border-yellow-500/50 inline-block w-fit">{tr('Awaiting HQ Approval...')}</span>
                                                         ) : null}
                                                         <input type="file" accept="image/*" capture="environment" id="bypassPhotoCapture" className="hidden" onChange={handleBypassPhotoCapture} />
                                                     </div>
@@ -2038,7 +2039,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                         </button>
                                     ) : (
                                         <button onClick={() => setShowSampleModal(true)} className="w-full mt-1 bg-[var(--duke-fill-ground)] border border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)] hover:bg-[var(--duke-amber)] text-[var(--duke-amber-ink)] hover:text-black text-[10px] font-bold uppercase tracking-widest p-2 rounded shadow-md flex items-center justify-center gap-2 transition-colors active:scale-95">
-                                            <Package size={12}/> Deploy Free Sample
+                                            <Package size={12}/> {tr('Deploy Free Sample')}
                                         </button>
                                     )}
                                 </div>
@@ -2061,9 +2062,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     </div>
 
                 <div>
-                    <label className="text-[10px] font-bold uppercase text-[var(--duke-ink-7)] block mb-1">Payment Method</label>
+                    <label className="text-[10px] font-bold uppercase text-[var(--duke-ink-7)] block mb-1">{tr('Payment Method')}</label>
                     <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} disabled={isReturMode} className={`w-full bg-[var(--duke-paper)] border border-[var(--duke-edge-on-paper)] text-[var(--duke-ink-7)] p-2 min-h-[44px] lg:min-h-0 text-[13px] md:text-sm font-bold uppercase outline-none rounded ${isReturMode ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                        {allowedPayments.filter(method => !(method === 'Titip' && cart.some(i => i.priceTier === 'Ecer'))).map(method => ( <option key={method} value={method}>{method === 'Titip' ? 'Consignment' : method}</option> ))}
+                        {allowedPayments.filter(method => !(method === 'Titip' && cart.some(i => i.priceTier === 'Ecer'))).map(method => ( <option key={method} value={method}>{tr(method === 'Titip' ? 'Consignment' : method)}</option> ))}
                     </select>
                     {/* A control that disappears has to say why it disappeared. */}
                     {cart.some(i => i.priceTier === 'Ecer') && allowedPayments.includes('Titip') && !isReturMode && (
@@ -2074,7 +2075,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 {paymentMethod === 'Titip' && !isReturMode && (
                     <div className="mt-3 bg-[var(--duke-fill-plank)] border border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)] p-3 rounded shadow-inner animate-fade-in">
                         <label className="text-[10px] font-bold text-[var(--duke-ink-1)] mb-2 flex items-center justify-between uppercase tracking-widest">
-                            <span>Jatuh Tempo (Due Date)</span>
+                            <span>{tr('Jatuh Tempo (Due Date)')}</span>
                             <span className="bg-[var(--duke-amber)] text-black px-2 py-0.5 rounded shadow-sm text-[10px]">{tempoDays} Hari</span>
                         </label>
                         <div className="flex items-center gap-3">
@@ -2092,7 +2093,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 {selectedCustomerDebts.isOverdue ? '⚠️ OVERDUE TITIP DETECTED' : 'Active Titip Balance'}
                             </h4>
                             <p className="text-[10px] text-[var(--duke-on-paper-dim)] mt-0.5 leading-tight font-bold">
-                                <strong className="text-[var(--duke-ink-7)]">Rp {new Intl.NumberFormat('id-ID').format(selectedCustomerDebts.totalDebt)}</strong> Unpaid.
+                                <strong className="text-[var(--duke-ink-7)]">Rp {new Intl.NumberFormat('id-ID').format(selectedCustomerDebts.totalDebt)}</strong> {tr('Unpaid.')}
                             </p>
                         </div>
                     </div>
@@ -2106,7 +2107,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 does not leave a hole. */}
             <div className="flex-1 min-h-0 max-h-[min(54vh,540px)] overflow-y-auto p-2 md:p-3 relative z-10 space-y-2 kpm-scroll bg-[color-mix(in_srgb,var(--duke-paper-2)_50%,transparent)]">
                 {cart.length === 0 ? (
-                    <div className="text-center opacity-50 mt-8 font-bold uppercase text-xs md:text-sm">Manifest Empty</div>
+                    <div className="text-center opacity-50 mt-8 font-bold uppercase text-xs md:text-sm">{tr('Manifest Empty')}</div>
                 ) : (
                     cart.map((item, idx) => {
                         /* Grosir is offered only on a shop registered as Grosir (his 2026-10-21 "grosir only available for
@@ -2177,8 +2178,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                             onChange={(e) => updateCartItem(item.productId, 'condition', e.target.value)}
                                             className={`text-[11px] font-bold uppercase p-1.5 rounded outline-none border flex-1 ${item.condition === 'DAMAGED' ? 'bg-red-900/30 border-red-500 text-red-700' : 'bg-[var(--duke-paper-3)] border-[var(--duke-edge-on-paper)] text-[var(--duke-ink-7)]'}`}
                                         >
-                                            <option value="GOOD">Good (Resellable)</option>
-                                            <option value="DAMAGED">Damaged (Quarantine)</option>
+                                            <option value="GOOD">{tr('Good (Resellable)')}</option>
+                                            <option value="DAMAGED">{tr('Damaged (Quarantine)')}</option>
                                         </select>
 
                                         {item.condition === 'DAMAGED' && (
@@ -2189,12 +2190,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                                 className="text-[11px] font-bold uppercase p-1.5 rounded outline-none border bg-white border-red-400 text-red-800 flex-1"
                                             >
                                                 <option value="">-- Select Reason --</option>
-                                                <option value="Expired / Out of Date">Expired</option>
-                                                <option value="Water / Weather Damage">Water Damage</option>
-                                                <option value="Torn / Crushed Packaging">Torn/Crushed</option>
-                                                <option value="Pest / Rodent Damage">Pest Damage</option>
-                                                <option value="Factory Defect">Factory Defect</option>
-                                                <option value="Other">Other...</option>
+                                                <option value="Expired / Out of Date">{tr('Expired')}</option>
+                                                <option value="Water / Weather Damage">{tr('Water Damage')}</option>
+                                                <option value="Torn / Crushed Packaging">{tr('Torn/Crushed')}</option>
+                                                <option value="Pest / Rodent Damage">{tr('Pest Damage')}</option>
+                                                <option value="Factory Defect">{tr('Factory Defect')}</option>
+                                                <option value="Other">{tr('Other...')}</option>
                                             </select>
                                         )}
                                     </div>
@@ -2202,7 +2203,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     {item.condition === 'DAMAGED' && item.returnReason === 'Other' && (
                                         <input 
                                             type="text" 
-                                            placeholder="Describe the damage..." 
+                                            placeholder={tr('Describe the damage...')} 
                                             value={item.otherReasonDetail || ''}
                                             onChange={(e) => updateCartItem(item.productId, 'otherReasonDetail', e.target.value)}
                                             className="w-full text-[10px] p-1.5 rounded border border-red-400 bg-white text-black outline-none focus:border-red-600"
@@ -2212,8 +2213,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     {/* EXCHANGE MODE ONLY: FULFILL NOW VS IOU */}
                                     {returType === 'EXCHANGE' && (
                                         <div className="flex gap-2 mt-1">
-                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'NOW')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment !== 'IOU' ? 'bg-[var(--duke-brass)] border-[var(--duke-brass-edge-2)] text-[var(--duke-on-plate)] shadow-md' : 'bg-[var(--duke-bar-3)] border-[color-mix(in_srgb,var(--duke-edge-3)_50%,transparent)] text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Give Replacement Now</button>
-                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'IOU')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment === 'IOU' ? 'bg-[var(--duke-brass-3)] border-[var(--duke-brass-edge-4)] text-[var(--duke-on-fill)] shadow-md' : 'bg-[var(--duke-bar-3)] border-[color-mix(in_srgb,var(--duke-edge-3)_50%,transparent)] text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Hutang Barang (IOU)</button>
+                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'NOW')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment !== 'IOU' ? 'bg-[var(--duke-brass)] border-[var(--duke-brass-edge-2)] text-[var(--duke-on-plate)] shadow-md' : 'bg-[var(--duke-bar-3)] border-[color-mix(in_srgb,var(--duke-edge-3)_50%,transparent)] text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>{tr('Give Replacement Now')}</button>
+                                            <button onClick={() => updateCartItem(item.productId, 'fulfillment', 'IOU')} className={`flex-1 py-1.5 text-[11px] font-bold uppercase rounded border transition-all ${item.fulfillment === 'IOU' ? 'bg-[var(--duke-brass-3)] border-[var(--duke-brass-edge-4)] text-[var(--duke-on-fill)] shadow-md' : 'bg-[var(--duke-bar-3)] border-[color-mix(in_srgb,var(--duke-edge-3)_50%,transparent)] text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>{tr('Hutang Barang (IOU)')}</button>
                                         </div>
                                     )}
                                 </div>
@@ -2230,7 +2231,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     anywhere: it never joins the cart, the total or the nota's sum. */}
                 {/* never hidden (his 2026-10-27 "dont hide the button"): with nothing to give it says why */}
                 <div data-guide="promo-give" className="flex flex-col p-3 md:p-4 mb-1 rounded border border-dashed border-[var(--duke-brass-edge-2)] bg-[var(--duke-paper)] shadow-sm">
-                        <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[var(--duke-ink-7)]">Promo · given free</span>
+                        <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[var(--duke-ink-7)]">{tr('Promo · given free')}</span>
                         {canGive ? promoVan.map(l => (
                             <div key={l.productId} className="flex items-center gap-2 md:gap-3 mt-2">
                                 <img alt="" src={promoPic(l.product || { kind: 'promo', name: l.name })} className="w-10 h-10 object-contain shrink-0 rounded border border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)] bg-[var(--duke-paper-2)]" />
@@ -2327,7 +2328,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 >
                     <div className="flex-1 min-w-0">
                         <div className="text-[10px] font-black uppercase tracking-widest text-[var(--duke-ink-3)] leading-none">
-                            Manifest ({cart.length})
+                            {tr('Manifest')} ({cart.length})
                         </div>
                         <div className="text-[10px] font-mono text-[var(--duke-ink-6)] truncate leading-tight mt-0.5">
                             {cart.length ? cart[cart.length - 1].name : givenLines.length ? `Promo only: ${givenLines.reduce((s, g) => s + g.qty, 0)} pcs given free` : 'Empty — tap a ware to add'}
@@ -2368,7 +2369,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     <div className="kpm-parchment px-4 md:px-6 pb-4 shrink-0">
 
                     <div className="mb-4">
-                        <label className="text-[10px] font-bold text-[var(--duke-ink-4)] uppercase tracking-widest block mb-2">Delivery Proof <span className="text-[var(--duke-danger-ink-2)]">*</span></label>
+                        <label className="text-[10px] font-bold text-[var(--duke-ink-4)] uppercase tracking-widest block mb-2">{tr('Delivery Proof')} <span className="text-[var(--duke-danger-ink-2)]">*</span></label>
                         {/* The file input EXISTS only where a file is a legal answer. A camera-only
                             tier has no chooser in the DOM at all — not in production, and not in a
                             dev build either.
@@ -2444,13 +2445,13 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         disabled={!canSubmitSale || isProcessingSale}
                         className={`kpm-hover py-2.5 md:py-4 border-2 text-base md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-[var(--duke-brass-2)] to-[var(--duke-brass-3)] border-[var(--duke-brass-edge)] text-[var(--duke-on-plate)] hover:from-[var(--duke-brass)] hover:to-[var(--duke-brass-6)] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-[var(--duke-on-fill)] hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[var(--duke-amber)] to-[var(--duke-amber-2)] border-[var(--duke-brass-edge-3)] text-black hover:from-[var(--duke-brass-5)] hover:to-[var(--duke-amber)]') : 'bg-transparent text-[var(--duke-ink-3)] border-[var(--duke-edge-4)] cursor-not-allowed'}`}
                     >
-                        {isProcessingSale ? <span className="flex items-center gap-2 animate-pulse"><Zap size={20}/> PROCESSING...</span> :
+                        {isProcessingSale ? <span className="flex items-center gap-2 animate-pulse"><Zap size={20}/> {tr('PROCESSING...')}</span> :
                          gpsStatus === 'checking' ? 'Awaiting GPS...' :
-                         isGpsRestricted ? <><Lock size={20}/> LOC. RESTRICTED</> :
-                         !txProofPhoto && customerName.trim() ? <><Camera size={20}/> REQUIRE PROOF</> :
-                         hasInvalidDamagedItems ? <><AlertTriangle size={20}/> REASON REQ.</> :
-                         hasInsufficientStockForExchange ? <><AlertTriangle size={20}/> NO STOCK</> :
-                         customerName.trim() ? (isReturMode ? <><AlertCircle size={24} className="md:w-6 md:h-6"/> PULL RETUR</> : <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> {cart.length === 0 && givenLines.length ? 'GIVE PROMO' : 'MAKE DEAL'}</>) : "SIGN MANIFEST >"}
+                         isGpsRestricted ? <><Lock size={20}/> {tr('LOC. RESTRICTED')}</> :
+                         !txProofPhoto && customerName.trim() ? <><Camera size={20}/> {tr('REQUIRE PROOF')}</> :
+                         hasInvalidDamagedItems ? <><AlertTriangle size={20}/> {tr('REASON REQ.')}</> :
+                         hasInsufficientStockForExchange ? <><AlertTriangle size={20}/> {tr('NO STOCK')}</> :
+                         customerName.trim() ? (isReturMode ? <><AlertCircle size={24} className="md:w-6 md:h-6"/> {tr('PULL RETUR')}</> : <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> {cart.length === 0 && givenLines.length ? 'GIVE PROMO' : 'MAKE DEAL'}</>) : "SIGN MANIFEST >"}
                     </button>
                 </div>
             </div>
@@ -2469,13 +2470,13 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             ${manifestOpen ? 'translate-x-[min(86vw,340px)]' : ''} ${pullX === null ? 'transition-transform duration-[320ms] ease-[cubic-bezier(.32,.72,0,1)]' : ''}`}
             >
                 <span className="min-w-[16px] h-4 px-0.5 rounded-full border border-[var(--duke-amber-edge)] text-[10px] font-black leading-[14px] text-center text-[var(--duke-amber-ink)]">{cart.length}</span>
-                <span className="[writing-mode:vertical-rl] rotate-180 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--duke-amber-ink)]">Manifest</span>
+                <span className="[writing-mode:vertical-rl] rotate-180 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--duke-amber-ink)]">{tr('Manifest')}</span>
                 <ChevronDown size={14} className={`mt-auto shrink-0 text-[var(--duke-ink-3)] ${manifestOpen ? 'rotate-90' : '-rotate-90'}`} />
             </button>
             {manifestOpen && <div aria-hidden="true" onClick={() => setManifestOpen(false)} className="hide-on-print lg:hidden fixed inset-0 z-[149] bg-[var(--duke-scrim)]"></div>}
             {flag && !manifestOpen && (
                 <div role="status" className="kpm-flag font-mono hide-on-print lg:hidden pointer-events-none fixed left-5 top-[calc(25%-56px)] z-[151] max-w-[calc(100vw-44px)] px-3 py-2 rounded-r-[10px] border-2 border-l-0 border-[var(--duke-amber-edge)] bg-[var(--duke-fill-panel)] shadow-[4px_6px_18px_rgba(0,0,0,0.55)]">
-                    <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--duke-ink-6)]">Added · {cart.length} in manifest</p>
+                    <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--duke-ink-6)]">{tr('Added ·')} {cart.length} {tr('in manifest')}</p>
                     <p className="mt-0.5 text-sm font-black uppercase tracking-wide text-[var(--duke-ink-1)] truncate">{flag.name}</p>
                     <p className="mt-0.5 text-lg font-black font-mono leading-none text-[var(--duke-amber-ink)]">Rp {new Intl.NumberFormat('id-ID').format(flag.total)}</p>
                 </div>
@@ -2492,32 +2493,32 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     <div data-guide="arrival" className="font-mono relative w-full lg:w-[520px] max-h-[90vh] overflow-y-auto p-4 pb-5 bg-[var(--duke-fill-panel)] text-[var(--duke-ink-1)] border-t-4 lg:border-4 border-[var(--duke-edge-1)] rounded-t-2xl lg:rounded-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.6)]">
                         <div className="flex items-start gap-2.5">
                             <div className="flex-1 min-w-0">
-                                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-ink-6)]">You are here · {arrival.metres} m · GPS ✓</p>
+                                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-ink-6)]">{tr('You are here ·')} {arrival.metres} m · GPS ✓</p>
                                 <p className="mt-1.5 text-[22px] leading-tight font-black uppercase tracking-wide break-words">{arrival.shop.name}</p>
                                 {arrival.shop.address && <p className="mt-0.5 text-[13px] text-[var(--duke-ink-3)]">{arrival.shop.address}</p>}
                             </div>
                             <button type="button" onClick={closeArrival} aria-label="Close" className="kpm-press w-11 h-11 shrink-0 grid place-items-center rounded-lg border border-[var(--duke-edge-ctl)] text-[var(--duke-ink-3)]"><X size={20}/></button>
                         </div>
                         {requestNote === null ? (<>
-                            <button type="button" onClick={closeArrival} className="kpm-press kpm-hover mt-4 w-full min-h-[60px] rounded-lg border-2 border-[var(--duke-amber-edge)] bg-[var(--duke-fill-plank)] text-[var(--duke-amber-ink)] text-lg font-black uppercase tracking-[0.18em] flex items-center justify-center gap-2.5"><Zap size={18}/><span>Take order</span></button>
-                            <p className="mt-4 mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-ink-6)]">No order? One tap saves the visit</p>
+                            <button type="button" onClick={closeArrival} className="kpm-press kpm-hover mt-4 w-full min-h-[60px] rounded-lg border-2 border-[var(--duke-amber-edge)] bg-[var(--duke-fill-plank)] text-[var(--duke-amber-ink)] text-lg font-black uppercase tracking-[0.18em] flex items-center justify-center gap-2.5"><Zap size={18}/><span>{tr('Take order')}</span></button>
+                            <p className="mt-4 mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-ink-6)]">{tr('No order? One tap saves the visit')}</p>
                             <div className="grid grid-cols-2 gap-2">
                                 {VISIT_TAGS.filter(t => t !== VISIT_TAGS[0] && !t.includes('📦')).map(tag => (
                                     <button key={tag} type="button" onClick={() => (tag.includes('📝') ? setRequestNote('') : saveVisit(tag))}
-                                        className="kpm-press kpm-hover min-h-[56px] px-3 py-2 rounded-lg border-2 border-[var(--duke-edge-ctl)] bg-[var(--duke-fill-well)] text-[var(--duke-ink-1)] text-[13px] font-black uppercase tracking-[0.06em] leading-tight text-left">{tag}</button>
+                                        className="kpm-press kpm-hover min-h-[56px] px-3 py-2 rounded-lg border-2 border-[var(--duke-edge-ctl)] bg-[var(--duke-fill-well)] text-[var(--duke-ink-1)] text-[13px] font-black uppercase tracking-[0.06em] leading-tight text-left">{tr(tag)}</button>
                                 ))}
                                 <button type="button" onClick={() => saveVisit(VISIT_TAGS[0])}
-                                    className="kpm-press kpm-hover col-span-2 min-h-[48px] px-3 py-2 rounded-lg border-2 border-[var(--duke-edge-ctl)] bg-[var(--duke-fill-well)] text-[var(--duke-ink-1)] text-[13px] font-black uppercase tracking-[0.06em]">{VISIT_TAGS[0]}</button>
+                                    className="kpm-press kpm-hover col-span-2 min-h-[48px] px-3 py-2 rounded-lg border-2 border-[var(--duke-edge-ctl)] bg-[var(--duke-fill-well)] text-[var(--duke-ink-1)] text-[13px] font-black uppercase tracking-[0.06em]">{tr(VISIT_TAGS[0])}</button>
                             </div>
                         </>) : (<>
-                            <label htmlFor="kpm-request-note" className="mt-4 mb-2 block text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-ink-6)]">New Request: what do they want?</label>
+                            <label htmlFor="kpm-request-note" className="mt-4 mb-2 block text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-ink-6)]">{tr('New Request: what do they want?')}</label>
                             {/* text-base = 16px, so iOS does not zoom the page into the field */}
-                            <textarea id="kpm-request-note" autoFocus rows={3} value={requestNote} onChange={(e) => setRequestNote(e.target.value)} placeholder="e.g. 2 slop Sampoerna Mild by Thursday"
+                            <textarea id="kpm-request-note" autoFocus rows={3} value={requestNote} onChange={(e) => setRequestNote(e.target.value)} placeholder={tr('e.g. 2 slop Sampoerna Mild by Thursday')}
                                 className="w-full p-3 rounded-lg border-2 border-[var(--duke-edge-ctl)] bg-[var(--duke-fill-well)] text-[var(--duke-ink-1)] text-base outline-none focus:border-[var(--duke-amber-edge)]" />
                             <div className="mt-2 grid grid-cols-[auto_1fr] gap-2">
-                                <button type="button" onClick={() => setRequestNote(null)} className="kpm-press min-h-[48px] px-4 rounded-lg border-2 border-[var(--duke-edge-ctl)] text-[var(--duke-ink-3)] text-[13px] font-black uppercase tracking-[0.06em]">Back</button>
+                                <button type="button" onClick={() => setRequestNote(null)} className="kpm-press min-h-[48px] px-4 rounded-lg border-2 border-[var(--duke-edge-ctl)] text-[var(--duke-ink-3)] text-[13px] font-black uppercase tracking-[0.06em]">{tr('Back')}</button>
                                 <button type="button" disabled={!requestNote.trim()} onClick={() => saveVisit(VISIT_TAGS.find(t => t.includes('📝')), requestNote.trim())}
-                                    className="kpm-press kpm-hover min-h-[48px] rounded-lg border-2 border-[var(--duke-amber-edge)] bg-[var(--duke-fill-plank)] text-[var(--duke-amber-ink)] text-[13px] font-black uppercase tracking-[0.12em] disabled:opacity-40">Save request</button>
+                                    className="kpm-press kpm-hover min-h-[48px] rounded-lg border-2 border-[var(--duke-amber-edge)] bg-[var(--duke-fill-plank)] text-[var(--duke-amber-ink)] text-[13px] font-black uppercase tracking-[0.12em] disabled:opacity-40">{tr('Save request')}</button>
                             </div>
                         </>)}
                     </div>
@@ -2537,20 +2538,20 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 {onAdminSalesMode && (
                     <div className="p-2 md:p-3 bg-[var(--duke-bar-solid)] border-b border-[var(--duke-edge-1)] shrink-0">
                         <div className="flex bg-[var(--duke-fill-ground)] rounded border border-[var(--duke-edge-2)] p-1">
-                            <button onClick={() => onAdminSalesMode('VAULT')} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-colors ${adminSalesMode !== 'VEHICLE' ? 'bg-[var(--duke-amber)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Master Vault</button>
-                            <button onClick={() => onAdminSalesMode('VEHICLE')} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-colors ${adminSalesMode === 'VEHICLE' ? 'bg-[var(--duke-brass-2)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>Boss Car</button>
+                            <button onClick={() => onAdminSalesMode('VAULT')} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-colors ${adminSalesMode !== 'VEHICLE' ? 'bg-[var(--duke-amber)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>{tr('Master Vault')}</button>
+                            <button onClick={() => onAdminSalesMode('VEHICLE')} className={`kpm-hover flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-colors ${adminSalesMode === 'VEHICLE' ? 'bg-[var(--duke-brass-2)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>{tr('Boss Car')}</button>
                         </div>
                     </div>
                 )}
                 <div className="flex gap-2 p-2 md:p-3 bg-[var(--duke-bar-solid)] border-b border-[var(--duke-edge-1)] overflow-x-auto scrollbar-hide shrink-0">
-                    {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`kpm-hover px-4 py-2 md:px-5 md:py-2.5 min-h-[44px] lg:min-h-0 text-[11px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[var(--duke-fill-tan)] text-black border-[var(--duke-amber-edge)]' : 'bg-[var(--duke-fill-panel)] text-[var(--duke-ink-5)] border-[var(--duke-edge-ctl)] hover:border-[var(--duke-edge-5)]'}`}>{cat}</button> ))}
+                    {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`kpm-hover px-4 py-2 md:px-5 md:py-2.5 min-h-[44px] lg:min-h-0 text-[11px] md:text-xs font-black uppercase whitespace-nowrap transition-all rounded-lg border-2 ${activeCategory === cat ? 'bg-[var(--duke-fill-tan)] text-black border-[var(--duke-amber-edge)]' : 'bg-[var(--duke-fill-panel)] text-[var(--duke-ink-5)] border-[var(--duke-edge-ctl)] hover:border-[var(--duke-edge-5)]'}`}>{tr(cat)}</button> ))}
                 </div>
                 {/* The examine shelf used to sit here as a full-width horizontal strip, which
                     cost the wares 150px of vertical room on every screen. It is the rail now —
                     same content, in space that was empty anyway. */}
                 <div className="p-2 md:p-3 border-b border-[var(--duke-edge-1)] flex gap-3 shrink-0 bg-[var(--duke-fill-well)] items-center relative z-10">
                     <div className="relative flex-1">
-                        <input ref={searchRef} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="SEARCH WARES..." className="w-full bg-[var(--duke-well)] border-2 border-[var(--duke-edge-ctl)] p-2 md:p-3 pl-9 md:pl-10 pr-10 min-h-[44px] lg:min-h-0 text-[var(--duke-amber-ink)] font-mono text-[13px] md:text-sm font-bold outline-none focus:border-[var(--duke-amber-edge)] rounded-lg shadow-inner transition-colors"/>
+                        <input ref={searchRef} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder={tr('SEARCH WARES...')} className="w-full bg-[var(--duke-well)] border-2 border-[var(--duke-edge-ctl)] p-2 md:p-3 pl-9 md:pl-10 pr-10 min-h-[44px] lg:min-h-0 text-[var(--duke-amber-ink)] font-mono text-[13px] md:text-sm font-bold outline-none focus:border-[var(--duke-amber-edge)] rounded-lg shadow-inner transition-colors"/>
                         <Search size={16} className="absolute left-3 top-3.5 text-[var(--duke-ink-3)]"/>
                         <span className="kpm-kbd hidden lg:inline-grid absolute right-3 top-1/2 -translate-y-1/2">/</span>
                     </div>
@@ -2586,7 +2587,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     <div className="kpm-strip lg:hidden shrink-0 border-b border-[var(--duke-edge-1)] bg-[var(--duke-fill-well)] px-3 py-2">
                         <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
-                                <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">Next stop</div>
+                                <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">{tr('Next stop')}</div>
                                 <div className="truncate font-mono text-[13px] font-black uppercase text-[var(--ink)]">{upNext.customer.name}</div>
                                 <div className="mt-0.5 font-mono text-[10px] tabular-nums text-[var(--ink-dim)]">
                                     {metresLabel(upNext.metres)} &middot; {upNext.remaining} left today
@@ -2602,7 +2603,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     rel="noopener noreferrer"
                                     className="kpm-press flex h-11 shrink-0 items-center gap-1.5 rounded border border-[var(--duke-edge-1)] bg-[var(--duke-fill-ground)] px-3 font-mono text-[10px] font-black uppercase tracking-[0.12em] text-[var(--duke-ink-3)] no-underline"
                                 >
-                                    <Map size={14}/> Go
+                                    <Map size={14}/> {tr('Go')}
                                 </a>
                             )}
                         </div>
@@ -2614,14 +2615,14 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         {cart.length > 0 ? (
                             <div className="flex items-center justify-between gap-3">
                                 <div className="min-w-0">
-                                    <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)]">Selling to</div>
+                                    <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)]">{tr('Selling to')}</div>
                                     <div className="truncate font-mono text-[12px] font-black uppercase text-[var(--ink)]">{customerName}</div>
                                 </div>
                                 {/* The debt is the ONE thing that stays visible while he sells.
                                     Everything else can wait; this changes what he should accept. */}
                                 {debtInfo && debtInfo.totalDebt > 0 && (
                                     <div className="shrink-0 border-l-[3px] border-[var(--danger)] bg-[var(--danger-well)] px-2 py-1 text-right">
-                                        <div className="font-mono text-[8px] font-black uppercase tracking-[0.14em] text-[var(--duke-danger-ink)]">Owes</div>
+                                        <div className="font-mono text-[8px] font-black uppercase tracking-[0.14em] text-[var(--duke-danger-ink)]">{tr('Owes')}</div>
                                         <div className="font-mono text-[11px] font-black tabular-nums text-[var(--danger-ink)]">
                                             Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}
                                         </div>
@@ -2633,12 +2634,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 {renderStoreSwap()}
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0">
-                                        <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">Before you go in</div>
+                                        <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">{tr('Before you go in')}</div>
                                         <div className="truncate font-mono text-[13px] font-black uppercase text-[var(--ink)]">{customerName}</div>
                                         <div className="mt-0.5 font-mono text-[10px] tabular-nums text-[var(--ink-dim)]">
                                             {brief
                                                 ? <>Last order {agoLabel(brief.lastAt)} &middot; usually Rp {new Intl.NumberFormat('id-ID').format(brief.avgBasket)}</>
-                                                : 'No order in the last 7 days'}
+                                                : tr('No order in the last 7 days.')}
                                         </div>
                                         {/* HIS REPORT, G5: "it doesnt show me what is the last order item is, only the
                                             value". The desktop rail has listed the items since it was built (:2303);
@@ -2656,7 +2657,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     </div>
                                     {debtInfo && debtInfo.totalDebt > 0 && (
                                         <div className="shrink-0 border-l-[3px] border-[var(--danger)] bg-[var(--danger-well)] px-2 py-1 text-right">
-                                            <div className="font-mono text-[8px] font-black uppercase tracking-[0.14em] text-[var(--duke-danger-ink)]">Owes</div>
+                                            <div className="font-mono text-[8px] font-black uppercase tracking-[0.14em] text-[var(--duke-danger-ink)]">{tr('Owes')}</div>
                                             <div className="font-mono text-[11px] font-black tabular-nums text-[var(--danger-ink)]">
                                                 Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}
                                             </div>
@@ -2672,7 +2673,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                         onClick={handleReorder}
                                         className="kpm-press h-11 w-full rounded border-2 border-[var(--duke-brass-edge-3)] bg-gradient-to-r from-[var(--duke-amber)] to-[var(--duke-amber-2)] font-mono text-[11px] font-black uppercase tracking-[0.12em] text-black"
                                     >
-                                        Same as last time
+                                        {tr('Same as last time')}
                                     </button>
                                 )}
                             </div>
@@ -2774,7 +2775,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                             LOW keeps its amber, now with the count inside it. */}
                                         <div className="flex flex-col gap-0.5 lg:gap-1">
                                             {item.stock <= 0 ? (
-                                                <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-red-900/20 text-red-500 border-red-900/50">EMPTY</span>
+                                                <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-red-900/20 text-red-500 border-red-900/50">{tr('EMPTY')}</span>
                                             ) : isLowStock(item, appSettings) ? (
                                                 <button type="button" onClick={(e) => flipCount(e, item)} title={COUNT_FLIP_TITLE} className={`kpm-card-count ${flatCountId === item.id ? 'is-flat ' : ''}relative before:absolute before:-inset-x-1 before:-inset-y-3 before:content-[''] cursor-pointer text-left text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-brass-4)] text-[var(--duke-amber-ink)] border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)]`}>LOW · {countFaces(item)}</button>
                                             ) : (
@@ -2838,7 +2839,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             {examineItem?.id === item.id && (
                                 <div className="kpm-strip w-full lg:hidden border-t-2 border-[var(--duke-edge-1)] bg-[var(--duke-bar)] px-2 py-2">
                                     <div className="mb-1.5 flex items-baseline justify-between gap-2">
-                                        <span className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)]">In vehicle</span>
+                                        <span className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)]">{tr('In vehicle')}</span>
                                         {item.dimensions && (
                                             <span className="font-mono text-[8.5px] tabular-nums text-[var(--ink-disabled)]">
                                                 {item.dimensions.w}×{item.dimensions.h}×{item.dimensions.d} mm
@@ -2863,7 +2864,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                             </div>
                                         </>
                                     ) : (
-                                        <div className="font-mono text-[11px] font-black uppercase text-[var(--duke-danger-ink)]">Empty</div>
+                                        <div className="font-mono text-[11px] font-black uppercase text-[var(--duke-danger-ink)]">{tr('Empty')}</div>
                                     )}
 
                                     {/* The eye moved here off the 80px image. A full row at 44px is
@@ -2874,7 +2875,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                         onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound('click')); onInspect(item); }}
                                         className="kpm-press mt-2 flex h-11 w-full items-center justify-center gap-2 rounded border border-[var(--duke-edge-1)] bg-[var(--duke-fill-ground)] font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[var(--duke-ink-3)]"
                                     >
-                                        <Eye size={14}/> Examine in 3D
+                                        <Eye size={14}/> {tr('Examine in 3D')}
                                     </button>
                                 </div>
                             )}
@@ -2897,7 +2898,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 <aside className="kpm-rail hidden xl:flex w-[236px] shrink-0 flex-col gap-4 border-l border-[var(--duke-edge-1)] bg-[var(--duke-fill-well)] p-4 overflow-y-auto kpm-scroll">
                     {examineItem ? (
                         <div key="examine" className="kpm-rail-panel">
-                            <h3 className="m-0 mb-3 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">Examine</h3>
+                            <h3 className="m-0 mb-3 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">{tr('Examine')}</h3>
                             <div className="kpm-cube-stage big h-[150px]" style={cubeVars(examineItem)}>
                                 {renderCube(examineItem)}
                             </div>
@@ -2911,12 +2912,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 4 Slop" is what he would say out loud and how he checks the van
                                 without opening a box; 9.892 is a number he has to do maths on. */}
                             <div className="mt-3 border-t border-[var(--line)] pt-3">
-                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-2">In vehicle</div>
+                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-2">{tr('In vehicle')}</div>
                                 {(() => {
                                     const split = splitToUnits(examineItem.stock || 0, examineItem);
                                     const rows = ['Karton', 'Bal', 'Slop', 'Bks'];
                                     if (!(examineItem.stock > 0)) {
-                                        return <div className="font-mono text-[13px] font-black uppercase text-[var(--duke-danger-ink)]">Empty</div>;
+                                        return <div className="font-mono text-[13px] font-black uppercase text-[var(--duke-danger-ink)]">{tr('Empty')}</div>;
                                     }
                                     return (
                                         <>
@@ -2943,7 +2944,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 onClick={() => { unlockSounds().then(() => playSound('click')); onInspect(examineItem); }}
                                 className="kpm-press kpm-hover mt-3 flex h-10 w-full items-center justify-center gap-2 rounded border border-[var(--duke-edge-1)] bg-[var(--duke-fill-ground)] font-mono text-[10px] font-black uppercase tracking-[0.14em] text-[var(--duke-ink-3)] hover:text-[var(--duke-amber-ink)] hover:border-[var(--duke-amber-edge)] transition-colors"
                             >
-                                <Eye size={14}/> Examine in 3D
+                                <Eye size={14}/> {tr('Examine in 3D')}
                             </button>
                         </div>
                     ) : customerSettled ? (
@@ -2958,13 +2959,13 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                            the day's takings there just looked like the rail had ignored him. */
                         <div key="brief" className="kpm-rail-panel">
                             {renderStoreSwap()}
-                            <h3 className="m-0 mb-1 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">Before you go in</h3>
+                            <h3 className="m-0 mb-1 font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">{tr('Before you go in')}</h3>
                             <p className="m-0 mb-3 font-mono text-[12px] font-black uppercase leading-tight text-[var(--ink)] break-words">{customerName}</p>
 
                             {!brief && (
                                 <p className="m-0 border-t border-[var(--line)] pt-3 font-mono text-[11px] leading-relaxed text-[var(--ink-dim)]">
-                                    No order in the last 7 days.<br/>
-                                    <span className="text-[var(--ink-disabled)]">New account, or one worth asking about.</span>
+                                    {tr('No order in the last 7 days.')}<br/>
+                                    <span className="text-[var(--ink-disabled)]">{tr('New account, or one worth asking about.')}</span>
                                 </p>
                             )}
 
@@ -2983,7 +2984,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     <div className="font-mono text-[10px] leading-snug text-[var(--ink-muted)]">
                                         {revisitToday === 'me'
                                             ? 'This would be a second visit.'
-                                            : <>Claimed by <span className="font-black uppercase text-[var(--danger-ink)]">{revisitToday}</span>. Selling here is a redundant visit.</>}
+                                            : <>{tr('Claimed by')} <span className="font-black uppercase text-[var(--danger-ink)]">{revisitToday}</span>. Selling here is a redundant visit.</>}
                                     </div>
                                 </div>
                             )}
@@ -2998,16 +2999,16 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                         it as a literal in the built bundle, and a minifier is free
                                         to re-quote and escape one, which would fail the check for
                                         no real reason. */}
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-danger-ink)] mb-1">Another agent handles this store</div>
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-danger-ink)] mb-1">{tr('Another agent handles this store')}</div>
                                     <div className="font-mono text-[10px] leading-snug text-[var(--ink-muted)]">
-                                        Assigned to <span className="font-black uppercase text-[var(--danger-ink)]">{territoryClaim}</span>. Selling is allowed — this sale will be recorded as a territory override.
+                                        {tr('Assigned to')} <span className="font-black uppercase text-[var(--danger-ink)]">{territoryClaim}</span>. Selling is allowed — this sale will be recorded as a territory override.
                                     </div>
                                 </div>
                             )}
 
                             {debtInfo && debtInfo.totalDebt > 0 && (
                                 <div className="mb-3 border-l-[3px] border-[var(--danger)] bg-[var(--danger-well)] px-3 py-2">
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-danger-ink)] mb-1">Owes</div>
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-danger-ink)] mb-1">{tr('Owes')}</div>
                                     <div className="font-mono text-[15px] font-black tabular-nums text-[var(--danger-ink)] leading-none">
                                         Rp {new Intl.NumberFormat('id-ID').format(debtInfo.totalDebt)}
                                     </div>
@@ -3031,7 +3032,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                         )}
                                     </ul>
                                 ) : (
-                                    <p className="m-0 font-mono text-[11px] text-[var(--ink-dim)]">No line detail on that order.</p>
+                                    <p className="m-0 font-mono text-[11px] text-[var(--ink-dim)]">{tr('No line detail on that order.')}</p>
                                 )}
                                 <div className="mt-2 font-mono text-[11px] font-black tabular-nums text-[var(--duke-amber-ink)]">
                                     Rp {new Intl.NumberFormat('id-ID').format(brief.lastTotal)}
@@ -3040,11 +3041,11 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
                             <div className="mt-3 grid grid-cols-2 gap-2 border-t border-[var(--line)] pt-3">
                                 <div>
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1">Usual basket</div>
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1">{tr('Usual basket')}</div>
                                     <div className="font-mono text-[13px] font-black tabular-nums text-[var(--ink)]">Rp {new Intl.NumberFormat('id-ID').format(brief.avgBasket)}</div>
                                 </div>
                                 <div>
-                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1">Visits &middot; 7d</div>
+                                    <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1">{tr('Visits · 7d')}</div>
                                     <div className="font-mono text-[13px] font-black tabular-nums text-[var(--ink)]">{brief.visits}</div>
                                 </div>
                             </div>
@@ -3054,26 +3055,26 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 disabled={isReturMode || !brief.lastItems.length}
                                 className="kpm-hover kpm-press mt-4 w-full rounded border-2 border-[var(--duke-brass-edge-3)] bg-gradient-to-r from-[var(--duke-amber)] to-[var(--duke-amber-2)] py-2.5 font-mono text-[11px] font-black uppercase tracking-[0.12em] text-black disabled:cursor-not-allowed disabled:border-[var(--line-2)] disabled:bg-none disabled:bg-transparent disabled:text-[var(--ink-disabled)]"
                             >
-                                Same as last time
+                                {tr('Same as last time')}
                             </button>
                             {isReturMode && (
-                                <p className="m-0 mt-1.5 font-mono text-[10px] leading-snug text-[var(--ink-dim)]">Not while a retur is open.</p>
+                                <p className="m-0 mt-1.5 font-mono text-[10px] leading-snug text-[var(--ink-dim)]">{tr('Not while a retur is open.')}</p>
                             )}
                             </>)}
                         </div>
                     ) : (
                         <div key="today" className="kpm-rail-panel">
-                            <h3 className="m-0 mb-3 font-mono text-[12.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">Today</h3>
+                            <h3 className="m-0 mb-3 font-mono text-[12.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">{tr('Today')}</h3>
 
                             <div>
-                                <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Taken</div>
+                                <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">{tr('Taken')}</div>
                                 <div className="font-mono text-[26px] font-black tabular-nums text-[var(--duke-price-ink)] leading-none">
                                     Rp {new Intl.NumberFormat('id-ID').format(today.today)}
                                 </div>
                                 {/* Direction is carried by the ARROW first and colour second: the palette
                                     bans green, so an up/down pair could never lean on red/green anyway. */}
                                 {today.pct === null ? (
-                                    <p className="m-0 mt-1.5 font-mono text-[11.5px] text-[var(--ink-dim)]">no sales yesterday to compare</p>
+                                    <p className="m-0 mt-1.5 font-mono text-[11.5px] text-[var(--ink-dim)]">{tr('no sales yesterday to compare')}</p>
                                 ) : (
                                     <p className={`m-0 mt-1.5 flex items-baseline gap-1.5 font-mono text-[12.5px] font-black tabular-nums ${today.pct >= 0 ? 'text-[var(--duke-brass-ink)]' : 'text-[var(--duke-danger-ink)]'}`}>
                                         <span aria-hidden="true">{today.pct >= 0 ? '▲' : '▼'}</span>
@@ -3084,20 +3085,20 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             </div>
 
                             <div className="mt-3 border-t border-[var(--line)] pt-3">
-                                <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Stores done</div>
+                                <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">{tr('Stores done')}</div>
                                 <div className="font-mono text-[26px] font-black tabular-nums text-[var(--ink)] leading-none">{today.stores}</div>
                                 {today.storesYesterday > 0 && (
                                     <p className={`m-0 mt-1.5 flex items-baseline gap-1.5 font-mono text-[12.5px] font-black tabular-nums ${today.storesDelta >= 0 ? 'text-[var(--duke-brass-ink)]' : 'text-[var(--duke-danger-ink)]'}`}>
                                         <span aria-hidden="true">{today.storesDelta >= 0 ? '▲' : '▼'}</span>
                                         {Math.abs(today.storesDelta)}
-                                        <span className="font-normal text-[var(--ink-dim)]">vs yesterday</span>
+                                        <span className="font-normal text-[var(--ink-dim)]">{tr('vs yesterday')}</span>
                                     </p>
                                 )}
                             </div>
 
                             {today.last && (
                                 <div className="mt-3 border-t border-[var(--line)] pt-3">
-                                    <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Last customer</div>
+                                    <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">{tr('Last customer')}</div>
                                     <div className="font-mono text-[15px] font-black uppercase text-[var(--ink)] leading-tight break-words">{today.last.customerName}</div>
                                     <p className="m-0 mt-1 font-mono text-[12px] tabular-nums text-[var(--ink-dim)]">
                                         {agoLabel(today.lastAt)} &middot; Rp {new Intl.NumberFormat('id-ID').format(Number(today.last.total) || 0)}
@@ -3107,7 +3108,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
                             {lowestStock && (
                                 <div className="mt-3 border-t border-[var(--line)] pt-3">
-                                    <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Running low</div>
+                                    <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">{tr('Running low')}</div>
                                     <div className="font-mono text-[15px] font-black uppercase text-[var(--duke-danger-ink)] leading-tight break-words">{lowestStock.name}</div>
                                     <p className="m-0 mt-1 font-mono text-[12px] tabular-nums text-[var(--ink-dim)]">
                                         {/* the boss can sell from either source (the two buttons above say
@@ -3127,31 +3128,31 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 often has no location permission at all. */}
                             {!agentLocation && (
                                 <div className="mt-3 border-t border-[var(--line)] pt-3">
-                                    <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Next stop</div>
+                                    <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">{tr('Next stop')}</div>
                                     <p className="m-0 font-mono text-[12px] leading-relaxed text-[var(--ink-dim)]">
-                                        Needs a GPS fix to know what is nearest.
+                                        {tr('Needs a GPS fix to know what is nearest.')}
                                     </p>
                                     <button
                                         onClick={() => verifyLocation(true)}
                                         className="kpm-hover kpm-press mt-2 flex h-9 w-full items-center justify-center gap-2 rounded border border-[var(--duke-edge-1)] bg-[var(--duke-fill-ground)] font-mono text-[11.5px] font-black uppercase tracking-[0.14em] text-[var(--duke-ink-3)] hover:text-[var(--duke-amber-ink)] hover:border-[var(--duke-amber-edge)] transition-colors"
                                     >
-                                        <MapPin size={13}/> Find me
+                                        <MapPin size={13}/> {tr('Find me')}
                                     </button>
                                 </div>
                             )}
 
                             {agentLocation && !upNext && (
                                 <div className="mt-3 border-t border-[var(--line)] pt-3">
-                                    <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Next stop</div>
+                                    <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">{tr('Next stop')}</div>
                                     <p className="m-0 font-mono text-[12px] leading-relaxed text-[var(--ink-dim)]">
-                                        Nothing left nearby — every store assigned to you has been visited today.
+                                        {tr('Nothing left nearby — every store assigned to you has been visited today.')}
                                     </p>
                                 </div>
                             )}
 
                             {upNext && (
                                 <div className="mt-3 border-t border-[var(--line)] pt-3">
-                                    <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Next stop</div>
+                                    <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">{tr('Next stop')}</div>
                                     <div className="font-mono text-[15px] font-black uppercase leading-tight text-[var(--ink)] break-words">{upNext.customer.name}</div>
                                     <p className="m-0 mt-1 font-mono text-[12px] tabular-nums text-[var(--ink-dim)]">
                                         {metresLabel(upNext.metres)} &middot; {upNext.remaining} left today
@@ -3166,14 +3167,14 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                             rel="noopener noreferrer"
                                             className="kpm-hover kpm-press mt-2 flex h-9 w-full items-center justify-center gap-2 rounded border border-[var(--duke-edge-1)] bg-[var(--duke-fill-ground)] font-mono text-[11.5px] font-black uppercase tracking-[0.14em] text-[var(--duke-ink-3)] no-underline hover:text-[var(--duke-amber-ink)] hover:border-[var(--duke-amber-edge)] transition-colors"
                                         >
-                                            <Map size={13}/> Directions
+                                            <Map size={13}/> {tr('Directions')}
                                         </a>
                                     )}
                                 </div>
                             )}
 
                             <p className="mt-auto pt-3 border-t border-[var(--line)] m-0 font-mono text-[11.5px] leading-relaxed text-[var(--ink-dim)]">
-                                Point at a ware to inspect it here.
+                                {tr('Point at a ware to inspect it here.')}
                             </p>
                         </div>
                     )}
@@ -3212,8 +3213,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     <div className="bg-[var(--duke-fill-ground)] w-full max-w-lg border-2 border-orange-500/50 rounded-2xl shadow-[0_0_50px_rgba(249,115,22,0.2)] flex flex-col max-h-[90vh] overflow-hidden animate-fade-in-up">
                         <div className="p-5 border-b border-[var(--duke-edge-1)] bg-[var(--duke-bar)] flex justify-between items-center">
                             <div>
-                                <h2 className="text-lg font-black text-[var(--duke-ink-hi)] flex items-center gap-2 uppercase tracking-wider"><Store size={20} className="text-orange-500"/> Outlet Registration</h2>
-                                <p className="text-[10px] text-[var(--duke-ink-3)] uppercase tracking-widest mt-1">Unlock Requested Pricing Tiers</p>
+                                <h2 className="text-lg font-black text-[var(--duke-ink-hi)] flex items-center gap-2 uppercase tracking-wider"><Store size={20} className="text-orange-500"/> {tr('Outlet Registration')}</h2>
+                                <p className="text-[10px] text-[var(--duke-ink-3)] uppercase tracking-widest mt-1">{tr('Unlock Requested Pricing Tiers')}</p>
                             </div>
                             <button onClick={() => setShowNooModal(false)} className="text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]"><X size={24}/></button>
                         </div>
@@ -3227,36 +3228,36 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 <div className="border-l-[3px] border-[var(--danger)] bg-[var(--danger-well)] px-3 py-3">
                                     <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-danger-ink)] mb-1">Existing store {proximityHit.metres}m away</div>
                                     <div className="font-mono text-[10px] leading-snug text-[var(--ink-muted)] mb-2.5">
-                                        You are standing next to <span className="font-black uppercase text-[var(--danger-ink)]">{proximityHit.name}</span>. Registering again would create a duplicate of it.
+                                        {tr('You are standing next to')} <span className="font-black uppercase text-[var(--danger-ink)]">{proximityHit.name}</span>. Registering again would create a duplicate of it.
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => { setProximityAck(proximityHit.name); setProximityHit(null); }}
                                         className="w-full min-h-[44px] bg-[var(--duke-fill-plank)] hover:bg-[var(--duke-fill-plank-2)] text-[var(--duke-amber-ink)] text-[10px] font-black uppercase tracking-widest py-2.5 rounded transition-colors"
                                     >
-                                        This is a different building — continue
+                                        {tr('This is a different building — continue')}
                                     </button>
                                 </div>
                             )}
                             <div>
-                                <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">Store Name</label>
+                                <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">{tr('Store Name')}</label>
                                 <input value={customerName} disabled className="w-full bg-[var(--duke-well-solid)] border border-[var(--duke-edge-ctl)] text-[var(--duke-ink-1)] p-3 rounded font-bold uppercase opacity-70" />
                             </div>
                             
                             <div>
-                                <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">WhatsApp / Phone <span className="text-red-500">*</span></label>
-                                <input value={nooForm.phone} onChange={e => setNooForm({...nooForm, phone: e.target.value})} placeholder="e.g. 081234567890" className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-ctl)] focus:border-orange-500 outline-none text-[var(--duke-ink-hi)] p-3 rounded font-bold" />
+                                <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">{tr('WhatsApp / Phone')} <span className="text-red-500">*</span></label>
+                                <input value={nooForm.phone} onChange={e => setNooForm({...nooForm, phone: e.target.value})} placeholder={tr('e.g. 081234567890')} className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-ctl)] focus:border-orange-500 outline-none text-[var(--duke-ink-hi)] p-3 rounded font-bold" />
                             </div>
 
                             <div>
-                                <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">Requested Pricing Tier <span className="text-red-500">*</span></label>
+                                <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">{tr('Requested Pricing Tier')} <span className="text-red-500">*</span></label>
                                 <select value={nooForm.requestedTier} onChange={e => setNooForm({...nooForm, requestedTier: e.target.value})} className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-ctl)] focus:border-orange-500 outline-none text-[var(--duke-ink-hi)] p-3 rounded font-bold uppercase">
                                     {allowedTiers.map(tier => ( <option key={tier} value={tier}>{tier === 'Grosir' && !canConfirmGrosir(userRole) ? 'Grosir (admin confirms first - sells at Retail till then)' : tier}</option> ))}
                                 </select>
                             </div>
 
                             <div>
-                                <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-2">Storefront Photo <span className="text-red-500">*</span></label>
+                                <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-2">{tr('Storefront Photo')} <span className="text-red-500">*</span></label>
                                 <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handlePhotoCapture} className="hidden" />
                                 {nooForm.photoUrl ? (
                                     <div className="relative rounded-lg overflow-hidden border-2 border-orange-500 bg-[var(--duke-stage)]">
@@ -3306,7 +3307,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     <div className="bg-[var(--duke-fill-ground)] w-full max-w-md border-2 border-[color-mix(in_srgb,var(--duke-brass-edge)_50%,transparent)] rounded-2xl shadow-[0_0_50px_rgba(99,102,241,0.2)] flex flex-col animate-fade-in-up">
                         <div className="p-5 border-b border-[var(--duke-edge-1)] bg-[var(--duke-bar)] flex justify-between items-center">
                             <div>
-                                <h2 className="text-lg font-black text-[var(--duke-ink-hi)] flex items-center gap-2 uppercase tracking-wider"><Package size={20} className="text-[var(--duke-brass-ink)]"/> Deploy Marketing Sample</h2>
+                                <h2 className="text-lg font-black text-[var(--duke-ink-hi)] flex items-center gap-2 uppercase tracking-wider"><Package size={20} className="text-[var(--duke-brass-ink)]"/> {tr('Deploy Marketing Sample')}</h2>
                                 <p className="text-[10px] text-[var(--duke-ink-3)] uppercase tracking-widest mt-1">Target: {customerName}</p>
                             </div>
                             <button onClick={() => setShowSampleModal(false)} className="text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]"><X size={24}/></button>
@@ -3314,7 +3315,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         
                         <div className="p-6 space-y-5">
                             <div>
-                                <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">Select Product</label>
+                                <label className="text-xs font-bold text-[var(--duke-ink-3)] uppercase tracking-widest block mb-1">{tr('Select Product')}</label>
                                 <select value={sampleForm.productId} onChange={e => setSampleForm({...sampleForm, productId: e.target.value})} className="w-full bg-[var(--duke-fill-panel)] border border-[var(--duke-edge-ctl)] focus:border-[var(--duke-brass-edge)] outline-none text-[var(--duke-ink-hi)] p-3 rounded font-bold">
                                     <option value="">-- Choose Product --</option>
                                     {inventory.map(p => {
@@ -3358,7 +3359,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             
                             <div className="bg-[color-mix(in_srgb,var(--duke-brass)_10%,transparent)] p-3 rounded border border-[color-mix(in_srgb,var(--duke-brass-edge)_30%,transparent)] text-[var(--duke-brass-ink)] text-[10px] uppercase tracking-widest font-bold flex items-start gap-2">
                                 <AlertCircle size={14} className="shrink-0 mt-0.5"/>
-                                <p>Warning: You must collect the Pita Cukai for every open pack. This will be demanded during EOD Setoran.</p>
+                                <p>{tr('Warning: You must collect the Pita Cukai for every open pack. This will be demanded during EOD Setoran.')}</p>
                             </div>
                         </div>
 

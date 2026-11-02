@@ -27,10 +27,71 @@ import CustomerAccessPanel from './CustomerAccessPanel.jsx';
 import { isTopTier } from '../utils/customerAccess.js';
 
 // 🚀 IMPORT THE MATRIX BRAIN
-import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS, FLEET_EDIT_PERMS, defaultFleetAccess } from '../config/permissions';
+import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS, FLEET_EDIT_PERMS, defaultFleetAccess, hasClearance } from '../config/permissions';
 import { confirmAction, promptAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 import { writeLiteMode } from '../utils/liteMode.js';
+import { getLang, setLang } from '../config/lang';
+
+/* THIS DEVICE: what only this phone sees, open to EVERY tier. Aldi, 2026-11-02: "we all can see indonesian just add
+   language swapper on the setting, we should make this setting that can be seen by every tiers, even though there
+   will be limitation of what they can access and edit". So the lock screen below shows this band too; the company
+   tabs stay behind the vault lock exactly as before. The Language card names itself in both languages, so whoever
+   is lost in the other one can still find it. */
+const DeviceBand = ({ isLiteMode, setIsLiteMode, triggerCapy }) => {
+    const lang = getLang();
+    return (
+        <>
+            <div className="kpm-band">This device · nothing here leaves the phone</div>
+
+            {/* ⚠️ ONE WRITER (`writeLiteMode`), and both positions drawn. The old
+                toggle asked him to remember which way "on" pointed on a setting whose
+                whole job is to be found by someone whose phone is struggling. */}
+            <div className="kpm-mod bench">
+                <div className="kpm-head">
+                    <span className="slot">Device · 01</span>
+                    <div className="line">
+                        <h3>Graphics</h3>
+                        <span className={`kpm-read ${isLiteMode ? 'on' : ''}`}>{isLiteMode ? 'Lite' : 'Full'}</span>
+                    </div>
+                    <p className="kpm-desc">
+                        <b>Lite</b> drops blur, animation and the heavy effects so a cheap phone stays
+                        quick and the battery lasts. Nothing is hidden and no data changes — it is only
+                        how this one device draws the app.
+                    </p>
+                </div>
+                <div className="kpm-shelf split">
+                    <div className="kpm-switch" role="group" aria-label="Graphics mode">
+                        <button type="button" aria-pressed={!isLiteMode}
+                            onClick={() => writeLiteMode(false, { setIsLiteMode, triggerCapy })}>Full</button>
+                        <button type="button" aria-pressed={!!isLiteMode}
+                            onClick={() => writeLiteMode(true, { setIsLiteMode, triggerCapy })}>Lite</button>
+                    </div>
+                </div>
+            </div>
+
+            <div className="kpm-mod bench">
+                <div className="kpm-head">
+                    <span className="slot">Device · 02</span>
+                    <div className="line">
+                        <h3>Language · Bahasa</h3>
+                        <span className={`kpm-read ${lang === 'id' ? 'on' : ''}`}>{lang === 'id' ? 'Indonesia' : 'English'}</span>
+                    </div>
+                    <p className="kpm-desc">
+                        The words on this phone only. Saved sales and the nota do not change. The page reloads to switch.
+                        <br />Hanya tulisan di HP ini. Data penjualan dan nota tidak berubah. Halaman dimuat ulang saat diganti.
+                    </p>
+                </div>
+                <div className="kpm-shelf split">
+                    <div className="kpm-switch" role="group" aria-label="Language">
+                        <button type="button" aria-pressed={lang === 'en'} onClick={() => setLang('en')}>English</button>
+                        <button type="button" aria-pressed={lang === 'id'} onClick={() => setLang('id')}>Indonesia</button>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+};
 
 export default function SettingsView({
     user, userId, db, appId, isAdmin, isSystemOwner, userRole,
@@ -126,7 +187,12 @@ export default function SettingsView({
     // 1. LOCKSCREEN
     if (!isAdmin) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in text-center">
+            <div className="animate-fade-in max-w-3xl mx-auto pb-20">
+            {/* every tier: this phone's own Graphics and Language (DeviceBand, top of file) */}
+            <DeviceBand isLiteMode={isLiteMode} setIsLiteMode={setIsLiteMode} triggerCapy={triggerCapy} />
+            {/* the company tabs: only a tier the matrix gives the Settings key may ask to unlock them */}
+            {hasClearance(userRole, 'view_settings') && (
+            <div className="flex flex-col items-center justify-center min-h-[40vh] text-center">
                 <div className="relative mb-8">
                     <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full animate-pulse"></div>
                     <div className="relative w-24 h-24 bg-black border-2 border-red-600 rounded-full flex items-center justify-center text-red-500 shadow-[0_0_30px_rgba(220,38,38,0.4)]">
@@ -142,6 +208,8 @@ export default function SettingsView({
                 <h2 className="text-3xl font-black text-[var(--duke-ink-hi)] uppercase tracking-[0.25em] mb-2 font-mono">Restricted Access</h2>
                 <p className="text-[var(--duke-ink-3)] text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed mb-8">Admin Clearance Required</p>
                 <button onClick={() => setShowAdminLogin(true)} className="px-10 py-4 border-2 border-[var(--duke-edge-4)] text-[var(--duke-ink-hi)] font-black uppercase text-xs hover:bg-[var(--duke-amber)] hover:text-black transition-all">Unlock System</button>
+            </div>
+            )}
             </div>
         );
     }
@@ -291,33 +359,7 @@ export default function SettingsView({
                          Security: what only this device sees, then what the whole company sees. */
                       <div className="animate-fade-in">
 
-                          <div className="kpm-band">This device · nothing here leaves the phone</div>
-
-                          {/* ⚠️ ONE WRITER (`writeLiteMode`), and both positions drawn. The old
-                              toggle asked him to remember which way "on" pointed on a setting whose
-                              whole job is to be found by someone whose phone is struggling. */}
-                          <div className="kpm-mod bench">
-                              <div className="kpm-head">
-                                  <span className="slot">Device · 01</span>
-                                  <div className="line">
-                                      <h3>Graphics</h3>
-                                      <span className={`kpm-read ${isLiteMode ? 'on' : ''}`}>{isLiteMode ? 'Lite' : 'Full'}</span>
-                                  </div>
-                                  <p className="kpm-desc">
-                                      <b>Lite</b> drops blur, animation and the heavy effects so a cheap phone stays
-                                      quick and the battery lasts. Nothing is hidden and no data changes — it is only
-                                      how this one device draws the app.
-                                  </p>
-                              </div>
-                              <div className="kpm-shelf split">
-                                  <div className="kpm-switch" role="group" aria-label="Graphics mode">
-                                      <button type="button" aria-pressed={!isLiteMode}
-                                          onClick={() => writeLiteMode(false, { setIsLiteMode, triggerCapy })}>Full</button>
-                                      <button type="button" aria-pressed={!!isLiteMode}
-                                          onClick={() => writeLiteMode(true, { setIsLiteMode, triggerCapy })}>Lite</button>
-                                  </div>
-                              </div>
-                          </div>
+                          <DeviceBand isLiteMode={isLiteMode} setIsLiteMode={setIsLiteMode} triggerCapy={triggerCapy} />
 
                           <div className="kpm-band">Company · printed on every invoice you hand out</div>
 
@@ -1556,7 +1598,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         { id: 'view_customers', label: 'Customers' },
         { id: 'view_sampling', label: 'Sampling' },
         { id: 'view_audit_logs', label: 'Audit Logs' },
-        { id: 'view_settings', label: 'Settings Panel' },
+        { id: 'view_settings', label: 'Settings: company tabs (everyone has This device)' },
         { id: 'view_agent_profile', label: 'Agent Profile' },
         { id: 'can_unrestricted_sample', label: 'Bypass GPS for Sampling' }, 
         { id: 'view_expected_count', label: 'Stock Count: see expected number while counting' },

@@ -946,7 +946,7 @@ const G21 = '21. The stock-source switch lives inside the terminal, not the shel
    this bar in App.jsx does not exist by the time this runs. That cost two build cycles to learn.
    The window starts at the bar's own background colour, so the wrapper's class list — where the
    z-index used to be — is inside what gets tested. */
-const adminBar = (termSrc.match(/onAdminSalesMode\('VAULT'\)[\s\S]{0,900}?Boss Car<\/button>/) || [''])[0];
+const adminBar = (termSrc.match(/onAdminSalesMode\('VAULT'\)[\s\S]{0,900}?Boss Car'\)\}<\/button>/) || [''])[0];
 
 check(G21, 'the field-mode toggle is present to check at all', adminBar.length > 300,
   'could not find the stock-source toggle in MerchantSalesView.jsx — this group is blind, fix the match');
@@ -1008,7 +1008,7 @@ check(G22, 'the picker escapes this subtree through a portal',
 /* iOS zooms the whole page into any focused input under 16px. text-base IS 16px. Drop below it
    and the page scales on focus — which is half of what "not satisfying" meant. */
 check(G22, 'the picker field is 16px so iOS cannot zoom the page on focus',
-  /placeholder="Type the shop name"[\s\S]{0,400}?text-base/.test(termSrc),
+  /placeholder=\{tr\('Type the shop name'\)\}[\s\S]{0,400}?text-base/.test(termSrc),
   'text-xs/text-sm here re-introduces the focus zoom that made typing a customer feel broken');
 check(G22, 'both halves of the picker are inside the click-outside sanctuary',
   /manifest-dropdown-area hide-on-print shrink-0 h-\[52px\]/.test(termSrc) &&
@@ -2311,9 +2311,12 @@ check(G34, 'every module declares its kind and prints its slot',
    2026-10-15: the writer moved to utils/liteMode.js when the top bar's status line became a
    second Lite switch (App cannot import from the lazy Settings chunk). Still exactly one writer:
    defined once there, imported here, never re-declared. */
+const deviceBand = (settingsSrc.match(/const DeviceBand = [\s\S]*?\n\};/) || [''])[0];
 const liteModeSrc = fs.readFileSync('src/utils/liteMode.js', 'utf8');
 check(G34, 'graphics mode has exactly one writer and both positions drawn',
-  (gen.match(/writeLiteMode\(/g) || []).length === 2 &&
+  /* since 2026-11-02 the Graphics card lives in DeviceBand (every tier sees it), and the General tab mounts it */
+  /<DeviceBand isLiteMode=\{isLiteMode\}/.test(gen) && !offToken.test(deviceBand) &&
+  (deviceBand.match(/writeLiteMode\(/g) || []).length === 2 &&
   (liteModeSrc.match(/^export const writeLiteMode = /gm) || []).length === 1 &&
   /import \{ writeLiteMode \} from '\.\.\/utils\/liteMode\.js';/.test(settingsSrc) &&
   !/^const writeLiteMode = /m.test(settingsSrc) &&

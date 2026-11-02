@@ -511,6 +511,9 @@ export default function BiohazardTheme({
     const visibleMenu = allMenuItems.filter(item => {
         // Reports button: show it if the tier has ANY of the 3 report modes (the old single 'view_reports' toggle no longer exists in Settings)
         if (item.feature === 'view_reports') return REPORT_PERMS.some(p => hasClearance(userRole, p));
+        /* Settings: every tier (his 2026-11-02 "this setting that can be seen by every tiers") - everyone gets this
+           phone's own Language and Graphics; view_settings now only decides who may unlock the company tabs inside */
+        if (item.id === 'settings') return true;
         return hasClearance(userRole, item.feature);
     });
 

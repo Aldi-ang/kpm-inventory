@@ -28,6 +28,7 @@ import { unlockSounds } from '../src/hooks/useSound.js';
 import PonderBookButton from '../src/ponder/PonderBook.jsx';
 import TierPovSwitch from '../src/components/TierPovSwitch.jsx';
 import CustomerAccessPanel from '../src/components/CustomerAccessPanel.jsx';
+import SettingsView from '../src/components/SettingsView.jsx';
 import StockByWarehouseTable from '../src/ponder/stages/StockByWarehouseTable.jsx';
 import ShipmentPlanTable from '../src/ponder/stages/ShipmentPlanTable.jsx';
 import ProductPerformancePanel from '../src/components/ProductPerformancePanel.jsx';
@@ -1045,9 +1046,10 @@ function ShellLab() {
   }, []);
   return (
     <BiohazardTheme
-      activeTab={q.has('map') ? 'map_war_room' : 'command_center'} setActiveTab={() => {}}
+      activeTab={q.has('map') ? 'map_war_room' : q.has('settings') ? 'settings' : 'command_center'} setActiveTab={() => {}}
       user={{ displayName: 'Lab', email: 'lab@example.com' }}
-      appSettings={{}} isAdmin userRole="ADMIN" agentSettings={{}} showAdminLogin={q.has('gate')}
+      /* &menu=<tier id> - the menu as that tier sees it (ROOKIE, FIELD_OPERATIVE...); default the boss's */
+      appSettings={{}} isAdmin userRole={q.get('menu') || 'ADMIN'} agentSettings={{}} showAdminLogin={q.has('gate')}
       notifications={q.has('bell') ? LAB_BELL_NEEDS : []} onNotificationClick={() => {}} appVersion="lab"
       darkMode={dark} setDarkMode={setDark}
       isLiteMode={lite} onToggleLite={() => setLite(v => !v)}
@@ -1231,6 +1233,12 @@ function ShellLab() {
           onRequestCrop={(file) => { window.__crop = file; }}
           croppedImage={null} onClearCroppedImage={() => {}}
         />
+      ) : q.has('settings') ? (
+        /* ?shell&settings&menu=ROOKIE - Settings as that tier sees it with the vault locked (2026-11-02: every tier
+           gets This device; only a tier holding view_settings is offered the unlock). Language is the real switch. */
+        <SettingsView userRole={q.get('menu') || 'ROOKIE'} isAdmin={false} isSystemOwner={false}
+          isLiteMode={lite} setIsLiteMode={setLite} triggerCapy={() => {}} setShowAdminLogin={() => {}}
+          sessionStatus={{}} setSessionStatus={() => {}} auditLogs={[]} appSettings={{}} tierSettings={[]} activeMessages={[]} />
       ) : q.has('terminal') ? (
         /* ?shell&terminal — the Sales Terminal INSIDE the real shell, wrapped exactly as App.jsx
            wraps it (activeTab === 'sales', App.jsx:4916): the shell's p-2 lg:p-6, then ONE bare

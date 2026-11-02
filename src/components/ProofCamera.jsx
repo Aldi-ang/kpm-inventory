@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { tr } from '../config/lang';
 import { createPortal } from 'react-dom';
 import { X, Camera, AlertTriangle } from 'lucide-react';
 
@@ -88,7 +89,7 @@ export default function ProofCamera({ open, onClose, onPhoto }) {
 
                 <div className="p-4 border-b border-[var(--duke-edge-1)] bg-[var(--duke-bar)] flex justify-between items-center">
                     <h2 className="text-sm font-black text-[var(--duke-ink-hi)] flex items-center gap-2 uppercase tracking-wider">
-                        <Camera size={16} className="text-[var(--duke-amber-ink-2)]"/> Take the handover photo
+                        <Camera size={16} className="text-[var(--duke-amber-ink-2)]"/> {tr('Take the handover photo')}
                     </h2>
                     <button onClick={onClose} className="text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]"><X size={20}/></button>
                 </div>
@@ -97,7 +98,7 @@ export default function ProofCamera({ open, onClose, onPhoto }) {
                     {state === 'blocked' ? (
                         <div className="border-l-[3px] border-[var(--danger)] bg-[var(--danger-well)] px-3 py-3">
                             <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-danger-ink)] mb-1 flex items-center gap-1.5">
-                                <AlertTriangle size={12}/> Camera unavailable
+                                <AlertTriangle size={12}/> {tr('Camera unavailable')}
                             </div>
                             <p className="font-mono text-[10px] leading-snug text-[var(--ink-muted)]">{detail}</p>
                         </div>
@@ -110,7 +111,7 @@ export default function ProofCamera({ open, onClose, onPhoto }) {
                     {state === 'live' && (
                         <button onClick={snap}
                             className="kpm-hover w-full py-3 bg-gradient-to-r from-[var(--duke-amber)] to-[var(--duke-amber-2)] border-2 border-[var(--duke-brass-edge-3)] text-black rounded font-black uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-2">
-                            <Camera size={18}/> Take photo
+                            <Camera size={18}/> {tr('Take photo')}
                         </button>
                     )}
                 </div>
