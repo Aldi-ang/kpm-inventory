@@ -8,7 +8,7 @@
 
 **2026-11-02 09:53 — THE ONE JOB: A round 1b - a words board for what is still English on the Sales Terminal, then wrap it. Then rounds 2-3 (Journey, evening hand-in), then B.**
 - Round 1 is BUILT and live (switch in Settings > This device; `src/config/lang.js` = `tr()` + the ID list; every tier opens Settings). His words: *"btw we all can see indonesian just add language swapper on the setting, we should make this setting that can be seen by every tiers, even though there will be limitation of what they can access and edit on the setting"*.
-- Owed (verbatim): "❓ ANSWER: Which sentence was your "5"? Name it in English, or say "ok"." + "🔴 DECIDE: Should a new phone start in English or Indonesian?". Default today: English (`getLang` in lang.js).
+- 2026-11-02 10:07: his *"english already correct, make it as second language indonesia on default"* -> BUILT: no stored choice = Indonesian (`getLang` in lang.js); English is the second language. His "5" is closed. Nothing owed.
 - Round 1b words to put on a board first (he has not seen them): the 35 `notify()` pop-ups in MerchantSalesView (many carry names/numbers -> `tr` needs a {name} fill-in), "Empty — tap a ware to add", "No promo goods in this van...", the camera button ("Open camera for handover photo" / "Capture or choose photo"), "Total Value", "Last order ... usually Rp", the Ecer/Consignment note, the Settings "This device" text, the menu labels. Probe: `node shoot.mjs <name> "shell&terminal&many" 375 812 id` in A-Brain `Raw/2026-11-02-language-switch` prints what is still English.
 - Same rules: display only (the self-check fails if a saved value goes through `tr`), no "kamu"/"Anda", "contoh:" not "mis.", one word per idea.
 - Rewrite this file again when done.

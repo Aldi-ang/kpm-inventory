@@ -2,13 +2,14 @@
    language swapper on the setting". English is the key, so the code stays readable and a word missing here shows
    in English instead of breaking. DISPLAY ONLY: values that are saved (paymentType, VISIT_TAGS, return reasons) are
    never passed through tr() - Day Replay and the reports read them back in English.
-   No stored choice = English, so nobody's screen changes until they pick Indonesia themselves. Switching reloads
-   the page: every label reads the language once, at load, and no screen needs to listen for a change. */
+   No stored choice = Indonesian; English is the second language, picked in Settings (his 2026-11-02: "english
+   already correct, make it as second language indonesia on default"). Switching reloads the page: every label
+   reads the language once, at load, and no screen needs to listen for a change. */
 const KEY = 'kpm_lang';
-export const getLang = () => { try { return localStorage.getItem(KEY) === 'id' ? 'id' : 'en'; } catch { return 'en'; } };
+export const getLang = () => { try { return localStorage.getItem(KEY) === 'en' ? 'en' : 'id'; } catch { return 'id'; } };
 const LANG = getLang();
 export const setLang = (lang) => {
-    try { localStorage.setItem(KEY, lang); } catch { /* storage blocked (private tab): stays English */ }
+    try { localStorage.setItem(KEY, lang); } catch { /* storage blocked (private tab): stays Indonesian */ }
     window.location.reload();
 };
 export const tr = (en) => (LANG === 'id' && ID[en]) || en;

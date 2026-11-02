@@ -6,6 +6,8 @@
    quarantine item to the main warehouse"*. So Dika (T6) sells, takes a damaged pack back from a shop (that is what puts
    anything in his quarantine), sends his EOD; the Owner approves it - that approval is what moves the leftover stock and
    the quarantine packs into the Master Vault (App.jsx handleVerifyEOD) - and then counts the vault. */
+/* the guide names a terminal button by the words the phone shows (Indonesian unless English was picked) */
+import { tr } from './lang.js';
 export const fmt = (n) => (Number(n) || 0).toLocaleString('id-ID');
 
 export const STEPS = [
@@ -67,7 +69,7 @@ export const GUIDE = {
         { at: ['[data-guide="reason"]', '[data-guide="cond"]'], say: ['Barangnya sudah ditandai Damaged. Pilih alasan rusaknya.', 'Ubah kondisinya menjadi Damaged.'],
           done: '[data-mission="4"][data-reasons]' },
         PHOTO,
-        { at: '[data-mission="4"]', say: 'Tekan PULL RETUR.' }],
+        { at: '[data-mission="4"]', say: `Tekan ${tr('PULL RETUR')}.` }],
     6: [nav('eod', 'EOD Setoran', '[data-mission="6"]'),
         { at: '[data-guide="deck"]', say: 'Hitung tiap kartu: uang tunai, transfer, barang kembali dan pita cukai. Isi angkanya, lalu tekan tombol di bawah kartu.',
           done: '[data-mission="6"]:not([data-stage="open"])' },

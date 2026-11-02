@@ -12648,8 +12648,14 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
 { const ms = read('src/MerchantSalesView.jsx') + read('src/components/ProofCamera.jsx');
   globalThis.localStorage = { getItem: (k) => (k === 'kpm_lang' ? 'id' : null), setItem() {} };
   const { tr, ID } = await import('../config/lang.js?as=id');
-  delete globalThis.localStorage;
+  globalThis.localStorage = { getItem: (k) => (k === 'kpm_lang' ? 'en' : null), setItem() {} };
   const { tr: trEn } = await import('../config/lang.js?as=en');
+  globalThis.localStorage = { getItem: () => null, setItem() {} };
+  const { tr: trNew, getLang } = await import('../config/lang.js?as=new');
+  delete globalThis.localStorage;
+  /* his 2026-11-02 "english already correct, make it as second language indonesia on default" */
+  ok('BEHAVIOUR: a phone that never chose reads Indonesian; English only after picking it in Settings',
+     getLang() === 'id' && trNew('Take order') === 'Ambil pesanan');
   const used = [...ms.matchAll(/\btr\('([^']+)'\)/g)].map((x) => x[1]);
   const missing = [...new Set(used)].filter((k) => !ID[k]);
   ok(`every tr('...') on the Sales Terminal has its Indonesian word (${used.length} uses)`, used.length > 100 && !missing.length,
