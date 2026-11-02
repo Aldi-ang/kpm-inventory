@@ -9522,6 +9522,21 @@ section('THE REGIONAL WAREHOUSE\'S CHEST (2026-09-30)');
      /\{item\.facility === 'MASTER' && \(\s*<button onClick=\{\(\) => setResolutionModal\(\{item, method: 'REPAIR'\}\)\}/.test(sv) &&
      sv.includes("if (resolutionModal.method === 'REPAIR' && fromFac !== 'MASTER') return notify(") &&
      sv.includes("const totalValue = resolutionModal.method === 'REPAIR' ? 0 : qtyToResolve * hpp;"));
+  /* his 2026-11-02 "make sure that the converted product have the same 3D design of that type but of course with
+     biohazard symbol somewhere on the cards or product icon" */
+  ok('REGRESSION: a converted pack keeps its 3D look - the "· RUSAK" item copies the pack\'s faces, size and back rule',
+     sv.includes("const look = Object.fromEntries(['images', 'dimensions', 'useFrontForBack'].map(k => [k, resolutionModal.item[k]]).filter(([, v]) => v !== undefined));") &&
+     sv.includes("damagedFrom: resolutionModal.item.id, ...look }"));
+  { const H2 = await import('../utils/helpers.js');
+    ok('BEHAVIOUR: isDamagedPack - a converted pack yes; a T-shirt, a cigarette, nothing - no',
+       H2.isDamagedPack({ kind: 'promo', damagedFrom: 'p-cg16' }) === true && H2.isDamagedPack({ kind: 'promo', goods: 'tshirt' }) === false &&
+       H2.isDamagedPack({ id: 'p-cg16', damagedFrom: 'x' }) === false && H2.isDamagedPack(undefined) === false); }
+  const markAt = { 'src/components/ResidentEvilInventory.jsx': 2, 'src/components/ExamineModal.jsx': 1, 'src/components/LoadingBay.jsx': 1,
+                   'src/MerchantSalesView.jsx': 1, 'src/AgentInventoryView.jsx': 1 };
+  ok('the biohazard mark is on every place a converted pack is drawn - Master Vault card + list icon, the 3D examine, the chest box, the terminal promo row, the agent\'s promo row',
+     Object.entries(markAt).every(([f, n]) => (read(f).match(/isDamagedPack\(.*?\) && <HazardMark /g) || []).length === n) &&
+     /if \(isPromo\(p\) && !isDamagedPack\(p\)\) return/.test(read('src/components/LoadingBay.jsx')) &&
+     /import \{ HAZARD_SIGN \} from '\.\.\/utils\/vanBay'/.test(read('src/components/HazardMark.jsx')));
   ok('switching crates: the box shrinks into the old crate (170 ms) and grows out of the new one (300 ms, the spring), the new origin read AFTER the shrink is cancelled; one crate is always open',
      /if \(k === fac \|\| busy\.current\) return;/.test(wc) && /duration: 170, easing: IN, fill: 'forwards'/.test(wc) && /a\.cancel\(\); h\.style\.transformOrigin = ox\(k\);/.test(wc) && /duration: 300, easing: SPRING/.test(wc) &&
      /if \(!h \|\| still\(\)\) \{ onPick\(k\);/.test(wc));

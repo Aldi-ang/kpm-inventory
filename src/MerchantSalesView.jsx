@@ -7,7 +7,8 @@ import { hasClearance, canPickFromGallery } from './config/permissions';
 import { IS_DEMO } from './config/firebase';
 import { demoPhoto } from './config/demoPhoto.js';
 import ProofCamera from './components/ProofCamera.jsx';
-import { savePhotoAndGetReference, fileOrKeepPhoto, photoStamp, nameTag, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey, promoPic } from './utils/helpers';
+import { savePhotoAndGetReference, fileOrKeepPhoto, photoStamp, nameTag, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey, promoPic, isDamagedPack } from './utils/helpers';
+import HazardMark from './components/HazardMark';
 import { giveLines, bundleCheck, bundlesFor, bundleUnitPrices } from './utils/vanBay';
 import { waNumber } from './utils/whatsapp.js';
 import { areaFromPin, watchBorders } from './utils/areaFromPin.js';
@@ -2228,7 +2229,10 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         ) : <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[var(--duke-ink-7)]">{tr('Promo · given free')}</span>}
                         {canGive ? (giveOpen && promoVan.map(l => (
                             <div key={l.productId} className="flex items-center gap-2 md:gap-3 mt-2">
-                                <img alt="" src={promoPic(l.product || { kind: 'promo', name: l.name })} className="w-10 h-10 object-contain shrink-0 rounded border border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)] bg-[var(--duke-paper-2)]" />
+                                <span className="relative shrink-0">
+                                    <img alt="" src={promoPic(l.product || { kind: 'promo', name: l.name })} className="w-10 h-10 object-contain rounded border border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)] bg-[var(--duke-paper-2)]" />
+                                    {isDamagedPack(l.product) && <HazardMark className="-bottom-1 -right-1 w-[18px] h-[18px]" />}
+                                </span>
                                 <span className="flex-1 min-w-0 text-[11px] md:text-xs font-black uppercase leading-tight break-words text-[var(--duke-ink-7)]">
                                     {l.name}
                                     <span className="block mt-0.5 text-[10px] font-bold normal-case tracking-normal text-[var(--duke-on-paper-dim)] tabular-nums">{l.qty} pcs in {giveFrom}</span>

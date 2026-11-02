@@ -27,7 +27,8 @@
    damaged goods) take turns in one place. Four squares a page, in one row, at every width. */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal, flushSync } from 'react-dom';
-import { convertToBks, getLocalDayKey, formatRupiah, isPromo, promoPic } from '../utils/helpers';
+import { convertToBks, getLocalDayKey, formatRupiah, isPromo, isDamagedPack, promoPic } from '../utils/helpers';
+import HazardMark from './HazardMark';
 import { PER, lineBks, netBks, loadCap, backCap, foldLine, vanCells, landingCell, applyPreset, teamLoad, HAZARD_SIGN, unitOf } from '../utils/vanBay';
 import { playSound } from '../hooks/useSound';
 import { QuarantineHatch, BlastDoors, QuarantineBand, runSwitch } from './QuarantineSwitch.jsx';
@@ -71,18 +72,20 @@ function center(el) { const r = el.getBoundingClientRect(); return { x: r.left +
    without its EXAMINE label, which means nothing inside a chest. */
 export function Cube({ p }) {
   /* a promo item is its picture (the warehouse chest's), never a cigarette pack - inside the same stage, so the ghost,
-     the flying boxes, the muatan and the HOW MANY panel carry it too */
-  if (isPromo(p)) return <span className="kpm-cube-stage"><img className="pimg" alt="" draggable={false} src={promoPic(p)} /></span>;
+     the flying boxes, the muatan and the HOW MANY panel carry it too. A damaged pack turned promo is the exception: it
+     stays its pack, with the biohazard mark (his 2026-11-02 "the same 3D design of that type") */
+  if (isPromo(p) && !isDamagedPack(p)) return <span className="kpm-cube-stage"><img className="pimg" alt="" draggable={false} src={promoPic(p)} /></span>;
   const d = p?.dimensions || { w: 55, h: 90, d: 22 };
   const img = p?.images || {};
   const front = img.front || p?.image;
   const back = p?.useFrontForBack ? front : img.back;
   const face = (cls, src) => <i className={cls}>{src ? <img src={src} alt="" draggable={false} /> : null}</i>;
   return (
-    <span className="kpm-cube-stage">
+    <span className="kpm-cube-stage" style={isDamagedPack(p) ? { position: 'relative' } : undefined}>
       <span className="kpm-cube" style={{ '--mm-w': d.w, '--mm-h': d.h, '--mm-d': d.d }}>
         {face('f', front)}{face('bk', back)}{face('l', img.left)}{face('r', img.right)}{face('t', img.top)}{face('bt', img.bottom)}
       </span>
+      {isDamagedPack(p) && <HazardMark className="right-0 bottom-0 z-10 w-[38%] h-auto aspect-square" />}
     </span>
   );
 }

@@ -747,9 +747,12 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                    of the old `samplings` row; this log keeps the record. */
                 const toWh = fromFac === 'MASTER' ? toWarehouse : fromFac;
                 const promoId = `dmg-${resolutionModal.item.id}`, promoName = `${resolutionModal.item.name} · RUSAK`;
-                const front = resolutionModal.item.images?.front;
+                /* the pack's whole look - all six faces, its size, its back rule - so every 3D view draws the same pack (his
+                   2026-11-02 "the same 3D design of that type"); HazardMark adds the biohazard sign wherever it is drawn.
+                   Copied, not undefined: Firestore refuses an undefined field. */
+                const look = Object.fromEntries(['images', 'dimensions', 'useFrontForBack'].map(k => [k, resolutionModal.item[k]]).filter(([, v]) => v !== undefined));
                 batch.set(doc(db, `artifacts/${appId}/users/${masterId}/products`, promoId),
-                    { name: promoName, kind: 'promo', unit: 'pcs', type: 'PROMO', stock: increment(0), damagedFrom: resolutionModal.item.id, ...(front ? { images: { front } } : {}) }, { merge: true });
+                    { name: promoName, kind: 'promo', unit: 'pcs', type: 'PROMO', stock: increment(0), damagedFrom: resolutionModal.item.id, ...look }, { merge: true });
                 batch.set(doc(db, `artifacts/${appId}/users/${masterId}/branches/${toWh}/inventory`, promoId), { productId: promoId, name: promoName, kind: 'promo', unit: 'pcs', stock: increment(qtyToResolve) }, { merge: true });
                 logData.details = { reason, to: toWh, promoId };
                 if (logAudit) await logAudit("QUARANTINE_SAMPLING", `Converted ${qtyToResolve}x ${resolutionModal.item.name} into ${qtyToResolve} pcs of promo goods "${promoName}" in ${toWh}.`);

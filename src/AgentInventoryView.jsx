@@ -9,7 +9,8 @@ import { isFleetManagementTier, canEditFleetRoster } from './config/permissions'
    `new Date().toISOString()`, the UTC one — so it stayed a day behind between midnight and 07:00
    WIB even after the shared helper was fixed. A second copy of a date rule is a second bug
    waiting for someone to fix only the first. */
-import { formatRupiah, getCurrentDate, saleLines, promoPic } from './utils/helpers';
+import { formatRupiah, getCurrentDate, saleLines, promoPic, isDamagedPack } from './utils/helpers';
+import HazardMark from './components/HazardMark';
 import { canvasWithPending } from './utils/vanSync';
 
 // 🚀 ACCEPT 'samplings' PROP HERE
@@ -455,8 +456,9 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                     {promoCanvas.map(item => (
                                         <div key={item.productId} className="bg-panel border border-line-2 p-3 rounded-none flex items-center justify-between">
                                             <div className="flex items-center gap-3 min-w-0">
-                                                <div className="w-10 h-10 rounded-none bg-ground border border-line-2 flex items-center justify-center shrink-0 shadow-inner">
+                                                <div className="relative w-10 h-10 rounded-none bg-ground border border-line-2 flex items-center justify-center shrink-0 shadow-inner">
                                                     <img alt="" className="w-8 h-8 object-contain" src={promoPic(promoItems.find(p => p.id === item.productId) || { kind: 'promo', name: item.name })} />
+                                                    {isDamagedPack(promoItems.find(p => p.id === item.productId)) && <HazardMark className="-bottom-1.5 -right-1.5 w-[18px] h-[18px]" />}
                                                 </div>
                                                 <div className="min-w-0 flex flex-col">
                                                     <h4 className="font-bold text-ink text-sm uppercase tracking-wide lg:truncate">{item.name}</h4>

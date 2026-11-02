@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Plus, Package, AlertCircle, AlertTriangle, ImageIcon, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatRupiah, convertToBks, getLocalDayKey, isPromo, promoSkin, promoGoods, inQuarantine } from '../utils/helpers';
+import { formatRupiah, convertToBks, getLocalDayKey, isPromo, isDamagedPack, promoSkin, promoGoods, inQuarantine } from '../utils/helpers';
 import PromoGoods3D from './PromoGoods3D';
+import HazardMark from './HazardMark';
 import * as threshold from '../utils/stockThreshold';
 
 // 🚀 NEW: ADVANCED STOCK FORMATTER (Handles Batang, Slops, and Bal)
@@ -121,6 +122,8 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                         <Maximize2 size={14} aria-hidden="true" />View in fullscreen
                     </button>
                 )}
+                {/* bottom-right: the top corners hold VIEW IN FULLSCREEN and the background-picture button */}
+                {isDamagedPack(product) && <HazardMark className="bottom-3 right-3 z-20 w-10 h-10" />}
                 {goods3d ? <PromoGoods3D product={product} className="absolute inset-0" /> : (
                 <div
                     className="relative"
@@ -286,6 +289,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                                 <div className={`w-12 h-12 shrink-0 border flex items-center justify-center bg-black relative ${selectedId === item.id ? 'border-amber-500' : isLowStock && isAdmin ? 'border-rose-500' : 'border-amber-900/30'}`}>
                                     {item.images?.front || isPromo(item) ? <img src={item.images?.front || (promoGoods(item) ? item.thumb || `/promo/${promoGoods(item)}.png` : promoSkin(item, 'front'))} className="w-full h-full object-cover" /> : <Package size={20} className="text-amber-900/60"/>}
                                     {isLowStock && isAdmin && <AlertCircle size={14} className="absolute -top-1.5 -right-1.5 text-rose-500 bg-black rounded-full shadow-[0_0_5px_red]" />}
+                                    {isDamagedPack(item) && <HazardMark className="-bottom-1.5 -right-1.5 z-10 w-5 h-5" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h4 className={`text-sm md:text-base font-black uppercase tracking-wide truncate ${selectedId === item.id ? 'text-amber-400' : isLowStock && isAdmin ? 'text-rose-400' : 'text-slate-300'}`}>{item.name}</h4>

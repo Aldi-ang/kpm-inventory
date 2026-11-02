@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, ZoomOut, Lock, Unlock, ZoomIn, RefreshCcw } from 'lucide-react';
-import { isPromo, promoSkin, promoGoods } from '../utils/helpers';
+import { isPromo, isDamagedPack, promoSkin, promoGoods } from '../utils/helpers';
 import PromoGoods3D from './PromoGoods3D';
+import HazardMark from './HazardMark';
 
 const START_ROTATION = { x: -15, y: 25 };
 const START_SCALE = 2.8;
@@ -106,7 +107,8 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
       <div className="kpm-examine-object relative w-full max-w-md h-[400px] flex items-center justify-center perspective-1000 cursor-move">
         {/* No `transition` here on purpose. The rAF loop writes this node's transform every
             frame, and a transition would restart on each write — that is the flicker. */}
-        {goods3d ? <PromoGoods3D product={product} drag className="w-full h-full" /> : (
+        {isDamagedPack(product) && <HazardMark className="top-2 right-2 z-20 w-12 h-12" />}
+        {goods3d ?<PromoGoods3D product={product} drag className="w-full h-full" /> : (
         <div ref={boxRef} className="relative preserve-3d" style={{ width: `${w}px`, height: `${h}px`, transformStyle: 'preserve-3d' }}>
           <div className="absolute inset-0 bg-white backface-hidden flex items-center justify-center border border-[#5c4b3a]" style={{ width: w, height: h, transform: `translateZ(${d / 2}px)` }}>{frontImage ? <img src={frontImage} className="w-full h-full object-cover"/> : <span className="text-4xl">🚬</span>}<div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none"></div></div>
           <div className="absolute inset-0 bg-[#1a1815] backface-hidden flex items-center justify-center border border-[#3e3226]" style={{ width: w, height: h, transform: `rotateY(180deg) translateZ(${d / 2}px)` }}>{renderFace(backImage, "bg-[#1a1815]")}</div>

@@ -251,6 +251,9 @@ export const absentForSure = (snap) =>
    products collection, `kind: 'promo'`; absent = cigarette, so no old document changes. Counted in pcs: no packing,
    no price. useDatabaseSync keeps them OUT of `inventory`, which every cigarette screen reads. */
 export const isPromo = (product) => product?.kind === 'promo';
+/* a damaged pack turned promo in Stock Opname (2026-11-02, `dmg-<pack>` "<NAME> · RUSAK"): drawn as its pack, with the
+   biohazard mark (HazardMark) */
+export const isDamagedPack = (product) => isPromo(product) && !!product?.damagedFrom;
 /* PROMO LINES on a delivery (stage 2, his 2026-10-26 "option to choose promotional items and send it to regional
    warehouse"): a line flagged `promo` counts pcs and carries no money (his "6 dont need for cost price") - it never joins
    a Bks total, a landed cost or a value. Cart and nota lines count `qtyReceived`, shipment lines `qty`. */

@@ -373,6 +373,12 @@ FIXTURES['branches/BANDUNG/inventory'] = [
    as the arrival check books them (kind 'promo', pcs) - the warehouse chest's third view. globalInventory never sees them. */
 const LAB_PROMO_ITEMS = [['p-tee', 'T-shirt', 40, 'tshirt'], ['p-hat', 'Hat', 25, 'hat'], ['p-lighter', 'Lighter', 300, 'lighter']]
   .map(([id, name, stock, goods]) => ({ id, name, stock, goods, kind: 'promo', unit: 'pcs', type: 'PROMO' }));
+/* 2026-11-02: a damaged pack turned promo (Stock Opname "Convert to Sample"). The lab cigarettes have no photos, so Cello
+   gets six drawn faces here - the board has to show the SAME pack on the cigarette and on its "· RUSAK" promo item. */
+const labFace = (fill, words) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 55 90"><rect width="55" height="90" fill="${fill}"/>${words ? '<rect y="56" width="55" height="16" fill="#f4f1e8"/><text x="27.5" y="32" font-family="Arial" font-weight="700" font-size="11" fill="#f4f1e8" text-anchor="middle">CELLO</text><text x="27.5" y="67.5" font-family="Arial" font-weight="700" font-size="8" fill="#1f5f3a" text-anchor="middle">GREEN 16</text>' : ''}</svg>`);
+const LAB_PACK_CG16 = { images: { front: labFace('#1f5f3a', true), back: labFace('#1f5f3a', true), left: labFace('#174a2d'), right: labFace('#174a2d'), top: labFace('#174a2d'), bottom: labFace('#174a2d') },
+  dimensions: { w: 55, h: 90, d: 22 } };
+const LAB_DMG_CG16 = { id: 'dmg-p-cg16', name: 'Cello Green 16 · RUSAK', stock: 4, kind: 'promo', unit: 'pcs', type: 'PROMO', damagedFrom: 'p-cg16', ...LAB_PACK_CG16 };
 if (q.has('promo')) FIXTURES['branches/BANDUNG/inventory'] = [...FIXTURES['branches/BANDUNG/inventory'],
   { id: 'p-tee', name: 'T-shirt', stock: 24, kind: 'promo', unit: 'pcs' }, { id: 'p-hat', name: 'Hat', stock: 10, kind: 'promo', unit: 'pcs' }];
 /* stage 3: the same two rows as DOCS, so the van bay's load transaction (one t.get per row) reads them - the stub answers a
@@ -1200,8 +1206,8 @@ function ShellLab() {
            lab cigarettes plus the four promo items of stage 1 (kind 'promo', type PROMO, pcs). &tab=promo opens their group. */
         <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col">
           <ResidentEvilInventory
-            inventory={[...LAB_PRODUCTS.map((p) => (p.id === 'p-djar' ? { ...p, damagedStock: 24 } : p)), ...[['p-tee', 'T-shirt', 40], ['p-poster', 'Poster', 120], ['p-hat', 'Hat', 2], ['p-lighter', 'Lighter', 300]]
-              .map(([id, name, stock]) => ({ id, name, stock, kind: 'promo', unit: 'pcs', type: 'PROMO', ...(id === 'p-tee' ? labShirt : {}) }))]}
+            inventory={[...LAB_PRODUCTS.map((p) => (p.id === 'p-djar' ? { ...p, damagedStock: 24 } : p.id === 'p-cg16' ? { ...p, ...LAB_PACK_CG16 } : p)), ...[['p-tee', 'T-shirt', 40], ['p-poster', 'Poster', 120], ['p-hat', 'Hat', 2], ['p-lighter', 'Lighter', 300]]
+              .map(([id, name, stock]) => ({ id, name, stock, kind: 'promo', unit: 'pcs', type: 'PROMO', ...(id === 'p-tee' ? labShirt : {}) })), LAB_DMG_CG16]}
             searchTerm="" onSearch={() => {}} motorists={LAB_MOTORISTS} transactions={[]} isAdmin appSettings={{}}
             onInspect={() => {}} onEdit={() => {}} onDelete={() => {}} onAddNew={() => {}} onUpdateProduct={() => {}} onUploadBg={() => {}}
           />
@@ -1259,8 +1265,8 @@ function ShellLab() {
             logAudit={() => {}} triggerCapy={() => {}}
             onProcessSale={async (sale, ...rest) => { window.__sale = { sale, rest }; window.__give = rest[4]; return { ok: true }; }}
             /* &promo (stage 4): the van holds 6 T-shirts + 2 hats; the give row shows with an empty cart too (a GIVEAWAY) */
-            promoVan={q.has('promo') ? [['p-tee', 'T-shirt', 6], ['p-hat', 'Hat', 2]].map(([productId, name, qty]) =>
-              ({ productId, name, qty, unit: 'pcs', promo: true, product: { id: productId, name, kind: 'promo' } })) : []}
+            promoVan={q.has('promo') ? [['p-tee', 'T-shirt', 6], ['p-hat', 'Hat', 2], ['dmg-p-cg16', 'Cello Green 16 · RUSAK', 4]].map(([productId, name, qty]) =>
+              ({ productId, name, qty, unit: 'pcs', promo: true, product: productId === 'dmg-p-cg16' ? LAB_DMG_CG16 : { id: productId, name, kind: 'promo' } })) : []}
             onInspect={() => {}}
             /* &bundles: two factory offers under the BUNDLES chip - the hat one has only 2 hats in the van for 3, so it greys out */
             appSettings={{ companyName: 'KPM INVENTORY', ...(q.has('bundles') ? { promoBundles: [
