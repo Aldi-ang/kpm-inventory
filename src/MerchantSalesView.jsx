@@ -2389,12 +2389,11 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-[var(--duke-on-fill)] p-1.5 rounded-md shadow-md"><X size={14}/></button>
                             </div>
                         ) : (
-                            /* a solid brass plate, not a dashed ghost on the paper (his 2026-11-02 "it is camouflage with its
-                               background"): the dashed edge is his NOTICE look, and MAKE DEAL stays dim until this photo exists,
-                               so this is the one lit plate at this step */
-                            <button data-guide="photo" onClick={() => IS_DEMO ? demoPhoto().then(setTxProofPhoto) : galleryOk ? document.getElementById('txProof').click() : setShowProofCamera(true)} className="kpm-hover w-full py-2.5 min-h-[52px] lg:min-h-[40px] border-2 border-[var(--duke-brass-edge)] bg-[var(--duke-brass-2)] hover:bg-[var(--duke-brass)] text-[var(--duke-on-plate)] rounded shadow-md active:translate-y-px flex items-center justify-center gap-2">
-                                <Camera size={18} />
-                                <span className="text-[13px] lg:text-[11px] uppercase tracking-widest font-black">{IS_DEMO ? 'Auto handover photo (demo)' : galleryOk ? 'Capture or choose photo' : 'Open camera for handover photo'}</span>
+                            /* the camera key (theme.css .kpm-shutter): his 2026-11-02 "make the button 3D for that camera",
+                               after "it is camouflage with its background" and the brass plate he hated - black cap, real side */
+                            <button data-guide="photo" onClick={() => IS_DEMO ? demoPhoto().then(setTxProofPhoto) : galleryOk ? document.getElementById('txProof').click() : setShowProofCamera(true)} className="kpm-shutter">
+                                <span className="kpm-shutter-lens"><Camera size={18} /></span>
+                                <span className="kpm-shutter-word">{IS_DEMO ? 'Auto handover photo (demo)' : galleryOk ? 'Capture or choose photo' : 'Open camera for handover photo'}</span>
                             </button>
                         )}
 

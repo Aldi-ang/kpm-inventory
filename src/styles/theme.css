@@ -4618,6 +4618,36 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
   background-image: linear-gradient(180deg, rgba(0, 0, 0, .45) 0, transparent 55%, color-mix(in srgb, var(--ink) 8%, transparent) 100%); }
 .kpm-well::after { content: ""; position: absolute; right: 5px; top: 5px; width: 6px; height: 6px; border-radius: 50%;
   background: #000; border: 1px solid var(--line-2); transition: background-color 160ms ease-out, border-color 160ms ease-out; }
+
+/* THE CAMERA KEY — the Sales Terminal's handover-photo button, 2026-11-02. His "make the button 3D for that camera",
+   after the brass plate it replaced ("that button is really bad quality change that i hate it even the fill color is
+   bad"; amber is an edge and an ink, never a fill - 2026-08-21). A black cap whose 6 px bottom border is its SIDE: that
+   border is the depth, because Lite Mode strips box-shadow (G30). The camera sits in a lens in amber ink. The press is
+   the one his keys already make (.kpm-key): the cap sinks into its side, and the charge line runs along it while held.
+   Fixed colours, like the LED's black well: the key is black on the paper in both themes. */
+.kpm-shutter { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 7px 14px 7px 8px;
+  text-align: left; color: #f5e6c8; border: 1px solid #0b0a08; border-bottom-width: 6px; border-radius: 10px;
+  background-image:
+    linear-gradient(90deg, #f59e0b, #f59e0b),
+    linear-gradient(180deg, rgba(255, 255, 255, .16) 0 1px, transparent 1px),
+    linear-gradient(180deg, #3b352d 0, #1d1a16 100%);
+  background-repeat: no-repeat; background-size: 0 3px, 100% 100%, 100% 100%; background-position: left bottom, 0 0, 0 0;
+  transition: translate 90ms ease-out, border-bottom-width 90ms ease-out, background-size 360ms cubic-bezier(.2, .8, .2, 1); }
+.kpm-shutter:active { translate: 0 4px; border-bottom-width: 2px; background-size: 100% 3px, 100% 100%, 100% 100%; }
+.kpm-shutter:focus-visible { outline: 2px solid #f59e0b; outline-offset: 2px; }
+.kpm-shutter-lens { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+  color: #f59e0b; border: 2px solid #0b0a08;
+  background: radial-gradient(circle at 34% 30%, rgba(255, 255, 255, .24) 0 3px, transparent 4px),
+              radial-gradient(circle, #14120f 0 56%, #4a4238 57% 64%, #14120f 65%); }
+.kpm-shutter-word { font-family: var(--font-display); font-weight: 800; font-size: 13px; line-height: 1.25; letter-spacing: .1em; text-transform: uppercase; }
+@media (hover: hover) and (pointer: fine) {
+  .kpm-shutter:hover { background-size: 100% 3px, 100% 100%, 100% 100%; }
+}
+@media (min-width: 1024px) {
+  .kpm-shutter { min-height: 44px; }
+  .kpm-shutter-lens { width: 30px; height: 30px; }
+  .kpm-shutter-word { font-size: 11px; }
+}
 /* a real pointer gets the charge line on hover too; the lamp never lights on a .kpm-key */
 @media (hover: hover) and (pointer: fine) {
   .kpm-key:hover { background-size: 100% 3px, 100% 100%, 100% 100%; }

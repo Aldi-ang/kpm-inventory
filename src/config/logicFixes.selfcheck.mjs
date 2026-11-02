@@ -7192,7 +7192,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /p-2 min-h-\[44px\] lg:min-h-0 text-\[13px\] md:text-sm font-bold uppercase outline-none rounded \$\{isReturMode/.test(r) &&
      /w-20 md:w-24 min-h-\[44px\] lg:min-h-0 bg-white/.test(m) &&
      (m.match(/bg-transparent min-h-\[44px\] lg:min-h-0 text-sm font-bold uppercase outline-none text-\[var\(--duke-ink-7\)\]/g) || []).length === 2 &&
-     /kpm-hover w-full py-2\.5 min-h-\[52px\] lg:min-h-\[40px\] border-2 border-\[var\(--duke-brass-edge\)\] bg-\[var\(--duke-brass-2\)\]/.test(r) &&
+     /<button data-guide="photo" [^\n]*className="kpm-shutter">/.test(r) && /\.kpm-shutter \{[^}]*min-height: 56px;/.test(themeCss) &&
      /shrink-0 px-3 py-1\.5 min-h-\[44px\] lg:min-h-0 border border-\[var\(--duke-edge-5\)\] rounded text-\[11px\] lg:text-\[10px\]/.test(m));
   /* his 2026-11-02 "we dont need 2 pelanggan textbox since we are be able to pull it from the side, just erase the top
      pelanggan box": the strip above the manifest is gone, the paper's Nama Pelanggan box is the one opener, and the ✕
@@ -7202,16 +7202,22 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /onClick=\{clearCustomer\}\s+aria-label="Clear customer"\s+className="shrink-0 w-11 lg:w-9 min-h-\[44px\] lg:min-h-0/.test(m) &&
      (m.match(/onClick=\{clearCustomer\}/g) || []).length === 1 && /\{renderCustomerBar\(\)\}/.test(m),
      'the strip held the only ✕; dropping it without moving the ✕ leaves no way to clear a chosen shop');
-  /* his 2026-11-02 "make sure that the capture button to be more visible because it is camouflage with its background":
-     the dashed ghost (ink 2.7:1 on the paper, measured) read as his NOTICE look, not a button. A brass plate with dark
-     ink, the same plate as the selected MODE JUAL - and the only lit plate until the photo exists, because MAKE DEAL is
-     dim until then. */
-  ok('REGRESSION: the handover-photo button is a solid brass plate, never the dashed ghost on the paper again',
-     /bg-\[var\(--duke-brass-2\)\] hover:bg-\[var\(--duke-brass\)\] text-\[var\(--duke-on-plate\)\]/.test(r) &&
-     !/border border-dashed border-\[var\(--duke-edge-4\)\] hover:border-\[var\(--duke-amber-edge-2\)\] text-\[var\(--duke-ink-4\)\]/.test(r));
-  ok('EXAMINE on the picture reads at 11 px on the phone, 9 on the desk; the camera-button label at 13 / 11',
+  /* his 2026-11-02 "make sure that the capture button to be more visible because it is camouflage with its background",
+     then on the brass plate built for it: "that button is really bad quality change that i hate it even the fill color is
+     bad" + "make the button 3D for that camera". Amber is an edge and an ink, never a fill (his 2026-08-21 "stop using
+     amber background i said"). The camera key: a black cap whose 6 px side IS the depth (Lite Mode strips box-shadow), a
+     lens holding the camera in amber ink, and the press his keys make - it sinks into its side, the charge line runs. */
+  ok('REGRESSION: the handover-photo button is the 3D camera key - never a brass/amber fill, never the dashed ghost on the paper',
+     /<button data-guide="photo" [^\n]*className="kpm-shutter">\s*<span className="kpm-shutter-lens"><Camera size=\{18\} \/><\/span>/.test(r) &&
+     /* scoped to the photo button's own line: the IOU "Fulfill" button carries the same brass classes on purpose */
+     !/<button data-guide="photo"[^\n]*(duke-brass|duke-amber|border-dashed)/.test(r) &&
+     /\.kpm-shutter \{[^}]*border-bottom-width: 6px;[^}]*background-size: 0 3px, 100% 100%, 100% 100%;/.test(themeCss) &&
+     /\.kpm-shutter:active \{ translate: 0 4px; border-bottom-width: 2px; background-size: 100% 3px, 100% 100%, 100% 100%; \}/.test(themeCss) &&
+     !/\.kpm-shutter[^{]*\{[^}]*(box-shadow|filter:)/.test(themeCss));
+  ok('EXAMINE on the picture reads at 11 px on the phone, 9 on the desk; the camera-key word at 13 / 11',
      /text-\[11px\] lg:text-\[9px\] font-black font-mono tracking-widest text-\[var\(--duke-amber-ink\)\]">\{tr\('EXAMINE'\)\}</.test(m) &&
-     /text-\[13px\] lg:text-\[11px\] uppercase tracking-widest font-black">\{(IS_DEMO \? 'Auto handover photo \(demo\)' : )?galleryOk/.test(r));
+     /<span className="kpm-shutter-word">\{(IS_DEMO \? 'Auto handover photo \(demo\)' : )?galleryOk/.test(r) &&
+     /\.kpm-shutter-word \{[^}]*font-size: 13px;/.test(themeCss) && /\.kpm-shutter-word \{ font-size: 11px; \}/.test(themeCss));
   ok('TRAP (a) holds: the T4–T6 proof camera still has no file picker — galleryOk alone decides',
      /galleryOk \? document\.getElementById\('txProof'\)\.click\(\) : setShowProofCamera\(true\)/.test(r));
 }
