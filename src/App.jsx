@@ -3940,7 +3940,7 @@ const handleGitHubMirror = async () => {
                       : `AKUN UJI DIGANTI NAMA: ${worn}.`);
               }
           }
-          setPov({ tier: account.tier });
+          setPov({ tier: account.tier, place: home });
           setShowPovSwitch(false);
           /* Land where that tier actually lands. Staying on a tab the costume cannot
              open would show him a locked screen and read as a broken feature. */

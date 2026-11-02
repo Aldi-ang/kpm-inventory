@@ -112,7 +112,9 @@ export const previewIdentity = (pov, real) => {
            the lie this feature must not tell. Only the NAME on the paperwork moves,
            so a test sale is signed [TEST] SALES CANVAS and can never be mistaken for
            a real agent's — which is the half of this he asked for by name. */
-        user: real.user ? { ...real.user, displayName: testAccountName(account), agentId: account.id, userRole: account.tier } : real.user,
+        /* and the PLACE it was put at: the shop list files a Tier 4-6 by user.location, and he (the raw Firebase
+           user) has none - so every costume landed in team UNASSIGNED and saw no shops (his 2026-11-02 report) */
+        user: real.user ? { ...real.user, displayName: testAccountName(account), agentId: account.id, userRole: account.tier, ...(pov.place ? { location: pov.place } : {}) } : real.user,
         userRole: account.tier,
         agentProfileId: account.id,
         isAdmin: false,

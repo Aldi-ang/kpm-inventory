@@ -3117,6 +3117,25 @@ section('S · The tier POV switch takes authority away and never hands it out');
      on.user.uid === 'aldi-real-uid' && on.user.email === POV_OWNER_EMAIL);
   ok('and the banner has something to name, so the label cannot come apart from the disguise',
      on.previewing && on.previewing.tier === CORPORATE_TIERS.TIER_5);
+  /* 2026-11-02, his "the test account cant see any of the customer therefore i cant accept the the consignment as
+     regional admin test acccount": the costume moved name, id and tier but not the PLACE. He is the raw Firebase
+     user (no location), so the shop list (useDatabaseSync, fed user.location) filed every Tier 4-6 costume under
+     team UNASSIGNED - no ticked folders, no shops. */
+  const at = previewIdentity({ tier: CORPORATE_TIERS.TIER_4, place: 'Muntilan' }, REAL);
+  ok('a costume worn at a place carries that place on the user the shop list reads',
+     at.user.location === 'Muntilan' && on.user.location === undefined);
+  { const { accessFor } = await import('../utils/customerAccess.js');
+    const access = { on: true, teams: { MUNTILAN: { areas: { 'JAWA TENGAH|MAGELANG': ['MUNTILAN'] } } } };
+    ok("so a regional-admin costume at Muntilan gets Muntilan's folders, not UNASSIGNED's nothing",
+       accessFor(access, at.userRole, at.user.location)?.team === 'MUNTILAN');
+    /* his "make sure that all the test account also works well": every costume at Muntilan sees every shop (T2/T3)
+       or asks Muntilan's ticked folders (T4-T6) - none is left with the empty UNASSIGNED team */
+    const { grantQueries } = await import('../utils/customerAccess.js');
+    ok('every test account T2-T6 worn at Muntilan has shops to load',
+       TEST_ACCOUNTS.length === 5 && TEST_ACCOUNTS.every(a => { const w = previewIdentity({ tier: a.tier, place: 'Muntilan' }, REAL);
+         const s = accessFor(access, w.userRole, w.user.location); return s === null || grantQueries(s.grant).length > 0; })); }
+  ok('REGRESSION: picking a costume hands previewIdentity the place it was put at',
+     /setPov\(\{ tier: account\.tier, place: home \}\)/.test(app));
 
   /* ---- A COSTUME THAT DOES NOT EXIST IS NO COSTUME ---- */
   ok('previewing tier 1 does nothing - it cannot become a way to HAND OUT tier 1',
