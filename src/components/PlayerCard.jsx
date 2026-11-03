@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCircle, RotateCcw, Undo2, Coins } from 'lucide-react';
-import { RankBorder } from '../config/rankBorders.jsx';
+import { RankBorder, BORDER_KEYFRAMES, FrameFilters } from '../config/rankBorders.jsx';
 import { careerXP, computeDayXP, rankLadder, xpLegs, DEFAULT_XP } from '../config/career.js';
 import { formatRupiah, nameInitials, convertToBks, shortStockRows, eodBountyLines, eodReportParts, eodPartApproved, eodNightMessage, EOD_PART_LABELS, bountyItems, nightLabel, eodNightOf } from '../utils/helpers.js';
 import { revenueOf, salesDelta, dayOf } from '../utils/salesRollup.js';
@@ -138,6 +138,8 @@ export const NightReplay = ({ report, motorist, career, ranks, closed, onClose }
     const { currentTier, nextTier, progressPercent } = rankLadder(shown, ranks);
     return (
         <div className={`kpm-replay${out ? ' out' : ''}`} onClick={() => fx?.skip()} role="dialog" aria-label={`Replay of ${report.agentName}'s night`}>
+            {/* the frame's CSS + filters ride with the replay: the salesman's screen mounts no card list that brings them */}
+            <style>{BORDER_KEYFRAMES}</style><FrameFilters />
             <div className={`kpm-seal-stage${out ? ' out' : ''}`} aria-hidden="true"><i className="kpm-docket-scan"></i><i className="kpm-docket-seal">VERIFIED</i></div>
             <div className="pc w-full max-w-md">
                 <PlayerCardHead name={report.agentName} photo={motorist?.profileImage} currentTier={currentTier} nextTier={nextTier} progressPercent={fx?.up ? 100 : progressPercent}

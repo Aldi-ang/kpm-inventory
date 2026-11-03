@@ -8138,6 +8138,13 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
        /\{cashRep && appSettings\?\.useCareerLedger && replayable\[cashRep\.agentId \|\| cashRep\.agentName\] === cashRep\.id && \(/.test(ev) &&
        /\{replay && <NightReplay report=\{replay\}/.test(ev) &&
        /from: Math\.max\(0, now - \(Number\(report\.dayXP\) \|\| 0\)\), to: now, breakdown: report\.xpBreakdown \|\| \{\}/.test(pc));
+    ok('EOD replay, the salesman (his "of course the receiver/salesman should see this too and they can replay it all the time as long as there is no updated EOD one"): his slot plays once by itself on this device, then the header Replay; ONE overlay for both views',
+       /const myReplay = \(appSettings\?\.useCareerLedger && effectiveId && eodReports\.find\(\(r\) => r\.id === replayable\[effectiveId\]\)\) \|\| null;/.test(ev) &&
+       /if \(localStorage\.getItem\(k\) === myReplay\.id\) return;/.test(ev) && /\{viewMode === 'submit' && myReplay && \(/.test(ev) &&
+       /role="dialog"[^>]*>\r?\n[^\n]*\r?\n\s+<style>\{BORDER_KEYFRAMES\}<\/style><FrameFilters \/>/.test(pc) &&   // the salesman's frame showed as a bare square without them (lab, 2026-11-03)
+       (ev.match(/<NightReplay /g) || []).length === 1 && /\{replay && <NightReplay report=\{replay\}[\s\S]{0,300}\/>\}\r?\n\s+<\/div>\r?\n\s+\);\r?\n\};\r?\n\r?\nexport default EODReconciliationView;/.test(ev));
+    ok('REGRESSION: the phone\'s chips sit at the photo\'s foot, over its frame - top-right sat on the name (lab, 2026-11-03)',
+       /@media \(max-width: 767px\) \{ \.pc-chips \{ right: auto; left: 16px; top: 16px; width: 128px; height: 128px;/.test(th) && /\.pc-chips \{[^}]*z-index: 25;/.test(th));
     ok('REGRESSION: the stamp sits above every card and the History Log column (PC frame: the folder card covered "VERIF...")',
        /\.kpm-seal-stage \.kpm-docket-scan, \.kpm-seal-stage \.kpm-docket-seal \{ z-index: 60; \}/.test(th)); }
   ok('PlayerCard: the head is the man as his profile draws him - the photo in the rank frame, rank + title, XP with tonight\'s plus, the bar to the next rank, CLOSED ?/?, the diode',

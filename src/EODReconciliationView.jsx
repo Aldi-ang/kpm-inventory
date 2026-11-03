@@ -317,6 +317,19 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         }
         return Object.fromEntries(Object.entries(best).map(([k, v]) => [k, v.id]));
     }, [eodReports]);
+    /* his 2026-11-03 "of course the receiver/salesman should see this too and they can replay it all the time as long as
+       there is no updated EOD one": the salesman's own slot - it plays once by itself on this device, then the header's
+       Replay plays it again until his next approved night takes the slot */
+    const myReplay = (appSettings?.useCareerLedger && effectiveId && eodReports.find((r) => r.id === replayable[effectiveId])) || null;
+    useEffect(() => {
+        if (viewMode !== 'submit' || !myReplay) return;
+        try {
+            const k = `kpm_eod_replay_seen_${effectiveId}`;
+            if (localStorage.getItem(k) === myReplay.id) return;
+            localStorage.setItem(k, myReplay.id);
+        } catch { /* no storage: it simply plays */ }
+        setReplay(myReplay);
+    }, [viewMode, myReplay?.id]);   // eslint-disable-line react-hooks/exhaustive-deps
     /* HIS late EOD on his own screen (his 2026-09-26 "salesman should also need to see the late EOD, because it is their
        late responsibility"): his earlier nights still waiting, grouped the way the boss's LATE EOD panel is. It only
        shows - approving and resetting stay with the boss. */
@@ -381,6 +394,11 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                             <Wallet size={14}/> My Setoran
                         </button>
                     </div>
+                )}
+                {viewMode === 'submit' && myReplay && (
+                    <button onClick={() => setReplay(myReplay)} className="flex items-center gap-2 min-h-[44px] px-4 rounded-lg border border-[var(--accent-edge)] bg-[var(--inset)] text-[var(--accent-ink)] text-[11px] uppercase tracking-widest font-bold active:scale-95 transition-transform">
+                        <RotateCcw size={14}/> Replay last EOD <span className="font-mono tabular-nums">+{myReplay.dayXP} XP</span>
+                    </button>
                 )}
             </div>
 
@@ -976,8 +994,6 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                 <i className="kpm-docket-seal">VERIFIED</i>
                             </div>
                         )}
-                        {replay && <NightReplay report={replay} motorist={motorists.find((m) => m.id === replay.agentId)} career={career?.[replay.agentId]} ranks={ranks}
-                            closed={dayTargets(customers, replay.agentName, eodNightOf(replay))} onClose={() => setReplay(null)} />}
                     </div>
 
                     {/* RIGHT: EOD HISTORY LOG (4-Level Folder Structure) */}
@@ -1155,6 +1171,9 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
                 </div>
             )}
+            {/* the replay overlay - the boss's History Log and the salesman's own Replay open the same one */}
+            {replay && <NightReplay report={replay} motorist={motorists.find((m) => m.id === replay.agentId)} career={career?.[replay.agentId]} ranks={ranks}
+                closed={dayTargets(customers, replay.agentName, eodNightOf(replay))} onClose={() => setReplay(null)} />}
         </div>
     );
 };

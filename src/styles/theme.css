@@ -4837,7 +4837,9 @@ html.lite-mode .kpm-unfold { display: none; }   /* never unfolds there, and its 
    lands as the banner + a light sweep + a gold burst + the avatar zooming in + the rank name rolling up. The banner band
    is the theme's --sunk with the readable --accent-ink on it (the control system never spends --gold as text). Lite
    Mode: html.lite-mode * stills it all, the banner simply shows. */
-.pc-chips { position: absolute; right: 12px; top: 12px; z-index: 6; display: grid; justify-items: end; gap: 4px; pointer-events: none; }
+.pc-chips { position: absolute; right: 12px; top: 12px; z-index: 25; display: grid;   /* 25: over the avatar's frame (.sframe 20) */ justify-items: end; gap: 4px; pointer-events: none; }
+/* the phone: at the photo's foot - top-right sat on the name, the card is too narrow for both (shot 2026-11-03) */
+@media (max-width: 767px) { .pc-chips { right: auto; left: 16px; top: 16px; width: 128px; height: 128px; padding-bottom: 16px; align-content: end; justify-items: center; } }
 .pc-chip { font: 700 12px/1 var(--font-mono); letter-spacing: .06em; color: var(--accent-ink); background: var(--inset); border: 1px solid var(--line-2); border-radius: 4px; padding: 4px 6px;
   animation: pcChipIn 220ms cubic-bezier(.23, 1, .32, 1) both, pcChipOut 300ms 1100ms ease-out forwards; }
 @keyframes pcChipIn { from { opacity: 0; transform: translateY(8px); } }
