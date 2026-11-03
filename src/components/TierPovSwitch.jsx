@@ -1,6 +1,7 @@
 import React from 'react';
 import { Eye, X, ShieldOff, CornerUpLeft, Lock, MapPin } from 'lucide-react';
 import { TEST_ACCOUNTS, tierLabel } from '../config/povPreview.js';
+import { tr } from '../config/lang';
 
 /* ============================================================================
    THE COSTUME RACK, and the label that says you are wearing one.
@@ -82,7 +83,9 @@ export default function TierPovSwitch({ open, current, places = [], onPick, onEx
        a destination the shipping form does not know. The fallback is not decoration: an empty
        array would render a select with nothing in it and no way to say why. */
     const options = places.length > 0 ? places : ['Headquarters'];
-    const chosen = options.includes(place) ? place : options[0];
+    /* '' = leave the test card where Fleet & Roster has it. Opening on Headquarters MOVED every costume worn without
+       touching this box (his 2026-11-03 TEST 2) - a place now changes only when he picks one. */
+    const chosen = place === '' || options.includes(place) ? place : '';
 
     return (
         <div className="hide-on-print fixed inset-0 z-[9998] bg-[var(--duke-scrim-hi)] flex items-center justify-center p-4 font-mono animate-fade-in">
@@ -153,6 +156,7 @@ export default function TierPovSwitch({ open, current, places = [], onPick, onEx
                                        text-[12px] font-black uppercase tracking-[0.1em] text-[var(--duke-ink-hi)]
                                        outline-none focus:border-[var(--duke-amber-edge)] transition-colors"
                         >
+                            <option value="">{tr('As set in Fleet & Roster')}</option>
                             {options.map((o) => <option key={o} value={o}>{o}</option>)}
                         </select>
                     </label>

@@ -19,7 +19,7 @@ import useDatabaseSync from './hooks/useDatabaseSync';
 import useOfflineEngine, { canReachInternet } from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
 import { injectDynamicPermissions, isFieldLevelTier, hasClearance, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion, canSetBundlePrice } from './config/permissions';
-import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch } from './config/povPreview';
+import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch, testAccountFor } from './config/povPreview';
 import { tr } from './config/lang';
 import { warehouseList } from './utils/supply';
 import { accessFor } from './utils/customerAccess.js';
@@ -3915,13 +3915,23 @@ const handleGitHubMirror = async () => {
   const povPlaces = React.useMemo(
       () => ['Headquarters', ...warehouseList(motorists).slice(1)], [motorists]);
 
+  /* Fleet & Roster is where a test account stands (his 2026-11-03: the costume kept the Tempat tugas it was worn with
+     and ignored a later move there). Read here, not inside previewIdentity: the costume decides which data loads, and
+     the roster is part of that data. */
+  useEffect(() => {
+      if (!pov) return;
+      const at = motorists.find((m) => m.id === testAccountFor(pov.tier)?.id)?.location;
+      if (at && at !== pov.place) setPov((p) => p && { ...p, place: at });
+  }, [motorists, pov]);
+
   const handlePickPov = async (account, place) => {
       if (!canUsePovSwitch(trueUser?.email)) return notify("POV switch is restricted to the owner account.");
       const worn = testAccountName(account);
-      const home = place || 'Headquarters';
       try {
           const ref = doc(db, `artifacts/${appId}/users/${userId}/motorists`, account.id);
           const snap = await getDocOfflineSafe(ref);
+          /* no place picked = keep the card where Fleet & Roster has it (his 2026-11-03 TEST 2) */
+          const home = place || (snap.exists() && snap.data()?.location) || 'Headquarters';
           if (!snap.exists()) {
               await setDoc(ref, { ...testAccountDoc(account, { location: home }), createdAt: serverTimestamp() });
               notify(`AKUN UJI DIBUAT: ${worn} di ${home}. Hapus lewat Fleet kapan saja.`);

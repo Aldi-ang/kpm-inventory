@@ -12744,7 +12744,7 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
 { /* every file that calls tr() - round 1b (2026-11-03) wrapped the menu, header, Settings and two utils too */
   const ms = ['src/MerchantSalesView.jsx', 'src/components/ProofCamera.jsx', 'src/components/BiohazardTheme.jsx',
     'src/components/SettingsView.jsx', 'src/App.jsx', 'src/MusicPlayer.jsx', 'src/ponder/PonderBook.jsx',
-    'src/utils/vanBay.js', 'src/utils/dayStats.js'].map(read).join('\n');
+    'src/utils/vanBay.js', 'src/utils/dayStats.js', 'src/components/TierPovSwitch.jsx'].map(read).join('\n');
   globalThis.localStorage = { getItem: (k) => (k === 'kpm_lang' ? 'id' : null), setItem() {} };
   const { tr, ID } = await import('../config/lang.js?as=id');
   globalThis.localStorage = { getItem: (k) => (k === 'kpm_lang' ? 'en' : null), setItem() {} };
@@ -12841,6 +12841,22 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   ok('REGRESSION: no FIFO debt engine sorts by the day alone - the terminal sidebar and the Receivables aging panel both sort by txSeconds',
      !/new Date\(a\.date\) - new Date\(b\.date\)/.test(ms + read('src/ConsignmentFinanceView.jsx')) &&
      read('src/ConsignmentFinanceView.jsx').includes('const sorted = [...myTransactions].sort((a, b) => (txSeconds(a) ?? Number.MAX_SAFE_INTEGER) - (txSeconds(b) ?? Number.MAX_SAFE_INTEGER));'));
+}
+
+/* FLEET & ROSTER IS WHERE A TEST ACCOUNT STANDS (his 2026-11-03 TEST 2: "when i put the tempat tugas in headquarters and
+   the the fleet and roster is still inside the muntilan, the account will prioritise access that is affected by the
+   tempat tugas"). Two faults: the rack's Tempat tugas opened on Headquarters every time, so wearing a costume without
+   touching it MOVED the test card to HQ; and the worn costume kept its own copy of the place, so a later move in Fleet &
+   Roster never reached it. Now the rack opens on "as set in Fleet & Roster" (no move), and a move there follows the
+   costume while it is worn. */
+{ const app = code(read('src/App.jsx')), rack = code(read('src/components/TierPovSwitch.jsx'));
+  ok('the rack opens on "as set in Fleet & Roster" - wearing a costume without picking a place moves nothing',
+     /<option value="">\{tr\('As set in Fleet & Roster'\)\}<\/option>/.test(rack) &&
+     /const chosen = place === '' \|\| options\.includes\(place\) \? place : '';/.test(rack));
+  ok('picking with no place keeps the test card where Fleet & Roster has it (a new card still starts at Headquarters)',
+     /const home = place \|\| \(snap\.exists\(\) && snap\.data\(\)\?\.location\) \|\| 'Headquarters';/.test(app));
+  ok('a move made in Fleet & Roster reaches the costume while it is worn',
+     /const at = motorists\.find\(\(m\) => m\.id === testAccountFor\(pov\.tier\)\?\.id\)\?\.location;\s*if \(at && at !== pov\.place\) setPov\(\(p\) => p && \{ \.\.\.p, place: at \}\);/.test(app));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

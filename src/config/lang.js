@@ -243,6 +243,7 @@ export const ID = {
     'Audit Logs': 'Catatan Audit',
     'Settings': 'Pengaturan',
     'Unlock Master Vault': 'Buka Gudang Pusat',
+    'As set in Fleet & Roster': 'Sesuai Fleet & Roster',
     'Music': 'Musik',
     'Tutorial': 'Panduan',
     'SYNCED': 'TERSINKRON',
