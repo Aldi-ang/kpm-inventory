@@ -2398,14 +2398,15 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         )}
 
                         {txProofPhoto ? (
-                            <div className="relative rounded-lg border-2 border-[var(--duke-amber-edge)] overflow-hidden shadow-[0_0_15px_rgba(255,157,0,0.3)] bg-[var(--duke-stage)]">
-                                <img src={txProofPhoto} alt={tr('Proof')}className="w-full h-32 object-contain opacity-90" />
-                                <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-[var(--duke-on-fill)] p-1.5 rounded-md shadow-md"><X size={14}/></button>
+                            /* his pick B "PHOTO CORNER" (2026-11-03): the photo he took sits in the album corners the button showed */
+                            <div className="kpm-photo kpm-corners">
+                                <img src={txProofPhoto} alt={tr('Proof')}className="block max-w-full max-h-40 w-auto h-auto" />
+                                <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 z-10 bg-red-600 hover:bg-red-500 text-[var(--duke-on-fill)] p-1.5 rounded-md shadow-md"><X size={14}/></button>
                             </div>
                         ) : (
-                            /* the camera key (theme.css .kpm-shutter): his 2026-11-02 "make the button 3D for that camera",
-                               after "it is camouflage with its background" and the brass plate he hated - black cap, real side */
-                            <button data-guide="photo" onClick={() => IS_DEMO ? demoPhoto().then(setTxProofPhoto) : galleryOk ? document.getElementById('txProof').click() : setShowProofCamera(true)} className="kpm-shutter">
+                            /* the photo corners (theme.css .kpm-shutter + .kpm-corners): his pick B "PHOTO CORNER" 2026-11-03, after
+                               the black camera key read as "tech" - an empty album spot on the manifest paper */
+                            <button data-guide="photo" onClick={() => IS_DEMO ? demoPhoto().then(setTxProofPhoto) : galleryOk ? document.getElementById('txProof').click() : setShowProofCamera(true)} className="kpm-shutter kpm-corners">
                                 <span className="kpm-shutter-lens"><Camera size={18} /></span>
                                 <span className="kpm-shutter-word">{IS_DEMO ? (getLang() === 'id' ? 'Foto serah terima otomatis (demo)' : 'Auto handover photo (demo)') : galleryOk ? tr('Capture or choose photo') : tr('Open camera for handover photo')}</span>
                             </button>

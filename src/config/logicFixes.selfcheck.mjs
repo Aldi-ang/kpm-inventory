@@ -7232,7 +7232,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /p-2 min-h-\[44px\] lg:min-h-0 text-\[13px\] md:text-sm font-bold uppercase outline-none rounded \$\{isReturMode/.test(r) &&
      /w-20 md:w-24 min-h-\[44px\] lg:min-h-0 bg-white/.test(m) &&
      (m.match(/bg-transparent min-h-\[44px\] lg:min-h-0 text-sm font-bold uppercase outline-none text-\[var\(--duke-ink-7\)\]/g) || []).length === 2 &&
-     /<button data-guide="photo" [^\n]*className="kpm-shutter">/.test(r) && /\.kpm-shutter \{[^}]*min-height: 56px;/.test(themeCss) &&
+     /<button data-guide="photo" [^\n]*className="kpm-shutter kpm-corners">/.test(r) && /\.kpm-shutter \{[^}]*min-height: 76px;/.test(themeCss) &&
      /shrink-0 px-3 py-1\.5 min-h-\[44px\] lg:min-h-0 border border-\[var\(--duke-edge-5\)\] rounded text-\[11px\] lg:text-\[10px\]/.test(m));
   /* his 2026-11-02 "we dont need 2 pelanggan textbox since we are be able to pull it from the side, just erase the top
      pelanggan box": the strip above the manifest is gone, the paper's Nama Pelanggan box is the one opener, and the ✕
@@ -7247,18 +7247,23 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      bad" + "make the button 3D for that camera". Amber is an edge and an ink, never a fill (his 2026-08-21 "stop using
      amber background i said"). The camera key: a black cap whose 6 px side IS the depth (Lite Mode strips box-shadow), a
      lens holding the camera in amber ink, and the press his keys make - it sinks into its side, the charge line runs. */
-  ok('REGRESSION: the handover-photo button is the 3D camera key - never a brass/amber fill, never the dashed ghost on the paper',
-     /<button data-guide="photo" [^\n]*className="kpm-shutter">\s*<span className="kpm-shutter-lens"><Camera size=\{18\} \/><\/span>/.test(r) &&
+  /* then 2026-11-03: "i want the button to be still in theme of the resident evil village manifest paper not tech like
+     this" - his pick B "PHOTO CORNER": an empty album spot with 4 black corners, and the photo he takes sits in them */
+  ok('REGRESSION: the handover-photo button is the PHOTO CORNERS on the paper (his pick B) - never a brass/amber fill, never the dashed ghost, never the black tech key; the taken photo sits in the same corners',
+     /<button data-guide="photo" [^\n]*className="kpm-shutter kpm-corners">\s*<span className="kpm-shutter-lens"><Camera size=\{18\} \/><\/span>/.test(r) &&
      /* scoped to the photo button's own line: the IOU "Fulfill" button carries the same brass classes on purpose */
      !/<button data-guide="photo"[^\n]*(duke-brass|duke-amber|border-dashed)/.test(r) &&
-     /\.kpm-shutter \{[^}]*border-bottom-width: 6px;[^}]*background-size: 0 3px, 100% 100%, 100% 100%;/.test(themeCss) &&
-     /\.kpm-shutter:active \{ translate: 0 4px; border-bottom-width: 2px; background-size: 100% 3px, 100% 100%, 100% 100%; \}/.test(themeCss) &&
-     !/\.kpm-shutter[^{]*\{[^}]*(box-shadow|filter:)/.test(themeCss));
-  ok('EXAMINE on the picture reads at 11 px on the phone, 9 on the desk; the camera-key word at 13 / 11',
+     /\.kpm-corners::after \{[^}]*linear-gradient\(135deg, #2a2118 50%, transparent 50%\)[^}]*background-position: left top, right top, left bottom, right bottom; \}/.test(themeCss) &&
+     /\.kpm-shutter:active \{ translate: 0 1px; background-color: rgba\(62, 50, 38, \.14\); \}/.test(themeCss) &&
+     !/\.kpm-shutter \{[^}]*(border-bottom-width: 6px|#1d1a16)/.test(themeCss) &&
+     /<div className="kpm-photo kpm-corners">\s*<img src=\{txProofPhoto\} alt=\{tr\('Proof'\)\}className="block max-w-full max-h-40 w-auto h-auto" \/>/.test(r) &&
+     /\.kpm-photo \{ width: fit-content;/.test(themeCss) &&   // the frame shrinks to the photo: the corners grip the picture, not a letterbox (shot 2026-11-03)
+     !/\.kpm-(shutter|corners|photo)[^{]*\{[^}]*(box-shadow|filter:)/.test(themeCss));
+  ok('EXAMINE on the picture reads at 11 px on the phone, 9 on the desk; the photo-corner word at 15 / 13',
      /text-\[11px\] lg:text-\[9px\] font-black font-mono tracking-widest text-\[var\(--duke-amber-ink\)\]">\{tr\('EXAMINE'\)\}</.test(m) &&
      /* the demo words sit INSIDE the IS_DEMO branch, never in lang.js: the real build must carry no demo text (demoBuild.check) */
      /<span className="kpm-shutter-word">\{(IS_DEMO \? \(getLang\(\) === 'id' \? 'Foto serah terima otomatis \(demo\)' : 'Auto handover photo \(demo\)'\) : )?galleryOk/.test(r) &&
-     /\.kpm-shutter-word \{[^}]*font-size: 13px;/.test(themeCss) && /\.kpm-shutter-word \{ font-size: 11px; \}/.test(themeCss));
+     /\.kpm-shutter-word \{[^}]*font-size: 15px;/.test(themeCss) && /\.kpm-shutter-word \{ font-size: 13px; \}/.test(themeCss));
   ok('TRAP (a) holds: the T4–T6 proof camera still has no file picker — galleryOk alone decides',
      /galleryOk \? document\.getElementById\('txProof'\)\.click\(\) : setShowProofCamera\(true\)/.test(r));
 }
