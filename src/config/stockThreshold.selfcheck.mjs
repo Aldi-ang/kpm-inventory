@@ -125,8 +125,19 @@ for (const [name, path] of Object.entries(adopters)) {
   ok(`${name} no longer inlines a minStock fallback`, !/minStock\s*\|\|\s*\d+/.test(src),
      'the 50 or the 5 came back');
   ok(`${name} imports the shared rule`,
-     /import\s+(?:\{[^}]*\bisLowStock\b[^}]*\}|\*\s+as\s+\w+)\s+from\s+'[^']*utils\/stockThreshold'/.test(src));
+     /import\s+(?:\{[^}]*\b(?:isLowStock|isLowOnTerminal)\b[^}]*\}|\*\s+as\s+\w+)\s+from\s+'[^']*utils\/stockThreshold'/.test(src));   // the terminal has its own line (2026-11-03)
 }
+/* THE SALES TERMINAL'S OWN LINE - his 2026-11-03 "1 slop and below is considered as low", after "10 slop is not a low
+   amount" (the 3 Bal restock line lit "LOW · 10 Slop" on a van card). Mirrored like the rest. */
+const isLowOnTerminal = (p) => Number(p?.stock || 0) <= convertToBks(1, 'Slop', p || {});
+const oneSlop = convertToBks(1, 'Slop', surya);
+ok('terminal: exactly 1 Slop is LOW, 1 Slop + 1 Bks is not, 10 Slop is not',
+   oneSlop > 1 && isLowOnTerminal({ ...surya, stock: oneSlop }) && !isLowOnTerminal({ ...surya, stock: oneSlop + 1 }) && !isLowOnTerminal({ ...surya, stock: oneSlop * 10 }),
+   `1 Slop = ${oneSlop} Bks`);
+ok('terminal: the module carries the rule the mirror tests, and the terminal calls it (not the 3 Bal restock line)',
+   /export const TERMINAL_LOW_SLOP = 1;/.test(read('src/utils/stockThreshold.js')) &&
+   /Number\(product\?\.stock \|\| 0\) <= convertToBks\(TERMINAL_LOW_SLOP, 'Slop', product \|\| \{\}\);/.test(read('src/utils/stockThreshold.js')) &&
+   /isLowOnTerminal\(item\) \?/.test(read('src/MerchantSalesView.jsx')) && !/isLowStock\(item, appSettings\)/.test(read('src/MerchantSalesView.jsx')));
 ok('coba baru: blank MIN. ALERT, 1 Bal on the shelf, 3 Bal company default → LOW',
    isLowStock({ ...surya, minStock: '', stock: 200 }, s3bal) === true);
 ok('the old `|| 50` rule said the opposite — that is the disagreement being closed',

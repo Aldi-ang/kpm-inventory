@@ -50,6 +50,13 @@ export const minStockBks = (product, appSettings) => {
 export const isLowStock = (product, appSettings) =>
   Number(product?.stock || 0) <= minStockBks(product, appSettings);
 
+/* THE SALES TERMINAL'S OWN LINE - his 2026-11-03: "1 slop and below is considered as low". A terminal card is a load to
+   sell from, not a warehouse to restock: the 3 Bal restock line above lit "LOW · 10 Slop" ("10 slop is not a low
+   amount"). The warehouse warning keeps isLowStock. */
+export const TERMINAL_LOW_SLOP = 1;
+export const isLowOnTerminal = (product) =>
+  Number(product?.stock || 0) <= convertToBks(TERMINAL_LOW_SLOP, 'Slop', product || {});
+
 /* HOW LONG THE SHELF LASTS, in days, at the speed it has actually been selling.
    Aldi's call, 2026-08-25: this does NOT decide what is low — "under X Bal" does. It only ORDERS
    the alert panel, so the thing that runs out first sits at the top. A product with no sales in

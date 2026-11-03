@@ -14,7 +14,7 @@ import { waNumber } from './utils/whatsapp.js';
 import { areaFromPin, watchBorders } from './utils/areaFromPin.js';
 import { grosirHold, priceLevelOf, canConfirmGrosir, grosirRequestNotice } from './utils/customerAccess.js';
 import { debtCredit } from './utils/revenueRule';
-import { isLowStock } from './utils/stockThreshold';
+import { isLowOnTerminal } from './utils/stockThreshold';
 import { dayStats, agoLabel, txSeconds } from './utils/dayStats';
 import { customerBrief, reorderFromLast } from './utils/customerBrief';
 import { nextStop, directionsUrl, metresLabel } from './utils/nextStop';
@@ -2787,7 +2787,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                         <div className="flex flex-col gap-0.5 lg:gap-1">
                                             {item.stock <= 0 ? (
                                                 <span className="text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-red-900/20 text-red-500 border-red-900/50">{tr('EMPTY')}</span>
-                                            ) : isLowStock(item, appSettings) ? (
+                                            ) : isLowOnTerminal(item) ? (
                                                 <button type="button" onClick={(e) => flipCount(e, item)} title={COUNT_FLIP_TITLE} className={`kpm-card-count ${flatCountId === item.id ? 'is-flat ' : ''}relative before:absolute before:-inset-x-1 before:-inset-y-3 before:content-[''] cursor-pointer text-left text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-brass-4)] text-[var(--duke-amber-ink)] border-[color-mix(in_srgb,var(--duke-amber-edge)_50%,transparent)]`}>LOW · {countFaces(item)}</button>
                                             ) : (
                                                 <button type="button" onClick={(e) => flipCount(e, item)} title={COUNT_FLIP_TITLE} className={`kpm-card-count ${flatCountId === item.id ? 'is-flat ' : ''}relative before:absolute before:-inset-x-1 before:-inset-y-3 before:content-[''] cursor-pointer text-left text-[10px] lg:text-xs font-black px-1.5 py-0.5 lg:px-2 lg:py-1 rounded-md border-2 inline-block bg-[var(--duke-badge)] text-[var(--duke-ink-3)] border-[var(--duke-edge-1)]`}>{countFaces(item)}</button>
