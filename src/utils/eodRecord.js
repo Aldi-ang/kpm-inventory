@@ -105,6 +105,17 @@ export function declareCard(card, sources, by, at) {
   return { ...card, declared, sources, state: CARD_STATE.DECLARED, by, at };
 }
 
+/* PITA CUKAI OFF (Settings, his 2026-11-03 "not all company want the pita cukai back"): a skipped card is signed off at
+   0 with nothing expected, so every rule that walks all four cards (canSend, restoreDraft, the admin's canApproveLetter)
+   holds unchanged while the deck and the letter simply leave it out. A card he already counted is kept. Pure - the
+   self-check runs it. */
+export function skipCards(letter, skip = []) {
+  if (!skip.length) return letter;
+  const cards = { ...letter.cards };
+  for (const id of skip) if (cards[id] && cards[id].declared === null) cards[id] = { ...declareCard(emptyCard(id), [], 'agent', 0), expected: 0 };
+  return { ...letter, cards };
+}
+
 /* The regional admin accepts a card, possibly for a different amount than declared.
 
    ⚠️ `gap` IS STORED RATHER THAN COMPUTED ON READ, and that is deliberate. This is an audit

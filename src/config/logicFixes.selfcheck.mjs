@@ -4293,7 +4293,7 @@ section('THE BOUNTY UNIT — a rupiah penalty must never be summed as a stamp co
    names PENALTY_ in three comments that would satisfy a file-wide match on their own. */
 const stampSums = [
   ['the agent dashboard', code(read('src/AgentInventoryView.jsx')), 'const cukaiDebts', 'totalCukaiOwed'],
-  ['the EOD screen',      code(read('src/EODReconciliationView.jsx')), 'let calcTotal', 'expectedCukai = Math.max(0, calcTotal'],
+  ['the EOD screen',      code(read('src/EODReconciliationView.jsx')), 'let calcTotal', 'expectedCukai = cukaiOn ? Math.max(0, calcTotal'],   // the Settings switch gates it (2026-11-03)
   ['the payment engine',  code(app), 'let remainingPayment', 'if (remainingPayment > 0)'],
 ];
 for (const [where, src, from, to] of stampSums) {
@@ -5314,7 +5314,7 @@ const aivRaw = read('src/AgentInventoryView.jsx');
 const aiv = code(aivRaw);
 
 ok('the screen accepts the previewing flag',
-   /previewing = null \}\) =>/.test(aiv),
+   /previewing = null, appSettings \}\) =>/.test(aiv),   // appSettings: the pita cukai switch (2026-11-03)
    'without the prop the screen cannot know it is wearing somebody else\u2019s tier');
 ok('and App.jsx actually passes it',
    /previewing=\{previewing\}/.test(read('src/App.jsx')),
@@ -8147,6 +8147,32 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
        /@media \(max-width: 767px\) \{ \.pc-chips \{ right: auto; left: 16px; top: 16px; width: 128px; height: 128px;/.test(th) && /\.pc-chips \{[^}]*z-index: 25;/.test(th));
     ok('REGRESSION: the stamp sits above every card and the History Log column (PC frame: the folder card covered "VERIF...")',
        /\.kpm-seal-stage \.kpm-docket-scan, \.kpm-seal-stage \.kpm-docket-seal \{ z-index: 60; \}/.test(th)); }
+  /* PITA CUKAI AT EOD (his 2026-10-25 "4a", asked again 2026-11-03: "make the toggle button to turn on/off the pita cukai on
+     EOD because not all company want the pita cukai back and they just giveaway sampling with all the pita cukai attached
+     on them"). One company switch, missing = ON; OFF touches no saved record. */
+  { const R = await import('../utils/eodRecord.js');
+    const sign = (l, id, n) => ({ ...l, cards: { ...l.cards, [id]: R.declareCard(R.emptyCard(id), [{ amount: n }], 'agent', 1) } });
+    let off = R.skipCards(R.emptyLetter(), ['cukai']), on = R.emptyLetter();
+    for (const id of ['cash', 'transfer', 'goods']) { off = sign(off, id, 5); on = sign(on, id, 5); }
+    const counted = R.skipCards(sign(R.emptyLetter(), 'cukai', 7), ['cukai']), back = R.restoreDraft({ letter: off }, {});
+    ok('PITA CUKAI OFF (real letters): it seals after cash, transfer and goods - the stamp card signed off at 0, nothing expected; ON still waits for it; a card he already counted is kept; the saved draft comes back sealed',
+       R.canSend(off) && !R.canSend(on) && off.cards.cukai.declared === 0 && off.cards.cukai.expected === 0 && R.skipCards(on, []) === on &&
+       counted.cards.cukai.declared === 7 && back && back.stage === 'sealed');
+    const msv = read('src/MerchantSalesView.jsx'), ev2 = read('src/EODReconciliationView.jsx'), flow = read('src/components/EODAgentFlow.jsx'),
+      st = read('src/components/SettingsView.jsx'), van = read('src/AgentInventoryView.jsx'), app2 = read('src/App.jsx');
+    ok('PITA CUKAI OFF: a sample opens no stamp debt and its "collect the Pita Cukai" warning is gone',
+       /if \(appSettings\?\.cukaiReturn !== false\) \{\s+let currentDebts = agentData\.cukaiDebts \|\| \{\};[^\n]*\n\s+t\.update\(agentRef, \{ activeCanvas: [^\n]*cukaiDebts: currentDebts \}\);\s+\} else t\.update\(agentRef, \{ activeCanvas: updatedCanvas\.filter\(c => c\.qty > 0\) \}\);/.test(msv) &&
+       /\{appSettings\?\.cukaiReturn !== false && \([^\n]*\n[^\n]*\n[^\n]*\n\s+<p>\{tr\('Warning: You must collect the Pita Cukai/.test(msv));
+    ok('PITA CUKAI OFF: EOD expects 0 stamps, the flow skips its stamp card, no CUKAI report is written, the stamp card is hidden; ON unchanged',
+       /const cukaiOn = appSettings\?\.cukaiReturn !== false;/.test(ev2) && /expectedCukai = cukaiOn \? Math\.max\(0, calcTotal \+ globalCredit \+ Math\.ceil\(legacyDebt\)\) : 0;/.test(ev2) &&
+       /agentProfileId, cukaiOn\]\);/.test(ev2) && /<EODAgentFlow key=\{effectiveId\} skip=\{cukaiOn \? \[\] : \['cukai'\]\}/.test(ev2) &&
+       /\.\.\.\(cukaiOn && agentData\.cukaiStatus === 'READY' \? \[\{/.test(ev2) && /\{agentData\.cashStatus !== 'READY' && cukaiOn && \(/.test(ev2) &&
+       /const \[letter, setLetter\] = useState\(\(\) => skipCards\(draft\?\.letter \|\| emptyLetter\(\), skip\)\);/.test(flow) && /ids=\{ids\}/.test(flow) && /const last = ids\[ids\.length - 1\];/.test(flow));
+    ok('PITA CUKAI switch: ONE writer behind both buttons, saved to settings/general, and it reports; the van hides "Cukai Due" and Cash fills the row; App hands the van the setting',
+       /const writeCukaiReturn = \(on\) => \{[\s\S]{0,200}setDoc\(doc\(db, `artifacts\/\$\{appId\}\/users\/\$\{user\.uid\}\/settings\/general`\), \{ cukaiReturn: on \}, \{ merge: true \}\)\s+\.then\(\(\) => triggerCapy\([\s\S]{0,160}\.catch\(\(\) => triggerCapy\(/.test(st) &&
+       (st.match(/onClick=\{\(\) => writeCukaiReturn\((true|false)\)\}/g) || []).length === 2 && /<h3>Lost pita cukai fine<\/h3>/.test(st) &&
+       /\{cukaiOn && \(\s+<div className="bg-panel[^\n]*\n[^\n]*Cukai Due/.test(van) && /\$\{cukaiOn \? '' : 'col-span-2 lg:col-span-1'\}/.test(van) &&
+       /appSettings=\{appSettings\}     \/\/ pita cukai at EOD on\/off/.test(app2)); }
   ok('PlayerCard: the head is the man as his profile draws him - the photo in the rank frame, rank + title, XP with tonight\'s plus, the bar to the next rank, CLOSED ?/?, the diode',
      /<RankBorder styleId=\{frame\} \/>/.test(pc) && /const frame = motorist\?\.borderStyle \|\| currentTier\.borderStyle \|\| 'classic';/.test(pc) &&
      /const \{ currentTier, nextTier, progressPercent \} = rankLadder\(shown, ranks\);/.test(pc) &&   // `shown` = the replay's count, else xp (2026-11-03)
@@ -8240,7 +8266,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/xl:w-\[65%\]/.test(a) && !/xl:flex-row/.test(a) && !/xl:w-auto/.test(a) && !/xl:mt-0/.test(a) &&
      /p-3 lg:p-4 flex flex-col justify-between items-start gap-3 lg:gap-4 shrink-0 relative z-10 shadow-md"/.test(a) &&
      /className="flex flex-col gap-2 lg:gap-3 w-full lg:mt-2">/.test(a) &&
-     /className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">/.test(a),
+     /className=\{`grid grid-cols-2 \$\{cukaiOn \? 'lg:grid-cols-4' : 'lg:grid-cols-3'\} gap-2 md:gap-3`\}>/.test(a),   // three boxes when pita cukai is off (2026-11-03)
      'a 7-digit rupiah is 152 px in his font; a 149 px box cannot hold it, a 239 px one can');
   ok('THE REVENUE LINE is the night\'s omset alone - no bar, no "his usual night" denominator (his 10:40: a target lives at the regional team or global level, never per person)',
      /<span>\{late \? 'Revenue that night' : 'Revenue tonight'\}<\/span><span className="text-\[var\(--ink\)\] tabular-nums whitespace-nowrap">\{formatRupiah\(group\.cashTotal\)\}<\/span>/.test(pc) &&

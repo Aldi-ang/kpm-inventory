@@ -100,6 +100,10 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
     const [cukaiReturnedInput, setCukaiReturnedInput] = useState("");
     const [cukaiPaidInput, setCukaiPaidInput] = useState("");
     const cukaiFinePrice = appSettings?.cukaiFinePrice || 5000;
+    /* PITA CUKAI AT EOD (Settings, his 2026-11-03 "not all company want the pita cukai back"): missing = ON. OFF: no stamps
+       expected, the counting flow skips its stamp card, no CUKAI report is written, the stamp card is not shown. The
+       stamps already owed stay on the van record and count again when it is ON. */
+    const cukaiOn = appSettings?.cukaiReturn !== false;
 
     const [openDates, setOpenDates] = useState([]);
     const [sealing, setSealing] = useState(false);   // a night's last part approved: the scan runs, the seal stamps over the list
@@ -162,7 +166,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         for (let [pid, val] of Object.entries(cDebts)) {
             if (pid !== 'global_credit' && !pid.startsWith('PENALTY_') && val > 0) calcTotal += Math.ceil(val);
         }
-        expectedCukai = Math.max(0, calcTotal + globalCredit + Math.ceil(legacyDebt));
+        expectedCukai = cukaiOn ? Math.max(0, calcTotal + globalCredit + Math.ceil(legacyDebt)) : 0;
 
         const todaysSamplings = samplings.filter(s => {
             const matchesAgent = isBossCar ? (s.sourceId === effectiveId || s.sourceId === 'VAULT' || s.sourceId === 'ADMIN') : (s.sourceId === effectiveId);
@@ -267,7 +271,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
         return { expectedCash, expectedTransfer, expectedCukai, activeStock: resolvedCanvas, promoStock: agentProfile.promoCanvas || [], damagedItemsToReturn, todaysSamplings, cashStatus, cukaiStatus, rejected, storesServed, titipCollected, itemsBks, cukaiRemaining: expectedCukai, cashSources, transferSources,
             dayXP: verifiedCash?.dayXP, xpBreakdown: verifiedCash?.xpBreakdown,   // tonight's XP, written by the boss's last approval (XpGain)
             dayCollected: Number(verifiedCash?.cash || 0) + Number(verifiedCash?.transfer || 0), dayStores: Number(verifiedCash?.storesServed || 0) };
-    }, [effectiveId, samplings, transactions, agentCanvas, eodReports, motorists, agentProfileId]);
+    }, [effectiveId, samplings, transactions, agentCanvas, eodReports, motorists, agentProfileId, cukaiOn]);
 
     /* 🔒 THE STAMP CEILING — Aldi, 2026-08-17: *"it still allow us to sent the item data more than
        what the agent bring"*. The cost is real and it is not cosmetic: `handleVerifyEOD` turns any
@@ -598,7 +602,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         {/* Keyed on the identity: the admin can switch whose setoran he is
                                             entering, and React would otherwise reuse this component and keep
                                             the previous agent's counted figures in its own state. */}
-                                        <EODAgentFlow key={effectiveId}
+                                        <EODAgentFlow key={effectiveId} skip={cukaiOn ? [] : ['cukai']}
                                             draftKey={`kpm-eod-draft:${effectiveId}:${getLocalDayKey()}`}
                                             submitting={submitting}
                                             expected={{
@@ -762,7 +766,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                    from the same tap, so it travels as a second payload rather
                                                    than a second call. As two calls the flag cleared between
                                                    them and the door reopened mid-submission. */
-                                                ...(agentData.cukaiStatus === 'READY' ? [{
+                                                ...(cukaiOn && agentData.cukaiStatus === 'READY' ? [{
                                                         cash: 0, transfer: 0,
                                                         cukaiReturned: returned,
                                                         cukaiPaid: lost,
@@ -790,7 +794,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                 ⚠️ It also wears the same EDGE as Cash & Stock beside it now. A gold-outlined
                                 card next to a plain one reads as two different systems, and the accent is
                                 already carried by the icon. */}
-                            {agentData.cashStatus !== 'READY' && (
+                            {agentData.cashStatus !== 'READY' && cukaiOn && (
                             <div className="bg-black/20 border border-[var(--line)] rounded-2xl p-5 md:p-6 shadow-xl flex flex-col h-full relative overflow-hidden">
                                 <h3 className="text-lg font-black text-[var(--ink)] uppercase tracking-widest border-b border-[var(--line)] pb-4 mb-5 flex items-center gap-2 relative z-10"><Tag className="text-[var(--accent-ink)]"/> Pita Cukai</h3>
                                 

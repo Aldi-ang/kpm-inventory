@@ -277,6 +277,18 @@ export default function SettingsView({
         triggerCapy("Indicators Reset to REQUIRED state.");
     };
 
+    /* PITA CUKAI AT EOD - his 2026-10-25 "4a", asked again 2026-11-03: "make the toggle button to turn on/off the pita
+       cukai on EOD because not all company want the pita cukai back and they just giveaway sampling with all the pita
+       cukai attached on them". Missing = ON (how it always worked). ONE WRITER for both buttons, and it reports. */
+    const cukaiOn = appSettings?.cukaiReturn !== false;
+    const writeCukaiReturn = (on) => {
+        setAppSettings(prev => ({ ...prev, cukaiReturn: on }));
+        if (!user) return;
+        setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { cukaiReturn: on }, { merge: true })
+            .then(() => triggerCapy(on ? 'Pita cukai is collected at EOD again.' : 'Pita cukai off: samples keep their stamps, EOD asks for none.'))
+            .catch(() => triggerCapy('Not saved - check the connection and press it again.'));
+    };
+
     // --- DEFINE DYNAMIC TABS ---
     const navTabs = [
         { id: 'general', label: 'General & Brand', icon: <Settings size={18} /> },
@@ -492,12 +504,21 @@ export default function SettingsView({
                                       <span className="slot">Company · 04</span>
                                       <div className="line">
                                           <h3>Lost pita cukai fine</h3>
-                                          <span className="kpm-read on">Charges salesmen</span>
+                                          <span className={`kpm-read ${cukaiOn ? 'on' : ''}`}>{cukaiOn ? 'Charges salesmen' : 'Pita cukai off'}</span>
                                       </div>
                                       <p className="kpm-desc">
                                           What a salesman is charged for every tax stamp that goes missing. This comes
                                           out of a real person's pay, so it is Tier 1 only and it saves immediately.
+                                          Turn <b>pita cukai at EOD</b> off when samples are given away with the stamps still
+                                          on the pack: sampling then opens no stamp debt, EOD asks for no stamps and charges no
+                                          fine. Stamps already owed stay saved and count again when you turn it back on.
                                       </p>
+                                  </div>
+                                  <div className="kpm-shelf split">
+                                      <div className="kpm-switch" role="group" aria-label="Pita cukai at EOD">
+                                          <button type="button" aria-pressed={cukaiOn} onClick={() => writeCukaiReturn(true)}>Collected at EOD</button>
+                                          <button type="button" aria-pressed={!cukaiOn} onClick={() => writeCukaiReturn(false)}>Off</button>
+                                      </div>
                                   </div>
                                   <div className="kpm-shelf split">
                                       <label className="kpm-field">

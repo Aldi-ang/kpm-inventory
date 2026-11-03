@@ -4659,6 +4659,7 @@ const handleGitHubMirror = async () => {
                motorists={motorists}   // 🚀 FIX: Pass motorists list
                previewing={previewing} // 🎭 POV keeps his real email, so the screen's email lookup must stand down
                pendingTxData={pendingTxData} // sales waiting in the Ghost Ledger come off the van on screen
+               appSettings={appSettings}     // pita cukai at EOD on/off (Settings, 2026-11-03)
            />
       )}
 

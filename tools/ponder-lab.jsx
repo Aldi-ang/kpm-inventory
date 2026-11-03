@@ -977,6 +977,8 @@ function ShellLab() {
   /* ?shell&eod&admin&live (2026-11-03, his #5): an approve lands the way Firestore lands it, so the held card, the stamp
      and the fold can be watched. Without &live the fixture reports stay, as before. */
   const [liveEod, setLiveEod] = React.useState(() => labEodReports(LAB_TODAY));
+  /* &nocukai (2026-11-03): the company switched pita cukai at EOD off; &owner lets the Settings switch be pressed here */
+  const [labSettings, setLabSettings] = React.useState(() => (q.has('nocukai') ? { cukaiReturn: false } : {}));
   /* ?shell&agent&tick — every 2.5 s a second RETUR (5 pcs) joins and leaves today's transactions,
      so the Quarantine count rolls 10 → 15 → 10 and the odometer can be watched and sampled
      (`el.getAnimations()`) instead of described. Off unless asked for. */
@@ -1175,7 +1177,7 @@ function ShellLab() {
           agentCanvas={FIXTURES['motorists/m2'].activeCanvas}
           inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]}
           transactions={[...LAB_AGENT_TXNS.map((t) => t.id === 'tx1' ? { ...t, items: [{ productId: 'p-cg16', qty: 12, unit: 'Bks', calculatedPrice: 89000 }, { productId: 'p-djar', qty: 5, unit: 'Bks', calculatedPrice: 156000 }] } : t.id === 'tx2' ? { ...t, items: [{ productId: 'p-cg16', qty: 8, unit: 'Bks', calculatedPrice: 80000 }] } : t), { id: 'tx5', agentId: 'm2', date: LAB_TODAY, type: 'SALE', total: 425000, paymentType: 'Transfer', customerName: 'Toko Berkah Jaya' }]}
-          samplings={[]} eodReports={q.has('admin') ? (q.has('live') ? liveEod : labEodReports(LAB_TODAY)) : q.has('verified') ? labVerifiedTonight() : q.has('late') ? labEodReports(LAB_TODAY).filter((r) => r.id === 'e6') : []} appSettings={q.has('admin') || q.has('verified') ? { useCareerLedger: true } : {}}
+          samplings={[]} eodReports={q.has('admin') ? (q.has('live') ? liveEod : labEodReports(LAB_TODAY)) : q.has('verified') ? labVerifiedTonight() : q.has('late') ? labEodReports(LAB_TODAY).filter((r) => r.id === 'e6') : []} appSettings={{ ...(q.has('admin') || q.has('verified') ? { useCareerLedger: true } : {}), ...labSettings }}
           user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
           onSubmitEOD={async (p) => { window.__eod = [...(window.__eod || []), p]; }}
           /* the boss's player card (shipped 2026-09-20): Budi's ledger puts him on Silver with a bar toward Gold; the
@@ -1208,7 +1210,7 @@ function ShellLab() {
            carry the three tier prices the Projected Value box multiplies; three of today's
            transactions so Cash, Retur and the QUARANTINE view all have something to show. */
         <AgentInventoryView
-          db={{}} appId="lab" userId="lab" agentProfileId="m2"
+          db={{}} appId="lab" userId="lab" agentProfileId="m2" appSettings={labSettings}
           inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA].map((p) => ({ ...p, priceRetail: Math.round(p.priceDistributor * 1.15), priceEcer: Math.round(p.priceDistributor * 1.25), priceGrosir: Math.round(p.priceDistributor * 1.08) }))}
           /* &admin: tx3 also carries its damaged line, the shape the chest's damaged row reads (vanBay damagedInVan) - kept
              out of LAB_AGENT_TXNS, which the EOD and Fleet labs share */
@@ -1258,9 +1260,9 @@ function ShellLab() {
       ) : q.has('settings') ? (
         /* ?shell&settings&menu=ROOKIE - Settings as that tier sees it with the vault locked (2026-11-02: every tier
            gets This device; only a tier holding view_settings is offered the unlock). Language is the real switch. */
-        <SettingsView userRole={q.get('menu') || 'ROOKIE'} isAdmin={false} isSystemOwner={false}
+        <SettingsView userRole={q.get('menu') || 'ROOKIE'} isAdmin={q.has('owner')} isSystemOwner={q.has('owner')} db={{}} appId="lab" user={{ uid: 'lab' }} setAppSettings={setLabSettings} editCompanyProfile={{ name: 'KPM INVENTORY', address: '', phone: '' }} setEditCompanyProfile={() => {}}
           isLiteMode={lite} setIsLiteMode={setLite} triggerCapy={() => {}} setShowAdminLogin={() => {}}
-          sessionStatus={{}} setSessionStatus={() => {}} auditLogs={[]} appSettings={{}} tierSettings={[]} activeMessages={[]} />
+          sessionStatus={{}} setSessionStatus={() => {}} auditLogs={[]} appSettings={labSettings} tierSettings={[]} activeMessages={[]} />
       ) : q.has('terminal') ? (
         /* ?shell&terminal — the Sales Terminal INSIDE the real shell, wrapped exactly as App.jsx
            wraps it (activeTab === 'sales', App.jsx:4916): the shell's p-2 lg:p-6, then ONE bare

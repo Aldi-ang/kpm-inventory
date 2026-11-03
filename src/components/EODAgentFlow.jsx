@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import EODCardDeck from './EODCardDeck';
 import EODLetter from './EODLetter';
-import { CARD_IDS, CARD_LABELS, emptyLetter, emptyCard, declareCard, canSend, undeclareCard, restoreDraft } from '../utils/eodRecord';
+import { CARD_IDS, CARD_LABELS, emptyLetter, emptyCard, declareCard, canSend, undeclareCard, restoreDraft, skipCards } from '../utils/eodRecord';
 
 /* THE DRAFT lives on this phone only, one per salesman per night (the key comes from the screen). Storage that refuses -
    a private window, a full disk - must never stop the count, so every touch is guarded; a stale night is swept away. */
@@ -34,12 +34,14 @@ export default function EODAgentFlow({
   sources = {},
   onSubmit,
   submitting = false,
-  draftKey = null
+  draftKey = null,
+  skip = []                 // cards Settings turned off (pita cukai, 2026-11-03): signed off at 0 and not shown
 }) {
+  const ids = CARD_IDS.filter((id) => !skip.includes(id));
   /* Aldi, 2026-09-26: "make sure the progress draft saved when the user move to other segment" - leaving the tab
      unmounts this screen, so what he counted comes back from the draft, the app's own figures re-read */
   const [draft] = useState(() => restoreDraft(readDraft(draftKey), expected));
-  const [letter, setLetter] = useState(() => draft?.letter || emptyLetter());
+  const [letter, setLetter] = useState(() => skipCards(draft?.letter || emptyLetter(), skip));
   const [stage, setStage] = useState(() => draft?.stage || 'open');   // open → sealed → launching → sent
   const [step, setStep] = useState(() => draft?.step || 0);             // the card on top, for the deck
   const [inputs, setInputs] = useState(() => draft?.inputs || {});     // what he typed on each card
@@ -58,9 +60,9 @@ export default function EODAgentFlow({
   /* "make sure that the agent can go back to step before so that they can revise before submit": a sealed letter
      opens again on its last card; from there Back walks the cards one by one */
   const revise = () => {
-    const last = CARD_IDS[CARD_IDS.length - 1];
+    const last = ids[ids.length - 1];
     setLetter(prev => undeclareCard(prev, last));
-    setStep(CARD_IDS.length - 1);
+    setStep(ids.length - 1);
     setStage('open');
     setDeckKey(k => k + 1);
   };
@@ -138,7 +140,7 @@ export default function EODAgentFlow({
         ))}
       </ol>
 
-      <EODLetter counted={counted} stage={stage} mouthRef={mouthRef} onSend={send} disabled={submitting} />
+      <EODLetter counted={counted} stage={stage} mouthRef={mouthRef} onSend={send} disabled={submitting} ids={ids} />
       {stage === 'sealed' && (
         <button type="button" onClick={revise} disabled={submitting}
           className="mt-3 w-full py-3 rounded-xl font-bold text-[13px] border border-[var(--line-2)] bg-[var(--raised)] text-[var(--ink)] hover:border-[var(--accent-edge)] disabled:opacity-40">
@@ -169,6 +171,7 @@ export default function EODAgentFlow({
       >
         <EODCardDeck
           key={deckKey}
+          ids={ids}
           initialStep={step}
           inputs={inputs}
           onInputs={(id, v) => setInputs(p => ({ ...p, [id]: v }))}

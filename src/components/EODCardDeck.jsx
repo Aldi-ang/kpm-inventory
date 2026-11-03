@@ -107,9 +107,10 @@ export default function EODCardDeck({
   onInputs,
   initialStep = 0,
   inputs = {},              // what he typed on each card, kept by the flow in his draft
-  disabled = false
+  disabled = false,
+  ids = CARD_IDS            // the cards on show - Settings can turn pita cukai off (2026-11-03)
 }) {
-  const typed = (i) => inputs[CARD_IDS[i]] || {};
+  const typed = (i) => inputs[ids[i]] || {};
   const [step, setStep] = useState(initialStep);
   const [entry, setEntry] = useState(() => typed(initialStep).entry ?? '');   // single-value cards
   const [rows, setRows] = useState(() => typed(initialStep).rows || {});      // per-line cards, keyed by line key
@@ -117,8 +118,8 @@ export default function EODCardDeck({
   const [flown, setFlown] = useState({});     // card id -> the measured flight to the letter
   const activeRef = useRef(null);
 
-  const active = CARD_IDS[step];
-  const finished = step >= CARD_IDS.length;
+  const active = ids[step];
+  const finished = step >= ids.length;
   /* every keystroke of the open card goes to the draft, so leaving the screen loses nothing */
   useEffect(() => { if (!finished) onInputs?.(active, { entry, rows, ticks }); }, [entry, rows, ticks]);   // eslint-disable-line react-hooks/exhaustive-deps
   const activeLines = lines[active];
@@ -215,7 +216,7 @@ export default function EODCardDeck({
      before submit"): the card before comes out of the letter and back on top, holding what he typed on it */
   const back = () => {
     if (disabled || step === 0) return;
-    const prev = CARD_IDS[step - 1], was = inputs[prev] || {};
+    const prev = ids[step - 1], was = inputs[prev] || {};
     setFlown(f => { const n = { ...f }; delete n[prev]; return n; });
     setEntry(was.entry ?? '');
     setRows(was.rows || {});
@@ -235,7 +236,7 @@ export default function EODCardDeck({
           card backs, 11 px each), and the 33 px margin is the room those backs need. Aldi, board 1:
           "yes". The flying card is NOT clipped — see the class per offset below. */}
       <div className="relative mb-[33px] lg:mb-0 lg:h-[344px]" style={{ perspective: '1200px' }}>
-        {CARD_IDS.map((id, i) => {
+        {ids.map((id, i) => {
           const Icon = ICONS[id];
           const offset = i - step;               // 0 = on top, >0 = still behind, <0 = gone
           const gone = offset < 0;
@@ -252,7 +253,7 @@ export default function EODCardDeck({
                   : 'translateY(-90px) rotate(-15deg) scale(.4)')
               : `translateY(${Math.min(offset, 3) * 11}px) scale(${1 - Math.min(offset, 3) * 0.035})`,
             opacity: gone ? 0 : offset > 3 ? 0 : 1,
-            zIndex: gone ? 40 : CARD_IDS.length - offset,
+            zIndex: gone ? 40 : ids.length - offset,
             pointerEvents: offset === 0 ? 'auto' : 'none',
             transitionProperty: 'transform, opacity',
             transitionDuration: gone ? '760ms' : '500ms',
@@ -277,7 +278,7 @@ export default function EODCardDeck({
                 </span>
                 <div className="min-w-0">
                   <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[var(--ink-dim)]">
-                    Card {i + 1} of {CARD_IDS.length}
+                    Card {i + 1} of {ids.length}
                   </p>
                   <h4 className="text-lg font-black text-[var(--ink)] leading-tight truncate">{CARD_LABELS[id]}</h4>
                 </div>

@@ -28,7 +28,8 @@ const Money = ({ value, className = '' }) => {
 };
 
 
-const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], promoItems = [], transactions = [], samplings = [], user, userRole, motorists = [], pendingTxData = [], previewing = null }) => {
+const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [], promoItems = [], transactions = [], samplings = [], user, userRole, motorists = [], pendingTxData = [], previewing = null, appSettings }) => {
+    const cukaiOn = appSettings?.cukaiReturn !== false;   // pita cukai OFF in Settings (2026-11-03): no "Cukai Due" tile
     const [rawCanvasItems, setCanvasItems] = useState([]);
     const [promoCanvas, setPromoCanvas] = useState([]);   // the van's promo goods - their own field, in pcs (stage 3)
     const [isLoading, setIsLoading] = useState(true);
@@ -273,7 +274,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                 <div className="flex flex-col gap-2 lg:gap-3 w-full lg:mt-2">
                     
                     {/* TOP ROW: Core Metrics */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
+                    <div className={`grid grid-cols-2 ${cukaiOn ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-2 md:gap-3`}>
                         <div className="bg-ground border border-line-2 rounded-none p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
                             <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Package size={12}/> Load</span>
                             <span className="text-base md:text-xl font-black text-gold">{new Intl.NumberFormat('id-ID').format(totalBks)} <span className="text-[11px] font-bold text-ink-dim">Bks</span></span>
@@ -284,7 +285,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                             <Money value={invValue} className="text-ink" />
                         </div>
                         
-                        <div className="bg-panel border border-line-2 rounded-none p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
+                        <div className={`bg-panel border border-line-2 rounded-none p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner ${cukaiOn ? '' : 'col-span-2 lg:col-span-1'}`}>
                             <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Coins size={12}/> Cash</span>
                             <span className="font-black text-ink kpm-num inline-flex items-center gap-2 min-w-0"><i className="kpm-coin lg" aria-hidden="true"></i><Money value={todayRevenue} className="text-ink" /></span>
                             {/* 🚀 NEW RETUR DEDUCTION DISPLAY */}
@@ -296,10 +297,12 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                         </div>
 
                         {/* 🚀 NEW CUKAI DEBT DISPLAY */}
+                        {cukaiOn && (
                         <div className="bg-panel border border-line-2 rounded-none p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
                             <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Tag size={12}/> Cukai Due</span>
                             <span className="text-sm md:text-xl font-black text-ink">{totalCukaiOwed} <span className="text-[11px] font-bold text-ink-dim">Pcs</span></span>
                         </div>
+                        )}
                     </div>
 
                     {/* BOTTOM ROW: 3-Tier Revenue Box (Wide & Readable) */}

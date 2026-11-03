@@ -1176,8 +1176,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         if (newCanvasBks < 0) throw "Not enough stock in your vehicle!";
                         updatedCanvas[canvasIdx] = { ...cItem, qty: newCanvasBks / mCanvas };
                         
-                        let currentDebts = agentData.cukaiDebts || {}; currentDebts[product.id] = (currentDebts[product.id] || 0) + totalQtyDecimal;
-                        t.update(agentRef, { activeCanvas: updatedCanvas.filter(c => c.qty > 0), cukaiDebts: currentDebts });
+                        /* pita cukai OFF in Settings (his 2026-11-03 "they just giveaway sampling with all the pita cukai
+                           attached on them"): the sample keeps its stamps, so no stamp debt opens */
+                        if (appSettings?.cukaiReturn !== false) {
+                            let currentDebts = agentData.cukaiDebts || {}; currentDebts[product.id] = (currentDebts[product.id] || 0) + totalQtyDecimal;
+                            t.update(agentRef, { activeCanvas: updatedCanvas.filter(c => c.qty > 0), cukaiDebts: currentDebts });
+                        } else t.update(agentRef, { activeCanvas: updatedCanvas.filter(c => c.qty > 0) });
                     }
                 } else {
                     const prodRef = doc(db, `artifacts/${appId}/users/${masterUid}/products`, product.id);
@@ -3363,10 +3367,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 </div>
                             </div>
                             
+                            {appSettings?.cukaiReturn !== false && (   /* pita cukai OFF in Settings: nothing to collect, so no warning */
                             <div className="bg-[color-mix(in_srgb,var(--duke-brass)_10%,transparent)] p-3 rounded border border-[color-mix(in_srgb,var(--duke-brass-edge)_30%,transparent)] text-[var(--duke-brass-ink)] text-[10px] uppercase tracking-widest font-bold flex items-start gap-2">
                                 <AlertCircle size={14} className="shrink-0 mt-0.5"/>
                                 <p>{tr('Warning: You must collect the Pita Cukai for every open pack. This will be demanded during EOD Setoran.')}</p>
                             </div>
+                            )}
                         </div>
 
                         <div className="p-5 border-t border-[var(--duke-edge-1)] bg-[var(--duke-bar)]">

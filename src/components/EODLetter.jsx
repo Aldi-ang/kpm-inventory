@@ -44,7 +44,7 @@ const SEND_EASE = {
   sent: 'cubic-bezier(.55,0,.35,1)'
 };
 
-export default function EODLetter({ counted = {}, stage = 'open', mouthRef, onSend, disabled = false }) {
+export default function EODLetter({ counted = {}, stage = 'open', mouthRef, onSend, disabled = false, ids = CARD_IDS }) {
   const sealed = stage !== 'open';
   const sent = stage === 'sent';
 
@@ -98,7 +98,7 @@ export default function EODLetter({ counted = {}, stage = 'open', mouthRef, onSe
               lands on top and clips the first row's figure — a closed envelope you cannot read
               through is realistic and useless. The flap now swings shut BEHIND the list. */}
           <div className="absolute inset-x-3 top-3 bottom-3 z-10 flex flex-col gap-1 justify-center">
-            {CARD_IDS.map((id, i) => {
+            {ids.map((id, i) => {
               const value = counted[id];
               const landed = value !== undefined && value !== null;
               return (
