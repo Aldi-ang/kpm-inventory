@@ -1,21 +1,21 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder, Target, BadgeDollarSign, ShieldAlert } from 'lucide-react';
-import { formatRupiah, getLocalDayKey, storeKey, shortStockRows, eodBountyLines, bountyItems, groupPendingEOD, nightLabel, nightParts, dayTargets, EOD_PART_LABELS } from './utils/helpers';
+import { ShieldCheck, Wallet, Truck, CheckCircle, Upload, AlertCircle, Clock, DollarSign, Package, XCircle, Tag, ChevronDown, ChevronRight, MapPin, User, Calendar, Folder, Target, BadgeDollarSign, ShieldAlert, RotateCcw } from 'lucide-react';
+import { formatRupiah, getLocalDayKey, storeKey, shortStockRows, eodBountyLines, bountyItems, groupPendingEOD, nightLabel, nightParts, dayTargets, eodNightOf, EOD_PART_LABELS } from './utils/helpers';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import EODAgentFlow from './components/EODAgentFlow.jsx';
 import NixieCount from './components/NixieCount.jsx';
 import FolderCard from './components/FolderCard.jsx';
-import PlayerCard from './components/PlayerCard.jsx';
+import PlayerCard, { NightReplay } from './components/PlayerCard.jsx';
 import { BORDER_KEYFRAMES, FrameFilters } from './config/rankBorders.jsx';
 
 /* THE BOSS'S REVIEW as player cards — his "looks good for v2 lets use that" (2026-09-20 05:35) on the card that grew out
    of the folders + docket of 03:50. One card per salesman (components/PlayerCard.jsx) holds every report he sent
    tonight: the head is the man as his profile draws him, the body is the handover one line per part with its own ✓ / ✕.
-   The scan + VERIFIED seal (EOD_SEAL_MS) still play over the list when the last part of a night is approved — gradients
+   The scan + VERIFIED seal still play over the list when the last part of a night is approved, held until the card's XP replay ends — gradients
    and transforms only, the tokens carry both themes. The History Log stays folders. */
 const EOD_FOLDER = 'kpm-folder-quiet w-full bg-[var(--raised)] border-[var(--line-2)] hover:border-[var(--accent-edge)] transition-colors';
-const EOD_SEAL_MS = 2900;   // the seal lands by 770 ms, holds to 2270, fades by 2570; the card folds by 2870 (theme.css .kpm-fold)
+const EOD_FADE_MS = 300;   // the replay done: the stamp fades, then the card folds - 300 ms each (theme.css kpmSealOut / kpmFold)
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const HIST_LEVELS = [
     { Icon: MapPin, count: (n) => plural(Object.keys(n).length, 'salesman', 'salesmen') },
@@ -103,7 +103,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
     const [openDates, setOpenDates] = useState([]);
     const [sealing, setSealing] = useState(false);   // a night's last part approved: the scan runs, the seal stamps over the list
-    const [held, setHeld] = useState(null);           // his #5: { g, late, at, sealed } - the night being approved keeps its place
+    const [held, setHeld] = useState(null);           // his #5: { g, late, at, sealed, out, fold } - the night being approved keeps its place
+    const [replay, setReplay] = useState(null);       // the History Log's replay: the CASH_STOCK report whose night plays again
     const [histPath, setHistPath] = useState([]);    // the History Log drill: [place, salesman, month]
     const [expandedReports, setExpandedReports] = useState([]);
 
@@ -304,6 +305,18 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
     /* one card per salesman per NIGHT (his 2026-09-26 "split cards by night to make it clear"): tonight's cards on
        top, any earlier night still waiting in its own LATE EOD panel - see helpers.js groupPendingEOD */
     const { tonight: pendingTonight, late: pendingLate } = useMemo(() => groupPendingEOD(pendingReports, getLocalDayKey()), [pendingReports]);
+    /* his 2026-11-03 "saved inside the history file so that i can retry it again in that day if there is a new EOD then
+       delete the older one and update it with the new one": ONE replay per salesman - his newest verified night (its dayXP
+       + xpBreakdown are already on the report); the next approved night takes the slot. agent -> report id. */
+    const replayable = useMemo(() => {
+        const best = {};
+        for (const r of eodReports) {
+            if (r.status !== 'VERIFIED' || r.reportType !== 'CASH_STOCK' || !(Number(r.dayXP) > 0)) continue;
+            const k = r.agentId || r.agentName, at = r.verifiedAt?.seconds || r.timestamp?.seconds || 0;
+            if (!best[k] || at > best[k].at) best[k] = { id: r.id, at };
+        }
+        return Object.fromEntries(Object.entries(best).map(([k, v]) => [k, v.id]));
+    }, [eodReports]);
     /* HIS late EOD on his own screen (his 2026-09-26 "salesman should also need to see the late EOD, because it is their
        late responsibility"): his earlier nights still waiting, grouped the way the boss's LATE EOD panel is. It only
        shows - approving and resetting stay with the boss. */
@@ -911,7 +924,15 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                             const seal = (g, ok) => {
                                 if (!ok) return drop(g);
                                 setHeld(h => h?.g.key === g.key ? { ...h, sealed: true } : h);
-                                setSealing(true); setTimeout(() => { setSealing(false); drop(g); }, EOD_SEAL_MS);
+                                setSealing(true);
+                            };
+                            /* his 2026-11-03 "the EOD animation should stay until all the level up or exp gain increase is
+                               completed": the card's replay (useXpReplay) ends the stamp - it fades, then the card folds */
+                            const finish = (g) => {
+                                const step = (k) => setHeld(h => h?.g.key === g.key ? { ...h, [k]: true } : h);
+                                step('out');
+                                setTimeout(() => step('fold'), EOD_FADE_MS);
+                                setTimeout(() => { setSealing(false); drop(g); }, EOD_FADE_MS * 2);
                             };
                             const keep = (list, late) => {
                                 if (!held || held.late !== late) return list;
@@ -924,11 +945,12 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                             const none = <div className="bg-black/20 border border-[var(--line)] p-8 rounded-2xl text-center text-[var(--ink-dim)] text-xs uppercase tracking-widest">No pending reports.</div>;
                             /* each card reads ITS night: that night's sales, route and date */
                             const cardOf = (g, late) => { const man = motorists.find((m) => m.id === g.agent); return (
-                                <div key={g.key} className={held?.sealed && held.g.key === g.key ? 'kpm-fold' : undefined}><div>
+                                <div key={g.key} className={held?.fold && held.g.key === g.key ? 'kpm-fold' : undefined}><div>
                                 <PlayerCard group={g} late={late} motorist={man} career={career?.[g.agent]}
                                     useCareerLedger={!!appSettings?.useCareerLedger} ranks={ranks} transactions={transactions} inventory={inventory} appSettings={appSettings}
                                     closed={dayTargets(customers, man?.name || g.agentName, g.night)} today={g.night}
-                                    onApprove={onVerifyEOD} onReset={onResetEOD} onHold={() => hold(g, late)} onSealed={(ok) => seal(g, ok)} />
+                                    onApprove={onVerifyEOD} onReset={onResetEOD} onHold={() => hold(g, late)} onSealed={(ok) => seal(g, ok)}
+                                    playing={!!held?.sealed && held.g.key === g.key} onPlayed={() => finish(g)} />
                                 </div></div>
                             ); };
                             return (
@@ -937,7 +959,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                     <FrameFilters />
                                     {tonightList.length === 0
                                         ? none
-                                        : <div className="space-y-3 kpm-arrive">{tonightList.map(g => cardOf(g, false))}{held?.sealed && !held.late && !pendingTonight.length && <div className="kpm-unfold"><div>{none}</div></div>}</div>}
+                                        : <div className="space-y-3 kpm-arrive">{tonightList.map(g => cardOf(g, false))}{held?.fold && !held.late && !pendingTonight.length && <div className="kpm-unfold"><div>{none}</div></div>}</div>}
                                     {/* LATE EOD - his "make special panel for late EOD": an earlier night still waiting, apart from tonight */}
                                     {lateList.length > 0 && (
                                         <section aria-label="Late EOD" className="mt-8 rounded-2xl border border-[var(--danger)] bg-[var(--danger-well)] p-3 md:p-4">
@@ -949,11 +971,13 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                             );
                         })()}
                         {sealing && (
-                            <div className="kpm-seal-stage" aria-hidden="true">
+                            <div className={`kpm-seal-stage${held?.out ? ' out' : ''}`} aria-hidden="true">
                                 <i className="kpm-docket-scan"></i>
                                 <i className="kpm-docket-seal">VERIFIED</i>
                             </div>
                         )}
+                        {replay && <NightReplay report={replay} motorist={motorists.find((m) => m.id === replay.agentId)} career={career?.[replay.agentId]} ranks={ranks}
+                            closed={dayTargets(customers, replay.agentName, eodNightOf(replay))} onClose={() => setReplay(null)} />}
                     </div>
 
                     {/* RIGHT: EOD HISTORY LOG (4-Level Folder Structure) */}
@@ -1058,6 +1082,14 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                                                                                         </p>
                                                                                                                     )}
                                                                                                                 </>}
+                                                                                                            {cashRep && appSettings?.useCareerLedger && replayable[cashRep.agentId || cashRep.agentName] === cashRep.id && (
+                                                                                                                <button
+                                                                                                                    onClick={(e) => { e.stopPropagation(); setReplay(cashRep); }}
+                                                                                                                    className="text-[11px] flex items-center gap-1 bg-[var(--inset)] text-[var(--accent-ink)] px-2 py-1 rounded border border-[var(--accent-edge)] transition-all active:scale-95 uppercase font-bold mt-2"
+                                                                                                                >
+                                                                                                                    <RotateCcw size={10}/> Replay
+                                                                                                                </button>
+                                                                                                            )}
                                                                                                             <button
                                                                                                                 onClick={resetRow}
                                                                                                                 className="text-[11px] flex items-center gap-1 bg-[var(--danger-well)] hover:bg-[var(--danger)] text-[var(--danger-ink)] hover:text-[var(--gold-ink)] px-2 py-1 rounded border border-[var(--danger)] transition-all active:scale-95 uppercase font-bold mt-2"

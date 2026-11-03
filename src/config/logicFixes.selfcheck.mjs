@@ -8082,13 +8082,13 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
 
   /* the card */
   ok('EOD review: one PlayerCard per salesman replaces the folders + docket; the frames\' CSS and filters are mounted once for the list; the scan + seal play over the list',
-     /import PlayerCard from '\.\/components\/PlayerCard\.jsx';/.test(ev) && /import \{ BORDER_KEYFRAMES, FrameFilters \} from '\.\/config\/rankBorders\.jsx';/.test(ev) &&
+     /import PlayerCard, \{ NightReplay \} from '\.\/components\/PlayerCard\.jsx';/.test(ev) && /import \{ BORDER_KEYFRAMES, FrameFilters \} from '\.\/config\/rankBorders\.jsx';/.test(ev) &&
      /groupPendingEOD\(pendingReports, getLocalDayKey\(\)\)/.test(ev) &&   // one card per salesman per NIGHT since 2026-09-26
      /<PlayerCard group=\{g\} late=\{late\} motorist=\{man\} career=\{career\?\.\[g\.agent\]\}/.test(ev) &&   // the key moved to its fold wrapper (#5)
      /closed=\{dayTargets\(customers, man\?\.name \|\| g\.agentName, g\.night\)\} today=\{g\.night\}/.test(ev) &&
-     /onApprove=\{onVerifyEOD\} onReset=\{onResetEOD\} onHold=\{\(\) => hold\(g, late\)\} onSealed=\{\(ok\) => seal\(g, ok\)\} \/>/.test(ev) &&
+     /onApprove=\{onVerifyEOD\} onReset=\{onResetEOD\} onHold=\{\(\) => hold\(g, late\)\} onSealed=\{\(ok\) => seal\(g, ok\)\}/.test(ev) &&
      /<style>\{BORDER_KEYFRAMES\}<\/style>\r?\n\s+<FrameFilters \/>/.test(ev) &&
-     /<div className="kpm-seal-stage" aria-hidden="true">\r?\n\s+<i className="kpm-docket-scan"><\/i>\r?\n\s+<i className="kpm-docket-seal">VERIFIED<\/i>/.test(ev) &&
+     /<div className=\{`kpm-seal-stage\$\{held\?\.out \? ' out' : ''\}`\} aria-hidden="true">\r?\n\s+<i className="kpm-docket-scan"><\/i>\r?\n\s+<i className="kpm-docket-seal">VERIFIED<\/i>/.test(ev) &&
      !/setDocket\(/.test(code(ev)) && !/const reportSection = /.test(code(ev)) && !/const MoneyLine = /.test(code(ev)) && !/onOpen=\{\(\) => setDocket/.test(code(ev)) &&
      /\.kpm-seal-stage \.kpm-docket-scan \{ animation: kpmScan 500ms/.test(th) && /\.kpm-seal-stage \.kpm-docket-seal \{ animation: kpmSeal 320ms 450ms/.test(th),
      'the docket and its sections are gone with the decision');
@@ -8097,25 +8097,52 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      began - the snapshot drops it when the transaction commits, the seal waited for logAudit after it. Now the card is
      held from the confirm, the seal holds and fades, and only then the card folds shut. */
   { const nums = (re) => (th.match(re) || []).slice(1).map(Number);
-    const [inDur, inDelay, outDur, outDelay] = nums(/\.kpm-seal-stage \.kpm-docket-seal \{ animation: kpmSeal (\d+)ms (\d+)ms [^;]*?, kpmSealOut (\d+)ms (\d+)ms/);
+    const [inDur, inDelay] = nums(/\.kpm-seal-stage \.kpm-docket-seal \{ animation: kpmSeal (\d+)ms (\d+)ms[^;]*; \}/);
+    const [outDur] = nums(/\.kpm-seal-stage\.out \.kpm-docket-seal \{ animation: kpmSeal [^;]*?, kpmSealOut (\d+)ms ease-in forwards; \}/);
     /* `.kpm-arrive > .x` on purpose: the arrive stagger's :nth-child delay outranked a bare `.kpm-fold` (sampled: a 25 ms unfold) */
-    const [foldDur, foldDelay] = nums(/\.kpm-fold, \.kpm-arrive > \.kpm-fold \{[^}]*animation: kpmFold (\d+)ms (\d+)ms/);
-    const [unDur, unDelay] = nums(/\.kpm-unfold, \.kpm-arrive > \.kpm-unfold \{[^}]*animation: kpmUnfold (\d+)ms (\d+)ms/);
+    const [foldDur] = nums(/\.kpm-fold, \.kpm-arrive > \.kpm-fold \{[^}]*animation: kpmFold (\d+)ms cubic/);
+    const [unDur] = nums(/\.kpm-unfold, \.kpm-arrive > \.kpm-unfold \{[^}]*animation: kpmUnfold (\d+)ms cubic/);
+    const fade = Number((ev.match(/const EOD_FADE_MS = (\d+);/) || [])[1]);
     ok('EOD stamp (#5): the night\'s last card folds INTO "No pending reports." - the box unfolds on the same clock, so nothing below jumps',
-       unDur === foldDur && unDelay === foldDelay && /held\?\.sealed && !held\.late && !pendingTonight\.length && <div className="kpm-unfold"><div>\{none\}<\/div><\/div>/.test(ev),
-       `fold ${foldDelay}+${foldDur}, unfold ${unDelay}+${unDur}`);
-    const stage = Number((ev.match(/const EOD_SEAL_MS = (\d+);/) || [])[1]), landed = inDelay + inDur;
-    ok('EOD stamp (#5): the seal holds >= 1.2 s after it lands, then fades; the card folds only after the fade; the stage ends with the fold',
-       outDelay - landed >= 1200 && outDur >= 200 && foldDelay >= outDelay + outDur && stage >= foldDelay + foldDur && stage - (foldDelay + foldDur) < 200,
-       `landed ${landed} ms, fade at ${outDelay}, fold ${foldDelay}+${foldDur}, stage ${stage}`);
-    ok('EOD stamp (#5): the card is held in place BEFORE the writes and let go by onSealed (never the old 900 ms stage); Lite keeps the stamp, still',
-       /const hold = pending\.every\(l => checked\[l\.key\]\);[\s\S]{0,260}if \(hold && onHold\) onHold\(\);[\s\S]{0,200}for \(const \{ report, decision \} of items\)/.test(pc) &&
-       /if \(hold && onSealed\) onSealed\(allIn\);/.test(pc) && !/const EOD_SEAL_MS = 900;/.test(ev) &&
+       unDur === foldDur && /held\?\.fold && !held\.late && !pendingTonight\.length && <div className="kpm-unfold"><div>\{none\}<\/div><\/div>/.test(ev), `fold ${foldDur}, unfold ${unDur}`);
+    ok('EOD stamp (#5 + his "stay until all the level up or exp gain increase is completed"): no fixed stage clock - the card\'s replay ends it; .out fades the seal, the fold follows on EOD_FADE_MS',
+       inDelay + inDur <= 800 && outDur === fade && foldDur === fade &&
+       /const finish = \(g\) => \{[\s\S]{0,200}step\('out'\);\s+setTimeout\(\(\) => step\('fold'\), EOD_FADE_MS\);\s+setTimeout\(\(\) => \{ setSealing\(false\); drop\(g\); \}, EOD_FADE_MS \* 2\);/.test(ev) &&
+       !/EOD_SEAL_MS/.test(ev) && /<div className=\{`kpm-seal-stage\$\{held\?\.out \? ' out' : ''\}`\}/.test(ev) &&
+       /playing=\{!!held\?\.sealed && held\.g\.key === g\.key\} onPlayed=\{\(\) => finish\(g\)\}/.test(ev),
+       `seal lands ${inDelay + inDur} ms, fade ${outDur}, fold ${foldDur}, EOD_FADE_MS ${fade}`);
+    ok('EOD stamp (#5): the card is held in place BEFORE the writes and let go by onSealed; Lite keeps the stamp, still',
+       /const hold = pending\.every\(l => checked\[l\.key\]\);[\s\S]{0,260}if \(hold && onHold\) \{[\s\S]{0,300}onHold\(\);\s+\}\s+for \(const \{ report, decision \} of items\)/.test(pc) &&
+       /if \(hold && onSealed\) onSealed\(allIn\);/.test(pc) &&
        /onHold=\{\(\) => hold\(g, late\)\} onSealed=\{\(ok\) => seal\(g, ok\)\}/.test(ev) &&
        /html\.lite-mode \.kpm-seal-stage \.kpm-docket-seal \{ opacity: 1;/.test(th)); }
+  /* his 2026-11-03: "the EOD animation should stay until all the level up or exp gain increase is completed and this data
+     or animation for that day should be saved inside the history file so that i can retry it again in that day if there
+     is a new EOD then delete the older one and update it with the new one, i want the animation like the one we have on
+     the presentation" */
+  { const { xpLegs, DEFAULT_RANKS } = await import('./career.js');
+    const legs = (a, b) => JSON.stringify(xpLegs(a, b, DEFAULT_RANKS).map(l => [l.from, l.to, l.rankUp]));
+    ok('EOD replay: the count is cut at every rank it crosses (real numbers on the default ladder)',
+       legs(4980, 5031) === '[[4980,5000,true],[5000,5031,false]]' && legs(100, 151) === '[[100,151,false]]' &&
+       legs(19990, 50010) === '[[19990,20000,true],[20000,50000,true],[50000,50010,false]]' && legs(4990, 5000) === '[[4990,5000,true]]' && legs(500, 500) === '[]',
+       legs(4980, 5031));
+    ok('EOD replay: the card counts from XP before to before + tonight\'s gain, frozen at the confirm (the live ledger lands mid-way and would jump)',
+       /setRun\(\{ from: xp, to: xp \+ gain, breakdown: gain \? computeDayXP\(cashReport, career \|\| \{\}, DEFAULT_XP\)\.breakdown : \{\} \}\);/.test(pc) &&
+       /const fx = useXpReplay\(run, playing, ranks, onPlayed\);/.test(pc) && /const shown = fx \? fx\.xp : xp;/.test(pc) && /if \(hold && !allIn\) setRun\(null\);/.test(pc));
+    ok('EOD replay: the slide\'s timing - a 2.6 s ease-out count per leg, a rank-up held 1.7 s; Lite / reduced motion land at once; a tap skips',
+       /await tween\(2600, \(u\) => set\(\{ xp: leg\.from \+ \(leg\.to - leg\.from\) \* \(1 - \(1 - u\) \*\* 2\) \}\)\);/.test(pc) && /await wait\(1700\);/.test(pc) &&
+       /classList\.contains\('lite-mode'\) \|\| matchMedia\('\(prefers-reduced-motion: reduce\)'\)\.matches/.test(pc) &&
+       /onTap=\{fx && playing \? fx\.skip : \(\) => setOpen\(v => !v\)\}/.test(pc) && /\.pc-ban \{[^}]*border-block: 1px solid var\(--gold\)/.test(th) && /\.pc-ban b \{[^}]*color: var\(--accent-ink\); \}/.test(th));
+    ok('EOD replay: ONE per salesman in the History Log - his newest verified CASH_STOCK night with dayXP; the next night takes the slot; ledger mode only',
+       /if \(!best\[k\] \|\| at > best\[k\]\.at\) best\[k\] = \{ id: r\.id, at \};/.test(ev) &&
+       /\{cashRep && appSettings\?\.useCareerLedger && replayable\[cashRep\.agentId \|\| cashRep\.agentName\] === cashRep\.id && \(/.test(ev) &&
+       /\{replay && <NightReplay report=\{replay\}/.test(ev) &&
+       /from: Math\.max\(0, now - \(Number\(report\.dayXP\) \|\| 0\)\), to: now, breakdown: report\.xpBreakdown \|\| \{\}/.test(pc));
+    ok('REGRESSION: the stamp sits above every card and the History Log column (PC frame: the folder card covered "VERIF...")',
+       /\.kpm-seal-stage \.kpm-docket-scan, \.kpm-seal-stage \.kpm-docket-seal \{ z-index: 60; \}/.test(th)); }
   ok('PlayerCard: the head is the man as his profile draws him - the photo in the rank frame, rank + title, XP with tonight\'s plus, the bar to the next rank, CLOSED ?/?, the diode',
      /<RankBorder styleId=\{frame\} \/>/.test(pc) && /const frame = motorist\?\.borderStyle \|\| currentTier\.borderStyle \|\| 'classic';/.test(pc) &&
-     /const \{ currentTier, nextTier, progressPercent \} = rankLadder\(xp, ranks\);/.test(pc) &&
+     /const \{ currentTier, nextTier, progressPercent \} = rankLadder\(shown, ranks\);/.test(pc) &&   // `shown` = the replay's count, else xp (2026-11-03)
      /const gain = useCareerLedger && cashReport \? computeDayXP\(cashReport, career \|\| \{\}, DEFAULT_XP\)\.total : 0;/.test(pc) &&
      /if \(useCareerLedger\) return careerXP\(career \|\| \{\}, DEFAULT_XP\);/.test(pc) && /Math\.floor\(omset \/ DEFAULT_XP\.rupiahPerXp\) \* \(expMultiplier \|\| 1\) \+ \(Number\(motorist\?\.manualExp\) \|\| 0\)/.test(pc) &&
      /\{closed\.closed\}<span className="text-\[var\(--ink-dim\)\] text-2xl"> \/ \{closed\.total\}<\/span>/.test(pc) &&
@@ -8154,8 +8181,8 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      component both screens draw, and the salesman's EOD panel counts tonight's XP up with the one number instrument. */
   { const ap = read('src/AgentProfileView.jsx'); const apc = code(ap);
   ok('STAGE B: the head is exported ONCE from PlayerCard.jsx and both the card and the Agent Profile draw it - no second copy',
-     /export const PlayerCardHead = \(\{ name, photo, currentTier, nextTier, progressPercent, xp, gain = 0, frame = 'classic', closed, night = null, diode = '', diodeText, onTap, children \}\) =>/.test(pc) &&
-     (pc.match(/pc-head/g) || []).length === 1 && /<PlayerCardHead name=\{group\.agentName\}/.test(pc) && /onTap=\{\(\) => setOpen\(v => !v\)\}/.test(pc) &&
+     /export const PlayerCardHead = \(\{ name, photo, currentTier, nextTier, progressPercent, xp, gain = 0, frame = 'classic', closed, night = null, diode = '', diodeText, onTap, fx, children \}\) =>/.test(pc) &&   // fx: the EOD replay's layers (2026-11-03)
+     (pc.match(/pc-head/g) || []).length === 1 && /<PlayerCardHead name=\{group\.agentName\}/.test(pc) && /onTap=\{fx && playing \? fx\.skip : \(\) => setOpen\(v => !v\)\}/.test(pc) &&
      /import PlayerCard, \{ PlayerCardHead \} from '\.\/components\/PlayerCard\.jsx';/.test(ev) === false &&
      /import \{ PlayerCardHead \} from '\.\/components\/PlayerCard\.jsx';/.test(ap) && /<PlayerCardHead name=\{activeAgent\.name\}/.test(ap) &&
      !/pc-head/.test(apc) && /<div className="pc pc-solo lg:max-w-lg">/.test(ap) && /\.pc-solo \{ padding-bottom: 0; \}/.test(th),

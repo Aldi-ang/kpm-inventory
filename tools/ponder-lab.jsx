@@ -68,12 +68,17 @@ import { Cloud } from 'lucide-react';
 import { FIXTURES } from './lab-firestore-stub.js';
 import { LOOKS } from './lab-looks.js';
 import { scanNotaToBase64, homography, getLocalDayKey } from '../src/utils/helpers.js';
+import { careerXP, computeDayXP, DEFAULT_XP } from '../src/config/career.js';
 import PhotoField from '../src/components/PhotoField.jsx';
 import { SCENES } from '../src/ponder/registry.js';
 import { LAB_BELL_NEEDS, seedLabBell } from './lab-bell.jsx';
 if (new URLSearchParams(window.location.search).has('bell')) seedLabBell();
 
 const q = new URLSearchParams(window.location.search);
+/* Budi's career ledger on the boss's EOD review. &rankup (2026-11-03, the EOD replay): 10 XP under Gold, so approving
+   tonight's night crosses a rank and the banner plays. */
+const LAB_CAREER = { live: { collected: 124500000, daysVerified: 41, cleanCukaiDays: 30, storesServed: 300 }, joinDate: '2025-01-10' };
+const labCareer = () => (q.has('rankup') ? { ...LAB_CAREER, bonusXP: 20000 - 10 - careerXP(LAB_CAREER, DEFAULT_XP) } : LAB_CAREER);
 if (q.has('light')) document.documentElement.classList.add('light');
 /* ?css=<rules> injects a stylesheet AFTER the app's own, so a proposed layout change can be
    rendered and shown to Aldi as a frame BEFORE it is written into a component — his rule,
@@ -436,7 +441,7 @@ const labEodReports = (today) => {
     { id: 'e6', status: 'PENDING', reportType: 'CASH_STOCK', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 86400 - 3600 }, countStatus: 'DISPUTED',
       expectedCash: 640000, cash: 640000, expectedTransfer: 0, transfer: 0, rejected: { stock: '1 Bks kurang' },
       expectedStock: stock, remainingStock: [{ ...stock[0], qty: 11 }, stock[1]], deployedSamples: [] },
-    { id: 'e3', status: 'VERIFIED', reportType: 'CASH_STOCK', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 86400 }, verifiedAt: { seconds: now - 80000 }, expectedCash: 980000, cash: 980000, expectedTransfer: 0, transfer: 0, remainingStock: stock },
+    { id: 'e3', status: 'VERIFIED', reportType: 'CASH_STOCK', agentId: 'm2', agentName: 'Budi Santoso', dayXP: 46, xpBreakdown: { collected: 9, closed: 25, cukai: 0, route: 12 }, timestamp: { seconds: now - 86400 }, verifiedAt: { seconds: now - 80000 }, expectedCash: 980000, cash: 980000, expectedTransfer: 0, transfer: 0, remainingStock: stock },
     { id: 'e4', status: 'VERIFIED', reportType: 'CUKAI', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 86400 }, verifiedAt: { seconds: now - 79000 }, cukaiReturned: 36, cukaiPaid: 0, cukaiFine: 0 },
     { id: 'e5', status: 'VERIFIED', reportType: 'CASH_STOCK', agentId: 'm2', agentName: 'Budi Santoso', timestamp: { seconds: now - 172800 }, verifiedAt: { seconds: now - 170000 }, expectedCash: 1410000, cash: 1400000, expectedTransfer: 0, transfer: 0, remainingStock: stock },
   ];
@@ -1178,11 +1183,12 @@ function ShellLab() {
              true so the scan + seal play - the fixture report stays, the real app removes it when Firestore updates */
           onVerifyEOD={async (r, d) => { window.__eodVerify = [...(window.__eodVerify || []), { id: r.id, ...d }];
             if (q.has('live')) {   // &live: the report turns VERIFIED at once (the snapshot), the answer ~400 ms later (App.jsx awaits logAudit)
-              setLiveEod((rs) => rs.map((x) => x.id !== r.id ? x : { ...x, verified: { ...x.verified, ...Object.fromEntries((d.approve || []).map((p) => [p, true])) }, status: Object.keys(d.reject || {}).length ? x.status : 'VERIFIED' }));
+              setLiveEod((rs) => rs.map((x) => x.id !== r.id ? x : { ...x, verified: { ...x.verified, ...Object.fromEntries((d.approve || []).map((p) => [p, true])) }, status: Object.keys(d.reject || {}).length ? x.status : 'VERIFIED',
+                verifiedAt: { seconds: Math.floor(Date.now() / 1000) }, ...(x.reportType === 'CASH_STOCK' ? (({ total, breakdown }) => ({ dayXP: total, xpBreakdown: breakdown }))(computeDayXP(x, labCareer(), DEFAULT_XP)) : {}) }));
               await new Promise((res) => setTimeout(res, 400));
             }
             return true; }} onResetEOD={async (r) => { window.__eodReset = [...(window.__eodReset || []), r.id]; }}
-          career={{ m2: { live: { collected: 124500000, daysVerified: 41, cleanCukaiDays: 30, storesServed: 300 }, joinDate: '2025-01-10' } }}
+          career={{ m2: labCareer() }}
           customers={LAB_CUSTOMERS.map((c, i) => ({ ...c, assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : '' }))}
         />
         </>

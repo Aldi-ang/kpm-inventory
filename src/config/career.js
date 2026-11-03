@@ -116,6 +116,20 @@ export const rankLadder = (xp, ranks = DEFAULT_RANKS) => {
   return { currentTier, nextTier, tierIndex, progressPercent, sortedRanks: sorted };
 };
 
+// THE EOD REPLAY'S PATH (his 2026-11-03 "the EOD animation should stay until all the level up or exp gain increase is
+// completed"): from -> to cut at every rank min it crosses, so each leg counts up on its own and each crossing lands as
+// a rank-up (components/PlayerCard.jsx useXpReplay). Pure, so the self-check runs it.
+export const xpLegs = (from, to, ranks = DEFAULT_RANKS) => {
+  const legs = [];
+  let a = from;
+  for (const m of (ranks || []).map((r) => Number(r.min)).filter((m) => m > from && m <= to).sort((x, y) => x - y)) {
+    legs.push({ from: a, to: m, rankUp: true });
+    a = m;
+  }
+  if (to > a) legs.push({ from: a, to, rankUp: false });
+  return legs;
+};
+
 export const computeDayXP = (report, prevCareer, cfg = DEFAULT_XP) => {
   if (report.reportType === 'BOUNTY') return { total: 0, breakdown: {} };  // a fine, not income
 

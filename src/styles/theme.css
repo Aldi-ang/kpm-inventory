@@ -4785,11 +4785,15 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
   font-family: var(--font-mono); font-size: 28px; font-weight: 900; letter-spacing: .3em; color: var(--accent-ink); font-style: normal;   /* gold never as text — the readable token */
   transform: translate(-50%, -50%) rotate(-8deg) scale(1.3); }
 .kpm-docket.sealing .kpm-docket-seal { animation: kpmSeal 320ms 450ms cubic-bezier(.2, .8, .3, 1) both; }
-/* his #5 (2026-11-03, "snap my screen and gone right away"): over the player-card list the seal lands at 770 ms, HOLDS
-   1.5 s and fades by 2570; then the approved card folds shut (.kpm-fold) and the stage ends (EOD_SEAL_MS) */
-.kpm-seal-stage .kpm-docket-seal { animation: kpmSeal 320ms 450ms cubic-bezier(.2, .8, .3, 1) both, kpmSealOut 300ms 2270ms ease-in forwards; }
+/* his #5 (2026-11-03, "snap my screen and gone right away") + his "the EOD animation should stay until all the level up or
+   exp gain increase is completed": the seal lands at 770 ms and HOLDS while the card's replay counts (useXpReplay); the
+   replay's end adds .out - the seal fades 300 ms, then the card folds shut (.kpm-fold, EOD_FADE_MS) */
+.kpm-seal-stage .kpm-docket-seal { animation: kpmSeal 320ms 450ms cubic-bezier(.2, .8, .3, 1) both; }
+.kpm-seal-stage.out .kpm-docket-seal { animation: kpmSeal 320ms 450ms cubic-bezier(.2, .8, .3, 1) both, kpmSealOut 300ms ease-in forwards; }
 /* the same scan + seal over the player-card list (the wrapper carries no transform, so the fixed children stay on the viewport) */
 .kpm-seal-stage { position: static; }
+/* above every card AND the History Log column after it in the DOM - on the PC the folder card painted over "VERIF..." (shot 2026-11-03) */
+.kpm-seal-stage .kpm-docket-scan, .kpm-seal-stage .kpm-docket-seal { z-index: 60; }
 @keyframes kpmSeal { from { opacity: 0; transform: translate(-50%, -50%) rotate(-8deg) scale(1.3); } to { opacity: 1; transform: translate(-50%, -50%) rotate(-8deg) scale(1); } }
 @keyframes kpmSealOut { to { opacity: 0; } }
 /* the approved card under the stamp keeps its place, then folds shut: grid rows 1fr -> 0fr animates the real height with
@@ -4797,14 +4801,14 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
    one up by that gap instead, so nothing jumps when it unmounts. clip-path clips only while folding, the glows stay.
    The grid child is a plain div (padding would floor the 0fr track), and `.kpm-arrive > ...` outranks the arrive
    stagger's `:nth-child(n) { animation-delay }`, which otherwise ran a 2nd card's fold at 25 ms. */
-.kpm-fold, .kpm-arrive > .kpm-fold { display: grid; grid-template-rows: 1fr; animation: kpmFold 300ms 2570ms cubic-bezier(.4, 0, .2, 1) forwards; }
+.kpm-fold, .kpm-arrive > .kpm-fold { display: grid; grid-template-rows: 1fr; animation: kpmFold 300ms cubic-bezier(.4, 0, .2, 1) forwards; }
 .kpm-fold > * { min-height: 0; }
 .kpm-fold:first-child:not(:last-child) { animation-name: kpmFoldFirst; }
 @keyframes kpmFold { from { clip-path: inset(0); } to { clip-path: inset(0); grid-template-rows: 0fr; opacity: 0; margin-top: 0; } }
 @keyframes kpmFoldFirst { from { clip-path: inset(0); } to { clip-path: inset(0); grid-template-rows: 0fr; opacity: 0; margin-bottom: -.75rem; } }
 /* the night's LAST card folds into "No pending reports.": the box unfolds in the same 300 ms, so the height goes card ->
    box in one glide and the box already sits where the empty list puts it */
-.kpm-unfold, .kpm-arrive > .kpm-unfold { display: grid; grid-template-rows: 0fr; overflow: hidden; animation: kpmUnfold 300ms 2570ms cubic-bezier(.4, 0, .2, 1) both; }
+.kpm-unfold, .kpm-arrive > .kpm-unfold { display: grid; grid-template-rows: 0fr; overflow: hidden; animation: kpmUnfold 300ms cubic-bezier(.4, 0, .2, 1) both; }
 .kpm-unfold > * { min-height: 0; }
 @keyframes kpmUnfold { from { grid-template-rows: 0fr; margin-top: 0; } to { grid-template-rows: 1fr; } }
 /* Lite Mode: no motion, but the stamp still holds for the stage and then goes (html.lite-mode * kills the keyframes) */
@@ -4828,6 +4832,41 @@ html.lite-mode .kpm-unfold { display: none; }   /* never unfolds there, and its 
   background: linear-gradient(160deg, #E4C98E, #B8893A); font: 900 26px/1 var(--font-mono); color: #2a1d08; }
 .pc-avatar .sframe { position: absolute; inset: 0; z-index: 20; pointer-events: none; }
 .pc-rank { color: var(--rk); font-weight: 900; }
+/* THE EOD REPLAY on the card (his 2026-11-03 "i want the animation like the one we have on the presentation" = slide 19
+   "Kartu Pemain", .lv-* in .claude/presentation/kpm-semua-terkendali.html): chips pop beside the count; a rank crossed
+   lands as the banner + a light sweep + a gold burst + the avatar zooming in + the rank name rolling up. The banner band
+   is the theme's --sunk with the readable --accent-ink on it (the control system never spends --gold as text). Lite
+   Mode: html.lite-mode * stills it all, the banner simply shows. */
+.pc-chips { position: absolute; right: 12px; top: 12px; z-index: 6; display: grid; justify-items: end; gap: 4px; pointer-events: none; }
+.pc-chip { font: 700 12px/1 var(--font-mono); letter-spacing: .06em; color: var(--accent-ink); background: var(--inset); border: 1px solid var(--line-2); border-radius: 4px; padding: 4px 6px;
+  animation: pcChipIn 220ms cubic-bezier(.23, 1, .32, 1) both, pcChipOut 300ms 1100ms ease-out forwards; }
+@keyframes pcChipIn { from { opacity: 0; transform: translateY(8px); } }
+@keyframes pcChipOut { to { opacity: 0; transform: translateY(-8px); } }
+.pc-ban { position: absolute; left: 0; right: 0; top: 50%; translate: 0 -50%; z-index: 7; display: grid; justify-items: center; gap: 2px; padding: 10px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--sunk) 18%, var(--sunk) 82%, transparent); border-block: 1px solid var(--gold);
+  animation: pcBanIn 260ms cubic-bezier(.23, 1, .32, 1) both; }
+.pc-ban.off { animation: pcBanIn 260ms cubic-bezier(.23, 1, .32, 1) both, pcBanOut 240ms ease-out forwards; }
+.pc-ban small { font: 700 12px/1 var(--font-mono); letter-spacing: .3em; text-transform: uppercase; color: var(--ink-dim); }
+.pc-ban b { font: 900 30px/1 var(--font-display); letter-spacing: .14em; text-transform: uppercase; color: var(--accent-ink); }
+@keyframes pcBanIn { from { opacity: 0; transform: scaleY(.3); } }
+@keyframes pcBanOut { to { opacity: 0; } }
+.pc-sweep { position: absolute; inset: 0; z-index: 6; pointer-events: none; translate: -110% 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 240, 210, .22) 48%, transparent 60%); animation: pcSweep 900ms cubic-bezier(.77, 0, .17, 1) forwards; }
+@keyframes pcSweep { to { translate: 110% 0; } }
+.pc-burst { position: absolute; inset: 0; z-index: 5; border-radius: inherit; pointer-events: none; opacity: 0; border: 2px solid var(--gold);   /* the slide's glow, without a shadow (the card's no-shadow rule) */
+  background: radial-gradient(ellipse at 50% 45%, rgba(228, 176, 74, .25), transparent 70%); animation: pcBurst 900ms cubic-bezier(.23, 1, .32, 1) forwards; }
+@keyframes pcBurst { 25% { opacity: 1; } }
+.pc-avatar.up { animation: pcFrameIn 620ms 160ms cubic-bezier(.23, 1, .32, 1) backwards; }
+@keyframes pcFrameIn { from { opacity: 0; transform: scale(1.3); } 75% { opacity: 1; transform: scale(.97); } }   /* the slide's blur dropped: nothing in the system rides on a filter */
+.pc-rank-in { display: inline-block; animation: pcRankIn 420ms 140ms cubic-bezier(.23, 1, .32, 1) backwards; }
+@keyframes pcRankIn { from { opacity: 0; transform: translateY(100%); } }
+/* the History Log's replay (his "retry it again in that day"): the card low on a dimmed screen, the stamp above it. No
+   transform or filter here - the stamp is position: fixed and must stay on the viewport. */
+.kpm-replay { position: fixed; inset: 0; z-index: 80; display: grid; place-items: end center; padding: 16px 16px 18vh; background: rgba(8, 7, 6, .74); animation: kpmReplayIn 200ms ease-out both; }
+.kpm-replay.out { animation: kpmReplayOut 300ms ease-in forwards; }
+.kpm-replay .kpm-docket-seal, .kpm-replay .kpm-docket-scan { z-index: 2; }
+@keyframes kpmReplayIn { from { opacity: 0; } }
+@keyframes kpmReplayOut { to { opacity: 0; } }
 .pc-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 320ms cubic-bezier(.2, .8, .3, 1); }
 .pc.open .pc-body { grid-template-rows: 1fr; }
 .pc-inner { overflow: hidden; min-height: 0; opacity: 0; filter: blur(6px); transform: translateY(-6px); transition: opacity 320ms, filter 360ms, transform 320ms; }
