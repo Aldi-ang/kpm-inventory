@@ -15,7 +15,7 @@ import { areaFromPin, watchBorders } from './utils/areaFromPin.js';
 import { grosirHold, priceLevelOf, canConfirmGrosir, grosirRequestNotice } from './utils/customerAccess.js';
 import { debtCredit } from './utils/revenueRule';
 import { isLowStock } from './utils/stockThreshold';
-import { dayStats, agoLabel } from './utils/dayStats';
+import { dayStats, agoLabel, txSeconds } from './utils/dayStats';
 import { customerBrief, reorderFromLast } from './utils/customerBrief';
 import { nextStop, directionsUrl, metresLabel } from './utils/nextStop';
 import { VISIT_TAGS, visitReport } from './utils/dayLog';
@@ -206,7 +206,10 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         if (!customerName) return null;
         const custTrans = transactions.filter(t => 
             storeKey(t.customerName) === storeKey(customerName)
-        ).sort((a,b) => new Date(a.date) - new Date(b.date));
+        /* by the exact second, like Receivables: `date` is only the DAY and the list arrives newest-first, so a payment
+           made the same day as its sale used to be counted before the sale and thrown away (his 2026-11-03: Utang
+           2.100.000 here, 1.050.000 in Receivables). No server time yet = just written = last. */
+        ).sort((a, b) => (txSeconds(a) ?? Number.MAX_SAFE_INTEGER) - (txSeconds(b) ?? Number.MAX_SAFE_INTEGER));
 
         let debts = [];
         custTrans.forEach(t => {

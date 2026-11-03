@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator, Printer, User, MapPin, Search } from 'lucide-react';
 import { convertToBks, formatRupiah, storeKey, storeLabel } from './utils/helpers';
 import { debtCredit } from './utils/revenueRule';
+import { txSeconds } from './utils/dayStats';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { handoffEligibility, canHandOffAcrossRegions, normalizeRegion, canApproveHandoffFrom } from './config/permissions';
 import { notify } from './components/Toast.jsx';
@@ -161,7 +162,9 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
     // 1. DYNAMIC FIFO DEBT ENGINE 
     const debtData = useMemo(() => {
         const customers = {};
-        const sorted = [...myTransactions].sort((a,b) => new Date(a.date) - new Date(b.date));
+        /* by the exact second: `date` is only the DAY, so a same-day payment could be counted before its sale and lost
+           (2026-11-03, the terminal's sidebar had the same sort). No server time yet = just written = last. */
+        const sorted = [...myTransactions].sort((a, b) => (txSeconds(a) ?? Number.MAX_SAFE_INTEGER) - (txSeconds(b) ?? Number.MAX_SAFE_INTEGER));
 
         sorted.forEach(t => {
             const cName = String(t.customerName || 'Unknown').trim();

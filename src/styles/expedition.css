@@ -194,8 +194,9 @@
 @media (hover: hover) and (pointer: fine) { .kx-c5:hover .art { transform: translateY(-3px); } }
 .kx-c5:active .art { transform: scale(.92); transition-duration: 80ms; }
 .kx-c5 svg.chest, .kx-c5 .kx-spr { position: absolute; left: 0; bottom: 0; width: 28px; height: 34px; }
-/* at rest: one cached picture each (src/utils/mapSprites.js SPRITE_CSS) */
-.kx-spr, .kx-sgn { background: center / 100% 100% no-repeat; }
+/* at rest: one cached picture each (src/utils/mapSprites.js SPRITE_CSS). Longhands ONLY: the `background:` shorthand
+   reset background-image, and when this file loaded after the injected pictures every chest went blank (2026-11-03) */
+.kx-spr, .kx-sgn { background-position: center; background-size: 100% 100%; background-repeat: no-repeat; }
 .kx-sgn { position: relative; display: block; width: 24px; height: 24px; }
 .kx-c5 .lidF, .kx-c5 .lidU { transform-box: fill-box; transform-origin: 50% 100%; }
 .kx-c5 .lidF { transform: translateY(3px); }

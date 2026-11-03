@@ -12805,5 +12805,43 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      /<button type="button" aria-pressed=\{lang === 'id'\} onClick=\{\(\) => setLang\('id'\)\}>Indonesia<\/button>/.test(sv));
 }
 
+/* JOURNEY CHESTS VANISHED (his 2026-11-03 "the map is buggy and didnt show the chest here"): mapSprites.js injects the
+   chest pictures as `.kx-spr-<state>{background-image}` at run time, and expedition.css said `.kx-spr { background: ... }`.
+   Same specificity, so whichever loads LAST wins - and the shorthand resets background-image to none. When another screen
+   (Day Replay) pulled mapSprites in before the Journey chunk's CSS arrived, every chest went blank; the red flags stayed,
+   having no shorthand on them. Lab proof: the picture rules moved above expedition.css -> background-image `none`. */
+{ const css = ['src/styles/expedition.css', 'src/styles/theme.css', 'src/index.css'].map(read).join('\n');
+  const rules = [...css.matchAll(/([^{}]*\.kx-(?:spr|sgn|free|req)\b[^{}]*)\{([^}]*)\}/g)];
+  const shorthand = rules.filter((r) => /(^|[;\s])background\s*:/.test(r[2])).map((r) => r[1].trim());
+  ok('REGRESSION: no CSS rule on a map picture (.kx-spr / .kx-sgn / .kx-free / .kx-req) uses the `background:` shorthand - it would erase the picture when it loads after mapSprites',
+     rules.length > 0 && !shorthand.length, 'shorthand on: ' + shorthand.join(' | '));
+  ok('the chest and sign boxes still stretch their picture: position center, size 100% 100%, no repeat',
+     /\.kx-spr, \.kx-sgn \{ background-position: center; background-size: 100% 100%; background-repeat: no-repeat; \}/.test(css));
+}
+
+/* THE SIDEBAR UTANG IGNORED A SAME-DAY PAYMENT (his 2026-11-03 sc2/sc3: Receivables Rp 1.050.000, the terminal's
+   "Sebelum masuk" Utang Rp 2.100.000). The FIFO engine sorted by `date`, which is only the DAY; the list arrives
+   newest-first, so a payment made the same day as its sale was processed first, found no debt and was thrown away.
+   Receivables sorts by the exact second. The engine itself is lifted out of the .jsx and run on his numbers. */
+{ const ms = read('src/MerchantSalesView.jsx');
+  const a = ms.indexOf('const custTrans = transactions.filter('), b = ms.indexOf('const activeDebts = debts.filter', a);
+  const { storeKey: sk } = await import('../utils/helpers.js');
+  const { debtCredit: dc } = await import('../utils/revenueRule.js');
+  const { txSeconds: ts } = await import('../utils/dayStats.js');
+  const engine = a > -1 && b > a ? new Function('transactions', 'customerName', 'storeKey', 'debtCredit', 'txSeconds',
+    ms.slice(a, b) + '\nreturn debts.reduce((s, d) => s + Math.max(0, d.remaining), 0);') : null;
+  const sale = { type: 'SALE', paymentType: 'Titip', customerName: 'HQ 2', total: 2100000, date: '2026-11-02', timestamp: { seconds: 1762081200 } };
+  const paid = { type: 'CONSIGNMENT_PAYMENT', customerName: 'HQ 2', amountPaid: 1050000, total: 1050000, date: '2026-11-02', timestamp: { seconds: 1762084800 } };
+  const owes = (list) => engine(list, 'HQ 2', sk, dc, ts);
+  ok('the sidebar debt engine was found in MerchantSalesView', !!engine);
+  ok('BEHAVIOUR: a payment made the same day as its sale counts - list newest-first (as Firestore sends it): owes Rp 1.050.000, not 2.100.000',
+     !!engine && owes([paid, sale]) === 1050000 && owes([sale, paid]) === 1050000, engine ? `got ${owes([paid, sale])}` : 'engine slice not found');
+  ok('BEHAVIOUR: a payment still waiting for its server time (timestamp null) was just written - it lands after the sale, not before',
+     !!engine && owes([{ ...paid, timestamp: null }, sale]) === 1050000);
+  ok('REGRESSION: no FIFO debt engine sorts by the day alone - the terminal sidebar and the Receivables aging panel both sort by txSeconds',
+     !/new Date\(a\.date\) - new Date\(b\.date\)/.test(ms + read('src/ConsignmentFinanceView.jsx')) &&
+     read('src/ConsignmentFinanceView.jsx').includes('const sorted = [...myTransactions].sort((a, b) => (txSeconds(a) ?? Number.MAX_SAFE_INTEGER) - (txSeconds(b) ?? Number.MAX_SAFE_INTEGER));'));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
