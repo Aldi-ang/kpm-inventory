@@ -191,6 +191,22 @@ export const hasClearance = (userRole, requiredFeature) => {
     return activePerms.includes(requiredFeature) || false;
 };
 
+/* WHICH MATRIX KEY OPENS EACH SIDEBAR TAB - BiohazardTheme's allMenuItems, and the same rule its filter applies (a check
+   keeps the two equal). The POV switch asks it, so putting a costume on or taking it off keeps the screen he is on when
+   the new chair may open it (his 2026-11-03), instead of always landing on the dashboard. */
+export const TAB_FEATURE = {
+    agent_profile: 'view_agent_profile', dashboard: 'view_dashboard', map_war_room: 'view_map', journey: 'view_journey',
+    fleet: 'view_fleet', inventory: 'view_master_vault', agent_inventory: 'view_agent_inventory', restock_vault: 'view_restock_vault',
+    sales: 'view_sales', receivables: 'view_receivables', eod: 'view_eod', stock_opname: 'view_stock_opname',
+    customers: 'view_customers', sampling: 'view_sampling', transactions: 'view_reports', audit: 'view_audit_logs', settings: 'view_settings'
+};
+export const canOpenTab = (role, tab) => {
+    if (tab === 'settings') return true;   // every tier (his 2026-11-02)
+    const f = TAB_FEATURE[tab];
+    if (f === 'view_reports') return ['view_reports_global', 'view_reports_regional', 'view_reports_personal'].some((p) => hasClearance(role, p));
+    return !!f && hasClearance(role, f);
+};
+
 /* STOCK COUNT: does this tier see the expected number WHILE counting?
    Aldi, 2026-08-20: "comparison healthy and found side by side is higher tier only on default,
    which is tier 3 and above only". His reason, the day before: "encourage them to really count

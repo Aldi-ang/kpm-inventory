@@ -18,7 +18,7 @@ import useTransactionEngine from './hooks/useTransactionEngine';
 import useDatabaseSync from './hooks/useDatabaseSync'; 
 import useOfflineEngine, { canReachInternet } from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
-import { injectDynamicPermissions, isFieldLevelTier, hasClearance, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion, canSetBundlePrice } from './config/permissions';
+import { injectDynamicPermissions, isFieldLevelTier, hasClearance, canOpenTab, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion, canSetBundlePrice } from './config/permissions';
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch, testAccountFor } from './config/povPreview';
 import { tr } from './config/lang';
 import { warehouseList } from './utils/supply';
@@ -3953,9 +3953,9 @@ const handleGitHubMirror = async () => {
           }
           setPov({ tier: account.tier, place: home });
           setShowPovSwitch(false);
-          /* Land where that tier actually lands. Staying on a tab the costume cannot
-             open would show him a locked screen and read as a broken feature. */
-          setActiveTab(hasClearance(account.tier, 'view_dashboard') ? 'dashboard' : 'journey');
+          /* Stay on the screen he is looking at when this tier may open it (his 2026-11-03); otherwise land where the
+             tier lands - a tab the costume cannot open would show a locked screen and read as a broken feature. */
+          setActiveTab((t) => (canOpenTab(account.tier, t) ? t : hasClearance(account.tier, 'view_dashboard') ? 'dashboard' : 'journey'));
           notify(`MELIHAT SEBAGAI ${worn}. Refresh untuk kembali ke owner.`);
       } catch (e) {
           notify(`GAGAL MASUK POV: ${e.message}`);
@@ -3966,7 +3966,7 @@ const handleGitHubMirror = async () => {
       const worn = previewing ? testAccountName(previewing) : null;
       setPov(null);
       setShowPovSwitch(false);
-      setActiveTab('dashboard');
+      setActiveTab((t) => (canOpenTab(trueRole, t) ? t : 'dashboard'));   // same screen if his own chair may open it
       notify(worn ? `KEMBALI KE OWNER. ${worn} dilepas.` : "KEMBALI KE OWNER.");
   };
   

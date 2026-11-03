@@ -12859,5 +12859,25 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      /const at = motorists\.find\(\(m\) => m\.id === testAccountFor\(pov\.tier\)\?\.id\)\?\.location;\s*if \(at && at !== pov\.place\) setPov\(\(p\) => p && \{ \.\.\.p, place: at \}\);/.test(app));
 }
 
+/* SWAPPING CHAIRS KEEPS THE SCREEN (his 2026-11-03: "if im swapping from test account to main account or vice versa, i
+   want the segment im looking at doesnt change as long as that test account have the access for that, if dont have the
+   access then back at their default segment panel"). Both the costume and the way back used to land on the dashboard. */
+{ const perms = await import('./permissions.js'), app = code(read('src/App.jsx'));
+  const { canOpenTab, TAB_FEATURE, CORPORATE_TIERS: T } = perms;
+  const theme = read('src/components/BiohazardTheme.jsx');
+  const menu = [...theme.matchAll(/\{ id: '(\w+)', label: '[^']+', feature: '(\w+)'/g)].map((x) => [x[1], x[2]]);
+  ok('the tab list the switch asks is the sidebar\'s own list - same 17 tabs, same matrix key each',
+     !!TAB_FEATURE && menu.length === 17 && menu.every(([id, f]) => TAB_FEATURE[id] === f) && Object.keys(TAB_FEATURE).length === 17);
+  ok('BEHAVIOUR: Settings opens for every tier, an unknown tab for none, the owner opens every tab',
+     typeof canOpenTab === 'function' && Object.values(T).every((r) => canOpenTab(r, 'settings')) && !canOpenTab(T.TIER_1, 'no_such_tab') &&
+     menu.every(([id]) => canOpenTab(T.TIER_1, id)));
+  ok('BEHAVIOUR: a tab is open to a tier exactly when the sidebar shows it (the Reports tab: any of the 3 report modes)',
+     typeof canOpenTab === 'function' && Object.values(T).every((r) => menu.every(([id, f]) => canOpenTab(r, id) === (id === 'settings' ? true
+       : f === 'view_reports' ? ['view_reports_global', 'view_reports_regional', 'view_reports_personal'].some((p) => perms.hasClearance(r, p)) : perms.hasClearance(r, f)))));
+  ok('wearing a costume keeps the tab when that tier may open it, else its own landing tab; taking it off keeps the tab when the owner may',
+     /setActiveTab\(\(t\) => \(canOpenTab\(account\.tier, t\) \? t : hasClearance\(account\.tier, 'view_dashboard'\) \? 'dashboard' : 'journey'\)\);/.test(app) &&
+     /setActiveTab\(\(t\) => \(canOpenTab\(trueRole, t\) \? t : 'dashboard'\)\);/.test(app));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
