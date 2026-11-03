@@ -4784,12 +4784,34 @@ html.light .kpm-led-line.crit, html.light .kpm-led-line.warn { color: var(--ink)
 .kpm-docket-seal { position: fixed; left: 50%; top: 40%; opacity: 0; pointer-events: none; padding: 10px 18px; border: 3px solid var(--gold); border-radius: 8px;
   font-family: var(--font-mono); font-size: 28px; font-weight: 900; letter-spacing: .3em; color: var(--accent-ink); font-style: normal;   /* gold never as text — the readable token */
   transform: translate(-50%, -50%) rotate(-8deg) scale(1.3); }
-.kpm-docket.sealing .kpm-docket-seal, .kpm-seal-stage .kpm-docket-seal { animation: kpmSeal 320ms 450ms cubic-bezier(.2, .8, .3, 1) both; }
+.kpm-docket.sealing .kpm-docket-seal { animation: kpmSeal 320ms 450ms cubic-bezier(.2, .8, .3, 1) both; }
+/* his #5 (2026-11-03, "snap my screen and gone right away"): over the player-card list the seal lands at 770 ms, HOLDS
+   1.5 s and fades by 2570; then the approved card folds shut (.kpm-fold) and the stage ends (EOD_SEAL_MS) */
+.kpm-seal-stage .kpm-docket-seal { animation: kpmSeal 320ms 450ms cubic-bezier(.2, .8, .3, 1) both, kpmSealOut 300ms 2270ms ease-in forwards; }
 /* the same scan + seal over the player-card list (the wrapper carries no transform, so the fixed children stay on the viewport) */
 .kpm-seal-stage { position: static; }
 @keyframes kpmSeal { from { opacity: 0; transform: translate(-50%, -50%) rotate(-8deg) scale(1.3); } to { opacity: 1; transform: translate(-50%, -50%) rotate(-8deg) scale(1); } }
+@keyframes kpmSealOut { to { opacity: 0; } }
+/* the approved card under the stamp keeps its place, then folds shut: grid rows 1fr -> 0fr animates the real height with
+   no measuring. The gap above it closes with it (space-y-3 = margin-top from the 2nd card on); a FIRST card pulls the next
+   one up by that gap instead, so nothing jumps when it unmounts. clip-path clips only while folding, the glows stay.
+   The grid child is a plain div (padding would floor the 0fr track), and `.kpm-arrive > ...` outranks the arrive
+   stagger's `:nth-child(n) { animation-delay }`, which otherwise ran a 2nd card's fold at 25 ms. */
+.kpm-fold, .kpm-arrive > .kpm-fold { display: grid; grid-template-rows: 1fr; animation: kpmFold 300ms 2570ms cubic-bezier(.4, 0, .2, 1) forwards; }
+.kpm-fold > * { min-height: 0; }
+.kpm-fold:first-child:not(:last-child) { animation-name: kpmFoldFirst; }
+@keyframes kpmFold { from { clip-path: inset(0); } to { clip-path: inset(0); grid-template-rows: 0fr; opacity: 0; margin-top: 0; } }
+@keyframes kpmFoldFirst { from { clip-path: inset(0); } to { clip-path: inset(0); grid-template-rows: 0fr; opacity: 0; margin-bottom: -.75rem; } }
+/* the night's LAST card folds into "No pending reports.": the box unfolds in the same 300 ms, so the height goes card ->
+   box in one glide and the box already sits where the empty list puts it */
+.kpm-unfold, .kpm-arrive > .kpm-unfold { display: grid; grid-template-rows: 0fr; overflow: hidden; animation: kpmUnfold 300ms 2570ms cubic-bezier(.4, 0, .2, 1) both; }
+.kpm-unfold > * { min-height: 0; }
+@keyframes kpmUnfold { from { grid-template-rows: 0fr; margin-top: 0; } to { grid-template-rows: 1fr; } }
+/* Lite Mode: no motion, but the stamp still holds for the stage and then goes (html.lite-mode * kills the keyframes) */
+html.lite-mode .kpm-seal-stage .kpm-docket-seal { opacity: 1; transform: translate(-50%, -50%) rotate(-8deg) scale(1); }
+html.lite-mode .kpm-unfold { display: none; }   /* never unfolds there, and its list gap nudged the page 12 px (sampled) */
 .kpm-docket.sealing { animation: kpmLeave 200ms 760ms cubic-bezier(.4, 0, .6, 1) both; }
-@media (prefers-reduced-motion: reduce) { .kpm-docket, .kpm-docket.sealing, .kpm-docket.sealing .kpm-docket-scan, .kpm-docket.sealing .kpm-docket-seal, .kpm-seal-stage .kpm-docket-scan, .kpm-seal-stage .kpm-docket-seal { animation-duration: 1ms; } }
+@media (prefers-reduced-motion: reduce) { .kpm-docket, .kpm-docket.sealing, .kpm-docket.sealing .kpm-docket-scan, .kpm-docket.sealing .kpm-docket-seal, .kpm-seal-stage .kpm-docket-scan, .kpm-seal-stage .kpm-docket-seal, .kpm-fold, .kpm-unfold, .kpm-arrive > .kpm-fold, .kpm-arrive > .kpm-unfold { animation-duration: 1ms; } }
 
 /* THE PLAYER CARD — one salesman's night in the boss's EOD review (components/PlayerCard.jsx; his "looks good for v2
    lets use that", 2026-09-20 05:35, from his second clip). The HEAD is the man as his Agent Profile draws him: the photo

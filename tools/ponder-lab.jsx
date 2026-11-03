@@ -969,6 +969,9 @@ function ShellLab() {
      so the shell can be looked at in both states without signing in. */
   const [lite, setLite] = React.useState(q.has('lite'));
   React.useEffect(() => { document.documentElement.classList.toggle('lite-mode', lite); }, [lite]);
+  /* ?shell&eod&admin&live (2026-11-03, his #5): an approve lands the way Firestore lands it, so the held card, the stamp
+     and the fold can be watched. Without &live the fixture reports stay, as before. */
+  const [liveEod, setLiveEod] = React.useState(() => labEodReports(LAB_TODAY));
   /* ?shell&agent&tick — every 2.5 s a second RETUR (5 pcs) joins and leaves today's transactions,
      so the Quarantine count rolls 10 → 15 → 10 and the odometer can be watched and sampled
      (`el.getAnimations()`) instead of described. Off unless asked for. */
@@ -1167,13 +1170,18 @@ function ShellLab() {
           agentCanvas={FIXTURES['motorists/m2'].activeCanvas}
           inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA]}
           transactions={[...LAB_AGENT_TXNS.map((t) => t.id === 'tx1' ? { ...t, items: [{ productId: 'p-cg16', qty: 12, unit: 'Bks', calculatedPrice: 89000 }, { productId: 'p-djar', qty: 5, unit: 'Bks', calculatedPrice: 156000 }] } : t.id === 'tx2' ? { ...t, items: [{ productId: 'p-cg16', qty: 8, unit: 'Bks', calculatedPrice: 80000 }] } : t), { id: 'tx5', agentId: 'm2', date: LAB_TODAY, type: 'SALE', total: 425000, paymentType: 'Transfer', customerName: 'Toko Berkah Jaya' }]}
-          samplings={[]} eodReports={q.has('admin') ? labEodReports(LAB_TODAY) : q.has('verified') ? labVerifiedTonight() : q.has('late') ? labEodReports(LAB_TODAY).filter((r) => r.id === 'e6') : []} appSettings={q.has('admin') ? { useCareerLedger: true } : {}}
+          samplings={[]} eodReports={q.has('admin') ? (q.has('live') ? liveEod : labEodReports(LAB_TODAY)) : q.has('verified') ? labVerifiedTonight() : q.has('late') ? labEodReports(LAB_TODAY).filter((r) => r.id === 'e6') : []} appSettings={q.has('admin') ? { useCareerLedger: true } : {}}
           user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
           onSubmitEOD={async (p) => { window.__eod = [...(window.__eod || []), p]; }}
           /* the boss's player card (shipped 2026-09-20): Budi's ledger puts him on Silver with a bar toward Gold; the
              route is the Journey Plan's fixture (one store closed today); a verify records the decision and answers
              true so the scan + seal play - the fixture report stays, the real app removes it when Firestore updates */
-          onVerifyEOD={async (r, d) => { window.__eodVerify = [...(window.__eodVerify || []), { id: r.id, ...d }]; return true; }} onResetEOD={async (r) => { window.__eodReset = [...(window.__eodReset || []), r.id]; }}
+          onVerifyEOD={async (r, d) => { window.__eodVerify = [...(window.__eodVerify || []), { id: r.id, ...d }];
+            if (q.has('live')) {   // &live: the report turns VERIFIED at once (the snapshot), the answer ~400 ms later (App.jsx awaits logAudit)
+              setLiveEod((rs) => rs.map((x) => x.id !== r.id ? x : { ...x, verified: { ...x.verified, ...Object.fromEntries((d.approve || []).map((p) => [p, true])) }, status: Object.keys(d.reject || {}).length ? x.status : 'VERIFIED' }));
+              await new Promise((res) => setTimeout(res, 400));
+            }
+            return true; }} onResetEOD={async (r) => { window.__eodReset = [...(window.__eodReset || []), r.id]; }}
           career={{ m2: { live: { collected: 124500000, daysVerified: 41, cleanCukaiDays: 30, storesServed: 300 }, joinDate: '2025-01-10' } }}
           customers={LAB_CUSTOMERS.map((c, i) => ({ ...c, assignedAgent: 'Budi Santoso', visitFreq: 7, lastVisit: i === 0 ? LAB_TODAY : '' }))}
         />

@@ -15,8 +15,8 @@ import { confirmAction, promptAction } from './ConfirmGate.jsx';
    the bounty when the count came up short), each with its own ✓ and ✕. ✓ marks a line for the plate;
    ✕ asks the reason through the dialog gate and sends that part back to him. APPROVE CHECKED hands
    `{ approve, reject }` per report to handleVerifyEOD, which credits only those parts; when the last
-   part is in, the parent plays the scan and the VERIFIED seal (onSealed) and the card leaves with
-   the report. A part already approved sits locked with its tick; a part sent back shows its reason
+   part is in, the parent holds the card in place from the confirm (onHold), plays the scan and the
+   VERIFIED seal (onSealed), and folds the card shut once the seal has gone (his #5, 2026-11-03). A part already approved sits locked with its tick; a part sent back shows its reason
    in red and offers ✓ again for the night he brings it right.
 
    The rank frame is the rank's own (or the frame he picked on his profile); `.sframe` needs
@@ -64,7 +64,7 @@ export const PlayerCardHead = ({ name, photo, currentTier, nextTier, progressPer
     </div>
 );
 
-const PlayerCard = ({ group, late = false, motorist, career, useCareerLedger = false, ranks, expMultiplier = 1, transactions = [], inventory = [], appSettings, closed, today, onApprove, onReset, onSealed }) => {
+const PlayerCard = ({ group, late = false, motorist, career, useCareerLedger = false, ranks, expMultiplier = 1, transactions = [], inventory = [], appSettings, closed, today, onApprove, onReset, onHold, onSealed }) => {
     const [open, setOpen] = useState(false);
     const [checked, setChecked] = useState({});   // `${reportId}:${part}` -> true
     const [returned, setReturned] = useState({}); // `${reportId}:${part}` -> reason
@@ -183,13 +183,15 @@ const PlayerCard = ({ group, late = false, motorist, career, useCareerLedger = f
         setBusy(true);
         try {
             if (!await confirmAction(eodNightMessage(items, inventory, tier))) return;
-            let allIn = pending.every(l => checked[l.key]);   // every open line of the night ticked → the seal
+            const hold = pending.every(l => checked[l.key]);   // every open line of the night ticked → the seal
+            let allIn = hold;
+            if (hold && onHold) onHold();   // the list keeps this card where it is - the snapshot drops it before the writes return
             for (const { report, decision } of items) {
                 const done = await onApprove(report, decision, { confirmed: true });
                 if (!done) allIn = false;
             }
             setChecked({}); setReturned({});
-            if (allIn && onSealed) onSealed();
+            if (hold && onSealed) onSealed(allIn);   // true: the stamp, then the fold; false: let go where it stands
         } finally { setBusy(false); }
     };
     /* the night only: a bounty payment is money for fines already owed, and has its own ✓ / ✕ (the history row keeps it

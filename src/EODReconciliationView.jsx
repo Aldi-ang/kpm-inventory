@@ -15,7 +15,7 @@ import { BORDER_KEYFRAMES, FrameFilters } from './config/rankBorders.jsx';
    The scan + VERIFIED seal (EOD_SEAL_MS) still play over the list when the last part of a night is approved — gradients
    and transforms only, the tokens carry both themes. The History Log stays folders. */
 const EOD_FOLDER = 'kpm-folder-quiet w-full bg-[var(--raised)] border-[var(--line-2)] hover:border-[var(--accent-edge)] transition-colors';
-const EOD_SEAL_MS = 900;
+const EOD_SEAL_MS = 2900;   // the seal lands by 770 ms, holds to 2270, fades by 2570; the card folds by 2870 (theme.css .kpm-fold)
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const HIST_LEVELS = [
     { Icon: MapPin, count: (n) => plural(Object.keys(n).length, 'salesman', 'salesmen') },
@@ -103,6 +103,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
     const [openDates, setOpenDates] = useState([]);
     const [sealing, setSealing] = useState(false);   // a night's last part approved: the scan runs, the seal stamps over the list
+    const [held, setHeld] = useState(null);           // his #5: { g, late, at, sealed } - the night being approved keeps its place
     const [histPath, setHistPath] = useState([]);    // the History Log drill: [place, salesman, month]
     const [expandedReports, setExpandedReports] = useState([]);
 
@@ -902,26 +903,46 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                         <h3 className="font-black text-[var(--ink)] uppercase tracking-widest flex items-center gap-2 mb-4"><AlertCircle className="text-[var(--accent-ink)]"/> Pending Verification ({pendingTonight.length})</h3>
                         {(() => {
                             /* the rank frames' CSS + the marble / violet filters, once for every card on the list */
-                            const seal = () => { if (sealing) return; setSealing(true); setTimeout(() => setSealing(false), EOD_SEAL_MS); };
+                            /* his #5 (2026-11-03): the night is held from the confirm - the snapshot drops it when the transaction
+                               commits, before the seal - its lines turn ✓ from the live reports, the stamp holds and fades, then it
+                               folds shut (.kpm-fold). A failed write lets it go where it stands. */
+                            const hold = (g, late) => setHeld({ g, late, at: (late ? pendingLate : pendingTonight).findIndex(x => x.key === g.key) });
+                            const drop = (g) => setHeld(h => h?.g.key === g.key ? null : h);
+                            const seal = (g, ok) => {
+                                if (!ok) return drop(g);
+                                setHeld(h => h?.g.key === g.key ? { ...h, sealed: true } : h);
+                                setSealing(true); setTimeout(() => { setSealing(false); drop(g); }, EOD_SEAL_MS);
+                            };
+                            const keep = (list, late) => {
+                                if (!held || held.late !== late) return list;
+                                const out = list.filter(x => x.key !== held.g.key);
+                                out.splice(Math.max(0, held.at), 0, { ...held.g, reports: held.g.reports.map(r => eodReports.find(x => x.id === r.id) || r) });
+                                return out;
+                            };
+                            const tonightList = keep(pendingTonight, false), lateList = keep(pendingLate, true);
+                            /* the night's LAST card folds into this box while it unfolds (.kpm-unfold), so nothing under the list jumps */
+                            const none = <div className="bg-black/20 border border-[var(--line)] p-8 rounded-2xl text-center text-[var(--ink-dim)] text-xs uppercase tracking-widest">No pending reports.</div>;
                             /* each card reads ITS night: that night's sales, route and date */
                             const cardOf = (g, late) => { const man = motorists.find((m) => m.id === g.agent); return (
-                                <PlayerCard key={g.key} group={g} late={late} motorist={man} career={career?.[g.agent]}
+                                <div key={g.key} className={held?.sealed && held.g.key === g.key ? 'kpm-fold' : undefined}><div>
+                                <PlayerCard group={g} late={late} motorist={man} career={career?.[g.agent]}
                                     useCareerLedger={!!appSettings?.useCareerLedger} ranks={ranks} transactions={transactions} inventory={inventory} appSettings={appSettings}
                                     closed={dayTargets(customers, man?.name || g.agentName, g.night)} today={g.night}
-                                    onApprove={onVerifyEOD} onReset={onResetEOD} onSealed={seal} />
+                                    onApprove={onVerifyEOD} onReset={onResetEOD} onHold={() => hold(g, late)} onSealed={(ok) => seal(g, ok)} />
+                                </div></div>
                             ); };
                             return (
                                 <>
                                     <style>{BORDER_KEYFRAMES}</style>
                                     <FrameFilters />
-                                    {pendingTonight.length === 0
-                                        ? <div className="bg-black/20 border border-[var(--line)] p-8 rounded-2xl text-center text-[var(--ink-dim)] text-xs uppercase tracking-widest">No pending reports.</div>
-                                        : <div className="space-y-3 kpm-arrive">{pendingTonight.map(g => cardOf(g, false))}</div>}
+                                    {tonightList.length === 0
+                                        ? none
+                                        : <div className="space-y-3 kpm-arrive">{tonightList.map(g => cardOf(g, false))}{held?.sealed && !held.late && !pendingTonight.length && <div className="kpm-unfold"><div>{none}</div></div>}</div>}
                                     {/* LATE EOD - his "make special panel for late EOD": an earlier night still waiting, apart from tonight */}
-                                    {pendingLate.length > 0 && (
+                                    {lateList.length > 0 && (
                                         <section aria-label="Late EOD" className="mt-8 rounded-2xl border border-[var(--danger)] bg-[var(--danger-well)] p-3 md:p-4">
                                             <h3 className="font-black text-[var(--danger-ink)] uppercase tracking-widest flex items-center gap-2 mb-3"><Clock size={18}/> Late EOD ({pendingLate.length})</h3>
-                                            <div className="space-y-3">{pendingLate.map(g => cardOf(g, true))}</div>
+                                            <div className="space-y-3">{lateList.map(g => cardOf(g, true))}</div>
                                         </section>
                                     )}
                                 </>

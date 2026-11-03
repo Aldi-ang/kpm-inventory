@@ -1708,7 +1708,7 @@ ok('and no raw red - the short-count branch uses the measured red plate',
 /* 2026-09-20 later: the docket became the PLAYER CARD; the one plate is APPROVE CHECKED on the card, gold for a normal
    night, the measured red plate when a short line is checked or the plate only sends things back. */
 ok('the normal night is the gold plate on the card (one plate for every report the salesman sent)',
-   /'bg-\[var\(--gold\)\] border-\[var\(--accent-edge\)\] text-\[var\(--gold-ink\)\]'/.test(read('src/components/PlayerCard.jsx')) && /const seal = \(\) => \{ if \(sealing\) return; setSealing\(true\);/.test(eod));
+   /'bg-\[var\(--gold\)\] border-\[var\(--accent-edge\)\] text-\[var\(--gold-ink\)\]'/.test(read('src/components/PlayerCard.jsx')) && /const seal = \(g, ok\) => \{/.test(eod));   // the seal knows its night since #5 (2026-11-03)
 ok('the cukai night verifies on the same plate — one panel per person, no second key',
    !/'bg-\[var\(--raised\)\] border-\[var\(--amber\)\] text-\[var\(--amber\)\]'/.test(eod));
 ok('a short count still gets the red plate, because that one is meant to stop him',
@@ -8084,14 +8084,35 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   ok('EOD review: one PlayerCard per salesman replaces the folders + docket; the frames\' CSS and filters are mounted once for the list; the scan + seal play over the list',
      /import PlayerCard from '\.\/components\/PlayerCard\.jsx';/.test(ev) && /import \{ BORDER_KEYFRAMES, FrameFilters \} from '\.\/config\/rankBorders\.jsx';/.test(ev) &&
      /groupPendingEOD\(pendingReports, getLocalDayKey\(\)\)/.test(ev) &&   // one card per salesman per NIGHT since 2026-09-26
-     /<PlayerCard key=\{g\.key\} group=\{g\} late=\{late\} motorist=\{man\} career=\{career\?\.\[g\.agent\]\}/.test(ev) &&
+     /<PlayerCard group=\{g\} late=\{late\} motorist=\{man\} career=\{career\?\.\[g\.agent\]\}/.test(ev) &&   // the key moved to its fold wrapper (#5)
      /closed=\{dayTargets\(customers, man\?\.name \|\| g\.agentName, g\.night\)\} today=\{g\.night\}/.test(ev) &&
-     /onApprove=\{onVerifyEOD\} onReset=\{onResetEOD\} onSealed=\{seal\} \/>/.test(ev) &&
+     /onApprove=\{onVerifyEOD\} onReset=\{onResetEOD\} onHold=\{\(\) => hold\(g, late\)\} onSealed=\{\(ok\) => seal\(g, ok\)\} \/>/.test(ev) &&
      /<style>\{BORDER_KEYFRAMES\}<\/style>\r?\n\s+<FrameFilters \/>/.test(ev) &&
      /<div className="kpm-seal-stage" aria-hidden="true">\r?\n\s+<i className="kpm-docket-scan"><\/i>\r?\n\s+<i className="kpm-docket-seal">VERIFIED<\/i>/.test(ev) &&
      !/setDocket\(/.test(code(ev)) && !/const reportSection = /.test(code(ev)) && !/const MoneyLine = /.test(code(ev)) && !/onOpen=\{\(\) => setDocket/.test(code(ev)) &&
      /\.kpm-seal-stage \.kpm-docket-scan \{ animation: kpmScan 500ms/.test(th) && /\.kpm-seal-stage \.kpm-docket-seal \{ animation: kpmSeal 320ms 450ms/.test(th),
      'the docket and its sections are gone with the decision');
+  /* his #5 (2026-11-03, the stamp "snap my screen and gone right away"): the stage lived 900 ms and the seal landed at
+     770, so it showed ~130 ms and was unmounted with no exit; and the approved card left the list before the stamp even
+     began - the snapshot drops it when the transaction commits, the seal waited for logAudit after it. Now the card is
+     held from the confirm, the seal holds and fades, and only then the card folds shut. */
+  { const nums = (re) => (th.match(re) || []).slice(1).map(Number);
+    const [inDur, inDelay, outDur, outDelay] = nums(/\.kpm-seal-stage \.kpm-docket-seal \{ animation: kpmSeal (\d+)ms (\d+)ms [^;]*?, kpmSealOut (\d+)ms (\d+)ms/);
+    /* `.kpm-arrive > .x` on purpose: the arrive stagger's :nth-child delay outranked a bare `.kpm-fold` (sampled: a 25 ms unfold) */
+    const [foldDur, foldDelay] = nums(/\.kpm-fold, \.kpm-arrive > \.kpm-fold \{[^}]*animation: kpmFold (\d+)ms (\d+)ms/);
+    const [unDur, unDelay] = nums(/\.kpm-unfold, \.kpm-arrive > \.kpm-unfold \{[^}]*animation: kpmUnfold (\d+)ms (\d+)ms/);
+    ok('EOD stamp (#5): the night\'s last card folds INTO "No pending reports." - the box unfolds on the same clock, so nothing below jumps',
+       unDur === foldDur && unDelay === foldDelay && /held\?\.sealed && !held\.late && !pendingTonight\.length && <div className="kpm-unfold"><div>\{none\}<\/div><\/div>/.test(ev),
+       `fold ${foldDelay}+${foldDur}, unfold ${unDelay}+${unDur}`);
+    const stage = Number((ev.match(/const EOD_SEAL_MS = (\d+);/) || [])[1]), landed = inDelay + inDur;
+    ok('EOD stamp (#5): the seal holds >= 1.2 s after it lands, then fades; the card folds only after the fade; the stage ends with the fold',
+       outDelay - landed >= 1200 && outDur >= 200 && foldDelay >= outDelay + outDur && stage >= foldDelay + foldDur && stage - (foldDelay + foldDur) < 200,
+       `landed ${landed} ms, fade at ${outDelay}, fold ${foldDelay}+${foldDur}, stage ${stage}`);
+    ok('EOD stamp (#5): the card is held in place BEFORE the writes and let go by onSealed (never the old 900 ms stage); Lite keeps the stamp, still',
+       /const hold = pending\.every\(l => checked\[l\.key\]\);[\s\S]{0,260}if \(hold && onHold\) onHold\(\);[\s\S]{0,200}for \(const \{ report, decision \} of items\)/.test(pc) &&
+       /if \(hold && onSealed\) onSealed\(allIn\);/.test(pc) && !/const EOD_SEAL_MS = 900;/.test(ev) &&
+       /onHold=\{\(\) => hold\(g, late\)\} onSealed=\{\(ok\) => seal\(g, ok\)\}/.test(ev) &&
+       /html\.lite-mode \.kpm-seal-stage \.kpm-docket-seal \{ opacity: 1;/.test(th)); }
   ok('PlayerCard: the head is the man as his profile draws him - the photo in the rank frame, rank + title, XP with tonight\'s plus, the bar to the next rank, CLOSED ?/?, the diode',
      /<RankBorder styleId=\{frame\} \/>/.test(pc) && /const frame = motorist\?\.borderStyle \|\| currentTier\.borderStyle \|\| 'classic';/.test(pc) &&
      /const \{ currentTier, nextTier, progressPercent \} = rankLadder\(xp, ranks\);/.test(pc) &&
@@ -8104,8 +8125,8 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /const parts = eodReportParts\(report, inventory, tier\);/.test(pc) && /PART_ORDER\.filter\(p => parts\.includes\(p\)\)\.forEach\(part => \{/.test(pc) &&
      /const why = await promptAction\(`Why is the \$\{line\.label\.toLowerCase\(\)\} going back to \$\{group\.agentName\}\?`, line\.why \|\| ''\);/.test(pc) &&
      /approve: own\.filter\(l => checked\[l\.key\]\)\.map\(l => l\.part\),/.test(pc) && /reject: Object\.fromEntries\(own\.filter\(l => returned\[l\.key\]\)\.map\(l => \[l\.part, returned\[l\.key\]\]\)\)/.test(pc) &&
-     /const done = await onApprove\(report, decision, \{ confirmed: true \}\);/.test(pc) && /if \(allIn && onSealed\) onSealed\(\);/.test(pc) &&
-     /let allIn = pending\.every\(l => checked\[l\.key\]\);/.test(pc) && /for \(const r of night\) await onReset\(r, \{ confirmed: true \}\);/.test(pc) &&   // the night only, never a bounty payment (2026-09-26)
+     /const done = await onApprove\(report, decision, \{ confirmed: true \}\);/.test(pc) && /if \(hold && onSealed\) onSealed\(allIn\);/.test(pc) &&
+     /let allIn = hold;/.test(pc) && /for \(const r of night\) await onReset\(r, \{ confirmed: true \}\);/.test(pc) &&   // the night only, never a bounty payment (2026-09-26)
      /const night = all\.filter\(r => r\.reportType !== 'BOUNTY'\);/.test(ev) && /for \(const r of row\.reports\) await onResetEOD\(r, \{ confirmed: true \}\);/.test(ev) &&
      /const handleResetEOD = async \(report, opts\) => \{/.test(app) && !/'EOD Cash\/Stock'/.test(code(ev)) &&
      /done: eodPartApproved\(report, part\), why: report\.rejected\?\.\[part\] \|\| ''/.test(pc) &&
@@ -8843,7 +8864,7 @@ section('THE AGENT\'S EOD: BACK A STEP, AND A DRAFT THAT SURVIVES LEAVING THE SC
 section('THE BOSS\'S EOD LIST: ONE CARD PER NIGHT, LATE NIGHTS APART, THE BOUNTY PAYBACK ITS OWN THING (2026-09-26)');
 { const eodv = code(read('src/EODReconciliationView.jsx')), card = code(read('src/components/PlayerCard.jsx'));
   ok('the list is grouped per salesman AND per night by one helper; tonight\'s cards and a LATE EOD panel',
-     /groupPendingEOD\(pendingReports, getLocalDayKey\(\)\)/.test(eodv) && /pendingLate\.length > 0 && \(/.test(eodv) && /Late EOD \(\{pendingLate\.length\}\)/.test(eodv) &&
+     /groupPendingEOD\(pendingReports, getLocalDayKey\(\)\)/.test(eodv) && /const tonightList = keep\(pendingTonight, false\), lateList = keep\(pendingLate, true\);/.test(eodv) && /lateList\.length > 0 && \(/.test(eodv) && /Late EOD \(\{pendingLate\.length\}\)/.test(eodv) &&
      !/const pendingByAgent/.test(eodv));
   ok('REGRESSION: a bounty payment never lights "short count" and is never revenue', !/r\.reportType === 'BOUNTY'\) g\.disputed = true/.test(eodv + read('src/utils/helpers.js')));
   ok('a card knows its salesman and its night: the sales, the route and the date are that night\'s',
