@@ -24,6 +24,7 @@
    immediately instead of waiting for something that is not playing. */
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { tr } from '../config/lang';
 import { X, ChevronLeft, ChevronRight, Lock,
          LayoutGrid, Map, Route, Truck, Package, Boxes, PackagePlus, Store, Receipt,
          Wallet, ClipboardList, Users, Gift, BarChart3, ScrollText, Settings, User } from 'lucide-react';
@@ -359,7 +360,7 @@ export default function PonderBookButton({ activeTab }) {
               <BookGlyph />
             </span>
           )}
-        <span className="hidden xl:inline font-mono text-[10px] uppercase tracking-widest">Tutorial</span>
+        <span className="hidden xl:inline font-mono text-[10px] uppercase tracking-widest">{tr('Tutorial')}</span>
       </button>
 
       {phone && padOpen && (
@@ -1259,7 +1260,7 @@ function Library({ anchorRef, initialSection, onClose, onPick, closeOnMount = fa
                     <Icon name={section.icon} size={28} style={{ color: '#C98A2E' }} />
                   </span>
                   <span className="font-display text-[15px] font-black uppercase tracking-[0.34em]"
-                        style={{ color: '#BFB29A' }}>Tutorial</span>
+                        style={{ color: '#BFB29A' }}>{tr('Tutorial')}</span>
                   <span className="h-[3px] w-10 rounded-full bg-orange" />
                 </div>
               </div>

@@ -20,6 +20,7 @@ import useOfflineEngine, { canReachInternet } from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
 import { injectDynamicPermissions, isFieldLevelTier, hasClearance, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion, canSetBundlePrice } from './config/permissions';
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch } from './config/povPreview';
+import { tr } from './config/lang';
 import { warehouseList } from './utils/supply';
 import { accessFor } from './utils/customerAccess.js';
 import { tallySaleOp, statsPath } from './utils/salesRollupWrite';
@@ -4570,7 +4571,7 @@ const handleGitHubMirror = async () => {
                    offline is news. .kpm-chip is the shared header plate. */
                 <button onClick={() => setShowFlightRecorder(true)} className={`kpm-chip relative ${isOnline ? '' : 'warn animate-pulse'}`}>
                     {isOnline ? <Cloud size={16} /> : <CloudOff size={16} />}
-                    <span className="text-[10px] font-black tracking-widest hidden md:inline">{isOnline ? 'SYNCED' : 'OFFLINE'}</span>
+                    <span className="text-[10px] font-black tracking-widest hidden md:inline">{isOnline ? tr('SYNCED') : 'OFFLINE'}</span>
                     {(pendingCount.transactions > 0 || pendingCount.noo > 0) && (
                         <span className="absolute -top-2 -right-2 bg-orange-500 text-[var(--duke-on-fill)] text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)]">{pendingCount.transactions + pendingCount.noo}</span>
                     )}

@@ -59,6 +59,12 @@ const FAILURE_STRIPS = [
     '"Sampoerna Mild" was NOT saved. Missing or insufficient permissions.',
     'Could not save this product. boom',
     'Stock belum masuk ke server.',
+    /* the Sales Terminal in Indonesian (round 1b, 2026-11-03): each one is red in English, so it stays red here */
+    'STOK DI MOBIL KURANG!\n\nHanya ada 12 unit Cello Green 16.',
+    'STOK KURANG!\n\nDi mobil hanya ada 12 unit Cello Green 16.',
+    'Kantor menolak permintaan izin jarak.',
+    'Kunjungan ke Toko Berkah Jaya TIDAK tersimpan: jaringan bermasalah',
+    'STOK HQ KURANG!\n\nKurang 4 Bks Cello Green 16. Ubah jumlah kirimnya dulu.',
 ];
 
 /* Good news — never painted as a failure. */
@@ -78,6 +84,9 @@ const SUCCESSES = [
        the packing — reporting only the packing is what made him think the app had confirmed
        something he had not touched. */
     'Sampoerna Mild saved.\nStock 1000 Bks · 1 Karton = 800 Bks · 1 Bal = 200 Bks.',
+    /* a restored draft is news in English, so "belum selesai" (unfinished) must not paint it red */
+    'Pesanan yang belum selesai dikembalikan — 3 barang untuk Toko Berkah Jaya. Kosongkan pesanan untuk membuangnya.',
+    'Kunjungan tersimpan: Toko Berkah Jaya - Cek Rutin',
 ];
 
 let pass = 0;

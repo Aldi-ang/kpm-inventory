@@ -11,7 +11,7 @@
 
    Both languages, because the messages are written in both. */
 
-const FAILURE = /\b(fail|fails|failed|failure|error|denied|invalid|cannot|can't|couldn't|unable|insufficient|unauthori[sz]ed|revoked|suspended|expired|rejected|incorrect|wrong|missing|gagal|ditolak|kadaluarsa|salah|habis)\b|\bcould not\b|\bnot (enough|found|allowed)\b|\bnot\s+(?:been\s+)?\w+ed\b|\bbelum\b|\btidak (bisa|cukup|ditemukan)\b|⚠|❌/i;
+const FAILURE = /\b(fail|fails|failed|failure|error|denied|invalid|cannot|can't|couldn't|unable|insufficient|unauthori[sz]ed|revoked|suspended|expired|rejected|incorrect|wrong|missing|gagal|ditolak|kadaluarsa|salah|habis|kurang|menolak)\b|\bcould not\b|\bnot (enough|found|allowed)\b|\bnot\s+(?:been\s+)?\w+ed\b|\bbelum\b(?!\s+selesai\b)|\btidak (bisa|cukup|ditemukan|tersimpan)\b|⚠|❌/i;
 
 /* "Is this a failure?" — only a recognised one counts. Three readers:
    - App.jsx triggerCapy: his pick A (2026-10-02) - a failure goes to the top panel ONLY, the

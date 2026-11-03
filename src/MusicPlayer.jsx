@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { tr } from './config/lang';
 import { Music, Play, Pause, SkipForward, SkipBack, Volume2, List, Repeat, Shuffle, ChevronDown, ChevronUp, X } from 'lucide-react';
 
 // --- DYNAMIC MUSIC LOADING ---
@@ -129,7 +130,7 @@ const MusicPlayer = ({ onOpen }) => {
                 <Music size={21} className={`kpm-music-note text-[#ff9d00] shrink-0 transition-transform duration-300 ${isPlaying ? 'animate-pulse' : ''} ${isExpanded ? 'scale-[1.22]' : ''}`} />
                 {/* the same label plate every other mark gets on a desk — his video asks for the
                     music button to be one of them, which means it says its name like one too */}
-                <span className="kpm-rail-word">Music</span>
+                <span className="kpm-rail-word">{tr('Music')}</span>
             </div>
 
             {/* THE PILL — his call, replacing the panel that hung off the side of the rail:

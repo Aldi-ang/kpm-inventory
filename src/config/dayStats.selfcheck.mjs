@@ -66,10 +66,11 @@ assert.equal(txSeconds({}), null);
 assert.equal(dayStats([{ timestamp: null, total: 999 }], NOW).today, 0);
 
 /* 7. elapsed time reads as elapsed time */
-assert.equal(agoLabel(Math.floor(NOW.getTime() / 1000) - 30, NOW), 'just now');
-assert.equal(agoLabel(Math.floor(NOW.getTime() / 1000) - 18 * 60, NOW), '18 min ago');
-assert.equal(agoLabel(Math.floor(NOW.getTime() / 1000) - 60 * 60, NOW), '1 hour ago');
-assert.equal(agoLabel(Math.floor(NOW.getTime() / 1000) - 3 * 3600, NOW), '3 hours ago');
+/* node has no localStorage, so lang.js reads it as a phone that never chose: Indonesian (round 1b, 2026-11-03) */
+assert.equal(agoLabel(Math.floor(NOW.getTime() / 1000) - 30, NOW), 'baru saja');
+assert.equal(agoLabel(Math.floor(NOW.getTime() / 1000) - 18 * 60, NOW), '18 menit lalu');
+assert.equal(agoLabel(Math.floor(NOW.getTime() / 1000) - 60 * 60, NOW), '1 jam lalu');
+assert.equal(agoLabel(Math.floor(NOW.getTime() / 1000) - 3 * 3600, NOW), '3 jam lalu');
 assert.equal(agoLabel(null), '');
 
 console.log('day-stats self-check: 7/7 pass');

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { tr } from './config/lang';
+import { tr, getLang } from './config/lang';
 import { createPortal } from 'react-dom';
 import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check, Eye } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
@@ -141,6 +141,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     // where the given pieces come from: the boss on the Master Vault gives from its own promo stock (his 2026-10-27
     // "can u add so that tier 1 can give the item straight from the master vault?"), everyone else from a van
     const giveFrom = userRole === 'ADMIN' && adminSalesMode !== 'VEHICLE' ? 'the Master Vault' : 'the van';
+    const giveWhere = giveFrom === 'the van' ? tr('in the van') : tr('in the Master Vault');   // shown; giveFrom stays the compared value
     // what the give box says when nothing can be given - it is never hidden (his 2026-10-27 "yes add that line and dont hide the button")
     const giveEmpty = isReturMode ? 'No promo goods with a retur. Give them on a new deal.'
         : giveFrom === 'the Master Vault' ? 'No promo goods in the Master Vault. Restock them in Restock Vault.'
@@ -341,7 +342,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 try {
                     localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...body, txProofPhoto: null,
                         nooForm: { ...nooForm, photoUrl: null } }));
-                    notify("Basket saved, but the proof photo was too big to keep. Take it again before you deal.");
+                    notify(tr('Basket saved, but the proof photo was too big to keep. Take it again before you deal.'));
                 } catch { /* nothing left to try; the basket is still on screen, just not saved */ }
             }
         }, 400);
@@ -354,7 +355,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     useEffect(() => {
         if (!draft) return;
         const n = draft.cart?.length || 0;
-        notify(`Draft restored — ${n} item${n === 1 ? '' : 's'}${draft.customerName ? ` for ${draft.customerName}` : ''}. Empty the cart to discard it.`);
+        const fill = { n, s: n === 1 ? '' : 's', shop: draft.customerName };
+        notify(draft.customerName ? tr('Draft restored — {n} item{s} for {shop}. Empty the cart to discard it.', fill)
+            : tr('Draft restored — {n} item{s}. Empty the cart to discard it.', fill));
     }, []);
 
     const handleTxPhotoCapture = (e) => {
@@ -806,17 +809,17 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     // the tier a NEW cart line starts at - a ware tap and a bundle share it, so the two can never price a pack differently
     const newLineTier = () => lockedTier || (allowedTiers.includes('Retail') ? 'Retail' : (allowedTiers.find(t => t !== 'Grosir') || 'Retail'));
     const addToCart = (product) => {
-        if (!isReturMode && product.stock <= 0) return notify(`OUT OF STOCK IN VEHICLE!\n\nYou cannot sell ${product.name} because you don't have any in your car.`);
+        if (!isReturMode && product.stock <= 0) return notify(`${tr('OUT OF STOCK IN VEHICLE!')}\n\n${tr("You cannot sell {name} because you don't have any in your car.", { name: product.name })}`);
 
         setCart(prev => {
             const existing = prev.find(i => i.productId === product.id);
             if (existing?.bundlePriced) {   // one more pack on a bundle line would go out at the bundle price
-                notify(`${product.name} is in the cart at a bundle price - tap the bundle again for another, or save this deal first.`);
+                notify(tr('{name} is in the cart at a bundle price - tap the bundle again for another, or save this deal first.', { name: product.name }));
                 return prev;
             }
             if (existing) {
                 if (!isReturMode && existing.qty >= product.stock) {
-                    notify(`MAX STOCK REACHED!\n\nYou only have ${product.stock} units of ${product.name} in your vehicle.`);
+                    notify(`${tr('MAX STOCK REACHED!')}\n\n${tr('You only have {n} units of {name} in your vehicle.', { n: product.stock, name: product.name })}`);
                     return prev;
                 }
                 triggerMerchantSpeak((product.priceEcer || 0) > 100000 ? 'expensive' : 'add');
@@ -845,12 +848,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
        summed in Bks. */
     const tierPrice = (p, tier) => ({ Ecer: p.priceEcer, Grosir: p.priceGrosir }[tier] ?? p.priceRetail) || 0;
     const applyBundle = (b) => {
-        if (isReturMode) return notify(`${b.name} is for a sale - switch Retur off first.`);
+        if (isReturMode) return notify(tr('{bundle} is for a sale - switch Retur off first.', { bundle: b.name }));
         const chk = bundleCheck(b, inventory, promoVan, cart, give);
         if (!chk.ok) return notify(chk.why);
         // an Utang Barang line is priced Rp 0 - summing a bundle into it would hand the bundle's packs out free
         const owed = cart.find(i => i.isIouFulfillment && chk.lines.some(l => l.product.id === i.productId));
-        if (owed) return notify(`${owed.name} is in the cart as Utang Barang - save that deal first, then add ${b.name}.`);
+        if (owed) return notify(tr('{name} is in the cart as Utang Barang - save that deal first, then add {bundle}.', { name: owed.name, bundle: b.name }));
         const tier = newLineTier();
         /* A BUNDLE PRICE (set by T1-T3, matrix key set_bundle_price): its cigarettes go in at that price, spread over the
            lines by bundleUnitPrices, on lines marked `bundlePriced` that a tier change, a +1 or a qty edit leave alone.
@@ -860,8 +863,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         const clash = chk.lines.find(l => { const i = cart.find(c => c.productId === l.product.id);
             return i && (priced ? !(i.bundlePriced === b.id && i.unit === l.unit) : i.bundlePriced); });
         if (clash) return notify(priced
-            ? `${clash.product.name} is already in the cart at another price - save that deal first, then add ${b.name}.`
-            : `${clash.product.name} is in the cart at a bundle price - save that deal first, then add ${b.name}.`);
+            ? tr('{name} is already in the cart at another price - save that deal first, then add {bundle}.', { name: clash.product.name, bundle: b.name })
+            : tr('{name} is in the cart at a bundle price - save that deal first, then add {bundle}.', { name: clash.product.name, bundle: b.name }));
         const unitPrices = priced ? bundleUnitPrices(Number(b.price), chk.lines.map(l => ({ qty: l.qty, value: tierPrice(l.product, tier) * l.bks }))) : [];
         setCart(prev => chk.lines.reduce((list, l, n) => {
             const have = list.find(i => i.productId === l.product.id);
@@ -914,7 +917,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const updateCartItem = (id, field, val) => {
         const priced = cart.find(i => i.productId === id && i.bundlePriced);
         if (priced && ['qty', 'unit', 'priceTier'].includes(field)) {
-            return notify(`${priced.name} is at a bundle price - tap the bundle again for another, or remove the line.`);
+            return notify(tr('{name} is at a bundle price - tap the bundle again for another, or remove the line.', { name: priced.name }));
         }
         setCart(prev => prev.map(item => {
             if (item.productId === id) {
@@ -923,7 +926,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 if (field === 'qty' && (!isReturMode || (isReturMode && returType === 'EXCHANGE' && item.fulfillment === 'NOW'))) {
                     const maxStock = item.product.stock || 0;
                     if (val > maxStock) {
-                        notify(`INSUFFICIENT VEHICLE STOCK!\n\nYou only have ${maxStock} units of ${item.name} available.`);
+                        notify(`${tr('INSUFFICIENT VEHICLE STOCK!')}\n\n${tr('You only have {n} units of {name} available.', { n: maxStock, name: item.name })}`);
                         finalVal = maxStock;
                     }
                 }
@@ -955,8 +958,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     // 🚀 THE IOU TEAMWORK ENGINE
     const handleFulfillIOU = (iou) => {
         const product = inventory.find(p => p.id === iou.productId);
-        if (!product) return notify("Product no longer exists in inventory!");
-        if (product.stock < iou.qty) return notify("You don't have enough healthy stock in your vehicle to settle this Utang Barang!");
+        if (!product) return notify(tr('Product no longer exists in inventory!'));
+        if (product.stock < iou.qty) return notify(tr("You don't have enough healthy stock in your vehicle to settle this Utang Barang!"));
 
         setCart(prev => [...prev, {
             productId: product.id, name: product.name, qty: iou.qty, unit: iou.unit,
@@ -1024,7 +1027,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 if (triggerCapy) triggerCapy("HQ Approved! Geofence widened to 100m. 🟢");
                                 unsub();
                             } else if (data.status === 'REJECTED') {
-                                setBypassState({ status: 'rejected', id: null, photo: null }); notify("HQ Rejected your Bypass Request."); unsub();
+                                setBypassState({ status: 'rejected', id: null, photo: null }); notify(tr('HQ Rejected your Bypass Request.')); unsub();
                             }
                         }
                     }, (err) => {
@@ -1032,9 +1035,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         // "Awaiting approval..." forever with no explanation.
                         console.warn("GPS bypass approval listener:", err.code);
                         setBypassState({ status: 'idle', id: null, photo: null });
-                        notify("Could not check bypass approval status. Please try again.");
+                        notify(tr('Could not check bypass approval status. Please try again.'));
                     });
-                } catch (err) { notify(`Failed to submit bypass request: ${err.message || "Network Error"}`); setBypassState({ status: 'idle', id: null, photo: null }); }
+                } catch (err) { notify(tr('Failed to submit bypass request: {error}', { error: err.message || tr('Network Error') })); setBypassState({ status: 'idle', id: null, photo: null }); }
             };
             img.src = event.target.result;
         };
@@ -1042,10 +1045,10 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     };
 
     const validateNoo = () => {
-        if (!nooForm.phone || !nooForm.photoUrl) return notify("Phone number and Photo are required to register a new outlet!");
+        if (!nooForm.phone || !nooForm.photoUrl) return notify(tr('Phone number and Photo are required to register a new outlet!'));
         // the receipt goes to this number on WhatsApp - a number WhatsApp cannot open is not saved (his 2026-10-20 "a must")
-        if (!waNumber(nooForm.phone)) return notify(`"${nooForm.phone}" is not a WhatsApp number. Type the owner's mobile number, for example 0812 3456 7890.`);
-        if (customers.find(c => c.name.toLowerCase().trim() === customerName.toLowerCase().trim())) return notify("DUPLICATE DETECTED!\n\nA store with this name is already in the database.");
+        if (!waNumber(nooForm.phone)) return notify(tr('"{phone}" is not a WhatsApp number. Type the owner\'s mobile number, for example 0812 3456 7890.', { phone: nooForm.phone }));
+        if (customers.find(c => c.name.toLowerCase().trim() === customerName.toLowerCase().trim())) return notify(`${tr('DUPLICATE DETECTED!')}\n\n${tr('A store with this name is already in the database.')}`);
         
         let tooClose = null; let tooCloseDistance = Infinity;
         if (agentLocation) {
@@ -1073,7 +1076,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     /* rings the admins' bell for a held Grosir; the shop is already saved, so a failed bell says so and is not a failed save */
     const askGrosir = (shopName, ownerId) =>
         addDoc(collection(db, `artifacts/${appId}/users/${ownerId}/notifications`), { ...grosirRequestNotice(myName || 'A salesman', shopName), timestamp: serverTimestamp() })
-            .catch(() => notify(`${shopName} is saved, but the admin's bell could not be rung. Tell your admin to look at Grosir requests in Customer Directory.`));
+            .catch(() => notify(tr("{shop} is saved, but the admin's bell could not be rung. Tell your admin to look at Grosir requests in Customer Directory.", { shop: shopName })));
 
     /* the shop photo as a Storage file when the switch is on (fix A, his 2026-10-27 "use option A to minimize the cost"):
        every phone downloads every shop record on every open, so a photo inside one is paid for on every open. Online
@@ -1106,7 +1109,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                covering it. Safe because the wares column says who he is selling to, and the tab
                carries the manifest's count. */
             setManifestOpen(false);
-        } catch (e) { notify("Failed to save NOO: " + e.message); }
+        } catch (e) { notify(tr('Failed to save NOO: {error}', { error: e.message })); }
     };
 
     // 🚀 FIX: "Register Only (No Sale)" button had no handler at all — undefined
@@ -1132,20 +1135,20 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             setShowNooModal(false);
             setNooForm({ phone: '', address: '', requestedTier: defaultNooTier, photoUrl: null });
             setManifestOpen(false);   // same convenience as the register-and-sell path above
-        } catch (e) { notify("Failed to save NOO: " + e.message); }
+        } catch (e) { notify(tr('Failed to save NOO: {error}', { error: e.message })); }
     };
 
     const handleDeploySample = async () => {
         const qtyBks = parseInt(sampleForm.qtyBks) || 0;
         const qtyBatang = parseInt(sampleForm.qtyBatang) || 0;
-        if (qtyBks === 0 && qtyBatang === 0) return notify("Enter a valid quantity to sample.");
-        if (!sampleForm.productId) return notify("Please select a product.");
+        if (qtyBks === 0 && qtyBatang === 0) return notify(tr('Enter a valid quantity to sample.'));
+        if (!sampleForm.productId) return notify(tr('Please select a product.'));
 
         const product = inventory.find(p => p.id === sampleForm.productId);
         const sp = product?.sticksPerPack || 16;
         const totalQtyDecimal = qtyBks + (qtyBatang / sp);
 
-        if ((product.stock || 0) < totalQtyDecimal) return notify(`INSUFFICIENT STOCK!\n\nYou only have ${product.stock} units of ${product.name} available in your vehicle.`);
+        if ((product.stock || 0) < totalQtyDecimal) return notify(`${tr('INSUFFICIENT STOCK!')}\n\n${tr('You only have {n} units of {name} available in your vehicle.', { n: product.stock, name: product.name })}`);
 
         setIsProcessingSale(true);
         try {
@@ -1194,7 +1197,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             window.dispatchEvent(new CustomEvent('trigger-telemetry-ping'));
 
             setShowSampleModal(false); setSampleForm({ productId: '', qtyBks: 0, qtyBatang: 0 });
-        } catch (err) { notify("Failed to deploy sample: " + err); } finally { setIsProcessingSale(false); }
+        } catch (err) { notify(tr('Failed to deploy sample: {error}', { error: String(err) })); } finally { setIsProcessingSale(false); }
     };
 
     /* Clearing the terminal after a deal. Extracted because a sale that COMMITS and then hits a
@@ -1227,7 +1230,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         // privilege, not a default one. Hiding the switch is not enough on its own — returType
         // can still be BUYBACK from before the grant was revoked.
         if (isReturMode && returType === 'BUYBACK' && !allowCashRefund) {
-            return notify("You do not have clearance to refund cash. Use Exchange (Tukar), or ask an admin to grant Cash Refund in Fleet & Roster.");
+            return notify(tr('You do not have clearance to refund cash. Use Exchange (Tukar), or ask an admin to grant Cash Refund in Fleet & Roster.'));
         }
 
         const isGiveaway = cart.length === 0;   // promo pieces only - the engine saves it as type GIVEAWAY, Rp 0
@@ -1529,10 +1532,10 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                    press MAKE DEAL again and bill the customer twice, because the cart was still
                    on screen. Report the truth and clear the terminal. */
                 console.error("Post-commit step failed:", error);
-                notify("Sale SAVED. A follow-up step failed (Utang Barang record or store update). Do NOT repeat this sale - tell the admin.");
+                notify(tr('Sale SAVED. A follow-up step failed (Utang Barang record or store update). Do NOT repeat this sale - tell the admin.'));
                 resetTerminalAfterDeal();
             } else {
-                notify("Transaction Failed! Please try again.");
+                notify(tr('Transaction Failed! Please try again.'));
             }
         }
         finally { setIsProcessingSale(false); }
@@ -1618,8 +1621,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         (async () => {
             await updateDoc(doc(db, `artifacts/${appId}/users/${dataOwnerId}/customers`, shop.id), { ...report.patch, updatedAt: serverTimestamp() });
             if (logAudit) await logAudit('VISIT_REPORT', report.sentence, false, { storeId: shop.id, tag, agentId: agentProfileId || null });
-        })().catch((err) => notify(`Visit NOT saved for ${shop.name}: ${err.message || 'network error'}`));
-        notify(`Visit saved: ${shop.name} - ${tag}`);
+        })().catch((err) => notify(tr('Visit NOT saved for {shop}: {error}', { shop: shop.name, error: err.message || tr('network error') })));
+        notify(tr('Visit saved: {shop} - {tag}', { shop: shop.name, tag: tr(tag) }));
     };
 
     const cartTotal = cart.reduce((sum, i) => sum + (i.calculatedPrice * i.qty), 0);
@@ -1722,7 +1725,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         if (!brief) return;
         const { lines, dropped, clamped } = reorderFromLast(brief.lastItems, inventory);
         if (!lines.length) {
-            notify("Nothing from their last order is on the vehicle today.");
+            notify(tr('Nothing from their last order is on the vehicle today.'));
             return;
         }
 
@@ -1743,9 +1746,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         triggerMerchantSpeak('add');
 
         const notes = [];
-        if (clamped.length) notes.push(clamped.map(c => `${c.name}: only ${c.qty} on board (wanted ${c.wanted})`).join('\n'));
-        if (dropped.length) notes.push(`Not on the vehicle today:\n${dropped.join('\n')}`);
-        if (notes.length) notify(`Loaded their last order, with changes:\n\n${notes.join('\n\n')}`);
+        if (clamped.length) notes.push(clamped.map(c => tr('{name}: only {n} on board (wanted {want})', { name: c.name, n: c.qty, want: c.wanted })).join('\n'));
+        if (dropped.length) notes.push(`${tr('Not on the vehicle today:')}\n${dropped.join('\n')}`);
+        if (notes.length) notify(`${tr('Loaded their last order, with changes:')}\n\n${notes.join('\n\n')}`);
     };
 
     const filteredItems = inventory.filter(i => (activeCategory === "ALL" || i.type === activeCategory) && i.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -1877,7 +1880,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 <div className="flex bg-[var(--duke-fill-ground)] rounded border border-[var(--duke-edge-2)] p-1 mb-2">
                     <button data-guide="sale-mode" onClick={() => { setIsReturMode(false); setReturType('EXCHANGE'); }} className={`kpm-hover flex-1 py-1.5 min-h-[44px] lg:min-h-0 text-[11px] lg:text-[10px] font-black uppercase tracking-widest rounded ${!isReturMode ? 'bg-[var(--duke-brass-2)] text-[var(--duke-on-plate)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>{tr('Sale Mode')}</button>
                     <button data-mission="5" onClick={() => {
-                        if (!allowRetur) return notify("You do not have clearance to process returns.");
+                        if (!allowRetur) return notify(tr('You do not have clearance to process returns.'));
                         setIsReturMode(true);
                     }} className={`kpm-hover flex-1 py-1.5 min-h-[44px] lg:min-h-0 text-[11px] lg:text-[10px] font-black uppercase tracking-widest rounded ${isReturMode ? 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]' : 'text-[var(--duke-ink-3)] hover:text-[var(--duke-ink-hi)]'}`}>{tr('Retur Mode')}</button>
                 </div>
@@ -2055,7 +2058,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     </select>
                     {/* A control that disappears has to say why it disappeared. */}
                     {cart.some(i => i.priceTier === 'Ecer') && allowedPayments.includes('Titip') && !isReturMode && (
-                        <p className="text-[10px] text-[var(--duke-ink-7)] opacity-70 mt-1 leading-snug">Ecer is an individual sale, so Consignment is not offered. Consignment is for registered stores.</p>
+                        <p className="text-[10px] text-[var(--duke-ink-7)] opacity-70 mt-1 leading-snug">{tr('Ecer is an individual sale, so Consignment is not offered. Consignment is for registered stores.')}</p>
                     )}
                 </div>
 
@@ -2235,19 +2238,19 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 </span>
                                 <span className="flex-1 min-w-0 text-[11px] md:text-xs font-black uppercase leading-tight break-words text-[var(--duke-ink-7)]">
                                     {l.name}
-                                    <span className="block mt-0.5 text-[10px] font-bold normal-case tracking-normal text-[var(--duke-on-paper-dim)] tabular-nums">{l.qty} pcs in {giveFrom}</span>
+                                    <span className="block mt-0.5 text-[10px] font-bold normal-case tracking-normal text-[var(--duke-on-paper-dim)] tabular-nums">{l.qty} pcs {giveWhere}</span>
                                 </span>
                                 <input type="number" inputMode="numeric" min="0" placeholder="0" aria-label={`${l.name}: pieces to give`}
                                     value={give[l.productId] || ''}
                                     onChange={(e) => {
                                         const n = Math.max(0, parseInt(e.target.value, 10) || 0);
-                                        if (n > l.qty) notify(`Only ${l.qty} pcs of ${l.name} in ${giveFrom} - not enough for ${n}.`);
+                                        if (n > l.qty) notify(tr('Only {n} pcs of {name} {where} - not enough for {want}.', { n: l.qty, name: l.name, where: giveWhere, want: n }));
                                         setGive(g => ({ ...g, [l.productId]: Math.min(n, l.qty) }));
                                     }}
                                     className="w-20 md:w-24 min-h-[44px] lg:min-h-0 bg-white border border-[var(--duke-edge-3)] text-center text-base md:text-sm font-bold tabular-nums outline-none focus:border-[var(--duke-amber-edge)] rounded p-1 text-[var(--duke-ink-7)]" />
                                 <span className="text-sm font-bold uppercase text-[var(--duke-ink-7)]">pcs</span>
                             </div>
-                        ))) : <p data-guide="promo-give-empty" className="mt-1.5 text-[11px] md:text-xs font-bold text-[var(--duke-on-paper-dim)]">{giveEmpty}</p>}
+                        ))) : <p data-guide="promo-give-empty" className="mt-1.5 text-[11px] md:text-xs font-bold text-[var(--duke-on-paper-dim)]">{tr(giveEmpty)}</p>}
                 </div>
             </div>
         </div>
@@ -2329,7 +2332,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             {tr('Manifest')} ({cart.length})
                         </div>
                         <div className="text-[10px] font-mono text-[var(--duke-ink-6)] truncate leading-tight mt-0.5">
-                            {cart.length ? cart[cart.length - 1].name : givenLines.length ? `Promo only: ${givenLines.reduce((s, g) => s + g.qty, 0)} pcs given free` : 'Empty — tap a ware to add'}
+                            {cart.length ? cart[cart.length - 1].name : givenLines.length ? tr('Promo only: {n} pcs given free', { n: givenLines.reduce((s, g) => s + g.qty, 0) }) : tr('Empty — tap a ware to add')}
                         </div>
                     </div>
                     <span className={`text-lg font-black font-mono leading-none shrink-0 ${isReturMode && returType === 'BUYBACK' ? 'text-red-500' : 'text-[var(--duke-amber-ink)]'}`}>
@@ -2389,7 +2392,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
                         {txProofPhoto ? (
                             <div className="relative rounded-lg border-2 border-[var(--duke-amber-edge)] overflow-hidden shadow-[0_0_15px_rgba(255,157,0,0.3)] bg-[var(--duke-stage)]">
-                                <img src={txProofPhoto} alt="Proof" className="w-full h-32 object-contain opacity-90" />
+                                <img src={txProofPhoto} alt={tr('Proof')}className="w-full h-32 object-contain opacity-90" />
                                 <button onClick={() => setTxProofPhoto(null)} className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-[var(--duke-on-fill)] p-1.5 rounded-md shadow-md"><X size={14}/></button>
                             </div>
                         ) : (
@@ -2397,7 +2400,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                after "it is camouflage with its background" and the brass plate he hated - black cap, real side */
                             <button data-guide="photo" onClick={() => IS_DEMO ? demoPhoto().then(setTxProofPhoto) : galleryOk ? document.getElementById('txProof').click() : setShowProofCamera(true)} className="kpm-shutter">
                                 <span className="kpm-shutter-lens"><Camera size={18} /></span>
-                                <span className="kpm-shutter-word">{IS_DEMO ? 'Auto handover photo (demo)' : galleryOk ? 'Capture or choose photo' : 'Open camera for handover photo'}</span>
+                                <span className="kpm-shutter-word">{IS_DEMO ? (getLang() === 'id' ? 'Foto serah terima otomatis (demo)' : 'Auto handover photo (demo)') : galleryOk ? tr('Capture or choose photo') : tr('Open camera for handover photo')}</span>
                             </button>
                         )}
 
@@ -2409,7 +2412,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     </div>
 
                     <div className="flex justify-between items-end mb-3 md:mb-4 border-b border-[var(--duke-edge-4)] pb-2 md:pb-3 font-mono">
-                        <span className="text-xs md:text-sm font-bold text-[var(--duke-ink-4)] uppercase tracking-widest">Total Value</span>
+                        <span className="text-xs md:text-sm font-bold text-[var(--duke-ink-4)] uppercase tracking-widest">{tr('Total Value')}</span>
                         <span className={`text-2xl md:text-3xl lg:text-4xl font-black leading-none tabular-nums ${isReturMode && returType === 'BUYBACK' ? 'text-[var(--duke-danger-ink-2)]' : 'text-[var(--duke-amber-ink-2)]'}`}>
                             {isReturMode && returType === 'BUYBACK' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}
                         </span>
@@ -2417,12 +2420,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     
                     {hasInvalidDamagedItems && (
                         <div className="bg-red-900/40 border border-red-500 text-red-500 p-2 rounded mb-3 text-[10px] uppercase tracking-widest font-bold flex items-center justify-center gap-2">
-                            <AlertTriangle size={14}/> Please complete damage reasons for all items.
+                            <AlertTriangle size={14}/> {tr('Please complete damage reasons for all items.')}
                         </div>
                     )}
                     {hasInsufficientStockForExchange && (
                         <div className="bg-orange-900/40 border border-orange-500 text-orange-500 p-2 rounded mb-3 text-[10px] uppercase tracking-widest font-bold flex items-center justify-center gap-2 text-center">
-                            <AlertTriangle size={16} className="shrink-0"/> You lack healthy vehicle stock to exchange. Switch to "Hutang Barang" or "Buyback".
+                            <AlertTriangle size={16} className="shrink-0"/> {tr('You lack healthy vehicle stock to exchange. Switch to "Hutang Barang" or "Buyback".')}
                         </div>
                     )}
 
@@ -2446,12 +2449,12 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         className={`kpm-hover py-2.5 md:py-4 border-2 text-base md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-[var(--duke-brass-2)] to-[var(--duke-brass-3)] border-[var(--duke-brass-edge)] text-[var(--duke-on-plate)] hover:from-[var(--duke-brass)] hover:to-[var(--duke-brass-6)] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-[var(--duke-on-fill)] hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[var(--duke-amber)] to-[var(--duke-amber-2)] border-[var(--duke-brass-edge-3)] text-black hover:from-[var(--duke-brass-5)] hover:to-[var(--duke-amber)]') : 'bg-transparent text-[var(--duke-ink-3)] border-[var(--duke-edge-4)] cursor-not-allowed'}`}
                     >
                         {isProcessingSale ? <span className="flex items-center gap-2 animate-pulse"><Zap size={20}/> {tr('PROCESSING...')}</span> :
-                         gpsStatus === 'checking' ? 'Awaiting GPS...' :
+                         gpsStatus === 'checking' ? tr('Awaiting GPS...') :
                          isGpsRestricted ? <><Lock size={20}/> {tr('LOC. RESTRICTED')}</> :
                          !txProofPhoto && customerName.trim() ? <><Camera size={20}/> {tr('REQUIRE PROOF')}</> :
                          hasInvalidDamagedItems ? <><AlertTriangle size={20}/> {tr('REASON REQ.')}</> :
                          hasInsufficientStockForExchange ? <><AlertTriangle size={20}/> {tr('NO STOCK')}</> :
-                         customerName.trim() ? (isReturMode ? <><AlertCircle size={24} className="md:w-6 md:h-6"/> {tr('PULL RETUR')}</> : <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> {cart.length === 0 && givenLines.length ? 'GIVE PROMO' : 'MAKE DEAL'}</>) : "SIGN MANIFEST >"}
+                         customerName.trim() ? (isReturMode ? <><AlertCircle size={24} className="md:w-6 md:h-6"/> {tr('PULL RETUR')}</> : <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> {cart.length === 0 && givenLines.length ? tr('GIVE PROMO') : tr('MAKE DEAL')}</>) : tr('SIGN MANIFEST >')}
                     </button>
                 </div>
             </div>
@@ -2590,7 +2593,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 <div className="font-mono text-[8.5px] font-black uppercase tracking-[0.16em] text-[var(--duke-brass-ink)]">{tr('Next stop')}</div>
                                 <div className="truncate font-mono text-[13px] font-black uppercase text-[var(--ink)]">{upNext.customer.name}</div>
                                 <div className="mt-0.5 font-mono text-[10px] tabular-nums text-[var(--ink-dim)]">
-                                    {metresLabel(upNext.metres)} &middot; {upNext.remaining} left today
+                                    {metresLabel(upNext.metres)} &middot; {tr('{n} left today', { n: upNext.remaining })}
                                 </div>
                             </div>
                             {directionsUrl(upNext.customer) && (
@@ -2638,7 +2641,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                         <div className="truncate font-mono text-[13px] font-black uppercase text-[var(--ink)]">{customerName}</div>
                                         <div className="mt-0.5 font-mono text-[10px] tabular-nums text-[var(--ink-dim)]">
                                             {brief
-                                                ? <>Last order {agoLabel(brief.lastAt)} &middot; usually Rp {new Intl.NumberFormat('id-ID').format(brief.avgBasket)}</>
+                                                ? <>{tr('Last order {ago} · usually Rp {rp}', { ago: agoLabel(brief.lastAt), rp: new Intl.NumberFormat('id-ID').format(brief.avgBasket) })}</>
                                                 : tr('No order in the last 7 days.')}
                                         </div>
                                         {/* HIS REPORT, G5: "it doesnt show me what is the last order item is, only the
@@ -2740,7 +2743,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     {renderCube(item)}
                                 </button>
                                 <div className="hidden lg:block absolute top-3 right-3 bg-[var(--duke-badge)] text-[var(--duke-ink-3)] text-[10px] font-black px-2 py-1 rounded-full border border-[var(--duke-edge-1)] uppercase tracking-wider">
-                                    {item.type || 'MISC'}
+                                    {item.type || tr('MISC')}
                                 </div>
                                 {/* Examine was reachable ONLY by right-click, which does not exist on a
                                     phone — so on the device most of these sales happen on, the 3D box
@@ -2785,7 +2788,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                         {/* the price THIS shop pays (his 2026-10-20: "the price shown on the card should be
                                             depending on the stores type that we are selling on"); Ecer until a shop is picked */}
                                         <div className="text-left lg:text-right lg:w-auto lg:mt-0 lg:pt-0 lg:border-none">
-                                            <span className="hidden lg:block text-[11px] text-[var(--duke-ink-6)] font-bold uppercase tracking-widest mb-1">{lockedTier || 'Ecer'} Price</span>
+                                            <span className="hidden lg:block text-[11px] text-[var(--duke-ink-6)] font-bold uppercase tracking-widest mb-1">{tr(`${lockedTier || 'Ecer'} Price`)}</span>
                                             <span className="text-[15px] lg:text-2xl font-black text-[var(--duke-amber-ink)] lg:text-[var(--duke-price-ink)] leading-none drop-shadow-[0_2px_4px_var(--duke-text-shade)]">{new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(cardPriceOf(item))}</span>
                                         </div>
                                     </div>
@@ -3018,7 +3021,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
                             {brief && (<>
                             <div className="border-t border-[var(--line)] pt-3">
-                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">Last order &middot; {agoLabel(brief.lastAt)}</div>
+                                <div className="font-mono text-[9.5px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">{tr('Last order')} &middot; {agoLabel(brief.lastAt)}</div>
                                 {brief.lastItems.length ? (
                                     <ul className="m-0 list-none p-0 flex flex-col gap-1">
                                         {brief.lastItems.slice(0, 4).map((it, i) => (
@@ -3114,7 +3117,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                         {/* the boss can sell from either source (the two buttons above say
                                             Master Vault / Boss Car); `inventory` is whichever he picked,
                                             so the card names that place in the buttons' own words */}
-                                        {new Intl.NumberFormat('id-ID').format(lowestStock.stock)} Bks left in the {adminSalesMode === 'VAULT' ? 'Master Vault' : 'vehicle'}
+                                        {tr(adminSalesMode === 'VAULT' ? '{n} Bks left in the Master Vault' : '{n} Bks left in the vehicle', { n: new Intl.NumberFormat('id-ID').format(lowestStock.stock) })}
                                     </p>
                                 </div>
                             )}
@@ -3155,7 +3158,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     <div className="font-mono text-[11px] font-black uppercase tracking-[0.16em] text-[var(--ink-dim)] mb-1.5">{tr('Next stop')}</div>
                                     <div className="font-mono text-[15px] font-black uppercase leading-tight text-[var(--ink)] break-words">{upNext.customer.name}</div>
                                     <p className="m-0 mt-1 font-mono text-[12px] tabular-nums text-[var(--ink-dim)]">
-                                        {metresLabel(upNext.metres)} &middot; {upNext.remaining} left today
+                                        {metresLabel(upNext.metres)} &middot; {tr('{n} left today', { n: upNext.remaining })}
                                     </p>
                                     {directionsUrl(upNext.customer) && (
                                         /* A link, not a button: it leaves the app, and an app that
@@ -3278,7 +3281,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     <div className="p-2 bg-[var(--duke-fill-plank)] text-[var(--duke-amber-ink)] rounded-full"><Map size={16}/></div>
                                     <div>
                                         <p className="text-[10px] font-bold text-[var(--duke-ink-3)] uppercase tracking-widest">Location Tracking</p>
-                                        <p className="text-xs text-[var(--duke-amber-ink)] font-mono">{agentLocation ? `${agentLocation.latitude.toFixed(5)}, ${agentLocation.longitude.toFixed(5)}` : 'Awaiting GPS Lock...'}</p>
+                                        <p className="text-xs text-[var(--duke-amber-ink)] font-mono">{agentLocation ? `${agentLocation.latitude.toFixed(5)}, ${agentLocation.longitude.toFixed(5)}` : tr('Awaiting GPS Lock...')}</p>
                                     </div>
                                 </div>
                                 {!agentLocation && (

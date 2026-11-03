@@ -31,7 +31,7 @@ import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissi
 import { confirmAction, promptAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 import { writeLiteMode } from '../utils/liteMode.js';
-import { getLang, setLang } from '../config/lang';
+import { getLang, setLang, tr } from '../config/lang';
 
 /* THIS DEVICE: what only this phone sees, open to EVERY tier. Aldi, 2026-11-02: "we all can see indonesian just add
    language swapper on the setting, we should make this setting that can be seen by every tiers, even though there
@@ -42,37 +42,35 @@ const DeviceBand = ({ isLiteMode, setIsLiteMode, triggerCapy }) => {
     const lang = getLang();
     return (
         <>
-            <div className="kpm-band">This device · nothing here leaves the phone</div>
+            <div className="kpm-band">{tr('This device · nothing here leaves the phone')}</div>
 
             {/* ⚠️ ONE WRITER (`writeLiteMode`), and both positions drawn. The old
                 toggle asked him to remember which way "on" pointed on a setting whose
                 whole job is to be found by someone whose phone is struggling. */}
             <div className="kpm-mod bench">
                 <div className="kpm-head">
-                    <span className="slot">Device · 01</span>
+                    <span className="slot">{tr('Device · 01')}</span>
                     <div className="line">
-                        <h3>Graphics</h3>
-                        <span className={`kpm-read ${isLiteMode ? 'on' : ''}`}>{isLiteMode ? 'Lite' : 'Full'}</span>
+                        <h3>{tr('Graphics')}</h3>
+                        <span className={`kpm-read ${isLiteMode ? 'on' : ''}`}>{isLiteMode ? tr('Lite') : tr('Full')}</span>
                     </div>
                     <p className="kpm-desc">
-                        <b>Lite</b> drops blur, animation and the heavy effects so a cheap phone stays
-                        quick and the battery lasts. Nothing is hidden and no data changes — it is only
-                        how this one device draws the app.
+                        <b>{tr('Lite')}</b> {tr('drops blur, animation and the heavy effects so a cheap phone stays quick and the battery lasts. Nothing is hidden and no data changes — it is only how this one device draws the app.')}
                     </p>
                 </div>
                 <div className="kpm-shelf split">
                     <div className="kpm-switch" role="group" aria-label="Graphics mode">
                         <button type="button" aria-pressed={!isLiteMode}
-                            onClick={() => writeLiteMode(false, { setIsLiteMode, triggerCapy })}>Full</button>
+                            onClick={() => writeLiteMode(false, { setIsLiteMode, triggerCapy })}>{tr('Full')}</button>
                         <button type="button" aria-pressed={!!isLiteMode}
-                            onClick={() => writeLiteMode(true, { setIsLiteMode, triggerCapy })}>Lite</button>
+                            onClick={() => writeLiteMode(true, { setIsLiteMode, triggerCapy })}>{tr('Lite')}</button>
                     </div>
                 </div>
             </div>
 
             <div className="kpm-mod bench">
                 <div className="kpm-head">
-                    <span className="slot">Device · 02</span>
+                    <span className="slot">{tr('Device · 02')}</span>
                     <div className="line">
                         <h3>Language · Bahasa</h3>
                         <span className={`kpm-read ${lang === 'id' ? 'on' : ''}`}>{lang === 'id' ? 'Indonesia' : 'English'}</span>

@@ -4,6 +4,7 @@
 import { convertToBks, storeKey, storeLabel, isPromo } from './helpers.js';
 import { debtCredit, isTitip } from './revenueRule.js';
 import { normalizeRegion } from '../config/permissions.js';
+import { tr } from '../config/lang.js';
 
 export const PER = 6;          // squares on a page
 export const CELLS = 18;       // the van's layout: three pages, and a hole means something
@@ -68,10 +69,10 @@ export function bundleCheck(bundle, inventory, promoVan, cart = [], give = {}) {
   const lines = [], gives = [];
   for (const l of bundle?.lines || []) {
     const product = (inventory || []).find(p => p.id === l.productId);
-    if (!product) return { ok: false, why: `${bundle.name}: a product in it is not in this van's list any more.` };
+    if (!product) return { ok: false, why: tr("{bundle}: a product in it is not in this van's list any more.", { bundle: bundle.name }) };
     const bks = convertToBks(Number(l.qty) || 0, l.unit || 'Bks', product);
     const inCart = (cart || []).filter(i => i.productId === product.id).reduce((s, i) => s + convertToBks(i.qty, i.unit, i.product || product), 0);
-    if (inCart + bks > (Number(product.stock) || 0)) return { ok: false, why: `Not enough ${product.name} in the van for ${bundle.name} (needs ${bks} Bks).` };
+    if (inCart + bks > (Number(product.stock) || 0)) return { ok: false, why: tr('Not enough {name} in the van for {bundle} (needs {n} Bks).', { name: product.name, bundle: bundle.name, n: bks }) };
     lines.push({ product, qty: Number(l.qty) || 0, unit: l.unit || 'Bks', bks });
   }
   for (const g of bundle?.gives || []) {
@@ -79,11 +80,11 @@ export function bundleCheck(bundle, inventory, promoVan, cart = [], give = {}) {
     const qty = Math.floor(Number(g.qty) || 0);
     const left = (Number(van?.qty) || 0) - (Number(give?.[g.productId]) || 0);
     if (qty > left) return { ok: false, why: left > 0
-      ? `Only ${left} pcs ${van.name} left in the van - ${bundle.name} gives ${qty}.`
-      : `No ${van?.name || g.name || 'promo piece'} left in the van for ${bundle.name}.` };
+      ? tr('Only {n} pcs {name} left in the van - {bundle} gives {qty}.', { n: left, name: van.name, bundle: bundle.name, qty })
+      : tr('No {name} left in the van for {bundle}.', { name: van?.name || g.name || 'promo piece', bundle: bundle.name }) };
     if (qty > 0) gives.push({ productId: g.productId, name: van.name, qty });   // van is set: qty > left above refuses a missing one
   }
-  if (!lines.length) return { ok: false, why: `${bundle?.name || 'This bundle'} has no cigarettes in it.` };
+  if (!lines.length) return { ok: false, why: tr('{bundle} has no cigarettes in it.', { bundle: bundle?.name || 'This bundle' }) };
   return { ok: true, why: '', lines, gives };
 }
 

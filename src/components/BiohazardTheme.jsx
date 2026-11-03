@@ -15,7 +15,8 @@ import UpdateStatus from './UpdateStatus.jsx';
 import MusicPlayer from '../MusicPlayer'; 
 
 // 🚀 IMPORT THE BRAIN
-import { hasClearance } from '../config/permissions'; 
+import { hasClearance } from '../config/permissions';
+import { tr } from '../config/lang';
 import { confirmAction } from './ConfirmGate.jsx';
 /* The tutorial book. It lives in the top bar because that bar is on EVERY screen, which is what
    he asked for: *"i want the tutorial book on the very top of the screen for every components"*. */
@@ -158,10 +159,10 @@ function ShellClock() {
    simply reads "SYSTEM ACTIVE · LITE" in amber, and the decode (JavaScript, which the CSS kill
    cannot reach) is skipped — his law: Lite freezes everything heavy, CSS or not.
    Its own component so the ~25 decode frames re-render one line, not the whole shell. */
-const PEEK_TEXT = 'Lite Mode · Off · Tap';
+const PEEK_TEXT = tr('Lite Mode · Off · Tap');
 const PEEK_DAY_KEY = 'kpm_lite_peek_day';
 function LiteStatusLine({ user, isLiteMode, onToggleLite }) {
-    const rest = user ? (isLiteMode ? 'System Active · Lite' : 'System Active') : 'Disconnected';
+    const rest = user ? (isLiteMode ? tr('System Active · Lite') : tr('System Active')) : tr('Disconnected');
     const [text, setText] = useState(rest);
     const [peeking, setPeeking] = useState(false);
     const decodeT = useRef(null);
@@ -197,8 +198,8 @@ function LiteStatusLine({ user, isLiteMode, onToggleLite }) {
             document.removeEventListener('visibilitychange', start);
             try { localStorage.setItem(PEEK_DAY_KEY, today); } catch { /* still peek */ }
             startT = setTimeout(() => {
-                setPeeking(true); decodeTo('System Active', PEEK_TEXT);
-                holdT = setTimeout(() => { setPeeking(false); decodeTo(PEEK_TEXT, 'System Active'); }, 3000);
+                setPeeking(true); decodeTo(tr('System Active'), PEEK_TEXT);
+                holdT = setTimeout(() => { setPeeking(false); decodeTo(PEEK_TEXT, tr('System Active')); }, 3000);
             }, 1200);
         };
         document.addEventListener('visibilitychange', start);
@@ -504,6 +505,8 @@ export default function BiohazardTheme({
         { id: 'settings', label: 'Settings', feature: 'view_settings', icon: Settings }
     ];
 
+    const tabWord = allMenuItems.find(item => item.id === activeTab)?.label;
+
     // 🚀 THE 3 REPORT VISIBILITY MODES (matches Settings > Global Permission Matrix > Reporting Authority)
     const REPORT_PERMS = ['view_reports_global', 'view_reports_regional', 'view_reports_personal'];
 
@@ -630,7 +633,7 @@ export default function BiohazardTheme({
                     style={{ right: RAIL_W + 10, top: Math.max(8, peek.y - 18) }}
                 >
                     <span className="block px-3 py-2 rounded bg-[#0f0e0d] border border-[#5c4b3a] text-[10px] font-black uppercase tracking-widest text-[#f5e6c8] shadow-[0_4px_20px_rgba(0,0,0,.6)]">
-                        {peek.label}
+                        {tr(peek.label)}
                     </span>
                 </div>
             )}
@@ -886,7 +889,7 @@ export default function BiohazardTheme({
                                     data-mark={item.id}
                                     data-label={item.label}
                                     onClick={() => { if (swallowedByScrub()) return; setActiveTab(item.id); setIsMobileMenuOpen(false); }}
-                                    title={item.label}
+                                    title={tr(item.label)}
                                     /* ONE set of classes for both widths now. The desk used to
                                        carry its own palette on top of this — a white slab with a
                                        white glow for the active tab (`lg:bg-white`,
@@ -917,7 +920,7 @@ export default function BiohazardTheme({
                                         is that box — it is `display: none` until the strip is
                                         pointed at, and the strip widens to hold it. The phone
                                         never shows it; there the peek plate follows the finger. */}
-                                    <span className="kpm-rail-word">{item.label}</span>
+                                    <span className="kpm-rail-word">{tr(item.label)}</span>
                                     {/* ⚠️ `kpm-rail-bar` EARNS ITS KEEP — the two Tailwind hexes here are the
                                         dark theme's, and an anonymous span gives the stylesheet nothing to
                                         aim at. With the class, `html.light .kpm-rail-bar` is two classes to
@@ -947,7 +950,7 @@ export default function BiohazardTheme({
                                 onPointerDown={(e) => setPeek({ id: 'unlock', label: 'Unlock Master Vault', y: e.clientY })}
                                 onPointerUp={() => setPeek(null)}
                                 onPointerCancel={() => setPeek(null)}
-                                title="Unlock Master Vault"
+                                title={tr('Unlock Master Vault')}
                                 /* 🔑 ONE SHAPE FOR EVERY CONTROL IN THE RAIL — his call,
                                    2026-08-14: *"i want exactly like that for all of our button
                                    inside the sidebar"*. This was a full-width gold block; the
@@ -1103,7 +1106,8 @@ export default function BiohazardTheme({
                             carries the emphasis, and it MOVES when you change tab, which is the
                             part that means something. */}
                         <div className="text-xl lg:text-2xl text-[var(--ink)] font-bold tracking-[0.15em] uppercase truncate">
-                            {activeTab.replace(/_/g, ' ')}
+                            {/* an Indonesian phone reads the tab's menu word; English keeps the id it always showed */}
+                            {tabWord && tr(tabWord) !== tabWord ? tr(tabWord) : activeTab.replace(/_/g, ' ')}
                         </div>
                         {/* Re-keyed on the tab, so the rule redraws itself every time you move.
                             It is the only motion in this row and it is the one that carries
@@ -1175,8 +1179,8 @@ export default function BiohazardTheme({
                 </div>
 
                 <div className="hide-on-print hidden lg:flex h-8 border-t border-[var(--duke-veil-edge)] items-center px-6 gap-6 text-[10px] text-[var(--ink-dim)] font-bold uppercase bg-[var(--duke-badge)] backdrop-blur shrink-0">
-                    <span className="flex items-center gap-2"><span className="kpm-read on">L-Click</span> Select</span>
-                    <span className="flex items-center gap-2"><span className="kpm-read">Scroll</span> Navigate</span>
+                    <span className="flex items-center gap-2"><span className="kpm-read on">{tr('L-Click')}</span> {tr('Select')}</span>
+                    <span className="flex items-center gap-2"><span className="kpm-read">{tr('Scroll')}</span> {tr('Navigate')}</span>
                 </div>
             </div>
             

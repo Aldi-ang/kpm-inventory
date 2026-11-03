@@ -6799,7 +6799,8 @@ section('TWO STOCK LABELS SAY WHERE AND WHAT (2026-09-13)');
      /adminSalesMode === 'VAULT'/.test(low) && /Master Vault/.test(low) && /vehicle/.test(low),
      'selling from the Master Vault, the card still said "in the vehicle"');
   ok('and it uses the two mode buttons\' own words, not a third name',
-     /'Master Vault'/.test(low) && /'vehicle'/.test(low) && !/warehouse|gudang|stok/i.test(low),
+     /* round 1b: the card's words are tr() keys now; Indonesian says Gudang Pusat, the button's own Indonesian */
+     /Bks left in the Master Vault'/.test(low) && /Bks left in the vehicle'/.test(low) && !/warehouse|gudang|stok/i.test(low),
      'the buttons say Master Vault and Boss Car; a third label sends him looking for a third place');
   /* 2026-09-24: the select picker became the van-loading bay's warehouse chest; the same rule moved with it */
   const bayCode = code(read('src/components/LoadingBay.jsx'));
@@ -7255,7 +7256,8 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/\.kpm-shutter[^{]*\{[^}]*(box-shadow|filter:)/.test(themeCss));
   ok('EXAMINE on the picture reads at 11 px on the phone, 9 on the desk; the camera-key word at 13 / 11',
      /text-\[11px\] lg:text-\[9px\] font-black font-mono tracking-widest text-\[var\(--duke-amber-ink\)\]">\{tr\('EXAMINE'\)\}</.test(m) &&
-     /<span className="kpm-shutter-word">\{(IS_DEMO \? 'Auto handover photo \(demo\)' : )?galleryOk/.test(r) &&
+     /* the demo words sit INSIDE the IS_DEMO branch, never in lang.js: the real build must carry no demo text (demoBuild.check) */
+     /<span className="kpm-shutter-word">\{(IS_DEMO \? \(getLang\(\) === 'id' \? 'Foto serah terima otomatis \(demo\)' : 'Auto handover photo \(demo\)'\) : )?galleryOk/.test(r) &&
      /\.kpm-shutter-word \{[^}]*font-size: 13px;/.test(themeCss) && /\.kpm-shutter-word \{ font-size: 11px; \}/.test(themeCss));
   ok('TRAP (a) holds: the T4–T6 proof camera still has no file picker — galleryOk alone decides',
      /galleryOk \? document\.getElementById\('txProof'\)\.click\(\) : setShowProofCamera\(true\)/.test(r));
@@ -11455,7 +11457,7 @@ section('THE STATUS LINE IS THE LITE SWITCH (2026-10-15) - his pick C, "hidden s
   ok('the top bar renders the switch, and the switch is a real button that flips Lite and says which state it is in',
      /<LiteStatusLine user=\{user\} isLiteMode=\{isLiteMode\} onToggleLite=\{onToggleLite\} \/>/.test(bio)
      && /<button type="button" onClick=\{onToggleLite\} aria-pressed=\{!!isLiteMode\}/.test(line)
-     && /isLiteMode \? 'System Active · Lite' : 'System Active'/.test(line));
+     && /isLiteMode \? tr\('System Active · Lite'\) : tr\('System Active'\)/.test(line));
   ok('Lite skips the decode (JavaScript the CSS kill cannot reach) and the words, not an animation, carry the state',
      /if \(isLiteMode \|\| window\.matchMedia\?\.\('\(prefers-reduced-motion: reduce\)'\)\.matches\) \{ setText\(to\); return; \}/.test(line)
      && !/opacity-0|forwards/.test(line),
@@ -12428,7 +12430,7 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   ok('REGRESSION: the boss on the Master Vault gets the give box (pieces "in the Master Vault"), no "switch to Boss Car" line; the history line lists the given pieces',
      !ms.includes('giveNeedsVan') && !ms.includes('Promo goods are given from a van - switch to Boss Car') &&
      ms.includes("const giveFrom = userRole === 'ADMIN' && adminSalesMode !== 'VEHICLE' ? 'the Master Vault' : 'the van';") &&
-     ms.includes('{l.qty} pcs in {giveFrom}') &&
+     ms.includes('{l.qty} pcs {giveWhere}') && ms.includes("const giveWhere = giveFrom === 'the van' ? tr('in the van') : tr('in the Master Vault');") &&
      code(read('src/components/HistoryReportView.jsx')).includes('.concat((t.promoGiven || []).map(g =>'));
   const engP = code(read('src/hooks/useTransactionEngine.js'));
   ok('REGRESSION: the sale engine lets ONLY the boss give from the Master Vault - the pieces join the vault moves (one transaction with the sale, refused when short, no Bks low-stock line), a vanless salesman is still refused',
@@ -12447,10 +12449,10 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   ok('BEHAVIOUR: a bundle the van covers -> 1 Bal = 100 Bks of the cigarette + 1 pcs T-shirt; on top of 200 Bks already in the cart (250 in the van) it is refused, named',
      okB.ok && okB.lines[0].bks === 100 && okB.lines[0].unit === 'Bal' && okB.gives[0].qty === 1 && okB.gives[0].name === 'T-shirt' &&
      !vb.bundleCheck(deal, [cello], vanTee, [{ productId: 'c', qty: 200, unit: 'Bks', product: cello }]).ok &&
-     /Not enough Cello in the van/.test(vb.bundleCheck(deal, [cello], vanTee, [{ productId: 'c', qty: 200, unit: 'Bks', product: cello }]).why));
+     /Cello di mobil tidak cukup untuk/.test(vb.bundleCheck(deal, [cello], vanTee, [{ productId: 'c', qty: 200, unit: 'Bks', product: cello }]).why));
   ok('BEHAVIOUR: the promo half counts what the give box already holds - 2 given of 2 = none left; 1 given + a bundle of 2 = "Only 1 pcs"; a product gone from the van list is refused',
-     /No T-shirt left/.test(vb.bundleCheck(deal, [cello], vanTee, [], { tee: 2 }).why) &&
-     /Only 1 pcs T-shirt left/.test(vb.bundleCheck({ ...deal, gives: [{ productId: 'tee', qty: 2 }] }, [cello], vanTee, [], { tee: 1 }).why) &&
+     /T-shirt di mobil sudah habis/.test(vb.bundleCheck(deal, [cello], vanTee, [], { tee: 2 }).why) &&
+     /T-shirt di mobil tinggal 1 pcs/.test(vb.bundleCheck({ ...deal, gives: [{ productId: 'tee', qty: 2 }] }, [cello], vanTee, [], { tee: 1 }).why) &&
      !vb.bundleCheck(deal, [], vanTee).ok && !vb.bundleCheck(deal, [cello], []).ok);
   const pbf = code(read('src/components/PromoBundleFields.jsx'));
   ok('REGRESSION: all-area bundles live on settings/general (salesmen already read it, only the boss writes it), the editor sits on a SAVED promo item and lists every offer incl. the regions\', removing asks first, its inputs never join the product form',
@@ -12461,7 +12463,7 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   ok('REGRESSION: the terminal turns a bundle into ORDINARY cart lines at the shop tier + give-box pieces, refuses it in Retur and on an Utang Barang line, and the engine never sees a bundle',
      ms.includes("const bundles = bundlesFor([...(appSettings?.promoBundles || []), ...regionOffers], sellerRegion, userRole === 'ADMIN');") && ms.includes('...(bundles.length ? ["BUNDLES"] : [])') &&
      ms.includes('const chk = bundleCheck(b, inventory, promoVan, cart, give);') && ms.includes('calculatedPrice: tierPrice(l.product, tier) * convertToBks(1, l.unit, l.product), product: l.product,') &&
-     ms.includes("if (isReturMode) return notify(`${b.name} is for a sale - switch Retur off first.`);") && ms.includes('const owed = cart.find(i => i.isIouFulfillment && chk.lines.some(l => l.product.id === i.productId));') &&
+     ms.includes("if (isReturMode) return notify(tr('{bundle} is for a sale - switch Retur off first.', { bundle: b.name }));") && ms.includes('const owed = cart.find(i => i.isIouFulfillment && chk.lines.some(l => l.product.id === i.productId));') &&
      !/promoBundles|bundleCheck/.test(eng) && !/\bprice\b/.test(JSON.stringify(deal)));
   /* REGIONAL OFFERS (his 2026-10-27: "offers differs for each of the regional area ... maybe bundle that are special for
      the regional location"): no region = every area; a region = only salesmen whose location is that region; the boss sees all. */
@@ -12638,7 +12640,7 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      /visitReport\(shop\.name, tag, note, myName \|\| 'Salesman',/.test(stc) &&
      /users\/\$\{dataOwnerId\}\/customers`, shop\.id\), \{ \.\.\.report\.patch, updatedAt: serverTimestamp\(\) \}/.test(stc) &&
      /logAudit\('VISIT_REPORT', report\.sentence, false, \{ storeId: shop\.id, tag, agentId: agentProfileId \|\| null \}\)/.test(stc) &&
-     /notify\(`Visit NOT saved for/.test(stc) && /notify\(`Visit saved:/.test(stc));
+     /notify\(tr\('Visit NOT saved for/.test(stc) && /notify\(tr\('Visit saved:/.test(stc));
   ok('REGRESSION: the sheet asks once per shop per day - never after a report or a sale there today, never twice in a session - so a saved status cannot re-open it when the same shop locks again',
      /if \(askedRef\.current\.has\(shop\.id\) \|\| shop\.lastVisit === new Date\(\)\.toLocaleDateString\('en-CA'\)\) return;/.test(stc) &&
      /if \(arrival\) askedRef\.current\.add\(arrival\.shop\.id\);/.test(stc) && /const saveVisit = [\s\S]{0,260}?closeArrival\(\);/.test(stc));
@@ -12739,7 +12741,10 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
 /* EN / ID PER PHONE (2026-11-02, Aldi: "we all can see indonesian just add language swapper on the setting, we should
    make this setting that can be seen by every tiers"). tr() swaps what is SHOWN; a saved value that went through it
    would split the data - Day Replay and the reports read paymentType, visit tags and return reasons back in English. */
-{ const ms = read('src/MerchantSalesView.jsx') + read('src/components/ProofCamera.jsx');
+{ /* every file that calls tr() - round 1b (2026-11-03) wrapped the menu, header, Settings and two utils too */
+  const ms = ['src/MerchantSalesView.jsx', 'src/components/ProofCamera.jsx', 'src/components/BiohazardTheme.jsx',
+    'src/components/SettingsView.jsx', 'src/App.jsx', 'src/MusicPlayer.jsx', 'src/ponder/PonderBook.jsx',
+    'src/utils/vanBay.js', 'src/utils/dayStats.js'].map(read).join('\n');
   globalThis.localStorage = { getItem: (k) => (k === 'kpm_lang' ? 'id' : null), setItem() {} };
   const { tr, ID } = await import('../config/lang.js?as=id');
   globalThis.localStorage = { getItem: (k) => (k === 'kpm_lang' ? 'en' : null), setItem() {} };
@@ -12750,10 +12755,41 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   /* his 2026-11-02 "english already correct, make it as second language indonesia on default" */
   ok('BEHAVIOUR: a phone that never chose reads Indonesian; English only after picking it in Settings',
      getLang() === 'id' && trNew('Take order') === 'Ambil pesanan');
-  const used = [...ms.matchAll(/\btr\('([^']+)'\)/g)].map((x) => x[1]);
+  /* a key in either quote, escaped quotes allowed, with or without a fill-in after it */
+  const used = [...ms.matchAll(/\btr\((['"])((?:\\.|(?!\1)[^\\])+)\1\s*[,)]/g)].map((x) => x[2].replace(/\\(['"])/g, '$1'));
   const missing = [...new Set(used)].filter((k) => !ID[k]);
-  ok(`every tr('...') on the Sales Terminal has its Indonesian word (${used.length} uses)`, used.length > 100 && !missing.length,
+  ok(`every tr('...') has its Indonesian word (${used.length} uses)`, used.length > 200 && !missing.length,
      'missing: ' + missing.join(' | '));
+  /* keys built at run time are not literals - name them here: the menu, the ware chips, the tier price, the give box */
+  const menu = [...read('src/components/BiohazardTheme.jsx').matchAll(/\{ id: '\w+', label: '([^']+)'/g)].map((x) => x[1]);
+  const dyn = [...menu, 'ALL', 'MISC', 'BUNDLES', 'Ecer Price', 'Retail Price', 'Grosir Price',
+    'No promo goods with a retur. Give them on a new deal.', 'No promo goods in the Master Vault. Restock them in Restock Vault.',
+    'No promo goods in this van. Load them in Fleet & Canvas → PROMO.'].filter((k) => !ID[k]);
+  ok(`every menu label (${menu.length}, the vault unlock too), ware chip, tier price and give-box line has its Indonesian word`, menu.length === 18 && !dyn.length,
+     'missing: ' + dyn.join(' | '));
+  ok('BEHAVIOUR: a fill-in lands after the lookup, in both languages; a name not in the fill stays as {key}',
+     tr('Visit saved: {shop} - {tag}', { shop: 'Toko Lancar', tag: tr('Routine Check') }) === 'Kunjungan tersimpan: Toko Lancar - Cek Rutin' &&
+     trEn('Visit saved: {shop} - {tag}', { shop: 'Toko Lancar', tag: trEn('Routine Check') }) === 'Visit saved: Toko Lancar - Routine Check' &&
+     tr('Only {n} pcs of {name} {where} - not enough for {want}.', { n: 2, name: 'Korek Api', where: tr('in the van'), want: 5 }) === 'Korek Api di mobil hanya ada 2 pcs - tidak cukup untuk 5.' &&
+     trEn('{n} left today', {}) === '{n} left today');
+  /* his 2026-11-02 board line 84: "Utang" on the customer card and every pop-up, so the old Hutang went too */
+  ok('REGRESSION: the IOU option reads "Utang Barang", never "Hutang"', tr('Hutang Barang (IOU)') === 'Utang Barang' &&
+     !Object.values(ID).some((v) => /\bHutang\b/.test(v)));
+  ok('REGRESSION: no tr() key holds an escape the scan above cannot read (a \\n inside a key)', !/\btr\((['"])[^'"]*\\n/.test(ms));
+  /* isFailure reads WORDS (red edge, error sound, top panel instead of the capybara), so a pop-up put into Indonesian can
+     change colour without anyone touching Toast.jsx. Round 1b found four that would have lost their red and a restored
+     draft that would have gone red. Three refusals are red in Indonesian only, on purpose - English never caught them. */
+  const { isFailure } = await import('../utils/toastSeverity.js');
+  const redOnlyInId = ["You don't have enough healthy stock in your vehicle to settle this Utang Barang!",
+    'You do not have clearance to refund cash. Use Exchange (Tukar), or ask an admin to grant Cash Refund in Fleet & Roster.',
+    'You do not have clearance to process returns.',
+    'OUT OF STOCK IN VEHICLE!'];   // a header: the whole pop-up is red in both ("cannot" / "tidak bisa" below it)
+  /* notify(tr('..')) and the header of notify(`${tr('..')}\n\n...`); a {name} is blanked first - {error} would read as "error" */
+  const pops = [...ms.matchAll(/notify\((?:`\$\{)?tr\((['"])((?:\\.|(?!\1)[^\\])+)\1/g)].map((x) => x[2].replace(/\\(['"])/g, '$1'));
+  const blank = (s) => s.replace(/\{\w+\}/g, 'X');
+  const drift = pops.filter((k) => ID[k] && !redOnlyInId.includes(k) && isFailure(blank(k)) !== isFailure(blank(ID[k])));
+  ok(`every translated pop-up keeps its colour - red in English = red in Indonesian (${pops.length} pop-ups)`, pops.length > 25 && !drift.length,
+     'changes colour: ' + drift.join(' | '));
   ok('REGRESSION: no saved value goes through tr() - payment method, visit tag, return reason, option value stay English',
      !/paymentType:\s*tr\(|setPaymentMethod\(tr\(|saveVisit\(tr\(|value=\{tr\(|onSalesMode\(tr\(/.test(ms) &&
      /saveVisit\(tag\)/.test(ms) && /<option key=\{method\} value=\{method\}>/.test(ms));

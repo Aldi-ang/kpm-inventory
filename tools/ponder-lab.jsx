@@ -26,6 +26,7 @@ import PonderOverlay from '../src/ponder/PonderOverlay.jsx';
 import CapybaraMascot from '../src/components/CapybaraMascot.jsx';
 import { unlockSounds } from '../src/hooks/useSound.js';
 import PonderBookButton from '../src/ponder/PonderBook.jsx';
+import { tr } from '../src/config/lang.js';
 import TierPovSwitch from '../src/components/TierPovSwitch.jsx';
 import CustomerAccessPanel from '../src/components/CustomerAccessPanel.jsx';
 import SettingsView from '../src/components/SettingsView.jsx';
@@ -1053,7 +1054,7 @@ function ShellLab() {
   }, []);
   return (
     <BiohazardTheme
-      activeTab={q.has('map') ? 'map_war_room' : q.has('settings') ? 'settings' : 'command_center'} setActiveTab={() => {}}
+      activeTab={q.has('map') ? 'map_war_room' : q.has('settings') ? 'settings' : q.has('terminal') ? 'sales' : 'dashboard'} setActiveTab={() => {}}
       user={{ displayName: 'Lab', email: 'lab@example.com' }}
       /* &menu=<tier id> - the menu as that tier sees it (ROOKIE, FIELD_OPERATIVE...); default the boss's */
       appSettings={{}} isAdmin userRole={q.get('menu') || 'ADMIN'} agentSettings={{}} showAdminLogin={q.has('gate')}
@@ -1064,7 +1065,7 @@ function ShellLab() {
       syncIndicator={(
         <button onClick={() => {}} className="kpm-chip relative ">
           <Cloud size={16} />
-          <span className="text-[10px] font-black tracking-widest hidden md:inline">SYNCED</span>
+          <span className="text-[10px] font-black tracking-widest hidden md:inline">{tr('SYNCED')}</span>
         </button>
       )}
     >

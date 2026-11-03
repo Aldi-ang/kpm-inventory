@@ -16,6 +16,7 @@
    resolver does not add the extension the way Vite does. */
 import { storeKey } from './helpers.js';
 import { revenueOf } from './revenueRule.js';
+import { tr } from '../config/lang.js';
 
 /* Firestore hands back a Timestamp, the offline queue writes a plain {seconds}, and a
    serverTimestamp() that has not resolved yet is null. Handle all three rather than
@@ -86,8 +87,8 @@ export function dayStats(transactions = [], now = new Date()) {
 export function agoLabel(seconds, now = new Date()) {
   if (seconds == null) return '';
   const mins = Math.max(0, Math.floor((Math.floor(now.getTime() / 1000) - seconds) / 60));
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins} min ago`;
+  if (mins < 1) return tr('just now');
+  if (mins < 60) return tr('{n} min ago', { n: mins });
   const hrs = Math.floor(mins / 60);
-  return hrs === 1 ? '1 hour ago' : `${hrs} hours ago`;
+  return hrs === 1 ? tr('1 hour ago') : tr('{n} hours ago', { n: hrs });
 }
