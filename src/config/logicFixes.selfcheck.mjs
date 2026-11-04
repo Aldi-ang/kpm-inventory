@@ -13075,5 +13075,28 @@ section('Where the Master Vault is: one company setting');
      /const atHq = isAreaAdmin && isMasterVaultPlace\(branchLocation\);/.test(desk));
 }
 
+/* ── 2026-11-04: THE SAVE BUTTON IS A RUBBER STAMP ──
+   His "why is the button become like this", then his pick "i like B better" (A-Brain Brainstorm/2026-11-04_save-button). */
+section('The save button belongs to the paper');
+{
+  const t = read('src/styles/theme.css').replace(/\r/g, ''), ms = read('src/MerchantSalesView.jsx').replace(/\r/g, '');
+  const at = ms.indexOf('data-mission="4"'), end = ms.indexOf('</button>', at);
+  const btn = at > 0 && end > at ? ms.slice(at, end) : '';
+  ok('REGRESSION: the save button is the stamp, with no fill, shadow or big spaced letters of its own, in any state',
+     btn.includes('className="kpm-save-stamp"') && !/bg-gradient|bg-\[|shadow-|text-2xl|tracking-\[|from-\[/.test(btn));
+  ok('REGRESSION: a label beside an icon keeps its words in a span, or the icon-only 44 px rule (src/index.css) beats the stamp height',
+     btn.length > 0 && !/<><(Lock|Camera|AlertTriangle|AlertCircle|Zap)[^>]*\/> \{/.test(btn) && btn.includes('<Zap fill="currentColor"'));
+  ok('REGRESSION: the stamp stays on one line in a double ink line, on no fill, and Retur and not-ready each keep their own ink',
+     /\.kpm-save-stamp \{[^}]*white-space: nowrap;[^}]*border: 4px double #2a2118;[^}]*background-color: transparent;/.test(t) &&
+     /\.kpm-save-stamp\[data-retur\] \{ color: #6e1a14; border-color: #6e1a14; \}/.test(t) &&
+     t.indexOf('.kpm-save-stamp[data-retur]') < t.indexOf('.kpm-save-stamp:disabled') &&
+     /\.kpm-save-stamp:disabled \{[^}]*border: 1px solid rgba\(62, 50, 38, \.4\);/.test(t));
+  ok('REGRESSION: the printed-count .kpm-stamp is a different class and keeps its own one rule: the save button must never share its name',
+     /\.kpm-stamp \{ font-family: var\(--font-mono\);/.test(t) && !/\.kpm-stamp[ :\[>][^{]*\{[^}]*double/.test(t) && !btn.includes('"kpm-stamp"'));
+  ok('REGRESSION: amber, brass and shadow never come back on it (his law, 2026-08-21), and it is as tall as it was on the phone',
+     ![...t.matchAll(/\.kpm-save-stamp[^{]*\{[^}]*\}/g)].some((m) => /gradient|duke-amber|duke-brass|--gold|box-shadow/.test(m[0])) &&
+     /\.kpm-save-stamp \{[^}]*min-height: 48px;/.test(t) && /\.kpm-save-stamp \{ min-height: 56px; font-size: 16px; \}/.test(t));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -2454,15 +2454,15 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         data-retur={isReturMode ? '' : undefined}
                         onClick={handleFinalDeal}
                         disabled={!canSubmitSale || isProcessingSale}
-                        className={`kpm-hover py-2.5 md:py-4 border-2 text-base md:text-xl lg:text-2xl font-black uppercase tracking-[0.2em] transition-all active:translate-y-1 shadow-lg rounded flex items-center justify-center gap-2 md:gap-3 ${canSubmitSale && !isProcessingSale ? (isReturMode ? (returType === 'EXCHANGE' ? 'bg-gradient-to-r from-[var(--duke-brass-2)] to-[var(--duke-brass-3)] border-[var(--duke-brass-edge)] text-[var(--duke-on-plate)] hover:from-[var(--duke-brass)] hover:to-[var(--duke-brass-6)] shadow-[0_0_20px_rgba(212,175,55,0.4)]' : 'bg-gradient-to-r from-red-600 to-red-800 border-red-500 text-[var(--duke-on-fill)] hover:from-red-500 hover:to-red-700 shadow-[0_0_20px_rgba(220,38,38,0.4)]') : 'bg-gradient-to-r from-[var(--duke-amber)] to-[var(--duke-amber-2)] border-[var(--duke-brass-edge-3)] text-black hover:from-[var(--duke-brass-5)] hover:to-[var(--duke-amber)]') : 'bg-transparent text-[var(--duke-ink-3)] border-[var(--duke-edge-4)] cursor-not-allowed'}`}
+                        className="kpm-save-stamp"
                     >
                         {isProcessingSale ? <span className="flex items-center gap-2 animate-pulse"><Zap size={20}/> {tr('PROCESSING...')}</span> :
                          gpsStatus === 'checking' ? tr('Awaiting GPS...') :
-                         isGpsRestricted ? <><Lock size={20}/> {tr('LOC. RESTRICTED')}</> :
-                         !txProofPhoto && customerName.trim() ? <><Camera size={20}/> {tr('REQUIRE PROOF')}</> :
-                         hasInvalidDamagedItems ? <><AlertTriangle size={20}/> {tr('REASON REQ.')}</> :
-                         hasInsufficientStockForExchange ? <><AlertTriangle size={20}/> {tr('NO STOCK')}</> :
-                         customerName.trim() ? (isReturMode ? <><AlertCircle size={24} className="md:w-6 md:h-6"/> {tr('PULL RETUR')}</> : <><Zap fill="black" size={20} className="md:w-6 md:h-6"/> {cart.length === 0 && givenLines.length ? tr('GIVE PROMO') : tr('MAKE DEAL')}</>) : tr('SIGN MANIFEST >')}
+                         isGpsRestricted ? <><Lock size={20}/> <span>{tr('LOC. RESTRICTED')}</span></> :
+                         !txProofPhoto && customerName.trim() ? <><Camera size={20}/> <span>{tr('REQUIRE PROOF')}</span></> :
+                         hasInvalidDamagedItems ? <><AlertTriangle size={20}/> <span>{tr('REASON REQ.')}</span></> :
+                         hasInsufficientStockForExchange ? <><AlertTriangle size={20}/> <span>{tr('NO STOCK')}</span></> :
+                         customerName.trim() ? (isReturMode ? <><AlertCircle size={24} className="md:w-6 md:h-6"/> <span>{tr('PULL RETUR')}</span></> : <><Zap fill="currentColor" size={20} className="md:w-6 md:h-6"/> <span>{cart.length === 0 && givenLines.length ? tr('GIVE PROMO') : tr('MAKE DEAL')}</span></>) : tr('SIGN MANIFEST >')}
                     </button>
                 </div>
             </div>

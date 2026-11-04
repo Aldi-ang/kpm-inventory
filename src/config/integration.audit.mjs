@@ -5432,6 +5432,13 @@ check(G61, 'the six goods models and list pictures are in the build',
   ['tshirt', 'poster', 'hat', 'lighter', 'ashtray', 'mug'].every(id => fs.existsSync(`dist/promo/${id}.glb`) && fs.existsSync(`dist/promo/${id}.png`)),
   'public/promo/ is copied into dist/promo/ by vite');
 
+const GSTAMP = 'The save button is a rubber stamp on the manifest paper';
+check(GSTAMP, 'the stamp reached the build: one line, a double ink line',
+  /\.kpm-save-stamp\{[^}]*white-space:nowrap/.test(css) && /\.kpm-save-stamp\{[^}]*border:4px double #2a2118/.test(css),
+  'src/styles/theme.css .kpm-save-stamp');
+check(GSTAMP, 'not ready is its own quiet line in the build',
+  /\.kpm-save-stamp:disabled\{[^}]*border:1px solid/.test(css), 'src/styles/theme.css .kpm-save-stamp:disabled');
+
 let last = '';
 for (const r of results) {
   if (r.group !== last) { console.log('\n' + r.group); last = r.group; }

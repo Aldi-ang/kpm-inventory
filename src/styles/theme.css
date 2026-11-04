@@ -4648,6 +4648,28 @@ html.lite-mode .kpm-pace-fill { opacity: 1; animation: none; }
   .kpm-shutter-lens { width: 30px; height: 30px; }
   .kpm-shutter-word { font-size: 13px; }
 }
+/* THE SAVE BUTTON IS A RUBBER STAMP - his "why is the button become like this" (the amber fill, and SIMPAN TRANSAKSI
+   wrapping to 2 lines on PC), then his pick from the board: "i like B better". Printed on the paper in both themes, so
+   fixed ink like the photo corners above it. No fill: amber is an edge and an ink (2026-08-21). A word beside an icon needs
+   its own <span>, or the icon-only rule in index.css holds this button at 44 px. */
+.kpm-save-stamp { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 10px;
+  white-space: nowrap; font-family: Georgia, 'Times New Roman', serif; font-size: 15px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  color: #2a2118; border: 4px double #2a2118; border-radius: 0; background-color: transparent;
+  transition: translate 90ms ease-out, background-color 120ms ease-out; }
+.kpm-save-stamp > svg { flex: none; }
+.kpm-save-stamp:enabled:active { translate: 0 1px; background-color: rgba(62, 50, 38, .16); }
+.kpm-save-stamp:focus-visible { outline: 2px solid #2a2118; outline-offset: 2px; }
+.kpm-save-stamp[data-retur] { color: #6e1a14; border-color: #6e1a14; }
+.kpm-save-stamp:disabled { color: #6b5a44; border: 1px solid rgba(62, 50, 38, .4); cursor: not-allowed; }
+@media (hover: hover) and (pointer: fine) {
+  .kpm-save-stamp:enabled:hover { background-color: rgba(62, 50, 38, .1); }
+}
+@media (min-width: 768px) {
+  .kpm-save-stamp { gap: 12px; }
+}
+@media (min-width: 1024px) {
+  .kpm-save-stamp { min-height: 56px; font-size: 16px; }
+}
 /* a real pointer gets the charge line on hover too; the lamp never lights on a .kpm-key */
 @media (hover: hover) and (pointer: fine) {
   .kpm-key:hover { background-size: 100% 3px, 100% 100%, 100% 100%; }
