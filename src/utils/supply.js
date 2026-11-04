@@ -1,6 +1,7 @@
 /* The `.js` is not decoration: the self-checks import this module in plain node, and node will not
    resolve an extensionless path. Vite is happy either way, so the extension is free. */
 import { convertToBks } from './helpers.js';
+import { isFieldLevelTier, normalizeRegion } from '../config/permissions.js';
 
 /* WHERE EVERY PACK ACTUALLY IS — sold, on a van, or still on a shelf.
    ────────────────────────────────────────────────────────────────────────────
@@ -37,25 +38,39 @@ import { convertToBks } from './helpers.js';
    third hardcoded copy in the Goods Received stage — so the same place read as three places.
 
    Safe to change because this value is a COMPUTED bucket label, never a stored one: warehouseList
-   builds it fresh each render and HQ_LOCATIONS below maps whatever Firestore actually holds
+   builds it fresh each render and isMasterVaultPlace below maps whatever Firestore actually holds
    ('Headquarters', or empty) onto it. Rename the label, and no saved document moves. */
 export const MASTER = 'Gudang Pusat (Master Vault)';
-const HQ_LOCATIONS = ['Headquarters', '', null, undefined];
+
+/* THE ONE TEST FOR "IS THIS THE MAIN WAREHOUSE". His 2026-11-03 video: the Fleet & Roster edit list is in capitals, so
+   moving his van to headquarters stored the capitals, every exact-match test said "a branch", and the van read an empty
+   warehouse of its own. A place is compared to the headquarters name here, case-blind, and nowhere else. A blank place
+   has always meant the main warehouse. */
+const isHqName = (loc) => normalizeRegion(loc) === 'HEADQUARTERS';
+export const isMasterVaultPlace = (loc) => !String(loc || '').trim() || isHqName(loc);
+/* the spelling a record is saved with and a report groups by; every other place keeps what it holds */
+export const canonicalPlace = (loc) => (isHqName(loc) ? 'Headquarters' : loc);
 /* exported because the Restock Vault's Tujuan list needs the SAME answer. It filtered on its
    own shorter list once and 'Headquarters' came back as a shippable cabang beside the real HQ
    entry — two destinations for one place, on a form that writes stock movements. */
 export const NON_BRANCH = ['Headquarters', 'UNASSIGNED', 'UNASSIGNED AREA'];
+export const isNonBranch = (loc) => isMasterVaultPlace(loc) || NON_BRANCH.some(n => normalizeRegion(n) === normalizeRegion(loc));
+
+/* WHICH WAREHOUSE A VAN LOADS FROM AND RETURNS TO. Tier 5 and 6 use the shelf of the place on their card; tier 1-4 the
+   Master Vault. It was typed out in five places (Fleet's bay, load, empty, clear; the EOD return) and they had drifted. */
+export const vanUsesBranch = (agent) =>
+    !!agent && isFieldLevelTier(agent.userRole) && !isNonBranch(agent.location);
 
 /* MASTER first, then every branch on the roster, in a stable order */
 export const warehouseList = (motorists = []) => {
     const branches = [...new Set(
-        motorists.map(m => m && m.location).filter(loc => loc && !NON_BRANCH.includes(loc))
+        motorists.map(m => m && m.location).filter(loc => loc && !isNonBranch(loc))
     )].sort();
     return [MASTER, ...branches];
 };
 
 const locationOf = (motorist) =>
-    (motorist && motorist.location && !HQ_LOCATIONS.includes(motorist.location))
+    (motorist && !isMasterVaultPlace(motorist.location))
         ? motorist.location
         : MASTER;
 

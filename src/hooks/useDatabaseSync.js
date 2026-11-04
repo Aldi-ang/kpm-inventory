@@ -5,6 +5,7 @@ import { ACCESS_DOC_ID, accessFor, grantQueries, seesEveryShop } from '../utils/
 import { notify } from '../components/Toast.jsx';
 import { isPromo } from '../utils/helpers';
 import { offersFromDocs } from '../utils/vanBay';
+import { isNonBranch } from '../utils/supply.js';
 
 const NO_SHOPS = [];   // one stable empty list, so screens keyed on `customers` do not re-run every render
 
@@ -208,7 +209,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
     const branchKey = [...new Set(
         (motorists || [])
             .map(m => m && m.location)
-            .filter(loc => loc && loc !== 'Headquarters' && loc !== 'UNASSIGNED' && loc !== 'UNASSIGNED AREA')
+            .filter(loc => loc && !isNonBranch(loc))
     )].sort().join('|');
 
     useEffect(() => {

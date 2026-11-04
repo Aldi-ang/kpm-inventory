@@ -3909,10 +3909,10 @@ check(G54, 'Tujuan asks supply.js what counts as a branch instead of deciding fo
   /* The name must come FROM supply.js; the rest of the import list is free to grow. Pinning the
      exact list made this go red on 2026-08-30 for the crime of importing `bufferDays` beside it —
      a check that fails when nothing it guards has changed is a check people learn to ignore. */
-  /import \{[^}]*\bNON_BRANCH\b[^}]*\} from '\.\/utils\/supply\.js'/.test(restockCode) &&
-  /!NON_BRANCH\.includes\(n\)/.test(restockCode) &&
+  /import \{[^}]*\bisNonBranch\b[^}]*\} from '\.\/utils\/supply\.js'/.test(restockCode) &&
+  /!isNonBranch\(n\)/.test(restockCode) &&
   /export const NON_BRANCH/.test(fs.readFileSync('src/utils/supply.js', 'utf8')),
-  'branchesSeen must filter through the NON_BRANCH exported by supply.js. A local list here drifts ' +
+  'branchesSeen must filter through the isNonBranch exported by supply.js. A local list here drifts ' +
   'from the one the dashboard counts by, and the first thing that slips through is Headquarters — ' +
   'which is the master vault, not a cabang you can ship to');
 

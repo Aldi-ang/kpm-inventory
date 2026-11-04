@@ -800,6 +800,10 @@ const LAB_FLEET = [
     activeCanvas: [{ productId: 'p-gg12', name: 'Gudang Garam Surya 12', qty: 1, unit: 'Karton' }] },
   { id: 'f-r1', name: 'Rina Wijaya', email: 'rina@kpm.example', location: 'SEMARANG', userRole: 'FIELD_OPERATIVE',
     role: 'Canvas', vehicle: 'HONDA BEAT H 2211 CD', allowedPayments: ['Cash'], allowedTiers: ['Ecer'] },
+  /* &hqcaps - his 2026-11-03 video: a van the old edit form saved in capitals must read the Master Vault, not an empty warehouse of its own */
+  ...(q.has('hqcaps') ? [{ id: 'f-hq', name: 'Admin (Boss Vehicle)', email: 'boss-van@kpm.example', location: 'HEADQUARTERS', userRole: 'FIELD_OPERATIVE',
+    role: 'Canvas', vehicle: 'BOSS VAN', allowedPayments: ['Cash'], allowedTiers: ['Retail'],
+    activeCanvas: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 100, unit: 'Bks' }] }] : []),
 ];
 /* Journey Plan reads the roster with getDocs(collection motorists) */
 FIXTURES['motorists'] = [...LAB_MOTORISTS.map((m) => ({ ...m })), ...LAB_FLEET];

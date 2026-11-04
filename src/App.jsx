@@ -18,10 +18,10 @@ import useTransactionEngine from './hooks/useTransactionEngine';
 import useDatabaseSync from './hooks/useDatabaseSync'; 
 import useOfflineEngine, { canReachInternet } from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
-import { injectDynamicPermissions, isFieldLevelTier, hasClearance, canOpenTab, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion, canSetBundlePrice } from './config/permissions';
+import { injectDynamicPermissions, hasClearance, canOpenTab, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion, canSetBundlePrice } from './config/permissions';
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch, testAccountFor } from './config/povPreview';
 import { tr } from './config/lang';
-import { warehouseList } from './utils/supply';
+import { warehouseList, vanUsesBranch } from './utils/supply';
 import { accessFor } from './utils/customerAccess.js';
 import { tallySaleOp, statsPath } from './utils/salesRollupWrite';
 import { syncOfflineSale, canvasWithPending } from './utils/vanSync';
@@ -2356,9 +2356,8 @@ const handleGitHubMirror = async () => {
               // 🚀 NEW: Field-level tiers (salesmen) return stock to their own region's branch.
               // Tier 3 and above always return to the Master Vault.
               const agentProfile = motorists.find(m => m.id === lookupAgentId);
-              const agentIsFieldLevel = isFieldLevelTier(agentProfile?.userRole);
               const agentLocation = agentProfile?.location;
-              const useBranchWarehouse = agentIsFieldLevel && agentLocation && agentLocation !== 'Headquarters' && agentLocation !== 'UNASSIGNED AREA';
+              const useBranchWarehouse = vanUsesBranch(agentProfile);
               const safeBranchPath = useBranchWarehouse ? agentLocation.replace(/\//g, '-') : null;
 
               // 🚨 FIX: read the EOD report itself so two admins verifying the same report at once

@@ -1115,7 +1115,7 @@ section('S38. Minimal kirim: the floor HQ sees, keyed on the Tujuan it is sendin
      /const to = \(poData\.destination \|\| ''\)\.trim\(\)/.test(desk) &&
      /\[isOut, poData\.destination,/.test(desk));
   ok('it refuses to answer for the master vault, which is not a cabang',
-     /if \(!to \|\| NON_BRANCH\.includes\(to\)\) return \{\}/.test(desk));
+     /if \(!to \|\| isNonBranch\(to\)\) return \{\}/.test(desk));
   ok('and never on the intake form, where the goods come from the factory',
      /if \(!isOut\) return \{\}/.test(desk));
   ok('the branch shelf comes from branchStockMap, not from HQ own stock',
@@ -12758,7 +12758,7 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      s.freeSeats([1, 2, 3, 4, 5, 6], 5).length === 0 && s.freeSeats([4, 1], Infinity, 3).join() === '2,3,5' &&
      s.seatDocId('u1', 3) === 'u1_3' && s.seatsFullMsg(25, 25) === '25 of 25 seats used. Ask KPM to add seats.');
   ok('REGRESSION: under a licence both Fleet login writes (add, and an email change) carry the seat and claim it in the same batch; an email change MOVES the held seat; a self-proxy (no login) takes none',
-     (fl.match(/location: newAgent\.location \|\| 'Headquarters', \.\.\.\(seatN \? \{ seat: seatN \} : \{\}\),\s*\}(, \{ merge: true \})?\);\s*claimSeat\(batch\);/g) || []).length === 2 &&
+     (fl.match(/location: savedLocation, \.\.\.\(seatN \? \{ seat: seatN \} : \{\}\),\s*\}(, \{ merge: true \})?\);\s*claimSeat\(batch\);/g) || []).length === 2 &&
      /const needsSeat = licensed && !isSelfProxy && \(!editingAgentId \|\| oldEmailKey !== emailKey\);/.test(fl) &&
      /if \(heldSeat\) batch\.update\(seatRef, \{ login: emailKey \}\);\s*else if \(seatN\) batch\.set\(seatRef, \{ bossUid: userId, n: seatN, login: emailKey \}\);/.test(fl) &&
      /if \(needsSeat && !seatN\) return notify\(seatsFullMsg\(seatDocs\.length, seatLimit\)\);/.test(fl) && imports(fleet, 'freeSeats'));
@@ -12963,6 +12963,52 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   ok('wearing a costume keeps the tab when that tier may open it, else its own landing tab; taking it off keeps the tab when the owner may',
      /setActiveTab\(\(t\) => \(canOpenTab\(account\.tier, t\) \? t : hasClearance\(account\.tier, 'view_dashboard'\) \? 'dashboard' : 'journey'\)\);/.test(app) &&
      /setActiveTab\(\(t\) => \(canOpenTab\(trueRole, t\) \? t : 'dashboard'\)\);/.test(app));
+}
+
+/* ── 2026-11-04: HEADQUARTERS IS ONE PLACE, HOWEVER IT IS SPELLED ──
+   His 2026-11-03 video: the Fleet & Roster edit list is in capitals, so moving his van to headquarters stored the
+   capitals, and "Gudang HEADQUARTERS, 0 Bks" appeared beside the real Gudang PUSAT. */
+section('Headquarters is one place, however it is spelled');
+{
+  const S = await import('../utils/supply.js');
+  const T5 = 'FIELD_OPERATIVE', T3 = 'AREA_ADMIN';
+  const spellings = ['Headquarters', 'HEADQUARTERS', 'headquarters', ' Headquarters '];
+
+  ok('BEHAVIOUR: every spelling is the main warehouse, so the list offers it once and no second "HEADQUARTERS"',
+     JSON.stringify(S.warehouseList([...spellings.map((location) => ({ location })), { location: 'BANDUNG' }])) === JSON.stringify([S.MASTER, 'BANDUNG']));
+
+  const goods = { id: 'p1', name: 'Cello' };
+  const van = { id: 'v1', location: 'HEADQUARTERS', userRole: T5, activeCanvas: [{ productId: 'p1', qty: 200, unit: 'Bks' }] };
+  const onVan = (warehouse) => S.supplyByProduct({ inventory: [goods], motorists: [van], warehouse })[0]?.field || 0;
+  ok('BEHAVIOUR: the 200 Bks on a van saved in capitals count under the main warehouse, and under no warehouse of its own',
+     onVan(S.MASTER) === 200 && onVan('HEADQUARTERS') === 0);
+
+  ok('BEHAVIOUR: a van at headquarters uses the Master Vault in every spelling; a real branch, and only a real branch, uses its own shelf',
+     typeof S.vanUsesBranch === 'function' &&
+     spellings.every((location) => !S.vanUsesBranch({ userRole: T5, location })) &&
+     S.vanUsesBranch({ userRole: T5, location: 'BANDUNG' }) === true &&
+     ['UNASSIGNED', 'UNASSIGNED AREA', '', '  ', null, undefined].every((location) => !S.vanUsesBranch({ userRole: T5, location })) &&
+     S.vanUsesBranch(null) === false);
+  ok('BEHAVIOUR: this fix moves nobody else - tier 1-4 still use the Master Vault wherever they are posted (his rank rule is a separate decision)',
+     typeof S.vanUsesBranch === 'function' && S.vanUsesBranch({ userRole: T3, location: 'BANDUNG' }) === false);
+  ok('BEHAVIOUR: saving heals only the headquarters spelling; every other place keeps what it holds',
+     typeof S.canonicalPlace === 'function' && spellings.every((p) => S.canonicalPlace(p) === 'Headquarters') &&
+     S.canonicalPlace('BANDUNG') === 'BANDUNG' && S.canonicalPlace('Muntilan') === 'Muntilan');
+
+  const walk = fs.readdirSync('src', { recursive: true }).map(String).map((f) => f.replace(/\\/g, '/'))
+    .filter((f) => /\.(js|jsx)$/.test(f) && !f.startsWith('ponder/'));
+  const exact = walk.filter((f) => /[!=]==?\s*'Headquarters'/.test(read('src/' + f)) || /NON_BRANCH\.includes/.test(read('src/' + f)));
+  ok('REGRESSION: no screen compares a place to the headquarters name by exact spelling; the one test lives in supply.js',
+     walk.length > 100 && exact.length === 0, 'exact match in: ' + exact.join(', '));
+
+  const fleetForm = read('src/FleetCanvasManager.jsx'), appFile = read('src/App.jsx');
+  ok('REGRESSION: the 4 van-warehouse rules in Fleet and the EOD return in App all ask the one rule',
+     (fleetForm.match(/vanUsesBranch\(selectedAgent\)/g) || []).length === 4 && /const useBranchWarehouse = vanUsesBranch\(agentProfile\);/.test(appFile));
+  ok('REGRESSION: the edit form shows the place the card holds (a headquarters card used to open showing the first place on the list) and saves the healed spelling',
+     /value=\{normalizeRegion\(newAgent\.location \|\| existingLocations\[0\]\)\}/.test(fleetForm) &&
+     /const savedLocation = isAreaAdmin \? \(newAgent\.location \|\| 'Headquarters'\) : canonicalPlace\(newAgent\.location \|\| 'Headquarters'\);/.test(fleetForm) &&
+     /id: newId, \.\.\.newAgent, location: savedLocation,/.test(fleetForm) &&
+     /role: newAgent\.role, email: emailKey,\s+allowedPayments[\s\S]{0,160}location: savedLocation,/.test(fleetForm));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

@@ -6,11 +6,12 @@ import {
 } from 'lucide-react';
 import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp, query, where } from 'firebase/firestore';
 import { seatDocId, freeSeats, seatsUsedText, seatsFullMsg } from './utils/seats.js';
-import { DYNAMIC_TIERS, isFieldLevelTier, canEditFleetRoster, tierWord, hasClearance, TIER_ONE_ID, resolveTierOneId, canSetBundlePrice } from './config/permissions';
+import { DYNAMIC_TIERS, canEditFleetRoster, tierWord, hasClearance, TIER_ONE_ID, resolveTierOneId, canSetBundlePrice } from './config/permissions';
 import { vaultDocPath, VAULT_TRIES_RESET } from './utils/vaultDoc.js';
 import { lockLeftMs, untilText } from './utils/vaultLock.js';
 import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems, nameInitials, isPromo } from './utils/helpers';
 import { normalizeRegion } from './config/permissions';
+import { canonicalPlace, vanUsesBranch } from './utils/supply';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { IS_DEMO } from './config/firebase';
@@ -193,9 +194,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
     // 🚀 FIX: Follows the SELECTED AGENT's own warehouse, not the viewer's — same rule as
     // EOD, Clear Canvas, and Load Canvas, so the number shown here always matches reality.
-    const selectedAgentUsesBranch = selectedAgent
-        ? isFieldLevelTier(selectedAgent.userRole) && selectedAgent.location && selectedAgent.location !== 'Headquarters' && selectedAgent.location !== 'UNASSIGNED AREA' && selectedAgent.location !== 'UNASSIGNED'
-        : false;
+    const selectedAgentUsesBranch = vanUsesBranch(selectedAgent);
     const selectedAgentLocation = selectedAgent?.location;
 
     useEffect(() => {
@@ -396,6 +395,9 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         if (isDupName) return notify(`ACCESS DENIED!\n\nThe name "${newAgent.name}" is already registered.`);
         if (isDupPlate) return notify(`ACCESS DENIED!\n\nThe vehicle license plate "${newAgent.vehicle.toUpperCase()}" is already assigned.`);
 
+        /* a regional admin keeps the spelling on the form: firestore.rules lets them create a card only at the exact
+           place on their own login, and a login saved in capitals before this fix would be refused the healed name */
+        const savedLocation = isAreaAdmin ? (newAgent.location || 'Headquarters') : canonicalPlace(newAgent.location || 'Headquarters');
         const oldAgent = editingAgentId ? agents.find(a => a.id === editingAgentId) : null;
         const oldEmailKey = oldAgent?.email?.toLowerCase().trim();
         /* THE SEAT: a new login record holds one. An email change MOVES the seat the old address held (his "they can
@@ -418,7 +420,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 batch.update(agentRef, {
                     name: newAgent.name, phone: newAgent.phone, vehicle: newAgent.vehicle, role: newAgent.role, email: emailKey,
                     allowedPayments: newAgent.allowedPayments, allowedTiers: newAgent.allowedTiers,
-                    userRole: newAgent.userRole || 'AGENT', location: newAgent.location || 'Headquarters', province: newAgent.province || 'Central Java',
+                    userRole: newAgent.userRole || 'AGENT', location: savedLocation, province: newAgent.province || 'Central Java',
                     allowRetur: newAgent.allowRetur || false,
                     allowCashRefund: newAgent.allowCashRefund || false,
                     joinDate: newAgent.joinDate || '',
@@ -433,21 +435,21 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 // No login mapping for a self-proxy — see isSelfProxy above.
                 if (!isSelfProxy) batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: editingAgentId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active',
-                    location: newAgent.location || 'Headquarters', ...(seatN ? { seat: seatN } : {}),
+                    location: savedLocation, ...(seatN ? { seat: seatN } : {}),
                 }, { merge: true });
                 claimSeat(batch);
 
             } else {
                 const newId = `AGT_${Date.now()}`;
                 const agentData = {
-                    id: newId, ...newAgent, email: emailKey, status: 'Active', activeCanvas: [], createdAt: serverTimestamp(),
+                    id: newId, ...newAgent, location: savedLocation, email: emailKey, status: 'Active', activeCanvas: [], createdAt: serverTimestamp(),
                     approvalRegions: (newAgent.approvalRegions || []).length ? newAgent.approvalRegions.map(normalizeRegion) : null
                 };
                 batch.set(doc(db, collPath, newId), agentData);
                 // No login mapping for a self-proxy — see isSelfProxy above.
                 if (!isSelfProxy) batch.set(doc(db, `artifacts/${appId}/employee_directory`, emailKey), {
                     bossUid: userId, agentId: newId, role: newAgent.role, userRole: newAgent.userRole || 'AGENT', status: 'Active',
-                    location: newAgent.location || 'Headquarters', ...(seatN ? { seat: seatN } : {}),
+                    location: savedLocation, ...(seatN ? { seat: seatN } : {}),
                 });
                 claimSeat(batch);
             }
@@ -605,9 +607,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
         // 🚀 FIX: Route based on the SELECTED AGENT's own tier/region, not the viewer's.
         // Matches the same rule used by EOD verification and Clear Canvas.
-        const agentIsFieldLevel = isFieldLevelTier(selectedAgent.userRole);
         const agentLocation = selectedAgent.location;
-        const useBranchWarehouse = agentIsFieldLevel && agentLocation && agentLocation !== 'Headquarters' && agentLocation !== 'UNASSIGNED AREA' && agentLocation !== 'UNASSIGNED';
+        const useBranchWarehouse = vanUsesBranch(selectedAgent);
         const sourceLabel = useBranchWarehouse ? `${agentLocation} Branch` : 'Master';
 
         const sourceRef = useBranchWarehouse
@@ -689,9 +690,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
         // 🚀 FIX: Route based on the SELECTED AGENT's own tier/region, not the viewer's.
         // Matches the same rule EOD verification uses, so the two can never disagree.
-        const agentIsFieldLevel = isFieldLevelTier(selectedAgent.userRole);
         const agentLocation = selectedAgent.location;
-        const useBranchWarehouse = agentIsFieldLevel && agentLocation && agentLocation !== 'Headquarters' && agentLocation !== 'UNASSIGNED AREA' && agentLocation !== 'UNASSIGNED';
+        const useBranchWarehouse = vanUsesBranch(selectedAgent);
         const destinationLabel = useBranchWarehouse ? `${agentLocation} Branch` : 'Master Vault';
 
         if (!await confirmAction(`Are you sure you want to empty ${selectedAgent.name}'s vehicle inventory? This will securely return all their unsold stock back into the ${destinationLabel}.`)) return;
@@ -763,9 +763,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         if (!selectedAgent || !product || !(Number(qtyBks) > 0)) return { ok: false, reason: 'Jumlah tidak sah' };
         const promo = isPromo(product);
 
-        const agentIsFieldLevel = isFieldLevelTier(selectedAgent.userRole);
         const agentLocation = selectedAgent.location;
-        const useBranchWarehouse = agentIsFieldLevel && agentLocation && agentLocation !== 'Headquarters' && agentLocation !== 'UNASSIGNED AREA' && agentLocation !== 'UNASSIGNED';
+        const useBranchWarehouse = vanUsesBranch(selectedAgent);
         const destinationLabel = useBranchWarehouse ? `${agentLocation} Branch` : 'Master Vault';
         const agentRef = doc(db, collPath, selectedAgent.id);
         const destRef = useBranchWarehouse
@@ -1248,7 +1247,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                     </div>
                                 ) : (
                                     <div className="flex-1 flex gap-2">
-                                        <select disabled={isReadOnlyMode} value={newAgent.location || existingLocations[0]} onChange={e => setNewAgent({...newAgent, location: e.target.value})} className={`flex-1 border border-[var(--accent-edge)] rounded p-2.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent-edge)] uppercase ${isReadOnlyMode ? 'bg-[var(--raised)] opacity-60 cursor-not-allowed' : 'bg-[var(--inset)]'}`}>
+                                        <select disabled={isReadOnlyMode} value={normalizeRegion(newAgent.location || existingLocations[0])} onChange={e => setNewAgent({...newAgent, location: e.target.value})} className={`flex-1 border border-[var(--accent-edge)] rounded p-2.5 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent-edge)] uppercase ${isReadOnlyMode ? 'bg-[var(--raised)] opacity-60 cursor-not-allowed' : 'bg-[var(--inset)]'}`}>
                                             {existingLocations.map(l => <option key={l} value={l}>{l}</option>)}
                                         </select>
                                         {!isReadOnlyMode && <button onClick={() => { setIsNewLoc(true); setNewAgent({...newAgent, location: ''}); }} className="bg-[var(--inset)] border border-[var(--accent-edge)] text-[var(--accent-ink)] p-2.5 rounded hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] transition-colors" title="Add New Area"><Plus size={14}/></button>}

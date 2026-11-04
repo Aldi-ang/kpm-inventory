@@ -7,6 +7,7 @@ import { commitInChunks } from '../utils/helpers';
 import { tallySaleOp } from '../utils/salesRollupWrite';
 import { formatRupiah, convertToBks, getCurrentDate, storeKey } from '../utils/helpers';
 import { hasClearance } from '../config/permissions';
+import { canonicalPlace, isMasterVaultPlace } from '../utils/supply';
 import { offerResults } from '../utils/vanBay';
 import { notify } from './Toast.jsx';
 import SaleReceipt from './SaleReceipt.jsx';
@@ -61,7 +62,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
     // The current viewer's own branch/region — used to fence in 'regional' access
     const myLocation = useMemo(() => {
         const myProfile = motorists?.find(m => m.id === agentProfileId);
-        return myProfile?.location || null;
+        return canonicalPlace(myProfile?.location) || null;
     }, [motorists, agentProfileId]);
 
     // --- ENGINE 1: DATA MERGE & TIME FILTER ---
@@ -81,7 +82,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 if (!myLocation) return false; // Hide everything if we don't know their branch yet
                 const txAgentId = t.agentId || 'ADMIN';
                 const txLocation = txAgentId === 'ADMIN' ? 'Headquarters' : (motorists?.find(m => m.id === txAgentId)?.location || null);
-                if (txLocation !== myLocation) return false; // Shred other regions' data
+                if (canonicalPlace(txLocation) !== myLocation) return false; // Shred other regions' data
             }
             
             const tDate = new Date(t.date);
@@ -120,9 +121,9 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             motorists.forEach(m => {
                 // 🛑 UI LOCK: Prevent UI folders from being built for anyone else
                 if (isFieldAgent && m.id !== agentProfileId) return;
-                if (isRegionalOnly && (m.location || 'UNASSIGNED AREA') !== myLocation) return;
+                if (isRegionalOnly && (canonicalPlace(m.location) || 'UNASSIGNED AREA') !== myLocation) return;
 
-                const loc = m.location || 'UNASSIGNED AREA';
+                const loc = canonicalPlace(m.location) || 'UNASSIGNED AREA';
                 const aName = m.name || m.agentName || 'Unknown Agent';
                 if (!structure[loc]) structure[loc] = { name: loc, total: 0, count: 0, agents: {} };
                 if (!structure[loc].agents[aName]) structure[loc].agents[aName] = { name: aName, id: m.id, total: 0, count: 0, provinsi: {} };
@@ -141,7 +142,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             if (agentId === 'ADMIN') {
                 const boss = motorists?.find(m => m.role === 'COMPANY_OWNER' || m.id === 'master_owner' || m.id === 'ADMIN');
                 if (boss && boss.location) {
-                    regionName = boss.location;
+                    regionName = canonicalPlace(boss.location);
                     agentName = boss.name || agentName;
                 } else {
                     regionName = 'Headquarters';
@@ -149,7 +150,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             } else if (motorists && motorists.length > 0) {
                 const motorist = motorists.find(m => m.id === agentId);
                 if (motorist) {
-                    regionName = motorist.location || 'UNASSIGNED AREA';
+                    regionName = canonicalPlace(motorist.location) || 'UNASSIGNED AREA';
                     agentName = motorist.name || motorist.agentName || agentName;
                 }
             }
@@ -251,8 +252,8 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         if (selectedAgent && selectedRegion) return searchedTransactions.filter(t => (t.agentName || 'Admin') === selectedAgent);
         if (selectedRegion) return searchedTransactions.filter(t => {
             const agentId = t.agentId || 'ADMIN';
-            if (agentId === 'ADMIN') return selectedRegion === 'Headquarters';
-            return motorists?.find(m => m.id === agentId)?.location === selectedRegion;
+            if (agentId === 'ADMIN') return isMasterVaultPlace(selectedRegion);
+            return canonicalPlace(motorists?.find(m => m.id === agentId)?.location) === selectedRegion;
         });
         return searchedTransactions; 
     }, [searchedTransactions, selectedRegion, selectedAgent, motorists]);

@@ -11,7 +11,7 @@ import { canPickFromGallery, canHandleDelivery, canManageRegistry, tierWord } fr
 import Lamp from './components/Lamp.jsx';
 import PhotoField from './components/PhotoField.jsx';
 /* one definition of "what is a branch", shared with the dashboard's supply maths */
-import { NON_BRANCH, bufferDays, MASTER } from './utils/supply.js';
+import { isNonBranch, bufferDays, MASTER } from './utils/supply.js';
 /* THE SAME FOUR FUNCTIONS THE BRANCH PANEL RUNS ON, imported rather than re-derived. His ask,
    2026-08-30: *"when we fill the shipment out forms, it shows the recommended quantity sent for
    each product"* — and the branch already had this maths. A second copy of "how fast does this
@@ -300,7 +300,7 @@ const RestockVaultView = ({ inventory = [], promoItems = [], procurements = [], 
         () => [...new Set([
             ...motorists.map(m => m?.location),
             ...stockRequests.map(r => r?.branch),
-        ].filter(Boolean).filter(n => !NON_BRANCH.includes(n)))].sort(),
+        ].filter(Boolean).filter(n => !isNonBranch(n)))].sort(),
         [motorists, stockRequests]
     );
     const suppliersSeen = useMemo(
@@ -477,7 +477,7 @@ const RestockVaultView = ({ inventory = [], promoItems = [], procurements = [], 
     const sendAdvice = useMemo(() => {
         if (!isOut) return {};
         const to = (poData.destination || '').trim();
-        if (!to || NON_BRANCH.includes(to)) return {};
+        if (!to || isNonBranch(to)) return {};
         const now = Math.floor(Date.now() / 1000);
         const rhythm = shipmentRhythm(stockRequests, to);
         const spare = bufferDays(appSettings, to);

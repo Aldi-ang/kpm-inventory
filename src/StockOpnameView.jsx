@@ -15,7 +15,7 @@ import { canSeeExpectedCount } from './config/permissions';
 /* Imported under a different name on purpose. The string 'MASTER' in this file is a SELECT VALUE
    that routes Firestore paths (branches/{facility}/inventory) — changing it would move documents.
    HQ_LABEL is only what the reader sees, and that is the part that had four spellings. */
-import { MASTER as HQ_LABEL } from './utils/supply.js';
+import { MASTER as HQ_LABEL, isMasterVaultPlace } from './utils/supply.js';
 import { CrateVault } from './components/WarehouseChest.jsx';
 import { IS_DEMO } from './config/firebase';
 
@@ -266,7 +266,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     const uniqueBranches = useMemo(() => {
         const branches = new Set();
         safeMotorists.forEach(m => {
-            if (m && m.location && m.location !== 'Headquarters' && m.location !== 'UNASSIGNED') branches.add(m.location);
+            if (m && !isMasterVaultPlace(m.location) && m.location !== 'UNASSIGNED') branches.add(m.location);
         });
         return Array.from(branches);
     }, [safeMotorists]);
@@ -827,7 +827,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                 }
             });
 
-            const targetAgents = safeMotorists.filter(m => m && (monitorFacility === 'MASTER' ? m.location === 'Headquarters' || !m.location : m.location === monitorFacility));
+            const targetAgents = safeMotorists.filter(m => m && (monitorFacility === 'MASTER' ? isMasterVaultPlace(m.location) : m.location === monitorFacility));
             const agentIds = targetAgents.map(a => a.id);
 
             targetAgents.forEach(agent => {
