@@ -675,9 +675,9 @@ section('S9. A count corrects the stock, it does not replace it');
 const opname = read('src/StockOpnameView.jsx');
 
 ok('approval applies the counted difference through increment()',
-   /stock:\s+increment\(Number\(item\.goodCount \|\| 0\)\s+- Number\(item\.expectedStock \|\| 0\)\)/.test(opname));
-ok('damaged stock is corrected the same way',
-   /damagedStock: increment\(Number\(item\.damagedCount \|\| 0\) - Number\(item\.expectedDamagedStock \|\| 0\)\)/.test(opname));
+   /stock: increment\(delta\.stock\)/.test(opname));
+ok('damaged stock only goes up, through the same increment()',
+   /damagedStock: increment\(delta\.damagedStock\)/.test(opname));
 ok('the blind overwrite is gone from the normal path',
    !/data: \{ stock: item\.goodCount, damagedStock: item\.damagedCount \}/.test(opname));
 /* ⚠️ THIS CHECK'S NAME ONLY BECAME TRUE ON 2026-08-21. It always claimed "AT COUNT TIME", but
@@ -2221,7 +2221,7 @@ section('S35. The counting card is readable in both themes and cannot overlap it
   ok('the figures are tabular, so digits line up between rows',
      (card.match(/tabular-nums/g) || []).length >= 4);
   ok('the counts are grouped - a four figure number is unreadable raw',
-     /formatNumber\(totalFound\)/.test(card));
+     /formatNumber\(target\.stock\)/.test(card));
   /* ⚠️ REWRITTEN 2026-08-21, and the RULE did not change - only the form it takes. Aldi:
      "stop using amber background i said, i hate it, use it for little things and u can do
      better animation or UI for the damaged item not just all amber". The verdict was a solid
@@ -2300,6 +2300,8 @@ ${opname.slice(bOpen + 1, bEnd)}
      !/\$\{sorted\} of \$\{dmgTotal\} sorted/.test(opname));
   ok('the words go red with the border, so the refusal is not carried by colour alone',
      /blocked \? 'text-\[var\(--accent-ink\)\]'/.test(opname), 'amber with its line since 2026-09-18 (his "too much red"); the refusal sentence is still printed');
+  ok('packs already in Quarantine are not asked for a cause again, so the right count is not harder than the wrong one',  damageBlocked({ damaged: 12, expDamaged: 12 }) === null);
+  ok('only the newly found damage is',  /3 damaged not sorted/.test(damageBlocked({ damaged: 15, expDamaged: 12, kinds: {} })));
   ok('3 pest + 2 water against 5 damaged passes',  damageBlocked({ damaged: 5, kinds: { 'Pest / Rodent Damage': 3, 'Water / Weather Damage': 2 } }) === null);
   ok('no free-text escape hatch is left in the rule',
      !/otherDetail/.test(opname), 'a free-text cause cannot be grouped or counted');
@@ -2322,7 +2324,7 @@ ${opname.slice(bOpen + 1, bEnd)}
      /expStock:\s*Number\(src\.stock/.test(opname) && /expDamaged:\s*Number\(src\.damagedStock/.test(opname));
   ok('the variance compares against the snapshot, not the live document',
      /const target = expectedOf\(item, entry\)/.test(opname)
-     && /variance: totalFound - \(target\.stock \+ target\.damaged\)/.test(opname));
+     && /goodDiff: Number\(entry\.good \|\| 0\) - target\.stock, damagedDiff: Number\(entry\.damaged \|\| 0\) - target\.damaged/.test(opname));
   ok('and the saved record carries the snapshot, not the figures at submit time',
      /expectedStock: Number\(entry\.expStock/.test(opname)
      && /expectedDamagedStock: Number\(entry\.expDamaged/.test(opname));
@@ -2331,7 +2333,7 @@ ${opname.slice(bOpen + 1, bEnd)}
      !/formatNumber\(item\.stock \|\| 0\)/.test(opname) && !/formatNumber\(item\.damagedStock \|\| 0\)/.test(opname));
   /* HQ's list had the identical fault: healthy-only expected beside a good+damaged found. */
   ok('HQ\'s review list compares like for like, and legacy audits still render',
-     /SYS: <\/span><span className="text-sm font-black font-mono tabular-nums text-\[var\(--ink\)\]">\{formatNumber\(\(item\.expectedStock \|\| 0\) \+ \(item\.expectedDamagedStock \|\| 0\)\)\}<\/span>/.test(opname));   /* 2026-09-22: a plain figure since the audit line followed the card */
+     /SYS: <\/span><span className="text-sm font-black font-mono tabular-nums text-\[var\(--ink\)\]">\{formatNumber\(expected \|\| 0\)\}<\/span>/.test(opname));   /* 2026-09-22: a plain figure since the audit line followed the card */
   ok('and HQ can see what kind of damage it is approving',
      /item\.damageKinds\.map/.test(opname));
 
@@ -2431,11 +2433,18 @@ ${opname.slice(rOpen + 1, rEnd)}
      recountState({ good: 99, damaged: 0 }, { stock: 99.4375, damaged: 0 }).needsRecount === false);
   ok('but a whole pack short still does',
      recountState({ good: 98, damaged: 0 }, { stock: 99.4375, damaged: 0 }).needsRecount === true);
+  /* his 2026-11-04: good and damaged are two counts, even for one product */
+  ok('HIS CASE: 1010 good and 0 damaged against 1000 and 10 is not a match, it is counted again',
+     recountState({ good: 1010, damaged: 0 }, { stock: 1000, damaged: 10 }).needsRecount === true);
+  ok('good and damaged each right is a match',
+     recountState({ good: 1000, damaged: 10 }, { stock: 1000, damaged: 10 }).needsRecount === false);
+  ok('an empty Damaged box with packs in Quarantine is a difference too',
+     recountState({ good: 1000, damaged: '' }, { stock: 1000, damaged: 10 }).needsRecount === true);
   /* comments stripped first: the fix documents the dead field by name, and a naive scan reads
      that prose as if the bug were still there. Only markup is judged. */
   const opnameCode = opname.replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
   ok('HQ judges a saved row by the same rule, not by a field that does not exist',
-     /withinTolerance\(item\.variance\)/.test(opnameCode) && !/item\.matched/.test(opnameCode));
+     /withinTolerance\(diff\)/.test(opnameCode) && !/item\.matched/.test(opnameCode));
 
   /* ---- A CONFIRMED DIFFERENCE MUST SAY WHY (2026-08-21) ----
      HQ used to receive a bare "-3" and had to guess between a bookkeeping fix, a write-off and a
@@ -7712,9 +7721,9 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/bg-\[var\(--danger-well\)\] text-\[var\(--danger-ink\)\] border border-\[var\(--danger\)\] px-2 py-0\.5 rounded/.test(code(so)) &&
      !/text-\[var\(--danger-ink\)\] font-bold uppercase tracking-widest whitespace-nowrap">Expected damaged/.test(code(so)));
   ok('the plates carry the control system\'s top light and the DIFFERENCE is a plain red figure keyed on the value (2026-09-22: the nixie refused for this plate); the verdict block folds open on the first typed number',
-     (so.match(/<div className="bg-\[var\(--sunk\)\] px-3 py-2 md:px-4 border border-transparent kpm-plate">/g) || []).length === 3 &&
-     /<div className=\{`bg-\[var\(--sunk\)\] px-3 py-2 md:px-4 border kpm-plate \$\{matched \? 'border-\[var\(--accent-edge\)\]' : tone === 'bad' \? 'border-\[var\(--danger\)\]' : 'border-\[var\(--accent-edge\)\]'\} `\}>/.test(so) &&
-     /<div key=\{variance\} className=\{`text-sm font-black font-mono tabular-nums /.test(so) && !/<div className="mt-1"><NixieCount value=\{variance\}/.test(so) &&
+     (so.match(/<div className="bg-\[var\(--sunk\)\] px-3 py-2 md:px-4 border border-transparent kpm-plate">/g) || []).length === 2 &&
+     /<div key=\{label\} className=\{`bg-\[var\(--sunk\)\] px-3 py-2 md:px-4 border kpm-plate flex flex-col justify-between \$\{same \? 'border-\[var\(--accent-edge\)\]' : tone === 'bad' \? 'border-\[var\(--danger\)\]' : 'border-\[var\(--accent-edge\)\]'\} `\}>/.test(so) &&
+     /<div key=\{diff\} className=\{`text-sm font-black font-mono tabular-nums /.test(so) && !/<div className="mt-1"><NixieCount value=\{variance\}/.test(so) &&
      /<div className="grid transition-\[grid-template-rows\] duration-\[260ms\] ease-out" style=\{\{ gridTemplateRows: isRevealed \? '1fr' : '0fr' \}\}>\s*<div className="overflow-hidden">\s*\{isRevealed && \(/.test(so) &&
      !/import NixieCount from '\.\/components\/NixieCount\.jsx';/.test(so),   /* 2026-09-22 15:45: the audit line followed the card, so the import is gone */
      'the LED window he refused is gone from here: no .kpm-led on this screen',
@@ -7725,13 +7734,13 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /<span className="font-bold text-sm lg:text-xs text-\[var\(--ink\)\] uppercase lg:truncate">\{item\.name\}<\/span>/.test(so) &&
      /<div className="kpm-fig3 grid grid-cols-3 gap-px bg-\[var\(--line\)\] rounded-lg overflow-hidden text-center lg:flex lg:items-center lg:gap-4 lg:bg-transparent lg:rounded-none lg:overflow-visible lg:text-left text-xs font-mono">/.test(so) &&
      (so.match(/<span className="lg:hidden block text-\[11px\] text-\[var\(--ink-dim\)\] font-bold uppercase tracking-widest mb-1">(Expected|Found)<\/span>/g) || []).length === 2 &&
-     /<span className=\{`lg:text-right font-black \$\{withinTolerance\(item\.variance\) \? 'text-\[var\(--accent-ink\)\]' : 'text-\[var\(--danger-ink\)\]'\} `\}>\s*<span className="lg:hidden block text-\[11px\] font-bold uppercase tracking-widest mb-1">Difference<\/span>/.test(so) &&
+     /<span className=\{`lg:text-right font-black \$\{withinTolerance\(diff\) \? 'text-\[var\(--accent-ink\)\]' : 'text-\[var\(--danger-ink\)\]'\} `\}>\s*<span className="lg:hidden block text-\[11px\] font-bold uppercase tracking-widest mb-1">Difference<\/span>/.test(so) &&
      (so.match(/<span className="hidden lg:inline">(SYS: |FND: )<\/span>/g) || []).length === 2 &&
      /* 2026-09-22 15:45, his "make boss audit have the same design like that one": the three figures are the count card's plain
         mono figure; the nixie and its .kpm-nixie-verdict size rule are gone from this screen */
-     /<span className="text-sm font-black font-mono tabular-nums text-\[var\(--ink\)\]">\{formatNumber\(\(item\.expectedStock \|\| 0\) \+ \(item\.expectedDamagedStock \|\| 0\)\)\}<\/span>/.test(so) &&
-     /<span className="text-sm font-black font-mono tabular-nums text-\[var\(--ink\)\]">\{formatNumber\(item\.totalFound\)\}<\/span>/.test(so) &&
-     /<span key=\{item\.variance\} className=\{`block text-sm font-black font-mono tabular-nums \$\{withinTolerance\(item\.variance\) \? 'text-\[var\(--ink\)\]' : 'text-\[var\(--danger-ink\)\] ' \+ \(item\.variance < 0 \? 'kpm-verdict-down' : 'kpm-verdict-up'\)\}`\}>\{item\.variance > 0 \? '\+' : item\.variance < 0 \? '-' : ''\}\{formatNumber\(Math\.abs\(item\.variance\)\)\}<\/span>/.test(so) &&
+     /<span className="text-sm font-black font-mono tabular-nums text-\[var\(--ink\)\]">\{formatNumber\(expected \|\| 0\)\}<\/span>/.test(so) &&
+     /<span className="text-sm font-black font-mono tabular-nums text-\[var\(--ink\)\]">\{formatNumber\(found \|\| 0\)\}<\/span>/.test(so) &&
+     /<span key=\{diff\} className=\{`block text-sm font-black font-mono tabular-nums \$\{withinTolerance\(diff\) \? 'text-\[var\(--ink\)\]' : 'text-\[var\(--danger-ink\)\] ' \+ \(diff < 0 \? 'kpm-verdict-down' : 'kpm-verdict-up'\)\}`\}>\{diff > 0 \? '\+' : diff < 0 \? '-' : ''\}\{formatNumber\(Math\.abs\(diff\)\)\}<\/span>/.test(so) &&
      !/NixieCount/.test(code(so)) && !/kpm-nixie-verdict/.test(th) &&
      /@media \(max-width: 1023px\) \{ \.kpm-fig3 > span \{ background-color: var\(--sunk\); padding: 8px 4px; background-image: linear-gradient/.test(th) &&
      !/<div className="flex justify-between items-center mb-2 border-b border-\[var\(--line\)\] pb-2">/.test(code(so)),
@@ -8446,13 +8455,13 @@ section('THE COUNT CARD\'S DIFFERENCE IS A PLAIN RED FIGURE THAT MOVES ONCE (202
   const plate = soc.slice(soc.indexOf('Expected good</div>'), soc.indexOf('{Number(damagedVal) > 0 && ('));
   ok('the count card\'s DIFFERENCE plate no longer holds the nixie', plate.length > 200 && !/<NixieCount value=\{variance\}/.test(plate));
   ok('the figure has the SAME format as its three siblings (text-sm font-black font-mono tabular-nums)',
-     /className=\{`text-sm font-black font-mono tabular-nums \$\{variance === 0 \? 'text-\[var\(--ink\)\]' : 'text-\[var\(--danger-ink\)\] ' \+ \(variance < 0 \? 'kpm-verdict-down' : 'kpm-verdict-up'\)\}`\}/.test(plate) &&
-     (plate.match(/text-sm font-black font-mono tabular-nums/g) || []).length === 4);
-  ok('red only when there is a difference; zero is plain ink like the others', /variance === 0 \? 'text-\[var\(--ink\)\]' : 'text-\[var\(--danger-ink\)\]/.test(plate));
-  ok('keyed on the value, so the motion plays once per new count, and the sign is written', /<div key=\{variance\}/.test(plate) && /\{variance > 0 \? '\+' : variance < 0 \? '-' : ''\}\{formatNumber\(Math\.abs\(variance\)\)\}/.test(plate));
+     /className=\{`text-sm font-black font-mono tabular-nums \$\{diff === 0 \? 'text-\[var\(--ink\)\]' : 'text-\[var\(--danger-ink\)\] ' \+ \(diff < 0 \? 'kpm-verdict-down' : 'kpm-verdict-up'\)\}`\}/.test(plate) &&
+     (plate.match(/text-sm font-black font-mono tabular-nums/g) || []).length === 3);
+  ok('red only when there is a difference; zero is plain ink like the others', /diff === 0 \? 'text-\[var\(--ink\)\]' : 'text-\[var\(--danger-ink\)\]/.test(plate));
+  ok('keyed on the value, so the motion plays once per new count, and the sign is written', /<div key=\{diff\}/.test(plate) && /\{diff > 0 \? '\+' : diff < 0 \? '-' : ''\}\{formatNumber\(Math\.abs\(diff\)\)\}/.test(plate));
   /* 15:45, his "make boss audit have the same design like that one": the audit line followed, so no nixie is left on this
      screen and its import is gone; the component itself stays for the EOD folder and the Agent Inventory window */
-  ok('no nixie is left on the Stock Opname screen; the boss\'s audit DIFFERENCE is the same keyed red figure', !/NixieCount/.test(soc) && /<span key=\{item\.variance\} className=\{`block text-sm font-black font-mono tabular-nums /.test(so) && (so.match(/kpm-verdict-down/g) || []).length === 2);
+  ok('no nixie is left on the Stock Opname screen; the boss\'s audit DIFFERENCE is the same keyed red figure', !/NixieCount/.test(soc) && /<span key=\{diff\} className=\{`block text-sm font-black font-mono tabular-nums /.test(so) && (so.match(/kpm-verdict-down/g) || []).length === 2);
   ok('the component still exists for the screens that keep it', fs.existsSync('src/components/NixieCount.jsx') && /NixieCount/.test(read('src/EODReconciliationView.jsx')) && /NixieCount/.test(read('src/AgentInventoryView.jsx')));
   const down = th.match(/@keyframes kpmVerdictDown \{([^}]*\}[^}]*\}[^}]*)\}/); const up = th.match(/@keyframes kpmVerdictUp \{([^}]*\}[^}]*\}[^}]*)\}/);
   ok('two one-shot motions exist: a shortfall drops in, a surplus rises', !!down && !!up && /translateY\(-10px\)/.test(down[1]) && /translateY\(8px\) scale\(\.92\)/.test(up[1]));
@@ -13183,6 +13192,42 @@ section('Stock Opname day: T3 and above pick one day, the count opens only that 
      st.includes('this login may not change the Stock Opname day yet'));
   ok('REGRESSION: the rule lets a T3 write that one field and nothing else; a T4 is not in it',
      rules.includes("allow update: if docId == 'general' && isAreaAdmin(bossUid) &&\n          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['opnameDay']) &&"));
+}
+
+section('Stock Opname: good and damaged are two counts, a count never turns damaged packs into good stock');
+{
+  const S = await import('../utils/supply.js');
+  const so = read('src/StockOpnameView.jsx');
+  const made = typeof S.approveDeltas === 'function' && typeof S.quarantineLost === 'function' && typeof S.damagedCountNote === 'function';
+  const item = (goodCount, damagedCount, expectedStock = 1000, expectedDamagedStock = 10) => ({ goodCount, damagedCount, expectedStock, expectedDamagedStock });
+  const approve = (g, d) => (made ? S.approveDeltas(item(g, d)) : {});
+  const is = (a, stock, damagedStock) => a.stock === stock && a.damagedStock === damagedStock;
+  ok('HIS CASE: 1010 typed as good and 0 as damaged against 1000 and 10 changes no number on approval, nothing converts', is(approve(1010, 0), 0, 0));
+  ok('BEHAVIOUR: an empty Damaged box keeps the Quarantine number', is(approve(1000, 0), 0, 0));
+  ok('BEHAVIOUR: a real shortage of good packs still corrects good stock, and Quarantine keeps its number', is(approve(995, 0), -5, 0));
+  ok('BEHAVIOUR: newly damaged packs move from good stock into Quarantine', is(approve(997, 13), -3, 3));
+  ok('BEHAVIOUR: a good surplus lands only for the part the damaged shortfall does not explain', is(approve(1015, 0), 5, 0));
+  ok('BEHAVIOUR: a right count changes nothing', is(approve(1000, 10), 0, 0));
+  const back = (x, b, g) => made && S.quarantineLost(x).back === b && S.quarantineLost(x).goodOut === g;
+  ok('PUT BACK: his case returns 10 to Quarantine and takes 10 out of good stock', back(item(1010, 0), 10, 10));
+  ok('PUT BACK: an empty box returns them to Quarantine and leaves good stock alone; a real shortage on the same row is kept',
+     back(item(1000, 0), 10, 0) && back(item(995, 0), 10, 0));
+  ok('PUT BACK: nothing to return from a count that lost nothing, or from a record with no snapshot',
+     back(item(997, 13), 0, 0) && back({ goodCount: 5, damagedCount: 0 }, 0, 0));
+  ok('EVERY ACTION REPORTS: HQ is told when damaged packs look counted as good, and when fewer were found; a right count says nothing',
+     made && /counted as good/.test(S.damagedCountNote(item(1010, 0)) || '') && /Fewer damaged/.test(S.damagedCountNote(item(1000, 0)) || '') && S.damagedCountNote(item(1000, 10)) === null);
+  ok('REGRESSION: approval reads that rule, and no path writes a counted damaged number over the Quarantine',
+     so.includes('const delta = approveDeltas(item);') && !/damagedStock: Number\(item\.damagedCount/.test(so) && !/increment\(Number\(item\.damagedCount/.test(so));
+  ok('REGRESSION: the count row shows two differences and never a total',
+     !so.includes('Total found') && !so.includes('item.totalFound') && so.includes('const { goodDiff, damagedDiff } = getVariance(item);') &&
+     so.includes('const matched = withinTolerance(goodDiff) && withinTolerance(damagedDiff);'));
+  ok('REGRESSION: the counter is told where damaged packs go when good is over and damaged is short',
+     so.includes('{goodDiff >= 1 && damagedDiff <= -1 && ') && so.includes('Damaged packs go in the Damaged box'));
+  ok('REGRESSION: HQ reads each count on its own line and never sees PERFECT MATCH while they differ',
+     so.includes('<AuditFigures label="Good"') && so.includes('<AuditFigures label="Damaged"') && so.includes('const hasIssues = totalDamaged > 0 || purelyMissing > 0 || anyDifference;'));
+  ok('REGRESSION: Put back shows on an old approved count only, reports, and can only run once',
+     so.includes("quarantineKept: true") && so.includes('putBack: true') && so.includes('!audit.quarantineKept && !audit.putBack && audit.items.some(i => quarantineLost(i).back > 0)') &&
+     so.includes('STOCK_OPNAME_PUT_BACK'));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

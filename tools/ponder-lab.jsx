@@ -751,6 +751,15 @@ FIXTURES['pending_audits'] = [
       { productId: 'p-cm12', name: 'Cello Merah 12', expectedStock: 168, expectedDamagedStock: 0, goodCount: 168, damagedCount: 0, totalFound: 168, variance: 0, varianceReason: null, countPasses: [{ good: 168, damaged: 0 }], countedTwice: false, threeWayDisagreement: false, damageKinds: [], damagedPhotoUrl: null },
     ] },
 ];
+/* &hisbug - his 2026-11-04 count: 10 damaged packs typed as good. One waiting for HQ, one already approved under the old rule. */
+if (q.has('hisbug')) {
+  const his = { productId: 'p-djar', name: 'Djarum Coklat 12', expectedStock: 1800, expectedDamagedStock: 12, goodCount: 1812, damagedCount: 0, totalFound: 1812, variance: 0, varianceReason: null, countPasses: [{ good: 1812, damaged: 0 }], countedTwice: false, threeWayDisagreement: false, damageKinds: [], damagedPhotoUrl: null };
+  const at = { seconds: Math.floor(Date.now() / 1000) - 7200 };
+  FIXTURES['pending_audits'] = [
+    { id: 'aud-his', status: 'PENDING_HQ_APPROVAL', branchLocation: 'HEADQUARTERS', agentName: 'Aldi', auditType: 'MASTER_VAULT', timestamp: at, items: [his] },
+    { id: 'aud-old', status: 'APPROVED', branchLocation: 'HEADQUARTERS', agentName: 'Aldi', auditType: 'MASTER_VAULT', timestamp: at, resolvedAt: at, resolvedBy: 'Aldi', items: [his] },
+  ];
+}
 FIXTURES['quarantine_logs'] = [
   { id: 'ql1', method: 'RTV', facility: 'BANDUNG', productName: 'Djarum Coklat 12', qty: 12, totalValueHpp: 150000,
     details: 'SJR-2026-014', resolvedBy: 'Lab', timestamp: { seconds: Math.floor(Date.now() / 1000) - 86400 } },

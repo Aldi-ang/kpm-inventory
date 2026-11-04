@@ -82,6 +82,34 @@ export const opnameThisWeek = (motorists = [], location, now = new Date(), day) 
     return { done: marks.find(o => !o.rejected) || null, sentBack: marks.find(o => o.rejected) || null };
 };
 
+/* GOOD AND DAMAGED ARE TWO COUNTS, even for one product. His 2026-11-04: "i put all the total count which is 1010 inside the
+   healthy goods, and keep the damaged good as 0 and the app didnt recognize that ... all the damaged good is gone converted into
+   healthy goods instead ... make sure damaged and healthy goods have different count number". What approving a count changes:
+   good stock by its own difference; Quarantine only goes up, because every decision on a damaged pack is made there ("all the
+   decision is in there"). A good surplus that a damaged shortfall explains is damaged packs counted as good: it changes nothing. */
+export const countedDiffs = (item) => ({
+    good: Number(item?.goodCount || 0) - Number(item?.expectedStock || 0),
+    damaged: Number(item?.damagedCount || 0) - Number(item?.expectedDamagedStock || 0)
+});
+export const approveDeltas = (item) => {
+    const { good, damaged } = countedDiffs(item);
+    return { stock: good - Math.min(Math.max(0, good), Math.max(0, -damaged)), damagedStock: Math.max(0, damaged) };
+};
+export const damagedCountNote = (item) => {
+    const { good, damaged } = countedDiffs(item);
+    if (damaged > -1) return null;
+    return good >= 1 ? 'Damaged packs look counted as good. Approving will not turn them into good stock.'
+                     : 'Fewer damaged packs found than in Quarantine. Approving keeps the Quarantine number; decide there.';
+};
+/* What a count approved before that rule took from Quarantine, and how much of it went into good stock. Nothing can be told from
+   a record with no snapshot. */
+export const quarantineLost = (item) => {
+    if (item?.expectedDamagedStock === undefined) return { back: 0, goodOut: 0 };
+    const { good, damaged } = countedDiffs(item);
+    const back = Math.max(0, -damaged);
+    return { back, goodOut: Math.min(back, Math.max(0, good)) };
+};
+
 /* WHAT A REGIONAL SHELF STILL HOLDS, for the Master Vault setting: '' when empty. A promo row counts pieces, never Bks. */
 export const shelfHolding = (rows = []) => {
     const count = (r) => Math.max(0, Number(r?.stock) || 0) + Math.max(0, Number(r?.damagedStock) || 0);

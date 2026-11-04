@@ -15,7 +15,7 @@ import { canSeeExpectedCount } from './config/permissions';
 /* Imported under a different name on purpose. The string 'MASTER' in this file is a SELECT VALUE
    that routes Firestore paths (branches/{facility}/inventory) — changing it would move documents.
    HQ_LABEL is only what the reader sees, and that is the part that had four spellings. */
-import { MASTER as HQ_LABEL, isMasterVaultPlace, opnameThisWeek, opnameMark } from './utils/supply.js';
+import { MASTER as HQ_LABEL, isMasterVaultPlace, opnameThisWeek, opnameMark, approveDeltas, countedDiffs, damagedCountNote, quarantineLost } from './utils/supply.js';
 import { nextWeekStart, WEEK_DAYS } from './utils/period.js';
 import { CrateVault } from './components/WarehouseChest.jsx';
 import { IS_DEMO } from './config/firebase';
@@ -119,12 +119,12 @@ export const recountState = (entry, target) => {
     const good = Number((entry && entry.good) || 0);
     const damaged = Number((entry && entry.damaged) || 0);
     const current = { good, damaged };
-    const variance = (good + damaged) - (Number(target.stock || 0) + Number(target.damaged || 0));
 
     /* A count that matches the system needs nothing, no matter how it got here — and anything
        under a whole pack counts as matching, because it is loose sticks the box cannot even
-       express. See VARIANCE_TOLERANCE_BKS. */
-    if (withinTolerance(variance)) return { needsRecount: false, confirmed: false, disagreement: false, passes: passes.length };
+       express. See VARIANCE_TOLERANCE_BKS. Two counts, never added: 1010 good and 0 damaged
+       against 1000 and 10 is two differences, not a match (supply.js approveDeltas). */
+    if (withinTolerance(good - Number(target.stock || 0)) && withinTolerance(damaged - Number(target.damaged || 0))) return { needsRecount: false, confirmed: false, disagreement: false, passes: passes.length };
 
     if (passes.length === 0) return { needsRecount: true, confirmed: false, disagreement: false, passes: 0 };
 
@@ -179,7 +179,9 @@ export const damageSorted = (entry) =>
    control exists to close — the same guard the terminal already applies at
    MerchantSalesView.jsx:1548. */
 export const damageBlocked = (entry) => {
-    const total = Number((entry && entry.damaged) || 0);
+    /* only NEWLY found damage: packs already in Quarantine got their cause when they entered, and asking again would make the
+       right count harder than typing them all as good */
+    const total = Math.max(0, Number((entry && entry.damaged) || 0) - Number((entry && entry.expDamaged) || 0));
     if (total <= 0) return null;
     const sorted = damageSorted(entry);
     if (sorted !== total) {
@@ -192,6 +194,34 @@ export const damageBlocked = (entry) => {
                               : `${sorted - total} sorted more than the total`;
     }
     return null;
+};
+
+/* ONE OF THE TWO COUNTS ON HQ's ROW. Good and damaged each print what the book said, what was found and the difference (his
+   2026-11-04: "they are different"); a total here is how 10 damaged packs read as a perfect count. */
+const AuditFigures = ({ label, expected, found }) => {
+    const diff = Number(found || 0) - Number(expected || 0);
+    return (
+        <div className="lg:flex lg:items-center lg:justify-end lg:gap-4">
+            <div className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-1 lg:mb-0">{label}</div>
+            <div className="kpm-fig3 grid grid-cols-3 gap-px bg-[var(--line)] rounded-lg overflow-hidden text-center lg:flex lg:items-center lg:gap-4 lg:bg-transparent lg:rounded-none lg:overflow-visible lg:text-left text-xs font-mono">
+                <span className="text-[var(--ink-dim)]">
+                    <span className="lg:hidden block text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-1">Expected</span>
+                    <span className="hidden lg:inline">SYS: </span><span className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(expected || 0)}</span>
+                </span>
+                <span className="hidden lg:inline text-[var(--ink-dim)]">→</span>
+                <span className="text-[var(--ink-dim)] font-bold"><span className="lg:hidden block text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-1">Found</span><span className="hidden lg:inline">FND: </span><span className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(found || 0)}</span></span>
+                {/* the SAME rule the agent's row uses. */}
+                <span className={`lg:text-right font-black ${withinTolerance(diff) ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>
+                    <span className="lg:hidden block text-[11px] font-bold uppercase tracking-widest mb-1">Difference</span>
+                    {/* the count card's verdict figure, his 2026-09-22 "make boss audit have the same
+                        design like that one": the same plain figure as the two beside it, red outside
+                        the tolerance, a shortfall drops in and a surplus rises, once (theme.css THE
+                        VERDICT FIGURE). The nixie left this screen with it. */}
+                    <span key={diff} className={`block text-sm font-black font-mono tabular-nums ${withinTolerance(diff) ? 'text-[var(--ink)]' : 'text-[var(--danger-ink)] ' + (diff < 0 ? 'kpm-verdict-down' : 'kpm-verdict-up')}`}>{diff > 0 ? '+' : diff < 0 ? '-' : ''}{formatNumber(Math.abs(diff))}</span>
+                </span>
+            </div>
+        </div>
+    );
 };
 
 const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db, storage, appId, user, userRole: liveRole, isAdmin, logAudit, triggerCapy, motorists = [], appSettings }) => {
@@ -498,20 +528,14 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
         damaged: Number(entry?.expDamaged ?? item?.damagedStock ?? 0)
     });
 
+    /* EACH COUNT AGAINST ITS OWN FIGURE, both from the frozen snapshot. Adding them is how 10 damaged
+       packs typed as good read as a perfect count (supply.js approveDeltas). */
     const getVariance = (item) => {
-        if (!item || !item.id) return { totalFound: 0, variance: 0 };
-        const entry = counts[item.id];
-        if (!entry) return { totalFound: 0, variance: 0 };
-        const good = Number(entry.good || 0);
-        const damaged = Number(entry.damaged || 0);
-        const totalFound = good + damaged;
+        const entry = item?.id && counts[item.id];
+        if (!entry) return { goodDiff: 0, damagedDiff: 0 };
         const target = expectedOf(item, entry);
-        return { totalFound, variance: totalFound - (target.stock + target.damaged) };
+        return { goodDiff: Number(entry.good || 0) - target.stock, damagedDiff: Number(entry.damaged || 0) - target.damaged };
     };
-
-    /* ⚠️ THE COMPARISON IS AGAINST HEALTHY *PLUS* ALREADY-KNOWN DAMAGED, never healthy alone -
-       otherwise re-counting the same known damaged units reads as new variance forever. That was
-       already true; what changed is that both halves now come from the frozen snapshot. */
 
     const handleCommit = async () => {
         if (weekDone) return notify(`Cannot submit: this week's count for ${countPlace} is already in (${weekDone.by}, ${dayWord(weekDone.at)}).`);
@@ -580,7 +604,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                         expectedDamagedStock: Number(entry.expDamaged ?? item.damagedStock ?? 0),
                         goodCount: good,
                         damagedCount: damaged,
-                        totalFound: totalFound,
+                        /* packs gone from the building, for the leak check and the Bks Missing line. No verdict reads it. */
                         variance: totalFound - ((item.stock || 0) + (item.damagedStock || 0)),
                         /* HOW MANY TIMES THIS ROW WAS COUNTED, and every number he reached.
                            `countedTwice` is what tells HQ this difference survived a second look
@@ -638,10 +662,16 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
         finally { setIsSubmitting(false); }
     };
 
+    const shelfWrite = (audit, productId, data) => {
+        const isBranch = audit.auditType === 'BRANCH_WAREHOUSE';
+        const ref = doc(db, isBranch ? `artifacts/${appId}/users/${masterId}/branches/${audit.branchLocation}/inventory` : `artifacts/${appId}/users/${masterId}/products`, productId);
+        return isBranch ? { type: 'set', ref, data, options: { merge: true } } : { type: 'update', ref, data };
+    };
+
     const handleApproveAudit = async (audit) => {
         // The old wording promised an overwrite, which is what this used to do and what made the
         // damage look deliberate. It applies the counted difference now, so the message says so.
-        if (!await confirmAction(`APPROVE AUDIT: applies the counted difference to ${audit.branchLocation}'s stock. Sales and returns made since the count are kept. Proceed?`)) return;
+        if (!await confirmAction(`APPROVE AUDIT: good stock at ${audit.branchLocation} changes by its own difference, and newly damaged packs go into Quarantine. A count never lowers Quarantine and never turns damaged packs into good stock. Sales and returns made since the count are kept. Proceed?`)) return;
         setIsProcessingAudit(true);
         try {
             // 🚀 FIX: Build the operations list and hand it to commitInChunks instead of a
@@ -649,13 +679,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
             // defensive chunking used for company-wide writes elsewhere, for consistency
             // as audits grow.
             const operations = [];
-            const basePath = audit.auditType === 'BRANCH_WAREHOUSE'
-                ? `artifacts/${appId}/users/${masterId}/branches/${audit.branchLocation}/inventory`
-                : `artifacts/${appId}/users/${masterId}/products`;
-
             for (const item of audit.items) {
-                const itemRef = doc(db, basePath, item.productId);
-
                 /* 🚀 FIX: apply the DIFFERENCE the counter found, not the number they counted.
                    Overwriting is right at the moment of counting and wrong by the evening: the
                    branch counts 100 at 08:00, sells 30, takes 20 back at EOD, and HQ approving
@@ -669,23 +693,19 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                    batch with no read, so reading the current stock here to subtract from would
                    race anything that sells while HQ is deciding. */
                 const hasSnapshot = item.expectedStock !== undefined && item.expectedDamagedStock !== undefined;
+                const delta = approveDeltas(item);
                 const data = hasSnapshot
-                    ? { stock:        increment(Number(item.goodCount || 0)    - Number(item.expectedStock || 0)),
-                        damagedStock: increment(Number(item.damagedCount || 0) - Number(item.expectedDamagedStock || 0)) }
+                    ? { stock: increment(delta.stock), damagedStock: increment(delta.damagedStock) }
                     /* Audits submitted before the snapshot existed carry no expected values, so
                        there is no difference to compute and the old overwrite is the only honest
-                       answer for them. */
-                    : { stock: Number(item.goodCount || 0), damagedStock: Number(item.damagedCount || 0) };
+                       answer for good stock. Quarantine is left alone: a count never lowers it. */
+                    : { stock: Number(item.goodCount || 0) };
 
-                if (audit.auditType === 'BRANCH_WAREHOUSE') {
-                    operations.push({ type: 'set', ref: itemRef, data, options: { merge: true } });
-                } else {
-                    operations.push({ type: 'update', ref: itemRef, data });
-                }
+                operations.push(shelfWrite(audit, item.productId, data));
             }
 
             const auditRef = doc(db, `artifacts/${appId}/users/${masterId}/pending_audits`, audit.id);
-            operations.push({ type: 'update', ref: auditRef, data: { status: 'APPROVED', resolvedAt: serverTimestamp(), resolvedBy: user.email?.split('@')[0] } });
+            operations.push({ type: 'update', ref: auditRef, data: { status: 'APPROVED', quarantineKept: true, resolvedAt: serverTimestamp(), resolvedBy: user.email?.split('@')[0] } });
 
             await commitInChunks(db, writeBatch, operations);
             if (logAudit) await logAudit("STOCK_OPNAME_APPROVED", `Approved stock audit for ${audit.branchLocation}.`);
@@ -693,6 +713,23 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
             
             setExpandedAudit(null);
         } catch (error) { notify("Failed to approve audit."); } 
+        finally { setIsProcessingAudit(false); }
+    };
+
+    /* PUT BACK - his 2026-11-04 count: 10 damaged packs typed as good, approved under the old rule, and they became good stock. The
+       approved count kept the numbers, so this reverses exactly that, once, and any real shortage on the row stays corrected. */
+    const handlePutBack = async (audit) => {
+        const rows = audit.items.map(i => ({ item: i, ...quarantineLost(i) })).filter(r => r.back > 0);
+        if (!rows.length) return;
+        if (!await confirmAction(`PUT BACK what this approved count took from Quarantine at ${audit.branchLocation}:\n\n${rows.map(r => `${r.item.name}: Quarantine +${r.back}${r.goodOut ? `, good stock -${r.goodOut}` : ''}`).join('\n')}\n\nProceed?`)) return;
+        setIsProcessingAudit(true);
+        try {
+            const operations = rows.map(r => shelfWrite(audit, r.item.productId, { damagedStock: increment(r.back), ...(r.goodOut ? { stock: increment(-r.goodOut) } : {}) }));
+            operations.push({ type: 'update', ref: doc(db, `artifacts/${appId}/users/${masterId}/pending_audits`, audit.id), data: { putBack: true, putBackAt: serverTimestamp(), putBackBy: user.email?.split('@')[0] } });
+            await commitInChunks(db, writeBatch, operations);
+            if (logAudit) await logAudit("STOCK_OPNAME_PUT_BACK", `Put back Quarantine taken by the approved count for ${audit.branchLocation}: ${rows.map(r => `${r.item.name} +${r.back}`).join(', ')}.`);
+            if (triggerCapy) triggerCapy('Quarantine is back to what it was.');
+        } catch (error) { notify("Failed to put back Quarantine - check the connection and press it again."); }
         finally { setIsProcessingAudit(false); }
     };
 
@@ -1321,15 +1358,17 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                 const isExpanded = expandedAudit === audit.id;
                                 const isHistory = auditSubTab === 'history';
                                 
-                                let totalDamaged = 0; let purelyMissing = 0;
+                                let totalDamaged = 0; let purelyMissing = 0; let anyDifference = false;
                                 audit.items.forEach(item => {
                                     if (item.damagedCount > 0) totalDamaged += item.damagedCount;
+                                    const diffs = countedDiffs(item);
+                                    if (!withinTolerance(diffs.good) || !withinTolerance(diffs.damaged)) anyDifference = true;
                                     if (item.variance < 0) {
                                         purelyMissing += Math.abs(item.variance);
                                     }
                                 });
 
-                                const hasIssues = totalDamaged > 0 || purelyMissing > 0;
+                                const hasIssues = totalDamaged > 0 || purelyMissing > 0 || anyDifference;
                                 let displayTime = "Unknown Time";
                                 if (audit.timestamp?.seconds) displayTime = new Date(audit.timestamp.seconds * 1000).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
                                 let resolvedTime = audit.resolvedAt?.seconds ? new Date(audit.resolvedAt.seconds * 1000).toLocaleString('id-ID') : '';
@@ -1366,6 +1405,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                 <div className="text-right hidden md:block">
                                                     {purelyMissing > 0 && <p className="text-[11px] lg:text-[10px] uppercase font-bold text-[var(--danger-ink)]">{purelyMissing} Bks Missing</p>}
                                                     {totalDamaged > 0 && <p className="text-[11px] lg:text-[10px] uppercase font-bold text-[var(--accent-ink)]">{totalDamaged} Bks Damaged</p>}
+                                                    {anyDifference && !purelyMissing && <p className="text-[11px] lg:text-[10px] uppercase font-bold text-[var(--danger-ink)]">Good or damaged differs</p>}
                                                     {!hasIssues && <p className="text-sm uppercase font-black text-[var(--ink-dim)]">PERFECT MATCH</p>}
                                                 </div>
                                                 {isExpanded ? <ChevronUp size={20} className="text-[var(--ink-dim)]"/> : <ChevronDown size={20} className="text-[var(--ink-dim)]"/>}
@@ -1387,6 +1427,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                 <div className="space-y-2 mb-4 lg:max-h-[40vh] lg:overflow-y-auto custom-scrollbar pr-2">
                                                     {audit.items.map((item, idx) => {
                                                         const isMissing = item.variance < 0;
+                                                        const damagedNote = !isHistory && damagedCountNote(item);
                                                         
                                                         return (
                                                             <div key={idx} className="flex flex-col bg-[var(--raised)] p-3 rounded-lg border border-[var(--line)]">
@@ -1407,35 +1448,9 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                                             );
                                                                         })()}
                                                                     </span>
-                                                                    <div className="kpm-fig3 grid grid-cols-3 gap-px bg-[var(--line)] rounded-lg overflow-hidden text-center lg:flex lg:items-center lg:gap-4 lg:bg-transparent lg:rounded-none lg:overflow-visible lg:text-left text-xs font-mono">
-                                                                        {/* SAME FAULT AS THE COUNT ROW, ON HQ's SIDE. This printed
-                                                                            expectedStock alone - healthy only - next to a totalFound
-                                                                            that counts good + damaged, so a perfect count of 100
-                                                                            healthy and 5 damaged read "SYS 100 -> FND 105 -> 0" and
-                                                                            looked like five boxes appearing from nowhere. The damaged
-                                                                            half is now named, so both sides measure the same thing.
-                                                                            `|| 0` matters: audits saved before the split have no
-                                                                            expectedDamagedStock at all. */}
-                                                                        <span className="text-[var(--ink-dim)]">
-                                                                            <span className="lg:hidden block text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-1">Expected</span>
-                                                                            <span className="hidden lg:inline">SYS: </span><span className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber((item.expectedStock || 0) + (item.expectedDamagedStock || 0))}</span>
-                                                                            {(item.expectedDamagedStock || 0) > 0 && (
-                                                                                <span className="block lg:inline text-[11px] lg:text-xs mt-1 lg:mt-0"> ({item.expectedDamagedStock} dmg)</span>
-                                                                            )}
-                                                                        </span>
-                                                                        <span className="hidden lg:inline text-[var(--ink-dim)]">→</span>
-                                                                        <span className="text-[var(--ink-dim)] font-bold"><span className="lg:hidden block text-[11px] text-[var(--ink-dim)] font-bold uppercase tracking-widest mb-1">Found</span><span className="hidden lg:inline">FND: </span><span className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(item.totalFound)}</span></span>
-                                                                        {/* the SAME rule the agent's row uses. `item.matched` is not a
-                                                                            field on the record - a blanket rename put it here and it would
-                                                                            have painted every HQ row red, on a value that never exists. */}
-                                                                        <span className={`lg:text-right font-black ${withinTolerance(item.variance) ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} `}>
-                                                                            <span className="lg:hidden block text-[11px] font-bold uppercase tracking-widest mb-1">Difference</span>
-                                                                            {/* the count card's verdict figure, his 2026-09-22 "make boss audit have the same
-                                                                                design like that one": the same plain figure as the two beside it, red outside
-                                                                                the tolerance, a shortfall drops in and a surplus rises, once (theme.css THE
-                                                                                VERDICT FIGURE). The nixie left this screen with it. */}
-                                                                            <span key={item.variance} className={`block text-sm font-black font-mono tabular-nums ${withinTolerance(item.variance) ? 'text-[var(--ink)]' : 'text-[var(--danger-ink)] ' + (item.variance < 0 ? 'kpm-verdict-down' : 'kpm-verdict-up')}`}>{item.variance > 0 ? '+' : item.variance < 0 ? '-' : ''}{formatNumber(Math.abs(item.variance))}</span>
-                                                                        </span>
+                                                                    <div className="flex flex-col gap-2 lg:gap-1 lg:shrink-0">
+                                                                        <AuditFigures label="Good" expected={item.expectedStock} found={item.goodCount} />
+                                                                        {(Number(item.expectedDamagedStock || 0) > 0 || Number(item.damagedCount || 0) > 0) && <AuditFigures label="Damaged" expected={item.expectedDamagedStock} found={item.damagedCount} />}
                                                                     </div>
                                                                 </div>
 
@@ -1487,6 +1502,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                                     )}
                                                                 </div>
 
+                                                                {damagedNote && <p className="mt-2 text-xs leading-relaxed font-bold text-[var(--danger-ink)]">{damagedNote}</p>}
                                                                 {(isMissing || item.damagedPhotoUrl) && (
                                                                     <div className="mt-2 flex items-center justify-between bg-[var(--sunk)] p-2 rounded">
                                                                         {isMissing ? (
@@ -1504,6 +1520,13 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                         );
                                                     })}
                                                 </div>
+
+                                                {isHistory && audit.status === 'APPROVED' && !audit.quarantineKept && !audit.putBack && audit.items.some(i => quarantineLost(i).back > 0) && (
+                                                    <div className="pt-2 border-t border-[var(--line)]">
+                                                        <button onClick={() => handlePutBack(audit)} disabled={isProcessingAudit} className="w-full bg-[var(--raised)] border border-[var(--accent-edge)] text-[var(--accent-ink)] py-3 rounded-lg font-bold text-xs">Put back what this count took from Quarantine</button>
+                                                    </div>
+                                                )}
+                                                {isHistory && audit.putBack && <p className="pt-2 border-t border-[var(--line)] text-xs font-bold text-[var(--ink-dim)]">Quarantine was put back after this count.</p>}
 
                                                 {!isHistory && (
                                                     <div className="flex gap-3 pt-2 border-t border-[var(--line)]">
@@ -1550,14 +1573,14 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                 const hasEntry = !!entry;
                                 const goodVal = entry?.good ?? '';
                                 const damagedVal = entry?.damaged ?? '';
-                                const { totalFound, variance } = getVariance(item);
+                                const { goodDiff, damagedDiff } = getVariance(item);
                                 /* frozen when he started this row, so a sale landing mid-count
                                    cannot move the number he is counting against */
                                 const target = expectedOf(item, entry);
                                 /* under one whole pack is loose sticks, not a difference - see
                                    VARIANCE_TOLERANCE_BKS. The FIGURE is still printed exactly as
                                    counted; only the verdict treats it as a match. */
-                                const matched = withinTolerance(variance);
+                                const matched = withinTolerance(goodDiff) && withinTolerance(damagedDiff);
                                 const hasTyped = goodVal !== '' || damagedVal !== '';
                                 const isRevealed = showExpectedWhileCounting || (hasEntry && hasTyped);
                                 /* ⚠️ AFTER `hasTyped`, AND THAT ORDER IS THE WHOLE POINT.
@@ -1631,27 +1654,31 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                         <div className="text-[11px] lg:text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Expected damaged</div>
                                                         <div className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(target.damaged)}</div>
                                                     </div>
-                                                    <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent kpm-plate">
-                                                        <div className="text-[11px] lg:text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Total found</div>
-                                                        <div className="text-sm font-black font-mono tabular-nums text-[var(--ink)]">{formatNumber(totalFound)}</div>
-                                                    </div>
-                                                    {/* A BORDER, NOT A RING. Tailwind's `ring` is a box-shadow, and Lite Mode
-                                                        strips box-shadow — the verdict would have lost its only edge on a
-                                                        cheap phone. Every plate carries a transparent border so the coloured
-                                                        one costs no shift. */}
-                                                    <div className={`bg-[var(--sunk)] px-3 py-2 md:px-4 border kpm-plate ${matched ? 'border-[var(--accent-edge)]' : tone === 'bad' ? 'border-[var(--danger)]' : 'border-[var(--accent-edge)]'} `}>
-                                                        <div className={`text-[11px] lg:text-[9px] font-bold uppercase tracking-widest ${matched ? 'text-[var(--accent-ink)]' : tone === 'bad' ? 'text-[var(--danger-ink)]' : 'text-[var(--accent-ink)]'} `}>{matched ? 'Match' : 'Difference'}</div>
-                                                        {/* THE VERDICT FIGURE. Aldi, 2026-09-22: the nixie "doesnt look natural compared to other
+                                                    {[['Good', goodDiff], ['Damaged', damagedDiff]].map(([label, diff]) => {
+                                                        const same = withinTolerance(diff);
+                                                        /* A BORDER, NOT A RING. Tailwind's `ring` is a box-shadow, and Lite Mode
+                                                           strips box-shadow — the verdict would have lost its only edge on a
+                                                           cheap phone. Every plate carries a transparent border so the coloured
+                                                           one costs no shift. */
+                                                        return (
+                                                            <div key={label} className={`bg-[var(--sunk)] px-3 py-2 md:px-4 border kpm-plate flex flex-col justify-between ${same ? 'border-[var(--accent-edge)]' : tone === 'bad' ? 'border-[var(--danger)]' : 'border-[var(--accent-edge)]'} `}>
+                                                                <div className={`text-[11px] lg:text-[9px] font-bold uppercase tracking-widest ${same ? 'text-[var(--accent-ink)]' : tone === 'bad' ? 'text-[var(--danger-ink)]' : 'text-[var(--accent-ink)]'} `}>{label} {same ? 'match' : 'difference'}</div>
+                                                                {/* THE VERDICT FIGURE. Aldi, 2026-09-22: the nixie "doesnt look natural compared to other
                                                             number box right there" — "just make it on red color with some animation on negative
                                                             and also specific animation on positive but just let the format be the same with
                                                             other text beside it". So: the same mono figure as the three plates beside it; red
                                                             when there is a difference, plain ink on zero; keyed on the value so it moves ONCE per
                                                             new count — a shortfall drops in, a surplus rises (theme.css THE VERDICT FIGURE).
                                                             Lite Mode strips the motion and keeps the red. */}
-                                                        <div key={variance} className={`text-sm font-black font-mono tabular-nums ${variance === 0 ? 'text-[var(--ink)]' : 'text-[var(--danger-ink)] ' + (variance < 0 ? 'kpm-verdict-down' : 'kpm-verdict-up')}`}>{variance > 0 ? '+' : variance < 0 ? '-' : ''}{formatNumber(Math.abs(variance))}</div>
-                                                    </div>
+                                                                <div key={diff} className={`text-sm font-black font-mono tabular-nums ${diff === 0 ? 'text-[var(--ink)]' : 'text-[var(--danger-ink)] ' + (diff < 0 ? 'kpm-verdict-down' : 'kpm-verdict-up')}`}>{diff > 0 ? '+' : diff < 0 ? '-' : ''}{formatNumber(Math.abs(diff))}</div>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
 
+                                                {goodDiff >= 1 && damagedDiff <= -1 && (
+                                                    <p className="w-full text-xs leading-relaxed font-bold text-[var(--danger-ink)]">Damaged packs go in the Damaged box, even for the same product. Good stock is only the healthy ones.</p>
+                                                )}
                                                 {Number(damagedVal) > 0 && (
                                                     <div className="w-full md:w-auto">
                                                         {entry.photo ? (
@@ -1731,8 +1758,8 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                     an open panel on each is unusable. Closed, the line still carries the
                                                     number, the progress and the red state, so nothing is hidden that has
                                                     a problem in it. */}
-                                                {Number(damagedVal) > 0 && (() => {
-                                                    const dmgTotal = Number(damagedVal || 0);
+                                                {damagedDiff >= 1 && (() => {
+                                                    const dmgTotal = damagedDiff;
                                                     const kinds = entry?.kinds || {};
                                                     const sorted = damageSorted(entry);
                                                     const blocked = damageBlocked(entry);

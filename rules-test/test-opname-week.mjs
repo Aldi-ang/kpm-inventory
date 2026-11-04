@@ -71,6 +71,14 @@ const back = owner => { const b = writeBatch(owner);
 await expect('owner: the rejection and the reopened week land in one batch', back(owner), true);
 await expect('T4: cannot approve or change a count', updateDoc(audit(dewi, 'AUDIT_1'), { status: 'APPROVED' }), false);
 
+console.log('Put back: the owner reverses what an old approval took');
+const putBack = (db) => { const b = writeBatch(db);
+  b.update(audit(db, 'AUDIT_1'), { putBack: true });
+  b.set(doc(db, `artifacts/${APP_ID}/users/ownerA/products`, 'p1'), { damagedStock: 12, stock: 1800 }, { merge: true });
+  return b.commit(); };
+await expect('owner: the quarantine and the mark land in one batch', putBack(owner), true);
+await expect('T4: cannot', putBack(dewi), false);
+
 console.log('The Stock Opname day: T3 and above');
 await expect('T3: picks a day', setDoc(general(tono), { opnameDay: 5 }, { merge: true }), true);
 await expect('T3: clears the day', setDoc(general(tono), { opnameDay: null }, { merge: true }), true);
