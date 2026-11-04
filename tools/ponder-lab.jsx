@@ -1164,8 +1164,8 @@ function ShellLab() {
              three protocol keys instead of the empty-zone plate */
           inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA].map((p) => (p.id === 'p-djar' ? { ...p, damagedStock: 12 } : p))} promoItems={LAB_PROMO_ITEMS} transactions={LAB_AGENT_TXNS}
           motorists={LAB_MOTORISTS} appSettings={{}}
-          userRole={q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE'} isAdmin={q.has('admin')}
-          user={{ uid: 'lab-boss', displayName: q.has('admin') ? 'Lab Boss' : 'Lab Salesman', email: 'lab@example.com', location: 'BANDUNG', userRole: q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE' }}
+          userRole={q.has('admin') ? 'ADMIN' : (q.get('role') || 'FIELD_OPERATIVE')} isAdmin={q.has('admin')}
+          user={{ uid: 'lab-boss', displayName: q.has('admin') ? 'Lab Boss' : 'Lab Salesman', email: 'lab@example.com', location: q.get('at') || 'BANDUNG', userRole: q.has('admin') ? 'ADMIN' : (q.get('role') || 'FIELD_OPERATIVE') }}
           logAudit={() => {}} triggerCapy={() => {}}
         />
       ) : q.has('eod') ? (
