@@ -132,7 +132,7 @@ export const canSetBundlePrice = (userRole) => {
 export let ROLE_PERMISSIONS = {
     [CORPORATE_TIERS.TIER_1]: ['ALL_ACCESS'], 
     [CORPORATE_TIERS.TIER_2]: [ 
-        'view_dashboard', 'view_map', 'view_journey', 'view_fleet', 'view_master_vault', 'view_restock_vault', 'view_sales', 'view_receivables', 'view_eod', 'view_stock_opname', 'view_customers', 'view_sampling', 'view_audit_logs', 'view_settings', 'view_agent_profile', 'edit_agent_roles', 'edit_rank_config', 'can_unrestricted_sample', 'view_expected_count', 'fleet_edit',
+        'view_dashboard', 'view_map', 'view_journey', 'view_fleet', 'view_master_vault', 'view_restock_vault', 'view_sales', 'view_receivables', 'view_eod', 'view_customers', 'view_sampling', 'view_audit_logs', 'view_settings', 'view_agent_profile', 'edit_agent_roles', 'edit_rank_config', 'can_unrestricted_sample', 'view_expected_count', 'fleet_edit',
         'view_reports_global' // 🚀 THE DROPDOWN AUTHORITY
     ],
     [CORPORATE_TIERS.TIER_3]: [ 
@@ -140,7 +140,7 @@ export let ROLE_PERMISSIONS = {
         'view_reports_regional' // 🚀 THE DROPDOWN AUTHORITY
     ],
     [CORPORATE_TIERS.TIER_4]: [ 
-        'view_map', 'view_journey', 'view_agent_inventory', 'view_fleet', 'view_sales', 'view_receivables', 'view_eod', 'view_agent_profile', 'fleet_edit',
+        'view_map', 'view_journey', 'view_agent_inventory', 'view_fleet', 'view_sales', 'view_receivables', 'view_eod', 'view_stock_opname', 'view_agent_profile', 'fleet_edit',
         'view_reports_regional' // 🚀 THE DROPDOWN AUTHORITY
     ],
     [CORPORATE_TIERS.TIER_5]: [ 

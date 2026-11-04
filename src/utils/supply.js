@@ -2,6 +2,7 @@
    resolve an extensionless path. Vite is happy either way, so the extension is free. */
 import { convertToBks } from './helpers.js';
 import { normalizeRegion } from '../config/permissions.js';
+import { weekStartKey } from './period.js';
 
 /* WHERE EVERY PACK ACTUALLY IS — sold, on a van, or still on a shelf.
    ────────────────────────────────────────────────────────────────────────────
@@ -66,6 +67,19 @@ export const isNonBranch = (loc) => isMasterVaultPlace(loc) || NON_BRANCH.some(n
    region A then i will examine and only can take goods from region A". It was typed out in five places (Fleet's bay,
    load, empty, clear; the EOD return) and they had drifted. */
 export const vanUsesBranch = (agent) => !!agent && !isNonBranch(agent.location);
+
+/* THE WEEKLY STOCK COUNT. His 2026-11-04: "there is only 1 submission needed each regional warehouse ... lets take the stock
+   opname submission each week as a group homework and the the team leader is the one who submit it". The mark sits on the
+   leader's roster card because firestore.rules closes pending_audits to a T4 and the roster is what every T4 can read. It
+   names its warehouse, so moving the leader does not move the count. */
+const opnameWarehouse = (loc) => (isMasterVaultPlace(loc) ? 'MASTER' : normalizeRegion(loc));
+export const opnameMark = ({ location, by, auditId, now = new Date() }) =>
+    ({ week: weekStartKey(now), warehouse: opnameWarehouse(location), by, auditId, at: now.toISOString() });
+export const opnameThisWeek = (motorists = [], location, now = new Date()) => {
+    const week = weekStartKey(now), warehouse = opnameWarehouse(location);
+    const marks = motorists.map(m => m?.lastOpname).filter(o => o && o.week === week && o.warehouse === warehouse);
+    return { done: marks.find(o => !o.rejected) || null, sentBack: marks.find(o => o.rejected) || null };
+};
 
 /* WHAT A REGIONAL SHELF STILL HOLDS, for the Master Vault setting: '' when empty. A promo row counts pieces, never Bks. */
 export const shelfHolding = (rows = []) => {

@@ -11967,7 +11967,7 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
      deal.indexOf("if (IS_DEMO && isReturMode && finalCart.some(i => i.condition === 'DAMAGED')) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 5,") > deal.indexOf('committed = true;') &&
      eodSend.indexOf('/eod_reports`), {') > 0 && eodSend.indexOf("if (IS_DEMO && reportData.reportType === 'CASH_STOCK') window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 6,") > eodSend.indexOf('/eod_reports`), {') &&
      eodOk.indexOf('await runTransaction(db') > 0 && eodOk.indexOf("if (IS_DEMO && sealed && report.reportType === 'CASH_STOCK' && report.dayKey === getLocalDayKey()) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 7,") > eodOk.indexOf("status: 'VERIFIED', verifiedAt: serverTimestamp() });\n          });") &&
-     count.indexOf('/pending_audits`), auditPayload);') > 0 && count.indexOf(send(8)) > count.indexOf('/pending_audits`), auditPayload);') &&
+     count.indexOf('await batch.commit();') > 0 && count.indexOf(send(8)) > count.indexOf('await batch.commit();') &&
      imports(sales, 'IS_DEMO') && imports(op, 'IS_DEMO') && imports(app, 'IS_DEMO'));
   ok('REGRESSION: the van-loading bay sends only step 3 - "goods returning" is the EOD, not the bay (his 2026-10-25 "good returning means EOD and also give back the quarantine item to the main warehouse")',
      (fleet.match(/new CustomEvent\('kpm-mission'/g) || []).length === 1);
@@ -13096,6 +13096,55 @@ section('The save button belongs to the paper');
   ok('REGRESSION: amber, brass and shadow never come back on it (his law, 2026-08-21), and it is as tall as it was on the phone',
      ![...t.matchAll(/\.kpm-save-stamp[^{]*\{[^}]*\}/g)].some((m) => /gradient|duke-amber|duke-brass|--gold|box-shadow/.test(m[0])) &&
      /\.kpm-save-stamp \{[^}]*min-height: 48px;/.test(t) && /\.kpm-save-stamp \{ min-height: 56px; font-size: 16px; \}/.test(t));
+}
+
+/* ── 2026-11-04: STOCK OPNAME IS A WEEKLY GROUP HOMEWORK ──
+   His words: "there is only 1 submission needed each regional warehouse, not everyone should count, stock opname as default
+   only be able to be seen by regional admin/T4 at default ... lets take the stock opname submission each week as a group
+   homework and the the team leader is the one who submit it, which is the T4". */
+section('Stock Opname: one count a week per warehouse, the T4 submits it');
+{
+  const S = await import('../utils/supply.js');
+  const P = await import('../utils/period.js');
+  const { isFailure } = await import('../utils/toastSeverity.js');
+  const made = typeof S.opnameMark === 'function' && typeof S.opnameThisWeek === 'function' && typeof P.weekStartKey === 'function';
+  ok('BEHAVIOUR: a week runs Monday to Sunday, across a month end too',
+     made && P.weekStartKey(new Date(2026, 10, 2, 0, 1)) === '2026-11-02' && P.weekStartKey(new Date(2026, 10, 8, 23, 59)) === '2026-11-02' &&
+     P.weekStartKey(new Date(2026, 10, 9, 0, 0)) === '2026-11-09' && P.weekStartKey(new Date(2026, 10, 1)) === '2026-10-26');
+  const now = new Date(2026, 10, 4, 9, 0), later = new Date(2026, 10, 9, 8, 0);
+  const mark = made ? S.opnameMark({ location: 'BANDUNG', by: 'Dewi', auditId: 'a1', now }) : {};
+  const week = (cards, place, at = now) => made ? S.opnameThisWeek(cards, place, at) : {};
+  ok('BEHAVIOUR: one count closes the week for that whole warehouse, in any spelling, and for no other warehouse',
+     week([{ location: 'BANDUNG', lastOpname: mark }], ' bandung ').done?.by === 'Dewi' && !week([{ location: 'BANDUNG', lastOpname: mark }], 'SEMARANG').done);
+  ok('BEHAVIOUR: next Monday the homework is open again',
+     !week([{ location: 'BANDUNG', lastOpname: mark }], 'BANDUNG', later).done);
+  ok('BEHAVIOUR: moving the leader does not move the count: it stays with the warehouse it counted',
+     !!week([{ location: 'SEMARANG', lastOpname: mark }], 'BANDUNG').done && !week([{ location: 'SEMARANG', lastOpname: mark }], 'SEMARANG').done);
+  const hq = made ? S.opnameMark({ location: 'HEADQUARTERS', by: 'Hendra', auditId: 'a2', now }) : {};
+  ok('BEHAVIOUR: the Master Vault is one warehouse in every spelling',
+     week([{ location: 'Headquarters', lastOpname: hq }], 'Headquarters').done?.by === 'Hendra');
+  const back = { ...mark, rejected: true, reason: 'Recount the Djarum' };
+  ok('BEHAVIOUR: a count HQ sends back opens the week again and says why; a new count closes it',
+     !week([{ lastOpname: back }], 'BANDUNG').done && week([{ lastOpname: back }], 'BANDUNG').sentBack?.reason === 'Recount the Djarum' &&
+     week([{ lastOpname: back }, { lastOpname: mark }], 'BANDUNG').done?.by === 'Dewi');
+
+  const perm = read('src/config/permissions.js').replace(/\r/g, '');
+  const tier = (n) => { const a = perm.indexOf('[CORPORATE_TIERS.TIER_' + n + ']: ['), b = perm.indexOf('\n    ]', a); return a > 0 && b > a ? perm.slice(a, b) : null; };
+  ok('REGRESSION: by default only the T4 has Stock Opname (T1 has everything and reviews); his matrix can still change it',
+     [2, 3, 4, 5, 6].every((n) => tier(n)) && tier(4).includes("'view_stock_opname'") && [2, 3, 5, 6].every((n) => !tier(n).includes("'view_stock_opname'")));
+  const op = read('src/StockOpnameView.jsx').replace(/\r/g, '');
+  ok('REGRESSION: someone posted at the Master Vault counts the Master Vault; no place on the login never falls through to it',
+     op.includes('const isAreaAdmin = !isHighCommand && (!user?.location || !isMasterVaultPlace(user.location));'));
+  ok('REGRESSION: the count and the week mark land together; the mark sits on the card because the rules close pending_audits to a T4',
+     /batch\.set\(auditRef, auditPayload\);\s+[^\n]*\n?\s*if \(!isHighCommand && user\.agentId\) batch\.update\(doc\(db, [^\n]*\/motorists\`, user\.agentId\), \{ lastOpname: opnameMark\(\{ location: user\.location, by: auditPayload\.agentName, auditId \}\) \}\);/.test(op) && op.includes('await batch.commit();'));
+  const refusal = "Cannot submit: this week's count for BANDUNG is already in (Dewi, Wed, 4 Nov).";
+  ok('REGRESSION: a second count is refused in the red strip, and the button says why',
+     isFailure(refusal) && op.includes("if (weekDone) return notify(\`Cannot submit: this week's count for \${countPlace} is already in (\${weekDone.by}, \${dayWord(weekDone.at)}).\`);") &&
+     op.includes('disabled={isSubmitting || weekDone || Object.keys(counts).length === 0}') && op.includes("{weekDone ? 'Submitted this week' : 'Submit to HQ'}"));
+  ok('REGRESSION: HQ sending a count back reopens the week on the same batch',
+     /card\?\.lastOpname\?\.auditId === audit\.id\) batch\.update\([^\n]*lastOpname: \{ \.\.\.card\.lastOpname, rejected: true, reason:/.test(op));
+  ok('REGRESSION: the blind tag only shows when the count really is blind; the Gudang Pusat filter finds a Master Vault count by its type',
+     op.includes("!isHighCommand && !weekDone && viewMode === 'count' && !showExpectedWhileCounting && <span") && op.includes("a.auditType === 'MASTER_VAULT'"));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
