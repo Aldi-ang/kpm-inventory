@@ -45,11 +45,16 @@ export const MASTER = 'Gudang Pusat (Master Vault)';
 /* THE ONE TEST FOR "IS THIS THE MAIN WAREHOUSE". His 2026-11-03 video: the Fleet & Roster edit list is in capitals, so
    moving his van to headquarters stored the capitals, every exact-match test said "a branch", and the van read an empty
    warehouse of its own. A place is compared to the headquarters name here, case-blind, and nowhere else. A blank place
-   has always meant the main warehouse. */
-const isHqName = (loc) => normalizeRegion(loc) === 'HEADQUARTERS';
-export const isMasterVaultPlace = (loc) => !String(loc || '').trim() || isHqName(loc);
+   has always meant the main warehouse.
+   His 2026-11-03 "we need some system where we can decide where is the master vault": Settings names one place
+   (settings/general masterVaultPlace; useDatabaseSync hands it here on every render). The word Headquarters keeps counting
+   as well, so a card still saying it never lands on an empty warehouse. */
+let masterPlace = '';
+export const setMasterVaultPlace = (place) => { masterPlace = String(place || '').trim() ? normalizeRegion(place) : ''; };
+const isHqWord = (loc) => normalizeRegion(loc) === 'HEADQUARTERS';
+export const isMasterVaultPlace = (loc) => !String(loc || '').trim() || isHqWord(loc) || (!!masterPlace && normalizeRegion(loc) === masterPlace);
 /* the spelling a record is saved with and a report groups by; every other place keeps what it holds */
-export const canonicalPlace = (loc) => (isHqName(loc) ? 'Headquarters' : loc);
+export const canonicalPlace = (loc) => (isHqWord(loc) ? 'Headquarters' : loc);
 /* exported because the Restock Vault's Tujuan list needs the SAME answer. It filtered on its
    own shorter list once and 'Headquarters' came back as a shippable cabang beside the real HQ
    entry — two destinations for one place, on a form that writes stock movements. */
@@ -62,6 +67,14 @@ export const isNonBranch = (loc) => isMasterVaultPlace(loc) || NON_BRANCH.some(n
    load, empty, clear; the EOD return) and they had drifted. */
 export const vanUsesBranch = (agent) => !!agent && !isNonBranch(agent.location);
 
+/* WHAT A REGIONAL SHELF STILL HOLDS, for the Master Vault setting: '' when empty. A promo row counts pieces, never Bks. */
+export const shelfHolding = (rows = []) => {
+    const count = (r) => Math.max(0, Number(r?.stock) || 0) + Math.max(0, Number(r?.damagedStock) || 0);
+    const bks = rows.filter(r => r?.kind !== 'promo').reduce((n, r) => n + count(r), 0);
+    const pcs = rows.filter(r => r?.kind === 'promo').reduce((n, r) => n + count(r), 0);
+    return [bks && `${bks} Bks`, pcs && `${pcs} pcs`].filter(Boolean).join(' + ');
+};
+
 /* WHAT A VAN CARRIES, one line per item: cigarettes and promo goods, in the unit each was loaded in */
 export const vanGoodsLines = (agent) => [...(agent?.activeCanvas || []), ...(agent?.promoCanvas || [])]
     .filter(l => Number(l?.qty) > 0)
@@ -71,7 +84,7 @@ export const vanGoodsLines = (agent) => [...(agent?.activeCanvas || []), ...(age
    must show confirmation for whoever trying to edit and change that card location, just a simple confirm and notification
    about the goods detail will do". The goods stay in the van the whole way; only where it loads from next changes. null =
    nothing to ask: no goods, or the same place in another spelling. */
-const placeWord = (loc) => (isMasterVaultPlace(loc) ? 'HEADQUARTERS' : normalizeRegion(loc));
+const placeWord = (loc) => (String(loc || '').trim() ? normalizeRegion(loc) : 'HEADQUARTERS');
 export const moveWithGoodsMessage = (agent, toPlace) => {
     const lines = vanGoodsLines(agent);
     if (!lines.length || placeWord(agent.location) === placeWord(toPlace)) return null;

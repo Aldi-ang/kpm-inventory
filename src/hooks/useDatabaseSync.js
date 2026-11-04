@@ -5,7 +5,7 @@ import { ACCESS_DOC_ID, accessFor, grantQueries, seesEveryShop } from '../utils/
 import { notify } from '../components/Toast.jsx';
 import { isPromo } from '../utils/helpers';
 import { offersFromDocs } from '../utils/vanBay';
-import { isNonBranch } from '../utils/supply.js';
+import { isNonBranch, setMasterVaultPlace } from '../utils/supply.js';
 
 const NO_SHOPS = [];   // one stable empty list, so screens keyed on `customers` do not re-run every render
 
@@ -32,6 +32,9 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
     const [adminPromo, setAdminPromo] = useState([]);   // the boss vehicle's promo goods, pcs - the terminal's give row (stage 4)
     const [branchStock, setBranchStock] = useState({});
     const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessages: [] });
+    setMasterVaultPlace(appSettings?.masterVaultPlace);
+    /* a new array when the setting changes, so every screen's warehouse list (a useMemo on motorists) works itself out again */
+    const placedMotorists = useMemo(() => [...motorists], [motorists, appSettings?.masterVaultPlace]);
     const [editCompanyProfile, setEditCompanyProfile] = useState({ name: "", address: "", phone: "" });
 
     useEffect(() => {
@@ -258,7 +261,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
         samplings, setSamplings,
         auditLogs, setAuditLogs,
         procurements, setProcurements,
-        motorists, setMotorists, regionOffers,
+        motorists: placedMotorists, setMotorists, regionOffers,
         career, setCareer,
         agentInventories, setAgentInventories,
         eodReports, setEodReports,

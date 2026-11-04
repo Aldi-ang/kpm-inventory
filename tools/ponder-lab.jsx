@@ -15,6 +15,7 @@
      open /tools/ponder-lab.html?light    light mode
      open /tools/ponder-lab.html?lite     Lite Mode (transitions stripped)
 */
+import { setMasterVaultPlace } from '../src/utils/supply.js';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import '../src/index.css';
@@ -807,6 +808,8 @@ const LAB_FLEET = [
 ];
 /* Journey Plan reads the roster with getDocs(collection motorists) */
 FIXTURES['motorists'] = [...LAB_MOTORISTS.map((m) => ({ ...m })), ...LAB_FLEET];
+/* &vault=PLACE - the Master Vault setting (Settings, Company 08), as useDatabaseSync hands it over in the app */
+if (q.get('vault')) setMasterVaultPlace(q.get('vault'));
 /* &seats=N (the seat limit, 2026-11-01) - his licence of N seats for the company; four logins hold seats 1-4, so
    &seats=5 shows "4 of 5 seats used" and &seats=4 the full company (the add key answers instead of opening) */
 if (q.has('seats')) {
@@ -1266,7 +1269,7 @@ function ShellLab() {
            gets This device; only a tier holding view_settings is offered the unlock). Language is the real switch. */
         <SettingsView userRole={q.get('menu') || 'ROOKIE'} isAdmin={q.has('owner')} isSystemOwner={q.has('owner')} db={{}} appId="lab" user={{ uid: 'lab' }} setAppSettings={setLabSettings} editCompanyProfile={{ name: 'KPM INVENTORY', address: '', phone: '' }} setEditCompanyProfile={() => {}}
           isLiteMode={lite} setIsLiteMode={setLite} triggerCapy={() => {}} setShowAdminLogin={() => {}}
-          sessionStatus={{}} setSessionStatus={() => {}} auditLogs={[]} appSettings={labSettings} tierSettings={[]} activeMessages={[]} />
+          sessionStatus={{}} setSessionStatus={() => {}} auditLogs={[]} appSettings={labSettings} tierSettings={[]} activeMessages={[]} motorists={FIXTURES['motorists']} />
       ) : q.has('terminal') ? (
         /* ?shell&terminal — the Sales Terminal INSIDE the real shell, wrapped exactly as App.jsx
            wraps it (activeTab === 'sales', App.jsx:4916): the shell's p-2 lg:p-6, then ONE bare

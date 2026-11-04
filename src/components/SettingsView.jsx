@@ -3,7 +3,7 @@ import { PRICE_TIERS } from '../utils/helpers';
 /* The roster is the only registry of cabang there is, and `warehouseList` is the one function that
    reads it — the same one the Tujuan picker and the POV rack use. A private list here would be a
    third answer to "which warehouses exist", which is the fault 20c4a0a already paid for. */
-import { warehouseList, DEFAULT_BUFFER_DAYS } from '../utils/supply';
+import { warehouseList, DEFAULT_BUFFER_DAYS, shelfHolding } from '../utils/supply';
 
 /* the mascot-peek notice's timer. Module scope, not a useRef, on purpose: every hook in this
    file below line ~95 sits AFTER `if (!isAdmin) return (...)`, so each one added there is one
@@ -14,7 +14,7 @@ let capyPeekTimer = null;
    inside the old omset/volume select, which is a labelled field now. Removed because THIS change
    orphaned them — no other dead import in this file was touched. */
 import { Lock, Users, ShieldCheck, ShieldAlert, UploadCloud, Copy, User, Settings, Trash2, ScanFace, Plus, Tag, Download, Upload, Image as ImageIcon, Edit, Save, X, Music, ChevronLeft, ChevronRight, LayoutDashboard, ToggleLeft, ToggleRight, BarChart2, Store, Truck } from 'lucide-react';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, getDocs, collection } from 'firebase/firestore';
 
 import LandlordDashboard from './LandlordDashboard';
 import CrownTransferProtocol from './CrownTransferProtocol';
@@ -275,6 +275,27 @@ export default function SettingsView({
         localStorage.removeItem('last_usb_backup'); 
         setSessionStatus({ recovery: false, usb: false, cloud: false }); 
         triggerCapy("Indicators Reset to REQUIRED state.");
+    };
+
+    /* WHERE THE MASTER VAULT IS - his 2026-11-03 "we need some system where we can decide where is the master vault and
+       where is the regional warehouse". Blank = Headquarters, how it always worked. A place whose regional shelf holds
+       stock is refused: Master Vault stock lives in products, so that shelf would drop out of view. */
+    const masterPlace = appSettings?.masterVaultPlace || '';
+    const masterOptions = [...new Set([...(masterPlace ? [masterPlace] : []), ...warehouseList(motorists).slice(1)])];
+    const writeMasterPlace = async (place) => {
+        if (!user) return;
+        try {
+            if (place) {
+                const shelf = await getDocs(collection(db, `artifacts/${appId}/users/${user.uid}/branches/${place.replace(/\//g, '-')}/inventory`));
+                const held = shelfHolding(shelf.docs.map(d => d.data()));
+                if (held) return notify(`Cannot make ${place} the Master Vault: its regional warehouse still holds ${held}. Move that stock out first.`);
+            }
+            await setDoc(doc(db, `artifacts/${appId}/users/${user.uid}/settings/general`), { masterVaultPlace: place }, { merge: true });
+            setAppSettings(prev => ({ ...prev, masterVaultPlace: place }));
+            triggerCapy(place ? `The Master Vault is at ${place} now.` : 'The Master Vault is at Headquarters.');
+        } catch (e) {
+            notify('Not saved - check the connection and press it again.');
+        }
     };
 
     /* PITA CUKAI AT EOD - his 2026-10-25 "4a", asked again 2026-11-03: "make the toggle button to turn on/off the pita
@@ -678,6 +699,33 @@ export default function SettingsView({
                                           onClick={handleRebuildSalesStats}>
                                           {isRebuildingStats ? 'Rebuilding…' : 'Rebuild sales totals'}
                                       </button>
+                                  </div>
+                              </div>
+                          )}
+
+                          {isSystemOwner && (
+                              <div className="kpm-mod live">
+                                  <div className="kpm-head">
+                                      <span className="slot">Company · 08</span>
+                                      <div className="line">
+                                          <h3>Where the Master Vault is</h3>
+                                          <span className="kpm-read on">{masterPlace || 'Headquarters'}</span>
+                                      </div>
+                                      <p className="kpm-desc">
+                                          Everyone posted at this place loads their van from the Master Vault and
+                                          returns to it, and the place stops being listed as a regional warehouse.
+                                          Cards that say Headquarters always count as the Master Vault too. A place
+                                          that still has stock in its regional warehouse has to be emptied first.
+                                      </p>
+                                  </div>
+                                  <div className="kpm-shelf split">
+                                      <label className="kpm-field">
+                                          <span>Master Vault is at</span>
+                                          <select value={masterPlace} onChange={(e) => writeMasterPlace(e.target.value)}>
+                                              <option value="">Headquarters</option>
+                                              {masterOptions.map(p => <option key={p} value={p}>{p}</option>)}
+                                          </select>
+                                      </label>
                                   </div>
                               </div>
                           )}

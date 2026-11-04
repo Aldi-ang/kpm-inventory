@@ -9,8 +9,8 @@ import { txSeconds } from '../utils/dayStats.js';
    readout runs on, so "di gudang / di tangan agen / terjual" on this screen and on the dashboard
    cannot drift into two different answers — which is the whole reason it lives in utils. His ask
    was literally *"just like what we have on the dashboard"*. */
-import { supplyByProduct, warehouseList, MASTER, bufferDays } from '../utils/supply.js';
-import { canManageRegistry, normalizeRegion } from '../config/permissions';
+import { supplyByProduct, warehouseList, MASTER, bufferDays, isMasterVaultPlace } from '../utils/supply.js';
+import { canManageRegistry } from '../config/permissions';
 /* the SAME status dot the Master Vault desk wears, not a lookalike */
 /* the nav strip is its own component so the Ponder scene mounts the REAL one */
 import WarehouseDeskNav from './WarehouseDeskNav.jsx';
@@ -287,7 +287,7 @@ export default function BranchWarehouseManager({ db, storage, appId, user, userR
     /* HQ is not a branch. A non-admin placed at Headquarters (the demo's T3 "HQ Sales Manager") got a desk for a
        "Gudang Headquarters" that has no shelf and nobody to ship to (demo walk, 2026-10-13). They read the company's
        Stock by Warehouse table instead; the main warehouse itself is run from the Master Vault desk above. */
-    const atHq = isAreaAdmin && normalizeRegion(branchLocation) === 'HEADQUARTERS';
+    const atHq = isAreaAdmin && isMasterVaultPlace(branchLocation);
 
     const [requests, setRequests] = useState([]);
     const [branchStock, setBranchStock] = useState([]);

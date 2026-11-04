@@ -11479,7 +11479,7 @@ section('THE DEMO WALK FINDINGS (2026-10-13) - his "fix it all whatever the orde
      /const masterIsT2 = isMaster && String\(agent\?\.title \|\| ''\)\.startsWith\('T2'\);/.test(profile) && /if \(\(isMaster && !masterIsT2\) \|\| role === 'DEVELOPER' \|\| role === 'ADMIN'\)/.test(profile)
      && owner?.title === 'T2 · OWNER' && owner?.userRole === 'COMPANY_OWNER');
   ok('4. a non-admin placed at Headquarters gets no fake "Gudang Headquarters" branch desk - HQ is not a branch - and reads the company\'s Stock by Warehouse table instead',
-     normalizeRegion('Headquarters') === 'HEADQUARTERS' && /const atHq = isAreaAdmin && normalizeRegion\(branchLocation\) === 'HEADQUARTERS';/.test(bwm)
+     normalizeRegion('Headquarters') === 'HEADQUARTERS' && /const atHq = isAreaAdmin && isMasterVaultPlace\(branchLocation\);/.test(bwm)
      && bwm.includes('{isAreaAdmin && !atHq && (') && bwm.includes('if (!isAdmin && !atHq) return [];') && bwm.includes('{(isAdmin || atHq) && logistics.length > 0 && (() => {'));
   ok('5. a staff sign-in no longer tries to copy his login record to employee_directory/<uid> - the rules refuse it (only the boss or an admin may create a record in a company), it threw "Uncaught (in promise) PERMISSION_DENIED" on every staff sign-in, and nothing reads that copy but the sign-in itself, after the email record',
      !app.includes('setDoc(uidRef, { ...activeData, uid: currentUser.uid, updatedAt: serverTimestamp() }, { merge: true });')
@@ -12286,11 +12286,13 @@ section('PROMO ITEMS, stage 2 of 4 - MASUK / KIRIM carry promo lines in pcs, the
      bw.includes('...(item.promo ? { promo: true } : {}),') && bw.includes("...(line.promo ? { kind: 'promo', unit: 'pcs' } : {}),") &&
      bw.includes("Diterima ({line.promo ? 'pcs' : 'Bks'})") && isPromo({ kind: 'promo', unit: 'pcs', stock: 40 }) && !isPromo({ stock: 40 }));
   /* the stage-1 lesson again, for the branch shelves: every reader of branches/<b>/inventory sums Bks, so each one splits
-     the promo rows off at the listener - except Stock Opname's own count list, which counts them by the piece on purpose */
+     the promo rows off at the listener - except Stock Opname's own count list, which counts them by the piece on purpose,
+     and the Master Vault setting's shelfHolding, which reports Bks and pieces apart */
   const readers = appFiles.flatMap(f => { const s = read(f).replace(/\r/g, ''); return [...s.matchAll(/collection\(db, `[^`]*branches\/\$\{[^}]+\}\/inventory`\)/g)].map(m => ({ f, after: s.slice(m.index, m.index + 900) })); });
   const unsplit = readers.filter(r => !r.after.includes('isPromo')).map(r => r.f);
-  ok('REGRESSION: every listener on a branch shelf splits off the promo rows - the only one that keeps them is Stock Opname\'s count list',
-     readers.length >= 7 && unsplit.length === 1 && unsplit[0] === 'src/StockOpnameView.jsx' && so.includes('setBranchInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })));'),
+  ok('REGRESSION: every listener on a branch shelf splits off the promo rows - the only ones that keep them are Stock Opname\'s count list and the Master Vault setting\'s count of what a shelf holds',
+     readers.length >= 7 && unsplit.length === 2 && unsplit.includes('src/StockOpnameView.jsx') && unsplit.includes('src/components/SettingsView.jsx') &&
+     readers.find(r => r.f === 'src/components/SettingsView.jsx').after.includes('shelfHolding(') && so.includes('setBranchInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })));'),
      `${readers.length} readers; not split: ${unsplit.join(', ')}`);
   ok('REGRESSION: the regional warehouse chest has a third view - the hatch steps healthy -> Quarantine -> Promo, promo squares are pictures in pcs',
      wc.includes("const NEXT = { ok: 'q', q: 'p', p: 'ok' };") && wc.includes('onPress={flip} next={NEXT} />') &&
@@ -13033,6 +13035,44 @@ section('Headquarters is one place, however it is spelled');
      /const savedLocation = isAreaAdmin \? \(newAgent\.location \|\| 'Headquarters'\) : canonicalPlace\(newAgent\.location \|\| 'Headquarters'\);/.test(fleetForm) &&
      /id: newId, \.\.\.newAgent, location: savedLocation,/.test(fleetForm) &&
      /role: newAgent\.role, email: emailKey,\s+allowedPayments[\s\S]{0,160}location: savedLocation,/.test(fleetForm));
+}
+
+/* ── 2026-11-04: WHERE THE MASTER VAULT IS ──
+   His 2026-11-03 "we need some system where we can decide where is the master vault and where is the regional warehouse". */
+section('Where the Master Vault is: one company setting');
+{
+  const S = await import('../utils/supply.js');
+  const { isFailure } = await import('../utils/toastSeverity.js');
+  const picked = typeof S.setMasterVaultPlace === 'function';
+  if (picked) S.setMasterVaultPlace('Muntilan');
+  const roster = ['MUNTILAN', 'BANDUNG', 'Headquarters'].map((location) => ({ location }));
+  ok('BEHAVIOUR: the picked place IS the Master Vault in any spelling, and the word Headquarters still counts, so no old card lands on an empty warehouse',
+     picked && S.isMasterVaultPlace('MUNTILAN') && S.isMasterVaultPlace(' muntilan ') && S.isMasterVaultPlace('Headquarters') && S.isMasterVaultPlace('') && !S.isMasterVaultPlace('BANDUNG'));
+  ok('BEHAVIOUR: a van posted there uses the Master Vault, and the place stops being offered as a regional warehouse',
+     picked && !S.vanUsesBranch({ location: 'MUNTILAN' }) && S.vanUsesBranch({ location: 'BANDUNG' }) &&
+     JSON.stringify(S.warehouseList(roster)) === JSON.stringify([S.MASTER, 'BANDUNG']));
+  ok('BEHAVIOUR: a report still names the place it is, and the move message says Master Vault under the real name',
+     picked && S.canonicalPlace('MUNTILAN') === 'MUNTILAN' &&
+     /BANDUNG to MUNTILAN/.test(S.moveWithGoodsMessage({ name: 'A', location: 'BANDUNG', activeCanvas: [{ name: 'X', qty: 1, unit: 'Bks' }] }, 'MUNTILAN') || '') &&
+     /the Master Vault/.test(S.moveWithGoodsMessage({ name: 'A', location: 'BANDUNG', activeCanvas: [{ name: 'X', qty: 1, unit: 'Bks' }] }, 'MUNTILAN') || ''));
+  if (picked) S.setMasterVaultPlace('');
+  ok('BEHAVIOUR: blank is how it always worked: Muntilan is a regional warehouse again and only Headquarters is the Master Vault',
+     picked && !S.isMasterVaultPlace('MUNTILAN') && S.vanUsesBranch({ location: 'MUNTILAN' }) && S.isMasterVaultPlace('HEADQUARTERS'));
+  ok('BEHAVIOUR: what a shelf still holds is counted in Bks and promo pieces apart, damaged stock included; an empty shelf holds nothing',
+     typeof S.shelfHolding === 'function' &&
+     S.shelfHolding([{ stock: 100, damagedStock: 20 }, { kind: 'promo', stock: 6 }, { stock: 0 }]) === '120 Bks + 6 pcs' &&
+     S.shelfHolding([{ stock: 0 }, {}]) === '' && S.shelfHolding([]) === '');
+
+  const settings = read('src/components/SettingsView.jsx'), hook = read('src/hooks/useDatabaseSync.js'), desk = read('src/components/BranchWarehouseManager.jsx');
+  const refusal = 'Cannot make BANDUNG the Master Vault: its regional warehouse still holds 120 Bks. Move that stock out first.';
+  ok('REGRESSION: a place with stock is refused in the red strip before anything is saved',
+     isFailure(refusal) && /Cannot make \$\{place\} the Master Vault: its regional warehouse still holds \$\{held\}\. Move that stock out first\./.test(settings) &&
+     settings.indexOf('Cannot make ${place}') < settings.indexOf('{ masterVaultPlace: place }, { merge: true }'));
+  ok('REGRESSION: the setting is read before the shelf listeners are worked out, and a change re-runs every screen\'s warehouse list',
+     hook.indexOf('setMasterVaultPlace(appSettings?.masterVaultPlace);') > 0 && hook.indexOf('setMasterVaultPlace(appSettings?.masterVaultPlace);') < hook.indexOf('const branchKey') &&
+     /useMemo\(\(\) => \[\.\.\.motorists\], \[motorists, appSettings\?\.masterVaultPlace\]\)/.test(hook) && /motorists: placedMotorists, setMotorists,/.test(hook));
+  ok('REGRESSION: an admin posted at the Master Vault gets the same company table, whichever place it is',
+     /const atHq = isAreaAdmin && isMasterVaultPlace\(branchLocation\);/.test(desk));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
