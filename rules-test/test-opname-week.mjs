@@ -29,19 +29,23 @@ const testEnv = await initializeTestEnvironment({
 const dir = (db, id) => doc(db, `artifacts/${APP_ID}/employee_directory`, id);
 const card = (db, id) => doc(db, `artifacts/${APP_ID}/users/ownerA/motorists`, id);
 const audit = (db, id) => doc(db, `artifacts/${APP_ID}/users/ownerA/pending_audits`, id);
-const week = { week: '2026-11-02', warehouse: 'BANDUNG', by: 'Dewi', auditId: 'AUDIT_1', at: '2026-11-04T02:00:00.000Z' };
+const general = (db) => doc(db, `artifacts/${APP_ID}/users/ownerA/settings`, 'general');
+const week = { warehouse: 'BANDUNG', by: 'Dewi', auditId: 'AUDIT_1', at: '2026-11-04T02:00:00.000Z' };
 
 await testEnv.withSecurityRulesDisabled(async (ctx) => {
   const db = ctx.firestore();
   await setDoc(dir(db, 'ownerA'), { bossUid: 'ownerA', role: 'COMPANY_OWNER', email: 'owner@test.com' });
   await setDoc(dir(db, 'dewi@test.com'), { bossUid: 'ownerA', userRole: 'FLEET_CAPTAIN', agentId: 'AGT_D', location: 'BANDUNG' });
   await setDoc(dir(db, 'budi@test.com'), { bossUid: 'ownerA', userRole: 'FIELD_OPERATIVE', agentId: 'AGT_B', location: 'BANDUNG' });
+  await setDoc(dir(db, 'rina@test.com'), { bossUid: 'ownerA', userRole: 'COMPANY_OWNER', agentId: 'AGT_R', location: 'HEADQUARTERS' });
+  await setDoc(dir(db, 'tono@test.com'), { bossUid: 'ownerA', userRole: 'AREA_ADMIN', agentId: 'AGT_T', location: 'HEADQUARTERS' });
+  await setDoc(general(db), { companyName: 'KPM' });
   await setDoc(card(db, 'AGT_D'), { id: 'AGT_D', name: 'Dewi', userRole: 'FLEET_CAPTAIN', location: 'BANDUNG' });
   await setDoc(card(db, 'AGT_B'), { id: 'AGT_B', name: 'Budi', userRole: 'FIELD_OPERATIVE', location: 'BANDUNG' });
 });
 
 const as = (uid, email) => testEnv.authenticatedContext(uid, { email }).firestore();
-const dewi = as('u-d', 'dewi@test.com'), owner = as('ownerA', 'owner@test.com');
+const dewi = as('u-d', 'dewi@test.com'), owner = as('ownerA', 'owner@test.com'), tono = as('u-t', 'tono@test.com'), rina = as('u-r', 'rina@test.com');
 
 const submit = (db, auditId, cardId) => {
   const b = writeBatch(db);
@@ -66,6 +70,16 @@ const back = owner => { const b = writeBatch(owner);
   return b.commit(); };
 await expect('owner: the rejection and the reopened week land in one batch', back(owner), true);
 await expect('T4: cannot approve or change a count', updateDoc(audit(dewi, 'AUDIT_1'), { status: 'APPROVED' }), false);
+
+console.log('The Stock Opname day: T3 and above');
+await expect('T3: picks a day', setDoc(general(tono), { opnameDay: 5 }, { merge: true }), true);
+await expect('T3: clears the day', setDoc(general(tono), { opnameDay: null }, { merge: true }), true);
+await expect('T3: a number that is no day is refused', setDoc(general(tono), { opnameDay: 9 }, { merge: true }), false);
+await expect('T3: any other field on the doc is refused', setDoc(general(tono), { opnameDay: 5, companyName: 'X' }, { merge: true }), false);
+await expect('T2: picks a day', setDoc(general(rina), { opnameDay: 2 }, { merge: true }), true);
+await expect('owner: picks a day', setDoc(general(owner), { opnameDay: 5 }, { merge: true }), true);
+await expect('T4: cannot pick a day', setDoc(general(dewi), { opnameDay: 1 }, { merge: true }), false);
+await expect('T4: reads the day', getDoc(general(dewi)), true);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 await testEnv.cleanup();

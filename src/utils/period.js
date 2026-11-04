@@ -90,10 +90,11 @@ export const periodDays = (period, w) => {
 export const txDate = (t) =>
     new Date(t.timestamp?.seconds ? t.timestamp.seconds * 1000 : t.date);
 
-/* A CALENDAR WEEK, Monday to Sunday, for the weekly stock count. Not the MINGGU above: homework is due by a day, a rolling
-   seven days has no due day. */
-export const weekStartKey = (now = new Date()) => {
-    const d = new Date(now); d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+/* A WEEK FOR THE STOCK COUNT: from `day` (0 Sunday ... 6 Saturday, the company's Stock Opname day) to the day before the next
+   one; Monday to Sunday while no day is picked. Not the MINGGU above: homework is due by a day, a rolling seven days has no due day. */
+export const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+export const weekStart = (now = new Date(), day) => {
+    const d = new Date(now); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() - (day ?? 1) + 7) % 7));
+    return d;
 };
-export const nextWeekStart = (now = new Date()) => { const d = new Date(now); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 7); return d; };
+export const nextWeekStart = (now = new Date(), day) => { const d = weekStart(now, day); d.setDate(d.getDate() + 7); return d; };

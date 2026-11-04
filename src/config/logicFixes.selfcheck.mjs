@@ -13107,10 +13107,10 @@ section('Stock Opname: one count a week per warehouse, the T4 submits it');
   const S = await import('../utils/supply.js');
   const P = await import('../utils/period.js');
   const { isFailure } = await import('../utils/toastSeverity.js');
-  const made = typeof S.opnameMark === 'function' && typeof S.opnameThisWeek === 'function' && typeof P.weekStartKey === 'function';
+  const made = typeof S.opnameMark === 'function' && typeof S.opnameThisWeek === 'function' && typeof P.weekStart === 'function';
   ok('BEHAVIOUR: a week runs Monday to Sunday, across a month end too',
-     made && P.weekStartKey(new Date(2026, 10, 2, 0, 1)) === '2026-11-02' && P.weekStartKey(new Date(2026, 10, 8, 23, 59)) === '2026-11-02' &&
-     P.weekStartKey(new Date(2026, 10, 9, 0, 0)) === '2026-11-09' && P.weekStartKey(new Date(2026, 10, 1)) === '2026-10-26');
+     made && +P.weekStart(new Date(2026, 10, 2, 0, 1)) === +new Date(2026, 10, 2) && +P.weekStart(new Date(2026, 10, 8, 23, 59)) === +new Date(2026, 10, 2) &&
+     +P.weekStart(new Date(2026, 10, 9, 0, 0)) === +new Date(2026, 10, 9) && +P.weekStart(new Date(2026, 10, 1)) === +new Date(2026, 9, 26));
   const now = new Date(2026, 10, 4, 9, 0), later = new Date(2026, 10, 9, 8, 0);
   const mark = made ? S.opnameMark({ location: 'BANDUNG', by: 'Dewi', auditId: 'a1', now }) : {};
   const week = (cards, place, at = now) => made ? S.opnameThisWeek(cards, place, at) : {};
@@ -13140,11 +13140,49 @@ section('Stock Opname: one count a week per warehouse, the T4 submits it');
   const refusal = "Cannot submit: this week's count for BANDUNG is already in (Dewi, Wed, 4 Nov).";
   ok('REGRESSION: a second count is refused in the red strip, and the button says why',
      isFailure(refusal) && op.includes("if (weekDone) return notify(\`Cannot submit: this week's count for \${countPlace} is already in (\${weekDone.by}, \${dayWord(weekDone.at)}).\`);") &&
-     op.includes('disabled={isSubmitting || weekDone || Object.keys(counts).length === 0}') && op.includes("{weekDone ? 'Submitted this week' : 'Submit to HQ'}"));
+     op.includes('disabled={isSubmitting || countClosed || Object.keys(counts).length === 0}') && op.includes("{weekDone ? 'Submitted this week' : "));
   ok('REGRESSION: HQ sending a count back reopens the week on the same batch',
      /card\?\.lastOpname\?\.auditId === audit\.id\) batch\.update\([^\n]*lastOpname: \{ \.\.\.card\.lastOpname, rejected: true, reason:/.test(op));
   ok('REGRESSION: the blind tag only shows when the count really is blind; the Gudang Pusat filter finds a Master Vault count by its type',
-     op.includes("!isHighCommand && !weekDone && viewMode === 'count' && !showExpectedWhileCounting && <span") && op.includes("a.auditType === 'MASTER_VAULT'"));
+     op.includes("!isHighCommand && !countClosed && viewMode === 'count' && !showExpectedWhileCounting && <span") && op.includes("a.auditType === 'MASTER_VAULT'"));
+}
+
+section('Stock Opname day: T3 and above pick one day, the count opens only that day');
+{
+  const S = await import('../utils/supply.js');
+  const P = await import('../utils/period.js');
+  const T = await import('./permissions.js');
+  const { isFailure } = await import('../utils/toastSeverity.js');
+  const op = read('src/StockOpnameView.jsx'), st = read('src/components/SettingsView.jsx');
+  const rules = read('firestore.rules').replace(/\r/g, '');
+  const FRIDAY = 5, nov = (d, h = 9) => new Date(2026, 10, d, h, 0);   /* the 6th and the 13th of November 2026 are Fridays */
+  const made = typeof P.weekStart === 'function';
+  ok('BEHAVIOUR: with Friday picked a week runs Friday to Thursday, and the next count is the next Friday, a full seven days on',
+     made && +P.weekStart(nov(6, 0), FRIDAY) === +nov(6, 0) && +P.weekStart(nov(12, 23), FRIDAY) === +nov(6, 0) && +P.weekStart(nov(13, 0), FRIDAY) === +nov(13, 0) &&
+     +P.nextWeekStart(nov(6), FRIDAY) === +nov(13, 0) && +P.nextWeekStart(nov(12), FRIDAY) === +nov(13, 0));
+  ok('BEHAVIOUR: no day picked is still Monday to Sunday', made && +P.weekStart(nov(4), null) === +nov(2, 0) && +P.nextWeekStart(nov(4), null) === +nov(9, 0));
+  const card = (now) => [{ lastOpname: S.opnameMark({ location: 'BANDUNG', by: 'Dewi', auditId: 'a1', now }) }];
+  const week = (cards, now, day) => made ? S.opnameThisWeek(cards, 'BANDUNG', now, day) : {};
+  ok('BEHAVIOUR: Friday\'s count closes the week until the next Friday, and that Friday it opens again',
+     !!week(card(nov(6)), nov(12), FRIDAY).done && !week(card(nov(6)), nov(13), FRIDAY).done);
+  ok('BEHAVIOUR: moving or clearing the day never undoes a count already in',
+     !!week(card(nov(3)), nov(4), FRIDAY).done && !!week(card(nov(6)), nov(7), null).done && !!week(card(nov(6)), nov(7), 1).done);
+  ok('REGRESSION: the count opens only on the day, for the team leader; the boss and the demo are not limited, and a count HQ sent back can be redone at once',
+     op.includes('const notCountDay = !isHighCommand && !IS_DEMO && !weekDone && !weekCount.sentBack && countDay !== null && new Date().getDay() !== countDay;') &&
+     op.includes('const countClosed = weekDone || notCountDay;') && op.includes('opnameThisWeek(safeMotorists, user?.location, new Date(), countDay)'));
+  const refusal = 'Cannot submit: Stock Opname day is Friday.';
+  ok('EVERY ACTION REPORTS: a press on another day is refused in the red strip, the button says when it opens, the line says the next date',
+     isFailure(refusal) && op.includes('if (notCountDay) return notify(\`Cannot submit: Stock Opname day is \${WEEK_DAYS[countDay]}.\`);') &&
+     op.includes('notCountDay ? \`Opens on \${WEEK_DAYS[countDay]}\`') && op.includes('<b>Stock Opname day is {WEEK_DAYS[countDay]}.</b>') &&
+     op.includes('{(countClosed ? [] : filteredItems).map(item => {'));
+  ok('BEHAVIOUR: T1, T2 and T3 may pick the day; T4, T5 and T6 may not',
+     typeof T.canSetOpnameDay === 'function' && ['DEVELOPER', 'ADMIN', 'COMPANY_OWNER', 'AREA_ADMIN'].every(r => T.canSetOpnameDay(r)) &&
+     ['FLEET_CAPTAIN', 'FIELD_OPERATIVE', 'ROOKIE', undefined].every(r => !T.canSetOpnameDay(r)));
+  ok('REGRESSION: the Settings card shows only to them, also on the lockscreen because a T3 never unlocks the tabs, and a T3 saves into the boss\'s company (userId), never their own login, and is told when it fails',
+     st.includes('const opnameDayCard = (isSystemOwner || canSetOpnameDay(userRole)) && (') && st.indexOf('const opnameDayCard') < st.indexOf('// 1. LOCKSCREEN') && st.slice(st.indexOf('// 1. LOCKSCREEN'), st.indexOf('LOGIC HUB')).includes('{opnameDayCard && ') && st.includes('users/\${userId}/settings/general\`), { opnameDay: day }, { merge: true })') &&
+     st.includes('this login may not change the Stock Opname day yet'));
+  ok('REGRESSION: the rule lets a T3 write that one field and nothing else; a T4 is not in it',
+     rules.includes("allow update: if docId == 'general' && isAreaAdmin(bossUid) &&\n          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['opnameDay']) &&"));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

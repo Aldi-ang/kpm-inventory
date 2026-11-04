@@ -119,6 +119,8 @@ export const canPickFromGallery = (userRole) => {
    only available on tier 3 and above as default, put this on the matrix as well". Same absence-means-tier-default
    shape as canPickFromGallery above: until the key is in his saved matrix, tiers 1-3 may; after, his switch wins. */
 const BUNDLE_PRICE_KEY = 'set_bundle_price';
+export const canSetOpnameDay = (userRole) =>   /* his 2026-11-04 "we as tier 3 and above"; rules CHANGE 22 */
+    [CORPORATE_TIERS.TIER_1, CORPORATE_TIERS.TIER_2, CORPORATE_TIERS.TIER_3].includes(translateLegacyRole(userRole));
 export const canSetBundlePrice = (userRole) => {
     const role = translateLegacyRole(userRole);
     if (role === CORPORATE_TIERS.TIER_1) return true;

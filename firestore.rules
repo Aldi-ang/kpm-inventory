@@ -848,6 +848,13 @@ service cloud.firestore {
         // on the doc (the owner keeps the rest via the catch-all). His "tier 3 and above can make offers bundle everywhere".
         allow update: if docId == 'general' && (isAreaAdmin(bossUid) || isCompanyTopTier(bossUid)) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['promoBundles']) && request.resource.data.promoBundles is list;
+        // [CHANGE 22 — 2026-11-04, DRAFT until Aldi publishes it] THE STOCK OPNAME DAY. His "we as tier 3 and above should have power
+        // to set the stock opname day": a T3 saves that ONE field on settings/general (T1 and T2 already write this doc through the
+        // catch-all; a T4 never). A number 0-6, Sunday to Saturday, or null = no day picked. Every employee already reads this doc.
+        // DEPLOY ORDER: any time. Before it, a T3's save is refused and Settings says so. rules-test/test-opname-week.mjs.
+        allow update: if docId == 'general' && isAreaAdmin(bossUid) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['opnameDay']) &&
+          (request.resource.data.opnameDay == null || request.resource.data.opnameDay in [0, 1, 2, 3, 4, 5, 6]);
       }
       // [ADDED — career ledger, Phase 2] READ: every employee — profile + leaderboard need it.
       // WRITE: deliberately nothing here. Falls through to the users/{bossUid} catch-all above

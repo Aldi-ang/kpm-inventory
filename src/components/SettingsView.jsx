@@ -27,7 +27,8 @@ import CustomerAccessPanel from './CustomerAccessPanel.jsx';
 import { isTopTier } from '../utils/customerAccess.js';
 
 // 🚀 IMPORT THE MATRIX BRAIN
-import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS, FLEET_EDIT_PERMS, defaultFleetAccess, hasClearance } from '../config/permissions';
+import { CORPORATE_TIERS, ROLE_PERMISSIONS, DYNAMIC_TIERS, injectDynamicPermissions, CUSTOMER_EDIT_PERMS, FLEET_EDIT_PERMS, defaultFleetAccess, hasClearance, canSetOpnameDay } from '../config/permissions';
+import { WEEK_DAYS } from '../utils/period.js';
 import { confirmAction, promptAction } from './ConfirmGate.jsx';
 import { notify } from './Toast.jsx';
 import { writeLiteMode } from '../utils/liteMode.js';
@@ -182,12 +183,54 @@ export default function SettingsView({
         setIsSavingTierRules(false);
     };
 
+    /* STOCK OPNAME DAY - his 2026-11-04 "we as tier 3 and above should have power to set the stock opname day, one specific day
+       for the stock opname so that the interval of the stock opname is the same each time". One day for the company; null = any
+       day, Monday to Sunday. userId, not user.uid: a T3 saves into the boss's company. Rules CHANGE 22 lets a T3 write this field.
+       Above the lockscreen: a T3 never unlocks these tabs, so this is the one company card they get. */
+    const opnameDay = appSettings?.opnameDay ?? null;
+    const writeOpnameDay = async (value) => {
+        const day = value === '' ? null : Number(value);
+        try {
+            await setDoc(doc(db, `artifacts/${appId}/users/${userId}/settings/general`), { opnameDay: day }, { merge: true });
+            setAppSettings(prev => ({ ...prev, opnameDay: day }));
+            triggerCapy(day === null ? 'Stock Opname: any day, Monday to Sunday.' : `Stock Opname day is ${WEEK_DAYS[day]} now.`);
+        } catch (e) {
+            notify(e.code === 'permission-denied' ? 'Not saved - this login may not change the Stock Opname day yet.' : 'Not saved - check the connection and press it again.');
+        }
+    };
+    const opnameDayCard = (isSystemOwner || canSetOpnameDay(userRole)) && (
+        <div className="kpm-mod live">
+            <div className="kpm-head">
+                <span className="slot">Company · 09</span>
+                <div className="line">
+                    <h3>Stock Opname day</h3>
+                    <span className="kpm-read on">{WEEK_DAYS[opnameDay] || 'Any day'}</span>
+                </div>
+                <p className="kpm-desc">
+                    One day for the whole company, so every count comes exactly a week after the
+                    last. Stock Opname opens only on that day, for the team leader of each
+                    warehouse. A count HQ sends back can be redone on any day.
+                </p>
+            </div>
+            <div className="kpm-shelf split">
+                <label className="kpm-field">
+                    <span>Count day</span>
+                    <select value={opnameDay ?? ''} onChange={(e) => writeOpnameDay(e.target.value)}>
+                        <option value="">Any day, Monday to Sunday</option>
+                        {[1, 2, 3, 4, 5, 6, 0].map(d => <option key={d} value={d}>{WEEK_DAYS[d]}</option>)}
+                    </select>
+                </label>
+            </div>
+        </div>
+    );
+
     // 1. LOCKSCREEN
     if (!isAdmin) {
         return (
             <div className="animate-fade-in max-w-3xl mx-auto pb-20">
             {/* every tier: this phone's own Graphics and Language (DeviceBand, top of file) */}
             <DeviceBand isLiteMode={isLiteMode} setIsLiteMode={setIsLiteMode} triggerCapy={triggerCapy} />
+            {opnameDayCard && <><div className="kpm-band">Company · one day for everyone</div>{opnameDayCard}</>}
             {/* the company tabs: only a tier the matrix gives the Settings key may ask to unlock them */}
             {hasClearance(userRole, 'view_settings') && (
             <div className="flex flex-col items-center justify-center min-h-[40vh] text-center">
@@ -729,6 +772,8 @@ export default function SettingsView({
                                   </div>
                               </div>
                           )}
+
+                          {opnameDayCard}
 
                           <div className="kpm-band">Mascot · the face and the lines it says</div>
 

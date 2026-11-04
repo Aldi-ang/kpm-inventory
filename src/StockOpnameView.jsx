@@ -16,7 +16,7 @@ import { canSeeExpectedCount } from './config/permissions';
    that routes Firestore paths (branches/{facility}/inventory) — changing it would move documents.
    HQ_LABEL is only what the reader sees, and that is the part that had four spellings. */
 import { MASTER as HQ_LABEL, isMasterVaultPlace, opnameThisWeek, opnameMark } from './utils/supply.js';
-import { nextWeekStart } from './utils/period.js';
+import { nextWeekStart, WEEK_DAYS } from './utils/period.js';
 import { CrateVault } from './components/WarehouseChest.jsx';
 import { IS_DEMO } from './config/firebase';
 
@@ -223,10 +223,15 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
        was: no list, and never the Master Vault by accident. */
     const isAreaAdmin = !isHighCommand && (!user?.location || !isMasterVaultPlace(user.location));
 
-    /* ONE COUNT A WEEK PER WAREHOUSE, Monday to Sunday, submitted by the team leader (supply.js opnameMark).
+    /* ONE COUNT A WEEK PER WAREHOUSE, submitted by the team leader (supply.js opnameMark). His 2026-11-04: T3 and above pick "one
+       specific day for the stock opname so that the interval of the stock opname is the same each time" (Settings, Company 09):
+       the week starts that day and the count opens only that day. No day picked: Monday to Sunday, any day.
        ponytail: checked on the phone, so two leaders pressing in the same second both land; a fixed audit id and a rule if it ever matters. */
-    const weekCount = useMemo(() => opnameThisWeek(safeMotorists, user?.location), [safeMotorists, user?.location]);
+    const countDay = appSettings?.opnameDay ?? null;
+    const weekCount = useMemo(() => opnameThisWeek(safeMotorists, user?.location, new Date(), countDay), [safeMotorists, user?.location, countDay]);
     const weekDone = !isHighCommand && !IS_DEMO && weekCount.done;
+    const notCountDay = !isHighCommand && !IS_DEMO && !weekDone && !weekCount.sentBack && countDay !== null && new Date().getDay() !== countDay;
+    const countClosed = weekDone || notCountDay;
     const countPlace = isAreaAdmin ? user?.location : HQ_LABEL;
     const dayWord = (d) => new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
     
@@ -510,6 +515,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
 
     const handleCommit = async () => {
         if (weekDone) return notify(`Cannot submit: this week's count for ${countPlace} is already in (${weekDone.by}, ${dayWord(weekDone.at)}).`);
+        if (notCountDay) return notify(`Cannot submit: Stock Opname day is ${WEEK_DAYS[countDay]}.`);
         const countedItems = activeInventory.filter(i => i && i.id && counts[i.id] !== undefined);
         if (countedItems.length === 0) return notify("No items counted! Please enter at least one physical count.");
 
@@ -1040,7 +1046,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                         {viewMode === 'review' && 'VERIFY REGIONAL STOCK OVERWRITES'}
                         {viewMode === 'quarantine' && 'DAMAGED GOODS LIQUIDATION & HISTORY'}
                         {viewMode === 'monitor' && 'REAL-TIME FACILITY OVERWATCH'}
-                        {!isHighCommand && !weekDone && viewMode === 'count' && !showExpectedWhileCounting && <span className="bg-transparent text-[var(--accent-ink)] border border-[var(--accent-edge)] px-2 py-0.5 rounded text-[11px] font-black tracking-widest flex items-center gap-1"><EyeOff size={10}/> BLIND COUNT ENFORCED</span>}
+                        {!isHighCommand && !countClosed && viewMode === 'count' && !showExpectedWhileCounting && <span className="bg-transparent text-[var(--accent-ink)] border border-[var(--accent-edge)] px-2 py-0.5 rounded text-[11px] font-black tracking-widest flex items-center gap-1"><EyeOff size={10}/> BLIND COUNT ENFORCED</span>}
                     </p>
                 </div>
                 
@@ -1526,18 +1532,20 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                 <div data-guide="count" className="flex-1 bg-[var(--sunk)] rounded-xl border border-[var(--line)] shadow-inner overflow-hidden flex flex-col relative animate-fade-in z-10">
                     {!isHighCommand && !IS_DEMO && (
                         <div data-guide="week-count" className="px-4 py-3 border-b border-[var(--line)] text-xs leading-relaxed text-[var(--ink)]">
-                            {weekDone ? <><b>This week's count is in.</b> {weekDone.by} submitted it on {dayWord(weekDone.at)}. The next count opens on {dayWord(nextWeekStart())}.</>
+                            {weekDone ? <><b>This week's count is in.</b> {weekDone.by} submitted it on {dayWord(weekDone.at)}. The next count opens on {dayWord(nextWeekStart(new Date(), countDay))}.</>
                              : weekCount.sentBack ? <><b className="text-[var(--danger-ink)]">HQ sent this week's count back:</b> {weekCount.sentBack.reason} Count again and submit.</>
+                             : notCountDay ? <><b>Stock Opname day is {WEEK_DAYS[countDay]}.</b> The next count opens on {dayWord(nextWeekStart(new Date(), countDay))}: the team counts together and the team leader submits it.</>
+                             : countDay !== null ? <><b>Today is Stock Opname day.</b> One count per warehouse, today: the team counts together and the team leader submits it.</>
                              : <><b>This week's count is not submitted yet.</b> One count per warehouse, by Sunday: the team counts together and the team leader submits it.</>}
                         </div>
                     )}
-                    <div className={`p-3 border-b border-[var(--line)] bg-[var(--sunk)] relative${weekDone ? ' hidden' : ''}`}>
+                    <div className={`p-3 border-b border-[var(--line)] bg-[var(--sunk)] relative${countClosed ? ' hidden' : ''}`}>
                         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Scan or Search Product..." className="bg-[var(--sunk)] border border-[var(--line)] pl-9 pr-4 py-3 rounded-lg text-sm w-full focus:border-[var(--accent-edge)] outline-none text-[var(--ink)] placeholder:text-[var(--ink-dim)] font-mono"/>
                         <Search size={16} className="absolute left-6 top-6 text-[var(--ink-dim)]"/>
                     </div>
                     <div className="overflow-y-auto flex-1 z-10 relative custom-scrollbar p-3">
                         <div className="space-y-3">
-                            {(weekDone ? [] : filteredItems).map(item => {
+                            {(countClosed ? [] : filteredItems).map(item => {
                                 const entry = counts[item.id];
                                 const hasEntry = !!entry;
                                 const goodVal = entry?.good ?? '';
@@ -1812,10 +1820,10 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                     </div>
 
                     <div className="p-4 bg-[var(--sunk)] border-t border-[var(--line)] flex flex-col md:flex-row justify-between items-center gap-4 z-10 relative">
-                        <div className="text-xs text-[var(--ink-dim)] font-bold uppercase w-full md:w-auto text-center md:text-left tracking-widest">{!weekDone && `${Object.keys(counts).length} Wares Counted`}</div>
+                        <div className="text-xs text-[var(--ink-dim)] font-bold uppercase w-full md:w-auto text-center md:text-left tracking-widest">{!countClosed && `${Object.keys(counts).length} Wares Counted`}</div>
                         <div className="flex w-full md:w-auto gap-3">
-                            {!weekDone && <button onClick={() => setCounts({})} className="flex-none justify-center px-4 py-3 md:py-2 text-[var(--ink-dim)] hover:text-[var(--ink)] font-bold text-xs flex items-center gap-2 transition-colors bg-[var(--raised)] border border-[var(--line)] rounded-lg"><RefreshCcw size={14}/> Reset</button>}
-                            <button data-guide="submit-count" onClick={handleCommit} disabled={isSubmitting || weekDone || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] disabled:bg-[var(--sunk)] disabled:text-[var(--ink-dim)] disabled:border disabled:border-[var(--line)] disabled:shadow-none disabled:cursor-not-allowed px-4 lg:px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} {weekDone ? 'Submitted this week' : 'Submit to HQ'}</button>
+                            {!countClosed && <button onClick={() => setCounts({})} className="flex-none justify-center px-4 py-3 md:py-2 text-[var(--ink-dim)] hover:text-[var(--ink)] font-bold text-xs flex items-center gap-2 transition-colors bg-[var(--raised)] border border-[var(--line)] rounded-lg"><RefreshCcw size={14}/> Reset</button>}
+                            <button data-guide="submit-count" onClick={handleCommit} disabled={isSubmitting || countClosed || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] disabled:bg-[var(--sunk)] disabled:text-[var(--ink-dim)] disabled:border disabled:border-[var(--line)] disabled:shadow-none disabled:cursor-not-allowed px-4 lg:px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} {weekDone ? 'Submitted this week' : notCountDay ? `Opens on ${WEEK_DAYS[countDay]}` : 'Submit to HQ'}</button>
                         </div>
                     </div>
                 </div>

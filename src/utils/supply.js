@@ -2,7 +2,7 @@
    resolve an extensionless path. Vite is happy either way, so the extension is free. */
 import { convertToBks } from './helpers.js';
 import { normalizeRegion } from '../config/permissions.js';
-import { weekStartKey } from './period.js';
+import { weekStart } from './period.js';
 
 /* WHERE EVERY PACK ACTUALLY IS — sold, on a van, or still on a shelf.
    ────────────────────────────────────────────────────────────────────────────
@@ -74,10 +74,11 @@ export const vanUsesBranch = (agent) => !!agent && !isNonBranch(agent.location);
    names its warehouse, so moving the leader does not move the count. */
 const opnameWarehouse = (loc) => (isMasterVaultPlace(loc) ? 'MASTER' : normalizeRegion(loc));
 export const opnameMark = ({ location, by, auditId, now = new Date() }) =>
-    ({ week: weekStartKey(now), warehouse: opnameWarehouse(location), by, auditId, at: now.toISOString() });
-export const opnameThisWeek = (motorists = [], location, now = new Date()) => {
-    const week = weekStartKey(now), warehouse = opnameWarehouse(location);
-    const marks = motorists.map(m => m?.lastOpname).filter(o => o && o.week === week && o.warehouse === warehouse);
+    ({ warehouse: opnameWarehouse(location), by, auditId, at: now.toISOString() });
+/* By the time of the count, not a week label: moving the Stock Opname day must not undo a count already in. */
+export const opnameThisWeek = (motorists = [], location, now = new Date(), day) => {
+    const from = weekStart(now, day).toISOString(), warehouse = opnameWarehouse(location);
+    const marks = motorists.map(m => m?.lastOpname).filter(o => o && o.at >= from && o.warehouse === warehouse);
     return { done: marks.find(o => !o.rejected) || null, sentBack: marks.find(o => o.rejected) || null };
 };
 

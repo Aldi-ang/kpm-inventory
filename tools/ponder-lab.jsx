@@ -1164,7 +1164,7 @@ function ShellLab() {
              three protocol keys instead of the empty-zone plate */
           inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA].map((p) => (p.id === 'p-djar' ? { ...p, damagedStock: 12 } : p))} promoItems={LAB_PROMO_ITEMS} transactions={LAB_AGENT_TXNS}
           motorists={[...LAB_MOTORISTS, ...(q.has('done') || q.has('sentback') ? [{ id: 'f-lead', name: 'Dewi', location: q.get('at') || 'BANDUNG',
-            lastOpname: { ...opnameMark({ location: q.get('at') || 'BANDUNG', by: 'Dewi', auditId: 'a1' }), ...(q.has('sentback') ? { rejected: true, reason: 'Recount the Djarum Coklat.' } : {}) } }] : [])]} appSettings={{}}
+            lastOpname: { ...opnameMark({ location: q.get('at') || 'BANDUNG', by: 'Dewi', auditId: 'a1' }), ...(q.has('sentback') ? { rejected: true, reason: 'Recount the Djarum Coklat.' } : {}) } }] : [])]} appSettings={q.has('day') ? { opnameDay: Number(q.get('day')) } : {}}
           userRole={q.has('admin') ? 'ADMIN' : (q.get('role') || 'FIELD_OPERATIVE')} isAdmin={q.has('admin')}
           user={{ uid: 'lab-boss', agentId: q.has('admin') ? undefined : 'f-lab', displayName: q.has('admin') ? 'Lab Boss' : 'Lab Salesman', email: 'lab@example.com', location: q.get('at') || 'BANDUNG', userRole: q.has('admin') ? 'ADMIN' : (q.get('role') || 'FIELD_OPERATIVE') }}
           logAudit={() => {}} triggerCapy={() => {}}
@@ -1268,7 +1268,7 @@ function ShellLab() {
       ) : q.has('settings') ? (
         /* ?shell&settings&menu=ROOKIE - Settings as that tier sees it with the vault locked (2026-11-02: every tier
            gets This device; only a tier holding view_settings is offered the unlock). Language is the real switch. */
-        <SettingsView userRole={q.get('menu') || 'ROOKIE'} isAdmin={q.has('owner')} isSystemOwner={q.has('owner')} db={{}} appId="lab" user={{ uid: 'lab' }} setAppSettings={setLabSettings} editCompanyProfile={{ name: 'KPM INVENTORY', address: '', phone: '' }} setEditCompanyProfile={() => {}}
+        <SettingsView userRole={q.get('menu') || 'ROOKIE'} isAdmin={q.has('owner')} isSystemOwner={q.has('owner')} db={{}} appId="lab" user={{ uid: 'lab' }} userId="lab" setAppSettings={setLabSettings} editCompanyProfile={{ name: 'KPM INVENTORY', address: '', phone: '' }} setEditCompanyProfile={() => {}}
           isLiteMode={lite} setIsLiteMode={setLite} triggerCapy={() => {}} setShowAdminLogin={() => {}}
           sessionStatus={{}} setSessionStatus={() => {}} auditLogs={[]} appSettings={labSettings} tierSettings={[]} activeMessages={[]} motorists={FIXTURES['motorists']} />
       ) : q.has('terminal') ? (
