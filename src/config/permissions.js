@@ -59,7 +59,7 @@ export const tierWord = (roleId) =>
 // 🚀 SHARED: normalizes legacy/old Firebase role tags (ADMIN, DEVELOPER, COMPANY_OWNER,
 // AREA_ADMIN, FLEET_CAPTAIN, ROOKIE, AGENT/Motorist/Canvas/Salesman) into the canonical
 // CORPORATE_TIERS id every tier check compares against. This exact translation block
-// used to be copy-pasted 3x (isFieldLevelTier, isFleetManagementTier, hasClearance) —
+// used to be copy-pasted 3x (a warehouse tier test since removed, isFleetManagementTier, hasClearance) —
 // precisely the kind of drift that's already caused tier-check bugs in this project
 // before, so it now lives in exactly one place.
 const translateLegacyRole = (userRole) => {
@@ -73,20 +73,10 @@ const translateLegacyRole = (userRole) => {
     return role;
 };
 
-// 🚀 SHARED WAREHOUSE-ROUTING RULE: Field-level tiers (T5/T6, real salesmen) return
-// stock to their own regional branch. Tier 3 and above always return to the Master Vault.
-// Used by both EOD verification and the Fleet & Canvas "Clear Canvas" button, so the
-// two can never disagree about where an agent's stock belongs.
-export const isFieldLevelTier = (userRole) => {
-    const role = translateLegacyRole(userRole);
-    return role === CORPORATE_TIERS.TIER_5 || role === CORPORATE_TIERS.TIER_6;
-};
-
 // 🚀 SHARED FLEET-MANAGEMENT TIER RULE: Tier 1-4 (Developer, Company Owner, Area
 // Admin, Fleet Captain) can manage the Journey Plan fleet paintbrush (squad colors /
 // map boundaries) — a regional/area management convenience, not an owner-exclusive
-// one. Tier 5/6 (Field Operative, Rookie) cannot. Mirrors isFieldLevelTier's exact
-// translation logic so the two tier checks never drift apart.
+// one. Tier 5/6 (Field Operative, Rookie) cannot.
 export const isFleetManagementTier = (userRole) => {
     const role = translateLegacyRole(userRole);
     return role === CORPORATE_TIERS.TIER_1 || role === CORPORATE_TIERS.TIER_2 || role === CORPORATE_TIERS.TIER_3 || role === CORPORATE_TIERS.TIER_4;
@@ -113,7 +103,7 @@ export const isFleetManagementTier = (userRole) => {
    missing from his live matrix. Read as a plain missing permission it would mean "no", and every
    tier would be camera-only the moment this shipped — the feature would look broken while the code
    was right. The moment the key appears anywhere in his saved matrix, his switch wins BOTH ways.
-   Mirrors isFieldLevelTier's translation so the tier checks can never drift apart. */
+   Uses translateLegacyRole so the tier checks can never drift apart. */
 const GALLERY_PHOTO_KEY = 'photo_pick_from_gallery';
 export const canPickFromGallery = (userRole) => {
     const role = translateLegacyRole(userRole);

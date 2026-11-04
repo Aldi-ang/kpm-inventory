@@ -438,7 +438,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     // 🚀 CORRECTED: This is a Tier 1-4 (Developer, Company Owner, Area Admin, Fleet
     // Captain) regional/area-management convenience, NOT an owner-exclusive feature —
     // gated by real tier via isFleetManagementTier (same tier-translation logic as
-    // isFieldLevelTier elsewhere in config/permissions.js). `isAdmin`/PIN-unlock counts
+    // isFleetManagementTier in config/permissions.js). `isAdmin`/PIN-unlock counts
     // as tier-eligible too (it can only ever be true for a Tier 1/2 account), it doesn't
     // bypass the master switch below.
     const isFleetManagementEligible = isAdmin === true || user?.isAdmin === true || isFleetManagementTier(userRole);

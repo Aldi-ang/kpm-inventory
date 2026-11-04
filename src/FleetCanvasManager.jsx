@@ -11,7 +11,7 @@ import { vaultDocPath, VAULT_TRIES_RESET } from './utils/vaultDoc.js';
 import { lockLeftMs, untilText } from './utils/vaultLock.js';
 import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems, nameInitials, isPromo } from './utils/helpers';
 import { normalizeRegion } from './config/permissions';
-import { canonicalPlace, vanUsesBranch } from './utils/supply';
+import { canonicalPlace, vanUsesBranch, moveWithGoodsMessage, vanGoodsLines } from './utils/supply';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { IS_DEMO } from './config/firebase';
@@ -412,6 +412,9 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             else if (seatN) batch.set(seatRef, { bossUid: userId, n: seatN, login: emailKey });
         };
 
+        const moveAsk = editingAgentId ? moveWithGoodsMessage(oldAgent, savedLocation) : null;
+        if (moveAsk && !await confirmAction(moveAsk)) return;
+
         try {
             const batch = writeBatch(db);
 
@@ -459,6 +462,11 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             if (editingAgentId) {
                 triggerCapy(`Profile updated for ${newAgent.name}!`);
                 logAudit("FLEET_EDIT", `Updated profile for ${emailKey}`);
+                if (moveAsk) {
+                    const goods = vanGoodsLines(oldAgent).join(', ');
+                    notify(`${newAgent.name} moved to ${normalizeRegion(savedLocation)}. Still in the van: ${goods}.`);
+                    logAudit("FLEET_MOVE", `${newAgent.name} moved ${oldAgent.location} to ${savedLocation} with ${goods}`);
+                }
             } else {
                 triggerCapy(seatN ? `${newAgent.name} added on seat ${seatN} of ${seatLimit}.` : `${newAgent.name} added!`);
                 logAudit("FLEET_ADD", `Created new ${newAgent.role} profile for ${emailKey}`);
@@ -605,7 +613,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         const unitToLoad = 'Bks';
         const loadInBks = qtyToLoad;
 
-        // 🚀 FIX: Route based on the SELECTED AGENT's own tier/region, not the viewer's.
+        // 🚀 FIX: Route based on the SELECTED AGENT's own place, not the viewer's.
         // Matches the same rule used by EOD verification and Clear Canvas.
         const agentLocation = selectedAgent.location;
         const useBranchWarehouse = vanUsesBranch(selectedAgent);
@@ -688,7 +696,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         if (!canEditFleet) return notify("VIEW ONLY: your tier cannot reconcile a canvas. Ask an admin to change it in Settings › Permissions.");
         if (!selectedAgent) return;
 
-        // 🚀 FIX: Route based on the SELECTED AGENT's own tier/region, not the viewer's.
+        // 🚀 FIX: Route based on the SELECTED AGENT's own place, not the viewer's.
         // Matches the same rule EOD verification uses, so the two can never disagree.
         const agentLocation = selectedAgent.location;
         const useBranchWarehouse = vanUsesBranch(selectedAgent);

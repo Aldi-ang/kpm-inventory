@@ -1,7 +1,7 @@
 /* The `.js` is not decoration: the self-checks import this module in plain node, and node will not
    resolve an extensionless path. Vite is happy either way, so the extension is free. */
 import { convertToBks } from './helpers.js';
-import { isFieldLevelTier, normalizeRegion } from '../config/permissions.js';
+import { normalizeRegion } from '../config/permissions.js';
 
 /* WHERE EVERY PACK ACTUALLY IS — sold, on a van, or still on a shelf.
    ────────────────────────────────────────────────────────────────────────────
@@ -56,10 +56,28 @@ export const canonicalPlace = (loc) => (isHqName(loc) ? 'Headquarters' : loc);
 export const NON_BRANCH = ['Headquarters', 'UNASSIGNED', 'UNASSIGNED AREA'];
 export const isNonBranch = (loc) => isMasterVaultPlace(loc) || NON_BRANCH.some(n => normalizeRegion(n) === normalizeRegion(loc));
 
-/* WHICH WAREHOUSE A VAN LOADS FROM AND RETURNS TO. Tier 5 and 6 use the shelf of the place on their card; tier 1-4 the
-   Master Vault. It was typed out in five places (Fleet's bay, load, empty, clear; the EOD return) and they had drifted. */
-export const vanUsesBranch = (agent) =>
-    !!agent && isFieldLevelTier(agent.userRole) && !isNonBranch(agent.location);
+/* WHICH WAREHOUSE A VAN LOADS FROM AND RETURNS TO: the place on the card, for every rank. His 2026-11-04: "how we restock
+   should be according to the location of that cards not according to tiers, if im tier 1 and im locating myself in the
+   region A then i will examine and only can take goods from region A". It was typed out in five places (Fleet's bay,
+   load, empty, clear; the EOD return) and they had drifted. */
+export const vanUsesBranch = (agent) => !!agent && !isNonBranch(agent.location);
+
+/* WHAT A VAN CARRIES, one line per item: cigarettes and promo goods, in the unit each was loaded in */
+export const vanGoodsLines = (agent) => [...(agent?.activeCanvas || []), ...(agent?.promoCanvas || [])]
+    .filter(l => Number(l?.qty) > 0)
+    .map(l => `${l.name}: ${l.qty} ${l.unit}`);
+
+/* MOVING A CARD WITH GOODS ON IT ASKS FIRST. His 2026-11-04: "moving agent card with goods in their inventory ... the app
+   must show confirmation for whoever trying to edit and change that card location, just a simple confirm and notification
+   about the goods detail will do". The goods stay in the van the whole way; only where it loads from next changes. null =
+   nothing to ask: no goods, or the same place in another spelling. */
+const placeWord = (loc) => (isMasterVaultPlace(loc) ? 'HEADQUARTERS' : normalizeRegion(loc));
+export const moveWithGoodsMessage = (agent, toPlace) => {
+    const lines = vanGoodsLines(agent);
+    if (!lines.length || placeWord(agent.location) === placeWord(toPlace)) return null;
+    const to = placeWord(toPlace);
+    return `Move ${agent.name} from ${placeWord(agent.location)} to ${to}?\n\nThese goods stay in their van and go with them:\n${lines.map(l => `• ${l}`).join('\n')}\n\nNo warehouse stock changes. From now on this van loads from and returns to ${isNonBranch(toPlace) ? 'the Master Vault' : `${to}'s warehouse`}.`;
+};
 
 /* MASTER first, then every branch on the roster, in a stable order */
 export const warehouseList = (motorists = []) => {

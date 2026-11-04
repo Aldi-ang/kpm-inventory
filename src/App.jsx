@@ -21,7 +21,7 @@ import MusicPlayer from './MusicPlayer';
 import { injectDynamicPermissions, hasClearance, canOpenTab, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion, canSetBundlePrice } from './config/permissions';
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch, testAccountFor } from './config/povPreview';
 import { tr } from './config/lang';
-import { warehouseList, vanUsesBranch } from './utils/supply';
+import { warehouseList, vanUsesBranch, moveWithGoodsMessage } from './utils/supply';
 import { accessFor } from './utils/customerAccess.js';
 import { tallySaleOp, statsPath } from './utils/salesRollupWrite';
 import { syncOfflineSale, canvasWithPending } from './utils/vanSync';
@@ -2353,8 +2353,7 @@ const handleGitHubMirror = async () => {
               // 🚀 FIX: 'ADMIN' was a legacy mistagging of the Boss's own vehicle (ADMIN_VEHICLE).
               const lookupAgentId = report.agentId === 'ADMIN' ? 'ADMIN_VEHICLE' : report.agentId;
 
-              // 🚀 NEW: Field-level tiers (salesmen) return stock to their own region's branch.
-              // Tier 3 and above always return to the Master Vault.
+              // 🚀 Stock returns to the warehouse of the place on the card, whatever the rank (vanUsesBranch).
               const agentProfile = motorists.find(m => m.id === lookupAgentId);
               const agentLocation = agentProfile?.location;
               const useBranchWarehouse = vanUsesBranch(agentProfile);
@@ -3943,6 +3942,8 @@ const handleGitHubMirror = async () => {
               const patch = {};
               if (was.name !== worn) patch.name = worn;
               if (was.location !== home) patch.location = home;
+              const ask = patch.location ? moveWithGoodsMessage({ ...was, name: worn }, home) : null;
+              if (ask && !await confirmAction(ask)) return;
               if (Object.keys(patch).length > 0) {
                   await setDoc(ref, patch, { merge: true });
                   notify(patch.location

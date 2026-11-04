@@ -12989,8 +12989,28 @@ section('Headquarters is one place, however it is spelled');
      S.vanUsesBranch({ userRole: T5, location: 'BANDUNG' }) === true &&
      ['UNASSIGNED', 'UNASSIGNED AREA', '', '  ', null, undefined].every((location) => !S.vanUsesBranch({ userRole: T5, location })) &&
      S.vanUsesBranch(null) === false);
-  ok('BEHAVIOUR: this fix moves nobody else - tier 1-4 still use the Master Vault wherever they are posted (his rank rule is a separate decision)',
-     typeof S.vanUsesBranch === 'function' && S.vanUsesBranch({ userRole: T3, location: 'BANDUNG' }) === false);
+  ok('BEHAVIOUR: the place on the card decides for every rank, his 2026-11-04 "according to the location of that cards not according to tiers"',
+     typeof S.vanUsesBranch === 'function' &&
+     ['ADMIN', 'COMPANY_OWNER', T3, 'FLEET_CAPTAIN', T5, 'ROOKIE'].every((userRole) =>
+       S.vanUsesBranch({ userRole, location: 'BANDUNG' }) === true && S.vanUsesBranch({ userRole, location: 'Headquarters' }) === false));
+
+  const loaded = { name: 'Admin (Boss Vehicle)', location: 'MUNTILAN',
+    activeCanvas: [{ name: 'Cello Chocolate', qty: 100, unit: 'Bks' }, { name: 'Empty line', qty: 0, unit: 'Bks' }],
+    promoCanvas: [{ name: 'T-shirt', qty: 6, unit: 'pcs' }] };
+  const toHq = typeof S.moveWithGoodsMessage === 'function' ? S.moveWithGoodsMessage(loaded, 'Headquarters') : '';
+  const toBranch = typeof S.moveWithGoodsMessage === 'function' ? S.moveWithGoodsMessage(loaded, 'BANDUNG') : '';
+  ok('BEHAVIOUR: moving a card with goods names both places and every line of goods, cigarettes and promo, and no empty line',
+     typeof toHq === 'string' && /MUNTILAN to HEADQUARTERS/.test(toHq) && /Cello Chocolate: 100 Bks/.test(toHq) && /T-shirt: 6 pcs/.test(toHq) && !/Empty line/.test(toHq));
+  ok('BEHAVIOUR: the message says which warehouse the van uses next: the Master Vault at headquarters, the place\'s own warehouse elsewhere',
+     /the Master Vault/.test(toHq) && /BANDUNG's warehouse/.test(toBranch) && !/Master Vault/.test(toBranch));
+  ok('BEHAVIOUR: nothing to ask when the van is empty, the place is the same in another spelling, or there is no card',
+     typeof S.moveWithGoodsMessage === 'function' &&
+     S.moveWithGoodsMessage({ ...loaded, activeCanvas: [], promoCanvas: [] }, 'BANDUNG') === null &&
+     S.moveWithGoodsMessage({ ...loaded, location: 'HEADQUARTERS' }, 'Headquarters') === null &&
+     S.moveWithGoodsMessage(null, 'BANDUNG') === null);
+  ok('REGRESSION: rank is not part of the warehouse rule any more, and the helper that held it is gone',
+     !/isFieldLevelTier/.test(read('src/utils/supply.js')) && !/isFieldLevelTier/.test(read('src/config/permissions.js')) &&
+     !/isFieldLevelTier/.test(read('src/App.jsx')) && !/isFieldLevelTier/.test(read('src/FleetCanvasManager.jsx')));
   ok('BEHAVIOUR: saving heals only the headquarters spelling; every other place keeps what it holds',
      typeof S.canonicalPlace === 'function' && spellings.every((p) => S.canonicalPlace(p) === 'Headquarters') &&
      S.canonicalPlace('BANDUNG') === 'BANDUNG' && S.canonicalPlace('Muntilan') === 'Muntilan');
@@ -13004,6 +13024,10 @@ section('Headquarters is one place, however it is spelled');
   const fleetForm = read('src/FleetCanvasManager.jsx'), appFile = read('src/App.jsx');
   ok('REGRESSION: the 4 van-warehouse rules in Fleet and the EOD return in App all ask the one rule',
      (fleetForm.match(/vanUsesBranch\(selectedAgent\)/g) || []).length === 4 && /const useBranchWarehouse = vanUsesBranch\(agentProfile\);/.test(appFile));
+  ok('REGRESSION: both ways of moving a card ask first with the goods: the Fleet edit form, and the owner\'s test-account rack',
+     /const moveAsk = editingAgentId \? moveWithGoodsMessage\(oldAgent, savedLocation\) : null;\s+if \(moveAsk && !await confirmAction\(moveAsk\)\) return;/.test(fleetForm) &&
+     /if \(moveAsk\) \{/.test(fleetForm) && /const goods = vanGoodsLines\(oldAgent\)\.join\(', '\);\s+notify\(.*Still in the van: \$\{goods\}/.test(fleetForm) &&
+     /moveWithGoodsMessage\(\{ \.\.\.was, name: worn \}, home\)/.test(appFile) && /if \(ask && !await confirmAction\(ask\)\) return;/.test(appFile));
   ok('REGRESSION: the edit form shows the place the card holds (a headquarters card used to open showing the first place on the list) and saves the healed spelling',
      /value=\{normalizeRegion\(newAgent\.location \|\| existingLocations\[0\]\)\}/.test(fleetForm) &&
      /const savedLocation = isAreaAdmin \? \(newAgent\.location \|\| 'Headquarters'\) : canonicalPlace\(newAgent\.location \|\| 'Headquarters'\);/.test(fleetForm) &&
