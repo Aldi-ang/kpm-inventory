@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-05 18:06 WIB, PC clock (🟠 KPM — Stock Opname: 3 business drafts sent, waiting on his pick; T3+ with a matrix key settled; no app code changed)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-05 20:49 WIB, PC clock (🟠 KPM — the Stock Opname Worklist, live d16c9ad; rules CHANGE 23 waits for his publish; next the "Same as last time" buttons)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-05 20:49 WIB — KPM: his "worklist is my favorite one, both pc and phone looks great" - BUILT + pushed `d16c9ad`
+Full story: the commit message. Proof: A-Brain `Raw/2026-11-05-opname-board/built-board.png`. Next ONE job: NEXT-SESSION.md top.
+WAITING ON ALDI: ✅ DO: Firebase Console > Firestore > Rules: paste firestore.rules whole (on his clipboard; CHANGE 22 and CHANGE 23 are the differences from what is live), Publish. ✅ TEST (reload first): as the owner, Stock Opname > HQ Audits: press a warehouse tab, Accept one product, press Undo, Reject one with a reason. Then, after publishing, as a Tier 3: the same. As a Tier 4: their own warehouse only, no buttons, and the rejected product comes back on New Count. And (verbatim): **❓ ANSWER: If a team leader submits a count that skipped some products, should the app refuse it until every product with stock is counted (1), or accept it and show those products as Not counted on your list (2, how it works now)?** Still open from 08:20: the ✅ TEST as a T4, Put back on the count he approved, pick the day, the ❓ on a missed day, and the older ✅ DO and ✅ TESTs.
 
 ## 🟠 2026-11-05 18:06 WIB — KPM: his "i like B better ... business format panel" - 3 BUSINESS DRAFTS sent + researched, no app code changed; T3+ with a matrix key settled
 Options + research: A-Brain `Brainstorm/2026-11-05_opname-board-looks.md`, Round 2. Live page: https://claude.ai/artifact/5aEV4TKsQsjcKDpmQSKSNT. Boards: `Raw/2026-11-05-opname-board/drafts-phone.png`, `drafts-pc.png`. Lab files `tools/opname-drafts*.jsx` local on purpose. Next ONE job: NEXT-SESSION.md top.
