@@ -82,25 +82,23 @@ export const opnameThisWeek = (motorists = [], location, now = new Date(), day) 
     return { done: marks.find(o => !o.rejected) || null, sentBack: marks.find(o => o.rejected) || null };
 };
 
-/* GOOD AND DAMAGED ARE TWO COUNTS, even for one product. His 2026-11-04: "i put all the total count which is 1010 inside the
-   healthy goods, and keep the damaged good as 0 and the app didnt recognize that ... all the damaged good is gone converted into
-   healthy goods instead ... make sure damaged and healthy goods have different count number". What approving a count changes:
-   good stock by its own difference; Quarantine only goes up, because every decision on a damaged pack is made there ("all the
-   decision is in there"). A good surplus that a damaged shortfall explains is damaged packs counted as good: it changes nothing. */
+/* GOOD AND DAMAGED ARE TWO COUNTS, even for one product (his 2026-11-04: "make sure damaged and healthy goods have different count
+   number"). After confirmation both numbers become what was counted (his 2026-11-05: "yes become the real number that is counted"),
+   as in SAP and Oracle. The one exception cannot be confirmed at all: good over and damaged short is damaged packs typed as good, and
+   turning a damaged pack good is a decision made in Quarantine (Repair), never a side effect of a count. */
 export const countedDiffs = (item) => ({
     good: Number(item?.goodCount || 0) - Number(item?.expectedStock || 0),
     damaged: Number(item?.damagedCount || 0) - Number(item?.expectedDamagedStock || 0)
 });
-export const approveDeltas = (item) => {
-    const { good, damaged } = countedDiffs(item);
-    return { stock: good - Math.min(Math.max(0, good), Math.max(0, -damaged)), damagedStock: Math.max(0, damaged) };
-};
+export const damagedAsGood = (item) => { const { good, damaged } = countedDiffs(item); return good >= 1 && damaged <= -1; };
 export const damagedCountNote = (item) => {
-    const { good, damaged } = countedDiffs(item);
-    if (damaged > -1) return null;
-    return good >= 1 ? 'Damaged packs look counted as good. Approving will not turn them into good stock.'
-                     : 'Fewer damaged packs found than in Quarantine. Approving keeps the Quarantine number; decide there.';
+    if (countedDiffs(item).damaged > -1) return null;
+    return damagedAsGood(item) ? 'Damaged packs look counted as good. This count cannot be approved: send it back.'
+                               : 'Fewer damaged packs found than in Quarantine. Approving lowers Quarantine to what was counted.';
 };
+/* An empty box is NOT COUNTED, never zero, wherever the book holds something (SAP's "zero count trap"). A typed 0 is a count. Where the
+   book is 0 too, empty means none, so a product with no damage needs no extra typing. */
+export const countBoxEmpty = (entry) => (entry?.good === '' && Number(entry?.expStock || 0) > 0) || (entry?.damaged === '' && Number(entry?.expDamaged || 0) > 0);
 /* What a count approved before that rule took from Quarantine, and how much of it went into good stock. Nothing can be told from
    a record with no snapshot. */
 export const quarantineLost = (item) => {

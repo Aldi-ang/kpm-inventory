@@ -15,7 +15,7 @@ import { canSeeExpectedCount } from './config/permissions';
 /* Imported under a different name on purpose. The string 'MASTER' in this file is a SELECT VALUE
    that routes Firestore paths (branches/{facility}/inventory) — changing it would move documents.
    HQ_LABEL is only what the reader sees, and that is the part that had four spellings. */
-import { MASTER as HQ_LABEL, isMasterVaultPlace, opnameThisWeek, opnameMark, approveDeltas, countedDiffs, damagedCountNote, quarantineLost } from './utils/supply.js';
+import { MASTER as HQ_LABEL, isMasterVaultPlace, opnameThisWeek, opnameMark, countedDiffs, damagedAsGood, countBoxEmpty, damagedCountNote, quarantineLost } from './utils/supply.js';
 import { nextWeekStart, WEEK_DAYS } from './utils/period.js';
 import { CrateVault } from './components/WarehouseChest.jsx';
 import { IS_DEMO } from './config/firebase';
@@ -123,7 +123,7 @@ export const recountState = (entry, target) => {
     /* A count that matches the system needs nothing, no matter how it got here — and anything
        under a whole pack counts as matching, because it is loose sticks the box cannot even
        express. See VARIANCE_TOLERANCE_BKS. Two counts, never added: 1010 good and 0 damaged
-       against 1000 and 10 is two differences, not a match (supply.js approveDeltas). */
+       against 1000 and 10 is two differences, not a match (supply.js countedDiffs). */
     if (withinTolerance(good - Number(target.stock || 0)) && withinTolerance(damaged - Number(target.damaged || 0))) return { needsRecount: false, confirmed: false, disagreement: false, passes: passes.length };
 
     if (passes.length === 0) return { needsRecount: true, confirmed: false, disagreement: false, passes: 0 };
@@ -455,6 +455,15 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
         setTimeout(() => setVarSnap(prev => { const c = { ...prev }; delete c[id]; return c; }), 240);
     };
 
+    /* BLIND STAYS BLIND. His 2026-11-05: "we have blind count for tier 4 and below right"; the matrix key view_expected_count decides.
+       Microsoft: "The system never shows the expected quantity to count. This design prevents intentional miscounts." So nothing on a
+       blind row is judged while typing: a live "count again" would let someone type until it goes away. Rows are checked when Submit is
+       pressed, a flagged row stays locked until Clear and count again, and that banks the attempt, so a guess costs one of three and HQ
+       sees them all. ponytail: the damage-kind count still tells how many are new, so it gives away the Quarantine number; a pack there
+       is on the shelf anyway. */
+    const [checkedRows, setCheckedRows] = useState({});
+    const clearCounts = () => { setCounts({}); setCheckedRows({}); };
+
     const [dmgPos, setDmgPos] = useState({});
     const [dmgOpen, setDmgOpen] = useState({});
     const [dmgSnap, setDmgSnap] = useState({});
@@ -466,6 +475,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
        and so are the damage kinds, because re-sorting damage he already classified is busywork.
        What is deliberately NOT kept is anything that would show him what he typed last time. */
     const startRecount = (id) => {
+        setCheckedRows(prev => { const next = { ...prev }; delete next[id]; return next; });
         setCounts(prev => {
             const entry = prev[id];
             if (!entry) return prev;
@@ -529,7 +539,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     });
 
     /* EACH COUNT AGAINST ITS OWN FIGURE, both from the frozen snapshot. Adding them is how 10 damaged
-       packs typed as good read as a perfect count (supply.js approveDeltas). */
+       packs typed as good read as a perfect count (supply.js countedDiffs). */
     const getVariance = (item) => {
         const entry = item?.id && counts[item.id];
         if (!entry) return { goodDiff: 0, damagedDiff: 0 };
@@ -542,6 +552,14 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
         if (notCountDay) return notify(`Cannot submit: Stock Opname day is ${WEEK_DAYS[countDay]}.`);
         const countedItems = activeInventory.filter(i => i && i.id && counts[i.id] !== undefined);
         if (countedItems.length === 0) return notify("No items counted! Please enter at least one physical count.");
+
+        const emptyBox = countedItems.filter(i => countBoxEmpty(counts[i.id])).map(i => i.name || i.id);
+        if (emptyBox.length) return notify(`Cannot submit: type a number in both boxes, 0 if there are none:\n\n${emptyBox.join('\n')}`);
+
+        if (!showExpectedWhileCounting) setCheckedRows(prev => ({ ...prev, ...Object.fromEntries(countedItems.filter(i => {
+            const state = recountState(counts[i.id], expectedOf(i, counts[i.id]));
+            return damageBlocked(counts[i.id]) || state.needsRecount || varianceReasonMissing(counts[i.id], state);
+        }).map(i => [i.id, true])) }));
 
         /* DAMAGE WITHOUT A CAUSE NEVER LEAVES THIS SCREEN. Checked before the confirm, so he is
            never asked to approve a count that cannot be saved. The reason decides who pays —
@@ -656,7 +674,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
             if (logAudit) await logAudit("STOCK_OPNAME_SUBMITTED", `Submitted warehouse audit to HQ.`);
             if (triggerCapy) triggerCapy(`Audit Payload sent to HQ! Awaiting Commander approval. 📡`);
 
-            setCounts({});
+            clearCounts();
             notify("✅ Physical Count submitted to HQ successfully!");
         } catch (error) { notify("Failed to submit audit payload to HQ."); } 
         finally { setIsSubmitting(false); }
@@ -671,7 +689,9 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     const handleApproveAudit = async (audit) => {
         // The old wording promised an overwrite, which is what this used to do and what made the
         // damage look deliberate. It applies the counted difference now, so the message says so.
-        if (!await confirmAction(`APPROVE AUDIT: good stock at ${audit.branchLocation} changes by its own difference, and newly damaged packs go into Quarantine. A count never lowers Quarantine and never turns damaged packs into good stock. Sales and returns made since the count are kept. Proceed?`)) return;
+        const mixedUp = audit.items.filter(damagedAsGood).map(i => i.name || i.productId);
+        if (mixedUp.length) return notify(`Cannot approve: damaged packs look counted as good on ${mixedUp.join(', ')}. Send the count back. If those packs really are good again, use Repair in Quarantine first.`);
+        if (!await confirmAction(`APPROVE AUDIT: good stock and Quarantine at ${audit.branchLocation} become what was counted. Sales and returns made since the count are kept. Proceed?`)) return;
         setIsProcessingAudit(true);
         try {
             // 🚀 FIX: Build the operations list and hand it to commitInChunks instead of a
@@ -693,19 +713,19 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                    batch with no read, so reading the current stock here to subtract from would
                    race anything that sells while HQ is deciding. */
                 const hasSnapshot = item.expectedStock !== undefined && item.expectedDamagedStock !== undefined;
-                const delta = approveDeltas(item);
+                const diff = countedDiffs(item);
                 const data = hasSnapshot
-                    ? { stock: increment(delta.stock), damagedStock: increment(delta.damagedStock) }
+                    ? { stock: increment(diff.good), damagedStock: increment(diff.damaged) }
                     /* Audits submitted before the snapshot existed carry no expected values, so
                        there is no difference to compute and the old overwrite is the only honest
-                       answer for good stock. Quarantine is left alone: a count never lowers it. */
+                       answer for good stock. Quarantine is left alone: nothing says what it was. */
                     : { stock: Number(item.goodCount || 0) };
 
                 operations.push(shelfWrite(audit, item.productId, data));
             }
 
             const auditRef = doc(db, `artifacts/${appId}/users/${masterId}/pending_audits`, audit.id);
-            operations.push({ type: 'update', ref: auditRef, data: { status: 'APPROVED', quarantineKept: true, resolvedAt: serverTimestamp(), resolvedBy: user.email?.split('@')[0] } });
+            operations.push({ type: 'update', ref: auditRef, data: { status: 'APPROVED', noPutBack: true, resolvedAt: serverTimestamp(), resolvedBy: user.email?.split('@')[0] } });
 
             await commitInChunks(db, writeBatch, operations);
             if (logAudit) await logAudit("STOCK_OPNAME_APPROVED", `Approved stock audit for ${audit.branchLocation}.`);
@@ -1521,7 +1541,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                     })}
                                                 </div>
 
-                                                {isHistory && audit.status === 'APPROVED' && !audit.quarantineKept && !audit.putBack && audit.items.some(i => quarantineLost(i).back > 0) && (
+                                                {isHistory && audit.status === 'APPROVED' && !audit.quarantineKept && !audit.noPutBack && !audit.putBack && audit.items.some(i => quarantineLost(i).back > 0) && (
                                                     <div className="pt-2 border-t border-[var(--line)]">
                                                         <button onClick={() => handlePutBack(audit)} disabled={isProcessingAudit} className="w-full bg-[var(--raised)] border border-[var(--accent-edge)] text-[var(--accent-ink)] py-3 rounded-lg font-bold text-xs">Put back what this count took from Quarantine</button>
                                                     </div>
@@ -1582,7 +1602,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                    counted; only the verdict treats it as a match. */
                                 const matched = withinTolerance(goodDiff) && withinTolerance(damagedDiff);
                                 const hasTyped = goodVal !== '' || damagedVal !== '';
-                                const isRevealed = showExpectedWhileCounting || (hasEntry && hasTyped);
+                                const isRevealed = showExpectedWhileCounting || (hasEntry && hasTyped && !!checkedRows[item.id]);
                                 /* ⚠️ AFTER `hasTyped`, AND THAT ORDER IS THE WHOLE POINT.
                                    This line sat two lines ABOVE the `const hasTyped` it reads, so
                                    every render threw "Cannot access 'hasTyped' before
@@ -1598,7 +1618,8 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                    key all went red at once, for a count the screen itself says is probably
                                    just wrong once. A first-pass difference is a request to count again
                                    (amber); red is for a difference the second count CONFIRMED. */
-                                const tone = !hasTyped ? 'idle' : (recount.confirmed || recount.disagreement) && !matched ? 'bad' : 'wait';
+                                const locked = !showExpectedWhileCounting && !!checkedRows[item.id] && recount.needsRecount;
+                                const tone = !hasTyped ? 'idle' : (recount.confirmed || recount.disagreement) && isRevealed && !matched ? 'bad' : 'wait';
                                 const edge = { idle: 'border-[var(--line)]', wait: 'border-[var(--accent-edge)]', bad: 'border-[var(--danger)]' }[tone];
                                 const bar = { idle: 'bg-[var(--line)]', wait: 'bg-[var(--accent-edge)]', bad: 'bg-[var(--danger)]' }[tone];
 
@@ -1621,11 +1642,11 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                             <div className="grid grid-cols-2 gap-3 w-full md:w-auto md:shrink-0">
                                                 <label className="flex flex-col gap-1 min-w-0">
                                                     <span className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Good stock</span>
-                                                    <input data-guide="good" type="number" inputMode="numeric" min="0" placeholder="0" value={goodVal} onChange={(e) => handleCountChange(item.id, 'good', e.target.value)} className="w-full md:w-28 text-center py-2.5 rounded-lg border border-[var(--line)] bg-[var(--sunk)] text-[var(--ink)] focus:border-[var(--accent-edge)] outline-none font-black text-lg font-mono tabular-nums placeholder:text-[var(--ink-dim)]"/>
+                                                    <input data-guide="good" disabled={locked} type="number" inputMode="numeric" min="0" placeholder="0" value={goodVal} onChange={(e) => handleCountChange(item.id, 'good', e.target.value)} className="w-full md:w-28 text-center py-2.5 rounded-lg border border-[var(--line)] bg-[var(--sunk)] text-[var(--ink)] focus:border-[var(--accent-edge)] outline-none font-black text-lg font-mono tabular-nums placeholder:text-[var(--ink-dim)]"/>
                                                 </label>
                                                 <label className="flex flex-col gap-1 min-w-0">
                                                     <span className="text-[11px] lg:text-[10px] text-[var(--accent-ink)] font-bold uppercase tracking-widest whitespace-nowrap">Damaged</span>
-                                                    <input type="number" inputMode="numeric" min="0" placeholder="0" value={damagedVal} onChange={(e) => handleCountChange(item.id, 'damaged', e.target.value)} className="w-full md:w-28 text-center py-2.5 rounded-lg border border-[var(--line)] bg-[var(--sunk)] text-[var(--accent-ink)] focus:border-[var(--accent-edge)] outline-none font-black text-lg font-mono tabular-nums placeholder:text-[var(--ink-dim)]"/>
+                                                    <input disabled={locked} type="number" inputMode="numeric" min="0" placeholder="0" value={damagedVal} onChange={(e) => handleCountChange(item.id, 'damaged', e.target.value)} className="w-full md:w-28 text-center py-2.5 rounded-lg border border-[var(--line)] bg-[var(--sunk)] text-[var(--accent-ink)] focus:border-[var(--accent-edge)] outline-none font-black text-lg font-mono tabular-nums placeholder:text-[var(--ink-dim)]"/>
                                                 </label>
                                             </div>
                                         </div>
@@ -1645,6 +1666,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                     of the comparison measure the same thing.
                                                     ⚠️ THE VERDICT IS AN EDGE, NOT A GOLD SLAB. Aldi, 2026-08-21: "stop
                                                     using amber background i said, i hate it, use it for little things". */}
+                                                {showExpectedWhileCounting && (
                                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-[var(--line)] rounded-lg overflow-hidden text-center w-full md:w-auto md:inline-grid">
                                                     <div className="bg-[var(--sunk)] px-3 py-2 md:px-4 border border-transparent kpm-plate">
                                                         <div className="text-[11px] lg:text-[9px] text-[var(--ink-dim)] font-bold uppercase tracking-widest whitespace-nowrap">Expected good</div>
@@ -1675,6 +1697,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                         );
                                                     })}
                                                 </div>
+                                                )}
 
                                                 {goodDiff >= 1 && damagedDiff <= -1 && (
                                                     <p className="w-full text-xs leading-relaxed font-bold text-[var(--danger-ink)]">Damaged packs go in the Damaged box, even for the same product. Good stock is only the healthy ones.</p>
@@ -1849,7 +1872,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                     <div className="p-4 bg-[var(--sunk)] border-t border-[var(--line)] flex flex-col md:flex-row justify-between items-center gap-4 z-10 relative">
                         <div className="text-xs text-[var(--ink-dim)] font-bold uppercase w-full md:w-auto text-center md:text-left tracking-widest">{!countClosed && `${Object.keys(counts).length} Wares Counted`}</div>
                         <div className="flex w-full md:w-auto gap-3">
-                            {!countClosed && <button onClick={() => setCounts({})} className="flex-none justify-center px-4 py-3 md:py-2 text-[var(--ink-dim)] hover:text-[var(--ink)] font-bold text-xs flex items-center gap-2 transition-colors bg-[var(--raised)] border border-[var(--line)] rounded-lg"><RefreshCcw size={14}/> Reset</button>}
+                            {!countClosed && <button onClick={() => clearCounts()} className="flex-none justify-center px-4 py-3 md:py-2 text-[var(--ink-dim)] hover:text-[var(--ink)] font-bold text-xs flex items-center gap-2 transition-colors bg-[var(--raised)] border border-[var(--line)] rounded-lg"><RefreshCcw size={14}/> Reset</button>}
                             <button data-guide="submit-count" onClick={handleCommit} disabled={isSubmitting || countClosed || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] disabled:bg-[var(--sunk)] disabled:text-[var(--ink-dim)] disabled:border disabled:border-[var(--line)] disabled:shadow-none disabled:cursor-not-allowed px-4 lg:px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} {weekDone ? 'Submitted this week' : notCountDay ? `Opens on ${WEEK_DAYS[countDay]}` : 'Submit to HQ'}</button>
                         </div>
                     </div>

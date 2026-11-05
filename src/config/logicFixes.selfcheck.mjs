@@ -675,9 +675,9 @@ section('S9. A count corrects the stock, it does not replace it');
 const opname = read('src/StockOpnameView.jsx');
 
 ok('approval applies the counted difference through increment()',
-   /stock: increment\(delta\.stock\)/.test(opname));
-ok('damaged stock only goes up, through the same increment()',
-   /damagedStock: increment\(delta\.damagedStock\)/.test(opname));
+   /stock: increment\(diff\.good\)/.test(opname));
+ok('damaged stock follows the count through the same increment()',
+   /damagedStock: increment\(diff\.damaged\)/.test(opname));
 ok('the blind overwrite is gone from the normal path',
    !/data: \{ stock: item\.goodCount, damagedStock: item\.damagedCount \}/.test(opname));
 /* ⚠️ THIS CHECK'S NAME ONLY BECAME TRUE ON 2026-08-21. It always claimed "AT COUNT TIME", but
@@ -7658,7 +7658,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /transform: translateY\(calc\(var\(--i\) \* var\(--dmg-row\) \* -1\)\);/.test(th),
      'the reel moves by --dmg-row per step; a fixed 46 in the transform would break at 92');
   ok('the footer: Reset stops stretching so SUBMIT TO HQ fits on one line; the desk keeps its padding',
-     /<button onClick=\{\(\) => setCounts\(\{\}\)\} className="flex-none justify-center px-4 py-3 md:py-2/.test(so) &&
+     /<button onClick=\{\(\) => clearCounts\(\)\} className="flex-none justify-center px-4 py-3 md:py-2/.test(so) &&
      /disabled:cursor-not-allowed px-4 lg:px-8 py-3 md:py-2 rounded-lg font-black/.test(so) &&
      !/className="flex-1 md:flex-none justify-center px-4 py-3 md:py-2 text-\[var\(--ink-dim\)\]/.test(code(so)),
      'SUBMIT TO HQ measured 173 x 57 in two lines at 375');
@@ -7707,7 +7707,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /@media \(prefers-reduced-motion: reduce\) \{ \.kpm-nixie-reel \{ transition: none; \} \}/.test(th),
      'audit G30 turned drawn shadows into gradients once already (832ea7c); this one is born without them');
   ok('his board 5 = A: the count card is AMBER for a first-pass difference and RED only once the second count confirms it or the damage line is refused',
-     /const tone = !hasTyped \? 'idle' : \(recount\.confirmed \|\| recount\.disagreement\) && !matched \? 'bad' : 'wait';/.test(so) &&
+     /const tone = !hasTyped \? 'idle' : \(recount\.confirmed \|\| recount\.disagreement\) && isRevealed && !matched \? 'bad' : 'wait';/.test(so) &&
      /const edge = \{ idle: 'border-\[var\(--line\)\]', wait: 'border-\[var\(--accent-edge\)\]', bad: 'border-\[var\(--danger\)\]' \}\[tone\];/.test(so) &&
      /const bar = \{ idle: 'bg-\[var\(--line\)\]', wait: 'bg-\[var\(--accent-edge\)\]', bad: 'bg-\[var\(--danger\)\]' \}\[tone\];/.test(so) &&
      !/hasTyped \? \(matched \? 'border-\[var\(--accent-edge\)\]' : 'border-\[var\(--danger\)\]'\)/.test(code(so)) &&
@@ -13194,30 +13194,41 @@ section('Stock Opname day: T3 and above pick one day, the count opens only that 
      rules.includes("allow update: if docId == 'general' && isAreaAdmin(bossUid) &&\n          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['opnameDay']) &&"));
 }
 
-section('Stock Opname: good and damaged are two counts, a count never turns damaged packs into good stock');
+section('Stock Opname: both numbers become what was counted; damaged typed as good cannot be confirmed; a blind count stays blind');
 {
+  /* his 2026-11-05: "yes become the real number that is counted" */
   const S = await import('../utils/supply.js');
+  const { isFailure } = await import('../utils/toastSeverity.js');
   const so = read('src/StockOpnameView.jsx');
-  const made = typeof S.approveDeltas === 'function' && typeof S.quarantineLost === 'function' && typeof S.damagedCountNote === 'function';
+  const made = typeof S.damagedAsGood === 'function' && typeof S.countBoxEmpty === 'function' && typeof S.quarantineLost === 'function' && typeof S.damagedCountNote === 'function';
   const item = (goodCount, damagedCount, expectedStock = 1000, expectedDamagedStock = 10) => ({ goodCount, damagedCount, expectedStock, expectedDamagedStock });
-  const approve = (g, d) => (made ? S.approveDeltas(item(g, d)) : {});
-  const is = (a, stock, damagedStock) => a.stock === stock && a.damagedStock === damagedStock;
-  ok('HIS CASE: 1010 typed as good and 0 as damaged against 1000 and 10 changes no number on approval, nothing converts', is(approve(1010, 0), 0, 0));
-  ok('BEHAVIOUR: an empty Damaged box keeps the Quarantine number', is(approve(1000, 0), 0, 0));
-  ok('BEHAVIOUR: a real shortage of good packs still corrects good stock, and Quarantine keeps its number', is(approve(995, 0), -5, 0));
-  ok('BEHAVIOUR: newly damaged packs move from good stock into Quarantine', is(approve(997, 13), -3, 3));
-  ok('BEHAVIOUR: a good surplus lands only for the part the damaged shortfall does not explain', is(approve(1015, 0), 5, 0));
-  ok('BEHAVIOUR: a right count changes nothing', is(approve(1000, 10), 0, 0));
-  const back = (x, b, g) => made && S.quarantineLost(x).back === b && S.quarantineLost(x).goodOut === g;
-  ok('PUT BACK: his case returns 10 to Quarantine and takes 10 out of good stock', back(item(1010, 0), 10, 10));
-  ok('PUT BACK: an empty box returns them to Quarantine and leaves good stock alone; a real shortage on the same row is kept',
-     back(item(1000, 0), 10, 0) && back(item(995, 0), 10, 0));
-  ok('PUT BACK: nothing to return from a count that lost nothing, or from a record with no snapshot',
-     back(item(997, 13), 0, 0) && back({ goodCount: 5, damagedCount: 0 }, 0, 0));
+  const is = (g, d, good, damaged) => { const x = S.countedDiffs(item(g, d)); return x.good === good && x.damaged === damaged; };
+  ok('HIS RULE: 2 damaged packs missing lowers Quarantine to what was counted', is(1000, 8, 0, -2));
+  ok('BEHAVIOUR: a real shortage lowers good stock to what was counted', is(995, 10, -5, 0));
+  ok('BEHAVIOUR: newly damaged packs move from good stock into Quarantine', is(997, 13, -3, 3));
+  ok('BEHAVIOUR: a right count changes nothing', is(1000, 10, 0, 0));
+  ok('HIS CASE: good over and damaged short is damaged typed as good, and only that',
+     made && S.damagedAsGood(item(1010, 0)) && S.damagedAsGood(item(1007, 3)) && !S.damagedAsGood(item(1000, 8)) && !S.damagedAsGood(item(995, 10)) && !S.damagedAsGood(item(1005, 10)) && !S.damagedAsGood(item(997, 13)));
+  const refusal = 'Cannot approve: damaged packs look counted as good on Djarum. Send the count back. If those packs really are good again, use Repair in Quarantine first.';
+  ok('EVERY ACTION REPORTS: that count cannot be approved, it says why in the red strip before asking anything',
+     isFailure(refusal) && so.includes('audit.items.filter(damagedAsGood)') && so.indexOf('audit.items.filter(damagedAsGood)') < so.indexOf('if (!await confirmAction(' + String.fromCharCode(96) + 'APPROVE AUDIT'));
+  ok('REGRESSION: approval applies both differences from one rule, and no path writes a counted damaged number over Quarantine',
+     so.includes('const diff = countedDiffs(item);') && !/damagedStock: Number\(item\.damagedCount/.test(so));
+  ok('ZERO TRAP: an empty box is not counted when the book holds something there; a typed 0 is a count; no extra typing where the book is 0',
+     made && S.countBoxEmpty({ good: 1000, damaged: '', expStock: 1000, expDamaged: 10 }) && S.countBoxEmpty({ good: '', damaged: 10, expStock: 1000, expDamaged: 10 }) &&
+     !S.countBoxEmpty({ good: 1000, damaged: 0, expStock: 1000, expDamaged: 10 }) && !S.countBoxEmpty({ good: 1000, damaged: '', expStock: 1000, expDamaged: 0 }));
+  ok('EVERY ACTION REPORTS: submitting an empty box is refused and names the product',
+     so.includes('countBoxEmpty(counts[i.id])') && isFailure('Cannot submit: type a number in both boxes, 0 if there are none:\n\nDjarum'));
   ok('EVERY ACTION REPORTS: HQ is told when damaged packs look counted as good, and when fewer were found; a right count says nothing',
-     made && /counted as good/.test(S.damagedCountNote(item(1010, 0)) || '') && /Fewer damaged/.test(S.damagedCountNote(item(1000, 0)) || '') && S.damagedCountNote(item(1000, 10)) === null);
-  ok('REGRESSION: approval reads that rule, and no path writes a counted damaged number over the Quarantine',
-     so.includes('const delta = approveDeltas(item);') && !/damagedStock: Number\(item\.damagedCount/.test(so) && !/increment\(Number\(item\.damagedCount/.test(so));
+     made && /cannot be approved/.test(S.damagedCountNote(item(1010, 0)) || '') && /lowers Quarantine/.test(S.damagedCountNote(item(1000, 8)) || '') && S.damagedCountNote(item(1000, 10)) === null);
+  ok('BLIND: below the tier allowed by the matrix no expected number or difference shows, and nothing is judged until Submit is pressed',
+     so.includes('const isRevealed = showExpectedWhileCounting || (hasEntry && hasTyped && !!checkedRows[item.id]);') &&
+     /\{showExpectedWhileCounting && \(\s*<div className="grid grid-cols-2 md:grid-cols-4 gap-px/.test(so) &&
+     so.includes("(recount.confirmed || recount.disagreement) && isRevealed && !matched ? 'bad' : 'wait'"));
+  ok('BLIND: a flagged row is locked until Clear and count again, so a wrong guess costs one of three attempts and HQ sees them all',
+     so.includes('const locked = !showExpectedWhileCounting && !!checkedRows[item.id] && recount.needsRecount;') &&
+     (so.match(/disabled=\{locked\}/g) || []).length === 2 && /const startRecount = \(id\) => \{\s*setCheckedRows\(/.test(so));
+  ok('REGRESSION: the REPORT of a blind count flags rows only when Submit is pressed', /if \(!showExpectedWhileCounting\) setCheckedRows\(/.test(so));
   ok('REGRESSION: the count row shows two differences and never a total',
      !so.includes('Total found') && !so.includes('item.totalFound') && so.includes('const { goodDiff, damagedDiff } = getVariance(item);') &&
      so.includes('const matched = withinTolerance(goodDiff) && withinTolerance(damagedDiff);'));
@@ -13225,8 +13236,14 @@ section('Stock Opname: good and damaged are two counts, a count never turns dama
      so.includes('{goodDiff >= 1 && damagedDiff <= -1 && ') && so.includes('Damaged packs go in the Damaged box'));
   ok('REGRESSION: HQ reads each count on its own line and never sees PERFECT MATCH while they differ',
      so.includes('<AuditFigures label="Good"') && so.includes('<AuditFigures label="Damaged"') && so.includes('const hasIssues = totalDamaged > 0 || purelyMissing > 0 || anyDifference;'));
-  ok('REGRESSION: Put back shows on an old approved count only, reports, and can only run once',
-     so.includes("quarantineKept: true") && so.includes('putBack: true') && so.includes('!audit.quarantineKept && !audit.putBack && audit.items.some(i => quarantineLost(i).back > 0)') &&
+  const back = (x, b, g) => made && S.quarantineLost(x).back === b && S.quarantineLost(x).goodOut === g;
+  ok('PUT BACK: his case returns 10 to Quarantine and takes 10 out of good stock', back(item(1010, 0), 10, 10));
+  ok('PUT BACK: an empty box returns them to Quarantine and leaves good stock alone; a real shortage on the same row is kept',
+     back(item(1000, 0), 10, 0) && back(item(995, 0), 10, 0));
+  ok('PUT BACK: nothing to return from a count that lost nothing, or from a record with no snapshot',
+     back(item(997, 13), 0, 0) && back({ goodCount: 5, damagedCount: 0 }, 0, 0));
+  ok('REGRESSION: Put back shows only on counts approved before these rules, reports, and can only run once',
+     so.includes('noPutBack: true') && so.includes('putBack: true') && so.includes('!audit.quarantineKept && !audit.noPutBack && !audit.putBack && audit.items.some(i => quarantineLost(i).back > 0)') &&
      so.includes('STOCK_OPNAME_PUT_BACK'));
 }
 
