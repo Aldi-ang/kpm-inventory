@@ -675,9 +675,9 @@ section('S9. A count corrects the stock, it does not replace it');
 const opname = read('src/StockOpnameView.jsx');
 
 ok('approval applies the counted difference through increment()',
-   /stock: increment\(diff\.good\)/.test(opname));
+   /stock: increment\(s\.good\)/.test(opname));
 ok('damaged stock follows the count through the same increment()',
-   /damagedStock: increment\(diff\.damaged\)/.test(opname));
+   /damagedStock: increment\(s\.damaged\)/.test(opname));
 ok('the blind overwrite is gone from the normal path',
    !/data: \{ stock: item\.goodCount, damagedStock: item\.damagedCount \}/.test(opname));
 /* ⚠️ THIS CHECK'S NAME ONLY BECAME TRUE ON 2026-08-21. It always claimed "AT COUNT TIME", but
@@ -689,9 +689,9 @@ ok('the count still snapshots what the system believed AT COUNT TIME',
    /expectedStock: Number\(entry\.expStock \?\? item\.stock \?\? 0\)/.test(opname)
    && /expectedDamagedStock: Number\(entry\.expDamaged \?\? item\.damagedStock \?\? 0\)/.test(opname));
 ok('audits submitted before the snapshot existed still fall back to the overwrite',
-   /const hasSnapshot = item\.expectedStock !== undefined/.test(opname));
+   /s\.overwrite !== undefined \? \{ stock: s\.overwrite \}/.test(opname));
 ok('the confirmation no longer promises an overwrite',
-   !/permanently overwrite the inventory/.test(opname) && /Sales and returns made since the count are kept/.test(opname));
+   !/permanently overwrite the inventory/.test(opname) && !/APPROVE AUDIT/.test(opname));
 
 /* BEHAVIOUR — the whole day, in order. */
 { const apply = (expected, counted, movements, useDelta) => {
@@ -12299,8 +12299,8 @@ section('PROMO ITEMS, stage 2 of 4 - MASUK / KIRIM carry promo lines in pcs, the
      and the Master Vault setting's shelfHolding, which reports Bks and pieces apart */
   const readers = appFiles.flatMap(f => { const s = read(f).replace(/\r/g, ''); return [...s.matchAll(/collection\(db, `[^`]*branches\/\$\{[^}]+\}\/inventory`\)/g)].map(m => ({ f, after: s.slice(m.index, m.index + 900) })); });
   const unsplit = readers.filter(r => !r.after.includes('isPromo')).map(r => r.f);
-  ok('REGRESSION: every listener on a branch shelf splits off the promo rows - the only ones that keep them are Stock Opname\'s count list and the Master Vault setting\'s count of what a shelf holds',
-     readers.length >= 7 && unsplit.length === 2 && unsplit.includes('src/StockOpnameView.jsx') && unsplit.includes('src/components/SettingsView.jsx') &&
+  ok('REGRESSION: every listener on a branch shelf splits off the promo rows - the only ones that keep them are Stock Opname\'s count list, its worklist (what the count list counts), and the Master Vault setting\'s count of what a shelf holds',
+     readers.length >= 7 && unsplit.length === 3 && unsplit.filter(f => f === 'src/StockOpnameView.jsx').length === 2 && so.includes('setBoardShelf(snap.docs.map(d => ({ id: d.id, ...d.data() })));') && unsplit.includes('src/components/SettingsView.jsx') &&
      readers.find(r => r.f === 'src/components/SettingsView.jsx').after.includes('shelfHolding(') && so.includes('setBranchInventory(snap.docs.map(d => ({ id: d.id, ...d.data() })));'),
      `${readers.length} readers; not split: ${unsplit.join(', ')}`);
   ok('REGRESSION: the regional warehouse chest has a third view - the hatch steps healthy -> Quarantine -> Promo, promo squares are pictures in pcs',
@@ -12969,7 +12969,7 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      typeof canOpenTab === 'function' && Object.values(T).every((r) => canOpenTab(r, 'settings')) && !canOpenTab(T.TIER_1, 'no_such_tab') &&
      menu.every(([id]) => canOpenTab(T.TIER_1, id)));
   ok('BEHAVIOUR: a tab is open to a tier exactly when the sidebar shows it (the Reports tab: any of the 3 report modes)',
-     typeof canOpenTab === 'function' && Object.values(T).every((r) => menu.every(([id, f]) => canOpenTab(r, id) === (id === 'settings' ? true
+     typeof canOpenTab === 'function' && Object.values(T).every((r) => menu.every(([id, f]) => canOpenTab(r, id) === (id === 'settings' || (id === 'stock_opname' && perms.canDecideOpname(r)) ? true
        : f === 'view_reports' ? ['view_reports_global', 'view_reports_regional', 'view_reports_personal'].some((p) => perms.hasClearance(r, p)) : perms.hasClearance(r, f)))));
   ok('wearing a costume keeps the tab when that tier may open it, else its own landing tab; taking it off keeps the tab when the owner may',
      /setActiveTab\(\(t\) => \(canOpenTab\(account\.tier, t\) \? t : hasClearance\(account\.tier, 'view_dashboard'\) \? 'dashboard' : 'journey'\)\);/.test(app) &&
@@ -13144,14 +13144,14 @@ section('Stock Opname: one count a week per warehouse, the T4 submits it');
   const op = read('src/StockOpnameView.jsx').replace(/\r/g, '');
   ok('REGRESSION: someone posted at the Master Vault counts the Master Vault; no place on the login never falls through to it',
      op.includes('const isAreaAdmin = !isHighCommand && (!user?.location || !isMasterVaultPlace(user.location));'));
-  ok('REGRESSION: the count and the week mark land together; the mark sits on the card because the rules close pending_audits to a T4',
-     /batch\.set\(auditRef, auditPayload\);\s+[^\n]*\n?\s*if \(!isHighCommand && user\.agentId\) batch\.update\(doc\(db, [^\n]*\/motorists\`, user\.agentId\), \{ lastOpname: opnameMark\(\{ location: user\.location, by: auditPayload\.agentName, auditId \}\) \}\);/.test(op) && op.includes('await batch.commit();'));
+  ok('REGRESSION: the count and the week mark land together; the mark sits on the card, which every T4 can read',
+     /batch\.set\(auditRef, auditPayload\);\s+[^\n]*\n?\s*if \(!isHighCommand && user\.agentId\) batch\.update\(doc\(db, [^\n]*\/motorists\`, user\.agentId\), \{ lastOpname: recounting\s+\? \{ \.\.\.weekDone, reopened: [^\n]*\s+: opnameMark\(\{ location: user\.location, by: auditPayload\.agentName, auditId \}\) \}\);/.test(op) && op.includes('await batch.commit();'));
   const refusal = "Cannot submit: this week's count for BANDUNG is already in (Dewi, Wed, 4 Nov).";
   ok('REGRESSION: a second count is refused in the red strip, and the button says why',
-     isFailure(refusal) && op.includes("if (weekDone) return notify(\`Cannot submit: this week's count for \${countPlace} is already in (\${weekDone.by}, \${dayWord(weekDone.at)}).\`);") &&
-     op.includes('disabled={isSubmitting || countClosed || Object.keys(counts).length === 0}') && op.includes("{weekDone ? 'Submitted this week' : "));
-  ok('REGRESSION: HQ sending a count back reopens the week on the same batch',
-     /card\?\.lastOpname\?\.auditId === audit\.id\) batch\.update\([^\n]*lastOpname: \{ \.\.\.card\.lastOpname, rejected: true, reason:/.test(op));
+     isFailure(refusal) && op.includes("if (weekDone && !recounting) return notify(\`Cannot submit: this week's count for \${countPlace} is already in (\${weekDone.by}, \${dayWord(weekDone.at)}).\`);") &&
+     op.includes('disabled={isSubmitting || countClosed || Object.keys(counts).length === 0}') && op.includes("{weekDone && !recounting ? 'Submitted this week' : "));
+  ok('REGRESSION: rejecting a product reopens only that product on the leader\'s card, on the same batch',
+     op.includes('reopened: { ...(was.reopened || {}), [r.id]: { name: r.name, reason } }') && op.includes("cards.forEach((c, id) => ops.push({ type: 'update', ref: cardRef(id), data: { lastOpname: c.now } }));"));
   ok('REGRESSION: the blind tag only shows when the count really is blind; the Gudang Pusat filter finds a Master Vault count by its type',
      op.includes("!isHighCommand && !countClosed && viewMode === 'count' && !showExpectedWhileCounting && <span") && op.includes("a.auditType === 'MASTER_VAULT'"));
 }
@@ -13178,7 +13178,7 @@ section('Stock Opname day: T3 and above pick one day, the count opens only that 
      !!week(card(nov(3)), nov(4), FRIDAY).done && !!week(card(nov(6)), nov(7), null).done && !!week(card(nov(6)), nov(7), 1).done);
   ok('REGRESSION: the count opens only on the day, for the team leader; the boss and the demo are not limited, and a count HQ sent back can be redone at once',
      op.includes('const notCountDay = !isHighCommand && !IS_DEMO && !weekDone && !weekCount.sentBack && countDay !== null && new Date().getDay() !== countDay;') &&
-     op.includes('const countClosed = weekDone || notCountDay;') && op.includes('opnameThisWeek(safeMotorists, user?.location, new Date(), countDay)'));
+     op.includes('const countClosed = (weekDone && !recounting) || notCountDay;') && op.includes('opnameThisWeek(safeMotorists, user?.location, new Date(), countDay)'));
   const refusal = 'Cannot submit: Stock Opname day is Friday.';
   ok('EVERY ACTION REPORTS: a press on another day is refused in the red strip, the button says when it opens, the line says the next date',
      isFailure(refusal) && op.includes('if (notCountDay) return notify(\`Cannot submit: Stock Opname day is \${WEEK_DAYS[countDay]}.\`);') &&
@@ -13209,11 +13209,11 @@ section('Stock Opname: both numbers become what was counted; damaged typed as go
   ok('BEHAVIOUR: a right count changes nothing', is(1000, 10, 0, 0));
   ok('HIS CASE: good over and damaged short is damaged typed as good, and only that',
      made && S.damagedAsGood(item(1010, 0)) && S.damagedAsGood(item(1007, 3)) && !S.damagedAsGood(item(1000, 8)) && !S.damagedAsGood(item(995, 10)) && !S.damagedAsGood(item(1005, 10)) && !S.damagedAsGood(item(997, 13)));
-  const refusal = 'Cannot approve: damaged packs look counted as good on Djarum. Send the count back. If those packs really are good again, use Repair in Quarantine first.';
+  const refusal = 'Cannot accept: damaged packs look counted as good on Djarum. Reject it so it is counted again. If those packs really are good again, use Repair in Quarantine first.';
   ok('EVERY ACTION REPORTS: that count cannot be approved, it says why in the red strip before asking anything',
-     isFailure(refusal) && so.includes('audit.items.filter(damagedAsGood)') && so.indexOf('audit.items.filter(damagedAsGood)') < so.indexOf('if (!await confirmAction(' + String.fromCharCode(96) + 'APPROVE AUDIT'));
+     isFailure(refusal) && so.includes('rows.filter(r => damagedAsGood(r.item))') && so.indexOf('rows.filter(r => damagedAsGood(r.item))') < so.indexOf('await commitInChunks(db, writeBatch, ops);'));
   ok('REGRESSION: approval applies both differences from one rule, and no path writes a counted damaged number over Quarantine',
-     so.includes('const diff = countedDiffs(item);') && !/damagedStock: Number\(item\.damagedCount/.test(so));
+     read('src/utils/supply.js').includes('const diff = countedDiffs(item);') && !/damagedStock: Number\(item\.damagedCount/.test(so));
   ok('ZERO TRAP: an empty box is not counted when the book holds something there; a typed 0 is a count; no extra typing where the book is 0',
      made && S.countBoxEmpty({ good: 1000, damaged: '', expStock: 1000, expDamaged: 10 }) && S.countBoxEmpty({ good: '', damaged: 10, expStock: 1000, expDamaged: 10 }) &&
      !S.countBoxEmpty({ good: 1000, damaged: 0, expStock: 1000, expDamaged: 10 }) && !S.countBoxEmpty({ good: 1000, damaged: '', expStock: 1000, expDamaged: 0 }));
@@ -13267,6 +13267,72 @@ section('Patch notes: a button in the top bar, every tier, what changed in words
      pn.includes("getLang() === 'en'") && (N.PATCH_STAMP || '') === (notes[0] ? notes[0].date + ':' + notes[0].items.length : 'x') && pn.includes('seen !== PATCH_STAMP'));
   ok('REGRESSION: it closes by the X, a press outside and Escape, and blocked storage cannot break it',
      pn.includes("e.key === 'Escape'") && pn.includes('aria-modal="true"') && /try \{ localStorage\.setItem/.test(pn) && /try \{ return localStorage\.getItem/.test(pn));
+}
+
+/* The Stock Opname worklist, his 2026-11-05 pick: accept or reject each product; tier 3 and above by default, in the matrix. Every money line below is
+   re-run on real numbers, because a wrong plan here changes real stock with no error anywhere. */
+console.log('\nStock Opname worklist: each product decided on its own, tier 3 and above by default, in the matrix');
+{
+  const S = await import('../utils/supply.js'), pm = await import('./permissions.js'); const { isFailure } = await import('../utils/toastSeverity.js');
+  const so = read('src/StockOpnameView.jsx'), wl = read('src/components/OpnameWorklist.jsx'), rules = read('firestore.rules'), css = read('src/styles/theme.css');
+  const it = (productId, expectedStock, goodCount, expectedDamagedStock = 0, damagedCount = 0) => ({ productId, name: productId, expectedStock, goodCount, expectedDamagedStock, damagedCount });
+  const price = (id) => ({ dj: 12500, cg: 8900, sm: 24800, ds: 19900 }[id] || 0);
+  const bdg = { id: 'A', status: 'PENDING_HQ_APPROVAL', branchLocation: 'BANDUNG', timestamp: { seconds: 2000 }, items: [it('dj', 1800, 1790, 12, 14), it('cg', 420, 415, 0, 3), it('ds', 340, 340), it('sm', 600, 588, 4, 4)], decisions: { sm: { status: 'REJECTED', reason: 'Recount' } } };
+  const board = S.opnameBoard([bdg], 'BANDUNG', { from: 1000, priceOf: price, shelf: [{ id: 'gk', name: 'gk', stock: 300 }, { id: 'none', name: 'none', stock: 0, damagedStock: 0 }, { id: 'dj', stock: 1800 }] });
+  const row = (id) => board.rows.find(r => r.id === id);
+  ok('BEHAVIOUR: 1800 to 1790 good and 12 to 14 damaged is 8 missing and 2 damaged, Rp 125.000',
+     row('dj').loss.missing === 8 && row('dj').loss.damaged === 2 && row('dj').loss.missingRp === 100000 && row('dj').loss.damagedRp === 25000 && row('dj').loss.rp === 125000);
+  ok('BEHAVIOUR: a product that matches loses nothing; under one pack is loose sticks, the count screen\'s own tolerance',
+     row('ds').same && row('ds').loss.rp === 0 && S.opnameLoss(it('x', 10, 9.5), 1000).rp === 0);
+  ok('BEHAVIOUR: "not counted" comes from the shelf, only where the book holds something, and never a product that was counted',
+     row('gk').status === 'none' && !row('none') && board.rows.filter(r => r.id === 'dj').length === 1);
+  const sums = S.opnameSums(board.rows);
+  ok('BEHAVIOUR: the numbers on top: counted and decided, and a rejected product is being recounted so it is not a loss yet',
+     sums.total === 5 && sums.counted === 4 && sums.none === 1 && sums.decided === 1 && sums.waiting === 3 && sums.rp === 125000 + 44500 && sums.missing === 10 && sums.damaged === 5);
+  ok('BEHAVIOUR: waiting comes first, biggest loss first', board.rows[0].id === 'dj' && board.rows[1].id === 'cg');
+  const acc = S.opnameDecisionPlan([row('dj')], 'ACCEPTED', '', 'lab');
+  ok('MONEY: accepting one product writes only that product\'s two differences', acc.stock.length === 1 && acc.stock[0].productId === 'dj' && acc.stock[0].good === -10 && acc.stock[0].damaged === 2 && acc.canUndo);
+  ok('MONEY: a product that matches writes no stock', S.opnameDecisionPlan([row('ds')], 'ACCEPTED', '', 'lab').stock.length === 0);
+  const rej = S.opnameDecisionPlan([row('dj')], 'REJECTED', 'Recount please', 'lab');
+  ok('MONEY: rejecting writes no stock and keeps the reason', rej.stock.length === 0 && rej.audits[0].set.dj.status === 'REJECTED' && rej.audits[0].set.dj.reason === 'Recount please');
+  ok('MONEY: a count with no snapshot keeps the old overwrite, and says it cannot be undone', (() => { const p = S.opnameDecisionPlan([{ id: 'x', item: { productId: 'x', goodCount: 5 }, audit: { id: 'L', items: [] }, older: [], diff: { good: 5, damaged: 0 } }], 'ACCEPTED', '', 'lab'); return p.stock[0].overwrite === 5 && !p.canUndo; })());
+  /* his money trap: the same shortage must never be taken twice */
+  const old = { id: 'OLD', status: 'PENDING_HQ_APPROVAL', branchLocation: 'BANDUNG', timestamp: { seconds: 500 }, items: [it('dj', 1800, 1795)] };
+  const twice = S.opnameBoard([old, { ...bdg, decisions: {} }], 'BANDUNG', { from: 1000, priceOf: price });
+  const dj2 = twice.rows.find(r => r.id === 'dj'), plan2 = S.opnameDecisionPlan([dj2], 'ACCEPTED', '', 'lab');
+  ok('MONEY: a newer count voids the older undecided one: one row, one stock write, the older marked SUPERSEDED',
+     twice.rows.filter(r => r.id === 'dj').length === 1 && dj2.audit.id === 'A' && plan2.stock.length === 1 && plan2.stock[0].good === -10 && plan2.audits.find(a => a.audit.id === 'OLD').set.dj.status === 'SUPERSEDED' && plan2.audits.find(a => a.audit.id === 'OLD').close === 'SUPERSEDED');
+  const rec = { id: 'R', status: 'PENDING_HQ_APPROVAL', branchLocation: 'BANDUNG', recountOf: 'A', timestamp: { seconds: 3000 }, items: [it('sm', 600, 590, 4, 4)] };
+  const after = S.opnameBoard([bdg, rec], 'BANDUNG', { from: 1000, priceOf: price }).rows.find(r => r.id === 'sm');
+  ok('BEHAVIOUR: a recount replaces the rejected row and waits again', after.status === 'wait' && after.recount && after.audit.id === 'R' && after.diff.good === -10);
+  ok('BEHAVIOUR: a count closes when every product is decided, and says how',
+     S.auditCloseStatus(bdg, { dj: { status: 'ACCEPTED' }, cg: { status: 'ACCEPTED' }, ds: { status: 'ACCEPTED' } }) === null &&
+     S.auditCloseStatus(bdg, { dj: { status: 'ACCEPTED' }, cg: { status: 'ACCEPTED' }, ds: { status: 'ACCEPTED' }, sm: { status: 'ACCEPTED' } }) === 'APPROVED' &&
+     S.auditCloseStatus(bdg, { dj: { status: 'ACCEPTED' }, cg: { status: 'ACCEPTED' }, ds: { status: 'ACCEPTED' }, sm: { status: 'REJECTED' } }) === 'PARTLY_APPROVED' &&
+     S.auditCloseStatus(bdg, { dj: { status: 'REJECTED' }, cg: { status: 'REJECTED' }, ds: { status: 'REJECTED' }, sm: { status: 'REJECTED' } }) === 'REJECTED');
+  ok('BEHAVIOUR: last week\'s closed count leaves the board; last week\'s undecided count stays until it is decided',
+     !S.opnameBoard([{ ...bdg, status: 'APPROVED', timestamp: { seconds: 10 } }], 'BANDUNG', { from: 1000 }).submitted && S.opnameBoard([{ ...bdg, timestamp: { seconds: 10 } }], 'BANDUNG', { from: 1000 }).submitted);
+  ok('BEHAVIOUR: a Master Vault count belongs to MASTER whatever place it was typed from', S.opnamePlaceOf({ auditType: 'MASTER_VAULT', branchLocation: 'Headquarters' }) === 'MASTER' && S.opnamePlaceOf({ branchLocation: 'BANDUNG' }) === 'BANDUNG');
+
+  ok('HIS RULE: tier 3 and above decide by default; a T4, T5 and T6 do not while the key is not in his saved matrix',
+     ['DEVELOPER', 'ADMIN', 'COMPANY_OWNER', 'AREA_ADMIN'].every(r => pm.canDecideOpname(r)) && ['FLEET_CAPTAIN', 'FIELD_OPERATIVE', 'ROOKIE'].every(r => !pm.canDecideOpname(r)));
+  ok('HIS RULE: the power is in the matrix, and the rules read the same key',
+     read('src/components/SettingsView.jsx').includes("{ id: 'decide_opname_product', label: 'Stock Opname: accept or reject a counted product (Tier 4 and above only)' },") && read('src/config/permissions.js').includes("const DECIDE_OPNAME_KEY = 'decide_opname_product';") && rules.includes("let key = 'decide_opname_product';"));
+  ok('BEHAVIOUR: T1-T3 see every warehouse, a T4 their own, nobody below', ['ADMIN', 'DEVELOPER', 'COMPANY_OWNER', 'AREA_ADMIN'].every(r => pm.opnameBoardScope(r) === 'all') && pm.opnameBoardScope('FLEET_CAPTAIN') === 'own' && !pm.opnameBoardScope('FIELD_OPERATIVE') && !pm.opnameBoardScope('ROOKIE'));
+  ok('REGRESSION: a T3 with counting switched off still reaches the worklist, from the sidebar and the costume switch alike',
+     pm.canOpenTab('AREA_ADMIN', 'stock_opname') && read('src/components/BiohazardTheme.jsx').includes("if (item.id === 'stock_opname' && canDecideOpname(userRole)) return true;") && so.includes("const canCount = isHighCommand || hasClearance(userRole, 'view_stock_opname');"));
+  ok('RULES: CHANGE 23 is a draft: a decider writes only the decisions and the closing fields, and a card only its lastOpname',
+     /\[CHANGE 23 — 2026-11-05, DRAFT until Aldi publishes it\]/.test(rules) && rules.includes("affectedKeys().hasOnly(['decisions', 'status', 'resolvedAt', 'resolvedBy', 'noPutBack'])") && rules.includes("(opnameDecider(bossUid) && (isAreaAdmin(bossUid) || resource.data.get('location', '') == getEmployeeProfile().get('location', 'NONE')) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastOpname']))"));
+  ok('REGRESSION: a T4 asks only for their own warehouse, the one question the rule answers', so.includes("boardScope === 'all' ? auditsRef : query(auditsRef, where('branchLocation', '==', user.location))"));
+  ok('REGRESSION: one batch: the stock, the decision and the leader\'s card; undo is that batch reversed; nothing is written offline',
+     so.includes('increment(-s.good)') && so.includes('increment(-s.damaged)') && so.includes("[`decisions.${id}`, deleteField()]") && so.includes('navigator.onLine === false') && so.includes('await commitInChunks(db, writeBatch, ops);'));
+  ok('REGRESSION: someone else\'s decision is read fresh first, and a refused write names the missing rule', so.includes('fresh.data().decisions?.[id]') && so.includes("e?.code === 'permission-denied'") && isFailure('Failed to save: the new Firestore rule is not published yet. Ask the owner to publish it.'));
+  ok('REGRESSION: a recount sends only what was reopened, and clears those from the card', so.includes('(!recounting || reopened[i.id])') && so.includes('Object.entries(reopened).filter(([id]) => !counts[id])') && so.includes('recountOf: weekDone.auditId'));
+  ok('REGRESSION: damaged typed as good shows no Accept; every press reports, with an Undo', wl.includes('{!stuck && <button className="kpm-wl-btn kpm-wl-acc"') && wl.includes('toast.undo') && wl.includes('Write why, so {leader} knows what to recount.'));
+  ok('REGRESSION: only a Tier 1 or 2 puts back an old approval: a T3 reads Audit History but the rule refuses that write', so.includes("{isHighCommand && audit.status === 'APPROVED' && !audit.quarantineKept"));
+  ok('HIS TASTE: the panel takes the colours and not the game: plain font, no Rajdhani, no amber fill, and the swap is Carbon\'s 240 ms and 150 ms',
+     css.includes('container: wl / inline-size') && !/\.kpm-wl[^{]*\{[^}]*font-display/.test(css) && !/\.kpm-wl[^{]*\{[^}]*background(-color)?: var\(--gold\)/.test(css) && css.includes('transition: transform 240ms cubic-bezier(0.2, 0, 0.38, 0.9)') && wl.includes('duration: 150,'));
+  ok('REGRESSION: the panel moves nothing on the keyboard and nothing in Lite Mode', wl.includes('!still() && !key.current') && wl.includes("classList.contains('lite-mode')"));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

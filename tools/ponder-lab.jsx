@@ -760,6 +760,27 @@ if (q.has('hisbug')) {
     { id: 'aud-old', status: 'APPROVED', branchLocation: 'HEADQUARTERS', agentName: 'Aldi', auditType: 'MASTER_VAULT', timestamp: at, resolvedAt: at, resolvedBy: 'Aldi', items: [his] },
   ];
 }
+/* &worklist (2026-11-05): a real week for the Stock Opname worklist: Bandung with every kind of row, a Master Vault count, Semarang all decided.
+   Add &many for the prices of the wider shelf. */
+if (q.has('worklist')) {
+  const ago = (h) => ({ seconds: Math.floor(Date.now() / 1000) - h * 3600 });
+  const it = (productId, name, expectedStock, goodCount, expectedDamagedStock = 0, damagedCount = 0, x = {}) => ({ productId, name, expectedStock, goodCount, expectedDamagedStock, damagedCount, totalFound: goodCount + damagedCount, variance: goodCount + damagedCount - expectedStock - expectedDamagedStock, varianceReason: null, countPasses: [{ good: goodCount, damaged: damagedCount }], countedTwice: false, threeWayDisagreement: false, damageKinds: [], damagedPhotoUrl: null, ...x });
+  FIXTURES['pending_audits'] = [
+    { id: 'wl-bdg', status: 'PENDING_HQ_APPROVAL', branchLocation: 'BANDUNG', agentName: 'Dewi', agentId: 'f-lead', auditType: 'BRANCH_WAREHOUSE', timestamp: ago(4),
+      decisions: { 'p-gg12': { status: 'ACCEPTED', by: 'Lab' }, 'p-ggf': { status: 'ACCEPTED', by: 'Lab' }, 'p-mag': { status: 'REJECTED', by: 'Lab', reason: 'Recount shelf B.' } },
+      items: [
+        it('p-smp16', 'Sampoerna Mild 16', 600, 588, 4, 4, { varianceReason: 'Not sure', countedTwice: true }),
+        it('p-djar', 'Djarum Coklat 12', 1800, 1790, 12, 14, { damageKinds: [{ reason: 'Crushed', qty: 2 }], damagedPhotoUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=', countedTwice: true, varianceReason: 'Counting mistake' }),
+        it('p-cg16', 'Cello Green 16', 420, 415, 0, 3, { damageKinds: [{ reason: 'Torn', qty: 2 }, { reason: 'Wet', qty: 1 }] }),
+        it('p-dss', 'Dji Sam Soe 12', 340, 340), it('p-lal', 'LA Lights 16', 510, 510, 2, 2), it('p-ggs', 'Gudang Garam Surya 16', 260, 260),
+        it('p-gg12', 'Gudang Garam Surya 12', 900, 900), it('p-ggf', 'Gudang Garam Filter 12', 450, 449, 0, 0, { varianceReason: 'Counting mistake' }), it('p-mag', 'Magnum Filter 12', 168, 160),
+        it('p-stuck', 'Cello Merah 12', 100, 112, 12, 0),
+      ] },
+    { id: 'wl-hq', status: 'PENDING_HQ_APPROVAL', branchLocation: 'Headquarters', agentName: 'Yoga', agentId: 'VAULT', auditType: 'MASTER_VAULT', timestamp: ago(3), items: [it('p-djar', 'Djarum Coklat 12', 1800, 1794, 12, 12, { varianceReason: 'Counting mistake' }), it('p-cg16', 'Cello Green 16', 4200, 4200)] },
+    { id: 'wl-smg', status: 'APPROVED', branchLocation: 'SEMARANG', agentName: 'Rina', agentId: 'm9', auditType: 'BRANCH_WAREHOUSE', timestamp: ago(5), resolvedAt: ago(1), resolvedBy: 'Lab', decisions: { 'p-djar': { status: 'ACCEPTED', by: 'Lab' }, 'p-cg16': { status: 'ACCEPTED', by: 'Lab' } }, items: [it('p-djar', 'Djarum Coklat 12', 760, 760, 0, 1, { damageKinds: [{ reason: 'Wet', qty: 1 }] }), it('p-cg16', 'Cello Green 16', 300, 300)] },
+  ];
+  FIXTURES['branches/BANDUNG/inventory'] = [{ id: 'p-unc', name: 'Sampoerna Kretek 12', stock: 300, damagedStock: 0 }, { id: 'p-djar', name: 'Djarum Coklat 12', stock: 1790, damagedStock: 12 }, { id: 'p-empty', name: 'Empty shelf', stock: 0, damagedStock: 0 }];
+}
 FIXTURES['quarantine_logs'] = [
   { id: 'ql1', method: 'RTV', facility: 'BANDUNG', productName: 'Djarum Coklat 12', qty: 12, totalValueHpp: 150000,
     details: 'SJR-2026-014', resolvedBy: 'Lab', timestamp: { seconds: Math.floor(Date.now() / 1000) - 86400 } },
@@ -1172,8 +1193,8 @@ function ShellLab() {
           /* one product carries damaged stock so the boss's QUARANTINE tab has a row with its
              three protocol keys instead of the empty-zone plate */
           inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA].map((p) => (p.id === 'p-djar' ? { ...p, damagedStock: 12 } : p))} promoItems={LAB_PROMO_ITEMS} transactions={LAB_AGENT_TXNS}
-          motorists={[...LAB_MOTORISTS, ...(q.has('done') || q.has('sentback') ? [{ id: 'f-lead', name: 'Dewi', location: q.get('at') || 'BANDUNG',
-            lastOpname: { ...opnameMark({ location: q.get('at') || 'BANDUNG', by: 'Dewi', auditId: 'a1' }), ...(q.has('sentback') ? { rejected: true, reason: 'Recount the Djarum Coklat.' } : {}) } }] : [])]} appSettings={q.has('day') ? { opnameDay: Number(q.get('day')) } : {}}
+          motorists={[...LAB_MOTORISTS, ...(q.has('done') || q.has('sentback') || q.has('recount') ? [{ id: 'f-lead', name: 'Dewi', location: q.get('at') || 'BANDUNG',
+            lastOpname: { ...opnameMark({ location: q.get('at') || 'BANDUNG', by: 'Dewi', auditId: 'a1' }), ...(q.has('recount') ? { reopened: { 'p-djar': { name: 'Djarum Coklat 12', reason: 'Recount please' } } } : {}), ...(q.has('sentback') ? { rejected: true, reason: 'Recount the Djarum Coklat.' } : {}) } }] : [])]} appSettings={q.has('day') ? { opnameDay: Number(q.get('day')) } : {}}
           userRole={q.has('admin') ? 'ADMIN' : (q.get('role') || 'FIELD_OPERATIVE')} isAdmin={q.has('admin')}
           user={{ uid: 'lab-boss', agentId: q.has('admin') ? undefined : 'f-lab', displayName: q.has('admin') ? 'Lab Boss' : 'Lab Salesman', email: 'lab@example.com', location: q.get('at') || 'BANDUNG', userRole: q.has('admin') ? 'ADMIN' : (q.get('role') || 'FIELD_OPERATIVE') }}
           logAudit={() => {}} triggerCapy={() => {}}
@@ -1754,3 +1775,4 @@ if (q.has('gudang') && q.has('probe')) {
     document.body.appendChild(el);
   }, 200);
 }
+

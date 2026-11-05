@@ -1,7 +1,7 @@
 // THE WEEKLY STOCK COUNT (kpm, 2026-11-04). His words: "there is only 1 submission needed each regional warehouse ... lets take
 // the stock opname submission each week as a group homework and the the team leader is the one who submit it, which is the T4".
 // The app's write needs no rule change, and this proves it: a T4 submits the count and marks the week on their own roster card
-// in ONE batch (StockOpnameView.jsx handleCommit); every T4 can read that mark on the roster, while pending_audits stays closed
+// in ONE batch (StockOpnameView.jsx handleCommit); every T4 can read that mark on the roster; pending_audits opens only their own warehouse
 // to them; the owner sends a count back on one batch too (handleRejectAudit).
 // Run (emulator only, never the live project):
 //   npx firebase emulators:exec --only firestore --project demo-kpm-rules "node rules-test/test-opname-week.mjs"
@@ -61,7 +61,7 @@ await expect('T4: another person\'s card cannot carry their mark, and the whole 
 console.log('Why the mark is on the roster');
 await expect('T4: reads the mark on the roster', getDoc(card(dewi, 'AGT_D')), true);
 await expect('T4: reads the whole roster the Stock Opname screen gets', getDocs(collection(dewi, `artifacts/${APP_ID}/users/ownerA/motorists`)), true);
-await expect('T4: pending_audits stays closed', getDoc(audit(dewi, 'AUDIT_1')), false);
+await expect('T4: reads their own warehouse\'s count (rules CHANGE 23, the worklist)', getDoc(audit(dewi, 'AUDIT_1')), true);
 
 console.log('The owner sends it back');
 const back = owner => { const b = writeBatch(owner);

@@ -6,18 +6,19 @@ import {
     Camera, UploadCloud, Image as ImageIcon,
     Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin, Wrench
 } from 'lucide-react';
-import { collection, addDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment } from "firebase/firestore";
+import { collection, addDoc, getDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment, deleteField } from "firebase/firestore";
 import { savePhotoAndGetReference, deletePhotoFromStorage, photoStamp, commitInChunks, formatRupiah, formatNumber, compressImageToBase64, tierPrice, getLocalDayKey, isPromo} from './utils/helpers';
 import * as threshold from './utils/stockThreshold';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
-import { canSeeExpectedCount } from './config/permissions';
+import { canSeeExpectedCount, canDecideOpname, opnameBoardScope, hasClearance } from './config/permissions';
 /* Imported under a different name on purpose. The string 'MASTER' in this file is a SELECT VALUE
    that routes Firestore paths (branches/{facility}/inventory) — changing it would move documents.
    HQ_LABEL is only what the reader sees, and that is the part that had four spellings. */
-import { MASTER as HQ_LABEL, isMasterVaultPlace, opnameThisWeek, opnameMark, countedDiffs, damagedAsGood, countBoxEmpty, damagedCountNote, quarantineLost } from './utils/supply.js';
-import { nextWeekStart, WEEK_DAYS } from './utils/period.js';
+import { MASTER as HQ_LABEL, isMasterVaultPlace, opnameThisWeek, opnameMark, countedDiffs, damagedAsGood, countBoxEmpty, quarantineLost, opnameBoard, opnamePlaceOf, opnameDecisionPlan } from './utils/supply.js';
+import { nextWeekStart, weekStart, WEEK_DAYS } from './utils/period.js';
 import { CrateVault } from './components/WarehouseChest.jsx';
+import OpnameWorklist from './components/OpnameWorklist.jsx';
 import { IS_DEMO } from './config/firebase';
 
 /* THE KINDS OF DAMAGE — Aldi, 2026-08-21: "our sales terminal give solid few options then we
@@ -247,6 +248,12 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     // Anyone who passed the old check but not this one would get a permission-denied
     // from the listeners below — same bug class as the procurement listener fix.
     const isHighCommand = userRole === 'ADMIN';
+    /* THE WORKLIST'S GATES, his 2026-11-05 "tier 3 and above as default ... added into the matrix". Who counts (view_stock_opname) and who
+       decides are two different powers, so a T3 with counting switched off still opens this screen, on the review. */
+    const canDecide = canDecideOpname(userRole);
+    const boardScope = opnameBoardScope(userRole);
+    const canSeeBoard = !!boardScope;
+    const canCount = isHighCommand || hasClearance(userRole, 'view_stock_opname');
 
     // 🚀 DYNAMIC UPGRADE: Automatically adapts to any custom Tier 4/Branch Admin rank!
     /* Posted at the Master Vault there is no branch shelf: they count the Master Vault. No place on the login stays as it
@@ -261,13 +268,17 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     const weekCount = useMemo(() => opnameThisWeek(safeMotorists, user?.location, new Date(), countDay), [safeMotorists, user?.location, countDay]);
     const weekDone = !isHighCommand && !IS_DEMO && weekCount.done;
     const notCountDay = !isHighCommand && !IS_DEMO && !weekDone && !weekCount.sentBack && countDay !== null && new Date().getDay() !== countDay;
-    const countClosed = weekDone || notCountDay;
+    /* A REJECTED PRODUCT REOPENS ONLY ITSELF (his "accept and reject each of the item"): the week stays closed for the rest, and the leader's
+       screen lists just those products. ponytail: one leader per warehouse, as the week rule already assumes. */
+    const reopened = (weekDone && weekDone.reopened) || {};
+    const recounting = Object.keys(reopened).length > 0;
+    const countClosed = (weekDone && !recounting) || notCountDay;
     const countPlace = isAreaAdmin ? user?.location : HQ_LABEL;
     const dayWord = (d) => new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
     
     const masterId = user?.bossUid || user?.uid || user?.id;
 
-    const [viewMode, setViewMode] = useState(isHighCommand ? 'monitor' : 'count'); 
+    const [viewMode, setViewMode] = useState(isHighCommand ? 'monitor' : canDecide ? 'review' : 'count'); 
     const [auditSubTab, setAuditSubTab] = useState('pending'); 
     const [quarSubTab, setQuarSubTab] = useState('active'); 
     const [regionFilter, setRegionFilter] = useState('ALL');
@@ -296,6 +307,10 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
 
     const [pendingAudits, setPendingAudits] = useState([]);
     const [auditHistory, setAuditHistory] = useState([]); 
+    const [allAudits, setAllAudits] = useState([]);
+    const [auditsDenied, setAuditsDenied] = useState(false);
+    const [boardPick, setBoardPick] = useState(null);
+    const [boardShelf, setBoardShelf] = useState([]);
     const [expandedAudit, setExpandedAudit] = useState(null);
     const [isProcessingAudit, setIsProcessingAudit] = useState(false);
     const [viewingImage, setViewingImage] = useState(null);
@@ -321,14 +336,20 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     const shownQuarantine = quarantineInventory.filter(i => i.facility === openFac);
 
     useEffect(() => {
-        if (!isHighCommand || !db || !appId || !masterId) return;
-
+        if (!boardScope || !db || !appId || !masterId || (boardScope === 'own' && !user?.location)) return;
         const auditsRef = collection(db, `artifacts/${appId}/users/${masterId}/pending_audits`);
-        const unsubAudits = onSnapshot(auditsRef, (snap) => {
-            const allAudits = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setPendingAudits(allAudits.filter(a => a.status === 'PENDING_HQ_APPROVAL').sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)));
-            setAuditHistory(allAudits.filter(a => a.status === 'APPROVED' || a.status === 'REJECTED').sort((a, b) => (b.resolvedAt?.seconds || 0) - (a.resolvedAt?.seconds || 0)));
-        }, (err) => console.warn("Pending audits listener:", err.code));
+        /* T1-T3 read every warehouse; a T4 may only ask for their own, and rules CHANGE 23 refuses the question otherwise */
+        return onSnapshot(boardScope === 'all' ? auditsRef : query(auditsRef, where('branchLocation', '==', user.location)), (snap) => {
+            const audits = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setAuditsDenied(false);
+            setAllAudits(audits);
+            setPendingAudits(audits.filter(a => a.status === 'PENDING_HQ_APPROVAL').sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)));
+            setAuditHistory(audits.filter(a => a.status !== 'PENDING_HQ_APPROVAL').sort((a, b) => (b.resolvedAt?.seconds || 0) - (a.resolvedAt?.seconds || 0)));
+        }, (err) => { console.warn("Pending audits listener:", err.code); if (err.code === 'permission-denied') setAuditsDenied(true); });
+    }, [boardScope, user?.location, db, appId, masterId]);
+
+    useEffect(() => {
+        if (!isHighCommand || !db || !appId || !masterId) return;
 
         const logsRef = collection(db, `artifacts/${appId}/users/${masterId}/quarantine_logs`);
         const unsubLogs = onSnapshot(logsRef, (snap) => {
@@ -337,8 +358,44 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
             setQuarantineLogs(fetchedLogs);
         }, (err) => console.warn("Quarantine logs listener:", err.code));
 
-        return () => { unsubAudits(); unsubLogs(); };
+        return () => unsubLogs();
     }, [isHighCommand, db, appId, masterId]);
+
+    /* THE WORKLIST'S DATA. Every warehouse's tab comes from its counts; only the open one also needs its shelf, for "not counted". */
+    const boardFrom = useMemo(() => weekStart(new Date(), countDay).getTime() / 1000, [countDay]);
+    const weekLabel = useMemo(() => {
+        const a = weekStart(new Date(), countDay), b = new Date(a); b.setDate(b.getDate() + 6);
+        const mon = (d) => d.toLocaleDateString('en-GB', { month: 'short' });
+        return `Week of ${a.getDate()}${mon(a) === mon(b) ? '' : ` ${mon(a)}`}-${b.getDate()} ${mon(b)} ${b.getFullYear()}`;
+    }, [countDay]);
+    const boardPlaces = useMemo(() => {
+        if (boardScope !== 'all') return [isMasterVaultPlace(user?.location) ? { key: 'MASTER', name: HQ_LABEL } : { key: user?.location, name: user?.location }];
+        const known = new Set(vaultFacilities.map(f => f.key));
+        const extra = [...new Set(allAudits.map(opnamePlaceOf))].filter(p => p && !known.has(p)).map(p => ({ key: p, name: p }));
+        return [...vaultFacilities, ...extra];
+    }, [boardScope, user?.location, vaultFacilities, allAudits]);
+    const openPlace = useMemo(() => {
+        if (boardPlaces.some(p => p.key === boardPick)) return boardPick;
+        const busy = boardPlaces.find(p => opnameBoard(allAudits, p.key, { from: boardFrom }).rows.some(r => r.status === 'wait'));
+        return (busy || boardPlaces[0])?.key ?? null;
+    }, [boardPlaces, boardPick, allAudits, boardFrom]);
+    useEffect(() => {
+        if (viewMode !== 'review' || !openPlace || openPlace === 'MASTER' || !db || !appId || !masterId) { setBoardShelf([]); return; }
+        return onSnapshot(collection(db, `artifacts/${appId}/users/${masterId}/branches/${openPlace}/inventory`), (snap) => {
+            setBoardShelf(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        }, (err) => console.warn("Worklist shelf listener:", err.code));
+    }, [viewMode, openPlace, db, appId, masterId]);
+    const boards = useMemo(() => {
+        const shelf = openPlace === 'MASTER' ? [...safeInventory, ...promoItems] : boardShelf;
+        const lookup = [...safeInventory, ...promoItems, ...boardShelf];
+        /* the same price the Quarantine's loss uses, so both screens agree on one number */
+        const priceOf = (id) => { const p = lookup.find(i => i?.id === id); return Number(p?.priceDistributor || p?.hpp || p?.costPrice || 0); };
+        return boardPlaces.map(p => {
+            const board = opnameBoard(allAudits, p.key, { from: boardFrom, shelf: p.key === openPlace ? shelf : [], priceOf });
+            const at = board.newest?.timestamp?.seconds ? new Date(board.newest.timestamp.seconds * 1000).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' }).replace(',', '') : 'just now';
+            return { ...p, board: { ...board, leader: board.newest?.agentName || 'the team leader', who: board.newest ? `Counted by ${board.newest.agentName} · ${at}` : '' } };
+        });
+    }, [boardPlaces, allAudits, boardFrom, openPlace, boardShelf, safeInventory, promoItems]);
 
     const [monitorInventory, setMonitorInventory] = useState([]);
     useEffect(() => {
@@ -548,7 +605,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     };
 
     const handleCommit = async () => {
-        if (weekDone) return notify(`Cannot submit: this week's count for ${countPlace} is already in (${weekDone.by}, ${dayWord(weekDone.at)}).`);
+        if (weekDone && !recounting) return notify(`Cannot submit: this week's count for ${countPlace} is already in (${weekDone.by}, ${dayWord(weekDone.at)}).`);
         if (notCountDay) return notify(`Cannot submit: Stock Opname day is ${WEEK_DAYS[countDay]}.`);
         const countedItems = activeInventory.filter(i => i && i.id && counts[i.id] !== undefined);
         if (countedItems.length === 0) return notify("No items counted! Please enter at least one physical count.");
@@ -591,7 +648,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
             return notify(`Say what happened with these before submitting:\n\n${noCause.join('\n')}`);
         }
 
-        if (!await confirmAction(`Submit Stock Opname for ${countedItems.length} of ${activeInventory.length} items to HQ for verification?${isHighCommand || IS_DEMO ? '' : `\n\nThis is the one count for ${countPlace} this week.`}`)) return;
+        if (!await confirmAction(`Submit Stock Opname for ${countedItems.length} of ${activeInventory.length} items to HQ for verification?${isHighCommand || IS_DEMO || recounting ? '' : `\n\nThis is the one count for ${countPlace} this week.`}`)) return;
 
         setIsSubmitting(true);
         try {
@@ -607,6 +664,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                 branchLocation: user.location || 'HQ',
                 timestamp: serverTimestamp(),
                 status: 'PENDING_HQ_APPROVAL',
+                ...(recounting ? { recountOf: weekDone.auditId } : {}),
                 items: countedItems.map(item => {
                     const entry = counts[item.id];
                     const good = Number(entry.good || 0);
@@ -654,7 +712,9 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
             const auditRef = doc(db, `artifacts/${appId}/users/${masterId}/pending_audits`, auditId);
             const batch = writeBatch(db);
             batch.set(auditRef, auditPayload);
-            if (!isHighCommand && user.agentId) batch.update(doc(db, `artifacts/${appId}/users/${masterId}/motorists`, user.agentId), { lastOpname: opnameMark({ location: user.location, by: auditPayload.agentName, auditId }) });
+            if (!isHighCommand && user.agentId) batch.update(doc(db, `artifacts/${appId}/users/${masterId}/motorists`, user.agentId), { lastOpname: recounting
+                ? { ...weekDone, reopened: Object.fromEntries(Object.entries(reopened).filter(([id]) => !counts[id])) }
+                : opnameMark({ location: user.location, by: auditPayload.agentName, auditId }) });
             await batch.commit();
             /* the demo's mission line ticks on the SAVED count (DemoMission.jsx) */
             if (IS_DEMO) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: 8, items: countedItems.length } }));
@@ -686,56 +746,6 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
         return isBranch ? { type: 'set', ref, data, options: { merge: true } } : { type: 'update', ref, data };
     };
 
-    const handleApproveAudit = async (audit) => {
-        // The old wording promised an overwrite, which is what this used to do and what made the
-        // damage look deliberate. It applies the counted difference now, so the message says so.
-        const mixedUp = audit.items.filter(damagedAsGood).map(i => i.name || i.productId);
-        if (mixedUp.length) return notify(`Cannot approve: damaged packs look counted as good on ${mixedUp.join(', ')}. Send the count back. If those packs really are good again, use Repair in Quarantine first.`);
-        if (!await confirmAction(`APPROVE AUDIT: good stock and Quarantine at ${audit.branchLocation} become what was counted. Sales and returns made since the count are kept. Proceed?`)) return;
-        setIsProcessingAudit(true);
-        try {
-            // 🚀 FIX: Build the operations list and hand it to commitInChunks instead of a
-            // raw writeBatch — bounded by a single audit's item count today, but the same
-            // defensive chunking used for company-wide writes elsewhere, for consistency
-            // as audits grow.
-            const operations = [];
-            for (const item of audit.items) {
-                /* 🚀 FIX: apply the DIFFERENCE the counter found, not the number they counted.
-                   Overwriting is right at the moment of counting and wrong by the evening: the
-                   branch counts 100 at 08:00, sells 30, takes 20 back at EOD, and HQ approving
-                   at 20:00 wrote 100 over a real 90 — ten packs from nowhere and a whole day of
-                   movement erased, with nothing on screen to notice.
-
-                   `expectedStock` is what the system believed AT COUNT TIME, snapshotted into
-                   the audit when it was submitted, so the counter's real correction is
-                   (counted - expected). increment() applies it server-side and atomically,
-                   which also settles the second half of the problem: these writes go through a
-                   batch with no read, so reading the current stock here to subtract from would
-                   race anything that sells while HQ is deciding. */
-                const hasSnapshot = item.expectedStock !== undefined && item.expectedDamagedStock !== undefined;
-                const diff = countedDiffs(item);
-                const data = hasSnapshot
-                    ? { stock: increment(diff.good), damagedStock: increment(diff.damaged) }
-                    /* Audits submitted before the snapshot existed carry no expected values, so
-                       there is no difference to compute and the old overwrite is the only honest
-                       answer for good stock. Quarantine is left alone: nothing says what it was. */
-                    : { stock: Number(item.goodCount || 0) };
-
-                operations.push(shelfWrite(audit, item.productId, data));
-            }
-
-            const auditRef = doc(db, `artifacts/${appId}/users/${masterId}/pending_audits`, audit.id);
-            operations.push({ type: 'update', ref: auditRef, data: { status: 'APPROVED', noPutBack: true, resolvedAt: serverTimestamp(), resolvedBy: user.email?.split('@')[0] } });
-
-            await commitInChunks(db, writeBatch, operations);
-            if (logAudit) await logAudit("STOCK_OPNAME_APPROVED", `Approved stock audit for ${audit.branchLocation}.`);
-            if (triggerCapy) triggerCapy(`Audit Approved! Vault updated. 🔒`);
-            
-            setExpandedAudit(null);
-        } catch (error) { notify("Failed to approve audit."); } 
-        finally { setIsProcessingAudit(false); }
-    };
-
     /* PUT BACK - his 2026-11-04 count: 10 damaged packs typed as good, approved under the old rule, and they became good stock. The
        approved count kept the numbers, so this reverses exactly that, once, and any real shortage on the row stays corrected. */
     const handlePutBack = async (audit) => {
@@ -753,23 +763,63 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
         finally { setIsProcessingAudit(false); }
     };
 
-    const handleRejectAudit = async (audit) => {
-        const reason = await promptAction("Reason for rejection (sent back to Admin):");
-        if (reason === null) return; 
-
-        setIsProcessingAudit(true);
+    /* ONE PRESS, ONE PRODUCT. His 2026-11-05: "i want our system to be able to accept and reject each of the item instead of all at once".
+       Accepting applies only that product's two differences, with increment() so a sale landing meanwhile is kept; the decision and the stock
+       land in one batch. Undo is that batch reversed: increments are exact whatever moved in between. Returns the undo, true when it cannot be
+       undone (a count with no snapshot), or null when nothing was saved. */
+    const decideProducts = async (place, rows, status, reason = '') => {
+        if (!canDecide) return null;
+        if (navigator.onLine === false) { notify('Failed to save: you are offline. A decision changes stock, so press it again when you are back online.'); return null; }
+        const mixedUp = status === 'ACCEPTED' ? rows.filter(r => damagedAsGood(r.item)).map(r => r.name) : [];
+        if (mixedUp.length) { notify(`Cannot accept: damaged packs look counted as good on ${mixedUp.join(', ')}. Reject it so it is counted again. If those packs really are good again, use Repair in Quarantine first.`); return null; }
+        const by = user.email?.split('@')[0] || user.displayName || 'HQ';
+        const plan = opnameDecisionPlan(rows, status, reason, by);
+        const auditRef = (id) => doc(db, `artifacts/${appId}/users/${masterId}/pending_audits`, id);
+        const cardRef = (id) => doc(db, `artifacts/${appId}/users/${masterId}/motorists`, id);
+        const saveFailed = (e) => notify(e?.code === 'permission-denied' ? 'Failed to save: the new Firestore rule is not published yet. Ask the owner to publish it.' : 'Failed to save the decision. Check the connection and press it again.');
+        const ping = (agentId, title, message) => { if (agentId && agentId !== 'VAULT') addDoc(collection(db, `artifacts/${appId}/users/${masterId}/notifications`), { title, message, type: 'AUDIT_RECOUNT', read: false, isRead: false, timestamp: serverTimestamp(), agentId, linkToTab: 'stock_opname' }).catch(() => {}); };
+        const log = (what) => { if (logAudit) Promise.resolve(logAudit(what, `${rows.map(r => r.name).join(', ')} at ${place.name}${reason ? `: ${reason}` : ''}.`)).catch(() => {}); };
         try {
-            const auditRef = doc(db, `artifacts/${appId}/users/${masterId}/pending_audits`, audit.id);
-            const batch = writeBatch(db);
-            batch.update(auditRef, { status: 'REJECTED', rejectReason: reason || "Discrepancy too high.", resolvedAt: serverTimestamp(), resolvedBy: user.email?.split('@')[0] });
-            /* it goes back to the team: the week opens again and the leader sees why */
-            const card = safeMotorists.find(m => m?.id === audit.agentId);
-            if (card?.lastOpname?.auditId === audit.id) batch.update(doc(db, `artifacts/${appId}/users/${masterId}/motorists`, card.id), { lastOpname: { ...card.lastOpname, rejected: true, reason: reason || "Discrepancy too high." } });
-            await batch.commit();
-            if (logAudit) await logAudit("STOCK_OPNAME_REJECTED", `Rejected stock audit for ${audit.branchLocation}.`);
-            setExpandedAudit(null);
-        } catch (error) { notify("Failed to reject audit."); } 
-        finally { setIsProcessingAudit(false); }
+            /* someone else may have decided it since this screen last heard */
+            for (const { audit, set } of plan.audits) {
+                const fresh = await getDoc(auditRef(audit.id));
+                const taken = fresh.exists() ? Object.keys(set).find(id => fresh.data().decisions?.[id]) : null;
+                if (taken) { notify(`Failed to save: ${fresh.data().decisions[taken].by} already decided this product. The list has been updated.`); return null; }
+            }
+            const ops = plan.stock.map(s => shelfWrite(s.audit, s.productId, s.overwrite !== undefined ? { stock: s.overwrite } : { stock: increment(s.good), damagedStock: increment(s.damaged) }));
+            plan.audits.forEach(({ audit, set, close }) => {
+                const data = Object.fromEntries(Object.entries(set).map(([id, d]) => [`decisions.${id}`, { ...d, at: serverTimestamp() }]));
+                if (close) Object.assign(data, { status: close, resolvedAt: serverTimestamp(), resolvedBy: by, noPutBack: true });
+                ops.push({ type: 'update', ref: auditRef(audit.id), data });
+            });
+            /* a rejected product goes back to the leader's own screen: only that product reopens */
+            const cards = new Map();
+            if (status === 'REJECTED') rows.forEach(r => {
+                const c = safeMotorists.find(m => m?.id === r.audit.agentId);
+                if (!c?.lastOpname) return;
+                const was = cards.get(c.id)?.now || c.lastOpname;
+                cards.set(c.id, { before: c.lastOpname, now: { ...was, reopened: { ...(was.reopened || {}), [r.id]: { name: r.name, reason } } } });
+            });
+            cards.forEach((c, id) => ops.push({ type: 'update', ref: cardRef(id), data: { lastOpname: c.now } }));
+            await commitInChunks(db, writeBatch, ops);
+            log(status === 'ACCEPTED' ? 'STOCK_OPNAME_PRODUCT_ACCEPTED' : 'STOCK_OPNAME_PRODUCT_REJECTED');
+            if (status === 'REJECTED') rows.forEach(r => ping(r.audit.agentId, '📋 Recount asked', `${by} sent ${r.name} back: ${reason}`));
+            if (!plan.canUndo) return true;
+            return async () => {
+                try {
+                    const back = plan.stock.map(s => shelfWrite(s.audit, s.productId, { stock: increment(-s.good), damagedStock: increment(-s.damaged) }));
+                    plan.audits.forEach(({ audit, set, close }) => back.push({ type: 'update', ref: auditRef(audit.id), data: {
+                        ...Object.fromEntries(Object.keys(set).map(id => [`decisions.${id}`, deleteField()])),
+                        ...(close ? { status: 'PENDING_HQ_APPROVAL', resolvedAt: deleteField(), resolvedBy: deleteField(), noPutBack: deleteField() } : {})
+                    } }));
+                    cards.forEach((c, id) => back.push({ type: 'update', ref: cardRef(id), data: { lastOpname: c.before } }));
+                    await commitInChunks(db, writeBatch, back);
+                    log('STOCK_OPNAME_DECISION_UNDONE');
+                    if (status === 'REJECTED') rows.forEach(r => ping(r.audit.agentId, '📋 Recount cancelled', `${by} took back the recount of ${r.name}.`));
+                    return true;
+                } catch (e) { saveFailed(e); return false; }
+            };
+        } catch (e) { saveFailed(e); return null; }
     };
 
     const executeResolution = async (e) => {
@@ -982,7 +1032,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     };
 
 
-    const filteredItems = useMemo(() => activeInventory.filter(i => i && i.name?.toLowerCase().includes(search.toLowerCase())), [activeInventory, search]);
+    const filteredItems = useMemo(() => activeInventory.filter(i => i && i.name?.toLowerCase().includes(search.toLowerCase()) && (!recounting || reopened[i.id])), [activeInventory, search, recounting, reopened]);
     
     const displayedAudits = useMemo(() => {
         const source = auditSubTab === 'pending' ? pendingAudits : auditHistory;
@@ -1090,8 +1140,8 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                 </div>
             )}
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end bg-[var(--sunk)] border border-[var(--line)] p-4 rounded-xl shadow-lg gap-4 shrink-0 z-10 relative">
-                <div>
+            <div className={`flex flex-col md:flex-row justify-between items-start md:items-end bg-[var(--sunk)] border border-[var(--line)] p-4 rounded-xl gap-4 shrink-0 z-10 relative ${viewMode === 'review' ? 'kpm-wl-fold' : 'shadow-lg'}`}>
+                <div className={viewMode === 'review' ? 'hidden' : ''}>
                     <h2 className="text-xl lg:text-2xl font-black text-[var(--ink)] flex items-center gap-2 tracking-widest uppercase">
                         {viewMode === 'count' && <><ClipboardList size={24} className="text-[var(--ink-dim)]"/> Warehouse Opname</>}
                         {viewMode === 'review' && <><ShieldAlert size={24} className="text-[var(--ink-dim)]"/> HQ Recon Board</>}
@@ -1107,20 +1157,20 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                     </p>
                 </div>
                 
-                {isHighCommand && (
+                {canSeeBoard && (
                     <div className="grid grid-cols-2 gap-1 lg:flex lg:gap-0 bg-[var(--sunk)] rounded-lg p-1 border border-[var(--line)] w-full md:w-auto lg:overflow-x-auto custom-scrollbar">
-                        <button onClick={() => setViewMode('monitor')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'monitor' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                        {isHighCommand && <button onClick={() => setViewMode('monitor')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'monitor' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <BarChart size={14}/> Monitor
-                        </button>
+                        </button>}
                         <button onClick={() => setViewMode('review')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
-                            <ShieldAlert size={14}/> HQ Audits {pendingAudits.length > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] px-1.5 py-0.5 rounded-full">{pendingAudits.length}</span>}
+                            <ShieldAlert size={14}/> {boardScope === 'all' ? 'HQ Audits' : 'Review'} {pendingAudits.length > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] px-1.5 py-0.5 rounded-full">{pendingAudits.length}</span>}
                         </button>
-                        <button onClick={() => setViewMode('quarantine')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                        {isHighCommand && <button onClick={() => setViewMode('quarantine')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <Biohazard size={14}/> Quarantine
-                        </button>
-                        <button data-mission="8" onClick={() => setViewMode('count')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'count' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                        </button>}
+                        {canCount && <button data-mission="8" onClick={() => setViewMode('count')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'count' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <ClipboardList size={14}/> New Count
-                        </button>
+                        </button>}
                     </div>
                 )}
             </div>
@@ -1343,19 +1393,20 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
             {/* ======================================================== */}
             {/* VIEW MODE 1: THE HQ RECONCILIATION BOARD                 */}
             {/* ======================================================== */}
-            {viewMode === 'review' && isHighCommand && (
+            {viewMode === 'review' && canSeeBoard && auditSubTab !== 'history' && (
+                <OpnameWorklist places={boards} selected={openPlace} onSelect={setBoardPick} weekLabel={weekLabel} canDecide={canDecide}
+                    onDecide={decideProducts} onHistory={() => setAuditSubTab('history')} onPhoto={setViewingImage} denied={auditsDenied}
+                    streakOf={(id) => { const st = shortageStreak(auditHistory, id); return isLeak(st) ? `Short in ${st.short} of the last ${st.total} counts` : null; }}
+                    emptyNote={`The team leader submits this week's count.${countDay !== null ? ` Stock Opname day is ${WEEK_DAYS[countDay]}.` : ''}`} />
+            )}
+            {viewMode === 'review' && canSeeBoard && auditSubTab === 'history' && (
                 <div className="flex-1 flex flex-col min-h-0 animate-fade-in">
-                    
+
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-                        <div className="flex bg-[var(--sunk)] rounded-lg p-1 border border-[var(--line)] w-full md:w-auto">
-                            <button onClick={() => setAuditSubTab('pending')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${auditSubTab === 'pending' ? 'bg-[var(--gold)] text-[var(--gold-ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--ink-dim)]'} `}>
-                                <Clock size={14}/> Pending HQ Approval
-                            </button>
-                            <button onClick={() => setAuditSubTab('history')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 ${auditSubTab === 'history' ? 'bg-[var(--raised)] text-[var(--ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
-                                <History size={14}/> Audit History
-                            </button>
-                        </div>
-                        <div className="flex items-center gap-2 bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-1.5 px-3 w-full md:w-auto">
+                        <button onClick={() => setAuditSubTab('pending')} className="px-4 py-2 min-h-11 lg:min-h-0 rounded-lg bg-[var(--sunk)] border border-[var(--line)] text-[11px] lg:text-[10px] uppercase tracking-widest font-bold text-[var(--ink)] flex items-center justify-center gap-2 w-full md:w-auto">
+                            <Clock size={14}/> Back to the review
+                        </button>
+                        <div className={`${boardScope === 'all' ? 'flex' : 'hidden'} items-center gap-2 bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-1.5 px-3 w-full md:w-auto`}>
                             <Filter size={14} className="text-[var(--ink-dim)]"/>
                             <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)} className="min-h-11 lg:min-h-0 bg-transparent text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none w-full">
                                 <option value="ALL" className="bg-[var(--sunk)] text-[var(--ink)]">All Regions</option>
@@ -1368,15 +1419,14 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                     <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 pb-4">
                         {displayedAudits.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full opacity-50 space-y-3 mt-8">
-                                {auditSubTab === 'pending' ? <CheckCircle size={48} className="text-[var(--ink-dim)]"/> : <History size={48} className="text-[var(--ink-dim)]"/>}
+                                <History size={48} className="text-[var(--ink-dim)]"/>
                                 <p className="text-sm font-bold text-[var(--ink-dim)] uppercase tracking-widest">
-                                    {auditSubTab === 'pending' ? 'No pending warehouse audits.' : 'No audit history found.'}
+                                    No audit history found.
                                 </p>
                             </div>
                         ) : (
                             displayedAudits.map(audit => {
                                 const isExpanded = expandedAudit === audit.id;
-                                const isHistory = auditSubTab === 'history';
                                 
                                 let totalDamaged = 0; let purelyMissing = 0; let anyDifference = false;
                                 audit.items.forEach(item => {
@@ -1394,27 +1444,27 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                 let resolvedTime = audit.resolvedAt?.seconds ? new Date(audit.resolvedAt.seconds * 1000).toLocaleString('id-ID') : '';
 
                                 return (
-                                    <div key={audit.id} className={`bg-[var(--sunk)] border rounded-xl overflow-hidden transition-all border-[var(--line)] ${isHistory ? (audit.status === 'APPROVED' ? 'border-[var(--line)]' : 'border-[var(--danger)]') : (hasIssues ? 'border-[var(--danger)]' : 'border-[var(--line)]')} `}>
+                                    <div key={audit.id} className={`bg-[var(--sunk)] border rounded-xl overflow-hidden transition-all border-[var(--line)] ${audit.status === 'APPROVED' ? 'border-[var(--line)]' : 'border-[var(--danger)]'} `}>
                                         <div onClick={() => setExpandedAudit(isExpanded ? null : audit.id)} className="p-4 flex items-center justify-between cursor-pointer hover:bg-[var(--raised)] transition-colors">
                                             <div className="flex items-center gap-4">
-                                                <div className={`p-3 rounded-full border bg-[var(--sunk)] ${isHistory ? (audit.status === 'APPROVED' ? 'border-[var(--accent-edge)] text-[var(--accent-ink)]' : 'border-[var(--danger)] text-[var(--danger-ink)]') : (hasIssues ? 'border-[var(--danger)] text-[var(--danger-ink)]' : 'border-[var(--accent-edge)] text-[var(--accent-ink)]')} `}>
-                                                    {isHistory ? (audit.status === 'APPROVED' ? <CheckCircle size={20}/> : <X size={20}/>) : (hasIssues ? <AlertTriangle size={20}/> : <CheckCircle size={20}/>)}
+                                                <div className={`p-3 rounded-full border bg-[var(--sunk)] ${audit.status === 'APPROVED' ? 'border-[var(--accent-edge)] text-[var(--accent-ink)]' : 'border-[var(--danger)] text-[var(--danger-ink)]'} `}>
+                                                    {audit.status === 'APPROVED' ? <CheckCircle size={20}/> : <X size={20}/>}
                                                 </div>
                                                 <div>
                                                     <div className="flex items-center gap-2">
                                                         <h3 className="font-black text-[var(--ink)] flex items-center gap-2 uppercase">
                                                             <Database size={14} className="text-[var(--ink-dim)]"/> {audit.branchLocation}
                                                         </h3>
-                                                        {isHistory && (
+                                                        {(
                                                             <span className={`text-[11px] border px-2 py-0.5 rounded font-black tracking-widest uppercase border-[var(--line)] ${audit.status === 'APPROVED' ? 'bg-[var(--sunk)] text-[var(--accent-ink)] border-[var(--accent-edge)]' : 'bg-[var(--sunk)] text-[var(--danger-ink)] border-[var(--danger)]'} `}>
-                                                                {audit.status}
+                                                                {String(audit.status).replace(/_/g, ' ')}
                                                             </span>
                                                         )}
                                                     </div>
                                                     <p className="text-xs text-[var(--ink-dim)] font-mono flex items-center gap-1 mt-1">
                                                         <User size={12}/> Count By: {audit.agentName.toUpperCase()} • {displayTime}
                                                     </p>
-                                                    {isHistory && audit.resolvedBy && (
+                                                    {audit.resolvedBy && (
                                                         <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-mono mt-0.5">
                                                             Resolved By: {audit.resolvedBy.toUpperCase()} • {resolvedTime}
                                                         </p>
@@ -1435,7 +1485,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                         {isExpanded && (
                                             <div className="border-t border-[var(--line)] bg-[var(--sunk)] p-4">
                                                 
-                                                {isHistory && audit.status === 'REJECTED' && audit.rejectReason && (
+                                                {audit.status === 'REJECTED' && audit.rejectReason && (
                                                     <div className="mb-4 bg-[var(--danger-well)] border border-[var(--danger)] p-3 rounded text-[11px] lg:text-[10px] font-mono text-[var(--danger-ink)]">
                                                         <span className="font-bold uppercase tracking-widest block mb-1">Rejection Reason:</span>
                                                         {audit.rejectReason}
@@ -1447,13 +1497,13 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                 <div className="space-y-2 mb-4 lg:max-h-[40vh] lg:overflow-y-auto custom-scrollbar pr-2">
                                                     {audit.items.map((item, idx) => {
                                                         const isMissing = item.variance < 0;
-                                                        const damagedNote = !isHistory && damagedCountNote(item);
                                                         
                                                         return (
                                                             <div key={idx} className="flex flex-col bg-[var(--raised)] p-3 rounded-lg border border-[var(--line)]">
                                                                 <div className="flex flex-col items-stretch gap-2.5 mb-3 lg:flex-row lg:justify-between lg:items-center lg:mb-2 lg:border-b lg:border-[var(--line)] lg:pb-2">
                                                                     <span className="flex items-center gap-2 min-w-0">
                                                                         <span className="font-bold text-sm lg:text-xs text-[var(--ink)] uppercase lg:truncate">{item.name}</span>
+                                                                        {audit.decisions?.[item.productId] && <span className="shrink-0 text-[11px] lg:text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded bg-[var(--sunk)] border border-[var(--line)] text-[var(--ink-dim)] whitespace-nowrap">{audit.decisions[item.productId].status}{audit.decisions[item.productId].reason ? ` · ${audit.decisions[item.productId].reason}` : ''}</span>}
                                                                         {/* LEAK, not miscount. Reads the audits already on file - short in at
                                                                             least two of the last three or more counts. Dark plate, red edge,
                                                                             red ink: it is a warning, not a slab. */}
@@ -1522,7 +1572,6 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                                     )}
                                                                 </div>
 
-                                                                {damagedNote && <p className="mt-2 text-xs leading-relaxed font-bold text-[var(--danger-ink)]">{damagedNote}</p>}
                                                                 {(isMissing || item.damagedPhotoUrl) && (
                                                                     <div className="mt-2 flex items-center justify-between bg-[var(--sunk)] p-2 rounded">
                                                                         {isMissing ? (
@@ -1541,23 +1590,13 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                                     })}
                                                 </div>
 
-                                                {isHistory && audit.status === 'APPROVED' && !audit.quarantineKept && !audit.noPutBack && !audit.putBack && audit.items.some(i => quarantineLost(i).back > 0) && (
+                                                {isHighCommand && audit.status === 'APPROVED' && !audit.quarantineKept && !audit.noPutBack && !audit.putBack && audit.items.some(i => quarantineLost(i).back > 0) && (
                                                     <div className="pt-2 border-t border-[var(--line)]">
                                                         <button onClick={() => handlePutBack(audit)} disabled={isProcessingAudit} className="w-full bg-[var(--raised)] border border-[var(--accent-edge)] text-[var(--accent-ink)] py-3 rounded-lg font-bold text-xs">Put back what this count took from Quarantine</button>
                                                     </div>
                                                 )}
-                                                {isHistory && audit.putBack && <p className="pt-2 border-t border-[var(--line)] text-xs font-bold text-[var(--ink-dim)]">Quarantine was put back after this count.</p>}
+                                                {audit.putBack && <p className="pt-2 border-t border-[var(--line)] text-xs font-bold text-[var(--ink-dim)]">Quarantine was put back after this count.</p>}
 
-                                                {!isHistory && (
-                                                    <div className="flex gap-3 pt-2 border-t border-[var(--line)]">
-                                                        <button onClick={() => handleRejectAudit(audit)} disabled={isProcessingAudit} className="flex-1 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--danger)_14%,var(--raised))] border border-[var(--danger)] text-[var(--danger-ink)] py-3 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-colors uppercase tracking-widest">
-                                                            <X size={14}/> Reject Count
-                                                        </button>
-                                                        <button onClick={() => handleApproveAudit(audit)} disabled={isProcessingAudit} className="flex-[2] bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] py-3 rounded-lg font-black text-xs flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-colors uppercase tracking-widest">
-                                                            <Check size={16}/> Approve & Quarantine Damages
-                                                        </button>
-                                                    </div>
-                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -1575,7 +1614,8 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                 <div data-guide="count" className="flex-1 bg-[var(--sunk)] rounded-xl border border-[var(--line)] shadow-inner overflow-hidden flex flex-col relative animate-fade-in z-10">
                     {!isHighCommand && !IS_DEMO && (
                         <div data-guide="week-count" className="px-4 py-3 border-b border-[var(--line)] text-xs leading-relaxed text-[var(--ink)]">
-                            {weekDone ? <><b>This week's count is in.</b> {weekDone.by} submitted it on {dayWord(weekDone.at)}. The next count opens on {dayWord(nextWeekStart(new Date(), countDay))}.</>
+                            {recounting ? <><b className="text-[var(--danger-ink)]">HQ sent {Object.keys(reopened).length} back:</b> {Object.values(reopened).map(r => `${r.name} (${r.reason})`).join(', ')}. Count only these again and submit.</>
+                             : weekDone ? <><b>This week's count is in.</b> {weekDone.by} submitted it on {dayWord(weekDone.at)}. The next count opens on {dayWord(nextWeekStart(new Date(), countDay))}.</>
                              : weekCount.sentBack ? <><b className="text-[var(--danger-ink)]">HQ sent this week's count back:</b> {weekCount.sentBack.reason} Count again and submit.</>
                              : notCountDay ? <><b>Stock Opname day is {WEEK_DAYS[countDay]}.</b> The next count opens on {dayWord(nextWeekStart(new Date(), countDay))}: the team counts together and the team leader submits it.</>
                              : countDay !== null ? <><b>Today is Stock Opname day.</b> One count per warehouse, today: the team counts together and the team leader submits it.</>
@@ -1873,7 +1913,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                         <div className="text-xs text-[var(--ink-dim)] font-bold uppercase w-full md:w-auto text-center md:text-left tracking-widest">{!countClosed && `${Object.keys(counts).length} Wares Counted`}</div>
                         <div className="flex w-full md:w-auto gap-3">
                             {!countClosed && <button onClick={() => clearCounts()} className="flex-none justify-center px-4 py-3 md:py-2 text-[var(--ink-dim)] hover:text-[var(--ink)] font-bold text-xs flex items-center gap-2 transition-colors bg-[var(--raised)] border border-[var(--line)] rounded-lg"><RefreshCcw size={14}/> Reset</button>}
-                            <button data-guide="submit-count" onClick={handleCommit} disabled={isSubmitting || countClosed || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] disabled:bg-[var(--sunk)] disabled:text-[var(--ink-dim)] disabled:border disabled:border-[var(--line)] disabled:shadow-none disabled:cursor-not-allowed px-4 lg:px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} {weekDone ? 'Submitted this week' : notCountDay ? `Opens on ${WEEK_DAYS[countDay]}` : 'Submit to HQ'}</button>
+                            <button data-guide="submit-count" onClick={handleCommit} disabled={isSubmitting || countClosed || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] disabled:bg-[var(--sunk)] disabled:text-[var(--ink-dim)] disabled:border disabled:border-[var(--line)] disabled:shadow-none disabled:cursor-not-allowed px-4 lg:px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} {weekDone && !recounting ? 'Submitted this week' : notCountDay ? `Opens on ${WEEK_DAYS[countDay]}` : 'Submit to HQ'}</button>
                         </div>
                     </div>
                 </div>

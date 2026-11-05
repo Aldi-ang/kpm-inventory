@@ -15,7 +15,7 @@ import UpdateStatus from './UpdateStatus.jsx';
 import MusicPlayer from '../MusicPlayer'; 
 
 // 🚀 IMPORT THE BRAIN
-import { hasClearance } from '../config/permissions';
+import { hasClearance, canDecideOpname } from '../config/permissions';
 import { tr } from '../config/lang';
 import { confirmAction } from './ConfirmGate.jsx';
 /* The tutorial book. It lives in the top bar because that bar is on EVERY screen, which is what
@@ -518,6 +518,7 @@ export default function BiohazardTheme({
         /* Settings: every tier (his 2026-11-02 "this setting that can be seen by every tiers") - everyone gets this
            phone's own Language and Graphics; view_settings now only decides who may unlock the company tabs inside */
         if (item.id === 'settings') return true;
+        if (item.id === 'stock_opname' && canDecideOpname(userRole)) return true;   // the same exception as canOpenTab
         return hasClearance(userRole, item.feature);
     });
 

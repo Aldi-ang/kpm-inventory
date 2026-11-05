@@ -116,6 +116,22 @@ service cloud.firestore {
         profile.get('canEditRoster', false) == true;
     }
 
+    // [CHANGE 23 — 2026-11-05, DRAFT until Aldi publishes it] WHO DECIDES A COUNTED PRODUCT. His "who can reject or accept the stock opname is
+    // the tier 3 and above as default, make sure this power added into the matrix". Mirrors canDecideOpname in permissions.js: until the key
+    // is in his saved matrix a T3 may; after, his switch wins, for a T3 and a T4. T1 and T2 already write through the company catch-all, and a
+    // T5 or T6 can never write stock, so the switch stops at T4.
+    function opnameDecider(bossUid) {
+      let profile = getEmployeeProfile();
+      let role = profile != null ? profile.get('userRole', 'NONE') : 'NONE';
+      let m = getPermissionMatrixDoc(bossUid);
+      let saved = m != null && ('matrix' in m) ? m.matrix : {};
+      let key = 'decide_opname_product';
+      let known = key in saved.get('DEVELOPER', []) || key in saved.get('COMPANY_OWNER', []) || key in saved.get('AREA_ADMIN', []) ||
+        key in saved.get('FLEET_CAPTAIN', []) || key in saved.get('FIELD_OPERATIVE', []) || key in saved.get('ROOKIE', []);
+      return isAuthenticated() && profile != null && profile.bossUid == bossUid && (role == 'AREA_ADMIN' || role == 'FLEET_CAPTAIN') &&
+        (known ? key in saved.get(role, []) : role == 'AREA_ADMIN');
+    }
+
     function isSalesman(bossUid) {
       let profile = getEmployeeProfile();
       return isAuthenticated() && profile != null && profile.bossUid == bossUid;
@@ -778,6 +794,8 @@ service cloud.firestore {
         // =====================================================================
         allow update: if (isAuthorizedAreaAdmin(bossUid) && resource.data.location == getEmployeeProfile().location) ||
           (isSalesman(bossUid) && getEmployeeProfile().agentId == motoristId) ||
+          // [CHANGE 23 — DRAFT] rejecting a product reopens it on the team leader's card, and nothing else on the card
+          (opnameDecider(bossUid) && (isAreaAdmin(bossUid) || resource.data.get('location', '') == getEmployeeProfile().get('location', 'NONE')) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastOpname'])) ||
           // [CHANGE 13 — 2026-09-29, DRAFT] a T1/T2 saves a roster card (the Gmail move's other half) - roster cards
           // stay out of the T2 catch-all (CHANGE 14). Never a T1's card, never into a T1 tag.
           (isCompanyTopTier(bossUid) && !isT1Tag(resource.data.get('userRole', 'NONE')) && !isT1Tag(request.resource.data.get('userRole', 'NONE')));
@@ -1039,9 +1057,13 @@ service cloud.firestore {
       //  - Vault owner / distributor admin (ADMIN) -> unaffected, full access via catch-all
       // =====================================================================
       match /pending_audits/{auditId} {
-        allow read: if isAreaAdmin(bossUid);
+        // [CHANGE 23 — DRAFT] a T4 reads their own warehouse's counts (his "regional admin and upper tiers should see the missing item"), and a
+        // decider writes only the decisions and the count's closing fields. A T4 with the matrix switch decides for their own warehouse only.
+        allow read: if isAreaAdmin(bossUid) || (isFleetCaptain(bossUid) && resource.data.get('branchLocation', '') == getEmployeeProfile().get('location', 'NONE'));
         allow create: if isSalesman(bossUid);
-        allow update, delete: if false;
+        allow update: if opnameDecider(bossUid) && (isAreaAdmin(bossUid) || resource.data.get('branchLocation', '') == getEmployeeProfile().get('location', 'NONE')) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['decisions', 'status', 'resolvedAt', 'resolvedBy', 'noPutBack']);
+        allow delete: if false;
       }
 
       // [ADDED — production_targets defense-in-depth] RestockVaultView.jsx reads/

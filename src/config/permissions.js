@@ -131,6 +131,27 @@ export const canSetBundlePrice = (userRole) => {
         || role === CORPORATE_TIERS.TIER_3;
 };
 
+/* WHO MAY ACCEPT OR REJECT A COUNTED PRODUCT? His 2026-11-05: "who can reject or accept the stock opname is the tier 3 and above as
+   default, make sure this power added into the matrix for additional flexibility". Same absence-means-tier-default shape as the keys
+   above: until the key is in his saved matrix, tiers 1-3 may; after, his switch wins. It stops at T4: rules CHANGE 23 mirrors this, and a
+   T5 or T6 may not write stock at all, so a switch for them would be a button the server refuses (UI-Says-Yes-Server-Says-No). A T4 with
+   the switch on decides for their own warehouse only. */
+const DECIDE_OPNAME_KEY = 'decide_opname_product';
+export const canDecideOpname = (userRole) => {
+    const role = translateLegacyRole(userRole);
+    if (role === CORPORATE_TIERS.TIER_1) return true;
+    if (role === CORPORATE_TIERS.TIER_5 || role === CORPORATE_TIERS.TIER_6) return false;
+    const matrixKnowsKey = Object.values(ROLE_PERMISSIONS)
+        .some(list => Array.isArray(list) && list.includes(DECIDE_OPNAME_KEY));
+    if (matrixKnowsKey) return hasClearance(userRole, DECIDE_OPNAME_KEY);
+    return role === CORPORATE_TIERS.TIER_2 || role === CORPORATE_TIERS.TIER_3;
+};
+/* Who sees the Stock Opname worklist: his "regional admin and tier 3 and above". T1-T3 every warehouse, a T4 their own, nobody below. */
+export const opnameBoardScope = (userRole) => {
+    const role = translateLegacyRole(userRole);
+    return [CORPORATE_TIERS.TIER_1, CORPORATE_TIERS.TIER_2, CORPORATE_TIERS.TIER_3].includes(role) ? 'all' : role === CORPORATE_TIERS.TIER_4 ? 'own' : null;
+};
+
 export let ROLE_PERMISSIONS = {
     [CORPORATE_TIERS.TIER_1]: ['ALL_ACCESS'], 
     [CORPORATE_TIERS.TIER_2]: [ 
@@ -194,6 +215,7 @@ export const TAB_FEATURE = {
 };
 export const canOpenTab = (role, tab) => {
     if (tab === 'settings') return true;   // every tier (his 2026-11-02)
+    if (tab === 'stock_opname' && canDecideOpname(role)) return true;   // the worklist: view_stock_opname is who COUNTS (his 2026-11-04)
     const f = TAB_FEATURE[tab];
     if (f === 'view_reports') return ['view_reports_global', 'view_reports_regional', 'view_reports_personal'].some((p) => hasClearance(role, p));
     return !!f && hasClearance(role, f);

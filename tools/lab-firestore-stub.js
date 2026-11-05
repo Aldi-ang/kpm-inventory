@@ -26,6 +26,7 @@ const snap = (rows) => Array.isArray(rows)
 /* a shooter can seed it before the page runs (globalThis.__labFixtures, set on a new document), so a listener that
    subscribes on mount - the geofence requests, say - already has rows; a later import would lose that race */
 export const FIXTURES = globalThis.__labFixtures || {};
+const listeners = [];
 
 export const collection = (_db, path) => ({ path });
 /* like the real one, the id segments join the path — so a document fixture can be keyed
@@ -38,7 +39,25 @@ export const onSnapshot = (ref, cb) => {
   /* Asynchronously, like the real one: a synchronous first callback would set state during
      render and hide any effect-ordering bug this harness is supposed to be able to show. */
   setTimeout(() => cb(snap(key ? FIXTURES[key] : [])), 0);
-  return () => {};
+  const entry = { path, cb };
+  listeners.push(entry);
+  return () => { listeners.splice(listeners.indexOf(entry), 1); };
+};
+/* 2026-11-05 - the Stock Opname counts are live in the lab: a batch's decision lands on the fixture and the listener fires again, so the
+   worklist can be pressed through its whole flow. Only this collection; stock figures stay recorded in __labWrites. */
+const LIVE = 'pending_audits';
+const applyLive = (op, ref, data) => {
+  const path = (ref && ref.path) || '', cut = path.lastIndexOf('/'), col = path.slice(0, cut), id = path.slice(cut + 1);
+  if (!col.endsWith(LIVE) || !Array.isArray(FIXTURES[LIVE])) return;
+  let row = FIXTURES[LIVE].find((r) => r.id === id);
+  if (!row && op === 'set') { row = { id }; FIXTURES[LIVE].push(row); }
+  if (!row) return;
+  Object.entries(data || {}).forEach(([k, v]) => {
+    const [a, b] = k.split('.');
+    if (b) { row[a] = row[a] || {}; if (v === undefined) delete row[a][b]; else row[a][b] = v; }
+    else if (v === undefined) delete row[a]; else row[a] = v;
+  });
+  setTimeout(() => listeners.filter((l) => l.path.endsWith(LIVE)).forEach((l) => l.cb(snap(FIXTURES[LIVE]))), 0);
 };
 
 /* 2026-09-22 — WRITES ARE RECORDED, READS SERVE THE FIXTURES. Still no network and still nothing
@@ -48,7 +67,7 @@ export const onSnapshot = (ref, cb) => {
    same path-suffix rule as onSnapshot, so an engine loop that reads a product first has a product. */
 const noop = () => {};
 const writes = () => (globalThis.__labWrites = globalThis.__labWrites || []);
-const record = (op) => (ref, data) => { writes().push({ op, path: (ref && ref.path) || '', data }); };
+const record = (op) => (ref, data) => { writes().push({ op, path: (ref && ref.path) || '', data }); applyLive(op, ref, data); };
 const found = (ref) => { const path = (ref && ref.path) || ''; const key = Object.keys(FIXTURES).find((k) => path.endsWith(k)); return key ? snap(FIXTURES[key]) : null; };
 export const writeBatch = () => ({ set: record('set'), update: record('update'), delete: record('delete'), commit: async () => {} });
 export const runTransaction = async (_db, fn) =>

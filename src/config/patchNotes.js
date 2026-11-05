@@ -4,6 +4,7 @@
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
   { date: '2026-11-05', items: [
+    { kind: 'new', en: 'Stock Opname review: accept or reject each product on its own. Every warehouse shows what is waiting and how much was lost. A rejected product goes back to the team leader for a recount of that product only.', id: 'Review Stock Opname: terima atau tolak per produk. Setiap gudang menampilkan yang masih menunggu dan nilai yang hilang. Produk yang ditolak kembali ke team leader, dan hanya produk itu yang dihitung ulang.' },
     { kind: 'fixed', en: 'Stock Opname: after a count is confirmed, good stock and Quarantine become exactly what was counted. Damaged packs typed as good cannot be confirmed.', id: 'Stock Opname: setelah hitungan dikonfirmasi, stok bagus dan Quarantine menjadi persis sesuai hitungan. Barang rusak yang diketik sebagai barang bagus tidak bisa dikonfirmasi.' },
     { kind: 'fixed', en: 'Blind count is now really blind: the expected number stays hidden, and a count is only checked when Submit is pressed.', id: 'Hitung buta sekarang benar-benar buta: angka seharusnya tetap tersembunyi, dan hitungan baru diperiksa saat tombol kirim ditekan.' },
     { kind: 'new', en: 'Patch notes: this list shows what changed in the app.', id: 'Catatan update: daftar ini menunjukkan apa yang berubah di aplikasi.' },
