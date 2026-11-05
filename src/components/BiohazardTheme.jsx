@@ -21,6 +21,7 @@ import { confirmAction } from './ConfirmGate.jsx';
 /* The tutorial book. It lives in the top bar because that bar is on EVERY screen, which is what
    he asked for: *"i want the tutorial book on the very top of the screen for every components"*. */
 import PonderBookButton from '../ponder/PonderBook.jsx';
+import PatchNotesButton from './PatchNotes.jsx';
 import { decodeFrame, decodeFrames } from '../utils/liteMode.js';
 
 /* ── THE SLIDING CLOCK ───────────────────────────────────────────────────────
@@ -1130,6 +1131,7 @@ export default function BiohazardTheme({
                             theme, notifications. This one is the only one that opens content, and
                             a thing you read does not belong wedged between two indicators. */}
                         <PonderBookButton activeTab={activeTab} />
+                        <PatchNotesButton />
 
                         {syncIndicator}
 

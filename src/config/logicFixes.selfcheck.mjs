@@ -13230,5 +13230,27 @@ section('Stock Opname: good and damaged are two counts, a count never turns dama
      so.includes('STOCK_OPNAME_PUT_BACK'));
 }
 
+section('Patch notes: a button in the top bar, every tier, what changed in words anyone can read');
+{
+  let N = {};
+  try { N = await import('./patchNotes.js'); } catch { /* red until it exists */ }
+  const notes = N.PATCH_NOTES || [];
+  const items = notes.flatMap(n => n.items || []);
+  const shell = read('src/components/BiohazardTheme.jsx');
+  let pn = '';
+  try { pn = read('src/components/PatchNotes.jsx'); } catch { /* red until it exists */ }
+  ok('BEHAVIOUR: newest first, one block per real date', notes.length > 0 &&
+     notes.every(n => /^\d{4}-\d{2}-\d{2}$/.test(n.date)) && notes.every((n, i) => i === 0 || n.date < notes[i - 1].date));
+  ok('BEHAVIOUR: every line says new or fixed, in both languages', items.length > 0 &&
+     items.every(i => ['new', 'fixed'].includes(i.kind) && String(i.en || '').trim() && String(i.id || '').trim()));
+  ok('COPY: never kamu or aku in the Indonesian', !items.some(i => /\b(kamu|Kamu|aku|Aku|kalian|gue|lo)\b/.test(i.id || '')));
+  ok('REGRESSION: the button sits in the top bar for every tier, beside the other thing people open to read',
+     /<PonderBookButton activeTab=\{activeTab\} \/>\s*<PatchNotesButton \/>/.test(shell));
+  ok('REGRESSION: the text follows the phone language, and a new line lights the dot again, even on the same day',
+     pn.includes("getLang() === 'en'") && (N.PATCH_STAMP || '') === (notes[0] ? notes[0].date + ':' + notes[0].items.length : 'x') && pn.includes('seen !== PATCH_STAMP'));
+  ok('REGRESSION: it closes by the X, a press outside and Escape, and blocked storage cannot break it',
+     pn.includes("e.key === 'Escape'") && pn.includes('aria-modal="true"') && /try \{ localStorage\.setItem/.test(pn) && /try \{ return localStorage\.getItem/.test(pn));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

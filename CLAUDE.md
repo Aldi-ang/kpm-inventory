@@ -32,6 +32,7 @@ Full workflow: A-Brain `Wiki/Concepts/Publishing a Fix.md`.
 - Push yourself, without asking, at the end of every FINISHED job (built, gates green, rendered if visual) -
   and whenever he says publish / push / "fix the publish". No approval window, and none should be added.
   Still stays local: a half-done job, a lab-only board waiting on his pick, anything with a red gate.
+- A finished job that changes what people see adds one line (en + id, plain words, no names) to `src/config/patchNotes.js`, before the checks below. His patch notes button reads it (2026-11-05).
 - Before the push, after the LAST edit: `node src/config/logicFixes.selfcheck.mjs`, `npm run build`,
   `node src/config/integration.audit.mjs`, all green; `git rev-list --count HEAD..origin/phase0-solid-ground` = 0.
 - After: `git fetch`, confirm `origin/phase0-solid-ground` is your commit, give him the hash (the vault
