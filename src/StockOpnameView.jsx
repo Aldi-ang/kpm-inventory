@@ -15,7 +15,7 @@ import { canSeeExpectedCount, canDecideOpname, opnameBoardScope, hasClearance } 
 /* Imported under a different name on purpose. The string 'MASTER' in this file is a SELECT VALUE
    that routes Firestore paths (branches/{facility}/inventory) — changing it would move documents.
    HQ_LABEL is only what the reader sees, and that is the part that had four spellings. */
-import { MASTER as HQ_LABEL, isMasterVaultPlace, opnameThisWeek, opnameMark, countedDiffs, damagedAsGood, countBoxEmpty, quarantineLost, opnameBoard, opnamePlaceOf, opnameDecisionPlan } from './utils/supply.js';
+import { MASTER as HQ_LABEL, isMasterVaultPlace, opnameThisWeek, opnameMark, countedDiffs, damagedAsGood, countBoxEmpty, quarantineLost, opnameMissing, opnameBoard, opnamePlaceOf, opnameDecisionPlan } from './utils/supply.js';
 import { nextWeekStart, weekStart, WEEK_DAYS } from './utils/period.js';
 import { CrateVault } from './components/WarehouseChest.jsx';
 import OpnameWorklist from './components/OpnameWorklist.jsx';
@@ -604,12 +604,14 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
         return { goodDiff: Number(entry.good || 0) - target.stock, damagedDiff: Number(entry.damaged || 0) - target.damaged };
     };
 
+    const stillUncounted = !isHighCommand && !IS_DEMO && !recounting ? opnameMissing(activeInventory, counts) : [];
     const handleCommit = async () => {
         if (weekDone && !recounting) return notify(`Cannot submit: this week's count for ${countPlace} is already in (${weekDone.by}, ${dayWord(weekDone.at)}).`);
         if (notCountDay) return notify(`Cannot submit: Stock Opname day is ${WEEK_DAYS[countDay]}.`);
         const countedItems = activeInventory.filter(i => i && i.id && counts[i.id] !== undefined);
         if (countedItems.length === 0) return notify("No items counted! Please enter at least one physical count.");
 
+        if (stillUncounted.length) return notify(`Cannot submit: every product with stock must be counted. Still not counted:\n\n${stillUncounted.map(i => i.name || i.id).join('\n')}\n\nType 0 if there are none on the shelf.`);
         const emptyBox = countedItems.filter(i => countBoxEmpty(counts[i.id])).map(i => i.name || i.id);
         if (emptyBox.length) return notify(`Cannot submit: type a number in both boxes, 0 if there are none:\n\n${emptyBox.join('\n')}`);
 
@@ -1910,7 +1912,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                     </div>
 
                     <div className="p-4 bg-[var(--sunk)] border-t border-[var(--line)] flex flex-col md:flex-row justify-between items-center gap-4 z-10 relative">
-                        <div className="text-xs text-[var(--ink-dim)] font-bold uppercase w-full md:w-auto text-center md:text-left tracking-widest">{!countClosed && `${Object.keys(counts).length} Wares Counted`}</div>
+                        <div className="text-xs text-[var(--ink-dim)] font-bold uppercase w-full md:w-auto text-center md:text-left tracking-widest">{!countClosed && (stillUncounted.length ? `${Object.keys(counts).length} of ${Object.keys(counts).length + stillUncounted.length} counted` : `${Object.keys(counts).length} Wares Counted`)}</div>
                         <div className="flex w-full md:w-auto gap-3">
                             {!countClosed && <button onClick={() => clearCounts()} className="flex-none justify-center px-4 py-3 md:py-2 text-[var(--ink-dim)] hover:text-[var(--ink)] font-bold text-xs flex items-center gap-2 transition-colors bg-[var(--raised)] border border-[var(--line)] rounded-lg"><RefreshCcw size={14}/> Reset</button>}
                             <button data-guide="submit-count" onClick={handleCommit} disabled={isSubmitting || countClosed || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] disabled:bg-[var(--sunk)] disabled:text-[var(--ink-dim)] disabled:border disabled:border-[var(--line)] disabled:shadow-none disabled:cursor-not-allowed px-4 lg:px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} {weekDone && !recounting ? 'Submitted this week' : notCountDay ? `Opens on ${WEEK_DAYS[countDay]}` : 'Submit to HQ'}</button>

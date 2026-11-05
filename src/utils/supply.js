@@ -164,6 +164,9 @@ export const opnameDecisionPlan = (rows, status, reason, by) => {
     const audits = [...byAudit.values()].map(({ audit, set }) => ({ audit, set, close: auditCloseStatus(audit, { ...(audit.decisions || {}), ...set }) }));
     return { stock, audits, canUndo: !stock.some(s => s.overwrite !== undefined) };
 };
+/* EVERY PRODUCT WITH STOCK IS COUNTED. Real systems fix the list before anyone counts: Microsoft counts the whole location, SAP keeps a worklist with a finish line, and the
+   person counting never chooses what to skip. His 2026-11-05: "how the real app or stock opname works? u tell me this is to answer your own question". A typed 0 is a count. */
+export const opnameMissing = (shelf, counts) => (shelf || []).filter(p => p?.id && counts?.[p.id] === undefined && (Number(p.stock || 0) > 0 || Number(p.damagedStock || 0) > 0));
 export const countBoxEmpty = (entry) => (entry?.good === '' && Number(entry?.expStock || 0) > 0) || (entry?.damaged === '' && Number(entry?.expDamaged || 0) > 0);
 /* What a count approved before that rule took from Quarantine, and how much of it went into good stock. Nothing can be told from
    a record with no snapshot. */

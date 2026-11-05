@@ -13332,6 +13332,11 @@ console.log('\nStock Opname worklist: each product decided on its own, tier 3 an
   ok('REGRESSION: only a Tier 1 or 2 puts back an old approval: a T3 reads Audit History but the rule refuses that write', so.includes("{isHighCommand && audit.status === 'APPROVED' && !audit.quarantineKept"));
   ok('HIS TASTE: the panel takes the colours and not the game: plain font, no Rajdhani, no amber fill, and the swap is Carbon\'s 240 ms and 150 ms',
      css.includes('container: wl / inline-size') && !/\.kpm-wl[^{]*\{[^}]*font-display/.test(css) && !/\.kpm-wl[^{]*\{[^}]*background(-color)?: var\(--gold\)/.test(css) && css.includes('transition: transform 240ms cubic-bezier(0.2, 0, 0.38, 0.9)') && wl.includes('duration: 150,'));
+  ok('REAL SYSTEMS COUNT EVERYTHING: a product with stock that was not counted blocks Submit; a typed 0 counts; a product with no stock asks nothing',
+     typeof S.opnameMissing === 'function' && S.opnameMissing([{ id: 'a', stock: 5 }, { id: 'b', stock: 0, damagedStock: 3 }, { id: 'c', stock: 0, damagedStock: 0 }, { id: 'd', stock: 5 }, null], { d: { good: 0, damaged: 0 } }).map(p => p.id).join() === 'a,b');
+  ok('REGRESSION: the refusal names the products in the red strip, before the confirm box, and only where the week rule applies: a recount, the boss and the demo are free',
+     isFailure('Cannot submit: every product with stock must be counted. Still not counted:') && so.includes('const stillUncounted = !isHighCommand && !IS_DEMO && !recounting ? opnameMissing(activeInventory, counts) : [];') &&
+     so.includes('if (stillUncounted.length) return notify(') && so.indexOf('if (stillUncounted.length) return notify(') < so.indexOf('Submit Stock Opname for') && so.includes('of ${Object.keys(counts).length + stillUncounted.length} counted'));
   ok('REGRESSION: the panel moves nothing on the keyboard and nothing in Lite Mode', wl.includes('!still() && !key.current') && wl.includes("classList.contains('lite-mode')"));
 }
 
