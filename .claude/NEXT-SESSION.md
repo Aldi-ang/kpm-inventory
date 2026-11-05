@@ -6,6 +6,25 @@
 3. **Paste this line** (it downloads first - the PC copy of this file is stale until the pull): `/alucard First run in PowerShell: git status -sb; git pull origin phase0-solid-ground - if git refuses because of local changes, show me the list and stop. Then read ONLY the first 40 lines of .claude/NEXT-SESSION.md and do the ONE JOB at its top. Never read PROGRESS.md, lessons.md or the rest of NEXT-SESSION.md whole (374 KB / 160 KB / 608 KB) - grep them for the one line you need.`
 
 
+**2026-11-05 08:38 — THE ONE JOB NOW = BUILD THE STOCK OPNAME BOARD HE PICKS. Three looks drawn and sent; no app code changed; nothing below starts until he answers both.**
+
+Asked (verbatim): **🔴 DECIDE: Which Stock Opname board do you want: A the hatch, B the rail, or C the deck? You can pick one for the phone and another for the PC.** **🔴 DECIDE: Who may accept or reject a product: Tier 1 and 2 only (1), or Tier 3 too (2)?** Recommended: A, and 2.
+
+Boards: A-Brain `Raw/2026-11-05-opname-board/board-phone.png`, `board-pc.png`; shooter `board.mjs` beside them. Live: `?shell&opname&admin&tab=hq%20audits&board=a|b|c` from `tools/opname-board-looks.jsx` + the last line of `tools/ponder-lab.jsx`. Those two files are LOCAL and uncommitted on purpose (a lab board waiting on his pick); the vault Raw folder holds a copy of the looks file. Options, costs, rejected paths: A-Brain `Brainstorm/2026-11-05_opname-board-looks.md`.
+
+**Corrections to the 08:20 block below, which stands otherwise:**
+- NO BLAST DOORS on the box. The 08:20 block says try hatch + BlastDoors; the taste file (2026-10-25) says doors lost to the scan line twice, "Do not offer doors again". The hatch stays (he loves the button); the box changes with the scan line.
+- TWO buttons, Accept and Reject, not Oracle's four. His words are "accept and reject"; Reject already sends only that product back for a recount, and no press means it waits (one function, one control, 2026-10-26).
+- The board REPLACES the Pending HQ Approval list and the region filter. Audit History stays.
+
+**Traps found drawing it:**
+- A swap that awaits requestAnimationFrame hangs for good in a hidden tab, and the busy flag then eats every later press (found in the Browser pane: 4 s, stuck). Race every wait with a timer, as `runSwitch` does.
+- The hatch plate reads `SKIN[skin].lbl`; the lab fakes a warehouse name with a CSS variable. The build needs a real label prop on `QuarantineHatch`, and HEADQUARTERS has not been measured on the plate (only SEMARANG, 58 of 124 px).
+- `.brd-lost span` shrank the money inside `<b>`: scope to `>`. Lost value leaves out a product sent back, because it is being recounted; say so if he asks.
+- The phone chrome above the board is 434 px (recon header, four tabs, sub-tabs), so the first product row starts at y 733 in every look.
+
+On build: the 08:20 logic + rules CHANGE 23, then `Skill(web-design-guidelines)` and impeccable's `detect.mjs` (neither ran on the looks), a `patchNotes.js` line, delete the looks file + its lab line. Then rewrite this file again.
+
 **2026-11-05 08:20 — THE ONE JOB NOW = HIS STOCK OPNAME BOARD + PRODUCT-BY-PRODUCT DECISIONS. Both numbers follow the count and blind stays blind are done + live `c88a3ac`.**
 
 His words (verbatim): *"yes become the real number that is counted, we have blind count for tier 4 and below right and dont we have the matric to toggle the blind counting as well? we also should approve product by product , then maybe we should make confirmation button for each of the product then, so maybe we make some dashboard for regional admin and tier 3 and above, this one panel show regional warehouse stock opname status one by one, swap able with animation and swap button, futuristic panel like features, where we as high tiers can see each of the products inside the warehouse status, we can see how many are them are already confirmed counting by the regional admin, when there is a missing item what the real system do to decide with their employees or is it human interaction to deal with that, if there is human interaction to deal with that? and i want our system to be able to accept and reject each of the item instead of all at once just to upgrade our stock opname system like the real one, the regional admin and upper tiers should see the missing item, what kind of the damaged or missing goods and their value so we know how much lost value we loss"*
