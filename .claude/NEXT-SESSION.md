@@ -6,6 +6,27 @@
 3. **Paste this line** (it downloads first - the PC copy of this file is stale until the pull): `/alucard First run in PowerShell: git status -sb; git pull origin phase0-solid-ground - if git refuses because of local changes, show me the list and stop. Then read ONLY the first 40 lines of .claude/NEXT-SESSION.md and do the ONE JOB at its top. Never read PROGRESS.md, lessons.md or the rest of NEXT-SESSION.md whole (374 KB / 160 KB / 608 KB) - grep them for the one line you need.`
 
 
+**2026-11-05 18:06 — THE ONE JOB NOW = BUILD THE BUSINESS DRAFT HE PICKS. He took the rail over the hatch, then asked for a serious business format. Three drafts sent; one pick owed; no app code changed.**
+
+His words (verbatim): *"i like B better but i dont like the animation, what if we make the animation and panel outside of our theme but take the color just not the design i want u to make it professional where real factory and business can use it, instead of gaming and not serious i want more serious, super ergonomics, super efficient and effective and business format panel u can do research on the internet for the website u can use framer website or 21stdev and any other animation for this, u can use your own claude design as well, use all the skills and taste that i already ask u to download to A-Brain for this one, give me the draft and i'll choose the design u generate, regarding your question, who can reject or accept the stock opname is the tier 3 and above as default, make sure this power added into the matrix for additional flexibility"*
+
+Asked (verbatim): **🔴 DECIDE: Which Stock Opname draft do you want: 1 the Ledger, 2 the Worklist, or 3 the Queue? You can pick one for the phone and another for the PC.** Recommended 2 on both.
+
+**Settled, do not re-ask:** Tier 3 and above may accept or reject by default, with a matrix key for flexibility. Same absence-means-tier-default shape as `set_bundle_price` (`src/config/permissions.js` ~118) + a line in `SettingsView.jsx` ~1716. Build the key WITH the board: a switch that changes nothing until then is the UI-says-yes bug.
+
+**Where it is:** live page https://claude.ai/artifact/5aEV4TKsQsjcKDpmQSKSNT (private, slug 250868a2-6484-4b12-856b-d999c56b98a0). Boards: A-Brain `Raw/2026-11-05-opname-board/drafts-phone.png`, `drafts-pc.png`; shooter `drafts.mjs`, page builder `build-drafts.mjs` beside them. Lab: `?shell&opname&admin&tab=hq%20audits&draft=1|2|3` from `tools/opname-drafts.jsx` + `tools/opname-drafts-page.jsx` + the last two lines of `tools/ponder-lab.jsx`: LOCAL and uncommitted on purpose; the vault Raw folder holds copies. Research, options, costs and rejected paths: A-Brain `Brainstorm/2026-11-05_opname-board-looks.md`, Round 2. Taste note written: 2026-11-05 in Aldi's Design Taste.
+
+**Corrections to the blocks below:** everything about the hatch, blast doors, scan line, rail plates, roll animation and corner ticks is OVER; the panel leaves the game material, keeps the colours. The 08:20 logic list and its traps still hold (per-product write, one product reopens, rules, money rule).
+
+**On build:**
+- It replaces the Pending HQ Approval list and the region filter; Audit History stays. The fold of the big title + double tabs into one row is drawn for the review mode only; he has not been asked about the other modes.
+- Rules CHANGE 23 (grep the highest, plus one): T4 read of their own warehouse, T3 write on the audit and on stock. A DRAFT he publishes, and it goes first.
+- Two things I added that he did not ask for, both flagged to him: "Accept N matching" (it was on my rejected list until his "super efficient") and a 5 second Undo. The draft's Undo only flips local state. Accept writes stock, so the real one must hold the write for those seconds on the device, or be dropped. Decide at build and say so in plain words.
+- Reject is an inline form, not `promptAction`; Lost value leaves out a rejected product because it is being recounted.
+- Use `formatRupiah`, `countedDiffs`, `priceDistributor || hpp || costPrice`; the draft has local copies only so it can bundle alone.
+- Traps from drawing: `index.css` holds icon-only buttons at 44 px, so the PC size needs `!important`; `button` text must sit in a `<span>` for the same rule; a wait on requestAnimationFrame hangs in a hidden tab, so race it with a timer. The Ledger's open/close relies on the browser's own scroll anchoring, not measured with a warehouse open above the pressed one.
+- Before done: `Skill(web-design-guidelines)`, impeccable's `detect.mjs` (neither ran on drafts), a `patchNotes.js` line, delete both draft files + the lab lines. Then rewrite this file again.
+
 **2026-11-05 08:38 — THE ONE JOB NOW = BUILD THE STOCK OPNAME BOARD HE PICKS. Three looks drawn and sent; no app code changed; nothing below starts until he answers both.**
 
 Asked (verbatim): **🔴 DECIDE: Which Stock Opname board do you want: A the hatch, B the rail, or C the deck? You can pick one for the phone and another for the PC.** **🔴 DECIDE: Who may accept or reject a product: Tier 1 and 2 only (1), or Tier 3 too (2)?** Recommended: A, and 2.

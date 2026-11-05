@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-05 08:38 WIB, PC clock (🟠 KPM — Stock Opname board: 3 looks sent, waiting on his two picks; no app code changed)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-05 18:06 WIB, PC clock (🟠 KPM — Stock Opname: 3 business drafts sent, waiting on his pick; T3+ with a matrix key settled; no app code changed)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-05 18:06 WIB — KPM: his "i like B better ... business format panel" - 3 BUSINESS DRAFTS sent + researched, no app code changed; T3+ with a matrix key settled
+Options + research: A-Brain `Brainstorm/2026-11-05_opname-board-looks.md`, Round 2. Live page: https://claude.ai/artifact/5aEV4TKsQsjcKDpmQSKSNT. Boards: `Raw/2026-11-05-opname-board/drafts-phone.png`, `drafts-pc.png`. Lab files `tools/opname-drafts*.jsx` local on purpose. Next ONE job: NEXT-SESSION.md top.
+WAITING ON ALDI (verbatim): **🔴 DECIDE: Which Stock Opname draft do you want: 1 the Ledger, 2 the Worklist, or 3 the Queue? You can pick one for the phone and another for the PC.** Still open from 08:20: the ✅ TEST as a T4, Put back on the count he approved, publish the rules, pick the day, the ❓ on a missed day, and the older ✅ DO and ✅ TESTs.
 
 ## 🟠 2026-11-05 08:38 WIB — KPM: his Stock Opname board - 3 LOOKS DRAWN + sent, no app code changed
 Options + costs: A-Brain `Brainstorm/2026-11-05_opname-board-looks.md`. Boards: `Raw/2026-11-05-opname-board/board-phone.png`, `board-pc.png`. Live looks: `tools/opname-board-looks.jsx` + the last line of `tools/ponder-lab.jsx`, local and uncommitted on purpose. Next ONE job: NEXT-SESSION.md top.
