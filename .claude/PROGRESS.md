@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-05 22:24 WIB, PC clock (🟠 KPM — a leader's count needs every product with stock, live 74388e3; next the "Same as last time" buttons)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-05 22:28 WIB, PC clock (🟠 KPM — next: keep a leader's typed numbers until Submit; rules CHANGE 23 waits for his publish)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,9 @@
 
 
 
+
+## 🟠 2026-11-05 22:28 WIB — KPM: his "1 of course it is a huge quality of life update tho" - DECIDED, not built; firestore.rules sent to him
+Next ONE job: NEXT-SESSION.md top. WAITING ON ALDI: ✅ DO: paste firestore.rules in the Console, Publish (CHANGE 22 and 23). The ✅ TEST and older items from 20:49 stay open.
 
 ## 🟠 2026-11-05 22:24 WIB — KPM: his "how the real app or stock opname works? u tell me this is to answer your own question" - answered from the research + BUILT + pushed `74388e3`
 Full story: the commit message. Proof: A-Brain `Raw/2026-11-05-opname-board/built-all-counted-phone.png`. Next ONE job: NEXT-SESSION.md top.
