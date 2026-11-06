@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-06 09:23 WIB, PC clock (🟠 KPM — next: the Same as last time buttons, frames first; rules CHANGE 22 and 23 published)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-06 09:58 WIB, PC clock (🟠 KPM — next: the Same as last time buttons, frames first; ✅ TEST 1 and 2 with him)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-06 09:58 WIB — KPM: his "test 1 doesnt work ... all the writing is gone" - reproduced on the real app, explained; his "i want these button to stays on the right" - BUILT + pushed `df98751`
+Full story: the commit message. Proof: A-Brain `Raw/2026-11-06-opname-draft/board-tabs-pc.png`, `real-t4-came-back.png`. Next ONE job: NEXT-SESSION.md top.
+WAITING ON ALDI: ✅ TEST 1 again (reload first): put on the test account, Stock Opname > New Count, type two numbers, close the app, open it. You are the owner again, on the Master Vault, so those boxes are empty: a refresh takes the test account off, his rule. Put the SAME test account back on at the SAME place: the numbers are back with "Your count came back". ✅ TEST 2: as a Tier 3, HQ Audits: press a warehouse tab, Accept one product, press Undo, Reject one with a reason. As a Tier 4: their own warehouse only, no buttons, and the rejected product comes back on New Count. ✅ TEST tabs: press all four on a PC: nothing moves. Still open from 20:49 and 08:20: Put back on the count he approved, pick the day, the ❓ on a missed day, and the older ✅ DO and ✅ TESTs.
 
 ## 🟠 2026-11-06 09:23 WIB — KPM: his "1 of course it is a huge quality of life update tho" - BUILT + pushed `ed23208`; his "i already paste the new rules in the firestore" - baseline synced
 Full story: the commit message. Proof: A-Brain `Raw/2026-11-06-opname-draft/phone-came-back.png`, walk `walk.mjs` beside it. Next ONE job: NEXT-SESSION.md top.
