@@ -6226,3 +6226,11 @@ html.lite-mode .kpm-ct-veil { background: rgba(5, 4, 3, .8); backdrop-filter: no
 .kpm-wl-fold > div:last-child { display: flex; overflow-x: auto; gap: 2px; scrollbar-width: none; }
 .kpm-wl-fold > div:last-child > button { flex: 1 0 auto; }
 @media (max-width: 480px) { .kpm-wl-fold svg { display: none; } }
+/* THE TABS NEVER MOVE ON A PC (his 2026-11-06: "i want these button to stays on the right and not changing position"). Every mode has the look he picked on
+   the Worklist and the same box around it, so the fold keeps its padding and only hides the card. */
+@media (min-width: 768px) {
+  .overflow-y-auto:has(.kpm-opname-tabs) { scrollbar-gutter: stable; } /* a long tab brings the page's scrollbar, a short one takes it away: 10 px of movement */
+  .kpm-wl-fold.kpm-wl-fold { padding: 1rem; border: 1px solid transparent; }
+  .kpm-opname-tabs.kpm-opname-tabs { gap: 2px; scrollbar-width: none; }
+  .kpm-opname-tabs.kpm-opname-tabs button { font-family: var(--font-body); letter-spacing: normal; text-transform: none; font-size: 13px; font-weight: 600; min-height: 40px; flex: 1 0 auto; }
+}

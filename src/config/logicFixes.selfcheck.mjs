@@ -7630,7 +7630,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/<h2 className="text-2xl font-black/.test(code(so)),
      'WAREHOUSE OPNAME at 24 px wrapped at 375, header 123 -> 87');
   ok('his board 3 = A: the boss\'s four tabs are two rows of two 44 px keys on the phone and the old sliding strip on the desk',
-     /<div className="grid grid-cols-2 gap-1 lg:flex lg:gap-0 bg-\[var\(--sunk\)\] rounded-lg p-1 border border-\[var\(--line\)\] w-full md:w-auto lg:overflow-x-auto custom-scrollbar">/.test(so) &&
+     /<div className="kpm-opname-tabs grid grid-cols-2 gap-1 md:flex md:ml-auto md:shrink-0 bg-\[var\(--sunk\)\] rounded-lg p-1 border border-\[var\(--line\)\] w-full md:w-auto md:overflow-x-auto custom-scrollbar">/.test(so) &&
      (so.match(/className=\{`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-\[11px\] lg:text-\[10px\] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap \$\{viewMode === '(monitor|review|quarantine|count)'/g) || []).length === 4 &&
      !/w-full md:w-auto overflow-x-auto custom-scrollbar">/.test(code(so)),
      'strip scrollWidth 331 in 325 at 375; QUARANTINE and NEW COUNT overlapped');
@@ -13376,7 +13376,16 @@ console.log('\nStock Opname: what a team leader typed survives a reload until Su
      !!S.readOpnameDraft && !sweep.m.has(oldKey) && sweep.m.has(otherPlace) && sweep.m.has(otherDay) && sweep.m.has(k));
   ok('the leader is told, not in the red strip', so.includes('Your count came back: ') && !isFailure('Your count came back: 12 products, as you left them. Nothing is sent until you press Submit.') && !isFailure('Your count came back: 1 product, as you left it. Nothing is sent until you press Submit. Photos did not fit on this phone: take them again.'));
   ok('REGRESSION: the first run for a key reads and returns, so an empty screen can never overwrite a saved draft',
-     so.includes('if (draftRead.current === draftKey) { saveOpnameDraft(draftKey, counts, checkedRows); return; }') && so.indexOf('draftRead.current = draftKey;') > 0 && so.indexOf('draftRead.current = draftKey;') < so.indexOf('readOpnameDraft(draftKey)') && so.includes('[draftKey, counts, checkedRows]'));
+     so.includes('if (draftRead.current?.key === draftKey) { saveOpnameDraft(draftKey, counts, checkedRows); return; }') && so.indexOf('draftRead.current = { key: draftKey, place: countPlace };') > 0 && so.indexOf('draftRead.current = { key: draftKey, place: countPlace };') < so.indexOf('readOpnameDraft(draftKey)') && so.includes('[draftKey, counts, checkedRows]'));
+  /* his report 2026-11-06, driven on the real app: a test account put on at Bandung carried the owner's 11 and 1 and the Master Vault's frozen 96 into Bandung's count */
+  ok('MONEY: another warehouse on this screen never inherits typed numbers or frozen targets; a moved week keeps them',
+     so.includes('const moved = draftRead.current && draftRead.current.place !== countPlace;') && so.includes('if (moved) { clearCounts(); setVarPos({}); }') && so.indexOf('if (moved) { clearCounts(); setVarPos({}); }') < so.indexOf('setCounts(saved.counts);'));
+  /* his 2026-11-06: "i want these button to stays on the right and not changing position". The real measure is the walk on the real app; these hold the three causes */
+  const opCss = read('src/styles/theme.css');
+  ok('REGRESSION: the tabs keep one corner on a PC: pushed right even with the title hidden, top-aligned in every mode',
+     so.includes('kpm-opname-tabs grid grid-cols-2 gap-1 md:flex md:ml-auto') && so.includes("flex flex-col md:flex-row justify-between items-start md:items-start bg-[var(--sunk)]") && !so.includes("flex flex-col md:flex-row justify-between items-start md:items-end bg-[var(--sunk)] border border-[var(--line)] p-4 rounded-xl gap-4 shrink-0 z-10 relative ${viewMode === 'review'"));
+  ok('REGRESSION: the tabs keep one size on a PC: one look in every mode, and the Worklist keeps the same box around them, after its phone rule',
+     opCss.includes('.kpm-wl-fold.kpm-wl-fold { padding: 1rem; border: 1px solid transparent; }') && /\.kpm-opname-tabs\.kpm-opname-tabs button \{[^}]*font-size: 13px/.test(opCss) && opCss.indexOf('.kpm-wl-fold.kpm-wl-fold { padding: 4px') < opCss.indexOf('.kpm-wl-fold.kpm-wl-fold { padding: 1rem') && opCss.includes('.overflow-y-auto:has(.kpm-opname-tabs) { scrollbar-gutter: stable; }'));
   ok('REGRESSION: a cause that came back shows as chosen, or the reel says Tap to say what happened over a saved cause', /setVarPos\(Object\.fromEntries\(Object\.entries\(saved\.counts\)/.test(so));
   ok('REGRESSION: a count already in ends the draft; a recount sends only what was reopened, whatever came back',
      so.includes('if (weekDone && !recounting) clearCounts();') && so.includes('counts[i.id] !== undefined && (!recounting || reopened[i.id])'));

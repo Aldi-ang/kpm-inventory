@@ -527,9 +527,13 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     const draftRead = useRef(null);
     useEffect(() => {
         if (!draftKey) return;
-        if (draftRead.current === draftKey) { saveOpnameDraft(draftKey, counts, checkedRows); return; }
-        draftRead.current = draftKey;
+        if (draftRead.current?.key === draftKey) { saveOpnameDraft(draftKey, counts, checkedRows); return; }
+        /* Another warehouse on this screen (a test account put on or taken off, a leader moved): one warehouse's numbers and frozen targets are never another's. A moved WEEK
+           keeps them: the count day loading late, or a T3 changing it mid-count, must not wipe a count. */
+        const moved = draftRead.current && draftRead.current.place !== countPlace;
+        draftRead.current = { key: draftKey, place: countPlace };
         const saved = readOpnameDraft(draftKey);
+        if (moved) { clearCounts(); setVarPos({}); }
         if (!saved) return;
         setCounts(saved.counts);
         setCheckedRows(saved.checkedRows || {});
@@ -1163,7 +1167,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                 </div>
             )}
 
-            <div className={`flex flex-col md:flex-row justify-between items-start md:items-end bg-[var(--sunk)] border border-[var(--line)] p-4 rounded-xl gap-4 shrink-0 z-10 relative ${viewMode === 'review' ? 'kpm-wl-fold' : 'shadow-lg'}`}>
+            <div className={`flex flex-col md:flex-row justify-between items-start md:items-start bg-[var(--sunk)] border border-[var(--line)] p-4 rounded-xl gap-4 shrink-0 z-10 relative ${viewMode === 'review' ? 'kpm-wl-fold' : 'shadow-lg'}`}>
                 <div className={viewMode === 'review' ? 'hidden' : ''}>
                     <h2 className="text-xl lg:text-2xl font-black text-[var(--ink)] flex items-center gap-2 tracking-widest uppercase">
                         {viewMode === 'count' && <><ClipboardList size={24} className="text-[var(--ink-dim)]"/> Warehouse Opname</>}
@@ -1181,7 +1185,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                 </div>
                 
                 {canSeeBoard && (
-                    <div className="grid grid-cols-2 gap-1 lg:flex lg:gap-0 bg-[var(--sunk)] rounded-lg p-1 border border-[var(--line)] w-full md:w-auto lg:overflow-x-auto custom-scrollbar">
+                    <div className="kpm-opname-tabs grid grid-cols-2 gap-1 md:flex md:ml-auto md:shrink-0 bg-[var(--sunk)] rounded-lg p-1 border border-[var(--line)] w-full md:w-auto md:overflow-x-auto custom-scrollbar">
                         {isHighCommand && <button onClick={() => setViewMode('monitor')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'monitor' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <BarChart size={14}/> Monitor
                         </button>}
