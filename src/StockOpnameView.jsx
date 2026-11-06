@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
     ClipboardList, Search, Save, AlertTriangle, CheckCircle, 
     RefreshCcw, Box, EyeOff, Send, ShieldAlert, Check, X, 
@@ -15,7 +15,7 @@ import { canSeeExpectedCount, canDecideOpname, opnameBoardScope, hasClearance } 
 /* Imported under a different name on purpose. The string 'MASTER' in this file is a SELECT VALUE
    that routes Firestore paths (branches/{facility}/inventory) — changing it would move documents.
    HQ_LABEL is only what the reader sees, and that is the part that had four spellings. */
-import { MASTER as HQ_LABEL, isMasterVaultPlace, opnameThisWeek, opnameMark, countedDiffs, damagedAsGood, countBoxEmpty, quarantineLost, opnameMissing, opnameBoard, opnamePlaceOf, opnameDecisionPlan } from './utils/supply.js';
+import { MASTER as HQ_LABEL, isMasterVaultPlace, opnameThisWeek, opnameMark, countedDiffs, damagedAsGood, countBoxEmpty, quarantineLost, opnameMissing, opnameBoard, opnamePlaceOf, opnameDecisionPlan, opnameDraftKey, readOpnameDraft, saveOpnameDraft } from './utils/supply.js';
 import { nextWeekStart, weekStart, WEEK_DAYS } from './utils/period.js';
 import { CrateVault } from './components/WarehouseChest.jsx';
 import OpnameWorklist from './components/OpnameWorklist.jsx';
@@ -521,6 +521,27 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     const [checkedRows, setCheckedRows] = useState({});
     const clearCounts = () => { setCounts({}); setCheckedRows({}); };
 
+    /* THE NUMBERS STAY ON THE PHONE UNTIL SUBMIT (supply.js). Since 74388e3 a leader cannot send part of a count, and a phone drops the page on a camera switch. The first run for
+       a key reads and returns, so an empty screen can never overwrite a saved draft; every later change saves, and an empty count (Reset, Submit) removes it. */
+    const draftKey = IS_DEMO || !masterId ? null : opnameDraftKey(masterId, countPlace, weekStart(new Date(), countDay));
+    const draftRead = useRef(null);
+    useEffect(() => {
+        if (!draftKey) return;
+        if (draftRead.current === draftKey) { saveOpnameDraft(draftKey, counts, checkedRows); return; }
+        draftRead.current = draftKey;
+        const saved = readOpnameDraft(draftKey);
+        if (!saved) return;
+        setCounts(saved.counts);
+        setCheckedRows(saved.checkedRows || {});
+        setVarPos(Object.fromEntries(Object.entries(saved.counts).filter(([, e]) => e.varianceReason).map(([id, e]) => [id, VARIANCE_REASONS.findIndex(r => r.value === e.varianceReason)])));
+        const n = Object.keys(saved.counts).length;
+        /* next tick: opened straight on this screen, this effect runs before the toast host has mounted, and the message would be lost */
+        if (!countClosed) setTimeout(() => notify(`Your count came back: ${n} product${n === 1 ? '' : 's'}, as you left ${n === 1 ? 'it' : 'them'}. Nothing is sent until you press Submit.${saved.noPhotos ? ' Photos did not fit on this phone: take them again.' : ''}`), 0);
+    }, [draftKey, counts, checkedRows]);
+    /* the week's count went in (from another phone, or Submit lost its reply): the numbers here belong to no count now.
+       ponytail: a draft from before a whole count went in can still reach a recount if this phone never opened in between; the commit sends only the reopened rows. */
+    useEffect(() => { if (weekDone && !recounting) clearCounts(); }, [weekDone, recounting]);
+
     const [dmgPos, setDmgPos] = useState({});
     const [dmgOpen, setDmgOpen] = useState({});
     const [dmgSnap, setDmgSnap] = useState({});
@@ -608,7 +629,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     const handleCommit = async () => {
         if (weekDone && !recounting) return notify(`Cannot submit: this week's count for ${countPlace} is already in (${weekDone.by}, ${dayWord(weekDone.at)}).`);
         if (notCountDay) return notify(`Cannot submit: Stock Opname day is ${WEEK_DAYS[countDay]}.`);
-        const countedItems = activeInventory.filter(i => i && i.id && counts[i.id] !== undefined);
+        const countedItems = activeInventory.filter(i => i && i.id && counts[i.id] !== undefined && (!recounting || reopened[i.id]));
         if (countedItems.length === 0) return notify("No items counted! Please enter at least one physical count.");
 
         if (stillUncounted.length) return notify(`Cannot submit: every product with stock must be counted. Still not counted:\n\n${stillUncounted.map(i => i.name || i.id).join('\n')}\n\nType 0 if there are none on the shelf.`);

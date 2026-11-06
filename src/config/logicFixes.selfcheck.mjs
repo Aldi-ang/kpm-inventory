@@ -13340,5 +13340,48 @@ console.log('\nStock Opname worklist: each product decided on its own, tier 3 an
   ok('REGRESSION: the panel moves nothing on the keyboard and nothing in Lite Mode', wl.includes('!still() && !key.current') && wl.includes("classList.contains('lite-mode')"));
 }
 
+/* A team leader's typed numbers stay on the phone until Submit, his 2026-11-05 "1 of course it is a huge quality of life update tho". */
+console.log('\nStock Opname: what a team leader typed survives a reload until Submit');
+{
+  const S = await import('../utils/supply.js'); const { isFailure } = await import('../utils/toastSeverity.js');
+  const so = read('src/StockOpnameView.jsx');
+  const key = S.opnameDraftKey || (() => 'k'), load = S.readOpnameDraft || (() => null), save = S.saveOpnameDraft || (() => {});
+  const fake = (init = {}, limit = Infinity) => { const m = new Map(Object.entries(init)); return { m, get length() { return m.size; }, key: (i) => [...m.keys()][i] ?? null, getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => { if (v.length > limit) throw new Error('QuotaExceededError'); m.set(k, v); }, removeItem: (k) => { m.delete(k); } }; };
+  const week = new Date(2026, 10, 2), now = new Date(2026, 10, 6).getTime(), k = key('boss', 'BANDUNG', week);
+  const entry = { good: 98, damaged: '', photo: 'data:image/jpeg;base64,AAAA', expStock: 100, expDamaged: 3, passes: [{ good: 97, damaged: 3 }], kinds: { Penyok: 2 }, varianceReason: 'MISCOUNT' };
+  const st = fake(); save(k, { p1: entry }, { p1: true }, st); const back = load(k, st, now);
+  ok('BEHAVIOUR: a row comes back whole: frozen target, banked counts, damage kinds, cause, photo, and a flagged row stays locked',
+     JSON.stringify(back?.counts) === JSON.stringify({ p1: entry }) && back?.checkedRows?.p1 === true && back?.counts?.p1?.expStock === 100 && back?.counts?.p1?.passes?.length === 1);
+  ok('BEHAVIOUR: one draft per company, warehouse and week; a place is one place however it is spelled',
+     key('boss', 'Bandung', week) === k && load(key('other', 'BANDUNG', week), st, now) === null && load(key('boss', 'SEMARANG', week), st, now) === null && load(key('boss', 'BANDUNG', new Date(2026, 10, 9)), st, now) === null);
+  const full = fake({}, 2000); save(k, { p1: { ...entry, photo: 'x'.repeat(5000) } }, {}, full); const noRoom = load(k, full, now);
+  ok('BEHAVIOUR: a full phone gives up the photos first, keeps every number, and says so',
+     noRoom?.counts?.p1?.good === 98 && noRoom?.counts?.p1?.expStock === 100 && noRoom?.counts?.p1?.passes?.length === 1 && noRoom?.counts?.p1?.photo === null && noRoom?.noPhotos === true && back?.noPhotos === undefined);
+  const refuses = { get length() { throw new Error('SecurityError'); }, key() { throw new Error('SecurityError'); }, getItem() { throw new Error('SecurityError'); }, setItem() { throw new Error('SecurityError'); }, removeItem() { throw new Error('SecurityError'); } };
+  const hadStorage = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  let quiet = true;
+  try {
+    save(k, { p1: entry }, {}, fake({}, 1)); save(k, { p1: entry }, {}, refuses); save(k, {}, {}, refuses); if (load(k, refuses, now) !== null) quiet = false;
+    Object.defineProperty(globalThis, 'localStorage', { get() { throw new Error('SecurityError'); }, configurable: true });
+    save(k, { p1: entry }, {}); if (load(k) !== null) quiet = false;
+  } catch { quiet = false; }
+  if (hadStorage) Object.defineProperty(globalThis, 'localStorage', hadStorage); else delete globalThis.localStorage;
+  ok('BEHAVIOUR: full or blocked storage never stops a count: nothing throws, nothing comes back', quiet && !!S.readOpnameDraft);
+  const cleared = fake(); save(k, { p1: entry }, {}, cleared); const had = cleared.m.has(k); save(k, {}, {}, cleared);
+  ok('BEHAVIOUR: Reset and Submit leave no draft behind', had && !cleared.m.has(k));
+  ok('BEHAVIOUR: a broken or empty save brings nothing back', load(k, fake({ [k]: '{not json' }), now) === null && load(k, fake({ [k]: '{"counts":{}}' }), now) === null);
+  const oldKey = key('boss', 'BANDUNG', new Date(2026, 9, 26)), otherPlace = key('boss', 'SEMARANG', week), otherDay = key('boss', 'BANDUNG', new Date(2026, 10, 1));
+  const sweep = fake({ [oldKey]: '{}', [otherPlace]: '{}', [otherDay]: '{}', [k]: JSON.stringify({ counts: { p1: entry } }) }); load(k, sweep, now);
+  ok('BEHAVIOUR: only a finished week is swept: another warehouse and a week still running stay, because the key moves when the count day loads',
+     !!S.readOpnameDraft && !sweep.m.has(oldKey) && sweep.m.has(otherPlace) && sweep.m.has(otherDay) && sweep.m.has(k));
+  ok('the leader is told, not in the red strip', so.includes('Your count came back: ') && !isFailure('Your count came back: 12 products, as you left them. Nothing is sent until you press Submit.') && !isFailure('Your count came back: 1 product, as you left it. Nothing is sent until you press Submit. Photos did not fit on this phone: take them again.'));
+  ok('REGRESSION: the first run for a key reads and returns, so an empty screen can never overwrite a saved draft',
+     so.includes('if (draftRead.current === draftKey) { saveOpnameDraft(draftKey, counts, checkedRows); return; }') && so.indexOf('draftRead.current = draftKey;') > 0 && so.indexOf('draftRead.current = draftKey;') < so.indexOf('readOpnameDraft(draftKey)') && so.includes('[draftKey, counts, checkedRows]'));
+  ok('REGRESSION: a cause that came back shows as chosen, or the reel says Tap to say what happened over a saved cause', /setVarPos\(Object\.fromEntries\(Object\.entries\(saved\.counts\)/.test(so));
+  ok('REGRESSION: a count already in ends the draft; a recount sends only what was reopened, whatever came back',
+     so.includes('if (weekDone && !recounting) clearCounts();') && so.includes('counts[i.id] !== undefined && (!recounting || reopened[i.id])'));
+  ok('REGRESSION: the demo keeps no draft', so.includes('const draftKey = IS_DEMO || !masterId ? null : opnameDraftKey('));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -3,6 +3,9 @@
    Every finished job that changes what people see adds a line here before its push (CLAUDE.md, Publishing).
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
+  { date: '2026-11-06', items: [
+    { kind: 'fixed', en: 'Stock Opname: the numbers a team leader types stay on the phone until Submit. A reload, a closed app or a dead battery loses nothing.', id: 'Stock Opname: angka yang diketik ketua tim tetap tersimpan di HP sampai dikirim. Muat ulang, aplikasi tertutup, atau baterai habis tidak menghilangkan apa pun.' },
+  ] },
   { date: '2026-11-05', items: [
     { kind: 'fixed', en: 'Stock Opname: a count can only be submitted when every product with stock is counted. Type 0 if there are none on the shelf.', id: 'Stock Opname: hitungan baru bisa dikirim kalau semua produk yang ada stoknya sudah dihitung. Isi 0 kalau di rak tidak ada.' },
     { kind: 'new', en: 'Stock Opname review: accept or reject each product on its own. Every warehouse shows what is waiting and how much was lost. A rejected product goes back to the team leader for a recount of that product only.', id: 'Review Stock Opname: terima atau tolak per produk. Setiap gudang menampilkan yang masih menunggu dan nilai yang hilang. Produk yang ditolak kembali ke team leader, dan hanya produk itu yang dihitung ulang.' },

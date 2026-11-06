@@ -168,6 +168,31 @@ export const opnameDecisionPlan = (rows, status, reason, by) => {
    person counting never chooses what to skip. His 2026-11-05: "how the real app or stock opname works? u tell me this is to answer your own question". A typed 0 is a count. */
 export const opnameMissing = (shelf, counts) => (shelf || []).filter(p => p?.id && counts?.[p.id] === undefined && (Number(p.stock || 0) > 0 || Number(p.damagedStock || 0) > 0));
 export const countBoxEmpty = (entry) => (entry?.good === '' && Number(entry?.expStock || 0) > 0) || (entry?.damaged === '' && Number(entry?.expDamaged || 0) > 0);
+/* WHAT A TEAM LEADER TYPED STAYS ON THE PHONE UNTIL SUBMIT, per company, warehouse and week (his 2026-11-05 "1 of course it is a huge quality of life update tho"). A row keeps its
+   frozen expStock / expDamaged and its passes, or the moving-target and retype-to-dodge bugs come back. Full storage gives up the photos first, because numbers are what cannot be
+   got back without a recount; blocked storage just saves nothing, and counting goes on. Only a FINISHED week is swept: the week in the key moves when the count day loads, so
+   "not this key" could be the real draft. */
+const DRAFT_PREFIX = 'kpm-opname-draft|', WEEK_MS = 7 * 86400000;
+export const opnameDraftKey = (masterId, place, week) => `${DRAFT_PREFIX}${masterId}|${opnameWarehouse(place)}|${new Date(week).getTime()}`;
+export const readOpnameDraft = (key, store, now = Date.now()) => {
+    try {
+        const s = store || localStorage;
+        for (let i = s.length - 1; i >= 0; i--) {
+            const k = s.key(i);
+            if (k?.startsWith(DRAFT_PREFIX) && Number(k.split('|').pop()) + WEEK_MS <= now) s.removeItem(k);
+        }
+        const saved = JSON.parse(s.getItem(key));
+        return saved?.counts && Object.keys(saved.counts).length ? saved : null;
+    } catch { return null; }
+};
+export const saveOpnameDraft = (key, counts, checkedRows, store) => {
+    try {
+        const s = store || localStorage;
+        if (!Object.keys(counts).length) { s.removeItem(key); return; }
+        try { s.setItem(key, JSON.stringify({ counts, checkedRows })); }
+        catch { s.setItem(key, JSON.stringify({ counts: Object.fromEntries(Object.entries(counts).map(([id, e]) => [id, { ...e, photo: null }])), checkedRows, noPhotos: true })); }
+    } catch { /* blocked, or full even without the photos */ }
+};
 /* What a count approved before that rule took from Quarantine, and how much of it went into good stock. Nothing can be told from
    a record with no snapshot. */
 export const quarantineLost = (item) => {
