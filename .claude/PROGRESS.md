@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-05 22:28 WIB, PC clock (🟠 KPM — next: keep a leader's typed numbers until Submit; rules CHANGE 23 waits for his publish)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-06 09:23 WIB, PC clock (🟠 KPM — next: the Same as last time buttons, frames first; rules CHANGE 22 and 23 published)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-06 09:23 WIB — KPM: his "1 of course it is a huge quality of life update tho" - BUILT + pushed `ed23208`; his "i already paste the new rules in the firestore" - baseline synced
+Full story: the commit message. Proof: A-Brain `Raw/2026-11-06-opname-draft/phone-came-back.png`, walk `walk.mjs` beside it. Next ONE job: NEXT-SESSION.md top.
+WAITING ON ALDI: ✅ TEST (reload first): as the owner, Stock Opname > New Count (or a team leader on the count day): type numbers in two products, close the app completely, open it again. The numbers are still there and a message says "Your count came back: 2 products". Press Reset: they are gone. ✅ TEST now the rules are live: as a Tier 3, HQ Audits: press a warehouse tab, Accept one product, press Undo, Reject one with a reason. As a Tier 4: their own warehouse only, no buttons, and the rejected product comes back on New Count. Told him: pasting alone changes nothing, Publish must be pressed; I cannot read the Console. Still open from 20:49 and 08:20: Put back on the count he approved, pick the day, the ❓ on a missed day, and the older ✅ DO and ✅ TESTs.
 
 ## 🟠 2026-11-05 22:28 WIB — KPM: his "1 of course it is a huge quality of life update tho" - DECIDED, not built; firestore.rules sent to him
 Next ONE job: NEXT-SESSION.md top. WAITING ON ALDI: ✅ DO: paste firestore.rules in the Console, Publish (CHANGE 22 and 23). The ✅ TEST and older items from 20:49 stay open.

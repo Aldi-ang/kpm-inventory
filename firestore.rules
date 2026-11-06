@@ -1,13 +1,14 @@
 // =============================================================================
-// PUBLISHED 2026-11-01 ~19:24 WIB by Aldi from the Firebase Console (this file as of kpm 03acc89, put on his
-//   clipboard and pasted whole; his "i published it already"). firestore.rules.deployed-baseline is
+// PUBLISHED by 2026-11-06 ~09:10 WIB by Aldi from the Firebase Console (this file as of kpm d16c9ad, put on his
+//   clipboard and pasted whole; his "i already paste the new rules in the firestore"). firestore.rules.deployed-baseline is
 //   that text - the instant rollback copy. Live = the 2026-07-28 rules + the shared rank/badge path closed,
 //   + CHANGE 11/11b (a vault password per person), 12 (lock an account), 13 (T1/T2 move a person to a new
 //   Gmail), 14 (the eight holes found reviewing the live rules), 15 (the bell's Missed list, one per person),
 //   16 (a salesman's sale may add to the month's sales tally), 17 (customer access by folder; Tier 3 never
 //   limited), 18 (only T1-T4 make a shop Grosir), 19 (team offers: T1-T3 everywhere, T4 his own region),
 //   20 (the seat limit: a login under a licensed company holds a numbered seat), 21 (a company owner can
-//   load lists of his own company again). Before this: 2026-11-01 ~18:36 (2f2eb69, without 21).
+//   load lists of his own company again), 22 (T3 and above pick the Stock Opname day), 23 (T3 and above decide each
+//   counted product; a T4 reads their own warehouse's counts). Before this: 2026-11-01 ~19:24 (03acc89, without 22 and 23).
 //   Any change below this line is a DRAFT again.
 //
 // Everything except the marked [CHANGE N] / [ADDED] / [FLAGGED] blocks below is
