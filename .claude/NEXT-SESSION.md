@@ -6,6 +6,8 @@
 3. **Paste this line** (it downloads first - the PC copy of this file is stale until the pull): `/alucard First run in PowerShell: git status -sb; git pull origin phase0-solid-ground - if git refuses because of local changes, show me the list and stop. Then read ONLY the first 40 lines of .claude/NEXT-SESSION.md and do the ONE JOB at its top. Never read PROGRESS.md, lessons.md or the rest of NEXT-SESSION.md whole (374 KB / 160 KB / 608 KB) - grep them for the one line you need.`
 
 
+**2026-11-08 06:39 — Also live `b8c1c47`: the warehouse line runs exactly from divider to divider (his "must be just exact with the border"); real width, no scaleX. The job below is unchanged.**
+
 **2026-11-08 06:20 — Also live `08b983f`: the warehouse underline stays under the words, clear of the hairlines (his "make sure the yellow line doesnt pass the vertical line border for all of those"). The job below is unchanged.**
 
 **2026-11-08 06:14 — Also live `62c9f83`: a hairline between each warehouse tab (his "put some space or line to misah each of the regional warehouse"). His "the button havent change" was his device's old copy: the live site has the gold line. The job below is unchanged.**
