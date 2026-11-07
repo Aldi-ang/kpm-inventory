@@ -125,7 +125,7 @@ export const SamplingAnalyticsView = ({ samplings, inventory, onBack }) => {
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                 <div className="flex items-center gap-2 bg-[var(--raised)] p-1.5 rounded-xl border border-[var(--line)]">
                     {['daily', 'weekly', 'monthly', 'yearly'].map(t => (
-                        <button key={t} onClick={() => setRangeType(t)} className={`px-4 py-2 rounded-lg text-sm font-bold capitalize transition-all ${rangeType === t ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:bg-[var(--inset)] '}`}>{t}</button>
+                        <button key={t} onClick={() => setRangeType(t)} className={`px-4 py-2 rounded-lg text-sm font-bold capitalize transition-all ${rangeType === t ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:bg-[var(--inset)] '}`}>{t}</button>
                     ))}
                 </div>
                 <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} className="p-2.5 rounded-xl border font-bold shadow-sm border-[var(--line)]"/>

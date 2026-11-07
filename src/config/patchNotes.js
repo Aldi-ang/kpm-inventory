@@ -3,6 +3,9 @@
    Every finished job that changes what people see adds a line here before its push (CLAUDE.md, Publishing).
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
+  { date: '2026-11-08', items: [
+    { kind: 'fixed', en: 'Tabs: the chosen tab now has a thin gold line under it instead of an amber fill (Stock Opname, Quarantine, EOD Setoran, Sampel).', id: 'Tab: tab yang dipilih sekarang ditandai garis emas tipis di bawahnya, bukan blok warna amber (Stock Opname, Quarantine, Setoran Sore, Sampel).' },
+  ] },
   { date: '2026-11-06', items: [
     { kind: 'fixed', en: 'Stock Opname: the buttons at the top stay in the same place on a PC when pressed.', id: 'Stock Opname: tombol di bagian atas tetap di tempatnya di PC saat ditekan.' },
     { kind: 'fixed', en: 'Stock Opname: numbers typed for one warehouse no longer carry over to another warehouse.', id: 'Stock Opname: angka yang diketik untuk satu gudang tidak lagi terbawa ke gudang lain.' },

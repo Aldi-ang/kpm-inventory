@@ -1186,16 +1186,16 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                 
                 {canSeeBoard && (
                     <div className="kpm-opname-tabs grid grid-cols-2 gap-1 md:flex md:ml-auto md:shrink-0 bg-[var(--sunk)] rounded-lg p-1 border border-[var(--line)] w-full md:w-auto md:overflow-x-auto custom-scrollbar">
-                        {isHighCommand && <button onClick={() => setViewMode('monitor')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'monitor' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                        {isHighCommand && <button onClick={() => setViewMode('monitor')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'monitor' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <BarChart size={14}/> Monitor
                         </button>}
-                        <button onClick={() => setViewMode('review')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                        <button onClick={() => setViewMode('review')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <ShieldAlert size={14}/> {boardScope === 'all' ? 'HQ Audits' : 'Review'} {pendingAudits.length > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] px-1.5 py-0.5 rounded-full">{pendingAudits.length}</span>}
                         </button>
-                        {isHighCommand && <button onClick={() => setViewMode('quarantine')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                        {isHighCommand && <button onClick={() => setViewMode('quarantine')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <Biohazard size={14}/> Quarantine
                         </button>}
-                        {canCount && <button data-mission="8" onClick={() => setViewMode('count')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'count' ? 'bg-[var(--gold)] text-[var(--gold-ink)] shadow-md' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                        {canCount && <button data-mission="8" onClick={() => setViewMode('count')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'count' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <ClipboardList size={14}/> New Count
                         </button>}
                     </div>
@@ -1315,10 +1315,10 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                     <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-[var(--accent-edge)] pb-4">
                         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
                             <div className="flex bg-[var(--sunk)] rounded-lg p-1 border border-[var(--accent-edge)]">
-                                <button onClick={() => setQuarSubTab('active')} className={`px-4 py-2 rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${quarSubTab === 'active' ? 'bg-[var(--gold)] text-[var(--gold-ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--accent-ink)]'} `}>
+                                <button onClick={() => setQuarSubTab('active')} className={`px-4 py-2 rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${quarSubTab === 'active' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--accent-ink)]'} `}>
                                     <AlertTriangle size={14}/> Active Quarantine
                                 </button>
-                                <button onClick={() => setQuarSubTab('history')} className={`px-4 py-2 rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${quarSubTab === 'history' ? 'bg-[var(--raised)] text-[var(--ink)]' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                                <button onClick={() => setQuarSubTab('history')} className={`px-4 py-2 rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${quarSubTab === 'history' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                                     <History size={14}/> Liquidation History
                                 </button>
                             </div>

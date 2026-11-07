@@ -13392,5 +13392,19 @@ console.log('\nStock Opname: what a team leader typed survives a reload until Su
   ok('REGRESSION: the demo keeps no draft', so.includes('const draftKey = IS_DEMO || !masterId ? null : opnameDraftKey('));
 }
 
+/* His 2026-11-08 "2 all", after "i hate the amber fill color" (the third time): a chosen tab is a gold line under a plain word, on every tab row he was shown. */
+console.log('\nTabs: the chosen tab is a gold line, not an amber fill');
+{
+  const css = read('src/styles/theme.css'), so = read('src/StockOpnameView.jsx'), eod = read('src/EODReconciliationView.jsx'), sm = read('src/components/SamplingManager.jsx');
+  const slab = /(viewMode|quarSubTab|rangeType) === ['a-z]+ \? 'bg-\[var\(--(gold|raised)\)\]/;
+  ok('REGRESSION: no tab row he named keeps a filled chosen tab (Stock Opname, its Quarantine, EOD Setoran, Sampel)', ![so, eod, sm].some((s) => slab.test(s)));
+  ok('REGRESSION: all nine chosen states use the one line class',
+     (so.match(/\? 'kpm-tab-on' :/g) || []).length === 6 && (eod.match(/\? 'kpm-tab-on' :/g) || []).length === 2 && (sm.match(/\? 'kpm-tab-on' :/g) || []).length === 1);
+  ok('HIS PICK: a plain word with a 2 px gold line under it, no plate, no shadow, and nothing that moves',
+     /\.kpm-tab-on \{[^}]*background: transparent;[^}]*color: var\(--ink\);/.test(css) && /\.kpm-tab-on::after \{[^}]*height: 2px;[^}]*background: var\(--accent-edge\);/.test(css) && !/\.kpm-tab-on[^{]*\{[^}]*(transition|animation)/.test(css));
+  ok('REGRESSION: the EOD tab box takes the theme, so a chosen word in dark ink never sits on a fixed dark grey in the light theme',
+     eod.includes('<div className="flex bg-[var(--sunk)] rounded-lg p-1 border border-[var(--line)] w-full md:w-auto overflow-x-auto custom-scrollbar">') && !eod.includes('flex bg-black/50 rounded-lg p-1 border border-[var(--line)] w-full md:w-auto'));
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
