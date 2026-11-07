@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-08 05:52 WIB, PC clock (🟠 KPM — next: the Same as last time buttons, frames first, a no-fill option first)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-08 06:14 WIB, PC clock (🟠 KPM — next: the Same as last time buttons, frames first, a no-fill option first)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-08 06:14 WIB — KPM: his "i want u to put some space or line to misah each of the regional warehouse because it is look like its one part, and another problem on sc2 is that the button havent change" - lines BUILT + pushed `62c9f83`; the buttons: his device's old copy, the live site has them
+Full story: the commit message. Proof: A-Brain `Raw/2026-11-08-tabs-amber/split.png`. Next ONE job: NEXT-SESSION.md top.
+WAITING ON ALDI: ✅ TEST (close the app fully, open it again first; the patch notes' top line should be the warehouse line): Stock Opname > HQ Audits: a thin line between each warehouse, and the four tabs at the top with a gold line, no amber block. Still open: the tab ✅ TEST from 05:52, ✅ TEST 1 and 2 from 2026-11-06.
 
 ## 🟠 2026-11-08 05:52 WIB — KPM: his "2 all" - BUILT + pushed `23abaa3`
 Full story: the commit message. Proof: A-Brain `Raw/2026-11-08-tabs-amber/built.png`. Next ONE job: NEXT-SESSION.md top.
