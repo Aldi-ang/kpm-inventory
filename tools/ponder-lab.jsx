@@ -904,6 +904,9 @@ const LAB_AGENT_TXNS = [
     items: [{ productId: 'p-cg16', qty: 20, unit: 'Bks', calculatedPrice: 27500, priceTier: 'Retail' }, { productId: 'p-djar', qty: 1, unit: 'Slop', calculatedPrice: 90000, priceTier: 'Grosir' }] },
   { id: 'tx3', agentId: 'm2', date: LAB_TODAY, type: 'RETUR', total: -89000, customerName: 'Toko Sumber Rejeki',
     forensicData: { quarantineCargo: [{ itemName: 'Cello Green 16', qty: 10, returnReason: 'Rusak / Basah' }] } },
+  /* 2026-11-08: a shop the terminal lists, with lines, so its brief shows "Same as last time" (the reorder buttons' looks) */
+  { id: 'tx4', agentId: 'm2', date: LAB_TODAY, timestamp: { seconds: Math.floor(Date.now() / 1000) - 3 * 86400 }, type: 'SALE', total: 640000, customerName: 'TOKO BERKAH JAYA',
+    items: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 20, unit: 'Bks', calculatedPrice: 27500, priceTier: 'Retail' }, { productId: 'p-djar', name: 'Djarum Coklat 12', qty: 1, unit: 'Slop', calculatedPrice: 90000, priceTier: 'Grosir' }] },
 ];
 
 /* ?shell&terminal&team (2026-11-02) - TWO salesmen sold today: the lab salesman (lab-t5) twice, Budi
@@ -1337,7 +1340,7 @@ function ShellLab() {
             regionOffers={q.has('bundles') ? [{ id: 'r1', name: 'TEAM SLOP DEAL', region: 'BANDUNG', by: 'Rizky Aditama', lines: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 1, unit: 'Slop' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }] }] : []}
             customers={LAB_CUSTOMERS}
             allowedPayments={['Cash', 'Transfer', 'IOU']} allowedTiers={['Retail', 'Ecer', 'Grosir']}
-            transactions={q.has('team') ? labTeamToday() : []} allowRetur allowCashRefund={false}
+            transactions={q.has('team') ? labTeamToday() : q.has('history') ? LAB_AGENT_TXNS : []} allowRetur allowCashRefund={false}
             db={null} appId="lab" agentProfileId="lab-t5" storage={null} masterUserId="lab"
             isOnline
           />
