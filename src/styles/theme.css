@@ -6120,7 +6120,7 @@ html.lite-mode .kpm-ct-veil { background: rgba(5, 4, 3, .8); backdrop-filter: no
 .kpm-wl-tab + .kpm-wl-tab { padding-left: 20px !important; }
 .kpm-wl-tab + .kpm-wl-tab::before { content: ''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 1px; background: var(--wl-hair2); pointer-events: none; }
 .kpm-wl-count { grid-column: 2; grid-row: 1; justify-self: start; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; font-style: normal; font-size: 11px; font-weight: 700; line-height: 16px; text-align: center; border: 1px solid var(--accent-edge); color: var(--accent-ink); }
-.kpm-wl-ind { position: absolute; left: 0; bottom: 0; width: 1px; height: 2px; background: var(--accent-edge); transform-origin: 0 0; transition: transform 240ms cubic-bezier(0.2, 0, 0.38, 0.9); }
+.kpm-wl-ind { position: absolute; left: 0; bottom: 0; width: 0; height: 2px; background: var(--accent-edge); transition: transform 240ms cubic-bezier(0.2, 0, 0.38, 0.9), width 240ms cubic-bezier(0.2, 0, 0.38, 0.9); }
 .kpm-wl-body { display: grid; gap: 12px; }
 .kpm-wl-kpi { padding: 10px 12px 0; display: grid; gap: 10px; }
 .kpm-wl-kgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }

@@ -82,9 +82,10 @@ export default function OpnameWorklist({ places, selected, onSelect, weekLabel, 
   useEffect(() => () => clearTimeout(tm.current), []);
 
   const tabs = () => (bar.current ? [...bar.current.querySelectorAll('[role=tab]')] : []);
-  /* the line sits under the words, inside the tab's padding, so it never reaches the hairline between warehouses (his 2026-11-08 "make sure the yellow line doesnt
-     pass the vertical line border for all of those"). Each tab is watched too: a font arriving late changes a tab's width and the bar's width stays the same. */
-  const placeLine = () => { const el = tabs()[at]; if (!el || !ind.current) return; const cs = getComputedStyle(el), l = parseFloat(cs.paddingLeft) || 0, r = parseFloat(cs.paddingRight) || 0; ind.current.style.transform = `translateX(${el.offsetLeft + l}px) scaleX(${Math.max(1, el.offsetWidth - l - r)})`; };
+  /* THE LINE RUNS EXACTLY FROM DIVIDER TO DIVIDER (his 2026-11-08 "must be just exact with the border"). Its real width, measured to the fraction: it used to be a
+     1px strip stretched by scaleX, and on his 175% screen that strip was painted about 14% long, past the divider. Each tab is watched too: a font arriving late
+     changes a tab's width while the bar's width stays the same. */
+  const placeLine = () => { const el = tabs()[at], b = bar.current; if (!el || !ind.current || !b) return; const r = el.getBoundingClientRect(), br = b.getBoundingClientRect(); ind.current.style.width = `${r.width}px`; ind.current.style.transform = `translateX(${r.left - br.left - b.clientLeft + b.scrollLeft}px)`; };
   useLayoutEffect(() => {
     placeLine();
     const el = tabs()[at];
