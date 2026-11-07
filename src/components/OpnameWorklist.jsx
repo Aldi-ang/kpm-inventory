@@ -82,7 +82,9 @@ export default function OpnameWorklist({ places, selected, onSelect, weekLabel, 
   useEffect(() => () => clearTimeout(tm.current), []);
 
   const tabs = () => (bar.current ? [...bar.current.querySelectorAll('[role=tab]')] : []);
-  const placeLine = () => { const el = tabs()[at]; if (el && ind.current) ind.current.style.transform = `translateX(${el.offsetLeft}px) scaleX(${el.offsetWidth})`; };
+  /* the line sits under the words, inside the tab's padding, so it never reaches the hairline between warehouses (his 2026-11-08 "make sure the yellow line doesnt
+     pass the vertical line border for all of those"). Each tab is watched too: a font arriving late changes a tab's width and the bar's width stays the same. */
+  const placeLine = () => { const el = tabs()[at]; if (!el || !ind.current) return; const cs = getComputedStyle(el), l = parseFloat(cs.paddingLeft) || 0, r = parseFloat(cs.paddingRight) || 0; ind.current.style.transform = `translateX(${el.offsetLeft + l}px) scaleX(${Math.max(1, el.offsetWidth - l - r)})`; };
   useLayoutEffect(() => {
     placeLine();
     const el = tabs()[at];
@@ -94,7 +96,7 @@ export default function OpnameWorklist({ places, selected, onSelect, weekLabel, 
     }
     last.current = selected; key.current = false;
   }, [selected]);
-  useEffect(() => { if (!bar.current) return undefined; const ro = new ResizeObserver(placeLine); ro.observe(bar.current); return () => ro.disconnect(); });
+  useEffect(() => { if (!bar.current) return undefined; const ro = new ResizeObserver(placeLine); ro.observe(bar.current); tabs().forEach((t) => ro.observe(t)); return () => ro.disconnect(); });
   const onKey = (e) => { const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!d) return; key.current = true; const next = places[(at + d + places.length) % places.length]; onSelect(next.key); tabs()[(at + d + places.length) % places.length]?.focus(); };
 
   const decide = async (list, status, reason = '') => {

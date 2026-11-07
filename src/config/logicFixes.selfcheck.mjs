@@ -13404,6 +13404,10 @@ console.log('\nTabs: the chosen tab is a gold line, not an amber fill');
      /\.kpm-tab-on \{[^}]*background: transparent;[^}]*color: var\(--ink\);/.test(css) && /\.kpm-tab-on::after \{[^}]*height: 2px;[^}]*background: var\(--accent-edge\);/.test(css) && !/\.kpm-tab-on[^{]*\{[^}]*(transition|animation)/.test(css));
   ok('HIS ASK 2026-11-08 "put some space or line to misah each of the regional warehouse": a hairline between warehouse tabs, with room on both sides of it, and the first tab still lined up with the panel',
      /\.kpm-wl-tab \+ \.kpm-wl-tab::before \{[^}]*width: 1px;[^}]*background: var\(--wl-hair2\);/.test(css) && css.includes('.kpm-wl-tab + .kpm-wl-tab { padding-left: 20px !important; }') && /\.kpm-wl-tab \{[^}]*padding: 7px 20px 8px 12px !important;/.test(css));
+  { const wl = read('src/components/OpnameWorklist.jsx');
+    ok('HIS ASK 2026-11-08 "make sure the yellow line doesnt pass the vertical line border for all of those": the line spans the words, inside each tab\'s padding, and re-measures when a tab changes size (a late font)',
+       wl.includes('const cs = getComputedStyle(el), l = parseFloat(cs.paddingLeft) || 0, r = parseFloat(cs.paddingRight) || 0;') && wl.includes('`translateX(${el.offsetLeft + l}px) scaleX(${Math.max(1, el.offsetWidth - l - r)})`') &&
+       wl.includes('ro.observe(bar.current); tabs().forEach((t) => ro.observe(t));')); }
   ok('REGRESSION: the EOD tab box takes the theme, so a chosen word in dark ink never sits on a fixed dark grey in the light theme',
      eod.includes('<div className="flex bg-[var(--sunk)] rounded-lg p-1 border border-[var(--line)] w-full md:w-auto overflow-x-auto custom-scrollbar">') && !eod.includes('flex bg-black/50 rounded-lg p-1 border border-[var(--line)] w-full md:w-auto'));
 }
