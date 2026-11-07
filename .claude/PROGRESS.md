@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-06 19:21 WIB, PC clock (🟠 KPM — next: the Stock Opname tabs lose the amber fill, frames first; ✅ TEST 1 and 2 with him)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-08 05:34 WIB, PC clock (🟠 KPM — waiting on his pick for the tab look; then build it)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-08 05:34 WIB — KPM: his "when we got the quota i also want u to redesign those button because i hate the amber fill color" - 2 LOOKS DRAWN on the real app + sent, no app code changed
+Options + costs: A-Brain `Brainstorm/2026-11-08_tabs-without-amber.md`. Board: `Raw/2026-11-08-tabs-amber/board.png`. Next ONE job: NEXT-SESSION.md top.
+WAITING ON ALDI (verbatim): **🔴 DECIDE: Which look do you want for the chosen tab: 1 a dark plate with a gold bar under it, like your Settings switches, or 2 only a gold line under it, like the warehouse tabs below? Add "all" if the other three tab rows that still have the amber fill should get the same look: Quarantine's Active / History, EOD Setoran's two tabs, and Sampel's date tabs.** Still open from 2026-11-06 09:58: ✅ TEST 1 again with the same test account put back on, ✅ TEST 2 as a Tier 3 and a Tier 4, ✅ TEST tabs.
 
 ## 🟠 2026-11-06 19:21 WIB — KPM: his "when we got the quota i also want u to redesign those button because i hate the amber fill color" - BRIEFED, not started, no app code changed
 Brief: NEXT-SESSION.md top. Taste: A-Brain `Wiki/Concepts/Aldi's Design Taste.md`, today's entry. Quota meter: 9router was down, restarted (it answers); no number read yet.
