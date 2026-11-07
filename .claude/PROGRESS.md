@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-08 06:14 WIB, PC clock (🟠 KPM — next: the Same as last time buttons, frames first, a no-fill option first)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-08 06:20 WIB, PC clock (🟠 KPM — next: the Same as last time buttons, frames first, a no-fill option first)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-08 06:20 WIB — KPM: his "make sure the yellow line doesnt pass the vertical line border for all of those" - BUILT + pushed `08b983f`
+Full story: the commit message. Proof: A-Brain `Raw/2026-11-08-tabs-amber/line-pc.png`, `line.mjs`. Next ONE job: NEXT-SESSION.md top.
+WAITING ON ALDI: ✅ TEST (close the app fully, open it again first): Stock Opname > HQ Audits, press each warehouse: the gold line stays under the name and never crosses the thin line between warehouses. Still open: the ✅ TESTs from 06:14, 05:52 and 2026-11-06.
 
 ## 🟠 2026-11-08 06:14 WIB — KPM: his "i want u to put some space or line to misah each of the regional warehouse because it is look like its one part, and another problem on sc2 is that the button havent change" - lines BUILT + pushed `62c9f83`; the buttons: his device's old copy, the live site has them
 Full story: the commit message. Proof: A-Brain `Raw/2026-11-08-tabs-amber/split.png`. Next ONE job: NEXT-SESSION.md top.

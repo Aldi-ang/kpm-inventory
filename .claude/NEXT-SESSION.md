@@ -6,6 +6,8 @@
 3. **Paste this line** (it downloads first - the PC copy of this file is stale until the pull): `/alucard First run in PowerShell: git status -sb; git pull origin phase0-solid-ground - if git refuses because of local changes, show me the list and stop. Then read ONLY the first 40 lines of .claude/NEXT-SESSION.md and do the ONE JOB at its top. Never read PROGRESS.md, lessons.md or the rest of NEXT-SESSION.md whole (374 KB / 160 KB / 608 KB) - grep them for the one line you need.`
 
 
+**2026-11-08 06:20 — Also live `08b983f`: the warehouse underline stays under the words, clear of the hairlines (his "make sure the yellow line doesnt pass the vertical line border for all of those"). The job below is unchanged.**
+
 **2026-11-08 06:14 — Also live `62c9f83`: a hairline between each warehouse tab (his "put some space or line to misah each of the regional warehouse"). His "the button havent change" was his device's old copy: the live site has the gold line. The job below is unchanged.**
 
 **2026-11-08 05:52 — THE TABS ARE DONE + live `23abaa3` (his "2 all": a gold line under a plain word, on Stock Opname, its Quarantine, EOD Setoran and Sampel). THE ONE JOB NOW = #2, THE TWO "SAME AS LAST TIME" BUTTONS: the 2026-11-05 20:49 block below has it (grep `handleReorder` in MerchantSalesView.jsx, frames side by side from the real screen, ONE 🔴 DECIDE, no code before his pick). New since then: he picked the QUIETEST look over my recommendation, so draw a no-fill option first (a plain button with a gold edge or line), and a plate only as the second. The real app on the emulator is the way to shoot it: A-Brain `Raw/2026-11-08-tabs-amber/tabs-looks.mjs` seeds, signs in and injects looks. Then #3 the Quarantine board. Rewrite this file again when done.**
