@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-08 06:39 WIB, PC clock (🟠 KPM — next: the Same as last time buttons, frames first, a no-fill option first)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-08 06:59 WIB, PC clock (🟠 KPM — waiting on his pick for the Same as last time buttons; then build it)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-08 06:59 WIB — KPM: his "yes well done continue your work" (the warehouse line passed his eye) - Same as last time: 2 LOOKS DRAWN + sent, no app code changed
+Options + costs: A-Brain `Brainstorm/2026-11-08_reorder-button-without-amber.md`. Board: `Raw/2026-11-08-reorder-button/board.png`. Lab: `&history` gives the terminal one past sale (tools/ponder-lab.jsx). Next ONE job: NEXT-SESSION.md top.
+WAITING ON ALDI (verbatim): **🔴 DECIDE: Which look do you want for the two "Sama seperti terakhir" buttons (on the shop card on the phone, and in the "Sebelum masuk" panel on the PC): 1 no fill, a gold edge around a plain word, or 2 a dark plate with a gold word?** Still open: the ✅ TESTs from 06:14, 05:52 and 2026-11-06.
 
 ## 🟠 2026-11-08 06:39 WIB — KPM: his "soo much off really" + "must be just exact with the border" - BUILT + pushed `b8c1c47`
 Full story: the commit message. Proof: A-Brain `Raw/2026-11-08-tabs-amber/exact.png`. Next ONE job: NEXT-SESSION.md top.
