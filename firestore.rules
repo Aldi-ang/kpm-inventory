@@ -788,6 +788,20 @@ service cloud.firestore {
         allow create, update: if isSalesman(bossUid);
       }
 
+      // =====================================================================
+      // [CHANGE 25 — 2026-11-09, DRAFT until Aldi publishes it] places: the company's warehouse registry (gudang
+      // names + addresses). Every Restock Vault desk reads it - the branch desk's delivery address
+      // (BranchWarehouseManager.jsx:572) and the surat jalan route boxes (RestockVaultView.jsx:282). Only the
+      // catch-all covered it (owner / T1 / T2), so a T3 (AREA_ADMIN) or T4 (FLEET_CAPTAIN) opening Restock Vault
+      // was refused and the address came back empty (demo walk 2026-11-08 #4; on the dev server the refusal also
+      // tripped a Firestore SDK assertion, ca9, under React StrictMode - not in a production build).
+      // Read: every login of this company. Writes stay with the catch-all (the registry is T1/T2's).
+      // rules-test/test-places-read.mjs.
+      // =====================================================================
+      match /places/{placeId} {
+        allow read: if isSalesman(bossUid);
+      }
+
       match /motorists/{motoristId} {
         allow read: if isSalesman(bossUid);
         // The second clause is load-bearing: it lets a field agent update their OWN

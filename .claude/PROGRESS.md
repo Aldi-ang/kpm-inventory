@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-08 19:38 WIB, PC clock (🟢 KPM — count badges nixie + 3 red buttons readable, both live)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-09 06:56 WIB, PC clock (🟠 KPM — badges tested in the real app; demo list: #4 rules draft waits for his publish, #11 pushed)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-09 06:56 WIB — KPM: his "test it and continue your work from your list" - badges TESTED in the real app; demo #11 (Reports) pushed with this note; #4 = rules draft CHANGE 25
+Proof: A-Brain `Raw/2026-11-09-badge-test/`; rules-test/test-places-read.mjs. Next: NEXT-SESSION.md top.
+WAITING ON ALDI: **🔴 PUBLISH: firestore.rules CHANGE 25 (every login of the company may READ the warehouse list `places`; only T1/T2 change it). Paste the whole file in the Console, (default) database, then say "published". Proof: rules-test/test-places-read.mjs - published rules refuse T3-T6 (8 refusals), the draft passes 20/20.** Still: the demo ranking is replaced by my order (he said continue); start Antigravity's task.
 
 ## 🟢 2026-11-08 19:38 WIB — KPM: his "yes" - the 3 red buttons (EOD reject, a Customers button, the EOD card chip) now light words on the deeper red, pushed with this note
 Full story: the commit message. Next: NEXT-SESSION.md top.

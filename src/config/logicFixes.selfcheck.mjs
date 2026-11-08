@@ -13503,6 +13503,17 @@ console.log('\nSales Terminal: a RUSAK lot is never LOW and never "Running low"'
   const jsx = fs.readdirSync('src', { recursive: true }).filter((f) => /\.jsx$/.test(f)).map((f) => 'src/' + String(f).replace(/\\/g, '/'));
   const old = jsx.filter((f) => /bg-\[var\(--danger\)\] (hover:bg-\[var\(--danger\)\] )?text-\[var\(--gold-ink\)\]|bg-red-600 text-white text-\[11px\] font-black rounded-full|bg-orange-500 text-\[var\(--duke-on-fill\)\] text-\[10px\] font-black w-5 h-5/.test(read(f)));
   ok('count badge + buttons: no screen keeps gold ink on the danger red (black in dark mode, 4.02:1; his "yes" 2026-11-08 for the 3 buttons), the red-600 bell dot or the orange sync dot', old.length === 0, 'found in: ' + old.join(', '));
+  { /* demo walk 2026-11-08 #11: Reports showed T4-T6 a red "could not be read" - the panel asked for totals the rules refuse them */
+    const P = await import('./permissions.js');
+    ok('BEHAVIOUR: only T1 and T2 may read the sales totals (the rules catch-all); T3-T6 may not',
+       typeof P.canReadSalesTotals === 'function' && ['DEVELOPER', 'ADMIN', 'COMPANY_OWNER'].every((r) => P.canReadSalesTotals(r)) &&
+       ['AREA_ADMIN', 'FLEET_CAPTAIN', 'FIELD_OPERATIVE', 'ROOKIE', undefined].every((r) => !P.canReadSalesTotals(r)));
+    ok('REGRESSION: Product Performance mounts only for a tier that may read sales_stats', /\{canReadSalesTotals\(userRole\) && <ProductPerformancePanel /.test(read('src/App.jsx')) &&
+       !/^\s*<ProductPerformancePanel /m.test(read('src/App.jsx')), 'demo walk #11');
+    const rules = read('firestore.rules');
+    ok('rules CHANGE 25: every login of the company reads places; writes stay with the catch-all', /match \/places\/\{placeId\} \{\s*allow read: if isSalesman\(bossUid\);\s*\}/.test(rules),
+       'demo walk #4: T3/T4 were refused the warehouse registry on Restock Vault (rules-test/test-places-read.mjs)');
+  }
   const nx = read('src/components/NixieCount.jsx');
   ok('count badge: rollIn mounts the reels on 0 and arms them two frames later, so a badge that appears rolls up', /useState\(!rollIn\)/.test(nx) && /'--i': armed \? d : 0/.test(nx) && /requestAnimationFrame\(\(\) => setArmed\(true\)\)/.test(nx),
     'his round-2 pick rolled the number in on arrival');

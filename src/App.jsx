@@ -19,7 +19,7 @@ import useTransactionEngine from './hooks/useTransactionEngine';
 import useDatabaseSync from './hooks/useDatabaseSync'; 
 import useOfflineEngine, { canReachInternet } from './hooks/useOfflineEngine';
 import MusicPlayer from './MusicPlayer';
-import { injectDynamicPermissions, hasClearance, canOpenTab, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion, canSetBundlePrice } from './config/permissions';
+import { injectDynamicPermissions, hasClearance, canOpenTab, handoffEligibility, canApproveHandoffFrom, handoffApprovers, normalizeRegion, canSetBundlePrice, canReadSalesTotals } from './config/permissions';
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch, testAccountFor } from './config/povPreview';
 import { tr } from './config/lang';
 import { warehouseList, vanUsesBranch, moveWithGoodsMessage } from './utils/supply';
@@ -5647,7 +5647,8 @@ const handleGitHubMirror = async () => {
                   is the screen he already opens to look at past sales, and directly above the
                   receipt list because the summary is what he came for and the receipts are the
                   detail underneath it. */}
-              <ProductPerformancePanel db={db} appId={appId} userId={userId} inventory={inventory} />
+              {/* T1/T2 only: the rules let nobody else read the totals (demo walk 2026-11-08 #11, permissions.js canReadSalesTotals) */}
+              {canReadSalesTotals(userRole) && <ProductPerformancePanel db={db} appId={appId} userId={userId} inventory={inventory} />}
             </div>
           )}
           {activeTab === 'transactions' && <HistoryReportView transactions={transactions} inventory={inventory} onDeleteFolder={handleDeleteHistory} onDeleteTransaction={handleDeleteSingleTransaction} isAdmin={isAdmin} user={user} userId={userId} appId={appId} db={db} appSettings={appSettings} userRole={userRole} agentProfileId={agentProfileId} fetchHistoricalTransactions={fetchHistoricalTransactions} motorists={motorists} customers={displayCustomers} />}

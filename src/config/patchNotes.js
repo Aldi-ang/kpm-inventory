@@ -3,6 +3,9 @@
    Every finished job that changes what people see adds a line here before its push (CLAUDE.md, Publishing).
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
+  { date: '2026-11-09', items: [
+    { kind: 'fixed', en: 'Reports: the Product Performance box now shows only to the owner, so other logins no longer see a red "could not be read" message.', id: 'Reports: kotak Product Performance sekarang hanya tampil untuk pemilik, jadi login lain tidak lagi melihat pesan merah "could not be read".' },
+  ] },
   { date: '2026-11-08', items: [
     { kind: 'fixed', en: 'EOD and Customers: three red buttons now have light words on a deeper red, easy to read in dark mode too.', id: 'EOD dan Customers: tiga tombol merah sekarang bertulisan terang di atas merah yang lebih gelap, mudah dibaca juga di mode gelap.' },
     { kind: 'fixed', en: 'Counters: the small numbers on HQ Audits, HQ Verification, the bell, the cart, the sync button and Customers are now the glowing nixie counter. Easy to read in dark and light, and the number rolls in when it changes.', id: 'Penghitung: angka kecil di HQ Audits, HQ Verification, lonceng, keranjang, tombol sinkron, dan Customers sekarang memakai penghitung nixie yang menyala. Mudah dibaca di mode gelap dan terang, dan angkanya bergulir saat berubah.' },

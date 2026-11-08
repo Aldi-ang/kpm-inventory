@@ -119,6 +119,12 @@ export const canPickFromGallery = (userRole) => {
    only available on tier 3 and above as default, put this on the matrix as well". Same absence-means-tier-default
    shape as canPickFromGallery above: until the key is in his saved matrix, tiers 1-3 may; after, his switch wins. */
 const BUNDLE_PRICE_KEY = 'set_bundle_price';
+/* THE MONTH'S SALES TOTALS (sales_stats) are READ only through the rules' catch-all: owner / T1 / T2 (firestore.rules
+   CHANGE 16: "the totals are an office screen"). Product Performance on Reports asks only when this says yes, so a
+   T3-T6 never meets a red "The sales figures could not be read" (demo walk 2026-11-08 #11). Widening it is a rules
+   change first, then this line. */
+export const canReadSalesTotals = (userRole) =>
+    [CORPORATE_TIERS.TIER_1, CORPORATE_TIERS.TIER_2].includes(translateLegacyRole(userRole));
 export const canSetOpnameDay = (userRole) =>   /* his 2026-11-04 "we as tier 3 and above"; rules CHANGE 22 */
     [CORPORATE_TIERS.TIER_1, CORPORATE_TIERS.TIER_2, CORPORATE_TIERS.TIER_3].includes(translateLegacyRole(userRole));
 export const canSetBundlePrice = (userRole) => {
