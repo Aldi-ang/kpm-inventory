@@ -146,6 +146,19 @@ export const canDecideOpname = (userRole) => {
     if (matrixKnowsKey) return hasClearance(userRole, DECIDE_OPNAME_KEY);
     return role === CORPORATE_TIERS.TIER_2 || role === CORPORATE_TIERS.TIER_3;
 };
+/* WHO MAY SELL A DAMAGED PACK AGAIN AND SET ITS PRICE (Quarantine > Sell Again)? His 2026-11-03: "only Tier 3 and up set that price",
+   a new Access Matrix key. canDecideOpname's shape and reach: until the key is in his saved matrix, tiers 1-3 may; after, his switch
+   wins, up to a T4. Rules CHANGE 24 mirrors it. A T3 reaches the screen through the Stock Opname tab, which canDecideOpname opens. */
+const SELL_DAMAGED_KEY = 'sell_damaged';
+export const canSellDamaged = (userRole) => {
+    const role = translateLegacyRole(userRole);
+    if (role === CORPORATE_TIERS.TIER_1) return true;
+    if (role === CORPORATE_TIERS.TIER_5 || role === CORPORATE_TIERS.TIER_6) return false;
+    const matrixKnowsKey = Object.values(ROLE_PERMISSIONS)
+        .some(list => Array.isArray(list) && list.includes(SELL_DAMAGED_KEY));
+    if (matrixKnowsKey) return hasClearance(userRole, SELL_DAMAGED_KEY);
+    return role === CORPORATE_TIERS.TIER_2 || role === CORPORATE_TIERS.TIER_3;
+};
 /* Who sees the Stock Opname worklist: his "regional admin and tier 3 and above". T1-T3 every warehouse, a T4 their own, nobody below. */
 export const opnameBoardScope = (userRole) => {
     const role = translateLegacyRole(userRole);

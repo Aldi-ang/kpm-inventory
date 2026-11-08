@@ -13447,7 +13447,34 @@ console.log('\nQuarantine: Sell Again puts a damaged lot on sale, right after it
     ok('both Sell Again refusals show as failures (a red strip, not news)', refusals.length === 2 && refusals.every(isFailure)); }
   ok('the terminal shelf runs through lotsAfterPacks and the card wears the mark', ms.includes('const filteredItems = lotsAfterPacks(inventory.filter(') && ms.includes('{isDamagedPack(item) && <HazardMark className="right-0.5 bottom-0.5'));
   ok('REGRESSION: a lot is never "low" (it is never restocked), in the one function every low-stock alarm reads', /export const isLowStock = \(product, appSettings\) =>\s*!product\?\.damagedFrom &&/.test(th));
-  ok('the Sell Again button sits after Convert to Sample, gold edge, and not on a lot that is damaged again', /Convert to Sample\s*<\/button>\s*\{\/\*[^]*?\*\/\}\s*\{!item\.damagedFrom && \(\s*<button onClick=\{\(\) => setResolutionModal\(\{item, method: 'SELL', cheap: false\}\)\}[^>]*border-\[var\(--accent-edge\)\]/.test(so));
+  ok('the Sell Again button sits after Convert to Sample, gold edge, and not on a lot that is damaged again', /Convert to Sample\s*<\/button>\}?\s*\{\/\*[^]*?\*\/\}\s*\{!item\.damagedFrom && \(\s*<button onClick=\{\(\) => setResolutionModal\(\{item, method: 'SELL', cheap: false\}\)\}[^>]*border-\[var\(--accent-edge\)\]/.test(so));
+}
+
+/* Stage 2, his 2026-11-03 "only Tier 3 and up set that price" (a new Access Matrix key); rules CHANGE 24. */
+console.log('\nQuarantine: Sell Again for Tier 3, the sell_damaged key');
+{
+  const pm = await import('./permissions.js'), T = pm.CORPORATE_TIERS;
+  const so = read('src/StockOpnameView.jsx');
+  ok('HIS RULE: tier 3 and up sell again by default; a T4, T5 and T6 do not while the key is not in his saved matrix',
+     ['DEVELOPER', 'ADMIN', 'COMPANY_OWNER', 'AREA_ADMIN'].every(r => pm.canSellDamaged(r)) && ['FLEET_CAPTAIN', 'FIELD_OPERATIVE', 'ROOKIE'].every(r => !pm.canSellDamaged(r)));
+  const before = { ...pm.ROLE_PERMISSIONS };
+  pm.injectDynamicPermissions({ ...before, [T.TIER_4]: [...before[T.TIER_4], 'sell_damaged'], [T.TIER_5]: [...before[T.TIER_5], 'sell_damaged'] }, null);
+  const t4 = pm.canSellDamaged('FLEET_CAPTAIN'), t3 = pm.canSellDamaged('AREA_ADMIN'), t5 = pm.canSellDamaged('FIELD_OPERATIVE'), t1 = pm.canSellDamaged('ADMIN');
+  pm.injectDynamicPermissions(before, null);
+  ok('BEHAVIOUR: once he saves the key, his switch wins: on for T4 only -> a T4 may, a T3 may not; a T5 never; Tier 1 always', t4 && !t3 && !t5 && t1);
+  ok('the key is in his matrix, worded like its sibling', read('src/components/SettingsView.jsx').includes("{ id: 'sell_damaged', label: 'Quarantine: sell damaged packs again and set their price (Tier 4 and above only)' },") && read('src/config/permissions.js').includes("const SELL_DAMAGED_KEY = 'sell_damaged';"));
+  ok('a holder opens Quarantine and sees the crates', so.includes("const canSell = isHighCommand || canSellDamaged(userRole);") && so.includes("{canSell && <button onClick={() => setViewMode('quarantine')}") && so.includes("{viewMode === 'quarantine' && canSell && ("));
+  ok('REGRESSION: Sample, RTV, Penalty, Repair and the Liquidation History stay the owner\'s (the rules refuse a T3 those writes and the log reads)',
+     so.includes("{isHighCommand && <button onClick={() => setResolutionModal({item, method: 'SAMPLING'})}") && /\{isHighCommand && <>\s*<button onClick=\{\(\) => setResolutionModal\(\{item, method: 'RTV'\}\)\}/.test(so) &&
+     /\{isHighCommand && <div className="flex bg-\[var\(--sunk\)\] rounded-lg p-1 border border-\[var\(--accent-edge\)\]">\s*<button onClick=\{\(\) => setQuarSubTab\('active'\)\}/.test(so) &&
+     /if \(!isHighCommand \|\| !db \|\| !appId \|\| !masterId\) return;\s*const logsRef = collection\(db, `artifacts\/\$\{appId\}\/users\/\$\{masterId\}\/quarantine_logs`\)/.test(so));
+  ok('the price box says who may set it (his board, frame B)', so.includes('>Only Tier 3 and up can set this price.</p>'));
+  const rules = read('firestore.rules');
+  ok('RULES: CHANGE 24 is a draft, reads the same key, and fences a holder to a rsk- lot of the pack it names plus a SELL log line',
+     /\[CHANGE 24 — 2026-11-08, DRAFT until Aldi publishes it\]/.test(rules) && rules.includes("let key = 'sell_damaged';") &&
+     rules.includes("allow create: if sellDamagedHolder(bossUid) && productId == 'rsk-' + request.resource.data.damagedFrom &&") &&
+     rules.includes("allow update: if sellDamagedHolder(bossUid) && productId == 'rsk-' + resource.data.damagedFrom &&") &&
+     rules.includes("allow create: if sellDamagedHolder(bossUid) && request.resource.data.method == 'SELL';") && !/allow (read|list|get)[^;]*sellDamagedHolder/.test(rules));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

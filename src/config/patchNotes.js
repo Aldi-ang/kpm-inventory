@@ -4,6 +4,7 @@
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
   { date: '2026-11-08', items: [
+    { kind: 'new', en: 'Quarantine: Tier 3 can now use Sell Again and set the price. A switch for it is in the Access Matrix.', id: 'Quarantine: Tier 3 sekarang bisa memakai Jual Lagi dan menentukan harganya. Saklarnya ada di Access Matrix.' },
     { kind: 'new', en: 'Quarantine: Sell Again puts damaged packs back on sale, at full price or a cheaper one. They keep the damaged mark and sit right after their own pack on the Sales Terminal.', id: 'Quarantine: Jual Lagi menjual kembali bungkus rusak, dengan harga penuh atau lebih murah. Tanda rusaknya tetap ada, dan letaknya tepat setelah bungkus aslinya di Sales Terminal.' },
     { kind: 'fixed', en: 'Sales Terminal: Same as last time is now a gold outline instead of an amber block, on the phone and the PC.', id: 'Sales Terminal: tombol Sama seperti terakhir sekarang bergaris tepi emas, bukan blok amber, di HP dan PC.' },
     { kind: 'fixed', en: 'Stock Opname review: the gold line under the chosen warehouse runs exactly from divider to divider, on every screen size.', id: 'Review Stock Opname: garis emas di bawah gudang yang dipilih pas dari garis pemisah ke garis pemisah, di semua ukuran layar.' },

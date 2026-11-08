@@ -133,6 +133,22 @@ service cloud.firestore {
         (known ? key in saved.get(role, []) : role == 'AREA_ADMIN');
     }
 
+    // [CHANGE 24 — 2026-11-08, DRAFT until Aldi publishes it] WHO SELLS A DAMAGED PACK AGAIN (Quarantine > Sell Again). His
+    // 2026-11-03 "only Tier 3 and up set that price", a new matrix key. Mirrors canSellDamaged in permissions.js, the same shape as
+    // opnameDecider above: until the key is in his saved matrix a T3 may; after, his switch wins, for a T3 and a T4. T1 and T2 already
+    // write through the company catch-all, and a T5 or T6 can never write stock. rules-test/test-sell-damaged.mjs.
+    function sellDamagedHolder(bossUid) {
+      let profile = getEmployeeProfile();
+      let role = profile != null ? profile.get('userRole', 'NONE') : 'NONE';
+      let m = getPermissionMatrixDoc(bossUid);
+      let saved = m != null && ('matrix' in m) ? m.matrix : {};
+      let key = 'sell_damaged';
+      let known = key in saved.get('DEVELOPER', []) || key in saved.get('COMPANY_OWNER', []) || key in saved.get('AREA_ADMIN', []) ||
+        key in saved.get('FLEET_CAPTAIN', []) || key in saved.get('FIELD_OPERATIVE', []) || key in saved.get('ROOKIE', []);
+      return isAuthenticated() && profile != null && profile.bossUid == bossUid && (role == 'AREA_ADMIN' || role == 'FLEET_CAPTAIN') &&
+        (known ? key in saved.get(role, []) : role == 'AREA_ADMIN');
+    }
+
     function isSalesman(bossUid) {
       let profile = getEmployeeProfile();
       return isAuthenticated() && profile != null && profile.bossUid == bossUid;
@@ -623,7 +639,24 @@ service cloud.firestore {
         // verify write only these four to a master product.
         allow update: if (isAreaAdmin(bossUid) || isFleetCaptain(bossUid)) &&
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock', 'damagedStock', 'name', 'productId']);
-        allow create, delete: if false;
+        // [CHANGE 24 — DRAFT] was `allow create, delete: if false;`. A Sell Again holder makes or re-prices the lot of ONE damaged pack:
+        // the id must be 'rsk-' + the pack it came from, and only the lot's own fields are written (StockOpnameView.jsx, method
+        // 'SELL'). The id is the whole fence: a normal pack's price stays out of reach (CHANGE 14 #8 above still allows only stock).
+        allow create: if sellDamagedHolder(bossUid) && productId == 'rsk-' + request.resource.data.damagedFrom &&
+          request.resource.data.keys().hasOnly(['name', 'damagedFrom', 'type', 'category', 'images', 'dimensions', 'useFrontForBack',
+            'sticksPerPack', 'packsPerSlop', 'slopsPerBal', 'balsPerCarton', 'hpp', 'costPrice',
+            'priceRetail', 'priceGrosir', 'priceEcer', 'priceDistributor', 'stock']);
+        allow update: if sellDamagedHolder(bossUid) && productId == 'rsk-' + resource.data.damagedFrom &&
+          request.resource.data.damagedFrom == resource.data.damagedFrom &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'damagedFrom', 'type', 'category', 'images', 'dimensions',
+            'useFrontForBack', 'sticksPerPack', 'packsPerSlop', 'slopsPerBal', 'balsPerCarton', 'hpp', 'costPrice',
+            'priceRetail', 'priceGrosir', 'priceEcer', 'priceDistributor', 'stock']);
+        allow delete: if false;
+      }
+      // [CHANGE 24 — DRAFT] the Sell Again holder writes its own line in the quarantine history, method SELL only. Reading the history
+      // stays the owner's (the users/{bossUid} catch-all above).
+      match /quarantine_logs/{logId} {
+        allow create: if sellDamagedHolder(bossUid) && request.resource.data.method == 'SELL';
       }
       // [INVESTIGATED — 2026-07-24, customer visibility gap] Every employee's browser
       // downloads the FULL company customer list; the app's own display logic only

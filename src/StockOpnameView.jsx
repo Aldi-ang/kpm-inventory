@@ -11,7 +11,7 @@ import { savePhotoAndGetReference, deletePhotoFromStorage, photoStamp, commitInC
 import * as threshold from './utils/stockThreshold';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
-import { canSeeExpectedCount, canDecideOpname, opnameBoardScope, hasClearance } from './config/permissions';
+import { canSeeExpectedCount, canDecideOpname, canSellDamaged, opnameBoardScope, hasClearance } from './config/permissions';
 /* Imported under a different name on purpose. The string 'MASTER' in this file is a SELECT VALUE
    that routes Firestore paths (branches/{facility}/inventory) — changing it would move documents.
    HQ_LABEL is only what the reader sees, and that is the part that had four spellings. */
@@ -254,6 +254,9 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     const boardScope = opnameBoardScope(userRole);
     const canSeeBoard = !!boardScope;
     const canCount = isHighCommand || hasClearance(userRole, 'view_stock_opname');
+    /* Quarantine for a Sell Again holder (his "only Tier 3 and up set that price", rules CHANGE 24): the crates and the Sell Again
+       button only. Sample, RTV, Penalty, Repair and the Liquidation History stay the owner's (the rules keep quarantine_logs reads his). */
+    const canSell = isHighCommand || canSellDamaged(userRole);
 
     // 🚀 DYNAMIC UPGRADE: Automatically adapts to any custom Tier 4/Branch Admin rank!
     /* Posted at the Master Vault there is no branch shelf: they count the Master Vault. No place on the login stays as it
@@ -1176,6 +1179,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                             <input name="price" type="number" min="1" max={Math.max(1, full - 1)} required autoFocus placeholder="Rp per Bks"
                                                 className="w-full bg-[var(--sunk)] border border-[var(--accent-edge)] p-3 rounded-lg text-[var(--ink)] font-mono text-lg font-black outline-none"/>
                                         )}
+                                        <p className="mt-2 text-[11px] text-[var(--ink-dim)] uppercase tracking-widest">Only Tier 3 and up can set this price.</p>
                                     </div>
                                 </>);
                             })()}
@@ -1243,7 +1247,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                         <button onClick={() => setViewMode('review')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <ShieldAlert size={14}/> {boardScope === 'all' ? 'HQ Audits' : 'Review'} {pendingAudits.length > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] px-1.5 py-0.5 rounded-full">{pendingAudits.length}</span>}
                         </button>
-                        {isHighCommand && <button onClick={() => setViewMode('quarantine')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
+                        {canSell && <button onClick={() => setViewMode('quarantine')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <Biohazard size={14}/> Quarantine
                         </button>}
                         {canCount && <button data-mission="8" onClick={() => setViewMode('count')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'count' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
@@ -1359,20 +1363,20 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
             {/* ======================================================== */}
             {/* VIEW MODE 1.5: THE QUARANTINE VAULT                      */}
             {/* ======================================================== */}
-            {viewMode === 'quarantine' && isHighCommand && (
+            {viewMode === 'quarantine' && canSell && (
                 <div className="flex-1 flex flex-col min-h-0 bg-[var(--sunk)] rounded-xl border border-[var(--accent-edge)] shadow-inner p-4 relative overflow-hidden animate-fade-in">
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(249,115,22,0.05),transparent_70%)] pointer-events-none"></div>
                     
                     <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-[var(--accent-edge)] pb-4">
                         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-                            <div className="flex bg-[var(--sunk)] rounded-lg p-1 border border-[var(--accent-edge)]">
+                            {isHighCommand && <div className="flex bg-[var(--sunk)] rounded-lg p-1 border border-[var(--accent-edge)]">
                                 <button onClick={() => setQuarSubTab('active')} className={`px-4 py-2 rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${quarSubTab === 'active' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--accent-ink)]'} `}>
                                     <AlertTriangle size={14}/> Active Quarantine
                                 </button>
                                 <button onClick={() => setQuarSubTab('history')} className={`px-4 py-2 rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${quarSubTab === 'history' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                                     <History size={14}/> Liquidation History
                                 </button>
-                            </div>
+                            </div>}
 
                             {/* the Active tab picks its warehouse with the crates below, not a list */}
                             {quarSubTab === 'active' ? null : (
@@ -1405,9 +1409,9 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                 line={(item) => `${item.name} · ${item.damagedStock} Bks damaged · Total HPP Loss: ${formatRupiah(item.damagedStock * Number(item.priceDistributor || item.hpp || item.costPrice || 0))} · ${item.facility}`}
                                 actions={(item) => (
                                     <div className="flex flex-col sm:flex-row gap-2">
-                                <button onClick={() => setResolutionModal({item, method: 'SAMPLING'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--alt-ink)_12%,var(--raised))] border border-[var(--alt-edge)] text-[var(--alt-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
+                                {isHighCommand && <button onClick={() => setResolutionModal({item, method: 'SAMPLING'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--alt-ink)_12%,var(--raised))] border border-[var(--alt-edge)] text-[var(--alt-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
                                     <FlaskConical size={14}/> Convert to Sample
-                                </button>
+                                </button>}
                                 {/* SELL AGAIN (his 2026-11-08 board, frame A): the siblings' box with a gold edge; not on a lot that
                                     is itself damaged again - it has no pack of its own to follow */}
                                 {!item.damagedFrom && (
@@ -1415,6 +1419,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                     <Tag size={14}/> Sell Again
                                 </button>
                                 )}
+                                {isHighCommand && <>
                                 <button onClick={() => setResolutionModal({item, method: 'RTV'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--ink)_8%,var(--raised))] border border-[var(--line)] text-[var(--ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
                                     <Undo2 size={14}/> RTV Factory
                                 </button>
@@ -1428,6 +1433,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                     <Wrench size={14}/> Repair
                                 </button>
                                 )}
+                                </>}
                                     </div>
                                 )} />
                         ) : (
