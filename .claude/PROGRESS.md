@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-08 17:50 WIB, PC clock (🟠 KPM — backlog ticked + the August sweep checked: 27 fixed, 9 open, 38 to Antigravity; next: the demo, waiting on his list)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-08 17:57 WIB, PC clock (🟠 KPM — next: Claude walks the demo itself, phone first; plan in NEXT-SESSION top)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-08 17:57 WIB — KPM: his demo ask (walk it yourself, phone first, the tutorial phone problem, the tutorial does not cover the main features) - PLANNED, not started
+Plan: NEXT-SESSION.md top. Told him to /compact first (this conversation was 47% full).
+WAITING ON ALDI: type /compact, then "go". Still: start Antigravity's task (the 38 sweep findings).
 
 ## 🟠 2026-11-08 17:50 WIB — KPM: his "check the notes, fixes and test it yourself" - backlog ticked (5 done + 13 made visible) and the August sweep checked (27 fixed / 9 open / 38 to Antigravity)
 Statuses: each A-Brain `Backlog/SWEEP - *.md` note's top block; backlog commit in A-Brain. 16/16 self-check suites pass. No app code changed. Next: NEXT-SESSION.md top (the demo).
