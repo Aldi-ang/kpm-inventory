@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-08 16:36 WIB, PC clock (🟠 KPM — Sell Again stage 2 BUILT LOCAL `856face`, rules test green; waiting on Aldi to publish CHANGE 24)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-08 16:45 WIB, PC clock (🟠 KPM — Sell Again stage 2 LIVE: rules CHANGE 24 published by Aldi, code pushed; waiting on his ✅ TEST)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-08 16:45 WIB — KPM: his "published" - rules CHANGE 24 LIVE, Sell Again stage 2 pushed
+He pasted firestore.rules on the (default) database (first tried Storage's Rules tab; caught before pasting). Baseline synced, header says live. Pushed with this note: `856face` + notes + Antigravity's `190c13a`, `eddad88`. Next: NEXT-SESSION.md top.
+WAITING ON ALDI: ✅ TEST: a Tier 3 account opens Stock Opname > Quarantine, sees only Sell Again, sells one damaged pack cheaper, and the "· RUSAK" card shows on the Sales Terminal. Still open: the PowerShell skill line + Antigravity ✅ TEST (09:40), the ✅ TESTs from 09:31, 07:04, 06:14, 05:52 and 2026-11-06.
 
 ## 🟠 2026-11-08 16:36 WIB — KPM: his "done check it" - Antigravity's rules test REVIEWED (`190c13a`, `eddad88`)
 Only its 2 allowed files. Claude re-ran it: draft 17/17, published rules 13/4 (the 4 new paths red). Task file: Status NONE. Nothing pushed: the rules go first. Next: NEXT-SESSION.md top.
