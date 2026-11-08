@@ -129,7 +129,11 @@ for (const [name, path] of Object.entries(adopters)) {
 }
 /* THE SALES TERMINAL'S OWN LINE - his 2026-11-03 "1 slop and below is considered as low", after "10 slop is not a low
    amount" (the 3 Bal restock line lit "LOW · 10 Slop" on a van card). Mirrored like the rest. */
-const isLowOnTerminal = (p) => Number(p?.stock || 0) <= convertToBks(1, 'Slop', p || {});
+const isLowOnTerminal = (p) => !p?.damagedFrom && Number(p?.stock || 0) <= convertToBks(1, 'Slop', p || {});
+ok('terminal: a Sell Again (RUSAK) lot is never LOW (his "yes", 2026-11-08: nobody restocks a damaged pack); its own pack at 1 Bks still is',
+   !isLowOnTerminal({ ...surya, damagedFrom: 'p1', stock: 1 }) && isLowOnTerminal({ ...surya, stock: 1 }));
+ok('terminal: the module skips the lot the way isLowStock does',
+   /export const isLowOnTerminal = \(product\) =>\s*!product\?\.damagedFrom &&/.test(read('src/utils/stockThreshold.js')));
 const oneSlop = convertToBks(1, 'Slop', surya);
 ok('terminal: exactly 1 Slop is LOW, 1 Slop + 1 Bks is not, 10 Slop is not',
    oneSlop > 1 && isLowOnTerminal({ ...surya, stock: oneSlop }) && !isLowOnTerminal({ ...surya, stock: oneSlop + 1 }) && !isLowOnTerminal({ ...surya, stock: oneSlop * 10 }),

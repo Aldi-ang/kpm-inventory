@@ -56,6 +56,7 @@ export const isLowStock = (product, appSettings) =>
    amount"). The warehouse warning keeps isLowStock. */
 export const TERMINAL_LOW_SLOP = 1;
 export const isLowOnTerminal = (product) =>
+  !product?.damagedFrom &&   // a Sell Again lot is never "low" here either (his "yes", 2026-11-08)
   Number(product?.stock || 0) <= convertToBks(TERMINAL_LOW_SLOP, 'Slop', product || {});
 
 /* HOW LONG THE SHELF LASTS, in days, at the speed it has actually been selling.

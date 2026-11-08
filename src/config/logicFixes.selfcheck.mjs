@@ -13477,5 +13477,17 @@ console.log('\nQuarantine: Sell Again for Tier 3, the sell_damaged key');
      rules.includes("allow create: if sellDamagedHolder(bossUid) && request.resource.data.method == 'SELL';") && !/allow (read|list|get)[^;]*sellDamagedHolder/.test(rules));
 }
 
+console.log('\nSales Terminal: a RUSAK lot is never LOW and never "Running low"');
+{
+  /* his "yes" (2026-11-08) to: a RUSAK pack with 1 left showed "LOW · 1 Bks" and was the "Stok menipis" pick. Nobody restocks it. */
+  const ms = read('src/MerchantSalesView.jsx'), th = read('src/utils/stockThreshold.js');
+  ok('REGRESSION: the terminal LOW plate skips a lot (isLowOnTerminal), and the running-low pick skips it too',
+     /export const isLowOnTerminal = \(product\) =>\s*!product\?\.damagedFrom &&/.test(th) && ms.includes('const inPlay = inventory.filter(i => (i.stock || 0) > 0 && !i.damagedFrom);'));
+  const pick = (inventory) => { const inPlay = inventory.filter(i => (i.stock || 0) > 0 && !i.damagedFrom); return inPlay.length ? inPlay.reduce((a, b) => ((a.stock || 0) <= (b.stock || 0) ? a : b)) : null; };
+  ok('BEHAVIOUR: GUDANG GARAM FI · RUSAK at 1 Bks, SAMPOERNA MILD at 8, SURYA 12 at 240 -> running low names SAMPOERNA MILD; only lots -> nothing',
+     pick([{ name: 'GUDANG GARAM FI · RUSAK', damagedFrom: 'p_gudgar', stock: 1 }, { name: 'SAMPOERNA MILD', stock: 8 }, { name: 'SURYA 12', stock: 240 }])?.name === 'SAMPOERNA MILD' &&
+     pick([{ name: 'X · RUSAK', damagedFrom: 'x', stock: 1 }]) === null);
+}
+
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

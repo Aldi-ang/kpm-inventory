@@ -1662,7 +1662,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     /* The ware most likely to run out on this route. Zero is not "low", it is gone, and a
        salesman cannot act on it from here — it belongs to restock, not to the shelf. */
     const lowestStock = React.useMemo(() => {
-        const inPlay = inventory.filter(i => (i.stock || 0) > 0);
+        const inPlay = inventory.filter(i => (i.stock || 0) > 0 && !i.damagedFrom);   /* a RUSAK lot is never restocked (his "yes", 2026-11-08) */
         if (!inPlay.length) return null;
         return inPlay.reduce((a, b) => ((a.stock || 0) <= (b.stock || 0) ? a : b));
     }, [inventory]);
