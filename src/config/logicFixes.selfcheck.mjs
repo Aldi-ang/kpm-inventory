@@ -7695,7 +7695,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      JSON.stringify(nixieDigits(104.7, false)) === JSON.stringify({ sign: '', digits: [1, 0, 4] }),
      'a DIFFERENCE prints its sign, a count prints none, garbage prints 0, a fraction is a whole number');
   ok('REGRESSION: the nixie counter keys its tubes by PLACE VALUE and drives the reel with --i, so 99 -> 100 keeps rolling instead of remounting',
-     /key=\{digits\.length - i\}/.test(nx) && /'--i': d/.test(nx) && /'--d': `\$\{i \* 45\}ms`/.test(nx) &&
+     /key=\{digits\.length - i\}/.test(nx) && /'--i': armed \? d : 0/.test(nx) && /'--d': `\$\{i \* 45\}ms`/.test(nx) &&
      /import \{ nixieDigits \} from '\.\.\/utils\/helpers/.test(nx));
   const nixieCss = th.slice(th.indexOf('.kpm-nixie {'), th.indexOf('.kpm-nixie-reel > span.lit') + 400);
   ok('the nixie CSS: a reel that TRANSLATES by --dmg-like --i, 420 ms, staggered by --d; the glow is a gradient disc; nothing in it is a shadow or a filter',
@@ -7725,7 +7725,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /<div key=\{label\} className=\{`bg-\[var\(--sunk\)\] px-3 py-2 md:px-4 border kpm-plate flex flex-col justify-between \$\{same \? 'border-\[var\(--accent-edge\)\]' : tone === 'bad' \? 'border-\[var\(--danger\)\]' : 'border-\[var\(--accent-edge\)\]'\} `\}>/.test(so) &&
      /<div key=\{diff\} className=\{`text-sm font-black font-mono tabular-nums /.test(so) && !/<div className="mt-1"><NixieCount value=\{variance\}/.test(so) &&
      /<div className="grid transition-\[grid-template-rows\] duration-\[260ms\] ease-out" style=\{\{ gridTemplateRows: isRevealed \? '1fr' : '0fr' \}\}>\s*<div className="overflow-hidden">\s*\{isRevealed && \(/.test(so) &&
-     !/import NixieCount from '\.\/components\/NixieCount\.jsx';/.test(so),   /* 2026-09-22 15:45: the audit line followed the card, so the import is gone */
+     !/<NixieCount value=\{(variance|diff)/.test(so),   /* 2026-09-22 15:45: no nixie on the audit figures; the import is back 2026-11-08 for the HQ Audits COUNT badge only (his pick) */
      'the LED window he refused is gone from here: no .kpm-led on this screen',
      );
   ok('no .kpm-led on Stock Opname', !/kpm-led/.test(code(so)));
@@ -7741,7 +7741,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /<span className="text-sm font-black font-mono tabular-nums text-\[var\(--ink\)\]">\{formatNumber\(expected \|\| 0\)\}<\/span>/.test(so) &&
      /<span className="text-sm font-black font-mono tabular-nums text-\[var\(--ink\)\]">\{formatNumber\(found \|\| 0\)\}<\/span>/.test(so) &&
      /<span key=\{diff\} className=\{`block text-sm font-black font-mono tabular-nums \$\{withinTolerance\(diff\) \? 'text-\[var\(--ink\)\]' : 'text-\[var\(--danger-ink\)\] ' \+ \(diff < 0 \? 'kpm-verdict-down' : 'kpm-verdict-up'\)\}`\}>\{diff > 0 \? '\+' : diff < 0 \? '-' : ''\}\{formatNumber\(Math\.abs\(diff\)\)\}<\/span>/.test(so) &&
-     !/NixieCount/.test(code(so)) && !/kpm-nixie-verdict/.test(th) &&
+     !/<NixieCount value=\{(?!pendingAudits\.length\})/.test(code(so)) && !/kpm-nixie-verdict/.test(th) &&
      /@media \(max-width: 1023px\) \{ \.kpm-fig3 > span \{ background-color: var\(--sunk\); padding: 8px 4px; background-image: linear-gradient/.test(th) &&
      !/<div className="flex justify-between items-center mb-2 border-b border-\[var\(--line\)\] pb-2">/.test(code(so)),
      '"too compact in a small space"; the difference "a little bit bigger"');
@@ -8461,7 +8461,7 @@ section('THE COUNT CARD\'S DIFFERENCE IS A PLAIN RED FIGURE THAT MOVES ONCE (202
   ok('keyed on the value, so the motion plays once per new count, and the sign is written', /<div key=\{diff\}/.test(plate) && /\{diff > 0 \? '\+' : diff < 0 \? '-' : ''\}\{formatNumber\(Math\.abs\(diff\)\)\}/.test(plate));
   /* 15:45, his "make boss audit have the same design like that one": the audit line followed, so no nixie is left on this
      screen and its import is gone; the component itself stays for the EOD folder and the Agent Inventory window */
-  ok('no nixie is left on the Stock Opname screen; the boss\'s audit DIFFERENCE is the same keyed red figure', !/NixieCount/.test(soc) && /<span key=\{diff\} className=\{`block text-sm font-black font-mono tabular-nums /.test(so) && (so.match(/kpm-verdict-down/g) || []).length === 2);
+  ok('no nixie on the Stock Opname FIGURES (the HQ Audits count badge is one, his 2026-11-08 pick); the boss\'s audit DIFFERENCE is the same keyed red figure', !/<NixieCount value=\{(?!pendingAudits\.length\})/.test(soc) && /<span key=\{diff\} className=\{`block text-sm font-black font-mono tabular-nums /.test(so) && (so.match(/kpm-verdict-down/g) || []).length === 2);
   ok('the component still exists for the screens that keep it', fs.existsSync('src/components/NixieCount.jsx') && /NixieCount/.test(read('src/EODReconciliationView.jsx')) && /NixieCount/.test(read('src/AgentInventoryView.jsx')));
   const down = th.match(/@keyframes kpmVerdictDown \{([^}]*\}[^}]*\}[^}]*)\}/); const up = th.match(/@keyframes kpmVerdictUp \{([^}]*\}[^}]*\}[^}]*)\}/);
   ok('two one-shot motions exist: a shortfall drops in, a surplus rises', !!down && !!up && /translateY\(-10px\)/.test(down[1]) && /translateY\(8px\) scale\(\.92\)/.test(up[1]));
@@ -13489,5 +13489,23 @@ console.log('\nSales Terminal: a RUSAK lot is never LOW and never "Running low"'
      pick([{ name: 'X · RUSAK', damagedFrom: 'x', stock: 1 }]) === null);
 }
 
+{ /* his 2026-11-08 "redesign this number in the HQ audit and all of this kind because this is unclear to see" -> his pick
+     "1 looks the best my favorite use that": every small count badge is the nixie instrument. The old HQ Audits badge was
+     black ink on the danger red, 4.02:1 in dark mode. */
+  const sites = [['src/StockOpnameView.jsx', /<NixieCount value=\{pendingAudits\.length\} size=\{13\} rollIn \/>/],
+    ['src/EODReconciliationView.jsx', /<NixieCount value=\{pendingReports\.length\} size=\{13\} rollIn \/>/],
+    ['src/components/CustomerManager.jsx', /<NixieCount value=\{pending\} size=\{12\} rollIn \/> Pending/],
+    ['src/components/NotificationBell.jsx', /<NixieCount value=\{unreadCount\}[^>]*rollIn[^>]*\/>[\s\S]*<NixieCount value=\{missedCount\}[^>]*rollIn/],
+    ['src/App.jsx', /<NixieCount value=\{pendingCount\.transactions \+ pendingCount\.noo\} size=\{10\} rollIn/],
+    ['src/MerchantSalesView.jsx', /<NixieCount value=\{cart\.length\} size=\{10\} rollIn \/>/]];
+  for (const [f, re] of sites) ok(`count badge: ${f.split('/').pop()} uses the nixie counter`, re.test(read(f)) && /import NixieCount from/.test(read(f)),
+    'his pick 2026-11-08: one counter look everywhere');
+  const jsx = fs.readdirSync('src', { recursive: true }).filter((f) => /\.jsx$/.test(f)).map((f) => 'src/' + String(f).replace(/\\/g, '/'));
+  const old = jsx.filter((f) => /bg-\[var\(--danger\)\] text-\[var\(--gold-ink\)\] text-\[11px\] (lg:text-\[10px\] font-bold )?px-(1\.5|2) py-(0\.5|1) rounded-full|bg-red-600 text-white text-\[11px\] font-black rounded-full|bg-orange-500 text-\[var\(--duke-on-fill\)\] text-\[10px\] font-black w-5 h-5/.test(read(f)));
+  ok('count badge: no screen keeps the old hard-to-read badge (gold ink on danger red, the red-600 bell dot, the orange sync dot)', old.length === 0, 'found in: ' + old.join(', '));
+  const nx = read('src/components/NixieCount.jsx');
+  ok('count badge: rollIn mounts the reels on 0 and arms them two frames later, so a badge that appears rolls up', /useState\(!rollIn\)/.test(nx) && /'--i': armed \? d : 0/.test(nx) && /requestAnimationFrame\(\(\) => setArmed\(true\)\)/.test(nx),
+    'his round-2 pick rolled the number in on arrival');
+}
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

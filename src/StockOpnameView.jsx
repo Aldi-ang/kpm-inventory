@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import NixieCount from './components/NixieCount.jsx';
 import { 
     ClipboardList, Search, Save, AlertTriangle, CheckCircle, 
     RefreshCcw, Box, EyeOff, Send, ShieldAlert, Check, X, 
@@ -1245,7 +1246,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                             <BarChart size={14}/> Monitor
                         </button>}
                         <button onClick={() => setViewMode('review')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
-                            <ShieldAlert size={14}/> {boardScope === 'all' ? 'HQ Audits' : 'Review'} {pendingAudits.length > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] px-1.5 py-0.5 rounded-full">{pendingAudits.length}</span>}
+                            <ShieldAlert size={14}/> {boardScope === 'all' ? 'HQ Audits' : 'Review'} {pendingAudits.length > 0 && <NixieCount value={pendingAudits.length} size={13} rollIn />}
                         </button>
                         {canSell && <button onClick={() => setViewMode('quarantine')} className={`px-2 lg:px-4 py-2 min-h-11 lg:min-h-0 justify-center lg:justify-start rounded-md text-[11px] lg:text-[10px] uppercase tracking-widest font-bold transition-all flex items-center gap-2 whitespace-nowrap ${viewMode === 'quarantine' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <Biohazard size={14}/> Quarantine

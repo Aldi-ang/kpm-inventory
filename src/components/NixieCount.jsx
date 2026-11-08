@@ -21,14 +21,24 @@ import { nixieDigits } from '../utils/helpers';
    `className` lets a theme rule override it by width (.kpm-nixie-verdict). */
 const DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-const NixieCount = ({ value = 0, signed = false, size = 16, className = '' }) => {
+const NixieCount = ({ value = 0, signed = false, size = 16, className = '', rollIn = false }) => {
     const { sign, digits } = nixieDigits(value, signed);
+    /* rollIn (the count badges, his 2026-11-08 pick "1 looks the best my favorite use that"): the reels mount on 0
+       and turn to the real digit two frames later, so a badge that APPEARS rolls up like one that changes.
+       Lite Mode ends the transition at once (index.css), so it just shows the number. */
+    const [armed, setArmed] = React.useState(!rollIn);
+    React.useEffect(() => {
+        if (armed) return undefined;
+        let r2;
+        const r1 = requestAnimationFrame(() => { r2 = requestAnimationFrame(() => setArmed(true)); });
+        return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); };
+    }, [armed]);
     return (
         <span className={`kpm-nixie ${className}`} style={{ '--nx': `${size}px` }} role="img" aria-label={`${sign}${digits.join('')}`}>
             {sign && <span className="kpm-nixie-sign" aria-hidden="true">{sign}</span>}
             {digits.map((d, i) => (
                 <span key={digits.length - i} className="kpm-nixie-tube" aria-hidden="true" style={{ '--d': `${i * 45}ms` }}>
-                    <span className="kpm-nixie-reel" style={{ '--i': d }}>
+                    <span className="kpm-nixie-reel" style={{ '--i': armed ? d : 0 }}>
                         {DIGITS.map((x) => <span key={x} className={x === d ? 'lit' : ''}>{x}</span>)}
                     </span>
                 </span>

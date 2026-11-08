@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, Suspense, lazy } from 'react';
+import NixieCount from './components/NixieCount.jsx';
 /* eslint-disable react-hooks/exhaustive-deps */
 import packageJson from '../package.json'; // 🚀 INJECT THE PACKAGE LINK HERE
 
@@ -4583,7 +4584,7 @@ const handleGitHubMirror = async () => {
                     {isOnline ? <Cloud size={16} /> : <CloudOff size={16} />}
                     <span className="text-[10px] font-black tracking-widest hidden md:inline">{isOnline ? tr('SYNCED') : 'OFFLINE'}</span>
                     {(pendingCount.transactions > 0 || pendingCount.noo > 0) && (
-                        <span className="absolute -top-2 -right-2 bg-orange-500 text-[var(--duke-on-fill)] text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-[0_0_10px_rgba(249,115,22,0.8)]">{pendingCount.transactions + pendingCount.noo}</span>
+                        <NixieCount value={pendingCount.transactions + pendingCount.noo} size={10} rollIn className="absolute -top-2 -right-2" />
                     )}
                 </button>
             )}

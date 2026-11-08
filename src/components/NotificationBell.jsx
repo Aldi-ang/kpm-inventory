@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useSyncExternalStore } from 'react';
+import NixieCount from './NixieCount.jsx';
 import { createPortal } from 'react-dom';
 import { Bell } from 'lucide-react';
 import { getMissed, subscribeMissed, unseenCount, markMissedSeen, clearMissed, bellTime } from '../utils/missedLog.js';
@@ -146,14 +147,10 @@ const NotificationBell = ({ notifications = [], onNotificationClick }) => {
                 <Bell size={22} />
 
                 {unreadCount > 0 && (
-                    <span className="absolute top-0 right-0 w-4 h-4 bg-red-600 text-white text-[11px] font-black rounded-full flex items-center justify-center shadow-[0_0_10px_red]">
-                        {unreadCount}
-                    </span>
+                    <NixieCount value={unreadCount} size={10} rollIn className="absolute top-0 right-0" />
                 )}
                 {missedCount > 0 && (
-                    <span className="absolute bottom-0 right-0 min-w-4 h-4 px-1 rounded-full border border-[var(--duke-amber-edge)] bg-[var(--duke-fill-deep)] text-[var(--duke-amber-ink)] text-[10px] font-black leading-none flex items-center justify-center">
-                        {missedCount}
-                    </span>
+                    <NixieCount value={missedCount} size={10} rollIn className="absolute bottom-0 right-0" />
                 )}
             </button>
 

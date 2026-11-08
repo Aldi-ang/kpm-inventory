@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import NixieCount from './NixieCount.jsx';
 import { createPortal } from 'react-dom';
 import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, updateDoc, getDocs, getDoc, setDoc, writeBatch, deleteField } from 'firebase/firestore';
 import { commitInChunks } from '../utils/helpers';
@@ -284,7 +285,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                 <FolderCard icon={icon} onOpen={onOpen} className="kpm-folder-quiet w-full bg-[var(--raised)] border-[var(--line-2)] hover:border-[var(--accent-edge)] transition-colors">
                     <h3 className="font-bold text-[15px] lg:text-lg mb-1 pr-11 truncate">{id}</h3>
                     <p className="kpm-stamp text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest font-bold">{countText}</p>
-                    {pending > 0 && <span className="inline-block mt-2 bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] lg:text-[10px] font-bold px-2 py-1 rounded-full">{pending} Pending</span>}
+                    {pending > 0 && <span className="inline-flex items-center gap-1.5 mt-2 text-[11px] lg:text-[10px] font-bold uppercase tracking-widest text-[var(--danger-text)]"><NixieCount value={pending} size={12} rollIn /> Pending</span>}
                 </FolderCard>
                 {isAdmin && <MoreKey id={key} label={id} open={open} onToggle={(k) => setActsOpen(o => (o === k ? null : k))} className="absolute right-1.5 top-[30px] z-10" />}
                 {isAdmin && (

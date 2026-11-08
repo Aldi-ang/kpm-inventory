@@ -392,7 +392,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                     <div className="flex bg-[var(--sunk)] rounded-lg p-1 border border-[var(--line)] w-full md:w-auto overflow-x-auto custom-scrollbar">
                         <button data-guide="eod-review" onClick={() => setViewMode('review')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${viewMode === 'review' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <ShieldAlert size={14}/> HQ Verification 
-                            {pendingReports.length > 0 && <span className="bg-[var(--danger)] text-[var(--gold-ink)] text-[11px] px-1.5 py-0.5 rounded-full">{pendingReports.length}</span>}
+                            {pendingReports.length > 0 && <NixieCount value={pendingReports.length} size={13} rollIn />}
                         </button>
                         <button onClick={() => setViewMode('submit')} className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2 whitespace-nowrap ${viewMode === 'submit' ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'} `}>
                             <Wallet size={14}/> My Setoran

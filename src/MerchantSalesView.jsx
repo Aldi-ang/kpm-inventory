@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import NixieCount from './components/NixieCount.jsx';
 import { tr, getLang } from './config/lang';
 import { createPortal } from 'react-dom';
 import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check, Eye } from 'lucide-react';
@@ -2480,7 +2481,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 className={`font-mono hide-on-print lg:hidden fixed left-0 top-[calc(25%-66px)] z-[151] w-5 h-[132px] py-1.5 flex flex-col items-center gap-1.5 rounded-r-[10px] border-2 border-l-0 border-[var(--duke-amber-edge)] bg-[var(--duke-fill-panel)] shadow-[4px_0_14px_rgba(0,0,0,0.5)]
                             ${manifestOpen ? 'translate-x-[min(86vw,340px)]' : ''} ${pullX === null ? 'transition-transform duration-[320ms] ease-[cubic-bezier(.32,.72,0,1)]' : ''}`}
             >
-                <span className="min-w-[16px] h-4 px-0.5 rounded-full border border-[var(--duke-amber-edge)] text-[10px] font-black leading-[14px] text-center text-[var(--duke-amber-ink)]">{cart.length}</span>
+                <NixieCount value={cart.length} size={10} rollIn />
                 <span className="[writing-mode:vertical-rl] rotate-180 text-[11px] font-black uppercase tracking-[0.18em] text-[var(--duke-amber-ink)]">{tr('Manifest')}</span>
                 <ChevronDown size={14} className={`mt-auto shrink-0 text-[var(--duke-ink-3)] ${manifestOpen ? 'rotate-90' : '-rotate-90'}`} />
             </button>
