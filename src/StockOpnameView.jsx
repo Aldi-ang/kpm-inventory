@@ -4,7 +4,7 @@ import {
     RefreshCcw, Box, EyeOff, Send, ShieldAlert, Check, X, 
     ChevronDown, ChevronUp, Clock, User, Database, ShieldCheck, 
     Camera, UploadCloud, Image as ImageIcon,
-    Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin, Wrench
+    Biohazard, FlaskConical, Undo2, BadgeDollarSign, History, Filter, BarChart, MapPin, Wrench, Tag
 } from 'lucide-react';
 import { collection, addDoc, getDoc, getDocs, updateDoc, doc, writeBatch, serverTimestamp, query, where, onSnapshot, increment, deleteField } from "firebase/firestore";
 import { savePhotoAndGetReference, deletePhotoFromStorage, photoStamp, commitInChunks, formatRupiah, formatNumber, compressImageToBase64, tierPrice, getLocalDayKey, isPromo} from './utils/helpers';
@@ -862,7 +862,17 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
         if (qtyToResolve <= 0 || qtyToResolve > resolutionModal.item.damagedStock) return notify("Invalid quantity.");
         if (resolutionModal.method === 'SAMPLING' && fromFac === 'MASTER' && !toWarehouse) return notify("Pick the regional warehouse that receives these packs as promo goods.");
         if (resolutionModal.method === 'REPAIR' && fromFac !== 'MASTER') return notify("Repair is for the Master Vault's damaged goods only.");
-        if (!await confirmAction(`Execute ${resolutionModal.method} protocol for ${qtyToResolve} Bks of ${resolutionModal.item.name}?`)) return;
+        /* SELL AGAIN: the pack's own prices, or one cheaper price for every shop (his 2026-11-03 "full OR a cheaper price") */
+        const sellSrc = safeInventory.find(p => p.id === resolutionModal.item.id) || resolutionModal.item;
+        const fullPrice = tierPrice(sellSrc, 'Retail');
+        const cheapPrice = Number(formData.get('price'));
+        if (resolutionModal.method === 'SELL' && !(fullPrice > 0))   // or the lot would go on the shelf at Rp 0
+            return notify(`${resolutionModal.item.name} has no Retail price yet. Set it in the Master Vault first, then Sell Again.`);
+        if (resolutionModal.method === 'SELL' && resolutionModal.cheap && !(cheapPrice > 0 && cheapPrice < fullPrice))
+            return notify(`A cheaper price must be more than 0 and less than the full price, ${formatRupiah(fullPrice)}.`);
+        if (!await confirmAction(resolutionModal.method === 'SELL'
+            ? `Put ${qtyToResolve} Bks of ${resolutionModal.item.name} back on sale as "${resolutionModal.item.name} · RUSAK" at ${formatRupiah(resolutionModal.cheap ? cheapPrice : fullPrice)} a Bks?`
+            : `Execute ${resolutionModal.method} protocol for ${qtyToResolve} Bks of ${resolutionModal.item.name}?`)) return;
 
         setIsProcessingAudit(true);
         try {
@@ -875,7 +885,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                store is resolved as SAMPLING or RTV and charges him nothing, which is his other
                rule and needed no code. */
             const hpp = tierPrice(resolutionModal.item, appSettings?.penaltyPriceTier);
-            const totalValue = resolutionModal.method === 'REPAIR' ? 0 : qtyToResolve * hpp;   // a repaired pack is not lost
+            const totalValue = ['REPAIR', 'SELL'].includes(resolutionModal.method) ? 0 : qtyToResolve * hpp;   // a repaired or re-sold pack is not lost
 
             const targetFacility = fromFac;
             const itemRef = targetFacility === 'MASTER'
@@ -917,6 +927,21 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                 batch.set(doc(db, `artifacts/${appId}/users/${masterId}/branches/${toWh}/inventory`, promoId), { productId: promoId, name: promoName, kind: 'promo', unit: 'pcs', stock: increment(qtyToResolve) }, { merge: true });
                 logData.details = { reason, to: toWh, promoId };
                 if (logAudit) await logAudit("QUARANTINE_SAMPLING", `Converted ${qtyToResolve}x ${resolutionModal.item.name} into ${qtyToResolve} pcs of promo goods "${promoName}" in ${toWh}.`);
+
+            } else if (resolutionModal.method === 'SELL') {
+                /* the lot stays where the packs are: a regional crate's in that warehouse, the Master Vault's in the Master
+                   Vault (`stock` of the product itself), until a van loads it like any pack. One lot per pack, so its price is
+                   the last one set. */
+                const lotId = `rsk-${sellSrc.id}`, lotName = `${sellSrc.name} · RUSAK`;
+                const keep = Object.fromEntries(['type', 'category', 'images', 'dimensions', 'useFrontForBack', 'sticksPerPack', 'packsPerSlop', 'slopsPerBal', 'balsPerCarton', 'hpp', 'costPrice']
+                    .map(k => [k, sellSrc[k]]).filter(([, v]) => v !== undefined));
+                const prices = Object.fromEntries(['priceRetail', 'priceGrosir', 'priceEcer', 'priceDistributor']
+                    .map(k => [k, resolutionModal.cheap ? cheapPrice : sellSrc[k]]).filter(([, v]) => v !== undefined));
+                batch.set(doc(db, `artifacts/${appId}/users/${masterId}/products`, lotId),
+                    { name: lotName, damagedFrom: sellSrc.id, ...keep, ...prices, stock: increment(fromFac === 'MASTER' ? qtyToResolve : 0) }, { merge: true });
+                if (fromFac !== 'MASTER') batch.set(doc(db, `artifacts/${appId}/users/${masterId}/branches/${fromFac}/inventory`, lotId), { productId: lotId, name: lotName, stock: increment(qtyToResolve) }, { merge: true });
+                logData.details = { to: fromFac, lotId, price: resolutionModal.cheap ? cheapPrice : fullPrice };
+                if (logAudit) await logAudit("QUARANTINE_SELL", `Put ${qtyToResolve}x ${sellSrc.name} back on sale as "${lotName}" in ${fromFac} at ${formatRupiah(resolutionModal.cheap ? cheapPrice : fullPrice)} a Bks.`);
 
             } else if (resolutionModal.method === 'REPAIR') {
                 logData.details = { note: reason };
@@ -1085,14 +1110,14 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
 
             {resolutionModal && (
                 <div className="fixed inset-0 z-[400] bg-[var(--duke-scrim-hi)] backdrop-blur-md flex items-center justify-center p-4 animate-pop-in">
-                    <div className={`w-full max-w-md bg-[var(--panel)] rounded-2xl border-2 shadow-2xl flex flex-col overflow-hidden ${['SAMPLING', 'REPAIR'].includes(resolutionModal.method) ?'border-[var(--accent-edge)]' : resolutionModal.method === 'RTV' ? 'border-[var(--line)]' : 'border-[var(--danger)]'} `}>
-                        <div className={`p-4 border-b border-[var(--line)] flex justify-between items-center ${['SAMPLING', 'REPAIR'].includes(resolutionModal.method) ?'bg-[var(--sunk)] text-[var(--accent-ink)]' : resolutionModal.method === 'RTV' ? 'bg-[var(--sunk)] text-[var(--accent-ink)]' : 'bg-[var(--danger)] text-[var(--danger-ink)]'} `}>
+                    <div className={`w-full max-w-md bg-[var(--panel)] rounded-2xl border-2 shadow-2xl flex flex-col overflow-hidden ${['SAMPLING', 'REPAIR', 'SELL'].includes(resolutionModal.method) ?'border-[var(--accent-edge)]' : resolutionModal.method === 'RTV' ? 'border-[var(--line)]' : 'border-[var(--danger)]'} `}>
+                        <div className={`p-4 border-b border-[var(--line)] flex justify-between items-center ${['SAMPLING', 'REPAIR', 'SELL'].includes(resolutionModal.method) ?'bg-[var(--sunk)] text-[var(--accent-ink)]' : resolutionModal.method === 'RTV' ? 'bg-[var(--sunk)] text-[var(--accent-ink)]' : 'bg-[var(--danger)] text-[var(--danger-ink)]'} `}>
                             <h3 className="font-black uppercase tracking-widest flex items-center gap-2">
                                 {resolutionModal.method === 'SAMPLING' && <FlaskConical size={18}/>}
                                 {resolutionModal.method === 'RTV' && <Undo2 size={18}/>}
                                 {resolutionModal.method === 'PENALTY' && <BadgeDollarSign size={18}/>}
                                 {resolutionModal.method === 'REPAIR' && <Wrench size={18}/>}
-                                {resolutionModal.method} PROTOCOL
+                                {resolutionModal.method === 'SELL' ? <><Tag size={18}/> Sell Again</> : `${resolutionModal.method} PROTOCOL`}
                             </h3>
                             <button onClick={() => setResolutionModal(null)} className="hover:text-[var(--ink)]"><X size={20}/></button>
                         </div>
@@ -1104,7 +1129,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                             </div>
                             
                             <div>
-                                <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Quantity to Resolve (Bks)</label>
+                                <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">{resolutionModal.method === 'SELL' ? 'Quantity to put on sale (Bks)' : 'Quantity to Resolve (Bks)'}</label>
                                 <input name="qty" type="number" max={resolutionModal.item.damagedStock} min="1" defaultValue={resolutionModal.item.damagedStock} className="w-full bg-[var(--sunk)] border border-[var(--line)] p-3 rounded-lg text-[var(--ink)] font-mono text-lg font-black focus:border-[var(--accent-edge)] outline-none" required/>
                             </div>
 
@@ -1128,6 +1153,32 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                     <input name="reason" type="text" placeholder="e.g., Torn wrap, still sealed" className="w-full bg-[var(--sunk)] border border-[var(--line)] p-3 rounded-lg text-[var(--ink)] focus:border-[var(--line)] outline-none" required/>
                                 </div>
                             </>)}
+
+                            {resolutionModal.method === 'SELL' && (() => {
+                                /* the board he saw (2026-11-08 frame B): Full price / Cheaper with no plate, a gold line under the
+                                   chosen one (his tab pick, kpm-tab-on), and the price field only for Cheaper */
+                                const full = tierPrice(safeInventory.find(p => p.id === resolutionModal.item.id) || resolutionModal.item, 'Retail');
+                                const opt = (cheap, label) => (
+                                    <button type="button" aria-pressed={!!resolutionModal.cheap === cheap} onClick={() => setResolutionModal(m => ({ ...m, cheap }))}
+                                        className={`flex-1 px-3 py-2 text-[11px] font-black uppercase tracking-widest ${cheap ? 'border-l border-[var(--line)]' : ''} ${!!resolutionModal.cheap === cheap ? 'kpm-tab-on' : 'text-[var(--ink-dim)] hover:text-[var(--ink)]'}`}>
+                                        {label}
+                                    </button>
+                                );
+                                return (<>
+                                    <p className="text-[11px] text-[var(--ink-dim)] uppercase tracking-widest leading-relaxed">
+                                        Goes on sale as <span className="text-[var(--ink)] font-black">{resolutionModal.item.name} · RUSAK</span>, with the damaged mark.
+                                        It waits in {resolutionModal.item.facility === 'MASTER' ? 'the Master Vault' : resolutionModal.item.facility} until a van loads it.
+                                    </p>
+                                    <div>
+                                        <label className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] uppercase tracking-widest mb-2 block">Price per Bks</label>
+                                        <div className="flex border-b border-[var(--line)] mb-3">{opt(false, `Full price · ${formatRupiah(full)}`)}{opt(true, 'Cheaper')}</div>
+                                        {resolutionModal.cheap && (
+                                            <input name="price" type="number" min="1" max={Math.max(1, full - 1)} required autoFocus placeholder="Rp per Bks"
+                                                className="w-full bg-[var(--sunk)] border border-[var(--accent-edge)] p-3 rounded-lg text-[var(--ink)] font-mono text-lg font-black outline-none"/>
+                                        )}
+                                    </div>
+                                </>);
+                            })()}
 
                             {resolutionModal.method === 'REPAIR' && (
                                 <div>
@@ -1159,8 +1210,8 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                 </div>
                             )}
 
-                            <button type="submit" disabled={isProcessingAudit} className={`w-full py-4 rounded-xl font-black uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-all active:scale-95 ${['SAMPLING', 'REPAIR'].includes(resolutionModal.method) ?'bg-[color-mix(in_srgb,var(--gold)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] border border-[var(--accent-edge)] text-[var(--accent-ink)]' : resolutionModal.method === 'RTV' ? 'bg-[color-mix(in_srgb,var(--gold)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] border border-[var(--accent-edge)] text-[var(--accent-ink)]' : 'bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] hover:bg-[color-mix(in_srgb,var(--danger)_24%,transparent)] border border-[var(--danger)] text-[var(--danger-ink)]'} `}>
-                                {isProcessingAudit ? <RefreshCcw size={18} className="animate-spin"/> : <Check size={18}/>} Execute Protocol
+                            <button type="submit" disabled={isProcessingAudit} className={`w-full py-4 rounded-xl font-black uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-all active:scale-95 ${['SAMPLING', 'REPAIR', 'SELL'].includes(resolutionModal.method) ?'bg-[color-mix(in_srgb,var(--gold)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] border border-[var(--accent-edge)] text-[var(--accent-ink)]' : resolutionModal.method === 'RTV' ? 'bg-[color-mix(in_srgb,var(--gold)_12%,transparent)] hover:bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] border border-[var(--accent-edge)] text-[var(--accent-ink)]' : 'bg-[color-mix(in_srgb,var(--danger)_14%,transparent)] hover:bg-[color-mix(in_srgb,var(--danger)_24%,transparent)] border border-[var(--danger)] text-[var(--danger-ink)]'} `}>
+                                {isProcessingAudit ? <RefreshCcw size={18} className="animate-spin"/> : <Check size={18}/>} {resolutionModal.method === 'SELL' ? 'Put on sale' : 'Execute Protocol'}
                             </button>
                         </form>
                     </div>
@@ -1357,6 +1408,13 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                 <button onClick={() => setResolutionModal({item, method: 'SAMPLING'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--alt-ink)_12%,var(--raised))] border border-[var(--alt-edge)] text-[var(--alt-ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
                                     <FlaskConical size={14}/> Convert to Sample
                                 </button>
+                                {/* SELL AGAIN (his 2026-11-08 board, frame A): the siblings' box with a gold edge; not on a lot that
+                                    is itself damaged again - it has no pack of its own to follow */}
+                                {!item.damagedFrom && (
+                                <button onClick={() => setResolutionModal({item, method: 'SELL', cheap: false})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--ink)_8%,var(--raised))] border border-[var(--accent-edge)] text-[var(--ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
+                                    <Tag size={14}/> Sell Again
+                                </button>
+                                )}
                                 <button onClick={() => setResolutionModal({item, method: 'RTV'})} className="flex-1 xl:flex-none px-4 py-2 bg-[var(--raised)] hover:bg-[color-mix(in_srgb,var(--ink)_8%,var(--raised))] border border-[var(--line)] text-[var(--ink)] rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors active:scale-[0.97]">
                                     <Undo2 size={14}/> RTV Factory
                                 </button>

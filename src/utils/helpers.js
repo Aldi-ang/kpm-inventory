@@ -251,9 +251,20 @@ export const absentForSure = (snap) =>
    products collection, `kind: 'promo'`; absent = cigarette, so no old document changes. Counted in pcs: no packing,
    no price. useDatabaseSync keeps them OUT of `inventory`, which every cigarette screen reads. */
 export const isPromo = (product) => product?.kind === 'promo';
-/* a damaged pack turned promo in Stock Opname (2026-11-02, `dmg-<pack>` "<NAME> · RUSAK"): drawn as its pack, with the
-   biohazard mark (HazardMark) */
-export const isDamagedPack = (product) => isPromo(product) && !!product?.damagedFrom;
+/* a damaged pack out of quarantine, drawn as its pack with the biohazard mark (HazardMark): turned promo by Convert to Sample
+   (2026-11-02, `dmg-<pack>`), or put back on sale by Sell Again (`rsk-<pack>`, below). Both carry `damagedFrom` = the pack. */
+export const isDamagedPack = (product) => !!product?.damagedFrom;
+/* SELL AGAIN (his 2026-11-03 option B; shelf pick 2026-11-08 "1 is easier to find use that"): the lot is its own product
+   `rsk-<pack>` "<NAME> · RUSAK", NOT promo, so the loading bay, the van, the terminal and EOD treat it as a pack and it never
+   joins the van's damaged hand-in. Never restocked, so never "low". */
+export const isDamagedLot = (product) => !isPromo(product) && !!product?.damagedFrom;
+/* the terminal shelf: a lot sits right after its own pack, and only while there is some to sell */
+export const lotsAfterPacks = (items = []) => {
+    const lots = items.filter((p) => isDamagedLot(p) && Number(p.stock) > 0);
+    const out = [];
+    items.filter((p) => !isDamagedLot(p)).forEach((p) => out.push(p, ...lots.filter((l) => l.damagedFrom === p.id)));
+    return [...out, ...lots.filter((l) => !out.includes(l))];   // its pack filtered off this shelf: the lot still shows, last
+};
 /* PROMO LINES on a delivery (stage 2, his 2026-10-26 "option to choose promotional items and send it to regional
    warehouse"): a line flagged `promo` counts pcs and carries no money (his "6 dont need for cost price") - it never joins
    a Bks total, a landed cost or a value. Cart and nota lines count `qtyReceived`, shipment lines `qty`. */

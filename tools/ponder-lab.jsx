@@ -458,6 +458,10 @@ const LAB_PRODUCTS = [
 if (q.has('many')) LAB_PRODUCTS.push(...[['p-ggs', 'Gudang Garam Surya 16', 21500], ['p-smild', 'Sampoerna Mild 16', 24800],
   ['p-dss', 'Dji Sam Soe 12', 19900], ['p-lal', 'LA Lights 16', 22300], ['p-mag', 'Magnum Filter 12', 16400], ['p-ggf', 'Gudang Garam Filter 12', 18700]]
   .map(([id, name, priceDistributor]) => ({ id, name, sku: id.slice(2).toUpperCase(), stock: 2400, priceDistributor, packsPerSlop: 10, slopsPerBal: 10, balsPerCarton: 4 })));
+/* &lot (2026-11-08): a Sell Again lot - its own product, NOT promo, 8 Bks at a cheaper price. Listed FIRST, so a frame proves the
+   terminal moves it right after its own pack (helpers lotsAfterPacks). */
+if (q.has('lot')) LAB_PRODUCTS.unshift({ id: 'rsk-p-cg16', name: 'Cello Green 16 · RUSAK', sku: 'CG16R', stock: 8, priceDistributor: 7400, damagedFrom: 'p-cg16',
+  packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4, ...LAB_PACK_CG16 });
 
 FIXTURES['places'] = [
   { id: 'bandung', name: 'BANDUNG', kind: 'gudang', address: 'Jl. Soekarno Hatta No. 412, Kec. Batununggal, Kota Bandung, Jawa Barat 40266' },
@@ -1195,7 +1199,7 @@ function ShellLab() {
           db={{}} storage={{}} appId="lab"
           /* one product carries damaged stock so the boss's QUARANTINE tab has a row with its
              three protocol keys instead of the empty-zone plate */
-          inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA].map((p) => (p.id === 'p-djar' ? { ...p, damagedStock: 12 } : p))} promoItems={LAB_PROMO_ITEMS} transactions={LAB_AGENT_TXNS}
+          inventory={[...LAB_PRODUCTS, ...LAB_VAN_EXTRA].map((p) => ({ ...(p.id === 'p-djar' ? { ...p, damagedStock: 12 } : p), ...(q.has('lot') ? { priceRetail: Math.round(p.priceDistributor * 1.15), priceGrosir: Math.round(p.priceDistributor * 1.08) } : {}) }))} promoItems={LAB_PROMO_ITEMS} transactions={LAB_AGENT_TXNS}
           motorists={[...LAB_MOTORISTS, ...(q.has('done') || q.has('sentback') || q.has('recount') ? [{ id: 'f-lead', name: 'Dewi', location: q.get('at') || 'BANDUNG',
             lastOpname: { ...opnameMark({ location: q.get('at') || 'BANDUNG', by: 'Dewi', auditId: 'a1' }), ...(q.has('recount') ? { reopened: { 'p-djar': { name: 'Djarum Coklat 12', reason: 'Recount please' } } } : {}), ...(q.has('sentback') ? { rejected: true, reason: 'Recount the Djarum Coklat.' } : {}) } }] : [])]} appSettings={q.has('day') ? { opnameDay: Number(q.get('day')) } : {}}
           userRole={q.has('admin') ? 'ADMIN' : (q.get('role') || 'FIELD_OPERATIVE')} isAdmin={q.has('admin')}

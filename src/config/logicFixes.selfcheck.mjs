@@ -2635,7 +2635,7 @@ section('S37. Quarantine and HQ Audits: gold is ink and edges, never a slab');
   ok('RTV stays neutral - it is the routine one', /border-\[var\(--line\)\] text-\[var\(--ink\)\]/.test(actions));
   ok('none of the quarantine actions is a gold slab any more',
      !/bg-\[var\(--gold\)\]/.test(actions));
-  ok('and they answer a press, which a slab never did', (actions.match(/active:scale-\[0\.97\]/g) || []).length === 2);
+  ok('and they answer a press, which a slab never did (Sample, Sell Again, RTV)', (actions.match(/active:scale-\[0\.97\]/g) || []).length === 3);
 
   /* The hazard mark. animate-pulse is opacity 1 -> 0,5 -> 1 every 2s: a blinking warning lamp,
      and it is on screen the whole time someone works in Quarantine. Reduced, not improved. */
@@ -9657,19 +9657,19 @@ section('THE REGIONAL WAREHOUSE\'S CHEST (2026-09-30)');
      sv.includes("batch.set(itemRef, { damagedStock: increment(-qtyToResolve), ...(resolutionModal.method === 'REPAIR' ? { stock: increment(qtyToResolve) } : {}) }, { merge: true });") &&
      /\{item\.facility === 'MASTER' && \(\s*<button onClick=\{\(\) => setResolutionModal\(\{item, method: 'REPAIR'\}\)\}/.test(sv) &&
      sv.includes("if (resolutionModal.method === 'REPAIR' && fromFac !== 'MASTER') return notify(") &&
-     sv.includes("const totalValue = resolutionModal.method === 'REPAIR' ? 0 : qtyToResolve * hpp;"));
+     sv.includes("const totalValue = ['REPAIR', 'SELL'].includes(resolutionModal.method) ? 0 : qtyToResolve * hpp;"));
   /* his 2026-11-02 "make sure that the converted product have the same 3D design of that type but of course with
      biohazard symbol somewhere on the cards or product icon" */
   ok('REGRESSION: a converted pack keeps its 3D look - the "· RUSAK" item copies the pack\'s faces, size and back rule',
      sv.includes("const look = Object.fromEntries(['images', 'dimensions', 'useFrontForBack'].map(k => [k, resolutionModal.item[k]]).filter(([, v]) => v !== undefined));") &&
      sv.includes("damagedFrom: resolutionModal.item.id, ...look }"));
   { const H2 = await import('../utils/helpers.js');
-    ok('BEHAVIOUR: isDamagedPack - a converted pack yes; a T-shirt, a cigarette, nothing - no',
+    ok('BEHAVIOUR: isDamagedPack - a converted pack and a Sell Again lot (2026-11-08) yes; a T-shirt, a cigarette, nothing - no',
        H2.isDamagedPack({ kind: 'promo', damagedFrom: 'p-cg16' }) === true && H2.isDamagedPack({ kind: 'promo', goods: 'tshirt' }) === false &&
-       H2.isDamagedPack({ id: 'p-cg16', damagedFrom: 'x' }) === false && H2.isDamagedPack(undefined) === false); }
+       H2.isDamagedPack({ id: 'rsk-p-cg16', damagedFrom: 'p-cg16' }) === true && H2.isDamagedPack({ id: 'p-cg16' }) === false && H2.isDamagedPack(undefined) === false); }
   const markAt = { 'src/components/ResidentEvilInventory.jsx': 2, 'src/components/ExamineModal.jsx': 1, 'src/components/LoadingBay.jsx': 1,
-                   'src/MerchantSalesView.jsx': 1, 'src/AgentInventoryView.jsx': 1 };
-  ok('the biohazard mark is on every place a converted pack is drawn - Master Vault card + list icon, the 3D examine, the chest box, the terminal promo row, the agent\'s promo row',
+                   'src/MerchantSalesView.jsx': 2, 'src/AgentInventoryView.jsx': 1 };
+  ok('the biohazard mark is on every place a converted pack is drawn - Master Vault card + list icon, the 3D examine, the chest box, the terminal promo row and shelf card, the agent\'s promo row',
      Object.entries(markAt).every(([f, n]) => (read(f).match(/isDamagedPack\(.*?\) && <HazardMark /g) || []).length === n) &&
      /if \(isPromo\(p\) && !isDamagedPack\(p\)\) return/.test(read('src/components/LoadingBay.jsx')) &&
      /import \{ HAZARD_SIGN \} from '\.\.\/utils\/vanBay'/.test(read('src/components/HazardMark.jsx')));
@@ -13398,8 +13398,8 @@ console.log('\nTabs: the chosen tab is a gold line, not an amber fill');
   const css = read('src/styles/theme.css'), so = read('src/StockOpnameView.jsx'), eod = read('src/EODReconciliationView.jsx'), sm = read('src/components/SamplingManager.jsx');
   const slab = /(viewMode|quarSubTab|rangeType) === ['a-z]+ \? 'bg-\[var\(--(gold|raised)\)\]/;
   ok('REGRESSION: no tab row he named keeps a filled chosen tab (Stock Opname, its Quarantine, EOD Setoran, Sampel)', ![so, eod, sm].some((s) => slab.test(s)));
-  ok('REGRESSION: all nine chosen states use the one line class',
-     (so.match(/\? 'kpm-tab-on' :/g) || []).length === 6 && (eod.match(/\? 'kpm-tab-on' :/g) || []).length === 2 && (sm.match(/\? 'kpm-tab-on' :/g) || []).length === 1);
+  ok('REGRESSION: all ten chosen states use the one line class (the tenth is Sell Again\'s Full price / Cheaper, 2026-11-08)',
+     (so.match(/\? 'kpm-tab-on' :/g) || []).length === 7 && (eod.match(/\? 'kpm-tab-on' :/g) || []).length === 2 && (sm.match(/\? 'kpm-tab-on' :/g) || []).length === 1);
   ok('HIS PICK: a plain word with a 2 px gold line under it, no plate, no shadow, and nothing that moves',
      /\.kpm-tab-on \{[^}]*background: transparent;[^}]*color: var\(--ink\);/.test(css) && /\.kpm-tab-on::after \{[^}]*height: 2px;[^}]*background: var\(--accent-edge\);/.test(css) && !/\.kpm-tab-on[^{]*\{[^}]*(transition|animation)/.test(css));
   ok('HIS ASK 2026-11-08 "put some space or line to misah each of the regional warehouse": a hairline between warehouse tabs, with room on both sides of it, and the first tab still lined up with the panel',
@@ -13416,6 +13416,35 @@ console.log('\nTabs: the chosen tab is a gold line, not an amber fill');
        /\.kpm-reorder \{ background: transparent; border-color: var\(--accent-edge\); color: var\(--ink\); \}/.test(css)); }
   ok('REGRESSION: the EOD tab box takes the theme, so a chosen word in dark ink never sits on a fixed dark grey in the light theme',
      eod.includes('<div className="flex bg-[var(--sunk)] rounded-lg p-1 border border-[var(--line)] w-full md:w-auto overflow-x-auto custom-scrollbar">') && !eod.includes('flex bg-black/50 rounded-lg p-1 border border-[var(--line)] w-full md:w-auto'));
+}
+
+/* His 2026-11-03 option B (a damaged pack back on sale, full or cheaper) and his 2026-11-08 shelf pick "1 is easier to find use that". */
+console.log('\nQuarantine: Sell Again puts a damaged lot on sale, right after its own pack');
+{
+  const { lotsAfterPacks, isDamagedLot, isDamagedPack } = await import('../utils/helpers.js');
+  const so = read('src/StockOpnameView.jsx'), ms = read('src/MerchantSalesView.jsx'), th = read('src/utils/stockThreshold.js');
+  const pack = { id: 'cello', name: 'CELLO', stock: 50 }, other = { id: 'surya', name: 'SURYA', stock: 9 };
+  const lot = { id: 'rsk-cello', name: 'CELLO · RUSAK', damagedFrom: 'cello', stock: 8 }, empty = { ...lot, id: 'rsk-surya', damagedFrom: 'surya', stock: 0 };
+  const promoDmg = { id: 'dmg-cello', kind: 'promo', damagedFrom: 'cello' };
+  ok('HIS PICK 1: the lot sits right after its own pack, whatever order the list came in',
+     lotsAfterPacks([lot, other, pack]).map((p) => p.id).join() === 'surya,cello,rsk-cello');
+  ok('a lot with nothing left is off the shelf; a lot whose pack is filtered away still shows, last',
+     lotsAfterPacks([pack, other, empty]).length === 2 && lotsAfterPacks([other, lot]).map((p) => p.id).join() === 'surya,rsk-cello');
+  ok('a lot is a pack, not promo: it wears the damaged mark, and Convert to Sample\'s promo item is still not a lot',
+     isDamagedLot(lot) && isDamagedPack(lot) && isDamagedPack(promoDmg) && !isDamagedLot(promoDmg) && !isDamagedLot(pack));
+  ok('REGRESSION: the Sell Again write makes its own product rsk-<pack>, never kind promo (or the van would hand it in as damaged and the terminal could not sell it)',
+     so.includes('const lotId = `rsk-${sellSrc.id}`') && !/lotId[^\n]*kind: 'promo'/.test(so) && so.includes('{ name: lotName, damagedFrom: sellSrc.id, ...keep, ...prices,'));
+  ok('MONEY: a pack with no Retail price is refused (the lot would sell at Rp 0); a cheaper price must be above 0 and below the full price, both refused before the confirm, and one price is set for every shop tier',
+     so.includes("if (resolutionModal.method === 'SELL' && !(fullPrice > 0))") && so.indexOf("!(fullPrice > 0)") < so.indexOf("resolutionModal.cheap && !(cheapPrice > 0") &&
+     so.includes("if (resolutionModal.method === 'SELL' && resolutionModal.cheap && !(cheapPrice > 0 && cheapPrice < fullPrice))") &&
+     so.indexOf("resolutionModal.cheap && !(cheapPrice > 0") < so.indexOf("if (!await confirmAction(resolutionModal.method === 'SELL'") &&
+     so.includes("['priceRetail', 'priceGrosir', 'priceEcer', 'priceDistributor']") && so.includes('resolutionModal.cheap ? cheapPrice : sellSrc[k]'));
+  ok('MONEY: the packs leave quarantine in the same write, and the lot lands where they were (a warehouse, or the Master Vault itself)',
+     so.includes("stock: increment(fromFac === 'MASTER' ? qtyToResolve : 0)") && so.includes("if (fromFac !== 'MASTER') batch.set(doc(db, `artifacts/${appId}/users/${masterId}/branches/${fromFac}/inventory`, lotId)") &&
+     so.includes("const totalValue = ['REPAIR', 'SELL'].includes(resolutionModal.method) ? 0"));
+  ok('the terminal shelf runs through lotsAfterPacks and the card wears the mark', ms.includes('const filteredItems = lotsAfterPacks(inventory.filter(') && ms.includes('{isDamagedPack(item) && <HazardMark className="right-0.5 bottom-0.5'));
+  ok('REGRESSION: a lot is never "low" (it is never restocked), in the one function every low-stock alarm reads', /export const isLowStock = \(product, appSettings\) =>\s*!product\?\.damagedFrom &&/.test(th));
+  ok('the Sell Again button sits after Convert to Sample, gold edge, and not on a lot that is damaged again', /Convert to Sample\s*<\/button>\s*\{\/\*[^]*?\*\/\}\s*\{!item\.damagedFrom && \(\s*<button onClick=\{\(\) => setResolutionModal\(\{item, method: 'SELL', cheap: false\}\)\}[^>]*border-\[var\(--accent-edge\)\]/.test(so));
 }
 
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);

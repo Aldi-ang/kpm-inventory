@@ -7,7 +7,7 @@ import { hasClearance, canPickFromGallery } from './config/permissions';
 import { IS_DEMO } from './config/firebase';
 import { demoPhoto } from './config/demoPhoto.js';
 import ProofCamera from './components/ProofCamera.jsx';
-import { savePhotoAndGetReference, fileOrKeepPhoto, photoStamp, nameTag, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey, promoPic, isDamagedPack } from './utils/helpers';
+import { savePhotoAndGetReference, fileOrKeepPhoto, photoStamp, nameTag, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey, promoPic, isDamagedPack, lotsAfterPacks } from './utils/helpers';
 import HazardMark from './components/HazardMark';
 import { giveLines, bundleCheck, bundlesFor, bundleUnitPrices } from './utils/vanBay';
 import { waNumber } from './utils/whatsapp.js';
@@ -1758,7 +1758,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         if (notes.length) notify(`${tr('Loaded their last order, with changes:')}\n\n${notes.join('\n\n')}`);
     };
 
-    const filteredItems = inventory.filter(i => (activeCategory === "ALL" || i.type === activeCategory) && i.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredItems = lotsAfterPacks(inventory.filter(i => (activeCategory === "ALL" || i.type === activeCategory) && i.name.toLowerCase().includes(searchTerm.toLowerCase())));
     const bundles = bundlesFor([...(appSettings?.promoBundles || []), ...regionOffers], sellerRegion, userRole === 'ADMIN');   // all-area offers + his region's; the boss sees every one
     const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC")), ...(bundles.length ? ["BUNDLES"] : [])];
 
@@ -2750,6 +2750,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 >
                                     {renderCube(item)}
                                 </button>
+                                {/* a Sell Again lot (helpers lotsAfterPacks) wears the quarantine sign, sized as on his 2026-11-08 board */}
+                                {isDamagedPack(item) && <HazardMark className="right-0.5 bottom-0.5 w-[22px] h-[22px] lg:right-auto lg:left-3.5 lg:bottom-3.5 lg:w-11 lg:h-11 z-20" />}
                                 <div className="hidden lg:block absolute top-3 right-3 bg-[var(--duke-badge)] text-[var(--duke-ink-3)] text-[10px] font-black px-2 py-1 rounded-full border border-[var(--duke-edge-1)] uppercase tracking-wider">
                                     {item.type || tr('MISC')}
                                 </div>

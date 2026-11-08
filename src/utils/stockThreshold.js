@@ -48,6 +48,7 @@ export const minStockBks = (product, appSettings) => {
 };
 
 export const isLowStock = (product, appSettings) =>
+  !product?.damagedFrom &&   // a Sell Again lot (helpers isDamagedLot) is never restocked, so it is never "low"
   Number(product?.stock || 0) <= minStockBks(product, appSettings);
 
 /* THE SALES TERMINAL'S OWN LINE - his 2026-11-03: "1 slop and below is considered as low". A terminal card is a load to
