@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-08 07:04 WIB, PC clock (🟠 KPM — next: #3 the Quarantine board, frames first)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-08 08:54 WIB, PC clock (🟠 KPM — waiting on his pick for the Quarantine Sell Again board)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-08 08:54 WIB — KPM: his "nice continue" - Quarantine Sell Again: BOARD DRAWN + sent, no app code changed
+Plan + costs: A-Brain `Brainstorm/2026-11-08_quarantine-sell-again-board.md`. Board: `Raw/2026-11-08-quarantine-board/board.png`. Next ONE job: NEXT-SESSION.md top. He has Google Antigravity now; told him: no setup needed, never let both edit at once (a push is the live app), point it at CLAUDE.md.
+WAITING ON ALDI (verbatim): **🔴 DECIDE: Where should a damaged pack you put back on sale sit on the Sales Terminal shelf: 1 right after its own pack, or 2 all damaged packs together at the end of the shelf, under a thin line?** Still open: the ✅ TESTs from 07:04, 06:14, 05:52 and 2026-11-06.
 
 ## 🟠 2026-11-08 07:04 WIB — KPM: his "1 better" - BUILT + pushed `cca32e1`
 Full story: the commit message. Proof: A-Brain `Raw/2026-11-08-reorder-button/built.png`. Next ONE job: NEXT-SESSION.md top.
