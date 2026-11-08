@@ -3,7 +3,7 @@
 Aldi, 2026-11-08: *"i want u alucard on claude is the one who responsible for our app project and i want antigravity as your partner to do your task"*.
 Claude writes ONE task here. Antigravity does it, writes the Result, sets Status to DONE. Status is OPEN, DONE or NONE.
 
-**Status:** DONE (test commit: see "Commit" under Result)
+**Status:** DONE (190c13a)
 **Written:** 2026-11-08 14:11 WIB, by Claude. Previous task (toast check anchor) DONE and live: `1350d35`, `47e6710`.
 
 **Task:** write the rules test for "Sell Again" by Tier 3: `rules-test/test-sell-damaged.mjs`, and run it against TWO
@@ -97,4 +97,4 @@ Totals: (a) 13 passed, 4 failed. (b) 17 passed, 0 failed.
 - Run as in the task: tools in `C:/Users/ASUS/AppData/Local/Temp/kpm-rules-test/` (rules-unit-testing 4.0.1, firebase 11.10.0),
   `old.rules` = `git show bae4cd3:firestore.rules`. firestore.rules not touched.
 - Gates after the last edit: logicFixes 2834/2834, `npm run build` ok, integration.audit 725/725.
-- Commit: (hash added in the follow-up commit)
+- Commit: 190c13a
