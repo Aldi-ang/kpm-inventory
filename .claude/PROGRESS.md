@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-08 09:31 WIB, PC clock (🟠 KPM — Sell Again stage 1 live `2ce81a5`; next: stage 2, Tier 3 + rules)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-08 09:40 WIB, PC clock (🟠 KPM — GEMINI.md: Antigravity shares the brain; next: Sell Again stage 2, Tier 3 + rules)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-08 09:40 WIB — KPM: his "claude and google antigravity working together ... without losing ... A-Brain" - GEMINI.md BUILT
+Plan, options, what the docs say: A-Brain `Brainstorm/2026-11-08_claude-and-antigravity-together.md`. Antigravity reads `GEMINI.md` (repo root): it pastes in CLAUDE.md + Personal-Context, never pushes, works on phase0-solid-ground (his Antigravity project says main), writes back 🔵 ANTIGRAVITY entries here. Skill links into `~/.gemini/config/skills` were refused by Claude Code's safety check: he has the PowerShell line. His "save this test for later": the ✅ TEST in the 09:31 entry below stays open.
+WAITING ON ALDI (verbatim): **🔴 DECIDE: When Antigravity finishes a change, who puts it live? 1 Antigravity saves it on your PC only, then Claude checks it and puts it live (safer; one short Claude turn each time). 2 Antigravity puts it live itself after the same three checks (faster; nobody looks again before your users see it).** Built as 1.
 
 ## 🟠 2026-11-08 09:31 WIB — KPM: Quarantine Sell Again stage 1 (owner) BUILT + pushed `e589cab`, `2ce81a5`
 Full story: the commit messages. Proof: A-Brain `Raw/2026-11-08-sell-again/` (shelf PC + phone, crate, box, confirm). Next ONE job: NEXT-SESSION.md top (stage 2: Tier 3, the matrix key, rules CHANGE 24 first). toastSeverity.selfcheck has 2 old fails (toast column anchor), not from this job.
