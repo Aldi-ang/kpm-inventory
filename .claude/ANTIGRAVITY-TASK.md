@@ -3,7 +3,7 @@
 Aldi, 2026-11-08: *"i want u alucard on claude is the one who responsible for our app project and i want antigravity as your partner to do your task"*.
 Claude writes ONE task here. Antigravity does it, writes the Result, sets Status to DONE. Status is OPEN, DONE or NONE.
 
-**Status:** DONE (fix commit: see "Commit" under Result)
+**Status:** DONE (1350d35)
 **Written:** 2026-11-08 13:41 WIB, by Claude
 
 **Task:** make the toast check green again. `node src/config/toastSeverity.selfcheck.mjs` fails two lines:
@@ -35,4 +35,4 @@ Then tell Aldi: "done, ask Claude to check it".
 - Fix: `src/config/toastSeverity.selfcheck.mjs:137` anchor now accepts `top-0` or `top-[var(--kpm-safe-top)]`. No app code.
 - Gates after the last edit: toastSeverity 55/55, logicFixes 2827/2827, `npm run build` ok, integration.audit 725/725.
 - Note: `npm run build` fails inside Antigravity's sandbox (EPERM realpath on index.html); it passes run outside it.
-- Commit: (hash added in the follow-up commit)
+- Commit: 1350d35
