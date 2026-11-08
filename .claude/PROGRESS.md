@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-08 14:19 WIB, PC clock (🟠 KPM — Sell Again stage 2 BUILT LOCAL `856face`, not pushed; Antigravity writing the rules test; then Aldi publishes CHANGE 24)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-08 16:36 WIB, PC clock (🟠 KPM — Sell Again stage 2 BUILT LOCAL `856face`, rules test green; waiting on Aldi to publish CHANGE 24)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-08 16:36 WIB — KPM: his "done check it" - Antigravity's rules test REVIEWED (`190c13a`, `eddad88`)
+Only its 2 allowed files. Claude re-ran it: draft 17/17, published rules 13/4 (the 4 new paths red). Task file: Status NONE. Nothing pushed: the rules go first. Next: NEXT-SESSION.md top.
+WAITING ON ALDI: 🔴 publish firestore.rules in the Firebase Console, then say "published". Still open: the PowerShell skill line + Antigravity ✅ TEST (09:40), the ✅ TESTs from 09:31, 07:04, 06:14, 05:52 and 2026-11-06.
 
 ## 🟠 2026-11-08 14:19 WIB — KPM: his "continue your work then, if u have task to give to antigravity just do it" - Sell Again stage 2 BUILT, LOCAL `856face`
 Full story: the commit message. Lab proof: A-Brain `Raw/2026-11-08-sell-again/t3-*.jpg`. Antigravity's task (1244d8a, updated in 856face): the rules test, run on the published rules and the draft. Not pushed: the rules go first. Next: NEXT-SESSION.md top.
