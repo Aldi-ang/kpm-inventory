@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-08 06:59 WIB, PC clock (🟠 KPM — waiting on his pick for the Same as last time buttons; then build it)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-08 07:04 WIB, PC clock (🟠 KPM — next: #3 the Quarantine board, frames first)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-08 07:04 WIB — KPM: his "1 better" - BUILT + pushed `cca32e1`
+Full story: the commit message. Proof: A-Brain `Raw/2026-11-08-reorder-button/built.png`. Next ONE job: NEXT-SESSION.md top.
+WAITING ON ALDI: ✅ TEST (close the app fully, open it again first): Sales Terminal, pick a shop you sold to before: "Sama seperti terakhir" is a gold outline with a plain word, no amber block, on the phone and the PC; press it and the last order fills in. Still open: the ✅ TESTs from 06:14, 05:52 and 2026-11-06.
 
 ## 🟠 2026-11-08 06:59 WIB — KPM: his "yes well done continue your work" (the warehouse line passed his eye) - Same as last time: 2 LOOKS DRAWN + sent, no app code changed
 Options + costs: A-Brain `Brainstorm/2026-11-08_reorder-button-without-amber.md`. Board: `Raw/2026-11-08-reorder-button/board.png`. Lab: `&history` gives the terminal one past sale (tools/ponder-lab.jsx). Next ONE job: NEXT-SESSION.md top.
