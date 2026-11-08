@@ -47,6 +47,8 @@ Three of those rules work differently for you, and these lines replace them:
 - A fix leaves a check in `src/config/logicFixes.selfcheck.mjs` that would fail if the bug came back.
 - A change people can see adds one line (en + id, plain words, no names) to `src/config/patchNotes.js`.
 - Commit named files only, never `git commit -a` (graphify-out is always dirty). Run `graphify update .` after code edits.
+- `npm run build` fails inside your sandbox (EPERM on the folder) and `git pull` needs the network: ask to run both
+  outside the sandbox straight away (seen on the first task, 2026-11-08).
 
 ## End of every job: write it back, or it is lost
 - Write what you found and did under **Result** in `.claude/ANTIGRAVITY-TASK.md`, then set **Status: DONE** with the
