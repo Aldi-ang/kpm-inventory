@@ -134,7 +134,7 @@ console.log('\nthe dialog paints over the toast column, never under it');
 {
     const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8');
     const toastHost = read('../components/Toast.jsx')
-        .match(/className="pointer-events-none fixed inset-x-0 top-0 z-\[(\d+)\]/);
+        .match(/className="pointer-events-none fixed inset-x-0 top-(?:0|\[var\(--kpm-safe-top\)\]) z-\[(\d+)\]/);
     const gate = read('../components/ConfirmGate.jsx')
         .match(/className="fixed inset-0 z-\[(\d+)\] flex items-center justify-center bg-black\/75/);
     report(!!toastHost, 'the toast column host line is where the check expects it',
