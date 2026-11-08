@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-08 08:57 WIB, PC clock (🟠 KPM — next: build Quarantine Sell Again, shelf 1; plan first, fresh session)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-08 09:31 WIB, PC clock (🟠 KPM — Sell Again stage 1 live `2ce81a5`; next: stage 2, Tier 3 + rules)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-08 09:31 WIB — KPM: Quarantine Sell Again stage 1 (owner) BUILT + pushed `e589cab`, `2ce81a5`
+Full story: the commit messages. Proof: A-Brain `Raw/2026-11-08-sell-again/` (shelf PC + phone, crate, box, confirm). Next ONE job: NEXT-SESSION.md top (stage 2: Tier 3, the matrix key, rules CHANGE 24 first). toastSeverity.selfcheck has 2 old fails (toast column anchor), not from this job.
+WAITING ON ALDI: ✅ TEST (close the app fully, open it again first): Stock Opname > Quarantine > a warehouse > a damaged pack > Sell Again > Cheaper, type a price, Put on sale. The quarantine count drops; load that warehouse into a van; on the Sales Terminal the "· RUSAK" card sits right after its pack with the yellow hazard sign and your price. Still open: the ✅ TESTs from 07:04, 06:14, 05:52 and 2026-11-06.
 
 ## 🟠 2026-11-08 08:57 WIB — KPM: his "1 is easier to find use that" - Quarantine Sell Again: DECIDED shelf 1, not built
 Next ONE job: NEXT-SESSION.md top (the full design + plan sketch). Told him to start it in a fresh session: context here was ~78% full.
