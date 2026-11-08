@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-08 17:23 WIB, PC clock (🟢 KPM — Sell Again finished: Tier 3 live + tested; a RUSAK pack is never LOW on the terminal, pushed)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-08 17:50 WIB, PC clock (🟠 KPM — backlog ticked + the August sweep checked: 27 fixed, 9 open, 38 to Antigravity; next: the demo, waiting on his list)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-08 17:50 WIB — KPM: his "check the notes, fixes and test it yourself" - backlog ticked (5 done + 13 made visible) and the August sweep checked (27 fixed / 9 open / 38 to Antigravity)
+Statuses: each A-Brain `Backlog/SWEEP - *.md` note's top block; backlog commit in A-Brain. 16/16 self-check suites pass. No app code changed. Next: NEXT-SESSION.md top (the demo).
+WAITING ON ALDI (verbatim): **❓ ANSWER: What is broken in the demo? Send me your list, even rough. I do not have it written down yet.** Also: start Antigravity's task (the 38). Still open: the PowerShell skill line + Antigravity ✅ TEST (09:40), the ✅ TESTs from 09:31, 07:04, 06:14, 05:52 and 2026-11-06.
 
 ## 🟢 2026-11-08 17:23 WIB — KPM: his "yes" - a RUSAK pack is never LOW and never "Stok menipis" on the Sales Terminal, pushed with this note
 Full story: the commit message. Proof: A-Brain `Raw/2026-11-08-sell-again/emu-terminal-no-low.png`. Next: NEXT-SESSION.md top (nothing queued).
