@@ -2682,7 +2682,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 {brief?.lastItems?.length > 0 && !isReturMode && (
                                     <button
                                         onClick={handleReorder}
-                                        className="kpm-press h-11 w-full rounded border-2 border-[var(--duke-brass-edge-3)] bg-gradient-to-r from-[var(--duke-amber)] to-[var(--duke-amber-2)] font-mono text-[11px] font-black uppercase tracking-[0.12em] text-black"
+                                        className="kpm-press h-11 w-full rounded border-2 kpm-reorder font-mono text-[11px] font-black uppercase tracking-[0.12em]"
                                     >
                                         {tr('Same as last time')}
                                     </button>
@@ -3064,7 +3064,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             <button
                                 onClick={handleReorder}
                                 disabled={isReturMode || !brief.lastItems.length}
-                                className="kpm-hover kpm-press mt-4 w-full rounded border-2 border-[var(--duke-brass-edge-3)] bg-gradient-to-r from-[var(--duke-amber)] to-[var(--duke-amber-2)] py-2.5 font-mono text-[11px] font-black uppercase tracking-[0.12em] text-black disabled:cursor-not-allowed disabled:border-[var(--line-2)] disabled:bg-none disabled:bg-transparent disabled:text-[var(--ink-disabled)]"
+                                className="kpm-hover kpm-press mt-4 w-full rounded border-2 kpm-reorder py-2.5 font-mono text-[11px] font-black uppercase tracking-[0.12em] disabled:cursor-not-allowed disabled:border-[var(--line-2)] disabled:bg-none disabled:bg-transparent disabled:text-[var(--ink-disabled)]"
                             >
                                 {tr('Same as last time')}
                             </button>

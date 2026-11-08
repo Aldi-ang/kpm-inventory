@@ -13409,6 +13409,11 @@ console.log('\nTabs: the chosen tab is a gold line, not an amber fill');
        wl.includes('ind.current.style.width = `${r.width}px`; ind.current.style.transform = `translateX(${r.left - br.left - b.clientLeft + b.scrollLeft}px)`;') && !/placeLine = [^\n]*scaleX/.test(wl) &&
        read('src/styles/theme.css').includes('.kpm-wl-ind { position: absolute; left: 0; bottom: 0; width: 0; height: 2px;') &&
        wl.includes('ro.observe(bar.current); tabs().forEach((t) => ro.observe(t));')); }
+  { const ms = read('src/MerchantSalesView.jsx');
+    ok('HIS PICK 2026-11-08 "1 better": both Same as last time buttons are a gold edge around a plain word, no amber gradient, and the PC one still greys out when it cannot be used',
+       (ms.match(/onClick=\{handleReorder\}/g) || []).length === 2 && !ms.includes('from-[var(--duke-amber)]') && (ms.match(/rounded border-2 kpm-reorder /g) || []).length === 2 &&
+       ms.includes('kpm-reorder py-2.5 font-mono text-[11px] font-black uppercase tracking-[0.12em] disabled:cursor-not-allowed disabled:border-[var(--line-2)]') &&
+       /\.kpm-reorder \{ background: transparent; border-color: var\(--accent-edge\); color: var\(--ink\); \}/.test(css)); }
   ok('REGRESSION: the EOD tab box takes the theme, so a chosen word in dark ink never sits on a fixed dark grey in the light theme',
      eod.includes('<div className="flex bg-[var(--sunk)] rounded-lg p-1 border border-[var(--line)] w-full md:w-auto overflow-x-auto custom-scrollbar">') && !eod.includes('flex bg-black/50 rounded-lg p-1 border border-[var(--line)] w-full md:w-auto'));
 }

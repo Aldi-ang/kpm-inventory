@@ -4,6 +4,7 @@
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
   { date: '2026-11-08', items: [
+    { kind: 'fixed', en: 'Sales Terminal: Same as last time is now a gold outline instead of an amber block, on the phone and the PC.', id: 'Sales Terminal: tombol Sama seperti terakhir sekarang bergaris tepi emas, bukan blok amber, di HP dan PC.' },
     { kind: 'fixed', en: 'Stock Opname review: the gold line under the chosen warehouse runs exactly from divider to divider, on every screen size.', id: 'Review Stock Opname: garis emas di bawah gudang yang dipilih pas dari garis pemisah ke garis pemisah, di semua ukuran layar.' },
     { kind: 'fixed', en: 'Stock Opname review: a thin line now separates each warehouse tab.', id: 'Review Stock Opname: sekarang ada garis tipis yang memisahkan tiap tab gudang.' },
     { kind: 'fixed', en: 'Tabs: the chosen tab now has a thin gold line under it instead of an amber fill (Stock Opname, Quarantine, EOD Setoran, Sampel).', id: 'Tab: tab yang dipilih sekarang ditandai garis emas tipis di bawahnya, bukan blok warna amber (Stock Opname, Quarantine, Setoran Sore, Sampel).' },

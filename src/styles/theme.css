@@ -6243,3 +6243,6 @@ html.lite-mode .kpm-ct-veil { background: rgba(5, 4, 3, .8); backdrop-filter: no
    Setoran and Sampel. No motion: tabs are pressed many times a day. In the light theme --gold is near-black, so the old fill was a black block there. */
 .kpm-tab-on { position: relative; background: transparent; color: var(--ink); }
 .kpm-tab-on::after { content: ''; position: absolute; left: 6px; right: 6px; bottom: -1px; height: 2px; background: var(--accent-edge); pointer-events: none; }
+/* "SAME AS LAST TIME" IS AN EDGE, NOT A SLAB. His 2026-11-08 pick, "1 better", over a dark plate: no fill, a gold edge around a plain word, like the
+   house edge buttons. Its box is unchanged (border-2 stays on the button); the PC one's disabled: classes still grey the edge and the word in retur mode. */
+.kpm-reorder { background: transparent; border-color: var(--accent-edge); color: var(--ink); }
