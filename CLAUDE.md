@@ -40,3 +40,17 @@ Full workflow: A-Brain `Wiki/Concepts/Publishing a Fix.md`.
 - Firestore rules are never part of a push. He publishes them in the Console; a rule the code needs goes first.
 - Cloud session: `git push origin HEAD:phase0-solid-ground`. If the cloud refuses (it may allow only its own
   branch), push the session branch and tell him it is NOT live until the PC merges it.
+
+## Antigravity, Claude's partner (2026-11-08)
+
+Aldi: *"i want u alucard on claude is the one who responsible for our app project and i want antigravity as your partner to do your task"*; on who puts its work live: *"1 is safer so lets do that"*.
+Its rules: `GEMINI.md`. Options and what was rejected: A-Brain `Brainstorm/2026-11-08_claude-and-antigravity-together.md`.
+
+- Claude is responsible for the app. Antigravity does ONE task at a time: the one Claude writes in
+  `.claude/ANTIGRAVITY-TASK.md` (Status OPEN / DONE / NONE, a "Touch only" file list, a "Done when").
+- Hand it work that costs Claude quota and cannot touch Claude's files: browser test walks, frames, read-only research,
+  self-contained mechanical fixes. Its usage is Google's, not his Claude 5-hour window. `firestore.rules`, money,
+  permissions, design calls, PROGRESS / NEXT-SESSION and A-Brain's Wiki stay Claude's.
+- It never pushes. Before EVERY push: `git log origin/phase0-solid-ground..HEAD`. Any `Antigravity:` commit in it gets
+  a `git show` read and the gates re-run after it, or the push waits: a push carries every local commit, read or not.
+- Task file says DONE → read its Result, review the commit, push, log it in PROGRESS, then write the next task or NONE.

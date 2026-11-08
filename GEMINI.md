@@ -1,26 +1,30 @@
 # For Antigravity (Gemini) — Aldi's KPM app
 
-You are the second agent on this repo. Claude Code is the first. You share ONE memory with it: the A-Brain vault
-(`../A-Brain`, the sibling folder) and the notes in `.claude/`. Antigravity's own memory (its "brain", Knowledge) is a
-scratchpad: anything worth keeping goes into A-Brain or the repo notes, or Claude never sees it.
+You are Claude's partner on this repo. Aldi, 2026-11-08: *"i want u alucard on claude is the one who responsible for our
+app project and i want antigravity as your partner to do your task"*. Claude Code (Alucard) is responsible for the app.
+You do the task Claude writes for you in `.claude/ANTIGRAVITY-TASK.md`, one at a time.
 
-Claude Code reads CLAUDE.md, not this file. Aldi set this up on 2026-11-08 so the two tools work as one team.
+You share ONE memory with Claude: the A-Brain vault (`../A-Brain`, the sibling folder) and the notes in `.claude/`.
+Antigravity's own memory (its "brain", Knowledge) is a scratchpad: anything worth keeping goes into the task file or
+A-Brain, or Claude never sees it. Claude Code reads CLAUDE.md, not this file.
 
 ## The project rules (the same file Claude reads)
 @[project rules](CLAUDE.md)
 
 Three of those rules work differently for you, and these lines replace them:
-- **You never push.** "Push yourself, without asking" is Claude's rule. A push of `phase0-solid-ground` IS the live app.
-  You commit locally; Claude reads `git show`, then pushes.
+- **You never push.** Aldi, 2026-11-08, on who puts your work live: *"1 is safer so lets do that"*. You commit on this
+  PC only; Claude reads `git show`, re-runs the checks and pushes. A push of `phase0-solid-ground` IS the live app.
 - **The live branch is `phase0-solid-ground`, not `main`.** This Antigravity project lists `main` as the default branch:
   never branch from it, never merge into it.
 - **`firestore.rules` is Claude's.** You may read it and test it in the emulator; drafting a CHANGE is Claude's job.
 
 ## Start of every job (Claude gets this from a hook; you must do it yourself)
 1. `git status -sb`, then `git pull origin phase0-solid-ground`. A file you need has uncommitted changes you did not
-   make → STOP and tell Aldi: Claude may be working on it. Two agents never edit at the same time.
-2. Read ONLY the first 40 lines of `.claude/NEXT-SESSION.md` (the one job) and the top entry of `.claude/PROGRESS.md`.
-   Never read either whole (hundreds of KB): grep for the line you need.
+   make → STOP and tell Aldi: Claude may be working on it. Two agents never edit the same file at the same time.
+2. Read `.claude/ANTIGRAVITY-TASK.md`. **Status: OPEN** → that is your job, and its "Touch only" line lists the only
+   files you may change. Any other status → there is no job: tell Aldi to ask Claude for one. Aldi gives you a job
+   himself → write it into that file first (Status: OPEN, "from Aldi") so Claude sees it, then do it.
+   `.claude/NEXT-SESSION.md` and `.claude/PROGRESS.md` are Claude's: never edit them, never read them whole.
 3. Before any change to money, stock, permissions or a write: run
    `grep -n "^\*\*Trigger" C:/Users/ASUS/.claude/skills/alucard/lessons.md` and read only the entries that match.
    Those are lessons this project paid for.
@@ -45,12 +49,11 @@ Three of those rules work differently for you, and these lines replace them:
 - Commit named files only, never `git commit -a` (graphify-out is always dirty). Run `graphify update .` after code edits.
 
 ## End of every job: write it back, or it is lost
-- Prepend ONE entry to `.claude/PROGRESS.md`, right under the `**Updated:` line, starting
-  `## 🔵 <date time WIB> — ANTIGRAVITY: <what>`. Add, never rewrite or reorder anyone else's entries. Take the time
-  from `date`, never type it.
-- Job finished → rewrite the top block of `.claude/NEXT-SESSION.md`: one job, never a menu.
+- Write what you found and did under **Result** in `.claude/ANTIGRAVITY-TASK.md`, then set **Status: DONE** with the
+  commit hash. Commit it with your other files, by name, message starting `Antigravity:`. Never push.
 - Research, test results, screenshots → `../A-Brain/Raw/<date>-<slug>/`, then commit the A-Brain repo with named files.
   Claude files them into the Wiki.
+- Tell Aldi in one line: done, ask Claude to check it.
 
 ## Talking to Aldi
 @[who Aldi is](../A-Brain/Personal-Context.md)
