@@ -319,7 +319,7 @@ export default function EODCardDeck({
                                     className={`flex-1 rounded-md border py-1.5 min-h-11 lg:min-h-0 text-[11px] font-bold uppercase tracking-wider transition-colors ${
                                       !on ? 'border-[var(--line)] bg-[var(--raised)] text-[var(--ink-dim)]'
                                         : v.tone === 'ok' ? 'border-[var(--accent-edge)] bg-[var(--raised)] text-[var(--ink)]'
-                                        : 'border-[var(--danger)] bg-[var(--danger)] text-[var(--gold-ink)]'
+                                        : 'border-[var(--danger-plate)] bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]'
                                     }`}
                                   >
                                     {v.label}

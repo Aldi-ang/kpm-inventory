@@ -1314,7 +1314,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                             >Edit</button>
                                             <button
                                                 onClick={() => handleDeleteDuplicate(m, g)}
-                                                className="px-2.5 py-1.5 rounded-lg bg-[var(--danger)] hover:bg-[var(--danger)] text-[var(--gold-ink)] text-[10px] font-black uppercase tracking-wider"
+                                                className="px-2.5 py-1.5 rounded-lg bg-[var(--danger-plate)] hover:bg-[var(--danger-plate)] text-[var(--danger-plate-ink)] text-[10px] font-black uppercase tracking-wider"
                                                 title="Permanently delete this store. It asks first and tells you exactly what you are removing."
                                             >Delete</button>
                                         </span>

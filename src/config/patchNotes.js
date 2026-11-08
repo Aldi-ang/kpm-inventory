@@ -4,6 +4,7 @@
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
   { date: '2026-11-08', items: [
+    { kind: 'fixed', en: 'EOD and Customers: three red buttons now have light words on a deeper red, easy to read in dark mode too.', id: 'EOD dan Customers: tiga tombol merah sekarang bertulisan terang di atas merah yang lebih gelap, mudah dibaca juga di mode gelap.' },
     { kind: 'fixed', en: 'Counters: the small numbers on HQ Audits, HQ Verification, the bell, the cart, the sync button and Customers are now the glowing nixie counter. Easy to read in dark and light, and the number rolls in when it changes.', id: 'Penghitung: angka kecil di HQ Audits, HQ Verification, lonceng, keranjang, tombol sinkron, dan Customers sekarang memakai penghitung nixie yang menyala. Mudah dibaca di mode gelap dan terang, dan angkanya bergulir saat berubah.' },
     { kind: 'fixed', en: 'Sales Terminal: a damaged (RUSAK) pack no longer shows LOW and is never listed under Running low.', id: 'Sales Terminal: bungkus rusak (RUSAK) tidak lagi bertanda LOW dan tidak pernah masuk daftar Stok menipis.' },
     { kind: 'new', en: 'Quarantine: Tier 3 can now use Sell Again and set the price. A switch for it is in the Access Matrix.', id: 'Quarantine: Tier 3 sekarang bisa memakai Jual Lagi dan menentukan harganya. Saklarnya ada di Access Matrix.' },

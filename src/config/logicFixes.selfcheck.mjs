@@ -13501,8 +13501,8 @@ console.log('\nSales Terminal: a RUSAK lot is never LOW and never "Running low"'
   for (const [f, re] of sites) ok(`count badge: ${f.split('/').pop()} uses the nixie counter`, re.test(read(f)) && /import NixieCount from/.test(read(f)),
     'his pick 2026-11-08: one counter look everywhere');
   const jsx = fs.readdirSync('src', { recursive: true }).filter((f) => /\.jsx$/.test(f)).map((f) => 'src/' + String(f).replace(/\\/g, '/'));
-  const old = jsx.filter((f) => /bg-\[var\(--danger\)\] text-\[var\(--gold-ink\)\] text-\[11px\] (lg:text-\[10px\] font-bold )?px-(1\.5|2) py-(0\.5|1) rounded-full|bg-red-600 text-white text-\[11px\] font-black rounded-full|bg-orange-500 text-\[var\(--duke-on-fill\)\] text-\[10px\] font-black w-5 h-5/.test(read(f)));
-  ok('count badge: no screen keeps the old hard-to-read badge (gold ink on danger red, the red-600 bell dot, the orange sync dot)', old.length === 0, 'found in: ' + old.join(', '));
+  const old = jsx.filter((f) => /bg-\[var\(--danger\)\] (hover:bg-\[var\(--danger\)\] )?text-\[var\(--gold-ink\)\]|bg-red-600 text-white text-\[11px\] font-black rounded-full|bg-orange-500 text-\[var\(--duke-on-fill\)\] text-\[10px\] font-black w-5 h-5/.test(read(f)));
+  ok('count badge + buttons: no screen keeps gold ink on the danger red (black in dark mode, 4.02:1; his "yes" 2026-11-08 for the 3 buttons), the red-600 bell dot or the orange sync dot', old.length === 0, 'found in: ' + old.join(', '));
   const nx = read('src/components/NixieCount.jsx');
   ok('count badge: rollIn mounts the reels on 0 and arms them two frames later, so a badge that appears rolls up', /useState\(!rollIn\)/.test(nx) && /'--i': armed \? d : 0/.test(nx) && /requestAnimationFrame\(\(\) => setArmed\(true\)\)/.test(nx),
     'his round-2 pick rolled the number in on arrival');

@@ -533,7 +533,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                                         }
                                                     }}
                                                     disabled={submitting}
-                                                    className="w-full md:w-auto px-10 py-4 disabled:opacity-40 bg-[var(--danger)] hover:bg-[var(--danger)] text-[var(--gold-ink)] rounded-xl font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(220,38,38,0.4)] active:scale-95 transition-all flex items-center justify-center gap-3"
+                                                    className="w-full md:w-auto px-10 py-4 disabled:opacity-40 bg-[var(--danger-plate)] hover:bg-[var(--danger-plate)] text-[var(--danger-plate-ink)] rounded-xl font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(220,38,38,0.4)] active:scale-95 transition-all flex items-center justify-center gap-3"
                                                 >
                                                     <BadgeDollarSign size={20}/> Pay Bounty
                                                 </button>
