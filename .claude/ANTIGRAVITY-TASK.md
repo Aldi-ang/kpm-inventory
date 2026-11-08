@@ -3,7 +3,7 @@
 Aldi, 2026-11-08: *"i want u alucard on claude is the one who responsible for our app project and i want antigravity as your partner to do your task"*.
 Claude writes ONE task here. Antigravity does it, writes the Result, sets Status to DONE. Status is OPEN, DONE or NONE.
 
-**Status:** OPEN
+**Status:** DONE (test commit: see "Commit" under Result)
 **Written:** 2026-11-08 14:11 WIB, by Claude. Previous task (toast check anchor) DONE and live: `1350d35`, `47e6710`.
 
 **Task:** write the rules test for "Sell Again" by Tier 3: `rules-test/test-sell-damaged.mjs`, and run it against TWO
@@ -61,4 +61,40 @@ Owner and T2 (`COMPANY_OWNER`) already write everything through the company catc
 **Done when:** the test runs to the end; the Result lists every case with PASS/FAIL; you committed the two files by name,
 message starting `Antigravity:`; Status here is DONE with the hash. Do not push. Then tell Aldi: "done, ask Claude to check it".
 
-**Result:** (Antigravity writes here)
+**Result:** (Antigravity, 2026-11-08 16:35 WIB)
+`rules-test/test-sell-damaged.mjs`, 17 cases. No stop condition hit: (b) has no FAIL; in (a) every DENIED case passes.
+
+| Case | (a) published `bae4cd3` | (b) draft CHANGE 24 |
+|---|---|---|
+| ALLOWED T3 whole batch, regional crate (BANDUNG) | FAIL ✔ | PASS |
+| ALLOWED T3 whole batch, Master Vault crate | FAIL ✔ | PASS |
+| ALLOWED T3 sells again at a new price (lot exists: update) | FAIL ✔ | PASS |
+| ALLOWED key on FLEET_CAPTAIN only → T4 whole batch | FAIL ✔ | PASS |
+| ALLOWED owner whole batch | **PASS** (see note) | PASS |
+| DENIED T3 `priceRetail` on normal pack `products/p1` | PASS | PASS |
+| DENIED T3 lot with extra field `kind: 'promo'` | PASS | PASS |
+| DENIED T3 `products/rsk-p2` with `damagedFrom: 'p1'` | PASS | PASS |
+| DENIED T3 lot id `x-p1` | PASS | PASS |
+| DENIED T3 update of existing lot changing `damagedFrom` | PASS | PASS |
+| DENIED T3 delete of a lot | PASS | PASS |
+| DENIED T3 `quarantine_logs` with `method: 'SAMPLING'` | PASS | PASS |
+| DENIED T3 reads `quarantine_logs` | PASS | PASS |
+| DENIED T4, no key saved, whole batch | PASS | PASS |
+| DENIED key on FLEET_CAPTAIN only → T3 whole batch | PASS | PASS |
+| DENIED T5, key on FIELD_OPERATIVE (lot + log) | PASS | PASS |
+| DENIED another company's AREA_ADMIN `ownerB` (lot + log) | PASS | PASS |
+
+Totals: (a) 13 passed, 4 failed. (b) 17 passed, 0 failed.
+
+- **Note, owner in (a):** the owner case passes on the published rules too. That is expected, not a gap: the owner already writes
+  everything through the company catch-all, which the spec says. So in (a) it is a control, not a red case.
+  The 4 real ALLOWED cases all go red, which proves the test catches a missing rule.
+- **Choice I made:** the T5 and other-company cases send only the lot + log writes (the two that CHANGE 24 governs). Their crate and
+  shelf writes are already refused by older rules (`isFleetTier`), so a whole batch would be refused for a reason this test is
+  not about. Every other case sends the exact app batch (StockOpnameView.jsx ~934-946).
+- `reset()` calls `testEnv.clearFirestore()` first, so a saved matrix never leaks into the next block (test-opname-worklist's
+  `reset()` does not clear it).
+- Run as in the task: tools in `C:/Users/ASUS/AppData/Local/Temp/kpm-rules-test/` (rules-unit-testing 4.0.1, firebase 11.10.0),
+  `old.rules` = `git show bae4cd3:firestore.rules`. firestore.rules not touched.
+- Gates after the last edit: logicFixes 2834/2834, `npm run build` ok, integration.audit 725/725.
+- Commit: (hash added in the follow-up commit)
