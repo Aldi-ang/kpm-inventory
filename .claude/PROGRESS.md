@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-08 16:45 WIB, PC clock (🟠 KPM — Sell Again stage 2 LIVE: rules CHANGE 24 published by Aldi, code pushed; waiting on his ✅ TEST)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-08 17:18 WIB, PC clock (🟠 KPM — Sell Again by Tier 3 LIVE and tested by Claude on the emulator; one ❓ on RUSAK packs showing LOW)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-08 17:18 WIB — KPM: his "test it for me" - Sell Again by Tier 3 TESTED (real app + emulator + real rules), PASS
+Proof: A-Brain `Raw/2026-11-08-sell-again/emu-*` (commit in A-Brain). No app code changed. Found: a RUSAK pack shows LOW and "Stok menipis" on the terminal (stage 1 leftover). Next: NEXT-SESSION.md top.
+WAITING ON ALDI (verbatim): **❓ ANSWER: On the Sales Terminal, a RUSAK pack with 1 left shows "LOW · 1 Bks" and is listed under "Stok menipis" (running low). You never restock a damaged pack. Should RUSAK packs stay out of both? Recommended: yes, hide them from both.** Still open: the PowerShell skill line + Antigravity ✅ TEST (09:40), the ✅ TESTs from 09:31, 07:04, 06:14, 05:52 and 2026-11-06.
 
 ## 🟠 2026-11-08 16:45 WIB — KPM: his "published" - rules CHANGE 24 LIVE, Sell Again stage 2 pushed
 He pasted firestore.rules on the (default) database (first tried Storage's Rules tab; caught before pasting). Baseline synced, header says live. Pushed with this note: `856face` + notes + Antigravity's `190c13a`, `eddad88`. Next: NEXT-SESSION.md top.
