@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-08 19:07 WIB, PC clock (🟠 KPM — count badge board made; waiting on his A/B/C pick)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-08 19:15 WIB, PC clock (🟠 KPM — count badges round 2 (moving) sent; waiting on his 1/2/3 pick)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-08 19:15 WIB — KPM: count badges - he refused round 1 ("all looks bad, i dont like all" then "i want small animation and effeect for that"); round 2 film sent, no app code changed
+Film + script: A-Brain `Raw/2026-11-08-badges/`. Next: NEXT-SESSION.md top.
+WAITING ON ALDI (verbatim): **🔴 DECIDE: pick the moving counter - 1 Nixie (amber number rolls up in a small glass tube and glows once), 2 Red tag (pops in with one ripple, then still) or 3 Red edge (slides in, a soft shine passes every few seconds). Film: A-Brain Raw/2026-11-08-badges/MOTION.gif. Recommended: 1.** Still: rank the demo board (18:52), start Antigravity's task.
 
 ## 🟠 2026-11-08 19:07 WIB — KPM: count badges - BOARD made (real Stock Opname screen in the lab, phone, dark/light/lite), no app code changed
 Board + script: A-Brain `Raw/2026-11-08-badges/`. Next: NEXT-SESSION.md top.
