@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-08 18:54 WIB, PC clock (🟠 KPM — next: redesign the count badges (his ask); demo ranking parked)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-08 19:07 WIB, PC clock (🟠 KPM — count badge board made; waiting on his A/B/C pick)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-08 19:07 WIB — KPM: count badges - BOARD made (real Stock Opname screen in the lab, phone, dark/light/lite), no app code changed
+Board + script: A-Brain `Raw/2026-11-08-badges/`. Next: NEXT-SESSION.md top.
+WAITING ON ALDI (verbatim): **🔴 DECIDE: pick the count badge - A (solid red circle, white number), B (red ring, red number, no fill) or C (pale red fill, red number). Board: A-Brain Raw/2026-11-08-badges/BOARD.png. Recommended: A.** Still: rank the demo board (18:52), start Antigravity's task.
 
 ## 🟠 2026-11-08 18:54 WIB — KPM: his "redesign this number in the HQ audit and all of this kind" - PLANNED, not started
 Plan + scope: NEXT-SESSION.md top. Told him to /compact first (5-hour window 75%, conversation 42% full).
