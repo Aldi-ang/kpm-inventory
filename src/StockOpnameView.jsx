@@ -867,9 +867,9 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
         const fullPrice = tierPrice(sellSrc, 'Retail');
         const cheapPrice = Number(formData.get('price'));
         if (resolutionModal.method === 'SELL' && !(fullPrice > 0))   // or the lot would go on the shelf at Rp 0
-            return notify(`${resolutionModal.item.name} has no Retail price yet. Set it in the Master Vault first, then Sell Again.`);
+            return notify(`Cannot sell ${resolutionModal.item.name} again: it has no Retail price yet. Set it in the Master Vault first.`);
         if (resolutionModal.method === 'SELL' && resolutionModal.cheap && !(cheapPrice > 0 && cheapPrice < fullPrice))
-            return notify(`A cheaper price must be more than 0 and less than the full price, ${formatRupiah(fullPrice)}.`);
+            return notify(`Cannot use that price: a cheaper price must be more than 0 and less than the full price, ${formatRupiah(fullPrice)}.`);
         if (!await confirmAction(resolutionModal.method === 'SELL'
             ? `Put ${qtyToResolve} Bks of ${resolutionModal.item.name} back on sale as "${resolutionModal.item.name} · RUSAK" at ${formatRupiah(resolutionModal.cheap ? cheapPrice : fullPrice)} a Bks?`
             : `Execute ${resolutionModal.method} protocol for ${qtyToResolve} Bks of ${resolutionModal.item.name}?`)) return;

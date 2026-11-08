@@ -13442,6 +13442,9 @@ console.log('\nQuarantine: Sell Again puts a damaged lot on sale, right after it
   ok('MONEY: the packs leave quarantine in the same write, and the lot lands where they were (a warehouse, or the Master Vault itself)',
      so.includes("stock: increment(fromFac === 'MASTER' ? qtyToResolve : 0)") && so.includes("if (fromFac !== 'MASTER') batch.set(doc(db, `artifacts/${appId}/users/${masterId}/branches/${fromFac}/inventory`, lotId)") &&
      so.includes("const totalValue = ['REPAIR', 'SELL'].includes(resolutionModal.method) ? 0"));
+  { const { isFailure } = await import('../utils/toastSeverity.js');
+    const refusals = [...so.matchAll(/return notify\(`(Cannot (?:sell|use that price)[^`]*)`\)/g)].map((m) => m[1].replace(/\$\{[^}]*\}/g, 'X'));
+    ok('both Sell Again refusals show as failures (a red strip, not news)', refusals.length === 2 && refusals.every(isFailure)); }
   ok('the terminal shelf runs through lotsAfterPacks and the card wears the mark', ms.includes('const filteredItems = lotsAfterPacks(inventory.filter(') && ms.includes('{isDamagedPack(item) && <HazardMark className="right-0.5 bottom-0.5'));
   ok('REGRESSION: a lot is never "low" (it is never restocked), in the one function every low-stock alarm reads', /export const isLowStock = \(product, appSettings\) =>\s*!product\?\.damagedFrom &&/.test(th));
   ok('the Sell Again button sits after Convert to Sample, gold edge, and not on a lot that is damaged again', /Convert to Sample\s*<\/button>\s*\{\/\*[^]*?\*\/\}\s*\{!item\.damagedFrom && \(\s*<button onClick=\{\(\) => setResolutionModal\(\{item, method: 'SELL', cheap: false\}\)\}[^>]*border-\[var\(--accent-edge\)\]/.test(so));
