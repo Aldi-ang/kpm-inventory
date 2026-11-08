@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-08 17:57 WIB, PC clock (🟠 KPM — next: Claude walks the demo itself, phone first; plan in NEXT-SESSION top)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-08 18:52 WIB, PC clock (🟠 KPM — demo walked phone + PC + the mission; 15 findings on a board; waiting on his ranking)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-08 18:52 WIB — KPM: his "check it yourself ... mainly on phone POV" - demo WALKED (5 logins, phone + PC, mission played on the phone)
+Findings: A-Brain `Backlog/Demo build - many things not working.md`; board `Raw/2026-11-08-demo-walk/DEMO-BOARD.png`. No app code changed. Next: NEXT-SESSION.md top.
+WAITING ON ALDI (verbatim): **🔴 DECIDE: rank the 12 numbered problems on the board (A-Brain Raw/2026-11-08-demo-walk/DEMO-BOARD.png), e.g. "1 3 2 5 ..." - and say which missing features the tutorial should teach first.** Still: start Antigravity's task (the 38 sweep findings).
 
 ## 🟠 2026-11-08 17:57 WIB — KPM: his demo ask (walk it yourself, phone first, the tutorial phone problem, the tutorial does not cover the main features) - PLANNED, not started
 Plan: NEXT-SESSION.md top. Told him to /compact first (this conversation was 47% full).
