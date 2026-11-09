@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-09 18:32 WIB, PC clock (🟠 KPM — promo word = company name, live; owner first-time setup waits on his yes)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-09 18:35 WIB, PC clock (🟠 KPM — professional edition: discussing, 4 questions to him; bugs first)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-09 18:35 WIB — KPM: his big job - a professional edition (business look, same logic, game edition kept as his resume, certification) - DISCUSSING, after every open bug
+Notes: A-Brain Brainstorm/2026-11-09_professional-edition.md. No app code changed.
+WAITING ON ALDI: ❓ 4 answers - first customer; his own staff move or not; capybara + lessons keep quiet or drop; owner setup wait for the professional edition. Still: the owner-setup 🔴 DECIDE folds into question 4.
 
 ## 🟠 2026-11-09 18:32 WIB — KPM: his "yes print the company name" - a promo item with no word of its own prints the company name (pushed with this note); his owner-setup idea answered
 Full story: the commit message. Proof: A-Brain Raw/2026-11-09-rename/PROMO-WORD.jpg. Next: NEXT-SESSION.md top.
