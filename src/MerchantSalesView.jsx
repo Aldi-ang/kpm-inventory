@@ -3,7 +3,8 @@ import NixieCount from './components/NixieCount.jsx';
 import { tr, getLang } from './config/lang';
 import { createPortal } from 'react-dom';
 import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSquare, ArrowRight, ArrowLeft, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check, Eye } from 'lucide-react';
-import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'; 
+import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction, query, where } from 'firebase/firestore';
+import { earnedLevel, nextLevel, nameVariants } from './utils/storeLevel';   // the shop's level after a sale (Settings > Tier Automation Rules) 
 import { hasClearance, canPickFromGallery } from './config/permissions';
 import { IS_DEMO } from './config/firebase';
 import { demoPhoto } from './config/demoPhoto.js';
@@ -52,7 +53,7 @@ const readDraft = (uid) => {
     } catch { return null; }
 };
 
-const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, motorists = [], storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine, promoVan = [], sellerRegion = '', regionOffers = [] }) => {
+const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], levels = [], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, motorists = [], storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine, promoVan = [], sellerRegion = '', regionOffers = [] }) => {
     /* WHOSE VAULT THE CUSTOMER RECORDS LIVE IN — and the answer must be the same one App used to
        fetch them, or a write lands in a document nobody reads.
 
@@ -1382,156 +1383,57 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             // Forensic data is perfectly secured inside the transactions document layout.
             // Agent Inventory will dynamically read from the transaction ledger instead.
 
+            /* THE SHOP AFTER A SALE - his "make sure that both features works well especially the leveling system that we
+               design" (2026-11-09). Two writes, each told when it fails: the visit date always, then the level from the
+               owner's targets (utils/storeLevel.js). It was ONE write inside `if (rules)`: no targets saved = no visit date
+               for anyone, every salesman (T3-T6) was refused reading the targets (rules CHANGE 27), the targets were checked
+               against the PRICE levels so none ever counted, and a fixed table scored this one sale - so no salesman's sale
+               ever touched the shop, and an owner's small sale could drop a Mythic shop to Unranked. */
             if (isOnline && !isReturMode && !isGiveaway && !finalCart.some(i => i.isIouFulfillment)) {
+                const userId = dataOwnerId;   // see dataOwnerId — must match where `customers` was read from
+                let shopRef = null;
                 try {
-                    const userId = dataOwnerId;   // see dataOwnerId — must match where `customers` was read from
-                    let rules = null;
-                    const rulesSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
-                    if (rulesSnap.exists() && rulesSnap.data().rules) rules = rulesSnap.data().rules;
-                
-                    if (rules) {
-                        let earnedTier = 'Unranked'; 
-                        let currentStoreSeasonalXP = 0;
-                        let debugTarget = 0; let debugMetric = 0;
-
-                        const getSafeTime = (t) => {
-                            if (!t) return 0;
-                            if (t.timestamp?.seconds) return t.timestamp.seconds * 1000;
-                            if (typeof t.timestamp === 'number') return t.timestamp < 1e12 ? t.timestamp * 1000 : t.timestamp;
-                            const parseDateStr = (dateStr) => {
-                                if (!dateStr) return 0;
-                                let ms = new Date(dateStr).getTime();
-                                if (!isNaN(ms)) return ms; 
-                                let cleanStr = String(dateStr).toLowerCase()
-                                    .replace(/januari|jan/g, 'january').replace(/februari|feb/g, 'february')
-                                    .replace(/maret|mar/g, 'march').replace(/mei/g, 'may').replace(/juni|jun/g, 'june').replace(/juli|jul/g, 'july')
-                                    .replace(/agustus|agu/g, 'august').replace(/oktober|okt/g, 'october').replace(/desember|des/g, 'december');
-                                ms = new Date(cleanStr).getTime();
-                                if (!isNaN(ms)) return ms;
-                                const parts = cleanStr.split(',')[0].trim().split(/[\/\-]/);
-                                if (parts.length === 3) {
-                                    let y = parts[2].length === 4 ? parts[2] : (parts[0].length === 4 ? parts[0] : new Date().getFullYear().toString());
-                                    let m = parts[2].length === 4 ? parts[1].padStart(2, '0') : parts[1].padStart(2, '0');
-                                    let d = parts[2].length === 4 ? parts[0].padStart(2, '0') : parts[2].padStart(2, '0');
-                                    ms = new Date(`${y}-${m}-${d}T12:00:00Z`).getTime();
-                                    if (!isNaN(ms)) return ms;
-                                }
-                                return 0;
-                            };
-                            const tsTime = parseDateStr(t.timestamp);
-                            if (tsTime > 0) return tsTime;
-                            return parseDateStr(t.date);
-                        };
-
-                        const safeTrans = Array.isArray(transactions) ? transactions : [];
-                        const safeRules = rules || {};
-                        const sortedRules = Object.entries(safeRules).sort((a, b) => {
-                            const isOmsetA = String(a[1]?.type || 'omset').toLowerCase().includes('omset');
-                            const isOmsetB = String(b[1]?.type || 'omset').toLowerCase().includes('omset');
-                            const tA = Number(String(isOmsetA ? (a[1]?.omsetTarget || a[1]?.target || 0) : (a[1]?.volumeTarget || a[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
-                            const tB = Number(String(isOmsetB ? (b[1]?.omsetTarget || b[1]?.target || 0) : (b[1]?.volumeTarget || b[1]?.target || 0)).replace(/[^0-9]/g, '')) || 0;
-                            return tB - tA;
-                        });
-
-                        let matchedDynamic = false;
-                        for (let [ruleKey, rule] of sortedRules) {
-                            if (!rule) continue; 
-                            const ruleTierName = String(rule.tierId || rule.targetTier || rule.tier || ruleKey);
-                            if (!allowedTiers.some(t => String(t).toLowerCase() === ruleTierName.toLowerCase())) continue;
-                            
-                            const ruleType = String(rule.type || 'omset').toLowerCase();
-                            const isOmset = ruleType.includes('omset');
-                            const target = Number(String(isOmset ? (rule.omsetTarget || rule.target || 0) : (rule.volumeTarget || rule.target || 0)).replace(/[^0-9]/g, '')) || 0;
-                            
-                            let timeframeDays = 90;
-                            if (rule.timeframe) {
-                                const tfStr = String(rule.timeframe).toLowerCase();
-                                const numVal = parseInt(tfStr.replace(/[^0-9]/g, '')) || 90;
-                                if (tfStr.includes('month') || tfStr.includes('bulan')) timeframeDays = numVal * 30;
-                                else if (tfStr.includes('year') || tfStr.includes('tahun')) timeframeDays = numVal * 365;
-                                else if (tfStr.includes('week') || tfStr.includes('minggu')) timeframeDays = numVal * 7;
-                                else timeframeDays = numVal;
-                            }
-
-                            const cutoff = new Date();
-                            cutoff.setDate(cutoff.getDate() - timeframeDays);
-                            let metricTotal = 0;
-
-                            safeTrans.forEach(t => {
-                                const tType = String(t.type || (t.total < 0 ? 'RETUR' : 'SALE')).toUpperCase();
-                                const isMatch = storeKey(t.customerName || t.customer) === storeKey(finalCust);
-                                if (t && isMatch && tType === 'SALE') {
-                                    if (getSafeTime(t) >= cutoff.getTime()) {
-                                        if (isOmset) metricTotal += (Number(String(t.total).replace(/[^0-9-]/g, '')) || 0);
-                                        else if (ruleType.includes('volume')) {
-                                            const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
-                                            itemsList.forEach(item => {
-                                                let qtyInBks = Number(item.qty) || 0;
-                                                if (item.unit === 'Slop') qtyInBks *= 10;
-                                                if (item.unit === 'Bal') qtyInBks *= 200;
-                                                if (item.unit === 'Karton') qtyInBks *= 800;
-                                                const vUnit = String(rule.volumeUnit || 'Bks').toLowerCase();
-                                                if (vUnit.includes('bks')) metricTotal += qtyInBks;
-                                                if (vUnit.includes('slop')) metricTotal += (qtyInBks / 10);
-                                                if (vUnit.includes('bal')) metricTotal += (qtyInBks / 200);
-                                                if (vUnit.includes('karton')) metricTotal += (qtyInBks / 800);
-                                            });
-                                        }
-                                    }
-                                }
-                            });
-
-                            if (isOmset) metricTotal += Number(finalTotal);
-                            else if (ruleType.includes('volume')) {
-                                finalCart.forEach(item => {
-                                    let qtyInBks = Number(item.qty) || 0;
-                                    if (item.unit === 'Slop') qtyInBks *= 10;
-                                    if (item.unit === 'Bal') qtyInBks *= 200;
-                                    if (item.unit === 'Karton') qtyInBks *= 800;
-                                    const vUnit = String(rule.volumeUnit || 'Bks').toLowerCase();
-                                    if (vUnit.includes('bks')) metricTotal += qtyInBks;
-                                    if (vUnit.includes('slop')) metricTotal += (qtyInBks / 10);
-                                    if (vUnit.includes('bal')) metricTotal += (qtyInBks / 200);
-                                    if (vUnit.includes('karton')) metricTotal += (qtyInBks / 800);
-                                });
-                            }
-
-                            if (metricTotal > currentStoreSeasonalXP) currentStoreSeasonalXP = metricTotal;
-                            debugMetric = metricTotal;
-                            if (metricTotal >= target) { earnedTier = ruleTierName; debugTarget = target; matchedDynamic = true; break; }
-                        }
-
-                        if (!matchedDynamic) {
-                            let fallbackMetric = currentStoreSeasonalXP > 0 ? currentStoreSeasonalXP : (debugMetric > 0 ? debugMetric : finalTotal);
-                            if (fallbackMetric >= 2500000) earnedTier = 'Mythic'; else if (fallbackMetric >= 1000000) earnedTier = 'Epic'; else if (fallbackMetric >= 500000) earnedTier = 'Grandmaster'; else if (fallbackMetric >= 250000) earnedTier = 'Bronze'; else earnedTier = 'Unranked';
-                        }
-
-                        const storeId = selectedCustomerInfo?.id;
-                        let targetDocRef = null; let currentTier = null;
-
-                        if (storeId && storeId !== 'NOO_TEMP' && !isFormalNoo) {
-                            targetDocRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, storeId);
-                            const storeSnap = await getDoc(targetDocRef);
-                            if (storeSnap.exists()) currentTier = storeSnap.data().tier;
-                        } else {
-                            if (isFormalNoo) await new Promise(resolve => setTimeout(resolve, 1500));
-                            const qSnap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/customers`));
-                            const foundDoc = qSnap.docs.find(d => (d.data()?.name || '').trim().toLowerCase() === finalCust.toLowerCase());
-                            if (foundDoc) { targetDocRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, foundDoc.id); currentTier = foundDoc.data().tier; }
-                        }
-                        
-                        if (targetDocRef) {
-                            const localToday = new Date().toLocaleDateString('en-CA');
-                            const storeUpdates = { lastVisit: localToday, lastVisitedBy: agentFallback, updatedAt: serverTimestamp() };
-                            if (currentTier !== earnedTier) storeUpdates.tier = earnedTier;
-                            await updateDoc(targetDocRef, storeUpdates);
-
-                            const localCust = customers.find(c => c.id === targetDocRef.id || (c.name || '').toLowerCase() === finalCust.toLowerCase());
-                            if (localCust) { localCust.lastVisit = localToday; localCust.lastVisitedBy = agentFallback; }
-                            if (currentTier !== earnedTier && triggerCapy) triggerCapy(`Level Up! ${finalCust} earned ${earnedTier}. 🚀`);
-                        }
+                    const storeId = selectedCustomerInfo?.id;
+                    if (storeId && storeId !== 'NOO_TEMP' && !isFormalNoo) {
+                        shopRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, storeId);
+                    } else {
+                        if (isFormalNoo) await new Promise(resolve => setTimeout(resolve, 1500));
+                        const qSnap = await getDocs(collection(db, `artifacts/${appId}/users/${userId}/customers`));
+                        const foundDoc = qSnap.docs.find(d => (d.data()?.name || '').trim().toLowerCase() === finalCust.toLowerCase());
+                        if (foundDoc) shopRef = doc(db, `artifacts/${appId}/users/${userId}/customers`, foundDoc.id);
                     }
-                } catch (e) { console.error("Auto-Promoter Failed:", e); }
+                    if (shopRef) {
+                        const localToday = new Date().toLocaleDateString('en-CA');
+                        await updateDoc(shopRef, { lastVisit: localToday, lastVisitedBy: agentFallback, updatedAt: serverTimestamp() });
+                        const localCust = customers.find(c => c.id === shopRef.id || (c.name || '').toLowerCase() === finalCust.toLowerCase());
+                        if (localCust) { localCust.lastVisit = localToday; localCust.lastVisitedBy = agentFallback; }
+                    }
+                } catch (e) {
+                    console.error('Visit date not saved:', e);
+                    notify(tr("Sale saved. The shop's visit date could not be saved."));
+                    shopRef = null;
+                }
+                const names = nameVariants(finalCust);
+                if (shopRef && levels.length && names.length) {
+                    try {
+                        const rulesSnap = await getDoc(doc(db, `artifacts/${appId}/users/${userId}/appSettings`, 'tierRules'));
+                        const rules = rulesSnap.exists() ? rulesSnap.data().rules : null;
+                        if (rules) {
+                            // ponytail: the shop's whole sales history per sale (a one-field query, no index to deploy); add a (customerName, timestamp) index when one shop passes ~1k sales
+                            const hist = await getDocs(query(collection(db, `artifacts/${appId}/users/${userId}/transactions`), where('customerName', 'in', names)));
+                            const { level } = earnedLevel({ rules, ladder: levels, sales: hist.docs.map(d => d.data()), shopName: finalCust, products: inventory });
+                            const shopSnap = await getDoc(shopRef);
+                            const up = nextLevel(shopSnap.exists() ? shopSnap.data().tier : null, level, levels);
+                            if (up) {
+                                await updateDoc(shopRef, { tier: up, updatedAt: serverTimestamp() });
+                                if (triggerCapy) triggerCapy(`Level Up! ${finalCust} earned ${up}. 🚀`);
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Shop level not updated:', e);
+                        notify(tr("Sale saved. The shop's level could not be updated."));
+                    }
+                }
             }
 
         } catch (error) {

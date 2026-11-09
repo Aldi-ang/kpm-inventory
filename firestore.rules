@@ -805,6 +805,18 @@ service cloud.firestore {
         allow read: if isSalesman(bossUid);
       }
 
+      // =====================================================================
+      // [CHANGE 27 — 2026-11-09, DRAFT until Aldi publishes it] appSettings/tierRules: the owner's shop-level targets
+      // (Settings > Tier Automation Rules). After every sale the terminal reads them to raise the shop's level
+      // (src/utils/storeLevel.js, MerchantSalesView "THE SHOP AFTER A SALE"). Only the catch-all covered appSettings
+      // (owner / T1 / T2), so every salesman (T3-T6) was refused and no salesman's sale ever moved a shop's level
+      // (demo walk 2026-11-08 #15; A-Brain Raw/2026-11-09-promoter). Read: every login of this company, that ONE doc -
+      // the rest of appSettings stays the owner's. Writes stay with the catch-all. rules-test/test-tier-rules-read.mjs.
+      // =====================================================================
+      match /appSettings/{docId} {
+        allow read: if isSalesman(bossUid) && docId == 'tierRules';
+      }
+
       match /motorists/{motoristId} {
         allow read: if isSalesman(bossUid);
         // The second clause is load-bearing: it lets a field agent update their OWN

@@ -527,7 +527,8 @@ const journey = read('src/JourneyView.jsx');
 const eod     = read('src/EODReconciliationView.jsx');
 
 ok('the FIFO debt engine matches by key', /storeKey\(t\.customerName\) === storeKey\(customerName\)/.test(merchant));
-ok('the rank metric matches by key', /storeKey\(t\.customerName \|\| t\.customer\) === storeKey\(finalCust\)/.test(merchant));
+/* the rank metric moved to utils/storeLevel.js (2026-11-09, the shop level after a sale) - still matched by key */
+ok('the rank metric matches by key', /const want = storeKey\(shopName\);/.test(read('src/utils/storeLevel.js')) && /storeKey\(t\.customerName \|\| t\.customer\) === want/.test(read('src/utils/storeLevel.js')));
 ok('the hand-off duplicate check matches by key', /storeKey\(r\.storeName\) === storeKey\(storeName\)/.test(app));
 ok('the hand-off row sweep matches by key', /const sameName = \(v\) => storeKey\(v\) === storeKey\(request\.storeName\)/.test(app));
 ok('the visit map is BUILT with the key', /const storeName = storeKey\(tx\.customerName\)/.test(journey));
@@ -13580,6 +13581,66 @@ console.log('\nSales Terminal: a RUSAK lot is never LOW and never "Running low"'
   ok('REGRESSION: the guide outlives the vault gate (the bar unmounts the mission while the gate is up; it came back switched off)',
      /^let guiding = false;\r?$/m.test(dm) && /useState\(guiding\)/.test(dm) && /useEffect\(\(\) => \{ guiding = guide; \}, \[guide\]\);/.test(dm));
   ok('the guide names the deal button the way the phone shows it (tr), never a raw MAKE DEAL', !/'Tekan MAKE DEAL/.test(guide) && /Tekan \$\{tr\('MAKE DEAL'\)\}/.test(guide));
+}
+section('SHOP LEVEL AFTER A SALE. The owner\'s targets (Settings > Tier Automation Rules), every seller, the visit date never lost (his "make sure ... especially the leveling system that we design", 2026-11-09)');
+{
+  const { earnedLevel, nextLevel, nameVariants, windowDays } = await import('../utils/storeLevel.js');
+  const { isFailure } = await import('../utils/toastSeverity.js');
+  const DAY = 86400e3, NOW = Date.parse('2026-11-09T12:00:00+07:00'), at = (d) => ({ seconds: Math.floor((NOW - d * DAY) / 1000) });
+  const LADDER = [{ id: 'Mythic' }, { id: 'Epic' }, { id: 'Grandmaster' }, { id: 'Bronze' }, { id: 'Unranked' }];
+  const RULES = {
+    Mythic: { type: 'omset', omsetTarget: 2500000, timeframe: '90' },
+    Epic: { type: 'omset', omsetTarget: 1000000, timeframe: '1 bulan' },
+    Grandmaster: { type: 'volume', volumeTarget: 3, volumeUnit: 'Bal', timeframe: '30' },
+    Bronze: { type: 'omset', omsetTarget: 250000, timeframe: '2 minggu' },
+    Unranked: { type: 'omset', omsetTarget: 0, timeframe: '90' },
+  };
+  /* two products with different packs: a Bal of p1 = 200 Bks (20 Slop x 10), a Bal of p2 = 120 Bks (10 Slop x 12) */
+  const PRODUCTS = [{ id: 'p1', packsPerSlop: 10, slopsPerBal: 20 }, { id: 'p2', packsPerSlop: 12, slopsPerBal: 10 }];
+  const SALES = [
+    { customerName: 'TOKO A', type: 'SALE', total: 1500000, timestamp: at(40), items: [] },
+    { customerName: 'TOKO A (Retail)', type: 'SALE', total: 600000, timestamp: at(5), items: [{ productId: 'p2', qty: 1, unit: 'Bal' }] },
+    { customerName: 'toko a', type: 'SALE', total: 300000, timestamp: at(0), items: [{ productId: 'p1', qty: 1, unit: 'Bal' }, { productId: 'p2', qty: 120, unit: 'Bks' }, { productId: 'p1', qty: 9, unit: 'Bal', promo: true }] },
+    { customerName: 'TOKO A', type: 'RETUR', total: 5000000, timestamp: at(1), items: [{ productId: 'p1', qty: 50, unit: 'Bal' }] },
+    { customerName: 'TOKO B', type: 'SALE', total: 9000000, timestamp: at(0), items: [{ productId: 'p1', qty: 50, unit: 'Bal' }] },
+  ];
+  const lv = (sales, rules = RULES) => earnedLevel({ rules, ladder: LADDER, sales, shopName: 'TOKO A', products: PRODUCTS, now: NOW });
+  const g = lv(SALES);
+  ok('BEHAVIOUR: TOKO A reaches Grandmaster on volume - 1 Bal of p2 + 1 Bal of p1 + 120 Bks of p2 (= 1 Bal of p2, its own pack size) = 3 Bal in 30 days; Mythic (2.4M of 2.5M in 90 days) and Epic (0.9M of 1M in 30) are not reached; TOKO B, the RETUR and the promo line never count',
+     g.level === 'Grandmaster' && Math.abs(g.metric - 3) < 1e-9 && g.target === 3, JSON.stringify(g));
+  ok('BEHAVIOUR: the old fixed "a Bal is 200 Bks" would have counted p2\'s 120 Bks as 0.6 Bal (2.6 of 3) - the product\'s own size is what reaches the target',
+     lv(SALES, { ...RULES, Grandmaster: { ...RULES.Grandmaster, volumeTarget: 3 } }).level === 'Grandmaster' && 120 / 200 < 1);
+  ok('BEHAVIOUR: one more 200,000 sale today -> 2.6M in 90 days -> Mythic (the ladder is walked from the top)',
+     lv([...SALES, { customerName: 'TOKO A', type: 'SALE', total: 200000, timestamp: at(0), items: [] }]).level === 'Mythic');
+  ok('BEHAVIOUR: each target has its own window - the 40-day-old 1.5M counts for Mythic (90 days) but not for Epic (30 days); moved to 100 days ago it leaves Mythic\'s window too: 1.1M -> Epic (1M in 30 days), not Mythic',
+     lv([...SALES, { customerName: 'TOKO A', type: 'SALE', total: 200000, timestamp: at(0), items: [] }].map((t, i) => (i === 0 ? { ...t, timestamp: at(100) } : t))).level === 'Epic');
+  ok('BEHAVIOUR: nothing reached -> the bottom level (Unranked), never the old fixed money table; a blank target is "not set", not "free"',
+     lv([{ customerName: 'TOKO A', type: 'SALE', total: 100000, timestamp: at(0), items: [] }]).level === 'Unranked' &&
+     lv([{ customerName: 'TOKO A', type: 'SALE', total: 100000, timestamp: at(0), items: [] }], { ...RULES, Mythic: { type: 'omset', omsetTarget: '', timeframe: '90' } }).level === 'Unranked');
+  ok('BEHAVIOUR: a sale only RAISES a level - Bronze -> Grandmaster writes; Mythic earning Grandmaster writes nothing (lowering is the Season Rank Audit); an old "Silver" ranks as the bottom; a level off the ladder is never written',
+     nextLevel('Bronze', 'Grandmaster', LADDER) === 'Grandmaster' && nextLevel('Mythic', 'Grandmaster', LADDER) === null &&
+     nextLevel('Silver', 'Unranked', LADDER) === null && nextLevel('Silver', 'Bronze', LADDER) === 'Bronze' && nextLevel(null, 'Epic', LADDER) === 'Epic' &&
+     nextLevel('Bronze', 'Diamond', LADDER) === null && nextLevel('Bronze', 'Bronze', LADDER) === null);
+  ok('BEHAVIOUR: the sale history is asked for every name a sale may carry for the shop (4 names, under the 30 an "in" query takes); windows read as Settings writes them',
+     JSON.stringify(nameVariants('TOKO A (Retail)')) === JSON.stringify(['TOKO A', 'TOKO A (Retail)', 'TOKO A (Wholesale)', 'TOKO A (Individual)']) && nameVariants('').length === 0 &&
+     windowDays('90') === 90 && windowDays('3 bulan') === 90 && windowDays('2 minggu') === 14 && windowDays('1 tahun') === 365 && windowDays('') === 90);
+  const msv = read('src/MerchantSalesView.jsx'), appJsx = read('src/App.jsx'), lang = read('src/config/lang.js'), rules = read('firestore.rules');
+  /* from the code, not the comment above it (the comment names the old `if (rules)`) */
+  const after = msv.slice(msv.indexOf('if (isOnline', msv.indexOf('THE SHOP AFTER A SALE')), msv.indexOf('} catch (error) {', msv.indexOf('THE SHOP AFTER A SALE')));
+  ok('REGRESSION: the old promoter is gone - no price-level check (allowedTiers), no fixed 2,500,000 table, no fixed Bal = 200, no log-only catch',
+     after.length > 0 && !/allowedTiers|2500000|qtyInBks \*= 200|Auto-Promoter Failed/.test(after) && !/Auto-Promoter Failed/.test(msv));
+  ok('REGRESSION: the visit date is written BEFORE and OUTSIDE the level step (no targets, or a refused level, never loses the visit), and each step says when it fails',
+     after.indexOf("lastVisit: localToday") > 0 && after.indexOf("lastVisit: localToday") < after.indexOf("appSettings\`, 'tierRules'") &&
+     !/if \(rules\)[\s\S]*lastVisit: localToday/.test(after) &&
+     after.includes(String.fromCharCode(34) + "Sale saved. The shop's visit date could not be saved." + String.fromCharCode(34)) && after.includes(String.fromCharCode(34) + "Sale saved. The shop's level could not be updated." + String.fromCharCode(34)) &&
+     /earnedLevel\(\{ rules, ladder: levels, sales: hist\.docs\.map\(d => d\.data\(\)\), shopName: finalCust, products: inventory \}\)/.test(after) && /nextLevel\(/.test(after) &&
+     /where\('customerName', 'in', names\)/.test(after) && /levels=\{tierSettings\}/.test(appJsx));
+  ok('both messages read as failures (red toast) and have their Indonesian line',
+     isFailure("Sale saved. The shop's visit date could not be saved.") && isFailure("Sale saved. The shop's level could not be updated.") &&
+     lang.includes("'Penjualan tersimpan. Tanggal kunjungan toko tidak bisa disimpan.'") && lang.includes("'Penjualan tersimpan. Level toko tidak bisa diperbarui.'") &&
+     isFailure('Penjualan tersimpan. Level toko tidak bisa diperbarui.'));
+  ok('rules CHANGE 27: every seller of the company reads appSettings/tierRules - that one doc - and nothing else of appSettings (rules-test/test-tier-rules-read.mjs)',
+     /match \/appSettings\/\{docId\} \{\s*allow read: if isSalesman\(bossUid\) && docId == 'tierRules';\s*\}/.test(rules));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

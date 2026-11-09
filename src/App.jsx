@@ -5475,6 +5475,7 @@ const handleGitHubMirror = async () => {
                           motorists={motorists}
                           allowedPayments={agentSettings.allowedPayments}
                           allowedTiers={agentSettings.allowedTiers}
+                          levels={tierSettings}   /* the shop levels, highest first (settings/tiers) - the ladder a sale climbs */
                           allowRetur={userRole === 'ADMIN' ? true : (agentSettings.allowRetur || false)}
                           /* 🔴 NO `userRole === 'ADMIN' ? true` HERE. The privilege is decided once,
                              where agentSettings is built, and this line only passes it on.

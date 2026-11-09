@@ -221,6 +221,8 @@ export const ID = {
     'Awaiting GPS...': 'Menunggu GPS...',
     'Awaiting GPS Lock...': 'Menunggu GPS...',
     'MAKE DEAL': 'SIMPAN TRANSAKSI',
+    "Sale saved. The shop's visit date could not be saved.": 'Penjualan tersimpan. Tanggal kunjungan toko tidak bisa disimpan.',
+    "Sale saved. The shop's level could not be updated.": 'Penjualan tersimpan. Level toko tidak bisa diperbarui.',
     'GIVE PROMO': 'BERIKAN PROMO',
     'SIGN MANIFEST >': 'PILIH PELANGGAN >',
     '{n} Bks left in the vehicle': 'sisa {n} Bks di mobil',

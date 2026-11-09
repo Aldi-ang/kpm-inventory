@@ -14,6 +14,10 @@
 
 
 
+## 🟠 2026-11-09 20:59 WIB — KPM: his "make sure ... especially the leveling system" - every sale saves the shop's visit date; the level follows his Settings targets (one formula), a sale only raises it; pushed with this note + rules draft CHANGE 27
+Full story: the commit message. Proof: A-Brain Raw/2026-11-09-shop-level/RESULT.md; rules-test/test-tier-rules-read.mjs. Next: NEXT-SESSION.md top.
+WAITING ON ALDI: **🔴 PUBLISH firestore.rules (CHANGE 27: every login of the company may READ the level targets, appSettings/tierRules; only T1/T2 change them) in BOTH projects - AFTER his phone shows this version. Paste the whole file, say "published".** ❓ ANSWER: a sale only RAISES a shop's level (lowering stays the monthly Season Rank Audit on the map) - keep it that way? Recommended: yes.
+
 ## 🟠 2026-11-09 20:37 WIB — KPM: his "test it yourself then continue" - both ✅ TESTs passed on the demo emulator (Dika T6: EOD Setoran in the menu, report saved; SWITCH back to the Owner: the unlock beat); #15b diagnosed - no app code changed
 Proof: A-Brain Raw/2026-11-09-t6-eod/, Raw/2026-11-09-promoter/RESULT.md. Next: NEXT-SESSION.md top.
 WAITING ON ALDI: **🔴 DECIDE: the shop's "last visit" date and level never update after ANY salesman's sale (only the owner's) - fix with (1) a rules change he publishes: every login may READ the level targets, only T1/T2 change them; and (2) an app change: the sale saves the visit date on its own, then the level, and says so if the level step fails. Recommended: both.**
