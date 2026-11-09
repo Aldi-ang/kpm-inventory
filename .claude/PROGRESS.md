@@ -14,6 +14,9 @@
 
 
 
+## 🟠 2026-11-10 06:43 WIB — KPM: his "bring the rules here, yes only sales raise the shop level" - whole firestore.rules sent as a file (only CHANGE 27 differs from live); promote-only kept, no code changed
+WAITING ON ALDI: 🔴 PUBLISH the file in BOTH projects once the vault card shows f916ba4 (or newer), then say "published". Then /compact and "go" for the sound board.
+
 ## 🟠 2026-11-09 21:02 WIB — KPM: his sound ask (capybara voice "annoying AF"; the receipt sound "too loud and long") - measured, plan in NEXT-SESSION top, no code changed
 WAITING ON ALDI: type /compact, then "go" - the playable sound board comes next. Still open: 🔴 PUBLISH CHANGE 27 (both projects, after his phone shows 0f2472a); ❓ a sale only raises a level - keep?
 
