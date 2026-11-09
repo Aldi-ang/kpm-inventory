@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-09 18:35 WIB, PC clock (🟠 KPM — professional edition: discussing, 4 questions to him; bugs first)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-09 19:03 WIB, PC clock (🟠 KPM — professional edition answered (option C); bugs first)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-09 19:03 WIB — KPM: professional edition - his 4 answers saved (first customer, option C, capybara stays, setup first, keep list is his)
+Notes: A-Brain Brainstorm/2026-11-09_professional-edition.md. No app code changed.
+WAITING ON ALDI: ❓ ANSWER: bugs that only concern the LOOK of screens we will redraw (lesson camera cutting names, guide boxes on the phone) - skip now and redo in the professional edition, fixing only logic/permission/wording bugs now? Recommended: yes. Then /compact and go.
 
 ## 🟠 2026-11-09 18:35 WIB — KPM: his big job - a professional edition (business look, same logic, game edition kept as his resume, certification) - DISCUSSING, after every open bug
 Notes: A-Brain Brainstorm/2026-11-09_professional-edition.md. No app code changed.
