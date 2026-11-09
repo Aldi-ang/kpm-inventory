@@ -39,7 +39,7 @@ const people = () => LOGINS.map((l) => ({ ...l, ...CARD[l.tier], initials: l.nam
 
 /* trap (b) of the brief: a sign-in that fails while the nightly reset rewrites the logins must not show a raw Firebase code */
 const DEMO_DOWN = 'The demo is being reset. Try again in a minute.';
-const INVITE_ONLY = 'This demo is invite-only - ask KPM for access.';
+const INVITE_ONLY = 'This demo is invite-only - ask us for access.';
 
 /* every question goes to the door keeper (api/demo-switch.js), which checks the sign-in token and his list on the
    server. Never throws: a dead network is an answer too (status 0). */
@@ -77,13 +77,13 @@ export function DemoDoor({ companyName, onGoogle }) {
     return (
         <div className="kpm-mod gate arrive w-full relative z-10">
             <div className="kpm-head">
-                <span className="slot">{companyName || 'KPM Inventory'} · DEMO</span>
+                <span className="slot">{companyName || 'Distribution and Sales Management'} · DEMO</span>
                 <div className="line"><h3>BY INVITATION</h3></div>
-                <p className="kpm-desc">A made-up company on the real app. Sign in with the Google account KPM invited, then pick who to be.</p>
+                <p className="kpm-desc">A made-up company on the real app. Sign in with the Google account we invited, then pick who to be.</p>
             </div>
             <div className="kpm-demo-door-go">
                 <button type="button" onClick={onGoogle} className="kpm-btn key block"><LogIn size={15} /> Sign in with Google</button>
-                <p className="kpm-demo-note">Not invited yet? Ask KPM for access.</p>
+                <p className="kpm-demo-note">Not invited yet? Ask us for access.</p>
             </div>
         </div>
     );

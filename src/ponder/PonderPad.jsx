@@ -273,7 +273,7 @@ export default function PonderPad({ initialSection, onClose, onPick }) {
             </div>
 
             <div className="pp-foot">
-              <span>KPM</span>
+              <span>DSM</span>
               <span className="pp-ticks" />
               <span>Siap <b>{pad2(totals.ready)}</b>/{pad2(totals.all)}</span>
             </div>

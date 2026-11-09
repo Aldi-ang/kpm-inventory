@@ -904,7 +904,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         const isReturReceipt = viewingReceipt.type === 'RETUR' || viewingReceipt.paymentType === 'Retur/BS';
         const displayTotal = viewingReceipt.total || viewingReceipt.amountPaid || 0;
 
-        let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT (REPRINT)*\n------------------------\n`;
+        let text = `*${appSettings?.companyName || "DISTRIBUTION AND SALES MANAGEMENT"}*\n*OFFICIAL RECEIPT (REPRINT)*\n------------------------\n`;
         text += `Date: ${viewingReceipt.timestamp ? new Date(viewingReceipt.timestamp.seconds * 1000).toLocaleString('id-ID') : viewingReceipt.date}\n`;
         text += `Customer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
         if (viewingReceipt.items) {
@@ -980,7 +980,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                         <div className="print-receipt format-thermal !bg-white !text-black w-full max-w-sm shadow-2xl relative flex flex-col font-mono text-sm border-t-8 !border-slate-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all">
                             <div className="p-6 pb-2 shrink-0">
                                 <div className="text-center mb-6">
-                                    <h2 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                    <h2 className="text-2xl font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "DISTRIBUTION AND SALES MANAGEMENT"}</h2>
                                     <p className="text-[10px] font-bold mt-1 !text-slate-400">OFFICIAL SALES RECEIPT</p>
                                     <p className="text-[11px] mt-1 uppercase tracking-widest !text-slate-400">REPRINT COPY</p>
                                 </div>

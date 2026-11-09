@@ -652,7 +652,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                             {printFormat === 'thermal' && (
                                 <div className="p-4 shrink-0 font-mono text-xs">
                                     <div className="text-center mb-4">
-                                        <h2 className="text-base font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                        <h2 className="text-base font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "DISTRIBUTION AND SALES MANAGEMENT"}</h2>
                                         <p className="text-[10px] font-bold mt-1 !text-slate-400">STORE AUDIT RECEIPT</p>
                                     </div>
                                     
@@ -858,7 +858,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                         <!DOCTYPE html>
                                         <html>
                                         <head>
-                                            <title>KPM Invoice</title>
+                                            <title>Invoice</title>
                                             <meta name="viewport" content="width=device-width, initial-scale=1.0">
                                             ${parentStyles}
                                             <style>
@@ -897,7 +897,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                 </button>
 
                                 <button onClick={() => {
-                                    let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*STORE AUDIT RECEIPT*\n------------------------\nDate: ${receiptDateStr}\nTime: ${receiptTimeStr}\nCustomer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
+                                    let text = `*${appSettings?.companyName || "DISTRIBUTION AND SALES MANAGEMENT"}*\n*STORE AUDIT RECEIPT*\n------------------------\nDate: ${receiptDateStr}\nTime: ${receiptTimeStr}\nCustomer: ${viewingReceipt.customerName}\nPayment: ${viewingReceipt.paymentType || 'Cash'}\n------------------------\n`;
                                     
                                     (viewingReceipt.itemsPaid || []).concat(viewingReceipt.itemsReturned || [], viewingReceipt.itemsRemaining || []).reduce((acc, curr) => {
                                         if (!acc.find(i => i.productId === curr.productId)) acc.push(curr); return acc;

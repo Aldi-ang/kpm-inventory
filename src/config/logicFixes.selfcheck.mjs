@@ -11235,7 +11235,7 @@ section('THE INVITE-ONLY DEMO (2026-10-13) - his "i can registered other google 
   const door = code(read('src/components/DemoFrontDoor.jsx'));
   ok('the door signs in with Google only; a person is entered through the server (a custom token), never with a typed password',
      !door.includes('signInWithEmailAndPassword') && door.includes('await signInWithCustomToken(auth, j.token)') && door.includes("fetch('/api/demo-switch'"));
-  ok('not on his list -> told so, then signed out', door.includes("'This demo is invite-only - ask KPM for access.'") && /notify\(INVITE_ONLY\);\s*await signOut\(auth\)/.test(door));
+  ok('not on his list -> told so, then signed out', door.includes("'This demo is invite-only - ask us for access.'") && /notify\(INVITE_ONLY\);\s*await signOut\(auth\)/.test(door));
   const app = code(read('src/App.jsx'));
   ok('his Gmail in the demo reads the demo company (the owner\'s folder) as T1 - not an empty folder of his own (his 18:08 screenshot)',
      app.includes('setUser(IS_DEMO ? { uid: OWNER_UID, realUid: currentUser.uid, email: currentUser.email, displayName: currentUser.displayName, photoURL: currentUser.photoURL } : currentUser)'));
@@ -12767,7 +12767,7 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   ok('BEHAVIOUR: the next seat is the lowest free number, a freed number is reused, a full or over-limit company gets none, the landlord numbers past any limit, and the limit sentence is his',
      s.freeSeats([1, 2], 3)[0] === 3 && s.freeSeats([1, 3], 5)[0] === 2 && s.freeSeats([1, 2, 3], 3).length === 0 &&
      s.freeSeats([1, 2, 3, 4, 5, 6], 5).length === 0 && s.freeSeats([4, 1], Infinity, 3).join() === '2,3,5' &&
-     s.seatDocId('u1', 3) === 'u1_3' && s.seatsFullMsg(25, 25) === '25 of 25 seats used. Ask KPM to add seats.');
+     s.seatDocId('u1', 3) === 'u1_3' && s.seatsFullMsg(25, 25) === '25 of 25 seats used. Ask us to add seats.');
   ok('REGRESSION: under a licence both Fleet login writes (add, and an email change) carry the seat and claim it in the same batch; an email change MOVES the held seat; a self-proxy (no login) takes none',
      (fl.match(/location: savedLocation, \.\.\.\(seatN \? \{ seat: seatN \} : \{\}\),\s*\}(, \{ merge: true \})?\);\s*claimSeat\(batch\);/g) || []).length === 2 &&
      /const needsSeat = licensed && !isSelfProxy && \(!editingAgentId \|\| oldEmailKey !== emailKey\);/.test(fl) &&
@@ -13534,6 +13534,16 @@ console.log('\nSales Terminal: a RUSAK lot is never LOW and never "Running low"'
   const nx = read('src/components/NixieCount.jsx');
   ok('count badge: rollIn mounts the reels on 0 and arms them two frames later, so a badge that appears rolls up', /useState\(!rollIn\)/.test(nx) && /'--i': armed \? d : 0/.test(nx) && /requestAnimationFrame\(\(\) => setArmed\(true\)\)/.test(nx),
     'his round-2 pick rolled the number in on arrival');
+}
+{ /* his 2026-11-09: "change both of the name and app name to be Distribution and Sales management ... this app should not exclusive to cello" */
+  const OLD = /KPM Inventory|KPM INVENTORY|KPM SYSTEM|KPM System|KPM App|KPM Invoice|[Aa]sk KPM|KPM invited|di KPM|KPM account|KPM profile|KPM Employee/;
+  const walkJs = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walkJs(d + '/' + e.name) : /\.jsx?$/.test(e.name) ? [d + '/' + e.name] : []));
+  const left = walkJs('src').filter((f) => OLD.test(read(f)));
+  ok('app name: no screen, receipt, message or default company name says the old KPM name', left.length === 0, 'found in: ' + left.join(', '));
+  ok('app name: tab title + install name "Distribution and Sales Management by AK", phone icon name "DSM"',
+     /<title>Distribution and Sales Management by AK<\/title>/.test(read('index.html')) && /name: 'Distribution and Sales Management by AK',/.test(read('vite.config.js')) && /short_name: 'DSM',/.test(read('vite.config.js')));
+  ok('app name: the demo door says ask us, the login gate prints the full name',
+     /Not invited yet\? Ask us for access\./.test(read('src/components/DemoFrontDoor.jsx')) && />Distribution and Sales Management<\/div>/.test(read('src/App.jsx')));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

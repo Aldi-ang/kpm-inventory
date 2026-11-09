@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-09 07:36 WIB, PC clock (🟠 KPM — next: rename the app to Distribution and Sales Management by AK / DSM; plan in NEXT-SESSION top)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-09 07:43 WIB, PC clock (🟢 KPM — the app is now Distribution and Sales Management / DSM, live)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟢 2026-11-09 07:43 WIB — KPM: his rename - the app is now "Distribution and Sales Management by AK" / "DSM" / demo door "ask us", pushed with this note
+Full story: the commit message. Proof: A-Brain Raw/2026-11-09-rename/GATE.jpg. Next: NEXT-SESSION.md top.
+WAITING ON ALDI: rename the 2 Firebase project display names (Console); fix his saved company name in Settings if it says KPM. ❓ ANSWER: a promo item with no word of its own (a plain "Mug") still prints KPM on its drawn picture (helpers.js promoWord fallback) - print the company name instead? Recommended: yes. ✅ TEST: open the app on the phone - the tab and the login say Distribution and Sales Management. ✅ TEST: T4 van load.
 
 ## 🟠 2026-11-09 07:36 WIB — KPM: rename - his 3 answers saved (DSM / keep by AK / "ask us"), plan in NEXT-SESSION top, not started
 WAITING ON ALDI: type /compact, then "go". He renames the two Firebase project display names himself (steps in the reply).

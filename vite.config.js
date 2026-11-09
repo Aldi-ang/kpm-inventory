@@ -109,8 +109,8 @@ return {
         navigateFallbackDenylist: [/^\/__\//]
       },
       manifest: {
-        name: 'KPM Inventory by AK', // <--- CHANGED: Full name for PC/Installation prompts
-        short_name: 'KPM by AK',     // <--- CHANGED: Shorter name for mobile home screens
+        name: 'Distribution and Sales Management by AK', // <--- CHANGED: Full name for PC/Installation prompts
+        short_name: 'DSM',           // <--- CHANGED: Shorter name for mobile home screens
         description: 'Resident Evil styled offline inventory manager',
         theme_color: '#000000',
         background_color: '#0f0e0d',

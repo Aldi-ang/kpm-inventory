@@ -770,7 +770,7 @@ check(G16, 'the mascot stays out of the login screen',
   'he saw the capybara standing beside the vault gate on his phone, telling him to run a backup '
   + 'he could not reach — the mascot belongs to the app, not to the door');
 check(G16, 'the second line names the app, not the vault screen',
-  /'KPM App access unlocked'/.test(gateCode) && !/'Master Vault unlocked'/.test(gateCode),
+  /'DSM access unlocked'/.test(gateCode) && !/'Master Vault unlocked'/.test(gateCode),
   'his wording: "master vault sentence should be KPM APP instead so kpm app access unlocked"');
 
 /* Three things Aldi caught by looking at the running gate, which no check had been watching. */

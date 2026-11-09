@@ -1421,7 +1421,7 @@ const handleGitHubMirror = async () => {
                     /* To the PERSON (his 2026-09-28 pick A). The template's "To Email" box reads {{to_email}} only
                        once he changes it in EmailJS; until then every code still goes to his own address. */
                     { to_email: user.email, name: profileName || user.displayName || user.email,
-                      message: 'Master vault recovery code for your KPM account.', time: new Date().toLocaleString(), otp_code: newOtp },
+                      message: 'Master vault recovery code for your DSM account.', time: new Date().toLocaleString(), otp_code: newOtp },
                     'veSkmuEcR5qSImMSq'  // 🔐 BRAND NEW SECURE PUBLIC KEY
                 );
                 setIsResetMode(false);
@@ -1476,7 +1476,7 @@ const handleGitHubMirror = async () => {
       return navigator.credentials.create({
           publicKey: {
               challenge: challenge,
-              rp: { name: "KPM System", id: window.location.hostname },
+              rp: { name: "DSM", id: window.location.hostname },
               user: { id: new TextEncoder().encode(user.realUid || user.uid), name: user?.email || "Admin", displayName: user?.displayName || "Administrator" },
               pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
               authenticatorSelection: {
@@ -1754,7 +1754,7 @@ const handleGitHubMirror = async () => {
   };
 
   // Capybara Message Cycle
-  const [capyMsg, setCapyMsg] = useState("Welcome to KPM Inventory!");
+  const [capyMsg, setCapyMsg] = useState("Welcome to DSM!");
   const [showCapyMsg, setShowCapyMsg] = useState(false);
   /* One hide-timer for the mascot, shared by every path that makes him speak. Two paths each
      setting their own 8s timeout meant the FIRST one's timer hid the SECOND one's message —
@@ -2917,7 +2917,7 @@ const handleGitHubMirror = async () => {
                 if (activeData) {
                     // 🚨 KILL SWITCH: Instantly reject suspended Tenants & Salesmen
                     if (activeData.subscriptionStatus === 'SUSPENDED' || activeData.status === 'SUSPENDED') {
-                        notify("ACCOUNT SUSPENDED: Subscription inactive. Please contact KPM System Administration.");
+                        notify("ACCOUNT SUSPENDED: Subscription inactive. Please contact your administrator.");
                         signOut(auth);
                         setUser(null);
                         return;
@@ -2969,7 +2969,7 @@ const handleGitHubMirror = async () => {
                                         activeData.location = liveData.location || activeData.location;
                                         
                                         if (liveData.status === 'SUSPENDED') {
-                                            notify("ACCOUNT SUSPENDED: Profile inactive. Please contact KPM System Administration.");
+                                            notify("ACCOUNT SUSPENDED: Profile inactive. Please contact your administrator.");
                                             signOut(auth);
                                             setUser(null);
                                             return;
@@ -2982,7 +2982,7 @@ const handleGitHubMirror = async () => {
                                     console.warn("Ghost Account Detected! Eradicating global auth tickets...");
                                     await deleteDoc(uidRef);
                                     await deleteDoc(emailRef);
-                                    notify("AUTHORIZATION REVOKED: Your KPM profile was deleted by the Administrator.");
+                                    notify("AUTHORIZATION REVOKED: Your profile was deleted by the Administrator.");
                                     signOut(auth);
                                     setUser(null);
                                     return;
@@ -4889,7 +4889,7 @@ const handleGitHubMirror = async () => {
                    real buttons — the preview merged them into one label because nothing there
                    had to work. */
             <div>
-                <div className="text-[9px] uppercase tracking-[0.34em] text-[var(--shell-ink-3)]">KPM Inventory</div>
+                <div className="text-[9px] uppercase tracking-[0.34em] text-[var(--shell-ink-3)]">Distribution and Sales Management</div>
                 <div className="text-[13px] uppercase tracking-[0.2em] font-bold text-[var(--shell-ink-2)] mt-[7px] mb-[17px]">Master Vault</div>
 
               {/* A REAL FORM, not a div with a click handler. On a phone this is what turns the
@@ -4993,7 +4993,7 @@ const handleGitHubMirror = async () => {
               <RefreshCcw size={48} className="text-[var(--duke-amber-ink)] mb-6 animate-spin" />
               <h2 className="text-xl font-black text-[var(--duke-ink-hi)] uppercase tracking-[0.25em] mb-2">Checking your account</h2>
               <p className="text-[var(--duke-ink-3)] text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
-                  Looking up <span className="text-[var(--duke-amber-ink)]">[{checkingEmail}]</span> in the KPM Employee Directory. The first open on a new device takes a moment.
+                  Looking up <span className="text-[var(--duke-amber-ink)]">[{checkingEmail}]</span> in the Employee Directory. The first open on a new device takes a moment.
               </p>
               <button onClick={handleLogout} className="px-10 py-4 border-2 border-[color-mix(in_srgb,var(--duke-edge-2)_50%,transparent)] text-[var(--duke-ink-3)] font-black uppercase text-xs hover:bg-[var(--duke-well)] transition-all">
                   Disconnect Session
@@ -5022,13 +5022,13 @@ const handleGitHubMirror = async () => {
                 onClose={() => setShowPovSwitch(false)}
             />
         )}
-        {/* 🚀 THE HARD STOP: Blocks any email not found in the KPM Employee Directory */}
+        {/* 🚀 THE HARD STOP: Blocks any email not found in the Employee Directory */}
         {userRole === 'UNAUTHORIZED' ? (IS_DEMO ? <DemoPick /> : (
             <div className="kpm-dark-island fixed inset-0 z-[9999] bg-[var(--duke-scrim-hi)] flex flex-col items-center justify-center text-center p-6 font-mono">
                 <ShieldAlert size={64} className="text-red-600 mb-6 animate-pulse" />
                 <h2 className="text-3xl font-black text-[var(--duke-ink-hi)] uppercase tracking-[0.25em] mb-2">Access Denied</h2>
                 <p className="text-[var(--duke-ink-3)] text-xs font-bold uppercase tracking-widest max-w-md leading-relaxed mb-8">
-                    The email <span className="text-red-500">[{user.email}]</span> is not registered in the KPM Employee Directory. Contact your System Administrator for clearance.
+                    The email <span className="text-red-500">[{user.email}]</span> is not registered in the Employee Directory. Contact your System Administrator for clearance.
                 </p>
                 <button onClick={handleLogout} className="px-10 py-4 border-2 border-red-600/50 text-red-500 font-black uppercase text-xs hover:bg-red-900/30 transition-all shadow-[0_0_15px_rgba(220,38,38,0.2)]">
                     Disconnect Session

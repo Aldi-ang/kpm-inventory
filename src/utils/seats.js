@@ -17,4 +17,4 @@ export function freeSeats(takenNs, limit, count = 1) {
 }
 
 export const seatsUsedText = (used, limit) => `${used} of ${limit} seats used`;
-export const seatsFullMsg = (used, limit) => `${seatsUsedText(used, limit)}. Ask KPM to add seats.`;
+export const seatsFullMsg = (used, limit) => `${seatsUsedText(used, limit)}. Ask us to add seats.`;

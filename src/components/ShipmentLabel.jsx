@@ -70,7 +70,7 @@ export default function ShipmentLabel({ shipment, onClose, companyName }) {
         <div className="px-8 pt-8 pb-7">
           <header className="border-b-2 border-black pb-4 pr-8">
             <h2 className="font-display text-xl font-black uppercase tracking-[0.14em] leading-none text-black">
-              {companyName || 'KPM INVENTORY'}
+              {companyName || 'DISTRIBUTION AND SALES MANAGEMENT'}
             </h2>
             <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-600">
               Label Pengiriman · Shipment Label

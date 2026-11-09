@@ -84,7 +84,7 @@ function linesFor(n, done, mine, doer) {
 const first = (name) => String(name || '').split(' ')[0].toLowerCase().replace(/^./, (c) => c.toUpperCase());
 function greet(n, done, mine, doer, me) {
     const hello = !Object.keys(done).length ? [
-        { face: 'happy', text: 'Halo, selamat datang di KPM! Saya Agent Capybara, pemandu Anda di demo ini.' },
+        { face: 'happy', text: 'Halo, selamat datang di DSM! Saya Agent Capybara, pemandu Anda di demo ini.' },
         { face: 'talk', text: `Kita akan menjalankan satu putaran barang dalam ${LAST} langkah: dari pabrik ke Master Vault, ke gudang wilayah, ke tas salesman, ke toko, lalu sisa barang dan barang rusak kembali ke gudang dan stoknya dihitung.` },
     ] : [{ face: 'happy', text: me ? `Halo, ${first(me.name)}! Anda masuk sebagai ${me.role}.` : 'Halo, selamat datang kembali!' }];
     return [...hello, ...linesFor(n, done, mine, doer)];

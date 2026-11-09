@@ -337,7 +337,7 @@ export default function VaultGate({ playing, agentName }) {
     /* His wording, 2026-08-10: the second line names the whole app, not the vault screen —
        "master vault sentence should be KPM APP instead so kpm app access unlocked". */
     resolveIn(helloRef.current, 'Welcome back', FORMED - 1400, 70, 440);
-    resolveIn(lineRef.current, 'KPM App access unlocked', FORMED + 300, 40, 360);
+    resolveIn(lineRef.current, 'DSM access unlocked', FORMED + 300, 40, 360);
 
     /* The name leaves EXACTLY like the two text lines: letter by letter, each scrambling through
        three glyphs before it goes, so the three read as one idea rather than three effects. */

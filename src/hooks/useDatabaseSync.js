@@ -31,7 +31,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
     const [adminCanvas, setAdminCanvas] = useState([]);
     const [adminPromo, setAdminPromo] = useState([]);   // the boss vehicle's promo goods, pcs - the terminal's give row (stage 4)
     const [branchStock, setBranchStock] = useState({});
-    const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'KPM Inventory', mascotMessages: [] });
+    const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'Distribution and Sales Management', mascotMessages: [] });
     setMasterVaultPlace(appSettings?.masterVaultPlace);
     /* a new array when the setting changes, so every screen's warehouse list (a useMemo on motorists) works itself out again */
     const placedMotorists = useMemo(() => [...motorists], [motorists, appSettings?.masterVaultPlace]);
@@ -47,12 +47,12 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
                 const data = snap.data();
                 setAppSettings(data);
                 setEditCompanyProfile({
-                    name: data?.companyName || "KPM Inventory",
+                    name: data?.companyName || "Distribution and Sales Management",
                     address: data?.companyAddress || "",
                     phone: data?.companyPhone || ""
                 });
             } else {
-                setDoc(doc(db, basePath, 'settings', 'general'), { companyName: 'KPM Inventory' });
+                setDoc(doc(db, basePath, 'settings', 'general'), { companyName: 'Distribution and Sales Management' });
             }
         }, (err) => console.warn("Settings listener:", err.code));
 

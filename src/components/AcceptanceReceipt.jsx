@@ -85,7 +85,7 @@ export default function AcceptanceReceipt({ acceptance, onClose, companyName }) 
           <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6 border-b-2 border-black pb-4 pr-8">
             <div>
               <h2 className="font-display text-xl font-black uppercase tracking-[0.14em] leading-none text-black">
-                {companyName || 'KPM INVENTORY'}
+                {companyName || 'DISTRIBUTION AND SALES MANAGEMENT'}
               </h2>
               <p className="mt-2 text-[10px] font-bold uppercase tracking-[0.2em] sm:tracking-[0.3em] text-gray-600">
                 Surat Jalan · Goods Received Note

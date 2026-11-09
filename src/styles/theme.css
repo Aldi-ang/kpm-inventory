@@ -3886,7 +3886,7 @@ html.lite-mode .kpm-mod.arrive { animation: none; }
   padding: 0; border-bottom: 0; }
 .kpm-mod.gate .kpm-shelf { background-color: transparent; padding: 15px 0 0; }
 .kpm-mod.gate .kpm-shelf.split { border-top: 0; }
-/* line 1 — the eyebrow, in the same 9px / .34em dim gold the gate prints "KPM Inventory" in */
+/* line 1 — the eyebrow, in the same 9px / .34em dim gold the gate prints the app name in */
 .kpm-mod.gate .kpm-head .slot { font-size: 9px; letter-spacing: .34em; color: #8a7048; }
 /* the title stacks rather than sharing a baseline: a flex row with space-between throws it off
    centre the moment anything else sits on the line */

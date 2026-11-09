@@ -672,7 +672,7 @@ export default function BiohazardTheme({
                     {IS_DEMO ? <DemoDoor companyName={appSettings?.companyName} onGoogle={onLogin} /> : (
                     <div className="kpm-mod gate arrive w-full relative z-10">
                         <div className="kpm-head">
-                            <span className="slot">{appSettings?.companyName || 'KPM Inventory'}</span>
+                            <span className="slot">{appSettings?.companyName || 'Distribution and Sales Management'}</span>
                             {/* No state plate on this line any more. The gate's panel is an
                                 eyebrow, a title and the control — a red readout is the one thing
                                 that would break the family, and "Sign in to continue" already
@@ -806,7 +806,7 @@ export default function BiohazardTheme({
                     {/* the glow was a box-shadow, which Lite Mode deletes — the name then lost its
                         edge entirely. A border is a border in every mode. */}
                     <h1 className="text-sm lg:text-[11px] font-display font-bold text-ink border-b-2 border-accent-edge pb-1 lg:pb-1.5 inline-block tracking-[0.08em] uppercase leading-tight">
-                        {appSettings?.companyName || "KPM SYSTEM"}
+                        {appSettings?.companyName || "DSM"}
                     </h1>
                     <p className="kpm-read mt-2 lg:mt-1.5 inline-block">v{appVersion}</p>
                 </div>

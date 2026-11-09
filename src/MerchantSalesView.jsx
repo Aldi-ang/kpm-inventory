@@ -3469,7 +3469,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             {printFormat === 'thermal' && (
                                 <div className="p-4 shrink-0 font-mono text-xs">
                                     <div className="text-center mb-4">
-                                        <h2 className="text-base font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "KPM INVENTORY"}</h2>
+                                        <h2 className="text-base font-black uppercase tracking-widest !text-black">{appSettings?.companyName || "DISTRIBUTION AND SALES MANAGEMENT"}</h2>
                                         <p className="text-[10px] font-bold mt-1 !text-slate-400">OFFICIAL SALES RECEIPT</p>
                                     </div>
                                     
@@ -3670,7 +3670,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                         <!DOCTYPE html>
                                         <html>
                                         <head>
-                                            <title>KPM Invoice</title>
+                                            <title>Invoice</title>
                                             <meta name="viewport" content="width=device-width, initial-scale=1.0">
                                             ${parentStyles}
                                             <style>
@@ -3742,7 +3742,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 </button>
 
                                 <button onClick={() => {
-                                    let text = `*${appSettings?.companyName || "KPM INVENTORY"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${receiptDateStr}\nTime: ${receiptTimeStr}\nCustomer: ${receiptData.customer}\nPayment: ${receiptData.method || 'Cash'}\n------------------------\n`;
+                                    let text = `*${appSettings?.companyName || "DISTRIBUTION AND SALES MANAGEMENT"}*\n*OFFICIAL RECEIPT*\n------------------------\nDate: ${receiptDateStr}\nTime: ${receiptTimeStr}\nCustomer: ${receiptData.customer}\nPayment: ${receiptData.method || 'Cash'}\n------------------------\n`;
                                     if (receiptData.items && receiptData.items.length > 0) {
                                         receiptData.items.forEach(item => { text += `${item.qty} ${item.unit} ${item.name}\n   Rp ${new Intl.NumberFormat('id-ID').format((item.calculatedPrice||0) * item.qty)}\n`; });
                                     }
