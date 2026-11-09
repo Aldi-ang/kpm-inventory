@@ -1,7 +1,7 @@
 // =============================================================================
-// PUBLISHED 2026-11-09 ~07:30 WIB by Aldi from the Firebase Console, (default) database, in BOTH projects - the KPM
-//   project and the demo project kpm-demo-f4d74 (this file as of kpm ac00398, pasted whole; his "published on both kpm
-//   demo and inventory manager"). firestore.rules.deployed-baseline is
+// PUBLISHED 2026-11-10 ~06:46 WIB by Aldi from the Firebase Console, (default) database, in BOTH projects - the KPM
+//   project and the demo project kpm-demo-f4d74 (this file as of kpm 659911c, sent to him whole; his "published both
+//   already"). firestore.rules.deployed-baseline is
 //   that text - the instant rollback copy. Live = the 2026-07-28 rules + the shared rank/badge path closed,
 //   + CHANGE 11/11b (a vault password per person), 12 (lock an account), 13 (T1/T2 move a person to a new
 //   Gmail), 14 (the eight holes found reviewing the live rules), 15 (the bell's Missed list, one per person),
@@ -11,8 +11,8 @@
 //   load lists of his own company again), 22 (T3 and above pick the Stock Opname day), 23 (T3 and above decide each
 //   counted product; a T4 reads their own warehouse's counts), 24 (Sell Again: the sell_damaged holder makes the
 //   "· RUSAK" lot of one damaged pack and its SELL line), 25 (every login of the company reads the warehouse list, places),
-//   26 (a T3 anywhere / a T4 in their own region loads a salesman's van - only the van lists change). Before this:
-//   2026-11-08 ~16:42 (856face, without 25/26); the demo project before this: 2026-10-13.
+//   26 (a T3 anywhere / a T4 in their own region loads a salesman's van - only the van lists change), 27 (every login of the company reads
+//   the shop-level targets, appSettings/tierRules - that one doc). Before this: 2026-11-09 ~07:30 (ac00398, without 27).
 //   Any change below this line is a DRAFT again.
 //
 // Everything except the marked [CHANGE N] / [ADDED] / [FLAGGED] blocks below is
@@ -806,7 +806,7 @@ service cloud.firestore {
       }
 
       // =====================================================================
-      // [CHANGE 27 — 2026-11-09, DRAFT until Aldi publishes it] appSettings/tierRules: the owner's shop-level targets
+      // [CHANGE 27 — 2026-11-09, LIVE 2026-11-10 in both projects] appSettings/tierRules: the owner's shop-level targets
       // (Settings > Tier Automation Rules). After every sale the terminal reads them to raise the shop's level
       // (src/utils/storeLevel.js, MerchantSalesView "THE SHOP AFTER A SALE"). Only the catch-all covered appSettings
       // (owner / T1 / T2), so every salesman (T3-T6) was refused and no salesman's sale ever moved a shop's level

@@ -14,6 +14,9 @@
 
 
 
+## 🟢 2026-11-10 06:46 WIB — KPM: his "published both already" - rules CHANGE 27 live in KPM + demo; header + firestore.rules.deployed-baseline synced
+WAITING ON ALDI: ✅ TEST: as a salesman, make a sale to a shop - its level card shows today's visit date, and the level rises when the shop reaches a target in Settings. Then /compact and "go" for the sound board.
+
 ## 🟠 2026-11-10 06:43 WIB — KPM: his "bring the rules here, yes only sales raise the shop level" - whole firestore.rules sent as a file (only CHANGE 27 differs from live); promote-only kept, no code changed
 WAITING ON ALDI: 🔴 PUBLISH the file in BOTH projects once the vault card shows f916ba4 (or newer), then say "published". Then /compact and "go" for the sound board.
 
