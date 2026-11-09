@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-09 07:34 WIB, PC clock (🟠 KPM — rules 25+26 LIVE in both projects; new ask: rename the app to Distribution and Sales Management)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-09 07:36 WIB, PC clock (🟠 KPM — next: rename the app to Distribution and Sales Management by AK / DSM; plan in NEXT-SESSION top)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,9 @@
 
 
 
+
+## 🟠 2026-11-09 07:36 WIB — KPM: rename - his 3 answers saved (DSM / keep by AK / "ask us"), plan in NEXT-SESSION top, not started
+WAITING ON ALDI: type /compact, then "go". He renames the two Firebase project display names himself (steps in the reply).
 
 ## 🟠 2026-11-09 07:34 WIB — KPM: his "published on both" - rules CHANGE 25 + 26 LIVE (KPM + demo project), baseline synced, pushed with this note. New ask: rename the app - scoped, waiting on his answers
 Next: NEXT-SESSION.md top.
