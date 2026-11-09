@@ -4,6 +4,7 @@
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
   { date: '2026-11-09', items: [
+    { kind: 'fixed', en: 'Demo guide: when the Master Vault is locked, the guide now shows where to unlock it and gives the demo password, and it stays on after the unlock.', id: 'Panduan demo: saat Master Vault terkunci, panduan sekarang menunjukkan tempat membukanya dan memberi sandi demo, dan tetap menyala setelah dibuka.' },
     { kind: 'fixed', en: 'EOD: a new salesman (T6) now has EOD Setoran in the menu and can send the day\'s report.', id: 'EOD: salesman baru (T6) sekarang punya EOD Setoran di menu dan bisa mengirim laporan hari itu.' },
     { kind: 'fixed', en: 'Backup reminder: only the owner, who can make the backup, sees it now. Salesmen no longer get it.', id: 'Pengingat backup: sekarang hanya pemilik, yang bisa membuat backup, yang melihatnya. Salesman tidak lagi menerimanya.' },
     { kind: 'fixed', en: 'Demo guide: its words now match the buttons on the screen.', id: 'Panduan demo: kata-katanya sekarang sama dengan tombol di layar.' },

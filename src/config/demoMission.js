@@ -8,6 +8,7 @@
    the quarantine packs into the Master Vault (App.jsx handleVerifyEOD) - and then counts the vault. */
 /* the guide names a terminal button by the words the phone shows (Indonesian unless English was picked) */
 import { tr } from './lang.js';
+import { VAULT_PASSWORD } from './demoLogins.js';
 export const fmt = (n) => (Number(n) || 0).toLocaleString('id-ID');
 
 export const STEPS = [
@@ -35,15 +36,22 @@ const SHOP = { at: ['[data-guide="shops"]', '[aria-label="Choose customer"]'], s
     done: '[data-mission="4"][data-cust]' };
 const PHOTO = { at: '[data-guide="photo"]', say: 'Tekan Foto serah terima otomatis.', done: '[data-mission="4"][data-photo]' };
 const BAY = '[data-mission="3"]', DIKA = '.pc[data-agent="demo-agent-2"]:not([data-late])';
+/* the owner's vault steps start with the vault open (demo walk 2026-11-08 #1: the owner lands locked - the real app's
+   path, the password opens it - and the guide pointed at Restock Vault, whose master desk stays shut, forever). The
+   big Unlock System key on a locked screen or the menu's Unlock Vault key, whichever is on screen; done = the menu's
+   foot says the vault is open (BiohazardTheme data-vault), so an open vault skips the beat. */
+const UNLOCK = { at: ['[data-guide="unlock"]', '[aria-label="Open navigation"]'],
+    say: [`Master Vault masih terkunci. Tekan tombol ini, lalu ketik sandi ${VAULT_PASSWORD}.`, 'Master Vault masih terkunci. Buka menu, lalu tekan Unlock Vault.'],
+    done: '[data-vault="open"]' };
 export const GUIDE = {
-    1: [nav('restock_vault', 'Restock Vault', '[data-mission="1"]'),
+    1: [UNLOCK, nav('restock_vault', 'Restock Vault', '[data-mission="1"]'),
         { at: '[data-mission="1"]', say: 'Tekan MASUK. Di sini barang yang datang dari pabrik dicatat.', done: '[data-mission="1"][aria-selected="true"]' },
         { at: '[data-guide="asal"]', say: 'Pilih Asal: Produksi Pusat.', done: '[data-guide="asal"][data-ok]', open: true },
         { at: '[data-guide="tujuan"]', say: 'Pilih Tujuan: Gudang Pusat (Master Vault).', done: '[data-guide="tujuan"][data-ok]', open: true },
         { at: '[data-guide="goods"]', say: 'Pilih barang yang datang dari pabrik.', done: '[data-guide="cart"][data-n]' },
         { at: '[data-guide="cart"]', say: 'Isi jumlahnya dalam karton, bal, slop atau bks.', done: '[data-guide="cart"][data-qty]' },
         { at: '[data-guide="save"]', say: 'Tekan Simpan surat jalan.' }],
-    2: [nav('restock_vault', 'Restock Vault', '[data-mission="2"]'),
+    2: [UNLOCK, nav('restock_vault', 'Restock Vault', '[data-mission="2"]'),
         { at: '[data-mission="2"]', say: 'Tekan KIRIM. Di sini barang keluar dari Master Vault.', done: '[data-mission="2"][aria-selected="true"]' },
         { at: '[data-guide="tujuan"]', say: 'Pilih Tujuan: gudang wilayah yang dikirimi.', done: '[data-guide="tujuan"][data-ok]', open: true },
         { at: '[data-guide="goods"]', say: 'Pilih barang yang mau dikirim.', done: '[data-guide="cart"][data-n]' },
@@ -60,7 +68,7 @@ export const GUIDE = {
         SHOP,
         { at: '[data-guide="products"]', say: 'Tekan + pada barang yang dibeli toko. Jumlahnya bisa diubah di Manifest.', done: '[data-mission="4"][data-cart]' },
         PHOTO,
-        { at: '[data-mission="4"]', say: 'Tekan MAKE DEAL.' }],
+        { at: '[data-mission="4"]', say: `Tekan ${tr('MAKE DEAL')}.` }],
     5: [nav('sales', 'Sales Terminal', '[data-mission="5"]'),
         { at: '[data-mission="5"]', say: 'Tekan Retur Mode.', done: '[data-mission="4"][data-retur]' },
         SHOP,
@@ -74,7 +82,7 @@ export const GUIDE = {
         { at: '[data-guide="deck"]', say: 'Hitung tiap kartu: uang tunai, transfer, barang kembali dan pita cukai. Isi angkanya, lalu tekan tombol di bawah kartu.',
           done: '[data-mission="6"]:not([data-stage="open"])' },
         { at: '[data-guide="send"]', say: 'Suratnya sudah lengkap. Tekan kirim.' }],
-    7: [nav('eod', 'EOD Setoran', '[data-guide="eod-review"], [data-mission="7"]'),
+    7: [UNLOCK, nav('eod', 'EOD Setoran', '[data-guide="eod-review"], [data-mission="7"]'),
         { at: '[data-guide="eod-review"]', say: 'Tekan HQ Verification: laporan yang menunggu persetujuan ada di sini.', done: '[data-mission="7"]' },
         { at: DIKA, say: 'Buka kartu Dika hari ini.', done: `${DIKA}.open` },
         { at: `${DIKA} [aria-label^="approve "][aria-pressed="false"]`, say: 'Tekan ✓ untuk menyetujui bagian ini.', done: `${DIKA}[data-all]` },

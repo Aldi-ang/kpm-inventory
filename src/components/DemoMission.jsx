@@ -29,6 +29,9 @@ const LAST = STEPS.length;
 
 /* once per page load: a remount inside the same load (the vault locked and opened again) does not greet twice */
 let greeted = false;
+/* the guide outlives the vault gate: the bar drops the mission while the gate is up (DemoBar inside=false), and the
+   remount used to come back with the guide off (demo walk #1) */
+let guiding = false;
 
 /* storage can be blocked (a private window): then the line forgets on reload, nothing breaks */
 const load = () => {
@@ -242,7 +245,8 @@ export default function DemoMission({ me, isT1, people }) {
     const mine = isT1 || me?.tier === step.who;
     const [greeting, setGreeting] = useState(!greeted);   // the line stays hidden until he has said hello
     const [talking, setTalking] = useState(() => (greeted ? null : greet(n, done, mine, doer, me)));
-    const [guide, setGuide] = useState(false);      // the step-by-step guide, on until closed or the round is done
+    const [guide, setGuide] = useState(guiding);    // the step-by-step guide, on until closed or the round is done
+    useEffect(() => { guiding = guide; }, [guide]);
 
     /* the 34 px the shell moves down for the line, only once the line is there */
     useEffect(() => {

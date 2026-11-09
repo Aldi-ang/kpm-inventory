@@ -12040,16 +12040,17 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
   /* BEHAVIOUR - the live beat on pretend pages: `on` = the selectors present */
   const pageWith = (...on) => (s) => s.split(/,\s*/).some((p) => on.includes(p));
   const g1 = GUIDE[1], g3 = GUIDE[3], g7 = GUIDE[7];
+  const open = (...on) => pageWith('[data-vault="open"]', ...on);   // the owner's vault already unlocked (demo #1 put the unlock beat first)
   ok('BEHAVIOUR: the live beat follows the page - nothing open = the menu; Restock Vault open = MASUK; MASUK open = Asal; Asal and Tujuan filled = the goods; goods + amount = Simpan; and back to the menu when he walks away',
-     liveBeat(g1, pageWith()) === 0 && liveBeat(g1, pageWith('[data-mission="1"]')) === 1 &&
-     liveBeat(g1, pageWith('[data-mission="1"]', '[data-mission="1"][aria-selected="true"]')) === 2 &&
-     liveBeat(g1, pageWith('[data-mission="1"]', '[data-mission="1"][aria-selected="true"]', '[data-guide="asal"][data-ok]', '[data-guide="tujuan"][data-ok]')) === 4 &&
-     liveBeat(g1, pageWith('[data-mission="1"]', '[data-mission="1"][aria-selected="true"]', '[data-guide="asal"][data-ok]', '[data-guide="tujuan"][data-ok]', '[data-guide="cart"][data-n]', '[data-guide="cart"][data-qty]')) === g1.length - 1 &&
-     liveBeat(g1, pageWith('[data-guide="asal"][data-ok]', '[data-guide="cart"][data-n]')) === 0);
+     liveBeat(g1, open()) === 1 && liveBeat(g1, open('[data-mission="1"]')) === 2 &&
+     liveBeat(g1, open('[data-mission="1"]', '[data-mission="1"][aria-selected="true"]')) === 3 &&
+     liveBeat(g1, open('[data-mission="1"]', '[data-mission="1"][aria-selected="true"]', '[data-guide="asal"][data-ok]', '[data-guide="tujuan"][data-ok]')) === 5 &&
+     liveBeat(g1, open('[data-mission="1"]', '[data-mission="1"][aria-selected="true"]', '[data-guide="asal"][data-ok]', '[data-guide="tujuan"][data-ok]', '[data-guide="cart"][data-n]', '[data-guide="cart"][data-qty]')) === g1.length - 1 &&
+     liveBeat(g1, open('[data-guide="asal"][data-ok]', '[data-guide="cart"][data-n]')) === 1);
   ok('BEHAVIOUR: the loading bay - Dika picked and the HOW MANY sheet open = "isi jumlahnya"; a line in the muatan = Muat van; the EOD approval skips straight to Dika\'s card when the pending list is already up',
      liveBeat(g3, pageWith('.kpm-actor[data-agent]', '.kpm-actor.on[data-agent="demo-agent-2"]', '.kpm-bay-sheet')) === 4 &&
      liveBeat(g3, pageWith('.kpm-actor[data-agent]', '.kpm-actor.on[data-agent="demo-agent-2"]', '[data-mission="3"] [data-ponder="go"]:not(:disabled)')) === g3.length - 1 &&
-     liveBeat(g7, pageWith('[data-mission="7"]')) === 2);
+     liveBeat(g7, open('[data-mission="7"]')) === 3);
   ok('Lite Mode keeps the dim without the blur on both layers (.8, his 2026-10-24 frame)',
      /html\.lite-mode \.kpm-mx-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(read('src/styles/theme.css')) &&
      /html\.lite-mode \.kpm-ct-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(read('src/styles/theme.css')));
@@ -13563,6 +13564,22 @@ console.log('\nSales Terminal: a RUSAK lot is never LOW and never "Running low"'
   const guide = read('src/config/demoMission.js'), mission = read('src/components/DemoMission.jsx'), book = read('src/ponder/sections.js');
   ok('the demo guide names the buttons as they read (id): no "Auto handover photo", no "Klik" on a phone, no MAKE DEAL', !/Auto handover photo|'Klik /.test(guide) && !/tekan MAKE DEAL/.test(mission) && /SIMPAN TRANSAKSI/.test(mission));
   ok('the lesson book never says kamu (his never-kamu rule)', !/\bkamu\b/i.test(book));
+}
+{ /* demo walk 2026-11-08 #1 - the owner lands with the Master Vault locked; the guide shows the unlock and outlives the gate */
+  const { GUIDE, liveBeat } = await import('./demoMission.js');
+  const { VAULT_PASSWORD } = await import('./demoLogins.js');
+  const OPEN = '[data-vault="open"]', first = (n) => GUIDE[n][0];
+  ok('BEHAVIOUR: a locked vault puts the owner on the unlock beat first (steps 1, 2, 7), with the demo password in its words; an open vault skips straight past it',
+     [1, 2, 7].every((n) => first(n).done === OPEN && liveBeat(GUIDE[n], () => false) === 0 && liveBeat(GUIDE[n], (s) => s === OPEN) === 1)
+     && [].concat(first(1).say)[0].includes(VAULT_PASSWORD));
+  ok('the salesmen\'s steps and the count never meet the unlock beat (it is the owner\'s vault)', [3, 4, 5, 6, 8].every((n) => GUIDE[n].every((b) => b.done !== OPEN)));
+  const shell = read('src/components/BiohazardTheme.jsx'), app = read('src/App.jsx'), dm = read('src/components/DemoMission.jsx'), guide = read('src/config/demoMission.js');
+  ok('REGRESSION: the marks the beat reads are on the real screens - the menu foot says data-vault="open" only with the vault open; Unlock Vault (menu) and Unlock System (locked dashboard) carry data-guide="unlock", never data-mark (the rail\'s finger-scrub would open it as a screen)',
+     /data-vault=\{isAdmin \? 'open' : undefined\} className="kpm-rail-foot /.test(shell) && /data-guide="unlock"\s+onClick=\{\(\) => \{ if \(setShowAdminLogin\) setShowAdminLogin\(true\)/.test(shell)
+     && /<button data-guide="unlock" onClick=\{\(\) => setShowAdminLogin\(true\)\}/.test(app) && !/data-mark="unlock"/.test(shell + app));
+  ok('REGRESSION: the guide outlives the vault gate (the bar unmounts the mission while the gate is up; it came back switched off)',
+     /^let guiding = false;\r?$/m.test(dm) && /useState\(guiding\)/.test(dm) && /useEffect\(\(\) => \{ guiding = guide; \}, \[guide\]\);/.test(dm));
+  ok('the guide names the deal button the way the phone shows it (tr), never a raw MAKE DEAL', !/'Tekan MAKE DEAL/.test(guide) && /Tekan \$\{tr\('MAKE DEAL'\)\}/.test(guide));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

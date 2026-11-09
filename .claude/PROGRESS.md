@@ -14,6 +14,10 @@
 
 
 
+## 🟠 2026-11-09 20:21 WIB — KPM: demo #1 - the owner's locked vault: the guide points at UNLOCK SYSTEM with admin123 and stays on after; pushed with this note
+Full story: the commit message. Proof: A-Brain Raw/2026-11-09-demo-unlock/ (demo emulator walk). Next: NEXT-SESSION.md top (#15b promoter, then the keep/change board).
+WAITING ON ALDI: ✅ TEST: in the demo as the Owner, press PETUNJUK -> Pandu saya: the guide points at UNLOCK SYSTEM and says the password; after admin123 it carries on to Restock Vault. Still: ✅ TEST Dika (T6) has EOD Setoran. Type /compact before the next item.
+
 ## 🟠 2026-11-09 20:07 WIB — KPM: bug list (logic/permission/wording only, his yes) - T6 gets EOD Setoran, backup reminder only to the owner, demo guide words, no kamu; pushed with this note
 Full story: the commit message. Next: NEXT-SESSION.md top (#1 demo owner locked, #15b promoter, then the keep/change board).
 WAITING ON ALDI: ✅ TEST: in the demo as Dika (T6), the menu has EOD Setoran and the day's report sends. If his own company saved its own tier rights in Settings, tick EOD Setoran for T6 there. Type /compact before the next item.
