@@ -14,6 +14,10 @@
 
 
 
+## 🟠 2026-11-09 20:37 WIB — KPM: his "test it yourself then continue" - both ✅ TESTs passed on the demo emulator (Dika T6: EOD Setoran in the menu, report saved; SWITCH back to the Owner: the unlock beat); #15b diagnosed - no app code changed
+Proof: A-Brain Raw/2026-11-09-t6-eod/, Raw/2026-11-09-promoter/RESULT.md. Next: NEXT-SESSION.md top.
+WAITING ON ALDI: **🔴 DECIDE: the shop's "last visit" date and level never update after ANY salesman's sale (only the owner's) - fix with (1) a rules change he publishes: every login may READ the level targets, only T1/T2 change them; and (2) an app change: the sale saves the visit date on its own, then the level, and says so if the level step fails. Recommended: both.**
+
 ## 🟠 2026-11-09 20:21 WIB — KPM: demo #1 - the owner's locked vault: the guide points at UNLOCK SYSTEM with admin123 and stays on after; pushed with this note
 Full story: the commit message. Proof: A-Brain Raw/2026-11-09-demo-unlock/ (demo emulator walk). Next: NEXT-SESSION.md top (#15b promoter, then the keep/change board).
 WAITING ON ALDI: ✅ TEST: in the demo as the Owner, press PETUNJUK -> Pandu saya: the guide points at UNLOCK SYSTEM and says the password; after admin123 it carries on to Restock Vault. Still: ✅ TEST Dika (T6) has EOD Setoran. Type /compact before the next item.
