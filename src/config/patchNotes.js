@@ -4,6 +4,9 @@
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
   { date: '2026-11-09', items: [
+    { kind: 'fixed', en: 'EOD: a new salesman (T6) now has EOD Setoran in the menu and can send the day\'s report.', id: 'EOD: salesman baru (T6) sekarang punya EOD Setoran di menu dan bisa mengirim laporan hari itu.' },
+    { kind: 'fixed', en: 'Backup reminder: only the owner, who can make the backup, sees it now. Salesmen no longer get it.', id: 'Pengingat backup: sekarang hanya pemilik, yang bisa membuat backup, yang melihatnya. Salesman tidak lagi menerimanya.' },
+    { kind: 'fixed', en: 'Demo guide: its words now match the buttons on the screen.', id: 'Panduan demo: kata-katanya sekarang sama dengan tombol di layar.' },
     { kind: 'fixed', en: 'Promo goods: an item with no word of its own (a plain Mug) now shows your company name on its picture instead of KPM.', id: 'Barang promo: barang tanpa tulisan sendiri (misalnya Mug polos) sekarang menampilkan nama perusahaan Anda di gambarnya, bukan KPM.' },
     { kind: 'new', en: 'New name: the app is now called Distribution and Sales Management (DSM on the phone home screen), so it fits any company. Your own company name from Settings still prints on your receipts.', id: 'Nama baru: aplikasi ini sekarang bernama Distribution and Sales Management (DSM di layar utama HP), supaya cocok untuk perusahaan mana pun. Nama perusahaan Anda dari Settings tetap tercetak di nota.' },
     { kind: 'fixed', en: 'Loading Bay: when a van load is refused, the reason is now written in plain words instead of a database code.', id: 'Loading Bay: kalau muat van ditolak, alasannya sekarang ditulis dengan kata-kata biasa, bukan kode database.' },

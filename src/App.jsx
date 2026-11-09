@@ -864,10 +864,10 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
      mascot remounted (the cropper, the vault gate). Now: once per sign-in, after the vault gate is passed. */
   const usbNagged = useRef(null);
   useEffect(() => {
-    if (!user || gateUp || isUsbSecure || usbNagged.current === user.uid) return;
+    if (!user || !isAdmin || gateUp || isUsbSecure || usbNagged.current === user.uid) return;   // only a login that can make the backup (demo walk #15: a T6 was told)
     usbNagged.current = user.uid;
     notify('⚠️ PROTOCOL ALERT: TIME FOR USB SAFE BACKUP!');
-  }, [user, gateUp, isUsbSecure]);
+  }, [user, isAdmin, gateUp, isUsbSecure]);
   
   
 

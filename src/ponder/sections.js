@@ -70,12 +70,12 @@ export const SECTIONS = [
   {
     id: 'eod', label: 'EOD Setoran', short: 'Setoran', icon: 'Wallet',
     blurb: 'Tutup hari: uang yang dihitung dibandingkan dengan apa.',
-    entries: [{ title: 'Setoran harian', desc: 'Angka kamu dibandingkan dengan penjualan hari itu, dan kenapa tidak bisa diubah.', icon: 'Wallet', soon: true }],
+    entries: [{ title: 'Setoran harian', desc: 'Angka setoran Anda dibandingkan dengan penjualan hari itu, dan kenapa tidak bisa diubah.', icon: 'Wallet', soon: true }],
   },
   {
     id: 'receivables', label: 'Receivables & Consignment', short: 'Piutang', icon: 'Receipt',
     blurb: 'Utang yang nyata, dan barang yang cuma dititipkan.',
-    entries: [{ title: 'Piutang vs titipan', desc: 'Mana yang uang kamu, mana yang barang kamu.', icon: 'Receipt', soon: true }],
+    entries: [{ title: 'Piutang vs titipan', desc: 'Mana yang uang Anda, mana yang barang Anda.', icon: 'Receipt', soon: true }],
   },
   {
     id: 'fleet', label: 'Fleet & Canvas', short: 'Fleet', icon: 'Truck',

@@ -14,6 +14,10 @@
 
 
 
+## 🟠 2026-11-09 20:07 WIB — KPM: bug list (logic/permission/wording only, his yes) - T6 gets EOD Setoran, backup reminder only to the owner, demo guide words, no kamu; pushed with this note
+Full story: the commit message. Next: NEXT-SESSION.md top (#1 demo owner locked, #15b promoter, then the keep/change board).
+WAITING ON ALDI: ✅ TEST: in the demo as Dika (T6), the menu has EOD Setoran and the day's report sends. If his own company saved its own tier rights in Settings, tick EOD Setoran for T6 there. Type /compact before the next item.
+
 ## 🟠 2026-11-09 19:03 WIB — KPM: professional edition - his 4 answers saved (first customer, option C, capybara stays, setup first, keep list is his)
 Notes: A-Brain Brainstorm/2026-11-09_professional-edition.md. No app code changed.
 WAITING ON ALDI: ❓ ANSWER: bugs that only concern the LOOK of screens we will redraw (lesson camera cutting names, guide boxes on the phone) - skip now and redo in the professional edition, fixing only logic/permission/wording bugs now? Recommended: yes. Then /compact and go.

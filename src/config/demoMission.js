@@ -33,20 +33,20 @@ const nav = (id, label, inside) => ({ at: [`[data-mark="${id}"]`, '[aria-label="
     say: [`Buka ${label} dari menu.`, `Buka menu, lalu pilih ${label}.`], done: inside });
 const SHOP = { at: ['[data-guide="shops"]', '[aria-label="Choose customer"]'], say: ['Pilih tokonya dari daftar.', 'Pilih toko yang Anda kunjungi.'],
     done: '[data-mission="4"][data-cust]' };
-const PHOTO = { at: '[data-guide="photo"]', say: 'Tekan Auto handover photo.', done: '[data-mission="4"][data-photo]' };
+const PHOTO = { at: '[data-guide="photo"]', say: 'Tekan Foto serah terima otomatis.', done: '[data-mission="4"][data-photo]' };
 const BAY = '[data-mission="3"]', DIKA = '.pc[data-agent="demo-agent-2"]:not([data-late])';
 export const GUIDE = {
     1: [nav('restock_vault', 'Restock Vault', '[data-mission="1"]'),
         { at: '[data-mission="1"]', say: 'Tekan MASUK. Di sini barang yang datang dari pabrik dicatat.', done: '[data-mission="1"][aria-selected="true"]' },
         { at: '[data-guide="asal"]', say: 'Pilih Asal: Produksi Pusat.', done: '[data-guide="asal"][data-ok]', open: true },
         { at: '[data-guide="tujuan"]', say: 'Pilih Tujuan: Gudang Pusat (Master Vault).', done: '[data-guide="tujuan"][data-ok]', open: true },
-        { at: '[data-guide="goods"]', say: 'Klik barang yang datang dari pabrik.', done: '[data-guide="cart"][data-n]' },
+        { at: '[data-guide="goods"]', say: 'Pilih barang yang datang dari pabrik.', done: '[data-guide="cart"][data-n]' },
         { at: '[data-guide="cart"]', say: 'Isi jumlahnya dalam karton, bal, slop atau bks.', done: '[data-guide="cart"][data-qty]' },
         { at: '[data-guide="save"]', say: 'Tekan Simpan surat jalan.' }],
     2: [nav('restock_vault', 'Restock Vault', '[data-mission="2"]'),
         { at: '[data-mission="2"]', say: 'Tekan KIRIM. Di sini barang keluar dari Master Vault.', done: '[data-mission="2"][aria-selected="true"]' },
         { at: '[data-guide="tujuan"]', say: 'Pilih Tujuan: gudang wilayah yang dikirimi.', done: '[data-guide="tujuan"][data-ok]', open: true },
-        { at: '[data-guide="goods"]', say: 'Klik barang yang mau dikirim.', done: '[data-guide="cart"][data-n]' },
+        { at: '[data-guide="goods"]', say: 'Pilih barang yang mau dikirim.', done: '[data-guide="cart"][data-n]' },
         { at: '[data-guide="cart"]', say: 'Isi jumlah yang dikirim.', done: '[data-guide="cart"][data-qty]' },
         { at: '[data-guide="save"]', say: 'Tekan Kirim sekarang, lalu setujui.' }],
     3: [nav('fleet', 'Fleet & Canvas', '.kpm-actor[data-agent]'),

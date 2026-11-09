@@ -57,7 +57,7 @@ const GO = {
     2: [{ face: 'think', text: 'Sekarang barang itu perlu dikirim ke gudang wilayah lewat surat jalan.' },
         { face: 'talk', text: 'Di Restock Vault, tekan KIRIM, pilih gudang tujuan dan jumlahnya, lalu kirim.' }],
     3: [{ face: 'think', text: 'Buka Fleet & Canvas, pilih DIKA SAPUTRA, lalu muat barang dari gudang ke tasnya.' }],
-    4: [{ face: 'think', text: 'Sekarang saatnya berjualan. Buka Sales Terminal, pilih toko, isi keranjang, ambil foto serah terima, lalu tekan MAKE DEAL.' }],
+    4: [{ face: 'think', text: 'Sekarang saatnya berjualan. Buka Sales Terminal, pilih toko, isi keranjang, ambil foto serah terima, lalu tekan SIMPAN TRANSAKSI.' }],
     5: [{ face: 'think', text: 'Ada toko yang mengembalikan barang rusak. Barang itu tidak boleh dijual lagi, jadi masuk karantina di tas.' },
         { face: 'talk', text: 'Di Sales Terminal, tekan RETUR, pilih tokonya, tandai barangnya Damaged dan pilih alasannya, ambil foto, lalu proses.' }],
     6: [{ face: 'think', text: 'Sore hari, Dika menutup harinya: hitung uang dan sisa barang di tas.' },

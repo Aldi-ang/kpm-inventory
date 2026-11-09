@@ -10219,7 +10219,7 @@ section('THE TWO-PART BELL: NEEDS YOU / MISSED, EVERY STRIP FADES (2026-10-02)')
   ok('no orange-N00 class in the bell: tailwind.config.js has ONE orange, so they were never generated (titles printed black)',
      !/(text|border|bg)-orange-\d/.test(bell) && /'orange':?\s*'var\(--orange\)'|orange:\s+'var\(--orange\)'/.test(read('tailwind.config.js')));
   ok('the USB-backup reminder is a warning in the top panel once per sign-in (his A, 07:50), never the capybara\'s untimed line',
-     /if \(!user \|\| gateUp \|\| isUsbSecure \|\| usbNagged\.current === user\.uid\) return;\s*usbNagged\.current = user\.uid;\s*notify\('⚠️ PROTOCOL ALERT: TIME FOR USB SAFE BACKUP!'\);/.test(app) &&
+     /if \(!user \|\| !isAdmin \|\| gateUp \|\| isUsbSecure \|\| usbNagged\.current === user\.uid\) return;[^\n]*\s*usbNagged\.current = user\.uid;\s*notify\('⚠️ PROTOCOL ALERT: TIME FOR USB SAFE BACKUP!'\);/.test(app) &&
      !/PROTOCOL ALERT|last_usb_backup/.test(capy));
   ok('rules draft: a person reads and writes only their own missed_log doc',
      /match \/missed_log\/\{profileId\} \{\s*allow read, write: if isSalesman\(bossUid\) && getEmployeeProfile\(\)\.get\('agentId', ''\) == profileId;\s*\}/.test(rules));
@@ -13553,6 +13553,16 @@ console.log('\nSales Terminal: a RUSAK lot is never LOW and never "Running low"'
      /<title>Distribution and Sales Management by AK<\/title>/.test(read('index.html')) && /name: 'Distribution and Sales Management by AK',/.test(read('vite.config.js')) && /short_name: 'DSM',/.test(read('vite.config.js')));
   ok('app name: the demo door says ask us, the login gate prints the full name',
      /Not invited yet\? Ask us for access\./.test(read('src/components/DemoFrontDoor.jsx')) && />Distribution and Sales Management<\/div>/.test(read('src/App.jsx')));
+}
+{ /* demo walk 2026-11-08 #3, #14, #15 - logic, permission and wording items (his "yes fix it", 2026-11-09) */
+  const perm = read('src/config/permissions.js'), roles = perm.slice(perm.indexOf('export let ROLE_PERMISSIONS'), perm.indexOf('};', perm.indexOf('export let ROLE_PERMISSIONS')));
+  const tiers = roles.split('[CORPORATE_TIERS.TIER_').slice(1).map((b) => [b[0], b]);
+  const noClose = tiers.filter(([, b]) => /'view_sales'/.test(b) && !/'view_eod'/.test(b)).map(([t]) => 'T' + t);
+  ok('BEHAVIOUR: every tier that sells by default can also close its day (view_sales -> view_eod); a T6 rookie had no EOD Setoran', tiers.length === 6 && noClose.length === 0, 'missing on: ' + noClose.join(', '));
+  ok('REGRESSION: the USB-backup reminder goes only to a login that can make the backup (the unlocked vault)', /if \(!user \|\| !isAdmin \|\| gateUp \|\| isUsbSecure \|\| usbNagged\.current === user\.uid\) return;/.test(read('src/App.jsx')) && /\}, \[user, isAdmin, gateUp, isUsbSecure\]\);/.test(read('src/App.jsx')));
+  const guide = read('src/config/demoMission.js'), mission = read('src/components/DemoMission.jsx'), book = read('src/ponder/sections.js');
+  ok('the demo guide names the buttons as they read (id): no "Auto handover photo", no "Klik" on a phone, no MAKE DEAL', !/Auto handover photo|'Klik /.test(guide) && !/tekan MAKE DEAL/.test(mission) && /SIMPAN TRANSAKSI/.test(mission));
+  ok('the lesson book never says kamu (his never-kamu rule)', !/\bkamu\b/i.test(book));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

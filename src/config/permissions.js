@@ -190,7 +190,7 @@ export let ROLE_PERMISSIONS = {
         'view_reports_personal' // 🚀 THE DROPDOWN AUTHORITY
     ],
     [CORPORATE_TIERS.TIER_6]: [ 
-        'view_journey', 'view_agent_inventory', 'view_sales', 'view_agent_profile',
+        'view_journey', 'view_agent_inventory', 'view_sales', 'view_eod', 'view_agent_profile',
         'view_reports_personal' // 🚀 THE DROPDOWN AUTHORITY
     ]
 };
@@ -214,7 +214,7 @@ export const hasClearance = (userRole, requiredFeature) => {
     let activePerms = ROLE_PERMISSIONS[role];
     if (!activePerms) {
         // Force fallback to Tier 5 Operative defaults
-        activePerms = ROLE_PERMISSIONS[CORPORATE_TIERS.TIER_5] || ['view_journey', 'view_agent_inventory', 'view_sales', 'view_agent_profile', 'view_reports_personal'];
+        activePerms = ROLE_PERMISSIONS[CORPORATE_TIERS.TIER_5] || ['view_journey', 'view_agent_inventory', 'view_sales', 'view_eod', 'view_agent_profile', 'view_reports_personal'];
     }
     
     // 🛡️ ALL_ACCESS is Tier 1's exclusive god-mode key. Never honor it for any other tier,
