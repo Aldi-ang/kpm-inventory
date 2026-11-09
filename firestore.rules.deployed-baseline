@@ -1,6 +1,7 @@
 // =============================================================================
-// PUBLISHED by 2026-11-06 ~09:10 WIB by Aldi from the Firebase Console (this file as of kpm d16c9ad, put on his
-//   clipboard and pasted whole; his "i already paste the new rules in the firestore"). firestore.rules.deployed-baseline is
+// PUBLISHED 2026-11-09 ~07:30 WIB by Aldi from the Firebase Console, (default) database, in BOTH projects - the KPM
+//   project and the demo project kpm-demo-f4d74 (this file as of kpm ac00398, pasted whole; his "published on both kpm
+//   demo and inventory manager"). firestore.rules.deployed-baseline is
 //   that text - the instant rollback copy. Live = the 2026-07-28 rules + the shared rank/badge path closed,
 //   + CHANGE 11/11b (a vault password per person), 12 (lock an account), 13 (T1/T2 move a person to a new
 //   Gmail), 14 (the eight holes found reviewing the live rules), 15 (the bell's Missed list, one per person),
@@ -8,7 +9,10 @@
 //   limited), 18 (only T1-T4 make a shop Grosir), 19 (team offers: T1-T3 everywhere, T4 his own region),
 //   20 (the seat limit: a login under a licensed company holds a numbered seat), 21 (a company owner can
 //   load lists of his own company again), 22 (T3 and above pick the Stock Opname day), 23 (T3 and above decide each
-//   counted product; a T4 reads their own warehouse's counts). Before this: 2026-11-01 ~19:24 (03acc89, without 22 and 23).
+//   counted product; a T4 reads their own warehouse's counts), 24 (Sell Again: the sell_damaged holder makes the
+//   "· RUSAK" lot of one damaged pack and its SELL line), 25 (every login of the company reads the warehouse list, places),
+//   26 (a T3 anywhere / a T4 in their own region loads a salesman's van - only the van lists change). Before this:
+//   2026-11-08 ~16:42 (856face, without 25/26); the demo project before this: 2026-10-13.
 //   Any change below this line is a DRAFT again.
 //
 // Everything except the marked [CHANGE N] / [ADDED] / [FLAGGED] blocks below is
@@ -787,6 +791,20 @@ service cloud.firestore {
         allow create, update: if isSalesman(bossUid);
       }
 
+      // =====================================================================
+      // [CHANGE 25 — 2026-11-09, DRAFT until Aldi publishes it] places: the company's warehouse registry (gudang
+      // names + addresses). Every Restock Vault desk reads it - the branch desk's delivery address
+      // (BranchWarehouseManager.jsx:572) and the surat jalan route boxes (RestockVaultView.jsx:282). Only the
+      // catch-all covered it (owner / T1 / T2), so a T3 (AREA_ADMIN) or T4 (FLEET_CAPTAIN) opening Restock Vault
+      // was refused and the address came back empty (demo walk 2026-11-08 #4; on the dev server the refusal also
+      // tripped a Firestore SDK assertion, ca9, under React StrictMode - not in a production build).
+      // Read: every login of this company. Writes stay with the catch-all (the registry is T1/T2's).
+      // rules-test/test-places-read.mjs.
+      // =====================================================================
+      match /places/{placeId} {
+        allow read: if isSalesman(bossUid);
+      }
+
       match /motorists/{motoristId} {
         allow read: if isSalesman(bossUid);
         // The second clause is load-bearing: it lets a field agent update their OWN
@@ -830,6 +848,16 @@ service cloud.firestore {
           (isSalesman(bossUid) && getEmployeeProfile().agentId == motoristId) ||
           // [CHANGE 23 — DRAFT] rejecting a product reopens it on the team leader's card, and nothing else on the card
           (opnameDecider(bossUid) && (isAreaAdmin(bossUid) || resource.data.get('location', '') == getEmployeeProfile().get('location', 'NONE')) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastOpname'])) ||
+          // [CHANGE 26 — 2026-11-09, DRAFT until Aldi publishes it] LOADING A SALESMAN'S VAN (Fleet & Roster > Loading Bay,
+          // FleetCanvasManager handleLoadCanvas / handleReturnToWarehouse). His "how the regional admin put item to the agent
+          // inventory" (2026-09-22): a T4's daily job. Before this only a T4 holding the hire/fire switch (canEditRoster,
+          // the first clause) could, so the app offered Muat van to every T4 and the database refused the rest (demo walk
+          // 2026-11-08 #2). A T3 anywhere, a T4 in their own region; ONLY the van lists change, and one of them MUST change
+          // (hasAny: a write that changes nothing would pass hasOnly on its own - rules-test/test-agent-chest.mjs caught it).
+          // rules-test/test-van-load.mjs.
+          ((isAreaAdmin(bossUid) || (isFleetCaptain(bossUid) && resource.data.get('location', '') == getEmployeeProfile().get('location', 'NONE'))) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasAny(['activeCanvas', 'promoCanvas']) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activeCanvas', 'promoCanvas'])) ||
           // [CHANGE 13 — 2026-09-29, DRAFT] a T1/T2 saves a roster card (the Gmail move's other half) - roster cards
           // stay out of the T2 catch-all (CHANGE 14). Never a T1's card, never into a T1 tag.
           (isCompanyTopTier(bossUid) && !isT1Tag(resource.data.get('userRole', 'NONE')) && !isT1Tag(request.resource.data.get('userRole', 'NONE')));

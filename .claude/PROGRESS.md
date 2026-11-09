@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-09 07:08 WIB, PC clock (🟠 KPM — demo list: #11 + #2 pushed; rules CHANGE 25+26 wait for his publish in BOTH projects)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-09 07:34 WIB, PC clock (🟠 KPM — rules 25+26 LIVE in both projects; new ask: rename the app to Distribution and Sales Management)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-09 07:34 WIB — KPM: his "published on both" - rules CHANGE 25 + 26 LIVE (KPM + demo project), baseline synced, pushed with this note. New ask: rename the app - scoped, waiting on his answers
+Next: NEXT-SESSION.md top.
+WAITING ON ALDI: the rename questions (short name for the phone, keep "by AK", who the demo door says to ask). ✅ TEST: as a T4 on the live app, load a salesman's van - it saves now.
 
 ## 🟠 2026-11-09 07:08 WIB — KPM: demo #2 - the van load says why in plain words (pushed with this note) + rules draft CHANGE 26 (a T4 loads a van without the hire/fire switch)
 Proof: demo on the local emulator (draft: loaded 50 Bks; live rules: the plain refusal); rules-test/test-van-load.mjs. Next: NEXT-SESSION.md top.
