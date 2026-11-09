@@ -14,6 +14,9 @@
 
 
 
+## 🟠 2026-11-09 21:02 WIB — KPM: his sound ask (capybara voice "annoying AF"; the receipt sound "too loud and long") - measured, plan in NEXT-SESSION top, no code changed
+WAITING ON ALDI: type /compact, then "go" - the playable sound board comes next. Still open: 🔴 PUBLISH CHANGE 27 (both projects, after his phone shows 0f2472a); ❓ a sale only raises a level - keep?
+
 ## 🟠 2026-11-09 20:59 WIB — KPM: his "make sure ... especially the leveling system" - every sale saves the shop's visit date; the level follows his Settings targets (one formula), a sale only raises it; pushed with this note + rules draft CHANGE 27
 Full story: the commit message. Proof: A-Brain Raw/2026-11-09-shop-level/RESULT.md; rules-test/test-tier-rules-read.mjs. Next: NEXT-SESSION.md top.
 WAITING ON ALDI: **🔴 PUBLISH firestore.rules (CHANGE 27: every login of the company may READ the level targets, appSettings/tierRules; only T1/T2 change them) in BOTH projects - AFTER his phone shows this version. Paste the whole file, say "published".** ❓ ANSWER: a sale only RAISES a shop's level (lowering stays the monthly Season Rank Audit on the map) - keep it that way? Recommended: yes.
