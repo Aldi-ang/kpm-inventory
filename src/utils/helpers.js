@@ -306,14 +306,21 @@ export const promoGoods = (product) => {
 /* a promo item's list picture: an uploaded photo, else its type's render (or the snapshot of his colours), else the drawn
    skin - the regional warehouse chest's rule, shared by the van bay and Agent Inventory (stage 3) */
 export const promoPic = (product) => product?.images?.front || (promoGoods(product) ? product.thumb || `/promo/${promoGoods(product)}.png` : promoSkin(product, 'front'));
+/* the company's own name - what an item with no word of its own prints (his 2026-11-09 "yes print the company name").
+   Set from the settings on every render, like setMasterVaultPlace; cut at a space to fit 18 letters
+   ("PT ADI KARYA SUKSES" -> PT ADI KARYA). No name saved -> DSM. */
+let promoBrand = '';
+export const setPromoBrand = (name) => { promoBrand = String(name || '').trim().toUpperCase(); };
+const brandWord = () => (promoBrand.length <= 18 ? promoBrand || 'DSM'
+    : promoBrand.slice(0, 19).replace(/\s+\S*$/, '') || promoBrand.slice(0, 18));
 /* the word printed on the goods: his PRINTED TEXT if he typed one, else the name without the goods' own word
-   ("T SHIRT TAWANG" -> TAWANG), or KPM */
+   ("T SHIRT TAWANG" -> TAWANG), else the company name */
 export const promoWord = (product) => {
     const own = String(product?.printText || '').trim();
     if (own) return own.toUpperCase().slice(0, 18);
     const words = PROMO_GOODS.find(([id]) => id === promoGoods(product))?.[2];
     const left = String(product?.name || '').replace(words || /$^/, '').replace(/^[\s\-:]+|[\s\-:]+$/g, '');
-    return (left || 'KPM').toUpperCase();
+    return left ? left.toUpperCase() : brandWord();
 };
 
 /* THE LOOK of the 3D goods (his 2026-10-26 "edit the color appearance on the 3D design, and change the name on it when
@@ -350,7 +357,7 @@ export const GOODS_SECOND = { tshirt: 'BACK TEXT', lighter: 'BACK TEXT', poster:
 
 /* The flat picture of a promo item with no photo (his 2026-10-26 "default skin for the 3D promo item like on the
    preview"): the lab's T-shirt card - cream, a black shape, a gold word ON the black (gold never as text on light).
-   A T-shirt gets the shirt, anything else a black label with its word; the back says KPM. Drawn, never saved. Since
+   A T-shirt gets the shirt, anything else a black label with its word. Drawn, never saved. Since
    the 3D goods it is the fallback: an item no goods type fits, or a phone where the 3D model cannot load. */
 export const promoSkin = (product, side) => {
     const shirt = promoGoods(product) === 'tshirt';

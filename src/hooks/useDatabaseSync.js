@@ -3,7 +3,7 @@ import { collection, doc, getDocs, onSnapshot, query, orderBy, setDoc, where } f
 import { applyDocChanges } from '../utils/docChanges';
 import { ACCESS_DOC_ID, accessFor, grantQueries, seesEveryShop } from '../utils/customerAccess.js';
 import { notify } from '../components/Toast.jsx';
-import { isPromo } from '../utils/helpers';
+import { isPromo, setPromoBrand } from '../utils/helpers';
 import { offersFromDocs } from '../utils/vanBay';
 import { isNonBranch, setMasterVaultPlace } from '../utils/supply.js';
 
@@ -33,6 +33,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
     const [branchStock, setBranchStock] = useState({});
     const [appSettings, setAppSettings] = useState({ mascotImage: '', companyName: 'Distribution and Sales Management', mascotMessages: [] });
     setMasterVaultPlace(appSettings?.masterVaultPlace);
+    setPromoBrand(appSettings?.companyName);   // a promo item with no word of its own prints the company name
     /* a new array when the setting changes, so every screen's warehouse list (a useMemo on motorists) works itself out again */
     const placedMotorists = useMemo(() => [...motorists], [motorists, appSettings?.masterVaultPlace]);
     const [editCompanyProfile, setEditCompanyProfile] = useState({ name: "", address: "", phone: "" });

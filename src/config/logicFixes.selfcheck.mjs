@@ -12148,11 +12148,11 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
   /* His 2026-10-26 "can u give it like default skin for the 3D promo item like on the preview u gave me earlier": a promo
      item with no photo draws the lab's T-shirt card (tools/ponder-lab.jsx labShirtPic). Drawn, never saved. */
   const skin = (p, side) => decodeURIComponent(String(promoSkin?.(p, side)).replace('data:image/svg+xml,', ''));
-  ok('BEHAVIOUR: a promo item with no photo gets the default skin - a shirt by its name gets the shirt with the rest of the name on it ("T-shirt Cello" -> CELLO, back KPM); a lighter gets the black label; a name with & stays a valid picture',
+  ok('BEHAVIOUR: a promo item with no photo gets the default skin - a shirt by its name gets the shirt with the rest of the name on it ("T-shirt Cello" -> CELLO, the back repeats it); a lighter with no word of its own prints the company name (none saved -> DSM) on the black label; a name with & stays a valid picture',
      skin({ name: 'T-shirt Cello' }, 'front').includes('M31 13') && skin({ name: 'T-shirt Cello' }, 'front').includes('>CELLO</text>') &&
      /* the back repeats the front word now - no fixed KPM (his 2026-10-26 "weird if the other one is tawang but the other text is kpm") */
      skin({ name: 'Kaos - Cello' }, 'front').includes('>CELLO</text>') && skin({ name: 'T-shirt Cello' }, 'back').includes('>CELLO</text>') &&
-     skin({ name: 'Lighter' }, 'front').includes('>KPM</text>') && !skin({ name: 'Lighter' }, 'front').includes('M31 13') &&
+     skin({ name: 'Lighter' }, 'front').includes('>DSM</text>') && !skin({ name: 'Lighter' }, 'front').includes('M31 13') &&
      skin({ name: 'Poster A&B' }, 'front').includes('>A&amp;B</text>') && skin({ name: 'Hat' }, 'front').includes('fill="#d4a017"'));
   ok('REGRESSION: the default skin is drawn wherever a promo item shows a face - the Master Vault box (front and back), its list picture, and the fullscreen viewer',
      rei.includes("const front = front0 || (isPromo(product) ? promoSkin(product, 'front') : null);") && rei.includes('const front0 = images.front || product.image;') &&
@@ -12181,9 +12181,18 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      promoGoods({ goods: 'mug', name: 'T-shirt Cello' }) === 'mug' && promoGoods({ goods: 'banana', name: 'Topi' }) === 'hat' &&
      promoGoods({ name: 'T SHIRT TAWANG' }) === 'tshirt' && promoWord({ name: 'T SHIRT TAWANG' }) === 'TAWANG' &&
      promoGoods({ name: 'Asbak Cello' }) === 'ashtray' && promoGoods({ name: 'Korek Gas' }) === 'lighter' && promoGoods({ name: 'Gelas KPM' }) === 'mug' &&
-     promoWord({ name: 'Mug Cello', goods: 'mug' }) === 'CELLO' && promoWord({ name: 'Mug', goods: 'mug' }) === 'KPM' &&
+     promoWord({ name: 'Mug Cello', goods: 'mug' }) === 'CELLO' && promoWord({ name: 'Mug', goods: 'mug' }) === 'DSM' &&
      promoGoods({ name: 'Gantungan kunci' }) === null && promoGoods({ name: 'Captain Black' }) === null &&
      skin({ name: 'T SHIRT TAWANG' }, 'front').includes('M31 13') && skin({ name: 'T SHIRT TAWANG' }, 'front').includes('>TAWANG</text>'));
+  { const { setPromoBrand } = await import('../utils/helpers.js');
+    setPromoBrand('PT Adi Karya Sukses'); const pt = promoWord({ name: 'Mug', goods: 'mug' });
+    setPromoBrand('Cello'); const ce = promoWord({ name: 'Mug', goods: 'mug' }), own = promoWord({ name: 'Mug Tawang', goods: 'mug' });
+    const drawn = skin({ name: 'Mug', goods: 'mug' }, 'front');
+    setPromoBrand('');
+    ok('BEHAVIOUR: a promo item with no word of its own prints the company name, cut at a space to fit (his 2026-11-09 "yes print the company name"); its own word still wins; no name saved -> DSM',
+       pt === 'PT ADI KARYA' && ce === 'CELLO' && own === 'TAWANG' && drawn.includes('>CELLO</text>') && promoWord({ name: 'Mug', goods: 'mug' }) === 'DSM');
+    ok('REGRESSION: useDatabaseSync hands the company name to the promo word; no fixed KPM is left in it',
+       /setPromoBrand\(appSettings\?\.companyName\)/.test(read('src/hooks/useDatabaseSync.js')) && !/'KPM'/.test(read('src/utils/helpers.js'))); }
   const glb = (id) => { try { return fs.readFileSync(`public/promo/${id}.glb`).toString('latin1'); } catch { return ''; } };
   ok('REGRESSION: every goods type has its model (a .glb with a printed area for the name) and its list picture in public/promo',
      (PROMO_GOODS || []).length === 6 && PROMO_GOODS.every(([id]) => glb(id).startsWith('glTF') && glb(id).includes('"print":"front"') && fs.existsSync(`public/promo/${id}.png`)));

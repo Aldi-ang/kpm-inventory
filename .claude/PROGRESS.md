@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-09 18:26 WIB, PC clock (🟢 KPM — rename finished, both Firebase project names changed by him)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-09 18:32 WIB, PC clock (🟠 KPM — promo word = company name, live; owner first-time setup waits on his yes)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-09 18:32 WIB — KPM: his "yes print the company name" - a promo item with no word of its own prints the company name (pushed with this note); his owner-setup idea answered
+Full story: the commit message. Proof: A-Brain Raw/2026-11-09-rename/PROMO-WORD.jpg. Next: NEXT-SESSION.md top.
+WAITING ON ALDI: **🔴 DECIDE: owner first-time setup - 4 phone screens: You (name) / Company (name, address, phone) / Lock (password + recovery word, fingerprint optional) / Intro. Yes, or what to add?** Then /compact for the board. Still: ✅ TEST the new name on the phone; ✅ TEST T4 van load; his saved company name in Settings.
 
 ## 🟢 2026-11-09 18:26 WIB — KPM: his "already renamed both" - Firebase project display names changed (main: Distribution and Sales by AK); the project id stays (Google never allows it)
 Next: NEXT-SESSION.md top (demo list #1).
