@@ -16,6 +16,19 @@ export const compactRp = (v) => {
   return formatRupiah(n);
 };
 
+/* A FAILED SAVE IN PLAIN WORDS. Firestore's own message is written for developers - the van load printed
+   "false for 'update' @ L44, evaluation error at L539:31 ..." under a product (demo walk 2026-11-08 #2). A Firestore
+   error carries a `code`; the errors our own code throws inside a transaction ("stok gudang tidak cukup") carry none,
+   and their message is already written for people, so it passes through. */
+export const plainSaveError = (e, fallback = 'Tidak tersimpan') => {
+    if (!e) return fallback;
+    if (!e.code) return e.message || fallback;
+    if (e.code === 'permission-denied') return 'Ditolak: login ini tidak punya izin untuk menyimpan ini';
+    if (e.code === 'unavailable' || e.code === 'deadline-exceeded') return 'Tidak ada sinyal - coba lagi';
+    if (e.code === 'aborted') return 'Bentrok dengan simpanan lain - coba lagi';
+    return fallback;
+};
+
 export const formatRupiah = (number) => {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',

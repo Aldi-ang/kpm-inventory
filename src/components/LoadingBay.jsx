@@ -27,7 +27,7 @@
    damaged goods) take turns in one place. Four squares a page, in one row, at every width. */
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal, flushSync } from 'react-dom';
-import { convertToBks, getLocalDayKey, formatRupiah, isPromo, isDamagedPack, promoPic } from '../utils/helpers';
+import { convertToBks, getLocalDayKey, formatRupiah, isPromo, isDamagedPack, promoPic, plainSaveError } from '../utils/helpers';
 import HazardMark from './HazardMark';
 import { PER, lineBks, netBks, loadCap, backCap, foldLine, vanCells, landingCell, applyPreset, teamLoad, HAZARD_SIGN, unitOf } from '../utils/vanBay';
 import { playSound } from '../hooks/useSound';
@@ -671,7 +671,7 @@ export default function LoadingBay({ agent, warehouse, stock, promo = [], damage
       const l = todo[i], p = P[l.id], bks = lineBks(l, p);
       let r;
       try { r = await (l.dir > 0 ? onLoad(l.id, bks) : onReturn(l.id, bks)); }
-      catch (err) { r = { ok: false, reason: err?.message }; }
+      catch (err) { r = { ok: false, reason: plainSaveError(err) }; }
       const row = { id: l.id, name: p?.name || l.id, qty: l.qty, unit: l.unit, bks, pcs: isPromo(p) };
       if (r && r.ok) (l.dir > 0 ? out : back).push(row);
       else failed.push({ ...l, reason: (r && r.reason) || 'Tidak tersimpan' });

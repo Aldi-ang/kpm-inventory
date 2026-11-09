@@ -845,6 +845,16 @@ service cloud.firestore {
           (isSalesman(bossUid) && getEmployeeProfile().agentId == motoristId) ||
           // [CHANGE 23 — DRAFT] rejecting a product reopens it on the team leader's card, and nothing else on the card
           (opnameDecider(bossUid) && (isAreaAdmin(bossUid) || resource.data.get('location', '') == getEmployeeProfile().get('location', 'NONE')) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastOpname'])) ||
+          // [CHANGE 26 — 2026-11-09, DRAFT until Aldi publishes it] LOADING A SALESMAN'S VAN (Fleet & Roster > Loading Bay,
+          // FleetCanvasManager handleLoadCanvas / handleReturnToWarehouse). His "how the regional admin put item to the agent
+          // inventory" (2026-09-22): a T4's daily job. Before this only a T4 holding the hire/fire switch (canEditRoster,
+          // the first clause) could, so the app offered Muat van to every T4 and the database refused the rest (demo walk
+          // 2026-11-08 #2). A T3 anywhere, a T4 in their own region; ONLY the van lists change, and one of them MUST change
+          // (hasAny: a write that changes nothing would pass hasOnly on its own - rules-test/test-agent-chest.mjs caught it).
+          // rules-test/test-van-load.mjs.
+          ((isAreaAdmin(bossUid) || (isFleetCaptain(bossUid) && resource.data.get('location', '') == getEmployeeProfile().get('location', 'NONE'))) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasAny(['activeCanvas', 'promoCanvas']) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activeCanvas', 'promoCanvas'])) ||
           // [CHANGE 13 — 2026-09-29, DRAFT] a T1/T2 saves a roster card (the Gmail move's other half) - roster cards
           // stay out of the T2 catch-all (CHANGE 14). Never a T1's card, never into a T1 tag.
           (isCompanyTopTier(bossUid) && !isT1Tag(resource.data.get('userRole', 'NONE')) && !isT1Tag(request.resource.data.get('userRole', 'NONE')));

@@ -8514,7 +8514,7 @@ section('THE VAN-LOADING BAY: TWO CHESTS, ONE PRESS (2026-09-24)');
   ok('the old select + qty + LOAD is gone', !/-- Choose Product --/.test(flc) && !/setLoadQty|setSelectedProduct/.test(flc));
   ok('handleLoadCanvas takes the product and the packs, reports per product to the audit log only, and answers ok / reason',
      /const handleLoadCanvas = async \(productId, qtyBks\) =>/.test(flc) && /logAudit\("CANVAS_LOAD"[\s\S]{0,200}return \{ ok: true \};/.test(load) &&
-     /return \{ ok: false, reason: e\.message/.test(load) && !/triggerCapy/.test(load));
+     /return \{ ok: false, reason: plainSaveError\(e, /.test(load) && !/triggerCapy/.test(load));   /* 2026-11-09: the reason is plain words (demo walk #2), never e.message */
   ok('its transaction is the old one: the live van read, the stock check, the merge in the row\'s own unit',
      /const agentSnap = await t\.get\(agentRef\);/.test(load) && /INSUFFICIENT WAREHOUSE STOCK!/.test(load) &&
      /const rowSize = convertToBks\(1, updatedCanvas\[existingItemIndex\]\.unit, masterProduct\);/.test(load));
@@ -13513,6 +13513,23 @@ console.log('\nSales Terminal: a RUSAK lot is never LOW and never "Running low"'
     const rules = read('firestore.rules');
     ok('rules CHANGE 25: every login of the company reads places; writes stay with the catch-all', /match \/places\/\{placeId\} \{\s*allow read: if isSalesman\(bossUid\);\s*\}/.test(rules),
        'demo walk #4: T3/T4 were refused the warehouse registry on Restock Vault (rules-test/test-places-read.mjs)');
+  }
+  { /* demo walk 2026-11-08 #2: the van load printed the raw rules error under the product */
+    const { plainSaveError } = await import('../utils/helpers.js');
+    const raw = { code: 'permission-denied', message: "false for 'update' @ L44, evaluation error at L539:31 for 'update' @ L539" };
+    ok('BEHAVIOUR: a refused save reads in plain words - never the rules text; our own messages pass through; nothing gives the fallback',
+       !/@ L\d|evaluation error/.test(plainSaveError(raw)) && /Ditolak/.test(plainSaveError(raw)) &&
+       plainSaveError({ message: 'Stok gudang tidak cukup' }) === 'Stok gudang tidak cukup' &&
+       plainSaveError(null) === 'Tidak tersimpan' && /sinyal/.test(plainSaveError({ code: 'unavailable', message: 'x' })) &&
+       plainSaveError({ code: 'internal', message: 'INTERNAL ASSERTION' }, 'Gagal') === 'Gagal');
+    const fl = read('src/FleetCanvasManager.jsx'), lb = read('src/components/LoadingBay.jsx');
+    ok('REGRESSION: the van load and the return never hand the raw error message to the screen',
+       !/reason: e\.message \|\|/.test(fl) && (fl.match(/reason: plainSaveError\(e, /g) || []).length === 2 &&
+       /catch \(err\) \{ r = \{ ok: false, reason: plainSaveError\(err\) \}; \}/.test(lb) && !/reason: err\?\.message/.test(lb), 'demo walk #2');
+    const rules = read('firestore.rules');
+    ok('rules CHANGE 26: a T3 anywhere / a T4 in their region change ONLY the van lists, and one of them must change',
+       /\(\(isAreaAdmin\(bossUid\) \|\| \(isFleetCaptain\(bossUid\) && resource\.data\.get\('location', ''\) == getEmployeeProfile\(\)\.get\('location', 'NONE'\)\)\) &&\s*request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\.hasAny\(\['activeCanvas', 'promoCanvas'\]\) &&\s*request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\.hasOnly\(\['activeCanvas', 'promoCanvas'\]\)\)/.test(rules),
+       'rules-test/test-van-load.mjs + test-agent-chest.mjs');
   }
   const nx = read('src/components/NixieCount.jsx');
   ok('count badge: rollIn mounts the reels on 0 and arms them two frames later, so a badge that appears rolls up', /useState\(!rollIn\)/.test(nx) && /'--i': armed \? d : 0/.test(nx) && /requestAnimationFrame\(\(\) => setArmed\(true\)\)/.test(nx),

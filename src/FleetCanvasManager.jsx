@@ -9,7 +9,7 @@ import { seatDocId, freeSeats, seatsUsedText, seatsFullMsg } from './utils/seats
 import { DYNAMIC_TIERS, canEditFleetRoster, tierWord, hasClearance, TIER_ONE_ID, resolveTierOneId, canSetBundlePrice } from './config/permissions';
 import { vaultDocPath, VAULT_TRIES_RESET } from './utils/vaultDoc.js';
 import { lockLeftMs, untilText } from './utils/vaultLock.js';
-import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems, nameInitials, isPromo } from './utils/helpers';
+import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems, nameInitials, isPromo, plainSaveError } from './utils/helpers';
 import { normalizeRegion } from './config/permissions';
 import { canonicalPlace, vanUsesBranch, moveWithGoodsMessage, vanGoodsLines } from './utils/supply';
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
@@ -685,7 +685,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             return { ok: true };
         } catch (e) {
             console.error(e);
-            return { ok: false, reason: e.message || "Failed to load vehicle canvas." };
+            return { ok: false, reason: plainSaveError(e, 'Gagal memuat ke van') };
         }
     };
 
@@ -809,7 +809,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
             return { ok: true };
         } catch (e) {
             console.error(e);
-            return { ok: false, reason: e.message || 'Gagal mengembalikan ke gudang' };
+            return { ok: false, reason: plainSaveError(e, 'Gagal mengembalikan ke gudang') };
         }
     };
 

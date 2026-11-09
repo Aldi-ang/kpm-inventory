@@ -4,6 +4,7 @@
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
   { date: '2026-11-09', items: [
+    { kind: 'fixed', en: 'Loading Bay: when a van load is refused, the reason is now written in plain words instead of a database code.', id: 'Loading Bay: kalau muat van ditolak, alasannya sekarang ditulis dengan kata-kata biasa, bukan kode database.' },
     { kind: 'fixed', en: 'Reports: the Product Performance box now shows only to the owner, so other logins no longer see a red "could not be read" message.', id: 'Reports: kotak Product Performance sekarang hanya tampil untuk pemilik, jadi login lain tidak lagi melihat pesan merah "could not be read".' },
   ] },
   { date: '2026-11-08', items: [

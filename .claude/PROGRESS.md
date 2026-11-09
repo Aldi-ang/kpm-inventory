@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-09 06:56 WIB, PC clock (🟠 KPM — badges tested in the real app; demo list: #4 rules draft waits for his publish, #11 pushed)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-09 07:08 WIB, PC clock (🟠 KPM — demo list: #11 + #2 pushed; rules CHANGE 25+26 wait for his publish in BOTH projects)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
 
 
@@ -13,6 +13,10 @@
 
 
 
+
+## 🟠 2026-11-09 07:08 WIB — KPM: demo #2 - the van load says why in plain words (pushed with this note) + rules draft CHANGE 26 (a T4 loads a van without the hire/fire switch)
+Proof: demo on the local emulator (draft: loaded 50 Bks; live rules: the plain refusal); rules-test/test-van-load.mjs. Next: NEXT-SESSION.md top.
+WAITING ON ALDI: **🔴 PUBLISH firestore.rules (CHANGE 25 + 26) in TWO places: (1) the KPM project, (default) database - as always; (2) the DEMO project kpm-demo-f4d74 - its rules were last published 2026-10-13, so it also catches up on everything since. Paste the whole file, then say "published". 25 = every login reads the warehouse list (places); 26 = a T3 anywhere / a T4 in their own region may load a salesman's van (only the van lists change) without the hire/fire switch. Proof: rules-test/test-places-read.mjs 20/20 + test-van-load.mjs 10/10, all 17 rules test files green on the draft; in the demo T4 Hendra loaded Dika's van (50 Bks, SJ written).**
 
 ## 🟠 2026-11-09 06:56 WIB — KPM: his "test it and continue your work from your list" - badges TESTED in the real app; demo #11 (Reports) pushed with this note; #4 = rules draft CHANGE 25
 Proof: A-Brain `Raw/2026-11-09-badge-test/`; rules-test/test-places-read.mjs. Next: NEXT-SESSION.md top.
