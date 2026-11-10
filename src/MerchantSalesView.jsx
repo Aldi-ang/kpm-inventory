@@ -21,7 +21,7 @@ import { dayStats, agoLabel, txSeconds } from './utils/dayStats';
 import { customerBrief, reorderFromLast } from './utils/customerBrief';
 import { nextStop, directionsUrl, metresLabel } from './utils/nextStop';
 import { VISIT_TAGS, visitReport } from './utils/dayLog';
-import { unlockSounds, speakMumble, playSound } from './hooks/useSound';
+import { unlockSounds, speakMumble, playSound, capyMaySpeak } from './hooks/useSound';
 import { notify } from './components/Toast.jsx';
 import { shareReceipt } from './components/shareReceipt.js';
 
@@ -560,7 +560,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         const line = pool[Math.floor(Math.random() * pool.length)];
         setMerchantLine(line);
         setMerchantMood('talking');
-        unlockSounds().then(() => speakMumble(line));
+        /* bubble only - his 2026-11-10 pick: no voice while items go in the cart (useSound.js capyMaySpeak) */
         setTimeout(() => { setMerchantMood('idle'); setMerchantLine(""); }, 2400);
     };
 
@@ -1343,7 +1343,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             // rather than landing on top - two sounds at the same instant read as one mess.
             unlockSounds().then(() => {
                 playSound('saleDone');
-                setTimeout(() => speakMumble(line), 520);
+                /* after the 1.6 s cha-ching, not on top of it (his 2026-11-10 pick) */
+                setTimeout(() => { if (capyMaySpeak('sale')) speakMumble(line); }, 1700);
             });
             // DESKTOP has the alcove, which is already showing him: a corner mascot as well
             // would be two merchants and two coins on one screen. Below lg he has no alcove,

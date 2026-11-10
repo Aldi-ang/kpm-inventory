@@ -267,6 +267,26 @@ export function unlockSounds({ AudioImpl, doc } = {}) {
     .then(() => unlocked);
 }
 
+/* WHEN THE CAPYBARA TALKS OUT LOUD - his 2026-11-10 *"yes go with your suggestion but also sound when he give us the
+   motivation on random sometimes ... without being annoying and too repetitive"*. His bubble still shows every time;
+   only the VOICE is rationed:
+   - sale        always (the line comes after the cha-ching has finished)
+   - news        "Saved" and the like, unless he spoke in the last 20 s (ten saves in a row = one voice, nine bubbles)
+   - motivation  his own pop-up lines, out loud at most once every 15 min and never within a minute of other talk;
+                 the pop-ups in between stay silent bubbles. The lines go round in order, so none repeats early.
+   - cart        never: the chatter while items go in the cart is bubble-only (it fired up to every 6 s). */
+const CAPY_QUIET = { news: 20e3, motivation: 60e3 };
+const MOTIVATION_EVERY = 15 * 60e3;
+const capyGate = { spoke: -Infinity, motivated: -Infinity };
+export function capyMaySpeak(kind, now = Date.now(), g = capyGate) {
+  if (!['sale', 'news', 'motivation'].includes(kind)) return false;
+  if (kind !== 'sale' && now - g.spoke < CAPY_QUIET[kind]) return false;
+  if (kind === 'motivation' && now - g.motivated < MOTIVATION_EVERY) return false;
+  if (kind === 'motivation') g.motivated = now;
+  g.spoke = now;
+  return true;
+}
+
 /* Speak a line in the capybara's voice. Returns the number of syllables scheduled, so a caller (or a
    test) can check it without waiting. Silent under Lite Mode and before unlock, because
    playSound refuses there — no separate check needed. */

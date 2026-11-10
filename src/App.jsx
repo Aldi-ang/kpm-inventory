@@ -45,7 +45,7 @@ import PromoBundleFields from './components/PromoBundleFields';
 import LandlordDashboard from './components/LandlordDashboard'; 
 import CrownTransferProtocol from './components/CrownTransferProtocol'; 
 import BiohazardTheme from './components/BiohazardTheme';
-import { unlockSounds, speakMumble } from './hooks/useSound';
+import { unlockSounds, speakMumble, capyMaySpeak } from './hooks/useSound';
 
 // 🚀 ENTERPRISE CODE SPLITTING: Lazy-load all heavy map, chart, and rendering engines
 const MapMissionControl = lazy(() => import('./MapMissionControl'));
@@ -3368,7 +3368,7 @@ const handleGitHubMirror = async () => {
     if (isFailure(text)) return notify(text);
     speakCapy(text);
     // T6: the mascot was mute outside the sales terminal. unlockSounds() is a no-op once unlocked.
-    unlockSounds().then(() => speakMumble(text)).catch(() => {});
+    if (capyMaySpeak('news')) unlockSounds().then(() => speakMumble(text)).catch(() => {});
     recordMissed(text, false);
   };
   
