@@ -11,7 +11,10 @@ priority today: *"for generating images video or sfx just use other platform to 
 **Task:** MEDIA ONLY - make raw files for the capybara's new voice and smooth animation, on Aldi's Google account
 (AI Studio + Flow, his Google AI Pro). No app code. Claude cuts, tunes and wires everything afterwards.
 
-Base folder for everything below: `D:\APP DEVELOPMENT\kpm inventory main FILES\A-Brain\Raw\2026-11-10-sound-board\round4\`
+Base folder for everything below (INSIDE this project, so no permission prompt per file - changed 2026-11-10 16:58;
+the folder is git-ignored, Claude moves the files to A-Brain afterwards): `.claude\antigravity-out\round4\`
+(full path `D:\APP DEVELOPMENT\kpm inventory main FILES\kpm-inventory-main\.claude\antigravity-out\round4\`).
+If you already saved some files in the old A-Brain `round4\` folder, leave them there and keep going here.
 
 ## Part 1 - voice takes (Google AI Studio, aistudio.google.com/generate-speech)
 

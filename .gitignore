@@ -51,3 +51,6 @@ tools/sfx-draft/
 # Alucard's own old backup of his skill file; the live SKILL.md is versioned
 .claude/skills/alucard/*.bak
 .claude/cost-sim/preview.html
+
+# Antigravity media drops (voice takes, Flow clips) - Claude moves them to A-Brain Raw, never into the app
+.claude/antigravity-out/
