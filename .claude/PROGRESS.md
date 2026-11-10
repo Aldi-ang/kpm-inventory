@@ -14,6 +14,10 @@
 
 
 
+## 🟠 2026-11-10 08:15 WIB — KPM: his new address dsm-ak.vercel.app - Vercel + Google Cloud done, the app signs in on it (566d61a); Firebase authorized domain missing (the handler refuses it, kpm-ang goes on)
+Next: NEXT-SESSION top.
+WAITING ON ALDI: 🔴 "in Firebase (project Distribution and Sales by AK), go to Authentication → Settings → Authorized domains → Add domain, type dsm-ak.vercel.app, then say added". ❓ "does anyone use kpm-inventory.vercel.app, the July copy that works on your real database?" Then /compact + go for the sound board.
+
 ## 🟢 2026-11-10 08:00 WIB — KPM: his "replace every aspect of this app with DSM on default now" - every visible default says DSM (receipts, backup files, demo company); pushed c9a50e2
 Full story: the commit message. Next: NEXT-SESSION top.
 dsm-ak.vercel.app ADDED by him next to kpm-ang (both Preview/phase0-solid-ground, same build, /__/auth/handler 200). kpm-inventory.vercel.app = the July 28 main build on the REAL database - redirect it (his answer owed: does anyone use it). WAITING ON ALDI: register dsm-ak in Google Cloud OAuth client (origin + https://dsm-ak.vercel.app/__/auth/handler) and Firebase Auth authorized domains, say registered; THEN I add it to firebase.js PROXIED_AUTH_HOSTS and push. Then /compact + go for the sound board.
