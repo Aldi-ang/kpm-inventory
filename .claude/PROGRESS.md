@@ -14,8 +14,12 @@
 
 
 
+## 🟢 2026-11-10 08:42 WIB — KPM: the address move is done - his phone on dsm-ak.vercel.app, demo on dsm-demo.vercel.app, old July copy and old demo link redirect (308), kpm-ang kept as is for later
+Next: NEXT-SESSION top.
+WAITING ON ALDI: /compact, then go - the sound board.
+
 ## 🟢 2026-11-10 08:20 WIB — KPM: dsm-ak.vercel.app signs in (real Google sign-in through its own address, stopped at the Master Vault); his Firebase entry had gone to the demo project first, now the main one too
-WAITING ON ALDI: ✅ TEST each phone: sync on the old address, open dsm-ak.vercel.app, sign in, Add to Home screen; tell me when all moved (then kpm-ang redirects). ❓ "does anyone use kpm-inventory.vercel.app, the July copy that works on your real database?" Then /compact + go for the sound board.
+He is the only user of the links (his 2026-11-10). Demo link next: dsm-demo.vercel.app is free (404 DEPLOYMENT_NOT_FOUND); no code holds kpm-demo-one. dsm-demo.vercel.app WORKS (demo Firebase lists it; same build as kpm-demo-one; /api/demo-switch answers 401 = alive). No .vercel link folder on the PC, so a Vercel PROJECT rename touches nothing here. Projects renamed by him: dsm-ak (real), dsm-demo (demo); all 5 addresses still 200. kpm-demo-one -> 308 -> dsm-demo.vercel.app (path + query kept, checked with curl). WAITING ON ALDI: kpm-inventory.vercel.app -> 308 -> dsm-ak (dsm-ak project, Edit -> Redirect to Another Domain); kpm-ang -> dsm-ak after his phone synced and moved. Then /compact + go: the sound board.
 
 ## 🟠 2026-11-10 08:15 WIB — KPM: his new address dsm-ak.vercel.app - Vercel + Google Cloud done, the app signs in on it (566d61a); Firebase authorized domain missing (the handler refuses it, kpm-ang goes on)
 Next: NEXT-SESSION top.
