@@ -48,9 +48,12 @@ Its rules: `GEMINI.md`. Options and what was rejected: A-Brain `Brainstorm/2026-
 
 - Claude is responsible for the app. Antigravity does ONE task at a time: the one Claude writes in
   `.claude/ANTIGRAVITY-TASK.md` (Status OPEN / DONE / NONE, a "Touch only" file list, a "Done when").
-- Hand it work that costs Claude quota and cannot touch Claude's files: browser test walks, frames, read-only research,
-  self-contained mechanical fixes. Its usage is Google's, not his Claude 5-hour window. `firestore.rules`, money,
+- Hand it THINKING work that costs Claude quota and cannot touch Claude's files: read-only audits and research,
+  reviews, self-contained mechanical fixes. Its usage is Google's, not his Claude 5-hour window. `firestore.rules`, money,
   permissions, design calls, PROGRESS / NEXT-SESSION and A-Brain's Wiki stay Claude's.
+- Never a "physical" job - driving a browser, clicking through a website (AI Studio, Flow, test walks). Aldi, 2026-11-10,
+  after its media run: *"next time we just give antigravity job thats need thinking, not physical like this, it takes so
+  much time"*. Media from Google tools: Claude writes the exact prompts + click steps, Aldi pastes them in himself.
 - It never pushes. Before EVERY push: `git log origin/phase0-solid-ground..HEAD`. Any `Antigravity:` commit in it gets
   a `git show` read and the gates re-run after it, or the push waits: a push carries every local commit, read or not.
 - Task file says DONE → read its Result, review the commit, push, log it in PROGRESS, then write the next task or NONE.

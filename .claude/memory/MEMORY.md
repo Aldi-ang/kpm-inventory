@@ -20,6 +20,7 @@
 - [Caveman mode scope](feedback_caveman_mode_scope.md) — always-on here; ask before enabling elsewhere
 - [9Router delegation](feedback_9router_subordinate_delegation.md) — delegate cheap high-output subtasks to localhost:20128, free tier kr/*+OpenCode+Vertex
 - [Alucard delegation autonomy](feedback_alucard_delegation_autonomy.md) — delegates heavy-output/low-judgment work, reports what and why
+- [Antigravity: thinking jobs only](feedback_antigravity_thinking_jobs_only.md) — never a browser/clicking job; Google-tool media = Claude writes prompts + steps, he pastes them (his call 2026-11-10)
 
 - [A-Brain is the only memory](feedback_abrain_is_the_only_memory.md) — every fact/decision goes in the vault; the repo is workspace, PROGRESS.md is session state only
 
