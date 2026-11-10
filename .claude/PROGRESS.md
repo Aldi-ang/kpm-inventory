@@ -2,6 +2,10 @@
 
 **Updated: 2026-11-09 19:03 WIB, PC clock (🟠 KPM — professional edition answered (option C); bugs first)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
+## 🟢 2026-11-10 16:49 WIB — KPM: his "if no voice then no capybara" - a tip shows only when spoken (max every 15 min), cart chatter removed, news voice quiet 5 s; pushed 1747122
+Full story: 1747122's message · next: NEXT-SESSION top.
+WAITING ON ALDI: ✅ TEST on the phone (version 1747122): add items - nothing; make a sale - cha-ching, then the capybara talks. Start Antigravity on its task (steps in the chat).
+
 ## 🟢 2026-11-10 16:32 WIB — KPM: his "go with your suggestion ... motivation on random sometimes ... u tell me" - the capybara talks only on a sale, good news (20 s apart) and a motivation tip at most every 15 min; cart chatter is bubble-only; pushed cd7f7b4
 Full story: cd7f7b4's message · next: NEXT-SESSION top.
 WAITING ON ALDI: ✅ TEST on the phone (version cd7f7b4): add items - no voice; make a sale - cha-ching, then the capybara. Start Antigravity on its task (voice takes + Flow clips).
