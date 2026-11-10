@@ -14,6 +14,10 @@
 
 
 
+## 🟢 2026-11-10 08:00 WIB — KPM: his "replace every aspect of this app with DSM on default now" - every visible default says DSM (receipts, backup files, demo company); pushed c9a50e2
+Full story: the commit message. Next: NEXT-SESSION top.
+WAITING ON ALDI: 🔴 his Vercel rename - keep kpm-ang.vercel.app working; tell me the new address BEFORE phones use it (3 registrations first). Then /compact + go for the sound board.
+
 ## 🟢 2026-11-10 07:18 WIB — KPM: his "skip the password making ... test it all yourself" - the demo goes straight to the unlock screen + intro; the nightly reset can no longer leave it empty; pushed 3ff452d
 Full story: the commit message. Proof: A-Brain Raw/2026-11-10-demo-vault/RESULT.md. Next: NEXT-SESSION top (check settings/demoReset next morning), then the sound board.
 Full Dika sale DONE on the PC copy with the phone placed at the shop (A-Brain Raw/2026-11-10-demo-vault/geo.js): Unranked -> Bronze + visit date. LIVE sale done 07:29 (he unlocked, I sold): AMANAH BARU Unranked -> Bronze + visit date by DIKA SAPUTRA in the live demo database. WAITING ON ALDI: /compact, then go - the sound board. ❓ rename the demo company KPM DEMO (on its receipts) to DSM?
