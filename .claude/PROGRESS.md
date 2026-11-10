@@ -14,6 +14,9 @@
 
 
 
+## 🟢 2026-11-10 08:20 WIB — KPM: dsm-ak.vercel.app signs in (real Google sign-in through its own address, stopped at the Master Vault); his Firebase entry had gone to the demo project first, now the main one too
+WAITING ON ALDI: ✅ TEST each phone: sync on the old address, open dsm-ak.vercel.app, sign in, Add to Home screen; tell me when all moved (then kpm-ang redirects). ❓ "does anyone use kpm-inventory.vercel.app, the July copy that works on your real database?" Then /compact + go for the sound board.
+
 ## 🟠 2026-11-10 08:15 WIB — KPM: his new address dsm-ak.vercel.app - Vercel + Google Cloud done, the app signs in on it (566d61a); Firebase authorized domain missing (the handler refuses it, kpm-ang goes on)
 Next: NEXT-SESSION top.
 WAITING ON ALDI: 🔴 "in Firebase (project Distribution and Sales by AK), go to Authentication → Settings → Authorized domains → Add domain, type dsm-ak.vercel.app, then say added". ❓ "does anyone use kpm-inventory.vercel.app, the July copy that works on your real database?" Then /compact + go for the sound board.
