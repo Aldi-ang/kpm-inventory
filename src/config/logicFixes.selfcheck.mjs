@@ -10893,7 +10893,7 @@ section('The demo seed (demo/seed.json, made by tools/demo-seed-from-backup.mjs 
      shops.length >= 100 && extra.length === 0 && !JSON.stringify(shops).includes('data:image') && !shops.some((c) => /\d{9,}/.test(String(c.name))));
   ok('no real salesman or folder name on a shop: demo-agent-n / Folder n only; no activity log, no sales history in the seed',
      shops.every((c) => (c.assignedAgent === undefined || /^demo-agent-\d+$/.test(c.assignedAgent)) && (c.mapFolder === undefined || /^Folder \d+$/.test(c.mapFolder)))
-     && !('auditLogs' in seed) && !('transactions' in seed) && seed.appSettings?.companyName === 'KPM Demo');
+     && !('auditLogs' in seed) && !('transactions' in seed) && seed.appSettings?.companyName === 'DSM Demo');
   const P = ['priceDistributor', 'priceGrosir', 'priceRetail', 'priceEcer'];
   ok('his "easier to compute" prices: every price a multiple of Rp 500, distributor < grosir < retail < ecer',
      items.length >= 1 && items.every((p) => P.every((k) => p[k] > 0 && p[k] % 500 === 0) && P.every((k, i) => i === 0 || p[P[i - 1]] < p[k])));
@@ -11034,7 +11034,7 @@ section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual 
   ok('the seed goes in, two places only: 6 products + the 6 promo goods, the 148 shops of Kabupaten Magelang + Bandung (no Yogyakarta, none without a region), his company name, the 5 tier pictures, rank read from the career record',
      !!a && under('products').length === 12 && seed.inventory.length === 6 && (seed.promo || []).length === 6 && teamShops.length === 148 && under('customers').length === 148
      && under('customers').every((d) => d.data.region === 'MAGELANG' || d.data.province === 'JAWA BARAT')
-     && a.docs.find((d) => d.path.endsWith('/settings/general'))?.data.companyName === 'KPM Demo' && a.docs.find((d) => d.path.endsWith('/settings/general'))?.data.useCareerLedger === true
+     && a.docs.find((d) => d.path.endsWith('/settings/general'))?.data.companyName === 'DSM Demo' && a.docs.find((d) => d.path.endsWith('/settings/general'))?.data.useCareerLedger === true
      && a.docs.find((d) => d.path.endsWith('/settings/tiers'))?.data.list.length === 5);
   ok('the seed\'s exported timestamps become real dates (an object with seconds would show as "Invalid Date"); the text dates stay text, as the app saved them',
      !!a && !JSON.stringify(a.docs).includes('firestore/timestamp/1.0') && under('products').filter((d) => d.data.kind !== 'promo').every((d) => d.data.updatedAt instanceof Date)
@@ -13676,6 +13676,16 @@ section('THE DEMO NEVER WAKES UP EMPTY, AND NEVER ASKS FOR A NEW PASSWORD (his 2
      login.indexOf('writeDemoVault(adminDocRef)') < login.indexOf('setIsSetupMode(true)'));
   ok('the demo\'s recovery word lives with its vault password (demoLogins.js), and the reset reads the same one',
      /export const RECOVERY_WORD = 'demo';/.test(logins) && !/export const RECOVERY_WORD =/.test(company) && /RECOVERY_WORD \} from '\.\.\/src\/config\/demoLogins\.js'/.test(company));
+}
+section('DSM BY DEFAULT (his 2026-11-10 "yes replace every aspect of this app with DSM on default now"): no word a person sees falls back to KPM');
+{
+  const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(`${d}/${e.name}`) : [`${d}/${e.name}`]);
+  const files = [...walk('src'), ...walk('api')].filter((f) => /\.(jsx?|mjs)$/.test(f) && !/selfcheck|\.check\.mjs|integration\.audit|patchNotes\.js/.test(f));
+  const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`\\])\/\/.*$/gm, '$1');
+  const hits = files.flatMap((f) => (strip(read(f)).match(/(['"`])[^'"`\n]*(KPM|KARYAMEGA|Karyamega)[^'"`\n]*\1/g) || []).map((m) => `${f}: ${m.slice(0, 60)}`));
+  ok('no string a person can see says KPM or the old PT KARYAMEGA PUTERA MANDIRI (code names like kpm-* classes and saved keys stay)', hits.length === 0, hits.slice(0, 6).join(' | '));
+  const seedJson = JSON.parse(read('demo/seed.json'));
+  ok('the demo company is DSM Demo (its receipts printed KPM DEMO)', seedJson.appSettings?.companyName === 'DSM Demo', seedJson.appSettings?.companyName);
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

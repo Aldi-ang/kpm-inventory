@@ -32,7 +32,7 @@ export const guestOf = async (t, invited) => {
     return email === T1_EMAIL || await invited(email) ? email : null;
 };
 
-const INVITE_ONLY = 'This demo is invite-only - ask KPM for access.';
+const INVITE_ONLY = 'This demo is invite-only - ask us for access.';
 
 export default async function handler(req, res) {
     const key = demoKey();

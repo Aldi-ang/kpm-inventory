@@ -1044,7 +1044,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                             <img src={appSettings.mascotImage} className="w-16 h-16 object-contain" alt="Company Logo" />
                                         )}
                                         <div>
-                                            <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase break-words">{appSettings?.companyName || "PT KARYAMEGA PUTERA MANDIRI"}</h1>
+                                            <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase break-words">{appSettings?.companyName || "DISTRIBUTION AND SALES MANAGEMENT"}</h1>
                                             <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang'}</p>
                                             {appSettings?.companyPhone && <p className="text-xs font-bold !text-slate-700 mt-0.5">Telp/WA: {appSettings.companyPhone}</p>}
                                         </div>

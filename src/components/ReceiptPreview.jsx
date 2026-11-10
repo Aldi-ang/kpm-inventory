@@ -47,7 +47,7 @@ const SAMPLE_ROWS = [
 export default function ReceiptPreview({ appSettings, editCompanyProfile, onClose }) {
     const [zoom, setZoom] = useState(FIT);
     const watermarkSrc = watermarkFrom(appSettings);
-    const companyName = appSettings?.companyName || editCompanyProfile?.name || 'PT KARYAMEGA PUTERA MANDIRI';
+    const companyName = appSettings?.companyName || editCompanyProfile?.name || 'DISTRIBUTION AND SALES MANAGEMENT';
     const companyAddress = appSettings?.companyAddress || editCompanyProfile?.address || 'Jl. Raya Magelang - Purworejo Km. 11';
 
     return createPortal(

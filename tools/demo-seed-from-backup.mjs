@@ -11,7 +11,7 @@
    - shops: real names (his call), town / region / type / level; each pin moved 150-400 m (same town);
      the map folders renamed "Folder 1..n"; the salesman on each shop replaced by demo-agent-1..n.
      Phones, addresses, photos, notes, contact names, debts, competitor notes, visit history: dropped.
-   - activity log: dropped (real people's actions). Company name: "KPM Demo".
+   - activity log: dropped (real people's actions). Company name: "DSM Demo".
    The seed's safety is re-checked on every run of src/config/logicFixes.selfcheck.mjs ("The demo seed"). */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { restorableBorders } from '../src/utils/mapBorders.js';
@@ -73,7 +73,7 @@ const droppedKeys = [...new Set(restorableBorders(backup).flatMap((b) => Object.
 
 const seed = {
     meta: { type: 'DEMO_SEED', from: backup.meta.ts, note: 'made by tools/demo-seed-from-backup.mjs - no phones, addresses, photos, notes or exact pins' },
-    appSettings: { companyName: 'KPM Demo' },
+    appSettings: { companyName: 'DSM Demo' },
     tierSettings: backup.tierSettings,
     inventory: products,
     promo,

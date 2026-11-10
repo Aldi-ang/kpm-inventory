@@ -4,6 +4,7 @@
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
   { date: '2026-11-10', items: [
+    { kind: 'fixed', en: 'The app says DSM everywhere by default: a receipt or invoice with no company name saved prints DISTRIBUTION AND SALES MANAGEMENT, backup and share files are named DSM, and the demo company is DSM Demo.', id: 'Aplikasi memakai nama DSM di semua tempat secara bawaan: nota atau faktur tanpa nama perusahaan tercetak DISTRIBUTION AND SALES MANAGEMENT, file backup dan share bernama DSM, dan perusahaan demo bernama DSM Demo.' },
     { kind: 'fixed', en: 'Demo: it no longer asks you to make a Master Vault password - every demo uses the password shown on its unlock screen, so you go straight there and to the usual intro. The nightly reset can no longer leave the demo empty.', id: 'Demo: tidak lagi meminta membuat sandi Master Vault - semua demo memakai sandi yang tertulis di layar buka kunci, jadi langsung ke sana dan ke intro seperti biasa. Reset tiap malam tidak bisa lagi membuat demo kosong.' },
   ] },
   { date: '2026-11-09', items: [

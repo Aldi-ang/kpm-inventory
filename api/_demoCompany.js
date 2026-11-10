@@ -66,7 +66,7 @@ const ROUTE = (c) => c.province === 'JAWA BARAT'
    wear a lower frame than their rank gives (Rina likes the marble). */
 const PROFILE = {
     master_owner: { join: '2019-02-01', collected: 25e9, days: 1600, titip: 9e8, streak: 120,
-        bio: 'Started KPM in 2019 with one motorbike in Muntilan. Runs the headquarters warehouse in Muntilan and the branch in Bandung.' },
+        bio: 'Started DSM in 2019 with one motorbike in Muntilan. Runs the headquarters warehouse in Muntilan and the branch in Bandung.' },
     'demo-agent-6': { join: '2021-03-15', collected: 5.8e9, days: 960, titip: 3.1e8, streak: 64, frame: 'platinum',
         bio: 'Joined in 2021 as a canvas salesman. HQ sales manager since 2024: plans both teams\' weekly routes and reads every end-of-day report.',
         awards: [{ title: 'Top Region - Q2 2026', reason: 'The HQ team beat the quarter target by 18%.', xp: 2500, at: '2026-07-03' }] },
@@ -366,10 +366,10 @@ export function buildDemoCompany(seed, now, vault) {
     put(`${home}/stock_requests/REQ_${askDay.replace(/-/g, '')}`, {
         id: `REQ_${askDay.replace(/-/g, '')}`, branch: 'BANDUNG', requestedBy: dewi.email, requestedByName: dewi.name, requestedItems: want(0),
         deliveryAddressText: 'Gudang Bandung, Jl. Soekarno-Hatta, Bandung', status: 'IN_TRANSIT',
-        senderName: hendra, courier: 'KPM van', trackingNo: `KPM-${shipDay.replace(/-/g, '').slice(2)}`, packagePhotoUrl: null,
+        senderName: hendra, courier: 'DSM van', trackingNo: `DSM-${shipDay.replace(/-/g, '').slice(2)}`, packagePhotoUrl: null,
         fulfilledItems: want(0), fulfilledAt: atWib(shipDay, 14 * 60), fulfilledBy: LOGINS[2].email,
         workflowTimeline: [{ status: 'PENDING', time: asked(askDay, 8 * 60), msg: 'Request submitted to HQ.' },
-            { status: 'IN_TRANSIT', time: asked(shipDay, 14 * 60), msg: `Shipped via KPM van (Resi: KPM-${shipDay.replace(/-/g, '').slice(2)}) by ${hendra}.` }],
+            { status: 'IN_TRANSIT', time: asked(shipDay, 14 * 60), msg: `Shipped via DSM van (Resi: DSM-${shipDay.replace(/-/g, '').slice(2)}) by ${hendra}.` }],
         timestamp: atWib(askDay, 8 * 60),
     });
     put(`${home}/stock_requests/REQ_${day.replace(/-/g, '')}`, {

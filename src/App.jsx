@@ -875,7 +875,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const handleCloudMirror = async () => {
     if(!user) return;
     const mirrorPayload = {
-      meta: { timestamp: new Date().toISOString(), app: "KPM_MIRROR", operator: user.email },
+      meta: { timestamp: new Date().toISOString(), app: "DSM_MIRROR", operator: user.email },
       inventory, transactions, customers, samplings, appSettings
     };
     const blob = new Blob([JSON.stringify(mirrorPayload, null, 2)], { type: 'application/json' });
@@ -941,7 +941,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     let exportData = {
         meta: { 
             type: `kpm_share_${type}`, 
-            signature: `KPM-AUTO-${Math.random().toString(36).substr(2, 9)}`, 
+            signature: `DSM-AUTO-${Math.random().toString(36).substr(2, 9)}`, 
             date: new Date().toISOString(), 
             owner: user.email 
         }
@@ -982,7 +982,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `KPM_SHARE_${type.toUpperCase()}_${getCurrentDate()}.json`;
+    a.download = `DSM_SHARE_${type.toUpperCase()}_${getCurrentDate()}.json`;
     a.click();
     triggerCapy(`Differentiated ${type} data signed and ready!`);
   };
@@ -1064,7 +1064,7 @@ const handleGitHubMirror = async () => {
     const mirrorPayload = {
       meta: { 
         timestamp: new Date().toISOString(), 
-        app: "KPM_SYSTEM_MIRROR",
+        app: "DSM_SYSTEM_MIRROR",
         operator: user.email 
       },
       inventory,
