@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-09 19:03 WIB, PC clock (🟠 KPM — professional edition answered (option C); bugs first)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-10 17:21 WIB, PC clock (🟠 KPM - capybara voice + animation: Antigravity is producing the media)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+
+## 🟠 2026-11-10 17:21 WIB — KPM: Antigravity kept asking him for permission - its drop folder moved inside the project (.claude/antigravity-out/round4/, git-ignored); pushed 8729943
+Next: NEXT-SESSION top.
+WAITING ON ALDI: send Antigravity "The task file changed: save every file in .claude\antigravity-out\round4\ (inside this project) instead of the A-Brain folder. The start frames are already there in frames\. Re-read .claude/ANTIGRAVITY-TASK.md and continue." Then "done, ask Claude to check it".
 
 ## 🟢 2026-11-10 16:49 WIB — KPM: his "if no voice then no capybara" - a tip shows only when spoken (max every 15 min), cart chatter removed, news voice quiet 5 s; pushed 1747122
 Full story: 1747122's message · next: NEXT-SESSION top.

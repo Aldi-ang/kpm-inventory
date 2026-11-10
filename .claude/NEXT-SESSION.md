@@ -1,5 +1,7 @@
 # The one job
 
+ANTIGRAVITY DROP FOLDER 2026-11-10 17:21 WIB (8729943): its files now land INSIDE the project at .claude/antigravity-out/round4/ (voice/*.wav, video/*.mp4; start frames copied to frames/) - git-ignored, because files outside its opened folder asked him permission one by one. When it says DONE: read its Result + its commit (git show), copy round4/ into A-Brain Raw/2026-11-10-sound-board/round4/, then J4 (rate 1.26) + split per mood, key the clips to animated WebP, wire through the TALK RULES call sites below.
+
 TALK RULES NOW (1747122, his "if no voice then no capybara"): useSound.js capyMaySpeak + the call sites - sale always (1.7 s after, past the cha-ching); news always shows, voice quiet 5 s (= while he is still on screen); a motivation tip comes up ONLY when it is spoken (max once per 15 min, a minute clear of other talk, sound actually on); cart chatter REMOVED (no voice, no line). The new Jett-by-mood voice goes through the SAME call sites (sale -> excited, news -> happy, ? -> curious, tip -> happy/approving). Still waiting: Antigravity's media task (round4).
 
 TALK RULES LIVE 2026-11-10 16:32 WIB (cd7f7b4): useSound.js capyMaySpeak - sale always (1.7 s after, past the cha-ching), news 20 s apart, motivation pop-ups out loud max once per 15 min (silent bubbles between), cart chatter never. The new Jett-by-mood voice must go through the SAME call sites (sale -> excited, news -> happy, ? -> curious, motivation -> happy/approving). Still waiting: Antigravity's media task (round4).
