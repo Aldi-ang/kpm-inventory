@@ -4,33 +4,84 @@ Aldi, 2026-11-08: *"i want u alucard on claude is the one who responsible for ou
 Claude writes ONE task here. Antigravity does it, writes the Result, sets Status to DONE. Status is OPEN, DONE or NONE.
 
 **Status:** OPEN
-**Written:** 2026-11-08 17:50 WIB, by Claude. Previous task (the Sell Again rules test) DONE `190c13a`, reviewed, live with `0ce8d87`.
+**Written:** 2026-11-10 16:30 WIB, by Claude. The 38-findings audit (below, QUEUED) is paused for this one - Aldi's
+priority today: *"for generating images video or sfx just use other platform to make your work lighter"* and
+*"u can use higgsfield or gemini to do that or antigravity your choice"*.
 
-**Task:** READ-ONLY. Settle the 38 "❔ not confirmed" findings of the August sweep. Aldi asked (2026-11-08): *"check the
-notes, fixes and test it yourself all of that"*. Claude checked the other 36 already. These 38 sit in code that was
-rewritten after August, so a line number in the note no longer points at anything.
+**Task:** MEDIA ONLY - make raw files for the capybara's new voice and smooth animation, on Aldi's Google account
+(AI Studio + Flow, his Google AI Pro). No app code. Claude cuts, tunes and wires everything afterwards.
 
-**Where they are:** A-Brain `Backlog/`, the seven `SWEEP - *.md` notes (not `SWEEP 2026-08-18 - START HERE.md`, not
-`SWEEP - 22 claims that got KILLED.md`). Each note now starts with a block "## Status, checked against the app
-2026-11-08". Every line in it marked ❔ is one finding to settle: the number is the finding's `## N.` section further
-down the same note (its **Where**, **What happens** and **Smallest fix**).
+Base folder for everything below: `D:\APP DEVELOPMENT\kpm inventory main FILES\A-Brain\Raw\2026-11-10-sound-board\round4\`
 
-**For each ❔ finding:**
-1. Read its section in the note.
-2. Find the code TODAY in the kpm repo. Search by the names the finding uses (function, field, label text), not by the
-   August line number. `git log -S "<text>"` tells you when a line went away.
-3. Answer ONE of:
-   - **FIXED**: the bad behaviour cannot happen any more. Give `file:line` of what stops it, and the commit if you found it.
-   - **OPEN**: it still happens. Give `file:line` of the code that still does it.
-   - **GONE**: the feature or code path no longer exists at all. Say what replaced it, if anything.
-4. One sentence of plain English each. No guesses: if you cannot tell, write **CAN'T TELL** and why.
+## Part 1 - voice takes (Google AI Studio, aistudio.google.com/generate-speech)
 
-**Never:** edit app code, edit any A-Brain file, run a build, deploy, push. Claude ticks the notes from your Result.
+Aldi picked the voice **Jett** (free voice list). Claude makes it sound smaller later - do NOT pitch or edit anything.
 
-**Touch only:** this file (the Result below).
+1. Model: the default "Gemini 3.8 Flash TTS". Speaker 1 voice: **Jett** (Open voice settings, pick Jett).
+2. Speech block -> **Style** -> type this whole text in "Describe the voice style" (base text + the mood line below):
+   `A big, round, jolly gentleman creature in a cozy life-simulation game, chatting happily in a made-up gibberish
+   language. Warm, soft and playful, a little chuckle in the voice, bouncy melody, relaxed pace, never shouting.`
+3. For each mood, replace the speech text with the script, add the mood line to the style, press Run, then the
+   Download button under the player. Do every mood **twice** (two runs of the same script come out different - that
+   is the variation Aldi wants). Save as `voice\<mood>-1.wav` and `voice\<mood>-2.wav`.
 
-**Done when:** all 38 have an answer under Result, as a table per note (Finding | Answer | file:line | one sentence);
-you committed this file by name, message starting `Antigravity:`; Status here is DONE with the hash. Do not push. Then tell
-Aldi: "done, ask Claude to check it".
+| mood | add to the style | script (type exactly) |
+|---|---|---|
+| happy | `Mood: cheerful and welcoming, like greeting a friend.` | `Hoba noo, sabba dee! ... Wubba-la, feeba nooli! ... Oho, dibba sabba doo! ... Nooba, la-la feeba!` |
+| curious | `Mood: curious and interested, every phrase rises at the end like a question.` | `Hmm? Nebba sooli? ... Oo, dabba-noo? ... Feeba wa, nibba? ... Hm-hm, sooba la?` |
+| approving | `Mood: calm and content, small approving murmurs, like nodding along.` | `Mm-hm, okka. ... Sabba, sabba. ... Nibba doo, mm. ... Okka-la, hm.` |
+| excited | `Mood: delighted and excited about a good deal, with a happy little laugh.` | `Oho! Zappa la-loo! ... Wubba wubba, gooba! ... Hehe! Toobi doo! ... Dah-dah, feeba nooo!` |
+
+If the Download button saves a `.tmp` file into Downloads, that file IS the finished WAV - copy it and rename it.
+Never link a paid API key (the "Link API key" / Voice Design dialogs): that bills Aldi. Free voices only.
+
+## Part 2 - animation clips (Google Flow, labs.google/flow, Veo)
+
+Start frames are ready in `frames\`: `idle-start.png`, `talk-start.png`, `deal-start.png` (the capybara on flat green).
+
+For each row: Flow -> new project -> **Frames to Video**, put the SAME png as the **first AND the last frame** (that is
+what makes it loop smoothly), paste the prompt, 16:9, sound off if there is a switch, generate, download the MP4.
+Make **2 versions** of each row. Save as `video\<name>-1.mp4`, `video\<name>-2.mp4`.
+
+Every prompt starts with: `2D cartoon capybara merchant in a brown coat and hat, the same drawing style and colours as
+the image, on a perfectly flat bright green background that never changes. Locked camera, no zoom, no shadow, no
+other objects, no text. Smooth, gentle, looping motion like a life-simulation game character.` then add:
+
+| name | frame | add to the prompt |
+|---|---|---|
+| idle | idle-start.png | `He stands relaxed, breathes slowly, blinks once, shifts his weight a little and settles back to the same pose.` |
+| talk | talk-start.png | `He chats happily: mouth moving as if talking, small friendly hand gestures, a slight head bob, then back to the same pose.` |
+| deal | deal-start.png | `He is delighted about a good deal: a proud little bounce, thumbs up, a happy grin, then back to the same pose.` |
+
+Use the fast Veo option if Flow offers one (fewer credits). If a clip changes the drawing (new face, different hat,
+real-looking fur, background not green), still save it, and say which in the Result. Do not try more than 2 extra
+attempts per row.
+
+## Never
+Edit app code or any file except the ones you create in `round4\` and this task file. Link a paid API key. Buy credits.
+Push. Commit media into the app repo.
+
+**Touch only:** `round4\voice\*.wav`, `round4\video\*.mp4`, and this file (the Result below).
+
+**Done when:** 8 voice WAVs + 6 MP4s are saved with the names above (or the Result says which are missing and why);
+the Result lists every file with its length and one plain sentence on how it came out; Status here is DONE. Commit THIS
+file by name, message starting `Antigravity:`. Do not push. Then tell Aldi: "done, ask Claude to check it".
 
 **Result:** (Antigravity writes here)
+
+---
+
+## QUEUED NEXT - do not start until the media task above is DONE and Claude has written it into the Status
+
+READ-ONLY. Settle the 38 "❔ not confirmed" findings of the August sweep. Aldi asked (2026-11-08): *"check the notes,
+fixes and test it yourself all of that"*. Claude checked the other 36 already. These 38 sit in code that was rewritten
+after August, so a line number in the note no longer points at anything.
+
+**Where they are:** A-Brain `Backlog/`, the seven `SWEEP - *.md` notes (not `SWEEP 2026-08-18 - START HERE.md`, not
+`SWEEP - 22 claims that got KILLED.md`). Each note starts with a block "## Status, checked against the app 2026-11-08".
+Every line in it marked ❔ is one finding: the number is the finding's `## N.` section in the same note.
+
+**For each ❔ finding:** read its section; find the code TODAY by the names it uses (not the August line number;
+`git log -S "<text>"` tells when a line went away); answer FIXED (file:line of what stops it), OPEN (file:line that
+still does it), GONE (what replaced it), or CAN'T TELL (why) - one plain sentence each. Never edit app code or A-Brain,
+build, deploy or push. Result as a table per note (Finding | Answer | file:line | one sentence).
