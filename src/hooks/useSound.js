@@ -269,13 +269,15 @@ export function unlockSounds({ AudioImpl, doc } = {}) {
 
 /* WHEN THE CAPYBARA TALKS OUT LOUD - his 2026-11-10 *"yes go with your suggestion but also sound when he give us the
    motivation on random sometimes ... without being annoying and too repetitive"*. His bubble still shows every time;
-   only the VOICE is rationed:
+   then, same day: *"if no voice then no capybara"* - so an appearance comes WITH the voice:
    - sale        always (the line comes after the cha-ching has finished)
-   - news        "Saved" and the like, unless he spoke in the last 20 s (ten saves in a row = one voice, nine bubbles)
-   - motivation  his own pop-up lines, out loud at most once every 15 min and never within a minute of other talk;
-                 the pop-ups in between stay silent bubbles. The lines go round in order, so none repeats early.
-   - cart        never: the chatter while items go in the cart is bubble-only (it fired up to every 6 s). */
-const CAPY_QUIET = { news: 20e3, motivation: 60e3 };
+   - news        "Saved" and the like. Quiet for 5 s after he spoke - exactly while he is still on screen from the last
+                 one (a new line keeps him up and swaps his words), so every NEW appearance talks. News always shows:
+                 it is a report (Lite Mode, sound off by design, shows it silently).
+   - motivation  his own pop-up tips, at most once every 15 min and never within a minute of other talk - and the tip
+                 only comes up when it is spoken (CapybaraMascot). The tips go round in order, so none repeats early.
+   - cart        never: the chatter while items went in the cart is gone (MerchantSalesView). */
+const CAPY_QUIET = { news: 5e3, motivation: 60e3 };
 const MOTIVATION_EVERY = 15 * 60e3;
 const capyGate = { spoke: -Infinity, motivated: -Infinity };
 export function capyMaySpeak(kind, now = Date.now(), g = capyGate) {

@@ -10973,8 +10973,8 @@ section('THE CORNER CAPYBARA TALKS TOO (2026-10-11) - his pick A after "the capy
 {
   const capy = code(read('src/components/CapybaraMascot.jsx')).replace(/\r/g, '');
   ok('the corner capybara imports the voice (and, since 2026-11-10, the rule for when it may talk)', /import \{ speakMumble, capyMaySpeak \} from '\.\.\/hooks\/useSound'/.test(capy));
-  ok('his idle line is spoken the moment it goes up - when the motivation rule allows (his 2026-11-10 "sometimes")',
-     /setInternalMsg\(nextText\);\s*(\/\*[^*]*\*\/\s*)?if \(capyMaySpeak\('motivation'\)\) speakMumble\(nextText\);/.test(capy));
+  ok('his tip is spoken the moment it goes up - and, his 2026-11-10 "if no voice then no capybara", it only goes up when it is spoken',
+     /if \(!capyMaySpeak\('motivation'\) \|\| !speakMumble\(nextText\)\) \{ scheduleNextPeek\(\); return; \}\s*setInternalMsg\(nextText\);/.test(capy));
   ok('a plain CAPY_COMMS line (his own news, e.g. "Sector Configuration Saved!") is spoken - when the news rule allows',
      /if \(typeof d === 'string' && d\) \{ recordMissed\(d, false\); if \(capyMaySpeak\('news'\)\) speakMumble\(d\); \}/.test(capy));
   ok('exactly those two: never the message prop (triggerCapy speaks it), never an object detail (the deal line - the terminal spoke it; the slider peek - no line)',
@@ -11433,9 +11433,10 @@ section('THE CAPYBARA SAYS 3 WORDS A SENTENCE AND YOU CAN HEAR THEM (2026-10-12)
   const lines = new Set(), walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(d + '/' + e.name) : /\.jsx?$/.test(e.name) ? [d + '/' + e.name] : []));
   for (const f of walk('src')) for (const m of read(f).matchAll(/triggerCapy\??\.?\(\s*(['"`])((?:\\.|(?!\1).)+?)\1\s*[,)]/g)) lines.add(m[2].replace(/\$\{[^}]*\}/g, '12'));
   const block = (f, a, b) => { const s = read(f), i = s.indexOf(a), j = s.indexOf(b, i); return i > -1 && j > i ? s.slice(i, j) : ''; };
-  for (const b of [block('src/components/CapybaraMascot.jsx', 'const LOGGED_IN_MESSAGES', 'const NO_MESSAGES'), block('src/MerchantSalesView.jsx', 'const CHATTER = {', '};'), block('src/MerchantSalesView.jsx', 'const DEAL_LINES = [', '];')])
+  for (const b of [block('src/components/CapybaraMascot.jsx', 'const LOGGED_IN_MESSAGES', 'const NO_MESSAGES'), block('src/MerchantSalesView.jsx', 'const DEAL_LINES = [', '];')])
     for (const m of b.matchAll(/"((?:[^"\\]|\\.)*?[A-Za-z](?:[^"\\]|\\.)*?)"/g)) lines.add(m[1]);
-  ok(`the corpus is every kind of line he hears (${lines.size} lines)`, lines.size > 120 && lines.has('Access Denied. 🛑') && lines.has('Good pick.') && lines.has("Deal's done. Good haul."));
+  /* the cart chatter ("Good pick.") left the corpus 2026-11-10: it is no longer heard (his "no voice then no capybara") */
+  ok(`the corpus is every kind of line he hears (${lines.size} lines)`, lines.size > 110 && lines.has('Access Denied. 🛑') && lines.has('Welcome back, Boss!') && lines.has("Deal's done. Good haul."));
   /* THE PLAN: words per sentence, 40 rolls a line */
   let sentences = 0, short = 0; const shortEx = [];
   for (const t of lines) for (let s = 1; s <= 40; s++) {
@@ -13696,15 +13697,14 @@ section('WHEN THE CAPYBARA TALKS (his 2026-11-10 "go with your suggestion" + mot
   const run = (steps) => { const g = { spoke: -Infinity, motivated: -Infinity }; return steps.map(([k, s]) => u.capyMaySpeak(k, s * 1000, g)); };
   const M = 60;
   ok('a sale always talks, even right after other talk', run([['news', 0], ['sale', 1], ['sale', 2]]).every(Boolean));
-  ok('news talks, then stays quiet for 20 s (ten saves in a row = one voice)', JSON.stringify(run([['news', 0], ['news', 5], ['news', 19], ['news', 21]])) === '[true,false,false,true]');
+  ok('news talks, then stays quiet only while he is still on screen (5 s) - every NEW appearance talks', JSON.stringify(run([['news', 0], ['news', 3], ['news', 4.9], ['news', 5.1]])) === '[true,false,false,true]');
   ok('a motivation pop-up talks at most once per 15 min; the ones between are silent bubbles',
      JSON.stringify(run([['motivation', 0], ['motivation', 3 * M], ['motivation', 14 * M], ['motivation', 15 * M + 1]])) === '[true,false,false,true]');
   ok('motivation never talks within a minute of other talk (a sale at 15:00 keeps the 15:30 pop-up silent)',
      JSON.stringify(run([['motivation', 0], ['sale', 15 * M], ['motivation', 15 * M + 30], ['motivation', 16 * M + 1]])) === '[true,true,false,true]');
   ok('cart chatter and any unknown kind never talk', run([['cart', 0], ['cart', 100], ['whatever', 200]]).every((x) => x === false));
   const sale = code(read('src/MerchantSalesView.jsx')).replace(/\r/g, ''), app = code(read('src/App.jsx')).replace(/\r/g, '');
-  const chat = sale.slice(sale.indexOf('const triggerMerchantSpeak'), sale.indexOf('};', sale.indexOf('const triggerMerchantSpeak')));
-  ok('the cart chatter is bubble-only (no voice in triggerMerchantSpeak)', chat.length > 50 && !/speakMumble/.test(chat));
+  ok('the cart chatter is gone - no voice AND no line (his "if no voice then no capybara")', /const triggerMerchantSpeak = \(\) => \{\};/.test(sale) && !/CHATTER/.test(sale));
   ok('the sale line talks after the 1.6 s cha-ching, through the rule', /playSound\('saleDone'\);\s*(\/\*[^*]*\*\/\s*)?setTimeout\(\(\) => \{ if \(capyMaySpeak\('sale'\)\) speakMumble\(line\); \}, 1700\);/.test(sale));
   ok('app news (triggerCapy) talks through the news rule', /if \(capyMaySpeak\('news'\)\) unlockSounds\(\)\.then\(\(\) => speakMumble\(text\)\)/.test(app));
 }

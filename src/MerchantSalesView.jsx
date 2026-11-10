@@ -114,7 +114,6 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     // he has to outlive alcoveOut by one animation, or he would vanish instead of leaving
     const [floatShown, setFloatShown] = useState(false);
     const [floatLeaving, setFloatLeaving] = useState(false);
-    const lastChatterRef = useRef(0);   // throttles how often he reacts to a tap
 
     // 🚀 DUAL RETUR ENGINE
     const [isReturMode, setIsReturMode] = useState(draft?.isReturMode || false);
@@ -537,32 +536,11 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
        deal commit ONLY, so a 15-line basket stays silent until it is paid. The dialogue table
        this used to hold was verbatim Resident Evil 4 merchant lines and has been deleted.
        Callers are left in place: they sit on transaction paths and changing them buys nothing. */
-    /* He mouthed the talking animation in silence on desktop: the mumble and the bubble
-       were both wired only through CapybaraMascot's CAPY_COMMS event, which the alcove
-       does not listen to. Same words, same voice, drawn where he actually stands. */
-    const CHATTER = {
-        add:       ["Right, that's noted.", "Into the book it goes.", "Good pick.", "Aye, one more."],
-        expensive: ["Now that's a proper ware.", "Heavy coin, that one.", "Fine taste."],
-        /* Choosing a customer used to borrow the `add` lines, so he announced "Aye, one more"
-           when nothing had been added — he was narrating the wrong event. These are about
-           opening someone's page, and they stay neutral because the same lines have to suit a
-           regular and a shop he has never sold to. */
-        customer:  ["Their page, then.", "Right, let's see their book.", "Ah. This one.", "Let's have a look at them."],
-    };
-    const triggerMerchantSpeak = (type) => {
-        // He reacts, but not to every single press - a 15-line basket would have him
-        // talking non-stop. At most once every 6 seconds, then back to idle.
-        const now = Date.now();
-        if (now - lastChatterRef.current < 6000) return;
-        lastChatterRef.current = now;
-
-        const pool = CHATTER[type] || CHATTER.add;
-        const line = pool[Math.floor(Math.random() * pool.length)];
-        setMerchantLine(line);
-        setMerchantMood('talking');
-        /* bubble only - his 2026-11-10 pick: no voice while items go in the cart (useSound.js capyMaySpeak) */
-        setTimeout(() => { setMerchantMood('idle'); setMerchantLine(""); }, 2400);
-    };
+    /* The cart chatter (add / expensive / customer lines, up to every 6 s) is GONE - his 2026-11-10 rule: *"if there is
+       no voice when capybara shows up then dont show the capybara at all"*, and the chatter was the voice he called
+       annoying. So no voice and no line: the merchant stays idle in the alcove until the deal. Same as his 2026-08-02
+       call above. The callers stay (they sit on transaction paths); the function does nothing. */
+    const triggerMerchantSpeak = () => {};
 
     /* "/" jumps to the search box, the way the prototype did it. Guarded against firing
        while the salesman is typing a customer name or a quantity — otherwise the key that

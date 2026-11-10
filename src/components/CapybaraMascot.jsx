@@ -203,10 +203,12 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
             peekTimer = setTimeout(() => {
                 const currentIndex = msgIndexRef.current;
                 const nextText = dialogueList[currentIndex];
-                
+                /* his 2026-11-10 rule: *"if there is capybara showing to give motivation there should be voice, if no
+                   voice then no capybara"*. So a tip comes up ONLY when it is spoken: the 15-min rule allows it AND the
+                   voice really plays (not Lite Mode, not before the first tap, not a hidden tab). Otherwise he stays
+                   away and tries again at the next timer. */
+                if (!capyMaySpeak('motivation') || !speakMumble(nextText)) { scheduleNextPeek(); return; }
                 setInternalMsg(nextText);
-                /* his motivation pop-up: out loud at most once per 15 min, a silent bubble in between */
-                if (capyMaySpeak('motivation')) speakMumble(nextText);
                 msgIndexRef.current = (currentIndex + 1) % dialogueList.length;
 
                 setIsPeeking(true);

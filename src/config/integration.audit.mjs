@@ -80,7 +80,10 @@ check(G1, 'both figures 200px',
 check(G1, 'both bubbles at 214px',
   (css.match(/bottom:214px/g) || []).length >= 2, 'need 2 occurrences');
 inJs(G1, 'no duplicate capybara (handshake)', 'CAPY_SUPPRESS');
-inJs(G1, 'customer lines (not "one more")',   'Their page, then.');
+/* The cart chatter (incl. the customer lines this once guarded) is GONE - his 2026-11-10 "if no voice then no capybara":
+   he only shows when he talks, and the chatter was the talk he found annoying. Now it must stay gone. */
+check(G1, 'no cart chatter in the build (his "if no voice then no capybara")',
+  !term.includes('Their page, then.') && !term.includes('Aye, one more.') && !term.includes('Heavy coin, that one.'));
 
 /* ── 2. THE WARES ────────────────────────────────────────────────────────── */
 const G2 = '2. The wares';
