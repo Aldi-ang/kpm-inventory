@@ -13689,5 +13689,16 @@ section('DSM BY DEFAULT (his 2026-11-10 "yes replace every aspect of this app wi
   const seedJson = JSON.parse(read('demo/seed.json'));
   ok('the demo company is DSM Demo (its receipts printed KPM DEMO)', seedJson.appSettings?.companyName === 'DSM Demo', seedJson.appSettings?.companyName);
 }
+section('THE SALE SOUND (his 2026-11-10 "too loud and long" -> his cha-ching, pick C2): short, and never boosted');
+{
+  const snd = read('src/hooks/useSound.js'), sale = read('src/MerchantSalesView.jsx');
+  let size = 0; try { size = fs.statSync('public/sounds/sale-chaching.mp3').size; } catch {}
+  /* 96 kb/s mono: 1.6 s is ~20 KB. Past 30 KB it is a longer clip again - the old sign.mp3 was 51 KB for 4.1 s. */
+  ok('the cha-ching file is there and short (under 30 KB, about 2.5 s at most)', size > 5000 && size < 30000, `${size} bytes`);
+  ok('it plays at the file\'s own level: no boost and full element volume (the old 0.9 x 2.4 pushed it past full scale)',
+     (snd.match(/saleDone: 1\.0,/g) || []).length === 2 && /saleDone: '\/sounds\/sale-chaching\.mp3'/.test(snd));
+  ok('the sale screen plays it, and the old sign sound is gone everywhere', /playSound\('saleDone'\)/.test(sale) && !/playSound\('sign'\)/.test(sale) &&
+     !/\bsign:\s/.test(snd) && !fs.existsSync('public/sounds/sign.mp3'));
+}
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

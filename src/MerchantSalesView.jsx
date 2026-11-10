@@ -1342,7 +1342,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             // play, so unlock here. The signing sound comes first and the mumble follows it
             // rather than landing on top - two sounds at the same instant read as one mess.
             unlockSounds().then(() => {
-                playSound('sign');
+                playSound('saleDone');
                 setTimeout(() => speakMumble(line), 520);
             });
             // DESKTOP has the alcove, which is already showing him: a corner mascot as well

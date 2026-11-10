@@ -20,7 +20,10 @@ const SOURCES = {
   /* Aldi's own SFX, from RE UI/SFX. click is trimmed to 150ms - the source was 3,4s of
      mostly silence, which made every press sound late. */
   click:  '/sounds/click.mp3',
-  sign:   '/sounds/sign.mp3',
+  /* A sale is saved and the receipt shows. HIS cha-ching (2026-11-10, *"for receipt use this SFX instead"*, then "c2"):
+     youtube EuLJv2qONRY cut to its 1.6 s with the bell ring faded, levelled to his message sound's loudness. Replaced
+     sign.mp3 - 4.1 s played 2.2x past full scale, his *"too loud and long"*. Board: A-Brain Raw/2026-11-10-sound-board. */
+  saleDone: '/sounds/sale-chaching.mp3',
   /* The Master Vault gate - HIS intro, made in the sound studio (2026-10-11): slow chord, reverse bell, warm bloom,
      breath, a soft key per letter, a 2.4 s hall. Baked by tools/sfx-bake.mjs from src/config/capyVoice.js on
      VaultGate's own clock (T_WAVE 0.1, T_WAVE_DUR 3, FORMED 4.5, OUT 6.7) - move those and re-bake. */
@@ -76,7 +79,7 @@ for (const f of capyFiles()) SOURCES[capyFile(f.on, f.v, f.len, f.rise)] = '/sou
    control pressed more than any other in the app, often outdoors next to a road - the
    quietest thing in it. The stepper and the error tone go to full. */
 const VOLUMES = {
-  click: 1.0, error: 1.0, tap: 0.9, commit: 0.9, sign: 0.9,
+  click: 1.0, error: 1.0, tap: 0.9, commit: 0.9, saleDone: 1.0,
   vaultIntro: 1.0,
   ponderOpen: 0.95,
   bookPage: 0.85, bookOpenS: 0.9, bookCloseS: 0.9,
@@ -103,7 +106,9 @@ const DEFAULT_VOLUME = 0.85;
    If Web Audio is missing or refuses, nothing breaks — the element keeps playing at its own
    volume, which is exactly today's behaviour. */
 const BOOST = {
-  click: 3.2, error: 2.4, tap: 2.2, commit: 2.4, sign: 2.4,
+  click: 3.2, error: 2.4, tap: 2.2, commit: 2.4,
+  /* No boost: the file already sits at his message sound's loudness - the 2.4 here is what made the old one crackle. */
+  saleDone: 1.0,
   /* No boost. The others are blips fighting a roadside; the intro is a mixed cue made at the level he set. */
   vaultIntro: 1.0,
   /* No boost either: each chest file already holds the loudness he set in the studio. */
