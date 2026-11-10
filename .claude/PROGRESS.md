@@ -2,6 +2,10 @@
 
 **Updated: 2026-11-09 19:03 WIB, PC clock (🟠 KPM — professional edition answered (option C); bugs first)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
 
+## 🟠 2026-11-10 16:12 WIB — KPM: his "jett is the best but ... sound like a small animal" - board v4: Jett at 3 sizes (higher + quicker = smaller throat); no app code changed
+Board: https://claude.ai/artifact/3s4aXiddpLFTCtuGUnq3mJ · proof: A-Brain Raw/2026-11-10-sound-board/RESULT.md round 3 · next: NEXT-SESSION top.
+WAITING ON ALDI: ✅ TEST the sizes, paste the gold pick line. ❓ his Gemini key into C:/Users/ASUS/.gemini/.env as GEMINI_API_KEY=... (he types it; I only read it), or "use the pane".
+
 ## 🟠 2026-11-10 09:10 WIB — KPM: his "use this SFX" + "SIMS kinda noise ... from the start" - board v3: his cha-ching (2 lengths) + 4 Sims-style capybara voices made in Google AI Studio (free tier); no app code changed
 Board: https://claude.ai/artifact/3s4aXiddpLFTCtuGUnq3mJ · proof: A-Brain Raw/2026-11-10-sound-board/RESULT.md round 2 · next: NEXT-SESSION top.
 WAITING ON ALDI: ✅ TEST the board, paste the gold pick line. 🔴 the paid Gemini key on "Distribution and Sales by AK" (Voice Design + 2,000 voices) - only if the 4 free voices are not enough.
