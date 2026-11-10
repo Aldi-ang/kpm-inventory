@@ -1,30 +1,15 @@
-/* Aldi's sound-studio save that the app's capybara voice and vault intro are built from - ONE place, read by the baker
-   (tools/sfx-bake.mjs renders the files from it) and by the app (src/utils/voicePlan.js speaks with it), so the two can
-   never disagree. Source: the studio https://claude.ai/artifact/AmgCRrR8s8MfPaAxfPQtNr, sfx/settings doc version 7,
-   saved 2026-10-11 13:13 WIB (copy kept in A-Brain Tools/sound-studio/saves/). He changes a sound: he saves in the
-   studio, these numbers are replaced from the new save, `node tools/sfx-bake.mjs` runs again.
+/* Aldi's sound-studio save that the vault intro is built from, read by the baker (tools/sfx-bake.mjs renders
+   public/sounds/vault-intro.mp3 from it). Source: the studio https://claude.ai/artifact/AmgCRrR8s8MfPaAxfPQtNr,
+   sfx/settings doc version 7, saved 2026-10-11 13:13 WIB (copy kept in A-Brain Tools/sound-studio/saves/). He changes
+   the intro: he saves in the studio, these numbers are replaced from the new save, `node tools/sfx-bake.mjs` runs again.
 
    The studio's "Volume, all" (0.25 in that save) is a listening level he set for the whole page - it scaled the message
    sounds the same way, so it is left out here and every sound keeps the balance he heard. His call on the messages,
-   2026-10-11: *"just leave the message like that for now"*. */
+   2026-10-11: *"just leave the message like that for now"*.
 
-/* Agent (firm) - his words: *"tegas and serious but expressive ... elegant manly and focus"*. The same voice since
-   2026-10-11 17:35 with HAPPY melodies and at least 3 sounds a line - his *"sometimes the capybara said one words only
-   its kinda scary tbh we need more happy emotion and minimum of 3 words when saying stuff"* (moods 'happy' + minSyl
-   are in tools/chip.js plan). The syllable files did not change, so nothing was re-baked. */
-/* REPLACED 2026-10-11 20:08 by his *"just use that voice for now"*: "Video mumble - natural" from the studio (v8) - the
-   real mumbles of his reference video (tools/mumble-pack.js, Gravity Sound "RPG Character Mumble Voices", no copyright),
-   one PSOLA shift for the whole voice so every syllable is the same person, deep and soft; his asks behind it:
-   *"fat but soft mumbling sound, just imagine the duke from resident evil village but inside the sim city"* and
-   *"make it more natural sounding instead of electronic edited sound"*. His loudness .4 and echo .12 kept.
-   2026-10-12, his *"i still can hear the capybara saying 1 or 2 words only ... minimum 3 words each sentence remember"*:
-   minSyl is now 3 WORDS per SENTENCE (tools/chip.js plan), and wordGap .15 s is the quiet between two words - at the old
-   .05 the syllables ran together with the echo and "Welcome back, Boss!" was heard as ONE sound (rendered and measured:
-   3 of 72 sentences heard as 3+ words at .05, 72 of 72 at .12 and up). */
-export const CAPY_VOICE = {
-  shape: 'rec', rec: 'round', natural: true, moods: 'happy', f: 108, formant: .9, intonation: .9, jitter: .2, scoop: 0, bend: 0, speed: .9,
-  cons: 0, vib: 0, breath: 0, maxSyl: 12, minSyl: 3, variety: 1, tempo: .5, drop: .5, emph: .5, fry: 0, vol: .4, echo: .12, wordGap: .15,
-};
+   THE CAPYBARA'S VOICE LEFT THIS FILE 2026-11-11. The studio voice that lived here (61 baked syllables, a speech plan
+   from tools/chip.js) was his *"annoying AF"* of 2026-11-10; he picked a spoken voice instead - Jett, cut into phrases
+   by mood. It is in src/hooks/useSound.js (CAPY_PHRASES). The file keeps its name: the baker and the checks import it. */
 
 /* the vault intro - his own mix: *"dont make the intro 8 bit bruh, we need elegant for that"* */
 export const INTRO_MIX = {
@@ -35,18 +20,3 @@ export const INTRO_MIX = {
   formed: { d: 'bloomchord', vol: 1, pitch: -12 },
   leave:  { d: 'breath', vol: 1, pitch: -12 },
 };
-
-/* the syllable files the voice needs: 3 consonant classes x 5 vowels x short / mid / long, a rising long one for a
-   question's last word, and the "hm." the agent sometimes starts with. Names: capy-<onset>-<vowel>-<len>[-r] */
-export const CAPY_ONSETS = ['soft', 'hard', 'hiss'];
-export const CAPY_VOWELS = ['a', 'e', 'i', 'o', 'u'];
-export function capyFile(on, v, len, rise) { return 'capy-' + on + '-' + v + '-' + len + (rise ? '-r' : ''); }
-export function capyFiles() {
-  const out = [];
-  for (const on of CAPY_ONSETS) for (const v of CAPY_VOWELS) {
-    for (const len of ['s', 'm', 'l']) out.push({ on, v, len, rise: false });
-    out.push({ on, v, len: 'l', rise: true });
-  }
-  out.push({ on: 'soft', v: 'm', len: 'm', rise: false });
-  return out;
-}

@@ -9764,27 +9764,41 @@ section('HEAVY APP 5b: CUSTOMERS, SETTINGS AND THE AUDIT VAULT LOAD ON OPEN (202
      ['<CustomerManagement', '<SettingsView', '<AuditVaultView'].every(t => inside.includes(t) && a.indexOf(t) === a.lastIndexOf(t)));
 }
 
-/* ── POTATO 1: THE MASCOT SHEET SLIDES ON THE GRAPHICS CHIP (2026-10-01) ─────────────────────────────────────────────
-   His "lighter ... potato phone even in full animation mode". A background-position sheet animation kept the main
-   processor drawing 60 frames a second on every screen: 18% -> 3% idle CPU (6x-slow phone) with the strip. The
-   frames were compared byte for byte (plain box: identical; phone corner box: worst pixel 1/255). */
-section('POTATO 1: THE MASCOT SHEET SLIDES ON THE GRAPHICS CHIP (2026-10-01)');
+/* ── POTATO 1: THE MASCOT MOVES WITHOUT THE MAIN PROCESSOR (2026-10-01, smooth clips 2026-11-11) ─────────────────────
+   2026-10-01, his "lighter ... potato phone even in full animation mode": a background-position sheet animation kept
+   the main processor drawing 60 frames a second on every screen (18% -> 3% idle CPU on a 6x-slow phone once the sheet
+   slid on a transform strip). 2026-11-10, his "moving animation for those capybara, smooth one, as smooth as sim city":
+   idle and talk are animated WebP clips now - the browser plays the picture itself, so no CSS animation is left.
+   Measured 2026-11-11, old sheet against new clip (headless Chrome, CPU of the page + the graphics process, two runs):
+   his alcove 6.7-7.4% -> 2.3-4.9% of one core, the corner 4.9-5.4% -> 0.8-3.7%, hidden off screen 0.1-0.2% -> 0.0-0.1%.
+   The stepped sheet was moved 60 times a second; the clip changes 12 times. Script: A-Brain
+   Raw/2026-11-10-sound-board/round4/cpu. */
+section('POTATO 1: THE MASCOT MOVES WITHOUT THE MAIN PROCESSOR (2026-10-01, smooth clips 2026-11-11)');
 { const th = read('src/styles/theme.css').replace(/\r/g, '');
-  ok('the idle and talk sheets animate a ::before strip by transform - never background-position on the element',
-     /@keyframes kpmMerchIdle \{ to \{ transform: translateX\(-2000px\); \} \}/.test(th) && /@keyframes kpmMerchTalk \{ to \{ transform: translateX\(-2600px\); \} \}/.test(th) &&
-     !/@keyframes kpmMerch(Idle|Talk) \{[^}]*background-position/.test(th) && /\.kpm-merch-idle, \.kpm-merch-talk \{ overflow: hidden; \}/.test(th));
-  /* the frame maths RUN: for each sheet, the strip width, the translate and the step count must put frame k at -200k px */
-  const sheet = (n) => { const w = +(th.match(new RegExp(`\\.kpm-merch-${n}::before \\{ width: (\\d+)px;`)) || [])[1];
-    const steps = +(th.match(new RegExp(`animation: kpmMerch${n[0].toUpperCase() + n.slice(1)} [\\d.]+s steps\\((\\d+), end\\)`)) || [])[1];
-    const to = +(th.match(new RegExp(`kpmMerch${n[0].toUpperCase() + n.slice(1)} \\{ to \\{ transform: translateX\\((-?\\d+)px\\)`)) || [])[1];
-    return { w, steps, to, frames: Array.from({ length: steps || 0 }, (_, k) => Math.floor(((k + 0.5) / steps) * steps) / steps * to) }; };
-  const idle = sheet('idle'), talk = sheet('talk');
-  ok('every frame lands on a 200px frame edge: idle 10 frames on a 2000px strip, talk 13 on 2600px (frame k at -200k)',
-     idle.w === 2000 && idle.steps === 10 && idle.to === -2000 && idle.frames.every((x, k) => x === -200 * k) &&
-     talk.w === 2600 && talk.steps === 13 && talk.to === -2600 && talk.frames.every((x, k) => x === -200 * k));
-  ok('Lite Mode and reduced motion still hold frame 1 (the strip stops at 0)',
-     /html\.lite-mode \.kpm-merch-idle::before, html\.lite-mode \.kpm-merch-talk::before \{ animation: none; transform: none; \}/.test(th) &&
-     /\.kpm-merch-idle::before, \.kpm-merch-talk::before \{ animation: none; transform: none; \}/.test(th));
+  ok('idle and talk are animated pictures: no CSS animation, no keyframes, no strip to move',
+     /\.kpm-merch-idle \{ background-image: url\('\/sprites\/merchant-idle\.webp'\); \}/.test(th) && /\.kpm-merch-talk \{ background-image: url\('\/sprites\/merchant-talk\.webp'\); \}/.test(th) &&
+     !/kpmMerch(Idle|Talk)/.test(th) && !/\.kpm-merch-(idle|talk)(::before)? \{[^}]*animation:/.test(th));
+  /* the files, READ: a walk over the WebP's own chunks - the canvas, the loop count, one ANMF chunk per frame */
+  const webp = (f) => { let b; try { b = fs.readFileSync(f); } catch { return { frames: -1 }; }
+    if (b.toString('latin1', 0, 4) !== 'RIFF' || b.toString('latin1', 8, 12) !== 'WEBP') return { frames: -1 };
+    let frames = 0, loop = -1, w = 0, h = 0;
+    for (let o = 12; o + 8 <= b.length;) { const id = b.toString('latin1', o, o + 4), size = b.readUInt32LE(o + 4);
+      if (id === 'VP8X') { w = 1 + b.readUIntLE(o + 12, 3); h = 1 + b.readUIntLE(o + 15, 3); }
+      if (id === 'ANIM') loop = b.readUInt16LE(o + 12);
+      if (id === 'ANMF') frames++;
+      o += 8 + size + (size & 1); }
+    return { frames, loop, w, h, size: b.length }; };
+  const idle = webp('public/sprites/merchant-idle.webp'), talk = webp('public/sprites/merchant-talk.webp'), still = webp('public/sprites/merchant-still.webp');
+  const say = (c) => `${c.w}x${c.h}, ${c.frames} frames, loop ${c.loop}, ${Math.round(c.size / 1024)} KB`;
+  ok('both clips are his 200px frame, loop for ever, and hold 12 frames a second for about 8 s (90-100 frames; the old sheets had 10 and 13)',
+     [idle, talk].every((c) => c.w === 200 && c.h === 200 && c.loop === 0 && c.frames >= 90 && c.frames <= 100), `idle ${say(idle)} | talk ${say(talk)}`);
+  ok('each clip stays under 600 KB - both are in the offline download', [idle, talk].every((c) => c.size > 100000 && c.size < 600000), `idle ${say(idle)} | talk ${say(talk)}`);
+  ok('Lite Mode and reduced motion show ONE still picture instead (CSS cannot pause an animated picture)',
+     /html\.lite-mode \.kpm-merch-idle, html\.lite-mode \.kpm-merch-talk \{ background-image: url\('\/sprites\/merchant-still\.webp'\); \}/.test(th) &&
+     /\n  \.kpm-merch-idle, \.kpm-merch-talk \{ background-image: url\('\/sprites\/merchant-still\.webp'\); \}/.test(th) &&
+     still.frames === 0 && still.w === 200 && still.h === 200 && still.size < 20000, `still ${say(still)}`);
+  ok('the offline download carries the clips (sprites/*.webp) and the old sheets are gone',
+     /'sprites\/\*\.webp'/.test(read('vite.config.js')) && !fs.existsSync('public/sprites/merchant-idle.png') && !fs.existsSync('public/sprites/merchant-talk.png'));
 }
 
 /* ── POTATO 2: THE BIOHAZARD SIGN PULSES BY OPACITY, NOT FILL (2026-10-01) ───────────────────────────────────────────
@@ -10921,52 +10935,57 @@ section('THE MESSAGE STRIP\'S OWN SOUNDS (2026-10-11) - his message-studio save:
      /room\(\.6, \.35, \.006, \.12, 11\)/.test(bake) && /room\(\.9, \.28, \.008, \.2, 7\)/.test(bake) && /Math\.pow\(10, q \/ 20\)/.test(bake));
 }
 
-section('THE CAPYBARA\'S VOICE + THE VAULT INTRO FROM HIS STUDIO (2026-10-11) - Agent (firm) and his intro mix, sfx/settings doc version 7');
+section('THE VAULT INTRO FROM HIS STUDIO (2026-10-11) - his intro mix, sfx/settings doc version 7');
 {
   const us = code(read('src/hooks/useSound.js')), vg = code(read('src/components/VaultGate.jsx'));
-  const vp = fs.existsSync('src/utils/voicePlan.js') ? code(read('src/utils/voicePlan.js')) : '';
   const cv = read('src/config/capyVoice.js'), bake = read('tools/sfx-bake.mjs');
-  ok('the voice is his "just use that voice for now" (2026-10-11 20:08): Video mumble - natural, the studio v8 numbers, his loudness .4 and echo .12',
-     /shape: 'rec', rec: 'round', natural: true, moods: 'happy', f: 108, formant: \.9, intonation: \.9, jitter: \.2, scoop: 0, bend: 0, speed: \.9,/.test(cv)
-     && /maxSyl: 12, minSyl: 3, variety: 1, tempo: \.5, drop: \.5, emph: \.5, fry: 0, vol: \.4, echo: \.12/.test(cv));
-  const bk = read('tools/sfx-bake.mjs');
-  ok('the baker loads the mumble clips BEFORE the synth - a rec voice baked without them is 61 silent files',
-     bk.indexOf("import './mumble-pack.js';") > -1 && bk.indexOf("import './mumble-pack.js';") < bk.indexOf("import './chip.js';") && fs.existsSync('tools/mumble-pack.js'));
   ok('his intro mix: slow chord .5, reverse bell -12 .25, warm bloom -12 1, breath -12 1, soft key .5, hall .35',
      /wave:\s*\{ d: 'bloom', vol: \.5, pitch: 0 \}/.test(cv) && /gather: \{ d: 'riser', vol: \.25, pitch: -12 \}/.test(cv)
      && /formed: \{ d: 'bloomchord', vol: 1, pitch: -12 \}/.test(cv) && /leave:\s*\{ d: 'breath', vol: 1, pitch: -12 \}/.test(cv)
      && /type:\s*\{ src: 'soft:key', vol: \.5,/.test(cv) && /echo: \.35,/.test(cv));
-  ok('speakMumble runs the studio\'s own plan (voicePlan -> tools/chip.js) with a NEW seed every call - his "annoying if its keep repeating the same sound"',
-     /import \{ voicePlan \} from '\.\.\/utils\/voicePlan\.js'/.test(us) && /voicePlan\(text, seed \?\? \(Math\.random\(\) \* 4294967296\) >>> 0\)/.test(us)
-     && /import '\.\.\/\.\.\/tools\/chip\.js'/.test(vp) && !/MUMBLES|mumble\d/.test(us));
-  ok('every syllable plays its own baked file at the plan\'s pitch AND loudness (playSound takes a gain)',
-     /playSound\(capyFile\(x\.on, x\.v, x\.len, x\.rise\), \{ AudioImpl, doc, rate: x\.rate, gain: x\.gain \}\)/.test(us)
-     && /export function playSound\(name, \{ AudioImpl, doc, rate = 1, gain = 1 \} = \{\}\)/.test(us));
-  ok('the 61 syllable files load only when first spoken - never all at once at the first tap (a weak phone)',
-     /if \(name\.startsWith\('capy-'\)\) continue;/.test(us) && /pool = makePool\(name, AudioImpl \|\| globalThis\.Audio\)/.test(us));
   ok('the vault gate plays his intro, and the old cut is gone from the sound list',
      /playSound\('vaultIntro'\)/.test(vg) && !/playSound\('vaultb'\)/.test(vg) && /vaultIntro:\s*'\/sounds\/vault-intro\.mp3'/.test(us) && !/vaultb:/.test(us));
-  const capy = (await import('./capyVoice.js')).capyFiles();
-  const files = capy.map((f) => 'public/sounds/capy-' + f.on + '-' + f.v + '-' + f.len + (f.rise ? '-r' : '') + '.mp3').concat(['public/sounds/vault-intro.mp3']);
-  const missing = files.filter((f) => !fs.existsSync(f));
-  ok(`all 61 syllable files + vault-intro.mp3 are baked (missing: ${missing.length})`, capy.length === 61 && missing.length === 0);
-  ok('the baker renders both from capyVoice.js with tools/chip.js - the studio\'s own synth file', /from '\.\.\/src\/config\/capyVoice\.js'/.test(bake) && /chip\.js/.test(bake) && /vault-intro/.test(bake));
+  ok('vault-intro.mp3 is baked, by the baker, from capyVoice.js with tools/chip.js - the studio\'s own synth file',
+     fs.existsSync('public/sounds/vault-intro.mp3') && /from '\.\.\/src\/config\/capyVoice\.js'/.test(bake) && /chip\.js/.test(bake) && /vault-intro/.test(bake));
 }
 
-section('THE CAPYBARA SOUNDS HAPPY, NEVER ONE LONELY SOUND (2026-10-11) - his "sometimes the capybara said one words only its kinda scary ... we need more happy emotion and minimum of 3 words"');
+section('THE CAPYBARA\'S VOICE IS JETT, BY MOOD (2026-11-11) - his "annoying AF" -> "jett is the best", "sound like a small animal", "add variation on the voice because there are several emotion"');
 {
-  const { voicePlan } = await import('../utils/voicePlan.js');
-  const cv = read('src/config/capyVoice.js');
-  const SHORT = ['Good pick.', 'Hello!', 'Hi.', 'Ok', 'Fine taste.', 'Their page, then.', 'Any new products to add?'];
-  let fewest = 99, moods = new Set(), hm = 0;
-  for (const t of SHORT) for (let s = 1; s <= 200; s++) {
-    const p = voicePlan(t, s); moods.add(p.mood);
-    fewest = Math.min(fewest, p.filter((x) => x.v !== 'm').length); if (p.some((x) => x.v === 'm')) hm++;
-  }
-  ok(`every line is at least 3 sounds (fewest over ${SHORT.length * 200} rolls: ${fewest})`, fewest >= 3);
-  ok(`only happy moods - cheerful / approving / excited / curious (heard: ${[...moods].sort().join(', ')})`, [...moods].every((m) => ['cheerful', 'approving', 'excited', 'curious'].includes(m)) && moods.size >= 3);
-  ok(`no lone low "hm." grunt before a line (${hm} of ${SHORT.length * 200})`, hm === 0);
-  ok('happy moods and the 3-sound minimum stay on whatever voice he picks', /moods: 'happy'/.test(cv) && /minSyl: 3/.test(cv));
+  const u = await import('../hooks/useSound.js');
+  const us = code(read('src/hooks/useSound.js')).replace(/\r/g, '');
+  const moods = Object.keys(u.CAPY_PHRASES || {}), want = moods.flatMap((m) => Array.from({ length: u.CAPY_PHRASES[m] }, (_, i) => `capy-${m}-${i + 1}.mp3`));
+  const have = fs.readdirSync('public/sounds').filter((f) => f.startsWith('capy-'));
+  ok(`four moods, and public/sounds holds exactly their phrase files: none missing, no old syllable left (${have.length} files)`,
+     moods.join() === 'happy,curious,approving,excited' && want.length === have.length && want.every((f) => have.includes(f)),
+     `missing: ${want.filter((f) => !have.includes(f)).slice(0, 4).join(' ')} | extra: ${have.filter((f) => !want.includes(f)).slice(0, 4).join(' ')}`);
+  /* 64 kb/s mono is 8000 bytes a second, so a file's size IS its length. His October rule, said three times - "minimum
+     3 words", never one lonely sound: every phrase is a whole spoken phrase (0.9 s+), and none babbles past 3.5 s. */
+  const secs = have.map((f) => fs.statSync('public/sounds/' + f).size / 8000);
+  ok(`every phrase is a whole phrase, ${Math.min(...secs).toFixed(1)} s to ${Math.max(...secs).toFixed(1)} s (never a lone grunt, never a speech)`, secs.length > 0 && secs.every((x) => x >= 0.9 && x <= 3.5));
+  ok('each mood has 5+ phrases to choose from', moods.every((m) => u.CAPY_PHRASES[m] >= 5));
+  /* behaviour, RUN on a stub player that records which file played */
+  const played = [];
+  class A { constructor(src) { this.src = src; this.currentTime = 0; this.volume = 1; } play() { played.push(this.src); return Promise.resolve(); } pause() {} }
+  const doc = { documentElement: { classList: { contains: () => false } }, visibilityState: 'visible' };
+  u.__reset(); await u.unlockSounds({ AudioImpl: A, doc });
+  const say = (t, o) => { played.length = 0; const n = u.speakMumble(t, { AudioImpl: A, doc, ...o }); return n + ' ' + played.join('|').replace(/\/sounds\/capy-|\.mp3/g, '').replace(/-\d+/g, ''); };
+  ok('one line is ONE phrase file - no second sound to land late', say('Saved.', {}) === '1 happy', say('Saved.', {}));
+  const got = [say('Any new products to add?', { mood: 'approving' }), say("Deal's done. Good haul.", { mood: 'excited' }), say('Stock looks good today.', { mood: 'approving' }), say('Sector Configuration Saved!', {}), say('x', { mood: 'nope' })];
+  ok('the mood follows the moment: a question is curious, a sale excited, a tip approving, plain news happy',
+     got.join(',') === '1 curious,1 excited,1 approving,1 happy,1 happy', got.join(','));
+  const seq = []; for (let k = 0; k < 6; k++) { played.length = 0; u.speakMumble('Saved.', { AudioImpl: A, doc, pick: () => 0.5 }); seq.push(played[0]); }
+  ok('the same phrase never comes twice in a row, even when the dice land on it every time (his "annoying if its keep repeating the same sound")',
+     seq.every((x, k) => x && (k === 0 || x !== seq[k - 1])) && new Set(seq).size === 2);
+  const all = new Set(); for (let k = 0; k < 400; k++) { played.length = 0; u.speakMumble('Saved.', { AudioImpl: A, doc, pick: () => (k * 0.6180339887) % 1 }); all.add(played[0]); }
+  ok(`every phrase of a mood can come up (${all.size} of ${u.CAPY_PHRASES?.happy} happy ones)`, all.size === u.CAPY_PHRASES?.happy);
+  const lite = { ...doc, documentElement: { classList: { contains: (c) => c === 'lite-mode' } } };
+  ok('silent when it should be: an empty line, Lite Mode', u.speakMumble('', { AudioImpl: A, doc }) === 0 && u.speakMumble('Saved.', { AudioImpl: A, doc: lite }) === 0);
+  u.__reset();
+  ok('the phrase files load only when first spoken - never all at once at the first tap (a weak phone)',
+     /if \(name\.startsWith\('capy-'\)\) continue;/.test(us) && /pool = makePool\(name, AudioImpl \|\| globalThis\.Audio\)/.test(us));
+  ok('the old studio voice is gone everywhere: no speech plan, no syllable list, no mumble pack, and the baker bakes no capybara',
+     !fs.existsSync('src/utils/voicePlan.js') && !fs.existsSync('tools/mumble-pack.js') && !/voicePlan|capyFile/.test(us)
+     && !/CAPY_VOICE|capyFile/.test(code(read('src/config/capyVoice.js'))) && !/capyFiles|CAPY_VOICE|mumble-pack/.test(code(read('tools/sfx-bake.mjs'))));
 }
 
 section('THE CORNER CAPYBARA TALKS TOO (2026-10-11) - his pick A after "the capy shows up and there is no voice tho"');
@@ -10974,7 +10993,7 @@ section('THE CORNER CAPYBARA TALKS TOO (2026-10-11) - his pick A after "the capy
   const capy = code(read('src/components/CapybaraMascot.jsx')).replace(/\r/g, '');
   ok('the corner capybara imports the voice (and, since 2026-11-10, the rule for when it may talk)', /import \{ speakMumble, capyMaySpeak \} from '\.\.\/hooks\/useSound'/.test(capy));
   ok('his tip is spoken the moment it goes up - and, his 2026-11-10 "if no voice then no capybara", it only goes up when it is spoken',
-     /if \(!capyMaySpeak\('motivation'\) \|\| !speakMumble\(nextText\)\) \{ scheduleNextPeek\(\); return; \}\s*setInternalMsg\(nextText\);/.test(capy));
+     /if \(!capyMaySpeak\('motivation'\) \|\| !speakMumble\(nextText, \{ mood: 'approving' \}\)\) \{ scheduleNextPeek\(\); return; \}\s*setInternalMsg\(nextText\);/.test(capy));
   ok('a plain CAPY_COMMS line (his own news, e.g. "Sector Configuration Saved!") is spoken - when the news rule allows',
      /if \(typeof d === 'string' && d\) \{ recordMissed\(d, false\); if \(capyMaySpeak\('news'\)\) speakMumble\(d\); \}/.test(capy));
   ok('exactly those two: never the message prop (triggerCapy speaks it), never an object detail (the deal line - the terminal spoke it; the slider peek - no line)',
@@ -11419,66 +11438,6 @@ section('THE A4 SHEET PRINTS IN COMPANY INK, NOT THEME INK (2026-10-12) - the Re
   }
 }
 
-section('THE CAPYBARA SAYS 3 WORDS A SENTENCE AND YOU CAN HEAR THEM (2026-10-12) - his "i still can hear the capybara saying 1 or 2 words only ... minimum 3 words each sentence remember"');
-{
-  /* the 2026-10-11 fix counted SOUNDS per LINE and glued the extra ones into the last word: "Hi." was 3 sounds heard as
-     one, and "Deal's done. Good haul." two 2-word sentences. Measured on the real voice, rendered: 3 of 72 sentences were
-     heard as 3+ words. Now every sentence of every line he can hear has 3+ words, and a word gap a listener can hear. */
-  await import('../../tools/mumble-pack.js');
-  const { voicePlan } = await import('../utils/voicePlan.js');
-  const { CAPY_VOICE: V } = await import('./capyVoice.js');
-  const C = globalThis.KPM_CHIP;
-  /* every line he can hear: the triggerCapy lines (a ${value} read as digits, which are never voiced - the worst case),
-     the mascot's own lists, the sales terminal's chatter and deal lines */
-  const lines = new Set(), walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(d + '/' + e.name) : /\.jsx?$/.test(e.name) ? [d + '/' + e.name] : []));
-  for (const f of walk('src')) for (const m of read(f).matchAll(/triggerCapy\??\.?\(\s*(['"`])((?:\\.|(?!\1).)+?)\1\s*[,)]/g)) lines.add(m[2].replace(/\$\{[^}]*\}/g, '12'));
-  const block = (f, a, b) => { const s = read(f), i = s.indexOf(a), j = s.indexOf(b, i); return i > -1 && j > i ? s.slice(i, j) : ''; };
-  for (const b of [block('src/components/CapybaraMascot.jsx', 'const LOGGED_IN_MESSAGES', 'const NO_MESSAGES'), block('src/MerchantSalesView.jsx', 'const DEAL_LINES = [', '];')])
-    for (const m of b.matchAll(/"((?:[^"\\]|\\.)*?[A-Za-z](?:[^"\\]|\\.)*?)"/g)) lines.add(m[1]);
-  /* the cart chatter ("Good pick.") left the corpus 2026-11-10: it is no longer heard (his "no voice then no capybara") */
-  ok(`the corpus is every kind of line he hears (${lines.size} lines)`, lines.size > 110 && lines.has('Access Denied. 🛑') && lines.has('Welcome back, Boss!') && lines.has("Deal's done. Good haul."));
-  /* THE PLAN: words per sentence, 40 rolls a line */
-  let sentences = 0, short = 0; const shortEx = [];
-  for (const t of lines) for (let s = 1; s <= 40; s++) {
-    const by = new Map(); for (const x of voicePlan(t, s)) { if (!by.has(x.sent)) by.set(x.sent, new Set()); by.get(x.sent).add(x.word); }
-    for (const w of by.values()) { sentences++; if (w.size < 3) { short++; if (shortEx.length < 3) shortEx.push(`${JSON.stringify(t)} #${s}: ${w.size}`); } }
-  }
-  ok(`every sentence is planned as 3+ words (${sentences} sentences, ${short} short${shortEx.length ? ': ' + shortEx.join(' | ') : ''})`, sentences > 3000 && short === 0);
-  { const ss = voicePlan('Sold Rp 52.000 today. Thanks a lot.', 1).map((x) => x.sent);
-    ok('a dot inside a number ("Rp 52.000") does not end a sentence; the real full stop does', ss.every(Number.isInteger) && new Set(ss).size === 2); }
-  /* THE EAR: what the phone plays - each syllable file as tools/sfx-bake.mjs bakes it (voice x vol + its short room at his
-     echo, added here as energy: a noise room adds energy, not a waveform), at the plan's rate, time and gain. A word is a
-     burst of sound with >= 60 ms under 12% of the peak before it. Cross-checked 2026-10-12 against a full sample render:
-     the same count in 72 of 72 sentences at wordGap .15, never more lenient. */
-  const SR = 44100, W = 220, room = (() => {
-    let y = 0, s = 11 * 2654435761 >>> 0, pw = 0; const r = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296), N = Math.floor(SR * .6), d = new Float64Array(N);
-    for (let i = 0; i < N; i++) { y += .35 * (r() - y); d[i] = i < SR * .006 ? 0 : y * Math.exp(-i / (SR * .12)); pw += d[i] * d[i]; }
-    const NORM = .00125 / Math.max(Math.sqrt(pw / N), .000125), H = [];
-    for (let i = 0; i < N; i += W) { let e = 0; for (let j = i; j < Math.min(N, i + W); j++) e += d[j] * d[j]; H.push(e * NORM * NORM); }
-    return H;
-  })(), keyE = {};
-  const heard = (text, seed) => {
-    const plan = voicePlan(text, seed), last = plan[plan.length - 1];
-    if (!last) return [];
-    const n = Math.ceil((last.at + 1.2) * SR / W), E = new Float64Array(n), T = new Float64Array(n);
-    for (const x of plan) {
-      const k = x.on + x.v + x.len + (x.rise ? 'R' : '');
-      if (!keyE[k]) { const sy = C.syllable(V, x.v, x.on, x.len, x.rise, SR), e = []; for (let i = 0; i < sy.length; i += W) { let a = 0; for (let j = i; j < Math.min(sy.length, i + W); j++) a += (sy[j] * V.vol) ** 2; e.push(a); } keyE[k] = e; }
-      const e = keyE[k], off = Math.round(x.at * SR / W), len = Math.floor(e.length / x.rate);
-      for (let i = 0; i < len && off + i < n; i++) E[off + i] += e[Math.floor(i * x.rate)] * x.gain * x.gain;
-    }
-    for (let i = 0; i < n; i++) { T[i] += E[i]; if (E[i]) for (let q = 1; q < room.length && i + q < n; q++) T[i + q] += E[i] * room[q] * V.echo * V.echo; }
-    const A = [...T].map(Math.sqrt), th = Math.max(...A) * .12, on = []; let quiet = 12;
-    A.forEach((a, i) => { if (a >= th) { if (quiet >= 12) on.push(i * W / SR); quiet = 0; } else quiet++; });
-    const st = [...new Set(plan.map((x) => x.sent))].map((s) => plan.find((x) => x.sent === s).at);
-    return st.map((at, i) => on.filter((t) => t >= at - .01 && (i + 1 >= st.length || t < st[i + 1] - .01)).length);
-  };
-  let heardS = 0, heardShort = 0; const heardEx = [];
-  for (const t of lines) for (const s of [1, 2, 3]) for (const b of heard(t, s)) { heardS++; if (b < 3) { heardShort++; if (heardEx.length < 3) heardEx.push(`${JSON.stringify(t)} #${s}: ${b}`); } }
-  ok(`every sentence is HEARD as 3+ words on the phone's files (${heardS} sentences, ${heardShort} heard short${heardEx.length ? ': ' + heardEx.join(' | ') : ''})`, heardS > 300 && heardShort === 0);
-  ok('his voice keeps the 3-word minimum and the audible word gap (capyVoice.js minSyl 3, wordGap .15)', /minSyl: 3,/.test(read('src/config/capyVoice.js')) && /wordGap: \.15/.test(read('src/config/capyVoice.js')));
-}
-
 section('THE DEMO WALK FINDINGS (2026-10-13) - his "fix it all whatever the order"');
 {
   const hof = read('src/HallOfFameView.jsx'), bwm = read('src/components/BranchWarehouseManager.jsx'), rules = read('firestore.rules');
@@ -11521,20 +11480,20 @@ section('LEADERBOARD XP WITH THE CAREER LEDGER OFF (2026-10-14) - his "yes fix t
 
 section('THE CAPYBARA IN A BACKGROUND TAB (2026-10-14) - his "delete the SFX that contained 1 or 2 words"');
 {
-  const snd = read('src/hooks/useSound.js').replace(/\r/g, '');
-  ok('speakMumble says nothing while the page is hidden, and a syllable whose timer fires after the tab was hidden does not play',
-     /const hidden = \(\) => \(doc \|\| globalThis\.document\)\?\.visibilityState === 'hidden';\s*if \(hidden\(\)\) return 0;/.test(snd)
-     && /timer\(\(\) => \{ if \(!hidden\(\)\) playSound\(capyFile\(/.test(snd),
-     'measured in real Chrome: a background tab quiet for 30 s fired syllables planned at 0 / 350 / 595 ms at 0 / 1247 / 1247 - heard as 2 sounds');
+  const all = code(read('src/hooks/useSound.js')).replace(/\r/g, ''), at = all.indexOf('export function speakMumble');
+  const snd = at > -1 ? all.slice(at, all.indexOf('export function', at + 10)) : '';
+  ok('speakMumble says nothing while the page is hidden - and a line is ONE file now (2026-11-11), so no timer is left to fire late',
+     /if \(\(doc \|\| globalThis\.document\)\?\.visibilityState === 'hidden'\) return 0;/.test(snd) && !/timer|setTimeout/.test(snd) && (snd.match(/playSound\(/g) || []).length === 1,
+     'measured in real Chrome 2026-10-14: a background tab quiet for 30 s fired syllables planned at 0 / 350 / 595 ms at 0 / 1247 / 1247 - heard as 2 sounds');
   const u = await import('../hooks/useSound.js');
   let plays = 0;
   class A { constructor() { this.currentTime = 0; this.volume = 1; } play() { plays++; return Promise.resolve(); } pause() {} }
   const doc = (v) => ({ documentElement: { classList: { contains: () => false } }, visibilityState: v });
   u.__reset(); await u.unlockSounds({ AudioImpl: A, doc: doc('visible') }); plays = 0;
-  const hid = u.speakMumble('Good pick.', { AudioImpl: A, doc: doc('hidden'), timer: (fn) => fn(), seed: 1 }), hidPlays = plays;
-  const vis = u.speakMumble('Good pick.', { AudioImpl: A, doc: doc('visible'), timer: (fn) => fn(), seed: 1 });
-  ok('behaviour: hidden -> 0 syllables, 0 plays; visible -> the whole line (3+ words, every syllable played)',
-     hid === 0 && hidPlays === 0 && vis >= 3 && plays === vis, `hidden ${hid}/${hidPlays}, visible ${vis}/${plays}`);
+  const hid = u.speakMumble('Good pick.', { AudioImpl: A, doc: doc('hidden') }), hidPlays = plays;
+  const vis = u.speakMumble('Good pick.', { AudioImpl: A, doc: doc('visible') });
+  ok('behaviour: hidden -> nothing said, 0 plays; visible -> one phrase, one play',
+     hid === 0 && hidPlays === 0 && vis === 1 && plays === 1, `hidden ${hid}/${hidPlays}, visible ${vis}/${plays}`);
   u.__reset();
 }
 
@@ -13705,7 +13664,7 @@ section('WHEN THE CAPYBARA TALKS (his 2026-11-10 "go with your suggestion" + mot
   ok('cart chatter and any unknown kind never talk', run([['cart', 0], ['cart', 100], ['whatever', 200]]).every((x) => x === false));
   const sale = code(read('src/MerchantSalesView.jsx')).replace(/\r/g, ''), app = code(read('src/App.jsx')).replace(/\r/g, '');
   ok('the cart chatter is gone - no voice AND no line (his "if no voice then no capybara")', /const triggerMerchantSpeak = \(\) => \{\};/.test(sale) && !/CHATTER/.test(sale));
-  ok('the sale line talks after the 1.6 s cha-ching, through the rule', /playSound\('saleDone'\);\s*(\/\*[^*]*\*\/\s*)?setTimeout\(\(\) => \{ if \(capyMaySpeak\('sale'\)\) speakMumble\(line\); \}, 1700\);/.test(sale));
+  ok('the sale line talks after the 1.6 s cha-ching, through the rule', /playSound\('saleDone'\);\s*(\/\*[^*]*\*\/\s*)?setTimeout\(\(\) => \{ if \(capyMaySpeak\('sale'\)\) speakMumble\(line, \{ mood: 'excited' \}\); \}, 1700\);/.test(sale));
   ok('app news (triggerCapy) talks through the news rule', /if \(capyMaySpeak\('news'\)\) unlockSounds\(\)\.then\(\(\) => speakMumble\(text\)\)/.test(app));
 }
 section('THE SALE SOUND (his 2026-11-10 "too loud and long" -> his cha-ching, pick C2): short, and never boosted');

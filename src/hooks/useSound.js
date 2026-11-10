@@ -10,9 +10,6 @@
    two-speed quantity design creates. Three pre-decoded elements per sound, round
    robin, rewound to 0, covers overlapping taps with no allocation. */
 
-import { voicePlan } from '../utils/voicePlan.js';
-import { capyFiles, capyFile } from '../config/capyVoice.js';
-
 const SOURCES = {
   tap:    '/sounds/tap.mp3',
   commit: '/sounds/commit.mp3',
@@ -70,10 +67,16 @@ const SOURCES = {
   msgFail: '/sounds/msg-fail.mp3',
 };
 
-/* The capybara's voice - Agent (firm), made in the sound studio (2026-10-11): one baked file per syllable his speech
-   plan can ask for (src/config/capyVoice.js lists them, tools/sfx-bake.mjs renders them). They replace the four
-   mumble blips, which played the same few sounds every time - his *"annoying if its keep repeating the same sound"*. */
-for (const f of capyFiles()) SOURCES[capyFile(f.on, f.v, f.len, f.rise)] = '/sounds/' + capyFile(f.on, f.v, f.len, f.rise) + '.mp3';
+/* THE CAPYBARA'S VOICE (2026-11-10). His pick: Jett, a free Google AI Studio voice, at "J4" - played 1.26x faster,
+   which lifts it 4 semitones and shrinks the throat (*"make it sound as like it sound like a small animal but in sims
+   style"*). His *"add variation on the voice because there are several emotion"*: two takes per mood, each cut at its
+   pauses into whole gibberish phrases of 1 to 3 seconds (never a lone grunt - his October *"minimum 3 words"*),
+   levelled to his message sound. How many phrases each mood has is below; the files are capy-<mood>-<n>.mp3. They
+   replace the 61 baked syllables of 2026-10-11 - his *"annoying AF"*. Masters + cut script: A-Brain
+   Raw/2026-11-10-sound-board/round4 (cut5.mjs voice). */
+export const CAPY_PHRASES = { happy: 6, curious: 6, approving: 7, excited: 6 };
+const capyPhrase = (mood, i) => 'capy-' + mood + '-' + (i + 1);
+for (const [mood, n] of Object.entries(CAPY_PHRASES)) for (let i = 0; i < n; i++) SOURCES[capyPhrase(mood, i)] = '/sounds/' + capyPhrase(mood, i) + '.mp3';
 
 /* Per-sound level. Everything used to sit at a flat 0,5, which made the steppers - the
    control pressed more than any other in the app, often outdoors next to a road - the
@@ -91,7 +94,7 @@ const VOLUMES = {
   chestPick: 1.0, chestLand: 1.0, chestPage: 1.0, chestRefuse: 1.0, chestLoad: 1.0,
   msgIn: 1.0, msgFail: 1.0,
 };
-/* the syllable files hold his studio loudness already; each play scales them by the plan's own gain */
+/* the phrase files are levelled already (to his message sound); at 1.0 the element plays exactly that */
 for (const name of Object.keys(SOURCES)) if (name.startsWith('capy-')) VOLUMES[name] = 1.0;
 const DEFAULT_VOLUME = 0.85;
 
@@ -164,7 +167,7 @@ function makePool(name, AudioImpl) {
 export function initSounds(AudioImpl = globalThis.Audio) {
   if (!AudioImpl) return;
   for (const name of Object.keys(SOURCES)) {
-    /* the capybara's 61 syllable files load when first spoken - all at the first tap would be 183 elements on a weak phone */
+    /* the capybara's 25 phrase files load when first spoken - all at the first tap would be 75 elements on a weak phone */
     if (name.startsWith('capy-')) continue;
     if (!pools.has(name)) pools.set(name, makePool(name, AudioImpl));
   }
@@ -289,25 +292,29 @@ export function capyMaySpeak(kind, now = Date.now(), g = capyGate) {
   return true;
 }
 
-/* Speak a line in the capybara's voice. Returns the number of syllables scheduled, so a caller (or a
-   test) can check it without waiting. Silent under Lite Mode and before unlock, because
-   playSound refuses there — no separate check needed. */
-export function speakMumble(text, { AudioImpl, doc, timer = setTimeout, seed } = {}) {
+/* Speak a line in the capybara's voice: ONE whole phrase, picked at random - never the one he said last, so the same
+   sound cannot come twice in a row (his 2026-10-11 *"annoying if its keep repeating the same sound"*). The mood: a line
+   ending in "?" is asked (curious); otherwise the caller's mood ('happy' | 'approving' | 'excited'), happy when none is
+   given. One file, no timers - nothing can bunch up in a background tab. Returns 1 when he spoke and 0 when he did not
+   (his "if no voice then no capybara" keeps a tip off screen on a 0). Silent under Lite Mode and before unlock,
+   because playSound refuses there, and on a hidden page: nobody can see him. */
+let lastPhrase = '';
+export function speakMumble(text, { AudioImpl, doc, mood, pick = Math.random } = {}) {
   if (!(text || '').replace(/\s+/g, '').length) return 0;
-  if (liteModeOn(doc) || !unlocked) return 0;
-  /* his "1 or 2 words" (2026-10-14): a background tab holds timers to a once-a-second wake-up, so every syllable after
-     the first landed at the same instant and the line was heard as 2 sounds. Nobody can see him then - say nothing. */
-  const hidden = () => (doc || globalThis.document)?.visibilityState === 'hidden';
-  if (hidden()) return 0;
-  /* the studio's own plan, a fresh seed each call: another mood, syllable count and pace every time he talks */
-  const steps = voicePlan(text, seed ?? (Math.random() * 4294967296) >>> 0);
-  for (const x of steps) timer(() => { if (!hidden()) playSound(capyFile(x.on, x.v, x.len, x.rise), { AudioImpl, doc, rate: x.rate, gain: x.gain }); }, x.at * 1000);
-  return steps.length;
+  if ((doc || globalThis.document)?.visibilityState === 'hidden') return 0;
+  const m = /\?\s*$/.test(text) ? 'curious' : (CAPY_PHRASES[mood] ? mood : 'happy');
+  const n = CAPY_PHRASES[m];
+  let i = Math.floor(pick() * n) % n;
+  if (capyPhrase(m, i) === lastPhrase) i = (i + 1) % n;
+  if (!playSound(capyPhrase(m, i), { AudioImpl, doc })) return 0;
+  lastPhrase = capyPhrase(m, i);
+  return 1;
 }
 
 /* test seam - not for app code */
 export function __reset() {
   pools.clear();
   unlocked = false;
+  lastPhrase = '';
 }
 export function __isUnlocked() { return unlocked; }

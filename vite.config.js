@@ -100,7 +100,8 @@ return {
            must never enter the precache. Add new art under sprites/, resized. */
         /* promo/*.png: the six promo goods' list pictures (~160 KB), so an offline vault list is not broken images; the
            .glb models stay out - offline, PromoGoods3D falls back to the flat picture */
-        globPatterns: ['**/*.{js,css,html,ico}', 'sprites/*.png', 'sounds/*.mp3', 'coin-sprite.png', 'promo/*.png', '**/*.woff2'],
+        /* sprites/*.webp: the capybara's smooth idle / talk clips (~0.5 MB each) and his Lite Mode still (2026-11-10) */
+        globPatterns: ['**/*.{js,css,html,ico}', 'sprites/*.png', 'sprites/*.webp', 'sounds/*.mp3', 'coin-sprite.png', 'promo/*.png', '**/*.woff2'],
         /* SIGN-IN MUST REACH FIREBASE (2026-10-01, his Samsung: "i press sign in it loads a little while and comeback
            to the sign in screen and not redirecting to google"). The offline helper answers every page navigation
            with the stored app, and sign-in starts by opening OUR /__/auth/handler (authDomain is this site, proxied

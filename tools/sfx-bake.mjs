@@ -13,8 +13,7 @@
 import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { CAPY_VOICE, INTRO_MIX, capyFiles, capyFile } from '../src/config/capyVoice.js';
-import './mumble-pack.js';                  // the recorded mumble clips (A-Brain Tools/sound-studio) -> globalThis.KPM_MUMBLE, read by chip.js shape 'rec'
+import { INTRO_MIX } from '../src/config/capyVoice.js';
 import './chip.js';                         // the studio's own synth (a byte copy of the published studio's chip.js) -> globalThis.KPM_CHIP
 
 /* sfx/settings version 2, saved by Aldi 2026-09-23 11:58 WIB; MUAT VAN (done) kept as is 2026-09-24 */
@@ -142,11 +141,11 @@ for (const { set, file: names, rec, room: rm } of STUDIOS) for (const [ev, s] of
     (fs.statSync(file).size / 1024).toFixed(1) + ' KB', '<- ' + s.src);
 }
 
-/* ── the capybara's voice and the vault intro: studio round 6, his save 2026-10-11 13:13 (src/config/capyVoice.js) ──
-   Both come from tools/chip.js, so each file is what he heard in the studio. The capybara is one file per syllable the
-   app's plan can ask for (the app picks them and sets pitch and loudness per syllable, the way the studio did), each at
-   his loudness with the message studio's short room at his echo. The intro is one stereo file through the studio's
-   2.4 s hall at his echo. "Volume, all" is a listening level and stays out (see capyVoice.js). */
+/* ── the vault intro: studio round 6, his save 2026-10-11 13:13 (src/config/capyVoice.js) ──
+   It comes from tools/chip.js, so the file is what he heard in the studio: one stereo file through the studio's
+   2.4 s hall at his echo. "Volume, all" is a listening level and stays out (see capyVoice.js).
+   The capybara's voice is NOT baked here any more (2026-11-11): the 61 studio syllables were replaced by his spoken
+   Jett phrases (public/sounds/capy-<mood>-<n>.mp3), cut by A-Brain Raw/2026-11-10-sound-board/round4/cut5.mjs. */
 const CHIP = globalThis.KPM_CHIP;
 function encode(pcm, channels, name, kbps) {
   const file = new URL(name + '.mp3', OUT);
@@ -155,32 +154,6 @@ function encode(pcm, channels, name, kbps) {
   if (r.status) throw new Error(String(r.stderr));
   return fs.statSync(file).size;
 }
-/* dry + the room, one channel; the tail cut where it drops under -60 dB, a 10 ms fade so the end is not a click */
-function trimTail(o, from) {
-  let last = o.length - 1;
-  while (last > from && Math.abs(o[last]) < 1e-3) last--;
-  const size = last + 1, fade = Math.round(SR * .01), out = new Float32Array(size);
-  for (let k = 0; k < size; k++) out[k] = o[k] * (k > size - fade ? (size - k) / fade : 1);
-  return out;
-}
-
-const SHORT = room(.6, .35, .006, .12, 11);
-let capyBytes = 0, capyPeak = 0;
-for (const f of capyFiles()) {
-  const s = CHIP.syllable(CAPY_VOICE, f.v, f.on, f.len, f.rise, SR), n = s.length, h = SHORT.IR[0];
-  const o = new Float64Array(n + SHORT.N - 1);
-  for (let k = 0; k < n; k++) {
-    const x = s[k] * CAPY_VOICE.vol; o[k] += x;
-    const w = x * CAPY_VOICE.echo * SHORT.NORM; if (!w) continue;
-    for (let j = 0; j < SHORT.N; j++) o[k + j] += w * h[j];
-  }
-  const pcm = trimTail(o, n);
-  for (const v of pcm) capyPeak = Math.max(capyPeak, Math.abs(v));
-  capyBytes += encode(pcm, 1, capyFile(f.on, f.v, f.len, f.rise), '64k');
-}
-if (capyPeak > .99) throw new Error('a capybara syllable peaks at ' + capyPeak.toFixed(3) + ' - it would clip');
-console.log('capy-*'.padEnd(18), capyFiles().length + ' files', 'peak ' + capyPeak.toFixed(2), (capyBytes / 1024).toFixed(1) + ' KB', '<- ' + (CAPY_VOICE.shape === 'rec' ? 'Video mumble - natural' : CAPY_VOICE.shape));
-
 /* the hall is 2.4 s and the intro ~10.5 s: a direct convolution would be ~90 G multiply-adds, so it goes through an FFT */
 function fft(re, im, inverse) {
   const n = re.length;

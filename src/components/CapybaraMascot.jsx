@@ -207,7 +207,7 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
                    voice then no capybara"*. So a tip comes up ONLY when it is spoken: the 15-min rule allows it AND the
                    voice really plays (not Lite Mode, not before the first tap, not a hidden tab). Otherwise he stays
                    away and tries again at the next timer. */
-                if (!capyMaySpeak('motivation') || !speakMumble(nextText)) { scheduleNextPeek(); return; }
+                if (!capyMaySpeak('motivation') || !speakMumble(nextText, { mood: 'approving' })) { scheduleNextPeek(); return; }
                 setInternalMsg(nextText);
                 msgIndexRef.current = (currentIndex + 1) % dialogueList.length;
 

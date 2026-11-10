@@ -811,30 +811,19 @@ html.lite-mode .kpm-coin.lg::before,   .kpm-coin.lg.still::before   { transform:
   .kpm-merch-corner { transform: scale(.96); }   /* 192 / 200 — matches md:w-48 */
 }
 
-/* 10 frames, 200px each -> 2000px sheet. What he does when nothing is happening.
-   Exactly ONE of the ten frames is a blink; the generated sheets arrive with four or
-   five, which reads as a nervous tic, so the extras are dropped at cut time. */
-/* THE SHEET SLIDES ON A STRIP, NOT BY BACKGROUND-POSITION (2026-10-01, his "make it lighter ... potato
-   phone even in full animation mode"). A background-position animation cannot run on the graphics chip,
-   so the phone's main processor re-ran the page's frame pipeline 60 times a second for a picture that
-   changes 4 times a second - on EVERY screen, hidden or not: 18% -> 2% idle CPU on a 6x-slow phone when
-   it was switched off. Now the element is a 200px window and the whole sheet is a ::before strip moved
-   by transform, which the graphics chip does alone. Same steps, same pixel offsets, so every frame is the
-   same picture (checked byte for byte). Lite Mode / reduced motion: `html.lite-mode *::before` below
-   stops the strip at 0, frame 1, as before. `:where()` keeps position at zero specificity - the corner
-   and float boxes position the element themselves. */
-.kpm-merch-idle, .kpm-merch-talk { overflow: hidden; }
+/* SMOOTH CLIPS, NOT SHEETS (2026-11-10, his "i want moving animation for those capybara, smooth one, as smooth as
+   sim city kinda animation"). Idle and talk are Google Flow (Veo) clips started from the old sheets' own first frame,
+   keyed off their green screen into animated WebP: 12 fps (drawn animation's "on twos"), 200px, 8 s, a seamless loop
+   because each clip ends on the frame it starts on. The browser plays the picture itself - no CSS animation runs, so
+   the 2026-10-01 strip (a ::before moved by transform, kept off the main processor) has nothing left to move. Lite
+   Mode / reduced motion: one still, idle's first frame (rules further down). Masters + cut script: A-Brain
+   Raw/2026-11-10-sound-board/round4. `:where()` keeps position at zero specificity - the corner and float boxes
+   position the element themselves. */
+.kpm-merch-idle, .kpm-merch-talk { overflow: hidden; background-size: 200px 200px; }
 :where(.kpm-merch-idle, .kpm-merch-talk) { position: relative; }
-.kpm-merch-idle::before, .kpm-merch-talk::before { content: ''; position: absolute; left: 0; top: 0; height: 200px;
-  background-repeat: no-repeat; background-position: 0 0; }
-.kpm-merch-idle::before { width: 2000px; background-image: url('/sprites/merchant-idle.png'); background-size: 2000px 200px;
-  animation: kpmMerchIdle 3s steps(10, end) infinite; }
-@keyframes kpmMerchIdle { to { transform: translateX(-2000px); } }
-
-/* 13 frames, 200px each -> 2600px sheet. Loops while he is speaking. */
-.kpm-merch-talk::before { width: 2600px; background-image: url('/sprites/merchant-talk.png'); background-size: 2600px 200px;
-  animation: kpmMerchTalk 2.4s steps(13, end) infinite; }
-@keyframes kpmMerchTalk { to { transform: translateX(-2600px); } }
+.kpm-merch-idle { background-image: url('/sprites/merchant-idle.webp'); }
+/* loops while he is speaking */
+.kpm-merch-talk { background-image: url('/sprites/merchant-talk.webp'); }
 
 /* DEAL IS ONE POSE, NOT A SHEET. Every defect the multi-frame version had - a body
    that drifted, a hat that vanished, a hand left floating from a bad split - was a
@@ -1099,13 +1088,13 @@ html.lite-mode .kpm-merch-hold::after { animation: none; background-position: -9
   .kpm-merch-hold::after { animation: none; background-position: -96px 0; }
 }
 
-/* Lite Mode and reduced motion hold a frame. Talking holds frame 1, the neutral
-   pose. Deal holds the LAST frame, so a Lite Mode user still sees the thumbs up -
-   the point of the animation, not its starting pose. */
-html.lite-mode .kpm-merch-idle::before, html.lite-mode .kpm-merch-talk::before { animation: none; transform: none; }
+/* Lite Mode and reduced motion hold a still. Idle and talking both hold idle's first
+   frame, the neutral pose (an animated picture cannot be paused by CSS - it is swapped
+   for a still one). Deal holds its one pose, without the breath. */
+html.lite-mode .kpm-merch-idle, html.lite-mode .kpm-merch-talk { background-image: url('/sprites/merchant-still.webp'); }
 html.lite-mode .kpm-merch-deal { animation: none; background-position: 0 0; }
 @media (prefers-reduced-motion: reduce) {
-  .kpm-merch-idle::before, .kpm-merch-talk::before { animation: none; transform: none; }
+  .kpm-merch-idle, .kpm-merch-talk { background-image: url('/sprites/merchant-still.webp'); }
   .kpm-merch-deal { animation: none; background-position: 0 0; }
 }
 

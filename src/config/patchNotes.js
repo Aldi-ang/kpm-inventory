@@ -3,6 +3,9 @@
    Every finished job that changes what people see adds a line here before its push (CLAUDE.md, Publishing).
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
+  { date: '2026-11-11', items: [
+    { kind: 'new', en: 'The capybara has a new voice and moves smoothly. He now says short, cheerful made-up phrases in four moods (happy, curious, pleased, and excited after a sale) instead of the old mumbling sounds, and the pictures of him standing and talking are smooth animations.', id: 'Kapibara punya suara baru dan gerakannya halus. Sekarang dia mengucapkan celoteh pendek yang ceria dalam empat suasana (senang, penasaran, puas, dan gembira setelah penjualan), bukan gumaman lama lagi, dan gambar saat dia berdiri dan berbicara sudah menjadi animasi yang halus.' },
+  ] },
   { date: '2026-11-10', items: [
     { kind: 'fixed', en: 'The capybara talks less, and when he shows up he always talks: after a sale (once the cha-ching ends), for good news, and a tip now and then (at most every 15 minutes). He no longer chats while you add items to the cart.', id: 'Capybara lebih jarang bicara, dan saat muncul dia selalu bersuara: setelah penjualan (setelah cha-ching selesai), untuk kabar baik, dan sesekali memberi tips (paling sering tiap 15 menit). Dia tidak lagi berceloteh saat menambah barang ke keranjang.' },
     { kind: 'fixed', en: 'Sales Terminal: the sound when a sale is saved is now a short cha-ching (1.6 seconds) at a gentle volume, instead of a 4-second pen sound that crackled.', id: 'Sales Terminal: suara saat penjualan tersimpan sekarang cha-ching pendek (1,6 detik) dengan volume lembut, bukan suara pena 4 detik yang pecah.' },

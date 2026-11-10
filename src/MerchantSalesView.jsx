@@ -1322,7 +1322,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             unlockSounds().then(() => {
                 playSound('saleDone');
                 /* after the 1.6 s cha-ching, not on top of it (his 2026-11-10 pick) */
-                setTimeout(() => { if (capyMaySpeak('sale')) speakMumble(line); }, 1700);
+                setTimeout(() => { if (capyMaySpeak('sale')) speakMumble(line, { mood: 'excited' }); }, 1700);
             });
             // DESKTOP has the alcove, which is already showing him: a corner mascot as well
             // would be two merchants and two coins on one screen. Below lg he has no alcove,

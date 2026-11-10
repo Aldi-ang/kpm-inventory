@@ -43,29 +43,24 @@ assert.equal(playSound('tap', ctx(false)), true, 'and un-silence when toggled ba
 /* 5. unknown sound is a no-op, not a crash */
 assert.equal(playSound('nope', ctx(false)), false);
 
-/* 6. the capybara speaks his line as syllables from the studio's plan: a count that changes with the seed (his
-      "variety on the number of syllabus"), capped near his longest-line setting, silent when empty or in Lite Mode */
+/* 6. the capybara speaks ONE whole phrase a line (his Jett voice, 2026-11-11): however long the line, never the same
+      phrase twice in a row, silent when empty, in Lite Mode or on a hidden page */
 {
-  const timer = (fn) => fn();                   // run synchronously, no waiting
-  const counts = new Set([1, 2, 3, 4, 5, 6, 7, 8].map((seed) => speakMumble('Sync Complete! 24 items secured in Master Vault.', { ...ctx(false), timer, seed })));
-  assert.ok(counts.size > 1, 'the same line must not always come out with the same number of syllables');
-  assert.ok([...counts].every((n) => n >= 2 && n <= 16), 'and never more than about his 12-syllable limit');
-  const n2 = speakMumble('x'.repeat(300), { ...ctx(false), timer, seed: 1 });
-  assert.ok(n2 >= 1 && n2 <= 16, 'a 300-letter line is still capped');
-  assert.equal(speakMumble('', { ...ctx(false), timer }), 0, 'empty line is silent');
-  assert.equal(speakMumble('anything', { ...ctx(true), timer }), 0, 'Lite Mode is silent');
-  /* his "1 or 2 words" (2026-10-14): a background tab quiet for a while has its timers held to a once-a-second wake-up
-     (measured in real Chrome: syllables planned at 0 / 350 / 595 ms fired at 0 / 1247 / 1247), so the line came out as
-     2 sounds. Silent when the page is hidden - and a tab hidden mid-line drops the rest instead of bunching it. */
-  const hidden = { ...makeDoc(false), visibilityState: 'hidden' };
   played.length = 0;
-  assert.equal(speakMumble('Good pick.', { AudioImpl: StubAudio, doc: hidden, timer, seed: 1 }), 0, 'a hidden page says nothing');
-  assert.equal(played.length, 0, 'and plays no syllable');
-  const later = [], page = { ...makeDoc(false), visibilityState: 'visible' };
-  const n3 = speakMumble('Good pick.', { AudioImpl: StubAudio, doc: page, timer: (fn) => later.push(fn), seed: 1 });
-  assert.ok(n3 >= 3, 'a visible page schedules the whole line');
-  later.shift()(); page.visibilityState = 'hidden'; later.forEach((fn) => fn());
-  assert.equal(played.length, 1, `hidden after the first syllable: the rest must not play (played ${played.length})`);
+  assert.equal(speakMumble('Sync Complete! 24 items secured in Master Vault.', ctx(false)), 1, 'a line is one phrase');
+  assert.equal(speakMumble('x'.repeat(300), ctx(false)), 1, 'a 300-letter line is still one phrase');
+  assert.equal(played.length, 2, `one file a line (played ${played.length})`);
+  /* each phrase has its own pool of elements, so two different elements = two different phrases */
+  played.length = 0;
+  for (let k = 0; k < 4; k++) speakMumble('Saved.', { ...ctx(false), pick: () => 0 });
+  assert.ok(played.every((id, k) => k === 0 || Math.floor((id - 1) / 3) !== Math.floor((played[k - 1] - 1) / 3)), 'the same phrase never comes twice in a row, even when the dice repeat');
+  assert.equal(speakMumble('', ctx(false)), 0, 'empty line is silent');
+  assert.equal(speakMumble('anything', ctx(true)), 0, 'Lite Mode is silent');
+  /* his "1 or 2 words" (2026-10-14): a background tab holds timers to a once-a-second wake-up, which bunched the old
+     syllables into 2 sounds. A line is one file now - and a hidden page still says nothing: nobody can see him. */
+  played.length = 0;
+  assert.equal(speakMumble('Good pick.', { AudioImpl: StubAudio, doc: { ...makeDoc(false), visibilityState: 'hidden' } }), 0, 'a hidden page says nothing');
+  assert.equal(played.length, 0, 'and plays nothing');
 }
 
 /* 7. a rate is a PITCH: the chest's landing pop rises box by box into the van and falls box by box
