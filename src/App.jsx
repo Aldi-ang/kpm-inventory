@@ -157,7 +157,7 @@ import {
 
 // --- CONFIG & UTILITIES IMPORTS ---
 import { auth, db, storage, googleProvider, appId, IS_DEMO } from './config/firebase';
-import { VAULT_PASSWORD, OWNER_UID } from './config/demoLogins.js';   // demo build only - printed on the Master Vault gate; the demo company's folder
+import { VAULT_PASSWORD, OWNER_UID, RECOVERY_WORD as DEMO_RECOVERY_WORD } from './config/demoLogins.js';   // demo build only - printed on the Master Vault gate; the demo company's folder
 import { DemoPick } from './components/DemoFrontDoor.jsx';   // demo build only - the invite check + "pick who to be"
 import { formatRupiah, getCurrentDate, getLocalDayKey, convertToBks, commitInChunks, savePhotoAndGetReference, fileOrKeepPhoto, photoStamp, nameTag, storeKey, storeLabel, eodBountyLines, eodReportParts, eodNightMessage, EOD_PART_LABELS, absentForSure, isPromo, PROMO_GOODS, promoGoods, GOODS_LOOK } from './utils/helpers';
 import { isLowStock } from './utils/stockThreshold';
@@ -169,7 +169,7 @@ import UpdateStatus from './components/UpdateStatus.jsx';
 import { readGrace, touchGrace, clearGrace } from './utils/vaultGrace.js';
 import { writeLiteMode } from './utils/liteMode.js';
 import { VAULT_TRIES, VAULT_LOCK_MS, lockLeftMs, strikeUpdate, untilText } from './utils/vaultLock.js';
-import { vaultDocPath } from './utils/vaultDoc.js';
+import { vaultDocPath, VAULT_TRIES_RESET } from './utils/vaultDoc.js';
 
 /* Phones flash the character you just typed before masking it — Aldi: "it shows in split second
    after i type it". That reveal is the platform's, not ours, and there is no way to switch it
@@ -1160,6 +1160,16 @@ const handleGitHubMirror = async () => {
       return { score, label: "ENCRYPTION SECURE (STRONG)", color: "text-[var(--duke-amber-ink)]", bar: "bg-[var(--duke-amber)] shadow-[0_0_10px_rgba(255,157,0,0.8)]" };
   };
 
+  /* THE DEMO NEVER ASKS FOR A NEW PASSWORD (his 2026-11-10 "i just want straight the login screen and do the intro just like
+     usual ... just skip the password making"): every demo vault is admin123, printed on the gate, so a missing one is
+     written with it and the normal unlock screen shows. null outside the demo build, so the real app keeps its setup. */
+  const writeDemoVault = IS_DEMO ? async (ref) => {
+      const security = { pin: await hashSecret(VAULT_PASSWORD), recoveryHash: await hashSecret(DEMO_RECOVERY_WORD), ...VAULT_TRIES_RESET,
+          ...(bossUid ? { uid: user.realUid, email: user.email } : {}), updatedAt: serverTimestamp() };
+      await setDoc(ref, security);
+      return security;
+  } : null;
+
   // 1. INITIAL CHECK: Does a PIN exist?
   useEffect(() => {
     let live = true;
@@ -1176,6 +1186,13 @@ const handleGitHubMirror = async () => {
                     setRegisteredPasskeys(data.passkeys || []); // 🚀 LOAD AUTHORIZED DEVICES
                     setHasAdminPin(true);
                     setIsSetupMode(false);
+                } else if (writeDemoVault) {
+            const made = await writeDemoVault(ref).catch((e) => { console.error('demo vault', e); return null; });
+            if (!live) return;
+            setRegisteredPasskeys([]);
+            setAdminPin(made?.pin || null);
+            setHasAdminPin(!!made);
+            setIsSetupMode(!made);   /* the write was refused: the old setup screen, never a gate that cannot open */
                 } else {
             // No PIN found: Force Setup Mode. Every T2 meets this once: their own password + recovery word.
             setRegisteredPasskeys([]);   /* the device list is this person's too, never a previous account's */
@@ -1299,7 +1316,8 @@ const handleGitHubMirror = async () => {
           }
           const prefetched = adminProfileRef.current;
           adminProfileRef.current = null;
-          const adminSnap = (prefetched && await prefetched) || await getDoc(adminDocRef);
+          let adminSnap = (prefetched && await prefetched) || await getDoc(adminDocRef);
+          if (!adminSnap.exists() && writeDemoVault && await writeDemoVault(adminDocRef).catch(() => null)) adminSnap = await getDoc(adminDocRef);
           /* Was a bare `return` — the single most invisible failure in the app, on the one screen
              every session starts at. handleResetPin has reported this same condition since it was
              written (see "No security profile found." below); only this path was missed. */

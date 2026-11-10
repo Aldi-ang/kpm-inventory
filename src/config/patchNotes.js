@@ -3,6 +3,9 @@
    Every finished job that changes what people see adds a line here before its push (CLAUDE.md, Publishing).
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
+  { date: '2026-11-10', items: [
+    { kind: 'fixed', en: 'Demo: it no longer asks you to make a Master Vault password - every demo uses the password shown on its unlock screen, so you go straight there and to the usual intro. The nightly reset can no longer leave the demo empty.', id: 'Demo: tidak lagi meminta membuat sandi Master Vault - semua demo memakai sandi yang tertulis di layar buka kunci, jadi langsung ke sana dan ke intro seperti biasa. Reset tiap malam tidak bisa lagi membuat demo kosong.' },
+  ] },
   { date: '2026-11-09', items: [
     { kind: 'fixed', en: 'Shops: every sale now saves the shop\'s visit date. The shop\'s level follows the targets set in Settings, and a sale only raises it. Before, a salesman\'s sale never touched the shop and the level used a fixed table.', id: 'Toko: setiap penjualan sekarang menyimpan tanggal kunjungan toko. Level toko mengikuti target di Pengaturan, dan penjualan hanya menaikkannya. Sebelumnya penjualan salesman tidak pernah mengubah toko dan levelnya memakai tabel tetap.' },
     { kind: 'fixed', en: 'Demo guide: when the Master Vault is locked, the guide now shows where to unlock it and gives the demo password, and it stays on after the unlock.', id: 'Panduan demo: saat Master Vault terkunci, panduan sekarang menunjukkan tempat membukanya dan memberi sandi demo, dan tetap menyala setelah dibuka.' },

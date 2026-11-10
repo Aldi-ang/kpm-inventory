@@ -7291,7 +7291,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /useEffect\(\(\) => \{\s*const ref = gateUp \? vaultRef\(\) : null;\s*if \(!ref\) \{ adminProfileRef\.current = null; return; \}\s*adminProfileRef\.current = getDoc\(ref\)\.catch\(\(\) => null\);\s*\}, \[gateUp, vaultPath\]\);/.test(a),   /* 2026-09-28: the doc is the PERSON's (vaultRef) */
      'the round trip a phone pays is the same either way; starting it while he types is what removes it from the press');
   ok('the press uses the prefetched copy and falls back to a live read — never a bare cached answer',
-     /const prefetched = adminProfileRef\.current;\s*adminProfileRef\.current = null;\s*const adminSnap = \(prefetched && await prefetched\) \|\| await getDoc\(adminDocRef\);/.test(a),
+     /const prefetched = adminProfileRef\.current;\s*adminProfileRef\.current = null;\s*(?:const|let) adminSnap = \(prefetched && await prefetched\) \|\| await getDoc\(adminDocRef\);/.test(a),
      'a rejected prefetch (offline) resolves to null, so the live read runs and the existing offline / insecure-context wording still fires');
   ok('BEHAVIOUR: a wrong password re-arms the prefetch AFTER its own strike write, so the next press reads the new count',
      /await updateDoc\(adminDocRef, upd\);[\s\S]{0,400}?`Incorrect PIN\. Strike \$\{upd\.failedRecoveryAttempts\}\/\$\{VAULT_TRIES\}\.`\);\s*adminProfileRef\.current = getDoc\(adminDocRef\)\.catch\(\(\) => null\);/.test(a),   /* 2026-09-28: the strike is strikeUpdate's */
@@ -13641,6 +13641,41 @@ section('SHOP LEVEL AFTER A SALE. The owner\'s targets (Settings > Tier Automati
      isFailure('Penjualan tersimpan. Level toko tidak bisa diperbarui.'));
   ok('rules CHANGE 27: every seller of the company reads appSettings/tierRules - that one doc - and nothing else of appSettings (rules-test/test-tier-rules-read.mjs)',
      /match \/appSettings\/\{docId\} \{\s*allow read: if isSalesman\(bossUid\) && docId == 'tierRules';\s*\}/.test(rules));
+}
+
+section('THE DEMO NEVER WAKES UP EMPTY, AND NEVER ASKS FOR A NEW PASSWORD (his 2026-11-10 "just skip the password making ... test it all yourself": the 2026-11-09 nightly reset deleted the company and wrote nothing, so he met INITIALIZE VAULT)');
+{
+  const { resetDemo } = await import('../../api/demo-reset.js');
+  const sets = [];
+  const fakeDb = (deleteThrows) => ({
+    recursiveDelete: async () => { if (deleteThrows) throw new Error('3 deletes failed. The last delete failed with: DEADLINE_EXCEEDED'); },
+    doc: (path) => ({ path, set: async () => { sets.push(path); } }),
+    bulkWriter: () => ({ onWriteError() {}, set(ref) { sets.push(ref.path); }, close: async () => {} }),
+  });
+  const fakeAuth = (throws) => ({
+    updateUser: async () => { if (throws) throw Object.assign(new Error('auth is down'), { code: 'auth/internal-error' }); },
+    createUser: async () => {}, revokeRefreshTokens: async () => {}, getUserByEmail: async () => ({ uid: 'x' }), deleteUser: async () => {},
+  });
+  const VAULT = 'artifacts/cello-inventory-manager/users/demo-owner/settings/admin';
+  let r = null, err = null;
+  try { r = await resetDemo(fakeDb(true), fakeAuth(false), new Date('2026-11-10T00:05:00+07:00')); } catch (e) { err = e; }
+  ok('a delete that fails no longer stops the reset: the fresh company (and the owner\'s admin123 vault) is still written, and the run says what failed',
+     !err && r && r.wrote > 900 && r.failed === 0 && /deletes failed/.test(r.deleteError || '') && sets.includes(VAULT), err ? err.message : JSON.stringify(r));
+  sets.length = 0; err = null;
+  try { await resetDemo(fakeDb(false), fakeAuth(true), new Date('2026-11-10T00:05:00+07:00')); } catch (e) { err = e; }
+  ok('the five logins are set back AFTER the company is written: a sign-in service error cannot leave the demo empty either',
+     !!err && sets.includes(VAULT) && sets.length > 900, `${err ? err.message : 'no error'}, ${sets.length} writes`);
+  ok('each run leaves a note of what it did (settings/demoReset) - the nightly run is checkable the next morning without Vercel\'s one-hour logs',
+     sets.includes('artifacts/cello-inventory-manager/users/demo-owner/settings/demoReset'));
+  const app = read('src/App.jsx'), logins = read('src/config/demoLogins.js'), company = read('api/_demoCompany.js');
+  const check = app.slice(app.indexOf('const checkAdminStatus = async'), app.indexOf('checkAdminStatus();'));
+  const login = app.slice(app.indexOf('const handlePinLogin = async'), app.indexOf('const data = adminSnap.data();', app.indexOf('const handlePinLogin = async')));
+  ok('demo build: a missing vault password is written as admin123 and the unlock screen shows - never INITIALIZE VAULT (first load AND the unlock press)',
+     /const writeDemoVault = IS_DEMO \?/.test(app) && /\} else if \(writeDemoVault\)/.test(check) &&
+     check.indexOf('writeDemoVault(ref)') < check.indexOf('setIsSetupMode(true)') && /writeDemoVault\(adminDocRef\)/.test(login) &&
+     login.indexOf('writeDemoVault(adminDocRef)') < login.indexOf('setIsSetupMode(true)'));
+  ok('the demo\'s recovery word lives with its vault password (demoLogins.js), and the reset reads the same one',
+     /export const RECOVERY_WORD = 'demo';/.test(logins) && !/export const RECOVERY_WORD =/.test(company) && /RECOVERY_WORD \} from '\.\.\/src\/config\/demoLogins\.js'/.test(company));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

@@ -19,7 +19,7 @@ import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { hashSecret } from '../src/utils/secretHash.js';
-import { buildDemoCompany, DEMO_PROJECT, APP_ID, T1_EMAIL, LOGINS, VAULT_PASSWORD, RECOVERY_WORD } from './_demoCompany.js';
+import { buildDemoCompany, DEMO_PROJECT, APP_ID, T1_EMAIL, LOGINS, VAULT_PASSWORD, RECOVERY_WORD, OWNER_UID } from './_demoCompany.js';
 
 /* the parsed service-account key, or null when it is missing, broken, or for another project */
 export const demoKey = (raw = process.env.DEMO_FIREBASE_KEY) => {
@@ -59,8 +59,12 @@ export async function resetDemo(db, auth, now = new Date()) {
     const vault = { pin: await hashSecret(VAULT_PASSWORD), recoveryHash: await hashSecret(RECOVERY_WORD.toLowerCase()) };
     const company = buildDemoCompany(seed, now, vault);
 
-    await db.recursiveDelete(db.doc(`artifacts/${APP_ID}`));
-    for (const l of LOGINS) { await upsertLogin(auth, l); await auth.revokeRefreshTokens(l.uid); }
+    /* NEVER LEAVE THE DEMO EMPTY (2026-11-10: the 2026-11-09 nightly run deleted all but 3 docs and wrote nothing, so
+       every visitor met an empty company and INITIALIZE VAULT). A delete that throws used to end the run before the first
+       write, and so did a sign-in error. Now a failed delete is only reported - set() overwrites every doc the company
+       owns anyway - and the logins come after the writes. */
+    let deleteError = null;
+    await db.recursiveDelete(db.doc(`artifacts/${APP_ID}`)).catch((e) => { deleteError = String(e?.message || e); console.error('demo reset: delete', e); });
 
     let failed = 0;
     const w = db.bulkWriter();
@@ -68,7 +72,13 @@ export async function resetDemo(db, auth, now = new Date()) {
     for (const d of company.docs) w.set(db.doc(d.path), d.data);
     await w.close();
 
-    return { day: company.day, wrote: company.docs.length - failed, failed, logins: LOGINS.length, ms: Date.now() - started };
+    const result = { day: company.day, wrote: company.docs.length - failed, failed, ...(deleteError ? { deleteError } : {}) };
+    /* what this run did, readable in the demo the next morning (Vercel keeps function logs for an hour only) */
+    await db.doc(`artifacts/${APP_ID}/users/${OWNER_UID}/settings/demoReset`).set({ ...result, at: now.toISOString() });
+
+    for (const l of LOGINS) { await upsertLogin(auth, l); await auth.revokeRefreshTokens(l.uid); }
+
+    return { ...result, logins: LOGINS.length, ms: Date.now() - started };
 }
 
 export default async function handler(req, res) {

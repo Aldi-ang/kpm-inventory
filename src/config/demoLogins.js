@@ -12,6 +12,9 @@ export const OWNER_UID = 'demo-owner';
    The vault's strength rule only runs when a person SETS a vault password in the app (App.jsx calculateStrength);
    the reset writes the hash itself, and unlock only compares. */
 export const VAULT_PASSWORD = 'admin123';
+/* the vault's recovery word, with its password: the reset writes both, and the demo app writes the same pair for a person
+   whose vault is missing (App.jsx writeDemoVault - his 2026-11-10 "just skip the password making") */
+export const RECOVERY_WORD = 'demo';
 
 /* The five switch logins (T2..T6) - never T1. TWO TEAMS (his 2026-10-13 "just make 2 teams, and make the muntilan inside
    kabupaten magelang as headquarters ... only bandung and muntilan team for now"): Muntilan IS the app's Headquarters

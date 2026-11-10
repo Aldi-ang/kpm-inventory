@@ -67,6 +67,7 @@ const expected = Object.fromEntries([...COLS, 'employee_directory'].map((c) => [
     const parts = rest.split('/');
     return parts.length === 2 && parts[0] === c;
 }).length]));
+expected.settings += 1;   /* + settings/demoReset, the run's own note, written after the builder's docs (2026-11-10) */
 
 const r0 = await call('GET', 'wrong-secret');
 ok('a wrong timer secret is refused', r0.code === 401, r0.code);
@@ -78,6 +79,8 @@ const c1 = await counts(db);
 console.log('  counts after reset 1:', JSON.stringify(c1));
 ok(`every folder holds what the builder wrote (${built.docs.length} docs in all): ${JSON.stringify(expected)}`,
    JSON.stringify(c1) === JSON.stringify(expected) && r1.body.wrote === built.docs.length);
+const note = (await db.doc(`${home}/settings/demoReset`).get()).data() || {};
+ok('the run leaves its note: what it wrote, nothing failed, no delete error, when', note.wrote === built.docs.length && note.failed === 0 && !note.deleteError && !!note.at, JSON.stringify(note));
 for (const l of LOGINS) ok(`${l.tier} login REFUSES the old public password admin123 (invite-only: the reset set a random one)`, !(await token(l.email, 'admin123')));
 
 /* what a visitor might do during the day: a sale of their own, a locked switch login, a changed password */
