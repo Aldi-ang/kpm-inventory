@@ -16,7 +16,7 @@
 
 ## 🟢 2026-11-10 07:18 WIB — KPM: his "skip the password making ... test it all yourself" - the demo goes straight to the unlock screen + intro; the nightly reset can no longer leave it empty; pushed 3ff452d
 Full story: the commit message. Proof: A-Brain Raw/2026-11-10-demo-vault/RESULT.md. Next: NEXT-SESSION top (check settings/demoReset next morning), then the sound board.
-WAITING ON ALDI: ✅ TEST (30 s): demo as Dika -> admin123 -> sell to AMANAH BARU -> its level goes Unranked -> Bronze with today's visit date (targets set for the test; the reset wipes them tonight). Then /compact and "go" for the sound board.
+Full Dika sale DONE on the PC copy with the phone placed at the shop (A-Brain Raw/2026-11-10-demo-vault/geo.js): Unranked -> Bronze + visit date. LIVE sale done 07:29 (he unlocked, I sold): AMANAH BARU Unranked -> Bronze + visit date by DIKA SAPUTRA in the live demo database. WAITING ON ALDI: /compact, then go - the sound board. ❓ rename the demo company KPM DEMO (on its receipts) to DSM?
 
 ## 🔴 2026-11-10 07:04 WIB — KPM: his "test it" - the live demo company is EMPTY (last night's reset deleted and wrote nothing); that is why he met INITIALIZE VAULT. No code changed
 WAITING ON ALDI: 🔴 OK to press "Reset demo now" in the pane? Then: fix the reset, demo skips the make-a-password screen (his ask), live Dika sale test. Details: NEXT-SESSION top.
