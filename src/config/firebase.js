@@ -23,7 +23,8 @@ import { getStorage } from "firebase/storage";
    dies with redirect_uri_mismatch. Every host NOT on this list keeps using the Firebase handler,
    which is already registered - so localhost, the LAN IPs Aldi tests phones on, and every Vercel
    preview URL keep working untouched. */
-const PROXIED_AUTH_HOSTS = ['kpm-ang.vercel.app'];
+/* dsm-ak.vercel.app: his new address (2026-11-10), registered on the OAuth client first (his screenshot, URI 7). */
+const PROXIED_AUTH_HOSTS = ['kpm-ang.vercel.app', 'dsm-ak.vercel.app'];
 const FIREBASE_AUTH_DOMAIN = 'cello-inventory-manager.firebaseapp.com';
 const resolvedAuthDomain =
   typeof window !== 'undefined' && PROXIED_AUTH_HOSTS.includes(window.location.hostname)

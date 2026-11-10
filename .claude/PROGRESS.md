@@ -16,7 +16,7 @@
 
 ## 🟢 2026-11-10 08:00 WIB — KPM: his "replace every aspect of this app with DSM on default now" - every visible default says DSM (receipts, backup files, demo company); pushed c9a50e2
 Full story: the commit message. Next: NEXT-SESSION top.
-WAITING ON ALDI: 🔴 his Vercel rename - keep kpm-ang.vercel.app working; tell me the new address BEFORE phones use it (3 registrations first). Then /compact + go for the sound board.
+dsm-ak.vercel.app ADDED by him next to kpm-ang (both Preview/phase0-solid-ground, same build, /__/auth/handler 200). kpm-inventory.vercel.app = the July 28 main build on the REAL database - redirect it (his answer owed: does anyone use it). WAITING ON ALDI: register dsm-ak in Google Cloud OAuth client (origin + https://dsm-ak.vercel.app/__/auth/handler) and Firebase Auth authorized domains, say registered; THEN I add it to firebase.js PROXIED_AUTH_HOSTS and push. Then /compact + go for the sound board.
 
 ## 🟢 2026-11-10 07:18 WIB — KPM: his "skip the password making ... test it all yourself" - the demo goes straight to the unlock screen + intro; the nightly reset can no longer leave it empty; pushed 3ff452d
 Full story: the commit message. Proof: A-Brain Raw/2026-11-10-demo-vault/RESULT.md. Next: NEXT-SESSION top (check settings/demoReset next morning), then the sound board.

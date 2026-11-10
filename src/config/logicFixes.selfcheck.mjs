@@ -5499,7 +5499,7 @@ ok('the login domain is resolved at runtime, not hardcoded',
    /authDomain: resolvedAuthDomain/.test(fb),
    'a constant cannot be right for localhost and for the deployed site at the same time');
 ok('only hosts on the explicit list use their own address',
-   /const PROXIED_AUTH_HOSTS = \['kpm-ang\.vercel\.app'\];/.test(fb),
+   /const PROXIED_AUTH_HOSTS = \['kpm-ang\.vercel\.app', 'dsm-ak\.vercel\.app'\];/.test(fb),
    'THE TRAP: a host here needs https://<host>/__/auth/handler registered on the OAuth client first, or its sign-in dies with redirect_uri_mismatch');
 ok('everything else keeps the Firebase handler, which is already registered',
    /: FIREBASE_AUTH_DOMAIN;/.test(fb),
@@ -5509,13 +5509,15 @@ ok('and the resolver cannot throw where there is no window',
    'this module is imported by tooling that runs in Node; a bare window reference would crash the import');
 
 /* The maths: the resolver re-run on the hosts that actually exist. */
-const PROXIED = ['kpm-ang.vercel.app'];
+const PROXIED = ['kpm-ang.vercel.app', 'dsm-ak.vercel.app'];
 const resolveAuthDomain = (host) =>
   PROXIED.includes(String(host).split(':')[0]) ? host : 'cello-inventory-manager.firebaseapp.com';
 
 ok('the shared demo link signs in on its own address',
    resolveAuthDomain('kpm-ang.vercel.app') === 'kpm-ang.vercel.app',
    'this is the whole fix — no cross-site cookie, so no shields to lower');
+ok('his new address dsm-ak.vercel.app signs in on its own address too (2026-11-10; its handler is URI 7 on the OAuth client)',
+   resolveAuthDomain('dsm-ak.vercel.app') === 'dsm-ak.vercel.app');
 ok('localhost is untouched, and it is what proved the diagnosis',
    resolveAuthDomain('localhost:5173') === 'cello-inventory-manager.firebaseapp.com',
    'there is no proxy in the dev server; pointing localhost at itself would break the one place that works');
