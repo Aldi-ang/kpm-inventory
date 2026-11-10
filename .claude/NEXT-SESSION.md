@@ -1,5 +1,7 @@
 # The one job
 
+TALK RULES LIVE 2026-11-10 16:32 WIB (cd7f7b4): useSound.js capyMaySpeak - sale always (1.7 s after, past the cha-ching), news 20 s apart, motivation pop-ups out loud max once per 15 min (silent bubbles between), cart chatter never. The new Jett-by-mood voice must go through the SAME call sites (sale -> excited, news -> happy, ? -> curious, motivation -> happy/approving). Still waiting: Antigravity's media task (round4).
+
 SOUND + CAPYBARA, ROUND 4 2026-11-10 16:25 WIB: his picks C2 (LIVE, 839cd01) + J4. Voice takes + Flow animation clips are ANTIGRAVITY's open task (.claude/ANTIGRAVITY-TASK.md; files land in A-Brain Raw/2026-11-10-sound-board/round4/). When it says DONE: review the Result, then J4 + split per mood, key the clips to animated WebP, wire voice-by-mood + the new animation; his "talks on" answer decides the call sites. His quota note: Fable does the new UI design this week; images / video / sfx go to other platforms. Details: A-Brain Raw/2026-11-10-sound-board/RESULT.md round 4.
 
 SOUND BOARD ROUND 3 2026-11-10 16:12 WIB: board v4 (same link) - Jett at 3 animal sizes (J4 / J7 / J10). WAITING: his size + receipt pick line, and his Gemini key in C:/Users/ASUS/.gemini/.env (or "use the pane"). THEN: 20-30 Jett phrases -> size -> split -> app (see round 2 paragraph below for the integration list). Details: A-Brain Raw/2026-11-10-sound-board/RESULT.md round 3.
