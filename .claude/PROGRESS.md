@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-11 05:47 WIB, PC clock (🟢 KPM - capybara voice + smooth clips live; the deal clip is his to remake)**
+**Updated: 2026-11-11 06:07 WIB, PC clock (🟠 KPM - deal clip encoded, NOT wired: stopped at the usage limit)**
+
+## 🟠 2026-11-11 06:07 WIB — KPM: his "done" - both deal clips are good (deal-3 picked); encoded to public/sprites/merchant-deal.webp (untracked), NOT wired yet - usage limit reached
+Next: NEXT-SESSION top (the one job: wire the deal clip).
+WAITING ON ALDI: nothing until the limit resets. Then one question will come with pictures: where the coin goes now that his hand moves.
 
 ## 🟢 2026-11-11 05:47 WIB — KPM: his "add variation on the voice ... smooth one, as smooth as sim city" - the Jett voice by mood and the smooth idle / talk clips are LIVE; pushed a7e0ab7
 Full story: a7e0ab7's message · next: NEXT-SESSION top.
