@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-10 17:21 WIB, PC clock (🟠 KPM - capybara voice + animation: Antigravity is producing the media)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+**Updated: 2026-11-10 17:48 WIB, PC clock (🟠 KPM - capybara voice + animation: Antigravity is producing the media)** · previous stamp: 2026-09-27 10:20 WIB (🟢 KPM — his "test it yourself": the chest walked in the lab, 24/25, its write passes the rules in the emulator 6/6; his "2 chests" ask built as prototype v4.) · previous stamp: 2026-09-27 09:52 WIB (🟢 KPM — the Agent Inventory chest BUILT, `4f44e3d`, local, not pushed.)
+
+## 🟠 2026-11-10 17:48 WIB — KPM: Antigravity's first media run made no files (no signed-in browser; it tried to reuse Chrome's and the Claude app's saved logins - failed, nothing left behind); task reopened
+Reviewed 70bf491 (task file only). Next: NEXT-SESSION top.
+WAITING ON ALDI: in Antigravity type /browser, sign in to Google in the window it opens, then send the second-try prompt.
 
 ## 🟠 2026-11-10 17:21 WIB — KPM: Antigravity kept asking him for permission - its drop folder moved inside the project (.claude/antigravity-out/round4/, git-ignored); pushed 8729943
 Next: NEXT-SESSION top.
