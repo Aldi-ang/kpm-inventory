@@ -21,7 +21,7 @@ import { dayStats, agoLabel, txSeconds } from './utils/dayStats';
 import { customerBrief, reorderFromLast } from './utils/customerBrief';
 import { nextStop, directionsUrl, metresLabel } from './utils/nextStop';
 import { VISIT_TAGS, visitReport } from './utils/dayLog';
-import { unlockSounds, speakMumble, playSound, capyMaySpeak } from './hooks/useSound';
+import { unlockSounds, speakMumble, playSound, capyMaySpeak, capyHoldForSale } from './hooks/useSound';
 import { notify } from './components/Toast.jsx';
 import { shareReceipt } from './components/shareReceipt.js';
 
@@ -1277,6 +1277,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 offers: isReturMode ? [] : Object.values(bundleUse).filter(o => o.productIds.every(id => finalCart.some(i => i.productId === id)))
             };
 
+            capyHoldForSale();   // the save's own news line must not talk over the sale line (two voices at once)
             const trueAgentName = await onProcessSale(finalCust, dbMethod, finalCart, newStorePayload, proofPayload, finalGive);
             committed = true;   // everything past this point is POST-commit: the sale already exists
             /* the demo's mission line ticks on the SAVED deal (DemoMission.jsx): a sale is step 4; a retur carrying a damaged

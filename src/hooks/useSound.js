@@ -282,12 +282,20 @@ export function unlockSounds({ AudioImpl, doc } = {}) {
    - cart        never: the chatter while items went in the cart is gone (MerchantSalesView). */
 const CAPY_QUIET = { news: 5e3, motivation: 60e3 };
 const MOTIVATION_EVERY = 15 * 60e3;
-const capyGate = { spoke: -Infinity, motivated: -Infinity };
+const capyGate = { spoke: -Infinity, motivated: -Infinity, saleUntil: -Infinity };
+/* TWO VOICES AT ONCE (2026-11-11, his "i feels like there is 2 voice at once ... sound like there is 2 dialogue
+   intersecting"). Saving a sale makes the app say its own news ("Manifest Recorded & Receipts Signed!",
+   useTransactionEngine) the moment the save lands - and the sale line came 1.7 s later, while that news phrase (up to
+   2.2 s) was still playing. Now the sales screen calls this BEFORE it saves: for 10 s only the sale line may talk.
+   The news still shows; it just stays quiet. 10 s also covers a slow save - and lapses by itself if the save fails. */
+export function capyHoldForSale(now = Date.now(), g = capyGate) { g.saleUntil = now + 10e3; }
 export function capyMaySpeak(kind, now = Date.now(), g = capyGate) {
   if (!['sale', 'news', 'motivation'].includes(kind)) return false;
+  if (kind !== 'sale' && now < g.saleUntil) return false;
   if (kind !== 'sale' && now - g.spoke < CAPY_QUIET[kind]) return false;
   if (kind === 'motivation' && now - g.motivated < MOTIVATION_EVERY) return false;
   if (kind === 'motivation') g.motivated = now;
+  if (kind === 'sale') g.saleUntil = -Infinity;   // he has said the sale line; the 5 s news quiet below takes over
   g.spoke = now;
   return true;
 }

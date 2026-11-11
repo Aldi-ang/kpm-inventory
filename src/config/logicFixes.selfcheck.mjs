@@ -13687,6 +13687,14 @@ section('WHEN THE CAPYBARA TALKS (his 2026-11-10 "go with your suggestion" + mot
   ok('motivation never talks within a minute of other talk (a sale at 15:00 keeps the 15:30 pop-up silent)',
      JSON.stringify(run([['motivation', 0], ['sale', 15 * M], ['motivation', 15 * M + 30], ['motivation', 16 * M + 1]])) === '[true,true,false,true]');
   ok('cart chatter and any unknown kind never talk', run([['cart', 0], ['cart', 100], ['whatever', 200]]).every((x) => x === false));
+  /* his 2026-11-11 "2 voice at once ... 2 dialogue intersecting": the save's news line spoke at 0 s, the sale line at 1.7 s */
+  { const g = { spoke: -Infinity, motivated: -Infinity, saleUntil: -Infinity }; u.capyHoldForSale(0, g);
+    const seq = [u.capyMaySpeak('news', 50, g), u.capyMaySpeak('motivation', 900, g), u.capyMaySpeak('sale', 1700, g), u.capyMaySpeak('news', 5000, g), u.capyMaySpeak('news', 6800, g)];
+    const g2 = { spoke: -Infinity, motivated: -Infinity, saleUntil: -Infinity }; u.capyHoldForSale(0, g2);
+    ok('a sale being saved silences the save\'s own news line; the sale line talks; news talks again 5 s after it; a failed save frees the voice after 10 s',
+       JSON.stringify(seq) === '[false,false,true,false,true]' && u.capyMaySpeak('news', 9000, g2) === false && u.capyMaySpeak('news', 10001, g2) === true, JSON.stringify(seq)); }
+  ok('the sales screen holds the voice BEFORE it saves (the news line fires inside the save)',
+     /capyHoldForSale\(\);[^\n]*\n\s*const trueAgentName = await onProcessSale\(/.test(read('src/MerchantSalesView.jsx').replace(/\r/g, '')));
   const sale = code(read('src/MerchantSalesView.jsx')).replace(/\r/g, ''), app = code(read('src/App.jsx')).replace(/\r/g, '');
   ok('the cart chatter is gone - no voice AND no line (his "if no voice then no capybara")', /const triggerMerchantSpeak = \(\) => \{\};/.test(sale) && !/CHATTER/.test(sale));
   ok('the sale line talks after the 1.6 s cha-ching, through the rule', /playSound\('saleDone'\);\s*(\/\*[^*]*\*\/\s*)?setTimeout\(\(\) => \{ if \(capyMaySpeak\('sale'\)\) speakMumble\(line, \{ mood: 'excited' \}\); \}, 1700\);/.test(sale));
