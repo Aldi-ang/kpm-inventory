@@ -1,6 +1,22 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-11 17:26 WIB, PC clock (🟢 KPM - capybara round CONFIRMED by Aldi: "great working well now")**
+**Updated: 2026-11-11 18:33 WIB, PC clock (🟢 KPM - Sales Terminal direction B is built, phone + PC, and live cb8f5244; two questions wait on him)**
+
+## 🟢 2026-11-11 18:33 WIB — KPM: his "Build direction B (Price list) for the Sales Terminal" - built on the phone and the PC, LIVE; pushed cb8f5244
+Full story: cb8f5244's message · boards: A-Brain Raw/2026-11-11-redesign-today/BUILT-PHONE.png + BUILT-PC.png · next: NEXT-SESSION top (Journey Plan).
+WAITING ON ALDI: ✅ TEST on the phone (version cb8f5244): open Sales Terminal, choose a shop in the strip on top, tap + on two products, tap Bayar, take the photo, save - the receipt total must equal the total in the bottom bar. 🔴 DECIDE 1: "The big header at the top (TERMINAL PENJUALAN and the row of round buttons) is shared by all 17 screens and still has the game look. On the phone it takes about a quarter of the screen, so 5 products fit before scrolling; your drawing had a one-row bar and 8 products. Do I rebuild that shared top bar as one row next, before Journey Plan? yes / no. Recommended: yes." 🔴 DECIDE 2: "The save button on the order slip is still your rubber stamp from 2026-11-03 (double line, old-book letters). The B drawing had a plain dark Bayar button there. Keep the stamp, or change it to the dark button? Recommended: the dark button, so the slip has one letter style."
+
+## 🟠 2026-11-11 18:01 WIB — KPM: his "i choose 1 ... there will be 3 app link i think, 1 is for the real professsional, 2 is demo professional and 3 is game version" - one repository; the demo follows the professional build; the game version keeps branch game-edition and gets its own link later
+Full story: A-Brain Brainstorm/2026-11-11_full-redesign-sales-terminal-directions.md · next: NEXT-SESSION top (build B, nothing blocks its push).
+WAITING ON ALDI: nothing. (The 17:56 question below is answered by this entry.) Later, when he wants it: the game version's live link - his clicks in Vercel, steps not written yet.
+
+## 🟠 2026-11-11 17:56 WIB — KPM: his "B looks the best i think it looks most professional ... the existing build app, game inspiration DSM should be stored somewhere else inside my github" - B (Price list) is the Sales Terminal pick, NOT built; the game look is on GitHub as tag game-edition-v1 + branch game-edition (4e07d2f4)
+Full story: A-Brain Brainstorm/2026-11-11_full-redesign-sales-terminal-directions.md · next: NEXT-SESSION top (build B).
+WAITING ON ALDI: 🔴 DECIDE "Where should the game edition live so you can show it: 1 = the same repository, on its own branch, with the demo address showing it (my pick), or 2 = its own second repository?" Does not block building B; it blocks the first PUSH of B only if the demo address builds from the live branch (not verified - Vercel, demo project, Settings > Git > Production Branch).
+
+## 🟠 2026-11-11 17:48 WIB — KPM: his "New job: a full redesign of the KPM / DSM app, to look professional on the phone AND the PC" - 17 screens ranked, today frames of the top 3, three Sales Terminal directions (A Tidy / B Price list / C Cashier) drawn at 375 and 1440; NO app code changed
+Full story: A-Brain Brainstorm/2026-11-11_full-redesign-sales-terminal-directions.md · boards in A-Brain Raw/2026-11-11-redesign-today/ · next: NEXT-SESSION top.
+WAITING ON ALDI: 🔴 DECIDE "Which Sales Terminal direction do I build: A (Tidy), B (Price list, my pick) or C (Cashier)?" 🔴 DECIDE "On 2026-11-09 you said the game look is your resume and must not be overwritten. Before the first redesigned screen goes live, do I save the game look first (a named restore point in git, and the demo address keeps showing it)? yes / no" ❓ ANSWER (only if wrong): the screen order - Sales Terminal, Journey Plan, Agent Inventory, EOD, then the office screens.
 
 ## 🟢 2026-11-11 15:24 WIB — KPM: his "new coin falling animation is better" - a gold coin drops into his bag before the thumbs-up; pushed (see git log)
 Next: NEXT-SESSION top.
