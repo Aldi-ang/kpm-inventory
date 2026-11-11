@@ -7219,18 +7219,19 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   /* the raw file for four of these: code() strips a block-comment span that swallows the
      payment select and the proof block, so the stripped text cannot see them */
   const r = merchant;
-  const steppers = (m.match(/kpm-press kpm-hover w-11 h-11 lg:w-8 lg:h-8 rounded-lg/g) || []).length;
+  const steppers = (m.match(/kpm-press kpm-hover w-11 h-11 lg:w-9 lg:h-9 rounded-lg/g) || []).length;   /* 36 on the desk since B, 2026-11-11 (was 32) */
   ok('REGRESSION: the two row steppers (− / +) are 44 px on the phone (32 on the desk, as before), and no 32 px phone stepper is left',
      steppers === 2 && !/kpm-press kpm-hover w-8 h-8/.test(m),
      'they were `w-8 h-8` with a comment admitting 32 is under 44; his pick 2026-09-17 was B — the picture gave up 32 px so these could grow');
   ok('the ware picture is 64 px with p-1 on the phone (a 56 px press target), 96 → 64 is what paid for the steppers',
-     /w-16 h-16 lg:w-auto lg:h-48 p-1 lg:p-5/.test(m) && !/w-24 h-24 lg:w-auto lg:h-48/.test(m));
+     /* B, 2026-11-11: the picture is 44 x 56 (still the finger minimum); the 64 px square went with the cards */
+     /className="relative w-11 h-14 lg:h-12 shrink-0"/.test(m) && !/w-16 h-16 lg:w-auto lg:h-48/.test(m) && !/w-24 h-24 lg:w-auto lg:h-48/.test(m));
   ok('the − / + cluster closes its gap to 4 px on the phone so a one-line name still fits beside a 64 px picture',
-     /flex items-center gap-1 lg:gap-2 shrink-0 mt-1 lg:mt-3/.test(m));
+     /flex items-center gap-1 shrink-0 lg:order-3 lg:justify-end/.test(m));
   ok('category tabs and the search box are 44 tall on the phone, desk untouched',
-     /px-4 py-2 md:px-5 md:py-2\.5 min-h-\[44px\] lg:min-h-0 text-\[11px\] md:text-xs/.test(m) &&
-     /pl-9 md:pl-10 pr-10 min-h-\[44px\] lg:min-h-0 text-\[var\(--duke-amber-ink\)\] font-mono text-\[13px\] md:text-sm/.test(m) &&
-     /<Search size=\{16\} className="absolute left-3 top-3\.5/.test(m),
+     /shrink-0 px-3 min-h-\[44px\] text-\[13px\] font-black uppercase tracking-wide whitespace-nowrap border-b-2/.test(m) &&
+     /pl-9 md:pl-10 pr-2 lg:pr-10 min-h-\[44px\] lg:min-h-0 text-\[var\(--duke-amber-ink\)\] font-mono text-\[13px\] md:text-sm/.test(m) &&
+     /<Search size=\{16\} className="absolute left-3 top-1\/2 -translate-y-1\/2/.test(m),
      'the search icon sat at top-2.5 for a 35 px box; at 44 it is centred at 14');
   ok('REGRESSION: the cart-line unit labels are no longer 8 px, and the four boxes are 44 tall',
      /<em className="not-italic text-\[10px\] lg:text-\[8px\] font-black uppercase tracking-wide lg:tracking-widest/.test(m) &&
@@ -7239,7 +7240,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /className="w-7 lg:w-8 h-11 lg:h-auto bg-transparent text-center/.test(m),
      '8 px labels on 20 px boxes was the smallest thing on the whole terminal, on the line that decides the quantity');
   ok('SALE MODE / RETUR MODE, the customer box, the payment select, the qty input, the unit and tier selects, the camera button, the picker DONE — all min-h 44 on the phone',
-     (m.match(/flex-1 py-1\.5 min-h-\[44px\] lg:min-h-0 text-\[11px\] lg:text-\[10px\]/g) || []).length === 2 &&
+     (m.match(/flex-1 py-1\.5 min-h-\[44px\] lg:min-h-\[40px\] text-\[11px\] lg:text-xs/g) || []).length === 2 &&
      /p-2 min-h-\[44px\] lg:min-h-0 text-\[13px\] md:text-sm font-black uppercase rounded truncate"/.test(m) &&
      /p-2 min-h-\[44px\] lg:min-h-0 text-\[13px\] md:text-sm font-bold uppercase outline-none rounded \$\{isReturMode/.test(r) &&
      /w-20 md:w-24 min-h-\[44px\] lg:min-h-0 bg-white/.test(m) &&
@@ -11605,6 +11606,29 @@ section('Permissions. The backup copy of the matrix is replaced, never merged (r
      'a merge deep-merges `matrix`, so a deleted tier kept its permissions in the backup');
 }
 
+section('Sales Terminal, direction B - the price list (his pick 2026-11-11: "B looks the best i think it looks most professional")');
+{ const msv = code(read('src/MerchantSalesView.jsx'));
+  ok('LOOK ONLY: the total is still the same one line of arithmetic',
+     /const cartTotal = cart\.reduce\(\(sum, i\) => sum \+ \(i\.calculatedPrice \* i\.qty\), 0\);/.test(msv));
+  ok('the phone total bar only OPENS the slip; the sale still leaves through the one committed button',
+     /data-guide="open-slip" onClick=\{\(\) => setManifestOpen\(true\)\}/.test(msv) && (msv.match(/onClick=\{handleFinalDeal\}/g) || []).length === 1);
+  ok('the bar is fixed to the bottom edge (the shell scrolls the screen, so a bar at the end of the column starts below the fold) and the list leaves room for it',
+     /lg:hidden fixed inset-x-0 bottom-0 z-\[140\]/.test(msv) && /pb-\[76px\] lg:px-0 lg:pb-0/.test(msv));
+  ok('the phone strip and the slip offer the SAME ways to pay: one list, two selects',
+     /* the raw file: code() strips a block-comment span that swallows the slip's payment select */
+     (read('src/MerchantSalesView.jsx').match(/payOptions\.map\(method =>/g) || []).length === 2 && (read('src/MerchantSalesView.jsx').match(/allowedPayments\.filter\(/g) || []).length === 1);
+  ok('the phone strip opens the same picker and stays inside its click-outside area',
+     /className="manifest-dropdown-area lg:hidden shrink-0 flex items-center gap-2/.test(msv));
+  ok('REGRESSION: a lit kind or stock source is a gold line under a plain word, never a tan or amber plate',
+     !/bg-\[var\(--duke-fill-tan\)\]/.test(msv) && !/adminSalesMode !== 'VEHICLE' \? 'bg-\[var\(--duke-amber\)\]/.test(msv) && (msv.match(/border-b-2 -mb-px transition-colors/g) || []).length === 3);
+  ok('each product that goes in still reports itself: the 2 s flag is read by the total bar',
+     /\{flag \? `\$\{tr\('Added ·'\)\} \$\{flag\.name\}`/.test(msv));
+  ok('the slip is flat cream with dark ink - no paper texture class is left on it, and the lit Sale side is a dark plate',
+     !/kpm-parchment/.test(msv) && /!isReturMode \? 'bg-\[var\(--duke-on-plate\)\] text-\[var\(--duke-paper\)\]'/.test(msv));
+  ok('the capybara and his room are untouched: the alcove, its walker and the float are still rendered',
+     /<div ref=\{alcoveRef\} className="kpm-alcove hidden lg:grid shrink-0">/.test(msv) && /kpm-merch-float hide-on-print hidden lg:block/.test(msv));
+}
+
 section('Sales terminal card: the count is back, the price follows the shop (his 2026-10-20, pick B)');
 { const msv = code(read('src/MerchantSalesView.jsx'));
   ok('the card shows the count as he says it, plain and inside LOW, on a button with both faces',
@@ -13444,7 +13468,7 @@ console.log('\nQuarantine: Sell Again puts a damaged lot on sale, right after it
   { const { isFailure } = await import('../utils/toastSeverity.js');
     const refusals = [...so.matchAll(/return notify\(`(Cannot (?:sell|use that price)[^`]*)`\)/g)].map((m) => m[1].replace(/\$\{[^}]*\}/g, 'X'));
     ok('both Sell Again refusals show as failures (a red strip, not news)', refusals.length === 2 && refusals.every(isFailure)); }
-  ok('the terminal shelf runs through lotsAfterPacks and the card wears the mark', ms.includes('const filteredItems = lotsAfterPacks(inventory.filter(') && ms.includes('{isDamagedPack(item) && <HazardMark className="right-0.5 bottom-0.5'));
+  ok('the terminal shelf runs through lotsAfterPacks and the card wears the mark', ms.includes('const filteredItems = lotsAfterPacks(inventory.filter(') && ms.includes('{isDamagedPack(item) && <HazardMark className="right-0 bottom-0 w-[18px] h-[18px]'));
   ok('REGRESSION: a lot is never "low" (it is never restocked), in the one function every low-stock alarm reads', /export const isLowStock = \(product, appSettings\) =>\s*!product\?\.damagedFrom &&/.test(th));
   ok('the Sell Again button sits after Convert to Sample, gold edge, and not on a lot that is damaged again', /Convert to Sample\s*<\/button>\}?\s*\{\/\*[^]*?\*\/\}\s*\{!item\.damagedFrom && \(\s*<button onClick=\{\(\) => setResolutionModal\(\{item, method: 'SELL', cheap: false\}\)\}[^>]*border-\[var\(--accent-edge\)\]/.test(so));
 }

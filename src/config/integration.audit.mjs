@@ -90,14 +90,18 @@ const G2 = '2. The wares';
 inCss(G2, '3D box',                       '.kpm-cube');
 inCss(G2, 'sized from real millimetres',  '--mm-h');
 inCss(G2, 'turns on hover',               '@keyframes kpm-turn');
-inJs (G2, 'six faces from the vault',     'useFrontForBack');
+/* B, 2026-11-11: the shelf shows the flat front photo; the six-face box lives in the Examine box only */
+check(G2, 'the shelf picture is the flat front photo, whole (the 3D box left the shelf with B)',
+  /const front = item\.images\?\.front \|\| item\.image;/.test(src) && /className="absolute inset-0 w-full h-full object-contain"/.test(src) && !/renderCube|kpm-cube/.test(src));
 inJs (G2, 'press picture to pin/expand',  'Show what is left of ');
 inJs (G2, 'examine button',               'Examine ');
 check(G2, 'hover-to-rail removed', !term.includes('onMouseEnter'));
 check(G2, 'no fixed card width in grid', !term.includes('lg:w-[260px]'));
-check(G2, 'three per row emitted', css.includes('@media(min-width:1400px)'));
-check(G2, 'three-per-row wins the cascade',
-  css.indexOf('@media(min-width:1400px)') > css.indexOf('@media(min-width:1024px)'));
+/* B, 2026-11-11: the shelf is a price list - one ruled row per product, a table at lg. The head and the rows share ONE
+   column template; a row's cells reach that grid through lg:contents, so both must be in the build. */
+check(G2, 'the table head and the rows share one column template',
+  (src.match(/grid-cols-\[44px_minmax\(0,1fr\)_110px_170px_110px_132px\]/g) || []).length === 2);
+check(G2, 'the row cells reach the table grid (lg:contents is emitted)', css.includes('lg\\:contents'));
 
 /* ── 3. THE RAIL ─────────────────────────────────────────────────────────── */
 const G3 = '3. The rail';
@@ -223,7 +227,9 @@ const G7b = '7b. Phone';
 inCss(G7b, 'context strip',               '.kpm-strip');
 inCss(G7b, 'strip enters',                '@keyframes kpmStripIn');
 inJs (G7b, 'brief on the phone',          'Before you go in');
-inJs (G7b, 'collapses while selling',     'Selling to');
+/* B: the shop's name is in the strip on top, so while he sells this card shows only when the shop owes money */
+check(G7b, 'while selling, the card shows only a debt',
+  /\{customerSettled && \(cart\.length === 0 \|\| \(debtInfo && debtInfo\.totalDebt > 0\)\) && \(/.test(src));
 check(G7b, 'strip animates transform/opacity only, never height',
   !/\.kpm-strip\{[^}]*height/.test(css) && !/@keyframes kpmStripIn\{[^}]*height/.test(css));
 /* A touch screen fires :hover on tap and KEEPS it. Ungated hover rules latch onto whatever
@@ -233,7 +239,7 @@ check(G7b, 'hover gated behind a real pointer',
   'need the bracket hover AND the cube spin gated');
 check(G7b, 'reorder button meets the 44px touch minimum', term.includes('h-11'));
 inJs (G7b, 'stock breakdown on the card',  'In vehicle');
-check(G7b, 'card wraps so the breakdown gets its own row', term.includes('flex-wrap lg:flex-col'));
+check(G7b, 'the breakdown gets its own full row under the product', term.includes('kpm-strip col-span-full'));
 /* Three targets never fit an 80px square. The eye moved into the panel; the picture keeps
    the square to itself and grew to 96px. */
 inJs (G7b, 'examine moved into the panel', 'Examine in 3D');
@@ -241,11 +247,13 @@ inJs (G7b, 'examine moved into the panel', 'Examine in 3D');
    picture, because the picture is the press target for opening a ware's detail at every
    width. Anything on top of it competes with it. */
 check(G7b, 'nothing overlaps the picture', !/absolute bottom-\d+ left-\d+[^"]*z-20/.test(term));
-check(G7b, 'examine reachable in BOTH panels',
-  (term.match(/Examine in 3D/g) || []).length >= 2, 'rail panel + phone card panel');
+/* B: the rail is gone; the row's own panel serves the phone AND the PC, so it must not be phone-only */
+check(G7b, 'examine reachable at both widths, from the row panel',
+  (term.match(/Examine in 3D/g) || []).length >= 1 && !term.includes('kpm-strip col-span-full lg:hidden'), 'the row panel carries the only Examine button');
 /* 96 until 2026-09-17; his pick B that morning traded 32 px of picture for 44 px steppers. p-1 keeps
    the press target at 56 — still over the 44 px finger. */
-check(G7b, 'picture target is 64px with p-1 on the phone (56 px press target), 96 → 64 paid for the 44 px steppers', term.includes('w-16 h-16 lg:w-auto lg:h-48 p-1 lg:p-5'));
+/* B, 2026-11-11: 44 x 56, the finger minimum - what lets more products show before scrolling */
+check(G7b, 'picture target is 44 x 56 on the phone (the finger minimum)', term.includes('relative w-11 h-14 lg:h-12 shrink-0'));
 /* The state the phone spends most of its day in: driving, no customer chosen. */
 check(G7b, 'driving state shows the next stop', term.includes('!customerName.trim()') || term.includes('Next stop'));
 check(G7b, 'Go button meets the touch minimum', /h-11 shrink-0 items-center/.test(term));
@@ -994,7 +1002,8 @@ check(G22, 'exactly ONE suggestion dropdown exists', custLists === 1,
 check(G22, 'the paper opens the same picker instead of telling you to go elsewhere',
   /Tap to choose the customer/.test(termSrc) &&
   !/Name the customer in the bar at the top/.test(termSrc) &&
-  (termSrc.match(/onClick=\{\(\) => setShowCustomerDropdown\(true\)\}/g) || []).length === 1,
+  /* two openers since B (2026-11-11): the paper's box and the phone's strip on top - still ONE picker, one state */
+  (termSrc.match(/onClick=\{\(\) => setShowCustomerDropdown\(true\)\}/g) || []).length === 2,
   'a manifest with no name on it is wrong, so the paper still states who the deal is with — ' +
   'but stating it and being unable to change it is what he reported');
 /* His 2026-11-02 "we dont need 2 pelanggan textbox ... just erase the top pelanggan box": the strip that sat above the
