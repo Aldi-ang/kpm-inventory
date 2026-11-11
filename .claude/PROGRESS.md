@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-11 10:33 WIB, PC clock (🟢 KPM - capybara: voice, idle, talk and his thumbs-up deal clip all live; one question open: the coin)**
+**Updated: 2026-11-11 15:24 WIB, PC clock (🟢 KPM - capybara done: voice, idle, talk, thumbs-up deal and the falling coin all live)**
+
+## 🟢 2026-11-11 15:24 WIB — KPM: his "new coin falling animation is better" - a gold coin drops into his bag before the thumbs-up; pushed (see git log)
+Next: NEXT-SESSION top.
+WAITING ON ALDI: ✅ TEST a sale on the phone: the coin drops into his bag, then the thumbs-up. Antigravity: the 38-findings audit (yes).
 
 ## 🟢 2026-11-11 10:33 WIB — KPM: his "i change the animation for the deal here i want u to use that" - the thumbs-up clip (deal-vaultboy) is LIVE after a sale; pushed 7990d52
 Full story: 7990d52's message · next: NEXT-SESSION top.
