@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-11 18:33 WIB, PC clock (🟢 KPM - Sales Terminal direction B is built, phone + PC, and live cb8f5244; two questions wait on him)**
+**Updated: 2026-11-12 05:55 WIB, PC clock (🟢 KPM - shopping list professional + capybara off the panel, live 1695539c; the shared top bar is next, one question waits on him)**
+
+## 🟢 2026-11-12 05:55 WIB — KPM: his "make the shopping list professional as well, and dont forget the capybara on the right is blocking the shopping panel" - both done and LIVE; pushed 1695539c. His "yes we should redesign" = the shared top bar, NOT built yet
+Full story: 1695539c's message · board: A-Brain Raw/2026-11-11-redesign-today/PANEL-V2.png · next: NEXT-SESSION top (the shared top bar, one row).
+WAITING ON ALDI: ✅ TEST (version 1695539c) one sale on the phone, and on the PC look at the order panel with 3 or more items: Total and the save button must stay in view. 🔴 DECIDE: "The top bar as one row: on the phone one row holds the title and about 3 buttons. Today there are 5 (Panduan, Catatan update, the sync sign, the light/dark switch, the bell). Which stay on the row? Recommended: the sync sign and the bell stay; Panduan, Catatan update and the light/dark switch move into the side menu. Example: the top of the phone becomes one line - TERMINAL PENJUALAN, a dot, a bell - and 3 more products fit on the screen."
 
 ## 🟢 2026-11-11 18:33 WIB — KPM: his "Build direction B (Price list) for the Sales Terminal" - built on the phone and the PC, LIVE; pushed cb8f5244
 Full story: cb8f5244's message · boards: A-Brain Raw/2026-11-11-redesign-today/BUILT-PHONE.png + BUILT-PC.png · next: NEXT-SESSION top (Journey Plan).
