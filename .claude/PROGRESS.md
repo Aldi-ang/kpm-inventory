@@ -1,6 +1,6 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-11 17:17 WIB, PC clock (🟢 KPM - capybara: sale talk cut to 2-3 words, live)**
+**Updated: 2026-11-11 17:22 WIB, PC clock (🟢 KPM - capybara: two voices at once after a sale fixed, live)**
 
 ## 🟢 2026-11-11 15:24 WIB — KPM: his "new coin falling animation is better" - a gold coin drops into his bag before the thumbs-up; pushed (see git log)
 Next: NEXT-SESSION top.
