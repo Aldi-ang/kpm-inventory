@@ -1308,10 +1308,11 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             // never on add-to-cart, so a 15-line basket stays silent until it is paid.
             // Line is original writing; the old one was a direct Resident Evil 4 quote.
             const DEAL_LINES = [
-                "Deal's done. Good haul.",
-                "Stock's moving. I like that.",
-                "Clean trade. Next route?",
-                "Counted and paid. We're square.",
+                /* 2-3 words: his 2026-11-11 'the conversation when sales done is too long 2-3 words is enough' */
+                "Good deal!",
+                "Nice sale!",
+                "Deal done!",
+                "Well sold!",
             ];
             const line = DEAL_LINES[Math.floor(Math.random() * DEAL_LINES.length)];
             setMerchantMood("deal");

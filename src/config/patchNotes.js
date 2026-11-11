@@ -4,6 +4,7 @@
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
   { date: '2026-11-11', items: [
+    { kind: 'fixed', en: 'After a sale the capybara now says just 2-3 words, out loud and in his bubble.', id: 'Setelah penjualan, kapibara sekarang hanya mengucapkan 2-3 kata, baik suaranya maupun di gelembungnya.' },
     { kind: 'new', en: 'After a sale a gold coin now drops into the capybara\'s bag just before his thumbs-up.', id: 'Setelah penjualan, sebuah koin emas sekarang jatuh ke tas kapibara tepat sebelum dia mengacungkan jempol.' },
     { kind: 'new', en: 'After a sale the capybara now gives a moving thumbs-up: he raises his hand, holds it, and lowers it again, instead of standing still in one pose.', id: 'Setelah penjualan, kapibara sekarang mengacungkan jempol dengan gerakan: dia mengangkat tangan, menahannya, lalu menurunkannya lagi, bukan diam dalam satu pose.' },
     { kind: 'new', en: 'The capybara has a new voice and moves smoothly. He now says short, cheerful made-up phrases in four moods (happy, curious, pleased, and excited after a sale) instead of the old mumbling sounds, and the pictures of him standing and talking are smooth animations.', id: 'Kapibara punya suara baru dan gerakannya halus. Sekarang dia mengucapkan celoteh pendek yang ceria dalam empat suasana (senang, penasaran, puas, dan gembira setelah penjualan), bukan gumaman lama lagi, dan gambar saat dia berdiri dan berbicara sudah menjadi animasi yang halus.' },

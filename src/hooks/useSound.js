@@ -74,7 +74,7 @@ const SOURCES = {
    levelled to his message sound. How many phrases each mood has is below; the files are capy-<mood>-<n>.mp3. They
    replace the 61 baked syllables of 2026-10-11 - his *"annoying AF"*. Masters + cut script: A-Brain
    Raw/2026-11-10-sound-board/round4 (cut5.mjs voice). */
-export const CAPY_PHRASES = { happy: 6, curious: 6, approving: 7, excited: 6 };
+export const CAPY_PHRASES = { happy: 6, curious: 6, approving: 7, excited: 5 };
 const capyPhrase = (mood, i) => 'capy-' + mood + '-' + (i + 1);
 for (const [mood, n] of Object.entries(CAPY_PHRASES)) for (let i = 0; i < n; i++) SOURCES[capyPhrase(mood, i)] = '/sounds/' + capyPhrase(mood, i) + '.mp3';
 

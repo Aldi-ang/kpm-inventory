@@ -10983,6 +10983,11 @@ section('THE CAPYBARA\'S VOICE IS JETT, BY MOOD (2026-11-11) - his "annoying AF"
   const secs = have.map((f) => fs.statSync('public/sounds/' + f).size / 8000);
   ok(`every phrase is a whole phrase, ${Math.min(...secs).toFixed(1)} s to ${Math.max(...secs).toFixed(1)} s (never a lone grunt, never a speech)`, secs.length > 0 && secs.every((x) => x >= 0.9 && x <= 3.5));
   ok('each mood has 5+ phrases to choose from', moods.every((m) => u.CAPY_PHRASES[m] >= 5));
+  /* his 2026-11-11 "the conversation when sales done is too long 2-3 words is enough": the sale is short, voice and words */
+  const ex = have.filter((f) => f.startsWith('capy-excited-')).map((f) => fs.statSync('public/sounds/' + f).size / 8000);
+  const deal = (read('src/MerchantSalesView.jsx').match(/const DEAL_LINES = \[([^\]]*)\]/) || ['', ''])[1].match(/"[^"]+"/g) || [];
+  ok(`after a sale he says 2-3 words: every sale phrase is about 1.5 s or less (${ex.map((x) => x.toFixed(2)).join(' ')}) and every line is 2-3 words`,
+     ex.length >= 5 && ex.every((x) => x <= 1.7) && deal.length >= 3 && deal.every((l) => { const n = l.split(/\s+/).length; return n >= 2 && n <= 3; }), deal.join(' '));
   /* behaviour, RUN on a stub player that records which file played */
   const played = [];
   class A { constructor(src) { this.src = src; this.currentTime = 0; this.volume = 1; } play() { played.push(this.src); return Promise.resolve(); } pause() {} }
@@ -10990,7 +10995,7 @@ section('THE CAPYBARA\'S VOICE IS JETT, BY MOOD (2026-11-11) - his "annoying AF"
   u.__reset(); await u.unlockSounds({ AudioImpl: A, doc });
   const say = (t, o) => { played.length = 0; const n = u.speakMumble(t, { AudioImpl: A, doc, ...o }); return n + ' ' + played.join('|').replace(/\/sounds\/capy-|\.mp3/g, '').replace(/-\d+/g, ''); };
   ok('one line is ONE phrase file - no second sound to land late', say('Saved.', {}) === '1 happy', say('Saved.', {}));
-  const got = [say('Any new products to add?', { mood: 'approving' }), say("Deal's done. Good haul.", { mood: 'excited' }), say('Stock looks good today.', { mood: 'approving' }), say('Sector Configuration Saved!', {}), say('x', { mood: 'nope' })];
+  const got = [say('Any new products to add?', { mood: 'approving' }), say('Good deal!', { mood: 'excited' }), say('Stock looks good today.', { mood: 'approving' }), say('Sector Configuration Saved!', {}), say('x', { mood: 'nope' })];
   ok('the mood follows the moment: a question is curious, a sale excited, a tip approving, plain news happy',
      got.join(',') === '1 curious,1 excited,1 approving,1 happy,1 happy', got.join(','));
   const seq = []; for (let k = 0; k < 6; k++) { played.length = 0; u.speakMumble('Saved.', { AudioImpl: A, doc, pick: () => 0.5 }); seq.push(played[0]); }
