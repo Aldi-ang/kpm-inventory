@@ -792,7 +792,8 @@ html.lite-mode .kpm-coin.lg::before,   .kpm-coin.lg.still::before   { transform:
 /* ---------- WHY THE SCALE IS ON A WRAPPER AND NOT ON THE SPRITE ----------
    2026-08-13. The scale used to sit on the same element as the sheet. `transform` is ONE
    property: any animation that touches transform replaces it wholesale, and an animation wins
-   over a normal declaration. `.kpm-merch-deal` animates `transform` (the breath) — so in the
+   over a normal declaration. `.kpm-merch-deal` animated `transform` then (a CSS breath, until
+   the 2026-11-11 thumbs-up clip; the rule holds for any animation put on a sprite) — so in the
    deal pose the .64 was thrown away, the element rendered at its true 200px anchored to the
    screen corner, and his feet and his right side went off the edge. Exactly the cut this whole
    block was written to fix, back again for one state only.
@@ -825,18 +826,15 @@ html.lite-mode .kpm-coin.lg::before,   .kpm-coin.lg.still::before   { transform:
 /* loops while he is speaking */
 .kpm-merch-talk { background-image: url('/sprites/merchant-talk.webp'); }
 
-/* DEAL IS ONE POSE, NOT A SHEET. Every defect the multi-frame version had - a body
-   that drifted, a hat that vanished, a hand left floating from a bad split - was a
-   BETWEEN-frame failure. A single drawing has no frames to disagree with, so none of
-   them can occur. The motion comes from CSS instead: a slow breath, transform only,
-   which Lite Mode strips without leaving him mid-pose. 6 KB against 83 KB. */
-.kpm-merch-deal { background-image: url('/sprites/merchant-deal.png');
-  background-size: 200px 200px;
-  animation: kpmMerchBreathe 2.8s ease-in-out infinite; }
-@keyframes kpmMerchBreathe {
-  0%, 100% { transform: translateY(0)     scale(1); }
-  50%      { transform: translateY(-2.5px) scale(1.012); }
-}
+/* DEAL IS HIS THUMBS-UP CLIP (2026-11-11, his "i change the animation for the deal here i want u to use that":
+   deal-vaultboy.mp4, made in Flow from the talk clip's own start frame). It starts and ends on the standing pose that
+   idle and talk share, so he goes INTO it without a jump: he stands, has the thumbs-up raised by 1.25 s, holds it to
+   6.25 s and lowers it - 7.9 s in all. A picture that comes back on screen plays from its FIRST frame (seen in the
+   pane: shown 3 s, hidden 2 s, twice over, the third showing had the thumb up at +1.2 s - a clip that paused and
+   resumed would have been standing), so every sale starts the gesture from the top.
+   The one still it replaced (2026-08: one pose + a CSS breath, because the sheets of that time drifted between frames)
+   is Lite Mode's picture now. Nothing here animates transform any more. */
+.kpm-merch-deal { background-image: url('/sprites/merchant-deal.webp'); background-size: 200px 200px; }
 
 /* THE COIN HE IS HOLDING. Aldi's idea, and the cheapest one available: reuse the
    coin sprite the app already ships and precaches, floating beside his hand, instead
@@ -1013,7 +1011,7 @@ html.lite-mode .kpm-coin.lg::before,   .kpm-coin.lg.still::before   { transform:
    same signal now walks him off toward the arch first, instead of cutting him.
 
    ⚠️ The walk lives on this WRAPPER, never on `.fig` itself. `.kpm-merch-deal` animates
-   `transform` for its breath, and an animation replaces a static transform wholesale — the same
+   `transform` for its breath (until 2026-11-11), and an animation replaces a static transform wholesale — the same
    trap that put the corner mascot's feet off the screen (group 28). Wrapper owns the journey,
    the sprite owns its own motion. */
 /* ⚠️ THE WALK IS ANCHORED TO THE DOOR, not to a pixel distance. A fixed `translateX` made where
@@ -1066,36 +1064,33 @@ html.lite-mode .kpm-alcove .arch::after { animation: none !important; }
 
 .kpm-merch-hold { position: absolute; inset: 0; pointer-events: none; }
 .kpm-merch-hold::after {
-  /* Position measured, not eyeballed: the open palm's centre sits at 81% across and
-     46% down in the sprite, so the coin hovers just above it at 72,5% / 30%.
-     32px is the coin sheet's native frame size, so it renders 1:1 with no resampling. */
+  /* THE COIN BELONGS TO THE STILL PICTURE (2026-11-11). It was placed for the old deal drawing's open palm (centre at
+     81% across, 46% down, so the coin hovers at 72,5% / 30%). In the thumbs-up clip no palm is open, and that same
+     spot is his raised wrist - the coin covered it. So it is drawn only where the still is: Lite Mode and reduced
+     motion (below), holding its front face, frame 3 - the same frame the inline .kpm-coin holds, so money reads
+     identically everywhere in the app. 32px is the coin sheet's native frame size: 1:1, no resampling. */
   content: ""; position: absolute; left: 72.5%; top: 30%;
   width: 32px; height: 32px;
   background-image: url('/coin-sprite.png');
   background-size: 256px 32px;          /* 8 frames x 32px, native */
+  background-position: -96px 0;
   background-repeat: no-repeat;
   image-rendering: pixelated;
-  animation: kpmMerchCoin .8s steps(8, end) infinite,
-             kpmMerchCoinFloat 2.8s ease-in-out infinite;
+  display: none;
 }
-@keyframes kpmMerchCoin      { to { background-position: -256px 0; } }
-@keyframes kpmMerchCoinFloat { 0%,100% { translate: 0 0; } 50% { translate: 0 -4px; } }
-
-/* Lite Mode holds the coin's front face, frame 3 — the same frame the inline
-   .kpm-coin holds, so money reads identically everywhere in the app. */
-html.lite-mode .kpm-merch-hold::after { animation: none; background-position: -96px 0; }
+html.lite-mode .kpm-merch-hold::after { display: block; }
 @media (prefers-reduced-motion: reduce) {
-  .kpm-merch-hold::after { animation: none; background-position: -96px 0; }
+  .kpm-merch-hold::after { display: block; }
 }
 
 /* Lite Mode and reduced motion hold a still. Idle and talking both hold idle's first
    frame, the neutral pose (an animated picture cannot be paused by CSS - it is swapped
-   for a still one). Deal holds its one pose, without the breath. */
+   for a still one). Deal holds the old thumbs-up drawing, the coin over its palm. */
 html.lite-mode .kpm-merch-idle, html.lite-mode .kpm-merch-talk { background-image: url('/sprites/merchant-still.webp'); }
-html.lite-mode .kpm-merch-deal { animation: none; background-position: 0 0; }
+html.lite-mode .kpm-merch-deal { background-image: url('/sprites/merchant-deal.png'); }
 @media (prefers-reduced-motion: reduce) {
   .kpm-merch-idle, .kpm-merch-talk { background-image: url('/sprites/merchant-still.webp'); }
-  .kpm-merch-deal { animation: none; background-position: 0 0; }
+  .kpm-merch-deal { background-image: url('/sprites/merchant-deal.png'); }
 }
 
 /* ---- entrance and exit ------------------------------------------------------

@@ -1335,7 +1335,10 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             /* His line is deliberately NOT cleared here — the receipt is still open and is
                showing it. The alcove bubble keys off the mood, so it goes quiet on schedule
                either way. */
-            setTimeout(() => setMerchantMood("idle"), 3000);
+            /* 7.6 s, not 3: the thumbs-up clip (2026-11-11) is a gesture of that length - at 3 s he was cut off with
+               his thumb in the air, while his line (spoken from 1.7 s) was still playing. Now he lowers his hand and
+               is standing when idle takes over. */
+            setTimeout(() => setMerchantMood("idle"), 7600);
             setIsProcessingSale(false);
 
          

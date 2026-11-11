@@ -9788,7 +9788,7 @@ section('POTATO 1: THE MASCOT MOVES WITHOUT THE MAIN PROCESSOR (2026-10-01, smoo
       if (id === 'ANMF') frames++;
       o += 8 + size + (size & 1); }
     return { frames, loop, w, h, size: b.length }; };
-  const idle = webp('public/sprites/merchant-idle.webp'), talk = webp('public/sprites/merchant-talk.webp'), still = webp('public/sprites/merchant-still.webp');
+  const idle = webp('public/sprites/merchant-idle.webp'), talk = webp('public/sprites/merchant-talk.webp'), still = webp('public/sprites/merchant-still.webp'), deal = webp('public/sprites/merchant-deal.webp');
   const say = (c) => `${c.w}x${c.h}, ${c.frames} frames, loop ${c.loop}, ${Math.round(c.size / 1024)} KB`;
   ok('both clips are his 200px frame, loop for ever, and hold 12 frames a second for about 8 s (90-100 frames; the old sheets had 10 and 13)',
      [idle, talk].every((c) => c.w === 200 && c.h === 200 && c.loop === 0 && c.frames >= 90 && c.frames <= 100), `idle ${say(idle)} | talk ${say(talk)}`);
@@ -9799,6 +9799,20 @@ section('POTATO 1: THE MASCOT MOVES WITHOUT THE MAIN PROCESSOR (2026-10-01, smoo
      still.frames === 0 && still.w === 200 && still.h === 200 && still.size < 20000, `still ${say(still)}`);
   ok('the offline download carries the clips (sprites/*.webp) and the old sheets are gone',
      /'sprites\/\*\.webp'/.test(read('vite.config.js')) && !fs.existsSync('public/sprites/merchant-idle.png') && !fs.existsSync('public/sprites/merchant-talk.png'));
+  /* THE DEAL IS HIS THUMBS-UP CLIP (2026-11-11, his "i change the animation for the deal here i want u to use that") */
+  ok('the deal pose is a clip too: his 200px frame, loops for ever, 90-100 frames, under 600 KB, and no CSS animation on it (the breath is gone)',
+     /\.kpm-merch-deal \{ background-image: url\('\/sprites\/merchant-deal\.webp'\); background-size: 200px 200px; \}/.test(th) && !/kpmMerchBreathe/.test(th) &&
+     deal.w === 200 && deal.h === 200 && deal.loop === 0 && deal.frames >= 90 && deal.frames <= 100 && deal.size > 100000 && deal.size < 600000, `deal ${say(deal)}`);
+  ok('Lite Mode and reduced motion keep the old thumbs-up drawing for the deal',
+     /html\.lite-mode \.kpm-merch-deal \{ background-image: url\('\/sprites\/merchant-deal\.png'\); \}/.test(th) &&
+     /\n  \.kpm-merch-deal \{ background-image: url\('\/sprites\/merchant-deal\.png'\); \}/.test(th) && fs.existsSync('public/sprites/merchant-deal.png'));
+  /* the coin was placed over the old drawing's open palm; on the clip that spot is his raised wrist */
+  const hold = (th.match(/\.kpm-merch-hold::after \{[^}]*\}/) || [''])[0];
+  ok('the coin is drawn only where the still drawing is (Lite Mode, reduced motion) - never over the moving clip, where it covered his wrist',
+     /display: none;/.test(hold) && !/animation:/.test(hold) && /html\.lite-mode \.kpm-merch-hold::after \{ display: block; \}/.test(th) &&
+     /\n  \.kpm-merch-hold::after \{ display: block; \}/.test(th) && !/kpmMerchCoin/.test(th));
+  ok('he holds the deal for the whole gesture (7.6 s) - at 3 s he was cut off with his thumb in the air',
+     /setTimeout\(\(\) => setMerchantMood\("idle"\), 7600\);/.test(read('src/MerchantSalesView.jsx')));
 }
 
 /* ── POTATO 2: THE BIOHAZARD SIGN PULSES BY OPACITY, NOT FILL (2026-10-01) ───────────────────────────────────────────

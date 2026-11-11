@@ -1915,10 +1915,11 @@ check(G28, 'the sheet child fills the wrapper',
   /\.kpm-merch-corner > \.kpm-merch \{ position: absolute; inset: 0; \}/.test(themeCss),
   'without it the child is width:100% of a 200px box, which happens to work — until someone ' +
   'changes .kpm-merch, and then he is silently a different size');
-check(G28, 'the deal pose still breathes',
-  /\.kpm-merch-deal \{[^}]*animation: kpmMerchBreathe/s.test(themeCss),
-  'the wrapper exists so this animation can keep its own transform — if it went away, the ' +
-  'wrapper is pointless indirection');
+check(G28, 'the deal pose is his thumbs-up clip, and no sprite animates transform',
+  /\.kpm-merch-deal \{ background-image: url\('\/sprites\/merchant-deal\.webp'\); background-size: 200px 200px; \}/.test(themeCss) &&
+  !/kpmMerchBreathe/.test(themeCss) && !/\.kpm-merch-(idle|talk|deal)(::before)? \{[^}]*(animation|transform):/.test(themeCss),
+  'until 2026-11-11 the deal pose breathed by a transform animation, which is why the scale sits on a wrapper. ' +
+  'The clip moves by itself; a transform animation put back on the sprite would throw the wrapper\'s scale away again');
 
 /* ── 29. THE CAVE ─────────────────────────────────────────────────────────
    Aldi sent a pixel-art dungeon and asked for the alcove to look like it, "but darker", with the

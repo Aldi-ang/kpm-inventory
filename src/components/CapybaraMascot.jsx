@@ -341,7 +341,7 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
                        this box — see the note in theme.css. Without it the element is 128px wide
                        with a 200px frame painted into it, and he is sliced down his right side.
                        The sheet MUST stay on the inner div: a sheet that animates transform (the
-                       deal breath does) replaces the wrapper's scale if they share an element. */
+                       deal breath did, until 2026-11-11) replaces the wrapper's scale if they share an element. */
                     <div className="kpm-merch-corner">
                         <div className={`kpm-merch ${spriteToShow}`} role="img" aria-label="Merchant">
                             {/* the coin he is holding — the app's existing spinning coin sprite,
