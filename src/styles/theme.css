@@ -1083,6 +1083,37 @@ html.lite-mode .kpm-merch-hold::after { display: block; }
   .kpm-merch-hold::after { display: block; }
 }
 
+/* THE COIN THAT FALLS INTO HIS BAG (2026-11-11, his "new coin falling animation is better since the old coin animation
+   is not nyambung with this one"). One coin, drawn here in the clip's own style (flat gold, his dark brown outline - not
+   the pixel sprite), tossed in from the top left: it turns as it falls, lands in the bag on his hip at about 1 s and is
+   gone - the moment the clip has him pat the bag, a quarter second before the thumb is up. Once per sale: the element
+   exists only while he is in the deal pose, and the animation starts when it appears, as the clip does.
+   Numbers are in his 200px frame: it starts centred at (26, -4) and lands at (72, 128), the bag's mouth, measured on the
+   clip at 1.0 s. Across is steady and down speeds up - two animations, so the path is a toss and not a slide.
+   Only transform, translate, rotate and opacity move: the graphics chip does all of it. The sideways move is on
+   `translate` and the fall on `transform` ON PURPOSE: the browser applies translate, then rotate, then transform, so a
+   sideways move inside `transform` happens in the coin's turned space - turned half round, it went LEFT (seen in the
+   pane: 46px right came out 46px left). A turn about the upright axis leaves up and down alone, so the fall is safe there.
+   At rest it is invisible (opacity 0), so Lite Mode and reduced motion, which switch every animation off, show nothing. */
+.kpm-merch-hold::before {
+  content: ""; position: absolute; left: 16px; top: -14px;
+  width: 20px; height: 20px; box-sizing: border-box; border-radius: 50%;
+  border: 2px solid #3a2414;
+  background: radial-gradient(circle at 36% 32%, #fff2bd 0 15%, #f6c94c 16% 58%, #dd9f25 59%);
+  opacity: 0;
+  animation: kpmDealCoinAcross .5s linear .45s both,
+             kpmDealCoinDown .62s .45s both,
+             kpmDealCoinTurn .5s linear .45s both;
+}
+@keyframes kpmDealCoinAcross { to { translate: 46px 0; } }
+@keyframes kpmDealCoinDown {
+  0%   { transform: translateY(0) scale(1); opacity: 0; animation-timing-function: cubic-bezier(.5, 0, 1, .6); }
+  10%  { opacity: 1; }
+  81%  { transform: translateY(132px) scale(1); opacity: 1; animation-timing-function: ease-out; }
+  100% { transform: translateY(137px) scale(.3); opacity: 0; }
+}
+@keyframes kpmDealCoinTurn { to { rotate: y 540deg; } }
+
 /* Lite Mode and reduced motion hold a still. Idle and talking both hold idle's first
    frame, the neutral pose (an animated picture cannot be paused by CSS - it is swapped
    for a still one). Deal holds the old thumbs-up drawing, the coin over its palm. */

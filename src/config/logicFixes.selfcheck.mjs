@@ -9811,6 +9811,12 @@ section('POTATO 1: THE MASCOT MOVES WITHOUT THE MAIN PROCESSOR (2026-10-01, smoo
   ok('the coin is drawn only where the still drawing is (Lite Mode, reduced motion) - never over the moving clip, where it covered his wrist',
      /display: none;/.test(hold) && !/animation:/.test(hold) && /html\.lite-mode \.kpm-merch-hold::after \{ display: block; \}/.test(th) &&
      /\n  \.kpm-merch-hold::after \{ display: block; \}/.test(th) && !/kpmMerchCoin/.test(th));
+  /* his "new coin falling animation is better since the old coin animation is not nyambung with this one" (2026-11-11) */
+  const fall = (th.match(/\.kpm-merch-hold::before \{[^}]*\}/) || [''])[0];
+  ok('a coin falls into his bag once per sale: invisible at rest (so Lite Mode shows none), runs once (no infinite), moves only by graphics-chip properties, and the sideways move sits on translate (inside transform the turn flipped it left)',
+     /opacity: 0;/.test(fall) && /kpmDealCoinAcross/.test(fall) && /kpmDealCoinDown/.test(fall) && !/infinite/.test(fall) &&
+     /@keyframes kpmDealCoinAcross \{ to \{ translate: 46px 0; \} \}/.test(th) && /@keyframes kpmDealCoinTurn \{ to \{ rotate: y 540deg; \} \}/.test(th) &&
+     !/@keyframes kpmDealCoin\w+ \{[^@]*(left|top|width|height|margin):/.test(th));
   ok('he holds the deal for the whole gesture (7.6 s) - at 3 s he was cut off with his thumb in the air',
      /setTimeout\(\(\) => setMerchantMood\("idle"\), 7600\);/.test(read('src/MerchantSalesView.jsx')));
 }
