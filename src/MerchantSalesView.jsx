@@ -109,6 +109,19 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const [merchantLine, setMerchantLine] = useState("");   // what the alcove bubble shows
     const searchRef = useRef(null);
     const alcoveRef = useRef(null);
+    /* B, PC: the terminal is exactly as tall as the shell's scroll box, so the table scrolls inside itself and the
+       slip's total and save button are always in view (it used to grow with the page and push them under the fold).
+       Measured, not guessed: the box's height depends on the header, the demo bar and the window. */
+    const rootRef = useRef(null);
+    const [fitH, setFitH] = useState(null);
+    useEffect(() => {
+        const box = rootRef.current?.closest('.overflow-y-auto');
+        if (!box || typeof ResizeObserver === 'undefined') return undefined;
+        const fit = () => { const cs = getComputedStyle(box); setFitH(Math.round(box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom))); };
+        fit();
+        const ro = new ResizeObserver(fit); ro.observe(box);
+        return () => ro.disconnect();
+    }, []);
     // true once his alcove has scrolled out of view — see the travelling merchant below
     const [alcoveOut, setAlcoveOut] = useState(false);
     // he has to outlive alcoveOut by one animation, or he would vanish instead of leaving
@@ -582,12 +595,14 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     /* Unmounting the moment the cave returns would delete him mid-step. He is kept alive
        for the length of the leave animation instead, then removed. */
     useEffect(() => {
-        if (alcoveOut) { setFloatLeaving(false); setFloatShown(true); return; }
+        /* B, 2026-11-12: he steps out only while he has something to say (a deal, a line). Standing in the corner
+           the whole time the order is scrolled, he covered whatever was there - his "the capybara ... is blocking". */
+        if (alcoveOut && merchantMood !== 'idle') { setFloatLeaving(false); setFloatShown(true); return; }
         if (!floatShown) return;
         setFloatLeaving(true);
         const t = setTimeout(() => { setFloatShown(false); setFloatLeaving(false); }, 300);
         return () => clearTimeout(t);
-    }, [alcoveOut, floatShown]);
+    }, [alcoveOut, floatShown, merchantMood]);
 
     /* Tell the app-wide mascot to stand down while our corner figure is up, or both are on
        screen at once — it peeks on its own 90-210s timer, which is why the duplicate was
@@ -1949,7 +1964,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 controls a salesman uses most ended up furthest apart exactly when the basket
                 was biggest. The cap is a max-height, not a fixed one, so a basket of one line
                 does not leave a hole. */}
-            <div className="flex-1 min-h-0 max-h-[min(54vh,540px)] overflow-y-auto p-2 md:p-3 relative z-10 space-y-2 kpm-scroll bg-[color-mix(in_srgb,var(--duke-paper-2)_50%,transparent)]">
+            <div className="flex-1 min-h-0 max-h-[min(54vh,540px)] lg:max-h-none overflow-y-auto lg:overflow-visible px-3 md:px-4 relative z-10 kpm-scroll">
                 {cart.length === 0 ? (
                     <div className="text-center opacity-50 mt-8 font-bold uppercase text-xs md:text-sm">{tr('Manifest Empty')}</div>
                 ) : (
@@ -1959,19 +1974,26 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         const mergedTiers = new Set(allowedTiers.filter(t => t !== 'Grosir' || lockedTier === 'Grosir'));
                         if (lockedTier) mergedTiers.add(lockedTier);
                         return (
-                        <div key={idx} className={`kpm-row-in flex flex-col border-b-2 border-dashed border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)] p-3 md:p-4 mb-1 rounded border shadow-sm ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[var(--duke-paper-3)] border-[var(--duke-brass-edge-2)]' : 'bg-[var(--duke-paper-7)] border-[var(--duke-danger-edge)]') : 'bg-[var(--duke-paper)] border-[color-mix(in_srgb,var(--duke-edge-on-paper)_50%,transparent)]'}`}>
-                            <div className="flex justify-between items-start mb-2">
-                                <span className={`text-[10px] md:text-xs font-black w-40 leading-tight uppercase break-words whitespace-normal ${isReturMode ? (returType === 'EXCHANGE' ? 'text-[var(--duke-brass-ink-2)]' : 'text-red-900') : 'text-[var(--duke-ink-7)]'}`}>
+                        /* B, the shopping list (his 2026-11-12 "make the shopping list professional as well"): a ruled
+                           line, not a boxed card. Name, the line's money and a quiet remove on one row; the same four
+                           unit boxes, quantity, unit and price type under it. Only the look moved - every handler and
+                           the line's arithmetic are the ones that were here. */
+                        <div key={idx} className={`kpm-row-in flex flex-col py-3 border-b border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)] ${isReturMode ? (returType === 'EXCHANGE' ? 'px-2 rounded bg-[var(--duke-paper-3)]' : 'px-2 rounded bg-[var(--duke-paper-7)]') : ''}`}>
+                            <div className="flex items-start gap-2 mb-1">
+                                <span className={`flex-1 min-w-0 pt-1 text-[13px] font-black leading-tight uppercase break-words whitespace-normal ${isReturMode ? (returType === 'EXCHANGE' ? 'text-[var(--duke-brass-ink-2)]' : 'text-red-900') : 'text-[var(--duke-ink-7)]'}`}>
                                     {item.name} {isReturMode && (returType === 'EXCHANGE' ? '(TUKAR GANTI)' : '(BUYBACK)')}
                                     {item.isIouFulfillment && ' (FULFILLING IOU)'}
                                 </span>
-                                <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} className={`p-1 rounded ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[var(--duke-paper-4)] text-[var(--duke-brass-ink-2)] hover:text-red-700' : 'text-red-800 hover:text-red-600 bg-red-200') : 'text-red-800 bg-red-100 hover:text-red-600'}`}><X size={14}/></button>
+                                <span className="shrink-0 pt-1 text-[15px] font-black tabular-nums text-[var(--duke-on-plate)]">
+                                    {isReturMode && returType === 'BUYBACK' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}
+                                </span>
+                                <button onClick={() => setCart(c => c.filter(i => i.productId !== item.productId))} aria-label={`Remove ${item.name}`} className="kpm-press shrink-0 -mt-2 -mr-2 w-11 h-11 grid place-items-center rounded text-[var(--duke-ink-7)] opacity-60 hover:opacity-100 hover:text-[var(--duke-danger-ink-2)]"><X size={16}/></button>
                             </div>
                             {/* the four boxes: type what the customer said, in their words */}
                             {!item.isIouFulfillment && (
                                 <div className="flex items-center gap-1 flex-wrap mb-2">
                                     {['Karton', 'Bal', 'Slop', 'Bks'].map(u => (
-                                        <span key={u} className="flex items-center gap-0.5 lg:gap-1 border border-[var(--duke-edge-on-paper)] bg-[var(--duke-paper-8)] px-1 lg:px-1.5 py-0 lg:py-1 h-11 lg:h-auto rounded">
+                                        <span key={u} className="flex items-center gap-0.5 lg:gap-1 border border-[color-mix(in_srgb,var(--duke-edge-on-paper)_45%,transparent)] bg-[var(--duke-paper-8)] px-1 lg:px-1.5 py-0 lg:py-1 h-11 lg:h-auto rounded">
                                             <input
                                                 type="text"
                                                 inputMode="numeric"
@@ -1981,10 +2003,10 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                                 aria-label={`${item.name} ${u}`}
                                                 className="w-7 lg:w-8 h-11 lg:h-auto bg-transparent text-center text-[var(--duke-on-plate)] font-black text-base lg:text-sm outline-none"
                                             />
-                                            <em className="not-italic text-[10px] lg:text-[8px] font-black uppercase tracking-wide lg:tracking-widest text-[var(--duke-on-paper-dim)]">{u}</em>
+                                            <em className="not-italic text-[10px] font-black uppercase tracking-wide text-[var(--duke-on-paper-dim)]">{u}</em>
                                         </span>
                                     ))}
-                                    <span className="text-[10px] font-black font-mono text-[var(--duke-amber-on-paper)] ml-1">
+                                    <span className="text-[11px] font-black font-mono tabular-nums text-[var(--duke-ink-7)] ml-1">
                                         = {new Intl.NumberFormat('id-ID').format(item.qty || 0)} Bks
                                     </span>
                                     {/* The rates this line is actually using. Packing is per product and set in
@@ -2001,13 +2023,13 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     })()}
                                 </div>
                             )}
-                            <div className={`flex items-center gap-1 md:gap-2 p-1 rounded border ${isReturMode ? (returType === 'EXCHANGE' ? 'bg-[color-mix(in_srgb,var(--duke-paper-4)_60%,transparent)] border-[var(--duke-brass-edge-2)]' : 'bg-red-200/50 border-red-300') : 'bg-[var(--duke-paper-2)] border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)]'}`}>
+                            <div className="flex items-center gap-2">
                                 <input type="number" value={item.qty} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'qty', e.target.value === '' ? '' : parseInt(e.target.value))} onBlur={(e) => { if (!e.target.value || parseInt(e.target.value) < 1) updateCartItem(item.productId, 'qty', 1); }} className={`w-20 md:w-24 min-h-[44px] lg:min-h-0 bg-white border border-[var(--duke-edge-3)] text-center text-base md:text-sm font-bold tabular-nums outline-none focus:border-[var(--duke-amber-edge)] rounded p-1 text-[var(--duke-ink-7)] ${item.isIouFulfillment ? 'opacity-50' : ''}`} />
                                 {/* 🚀 Phase 8: unit + price-tier directly change how much money is charged —
                                     bumped to text-sm specifically, not just the general 11px pass, since
                                     these two decide the price, not just describe something. */}
-                                <select value={item.unit} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className={`bg-transparent min-h-[44px] lg:min-h-0 text-sm font-bold uppercase outline-none text-[var(--duke-ink-7)] border-r border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)] pr-1 md:pr-2 ${item.isIouFulfillment ? 'opacity-50' : ''}`}><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select>
-                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier || item.isIouFulfillment} className={`bg-transparent min-h-[44px] lg:min-h-0 text-sm font-bold uppercase outline-none text-[var(--duke-ink-7)] pl-1 ${lockedTier || item.isIouFulfillment ? 'opacity-50 cursor-not-allowed text-red-700' : ''}`}>
+                                <select value={item.unit} disabled={item.isIouFulfillment} onChange={(e) => updateCartItem(item.productId, 'unit', e.target.value)} className={`bg-transparent min-h-[44px] lg:min-h-0 text-sm font-bold uppercase outline-none text-[var(--duke-ink-7)] border border-[color-mix(in_srgb,var(--duke-edge-on-paper)_45%,transparent)] rounded px-2 lg:py-1 ${item.isIouFulfillment ? 'opacity-50' : ''}`}><option>Bks</option><option>Slop</option><option>Bal</option><option>Karton</option></select>
+                                <select value={item.priceTier} onChange={(e) => updateCartItem(item.productId, 'priceTier', e.target.value)} disabled={!!lockedTier || item.isIouFulfillment} className={`bg-transparent min-h-[44px] lg:min-h-0 text-sm font-bold uppercase outline-none text-[var(--duke-ink-7)] border border-[color-mix(in_srgb,var(--duke-edge-on-paper)_45%,transparent)] rounded px-2 lg:py-1 ${lockedTier || item.isIouFulfillment ? 'opacity-60 cursor-not-allowed' : ''}`}>
                                     {Array.from(mergedTiers).map(tier => ( <option key={tier} value={tier}>{tier}</option> ))}
                                 </select>
                             </div>
@@ -2063,10 +2085,6 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     )}
                                 </div>
                             )}
-
-                            <div className="text-right text-base md:text-lg font-black font-mono mt-2 text-[var(--duke-on-paper-dim)]">
-                                {isReturMode && returType === 'BUYBACK' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(item.calculatedPrice * item.qty)}
-                            </div>
                         </div>
                     )})
                 )}
@@ -2119,7 +2137,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     return (
         /* B, THE PRICE LIST (his pick 2026-11-11, "looks most professional"): one letter style (Rajdhani), flat ground,
            ruled lines. The frame, the hatch and the serif went with the game look (tag game-edition-v1). */
-        <div className="flex h-full w-full bg-[var(--duke-fill-ground)] text-[var(--duke-ink-1)] font-mono overflow-hidden relative">
+        <div ref={rootRef} style={fitH ? { '--term-h': `${fitH}px` } : undefined} className="flex h-full lg:h-[var(--term-h,100%)] w-full bg-[var(--duke-fill-ground)] text-[var(--duke-ink-1)] font-mono overflow-hidden relative">
 
             {/* Below lg this element IS the side panel: fixed to the left edge at full height, slid
                 off by its own width while shut (pullX follows a finger on the tab). At lg the
@@ -2144,37 +2162,6 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 {/* ponytail: on the demo build the DEMO bar and its mission line sit over the top 70 px of this phone
                     panel (the shell boxes the panel under them, so no z-index here lifts it) - hence pt-[70px] above,
                     demo only. A bar height owned by the shell is the real fix, when the shared top bar is redesigned. */}
-                <div ref={alcoveRef} className="kpm-alcove hidden lg:grid shrink-0">
-                    <div className="rock"></div>
-                    {/* the lit doorway he stands in front of — the only warm light in the cave,
-                        and what gives the figure a silhouette instead of a flat cut-out */}
-                    <div className="arch" aria-hidden="true"></div>
-                    <div className="kpm-torch l">
-                        <div className="pole"></div><div className="bowl"></div>
-                        {/* one sprite, 8 frames. The three stacked gradients it replaced could
-                            not make a pixel flame read as pixel art. */}
-                        <div className="kpm-flame"></div>
-                    </div>
-                    <div className="kpm-torch r">
-                        <div className="pole"></div><div className="bowl"></div>
-                        <div className="kpm-flame"></div>
-                    </div>
-                    <div className="cast"></div>
-                    <div className="floor"></div>
-                    {/* He walks out through the doorway when the cave scrolls away, and back in
-                        when it returns — the wrapper carries the journey so the deal-pose breath
-                        cannot cancel it, and his two shadows travel with him. */}
-                    <div className={`walker ${alcoveOut ? 'out' : ''}`}>
-                        {/* the two shadows are the SAME sprite, flattened - no extra download */}
-                        <div className={`fig sh a kpm-merch ${merchSprite}`}></div>
-                        <div className={`fig sh b kpm-merch ${merchSprite}`}></div>
-                        <div className={`fig kpm-merch ${merchSprite}`} aria-hidden="true">
-                            {merchantMood === 'deal' && <span className="kpm-merch-hold"></span>}
-                        </div>
-                    </div>
-                    <div className="dark" aria-hidden="true"></div>
-                    {merchantLine && merchantMood !== 'idle' && <p className="says" role="status">{merchantLine}</p>}
-                </div>
 
                 {renderCustomerBar()}
 
@@ -2221,6 +2208,42 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     scrolling sheet. overflow-hidden became overflow-y-auto for the same reason —
                     the paper has to be able to scroll now that it carries them. */}
                 <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
+                    {/* B, his 2026-11-12 "the capybara on the right is blocking the shopping panel": the room is the first
+                        thing in the slip's OWN scroll now. At rest he stands on top of the order as before; scroll the
+                        order and the whole panel is the order, with the total and the save button still in view. Not
+                        sticky any more (lg:!relative) - stuck, it kept 280 px of the panel for itself. His walk-out and
+                        his corner visit are the same observer as before. */}
+                    <div ref={alcoveRef} className="kpm-alcove hidden lg:grid shrink-0 lg:!relative">
+                        <div className="rock"></div>
+                        {/* the lit doorway he stands in front of — the only warm light in the cave,
+                            and what gives the figure a silhouette instead of a flat cut-out */}
+                        <div className="arch" aria-hidden="true"></div>
+                        <div className="kpm-torch l">
+                            <div className="pole"></div><div className="bowl"></div>
+                            {/* one sprite, 8 frames. The three stacked gradients it replaced could
+                                not make a pixel flame read as pixel art. */}
+                            <div className="kpm-flame"></div>
+                        </div>
+                        <div className="kpm-torch r">
+                            <div className="pole"></div><div className="bowl"></div>
+                            <div className="kpm-flame"></div>
+                        </div>
+                        <div className="cast"></div>
+                        <div className="floor"></div>
+                        {/* He walks out through the doorway when the cave scrolls away, and back in
+                            when it returns — the wrapper carries the journey so the deal-pose breath
+                            cannot cancel it, and his two shadows travel with him. */}
+                        <div className={`walker ${alcoveOut ? 'out' : ''}`}>
+                            {/* the two shadows are the SAME sprite, flattened - no extra download */}
+                            <div className={`fig sh a kpm-merch ${merchSprite}`}></div>
+                            <div className={`fig sh b kpm-merch ${merchSprite}`}></div>
+                            <div className={`fig kpm-merch ${merchSprite}`} aria-hidden="true">
+                                {merchantMood === 'deal' && <span className="kpm-merch-hold"></span>}
+                            </div>
+                        </div>
+                        <div className="dark" aria-hidden="true"></div>
+                        {merchantLine && merchantMood !== 'idle' && <p className="says" role="status">{merchantLine}</p>}
+                    </div>
                     {renderManifestUI()}
 
                     {/* Still the same sheet of paper — same parchment, same tokens. It scrolls
@@ -2270,12 +2293,6 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         />
                     </div>
 
-                    <div className="flex justify-between items-end mb-3 md:mb-4 border-b border-[var(--duke-edge-4)] pb-2 md:pb-3 font-mono">
-                        <span className="text-xs md:text-sm font-bold text-[var(--duke-ink-4)] uppercase tracking-widest">{tr('Total Value')}</span>
-                        <span className={`text-2xl md:text-3xl font-black leading-none tabular-nums ${isReturMode && returType === 'BUYBACK' ? 'text-[var(--duke-danger-ink-2)]' : 'text-[var(--duke-on-plate)]'}`}>
-                            {isReturMode && returType === 'BUYBACK' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}
-                        </span>
-                    </div>
                     
                     {hasInvalidDamagedItems && (
                         <div className="bg-red-900/40 border border-red-500 text-red-500 p-2 rounded mb-3 text-[10px] uppercase tracking-widest font-bold flex items-center justify-center gap-2">
@@ -2293,7 +2310,16 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
                 {/* THE PINNED BAR — the only thing that stays fixed on a phone now. Slimmer than
                     the old footer on purpose: this bar is height taken from the product list. */}
-                <div className="bg-[var(--duke-paper-2)] px-4 py-2 md:px-6 md:py-4 border-t border-[var(--duke-edge-on-paper)] flex flex-col shrink-0 z-20">
+                <div className="bg-[var(--duke-paper-2)] px-4 py-2 md:px-6 md:py-3 border-t border-[var(--duke-edge-on-paper)] flex flex-col gap-2 shrink-0 z-20">
+                    {/* B: the total sits with the button that commits it, in view at every width. (On the phone it
+                        scrolled with the paper while the slip shared the screen with the shelf; the slip is a full
+                        panel now, so the two things he looks at last are together.) */}
+                    <div className="flex justify-between items-baseline font-mono">
+                        <span className="text-xs md:text-sm font-bold text-[var(--duke-ink-7)] uppercase tracking-widest">{tr('Total Value')}</span>
+                        <span className={`text-2xl md:text-3xl font-black leading-none tabular-nums ${isReturMode && returType === 'BUYBACK' ? 'text-[var(--duke-danger-ink-2)]' : 'text-[var(--duke-on-plate)]'}`}>
+                            {isReturMode && returType === 'BUYBACK' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}
+                        </span>
+                    </div>
                     <button
                         data-mission="4"
                         /* what the demo mission's guide reads to know which press comes next: shop chosen (and its list
@@ -2305,7 +2331,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         data-retur={isReturMode ? '' : undefined}
                         onClick={handleFinalDeal}
                         disabled={!canSubmitSale || isProcessingSale}
-                        className="kpm-save-stamp"
+                        /* B: a dark plate with cream words, one letter style with the rest of the slip (it was the
+                           rubber stamp of 2026-11-03, the game look's serif). Not ready = a quiet outlined line. */
+                        className={`kpm-press w-full min-h-[52px] rounded-lg flex items-center justify-center gap-2 text-[15px] md:text-base font-black uppercase tracking-wide whitespace-nowrap transition-colors ${isReturMode ? 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]' : 'bg-[var(--duke-on-plate)] text-[var(--duke-paper)]'} disabled:bg-transparent disabled:text-[var(--duke-ink-7)] disabled:border disabled:border-[color-mix(in_srgb,var(--duke-edge-on-paper)_50%,transparent)] disabled:opacity-80`}
                     >
                         {isProcessingSale ? <span className="flex items-center gap-2 animate-pulse"><Zap size={20}/> {tr('PROCESSING...')}</span> :
                          gpsStatus === 'checking' ? tr('Awaiting GPS...') :
@@ -2403,7 +2431,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
             {/* Always mounted now. It used to be hidden whenever the Merchant tab was open,
                 which is the ~2n tab switches per sale this phase exists to remove. No bottom
                 padding since 2026-10-31: the manifest left the bottom of the phone for the side. */}
-            <div className="hide-on-print flex-1 flex flex-col h-full lg:h-auto bg-[var(--duke-fill-deep)] overflow-hidden">
+            <div className="hide-on-print flex-1 min-w-0 flex flex-col h-full bg-[var(--duke-fill-deep)] overflow-hidden">
                 {/* WHICH STOCK AM I SELLING FROM — the boss's only. This used to be a bar in the
                     app shell above the whole terminal, where the manifest drawer painted over it
                     (his G5 report, twice). It is a row of this column now because this column is
@@ -2698,7 +2726,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     panel unreachable — you cannot walk to a thing that disappears when you set
                     off towards it. Press the picture again, or another, to change it. */}
                 <div className="flex-1 min-h-0 flex overflow-hidden">
-                <div data-guide="products" className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-3 pb-[76px] lg:px-0 lg:pb-0 lg:mx-4 lg:mt-3 lg:mb-4 lg:self-start lg:rounded-lg lg:border lg:border-[var(--duke-edge-1)] flex flex-col scrollbar-hide bg-[var(--duke-fill-ground)] relative scroll-smooth" ref={scrollContainerRef}>
+                <div data-guide="products" className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-3 pb-[76px] lg:px-0 lg:pb-0 lg:mx-4 lg:mt-3 lg:mb-4 lg:self-start lg:max-h-[calc(100%-28px)] lg:rounded-lg lg:border lg:border-[var(--duke-edge-1)] flex flex-col scrollbar-hide bg-[var(--duke-fill-ground)] relative scroll-smooth" ref={scrollContainerRef}>
                     {/* B, PC: the table's head. The same six columns as the rows under it (one grid template, twice). */}
                     <div className="hidden lg:grid sticky top-0 z-20 shrink-0 grid-cols-[44px_minmax(0,1fr)_110px_170px_110px_132px] gap-x-4 px-4 py-2.5 border-b border-[var(--duke-edge-1)] bg-[var(--duke-fill-ground)] text-[12px] text-[var(--duke-ink-5)]">
                         <span></span>
@@ -2862,7 +2890,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 says, so he was painted behind the wares grid that follows him in the DOM. A
                 fixed element only escapes if no ancestor has boxed it in. */}
             {floatShown && (
-                <div className={`kpm-merch-float hide-on-print hidden lg:block ${floatLeaving ? 'leaving' : ''}`}>
+                /* B: the slip is on the right now, so his corner is the bottom LEFT - at the right he stood on the
+                   total and the save button (his 2026-11-12 "the capybara on the right is blocking the shopping panel") */
+                <div className={`kpm-merch-float hide-on-print hidden lg:block lg:!right-auto lg:!left-6 ${floatLeaving ? 'leaving' : ''}`}>
                     {merchantLine && merchantMood !== 'idle' && (
                         <p className="bubble" role="status">{merchantLine}</p>
                     )}

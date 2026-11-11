@@ -7234,7 +7234,8 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /<Search size=\{16\} className="absolute left-3 top-1\/2 -translate-y-1\/2/.test(m),
      'the search icon sat at top-2.5 for a 35 px box; at 44 it is centred at 14');
   ok('REGRESSION: the cart-line unit labels are no longer 8 px, and the four boxes are 44 tall',
-     /<em className="not-italic text-\[10px\] lg:text-\[8px\] font-black uppercase tracking-wide lg:tracking-widest/.test(m) &&
+     /* 10 px at both widths since 2026-11-12 (the desk's 8 px went with the boxed card) */
+     /<em className="not-italic text-\[10px\] font-black uppercase tracking-wide text-/.test(m) && !/not-italic text-\[10px\] lg:text-\[8px\]/.test(m) &&
      !/not-italic text-\[8px\] font-black/.test(m) &&
      /px-1 lg:px-1\.5 py-0 lg:py-1 h-11 lg:h-auto rounded">/.test(m) &&
      /className="w-7 lg:w-8 h-11 lg:h-auto bg-transparent text-center/.test(m),
@@ -11625,8 +11626,22 @@ section('Sales Terminal, direction B - the price list (his pick 2026-11-11: "B l
      /\{flag \? `\$\{tr\('Added ·'\)\} \$\{flag\.name\}`/.test(msv));
   ok('the slip is flat cream with dark ink - no paper texture class is left on it, and the lit Sale side is a dark plate',
      !/kpm-parchment/.test(msv) && /!isReturMode \? 'bg-\[var\(--duke-on-plate\)\] text-\[var\(--duke-paper\)\]'/.test(msv));
-  ok('the capybara and his room are untouched: the alcove, its walker and the float are still rendered',
-     /<div ref=\{alcoveRef\} className="kpm-alcove hidden lg:grid shrink-0">/.test(msv) && /kpm-merch-float hide-on-print hidden lg:block/.test(msv));
+  ok('the capybara keeps his room, his walker and his corner visit (the room, the walker and the float are still rendered)',
+     /<div ref=\{alcoveRef\} className="kpm-alcove hidden lg:grid shrink-0 lg:!relative">/.test(msv) && /<div className=\{`walker \$\{alcoveOut \? 'out' : ''\}`\}>/.test(msv) && /kpm-merch-float hide-on-print hidden lg:block/.test(msv));
+  /* his 2026-11-12: "dont forget the capybara on the right is blocking the shopping panel" */
+  ok('REGRESSION: the room does not hold the panel: it scrolls with the order (first child of the slip scroll, not sticky), and he steps out only while he has something to say, in the LEFT corner',
+     /* [^<]* = the note that sits between them (code() leaves its braces) */
+     /<div className="flex-1 min-h-0 overflow-y-auto flex flex-col">[^<]*<div ref=\{alcoveRef\}/.test(msv) &&
+     /if \(alcoveOut && merchantMood !== 'idle'\) \{ setFloatLeaving\(false\); setFloatShown\(true\); return; \}/.test(msv) && /\}, \[alcoveOut, floatShown, merchantMood\]\);/.test(msv) &&
+     /kpm-merch-float hide-on-print hidden lg:block lg:!right-auto lg:!left-6/.test(msv));
+  ok('PC: the terminal is as tall as the shell scroll box (measured), so the table scrolls inside itself and the total + save stay in view',
+     /const box = rootRef\.current\?\.closest\('\.overflow-y-auto'\);/.test(msv) && /lg:h-\[var\(--term-h,100%\)\]/.test(msv) && !/h-full lg:h-auto/.test(msv));
+  { const raw = read('src/MerchantSalesView.jsx').replace(/\r/g, ''); const at = raw.indexOf("{tr('Total Value')}"), save = raw.indexOf('data-mission="4"');
+    ok('the total sits with the save button, in the pinned bar, once', (raw.match(/\{tr\('Total Value'\)\}/g) || []).length === 1 && at > 0 && save > at && save - at < 900 &&
+       (raw.match(/format\(cartTotal\)/g) || []).length === 3); }
+  ok('the shopping list is ruled lines, not boxed cards, and the line money is still price x quantity, shown once per line',
+     /className=\{`kpm-row-in flex flex-col py-3 border-b border-\[color-mix/.test(msv) && !/kpm-row-in flex flex-col border-b-2 border-dashed/.test(msv) &&
+     (msv.match(/format\(item\.calculatedPrice \* item\.qty\)/g) || []).length === 1);
 }
 
 section('Sales terminal card: the count is back, the price follows the shop (his 2026-10-20, pick B)');
@@ -13114,8 +13129,13 @@ section('The save button belongs to the paper');
   const t = read('src/styles/theme.css').replace(/\r/g, ''), ms = read('src/MerchantSalesView.jsx').replace(/\r/g, '');
   const at = ms.indexOf('data-mission="4"'), end = ms.indexOf('</button>', at);
   const btn = at > 0 && end > at ? ms.slice(at, end) : '';
-  ok('REGRESSION: the save button is the stamp, with no fill, shadow or big spaced letters of its own, in any state',
-     btn.includes('className="kpm-save-stamp"') && !/bg-gradient|bg-\[|shadow-|text-2xl|tracking-\[|from-\[/.test(btn));
+  /* 2026-11-12, his "make the shopping list professional as well": the rubber stamp (his 2026-11-04 pick B, the game
+     look's serif) became a dark plate with cream words - one letter style on the slip. What the old check guarded
+     still holds: no gradient, no shadow, no amber, no big spaced letters, and a not-ready state that is quiet. */
+  ok('REGRESSION: the save button is one dark plate with cream words (the danger plate in retur), never a gradient, a shadow or an amber fill; not ready is a quiet outlined line',
+     btn.includes("'bg-[var(--duke-on-plate)] text-[var(--duke-paper)]'") && btn.includes("isReturMode ? 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]'") &&
+     btn.includes('disabled:bg-transparent disabled:text-[var(--duke-ink-7)] disabled:border') && btn.includes('min-h-[52px]') &&
+     !/kpm-save-stamp|bg-gradient|shadow-|text-2xl|tracking-\[|from-\[|duke-amber|duke-brass/.test(btn));
   ok('REGRESSION: a label beside an icon keeps its words in a span, or the icon-only 44 px rule (src/index.css) beats the stamp height',
      btn.length > 0 && !/<><(Lock|Camera|AlertTriangle|AlertCircle|Zap)[^>]*\/> \{/.test(btn) && btn.includes('<Zap fill="currentColor"'));
   ok('REGRESSION: the stamp stays on one line in a double ink line, on no fill, and Retur and not-ready each keep their own ink',
