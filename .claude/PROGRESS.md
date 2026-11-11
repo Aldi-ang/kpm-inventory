@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-11 06:07 WIB, PC clock (🟠 KPM - deal clip encoded, NOT wired: stopped at the usage limit)**
+**Updated: 2026-11-11 10:33 WIB, PC clock (🟢 KPM - capybara: voice, idle, talk and his thumbs-up deal clip all live; one question open: the coin)**
+
+## 🟢 2026-11-11 10:33 WIB — KPM: his "i change the animation for the deal here i want u to use that" - the thumbs-up clip (deal-vaultboy) is LIVE after a sale; pushed 7990d52
+Full story: 7990d52's message · next: NEXT-SESSION top.
+WAITING ON ALDI: ✅ TEST a sale on the phone (version 7990d52): cha-ching, he raises a thumbs-up, says an excited phrase, lowers his hand. 🔴 DECIDE: the coin - leave it off the moving clip (now), or put it above his thumb. Antigravity asked him whether to start the 38-findings audit: yes.
 
 ## 🟠 2026-11-11 06:07 WIB — KPM: his "done" - both deal clips are good (deal-3 picked); encoded to public/sprites/merchant-deal.webp (untracked), NOT wired yet - usage limit reached
 Next: NEXT-SESSION top (the one job: wire the deal clip).
