@@ -1290,14 +1290,17 @@ function ShellLab() {
         <CustomerManagement
           customers={LAB_CUSTOMERS.map((c) => ({ ...c, region: 'BANDUNG', city: 'Bandung', tier: 'Bronze', phone: '0812-3456-7890', visitFreq: 7,
             /* &grosirask - a salesman asked Grosir for Kios Maju Mundur and it waits (P3, 2026-10-21): the boss sees the list */
-            ...(q.has('grosirask') && c.id === 'c-maju' ? { requestedTier: 'Grosir', nooAgentName: 'Budi Santoso' } : {}) }))}
+            ...(q.has('grosirask') && c.id === 'c-maju' ? { requestedTier: 'Grosir', nooAgentName: 'Budi Santoso' } : {}),
+            /* &ownerask - stage C: every shop but Kios Maju Mundur has a salesman, so Maju alone waits for one */
+            ...(q.has('ownerask') && c.id !== 'c-maju' ? { assignedAgent: 'Budi Santoso' } : {}) }))}
+          roster={['Adi Nugroho', 'Budi Santoso', 'Lab Salesman']}
           db={{}} appId="lab"
           user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com', location: 'BANDUNG' }}
           logAudit={() => {}} triggerCapy={() => {}}
           /* &admin — the boss's header: Find Duplicates / Data Scrub / Import Map Marker sit
              beside the title in one non-wrapping row (his "customer page moves sideways",
              2026-09-18 — invisible to the T5 mount, which never shows them) */
-          isAdmin={q.has('admin')} userRole={q.has('admin') ? 'ADMIN' : 'FIELD_OPERATIVE'} employeeRegion="BANDUNG"
+          isAdmin={q.has('admin')} userRole={q.has('admin') ? 'ADMIN' : q.has('t4') ? 'FLEET_CAPTAIN' : 'FIELD_OPERATIVE'} employeeRegion="BANDUNG"
           tierSettings={[
             { id: 'Mythic', label: 'Mythic', color: '#f59e0b', iconType: 'emoji', value: '👑' },
             { id: 'Bronze', label: 'Bronze', color: '#d97706', iconType: 'emoji', value: '🛡️' },

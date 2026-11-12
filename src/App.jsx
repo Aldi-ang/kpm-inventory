@@ -23,7 +23,7 @@ import { injectDynamicPermissions, hasClearance, canOpenTab, handoffEligibility,
 import { POV_OWNER_EMAIL, previewIdentity, testAccountDoc, testAccountName, canUsePovSwitch, testAccountFor } from './config/povPreview';
 import { tr } from './config/lang';
 import { warehouseList, vanUsesBranch, moveWithGoodsMessage } from './utils/supply';
-import { accessFor } from './utils/customerAccess.js';
+import { accessFor, canConfirmGrosir, ASK_NOTICE_TYPES } from './utils/customerAccess.js';
 import { tallySaleOp, statsPath } from './utils/salesRollupWrite';
 import { syncOfflineSale, canvasWithPending } from './utils/vanSync';
 import { promoWithPending, offerWrites } from './utils/vanBay';
@@ -709,7 +709,9 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   const combinedNotifications = useMemo(() => {
       // 🚀 THE FIX: Filter the real systemNotifs instead of the broken 'notifications' variable
       const myDbNotifs = systemNotifs.filter(n => {
-          if (userRole === 'ADMIN') return n.agentId === 'ADMIN' || !n.agentId; 
+          if (userRole === 'ADMIN') return n.agentId === 'ADMIN' || !n.agentId;
+          /* a Grosir request or a new shop is tier 1-4's to decide, so their bell rings too (package rules stage C) */
+          if (n.agentId === 'ADMIN' && ASK_NOTICE_TYPES.includes(n.type) && canConfirmGrosir(userRole)) return true;
           return n.agentId === agentProfileId;
       });
       return [...myDbNotifs, ...logisticsNotifs];
@@ -5583,6 +5585,7 @@ const handleGitHubMirror = async () => {
                   employeeRegion={user?.location || (agentProfileId ? motorists.find(m => m.id === agentProfileId)?.location : '')}
                   customerScope={customerScope}
                   tierSettings={tierSettings}
+                  roster={motorists.map(m => String(m.name || '')).filter(Boolean).sort()}
                   onNavigateToMap={() => setActiveTab('map_war_room')}
                   onRequestCrop={(file) => {
                       const reader = new FileReader();

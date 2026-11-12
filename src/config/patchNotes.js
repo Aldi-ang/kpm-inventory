@@ -3,6 +3,9 @@
    Every finished job that changes what people see adds a line here before its push (CLAUDE.md, Publishing).
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
+  { date: '2026-11-13', items: [
+    { kind: 'new', en: 'Customer Directory: tier 1 to 4 now see a list of shops that have no salesman yet. Choose a salesman and press Give, and the shop\'s packages open for that salesman at once. When a salesman registers a new shop, tier 1 to 4 get a bell message. Grosir requests now reach tier 4\'s bell too.', id: 'Daftar Pelanggan: tier 1 sampai 4 sekarang melihat daftar toko yang belum punya sales. Pilih sales lalu tekan Give, dan paket toko itu langsung terbuka untuk sales tersebut. Saat sales mendaftarkan toko baru, tier 1 sampai 4 mendapat pesan di lonceng. Permintaan Grosir sekarang juga sampai ke lonceng tier 4.' },
+  ] },
   { date: '2026-11-12', items: [
     { kind: 'fixed', en: 'Journey Plan: only tier 1 to 4 can change which salesman a shop belongs to, the same as the paintbrush. Tier 5 and 6 still see their route and can still move a shop\'s pin.', id: 'Rencana Perjalanan: hanya tier 1 sampai 4 yang bisa mengubah sales pemilik sebuah toko, sama seperti kuas cat. Tier 5 dan 6 tetap melihat rute mereka dan tetap bisa memindahkan titik lokasi toko.' },
     { kind: 'new', en: 'Tier 1, 2 and 3 can now sell a package to a shop that belongs to another salesman. Other tiers still sell packages only to their own shops. A shop with no salesman yet still waits for one. This can be changed in the permission settings.', id: 'Tier 1, 2, dan 3 sekarang bisa menjual paket ke toko milik sales lain. Tier lain tetap hanya bisa menjual paket ke toko mereka sendiri. Toko yang belum punya sales tetap menunggu sampai ada sales yang ditugaskan. Ini bisa diubah di pengaturan izin.' },

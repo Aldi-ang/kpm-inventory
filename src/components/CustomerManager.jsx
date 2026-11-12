@@ -6,7 +6,7 @@ import { commitInChunks } from '../utils/helpers';
 import { waNumber } from '../utils/whatsapp.js';
 import { findDuplicates, createdMillis, groupKey } from '../utils/findDuplicates';
 import { getCustomerAccessLevel } from '../config/permissions';
-import { canEditShop, canConfirmGrosir, priceLevelOf, grosirRequestNotice } from '../utils/customerAccess.js';
+import { canEditShop, canConfirmGrosir, priceLevelOf, grosirRequestNotice, hasNoSalesman, newShopNotice } from '../utils/customerAccess.js';
 
 // 🚀 GEOSPATIAL MATH ENGINE: the CRM Directory reads Map Borders through ../utils/areaFromPin.js (shared with the
 // Sales Terminal's new-outlet form since 2026-10-20, so both file a shop under the same area)
@@ -187,7 +187,7 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
 };          
 
 // --- UPGRADED: CUSTOMER MANAGEMENT ---
-export const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, userRole, employeeRegion, customerScope = null, tierSettings, onRequestCrop, croppedImage, onClearCroppedImage, onNavigateToMap }) => {
+export const CustomerManagement = ({ customers, db, appId, user, logAudit, triggerCapy, isAdmin, userRole, employeeRegion, customerScope = null, tierSettings, onRequestCrop, croppedImage, onClearCroppedImage, onNavigateToMap, roster = [] }) => {
     const [viewMode, setViewMode] = useState('list');
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     /* PHONE: the registration form is folded behind one button until he wants it. His YES
@@ -243,6 +243,27 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
             triggerCapy(yes ? `${c.name} sells at Grosir from its next sale.` : `${c.name} stays at ${now}.`);
         } catch (err) {
             notify(`The Grosir decision for ${c.name} was NOT saved: ${err?.code === 'permission-denied' ? 'your access to this shop is view only - ask Tier 1' : err?.message}`);
+        }
+    };
+    /* PACKAGE RULES STAGE C (his 2026-11-12 "regional manager tier 4 as default who are responsible for that confirming the new
+       customer, but higher tier inside that team can also see that"): the shops with no salesman that THIS person may edit
+       (his region / his folders - the rules' own line), newest first. Same people as Grosir: tier 1-4 or the boss's unlock.
+       The name written is picked from the roster, never typed: the terminal matches assignedAgent exactly (stage A). */
+    const ownerAsks = useMemo(() => grantsGrosir ? (customers || []).filter(c => hasNoSalesman(c) && canEditCustomer(c))
+        .sort((a, b) => createdMillis(b) - createdMillis(a)) : [], [customers, grantsGrosir, customerScope, customerAccessLevel, employeeRegion, isAdmin]);
+    const [ownerPick, setOwnerPick] = useState({});
+    const [ownerAll, setOwnerAll] = useState(false);
+    const giveSalesman = async (c) => {
+        const name = ownerPick[c.id];
+        if (!name) return notify(`Choose a salesman for ${c.name} first.`);
+        if (!await confirmAction(`Give ${c.name} to ${name}? From now on it is ${name}'s shop, and its packages open for ${name}.`)) return;
+        const who = user.displayName || user.email?.split('@')[0] || 'Admin';
+        try {
+            await updateDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', c.id), { assignedAgent: name, assignedBy: who, assignedAt: serverTimestamp() });
+            logAudit('AGENT_ASSIGNED', `${who} gave ${c.name} to ${name}`);
+            triggerCapy(`${c.name} is ${name}'s shop now - its packages open for ${name}.`);
+        } catch (err) {
+            notify(`${c.name} was NOT given to ${name}: ${err?.code === 'permission-denied' ? 'this shop is outside what you may edit - ask Tier 1' : err?.message}`);
         }
     };
 
@@ -1049,6 +1070,9 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                bell says so instead of reading as a failed save */
             if (newAsk) await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/notifications`), { ...grosirRequestNotice(agentName, formData.name), timestamp: serverTimestamp() })
                 .catch(() => notify(`${formData.name} is saved, but the admin's bell could not be rung. Tell your admin to look at Grosir requests.`));
+            /* a new shop from someone who cannot give it a salesman: tier 1-4's bell (stage C) - it gets no package until then */
+            if (!editingId && !grantsGrosir) await addDoc(collection(db, `artifacts/${appId}/users/${user.uid}/notifications`), { ...newShopNotice(agentName, formData.name), timestamp: serverTimestamp() })
+                .catch(() => notify(`${formData.name} is saved, but tier 4's bell could not be rung. Tell your regional admin it needs a salesman.`));
             setFormData({ name: '', phone: '', province: '', region: '', city: '', address: '', gmapsUrl: '', embedHtml: '', latitude: '', longitude: '', storeImage: '', tier: 'Silver', priceTier: 'Retail', visitFreq: 7, lastVisit: '', picName: '', description: '', mapFolder: '' });
             setCoordInput("");
             /* saved: the panel closes so the directory he just added to is in view */
@@ -1577,6 +1601,34 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                             </div>
                         </div>
                     ))}
+                </section>
+            )}
+
+            {/* 🏪 SHOPS WAITING FOR A SALESMAN (package rules stage C) - a shop with no salesman gets no package */}
+            {grantsGrosir && ownerAsks.length > 0 && (
+                <section aria-label="Shops waiting for a salesman" className="mb-6 rounded-xl border border-[var(--accent-edge)] bg-[var(--raised)] overflow-hidden">
+                    <h4 className="px-3 lg:px-4 py-2 bg-[var(--inset)] border-b border-[var(--line-3)] text-[11px] lg:text-[10px] uppercase tracking-widest font-bold text-[var(--accent-ink)]">Shops waiting for a salesman · {ownerAsks.length} · no package until they have one</h4>
+                    {(ownerAll ? ownerAsks : ownerAsks.slice(0, 8)).map(c => (
+                        <div key={c.id} className="flex flex-wrap items-center gap-2 px-3 lg:px-4 py-2.5 border-b border-[var(--line-2)] last:border-b-0">
+                            <div className="min-w-0 flex-1 basis-48">
+                                <p className="text-[15px] leading-5 font-bold text-[var(--ink)] truncate">{c.name}</p>
+                                <p className="text-[11px] text-[var(--ink-dim)] lg:truncate">{[c.city, c.region].filter(Boolean).join(' · ') || 'No area yet'} · added by {c.nooAgentName || c.mappedBy || 'a salesman'}{c.requestedTier === 'Grosir' ? ' · its Grosir is a separate request above' : ''}</p>
+                            </div>
+                            <div className="flex gap-2 shrink-0 w-full sm:w-auto">
+                                <select aria-label={`Salesman for ${c.name}`} value={ownerPick[c.id] || ''} onChange={e => setOwnerPick(p => ({ ...p, [c.id]: e.target.value }))}
+                                    className="flex-1 sm:flex-none sm:w-44 min-h-[44px] lg:min-h-0 px-2 text-sm rounded border border-[var(--line)] bg-[var(--raised)] text-[var(--ink)] font-bold outline-none">
+                                    <option value="">{roster.length ? 'Choose salesman' : 'No salesmen on the roster'}</option>
+                                    {roster.map(n => <option key={n} value={n}>{n}</option>)}
+                                </select>
+                                <button onClick={() => giveSalesman(c)} disabled={!ownerPick[c.id]} className="kpm-btn key rounded min-h-[44px] lg:min-h-0 disabled:opacity-50"><span>Give</span></button>
+                            </div>
+                        </div>
+                    ))}
+                    {ownerAsks.length > 8 && (
+                        <button onClick={() => setOwnerAll(v => !v)} className="w-full px-3 py-2.5 min-h-[44px] lg:min-h-0 text-[12px] font-bold text-[var(--accent-ink)] hover:bg-[var(--inset)]">
+                            {ownerAll ? 'Show fewer' : `Show all ${ownerAsks.length}`}
+                        </button>
+                    )}
                 </section>
             )}
 

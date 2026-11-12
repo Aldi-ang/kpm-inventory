@@ -114,3 +114,15 @@ export const grosirRequestNotice = (who, shopName) => ({
     message: `${who} asked for Grosir on ${shopName}. It sells at Retail until an admin confirms it in Customer Directory.`,
     type: 'GROSIR_REQUEST', isRead: false, agentId: 'ADMIN', linkToTab: 'customers',
 });
+/* PACKAGE RULES STAGE C (his 2026-11-12): a shop with no salesman gets no package, and the regional admin (tier 4) - or a
+   higher tier who sees that region - gives it one. The same "nobody" the terminal reads (MerchantSalesView `unowned`). */
+export const hasNoSalesman = (c) => { const a = String(c?.assignedAgent || '').trim(); return !a || a.toLowerCase() === 'unassigned'; };
+/* the bell line when a salesman registers a shop: it waits for a salesman, so no package opens for it yet */
+export const newShopNotice = (who, shopName) => ({
+    title: '🏪 New shop needs a salesman',
+    message: `${who} registered ${shopName}. It gets no package until it has a salesman: give it one in Customer Directory.`,
+    type: 'NEW_SHOP', isRead: false, agentId: 'ADMIN', linkToTab: 'customers',
+});
+/* the 'ADMIN' bell lines tier 1-4 also get (before this only the boss's account read them, so a tier 4 who confirms Grosir
+   never heard a Grosir request) */
+export const ASK_NOTICE_TYPES = ['GROSIR_REQUEST', 'NEW_SHOP'];

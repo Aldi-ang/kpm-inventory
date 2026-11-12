@@ -13867,5 +13867,23 @@ section('THE SALE SOUND (his 2026-11-10 "too loud and long" -> his cha-ching, pi
   ok('the sale screen plays it, and the old sign sound is gone everywhere', /playSound\('saleDone'\)/.test(sale) && !/playSound\('sign'\)/.test(sale) &&
      !/\bsign:\s/.test(snd) && !fs.existsSync('public/sounds/sign.mp3'));
 }
+section('PACKAGE RULES STAGE C (his 2026-11-12 "regional manager tier 4 ... confirming the new customer"): shops waiting for a salesman');
+{
+  const ca = await import('../utils/customerAccess.js');
+  const shops = [{ assignedAgent: 'Budi Santoso' }, { assignedAgent: 'Unassigned' }, { assignedAgent: '  unassigned ' }, { assignedAgent: '' }, {}, { assignedAgent: 'Adi' }];
+  ok('"no salesman" = empty, missing or Unassigned in any case (the terminal\'s own "unowned"); a named shop is not waiting',
+     JSON.stringify(shops.map(ca.hasNoSalesman)) === '[false,true,true,true,true,false]');
+  ok('tier 1-4 hear the new-shop and Grosir bells; tier 5-6 do not',
+     ['ADMIN', 'COMPANY_OWNER', 'AREA_ADMIN', 'FLEET_CAPTAIN'].every(ca.canConfirmGrosir) && !['FIELD_OPERATIVE', 'ROOKIE'].some(ca.canConfirmGrosir) &&
+     ca.ASK_NOTICE_TYPES.includes(ca.newShopNotice('Andi', 'Toko X').type) && ca.newShopNotice('Andi', 'Toko X').agentId === 'ADMIN');
+  const cm = code(read('src/components/CustomerManager.jsx')).replace(/\r/g, ''), app = code(read('src/App.jsx')).replace(/\r/g, '');
+  ok('the list shows only to tier 1-4 and only shops this person may edit; the name comes from the roster; the give is confirmed and reports',
+     /grantsGrosir \? \(customers \|\| \[\]\)\.filter\(c => hasNoSalesman\(c\) && canEditCustomer\(c\)\)/.test(cm) && /\{grantsGrosir && ownerAsks\.length > 0 && \(/.test(cm) &&
+     /roster\.map\(n => <option key=\{n\} value=\{n\}>/.test(cm) && /assignedAgent: name, assignedBy: who/.test(cm) && /confirmAction\(`Give \$\{c\.name\} to/.test(cm) &&
+     /triggerCapy\(`\$\{c\.name\} is \$\{name\}'s shop now/.test(cm) && /was NOT given to/.test(cm));
+  ok('a new shop from tier 5-6 rings the bell; the app passes the roster and lets tier 1-4 read those bells',
+     /if \(!editingId && !grantsGrosir\) await addDoc\([^\n]*newShopNotice\(/.test(cm) && /roster=\{motorists\.map\(m => String\(m\.name/.test(app) &&
+     /n\.agentId === 'ADMIN' && ASK_NOTICE_TYPES\.includes\(n\.type\) && canConfirmGrosir\(userRole\)/.test(app));
+}
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
