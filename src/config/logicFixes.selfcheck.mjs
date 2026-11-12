@@ -11653,6 +11653,8 @@ section('Sales Terminal, direction B - the price list (his pick 2026-11-11: "B l
      && /playSound\(bundleUse\[b\.id\]\.taps > 1 \? 'click' : 'error'\)\); removeBundle\(b\);/.test(msv)
      && /playSound\(chk\.ok \? 'click' : 'error'\)\); applyBundle\(b\); \}\}\s+className="kpm-press kpm-hover w-11 h-11/.test(msv)
      && !/<button key=\{b\.id\} type="button" data-guide="bundle-card"/.test(msv));
+  ok('on the phone the total side of the bottom bar opens the order list too, not only the Bayar button (his "how do i see the shopping list on the phone")',
+     /<button type="button" data-guide="open-slip-total" onClick=\{\(\) => setManifestOpen\(true\)\}/.test(msv) && /<button type="button" data-guide="open-slip" onClick=\{\(\) => setManifestOpen\(true\)\}/.test(msv));
   { const { bundleTakeBack } = await import('../utils/vanBay.js');
     const price = (p, tier) => (tier === 'Ecer' ? p.priceEcer : p.priceRetail) || 0;
     const cello = { id: 'c', priceRetail: 10000, priceEcer: 11000 };

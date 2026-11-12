@@ -2383,14 +2383,19 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 reports here for 2 s (the flag that used to slide out of the edge tab). The button only OPENS the slip:
                 the photo and the one committed save stay on the paper. */}
             <div className="hide-on-print lg:hidden fixed inset-x-0 bottom-0 z-[140] flex items-center gap-3 px-3 pt-2 pb-[max(8px,env(safe-area-inset-bottom))] border-t border-[var(--duke-edge-1)] bg-[var(--duke-fill-well)]">
-                <div className="min-w-0 flex-1" role="status">
+                {/* the total side opens the slip too (his 2026-11-12 "how do i see the shopping list on the phone"): both halves of
+                    the bar are the way in, and the small arrow says the words can be pressed */}
+                <button type="button" data-guide="open-slip-total" onClick={() => setManifestOpen(true)} className="kpm-hover min-w-0 flex-1 text-left">
+                  <div role="status">
                     <div className="truncate text-[12px] font-bold text-[var(--duke-ink-5)]">
                         {flag ? `${tr('Added ·')} ${flag.name}` : `${tr('Manifest')}${customerName.trim() ? ` · ${customerName.trim()}` : ''} · ${cart.length} ${getLang() === 'id' ? 'barang' : (cart.length === 1 ? 'item' : 'items')}`}
+                        <ChevronDown size={14} aria-hidden="true" className="inline-block ml-1 rotate-180 align-[-2px]" />
                     </div>
                     <div className={`text-[22px] font-black leading-tight tabular-nums ${isReturMode && returType === 'BUYBACK' ? 'text-[var(--duke-danger-ink)]' : 'text-[var(--duke-ink-1)]'}`}>
                         {isReturMode && returType === 'BUYBACK' ? '-' : ''}Rp {new Intl.NumberFormat('id-ID').format(cartTotal)}
                     </div>
-                </div>
+                  </div>
+                </button>
                 <button type="button" data-guide="open-slip" onClick={() => setManifestOpen(true)} className="kpm-press shrink-0 min-h-[48px] px-6 rounded-lg bg-[var(--duke-paper)] text-[var(--duke-on-plate)] text-[15px] font-black">
                     {isReturMode ? 'Retur' : getLang() === 'id' ? 'Bayar' : 'Pay'}
                 </button>
