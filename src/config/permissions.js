@@ -127,15 +127,21 @@ export const canReadSalesTotals = (userRole) =>
     [CORPORATE_TIERS.TIER_1, CORPORATE_TIERS.TIER_2].includes(translateLegacyRole(userRole));
 export const canSetOpnameDay = (userRole) =>   /* his 2026-11-04 "we as tier 3 and above"; rules CHANGE 22 */
     [CORPORATE_TIERS.TIER_1, CORPORATE_TIERS.TIER_2, CORPORATE_TIERS.TIER_3].includes(translateLegacyRole(userRole));
-export const canSetBundlePrice = (userRole) => {
+const tierThreeDefault = (key) => (userRole) => {
     const role = translateLegacyRole(userRole);
     if (role === CORPORATE_TIERS.TIER_1) return true;
     const matrixKnowsKey = Object.values(ROLE_PERMISSIONS)
-        .some(list => Array.isArray(list) && list.includes(BUNDLE_PRICE_KEY));
-    if (matrixKnowsKey) return hasClearance(userRole, BUNDLE_PRICE_KEY);
+        .some(list => Array.isArray(list) && list.includes(key));
+    if (matrixKnowsKey) return hasClearance(userRole, key);
     return role === CORPORATE_TIERS.TIER_2
         || role === CORPORATE_TIERS.TIER_3;
 };
+export const canSetBundlePrice = tierThreeDefault(BUNDLE_PRICE_KEY);
+/* THE PACKAGE RULES (his 2026-11-12: "there should be on and off toggle button but tier 3 and above as default to activate
+   bundle or off that bundle", and "limit option ... manageable by tier 3 and above on default"). Two keys on the matrix,
+   the same absence-means-tier-default shape as the price above: the switch, and the rules (which shops, the limit). */
+export const canSwitchBundle = tierThreeDefault('switch_bundle');
+export const canSetBundleRules = tierThreeDefault('set_bundle_limit');
 
 /* WHO MAY ACCEPT OR REJECT A COUNTED PRODUCT? His 2026-11-05: "who can reject or accept the stock opname is the tier 3 and above as
    default, make sure this power added into the matrix for additional flexibility". Same absence-means-tier-default shape as the keys

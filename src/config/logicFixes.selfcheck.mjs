@@ -12568,7 +12568,8 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      ap.includes(': promoWithPending(agentPromo, pendingTxData, agentProfileId)') && ap.includes('promoVan={promoVanNow}') && !ms.includes('promoItems'));
   ok('REGRESSION: the terminal shows the give row whenever the van holds promo (never in Retur), caps it at the van, sends it as the 6th argument and clears it after the deal',
      ms.includes('const canGive = !isReturMode && promoVan.length > 0;') &&
-     ms.includes('const givenLines = canGive ? giveLines(promoVan.map(l => ({ productId: l.productId, name: l.name, qty: Math.min(give[l.productId] || 0, l.qty) }))) : [];') &&
+     ms.includes('const givenLines = canGive ? giveLines(promoVan.map(l => ({ productId: l.productId, name: l.name, qty: giveOf(l) }))) : [];') &&
+     ms.includes('const giveOf = (l) => Math.min(give[l.productId] || 0, l.qty,') &&   /* the van cap moved into giveOf with the package cap (2026-11-12) */
      ms.includes('await onProcessSale(finalCust, dbMethod, finalCart, newStorePayload, proofPayload, finalGive);') && ms.includes('setGive({});') &&
      ms.includes('data-guide="promo-give"'));
   /* his 2026-10-27 "yes add that line and dont hide the button" - the box is always on screen; when nothing can be given
@@ -12727,6 +12728,38 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      pbf2.includes('{canSetPrice && (') && pbf2.includes('+ ANOTHER CIGARETTE') && pbf2.includes('+ ANOTHER PROMO ITEM') &&
      pbf2.includes('gives: [{ productId: promo.id, name: promo.name, qty: Math.floor(gives) }, ...extras.map(') &&
      ap.includes('promoItems={promoItems} canSetPrice={canSetBundlePrice(userRole)}') && (fl.match(/canSetPrice=\{canSetBundlePrice\(userRole\)\}/g) || []).length === 2);
+  /* THE PACKAGE RULES, stage A (his 2026-11-12: "bundle should be limited to per store ... ecer cant do that only retail and
+     whosales who are registered", "the only sales that can sell bundle to that stores is the one who is assigned to that
+     stores", "there should be on and off toggle button but tier 3 and above as default"). Phone side only: the count over
+     days waits for the per-shop record. */
+  { const pk = { id: 'p1', name: 'TAWANG PAKET', lines: [{ productId: 'tw', qty: 10, unit: 'Bks' }], gives: [{ productId: 'lt', qty: 1 }], limit: { max: 1, n: 1, unit: 'months' } };
+    const shop = { name: 'TOKO MUNTILAN', assignedAgent: 'Budi' };
+    const g = (b, o) => vb.bundleGate(b, { shop, tier: 'Retail', names: ['Budi'], taps: 0, ...o });
+    const no = [g({ ...pk, off: true }), g(pk, { shop: null }), g(pk, { tier: 'Ecer' }), g(pk, { shop: { name: 'BARU' } }), g(pk, { names: ['Bud', 'Budiman'] }), g(pk, { taps: 1 })];
+    ok('BEHAVIOUR: a package opens only for a registered Retail/Grosir shop assigned to THIS salesman (exact name: "Bud" and "Budiman" do not open Budi\'s shop), while it is on and under its limit in the order; each of the 6 refusals gives its own reason and the wrong-salesman one names the owner',
+       g(pk) === '' && g(pk, { names: [undefined, ' budi '] }) === '' && g(pk, { tier: 'Grosir' }) === '' && no.every(Boolean) && new Set(no).size === 6 && no[4].includes('Budi') &&
+       g(pk, { shop: { name: 'X', assignedAgent: 'Unassigned' } }) !== '' && g({ ...pk, tiers: ['Grosir'] }) !== '' && g({ ...pk, tiers: ['Grosir'] }, { tier: 'Grosir' }) === '' &&
+       g({ ...pk, tiers: ['Ecer'] }, { tier: 'Ecer' }) !== '' && vb.bundleTiers({ tiers: ['Ecer'] }).join() === 'Retail,Grosir' && g({ ...pk, limit: undefined }, { taps: 9 }) === '');
+    const cover = (taps, bks, extra = {}) => vb.packageGives([pk], { p1: { taps } }, bks ? [{ productId: 'tw', qty: bks, unit: 'Bks', ...extra }] : [], [{ id: 'tw' }]).lt;
+    ok('BEHAVIOUR: a package\'s free piece follows its cigarettes - 2 packages of 10 Bks: 20 Bks in the cart cover 2 lighters, 15 cover 1, 9 cover 0, an empty cart 0; never more than the packages pressed; an Utang Barang line covers nothing',
+       cover(2, 20) === 2 && cover(2, 15) === 1 && cover(2, 9) === 0 && cover(2, 0) === 0 && cover(1, 30) === 1 && cover(1, 10, { isIouFulfillment: true }) === 0 &&
+       Object.keys(vb.packageGives([pk], {}, [{ productId: 'tw', qty: 50, unit: 'Bks' }], [])).length === 0);
+    ok('BEHAVIOUR: the rule line reads in plain words, and the switch and the rules default to tiers 1-3, never T4-T6, while their keys are not in his saved matrix',
+       vb.bundleRuleWords(pk) === 'Retail + Grosir shops · 1 per shop, every month' && vb.bundleRuleWords({ tiers: ['Grosir'], limit: { max: 2, n: 2, unit: 'weeks' } }) === 'Grosir shops · 2 per shop, every 2 weeks' &&
+       vb.bundleRuleWords({ limit: { max: 1, unit: 'forever' } }) === 'Retail + Grosir shops · 1 per shop, once, forever' && vb.bundleRuleWords({}) === 'Retail + Grosir shops · no limit per shop' &&
+       ['DEVELOPER', 'ADMIN', 'COMPANY_OWNER', 'AREA_ADMIN'].every(r => pm.canSwitchBundle(r) && pm.canSetBundleRules(r)) &&
+       ['FLEET_CAPTAIN', 'FIELD_OPERATIVE', 'ROOKIE'].every(r => !pm.canSwitchBundle(r) && !pm.canSetBundleRules(r)));
+    const pbf3 = code(read('src/components/PromoBundleFields.jsx')).replace(/\r/g, ''), sv = read('src/components/SettingsView.jsx');
+    ok('REGRESSION: the gate is asked at the press, on the card AND at the save (the shop can change after a package went in); a package item has no hand-give controls and its saved count is capped by what the packages cover; the boss still gives by hand; the editor saves the switch and the rules behind their own keys, on both mounts',
+       ms.includes('if (gate) return notify(gate);') && ms.includes('const chk = gate ? { ...van, ok: false, why: gate } : van;') &&
+       ms.includes("const refused = isReturMode ? '' : bundles.map(b => (bundleUse[b.id]?.taps > 0 ? gateOf(b, bundleUse[b.id].taps - 1) : '')).find(Boolean);") &&
+       ms.includes("const packOnly = new Set(userRole === 'ADMIN' ? [] : bundles.flatMap(b => (b.gives || []).map(g => g.productId)));") &&
+       ms.includes('const giveOf = (l) => Math.min(give[l.productId] || 0, l.qty, packOnly.has(l.productId) ? (packCover[l.productId] || 0) : Infinity);') &&
+       ms.includes('qty: giveOf(l) }))) : [];') && ms.includes('{closed ? (') && ms.indexOf('const bundles = bundlesFor(') < ms.indexOf('const givenLines = ') &&
+       pbf3.includes('...(canSetRules ? rulesOf(rules) : {}),') && pbf3.includes('{canToggle && <button') && pbf3.includes('{canSetRules && ruleFields(rules, setRules, \'bundle\')}') &&
+       ap.includes('canToggle={canSwitchBundle(userRole)} canSetRules={canSetBundleRules(userRole)}') &&
+       (fl.match(/canToggle=\{canSwitchBundle\(userRole\)\} canSetRules=\{canSetBundleRules\(userRole\)\}/g) || []).length === 2 &&
+       sv.includes("{ id: 'switch_bundle', label:") && sv.includes("{ id: 'set_bundle_limit', label:")); }
   ok('REGRESSION: DETAILS / EDIT / + and OFFERS open IN FRONT (a fixed, blurred FrontPanel) not at the top of the roster; the native dropdown list is dark by default and takes the theme surface',
      /function FrontPanel\(\{ label, onClose, children \}\)/.test(fl) && fl.includes('fixed inset-0 z-[480] bg-black/60 backdrop-blur-md') &&
      fl.includes('<FrontPanel label="Team offers" onClose={() => setOffersOpen(false)}>') &&

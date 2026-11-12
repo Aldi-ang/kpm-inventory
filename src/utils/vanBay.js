@@ -112,6 +112,65 @@ export function bundleCheck(bundle, inventory, promoVan, cart = [], give = {}) {
   return { ok: true, why: '', lines, gives };
 }
 
+/* THE PACKAGE RULES, phone side (his 2026-11-12: "bundle should be limited to per store ... ecer cant do that only retail
+   and whosales who are registered", "the only sales that can sell bundle to that stores is the one who is assigned to
+   that stores", "there should be on and off toggle button"). On an offer: `off: true` = switched off; `tiers` = the
+   shop price levels that may take it (absent = Retail and Grosir; Ecer never); `limit: { max, n, unit }` = max per shop
+   every n days / weeks / months, or unit 'forever'.
+   shopOwner is EXACT on purpose (not the picker's loose `includes`): "Adi" must not open Aditya's shops. `names` = the
+   seller's roster name and his sign-in name. */
+export const shopOwner = (shop, names) => {
+  const a = String(shop?.assignedAgent || '').trim().toLowerCase();
+  if (!a || a === 'unassigned') return 'none';
+  return (names || []).some(n => String(n || '').trim().toLowerCase() === a) ? 'mine' : 'other';
+};
+export const bundleTiers = (bundle) => {
+  const t = ['Retail', 'Grosir'].filter(x => (bundle?.tiers || []).includes(x));
+  return t.length ? t : ['Retail', 'Grosir'];
+};
+/* '' = this shop may take one more of this package from this seller; else the reason, in his words. ONE predicate, read
+   by the card, by the press and by the save (the shop can be changed after the package went in). `taps` = how many of
+   this package the order already holds. The count over earlier days is not here yet: it needs the per-shop record. */
+export function bundleGate(bundle, { shop, tier, names, taps = 0 } = {}) {
+  const fill = { bundle: bundle?.name || 'This package', shop: shop?.name || '' };
+  if (bundle?.off) return tr('{bundle} is switched off by the office.', fill);
+  if (!shop) return tr('{bundle} is only for a registered shop - pick the shop from the list first.', fill);
+  const allowed = bundleTiers(bundle);
+  if (!allowed.includes(tier)) return tr('{bundle} is only for {tiers} shops - {shop} buys at the {tier} price.', { ...fill, tiers: allowed.join(' + '), tier: tier || 'Ecer' });
+  const owner = shopOwner(shop, names);
+  if (owner === 'none') return tr('{shop} has no salesman assigned yet - the office assigns it first, then {bundle} opens.', fill);
+  if (owner === 'other') return tr('{shop} is assigned to {agent} - only that salesman can sell it {bundle}.', { ...fill, agent: String(shop.assignedAgent).trim() });
+  const max = Math.floor(Number(bundle?.limit?.max) || 0);
+  if (max > 0 && taps >= max) return tr('{bundle}: only {max} per shop - it is already in this order.', { ...fill, max });
+  return '';
+}
+/* A PACKAGE ITEM IS NOT A HAND GIFT (his 2026-11-12 yes to "should a promo item that is part of a package be closed in
+   that list"): how many free pieces the order's packages REALLY cover, per promo item. A package counts only as often as
+   its cigarettes are still in the cart, so taking the cigarettes back out takes the gift with them.
+   ponytail: two packages on the same cigarette both count the same packs; split them if he ever stacks offers. */
+export function packageGives(bundles, use, cart, inventory) {
+  const out = {};
+  for (const b of bundles || []) {
+    const taps = Math.floor(Number(use?.[b.id]?.taps) || 0);
+    if (taps <= 0 || !(b.lines || []).length) continue;
+    const covered = Math.min(taps, ...b.lines.map(l => {
+      const p = (inventory || []).find(x => x.id === l.productId) || {};
+      const need = convertToBks(Number(l.qty) || 0, l.unit || 'Bks', p);
+      const have = (cart || []).filter(i => i.productId === l.productId && !i.isIouFulfillment)
+        .reduce((s, i) => s + convertToBks(i.qty, i.unit, i.product || p), 0);
+      return need > 0 ? Math.floor(have / need) : 0;
+    }));
+    for (const g of b.gives || []) out[g.productId] = (out[g.productId] || 0) + covered * Math.floor(Number(g.qty) || 0);
+  }
+  return out;
+}
+/* the editor's one line under an offer: "Retail + Grosir shops · 1 per shop, every 2 weeks" */
+export const bundleRuleWords = (bundle) => {
+  const l = bundle?.limit, max = Math.floor(Number(l?.max) || 0), n = Math.max(1, Math.floor(Number(l?.n) || 1));
+  const every = l?.unit === 'forever' ? 'once, forever' : `every ${n === 1 ? String(l?.unit || '').replace(/s$/, '') : `${n} ${l?.unit}`}`;
+  return `${bundleTiers(bundle).join(' + ')} shops · ${max > 0 ? `${max} per shop, ${every}` : 'no limit per shop'}`;
+};
+
 /* WHICH OFFERS THIS SELLER SEES (his 2026-10-27: "offers differs for each of the regional area because some of them perform
    better sales than others"). An offer with no `region` runs in every area; one with a region shows only to salesmen whose
    `location` is that region (same normalizeRegion every region screen uses). The boss sees all of them. */

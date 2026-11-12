@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp, query, where } from 'firebase/firestore';
 import { seatDocId, freeSeats, seatsUsedText, seatsFullMsg } from './utils/seats.js';
-import { DYNAMIC_TIERS, canEditFleetRoster, tierWord, hasClearance, TIER_ONE_ID, resolveTierOneId, canSetBundlePrice } from './config/permissions';
+import { DYNAMIC_TIERS, canEditFleetRoster, tierWord, hasClearance, TIER_ONE_ID, resolveTierOneId, canSetBundlePrice, canSwitchBundle, canSetBundleRules } from './config/permissions';
 import { vaultDocPath, VAULT_TRIES_RESET } from './utils/vaultDoc.js';
 import { lockLeftMs, untilText } from './utils/vaultLock.js';
 import { convertToBks, isSafeDocIdEmail, getLocalDayKey, bountyItems, nameInitials, isPromo, plainSaveError } from './utils/helpers';
@@ -1182,10 +1182,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                                 {offersEverywhere
                                     ? <PromoBundleFields key={promo.id} promo={promo} bundles={[...(appSettings?.promoBundles || []), ...regionOffers]} products={inventory}
                                         regions={offerRegions} by={myProfile?.name || user?.displayName || ''} onSave={(list) => onSavePromoBundles(list)}
-                                        promoItems={promoItems} canSetPrice={canSetBundlePrice(userRole)} />
+                                        promoItems={promoItems} canSetPrice={canSetBundlePrice(userRole)} canToggle={canSwitchBundle(userRole)} canSetRules={canSetBundleRules(userRole)} />
                                     : <PromoBundleFields key={promo.id} promo={promo} bundles={regionOffers.filter(b => normalizeRegion(b.region) === offerRegion)} products={inventory}
                                         lockRegion={offerRegion} by={myProfile?.name || user?.displayName || ''} onSave={(list) => onSavePromoBundles(list, offerRegion)}
-                                        promoItems={promoItems} canSetPrice={canSetBundlePrice(userRole)} />}
+                                        promoItems={promoItems} canSetPrice={canSetBundlePrice(userRole)} canToggle={canSwitchBundle(userRole)} canSetRules={canSetBundleRules(userRole)} />}
                             </div>
                             </FrontPanel>
                         );

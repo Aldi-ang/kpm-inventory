@@ -1716,6 +1716,8 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         { id: 'view_expected_count', label: 'Stock Count: see expected number while counting' },
         { id: 'photo_pick_from_gallery', label: 'Proof photos: may choose from gallery (off = live camera only)' },
         { id: 'set_bundle_price', label: 'Factory offers: may set a bundle price' },
+        { id: 'switch_bundle', label: 'Factory offers: may switch an offer on or off' },
+        { id: 'set_bundle_limit', label: 'Factory offers: may set which shops can take it and the limit per shop' },
         { id: 'decide_opname_product', label: 'Stock Opname: accept or reject a counted product (Tier 4 and above only)' },
         { id: 'sell_damaged', label: 'Quarantine: sell damaged packs again and set their price (Tier 4 and above only)' },
         { id: 'edit_agent_roles', label: '[GOD] Promote Agents' },

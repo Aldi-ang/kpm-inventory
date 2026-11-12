@@ -11,7 +11,7 @@ import { demoPhoto } from './config/demoPhoto.js';
 import ProofCamera from './components/ProofCamera.jsx';
 import { savePhotoAndGetReference, fileOrKeepPhoto, photoStamp, nameTag, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey, promoPic, isDamagedPack, lotsAfterPacks } from './utils/helpers';
 import HazardMark from './components/HazardMark';
-import { giveLines, bundleCheck, bundlesFor, bundleUnitPrices, bundleTakeBack } from './utils/vanBay';
+import { giveLines, bundleCheck, bundlesFor, bundleUnitPrices, bundleTakeBack, bundleGate, packageGives } from './utils/vanBay';
 import { waNumber } from './utils/whatsapp.js';
 import { areaFromPin, watchBorders } from './utils/areaFromPin.js';
 import { grosirHold, priceLevelOf, canConfirmGrosir, grosirRequestNotice } from './utils/customerAccess.js';
@@ -152,6 +152,14 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const [giveOpen, setGiveOpen] = useState(false);   // the promo list starts folded (his 2026-11-02 "hide the promo goods on default")
     const [bundleUse, setBundleUse] = useState({});   // OFFER RESULTS: the offers tapped into this deal, kept on the sale as `offers`
     const canGive = !isReturMode && promoVan.length > 0;
+    const bundles = bundlesFor([...(appSettings?.promoBundles || []), ...regionOffers], sellerRegion, userRole === 'ADMIN');   // all-area offers + his region's; the boss sees every one
+    /* A PACKAGE ITEM IS NOT A HAND GIFT (his 2026-11-12 yes): a promo item that any of this seller's packages gives, on or
+       off, has no − / + / typed count in the give list, and what is saved of it is capped at what the order's packages
+       cover (packageGives), so taking the cigarettes back out takes the gift with them. The boss keeps giving by hand
+       (his 2026-10-27 "tier 1 can give the item straight from the master vault"). */
+    const packOnly = new Set(userRole === 'ADMIN' ? [] : bundles.flatMap(b => (b.gives || []).map(g => g.productId)));
+    const packCover = packageGives(bundles, bundleUse, cart, inventory);
+    const giveOf = (l) => Math.min(give[l.productId] || 0, l.qty, packOnly.has(l.productId) ? (packCover[l.productId] || 0) : Infinity);
     // where the given pieces come from: the boss on the Master Vault gives from its own promo stock (his 2026-10-27
     // "can u add so that tier 1 can give the item straight from the master vault?"), everyone else from a van
     const giveFrom = userRole === 'ADMIN' && adminSalesMode !== 'VEHICLE' ? 'the Master Vault' : 'the van';
@@ -160,7 +168,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const giveEmpty = isReturMode ? 'No promo goods with a retur. Give them on a new deal.'
         : giveFrom === 'the Master Vault' ? 'No promo goods in the Master Vault. Restock them in Restock Vault.'
         : 'No promo goods in this van. Load them in Fleet & Canvas → PROMO.';
-    const givenLines = canGive ? giveLines(promoVan.map(l => ({ productId: l.productId, name: l.name, qty: Math.min(give[l.productId] || 0, l.qty) }))) : [];
+    const givenLines = canGive ? giveLines(promoVan.map(l => ({ productId: l.productId, name: l.name, qty: giveOf(l) }))) : [];
     const [lockedTier, setLockedTier] = useState(draft?.lockedTier ?? null);
     // the product card's price: the picked shop's tier, Ecer until a shop is picked
     const cardPriceOf = (p) => ({ Retail: p.priceRetail, Grosir: p.priceGrosir }[lockedTier] ?? p.priceEcer) || 0;
@@ -625,6 +633,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     /* the salesman named in a photo file the way the sale record names him (useTransactionEngine finalAgentName): his
        Fleet & Roster profile name, else myName. His 2026-10-27 "its not the agent name but the google name". */
     const photoAgent = motorists.find(m => m.id === agentProfileId)?.name || myName;
+    /* MAY THIS SHOP TAKE THIS PACKAGE FROM ME? (vanBay bundleGate: off, no registered shop, an Ecer shop, a shop nobody
+       assigned, a shop assigned to someone else, over the limit.) '' = yes. The card, the press and the save all ask here. */
+    const gateOf = (b, taps = bundleUse[b.id]?.taps || 0) => bundleGate(b, { shop: selectedCustomerInfo, tier: lockedTier || (selectedCustomerInfo ? priceLevelOf(selectedCustomerInfo) : 'Ecer'), names: [photoAgent, myName], taps });
 
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
         autoLockRef.current = null;   // his pick from here on; applyFix marks a GPS pick AFTER this call
@@ -817,6 +828,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const tierPrice = (p, tier) => ({ Ecer: p.priceEcer, Grosir: p.priceGrosir }[tier] ?? p.priceRetail) || 0;
     const applyBundle = (b) => {
         if (isReturMode) return notify(tr('{bundle} is for a sale - switch Retur off first.', { bundle: b.name }));
+        const gate = gateOf(b);
+        if (gate) return notify(gate);
         const chk = bundleCheck(b, inventory, promoVan, cart, give);
         if (!chk.ok) return notify(chk.why);
         // an Utang Barang line is priced Rp 0 - summing a bundle into it would hand the bundle's packs out free
@@ -1196,7 +1209,10 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
 
     const handleFinalDeal = async () => {
         if ((cart.length === 0 && !givenLines.length) || !customerName.trim() || !txProofPhoto || isProcessingSale) return;
-        setIsProcessingSale(true); 
+        // the shop can be changed AFTER a package went in: the same gate once more, on what the order holds now
+        const refused = isReturMode ? '' : bundles.map(b => (bundleUse[b.id]?.taps > 0 ? gateOf(b, bundleUse[b.id].taps - 1) : '')).find(Boolean);
+        if (refused) return notify(`${refused}\n\n${tr('Take the package out of the order first: press − on it under BUNDLES.')}`);
+        setIsProcessingSale(true);
         
         const finalCust = customerName.trim();
         const finalCart = [...cart];
@@ -1627,7 +1643,6 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     };
 
     const filteredItems = lotsAfterPacks(inventory.filter(i => (activeCategory === "ALL" || i.type === activeCategory) && i.name.toLowerCase().includes(searchTerm.toLowerCase())));
-    const bundles = bundlesFor([...(appSettings?.promoBundles || []), ...regionOffers], sellerRegion, userRole === 'ADMIN');   // all-area offers + his region's; the boss sees every one
     const categories = ["ALL", ...new Set(inventory.map(i => i.type || "MISC")), ...(bundles.length ? ["BUNDLES"] : [])];
 
     const isGpsRestricted = gpsStatus === 'manual_override' && !canOverrideGps;
@@ -2111,7 +2126,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         ) : <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[var(--duke-ink-7)]">{tr('Promo · given free')}</span>}
                         {canGive ? (giveOpen && promoVan.map(l => {
                             /* − n + like a product row (his 2026-11-12 "promo doesnt have add button"); the box still takes a typed count */
-                            const cur = Math.min(give[l.productId] || 0, l.qty);
+                            const cur = giveOf(l);
+                            const closed = packOnly.has(l.productId);   // a package item: no hand-give, only what the packages cover
                             const setN = (n) => {
                                 if (n > l.qty) notify(tr('Only {n} pcs of {name} {where} - not enough for {want}.', { n: l.qty, name: l.name, where: giveWhere, want: n }));
                                 setGive(g => ({ ...g, [l.productId]: Math.max(0, Math.min(n, l.qty)) }));
@@ -2127,12 +2143,19 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     {l.name}
                                     <span className="block mt-0.5 text-[10px] font-bold normal-case tracking-normal text-[var(--duke-on-paper-dim)] tabular-nums">{l.qty} pcs {giveWhere}</span>
                                 </span>
+                                {closed ? (
+                                    <span data-guide="promo-pack-only" className="shrink-0 text-right text-[10px] md:text-xs font-black uppercase tracking-widest text-[var(--duke-on-paper-dim)]">
+                                        {cur > 0 && <span className="block text-xs md:text-sm tabular-nums text-[var(--duke-ink-7)]">{cur} pcs</span>}
+                                        {tr('Package only')}
+                                    </span>
+                                ) : (<>
                                 <button type="button" aria-label={`${l.name}: one less`} onClick={() => { unlockSounds().then(() => playSound(cur > 0 ? 'click' : 'error')); setN(cur - 1); }} className={`${stepCls} ${cur > 0 ? '' : 'opacity-40'}`}>−</button>
                                 <input type="number" inputMode="numeric" min="0" placeholder="0" aria-label={`${l.name}: pieces to give`}
                                     value={give[l.productId] || ''}
                                     onChange={(e) => setN(parseInt(e.target.value, 10) || 0)}
                                     className="w-12 md:w-14 min-h-[44px] lg:min-h-0 bg-white border border-[var(--duke-edge-3)] text-center text-base md:text-sm font-bold tabular-nums outline-none focus:border-[var(--duke-amber-edge)] rounded p-1 text-[var(--duke-ink-7)]" />
                                 <button type="button" aria-label={`${l.name}: one more`} onClick={() => { unlockSounds().then(() => playSound('click')); setN(cur + 1); }} className={`${stepCls} ${cur < l.qty ? '' : 'opacity-40'}`}>+</button>
+                                </>)}
                             </div>
                             );
                         })) : <p data-guide="promo-give-empty" className="mt-1.5 text-[11px] md:text-xs font-bold text-[var(--duke-on-paper-dim)]">{tr(giveEmpty)}</p>}
@@ -2758,7 +2781,9 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     </div>
                     {/* FACTORY BUNDLES - one card each; the price is the cigarettes' own at this shop's tier, the promo is free */}
                     {activeCategory === 'BUNDLES' && bundles.map(b => {
-                        const chk = bundleCheck(b, inventory, promoVan, cart, give);
+                        const van = bundleCheck(b, inventory, promoVan, cart, give);
+                        const gate = gateOf(b);   // the shop / switch / limit rule outranks the van's stock: its reason shows first
+                        const chk = gate ? { ...van, ok: false, why: gate } : van;
                         const price = Number(b.price) > 0 ? Number(b.price) : (chk.lines || []).reduce((s, l) => s + tierPrice(l.product, newLineTier()) * l.bks, 0);
                         return (
                             <div key={b.id} data-guide="bundle-card" onClick={() => { unlockSounds().then(() => playSound(chk.ok ? 'click' : 'error')); applyBundle(b); }}

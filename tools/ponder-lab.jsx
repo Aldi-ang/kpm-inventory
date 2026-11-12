@@ -1338,11 +1338,15 @@ function ShellLab() {
               /* a JAKARTA-only offer: this BANDUNG salesman must NOT see it (&region=JAKARTA flips that) */
               { id: 'b3', name: 'JAKARTA SHIRT DEAL', region: 'JAKARTA', lines: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 2, unit: 'Slop' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }] },
               /* a BUNDLE PRICE (2026-10-27): 1 Bal Cello + 1 Slop Djarum + T-shirt + hat for Rp 1.100.000 flat */
-              { id: 'b4', name: 'PRICED COMBO', price: 1100000, lines: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 1, unit: 'Bal' }, { productId: 'p-djar', name: 'Djarum Coklat 12', qty: 1, unit: 'Slop' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }, { productId: 'p-hat', name: 'Hat', qty: 1 }] }] } : {}) }}
+              { id: 'b4', name: 'PRICED COMBO', price: 1100000, lines: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 1, unit: 'Bal' }, { productId: 'p-djar', name: 'Djarum Coklat 12', qty: 1, unit: 'Slop' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }, { productId: 'p-hat', name: 'Hat', qty: 1 }] }]
+              /* &rules: CELLO BUNDLE is limited to 1 per shop a month, PRICED COMBO is switched off */
+              .map((b) => (!q.has('rules') ? b : b.id === 'b1' ? { ...b, limit: { max: 1, n: 1, unit: 'months' } } : b.id === 'b4' ? { ...b, off: true } : b)) } : {}) }}
             sellerRegion={q.get('region') || 'Bandung'}
             /* a TEAM OFFER from the BANDUNG doc (promoOffers/BANDUNG) - the Bandung regional admin's own */
             regionOffers={q.has('bundles') ? [{ id: 'r1', name: 'TEAM SLOP DEAL', region: 'BANDUNG', by: 'Rizky Aditama', lines: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 1, unit: 'Slop' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }] }] : []}
-            customers={LAB_CUSTOMERS}
+            /* THE PACKAGE RULES (2026-11-12): a package opens only for a shop assigned to this salesman. Berkah (Retail) and
+               Sumber (Ecer) are his, Lancar (Grosir) is Adi's, Maju is nobody's - one shop per refusal reason. */
+            customers={LAB_CUSTOMERS.map((c) => ({ ...c, ...({ 'c-berkah': { assignedAgent: 'Lab Salesman' }, 'c-sumber': { assignedAgent: 'Lab Salesman' }, 'c-lancar': { assignedAgent: 'Adi Nugroho' } }[c.id] || {}) }))}
             allowedPayments={['Cash', 'Transfer', 'IOU']} allowedTiers={['Retail', 'Ecer', 'Grosir']}
             transactions={q.has('team') ? labTeamToday() : q.has('history') ? LAB_AGENT_TXNS : []} allowRetur allowCashRefund={false}
             db={null} appId="lab" agentProfileId="lab-t5" storage={null} masterUserId="lab"
@@ -1475,11 +1479,14 @@ function PromoLookLab() {
    The form around it submits to window.__submitted, so a stray Enter is visible. */
 function PromoBundlesLab() {
   const tee = { id: 'p-tee', name: 'T-shirt', kind: 'promo' };
-  const [list, setList] = React.useState([{ id: 'b1', name: 'CELLO BUNDLE', lines: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 1, unit: 'Bal' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }] }]);
+  /* the rules (2026-11-12): one offer limited and on, one switched off; &t4 = a tier with neither key (reads, cannot change) */
+  const [list, setList] = React.useState([{ id: 'b1', name: 'CELLO BUNDLE', lines: [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 1, unit: 'Bal' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }], limit: { max: 1, n: 1, unit: 'months' } },
+    { id: 'b2', name: 'SLOP DEAL', region: 'BANDUNG', off: true, tiers: ['Grosir'], lines: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 2, unit: 'Slop' }], gives: [{ productId: 'p-tee', name: 'T-shirt', qty: 1 }] }]);
   return (
     <div style={{ background: '#0A0908', minHeight: '100vh', padding: 16, fontSize: 13, maxWidth: 420 }}>
       <form onSubmit={(e) => { e.preventDefault(); window.__submitted = (window.__submitted || 0) + 1; }} style={{ border: '1px solid #3a322a', padding: 12 }}>
-        <PromoBundleFields promo={tee} bundles={list} products={LAB_PRODUCTS} regions={['BANDUNG', 'JAKARTA']} onSave={async (l) => { window.__bundles = l; setList(l); return true; }} />
+        <PromoBundleFields promo={tee} bundles={list} products={LAB_PRODUCTS} regions={['BANDUNG', 'JAKARTA']} onSave={async (l) => { window.__bundles = l; setList(l); return true; }}
+          canSetPrice={!q.has('t4')} canToggle={!q.has('t4')} canSetRules={!q.has('t4')} />
       </form>
     </div>
   );
