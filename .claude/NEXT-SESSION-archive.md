@@ -1,3 +1,32 @@
+## DONE 2026-11-13 (kpm 56942b48) - package rules stage C, the new-shop queue
+
+# The one job
+
+THE PACKAGE (PAKET) RULES, STAGE C - the new-shop confirmation queue. Stages A and B are LIVE (kpm 141dd879, 20131db3; their commit messages are the full story). Decisions and his words: A-Brain Brainstorm/2026-11-12_package-limit-per-shop-and-switch.md (read its last three sections only; do not re-derive).
+
+WHAT IS LIVE: a package opens only for a registered Retail/Grosir shop ASSIGNED to the seller (exact name match, vanBay shopOwner), while it is on and under its limit; the limit counts the shop's own sales over days / weeks / months / forever (vanBay bundleTaken; the terminal reads the shop's sales once per pick, MerchantSalesView "THE SHOP'S EARLIER PACKAGES"). A shop nobody is assigned to gets no package: that is how a new shop waits today. Nothing tells a boss that a shop is waiting.
+
+HIS RULE FOR C (2026-11-12): "boss assign here means, should be regional manager tier 4 as default who are responsible for that confirming the new customer, but higher tier inside that team can also see that, for example if tier 3 visit muntilan then that tier 3 can see the confirmation coming to its account as well". Tier 4 = the code's FLEET_CAPTAIN (his "Regional Admin"); "higher tier inside that team" = T1-T3 who can see that region.
+
+BLOCKER CLOSED 2026-11-12 (kpm 9eda75b5, his "i only give the paintbrush features for tier 4 and above in default"): in Journey Plan only tier 1-4 choose a shop's salesman (JourneyView canChooseSalesman). Still open, phone-side only: the database lets any salesman with shop-edit access write assignedAgent (firestore.rules:751) - a rule he would publish; check CustomerManager.jsx:662 (the transfer writes 'Unassigned') before drafting it. Build the queue below first.
+
+WHAT C BUILDS (find the facts first, then the smallest version). Facts already read: the Grosir queue is CustomerManager.jsx ~1565 (grantsGrosir && grosirAsks, decideGrosir ~234); CustomerManagement gets no roster prop (JourneyView has agentsList); the assignment write is JourneyView handleAssignAgent ~683.
+1. Where a shop gets its salesman today: src/JourneyView.jsx writes assignedAgent: agentName near line 700. Who can open that screen and who may write customers (firestore.rules, the customers block - read it, and A-Brain Wiki/Entities/Fleet Captain Permission Gap.md: isAreaAdmin() covers only AREA_ADMIN). If a T4 cannot write assignedAgent today, that is the rule C needs; the rule goes FIRST, as a draft he publishes in the Console (grep "CHANGE [0-9]" firestore.rules, the highest is 27, take the next), never part of a push.
+2. The queue: the shops in that region with no salesman assigned, shown where T4 already works, each with a "give it a salesman" choice that writes assignedAgent (the same write JourneyView does). Copy the request-and-confirm pattern of the Grosir request in src/components/CustomerManager.jsx (requestedTier, grosirAsks, grosirConfirmedBy) - and the bell/inbox note it raises - instead of inventing a second one. A higher tier who sees that region sees the same list.
+3. Every action reports (his law): the assignment says who did it, to whom, and the shop's package cards open for that salesman at once.
+4. One self-check line on real data, the patch note, render it at 375 in the lab (tools/ponder-lab.jsx; launch "ponder-lab", port 4190).
+
+TRAPS: assignedAgent is free text and the terminal matches it EXACTLY now (stage A) - the queue must write the roster name exactly as the roster has it (pick from the roster, never a typed name). Do not break the old loose owner check at MerchantSalesView handleCustomerSelect ("territoryClaim"): it only reports, never blocks, on purpose (its comment says why). A Grosir shop still needs its own Grosir confirmation; the two queues are different questions - say so on screen if they meet. The lab's terminal shops: Berkah (Retail, his), Sumber (Ecer, his), Lancar (Grosir, Adi's), Maju (nobody's) under ?shell&terminal&promo&bundles&rules.
+
+SETTLED 2026-11-12 18:35 (kpm aabead7e): tiers 1-3 may sell a package to another salesman's shop by default (key sell_bundle_any_shop); a shop with NO salesman still waits for every tier - the queue in C is the only way out of it. STILL OPEN WITH HIM (ask once, in the first reply): "Today nothing can clear a shop's package count: it is counted from the sales, and a return does not give it back (your rule). If a salesman presses a package by mistake and saves, that shop waits out the period. Do you want tier 3 and above to be able to clear one shop's count, written in the audit log? yes / no. Recommended: no until it happens once - every way to clear it is also a way around the limit."
+
+AFTER C: stage D = one line in the boss's report: took a package, returned the cigarettes within 7 days. Then the Journey Plan redesign (grep "JOURNEY PLAN" in .claude/NEXT-SESSION-archive.md, read that one block only).
+
+ALSO QUEUED FOR ANTIGRAVITY (his yes): a read-only audit of the whole Retur path, every way a return could be used for gain - write it into .claude/ANTIGRAVITY-TASK.md only once its current task (the 38-findings audit, Status OPEN on 2026-11-12) says DONE.
+
+KEEP THIS FILE UNDER 7,000 CHARACTERS - ONE job. The start-up hook prints it whole. When a job is done, move its text to the top of NEXT-SESSION-archive.md and write the next one here.
+
+
 <!-- finished 2026-11-12: package rules stage B, kpm 20131db3 (built from the sales, not a new record) -->
 # The one job
 
