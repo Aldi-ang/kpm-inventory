@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-12 12:24 WIB, PC clock (🟢 KPM - all package questions answered, the package rules are the next job (NEXT-SESSION top), not built; the phone's total bar opens the order list, live df1fd6d6)**
+**Updated: 2026-11-12 12:53 WIB, PC clock (🟢 KPM - resume made cheap: the one job is printed at start-up; all package questions answered, the package rules are the next job (NEXT-SESSION top), not built; the phone's total bar opens the order list, live df1fd6d6)**
+
+## 🟢 2026-11-12 12:53 WIB — KPM: his "i clear and say continue last time, and it waste my 13% of my 5 hours quota ... make it more straight forwards" - fixed: NEXT-SESSION.md was 733 KB, now one job (5 KB) and the start-up hook prints it, so "continue" needs no file read
+What changed: .claude/NEXT-SESSION.md = the one job only (keep it under 7,000 characters; the hook warns above that) · everything older is in .claude/NEXT-SESSION-archive.md (never read whole) · the start-up note shows 4 entries, not 10 · the lessons report names 3 titles, not 27.
+WAITING ON ALDI: nothing new. Type /clear, then "continue": the package rules job is printed above this note. His "bundle on off should be inside fleet and roster right since the setting is inside there on the first time" is in that job.
 
 ## 🟢 2026-11-12 12:24 WIB — KPM: his "boss assign here means, should be regional manager tier 4 as default who are responsible for that confirming the new customer, but higher tier inside that team can also see that, for example if tier 3 visit muntilan then that tier 3 can see the confirmation coming to its account as well . yes to all recommendation" - every package question is answered; the package rules are the next job, NOT built; the phone's total bar now opens the order list, LIVE, pushed df1fd6d6
 Full story: df1fd6d6's message (the bar) · A-Brain Brainstorm/2026-11-12_package-limit-per-shop-and-switch.md (the package decisions) · next: NEXT-SESSION top (the package rules, stage A first).

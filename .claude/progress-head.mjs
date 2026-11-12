@@ -10,7 +10,10 @@
    Test: node .claude/startup-cost.test.mjs */
 import fs from 'node:fs';
 
-const MAX = 12000, ENTRIES = 10;
+/* 2026-11-12, his "i clear and say continue last time, and it waste my 13% of my 5 hours quota ... make it more straight
+   forwards": 4 entries, not 10 (the older ones are answered questions), and THE ONE JOB is printed here too, so
+   "continue" starts from this text with no tool call. NEXT-SESSION.md had reached 733 KB - opening it was the 13%. */
+const MAX = 7000, ENTRIES = 4, JOB_MAX = 7000;
 let src;
 try { src = fs.readFileSync(new URL('./PROGRESS.md', import.meta.url), 'utf8'); } catch { process.exit(0); }
 const lines = src.split('\n');
@@ -25,4 +28,9 @@ for (; i < lines.length; i++) {
 }
 const older = lines.slice(i).filter((l) => l.startsWith('## ')).length;
 if (older) out.push('', `... ${older} older entries are in .claude/PROGRESS.md - never read it whole (${Math.round(src.length / 1024)} KB); grep it for the one line you need. Every version is in git log.`);
+try {
+  const job = fs.readFileSync(new URL('./NEXT-SESSION.md', import.meta.url), 'utf8');
+  out.push('', '## THE ONE JOB - this is .claude/NEXT-SESSION.md, whole. "continue" = start from this text; do not open the file', '', job.slice(0, JOB_MAX).trimEnd());
+  if (job.length > JOB_MAX) out.push('', `WARNING: NEXT-SESSION.md is ${Math.round(job.length / 1024)} KB; only its first ${JOB_MAX} characters are shown. It must hold ONE job. Before anything else, move everything under the job to the top of .claude/NEXT-SESSION-archive.md (never read either file whole).`);
+} catch { /* no brief yet */ }
 console.log(out.join('\n'));
