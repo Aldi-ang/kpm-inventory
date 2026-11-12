@@ -8,7 +8,7 @@ import { tallySaleOp } from '../utils/salesRollupWrite';
 import { formatRupiah, convertToBks, getCurrentDate, storeKey } from '../utils/helpers';
 import { hasClearance } from '../config/permissions';
 import { canonicalPlace, isMasterVaultPlace } from '../utils/supply';
-import { offerResults } from '../utils/vanBay';
+import { offerResults, packageReturns } from '../utils/vanBay';
 import { notify } from './Toast.jsx';
 import SaleReceipt from './SaleReceipt.jsx';
 
@@ -263,6 +263,17 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
        offer, best first. No extra read: every deal carries its `offers`. */
     const offerStats = useMemo(() => Object.entries(offerResults(contextualTransactions))
         .map(([id, r]) => ({ id, ...r })).sort((a, b) => b.rp - a.rp), [contextualTransactions]);
+    /* PACKAGE RULES STAGE D: a package, then its cigarettes back as a Retur within 7 days - and every shop whose package
+       count tier 1-4 cleared in the last 30 days (his accepted cost of "Clear count"). For the people who watch others:
+       a field agent's own report does not show it. Shown, never blocked. */
+    const pkgReturns = useMemo(() => (isFieldAgent ? [] : packageReturns(contextualTransactions)), [contextualTransactions, isFieldAgent]);
+    const countClears = useMemo(() => {
+        if (isFieldAgent) return [];
+        const names = Object.fromEntries([...(appSettings?.promoBundles || []), ...offerStats].map(o => [o.id, o.name]));
+        return (customers || []).flatMap(c => Object.entries(c.bundleReset || {}).map(([id, at]) => ({ shop: c.name, offer: names[id] || 'a regional package', at: Number(at) || 0 })))
+            .filter(x => Date.now() - x.at <= 30 * 86400000).sort((a, b) => b.at - a.at);
+    }, [customers, appSettings, offerStats, isFieldAgent]);
+    const shortDay = (ms) => new Date(ms).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 
     const stats = useMemo(() => {
         const totalRev = contextualTransactions.reduce((sum, t) => t.type === 'RETUR' ? sum - Math.abs(t.total || 0) : sum + (t.total || t.amountPaid || 0), 0);
@@ -540,6 +551,23 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                         ))}
                                     </tbody>
                                  </table>
+                             </div>)}
+                             {!isFieldAgent && (
+                             <div className="mt-5 print:mt-3" data-guide="package-returns">
+                                 <h4 className="font-bold text-sm print:text-xs text-[var(--ink)] flex items-center gap-2"><AlertTriangle size={16} className="text-[var(--accent-ink)]"/> Package, then Retur within 7 days</h4>
+                                 <p className="text-xs text-[var(--ink-muted)] mb-2">The shop took a package, then sent back that package's cigarettes as a Retur within 7 days. Nothing is blocked - this is only to see it.</p>
+                                 {pkgReturns.length === 0 ? <p className="text-sm text-[var(--ink-muted)]">None in this period.</p> : (
+                                 <ul className="divide-y divide-[var(--line)] text-xs">
+                                     {pkgReturns.map((r, i) => (
+                                         <li key={i} className="py-2">
+                                             <span className="font-bold text-[var(--ink)]">{r.shop}</span>
+                                             <span className="text-[var(--ink-muted)]"> · {r.offer} on {shortDay(r.soldAt)} by {r.salesman} · Retur on {shortDay(r.returnedAt)} by {r.returnedBy}: {r.items.join(', ')}</span>
+                                         </li>
+                                     ))}
+                                 </ul>)}
+                                 {countClears.length > 0 && (
+                                 <p className="mt-3 text-xs text-[var(--ink-muted)]"><span className="font-bold text-[var(--ink)]">Package counts cleared, last 30 days:</span> {countClears.map(c => `${c.shop} (${c.offer}, ${shortDay(c.at)})`).join(' · ')}. Who cleared each one is in the audit log.</p>
+                                 )}
                              </div>)}
                          </div>
 

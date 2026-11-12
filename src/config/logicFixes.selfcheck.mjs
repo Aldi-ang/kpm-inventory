@@ -13903,5 +13903,22 @@ section('CLEAR A SHOP\'S PACKAGE COUNT (his 2026-11-13 "yes i think tier 4 and a
      ms.includes("{ bundleReset: reset });") && ms.includes("logAudit('BUNDLE_COUNT_CLEARED'") && ms.includes('its count is cleared.') && ms.includes('count was NOT cleared') &&
      /if \(!await confirmAction\(`Clear \$\{shop\.name\}'s count/.test(ms));
 }
+section('PACKAGE RULES STAGE D: "took a package, returned the cigarettes within 7 days" - shown in the report, never blocked');
+{
+  const vb = await import('../utils/vanBay.js');
+  const d = (day, h = 9) => ({ seconds: Date.parse(`2026-11-${String(day).padStart(2, '0')}T${String(h).padStart(2, '0')}:00:00+07:00`) / 1000 });
+  const pkg = (shop, day) => ({ type: 'SALE', customerName: shop, agentName: 'Budi', timestamp: d(day), offers: [{ id: 'b1', name: 'CELLO BUNDLE', productIds: ['p-cg'] }], items: [{ productId: 'p-cg', qty: 1, unit: 'Bal', name: 'Cello' }] });
+  const ret = (shop, day, pid = 'p-cg') => ({ type: 'RETUR', customerName: shop, agentName: 'Budi', timestamp: d(day, 15), items: [{ productId: pid, qty: 1, unit: 'Slop', name: pid }] });
+  const rows = (txs) => vb.packageReturns(txs);
+  ok('day 1 package + day 5 Retur of its cigarette = 1 row; day 9 = none; another shop = none; another product = none; two packages + one Retur = ONE row (tied to the later package)',
+     rows([pkg('Toko A', 1), ret('Toko A', 5)]).length === 1 && rows([pkg('Toko A', 1), ret('Toko A', 9)]).length === 0 &&
+     rows([pkg('Toko A', 1), ret('Toko B', 5)]).length === 0 && rows([pkg('Toko A', 1), ret('Toko A', 5, 'p-djar')]).length === 0 &&
+     JSON.stringify(rows([pkg('Toko A', 1), pkg('Toko A', 3), ret('Toko A', 5)]).map(r => new Date(r.soldAt).getUTCDate())) === '[3]' &&
+     rows([pkg('toko a ', 1), { ...ret('Toko A', 2), type: 'SALE', paymentType: 'Retur/BS' }]).length === 1);
+  const hr = code(read('src/components/HistoryReportView.jsx')).replace(/\r/g, '');
+  ok('the report shows it (and the counts cleared in 30 days) under Offer Performance, not to a field agent',
+     hr.includes('packageReturns(contextualTransactions)') && hr.includes('{!isFieldAgent && (') && hr.includes('data-guide="package-returns"') &&
+     hr.includes('Package counts cleared, last 30 days:') && /c\.bundleReset \|\| \{\}/.test(hr));
+}
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

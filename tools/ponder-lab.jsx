@@ -1511,10 +1511,19 @@ function ReportsLab() {
     sale('t1', 'TOKO MAJU', [{ id: 'r1', name: 'TAWANG BUNDLE 1', region: 'MUNTILAN', productIds: ['p-djar'] }], [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 2, unit: 'Slop', calculatedPrice: 172500 }]),
     sale('t2', 'TOKO MAJU', [{ id: 'r1', name: 'TAWANG BUNDLE 1', region: 'MUNTILAN', productIds: ['p-djar'] }], [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 4, unit: 'Slop', calculatedPrice: 172500 }]),
     sale('t3', 'WARUNG SARI', [{ id: 'b1', name: 'CELLO BUNDLE', region: '', productIds: ['p-cg16'] }], [{ productId: 'p-cg16', name: 'Cello Green 16', qty: 1, unit: 'Bal', calculatedPrice: 2047000 }, { productId: 'p-djar', name: 'Djarum Coklat 12', qty: 1, unit: 'Slop', calculatedPrice: 172500 }])];
+  /* &pkgret - stage D: TOKO MAJU sends 1 Slop of its package's Djarum back an hour later (flagged); WARUNG SARI returns its
+     Djarum, which was NOT in its CELLO BUNDLE (not flagged); Toko Berkah's CELLO BUNDLE count was cleared yesterday */
+  const pkgret = new URLSearchParams(location.search).has('pkgret');
+  if (pkgret) txs.push(
+    { id: 'rt1', type: 'RETUR', date, customerName: 'TOKO MAJU', agentId: 'm2', agentName: 'Budi Santoso', paymentType: 'Retur/BS', timestamp: { seconds: Math.floor(today.getTime() / 1000) + 3600 },
+      items: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 1, unit: 'Slop', calculatedPrice: 172500 }], total: -172500 },
+    { id: 'rt2', type: 'RETUR', date, customerName: 'WARUNG SARI', agentId: 'ADMIN', agentName: 'Admin', paymentType: 'Retur/BS', timestamp: { seconds: Math.floor(today.getTime() / 1000) + 3600 },
+      items: [{ productId: 'p-djar', name: 'Djarum Coklat 12', qty: 1, unit: 'Slop', calculatedPrice: 172500 }], total: -172500 });
   return (
     <div className="h-full w-full max-w-7xl mx-auto p-2 lg:p-4">
       <HistoryReportView transactions={txs} inventory={LAB_PRODUCTS} onDeleteFolder={() => {}} onDeleteTransaction={() => {}} isAdmin user={{ uid: 'lab' }} userId="lab" appId="lab" db={null}
-        appSettings={{ companyName: 'KPM INVENTORY' }} userRole="ADMIN" agentProfileId={null} fetchHistoricalTransactions={async () => []} motorists={LAB_MOTORISTS} customers={[]} />
+        appSettings={{ companyName: 'KPM INVENTORY', promoBundles: [{ id: 'b1', name: 'CELLO BUNDLE' }] }} userRole="ADMIN" agentProfileId={null} fetchHistoricalTransactions={async () => []} motorists={LAB_MOTORISTS}
+        customers={pkgret ? [{ id: 'c-berkah', name: 'Toko Berkah Jaya', bundleReset: { b1: today.getTime() - 86400000 } }] : []} />
     </div>
   );
 }

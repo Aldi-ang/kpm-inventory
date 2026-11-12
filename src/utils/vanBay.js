@@ -244,6 +244,27 @@ export const offerResults = (transactions) => {
   return Object.fromEntries(Object.entries(out).map(([id, r]) => [id, { name: r.name, region: r.region, sales: r.sales, shops: r.shops.size, rp: r.rp }]));
 };
 
+/* PACKAGE RULES STAGE D (his yes to "one report line for the boss: took a package, returned the cigarettes within 7 days"):
+   SHOW it, never block it. One row per Retur that sent back a package's cigarettes within `days` after that shop took the
+   package - tied to the LATEST such package sale, so one Retur is never counted twice (the lab caught that: two packages,
+   one Retur, two rows). Same shop = storeKey, like the rest of the report.
+   ponytail: only the sales given (the report's period); a Retur just after the period ends shows in the next period's report
+   only if the package sale is in it too - widen the read if he asks. */
+const txMs = (t) => (Number(t?.timestamp?.seconds) * 1000) || Date.parse(t?.date) || 0;
+export const isReturTx = (t) => t?.type === 'RETUR' || t?.paymentType === 'Retur/BS';
+export const packageReturns = (transactions, days = 7) => {
+  const all = transactions || [];
+  const takes = all.filter(t => (t.type || 'SALE') === 'SALE' && !isReturTx(t))
+    .flatMap(t => (t.offers || []).map(o => ({ t, o, at: txMs(t), shop: storeKey(t.customerName), ids: new Set(o.productIds || []) })));
+  return all.filter(isReturTx).flatMap(r => {
+    const at = txMs(r), shop = storeKey(r.customerName);
+    const hit = takes.filter(k => k.shop === shop && at > k.at && at - k.at <= days * 86400000 && (r.items || []).some(i => k.ids.has(i.productId)))
+      .sort((a, b) => b.at - a.at)[0];
+    return hit ? [{ shop: r.customerName, salesman: hit.t.agentName || 'Admin', offer: hit.o.name || hit.o.id, soldAt: hit.at, returnedAt: at, returnedBy: r.agentName || 'Admin',
+      items: (r.items || []).filter(i => hit.ids.has(i.productId)).map(i => `${i.qty} ${i.unit || ''} ${i.name || i.productName || ''}`.replace(/\s+/g, ' ').trim()) }] : [];
+  }).sort((a, b) => b.returnedAt - a.returnedAt);
+};
+
 /* The boss's editor saves the WHOLE list: all-area offers to settings/general, each region's to its own doc. A region that
    had offers and now has none is still written (an empty list), or the offer he removed would stay live. */
 export const offerWrites = (list, oldRegions = []) => {
