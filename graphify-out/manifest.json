@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "src/MerchantSalesView.jsx": {
-    "mtime": 1794482553.81534,
-    "ast_hash": "43c3dcacd80af1ab14e7903642ff6e70",
+    "mtime": 1794483205.3105464,
+    "ast_hash": "3f0fa4f265d525694d399cea28777f7b",
     "semantic_hash": ""
   },
   "src/MusicPlayer.jsx": {
@@ -185,8 +185,8 @@
     "semantic_hash": ""
   },
   "src/components/SettingsView.jsx": {
-    "mtime": 1794465900.2793841,
-    "ast_hash": "d186a0bc0668715044f1ea82ad8e441f",
+    "mtime": 1794483144.463173,
+    "ast_hash": "e38b147aeddb80202467c4ebea9ad6d1",
     "semantic_hash": ""
   },
   "src/config/firebase.js": {
@@ -195,8 +195,8 @@
     "semantic_hash": ""
   },
   "src/config/permissions.js": {
-    "mtime": 1794465900.103443,
-    "ast_hash": "3b2bd7ee56b8f5808a9cd5bdd9284aae",
+    "mtime": 1794483144.344402,
+    "ast_hash": "9e60e1433786da62438e10763f7e881d",
     "semantic_hash": ""
   },
   "src/hooks/useDatabaseSync.js": {
@@ -535,8 +535,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1794480253.6544821,
-    "ast_hash": "cea39e3187e74e7915e28a1922ddf204",
+    "mtime": 1794482759.2524693,
+    "ast_hash": "938dc6c3ef090632625f26ee3327d485",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -715,13 +715,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1794482586.10288,
-    "ast_hash": "eef111d96093300457022b7ed60732dd",
+    "mtime": 1794483205.4317286,
+    "ast_hash": "d9225dcb1e77077c9d6c9cac0cdc9b40",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1794480235.6841903,
-    "ast_hash": "ae961704eb2f905817907da28327d744",
+    "mtime": 1794482759.1110542,
+    "ast_hash": "75aea8155db7e3208deb256593d44920",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -1125,8 +1125,8 @@
     "semantic_hash": ""
   },
   "src/utils/vanBay.js": {
-    "mtime": 1794482538.1434064,
-    "ast_hash": "46404d419d0dce2b3914db122852ea51",
+    "mtime": 1794483144.6430745,
+    "ast_hash": "0b55d1e54d186d1c9cf9f710f990d77c",
     "semantic_hash": ""
   },
   "src/ponder/demo/loadingBay.js": {
@@ -2095,8 +2095,8 @@
     "semantic_hash": ""
   },
   "src/config/patchNotes.js": {
-    "mtime": 1794482585.821141,
-    "ast_hash": "9ddd3ade53a41ea77db13457d57af403",
+    "mtime": 1794483145.0783806,
+    "ast_hash": "d23acb1acf784919aadafe12a02241f0",
     "semantic_hash": ""
   },
   "rules-test/test-opname-worklist.mjs": {
@@ -2290,8 +2290,8 @@
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION-archive.md": {
-    "mtime": 1794480235.683342,
-    "ast_hash": "7a62f7e0c5b301a1c231d48c8ecce5b7",
+    "mtime": 1794482742.1852038,
+    "ast_hash": "6db80786177561d3e8fcb1c54e1893c8",
     "semantic_hash": ""
   }
 }

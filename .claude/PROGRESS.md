@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-12 18:26 WIB, PC clock (🟢 KPM - package rules stage B LIVE 20131db3: the limit counts over days/weeks/months/forever from the shop's own sales, no Console rule; stage C, the new-shop queue for tier 4, is NEXT-SESSION top; before that: package rules stage A LIVE 141dd879; before that: Alucard file cut to 21 KB; resume made cheap: the one job is printed at start-up; all package questions answered, the package rules are the next job (NEXT-SESSION top), not built; the phone's total bar opens the order list, live df1fd6d6)**
+**Updated: 2026-11-12 18:36 WIB, PC clock (🟢 KPM - tiers 1-3 may sell a package to another salesman's shop, LIVE aabead7e; before that: package rules stage B LIVE 20131db3: the limit counts over days/weeks/months/forever from the shop's own sales, no Console rule; stage C, the new-shop queue for tier 4, is NEXT-SESSION top; before that: package rules stage A LIVE 141dd879; before that: Alucard file cut to 21 KB; resume made cheap: the one job is printed at start-up; all package questions answered, the package rules are the next job (NEXT-SESSION top), not built; the phone's total bar opens the order list, live df1fd6d6)**
+
+## 🟢 2026-11-12 18:36 WIB — KPM: his "well only tier 1.2.3 can have that ability as default and do your test" - built, tested, LIVE, pushed aabead7e
+Full story: aabead7e's message. Tiers 1-3 may sell a package to another salesman's shop (new matrix row, key sell_bundle_any_shop); a shop with no salesman still waits for every tier. The test also found and fixed: the count now filters the shop's sales by name on the phone too.
+WAITING ON ALDI: ✅ TEST as the boss: pick a shop assigned to a salesman - its packages open. Then /clear and "continue" (stage C, the new-shop list for tier 4).
 
 ## 🟢 2026-11-12 18:26 WIB — KPM: his "can u test it and continue" - stage A's save check proven for real; stage B (the limit over days) built and LIVE, pushed 20131db3
 Full story: 20131db3's message · A-Brain Brainstorm/2026-11-12_package-limit-per-shop-and-switch.md ("Stage B ... NOT the way the plan said": counted from the sales, so no new record and no Console rule) · next: NEXT-SESSION top (stage C).
