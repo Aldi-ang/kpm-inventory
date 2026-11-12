@@ -97,7 +97,7 @@ export default function PromoBundleFields({ promo, bundles = [], products = [], 
                     <option value="forever">once, forever</option>
                 </select>
             </div>
-            <p className="mt-1 text-[var(--duke-ink-8)] leading-relaxed">Always: only the salesman assigned to a shop can sell it this offer. For now the app stops a second one in the same order; counting over days arrives with the next update.</p></div>
+            <p className="mt-1 text-[var(--duke-ink-8)] leading-relaxed">Always: only the salesman assigned to a shop can sell it this offer. The count is the shop's own sales in that time; a return never gives one back.</p></div>
     </>);
     const remove = async (b) => {
         if (!(await confirmAction(`Remove the offer "${b.name}"? Salesmen stop seeing it in BUNDLES.`))) return;

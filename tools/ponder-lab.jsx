@@ -863,6 +863,11 @@ if (q.has('landlord')) {
 }
 /* &promo (stage 3): Budi's van as a DOC too, so a return / clear transaction reads his live promoCanvas */
 if (q.has('promo')) FIXTURES['motorists/f-b1'] = LAB_FLEET.find((m) => m.id === 'f-b1');
+/* &rules (the limit over days, 2026-11-12): Toko Berkah took CELLO BUNDLE 10 days ago, so its "1 per month" is used up;
+   Toko Lancar's earlier sale has no package. The terminal's shop read answers from here. */
+if (q.has('rules')) FIXTURES.transactions = [
+  { id: 'tx-old-1', type: 'SALE', customerName: 'Toko Berkah Jaya', timestamp: { seconds: Math.floor(Date.now() / 1000) - 10 * 86400 }, offers: [{ id: 'b1', name: 'CELLO BUNDLE', productIds: ['p-cg16'], taps: 1 }] },
+  { id: 'tx-old-2', type: 'SALE', customerName: 'Toko Lancar', timestamp: { seconds: Math.floor(Date.now() / 1000) - 3 * 86400 } }];
 /* round 5: what Budi left at shops on titip (the van chest's TITIP tab) - one part-paid, one Dedi handed to him,
    one settled (so it stays off the tab). They reach the screen as props, like App passes them, not through a listener. */
 const labTs = (d) => ({ seconds: Math.floor(new Date(d + 'T10:00:00+07:00').getTime() / 1000) });

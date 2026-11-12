@@ -12734,12 +12734,32 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
      days waits for the per-shop record. */
   { const pk = { id: 'p1', name: 'TAWANG PAKET', lines: [{ productId: 'tw', qty: 10, unit: 'Bks' }], gives: [{ productId: 'lt', qty: 1 }], limit: { max: 1, n: 1, unit: 'months' } };
     const shop = { name: 'TOKO MUNTILAN', assignedAgent: 'Budi' };
-    const g = (b, o) => vb.bundleGate(b, { shop, tier: 'Retail', names: ['Budi'], taps: 0, ...o });
+    const g = (b, o) => vb.bundleGate(b, { shop, tier: 'Retail', names: ['Budi'], taps: 0, sales: [], ...o });
     const no = [g({ ...pk, off: true }), g(pk, { shop: null }), g(pk, { tier: 'Ecer' }), g(pk, { shop: { name: 'BARU' } }), g(pk, { names: ['Bud', 'Budiman'] }), g(pk, { taps: 1 })];
     ok('BEHAVIOUR: a package opens only for a registered Retail/Grosir shop assigned to THIS salesman (exact name: "Bud" and "Budiman" do not open Budi\'s shop), while it is on and under its limit in the order; each of the 6 refusals gives its own reason and the wrong-salesman one names the owner',
        g(pk) === '' && g(pk, { names: [undefined, ' budi '] }) === '' && g(pk, { tier: 'Grosir' }) === '' && no.every(Boolean) && new Set(no).size === 6 && no[4].includes('Budi') &&
        g(pk, { shop: { name: 'X', assignedAgent: 'Unassigned' } }) !== '' && g({ ...pk, tiers: ['Grosir'] }) !== '' && g({ ...pk, tiers: ['Grosir'] }, { tier: 'Grosir' }) === '' &&
        g({ ...pk, tiers: ['Ecer'] }, { tier: 'Ecer' }) !== '' && vb.bundleTiers({ tiers: ['Ecer'] }).join() === 'Retail,Grosir' && g({ ...pk, limit: undefined }, { taps: 9 }) === '');
+    /* THE LIMIT OVER DAYS (stage B): the record is the shop's sales. Real dates, "now" = 2026-11-12 12:00. */
+    const now = Date.parse('2026-11-12T12:00:00+07:00'), sec = (iso) => ({ seconds: Date.parse(iso) / 1000 });
+    const took = (iso, taps, id = 'p1', type = 'SALE') => ({ type, timestamp: sec(iso), offers: [{ id, taps }] });
+    const month = { ...pk, limit: { max: 1, n: 1, unit: 'months' } }, twoWeeks = { ...pk, limit: { max: 2, n: 2, unit: 'weeks' } }, once = { ...pk, limit: { max: 1, unit: 'forever' } };
+    const at = (b, sales) => vb.bundleGate(b, { shop, tier: 'Retail', names: ['Budi'], sales, now });
+    const refusedMonth = at(month, [took('2026-10-29T09:00:00+07:00', 1)]);
+    ok('BEHAVIOUR: "1 per shop every month" - taken 2026-10-29: refused on 11-12 and names the day it opens (29 Nov); taken 2026-10-11: open; a return, another package, or a sale with no package never counts; a sale with no time yet (server time pending) counts as now',
+       refusedMonth.includes('29 Nov') && at(month, [took('2026-10-11T09:00:00+07:00', 1)]) === '' &&
+       at(month, [took('2026-11-10T09:00:00+07:00', 1, 'p1', 'RETURN'), took('2026-11-10T09:00:00+07:00', 1, 'other'), { type: 'SALE', timestamp: sec('2026-11-11T09:00:00+07:00') }]) === '' &&
+       at(month, [{ type: 'SALE', timestamp: {}, offers: [{ id: 'p1' }] }]) !== '');
+    ok('BEHAVIOUR: "2 per shop every 2 weeks" counts taps (one sale with 2 = full; 1 then 1 = full; one 15 days ago = out of the window); "once, forever" never reopens (a take from 2025 still refuses, with no date); while the sales load the card waits, when they cannot be read it says to check the signal',
+       at(twoWeeks, [took('2026-11-05T09:00:00+07:00', 2)]) !== '' && at(twoWeeks, [took('2026-11-01T09:00:00+07:00', 1), took('2026-11-10T09:00:00+07:00', 1)]) !== '' &&
+       at(twoWeeks, [took('2026-11-05T09:00:00+07:00', 1)]) === '' && at(twoWeeks, [took('2026-10-28T09:00:00+07:00', 2)]) === '' &&
+       at(once, [took('2025-01-02T09:00:00+07:00', 1)]) !== '' && !/\d/.test(at(once, [took('2025-01-02T09:00:00+07:00', 1)])) &&
+       at(month, null) !== '' && at(month, false) !== '' && at(month, null) !== at(month, false) && at({ ...pk, limit: undefined }, null) === '' &&
+       vb.bundleTaken(month, [took('2026-10-29T09:00:00+07:00', 1)], now).nextOpen === Date.parse('2026-11-29T09:00:00+07:00'));
+    ok('REGRESSION: the terminal reads the shop\'s sales by name (nameVariants, no index) only when a package has a limit, adds this phone\'s unsent sales, and passes them to the gate; App hands it the unsent sales',
+       ms.includes("getDocs(query(collection(db, `artifacts/${appId}/users/${dataOwnerId}/transactions`), where('customerName', 'in', nameVariants(shopName))))") &&
+       ms.includes('names: [photoAgent, myName], taps, sales: shopHistory });') && ms.includes('...(pendingTxs || []).filter(t => nameVariants(shopName).includes(') &&
+       read('src/App.jsx').includes('pendingTxs={pendingTxData}'));
     const cover = (taps, bks, extra = {}) => vb.packageGives([pk], { p1: { taps } }, bks ? [{ productId: 'tw', qty: bks, unit: 'Bks', ...extra }] : [], [{ id: 'tw' }]).lt;
     ok('BEHAVIOUR: a package\'s free piece follows its cigarettes - 2 packages of 10 Bks: 20 Bks in the cart cover 2 lighters, 15 cover 1, 9 cover 0, an empty cart 0; never more than the packages pressed; an Utang Barang line covers nothing',
        cover(2, 20) === 2 && cover(2, 15) === 1 && cover(2, 9) === 0 && cover(2, 0) === 0 && cover(1, 30) === 1 && cover(1, 10, { isIouFulfillment: true }) === 0 &&

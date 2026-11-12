@@ -5468,6 +5468,7 @@ const handleGitHubMirror = async () => {
               <div className="h-full w-full relative bg-[var(--duke-well-solid)]">
                       <MerchantSalesView
                           isOnline={isOnline}
+                          pendingTxs={pendingTxData}   /* unsent sales count toward a package's limit per shop */
                           /* the boss signs in as the raw Firebase user, which carries no role of
                              its own; every other screen gets the live role this way, and this one
                              read it off `user` alone — so tier 1 arrived as tier 5 and got the

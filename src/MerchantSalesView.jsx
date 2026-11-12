@@ -53,7 +53,7 @@ const readDraft = (uid) => {
     } catch { return null; }
 };
 
-const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], levels = [], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, motorists = [], storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine, promoVan = [], sellerRegion = '', regionOffers = [] }) => {
+const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], levels = [], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, motorists = [], storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine, pendingTxs = [], promoVan = [], sellerRegion = '', regionOffers = [] }) => {
     /* WHOSE VAULT THE CUSTOMER RECORDS LIVE IN — and the answer must be the same one App used to
        fetch them, or a write lands in a document nobody reads.
 
@@ -635,7 +635,25 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const photoAgent = motorists.find(m => m.id === agentProfileId)?.name || myName;
     /* MAY THIS SHOP TAKE THIS PACKAGE FROM ME? (vanBay bundleGate: off, no registered shop, an Ecer shop, a shop nobody
        assigned, a shop assigned to someone else, over the limit.) '' = yes. The card, the press and the save all ask here. */
-    const gateOf = (b, taps = bundleUse[b.id]?.taps || 0) => bundleGate(b, { shop: selectedCustomerInfo, tier: lockedTier || (selectedCustomerInfo ? priceLevelOf(selectedCustomerInfo) : 'Ecer'), names: [photoAgent, myName], taps });
+    const gateOf = (b, taps = bundleUse[b.id]?.taps || 0) => bundleGate(b, { shop: selectedCustomerInfo, tier: lockedTier || (selectedCustomerInfo ? priceLevelOf(selectedCustomerInfo) : 'Ecer'), names: [photoAgent, myName], taps, sales: shopHistory });
+    /* THE SHOP'S EARLIER PACKAGES, for the limit over days: its saved sales (the same one-field read the shop-level check
+       below uses, no index to deploy) + this phone's unsent ones. Read once per shop pick, and only when a package has a
+       limit. null = loading, false = could not be read. A shop that is new today has no earlier sales: [] at once. */
+    const [shopSales, setShopSales] = useState([]);
+    const shopName = selectedCustomerInfo && !selectedCustomerInfo.isNooRegistration ? selectedCustomerInfo.name : '';
+    const anyLimit = bundles.some(b => Number(b.limit?.max) > 0);
+    useEffect(() => {
+        if (!shopName || !anyLimit) { setShopSales([]); return undefined; }
+        let live = true;
+        setShopSales(null);
+        getDocs(query(collection(db, `artifacts/${appId}/users/${dataOwnerId}/transactions`), where('customerName', 'in', nameVariants(shopName))))
+            .then(s => { if (live) setShopSales(s.docs.map(d => d.data())); })
+            .catch(() => { if (live) setShopSales(false); });
+        return () => { live = false; };
+    }, [shopName, anyLimit, db, appId, dataOwnerId]);
+    const shopHistory = Array.isArray(shopSales)
+        ? [...shopSales, ...(pendingTxs || []).filter(t => nameVariants(shopName).includes(String(t.customerName || '').trim()))]
+        : shopSales;
 
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
         autoLockRef.current = null;   // his pick from here on; applyFix marks a GPS pick AFTER this call

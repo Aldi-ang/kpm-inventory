@@ -128,10 +128,32 @@ export const bundleTiers = (bundle) => {
   const t = ['Retail', 'Grosir'].filter(x => (bundle?.tiers || []).includes(x));
   return t.length ? t : ['Retail', 'Grosir'];
 };
+/* THE LIMIT OVER DAYS (his 2026-11-12 "add time limit from days to week or months or forever"). The record is the sales
+   themselves: every sale already stores the packages it used (`offers`, with `taps`), on the online and the offline path,
+   and a sale can never be edited or deleted (firestore.rules: transactions update, delete: false). A return is a sale of
+   its own, so it never gives the limit back (his yes). The window rolls: "1 per month" = none in the 1 month before now.
+   A sale with no time yet (just written, server time pending) is counted as now. */
+const DAY = 86400000;
+const shift = (at, limit, dir) => {
+  const n = Math.max(1, Math.floor(Number(limit?.n) || 1)), d = new Date(at);
+  if (limit?.unit === 'months') d.setMonth(d.getMonth() + dir * n);
+  else d.setTime(d.getTime() + dir * n * (limit?.unit === 'weeks' ? 7 : 1) * DAY);
+  return d.getTime();
+};
+/* how many of this package the shop took inside the window, and when the oldest of them leaves it (null = forever) */
+export function bundleTaken(bundle, sales, now = Date.now()) {
+  const forever = bundle?.limit?.unit === 'forever', from = forever ? -Infinity : shift(now, bundle?.limit, -1);
+  const takes = (sales || []).filter(t => (t.type || 'SALE') === 'SALE')
+    .map(t => ({ at: Number(t.timestamp?.seconds) ? t.timestamp.seconds * 1000 : now, o: (t.offers || []).find(o => o.id === bundle?.id) }))
+    .filter(x => x.o && x.at >= from).sort((a, b) => a.at - b.at);
+  return { taken: takes.reduce((s, x) => s + Math.max(1, Math.floor(Number(x.o.taps) || 1)), 0),
+    nextOpen: !takes.length || forever ? null : shift(takes[0].at, bundle.limit, 1) };
+}
 /* '' = this shop may take one more of this package from this seller; else the reason, in his words. ONE predicate, read
    by the card, by the press and by the save (the shop can be changed after the package went in). `taps` = how many of
-   this package the order already holds. The count over earlier days is not here yet: it needs the per-shop record. */
-export function bundleGate(bundle, { shop, tier, names, taps = 0 } = {}) {
+   this package the order already holds. `sales` = the shop's earlier sales (saved + this phone's unsent ones); null while
+   they load, false when they could not be read - a package with a limit waits for them. */
+export function bundleGate(bundle, { shop, tier, names, taps = 0, sales = [], now = Date.now() } = {}) {
   const fill = { bundle: bundle?.name || 'This package', shop: shop?.name || '' };
   if (bundle?.off) return tr('{bundle} is switched off by the office.', fill);
   if (!shop) return tr('{bundle} is only for a registered shop - pick the shop from the list first.', fill);
@@ -141,8 +163,15 @@ export function bundleGate(bundle, { shop, tier, names, taps = 0 } = {}) {
   if (owner === 'none') return tr('{shop} has no salesman assigned yet - the office assigns it first, then {bundle} opens.', fill);
   if (owner === 'other') return tr('{shop} is assigned to {agent} - only that salesman can sell it {bundle}.', { ...fill, agent: String(shop.assignedAgent).trim() });
   const max = Math.floor(Number(bundle?.limit?.max) || 0);
-  if (max > 0 && taps >= max) return tr('{bundle}: only {max} per shop - it is already in this order.', { ...fill, max });
-  return '';
+  if (max <= 0) return '';
+  if (taps >= max) return tr('{bundle}: only {max} per shop - it is already in this order.', { ...fill, max });
+  if (sales === null) return tr("Checking {shop}'s earlier packages...", fill);
+  if (sales === false) return tr("{shop}'s earlier packages could not be read - check the signal, then pick the shop again.", fill);
+  const { taken, nextOpen } = bundleTaken(bundle, sales, now);
+  if (taps + taken < max) return '';
+  return nextOpen
+    ? tr('{shop} already took {bundle} ({n}x) - the next one opens on {date}.', { ...fill, n: taken, date: new Date(nextOpen).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) })
+    : tr('{shop} already took {bundle} - it is once per shop, forever.', fill);
 }
 /* A PACKAGE ITEM IS NOT A HAND GIFT (his 2026-11-12 yes to "should a promo item that is part of a package be closed in
    that list"): how many free pieces the order's packages REALLY cover, per promo item. A package counts only as often as
