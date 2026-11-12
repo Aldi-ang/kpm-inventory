@@ -6913,13 +6913,30 @@ section('THE BELL IS ON THE PHONE SCREEN (2026-09-14)');
    costs only height; truncation is silent" — so the row wraps, and the control cluster keeps the
    right edge on its own line. The ribbon measured top 340 of 812 in the same probe: the queued
    "top:-66px" was a hidden-pane artifact, not a bug. */
-{ const PAD = 16, GAP = 12, LEFT = 232, RIGHT = 229;                 // measured, 2026-09-14
-  const oneLine = (viewport) => PAD + LEFT + GAP + RIGHT + PAD <= viewport;
-  ok('at 375 the title and the controls cannot share one line', !oneLine(375), `${PAD + LEFT + GAP + RIGHT + PAD} > 375`);
-  ok('on a desk they still can, so the desk header does not change', oneLine(1024) && oneLine(1280));
+/* 2026-11-12, THE ONE-ROW BAR (his "yes we should redesign to make it more professional", then "recommended"): on the
+   phone the row is the title, the sync sign and the bell; the book, the patch notes and the light/dark switch are the
+   `stowables`, rendered by the bar on a desk and by the menu's foot on a phone. Measured at 375 (headless, touch): bar
+   53 px (it was about 205), right cluster = 2 controls of 44 + one 8 px gap = 96. The 2026-09-14 numbers stay as the
+   reason the five could never share the phone's row. */
+{ const PAD = 16, GAP = 12, LEFT = 232, RIGHT = 229;                 // measured, 2026-09-14: all five controls
+  const PHONE_RIGHT = 44 + 8 + 44;                                   // measured, 2026-11-12: the sync sign + the bell
+  const oneLine = (viewport, right = RIGHT) => PAD + LEFT + GAP + right + PAD <= viewport;
+  ok('at 375 the title and all FIVE controls cannot share one line', !oneLine(375), `${PAD + LEFT + GAP + RIGHT + PAD} > 375`);
+  ok('at 375 the title, the sync sign and the bell do share one line', oneLine(375, PHONE_RIGHT), `${PAD + LEFT + GAP + PHONE_RIGHT + PAD} <= 375`);
+  ok('on a desk all of them still can, so the desk keeps every control in the bar', oneLine(1024) && oneLine(1280));
   const bt = read('src/components/BiohazardTheme.jsx');
+  ok('the three stowed controls are mounted ONCE and placed by width: the bar on a desk, the menu foot on a phone',
+     (bt.match(/<PonderBookButton activeTab=\{activeTab\} \/>/g) || []).length === 1 && (bt.match(/<PatchNotesButton \/>/g) || []).length === 1 &&
+     (bt.match(/kpm-theme-switch \$\{darkMode/g) || []).length === 1 && /\{desk && stowables\}/.test(bt) && /\{!desk && \(\s*<div className="grid grid-cols-2 place-items-center gap-2 px-2 mb-3" onClick=\{\(\) => setIsMobileMenuOpen\(false\)\}>\s*\{stowables\}/.test(bt) &&
+     /window\.matchMedia\('\(min-width: 1024px\)'\)/.test(bt));
+  ok('Lite Mode keeps a switch at both widths: the status line in the desk bar, a mark in the phone menu',
+     /\{desk && <LiteStatusLine user=\{user\} isLiteMode=\{isLiteMode\} onToggleLite=\{onToggleLite\} \/>\}/.test(bt) && (bt.match(/'Turn Lite Mode on'/g) || []).length === 2);
+  ok('REGRESSION: the moved block does not shrink the menu marks under 44 px - the face and the exit button share a row on the phone',
+     /className="flex flex-row justify-center lg:flex-col items-center gap-4 lg:gap-2"/.test(bt));
+  ok('the title wraps instead of being cut, and takes only what the controls leave (no second row of controls)',
+     /className="min-w-0 flex-1 basis-0 flex items-center gap-4"/.test(bt) && /font-bold tracking-\[0\.1em\] uppercase leading-tight break-words/.test(bt) && !/uppercase truncate">\s*\{\/\* an Indonesian phone/.test(bt));
   const a = bt.indexOf('kpm-topbar hide-on-print');
-  const b = bt.indexOf('<PonderBookButton activeTab={activeTab} />', a);
+  const b = bt.indexOf('{desk && stowables}', a);
   ok('the top bar and its control cluster were found', a > -1 && b > a && b - a < 6000, `${a}..${b}`);
   const bar = bt.slice(a, b);
   ok('the top bar row may wrap', /^kpm-topbar hide-on-print [^`]*\bflex-wrap\b/.test(bar),

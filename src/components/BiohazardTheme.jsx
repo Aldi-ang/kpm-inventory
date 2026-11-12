@@ -253,6 +253,18 @@ export default function BiohazardTheme({
        reasoning that a desk has room for it. It has room; he still did not ask for it. The
        ribbon is the way in at both widths now, so one default serves both. */
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    /* B, the one-row top bar (his pick 2026-11-12, "recommended"): on the phone the row holds the title, the sync sign
+       and the bell; the book, the patch notes, the light/dark switch and Lite Mode live in the menu. They are the SAME
+       components, mounted once - `desk` decides which of the two places renders them (two copies would mean two
+       modals, two unread dots and two targets for the demo guide). */
+    const [desk, setDesk] = useState(() => typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(min-width: 1024px)').matches);
+    useEffect(() => {
+        if (!window.matchMedia) return undefined;
+        const mq = window.matchMedia('(min-width: 1024px)');
+        const on = () => setDesk(mq.matches);
+        mq.addEventListener('change', on);
+        return () => mq.removeEventListener('change', on);
+    }, []);
 
     /* Tell the rest of the app the sidebar is taking 256px.
 
@@ -526,6 +538,28 @@ export default function BiohazardTheme({
        this app has no logo file, and a generic menu glyph would say nothing — so the circle
        carries the mark of the tab you are ON. Collapsed, the rail still answers "where am I". */
     const TotemMark = visibleMenu.find(i => i.id === activeTab)?.icon || LayoutGrid;
+    /* the three controls that sit in the bar on a desk and in the menu on a phone (see `desk`) */
+    const stowables = (
+        <>
+            <PonderBookButton activeTab={activeTab} />
+            <PatchNotesButton />
+            {setDarkMode && (
+                <button
+                    onClick={() => setDarkMode(prev => !prev)}
+                    role="switch"
+                    aria-checked={!darkMode}
+                    aria-label={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                    title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                    className={`kpm-theme-switch ${darkMode ? '' : 'is-light'}`}
+                >
+                    {/* 15, up from 12, because the knob went 22 -> 28. An icon that
+                        does not grow with its knob leaves a ring of empty colour and
+                        reads as a smaller switch, not a bigger one. */}
+                    <span className="knob">{darkMode ? <Moon size={15} /> : <Sun size={15} />}</span>
+                </button>
+            )}
+        </>
+    );
 
     return (
         /* 🔴 THIS ONE CLASS WAS THE WHOLE OF *"the background is still black on light mode"*.
@@ -967,6 +1001,23 @@ export default function BiohazardTheme({
                         </div>
                     )}
 
+                    {/* B, the one-row top bar: on the phone these left the bar for the menu (see `desk`). A press on any
+                        of them also puts the menu away, so what it opens is not behind the menu. */}
+                    {!desk && (
+                        <div className="grid grid-cols-2 place-items-center gap-2 px-2 mb-3" onClick={() => setIsMobileMenuOpen(false)}>
+                            {stowables}
+                            {onToggleLite && (
+                                <button type="button" onClick={onToggleLite} aria-pressed={!!isLiteMode}
+                                    aria-label={isLiteMode ? 'Lite Mode is on. Tap to turn it off' : 'Turn Lite Mode on'}
+                                    title={isLiteMode ? 'Lite Mode on - tap to turn it off' : 'Lite Mode off - tap to turn it on'}
+                                    className="kpm-rail-mark relative w-full flex items-center justify-center h-11 text-[#b39c7d]">
+                                    <Zap size={19} className={`kpm-rail-icon ${isLiteMode ? 'text-[var(--duke-amber-ink)]' : ''}`} />
+                                    <span className="kpm-rail-word">Lite</span>
+                                </button>
+                            )}
+                        </div>
+                    )}
+
                     {/* HIS CALL: "nah bro bring back that music player man". It is here at every
                         width now. A 76px rail genuinely cannot hold the transport and the volume
                         slider, so on a phone the player keeps only its head — the note and
@@ -979,7 +1030,9 @@ export default function BiohazardTheme({
 
                         {/* A column at BOTH widths now — `lg:flex-row` was laying the face, the
                             name and the logout button side by side across 256px. */}
-                        <div className="flex flex-col items-center gap-2">
+                        {/* 2026-11-12: side by side on the PHONE. The four controls that left the top bar took 100 px of this
+                            foot, and the owner's 17 marks shrank to 41 px to pay for it; this row gives the height back. */}
+                        <div className="flex flex-row justify-center lg:flex-col items-center gap-4 lg:gap-2">
                             {/* HIS CALL: "my profile picture above the logout button should follow
                                 the one each email have on the agent profile ... we dont need that
                                 mascott profile anymore". So: the agent's own uploaded photo, then
@@ -1083,39 +1136,21 @@ export default function BiohazardTheme({
                     on a 375 phone: clipped, never drawn. The row wraps instead of clipping; on a
                     desk the same sum fits in one line, so nothing there moves. His rule on wrap
                     vs. truncate: *"wrapping shows every character and costs only height"*. */}
-                <div className={`kpm-topbar hide-on-print pt-4 lg:pt-6 px-4 lg:px-8 pb-2 flex flex-wrap justify-between items-end gap-3 border-b border-[#3e3226] shrink-0 relative`}>
-                    {/* 👻 THE GHOST IS THE SECTION'S MARK NOW, NOT ITS NAME.
-                        His note when I proposed deleting it: *"well it change according to the
-                        choosen app section"* — and he is right, that is the good part, so it is
-                        kept. What is dropped is the redundancy: it used to print the tab NAME at
-                        60px, the same word already set 24px to its left, and it sat directly
-                        behind the bell and the clock while doing it. Text behind text is an echo,
-                        and letterforms are the worst possible thing to put under a control.
-                        The same tab's ICON still changes with every section, still fills the
-                        corner, and cannot be misread as a second label. */}
-                    <TotemMark
-                        size={150}
-                        strokeWidth={1}
-                        aria-hidden="true"
-                        className="kpm-topbar-ghost hidden lg:block"
-                    />
-
-                    <div>
-                        {/* The status line is the Lite switch — see LiteStatusLine above. */}
-                        <LiteStatusLine user={user} isLiteMode={isLiteMode} onToggleLite={onToggleLite} />
-                        {/* `text-shadow-glow` is gone: a white blur around white letterforms is
-                            the one 2015 thing left in this row, and it softens the very edges the
-                            letter-spacing exists to sharpen. The gold rule under the title already
-                            carries the emphasis, and it MOVES when you change tab, which is the
-                            part that means something. */}
-                        <div className="text-xl lg:text-2xl text-[var(--ink)] font-bold tracking-[0.15em] uppercase truncate">
-                            {/* an Indonesian phone reads the tab's menu word; English keeps the id it always showed */}
-                            {tabWord && tr(tabWord) !== tabWord ? tr(tabWord) : activeTab.replace(/_/g, ' ')}
+                <div className={`kpm-topbar hide-on-print min-h-[52px] py-1 px-4 lg:px-8 flex flex-wrap justify-between items-center gap-x-3 gap-y-1 border-b border-[#3e3226] shrink-0 relative`}>
+                    {/* flex-1 + basis-0: the title takes what the controls leave and wraps inside it, so the controls
+                        never drop to a second row (they did: 205 px of header on a 812 px phone). */}
+                    <div className="min-w-0 flex-1 basis-0 flex items-center gap-4">
+                        <div className="min-w-0">
+                            <div className="text-[17px] lg:text-xl text-[var(--ink)] font-bold tracking-[0.1em] uppercase leading-tight break-words">
+                                {/* an Indonesian phone reads the tab's menu word; English keeps the id it always showed */}
+                                {tabWord && tr(tabWord) !== tabWord ? tr(tabWord) : activeTab.replace(/_/g, ' ')}
+                            </div>
+                            {/* Re-keyed on the tab, so the rule redraws itself every time you move. Desk only: on the
+                                phone the row is the title and two signs, nothing else. */}
+                            {desk && <span key={activeTab} className="kpm-title-rule"></span>}
                         </div>
-                        {/* Re-keyed on the tab, so the rule redraws itself every time you move.
-                            It is the only motion in this row and it is the one that carries
-                            meaning: something changed, and this is what it changed to. */}
-                        <span key={activeTab} className="kpm-title-rule"></span>
+                        {/* The status line is the Lite switch - see LiteStatusLine above. On the phone it is a mark in the menu. */}
+                        {desk && <LiteStatusLine user={user} isLiteMode={isLiteMode} onToggleLite={onToggleLite} />}
                     </div>
 
                     {/* `ml-auto`: when this cluster wraps onto its own line, `justify-between` has
@@ -1132,33 +1167,9 @@ export default function BiohazardTheme({
                         {/* First in the row on purpose. The other three report STATE — synced,
                             theme, notifications. This one is the only one that opens content, and
                             a thing you read does not belong wedged between two indicators. */}
-                        <PonderBookButton activeTab={activeTab} />
-                        <PatchNotesButton />
+                        {desk && stowables}
 
                         {syncIndicator}
-
-                        {/* A SWITCH, not a chip. His note: "make sure that it background change
-                            from white to black according to the changes" — so the track itself
-                            carries the answer. Black track with the knob left means you are in
-                            the dark; white track with the knob right means you are in the light.
-                            The knob shows the state you are IN, not the one you would get: a
-                            switch that displays its destination is the oldest way to make a
-                            toggle unreadable. `role="switch"` so it is announced as one. */}
-                        {setDarkMode && (
-                            <button
-                                onClick={() => setDarkMode(prev => !prev)}
-                                role="switch"
-                                aria-checked={!darkMode}
-                                aria-label={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-                                title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-                                className={`kpm-theme-switch ${darkMode ? '' : 'is-light'}`}
-                            >
-                                {/* 15, up from 12, because the knob went 22 -> 28. An icon that
-                                    does not grow with its knob leaves a ring of empty colour and
-                                    reads as a smaller switch, not a bigger one. */}
-                                <span className="knob">{darkMode ? <Moon size={15} /> : <Sun size={15} />}</span>
-                            </button>
-                        )}
 
                         {/* The wrapper this used to sit in carried `z-[9999]` and did nothing at
                             all — z-index is ignored on an element that is not positioned, so it
