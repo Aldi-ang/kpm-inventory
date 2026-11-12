@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "src/App.jsx": {
-    "mtime": 1794479865.4171042,
-    "ast_hash": "f9e50f02010bfbdd9756de3ef9f2c041",
+    "mtime": 1794482553.9564168,
+    "ast_hash": "1e6d014390f6d582526d0d2fb134ded2",
     "semantic_hash": ""
   },
   "src/ConsignmentFinanceView.jsx": {
@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "src/MerchantSalesView.jsx": {
-    "mtime": 1794466018.8433478,
-    "ast_hash": "a180ffad15d02608ddc108a0d18b60b5",
+    "mtime": 1794482553.81534,
+    "ast_hash": "43c3dcacd80af1ab14e7903642ff6e70",
     "semantic_hash": ""
   },
   "src/MusicPlayer.jsx": {
@@ -535,8 +535,8 @@
     "semantic_hash": ""
   },
   ".claude/PROGRESS.md": {
-    "mtime": 1794465303.7078485,
-    "ast_hash": "214e639d6a5dadef55ef0106cfc28463",
+    "mtime": 1794480253.6544821,
+    "ast_hash": "cea39e3187e74e7915e28a1922ddf204",
     "semantic_hash": ""
   },
   ".claude/pre-compact-context.md": {
@@ -715,13 +715,13 @@
     "semantic_hash": ""
   },
   "src/config/logicFixes.selfcheck.mjs": {
-    "mtime": 1794479909.990852,
-    "ast_hash": "3ab6d62e91eae262de482acf1033aa70",
+    "mtime": 1794482586.10288,
+    "ast_hash": "eef111d96093300457022b7ed60732dd",
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION.md": {
-    "mtime": 1794465302.4738643,
-    "ast_hash": "36d4a0af380cf274a878e29cbec1f2fb",
+    "mtime": 1794480235.6841903,
+    "ast_hash": "ae961704eb2f905817907da28327d744",
     "semantic_hash": ""
   },
   ".claude/SWEEP-2026-08-19.md": {
@@ -795,8 +795,8 @@
     "semantic_hash": ""
   },
   "tools/ponder-lab.jsx": {
-    "mtime": 1794479985.3270824,
-    "ast_hash": "fa7f2f54727f7b7f57838d3e7b1ec727",
+    "mtime": 1794482585.473277,
+    "ast_hash": "c767bb46524011bbf1ac22fe5277b70b",
     "semantic_hash": ""
   },
   ".claude/PONDER-PLAN.md": {
@@ -1125,8 +1125,8 @@
     "semantic_hash": ""
   },
   "src/utils/vanBay.js": {
-    "mtime": 1794465900.4581058,
-    "ast_hash": "444da41cf202448088c11abb66d9945b",
+    "mtime": 1794482538.1434064,
+    "ast_hash": "46404d419d0dce2b3914db122852ea51",
     "semantic_hash": ""
   },
   "src/ponder/demo/loadingBay.js": {
@@ -1880,8 +1880,8 @@
     "semantic_hash": ""
   },
   "src/components/PromoBundleFields.jsx": {
-    "mtime": 1794480009.1585293,
-    "ast_hash": "4ddddc7fb8efb88009738555a7a18796",
+    "mtime": 1794482585.6165926,
+    "ast_hash": "1f56e63de8dde9920b8911982aff7e28",
     "semantic_hash": ""
   },
   "rules-test/test-promo-offers.mjs": {
@@ -2075,8 +2075,8 @@
     "semantic_hash": ""
   },
   "src/config/lang.js": {
-    "mtime": 1794479865.8302186,
-    "ast_hash": "bdde52d51aa4cf3c1444109ff039fa11",
+    "mtime": 1794482585.721031,
+    "ast_hash": "3e0fd7c80230aaf6a3b555877e509719",
     "semantic_hash": ""
   },
   "src/components/HazardMark.jsx": {
@@ -2095,8 +2095,8 @@
     "semantic_hash": ""
   },
   "src/config/patchNotes.js": {
-    "mtime": 1794479865.9737842,
-    "ast_hash": "783a6d59282e8276e0506702b5560c5d",
+    "mtime": 1794482585.821141,
+    "ast_hash": "9ddd3ade53a41ea77db13457d57af403",
     "semantic_hash": ""
   },
   "rules-test/test-opname-worklist.mjs": {
@@ -2290,8 +2290,8 @@
     "semantic_hash": ""
   },
   ".claude/NEXT-SESSION-archive.md": {
-    "mtime": 1794462674.521875,
-    "ast_hash": "bbc564e3dbae98dfd9a54364a373739d",
+    "mtime": 1794480235.683342,
+    "ast_hash": "7a62f7e0c5b301a1c231d48c8ecce5b7",
     "semantic_hash": ""
   }
 }

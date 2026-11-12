@@ -130,7 +130,6 @@
   "128": "k",
   "129": "GoodsReceivedStage.jsx",
   "130": "test-seat-limit.mjs",
-  "131": "career.js",
   "132": "A",
   "133": "mixedUnits.selfcheck.mjs",
   "134": "UpdateStatus.jsx",
@@ -140,7 +139,6 @@
   "138": "demo-reset.js",
   "139": "useOfflineEngine",
   "140": "ConfirmGate.jsx",
-  "141": "test-missed-log.mjs",
   "142": "interact.mjs",
   "143": "intro.mjs",
   "144": "fixes.mjs",
@@ -152,7 +150,6 @@
   "150": "heads.mjs",
   "151": "hint2.mjs",
   "152": "wbar.mjs",
-  "153": "AgentChestStage.jsx",
   "154": "mkcyi.mjs",
   "155": "SaleReceipt.jsx",
   "156": "cdp.mjs",
@@ -173,7 +170,6 @@
   "171": "convertToBks",
   "172": "autoprefixer",
   "173": "SaleReceipt.jsx",
-  "174": "docChanges.selfcheck.mjs",
   "175": "ANTIGRAVITY-TASK.md",
   "176": "ShellLab",
   "177": "main.jsx",
@@ -185,7 +181,5 @@
   "185": "vaultGrace.js",
   "186": "cloud-start.mjs",
   "187": "PatchNotes.jsx",
-  "188": "StockByWarehouseTable.jsx",
-  "189": "openApp",
-  "190": "@vitejs/plugin-react"
+  "189": "openApp"
 }

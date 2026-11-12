@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-12 17:43 WIB, PC clock (🟢 KPM - package rules stage A LIVE 141dd879 (switch, which shops, assigned salesman only, package items closed in hand-give); stage B, the limit over days, is NEXT-SESSION top; before that: Alucard file cut to 21 KB; resume made cheap: the one job is printed at start-up; all package questions answered, the package rules are the next job (NEXT-SESSION top), not built; the phone's total bar opens the order list, live df1fd6d6)**
+**Updated: 2026-11-12 18:26 WIB, PC clock (🟢 KPM - package rules stage B LIVE 20131db3: the limit counts over days/weeks/months/forever from the shop's own sales, no Console rule; stage C, the new-shop queue for tier 4, is NEXT-SESSION top; before that: package rules stage A LIVE 141dd879; before that: Alucard file cut to 21 KB; resume made cheap: the one job is printed at start-up; all package questions answered, the package rules are the next job (NEXT-SESSION top), not built; the phone's total bar opens the order list, live df1fd6d6)**
+
+## 🟢 2026-11-12 18:26 WIB — KPM: his "can u test it and continue" - stage A's save check proven for real; stage B (the limit over days) built and LIVE, pushed 20131db3
+Full story: 20131db3's message · A-Brain Brainstorm/2026-11-12_package-limit-per-shop-and-switch.md ("Stage B ... NOT the way the plan said": counted from the sales, so no new record and no Console rule) · next: NEXT-SESSION top (stage C).
+WAITING ON ALDI: ✅ TEST: set a package to "1 per shop every 1 month" (Fleet & Canvas → Team offers → RULES), sell it to one of your shops, then pick that shop again: the card says the date the next one opens. ❓ ANSWER: the boss-account question in the 17:43 entry below, still open. Then /clear and "continue".
 
 ## 🟢 2026-11-12 17:43 WIB — KPM: his "continue" - the package rules, stage A, built and LIVE, pushed 141dd879
 Full story: 141dd879's message · A-Brain Brainstorm/2026-11-12_package-limit-per-shop-and-switch.md ("Stage A built", the 6 choices made while building) · next: NEXT-SESSION top (stage B: the rule, the per-shop record, the limit over days).

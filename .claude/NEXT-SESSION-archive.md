@@ -1,3 +1,29 @@
+<!-- finished 2026-11-12: package rules stage B, kpm 20131db3 (built from the sales, not a new record) -->
+# The one job
+
+THE PACKAGE (PAKET) RULES, STAGE B - the limit over days. Stage A is LIVE (kpm 141dd879, its commit message is the full story). Decisions and his words: A-Brain Brainstorm/2026-11-12_package-limit-per-shop-and-switch.md (read its last two sections only; do not re-derive).
+
+WHAT STAGE A LEFT IN PLACE: an offer carries `off: true`, `tiers: ['Retail'|'Grosir']` (absent = both, Ecer never) and `limit: { max, n, unit }` (unit days / weeks / months, or 'forever' with no n). src/utils/vanBay.js: bundleGate(bundle, { shop, tier, names, taps }) returns '' or the reason; shopOwner (EXACT name match, never loose); packageGives (the gift follows the cigarettes); bundleRuleWords. src/MerchantSalesView.jsx: gateOf(b, taps) is asked on the card, in applyBundle and at the top of handleFinalDeal. Matrix keys switch_bundle and set_bundle_limit (permissions.js tierThreeDefault). The limit today only stops a second package inside ONE order; the editor (src/components/PromoBundleFields.jsx, the sentence "For now the app stops a second one in the same order") and the 2026-11-12 patch note both say so - remove that sentence when B ships.
+
+WHAT B BUILDS, in this order:
+1. THE RULE FIRST. firestore.rules is a DRAFT: write the new block, report every allow line to him in plain words, he publishes it in the Console, and only then does code that needs it go live. Before writing the block: grep "CHANGE [0-9]" firestore.rules and take the highest number plus one. Read A-Brain Wiki/Entities/Fleet Captain Permission Gap.md first (isAreaAdmin() covers only AREA_ADMIN; tier 4 is the string FLEET_CAPTAIN).
+2. THE RECORD: one small document per shop per package - who took it (salesman id and name), when, how many. The salesman assigned to the shop creates it; bosses read it. Proposed place: artifacts/{appId}/users/{bossUid}/packageTakes/{shopId}_{bundleId}; check the customers block in firestore.rules for the shape to copy before choosing.
+3. THE ASSIGNMENT ID: src/JourneyView.jsx writes assignedAgent: agentName near line 700 - save the salesman's roster id beside it (a new field), keep the name. Old shops keep working on the name; the rule may trust only the id.
+4. THE LIMIT: bundleGate gets the number already taken inside the offer's window = the record + this phone's unsent sales (a saved sale keeps `offers`, each with `taps`). Over the limit -> the card says when the next one opens. A rolling window from the last take is the simplest; say which one was built.
+5. One self-check line on real dates (1 per month: day 29 refused, day 31 open; 'forever' never reopens), the patch note, render the card.
+
+TRAPS: the record must NEVER ride in the sale's own batch - a refused record must not throw a real sale away; write it after the sale commits, and a failed write is reported and retried, never fatal. assignedAgent is free text: compare it on the phone, never in a rule. A return never gives the limit back (his yes) - do not touch Retur. The save-time gate in handleFinalDeal is pinned by text only (the lab has no proof photo): exercise it for real if a way appears. The lab: npx vite --config tools/ponder-lab.config.mjs (launch name ponder-lab, port 4190), then /tools/ponder-lab.html?promobundles for the editor and ?shell&terminal&promo&bundles&rules for the terminal (Toko Berkah = his Retail shop, Sumber = his Ecer shop, Lancar = another salesman's, Maju = nobody's).
+
+ASK HIM ONCE BEFORE BUILDING (one message, both): (a) "May tier 3 and above reset a shop's package count by hand, for a mistake? yes / no. Recommended: yes, and the reset is written in the audit log." (b) the boss-account question from PROGRESS, if still unanswered.
+
+AFTER B: stage C = the new-shop confirmation queue (tier 4, the code's FLEET_CAPTAIN, confirms by default; a higher tier inside that team sees the same request; copy the Grosir request in src/components/CustomerManager.jsx: requestedTier, grosirAsks, grosirConfirmedBy). Stage D = one line in the boss's report: took a package, returned the cigarettes within 7 days. Then the Journey Plan redesign (grep "JOURNEY PLAN" in .claude/NEXT-SESSION-archive.md, read that one block only).
+
+ALSO QUEUED FOR ANTIGRAVITY (his yes): a read-only audit of the whole Retur path, every way a return could be used for gain - write it into .claude/ANTIGRAVITY-TASK.md only once its current task (the 38-findings audit, Status OPEN on 2026-11-12) says DONE.
+
+KEEP THIS FILE UNDER 7,000 CHARACTERS - ONE job. The start-up hook prints it whole. When a job is done, move its text to the top of NEXT-SESSION-archive.md and write the next one here.
+
+---
+
 <!-- finished 2026-11-12: package rules stage A, kpm 141dd879 -->
 # The one job
 
