@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-12 06:36 WIB, PC clock (🟢 KPM - the shared top bar is one row on every screen, live d4e84da6; Journey Plan is next; nothing waits on him but a test)**
+**Updated: 2026-11-12 11:05 WIB, PC clock (🟢 KPM - Sales Terminal item types are buttons, promo goods have − and +, live 00cf1b51; Journey Plan is next; nothing waits on him but a test)**
+
+## 🟢 2026-11-12 11:05 WIB — KPM: his "i want u to redesign this panel that show type of the items here and also looks like promo doesnt have add button" - the item types are bordered buttons on their own phone row; promo goods on the slip have − n +; a package card shows a + and a tap count; LIVE, pushed 00cf1b51
+Full story: 00cf1b51's message · next: NEXT-SESSION top (Journey Plan).
+WAITING ON ALDI: ✅ TEST on the phone: Sales Terminal - the item types are buttons in their own row above the search, none cut in half; open the order slip, open "Promo · gratis", press + and − on a promo item. ❓ ANSWER (only if wrong): "By 'promo doesnt have add button' I understood the promo goods list on the order slip (it had only a number box). If you meant another place, tell me which screen." Not rendered: the package (Paket) card's + mark - the lab has no package to show.
 
 ## 🟢 2026-11-12 06:36 WIB — KPM: his "recommended" (the sync sign and the bell stay on the phone's row; Panduan, Catatan update and the light/dark switch move into the side menu) - the shared top bar is ONE ROW on every screen, LIVE; pushed d4e84da6
 Full story: d4e84da6's message · board: A-Brain Raw/2026-11-11-redesign-today/TOPBAR-V3.png · next: NEXT-SESSION top (Journey Plan).
