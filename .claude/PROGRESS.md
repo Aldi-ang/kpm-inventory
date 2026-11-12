@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-12 12:15 WIB, PC clock (🟠 KPM - the package limit is PER SHOP, per time window, sold only by the shop's assigned salesman, with an on/off switch - his calls; no code yet, 4 questions wait on him; a package's − n + is live 6257a8df; Journey Plan after that)**
+**Updated: 2026-11-12 12:24 WIB, PC clock (🟢 KPM - all package questions answered, the package rules are the next job (NEXT-SESSION top), not built; the phone's total bar opens the order list, live df1fd6d6)**
+
+## 🟢 2026-11-12 12:24 WIB — KPM: his "boss assign here means, should be regional manager tier 4 as default who are responsible for that confirming the new customer, but higher tier inside that team can also see that, for example if tier 3 visit muntilan then that tier 3 can see the confirmation coming to its account as well . yes to all recommendation" - every package question is answered; the package rules are the next job, NOT built; the phone's total bar now opens the order list, LIVE, pushed df1fd6d6
+Full story: df1fd6d6's message (the bar) · A-Brain Brainstorm/2026-11-12_package-limit-per-shop-and-switch.md (the package decisions) · next: NEXT-SESSION top (the package rules, stage A first).
+WAITING ON ALDI: ✅ TEST on the phone: Sales Terminal - press the words "Pesanan · 1 barang" or the total at the bottom: the order list opens, the same as Bayar. Nothing else: all 12:15 questions below are answered (yes to all; a new shop is confirmed by tier 4, higher tiers of that team see the request). Antigravity: the Retur audit is queued behind its open task.
 
 ## 🟠 2026-11-12 12:15 WIB — KPM: his "decide 1 = A, decide 2 = we should add time limit from days to week or months or forever ... decide 3 = i dont understand ... the only sales that can sell bundle to that stores is the one who is assigned to that stores" - NO code; his assigned-salesman rule replaces the ticket, 4 questions wait
 Full story: A-Brain Brainstorm/2026-11-12_package-limit-per-shop-and-switch.md ("His answers") · next: NEXT-SESSION top.
