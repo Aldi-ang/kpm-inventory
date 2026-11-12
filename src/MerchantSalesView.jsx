@@ -11,7 +11,7 @@ import { demoPhoto } from './config/demoPhoto.js';
 import ProofCamera from './components/ProofCamera.jsx';
 import { savePhotoAndGetReference, fileOrKeepPhoto, photoStamp, nameTag, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey, promoPic, isDamagedPack, lotsAfterPacks } from './utils/helpers';
 import HazardMark from './components/HazardMark';
-import { giveLines, bundleCheck, bundlesFor, bundleUnitPrices } from './utils/vanBay';
+import { giveLines, bundleCheck, bundlesFor, bundleUnitPrices, bundleTakeBack } from './utils/vanBay';
 import { waNumber } from './utils/whatsapp.js';
 import { areaFromPin, watchBorders } from './utils/areaFromPin.js';
 import { grosirHold, priceLevelOf, canConfirmGrosir, grosirRequestNotice } from './utils/customerAccess.js';
@@ -849,6 +849,13 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         setGive(g => chk.gives.reduce((acc, x) => ({ ...acc, [x.productId]: (acc[x.productId] || 0) + x.qty }), g));
         setBundleUse(u => ({ ...u, [b.id]: { id: b.id, name: b.name, region: b.region || '', productIds: chk.lines.map(l => l.product.id), taps: (u[b.id]?.taps || 0) + 1 } }));
         triggerMerchantSpeak('add');
+    };
+    // the − on a package card: one package back out - its cigarettes, its free pieces, one off the count (bundleTakeBack)
+    const removeBundle = (b) => {
+        if (!bundleUse[b.id]?.taps) return;
+        setCart(prev => bundleTakeBack(b, inventory, prev, {}, tierPrice).cart);
+        setGive(g => bundleTakeBack(b, inventory, [], g, tierPrice).give);
+        setBundleUse(u => { const { [b.id]: cur, ...rest } = u; return cur?.taps > 1 ? { ...rest, [b.id]: { ...cur, taps: cur.taps - 1 } } : rest; });
     };
 
     /* MIXED UNITS — "2 karton, 3 slop, 17 bungkus" of one product.
@@ -2749,8 +2756,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         const chk = bundleCheck(b, inventory, promoVan, cart, give);
                         const price = Number(b.price) > 0 ? Number(b.price) : (chk.lines || []).reduce((s, l) => s + tierPrice(l.product, newLineTier()) * l.bks, 0);
                         return (
-                            <button key={b.id} type="button" data-guide="bundle-card" onClick={() => applyBundle(b)}
-                                className={`kpm-hover font-mono w-full shrink-0 text-left py-3 lg:px-4 border-b border-[var(--duke-edge-1)] flex items-center gap-3 transition-colors lg:hover:bg-[var(--duke-fill-well)] ${chk.ok ? '' : 'opacity-60'}`}>
+                            <div key={b.id} data-guide="bundle-card" onClick={() => { unlockSounds().then(() => playSound(chk.ok ? 'click' : 'error')); applyBundle(b); }}
+                                className={`kpm-hover font-mono w-full shrink-0 text-left cursor-pointer py-3 lg:px-4 border-b border-[var(--duke-edge-1)] flex items-center gap-3 transition-colors lg:hover:bg-[var(--duke-fill-well)] ${chk.ok ? '' : 'opacity-60'}`}>
                               <span className="flex-1 min-w-0 flex flex-col gap-1">
                                 <h4 className="text-[var(--duke-ink-1)] text-[12px] lg:text-sm font-black uppercase leading-tight">{b.name}{b.region && <span className="ml-2 text-[10px] lg:text-xs font-bold tracking-widest text-[var(--duke-ink-5)]">· {b.region} ONLY</span>}</h4>
                                 {(b.lines || []).map((l, i) => (
@@ -2763,10 +2770,24 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     {chk.ok ? `Rp ${new Intl.NumberFormat('id-ID').format(price)}${Number(b.price) > 0 ? ' · BUNDLE PRICE' : ''}` : chk.why}
                                 </span>
                               </span>
-                              {/* the whole card is the press; the plus says so, and the count reports each tap (same look as a product's +) */}
-                              {bundleUse[b.id]?.taps > 0 && <span className="shrink-0 text-[15px] font-black tabular-nums text-[var(--duke-ink-1)]">×{bundleUse[b.id].taps}</span>}
-                              <span aria-hidden="true" className="shrink-0 w-11 h-11 lg:w-9 lg:h-9 rounded-lg border border-[var(--duke-amber-edge)] text-[var(--duke-amber-ink)] text-lg font-black leading-none flex items-center justify-center">+</span>
-                            </button>
+                              {/* − n + exactly like a product row (his 2026-11-12 "no minus button ... no SFX and animation on the button press"):
+                                  the same classes, the same sounds, kpm-press for the press. A press on the card itself still adds one. */}
+                              <div className="shrink-0 flex items-center gap-2">
+                                {bundleUse[b.id]?.taps > 0 && (
+                                    <>
+                                        <button type="button" aria-label={`${b.name}: one less`}
+                                            onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound(bundleUse[b.id].taps > 1 ? 'click' : 'error')); removeBundle(b); }}
+                                            className="kpm-press kpm-hover w-11 h-11 lg:w-9 lg:h-9 rounded-lg border border-[var(--duke-edge-ctl)] bg-transparent text-[var(--duke-ink-1)] text-lg font-black leading-none flex items-center justify-center"
+                                        >−</button>
+                                        <span className="w-[26px] text-center text-[15px] font-black tabular-nums text-[var(--duke-ink-1)]">{bundleUse[b.id].taps}</span>
+                                    </>
+                                )}
+                                <button type="button" aria-label={`${b.name}: one more`}
+                                    onClick={(e) => { e.stopPropagation(); unlockSounds().then(() => playSound(chk.ok ? 'click' : 'error')); applyBundle(b); }}
+                                    className="kpm-press kpm-hover w-11 h-11 lg:w-9 lg:h-9 rounded-lg border border-[var(--duke-amber-edge)] bg-transparent text-[var(--duke-amber-ink)] text-lg font-black leading-none flex items-center justify-center"
+                                >+</button>
+                              </div>
+                            </div>
                         );
                     })}
                     {filteredItems.map(item => {

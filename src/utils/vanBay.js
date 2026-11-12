@@ -65,6 +65,30 @@ export const promoWithPending = (canvas, pendingTxs, vanId) => (pendingTxs || []
    qty, unit }], gives: [{ productId, qty }] }`, with NO price of its own: the terminal turns it into ordinary cart lines at
    the shop's tier plus pieces in the give box, so every money path stays as it was. Can THIS van cover it on top of what
    the cart and the give box already hold? `why` names the first thing missing, in his words. */
+/* ONE PACKAGE BACK OUT OF THE DEAL (the − on a package card, his 2026-11-12 "there is no minus button"): the mirror of
+   the terminal's applyBundle. A priced package leaves its own `bundlePriced` lines; an unpriced one leaves the ordinary
+   line it was summed into (never an Utang Barang line, never another package's priced line). A line that reaches 0 goes.
+   A line the salesman already removed by hand is skipped, so this can never take more than is there. */
+export function bundleTakeBack(bundle, inventory, cart, give, priceOf) {
+  const priced = Number(bundle?.price) > 0;
+  let list = cart || [];
+  for (const l of bundle?.lines || []) {
+    const have = list.find(i => i.productId === l.productId && (priced ? i.bundlePriced === bundle.id : !i.bundlePriced && !i.isIouFulfillment));
+    if (!have) continue;
+    const qty = Number(l.qty) || 0;
+    if (priced) { list = have.qty - qty > 0 ? list.map(i => i === have ? { ...i, qty: i.qty - qty } : i) : list.filter(i => i !== have); continue; }
+    const p = have.product || (inventory || []).find(x => x.id === l.productId) || {};
+    const bks = convertToBks(have.qty, have.unit, p) - convertToBks(qty, l.unit || 'Bks', p);
+    list = bks > 0 ? list.map(i => i === have ? { ...i, qty: bks, unit: 'Bks', mix: undefined, calculatedPrice: priceOf(p, i.priceTier) } : i) : list.filter(i => i !== have);
+  }
+  const g = { ...(give || {}) };
+  for (const x of bundle?.gives || []) {
+    const n = (Number(g[x.productId]) || 0) - Math.floor(Number(x.qty) || 0);
+    if (n > 0) g[x.productId] = n; else delete g[x.productId];
+  }
+  return { cart: list, give: g };
+}
+
 export function bundleCheck(bundle, inventory, promoVan, cart = [], give = {}) {
   const lines = [], gives = [];
   for (const l of bundle?.lines || []) {

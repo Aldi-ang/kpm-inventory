@@ -7237,8 +7237,8 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      payment select and the proof block, so the stripped text cannot see them */
   const r = merchant;
   const steppers = (m.match(/kpm-press kpm-hover w-11 h-11 lg:w-9 lg:h-9 rounded-lg/g) || []).length;   /* 36 on the desk since B, 2026-11-11 (was 32) */
-  ok('REGRESSION: the two row steppers (− / +) are 44 px on the phone (32 on the desk, as before), and no 32 px phone stepper is left',
-     steppers === 2 && !/kpm-press kpm-hover w-8 h-8/.test(m),
+  ok('REGRESSION: the row steppers (− / + on a product, and since 2026-11-12 on a package) are 44 px on the phone (32 on the desk, as before), and no 32 px phone stepper is left',
+     steppers === 4 && !/kpm-press kpm-hover w-8 h-8/.test(m),
      'they were `w-8 h-8` with a comment admitting 32 is under 44; his pick 2026-09-17 was B — the picture gave up 32 px so these could grow');
   ok('the ware picture is 64 px with p-1 on the phone (a 56 px press target), 96 → 64 is what paid for the steppers',
      /* B, 2026-11-11: the picture is 44 x 56 (still the finger minimum); the 64 px square went with the cards */
@@ -11648,8 +11648,26 @@ section('Sales Terminal, direction B - the price list (his pick 2026-11-11: "B l
      && /Math\.max\(0, Math\.min\(n, l\.qty\)\)/.test(msv));
   { const clamp = (n, q) => Math.max(0, Math.min(n, q));
     ok('and the count stays between 0 and what the van holds (7 of 6 -> 6, one less than 0 -> 0)', clamp(7, 6) === 6 && clamp(-1, 6) === 0 && clamp(3, 6) === 3); }
-  ok('a package card shows the plus mark and counts its taps',
-     /bundleUse\[b\.id\]\?\.taps > 0 &&/.test(msv) && /<span aria-hidden="true" className="shrink-0 w-11 h-11 lg:w-9 lg:h-9 rounded-lg border border-\[var\(--duke-amber-edge\)\]/.test(msv));
+  ok('a package card has − n + like a product row: real buttons with the press animation and the sounds (his "no minus button ... no SFX and animation")',
+     /bundleUse\[b\.id\]\?\.taps > 0 && \(/.test(msv) && /aria-label=\{`\$\{b\.name\}: one less`\}/.test(msv) && /aria-label=\{`\$\{b\.name\}: one more`\}/.test(msv)
+     && /playSound\(bundleUse\[b\.id\]\.taps > 1 \? 'click' : 'error'\)\); removeBundle\(b\);/.test(msv)
+     && /playSound\(chk\.ok \? 'click' : 'error'\)\); applyBundle\(b\); \}\}\s+className="kpm-press kpm-hover w-11 h-11/.test(msv)
+     && !/<button key=\{b\.id\} type="button" data-guide="bundle-card"/.test(msv));
+  { const { bundleTakeBack } = await import('../utils/vanBay.js');
+    const price = (p, tier) => (tier === 'Ecer' ? p.priceEcer : p.priceRetail) || 0;
+    const cello = { id: 'c', priceRetail: 10000, priceEcer: 11000 };
+    const deal = { id: 'b0', name: 'Deal', lines: [{ productId: 'c', qty: 10, unit: 'Bks' }], gives: [{ productId: 'tee', qty: 1 }] };
+    const two = [{ productId: 'c', qty: 20, unit: 'Bks', priceTier: 'Retail', calculatedPrice: 10000, product: cello }];
+    const one = bundleTakeBack(deal, [cello], two, { tee: 2 }, price), none = bundleTakeBack(deal, [cello], one.cart, one.give, price);
+    ok('one package back out of two leaves one: 20 Bks -> 10 Bks at the same price, 2 free pieces -> 1; the second takes the line and the piece away',
+       one.cart.length === 1 && one.cart[0].qty === 10 && one.cart[0].calculatedPrice === 10000 && one.give.tee === 1 && none.cart.length === 0 && !('tee' in none.give));
+    const pricedDeal = { id: 'b1', price: 98000, lines: [{ productId: 'c', qty: 1, unit: 'Slop' }], gives: [] };
+    const mixed = [{ productId: 'c', qty: 2, unit: 'Slop', bundlePriced: 'b1' }, { productId: 'x', qty: 1, unit: 'Bks' }, { productId: 'c', qty: 5, unit: 'Bks', isIouFulfillment: true }];
+    const p1 = bundleTakeBack(pricedDeal, [cello], mixed, {}, price), p2 = bundleTakeBack(pricedDeal, [cello], p1.cart, {}, price), p3 = bundleTakeBack(pricedDeal, [cello], p2.cart, {}, price);
+    ok('a priced package only ever leaves its own priced line: 2 -> 1 -> gone, and the other lines (an Utang Barang line too) are never touched, even on a press too many',
+       p1.cart.find(i => i.bundlePriced === 'b1').qty === 1 && p2.cart.length === 2 && !p2.cart.some(i => i.bundlePriced) && p3.cart.length === 2 && p3.cart.some(i => i.isIouFulfillment && i.qty === 5));
+    ok('and an unpriced package never eats a priced or an Utang Barang line of the same product',
+       bundleTakeBack(deal, [cello], mixed, {}, price).cart.length === 3); }
   ok('each product that goes in still reports itself: the 2 s flag is read by the total bar',
      /\{flag \? `\$\{tr\('Added ·'\)\} \$\{flag\.name\}`/.test(msv));
   ok('the slip is flat cream with dark ink - no paper texture class is left on it, and the lit Sale side is a dark plate',
