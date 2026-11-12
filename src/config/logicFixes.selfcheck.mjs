@@ -12766,6 +12766,11 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
        g(pk, { names: ['Bud'], anyShop: true, tier: 'Ecer' }) !== '' && g({ ...pk, off: true }, { anyShop: true }) !== '' && g(pk, { names: ['Bud'], anyShop: true, taps: 1 }) !== '' &&
        ['DEVELOPER', 'ADMIN', 'COMPANY_OWNER', 'AREA_ADMIN'].every(r => pm.canSellBundleAnyShop(r)) && ['FLEET_CAPTAIN', 'FIELD_OPERATIVE', 'ROOKIE'].every(r => !pm.canSellBundleAnyShop(r)) &&
        ms.includes('anyShop: canSellBundleAnyShop(userRole) });') && read('src/components/SettingsView.jsx').includes("{ id: 'sell_bundle_any_shop', label:"));
+    { const jv = code(read('src/JourneyView.jsx')).replace(/\r/g, '');
+      ok('REGRESSION: in Journey Plan only tier 1-4 (FLEET_CAPTAIN included, T5/T6 never) choose a shop\'s salesman - both Assign Fleet boxes and the save itself; moving a pin stays open (his 2026-11-12 "paintbrush features for tier 4 and above")',
+         ['DEVELOPER', 'ADMIN', 'COMPANY_OWNER', 'AREA_ADMIN', 'FLEET_CAPTAIN'].every(r => pm.isFleetManagementTier(r)) && ['FIELD_OPERATIVE', 'ROOKIE'].every(r => !pm.isFleetManagementTier(r)) &&
+         jv.includes('const canChooseSalesman = devUnlock || isFleetManagementEligible;') && jv.includes('if (!canChooseSalesman) return notify(ownerLockedWhy);') &&
+         (jv.match(/disabled=\{!canChooseSalesman/g) || []).length === 2 && !/disabled=\{!canAssignAgent/.test(jv) && jv.includes('if (!canAssignAgent) return;\n        setEditingStoreId(store.id);')); }
     const cover = (taps, bks, extra = {}) => vb.packageGives([pk], { p1: { taps } }, bks ? [{ productId: 'tw', qty: bks, unit: 'Bks', ...extra }] : [], [{ id: 'tw' }]).lt;
     ok('BEHAVIOUR: a package\'s free piece follows its cigarettes - 2 packages of 10 Bks: 20 Bks in the cart cover 2 lighters, 15 cover 1, 9 cover 0, an empty cart 0; never more than the packages pressed; an Utang Barang line covers nothing',
        cover(2, 20) === 2 && cover(2, 15) === 1 && cover(2, 9) === 0 && cover(2, 0) === 0 && cover(1, 30) === 1 && cover(1, 10, { isIouFulfillment: true }) === 0 &&

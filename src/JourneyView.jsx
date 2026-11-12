@@ -457,6 +457,12 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     // employee (isSalesman covers every tier under the boss) — so this doesn't need an
     // admin-only gate the way mapSettings does.
     const canAssignAgent = !!user;
+    /* WHO OWNS A SHOP is tier 1-4, like the paintbrush (his 2026-11-12 "i only give the paintbrush features for tier 4 and
+       above in default"). The two "Assign Fleet" boxes used canAssignAgent above, so a tier 5 could give any shop to himself
+       - and a package opens only for the shop's own salesman, so that was the way around the new-shop wait. Moving a pin
+       stays with canAssignAgent. */
+    const canChooseSalesman = devUnlock || isFleetManagementEligible;
+    const ownerLockedWhy = 'Only tier 1-4 can change who a shop belongs to.';
 
     const [selectedProvinsi, setSelectedProvinsi] = useState('All');
     const [selectedKabupaten, setSelectedKabupaten] = useState('All');
@@ -681,7 +687,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     }, [customers]);
 
     const handleAssignAgent = async (customerId, agentName) => {
-        if (!canAssignAgent) return;
+        if (!canChooseSalesman) return notify(ownerLockedWhy);
         const userId = user?.uid || user?.id || 'default';
         
         setAssignments(prev => ({ ...prev, [customerId]: agentName === 'Unassigned' ? null : agentName }));
@@ -1543,7 +1549,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                         value={assignments[store.id] || 'Unassigned'}
                                                         onChange={(e) => handleAssignAgent(store.id, e.target.value)}
                                                         style={{ colorScheme: 'dark' }}
-                                                        disabled={!canAssignAgent}
+                                                        disabled={!canChooseSalesman} title={canChooseSalesman ? undefined : ownerLockedWhy}
                                                     >
                                                         <option value="Unassigned" className="bg-slate-900 text-white">-- UNASSIGNED --</option>
                                                         {globalAgentList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}</option>)}
@@ -1772,7 +1778,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                 value={assignments[customer.id] || 'Unassigned'}
                                                                 onChange={(e) => handleAssignAgent(customer.id, e.target.value)}
                                                                 style={{ colorScheme: 'dark' }}
-                                                                disabled={!canAssignAgent || isVisited}
+                                                                disabled={!canChooseSalesman || isVisited} title={canChooseSalesman ? undefined : ownerLockedWhy}
                                                             >
                                                                 <option value="Unassigned">UNASSIGNED</option>
                                                                 {globalAgentList.map(a => <option key={a} value={a}>{a}</option>)}
