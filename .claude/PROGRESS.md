@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-12 12:53 WIB, PC clock (🟢 KPM - resume made cheap: the one job is printed at start-up; all package questions answered, the package rules are the next job (NEXT-SESSION top), not built; the phone's total bar opens the order list, live df1fd6d6)**
+**Updated: 2026-11-12 13:35 WIB, PC clock (🟢 KPM - Alucard file cut to 21 KB; resume made cheap: the one job is printed at start-up; all package questions answered, the package rules are the next job (NEXT-SESSION top), not built; the phone's total bar opens the order list, live df1fd6d6)**
+
+## 🟢 2026-11-12 13:35 WIB — KPM: his "u can cut it but make sure that all the information is still there , make it more to the point straigh forward and tidak bertele2" - the Alucard instruction file is 21 KB (was 48 KB); every rule kept, the stories moved to the vault
+Where: `.claude/skills/alucard/SKILL.md` · the full old text: A-Brain Archive/alucard-SKILL-full-2026-11-12.md (grep it, never read it whole) · also: the start-up rules now say he is 24, not 14.
+WAITING ON ALDI: nothing. /clear, then "continue" (the package rules job is printed at start-up).
 
 ## 🟢 2026-11-12 12:53 WIB — KPM: his "i clear and say continue last time, and it waste my 13% of my 5 hours quota ... make it more straight forwards" - fixed: NEXT-SESSION.md was 733 KB, now one job (5 KB) and the start-up hook prints it, so "continue" needs no file read
 What changed: .claude/NEXT-SESSION.md = the one job only (keep it under 7,000 characters; the hook warns above that) · everything older is in .claude/NEXT-SESSION-archive.md (never read whole) · the start-up note shows 4 entries, not 10 · the lessons report names 3 titles, not 27.

@@ -41,7 +41,7 @@ silently. Fixing something subtle? Add a check, not a paragraph.
 
 ### Talking to Aldi
 
-He is 14, owns this app, makes every real decision, and **skims**.
+He is 24, owns this app, makes every real decision, and **skims**.
 
 - Open every reply with ONE bold line naming what he must do. Nothing needed? Say that.
 - Mark every ask: `🔴 DECIDE` / `❓ ANSWER` / `✅ TEST`. Group them, never mid-paragraph.
