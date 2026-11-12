@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-12 11:06 WIB, PC clock (🟢 KPM - Sales Terminal item types are buttons, promo goods have − and +, live 00cf1b51; Journey Plan is next; nothing waits on him but a test)**
+**Updated: 2026-11-12 11:41 WIB, PC clock (🟢 KPM - a package has − n + with sound and press, live 6257a8df; the package LIMIT waits on his answer; Journey Plan after that)**
+
+## 🟢 2026-11-12 11:41 WIB — KPM: his "there is no minus button on the promo and i think we should add limit option ... also there is no SFX and animation on the button press ... what i meant before was not promo but paket" - a package card has − n + with the sounds and the press, LIVE, pushed 6257a8df; the LIMIT is NOT built, it waits on one answer
+Full story: 6257a8df's message · next: NEXT-SESSION top (Journey Plan, after the limit answer).
+WAITING ON ALDI: ✅ TEST on the phone: Sales Terminal > PAKET - press + three times, press − once: the count says 2 and the total drops by one package; both buttons click and move. 🔴 DECIDE: "The package limit: what should the number count? 1 = per deal: one sale can hold at most N of this package (example: TAWANG BUNDLE 1 with limit 3 - the 4th press on + says 'limit 3 per deal'). 2 = per shop per day: N for the same shop across all of today's sales. 3 = per salesman per day: N in total for the day, any shops. Recommended: 1, because the phone can check it with no internet; 2 and 3 need today's sales loaded, so a salesman who is offline could pass the limit. Who sets it: tier 3 and above by default, changeable in the permission matrix, the same as the package price today."
 
 ## 🟢 2026-11-12 11:05 WIB — KPM: his "i want u to redesign this panel that show type of the items here and also looks like promo doesnt have add button" - the item types are bordered buttons on their own phone row; promo goods on the slip have − n +; a package card shows a + and a tap count; LIVE, pushed 00cf1b51
 Full story: 00cf1b51's message · next: NEXT-SESSION top (Journey Plan).
