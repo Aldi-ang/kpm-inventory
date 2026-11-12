@@ -2102,7 +2102,15 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 <ChevronDown size={18} className={`shrink-0 ${giveOpen ? 'rotate-180' : ''}`} />
                             </button>
                         ) : <span className="text-[10px] md:text-xs font-black uppercase tracking-widest text-[var(--duke-ink-7)]">{tr('Promo · given free')}</span>}
-                        {canGive ? (giveOpen && promoVan.map(l => (
+                        {canGive ? (giveOpen && promoVan.map(l => {
+                            /* − n + like a product row (his 2026-11-12 "promo doesnt have add button"); the box still takes a typed count */
+                            const cur = Math.min(give[l.productId] || 0, l.qty);
+                            const setN = (n) => {
+                                if (n > l.qty) notify(tr('Only {n} pcs of {name} {where} - not enough for {want}.', { n: l.qty, name: l.name, where: giveWhere, want: n }));
+                                setGive(g => ({ ...g, [l.productId]: Math.max(0, Math.min(n, l.qty)) }));
+                            };
+                            const stepCls = 'kpm-press kpm-hover shrink-0 w-11 h-11 lg:w-8 lg:h-8 rounded border border-[var(--duke-edge-3)] bg-white text-[var(--duke-ink-7)] text-lg font-black leading-none flex items-center justify-center';
+                            return (
                             <div key={l.productId} className="flex items-center gap-2 md:gap-3 mt-2">
                                 <span className="relative shrink-0">
                                     <img alt="" src={promoPic(l.product || { kind: 'promo', name: l.name })} className="w-10 h-10 object-contain rounded border border-[color-mix(in_srgb,var(--duke-edge-on-paper)_30%,transparent)] bg-[var(--duke-paper-2)]" />
@@ -2112,17 +2120,15 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                     {l.name}
                                     <span className="block mt-0.5 text-[10px] font-bold normal-case tracking-normal text-[var(--duke-on-paper-dim)] tabular-nums">{l.qty} pcs {giveWhere}</span>
                                 </span>
+                                <button type="button" aria-label={`${l.name}: one less`} onClick={() => { unlockSounds().then(() => playSound(cur > 0 ? 'click' : 'error')); setN(cur - 1); }} className={`${stepCls} ${cur > 0 ? '' : 'opacity-40'}`}>−</button>
                                 <input type="number" inputMode="numeric" min="0" placeholder="0" aria-label={`${l.name}: pieces to give`}
                                     value={give[l.productId] || ''}
-                                    onChange={(e) => {
-                                        const n = Math.max(0, parseInt(e.target.value, 10) || 0);
-                                        if (n > l.qty) notify(tr('Only {n} pcs of {name} {where} - not enough for {want}.', { n: l.qty, name: l.name, where: giveWhere, want: n }));
-                                        setGive(g => ({ ...g, [l.productId]: Math.min(n, l.qty) }));
-                                    }}
-                                    className="w-20 md:w-24 min-h-[44px] lg:min-h-0 bg-white border border-[var(--duke-edge-3)] text-center text-base md:text-sm font-bold tabular-nums outline-none focus:border-[var(--duke-amber-edge)] rounded p-1 text-[var(--duke-ink-7)]" />
-                                <span className="text-sm font-bold uppercase text-[var(--duke-ink-7)]">pcs</span>
+                                    onChange={(e) => setN(parseInt(e.target.value, 10) || 0)}
+                                    className="w-12 md:w-14 min-h-[44px] lg:min-h-0 bg-white border border-[var(--duke-edge-3)] text-center text-base md:text-sm font-bold tabular-nums outline-none focus:border-[var(--duke-amber-edge)] rounded p-1 text-[var(--duke-ink-7)]" />
+                                <button type="button" aria-label={`${l.name}: one more`} onClick={() => { unlockSounds().then(() => playSound('click')); setN(cur + 1); }} className={`${stepCls} ${cur < l.qty ? '' : 'opacity-40'}`}>+</button>
                             </div>
-                        ))) : <p data-guide="promo-give-empty" className="mt-1.5 text-[11px] md:text-xs font-bold text-[var(--duke-on-paper-dim)]">{tr(giveEmpty)}</p>}
+                            );
+                        })) : <p data-guide="promo-give-empty" className="mt-1.5 text-[11px] md:text-xs font-bold text-[var(--duke-on-paper-dim)]">{tr(giveEmpty)}</p>}
                 </div>
             </div>
         </div>
@@ -2598,12 +2604,14 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         </div>
                     )}
                 </div>
-                {/* One row: the kinds as words with a gold line under the lit one (amber is a mark, never a plate), then the search. */}
-                <div className="flex items-stretch gap-2 px-3 lg:px-4 lg:mt-2 border-b border-[var(--duke-edge-1)] shrink-0 relative z-10">
-                    <div className="flex min-w-0 max-w-[58%] lg:max-w-none overflow-x-auto scrollbar-hide">
-                        {categories.map(cat => ( <button key={cat} onClick={() => setActiveCategory(cat)} className={`kpm-hover shrink-0 px-3 min-h-[44px] text-[13px] font-black uppercase tracking-wide whitespace-nowrap border-b-2 -mb-px transition-colors ${activeCategory === cat ? 'border-[var(--duke-amber-edge)] text-[var(--duke-ink-1)]' : 'border-transparent text-[var(--duke-ink-5)] hover:text-[var(--duke-ink-1)]'}`}>{tr(cat)}</button> ))}
+                {/* The kinds are bordered buttons (his 2026-11-12 "redesign this panel that show type of the items"): on the phone
+                    they get their own row, edge to edge, so a name is never cut in half beside the search; at lg the search
+                    shares the row. The lit one takes the gold edge (amber is a mark, never a plate). A 44 px press, a 32 px look. */}
+                <div className="flex flex-col lg:flex-row lg:items-stretch lg:gap-2 px-3 lg:px-4 lg:mt-2 border-b border-[var(--duke-edge-1)] shrink-0 relative z-10">
+                    <div className="flex items-center gap-1.5 min-w-0 -mx-3 px-3 lg:mx-0 lg:px-0 overflow-x-auto scrollbar-hide">
+                        {categories.map(cat => ( <button key={cat} type="button" onClick={() => setActiveCategory(cat)} aria-pressed={activeCategory === cat} className="kpm-hover group shrink-0 min-h-[44px] flex items-center"><span className={`px-3 py-1.5 rounded-lg border text-[12px] font-black uppercase tracking-wide whitespace-nowrap transition-colors ${activeCategory === cat ? 'border-[var(--duke-amber-edge)] bg-[var(--duke-fill-well)] text-[var(--duke-ink-1)]' : 'border-[var(--duke-edge-ctl)] text-[var(--duke-ink-5)] group-hover:text-[var(--duke-ink-1)]'}`}>{tr(cat)}</span></button> ))}
                     </div>
-                    <div className="relative flex-1 min-w-[120px] self-center py-1.5">
+                    <div className="relative w-full lg:w-auto lg:flex-1 min-w-[120px] lg:self-center pb-2 lg:py-1.5">
                         <input ref={searchRef} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder={tr('SEARCH WARES...')} className="w-full bg-transparent border border-[var(--duke-edge-ctl)] p-2 pl-9 md:pl-10 pr-2 lg:pr-10 min-h-[44px] lg:min-h-0 text-[var(--duke-amber-ink)] font-mono text-[13px] md:text-sm font-bold outline-none focus:border-[var(--duke-amber-edge)] rounded-lg transition-colors"/>
                         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--duke-ink-3)]"/>
                         <span className="kpm-kbd hidden lg:inline-grid absolute right-3 top-1/2 -translate-y-1/2">/</span>
@@ -2742,7 +2750,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                         const price = Number(b.price) > 0 ? Number(b.price) : (chk.lines || []).reduce((s, l) => s + tierPrice(l.product, newLineTier()) * l.bks, 0);
                         return (
                             <button key={b.id} type="button" data-guide="bundle-card" onClick={() => applyBundle(b)}
-                                className={`kpm-hover font-mono w-full shrink-0 text-left py-3 lg:px-4 border-b border-[var(--duke-edge-1)] flex flex-col gap-1 transition-colors lg:hover:bg-[var(--duke-fill-well)] ${chk.ok ? '' : 'opacity-60'}`}>
+                                className={`kpm-hover font-mono w-full shrink-0 text-left py-3 lg:px-4 border-b border-[var(--duke-edge-1)] flex items-center gap-3 transition-colors lg:hover:bg-[var(--duke-fill-well)] ${chk.ok ? '' : 'opacity-60'}`}>
+                              <span className="flex-1 min-w-0 flex flex-col gap-1">
                                 <h4 className="text-[var(--duke-ink-1)] text-[12px] lg:text-sm font-black uppercase leading-tight">{b.name}{b.region && <span className="ml-2 text-[10px] lg:text-xs font-bold tracking-widest text-[var(--duke-ink-5)]">· {b.region} ONLY</span>}</h4>
                                 {(b.lines || []).map((l, i) => (
                                     <span key={`l${i}`} className="text-[11px] lg:text-xs font-bold text-[var(--duke-ink-3)] tabular-nums">{l.qty} {l.unit} · {inventory.find(p => p.id === l.productId)?.name || l.name}</span>
@@ -2753,6 +2762,10 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 <span className={`mt-1 text-[12px] lg:text-sm font-black ${chk.ok ? 'text-[var(--duke-amber-ink)] tabular-nums' : 'text-[var(--duke-ink-5)]'}`}>
                                     {chk.ok ? `Rp ${new Intl.NumberFormat('id-ID').format(price)}${Number(b.price) > 0 ? ' · BUNDLE PRICE' : ''}` : chk.why}
                                 </span>
+                              </span>
+                              {/* the whole card is the press; the plus says so, and the count reports each tap (same look as a product's +) */}
+                              {bundleUse[b.id]?.taps > 0 && <span className="shrink-0 text-[15px] font-black tabular-nums text-[var(--duke-ink-1)]">×{bundleUse[b.id].taps}</span>}
+                              <span aria-hidden="true" className="shrink-0 w-11 h-11 lg:w-9 lg:h-9 rounded-lg border border-[var(--duke-amber-edge)] text-[var(--duke-amber-ink)] text-lg font-black leading-none flex items-center justify-center">+</span>
                             </button>
                         );
                     })}

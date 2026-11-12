@@ -7246,7 +7246,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   ok('the − / + cluster closes its gap to 4 px on the phone so a one-line name still fits beside a 64 px picture',
      /flex items-center gap-1 shrink-0 lg:order-3 lg:justify-end/.test(m));
   ok('category tabs and the search box are 44 tall on the phone, desk untouched',
-     /shrink-0 px-3 min-h-\[44px\] text-\[13px\] font-black uppercase tracking-wide whitespace-nowrap border-b-2/.test(m) &&
+     /className="kpm-hover group shrink-0 min-h-\[44px\] flex items-center"><span className=\{`px-3 py-1\.5 rounded-lg border text-\[12px\] font-black uppercase tracking-wide whitespace-nowrap/.test(m) &&
      /pl-9 md:pl-10 pr-2 lg:pr-10 min-h-\[44px\] lg:min-h-0 text-\[var\(--duke-amber-ink\)\] font-mono text-\[13px\] md:text-sm/.test(m) &&
      /<Search size=\{16\} className="absolute left-3 top-1\/2 -translate-y-1\/2/.test(m),
      'the search icon sat at top-2.5 for a 35 px box; at 44 it is centred at 14');
@@ -11638,7 +11638,18 @@ section('Sales Terminal, direction B - the price list (his pick 2026-11-11: "B l
   ok('the phone strip opens the same picker and stays inside its click-outside area',
      /className="manifest-dropdown-area lg:hidden shrink-0 flex items-center gap-2/.test(msv));
   ok('REGRESSION: a lit kind or stock source is a gold line under a plain word, never a tan or amber plate',
-     !/bg-\[var\(--duke-fill-tan\)\]/.test(msv) && !/adminSalesMode !== 'VEHICLE' \? 'bg-\[var\(--duke-amber\)\]/.test(msv) && (msv.match(/border-b-2 -mb-px transition-colors/g) || []).length === 3);
+     !/bg-\[var\(--duke-fill-tan\)\]/.test(msv) && !/adminSalesMode !== 'VEHICLE' \? 'bg-\[var\(--duke-amber\)\]/.test(msv) && (msv.match(/border-b-2 -mb-px transition-colors/g) || []).length === 2);
+  /* 2026-11-12, his "redesign this panel that show type of the items ... promo doesnt have add button" */
+  ok('the kinds are bordered buttons on their own phone row - the 58% squeeze that cut a name in half is gone',
+     !/max-w-\[58%\]/.test(msv) && /aria-pressed=\{activeCategory === cat\}/.test(msv) && /flex flex-col lg:flex-row lg:items-stretch/.test(msv)
+     && /'border-\[var\(--duke-amber-edge\)\] bg-\[var\(--duke-fill-well\)\] text-\[var\(--duke-ink-1\)\]'/.test(msv));
+  ok('promo goods on the slip have a minus and a plus beside the count',
+     /: one less`\}/.test(msv) && /: one more`\}/.test(msv) && /setN\(cur \+ 1\)/.test(msv) && /setN\(cur - 1\)/.test(msv)
+     && /Math\.max\(0, Math\.min\(n, l\.qty\)\)/.test(msv));
+  { const clamp = (n, q) => Math.max(0, Math.min(n, q));
+    ok('and the count stays between 0 and what the van holds (7 of 6 -> 6, one less than 0 -> 0)', clamp(7, 6) === 6 && clamp(-1, 6) === 0 && clamp(3, 6) === 3); }
+  ok('a package card shows the plus mark and counts its taps',
+     /bundleUse\[b\.id\]\?\.taps > 0 &&/.test(msv) && /<span aria-hidden="true" className="shrink-0 w-11 h-11 lg:w-9 lg:h-9 rounded-lg border border-\[var\(--duke-amber-edge\)\]/.test(msv));
   ok('each product that goes in still reports itself: the 2 s flag is read by the total bar',
      /\{flag \? `\$\{tr\('Added ·'\)\} \$\{flag\.name\}`/.test(msv));
   ok('the slip is flat cream with dark ink - no paper texture class is left on it, and the lit Sale side is a dark plate',
@@ -12543,7 +12554,7 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
   /* his 2026-10-27 "yes add that line and dont hide the button" - the box is always on screen; when nothing can be given
      it SAYS why (his rule: every action must report), never an empty gap */
   ok('REGRESSION: the "Promo · given free" box is never hidden - with nothing to give it names the reason: an empty van (load in Fleet & Canvas), an empty Master Vault (Restock Vault), or a retur',
-     !ms.includes('{canGive && (') && ms.includes('{canGive ? (giveOpen && promoVan.map(l => (') && ms.includes('<p data-guide="promo-give-empty"') &&
+     !ms.includes('{canGive && (') && ms.includes('{canGive ? (giveOpen && promoVan.map(l => {') && ms.includes('<p data-guide="promo-give-empty"') &&
      ms.includes("const giveEmpty = isReturMode ? 'No promo goods with a retur. Give them on a new deal.'") &&
      ms.includes(": giveFrom === 'the Master Vault' ? 'No promo goods in the Master Vault. Restock them in Restock Vault.'") &&
      ms.includes(": 'No promo goods in this van. Load them in Fleet & Canvas → PROMO.';"));
