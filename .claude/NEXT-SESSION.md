@@ -13,9 +13,9 @@ THE SMALLEST VERSION: a pure function (in the same utils file as bundleTaken) th
 
 TRAPS: never block or undo anything (his rule: show, not stop). Do not touch the Retur path itself. Shop names are matched exactly elsewhere in the package rules (storeKey in utils/helpers.js) - use the same key. A return of a DIFFERENT product is not this case.
 
-STILL OPEN WITH HIM (ask once, in the first reply): "Today nothing can clear a shop's package count: it is counted from the sales, and a return does not give it back (your rule). If a salesman presses a package by mistake and saves, that shop waits out the period. Do you want tier 3 and above to be able to clear one shop's count, written in the audit log? yes / no. Recommended: no until it happens once - every way to clear it is also a way around the limit."
+SETTLED 2026-11-13 (kpm 63e79fb6, his "tier 4 and above can refresh that immediately"): tier 1-4 clear one shop's package count with "Clear count" on the terminal's package card (customer.bundleReset[package id]; bundleTaken counts only sales after it; audit BUNDLE_COUNT_CLEARED). Stage D's report line should also name a shop whose count was cleared (the audit log has it) - one more way around the limit to show.
 
-ALSO OPEN, phone-side only: the database lets any salesman with shop-edit access write assignedAgent (firestore.rules:751; the app hides it from tier 5-6 since 9eda75b5). A rule he would publish in the Console; check CustomerManager.jsx:662 (KML import writes 'Unassigned') before drafting it. Not this job.
+ALSO OPEN, phone-side only: the database lets any salesman with shop-edit access write assignedAgent AND bundleReset (firestore.rules:751; the app shows both only to tier 1-4). A rule he would publish in the Console; check CustomerManager.jsx:662 (KML import writes 'Unassigned') before drafting it. Not this job.
 
 AFTER D: the Journey Plan redesign (grep "JOURNEY PLAN" in .claude/NEXT-SESSION-archive.md, read that one block only).
 
