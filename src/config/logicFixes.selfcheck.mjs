@@ -12758,8 +12758,14 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
        vb.bundleTaken(month, [took('2026-10-29T09:00:00+07:00', 1)], now).nextOpen === Date.parse('2026-11-29T09:00:00+07:00'));
     ok('REGRESSION: the terminal reads the shop\'s sales by name (nameVariants, no index) only when a package has a limit, adds this phone\'s unsent sales, and passes them to the gate; App hands it the unsent sales',
        ms.includes("getDocs(query(collection(db, `artifacts/${appId}/users/${dataOwnerId}/transactions`), where('customerName', 'in', nameVariants(shopName))))") &&
-       ms.includes('names: [photoAgent, myName], taps, sales: shopHistory });') && ms.includes('...(pendingTxs || []).filter(t => nameVariants(shopName).includes(') &&
+       ms.includes("setShopSales(s.docs.map(d => d.data()).filter(t => nameVariants(shopName).includes(String(t.customerName || '').trim())))") &&
+       ms.includes('names: [photoAgent, myName], taps, sales: shopHistory, anyShop: canSellBundleAnyShop(userRole) });') && ms.includes('...(pendingTxs || []).filter(t => nameVariants(shopName).includes(') &&
        read('src/App.jsx').includes('pendingTxs={pendingTxData}'));
+    ok('BEHAVIOUR: tiers 1-3 may sell a package to another salesman\'s shop (key sell_bundle_any_shop, T4-T6 never by default) - but a shop with no salesman still waits for every tier, and Ecer / off / the limit still hold for them',
+       g(pk, { names: ['Bud'], anyShop: true }) === '' && g(pk, { names: ['Bud'] }) !== '' && g(pk, { shop: { name: 'BARU' }, anyShop: true }) !== '' &&
+       g(pk, { names: ['Bud'], anyShop: true, tier: 'Ecer' }) !== '' && g({ ...pk, off: true }, { anyShop: true }) !== '' && g(pk, { names: ['Bud'], anyShop: true, taps: 1 }) !== '' &&
+       ['DEVELOPER', 'ADMIN', 'COMPANY_OWNER', 'AREA_ADMIN'].every(r => pm.canSellBundleAnyShop(r)) && ['FLEET_CAPTAIN', 'FIELD_OPERATIVE', 'ROOKIE'].every(r => !pm.canSellBundleAnyShop(r)) &&
+       ms.includes('anyShop: canSellBundleAnyShop(userRole) });') && read('src/components/SettingsView.jsx').includes("{ id: 'sell_bundle_any_shop', label:"));
     const cover = (taps, bks, extra = {}) => vb.packageGives([pk], { p1: { taps } }, bks ? [{ productId: 'tw', qty: bks, unit: 'Bks', ...extra }] : [], [{ id: 'tw' }]).lt;
     ok('BEHAVIOUR: a package\'s free piece follows its cigarettes - 2 packages of 10 Bks: 20 Bks in the cart cover 2 lighters, 15 cover 1, 9 cover 0, an empty cart 0; never more than the packages pressed; an Utang Barang line covers nothing',
        cover(2, 20) === 2 && cover(2, 15) === 1 && cover(2, 9) === 0 && cover(2, 0) === 0 && cover(1, 30) === 1 && cover(1, 10, { isIouFulfillment: true }) === 0 &&

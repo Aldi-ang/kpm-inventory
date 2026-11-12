@@ -1718,6 +1718,7 @@ const PermissionMatrixEditor = ({ db, appId, userRole, userId }) => {
         { id: 'set_bundle_price', label: 'Factory offers: may set a bundle price' },
         { id: 'switch_bundle', label: 'Factory offers: may switch an offer on or off' },
         { id: 'set_bundle_limit', label: 'Factory offers: may set which shops can take it and the limit per shop' },
+        { id: 'sell_bundle_any_shop', label: "Factory offers: may sell a package to a shop assigned to another salesman" },
         { id: 'decide_opname_product', label: 'Stock Opname: accept or reject a counted product (Tier 4 and above only)' },
         { id: 'sell_damaged', label: 'Quarantine: sell damaged packs again and set their price (Tier 4 and above only)' },
         { id: 'edit_agent_roles', label: '[GOD] Promote Agents' },

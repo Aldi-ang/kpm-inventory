@@ -153,7 +153,9 @@ export function bundleTaken(bundle, sales, now = Date.now()) {
    by the card, by the press and by the save (the shop can be changed after the package went in). `taps` = how many of
    this package the order already holds. `sales` = the shop's earlier sales (saved + this phone's unsent ones); null while
    they load, false when they could not be read - a package with a limit waits for them. */
-export function bundleGate(bundle, { shop, tier, names, taps = 0, sales = [], now = Date.now() } = {}) {
+/* `anyShop` (matrix key sell_bundle_any_shop, tiers 1-3 by default, his 2026-11-12): may sell to another salesman's shop.
+   A shop with NO salesman still waits for everyone: that is how a new shop is confirmed. */
+export function bundleGate(bundle, { shop, tier, names, taps = 0, sales = [], now = Date.now(), anyShop = false } = {}) {
   const fill = { bundle: bundle?.name || 'This package', shop: shop?.name || '' };
   if (bundle?.off) return tr('{bundle} is switched off by the office.', fill);
   if (!shop) return tr('{bundle} is only for a registered shop - pick the shop from the list first.', fill);
@@ -161,7 +163,7 @@ export function bundleGate(bundle, { shop, tier, names, taps = 0, sales = [], no
   if (!allowed.includes(tier)) return tr('{bundle} is only for {tiers} shops - {shop} buys at the {tier} price.', { ...fill, tiers: allowed.join(' + '), tier: tier || 'Ecer' });
   const owner = shopOwner(shop, names);
   if (owner === 'none') return tr('{shop} has no salesman assigned yet - the office assigns it first, then {bundle} opens.', fill);
-  if (owner === 'other') return tr('{shop} is assigned to {agent} - only that salesman can sell it {bundle}.', { ...fill, agent: String(shop.assignedAgent).trim() });
+  if (owner === 'other' && !anyShop) return tr('{shop} is assigned to {agent} - only that salesman can sell it {bundle}.', { ...fill, agent: String(shop.assignedAgent).trim() });
   const max = Math.floor(Number(bundle?.limit?.max) || 0);
   if (max <= 0) return '';
   if (taps >= max) return tr('{bundle}: only {max} per shop - it is already in this order.', { ...fill, max });

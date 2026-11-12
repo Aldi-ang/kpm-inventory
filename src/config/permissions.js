@@ -142,6 +142,8 @@ export const canSetBundlePrice = tierThreeDefault(BUNDLE_PRICE_KEY);
    the same absence-means-tier-default shape as the price above: the switch, and the rules (which shops, the limit). */
 export const canSwitchBundle = tierThreeDefault('switch_bundle');
 export const canSetBundleRules = tierThreeDefault('set_bundle_limit');
+/* his 2026-11-12 "only tier 1.2.3 can have that ability as default": sell a package to a shop assigned to another salesman */
+export const canSellBundleAnyShop = tierThreeDefault('sell_bundle_any_shop');
 
 /* WHO MAY ACCEPT OR REJECT A COUNTED PRODUCT? His 2026-11-05: "who can reject or accept the stock opname is the tier 3 and above as
    default, make sure this power added into the matrix for additional flexibility". Same absence-means-tier-default shape as the keys

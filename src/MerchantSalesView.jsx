@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { Search, Box, Zap, X, DollarSign, List, ChevronDown, Printer, MessageSquare, MapPin, AlertCircle, Camera, Store, Map, Lock, Package, AlertTriangle, Check, Eye } from 'lucide-react';
 import { doc, setDoc, collection, getDoc, getDocs, updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction, query, where } from 'firebase/firestore';
 import { earnedLevel, nextLevel, nameVariants } from './utils/storeLevel';   // the shop's level after a sale (Settings > Tier Automation Rules) 
-import { hasClearance, canPickFromGallery } from './config/permissions';
+import { hasClearance, canPickFromGallery, canSellBundleAnyShop } from './config/permissions';
 import { IS_DEMO } from './config/firebase';
 import { demoPhoto } from './config/demoPhoto.js';
 import ProofCamera from './components/ProofCamera.jsx';
@@ -635,7 +635,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const photoAgent = motorists.find(m => m.id === agentProfileId)?.name || myName;
     /* MAY THIS SHOP TAKE THIS PACKAGE FROM ME? (vanBay bundleGate: off, no registered shop, an Ecer shop, a shop nobody
        assigned, a shop assigned to someone else, over the limit.) '' = yes. The card, the press and the save all ask here. */
-    const gateOf = (b, taps = bundleUse[b.id]?.taps || 0) => bundleGate(b, { shop: selectedCustomerInfo, tier: lockedTier || (selectedCustomerInfo ? priceLevelOf(selectedCustomerInfo) : 'Ecer'), names: [photoAgent, myName], taps, sales: shopHistory });
+    const gateOf = (b, taps = bundleUse[b.id]?.taps || 0) => bundleGate(b, { shop: selectedCustomerInfo, tier: lockedTier || (selectedCustomerInfo ? priceLevelOf(selectedCustomerInfo) : 'Ecer'), names: [photoAgent, myName], taps, sales: shopHistory, anyShop: canSellBundleAnyShop(userRole) });
     /* THE SHOP'S EARLIER PACKAGES, for the limit over days: its saved sales (the same one-field read the shop-level check
        below uses, no index to deploy) + this phone's unsent ones. Read once per shop pick, and only when a package has a
        limit. null = loading, false = could not be read. A shop that is new today has no earlier sales: [] at once. */
@@ -647,7 +647,8 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         let live = true;
         setShopSales(null);
         getDocs(query(collection(db, `artifacts/${appId}/users/${dataOwnerId}/transactions`), where('customerName', 'in', nameVariants(shopName))))
-            .then(s => { if (live) setShopSales(s.docs.map(d => d.data())); })
+            // the name filter again on the phone: a sale of another shop must never fill this shop's count
+            .then(s => { if (live) setShopSales(s.docs.map(d => d.data()).filter(t => nameVariants(shopName).includes(String(t.customerName || '').trim()))); })
             .catch(() => { if (live) setShopSales(false); });
         return () => { live = false; };
     }, [shopName, anyLimit, db, appId, dataOwnerId]);
