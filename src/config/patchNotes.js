@@ -4,6 +4,7 @@
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
   { date: '2026-11-13', items: [
+    { kind: 'new', en: 'Sales Terminal: when a shop has already taken its package for this period, tier 1 to 4 see a Clear count button on the package. Use it when a package was pressed by mistake: the shop may take the package again at once, and the clear is written in the audit log.', id: 'Terminal Penjualan: saat sebuah toko sudah mengambil paketnya untuk periode ini, tier 1 sampai 4 melihat tombol Clear count di paket itu. Pakai saat paket tertekan tidak sengaja: toko itu langsung bisa mengambil paket lagi, dan penghapusan hitungan dicatat di log audit.' },
     { kind: 'new', en: 'Customer Directory: tier 1 to 4 now see a list of shops that have no salesman yet. Choose a salesman and press Give, and the shop\'s packages open for that salesman at once. When a salesman registers a new shop, tier 1 to 4 get a bell message. Grosir requests now reach tier 4\'s bell too.', id: 'Daftar Pelanggan: tier 1 sampai 4 sekarang melihat daftar toko yang belum punya sales. Pilih sales lalu tekan Give, dan paket toko itu langsung terbuka untuk sales tersebut. Saat sales mendaftarkan toko baru, tier 1 sampai 4 mendapat pesan di lonceng. Permintaan Grosir sekarang juga sampai ke lonceng tier 4.' },
   ] },
   { date: '2026-11-12', items: [

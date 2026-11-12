@@ -141,8 +141,10 @@ const shift = (at, limit, dir) => {
   return d.getTime();
 };
 /* how many of this package the shop took inside the window, and when the oldest of them leaves it (null = forever) */
-export function bundleTaken(bundle, sales, now = Date.now()) {
-  const forever = bundle?.limit?.unit === 'forever', from = forever ? -Infinity : shift(now, bundle?.limit, -1);
+/* `since` = when tier 1-4 last cleared this shop's count for this package (customer.bundleReset[id], his 2026-11-13 "tier 4
+   and above can refresh that immediately"): a sale before it no longer counts. */
+export function bundleTaken(bundle, sales, now = Date.now(), since = 0) {
+  const forever = bundle?.limit?.unit === 'forever', from = Math.max(forever ? -Infinity : shift(now, bundle?.limit, -1), Number(since) || -Infinity);
   const takes = (sales || []).filter(t => (t.type || 'SALE') === 'SALE')
     .map(t => ({ at: Number(t.timestamp?.seconds) ? t.timestamp.seconds * 1000 : now, o: (t.offers || []).find(o => o.id === bundle?.id) }))
     .filter(x => x.o && x.at >= from).sort((a, b) => a.at - b.at);
@@ -169,7 +171,7 @@ export function bundleGate(bundle, { shop, tier, names, taps = 0, sales = [], no
   if (taps >= max) return tr('{bundle}: only {max} per shop - it is already in this order.', { ...fill, max });
   if (sales === null) return tr("Checking {shop}'s earlier packages...", fill);
   if (sales === false) return tr("{shop}'s earlier packages could not be read - check the signal, then pick the shop again.", fill);
-  const { taken, nextOpen } = bundleTaken(bundle, sales, now);
+  const { taken, nextOpen } = bundleTaken(bundle, sales, now, shop?.bundleReset?.[bundle?.id]);
   if (taps + taken < max) return '';
   return nextOpen
     ? tr('{shop} already took {bundle} ({n}x) - the next one opens on {date}.', { ...fill, n: taken, date: new Date(nextOpen).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) })

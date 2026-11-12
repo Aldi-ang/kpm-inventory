@@ -13885,5 +13885,23 @@ section('PACKAGE RULES STAGE C (his 2026-11-12 "regional manager tier 4 ... conf
      /if \(!editingId && !grantsGrosir\) await addDoc\([^\n]*newShopNotice\(/.test(cm) && /roster=\{motorists\.map\(m => String\(m\.name/.test(app) &&
      /n\.agentId === 'ADMIN' && ASK_NOTICE_TYPES\.includes\(n\.type\) && canConfirmGrosir\(userRole\)/.test(app));
 }
+section('CLEAR A SHOP\'S PACKAGE COUNT (his 2026-11-13 "yes i think tier 4 and above can refresh that immediately")');
+{
+  const vb = await import('../utils/vanBay.js');
+  const month = { id: 'b1', name: 'CELLO BUNDLE', limit: { max: 1, n: 1, unit: 'months' } };
+  const took = (iso) => ({ type: 'SALE', timestamp: { seconds: Date.parse(iso) / 1000 }, offers: [{ id: 'b1', taps: 1 }] });
+  const now = Date.parse('2026-11-13T09:00:00+07:00'), reset = Date.parse('2026-11-12T12:00:00+07:00');
+  const shop = (r) => ({ name: 'Toko Berkah', assignedAgent: 'Budi', priceTier: 'Retail', ...(r ? { bundleReset: { b1: r } } : {}) });
+  const gate = (s, sales) => vb.bundleGate(month, { shop: s, tier: 'Retail', names: ['Budi'], sales, now });
+  ok('a package taken before the clear no longer counts; one taken after it counts again; another package\'s clear does not open this one',
+     gate(shop(), [took('2026-11-10T09:00:00+07:00')]) !== '' && gate(shop(reset), [took('2026-11-10T09:00:00+07:00')]) === '' &&
+     gate(shop(reset), [took('2026-11-12T15:00:00+07:00')]) !== '' && gate({ ...shop(), bundleReset: { b9: reset } }, [took('2026-11-10T09:00:00+07:00')]) !== '' &&
+     vb.bundleTaken(month, [took('2026-11-10T09:00:00+07:00'), took('2026-11-12T15:00:00+07:00')], now, reset).taken === 1);
+  const ms = code(read('src/MerchantSalesView.jsx')).replace(/\r/g, '');
+  ok('only tier 1-4 (or the boss\'s unlock) see Clear count, only on a package whose count is full; it asks, saves bundleReset, audits and reports',
+     ms.includes('const canClearCount = isAdmin || canConfirmGrosir(userRole);') && ms.includes('{gate && canClearCount && countFull(b) && (') &&
+     ms.includes("{ bundleReset: reset });") && ms.includes("logAudit('BUNDLE_COUNT_CLEARED'") && ms.includes('its count is cleared.') && ms.includes('count was NOT cleared') &&
+     /if \(!await confirmAction\(`Clear \$\{shop\.name\}'s count/.test(ms));
+}
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

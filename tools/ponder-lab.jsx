@@ -1332,7 +1332,7 @@ function ShellLab() {
             inventory={LAB_PRODUCTS.map((p) => ({ ...p, priceRetail: Math.round(p.priceDistributor * 1.15), priceEcer: Math.round(p.priceDistributor * 1.25), priceGrosir: Math.round(p.priceDistributor * 1.08) }))}
             user={{ uid: 'lab-t5', displayName: 'Lab Salesman', email: 'lab@example.com' }}
             /* &vault: the boss selling from the Master Vault (no van) - the give box is one line, "switch to Boss Car" */
-            userRole={q.has('vault') ? 'ADMIN' : 'FIELD_OPERATIVE'} isAdmin={q.has('vault')} adminSalesMode={q.has('vault') ? 'VAULT' : undefined}
+            userRole={q.has('vault') ? 'ADMIN' : q.has('t4') ? 'FLEET_CAPTAIN' : 'FIELD_OPERATIVE'} isAdmin={q.has('vault')} adminSalesMode={q.has('vault') ? 'VAULT' : undefined}
             logAudit={() => {}} triggerCapy={() => {}}
             onProcessSale={async (sale, ...rest) => { window.__sale = { sale, rest }; window.__give = rest[4]; return { ok: true }; }}
             /* &promo (stage 4): the van holds 6 T-shirts + 2 hats; the give row shows with an empty cart too (a GIVEAWAY) */

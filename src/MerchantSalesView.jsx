@@ -11,7 +11,7 @@ import { demoPhoto } from './config/demoPhoto.js';
 import ProofCamera from './components/ProofCamera.jsx';
 import { savePhotoAndGetReference, fileOrKeepPhoto, photoStamp, nameTag, convertToBks, splitToUnits, unitsText, paymentLabel, storeKey, getLocalDayKey, promoPic, isDamagedPack, lotsAfterPacks } from './utils/helpers';
 import HazardMark from './components/HazardMark';
-import { giveLines, bundleCheck, bundlesFor, bundleUnitPrices, bundleTakeBack, bundleGate, packageGives } from './utils/vanBay';
+import { giveLines, bundleCheck, bundlesFor, bundleUnitPrices, bundleTakeBack, bundleGate, packageGives, bundleTaken } from './utils/vanBay';
 import { waNumber } from './utils/whatsapp.js';
 import { areaFromPin, watchBorders } from './utils/areaFromPin.js';
 import { grosirHold, priceLevelOf, canConfirmGrosir, grosirRequestNotice } from './utils/customerAccess.js';
@@ -23,6 +23,7 @@ import { nextStop, directionsUrl, metresLabel } from './utils/nextStop';
 import { VISIT_TAGS, visitReport } from './utils/dayLog';
 import { unlockSounds, speakMumble, playSound, capyMaySpeak, capyHoldForSale } from './hooks/useSound';
 import { notify } from './components/Toast.jsx';
+import { confirmAction } from './components/ConfirmGate.jsx';
 import { shareReceipt } from './components/shareReceipt.js';
 
 /* `onAdminSalesMode` is undefined for everyone but the boss, and that IS the permission check —
@@ -655,6 +656,30 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     const shopHistory = Array.isArray(shopSales)
         ? [...shopSales, ...(pendingTxs || []).filter(t => nameVariants(shopName).includes(String(t.customerName || '').trim()))]
         : shopSales;
+    /* CLEAR A SHOP'S PACKAGE COUNT (his 2026-11-13 "yes i think tier 4 and above can refresh that immediately"): a package
+       pressed by mistake must not make the shop wait out the period. Tier 1-4 (or the boss's unlock) only; the sales stay as
+       they are - the shop gets bundleReset[package id] = now, and bundleTaken counts only sales after it. Audit-logged. */
+    const canClearCount = isAdmin || canConfirmGrosir(userRole);
+    const countFull = (b) => {
+        const max = Math.floor(Number(b.limit?.max) || 0);
+        return max > 0 && !b.off && Array.isArray(shopHistory) && !!selectedCustomerInfo?.id &&
+            bundleTaken(b, shopHistory, Date.now(), selectedCustomerInfo.bundleReset?.[b.id]).taken >= max;
+    };
+    const clearCount = async (b) => {
+        const shop = selectedCustomerInfo, was = shop?.bundleReset || {};
+        const { taken } = bundleTaken(b, shopHistory, Date.now(), was[b.id]);
+        if (!await confirmAction(`Clear ${shop.name}'s count for ${b.name}? It took it ${taken}x in this period. From now on it may take it again, and this goes in the audit log.`)) return;
+        const reset = { ...was, [b.id]: Date.now() };
+        setSelectedCustomerInfo(s => (s?.id === shop.id ? { ...s, bundleReset: reset } : s));
+        try {
+            await updateDoc(doc(db, `artifacts/${appId}/users/${dataOwnerId}/customers`, shop.id), { bundleReset: reset });
+            if (logAudit) logAudit('BUNDLE_COUNT_CLEARED', `${myName || 'Admin'} cleared ${shop.name}'s ${b.name} count (was ${taken}x)`);
+            notify(`${shop.name} may take ${b.name} again - its count is cleared.`);
+        } catch (err) {
+            setSelectedCustomerInfo(s => (s?.id === shop.id ? { ...s, bundleReset: was } : s));
+            notify(`${shop.name}'s count was NOT cleared: ${err?.code === 'permission-denied' ? 'this shop is outside what you may edit - ask Tier 1' : err?.message}`);
+        }
+    };
 
     const handleCustomerSelect = (cust, autoLockedDistance = null) => {
         autoLockRef.current = null;   // his pick from here on; applyFix marks a GPS pick AFTER this call
@@ -2818,6 +2843,11 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 <span className={`mt-1 text-[12px] lg:text-sm font-black ${chk.ok ? 'text-[var(--duke-amber-ink)] tabular-nums' : 'text-[var(--duke-ink-5)]'}`}>
                                     {chk.ok ? `Rp ${new Intl.NumberFormat('id-ID').format(price)}${Number(b.price) > 0 ? ' · BUNDLE PRICE' : ''}` : chk.why}
                                 </span>
+                                {gate && canClearCount && countFull(b) && (
+                                    <button type="button" onClick={(e) => { e.stopPropagation(); clearCount(b); }}
+                                        className="kpm-press kpm-hover self-start mt-1 min-h-[44px] lg:min-h-0 px-3 py-1.5 rounded-lg border border-[var(--duke-amber-edge)] bg-transparent text-[var(--duke-amber-ink)] text-[11px] lg:text-xs font-black uppercase tracking-widest"
+                                    >Clear count</button>
+                                )}
                               </span>
                               {/* − n + exactly like a product row (his 2026-11-12 "no minus button ... no SFX and animation on the button press"):
                                   the same classes, the same sounds, kpm-press for the press. A press on the card itself still adds one. */}
