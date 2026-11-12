@@ -1818,3 +1818,10 @@ Seen: 2026-11-11
 **Lesson:** every screen sits in the shell's scroller (`print-reset flex-1 overflow-y-auto`), and the screen root is `h-full` of a box that starts under the header, so the root's last ~200 px begin below the fold. Put the bar at the screen root as `fixed inset-x-0 bottom-0`, pad the list by the bar's height, and print `bar.top + bar.height <= innerHeight` in the first frame's JSON line.
 **Would have prevented:** 2026-11-11 18:1x, Sales Terminal direction B: the first phone frame showed the new total bar cut off at the bottom edge ("Rp 0" half hidden) - one extra edit + shoot round. The same bar is coming on Journey Plan, Agent Inventory and EOD.
 Seen: 2026-11-11
+
+### 2026-11-12 — a panel that changes sides meets everything already pinned to that side; shoot it scrolled, not only at rest
+**Status:** LIKELY
+**Trigger:** before a completion claim on a layout change that moves a panel to another edge or makes a column the home of a fixed-height block (a mascot room, a banner) - the moment the "built" frames are chosen for the board.
+**Lesson:** grep the screen and the shell for `fixed` / `sticky` elements anchored to the edge the panel now sits on (the corner visitor `right: 44px; bottom: 8px`, the app mascot `bottom-0 right-0`, a sticky room) and shoot two more states before the push: the panel with a real cart SCROLLED, and the last control of the panel (total, save) with `bottom <= innerHeight` printed. A frame at rest with two items cannot show what stands on the total.
+**Would have prevented:** 2026-11-11 18:33, Sales Terminal direction B (kpm cb8f5244): the order slip moved to the right, under his 280 px room and into his corner visit's corner; pushed live with the total under the fold on the PC. He had to report it himself the next morning ("the capybara on the right is blocking the shopping panel") - one more build, render and push round (kpm 1695539c).
+Seen: 2026-11-12

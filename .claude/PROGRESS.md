@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-12 05:55 WIB, PC clock (🟢 KPM - shopping list professional + capybara off the panel, live 1695539c; the shared top bar is next, one question waits on him)**
+**Updated: 2026-11-12 06:36 WIB, PC clock (🟢 KPM - the shared top bar is one row on every screen, live d4e84da6; Journey Plan is next; nothing waits on him but a test)**
+
+## 🟢 2026-11-12 06:36 WIB — KPM: his "recommended" (the sync sign and the bell stay on the phone's row; Panduan, Catatan update and the light/dark switch move into the side menu) - the shared top bar is ONE ROW on every screen, LIVE; pushed d4e84da6
+Full story: d4e84da6's message · board: A-Brain Raw/2026-11-11-redesign-today/TOPBAR-V3.png · next: NEXT-SESSION top (Journey Plan).
+WAITING ON ALDI: ✅ TEST on the phone (version d4e84da6): the top is one line (title, sync sign, bell); pull the side menu and find Panduan, Catatan update, the light/dark switch and the lightning mark (Lite Mode) at its bottom; each one still opens or switches. (The 05:55 question below is answered by this entry.)
 
 ## 🟢 2026-11-12 05:55 WIB — KPM: his "make the shopping list professional as well, and dont forget the capybara on the right is blocking the shopping panel" - both done and LIVE; pushed 1695539c. His "yes we should redesign" = the shared top bar, NOT built yet
 Full story: 1695539c's message · board: A-Brain Raw/2026-11-11-redesign-today/PANEL-V2.png · next: NEXT-SESSION top (the shared top bar, one row).
