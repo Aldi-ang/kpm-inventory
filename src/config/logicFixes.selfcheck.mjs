@@ -7800,8 +7800,10 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      !/box-shadow|text-shadow|filter:/.test(code(tf).slice(code(tf).indexOf('.kpm-folders {'), code(tf).indexOf('.kpm-docket {'))),
      'his "make it more alive like this video" - the press is the phone\'s hover');
   ok('both hub levels (province, regency) wear the folder and their lists carry the counter; the old flat card is gone',
-     /<FolderCard key=\{prov\} icon=\{<MapPin size=\{22\} \/>\} onOpen=\{\(\) => setSelectedProvinsi\(prov\)\} className="bg-slate-900 border-slate-700 hover:border-orange-500 transition-colors duration-300">/.test(jf) &&
-     /<FolderCard key=\{kab\} icon=\{<Layers size=\{22\} \/>\} onOpen=\{\(\) => setSelectedKabupaten\(kab\)\} className="bg-slate-900 border-slate-700 hover:border-blue-500 transition-colors duration-300">/.test(jf) &&
+     /<FolderCard key=\{prov\} icon=\{<MapPin size=\{22\} \/>\} onOpen=\{\(\) => setSelectedProvinsi\(prov\)\} className="bg-\[var\(--raised\)\] border-\[var\(--line-2\)\] hover:border-\[var\(--accent-edge\)\] transition-colors duration-300">/.test(jf) &&
+     /<FolderCard key=\{kab\} icon=\{<Layers size=\{22\} \/>\} onOpen=\{\(\) => setSelectedKabupaten\(kab\)\} className="bg-\[var\(--raised\)\] border-\[var\(--line-2\)\] hover:border-\[var\(--accent-edge\)\] transition-colors duration-300">/.test(jf) &&
+     /* redesign B, 2026-11-13: the slate card read navy (palette law) - both levels now wear the same warm card */
+     !/hover:border-blue-500/.test(code(jf)) &&
      /import FolderCard(, \{ FOLDER_HOLD_MS \})? from '\.\/components\/FolderCard\.jsx';/.test(jf) &&
      (jf.match(/ kpm-folders">/g) || []).length === 2 &&
      !/p-5 rounded-2xl flex flex-col items-start gap-3 transition-all duration-300 group shadow-md/.test(code(jf)),
@@ -7872,16 +7874,16 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      code(tc).indexOf('html.light .kpm-led-line.crit, html.light .kpm-led-line.warn') < code(tc).indexOf('.kpm-folders {'),
      'the player card\'s "2 stamps lost" was amber #FFB020 on #D2C9B4 in light mode (2026-09-21) - the rule sits inside the LED block so its own guard slice keeps it');
   ok('C: on the phone the strip and the address show only while the ⋯ is open; the body is 12 px; the desk keeps its band and its 16 px',
-     /className=\{`\$\{customer\.storeImage \? 'h-24' : 'min-h-11 lg:h-24'\} \$\{actsOpen === customer\.id \? '' : 'hidden lg:block'\} bg-black relative shrink-0 border-b border-slate-800`\}/.test(jc) &&
+     /className=\{`\$\{customer\.storeImage \? 'h-24' : 'min-h-11 lg:h-24'\} \$\{actsOpen === customer\.id \? '' : 'hidden lg:block'\} bg-\[var\(--inset\)\] relative shrink-0 border-b border-\[var\(--line-2\)\]`\}/.test(jc) &&
      /<div className=\{`space-y-2 mb-3 lg:mb-4 flex-1 \$\{actsOpen === customer\.id \? '' : 'hidden lg:block'\}`\}>/.test(jc) &&
-     /<div className="p-3 lg:p-4 flex-1 flex flex-col bg-gradient-to-b from-\[#1a1815\] to-\[#0f0e0d\]">/.test(jc) &&
-     /<h3 className="font-black text-base text-white uppercase tracking-wider mb-1\.5 lg:mb-2 leading-tight flex items-start gap-2 lg:block lg:truncate">/.test(jc) &&
+     /<div className="p-3 lg:p-4 flex-1 flex flex-col">/.test(jc) /* redesign B: flat ground, the gradient went (2026-11-13) */ &&
+     /<h3 className="font-black text-base text-\[var\(--ink\)\] uppercase tracking-wider mb-1\.5 lg:mb-2 leading-tight flex items-start gap-2 lg:block lg:truncate">/.test(jc) &&
      !/<div className="space-y-2 mb-4 flex-1">/.test(code(jc)),
      'his "board 1 = C"; measured 2026-09-19: today 343 px, C 158 px');
   ok('C: ENGAGE TARGET and NAVIGATE share one 44 px row on the phone (his "usually engage target and navigate"); the desk column stays',
      /* 2026-10-04: the push to the bottom (mt-auto) moved to the open request's key right above this row, so the key sits on it */
      /<div className="mt-auto relative z-20">\{requestDoneKey\(customer\)\}<\/div>\s*<div className="flex flex-row lg:flex-col gap-2 relative z-20">/.test(jc) &&
-     /className="w-full flex-\[2\] lg:flex-none bg-gradient-to-r from-orange-600 to-red-600/.test(jc) &&
+     /className="w-full flex-\[2\] lg:flex-none bg-\[var\(--duke-paper-2\)\] text-\[var\(--duke-on-plate\)\]/.test(jc) /* redesign B, 2026-11-13: cream = the one main key */ &&
      /<div className="flex gap-2 flex-1 lg:flex-none">/.test(jc) &&
      !/<div className="flex flex-col gap-2 mt-auto relative z-20">/.test(code(jc)));
   ok('C: RADAR and LOG are written once (mapKey / logKey) and mounted twice - in the ⋯ fold on the phone as SHOW ON MAP / LOG A VISIT, in the key row on the desk',
@@ -7948,14 +7950,15 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /\.kx-dock \.kx-mapkey \{[^}]*min-height: 58px;/.test(read('src/styles/expedition.css')) && /\.kx-pen \{[^}]*min-height: 44px;/.test(read('src/styles/expedition.css')),
      'measured 2026-09-19: 149 x 37 and 43 x 43; the dock and 44 rows are his pick on the round-5 board');
   ok('board 3: the path row stays inside the page and the sector cards wrap two to a row - no sideways move, no swipe reel',
-     /bg-slate-900\/80 backdrop-blur p-3 rounded-xl border border-slate-700 max-w-full lg:w-max shadow-lg">/.test(jv) &&
-     /<div className="flex flex-wrap lg:flex-nowrap lg:overflow-x-auto hide-scrollbar gap-3 pb-4 kpm-arrive">/.test(jv) &&
-     /className=\{`shrink-0 basis-\[calc\(50%-6px\)\] lg:basis-auto flex flex-col items-start p-3\.5 rounded-2xl border-2/.test(jv) &&
+     /* redesign B, 2026-11-13: the path is plain words on a ruled line, the areas are tabs with the amber line under the open one */
+     /<div className="flex flex-wrap items-center gap-x-3 mb-2 border-b border-\[var\(--line-2\)\] max-w-full">/.test(jv) &&
+     /<div className="flex flex-wrap lg:flex-nowrap lg:overflow-x-auto hide-scrollbar border-b border-\[var\(--line-2\)\] mb-4 kpm-arrive">/.test(jv) &&
+     /className=\{`shrink-0 basis-1\/2 lg:basis-auto flex flex-col items-start min-h-11 px-3 py-2\.5 -mb-px border-b-2/.test(jv) &&
      !/-mx-4 px-4 lg:mx-0 lg:px-0/.test(code(jv)) &&
      !/border border-slate-700 w-max shadow-lg/.test(code(jv)),
      'measured 2026-09-19: shell scrollWidth 387 on a 375 screen; his "sideways swipe is inconvenience"');
   ok('board 3: the three path-row keys are 44 px on the phone',
-     (jv.match(/min-h-11 lg:min-h-0 text-xs font-black uppercase tracking-widest/g) || []).length >= 2,
+     (jv.match(/min-h-11 lg:min-h-9 -mb-px border-b-2 text-xs font-black uppercase tracking-widest/g) || []).length >= 2,
      'the middle crumb button measured 140 x 16');
   ok('2B: the ⋯ key is ONE component, shared by Customers and Journey Plan',
      /const MoreKey = \(\{ id, label, open, onToggle, className = '' \}\) => \(/.test(mk) &&
@@ -7967,21 +7970,22 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /const \[actsOpen, setActsOpen\] = useState\(null\);/.test(jv) &&
      /if \(!e\.target\.closest\('\[data-acts\]'\)\) setActsOpen\(null\);/.test(jv) &&
      /document\.addEventListener\('pointerdown', close\)/.test(jv) &&
-     /<div data-acts onClick=\{e => e\.stopPropagation\(\)\} className=\{`order-last lg:order-none grid lg:flex lg:justify-between lg:items-center lg:p-1\.5 bg-black border-t lg:border-t-0 lg:border-b border-slate-800 z-10 transition-\[grid-template-rows,opacity\] duration-200 ease-out \$\{actsOpen === customer\.id \? 'opacity-100' : 'opacity-0 lg:opacity-100'\}`\} style=\{\{ gridTemplateRows: actsOpen === customer\.id \? '1fr' : '0fr' \}\}>/.test(jv) &&
+     /<div data-acts onClick=\{e => e\.stopPropagation\(\)\} className=\{`order-last lg:order-none grid lg:flex lg:justify-between lg:items-center lg:p-1\.5 bg-\[var\(--inset\)\] border-t lg:border-t-0 lg:border-b border-\[var\(--line-2\)\] z-10 transition-\[grid-template-rows,opacity\] duration-200 ease-out \$\{actsOpen === customer\.id \? 'opacity-100' : 'opacity-0 lg:opacity-100'\}`\} style=\{\{ gridTemplateRows: actsOpen === customer\.id \? '1fr' : '0fr' \}\}>/.test(jv) &&
      /<div className="overflow-hidden lg:contents">\s*<div className="flex gap-2 p-2 pb-0 lg:hidden">[^\n]*<\/div>\s*<div className="flex justify-between items-center gap-2 p-2 lg:contents">/.test(jv) &&
      /<MoreKey id=\{customer\.id\} label=\{customer\.name\} open=\{actsOpen === customer\.id\} onToggle=\{\(id\) => setActsOpen\(o => \(o === id \? null : id\)\)\} className="shrink-0 -mt-1 -mr-1" \/>/.test(jv) &&
      !/<div className="bg-black border-b border-slate-800 p-1\.5 flex justify-between items-center z-10">/.test(code(jv)),
      'his "board 2 = B"');
   ok('2B: the arrows and the assign box are 44 on the phone, the name shows whole, the address is 11',
-     (jv.match(/w-11 h-11 lg:w-6 lg:h-6 text-base lg:text-xs bg-slate-900/g) || []).length === 2 &&
-     /px-2 py-1 min-h-11 lg:min-h-0 rounded outline-none border transition-all relative z-20/.test(jv) &&
-     /<h3 className="font-black text-base text-white uppercase tracking-wider mb-1\.5 lg:mb-2 leading-tight flex items-start gap-2 lg:block lg:truncate">/.test(jv) &&
+     (jv.match(/w-11 h-11 lg:w-6 lg:h-6 text-base lg:text-xs bg-transparent/g) || []).length === 2 &&
+     /px-2 py-1 min-h-11 lg:min-h-0 rounded outline-none border transition-colors relative z-20/.test(jv) &&
+     /<h3 className="font-black text-base text-\[var\(--ink\)\] uppercase tracking-wider mb-1\.5 lg:mb-2 leading-tight flex items-start gap-2 lg:block lg:truncate">/.test(jv) &&
      /<p className="text-\[11px\] lg:text-\[10px\] font-bold leading-relaxed line-clamp-2">\{customer\.address\}<\/p>/.test(jv) &&
      !/leading-tight truncate">/.test(code(jv)) && !/w-6 h-6 text-xs bg-slate-900/.test(code(jv)),
      'measured 2026-09-19: arrows 24 x 24, assign 128 x 23, the name cut with …, the address 10 px');
   ok('2B: with no photo the NO INTEL band is a 44 px strip carrying the badges; with a photo it stays the 96 px picture',
-     /className=\{`\$\{customer\.storeImage \? 'h-24' : 'min-h-11 lg:h-24'\} \$\{actsOpen === customer\.id \? '' : 'hidden lg:block'\} bg-black relative shrink-0 border-b border-slate-800`\}/.test(jv) &&
-     /<div className="hidden lg:flex w-full h-full flex-col items-center justify-center text-slate-700/.test(jv) &&
+     /className=\{`\$\{customer\.storeImage \? 'h-24' : 'min-h-11 lg:h-24'\} \$\{actsOpen === customer\.id \? '' : 'hidden lg:block'\} bg-\[var\(--inset\)\] relative shrink-0 border-b border-\[var\(--line-2\)\]`\}/.test(jv) &&
+     /<div className="hidden lg:flex w-full h-full flex-col items-center justify-center text-\[var\(--line-3\)\]">/.test(jv) &&
+     !/transparenttextures\.com/.test(code(jv)) &&
      /className=\{`\$\{customer\.storeImage \? 'absolute top-2 left-2 flex flex-col gap-1\.5' : 'static flex flex-row flex-wrap items-center gap-1\.5 px-2 py-1\.5 lg:absolute lg:top-2 lg:left-2 lg:flex-col lg:p-0'\}`\}/.test(jv) &&
      !/<div className="h-24 bg-black relative shrink-0 border-b border-slate-800">/.test(code(jv)),
      'measured 2026-09-19: 96 px of hex texture and NO INTEL on every card without a photo');
@@ -7989,13 +7993,14 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /\.kx-feed-meta \{ font: 700 11px\/1/.test(read('src/styles/expedition.css')) && /\.kx-feed-field > span \{ font: 700 11px\/1/.test(read('src/styles/expedition.css')) && /\.kx-feed \.kx-meta3 small \{ font-size: 11px; \}/.test(read('src/styles/expedition.css')) &&
      /\.kx-feed-meta, \.kx-feed-count small, \.kx-feed-field > span \{ font-size: 10px; \}/.test(read('src/styles/expedition.css')) &&
      /\.kx-dock \.kx-mapkey > span \{ font: 800 11px\/1 var\(--font-display\);/.test(read('src/styles/expedition.css')) &&   // the phone's brush key moved into the full map's dock (2026-10-03)
-     (jv.match(/<p className="text-\[11px\] lg:text-\[10px\] text-slate-400 font-bold uppercase tracking-wider">\{k(ab|ec)Count\}/g) || []).length === 2 &&
-     /className=\{`text-\[11px\] lg:text-\[10px\] font-bold mt-1 \$\{isCleared/.test(jv) &&
+     (jv.match(/<p className="text-\[11px\] lg:text-\[10px\] text-\[var\(--ink-dim\)\] font-bold uppercase tracking-wider">\{k(ab|ec)Count\}/g) || []).length === 2 &&
+     /className=\{`text-\[11px\] lg:text-\[10px\] font-bold mt-1 tabular-nums \$\{isActive \|\| isCleared/.test(jv) &&
      (jv.match(/(?<!lg:)text-\[10px\]/g) || []).length <= 10,
      'measured 2026-09-19: every label 10 px; his 2026-08-16 "make the font little bit bigger"');
   ok('the store block and the MISSION FEED card give the phone its 16 px back (p-5 -> p-3; the feed card keeps 12 px sides since the strip, 2026-09-20)',
      /\.kx-feed \{[^}]*padding: 8px 12px 12px;/.test(read('src/styles/expedition.css')) &&
-     /<div className="animate-fade-in bg-black\/20 p-3 lg:p-5 rounded-3xl border border-white\/5 mt-2">/.test(jv),
+     /<div className="animate-fade-in mt-2">/.test(jv) && /* redesign B, 2026-11-13: no frame, so no padding to give back */
+     /<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-px bg-\[var\(--line-2\)\] border border-\[var\(--line-2\)\]">/.test(jv),
      'the store card measured 318 wide in a 359 column');
   ok('the map: the tiles are Esri Dark Gray (no key needed) on Journey Plan and on the War Room; CARTO is gone - its tiles print API KEY REQUIRED',
      /<TileLayer url="https:\/\/server\.arcgisonline\.com\/ArcGIS\/rest\/services\/Canvas\/World_Dark_Gray_Base\/MapServer\/tile\/\{z\}\/\{y\}\/\{x\}" maxNativeZoom=\{16\} attribution='© Esri' \/>/.test(jv) &&
@@ -8033,7 +8038,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      124 px folded + a 400 px map put the RADAR HUB at y 821; the map's box had touch-action none, so a finger moved the map */
   const jv = read('src/JourneyView.jsx'); const th = read('src/styles/theme.css'); const ll = read('tools/lab-looks.js');
   ok('Journey Plan: the map is a 160 px strip on the phone (500 on the desk); only the ⛶ and the recenter key stay on the strip — the other keys, the legend and the zoom control come back full screen (in the dock) and on the desk',
-     /'relative w-full h-40 lg:h-\[500px\] rounded-2xl kpm-jp-map'/.test(jv) &&
+     /'relative w-full h-40 lg:h-\[500px\] rounded-none kpm-jp-map'/.test(jv) &&
      (jv.match(/\$\{isFullScreen && replayFor \? 'flex lg:hidden' : isFullScreen \? 'flex' : 'hidden lg:flex'\}/g) || []).length === 1 &&   /* the PC brush key steps off during a fullscreen replay (no shops on the map to paint), 2026-10-05 */
      (jv.match(/className="kx-mapkey k-(home|fly) hidden lg:flex items-center gap-2"/g) || []).length === 2 &&
      /\{isFullScreen && \(\s*<nav className="kx-dock/.test(jv) &&
@@ -10367,7 +10372,7 @@ section('Expedition map');
         from the map box to the end of the shop popup there is no blue and no green, the keys share one themed style
         that sets no display (Tailwind's hidden / lg:flex must keep working), and the Leaflet controls are themed */
     const jvc = code(read('src/JourneyView.jsx')), exc = read('src/styles/expedition.css');
-    const mapPart = jvc.slice(jvc.indexOf('kx-map bg-slate-900'), jvc.indexOf('Navigate via Google Maps') + 30);
+    const mapPart = jvc.slice(jvc.indexOf('kx-map bg-[#474749]'), jvc.indexOf('Navigate via Google Maps') + 30);   // redesign B: the box is the tiles' own land colour
     ok('Journey map on the theme: no blue or green from the map box to the popup, gold = secured, cream = you are here, one key style',
        mapPart.length > 1000 && !/(blue|emerald|green|cyan|sky|teal)-\d|#3b82f6|#2563eb|#10b981|#38bdf8/.test(mapPart) &&
        !/#3b82f6|#2563eb|#06b6d4|#14b8a6|#10b981/.test(jvc.slice(0, jvc.indexOf('const JourneyView = '))) &&

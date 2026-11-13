@@ -1163,7 +1163,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
             <div className="flex flex-col gap-3 lg:flex-row lg:gap-4">
             <div 
-                className={`${isFullScreen ? 'fixed inset-0 z-[9999] rounded-none' : 'relative w-full h-40 lg:h-[500px] rounded-2xl kpm-jp-map'} kx-map bg-slate-900 overflow-hidden border border-slate-700 shadow-xl transition-all duration-300${road ? ' kx-focus' : ''}`}
+                className={`${isFullScreen ? 'fixed inset-0 z-[9999] rounded-none' : 'relative w-full h-40 lg:h-[500px] rounded-none kpm-jp-map'} kx-map bg-[#474749] overflow-hidden border border-[var(--line-2)] transition-all duration-300${road ? ' kx-focus' : ''}`}
                 style={isFullScreen ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', margin: 0, padding: 0 } : {}}
             >
                 {/* the brush (his "new" key layout, 2026-10-03): the key stays in its corner and the list opens ABOVE it;
@@ -1225,14 +1225,14 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 </div>
 
                 {editingStoreId && (
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/95 backdrop-blur border-2 border-orange-500 p-2.5 rounded-xl shadow-[0_0_30px_rgba(249,115,22,0.5)] flex flex-col items-center gap-2 pointer-events-auto animate-fade-in-up w-max min-w-[220px]">
+                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[9999] bg-[var(--panel)] border border-[var(--duke-amber-edge)] p-2.5 rounded flex flex-col items-center gap-2 pointer-events-auto animate-fade-in-up w-max min-w-[220px]">
                         <div className="flex flex-col text-center">
-                            <span className="text-orange-500 text-[11px] lg:text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1"><MapPin size={12}/> Edit Pin Location</span>
-                            <span className="text-slate-300 text-[11px] font-bold mt-0.5 leading-tight">Drag pin or tap map to move.</span>
+                            <span className="text-[var(--accent-ink)] text-[11px] lg:text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-1"><MapPin size={12}/> Edit Pin Location</span>
+                            <span className="text-[var(--ink-muted)] text-[11px] font-bold mt-0.5 leading-tight">Drag pin or tap map to move.</span>
                         </div>
                         <div className="flex gap-2 w-full">
-                            <button onClick={handleCancelPin} className="flex-1 bg-slate-800 text-slate-400 hover:text-white py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest border border-slate-700 transition-colors px-4">Cancel</button>
-                            <button onClick={handleConfirmPin} className="flex-1 bg-orange-600 hover:bg-orange-500 text-white py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-1 shadow-md transition-all active:scale-95 px-4"><Save size={12}/> Save</button>
+                            <button onClick={handleCancelPin} className="flex-1 min-h-11 lg:min-h-9 bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] py-1.5 rounded text-[11px] font-black uppercase tracking-widest border border-[var(--line-3)] transition-colors px-4">Cancel</button>
+                            <button onClick={handleConfirmPin} className="flex-1 min-h-11 lg:min-h-9 bg-[var(--duke-paper-2)] text-[var(--duke-on-plate)] py-1.5 rounded text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-1 transition-transform active:scale-95 px-4"><Save size={12}/> Save</button>
                         </div>
                     </div>
                 )}
@@ -1440,11 +1440,11 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                         style={{ margin: '-13px' }}
                                         onClose={() => setActivePopupId(null)}
                                     >
-                                        <div className="bg-[#121110] p-4 rounded-xl shadow-2xl border border-[#3E3A35] w-[240px] font-mono">
-                                            <div className="flex justify-between items-start mb-3 border-b border-slate-700 pb-2">
-                                                <p className="font-black text-white text-sm leading-tight pr-2 uppercase">{store.name}</p>
+                                        <div className="bg-[#121110] p-4 rounded border border-[#3E3A35] w-[240px] font-mono">
+                                            <div className="flex justify-between items-start mb-3 border-b border-[var(--line-2)] pb-2">
+                                                <p className="font-black text-[var(--ink)] text-sm leading-tight pr-2 uppercase">{store.name}</p>
                                                 <span 
-                                                    className="text-[10px] font-black px-2 py-1 rounded shadow-inner shrink-0 uppercase tracking-widest"
+                                                    className="text-[10px] font-black px-2 py-1 rounded shrink-0 uppercase tracking-widest"
                                                     style={{ backgroundColor: `${ringColor}33`, color: ringColor }}
                                                 >
                                                     {isVisited ? 'DONE' : `${metric.agentName === 'Unassigned' ? 'Unassigned' : metric.agentName.split(' ')[0]} #${stopNum}`}
@@ -1452,39 +1452,37 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                             </div>
                                             
                                             {isVisited ? (
-                                                <div className="mb-3 px-3 py-2 rounded-lg border border-[#D08A2E] bg-black/40 text-[#E4B04A] text-[10px] font-black tracking-wider flex flex-col gap-1 text-left shadow-inner">
+                                                <div className="mb-3 px-3 py-2 rounded border border-[#D08A2E] bg-black/40 text-[#E4B04A] text-[10px] font-black tracking-wider flex flex-col gap-1 text-left">
                                                     <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {hasLiveTxToday ? 'SECURED TODAY' : store.lastVisitTag}</span>
                                                     {(!hasLiveTxToday && store.lastVisitNote) && <span className="text-[11px] font-mono text-[#A39B90] font-normal normal-case leading-snug line-clamp-3 border-t border-[#3E3A35] pt-1.5 mt-0.5">{store.lastVisitNote}</span>}
                                                 </div>
                                             ) : (
-                                                <div className={`mb-3 px-3 py-1.5 rounded-lg border text-[11px] font-black uppercase tracking-widest text-center ${statusBadge.color} ${statusBadge.border} ${statusBadge.flashing ? 'animate-pulse' : ''}`}>
-                                                    {statusBadge.text}
-                                                </div>
+                                                <div className={`kpm-led-line mb-3 ${statusBadge.led}`}><i aria-hidden="true"></i>{statusBadge.text}</div>
                                             )}
                                             {requestDoneKey(store)}
 
                                             <div className="space-y-3">
                                                 {/* 🚀 MANUAL FOLDER OVERRIDE UI */}
-                                                <div className="bg-black/50 p-2 rounded-lg border border-slate-700 shadow-inner">
+                                                <div className="bg-[var(--inset)] p-2 rounded border border-[var(--line-2)]">
                                                     {editingFolderId === store.id ? (
                                                         <div className="flex flex-col gap-1.5 animate-fade-in">
                                                             <div className="flex justify-between items-center mb-1">
-                                                                <span className="text-[11px] text-orange-400 font-black uppercase flex items-center gap-1"><Layers size={10}/> Override Routing</span>
+                                                                <span className="text-[11px] text-[var(--accent-ink)] font-black uppercase flex items-center gap-1"><Layers size={10}/> Override Routing</span>
                                                             </div>
-                                                            <input value={folderEdits.prov} onChange={e=>setFolderEdits({...folderEdits, prov: e.target.value})} placeholder="Provinsi" className="bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider p-1.5 rounded border border-slate-600 outline-none focus:border-orange-500 w-full transition-colors" />
-                                                            <input value={folderEdits.kab} onChange={e=>setFolderEdits({...folderEdits, kab: e.target.value})} placeholder="Kabupaten" className="bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider p-1.5 rounded border border-slate-600 outline-none focus:border-orange-500 w-full transition-colors" />
-                                                            <input value={folderEdits.kec} onChange={e=>setFolderEdits({...folderEdits, kec: e.target.value})} placeholder="Kecamatan" className="bg-slate-900 text-orange-100 text-[11px] font-bold uppercase tracking-wider p-1.5 rounded border border-orange-500/50 outline-none focus:border-orange-500 w-full transition-colors" />
+                                                            <input value={folderEdits.prov} onChange={e=>setFolderEdits({...folderEdits, prov: e.target.value})} placeholder="Provinsi" className="bg-[var(--inset)] text-[var(--ink)] text-[11px] font-bold uppercase tracking-wider p-1.5 rounded border border-[var(--line-3)] outline-none focus:border-[var(--accent-edge)] w-full transition-colors" />
+                                                            <input value={folderEdits.kab} onChange={e=>setFolderEdits({...folderEdits, kab: e.target.value})} placeholder="Kabupaten" className="bg-[var(--inset)] text-[var(--ink)] text-[11px] font-bold uppercase tracking-wider p-1.5 rounded border border-[var(--line-3)] outline-none focus:border-[var(--accent-edge)] w-full transition-colors" />
+                                                            <input value={folderEdits.kec} onChange={e=>setFolderEdits({...folderEdits, kec: e.target.value})} placeholder="Kecamatan" className="bg-[var(--inset)] text-[var(--accent-ink)] text-[11px] font-bold uppercase tracking-wider p-1.5 rounded border border-[var(--accent-edge)] outline-none focus:border-[var(--accent-edge)] w-full transition-colors" />
                                                             
                                                             <div className="flex gap-2 mt-1">
-                                                                <button onClick={() => setEditingFolderId(null)} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-400 text-[11px] font-black p-1.5 rounded uppercase border border-slate-700 transition-colors">Abort</button>
-                                                                <button onClick={() => saveFolderEdit(store.id)} className="flex-[2] bg-orange-600 hover:bg-orange-500 text-white text-[11px] font-black p-1.5 rounded uppercase flex items-center justify-center gap-1 shadow-[0_0_10px_rgba(249,115,22,0.4)] transition-colors"><Save size={10}/> Enforce</button>
+                                                                <button onClick={() => setEditingFolderId(null)} className="flex-1 bg-[var(--raised)] hover:bg-[var(--raised)] text-[var(--ink-dim)] text-[11px] font-black p-1.5 rounded uppercase border border-[var(--line-2)] transition-colors">Abort</button>
+                                                                <button onClick={() => saveFolderEdit(store.id)} className="flex-[2] bg-[var(--duke-paper-2)] text-[var(--duke-on-plate)] text-[11px] font-black p-1.5 rounded uppercase flex items-center justify-center gap-1 transition-colors"><Save size={10}/> Enforce</button>
                                                             </div>
                                                         </div>
                                                     ) : (
                                                         <div className="flex flex-col gap-1 relative group">
-                                                            <span className="text-[11px] text-slate-400 uppercase font-black tracking-widest flex items-center gap-1"><Layers size={10}/> Matrix Location</span>
-                                                            <div className="text-[11px] text-slate-300 font-bold leading-tight pr-8">
-                                                                {store._hierarchy?.Provinsi} <span className="text-slate-400">{' > '}</span> {store._hierarchy?.Kabupaten} <span className="text-slate-400">{' > '}</span> <span className="text-orange-400">{store._hierarchy?.Kecamatan}</span>
+                                                            <span className="text-[11px] text-[var(--ink-dim)] uppercase font-black tracking-widest flex items-center gap-1"><Layers size={10}/> Matrix Location</span>
+                                                            <div className="text-[11px] text-[var(--ink-muted)] font-bold leading-tight pr-8">
+                                                                {store._hierarchy?.Provinsi} <span className="text-[var(--ink-dim)]">{' > '}</span> {store._hierarchy?.Kabupaten} <span className="text-[var(--ink-dim)]">{' > '}</span> <span className="text-[var(--accent-ink)]">{store._hierarchy?.Kecamatan}</span>
                                                             </div>
                                                             {canAssignAgent && (
                                                                 <button
@@ -1496,7 +1494,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                             kec: store.city || store._hierarchy?.Kecamatan || ''
                                                                         });
                                                                     }} 
-                                                                    className="absolute top-1/2 -translate-y-1/2 right-0 bg-slate-800 hover:bg-orange-600 text-slate-400 hover:text-white px-2 py-1 rounded border border-slate-600 hover:border-orange-500 transition-all text-[11px] font-black uppercase shadow-lg"
+                                                                    className="absolute top-1/2 -translate-y-1/2 right-0 bg-[var(--raised)] hover:bg-[var(--raised)] text-[var(--ink-dim)] hover:text-[var(--ink)] px-2 py-1 rounded border border-[var(--line-3)] hover:border-[var(--accent-edge)] transition-all text-[11px] font-black uppercase"
                                                                 >
                                                                     Edit
                                                                 </button>
@@ -1506,9 +1504,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                 </div>
 
                                                 <div className="flex gap-2">
-                                                    <div className="flex-1 bg-black p-2 rounded border border-slate-700 text-center flex flex-col justify-center gap-0.5">
-                                                        <span className="block text-[11px] text-slate-400 uppercase font-black">Performance Rank</span>
-                                                        <span className="text-[10px] text-orange-400 font-bold uppercase leading-none">{store.tier}</span>
+                                                    <div className="flex-1 bg-[var(--inset)] p-2 rounded border border-[var(--line-2)] text-center flex flex-col justify-center gap-0.5">
+                                                        <span className="block text-[11px] text-[var(--ink-dim)] uppercase font-black">Performance Rank</span>
+                                                        <span className="text-[10px] text-[var(--accent-ink)] font-bold uppercase leading-none">{store.tier}</span>
                                                         {store.priceTier !== store.tier && (
                                                             <span className="text-[11px] text-[#E8E4DE] font-bold uppercase leading-none mt-0.5">Price: {store.priceTier}</span>
                                                         )}
@@ -1519,13 +1517,13 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                             href={`https://wa.me/${String(store.phone).replace(/\D/g, '')}`} 
                                                             target="_blank" 
                                                             rel="noreferrer"
-                                                            className="flex-1 bg-[#25D366]/10 hover:bg-[#25D366]/30 border border-[#25D366]/50 text-[#25D366] p-2 rounded flex flex-col items-center justify-center transition-colors shadow-inner"
+                                                            className="flex-1 bg-transparent hover:bg-[var(--raised)] border border-[var(--line-3)] text-[var(--ink)] p-2 rounded flex flex-col items-center justify-center transition-colors"
                                                         >
                                                             <MessageSquare size={12} className="mb-0.5"/>
                                                             <span className="text-[11px] font-black uppercase tracking-widest">WhatsApp</span>
                                                         </a>
                                                     ) : (
-                                                        <div className="flex-1 bg-slate-800 border border-slate-700 text-slate-400 p-2 rounded flex flex-col items-center justify-center">
+                                                        <div className="flex-1 bg-[var(--raised)] border border-[var(--line-2)] text-[var(--ink-dim)] p-2 rounded flex flex-col items-center justify-center">
                                                             <Phone size={12} className="mb-0.5"/>
                                                             <span className="text-[11px] font-black uppercase tracking-widest">No Phone</span>
                                                         </div>
@@ -1535,7 +1533,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                 {canAssignAgent && (
                                                     <button
                                                         onClick={() => handleStartEditPin(store)}
-                                                        className="w-full bg-slate-800 hover:bg-orange-900/40 text-slate-400 hover:text-orange-400 border border-slate-600 hover:border-orange-500 p-2.5 rounded flex items-center justify-center gap-2 transition-colors active:scale-95 shadow-inner"
+                                                        className="w-full bg-[var(--raised)] hover:bg-[var(--raised)] text-[var(--ink-dim)] hover:text-[var(--accent-ink)] border border-[var(--line-3)] hover:border-[var(--accent-edge)] p-2.5 rounded flex items-center justify-center gap-2 transition-colors active:scale-95"
                                                     >
                                                         <MapPin size={14} />
                                                         <span className="text-[11px] font-black uppercase tracking-widest">Adjust Pin Location</span>
@@ -1543,23 +1541,23 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                 )}
 
                                                 <div>
-                                                    <label className="text-[11px] text-slate-400 mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><Truck size={10}/> Assign Fleet:</label>
+                                                    <label className="text-[11px] text-[var(--ink-dim)] mb-1 uppercase tracking-widest font-bold flex items-center gap-1"><Truck size={10}/> Assign Fleet:</label>
                                                     <select
-                                                        className={`w-full bg-black text-xs font-bold uppercase p-2 rounded outline-none border transition-colors shadow-inner ${assignments[store.id] ? 'border-[#D08A2E] text-[#E8E4DE]' : 'border-slate-700 text-slate-300'} ${canAssignAgent ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
+                                                        className={`w-full bg-[var(--inset)] text-xs font-bold uppercase p-2 rounded outline-none border transition-colors ${assignments[store.id] ? 'border-[#D08A2E] text-[#E8E4DE]' : 'border-[var(--line-2)] text-[var(--ink-muted)]'} ${canAssignAgent ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                                                         value={assignments[store.id] || 'Unassigned'}
                                                         onChange={(e) => handleAssignAgent(store.id, e.target.value)}
                                                         style={{ colorScheme: 'dark' }}
                                                         disabled={!canChooseSalesman} title={canChooseSalesman ? undefined : ownerLockedWhy}
                                                     >
-                                                        <option value="Unassigned" className="bg-slate-900 text-white">-- UNASSIGNED --</option>
-                                                        {globalAgentList.map(a => <option key={a} value={a} className="bg-slate-900 text-white">{a}</option>)}
+                                                        <option value="Unassigned" className="bg-[var(--inset)] text-[var(--ink)]">-- UNASSIGNED --</option>
+                                                        {globalAgentList.map(a => <option key={a} value={a} className="bg-[var(--inset)] text-[var(--ink)]">{a}</option>)}
                                                     </select>
                                                 </div>
                                             </div>
 
                                             <button 
                                                 onClick={() => handleOpenLocation(store)}
-                                                className="w-full mt-4 min-h-11 bg-black border border-[#D08A2E] hover:bg-[#1B1917] text-[#E4B04A] text-[10px] font-black py-3 rounded-lg uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95"
+                                                className="w-full mt-4 min-h-11 bg-[var(--inset)] border border-[#D08A2E] hover:bg-[#1B1917] text-[#E4B04A] text-[10px] font-black py-3 rounded uppercase tracking-widest flex items-center justify-center gap-2 transition-transform active:scale-95"
                                             >
                                                 <Navigation size={14}/> Navigate via Google Maps
                                             </button>
@@ -1591,15 +1589,16 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     return (
                         <>
                             {/* 🚀 TACTICAL BREADCRUMB NAVIGATION */}
-                            <div className="flex flex-wrap items-center gap-2 mb-2 bg-slate-900/80 backdrop-blur p-3 rounded-xl border border-slate-700 max-w-full lg:w-max shadow-lg">
-                                <button onClick={() => { setSelectedProvinsi('All'); setSelectedKabupaten('All'); setUserSelectedPath(null); }} className={`min-h-11 lg:min-h-0 text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-colors ${selectedProvinsi === 'All' ? 'text-orange-500' : 'text-slate-400 hover:text-white'}`}>
+                            {/* the path (redesign B): plain words on a ruled line, the level you stand on wears the amber line under it */}
+                            <div className="flex flex-wrap items-center gap-x-3 mb-2 border-b border-[var(--line-2)] max-w-full">
+                                <button onClick={() => { setSelectedProvinsi('All'); setSelectedKabupaten('All'); setUserSelectedPath(null); }} className={`min-h-11 lg:min-h-9 -mb-px border-b-2 text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-colors ${selectedProvinsi === 'All' ? 'border-[var(--duke-amber-edge)] text-[var(--ink)]' : 'border-transparent text-[var(--ink-dim)] hover:text-[var(--ink)]'}`}>
                                     <Layers size={14}/> Radar Hub
                                 </button>
-                                
+
                                 {selectedProvinsi !== 'All' && (
                                     <>
-                                        <ChevronRight size={14} className="text-slate-400"/>
-                                        <button onClick={() => { setSelectedKabupaten('All'); setUserSelectedPath(null); }} className={`min-h-11 lg:min-h-0 text-xs font-black uppercase tracking-widest transition-colors ${selectedKabupaten === 'All' ? 'text-orange-500' : 'text-slate-400 hover:text-white'}`}>
+                                        <ChevronRight size={14} className="text-[var(--ink-dim)]"/>
+                                        <button onClick={() => { setSelectedKabupaten('All'); setUserSelectedPath(null); }} className={`min-h-11 lg:min-h-9 -mb-px border-b-2 text-xs font-black uppercase tracking-widest transition-colors ${selectedKabupaten === 'All' ? 'border-[var(--duke-amber-edge)] text-[var(--ink)]' : 'border-transparent text-[var(--ink-dim)] hover:text-[var(--ink)]'}`}>
                                             {selectedProvinsi}
                                         </button>
                                     </>
@@ -1607,8 +1606,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
                                 {selectedProvinsi !== 'All' && selectedKabupaten !== 'All' && (
                                     <>
-                                        <ChevronRight size={14} className="text-slate-400"/>
-                                        <span className="text-orange-500 text-xs font-black uppercase tracking-widest">{selectedKabupaten}</span>
+                                        <ChevronRight size={14} className="text-[var(--ink-dim)]"/>
+                                        <span className="min-h-11 lg:min-h-9 -mb-px border-b-2 border-[var(--duke-amber-edge)] flex items-center text-[var(--ink)] text-xs font-black uppercase tracking-widest">{selectedKabupaten}</span>
                                     </>
                                 )}
                             </div>
@@ -1625,9 +1624,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                         Object.values(groupedTree[prov] || {}).forEach(k => Object.values(k).forEach(c => storeCount += c.length));
                                         
                                         return (
-                                            <FolderCard key={prov} icon={<MapPin size={22} />} onOpen={() => setSelectedProvinsi(prov)} className="bg-slate-900 border-slate-700 hover:border-orange-500 transition-colors duration-300">
-                                                <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{prov}</h3>
-                                                <p className="text-[11px] lg:text-[10px] text-slate-400 font-bold uppercase tracking-wider">{kabCount} Regions • {storeCount} Targets</p>
+                                            <FolderCard key={prov} icon={<MapPin size={22} />} onOpen={() => setSelectedProvinsi(prov)} className="bg-[var(--raised)] border-[var(--line-2)] hover:border-[var(--accent-edge)] transition-colors duration-300">
+                                                <h3 className="text-sm font-black text-[var(--ink)] uppercase tracking-widest mb-1">{prov}</h3>
+                                                <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-bold uppercase tracking-wider">{kabCount} Regions • {storeCount} Targets</p>
                                             </FolderCard>
                                         );
                                     })}
@@ -1643,9 +1642,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                         Object.values(groupedTree[selectedProvinsi][kab] || {}).forEach(c => storeCount += c.length);
 
                                         return (
-                                            <FolderCard key={kab} icon={<Layers size={22} />} onOpen={() => setSelectedKabupaten(kab)} className="bg-slate-900 border-slate-700 hover:border-blue-500 transition-colors duration-300">
-                                                <h3 className="text-sm font-black text-white uppercase tracking-widest mb-1">{kab}</h3>
-                                                <p className="text-[11px] lg:text-[10px] text-slate-400 font-bold uppercase tracking-wider">{kecCount} Sectors • {storeCount} Targets</p>
+                                            <FolderCard key={kab} icon={<Layers size={22} />} onOpen={() => setSelectedKabupaten(kab)} className="bg-[var(--raised)] border-[var(--line-2)] hover:border-[var(--accent-edge)] transition-colors duration-300">
+                                                <h3 className="text-sm font-black text-[var(--ink)] uppercase tracking-widest mb-1">{kab}</h3>
+                                                <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-bold uppercase tracking-wider">{kecCount} Sectors • {storeCount} Targets</p>
                                             </FolderCard>
                                         );
                                     })}
@@ -1660,7 +1659,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                     <div className="animate-fade-in mt-4">
                                         {/* 📱 the sector cards wrap two to a row on the phone (his board 3 = YES: no swipe reel, and the
                                             old -mx-4 stuck out of the phone shell's p-2); the desk keeps its one-row reel */}
-                                        <div className="flex flex-wrap lg:flex-nowrap lg:overflow-x-auto hide-scrollbar gap-3 pb-4 kpm-arrive">
+                                        {/* the areas as tabs (redesign B): a plain name with its count under it on one ruled line,
+                                            the open one wears the amber line; two to a row on the phone, one row on the desk */}
+                                        <div className="flex flex-wrap lg:flex-nowrap lg:overflow-x-auto hide-scrollbar border-b border-[var(--line-2)] mb-4 kpm-arrive">
                                             {Object.keys(kecs).sort().map(kec => {
                                                 const sectorStores = kecs[kec];
                                                 const completedInSector = sectorStores.filter(c => c.lastVisit === todayDate || !!safeVisits[c.name.trim().toLowerCase()]).length;
@@ -1672,16 +1673,12 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                     <button 
                                                         key={currentPath}
                                                         onClick={() => setUserSelectedPath(currentPath)}
-                                                        className={`shrink-0 basis-[calc(50%-6px)] lg:basis-auto flex flex-col items-start p-3.5 rounded-2xl border-2 transition-all duration-300 min-w-[140px] ${isActive ? 'bg-orange-600/10 border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.2)]' : 'bg-slate-900 border-slate-700 hover:border-slate-500 hover:bg-slate-800'}`}
+                                                        className={`shrink-0 basis-1/2 lg:basis-auto flex flex-col items-start min-h-11 px-3 py-2.5 -mb-px border-b-2 transition-colors min-w-[140px] ${isActive ? 'border-[var(--duke-amber-edge)]' : 'border-transparent hover:border-[var(--line-3)]'}`}
                                                     >
-                                                        <div className="flex justify-between items-center w-full mb-2">
-                                                            <MapPin size={14} className={isActive ? 'text-orange-500' : 'text-slate-400'} />
-                                                            {isCleared && <CheckCircle size={14} className="text-emerald-500 shadow-emerald-500/50" />}
-                                                        </div>
-                                                        <span className={`text-xs font-black uppercase tracking-widest text-left w-full truncate ${isActive ? 'text-white' : 'text-slate-400'}`}>
-                                                            {kec}
+                                                        <span className={`flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-left w-full truncate ${isActive ? 'text-[var(--ink)]' : 'text-[var(--ink-dim)]'}`}>
+                                                            {isCleared && <CheckCircle size={12} className="shrink-0 text-[var(--accent-ink)]" />}<span className="truncate">{kec}</span>
                                                         </span>
-                                                        <div className={`text-[11px] lg:text-[10px] font-bold mt-1 ${isCleared ? 'text-emerald-400' : (isActive ? 'text-orange-400' : 'text-slate-400')}`}>
+                                                        <div className={`text-[11px] lg:text-[10px] font-bold mt-1 tabular-nums ${isActive || isCleared ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-dim)]'}`}>
                                                             {completedInSector} / {sectorStores.length} Secured
                                                         </div>
                                                     </button>
@@ -1697,19 +1694,15 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                             if (!activeStores) return null;
 
                                             return (
-                                                <div className="animate-fade-in bg-black/20 p-3 lg:p-5 rounded-3xl border border-white/5 mt-2">
-                                                    <div className="flex items-center justify-between mb-5 border-b border-white/10 pb-4">
-                                                        <div>
-                                                            <h3 className="text-xl font-black text-white uppercase tracking-widest leading-none flex items-center gap-3">
-                                                                <div className="bg-orange-500/20 p-2 rounded-lg border border-orange-500/30">
-                                                                    <Layers size={18} className="text-orange-500"/>
-                                                                </div>
-                                                                {actKec}
-                                                            </h3>
-                                                        </div>
+                                                <div className="animate-fade-in mt-2">
+                                                    <div className="flex items-center justify-between mb-3 pb-2">
+                                                        <h3 className="text-xl font-black text-[var(--ink)] uppercase tracking-widest leading-none flex items-center gap-2">
+                                                            <Layers size={18} className="text-[var(--accent-ink)]"/>
+                                                            {actKec}
+                                                        </h3>
                                                     </div>
 
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-px bg-[var(--line-2)] border border-[var(--line-2)]">
                                             {activeStores.map((customer) => {
                                                 const safeCustomerName = customer.name.trim().toLowerCase();
                                                 const hasLiveTxToday = !!safeVisits[safeCustomerName];
@@ -1722,59 +1715,35 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                 /* RADAR and LOG are written once and mounted twice: in the ⋯ fold on the phone (named by what
                                                    they do), in the key row on the desk - his "board 1 = C", 2026-09-19 */
                                                 const mapKey = (label) => (
-                                                    <button onClick={() => jumpToMap(customer.id)} className="flex-1 min-h-11 lg:min-h-0 bg-slate-800 hover:bg-slate-700 text-blue-400 py-2.5 rounded-lg font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600">
+                                                    <button onClick={() => jumpToMap(customer.id)} className="flex-1 min-h-11 lg:min-h-9 bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] py-2.5 rounded font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-colors border border-[var(--line-3)]">
                                                         <Globe size={12}/> {label}
                                                     </button>
                                                 );
                                                 const logKey = (label) => (
-                                                    <button onClick={() => { setCheckInCustomer(customer); setVisitNote(""); setVisitTag("Store Closed 🔒"); }} className="flex-1 min-h-11 lg:min-h-0 bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 py-2.5 rounded-lg font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-slate-600 hover:border-red-500/50">
+                                                    <button onClick={() => { setCheckInCustomer(customer); setVisitNote(""); setVisitTag("Store Closed 🔒"); }} className="flex-1 min-h-11 lg:min-h-9 bg-transparent text-[var(--ink-muted)] hover:text-[var(--danger-ink)] py-2.5 rounded font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-colors border border-[var(--line-3)] hover:border-[var(--danger)]">
                                                         <AlertTriangle size={12}/> {label}
                                                     </button>
                                                 );
 
                                                 return (
-                                                    <div key={customer.id} className={`bg-[#0f0e0d] rounded-2xl border-2 overflow-hidden flex flex-col relative transition-all duration-500 ${isVisited ? 'border-emerald-900/50 opacity-70 grayscale hover:grayscale-0' : 'border-slate-700 hover:border-orange-500 shadow-[0_10px_20px_rgba(0,0,0,0.5)] hover:-translate-y-1'} ${!isVisited && statusBadge.led === 'crit' ? 'kpm-crit' : ''}`}>
-                                                        
-                                                        {isVisited && (() => {
-                                                            const tag = String(hasLiveTxToday ? '' : (customer.lastVisitTag || ''));
-                                                            let stampText = 'CLAIMED';
-                                                            let bgOverlay = 'bg-emerald-900/20';
-                                                            let boxBg = 'bg-emerald-900/95 text-emerald-400 border-emerald-500 shadow-[0_0_50px_rgba(16,185,129,0.6)]';
-                                                            let badgeBorder = 'border-emerald-500/30';
-                                                            
-                                                            if (tag.includes('🔒')) { stampText = 'CLOSED'; bgOverlay = 'bg-red-900/20'; boxBg = 'bg-red-900/95 text-red-400 border-red-500 shadow-[0_0_50px_rgba(239,68,68,0.6)]'; badgeBorder = 'border-red-500/30'; }
-                                                            else if (tag.includes('🛑')) { stampText = 'FULL'; bgOverlay = 'bg-orange-900/20'; boxBg = 'bg-orange-900/95 text-orange-400 border-orange-500 shadow-[0_0_50px_rgba(249,115,22,0.6)]'; badgeBorder = 'border-orange-500/30'; }
-                                                            else if (tag.includes('⚠️')) { stampText = 'ISSUE'; bgOverlay = 'bg-yellow-900/20'; boxBg = 'bg-yellow-900/95 text-yellow-400 border-yellow-500 shadow-[0_0_50px_rgba(234,179,8,0.6)]'; badgeBorder = 'border-yellow-500/30'; }
-                                                            else if (tag.includes('📝')) { stampText = 'REQUEST'; bgOverlay = 'bg-blue-900/20'; boxBg = 'bg-blue-900/95 text-blue-400 border-blue-500 shadow-[0_0_50px_rgba(59,130,246,0.6)]'; badgeBorder = 'border-blue-500/30'; }
-                                                            
-                                                            const trueVisitorName = safeVisits[safeCustomerName] || customer.lastVisitedBy || 'FLEET';
-
-                                                            return (
-                                                                <div className={`absolute inset-0 z-50 flex flex-col items-center justify-center pointer-events-none overflow-hidden backdrop-blur-[2px] ${bgOverlay}`}>
-                                                                    <div className={`border-4 px-6 py-3 rounded-xl font-black text-center transform -rotate-6 backdrop-blur-md ${boxBg}`}>
-                                                                        <div className="text-2xl uppercase tracking-[0.2em] leading-none mb-1">{stampText}</div>
-                                                                        <div className={`text-[10px] text-white font-bold tracking-widest bg-black/60 rounded py-0.5 px-2 border shadow-inner max-w-[200px] truncate ${badgeBorder}`}>
-                                                                            BY {trueVisitorName.toUpperCase().split(' ')[0]}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            )
-                                                        })()}
+                                                    <div key={customer.id} className={`bg-[var(--panel)] overflow-hidden flex flex-col relative transition-colors ${isVisited ? '' : 'hover:bg-[var(--raised)]'} ${!isVisited && statusBadge.led === 'crit' ? 'kpm-crit' : ''}`}>
+                                                        {/* the old rotated CLAIMED / CLOSED stamp over the whole card became one word on the card's
+                                                            report line (redesign B: flat, no glow); the word and the name are the same as before */}
 
                                                         {/* 📱 THE TOOL BAR (↑ ↓ the route order, the assign box). On the desk it is the black bar at the
                                                             top of the card, as always. On the phone the SAME bar is a fold at the foot of the card
                                                             (order-last), 0fr until the ⋯ key beside the name opens it - his board 2 = B, 2026-09-19.
                                                             One set of controls for both widths; nothing is duplicated. */}
-                                                        <div data-acts onClick={e => e.stopPropagation()} className={`order-last lg:order-none grid lg:flex lg:justify-between lg:items-center lg:p-1.5 bg-black border-t lg:border-t-0 lg:border-b border-slate-800 z-10 transition-[grid-template-rows,opacity] duration-200 ease-out ${actsOpen === customer.id ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`} style={{ gridTemplateRows: actsOpen === customer.id ? '1fr' : '0fr' }}>
+                                                        <div data-acts onClick={e => e.stopPropagation()} className={`order-last lg:order-none grid lg:flex lg:justify-between lg:items-center lg:p-1.5 bg-[var(--inset)] border-t lg:border-t-0 lg:border-b border-[var(--line-2)] z-10 transition-[grid-template-rows,opacity] duration-200 ease-out ${actsOpen === customer.id ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`} style={{ gridTemplateRows: actsOpen === customer.id ? '1fr' : '0fr' }}>
                                                         <div className="overflow-hidden lg:contents">
                                                         <div className="flex gap-2 p-2 pb-0 lg:hidden">{mapKey('SHOW ON MAP')}{logKey('LOG A VISIT')}</div>
                                                         <div className="flex justify-between items-center gap-2 p-2 lg:contents">
                                                             <div className="flex gap-1 relative z-20">
-                                                                <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'up'); }} disabled={originalIdx === 0 || isVisited} className="w-11 h-11 lg:w-6 lg:h-6 text-base lg:text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↑</button>
-                                                                <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'down'); }} disabled={originalIdx === orderedRoute.length - 1 || isVisited} className="w-11 h-11 lg:w-6 lg:h-6 text-base lg:text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 disabled:opacity-30 rounded text-slate-400 flex items-center justify-center font-bold transition-colors">↓</button>
+                                                                <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'up'); }} disabled={originalIdx === 0 || isVisited} className="w-11 h-11 lg:w-6 lg:h-6 text-base lg:text-xs bg-transparent hover:text-[var(--ink)] border border-[var(--line-3)] disabled:opacity-30 rounded text-[var(--ink-muted)] flex items-center justify-center font-bold transition-colors">↑</button>
+                                                                <button onClick={(e) => { e.stopPropagation(); moveStore(originalIdx, 'down'); }} disabled={originalIdx === orderedRoute.length - 1 || isVisited} className="w-11 h-11 lg:w-6 lg:h-6 text-base lg:text-xs bg-transparent hover:text-[var(--ink)] border border-[var(--line-3)] disabled:opacity-30 rounded text-[var(--ink-muted)] flex items-center justify-center font-bold transition-colors">↓</button>
                                                             </div>
                                                             <select
-                                                                className={`bg-slate-900 text-[11px] font-black uppercase tracking-widest px-2 py-1 min-h-11 lg:min-h-0 rounded outline-none border transition-all relative z-20 ${assignments[customer.id] ? 'border-emerald-500/50 text-emerald-400' : 'border-slate-700 text-slate-400'} ${canAssignAgent && !isVisited ? 'cursor-pointer hover:border-orange-500 hover:text-white' : 'pointer-events-none'}`}
+                                                                className={`bg-[var(--inset)] text-[11px] font-black uppercase tracking-widest px-2 py-1 min-h-11 lg:min-h-0 rounded outline-none border transition-colors relative z-20 ${assignments[customer.id] ? 'border-[var(--accent-edge)] text-[var(--ink)]' : 'border-[var(--line-3)] text-[var(--ink-muted)]'} ${canAssignAgent && !isVisited ? 'cursor-pointer hover:text-[var(--ink)]' : 'pointer-events-none'}`}
                                                                 value={assignments[customer.id] || 'Unassigned'}
                                                                 onChange={(e) => handleAssignAgent(customer.id, e.target.value)}
                                                                 style={{ colorScheme: 'dark' }}
@@ -1788,28 +1757,28 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
                                                         {/* the picture band: 96 px when there is a photo; without one the phone gets a 44 px strip
                                                             that carries the badges instead of a NO INTEL texture */}
-                                                        <div className={`${customer.storeImage ? 'h-24' : 'min-h-11 lg:h-24'} ${actsOpen === customer.id ? '' : 'hidden lg:block'} bg-black relative shrink-0 border-b border-slate-800`}>
+                                                        <div className={`${customer.storeImage ? 'h-24' : 'min-h-11 lg:h-24'} ${actsOpen === customer.id ? '' : 'hidden lg:block'} bg-[var(--inset)] relative shrink-0 border-b border-[var(--line-2)]`}>
                                                             {customer.storeImage ? (
                                                                 <img src={customer.storeImage} className="w-full h-full object-cover opacity-60" alt="Store"/>
                                                             ) : (
-                                                                <div className="hidden lg:flex w-full h-full flex-col items-center justify-center text-slate-700 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+                                                                <div className="hidden lg:flex w-full h-full flex-col items-center justify-center text-[var(--line-3)]">
                                                                     <Store size={24} className="mb-1 opacity-50"/>
                                                                     <span className="text-[11px] font-black tracking-widest uppercase">No Intel</span>
                                                                 </div>
                                                             )}
 
                                                             <div className={`${customer.storeImage ? 'absolute top-2 left-2 flex flex-col gap-1.5' : 'static flex flex-row flex-wrap items-center gap-1.5 px-2 py-1.5 lg:absolute lg:top-2 lg:left-2 lg:flex-col lg:p-0'}`}>
-                                                                <div className="bg-black/80 backdrop-blur border border-white/10 text-white text-[11px] font-black px-2 py-1 rounded uppercase tracking-widest shadow-lg flex items-center gap-1.5">
+                                                                <div className="bg-[var(--inset)] border border-[var(--line-3)] text-[var(--ink)] text-[11px] font-black px-2 py-1 rounded uppercase tracking-widest flex items-center gap-1.5">
                                                                     <span style={{ color: ringColor }}>●</span>
-                                                                    {metric.agentName === 'Unassigned' ? 'UNASSIGNED' : metric.agentName.split(' ')[0]} 
+                                                                    {metric.agentName === 'Unassigned' ? 'UNASSIGNED' : metric.agentName.split(' ')[0]}
                                                                     <span className="opacity-50">|</span> #{metric.stopNumber}
                                                                 </div>
                                                                 <div className="flex gap-1 flex-wrap">
-                                                                    <div className="bg-orange-600/90 backdrop-blur border border-orange-400 text-white text-[11px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
+                                                                    <div className="bg-[var(--inset)] border border-[var(--accent-edge)] text-[var(--accent-ink)] text-[11px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest">
                                                                         RANK: {customer.tier}
                                                                     </div>
                                                                     {customer.priceTier !== customer.tier && (
-                                                                        <div className="bg-blue-600/90 backdrop-blur border border-blue-400 text-white text-[11px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest shadow-lg">
+                                                                        <div className="bg-[var(--inset)] border border-[var(--line-3)] text-[var(--ink)] text-[11px] font-black px-2 py-0.5 rounded w-max uppercase tracking-widest">
                                                                             PRICE: {customer.priceTier}
                                                                         </div>
                                                                     )}
@@ -1817,24 +1786,31 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                             </div>
                                                         </div>
 
-                                                        <div className="p-3 lg:p-4 flex-1 flex flex-col bg-gradient-to-b from-[#1a1815] to-[#0f0e0d]">
-                                                            <h3 className="font-black text-base text-white uppercase tracking-wider mb-1.5 lg:mb-2 leading-tight flex items-start gap-2 lg:block lg:truncate">
+                                                        <div className="p-3 lg:p-4 flex-1 flex flex-col">
+                                                            <h3 className="font-black text-base text-[var(--ink)] uppercase tracking-wider mb-1.5 lg:mb-2 leading-tight flex items-start gap-2 lg:block lg:truncate">
                                                                 <span className="flex-1 min-w-0">{customer.name}</span>
                                                                 <MoreKey id={customer.id} label={customer.name} open={actsOpen === customer.id} onToggle={(id) => setActsOpen(o => (o === id ? null : id))} className="shrink-0 -mt-1 -mr-1" />
                                                             </h3>
                                                             
-                                                            {isVisited ? (
-                                                                <div className="mb-3 px-3 py-2 rounded-lg border border-emerald-500 bg-emerald-900/40 text-emerald-400 text-[11px] lg:text-[10px] font-black tracking-wider w-full flex flex-col gap-1 text-left shadow-inner relative z-10">
-                                                                    <span className="flex items-center gap-1.5 uppercase leading-tight"><CheckCircle size={12} className="shrink-0"/> {hasLiveTxToday ? 'SECURED TODAY' : customer.lastVisitTag}</span>
-                                                                    {(!hasLiveTxToday && customer.lastVisitNote) && <span className="text-[11px] font-mono text-emerald-200/80 font-normal normal-case leading-snug line-clamp-2 border-t border-emerald-500/30 pt-1.5 mt-0.5">{customer.lastVisitNote}</span>}
+                                                            {isVisited ? (() => {
+                                                                const tag = String(hasLiveTxToday ? '' : (customer.lastVisitTag || ''));
+                                                                const stampText = tag.includes('🔒') ? 'CLOSED' : tag.includes('🛑') ? 'FULL' : tag.includes('⚠️') ? 'ISSUE' : tag.includes('📝') ? 'REQUEST' : 'CLAIMED';
+                                                                const trueVisitorName = safeVisits[safeCustomerName] || customer.lastVisitedBy || 'FLEET';
+                                                                const bad = stampText === 'CLOSED' || stampText === 'ISSUE';
+                                                                return (
+                                                                <div className={`mb-3 pl-3 py-1 border-l-2 ${bad ? 'border-[var(--danger)]' : 'border-[var(--accent-edge)]'} text-[11px] lg:text-[10px] font-black tracking-wider w-full flex flex-col gap-1 text-left relative z-10`}>
+                                                                    <span className={`uppercase tracking-[0.2em] ${bad ? 'text-[var(--danger-ink)]' : 'text-[var(--accent-ink)]'}`}>{stampText} · BY {trueVisitorName.toUpperCase().split(' ')[0]}</span>
+                                                                    <span className="flex items-center gap-1.5 uppercase leading-tight text-[var(--ink)]"><CheckCircle size={12} className="shrink-0"/> {hasLiveTxToday ? 'SECURED TODAY' : customer.lastVisitTag}</span>
+                                                                    {(!hasLiveTxToday && customer.lastVisitNote) && <span className="text-[11px] font-mono text-[var(--ink-muted)] font-normal normal-case leading-snug line-clamp-2 border-t border-[var(--line-2)] pt-1.5 mt-0.5">{customer.lastVisitNote}</span>}
                                                                 </div>
-                                                            ) : (
+                                                                );
+                                                            })() : (
                                                                 <div className={`kpm-led-line mb-2 lg:mb-3 ${statusBadge.led}`}><i aria-hidden="true"></i>{statusBadge.short}</div>
                                                             )}
                                                             
                                                             <div className={`space-y-2 mb-3 lg:mb-4 flex-1 ${actsOpen === customer.id ? '' : 'hidden lg:block'}`}>
-                                                                <div className="flex items-start gap-2 text-slate-400 bg-black/40 p-2 rounded border border-white/5">
-                                                                    <MapPin size={12} className="shrink-0 text-blue-500 mt-0.5"/>
+                                                                <div className="flex items-start gap-2 text-[var(--ink-muted)] py-1">
+                                                                    <MapPin size={12} className="shrink-0 text-[var(--ink-dim)] mt-0.5"/>
                                                                     <div>
                                                                         <p className="text-[11px] lg:text-[10px] font-bold leading-relaxed line-clamp-2">{customer.address}</p>
                                                                     </div>
@@ -1847,7 +1823,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                     <>
                                                                         <button 
                                                                             onClick={() => jumpToTerminal(customer.name)}
-                                                                            className="w-full flex-[2] lg:flex-none bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-3 min-h-11 lg:min-h-0 rounded-lg font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-[0_5px_20px_rgba(249,115,22,0.4)] border border-orange-400"
+                                                                            className="w-full flex-[2] lg:flex-none bg-[var(--duke-paper-2)] text-[var(--duke-on-plate)] hover:brightness-105 py-3 min-h-11 lg:min-h-0 rounded font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-transform active:scale-95"
                                                                         >
                                                                             <Crosshair size={14}/> Engage Target
                                                                         </button>
@@ -1857,7 +1833,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                             
                                                                             <button 
                                                                                 onClick={() => handleOpenLocation(customer)}
-                                                                                className="flex-[1.5] bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-lg font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all border border-blue-500 shadow-md shadow-blue-900/50"
+                                                                                className="flex-[1.5] min-h-11 lg:min-h-9 bg-transparent text-[var(--accent-ink)] py-2.5 rounded font-bold text-[11px] uppercase tracking-widest flex items-center justify-center gap-1.5 transition-colors border border-[var(--accent-edge)] hover:bg-[var(--raised)]"
                                                                                 title="Navigate via Google Maps"
                                                                             >
                                                                                 <Navigation size={12}/> Navigate
@@ -1873,7 +1849,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                                 handleUndoCheckIn(customer);
                                                                             }
                                                                         }}
-                                                                        className="w-full bg-slate-900 hover:bg-red-900/40 text-slate-400 hover:text-red-400 py-3 rounded-lg font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all border border-slate-800 hover:border-red-900/50"
+                                                                        className="w-full min-h-11 bg-transparent text-[var(--ink-muted)] hover:text-[var(--danger-ink)] py-3 rounded font-black text-[11px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-colors border border-[var(--line-3)] hover:border-[var(--danger)]"
                                                                     >
                                                                         <RotateCcw size={14}/> Reverse Clearance
                                                                     </button>
@@ -1896,32 +1872,32 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             </div>
 
             {checkInCustomer && (
-                <div className="fixed inset-0 z-[2000] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-mono">
-                    <div className="bg-slate-900 w-full max-w-lg rounded-2xl shadow-[0_0_50px_rgba(249,115,22,0.2)] border-2 border-orange-500/50 flex flex-col overflow-hidden">
+                <div className="fixed inset-0 z-[2000] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-mono">
+                    <div className="bg-[var(--inset)] w-full max-w-lg rounded border border-[var(--line-2)] flex flex-col overflow-hidden">
                         
-                        <div className="bg-black/60 p-5 border-b border-slate-800 flex justify-between items-center">
+                        <div className="bg-[var(--inset)] p-5 border-b border-[var(--line-2)] flex justify-between items-center">
                             <div>
-                                <h3 className="font-black text-xl text-white flex items-center gap-3 uppercase tracking-widest">
-                                    <AlertTriangle size={20} className="text-orange-500"/>
+                                <h3 className="font-black text-xl text-[var(--ink)] flex items-center gap-3 uppercase tracking-widest">
+                                    <AlertTriangle size={20} className="text-[var(--accent-ink)]"/>
                                     Exception Log
                                 </h3>
-                                <p className="text-[11px] lg:text-[10px] text-slate-400 tracking-widest uppercase mt-1">Target: {checkInCustomer.name}</p>
+                                <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] tracking-widest uppercase mt-1">Target: {checkInCustomer.name}</p>
                             </div>
-                            <button onClick={() => setCheckInCustomer(null)} className="text-slate-400 hover:text-white transition-colors"><X size={24}/></button>
+                            <button onClick={() => setCheckInCustomer(null)} className="text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors"><X size={24}/></button>
                         </div>
 
                         <div className="p-6 space-y-6">
                             <div>
-                                <label className="text-[11px] lg:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block">Exception Reason</label>
+                                <label className="text-[11px] lg:text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-3 block">Exception Reason</label>
                                 <div className="flex flex-wrap gap-2">
                                     {QUICK_TAGS.map(tag => (
                                         <button 
                                             key={tag}
                                             onClick={() => setVisitTag(tag)}
-                                            className={`px-3 py-2.5 min-h-11 lg:min-h-0 rounded-lg text-[11px] lg:text-[10px] font-black uppercase tracking-wider border transition-all ${
+                                            className={`px-3 py-2.5 min-h-11 lg:min-h-0 rounded text-[11px] lg:text-[10px] font-black uppercase tracking-wider border transition-all ${
                                                 visitTag === tag 
-                                                ? 'bg-orange-600 text-white border-orange-400 shadow-[0_0_15px_rgba(249,115,22,0.4)]' 
-                                                : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-500'
+                                                ? 'bg-[var(--inset)] text-[var(--ink)] border-[var(--duke-amber-edge)]' 
+                                                : 'bg-[var(--raised)] text-[var(--ink-dim)] border-[var(--line-2)] hover:border-[var(--line-3)]'
                                             }`}
                                         >
                                             {tag}
@@ -1931,11 +1907,11 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                             </div>
 
                             <div>
-                                <label className="text-[11px] lg:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block flex items-center gap-2">
+                                <label className="text-[11px] lg:text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-2 block flex items-center gap-2">
                                     <MessageSquare size={14}/> Field Intel (Notes)
                                 </label>
                                 <textarea 
-                                    className="w-full p-4 rounded-xl bg-black border border-slate-700 text-white text-sm focus:border-orange-500 outline-none min-h-[120px] font-sans"
+                                    className="w-full p-4 rounded bg-[var(--inset)] border border-[var(--line-2)] text-[var(--ink)] text-sm focus:border-[var(--accent-edge)] outline-none min-h-[120px] font-sans"
                                     placeholder="Provide intelligence on why the target was skipped or closed..."
                                     value={visitNote}
                                     onChange={(e) => setVisitNote(e.target.value)}
@@ -1944,17 +1920,17 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                             </div>
                         </div>
 
-                        <div className="p-5 bg-black/60 border-t border-slate-800 flex gap-3">
+                        <div className="p-5 bg-[var(--inset)] border-t border-[var(--line-2)] flex gap-3">
                             <button 
                                 onClick={() => setCheckInCustomer(null)}
-                                className="flex-1 py-4 rounded-xl bg-slate-800 border border-slate-700 font-bold text-slate-400 hover:text-white hover:bg-slate-700 uppercase tracking-widest text-[11px] lg:text-[10px] transition-colors"
+                                className="flex-1 py-4 rounded bg-[var(--raised)] border border-[var(--line-2)] font-bold text-[var(--ink-dim)] hover:text-[var(--ink)] hover:bg-[var(--raised)] uppercase tracking-widest text-[11px] lg:text-[10px] transition-colors"
                             >
                                 Abort
                             </button>
                             <button 
                                 onClick={confirmCheckIn}
                                 disabled={isSubmitting}
-                                className="flex-[2] py-4 rounded-xl bg-orange-600 hover:bg-orange-500 text-white font-black uppercase tracking-[0.2em] text-xs shadow-[0_0_20px_rgba(249,115,22,0.4)] disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
+                                className="flex-[2] py-4 rounded bg-[var(--duke-paper-2)] text-[var(--duke-on-plate)] font-black uppercase tracking-[0.2em] text-xs disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
                             >
                                 <Save size={16}/> {isSubmitting ? 'Transmitting...' : 'Submit Intel'}
                             </button>

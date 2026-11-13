@@ -149,6 +149,17 @@
 .kx-feed .kx-desk { display: none; }
 /* labels 11 px on the phone, his "make the font little bit bigger" (2026-08-16); the desk keeps 10 */
 .kx-feed .kx-meta3 small { font-size: 11px; }
+/* REDESIGN B (2026-11-13, the Sales Terminal's language on Journey Plan): flat ground and ruled lines, no framed card.
+   The day's numbers are ONE strip split by rules; a day key is a plain word and the lit one wears the amber line under it
+   (the terminal's lit tab, border-b-2 -mb-px), never a plate. Placed after the base rules so these win at equal weight. */
+.kx-feed { background: none; border: 0; border-bottom: 1px solid var(--line-2); border-radius: 0; }
+.kx-feed .kx-meta3 { gap: 0; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); }
+.kx-feed .kx-meta3 div { border: 0; border-radius: 0; background: none; padding: 8px 10px; }
+.kx-feed .kx-meta3 div + div { border-left: 1px solid var(--line-2); }
+.kx-days { gap: 0; border-bottom: 1px solid var(--line-2); }
+.kx-days button { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; margin-bottom: -1px; color: var(--ink-dim); }
+.kx-days button[aria-pressed="true"] { background: none; border-bottom-color: var(--duke-amber-edge); color: var(--ink); }
+.kx-days button.today::after { bottom: 6px; }
 @media (min-width: 1024px) {
   .kx-feed { padding: 14px 16px 16px; gap: 12px; }
   .kx-feed-head { font-size: 22px; }
