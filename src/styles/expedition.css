@@ -152,7 +152,7 @@
 /* REDESIGN B (2026-11-13, the Sales Terminal's language on Journey Plan): flat ground and ruled lines, no framed card.
    The day's numbers are ONE strip split by rules; a day key is a plain word and the lit one wears the amber line under it
    (the terminal's lit tab, border-b-2 -mb-px), never a plate. Placed after the base rules so these win at equal weight. */
-.kx-feed { background: none; border: 0; border-bottom: 1px solid var(--line-2); border-radius: 0; }
+.kx-feed { background: none; border: 0; border-radius: 0; }   /* the day keys' own rule closes it - a second line here doubled it (shot 2026-11-13) */
 .kx-feed .kx-meta3 { gap: 0; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); }
 .kx-feed .kx-meta3 div { border: 0; border-radius: 0; background: none; padding: 8px 10px; }
 .kx-feed .kx-meta3 div + div { border-left: 1px solid var(--line-2); }

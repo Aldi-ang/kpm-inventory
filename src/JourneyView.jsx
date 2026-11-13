@@ -1517,7 +1517,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                             href={`https://wa.me/${String(store.phone).replace(/\D/g, '')}`} 
                                                             target="_blank" 
                                                             rel="noreferrer"
-                                                            className="flex-1 bg-transparent hover:bg-[var(--raised)] border border-[var(--line-3)] text-[var(--ink)] p-2 rounded flex flex-col items-center justify-center transition-colors"
+                                                            className="flex-1 bg-transparent hover:bg-[var(--raised)] border border-[var(--line-3)] !text-[var(--ink)] p-2 rounded flex flex-col items-center justify-center transition-colors"
                                                         >
                                                             <MessageSquare size={12} className="mb-0.5"/>
                                                             <span className="text-[11px] font-black uppercase tracking-widest">WhatsApp</span>
@@ -1761,7 +1761,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                             {customer.storeImage ? (
                                                                 <img src={customer.storeImage} className="w-full h-full object-cover opacity-60" alt="Store"/>
                                                             ) : (
-                                                                <div className="hidden lg:flex w-full h-full flex-col items-center justify-center text-[var(--line-3)]">
+                                                                <div className="hidden lg:flex w-full h-full flex-col items-end justify-end p-2 text-[var(--line-3)]">
                                                                     <Store size={24} className="mb-1 opacity-50"/>
                                                                     <span className="text-[11px] font-black tracking-widest uppercase">No Intel</span>
                                                                 </div>

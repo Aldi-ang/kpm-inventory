@@ -7984,7 +7984,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      'measured 2026-09-19: arrows 24 x 24, assign 128 x 23, the name cut with …, the address 10 px');
   ok('2B: with no photo the NO INTEL band is a 44 px strip carrying the badges; with a photo it stays the 96 px picture',
      /className=\{`\$\{customer\.storeImage \? 'h-24' : 'min-h-11 lg:h-24'\} \$\{actsOpen === customer\.id \? '' : 'hidden lg:block'\} bg-\[var\(--inset\)\] relative shrink-0 border-b border-\[var\(--line-2\)\]`\}/.test(jv) &&
-     /<div className="hidden lg:flex w-full h-full flex-col items-center justify-center text-\[var\(--line-3\)\]">/.test(jv) &&
+     /<div className="hidden lg:flex w-full h-full flex-col items-end justify-end p-2 text-\[var\(--line-3\)\]">/.test(jv) /* the corner: centred, it sat under the badges (shot 2026-11-13) */ &&
      !/transparenttextures\.com/.test(code(jv)) &&
      /className=\{`\$\{customer\.storeImage \? 'absolute top-2 left-2 flex flex-col gap-1\.5' : 'static flex flex-row flex-wrap items-center gap-1\.5 px-2 py-1\.5 lg:absolute lg:top-2 lg:left-2 lg:flex-col lg:p-0'\}`\}/.test(jv) &&
      !/<div className="h-24 bg-black relative shrink-0 border-b border-slate-800">/.test(code(jv)),
@@ -10377,7 +10377,9 @@ section('Expedition map');
        mapPart.length > 1000 && !/(blue|emerald|green|cyan|sky|teal)-\d|#3b82f6|#2563eb|#10b981|#38bdf8/.test(mapPart) &&
        !/#3b82f6|#2563eb|#06b6d4|#14b8a6|#10b981/.test(jvc.slice(0, jvc.indexOf('const JourneyView = '))) &&
        (jvc.match(/kx-mapkey/g) || []).length >= 6 && /\.kx-mapkey \{ align-items: center;/.test(exc) && !/\.kx-mapkey \{[^}]*display:/.test(exc) &&
-       /\.kx-map \.leaflet-bar a \{ background: var\(--panel\);/.test(exc),
+       /\.kx-map \.leaflet-bar a \{ background: var\(--panel\);/.test(exc) &&
+       /* shot 2026-11-13: Leaflet's own `.leaflet-container a { color: #0078A8 }` beat the WhatsApp key's ink class - a link in the popup forces it */
+       /href=\{`https:\/\/wa\.me\/[\s\S]{0,500}?!text-\[var\(--ink\)\]/.test(jvc),
        'his screenshot: a blue fullscreen key, an emerald Fly Home, white zoom keys, green secured pins on a slate map');
   }
   {  /* JOURNEY MAP, HIS SETTLED DESIGN (2026-10-03): a shop is a chest, a visit plants a lit sign per outcome, a bubble is
