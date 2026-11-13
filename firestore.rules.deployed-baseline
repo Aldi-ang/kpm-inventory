@@ -1,7 +1,7 @@
 // =============================================================================
-// PUBLISHED 2026-11-10 ~06:46 WIB by Aldi from the Firebase Console, (default) database, in BOTH projects - the KPM
-//   project and the demo project kpm-demo-f4d74 (this file as of kpm 659911c, sent to him whole; his "published both
-//   already"). firestore.rules.deployed-baseline is
+// PUBLISHED 2026-11-13 ~19:30 WIB by Aldi from the Firebase Console, (default) database, asked for BOTH projects - the
+//   KPM project and the demo project kpm-demo-f4d74 (this file as of kpm 67e22865, sent to him whole; his "i already
+//   publish the rules"). firestore.rules.deployed-baseline is
 //   that text - the instant rollback copy. Live = the 2026-07-28 rules + the shared rank/badge path closed,
 //   + CHANGE 11/11b (a vault password per person), 12 (lock an account), 13 (T1/T2 move a person to a new
 //   Gmail), 14 (the eight holes found reviewing the live rules), 15 (the bell's Missed list, one per person),
@@ -12,7 +12,8 @@
 //   counted product; a T4 reads their own warehouse's counts), 24 (Sell Again: the sell_damaged holder makes the
 //   "· RUSAK" lot of one damaged pack and its SELL line), 25 (every login of the company reads the warehouse list, places),
 //   26 (a T3 anywhere / a T4 in their own region loads a salesman's van - only the van lists change), 27 (every login of the company reads
-//   the shop-level targets, appSettings/tierRules - that one doc). Before this: 2026-11-09 ~07:30 (ac00398, without 27).
+//   the shop-level targets, appSettings/tierRules - that one doc), 28 (a shop's salesman and its package-count reset are
+//   written by T1-T4 only). Before this: 2026-11-10 ~06:46 (659911c, without 28).
 //   Any change below this line is a DRAFT again.
 //
 // Everything except the marked [CHANGE N] / [ADDED] / [FLAGGED] blocks below is
@@ -321,6 +322,24 @@ service cloud.firestore {
     }
     function grosirCreateOk() { return !isGrosirLevel(request.resource.data) || grosirAdmin(); }
     function grosirUpdateOk() { return !isGrosirLevel(request.resource.data) || isGrosirLevel(resource.data) || grosirAdmin(); }
+
+    // [CHANGE 28 — 2026-11-13, LIVE 2026-11-13 in both projects] A SHOP'S SALESMAN AND ITS PACKAGE COUNT ARE TIER 1-4's. His words: "i only give the
+    // paintbrush features for tier 4 and above in default bro" (2026-11-12, who chooses a shop's salesman) and "tier 4 and
+    // above can refresh that immediately" (2026-11-13, clearing a shop's package count). The app already shows both only to
+    // T1-T4 (Journey Plan's Assign Fleet + paintbrush, Customer Directory's Give, the terminal's Clear count), but until this
+    // rule anyone with shop-edit access could write them from a changed app - and the salesman named on a shop is the one
+    // who may sell its packages and whose receivable it is. grosirAdmin() is exactly T1-T4 (= the app's canConfirmGrosir).
+    // Update: touching assignedAgent / assignedBy / assignedAt / bundleReset (a removed key counts) needs T1-T4.
+    // Create: a new shop may arrive with no salesman or 'Unassigned' (the KML import writes 'Unassigned'), never with a
+    // named one or a count reset, unless T1-T4. The shop form never sends these keys, so a salesman's own new shop and his
+    // edits and visits are untouched; each check stops before the profile read when the keys are not touched. The app
+    // works under the rules before this one, so it can be published any time. rules-test/test-shop-owner-fields.mjs.
+    function shopOwnerKeys() { return ['assignedAgent', 'assignedBy', 'assignedAt', 'bundleReset']; }
+    function ownerFieldsCreateOk() {
+      let d = request.resource.data;
+      return (!d.keys().hasAny(['assignedBy', 'assignedAt', 'bundleReset']) && d.get('assignedAgent', 'Unassigned') == 'Unassigned') || grosirAdmin();
+    }
+    function ownerFieldsUpdateOk() { return !request.resource.data.diff(resource.data).affectedKeys().hasAny(shopOwnerKeys()) || grosirAdmin(); }
 
     match /system_admins/{uid} {
       allow read: if isAuthenticated() && request.auth.uid == uid;
@@ -746,16 +765,17 @@ service cloud.firestore {
         allow read: if isSalesman(bossUid) && !folderLimited(bossUid);
         allow read: if folderReadOk(bossUid, resource.data);
         // [CHANGE 18] each of the three lines below also ends in a Grosir check (only T1-T4 make a shop Grosir)
-        allow create: if isSalesman(bossUid) && customerAccessLevel(bossUid) != 'view_only' && grosirCreateOk();
+        // [CHANGE 28 — LIVE 2026-11-13] the create line and both update lines also end in the owner-fields check (T1-T4 only)
+        allow create: if isSalesman(bossUid) && customerAccessLevel(bossUid) != 'view_only' && grosirCreateOk() && ownerFieldsCreateOk();
         // [CHANGE 17] the old update line, now only while folders are off (or for T1/T2) ...
         allow update: if isSalesman(bossUid) && !folderLimited(bossUid) && customerAccessLevel(bossUid) != 'view_only' && (
           customerAccessLevel(bossUid) != 'own_region' ||
           isUnclassifiedRegion(resource.data.get('region', '')) ||
           isOwnRegionMatch(bossUid)
-        ) && grosirUpdateOk();
+        ) && grosirUpdateOk() && ownerFieldsUpdateOk();
         // ... and while on: a shop he can see; a visit by anyone, a real edit only with his switch on, and the
         // shop may land only in his own folders (from his temporary folder, or between his folders).
-        allow update: if isSalesman(bossUid) && folderLimited(bossUid) && folderEditOk(bossUid) && grosirUpdateOk();
+        allow update: if isSalesman(bossUid) && folderLimited(bossUid) && folderEditOk(bossUid) && grosirUpdateOk() && ownerFieldsUpdateOk();
         allow delete: if false;
         match /benchmarks/{benchmarkId} {
           allow read, write: if isSalesman(bossUid);
