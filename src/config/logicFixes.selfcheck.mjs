@@ -7394,7 +7394,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   ok('the list scrolls itself only on the desk; on the phone the shell scrolls everything once',
      /<div className="flex-1 lg:overflow-y-auto p-4 custom-scrollbar relative z-10">/.test(a));
   ok('Saleable / Quarantine are 44 tall under lg and unchanged on the desk',
-     (a.match(/flex-1 py-2 min-h-\[44px\] lg:min-h-0 text-sm font-medium rounded-none/g) || []).length === 2,
+     (a.match(/flex-1 py-2 min-h-\[44px\] lg:min-h-9 -mb-px border-b-2 text-\[11px\] font-black uppercase tracking-widest/g) || []).length === 2,   /* redesign B 2026-11-13: tabs */
      'measured 36 (py-2) — under his 44 rule');
   ok('a product name wraps on the phone and truncates on the desk',
      /group-hover:text-ink transition-colors lg:truncate">\{item\.name\}<\/h4>/.test(a),
@@ -7414,7 +7414,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      (a.match(/(?<!lg:)text-\[10px\]/g) || []).length === 1 && /'text-\[10px\] md:text-base'/.test(a),
      'his 2026-08-19 fix sizes money by string length — that one stays');
   ok('header: p-3 / gap-3 / no top margin under lg, p-4 / gap-4 / mt-2 on the desk',
-     /bg-panel border-b border-line-2 p-3 lg:p-4 flex flex-col justify-between items-start gap-3 lg:gap-4/.test(a) &&   /* the xl split left 2026-09-22 (THE DESK, board 2 = A) */
+     /bg-ground border-b border-line-2 p-3 lg:p-4 flex flex-col justify-between items-start gap-3 lg:gap-4/.test(a) &&   /* redesign B: flat ground */   /* the xl split left 2026-09-22 (THE DESK, board 2 = A) */
      /flex flex-col gap-2 lg:gap-3 w-full lg:mt-2/.test(a),
      'measured header 424 → 401 before the fold');
 }
@@ -8212,7 +8212,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
     ok('PITA CUKAI switch: ONE writer behind both buttons, saved to settings/general, and it reports; the van hides "Cukai Due" and Cash fills the row; App hands the van the setting',
        /const writeCukaiReturn = \(on\) => \{[\s\S]{0,200}setDoc\(doc\(db, `artifacts\/\$\{appId\}\/users\/\$\{user\.uid\}\/settings\/general`\), \{ cukaiReturn: on \}, \{ merge: true \}\)\s+\.then\(\(\) => triggerCapy\([\s\S]{0,160}\.catch\(\(\) => triggerCapy\(/.test(st) &&
        (st.match(/onClick=\{\(\) => writeCukaiReturn\((true|false)\)\}/g) || []).length === 2 && /<h3>Lost pita cukai fine<\/h3>/.test(st) &&
-       /\{cukaiOn && \(\s+<div className="bg-panel[^\n]*\n[^\n]*Cukai Due/.test(van) && /\$\{cukaiOn \? '' : 'col-span-2 lg:col-span-1'\}/.test(van) &&
+       /\{cukaiOn && \(\s+<div className="bg-ground[^\n]*\n[^\n]*Cukai Due/.test(van) && /\$\{cukaiOn \? '' : 'col-span-2 lg:col-span-1'\}/.test(van) &&
        /appSettings=\{appSettings\}     \/\/ pita cukai at EOD on\/off/.test(app2)); }
   ok('PlayerCard: the head is the man as his profile draws him - the photo in the rank frame, rank + title, XP with tonight\'s plus, the bar to the next rank, CLOSED ?/?, the diode',
      /<RankBorder styleId=\{frame\} \/>/.test(pc) && /const frame = motorist\?\.borderStyle \|\| currentTier\.borderStyle \|\| 'classic';/.test(pc) &&
@@ -8305,9 +8305,9 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      'his A with the 128 photo: 880 px → fits his 1000 px screen; the phone measured identical at 375');
   ok('THE DESK, board 2 = A: the Agent Inventory header never splits at xl - the MANIFEST block on its own row, the four boxes full-width under it, the coin inside its box',
      !/xl:w-\[65%\]/.test(a) && !/xl:flex-row/.test(a) && !/xl:w-auto/.test(a) && !/xl:mt-0/.test(a) &&
-     /p-3 lg:p-4 flex flex-col justify-between items-start gap-3 lg:gap-4 shrink-0 relative z-10 shadow-md"/.test(a) &&
+     /p-3 lg:p-4 flex flex-col justify-between items-start gap-3 lg:gap-4 shrink-0 relative z-10"/.test(a) &&
      /className="flex flex-col gap-2 lg:gap-3 w-full lg:mt-2">/.test(a) &&
-     /className=\{`grid grid-cols-2 \$\{cukaiOn \? 'lg:grid-cols-4' : 'lg:grid-cols-3'\} gap-2 md:gap-3`\}>/.test(a),   // three boxes when pita cukai is off (2026-11-03)
+     /className=\{`grid grid-cols-2 \$\{cukaiOn \? 'lg:grid-cols-4' : 'lg:grid-cols-3'\} gap-px bg-line-2 border-y border-line-2`\}>/.test(a),   /* redesign B: one strip split by rules */   // three boxes when pita cukai is off (2026-11-03)
      'a 7-digit rupiah is 152 px in his font; a 149 px box cannot hold it, a 239 px one can');
   ok('THE REVENUE LINE is the night\'s omset alone - no bar, no "his usual night" denominator (his 10:40: a target lives at the regional team or global level, never per person)',
      /<span>\{late \? 'Revenue that night' : 'Revenue tonight'\}<\/span><span className="text-\[var\(--ink\)\] tabular-nums whitespace-nowrap">\{formatRupiah\(group\.cashTotal\)\}<\/span>/.test(pc) &&
@@ -9221,7 +9221,7 @@ section('AGENT INVENTORY V4.1: THE PANEL FLOATS OVER ITS CHEST (2026-09-28)');
   ok('it is seen whole: the page scrolls up just enough, and only what is still missing sinks it into the row',
      /function fitPanel\(side\) \{/.test(bay) && /scrollBy\(\{ top: -by/.test(bay) && /setProperty\('--sink'/.test(bay) && /requestAnimationFrame\(\(\) => fitPanel\(side\)\)/.test(bay));
   ok('the chest view does not clip it: no overflow-hidden on the chest view; the salesman keeps his',
-     /shadow-2xl\$\{seesChest \? '' : ' overflow-hidden'\} relative`\}/.test(raw));
+     /font-mono\$\{seesChest \? '' : ' overflow-hidden'\} relative`\}/.test(raw));   /* redesign B: font-mono root, no shadow */
   /* superseded 2026-09-30 by his v6 ("on the middle of the chest ... symetrical", "floating on top of table like enchanting
      table from minecraft"): the book is no longer on its own shelf - it floats over an enchanting table BETWEEN the chests */
   ok('the book floats over an enchanting table in the MIDDLE of the chest row (his v6), never on a shelf of its own',

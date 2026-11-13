@@ -253,14 +253,14 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
            takes its content height and the shell scrolls everything once; the desk keeps its
            pinned header over a scrolling list (`lg:h-…` + `lg:overflow-y-auto` below) - the SALESMAN's desk only since v4
            (2026-09-27): his PC test found the chest in a ~300 px window under the pinned Manifest, so T1-T4 scroll as one. */
-        <div className={`${seesChest ? '' : 'lg:h-[calc(100vh-120px)] '}flex flex-col max-w-5xl mx-auto animate-fade-in bg-ground font-sans border-x border-line-2 shadow-2xl${seesChest ? '' : ' overflow-hidden'} relative`}>
+        <div className={`${seesChest ? '' : 'lg:h-[calc(100vh-120px)] '}flex flex-col max-w-5xl mx-auto animate-fade-in bg-ground font-mono${seesChest ? '' : ' overflow-hidden'} relative`}>
 
             {/* DYNAMIC FINANCIAL COMMAND BAR */}
-            <div className="bg-panel border-b border-line-2 p-3 lg:p-4 flex flex-col justify-between items-start gap-3 lg:gap-4 shrink-0 relative z-10 shadow-md">
+            <div className="bg-ground border-b border-line-2 p-3 lg:p-4 flex flex-col justify-between items-start gap-3 lg:gap-4 shrink-0 relative z-10">
                 
                 {/* LEFT: AGENT IDENTITY */}
                 <div className="flex items-center gap-3 shrink-0 w-full">
-                    <div className="p-2.5 bg-ground rounded-none border border-line-2 shadow-inner">
+                    <div className="p-1">
                         <Truck className="text-gold" size={24} />
                     </div>
                     <div>
@@ -274,18 +274,18 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                 <div className="flex flex-col gap-2 lg:gap-3 w-full lg:mt-2">
                     
                     {/* TOP ROW: Core Metrics */}
-                    <div className={`grid grid-cols-2 ${cukaiOn ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-2 md:gap-3`}>
-                        <div className="bg-ground border border-line-2 rounded-none p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
+                    <div className={`grid grid-cols-2 ${cukaiOn ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-px bg-line-2 border-y border-line-2`}>
+                        <div className="bg-ground p-2 md:p-3 flex flex-col justify-center items-center text-center">
                             <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Package size={12}/> Load</span>
                             <span className="text-base md:text-xl font-black text-gold">{new Intl.NumberFormat('id-ID').format(totalBks)} <span className="text-[11px] font-bold text-ink-dim">Bks</span></span>
                         </div>
                         
-                        <div className="bg-ground border border-line-2 rounded-none p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
+                        <div className="bg-ground p-2 md:p-3 flex flex-col justify-center items-center text-center">
                             <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Wallet size={12}/> Modal</span>
                             <Money value={invValue} className="text-ink" />
                         </div>
                         
-                        <div className={`bg-panel border border-line-2 rounded-none p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner ${cukaiOn ? '' : 'col-span-2 lg:col-span-1'}`}>
+                        <div className={`bg-ground p-2 md:p-3 flex flex-col justify-center items-center text-center ${cukaiOn ? '' : 'col-span-2 lg:col-span-1'}`}>
                             <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Coins size={12}/> Cash</span>
                             <span className="font-black text-ink kpm-num inline-flex items-center gap-2 min-w-0"><i className="kpm-coin lg" aria-hidden="true"></i><Money value={todayRevenue} className="text-ink" /></span>
                             {/* 🚀 NEW RETUR DEDUCTION DISPLAY */}
@@ -298,7 +298,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
 
                         {/* 🚀 NEW CUKAI DEBT DISPLAY */}
                         {cukaiOn && (
-                        <div className="bg-panel border border-line-2 rounded-none p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-inner">
+                        <div className="bg-ground p-2 md:p-3 flex flex-col justify-center items-center text-center">
                             <span className="text-[11px] md:text-xs text-ink-dim font-bold uppercase tracking-widest flex items-center gap-1 mb-1"><Tag size={12}/> Cukai Due</span>
                             <span className="text-sm md:text-xl font-black text-ink">{totalCukaiOwed} <span className="text-[11px] font-bold text-ink-dim">Pcs</span></span>
                         </div>
@@ -306,7 +306,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                     </div>
 
                     {/* BOTTOM ROW: 3-Tier Revenue Box (Wide & Readable) */}
-                    <div className="bg-panel border border-line-2 rounded-none px-3 lg:p-3 shadow-inner">
+                    <div className="border-b border-line-2 px-1 lg:py-3">
                         {/* the title row is the fold's button under lg (44 tall, label in a span so
                             index.css `button:has(> svg:only-child)` never claims it); on the desk it
                             is inert and the rows are always shown */}
@@ -349,23 +349,23 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
             ) : (<>
             {/* 🚀 SEGMENTED CONTROL TOGGLE */}
             <div className="px-4 pt-4 shrink-0 relative z-10 bg-ground">
-                <div className="flex p-1 bg-panel rounded-none ring-1 ring-line-2">
+                <div className="flex border-b border-line-2">
                     <button
                         onClick={() => setViewMode('HEALTHY')}
-                        className={`flex-1 py-2 min-h-[44px] lg:min-h-0 text-sm font-medium rounded-none transition-all duration-200 ${
+                        className={`flex-1 py-2 min-h-[44px] lg:min-h-9 -mb-px border-b-2 text-[11px] font-black uppercase tracking-widest transition-colors ${
                             viewMode === 'HEALTHY'
-                                ? 'bg-panel text-ink shadow-sm'
-                                : 'text-ink-dim hover:text-ink'
+                                ? 'border-[var(--duke-amber-edge)] text-ink'
+                                : 'border-transparent text-ink-dim hover:text-ink'
                         }`}
                     >
                         Saleable
                     </button>
                     <button
                         onClick={() => setViewMode('QUARANTINE')}
-                        className={`flex-1 py-2 min-h-[44px] lg:min-h-0 text-sm font-medium rounded-none transition-all duration-200 flex items-center justify-center gap-2 ${
+                        className={`flex-1 py-2 min-h-[44px] lg:min-h-9 -mb-px border-b-2 text-[11px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-2 ${
                             viewMode === 'QUARANTINE'
-                                ? 'bg-danger-well text-danger-text ring-1 ring-danger-rail shadow-sm'
-                                : 'text-ink-dim hover:text-ink'
+                                ? 'border-danger-rail text-danger-text'
+                                : 'border-transparent text-ink-dim hover:text-ink'
                         }`}
                     >
                         Quarantine
@@ -388,7 +388,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                 <p className="font-black text-lg tracking-widest uppercase text-ink-dim">Nothing Loaded</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-8">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-line-2 border-y border-line-2 mb-8">
                                 {canvasItems.map((item, idx) => {
                                     const itemBksDecimal = calculateBks(item.qty, item.unit);
                                     
@@ -402,9 +402,9 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                     const physicalBtg = Math.round((itemBksDecimal - physicalBks) * sp);
 
                                     return (
-                                        <div key={idx} className="bg-panel border border-line-2 p-3 rounded-none flex items-center justify-between kpm-hot hover:border-line-3 group">
+                                        <div key={idx} className="bg-ground p-3 flex items-center justify-between kpm-hot hover:bg-panel group">
                                             <div className="flex items-center gap-3 min-w-0">
-                                                <div className="w-10 h-10 rounded-none bg-ground border border-line-2 flex items-center justify-center shrink-0 shadow-inner group-hover:border-line-3 transition-colors">
+                                                <div className="w-10 h-10 flex items-center justify-center shrink-0">
                                                     <Package size={18} className="text-ink-dim group-hover:text-gold transition-colors"/>
                                                 </div>
                                                 <div className="min-w-0 flex flex-col">
@@ -441,7 +441,7 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                                         <p className="text-[11px] text-ink-dim font-bold uppercase tracking-widest">Bks</p>
                                                     </div>
                                                 )}
-                                                <div className="bg-ground border border-line-2 px-2 py-0.5 rounded text-[11px] lg:text-[10px] font-bold text-ink-dim uppercase tracking-wider shadow-inner mt-1.5">
+                                                <div className="text-[11px] lg:text-[10px] font-bold text-ink-dim uppercase tracking-wider mt-1.5">
                                                     [{Number(item.qty).toFixed(2).replace(/\.00$/, '')} {item.unit}]
                                                 </div>
                                             </div>
@@ -455,11 +455,11 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                         {!isLoading && promoCanvas.length > 0 && (
                             <div className="mb-8">
                                 <h3 className="text-ink-muted font-bold uppercase tracking-widest text-xs mb-3">Promo items · pcs</h3>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-line-2 border-y border-line-2">
                                     {promoCanvas.map(item => (
-                                        <div key={item.productId} className="bg-panel border border-line-2 p-3 rounded-none flex items-center justify-between">
+                                        <div key={item.productId} className="bg-ground p-3 flex items-center justify-between">
                                             <div className="flex items-center gap-3 min-w-0">
-                                                <div className="relative w-10 h-10 rounded-none bg-ground border border-line-2 flex items-center justify-center shrink-0 shadow-inner">
+                                                <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
                                                     <img alt="" className="w-8 h-8 object-contain" src={promoPic(promoItems.find(p => p.id === item.productId) || { kind: 'promo', name: item.name })} />
                                                     {isDamagedPack(promoItems.find(p => p.id === item.productId)) && <HazardMark className="-bottom-1.5 -right-1.5 w-[18px] h-[18px]" />}
                                                 </div>
@@ -485,21 +485,21 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                         </div>
 
                         {todayTransactions.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-8 opacity-50 border border-line-2 border-dashed rounded-none bg-panel/30 mb-6">
+                            <div className="flex flex-col items-center justify-center py-8 opacity-50 border border-line-2 border-dashed mb-6">
                                 <Coins size={32} className="mb-3 text-ink-dim"/>
                                 <p className="text-[11px] lg:text-[10px] font-bold tracking-widest uppercase text-ink-dim">No Sales Today</p>
                             </div>
                         ) : (
-                            <div className="space-y-3 mb-6">
+                            <div className="border-y border-line-2 divide-y divide-line-2 mb-6">
                                 {todayTransactions.map((tx, idx) => { const txKey = tx.id || idx; const txLines = openTx === txKey ? saleLines(tx, inventory) : []; return (
-                                    <div key={txKey} className="bg-panel border border-line-2 rounded-none kpm-hot hover:border-line-3">
+                                    <div key={txKey} className="kpm-hot hover:bg-panel">
                                     {/* the row opens to what the sale was made of (his 2026-09-26 "we need more description dropdown on that") */}
                                     <button type="button" onClick={() => setOpenTx(o => (o === txKey ? null : txKey))} aria-expanded={openTx === txKey}
                                         className="w-full p-3.5 flex justify-between items-center text-left cursor-pointer">
                                         <div>
                                             <h4 className="font-bold text-ink text-sm uppercase tracking-wide">{tx.customerName || 'Unknown Customer'}</h4>
                                             <div className="flex items-center gap-2 mt-1.5">
-                                                <span className="text-[11px] px-2 py-0.5 rounded bg-ground text-ink-dim font-bold uppercase tracking-wider border border-line-2 shadow-inner">
+                                                <span className="text-[11px] px-1.5 py-0.5 text-ink-dim font-bold uppercase tracking-wider border border-line-3">
                                                     {tx.paymentType || 'CASH'}
                                                 </span>
                                                 <span className="text-[11px] lg:text-[10px] text-ink-dim font-mono font-semibold">
@@ -537,12 +537,12 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                         </div>
 
                         {todaySamplings.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-8 opacity-50 border border-line-2 border-dashed rounded-none bg-panel/30 mb-20">
+                            <div className="flex flex-col items-center justify-center py-8 opacity-50 border border-line-2 border-dashed mb-20">
                                 <Package size={32} className="mb-3 text-ink-dim"/>
                                 <p className="text-[11px] lg:text-[10px] font-bold tracking-widest uppercase text-ink-dim">No Samples Today</p>
                             </div>
                         ) : (
-                            <div className="space-y-3 pb-20">
+                            <div className="border-y border-line-2 divide-y divide-line-2 mb-20">
                                 {todaySamplings.map((sample, idx) => {
                                     const cukaiOwed = Math.ceil(sample.qty);
                                     
@@ -552,11 +552,11 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                     const btg = Math.round(((sample.qty || 0) - bks) * sp);
 
                                     return (
-                                        <div key={idx} className="bg-panel border border-line-2 p-3.5 rounded-none flex justify-between items-center kpm-hot hover:border-line-3">
+                                        <div key={idx} className="p-3.5 flex justify-between items-center kpm-hot hover:bg-panel">
                                             <div>
                                                 <h4 className="font-bold text-ink-muted text-sm uppercase tracking-wide">{sample.reason || 'Unknown Target'}</h4>
                                                 <div className="flex items-center gap-2 mt-1.5">
-                                                    <span className="text-[11px] px-2 py-0.5 rounded bg-ground text-ink font-bold uppercase tracking-wider border border-line-2 shadow-inner">
+                                                    <span className="text-[11px] px-1.5 py-0.5 text-ink font-bold uppercase tracking-wider border border-line-3">
                                                         {sample.productName}
                                                     </span>
                                                     <span className="text-[11px] lg:text-[10px] text-ink-dim font-mono font-semibold">
@@ -566,8 +566,8 @@ const AgentInventoryView = ({ db, appId, userId, agentProfileId, inventory = [],
                                             </div>
                                             <div className="text-right flex flex-col items-end">
                                                 {/* 🚀 SPLIT DISPLAY: Large Bks on top, smaller Batang underneath */}
-                                                {bks > 0 && <p className="text-lg md:text-xl font-black text-ink leading-none drop-shadow-sm">-{bks} Bks</p>}
-                                                {btg > 0 && <p className={`text-xs font-black text-ink-muted drop-shadow-sm ${bks > 0 ? 'mt-1' : ''}`}>-{btg} Batang</p>}
+                                                {bks > 0 && <p className="text-lg md:text-xl font-black text-ink leading-none">-{bks} Bks</p>}
+                                                {btg > 0 && <p className={`text-xs font-black text-ink-muted ${bks > 0 ? 'mt-1' : ''}`}>-{btg} Batang</p>}
                                                 
                                                 <p className="text-[11px] text-danger-text font-bold uppercase tracking-widest mt-1.5">Owe {cukaiOwed} Cukai</p>
                                             </div>
@@ -605,11 +605,11 @@ function QuarantineLedgerBoard({ cargo }) {
     }
   
     return (
-      <div className="space-y-3 pb-20">
+      <div className="border-y border-line-2 divide-y divide-line-2 mb-20">
         {cargo.map((item) => (
           <div 
             key={item.id} 
-            className="bg-panel rounded-none p-4 border border-danger-rail relative overflow-hidden shadow-sm"
+            className="p-4 relative overflow-hidden"
           >
             {/* Visual Warning Bar */}
             <div className="absolute left-0 top-0 bottom-0 w-1 bg-danger-rail"></div>
@@ -625,7 +625,7 @@ function QuarantineLedgerBoard({ cargo }) {
               
               {/* Exact Quantity Marker */}
               <div className="flex flex-col items-end shrink-0 ml-4">
-                <div className="bg-danger-well text-danger-text px-3 py-1 rounded-none text-lg font-black ring-1 ring-danger-rail">
+                <div className="text-danger-text px-1 text-lg font-black kpm-num">
                   - {item.qty}
                 </div>
               </div>
