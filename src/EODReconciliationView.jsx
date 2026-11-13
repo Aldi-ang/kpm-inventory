@@ -378,7 +378,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
 
     return (
-        <div className="animate-fade-in space-y-6 max-w-7xl mx-auto p-2">
+        <div className="animate-fade-in space-y-6 max-w-7xl mx-auto p-2 font-mono">
             
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-[var(--line)] pb-6">
                 <div>
@@ -414,7 +414,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
 
                     {/* 🚀 THE IDENTITY SWITCHER (ADMIN ONLY) 🚀 */}
                     {isAdmin && (
-                        <div className="md:col-span-2 bg-[var(--sunk)] border border-[var(--line)] p-4 rounded-xl shadow-lg flex flex-col md:flex-row items-start md:items-center gap-4">
+                        <div className="md:col-span-2 border-y border-[var(--line-2)] py-4 flex flex-col md:flex-row items-start md:items-center gap-4">
                             <div>
                                 <h3 className="text-[var(--ink-dim)] font-bold uppercase tracking-widest text-[10px] mb-1 flex items-center gap-1"><User size={12}/> Operating Identity</h3>
                                 <p className="text-[var(--ink-dim)] text-[10px]">Select which profile's wallet you are reconciling.</p>
@@ -422,7 +422,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                             <select 
                                 value={adminSetoranId} 
                                 onChange={(e) => setAdminSetoranId(e.target.value)}
-                                className="flex-1 bg-[var(--sunk)] border border-[var(--line)] rounded-lg p-3 text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none focus:border-[var(--line)] w-full"
+                                className="flex-1 min-h-11 bg-[var(--inset)] border border-[var(--line-3)] rounded p-3 text-xs text-[var(--ink)] font-bold uppercase tracking-widest outline-none focus:border-[var(--accent-edge)] w-full"
                             >
                                 <option value="" className="bg-[var(--sunk)]">-- SELECT IDENTITY --</option>
                                 {motorists.filter(m => m.id !== 'master_owner').map(m => (
@@ -442,11 +442,11 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                     ) : agentData && (
                         <>
                             {myLateNights.length > 0 && (
-                                <section aria-label="Your late EOD" className="md:col-span-2 rounded-2xl border border-[var(--danger)] bg-[var(--danger-well)] p-4 md:p-5">
+                                <section aria-label="Your late EOD" className="md:col-span-2 border-l-2 border-[var(--danger)] pl-4 md:pl-5 py-1">
                                     <h3 className="font-black text-[var(--danger-ink)] uppercase tracking-widest flex items-center gap-2 mb-3"><Clock size={18}/> Late EOD ({myLateNights.length})</h3>
-                                    <div className="space-y-2">
+                                    <div className="border-y border-[var(--line-2)] divide-y divide-[var(--line-2)]">
                                         {myLateNights.map(g => (
-                                            <div key={g.key} className="rounded-xl border border-[var(--line-2)] bg-[var(--raised)] p-3">
+                                            <div key={g.key} className="py-3">
                                                 <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--ink-muted)] mb-2">{nightLabel(g.night)}</p>
                                                 <ul className="space-y-1.5">
                                                     {nightParts(g, inventory, appSettings?.penaltyPriceTier).map(l => (
@@ -549,8 +549,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                 ancestor deletes the only animation on the screen.
                                 ⚠️ The decorative gold quarter-circle is gone from both cards — it
                                 overflowed the corner radius and was part of what he read as broken. */}
-                            <div className={`bg-black/20 border border-[var(--line)] rounded-2xl p-5 md:p-6 shadow-xl flex flex-col h-full relative ${agentData.cashStatus === 'READY' ? 'md:col-span-2' : 'overflow-hidden'}`}>
-                                <h3 className="text-lg font-black text-[var(--ink)] uppercase tracking-widest border-b border-[var(--line)] pb-4 mb-5 flex items-center gap-2 relative z-10"><Wallet className="text-[var(--ink-dim)]"/> {agentData.cashStatus === 'READY' ? 'Close The Day' : 'Cash & Stock'}</h3>
+                            <div className={`border-t border-[var(--line-2)] pt-5 md:pt-6 flex flex-col h-full relative ${agentData.cashStatus === 'READY' ? 'md:col-span-2' : 'overflow-hidden'}`}>
+                                <h3 className="text-lg font-black text-[var(--ink)] uppercase tracking-widest pb-3 mb-4 flex items-center gap-2 relative z-10"><Wallet className="text-[var(--ink-dim)]"/> {agentData.cashStatus === 'READY' ? 'Close The Day' : 'Cash & Stock'}</h3>
                                 
                                 <div className="flex-1">
                                     {agentData.cashStatus === 'PENDING' ? (
@@ -795,8 +795,8 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                 card next to a plain one reads as two different systems, and the accent is
                                 already carried by the icon. */}
                             {agentData.cashStatus !== 'READY' && cukaiOn && (
-                            <div className="bg-black/20 border border-[var(--line)] rounded-2xl p-5 md:p-6 shadow-xl flex flex-col h-full relative overflow-hidden">
-                                <h3 className="text-lg font-black text-[var(--ink)] uppercase tracking-widest border-b border-[var(--line)] pb-4 mb-5 flex items-center gap-2 relative z-10"><Tag className="text-[var(--accent-ink)]"/> Pita Cukai</h3>
+                            <div className="border-t border-[var(--line-2)] pt-5 md:pt-6 flex flex-col h-full relative overflow-hidden">
+                                <h3 className="text-lg font-black text-[var(--ink)] uppercase tracking-widest pb-3 mb-4 flex items-center gap-2 relative z-10"><Tag className="text-[var(--accent-ink)]"/> Pita Cukai</h3>
                                 
                                 <div className="flex-1">
                                     {agentData.cukaiStatus === 'PENDING' ? (
@@ -964,7 +964,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                             };
                             const tonightList = keep(pendingTonight, false), lateList = keep(pendingLate, true);
                             /* the night's LAST card folds into this box while it unfolds (.kpm-unfold), so nothing under the list jumps */
-                            const none = <div className="bg-black/20 border border-[var(--line)] p-8 rounded-2xl text-center text-[var(--ink-dim)] text-xs uppercase tracking-widest">No pending reports.</div>;
+                            const none = <div className="border-y border-dashed border-[var(--line-2)] p-8 text-center text-[var(--ink-dim)] text-xs uppercase tracking-widest">No pending reports.</div>;
                             /* each card reads ITS night: that night's sales, route and date */
                             const cardOf = (g, late) => { const man = motorists.find((m) => m.id === g.agent); return (
                                 <div key={g.key} className={held?.fold && held.g.key === g.key ? 'kpm-fold' : undefined}><div>
@@ -984,7 +984,7 @@ const EODReconciliationView = ({ samplings = [], transactions = [], inventory = 
                                         : <div className="space-y-3 kpm-arrive">{tonightList.map(g => cardOf(g, false))}{held?.fold && !held.late && !pendingTonight.length && <div className="kpm-unfold"><div>{none}</div></div>}</div>}
                                     {/* LATE EOD - his "make special panel for late EOD": an earlier night still waiting, apart from tonight */}
                                     {lateList.length > 0 && (
-                                        <section aria-label="Late EOD" className="mt-8 rounded-2xl border border-[var(--danger)] bg-[var(--danger-well)] p-3 md:p-4">
+                                        <section aria-label="Late EOD" className="mt-8 border-l-2 border-[var(--danger)] pl-3 md:pl-4 py-1">
                                             <h3 className="font-black text-[var(--danger-ink)] uppercase tracking-widest flex items-center gap-2 mb-3"><Clock size={18}/> Late EOD ({pendingLate.length})</h3>
                                             <div className="space-y-3">{lateList.map(g => cardOf(g, true))}</div>
                                         </section>

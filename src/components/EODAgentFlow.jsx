@@ -118,7 +118,7 @@ export default function EODAgentFlow({
   return (
     <div className="w-full" data-mission="6" data-stage={stage}>
       {/* the three acts, so the agent can always see that sealing is not finishing */}
-      <ol className="flex gap-2 mb-4 list-none p-0 m-0">
+      <ol className="flex mb-4 list-none p-0 m-0 border-b border-[var(--line-2)]">
         {[
           ['You count',       stage === 'open'],
           ['You seal & send', stage === 'sealed' || stage === 'launching'],
@@ -126,8 +126,8 @@ export default function EODAgentFlow({
         ].map(([label, live], i) => (
           <li
             key={label}
-            className={`flex-1 rounded-lg border px-2.5 py-1.5 transition-colors duration-300 ${
-              live ? 'border-[var(--accent-edge)] bg-[var(--inset)]' : 'border-[var(--line)] bg-[var(--raised)]'
+            className={`flex-1 -mb-px border-b-2 px-2.5 py-1.5 transition-colors duration-300 ${
+              live ? 'border-[var(--duke-amber-edge)]' : 'border-transparent'
             }`}
           >
             <span className={`block font-mono text-[11px] lg:text-[10px] font-bold uppercase tracking-[.16em] ${
@@ -143,7 +143,7 @@ export default function EODAgentFlow({
       <EODLetter counted={counted} stage={stage} mouthRef={mouthRef} onSend={send} disabled={submitting} ids={ids} />
       {stage === 'sealed' && (
         <button type="button" onClick={revise} disabled={submitting}
-          className="mt-3 w-full py-3 rounded-xl font-bold text-[13px] border border-[var(--line-2)] bg-[var(--raised)] text-[var(--ink)] hover:border-[var(--accent-edge)] disabled:opacity-40">
+          className="mt-3 w-full min-h-11 py-3 rounded font-bold text-[13px] border border-[var(--line-3)] bg-transparent text-[var(--ink)] hover:border-[var(--accent-edge)] disabled:opacity-40">
           ← Back to the cards
         </button>
       )}

@@ -507,7 +507,7 @@ export default function EODCardDeck({
         <div className="flex gap-2">
         {step > 0 && (
           <button type="button" onClick={back} disabled={disabled}
-            className="shrink-0 px-4 py-3.5 rounded-xl font-black border border-[var(--line-2)] bg-[var(--raised)] text-[var(--ink)] transition-transform active:scale-[.98] disabled:opacity-40">
+            className="shrink-0 min-h-11 px-4 py-3.5 rounded font-black border border-[var(--line-3)] bg-transparent text-[var(--ink)] transition-transform active:scale-[.98] disabled:opacity-40">
             ← Back
           </button>
         )}
@@ -515,7 +515,7 @@ export default function EODCardDeck({
           type="button"
           onClick={commit}
           disabled={disabled || !ready}
-          className="flex-1 w-full py-3.5 rounded-xl font-black bg-[var(--gold)] text-[var(--gold-ink)] border border-[var(--accent-edge)] shadow-md transition-transform active:scale-[.98] disabled:opacity-40"
+          className="flex-1 w-full min-h-11 py-3.5 rounded font-black bg-[var(--duke-paper-2)] text-[var(--duke-on-plate)] transition-transform active:scale-[.98] disabled:opacity-40"
         >
           {ready
             ? `Put ${CARD_LABELS[active]} in the letter`
