@@ -448,9 +448,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     // !== false) so nothing changes for anyone until an owner deliberately flips it off.
     const fleetPaintbrushEnabled = appSettings?.enableFleetPaintbrush !== false;
 
-    // devUnlock (double-tap, dev/testing escape hatch) is the one thing that overrides
-    // both the tier check AND the master switch — everyone else needs both true.
-    const canManageFleetSettings = devUnlock || (isFleetManagementEligible && fleetPaintbrushEnabled);
+    // devUnlock (double-click on the key) overrides ONLY the master switch, and only for tier 1-4: his 2026-11-13
+    // "only tier 4 and above who can double click and access the paintbrush". It used to override the tier check too,
+    // so a tier 5-6 on a PC got the brush and "choose salesman" (and CHANGE 28 now refuses their save).
+    const canManageFleetSettings = isFleetManagementEligible && (devUnlock || fleetPaintbrushEnabled);
 
     // Assigning a store to an agent, adjusting its pin, and overriding its routing all
     // write to `customers`, which Firestore's rules already allow for ANY authenticated
@@ -461,7 +462,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
        above in default"). The two "Assign Fleet" boxes used canAssignAgent above, so a tier 5 could give any shop to himself
        - and a package opens only for the shop's own salesman, so that was the way around the new-shop wait. Moving a pin
        stays with canAssignAgent. */
-    const canChooseSalesman = devUnlock || isFleetManagementEligible;
+    const canChooseSalesman = isFleetManagementEligible;
     const ownerLockedWhy = 'Only tier 1-4 can change who a shop belongs to.';
 
     const [selectedProvinsi, setSelectedProvinsi] = useState('All');
@@ -1172,8 +1173,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 <div className={`kx-brushwrap absolute bottom-4 left-4 z-[9999] ${isFullScreen && replayFor ? 'flex lg:hidden' : isFullScreen ? 'flex' : 'hidden lg:flex'} flex-col-reverse gap-2 items-start pointer-events-none`}>
                     <button
                         onClick={(e) => { act(e); setIsPanelOpen(!isPanelOpen); }}
-                        onDoubleClick={() => setDevUnlock(true)}
-                        title="Double-Tap to Override Permissions"
+                        onDoubleClick={() => { if (isFleetManagementEligible) setDevUnlock(true); }}
+                        title={isFleetManagementEligible ? 'Double-Tap to Override Permissions' : undefined}
                         className={`pointer-events-auto kx-mapkey k-brush hidden lg:flex items-center gap-2 select-none ${isPanelOpen ? 'open' : ''}`}
                     >
                         {canManageFleetSettings ? <Paintbrush size={20} className="text-[var(--gold)]"/> : <Globe size={20}/>}
