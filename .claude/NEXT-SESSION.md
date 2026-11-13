@@ -4,6 +4,8 @@ WHEN HE SAYS "published" (rules CHANGE 28, kpm 67e22865): sync the record. fires
 
 WHAT CHANGE 28 DOES (so you can answer him): a shop's salesman (assignedAgent / assignedBy / assignedAt) and its package-count reset (bundleReset) can be written by tier 1-4 only; a new shop arrives with no salesman or 'Unassigned'. The app already behaved this way on screen; this closes the database side. Proof: rules-test/test-shop-owner-fields.mjs, 22/22 on the draft, 14/8 on the published rules (exactly the 8 refused cases get through there). Run: `npm i --no-save @firebase/rules-unit-testing@5` once, then `npx firebase emulators:exec --only firestore --project demo-kpm-rules "node rules-test/test-shop-owner-fields.mjs"`.
 
+HIS REVIEW PAGE of the redesign (before / now at phone width, 2026-11-13): https://claude.ai/artifact/DBBCoC74eK6mGRr7JyCGtq - its "before" pictures came from putting the morning's six screen files back for a minute (git checkout e8d820aa -- <files>, then git checkout HEAD -- <files>); the code is the live version.
+
 ALSO WAITING ON HIM: which screen the redesign does next (Sales Terminal, Journey Plan, Agent Inventory, EOD are live in direction B). The B language and its traps are in NEXT-SESSION-archive.md (the Agent Inventory and EOD blocks at the top).
 
 ANTIGRAVITY: its task (.claude/ANTIGRAVITY-TASK.md, the 38 findings, Status OPEN since 2026-11-11) waits for him to start it ("Do the task in .claude/ANTIGRAVITY-TASK.md"). When it says DONE: review, push, then write the queued one - a read-only audit of the whole Retur path, every way a return could be used for gain.
