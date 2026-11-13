@@ -244,8 +244,8 @@ export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page, focused
     const a = team.find((t) => t.id === sel) || team[0];
 
     return (
-        <aside className={`kx-panel${page ? ' kx-page' : ''}`} aria-label="Expedition">
-            <div className="kx-ph"><b>Expedition</b><span>{out.length} out · <em>{done}/{of}</em> shops</span></div>
+        <aside className={`kx-panel${page ? ' kx-page' : ''}`} aria-label="Team">
+            <div className="kx-ph"><b>Team</b><span>{out.length} out · <em>{done}/{of}</em> shops</span></div>
             {focused && <RoadSwitch all={roadAll} onAll={onRoadAll} />}
             {focused && onReplay && <button type="button" className="kx-rp-go" onClick={onReplay}><svg viewBox="0 0 12 12"><path d="M3 1.5v9l7.5-4.5z" /></svg>Replay his day</button>}
             {!team.length ? (
@@ -311,8 +311,8 @@ export function ExpeditionMini({ team, sel, onPick, wide, colorOf, focused, road
     const a = team.find((t) => t.id === sel) || team[0];
     const sq = (t) => ({ '--c': safeHex(colorOf ? colorOf(t.name) : '#E8E4DE', '#E8E4DE') });
     if (wide) return (
-        <aside className="kx-mini" aria-label="Expedition">
-            <header><b>Expedition</b><small>{out} out · {team.length - out} not</small></header>
+        <aside className="kx-mini" aria-label="Team">
+            <header><b>Team</b><small>{out} out · {team.length - out} not</small></header>
             <div className="kx-mrows">
                 {team.map((t) => (
                     <button type="button" key={t.id} className={`kx-mrow${t.live ? '' : ' off'}${t.id === sel && focused ? ' sel' : ''}`} style={sq(t)} aria-pressed={t.id === sel && focused} onClick={() => onPick(t.id)}>

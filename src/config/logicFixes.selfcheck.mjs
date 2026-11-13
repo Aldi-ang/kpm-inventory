@@ -7849,8 +7849,8 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   const jc = read('src/JourneyView.jsx');
   const tc = read('src/styles/theme.css');
   ok('C: getBountyStatus gives every state a short line and a diode class; the card prints the line beside the diode, nothing blinks',
-     /return \{ text: "⚠️ CRITICAL: NEVER VISITED", short: "NEVER VISITED", led: "crit",/.test(jc) &&
-     /short: `SAFE · \$\{daysLeft\} DAYS LEFT`, led: "ok",/.test(jc) &&
+     /return \{ text: "NEVER VISITED", short: "NEVER VISITED", led: "crit",/.test(jc) &&
+     /short: `ON TIME · \$\{daysLeft\} DAYS LEFT`, led: "ok",/.test(jc) &&
      /short: `DUE IN \$\{daysLeft\} \$\{daysLeft === 1 \? 'DAY' : 'DAYS'\}`, led: "warn",/.test(jc) &&
      /short: overdue === 0 \? 'DUE TODAY' : `OVERDUE · \$\{overdue\} \$\{overdue === 1 \? 'DAY' : 'DAYS'\}`, led: "crit",/.test(jc) &&
      /<div className=\{`kpm-led-line mb-2 lg:mb-3 \$\{statusBadge\.led\}`\}><i aria-hidden="true"><\/i>\{statusBadge\.short\}<\/div>/.test(jc) &&
@@ -7889,7 +7889,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   ok('C: RADAR and LOG are written once (mapKey / logKey) and mounted twice - in the ⋯ fold on the phone as SHOW ON MAP / LOG A VISIT, in the key row on the desk',
      /const mapKey = \(label\) => \(/.test(jc) && /const logKey = \(label\) => \(/.test(jc) &&
      /<div className="flex gap-2 p-2 pb-0 lg:hidden">\{mapKey\('SHOW ON MAP'\)\}\{logKey\('LOG A VISIT'\)\}<\/div>/.test(jc) &&
-     /<div className="hidden lg:contents">\{mapKey\('Radar'\)\}<\/div>/.test(jc) &&
+     /* the desk key says Map since his 2026-11-13 "switch to plain words" */ /<div className="hidden lg:contents">\{mapKey\('Map'\)\}<\/div>/.test(jc) &&
      /<div className="hidden lg:contents">\{logKey\('Log'\)\}<\/div>/.test(jc) &&
      (jc.match(/onClick=\{\(\) => jumpToMap\(customer\.id\)\}/g) || []).length === 1 &&
      !/<Globe size=\{12\}\/> Radar/.test(code(jc)) && !/<AlertTriangle size=\{12\}\/> Log\r?\n/.test(code(jc)),
@@ -7912,12 +7912,14 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
   ok('1B: the filter panel rides a grid-template-rows fold, 200 ms, and is always open on the desk',
      /className=\{`grid transition-\[grid-template-rows,opacity\] duration-200 ease-out lg:block \$\{feedOpen \? 'opacity-100' : 'opacity-0 lg:opacity-100'\}`\} style=\{\{ gridTemplateRows: feedOpen \? '1fr' : '0fr' \}\}/.test(jv) &&
      /<div className="overflow-hidden lg:contents">\s*<div className="kx-feed-controls">/.test(jv));
-  ok('MISSION FEED redesign (his A on the PC, B on the phone, 2026-10-03): no green or blue, 7 day keys (today dotted), one cell per shop up to 40, 3 numbers on the phone, his names kept',
+  ok('MISSION FEED redesign (his A on the PC, B on the phone, 2026-10-03): no green or blue, 7 day keys (today dotted), one cell per shop up to 40, 3 numbers on the phone, plain words (his 2026-11-13 "switch to plain words")',
      !/(emerald|blue)-\d/.test(jv.slice(jv.indexOf('<div className="kx-feed">'), jv.indexOf('<div className="flex flex-col gap-3 lg:flex-row lg:gap-4">'))) &&
      /aria-pressed=\{selectedDay === d\} className=\{d === todayName \? 'today' : ''\} onClick=\{\(\) => setSelectedDay\(d\)\}/.test(jv) &&
      /orderedRoute\.length > 0 && orderedRoute\.length <= 40/.test(jv) && /<small>salesmen out<\/small>/.test(jv) && /<small>overdue<\/small>/.test(jv) &&
      /* "'s Bounties" left with the Global Fleet filter - his 2026-10-05 "global filter is useless since we have the expedition panel" */
-     /Mission Feed/.test(jv) && /Elimination Status/.test(jv) && /<small>Secured<\/small>/.test(jv) &&
+     /Today's Route/.test(jv) && />Progress<\/span>/.test(jv) && /<small>Visited<\/small>/.test(jv) &&
+     /* his 2026-11-13 "switch to plain words": the game words stay gone */
+     !/Mission Feed|Elimination Status|Engage Target|Submit Intel|Exception Log|Radar Hub|Squad Legend|Matrix Location|Field Intel|No Intel/.test(jv) &&
      /<div className="lg:hidden">\{feedDays\}<\/div>/.test(jv) && /<div className="kx-feed-field kx-desk"><span>Day<\/span>\{feedDays\}<\/div>/.test(jv) &&
      /* the feed's own classes carry a display, so Tailwind's hidden / lg:hidden lose to them - the feed hides its own
         (measured 2026-10-03: the day keys showed twice in the open fold at 390) */

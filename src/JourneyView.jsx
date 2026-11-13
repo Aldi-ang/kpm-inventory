@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Truck, MapPin, CheckCircle, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, AlertTriangle, Zap, Crosshair, Layers, ChevronDown, Paintbrush, LocateFixed, Maximize, Minimize, ChevronRight } from 'lucide-react';
+import { Truck, MapPin, CheckCircle, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, AlertTriangle, Zap, ShoppingBag, Layers, ChevronDown, Paintbrush, LocateFixed, Maximize, Minimize, ChevronRight } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs, getDoc, setDoc } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
@@ -527,7 +527,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             });
             
             if (logAudit) logAudit("MANUAL_FOLDER_MOVE", `Manually routed store ${storeId} to ${folderEdits.kec}`);
-            if (triggerCapy) triggerCapy("Target routing permanently updated! 🚀");
+            if (triggerCapy) triggerCapy("Shop moved to its new area. 🚀");
             setEditingFolderId(null);
         } catch (error) {
             console.error("Failed to update folder:", error);
@@ -557,7 +557,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 updatedAt: serverTimestamp()
             });
             if (logAudit) logAudit("GPS_PIN_DRAGGED", `Manually dragged GPS pin to ${finalLat}, ${finalLng}`);
-            if (triggerCapy) triggerCapy("📍 Target Coordinates Secured!");
+            if (triggerCapy) triggerCapy("📍 Shop location saved.");
             
             setEditingStoreId(null);
             setTempPinLocation(null);
@@ -852,9 +852,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     }, [road, orderedRoute, customers]);
 
     const getBountyStatus = (customer) => {
-        if (!customer) return { text: "UNKNOWN TARGET", short: "UNKNOWN", led: "", color: "bg-slate-600", border: "border-slate-500", flashing: false };
+        if (!customer) return { text: "UNKNOWN SHOP", short: "UNKNOWN", led: "", color: "bg-slate-600", border: "border-slate-500", flashing: false };
         const freq = parseInt(customer.visitFreq) || 7;
-        if (!customer.lastVisit) return { text: "⚠️ CRITICAL: NEVER VISITED", short: "NEVER VISITED", led: "crit", color: "bg-red-600 text-white", border: "border-red-500", flashing: true };
+        if (!customer.lastVisit) return { text: "NEVER VISITED", short: "NEVER VISITED", led: "crit", color: "bg-red-600 text-white", border: "border-red-500", flashing: true };
         
         try {
             const parseDate = (dStr) => {
@@ -870,10 +870,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
             const daysLeft = freq - diffDays;
 
-            if (daysLeft > 2) return { text: `STATUS: SAFE (${daysLeft} Days Left)`, short: `SAFE · ${daysLeft} DAYS LEFT`, led: "ok", color: "bg-emerald-900/60 text-emerald-400", border: "border-emerald-500/50" };
-            if (daysLeft > 0) return { text: `EXPIRING SOON (${daysLeft} Days Left)`, short: `DUE IN ${daysLeft} ${daysLeft === 1 ? 'DAY' : 'DAYS'}`, led: "warn", color: "bg-yellow-900/60 text-yellow-400", border: "border-yellow-500/50" };
+            if (daysLeft > 2) return { text: `ON TIME · ${daysLeft} DAYS LEFT`, short: `ON TIME · ${daysLeft} DAYS LEFT`, led: "ok", color: "bg-emerald-900/60 text-emerald-400", border: "border-emerald-500/50" };
+            if (daysLeft > 0) return { text: `DUE IN ${daysLeft} ${daysLeft === 1 ? 'DAY' : 'DAYS'}`, short: `DUE IN ${daysLeft} ${daysLeft === 1 ? 'DAY' : 'DAYS'}`, led: "warn", color: "bg-yellow-900/60 text-yellow-400", border: "border-yellow-500/50" };
             const overdue = Math.abs(daysLeft);
-            return { text: `⚠️ CRITICAL: OVERDUE BY ${overdue} DAYS`, short: overdue === 0 ? 'DUE TODAY' : `OVERDUE · ${overdue} ${overdue === 1 ? 'DAY' : 'DAYS'}`, led: "crit", color: "bg-red-600 text-white", border: "border-red-500", flashing: true };
+            return { text: overdue === 0 ? 'DUE TODAY' : `OVERDUE BY ${overdue} ${overdue === 1 ? 'DAY' : 'DAYS'}`, short: overdue === 0 ? 'DUE TODAY' : `OVERDUE · ${overdue} ${overdue === 1 ? 'DAY' : 'DAYS'}`, led: "crit", color: "bg-red-600 text-white", border: "border-red-500", flashing: true };
         } catch(e) {
             return { text: "DATA CORRUPT", short: "DATA CORRUPT", led: "crit", color: "bg-red-600 text-white", border: "border-red-500", flashing: false };
         }
@@ -910,7 +910,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             });
 
             if (logAudit) await logAudit("VISIT_UNDO", `Undid visit for ${customer.name}`);
-            if (triggerCapy) triggerCapy("Visit Cancelled. Bounty Restored. ↩️");
+            if (triggerCapy) triggerCapy("Visit undone. The shop is back on the route. ↩️");
         } catch (error) { notify("Failed to undo: " + error.message); }
     };
 
@@ -949,7 +949,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             /* the shop, the tag and the man as fields too (the Day Replay reads them; older entries are the sentence only) */
             if (logAudit) await logAudit("VISIT_REPORT", report.sentence, false,
                 { storeId: checkInCustomer.id, tag: visitTag, agentId: agentProfileId || null });
-            if (triggerCapy) triggerCapy(`Bounty Claimed! ✅`);
+            if (triggerCapy) triggerCapy(`Visit saved ✅`);
             
             setCheckInCustomer(null);
             setIsSubmitting(false);
@@ -1003,7 +1003,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     const rp = useDayReplay({ man: replayMan, day: replayFor?.day, db, appId, uid: user?.uid, transactions, customers: rawCustomers || [], lite: !!isLiteMode || reduceMotion });
     const openReplay = () => {
         const id = team.find((a) => a.name === focusName)?.id;
-        if (!id) return notify('Press a salesman in the Expedition first.');
+        if (!id) return notify('Press a salesman in the Team list first.');
         setRpCam(null); setRpPick(null); setReplayFor({ id, day: todayDate });
     };
     const rpPickAt = (k) => { setRpPick(k); if (k != null) rp.setPlaying(false); };
@@ -1098,7 +1098,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             // 🚀 ACTUAL FIX: The real Google Maps Universal Search API
             window.open(`https://www.google.com/maps/search/?api=1&query=${customer.latitude},${customer.longitude}`, '_blank');
         } else {
-            notify("No GPS Coordinates found for this target.");
+            notify("This shop has no GPS pin saved yet.");
         }
     };
 
@@ -1116,7 +1116,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
             {activeBrush && <style>{`.leaflet-container { cursor: crosshair !important; } .custom-icon { cursor: crosshair !important; }`}</style>}
 
             {/* MISSION FEED, redesigned 2026-10-03 - his pick: A strip on the PC, B day card on the phone (board A-Brain
-                Raw/2026-10-03-journey-header). Theme tokens, no green or blue, his names kept. On the phone the title is
+                Raw/2026-10-03-journey-header). Theme tokens, no green or blue; plain work words since his 2026-11-13 "switch to plain words". On the phone the title is
                 still the 44 px key that folds the pickers (his board 1 = B, 2026-09-19); the day keys stay out of the fold
                 there, because "which day" is the first thing this screen asks. */}
             <div className="kx-feed">
@@ -1124,14 +1124,14 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                     <button type="button" onClick={() => setFeedOpen(v => !v)} aria-expanded={feedOpen}
                         className="w-full flex items-center gap-3 text-left uppercase min-h-11 lg:min-h-0 lg:pointer-events-none lg:cursor-default">
                         <i className="kx-feed-mark" aria-hidden="true" />
-                        Mission Feed
+                        {selectedDay === todayName ? "Today's Route" : 'Route'}
                         <span className="kx-feed-meta lg:hidden ml-auto">{journeyWhere(selectedProvinsi, selectedKabupaten, selectedKecamatan)} {feedOpen ? '▴' : '▾'}</span>
                         <span className="kx-feed-meta hidden lg:inline"><b>{selectedDay}</b> · {journeyWhere(selectedProvinsi, selectedKabupaten, selectedKecamatan)} · {selectedTeam === 'All' ? 'All Teams' : selectedTeam}</span>
-                        <span className="kx-feed-count hidden lg:inline ml-auto">{conqueredCount}/{orderedRoute.length}<small>Secured</small></span>
+                        <span className="kx-feed-count hidden lg:inline ml-auto">{conqueredCount}/{orderedRoute.length}<small>Visited</small></span>
                     </button>
                 </h2>
-                <div className="kx-feed-day kx-phone"><span>{selectedDay}</span><span className="kx-feed-count">{conqueredCount}/{orderedRoute.length}<small>Secured</small></span></div>
-                <div className="kx-feed-prog"><span className="kx-feed-meta hidden lg:inline">Elimination Status</span>{feedProgress}</div>
+                <div className="kx-feed-day kx-phone"><span>{selectedDay}</span><span className="kx-feed-count">{conqueredCount}/{orderedRoute.length}<small>Visited</small></span></div>
+                <div className="kx-feed-prog"><span className="kx-feed-meta hidden lg:inline">Progress</span>{feedProgress}</div>
                 <div className="kx-meta3 kx-phone">
                     <div><b>{orderedRoute.length - conqueredCount}</b><small>shops left</small></div>
                     <div><b>{team.filter(t => t.out).length}</b><small>salesmen out</small></div>
@@ -1177,7 +1177,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                         className={`pointer-events-auto kx-mapkey k-brush hidden lg:flex items-center gap-2 select-none ${isPanelOpen ? 'open' : ''}`}
                     >
                         {canManageFleetSettings ? <Paintbrush size={20} className="text-[var(--gold)]"/> : <Globe size={20}/>}
-                        <span className="text-[var(--ink)]">{canManageFleetSettings ? 'Paintbrush' : 'Squad Legend'}</span>
+                        <span className="text-[var(--ink)]">{canManageFleetSettings ? 'Paintbrush' : 'Salesman Colors'}</span>
                         <ChevronDown size={14} className={`text-[var(--ink-dim)] transition-transform ${isPanelOpen ? 'rotate-180' : ''}`}/>
                     </button>
 
@@ -1207,7 +1207,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                             <i className="sw" /><span className="nm">{a}</span>
                                         </button>
                                         {canManageFleetSettings && (
-                                            <div className="kx-swatch relative shrink-0 overflow-hidden cursor-pointer" title="Change Squad Color">
+                                            <div className="kx-swatch relative shrink-0 overflow-hidden cursor-pointer" title="Change color">
                                                 <input
                                                     type="color"
                                                     value={color}
@@ -1467,7 +1467,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                     {editingFolderId === store.id ? (
                                                         <div className="flex flex-col gap-1.5 animate-fade-in">
                                                             <div className="flex justify-between items-center mb-1">
-                                                                <span className="text-[11px] text-[var(--accent-ink)] font-black uppercase flex items-center gap-1"><Layers size={10}/> Override Routing</span>
+                                                                <span className="text-[11px] text-[var(--accent-ink)] font-black uppercase flex items-center gap-1"><Layers size={10}/> Move to another area</span>
                                                             </div>
                                                             <input value={folderEdits.prov} onChange={e=>setFolderEdits({...folderEdits, prov: e.target.value})} placeholder="Provinsi" className="bg-[var(--inset)] text-[var(--ink)] text-[11px] font-bold uppercase tracking-wider p-1.5 rounded border border-[var(--line-3)] outline-none focus:border-[var(--accent-edge)] w-full transition-colors" />
                                                             <input value={folderEdits.kab} onChange={e=>setFolderEdits({...folderEdits, kab: e.target.value})} placeholder="Kabupaten" className="bg-[var(--inset)] text-[var(--ink)] text-[11px] font-bold uppercase tracking-wider p-1.5 rounded border border-[var(--line-3)] outline-none focus:border-[var(--accent-edge)] w-full transition-colors" />
@@ -1475,12 +1475,12 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                             
                                                             <div className="flex gap-2 mt-1">
                                                                 <button onClick={() => setEditingFolderId(null)} className="flex-1 bg-[var(--raised)] hover:bg-[var(--raised)] text-[var(--ink-dim)] text-[11px] font-black p-1.5 rounded uppercase border border-[var(--line-2)] transition-colors">Abort</button>
-                                                                <button onClick={() => saveFolderEdit(store.id)} className="flex-[2] bg-[var(--duke-paper-2)] text-[var(--duke-on-plate)] text-[11px] font-black p-1.5 rounded uppercase flex items-center justify-center gap-1 transition-colors"><Save size={10}/> Enforce</button>
+                                                                <button onClick={() => saveFolderEdit(store.id)} className="flex-[2] bg-[var(--duke-paper-2)] text-[var(--duke-on-plate)] text-[11px] font-black p-1.5 rounded uppercase flex items-center justify-center gap-1 transition-colors"><Save size={10}/> Save</button>
                                                             </div>
                                                         </div>
                                                     ) : (
                                                         <div className="flex flex-col gap-1 relative group">
-                                                            <span className="text-[11px] text-[var(--ink-dim)] uppercase font-black tracking-widest flex items-center gap-1"><Layers size={10}/> Matrix Location</span>
+                                                            <span className="text-[11px] text-[var(--ink-dim)] uppercase font-black tracking-widest flex items-center gap-1"><Layers size={10}/> Location</span>
                                                             <div className="text-[11px] text-[var(--ink-muted)] font-bold leading-tight pr-8">
                                                                 {store._hierarchy?.Provinsi} <span className="text-[var(--ink-dim)]">{' > '}</span> {store._hierarchy?.Kabupaten} <span className="text-[var(--ink-dim)]">{' > '}</span> <span className="text-[var(--accent-ink)]">{store._hierarchy?.Kecamatan}</span>
                                                             </div>
@@ -1592,7 +1592,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                             {/* the path (redesign B): plain words on a ruled line, the level you stand on wears the amber line under it */}
                             <div className="flex flex-wrap items-center gap-x-3 mb-2 border-b border-[var(--line-2)] max-w-full">
                                 <button onClick={() => { setSelectedProvinsi('All'); setSelectedKabupaten('All'); setUserSelectedPath(null); }} className={`min-h-11 lg:min-h-9 -mb-px border-b-2 text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-colors ${selectedProvinsi === 'All' ? 'border-[var(--duke-amber-edge)] text-[var(--ink)]' : 'border-transparent text-[var(--ink-dim)] hover:text-[var(--ink)]'}`}>
-                                    <Layers size={14}/> Radar Hub
+                                    <Layers size={14}/> Regions
                                 </button>
 
                                 {selectedProvinsi !== 'All' && (
@@ -1626,7 +1626,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                         return (
                                             <FolderCard key={prov} icon={<MapPin size={22} />} onOpen={() => setSelectedProvinsi(prov)} className="bg-[var(--raised)] border-[var(--line-2)] hover:border-[var(--accent-edge)] transition-colors duration-300">
                                                 <h3 className="text-sm font-black text-[var(--ink)] uppercase tracking-widest mb-1">{prov}</h3>
-                                                <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-bold uppercase tracking-wider">{kabCount} Regions • {storeCount} Targets</p>
+                                                <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-bold uppercase tracking-wider">{kabCount} Regions • {storeCount} Shops</p>
                                             </FolderCard>
                                         );
                                     })}
@@ -1644,7 +1644,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                         return (
                                             <FolderCard key={kab} icon={<Layers size={22} />} onOpen={() => setSelectedKabupaten(kab)} className="bg-[var(--raised)] border-[var(--line-2)] hover:border-[var(--accent-edge)] transition-colors duration-300">
                                                 <h3 className="text-sm font-black text-[var(--ink)] uppercase tracking-widest mb-1">{kab}</h3>
-                                                <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-bold uppercase tracking-wider">{kecCount} Sectors • {storeCount} Targets</p>
+                                                <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] font-bold uppercase tracking-wider">{kecCount} Areas • {storeCount} Shops</p>
                                             </FolderCard>
                                         );
                                     })}
@@ -1679,7 +1679,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                             {isCleared && <CheckCircle size={12} className="shrink-0 text-[var(--accent-ink)]" />}<span className="truncate">{kec}</span>
                                                         </span>
                                                         <div className={`text-[11px] lg:text-[10px] font-bold mt-1 tabular-nums ${isActive || isCleared ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-dim)]'}`}>
-                                                            {completedInSector} / {sectorStores.length} Secured
+                                                            {completedInSector} / {sectorStores.length} Visited
                                                         </div>
                                                     </button>
                                                 );
@@ -1763,7 +1763,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                             ) : (
                                                                 <div className="hidden lg:flex w-full h-full flex-col items-end justify-end p-2 text-[var(--line-3)]">
                                                                     <Store size={24} className="mb-1 opacity-50"/>
-                                                                    <span className="text-[11px] font-black tracking-widest uppercase">No Intel</span>
+                                                                    <span className="text-[11px] font-black tracking-widest uppercase">No photo</span>
                                                                 </div>
                                                             )}
 
@@ -1794,7 +1794,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                             
                                                             {isVisited ? (() => {
                                                                 const tag = String(hasLiveTxToday ? '' : (customer.lastVisitTag || ''));
-                                                                const stampText = tag.includes('🔒') ? 'CLOSED' : tag.includes('🛑') ? 'FULL' : tag.includes('⚠️') ? 'ISSUE' : tag.includes('📝') ? 'REQUEST' : 'CLAIMED';
+                                                                const stampText = tag.includes('🔒') ? 'CLOSED' : tag.includes('🛑') ? 'FULL' : tag.includes('⚠️') ? 'ISSUE' : tag.includes('📝') ? 'REQUEST' : 'VISITED';
                                                                 const trueVisitorName = safeVisits[safeCustomerName] || customer.lastVisitedBy || 'FLEET';
                                                                 const bad = stampText === 'CLOSED' || stampText === 'ISSUE';
                                                                 return (
@@ -1825,11 +1825,11 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                                                             onClick={() => jumpToTerminal(customer.name)}
                                                                             className="w-full flex-[2] lg:flex-none bg-[var(--duke-paper-2)] text-[var(--duke-on-plate)] hover:brightness-105 py-3 min-h-11 lg:min-h-0 rounded font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-transform active:scale-95"
                                                                         >
-                                                                            <Crosshair size={14}/> Engage Target
+                                                                            <ShoppingBag size={14}/> Sell
                                                                         </button>
                                                                         
                                                                         <div className="flex gap-2 flex-1 lg:flex-none">
-                                                                            <div className="hidden lg:contents">{mapKey('Radar')}</div>
+                                                                            <div className="hidden lg:contents">{mapKey('Map')}</div>
                                                                             
                                                                             <button 
                                                                                 onClick={() => handleOpenLocation(customer)}
@@ -1879,16 +1879,16 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                             <div>
                                 <h3 className="font-black text-xl text-[var(--ink)] flex items-center gap-3 uppercase tracking-widest">
                                     <AlertTriangle size={20} className="text-[var(--accent-ink)]"/>
-                                    Exception Log
+                                    Log a visit
                                 </h3>
-                                <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] tracking-widest uppercase mt-1">Target: {checkInCustomer.name}</p>
+                                <p className="text-[11px] lg:text-[10px] text-[var(--ink-dim)] tracking-widest uppercase mt-1">Shop: {checkInCustomer.name}</p>
                             </div>
                             <button onClick={() => setCheckInCustomer(null)} className="text-[var(--ink-dim)] hover:text-[var(--ink)] transition-colors"><X size={24}/></button>
                         </div>
 
                         <div className="p-6 space-y-6">
                             <div>
-                                <label className="text-[11px] lg:text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-3 block">Exception Reason</label>
+                                <label className="text-[11px] lg:text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-3 block">Reason</label>
                                 <div className="flex flex-wrap gap-2">
                                     {QUICK_TAGS.map(tag => (
                                         <button 
@@ -1908,7 +1908,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
                             <div>
                                 <label className="text-[11px] lg:text-[10px] font-bold text-[var(--ink-dim)] uppercase tracking-widest mb-2 block flex items-center gap-2">
-                                    <MessageSquare size={14}/> Field Intel (Notes)
+                                    <MessageSquare size={14}/> Notes
                                 </label>
                                 <textarea 
                                     className="w-full p-4 rounded bg-[var(--inset)] border border-[var(--line-2)] text-[var(--ink)] text-sm focus:border-[var(--accent-edge)] outline-none min-h-[120px] font-sans"
@@ -1932,7 +1932,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                                 disabled={isSubmitting}
                                 className="flex-[2] py-4 rounded bg-[var(--duke-paper-2)] text-[var(--duke-on-plate)] font-black uppercase tracking-[0.2em] text-xs disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-2"
                             >
-                                <Save size={16}/> {isSubmitting ? 'Transmitting...' : 'Submit Intel'}
+                                <Save size={16}/> {isSubmitting ? 'Saving...' : 'Save'}
                             </button>
                         </div>
                     </div>
