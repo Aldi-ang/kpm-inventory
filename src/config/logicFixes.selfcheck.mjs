@@ -11832,7 +11832,7 @@ section('Customer access by folder - P2 (his 2026-10-20 "bandung team may only s
      /allow read: if isSalesman\(bossUid\) && !folderLimited\(bossUid\);/.test(custBlock) && /allow read: if folderReadOk\(bossUid, resource\.data\);/.test(custBlock));
   ok('the old update line holds only while folders are off; the folder line decides while on',
      /allow update: if isSalesman\(bossUid\) && !folderLimited\(bossUid\) && customerAccessLevel/.test(custBlock) &&
-     /allow update: if isSalesman\(bossUid\) && folderLimited\(bossUid\) && folderEditOk\(bossUid\)( && grosirUpdateOk\(\))?;/.test(custBlock));
+     /allow update: if isSalesman\(bossUid\) && folderLimited\(bossUid\) && folderEditOk\(bossUid\)( && grosirUpdateOk\(\))?( && ownerFieldsUpdateOk\(\))?;/.test(custBlock));   // CHANGE 28 (2026-11-13) adds the last clause
   /* the rules and the app must agree on WHO is never limited, or a T1/T2 phone asks for every shop and is refused */
   const exempt = rules.slice(rules.indexOf('function folderLimited'), rules.indexOf('function folderReadOk'));
   /* his 2026-10-20 "tier 3 should be able to see evrything on default actually same like tier 1 and 2" */
@@ -12028,10 +12028,17 @@ section('P3: a new shop is seen by its team at once; Grosir waits for the region
      /could not be rung/.test(cm) && /could not be rung/.test(msv));
   /* REGRESSION - the server side (CHANGE 18; rules-test/test-customer-access.mjs runs it) */
   const custBlock = code(rules.slice(rules.indexOf('match /customers/{customerId} {'), rules.indexOf('match /benchmarks/{benchmarkId}')));
-  ok('REGRESSION: rules CHANGE 18 - create and BOTH update lines end in the Grosir check',
-     /allow create: if isSalesman\(bossUid\) && customerAccessLevel\(bossUid\) != 'view_only' && grosirCreateOk\(\);/.test(custBlock) &&
-     (custBlock.match(/&& grosirUpdateOk\(\);/g) || []).length === 2 &&
+  ok('REGRESSION: rules CHANGE 18 - create and BOTH update lines end in the Grosir check (CHANGE 28 follows it)',
+     /allow create: if isSalesman\(bossUid\) && customerAccessLevel\(bossUid\) != 'view_only' && grosirCreateOk\(\) && ownerFieldsCreateOk\(\);/.test(custBlock) &&
+     (custBlock.match(/&& grosirUpdateOk\(\) && ownerFieldsUpdateOk\(\);/g) || []).length === 2 &&
      /function grosirAdmin\(\)[\s\S]{0,300}role == 'AREA_ADMIN' \|\| role == 'FLEET_CAPTAIN'/.test(rules));
+  /* CHANGE 28 (2026-11-13): a shop's salesman and its package-count reset are T1-T4's in the database too, not only on screen -
+     his "paintbrush ... tier 4 and above" and "tier 4 and above can refresh that". rules-test/test-shop-owner-fields.mjs, 22 cases. */
+  ok('rules CHANGE 28 - touching assignedAgent / assignedBy / assignedAt / bundleReset needs grosirAdmin() (T1-T4); a new shop comes unassigned',
+     /function shopOwnerKeys\(\) \{ return \['assignedAgent', 'assignedBy', 'assignedAt', 'bundleReset'\]; \}/.test(rules) &&
+     /function ownerFieldsUpdateOk\(\) \{ return !request\.resource\.data\.diff\(resource\.data\)\.affectedKeys\(\)\.hasAny\(shopOwnerKeys\(\)\) \|\| grosirAdmin\(\); \}/.test(rules) &&
+     /d\.get\('assignedAgent', 'Unassigned'\) == 'Unassigned'\) \|\| grosirAdmin\(\);/.test(rules) &&
+     fs.existsSync('rules-test/test-shop-owner-fields.mjs'));
 }
 
 /* ── THE DEMO MISSION LINE + THE CAPYBARA (his picks 2026-10-24 "b" + PETUNJUK, 2026-10-25 the RPG dialogue) ──────── */
