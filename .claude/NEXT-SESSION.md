@@ -2,6 +2,8 @@
 
 Journey Plan must look its best before any other screen (Aldi, 2026-11-14: "we need to make sure the journey plan looks best first before doing other, but the next job after this done is definitely the fleet and roster"). Fleet & Roster is the job AFTER this one.
 
+WAITING ON ALDI: ✅ his 3 iPhone tests on https://claude.ai/artifact/Hh5bD2jg2faU78ugL5XTYC (print his day, hold a flag, Day Replay pin). His answers save to that page's db collection "results" (ArtifactData list, collection "results"); he says "iPhone tests done". Read them first: a "fail" outranks the looks round. Android passed all of these at 15:13 (A-Brain Raw/2026-11-14-android-print/tests.mjs + results-1513.json).
+
 NOW: the Day Replay mark, looks round. He saw the board (NOW = a pressed shop with no pin marked, beside an example gold glow + ring) and said "q2= sure". Show him 2-3 looks, he picks, then build it.
 
 1. Load the design stack first (alucard §1a): his taste file (A-Brain Wiki/Concepts/Aldi's Design Taste.md - grep it for mark, ring, glow, selected, pin, flag; never read it whole; its newest lines: no text may touch other text or a marker at any size; "best on phone" = a frame drawn for the phone), then emil-design-eng. Rules that bind: palette law (slate + gold, no blue, no green, gold never as text on light), Lite mode = performance (no rotation; nothing that has to move to be seen), every look must read at 375 on a phone.
