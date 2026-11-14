@@ -7,6 +7,7 @@ WAITING ON ALDI (asked 15:35, verbatim):
 
 WHAT EXISTS (read before planning; never read demo/seed.json whole - 1.4 MB):
 - The live demo company is rebuilt every night by api/demo-reset.js from demo/seed.json (vercel.json cron "5 17 * * *" = 00:05 WIB, maxDuration 60 s). The seed today: meta, appSettings, tierSettings (5), inventory (6), promo (6), customers (152) - NO salesmen, NO sales, so reports show nothing. On 2026-11-10 a reset once left the demo EMPTY (PROGRESS: grep "live demo company is EMPTY").
+- READ FIRST, it may already make revenue: api/_demoCompany.js and tools/demo-omset-lab.jsx (graphify names both under "demo company"; not opened this session). Brainstorm: A-Brain Brainstorm/2026-11-14_professional-demo-company.md (options A/B/C, costs).
 - Demo screens: src/components/DemoFrontDoor.jsx, DemoMission.jsx; check src/config/demoBuild.check.mjs; local runs: launch.json demo-emulator / demo-app-emulator / demo-api-emulator.
 - "Professional edition" = his 2026-11-09 big job (business look, same logic; the game look kept as kpm tag game-edition-v1). Taste: grep "professional" in A-Brain Wiki/Concepts/Aldi's Design Taste.md (densest, quietest; ruled lines beat cards).
 
