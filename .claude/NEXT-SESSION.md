@@ -2,8 +2,11 @@
 
 Build a big-company demo for the professional edition, then test Journey Plan on it myself on the Android emulator. Aldi, 2026-11-14 after 15:17: "i rather let u build a demo for the professional one first before testing because u could simulate as its a big company having a lot of sales and revenue to view". No more manual phone tests from him: "all this test could be done in android since they both share the same ui as long as their resolution fir the iphone and android it should be fine, dont forget that some phone have notch as well like iphone".
 
-WAITING ON ALDI (asked 15:35, verbatim):
-🔴 "The big demo company - OK like this? 20 salesmen in 3 areas, 600 shops, the last 7 days in full (about 1,800 sales with their visit reports), and 6 months of totals (about Rp 11 billion). It replaces what visitors see in the live demo, which is rebuilt every night. "yes" → I build exactly this next. Other numbers → just tell me."
+SIZE: accepted - 20 salesmen in 3 areas, 600 shops, the last 7 days in full (~1,800 sales + visit reports), 6 months as totals (~Rp 11 billion). His answer: "yes just like the previous demo that we made right exactly the same, with tutorial capybara also but with the newest version of the app, but if this takes a long time and quota then we can do it at last, because dont making the demo causing double job since we havent redesign most of the segment inside this app right therefore if there is a new update then u need to update the demo as well and it cause double jobs doesnt we? or do u have other pov?"
+
+WAITING ON ALDI (asked after 15:40, verbatim): 🔴 "split" or "all at the end"?
+- split (my pick) -> THIS job, narrowed: the big company's DATA now - a generator with a fixed random seed that feeds the lab (a switch like `&big`) so Journey Plan, Fleet & Roster and every later redesign are tested at real size; later the same generator writes the live demo's nightly seed. Redesigns change looks, not data ("same logic"), so it is built once. Do NOT touch the live demo, the capybara tutorial, DemoFrontDoor/DemoMission or demo/seed.json yet: they point at screens that will change, so they come LAST, after the redesigns (his double-job worry is right for them).
+- all at the end -> skip the demo now; start at THEN step 2 (the mark looks round).
 
 WHAT EXISTS (read before planning; never read demo/seed.json whole - 1.4 MB):
 - The live demo company is rebuilt every night by api/demo-reset.js from demo/seed.json (vercel.json cron "5 17 * * *" = 00:05 WIB, maxDuration 60 s). The seed today: meta, appSettings, tierSettings (5), inventory (6), promo (6), customers (152) - NO salesmen, NO sales, so reports show nothing. On 2026-11-10 a reset once left the demo EMPTY (PROGRESS: grep "live demo company is EMPTY").
