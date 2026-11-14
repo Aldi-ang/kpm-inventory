@@ -2,9 +2,10 @@
 
 Test Journey Plan on the BIG demo company in the Android emulator (notch included), then send him frames, not a test list. Aldi, 2026-11-14: "all this test could be done in android since they both share the same ui as long as their resolution fir the iphone and android it should be fine, dont forget that some phone have notch as well like iphone". Why the big company: "u could simulate as its a big company having a lot of sales and revenue to view".
 
-FIRST: his answer to the 🔴 DECIDE of 2026-11-14 17:07 (PROGRESS top, WAITING ON ALDI): "should the live demo's nightly reset build the big company?"
-- YES -> before the switch, walk the capybara tutorial (src/config/demoMission.js, Dika = demo-agent-2) on the big company on the demo emulator: the roster now has 25 cards and Dika 29 shops, so the mission's ring must still find his card and a shop. Then flip the default in api/demo-reset.js (`big = process.env.DEMO_SIZE === 'big'` -> on unless DEMO_SIZE=small), or he sets DEMO_SIZE=big in the DEMO's Vercel project. Gates, push. It is a production write from the next 00:05 WIB reset.
-- NO, or no answer -> the live demo stays small. Nothing to do.
+FIRST - his "yes" (2026-11-14 17:40) to "Should the live demo's nightly reset build the big company?" The yes came with my promise to walk the tutorial first:
+1. Walk the capybara tutorial on the big company in the demo app on the emulator (HOW TO OPEN IT below): the 8 steps of src/config/demoMission.js STEPS - T2 goods in, T2 sends to the regional warehouse, T4 loads Dika's bag, T6 sells, T6 retur, T6 EOD, T2 approves the EOD, T2 counts the Master Vault. The lists grew: 8 HQ vans in the bay, Dika's 29 shops, 100 EOD reports in 7 days, 25 roster cards. DemoMission scrolls its target into view (DemoMission.jsx:182) - check every ring still lands. A step that breaks: fix it before the switch.
+2. Then flip: api/demo-reset.js `big = process.env.DEMO_SIZE === 'big'` -> `big = process.env.DEMO_SIZE !== 'small'` (+ its header words); tools/demo-reset-emulator.mjs `--big` -> `--small` and built `{ big: process.env.DEMO_SIZE !== 'small' }`; the logicFixes check "the live switch" (regex + words); one patch note, en + id, like the "Demo: ..." lines at src/config/patchNotes.js:46-53. Gates, push. It goes live at the next 00:05 WIB reset - a production write on the demo project, covered by his yes.
+3. Then the job below, on the same lab.
 
 THE BIG COMPANY (kpm 2a02b48d, pushed, OFF on the live demo):
 - api/_demoCompany.js: buildDemoCompany(seed, now, vault, { big: true }) - constants BIG, AREAS, BIG_STAFF, WRITE_BUDGET; bigShops, bigProfile; faces api/_demoFaces.js faceFor.
