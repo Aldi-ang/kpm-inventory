@@ -26,7 +26,7 @@ import { salesDelta } from '../src/utils/salesRollup.js';
 import { careerXP, rankLadder, computeDayXP, checkBadges, DEFAULT_BADGES, DEFAULT_RANKS } from '../src/config/career.js';
 import { borderDocId } from '../src/utils/mapBorders.js';
 import { MASTER } from '../src/utils/supply.js';
-import { FACES } from './_demoFaces.js';
+import { FACES, faceFor } from './_demoFaces.js';
 
 export const DEMO_PROJECT = 'kpm-demo-f4d74';
 export const APP_ID = 'cello-inventory-manager';          // the folder name inside the demo database, as in firebase.js
@@ -104,6 +104,8 @@ const WIB = 7 * 3600e3;
 export const wibDay = (now) => new Date(now.getTime() + WIB).toISOString().slice(0, 10);
 const atWib = (day, minutes) => new Date(Date.parse(`${day}T00:00:00Z`) - WIB + minutes * 60e3);
 const addDays = (day, n) => new Date(Date.parse(`${day}T00:00:00Z`) + n * 86400e3).toISOString().slice(0, 10);
+const monthStart = (day, back) => { const d = new Date(`${day.slice(0, 7)}-01T00:00:00Z`); d.setUTCMonth(d.getUTCMonth() - back); return d.toISOString().slice(0, 10); };
+const isSunday = (day) => new Date(`${day}T00:00:00Z`).getUTCDay() === 0;
 const hhmm = (d) => new Date(d.getTime() + WIB).toISOString().slice(11, 19);
 export const HISTORY_DAYS = 28;
 
@@ -135,14 +137,25 @@ const line = (p, qty, tier) => {
    so the routes and visit notes after it stay the same draw. */
 const qtyOf = (p, tier, r) => ((p[PRICE_FIELD[tier]] || p.priceRetail) > 50000 ? 1 + Math.floor(r() * 4)
     : tier === 'Grosir' ? 100 * (3 + Math.floor(r() * 8)) : 10 * (5 + Math.floor(r() * 26)));
+/* the BIG company's orders are a real warung's: 1-2 slop of a brand (10-20 Bks), a grosir 5-15 slop, the import a pack
+   (now and then two) - twenty salesmen then land near Rp 2 miliar a month, his accepted ~Rp 11 miliar over 6 months.
+   One r() call either way, as qtyOf. */
+const qtyBig = (p, tier, r) => ((p[PRICE_FIELD[tier]] || p.priceRetail) > 50000 ? (r() < 0.8 ? 1 : 2)
+    : tier === 'Grosir' ? 50 * (1 + Math.floor(r() * 3)) : 10 * (1 + Math.floor(r() * 2)));
 
-/* one salesman's day: 4-6 of his shops as a short route (nearest next) from 08:30 WIB, each a sale, then one or
-   two more shops on the way home that bought nothing - those get a Visit Report instead */
-const dayRound = (day, man, shops, products) => {
+/* the company's size: days of single sales, sales a day (least + spread), shops on the way home that buy nothing,
+   minutes between stops, order size, the Command Center's targets. BIG: buildDemoCompany(..., { big: true }) */
+const SMALL = { fullDays: HISTORY_DAYS, stops: [4, 3], extra: [1, 2], gap: 55, qty: qtyOf, target: 1500000000, bal: 35 };
+/* bal: the big company sells ~7.000 Bks a day, the small one ~6.200 against its 35 - the same yardstick gives 40 */
+const BIG = { fullDays: 7, months: 6, stops: [9, 5], extra: [1, 3], gap: 32, qty: qtyBig, target: 2000000000, bal: 40 };
+
+/* one salesman's day: 4-6 of his shops (BIG 9-13) as a short route (nearest next) from 08:30 WIB, each a sale, then one
+   or two more shops (BIG 1-3) on the way home that bought nothing - those get a Visit Report instead */
+const dayRound = (day, man, shops, products, S = SMALL) => {
     const r = rng(day + man.agentId);
     const left = shops.filter((c) => c.assignedAgent === man.agentId && Number(c.latitude) && Number(c.longitude) && c.name);
     if (!left.length) return { sales: [], visits: [] };
-    const stops = 4 + Math.floor(r() * 3), extra = 1 + Math.floor(r() * 2);
+    const stops = S.stops[0] + Math.floor(r() * S.stops[1]), extra = S.extra[0] + Math.floor(r() * S.extra[1]);
     const route = [left.splice(Math.floor(r() * left.length), 1)[0]];
     while (route.length < stops + extra && left.length) {
         const last = route[route.length - 1];
@@ -153,28 +166,121 @@ const dayRound = (day, man, shops, products) => {
     const sales = route.slice(0, stops).map((shop, i) => {
         const tier = PRICE_FIELD[shop.priceTier] ? shop.priceTier : 'Retail';
         const picks = [...products].sort(() => r() - 0.5).slice(0, 1 + Math.floor(r() * 3));
-        const items = picks.map((p) => line(p, qtyOf(p, tier, r), tier));
+        const items = picks.map((p) => line(p, S.qty(p, tier, r), tier));
         return {
             id: `demo-${day}-${man.agentId}-${i + 1}`, shop,
             data: {
                 date: day, customerName: shop.name, paymentType: 'Cash', items,
                 total: items.reduce((s, x) => s + x.qty * x.calculatedPrice, 0),
                 totalProfit: items.reduce((s, x) => s + x.profitSnapshot, 0),
-                type: 'SALE', timestamp: atWib(day, 8 * 60 + 30 + i * 55 + Math.floor(r() * 15)),
+                type: 'SALE', timestamp: atWib(day, 8 * 60 + 30 + i * S.gap + Math.floor(r() * 15)),
                 agentId: man.agentId, agentName: man.name, tempoDays: null, territoryOverride: null, deliveryProof: null, demo: true,
             },
         };
     });
     const visits = route.slice(stops).map((shop, i) => {
         const [tag, notes] = VISIT_NOTES[Math.floor(r() * VISIT_NOTES.length)];
-        return { shop, tag, note: notes[Math.floor(r() * notes.length)], at: atWib(day, 8 * 60 + 30 + (stops + i) * 55 + Math.floor(r() * 15)) };
+        return { shop, tag, note: notes[Math.floor(r() * notes.length)], at: atWib(day, 8 * 60 + 30 + (stops + i) * S.gap + Math.floor(r() * 15)) };
     });
     return { sales, visits };
 };
 
+/* ═══ THE BIG COMPANY (2026-11-14) ═══ his "i rather let u build a demo for the professional one first before testing
+   because u could simulate as its a big company having a lot of sales and revenue to view"; the size he accepted the same
+   day: 20 salesmen in 3 areas, 600 shops, the last days in full, 6 months as totals (A-Brain Brainstorm/2026-11-14_
+   professional-demo-company.md). Still his TWO teams (2026-10-13 "just make 2 teams"): the 3 areas are where their shops
+   are - Kabupaten Magelang (HQ), Kabupaten Bandung (+ Bandung Barat), Kota Bandung (+ Cimahi). Everyone above stays (the
+   five logins, the mission's Dika, the practice staff); 16 practice salesmen and 452 shops join them. Every draw is
+   seeded, so it is the same company every night. */
+const JAWA = ['Bu Sri', 'Bu Tum', 'Bu Darmi', 'Mbak Yuni', 'Pak Slamet', 'Pak Darmo', 'Pak Sugeng', 'Bu Marni', 'Pak Kasno', 'Bu Tini', 'Pak Narto', 'Mbah Giyem'];
+const SUNDA = ['Ceu Imas', 'Teh Euis', 'Mang Ujang', 'Kang Asep', 'Teh Iis', 'Ceu Cucu', 'Bi Entin', 'Mang Dadang', 'Teh Nining', 'Kang Jajang', 'Bi Oneng', 'Ceu Yayah'];
+const FIRMS = ['Berkah', 'Barokah', 'Sumber Rejeki', 'Maju Jaya', 'Sinar Jaya', 'Makmur', 'Sejahtera', 'Lancar Jaya', 'Mekar Sari', 'Sri Rejeki', 'Sumber Makmur',
+    'Jaya Abadi', 'Tiga Saudara', 'Anugerah', 'Sentosa', 'Mandiri', 'Amanah', 'Mulya', 'Rahayu', 'Subur', 'Bintang', 'Cahaya', 'Murah Meriah', 'Sido Mampir'];
+export const AREAS = [
+    { key: 'MAGELANG', shops: 240, owners: JAWA, has: (c) => c.region === 'MAGELANG' },
+    { key: 'KAB_BANDUNG', shops: 180, owners: SUNDA, has: (c) => c.province === 'JAWA BARAT' && c.region !== 'KOTA BANDUNG' && c.region !== 'KOTA CIMAHI' },
+    { key: 'KOTA_BANDUNG', shops: 180, owners: SUNDA, has: (c) => c.region === 'KOTA BANDUNG' || c.region === 'KOTA CIMAHI' },
+];
+/* the four sellers above keep their side: Dika + Budi in Magelang, Agus in Kabupaten Bandung, Ari in Kota Bandung */
+const AREA_OF = { 'demo-agent-2': 'MAGELANG', 'demo-agent-3': 'MAGELANG', 'demo-agent-1': 'KAB_BANDUNG', 'demo-agent-4': 'KOTA_BANDUNG' };
+export const BIG_STAFF = [
+    ['WAHYU NUGROHO', 'Canvas', 'MAGELANG'], ['SRI LESTARI', 'Motorist', 'MAGELANG', 1], ['JOKO PURNOMO', 'Motorist', 'MAGELANG'],
+    ['BAGUS SETIAWAN', 'Canvas', 'MAGELANG'], ['EKO PRASETYA', 'Motorist', 'MAGELANG'], ['RATNA SARI', 'Motorist', 'MAGELANG', 1],
+    ['ASEP SAEPUDIN', 'Canvas', 'KAB_BANDUNG'], ['UJANG KOSASIH', 'Motorist', 'KAB_BANDUNG'], ['DEDE SUPRIATNA', 'Motorist', 'KAB_BANDUNG'],
+    ['NENG YULIANI', 'Motorist', 'KAB_BANDUNG', 1], ['CECEP HIDAYAT', 'Canvas', 'KAB_BANDUNG'],
+    ['IWAN HERMAWAN', 'Canvas', 'KOTA_BANDUNG'], ['DADANG SUHENDAR', 'Motorist', 'KOTA_BANDUNG'], ['LINA MARLINA', 'Motorist', 'KOTA_BANDUNG', 1],
+    ['YAYAN SOPIAN', 'Motorist', 'KOTA_BANDUNG'], ['ENDANG RUSMANA', 'Canvas', 'KOTA_BANDUNG'],
+].map(([name, role, area, woman], i) => ({ agentId: `demo-agent-${8 + i}`, email: `${name.split(' ')[0].toLowerCase()}.demo@example.com`, name,
+    userRole: role === 'Canvas' ? 'FIELD_OPERATIVE' : 'ROOKIE', role, location: area === 'MAGELANG' ? 'Headquarters' : 'BANDUNG', area, woman: !!woman }));
+
+/* THE WRITE BUDGET of one reset. The reset deletes last night's company, then writes the new one, and the admin SDK's
+   BulkWriter starts at 500 operations a second: 2 x 7.500 / 500 = 30 s, half of vercel.json's 60 s. 7.500 is also under
+   half of Firestore's 20.000 free writes a day (and of its 20.000 free deletes), so the visitors keep the rest.
+   logicFixes "THE BIG DEMO COMPANY" fails when either size passes it. */
+export const WRITE_BUDGET = 7500;
+
+const title = (s) => String(s).toLowerCase().replace(/\b\w/g, (ch) => ch.toUpperCase());
+const townsOf = (shops) => {
+    const n = {};
+    for (const c of shops) if (c.city !== 'UNMAPPED KECAMATAN') n[c.city] = (n[c.city] || 0) + 1;
+    const top = Object.keys(n).sort((a, b) => n[b] - n[a]).slice(0, 3).map(title);
+    return top.length > 1 ? `${top.slice(0, -1).join(', ')} and ${top[top.length - 1]}` : top[0] || 'the area';
+};
+const TRAITS = ['Knows every warung owner on the route by name.', 'Never misses a Saturday route.', 'Brings the new promo posters on every visit.',
+    'Wins shops back from the competitor vans.', 'Counts the van twice: before leaving and on the way back.', 'First at the warehouse every morning.'];
+
+/* 452 shops around the real ones: each 60-300 m from a real shop of its area, in that shop's kecamatan (the real pins
+   were themselves moved 150-400 m by tools/demo-seed-from-backup.mjs), with a name no other shop has, ~1 in 20 a grosir.
+   Then each area's shops are cut into one slice per salesman around the area's middle, so every man drives one side of
+   it; the 11 Magelang shops with no kecamatan still wait for an owner, as in the small company. */
+const bigShops = (real) => {
+    const r = rng('big-company-shops');
+    const of = (list) => list[Math.floor(r() * list.length)];
+    const taken = new Set(real.map((c) => String(c.name).trim().toUpperCase()));
+    const out = [];
+    let n = 0;
+    for (const area of AREAS) {
+        const mine = real.filter(area.has).map(({ assignedAgent, ...c }) => c);
+        const anchors = mine.filter((c) => Number(c.latitude) && Number(c.longitude) && c.city !== 'UNMAPPED KECAMATAN');
+        while (mine.length < area.shops) {
+            const at = of(anchors), grosir = r() < 0.05;
+            const base = grosir ? `Grosir ${of(FIRMS)}` : r() < 0.5 ? `Warung ${of(area.owners)}` : `${r() < 0.6 ? 'Toko' : 'Kios'} ${of(FIRMS)}`;
+            let name = base;
+            for (let k = 1; taken.has(name.toUpperCase()); k++) name = `${base} ${title(at.city)}${k > 1 ? ` ${k}` : ''}`;
+            taken.add(name.toUpperCase());
+            const d = 60 + 240 * r(), a = 2 * Math.PI * r();
+            mine.push({ id: `demo-shop-${String(++n).padStart(3, '0')}`, name, city: at.city, province: at.province, region: at.region,
+                storeType: grosir ? 'Wholesaler' : 'Retailer', tier: 'Unranked', priceTier: grosir ? 'Grosir' : 'Retail', status: 'APPROVED', visitFreq: 7,
+                lifetimeXP: 0, seasonXP: 0, createdAt: new Date(Date.parse('2023-06-01T03:00:00Z') + Math.floor(r() * 1100) * 86400e3),
+                latitude: +(at.latitude + (d * Math.cos(a)) / 111320).toFixed(6),
+                longitude: +(at.longitude + (d * Math.sin(a)) / (111320 * Math.cos((at.latitude * Math.PI) / 180))).toFixed(6) });
+        }
+        const men = [...Object.keys(AREA_OF).filter((id) => AREA_OF[id] === area.key), ...BIG_STAFF.filter((m) => m.area === area.key).map((m) => m.agentId)];
+        const routed = mine.filter((c) => Number(c.latitude) && Number(c.longitude) && c.city !== 'UNMAPPED KECAMATAN');
+        const cy = routed.reduce((s, c) => s + c.latitude, 0) / routed.length, cx = routed.reduce((s, c) => s + c.longitude, 0) / routed.length;
+        routed.sort((x, y) => Math.atan2(x.latitude - cy, x.longitude - cx) - Math.atan2(y.latitude - cy, y.longitude - cx));
+        routed.forEach((c, i) => { c.assignedAgent = men[Math.floor((i * men.length) / routed.length)]; });
+        out.push(...mine);
+    }
+    return out;
+};
+
+/* a big-company salesman's record before these days, the way PROFILE writes the others: joined 2022-2026, ~4 of 5 days
+   worked since, Rp 2,5-4,5 jt collected a day; the bio names the three towns of his own route */
+const bigProfile = (m, shops) => {
+    const r = rng(`profile-${m.agentId}`);
+    const join = addDays('2022-01-03', Math.floor(r() * 1580));
+    const days = Math.round(((Date.parse('2026-11-01') - Date.parse(join)) / 86400e3) * 0.8);
+    const collected = Math.round((days * (2.5e6 + 2e6 * r())) / 1e6) * 1e6;
+    const since = new Date(`${join}T00:00:00Z`).toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    return { join, collected, days, titip: Math.round(collected * 0.01 * r()), streak: 5 + Math.floor(r() * 35),
+        bio: `${m.role === 'Canvas' ? 'Canvas van' : 'Motorist'} for ${townsOf(shops.filter((c) => c.assignedAgent === m.agentId))} since ${since}. ${TRAITS[Math.floor(r() * TRAITS.length)]}` };
+};
+
 /* `vault` = { pin, recoveryHash } fingerprints made by the caller with the app's own hashSecret
    (src/utils/secretHash.js) - computed once per reset, so this stays synchronous and pure. */
-export function buildDemoCompany(seed, now, vault) {
+export function buildDemoCompany(seed, now, vault, { big = false } = {}) {
+    const S = big ? BIG : SMALL;
     const day = wibDay(now);
     const root = `artifacts/${APP_ID}`, home = `${root}/users/${OWNER_UID}`;
     const products = seed.inventory.map(revive);
@@ -192,16 +298,21 @@ export function buildDemoCompany(seed, now, vault) {
     /* useCareerLedger: rank and badges come from the career record (Settings "Career history"), not from the last 7 days */
     /* the Command Center's targets sized to the demo's own month (qtyOf): left blank, the app's defaults (Rp 500 jt,
        50 bal a day) put the line at 310% and pinned it flat at the top from the 12th */
-    put(`${home}/settings/general`, { ...revive(seed.appSettings), useCareerLedger: true, targetMonthlyRevenue: 1500000000, targetDailyBal: 35 });
+    put(`${home}/settings/general`, { ...revive(seed.appSettings), useCareerLedger: true, targetMonthlyRevenue: S.target, targetDailyBal: S.bal });
     put(`${home}/settings/tiers`, { list: revive(seed.tierSettings) });
     /* his own map borders, where the Map System reads them (the seed carries them once a real backup has them) */
     for (const b of seed.mapBorders || []) put(`${home}/mapSettings/${borderDocId(b)}`, b);
 
-    const staff = [...LOGINS.slice(1).map((l) => ({ ...l, demoLogin: true })), ...PRACTICE.map((p) => ({ ...p, demoLogin: false }))];
-    const shops = seed.customers.map(revive).filter((c) => TEAMS.some((t) => t.has(c))).map((c) => {
+    const staff = [...LOGINS.slice(1).map((l) => ({ ...l, demoLogin: true })), ...PRACTICE.map((p) => ({ ...p, demoLogin: false })),
+        ...(big ? BIG_STAFF.map((p) => ({ ...p, demoLogin: false })) : [])];
+    const teamShops = seed.customers.map(revive).filter((c) => TEAMS.some((t) => t.has(c)));
+    const shops = big ? bigShops(teamShops) : teamShops.map((c) => {
         const { assignedAgent, ...rest } = c;
         return ROUTE(c) ? { ...rest, assignedAgent: ROUTE(c) } : rest;
     });
+    /* who each person is, and their face: the big company's salesmen are made the same way (bigProfile, faceFor) */
+    const profiles = big ? { ...PROFILE, ...Object.fromEntries(BIG_STAFF.map((m) => [m.agentId, bigProfile(m, shops)])) } : PROFILE;
+    const faces = big ? { ...FACES, ...Object.fromEntries(BIG_STAFF.map((m) => [m.agentId, faceFor(m.agentId, m.woman)])) } : FACES;
     const sellers = new Set(shops.map((c) => c.assignedAgent).filter(Boolean));
     /* the app keeps the salesman's NAME on a shop (JourneyView's agentsList is names) */
     const nameOf = Object.fromEntries(staff.map((m) => [m.agentId, m.name]));
@@ -215,13 +326,19 @@ export function buildDemoCompany(seed, now, vault) {
         for (const p of products) put(`${home}/branches/${place}/inventory/${p.id}`, { name: p.name, stock: Math.min(300, p.stock || 0) || 300 });
     }
 
-    /* FOUR WEEKS, Monday to Saturday, and today (the sample day carries the run's own date - his 19:44 pick B) */
+    /* FOUR WEEKS (BIG: one), Monday to Saturday, and today (the sample day carries the run's own date - his 19:44 pick B) */
     const days = [];
-    for (let i = HISTORY_DAYS; i >= 1; i--) { const d = addDays(day, -i); if (new Date(`${d}T00:00:00Z`).getUTCDay() !== 0) days.push(d); }
+    for (let i = S.fullDays; i >= 1; i--) { const d = addDays(day, -i); if (!isSunday(d)) days.push(d); }
     days.push(day);
-    const rounds = days.flatMap((d) => staff.filter((m) => sellers.has(m.agentId)).map((m) => ({ day: d, man: m, ...dayRound(d, m, shops, products) })));
+    const rounds = days.flatMap((d) => staff.filter((m) => sellers.has(m.agentId)).map((m) => ({ day: d, man: m, ...dayRound(d, m, shops, products, S) })));
     const sales = rounds.flatMap((x) => x.sales);
     for (const s of sales) put(`${home}/transactions/${s.id}`, s.data);
+    /* BIG: the months before those days - the same rounds, counted into the month tallies only, never a single sale (the
+       write budget). Product Performance reads the tallies; the Reports archive and Day Replay read single sales. */
+    const older = [];
+    if (big) for (let d = monthStart(day, BIG.months - 1); d < days[0]; d = addDays(d, 1)) {
+        if (!isSunday(d)) for (const m of staff) if (sellers.has(m.agentId)) older.push(...dayRound(d, m, shops, products, S).sales);
+    }
 
     /* VISIT REPORTS: the activity log of that day (audit_vault/<day>/logs, what Day Replay reads) and, for the last
        7 days, the activity list too (audit_logs) - App.jsx logAudit writes both. The shop keeps its latest one. */
@@ -273,7 +390,7 @@ export function buildDemoCompany(seed, now, vault) {
     const people = [{ agentId: 'master_owner', name: owner.name, email: owner.email, location: 'Headquarters' }, ...staff];
     const career = {};
     for (const m of people) {
-        const p = PROFILE[m.agentId];
+        const p = profiles[m.agentId];
         const live = { collected: 0, itemsBks: 0, titipCollected: 0, storesServed: 0, daysVerified: 0, cleanCukaiDays: 0 };
         let streak = 0, last = '', season = null;
         const credited = {};
@@ -301,8 +418,8 @@ export function buildDemoCompany(seed, now, vault) {
        borderTier so the profile's rank-up switch leaves it alone */
     const look = (id) => {
         const { currentTier } = rankLadder(careerXP(career[id]), DEFAULT_RANKS);
-        return { profileImage: FACES[id], bio: PROFILE[id].bio, borderStyle: PROFILE[id].frame || currentTier.name.toLowerCase(), borderTier: currentTier.id,
-            joinDate: PROFILE[id].join, createdAt: new Date(`${PROFILE[id].join}T02:00:00Z`) };
+        return { profileImage: faces[id], bio: profiles[id].bio, borderStyle: profiles[id].frame || currentTier.name.toLowerCase(), borderTier: currentTier.id,
+            joinDate: profiles[id].join, createdAt: new Date(`${profiles[id].join}T02:00:00Z`) };
     };
 
     /* the owner's own profile (Agent Profile reads motorists/master_owner) and his van, which the app would otherwise
@@ -344,8 +461,9 @@ export function buildDemoCompany(seed, now, vault) {
     const FACTORY = { name: 'Produksi Pusat', address: 'Malang, Jawa Timur' };
     put(`${home}/places/produksi-pusat`, { ...FACTORY, kind: 'pabrik', updatedAt: atWib(days[0], 8 * 60) });
     const hendra = LOGINS.find((l) => l.tier === 'T4').name;
-    const past = days.slice(0, -1);
-    [12, 5, 2].map((n) => past[past.length - n]).forEach((d, k) => {
+    /* 12, 5 and 2 work days back, counted on the calendar - a one-week company (BIG) has those days too */
+    const workBack = (n) => { let d = day; for (let k = 0; k < n;) { d = addDays(d, -1); if (!isSunday(d)) k++; } return d; };
+    [12, 5, 2].map(workBack).forEach((d, k) => {
         const items = products.slice(1).filter((_, i) => (i + k) % 2 === 0).map((p, i) => ({
             cartId: k * 10 + i + 1, id: p.id, name: p.name, batchNo: `B${d.replace(/-/g, '').slice(2)}-${i + 1}`, qtyReceived: 10000 + 5000 * ((i + k) % 3), basePrice: p.priceDistributor || 0, unit: 'Bks' }));
         const totalBasePrice = items.reduce((s, i) => s + i.qtyReceived * i.basePrice, 0), shippingCost = 350000, laborCost = 150000;
@@ -381,7 +499,7 @@ export function buildDemoCompany(seed, now, vault) {
     /* the month tallies Reports reads - the app's own salesDelta, summed per month (the reset starts from empty) */
     const byId = Object.fromEntries(products.map((p) => [p.id, p]));
     const months = {};
-    for (const s of sales) {
+    for (const s of [...older, ...sales]) {
         const d = salesDelta(s.data, byId, 1);
         if (!d) continue;
         const m = (months[d.month] = months[d.month] || { month: d.month, byProduct: {}, byDay: {} });

@@ -11254,6 +11254,86 @@ section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual 
   ok('Vercel calls it once a day (00:05 WIB = 17:05 UTC)', /"crons"/.test(vj) && /"path": "\/api\/demo-reset"/.test(vj) && /"schedule": "5 17 \* \* \*"/.test(vj));
 }
 
+section('THE BIG DEMO COMPANY (2026-11-14) - his "u could simulate as its a big company having a lot of sales and revenue to view"; size accepted: 20 salesmen, 3 areas, 600 shops, the last days in full, 6 months as totals');
+{
+  let dc = null, fc = null;
+  try { dc = await import('../../api/_demoCompany.js'); fc = await import('../../api/_demoFaces.js'); } catch (e) { console.log('  (big demo not importable: ' + e.message.split('\n')[0] + ')'); }
+  const seed = JSON.parse(read('demo/seed.json'));
+  const NOW = new Date('2026-11-14T05:00:00Z');                       /* 12:00 WIB, a Saturday */
+  const VAULT = { pin: { algo: 'PBKDF2-SHA256', hash: 'p' }, recoveryHash: { algo: 'PBKDF2-SHA256', hash: 'r' } };
+  const small = dc ? dc.buildDemoCompany(seed, NOW, VAULT) : null;
+  const big = dc?.BIG_STAFF ? dc.buildDemoCompany(seed, NOW, VAULT, { big: true }) : null;
+  const home = dc ? `artifacts/cello-inventory-manager/users/${dc.OWNER_UID}/` : '';
+  const under = (c, p) => (c ? c.docs.filter((d) => d.path.startsWith(home + p + '/')).map((d) => d.data) : []);
+  const shops = under(big, 'customers'), sales = under(big, 'transactions'), roster = under(big, 'motorists');
+  const real = seed.customers.filter((c) => c.region === 'MAGELANG' || c.province === 'JAWA BARAT');
+  const made = shops.filter((c) => String(c.id).startsWith('demo-shop-'));
+  ok(`the write budget (${dc?.WRITE_BUDGET}): the small company writes ${small?.docs.length}, the big one ${big?.docs.length} - a reset deletes the old and writes the new at BulkWriter's 500 a second, so 2 x budget / 500 = 30 s of vercel.json's 60, and under half of the 20.000 free writes a day`,
+     !!big && dc.WRITE_BUDGET <= 7500 && small.docs.length <= dc.WRITE_BUDGET && big.docs.length <= dc.WRITE_BUDGET && big.docs.length > 3 * small.docs.length);
+  ok('the big company is off unless asked: no 4th argument and { big: false } build the same small company, byte for byte, with none of its people or shops',
+     !!big && JSON.stringify(small) === JSON.stringify(dc.buildDemoCompany(seed, NOW, VAULT, { big: false }))
+     && !small.docs.some((d) => /demo-shop-|demo-agent-(8|9|1\d|2\d)$/.test(d.path)));
+  ok('the big company is the same every night: two builds of the same moment are byte for byte equal', !!big && JSON.stringify(big) === JSON.stringify(dc.buildDemoCompany(seed, NOW, VAULT, { big: true })));
+  const sellers = [...new Set(sales.map((s) => s.agentId))];
+  const today = sales.filter((s) => s.date === big?.day);
+  const tabs = [...new Set(roster.map((m) => `${m.province} › ${m.location}`))].sort();
+  ok(`20 salesmen, every one selling today (${new Set(today.map((s) => s.agentId)).size}); still his two teams (${tabs.join(' | ')}), each with a T4 regional admin and a T6 motorist who sells; the five logins and the mission's Dika (demo-agent-2) are the same people`,
+     !!big && sellers.length === 20 && new Set(today.map((s) => s.agentId)).size === 20 && tabs.length === 2
+     && ['Headquarters', 'BANDUNG'].every((loc) => roster.some((m) => m.location === loc && m.userRole === 'FLEET_CAPTAIN') && roster.some((m) => m.location === loc && m.userRole === 'ROOKIE' && today.some((s) => s.agentId === m.id)))
+     && dc.LOGINS.slice(1).every((l) => roster.some((m) => m.id === l.agentId && m.email === l.email && m.name === l.name)) && today.some((s) => s.agentId === 'demo-agent-2'));
+  const near = (c) => Math.min(...real.filter((x) => x.city === c.city && Number(x.latitude)).map((x) => Math.hypot((c.latitude - x.latitude) * 111320, (c.longitude - x.longitude) * 111320 * Math.cos((x.latitude * Math.PI) / 180))));
+  const upper = (c) => String(c.name).trim().toUpperCase();
+  ok(`600 shops: the ${real.length} real ones + ${made.length} made around them, the areas' counts (${dc?.AREAS ? dc.AREAS.map((a) => `${a.key} ${shops.filter(a.has).length}`).join(', ') : '?'}); a made shop sits 60-300 m from a real shop of its own kecamatan and has a name no other shop has`,
+     !!big && shops.length === 600 && made.length === 600 - real.length && real.every((c) => shops.some((s) => s.id === c.id))
+     && dc.AREAS.every((a) => shops.filter(a.has).length === a.shops)
+     && made.every((c) => near(c) <= 301 && c.status === 'APPROVED' && c.createdAt instanceof Date)
+     && new Set(made.map(upper)).size === made.length && !made.some((c) => real.some((x) => upper(x) === upper(c))));
+  const nameOf = Object.fromEntries(roster.map((m) => [m.id, m.name]));
+  const areaOf = (c) => dc.AREAS.find((a) => a.has(c))?.key;
+  const tierOf = (c) => (['Retail', 'Grosir', 'Ecer'].includes(c.priceTier) ? c.priceTier : 'Retail');
+  /* a sale carries the shop's NAME only, and the real seed has two names twice - so "one of his shops of that name" */
+  ok('routes: each salesman owns 25-35 shops, all in ONE area of his own team; every sale is to one of his own shops, at its price level, total = its lines; only the shops with no kecamatan or no pin wait for an owner',
+     !!big && sellers.every((id) => { const mine = shops.filter((c) => c.assignedAgent === nameOf[id]), man = roster.find((m) => m.id === id);
+       const areas = new Set(mine.map(areaOf));
+       return mine.length >= 25 && mine.length <= 35 && areas.size === 1 && (areas.has('MAGELANG') ? 'Headquarters' : 'BANDUNG') === man.location; })
+     && sales.every((s) => shops.some((c) => c.name === s.customerName && c.assignedAgent === nameOf[s.agentId] && s.items.every((i) => i.priceTier === tierOf(c)))
+       && s.total === s.items.reduce((t, i) => t + i.qty * i.calculatedPrice, 0))
+     && shops.filter((c) => !c.assignedAgent).every((c) => c.city === 'UNMAPPED KECAMATAN' || !Number(c.latitude)));
+  const dayKey = (t) => new Date(t).toISOString().slice(0, 10);
+  const full = [];
+  if (big) { for (let i = 7; i >= 1; i--) { const d = dayKey(Date.parse(`${big.day}T00:00:00Z`) - i * 86400e3); if (new Date(`${d}T00:00:00Z`).getUTCDay() !== 0) full.push(d); } full.push(big.day); }
+  const stats = under(big, 'sales_stats');
+  const revOf = (bucket) => Object.values(bucket || {}).reduce((t, v) => t + v.revenue, 0);
+  const monthOf = (d) => stats.find((m) => m.month === d.slice(0, 7));
+  const everyWorkDay = () => { for (let t = Date.parse('2026-06-01T00:00:00Z'); dayKey(t) <= big.day; t += 86400e3) { if (new Date(t).getUTCDay() !== 0 && !revOf(monthOf(dayKey(t))?.byDay[dayKey(t)])) return false; } return true; };
+  ok(`history: single sales only on the last week's work days + today (${full.length} days), each 08:00-17:00 WIB; the month tallies cover 6 months (${stats.map((m) => m.month).join(', ')}), every work day in them has a day total, and on the single-sale days that total IS those sales`,
+     !!big && [...new Set(sales.map((s) => s.date))].sort().join() === full.join() && sales.every((s) => s.timestamp.getUTCHours() >= 1 && s.timestamp.getUTCHours() < 10)
+     && stats.map((m) => m.month).join() === '2026-06,2026-07,2026-08,2026-09,2026-10,2026-11'
+     && full.every((d) => revOf(monthOf(d)?.byDay[d]) === sales.filter((s) => s.date === d).reduce((t, s) => t + s.total, 0)) && everyWorkDay());
+  const six = stats.reduce((t, m) => t + revOf(m.byProduct), 0);
+  const month = stats.filter((m) => m.month < '2026-11').reduce((t, m) => t + revOf(m.byProduct), 0) / 5;
+  const lines = sales.flatMap((s) => s.items);
+  const general = big ? big.docs.find((d) => d.path.endsWith('/settings/general'))?.data : null;
+  ok(`BEHAVIOUR: 6 months read Rp ${(six / 1e9).toFixed(2).replace('.', ',')} miliar (his accepted ~Rp 11 miliar), from a real warung's orders - 1-2 slop a brand, a grosir 5-15 slop, the import a pack or two; the Command Center's month target sits near a real month`,
+     !!big && six >= 9e9 && six <= 15e9 && lines.length > 0
+     && lines.every((i) => (i.calculatedPrice > 50000 ? i.qty >= 1 && i.qty <= 2 : i.priceTier === 'Grosir' ? [50, 100, 150].includes(i.qty) : [10, 20].includes(i.qty)))
+     && general.targetMonthlyRevenue >= month * 0.7 && general.targetMonthlyRevenue <= month * 1.4 && general.targetDailyBal > 0);
+  const cold = (h) => { const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255), mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+    if (mx === mn || (mx - mn) / (mx + mn > 1 ? 2 - mx - mn : mx + mn) < 0.2) return false;
+    const hue = mx === r ? ((g - b) / (mx - mn) + 6) % 6 * 60 : mx === g ? ((b - r) / (mx - mn) + 2) * 60 : ((r - g) / (mx - mn) + 4) * 60;
+    return hue >= 60 && hue <= 300; };
+  const added = roster.filter((m) => dc?.BIG_STAFF?.some((b) => b.agentId === m.id));
+  const careerIds = new Set(big ? big.docs.filter((d) => /\/career\/[^/]+$/.test(d.path)).map((d) => d.path.split('/').pop()) : []);
+  ok('the 16 new salesmen each have a drawn face (faceFor, none of its colours blue or green), a bio naming a town of their own route, a career record and a login record - and no vault (practice staff)',
+     !!big && !!fc && added.length === 16 && added.every((m) => m.profileImage === fc.faceFor(m.id, dc.BIG_STAFF.find((b) => b.agentId === m.id).woman)
+       && String(m.profileImage).startsWith('data:image/svg+xml') && (decodeURIComponent(m.profileImage).match(/#[0-9A-Fa-f]{6}/g) || []).every((h) => !cold(h))
+       && String(m.bio).length > 40 && shops.some((c) => c.assignedAgent === m.name && m.bio.toLowerCase().includes(c.city.toLowerCase()))
+       && careerIds.has(m.id) && big.docs.some((d) => d.path.endsWith('/employee_directory/' + m.email)) && !big.docs.some((d) => d.path.endsWith('/vault_keys/' + m.id))));
+  const resetSrc = read('api/demo-reset.js');
+  ok('the live switch: api/demo-reset.js builds the big company only when the demo\'s server says DEMO_SIZE=big - unset, the nightly reset is the small company as before',
+     /big = process\.env\.DEMO_SIZE === 'big'/.test(resetSrc) && /buildDemoCompany\(seed, now, vault, \{ big \}\)/.test(resetSrc));
+}
+
 section('THE DEMO FRONT DOOR + SWITCH BAR (2026-10-13) - his "A for phone B for pc for decide 1, decide 2 is A"');
 {
   let dl = null, dc = null;

@@ -51,3 +51,15 @@ export const FACES = {
     'demo-agent-4': face({ skin: 'light', cut: 'side', shirt: '#454B57', bg: 2 }),           /* Ari - Bandung motorist */
     'demo-agent-5': face({ skin: 'tan', hijab: '#A0703A', bg: 0 }),                          /* Dewi - Bandung regional admin */
 };
+
+/* the big company's salesmen (api/_demoCompany.js BIG_STAFF): the same drawing, its parts picked by the person's id - the
+   same face every night - in colours this file already uses */
+const SHIRTS = ['#3A404B', '#454B57', '#2F343D', '#1A1D22'], HIJABS = ['#7A3E3A', '#A0703A'];
+export const faceFor = (id, woman) => {
+    let h = 2166136261;
+    for (const ch of id) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+    const at = (list, k) => list[(h >>> k) % list.length];
+    const skin = at(Object.keys(SKIN), 2), bg = at([0, 1, 2], 4);
+    return woman ? face({ skin, hijab: at(HIJABS, 6), bg })
+        : face({ skin, cut: at(Object.keys(HAIR), 8), shirt: at(SHIRTS, 11), bg, glasses: at([1, 0, 0, 0, 0], 14) === 1, moustache: at([1, 0, 0], 17) === 1 });
+};

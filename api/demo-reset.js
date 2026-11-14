@@ -11,7 +11,10 @@
    What one reset does (design: A-Brain Brainstorm/2026-10-06_public-demo.md): wipe
    artifacts/cello-inventory-manager, set the 5 switch logins back (a random password, name, enabled), then write
    the company from api/_demoCompany.js. Proven against the Firebase emulator with the real rules:
-   tools/demo-reset-emulator.mjs. */
+   tools/demo-reset-emulator.mjs.
+
+   WHICH COMPANY: the small one, unless the demo's server says DEMO_SIZE=big - then the big company (2026-11-14: 20
+   salesmen, 600 shops, api/_demoCompany.js BIG). Unset = tonight's reset is exactly what it was. */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { timingSafeEqual, randomBytes } from 'node:crypto';
@@ -53,11 +56,11 @@ const upsertLogin = async (auth, l) => {
     }
 };
 
-export async function resetDemo(db, auth, now = new Date()) {
+export async function resetDemo(db, auth, now = new Date(), big = process.env.DEMO_SIZE === 'big') {
     const started = Date.now();
     const seed = JSON.parse(readFileSync(join(process.cwd(), 'demo', 'seed.json'), 'utf8'));
     const vault = { pin: await hashSecret(VAULT_PASSWORD), recoveryHash: await hashSecret(RECOVERY_WORD.toLowerCase()) };
-    const company = buildDemoCompany(seed, now, vault);
+    const company = buildDemoCompany(seed, now, vault, { big });
 
     /* NEVER LEAVE THE DEMO EMPTY (2026-11-10: the 2026-11-09 nightly run deleted all but 3 docs and wrote nothing, so
        every visitor met an empty company and INITIALIZE VAULT). A delete that throws used to end the run before the first
@@ -72,7 +75,7 @@ export async function resetDemo(db, auth, now = new Date()) {
     for (const d of company.docs) w.set(db.doc(d.path), d.data);
     await w.close();
 
-    const result = { day: company.day, wrote: company.docs.length - failed, failed, ...(deleteError ? { deleteError } : {}) };
+    const result = { day: company.day, wrote: company.docs.length - failed, failed, ...(deleteError ? { deleteError } : {}), ...(big ? { big: true } : {}) };
     /* what this run did, readable in the demo the next morning (Vercel keeps function logs for an hour only) */
     await db.doc(`artifacts/${APP_ID}/users/${OWNER_UID}/settings/demoReset`).set({ ...result, at: now.toISOString() });
 

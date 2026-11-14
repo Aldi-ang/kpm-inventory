@@ -4,7 +4,7 @@
    `firebase emulators:start --only auth,firestore --project kpm-demo-f4d74` (launch config
    `demo-emulator`; firebase.json loads the real firestore.rules). Usage, from the repo root:
 
-     node tools/demo-reset-emulator.mjs
+     node tools/demo-reset-emulator.mjs [--big]      (--big = the big company, as DEMO_SIZE=big makes the live one)
 
    It refuses to run unless both emulator addresses point at this machine, and the key it hands the
    function is a throwaway made here (a fresh RSA key nobody holds) - the emulator never checks it. */
@@ -19,6 +19,7 @@ const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048, private
 const KEY = JSON.stringify({ type: 'service_account', project_id: 'kpm-demo-f4d74', client_email: 'emulator@kpm-demo-f4d74.iam.gserviceaccount.com', private_key: privateKey });
 process.env.DEMO_FIREBASE_KEY = KEY;
 process.env.CRON_SECRET = 'emulator-cron';
+if (process.argv.includes('--big')) process.env.DEMO_SIZE = 'big';
 
 const { default: handler } = await import('../api/demo-reset.js');
 const { default: switcher } = await import('../api/demo-switch.js');
@@ -61,7 +62,7 @@ const counts = async (db) => {
 /* what one reset should leave, from the very builder the function runs (same seed, same day) - not numbers typed here */
 const { buildDemoCompany } = await import('../api/_demoCompany.js');
 const { readFileSync } = await import('node:fs');
-const built = buildDemoCompany(JSON.parse(readFileSync('demo/seed.json', 'utf8')), new Date(), { pin: 'p', recoveryHash: 'r' });
+const built = buildDemoCompany(JSON.parse(readFileSync('demo/seed.json', 'utf8')), new Date(), { pin: 'p', recoveryHash: 'r' }, { big: process.env.DEMO_SIZE === 'big' });
 const expected = Object.fromEntries([...COLS, 'employee_directory'].map((c) => [c, built.docs.filter((d) => {
     const rest = c === 'employee_directory' ? d.path.replace(`artifacts/${APP_ID}/`, '') : d.path.startsWith(`${home}/`) ? d.path.slice(home.length + 1) : '';
     const parts = rest.split('/');
@@ -77,6 +78,7 @@ ok('the daily timer resets the demo', r1.code === 200 && r1.body.ok && r1.body.f
 const db = getFirestore(getApps()[0]), auth = getAuth(getApps()[0]);
 const c1 = await counts(db);
 console.log('  counts after reset 1:', JSON.stringify(c1));
+console.log(`  reset 1: ${r1.body.wrote} docs in ${r1.body.ms} ms${r1.body.big ? ' (the big company)' : ''}`);
 ok(`every folder holds what the builder wrote (${built.docs.length} docs in all): ${JSON.stringify(expected)}`,
    JSON.stringify(c1) === JSON.stringify(expected) && r1.body.wrote === built.docs.length);
 const note = (await db.doc(`${home}/settings/demoReset`).get()).data() || {};
