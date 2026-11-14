@@ -1,21 +1,22 @@
 /* THE DAY REPLAY on Journey Plan (his 2026-10-04 ask, drawn and picked on the Day Replay page - A-Brain
    Raw/2026-10-04-day-replay/day-replay.html v2, "that is really cool bro"): a pressed salesman's day played back on the
-   real map. He walks from where his day started to each shop in order; every shop plays its own moment - the chest opens,
-   what the shop hands him goes up into his hands, its sign (look C, the app's own) acts out what happened - with a
+   real map. He walks from where his day started to each shop in order; every shop plays its own moment - he plants its
+   flag (his 2026-11-14 pick), what the shop hands him flies to him, the flag's word says what happened - with a
    timeline to drag, the Day Log beside it (PC) or one card + a chip strip (phone), and a card for any shop pressed. The
    data is the Day Log (src/utils/dayLog.js); nothing here writes.
 
    ONE FUNCTION OF TIME. The clock lives in a ref and reaches the map and the timeline straight through the DOM every frame
    (the useScenePlayer rule: a per-frame value never goes through React state - on his phone that re-rendered the subtree
    60 times a second and read as flicker). React re-renders only when a shop's state, his pose or the current stop
-   changes. Every moving part of a scene - the chest's CSS moment (.kx-c5.burst in expedition.css) and the props - is
+   changes. Every moving part of a scene - the flag's and his CSS planting moment (.kx-fl.plant, .kx-sm.plant.play in
+   expedition.css) and the props - is
    PAUSED and handed currentTime = the scene's own time, so dragging backwards is a plain read. Lite = cuts between the
    still end pictures; nothing animates. */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { chestHtml, sellerHtml, personSvg, safeHex, px } from '../utils/mapSprites.js';
+import { shopHtml, shopIconBox, planterHtml, personSvg, safeHex, px } from '../utils/mapSprites.js';
 import { SCENE, hm } from '../utils/dayLog.js';
 import { useTick } from '../hooks/useDayReplay.js';
 import { formatRupiah, getLocalDayKey } from '../utils/helpers.js';
@@ -74,8 +75,6 @@ const PROP_FRAMES = {
         { opacity: 1, transform: 'translate(-2px,-26px)', offset: o(1120) }, { opacity: 1, transform: 'translate(-25px,-23px)', offset: o(1240), easing: 'ease-in-out' },
         { opacity: 0, transform: 'translate(-25px,-23px)', offset: o(1260) }, { opacity: 0, transform: 'translate(-25px,-23px)', offset: 1 }]],
 };
-/* what he holds up after the shop hands it over (the app's own hands-up seller, the coin swapped for the thing) */
-const HELD = { coin: '<i class="kpm-coin"></i>', crate: svgOf('hazard', 2.25), note: svgOf('note', 2.5) };
 
 /* ---- on the map: the road, a chest per shop, him ---- */
 const iconCache = new Map();
@@ -95,8 +94,9 @@ export function DayReplayLayer({ rp, ini, shirt, hair, cam, picked, onPick }) {
     }, [stops]);
     const [zoom, setZoom] = useState(() => map.getZoom());
     useEffect(() => { const f = () => setZoom(map.getZoom()); map.on('zoomend', f); return () => { map.off('zoomend', f); }; }, [map]);
-    /* he stands 2 px clear of the chest's left edge, feet on its line (the app's selling scene): 31 px left, 3 px down */
-    const feet = useMemo(() => stops.map((s) => map.layerPointToLatLng(map.latLngToLayerPoint([s.lat, s.lng]).add([-31, 3]))), [stops, zoom, map]); // eslint-disable-line react-hooks/exhaustive-deps -- 31 px is a different distance at every zoom
+    /* he stands with his fist on the flag's pole (the app's planting scene, Expedition anchor 32, 40): with his anchor 15 that
+       is 17 px left of the shop, feet 2 px under the pole's foot */
+    const feet = useMemo(() => stops.map((s) => map.layerPointToLatLng(map.latLngToLayerPoint([s.lat, s.lng]).add([-17, 2]))), [stops, zoom, map]); // eslint-disable-line react-hooks/exhaustive-deps -- 17 px is a different distance at every zoom
 
     const phaseOf = (t, sh) => {
         let k = null;
@@ -107,15 +107,13 @@ export function DayReplayLayer({ rp, ini, shirt, hair, cam, picked, onPick }) {
     const poseOf = (t) => {
         const s = tl.segAt(t), local = s.kind === 'scene' ? t - s.t0 : 0;
         const kind = s.kind === 'scene' ? stops[s.k].kind : s.kind === 'end' ? stops[s.k].kind : null;
-        let held = '';
-        if (s.kind === 'scene' && (lite || local >= 1050) && kind === 'sold') held = 'coin';
-        if (s.kind === 'scene' && (lite || local >= 1050) && kind === 'swap') held = 'crate';
-        if (s.kind === 'scene' && (lite || local >= 1250) && kind === 'request') held = 'note';
-        if (s.kind === 'end' && kind === 'sold') held = 'coin';
+        /* his 2026-11-14 "yes": here too he plants the shop's flag instead of holding up the coin / crate / note - the stab
+           plays on the replay's clock (draw), then his fist stays on the pole; Lite and the day's end = the still picture */
+        const plant = (s.kind === 'scene' || s.kind === 'end') && kind ? (lite || s.kind === 'end' ? 'still' : 'play') : '';
         const walking = s.kind === 'walk' && rp.playing && !lite;
         const busy = (s.kind === 'scene' && (lite || local > 250)) || s.kind === 'end' || (s.kind === 'walk' && s.k > 1 && (t - s.t0) / (s.t1 - s.t0) < 0.3);
         const n = stops.filter((st, k) => k && t >= tl.sceneSeg(k).t0 + (lite ? 0 : 1300)).length;
-        return `${held}|${walking ? 1 : 0}|${busy ? 1 : 0}|${n}`;
+        return `${plant}|${walking ? 1 : 0}|${busy ? 1 : 0}|${n}`;
     };
     const [phases, setPhases] = useState(''), [pose, setPose] = useState('|0|0|0');
     /* a new day or a new man (the date picker, the fullscreen swap) = new stops: the old day's phases name stops the new day
@@ -143,6 +141,10 @@ export function DayReplayLayer({ rp, ini, shirt, hair, cam, picked, onPick }) {
             if (!lite && kind === 'routine' && local > 600 && local < 1100) dy = 1;   /* looks inside */
             const who = el.querySelector('.who');
             if (who) { who.style.translate = `${dx}px ${dy}px`; who.style.scale = flip ? '-1 1' : ''; }
+            /* his stab, like the scenes: paused and handed the scene's own time, so a drag backwards replays it */
+            const pl = el.querySelector('.kx-sm.plant.play');
+            if (pl && el.__plFor !== pl) { el.__pl = pl.getAnimations({ subtree: true }); el.__pl.forEach((a) => a.pause()); el.__plFor = pl; }
+            if (pl) el.__pl.forEach((a) => { a.currentTime = local; });
         }
         /* the trail: solid where he has already walked */
         const walked = feet.slice(0, done).concat(s.kind === 'walk' ? [p] : []);
@@ -152,7 +154,7 @@ export function DayReplayLayer({ rp, ini, shirt, hair, cam, picked, onPick }) {
         shops.forEach((sh, i) => {
             const m = /^s(\d+)$/.exec(ph.split(',')[i] || ''), mk = marks.current[sh.key];
             if (!m || !mk) return;
-            const k = +m[1], box = mk.getElement(), scene = box?.querySelector('.kx-c5.burst');
+            const k = +m[1], box = mk.getElement(), scene = box?.querySelector('.kx-c5.plant');
             if (!scene) return;   // React has not drawn the scene's picture yet - next frame
             /* a divIcon REUSES its element and swaps the inside, so the cache is keyed on the scene's own chest, never the box */
             if (box.__rpFor !== scene) {
@@ -192,12 +194,12 @@ export function DayReplayLayer({ rp, ini, shirt, hair, cam, picked, onPick }) {
     });
 
     if (!tl) return null;
-    const ph = phases.split(','), [held, walking, busy, n] = pose.split('|');
+    const ph = phases.split(','), [plant, walking, busy, n] = pose.split('|');
     const curKey = cur > 0 ? stops[cur]?.key : null;
     const manIcon = cachedIcon(`man|${c}|${hair}|${ini}|${pose}|${stops.length}`, () => L.divIcon({
-        className: 'kx-mk kx-rp-man', iconSize: [30, 42], iconAnchor: [15, 42],
-        html: `<div class="kx-sm ${held ? 'sell' : walking === '1' ? 'walk' : 'idle'}${busy === '1' ? ' busy' : ''}" style="--c:${c}"><i class="kx-shadow"></i>`
-            + `<div class="who"><div class="body">${held ? sellerHtml(hair, c).replace('<i class="kpm-coin"></i>', HELD[held]) : personSvg(hair, c)}</div></div>`
+        className: 'kx-mk kx-rp-man', iconSize: plant ? [33, 42] : [30, 42], iconAnchor: [15, 42],
+        html: `<div class="kx-sm ${plant ? `plant${plant === 'play' ? ' play' : ''}` : walking === '1' ? 'walk' : 'idle'}${busy === '1' ? ' busy' : ''}" style="--c:${c}"><i class="kx-shadow"></i>`
+            + `<div class="who"><div class="body">${plant ? planterHtml(hair, c) : personSvg(hair, c)}</div></div>`
             + `<span class="tag"><i style="background:var(--c)"></i>${esc(ini)} · ${n}/${stops.length - 1}</span></div>`,
     }));
     const startIcon = cachedIcon(`start|${stops[0].time}|${stops[0].guessed ? 1 : 0}`, () => L.divIcon({
@@ -215,8 +217,8 @@ export function DayReplayLayer({ rp, ini, shirt, hair, cam, picked, onPick }) {
                 const pick = picked != null && sh.ks.includes(picked), here = sh.key === curKey;
                 const key = `shop|${sh.key}|${st}|${pick ? 1 : 0}|${here ? 1 : 0}|${c}|${ini}`;
                 const icon = cachedIcon(key, () => L.divIcon({
-                    className: `kx-mk kx-rp-mk${pick ? ' picked' : ''}${here && kind ? ' held' : ''}`, iconSize: [28, 34], iconAnchor: [14, 31],
-                    html: chestHtml(kind, c, st[0] === 's' ? 'burst' : '', `${ini} · ${sh.n}`, false, false, sh.name)
+                    className: `kx-mk kx-rp-mk${pick ? ' picked' : ''}${here && kind ? ' held' : ''}`, iconSize: shopIconBox(kind).size, iconAnchor: shopIconBox(kind).anchor,
+                    html: shopHtml(kind, c, st[0] === 's' ? 'plant' : '', `${ini} · ${sh.n}`, false, false, sh.name)
                         + (st[0] === 's' ? (PROP_ART[kind] || []).map((h, j) => `<span class="kx-rp-prop p${j + 1}">${h}</span>`).join('') : ''),
                 }));
                 /* pressing a shop opens what happened there: the visit playing or played, else his first one */

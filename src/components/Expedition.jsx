@@ -7,7 +7,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Marker, Polyline, CircleMarker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { agoLabel } from '../utils/expedition';
-import { personSvg, sellerHtml, QUEST, safeHex, HAIR } from '../utils/mapSprites';
+import { personSvg, planterHtml, QUEST, safeHex, HAIR } from '../utils/mapSprites';
 import '../styles/expedition.css';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -158,8 +158,9 @@ export function ExpeditionLayer({ team, sel, focus, wide, bare, stops = true, ro
 /* ---- Journey Plan's salesmen: a pixel person in his squad colour (his pick 2026-10-03, "full pixel"), rendered INSIDE
    the shop cluster group so Leaflet's own clustering puts each man in exactly one bubble at every zoom, walking ones
    too; the bubble draws them as a crowd from `kxFig` (JourneyView createJourneyClusterIcon). Zoomed in, each stands
-   fixed at his spot (his "supposed to be fix", 2026-10-03 20:00), just LEFT of it so his shop's chest stays clear.
-   Seen at a shop (state `at`) = the selling scene: he stands beside that shop's chest holding the coin up. ---- */
+   fixed at his spot (his "supposed to be fix", 2026-10-03 20:00), just LEFT of it so his shop's flag stays clear.
+   Seen at a shop (state `at`) = the planting scene (his 2026-11-14 pick A): he stabs that shop's flag into the ground
+   and keeps his fist on its pole. ---- */
 export function ExpeditionPeople({ team, sel, wide, colorOf, focusName }) {
     const shopOf = (a) => (a.state === 'at' && a.done[a.done.length - 1]?.lat ? a.done[a.done.length - 1] : null);
     /* THE SELLING MOMENT plays only for a man newly seen at a shop while the map is open - the chest's own rule (his
@@ -196,11 +197,12 @@ export function ExpeditionPeople({ team, sel, wide, colorOf, focusName }) {
         const mine = focusName ? a.name === focusName : wide || a.id === sel, play = playing.current[a.id] > Date.now();   // a pressed man: everyone else fades
         const icon = cachedIcon({
             className: 'kx-mk',
-            html: `<div class="kx-sm ${shop ? `sell${play ? ' play' : ''}` : a.state === 'go' ? 'walk' : 'idle'}${a.id === sel ? ' sel' : ''}${mine ? '' : ' dim'}" style="--c:${safeHex(shirt, '#E8E4DE')}"><i class="kx-shadow"></i>`
-                + `<div class="who"><div class="body">${shop ? sellerHtml(hair, shirt) : personSvg(hair, shirt)}</div></div>`
+            html: `<div class="kx-sm ${shop ? `plant${play ? ' play' : ''}` : a.state === 'go' ? 'walk' : 'idle'}${a.id === sel ? ' sel' : ''}${mine ? '' : ' dim'}" style="--c:${safeHex(shirt, '#E8E4DE')}"><i class="kx-shadow"></i>`
+                + `<div class="who"><div class="body">${shop ? planterHtml(hair, shirt) : personSvg(hair, shirt)}</div></div>`
                 + `<span class="tag"><i style="background:var(--c)"></i>${esc(a.ini)} · ${count(a)}</span>${QUEST}</div>`,
-            /* at a shop his feet line up with the chest's (anchor 14, 31) and he stands 2 px clear of its left edge */
-            iconSize: [30, 42], iconAnchor: row ? [46 + i * 32, 39] : [45 - shift, 42],
+            /* at a shop: the planter's fist (his 11th column, x 30-33) on the flag's pole (the flag's anchor 7, 44 = the
+               pole's foot), his feet 2 px under it; the others in his row stand 2 px apart to his left */
+            iconSize: shop ? [33, 42] : [30, 42], iconAnchor: row ? [32 + i * 32, 40] : [45 - shift, 42],
             kxFig: [hair, shirt],
         });
         return <Marker key={a.id} position={ll(where(a))} icon={icon} interactive={false} zIndexOffset={a.id === sel ? 21000 : 20000} />;

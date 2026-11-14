@@ -383,6 +383,19 @@
   100% { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) { .kx-sm .body, .kx-sm .legsA, .kx-sm .legsB, .kx-sm .quest, .kx-sm .pStand, .kx-sm .pArms, .kx-sm .kx-cx, .kx-sm .kx-cy { animation: none; } }
+/* PLANTING THE FLAG (his 2026-11-14 pick A, "plant it looks the best"; mapSprites planterHtml): he lifts the pole, stabs
+   it down at 440 ms, then keeps his fist on it - one clock with the flag's .kx-fl.plant (the cloth unrolls 520-880 ms,
+   the gust starts at 0.52 s). The resting style is the last picture, fist on the pole. Anchor (32, 40) in Expedition.jsx
+   puts the fist (column 11) on the pole's line and his feet 2 px under its foot. */
+.kx-sm.plant { width: 33px; }
+.kx-sm.plant .body svg { width: 33px; }
+.kx-sm.plant .body { animation: kx-breathe 2600ms ease-in-out infinite; }
+.kx-sm.plant .pReach { opacity: 0; }
+.kx-sm.plant.play .pReach { animation: kx-cut-out 440ms steps(1, end) both; }
+.kx-sm.plant.play .pHold { animation: kx-cut-in 440ms steps(1, end) both; }
+.kx-sm.plant.play .who { animation: kx-stab 180ms ease-out 440ms both; }
+@keyframes kx-stab { 33% { transform: translateY(1.5px); } }
+@media (prefers-reduced-motion: reduce) { .kx-sm .pReach, .kx-sm .pHold, .kx-sm.plant .who { animation: none; } }
 
 /* the crowd on a bubble (his "group of 8bit character", 2026-10-03 20:15): feet on the slot's top edge, or on the point
    itself when the bubble holds men only; still pictures, no loop */
@@ -758,18 +771,13 @@
 @keyframes ms-pop { from { opacity: 0; transform: translateY(8px) scale(.98); } }
 
 /* ===== THE DAY REPLAY (src/components/DayReplay.jsx; drawn on A-Brain Raw/2026-10-04-day-replay/day-replay.html v2) ===== */
-/* the replay's chest: the app's own moment (.kx-c5.burst) with the sign's beat moved after what the shop hands him - the
-   page's order: the chest opens 220-740 ms, the props 560-1260, the sign plants at 1300, its lamp warms at 1450 */
-.kx-rp-mk .kx-c5.burst .sign5 { --d: 1300ms; animation-delay: 1300ms; }
-.kx-rp-mk .kx-c5.burst .lamp { animation-delay: 1450ms; }
-.kx-rp-mk .kx-c5.burst .fx i { animation-delay: 1400ms; }
+/* the replay's shop: the app's own planting moment (.kx-fl.plant, his 2026-11-14 "yes"), the props 560-1260 ms */
 .kx-rp-mk .kx-rp-prop { position: absolute; left: 0; top: 0; pointer-events: none; opacity: 0; }
 .kx-rp-mk .kx-rp-prop svg { display: block; }
 .kx-rp-mk.picked .kx-ring { border-color: #E4B04A; border-width: 3px; }
 /* his tag steps aside while he stands at a shop: the shop's own tag is the label there */
 .kx-rp-man .kx-sm .tag { transition: opacity 160ms ease; }
 .kx-rp-man .kx-sm.busy .tag { opacity: 0; }
-.kx-rp-man .kx-sm .kx-cx svg { display: block; margin: 1px auto 0; }
 .kx-rp-start { display: flex; align-items: center; }
 .kx-rp-start span { position: absolute; left: 50%; bottom: calc(100% + 4px); translate: -50% 0; white-space: nowrap; padding: 3px 5px 2px; background: rgba(10, 9, 8, .82);
   color: #E8E4DE; font: 800 11px/1 var(--font-display); letter-spacing: .06em; text-transform: uppercase; }
@@ -900,3 +908,68 @@
 .kx-mini .kx-rp-card .top .kx-rp-x { min-width: 30px; min-height: 30px; }
 .kx-mini .kx-rp-card .acts button { min-height: 30px; padding: 0 8px; font-size: 10px; }
 .kx-mini:has(.kx-rp-card) .kx-mrows { max-height: max(120px, calc(100vh - 600px)); }
+
+/* ---- the professional map pins (mapSprites shopHtml / groupHtml; his 2026-11-13 pick B, round 3: the word sewn on the flag).
+   A shop still to visit = a small round pin in its salesman's colour; a visit = a flag. Outlines are borders, never
+   box-shadow (Lite kills shadows). The gust is SMIL inside the flag's svg and is only built when motion is allowed. ---- */
+.kx-c5.kx-pn .art svg { display: block; width: 28px; height: 33px; overflow: visible; }
+.kx-c5.kx-pn path { fill: #1B1917; stroke: var(--c); stroke-width: 2.5; stroke-linejoin: round; }
+.kx-c5.kx-pn .dot { position: absolute; left: 14px; top: 13px; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: var(--c); }
+.kx-c5.kx-pn.nb path { stroke: #B4524A; stroke-dasharray: 3.4 2.4; }
+.kx-c5.kx-pn .q { position: absolute; left: 14px; top: 13px; translate: -50% -50%; font: 800 14px/1 system-ui, sans-serif; color: #E08C82; }
+.kx-c5.kx-pn .kx-snm { top: 33px; }
+.kx-c5.kx-fl { height: 46px; }
+.kx-fl .pole { position: absolute; left: 0; top: 0; width: 14px; height: 46px; overflow: visible; }
+.kx-fl .pole .d { stroke: #0A0908; stroke-width: 3.6; stroke-linecap: round; }
+.kx-fl .pole .l { stroke: #D6CFC2; stroke-width: 1.6; stroke-linecap: round; }
+.kx-fl .base { position: absolute; left: 7px; top: 44px; width: 12px; height: 12px; margin: -6px 0 0 -6px; box-sizing: border-box; border-radius: 50%; background: var(--c); border: 1.5px solid #0A0908; }
+.kx-fl .bn { position: absolute; left: 8px; top: 4px; height: 25px; transform-origin: 0 100%; }
+.kx-fl .rip { position: absolute; left: 7px; top: 44px; width: 22px; height: 8px; margin: -4px 0 0 -11px; border-radius: 50%; border: 2px solid var(--fam); opacity: 0; pointer-events: none; }
+.kx-c5.kx-fl .kx-snm { left: 7px; top: 50px; }
+.kx-c5.kx-fl .kx-otag { bottom: calc(100% + 2px); }
+.kx-fl.f-money { --fam: #E2A12E; --gl: #2B2318; --hem: rgba(70, 45, 8, .5); --emb: rgba(255, 246, 222, .7); }
+.kx-fl.f-plain { --fam: #DFD5BC; --gl: #2B2318; --hem: rgba(70, 56, 34, .45); --emb: rgba(255, 255, 255, .8); }
+.kx-fl.f-problem { --fam: #B4524A; --gl: #F2EEE4; --hem: rgba(255, 228, 220, .42); --emb: rgba(44, 8, 6, .6); }
+.kx-fl.f-closed { --fam: #4A453F; --gl: #C9C2B6; --hem: rgba(255, 255, 255, .28); --emb: rgba(0, 0, 0, .65); }
+.kx-sf { display: block; overflow: visible; }
+.kx-sf .cl { fill: var(--fam); }
+.kx-sf .ho { fill: var(--c); }
+.kx-sf .hm { fill: none; stroke: var(--hem); stroke-width: .7; stroke-dasharray: 1.6 1.2; }
+.kx-sf .ed { fill: none; stroke: #0A0908; stroke-width: 1.5; stroke-linejoin: round; }
+.kx-sf .tx { font: 700 9.5px/1 ui-monospace, "Cascadia Mono", Consolas, "Roboto Mono", "Droid Sans Mono", monospace; text-anchor: middle; fill: var(--gl); }
+.kx-sf .tx.em { fill: var(--emb); }
+.kx-sf .gp { fill: none; stroke: var(--gl); stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
+.kx-sf .gp.em { stroke: var(--emb); }
+.kx-fl.burst .bn { animation: kx-raise 340ms cubic-bezier(.2, .8, .3, 1) both; }
+.kx-fl:is(.burst, .resign) .rip { animation: kx-rip 700ms ease-out both; }
+@keyframes kx-raise { from { transform: translateY(20px) scaleY(.3); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes kx-rip { from { transform: scale(1); opacity: .85; } to { transform: scale(2.6); opacity: 0; } }
+/* a flag he plants (Journey Plan, with planterHtml's man): lifted 4 -> 12 px with the cloth still rolled on the pole,
+   stabbed down at 440 ms (the dust ring and the foot come with the stab), the cloth unrolls 520-880 ms, then the gust */
+.kx-fl.plant .pole { animation: kx-plant-lift 880ms both; }
+.kx-fl.plant .bn { transform-origin: 0 50%; animation: kx-plant-lift 880ms both, kx-plant-unroll 880ms both; }
+.kx-fl.plant .rip { animation: kx-rip 700ms ease-out 440ms forwards; }   /* not `both`: kx-rip's first frame is the ring at .85, it must not wait under the lifted pole */
+.kx-fl.plant .base { animation: kx-plant-foot 250ms cubic-bezier(.23, 1, .32, 1) 440ms both; }
+@keyframes kx-plant-lift {
+  0%   { translate: 0 -4px; animation-timing-function: cubic-bezier(.23, 1, .32, 1); }
+  34%  { translate: 0 -12px; animation-timing-function: cubic-bezier(.5, 0, .9, .6); }
+  50%, 100% { translate: 0 0; }
+}
+@keyframes kx-plant-unroll { 0%, 59% { scale: .12 1; animation-timing-function: cubic-bezier(.23, 1, .32, 1); } 100% { scale: 1 1; } }
+@keyframes kx-plant-foot { from { opacity: 0; scale: .4; } }
+/* small round badges: "!" = an open request (pings three times, then still), "?" = no salesman yet */
+.kx-bd { position: absolute; width: 15px; height: 15px; box-sizing: border-box; border-radius: 50%; border: 1.5px solid #0A0908; display: grid; place-items: center;
+  font: 800 10px/1 system-ui, sans-serif; z-index: 2; pointer-events: none; }
+.kx-bd.req { background: #E2A12E; color: #2B2318; }
+.kx-bd.req::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid #E2A12E; opacity: 0; animation: kx-ping 2.4s ease-out 3; }
+.kx-bd.nb { background: #B4524A; color: #F2EEE4; }
+@keyframes kx-ping { 0% { transform: scale(1); opacity: .9; } 55%, 100% { transform: scale(2.2); opacity: 0; } }
+.kx-pn .kx-bd.req { top: -2px; right: -3px; }
+.kx-fl .kx-bd.req { top: -7px; right: -5px; }
+.kx-fl .kx-bd.nb { top: -7px; left: 2px; }
+/* a group of shops: the count, and a ring that fills gold with the share already visited */
+.kx-grp { position: relative; width: 42px; height: 42px; box-sizing: border-box; border-radius: 50%; border: 1px solid #0A0908; background: conic-gradient(#E2A12E calc(var(--f) * 1turn), #4A453F 0); cursor: pointer; }
+.kx-grp::before { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: #1B1917; }
+.kx-grp b { position: absolute; inset: 0; display: grid; place-items: center; font: 700 15px/1 var(--font-display); color: #E8E4DE; }
+.kx-grp .kx-bd { top: -3px; } .kx-grp .kx-bd.req { right: -3px; } .kx-grp .kx-bd.nb { left: -3px; }
+@media (prefers-reduced-motion: reduce) { .kx-fl .bn, .kx-fl .rip, .kx-fl .pole, .kx-fl .base, .kx-bd.req::after { animation: none !important; } }

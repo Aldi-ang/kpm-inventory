@@ -3,6 +3,9 @@
    Every finished job that changes what people see adds a line here before its push (CLAUDE.md, Publishing).
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
+  { date: '2026-11-14', items: [
+    { kind: 'new', en: 'Journey Plan map: a visited shop now shows a flag with the visit result written on it (SALE, ORDER, CLOSED and so on) instead of a chest, and a shop still to visit is a small round pin in its salesman\'s colour. When a salesman reaches a shop, his figure plants the flag in the ground. The Day Replay shows the same.', id: 'Peta Rencana Perjalanan: toko yang sudah dikunjungi sekarang memakai bendera bertuliskan hasil kunjungan (SALE, ORDER, CLOSED dan lainnya) sebagai ganti peti, dan toko yang belum dikunjungi berupa pin bulat kecil dengan warna salesman-nya. Saat salesman sampai di toko, karakternya menancapkan bendera itu ke tanah. Day Replay juga sama.' },
+  ] },
   { date: '2026-11-13', items: [
     { kind: 'fixed', en: 'Journey Plan map: only tier 1 to 4 can turn the Paintbrush on by double-clicking the Salesman Colors key. Before, anyone on a PC could.', id: 'Peta Rencana Perjalanan: hanya tier 1 sampai 4 yang bisa menyalakan Paintbrush dengan klik dua kali tombol Salesman Colors. Sebelumnya semua orang di PC bisa.' },
     { kind: 'new', en: 'Journey Plan now uses plain work words instead of game words: Today\'s Route, Visited, Progress, Sell, Log a visit, Save, Regions, Areas, Shops and Team. Nothing works differently.', id: 'Rencana Perjalanan sekarang memakai kata-kata kerja biasa, bukan kata-kata game: Today\'s Route, Visited, Progress, Sell, Log a visit, Save, Regions, Areas, Shops dan Team. Cara kerjanya tidak berubah.' },

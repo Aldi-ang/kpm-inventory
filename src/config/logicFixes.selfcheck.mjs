@@ -10555,7 +10555,7 @@ section('Expedition map');
        /expedition\(visibleTeam\([^\n]*new Date\(\), eodReports \|\| \[\]\)/.test(jvr) && /expedition\(visibleTeam\([^\n]*new Date\(\), eodReports \|\| \[\]\)/.test(mp),
        'without it the panel says "Day closed" while the map keeps him');
     ok('Journey map: a salesman is fixed to his spot at every zoom (no screen-space step-aside), standing just left of it so his shop\'s chest stays clear; one cached icon per look',
-       !/style\.translate =|kx-tether|MutationObserver/.test(exj) && !/kx-tether/.test(exc) && /iconAnchor: row \? \[46 \+ i \* 32, 39\] : \[45 - shift, 42\]/.test(exj) && /const cachedIcon = /.test(exj),
+       !/style\.translate =|kx-tether|MutationObserver/.test(exj) && !/kx-tether/.test(exc) && /iconAnchor: row \? \[32 \+ i \* 32, 40\] : \[45 - shift, 42\]/.test(exj) && /const cachedIcon = /.test(exj),
        'the step-aside of eabda69 picked a new spot after every zoom, so he jumped');
     /* HIS "group of 8bit character" on the bubble (2026-10-03 20:15) and his pick B "paid" with "coin animation that used
        on the agent inventory and receipt" (23:05) */
@@ -10564,13 +10564,24 @@ section('Expedition map');
     const crowd = crowdHtml(seven), cluster = jvr.slice(jvr.indexOf('<MarkerClusterGroup'), jvr.indexOf('</MarkerClusterGroup>'));
     ok('Journey map crowd re-run: a bubble draws at most 5 men then "+N", none for no men, every figure a cached picture, a colour that is not a plain hex never reaches the HTML; the bubble counts shops only',
        (crowd.match(/class="kx-fig /g) || []).length === 5 && crowd.includes('<b>+2</b>') && crowdHtml([]) === '' && !crowd.includes('<rect') && !crowd.includes('url(') &&
-       /<ExpeditionPeople [^>]*\/>/.test(cluster) && /slotHtml\(shops\.length, shops\.filter\(/.test(jvr) && /kxFig: \[hair, shirt\]/.test(exj),
+       /<ExpeditionPeople [^>]*\/>/.test(cluster) && /groupHtml\(shops\.length, shops\.filter\(/.test(jvr) && /kxFig: \[hair, shirt\]/.test(exj),
        crowd.slice(0, 90));
     ok('Journey map selling scene (B, the inventory coin): at a shop he holds the spinning .kpm-coin up; the resting style is the last picture (Lite and a fresh map); the moment plays only for a man newly seen at a shop while the map is open',
        sellerHtml('#2B1A0E', '#a855f7').includes('class="pArms"') && sellerHtml('#2B1A0E', '#a855f7').includes('<i class="kpm-coin"></i>') &&
        /\.kx-sm\.sell \.pStand \{ opacity: 0; \}/.test(exc) && /\.kx-sm\.sell\.play \.kx-cx \{ animation: kx-coin-x 450ms linear 600ms both; \}/.test(exc) &&
        /if \(!\(a\.id in prev\)\) return;/.test(exj) && /playing\.current\[a\.id\] = now \+ 1500/.test(exj),
        'his: "chest and 8 bit character not colliding but combined into one animation instead"');
+    /* HIS 2026-11-14: "actually i like the pixel guy better, but instead of opening chest we should do something to make it
+       look like its interacting with the flag instead" -> "plant it looks the best" (board A-Brain Raw/2026-11-14-man-flag) */
+    const { planterHtml } = await import('../utils/mapSprites.js');
+    const pl = planterHtml('#2B1A0E', '#a855f7'), msp = read('src/utils/mapSprites.js');
+    ok('Journey map planting scene (A): at a shop the pixel man lifts the pole, stabs it at 440 ms and keeps his fist (column 11) on it; the flag lifts, stabs and unrolls on the same clock; its gust starts at 0.52 s and ends inside the 2700 ms moment',
+       pl.includes('viewBox="0 0 11 14"') && pl.includes('class="pReach"') && pl.includes('class="pHold"') && !pl.includes('kpm-coin') &&
+       /\.kx-sm\.plant \.pReach \{ opacity: 0; \}/.test(exc) && /\.kx-sm\.plant\.play \.who \{ animation: kx-stab 180ms ease-out 440ms both; \}/.test(exc) &&
+       /\.kx-fl\.plant \.rip \{ animation: kx-rip 700ms ease-out 440ms forwards; \}/.test(exc) && /34% +\{ translate: 0 -12px;/.test(exc) && /50%, 100% \{ translate: 0 0; \}/.test(exc) &&
+       /flagSvg\(outcome, moving, play === 'plant' \? 0\.52 : 0\.24\)/.test(msp) && /begin="\$\{begin\}s" dur="2s"/.test(msp) &&
+       /cls: prev\[id\] \? 'resign' : 'plant', until: now \+ 2700/.test(jvr) && /iconAnchor: row \? \[32 \+ i \* 32, 40\]/.test(exj) && 0.52 + 2 < 2.7 && 440 / 880 === 0.5,
+       'his: "plant it looks the best"');
     /* HIS 2026-10-04: "a clearer indicator that the chest is theirs to collect not just color ... especially for the people
        who color blinds" -> look B "Name tags is easier to see"; road "shop assigned today, but also add option on all shop
        assigned"; "i want the expedition to be visible but smaller on fullscreen as well" -> "fulscreen looks good" */
@@ -10599,7 +10610,7 @@ section('Expedition map');
        /if \(pts\.length > \(wide && !focus \? 1 : 0\)\) map\.fitBounds\(/.test(layerFit) && !/if \(pts\.length\) map\.fitBounds\(/.test(layerFit),
        'test: &nobody&boss left 4 of 32 shops in view');
     ok('Journey two men on one shop: a group standing at a selling man\'s shop forms ONE row left of the chest, sellers nearest it - never the seller\'s row mixed with the centred shift',
-       /g\.sort\(\(x, y\) => !!shopOf\(byId\[y\]\) - !!shopOf\(byId\[x\]\)\)/.test(people) && /iconAnchor: row \? \[46 \+ i \* 32, 39\] : \[45 - shift, 42\]/.test(people),
+       /g\.sort\(\(x, y\) => !!shopOf\(byId\[y\]\) - !!shopOf\(byId\[x\]\)\)/.test(people) && /iconAnchor: row \? \[32 \+ i \* 32, 40\] : \[45 - shift, 42\]/.test(people),
        'test: Ari on Budi\'s shop overlapped Budi by 12 px (manOnMan 1)');
     ok('Journey pen and press are ONE pick: pressing a man while a pen is on moves the pen to him (off if he cannot be painted for); picking a pen lets the pressed man go; tapping him again lets his pen go too',
        /if \(activeBrush\) setActiveBrush\(globalAgentList\.includes\(name\) \? name : null\);/.test(jvr) && /onClick=\{\(\) => \{ if \(canManageFleetSettings\) \{ setActiveBrush\(a\); setExpFocus\(false\); \} \}\}/.test(jvr) &&
@@ -10897,8 +10908,9 @@ section('THE DAY REPLAY ON JOURNEY PLAN (2026-10-05) - his "this chain of events
      /const \[seenTl, setSeenTl\] = useState\(tl\);\s*if \(seenTl !== tl\) \{ setSeenTl\(tl\); setPhases\(''\); setPose\('\|0\|0\|0'\); \}/.test(rp));
   ok('the small fullscreen Expedition never scrolls sideways: a long name ends in "..." (his shot - "[TEST] HQ SALES MANAGER" pushed the count out)',
      /\.kx-mini, \.kx-mrows \{ grid-template-columns: minmax\(0, 1fr\); \}/.test(css) && /\.kx-mrow span \{ min-width: 0; \}/.test(css));
-  ok('the replay\'s scenes reuse the app\'s own chest moment (.kx-c5.burst, look C acts), with the sign moved after what the shop hands him',
-     /chestHtml\(kind, c, st\[0\] === 's' \? 'burst' : ''/.test(rp) && /\.kx-rp-mk \.kx-c5\.burst \.sign5 \{ --d: 1300ms; animation-delay: 1300ms; \}/.test(css));
+  ok('the replay\'s scenes reuse the app\'s own planting moment - his 2026-11-14 "yes" to the man planting there too instead of holding up the coin: the shop\'s flag (.kx-fl.plant) and his stab (.kx-sm.plant.play) both run on the replay\'s clock, so a drag backwards replays them',
+     /shopHtml\(kind, c, st\[0\] === 's' \? 'plant' : ''/.test(rp) && /box\?\.querySelector\('\.kx-c5\.plant'\)/.test(rp) && /if \(pl\) el\.__pl\.forEach\(\(a\) => \{ a\.currentTime = local; \}\);/.test(rp)
+     && /planterHtml\(hair, c\)/.test(rp) && !/HELD\[|sellerHtml/.test(rp) && /\.add\(\[-17, 2\]\)/.test(rp) && -17 - 15 === -32);
   ok('the walk is never claimed as tracked: the note says it is drawn, the card says a report\'s time is when he pressed Report',
      /The walk between stops is drawn, not tracked\./.test(rp) && /\(when he pressed Report\)/.test(rp));
   ok('palette law on the replay (component + its CSS): no blue / green / purple / slate class or hex, gold only as a line or a fill, never a text colour',

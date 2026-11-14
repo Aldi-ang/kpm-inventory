@@ -18,7 +18,7 @@ import { expedition, visibleTeam, roadStops, initials } from './utils/expedition
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { visitReport } from './utils/dayLog.js';
-import { signFor, kindByShop, chestHtml, slotHtml, crowdHtml, HAIR } from './utils/mapSprites';
+import { signFor, kindByShop, shopHtml, shopIconBox, groupHtml, crowdHtml, HAIR } from './utils/mapSprites';
 
 // 🚀 SAFE LEAFLET ICON SETUP
 delete L.Icon.Default.prototype._getIconUrl;
@@ -39,7 +39,7 @@ const createJourneyClusterIcon = (cluster) => {
     const men = kids.map((m) => m.options.icon?.options?.kxFig).filter(Boolean);
     const shops = kids.filter((m) => !m.options.icon?.options?.kxFig);
     return L.divIcon({
-        html: (shops.length ? slotHtml(shops.length, shops.filter((m) => m.options.icon?.options?.kxVisited).length, shops.some((m) => m.options.icon?.options?.kxFree), shops.some((m) => m.options.icon?.options?.kxReq)) :'<i class="kx-crowd-shadow"></i>')
+        html: (shops.length ? groupHtml(shops.length, shops.filter((m) => m.options.icon?.options?.kxVisited).length, shops.some((m) => m.options.icon?.options?.kxFree), shops.some((m) => m.options.icon?.options?.kxReq)) :'<i class="kx-crowd-shadow"></i>')
             + crowdHtml(men, shops.length ? 0 : 21),
         className: 'kx-mk',
         iconSize: [42, 51],
@@ -74,9 +74,9 @@ const getStoreIcon = (outcome, ringColor, isEditing, play = '', tag = '', free =
             iconAnchor: [17, 17]
         }) : L.divIcon({
             className: 'kx-mk',
-            html: chestHtml(outcome, ringColor, play, tag, free, req, name),
-            iconSize: [28, 34],
-            iconAnchor: [14, 31],
+            html: shopHtml(outcome, ringColor, play, tag, free, req, name),
+            iconSize: shopIconBox(outcome).size,
+            iconAnchor: shopIconBox(outcome).anchor,
             kxVisited: !!outcome,
             kxFree: free,   // the bubble raises the red flag too
             kxReq: req      // and the open request's "!"
@@ -168,7 +168,7 @@ const ShopNames = () => {
         const declutter = () => {
             const names = [...box.querySelectorAll('.kx-snm > i')];
             names.forEach((el) => { el.style.visibility = ''; });
-            const kept = [...box.querySelectorAll('.kx-otag, .kx-sm .body, .kx-slot, .leaflet-marker-icon > .kx-c5 > .art')].map(R);
+            const kept = [...box.querySelectorAll('.kx-otag, .kx-sm .body, .kx-grp, .leaflet-marker-icon > .kx-c5 > .art')].map(R);
             const rects = names.map(R);
             names.forEach((el, i) => {
                 const r = rects[i];
@@ -983,13 +983,15 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         for (const id in outcomeById) {
             if (!(id in prev) || prev[id] === outcomeById[id]) continue;
             outcomeMoved.current = true;
-            if (outcomeById[id]) playing.current[id] = { cls: prev[id] ? 'resign' : 'burst', until: now + 1500 };
+            /* 2700 ms: the man's stab (0.44 s) + the flag's 2 s gust (mapSprites flagSvg begins 0.52 s on 'plant') end before
+               the still copy swaps in */
+            if (outcomeById[id]) playing.current[id] = { cls: prev[id] ? 'resign' : 'plant', until: now + 2700 };
         }
     }, [outcomeById]);
     useEffect(() => {
         if (outcomeMoved.current) { outcomeMoved.current = false; clusterRef.current?.refreshClusters(); }   // a bubble's bar only redraws when told
         if (!Object.values(playing.current).some((p) => p.until > Date.now())) return;
-        const t = setTimeout(() => setReplayTick((x) => x + 1), 1600);
+        const t = setTimeout(() => setReplayTick((x) => x + 1), 2800);
         return () => clearTimeout(t);
     }, [outcomeById]);
     const [locateTrigger, setLocateTrigger] = useState(0);
