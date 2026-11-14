@@ -13970,9 +13970,10 @@ section('THE DAY LOG ON PAPER (his 2026-11-14 "paper like Todays log that can be
      ex.includes('Print his day</button>') && ex.includes('Print team day</button>') && jv.includes('onPrint={printToday} onPrintTeam={printTeam} page />')
      && dr.includes('onClick={onPrint}>Print</button>') && jv.includes('onPrint={() => printMan(replayFor.day)}'));
   const mp = pp.mapSvg(budi, [{ name: 'Muntilan', feature: { type: 'Polygon', coordinates: [[[110.28, -7.59], [110.30, -7.59], [110.30, -7.57], [110.28, -7.57], [110.28, -7.59]]] } },
-    { name: 'Far', geometry: { type: 'Polygon', coordinates: [[[111, -8], [111.1, -8], [111.1, -7.9], [111, -8]]] } }]);
+    { name: 'Far', geometry: { type: 'Polygon', coordinates: [[[111, -8], [111.1, -8], [111.1, -7.9], [111, -8]]] } },
+    { name: 'Kecil', geometry: { type: 'GeometryCollection', geometries: [{ type: 'Polygon', coordinates: [[[110.293, -7.578], [110.2935, -7.578], [110.2935, -7.5775], [110.293, -7.578]]] }] } }]);
   ok('his "show the map in full and its regional information": the route sits on the real street map (Esri, the Journey map\'s source) with Journey Plan\'s area borders - his 3 shops counted in Muntilan, an area off this piece of map not drawn',
-     mp.includes('server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/') && mp.includes('<b>Areas:</b> Muntilan 3') && mp.includes('>MUNTILAN</text>')
+     mp.includes('server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/') && mp.includes('<b>Areas on this map:</b> Muntilan 3 · Kecil') && (mp.match(/<path d=/g) || []).length === 2 && mp.includes('>MUNTILAN</text>')
      && !mp.includes('FAR') && mp.includes('Map © Esri') && jv.includes('borders: boundaries,') && c.includes('<figure class="route">'));
   ok('one rule for "his round": the map\'s road and the paper\'s not-visited both read roundOf (expedition.js)',
      /const round = roundOf\(customers, m\.name, weekday\);/.test(read('src/utils/expedition.js')) && read('src/utils/dayLogPaper.js').includes("import { roundOf } from './expedition.js';"));

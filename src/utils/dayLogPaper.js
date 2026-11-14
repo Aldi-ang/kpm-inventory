@@ -53,7 +53,7 @@ const foot = (meta) => `<footer class="pf"><span>Printed ${esc(meta.printed)} ·
 const TILES = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile';
 const merc = (lat, lng, z) => { const n = 256 * 2 ** z, s = Math.sin(lat * Math.PI / 180); return [(lng + 180) / 360 * n, (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n]; };
 const ringsOf = (g) => (!g ? [] : g.type === 'FeatureCollection' ? (g.features || []).flatMap((f) => ringsOf(f.geometry))
-    : g.type === 'Feature' ? ringsOf(g.geometry) : g.type === 'Polygon' ? g.coordinates : g.type === 'MultiPolygon' ? g.coordinates.flat() : []);
+    : g.type === 'GeometryCollection' ? (g.geometries || []).flatMap(ringsOf) : g.type === 'Feature' ? ringsOf(g.geometry) : g.type === 'Polygon' ? g.coordinates : g.type === 'MultiPolygon' ? g.coordinates.flat() : []);
 /* even-odd over every ring: inside a hole or in two parts at once = outside */
 const inRings = (lng, lat, rings) => rings.reduce((inn, r) => {
     let c = false;
@@ -81,7 +81,9 @@ export function mapSvg(d, borders = []) {
         const xs = pts.flat().map((p) => p[0]), ys = pts.flat().map((p) => p[1]);
         const x0 = Math.max(0, Math.min(...xs)), x1 = Math.min(W, Math.max(...xs)), y0 = Math.max(0, Math.min(...ys)), y1 = Math.min(H, Math.max(...ys));
         /* the name in its corner, clear of the pins; an area too narrow for its name keeps the outline, the caption names it */
-        return x1 - x0 > 20 && y1 - y0 > 10 ? { ...ar, d: pts.map((r) => `M${r.map((p) => p.join(',')).join('L')}Z`).join(''), lx: x0 + 6, ly: y0 + 16, fits: x1 - x0 > ar.name.length * 9.5 + 12 } : null;
+        /* EVERY border that touches this piece of map is drawn, however small (his "make sure all the borders for kecamatan
+           inside the map ... also showed there bro, just for extra info") */
+        return x1 > x0 && y1 > y0 ? { ...ar, d: pts.map((r) => `M${r.map((p) => p.join(',')).join('L')}Z`).join(''), lx: x0 + 6, ly: y0 + 16, fits: x1 - x0 > ar.name.length * 9.5 + 12 && y1 - y0 > 22 } : null;
     }).filter(Boolean);
     const count = {};
     all.filter((p) => !p.s).forEach((p) => { const ar = areas.find((r) => inRings(p.lng, p.lat, r.rings)); if (ar) count[ar.name] = (count[ar.name] || 0) + 1; });
@@ -89,7 +91,8 @@ export function mapSvg(d, borders = []) {
         const [x, y] = xy(p.lat, p.lng), fill = p.money && !p.s ? '#1b1917' : '#fff', ink = p.money && !p.s ? '#fff' : '#1b1917';
         return `<circle cx="${x}" cy="${y}" r="10" fill="${fill}" stroke="#1b1917" stroke-width="2"/><text x="${x}" y="${y + 4}" text-anchor="middle" class="pn" fill="${ink}">${p.s ? 'S' : p.n}</text>`;
     };
-    const inAreas = Object.entries(count).sort((x, y) => y[1] - x[1]).map(([k, v]) => `${esc(k)} ${v}`).join(' · ');
+    /* every area on the map by name: his shops' areas first with their count, then the rest */
+    const inAreas = [...new Set([...Object.entries(count).sort((x, y) => y[1] - x[1]).map(([k, v]) => `${esc(k)} ${v}`), ...drawn.filter((ar) => !count[ar.name]).map((ar) => esc(ar.name))])].join(' · ');
     return `<figure class="route"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="His route on the map">`
         + '<defs><filter id="kx-grey"><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncR type="linear" slope=".78" intercept=".22"/><feFuncG type="linear" slope=".78" intercept=".22"/><feFuncB type="linear" slope=".78" intercept=".22"/></feComponentTransfer></filter></defs>'
         + `<rect width="${W}" height="${H}" fill="#f2f0eb"/><g filter="url(#kx-grey)">${tiles.join('')}</g>`
@@ -99,7 +102,7 @@ export function mapSvg(d, borders = []) {
         + (stops.length > 1 ? `<polyline points="${stops.map((p) => xy(p.lat, p.lng).join(',')).join(' ')}" fill="none" stroke="#1b1917" stroke-width="2" stroke-dasharray="6 4"/>` : '')
         + stops.map(dot).join('') + '</svg>'
         + `<figcaption><span><i class="k s"></i>sale or order</span><span><i class="k v"></i>visited, no sale</span>${miss.length ? '<span><i class="k m"></i>not visited</span>' : ''}${start.length ? '<span><b>S</b> his first position</span>' : ''}`
-        + `${inAreas ? `<span><b>Areas:</b> ${inAreas}</span>` : ''}<span>The line joins the shops in order; it is not the road he rode. Map © Esri</span></figcaption></figure>`;
+        + `${inAreas ? `<span><b>Areas on this map:</b> ${inAreas}</span>` : ''}<span>The line joins the shops in order; it is not the road he rode. Map © Esri</span></figcaption></figure>`;
 }
 
 /* C: one salesman */
