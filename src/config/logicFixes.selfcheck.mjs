@@ -13973,8 +13973,23 @@ section('THE DAY LOG ON PAPER (his 2026-11-14 "paper like Todays log that can be
     { name: 'Far', geometry: { type: 'Polygon', coordinates: [[[111, -8], [111.1, -8], [111.1, -7.9], [111, -8]]] } },
     { name: 'Kecil', geometry: { type: 'GeometryCollection', geometries: [{ type: 'Polygon', coordinates: [[[110.293, -7.578], [110.2935, -7.578], [110.2935, -7.5775], [110.293, -7.578]]] }] } }]);
   ok('his "show the map in full and its regional information": the route sits on the real street map (Esri, the Journey map\'s source) with Journey Plan\'s area borders - his 3 shops counted in Muntilan, an area off this piece of map not drawn',
-     mp.includes('server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/') && mp.includes('<b>Areas on this map:</b> Muntilan 3 · Kecil') && (mp.match(/<path d=/g) || []).length === 2 && mp.includes('>MUNTILAN</text>')
+     mp.includes('server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/') && mp.includes('<b>Areas on this map:</b> Muntilan 3 · Kecil') && (mp.match(/<path d=/g) || []).length === 4 && mp.includes('>MUNTILAN</text>')
      && !mp.includes('FAR') && mp.includes('Map © Esri') && jv.includes('borders: boundaries,') && c.includes('<figure class="route">'));
+  /* his "make sure that there is no intersection in words and make sure it looks the best for phone and pc": a hard day -
+     three shops and a missed one within metres, two pairs side by side, an L-shaped border - laid out at the A4 / PC
+     size and at the phone size */
+  const L0 = { lat: -7.58, lng: 110.29 }, near = (n, dx, dy, money) => ({ key: 'k' + n, name: 'S' + n, n, money, lat: L0.lat + dy, lng: L0.lng + dx });
+  const hard = { log: { start: { lat: L0.lat - 0.012, lng: L0.lng - 0.01 } }, missed: [{ key: 'm1', name: 'M1', lat: L0.lat + 0.0007, lng: L0.lng + 0.0008 }, { key: 'm2', name: 'M2', lat: L0.lat - 0.008, lng: L0.lng + 0.03 }],
+    shops: [near(1, 0, 0, true), near(2, 0.0006, 0.0004, true), near(3, 0.0012, -0.0002, false), near(4, 0.02, 0, true), near(5, 0.0204, 0.0002, false), near(6, 0.032, 0.004, false), near(7, 0.0322, 0.0043, false), near(8, 0.044, 0.008, true)] };
+  const sq = (name, pts) => ({ name, feature: { type: 'Polygon', coordinates: [pts.map(([x, y]) => [L0.lng + x, L0.lat + y])] } });
+  const hb = [sq('Muntilan', [[-0.008, -0.016], [0.026, -0.016], [0.026, 0.002], [0.012, 0.002], [0.012, 0.02], [-0.008, 0.02], [-0.008, -0.016]]),
+    sq('Mungkid', [[0.026, -0.016], [0.052, -0.016], [0.052, 0.02], [0.012, 0.02], [0.012, 0.002], [0.026, 0.002], [0.026, -0.016]]), sq('Sawangan Selatan', [[-0.036, -0.016], [-0.008, -0.016], [-0.008, 0.02], [-0.036, 0.02], [-0.036, -0.016]])];
+  const lay = [[700, 195], [360, 250]].map(([W, H]) => ({ W, H, L: pp.mapLayout(hard, hb, W, H) }));
+  ok('no word on another, at the A4 / PC size AND the phone size: no marker row, area name or frame edge touches another; shops metres apart sit side by side in one row; every shop drawn once; an area named inside its own border',
+     lay.every(({ W, H, L }) => { const bx = [...L.groups.map((g) => g.box), ...L.labels.map((l) => l.box)];
+       return bx.every((p, i) => bx.every((q, j) => i === j || !pp.boxesTouch(p, q))) && bx.every((b) => b.x >= 0 && b.y >= 0 && b.x + b.w <= W && b.y + b.h <= H)
+         && L.items.filter((x) => !x.s && !x.m).map((x) => x.n).sort((a, b) => a - b).join() === '1,2,3,4,5,6,7,8' && L.items.length === 11 && L.labels.length >= 1; })
+     && lay[0].L.groups.some((g) => g.items.length >= 3) && pp.mapSvg(hard, hb).includes('<svg class="ph"'));
   ok('one rule for "his round": the map\'s road and the paper\'s not-visited both read roundOf (expedition.js)',
      /const round = roundOf\(customers, m\.name, weekday\);/.test(read('src/utils/expedition.js')) && read('src/utils/dayLogPaper.js').includes("import { roundOf } from './expedition.js';"));
 }

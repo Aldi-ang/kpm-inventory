@@ -46,63 +46,118 @@ const sign = '<div class="sig"><span>Checked by</span><span>Salesman</span></div
 const foot = (meta) => `<footer class="pf"><span>Printed ${esc(meta.printed)} · Journey Plan${meta.company ? ` · ${esc(meta.company)}` : ''}</span><span>A time is when the sale was saved or the visit reported, not when he arrived.</span></footer>`;
 
 /* HIS ROUTE ON THE REAL MAP (his 2026-11-14 "should also show the map in full and its regional information, because
-   drawing of map pins and lines doesnt give any information really"): Esri's street map (the Journey map's own source,
-   street version) in grey, the areas' borders and names Journey Plan draws (its `boundaries`), his shops numbered in
-   the order he first reached them, the shops he missed, and the areas his round lies in. One SVG, so it scales to the
-   phone and prints as it shows. The line joins the shops in order - drawn, never tracked; the caption says so. */
+   drawing of map pins and lines doesnt give any information really"; "make sure all the borders for kecamatan inside the
+   map ... also showed"; "make sure that there is no intersection in words and make sure it looks the best for phone and
+   pc"): Esri's street map in grey, every Journey Plan border that touches it, his shops numbered in the order he first
+   reached them, the shops he missed. Drawn twice - the A4 / PC frame and a taller phone frame - so a phone reads it at
+   its own size instead of shrunk. The line joins the shops in order: drawn, never tracked. */
 const TILES = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile';
 const merc = (lat, lng, z) => { const n = 256 * 2 ** z, s = Math.sin(lat * Math.PI / 180); return [(lng + 180) / 360 * n, (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * n]; };
 const ringsOf = (g) => (!g ? [] : g.type === 'FeatureCollection' ? (g.features || []).flatMap((f) => ringsOf(f.geometry))
-    : g.type === 'GeometryCollection' ? (g.geometries || []).flatMap(ringsOf) : g.type === 'Feature' ? ringsOf(g.geometry) : g.type === 'Polygon' ? g.coordinates : g.type === 'MultiPolygon' ? g.coordinates.flat() : []);
-/* even-odd over every ring: inside a hole or in two parts at once = outside */
-const inRings = (lng, lat, rings) => rings.reduce((inn, r) => {
+    : g.type === 'GeometryCollection' ? (g.geometries || []).flatMap(ringsOf) : g.type === 'Feature' ? ringsOf(g.geometry)
+    : g.type === 'Polygon' ? g.coordinates : g.type === 'MultiPolygon' ? g.coordinates.flat() : []);
+/* even-odd over every ring: inside a hole or in two parts at once = outside. Reads [lng, lat] and [x, y] alike */
+const inRings = (x, y, rings) => rings.reduce((inn, r) => {
     let c = false;
-    for (let i = 0, j = r.length - 1; i < r.length; j = i++) if ((r[i][1] > lat) !== (r[j][1] > lat) && lng < ((r[j][0] - r[i][0]) * (lat - r[i][1])) / (r[j][1] - r[i][1]) + r[i][0]) c = !c;
+    for (let i = 0, j = r.length - 1; i < r.length; j = i++) if ((r[i][1] > y) !== (r[j][1] > y) && x < ((r[j][0] - r[i][0]) * (y - r[i][1])) / (r[j][1] - r[i][1]) + r[i][0]) c = !c;
     return inn !== c;
 }, false);
-export function mapSvg(d, borders = []) {
-    const start = d.log.start ? [{ ...d.log.start, s: true }] : [];
-    const stops = [...start, ...d.shops.filter((s) => s.lat)], miss = d.missed.filter((s) => s.lat), all = [...stops, ...miss];
-    if (!d.shops.some((s) => s.lat)) return '';
-    const W = 700, H = 195, P = 28;
-    /* the exact zoom at which every pin just fits the box (a whole-number zoom left them in a corner), never past 16 */
-    const span = (k) => { const ps = all.map((p) => merc(p.lat, p.lng, k)), xs = ps.map((p) => p[0]), ys = ps.map((p) => p[1]); return [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]; };
+/* a border's points, at least 1.5 units from the last one KEPT (against the previous point, a dense border thinned to
+   nothing when the map zoomed out) */
+const thin = (r) => r.reduce((out, p) => { const q = out[out.length - 1]; if (!q || Math.abs(p[0] - q[0]) + Math.abs(p[1] - q[1]) >= 1.5) out.push(p); return out; }, []);
+export const boxesTouch = (a, b, m = 0) => a.x < b.x + b.w + m && b.x < a.x + a.w + m && a.y < b.y + b.h + m && b.y < a.y + a.h + m;
+const SLOT = 22;   // one marker's square: its 10-unit circle and the gap around it
+const rank = (it) => (it.s ? -1 : it.m ? 1e6 : it.n);
+
+/* NO WORD ON ANOTHER - one layout per frame size, pure, so a check can prove it:
+   - markers whose squares would touch sit side by side in ONE row at their spot (S first, his numbers in order, then
+     the missed ones); rows that would touch merge; a row stays inside the frame and wraps when it is wider than it
+   - an area's name takes the free spot inside its own border nearest that border's middle: touching no marker, no
+     other name and no edge, all four corners inside the border. No such spot = no name on the map; the caption under
+     it still names every area */
+export function mapLayout(d, borders = [], W = 700, H = 195) {
+    const start = d.log?.start?.lat ? [{ ...d.log.start, s: true }] : [];
+    const pins = [...start, ...d.shops.filter((s) => s.lat), ...d.missed.filter((s) => s.lat).map((s) => ({ ...s, m: true }))];
+    if (!d.shops.some((s) => s.lat)) return null;
+    const P = Math.round(Math.min(W, H) * 0.15);
+    const span = (k) => { const ps = pins.map((p) => merc(p.lat, p.lng, k)), xs = ps.map((p) => p[0]), ys = ps.map((p) => p[1]); return [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]; };
+    /* the exact zoom at which every pin just fits (a whole-number zoom left them in a corner), never past 16 */
     const [a0, b0, c0, e0] = span(0), z = Math.min(16, Math.log2(Math.min((W - 2 * P) / (b0 - a0 || 1e-12), (H - 2 * P) / (e0 - c0 || 1e-12))));
     const [a, b, c, e] = span(z), ox = (a + b) / 2 - W / 2, oy = (c + e) / 2 - H / 2;
-    const xy = (lat, lng) => { const [x, y] = merc(lat, lng, z); return [+(x - ox).toFixed(1), +(y - oy).toFixed(1)]; };
-    /* the nearest whole tile zoom, drawn at 0.7-1.4x its own size, so the street and place names stay readable on paper */
+    const xy = (lat, lng) => { const [x, y] = merc(lat, lng, z); return [x - ox, y - oy]; };
+    /* the nearest whole tile zoom, drawn at 0.7-1.4x its own size, so street and place names stay readable */
     const tz = Math.round(z), T = 256 * 2 ** (z - tz), n = 2 ** tz, tiles = [];
     for (let tx = Math.floor(ox / T); tx * T < ox + W; tx++) for (let ty = Math.max(0, Math.floor(oy / T)); ty * T < oy + H && ty < n; ty++)
-        tiles.push(`<image href="${TILES}/${tz}/${ty}/${((tx % n) + n) % n}" x="${(tx * T - ox).toFixed(1)}" y="${(ty * T - oy).toFixed(1)}" width="${(T + 0.5).toFixed(1)}" height="${(T + 0.5).toFixed(1)}"/>`);
-    /* the areas on this piece of map: outline + name; and which area each of his shops lies in */
+        tiles.push({ href: `${TILES}/${tz}/${ty}/${((tx % n) + n) % n}`, x: tx * T - ox, y: ty * T - oy, size: T + 0.5 });
+
+    const items = pins.map((p) => { const [x, y] = xy(p.lat, p.lng); return { ...p, tx: x, ty: y }; });
+    const boxOf = (g) => {
+        const cols = Math.max(1, Math.min(g.items.length, Math.floor((W - 4) / SLOT))), w = cols * SLOT, h = Math.ceil(g.items.length / cols) * SLOT;
+        return { x: Math.min(Math.max(2, g.cx - w / 2), W - 2 - w), y: Math.min(Math.max(2, g.cy - h / 2), H - 2 - h), w, h, cols };
+    };
+    const groups = items.map((it) => ({ items: [it], cx: it.tx, cy: it.ty }));
+    for (let merged = true; merged;) {
+        merged = false;
+        groups.forEach((g) => { g.box = boxOf(g); });
+        for (let i = 0; i < groups.length && !merged; i++) for (let j = i + 1; j < groups.length && !merged; j++) {
+            if (!boxesTouch(groups[i].box, groups[j].box, 2)) continue;
+            const its = [...groups[i].items, ...groups[j].items].sort((p, q) => rank(p) - rank(q));
+            groups[i] = { items: its, cx: its.reduce((s, t) => s + t.tx, 0) / its.length, cy: its.reduce((s, t) => s + t.ty, 0) / its.length };
+            groups.splice(j, 1); merged = true;
+        }
+    }
+    groups.forEach((g) => g.items.forEach((it, k) => { it.x = g.box.x + (k % g.box.cols) * SLOT + SLOT / 2; it.y = g.box.y + Math.floor(k / g.box.cols) * SLOT + SLOT / 2; }));
+
+    /* every border that touches the frame, however small; which area each of his shops lies in */
     const areas = (borders || []).map((bd) => ({ name: String(bd?.name || '').trim(), rings: ringsOf(bd?.feature || bd?.geometry) })).filter((r) => r.name && r.rings.length);
     const drawn = areas.map((ar) => {
-        const pts = ar.rings.map((r) => r.map(([lng, lat]) => xy(lat, lng)).filter((p, i, s) => !i || Math.abs(p[0] - s[i - 1][0]) + Math.abs(p[1] - s[i - 1][1]) >= 1.5));
-        const xs = pts.flat().map((p) => p[0]), ys = pts.flat().map((p) => p[1]);
-        const x0 = Math.max(0, Math.min(...xs)), x1 = Math.min(W, Math.max(...xs)), y0 = Math.max(0, Math.min(...ys)), y1 = Math.min(H, Math.max(...ys));
-        /* the name in its corner, clear of the pins; an area too narrow for its name keeps the outline, the caption names it */
-        /* EVERY border that touches this piece of map is drawn, however small (his "make sure all the borders for kecamatan
-           inside the map ... also showed there bro, just for extra info") */
-        return x1 > x0 && y1 > y0 ? { ...ar, d: pts.map((r) => `M${r.map((p) => p.join(',')).join('L')}Z`).join(''), lx: x0 + 6, ly: y0 + 16, fits: x1 - x0 > ar.name.length * 9.5 + 12 && y1 - y0 > 22 } : null;
+        const pts = ar.rings.map((r) => thin(r.map(([lng, lat]) => xy(lat, lng)))), all = pts.flat();
+        const xs = all.map((p) => p[0]), ys = all.map((p) => p[1]);
+        const bb = [Math.max(0, Math.min(...xs)), Math.max(0, Math.min(...ys)), Math.min(W, Math.max(...xs)), Math.min(H, Math.max(...ys))];
+        return bb[2] > bb[0] && bb[3] > bb[1] ? { ...ar, pts, bb } : null;
     }).filter(Boolean);
     const count = {};
-    all.filter((p) => !p.s).forEach((p) => { const ar = areas.find((r) => inRings(p.lng, p.lat, r.rings)); if (ar) count[ar.name] = (count[ar.name] || 0) + 1; });
-    const dot = (p) => {
-        const [x, y] = xy(p.lat, p.lng), fill = p.money && !p.s ? '#1b1917' : '#fff', ink = p.money && !p.s ? '#fff' : '#1b1917';
-        return `<circle cx="${x}" cy="${y}" r="10" fill="${fill}" stroke="#1b1917" stroke-width="2"/><text x="${x}" y="${y + 4}" text-anchor="middle" class="pn" fill="${ink}">${p.s ? 'S' : p.n}</text>`;
-    };
-    /* every area on the map by name: his shops' areas first with their count, then the rest */
-    const inAreas = [...new Set([...Object.entries(count).sort((x, y) => y[1] - x[1]).map(([k, v]) => `${esc(k)} ${v}`), ...drawn.filter((ar) => !count[ar.name]).map((ar) => esc(ar.name))])].join(' · ');
-    return `<figure class="route"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="His route on the map">`
-        + '<defs><filter id="kx-grey"><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncR type="linear" slope=".78" intercept=".22"/><feFuncG type="linear" slope=".78" intercept=".22"/><feFuncB type="linear" slope=".78" intercept=".22"/></feComponentTransfer></filter></defs>'
-        + `<rect width="${W}" height="${H}" fill="#f2f0eb"/><g filter="url(#kx-grey)">${tiles.join('')}</g>`
-        + drawn.map((ar) => `<path d="${ar.d}" fill="none" stroke="#1b1917" stroke-width="1.4" stroke-dasharray="7 4" opacity=".75"/>`).join('')
-        + drawn.filter((ar) => ar.fits).map((ar) => `<text x="${ar.lx.toFixed(1)}" y="${ar.ly.toFixed(1)}" class="ar">${esc(ar.name.toUpperCase())}</text>`).join('')
-        + miss.map((p) => { const [x, y] = xy(p.lat, p.lng); return `<circle cx="${x}" cy="${y}" r="6" fill="#fff" stroke="#1b1917" stroke-width="1.5" stroke-dasharray="2.5 2"/>`; }).join('')
-        + (stops.length > 1 ? `<polyline points="${stops.map((p) => xy(p.lat, p.lng).join(',')).join(' ')}" fill="none" stroke="#1b1917" stroke-width="2" stroke-dasharray="6 4"/>` : '')
-        + stops.map(dot).join('') + '</svg>'
-        + `<figcaption><span><i class="k s"></i>sale or order</span><span><i class="k v"></i>visited, no sale</span>${miss.length ? '<span><i class="k m"></i>not visited</span>' : ''}${start.length ? '<span><b>S</b> his first position</span>' : ''}`
-        + `${inAreas ? `<span><b>Areas on this map:</b> ${inAreas}</span>` : ''}<span>The line joins the shops in order; it is not the road he rode. Map © Esri</span></figcaption></figure>`;
+    items.filter((it) => !it.s).forEach((it) => { const ar = areas.find((r) => inRings(it.lng, it.lat, r.rings)); if (ar) count[ar.name] = (count[ar.name] || 0) + 1; });
+    const spots = drawn.map((ar) => {
+        const c = []; let sx = 0, sy = 0;
+        for (let y = ar.bb[1] + 4; y < ar.bb[3]; y += 8) for (let x = ar.bb[0] + 4; x < ar.bb[2]; x += 8) if (inRings(x, y, ar.pts)) { c.push([x, y]); sx += x; sy += y; }
+        return { ar, c, mx: sx / (c.length || 1), my: sy / (c.length || 1) };
+    }).filter((s) => s.c.length);
+    const taken = groups.map((g) => g.box), labels = [];
+    [...spots].sort((p, q) => (count[q.ar.name] || 0) - (count[p.ar.name] || 0) || q.c.length - p.c.length).forEach(({ ar, c, mx, my }) => {
+        const w = ar.name.length * 10 + 12, h = 18;
+        c.sort((p, q) => Math.hypot(p[0] - mx, p[1] - my) - Math.hypot(q[0] - mx, q[1] - my));
+        for (const [x, y] of c) {
+            const box = { x: x - w / 2, y: y - h / 2, w, h };
+            if (box.x < 2 || box.y < 2 || box.x + w > W - 2 || box.y + h > H - 2 || taken.some((t) => boxesTouch(box, t, 3))) continue;
+            if (![[box.x, box.y], [box.x + w, box.y], [box.x, box.y + h], [box.x + w, box.y + h]].every(([px, py]) => inRings(px, py, ar.pts))) continue;
+            labels.push({ name: ar.name, x, y, box }); taken.push(box); return;
+        }
+    });
+    return { W, H, tiles, drawn, items, groups, labels, count, visible: drawn.map((ar) => ar.name) };   // the caption names every border drawn, a sliver at the edge too
+}
+
+const r1 = (v) => +v.toFixed(1);
+const frame = (L, cls) => {
+    const route = L.items.filter((it) => !it.m).sort((p, q) => rank(p) - rank(q));
+    const mark = (it) => (it.m ? `<circle cx="${r1(it.x)}" cy="${r1(it.y)}" r="6" fill="#fff" stroke="#1b1917" stroke-width="1.5" stroke-dasharray="2.5 2"/>`
+        : `<circle cx="${r1(it.x)}" cy="${r1(it.y)}" r="10" fill="${it.money && !it.s ? '#1b1917' : '#fff'}" stroke="#1b1917" stroke-width="2"/>`
+        + `<text x="${r1(it.x)}" y="${r1(it.y + 4)}" text-anchor="middle" class="pn" fill="${it.money && !it.s ? '#fff' : '#1b1917'}">${it.s ? 'S' : it.n}</text>`);
+    return `<svg class="${cls}" viewBox="0 0 ${L.W} ${L.H}" role="img" aria-label="His route on the map">`
+        + `<defs><filter id="kx-grey-${cls}"><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncR type="linear" slope=".78" intercept=".22"/><feFuncG type="linear" slope=".78" intercept=".22"/><feFuncB type="linear" slope=".78" intercept=".22"/></feComponentTransfer></filter></defs>`
+        + `<rect width="${L.W}" height="${L.H}" fill="#f2f0eb"/><g filter="url(#kx-grey-${cls})">${L.tiles.map((t) => `<image href="${t.href}" x="${r1(t.x)}" y="${r1(t.y)}" width="${r1(t.size)}" height="${r1(t.size)}"/>`).join('')}</g>`
+        + L.drawn.map((ar) => `<path d="${ar.pts.map((r) => `M${r.map((p) => `${r1(p[0])},${r1(p[1])}`).join('L')}Z`).join('')}" fill="none" stroke="#1b1917" stroke-width="1.4" stroke-dasharray="7 4" opacity=".75"/>`).join('')
+        + (route.length > 1 ? `<polyline points="${route.map((it) => `${r1(it.x)},${r1(it.y)}`).join(' ')}" fill="none" stroke="#1b1917" stroke-width="2" stroke-dasharray="6 4"/>` : '')
+        + L.items.map(mark).join('')
+        + L.labels.map((l) => `<text x="${r1(l.x)}" y="${r1(l.y + 4.5)}" text-anchor="middle" class="ar">${esc(l.name.toUpperCase())}</text>`).join('') + '</svg>';
+};
+export function mapSvg(d, borders = []) {
+    const pc = mapLayout(d, borders, 700, 195), ph = mapLayout(d, borders, 360, 250);
+    if (!pc) return '';
+    const names = [...Object.entries(pc.count).sort((x, y) => y[1] - x[1]).map(([k, v]) => `${esc(k)} ${v}`), ...[...new Set(pc.visible)].filter((v) => !pc.count[v]).map(esc)].join(' · ');
+    return `<figure class="route">${frame(pc, 'pc')}${frame(ph, 'ph')}`
+        + `<figcaption><span><i class="k s"></i>sale or order</span><span><i class="k v"></i>visited, no sale</span>${pc.items.some((it) => it.m) ? '<span><i class="k m"></i>not visited</span>' : ''}${pc.items.some((it) => it.s) ? '<span><b>S</b> his first position</span>' : ''}`
+        + `${names ? `<span><b>Areas on this map:</b> ${names}</span>` : ''}<span>Shops a few metres apart sit side by side. The line joins the shops in order; it is not the road he rode. Map © Esri</span></figcaption></figure>`;
 }
 
 /* C: one salesman */
@@ -160,6 +215,7 @@ small, th { font: 700 7pt/1 ui-monospace, Consolas, monospace; letter-spacing: .
 .sum b { display: block; margin-top: 1.6mm; font-size: 13pt; white-space: nowrap; }
 .route { margin: 4mm 0 0; }
 .route svg { display: block; width: 100%; height: auto; font-family: system-ui, sans-serif; }
+.route .ph { display: none; }
 .route .pn { font: 700 11px ui-monospace, Consolas, monospace; }
 .route .ar { font: 800 12px system-ui, sans-serif; letter-spacing: .1em; fill: #1b1917; stroke: #fff; stroke-width: 3.5px; stroke-linejoin: round; paint-order: stroke; }
 figcaption, .key { display: flex; flex-wrap: wrap; gap: 1.5mm 5mm; margin-top: 2mm; font-size: 8pt; color: var(--dim); }
@@ -169,11 +225,11 @@ i.k.s { background: var(--ink); } i.k.m { border: .3mm dashed #a39d94; }
 table { width: 100%; border-collapse: collapse; margin-top: 4mm; }
 thead { display: table-header-group; } tr { break-inside: avoid; }
 th { text-align: left; padding: 0 3mm 2mm 0; border-bottom: .4mm solid var(--ink); }
-td { padding: 1.1mm 3mm 1.1mm 0; line-height: 1.3; vertical-align: top; border-bottom: .2mm solid var(--rule); }
+td { padding: .8mm 3mm .8mm 0; line-height: 1.3; vertical-align: top; border-bottom: .2mm solid var(--rule); }
 .n { text-align: right; padding-right: 0; white-space: nowrap; }
 .n + td, .n + th { padding-left: 6mm; }
 td.t { font-family: ui-monospace, Consolas, monospace; white-space: nowrap; }
-.sub { display: block; margin-top: .3mm; color: var(--dim); font-size: 8.5pt; line-height: 1.25; }
+.sub { display: block; margin-top: .3mm; color: var(--dim); font-size: 8.5pt; line-height: 1.15; }
 .res { font: 700 8pt/1.2 ui-monospace, Consolas, monospace; letter-spacing: .06em; white-space: nowrap; }
 .res.money { text-decoration: underline .5mm var(--gold); text-underline-offset: 1.2mm; }
 tfoot td { border-bottom: 0; border-top: .4mm solid var(--ink); font-weight: 700; padding-top: 2.6mm; }
@@ -194,6 +250,7 @@ tfoot td { border-bottom: 0; border-top: .4mm solid var(--ink); font-weight: 700
   body { font-size: 9pt; } .sheet { padding: 6mm 4.5mm; margin: 10px auto; }
   .ph { flex-direction: column; align-items: flex-start; gap: 2mm; } .ph .m { text-align: left; } .ph h1 { font-size: 16pt; }
   .sum { grid-template-columns: 1fr 1fr; } .pf { flex-direction: column; gap: 1mm; }
+  .route .pc { display: none; } .route .ph { display: block; }
   thead { display: none; }
   tr { display: grid; column-gap: 3mm; padding: 2mm 0; border-bottom: .2mm solid var(--rule); }
   td, .n + td { padding: 0; border: 0; } tbody tr:last-child { border-bottom: 0; } tfoot tr { border-bottom: 0; border-top: .4mm solid var(--ink); }
