@@ -4,6 +4,7 @@
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
   { date: '2026-11-14', items: [
+    { kind: 'fixed', en: 'Journey Plan map on the phone: holding a finger on a shop shows its name again when other shops hide it.', id: 'Peta Rencana Perjalanan di HP: menahan jari di toko kembali menampilkan namanya saat tertutup toko lain.' },
     { kind: 'new', en: 'Journey Plan map: a visited shop now shows a flag with the visit result written on it (SALE, ORDER, CLOSED and so on) instead of a chest, and a shop still to visit is a small round pin in its salesman\'s colour. When a salesman reaches a shop, his figure plants the flag in the ground. The Day Replay shows the same.', id: 'Peta Rencana Perjalanan: toko yang sudah dikunjungi sekarang memakai bendera bertuliskan hasil kunjungan (SALE, ORDER, CLOSED dan lainnya) sebagai ganti peti, dan toko yang belum dikunjungi berupa pin bulat kecil dengan warna salesman-nya. Saat salesman sampai di toko, karakternya menancapkan bendera itu ke tanah. Day Replay juga sama.' },
   ] },
   { date: '2026-11-13', items: [

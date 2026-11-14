@@ -1,7 +1,8 @@
-/* Journey Plan's map objects, pixel art (his settled design 2026-10-03, prototype A-Brain
-   Raw/2026-10-03-map-keys/round5/map-chest-r5.html): a shop is a 14 x 14 chest, a visit plants a lit sign beside it,
-   a bubble is an inventory slot, a salesman is a pixel person in his squad colour. Strings, because Leaflet's
-   divIcon takes HTML. CSS lives in src/styles/expedition.css (.kx-c5, .kx-slot, .kx-sm). */
+/* Journey Plan's map objects. A shop still to visit is a round pin, a visit plants a flag with its result's word (his
+   2026-11-13 pick, shopHtml / groupHtml at the end), a salesman is a pixel person in his squad colour who plants it (his
+   2026-11-14 pick, planterHtml). The 2026-10-03 pixel chests and the bubble slot went with 7a3dc370; the visit signs stay
+   as the Day Replay's still pictures (.kx-sgn-*). Strings, because Leaflet's divIcon takes HTML. CSS lives in
+   src/styles/expedition.css (.kx-c5 = the shop marker's root, .kx-fl, .kx-pn, .kx-grp, .kx-sm). */
 
 /* one letter per pixel, '.' = empty; a run of one colour becomes one rect */
 export const px = (rows, pal) => {
@@ -22,25 +23,10 @@ const at = (rows, y0) => Array(y0).fill('').concat(rows);
 export const safeHex = (c, fallback = '#6A645C') => (/^#[0-9a-f]{6}$/i.test(String(c)) ? c : fallback);
 const darker = (hex, k = 0.7) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * k).toString(16).padStart(2, '0')).join('');
 
-/* ---- the chest: a 17-row canvas; closed = rows 3-16, open = the lid's dark inside face standing at rows 0-4 ---- */
-const W5DIM = { O: 'fill="#160E07"', H: 'fill="#7A5A38"', W: 'fill="#644629"', M: 'fill="#53391F"', D: 'fill="#3F2A15"', S: 'fill="#2C1C0D"',
-    k: 'fill="#1C1814"', L: 'fill="#A8A296"', l: 'fill="#6E6A62"', K: 'fill="#0D0804"' };
-const W5 = { O: 'fill="#24160A"', H: 'fill="#E0A55C"', W: 'fill="#BF8240"', M: 'fill="#9C6630"', D: 'fill="#74481C"', S: 'fill="#4E3012"',
-    k: 'fill="#2A2622"', L: 'fill="#F2EEE4"', l: 'fill="#A9A49A"', K: 'fill="#120A04"' };
-const BODY5 = ['OSSSSSSSSSSSSO', 'OHHHHHHHHHHHHO', 'OWWWWWWWWWWWMO', 'OMWWWWWWWWWWMO', 'OSSSSSSSSSSSSO', 'OHWWWWWWWWWWWO', 'OMWWWWWWWWWWMO', 'ODDDDDDDDDDDDO', '.OOOOOOOOOOOO.'];
-const LID5 = ['.OOOOOOOOOOOO.', 'OHHHHHHHHHHHHO', 'OWWWWWWWWWWWMO', 'OMWWWkkkkWWWMO', 'ODDDDkLLkDDDDO', '.....kLlk.....', '.....kllk.....', '.....kkkk.....'];
-const UNDER5 = ['.OOOOOOOOOOOO.', 'ODDDDDDDDDDDDO', 'ODMMMMMMMMMMDO', 'ODSSSSSSSSSSDO', 'ODDDDDDDDDDDDO'];
-const INSIDE5 = ['.OOOOOOOOOOOO.', 'OKKKKKKKKKKKKO', 'OKKKKKKKKKKKKO'];
-const CHEST5 = `<svg class="px chest" viewBox="0 0 14 17" width="28" height="34">`
-    + `<g>${px(at(BODY5, 8), W5DIM)}</g><g class="bright">${px(at(BODY5, 8), W5)}</g>`
-    + `<g>${px(at(INSIDE5, 5), W5)}</g><g class="lidU">${px(UNDER5, W5)}</g>`
-    + `<g class="lidF"><g>${px(LID5, W5DIM)}</g><g class="bright">${px(LID5, W5)}</g></g></svg>`;
-
 /* ---- the visit signs, his look C (2026-10-04 18:30, "C is the best because it is really clear"; drawn and checked on A-Brain
    Raw/2026-10-04-day-replay/day-replay.html v3). No board: each status is its own 12 x 12 object (the outline tells them apart
-   without colour), the lamp behind it says the family (gold money / pale no sale / red problem / none closed), the word under
-   it. Parts .m / .x ACT OUT the word once on the chest's moment (expedition.css kx-a-*), then stand still. Sale is the app's
-   own coin (his "one coin across the app"). Today's cream board read alike at 22 px: one outline for all ---- */
+   without colour), and the family and the word ride with it. Since the flags (7a3dc370) they are the Day Replay's still
+   pictures only (SPRITE_CSS .kx-sgn-*: its Day Log rows, chips and notches); sale is the app's own coin there ---- */
 const SP6 = Object.fromEntries(Object.entries({ K: '#0A0908', w: '#F0E2BC', v: '#D9C597', W: '#FFF8E6', G: '#E2A12E', Y: '#FFF4CF', g: '#9C6A1E',
     R: '#B3261E', r: '#E0473C', b: '#C98A4A', B: '#8A5A2C', s: '#A9A49A', S: '#6E6A62', t: '#E8E4DC', y: '#E4B04A' }).map(([k, v]) => [k, `fill="${v}"`]));
 const E12 = Array(12).fill('............');
@@ -99,55 +85,15 @@ export const kindByShop = (transactions, day, key) => {
     return k;
 };
 
-/* sparks: only on an element born to play the moment */
-const SPARKS = '<span class="fx">' + [[-14, -16], [12, -18], [-6, -24], [16, -6], [-17, -4], [5, -27]].map(([dx, dy]) => `<i style="--dx:${dx}px;--dy:${dy}px"></i>`).join('') + '</span>';
-
-/* AT REST a chest or a sign is ONE cached picture, not ~150 pixel squares (his "zoomed out ... so much lag on the
-   phone", 2026-10-03 17:30: every zoom rebuilt ~1,700-2,600 squares, frames up to 346 ms at phone speed). The same
-   pixel rows as the animated chest, frozen in each end state, so the swap after the moment is invisible. */
-const STILL = {
-    closed: px(at(BODY5, 8), W5DIM) + px(at(INSIDE5, 5), W5) + px(at(LID5, 3), W5DIM),   // not visited: dim, lid down
-    shut: px(at(BODY5, 8), W5) + px(at(INSIDE5, 5), W5) + px(at(LID5, 3), W5),           // closed store (and a bubble's chest)
-    open: px(at(BODY5, 8), W5) + px(at(INSIDE5, 5), W5) + px(UNDER5, W5),                // visited: lid up, dark inside
-};
 const uri = (body, w, h) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges">${body}</svg>`)}")`;
-/* NOBODY'S SHOP (his 2026-10-04 "give some mark on the stores that havent been assigned by anyone on red flag marked"): a
-   red pixel flag on a pole, one cached picture like the chests */
-const FREE = px(['OOOOOO.', 'OPrRRRO', 'OPRRRRO', 'OPRRRO.', 'OPOOO..', 'OP.....', 'OP.....', 'OP.....', 'OP.....', 'OO.....'],
-    { O: 'fill="#0A0908"', P: 'fill="#5B3F22"', R: 'fill="#B3261E"', r: 'fill="#E0473C"' });
-/* AN OPEN REQUEST (his 2026-10-04 "for request since it is very important we need more visible ... until order is
-   fullfilled", look B "is good"): a game's "!" - this shop wants something from you - top right of the chest (the red flag
-   owns the top left), on the bubble too, until someone presses Request done */
-const REQ = px(['.OOOOOO.', 'OYGGGGGO', 'OGGOOGGO', 'OGGOOGGO', 'OGGOOGGO', 'OGGOOGGO', 'OGGGGGGO', 'OGGOOGGO', 'OGGGGGGO', '.OOOOOO.', '...OO...', '....O...'],
-    { O: 'fill="#0A0908"', G: 'fill="#E2A12E"', Y: 'fill="#FFF4CF"' });
-export const SPRITE_CSS = Object.entries(STILL).map(([k, b]) => `.kx-spr-${k}{background-image:${uri(b, 14, 17)}}`)
-    .concat(Object.keys(PIC6).map((k) => `.kx-sgn-${k}{background-image:${uri(SIGN5[k].replace(/^<svg[^>]*>|<\/svg>$/g, ''), 12, 12)}}`))
-    .concat(`.kx-free{background-image:${uri(FREE, 7, 10)}}`, `.kx-req{background-image:${uri(REQ, 8, 12)}}`).join('\n');
+/* AT REST a sign is ONE cached picture, not ~150 pixel squares (his "zoomed out ... so much lag on the phone", 2026-10-03) */
+export const SPRITE_CSS = Object.keys(PIC6).map((k) => `.kx-sgn-${k}{background-image:${uri(SIGN5[k].replace(/^<svg[^>]*>|<\/svg>$/g, ''), 12, 12)}}`).join('\n');
 if (typeof document !== 'undefined' && !document.getElementById('kx-sprites')) {
     const s = document.createElement('style'); s.id = 'kx-sprites'; s.textContent = SPRITE_CSS; document.head.append(s);
 }
 
-/* a shop: not visited = dim closed chest; visited = lid open, dark inside, a lit sign; closed store = lid down + lock.
-   `play` = 'burst' (first visit) or 'resign' (the outcome changed) - only while the map is open, and only then is the
-   chest built from its animated parts */
-/* `tag`: the pressed salesman's own name tag with the stop number ("BS · 3", his look B 2026-10-04, "Name tags is easier
-   to see") - ownership in words, never only the ring's colour */
+/* a pressed salesman's name tag and the shop's name reach innerHTML: escaped */
 const escTag = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-/* `name`: the shop's name under the chest, always (his 2026-10-05 "keep the store name visible"); the status word rides at
-   its right end, shown only on hover / hold */
-export const chestHtml = (outcome, ring, play = '', tag = '', free = false, req = false, name = '') =>
-    `<div class="kx-c5${outcome ? ' v' : ''}${outcome === 'closed' ? ' shut' : ''}${play ? ` ${play}` : ''}${tag ? ' mine' : ''}" style="--c:${safeHex(ring)}"><i class="kx-ring"></i>`
-    + (tag ? `<span class="kx-otag"><i style="background:var(--c)"></i>${escTag(tag)}</span>` : '') + (free ? '<i class="kx-free"></i>' : '') + (req ? `<i class="kx-req${outcome === 'request' ? ' new' : ''}"></i>` : '')
-    + `<div class="art"><div class="hop">${play ? CHEST5 : `<i class="kx-spr kx-spr-${!outcome ? 'closed' : outcome === 'closed' ? 'shut' : 'open'}"></i>`}</div></div>`
-    + (outcome ? `<i class="sign5 k-${outcome} f-${SIGN_FAMILY[outcome]}"><i class="lamp"></i>${play || outcome === 'sold' ? SIGN5[outcome] : `<i class="kx-sgn kx-sgn-${outcome}"></i>`}</i>` : '')
-    + (name || outcome ? `<span class="kx-snm">${name ? `<i>${escTag(name)}</i>` : ''}${outcome ? `<b class="kx-sw">${SIGN_WORD[outcome]}</b>` : ''}</span>` : '')
-    + (play ? SPARKS : '') + '</div>';
-
-/* a bubble: an inventory slot, the shop count like an item stack, a bar filling amber with the visited share */
-export const slotHtml = (n, visited, free = false, req = false) =>   // free = the bubble holds a shop nobody is assigned to; req = one with an open request
-    `<div class="kx-slot${n && visited === n ? ' full' : ''}" style="--f:${n ? (visited / n).toFixed(3) : 0}">${free ? '<i class="kx-free"></i>' : ''}${req ? '<i class="kx-req"></i>' : ''}<div class="hop">`
-    + `<span class="kx-c5"><i class="kx-spr kx-spr-${n && visited === n ? 'open' : 'shut'}"></i></span><b class="cnt" data-n="${n}">${n}</b></div><i class="dur"><i></i></i></div>`;
-
 /* ---- the salesman: 10 x 14 pixel person, the shirt in his squad colour, two leg frames for walking ---- */
 export const HAIR = ['#2B1A0E', '#151210', '#5A3418'];   /* picked by the length of his id: Expedition's men and the Day Replay's man match */
 const HEAD = ['..OOOOOO..', '.OhhhhhhO.', '.OhsssshO.', '.OsessesO.', '.OsszzssO.'];
@@ -156,8 +102,6 @@ const LEGS_A = ['.OppOOppO.', '.OppOOffO.', '.OffO.OO..', '.OOOO.....'];   /* le
 const LEGS_B = ['.OppOOppO.', '.OffOOppO.', '..OO.OffO.', '.....OOOO.'];   /* the other way round */
 const LEGS_S = ['.OppOOppO.', '.OppOOppO.', '.OffO.OffO', '.OOOO.OOOO'];   /* both feet down: standing in a crowd */
 const STAND = HEAD.concat(TORSO, LEGS_S);
-const ARMS = ['s.OOOOOO.s', 'cOhhhhhhOc', 'cOhsssshOc', 'cOsessesOc', 'cOsszzssOc',   /* both hands up, holding the coin */
-    'OccccccccO', 'OcCccccCcO', 'OcCccccCcO', 'OcCccccCcO', 'OOppppppOO'].concat(LEGS_S);
 const pal = (hair, shirt) => {
     const c = safeHex(shirt, '#E8E4DE');
     return { O: 'fill="#0A0908"', h: `fill="${safeHex(hair, '#2B1A0E')}"`, s: 'fill="#E2AE80"', z: 'fill="#C48C5E"', e: 'fill="#2A1A10"',
@@ -167,15 +111,6 @@ export const personSvg = (hair, shirt) => {
     const P = pal(hair, shirt);
     return `<svg class="px" viewBox="0 0 10 14" width="30" height="42"><g class="legsA">${px(at(LEGS_A, 10), P)}</g><g class="legsB">${px(at(LEGS_B, 10), P)}</g>`
         + `<g>${px(HEAD.concat(TORSO), P)}</g></svg>`;
-};
-
-/* SELLING AT A SHOP (his pick B "paid", with "coin animation that used on the agent inventory and receipt", 2026-10-03
-   23:05): hands up holding Agent Inventory's spinning coin (.kpm-coin, theme.css). Standing is the moment's first frame
-   only; the resting picture is the held coin, so Lite and a freshly opened map show it. Motion in expedition.css. */
-export const sellerHtml = (hair, shirt) => {
-    const P = pal(hair, shirt);
-    return `<svg class="px" viewBox="0 0 10 14" width="30" height="42"><g class="pStand">${px(STAND, P)}</g><g class="pArms">${px(ARMS, P)}</g></svg>`
-        + '<span class="kx-cx"><span class="kx-cy"><i class="kpm-coin"></i></span></span>';
 };
 
 /* PLANTING THE FLAG (his 2026-11-14 "instead of opening chest we should do something to make it look like its interacting

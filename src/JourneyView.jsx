@@ -156,8 +156,8 @@ const MapRecenter = ({ trigger, saveTrigger, savedHome, onSaveHome, defaultCente
    carry GPS — the outlet form captures it — but nothing in the save path enforces it, and Leaflet
    given a NaN pair does not error: it drifts to the map's default view. For a question that is
    specifically about DISTANCE, silently showing the wrong place is the worst possible answer. */
-/* his 2026-10-05 "keep the store name visible": every chest wears its shop's name (mapSprites chestHtml). A name that would
-   land on another name, a name tag, a man, a bubble or another chest is hidden - Expedition's own rule for shop names -
+/* his 2026-10-05 "keep the store name visible": every pin and flag wears its shop's name (mapSprites shopHtml). A name that
+   would land on another name, a name tag, a man, a group or another shop is hidden - Expedition's own rule for shop names -
    and zooming in brings it back (hover / hold shows it anyway, expedition.css). Clear all, read all, then write: one
    layout pass, not one per name */
 const ShopNames = () => {
@@ -185,9 +185,9 @@ const ShopNames = () => {
     return null;
 };
 
-/* his look C (2026-10-04): every visited shop's sign carries its word - and his 19:45 "only showing when hovered or hold that
-   way it looks cleaner": hidden at rest (expedition.css), a mouse shows it on hover, a finger held FOLDER_HOLD_MS on a chest
-   shows it until release - his folder-day rule, hold is a preview, tap is the commit. The click a held finger fires on
+/* his 2026-10-04 19:45 "only showing when hovered or hold that way it looks cleaner" - since the flags (7a3dc370) the word
+   is on the flag itself, so what a hover or a hold shows is a shop name ShopNames hid in a crowd: a mouse on hover, a finger
+   held FOLDER_HOLD_MS on a pin or flag until release - his folder-day rule, hold is a preview, tap is the commit. The click a held finger fires on
    release is swallowed before Leaflet sees it (Leaflet listens on this same container, bubbling), so a hold never opens
    the popup; a normal tap opens it as before. One listener set on the container, not one per marker */
 const SignHold = () => {
@@ -201,13 +201,13 @@ const SignHold = () => {
             if (e.pointerType === 'mouse') return;
             end();
             const el = e.target.closest?.('.kx-mk');
-            if (!el?.querySelector('.kx-sw')) return;
+            if (!el?.querySelector('.kx-snm')) return;
             mk = el; x = e.clientX; y = e.clientY;
             timer = setTimeout(() => { swallow = true; mk.classList.add('held'); }, FOLDER_HOLD_MS);
         };
         const move = (e) => { if (mk && !swallow && Math.hypot(e.clientX - x, e.clientY - y) > 10) end(); };   // a pan, not a hold
         const click = (e) => { if (swallow) { swallow = false; e.stopPropagation(); e.preventDefault(); } };
-        const menu = (e) => { if (e.target.closest?.('.kx-mk')) e.preventDefault(); };   // no long-press menu over the chest
+        const menu = (e) => { if (e.target.closest?.('.kx-mk')) e.preventDefault(); };   // no long-press menu over a shop
         const on = [['pointerdown', down], ['pointermove', move], ['pointerup', end], ['pointercancel', end], ['click', click], ['contextmenu', menu]];
         on.forEach(([t, f]) => box.addEventListener(t, f, true));
         return () => { end(); on.forEach(([t, f]) => box.removeEventListener(t, f, true)); };

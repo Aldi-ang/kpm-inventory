@@ -198,143 +198,24 @@
 /* z-index auto: Leaflet gives every svg in the map 200 (.leaflet-map-pane svg), which lifted the sprites over the bubble's count and the sparks */
 .kx-mk .px { shape-rendering: crispEdges; display: block; overflow: visible; z-index: auto; }
 
-/* a shop: a 14 x 14 chest. Every wrapper is as big as the mark - a transformed 0-height wrapper threw the chest 28 px up */
+/* a shop: a round pin or a flag (mapSprites shopHtml), its root still .kx-c5 (ShopNames, the focus fade and the Day Replay
+   hook on it). Every wrapper is as big as the mark - a transformed 0-height wrapper threw the old chest 28 px up */
 .kx-c5 { position: relative; width: 28px; height: 34px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.kx-c5 .art, .kx-c5 .hop { position: absolute; inset: 0; transform-origin: 50% 100%; }
-.kx-c5 .art { transition: transform 180ms cubic-bezier(.23, 1, .32, 1); }
+.kx-c5 .art { position: absolute; inset: 0; transform-origin: 50% 100%; transition: transform 180ms cubic-bezier(.23, 1, .32, 1); }
 @media (hover: hover) and (pointer: fine) { .kx-c5:hover .art { transform: translateY(-3px); } }
 .kx-c5:active .art { transform: scale(.92); transition-duration: 80ms; }
-.kx-c5 svg.chest, .kx-c5 .kx-spr { position: absolute; left: 0; bottom: 0; width: 28px; height: 34px; }
-/* at rest: one cached picture each (src/utils/mapSprites.js SPRITE_CSS). Longhands ONLY: the `background:` shorthand
-   reset background-image, and when this file loaded after the injected pictures every chest went blank (2026-11-03) */
-.kx-spr, .kx-sgn { background-position: center; background-size: 100% 100%; background-repeat: no-repeat; }
-.kx-sgn { position: relative; display: block; width: 24px; height: 24px; }
-.kx-c5 .lidF, .kx-c5 .lidU { transform-box: fill-box; transform-origin: 50% 100%; }
-.kx-c5 .lidF { transform: translateY(3px); }
-.kx-c5 .lidU { opacity: 0; }
-/* the front tilts up INTO the back rim (row 5), the line the inside face then rises from - onto the front edge left a 3-row jump */
-.kx-c5.v:not(.shut) .lidF { opacity: 0; transform: translateY(-3px) scaleY(.15); }
-.kx-c5.v:not(.shut) .lidU { opacity: 1; }
-.kx-c5 .bright { opacity: 0; }
-.kx-c5.v .bright { opacity: 1; }
-.kx-c5 .kx-ring { position: absolute; left: 50%; bottom: -5px; width: 36px; height: 12px; translate: -50% 0; border-radius: 50%; border: 2px solid var(--c); background: rgba(10, 9, 8, .55); z-index: -1; }
-/* the sign: his look C (2026-10-04), a 12 x 12 object at 2x; the lamp's colour says the family, closed has none */
-.kx-c5 .sign5 { position: absolute; left: 18px; bottom: -9px; width: 24px; height: 24px; transform-origin: 50% 100%; }
-.kx-c5 .sign5 > svg { position: relative; width: 24px; height: 24px; }
-.kx-c5 .sign5 .m, .kx-c5 .sign5 .x { transform-box: fill-box; }   /* each part turns about its own box (the shutter rolls from its top) */
-.kx-c5 .sign5 .kpm-coin { position: relative; display: block; }
-.kx-c5 .sign5 .kpm-coin::before { animation: none; transform: translateX(-72px); }   /* the app's coin, still on its face */
-.kx-c5 .lamp { position: absolute; left: -10px; top: -11px; width: 44px; height: 36px; border-radius: 50%;
-  background: radial-gradient(closest-side, var(--l1, rgba(255, 214, 140, .62)), var(--l2, rgba(228, 176, 74, .22)) 55%, transparent); }
-.kx-c5 .f-plain { --l1: rgba(240, 226, 188, .34); --l2: rgba(240, 226, 188, .1); }
-.kx-c5 .f-problem { --l1: rgba(224, 88, 58, .55); --l2: rgba(179, 38, 30, .2); }
-.kx-c5 .f-closed .lamp { visibility: hidden; }
-/* the shop's name under the chest, always (his 2026-10-05 "keep the store name visible"), below the sign's foot; a long name
-   ends in "..." (the popup has it whole). A name that would sit on another name, a tag, a man or a chest hides until zoomed
-   in (Expedition's rule for shop names, JourneyView ShopNames) and comes back on hover / hold */
+/* the Day Replay's still signs (mapSprites SPRITE_CSS). Longhands ONLY: the `background:` shorthand reset background-image,
+   and when this file loaded after the injected pictures every picture went blank (2026-11-03) */
+.kx-sgn { position: relative; display: block; width: 24px; height: 24px; background-position: center; background-size: 100% 100%; background-repeat: no-repeat; }
+/* the shop's name under its pin or flag, always (his 2026-10-05 "keep the store name visible"); a long name ends in "..."
+   (the popup has it whole). A name that would sit on another name, a tag, a man or a shop hides until zoomed in
+   (Expedition's rule for shop names, JourneyView ShopNames) and comes back on hover / hold (JourneyView SignHold) */
 .kx-c5 .kx-snm { position: absolute; left: 50%; top: calc(100% + 11px); translate: -50% 0; display: flex; pointer-events: none; }
 .kx-c5 .kx-snm > i { display: block; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 2px 4px 1px;
   background: rgba(10, 9, 8, .84); color: #E8E4DE; font: 700 10px/1 var(--font-display); font-style: normal; letter-spacing: .02em; }
-/* the status word rides at the name's right end, one strip, never a second box (his "stacking reads as clutter"). His
-   2026-10-04 19:45 "only showing when hovered or hold that way it looks cleaner": hidden at rest, shown on hover (mouse) or
-   while a finger holds the chest (JourneyView SignHold); the sign, its lamp and the "!" stay. The shown one rises over its
-   neighbours so no chest covers it */
-.kx-c5 .kx-sw { position: absolute; left: 100%; top: 0; white-space: nowrap; padding: 2px 4px 1px; border-left: 1px solid rgba(232, 228, 222, .25);
-  background: rgba(10, 9, 8, .84); color: #E4B04A; font: 800 10px/1 var(--font-display); letter-spacing: .06em; pointer-events: none; visibility: hidden; }
-.kx-mk.held .kx-sw { visibility: visible; }
 .kx-mk.held .kx-snm > i { visibility: visible !important; }
 .kx-mk.held { z-index: 100000 !important; }
-@media (hover: hover) and (pointer: fine) { .kx-mk:hover .kx-sw { visibility: visible; } .kx-mk:hover .kx-snm > i { visibility: visible !important; } .kx-mk:hover { z-index: 100000 !important; } }
-.kx-c5 .fx { position: absolute; left: 30px; top: 18px; width: 0; height: 0; pointer-events: none; }
-.kx-c5 .fx i { position: absolute; width: 4px; height: 4px; background: #FFE2A0; opacity: 0; }
-.kx-c5 .fx i:nth-child(2n) { background: #E4B04A; width: 3px; height: 3px; }
-/* the moment: keyframes FROM the closed values, on the element Leaflet builds for the new icon */
-.kx-c5.burst .hop { animation: kx-hop 600ms both; }
-@keyframes kx-hop {
-  0%   { transform: none; animation-timing-function: cubic-bezier(.3, 0, .5, 1); }
-  16%  { transform: scale(1.14, .84); animation-timing-function: cubic-bezier(.2, .6, .35, 1); }
-  44%  { transform: translateY(-9px) scale(.94, 1.08); animation-timing-function: cubic-bezier(.55, 0, .85, .35); }
-  64%  { transform: scale(1.1, .9); animation-timing-function: cubic-bezier(.2, .8, .3, 1); }
-  82%  { transform: scale(.98, 1.02); }
-  100% { transform: none; }
-}
-.kx-c5.burst:not(.shut) .lidF { animation: kx-lid-tilt 190ms cubic-bezier(.5, 0, .9, .6) 220ms both; }
-@keyframes kx-lid-tilt { from { opacity: 1; transform: translateY(3px); } 92% { opacity: 1; } to { opacity: 0; transform: translateY(-3px) scaleY(.15); } }
-.kx-c5.burst:not(.shut) .lidU { animation: kx-lid-unfold 340ms cubic-bezier(.34, 1.56, .64, 1) 400ms both; }
-@keyframes kx-lid-unfold { from { opacity: 1; transform: scaleY(0); } to { opacity: 1; transform: none; } }
-.kx-c5.burst .bright { animation: kx-fade-in 240ms ease 150ms both; }
-@keyframes kx-fade-in { from { opacity: 0; } }
-.kx-c5.burst .sign5 { --d: 540ms; animation: kx-fade-in 140ms ease 540ms both; }
-.kx-c5.burst .lamp { animation: kx-lamp-on 520ms cubic-bezier(.23, 1, .32, 1) 820ms both; }
-.kx-c5.burst .fx i { animation: kx-spark 680ms cubic-bezier(.23, 1, .32, 1) 840ms; }
-.kx-c5.resign .sign5 { --d: 0ms; animation: kx-fade-in 140ms ease both; }
-.kx-c5.resign .lamp { animation: kx-lamp-on 520ms cubic-bezier(.23, 1, .32, 1) 260ms both; }
-.kx-c5.resign .fx i { animation: kx-spark 680ms cubic-bezier(.23, 1, .32, 1) 280ms; }
-/* the act: every sign acts out its word once (700 ms) as it plants - the frames drawn and frozen on A-Brain
-   Raw/2026-10-04-day-replay (v3). Nothing loops; Lite Mode kills them and leaves the still picture */
-.kx-c5:is(.burst, .resign) .sign5 :is(.m, .x, .kpm-coin) { animation: 700ms var(--d) both; }
-.kx-c5:is(.burst, .resign) .k-sold .kpm-coin { animation-name: kx-a-sold; }
-.kx-c5:is(.burst, .resign) .k-sold .kpm-coin::before { animation: kx-coin-turn 574ms steps(8, end) calc(var(--d) + 70ms) backwards; }
-.kx-c5:is(.burst, .resign) .k-order .m { animation-name: kx-a-order; }
-.kx-c5:is(.burst, .resign) .k-full .m { animation-name: kx-a-full-m; }
-.kx-c5:is(.burst, .resign) .k-full .x { animation-name: kx-a-full-x; }
-.kx-c5:is(.burst, .resign) .k-issue .m { animation-name: kx-a-issue-m; }
-.kx-c5:is(.burst, .resign) .k-issue .x { animation-name: kx-a-issue-x; }
-.kx-c5:is(.burst, .resign) .k-request .m { animation-name: kx-a-request-m; }
-.kx-c5:is(.burst, .resign) .k-request .x { animation-name: kx-a-request-x; }
-.kx-c5:is(.burst, .resign) .k-closed .m { animation-name: kx-a-closed-m; }
-.kx-c5:is(.burst, .resign) .k-closed .x { animation-name: kx-a-closed-x; }
-.kx-c5:is(.burst, .resign) .k-routine .m { animation-name: kx-a-routine-m; }
-.kx-c5:is(.burst, .resign) .k-routine .x { animation-name: kx-a-routine-x; }
-.kx-c5:is(.burst, .resign) .k-swap .m { animation-name: kx-a-swap-m; }
-.kx-c5:is(.burst, .resign) .k-swap .x { animation-name: kx-a-swap-x; }
-/* sale: the coin jumps up and spins one turn (the app's own 8 frames), then shows its face */
-@keyframes kx-a-sold { 0% { transform: translateY(10px); opacity: 0; animation-timing-function: ease-out; } 28% { transform: translateY(-4px); opacity: 1; animation-timing-function: ease-in-out; } 42%, 100% { transform: none; opacity: 1; } }
-@keyframes kx-coin-turn { from { transform: translateX(0); } to { transform: translateX(-192px); } }
-/* repeat order: the cart rolls away and comes back round for more */
-@keyframes kx-a-order { 0%, 12% { transform: none; opacity: 1; animation-timing-function: ease-in; } 42% { transform: translateX(9px); opacity: 0; }
-  50% { transform: translateX(-9px); opacity: 0; animation-timing-function: cubic-bezier(.23, 1, .32, 1); } 86%, 100% { transform: none; opacity: 1; } }
-/* stock full: one more pack is pushed in, there is no room, it bounces back out and falls away */
-@keyframes kx-a-full-x { 0% { transform: translate(-6px, 0); opacity: 0; } 15% { transform: translate(-4px, 0); opacity: 1; animation-timing-function: ease-in; }
-  35% { transform: none; opacity: 1; animation-timing-function: cubic-bezier(.23, 1, .32, 1); } 55% { transform: translate(-4px, -3px); opacity: 1; animation-timing-function: ease-in; }
-  85%, 100% { transform: translate(-6px, 5px); opacity: 0; } }
-@keyframes kx-a-full-m { 0%, 34% { transform: none; } 40% { transform: translateX(.7px); } 50%, 100% { transform: none; } }
-/* competitor: two swords swing in and clash */
-@keyframes kx-a-issue-m { 0% { transform: rotate(-38deg); opacity: 0; } 15% { transform: rotate(-38deg); opacity: 1; animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
-  45% { transform: rotate(5deg); animation-timing-function: ease-out; } 62%, 100% { transform: none; opacity: 1; } }
-@keyframes kx-a-issue-x { 0% { transform: rotate(38deg); opacity: 0; } 15% { transform: rotate(38deg); opacity: 1; animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
-  45% { transform: rotate(-5deg); animation-timing-function: ease-out; } 62%, 100% { transform: none; opacity: 1; } }
-/* new request: a note drops on, the pin presses it in, it swings from the pin */
-@keyframes kx-a-request-m { 0% { transform: translateY(-5px) rotate(-8deg); opacity: 0; animation-timing-function: cubic-bezier(.23, 1, .32, 1); } 30% { transform: rotate(-8deg); opacity: 1; }
-  45% { transform: rotate(-8deg); animation-timing-function: ease-in-out; } 62% { transform: rotate(5deg); animation-timing-function: ease-in-out; }
-  78% { transform: rotate(-2deg); animation-timing-function: ease-in-out; } 90%, 100% { transform: none; opacity: 1; } }
-@keyframes kx-a-request-x { 0%, 28% { transform: translateY(-4px); opacity: 0; } 34% { transform: translateY(-2px); opacity: 1; animation-timing-function: ease-in; } 44%, 100% { transform: none; opacity: 1; } }
-/* store closed: the shutter rolls down, the padlock drops on and swings */
-@keyframes kx-a-closed-m { 0%, 5% { transform: scaleY(.12); animation-timing-function: cubic-bezier(.55, 0, 1, .45); } 45% { transform: none; } 51% { transform: scaleY(.93); } 58%, 100% { transform: none; } }
-@keyframes kx-a-closed-x { 0%, 55% { transform: translateY(-5px); opacity: 0; animation-timing-function: ease-in; } 72% { transform: none; opacity: 1; animation-timing-function: ease-in-out; }
-  80% { transform: rotate(-10deg); animation-timing-function: ease-in-out; } 88% { transform: rotate(6deg); animation-timing-function: ease-in-out; } 96%, 100% { transform: none; opacity: 1; } }
-/* routine check: the glass sweeps over the shop, then the tick shows inside it */
-@keyframes kx-a-routine-m { 0% { transform: translateX(-3px); opacity: 0; } 15% { transform: translateX(-3px); opacity: 1; animation-timing-function: ease-in-out; }
-  45% { transform: translateX(2px); animation-timing-function: ease-in-out; } 68% { transform: translateX(-1px); animation-timing-function: ease-in-out; } 82%, 100% { transform: none; opacity: 1; } }
-@keyframes kx-a-routine-x { 0%, 78% { opacity: 0; } 90%, 100% { opacity: 1; } }
-/* exchange: the taped crate and a clean one trade places */
-@keyframes kx-a-swap-m { 0% { transform: translate(5px, 6px); opacity: 0; } 12% { transform: translate(5px, 6px); opacity: 1; animation-timing-function: ease-in-out; }
-  40% { transform: translate(5px, -2px); animation-timing-function: ease-in-out; } 75%, 100% { transform: none; opacity: 1; } }
-@keyframes kx-a-swap-x { 0% { transform: translate(-5px, -6px); opacity: 0; } 12% { transform: translate(-5px, -6px); opacity: 1; animation-timing-function: ease-in-out; }
-  40% { transform: translate(-5px, 2px); animation-timing-function: ease-in-out; } 75%, 100% { transform: none; opacity: 1; } }
-@keyframes kx-lamp-on { from { opacity: 0; transform: scale(.4); } 45% { opacity: 1; transform: scale(1.25); } }
-@keyframes kx-spark { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.4); } }
-
-/* a bubble: an inventory slot - the chest inside, the count like an item stack, a bar filling amber with the visited share */
-.kx-slot { position: relative; width: 42px; height: 51px; }
-.kx-slot .hop { position: relative; width: 42px; height: 42px; background: #8B8B8B; border: 3px solid; border-color: #373737 #FFFFFF #FFFFFF #373737; display: grid; place-items: center; }
-.kx-slot .kx-c5 { width: 28px; height: 34px; cursor: inherit; }
-.kx-slot .cnt { position: absolute; right: 2px; bottom: 1px; font: 900 16px/1 var(--font-display); color: #FFFFFF; z-index: 1; }
-.kx-slot .cnt::before { content: attr(data-n); position: absolute; left: 2px; top: 2px; color: #3F3F3F; z-index: -1; }
-.kx-slot .dur { position: absolute; left: 0; right: 0; top: 46px; height: 5px; background: #0A0908; border: 1px solid #0A0908; }
-.kx-slot .dur i { position: absolute; inset: 0; background: #E4B04A; transform-origin: 0 50%; transform: scaleX(var(--f)); }
-.kx-slot.full .hop::after { content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(115deg, transparent 30%, rgba(186, 120, 255, .35) 46%, rgba(255, 214, 140, .30) 54%, transparent 70%); }
+@media (hover: hover) and (pointer: fine) { .kx-mk:hover .kx-snm > i { visibility: visible !important; } .kx-mk:hover { z-index: 100000 !important; } }
 
 /* a salesman: a pixel person in his squad colour, a name tag above (initials · shops done) */
 .kx-sm { position: relative; width: 30px; height: 42px; }
@@ -358,31 +239,10 @@
 @keyframes kx-breathe { 50% { transform: translateY(-1px); } }
 .kx-sm.off { opacity: .5; }
 .kx-sm.dim { opacity: .35; }
-/* selling at a shop (his pick B with Agent Inventory's coin, 2026-10-03 23:05): he stands just left of the shop's chest,
-   hands up, the coin spinning over his head. Every resting style here is the LAST frame (Lite, a freshly opened map).
-   The moment rides the chest's own secure moment (.kx-c5.burst opens the lid 220-740 ms): the coin pops out above the
-   chest's back rim at 600 ms and lands in his raised hands at 1050 ms - 31 px right / 13 px down of its resting place,
-   from his anchor (46, 39) against the chest's (14, 31). */
-.kx-sm.sell .body { animation: kx-breathe 2600ms ease-in-out infinite; }
-.kx-sm.sell .pStand { opacity: 0; }
-.kx-sm.sell .tag { bottom: calc(100% + 22px); }
-.kx-sm.sell .quest { bottom: calc(100% + 44px); }
-.kx-sm .kx-cx { position: absolute; left: 6px; top: -19px; width: 18px; height: 18px; }
-.kx-sm .kx-cy, .kx-sm .kx-cy .kpm-coin { display: block; }
-.kx-sm.sell.play .pStand { animation: kx-cut-out 1000ms steps(1, end) both; }
-.kx-sm.sell.play .pArms { animation: kx-cut-in 1000ms steps(1, end) both; }
+/* a pose swap: one picture out, the next in, on the frame the moment says (the planting man below) */
 @keyframes kx-cut-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes kx-cut-in { from { opacity: 0; } to { opacity: 1; } }
-.kx-sm.sell.play .kx-cx { animation: kx-coin-x 450ms linear 600ms both; }
-.kx-sm.sell.play .kx-cy { animation: kx-coin-y 450ms linear 600ms both; }
-@keyframes kx-coin-x { from { transform: translateX(31px); } to { transform: none; } }
-@keyframes kx-coin-y {
-  0%   { opacity: 0; transform: translateY(13px) scale(.6); animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
-  8%   { opacity: 1; }
-  70%  { transform: translateY(-4px) scale(1); animation-timing-function: cubic-bezier(.6, 0, .8, .4); }
-  100% { opacity: 1; transform: none; }
-}
-@media (prefers-reduced-motion: reduce) { .kx-sm .body, .kx-sm .legsA, .kx-sm .legsB, .kx-sm .quest, .kx-sm .pStand, .kx-sm .pArms, .kx-sm .kx-cx, .kx-sm .kx-cy { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .kx-sm .body, .kx-sm .legsA, .kx-sm .legsB, .kx-sm .quest { animation: none; } }
 /* PLANTING THE FLAG (his 2026-11-14 pick A, "plant it looks the best"; mapSprites planterHtml): he lifts the pole, stabs
    it down at 440 ms, then keeps his fist on it - one clock with the flag's .kx-fl.plant (the cloth unrolls 520-880 ms,
    the gust starts at 0.52 s). The resting style is the last picture, fist on the pole. Anchor (32, 40) in Expedition.jsx
@@ -406,24 +266,12 @@
 .kx-crowd-shadow { position: absolute; left: -9px; top: 16px; width: 60px; height: 10px; border-radius: 50%; background: rgba(0, 0, 0, .45); }
 
 /* ---- the pressed salesman (his look B, 2026-10-04: "Name tags is easier to see"): his own name tag over each of his
-   chests with the stop number, everyone else fades - ownership said in words and brightness, never only in colour
+   shops with the stop number, everyone else fades - ownership said in words and brightness, never only in colour
    (his "especially for the people who color blinds"). Static: a tag that replayed on every zoom would read as a glitch */
 .kx-c5 .kx-otag { position: absolute; left: 50%; bottom: calc(100% + 6px); translate: -50% 0; white-space: nowrap; padding: 3px 5px 2px; background: rgba(10, 9, 8, .82);
   color: #FFFFFF; font: 800 12px/1 var(--font-display); letter-spacing: .06em; display: flex; align-items: center; gap: 5px; pointer-events: none; z-index: 2; }
 .kx-c5 .kx-otag i { width: 7px; height: 7px; }
 .kx-focus .leaflet-marker-icon > .kx-c5:not(.mine) { opacity: .28; }
-/* nobody's shop: a red pixel flag at the chest's top-left (and at a bubble's corner); the sign keeps the right side */
-.kx-free { position: absolute; left: -9px; top: -6px; width: 14px; height: 20px; background-size: 100% 100%; background-repeat: no-repeat; image-rendering: pixelated; z-index: 1; pointer-events: none; }
-.kx-slot .kx-free { left: -9px; top: 22px; }   /* low on the left edge: the crowd stands on the top, the count sits bottom-right */
-/* an open request: the "!" (his look B, 2026-10-04) top right of the chest - clear of the red flag (top left) and of the
-   name tag (measured on the drawn page: 0 clashes); it drops in once on the moment the request is sent, then stands still */
-.kx-req { position: absolute; left: 42px; top: -10px; width: 16px; height: 24px; background-size: 100% 100%; background-repeat: no-repeat; image-rendering: pixelated; z-index: 2; pointer-events: none; transform-origin: 50% 100%; }
-.kx-slot .kx-req { left: 30px; top: -16px; }
-.kx-c5.burst .kx-req.new { animation: kx-req-drop 600ms 540ms both; }   /* .new = today's report IS the request; an older one stays put */
-.kx-c5.resign .kx-req.new { animation: kx-req-drop 600ms both; }
-@keyframes kx-req-drop { 0% { transform: translateY(-16px); opacity: 0; animation-timing-function: cubic-bezier(.55, 0, 1, .45); }
-  45% { transform: translateY(0) scale(1.1, .88); opacity: 1; animation-timing-function: ease-out; } 65% { transform: translateY(-4px) scale(.96, 1.05); animation-timing-function: ease-in-out; }
-  82%, 100% { transform: none; opacity: 1; } }
 .kx-arrow { display: block; width: 16px; height: 16px; overflow: visible; }
 .kx-title { margin-left: 8px; padding: 2px 5px 1px; border: 1px solid var(--line-3); border-radius: 4px; color: #E4B04A; font: 800 10px/1 var(--font-display); letter-spacing: .1em; font-style: normal; vertical-align: 2px; white-space: nowrap; }
 .kx-roadsw { display: inline-flex; gap: 4px; margin: 6px 0 2px; }
@@ -774,7 +622,6 @@
 /* the replay's shop: the app's own planting moment (.kx-fl.plant, his 2026-11-14 "yes"), the props 560-1260 ms */
 .kx-rp-mk .kx-rp-prop { position: absolute; left: 0; top: 0; pointer-events: none; opacity: 0; }
 .kx-rp-mk .kx-rp-prop svg { display: block; }
-.kx-rp-mk.picked .kx-ring { border-color: #E4B04A; border-width: 3px; }
 /* his tag steps aside while he stands at a shop: the shop's own tag is the label there */
 .kx-rp-man .kx-sm .tag { transition: opacity 160ms ease; }
 .kx-rp-man .kx-sm.busy .tag { opacity: 0; }

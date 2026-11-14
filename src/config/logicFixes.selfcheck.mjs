@@ -10384,9 +10384,10 @@ section('Expedition map');
        /href=\{`https:\/\/wa\.me\/[\s\S]{0,500}?!text-\[var\(--ink\)\]/.test(jvc),
        'his screenshot: a blue fullscreen key, an emerald Fly Home, white zoom keys, green secured pins on a slate map');
   }
-  {  /* JOURNEY MAP, HIS SETTLED DESIGN (2026-10-03): a shop is a chest, a visit plants a lit sign per outcome, a bubble is
-        an inventory slot, the secure moment plays only on a change seen while the map is open */
-    const { signFor, SIGN5, chestHtml, slotHtml } = await import('../utils/mapSprites.js');
+  {  /* JOURNEY MAP, HIS SETTLED DESIGN (2026-10-03; since 7a3dc370 a shop is a round pin, a visit plants a flag with its word,
+        a bubble is a group ring - his 2026-11-13 "better professional pin looking but stays animated"); the moment plays only
+        on a change seen while the map is open */
+    const { signFor, SIGN5, shopHtml, groupHtml } = await import('../utils/mapSprites.js');
     const jvr = read('src/JourneyView.jsx'), exc = read('src/styles/expedition.css');
     const tags = JSON.parse(jvr.match(/const QUICK_TAGS = (\[[^\]]*\]);/)?.[1] || '[]');
     const got = tags.map((t) => signFor(t, false));
@@ -10395,39 +10396,32 @@ section('Expedition map');
        signFor('Store Closed 🔒', true) === 'sold' && signFor('Stock Full (No Order) 🛑', false, true) === 'swap' && signFor('', true, true) === 'sold' &&
        ['order', 'routine', 'full', 'issue', 'request', 'closed', 'swap'].every((k) => SIGN5[k]?.includes('<rect')) && SIGN5.sold?.includes('kpm-coin'),
        `${tags.join(' / ')} -> ${got.join()}`);
-    ok('Journey map chest re-run: not visited = no sign; visited = open + lit sign; closed = lid down; a squad colour that is not a plain hex never reaches the HTML; the slot fills with the visited share',
-       !chestHtml(null, '#a855f7').includes('sign5') && /class="kx-c5 v"/.test(chestHtml('order', '#a855f7')) && chestHtml('order', '#a855f7').includes('class="lamp"') &&
-       /class="kx-c5 v shut"/.test(chestHtml('closed', '#a855f7')) && !chestHtml('routine', 'red;background:url(x)').includes('url(') &&
-       /--f:0\.250/.test(slotHtml(4, 1)) && /kx-slot full/.test(slotHtml(3, 3)) && !/kx-slot full/.test(slotHtml(3, 2)),
-       chestHtml('closed', '#a855f7').slice(0, 60));
-    ok('Journey map traps: marker wrappers inset 0, the lid tilts INTO the back rim, glows are gradients, the moment is only for a change seen while the map is open',
-       /\.kx-c5 \.art, \.kx-c5 \.hop \{ position: absolute; inset: 0;/.test(exc) &&
-       /\.kx-c5\.v:not\(\.shut\) \.lidF \{ opacity: 0; transform: translateY\(-3px\) scaleY\(\.15\); \}/.test(exc) &&
-       !/\.kx-(c5|slot|sm)[^{]*\{[^}]*box-shadow/.test(exc) && /\.kx-mk \.px \{[^}]*z-index: auto;/.test(exc) &&
+    ok('Journey map pin + flag re-run: not visited = a round pin, no word; visited = a flag in its result\'s family with the word on it; a squad colour that is not a plain hex never reaches the HTML; a group fills its ring with the visited share',
+       shopHtml(null, '#a855f7').includes('kx-pn') && !shopHtml(null, '#a855f7').includes('kx-fl') && /class="kx-c5 kx-fl v f-money"/.test(shopHtml('order', '#a855f7'))
+       && [...'ORDER'].every((ch) => shopHtml('order', '#a855f7').includes(`>${ch}</text>`)) && /class="kx-c5 kx-fl v f-closed"/.test(shopHtml('closed', '#a855f7'))
+       && !shopHtml('routine', 'red;background:url(x)').includes('background') && /--f:0\.250/.test(groupHtml(4, 1)) && /--f:1\.000/.test(groupHtml(3, 3)),
+       shopHtml('closed', '#a855f7').slice(0, 60));
+    ok('Journey map traps: marker wrappers inset 0, outlines are borders never shadows (Lite kills shadows), the moment is only for a change seen while the map is open',
+       /\.kx-c5 \.art \{ position: absolute; inset: 0;/.test(exc) &&
+       !/\.kx-(c5|fl|pn|grp|sm)[^{]*\{[^}]*box-shadow/.test(exc) && /\.kx-mk \.px \{[^}]*z-index: auto;/.test(exc) &&
        /if \(!prev\) return;/.test(jvr) && /if \(!\(id in prev\) \|\| prev\[id\] === outcomeById\[id\]\) continue;/.test(jvr),
-       'measured on the round-5 prototype: a 0-height wrapper threw the chest 28 px up; the front-edge collapse left a 3-row jump');
+       'measured on the round-5 prototype: a 0-height wrapper threw the old chest 28 px up');
     /* HIS 2026-10-04 18:30 "C is the best because it is really clear" (look C, drawn on A-Brain Raw/2026-10-04-day-replay v3):
        no board - each status its own 12 x 12 object, a family lamp, the word; each acts out its word once on the moment.
        Today's board gave all 7 signs ONE outline (overlap 1.00): Sale / Repeat Order / Stock Full read alike at 22 px. And an
        exchange (RETUR) counted as a sale: a shop whose only record today was an exchange showed the Sale coin */
     { const { SIGNS, SIGN_FAMILY, SIGN_WORD, SPRITE_CSS, kindByShop } = await import('../utils/mapSprites.js');
       const ex = code(exc), jv = code(jvr);
-      const parts = (k) => [...SIGN5[k].matchAll(/class="(m|x)"/g)].map((m) => m[1]);
-      const actOf = (k, p) => (ex.match(new RegExp(`\\.k-${k} \\.${p} \\{ animation-name: (kx-a-[a-z-]+); \\}`)) || [])[1];
-      const acts = SIGNS.filter((k) => k !== 'sold').flatMap((k) => parts(k).map((p) => actOf(k, p)));
       const mask = (k) => { const g = Array.from({ length: 12 }, () => Array(12).fill(false));
         [...SIGN5[k].replace(/<g class="x" style="[^"]*opacity:0">[\s\S]*?<\/g>/, '').matchAll(/<rect x="(\d+)" y="(\d+)" width="(\d+)"/g)]
           .forEach(([, x, y, w]) => { for (let i = 0; i < +w; i++) if (g[+y]) g[+y][+x + i] = true; }); return g; };
       const iou = (A, B) => { let i = 0, u = 0; A.forEach((r, y) => r.forEach((v, x) => { if (v && B[y][x]) i++; if (v || B[y][x]) u++; })); return i / u; };
       const kinds = SIGNS.filter((k) => k !== 'sold'); let worst = 0, pair = '';
       kinds.forEach((a, i) => kinds.slice(i + 1).forEach((b) => { const v = iou(mask(a), mask(b)); if (v > worst) { worst = v; pair = `${a}/${b}`; } }));
-      ok('Journey signs, his look C: every status has its own object (no two share an outline), a still picture, a family lamp and its word; every part that moves has its act and the act exists; nothing loops; each part turns about its own box',
+      ok('Journey signs, his look C: every status has its own object (no two share an outline) and its still picture, which the Day Replay list draws; every result has a family and a one-word name (the flag\'s word)',
          SIGNS.length === 8 && worst < .9 && kinds.every((k) => SPRITE_CSS.includes(`.kx-sgn-${k}{`)) && SIGNS.every((k) => ['money', 'plain', 'problem', 'closed'].includes(SIGN_FAMILY[k]))
-         && /\.kx-c5 \.f-plain \{/.test(ex) && /\.kx-c5 \.f-problem \{/.test(ex) && /\.kx-c5 \.f-closed \.lamp \{ visibility: hidden; \}/.test(ex)
-         && SIGNS.every((k) => /^[A-Z]+$/.test(SIGN_WORD[k]) && chestHtml(k, '#a855f7').includes(`<b class="kx-sw">${SIGN_WORD[k]}</b>`))
-         && acts.length >= 13 && acts.every((a) => a && new RegExp(`@keyframes ${a} \\{`).test(ex)) && /\.k-sold \.kpm-coin \{ animation-name: kx-a-sold; \}/.test(ex)
-         && !/kx-a-[a-z-]+[^;{}]*infinite/.test(ex) && /\.kx-c5 \.sign5 \.m, \.kx-c5 \.sign5 \.x \{ transform-box: fill-box; \}/.test(ex),
-         `outline overlap max ${worst.toFixed(2)} (${pair}), acts ${acts.length}`);
+         && SIGNS.every((k) => /^[A-Z]+$/.test(SIGN_WORD[k])) && /kx-sgn kx-sgn-\$\{k\}/.test(read('src/components/DayReplay.jsx')),
+         `outline overlap max ${worst.toFixed(2)} (${pair})`);
       const kb = kindByShop([{ date: 'D', customerName: 'A', type: 'RETUR' }, { date: 'D', customerName: 'B', type: 'SALE' }, { date: 'D', customerName: 'B', type: 'RETUR' },
         { date: 'D', customerName: 'C', type: 'RETUR' }, { date: 'D', customerName: 'C', type: 'SALE' }, { date: 'X', customerName: 'E', type: 'SALE' },
         { date: 'D', customerName: 'F', type: 'SALE', paymentType: 'Retur/BS' }, null], 'D', (s) => s);
@@ -10435,11 +10429,12 @@ section('Expedition map');
          shows it on hover, a finger held FOLDER_HOLD_MS shows it until release and the click that follows a hold is swallowed
          (or the popup opens anyway - measured on the lab build 2026-10-05: 18 words at rest, a hold opened the popup) */
       const hold = (jv.match(/const SignHold = \(\) => \{[\s\S]*?\n\};/) || [''])[0];
-      ok('Journey signs re-run: an exchange is not a sale - a shop whose only record today is a RETUR gets the Exchange sign, any real sale still wins, another day counts nothing; the word shows only on hover (PC) or hold (phone), and a hold never opens the popup',
+      ok('Journey signs re-run: an exchange is not a sale - a shop whose only record today is a RETUR gets the Exchange sign, any real sale still wins, another day counts nothing; a shop name hidden in a crowd shows on hover (PC) or hold (phone), and a hold never opens the popup',
          JSON.stringify(kb) === JSON.stringify({ A: 'swap', B: 'sold', C: 'sold', F: 'swap' })
          && /signFor\(s\.lastVisitTag, kind === 'sold', kind === 'swap'\)/.test(jv) && /signFor\(store\.lastVisitTag, kind === 'sold', kind === 'swap'\)/.test(jv)
-         && /\.kx-c5 \.kx-sw \{[^}]*visibility: hidden;/.test(ex) && /\.kx-mk\.held \.kx-sw \{ visibility: visible; \}/.test(ex)
-         && /@media \(hover: hover\) and \(pointer: fine\) \{[^{}]*\.kx-mk:hover \.kx-sw \{ visibility: visible; \}/.test(ex)
+         && /\.kx-mk\.held \.kx-snm > i \{ visibility: visible !important; \}/.test(ex)
+         && /@media \(hover: hover\) and \(pointer: fine\) \{[^{}]*\.kx-mk:hover \.kx-snm > i \{ visibility: visible !important; \}/.test(ex)
+         && /if \(!el\?\.querySelector\('\.kx-snm'\)\) return;/.test(hold)
          && !/SignWords/.test(jv) && /<SignHold \/>\s*<\/MapContainer>/.test(jv)
          && /pointerType === 'mouse'\) return/.test(hold) && /setTimeout\([\s\S]{0,80}classList\.add\('held'\)[\s\S]{0,20}FOLDER_HOLD_MS\)/.test(hold)
          && /if \(swallow\) \{[^}]*stopPropagation\(\)/.test(hold) && /\['click', click\]/.test(hold) && /addEventListener\(t, f, true\)/.test(hold) && /\}, \[map\]\);/.test(hold),
@@ -10449,10 +10444,10 @@ section('Expedition map');
          the right (one strip) on hover / hold; a name that would sit on another hides until zoomed in, but shows on hover /
          hold; the name is escaped */
       const names = (jv.match(/const ShopNames = \(\) => \{[\s\S]*?\n\};/) || [''])[0];
-      ok('Journey shop names: every chest wears its shop\'s name at rest (visited or not, escaped), the status word joins it on hover / hold, a crowded name hides until zoomed in and comes back on hover / hold',
-         chestHtml('sold', '#a855f7', '', '', false, false, 'Toko <A>').includes('<span class="kx-snm"><i>Toko &#60;A&#62;</i><b class="kx-sw">SALE</b></span>')
-         && chestHtml('', '#a855f7', '', '', false, false, 'Toko B').includes('<span class="kx-snm"><i>Toko B</i></span>')
-         && /\.kx-c5 \.kx-snm > i \{[^}]*text-overflow: ellipsis;/.test(ex) && /\.kx-c5 \.kx-sw \{[^}]*left: 100%;/.test(ex)
+      ok('Journey shop names: every pin and flag wears its shop\'s name at rest (visited or not, escaped), a crowded name hides until zoomed in and comes back on hover / hold',
+         shopHtml('sold', '#a855f7', '', '', false, false, 'Toko <A>').includes('<span class="kx-snm"><i>Toko &#60;A&#62;</i></span>')
+         && shopHtml('', '#a855f7', '', '', false, false, 'Toko B').includes('<span class="kx-snm"><i>Toko B</i></span>')
+         && /\.kx-c5 \.kx-snm > i \{[^}]*text-overflow: ellipsis;/.test(ex)
          && /\.kx-mk\.held \.kx-snm > i \{ visibility: visible !important; \}/.test(ex) && /\.kx-mk:hover \.kx-snm > i \{ visibility: visible !important; \}/.test(ex)
          && /<ShopNames \/>\s*<SignHold \/>\s*<\/MapContainer>/.test(jv) && /store\.openRequest, store\.name\)/.test(jv)
          && /querySelectorAll\('\.kx-snm > i'\)/.test(names) && /visibility = 'hidden'/.test(names) && /map\.on\('zoomend moveend', later\)/.test(names),
@@ -10487,8 +10482,7 @@ section('Expedition map');
        lastVisitTag, so a request was forgotten at the next visit. Now a New Request writes openRequest; only a Request done
        press clears it (asks, reports, logged); undoing today's request takes it back; the "!" sits top right on the chest
        and on the bubble */
-    { const { chestHtml: ch2, slotHtml: sl2, SPRITE_CSS: sc2 } = await import('../utils/mapSprites.js');
-      const jv = code(jvr), ex = code(exc), cut = (re) => (jv.match(re) || [''])[0];
+    { const jv = code(jvr), ex = code(exc), cut = (re) => (jv.match(re) || [''])[0];
       const report = cut(/const confirmCheckIn = async[\s\S]*?\n    \};/), undo = cut(/const handleUndoCheckIn = async[\s\S]*?\n    \};/), done = cut(/const handleRequestDone = async[\s\S]*?\n    \};/);
       ok('Journey open request: a New Request report opens it, any other report leaves it alone, undoing today\'s request takes it back, and only a Request done press clears it - asking first, reporting, logged',
          /* the write moved into dayLog.js visitReport on 2026-10-31 so the Sales Terminal's arrival sheet makes the same one */
@@ -10499,23 +10493,19 @@ section('Expedition map');
          && (jv.match(/openRequest: deleteField\(\)/g) || []).length === 2 && /openRequest: c\.openRequest && typeof c\.openRequest === 'object'/.test(jv)
          && (jv.match(/\{requestDoneKey\((customer|store)\)\}/g) || []).length === 2,
          'his: "until order is fullfilled"');
-      ok('Journey open request re-run: the "!" is on a shop with an open request and on its bubble, never without one; it drops in only when today\'s report IS the request; the map passes it and the bubble reads it',
-         ch2('request', '#a855f7', '', '', false, true).includes('class="kx-req new"') && ch2('routine', '#a855f7', '', '', false, true).includes('class="kx-req"')
-         && !ch2('request', '#a855f7').includes('kx-req') && sl2(3, 1, false, true).includes('kx-req') && !sl2(3, 1).includes('kx-req')
-         && sc2.includes('.kx-req{background-image:') && /\.kx-c5\.burst \.kx-req\.new \{ animation: kx-req-drop/.test(ex) && !/kx-req-drop[^;]*infinite/.test(ex)
-         && /\.kx-req \{ position: absolute; left: 42px; top: -10px;/.test(ex)
+      ok('Journey open request re-run: the "!" is on a shop with an open request (pin or flag) and on its group, never without one; it pings three times, then stands still; the map passes it and the group reads it',
+         shopHtml('request', '#a855f7', '', '', false, true).includes('class="kx-bd req"') && shopHtml(null, '#a855f7', '', '', false, true).includes('class="kx-bd req"')
+         && !shopHtml('request', '#a855f7').includes('kx-bd req') && groupHtml(3, 1, false, true).includes('kx-bd req') && !groupHtml(3, 1).includes('kx-bd req')
+         && /\.kx-bd\.req::after \{[^}]*animation: kx-ping 2\.4s ease-out 3; \}/.test(ex)
          && /metric\.agentName === 'Unassigned', !!store\.openRequest, store\.name\);/.test(jv) && /kxReq: req/.test(jv) && /options\?\.kxReq\)/.test(jv),
          'drawn and measured on the page: 0 clashes with the name tag (top centre) and the red flag (top left)'); }
     /* HIS "chest and person not colliding ... so much lag on the phone" (2026-10-03 17:30), measured at 6x CPU, 390 wide */
     const { SPRITE_CSS } = await import('../utils/mapSprites.js');
     const exj = code(read('src/components/Expedition.jsx'));
-    ok('Journey map lag re-run: a chest or bubble at rest is ONE cached picture (no pixel squares); only the element playing the moment is built from parts; every still look and every sign has its picture',
-       !chestHtml('order', '#a855f7').includes('<rect') && !chestHtml(null, '#a855f7').includes('<rect') && !slotHtml(3, 1).includes('<rect') &&
-       chestHtml('order', '#a855f7', 'burst').includes('<rect') && /kx-spr-open/.test(chestHtml('order', '#a855f7')) && /kx-spr-shut/.test(chestHtml('closed', '#a855f7')) &&
-       ['closed', 'shut', 'open'].every((k) => SPRITE_CSS.includes(`.kx-spr-${k}{background-image:url("data:image/svg+xml,`)) &&
-       ['order', 'routine', 'full', 'issue', 'request', 'closed', 'swap'].every((k) => SPRITE_CSS.includes(`.kx-sgn-${k}{`)) &&
-       /* look C (2026-10-04): the sale sign at rest is the app's own coin - one element, no squares */
-       !chestHtml('sold', '#a855f7').includes('<rect') && chestHtml('sold', '#a855f7').includes('kpm-coin'),
+    ok('Journey map lag re-run: a pin, a flag at rest and a group are plain shapes with no moving parts; only the flag just planted carries the wave (never in Lite); every result has its still sign picture',
+       !shopHtml('order', '#a855f7').includes('<animate') && !shopHtml(null, '#a855f7').includes('<rect') && !groupHtml(3, 1).includes('<rect')
+       && /const W = flagWidth\(outcome\), moving = !!play && !stillMotion\(\);/.test(read('src/utils/mapSprites.js'))
+       && ['order', 'routine', 'full', 'issue', 'request', 'closed', 'swap'].every((k) => SPRITE_CSS.includes(`.kx-sgn-${k}{`)),
        'zoomed out, every zoom rebuilt 1,704-2,621 pixel squares: frames up to 346 ms; with pictures 55-109 ms');
     ok('Journey map lag: the flowing line moves only where there is a mouse (one flowing line repaints the whole line layer every frame - 85% of a phone\'s main thread at rest)',
        /@media \(hover: hover\) and \(pointer: fine\) \{ \.kx-march \{ animation: kx-flow 5s linear infinite; \} \}/.test(exc) && !/^\.kx-march \{ animation/m.test(exc),
@@ -10559,16 +10549,14 @@ section('Expedition map');
        'the step-aside of eabda69 picked a new spot after every zoom, so he jumped');
     /* HIS "group of 8bit character" on the bubble (2026-10-03 20:15) and his pick B "paid" with "coin animation that used
        on the agent inventory and receipt" (23:05) */
-    const { crowdHtml, sellerHtml } = await import('../utils/mapSprites.js');
+    const { crowdHtml } = await import('../utils/mapSprites.js');
     const seven = Array.from({ length: 7 }, (_, k) => ['#2B1A0E', k % 2 ? '#a855f7' : 'red;background:url(x)']);
     const crowd = crowdHtml(seven), cluster = jvr.slice(jvr.indexOf('<MarkerClusterGroup'), jvr.indexOf('</MarkerClusterGroup>'));
     ok('Journey map crowd re-run: a bubble draws at most 5 men then "+N", none for no men, every figure a cached picture, a colour that is not a plain hex never reaches the HTML; the bubble counts shops only',
        (crowd.match(/class="kx-fig /g) || []).length === 5 && crowd.includes('<b>+2</b>') && crowdHtml([]) === '' && !crowd.includes('<rect') && !crowd.includes('url(') &&
        /<ExpeditionPeople [^>]*\/>/.test(cluster) && /groupHtml\(shops\.length, shops\.filter\(/.test(jvr) && /kxFig: \[hair, shirt\]/.test(exj),
        crowd.slice(0, 90));
-    ok('Journey map selling scene (B, the inventory coin): at a shop he holds the spinning .kpm-coin up; the resting style is the last picture (Lite and a fresh map); the moment plays only for a man newly seen at a shop while the map is open',
-       sellerHtml('#2B1A0E', '#a855f7').includes('class="pArms"') && sellerHtml('#2B1A0E', '#a855f7').includes('<i class="kpm-coin"></i>') &&
-       /\.kx-sm\.sell \.pStand \{ opacity: 0; \}/.test(exc) && /\.kx-sm\.sell\.play \.kx-cx \{ animation: kx-coin-x 450ms linear 600ms both; \}/.test(exc) &&
+    ok('Journey map: the man\'s moment at a shop plays only for a man newly seen at a shop while the map is open (now the planting scene below)',
        /if \(!\(a\.id in prev\)\) return;/.test(exj) && /playing\.current\[a\.id\] = now \+ 1500/.test(exj),
        'his: "chest and 8 bit character not colliding but combined into one animation instead"');
     /* HIS 2026-11-14: "actually i like the pixel guy better, but instead of opening chest we should do something to make it
@@ -10588,7 +10576,8 @@ section('Expedition map');
     const { roadStops } = await import('../utils/expedition.js');
     const man = { done: [{ key: 'A', lat: 1, lng: 1 }], ahead: [{ key: 'B', lat: 2, lng: 2 }, { key: 'C' }] };
     const today = roadStops(man, false, [{ key: 'X' }]), all = roadStops(man, true, [{ key: 'X' }, { key: 'Y' }]);
-    const tagged = chestHtml('order', '#a855f7', '', 'BS · 3');
+    const { shopHtml: shop5, groupHtml: group5 } = await import('../utils/mapSprites.js');
+    const tagged = shop5('order', '#a855f7', '', 'BS · 3');
     ok('Journey road re-run: today = his sales so far then the round still ahead, numbered 1..n; "All shops" = every shop assigned to him in stop order; nobody pressed = no road',
        today.map((s) => s.key + s.n).join() === 'A1,B2,C3' && all.map((s) => s.key + s.n).join() === 'X1,Y2' && roadStops(undefined, false, []).length === 0 &&
        /const \[roadAllFor, setRoadAllFor\] = useState\(null\);/.test(jvr) && /road=\{road\?\.points\}/.test(jvr) && /className="kx-road"/.test(exj),
@@ -10683,22 +10672,21 @@ section('Expedition map');
            r2.of === 3 && r2.ahead.map((s) => s.name).sort().join() === 'A,C,D' && /\(parseInt\(c\.visitFreq\) \|\| 7\) === 7/.test(code(read('src/utils/expedition.js'))),
            `of ${r2.of}: ${r2.ahead.map((s) => s.name)}`);
     }
-    ok('Journey "his chest" re-run: a pressed man\'s chest wears his name tag with the stop number (text, not colour), the tag is escaped, an untagged chest has none; everyone else fades',
-       /class="kx-c5 v mine"/.test(tagged) && tagged.includes('<span class="kx-otag">') && tagged.includes('BS · 3') && !chestHtml('order', '#a855f7').includes('kx-otag') &&
-       !chestHtml('order', '#a855f7', '', '<b>x').includes('<b>x') && /\.kx-focus \.leaflet-marker-icon > \.kx-c5:not\(\.mine\) \{ opacity: \.28; \}/.test(exc) &&
+    ok('Journey "his flag" re-run: a pressed man\'s shop wears his name tag with the stop number (text, not colour), the tag is escaped, an untagged one has none; everyone else fades',
+       /class="kx-c5 kx-fl v f-money mine"/.test(tagged) && tagged.includes('<span class="kx-otag"') && tagged.includes('BS · 3') && !shop5('order', '#a855f7').includes('kx-otag') &&
+       !shop5('order', '#a855f7', '', '<b>x').includes('<b>x') && /\.kx-focus \.leaflet-marker-icon > \.kx-c5:not\(\.mine\) \{ opacity: \.28; \}/.test(exc) &&
        /\$\{road \? ' kx-focus' : ''\}/.test(jvr),
        tagged.slice(0, 70));
     /* HIS 2026-10-04 10:20: "if i press one of the expedition user just show the stores that is being assigned for him
        instead even when zoomed out" + "give some mark on the stores that havent been assigned by anyone on red flag" +
        "i still cant see the team list when fullscreen btw i think it is a bug" (the small list showed only men out today) */
     const mini = exj.slice(exj.indexOf('export function ExpeditionMini('));
-    const { slotHtml: slot3 } = await import('../utils/mapSprites.js');
     ok('Journey pressed man = only his shops on the map, so the bubbles count his shops too (zoomed out); with a Paintbrush pen the others only fade, or nothing could be painted',
        /const hideOthers = !!road && expFocus && !activeBrush;/.test(jvr) && /if \(hideOthers && !road\.tagOf\[storeKey\(store\.name\)\] && !isEditing\) return null;/.test(jvr),
        'his: "just show the stores that is being assigned for him instead even when zoomed out"');
-    ok('Journey red flag: a shop nobody is assigned to carries a red flag, and so does a bubble holding one; an assigned shop has none',
-       chestHtml(null, '#6A645C', '', '', true).includes('class="kx-free"') && !chestHtml(null, '#a855f7').includes('kx-free') &&
-       slot3(3, 1, true).includes('class="kx-free"') && !slot3(3, 1).includes('kx-free') && /kxFree: free/.test(jvr) && /options\?\.kxFree\)/.test(jvr),
+    ok('Journey nobody\'s shop: a shop nobody is assigned to is a dashed red pin with "?" (a red "?" badge once it has a flag), and so is a group holding one; an assigned shop has none',
+       shop5(null, '#6A645C', '', '', true).includes('kx-pn nb') && shop5(null, '#6A645C', '', '', true).includes('<b class="q">?</b>') && shop5('order', '#6A645C', '', '', true).includes('class="kx-bd nb"')
+       && !shop5(null, '#a855f7').includes(' nb') && group5(3, 1, true).includes('class="kx-bd nb"') && !group5(3, 1).includes('kx-bd nb') && /kxFree: free/.test(jvr) && /options\?\.kxFree\)/.test(jvr),
        'his: "give some mark on the stores that havent been assigned by anyone on red flag marked"');
     ok('Journey fullscreen team list = the WHOLE team (men not out today dimmed, not hidden) on the PC rows and the phone chips',
        (mini.match(/\{team\.map\(\(t\) => \(/g) || []).length === 2 && !/not out today<\/small>/.test(mini) && /kx-mrow\$\{t\.live \? '' : ' off'\}/.test(mini),
@@ -13086,12 +13074,12 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
    (Day Replay) pulled mapSprites in before the Journey chunk's CSS arrived, every chest went blank; the red flags stayed,
    having no shorthand on them. Lab proof: the picture rules moved above expedition.css -> background-image `none`. */
 { const css = ['src/styles/expedition.css', 'src/styles/theme.css', 'src/index.css'].map(read).join('\n');
-  const rules = [...css.matchAll(/([^{}]*\.kx-(?:spr|sgn|free|req)\b[^{}]*)\{([^}]*)\}/g)];
+  const rules = [...css.matchAll(/([^{}]*\.kx-sgn\b[^{}]*)\{([^}]*)\}/g)];
   const shorthand = rules.filter((r) => /(^|[;\s])background\s*:/.test(r[2])).map((r) => r[1].trim());
-  ok('REGRESSION: no CSS rule on a map picture (.kx-spr / .kx-sgn / .kx-free / .kx-req) uses the `background:` shorthand - it would erase the picture when it loads after mapSprites',
+  ok('REGRESSION: no CSS rule on a sign picture (.kx-sgn, the Day Replay\'s still signs) uses the `background:` shorthand - it would erase the picture when it loads after mapSprites',
      rules.length > 0 && !shorthand.length, 'shorthand on: ' + shorthand.join(' | '));
-  ok('the chest and sign boxes still stretch their picture: position center, size 100% 100%, no repeat',
-     /\.kx-spr, \.kx-sgn \{ background-position: center; background-size: 100% 100%; background-repeat: no-repeat; \}/.test(css));
+  ok('the sign boxes still stretch their picture: position center, size 100% 100%, no repeat',
+     /\.kx-sgn \{ position: relative; display: block; width: 24px; height: 24px; background-position: center; background-size: 100% 100%; background-repeat: no-repeat; \}/.test(css));
 }
 
 /* THE SIDEBAR UTANG IGNORED A SAME-DAY PAYMENT (his 2026-11-03 sc2/sc3: Receivables Rp 1.050.000, the terminal's
