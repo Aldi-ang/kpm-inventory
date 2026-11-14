@@ -1,23 +1,24 @@
 # The one job
 
-Journey Plan must look its best before any other screen. Aldi, 2026-11-14: "we need to make sure the journey plan looks best first before doing other, but the next job after this done is definitely the fleet and roster". Fleet & Roster is the job AFTER this one.
+Journey Plan must look its best before any other screen (Aldi, 2026-11-14: "we need to make sure the journey plan looks best first before doing other, but the next job after this done is definitely the fleet and roster"). Fleet & Roster is the job AFTER this one.
 
-WAITING ON ALDI (verbatim):
-- ❓ Q2, board sent 14:35: "Want a mark? "yes" → I make 2-3 looks for you to pick. "no" → it stays as it is."
-- ❓ (13:18, unanswered): "Is your phone Android or iPhone? The simulator only does Android, and an iPhone can't be simulated on Windows."
+NOW: the Day Replay mark, looks round. He saw the board (NOW = a pressed shop with no pin marked, beside an example gold glow + ring) and said "q2= sure". Show him 2-3 looks, he picks, then build it.
 
-DONE today:
-- 14:27 LIVE bf2018d7 (Antigravity's 38 answers: 1 fixed, 37 open; tables in the A-Brain Backlog sweep notes, vault 203c7abe) + 78914bdf (capy-excited-6.mp3 removed for good). Antigravity's next task (the Retur audit) is in .claude/ANTIGRAVITY-TASK.md, Status OPEN - he starts it ("Do the task in .claude/ANTIGRAVITY-TASK.md").
-- 14:42 STEP 1, the print test, PASSED on the Android emulator (Android 15, Chrome 124): "Print his day" and "Print team day" -> Android's print screen shows only the paper, one page each. Board sent to him. How to run the emulator, and the IPv6 trap: A-Brain Wiki/Concepts/Looking at the App.md, section "A REAL Android phone" (vault e7180a8e). The driver (android/cdp.mjs: adb forward tcp:9223 localabstract:chrome_devtools_remote, CDP touch taps) lived in the scratchpad - rebuild it from that page if gone.
+1. Load the design stack first (alucard §1a): his taste file (A-Brain Wiki/Concepts/Aldi's Design Taste.md - grep it for mark, ring, glow, selected, pin, flag; never read it whole; its newest lines: no text may touch other text or a marker at any size; "best on phone" = a frame drawn for the phone), then emil-design-eng. Rules that bind: palette law (slate + gold, no blue, no green, gold never as text on light), Lite mode = performance (no rotation; nothing that has to move to be seen), every look must read at 375 on a phone.
+2. The code: DayReplay.jsx:217-220 gives the pressed shop's marker the class `picked` (`kx-mk kx-rp-mk picked`); src/styles/expedition.css has had no `.picked` rule since 7a3dc370 (the chest's gold ring left with the chest). A look can be CSS only.
+3. Frames: A-Brain Raw/2026-11-14-day-replay-mark/shoot.mjs - copy it to the scratchpad, build the lab (`npx vite build --config tools/ponder-lab.config.mjs`), start launch.json "ponder-lab-built". It presses BS -> "Replay his day" -> Pause -> WHOLE DAY -> full screen -> wheel-zooms on the shops -> presses Toko Makmur, then injects MARK_CSS. Give it one CSS per look; shoot NOW + A + B + C at 375 with phone media.
+4. Starting ideas, to check against his taste file (not promises): A a gold ring at the pin's foot (the example he saw); B the pressed pin itself turns gold and stands a little taller, its "BS · n" label gold too; C the other pins fade so only the pressed one stays bright.
+5. Board: the frames side by side, plain captions, my pick named, sent as a PNG. His letter -> build it in src/styles/expedition.css, one check in src/config/logicFixes.selfcheck.mjs that the `.kx-rp-mk.picked` rule exists, frames at 375 and 1280, a patch note line (src/config/patchNotes.js, en + id), the gates, push.
 
-STEP 2 - Q2 mark, after his answer. Yes -> a looks round (alucard §1a, his taste file first). The example was CSS only: `.kx-rp-mk.picked` drop-shadow + `::after` gold ellipse (DayReplay.jsx:217-220 sets `picked`; expedition.css has had no `.picked` rule since 7a3dc370). Shooter: lab at 375 with phone media: BS -> "Replay his day" -> Pause -> WHOLE DAY -> full screen (.kx-mapkey.k-full) -> wheel-zoom on the shops -> press Toko Makmur. No -> drop it.
-- Seen while shooting, NOT asked yet (show him a frame, do not fix): on the phone, full screen + WHOLE DAY zooms out until the day's 8 shops sit in one blob (cause not checked - maybe the fit includes his start point); the open card then covers half the map.
+STILL TO SHOW HIM (a frame, not words; do not fix unasked): on the phone, full screen + WHOLE DAY zooms out until the day's 8 shops sit in one blob (cause not checked - maybe the fit includes his start point); the open card then covers half the map.
 
-STEP 3 - ask him, with Journey Plan frames at 375 and 1280, whether anything else keeps it from looking its best. Do not invent polish. Then Fleet & Roster (graphify gives src/FleetCanvasManager.jsx for "fleet" - confirm which screen he means).
+After the mark: ask him, with Journey Plan frames at 375 and 1280, whether anything else keeps it from looking its best. Then Fleet & Roster (graphify gives src/FleetCanvasManager.jsx for "fleet" - confirm which screen he means).
+
+DONE today: LIVE bf2018d7 + 78914bdf (Antigravity's 38 answers; capy-excited-6.mp3 gone for good). The Day Log print test PASSED on the Android emulator (how-to: A-Brain Looking at the App, "A REAL Android phone"). He has both phones; "most of the users of this app would be on android" - the emulator is the main phone check. Antigravity: the Retur audit task is OPEN in .claude/ANTIGRAVITY-TASK.md, waiting for him to start it.
 
 TRAPS
 - Before any push: `git log origin/phase0-solid-ground..HEAD`; an `Antigravity:` commit gets `git show` + the gates re-run, or the push waits.
 - A ` D <file>` in git status can be a finished job's deletion that was never committed: grep the self-checks for the name before bringing it back.
-- Paper map traps: mapLayout() once per frame (700x195 A4/PC, 360x250 phone); keep "no word on another" green; zoom EXACT-fit; tiles near their own size; 15+ stops -> second page.
+- The lab server on localhost listens on IPv6 only; the emulator needs launch.json "ponder-lab-built-ipv4" (local, not committed) + `adb reverse tcp:4187 tcp:4188`.
 
 KEEP THIS FILE UNDER 7,000 CHARACTERS - ONE job. When a job is done, move its text to the top of NEXT-SESSION-archive.md and write the next one here.
