@@ -8,6 +8,11 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { dayLog, replayTimeline } from '../utils/dayLog.js';
 import { notify } from '../components/Toast.jsx';
 
+/* the day's Visit Reports and their undos: one read of that day's activity-log folder (the Day Log paper reads it too) */
+export const readVisitLogs = (db, appId, uid, day) =>
+    getDocs(query(collection(db, `artifacts/${appId}/users/${uid}/audit_vault/${day}/logs`), where('action', 'in', ['VISIT_REPORT', 'VISIT_UNDO'])))
+        .then((s) => s.docs.map((d) => ({ id: d.id, ...d.data() })));
+
 export function useDayReplay({ man, day, db, appId, uid, transactions, customers, lite }) {
     /* the day's Visit Reports: one read of that day's activity-log folder. `got` remembers which man + day it is for, so a
        new pick reads as "still reading" without a reset inside the effect */
@@ -16,8 +21,8 @@ export function useDayReplay({ man, day, db, appId, uid, transactions, customers
     useEffect(() => {
         if (!want) return undefined;
         let live = true;
-        getDocs(query(collection(db, `artifacts/${appId}/users/${uid}/audit_vault/${day}/logs`), where('action', 'in', ['VISIT_REPORT', 'VISIT_UNDO'])))
-            .then((s) => { if (live) setGot({ key: want, logs: s.docs.map((d) => ({ id: d.id, ...d.data() })) }); })
+        readVisitLogs(db, appId, uid, day)
+            .then((logs) => { if (live) setGot({ key: want, logs }); })
             .catch((e) => { if (!live) return; setGot({ key: want, logs: [] }); notify(`Could not read the visit reports for ${day} (${e.message}) - only his sales play.`); });
         return () => { live = false; };
     }, [want, day, db, appId, uid]);

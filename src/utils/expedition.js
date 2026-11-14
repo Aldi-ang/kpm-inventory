@@ -54,6 +54,11 @@ const his = (c, name) => {
     const a = String(c?.assignedAgent || '').trim().toLowerCase();
     return !!a && a !== 'unassigned' && a === String(name || '').trim().toLowerCase();
 };
+/* HIS ROUND on a weekday: his own shops due that day. A missing visitFreq is 7 (every day), exactly as Journey Plan's
+   sanitizer reads it - or a press hides shops Journey Plan itself lists as due today (test 2026-10-04). PENDING shops
+   count too since 2026-10-21 (his "all store registration should be automatically can be seen by every team member").
+   The Day Log paper (dayLogPaper.js) reads the same round for its "not visited". */
+export const roundOf = (customers, name, weekday) => customers.filter((c) => his(c, name) && ((parseInt(c.visitFreq) || 7) === 7 || c.visitDay === weekday));
 
 export function expedition(motorists = [], customers = [], transactions = [], now = new Date(), eods = []) {
     const today = getLocalDayKey(now);
@@ -88,10 +93,7 @@ export function expedition(motorists = [], customers = [], transactions = [], no
                 });
 
             /* the round still ahead, nearest-first from where he was last seen; a shop with no pin still counts, last */
-            /* a missing visitFreq is 7 (every day), exactly as Journey Plan's sanitizer reads it - or a press hides shops Journey
-               Plan itself lists as due today (test 2026-10-04) */
-            /* PENDING shops count too since 2026-10-21 (his "all store registration should be automatically can be seen by every team member") */
-            const round = customers.filter((c) => his(c, m.name) && ((parseInt(c.visitFreq) || 7) === 7 || c.visitDay === weekday));
+            const round = roundOf(customers, m.name, weekday);
             const left = round.filter((c) => !done.some((d) => d.key === storeKey(c.name)));
             const ahead = [];
             let from = at;

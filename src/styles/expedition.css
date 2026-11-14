@@ -712,7 +712,11 @@
 .kx-rp-go { min-height: 40px; padding: 0 12px; border: 1px solid #E4B04A; border-radius: 8px; background: var(--panel); color: var(--ink); justify-self: start;
   font: 800 12px/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
 .kx-rp-go svg { width: 14px; height: 14px; fill: currentColor; }
+.kx-keys { display: flex; flex-wrap: wrap; gap: 8px; justify-self: start; }   /* Replay his day + the Day Log paper's Print keys, one row */
 .kx-rp-rcpt { position: fixed; inset: 0; z-index: 9999; }
+/* the Day Log paper (src/utils/dayLogPaper.js): its page in a frame over the whole app, its own Print / Close keys on top */
+.kx-paper { position: fixed; inset: 0; z-index: 10000; background: #e9e6e1; }
+.kx-paper iframe { display: block; width: 100%; height: 100%; border: 0; }
 
 /* ---- the replay on the FULLSCREEN map, his look A (2026-10-05 "A - thin bottom bar", drawn compact on his "more compact
    especially on pc"): one bar along the map's bottom, the day as colour ticks - gold money, pale visited no sale, red a

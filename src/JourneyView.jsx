@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Truck, MapPin, CheckCircle, Phone, Store, Navigation, X, Save, MessageSquare, RotateCcw, Globe, AlertTriangle, Zap, ShoppingBag, Layers, ChevronDown, Paintbrush, LocateFixed, Maximize, Minimize, ChevronRight } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, deleteField, collection, getDocs, getDoc, setDoc } from "firebase/firestore";
 import { MapContainer, TileLayer, Marker, GeoJSON, Tooltip as LeafletTooltip, Popup, useMap, useMapEvents } from 'react-leaflet';
@@ -12,7 +13,8 @@ import { loadBorderCache, saveBorderCache } from './utils/borderCache';
 import { isFleetManagementTier, hasClearance } from './config/permissions';
 import { ExpeditionLayer, ExpeditionPanel, ExpeditionPeople, ExpeditionMini } from './components/Expedition.jsx';
 import { DayReplayLayer, DayReplayPanel } from './components/DayReplay.jsx';
-import { useDayReplay } from './hooks/useDayReplay.js';
+import { useDayReplay, readVisitLogs } from './hooks/useDayReplay.js';
+import { paperDay, manSheet, teamSheet, paperDoc, paperWait } from './utils/dayLogPaper.js';
 import { useWide } from './hooks/useWide';
 import { expedition, visibleTeam, roadStops, initials } from './utils/expedition';
 import { confirmAction } from './components/ConfirmGate.jsx';
@@ -1009,6 +1011,35 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         if (!id) return notify('Press a salesman in the Team list first.');
         setRpCam(null); setRpPick(null); setReplayFor({ id, day: todayDate });
     };
+    /* THE DAY LOG ON PAPER (his 2026-11-14 pick B + C, src/utils/dayLogPaper.js): `ids` = one man (his sheet, C) or the whole
+       Team list (one sheet, B). The page shows at once in a frame over the app ("Reading the day…" until the visit reports
+       are in) and its Print key prints that frame - the receipt's path (SaleReceipt.jsx). Not a new tab: a blocked pop-up
+       (the lab's browser, an installed app) left the press doing nothing but a toast */
+    const [paper, setPaper] = useState(null);
+    const printDay = async (ids, day, team) => {
+        const men = ids.map((id) => (motorists || []).find((m) => m.id === id)).filter(Boolean);
+        if (!men.length) return notify('Press a salesman in the Team list first.');
+        setPaper(paperWait);
+        let logs = [], warn = '';
+        try { logs = await readVisitLogs(db, appId, user?.uid, day); }
+        catch (e) { warn = `The visit reports could not be read (${e.message}) - only the sales are on this paper.`; }
+        const days = men.map((man) => paperDay({ man, day, transactions, logs, customers: rawCustomers || [] }));
+        const meta = { day, today: todayDate, warn, where: selectedTeam === 'All' ? '' : selectedTeam, company: appSettings?.companyName || '', borders: boundaries,
+            printed: new Date().toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) };
+        /* a Close pressed while it read leaves it closed */
+        setPaper((p) => p && paperDoc(team ? `Team Day Log ${day}` : `Day Log ${men[0].name} ${day}`, team ? teamSheet(days, meta) : manSheet(days[0], meta)));
+    };
+    const paperKeys = (e) => {
+        const w = e.currentTarget.contentWindow;
+        w.document.getElementById('kx-print')?.addEventListener('click', () => w.print());
+        w.document.getElementById('kx-close')?.addEventListener('click', () => setPaper(null));
+    };
+    const printMan = (day) => {
+        const id = replayFor?.id || team.find((a) => a.name === focusName)?.id;
+        if (!id) return notify('Press a salesman in the Team list first.');
+        printDay([id], day, false);
+    };
+    const printToday = () => printMan(todayDate), printTeam = () => printDay(team.map((a) => a.id), todayDate, true);
     const rpPickAt = (k) => { setRpPick(k); if (k != null) rp.setPlaying(false); };
     /* fullscreen (his "swap means change other people daily recording when press", 2026-10-05): while a day plays, a press
        on another man in the small Expedition plays HIS day - the same day, the camera kept; the card under the list is
@@ -1579,9 +1610,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 </MapContainer>
             </div>
             {replayFor ? !isFullScreen && (
-                <DayReplayPanel rp={rp} man={replayMan} day={replayFor.day} onDay={(day) => { setRpPick(null); setReplayFor({ ...replayFor, day }); }} onClose={() => setReplayFor(null)}
+                <DayReplayPanel rp={rp} man={replayMan} day={replayFor.day} onDay={(day) => { setRpPick(null); setReplayFor({ ...replayFor, day }); }} onClose={() => setReplayFor(null)} onPrint={() => printMan(replayFor.day)}
                     cam={rpCam || (wide ? 'whole' : 'follow')} onCam={setRpCam} picked={rpPick} onPick={rpPickAt} wide={wide} appSettings={appSettings} />
-            ) : team.length > 0 && <ExpeditionPanel team={team} sel={selId} onPick={pickAgent} wide={wide} scoped={!globalView} focused={!!road} roadAll={roadAll} onRoadAll={setRoadAll} onReplay={openReplay} page />}
+            ) : team.length > 0 && <ExpeditionPanel team={team} sel={selId} onPick={pickAgent} wide={wide} scoped={!globalView} focused={!!road} roadAll={roadAll} onRoadAll={setRoadAll} onReplay={openReplay}
+                onPrint={printToday} onPrintTeam={printTeam} page />}
             </div>
 
             <div className="pt-6 space-y-4 animate-fade-in">
@@ -1950,6 +1982,8 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 .region-watermark-label::before, .region-watermark-label::after { display: none !important; }
                 .leaflet-top.leaflet-left { margin-top: 70px !important; }
             `}</style>
+            {/* the Day Log paper over everything (the map keys are z-9999), in a layer of its own at the end of the page */}
+            {paper && createPortal(<div className="kx-paper"><iframe title="Day Log" srcDoc={paper} onLoad={paperKeys} /></div>, document.body)}
         </div>
     );
 };

@@ -13936,5 +13936,46 @@ section('PACKAGE RULES STAGE D: "took a package, returned the cigarettes within 
      hr.includes('packageReturns(contextualTransactions)') && hr.includes('{!isFieldAgent && (') && hr.includes('data-guide="package-returns"') &&
      hr.includes('Package counts cleared, last 30 days:') && /c\.bundleReset \|\| \{\}/.test(hr));
 }
+section('THE DAY LOG ON PAPER (his 2026-11-14 "paper like Todays log that can be printed", picked B + C): src/utils/dayLogPaper.js');
+{
+  const pp = await import('../utils/dayLogPaper.js');
+  const t = (h, m) => ({ seconds: Math.floor(new Date(2026, 10, 13, h, m).getTime() / 1000) });   // 2026-11-13 is a Friday
+  const shop = (name, agent, visitDay = 'Friday', extra = {}) => ({ id: name, name, assignedAgent: agent, visitFreq: 1, visitDay, latitude: -7.58, longitude: 110.29, ...extra });
+  const customers = [shop('Toko A', 'Budi'), shop('Warung <script>x</script>', 'Budi'), shop('Toko C', 'Budi'), shop('Toko Senin', 'Budi', 'Monday'), shop('Toko Ari', 'Ari')];
+  const transactions = [{ agentId: 'm2', customerName: 'Toko A', type: 'SALE', total: 1240000, items: [{ qty: 2, unit: 'Slop', name: 'Sampoerna Mild 16' }], timestamp: t(7, 52) },
+    { agentId: 'm2', customerName: 'Toko A', type: 'RETUR', paymentType: 'Retur/BS', total: 99, timestamp: t(7, 58) },
+    { agentId: 'm5', customerName: 'Toko Ari', type: 'SALE', total: 500000, timestamp: t(9, 0) }];
+  const logs = [{ action: 'VISIT_REPORT', details: 'Visited Warung <script>x</script> - Store Closed 🔒: tutup', user: 'budi@x.id', timestamp: t(8, 30) },
+    { action: 'VISIT_REPORT', details: 'Visited Toko C - Routine Check: salah', user: 'budi@x.id', timestamp: t(8, 40) },
+    { action: 'VISIT_UNDO', details: 'Undid visit for Toko C', user: 'budi@x.id', timestamp: t(8, 41) }];
+  const budi = pp.paperDay({ man: { id: 'm2', name: 'Budi', email: 'budi@x.id' }, day: '2026-11-13', transactions, logs, customers });
+  const ari = pp.paperDay({ man: { id: 'm5', name: 'Ari', email: 'ari@x.id' }, day: '2026-11-13', transactions, logs, customers });
+  ok('his day on paper: 2 shops of a Friday round of 3 (the Monday shop is not on it), the undone report gone so Toko C is NOT visited, 1 sale (the exchange is not one), total = the sale alone',
+     budi.shops.length === 2 && budi.of === 3 && budi.missed.map((m) => m.name).join() === 'Toko C' && budi.sales === 1 && budi.total === 1240000 && budi.first === '07:52' && budi.last === '08:30');
+  const meta = { day: '2026-11-13', today: '2026-11-13', where: 'MUNTILAN', printed: 'x' };
+  const c = pp.manSheet(budi, meta), b = pp.teamSheet([budi, ari], meta);
+  ok('a shop name or a note typed by a salesman is escaped (the page shares the app\'s origin): no raw <script> on either sheet',
+     !/<script>/i.test(c + b + pp.paperDoc('<script>', c)) && c.includes('Warung &#60;script&#62;x&#60;/script&#62;'));
+  ok('C carries the route drawing, the result words of the map\'s flags, the not-visited line and the honest time note; B\'s totals line is the sum of its men',
+     c.includes('<figure class="route">') && c.includes('>SALE<') && c.includes('>CLOSED<') && c.includes('>EXCHANGE<') && c.includes('Not visited today (1):</b> Toko C')
+     && c.includes('not when he arrived') && b.includes('Team · 2 of 2 out') && b.includes(`>${'3'} of 4<`) && b.includes((await import('../utils/helpers.js')).formatRupiah(1740000)));
+  const paperCss = pp.paperDoc('x', '');
+  ok('palette law on the paper: black ink, gold only as a line (never a text colour), no blue / green',
+     !/#3b82f6|#10b981|#38bdf8|#2563eb|\bblue\b|\bgreen\b/i.test(paperCss) && !/[^-]color: (?:var\(--gold\)|#e4b04a)/i.test(paperCss) && /underline \.5mm var\(--gold\)/.test(paperCss));
+  const jv = code(read('src/JourneyView.jsx')).replace(/\r/g, ''), ex = read('src/components/Expedition.jsx'), dr = read('src/components/DayReplay.jsx');
+  ok('it opens in a frame over the app and prints that frame (the receipt\'s path) - never a new tab, which a blocked pop-up turned into a dead press; Close while it reads stays closed',
+     jv.includes('createPortal(<div className="kx-paper"><iframe title="Day Log" srcDoc={paper} onLoad={paperKeys} /></div>, document.body)')
+     && jv.includes("addEventListener('click', () => w.print())") && jv.includes('setPaper((p) => p && paperDoc(') && !/window\.open\('',/.test(jv));
+  ok('three ways in: Print his day beside Replay his day, Print team day on the Team list, Print in the Day Replay (the shown day, so a past day prints)',
+     ex.includes('Print his day</button>') && ex.includes('Print team day</button>') && jv.includes('onPrint={printToday} onPrintTeam={printTeam} page />')
+     && dr.includes('onClick={onPrint}>Print</button>') && jv.includes('onPrint={() => printMan(replayFor.day)}'));
+  const mp = pp.mapSvg(budi, [{ name: 'Muntilan', feature: { type: 'Polygon', coordinates: [[[110.28, -7.59], [110.30, -7.59], [110.30, -7.57], [110.28, -7.57], [110.28, -7.59]]] } },
+    { name: 'Far', geometry: { type: 'Polygon', coordinates: [[[111, -8], [111.1, -8], [111.1, -7.9], [111, -8]]] } }]);
+  ok('his "show the map in full and its regional information": the route sits on the real street map (Esri, the Journey map\'s source) with Journey Plan\'s area borders - his 3 shops counted in Muntilan, an area off this piece of map not drawn',
+     mp.includes('server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/') && mp.includes('<b>Areas:</b> Muntilan 3') && mp.includes('>MUNTILAN</text>')
+     && !mp.includes('FAR') && mp.includes('Map © Esri') && jv.includes('borders: boundaries,') && c.includes('<figure class="route">'));
+  ok('one rule for "his round": the map\'s road and the paper\'s not-visited both read roundOf (expedition.js)',
+     /const round = roundOf\(customers, m\.name, weekday\);/.test(read('src/utils/expedition.js')) && read('src/utils/dayLogPaper.js').includes("import { roundOf } from './expedition.js';"));
+}
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

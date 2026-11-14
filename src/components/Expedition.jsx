@@ -239,8 +239,10 @@ const RoadSwitch = ({ all, onAll }) => (
     </div>
 );
 
-/* `onReplay`: the pressed man's Day Replay (src/components/DayReplay.jsx) - his day played back on this map */
-export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page, focused, roadAll, onRoadAll, onReplay }) {
+/* `onReplay`: the pressed man's Day Replay (src/components/DayReplay.jsx) - his day played back on this map.
+   `onPrint` / `onPrintTeam`: today's Day Log on paper - his sheet, or the whole team on one (src/utils/dayLogPaper.js) */
+const PRINTER = <svg viewBox="0 0 12 12"><path d="M3 1h6v3H3zM1 5h10v4H9v2H3V9H1zM4 8v2h4V8z" fillRule="evenodd" /></svg>;
+export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page, focused, roadAll, onRoadAll, onReplay, onPrint, onPrintTeam }) {
     const out = team.filter((a) => a.out);
     const done = out.reduce((s, a) => s + a.done.length, 0), of = out.reduce((s, a) => s + (a.of ?? a.done.length), 0);
     const a = team.find((t) => t.id === sel) || team[0];
@@ -249,7 +251,11 @@ export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page, focused
         <aside className={`kx-panel${page ? ' kx-page' : ''}`} aria-label="Team">
             <div className="kx-ph"><b>Team</b><span>{out.length} out · <em>{done}/{of}</em> shops</span></div>
             {focused && <RoadSwitch all={roadAll} onAll={onRoadAll} />}
-            {focused && onReplay && <button type="button" className="kx-rp-go" onClick={onReplay}><svg viewBox="0 0 12 12"><path d="M3 1.5v9l7.5-4.5z" /></svg>Replay his day</button>}
+            {(focused || (team.length > 0 && onPrintTeam)) && <div className="kx-keys">
+                {focused && onReplay && <button type="button" className="kx-rp-go" onClick={onReplay}><svg viewBox="0 0 12 12"><path d="M3 1.5v9l7.5-4.5z" /></svg>Replay his day</button>}
+                {focused && onPrint && <button type="button" className="kx-rp-go" onClick={onPrint}>{PRINTER}Print his day</button>}
+                {team.length > 0 && onPrintTeam && <button type="button" className="kx-rp-go" onClick={onPrintTeam}>{PRINTER}Print team day</button>}
+            </div>}
             {!team.length ? (
                 <p className="kx-empty">No salesman{scoped ? ' in your region' : ''} has sent a position yet. His phone sends one with every sale and every time he opens the app.</p>
             ) : wide ? (

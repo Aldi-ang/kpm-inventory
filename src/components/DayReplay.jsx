@@ -235,7 +235,8 @@ export function DayReplayLayer({ rp, ini, shirt, hair, cam, picked, onPick }) {
    `full` = the FULLSCREEN map (his look A, 2026-10-05 "A - thin bottom bar"): the same player as ONE thin bar along the map's
    bottom, the day as colour ticks; no totals and no Day Log; a pressed shop's card sits under the Expedition list on the PC
    (`cardHost`, a node inside ExpeditionMini) and above the player on the phone */
-export function DayReplayPanel({ rp, man, day, onDay, onClose, cam, onCam, picked, onPick, wide, appSettings, full, cardHost }) {
+/* `onPrint`: the shown day's Day Log on paper (src/utils/dayLogPaper.js) - a past day prints from here */
+export function DayReplayPanel({ rp, man, day, onDay, onClose, onPrint, cam, onCam, picked, onPick, wide, appSettings, full, cardHost }) {
     const { log, logs, stops, tl, cur, playing, toggle, speed, setSpeed, jumpTo, seek, setPlaying } = rp;
     const fill = useRef(null), head = useRef(null), clock = useRef(null), bar = useRef(null), panel = useRef(null), strip = useRef(null);
     const [rcpt, setRcpt] = useState(null);
@@ -298,7 +299,7 @@ export function DayReplayPanel({ rp, man, day, onDay, onClose, cam, onCam, picke
 
     return (
         <aside ref={panel} className={full ? 'kx-rp kx-rp-fs' : 'kx-panel kx-page kx-rp'} aria-label="Day Replay">
-            {!full && <div className="kx-ph"><b>Day Replay</b><button type="button" className="kx-rp-x" onClick={onClose}>Back to team</button></div>}
+            {!full && <div className="kx-ph"><b>Day Replay</b><div className="kx-keys">{onPrint && <button type="button" className="kx-rp-x" onClick={onPrint}>Print</button>}<button type="button" className="kx-rp-x" onClick={onClose}>Back to team</button></div></div>}
             {!full && <div className="kx-rp-who">
                 <div className="min-w-0"><span className="kx-nm">{man?.name}</span>
                     <small>{events.length} {events.length === 1 ? 'thing' : 'things'} recorded{log?.skipped ? ` · ${log.skipped} report${log.skipped > 1 ? 's' : ''} could not be read` : ''}</small></div>
