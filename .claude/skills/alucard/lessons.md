@@ -104,6 +104,7 @@ are u rushing things that havent done"*.
 Seen: 2026-07-30, 2026-08-02, 2026-08-16
 Fired: 2026-08-18 (carried forward from the archived entry; the fires that earned it are in Lessons-Archive.md)
 Fired: 2026-10-27 (giveaway + bundles rendered in the lab at 375 and 1440; a stale frame was re-shot after a DOM measure disagreed with it)
+Fired: 2026-11-14 (man + flag board: frames shot at 2x and 5x before publishing; the 5x frame showed his hand missing the pole, fixed with an 11th column fist)
 Fired: 2026-08-24 (refused to claim the new Settings permission row worked while the Master Vault password screen was up - reported it unseen instead; got eyes on it later the same session once he opened the vault himself, and it was correct)
 Fired: 2026-09-02 (the tech-pad draft was rendered at phone width before it was reported - the display painted behind its own housing and was invisible while the DOM was entirely correct; nothing but the frame could have caught it)
 Fired: 2026-09-06 (the greyed-out picker option is behind Firebase auth inside a selected consignment store; reported unverified in the commit, the note and the reply rather than claimed)
@@ -137,6 +138,8 @@ four contrast pairs, and the feasibility windows proved NO colour could satisfy 
 next session opened at 87% quota, spent it discovering the job was impossible, and shipped no
 pixels. One trial run at write time would have turned the brief into the right question instead.
 Seen: 2026-08-24
+Fired: 2026-11-14 14:4x (STEP 1 written as measured on the emulator; Q2 and the WHOLE DAY blob kept as questions, no fix promised)
+Fired: 2026-11-14 13:20 (Journey Plan brief: the emulator setup and the Save-as-PDF key written as an untested plan and a proposal, no fix promised)
 Fired: 2026-11-06 19:21 (the job is frames and one DECIDE, no edit promised)
 Fired: 2026-11-06 09:23 (the next job is frames and one DECIDE, no edit promised)
 Fired: 2026-11-02 (NEXT-SESSION names the agentId filter only after a node trial on the fixture: 750000 / 2 / Warung Bu Sri)
@@ -287,6 +290,7 @@ is context size x turns taken, that is the most expensive kind of nothing.
 in one line rather than inventing a log entry the hook asked for but the work did not earn.
 Seen: 2026-11-11 10:34 (missed twice in one session: a file written under .claude/ AFTER the notes - a sed on the task file, then a picture cropped into .claude/antigravity-out for him - made NEXT-SESSION the older file and the Stop hook blocked. Notes are the LAST write under .claude/; a picture for him is made before them or in the scratchpad)
 Seen: 2026-08-30 (x4 in one session)
+Fired: 2026-11-14 13:20 (after one Stop-hook block: his answers had moved the plan and no notes were written; lessons first, then NEXT-SESSION, then PROGRESS)
 Fired: 2026-09-01 (wrote NEXT-SESSION.md, then PROGRESS.md, then committed both together — the Stop hook did not fire once)
 Fired: 2026-11-08 (a notes script edited ANTIGRAVITY-TASK.md AFTER NEXT-SESSION + PROGRESS; the hook compares every .claude note file, so the task file goes FIRST. Cost: one Stop-hook block and a turn.)
 Fired: 2026-10-27 (NEXT-SESSION.md rewritten before PROGRESS.md at close)
@@ -741,6 +745,7 @@ file, and needed two TaskStop calls and a re-run — about three wasted turns, i
 where Aldi had just said *"i dont know why but suddently quota finishes so fast with just simple
 work"*.
 Seen: 2026-09-07
+Fired: 2026-11-14 14:44 (both lab preview servers stopped before the gates' npm run build)
 Fired: 2026-11-11 18:33 (both demo servers stopped before each of the 3 builds)
 Fired: 2026-11-08 05:52 (emulator and dev server stopped first)
 Fired: 2026-11-06 09:58 (emulator and dev server stopped first)
@@ -863,6 +868,7 @@ those tomorrow."* Acting on the first would have produced exactly the document A
 message explaining he did not want yet — a price put in front of family before they have a reason
 to want the thing. Caught only because the whole file was read before the first write.
 Seen: 2026-09-10
+Fired: 2026-11-14 13:04 (NEXT-SESSION read whole from the start-up print; no two parts disagree - item 3 "ask him before drawing one" done as a question, nothing drawn)
 Fired: 2026-11-08 09:3x (Sell Again brief read top block whole; the 08:54 block below is the superseded one, no contradiction)
 Fired: 2026-11-06 09:23 (the top block is the correction: it pauses #2, and its traps were checked against the code)
 Fired: 2026-11-02 (NEXT-SESSION top block read; older blocks marked, no contradiction for this job)
@@ -923,6 +929,7 @@ wrong, not the measurement.
 a 98 px name column and a two-line wrap. Caught by looking before composing; without the pin the
 board would have asked Aldi to fix a wrap he could not see.
 Seen: 2026-09-17
+Fired: 2026-11-14 14:31 (Q2 NOW frame shot at 375 with phone metrics, beside a mark frame of the same size)
 Fired: 2026-11-11 17:35 (today frames shot at a real 375 with touch media; the 5-row count read off the frame)
 Fired: 2026-11-02 (rail is xl-only; frame shot at a real 1440, defect visible in the TODAY frame before composing)
 Fired:2026-09-18 · 2026-09-19 (the store card boards: the first `today` PNG after a cold vite start was caught mid fade — the whole card dim beside a bright A; read back before sending, one frame reshot) 2026-09-22, 2026-10-06, 2026-10-21
@@ -950,6 +957,7 @@ phone at https://…" and he answered *"btw what is the test customer u mean?"* 
 the test still not run.
 Seen: 2026-09-18
 Seen: 2026-11-06 09:58 (a TEST crossing a reload named "the owner" and did not warn that a test account comes off: he used one and it read as a failure)
+Fired: 2026-11-14 13:04 (Day Log paper phone test re-asked as steps in his words, with what he should see and what to tell back)
 Fired: 2026-11-06 09:23 (the checklist is in the reply, in his words for the screens)
 Fired: 2026-09-19 20:20 ("✅ TEST d7f2193 stands as written, at the new address" — a pointer to an earlier reply; he answered "what is the test?"); 2026-09-22 07:40 (the four owed commits re-asked as one walk with the address read from preview_logs, not a pointer to PROGRESS.md)
 Fired: 2026-09-23 (the prototype ✅ TEST written as six steps, after the same six were run with real drags)
@@ -1030,6 +1038,7 @@ arrives as the previous version is a decision made on the wrong picture, and the
 frame does not show. The same silent no-op hit board-phone.png in the next run, and again through a `dir` parameter in
 `page()` that shadowed the directory variable, so the delete landed in a folder named "row".
 Seen: 2026-09-22
+Fired: 2026-11-14 14:34 (rm -f board.png before Chrome --screenshot; CDP frames written from the returned bytes)
 Fired: 2026-11-11 17:44 (shot.mjs deletes the png first; mtimes checked, both boards read back before sending)
 Fired: 2026-11-08 05:52 (built.png read before sending; it showed the EOD light-theme contrast fault, fixed and re-shot)
 Fired: 2026-11-08 05:34 (board.png read before sending)
@@ -1076,6 +1085,7 @@ Fired: 2026-09-23 (the van-loading prototype: move/drop on the window, the van p
 ### 2026-09-28 — never `git add` a whole Raw folder a headless browser has run in
 **Status:** LIVE
 **Trigger:** committing lab frames or a walk script in A-Brain `Raw/<date>-*/` after a shooter or test ran there.
+Fired: 2026-11-14 14:44 (Raw/2026-11-14-android-print: one board.png copied in and added by name; no Chrome profile there)
 Fired: 2026-10-05 (sign-hold folder added by name: probe, hold.json, 5 frames; built8's re-shot frames restored, not committed)
 **Lesson:** the shooters launch Chrome with `--user-data-dir` BESIDE the shots (`Raw/<dir>/profile/`), and a run that ends
 before Chrome lets go leaves hundreds of cache files there. Add the files by name (`test-*.mjs shoot-*.mjs shots test-shots`),
@@ -1116,7 +1126,23 @@ Seen: 2026-10-11 09:20 (a second form: under mobile emulation a too-wide card ma
 Seen: 2026-10-02
 Fired: 2026-10-04 (Day Replay: page + ground.jpg + coin-sprite.png copied to one scratchpad folder, published with files on the first try)
 
-Last checked: 2026-11-12 — no lesson (auto, 15-turn session)
+## 2026-11-13 — a hidden browser pane hands back a FROZEN screenshot; check "displayed" first, never fall back to agent-browser
+**Status:** LIVE
+**Trigger:** the first screenshot of a session in the built-in browser pane, or any thought of reaching for agent-browser.
+**Lesson:** run `tabs_context` before the first screenshot. If it says "hidden", every screenshot is a stale, cropped frame while the page changes underneath. Measure with `javascript_tool` instead (overflow, computed colours, control heights), say so, and ask him to show the pane. Never call agent-browser on this PC.
+**Would have prevented:** 2026-11-13, Journey Plan redesign: 4 screenshot batches returned the same frozen picture before `tabs_context` showed "hidden"; `agent_browser_open` then hung 1,800 s and was aborted; the finished job (1f4b4011) stayed unpushed for want of one picture.
+Seen: 2026-11-13
+Fired: 2026-11-14 14:30 (tabs_context said the pane was hidden: the Q2 frames came from a headless CDP shooter, not pane screenshots)
+
+## 2026-11-13 — a JS board in the scratchpad cannot be looked at in the browser pane; copy it under tools/ first
+**Status:** LIVE
+**Trigger:** looking at an artifact page that JS draws, from the scratchpad, before publishing it.
+**Lesson:** the pane opens a file outside the project as a static snapshot with scripts off, so a JS-drawn board shows empty. Copy it to tools/ (the ponder-lab server serves localhost:4190/tools/<name>.html) with `<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">` in front: the artifact skeleton adds both only at publish, so without them a middle dot prints as two letters and a phone width lays out at 980 px. Look, then delete the copy.
+**Would have prevented:** 2026-11-13, map pins board: two wasted batches (a static snapshot, then garbled dots at 980 px).
+Fired: 2026-11-14 (man + flag board: copied to tools/ with charset + viewport, read in the lab, copy deleted after)
+Seen: 2026-11-13
+
+Last checked: 2026-11-13 — lessons added above (hidden pane / agent-browser hang; a JS board in the pane); evening: hidden-pane clock seen again (Seen line)
 Fired: 2026-10-03 (map-keys prototype + ground.jpg published from scratchpad/mapkeys)
 Fired: 2026-10-03 (round 6 crowd + selling scenes: page + ground.jpg copied to scratchpad/r6, published on the first try)
 Fired: 2026-10-04 (Day Replay v3: page + ground.jpg + coin-sprite.png from scratchpad/replay3, first try)
@@ -1170,6 +1196,7 @@ Fired: 2026-10-28 (lab frames for the Distri board caught mid fade-in; getAnimat
 Fired: 2026-11-03 (EOD stamp #5: 6 moments frozen with getAnimations().currentTime, a fresh press each)
 Fired: 2026-11-03 (EOD replay: the XP count is a JS tween that getAnimations cannot freeze - frames labelled by the state read at the shot; the first rank-up shot caught the banner mid-fade (read as see-through), re-shot 650 ms in)
 Fired: 2026-11-05 08:38 (mid-swap frames frozen with getAnimations().pause() + currentTime, each from a fresh press, no time on the captions)
+Fired: 2026-11-14 (man + flag board: every stage frozen at 0.15-2.6 s with getAnimations({subtree}) + the svg clock set, one film strip per look)
 
 ### 2026-09-30 — a thing drawn "in the middle" is measured against the middle before he sees it
 **Status:** LIVE
@@ -1243,6 +1270,7 @@ Fired: 2026-11-03 (EOD stamp #5: rest row read before the Confirm click; Late pa
 **Lesson:** `mobile: true` changes the viewport only; `(hover: hover)` and `(pointer: fine)` still match, so every phone-only or mouse-only CSS branch measures as the PC. Also send `Emulation.setTouchEmulationEnabled` and `Emulation.setEmulatedMedia` (hover none, pointer coarse, any-hover none, any-pointer coarse), and assert one phone-only rule is live before reading a number.
 **Would have prevented:** Journey map lag fix, 2026-10-03 17:45: the first "after" run still showed the flowing line running and ~2,900 ms busy per 3 s, which read as "the fix did nothing" until the media was found - a rebuild and four probe runs.
 Seen: 2026-10-03
+Fired: 2026-11-14 14:31 (Q2 shooter set touch + hover:none/pointer:coarse media and printed matchMedia true before any frame)
 Fired: 2026-11-11 18:33 ((hover: none) printed true on every phone frame)
 Fired: 2026-11-11 17:35 (touch + hover/pointer media sent, hover none printed true on every phone frame)
 Fired: 2026-11-08 05:34 (touch + hover/pointer media sent for the phone frames)
@@ -1331,6 +1359,8 @@ Fired: 2026-10-12 (drag probe: 40 steps of 4 px with 8 ms gaps, held 120 ms befo
 **Would have prevented:** 2026-10-10, the demo session: three vault stamps typed ahead of the clock (19:45 at 19:31, 19:52 at 19:49, 19:55 at 19:50), each one needing a fix and an amend commit after the `date` output showed the truth.
 Seen: 2026-10-10 · 2026-10-10 21:49 (third: "21:55" typed into this file's own footer by sed) · 2026-10-10 20:06 (again, one hour later: "20:08" typed into an Edit of PROGRESS + NEXT-SESSION at 20:06 - the Edit tool cannot run `date`, so read the clock in the SAME turn first)
 Seen: 2026-11-11 05:49 (missed: "05:50" typed into the Antigravity task file, the clock said 05:47; replaced from date by sed - which touched that file after NEXT-SESSION and tripped the Stop hook)
+Fired: 2026-11-14 14:43 (vault Log and PROGRESS stamps copied from the 14:43 date output)
+Fired: 2026-11-14 13:20 (PROGRESS + NEXT-SESSION stamps copied from the 13:20 date output read in the same turn; his message time not guessed)
 Fired: 2026-11-10 06:51 (vault Log stamp copied from a `date` output read in the same turn)
 Fired: 2026-11-08 05:52 (every stamp from Intl Asia/Jakarta inside the writing script)
 Fired: 2026-11-08 05:34 (every stamp from Intl Asia/Jakarta inside the writing script)
@@ -1359,6 +1389,7 @@ Fired: 2026-11-05 20:49 (every stamp from Intl Asia/Jakarta inside the writing s
 **Lesson:** `git add <the files I wrote>` then `git diff --cached --stat` BEFORE `git commit -m`; never `-a` / `-am`. The vault always carries tracked frames a shooter re-wrote and files another session staged, and both ride along silently.
 **Would have prevented:** 2026-10-10, the demo session: `git commit -qam` on a one-line stamp fix swept in `Raw/2026-10-05-map-system/built/pc-area.png`; the redo with `reset --soft` still carried `pc-card-tools.png`, which was already staged - two unrelated pictures in "my" commits, one of them still there (`60d0f57`).
 Seen: 2026-10-10
+Fired: 2026-11-14 13:31 + 14:4x (8 sweep notes, then the emulator page + Log + one board: each added by name, staged list checked first)
 Fired: 2026-11-11 05:49 (app + vault: every file added by name, --cached --stat read before each commit)
 Fired: 2026-11-10 06:52 (6 vault files added by name, --cached --stat read first, nothing else staged)
 Fired: 2026-11-08 09:3x (staged list read first: the note + 5 frames, nothing else)
@@ -1427,6 +1458,7 @@ Fired: 2026-11-03 (EOD stamp #5: grep PROGRESS for his words - first report)
 **Lesson:** his approvals are per action. A yes to a future mechanism ("A-Brain uploads itself at the end of every session", a Stop hook not built yet) or to one planned push (build step 7) does not cover an extra push mid-session. No sentence of his names this push -> commit locally, ask, push only on his word.
 **Would have prevented:** 2026-10-14 23:14, a second A-Brain push of my own note (53031e4) started right after the approved step-7 push; it hung on a GitHub approval window on his screen, which he declined - *"i havent approve the second github upload"*.
 Seen: 2026-10-15
+Fired: 2026-11-14 14:27 + 14:4x (bf2018d7 + 78914bdf, then the notes: CLAUDE.md 2026-10-21 "u dont need my permission", his "antigravity job is done u may check it" and "yes to all continue"; gates green after the last edit)
 Fired: 2026-11-11 18:33 (his "Push when it is finished and the checks are green", frames sent first)
 Fired: 2026-11-08 09:3x (his 2026-10-21 "u dont need my permission" covers a finished stage with gates green and frames shot)
 Fired: 2026-11-08 05:52 (kpm 23abaa3 + notes + vault: CLAUDE.md 2026-10-21 "u dont need my permission", finished job, gates green after the last edit)
@@ -1525,9 +1557,10 @@ Fired: 2026-11-03 08:11 (rebuilt dist-demo first; the check caught the demo-only
 **Trigger:** before a completion claim about MOTION (a transition, a wipe, a settle) proven by a frame from the Browser pane or from headless Chrome `--screenshot`.
 **Lesson:** check `document.timeline.currentTime` first. In the pane it reads 0 while the Claude window is hidden - every animation sits at its first keyframe while timers keep running. Headless `--virtual-time-budget` advances timers but not the animations either, and `--timeout` shoots before the page acts. What works: headless Chrome over CDP in REAL time (`Page.navigate`, `Runtime.evaluate` to start the turn, real wait, pause every animation AND hold the page's timers, `Page.captureScreenshot`), one fresh turn per frame - the script is `scratchpad/promo-chest/shoot.mjs` of session 4545991b (copy it, it is short).
 **Would have prevented:** 2026-10-25 ~19:50, the promo dial round 2: six wasted renders (pane freezes, three virtual-time shots, three `--timeout` shots) and a near-claim that the scan was broken, before the CDP real-time shot showed it working.
-Seen: 2026-10-25
+Seen: 2026-10-25, 2026-11-13 (a flag gust: svg clock read 0 for 7 s while the pane was hidden; fixed by freezing each svg at set times, pauseAnimations + setCurrentTime, and one headless film strip)
 Fired: 2026-11-03 (EOD stamp #5: headless CDP real time, document.timeline running (8118 ms), not the pane)
 Fired: 2026-11-03 (EOD replay: headless CDP real time, not the pane)
+Fired: 2026-11-14 (man + flag board: the pane was hidden and its zooms came back stale; the numbers came from getComputedStyle, the frames from a headless strip with fixed times)
 
 ### 2026-10-25 — "behind the sign-in" is not a wall: the emulator signs in without Google
 **Status:** LIVE
@@ -1573,7 +1606,7 @@ Seen: 2026-10-27
 Fired: 2026-11-02 (board says 'shops paid him Rp 750.000' and 'in Budi's cash box')
 
 ### 2026-10-31 — an overlay's z-index only counts inside its parent's stacking context
-**Status:** LIKELY
+**Status:** RETIRED (2026-11-14) — never fired in 14+ days; createPortal for shell overlays is the app pattern now, the prose recalled nothing
 **Trigger:** before a completion claim - a fixed overlay (veil, ring, caption) rendered from inside a component that sits in the shell (the demo bar, a panel) and meant to sit over menus or portals.
 **Lesson:** render it with createPortal(..., document.body); a high z-index inside an ancestor that makes a stacking context (a z-index / transform / filter parent) loses to a lower z-index at the page root. Check it on the phone with the menu OPEN, not on the PC.
 **Would have prevented:** 2026-10-25, the mission guide's z 400 was drawn under the phone menu (z 90) - found only by opening the menu in the lab; cost a fix, a re-render and a new self-check line.
@@ -1782,7 +1815,7 @@ his sign-in and Chrome debug mode, then asked him for permission on every new ac
 Seen: 2026-11-10
 
 ### 2026-11-11 — "the steps are above" is checked against the reply before it is sent
-**Status:** LIKELY
+**Status:** LIVE
 **Trigger:** a reply, or a note written for the next session, that points at content - "the steps are above", "he got
 the prompt", "see the list in the chat" - most of all at the end of a turn he interrupted
 Search the visible replies for the thing itself before pointing at it. A turn that was redirected mid-way (he sent two
@@ -1792,6 +1825,7 @@ session would never have written them. If it is not in the chat, write it now or
 **Would have prevented:** 2026-11-10 22:29: he went to sleep on "make the deal clip in Flow (the steps are above)" -
 no steps existed anywhere; the deal clip lost a day, and the gap was found only by rereading the turn the next morning.
 Seen: 2026-11-11
+Fired: 2026-11-14 13:20 (NEXT-SESSION was about to say "the 4 steps in the 13:04 reply"; the steps were written into the brief instead)
 
 ### 2026-11-11 — a CSS move combined with a rotate goes on `translate`, never inside `transform`
 **Status:** LIKELY
@@ -1825,3 +1859,23 @@ Seen: 2026-11-11
 **Lesson:** grep the screen and the shell for `fixed` / `sticky` elements anchored to the edge the panel now sits on (the corner visitor `right: 44px; bottom: 8px`, the app mascot `bottom-0 right-0`, a sticky room) and shoot two more states before the push: the panel with a real cart SCROLLED, and the last control of the panel (total, save) with `bottom <= innerHeight` printed. A frame at rest with two items cannot show what stands on the total.
 **Would have prevented:** 2026-11-11 18:33, Sales Terminal direction B (kpm cb8f5244): the order slip moved to the right, under his 280 px room and into his corner visit's corner; pushed live with the total under the fold on the PC. He had to report it himself the next morning ("the capybara on the right is blocking the shopping panel") - one more build, render and push round (kpm 1695539c).
 Seen: 2026-11-12
+
+### 2026-11-14 — a delayed animation with fill `both` shows its FIRST keyframe during the delay
+**Status:** LIKELY
+**Trigger:** writing a CSS animation with a delay (`... 440ms both`) on an element hidden at rest (opacity 0) - a ring, a burst, a badge that must appear AT a moment.
+**Lesson:** `both` includes `backwards`: during the delay the element takes the first keyframe, so a ring whose `from` is opacity .85 sits visible from 0 ms. Use `forwards` when the first keyframe is visible; keep `both` only where the first keyframe is the hidden one (a pop from opacity 0).
+**Would have prevented:** 2026-11-14, the planting man: the dust ring showed under the lifted pole from 0 to 0.44 s; caught on the frozen frames, one more edit and a re-shoot.
+Seen: 2026-11-14
+
+**Status:** LIKELY
+**Trigger:** before writing `window.open(` for a KPM feature that shows or prints a page of its own (a paper, a preview, a report) - the moment a new tab is picked over the app's existing frame path.
+**Lesson:** a tab opened by script is a pop-up: the lab's browser pane blocks it from a real click, and an installed app or an in-app browser may too, so the press does nothing but a toast. KPM already prints through a frame (SaleReceipt.jsx: an iframe the page writes, then its own print()). Show the page in a frame over the app (a portal, `srcDoc`) and print that frame; wire its keys from the parent, no script in the page. Read the existing path's CODE, not a note's summary of it (the note said "a new window"; the code was an iframe).
+**Would have prevented:** 2026-11-14, the Day Log paper: the tab version was built, pressed in the lab, returned null twice (blocked pop-up, only the toast showed), then rebuilt as a frame - about six turns and a second round of edits to JourneyView and the checks.
+Seen: 2026-11-14
+
+### 2026-11-14 — a file deleted on disk can be a finished job's deletion that was never committed
+**Status:** LIKELY
+**Trigger:** before a mutating action that brings back a tracked file deleted in the working tree (`git restore`, `git checkout --`) - the moment "I put it back" is typed.
+**Lesson:** grep the self-checks for the file's name and its folder, and run them, before bringing it back. A session that retires an asset and commits only its code leaves ` D <file>` in git status for days, and the check guarding the deletion stays green only while the file is gone. Aldi cannot answer "did you delete it?" - a session did it, for a job he asked for.
+**Would have prevented:** 2026-11-14 13:14 - capy-excited-6.mp3 (retired by the Jett voice job on 2026-11-11, guarded by "public/sounds holds exactly their phrase files ... no old syllable left") was put back on his "i dont remember deleting any of the file". The self-check went red (2952/2953), the Antigravity push had to wait, he was told "cause unknown", and deleting it again needed a second yes from him (the auto-mode guard refused `git rm`).
+Seen: 2026-11-14
