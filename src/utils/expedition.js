@@ -140,8 +140,37 @@ export function expedition(motorists = [], customers = [], transactions = [], no
                 metresToNext: next?.lat ? metres(at, next) : null,
             };
         })
-        .sort((a, b) => (b.out - a.out) || a.name.localeCompare(b.name));
+        .sort((a, b) => (b.out - a.out) || a.name.localeCompare(b.name))
+        .map((a, i, all) => ({ ...a, tag: chipTag(a, all) }));
 }
+
+/* A SALESMAN CHIP'S NAME (his "everything is fine" to the review board, 2026-11-15, A-Brain Raw/2026-11-15-journey-review):
+   his initials, or his first name when a teammate has the same initials (Budi Santoso and Bagus Setiawan were two
+   "BS 11/28" chips), and his whole name when the first name is shared too (Budi Santoso / Budi Setiawan - "BUDI S"
+   would clash again). The chip row scrolls sideways, so a longer chip costs nothing. */
+const words = (n) => String(n || '').replace(/\[[^\]]*\]/g, ' ').trim().split(/\s+/).filter(Boolean).map((w) => w.toUpperCase());
+export const chipTag = (a, all) => {
+    const same = all.filter((b) => b.ini === a.ini);
+    if (same.length < 2) return a.ini;
+    const w = words(a.name);
+    const twin = same.some((b) => b !== a && words(b.name)[0] === w[0]);
+    return (twin ? w.join(' ') : w[0]) || a.ini;
+};
+export const kmLabel = (m) => (m == null ? '-' : `${(m / 1000).toFixed(1).replace('.', ',')} km`);
+
+/* ONE ARRAY PER SPOT for a map Marker's `position` (Journey Plan's speed, his pick 2026-11-15): react-leaflet calls
+   setLatLng whenever `position` is a NEW array, and inside the cluster group every setLatLng is a remove + re-add that
+   rebuilds the bubble's icon (markercluster _moveChild). One open of Journey Plan on the big demo company made 4,502
+   setIcon calls, 4,462 of them with the very same icon - 354 ms (probe A-Brain Raw/2026-11-15-journey-review/seticon.js).
+   ponytail: the cache keeps every spot it has seen (shops + a salesman's stops, a few thousand a day); clear it if it
+   ever matters. */
+const spots = new Map();
+export const pinAt = (lat, lng) => {
+    const k = `${lat},${lng}`;
+    let v = spots.get(k);
+    if (!v) spots.set(k, (v = [lat, lng]));
+    return v;
+};
 
 /* THE ROAD of a pressed salesman (his 2026-10-04 "shop assigned today, but also add option on all shop assigned"): today =
    his sales so far, then the round still ahead, in that order; all = every shop assigned to him, in stop order. 1..n. */

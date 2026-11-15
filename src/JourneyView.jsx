@@ -16,7 +16,7 @@ import { DayReplayLayer, DayReplayPanel } from './components/DayReplay.jsx';
 import { useDayReplay, readVisitLogs } from './hooks/useDayReplay.js';
 import { paperDay, manSheet, teamSheet, paperDoc, paperWait } from './utils/dayLogPaper.js';
 import { useWide } from './hooks/useWide';
-import { expedition, visibleTeam, roadStops, initials, hiddenShopNote } from './utils/expedition';
+import { expedition, visibleTeam, roadStops, initials, hiddenShopNote, kmLabel, pinAt } from './utils/expedition';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { visitReport } from './utils/dayLog.js';
@@ -414,6 +414,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
        tool bar (↑ ↓ and the assign box) is unfolded at a time by the ⋯ key beside its name; a tap
        anywhere outside a `[data-acts]` element folds it (the Customers ⋯ pattern). */
     const [feedOpen, setFeedOpen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
+    const findRef = useRef(null);   // the phone's search key focuses Find a shop in the same tap
     const isPhone = typeof window !== 'undefined' && window.innerWidth < 1024;   // the strip and the touch gate (his A, 2026-09-20)
     const [actsOpen, setActsOpen] = useState(null);
     useEffect(() => {
@@ -498,6 +499,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
     const teamByName = useMemo(() => Object.fromEntries((motorists || []).map((m) => [m.name, teamKey(m.location)])), [motorists]);
     const [expSel, setExpSel] = useState(null);
     const selId = team.some((a) => a.id === expSel) ? expSel : team.some((a) => a.id === agentProfileId) ? agentProfileId : team[0]?.id;   // a salesman opens on his own card
+    const myRound = team.find((a) => a.id === agentProfileId && a.planned);   // the viewer's own round today, if he has one
     const [expFocus, setExpFocus] = useState(false);   // PC: false = frame the whole team, true = frame the picked row
     const wide = useWide();
     /* the pressed man and the Paintbrush pen are ONE pick (test 2026-10-04: the Ari pen on, Budi pressed = Budi's road on
@@ -1157,32 +1159,45 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
                 still the 44 px key that folds the pickers (his board 1 = B, 2026-09-19); the day keys stay out of the fold
                 there, because "which day" is the first thing this screen asks. */}
             <div className="kx-feed">
-                <h2 className="kx-feed-head">
+                <h2 className="kx-feed-head flex items-center gap-2">
                     <button type="button" onClick={() => setFeedOpen(v => !v)} aria-expanded={feedOpen}
-                        className="w-full flex items-center gap-3 text-left uppercase min-h-11 lg:min-h-0 lg:pointer-events-none lg:cursor-default">
+                        className="flex-1 min-w-0 flex items-center gap-3 text-left uppercase min-h-11 lg:min-h-0 lg:pointer-events-none lg:cursor-default">
                         <i className="kx-feed-mark" aria-hidden="true" />
                         {selectedDay === todayName ? "Today's Route" : 'Route'}
                         <span className="kx-feed-meta lg:hidden ml-auto">{journeyWhere(selectedProvinsi, selectedKabupaten, selectedKecamatan)} {feedOpen ? '▴' : '▾'}</span>
                         <span className="kx-feed-meta hidden lg:inline"><b>{selectedDay}</b> · {journeyWhere(selectedProvinsi, selectedKabupaten, selectedKecamatan)} · {selectedTeam === 'All' ? 'All Teams' : selectedTeam}</span>
                         <span className="kx-feed-count hidden lg:inline ml-auto">{conqueredCount}/{orderedRoute.length}<small>Visited</small></span>
                     </button>
+                    {/* FIND IN ONE PRESS on the phone (his pick 2026-11-15, board A-Brain Raw/2026-11-15-journey-review): Find a shop
+                        only opened from "ALL ▾". The key opens the fold with the box focused IN the tap, so a phone raises its
+                        keyboard (iOS ignores a focus from a timer). The span hides it on the PC, where Find is always open:
+                        theme.css `button:has(> svg:only-child)` beats a one-class display rule on the button itself. */}
+                    <span className="lg:hidden"><button type="button" className="kx-find-key" aria-label="Open Find a shop"
+                        onClick={() => { findRef.current?.focus({ preventScroll: true }); setFeedOpen(true); }}>
+                        <svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="7" cy="7" r="4.5" /><path d="M10.5 10.5 14 14" strokeLinecap="round" /></svg>
+                    </button></span>
                 </h2>
                 <div className="kx-feed-day kx-phone"><span>{selectedDay}</span><span className="kx-feed-count">{conqueredCount}/{orderedRoute.length}<small>Visited</small></span></div>
                 <div className="kx-feed-prog"><span className="kx-feed-meta hidden lg:inline">Progress</span>{feedProgress}</div>
-                <div className="kx-meta3 kx-phone">
-                    <div><b>{orderedRoute.length - conqueredCount}</b><small>shops left</small></div>
-                    <div><b>{team.filter(t => t.out).length}</b><small>salesmen out</small></div>
-                    <div><b>{overdueCount}</b><small>overdue</small></div>
-                </div>
+                {/* ONE LINE, not three tiles (his pick 2026-11-15): "shops left" was 600 - visited, the count just above, and the
+                    tiles pushed the map 40 px down. A salesman with a round today reads HIS next shop here - before, it sat
+                    under the map at the bottom of the Team box; the boss (no round) keeps the team's two numbers. */}
+                {myRound ? (
+                    <p className="kx-feed-line kx-phone">{myRound.next
+                        ? <>Your next shop <b>{myRound.next.name}</b>{myRound.metresToNext != null && <> · <b>{kmLabel(myRound.metresToNext)}</b></>}</>
+                        : <>Your round is done · <b>{myRound.done.length}/{myRound.of}</b></>}</p>
+                ) : (
+                    <p className="kx-feed-line kx-phone"><b>{team.filter(t => t.out).length}</b> salesmen out · <b>{overdueCount}</b> overdue</p>
+                )}
                 <div className="lg:hidden">{feedDays}</div>
 
                 {/* the pickers ride a grid-rows fold on the phone (0fr → 1fr, 200 ms) and are always open on the desk */}
-                <div className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out lg:block ${feedOpen ? 'opacity-100' : 'opacity-0 lg:opacity-100'}`} style={{ gridTemplateRows: feedOpen ? '1fr' : '0fr' }}>
+                <div className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out lg:block ${feedOpen ? 'opacity-100' : 'opacity-0 lg:opacity-100 kx-fold-shut'}`} style={{ gridTemplateRows: feedOpen ? '1fr' : '0fr' }}>
                 <div className="overflow-hidden lg:contents">
                 <div className="kx-feed-controls">
                     <div className="kx-feed-field kx-desk"><span>Day</span>{feedDays}</div>
                     <label className="kx-feed-field"><span>Find a Shop</span>
-                        <input type="search" aria-label="Find a shop" list="kx-journey-shops" value={shopQuery} placeholder="Type a shop name" enterKeyHint="search"
+                        <input ref={findRef} type="search" aria-label="Find a shop" list="kx-journey-shops" value={shopQuery} placeholder="Type a shop name" enterKeyHint="search"
                             onChange={(e) => { setShopQuery(e.target.value); if (customers.some((c) => c.name === e.target.value)) { e.target.blur(); goToShop(e.target.value); } }}
                             onKeyDown={(e) => { if (e.key === 'Enter') { e.currentTarget.blur(); goToShop(e.currentTarget.value); } }} />
                         <datalist id="kx-journey-shops">{customers.map((c) => <option key={c.id} value={c.name} />)}</datalist>
@@ -1426,7 +1441,7 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
                         let ringColor = isVisited ? '#E4B04A' : (metric.agentName === 'Unassigned' ? '#6A645C' : metric.color);
                         const finalRingColor = isEditing ? '#f97316' : ringColor;
-                        const markerPos = isEditing && tempPinLocation ? [tempPinLocation.lat, tempPinLocation.lng] : [store.latitude, store.longitude];
+                        const markerPos = isEditing && tempPinLocation ? [tempPinLocation.lat, tempPinLocation.lng] : pinAt(store.latitude, store.longitude);   // the same array = no "move"
                         
                         // the ring under the chest stays the salesman's colour; the sign says it was visited
                         const customIcon = getStoreIcon(outcome, isEditing ? finalRingColor : (metric.agentName === 'Unassigned' ? '#6A645C' : metric.color), isEditing, play, road?.tagOf[storeKey(store.name)] || '', metric.agentName === 'Unassigned', !!store.openRequest, store.name);

@@ -6,13 +6,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Marker, Polyline, CircleMarker, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { agoLabel } from '../utils/expedition';
+import { agoLabel, kmLabel, pinAt } from '../utils/expedition';
 import { personSvg, planterHtml, QUEST, safeHex, HAIR } from '../utils/mapSprites';
 import '../styles/expedition.css';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 const count = (a) => `${a.done.length}${a.of != null ? `/${a.of}` : ''}`;
-const kmLabel = (m) => (m == null ? '-' : `${(m / 1000).toFixed(1).replace('.', ',')} km`);
 const said = (a) => ({
     go: `En route → ${a.next?.name}`, at: `At shop · ${a.done[a.done.length - 1]?.name}`,
     home: 'Round done', idle: 'No shop left to suggest', off: 'Not out today', closed: 'Day closed',
@@ -199,13 +198,13 @@ export function ExpeditionPeople({ team, sel, wide, colorOf, focusName }) {
             className: 'kx-mk',
             html: `<div class="kx-sm ${shop ? `plant${play ? ' play' : ''}` : a.state === 'go' ? 'walk' : 'idle'}${a.id === sel ? ' sel' : ''}${mine ? '' : ' dim'}" style="--c:${safeHex(shirt, '#E8E4DE')}"><i class="kx-shadow"></i>`
                 + `<div class="who"><div class="body">${shop ? planterHtml(hair, shirt) : personSvg(hair, shirt)}</div></div>`
-                + `<span class="tag"><i style="background:var(--c)"></i>${esc(a.ini)} · ${count(a)}</span>${QUEST}</div>`,
+                + `<span class="tag"><i style="background:var(--c)"></i>${esc(a.tag || a.ini)} · ${count(a)}</span>${QUEST}</div>`,
             /* at a shop: the planter's fist (his 11th column, x 30-33) on the flag's pole (the flag's anchor 7, 44 = the
                pole's foot), his feet 2 px under it; the others in his row stand 2 px apart to his left */
             iconSize: shop ? [33, 42] : [30, 42], iconAnchor: row ? [32 + i * 32, 40] : [45 - shift, 42],
             kxFig: [hair, shirt],
         });
-        return <Marker key={a.id} position={ll(where(a))} icon={icon} interactive={false} zIndexOffset={a.id === sel ? 21000 : 20000} />;
+        return <Marker key={a.id} position={pinAt(where(a).lat, where(a).lng)} icon={icon} interactive={false} zIndexOffset={a.id === sel ? 21000 : 20000} />;
     });
 }
 
@@ -249,7 +248,9 @@ export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page, focused
 
     return (
         <aside className={`kx-panel${page ? ' kx-page' : ''}`} aria-label="Team">
-            <div className="kx-ph"><b>Team</b><span>{out.length} out · <em>{done}/{of}</em> shops</span></div>
+            {/* "sold", not "shops" (his pick 2026-11-15): beside the top's "264/600 visited" the old "228/588 shops" read as
+                a second count of the same thing - done counts sales only (expedition.js), a visit with no sale is not one */}
+            <div className="kx-ph"><b>Team</b><span>{out.length} out · <em>{done}/{of}</em> sold</span></div>
             {focused && <RoadSwitch all={roadAll} onAll={onRoadAll} />}
             {(focused || (team.length > 0 && onPrintTeam)) && <div className="kx-keys">
                 {focused && onReplay && <button type="button" className="kx-rp-go" onClick={onReplay}><svg viewBox="0 0 12 12"><path d="M3 1.5v9l7.5-4.5z" /></svg>Replay his day</button>}
@@ -284,7 +285,7 @@ export function ExpeditionPanel({ team, sel, onPick, wide, scoped, page, focused
                 <>
                     <div className="kx-pick">
                         {team.map((t) => (
-                            <button type="button" key={t.id} aria-pressed={t.id === sel} onClick={() => onPick(t.id)}><i />{t.ini} {count(t)}</button>
+                            <button type="button" key={t.id} aria-pressed={t.id === sel} onClick={() => onPick(t.id)}><i />{t.tag || t.ini} {count(t)}</button>
                         ))}
                     </div>
                     <div className="kx-travel">
@@ -337,7 +338,7 @@ export function ExpeditionMini({ team, sel, onPick, wide, colorOf, focused, road
         <div className="kx-mbar">
             <div className="kx-mchips">
                 {team.map((t) => (
-                    <button type="button" key={t.id} className={`${t.id === sel ? 'sel' : ''}${t.live ? '' : ' off'}`} style={sq(t)} aria-pressed={t.id === sel} onClick={() => onPick(t.id)}><i />{t.ini} {count(t)}</button>
+                    <button type="button" key={t.id} className={`${t.id === sel ? 'sel' : ''}${t.live ? '' : ' off'}`} style={sq(t)} aria-pressed={t.id === sel} onClick={() => onPick(t.id)}><i />{t.tag || t.ini} {count(t)}</button>
                 ))}
             </div>
             {a && (

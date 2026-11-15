@@ -308,7 +308,7 @@ export default function CapybaraMascot({ isDiscoMode, message, messages = NO_MES
        has bitten in this app: the field-mode bar, the music pill, now him. */
     return createPortal(
         <div
-            className={`hide-on-print fixed bottom-0 right-0 z-[99999] cursor-pointer group ${stateClass}`}
+            className={`kpm-capy hide-on-print fixed bottom-0 right-0 z-[99999] cursor-pointer group ${stateClass}`}
             onClick={onMascotClick}
             /* HIS REPORT: "capybara is still cutted on the phone". `viewport-fit=cover` went into
                index.html on 2026-08-10 so the app could fill the notch — which also means the

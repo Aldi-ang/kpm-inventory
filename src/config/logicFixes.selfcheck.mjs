@@ -7910,12 +7910,12 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /import \{ storeKey, getLocalDayKey, journeyWhere, findShop, teamKey \} from '\.\/utils\/helpers'/.test(jv),
      'his "board 1 = B"');
   ok('1B: the filter panel rides a grid-template-rows fold, 200 ms, and is always open on the desk',
-     /className=\{`grid transition-\[grid-template-rows,opacity\] duration-200 ease-out lg:block \$\{feedOpen \? 'opacity-100' : 'opacity-0 lg:opacity-100'\}`\} style=\{\{ gridTemplateRows: feedOpen \? '1fr' : '0fr' \}\}/.test(jv) &&
+     /className=\{`grid transition-\[grid-template-rows,opacity\] duration-200 ease-out lg:block \$\{feedOpen \? 'opacity-100' : 'opacity-0 lg:opacity-100 kx-fold-shut'\}`\} style=\{\{ gridTemplateRows: feedOpen \? '1fr' : '0fr' \}\}/.test(jv) &&
      /<div className="overflow-hidden lg:contents">\s*<div className="kx-feed-controls">/.test(jv));
-  ok('MISSION FEED redesign (his A on the PC, B on the phone, 2026-10-03): no green or blue, 7 day keys (today dotted), one cell per shop up to 40, 3 numbers on the phone, plain words (his 2026-11-13 "switch to plain words")',
+  ok('MISSION FEED redesign (his A on the PC, B on the phone, 2026-10-03): no green or blue, 7 day keys (today dotted), one cell per shop up to 40, the numbers on one line on the phone (his 2026-11-15 pick), plain words (his 2026-11-13 "switch to plain words")',
      !/(emerald|blue)-\d/.test(jv.slice(jv.indexOf('<div className="kx-feed">'), jv.indexOf('<div className="flex flex-col gap-3 lg:flex-row lg:gap-4">'))) &&
      /aria-pressed=\{selectedDay === d\} className=\{d === todayName \? 'today' : ''\} onClick=\{\(\) => setSelectedDay\(d\)\}/.test(jv) &&
-     /orderedRoute\.length > 0 && orderedRoute\.length <= 40/.test(jv) && /<small>salesmen out<\/small>/.test(jv) && /<small>overdue<\/small>/.test(jv) &&
+     /orderedRoute\.length > 0 && orderedRoute\.length <= 40/.test(jv) && /<\/b> salesmen out · <b>\{overdueCount\}<\/b> overdue<\/p>/.test(jv) &&
      /* "'s Bounties" left with the Global Fleet filter - his 2026-10-05 "global filter is useless since we have the expedition panel" */
      /Today's Route/.test(jv) && />Progress<\/span>/.test(jv) && /<small>Visited<\/small>/.test(jv) &&
      /* his 2026-11-13 "switch to plain words": the game words stay gone */
@@ -7943,7 +7943,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      'measured 2026-09-19: 144/81/81 x 30 at 10 px, the third to x 367 past its column at 330');
   ok('the floor: the shop search (the FLEET select until 2026-10-05) and the DAY keys are 44 px tall on the phone - the control itself is the tap target',
      /\.kx-feed select \{ min-height: 44px;/.test(read('src/styles/expedition.css')) && /\.kx-days button \{ min-height: 44px;/.test(read('src/styles/expedition.css')) &&
-     /\.kx-feed input\[type="search"\] \{ min-height: 44px;/.test(read('src/styles/expedition.css')) && /<input type="search" aria-label="Find a shop"/.test(jv),
+     /\.kx-feed input\[type="search"\] \{ min-height: 44px;/.test(read('src/styles/expedition.css')) && /<input ref=\{findRef\} type="search" aria-label="Find a shop"/.test(jv),
      'measured 2026-09-19: 107 x 13 inside a 27 px box');
   ok('the floor: the strip\'s ⛶ key is 44 on the phone; the full map\'s keys are one dock of six 58 tall (his "new" key layout, 2026-10-03)',
      /className=\{`kx-keys absolute top-4 right-4 z-\[9999\] \$\{isFullScreen \? 'hidden lg:flex' : 'flex'\} flex-col gap-3 pointer-events-auto \[&>button\]:min-h-11 \[&>button\]:min-w-11 lg:\[&>button\]:min-h-0 lg:\[&>button\]:min-w-0`\}/.test(jv) &&
@@ -8057,7 +8057,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      the count, one cell per shop, three numbers, the day keys out of the fold (his "A for pc B for phone"). What
      survives of it: the old lab looks stay gone, and the pickers still fold. */
   ok('Journey Plan: the MISSION FEED on the phone is his B day card (the strip it replaced is retired); the lab looks jp-strip / jp-mapfold stay gone',
-     /<div className="kx-feed-day kx-phone">/.test(jv) && /<div className="kx-meta3 kx-phone">/.test(jv) && !/jp-strip|jp-mapfold/.test(code(ll)),
+     /<div className="kx-feed-day kx-phone">/.test(jv) && /<p className="kx-feed-line kx-phone">/.test(jv) && !/<div className="kx-meta3 kx-phone">/.test(jv) && !/jp-strip|jp-mapfold/.test(code(ll)),
      'the lab looks jp-strip / jp-mapfold are gone with the decision');
 }
 
@@ -10473,7 +10473,7 @@ section('Expedition map');
          !/Operational Filter|Global Fleet|setSelectedAgent|selectedAgent|streetRoute|project-osrm/.test(jv)
          && /<StoreFocus focusStore=\{searchFocus\} customers=\{customers\} onHandled=\{\(\) => setSearchFocus\(null\)\} \/>/.test(jv)
          && /const goToShop = [\s\S]{0,700}findShop\(customers, text\)[\s\S]{0,300}notify\(`No shop called/.test(jv) && /is not on \$\{selectedDay\}'s round/.test(jv)
-         && /<datalist id="kx-journey-shops">/.test(jv) && /<input type="search" aria-label="Find a shop"/.test(jv), 'his screenshot: GLOBAL FLEET open over the map');
+         && /<datalist id="kx-journey-shops">/.test(jv) && /<input ref=\{findRef\} type="search" aria-label="Find a shop"/.test(jv), 'his screenshot: GLOBAL FLEET open over the map');
       ok('Map System: the same search under the region bar - picking a shop presses its pin (its card opens, the map flies there) and a miss is reported',
          /<input type="search" aria-label="Find a shop"/.test(mmc) && /<datalist id="kx-map-shops">/.test(mmc)
          && /const goToShop = [\s\S]{0,500}findShop\(mapPoints, text\)[\s\S]{0,400}handlePinClick\(shop, mapRef\.current\)/.test(mmc) && /notify\(`No shop called/.test(mmc), ''); }
@@ -14166,6 +14166,37 @@ section('THE DAY LOG ON PAPER (his 2026-11-14 "paper like Todays log that can be
         clearPan(512, 234, 440) === 175 && clearPan(300, 234, 440) === 0 && clearPan(150, 234, 440) === -187
         && /clearPan\(y, \(chips \? chips\.getBoundingClientRect\(\)\.bottom : box\.top\) \+ 48, bar\.getBoundingClientRect\(\)\.top - 12\)/.test(dr)
         && /if \(dy\) map\.panBy\(\[0, dy\]/.test(dr));
+}
+/* THE JOURNEY REVIEW BOARD's seven picks (his "everything is fine", 2026-11-15, A-Brain Raw/2026-11-15-journey-review) */
+{
+    const { chipTag, pinAt, expedition } = await import('../utils/expedition.js');
+    const jv = read('src/JourneyView.jsx'), ex = read('src/components/Expedition.jsx'), css = read('src/styles/expedition.css'), capy = read('src/components/CapybaraMascot.jsx');
+    const t = [{ name: 'Budi Santoso', ini: 'BS' }, { name: 'Bagus Setiawan', ini: 'BS' }, { name: 'Agus Prasetyo', ini: 'AP' }];
+    const t2 = [{ name: 'Budi Santoso', ini: 'BS' }, { name: 'Budi Setiawan', ini: 'BS' }];
+    const now = new Date(), at = (lat) => ({ lat, lng: 110.2, timestamp: now.toISOString() });
+    const team = expedition([{ id: 'b1', name: 'Budi Santoso', currentLocation: at(-7.5) }, { id: 'b2', name: 'Bagus Setiawan', currentLocation: at(-7.6) }], [], [], now);
+    ok('Journey chips: two men with the same initials show first names (BUDI / BAGUS), a shared first name the whole name, the rest keep their letters',
+        chipTag(t[0], t) === 'BUDI' && chipTag(t[1], t) === 'BAGUS' && chipTag(t[2], t) === 'AP'
+        && chipTag(t2[0], t2) === 'BUDI SANTOSO' && chipTag(t2[1], t2) === 'BUDI SETIAWAN'
+        && team.map((a) => a.tag).sort().join() === 'BAGUS,BUDI'
+        && (ex.match(/\{t\.tag \|\| t\.ini\} \{count\(t\)\}/g) || []).length === 2 && ex.includes('${esc(a.tag || a.ini)} · ${count(a)}'));
+    ok('Journey Team box says "sold", not "shops" - beside the top\'s "visited" it read as the same count twice',
+        ex.includes('<em>{done}/{of}</em> sold</span>') && !ex.includes('<em>{done}/{of}</em> shops'));
+    ok('Journey speed: one array per spot, so an unmoved shop or man is never "moved" (4,502 setIcon calls on one open -> 40)',
+        pinAt(-7.5, 110.2) === pinAt(-7.5, 110.2) && pinAt(-7.5, 110.2) !== pinAt(-7.5, 110.3) && pinAt(-7.5, 110.2)[0] === -7.5
+        && jv.includes(': pinAt(store.latitude, store.longitude);') && ex.includes('position={pinAt(where(a).lat, where(a).lng)}'));
+    ok('Journey phone: the search key focuses Find a shop in the same tap and opens the fold; hidden on the PC by its span',
+        /<span className="lg:hidden"><button type="button" className="kx-find-key" aria-label="Open Find a shop"\s+onClick=\{\(\) => \{ findRef\.current\?\.focus\(\{ preventScroll: true \}\); setFeedOpen\(true\); \}\}>/.test(jv)
+        && jv.includes('<input ref={findRef} type="search" aria-label="Find a shop"') && !/setTimeout\([^)]*focus/.test(jv));
+    ok('Journey phone: one line instead of three tiles - the boss reads salesmen out + overdue, a salesman with a round his next shop',
+        !jv.includes('<small>shops left</small>') && jv.includes('const myRound = team.find((a) => a.id === agentProfileId && a.planned);')
+        && jv.includes('Your next shop <b>{myRound.next.name}</b>') && jv.includes('Your round is done')
+        && jv.includes('<b>{team.filter(t => t.out).length}</b> salesmen out · <b>{overdueCount}</b> overdue'));
+    ok('Journey phone: the shut fold adds no band over the map (margins, not the grid gap; the shut fold takes none)',
+        jv.includes("'opacity-0 lg:opacity-100 kx-fold-shut'") && /\.kx-feed \{ padding-bottom: 0; row-gap: 0; \}/.test(css)
+        && /\.kx-feed > \.kx-fold-shut \{ margin-top: 0; \}/.test(css));
+    ok('Phone full map: the capybara waits until it closes (he stood over the Exit corner on Android)',
+        capy.includes('className={`kpm-capy hide-on-print fixed') && /body:has\(\.kx-map\.kx-full\) \.kpm-capy \{ display: none; \}/.test(css));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
