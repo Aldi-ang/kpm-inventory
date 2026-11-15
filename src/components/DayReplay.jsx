@@ -17,7 +17,7 @@ import { createPortal } from 'react-dom';
 import { Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { shopHtml, shopIconBox, planterHtml, personSvg, safeHex, px } from '../utils/mapSprites.js';
-import { SCENE, hm } from '../utils/dayLog.js';
+import { SCENE, hm, clearPan } from '../utils/dayLog.js';
 import { useTick } from '../hooks/useDayReplay.js';
 import { formatRupiah, getLocalDayKey } from '../utils/helpers.js';
 import SaleReceipt from './SaleReceipt.jsx';
@@ -129,6 +129,23 @@ export function DayReplayLayer({ rp, ini, shirt, hair, cam, picked, onPick }) {
         map.fitBounds(L.latLngBounds(stops.map((s) => [s.lat, s.lng])), { padding: [56, 56], maxZoom: 17, animate: !lite });
     }, [cam, tl, map]); // eslint-disable-line react-hooks/exhaustive-deps
     useEffect(() => { if (tl && cam === 'follow' && map.getZoom() < 16) map.setZoom(16, { animate: false }); }, [cam, tl, map]);
+    /* THE PRESSED SHOP STAYS IN SIGHT (test 2026-11-15, phone 390): on the full map the shop's card opens in the bottom bar
+       (.kx-rp-fs), and a flag pressed low on the map went under it (flag top 478, bar top 452) - its gold mark could not be
+       seen. One pan puts it in the middle of the band the top chips (.kx-mbar) and the bar leave free. Follow him keeps
+       the camera on him, so it is left alone there. */
+    useEffect(() => {
+        const sh = picked != null && cam !== 'follow' && shops.find((s) => s.ks.includes(picked));
+        if (!sh) return;
+        const f = requestAnimationFrame(() => {
+            const box = map.getContainer().getBoundingClientRect(), root = map.getContainer().closest('.kx-map');
+            const bar = root?.querySelector('.kx-rp-fs'), chips = root?.querySelector('.kx-mbar');
+            if (!bar) return;   // the replay under the small map: its card is in the page, not over the map
+            const y = box.top + map.latLngToContainerPoint([sh.lat, sh.lng]).y;   // the flag's foot; it stands ~40 px above
+            const dy = clearPan(y, (chips ? chips.getBoundingClientRect().bottom : box.top) + 48, bar.getBoundingClientRect().top - 12);
+            if (dy) map.panBy([0, dy], { animate: !lite });
+        });
+        return () => cancelAnimationFrame(f);
+    }, [picked]); // eslint-disable-line react-hooks/exhaustive-deps -- one pan per press, not on every zoom or tick
 
     const draw = (t, s, local, p, flip, done, ph) => {
         manRef.current?.setLatLng(p);

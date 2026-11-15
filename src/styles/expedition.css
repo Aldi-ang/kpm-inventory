@@ -620,6 +620,12 @@
 
 /* ===== THE DAY REPLAY (src/components/DayReplay.jsx; drawn on A-Brain Raw/2026-10-04-day-replay/day-replay.html v2) ===== */
 /* the replay's shop: the app's own planting moment (.kx-fl.plant, his 2026-11-14 "yes"), the props 560-1260 ms */
+/* THE Q2 MARK (his "q2= sure", 2026-11-14): the shop you pressed glows gold with a gold ring under its flag, so the map
+   says which one the card is about. The ring is a border in the map's literal gold (--gold is black in light mode, the
+   map stays dark): Lite Mode strips the glow and the shadow, the ring stays. !important beats Leaflet's inline z-index. */
+.kx-rp-mk.picked { z-index: 20000 !important; filter: drop-shadow(0 0 5px rgba(228, 176, 74, .95)); }
+.kx-rp-mk.picked::after { content: ''; position: absolute; left: 50%; bottom: -7px; width: 34px; height: 13px; transform: translateX(-50%);
+  border: 3px solid #E4B04A; border-radius: 50%; box-shadow: 0 0 9px rgba(228, 176, 74, .8); pointer-events: none; }
 .kx-rp-mk .kx-rp-prop { position: absolute; left: 0; top: 0; pointer-events: none; opacity: 0; }
 .kx-rp-mk .kx-rp-prop svg { display: block; }
 /* his tag steps aside while he stands at a shop: the shop's own tag is the label there */

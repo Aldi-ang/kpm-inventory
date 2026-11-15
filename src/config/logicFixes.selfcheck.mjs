@@ -14150,5 +14150,22 @@ section('THE DAY LOG ON PAPER (his 2026-11-14 "paper like Todays log that can be
      && hiddenShopNote('Toko A', '', 'Ari Wibowo', 'Sunday').startsWith('Toko A has no salesman yet')
      && hiddenShopNote('Toko A', ' ari wibowo', 'Ari Wibowo', 'Sunday') === "Toko A is Ari Wibowo's shop, but not on Sunday's round - press All shops to see it. This is where it is.");
 }
+/* THE Q2 MARK (his "q2= sure", 2026-11-14, board A-Brain Raw/2026-11-14-day-replay-mark): the shop pressed on Day Replay's
+   map glows gold with a gold ring under its flag - the card alone named it. The ring is a BORDER in the map's own literal gold
+   (--gold turns black in light mode, and the map stays dark): Lite Mode strips the glow and the shadow, never the ring. */
+{
+    const css = read('src/styles/expedition.css'), dr = read('src/components/DayReplay.jsx');
+    ok('Day Replay: the pressed shop is marked on the map too - a gold ring under its flag that Lite Mode keeps',
+        /kx-rp-mk\$\{pick \? ' picked' : ''\}/.test(dr)
+        && /\.kx-rp-mk\.picked \{ z-index: 20000 !important;/.test(css)
+        && /\.kx-rp-mk\.picked::after \{[^}]*border: 3px solid #E4B04A;/.test(css));
+    /* and the mark is never under the card: a flag pressed low pans up into the clear band (lab 390: flag foot 512,
+       band 234-440 -> 175 px up); one already in the band does not move */
+    const { clearPan } = await import('../utils/dayLog.js');
+    ok('Day Replay: a shop pressed under the bottom card pans into the clear band, one already clear stays put',
+        clearPan(512, 234, 440) === 175 && clearPan(300, 234, 440) === 0 && clearPan(150, 234, 440) === -187
+        && /clearPan\(y, \(chips \? chips\.getBoundingClientRect\(\)\.bottom : box\.top\) \+ 48, bar\.getBoundingClientRect\(\)\.top - 12\)/.test(dr)
+        && /if \(dy\) map\.panBy\(\[0, dy\]/.test(dr));
+}
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

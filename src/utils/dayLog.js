@@ -98,6 +98,9 @@ export function dayLog({ man, day, transactions = [], logs = [], customers = [] 
    between two stops (55 ms per minute at 1x, held to 0.9-2.4 s), each stop's scene holds the clock SCENE ms, so any t -
    forwards or backwards - is a pure read. `stops` = the start + every event that has a map pin, in time order. */
 export const SCENE = 2000, START_HOLD = 700, END_HOLD = 1200, MS_PER_MIN = 55;
+/* how far the replay map pans so a pressed shop at screen y sits in the clear band [lo, hi] between the top chips and the
+   bottom bar: 0 when it already does (Day Replay's Q2 mark, test 2026-11-15 - a flag pressed low went under the card) */
+export const clearPan = (y, lo, hi) => (y >= lo && y <= hi ? 0 : Math.round(y - (lo + hi) / 2));
 export function replayTimeline(stops) {
     const T = stops.map((s) => minutes(s.at));
     const segs = [{ kind: 'start', k: 0, t0: 0, t1: START_HOLD }];
