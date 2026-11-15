@@ -1,31 +1,35 @@
 # The one job
 
-Test Journey Plan on the BIG demo company in the Android emulator (notch included), then send him frames, not a test list. Aldi, 2026-11-14: "all this test could be done in android since they both share the same ui as long as their resolution fir the iphone and android it should be fine, dont forget that some phone have notch as well like iphone". Why the big company: "u could simulate as its a big company having a lot of sales and revenue to view".
+Journey Plan fixes from the big-company phone test (2026-11-15 08:43) - his pick of A-F decides. Board: A-Brain Raw/2026-11-15-journey-big/board.png. Every finding with its numbers: A-Brain Brainstorm/2026-11-15_journey-plan-big-company-test.md.
 
-FIRST - the switch is IN (kpm 6eea6e92, 2026-11-15 07:55). His yes: "yes, to make sure that there is no problem when big company want to use my system is simulate it big". The live demo is the big company from the next 00:05 WIB reset; DEMO_SIZE=small on the demo's Vercel project undoes it without code. His test owed: on his phone, SWITCH twice in the live demo -> "fast" or "slow". His reason makes the slow vault (OPEN below) a product problem a real big customer would hit: if he says slow, the speed comes before this job.
+FIRST - two answers owed by him:
+1. His phone test of the live demo after 00:05 WIB on 2026-11-16 (the big company starts with that reset): press SWITCH twice -> "fast" or "slow". The lab says the vault gate takes 23.5 s on a first visit on the PRODUCTION build (22.9 s on the dev server), so the wait is real. "slow" -> E comes before A-D. DEMO_SIZE=small on the demo's Vercel project undoes the big company without code.
+2. Which of A-F, in what order. My pick: A, B, C, D in one job; E its own job; F only if he wants it.
+
+THE FIXES - each one: trial first, one line in src/config/logicFixes.selfcheck.mjs, frames on the phone. None was tried yet.
+A. The full map is taller than an Android screen. src/JourneyView.jsx:1200 gives it `fixed inset-0`; in an Android Chrome tab that resolves to the large viewport: 839 px on a 783 px screen (412 wide), 773 on 717 (390). The six bottom keys (nav[aria-label="Map keys"], expedition.css .kx-dock) lose their names below the edge; their top halves still take a tap. Candidate: 100dvh (or the small viewport). The iPhone home-screen app already fits (dock 719-787 of 844) - keep it so.
+B. Find a shop while a salesman is pressed shows empty streets and no message. JourneyView.jsx:848 `hideOthers` keeps only his shops; goToShop (:890-897) warns only when the shop is off the day's round. Two ways: let go of him and fly (all shops back), or keep him and notify "Toko X is not on AW's road". Others hide because of his 2026-10 "just show the stores that is being assigned for him" - ask which, or take notify (smaller, changes nothing he chose).
+C. The full map's top row (salesman chips, zoom +) sits under the DEMO bar and the guide line: y 13 on Android, y 60 on the iPhone (elementFromPoint = kpm-demo-bar). Demo build only.
+D. Demo data: api/_demoCompany.js:345-359 sets a shop's lastVisit only from visit reports, so the top says 36/600 visited while the Team box says 228/588 done. A real sale sets it (MerchantSalesView.jsx:1445). Let today's sales set lastVisit too; it shows after the next reset; `node tools/demo-reset-emulator.mjs` must stay 34/34.
+E. Vault gate speed on a first visit, big company: 23.5 s. App.jsx ~1369 awaits updateDoc(adminDocRef) while isUnlocking - LIKELY the phone's cache saving ~3,000 docs first; not proven. A diagnosis job of its own.
+F. A 46 px empty band between the day row and the small map (day row bottom 360, map top 406 at 412) - the closed Find / Team fold.
+Also seen, not a fix yet: the capybara's "WELCOME BACK, BOSS!" stands over the full map's Exit corner on Android (Exit still takes the tap). Journey Plan opens in 1.8-2.2 s on the production build (settled 3.3-3.9 s); its profile: garbage collection ~1 s, Leaflet re-making marker icons 0.32 s.
 
 THE LAB (as of 2026-11-15):
-1. preview_start "demo-emulator"; `node tools/demo-reset-emulator.mjs` (the big company is the default now, `--small` for the small one; 34 checks; run it with no app connected - with the phone's app listening one reset took 305 s and 3 checks failed); invite: FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 + firebase-admin, set demo_invites/walker@gmail.com (and walker.pc@gmail.com).
-2. preview_start "demo-api-emulator" (5177) and "demo-app-emulator" (5176).
-3. Android: boot kpm_phone (A-Brain Wiki/Concepts/Looking at the App.md); adb reverse 5176 5177 8080 9099; open http://localhost:5176/ ONCE - `am start` opens a new tab each time and a background tab is frozen (a probe never answers): `node tabs.mjs` keeps one. The phone keeps its storage across boots; `node clear.mjs` makes a first-time visitor.
-4. Tools in A-Brain Raw/2026-11-14-big-demo-walk: walk.mjs (the guide walk: --tag= --tier= --pc --gate-only), probe.mjs / tap.mjs (one look / one tap), board.mjs (a board from frames). Sign-in on the emulator: window.__kpmEmulatorAuth (walk.mjs signIn).
-5. Sizes: `adb shell wm size 1170x2532` + `wm density 480` = the iPhone 13's 390x844 CSS px (460 gives 407). Notch: index.html has viewport-fit=cover + black-translucent, so the iPhone home-screen app draws under the notch; PC Chrome 157 fakes it with CDP Emulation.setSafeAreaInsetsOverride { insets: { top: 47, bottom: 34 } } at 390x844 - label those frames a simulation. On Android, read env(safe-area-inset-top) in a Chrome tab before claiming either way.
-6. Stop the preview servers before any `npm run build`.
+1. preview_start "demo-emulator"; `node tools/demo-reset-emulator.mjs` (big by default, 35 s, no app connected); invites: FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 + firebase-admin, set demo_invites/walker@gmail.com and walker.pc@gmail.com ({ by: 'lab', at: new Date() }).
+2. Phone: boot kpm_phone (A-Brain Wiki/Concepts/Looking at the App.md). To LOOK at a fix, the dev server is fine: "demo-app-emulator" 5176 + "demo-api-emulator" 5177, adb reverse 5176 5177 8080 9099. For SPEED only the production lab build counts - recipe in Looking at the App, "SPEED IS MEASURED ON A PRODUCTION BUILD"; the dev server reads 4-8x slower (React dev timers).
+3. Tools in A-Brain Raw/2026-11-15-journey-big: jp.mjs (state / tap / shot / journey timing; taps scroll to off-screen keys), prof.mjs + callers.mjs (CPU profile of the open), notch.mjs (iPhone 13 home-screen notch, one process), fresh.mjs (first-time visitor), hush.mjs (the capybara intro), walk4195.mjs (sign-in + vault gate on 4195), board.mjs (gold marks + a drawn notch).
+4. 390 px: `adb shell wm size 1170x2532` + `wm density 480` (the page reloads and the capybara intro replays - hush.mjs); `wm size reset` + `wm density reset` after.
+5. Stop the preview servers before any build.
 
-JOURNEY PLAN (src/JourneyView.jsx, src/components/DayReplay.jsx): menu mark [data-mark="journey"]; controls by aria-label: "Team", "Day" (2 pickers), "Map keys", "Find a shop", "Replay" / "Day Replay", "Camera", replay keys (Play/Pause, Restart, Previous stop, Next stop, Speed, Time of day), "Close". As T2 (Owner). Frames: open, a salesman picked, Day Replay playing, Find a shop - at 412 (Pixel 7), 390 (iPhone 13 size) and the iPhone notch simulation. Time how long the map takes to show its shops.
+OPEN (not this job): step 8 "Count this one again" (StockOpnameView ~1855) - the guide does not say a count that differs must be typed twice.
 
-OPEN (found by the walk, not fixed):
-- Step 8 "Count this one again" (StockOpnameView ~1855): a count that differs from the stock must be typed twice; the guide does not say so, so a visitor who types any number is stuck at Submit ("Count these again before submitting").
-- Speed on the lab phone: vault open ~9.5 s on a first visit (small) vs 18-22 s after a SWITCH and 33 s+ on a first visit (big); PROSES RETUR busy 16 s, EOD send 12.8 s, approve 7.8 s (big). The unlock awaits updateDoc(adminDocRef) (App.jsx ~1369) while isUnlocking - LIKELY the phone's cache saving ~3,000 docs first; not proven.
-
-THEN (his order):
-1. The Q2 mark looks round (he said "sure"): A-Brain Raw/2026-11-14-day-replay-mark/; DayReplay.jsx:217-220 sets `picked`; expedition.css has no `.picked` rule since 7a3dc370.
-2. Ask him whether anything else keeps Journey Plan from looking its best. Then Fleet & Roster (src/FleetCanvasManager.jsx).
-3. Last (his split): the capybara tutorial + the demo door on the newest app, once the redesigns are done.
+THEN (his order): 1. The Q2 mark looks round (A-Brain Raw/2026-11-14-day-replay-mark/; DayReplay.jsx:217-220 sets `picked`; expedition.css has no `.picked` rule since 7a3dc370). 2. Ask him whether anything else keeps Journey Plan from looking its best, then Fleet & Roster (src/FleetCanvasManager.jsx). 3. Last (his split): the capybara tutorial + the demo door on the newest app.
 
 Antigravity: the Retur audit task (.claude/ANTIGRAVITY-TASK.md) is OPEN, waiting for him to run it.
 
 TRAPS
+- launch.json "demo-build" (4195) serves dist-demo, a build on the LIVE demo project: never sign in there. `grep -l __kpmEmulatorAuth dist-demo/assets/*.js` names a file only for a lab build. After a lab build, rebuild dist-demo the normal way and run `node src/config/demoBuild.check.mjs`.
 - Before any push: `git log origin/phase0-solid-ground..HEAD`; an `Antigravity:` commit gets `git show` + the gates re-run, or the push waits.
 - A-Brain pushes need no ask (his 2026-11-15 "u should upload every information to A brain"); its remote also gets "Nolan A-Brain" tobacco commits, so pull --rebase --autostash first when a push is refused.
 - .claude/launch.json, graphify-out/ and .claude/skills/alucard/lessons.md were modified before this job - never commit them with it.
