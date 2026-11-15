@@ -712,7 +712,7 @@
 .kx-rp-go { min-height: 40px; padding: 0 12px; border: 1px solid #E4B04A; border-radius: 8px; background: var(--panel); color: var(--ink); justify-self: start;
   font: 800 12px/1 var(--font-display); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
 .kx-rp-go svg { width: 14px; height: 14px; fill: currentColor; }
-.kx-keys { display: flex; flex-wrap: wrap; gap: 8px; justify-self: start; }   /* Replay his day + the Day Log paper's Print keys, one row */
+.kx-keys:not(.hidden) { display: flex; flex-wrap: wrap; gap: 8px; justify-self: start; }   /* Replay his day + the Day Log paper's Print keys, one row - :not(.hidden): the class is shared with the map's PC-only key bar (JourneyView, MapMissionControl), whose "hidden lg:flex" this rule beat on every phone from 2026-11-14 to the 2026-11-15 phone test */
 .kx-rp-rcpt { position: fixed; inset: 0; z-index: 9999; }
 /* the Day Log paper (src/utils/dayLogPaper.js): its page in a frame over the whole app, its own Print / Close keys on top */
 .kx-paper { position: fixed; inset: 0; z-index: 10000; background: #e9e6e1; }
@@ -824,3 +824,10 @@
 .kx-grp b { position: absolute; inset: 0; display: grid; place-items: center; font: 700 15px/1 var(--font-display); color: #E8E4DE; }
 .kx-grp .kx-bd { top: -3px; } .kx-grp .kx-bd.req { right: -3px; } .kx-grp .kx-bd.nb { left: -3px; }
 @media (prefers-reduced-motion: reduce) { .kx-fl .bn, .kx-fl .rip, .kx-fl .pole, .kx-fl .base, .kx-bd.req::after { animation: none !important; } }
+
+/* THE FULL MAP (JourneyView isFullScreen): no taller than the screen you can SEE, and below the demo's DEMO bar + mission
+   line. Android Chrome sizes `fixed inset-0` to the screen WITHOUT its address bar - 839 px on a 783 px phone - so the
+   bottom keys lost their names, and the salesman row sat under the DEMO bar (phone test 2026-11-15). --kpm-safe-top less
+   the notch = the demo chrome only (0 outside the demo; the map's own controls already keep clear of the notch).
+   max-height, not height: `none` -> a length never animates, so transition-all on .kx-map still snaps in and out. */
+.kx-map.kx-full { top: calc(var(--kpm-safe-top, 0px) - env(safe-area-inset-top, 0px)); max-height: calc(100dvh - var(--kpm-safe-top, 0px) + env(safe-area-inset-top, 0px)); }

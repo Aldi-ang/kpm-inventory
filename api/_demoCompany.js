@@ -352,11 +352,17 @@ export function buildDemoCompany(seed, now, vault, { big = false } = {}) {
         if (x.day > weekAgo) put(`${home}/audit_logs/${id}`, log);
         lastVisit[v.shop.id] = { day: x.day, ...v, by: x.man.name };
     }));
+    /* A SALE IS A VISIT TOO: the real Sales Terminal writes lastVisit + lastVisitedBy on every sale and leaves the visit
+       report's note and tag alone (MerchantSalesView.jsx, updateDoc on the shop). Without it the big company's Journey Plan
+       said 36 shops visited today while its Team box counted 228 that bought (his phone test, 2026-11-15). */
+    const lastSale = {};
+    for (const s of sales) if (!lastSale[s.shop.id] || s.data.date >= lastSale[s.shop.id].day) lastSale[s.shop.id] = { day: s.data.date, by: s.data.agentName };
     for (const c of shops) {
-        const v = lastVisit[c.id];
+        const v = lastVisit[c.id], sold = lastSale[c.id];
         put(`${home}/customers/${c.id}`, {
             ...c, ...(c.assignedAgent ? { assignedAgent: nameOf[c.assignedAgent] } : {}),
             ...(v ? { lastVisit: v.day, lastVisitNote: `[${v.tag}] ${v.note}`, lastVisitTag: v.tag, lastVisitedBy: v.by } : {}),
+            ...(sold && (!v || sold.day >= v.day) ? { lastVisit: sold.day, lastVisitedBy: sold.by } : {}),
             /* a New Request stays open on the shop (the "!" on the map) until someone presses Request done - JourneyView */
             ...(v && v.tag.includes('📝') && v.day >= addDays(day, -3) ? { openRequest: { note: v.note, day: v.day, by: v.by } } : {}),
         });

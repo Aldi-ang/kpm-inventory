@@ -11228,7 +11228,8 @@ section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual 
   ok(`Day Replay on a past day (${pastDay}, Agus): the app's own dayLog finds his sales AND his visit report, each on a pinned shop, in route order from 08:30`,
      !!replay && replay.events.some((e) => e.kind === 'sold') && replay.events.some((e) => e.source === 'report' && e.tag) && replay.events.every((e) => e.lat && e.lng)
      && replay.events[0].time >= '08:30' && replay.events[replay.events.length - 1].source === 'report');
-  const visitShops = a ? under('customers').filter((d) => d.data.lastVisit) : [];
+  /* the shops a report visited (a shop only sold to carries lastVisit + by and no note, as a real sale writes - 2026-11-15) */
+  const visitShops = a ? under('customers').filter((d) => d.data.lastVisitNote) : [];
   ok('a visited shop keeps its latest report (lastVisit / tag / note / by, as JourneyView writes them), and a fresh New Request stays open on it',
      !!a && visitShops.length >= 40 && visitShops.every((d) => d.data.lastVisitNote.startsWith(`[${d.data.lastVisitTag}] `) && staffNames.includes(d.data.lastVisitedBy))
      && under('customers').filter((d) => d.data.openRequest).every((d) => d.data.lastVisitTag.includes('📝')));
@@ -11276,6 +11277,13 @@ section('THE BIG DEMO COMPANY (2026-11-14) - his "u could simulate as its a big 
   ok('the big company is the same every night: two builds of the same moment are byte for byte equal', !!big && JSON.stringify(big) === JSON.stringify(dc.buildDemoCompany(seed, NOW, VAULT, { big: true })));
   const sellers = [...new Set(sales.map((s) => s.agentId))];
   const today = sales.filter((s) => s.date === big?.day);
+  /* his Journey Plan on the big company said 36 shops visited today while its Team box counted 228 that bought (phone test
+     2026-11-15): the real Sales Terminal writes lastVisit + lastVisitedBy on every sale (MerchantSalesView.jsx, updateDoc on the shop) */
+  /* a sale names its shop, not its id, and the seed has real shops sharing a name (3 x "warung sembako sumber rejeki") */
+  const boughtToday = [...new Set(today.map((s) => s.customerName))];
+  const visitedFor = (n) => shops.some((c) => c.name === n && c.lastVisit === big?.day && !!c.lastVisitedBy);
+  ok(`a demo shop that bought today counts as visited today, as a real sale makes it: ${boughtToday.filter(visitedFor).length} of ${boughtToday.length} shops that bought carry today's visit date; ${shops.filter((c) => c.lastVisit === big?.day).length} shops visited today in all`,
+     !!big && boughtToday.length > 100 && boughtToday.every(visitedFor));
   const tabs = [...new Set(roster.map((m) => `${m.province} › ${m.location}`))].sort();
   ok(`20 salesmen, every one selling today (${new Set(today.map((s) => s.agentId)).size}); still his two teams (${tabs.join(' | ')}), each with a T4 regional admin and a T6 motorist who sells; the five logins and the mission's Dika (demo-agent-2) are the same people`,
      !!big && sellers.length === 20 && new Set(today.map((s) => s.agentId)).size === 20 && tabs.length === 2
@@ -14118,6 +14126,29 @@ section('THE DAY LOG ON PAPER (his 2026-11-14 "paper like Todays log that can be
      && lay[0].L.groups.some((g) => g.items.length >= 3) && pp.mapSvg(hard, hb).includes('<svg class="ph"'));
   ok('one rule for "his round": the map\'s road and the paper\'s not-visited both read roundOf (expedition.js)',
      /const round = roundOf\(customers, m\.name, weekday\);/.test(read('src/utils/expedition.js')) && read('src/utils/dayLogPaper.js').includes("import { roundOf } from './expedition.js';"));
+}
+/* 2026-11-15 Journey Plan on the big demo company, tested on the Android phone (A-Brain Brainstorm/2026-11-15_journey-plan-big-company-test.md) */
+{
+  const jv = code(read('src/JourneyView.jsx')), ex = read('src/styles/expedition.css');
+  const full = (jv.match(/isFullScreen \? '(fixed inset-0[^']*)'/) || [])[1] || '';
+  const rule = (ex.match(/\.kx-map\.kx-full \{([^}]*)\}/) || [])[1] || '';
+  const inline = (jv.match(/style=\{isFullScreen \? \{([^}]*)\}/) || [])[1] || '';
+  ok('Journey full map: no taller than the screen you can SEE (max-height 100dvh) and below the DEMO bar + mission line (--kpm-safe-top less the notch, 0 outside the demo); the inline style keeps no top / height (an inline 100vh is Android Chrome\'s screen without its address bar, 839 px on a 783 px phone: the bottom keys lost their names, and the salesman row sat under the DEMO bar)',
+     full.split(' ').includes('kx-full') && inline.includes("position: 'fixed'") && !/\b(top|height)\s*:/.test(inline)
+     /* and the Replay/Print row's display:flex (2026-11-14) no longer un-hides the PC-only key bar that shares its class: on the
+        phone it stood half under the salesman chips once the row came out from under the DEMO bar */
+     && ex.includes('.kx-keys:not(.hidden) { display: flex;') && !/(^|\n)\.kx-keys \{ display: flex/.test(ex)
+     && rule.includes('top: calc(var(--kpm-safe-top, 0px) - env(safe-area-inset-top, 0px))')
+     && rule.includes('max-height: calc(100dvh - var(--kpm-safe-top, 0px) + env(safe-area-inset-top, 0px))'));
+  const { hiddenShopNote } = await import('../utils/expedition.js');
+  const a = jv.indexOf('const goToShop = '), b = a < 0 ? -1 : jv.indexOf('const validStore = ', a);
+  const go = a >= 0 && b > a ? jv.slice(a, b) : '';
+  ok('Find a shop while a salesman is pressed: a shop off his road says whose it is (his "this store is occupied by teammate name", 2026-11-15) - before, the map flew to empty streets and said nothing',
+     !!hiddenShopNote && go.includes('hideOthers') && go.includes('hiddenShopNote(shop.name, storeMetrics[shop.id]?.agentName, focusName, selectedDay)')
+     && hiddenShopNote('Toko Subur Baleendah', 'Dika Saputra', 'Ari Wibowo', 'Sunday') === "Toko Subur Baleendah is Dika Saputra's shop, not Ari Wibowo's - only Ari Wibowo's shops show while he is pressed. This is where it is."
+     && hiddenShopNote('Toko A', 'Unassigned', 'Ari Wibowo', 'Sunday').startsWith('Toko A has no salesman yet')
+     && hiddenShopNote('Toko A', '', 'Ari Wibowo', 'Sunday').startsWith('Toko A has no salesman yet')
+     && hiddenShopNote('Toko A', ' ari wibowo', 'Ari Wibowo', 'Sunday') === "Toko A is Ari Wibowo's shop, but not on Sunday's round - press All shops to see it. This is where it is.");
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

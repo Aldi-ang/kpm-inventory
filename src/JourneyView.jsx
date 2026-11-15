@@ -16,7 +16,7 @@ import { DayReplayLayer, DayReplayPanel } from './components/DayReplay.jsx';
 import { useDayReplay, readVisitLogs } from './hooks/useDayReplay.js';
 import { paperDay, manSheet, teamSheet, paperDoc, paperWait } from './utils/dayLogPaper.js';
 import { useWide } from './hooks/useWide';
-import { expedition, visibleTeam, roadStops, initials } from './utils/expedition';
+import { expedition, visibleTeam, roadStops, initials, hiddenShopNote } from './utils/expedition';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { visitReport } from './utils/dayLog.js';
@@ -894,6 +894,9 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
         setSearchFocus(shop.name);
         const pinned = Number(shop.latitude) && Number(shop.longitude);
         if (pinned && ![...orderedRoute, ...offRoute].some((s) => s.id === shop.id)) notify(`${shop.name} is not on ${selectedDay}'s round, so no chest is drawn there - this is where it is.`);
+        /* a pressed salesman hides every shop off his road (hideOthers): say whose shop it is, or the map flies to empty
+           streets and says nothing - his "this store is occupied by teammate name" (phone test 2026-11-15) */
+        else if (pinned && hideOthers && !road.tagOf[storeKey(shop.name)]) notify(hiddenShopNote(shop.name, storeMetrics[shop.id]?.agentName, focusName, selectedDay));
     };
 
     const validStore = orderedRoute.find(c => !isNaN(parseFloat(c.latitude)) && !isNaN(parseFloat(c.longitude)));
@@ -1197,8 +1200,10 @@ const JourneyView = ({ customers: rawCustomers, transactions: rawTransactions = 
 
             <div className="flex flex-col gap-3 lg:flex-row lg:gap-4">
             <div 
-                className={`${isFullScreen ? 'fixed inset-0 z-[9999] rounded-none' : 'relative w-full h-40 lg:h-[500px] rounded-none kpm-jp-map'} kx-map bg-[#474749] overflow-hidden border border-[var(--line-2)] transition-all duration-300${road ? ' kx-focus' : ''}`}
-                style={isFullScreen ? { position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', margin: 0, padding: 0 } : {}}
+                className={`${isFullScreen ? 'fixed inset-0 z-[9999] rounded-none kx-full' : 'relative w-full h-40 lg:h-[500px] rounded-none kpm-jp-map'} kx-map bg-[#474749] overflow-hidden border border-[var(--line-2)] transition-all duration-300${road ? ' kx-focus' : ''}`}
+                style={isFullScreen ? { /* top + height come from .kx-full (expedition.css): an inline 100vh is the screen WITHOUT
+                    Android Chrome's address bar, 839 px on a 783 px phone, and an inline top beat the DEMO bar's (test 2026-11-15) */
+                    position: 'fixed', left: 0, width: '100vw', margin: 0, padding: 0 } : {}}
             >
                 {/* the brush (his "new" key layout, 2026-10-03): the key stays in its corner and the list opens ABOVE it;
                     on the phone's full map the key lives in the dock and the list opens above the dock. Rows 44 tall,

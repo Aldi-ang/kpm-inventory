@@ -59,6 +59,15 @@ const his = (c, name) => {
    count too since 2026-10-21 (his "all store registration should be automatically can be seen by every team member").
    The Day Log paper (dayLogPaper.js) reads the same round for its "not visited". */
 export const roundOf = (customers, name, weekday) => customers.filter((c) => his(c, name) && ((parseInt(c.visitFreq) || 7) === 7 || c.visitDay === weekday));
+/* WHY A SEARCHED SHOP IS NOT DRAWN while one salesman is pressed in Journey Plan (only his road shows): whose shop it is -
+   his "this store is occupied by teammate name" (2026-11-15). shop = its name, owner = its salesman ('Unassigned' or empty
+   = nobody yet), man = the pressed salesman, day = the picked day. Words follow the sibling note "X is not on Sunday's round". */
+export const hiddenShopNote = (shop, owner, man, day) => {
+    const o = String(owner || '').trim();
+    if (o && o.toLowerCase() === String(man || '').trim().toLowerCase()) return `${shop} is ${man}'s shop, but not on ${day}'s round - press All shops to see it. This is where it is.`;
+    if (!o || /^unassigned$/i.test(o)) return `${shop} has no salesman yet - only ${man}'s shops show while he is pressed. This is where it is.`;
+    return `${shop} is ${o}'s shop, not ${man}'s - only ${man}'s shops show while he is pressed. This is where it is.`;
+};
 
 export function expedition(motorists = [], customers = [], transactions = [], now = new Date(), eods = []) {
     const today = getLocalDayKey(now);
