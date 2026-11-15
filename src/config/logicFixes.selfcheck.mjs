@@ -11330,8 +11330,8 @@ section('THE BIG DEMO COMPANY (2026-11-14) - his "u could simulate as its a big 
        && String(m.bio).length > 40 && shops.some((c) => c.assignedAgent === m.name && m.bio.toLowerCase().includes(c.city.toLowerCase()))
        && careerIds.has(m.id) && big.docs.some((d) => d.path.endsWith('/employee_directory/' + m.email)) && !big.docs.some((d) => d.path.endsWith('/vault_keys/' + m.id))));
   const resetSrc = read('api/demo-reset.js');
-  ok('the live switch: api/demo-reset.js builds the big company only when the demo\'s server says DEMO_SIZE=big - unset, the nightly reset is the small company as before',
-     /big = process\.env\.DEMO_SIZE === 'big'/.test(resetSrc) && /buildDemoCompany\(seed, now, vault, \{ big \}\)/.test(resetSrc));
+  ok('the live switch (his yes 2026-11-15, "to make sure that there is no problem when big company want to use my system is simulate it big"): api/demo-reset.js builds the big company unless the demo\'s server says DEMO_SIZE=small - the small company stays one setting away',
+     /big = process\.env\.DEMO_SIZE !== 'small'/.test(resetSrc) && /buildDemoCompany\(seed, now, vault, \{ big \}\)/.test(resetSrc));
 }
 
 section('THE DEMO FRONT DOOR + SWITCH BAR (2026-10-13) - his "A for phone B for pc for decide 1, decide 2 is A"');

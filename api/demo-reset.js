@@ -13,8 +13,9 @@
    the company from api/_demoCompany.js. Proven against the Firebase emulator with the real rules:
    tools/demo-reset-emulator.mjs.
 
-   WHICH COMPANY: the small one, unless the demo's server says DEMO_SIZE=big - then the big company (2026-11-14: 20
-   salesmen, 600 shops, api/_demoCompany.js BIG). Unset = tonight's reset is exactly what it was. */
+   WHICH COMPANY: the big one (api/_demoCompany.js BIG: 25 people, 20 salesmen, 600 shops, 6 months of totals) - his
+   yes on 2026-11-15: "to make sure that there is no problem when big company want to use my system is simulate it big".
+   DEMO_SIZE=small on the demo's server brings back the small company exactly as it was. */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { timingSafeEqual, randomBytes } from 'node:crypto';
@@ -56,7 +57,7 @@ const upsertLogin = async (auth, l) => {
     }
 };
 
-export async function resetDemo(db, auth, now = new Date(), big = process.env.DEMO_SIZE === 'big') {
+export async function resetDemo(db, auth, now = new Date(), big = process.env.DEMO_SIZE !== 'small') {
     const started = Date.now();
     const seed = JSON.parse(readFileSync(join(process.cwd(), 'demo', 'seed.json'), 'utf8'));
     const vault = { pin: await hashSecret(VAULT_PASSWORD), recoveryHash: await hashSecret(RECOVERY_WORD.toLowerCase()) };
