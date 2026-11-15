@@ -1,9 +1,9 @@
-# The one job - his order decides: the Q2 mark looks round, or Fleet & Roster first
+# The one job - the Q2 mark looks round (then Fleet & Roster, then the demo tutorial + door)
 
 Journey fixes A-D are LIVE (9352941a, 2026-11-15 12:50 WIB). Finished jobs are in NEXT-SESSION-archive.md.
 
 FIRST - two answers owed by him:
-1. Mid-job on 2026-11-15 he asked: *"dont we continue with the demo application or the fleet and roster yet?"* I answered with his own order (below) and asked whether Fleet & Roster should jump ahead of the Q2 mark. His answer picks the job. No answer -> his order stands: the Q2 mark first.
+1. ANSWERED 2026-11-15 13:21: *"whatever the order as long as all done, efficiently and effectively"* -> the order is mine: the Q2 mark (small; this job), then Fleet & Roster, then the demo tutorial + door. Also asked him: does anything else in Journey Plan bother him? No answer -> straight to Fleet & Roster after the Q2 mark; do not ask again.
 2. His phone test of the live demo after 00:05 WIB on 2026-11-16 (the big company starts with that reset): press SWITCH twice -> "fast" or "slow". The lab says the vault gate takes 23.5 s on a first visit (production build). "slow" -> E (below) comes before everything else. DEMO_SIZE=small on the demo's Vercel project undoes the big company without code.
 
 HIS ORDER (set before 2026-11-15):
