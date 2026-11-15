@@ -1,4 +1,6 @@
-# The one job - the Q2 mark looks round (then Fleet & Roster, then the demo tutorial + door)
+# The one job - Journey Plan review board (today vs proposed) + the Q2 mark, one lab run
+
+He asked 2026-11-15 13:40: *"does u think journey plan now is the most efficient end most effective UI that we can do right now? if u have any suggestion as all the users for this app then tell me and show me the solution"*. Answer given: not yet, six findings - table with numbers in A-Brain Brainstorm/2026-11-15_journey-plan-big-company-test.md, "REVIEW 2026-11-15 13:45". SHOW him: one board, today vs proposed, phone 390 AND PC 1280 (his habit: phone one thing, PC everything), plus the salesman's own Journey Plan on the phone (not checked yet) and the Q2 mark's look. Proposed frames = trial in the working tree on the dev server (5176), shot, then `git stash` it back - nothing committed before his pick. Load the design stack first (skill section 1a). Respect: the 160 px strip (his A) and the fold (his B) stay. Then build what he keeps, gates, push.
 
 Journey fixes A-D are LIVE (9352941a, 2026-11-15 12:50 WIB). Finished jobs are in NEXT-SESSION-archive.md.
 
