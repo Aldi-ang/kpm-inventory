@@ -22,7 +22,7 @@
 - [Alucard delegation autonomy](feedback_alucard_delegation_autonomy.md) — delegates heavy-output/low-judgment work, reports what and why
 - [Antigravity: thinking jobs only](feedback_antigravity_thinking_jobs_only.md) — never a browser/clicking job; Google-tool media = Claude writes prompts + steps, he pastes them (his call 2026-11-10)
 
-- [A-Brain is the only memory](feedback_abrain_is_the_only_memory.md) — every fact/decision goes in the vault; the repo is workspace, PROGRESS.md is session state only
+- [A-Brain is the only memory](feedback_abrain_is_the_only_memory.md) — every fact/decision goes in the vault AND gets uploaded (push, no ask - his 2026-11-15); the repo is workspace, PROGRESS.md is session state only
 
 ## Design laws (locked — do not re-litigate)
 - [Every action must report](project_kpm_every_action_must_report.md) — silence is a bug, not missing polish; his words, unprompted
@@ -32,6 +32,7 @@
 - [Receipt keeps KPM company blue](project_kpm_receipt_is_company_theme.md) — the nota is NOT app UI; palette law stops at the print block
 
 ## Current work
+- [Bug hunt when the app is finished](project_kpm_bughunter_after_finish.md) — Claude-BugHunter stored in A-Brain Skills-Library (his 2026-11-15 ask); offer it when he calls the app finished; never install or run its installer
 - [UI rework phases](project_kpm_ui_rework_phases.md) — 6-phase plan, Phase 5 COMPLETE; **login screen + app shell are the live front (2026-08-14)**; plan file path + locked decisions
 - [MerchantSalesView redesign](project_kpm_merchantsales_redesign_brief.md) — sales-terminal TRAPS and locked decisions only; **the resume point is `.claude/NEXT-SESSION.md` in the repo** (one job, printed by the SessionStart hook with PROGRESS.md) — never search for it
 - [Cost fix workflow](project_kpm_cost_fix_workflow.md) — **active**; stage 1 done (1acabca), stage 2 blocked on the benchmark question

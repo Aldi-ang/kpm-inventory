@@ -5,7 +5,7 @@ metadata:
   node_type: memory
   type: feedback
   originSessionId: cc70e7ae-7888-4158-b297-2dbf39b9b10c
-  modified: 2026-08-13T23:49:38.799Z
+  modified: 2026-11-15T00:55:38.586Z
 ---
 
 Aldi, 2026-08-14: *"this app memories and facts should be take noted inside the A-Brain, this app
@@ -23,3 +23,9 @@ disagree, A-Brain wins and the other copy gets fixed. `.claude/PROGRESS.md` stay
 session state (where the work stands, what is half-done, what he was asked) rather than knowledge;
 it is what makes `/clear` free. Knowledge that appears in it must also be written to A-Brain in the
 same session. See [[project-kpm-second-brain-wiki]] and [[project-kpm-abrain-rename-and-graphify]].
+
+**Uploading it (2026-11-15):** *"yes u should upload every information to A brain"* - after the auto-mode guard
+refused a vault push. Push every A-Brain commit you make (named files, `git diff --cached --stat` first), no ask.
+The vault's remote also receives an automated tobacco-notes agent ("Nolan A-Brain" commits to Tobacco-Business/),
+so a push can be refused as non-fast-forward: `git pull --rebase --autostash`, check the incoming files do not
+touch yours, then push. See [[feedback-kpm-dont-push-every-update]].
