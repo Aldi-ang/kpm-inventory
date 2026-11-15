@@ -1879,6 +1879,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                             button. Nothing here duplicates it. */}
                         <div className="flex gap-2">
                         <button
+                            data-guide="customer"
                             onClick={() => setShowCustomerDropdown(true)}
                             aria-label={customerName ? `Customer: ${customerName}. Tap to change` : 'Choose customer'}
                             className="kpm-hover flex-1 min-w-0 text-left bg-[var(--duke-paper-5)] border border-[var(--duke-edge-on-paper)] text-[var(--duke-ink-7)] p-2 min-h-[44px] lg:min-h-0 text-[13px] md:text-sm font-black uppercase rounded truncate"
@@ -2249,6 +2250,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     ADDED, as the closed bottom bar used to carry them. A tap puts the panel away. */}
                 <button
                     type="button"
+                    data-guide="close-slip"
                     onClick={() => setManifestOpen(false)}
                     className="lg:hidden h-[52px] shrink-0 px-4 flex items-center gap-3 text-left bg-[var(--duke-paper-2)] border-b border-[var(--duke-edge-on-paper)]"
                 >
@@ -2463,7 +2465,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     </div>
                   </div>
                 </button>
-                <button type="button" data-guide="open-slip" onClick={() => setManifestOpen(true)} className="kpm-press shrink-0 min-h-[48px] px-6 rounded-lg bg-[var(--duke-paper)] text-[var(--duke-on-plate)] text-[15px] font-black">
+                <button type="button" data-guide="open-slip" onClick={() => setManifestOpen(true)} data-shut={manifestOpen ? undefined : ''} className="kpm-press shrink-0 min-h-[48px] px-6 rounded-lg bg-[var(--duke-paper)] text-[var(--duke-on-plate)] text-[15px] font-black">
                     {isReturMode ? 'Retur' : getLang() === 'id' ? 'Bayar' : 'Pay'}
                 </button>
             </div>
@@ -2525,7 +2527,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                 {/* B, phone: who is buying and how they pay, on top of the shelf. The SAME picker and the same
                     paymentMethod as the slip; manifest-dropdown-area keeps the picker's click-outside listener off it. */}
                 <div className="manifest-dropdown-area lg:hidden shrink-0 flex items-center gap-2 px-3 py-1.5 border-b border-[var(--duke-edge-1)] bg-[var(--duke-fill-well)]">
-                    <button type="button" onClick={() => setShowCustomerDropdown(true)} className="kpm-press min-w-0 flex-1 min-h-[44px] flex items-center gap-2 text-left">
+                    <button type="button" data-guide="customer" onClick={() => setShowCustomerDropdown(true)} className="kpm-press min-w-0 flex-1 min-h-[44px] flex items-center gap-2 text-left">
                         {customerName.trim() && <span className="shrink-0 text-[12px] font-bold text-[var(--duke-ink-5)]">{getLang() === 'id' ? 'Pelanggan' : 'Customer'}</span>}
                         <span className={`truncate text-[14px] ${customerName.trim() ? 'font-black uppercase text-[var(--duke-ink-1)]' : 'font-bold text-[var(--duke-ink-5)]'}`}>{customerName.trim() || tr('Tap to choose the customer')}</span>
                         <ChevronDown size={14} className="shrink-0 text-[var(--duke-ink-5)]" />
@@ -2813,7 +2815,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                     panel unreachable — you cannot walk to a thing that disappears when you set
                     off towards it. Press the picture again, or another, to change it. */}
                 <div className="flex-1 min-h-0 flex overflow-hidden">
-                <div data-guide="products" className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-3 pb-[76px] lg:px-0 lg:pb-0 lg:mx-4 lg:mt-3 lg:mb-4 lg:self-start lg:max-h-[calc(100%-28px)] lg:rounded-lg lg:border lg:border-[var(--duke-edge-1)] flex flex-col scrollbar-hide bg-[var(--duke-fill-ground)] relative scroll-smooth" ref={scrollContainerRef}>
+                <div data-guide="products" data-covered={manifestOpen ? '' : undefined} className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden px-3 pb-[76px] lg:px-0 lg:pb-0 lg:mx-4 lg:mt-3 lg:mb-4 lg:self-start lg:max-h-[calc(100%-28px)] lg:rounded-lg lg:border lg:border-[var(--duke-edge-1)] flex flex-col scrollbar-hide bg-[var(--duke-fill-ground)] relative scroll-smooth" ref={scrollContainerRef}>
                     {/* B, PC: the table's head. The same six columns as the rows under it (one grid template, twice). */}
                     <div className="hidden lg:grid sticky top-0 z-20 shrink-0 grid-cols-[44px_minmax(0,1fr)_110px_170px_110px_132px] gap-x-4 px-4 py-2.5 border-b border-[var(--duke-edge-1)] bg-[var(--duke-fill-ground)] text-[12px] text-[var(--duke-ink-5)]">
                         <span></span>
@@ -3554,7 +3556,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
                                 </button>
                             </div>
 
-                            <button onClick={() => { setReceiptData(null); setLockedTier(null); }} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</button>
+                            <button data-guide="receipt-close" onClick={() => { setReceiptData(null); setLockedTier(null); }} className="no-print w-full shrink-0 !bg-red-600 hover:!bg-red-700 !text-white py-4 font-black uppercase tracking-[0.2em] shadow-[0_-5px_20px_rgba(0,0,0,0.2)] active:scale-95 transition-transform rounded-b-lg flex items-center justify-center gap-2"><X size={20}/> CLOSE RECEIPT</button>
                         </div>
                     </div>
                 );

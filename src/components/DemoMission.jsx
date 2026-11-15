@@ -169,22 +169,39 @@ const same = (a, b) => (!a && !b) || (a && b && a.i === b.i && a.say === b.say &
 function Walk({ n, beats, onClose }) {
     const [v, setV] = useState(null);   // { i, say, r } - r null = the target is not on the page
     const seen = useRef(null);
+    const hand = useRef(false);   // he scrolled by hand since the square last moved the page
     useEffect(() => {
         /* read straight away, not on the next frame: a few selectors and one rect, and a frame that never comes (a
            background tab, a pane that does not paint) must not freeze the square on the last beat */
         const look = () => {
             /* the dialog gate is asking now ("Kirim ...?", "Approve ...?"): it is the next press, so step aside */
             if (qs('[role="alertdialog"]')) { setV(null); return; }
-            const { i, el, say } = aim(beats);
+            const live = aim(beats);
+            /* the terminal's receipt over the whole screen (after SIMPAN TRANSAKSI / PROSES RETUR) covers whatever the beat
+               points at - the 2026-11-14 phone walk found step 5's ring on the receipt's title, Retur Mode under it. Its
+               close key is the next press, whatever the beat. */
+            const rc = qs('[data-guide="receipt-close"]');
+            const shut = !!rc && rc.getBoundingClientRect().height > 0;
+            const { i } = live, el = shut ? rc : live.el, say = shut ? 'Tutup notanya dulu: tekan tombol ini.' : live.say;
             /* never scroll while he is typing in a box: the first digit already moves the guide on, and the page jumping
                away under the second digit reads as the app eating the number. The scroll waits until he leaves the box. */
             const typing = document.activeElement?.matches?.('input, textarea, select') && !el?.contains(document.activeElement);
-            if (el && el !== seen.current && !typing) { el.scrollIntoView({ block: 'nearest' }); seen.current = el; }
-            const next = { i, say, r: el ? boxOf(el, beats[i].open) : null, typing: !!typing };
+            /* and bring it back while it sticks out: the page can still move after that first scroll (the EOD deck folds
+               820 ms after its last card and left the letter's send key 5 px on the phone's screen, 2026-11-14) - unless
+               he scrolled by hand since the square moved */
+            const q = el?.getBoundingClientRect();
+            if (el && !typing && (el !== seen.current || (!hand.current && (q.top < 0 || q.bottom > window.innerHeight)))) {
+                if (el !== seen.current) hand.current = false;
+                el.scrollIntoView({ block: 'nearest' }); seen.current = el;
+            }
+            const next = { i, say, r: el ? boxOf(el, !shut && beats[i].open) : null, typing: !!typing };
             setV((p) => (same(p, next) ? p : next));
         };
         look();
         const t = setInterval(look, 300);
+        const byHand = () => { hand.current = true; };
+        window.addEventListener('touchmove', byHand, { capture: true, passive: true });
+        window.addEventListener('wheel', byHand, { capture: true, passive: true });
         window.addEventListener('resize', look);
         window.addEventListener('scroll', look, true);
         window.addEventListener('pointerup', look, true);
@@ -195,6 +212,8 @@ function Walk({ n, beats, onClose }) {
             window.removeEventListener('scroll', look, true);
             window.removeEventListener('pointerup', look, true);
             window.removeEventListener('keyup', look, true);
+            window.removeEventListener('touchmove', byHand, { capture: true });
+            window.removeEventListener('wheel', byHand, { capture: true });
         };
     }, [beats]);
     if (!v) return null;

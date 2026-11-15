@@ -12128,6 +12128,52 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
 {
   const { STEPS, GUIDE, missionDay, liveStep, liveBeat, fmt } = await import('./demoMission.js');
   const rv = read('src/RestockVaultView.jsx'), dm = read('src/components/DemoMission.jsx'), door = read('src/components/DemoFrontDoor.jsx');
+  /* the 2026-11-14 walk on the Android phone (412 px): step 4's "Pilih toko yang Anda kunjungi." ringed the manifest's
+     customer button, which sits off-canvas on the phone (ring at x -334, the whole screen dimmed) - the phone's own
+     customer bar on top of the shelf carried no mark the guide could find */
+  const salesSrc = read('src/MerchantSalesView.jsx'), shopAt = GUIDE[4].flatMap((b) => [].concat(b.at));
+  ok('REGRESSION: the choose-the-shop beat rings a customer picker that is on screen at both widths - the phone\'s own customer bar (lg:hidden) and the manifest\'s button both carry data-guide="customer", and the beat points at that mark, never at the manifest-only aria-label',
+     shopAt.includes('[data-guide="customer"]') && !shopAt.some((s) => /Choose customer/.test(s))
+     && /<button type="button" data-guide="customer" onClick=\{\(\) => setShowCustomerDropdown\(true\)\} className="kpm-press min-w-0 flex-1/.test(salesSrc)
+     && /<button\s+data-guide="customer"\s+onClick=\{\(\) => setShowCustomerDropdown\(true\)\}\s+aria-label=\{customerName \?/.test(salesSrc));
+  /* the same walk, two beats on: the slip (the manifest) is a drawer shut off-canvas on the phone, and "Tekan Foto serah
+     terima otomatis." ringed x -330 with the whole screen dimmed. Every beat whose control lives in the slip also names
+     the phone's Bayar / Retur key that opens it, last - the PC never shows that key, so its own control still wins there */
+  const inSlip = /data-guide="(photo|reason|cond|sale-mode)"|data-mission="[45]"/;
+  const slipBeats = (n) => GUIDE[n].filter((b) => [].concat(b.at).some((s) => inSlip.test(s)));
+  ok('REGRESSION: every step-4/5 beat whose control lives in the slip (sale/retur keys, damage boxes, photo, the final press) rings the phone\'s open-the-slip key only while the slip is shut (data-shut) - 3 beats in step 4, 4 in step 5, each with its own sentence',
+     [4, 5].every((n) => slipBeats(n).every((b) => [].concat(b.at).at(-1) === '[data-guide="open-slip"][data-shut]' && [].concat(b.say).length === [].concat(b.at).length))
+     && slipBeats(4).length === 3 && slipBeats(5).length === 4);
+  /* run 6 of the same walk: with the slip OPEN (Retur Mode and the shop are picked inside it), "Tekan + pada barang rusak"
+     ringed the shelf under the open slip - its middle sat on the slip's BAGIKAN SAMPEL GRATIS; and with a slip control
+     scrolled below the screen, the open-slip key (behind the open slip) won over it. The marks now say the slip's state:
+     the shelf carries data-covered while the slip is open, the open-slip key data-shut while it is shut */
+  const prodBeats = [4, 5].map((n) => GUIDE[n].find((b) => [].concat(b.at).some((s) => /data-guide="products"/.test(s))));
+  ok('REGRESSION: the shelf beats ring the shelf only while the slip is shut, else the slip\'s own header key that puts it away ("Tutup pesanan dulu")',
+     prodBeats.every((b) => b && [].concat(b.at).join() === '[data-guide="products"]:not([data-covered]),[data-guide="close-slip"]' && [].concat(b.say).length === 2)
+     && /<div data-guide="products" data-covered=\{manifestOpen \? '' : undefined\}/.test(salesSrc)
+     && /data-guide="open-slip" onClick=\{\(\) => setManifestOpen\(true\)\} data-shut=\{manifestOpen \? undefined : ''\}/.test(salesSrc)
+     && /type="button"\s+data-guide="close-slip"\s+onClick=\{\(\) => setManifestOpen\(false\)\}/.test(salesSrc));
+  /* and one press later: SIMPAN TRANSAKSI opens the receipt over the whole screen, and step 5's ring sat on the receipt's
+     title (Retur Mode under it). While a receipt is up, its close key is the next press, whatever the beat */
+  /* step 6 on the phone: the guide scrolled the letter's send key in once, then the EOD deck folded (820 ms after its last
+     card) and pushed it down - 5 px of "Send to the regional admin" left on a 783 px screen. The square now brings its
+     target back while it sticks out, unless the visitor scrolled by hand since the square moved */
+  ok('REGRESSION: the guide brings its target back on screen after the page moves under it (the EOD send key), unless he scrolled by hand since',
+     /const hand = useRef\(false\);/.test(dm) && /el !== seen\.current \|\| \(!hand\.current && \(q\.top < 0 \|\| q\.bottom > window\.innerHeight\)\)/.test(dm)
+     && /addEventListener\('touchmove', byHand, \{ capture: true, passive: true \}\)/.test(dm) && /removeEventListener\('touchmove', byHand, \{ capture: true \}\)/.test(dm));
+  ok('REGRESSION: while the terminal\'s receipt is up, the guide rings its CLOSE RECEIPT key ("Tutup notanya dulu") instead of a control the receipt covers',
+     /<button data-guide="receipt-close" onClick=\{\(\) => \{ setReceiptData\(null\); setLockedTier\(null\); \}\}/.test(salesSrc)
+     && /const rc = qs\('\[data-guide="receipt-close"\]'\);/.test(dm) && /el = shut \? rc : live\.el, say = shut \? 'Tutup notanya dulu: tekan tombol ini\.' : live\.say/.test(dm));
+  /* step 8 on the phone: the count beat ended the moment Submit lit up (one box typed), but the app takes a counted product
+     only with BOTH boxes it needs (countBoxEmpty) - the walk's press got "Cannot submit: type a number in both boxes, 0 if
+     there are none". The row and Submit now say when a counted product still has such an empty box */
+  const sov = read('src/StockOpnameView.jsx'), countBeat = GUIDE[8].find((x) => [].concat(x.at).includes('[data-guide="good"]'));
+  ok('REGRESSION: the count beat lasts until no counted product has an empty box the app needs (data-half on the row and on Submit, both from countBoxEmpty) - the half row\'s empty box is ringed first',
+     !!countBeat && [].concat(countBeat.at)[0] === '[data-half] input:placeholder-shown' && countBeat.done === '[data-guide="submit-count"]:not(:disabled):not([data-half])'
+     && /data-half=\{counts\[item\.id\] !== undefined && countBoxEmpty\(counts\[item\.id\]\) \? '' : undefined\}/.test(sov)
+     && /data-guide="submit-count" data-half=\{halfRows \? '' : undefined\}/.test(sov)
+     && /const halfRows = activeInventory\.some\(\(i\) => i && counts\[i\.id\] !== undefined && \(!recounting \|\| reopened\[i\.id\]\) && countBoxEmpty\(counts\[i\.id\]\)\);/.test(sov));
   const send = (n) => `if (IS_DEMO) window.dispatchEvent(new CustomEvent('kpm-mission', { detail: { step: ${n},`;
   const masuk = rv.slice(rv.indexOf('const handleProcessRestock'), rv.indexOf('const handleHQPush'));
   const kirim = rv.slice(rv.indexOf('const handleHQPush'), rv.indexOf('const handleSaveTarget'));
@@ -12205,7 +12251,7 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
   ok('REGRESSION (found in the lab, 2026-10-25): the guide is drawn on the page root - inside the demo bar its z 400 lost to the phone menu (z 90) - reads the page without waiting for a frame, picks the copy of a control that is on screen, and neither scrolls nor dims while he types in a box',
      /return createPortal\(/.test(dm) && /document\.body\s*\);/.test(dm) && !/requestAnimationFrame/.test(code(dm)) &&
      /all\.find\(shows\) \|\| all\[0\]/.test(dm) &&
-     /if \(el && el !== seen\.current && !typing\) \{ el\.scrollIntoView/.test(dm) && /const panels = r && !off && !v\.typing \?/.test(dm));
+     /if \(el && !typing && \(el !== seen\.current \|\| /.test(dm) && /el\.scrollIntoView\(\{ block: 'nearest' \}\); seen\.current = el;/.test(dm) && /const panels = r && !off && !v\.typing \?/.test(dm));
   ok('the guide sits over the sales terminal\'s shop picker (z 300) and the bay\'s sheet (z 80), under the dialog gate (z 10001)',
      /\.kpm-mx-veil \{ position: fixed; z-index: 400;/.test(read('src/styles/theme.css')) && /\.kpm-mx-cap \{ position: fixed; z-index: 401;/.test(read('src/styles/theme.css')) &&
      /fixed inset-0 z-\[300\]/.test(sales) && /\.kpm-bay-sheet \{ position: fixed; z-index: 80;/.test(read('src/styles/theme.css')) && /z-\[10001\]/.test(read('src/components/ConfirmGate.jsx')));

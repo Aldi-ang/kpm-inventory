@@ -32,9 +32,18 @@ export const STEPS = [
    `data-*` marks it reads sit on the real components. */
 const nav = (id, label, inside) => ({ at: [`[data-mark="${id}"]`, '[aria-label="Open navigation"]'],
     say: [`Buka ${label} dari menu.`, `Buka menu, lalu pilih ${label}.`], done: inside });
-const SHOP = { at: ['[data-guide="shops"]', '[aria-label="Choose customer"]'], say: ['Pilih tokonya dari daftar.', 'Pilih toko yang Anda kunjungi.'],
+/* the customer picker that is on screen: the phone's bar on top of the shelf, or the manifest's button on the PC - both
+   carry data-guide="customer". The manifest's copy sits off-canvas on the phone (the 2026-11-14 phone walk: ring at x -334). */
+const SHOP = { at: ['[data-guide="shops"]', '[data-guide="customer"]'], say: ['Pilih tokonya dari daftar.', 'Pilih toko yang Anda kunjungi.'],
     done: '[data-mission="4"][data-cust]' };
 const PHOTO = { at: '[data-guide="photo"]', say: 'Tekan Foto serah terima otomatis.', done: '[data-mission="4"][data-photo]' };
+/* the slip (the manifest) is a drawer on the phone, shut off-canvas to the left: a beat whose control lives in it rings
+   the phone's own Bayar / Retur key first (lg:hidden, so the PC's always-open slip still wins). The 2026-11-14 phone
+   walk found the photo key ringed at x -330 with the whole screen dimmed. */
+const slip = (b) => ({ ...b, at: [...[].concat(b.at), '[data-guide="open-slip"][data-shut]'], say: [...[].concat(b.say), 'Buka pesanan dulu: tekan tombol ini.'] });
+/* and the other way round: an open slip covers the shelf (its middle sat on BAGIKAN SAMPEL GRATIS, run 6), so the
+   shelf counts only while the slip is shut - else the slip's own header key puts it away */
+const shelf = (say, done) => ({ at: ['[data-guide="products"]:not([data-covered])', '[data-guide="close-slip"]'], say: [say, 'Tutup pesanan dulu: tekan tombol ini.'], done });
 const BAY = '[data-mission="3"]', DIKA = '.pc[data-agent="demo-agent-2"]:not([data-late])';
 /* the owner's vault steps start with the vault open (demo walk 2026-11-08 #1: the owner lands locked - the real app's
    path, the password opens it - and the guide pointed at Restock Vault, whose master desk stays shut, forever). The
@@ -64,20 +73,20 @@ export const GUIDE = {
         { at: '.kpm-bay-sheet', say: 'Isi jumlahnya, lalu tekan Masukkan ke van.', done: `${BAY} [data-ponder="go"]:not(:disabled)` },
         { at: `${BAY} [data-ponder="go"]`, say: 'Tekan Muat van.' }],
     4: [nav('sales', 'Sales Terminal', '[data-mission="4"]'),
-        { at: '[data-guide="sale-mode"]', say: 'Tekan Sale Mode.', done: '[data-mission="4"]:not([data-retur])' },
+        slip({ at: '[data-guide="sale-mode"]', say: 'Tekan Sale Mode.', done: '[data-mission="4"]:not([data-retur])' }),
         SHOP,
-        { at: '[data-guide="products"]', say: 'Tekan + pada barang yang dibeli toko. Jumlahnya bisa diubah di Manifest.', done: '[data-mission="4"][data-cart]' },
-        PHOTO,
-        { at: '[data-mission="4"]', say: `Tekan ${tr('MAKE DEAL')}.` }],
+        shelf('Tekan + pada barang yang dibeli toko. Jumlahnya bisa diubah di Manifest.', '[data-mission="4"][data-cart]'),
+        slip(PHOTO),
+        slip({ at: '[data-mission="4"]', say: `Tekan ${tr('MAKE DEAL')}.` })],
     5: [nav('sales', 'Sales Terminal', '[data-mission="5"]'),
-        { at: '[data-mission="5"]', say: 'Tekan Retur Mode.', done: '[data-mission="4"][data-retur]' },
+        slip({ at: '[data-mission="5"]', say: 'Tekan Retur Mode.', done: '[data-mission="4"][data-retur]' }),
         SHOP,
-        { at: '[data-guide="products"]', say: 'Tekan + pada barang rusak yang dikembalikan toko.', done: '[data-mission="4"][data-cart]' },
+        shelf('Tekan + pada barang rusak yang dikembalikan toko.', '[data-mission="4"][data-cart]'),
         /* a pack put in the cart before Retur Mode is still Good and has no reason box yet: then the condition box first */
-        { at: ['[data-guide="reason"]', '[data-guide="cond"]'], say: ['Barangnya sudah ditandai Damaged. Pilih alasan rusaknya.', 'Ubah kondisinya menjadi Damaged.'],
-          done: '[data-mission="4"][data-reasons]' },
-        PHOTO,
-        { at: '[data-mission="4"]', say: `Tekan ${tr('PULL RETUR')}.` }],
+        slip({ at: ['[data-guide="reason"]', '[data-guide="cond"]'], say: ['Barangnya sudah ditandai Damaged. Pilih alasan rusaknya.', 'Ubah kondisinya menjadi Damaged.'],
+          done: '[data-mission="4"][data-reasons]' }),
+        slip(PHOTO),
+        slip({ at: '[data-mission="4"]', say: `Tekan ${tr('PULL RETUR')}.` })],
     6: [nav('eod', 'EOD Setoran', '[data-mission="6"]'),
         { at: '[data-guide="deck"]', say: 'Hitung tiap kartu: uang tunai, transfer, barang kembali dan pita cukai. Isi angkanya, lalu tekan tombol di bawah kartu.',
           done: '[data-mission="6"]:not([data-stage="open"])' },
@@ -89,8 +98,12 @@ export const GUIDE = {
         { at: `${DIKA} [data-guide="approve-night"]`, say: 'Tekan tombol Approve, lalu setujui.' }],
     8: [nav('stock_opname', 'Stock Opname', '[data-mission="8"]'),
         { at: '[data-mission="8"]', say: 'Tekan New Count.', done: '[data-guide="count"]' },
-        { at: ['[data-guide="good"]', '[data-guide="count"]'], say: ['Isi jumlah fisik barang yang Anda hitung.', 'Isi jumlah fisik barang yang Anda hitung.'],
-          done: '[data-guide="submit-count"]:not(:disabled)' },
+        /* a counted product needs every box the app asks for (Good and Damaged, 0 if none) before Submit takes it: the
+           2026-11-14 phone walk was sent to Submit after one box and got "Cannot submit: type a number in both boxes".
+           A half-filled row's empty box comes first (StockOpnameView data-half, from the app's own countBoxEmpty). */
+        { at: ['[data-half] input:placeholder-shown', '[data-guide="good"]', '[data-guide="count"]'],
+          say: ['Isi juga kotak ini: ketik 0 kalau tidak ada.', 'Isi jumlah fisik barang yang Anda hitung.', 'Isi jumlah fisik barang yang Anda hitung.'],
+          done: '[data-guide="submit-count"]:not(:disabled):not([data-half])' },
         { at: '[data-guide="submit-count"]', say: 'Tekan Submit to HQ.' }],
 };
 

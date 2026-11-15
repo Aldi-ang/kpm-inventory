@@ -634,6 +634,9 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
     };
 
     const stillUncounted = !isHighCommand && !IS_DEMO && !recounting ? opnameMissing(activeInventory, counts) : [];
+    /* a counted product that still has a box the app needs (handleCommit's own countBoxEmpty test): the demo guide's count
+       beat waits for none (demoMission.js GUIDE[8]) - the 2026-11-14 phone walk was sent to Submit after one box */
+    const halfRows = activeInventory.some((i) => i && counts[i.id] !== undefined && (!recounting || reopened[i.id]) && countBoxEmpty(counts[i.id]));
     const handleCommit = async () => {
         if (weekDone && !recounting) return notify(`Cannot submit: this week's count for ${countPlace} is already in (${weekDone.by}, ${dayWord(weekDone.at)}).`);
         if (notCountDay) return notify(`Cannot submit: Stock Opname day is ${WEEK_DAYS[countDay]}.`);
@@ -1763,7 +1766,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                         gold, a mismatch is red. */
                                 return (
                                     
-                                    <div key={item.id} className={`relative overflow-hidden bg-[var(--raised)] rounded-xl border transition-colors ${edge} `}>
+                                    <div key={item.id} data-half={counts[item.id] !== undefined && countBoxEmpty(counts[item.id]) ? '' : undefined} className={`relative overflow-hidden bg-[var(--raised)] rounded-xl border transition-colors ${edge} `}>
                                         {/* one glance down the list says which rows are done and which are off */}
                                         <span className={`absolute left-0 top-0 bottom-0 w-1 ${bar} `} aria-hidden="true"></span>
                                         <div className="pl-4 pr-3 py-3 md:py-4 flex flex-col md:flex-row md:items-end gap-3 md:gap-6">
@@ -2005,7 +2008,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                         <div className="text-xs text-[var(--ink-dim)] font-bold uppercase w-full md:w-auto text-center md:text-left tracking-widest">{!countClosed && (stillUncounted.length ? `${Object.keys(counts).length} of ${Object.keys(counts).length + stillUncounted.length} counted` : `${Object.keys(counts).length} Wares Counted`)}</div>
                         <div className="flex w-full md:w-auto gap-3">
                             {!countClosed && <button onClick={() => clearCounts()} className="flex-none justify-center px-4 py-3 md:py-2 text-[var(--ink-dim)] hover:text-[var(--ink)] font-bold text-xs flex items-center gap-2 transition-colors bg-[var(--raised)] border border-[var(--line)] rounded-lg"><RefreshCcw size={14}/> Reset</button>}
-                            <button data-guide="submit-count" onClick={handleCommit} disabled={isSubmitting || countClosed || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] disabled:bg-[var(--sunk)] disabled:text-[var(--ink-dim)] disabled:border disabled:border-[var(--line)] disabled:shadow-none disabled:cursor-not-allowed px-4 lg:px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} {weekDone && !recounting ? 'Submitted this week' : notCountDay ? `Opens on ${WEEK_DAYS[countDay]}` : 'Submit to HQ'}</button>
+                            <button data-guide="submit-count" data-half={halfRows ? '' : undefined} onClick={handleCommit}disabled={isSubmitting || countClosed || Object.keys(counts).length === 0} className="flex-1 md:flex-none justify-center bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] disabled:bg-[var(--sunk)] disabled:text-[var(--ink-dim)] disabled:border disabled:border-[var(--line)] disabled:shadow-none disabled:cursor-not-allowed px-4 lg:px-8 py-3 md:py-2 rounded-lg font-black shadow-lg flex items-center gap-2 transition-all active:scale-95 tracking-widest uppercase text-xs">{isSubmitting ? <RefreshCcw size={16} className="animate-spin"/> : <Send size={16}/>} {weekDone && !recounting ? 'Submitted this week' : notCountDay ? `Opens on ${WEEK_DAYS[countDay]}` : 'Submit to HQ'}</button>
                         </div>
                     </div>
                 </div>
