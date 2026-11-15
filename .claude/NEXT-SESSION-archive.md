@@ -1,3 +1,7 @@
+# Archived 2026-11-15 07:29 WIB - DONE: the tutorial walk before the big-company switch
+
+6 guide gaps found on the Android phone and fixed, LIVE kpm b9a6c3a5 (commit message has the table; A-Brain Wiki/Concepts/Demo Guide on the Phone.md). Clean phone walk: steps 1-7 pass, step 8 up to Submit. The switch was edited then taken back out: the vault took ~20 s after a SWITCH on the big company vs ~9.5 s on the small one (lab phone) - his answer owed (NEXT-SESSION FIRST).
+
 ## DONE 2026-11-14 - THE BIG DEMO COMPANY (data, checks, emulator proof), kpm 2a02b48d - off on the live demo until his yes. The job as it stood:
 
 # The one job
