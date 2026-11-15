@@ -29,6 +29,7 @@ TRAPS
 
 
 - Lab tools also in that folder now: seticon.js + seticon-read.js (count setIcon per open), open-journey.js / away.js (open and leave a screen by its data-mark), shoot.mjs --capy (full map + capybara).
+- The Android phone keeps its lab sign-in across emulator runs, but a fresh auth emulator does not know it: SWITCH then fails with "demo sign-in refused 401". Run `node onetab.mjs` (closes the hidden 2nd tab) and `node clear.mjs` (wipes localhost:5176's site data), then `node walk5176.mjs --tier=T6 --gate-only 40` (no --pc = the phone; --tier picks the person at the door). Phone tools: who.js (persona, chips, line, focus, capybara), keyboard = `adb shell dumpsys input_method | grep mInputShown`.
 
 Antigravity: the Retur audit task (.claude/ANTIGRAVITY-TASK.md) is OPEN, waiting for him to run it.
 
