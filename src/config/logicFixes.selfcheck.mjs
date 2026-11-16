@@ -12283,11 +12283,11 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
      && lostMarks.length === 0);
   ok('REGRESSION: the guide reads the page through liveBeat, steps aside while the dialog gate asks, shows only while on, outside the dialogue and before the round is done, and the "Pandu saya" answer turns it on',
      /const i = liveBeat\(beats, \(s\) => !!qs\(s\)\);/.test(dm) && /if \(qs\('\[role="alertdialog"\]'\)\) \{ setV\(null\); return; \}/.test(dm) &&
-     /\{guide && n > 0 && !talking && beats && <Walk /.test(dm) && /const show = \(\) => \{ endGreeting\(\); setTalking\(null\); setGuide\(true\); \};/.test(dm) &&
+     /\{guide && n > 0 && !talking && !touringNow && beats && <Walk /.test(dm) && /const show = \(\) => \{ endGreeting\(\); setTalking\(null\); setGuide\(true\); \};/.test(dm) &&
      !/\bPLACE\b|<Hint\b/.test(code(dm)));
   ok('REGRESSION (found in the lab, 2026-10-25): the guide is drawn on the page root - inside the demo bar its z 400 lost to the phone menu (z 90) - reads the page without waiting for a frame, picks the copy of a control that is on screen, and neither scrolls nor dims while he types in a box',
      /return createPortal\(/.test(dm) && /document\.body\s*\);/.test(dm) && !/requestAnimationFrame/.test(code(dm)) &&
-     /all\.find\(shows\) \|\| all\[0\]/.test(dm) &&
+     /all\.find\(shows\) \|\| all\.find\(seen\) \|\| null/.test(dm) &&
      /if \(el && !typing && \(el !== seen\.current \|\| /.test(dm) && /el\.scrollIntoView\(\{ block: 'nearest' \}\); seen\.current = el;/.test(dm) && /const panels = r && !off && !v\.typing \?/.test(dm));
   ok('the guide sits over the sales terminal\'s shop picker (z 300) and the bay\'s sheet (z 80), under the dialog gate (z 10001)',
      /\.kpm-mx-veil \{ position: fixed; z-index: 400;/.test(read('src/styles/theme.css')) && /\.kpm-mx-cap \{ position: fixed; z-index: 401;/.test(read('src/styles/theme.css')) &&
@@ -14358,6 +14358,38 @@ section('ROUND 4: THE SURAT JALAN, HIS PICK B (2026-11-16)');
      sj.includes('Mulai saat dokumen ini ditandatangani, seluruh barang menjadi tanggung jawab penuh pihak penerima atas kehilangan, kerusakan, atau penyalahgunaan selama masa operasional.') &&
      sj.includes("<dt>Dari gudang</dt><dd>{selectedAgentUsesBranch ? `Gudang ${selectedAgentLocation}` : 'Master Vault'}</dd>") &&
      sj.includes('Total · {items.length} produk') && sj.includes("{units.length === 1 ? total.toLocaleString('id-ID') : ''}"));
+}
+/* ── THE MENU TOUR, AND A RING ONLY ON WHAT IS DRAWN (2026-11-17) ───────────────────────────────────────────────────
+   His 2026-11-16: "he should give step by step tutorial starting from the sidebar first and what it use then to the next".
+   The bug under it (Antigravity Task 3; lab frame pc-f16-s1-02 of 2026-11-16): on the PC the guide's first ring sat round
+   an empty spot - the shut menu keeps its items in the page at opacity 0, and aim() took the first match. */
+section('THE MENU TOUR, AND A RING ONLY ON WHAT IS DRAWN (2026-11-17)');
+{ const { GUIDE, TOUR, tourBeat } = await import('./demoMission.js');
+  const dm = read('src/components/DemoMission.jsx').replace(/\r/g, ''), th = read('src/styles/theme.css').replace(/\r/g, ''), shell = read('src/components/BiohazardTheme.jsx');
+  const from = shell.indexOf('allMenuItems = [');
+  const menuIds = [...shell.slice(from, shell.indexOf('];', from)).matchAll(/id: '([a-z_]+)', label: '/g)].map((m) => m[1]);
+  ok(`BEHAVIOUR: every menu item has its tour line (${menuIds.length} items); each names the item the way the menu shows it and never says aku / kamu`,
+     menuIds.length === 17 && menuIds.every((id) => typeof TOUR[id] === 'function' && TOUR[id]('XLABELX').includes('XLABELX') && !/\b(aku|kamu)\b/i.test(TOUR[id]('X'))));
+  const b0 = tourBeat('sales', 'Terminal Penjualan', true), b1 = tourBeat('eod', 'EOD Setoran', false);
+  ok('BEHAVIOUR: a tour beat rings the item inside the menu, else the PC\'s corner circle, else the phone\'s edge key, each with its own line; only the first item opens with "Ini menu utama"',
+     b0.at.join() === '[data-kpm-rail] [data-mark="sales"],.kpm-rail-totem,[aria-label="Open navigation"]' && b0.say.length === 3 &&
+     b0.say[0].startsWith('Ini menu utama') && b0.say[0].includes('Terminal Penjualan') && !b1.say[0].startsWith('Ini menu utama'));
+  const menuBeats = Object.values(GUIDE).flat().filter((b) => [].concat(b.at).includes('[aria-label="Open navigation"]'));
+  ok(`REGRESSION: every step beat that names the phone's menu key names the PC's corner circle just before it, with its own line (${menuBeats.length} beats)`,
+     menuBeats.length >= 10 && menuBeats.every((b) => { const a = [].concat(b.at); return a.indexOf('.kpm-rail-totem') === a.length - 2 && [].concat(b.say).length === a.length; }));
+  ok('REGRESSION: the ring takes only a drawn copy (zero size, visibility hidden, opacity 0 on it or any parent = refused), and a drawn copy below the screen still beats nothing (the scroll brings it in)',
+     /const seen = \(el\) => \{/.test(dm) && /getComputedStyle\(el\)\.visibility === 'hidden'/.test(dm) &&
+     dm.includes("for (let e = el; e && e !== document.body; e = e.parentElement) if (getComputedStyle(e).opacity === '0') return false;") &&
+     /return seen\(el\) && r\.right > 0/.test(dm) && /all\.find\(shows\) \|\| all\.find\(seen\) \|\| null/.test(dm) &&
+     /* lab 2026-11-17: the menu's first item sits 4 px from the PC's edge and its ring lost its left side */
+     dm.includes('left: Math.max(1, v.r.left - PAD)') && dm.includes('right: Math.min(window.innerWidth - 1, v.r.right + PAD)'));
+  ok('REGRESSION: the tour runs before the step, once a day per browser, over the items the menu carries, and holds the PC menu open (all 7 rules that open it on hover also open it under html.kpm-tour)',
+     /const TOURED = 'kpm-demo-tour';/.test(dm) && dm.includes('localStorage.getItem(TOURED) === missionDay(Date.now()) ? -1 : 0') &&
+     dm.includes("document.querySelectorAll('[data-kpm-rail] [data-mark]')") && dm.includes("classList.add('kpm-tour')") &&
+     /\{touringNow && <Walk key="tour"/.test(dm) && (th.match(/html\.(lite-mode\.)?kpm-tour \[data-kpm-rail\]/g) || []).length === 7);
+  ok('the tour moves on by hand - LANJUT only while the ring is on the item itself, LEWATI always - and the keys take presses inside a box that takes none',
+     dm.includes('{!v.alt && <button type="button" className="on" onClick={tour.next}>LANJUT ▶</button>}') && dm.includes('onClick={tour.skip}>LEWATI<') &&
+     /\.kpm-mx-cap \.go button \{[^}]*pointer-events: auto;/.test(th));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

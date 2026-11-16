@@ -30,8 +30,11 @@ export const STEPS = [
    follows whatever the visitor does - forward, back, or straight past a beat the form already had filled in. A beat with
    no `done` is the step's last press; the step's own tick ('kpm-mission') moves the guide on. The `data-guide` /
    `data-*` marks it reads sit on the real components. */
-const nav = (id, label, inside) => ({ at: [`[data-mark="${id}"]`, '[aria-label="Open navigation"]'],
-    say: [`Buka ${label} dari menu.`, `Buka menu, lalu pilih ${label}.`], done: inside });
+/* the PC's shut menu is one circle in the top-left corner (.kpm-rail-totem); its items stay in the page at opacity 0
+   until the pointer is over it, and the guide used to ring that empty spot (Antigravity Task 3). The circle comes before
+   the phone's edge key: the phone never shows the circle, the PC never shows the edge key */
+const nav = (id, label, inside) => ({ at: [`[data-mark="${id}"]`, '.kpm-rail-totem', '[aria-label="Open navigation"]'],
+    say: [`Buka ${label} dari menu.`, `Arahkan kursor ke menu di kiri atas, lalu pilih ${label}.`, `Buka menu, lalu pilih ${label}.`], done: inside });
 /* the customer picker that is on screen: the phone's bar on top of the shelf, or the manifest's button on the PC - both
    carry data-guide="customer". The manifest's copy sits off-canvas on the phone (the 2026-11-14 phone walk: ring at x -334). */
 const SHOP = { at: ['[data-guide="shops"]', '[data-guide="customer"]'], say: ['Pilih tokonya dari daftar.', 'Pilih toko yang Anda kunjungi.'],
@@ -49,8 +52,9 @@ const BAY = '[data-mission="3"]', DIKA = '.pc[data-agent="demo-agent-2"]:not([da
    path, the password opens it - and the guide pointed at Restock Vault, whose master desk stays shut, forever). The
    big Unlock System key on a locked screen or the menu's Unlock Vault key, whichever is on screen; done = the menu's
    foot says the vault is open (BiohazardTheme data-vault), so an open vault skips the beat. */
-const UNLOCK = { at: ['[data-guide="unlock"]', '[aria-label="Open navigation"]'],
-    say: [`Master Vault masih terkunci. Tekan tombol ini, lalu ketik sandi ${VAULT_PASSWORD}.`, 'Master Vault masih terkunci. Buka menu, lalu tekan Unlock Vault.'],
+const UNLOCK = { at: ['[data-guide="unlock"]', '.kpm-rail-totem', '[aria-label="Open navigation"]'],
+    say: [`Master Vault masih terkunci. Tekan tombol ini, lalu ketik sandi ${VAULT_PASSWORD}.`, 'Master Vault masih terkunci. Arahkan kursor ke menu di kiri atas, lalu tekan Unlock Vault.',
+        'Master Vault masih terkunci. Buka menu, lalu tekan Unlock Vault.'],
     done: '[data-vault="open"]' };
 export const GUIDE = {
     1: [UNLOCK, nav('restock_vault', 'Restock Vault', '[data-mission="1"]'),
@@ -104,6 +108,32 @@ export const GUIDE = {
           done: '[data-guide="submit-count"]:not(:disabled):not([data-half])' },
         { at: '[data-guide="submit-count"]', say: 'Tekan Submit to HQ.' }],
 };
+
+/* THE MENU TOUR - his 2026-11-16: *"he should give step by step tutorial starting from the sidebar first and what it use
+   then to the next"*. Before the step, the guide walks the menu one item at a time (DemoMission.jsx reads which items this
+   login's menu carries). One line per item: Antigravity Task 5's words, with the item's name as the menu shows it (L). */
+export const TOUR = {
+    agent_profile: (L) => `Di ${L}, Anda melihat profil, target, peringkat, dan catatan kerja Anda.`,
+    dashboard: (L) => `${L} merangkum penjualan, setoran, dan stok perusahaan hari ini dalam satu layar.`,
+    map_war_room: (L) => `${L} memantau posisi salesman dan sebaran toko di peta secara langsung.`,
+    journey: (L) => `${L} menampilkan daftar toko yang harus Anda kunjungi hari ini dan urutannya.`,
+    fleet: (L) => `Di ${L}, pimpinan mengatur tim, memuat barang ke tas salesman, dan menariknya kembali.`,
+    inventory: (L) => `${L} menyimpan stok utama perusahaan di gudang pusat beserta barang rusak.`,
+    agent_inventory: (L) => `${L} menampilkan isi tas jualan Anda sekarang dan catatan pemasukan hari ini.`,
+    restock_vault: (L) => `${L} mencatat barang masuk dari pabrik dan pengiriman stok ke gudang wilayah.`,
+    sales: (L) => `${L} dipakai untuk mencatat penjualan ke toko, barang titipan, dan retur barang rusak.`,
+    receivables: (L) => `${L} mencatat tagihan titipan toko yang belum lunas dan pembayarannya.`,
+    eod: (L) => `Di ${L}, Anda menutup hari: hitung uang tunai, sisa barang, dan kirim laporan ke atasan.`,
+    stock_opname: (L) => `${L} dipakai untuk menghitung stok fisik gudang dan mencocokkannya dengan catatan sistem.`,
+    customers: (L) => `Di ${L}, Anda mengelola daftar toko terdaftar, alamat, dan batas harganya.`,
+    sampling: (L) => `${L} mencatat pembagian rokok contoh gratis ke toko beserta pita cukainya.`,
+    transactions: (L) => `${L} menyimpan semua riwayat nota penjualan, retur, dan ringkasan hasil kerja.`,
+    audit: (L) => `${L} merekam setiap perubahan penting di sistem agar semua catatan bisa ditelusuri.`,
+    settings: (L) => `Di ${L}, Anda mengatur bahasa, tampilan hemat baterai, serta aturan perusahaan.`,
+};
+/* one item's beat: the item inside the menu, else what opens the menu (the PC's corner circle, the phone's edge key) */
+export const tourBeat = (id, label, first) => ({ at: [`[data-kpm-rail] [data-mark="${id}"]`, '.kpm-rail-totem', '[aria-label="Open navigation"]'],
+    say: [`${first ? 'Ini menu utama: semua layar aplikasi ada di sini. ' : ''}${TOUR[id](label)}`, 'Arahkan kursor ke menu di kiri atas.', 'Buka menu dulu: tekan tombol ini.'] });
 
 /* the live beat: the first whose `done` is not on the page (`has` asks the page); the last press when all the rest are */
 export const liveBeat = (beats, has) => {

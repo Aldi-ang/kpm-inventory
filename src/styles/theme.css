@@ -2002,6 +2002,9 @@ html.lite-mode .kpm-topbar-ghost { opacity: .04; }
      only moved focus out.
      `:has(:focus-visible)` matches only the focus the browser judges KEYBOARD-driven, so tabbing
      still opens the dock and reads it out, while a mouse click no longer pins it open. */
+  /* html.kpm-tour = the demo guide's menu tour holds the dock open (DemoMission.jsx): the pointer leaves it for LANJUT.
+     It rides on every rule below that opens the dock on hover - seven, pinned by logicFixes */
+  html.kpm-tour [data-kpm-rail][data-kpm-rail],
   [data-kpm-rail][data-kpm-rail]:hover,
   [data-kpm-rail][data-kpm-rail]:has(:focus-visible) { width: 351px; transition-delay: 0s; }
   /* 🔑 THE LOGO IS THE TRIGGER, not the column — *"Hover the logo, and the pill unfurls"*, and
@@ -2027,6 +2030,7 @@ html.lite-mode .kpm-topbar-ghost { opacity: .04; }
      does not) — so handing the pod events unconditionally would make a column of INVISIBLE
      buttons hittable down the side of the app. At rest the totem alone takes events; it
      re-enables them on itself further down, which works fine under a `none` ancestor. */
+  html.kpm-tour [data-kpm-rail][data-kpm-rail] .kpm-rail-pod,
   [data-kpm-rail][data-kpm-rail]:hover .kpm-rail-pod,
   [data-kpm-rail][data-kpm-rail]:has(:focus-visible) .kpm-rail-pod { pointer-events: auto; }
   /* the pod never widens — only the window around it does.
@@ -2051,6 +2055,7 @@ html.lite-mode .kpm-topbar-ghost { opacity: .04; }
      capsule exactly the 56px circle he signed off, in the same corner. Only its right edge and
      its height animate; the left edge never moves. */
   .kpm-rail-pod::before { left: 4px; right: 40px; top: 12px; height: 56px; border-radius: 999px; }
+  html.kpm-tour [data-kpm-rail] .kpm-rail-pod::before,
   [data-kpm-rail]:hover .kpm-rail-pod::before,
   [data-kpm-rail]:has(:focus-visible) .kpm-rail-pod::before {
     left: 0; right: 0; top: 12px; height: calc(100% - 24px); border-radius: 30px;
@@ -2075,6 +2080,7 @@ html.lite-mode .kpm-topbar-ghost { opacity: .04; }
      inline style, count the specificity, do not eyeball it. */
   [data-kpm-rail] .kpm-rail-pod > * { animation: none; }
   .kpm-rail-pod > *:not(.kpm-rail-totem) { opacity: 0; transition: opacity 140ms ease-out; }
+  html.kpm-tour [data-kpm-rail] .kpm-rail-pod > *:not(.kpm-rail-totem),
   [data-kpm-rail]:hover .kpm-rail-pod > *:not(.kpm-rail-totem),
   [data-kpm-rail]:has(:focus-visible) .kpm-rail-pod > *:not(.kpm-rail-totem) {
     opacity: 1; transition: opacity 260ms ease-out 120ms;
@@ -2095,6 +2101,7 @@ html.lite-mode .kpm-topbar-ghost { opacity: .04; }
      you are closed". These restate the second at equal weight, and only on a desk - below 1024px
      the rail is a drawer and pinning boot-* is exactly right there. */
   html.lite-mode .kpm-rail-pod > *:not(.kpm-rail-totem) { opacity: 0 !important; }
+  html.lite-mode.kpm-tour [data-kpm-rail] .kpm-rail-pod > *:not(.kpm-rail-totem),
   html.lite-mode [data-kpm-rail]:hover .kpm-rail-pod > *:not(.kpm-rail-totem),
   html.lite-mode [data-kpm-rail]:has(:focus-visible) .kpm-rail-pod > *:not(.kpm-rail-totem) {
     opacity: 1 !important;
@@ -2107,6 +2114,7 @@ html.lite-mode .kpm-topbar-ghost { opacity: .04; }
     color: #ff9d00; pointer-events: auto; cursor: pointer;
     transition: opacity 180ms ease-out;
   }
+  html.kpm-tour [data-kpm-rail] .kpm-rail-totem,
   [data-kpm-rail]:hover .kpm-rail-totem,
   [data-kpm-rail]:has(:focus-visible) .kpm-rail-totem { opacity: 0; }
   /* ONE column by default — "shrink in to 1 button big" — and TWO once the tab list passes ten,
@@ -2303,6 +2311,7 @@ html.lite-mode .kpm-topbar-ghost { opacity: .04; }
   }
   /* the fifth and last of the pair — all five must agree, or the capsule stays drawn open while
      the panel that clips it has already closed, and the marks get sliced down their right side */
+  html.kpm-tour [data-kpm-rail] .kpm-rail-grid .kpm-rail-mark,
   [data-kpm-rail]:hover .kpm-rail-grid .kpm-rail-mark,
   [data-kpm-rail]:has(:focus-visible) .kpm-rail-grid .kpm-rail-mark {
     opacity: 1;
@@ -6157,6 +6166,12 @@ html.lite-mode .kpm-mx-veil { background: rgba(5, 4, 3, .8); backdrop-filter: no
 .kpm-mx-cap .notch i.on { background: var(--accent-edge); }
 .kpm-mx-cap .x { flex: none; min-width: 36px; min-height: 36px; margin: -6px -8px -6px 0; background: none; border: 0; color: var(--ink-muted); font-size: 14px; cursor: pointer; touch-action: manipulation; pointer-events: auto; }
 .kpm-mx-cap p { margin: 0; font: 600 15px/1.45 var(--font-body); }
+/* the menu tour's two keys (a step has none: the press on the real screen moves it on). The box takes no presses, so
+   each key takes its own, like the close */
+.kpm-mx-cap .go { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.kpm-mx-cap .go button { min-height: 40px; padding: 0 14px; background: none; border: 1px solid var(--line-3); border-radius: 8px; color: var(--ink-muted);
+  font: 700 11px/1 var(--font-mono); letter-spacing: .16em; cursor: pointer; touch-action: manipulation; pointer-events: auto; }
+.kpm-mx-cap .go .on { border-color: var(--accent-edge); color: var(--ink); }
 /* the capybara's dialogue (his 2026-10-25 ask): the face stands over the box's edge, a slanted name plate, LANJUT in the
    corner, choices above the box. Nothing moves - the face snaps. */
 .kpm-ct-veil { position: fixed; inset: 0; z-index: 98; background: rgba(5, 4, 3, .55); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }

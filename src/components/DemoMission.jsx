@@ -14,7 +14,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Lightbulb } from 'lucide-react';
 import { notify } from './Toast.jsx';
-import { STEPS, GUIDE, missionDay, liveStep, liveBeat } from '../config/demoMission.js';
+import { STEPS, GUIDE, TOUR, tourBeat, missionDay, liveStep, liveBeat } from '../config/demoMission.js';
 import talk from '../assets/capy-talk/e-talk.webp';
 import happy from '../assets/capy-talk/e-happy.webp';
 import shock from '../assets/capy-talk/e-shock.webp';
@@ -24,6 +24,7 @@ import sad from '../assets/capy-talk/e-sad.webp';
 /* the six faces were remade in Dreamina 2026-10-25 (same body in each, only the face changes); annoyed has no line yet */
 const FACE = { talk, happy, shock, think, sad };
 const KEY = 'kpm-demo-mission';
+const TOURED = 'kpm-demo-tour';   // the day the menu tour was finished or skipped in this browser
 const PAD = 6;
 const LAST = STEPS.length;
 
@@ -139,19 +140,31 @@ function CapyTalk({ lines, onShow, onClose }) {
    close: it reads the page every 300 ms and after every press, so the square moves on the moment the visitor does the
    thing, goes back if they leave, and skips a beat the form already had filled in. */
 const qs = (s) => { try { return document.querySelector(s); } catch { return null; } };
+/* drawn and not see-through. The PC's shut menu keeps its items in the page at opacity 0 (theme.css .kpm-rail-pod > *),
+   and the guide used to ring that empty spot (Antigravity Task 3; lab frame pc-f16-s1-02, 2026-11-16) */
+const seen = (el) => {
+    const r = el.getBoundingClientRect();
+    if (!(r.width > 0 && r.height > 0) || getComputedStyle(el).visibility === 'hidden') return false;
+    for (let e = el; e && e !== document.body; e = e.parentElement) if (getComputedStyle(e).opacity === '0') return false;
+    return true;
+};
+/* ...and on the screen */
 const shows = (el) => {
     const r = el.getBoundingClientRect();
-    return r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < window.innerWidth && r.top < window.innerHeight;
+    return seen(el) && r.right > 0 && r.bottom > 0 && r.left < window.innerWidth && r.top < window.innerHeight;
 };
 /* the live beat, and which of its targets is on screen (the menu item, or the phone's menu key while the menu is shut) */
 function aim(beats) {
     const i = liveBeat(beats, (s) => !!qs(s));
     const at = [].concat(beats[i].at), say = [].concat(beats[i].say);
-    /* a screen can hold one control twice (the terminal's phone and desk layouts): the copy on screen wins */
-    const els = at.map((s) => { let all = []; try { all = [...document.querySelectorAll(s)]; } catch { /* bad selector */ } return all.find(shows) || all[0] || null; });
+    /* a screen can hold one control twice (the terminal's phone and desk layouts): the copy on screen wins, then a drawn
+       copy below the screen (the scroll brings it in) - never one that is not drawn. Task 7 asked to drop this fallback
+       altogether; that would also drop the scroll to a key under the fold, so only the undrawn copy is refused */
+    const els = at.map((s) => { let all = []; try { all = [...document.querySelectorAll(s)]; } catch { /* bad selector */ } return all.find(shows) || all.find(seen) || null; });
     let k = els.findIndex((el) => el && shows(el));
     if (k < 0) k = els.findIndex(Boolean);
-    return { i, el: els[k] || null, say: say[Math.max(0, k)] ?? say[0] };
+    /* alt = the ring is on a stand-in (what opens the menu), not on the beat's own target */
+    return { i, el: els[k] || null, say: say[Math.max(0, k)] ?? say[0], alt: k > 0 };
 }
 /* a picker's list hangs outside its box, so `open` beats take the union of everything inside - the list stays bright */
 function boxOf(el, open) {
@@ -164,9 +177,9 @@ function boxOf(el, open) {
     }
     return { left: Math.round(b.left), top: Math.round(b.top), right: Math.round(b.right), bottom: Math.round(b.bottom) };
 }
-const same = (a, b) => (!a && !b) || (a && b && a.i === b.i && a.say === b.say && a.typing === b.typing && JSON.stringify(a.r) === JSON.stringify(b.r));
+const same = (a, b) => (!a && !b) || (a && b && a.i === b.i && a.say === b.say && a.typing === b.typing && a.alt === b.alt && JSON.stringify(a.r) === JSON.stringify(b.r));
 
-function Walk({ n, beats, onClose }) {
+function Walk({ n, beats, onClose, tour }) {
     const [v, setV] = useState(null);   // { i, say, r } - r null = the target is not on the page
     const seen = useRef(null);
     const hand = useRef(false);   // he scrolled by hand since the square last moved the page
@@ -194,7 +207,7 @@ function Walk({ n, beats, onClose }) {
                 if (el !== seen.current) hand.current = false;
                 el.scrollIntoView({ block: 'nearest' }); seen.current = el;
             }
-            const next = { i, say, r: el ? boxOf(el, !shut && beats[i].open) : null, typing: !!typing };
+            const next = { i, say, r: el ? boxOf(el, !shut && beats[i].open) : null, typing: !!typing, alt: !shut && live.alt };
             setV((p) => (same(p, next) ? p : next));
         };
         look();
@@ -217,8 +230,10 @@ function Walk({ n, beats, onClose }) {
         };
     }, [beats]);
     if (!v) return null;
+    const count = tour ? tour.of : beats.length, at = tour ? tour.k : v.i;
     const W = Math.min(340, window.innerWidth - 24), H = window.innerHeight;
-    const r = v.r && { left: v.r.left - PAD, top: v.r.top - PAD, right: v.r.right + PAD, bottom: v.r.bottom + PAD };
+    /* kept 1 px inside the screen's sides: the menu's first item sits 4 px from the edge and its ring lost its left side */
+    const r = v.r && { left: Math.max(1, v.r.left - PAD), top: v.r.top - PAD, right: Math.min(window.innerWidth - 1, v.r.right + PAD), bottom: v.r.bottom + PAD };
     /* the box goes under the square, else over it, else (a square that fills the screen, or one off screen while he types)
        it docks at the bottom - and an off-screen square dims nothing, so the box he is typing in stays clear */
     const off = r && (r.bottom < 0 || r.top > H);
@@ -242,13 +257,21 @@ function Walk({ n, beats, onClose }) {
             <div className="kpm-mx-cap hide-on-print" role="status" style={{ left, width: W, ...place }}>
                 {tail !== null && <span className={`tail ${below ? 'up' : 'down'}`} style={{ left: tail }} />}
                 <div className="head">
-                    <b>LANGKAH {n}/{LAST}</b>
-                    <span className="notch" aria-label={`bagian ${v.i + 1} dari ${beats.length}`}>
-                        {beats.map((_, k) => <i key={k} className={k < v.i ? 'done' : k === v.i ? 'on' : ''} />)}
+                    <b>{tour ? `MENU ${tour.k + 1}/${tour.of}` : `LANGKAH ${n}/${LAST}`}</b>
+                    <span className="notch" aria-label={`bagian ${at + 1} dari ${count}`}>
+                        {Array.from({ length: count }, (_, k) => <i key={k} className={k < at ? 'done' : k === at ? 'on' : ''} />)}
                     </span>
                     <button type="button" className="x" aria-label="Tutup petunjuk" onClick={onClose}>✕</button>
                 </div>
                 <p>{v.say}</p>
+                {/* a menu item has nothing to press that proves it was read, so the tour moves on by hand; LANJUT waits
+                    while the ring is on what opens the menu */}
+                {tour && (
+                    <div className="go">
+                        <button type="button" onClick={tour.skip}>LEWATI</button>
+                        {!v.alt && <button type="button" className="on" onClick={tour.next}>LANJUT ▶</button>}
+                    </div>
+                )}
             </div>
         </>,
         document.body
@@ -266,6 +289,22 @@ export default function DemoMission({ me, isT1, people }) {
     const [talking, setTalking] = useState(() => (greeted ? null : greet(n, done, mine, doer, me)));
     const [guide, setGuide] = useState(guiding);    // the step-by-step guide, on until closed or the round is done
     useEffect(() => { guiding = guide; }, [guide]);
+    /* THE MENU TOUR (his 2026-11-16: *"step by step tutorial starting from the sidebar first and what it use then to the
+       next"*): before the step, the guide walks this login's menu one item at a time, in the menu's order. The shell
+       renders only the items the tier may open, so the page is the list. Once a day per browser, like the round. */
+    const [tour, setTour] = useState(() => { try { return localStorage.getItem(TOURED) === missionDay(Date.now()) ? -1 : 0; } catch { return 0; } });
+    const touring = guide && n > 0 && !talking && tour >= 0;
+    const items = React.useMemo(() => (touring ? [...document.querySelectorAll('[data-kpm-rail] [data-mark]')]
+        .filter((b) => TOUR[b.dataset.mark]).map((b) => ({ id: b.dataset.mark, label: b.title || b.dataset.label })) : []), [touring]);
+    const tourBeats = React.useMemo(() => (items[tour] ? [tourBeat(items[tour].id, items[tour].label, tour === 0)] : null), [items, tour]);
+    const touringNow = !!tourBeats;
+    const endTour = React.useCallback(() => { try { localStorage.setItem(TOURED, missionDay(Date.now())); } catch { /* blocked */ } setTour(-1); }, []);
+    /* the PC's menu opens only under the pointer, and the pointer leaves it for LANJUT: the tour holds it open (theme.css) */
+    useEffect(() => {
+        if (!touringNow) return undefined;
+        document.documentElement.classList.add('kpm-tour');
+        return () => document.documentElement.classList.remove('kpm-tour');
+    }, [touringNow]);
 
     /* the 34 px the shell moves down for the line, only once the line is there */
     useEffect(() => {
@@ -323,7 +362,9 @@ export default function DemoMission({ me, isT1, people }) {
                     </button>
                 </div>
             )}
-            {guide && n > 0 && !talking && beats && <Walk key={`${n}-${mine}`} n={n} beats={beats} onClose={endGuide} />}
+            {touringNow && <Walk key="tour" n={n} beats={tourBeats} onClose={endGuide}
+                tour={{ k: tour, of: items.length, next: () => (tour + 1 < items.length ? setTour(tour + 1) : endTour()), skip: endTour }} />}
+            {guide && n > 0 && !talking && !touringNow && beats && <Walk key={`${n}-${mine}`} n={n} beats={beats} onClose={endGuide} />}
             {talking && <CapyTalk lines={talking} onShow={show} onClose={closeTalk} />}
         </>
     );
