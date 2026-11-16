@@ -409,7 +409,7 @@ List only REAL bugs: file:line, the exact steps to see it, what the user sees, a
 ---
 
 ## Task 12 - for each of your 6 Retur holes, the check that FAILS today
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-16 21:45 WIB, by Claude. Same rules as above.
 
 Aldi will decide the 6 holes from your Task 6 Result (A strict fix or B lighter one). Claude's rule: a fix is proven RED before GREEN. For EACH hole write, in a code block in your Result, the `ok('...', expr)` check in the style of `src/config/logicFixes.selfcheck.mjs` (it reads source files with `read(...)` and tests strings/regexes, or calls a pure function on real numbers) that:
@@ -418,3 +418,78 @@ Aldi will decide the 6 holes from your Task 6 Result (A strict fix or B lighter 
 Prefer a behaviour check on real numbers (a pure function from `src/utils/` called with a sale and a return) over a string match when the logic is reachable without Firebase. Do NOT add them to the file and do NOT change the code.
 
 **Result:**
+Note: none of these 6 holes live in a pure `src/utils/` function (the `RETUR` gating, pricing, stock return, History cash bucket, and EOD `storesServed`/`itemsBks` all live in `firestore.rules`, `MerchantSalesView.jsx`, `useTransactionEngine.js`, `HistoryReportView.jsx`, and `EODReconciliationView.jsx`), so these checks read the source slices with `read(...)` / `code(...)`.
+
+```js
+// Hole 1: Direct SDK create of RETUR without allowRetur / allowCashRefund
+// FAILS today at firestore.rules:796 (`allow create: if isSalesman(bossUid);`)
+{
+  const rulesTx = read('firestore.rules').match(/match \/transactions\/\{transactionId\} \{[\s\S]*?\}/)?.[0] || '';
+  // Option A (rules gate):
+  ok('Hole 1A: transactions create rules gate RETUR on allowRetur / allowCashRefund',
+     /allow create:/.test(rulesTx) && !/allow create: if isSalesman\(bossUid\);/.test(rulesTx) && /RETUR/.test(rulesTx) && /allowRetur/.test(rulesTx));
+  // Option B (audit/flag in Reports):
+  ok('Hole 1B: HistoryReportView flags RETUR docs created by agents without allowRetur',
+     /allowRetur/.test(code(read('src/components/HistoryReportView.jsx'))));
+}
+
+// Hole 2: Return with no prior sale behind it
+// FAILS today at src/MerchantSalesView.jsx:1271-1291 & src/hooks/useTransactionEngine.js:275
+{
+  const msv = code(read('src/MerchantSalesView.jsx'));
+  const eng = code(read('src/hooks/useTransactionEngine.js'));
+  // Option A (require prior SALE receipt):
+  ok('Hole 2A: BUYBACK/RETUR requires a linked sourceSaleId in Sales Terminal and transaction engine',
+     /isReturMode[\s\S]{0,600}sourceSaleId/.test(msv) && /sourceSaleId/.test(eng));
+  // Option B (warning badge in History):
+  ok('Hole 2B: HistoryReportView warns when a RETUR has no matching prior SALE',
+     /isRetur[\s\S]{0,600}No matching sale|unlinkedRetur/i.test(code(read('src/components/HistoryReportView.jsx'))));
+}
+
+// Hole 3: Return worth more than the sale it reverses (higher tier, unit, or qty)
+// FAILS today at src/MerchantSalesView.jsx:853-864, 958, 973-984
+{
+  const msv = code(read('src/MerchantSalesView.jsx'));
+  const upd = msv.slice(msv.indexOf('const updateCartItem'), msv.indexOf('const handleFulfillIOU'));
+  // Option A (cap qty/tier/unit to sourceSale):
+  ok('Hole 3A: BUYBACK caps qty and locks priceTier to the original sale in updateCartItem',
+     !/isReturMode \|\| \(isReturMode && returType === 'EXCHANGE'/.test(upd) && /sourceSale/.test(upd));
+  // Option B (lock tier to lockedTier or Grosir for BUYBACK):
+  ok('Hole 3B: BUYBACK defaults unlocked shops to Grosir instead of Retail/Ecer',
+     /isReturMode && returType === 'BUYBACK'[\s\S]{0,200}Grosir/.test(msv));
+}
+
+// Hole 4: Same goods returned twice / GOOD stock re-entering van for repeat refund
+// FAILS today at src/hooks/useTransactionEngine.js:284 (`const isReturnedToStock = proofPayload?.type === 'RETUR' && item.condition !== 'DAMAGED';`)
+{
+  const eng = code(read('src/hooks/useTransactionEngine.js'));
+  // Option A (no direct return to sellable van stock, or per-sale remaining qty guard):
+  ok('Hole 4A: GOOD buybacks do not re-enter sellable stock directly without EOD/sourceSaleId check',
+     !/const isReturnedToStock = proofPayload\?\.type === 'RETUR' && item\.condition !== 'DAMAGED';/.test(eng));
+  // Option B (daily multi-RETUR alert in History/EOD):
+  ok('Hole 4B: History or EOD alerts when an agent submits multiple RETURs in one day',
+     /repeatRetur|returCount\s*>\s*1/i.test(code(read('src/components/HistoryReportView.jsx')) + code(read('src/EODReconciliationView.jsx'))));
+}
+
+// Hole 5: Cash refund (Retur/BS) subtracted from Cash when original sale was Titip or Transfer
+// FAILS today at src/components/HistoryReportView.jsx:289 (`if (t.type === 'RETUR') payments['Cash'] -= Math.abs(value);`)
+{
+  const hist = code(read('src/components/HistoryReportView.jsx'));
+  // Option A & B both stop subtracting every RETUR blindly from payments['Cash']:
+  ok('Hole 5A/5B: HistoryReportView does not blindly subtract every RETUR from payments["Cash"]',
+     !/if \(t\.type === 'RETUR'\) payments\['Cash'\] -= Math\.abs\(value\);/.test(hist));
+}
+
+// Hole 6: Exchange (Tukar Ganti) inflates storesServed and itemsBks in EOD
+// FAILS today at src/EODReconciliationView.jsx:217 & 223 (`todaysTrans.filter(t => t.type === 'SALE')`)
+{
+  const eod = code(read('src/EODReconciliationView.jsx'));
+  const block = eod.slice(eod.indexOf('const storesServed ='), eod.indexOf('const todaysReports ='));
+  // Option A (exclude Tukar Ganti from both storesServed and itemsBks):
+  ok('Hole 6A: EOD storesServed and itemsBks exclude Rp 0 Tukar Ganti exchanges',
+     (block.match(/t\.type === 'SALE' && t\.paymentType !== 'Tukar Ganti'/g) || []).length === 2);
+  // Option B (exclude Tukar Ganti from itemsBks only):
+  ok('Hole 6B: EOD itemsBks excludes Tukar Ganti exchanges',
+     /const itemsBks = todaysTrans\s*\.filter\(t => t\.type === 'SALE' && t\.paymentType !== 'Tukar Ganti'\)/.test(block));
+}
+```
