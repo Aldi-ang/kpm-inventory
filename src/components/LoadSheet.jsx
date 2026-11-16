@@ -64,6 +64,14 @@ export default function LoadSheet({ agent, warehouse, stock, promo = [], soldTod
     const goLock = useRef(false);
     const [report, setReport] = useState(null);
     const inputs = useRef({});
+    /* his 2026-11-16 ask: "add button where i can increase the add button by 1 or by 10" - each press of − + adds one pack
+       or one slop. Kept on this device: the sheet opens fresh for every person, and a manager loads them in a row. */
+    const [byOne, setByOne] = useState(() => { try { return localStorage.getItem('kpm-load-step') === 'bks'; } catch { return false; } });
+    const pickStep = (one) => {
+        setByOne(one);
+        unlockSounds().then(() => playSound('click'));
+        try { localStorage.setItem('kpm-load-step', one ? 'bks' : 'slop'); } catch { /* this sheet only */ }
+    };
 
     const ret = tab === 'return';
     const map = ret ? back : qty, setMap = ret ? setBack : setQty;
@@ -82,9 +90,10 @@ export default function LoadSheet({ agent, warehouse, stock, promo = [], soldTod
         setMap(m => ({ ...m, [p.id]: clamp(p, n) }));
         setWhy(w => (w[p.id] ? { ...w, [p.id]: '' } : w));
     };
-    /* one press of − + is one slop of that product (10 packs unless the product says otherwise); a promo item is one piece.
-       The new number is worked out from the number in state, not the one this render saw, so two fast presses count twice. */
-    const stepOf = (p) => (isPromo(p) ? 1 : convertToBks(1, 'Slop', p));
+    /* one press of − + is one slop of that product (10 packs unless the product says otherwise), or one pack when he picks
+       "1 Bks"; a promo item is always one piece. The new number is worked out from the number in state, not the one this
+       render saw, so two fast presses count twice. */
+    const stepOf = (p) => (isPromo(p) || byOne ? 1 : convertToBks(1, 'Slop', p));
     const bump = (p, dir) => {
         if (busy || !canEdit) return;
         const now = map[p.id] || 0;
@@ -174,6 +183,14 @@ export default function LoadSheet({ agent, warehouse, stock, promo = [], soldTod
                 {extra ? extra.body : (
                     <>
                         <div className="kpm-fleet-tools flex flex-wrap items-center gap-2 px-4 py-2.5">
+                            {canEdit && rows.length > 0 && (
+                                <span className="kpm-fleet-step lg:order-last lg:ml-auto" role="group" aria-label="Each press of − and + adds">
+                                    <small>Each press</small>
+                                    {[[true, '1 Bks'], [false, '1 Slop']].map(([one, label]) => (
+                                        <button key={label} type="button" className="kpm-press" aria-pressed={byOne === one} disabled={busy} onClick={() => pickStep(one)}>{label}</button>
+                                    ))}
+                                </span>
+                            )}
                             {!canEdit && <p className="text-xs text-[var(--ink-muted)]">View only: your tier cannot load a van.</p>}
                             {canEdit && !ret && (
                                 <>

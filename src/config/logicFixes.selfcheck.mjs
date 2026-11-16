@@ -14329,6 +14329,13 @@ section('ROUND 3: HIS PICK A - THE FOCUS PANEL (2026-11-16)');
      phone.includes('.kpm-fleet-acts { display: none; }') && phone.includes('.kpm-fleet-panel[data-more] .kpm-fleet-acts { display: flex;') &&
      phone.includes('.kpm-fleet-body > .kpm-fleet-tools { flex-wrap: nowrap; overflow-x: auto;') && phone.includes('.kpm-fleet-line .n small:not(.why) { display: none; }') &&
      sheet.includes("<small className=\"ph\">{(notes || s > 0) && <>{notes.replace('sold today', 'today')}"));
+  /* his 2026-11-16 "add button where i can increase the add button by 1 or by 10" - lab: 1 Bks + + = 2, then 1 Slop + = 12 */
+  ok('REGRESSION: "Each press: 1 Bks | 1 Slop" picks the step of − +, a promo item stays 1 piece, the pick is kept on this device, and a press of it reports (gold edge + click)',
+     sheet.includes("const stepOf = (p) => (isPromo(p) || byOne ? 1 : convertToBks(1, 'Slop', p));") &&
+     sheet.includes("localStorage.getItem('kpm-load-step') === 'bks'") && sheet.includes("localStorage.setItem('kpm-load-step', one ? 'bks' : 'slop')") &&
+     sheet.includes('<span className="kpm-fleet-step lg:order-last lg:ml-auto" role="group" aria-label="Each press of − and + adds">') &&
+     sheet.includes('aria-pressed={byOne === one} disabled={busy} onClick={() => pickStep(one)}') && /const pickStep = \(one\) => \{\s*setByOne\(one\);\s*unlockSounds\(\)\.then\(\(\) => playSound\('click'\)\);/.test(sheet) &&
+     th.includes('.kpm-fleet-step button[aria-pressed="true"] { position: relative; border-color: var(--accent-edge); color: var(--ink); }'));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
