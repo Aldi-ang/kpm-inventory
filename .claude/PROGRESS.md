@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-16 22:00 WIB, PC clock (🟢 KPM - NOW: his Surat Jalan pick B (black and white) LIVE; NEXT-SESSION = the demo guide; pick A LIVE c497b4c1; NEXT-SESSION = the demo guide; Antigravity Tasks 9-10 OPEN. Log trimmed to 5 entries 2026-11-16 21:32 - older ones: git log -p .claude/PROGRESS.md)**
+**Updated: 2026-11-16 22:05 WIB, PC clock (🟢 KPM - NOW: Surat Jalan B LIVE and tested by him on screen + print; NEXT-SESSION = the demo guide (fresh chat); pick A LIVE c497b4c1; NEXT-SESSION = the demo guide; Antigravity Tasks 9-10 OPEN. Log trimmed to 5 entries 2026-11-16 21:32 - older ones: git log -p .claude/PROGRESS.md)**
+
+## 🟢 2026-11-16 22:05 WIB — KPM: he tested Surat Jalan B - passed
+His words: *"surat jalan looks okay print also clean"*. Nothing open on it.
+WAITING ON ALDI (word for word from the reply): "Type /clear, then /alucard continue." Still owed: his test of pick A live; phone SWITCH twice -> "fast" or "slow"; Antigravity Tasks 13-14 running.
 
 ## 🟢 2026-11-16 22:00 WIB — KPM: Surat Jalan B (black and white) LIVE; Antigravity 11-12 read, 13-14 queued
 His words: *"i'll choose B black and white it is more netral i guess"*. Lab: two print traps caught before the push (the shell's print rule hides <header>; the portaled wrapper became 89 px tall in print) - both fixed and pinned by checks; printed page proven on A4. Story: the commit message. Antigravity Task 11 found 2 Fleet fixes (keyboard behind the veil, close mid-entrance) -> in NEXT-SESSION's AFTER list.
