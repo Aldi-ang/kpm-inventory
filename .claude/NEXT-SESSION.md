@@ -18,7 +18,7 @@ THE REST (no design call needed - build together with the picked option, one pus
 
 AFTER THIS JOB (next brief, not now): the demo guide - Antigravity Task 3 (aaf18067) found why step 1 rings the dashboard on a PC (aim() picks the hidden `<button data-mark="restock_vault">`, opacity 0, not `.kpm-rail-totem`), and he wants the capybara to first walk the sidebar, item by item, saying what each one is for. Then the Retur audit's 6 OPEN holes as 🔴 DECIDEs (money, never fixed unasked).
 
-ANTIGRAVITY (written 15:40): Task 4 = the cause of item 4 (the cut panel) + every other panel built the same way; Task 5 = the capybara's sidebar-tour lines in Indonesian. If Task 4 is DONE, use its answer for item 4 after checking it in the code; Task 5 feeds the guide job after this one.
+ANTIGRAVITY: Task 4 DONE 6f2463cc (only the task file, checked): BiohazardTheme.jsx wraps every screen in `relative z-10`, so FrontPanel's z-480 is stuck at 10, under the demo bar (95) and mission strip (96); `createPortal(..., document.body)` fixes it; it lists 16 OTHER `fixed inset-0 z-` overlays inside that box with the same trap - check its list, fix FrontPanel in this job, and say how many others show the cut in the demo. Task 5 DONE b1199b63: 17 Indonesian sidebar-tour lines, feeds the guide job after this one. Queued 15:50: Task 6 = the 6 Retur holes as worked examples + options A/B (for the 🔴 DECIDEs), Task 7 = every guide beat that aims at a hidden element.
 
 BEFORE ANY PUSH: `git log origin/phase0-solid-ground..HEAD` - Antigravity's 138009ba, 103879bb, aaf18067 (and any newer) each get `git show`: they must touch only .claude/ANTIGRAVITY-TASK.md. Gates: logicFixes, npm run build, integration.audit, all *.selfcheck.mjs by exit code; patch note en + id.
 
