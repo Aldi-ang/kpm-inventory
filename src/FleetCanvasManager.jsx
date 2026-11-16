@@ -166,6 +166,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
        .closing, then unmounted; a new pick during those 200 ms cancels the exit */
     const [panelClosing, setPanelClosing] = useState(false);
     const closeTimer = useRef(null);
+    /* phone: the person keys (Surat Jalan, Details, Edit, Delete...) wait behind More; a new pick folds them again */
+    const [moreOpen, setMoreOpen] = useState(false);
     /* The picked person's account lock, live from their login record - the card offers Lock or Unlock */
     const [selLocked, setSelLocked] = useState(false);
     useEffect(() => {
@@ -266,10 +268,19 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
        box's height depends on the header, the demo bar and the window. */
     const rootRef = useRef(null);
     const [fitH, setFitH] = useState(null);
+    /* his 2026-11-16 pick A, "focus": the PC person panel runs from just under the app header to the screen box's bottom,
+       its left edge 275 px into the name column so the names stay readable beside it; top and bottom reach into the scroll
+       box's padding (10 px under the header, the box's own bottom) - measured with fitH, never guessed */
+    const [focusBox, setFocusBox] = useState(null);
     useEffect(() => {
         const box = rootRef.current?.parentElement?.closest('.overflow-y-auto');
         if (!box || typeof ResizeObserver === 'undefined') return undefined;
-        const fit = () => { const cs = getComputedStyle(box); setFitH(Math.round(box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom))); };
+        const fit = () => {
+            const cs = getComputedStyle(box); setFitH(Math.round(box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)));
+            const b = box.getBoundingClientRect(), r = rootRef.current.getBoundingClientRect();
+            setFocusBox({ '--fp-t': `${Math.round(b.top + 10)}px`, '--fp-b': `${Math.round(window.innerHeight - b.bottom)}px`,
+                '--fp-l': `${Math.round(r.left + 275)}px`, '--fp-r': `${Math.round(window.innerWidth - r.right)}px` });
+        };
         fit();
         const ro = new ResizeObserver(fit); ro.observe(box);
         return () => ro.disconnect();
@@ -866,7 +877,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     const pickAgent = async (m) => {
         if (bayLines > 0 && selectedAgent?.id !== m.id && !await confirmAction(`${selectedAgent?.name}'s sheet has numbers that are not saved yet. Open ${m.name} and drop them?`)) return;
         clearTimeout(closeTimer.current); setPanelClosing(false);
-        setSelectedAgent(m);
+        setSelectedAgent(m); setMoreOpen(false);
     };
     /* the exit's own end unmounts it (a 200 ms timer started ~45 ms before React painted .closing and cut it at opacity .4);
        the timer only covers an exit that never runs */
@@ -970,7 +981,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     }
 
     return (
-        <div ref={rootRef} style={fitH ? { '--fleet-h': `${fitH}px` } : undefined} className="print-reset kpm-fleet h-full lg:h-[var(--fleet-h,100%)] w-full bg-[var(--panel)] rounded-2xl border border-[var(--line-2)] overflow-y-auto lg:overflow-hidden custom-scrollbar flex flex-col text-[var(--ink)] font-sans relative">
+        <div ref={rootRef} style={fitH ? { '--fleet-h': `${fitH}px`, ...focusBox } : undefined} className="print-reset kpm-fleet h-full lg:h-[var(--fleet-h,100%)] w-full bg-[var(--panel)] rounded-2xl border border-[var(--line-2)] overflow-y-auto lg:overflow-hidden custom-scrollbar flex flex-col text-[var(--ink)] font-sans relative">
             
             {/* 🚀 UPGRADED FORENSIC RECEIPT MODAL 🚀 */}
             {viewingReceipt && (() => {
@@ -1514,6 +1525,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
 
                 {/* THE PERSON PANEL - slides over the list on the PC, ONCE per opening (keyed by the person, so a − + press
                     or a saved load never re-mounts it: that replay was the flicker); its own page on the phone. */}
+                {/* THE FOCUS VEIL (his 2026-11-16 pick A: "blur all the screen and only name and the right panel is the only panel
+                    that is not blurred"). PC only. Not keyed by the person: it fades in once per opening and stays still while
+                    he switches names; it fades out with the panel. A press on it closes the panel. */}
+                {selectedAgent && <div className={`kpm-fleet-veil${panelClosing ? ' closing' : ''}`} onClick={closePanel} aria-hidden="true" />}
                 {selectedAgent && (() => {
                     const sel = selectedAgent;
                     const left = Math.round(loadOf(sel)), sold = Math.round(sumOf(soldByAgent[sel.id]));
@@ -1531,11 +1546,12 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     const group = (words) => <div className="kpm-fleet-grp">{words}</div>;
                     const rp = (v) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v || 0);
                     return (
-                        <aside key={sel.id} className={`kpm-fleet-panel${panelClosing ? ' closing' : ''}`} onAnimationEnd={(e) => { if (e.animationName === 'kpmFleetOut') finishClose(); }} aria-label={`${sel.name}'s van`} data-mission="3">
-                            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 border-b border-[var(--line-2)]">
-                                <div className="min-w-0 flex-1">
-                                    <button type="button" className="lg:hidden block text-sm text-[var(--ink-muted)] min-h-[44px] pr-4" onClick={closePanel}>‹ Roster</button>
+                        <aside key={sel.id} className={`kpm-fleet-panel${panelClosing ? ' closing' : ''}`} onAnimationEnd={(e) => { if (e.animationName === 'kpmFleetOut') finishClose(); }} aria-label={`${sel.name}'s van`} data-mission="3" data-more={moreOpen || undefined}>
+                            <div className="kpm-fleet-phead">
+                                <div className="kpm-fleet-who min-w-0 flex-1">
+                                    <button type="button" className="lg:hidden block text-xl leading-none text-[var(--ink-muted)] min-h-[44px] pr-2" aria-label="Back to the roster" onClick={closePanel}>‹</button>
                                     <h3 className="text-base font-bold text-[var(--ink)] truncate">{sel.name}</h3>
+                                    <button type="button" className="kpm-fleet-more lg:hidden" aria-expanded={moreOpen} onClick={() => setMoreOpen(v => !v)}>More <span aria-hidden="true">▾</span></button>
                                     <p className="text-xs text-[var(--ink-muted)]">{roleLine(sel)} · loads from {selectedAgentUsesBranch ? `the ${whName}` : 'the Master Vault'}</p>
                                 </div>
                                 {/* Loaded / Sold / Left for this person - the same sums the ledger line shows, said once here */}

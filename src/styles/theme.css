@@ -5830,6 +5830,9 @@ html.lite-mode .kpm-ench *, html.lite-mode .kpm-ench *::before, html.lite-mode .
 .kpm-fleet-panel { display: flex; flex-direction: column; min-width: 0; background: var(--panel); }
 /* only the sheet's body gives way when the window is short - the head, the keys, the tabs and the Load key keep their height */
 .kpm-fleet-panel > :not(.kpm-fleet-body) { flex: none; }
+.kpm-fleet-phead { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; padding: 4px 12px 8px; border-bottom: 1px solid var(--line-2); }
+.kpm-fleet-more { min-height: 44px; padding: 4px 12px; border: 1px solid var(--line-2); border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.kpm-fleet-more[aria-expanded="true"] { border-color: var(--accent-edge); }
 .kpm-fleet-kpis { display: flex; justify-content: space-between; gap: 20px; width: 100%; font-variant-numeric: tabular-nums; }
 .kpm-fleet-kpis small { display: block; font-size: 11px; color: var(--ink-muted); white-space: nowrap; }
 .kpm-fleet-kpis b { font-size: 16px; font-weight: 700; color: var(--ink); }
@@ -5863,6 +5866,19 @@ html.lite-mode .kpm-ench *, html.lite-mode .kpm-ench *::before, html.lite-mode .
   .kpm-fleet-foot { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
   .kpm-fleet-foot .after { display: none; }
   .kpm-fleet-body { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+  /* his pick, 2026-11-16 (3 -> 5 products in view): back key, name and More on one line; the three numbers on one line;
+     the person keys open under More; the tool keys on one row; "sold today" joins the numbers line under each product */
+  .kpm-fleet-who { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 6px; }
+  .kpm-fleet-who > p { grid-column: 1 / -1; }
+  .kpm-fleet-kpis { justify-content: flex-start; gap: 16px; }
+  .kpm-fleet-kpis > div { display: flex; align-items: baseline; gap: 5px; }
+  .kpm-fleet-kpis b { font-size: 14px; }
+  .kpm-fleet-acts { display: none; }
+  .kpm-fleet-panel[data-more] .kpm-fleet-acts { display: flex; animation: kpmFleetMore 160ms cubic-bezier(.23, 1, .32, 1); }
+  .kpm-fleet-body > .kpm-fleet-tools { flex-wrap: nowrap; overflow-x: auto; padding: 8px 12px; }
+  .kpm-fleet-tools > * { flex: none; }
+  .kpm-fleet-line { padding-top: 8px; padding-bottom: 8px; }
+  .kpm-fleet-line .n small:not(.why) { display: none; }
 }
 @media (min-width: 1024px) {
   .kpm-fleet-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -5880,15 +5896,35 @@ html.lite-mode .kpm-ench *, html.lite-mode .kpm-ench *::before, html.lite-mode .
   .kpm-fleet-row > .ph { display: none; }
   /* its own surface and a 2px gold edge (his 2026-11-16 "some kejelasan that these panel are different"); --panel is
      re-pointed so the sticky product head inside it matches */
-  .kpm-fleet-panel { position: absolute; top: 0; right: 0; bottom: 0; z-index: 20; width: min(640px, 100%); --panel: var(--raised); background: var(--raised); border-left: 2px solid var(--accent-edge); animation: kpmFleetSlide 260ms cubic-bezier(.22, 1, .36, 1); }
-  /* the way out: shorter than the way in, ease-in, transform + opacity only; it holds the end frame until the unmount */
-  .kpm-fleet-panel.closing { animation: kpmFleetOut 200ms cubic-bezier(.4, 0, 1, 1) forwards; pointer-events: none; }
+  /* his 2026-11-16 pick A, "focus" (3 -> 8 products in view): fixed from just under the app header to the screen box's
+     bottom, the name column sharp beside it (--fp-* measured in FleetCanvasManager); tabs + person keys share one row */
+  .kpm-fleet-panel { position: fixed; top: var(--fp-t, 0); right: var(--fp-r, 0); bottom: var(--fp-b, 0); left: var(--fp-l, 300px); z-index: 20; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto minmax(0, 1fr) auto; --panel: var(--raised); background: var(--raised); border-left: 2px solid var(--accent-edge); animation: kpmFleetSlide 260ms cubic-bezier(.22, 1, .36, 1) 40ms backwards; }
+  /* the 40 ms wait (held at the start pose): the frame that builds the sheet's lines is slow, and an entrance that starts
+     inside it skipped its first third (lab sample: 0 -> .64 in one painted frame); it now starts after that frame */
+  .kpm-fleet-panel > .kpm-fleet-phead { grid-column: 1 / -1; flex-wrap: nowrap; padding: 8px 16px; }
+  .kpm-fleet-panel > .kpm-fleet-tabs { grid-column: 1; grid-row: 2; }
+  .kpm-fleet-panel > .kpm-fleet-acts { grid-column: 2; grid-row: 2; align-items: center; justify-content: flex-end; max-width: 520px; padding: 4px 12px 4px 0; border-bottom: 1px solid var(--line-2); }
+  .kpm-fleet-panel > .kpm-fleet-acts button { min-height: 0; height: 30px; }
+  .kpm-fleet-panel > .kpm-fleet-body { grid-column: 1 / -1; grid-row: 3; }
+  .kpm-fleet-panel > .kpm-fleet-foot { grid-column: 1 / -1; grid-row: 4; }
+  /* the name panel stands above the focus veil, on its own ground so the veil's dim never shows through it */
+  .kpm-fleet-layer.open .kpm-fleet-list { position: relative; z-index: 16; background: var(--panel); }
+  /* the way out: shorter than the way in, a strong ease-out (it answers at once), transform + opacity only; it holds the
+     end frame until the unmount */
+  .kpm-fleet-panel.closing { animation: kpmFleetOut 200ms cubic-bezier(.23, 1, .32, 1) forwards; pointer-events: none; }
   .kpm-fleet-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   .kpm-fleet-tabs button { min-height: 0; }
   .kpm-fleet-kpis { width: auto; justify-content: flex-end; text-align: right; }
   .kpm-fleet-acts { padding: 6px 16px; }
   .kpm-fleet-acts button { min-height: 30px; padding: 4px 10px; }
-  .kpm-fleet-line { grid-template-columns: minmax(0, 1fr) 76px 60px 84px 132px; }
+  /* each product on one line: the name (cut with … when long) and its "sold today" note side by side */
+  .kpm-fleet-line { grid-template-columns: minmax(0, 1fr) 88px 72px 104px 132px; padding-top: 6px; padding-bottom: 6px; }
+  .kpm-fleet-line .n { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px; }
+  .kpm-fleet-line .n b { min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kpm-fleet-line .n small { white-space: nowrap; }
+  .kpm-fleet-line .n small.why { flex-basis: 100%; white-space: normal; }
+  .kpm-fleet-body > .kpm-fleet-tools { padding-top: 6px; padding-bottom: 6px; }
+  .kpm-fleet-tools :is(button, select) { min-height: 0; height: 30px; padding-top: 2px; padding-bottom: 2px; }
   .kpm-fleet-line > .c { display: block; text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
   .kpm-fleet-line > .ph { display: none; }
   .kpm-fleet-linehead { display: grid; position: sticky; top: 0; z-index: 1; padding-top: 7px; padding-bottom: 7px; background: var(--panel); }
@@ -5900,6 +5936,26 @@ html.lite-mode .kpm-ench *, html.lite-mode .kpm-ench *::before, html.lite-mode .
 .lite-mode .kpm-fleet-panel { animation: none; }
 @media (prefers-reduced-motion: reduce) { .kpm-fleet-panel { animation: none; } }
 /* ── END OF THE ROSTER LEDGER ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── THE FOCUS VEIL (FleetCanvasManager.jsx, his 2026-11-16 pick A) ──────────────────────────────────────────────
+   His words: "blur all the screen and only name and the right panel is the only panel that is not blurred". PC only. The
+   veil covers the shell box (the demo bars live outside it and stay sharp); the name panel (z 16) and the person panel
+   (z 20) stand above it. It fades with the panel - in 260 ms, out 200 ms - opacity only; switching names never replays it.
+   A press on it closes the panel. Lite Mode: no blur, dim .8 (the demo veils' numbers - .55 alone read as no dim). Kept
+   OUT of the ledger block on purpose: that block holds no filter (logicFixes) - this one is a named G30 exemption. */
+.kpm-fleet-veil { display: none; }
+@media (min-width: 1024px) {
+  .kpm-fleet-veil { display: block; position: fixed; inset: 0; z-index: 15; background: rgba(8, 7, 6, .55); backdrop-filter: blur(3px); animation: kpmFleetVeilIn 260ms cubic-bezier(.22, 1, .36, 1) 40ms backwards; }
+  .kpm-fleet-veil.closing { animation: kpmFleetVeilOut 200ms cubic-bezier(.23, 1, .32, 1) forwards; pointer-events: none; }
+}
+@keyframes kpmFleetVeilIn { from { opacity: 0; } }
+@keyframes kpmFleetVeilOut { to { opacity: 0; } }
+/* the phone's More: the keys drop 4 px into place, once per press */
+@keyframes kpmFleetMore { from { opacity: 0; transform: translateY(-4px); } }
+html.lite-mode .kpm-fleet-veil { background: rgba(5, 4, 3, .8); backdrop-filter: none; animation: none; }
+html.lite-mode .kpm-fleet-acts { animation: none; }
+@media (prefers-reduced-motion: reduce) { .kpm-fleet-veil, .kpm-fleet-acts { animation: none; } }
+/* ── END OF THE FOCUS VEIL ────────────────────────────────────────────────────────────────────────────────────── */
 
 /* ── THE MASTER VAULT'S 3D CARD SPIN (2026-10-01, potato phone) ───────────────────────────────────────────── */
 /* The idle spin used to be React state +0.3deg every frame (ResidentEvilInventory.jsx). This inner layer turns the

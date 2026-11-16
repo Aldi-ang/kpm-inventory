@@ -2031,7 +2031,10 @@ const SHADOW_EXEMPT = /\[aria-pressed="true"\] > \.kpm-sw::after \{[^}]*\}/g;
    twice over without the blur — the body's row height (0fr → 1fr) and its opacity (0 → 1) — so
    Lite Mode dropping the filter costs the sharpening and no meaning. The check below asserts both
    carriers are still in the rule; the exemption dies with them. */
-const BLUR_EXEMPT = /\.pc-inner \{[^}]*\}|\.pc\.open \.pc-inner \{[^}]*\}|\.kpm-mx-veil \{[^}]*\}|\.kpm-ct-veil \{[^}]*\}/g;
+const BLUR_EXEMPT = /\.pc-inner \{[^}]*\}|\.pc\.open \.pc-inner \{[^}]*\}|\.kpm-mx-veil \{[^}]*\}|\.kpm-ct-veil \{[^}]*\}|\.kpm-fleet-veil \{[^}]*\}/g;
+/* THE FOURTH, 2026-11-16: Fleet & Roster's focus veil - his own idea, his pick A: *"blur all the screen and only name and
+   the right panel is the only panel that is not blurred"*. Same deal as the demo veils: the dim carries the meaning, Lite
+   Mode drops the blur and raises the dim to .8. The check below asserts that Lite rule; the exemption dies with it. */
 /* THE THIRD, 2026-10-25: the demo mission's two veils (DemoMission.jsx) blur what is behind them - asked for in words twice:
    *"blur other outside of the box"* (the hint, 2026-10-24) and *"blur everything behind it"* (the capybara, 2026-10-25).
    The dim carries the meaning without the blur: Lite Mode drops the filter and raises the dim to .8 (.55 alone read as
@@ -2048,7 +2051,8 @@ check(G30, 'nothing in the system depends on a shadow, a blur or a filter',
   /\.pc-inner \{[^}]*opacity: 0;[^}]*\}/.test(themeCss) && /\.pc\.open \.pc-inner \{[^}]*opacity: 1;[^}]*\}/.test(themeCss) &&
   /\.pc-body \{[^}]*grid-template-rows: 0fr;/.test(themeCss) && /\.pc\.open \.pc-body \{ grid-template-rows: 1fr; \}/.test(themeCss) &&
   /html\.lite-mode \.kpm-mx-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(themeCss) &&
-  /html\.lite-mode \.kpm-ct-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(themeCss),
+  /html\.lite-mode \.kpm-ct-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(themeCss) &&
+  /html\.lite-mode \.kpm-fleet-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(themeCss),
   'Lite Mode deletes all four — the old tab put every separation into shadows, so on a cheap ' +
   'Android the six panels collapsed into one undifferentiated column. The switch glow is the one ' +
   'exemption and it only holds while position + fill still carry the state without it');

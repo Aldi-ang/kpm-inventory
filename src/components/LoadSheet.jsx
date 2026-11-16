@@ -173,7 +173,7 @@ export default function LoadSheet({ agent, warehouse, stock, promo = [], soldTod
             <div className="kpm-fleet-body custom-scrollbar">
                 {extra ? extra.body : (
                     <>
-                        <div className="flex flex-wrap items-center gap-2 px-4 py-2.5">
+                        <div className="kpm-fleet-tools flex flex-wrap items-center gap-2 px-4 py-2.5">
                             {!canEdit && <p className="text-xs text-[var(--ink-muted)]">View only: your tier cannot load a van.</p>}
                             {canEdit && !ret && (
                                 <>
@@ -219,7 +219,7 @@ export default function LoadSheet({ agent, warehouse, stock, promo = [], soldTod
                                                     </>
                                                 ) : <b className="tabular-nums">{fmt(have)} {w}</b>}
                                             </span>
-                                            <small className="ph">Warehouse {fmt(p.stock)} · in van <CountUp value={have} /> · {ret ? `sold today ${fmt(sold)}` : `last day ${fmt(last)}`}</small>
+                                            <small className="ph">{(notes || s > 0) && <>{notes.replace('sold today', 'today')}{notes && s > 0 ? ' · ' : ''}{s > 0 && <em>suggested {fmt(s)}</em>} · </>}Warehouse {fmt(p.stock)} · in van <CountUp value={have} /> · {ret ? `sold today ${fmt(sold)}` : `last day ${fmt(last)}`}</small>
                                         </div>
                                     );
                                 })}

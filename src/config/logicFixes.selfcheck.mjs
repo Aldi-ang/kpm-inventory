@@ -8810,7 +8810,7 @@ section('ROUND 4: THE DEPLOYMENT HEADER MOVES INTO THE GOLD BAR (2026-09-24)');
   ok('the panel follows the picked person on any area chip or search', /const sel = selectedAgent;/.test(panel) && /<aside key=\{sel\.id\}/.test(panel));
   ok('phone: the person panel becomes its own full-screen page with a pinned Load key; PC: one-row top strip and slide-over panel',
      /@media \(max-width: 1023px\) \{[\s\S]*?\.kpm-fleet-top\.open, \.kpm-fleet-layer\.open \.kpm-fleet-list \{ display: none; \}/.test(ledgerCss) &&
-     /@media \(min-width: 1024px\) \{[\s\S]*?\.kpm-fleet-top \{ display: flex; align-items: stretch; \}[\s\S]*?\.kpm-fleet-panel \{ position: absolute;/.test(ledgerCss));
+     /@media \(min-width: 1024px\) \{[\s\S]*?\.kpm-fleet-top \{ display: flex; align-items: stretch; \}[\s\S]*?\.kpm-fleet-panel \{ position: fixed;/.test(ledgerCss));
 }
 
 /* ── ROUND 5: TITIP AND BOUNTIES BEHIND THE VAN CHEST (2026-09-26) ─────────────────────────────────────
@@ -14270,8 +14270,8 @@ section('FLEET & ROSTER: THE LEDGER AND THE LOAD SHEET (2026-11-16)');
   const lg = th.slice(th.indexOf('@media (min-width: 1024px) {', th.indexOf('/* ── THE ROSTER LEDGER')), th.indexOf('/* the ONE entrance'));
   ok('REGRESSION: pressing the open name closes the panel (his "2 way to close"), by pointer and by key; another name still opens through the unsaved-sheet guard',
      rowFn.includes('onClick={() => (on ? closePanel() : pickAgent(m))}') && rowFn.includes('on ? closePanel() : pickAgent(m); }'));
-  ok('REGRESSION: the close slides out on the PC and unmounts on its own end (kpmFleetOut 200 ms ease-in, transform + opacity, no loop); phone, Lite Mode and reduced motion close at once; a new pick cancels the exit',
-     /\.kpm-fleet-panel\.closing \{ animation: kpmFleetOut 200ms cubic-bezier\(\.4, 0, 1, 1\) forwards; pointer-events: none; \}/.test(lg) &&
+  ok('REGRESSION: the close slides out on the PC and unmounts on its own end (kpmFleetOut 200 ms ease-out, transform + opacity, no loop); phone, Lite Mode and reduced motion close at once; a new pick cancels the exit',
+     /\.kpm-fleet-panel\.closing \{ animation: kpmFleetOut 200ms cubic-bezier\(\.23, 1, \.32, 1\) forwards; pointer-events: none; \}/.test(lg) &&
      /@keyframes kpmFleetOut \{ to \{ transform: translateX\(24px\); opacity: 0; \} \}/.test(th) && !/kpmFleetOut[^;]*infinite/.test(th) &&
      fl.includes("onAnimationEnd={(e) => { if (e.animationName === 'kpmFleetOut') finishClose(); }}") &&
      fl.includes("window.matchMedia('(min-width: 1024px) and (prefers-reduced-motion: no-preference)').matches || document.documentElement.classList.contains('lite-mode')) return setSelectedAgent(null);") &&
@@ -14286,6 +14286,49 @@ section('FLEET & ROSTER: THE LEDGER AND THE LOAD SHEET (2026-11-16)');
      sheet.includes("className={tab === id ? 'on' : ''} disabled={busy} onClick={() => setTab(id)}"));
   ok('REGRESSION: a promo-only van says its pieces on the phone row, never "van empty"',
      rowFn.includes(": pcs > 0 ? <small>+ {pcs.toLocaleString('id-ID')} pcs promo</small> : lead ?"));
+}
+/* ── ROUND 3: HIS PICK A - THE FOCUS PANEL (2026-11-16) ─────────────────────────────────────────────────────────────
+   His "A is good make sure it well animated and smooth". PC: the panel runs from under the app header to the screen
+   box's bottom (8 products in view, was 3); the rest dims and blurs behind a veil; the name panel stays sharp above it.
+   Phone: the head folds (3 -> 5 products), the person keys wait behind More. Lab proof (counts, per-frame motion, light
+   theme, Lite Mode): A-Brain Raw/2026-11-16-fleet-build (count.js, veil.js, motion.js, more.js). */
+section('ROUND 3: HIS PICK A - THE FOCUS PANEL (2026-11-16)');
+{ const fl = read('src/FleetCanvasManager.jsx').replace(/\r/g, ''), sheet = read('src/components/LoadSheet.jsx').replace(/\r/g, '');
+  const th = read('src/styles/theme.css').replace(/\r/g, '');
+  const veilCss = th.slice(th.indexOf('/* ── THE FOCUS VEIL'), th.indexOf('/* ── END OF THE FOCUS VEIL'));
+  const at = th.indexOf('/* ── THE ROSTER LEDGER');
+  const phone = th.slice(th.indexOf('@media (max-width: 1023px) {', at), th.indexOf('@media (min-width: 1024px) {', at));
+  const lg = th.slice(th.indexOf('@media (min-width: 1024px) {', at), th.indexOf('/* the ONE entrance'));
+  const VEIL = "{selectedAgent && <div className={`kpm-fleet-veil${panelClosing ? ' closing' : ''}`} onClick={closePanel} aria-hidden=\"true\" />}";
+  ok('REGRESSION: the veil sits outside the keyed panel (a name switch never replays it), fades out with the close, and a press on it closes',
+     fl.indexOf(VEIL) > fl.indexOf('{/* THE PERSON PANEL') && fl.indexOf(VEIL) < fl.indexOf('<aside key={sel.id}'));
+  ok('REGRESSION: PC only, veil z 15 under the name panel (z 16, on its own ground) and the person panel (z 20); Lite Mode: no blur, .8 dim; reduced motion stands still',
+     /\.kpm-fleet-veil \{ display: none; \}/.test(veilCss) &&
+     /@media \(min-width: 1024px\) \{\s*\.kpm-fleet-veil \{ display: block; position: fixed; inset: 0; z-index: 15; background: rgba\(8, 7, 6, \.55\); backdrop-filter: blur\(3px\);/.test(veilCss) &&
+     veilCss.includes('html.lite-mode .kpm-fleet-veil { background: rgba(5, 4, 3, .8); backdrop-filter: none; animation: none; }') &&
+     veilCss.includes('@media (prefers-reduced-motion: reduce) { .kpm-fleet-veil, .kpm-fleet-acts { animation: none; } }') &&
+     lg.includes('.kpm-fleet-layer.open .kpm-fleet-list { position: relative; z-index: 16; background: var(--panel); }') && /\.kpm-fleet-panel \{ position: fixed;[^}]*z-index: 20;/.test(lg));
+  ok('REGRESSION: the veil and the panel move together - in 260 ms after a 40 ms hold (past the slow frame that builds the lines), out 200 ms ease-out; opacity + transform only, nothing loops',
+     /animation: kpmFleetSlide 260ms cubic-bezier\(\.22, 1, \.36, 1\) 40ms backwards;/.test(lg) && /animation: kpmFleetVeilIn 260ms cubic-bezier\(\.22, 1, \.36, 1\) 40ms backwards;/.test(veilCss) &&
+     veilCss.includes('.kpm-fleet-veil.closing { animation: kpmFleetVeilOut 200ms cubic-bezier(.23, 1, .32, 1) forwards; pointer-events: none; }') &&
+     veilCss.includes('@keyframes kpmFleetVeilIn { from { opacity: 0; } }') && veilCss.includes('@keyframes kpmFleetVeilOut { to { opacity: 0; } }') && !/infinite/.test(veilCss));
+  ok('REGRESSION: the panel box is measured (--fp-*) beside fitH, never guessed; fixed, no 640 px cap',
+     fl.includes("setFocusBox({ '--fp-t': `${Math.round(b.top + 10)}px`, '--fp-b': `${Math.round(window.innerHeight - b.bottom)}px`,") &&
+     fl.includes("'--fp-l': `${Math.round(r.left + 275)}px`, '--fp-r': `${Math.round(window.innerWidth - r.right)}px` });") &&
+     fl.includes("style={fitH ? { '--fleet-h': `${fitH}px`, ...focusBox } : undefined}") &&
+     lg.includes('.kpm-fleet-panel { position: fixed; top: var(--fp-t, 0); right: var(--fp-r, 0); bottom: var(--fp-b, 0); left: var(--fp-l, 300px);') && !/min\(640px/.test(lg));
+  ok('REGRESSION: PC - tabs and person keys share one row (keys 30 px), each product on one line with its note, a "Not saved" reason drops to its own line',
+     lg.includes('.kpm-fleet-panel > .kpm-fleet-tabs { grid-column: 1; grid-row: 2; }') && lg.includes('.kpm-fleet-panel > .kpm-fleet-acts { grid-column: 2; grid-row: 2;') &&
+     lg.includes('.kpm-fleet-panel > .kpm-fleet-acts button { min-height: 0; height: 30px; }') &&
+     lg.includes('.kpm-fleet-line { grid-template-columns: minmax(0, 1fr) 88px 72px 104px 132px; padding-top: 6px; padding-bottom: 6px; }') &&
+     lg.includes('.kpm-fleet-line .n small.why { flex-basis: 100%; white-space: normal; }'));
+  ok('REGRESSION: phone - ‹ + name + More on one line; More (44 px) opens the real person keys and a new pick folds them; tools on one row; "today N" joins the numbers line',
+     fl.includes('aria-label="Back to the roster" onClick={closePanel}>‹</button>') &&
+     fl.includes('<button type="button" className="kpm-fleet-more lg:hidden" aria-expanded={moreOpen} onClick={() => setMoreOpen(v => !v)}>') &&
+     fl.includes('data-more={moreOpen || undefined}>') && /setSelectedAgent\(m\); setMoreOpen\(false\);/.test(fl) && th.includes('.kpm-fleet-more { min-height: 44px;') &&
+     phone.includes('.kpm-fleet-acts { display: none; }') && phone.includes('.kpm-fleet-panel[data-more] .kpm-fleet-acts { display: flex;') &&
+     phone.includes('.kpm-fleet-body > .kpm-fleet-tools { flex-wrap: nowrap; overflow-x: auto;') && phone.includes('.kpm-fleet-line .n small:not(.why) { display: none; }') &&
+     sheet.includes("<small className=\"ph\">{(notes || s > 0) && <>{notes.replace('sold today', 'today')}"));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
