@@ -5805,6 +5805,9 @@ html.lite-mode .kpm-ench *, html.lite-mode .kpm-ench *::before, html.lite-mode .
 .kpm-fleet-chip.on { border-color: var(--accent-edge); color: var(--ink); font-weight: 600; }
 .kpm-fleet-chip small { margin-left: 2px; font-variant-numeric: tabular-nums; }
 .kpm-fleet-grp { padding: 12px 16px 6px; border-bottom: 1px solid var(--line-2); font-size: 11px; font-weight: 600; letter-spacing: .05em; color: var(--ink-muted); }
+/* leaders vs salesmen (his 2026-11-16 "clearer border between tier 4 and lower tiers"): a heavier rule and air above the
+   SALESMEN group; the quiet 1px rules stay INSIDE a group */
+.kpm-fleet-row + .kpm-fleet-grp { margin-top: 12px; border-top: 2px solid var(--line-3); }
 .kpm-fleet-head { display: none; }
 .kpm-fleet-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 12px; padding: 10px 16px 10px 13px; border-bottom: 1px solid var(--line-2); border-left: 3px solid transparent; cursor: pointer; outline: none; }
 .kpm-fleet-row > .c { display: none; }
@@ -5875,7 +5878,11 @@ html.lite-mode .kpm-ench *, html.lite-mode .kpm-ench *::before, html.lite-mode .
   .kpm-fleet-head { display: grid; gap: 2px 12px; position: sticky; top: 0; z-index: 1; padding: 8px 16px; border-bottom: 1px solid var(--line-2); background: var(--panel); font-size: 11px; font-weight: 600; color: var(--ink-muted); }
   .kpm-fleet-row > .c { display: block; }
   .kpm-fleet-row > .ph { display: none; }
-  .kpm-fleet-panel { position: absolute; top: 0; right: 0; bottom: 0; z-index: 20; width: min(640px, 100%); border-left: 1px solid var(--line-2); animation: kpmFleetSlide 260ms cubic-bezier(.22, 1, .36, 1); }
+  /* its own surface and a 2px gold edge (his 2026-11-16 "some kejelasan that these panel are different"); --panel is
+     re-pointed so the sticky product head inside it matches */
+  .kpm-fleet-panel { position: absolute; top: 0; right: 0; bottom: 0; z-index: 20; width: min(640px, 100%); --panel: var(--raised); background: var(--raised); border-left: 2px solid var(--accent-edge); animation: kpmFleetSlide 260ms cubic-bezier(.22, 1, .36, 1); }
+  /* the way out: shorter than the way in, ease-in, transform + opacity only; it holds the end frame until the unmount */
+  .kpm-fleet-panel.closing { animation: kpmFleetOut 200ms cubic-bezier(.4, 0, 1, 1) forwards; pointer-events: none; }
   .kpm-fleet-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   .kpm-fleet-tabs button { min-height: 0; }
   .kpm-fleet-kpis { width: auto; justify-content: flex-end; text-align: right; }
@@ -5889,6 +5896,7 @@ html.lite-mode .kpm-ench *, html.lite-mode .kpm-ench *::before, html.lite-mode .
 }
 /* the ONE entrance: 24 px and a fade, 260 ms, once per opening (the panel is keyed by the person, never by a press) */
 @keyframes kpmFleetSlide { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes kpmFleetOut { to { transform: translateX(24px); opacity: 0; } }
 .lite-mode .kpm-fleet-panel { animation: none; }
 @media (prefers-reduced-motion: reduce) { .kpm-fleet-panel { animation: none; } }
 /* ── END OF THE ROSTER LEDGER ─────────────────────────────────────────────────────────────────────────── */

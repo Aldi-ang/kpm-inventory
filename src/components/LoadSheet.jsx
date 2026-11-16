@@ -61,6 +61,7 @@ export default function LoadSheet({ agent, warehouse, stock, promo = [], soldTod
     const [back, setBack] = useState({});    // packs going BACK to the warehouse, by product
     const [why, setWhy] = useState({});      // a failed line's reason, by product
     const [busy, setBusy] = useState(false);
+    const goLock = useRef(false);
     const [report, setReport] = useState(null);
     const inputs = useRef({});
 
@@ -134,7 +135,10 @@ export default function LoadSheet({ agent, warehouse, stock, promo = [], soldTod
 
     /* ── LOAD VAN / RETURN - the ONE press ── */
     async function go() {
-        if (busy || !lines.length || !canEdit) return;
+        /* goLock: a second press in the same frame, before `busy` has painted, must not load the van twice (Antigravity's
+           2026-11-16 review) */
+        if (busy || goLock.current || !lines.length || !canEdit) return;
+        goLock.current = true;
         setBusy(true); setReport(null);
         const done = [], bad = {};
         for (const p of lines) {
@@ -147,7 +151,7 @@ export default function LoadSheet({ agent, warehouse, stock, promo = [], soldTod
         }
         const failed = Object.keys(bad).length;
         setMap(m => Object.fromEntries(Object.entries(m).filter(([id]) => bad[id])));
-        setWhy(bad); setBusy(false);
+        setWhy(bad); setBusy(false); goLock.current = false;
         if (!done.length) return notify(`Nothing was saved for ${agent.name}. The reason is on each line.`);
         const total = words(done.reduce((a, d) => a + (d.promo ? 0 : d.bks), 0), done.reduce((a, d) => a + (d.promo ? d.bks : 0), 0));
         const no = `${ret ? 'BK' : 'SJ'}-${getLocalDayKey().replace(/-/g, '')}-${String(agent.id).slice(-4)}-${new Date().toTimeString().slice(0, 5).replace(':', '')}`;
@@ -163,7 +167,7 @@ export default function LoadSheet({ agent, warehouse, stock, promo = [], soldTod
         <>
             <div className="kpm-fleet-tabs" role="tablist" aria-label={`${agent.name}'s van`}>
                 {allTabs.map(([id, label]) => (
-                    <button key={id} type="button" role="tab" aria-selected={tab === id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>{label}</button>
+                    <button key={id} type="button" role="tab" aria-selected={tab === id} className={tab === id ? 'on' : ''} disabled={busy} onClick={() => setTab(id)}>{label}</button>
                 ))}
             </div>
             <div className="kpm-fleet-body custom-scrollbar">

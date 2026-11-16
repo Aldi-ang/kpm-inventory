@@ -3340,7 +3340,7 @@ section('T · Fleet & canvas: who may look, and who may change');
   const sheetSrc = fs.existsSync('src/components/LoadSheet.jsx') ? stripComments(read('src/components/LoadSheet.jsx')) : '';
   ok('and both doors are hidden as well as guarded',
      /<LoadSheet[\s\S]{0,1400}canEdit=\{canEditFleet\}/.test(fleetSrc) && /<LoadSheet[\s\S]{0,1400}onClear=\{handleClearCanvas\}/.test(fleetSrc) &&
-     /\{!extra && canEdit && \(\s*<div className="kpm-fleet-foot">/.test(sheetSrc) && /if \(busy \|\| !lines\.length \|\| !canEdit\) return;/.test(sheetSrc) &&
+     /\{!extra && canEdit && \(\s*<div className="kpm-fleet-foot">/.test(sheetSrc) && /if \(busy \|\| goLock\.current \|\| !lines\.length \|\| !canEdit\) return;/.test(sheetSrc) &&
      /\{canEdit && ret && vanBks > 0 && <button [^>]*onClick=\{onClear\}>Reconcile &amp; clear/.test(sheetSrc));
   /* Reconcile & Clear was on the backlog on its own as "a button that lies" - the database rules
      already refused the save, so pressing it gave a failure and no reason. */
@@ -8653,7 +8653,7 @@ section('THE ROSTER, REDRAWN WITH EVERY DOOR KEPT (2026-09-24)');
   ok('the stage pages are gone (seven cards a page): the ledger lists everyone in the place - tag game-edition-v1 keeps them',
      !/PER_STAGE|pageCast|rosterPage|setRosterPage/.test(code(fl)) && left.length > 3000 && gameEditionKept);
   ok('the panel slides in once per pick, never on a loop (the bar\'s one sheen became the panel\'s one entrance)',
-     /<aside key=\{sel\.id\} className="kpm-fleet-panel"/.test(right) &&
+     /<aside key=\{sel\.id\} className=\{`kpm-fleet-panel\$\{panelClosing \? ' closing' : ''\}`\}/.test(right) &&
      /\.kpm-fleet-panel \{[^}]*animation: kpmFleetSlide 260ms [^;]*;/.test(ledgerCss) && !/kpmFleetSlide[^;]*infinite/.test(th));
   /* round 4 (his 09:35 "i still want u to add the closing animation on the chest"): the knock is gone, a tap closes again */
   ok('a tap on a chest opens it AND closes it again; nothing knocks',
@@ -8665,10 +8665,10 @@ section('THE ROSTER, REDRAWN WITH EVERY DOOR KEPT (2026-09-24)');
      rowFn.includes('const pcs = (m.promoCanvas || []).reduce(') && rowFn.includes("` · + ${pcs.toLocaleString('id-ID')} pcs promo`") &&
      /has = loaded > 0 \|\| pcs > 0;/.test(rowFn) && !/(left|loaded|sold) \+ pcs/.test(rowFn));
   ok('picking a row goes through the unsaved-sheet guard, by pointer or by key; closing the panel asks the same',
-     /onClick=\{\(\) => pickAgent\(m\)\}/.test(rowFn) && /e\.key === 'Enter' \|\| e\.key === ' '/.test(rowFn) && /const pickAgent = async \(m\) => \{\s*if \(bayLines > 0/.test(fl) &&
-     /const closePanel = async \(\) => \{\s*if \(bayLines > 0 && !await confirmAction\(/.test(fl) && /<LoadSheet[\s\S]{0,1400}onDirty=\{setBayLines\}/.test(fl));
+     /onClick=\{\(\) => \(on \? closePanel\(\) : pickAgent\(m\)\)\}/.test(rowFn) && /e\.key === 'Enter' \|\| e\.key === ' '/.test(rowFn) && /const pickAgent = async \(m\) => \{\s*if \(bayLines > 0/.test(fl) &&
+     /const closePanel = async \(\) => \{\s*if \(panelClosing\) return;\s*if \(bayLines > 0 && !await confirmAction\(/.test(fl) && /<LoadSheet[\s\S]{0,1400}onDirty=\{setBayLines\}/.test(fl));
   ok('a row is visible at rest - no rule hides it; a pointer (where there is one) or a key marks it the way a pick does',
-     !/opacity:\s*0[;\s]/.test(ledgerCss.replace(/@keyframes kpmFleetSlide \{[^\n]*\n/, '')) &&
+     !/opacity:\s*0[;\s]/.test(ledgerCss.replace(/@keyframes kpmFleet(?:Slide|Out) \{[^\n]*\n/g, '')) &&
      /\.kpm-fleet-row\.on, \.kpm-fleet-row:focus-visible \{ background: var\(--raised\); border-left-color: var\(--accent-edge\); \}/.test(ledgerCss) &&
      /@media \(hover: hover\) \{ \.kpm-fleet-row:hover \{ background: var\(--raised\); \} \}/.test(ledgerCss));
   ok('the blue standby is gone; nobody picked shows the ledger whole - the community block is gone with the stage (tag game-edition-v1 keeps it)',
@@ -8782,7 +8782,7 @@ section('ROUND 4: FAR AND NEAR ON THE STAGE (2026-09-24)');
   /* 2026-11-16: the panel's edge shadow came off before the push - integration.audit G30 ("nothing in the system depends on
      a shadow") read it; its 1px left rule carries the edge in every theme and in Lite Mode */
   ok('the ledger and the panel use no shadow, no filter, and nothing loops in their CSS (G30)',
-     ledgerCss.length > 3000 && !/box-shadow|drop-shadow|filter:|infinite/.test(ledgerCss) && /\.kpm-fleet-panel \{[^}]*border-left: 1px solid var\(--line-2\);/.test(ledgerCss));
+     ledgerCss.length > 3000 && !/box-shadow|drop-shadow|filter:|infinite/.test(ledgerCss) && /\.kpm-fleet-panel \{[^}]*border-left: 2px solid var\(--accent-edge\);/.test(ledgerCss));
   ok('Lite Mode and reduced motion keep the panel still (no glide, no replay)',
      /\.lite-mode \.kpm-fleet-panel \{ animation: none; \}/.test(ledgerCss) &&
      /@media \(prefers-reduced-motion: reduce\) \{ \.kpm-fleet-panel \{ animation: none; \} \}/.test(ledgerCss));
@@ -14253,10 +14253,39 @@ section('FLEET & ROSTER: THE LEDGER AND THE LOAD SHEET (2026-11-16)');
      ld.day === '2026-11-14' && ld.by.cg16 === 12);
   const afterLoadSheet = sheetc.slice(sheetc.indexOf('export default function LoadSheet('));
   ok('REGRESSION: the person panel is keyed by the person, kpmFleetSlide never loops, LoadSheet defines no component inside render, and CountUp floors k at 0',
-     /<aside key=\{sel\.id\} className="kpm-fleet-panel"/.test(fl) &&
+     /<aside key=\{sel\.id\} className=\{`kpm-fleet-panel\$\{panelClosing \? ' closing' : ''\}`\}/.test(fl) &&
      /@keyframes kpmFleetSlide/.test(th) && !/kpmFleetSlide[^;]*infinite/.test(th) &&
      !/^\s*function\s+[A-Z]/m.test(afterLoadSheet) &&
      /const k = Math\.max\(0,/.test(sheetc.slice(sheetc.indexOf('function CountUp('), sheetc.indexOf('export default function LoadSheet('))));
+}
+/* 2026-11-16 FLEET & ROSTER ROUND 2 - his asks on the live demo that need no design pick, + Antigravity's review (138009ba).
+   Lab proof, Raw/2026-11-16-fleet-build: toggle.js (close sampled 1 -> 0 opacity, 0 -> 24 px, then unmounted), cut-add.js
+   (Add personnel's title and X were under .kpm-mission, now the panel's own), motion.js (open 1, presses 0, next person 1). */
+{
+  const fl = read('src/FleetCanvasManager.jsx').replace(/\r/g, '');
+  const sheet = read('src/components/LoadSheet.jsx').replace(/\r/g, '');
+  const th = read('src/styles/theme.css').replace(/\r/g, '');
+  const rowFn = fl.slice(fl.indexOf('const rosterRow = (m) =>'), fl.indexOf('const handleWhatsAppShare'));
+  const front = fl.slice(fl.indexOf('function FrontPanel('), fl.indexOf('export default function FleetCanvasManager('));
+  const lg = th.slice(th.indexOf('@media (min-width: 1024px) {', th.indexOf('/* ── THE ROSTER LEDGER')), th.indexOf('/* the ONE entrance'));
+  ok('REGRESSION: pressing the open name closes the panel (his "2 way to close"), by pointer and by key; another name still opens through the unsaved-sheet guard',
+     rowFn.includes('onClick={() => (on ? closePanel() : pickAgent(m))}') && rowFn.includes('on ? closePanel() : pickAgent(m); }'));
+  ok('REGRESSION: the close slides out on the PC and unmounts on its own end (kpmFleetOut 200 ms ease-in, transform + opacity, no loop); phone, Lite Mode and reduced motion close at once; a new pick cancels the exit',
+     /\.kpm-fleet-panel\.closing \{ animation: kpmFleetOut 200ms cubic-bezier\(\.4, 0, 1, 1\) forwards; pointer-events: none; \}/.test(lg) &&
+     /@keyframes kpmFleetOut \{ to \{ transform: translateX\(24px\); opacity: 0; \} \}/.test(th) && !/kpmFleetOut[^;]*infinite/.test(th) &&
+     fl.includes("onAnimationEnd={(e) => { if (e.animationName === 'kpmFleetOut') finishClose(); }}") &&
+     fl.includes("window.matchMedia('(min-width: 1024px) and (prefers-reduced-motion: no-preference)').matches || document.documentElement.classList.contains('lite-mode')) return setSelectedAgent(null);") &&
+     /clearTimeout\(closeTimer\.current\); setPanelClosing\(false\);\s*setSelectedAgent\(m\);/.test(fl));
+  ok('REGRESSION: on the PC the panel has its own surface and a 2px gold edge; leaders and salesmen are split by a heavier rule with air',
+     /\.kpm-fleet-panel \{[^}]*--panel: var\(--raised\); background: var\(--raised\); border-left: 2px solid var\(--accent-edge\);/.test(lg) &&
+     th.includes('.kpm-fleet-row + .kpm-fleet-grp { margin-top: 12px; border-top: 2px solid var(--line-3); }'));
+  ok('REGRESSION: FrontPanel (Offers, Add personnel, Details, Edit) renders from document.body, so the demo bars (z 95/96) cannot cover its head',
+     /import \{ createPortal \} from 'react-dom';/.test(fl) && /return createPortal\(\s*<div className="fixed inset-0 z-\[480\]/.test(front) && /<\/div>,\s*document\.body\s*\);\s*\}\s*$/.test(front));
+  ok('REGRESSION: a double press cannot load or return twice (goLock), and the tabs are locked while the sheet saves',
+     /if \(busy \|\| goLock\.current \|\| !lines\.length \|\| !canEdit\) return;\s*goLock\.current = true;/.test(sheet) && /setBusy\(false\); goLock\.current = false;/.test(sheet) &&
+     sheet.includes("className={tab === id ? 'on' : ''} disabled={busy} onClick={() => setTab(id)}"));
+  ok('REGRESSION: a promo-only van says its pieces on the phone row, never "van empty"',
+     rowFn.includes(": pcs > 0 ? <small>+ {pcs.toLocaleString('id-ID')} pcs promo</small> : lead ?"));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

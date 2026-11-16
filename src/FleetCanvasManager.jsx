@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
     Truck, UserPlus, Save,
     MapPin, Activity, X, AlertCircle, User, Mail, Pencil, Trash2, 
@@ -28,7 +29,9 @@ function FrontPanel({ label, onClose, children }) {
         window.addEventListener('keydown', key);
         return () => window.removeEventListener('keydown', key);
     }, [onClose]);
-    return (
+    /* FROM document.body (his 2026-11-16 demo frame: Offers and Add personnel opened with their head under the mission
+       strip): inside the screen's box (BiohazardTheme `relative z-10`) z-480 counts as 10, under the demo bars (95, 96) */
+    return createPortal(
         <div className="fixed inset-0 z-[480] bg-black/60 backdrop-blur-md flex items-center justify-center p-3 lg:p-6" role="dialog" aria-modal="true" aria-label={label} onClick={onClose} data-guide="front-panel">
             <div className="w-full max-w-2xl max-h-[92dvh] overflow-y-auto custom-scrollbar rounded-xl border border-[var(--accent-edge)] bg-[var(--raised)] shadow-2xl" onClick={(e) => e.stopPropagation()}>
                 <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-4 py-3 bg-[var(--raised)] border-b border-[var(--line-2)]">
@@ -37,7 +40,8 @@ function FrontPanel({ label, onClose, children }) {
                 </div>
                 {children}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
@@ -158,6 +162,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     }, [activeMotorists, isAreaAdmin, searchLocation]);
     
     const [selectedAgent, setSelectedAgent] = useState(null);
+    /* the panel's way out (his 2026-11-16 "closing and opening ... smooth and high quality"): kept on screen 200 ms with
+       .closing, then unmounted; a new pick during those 200 ms cancels the exit */
+    const [panelClosing, setPanelClosing] = useState(false);
+    const closeTimer = useRef(null);
     /* The picked person's account lock, live from their login record - the card offers Lock or Unlock */
     const [selLocked, setSelLocked] = useState(false);
     useEffect(() => {
@@ -857,11 +865,19 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     /* opening another person, or closing the panel, while the sheet holds unsaved numbers asks first, through the dialog gate */
     const pickAgent = async (m) => {
         if (bayLines > 0 && selectedAgent?.id !== m.id && !await confirmAction(`${selectedAgent?.name}'s sheet has numbers that are not saved yet. Open ${m.name} and drop them?`)) return;
+        clearTimeout(closeTimer.current); setPanelClosing(false);
         setSelectedAgent(m);
     };
+    /* the exit's own end unmounts it (a 200 ms timer started ~45 ms before React painted .closing and cut it at opacity .4);
+       the timer only covers an exit that never runs */
+    const finishClose = () => { clearTimeout(closeTimer.current); setPanelClosing(false); setSelectedAgent(null); };
     const closePanel = async () => {
+        if (panelClosing) return;
         if (bayLines > 0 && !await confirmAction(`${selectedAgent?.name}'s sheet has numbers that are not saved yet. Close it and drop them?`)) return;
-        setSelectedAgent(null);
+        /* only the PC slides it out; the phone, Lite Mode and reduced motion close at once, the way they open */
+        if (!window.matchMedia('(min-width: 1024px) and (prefers-reduced-motion: no-preference)').matches || document.documentElement.classList.contains('lite-mode')) return setSelectedAgent(null);
+        setPanelClosing(true);
+        closeTimer.current = setTimeout(finishClose, 400);
     };
     /* the three tiers that lead a team stand on top of the ledger - FLEET_CAPTAIN included (the stage forgot that tier) */
     const isLeader = (m) => ['ADMIN', 'AREA_ADMIN', 'FLEET_CAPTAIN'].includes(m.userRole);
@@ -881,8 +897,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         const state = sold > 0 ? 'On route' : has ? 'Loaded' : 'Not loaded';
         const num = (v) => (has ? v.toLocaleString('id-ID') : '—');
         return (
-            <div key={m.id} data-agent={m.id} role="option" aria-selected={on} tabIndex={0} onClick={() => pickAgent(m)}
-                onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); pickAgent(m); } }}
+            <div key={m.id} data-agent={m.id} role="option" aria-selected={on} tabIndex={0} onClick={() => (on ? closePanel() : pickAgent(m))}
+                onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); on ? closePanel() : pickAgent(m); } }}
                 className={`kpm-fleet-row${on ? ' on' : ''}`}>
                 <span className="who">
                     <b>{m.name}</b>
@@ -892,7 +908,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 <span className="c num">{num(loaded)}</span>
                 <span className="c num">{num(sold)}{loaded > 0 && <span className="kpm-fleet-meter" aria-hidden="true"><i style={{ width: `${pct}%` }} /></span>}</span>
                 <span className="c num">{num(left)}</span>
-                <span className="ph">{loaded > 0 ? <><b>{left.toLocaleString('id-ID')}</b><small>sold {sold.toLocaleString('id-ID')} · {pct}%</small></> : lead ? <i className="kpm-fleet-tag">Leader</i> : <small>van empty</small>}</span>
+                <span className="ph">{loaded > 0 ? <><b>{left.toLocaleString('id-ID')}</b><small>sold {sold.toLocaleString('id-ID')} · {pct}%</small></> : pcs > 0 ? <small>+ {pcs.toLocaleString('id-ID')} pcs promo</small> : lead ? <i className="kpm-fleet-tag">Leader</i> : <small>van empty</small>}</span>
             </div>
         );
     };
@@ -1515,7 +1531,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     const group = (words) => <div className="kpm-fleet-grp">{words}</div>;
                     const rp = (v) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v || 0);
                     return (
-                        <aside key={sel.id} className="kpm-fleet-panel" aria-label={`${sel.name}'s van`} data-mission="3">
+                        <aside key={sel.id} className={`kpm-fleet-panel${panelClosing ? ' closing' : ''}`} onAnimationEnd={(e) => { if (e.animationName === 'kpmFleetOut') finishClose(); }} aria-label={`${sel.name}'s van`} data-mission="3">
                             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 border-b border-[var(--line-2)]">
                                 <div className="min-w-0 flex-1">
                                     <button type="button" className="lg:hidden block text-sm text-[var(--ink-muted)] min-h-[44px] pr-4" onClick={closePanel}>‹ Roster</button>
