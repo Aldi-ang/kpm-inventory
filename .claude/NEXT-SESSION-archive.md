@@ -1,3 +1,37 @@
+## DONE 2026-11-17 06:35 WIB - LIVE 04a6bed2 (menu tour + ring only on drawn items)
+
+# The one job - the demo guide: the capybara walks the sidebar first, then every beat rings something visible
+
+His words (2026-11-16 15:30): *"dont forget the tutorial capybara still shows the wrong screen, not entirely wrong but like he should give step by step tutorial starting from the sidebar first and what it use then to the next"*.
+
+State 2026-11-16 21:20 WIB: Fleet & Roster pick A is LIVE c497b4c1 (focus panel + veil, phone More). Nothing of the guide is built yet.
+
+Antigravity Task 7 is DONE (read 2026-11-16 21:45): in `DemoMission.jsx:142-155` `shows(el)` must also reject computed visibility hidden, opacity 0 and pointer-events none, checking ANCESTORS (the rail sets opacity 0 on `nav.kpm-rail-grid` / `.kpm-rail-foot` and pointer-events none on `[data-kpm-rail]`), and `aim()` must drop the `|| all[0]` fallback (~L151); then `nav()` (`demoMission.js:33`) and `UNLOCK` (`:52`) need `.kpm-rail-totem` in their `at` lists (PC rail closed). Every other beat checked fine. Full list: its Task 7 Result.
+
+Known (Antigravity Task 3, DONE, read 2026-11-16): `aim()` in `src/components/DemoMission.jsx` (~L147) rings the FIRST element matching a beat's `at` selector even when it is invisible; on the PC step 1 rings the hidden `<button data-mark="restock_vault">` instead of the visible rail item `.kpm-rail-totem`. The 8 steps: `GUIDE` in `src/config/demoMission.js`.
+
+Build, in order:
+1. `aim()`: skip matches with no visible box (zero size, opacity 0, visibility hidden, display none) and take the next match. One change for every beat; Task 7 says which beats still need their own selector. Prove it RED first: a lab frame of step 1 on the PC ringing nothing he can see.
+2. The sidebar tour: before step 1 the capybara walks the sidebar item by item - one beat per menu item the current tier can see, ringing that item, with Task 5's line (17 items, Indonesian, tier column: ANTIGRAVITY-TASK.md Task 5 Result). PC: the rail items. Phone: the drawer must be OPEN for a ring to land -> 🔴 DECIDE to him with frames side by side (open the drawer for the tour, or the line only with no ring).
+3. Then step 1 as today.
+
+TRAPS
+- Guide copy never says "kamu" (audit check 667). New UI labels are English; the guide lines are Indonesian (Task 5).
+- The guide veil `.kpm-mx-veil` (z 400) lives OUTSIDE the shell's z-10 box; the Fleet focus veil (z 15) is inside it - they never fight. FrontPanel portals at z 480, above the guide veil.
+- skip12.js (Raw/2026-11-16-fleet-build) marks guide steps done in the guide's own localStorage record - use it instead of re-walking.
+- A lab reload drops the lab back to the owner with the guide open: talk.js, SWITCH, HENDRA, --gate-only 8 again.
+- A motion fix is not done until sampled on the page (veil.js / motion.js are the pattern: per-frame opacity + x, baseline at rest).
+
+LAB: launch demo-emulator, demo-api-emulator, demo-app-emulator (5176); `node tools/demo-reset-emulator.mjs`. A fresh emulator has NO invites (404): write `demo_invites/walker.pc@gmail.com` and `walker@gmail.com` by REST - POST `http://127.0.0.1:8080/v1/projects/kpm-demo-f4d74/databases/(default)/documents/demo_invites?documentId=<email>`, header `Authorization: Bearer owner`, body `{fields:{by:{stringValue:'lab'}}}`. Then from A-Brain `Raw/2026-11-15-journey-review`: `node walk5176.mjs --pc --gate-only 8`, `node jp.mjs tap 'text=SWITCH' --pc=9557`, `tap 'text=HENDRA'`, `--gate-only 8` again, `node jp.mjs eval talk.js --pc=9557`. Shooter in `Raw/2026-11-16-fleet-build`: `node fs.mjs <pc|phone> <prefix> [--noopen] [--eval=x.js] [--after=count.js] [--quiet]`. CRLF files (FleetCanvasManager.jsx, theme.css, vanBay.js): edit with scratchpad `rep.mjs` (//@@FIND //@@WITH //@@END, each FIND must match once). Stop the servers before `npm run build`.
+
+BEFORE ANY PUSH: `git log origin/phase0-solid-ground..HEAD`; any `Antigravity:` commit gets `git show` (only .claude/ANTIGRAVITY-TASK.md) and the gates re-run. Gates: logicFixes, npm run build, integration.audit, every *.selfcheck.mjs by exit code; a patch note en + id.
+
+ANTIGRAVITY: Tasks 6-8 DONE and read 21:45 (6 = the Retur DECIDE drafts; 8 = 18 overlays AT RISK of opening cut under the demo bars, one portal pattern fixes them, ImageCropper z-[70] must go to 97+; the Surat Jalan modal is one of them). Tasks 9-10 DONE and read 21:45 (9: the load sheet was the only stepper adding 10 with no label - fixed by "Each press"; 10: one shared minimal layout for the Fleet Surat Jalan, the LoadSheet SURAT JALAN / BUKTI KEMBALI card and AcceptanceReceipt; the notas stay as they are; the Consignment A4 nota scrolls sideways on the phone). Tasks 11-12 DONE and read 22:00 (12 = a failing check per Retur hole, ready for the Retur job). Tasks 13-14 DONE 22:05 (commits de5ad89b, 33f54b24 - task file only; read only their stat so far). Task 13's Result = THIS JOB'S DATA: per sidebar item the element to ring on PC/phone + the beats as one ```js block for GUIDE - read it in full and review before pasting. Task 14 = the restock Surat Jalan + LoadSheet card on the .kpm-sj paper (a later job). Tasks 15 (exact code for Task 11's two Fleet fixes) and 16 (an edit plan for the 18 AT RISK overlays) OPEN. Keep at least 2 OPEN, refill unasked, and end every reply that queues or closes work with the paste-ready prompt (CLAUDE.md, his 2026-11-16).
+
+AFTER THIS JOB (next brief, not now): Antigravity Task 11's two Fleet fixes - (1) MED: with the PC panel open, Tab reaches the dimmed keys behind the veil (.kpm-fleet-top: Offers, Add personnel) and Escape does not close it -> `inert` on .kpm-fleet-top while a person is open + Escape -> closePanel (mind FrontPanel's own Escape at FleetCanvasManager.jsx ~L28 and the Surat Jalan portal); (2) LOW: closing inside the first ~300 ms snaps to opacity 1 before kpmFleetOut (keyframe swap) -> drive open/close with transitions. Then the Retur audit's 6 OPEN holes as 🔴 DECIDEs (Task 6 drafts them) - money, never fixed unasked. Then Task 8's overlay findings (which pop-ups can open cut under the demo bars).
+
+STILL OWED BY HIM: his test of pick A live (PC: press a name -> the rest dims and blurs, 8 products; press the dimmed part -> closes; phone: More); his test of 63abfb93; phone SWITCH twice -> "fast" or "slow".
+
 ## DONE 2026-11-16 21:20 WIB - LIVE c497b4c1 (his pick A)
 
 # The one job - Fleet & Roster: build the bigger load panel he picks (A, B or C)
