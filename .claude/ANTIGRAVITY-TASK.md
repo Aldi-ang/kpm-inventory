@@ -497,7 +497,7 @@ Note: none of these 6 holes live in a pure `src/utils/` function (the `RETUR` ga
 ---
 
 ## Task 13 - the capybara's sidebar tour, ready to paste (feeds Claude's next job)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-16 22:00 WIB, by Claude. Same rules as above (read-only, touch only this file, commit it alone, "Antigravity:").
 
 Aldi: the capybara *"should give step by step tutorial starting from the sidebar first and what it use then to the next"*. Claude builds it next, using your Task 5 lines (17 items) and your Task 7 findings (`shows()` / `aim()` in `src/components/DemoMission.jsx` ~L142-155, the rail's opacity-0 children, `.kpm-rail-totem`). For EACH of the 17 sidebar items:
@@ -507,6 +507,70 @@ Aldi: the capybara *"should give step by step tutorial starting from the sidebar
 Then write the beats as ONE code block in the shape `GUIDE` uses in `src/config/demoMission.js` (read how a beat is built: `at`, the line, any `nav()`), the Indonesian lines from Task 5 word for word, in sidebar order. Claude pastes it after review. Do NOT change the code.
 
 **Result:**
+
+**How every item's ring resolves (same rule for all 17 items):**
+- **PC (1280) — rail collapsed at rest:** `[data-mark="${id}"]` (`src/components/BiohazardTheme.jsx:925`) is `opacity: 0` + `pointer-events: none` (`src/styles/theme.css:2024, 2077`). Ring `.kpm-rail-totem` (`BiohazardTheme.jsx:831`, `theme.css:2053`) first; hovering/focusing `[data-kpm-rail]` (`theme.css:2005, 2078-2079`, CSS `:hover`/`:has(:focus-visible)`) opens the rail automatically.
+- **PC (1280) — rail open:** Ring `[data-kpm-rail]:hover [data-mark="${id}"]` (or `:has(:focus-visible)`).
+- **Phone (390) — drawer closed:** `<aside>` has `translate-x-full` (`BiohazardTheme.jsx:820`) and `.kpm-rail-totem` is `display: none` (`theme.css:1840`). Ring `[aria-label="Open navigation"]` (`BiohazardTheme.jsx:641, 648`, `onPointerDown={startRailPull}` opens it).
+- **Phone (390) — drawer open:** Ring `[data-kpm-rail].translate-x-0 [data-mark="${id}"]` (`BiohazardTheme.jsx:820, 925`).
+
+| # | `data-mark` | PC collapsed -> open (`BiohazardTheme.jsx:831,925`) | Phone closed -> open (`BiohazardTheme.jsx:641,820,925`) | Tiers (`BiohazardTheme.jsx:527-535`, `permissions.js:154-203`) |
+|---|---|---|---|---|
+| 1 | `agent_profile` | `.kpm-rail-totem` -> `[data-mark="agent_profile"]` | `[aria-label="Open navigation"]` -> `[data-mark="agent_profile"]` | T2, T4, T6 (`view_agent_profile`) |
+| 2 | `dashboard` | `.kpm-rail-totem` -> `[data-mark="dashboard"]` | `[aria-label="Open navigation"]` -> `[data-mark="dashboard"]` | T2 (`view_dashboard`) |
+| 3 | `map_war_room` | `.kpm-rail-totem` -> `[data-mark="map_war_room"]` | `[aria-label="Open navigation"]` -> `[data-mark="map_war_room"]` | T2, T4 (`view_map`) |
+| 4 | `journey` | `.kpm-rail-totem` -> `[data-mark="journey"]` | `[aria-label="Open navigation"]` -> `[data-mark="journey"]` | T2, T4, T6 (`view_journey`) |
+| 5 | `fleet` | `.kpm-rail-totem` -> `[data-mark="fleet"]` | `[aria-label="Open navigation"]` -> `[data-mark="fleet"]` | T2, T4 (`view_fleet`) |
+| 6 | `inventory` | `.kpm-rail-totem` -> `[data-mark="inventory"]` | `[aria-label="Open navigation"]` -> `[data-mark="inventory"]` | T2 (`view_master_vault`) |
+| 7 | `agent_inventory` | `.kpm-rail-totem` -> `[data-mark="agent_inventory"]` | `[aria-label="Open navigation"]` -> `[data-mark="agent_inventory"]` | T4, T6 (`view_agent_inventory`) |
+| 8 | `restock_vault` | `.kpm-rail-totem` -> `[data-mark="restock_vault"]` | `[aria-label="Open navigation"]` -> `[data-mark="restock_vault"]` | T2 (`view_restock_vault`) |
+| 9 | `sales` | `.kpm-rail-totem` -> `[data-mark="sales"]` | `[aria-label="Open navigation"]` -> `[data-mark="sales"]` | T2, T4, T6 (`view_sales`) |
+| 10 | `receivables` | `.kpm-rail-totem` -> `[data-mark="receivables"]` | `[aria-label="Open navigation"]` -> `[data-mark="receivables"]` | T2, T4 (`view_receivables`) |
+| 11 | `eod` | `.kpm-rail-totem` -> `[data-mark="eod"]` | `[aria-label="Open navigation"]` -> `[data-mark="eod"]` | T2, T4, T6 (`view_eod`) |
+| 12 | `stock_opname` | `.kpm-rail-totem` -> `[data-mark="stock_opname"]` | `[aria-label="Open navigation"]` -> `[data-mark="stock_opname"]` | T2 (`canDecideOpname`), T4 (`view_stock_opname`) |
+| 13 | `customers` | `.kpm-rail-totem` -> `[data-mark="customers"]` | `[aria-label="Open navigation"]` -> `[data-mark="customers"]` | T2 (`view_customers`) |
+| 14 | `sampling` | `.kpm-rail-totem` -> `[data-mark="sampling"]` | `[aria-label="Open navigation"]` -> `[data-mark="sampling"]` | T2 (`view_sampling`) |
+| 15 | `transactions` | `.kpm-rail-totem` -> `[data-mark="transactions"]` | `[aria-label="Open navigation"]` -> `[data-mark="transactions"]` | T2, T4, T6 (`view_reports_*`) |
+| 16 | `audit` | `.kpm-rail-totem` -> `[data-mark="audit"]` | `[aria-label="Open navigation"]` -> `[data-mark="audit"]` | T2 (`view_audit_logs`) |
+| 17 | `settings` | `.kpm-rail-totem` -> `[data-mark="settings"]` | `[aria-label="Open navigation"]` -> `[data-mark="settings"]` | T2, T4, T6 (always visible) |
+
+```js
+// Ready to paste into src/config/demoMission.js (after updating shows() in DemoMission.jsx to skip opacity:0 / pointer-events:none)
+const tourBeat = (id, label, text, tiers) => ({
+    id,
+    tiers,
+    at: [
+        `[data-kpm-rail]:hover [data-mark="${id}"], [data-kpm-rail]:has(:focus-visible) [data-mark="${id}"], [data-kpm-rail].translate-x-0 [data-mark="${id}"]`,
+        '.kpm-rail-totem',
+        '[aria-label="Open navigation"]',
+    ],
+    say: [
+        text,
+        `Arahkan kursor ke tombol menu di kiri atas untuk melihat ${label}.`,
+        `Buka menu di kanan layar untuk melihat ${label}.`,
+    ],
+});
+
+export const SIDEBAR_TOUR = [
+    tourBeat('agent_profile', 'Agent Profile', 'Di Agent Profile, Anda melihat profil, target, peringkat, dan catatan kerja Anda.', ['T2', 'T4', 'T6']),
+    tourBeat('dashboard', 'Command Center', 'Command Center merangkum penjualan, setoran, dan stok perusahaan hari ini dalam satu layar.', ['T2']),
+    tourBeat('map_war_room', 'Map System', 'Map System memantau posisi salesman dan sebaran toko di peta secara langsung.', ['T2', 'T4']),
+    tourBeat('journey', 'Journey Plan', 'Journey Plan menampilkan daftar toko yang harus Anda kunjungi hari ini dan urutannya.', ['T2', 'T4', 'T6']),
+    tourBeat('fleet', 'Fleet & Canvas', 'Di Fleet & Canvas, pimpinan mengatur tim serta memuat dan menarik stok barang ke tas salesman.', ['T2', 'T4']),
+    tourBeat('inventory', 'Master Vault', 'Master Vault menyimpan stok utama perusahaan di gudang pusat beserta barang rusak.', ['T2']),
+    tourBeat('agent_inventory', 'Agent Inventory', 'Agent Inventory menampilkan isi tas jualan Anda sekarang dan catatan pemasukan hari ini.', ['T4', 'T6']),
+    tourBeat('restock_vault', 'Restock Vault', 'Restock Vault mencatat barang masuk dari pabrik dan pengiriman stok ke gudang wilayah.', ['T2']),
+    tourBeat('sales', 'Sales Terminal', 'Sales Terminal dipakai untuk mencatat penjualan ke toko, barang titipan, dan retur barang rusak.', ['T2', 'T4', 'T6']),
+    tourBeat('receivables', 'Receivables & Consignment', 'Receivables & Consignment mencatat tagihan titipan toko yang belum lunas dan pembayarannya.', ['T2', 'T4']),
+    tourBeat('eod', 'EOD Setoran', 'Di EOD Setoran, Anda menutup hari: hitung uang tunai, sisa barang, dan kirim laporan ke atasan.', ['T2', 'T4', 'T6']),
+    tourBeat('stock_opname', 'Stock Opname', 'Stock Opname dipakai untuk menghitung stok fisik gudang dan mencocokkannya dengan catatan sistem.', ['T2', 'T4']),
+    tourBeat('customers', 'Customers', 'Di Customers, Anda mengelola daftar toko terdaftar, alamat, dan batas harganya.', ['T2']),
+    tourBeat('sampling', 'Sampling', 'Sampling mencatat pembagian rokok contoh gratis ke toko beserta pita cukainya.', ['T2']),
+    tourBeat('transactions', 'Reports', 'Reports menyimpan semua riwayat nota penjualan, retur, dan ringkasan hasil kerja.', ['T2', 'T4', 'T6']),
+    tourBeat('audit', 'Audit Logs', 'Audit Logs merekam setiap perubahan penting di sistem agar semua catatan bisa ditelusuri.', ['T2']),
+    tourBeat('settings', 'Settings', 'Di Settings, Anda mengatur bahasa, tampilan hemat baterai, serta aturan perusahaan.', ['T2', 'T4', 'T6']),
+];
+```
 
 ---
 
