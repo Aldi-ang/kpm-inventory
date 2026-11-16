@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-16 21:32 WIB, PC clock (🔴 KPM - NOW: waiting on his Surat Jalan pick (A/B/C artifact) and his answer on the 10-Bks press step; pick A LIVE c497b4c1; NEXT-SESSION = the demo guide; Antigravity Tasks 9-10 OPEN. Log trimmed to 5 entries 2026-11-16 21:32 - older ones: git log -p .claude/PROGRESS.md)**
+**Updated: 2026-11-16 21:45 WIB, PC clock (🔴 KPM - NOW: "Each press: 1 Bks | 1 Slop" LIVE; waiting on his Surat Jalan pick (A, A2, A3, B or C); pick A LIVE c497b4c1; NEXT-SESSION = the demo guide; Antigravity Tasks 9-10 OPEN. Log trimmed to 5 entries 2026-11-16 21:32 - older ones: git log -p .claude/PROGRESS.md)**
+
+## 🔴 2026-11-16 21:45 WIB — KPM: "Each press" key live; Surat Jalan A2 + A3 drawn; Antigravity 9-10 read, 11-12 queued
+His words: *"A is fine but not really special tbh , well 1 press is 1 slop and 1 slop is 10 bks but i think u should add button where i can increase the add button by 1 or by 10"*. Built: LoadSheet "Each press: 1 Bks | 1 Slop" (lab: 1 Bks + + = 2, then 1 Slop + = 12; kept per device). Surat Jalan artifact v3 adds A2 (navy band) and A3 (big title, navy spine, stamp box - my pick).
+WAITING ON ALDI (word for word from the reply): "🔴 Pick one: A, A2, A3, B or C" - https://claude.ai/artifact/QauvVpPpTfLkR8LGJAUT1s. Still owed: his test of pick A live; phone SWITCH twice -> "fast" or "slow".
 
 ## 🔴 2026-11-16 21:32 WIB — KPM: Surat Jalan options sent, his 4 questions answered; Antigravity 6-8 read, 9-10 queued
 He liked pick A live: *"well overall the UI is really good, very professional and very simple and straighforward like what i wanted"*. His 4 questions (10 Bks per press, Fill suggested, "try it on Budi", the Return tab) answered in chat. Antigravity Tasks 6-8 DONE; they went out unread inside push 2dd4d5cf (task file only, gates re-run green after) - read since; findings in NEXT-SESSION. Tasks 9 (every + / − step) and 10 (every printed paper) OPEN.
