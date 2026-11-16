@@ -3334,10 +3334,14 @@ section('T · Fleet & canvas: who may look, and who may change');
       ok(`${fn} refuses before it does anything`,
          start > -1 && /const \w+ = async \([^)]*\) => \{ if \(!canEditFleet\) return notify\(/.test(head));
   }
-  /* 2026-09-24: loading moved into the van-loading bay; its MUAT VAN is hidden by the same gate */
+  /* 2026-09-24: loading moved into the van-loading bay; its MUAT VAN is hidden by the same gate.
+     2026-11-16: the bay left Fleet & Roster for the load sheet (his pick A / 1 / Y) - its Load van and its Reconcile & clear
+     sit behind the same gate, and go() refuses without it too */
+  const sheetSrc = fs.existsSync('src/components/LoadSheet.jsx') ? stripComments(read('src/components/LoadSheet.jsx')) : '';
   ok('and both doors are hidden as well as guarded',
-     /<LoadingBay[\s\S]{0,900}canEdit=\{canEditFleet\}/.test(fleetSrc) &&
-     /\{canEditFleet && <button onClick=\{handleClearCanvas\}/.test(fleetSrc));
+     /<LoadSheet[\s\S]{0,1400}canEdit=\{canEditFleet\}/.test(fleetSrc) && /<LoadSheet[\s\S]{0,1400}onClear=\{handleClearCanvas\}/.test(fleetSrc) &&
+     /\{!extra && canEdit && \(\s*<div className="kpm-fleet-foot">/.test(sheetSrc) && /if \(busy \|\| !lines\.length \|\| !canEdit\) return;/.test(sheetSrc) &&
+     /\{canEdit && ret && vanBks > 0 && <button [^>]*onClick=\{onClear\}>Reconcile &amp; clear/.test(sheetSrc));
   /* Reconcile & Clear was on the backlog on its own as "a button that lies" - the database rules
      already refused the save, so pressing it gave a failure and no reason. */
   ok('the refusal explains itself and names where to change it',
@@ -8529,17 +8533,30 @@ section('THE CHEST SOUNDS ARE FILES, RENDERED FROM HIS STUDIO (2026-09-24)');
    per product - handleLoadCanvas for what goes out, a NEW per-product return transaction for what
    comes back - and only the report collapses to one line. What a drag saves is the LAYOUT, in its
    own field. The panel is his look 1, the Minecraft stone grey. */
+/* The game edition of Fleet & Roster (3D stage, gold bar, two chests) left the screen on 2026-11-16 for his professional
+   pick (A Ledger / 1 Load sheet / Y Slide-over). Tag game-edition-v1 keeps it showable: every gone-check below asks git
+   that the tag is still there, so "gone" never means "lost". */
+const gameEditionKept = await (async () => {
+  try {
+    const { execSync } = await import('node:child_process');
+    return /^[0-9a-f]{40}\s*$/.test(execSync('git rev-parse -q --verify refs/tags/game-edition-v1', { stdio: ['ignore', 'pipe', 'ignore'] }).toString());
+  } catch { return false; }
+})();
 section('THE VAN-LOADING BAY: TWO CHESTS, ONE PRESS (2026-09-24)');
 { const fl = read('src/FleetCanvasManager.jsx'), flc = code(fl);
+  const sheet = fs.existsSync('src/components/LoadSheet.jsx') ? read('src/components/LoadSheet.jsx') : '', sheetc = code(sheet);
   const bayPath = 'src/components/LoadingBay.jsx', bay = fs.existsSync(bayPath) ? read(bayPath) : '', bayc = code(bay);
   const th = read('src/styles/theme.css');
   const bayCss = th.slice(th.indexOf('/* ── THE VAN-LOADING BAY'), th.indexOf('/* ── END OF THE VAN-LOADING BAY'));
   const fnBody = (src, name) => { const s = src.indexOf(`const ${name} = async`); return s < 0 ? '' : src.slice(s, src.indexOf('\n    };', s)); };
   const load = fnBody(flc, 'handleLoadCanvas'), ret = fnBody(flc, 'handleReturnToWarehouse');
 
-  ok('Fleet & Roster mounts the bay with the three writers and the edit gate',
-     /<LoadingBay[\s\S]{0,900}onLoad=\{handleLoadCanvas\}/.test(flc) && /<LoadingBay[\s\S]{0,900}onReturn=\{handleReturnToWarehouse\}/.test(flc) &&
-     /<LoadingBay[\s\S]{0,900}onLayout=\{handleSaveLayout\}/.test(flc) && /<LoadingBay[\s\S]{0,900}canEdit=\{canEditFleet\}/.test(flc));
+  /* 2026-11-16: the chests left Fleet & Roster for the load sheet - the SAME two stock writers, the usual-load writer and
+     the gate; the layout writer went with the squares (its gone-check is below) */
+  ok('Fleet & Roster mounts the load sheet with the two stock writers, the usual-load writer and the edit gate; Load van calls a writer once per line',
+     /<LoadSheet[\s\S]{0,1400}onLoad=\{handleLoadCanvas\}/.test(flc) && /<LoadSheet[\s\S]{0,1400}onReturn=\{handleReturnToWarehouse\}/.test(flc) &&
+     /<LoadSheet[\s\S]{0,1400}onPreset=\{handleSavePreset\}/.test(flc) && /<LoadSheet[\s\S]{0,1400}canEdit=\{canEditFleet\}/.test(flc) &&
+     /for \(const p of lines\) \{[\s\S]{0,200}r = await \(ret \? onReturn : onLoad\)\(p\.id, bks\);/.test(sheetc));
   ok('the old select + qty + LOAD is gone', !/-- Choose Product --/.test(flc) && !/setLoadQty|setSelectedProduct/.test(flc));
   ok('handleLoadCanvas takes the product and the packs, reports per product to the audit log only, and answers ok / reason',
      /const handleLoadCanvas = async \(productId, qtyBks\) =>/.test(flc) && /logAudit\("CANVAS_LOAD"[\s\S]{0,200}return \{ ok: true \};/.test(load) &&
@@ -8550,8 +8567,9 @@ section('THE VAN-LOADING BAY: TWO CHESTS, ONE PRESS (2026-09-24)');
   ok('a RETURN is its own per-product transaction: the van row read LIVE inside it, converted in the row\'s own unit, never an emptied van',
      ret.length > 400 && /runTransaction\(db, async \(t\) => \{\s*const agentSnap = await t\.get\(agentRef\);/.test(ret) &&
      /convertToBks\(1, updated\[idx\]\.unit, product\)/.test(ret) && /if \(!promo && rowBks < qtyBks\) throw/.test(ret) && !/activeCanvas: \[\]/.test(ret));
-  ok('the layout is its own field, written on its own, never inside activeCanvas',
-     /updateDoc\(doc\(db, collPath, selectedAgent\.id\), \{ vanLayout: cells \}\)/.test(flc) && !/activeCanvas/.test(bayc.replace(/agent\.activeCanvas/g, '')));
+  ok('the van layout is gone with the squares (the sheet has none): no vanLayout writer, no onLayout - tag game-edition-v1 keeps it; the sheet never writes activeCanvas',
+     !/vanLayout|handleSaveLayout|onLayout/.test(flc) && sheetc.length > 2000 && !/onLayout|vanLayout/.test(sheetc) &&
+     !/activeCanvas/.test(sheetc.replace(/agent\.activeCanvas/g, '')) && gameEditionKept);
   ok('switching the salesman while the muatan has lines asks through the dialog gate', /bayLines > 0[\s\S]{0,200}await confirmAction\(/.test(flc));
   ok('the drag listens on the WINDOW and finds squares by rectangles, never elementFromPoint',
      /window\.addEventListener\('pointermove'/.test(bayc) && /window\.addEventListener\('pointerup'/.test(bayc) && /window\.addEventListener\('pointercancel'/.test(bayc) &&
@@ -8603,41 +8621,58 @@ section('THE VAN-LOADING BAY: TWO CHESTS, ONE PRESS (2026-09-24)');
    the shape: one place in view lists its people, several places are his folders, a search lists matches. */
 section('THE ROSTER, REDRAWN WITH EVERY DOOR KEPT (2026-09-24)');
 { const fl = read('src/FleetCanvasManager.jsx');
-  const left = fl.slice(fl.indexOf('{/* LEFT PANEL: FLEET ROSTER'), fl.indexOf('{/* RIGHT PANEL: THE LOADING DOCK */}'));
-  /* 2026-09-24 08:40: his State of Decay 2 screen replaced the folders the same morning - the people stand on a
-     stage as 3D cards, the doors moved to the gold bar under it, acting on the picked person */
-  const rowFn = fl.slice(fl.indexOf('const stageCard = (m) =>'), fl.indexOf('const handleWhatsAppShare'));
-  const right = fl.slice(fl.indexOf('{/* RIGHT PANEL: THE LOADING DOCK */}'));
-  ok('the left panel was found', left.length > 3000 && rowFn.length > 1500);
+  /* 2026-11-16 the professional Fleet & Roster (his pick A Ledger / 1 Load sheet / Y Slide-over): the top bar and the ledger
+     sit between THE ROSTER LEDGER and THE PERSON PANEL; the panel runs to the end of the file. (2026-09-24 08:40 his State of
+     Decay 2 screen had put the people on a stage as 3D cards with the doors on a gold bar - tag game-edition-v1 keeps it.) */
+  const left = fl.slice(fl.indexOf('{/* THE ROSTER LEDGER (2026-11-16)'), fl.indexOf('{/* THE PERSON PANEL'));
+  const rowFn = fl.slice(fl.indexOf('const rosterRow = (m) =>'), fl.indexOf('const handleWhatsAppShare'));
+  const right = fl.slice(fl.indexOf('{/* THE PERSON PANEL'));
+  const acts = right.slice(right.indexOf('<span className="kpm-fleet-acts">'), right.indexOf('<LoadSheet'));
+  const th = read('src/styles/theme.css').replace(/\r/g, '');
+  const ledgerCss = th.slice(th.indexOf('/* ── THE ROSTER LEDGER'), th.indexOf('/* ── END OF THE ROSTER LEDGER'));
+  ok('the ledger, the person panel, its keys and the row were found', left.length > 3000 && rowFn.length > 1500 && right.length > 3000 && acts.length > 500 && ledgerCss.length > 3000);
   ok('the stage, its cards and the person\'s side paint in the app\'s tokens only - no blue, green, purple, orange or red Tailwind colours',
      !/\b(bg|text|border)-(blue|emerald|green|purple|orange|indigo|amber|red|slate)-\d/.test(left + rowFn + right));
+  /* 2026-11-16: the doors moved from the gold bar to the person panel's keys (kpm-fleet-acts) - the SAME gates */
   ok('view for everyone; edit and remove only behind the fleet gate, remove still wears data-kpm-del',
-     /onClick=\{\(e\) => handleViewClick\(e, sel\)\}/.test(left) &&
-     /\{canEditFleet && \(\s*<>\s*<button type="button"(?: className=\{isDemoLogin\(sel\) \? 'demo-locked' : undefined\})? onClick=\{\(e\) => handleEditClick\(e, sel\)\}[\s\S]{0,300}<button data-kpm-del data-label="Delete" type="button"(?: className=\{isDemoLogin\(sel\) \? 'demo-locked' : undefined\})? onClick=\{\(e\) => handleDeleteAgent\(e, sel\)\}/.test(left));
+     /onClick=\{\(e\) => handleViewClick\(e, sel\)\}/.test(acts) &&
+     /\{canEditFleet && \(\s*<>\s*<button type="button"(?: className=\{isDemoLogin\(sel\) \? 'demo-locked' : undefined\})? onClick=\{\(e\) => handleEditClick\(e, sel\)\}[\s\S]{0,300}<button data-kpm-del data-label="Delete" type="button"(?: className=\{isDemoLogin\(sel\) \? 'demo-locked' : undefined\})? onClick=\{\(e\) => handleDeleteAgent\(e, sel\)\}/.test(acts));
   /* 2026-11-01 the seat limit: at the limit the key says so before it opens the form (SEAT LIMIT block at the end) */
   ok('the add key is behind the same gate and still resets the form', /\{canEditFleet && \(\s*<button onClick=\{\(\) => \{\s*(?:\/\*[^*]*\*\/\s*)?if \(!isAddingAgent && seatsFull\) return notify\(seatsFullMsg\(seatDocs\.length, seatLimit\)\);\s*setIsAddingAgent\(!isAddingAgent\); setEditingAgentId\(null\); setNewAgent\(defaultAgentState\); setIsReadOnlyMode\(false\); \}\}/.test(left));
   ok('the search reads the same five fields', /a\.name\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.email\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.userRole\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.location\?\.toLowerCase\(\)\.includes\(term\) \|\| a\.province\?\.toLowerCase\(\)\.includes\(term\)/.test(left));
-  ok('people keep their rank order (admin, area admin, agent)', /const rank = \{ 'ADMIN': 3, 'AREA_ADMIN': 2, 'AGENT': 1 \};/.test(left) && /const cast = byRank\(term \? shown : \(places\[place\]\?\.people \|\| \[\]\)\);/.test(left));
-  ok('areas become tabs over the stage only when more than one place is in view, and a search puts every match on it',
-     /\{!term && keys\.length > 1 && \(/.test(left) && /role="tab" aria-selected=\{k === place\}/.test(left) && /\{pageCast\.map\(m => stageCard\(m\)\)\}/.test(left));
-  ok('seven cards a page, pages 1 2 3 when there are more, and a new area or search starts on page 1',
-     /const PER_STAGE = 7;/.test(left) && /const pageCast = cast\.slice\(pg \* PER_STAGE, pg \* PER_STAGE \+ PER_STAGE\);/.test(left) &&
-     /setRosterPlace\(k\); setRosterPage\(0\);/.test(left) && /setSearchTerm\(e\.target\.value\); setRosterPage\(0\);/.test(left));
-  ok('the bar lights once per pick, never on a loop', /key=\{sel\?\.id \|\| 'none'\}/.test(left) &&
-     /\.kpm-stage-bar\.lit::after \{ animation: kpmStageSheen 900ms [^;]* 1 both; \}/.test(read('src/styles/theme.css')) && !/kpmStageSheen[^;]*infinite/.test(read('src/styles/theme.css')));
+  /* 2026-11-16: FLEET_CAPTAIN joined the leaders (the stage's 3/2/1 map forgot that tier), then A-Z by name */
+  ok('people keep their rank order (admin, area admin, fleet captain, agent), then A-Z, and the three leader tiers stand on top',
+     /const rank = \{ 'ADMIN': 4, 'AREA_ADMIN': 3, 'FLEET_CAPTAIN': 2, 'AGENT': 1 \};/.test(left) &&
+     /\|\| String\(x\.name \|\| ''\)\.localeCompare\(String\(y\.name \|\| ''\)\)/.test(left) &&
+     /const cast = byRank\(term \? shown : \(places\[place\]\?\.people \|\| \[\]\)\);/.test(left) &&
+     /const isLeader = \(m\) => \['ADMIN', 'AREA_ADMIN', 'FLEET_CAPTAIN'\]\.includes\(m\.userRole\);/.test(fl) &&
+     /const leaders = cast\.filter\(isLeader\), crew = cast\.filter\(m => !isLeader\(m\)\);/.test(left));
+  ok('areas become chips over the ledger only when more than one place is in view, and a search lists every match',
+     /\{!term && keys\.length > 1 && \(/.test(left) && /role="tab" aria-selected=\{k === place\} className=\{`kpm-fleet-chip/.test(left) &&
+     /\{leaders\.map\(m => rosterRow\(m\)\)\}/.test(left) && /\{crew\.map\(m => rosterRow\(m\)\)\}/.test(left));
+  ok('the stage pages are gone (seven cards a page): the ledger lists everyone in the place - tag game-edition-v1 keeps them',
+     !/PER_STAGE|pageCast|rosterPage|setRosterPage/.test(code(fl)) && left.length > 3000 && gameEditionKept);
+  ok('the panel slides in once per pick, never on a loop (the bar\'s one sheen became the panel\'s one entrance)',
+     /<aside key=\{sel\.id\} className="kpm-fleet-panel"/.test(right) &&
+     /\.kpm-fleet-panel \{[^}]*animation: kpmFleetSlide 260ms [^;]*;/.test(ledgerCss) && !/kpmFleetSlide[^;]*infinite/.test(th));
   /* round 4 (his 09:35 "i still want u to add the closing animation on the chest"): the knock is gone, a tap closes again */
   ok('a tap on a chest opens it AND closes it again; nothing knocks',
      /onClick=\{\(\) => toggle\('wh', !open\.wh\)\}/.test(code(read('src/components/LoadingBay.jsx'))) &&
      /onClick=\{\(\) => toggle\('van', !open\.van\)\}/.test(code(read('src/components/LoadingBay.jsx'))) && !/knock/.test(code(read('src/components/LoadingBay.jsx'))));
-  ok('a card names the tier in his words and says what the van holds, in packs',
-     /tierWord\(m\.userRole\)/.test(rowFn) && /const bks = Math\.round\(loadOf\(m\)\);/.test(rowFn) && /convertToBks\(r\.qty, r\.unit, inventory\.find/.test(fl) &&
-     /* stage 3: the van's promo goods ride beside the packs (+ N pcs) and count as items - never added into the Bks */
-     rowFn.includes("Bks${pcs > 0 ? ` + ${pcs.toLocaleString('id-ID')} pcs` : ''} · ${items}") && rowFn.includes('const pcs = (m.promoCanvas || []).reduce('));
-  ok('picking a card goes through the muatan guard, by pointer or by key', /onClick=\{\(\) => pickAgent\(m\)\}/.test(rowFn) && /e\.key === 'Enter' \|\| e\.key === ' '/.test(rowFn) && /const pickAgent = async \(m\) => \{\s*if \(bayLines > 0/.test(fl));
-  const stageCss = read('src/styles/theme.css').slice(read('src/styles/theme.css').indexOf('/* ── THE ROSTER STAGE'), read('src/styles/theme.css').indexOf('/* ── END OF THE ROSTER STAGE'));
-  ok('a card is visible at rest and lifts only on a pointer or a key (Lite Mode keeps it all)',
-     stageCss.length > 1500 && !/opacity:\s*0[;\s]/.test(stageCss.replace(/\.kpm-stage-bar::after \{[^}]*\}/, '')) && /\.kpm-actor:hover \.kpm-actor-card, \.kpm-actor:focus-visible \.kpm-actor-card \{ transform: translateY\(-10px\)/.test(stageCss));
-  ok('the blue standby is gone; nobody picked shows the community', !/Standby For Deployment/.test(fl) && /the community today/.test(fl));
+  ok('a row names the tier in his words and says what the van holds, in packs; promo pieces ride beside the packs, never inside them, and a promo-only van is not empty',
+     /tierWord\(m\.userRole\)/.test(fl.slice(fl.indexOf('const roleLine = (m) =>'), fl.indexOf('const rosterRow = (m) =>'))) && /\{roleLine\(m\)\}/.test(rowFn) &&
+     /const left = Math\.round\(loadOf\(m\)\);/.test(rowFn) && /convertToBks\(r\.qty, r\.unit, inventory\.find/.test(fl) &&
+     rowFn.includes('const pcs = (m.promoCanvas || []).reduce(') && rowFn.includes("` · + ${pcs.toLocaleString('id-ID')} pcs promo`") &&
+     /has = loaded > 0 \|\| pcs > 0;/.test(rowFn) && !/(left|loaded|sold) \+ pcs/.test(rowFn));
+  ok('picking a row goes through the unsaved-sheet guard, by pointer or by key; closing the panel asks the same',
+     /onClick=\{\(\) => pickAgent\(m\)\}/.test(rowFn) && /e\.key === 'Enter' \|\| e\.key === ' '/.test(rowFn) && /const pickAgent = async \(m\) => \{\s*if \(bayLines > 0/.test(fl) &&
+     /const closePanel = async \(\) => \{\s*if \(bayLines > 0 && !await confirmAction\(/.test(fl) && /<LoadSheet[\s\S]{0,1400}onDirty=\{setBayLines\}/.test(fl));
+  ok('a row is visible at rest - no rule hides it; a pointer (where there is one) or a key marks it the way a pick does',
+     !/opacity:\s*0[;\s]/.test(ledgerCss.replace(/@keyframes kpmFleetSlide \{[^\n]*\n/, '')) &&
+     /\.kpm-fleet-row\.on, \.kpm-fleet-row:focus-visible \{ background: var\(--raised\); border-left-color: var\(--accent-edge\); \}/.test(ledgerCss) &&
+     /@media \(hover: hover\) \{ \.kpm-fleet-row:hover \{ background: var\(--raised\); \} \}/.test(ledgerCss));
+  ok('the blue standby is gone; nobody picked shows the ledger whole - the community block is gone with the stage (tag game-edition-v1 keeps it)',
+     !/Standby For Deployment/.test(fl) && !/the community today/.test(fl) && /\{selectedAgent && \(\(\) => \{\s*const sel = selectedAgent;/.test(right) && gameEditionKept);
   ok('every empty-roster cause still names itself', /The roster could not be read\./.test(left) && /Your own staff record was not found\./.test(left) && /You are not posted to a branch yet\./.test(left) && /Nobody is posted to \{branchPathLocation\}\./.test(left));
 }
 
@@ -8654,7 +8689,8 @@ section('ROUND 4: A CLOSED CHEST SHOWS TABS IN ITS PANEL\'S PLACE (2026-09-24)')
   /* CRLF-proof and both ends asserted (2026-09-30: a stash round-trip rewrote LoadingBay.jsx to CRLF, the end anchor
      missed, and the slice ran to the end of the file - a correct file went red) */
   const fnOf = (src, name) => { const t = src.replace(/\r/g, ''), s = t.indexOf(`function ${name}(`), e = t.indexOf('\n  }\n', s); return s > -1 && e > s ? t.slice(s, e) : ''; };
-  const right = fl.slice(fl.indexOf('{/* RIGHT PANEL: THE LOADING DOCK */}'));
+  const right = fl.slice(fl.indexOf('{/* THE PERSON PANEL'));
+  const list = fl.slice(fl.indexOf('<div className="kpm-fleet-list'), fl.indexOf('{/* THE PERSON PANEL'));
 
   ok('a chest closed by hand shows its tabs in the panel\'s place - the warehouse PRESET + TEAM, the van GEOFENCE',
      /\{open\.wh === false && \(\s*<div className="slip wh"/.test(bayc) && /\{open\.van === false(?: && !vanOnly)?(?: && !open\.q)? && \(\s*<div className="slip van"/.test(bayc) &&
@@ -8668,9 +8704,12 @@ section('ROUND 4: A CLOSED CHEST SHOWS TABS IN ITS PANEL\'S PLACE (2026-09-24)')
   ok('a tab\'s list never pushes its status chips past the edge: one minmax column (his 1440 frame clipped "DITOLAK")',
      /\.kpm-bay \.slip \.rows \{[^}]*grid-template-columns: minmax\(0, 1fr\)/.test(bayCss));
   ok('the lid still closes in full, with its own sound', /chestEnderClose/.test(bayc) && /chestVanClose/.test(bayc) && /\.kpm-bay \.chest \.lid \{[^}]*transition: transform/.test(bayCss));
-  ok('the usual load is its own field on the person\'s record, written like the layout, never inside activeCanvas',
+  /* 2026-11-16: the chests left Fleet & Roster for LoadSheet.jsx; handleSavePreset is still the same field on the person */
+  const sheetc = fs.existsSync('src/components/LoadSheet.jsx') ? code(read('src/components/LoadSheet.jsx')) : '';
+  ok('the usual load is its own field on the person\'s record, written on its own, never inside activeCanvas',
      /const handleSavePreset = async \(preset\) =>/.test(flc) && /updateDoc\(doc\(db, collPath, selectedAgent\.id\), \{ loadPreset: preset \}\)/.test(flc) &&
-     /<LoadingBay[\s\S]{0,1400}onPreset=\{handleSavePreset\}/.test(flc) && /canEditFleet/.test(flc.slice(flc.indexOf('const handleSavePreset = async'), flc.indexOf('const handleSavePreset = async') + 300)));
+     /<LoadSheet[\s\S]{0,1400}onPreset=\{handleSavePreset\}/.test(flc) && /canEditFleet/.test(flc.slice(flc.indexOf('const handleSavePreset = async'), flc.indexOf('const handleSavePreset = async') + 300)) &&
+     /const saveUsual = async \(\) => \{/.test(sheetc) && /onPreset\?\.\(next\)/.test(sheetc) && !/activeCanvas/.test(sheetc.replace(/agent\.activeCanvas/g, '')));
   ok('saving keeps only the PLUS lines, as { id, qty, unit }', /lines\.filter\(l => l\.dir > 0\)\.map\(\(\{ id, qty, unit \}\) => \(\{ id, qty, unit \}\)\)/.test(fnOf(bayc, 'savePreset')));
   ok('using it only FILLS THE MUATAN (his rule): applyPreset, no writer, and it says what was cut',
      /applyPreset\(/.test(fnOf(bayc, 'fillMuatan')) && !/onLoad\(|onReturn\(|onPreset\(|onLayout\(/.test(fnOf(bayc, 'fillMuatan')) &&
@@ -8682,18 +8721,18 @@ section('ROUND 4: A CLOSED CHEST SHOWS TABS IN ITS PANEL\'S PLACE (2026-09-24)')
      /onClick=\{\(\) => copyLoad\(v\)\}/.test(bayc) && /\{canEdit && <button[^>]*onClick=\{\(\) => copyLoad\(v\)\}/.test(bayc));
   ok('the team is the other people in THIS place, from the roster the viewer already sees',
      /const placeOf = \(a\) =>/.test(flc) && /const \{ prov, loc, k \} = placeOf\(a\);/.test(flc) &&
-     /team=\{agents\.filter\(a => a\.id !== selectedAgent\.id && placeOf\(a\)\.k === placeOf\(selectedAgent\)\.k\)\}/.test(flc));
-  ok('ONE matcher for a person\'s override requests - the ledger, the log and the van tab all use it',
+     /team=\{agents\.filter\(a => a\.id !== sel\.id && placeOf\(a\)\.k === placeOf\(sel\)\.k\)\}/.test(flc));
+  ok('ONE matcher for a person\'s override requests - the Requests tab and the Activity tab both use it',
      /const isAgentBypass = \(b, a\) =>/.test(flc) && (flc.match(/\(b\.salesmanName \|\| ''\)\.toLowerCase\(\) ===/g) || []).length === 2 &&
-     (flc.match(/b\.status !== 'PENDING' && \(?isAgentBypass\(b, selectedAgent\)/g) || []).length === 2 &&
-     /bypasses=\{allBypasses\.filter\(b => isAgentBypass\(b, selectedAgent\)\)\}/.test(flc));
-  ok('the company-wide PENDING queue stays at the top of the screen, never only behind a closed chest',
-     right.indexOf("allBypasses.some(b => b.status === 'PENDING') && (") > 0 && right.indexOf("allBypasses.some(b => b.status === 'PENDING') && (") < right.indexOf('{selectedAgent ? ('));
+     /const mine = allBypasses\.filter\(b => isAgentBypass\(b, sel\)\)/.test(flc) &&
+     /mine\.some\(b => b\.status === 'APPROVED'/.test(flc));
+  ok('the company-wide PENDING queue stays at the top of the screen, never only inside a person\'s panel',
+     list.indexOf("allBypasses.some(b => b.status === 'PENDING') && (") > 0 && right.indexOf('<aside key={sel.id}') > 0);
   ok('the van tab only READS the requests - approving stays in the queue', !/updateDoc|gps_bypasses|confirmAction/.test(bayc));
   /* his 12:50 "instruction on sc1 is not explained correctly in indonesian and its sound so robot ... dont put tutorial
      inside the panel, we will put all the tutorial on the ponder book anyway" */
-  ok('no tutorial inside the bay or on the stage bar - the ponder book will carry it',
-     !/tidak mencatat apa pun|satu tekan|Tarik kotak dari gudang|tidak ada angka bawaan|Hanya mengisi muatan|antrean paling atas|lalu simpan di sini|Tarik barang dari gudang ke van, atau/.test(bay) &&
+  ok('no tutorial inside the bay, the load sheet or the ledger - the ponder book will carry it',
+     !/tidak mencatat apa pun|satu tekan|Tarik kotak dari gudang|tidak ada angka bawaan|Hanya mengisi muatan|antrean paling atas|lalu simpan di sini|Tarik barang dari gudang ke van, atau/.test(bay + sheetc) &&
      !/className="contract"|manFoot/.test(bay) && !/Point at a card to look/.test(fl) && !/\.kpm-bay \.contract|\.kpm-stage-hint/.test(th));
   ok('the bay\'s words read as people talk: no "-mu", no "belum ada muatan" on the key',
      !/tingkatmu|Muat van — belum ada muatan/.test(bay) && /'Muat van'/.test(bay) && /Muatan masih kosong\./.test(bay));
@@ -8731,59 +8770,45 @@ section('ROUND 4: A CLOSED CHEST SHOWS TABS IN ITS PANEL\'S PLACE (2026-09-24)')
   }
 }
 
-/* ── ROUND 4: FAR AND NEAR ON THE STAGE (2026-09-24) ─────────────────────────────────────────────────────
-   His 09:35 "add far and near effect on the cards ... better 3D background", on his State of Decay 2 screenshot. */
+/* ── ROUND 4: FAR AND NEAR ON THE STAGE (2026-09-24) -> GONE WITH THE 3D STAGE (2026-11-16) ──────────────
+   His 2026-11-15 pick ("Team list A Ledger table · Loading 1 Load sheet · PC Y Slide-over panel") replaced the 3D stage,
+   its far/near cards, its overhead lamp and its hover zones with a ruled ledger and a slide-over panel. The 3D stage
+   stays showable in tag game-edition-v1. */
 section('ROUND 4: FAR AND NEAR ON THE STAGE (2026-09-24)');
-{ const th = read('src/styles/theme.css');
-  const stageCss = th.slice(th.indexOf('/* ── THE ROSTER STAGE'), th.indexOf('/* ── END OF THE ROSTER STAGE'));
-  const back = /\.kpm-stage:has\(\.kpm-actor\.on, \.kpm-actor:hover, \.kpm-actor:focus-visible\) \.kpm-actor:not\(\.on, :hover, :focus-visible\) \.kpm-actor-card \{([^}]*)\}/.exec(stageCss);
-  ok('when one card is pointed at or picked, every other card stands further back - smaller, dimmer, higher',
-     !!back && /translateY\(-\d+px\) scale\(\.\d+\)/.test(back[1]) &&
-     /:root:not\(\.lite-mode\) \.kpm-stage:has\([^{]*\.kpm-actor-card \{ opacity: \.[6-9]\d*; \}/.test(stageCss));
-  ok('the pointed or picked card steps forward',
-     /\.kpm-actor:hover \.kpm-actor-card, \.kpm-actor:focus-visible \.kpm-actor-card \{ transform: translateY\(-10px\) scale\(1\.0\d\)/.test(stageCss) &&
-     /\.kpm-actor\.on \.kpm-actor-card \{ transform: translateY\(-6px\) scale\(1\.0\d\)/.test(stageCss));
-  /* his 12:50: the grid floor was "too norak ... less lines like there is some cyberpunk stuff going on there, just simple
-     cool and elegant with the warm lighting just like what the State of decay have" */
-  ok('the stage is lit warm and plain - a lamp overhead, its pool on the floor, the edges in shadow - and no lines',
-     /the lamp overhead/.test(stageCss) && /its pool on the floor/.test(stageCss) && !/repeating-(conic|linear)-gradient|conic-gradient/.test(stageCss) &&
-     !/rgba\(208, 138, 46, \.2\) 9%/.test(stageCss));
-  /* his 12:50 recording: with nobody picked the row pulsed as the pointer crossed it - in each GAP between cards nothing
-     is hovered, so every far card grew back, then shrank again at the next card */
-  ok('the hover zones touch - no gap between cards - so crossing the row never drops the far/near state',
-     /\.kpm-stage \{[^}]*gap: 0;/.test(stageCss) && /\.kpm-actor \{ flex: 0 0 188px;/.test(stageCss) &&
-     /@media \(min-width: 1024px\) \{ \.kpm-stage \.kpm-actor \{ flex: 1 1 188px; \} \}/.test(stageCss) && !/space-evenly/.test(stageCss));
-  ok('no shadow, no filter, nothing on a loop (G30)', stageCss.length > 3000 && !/box-shadow|drop-shadow|filter:|infinite/.test(stageCss));
-  ok('Lite Mode keeps every card whole: the dimming is gated out of it, and nothing glides',
-     /\.lite-mode \.kpm-actor-card, \.lite-mode \.kpm-actor-floor \{ transition: none; \}/.test(stageCss) &&
-     (stageCss.match(/opacity: \.\d+;/g) || []).length === 1 && /:root:not\(\.lite-mode\)[^{]*\{ opacity: \.72; \}/.test(stageCss));
+{ const th = read('src/styles/theme.css').replace(/\r/g, '');
+  const ledgerCss = th.slice(th.indexOf('/* ── THE ROSTER LEDGER'), th.indexOf('/* ── END OF THE ROSTER LEDGER'));
+  ok('the 3D stage, far/near cards, stage lamp and hover-zone rules are gone (tag game-edition-v1 keeps them)',
+     !/\.kpm-stage\b|\.kpm-actor\b|\.kpm-actor-card\b/.test(th) && gameEditionKept);
+  ok('the ledger rows use no shadow, no filter, and nothing loops in the ledger or panel CSS (G30)',
+     ledgerCss.length > 3000 && !/box-shadow|drop-shadow|filter:|infinite/.test(ledgerCss.replace(/\.kpm-fleet-panel \{[^}]*box-shadow:[^;]*;/g, '')));
+  ok('Lite Mode and reduced motion keep the panel still and drop its shadow (no glide, no replay)',
+     /\.lite-mode \.kpm-fleet-panel \{ animation: none; box-shadow: none; \}/.test(ledgerCss) &&
+     /@media \(prefers-reduced-motion: reduce\) \{ \.kpm-fleet-panel \{ animation: none; \} \}/.test(ledgerCss));
 }
 
-/* ── ROUND 4: THE DEPLOYMENT HEADER MOVES INTO THE GOLD BAR (2026-09-24) ───────────────────────────────────
-   His 09:35 "i just dont like that the active deployment terminal take a big space even when not use maybe we
-   should redeign the UI format and placement for this while keeping everything". Nothing it showed is lost. */
+/* ── ROUND 4: THE DEPLOYMENT HEADER MOVES INTO THE PERSON PANEL (2026-09-24, updated 2026-11-16) ───────────
+   The big "Active Deployment Terminal" header stayed gone; its Loaded / Sold today / Left in van counts and action keys
+   now live in the person's slide-over panel, and permission chips live in Details so the head stays clean. */
 section('ROUND 4: THE DEPLOYMENT HEADER MOVES INTO THE GOLD BAR (2026-09-24)');
-{ const fl = read('src/FleetCanvasManager.jsx'), th = read('src/styles/theme.css');
-  const left = fl.slice(fl.indexOf('{/* LEFT PANEL: FLEET ROSTER'), fl.indexOf('{/* RIGHT PANEL: THE LOADING DOCK */}'));
-  const bar = left.slice(left.indexOf('className={`kpm-stage-bar'));
-  const right = fl.slice(fl.indexOf('{/* RIGHT PANEL: THE LOADING DOCK */}'));
-  const person = right.slice(right.indexOf('{selectedAgent ? ('), right.indexOf('<LoadingBay'));
-  const stageCss = th.slice(th.indexOf('/* ── THE ROSTER STAGE'), th.indexOf('/* ── END OF THE ROSTER STAGE'));
-  ok('the big "Active Deployment Terminal" header is gone from the person\'s side',
-     person.length > 100 && !/Active Deployment Terminal/.test(fl) && !/text-3xl font-black/.test(person) && !/allowedPayments|Initial|Current/.test(person));
-  ok('the bar names the place and the picked person, left',
-     /className="kpm-stage-who"/.test(bar) && /\{sel && <b className="kpm-stage-person">\{sel\.name\}<\/b>\}/.test(bar) && /placeOf\(sel\)\.loc/.test(bar));
-  ok('the permission chips moved into the bar\'s middle, Titip still read as Consign',
-     /className="kpm-stage-chips"/.test(bar) && /\(sel\.allowedPayments \|\| \['Cash'\]\)\.map/.test(bar) && /p === 'Titip' \? 'Consign' : p/.test(bar) &&
-     /\(sel\.allowedTiers \|\| \['Retail', 'Ecer'\]\)\.map/.test(bar));
-  ok('INITIAL / SOLD / CURRENT moved into the bar with the same sums: buybacks and IOU promises are not sold',
-     /className="kpm-stage-counts"/.test(bar) && /\['Initial', initialLoadBks\], \['Sold', soldTodayBks\], \['Current', currentLoadBks\]/.test(bar) &&
-     /if \(t\.type === 'RETUR' && t\.paymentType !== 'Tukar Ganti'\) return;/.test(left) && /if \(t\.paymentType === 'Tukar Ganti' && item\.fulfillment === 'IOU'\) return;/.test(left) &&
-     /const initialLoadBks = currentLoadBks \+ soldTodayBks;/.test(left));
-  ok('the bar follows the picked person on any page or area tab, as the header did', /const sel = selectedAgent \|\| null;/.test(left));
-  ok('one column on the phone (his 07:50: the place ran under the keys), one line on the PC',
-     /\.kpm-stage-bar \{[^}]*grid-template-areas: "who" "chips" "counts" "acts"/.test(stageCss) &&
-     /@media \(min-width: 1024px\) \{[^@]*\.kpm-stage-bar \{[^}]*grid-template-areas: "who chips counts acts"/.test(stageCss));
+{ const fl = read('src/FleetCanvasManager.jsx'), th = read('src/styles/theme.css').replace(/\r/g, '');
+  const vb = read('src/utils/vanBay.js');
+  const panel = fl.slice(fl.indexOf('{/* THE PERSON PANEL'));
+  const ledgerCss = th.slice(th.indexOf('/* ── THE ROSTER LEDGER'), th.indexOf('/* ── END OF THE ROSTER LEDGER'));
+  ok('the big "Active Deployment Terminal" header is still gone from the screen',
+     panel.length > 100 && !/Active Deployment Terminal/.test(fl) && !/text-3xl font-black/.test(panel));
+  ok('the person panel names the picked person, their role and which warehouse they load from',
+     /<h3[^>]*>\{sel\.name\}<\/h3>/.test(panel) && /roleLine\(sel\)/.test(panel) && /loads from \{selectedAgentUsesBranch/.test(panel));
+  ok('permission chips are gone from the panel head on purpose (Details shows them); the gold bar is gone with the stage (tag game-edition-v1)',
+     !/allowedPayments|allowedTiers/.test(panel.slice(0, panel.indexOf('<LoadSheet'))) && !/kpm-stage-bar/.test(fl + th) && gameEditionKept);
+  ok('Loaded / Sold today / Left in van live in the panel KPIs with the same sums: buybacks and IOU promises are not sold',
+     /\[\['Loaded', left \+ sold\], \['Sold today', sold\], \['Left in van', left\]\]/.test(panel) &&
+     /soldBks\(list, inventory\)/.test(fl) &&
+     /if \(t\.type === 'RETUR' && t\.paymentType !== 'Tukar Ganti'\) return;|if \(t\.type === 'RETUR' && t\.paymentType !== 'Tukar Ganti'\) continue;/.test(vb) &&
+     /if \(t\.paymentType === 'Tukar Ganti' && it\.fulfillment === 'IOU'\) continue;/.test(vb));
+  ok('the panel follows the picked person on any area chip or search', /const sel = selectedAgent;/.test(panel) && /<aside key=\{sel\.id\}/.test(panel));
+  ok('phone: the person panel becomes its own full-screen page with a pinned Load key; PC: one-row top strip and slide-over panel',
+     /@media \(max-width: 1023px\) \{[\s\S]*?\.kpm-fleet-top\.open, \.kpm-fleet-layer\.open \.kpm-fleet-list \{ display: none; \}/.test(ledgerCss) &&
+     /@media \(min-width: 1024px\) \{[\s\S]*?\.kpm-fleet-top \{ display: flex; align-items: stretch; \}[\s\S]*?\.kpm-fleet-panel \{ position: absolute;/.test(ledgerCss));
 }
 
 /* ── ROUND 5: TITIP AND BOUNTIES BEHIND THE VAN CHEST (2026-09-26) ─────────────────────────────────────
@@ -8801,8 +8826,10 @@ section('ROUND 5: TITIP AND BOUNTIES BEHIND THE VAN CHEST (2026-09-26)');
      /tabKeys\('van', \[\['geo', [^\]]*\], \['titip', `Titip · \$\{titip\.length\}`\], \['bounty', `Bounty · \$\{bounties\.length\}`\]\]\)/.test(bayc) &&
      /aria-labelledby="kpm-slip-titip"/.test(bayc) && /aria-labelledby="kpm-slip-bounty"/.test(bayc));
   ok('each new list is the slip\'s one-minmax-column list', (bayc.match(/<ul className="rows">/g) || []).length === 4);
-  ok('Fleet hands the rows to the bay AFTER bypasses, from what it already holds',
-     /bypasses=\{allBypasses\.filter\(b => isAgentBypass\(b, selectedAgent\)\)\}\s*titip=\{titipOf\(transactions, customers, selectedAgent\.id, inventory\)\}\s*bounties=\{bountyItems\(selectedAgent\)\}/.test(flc));
+  ok('Fleet hands the rows to LoadSheet\'s extra tabs from what it already holds (Consignment, Bounty, Requests)',
+     /const dmg = damagedInVan\(agentSales, inventory\), titip = titipOf\(transactions, customers, sel\.id, inventory\), bounties = bountyItems\(sel\);/.test(flc) &&
+     /const mine = allBypasses\.filter\(b => isAgentBypass\(b, sel\)\)/.test(flc) &&
+     /id: 'titip', label: `Consignment/.test(flc) && /id: 'bounty', label: `Bounty/.test(flc) && /id: 'requests', label: `Requests/.test(flc));
   ok('no new listener: the customers come from App as a prop, the transactions already did',
      /<FleetCanvasManager[\s\S]{0,1200}customers=\{customers\}/.test(app) && /customers = \[\]/.test(sig) && !/collection\(db, [^)]*(transactions|customers)/.test(flc));
   ok('the tabs only READ - no payment, no clearing, no writer inside the bay', !/updateDoc|confirmAction|onPayment|penaltyKeys|Pay Bounty/.test(bayc));
@@ -8857,9 +8884,9 @@ section('ROUND 5: TITIP AND BOUNTIES BEHIND THE VAN CHEST (2026-09-26)');
 section('HIS 07:50 TEST OF ROUND 5 - FLEET & ROSTER ON THE PC AND THE PHONE (2026-09-26)');
 { const fl = read('src/FleetCanvasManager.jsx');
   const bay = read('src/components/LoadingBay.jsx'), bayc = code(bay);
-  const th = read('src/styles/theme.css');
+  const th = read('src/styles/theme.css').replace(/\r/g, '');
   const bayCss = th.slice(th.indexOf('/* ── THE VAN-LOADING BAY'), th.indexOf('/* ── END OF THE VAN-LOADING BAY'));
-  const stageCss = th.slice(th.indexOf('/* ── THE ROSTER STAGE'), th.indexOf('/* ── END OF THE ROSTER STAGE'));
+  const ledgerCss = th.slice(th.indexOf('/* ── THE ROSTER LEDGER'), th.indexOf('/* ── END OF THE ROSTER LEDGER'));
   /* CRLF-proof and both ends asserted (2026-09-30: a stash round-trip rewrote LoadingBay.jsx to CRLF, the end anchor
      missed, and the slice ran to the end of the file - a correct file went red) */
   const fnOf = (src, name) => { const t = src.replace(/\r/g, ''), s = t.indexOf(`function ${name}(`), e = t.indexOf('\n  }\n', s); return s > -1 && e > s ? t.slice(s, e) : ''; };
@@ -8889,14 +8916,14 @@ section('HIS 07:50 TEST OF ROUND 5 - FLEET & ROSTER ON THE PC AND THE PHONE (202
      /setPicked\(\{ src: 'wh', id: d\.id \}\)/.test(fnOf(bayc, 'tapBox')) && /onClick=\{tapVan\}/.test(bayc) &&
      /landingCell\(cells, picked\.id, cell, vanPage, per\)/.test(fnOf(bayc, 'placePicked')) && /openSheet\(\{ mode: 'add', dir: 1, id: picked\.id, cell: at/.test(fnOf(bayc, 'placePicked')) &&
      !/onLoad\(|onReturn\(|onLayout\(/.test(fnOf(bayc, 'placePicked')));
-  /* sc7 "there is collapsing text here" - the place ran under Details / Edit on the phone */
-  ok('gold bar on the phone: one column - place + name, the permissions, the counts, the keys - nothing under anything',
-     /\.kpm-stage-bar \{[^}]*grid-template-columns: minmax\(0, 1fr\);\s*grid-template-areas: "who" "chips" "counts" "acts";/.test(stageCss) &&
-     /\.kpm-stage-name \{[^}]*text-overflow: ellipsis/.test(stageCss) &&
-     /@media \(min-width: 1024px\) \{[^@]*\.kpm-stage-bar \{[^}]*grid-template-areas: "who chips counts acts"/.test(stageCss));
-  /* sc8 "make the roster slide lock 1 by 1 ... so slide to move 1 user to another user" */
-  /* 2026-10-01 his "unlocked and not one by one just to make it fluid" replaced sc8: the snap still lands a person, nothing forces one at a time */
-  ok('the roster snaps a person to the middle but no longer stops at every one', /\.kpm-stage \{[^}]*scroll-snap-type: x mandatory;/.test(stageCss) && /\.kpm-actor \{[^}]*scroll-snap-align: center;/.test(stageCss) && !/scroll-snap-stop: always/.test(stageCss));
+  /* 2026-11-16: the gold bar and the horizontal card stage are gone (tag game-edition-v1 keeps them); the top strip and
+     ledger rows keep phone-first clean layout without overlapping text */
+  ok('top strip + ledger row on phone vs PC: 2-col strip and compact row on phone, 4-col strip and 5-col ledger on PC',
+     /\.kpm-fleet-strip \{ display: grid; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/.test(ledgerCss) &&
+     /\.kpm-fleet-row \.who b \{[^}]*text-overflow: ellipsis;/.test(ledgerCss) &&
+     /@media \(min-width: 1024px\) \{[\s\S]*?\.kpm-fleet-strip \{ grid-template-columns: repeat\(4, minmax\(0, 1fr\)\); \}[\s\S]*?\.kpm-fleet-head, \.kpm-fleet-row \{ grid-template-columns: minmax\(0, 1fr\) 160px 96px 110px 110px; \}/.test(ledgerCss));
+  ok('the stage snap is gone with the 3D card stage (tag game-edition-v1 keeps it)',
+     !/scroll-snap-type|scroll-snap-stop/.test(ledgerCss) && gameEditionKept);
 
   const vb = await import('../utils/vanBay.js');
   ok('the page maths take the page size: 4 a page gives the van 20 squares (5 pages), 19 products still 20, 21 grow a page; the PC keeps 18',
@@ -9032,9 +9059,9 @@ section('THE SALESMAN SEES HIS OWN LATE EOD (2026-09-26)');
    phone's own momentum, landing 1 px from a person's centre. */
 section('THE ROSTER SLIDES FREELY (2026-10-01)');
 { const fl = code(read('src/FleetCanvasManager.jsx')), th = read('src/styles/theme.css').replace(/\r/g, '');
-  ok('no code takes the swipe any more: the stage has no touch handlers and nothing locks its sideways scroll',
-     /<div className="kpm-stage" role="listbox" aria-label="People">/.test(fl) && !/stageTouch|swipeFrom|swipeTarget/.test(fl) &&
-     !/\.kpm-stage \{[^}]*touch-action: pan-y/.test(th) && !/@media \(pointer: coarse\) \{ \.kpm-stage/.test(th));
+  ok('no code takes the swipe any more: the ledger has no touch handlers and the 3D stage is gone (tag game-edition-v1 keeps it)',
+     /<div role="listbox" aria-label="People">/.test(fl) && !/stageTouch|swipeFrom|swipeTarget/.test(fl) &&
+     !/\.kpm-stage \{[^}]*touch-action: pan-y/.test(th) && !/@media \(pointer: coarse\) \{ \.kpm-stage/.test(th) && gameEditionKept);
   ok('the one-per-swipe helper is gone with its caller', !/swipeTarget/.test(read('src/utils/helpers.js')));
 }
 
@@ -9544,10 +9571,10 @@ section('FLEET & ROSTER: THE QUARANTINE SWITCH (2026-09-30)');
   ok('HQ Quarantine = the products whose own damagedStock is above 0: Cello Green 16 · 5 only', hq.length === 1 && hq[0].id === 'a' && hq[0].damagedStock === 5);
   ok('a BRANCH Quarantine reads the branch rows, never HQ\'s number: Cello Merah 12 · 2 only, named from the master row',
      br.length === 1 && br[0].id === 'b' && br[0].damagedStock === 2 && br[0].name === 'Cello Merah 12');
-  ok('Fleet & Roster reads it off rows it already listens to - no new listener, one prop',
+  ok('Fleet & Roster reads it off rows it already listens to - no new listener, shown inside the Damaged tab',
      /const whQuarantine = useMemo\(\(\) => quarantineOf\(inventory, selectedAgentUsesBranch \? branchStock : null\)/.test(fl) &&
      /* 4 -> 6 on 2026-11-01: the seat limit's licence + seats listeners (SEAT LIMIT block at the end), none for this */
-     /warehouseQ=\{whQuarantine\}/.test(fl) && (fl.match(/onSnapshot\(/g) || []).length === 6);
+     /\{whQuarantine\.length > 0 && group\(`QUARANTINE · \$\{whName\.toUpperCase\(\)\}`\)\}/.test(fl) && (fl.match(/onSnapshot\(/g) || []).length === 6);
 
   /* the box */
   /* stage 3 widened it to three: the promo goods (the gift band) are the hatch's third stop */
@@ -12233,7 +12260,7 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
   /* THE STEP-BY-STEP GUIDE - his pick B, 2026-10-25 ("easier to understand and see if the guide is just infront of them face
      without too many buttons"). Its beats are selectors on the real screens, so a renamed mark would leave the ring with
      nothing to go round and nothing would say so: every mark a beat names must still be in the source. */
-  const guideSrc = [rv, fleet, sales, op, app, eodView, eodFlow, door, read('src/components/LoadingBay.jsx'), read('src/components/PlayerCard.jsx'),
+  const guideSrc = [rv, fleet, sales, op, app, eodView, eodFlow, door, read('src/components/LoadingBay.jsx'), read('src/components/LoadSheet.jsx'), read('src/components/PlayerCard.jsx'),
     read('src/components/EODLetter.jsx'), read('src/components/BiohazardTheme.jsx')].join('\n');
   const sels = Object.values(GUIDE).flat().flatMap((b) => [...[].concat(b.at), ...(b.done ? [b.done] : [])]);
   const lostMarks = [...new Set(sels.flatMap((s) => {
@@ -12273,9 +12300,9 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
      liveBeat(g1, open('[data-mission="1"]', '[data-mission="1"][aria-selected="true"]', '[data-guide="asal"][data-ok]', '[data-guide="tujuan"][data-ok]')) === 5 &&
      liveBeat(g1, open('[data-mission="1"]', '[data-mission="1"][aria-selected="true"]', '[data-guide="asal"][data-ok]', '[data-guide="tujuan"][data-ok]', '[data-guide="cart"][data-n]', '[data-guide="cart"][data-qty]')) === g1.length - 1 &&
      liveBeat(g1, open('[data-guide="asal"][data-ok]', '[data-guide="cart"][data-n]')) === 1);
-  ok('BEHAVIOUR: the loading bay - Dika picked and the HOW MANY sheet open = "isi jumlahnya"; a line in the muatan = Muat van; the EOD approval skips straight to Dika\'s card when the pending list is already up',
-     liveBeat(g3, pageWith('.kpm-actor[data-agent]', '.kpm-actor.on[data-agent="demo-agent-2"]', '.kpm-bay-sheet')) === 4 &&
-     liveBeat(g3, pageWith('.kpm-actor[data-agent]', '.kpm-actor.on[data-agent="demo-agent-2"]', '[data-mission="3"] [data-ponder="go"]:not(:disabled)')) === g3.length - 1 &&
+  ok('BEHAVIOUR: the load sheet - Dika picked = tap + on a product; a line in the sheet = Load van; the EOD approval skips straight to Dika\'s card when the pending list is already up',
+     liveBeat(g3, pageWith('.kpm-fleet-row[data-agent]', '.kpm-fleet-row.on[data-agent="demo-agent-2"]')) === 2 &&
+     liveBeat(g3, pageWith('.kpm-fleet-row[data-agent]', '.kpm-fleet-row.on[data-agent="demo-agent-2"]', '[data-mission="3"] [data-ponder="go"]:not(:disabled)')) === g3.length - 1 &&
      liveBeat(g7, open('[data-mission="7"]')) === 3);
   ok('Lite Mode keeps the dim without the blur on both layers (.8, his 2026-10-24 frame)',
      /html\.lite-mode \.kpm-mx-veil \{ background: rgba\(5, 4, 3, \.8\); backdrop-filter: none;/.test(read('src/styles/theme.css')) &&
@@ -14197,6 +14224,37 @@ section('THE DAY LOG ON PAPER (his 2026-11-14 "paper like Todays log that can be
         && /\.kx-feed > \.kx-fold-shut \{ margin-top: 0; \}/.test(css));
     ok('Phone full map: the capybara waits until it closes (he stood over the Exit corner on Android)',
         capy.includes('className={`kpm-capy hide-on-print fixed') && /body:has\(\.kx-map\.kx-full\) \.kpm-capy \{ display: none; \}/.test(css));
+}
+
+section('FLEET & ROSTER: THE LEDGER AND THE LOAD SHEET (2026-11-16)');
+{ const vb = await import('../utils/vanBay.js');
+  const fl = read('src/FleetCanvasManager.jsx');
+  const sheet = read('src/components/LoadSheet.jsx'), sheetc = code(sheet);
+  const th = read('src/styles/theme.css').replace(/\r/g, '');
+  const inv = [{ id: 'cg16', packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 }, { id: 'cm12', packsPerSlop: 10, slopsPerBal: 20, balsPerCarton: 4 }];
+  ok('BEHAVIOUR: suggestBks returns 0 when the van holds at least what was sold, the difference when short, and 0 when no sales exist',
+     vb.suggestBks(180, 300) === 0 && vb.suggestBks(200, 20) === 180 && vb.suggestBks(undefined, 5) === 0);
+  const s = vb.soldBks([
+    { type: 'SALE', items: [{ productId: 'cg16', qty: 2, unit: 'Slop' }] },
+    { type: 'RETUR', paymentType: 'Retur/BS', items: [{ productId: 'cg16', qty: 5, unit: 'Bks' }] },
+    { type: 'SALE', paymentType: 'Tukar Ganti', items: [{ productId: 'cg16', qty: 3, unit: 'Bks', fulfillment: 'IOU' }, { productId: 'cm12', qty: 4, unit: 'Bks' }] },
+  ], inv);
+  ok('BEHAVIOUR: soldBks skips a pure buyback and an IOU exchange line, and counts a normal sale and a handed exchange line',
+     s.cg16 === 20 && s.cm12 === 4);
+  const ld = vb.lastDaySold([
+    { agentId: 'a1', date: '2026-11-16', type: 'SALE', items: [{ productId: 'cg16', qty: 99, unit: 'Bks' }] },
+    { agentId: 'a1', date: '2026-11-15', type: 'RETUR', paymentType: 'Retur/BS', items: [{ productId: 'cg16', qty: 10, unit: 'Bks' }] },
+    { agentId: 'a1', date: '2026-11-14', type: 'SALE', items: [{ productId: 'cg16', qty: 12, unit: 'Bks' }] },
+    { agentId: 'a1', date: '2026-11-12', type: 'SALE', items: [{ productId: 'cg16', qty: 50, unit: 'Bks' }] },
+  ], 'a1', '2026-11-16', inv);
+  ok('BEHAVIOUR: lastDaySold picks the newest day BEFORE today that has a real sale, never today',
+     ld.day === '2026-11-14' && ld.by.cg16 === 12);
+  const afterLoadSheet = sheetc.slice(sheetc.indexOf('export default function LoadSheet('));
+  ok('REGRESSION: the person panel is keyed by the person, kpmFleetSlide never loops, LoadSheet defines no component inside render, and CountUp floors k at 0',
+     /<aside key=\{sel\.id\} className="kpm-fleet-panel"/.test(fl) &&
+     /@keyframes kpmFleetSlide/.test(th) && !/kpmFleetSlide[^;]*infinite/.test(th) &&
+     !/^\s*function\s+[A-Z]/m.test(afterLoadSheet) &&
+     /const k = Math\.max\(0,/.test(sheetc.slice(sheetc.indexOf('function CountUp('), sheetc.indexOf('export default function LoadSheet('))));
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
