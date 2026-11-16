@@ -4,7 +4,7 @@ His words (2026-11-16 15:30): *"dont forget the tutorial capybara still shows th
 
 State 2026-11-16 21:20 WIB: Fleet & Roster pick A is LIVE c497b4c1 (focus panel + veil, phone More). Nothing of the guide is built yet.
 
-FIRST: read Antigravity's Task 7 Result in `.claude/ANTIGRAVITY-TASK.md` (every GUIDE beat whose `at` selector can hit a hidden element, PC 1280 and phone 390). Still OPEN -> build step 1 below and leave the per-beat list for its answer.
+Antigravity Task 7 is DONE (read 2026-11-16 21:45): in `DemoMission.jsx:142-155` `shows(el)` must also reject computed visibility hidden, opacity 0 and pointer-events none, checking ANCESTORS (the rail sets opacity 0 on `nav.kpm-rail-grid` / `.kpm-rail-foot` and pointer-events none on `[data-kpm-rail]`), and `aim()` must drop the `|| all[0]` fallback (~L151); then `nav()` (`demoMission.js:33`) and `UNLOCK` (`:52`) need `.kpm-rail-totem` in their `at` lists (PC rail closed). Every other beat checked fine. Full list: its Task 7 Result.
 
 Known (Antigravity Task 3, DONE, read 2026-11-16): `aim()` in `src/components/DemoMission.jsx` (~L147) rings the FIRST element matching a beat's `at` selector even when it is invisible; on the PC step 1 rings the hidden `<button data-mark="restock_vault">` instead of the visible rail item `.kpm-rail-totem`. The 8 steps: `GUIDE` in `src/config/demoMission.js`.
 
@@ -24,7 +24,7 @@ LAB: launch demo-emulator, demo-api-emulator, demo-app-emulator (5176); `node to
 
 BEFORE ANY PUSH: `git log origin/phase0-solid-ground..HEAD`; any `Antigravity:` commit gets `git show` (only .claude/ANTIGRAVITY-TASK.md) and the gates re-run. Gates: logicFixes, npm run build, integration.audit, every *.selfcheck.mjs by exit code; a patch note en + id.
 
-ANTIGRAVITY: Tasks 6, 7, 8 OPEN. Keep at least 2 OPEN, refill unasked, and end every reply that queues or closes work with the paste-ready prompt (CLAUDE.md, his 2026-11-16).
+ANTIGRAVITY: Tasks 6-8 DONE and read 21:45 (6 = the Retur DECIDE drafts; 8 = 18 overlays AT RISK of opening cut under the demo bars, one portal pattern fixes them, ImageCropper z-[70] must go to 97+; the Surat Jalan modal is one of them). Tasks 9 (every + / − step) and 10 (every printed paper) OPEN. Keep at least 2 OPEN, refill unasked, and end every reply that queues or closes work with the paste-ready prompt (CLAUDE.md, his 2026-11-16).
 
 AFTER THIS JOB (next brief, not now): the Retur audit's 6 OPEN holes as 🔴 DECIDEs (Task 6 drafts them) - money, never fixed unasked. Then Task 8's overlay findings (which pop-ups can open cut under the demo bars).
 
