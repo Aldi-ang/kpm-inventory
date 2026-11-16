@@ -2,7 +2,7 @@
 
 State 2026-11-16 18:00 WIB: LIVE 63abfb93 - pressing the open name closes the panel, the PC close slides out (kpmFleetOut, unmounts on onAnimationEnd -> finishClose), the panel's own surface + 2px gold edge, a heavier rule above SALESMEN, FrontPanel through createPortal (Add personnel's head was under the mission strip), LoadSheet tabs locked while busy + goLock, promo-only van label. The bigger panel was NOT built: the board went to him 17:47 (A-Brain `Raw/2026-11-16-fleet-build/board.png`, note `Brainstorm/2026-11-16_fleet-bigger-load-panel.md`).
 
-FIRST: his letter. Not in chat yet -> ask once: "🔴 DECIDE: which bigger load panel - A (8 products, the top dims and blurs, the name panel stays sharp), B (4, covers the day strip) or C (5, nothing hidden)?" Then build ONLY that one + the phone fold (same for all).
+FIRST: his letter. The board is an artifact now: https://claude.ai/artifact/Bow3FxZoZmXjwSxBZEZiF7 (his ask 20:15, "so that i can decide better"). Not in chat yet -> ask once: "🔴 DECIDE: which bigger load panel - A (8 products, the top dims and blurs, the name panel stays sharp), B (4, covers the day strip) or C (5, nothing hidden)?" Then build ONLY that one + the phone fold (same for all).
 
 Measured (count.js, real app, Hendra opening Bagus): PC 1280x800 today 3 · A 8 · B 4 · C 5 products in view. Phone 390x844 today 3 -> 5. Cause: name 69 + person keys 57 + tabs 41 + tools 50 + column head 35 + foot 57 = 309 of 497 px.
 
@@ -26,8 +26,8 @@ BEFORE ANY PUSH: `git log origin/phase0-solid-ground..HEAD`; any `Antigravity:` 
 
 AFTER THIS JOB (next brief, not now): the demo guide - Antigravity Task 3 (aim() rings the hidden `<button data-mark="restock_vault">`, not `.kpm-rail-totem`), the capybara walks the sidebar item by item (Task 5's 17 lines), Task 7 (every beat aiming at something hidden). Then the Retur audit's 6 OPEN holes as 🔴 DECIDEs (Task 6) - money, never fixed unasked.
 
-ANTIGRAVITY: Tasks 6 and 7 OPEN (queued 15:50). DONE -> read its Result, review the commit, push, log it.
+ANTIGRAVITY: Tasks 6, 7, 8 OPEN (8 = the other overlays cut audit, 20:15). DONE -> read its Result, review the commit, push, log it, and write the next task unasked: keep at least 2 OPEN until HE says its quota is out (his 2026-11-16 20:15).
 
-THE OTHER 15 OVERLAYS (Antigravity Task 4 list): inside the same z-10 box, so under the demo bars by construction; a cut shows only when the content is taller than the screen minus 71 px. Not measured. Fleet's Surat Jalan was measured: fine (title y 96 PC / 82 phone).
+THE OTHER 15 OVERLAYS (Antigravity Task 4 list): inside the same z-10 box, so under the demo bars by construction; a cut shows only when the content is taller than the screen minus 71 px. Not measured; Antigravity Task 8 audits them (read-only). Fleet's Surat Jalan was measured: fine (title y 96 PC / 82 phone).
 
 STILL OWED BY HIM: his test of 63abfb93 on the live demo; phone test - SWITCH twice -> "fast" or "slow".

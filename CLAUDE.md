@@ -56,4 +56,7 @@ Its rules: `GEMINI.md`. Options and what was rejected: A-Brain `Brainstorm/2026-
   much time"*. Media from Google tools: Claude writes the exact prompts + click steps, Aldi pastes them in himself.
 - It never pushes. Before EVERY push: `git log origin/phase0-solid-ground..HEAD`. Any `Antigravity:` commit in it gets
   a `git show` read and the gates re-run after it, or the push waits: a push carries every local commit, read or not.
-- Task file says DONE → read its Result, review the commit, push, log it in PROGRESS, then write the next task or NONE.
+- Task file says DONE → read its Result, review the commit, push, log it in PROGRESS, then write the next task.
+- The queue is never empty and never NONE (Aldi, 2026-11-16: *"keep giving antigravity jobs without i need to ask everytime
+  if its running out of quota i'll tell u"*). Keep at least 2 OPEN thinking tasks in the file; when one goes DONE, write the
+  next one in the same session, unasked. Stop refilling only when HE says Antigravity is out of quota.
