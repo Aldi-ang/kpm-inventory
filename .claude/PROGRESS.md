@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-16 22:05 WIB, PC clock (🟢 KPM - NOW: Surat Jalan B LIVE and tested by him on screen + print; NEXT-SESSION = the demo guide (fresh chat); pick A LIVE c497b4c1; NEXT-SESSION = the demo guide; Antigravity Tasks 9-10 OPEN. Log trimmed to 5 entries 2026-11-16 21:32 - older ones: git log -p .claude/PROGRESS.md)**
+**Updated: 2026-11-16 22:10 WIB, PC clock (🟢 KPM - Antigravity 13-14 done (13 = the sidebar tour data for NEXT-SESSION), 15-16 queued; before that: 🟢 KPM - NOW: Surat Jalan B LIVE and tested by him on screen + print; NEXT-SESSION = the demo guide (fresh chat); pick A LIVE c497b4c1; NEXT-SESSION = the demo guide; Antigravity Tasks 9-10 OPEN. Log trimmed to 5 entries 2026-11-16 21:32 - older ones: git log -p .claude/PROGRESS.md)**
+
+## 🟡 2026-11-16 22:10 WIB — KPM: Antigravity 13-14 done, 15-16 queued
+His words: *"antigravity also done"*. Task 13 = the sidebar tour beats for the next job (code block in its Result); Task 14 = the plan to put the restock Surat Jalan + LoadSheet card on the new paper. Both commits touch only the task file; gates re-run green before the push.
+WAITING ON ALDI (word for word from the reply): "Type /clear, then /alucard continue." and paste the Antigravity prompt for Tasks 15-16.
 
 ## 🟢 2026-11-16 22:05 WIB — KPM: he tested Surat Jalan B - passed
 His words: *"surat jalan looks okay print also clean"*. Nothing open on it.

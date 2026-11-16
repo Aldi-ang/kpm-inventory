@@ -617,3 +617,30 @@ Do NOT change the code.
 - **Smallest edit list (do not apply):**
   - `src/FleetCanvasManager.jsx:1049-1104, 1557-1565`: extract the `.kpm-sj` portaled modal into a shared renderer/props and pass `onPrintReport` (or `appSettings` + `adminName`) to `<LoadSheet>`.
   - `src/components/LoadSheet.jsx:154, 227`: stamp `at: new Date()` onto `report` and add a `Print` button to the inline `report` header that opens the `.kpm-sj` modal.
+
+---
+
+## Task 15 - the two Fleet fixes from your Task 11, as exact proposed code
+**Status:** OPEN
+**Written:** 2026-11-16 22:10 WIB, by Claude. Same rules as above (read-only, touch only this file, commit it alone, "Antigravity:").
+
+Your Task 11 found (1) with the PC person panel open, Tab reaches the dimmed keys behind `.kpm-fleet-veil` and Escape does not close the panel; (2) closing inside the first ~300 ms snaps to opacity 1 before `kpmFleetOut` runs (two keyframe animations swapped). Claude will build both. Write the exact change as code blocks in your Result (do NOT edit the files):
+- **(1)** which elements get `inert` while a person is open on the PC (`.kpm-fleet-top`? anything else inside the shell box - the app header and rail live in `src/components/BiohazardTheme.jsx`), how React in this repo sets `inert` (check the React version in package.json: 18 needs `inert=""`, 19 takes a boolean), the Escape handler (where, and how it must step aside while FrontPanel (`FleetCanvasManager.jsx` ~L28, its own Escape), the Surat Jalan portal, or a ConfirmGate dialog is open), and where focus goes when the panel closes (back to the person's row).
+- **(2)** the open/close driven by CSS transitions instead of `kpmFleetSlide`/`kpmFleetOut` keyframes, keeping: the 40 ms hold, 260 ms in / 200 ms out, the veil moving with the panel, the unmount on the panel's own end (today `onAnimationEnd` -> `finishClose`; a transition needs `onTransitionEnd` + a fallback timer), Lite Mode and reduced motion instant, and no replay on a − + press. Name every logicFixes check (file:line) that pins the old keyframes and would need re-pinning.
+
+**Result:**
+
+---
+
+## Task 16 - the 18 AT RISK overlays from your Task 8: an exact edit plan
+**Status:** OPEN
+**Written:** 2026-11-16 22:10 WIB, by Claude. Same rules as above.
+
+Your Task 8 listed 18 overlays that can open cut under the demo bars. The Fleet Surat Jalan is fixed (portaled, b10ce952). Two print traps were found on it in the lab: (a) the shell's print rule (`BiohazardTheme.jsx` ~L1220-1243) hides every `<header>` and `<nav>`; (b) a portaled `fixed inset-0` wrapper with `overflow-y-auto` prints only 89 px unless it gets `print:!bottom-auto print:!overflow-visible`. For EACH remaining AT RISK overlay:
+- **The smallest fix**: portal to `document.body` (FrontPanel's way) or something smaller; exact file:line and the exact className / JSX change in words.
+- **Does it print?** If yes: would the portal trigger trap (a) or (b) - does it contain `<header>`/`<nav>`, does its wrapper have `inset-0` + an overflow class?
+- **z-index after the portal**: must be 97+ to clear the demo bars (ImageCropper `z-[70]`).
+- **Anything it reads from its place in the tree** (CSS that depends on a parent class) that a portal would break.
+Group them: which can share ONE small wrapper component, which need their own change. Do NOT change the code.
+
+**Result:**
