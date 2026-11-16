@@ -60,3 +60,7 @@ Its rules: `GEMINI.md`. Options and what was rejected: A-Brain `Brainstorm/2026-
 - The queue is never empty and never NONE (Aldi, 2026-11-16: *"keep giving antigravity jobs without i need to ask everytime
   if its running out of quota i'll tell u"*). Keep at least 2 OPEN thinking tasks in the file; when one goes DONE, write the
   next one in the same session, unasked. Stop refilling only when HE says Antigravity is out of quota.
+- He starts Antigravity by pasting a prompt into it. Every reply that writes or refills a task, and every reply that closes
+  a job while tasks are OPEN, ends with that prompt ready to paste in a code block - unasked (Aldi, 2026-11-16: *"always
+  give me prompt to antigravity without me asking"*). The prompt names the OPEN task numbers and says: read
+  `.claude/ANTIGRAVITY-TASK.md`, do them top to bottom by its rules, commit only that file, never push.
