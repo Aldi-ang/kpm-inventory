@@ -1044,104 +1044,63 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 );
             })()}
 
-           {/* SURAT JALAN MODAL */}
-            {viewingSuratJalan && selectedAgent && (
-                <div className="print-modal-wrapper fixed inset-0 z-[500] bg-black/90 print:bg-transparent flex items-center justify-center p-4 print:!p-0 print:!m-0 print:!block">
-                    <div className="print-receipt format-a4 !bg-white !text-black w-full max-w-4xl shadow-2xl relative flex flex-col font-sans text-sm border-t-8 !border-blue-800 animate-fade-in rounded-b-lg max-h-[90vh] overflow-y-auto custom-scrollbar transition-all print:!max-h-none print:!border-none print:!shadow-none print:!m-0 print:!p-0 print:!block print:!rounded-none">
-                        
-                        <div className="w-full overflow-x-auto custom-scrollbar border-b !border-slate-300 print:!overflow-visible print:!border-none print:!block print:!w-full print:!m-0 print:!p-0">
-                            <div className="p-8 md:p-12 shrink-0 font-sans relative min-w-[800px] print:!min-w-0 print:!w-full print:!max-w-none print:!p-0 print:!m-0 mx-auto" style={{ backgroundColor: '#ffffff', color: '#000000', boxSizing: 'border-box' }}>
-                                <div className="border-b-4 !border-blue-800 pb-4 mb-6 flex justify-between items-end gap-8">
-                                    <div className="flex-1 flex items-center gap-4">
-                                        {appSettings?.mascotImage && (
-                                            <img src={appSettings.mascotImage} className="w-16 h-16 object-contain" alt="Company Logo" />
-                                        )}
-                                        <div>
-                                            <h1 className="text-2xl md:text-3xl font-black !text-blue-900 tracking-widest uppercase break-words">{appSettings?.companyName || "DISTRIBUTION AND SALES MANAGEMENT"}</h1>
-                                            <p className="text-xs md:text-sm font-bold !text-slate-700 mt-1 whitespace-pre-line">{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang'}</p>
-                                            {appSettings?.companyPhone && <p className="text-xs font-bold !text-slate-700 mt-0.5">Telp/WA: {appSettings.companyPhone}</p>}
+            {/* SURAT JALAN - his 2026-11-16 pick B, black and white ("i'll choose B black and white it is more netral").
+                Portaled to the body: inside the shell's z-10 box the demo bars covered its top (Antigravity Task 8). The paper
+                sizes by its own width (.kpm-sj in theme.css), so a phone shows the whole page with no side scroll. */}
+            {viewingSuratJalan && selectedAgent && createPortal(
+                <div className="print-modal-wrapper fixed inset-0 z-[500] overflow-y-auto bg-black/80 print:bg-transparent p-3 md:p-6 print:!p-0 print:!m-0 print:!block print:!bottom-auto print:!overflow-visible" onClick={(e) => { if (e.target === e.currentTarget) setViewingSuratJalan(false); }}>
+                    <div className="mx-auto w-full max-w-[794px] flex flex-col gap-3 animate-fade-in print:!max-w-none">
+                        <div className="no-print sticky top-0 z-[1] flex items-center gap-2 rounded-lg border border-[var(--line-2)] bg-[var(--raised)] p-2">
+                            <b className="min-w-0 flex-1 truncate px-2 text-sm text-[var(--ink)]">Surat Jalan · {selectedAgent.name}</b>
+                            <button type="button" onClick={() => setViewingSuratJalan(false)} className="kpm-press min-h-[44px] px-4 rounded-md border border-[var(--line-2)] text-sm font-semibold text-[var(--ink)]">Close</button>
+                            <button type="button" onClick={() => window.print()} className="kpm-press min-h-[44px] px-4 rounded-md border border-[var(--accent-edge)] text-sm font-semibold text-[var(--ink)] flex items-center gap-2"><Printer size={15}/> Print</button>
+                        </div>
+                        {(() => {
+                            const items = selectedAgent.activeCanvas || [];
+                            const units = [...new Set(items.map(i => i.unit))];
+                            const total = items.reduce((a, i) => a + (Number(i.qty) || 0), 0);
+                            const now = new Date();
+                            const branchAdmin = activeMotorists.find(m => m.userRole === 'AREA_ADMIN' && String(m.location || '').trim().toUpperCase() === String(selectedAgent.location || '').trim().toUpperCase());
+                            return (
+                                <div className="print-receipt format-a4 kpm-sj">
+                                    <div className="pg">
+                                        <div className="hd">
+                                            <div className="co">
+                                                {appSettings?.mascotImage && <img src={appSettings.mascotImage} alt="Company logo" />}
+                                                <div>
+                                                    <h1>{appSettings?.companyName || 'DISTRIBUTION AND SALES MANAGEMENT'}</h1>
+                                                    <p>{appSettings?.companyAddress || 'Jl. Raya Magelang - Purworejo Km. 11, Palbapang, Mungkid, Magelang'}{appSettings?.companyPhone ? `\nTelp/WA: ${appSettings.companyPhone}` : ''}</p>
+                                                </div>
+                                            </div>
+                                            <div className="doc"><h2>SURAT JALAN</h2><p>SJ-{getLocalDayKey().replace(/-/g, '')}-{selectedAgent.id.slice(-4)}</p></div>
+                                        </div>
+                                        <dl className="meta">
+                                            <div><dt>Kepada</dt><dd>{selectedAgent.name}<small>{selectedAgent.role === 'Canvas' ? 'Sales Canvas' : 'Sales Motorist'}</small></dd></div>
+                                            <div><dt>Kendaraan</dt><dd>{selectedAgent.vehicle || '—'}</dd></div>
+                                            <div><dt>Dari gudang</dt><dd>{selectedAgentUsesBranch ? `Gudang ${selectedAgentLocation}` : 'Master Vault'}</dd></div>
+                                            <div><dt>Tanggal</dt><dd>{now.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}<small>{now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</small></dd></div>
+                                        </dl>
+                                        <table>
+                                            <thead><tr><th className="n">No</th><th>Nama barang</th><th className="q">Jumlah</th><th className="u">Satuan</th></tr></thead>
+                                            <tbody>
+                                                {items.length === 0
+                                                    ? <tr><td colSpan="4" className="empty">Tidak ada barang yang dimuat.</td></tr>
+                                                    : items.map((item, idx) => <tr key={idx}><td className="n">{idx + 1}</td><td>{item.name}</td><td className="q">{(Number(item.qty) || 0).toLocaleString('id-ID')}</td><td className="u">{item.unit}</td></tr>)}
+                                            </tbody>
+                                            {items.length > 0 && <tfoot><tr><td /><td>Total · {items.length} produk</td><td className="q">{units.length === 1 ? total.toLocaleString('id-ID') : ''}</td><td className="u">{units.length === 1 ? units[0] : ''}</td></tr></tfoot>}
+                                        </table>
+                                        <p className="stmt">Dengan ditandatanganinya Surat Jalan ini, pihak penerima (Sales/Driver) menyatakan bahwa barang-barang yang tercantum di atas telah diterima dalam keadaan utuh, baik, dan sesuai dengan jumlah yang tertera. Mulai saat dokumen ini ditandatangani, seluruh barang menjadi tanggung jawab penuh pihak penerima atas kehilangan, kerusakan, atau penyalahgunaan selama masa operasional.</p>
+                                        <div className="sign">
+                                            <div><span>Admin Gudang</span><i /><b>{branchAdmin ? branchAdmin.name : (user.displayName || 'Admin')}</b></div>
+                                            <div><span>Sales / Driver</span><i /><b>{selectedAgent.name}</b></div>
                                         </div>
                                     </div>
-                                    <div className="text-right shrink-0">
-                                        <h2 className="text-xl md:text-2xl font-bold !text-blue-800 uppercase tracking-widest">SURAT JALAN</h2>
-                                        <p className="text-[10px] uppercase font-bold !text-slate-400 tracking-widest mt-1">OFFICIAL DELIVERY ORDER</p>
-                                        <p className="text-sm font-mono font-black mt-2 !text-black">SJ-{getLocalDayKey().replace(/-/g,'')}-{selectedAgent.id.slice(-4)}</p>
-                                    </div>
                                 </div>
-
-                                <div className="px-0 mb-6 grid grid-cols-2 gap-4">
-                                    <div className="border-2 !border-slate-800 p-3 rounded-lg shadow-sm">
-                                        <p className="text-[10px] font-bold !text-slate-400 uppercase mb-1">Diberikan Kepada (Sales/Driver)</p>
-                                        <p className="font-black text-lg uppercase !text-black">{selectedAgent.name}</p>
-                                        <p className="text-xs mt-1 font-bold !text-slate-700">Role: {selectedAgent.role === 'Canvas' ? 'Sales Canvas' : 'Sales Motorist'}</p>
-                                    </div>
-                                    <div className="border-2 !border-slate-800 p-3 rounded-lg shadow-sm text-right">
-                                        <p className="text-[10px] font-bold !text-slate-400 uppercase mb-1">Informasi Kendaraan / Waktu</p>
-                                        <p className="font-black text-lg uppercase !text-black">{selectedAgent.vehicle || 'TIDAK ADA DATA KENDARAAN'}</p>
-                                        <p className="text-xs mt-1 font-bold !text-slate-700">Deploy: {new Date().toLocaleTimeString('id-ID')}</p>
-                                    </div>
-                                </div>
-
-                                <table className="w-full text-sm border-collapse border-2 !border-slate-800 mb-8 shadow-sm">
-                                    <thead className="!bg-blue-50 !text-blue-900">
-                                        <tr>
-                                            <th className="border-2 !border-slate-800 p-3 text-center w-12 font-black">NO</th>
-                                            <th className="border-2 !border-slate-800 p-3 text-left font-black">NAMA BARANG</th>
-                                            <th className="border-2 !border-slate-800 p-3 text-right w-32 font-black">QTY</th>
-                                            <th className="border-2 !border-slate-800 p-3 w-32 text-center font-black">UNIT</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {(selectedAgent.activeCanvas || []).length === 0 ? (
-                                            <tr><td colSpan="4" className="text-center p-8 text-gray-400 italic border-2 !border-slate-800">Tidak ada barang yang dimuat.</td></tr>
-                                        ) : (
-                                            (selectedAgent.activeCanvas || []).map((item, idx) => (
-                                                <tr key={idx}>
-                                                    <td className="border-2 !border-slate-800 p-2 text-center font-bold !text-slate-400">{idx + 1}</td>
-                                                    <td className="border-2 !border-slate-800 p-2 font-bold uppercase !text-black">{item.name}</td>
-                                                    <td className="border-2 !border-slate-800 p-2 text-right font-black text-lg !text-blue-700">{item.qty}</td>
-                                                    <td className="border-2 !border-slate-800 p-2 text-center font-bold !text-black">{item.unit}</td>
-                                                </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
-
-                                <div className="mb-8">
-                                    <div className="!bg-blue-50 p-4 border-2 !border-blue-800 rounded-xl text-sm text-justify leading-relaxed italic !text-blue-900 shadow-md">
-                                        <strong className="uppercase tracking-widest block mb-1">Pernyataan:</strong> Dengan ditandatanganinya Surat Jalan ini, pihak penerima (Sales/Driver) menyatakan bahwa barang-barang yang tercantum di atas telah diterima dalam keadaan utuh, baik, dan sesuai dengan jumlah yang tertera. Mulai saat dokumen ini ditandatangani, seluruh barang menjadi tanggung jawab penuh pihak penerima atas kehilangan, kerusakan, atau penyalahgunaan selama masa operasional.
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-8 text-center mt-12 pb-4 !text-black print:mt-24">
-                                    <div className="flex flex-col items-center">
-                                        <p className="font-bold text-sm mb-24 uppercase tracking-widest">Admin Gudang</p>
-                                        <div className="border-b-2 !border-slate-800 w-48 md:w-56"></div>
-                                        <p className="text-sm mt-2 uppercase font-bold">
-                                            {(() => {
-                                                const branchAdmin = activeMotorists.find(m => 
-                                                    m.userRole === 'AREA_ADMIN' && 
-                                                    String(m.location || '').trim().toUpperCase() === String(selectedAgent.location || '').trim().toUpperCase()
-                                                );
-                                                return branchAdmin ? branchAdmin.name : (user.displayName || 'Admin');
-                                            })()}
-                                        </p>
-                                    </div>
-                                    <div className="flex flex-col items-center">
-                                        <p className="font-bold text-sm mb-24 uppercase tracking-widest">Sales/Motorist</p>
-                                        <div className="border-b-2 !border-slate-800 w-48 md:w-56"></div>
-                                        <p className="text-sm mt-2 uppercase font-bold">{selectedAgent.name}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="no-print !bg-slate-200 p-4 flex gap-3 border-t !border-slate-300 mt-auto shrink-0 rounded-b-lg">
-                            <button onClick={() => window.print()} className="flex-1 !bg-slate-800 !text-white py-3 rounded-lg uppercase font-bold flex items-center justify-center gap-2 hover:!bg-slate-950 transition-colors tracking-widest text-[10px] shadow-md active:scale-95"><Printer size={14}/> Print Surat Jalan</button>
-                            <button onClick={() => setViewingSuratJalan(false)} className="px-8 !bg-red-600 hover:!bg-red-700 !text-white py-3 font-black uppercase tracking-[0.2em] text-[10px] rounded-lg shadow-md active:scale-95 flex items-center gap-2"><X size={14}/> Tutup</button>
-                        </div>
+                            );
+                        })()}
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* THE ROSTER LEDGER (2026-11-16) - his pick "Team list A Ledger table · Loading 1 Load sheet · PC Y Slide-over

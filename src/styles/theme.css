@@ -5964,6 +5964,42 @@ html.lite-mode .kpm-fleet-acts { animation: none; }
 @media (prefers-reduced-motion: reduce) { .kpm-fleet-veil, .kpm-fleet-acts { animation: none; } }
 /* ── END OF THE FOCUS VEIL ────────────────────────────────────────────────────────────────────────────────────── */
 
+/* ── THE SURAT JALAN PAPER (FleetCanvasManager.jsx, his 2026-11-16 pick B: "black and white it is more netral") ──────
+   A printed paper, not app UI: black on white, no colour, so it looks the same on screen and on any printer. It is sized
+   by its own width (container units), so a phone shows the whole page with no side scroll and print scales to A4. No
+   shadow, no filter. The light grey header row and stripes print too (print-color-adjust). */
+.kpm-sj { container-type: inline-size; width: 100%; background: #fff; color: #111; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.kpm-sj .pg { min-height: 141.4cqw; padding: 7cqw 7.5cqw; display: flex; flex-direction: column; gap: 4.2cqw; box-sizing: border-box; font-size: 1.9cqw; line-height: 1.45; }
+.kpm-sj .hd { display: flex; justify-content: space-between; align-items: flex-end; gap: 4cqw; padding-bottom: 3cqw; border-bottom: 1px solid #111; }
+.kpm-sj .co { display: flex; align-items: center; gap: 2.4cqw; min-width: 0; }
+.kpm-sj .co img { flex: none; width: 7cqw; height: 7cqw; object-fit: contain; }
+.kpm-sj .co h1 { margin: 0; font-size: 2.6cqw; font-weight: 700; line-height: 1.2; letter-spacing: .04em; text-transform: uppercase; }
+.kpm-sj .co p { margin: .5cqw 0 0; font-size: 1.6cqw; color: #666; white-space: pre-line; }
+.kpm-sj .doc { flex: none; text-align: right; }
+.kpm-sj .doc h2 { margin: 0; font-size: 4.4cqw; font-weight: 700; letter-spacing: .08em; }
+.kpm-sj .doc p { margin: .6cqw 0 0; font: 500 1.75cqw/1.2 var(--font-mono, ui-monospace, monospace); }
+.kpm-sj .meta { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 0 3cqw; margin: 0; }
+.kpm-sj .meta dt, .kpm-sj th, .kpm-sj .sign span { font-size: 1.45cqw; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #666; }
+.kpm-sj .meta dd { margin: .5cqw 0 0; font-weight: 600; overflow-wrap: anywhere; }
+.kpm-sj .meta dd small { display: block; font-weight: 400; color: #666; }
+.kpm-sj table { width: 100%; border-collapse: collapse; font-size: inherit; color: #111; font-variant-numeric: tabular-nums; }
+.kpm-sj th { padding: 1.2cqw 1.4cqw; text-align: left; background: #f2f2f2; color: #111; }
+.kpm-sj td { padding: 1.5cqw 1.4cqw; }
+.kpm-sj tbody tr:nth-child(even) td { background: #f7f7f7; }
+.kpm-sj .n { width: 5cqw; color: #666; }
+.kpm-sj .q { width: 14cqw; text-align: right; }
+.kpm-sj .u { width: 9cqw; color: #666; }
+.kpm-sj td.q { font-weight: 700; }
+.kpm-sj tfoot td { border-top: 1px solid #111; font-weight: 700; }
+.kpm-sj td.empty { padding: 6cqw; text-align: center; font-style: italic; color: #666; }
+.kpm-sj .stmt { margin: 0; font-size: 1.55cqw; color: #666; }
+.kpm-sj .sign { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10cqw; text-align: center; }
+.kpm-sj .sign i { display: block; height: 11cqw; }
+.kpm-sj .sign b { display: block; padding-top: 1cqw; border-top: 1px solid #111; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+/* print: the shell's print rule already pads the A4 sheet 10 mm (BiohazardTheme, .print-receipt.format-a4) */
+@media print { .kpm-sj .pg { min-height: 0; padding: 0; } }
+/* ── END OF THE SURAT JALAN PAPER ─────────────────────────────────────────────────────────────────────────────── */
+
 /* ── THE MASTER VAULT'S 3D CARD SPIN (2026-10-01, potato phone) ───────────────────────────────────────────── */
 /* The idle spin used to be React state +0.3deg every frame (ResidentEvilInventory.jsx). This inner layer turns the
    faces on the graphics chip instead, inside the drag rotation, one turn per 20 s (0.3deg at 60 fps), and holds its

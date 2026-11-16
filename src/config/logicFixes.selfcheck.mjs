@@ -14337,5 +14337,27 @@ section('ROUND 3: HIS PICK A - THE FOCUS PANEL (2026-11-16)');
      sheet.includes('aria-pressed={byOne === one} disabled={busy} onClick={() => pickStep(one)}') && /const pickStep = \(one\) => \{\s*setByOne\(one\);\s*unlockSounds\(\)\.then\(\(\) => playSound\('click'\)\);/.test(sheet) &&
      th.includes('.kpm-fleet-step button[aria-pressed="true"] { position: relative; border-color: var(--accent-edge); color: var(--ink); }'));
 }
+/* ── ROUND 4: THE SURAT JALAN, HIS PICK B (2026-11-16) ─────────────────────────────────────────────────────────────
+   His "i'll choose B black and white it is more netral". Two print traps were caught in the lab (printshot.mjs, A-Brain
+   Raw/2026-11-16-fleet-build) before the push: the shell's print rule hides EVERY <header> and <nav> (BiohazardTheme
+   @media print), so the paper's top block printed blank; and the portaled wrapper (fixed inset-0 + overflow-y-auto)
+   became absolute with top 0 AND bottom 0 in print - 89 px tall with a scroll box - so only the first 89 px printed. */
+section('ROUND 4: THE SURAT JALAN, HIS PICK B (2026-11-16)');
+{ const fl = read('src/FleetCanvasManager.jsx').replace(/\r/g, ''), th = read('src/styles/theme.css').replace(/\r/g, '');
+  const sj = fl.slice(fl.indexOf('{/* SURAT JALAN - his 2026-11-16 pick B'), fl.indexOf('{/* THE ROSTER LEDGER (2026-11-16)'));
+  const css = th.slice(th.indexOf('/* ── THE SURAT JALAN PAPER'), th.indexOf('/* ── END OF THE SURAT JALAN PAPER'));
+  ok('REGRESSION: the Surat Jalan renders from document.body (the demo bars covered its top inside the shell box) and keeps the print hooks',
+     sj.length > 2000 && /\{viewingSuratJalan && selectedAgent && createPortal\(/.test(sj) && /document\.body\s*\)\}/.test(sj) &&
+     sj.includes('<div className="print-receipt format-a4 kpm-sj">'));
+  ok('REGRESSION: print shows the whole paper - no <header>/<nav> inside it (print hides them) and the wrapper grows with the paper in print',
+     !/<header|<nav/.test(sj) && sj.includes('print:!bottom-auto print:!overflow-visible'));
+  ok('REGRESSION: black and white only - no blue, no colour class, no shadow, no filter; the phone gets the whole page (no fixed 800 px width)',
+     !/blue|slate|red-|green|amber/.test(sj) && !/min-w-\[800px\]/.test(sj) && css.length > 1500 && !/box-shadow|filter:|#[0-9a-f]{6}(?<!#ffffff|#111111)/i.test(css.replace(/#fff\b|#111\b|#666\b|#f2f2f2|#f7f7f7/g, '')) &&
+     css.includes('.kpm-sj { container-type: inline-size;') && css.includes('print-color-adjust: exact;'));
+  ok('the statement keeps his approved wording word for word; the paper says which warehouse and adds a total line',
+     sj.includes('Mulai saat dokumen ini ditandatangani, seluruh barang menjadi tanggung jawab penuh pihak penerima atas kehilangan, kerusakan, atau penyalahgunaan selama masa operasional.') &&
+     sj.includes("<dt>Dari gudang</dt><dd>{selectedAgentUsesBranch ? `Gudang ${selectedAgentLocation}` : 'Master Vault'}</dd>") &&
+     sj.includes('Total · {items.length} produk') && sj.includes("{units.length === 1 ? total.toLocaleString('id-ID') : ''}"));
+}
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
