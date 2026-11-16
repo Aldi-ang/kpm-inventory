@@ -575,7 +575,7 @@ export const SIDEBAR_TOUR = [
 ---
 
 ## Task 14 - the other papers on the new Surat Jalan layout: an exact plan
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-16 22:00 WIB, by Claude. Same rules as above.
 
 Aldi picked B (black and white). It is LIVE on the Fleet Surat Jalan: `.kpm-sj` in `src/styles/theme.css` ("THE SURAT JALAN PAPER") and the block `{/* SURAT JALAN - his 2026-11-16 pick B` in `src/FleetCanvasManager.jsx`. Your Task 10 said two siblings should share it: the restock Surat Jalan / GRN (`src/components/AcceptanceReceipt.jsx`) and the LoadSheet SURAT JALAN / BUKTI KEMBALI card (`src/components/LoadSheet.jsx` ~L225, on-screen only today). For each:
@@ -586,3 +586,34 @@ Aldi picked B (black and white). It is LIVE on the Fleet Surat Jalan: `.kpm-sj` 
 Do NOT change the code.
 
 **Result:**
+
+### 1. `src/components/AcceptanceReceipt.jsx` (Restock Surat Jalan / Goods Received Note)
+- **Field map onto `.kpm-sj` (`src/styles/theme.css:5971-6000`):**
+  - `.hd`: `.co` gets `companyName` (`AcceptanceReceipt.jsx:52, 87-88`; `companyAddress`/`companyPhone`/`mascotImage` are not passed today — pass `appSettings` from `RestockVaultView` if needed); `.doc` gets `<h2>SURAT JALAN</h2><p>{acceptance.poNumber}</p>` (`91, 95-96`).
+  - `.meta` (4 cells): `Asal` (`origin`, `sub: acceptance.originAddress`, `103`), `Tujuan` (`acceptance.destination || MASTER`, `sub: acceptance.destinationAddress`, `104`), `Tanggal` (`acceptance.date`, `105`), `Jumlah Item` (`${totalQty} baris`, `106`).
+  - `<table>`: `No` (`.n`), `Nama barang` (`i.name`), `Batch` (`i.batchNo || '—'`), `Jumlah` (`.q`, `i.qtyReceived`), `Satuan` (`.u`, `i.promo ? 'pcs' : 'Bks'`) (`109-126`).
+  - **Fields with no place in `.kpm-sj` today:** the 4 landed-cost money rows (`Total Wares Base`, `Shipping / Labor`, `Tax / Cukai`, `Total Landed Value`, `128-135`) — add a `.money` block under `<table>`.
+  - `.sign`: `Dikirim oleh` (`acceptance.deliveredBy || ''`) and `Diterima & diperiksa oleh` (`acceptance.receivedBy || acceptance.recordedBy || ''`) (`147-158`). `.stmt` is omitted (GRN has no liability statement).
+- **Print path & the two traps:**
+  - Today it uses a scoped `@media print` `visibility: hidden` style (`62-69`) inside `BiohazardTheme`'s `z-10` box.
+  - **Trap 1 (`<header>` hidden):** `AcceptanceReceipt.jsx:85` uses `<header>`, which `BiohazardTheme.jsx:1224` (`nav, header, ... { display: none !important; }`) hides in print! Replacing `<header>` with `<div className="hd">` fixes it.
+  - **Trap 2 (`fixed inset-0` + `overflow-y-auto`):** `AcceptanceReceipt.jsx:76` has `max-h-[90vh] overflow-y-auto`. Switching to `FleetCanvasManager.jsx:1050-1051`'s `createPortal(..., document.body)` + `print-modal-wrapper ... print:!bottom-auto print:!overflow-visible` avoids both the 89 px print clip and demo-bar overlap (Task 8).
+- **Phone (390 px):** Does not force `min-w` (`max-w-2xl` today, fits 390 px); `.kpm-sj` (`cqw`) scales cleanly with no horizontal scroll.
+- **Smallest edit list (do not apply):**
+  - `src/components/AcceptanceReceipt.jsx:61-167`: portal with `createPortal(..., document.body)` using `FleetCanvasManager.jsx:1051`'s `print-modal-wrapper` + sticky `no-print` Close/Print bar (`1053-1057`), replace `<header>` (`85`) with `<div className="hd">`, render `.kpm-sj` `.pg` (4 `.meta` cells, `<table>` with `Batch`, 4-line money block, `.sign`), and delete the inline `<style>` visibility hack (`62-69`).
+  - `src/styles/theme.css:5994`: add a `.kpm-sj .money` block (`margin-left: auto; width: 52%;`) for the 4 money rows.
+
+### 2. `src/components/LoadSheet.jsx` (`SURAT JALAN` / `BUKTI KEMBALI`, lines `153, 225-232`)
+- **Field map onto `.kpm-sj`:**
+  - `.hd`: `.co` gets `appSettings?.companyName / Address / Phone / mascotImage` (not passed to `LoadSheet` today at `FleetCanvasManager.jsx:1557`); `.doc` gets `<h2>{report.ret ? 'BUKTI KEMBALI' : 'SURAT JALAN'}</h2><p>{report.no}</p>` (`LoadSheet.jsx:153, 227`).
+  - `.meta` (4 cells): `Kepada` / `Dari` (`agent.name`, role `'Sales Canvas'` / `'Sales Motorist'`), `Kendaraan` (`agent.vehicle || '—'`), `Dari gudang` / `Ke gudang` (`warehouse`), `Tanggal` (`new Date()` stamped into `report` at `LoadSheet.jsx:154`).
+  - `<table>`: `No`, `Nama barang` (`x.name`), `Jumlah` (`fmt(x.bks)`), `Satuan` (`x.promo ? 'pcs' : 'Bks'`), `<tfoot>` (`Total · {report.rows.length} produk`, `report.total`) (`LoadSheet.jsx:229-230`).
+  - `.stmt` & `.sign`: `FleetCanvasManager.jsx:1092` statement (for `SURAT JALAN`) and `Admin Gudang` (`branchAdmin ? branchAdmin.name : user.displayName`, `1063, 1094`) + `Sales / Driver` (`agent.name`).
+  - **Missing data in `LoadSheet` today:** `appSettings` (company block) and `adminName` (Admin Gudang signature) — both are already in `FleetCanvasManager.jsx`.
+- **Print path & the two traps:**
+  - Today `LoadSheet.jsx:225-232` is an **inline on-screen card only** (no `window.print()`, no `print-receipt`, no `<header>`).
+  - Printing via a modal must use `createPortal(..., document.body)` + `print-modal-wrapper ... print:!bottom-auto print:!overflow-visible` (`FleetCanvasManager.jsx:1051`) and `<div className="hd">` (not `<header>`) to avoid both traps.
+- **Phone (390 px):** Today's inline card fits 390 px; `.kpm-sj` in the portaled modal also fits 390 px with no horizontal scroll.
+- **Smallest edit list (do not apply):**
+  - `src/FleetCanvasManager.jsx:1049-1104, 1557-1565`: extract the `.kpm-sj` portaled modal into a shared renderer/props and pass `onPrintReport` (or `appSettings` + `adminName`) to `<LoadSheet>`.
+  - `src/components/LoadSheet.jsx:154, 227`: stamp `at: new Date()` onto `report` and add a `Print` button to the inline `report` header that opens the `.kpm-sj` modal.
