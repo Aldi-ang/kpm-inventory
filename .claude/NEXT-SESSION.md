@@ -2,6 +2,8 @@
 
 The professional Fleet & Roster is LIVE since 2026-11-16 14:51 WIB (62f5615d; build 48c5081e, checks ca4921ca). Aldi, same day: *"u should give another jobs for antigravity until all the usage runout from it so that we can save some quota here"*. Antigravity has a QUEUE in `.claude/ANTIGRAVITY-TASK.md`: Task 1 = review the new Fleet code for bugs (money, stock, trust), Task 2 = the Retur audit, Task 3 = why the demo guide's step 1 ring sits on the dashboard on a PC.
 
+2026-11-16 15:12 - ALL THREE TASKS ARE DONE (local, not pushed): Task 1 Fleet review 138009ba (0 HIGH, 1 MED: the tab buttons in LoadSheet.jsx stay pressable while `busy`; 3 LOW: go() double-click ref lock, promo-only phone row label, soldBks promo fallback), Task 2 Retur audit 103879bb (6 OPEN, 4 STOPPED, 0 CAN'T TELL - every confirmed OPEN goes to Aldi as a 🔴 DECIDE with a worked example, money, never fixed unasked), Task 3 PC guide ring aaf18067 (aim() in DemoMission.jsx picks the hidden `<button data-mark="restock_vault">`, opacity 0 at rest, not the visible `.kpm-rail-totem`; its selector fix is written in the task file - check it, apply it, walk step 1 at 1280). Antigravity's queue is EMPTY: write its next task (or NONE) after the review.
+
 START HERE
 1. `git log --oneline origin/phase0-solid-ground..HEAD` and `git log --oneline -8`. Every "Antigravity:" commit: `git show` it - it must touch ONLY `.claude/ANTIGRAVITY-TASK.md`. If it touched anything else, revert that part and tell Aldi.
 2. Read Task 1's Result table (worst first). For EACH HIGH and MED row, open the file:line it names and confirm it in today's code before believing it ("one verification pass is evidence, not proof"). Answer each: REAL / NOT REAL (why) in the vault note.
