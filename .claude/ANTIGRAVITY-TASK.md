@@ -1,101 +1,50 @@
-# Antigravity's task, written by Claude
+# Antigravity's tasks, written by Claude
 
 Aldi, 2026-11-08: *"i want u alucard on claude is the one who responsible for our app project and i want antigravity as your partner to do your task"*.
-Claude writes ONE task here. Antigravity does it, writes the Result, sets Status to DONE. Status is OPEN, DONE or NONE.
+Aldi, 2026-11-16: *"u should give another jobs for antigravity until all the usage runout from it so that we can save some quota here"* - so this file is now a QUEUE: do Task 1, commit, then go straight on to Task 2, then Task 3. Do not wait for Claude between them.
 
-**Status:** DONE
-**Written:** 2026-11-16 14:05 WIB, by Claude.
-**Your jobs are THINKING jobs** (Aldi, 2026-11-10): reading code, audits, reviews, self-contained fixes. Never a browser, never a click-through.
+**Your jobs are THINKING jobs** (Aldi, 2026-11-10): reading code, audits, reviews. Never a browser, never a click-through.
+**Previous task (the 39 Fleet self-checks): DONE, reviewed by Claude 2026-11-16 (commit ca4921ca): count adds up (2981 - 3 merged + 4 new = 2982), no check weakened. Its Result table is in that commit.**
 
-**The Retur audit (written 2026-11-14) is parked, not cancelled:** it comes back as your next task after this one. Its full text is in git commit f3ff4b4b. This one goes first because it blocks a push Aldi is waiting for.
+## Rules for every task below
+- READ-ONLY on the app: never edit anything in src/, firestore.rules, A-Brain. Never build, deploy, push, or open a browser.
+- An answer you did not read in TODAY's code is CAN'T TELL. Every claim carries file:line.
+- Touch only THIS file: write the task's Result under it, set its Status to DONE, commit THIS file alone with a message starting "Antigravity:", then start the next task.
+- Claude may be committing to the same branch while you work. Before each commit run `git status`; if anything other than this file is staged, unstage it.
 
-## Task: rewrite the self-checks that still describe the OLD Fleet & Roster
+---
 
-Aldi replaced the game-look Fleet & Roster (3D cards on a stage, a gold bar, two Minecraft chests) with a professional one (his pick 2026-11-15: "Team list A Ledger table · Loading 1 Load sheet · PC Y Slide-over panel"). Claude built it in commit **48c5081e** (local, not pushed). Read that commit first: `git show 48c5081e --stat` then the diff of `src/FleetCanvasManager.jsx` and the new `src/components/LoadSheet.jsx`.
+## Task 1 - review the new Fleet & Roster code for real bugs
+**Status:** OPEN
 
-`node src/config/logicFixes.selfcheck.mjs` now says **2942 passed, 39 failed**. Every one of the 39 pins the old markup. Your job: make each one check the SAME PROMISE against the NEW code.
+Claude built the professional Fleet & Roster in commit 48c5081e (you rewrote its checks in ca4921ca). It goes live today. Read, as a reviewer looking for bugs that would cost Aldi money, stock or trust:
+- `src/components/LoadSheet.jsx` (whole file, ~260 lines) - the sheet that loads and returns stock.
+- In `src/FleetCanvasManager.jsx`: `rosterRow`, `pickAgent`, `closePanel`, `soldByAgent`, `lastDay`, `dayStrip`, and the block from `{/* THE PERSON PANEL` to its `</aside>`.
+- In `src/utils/vanBay.js`: `soldBks`, `lastDaySold`, `suggestBks`.
+- The two writers it calls, unchanged: `handleLoadCanvas`, `handleReturnToWarehouse` in FleetCanvasManager.jsx.
 
-**The 39 (names as the run prints them):** and both doors are hidden as well as guarded · Fleet & Roster mounts the bay with the three writers and the edit gate · the layout is its own field, written on its own, never inside activeCanvas · the left panel was found · view for everyone; edit and remove only behind the fleet gate, remove still wears data-kpm-del · the add key is behind the same gate and still resets the form · the search reads the same five fields · people keep their rank order (admin, area admin, agent) · areas become tabs over the stage only when more than one place is in view, and a search puts every match on it · seven cards a page, pages 1 2 3 when there are more · the bar lights once per pick, never on a loop · a card names the tier in his words and says what the van holds, in packs · picking a card goes through the muatan guard, by pointer or by key · a card is visible at rest and lifts only on a pointer or a key · the blue standby is gone; nobody picked shows the community · every empty-roster cause still names itself · the usual load is its own field on the person's record · the team is the other people in THIS place · ONE matcher for a person's override requests · the company-wide PENDING queue stays at the top of the screen · the six FAR AND NEAR checks (one card pointed at ... Lite Mode keeps every card whole) · the six DEPLOYMENT HEADER checks (the big "Active Deployment Terminal" header ... one column on the phone, one line on the PC) · Fleet hands the rows to the bay AFTER bypasses · gold bar on the phone: one column · the roster snaps a person to the middle · no code takes the swipe any more · Fleet & Roster reads it off rows it already listens to - no new listener, one prop · REGRESSION: the guide walks all eight steps (missing: data-guide="load-plus") · BEHAVIOUR: the loading bay - Dika picked ... (guide step 3).
+**Check at least these:** a promo item (pcs) loaded or returned - is it ever added into a Bks total? · the − + cap: can a press go above the warehouse stock, or (Return tab) above what the van holds? · a load where one product fails and another succeeds: what stays on the sheet, what the toast says, is anything written twice? · switching from Load to Return tab with numbers on the sheet: can the Load numbers be sent as a return or the other way round? · Fill suggested / Usual load / Copy a teammate with a product the warehouse does not carry, or with 0 stock · a person with no sales before today (lastDay empty) · a typed number with letters, a minus sign, a decimal · `busy` - can a second press of Load van during a slow save send the lines twice? · the Activity tab: a RETUR's total shown with a minus, an exchange, an IOU fulfilment · anything in LoadSheet that re-creates a component per render (the flicker Aldi forbade) · any user-facing English that is unclear or wrong.
 
-**Old → new, so you do not have to guess** (all in src/FleetCanvasManager.jsx unless named):
-| Old | New |
-|---|---|
-| slices `{/* LEFT PANEL: FLEET ROSTER` .. `{/* RIGHT PANEL: THE LOADING DOCK */}` | `{/* THE ROSTER LEDGER (2026-11-16)` (top bar + ledger) .. `{/* THE PERSON PANEL` (panel to the end) |
-| `const stageCard = (m) =>` | `const rosterRow = (m) =>` (ends at `const handleWhatsAppShare`) |
-| rank `{ 'ADMIN': 3, 'AREA_ADMIN': 2, 'AGENT': 1 }` | `{ 'ADMIN': 4, 'AREA_ADMIN': 3, 'FLEET_CAPTAIN': 2, 'AGENT': 1 }`, then A-Z by name; `isLeader` = ADMIN, AREA_ADMIN, FLEET_CAPTAIN |
-| area tabs `kpm-stage-tab`, pages `PER_STAGE = 7` | chips `kpm-fleet-chip` (`role="tab" aria-selected={k === place}`); no pages any more |
-| gold bar `kpm-stage-bar` with Details / Edit / Delete / vault / lock | the panel's `<span className="kpm-fleet-acts">` - the SAME buttons and gates, plus Surat Jalan |
-| Initial / Sold / Current | `[['Loaded', left + sold], ['Sold today', sold], ['Left in van', left]]`; sold comes from `soldByAgent` = vanBay `soldBks` (skips a RETUR that is not Tukar Ganti, and a Tukar Ganti line with fulfillment IOU - the same two skips) |
-| permission chips in the bar | gone from the head on purpose (Details shows them) |
-| `<LoadingBay ... onLoad onReturn onLayout onPreset canEdit>` | `<LoadSheet ... canEdit={canEditFleet} onLoad={handleLoadCanvas} onReturn={handleReturnToWarehouse} onPreset={handleSavePreset} onDirty={setBayLines} onClear={handleClearCanvas}>` |
-| `handleSaveLayout` / `vanLayout` from Fleet | deleted on purpose: the sheet has no squares. LoadingBay.jsx still exists for Agent Inventory - do not touch its checks |
-| `{canEditFleet && <button onClick={handleClearCanvas}` | LoadSheet: `{canEdit && ret && vanBks > 0 && <button ... onClick={onClear}>Reconcile &amp; clear` (the handler's own guard is unchanged) |
-| `data-mission="3"` on a div round the bay | on `<aside key={sel.id} className="kpm-fleet-panel" ... data-mission="3">` |
-| stage CSS `/* ── THE ROSTER STAGE` .. `/* ── END OF THE ROSTER STAGE` (theme.css) | `/* ── THE ROSTER LEDGER + THE PERSON PANEL` .. `/* ── END OF THE ROSTER LEDGER`; the panel's one entrance `kpmFleetSlide 260ms`, `.lite-mode .kpm-fleet-panel { animation: none; ...}`, a reduced-motion rule, no `infinite` |
-| guide step 3 (src/config/demoMission.js) | nav to `.kpm-fleet-row[data-agent]` → Dika's row (done `.kpm-fleet-row.on[data-agent="demo-agent-2"]`) → `[data-mission="3"] [data-guide="load-plus"]` (in LoadSheet.jsx) → `[data-mission="3"] [data-ponder="go"]` |
-
-**How to rewrite:**
-- A promise that still holds → rewrite the check to test it on the new code. Keep the old name when the promise is the same; rename it when the words name things that are gone (cards, stage, bar).
-- A promise about something removed ON PURPOSE (3D cards, far/near, the stage lamp, the swipe, pages, the layout field, the community block) → ONE check per removed thing that says it is gone and that tag `game-edition-v1` keeps it. Never delete a check without a replacement line in the Result.
-- **If the new code broke a promise that should still hold** (a guard missing, a sum that changed, a door gone): do NOT weaken the check. Leave it red and write it in the Result as LOST with file:line. Claude fixes the app, not you.
-- Then ADD these behaviour checks on real numbers (vanBay is plain JS, import it like the file's other behaviour checks do): `suggestBks(180, 300) === 0`, `suggestBks(200, 20) === 180`, `suggestBks(undefined, 5) === 0`; `soldBks` skips a pure buyback and an IOU exchange line but counts a sale; `lastDaySold` returns the newest day BEFORE today that has a sale, never today; the panel is keyed by the person (`<aside key={sel.id} className="kpm-fleet-panel"`); `kpmFleetSlide` is never `infinite`; LoadSheet.jsx defines no component inside `LoadSheet(` (CountUp is top-level); CountUp floors the progress at 0 (`Math.max(0,`).
-
-## Never
-Edit app code (anything in src/ other than the one check file), rules or A-Brain. Build, deploy or push. Open a browser. Touch a check that was green before this task.
-
-**Touch only:** `src/config/logicFixes.selfcheck.mjs` and this file (the Result below).
-
-**Done when:** `node src/config/logicFixes.selfcheck.mjs` ends with 0 failed, OR every remaining red is written below as LOST; the Result is ONE table (Old check | What you did: rewritten / renamed / replaced-by-a-gone-check / LOST | New check name | one sentence), plus the list of new behaviour checks and the final "N passed, M failed" line; Status here is DONE. Commit ONLY these two files, message starting "Antigravity:". Never push.
+**Result:** ONE table: Finding | Who hits it | What goes wrong (money / stock / trust / looks) | file:line | Severity (HIGH / MED / LOW) | Smallest fix in one sentence. Worst first; count per severity on top. If you find nothing in a line of the checklist, say "checked, fine" for it.
 
 **Result:**
 
-| Old check | What you did | New check name | One sentence |
-|---|---|---|---|
-| `and both doors are hidden as well as guarded` | rewritten | `and both doors are hidden as well as guarded` | Checks `<LoadSheet canEdit={canEditFleet} onClear={handleClearCanvas}>`, `{!extra && canEdit && (<div className="kpm-fleet-foot">`, `go()` guard, and `Reconcile & clear` gate in `LoadSheet.jsx`. |
-| `Fleet & Roster mounts the bay with the three writers and the edit gate` | renamed | `Fleet & Roster mounts the load sheet with the two stock writers, the usual-load writer and the edit gate; Load van calls a writer once per line` | Checks `<LoadSheet>` props (`onLoad`, `onReturn`, `onPreset`, `canEdit`) and the per-product loop in `go()`. |
-| `the layout is its own field, written on its own, never inside activeCanvas` | replaced-by-a-gone-check | `the van layout is gone with the squares (the sheet has none): no vanLayout writer, no onLayout - tag game-edition-v1 keeps it; the sheet never writes activeCanvas` | Asserts `vanLayout`/`handleSaveLayout`/`onLayout` are gone from Fleet & LoadSheet, `LoadSheet` never writes `activeCanvas`, and tag `game-edition-v1` exists in git. |
-| `the left panel was found` | renamed | `the ledger, the person panel, its keys and the row were found` | Slices `THE ROSTER LEDGER`, `THE PERSON PANEL`, `kpm-fleet-acts`, `rosterRow`, and `THE ROSTER LEDGER` CSS. |
-| `view for everyone; edit and remove only behind the fleet gate, remove still wears data-kpm-del` | rewritten | `view for everyone; edit and remove only behind the fleet gate, remove still wears data-kpm-del` | Matches `handleViewClick`, `handleEditClick`, and `data-kpm-del` `handleDeleteAgent` inside the panel's `kpm-fleet-acts` span. |
-| `the add key is behind the same gate and still resets the form` | rewritten | `the add key is behind the same gate and still resets the form` | Same regex, now matches inside `THE ROSTER LEDGER` top bar (`left`). |
-| `the search reads the same five fields` | rewritten | `the search reads the same five fields` | Same regex, now matches inside `THE ROSTER LEDGER` (`left`). |
-| `people keep their rank order (admin, area admin, agent)` | renamed | `people keep their rank order (admin, area admin, fleet captain, agent), then A-Z, and the three leader tiers stand on top` | Verifies `{ 'ADMIN': 4, 'AREA_ADMIN': 3, 'FLEET_CAPTAIN': 2, 'AGENT': 1 }`, A-Z tie-breaker, and `isLeader` split. |
-| `areas become tabs over the stage only when more than one place is in view, and a search puts every match on it` | renamed | `areas become chips over the ledger only when more than one place is in view, and a search lists every match` | Verifies `kpm-fleet-chip` `role="tab"` when `!term && keys.length > 1` and `leaders`/`crew` rendering via `rosterRow`. |
-| `seven cards a page, pages 1 2 3 when there are more, and a new area or search starts on page 1` | replaced-by-a-gone-check | `the stage pages are gone (seven cards a page): the ledger lists everyone in the place - tag game-edition-v1 keeps them` | Asserts `PER_STAGE`/`pageCast`/`rosterPage`/`setRosterPage` are gone and tag `game-edition-v1` exists. |
-| `the bar lights once per pick, never on a loop` | renamed | `the panel slides in once per pick, never on a loop (the bar's one sheen became the panel's one entrance)` | Checks `<aside key={sel.id} className="kpm-fleet-panel"` and `kpmFleetSlide 260ms` without `infinite`. |
-| `a card names the tier in his words and says what the van holds, in packs` | renamed | `a row names the tier in his words and says what the van holds, in packs; promo pieces ride beside the packs, never inside them, and a promo-only van is not empty` | Checks `tierWord(m.userRole)` in `roleLine`, `loadOf(m)`, `pcs` promo count, and `has = loaded > 0 \|\| pcs > 0` in `rosterRow`. |
-| `picking a card goes through the muatan guard, by pointer or by key` | renamed | `picking a row goes through the unsaved-sheet guard, by pointer or by key; closing the panel asks the same` | Checks `pickAgent` / `closePanel` `bayLines > 0` `confirmAction` guard, keyboard Enter/Space, and `onDirty={setBayLines}`. |
-| `a card is visible at rest and lifts only on a pointer or a key (Lite Mode keeps it all)` | renamed | `a row is visible at rest - no rule hides it; a pointer (where there is one) or a key marks it the way a pick does` | Checks no `opacity: 0` hides rows at rest and `.kpm-fleet-row.on, :focus-visible` + `@media (hover: hover)` styling. |
-| `the blue standby is gone; nobody picked shows the community` | replaced-by-a-gone-check | `the blue standby is gone; nobody picked shows the ledger whole - the community block is gone with the stage (tag game-edition-v1 keeps it)` | Asserts neither `Standby For Deployment` nor `the community today` exists, `{selectedAgent && ...}` gates the panel, and tag `game-edition-v1` exists. |
-| `every empty-roster cause still names itself` | rewritten | `every empty-roster cause still names itself` | Same 4 empty-roster messages, now matched inside `THE ROSTER LEDGER` (`left`). |
-| `the usual load is its own field on the person's record, written like the layout, never inside activeCanvas` | rewritten | `the usual load is its own field on the person's record, written on its own, never inside activeCanvas` | Checks `handleSavePreset` (`updateDoc` `{ loadPreset: preset }`), `canEditFleet` gate, `<LoadSheet onPreset={handleSavePreset}>`, and `saveUsual` in `LoadSheet.jsx`. |
-| `the team is the other people in THIS place, from the roster the viewer already sees` | rewritten | `the team is the other people in THIS place, from the roster the viewer already sees` | Updated `selectedAgent` -> `sel` on the `<LoadSheet team={...}>` prop. |
-| `ONE matcher for a person's override requests - the ledger, the log and the van tab all use it` | renamed | `ONE matcher for a person's override requests - the Requests tab and the Activity tab both use it` | Checks `isAgentBypass` definition, 2 `salesmanName` checks, `mine` filter, and `mine.some(... APPROVED)` in Activity. |
-| `the company-wide PENDING queue stays at the top of the screen, never only behind a closed chest` | renamed | `the company-wide PENDING queue stays at the top of the screen, never only inside a person's panel` | Checks the PENDING queue sits inside `.kpm-fleet-list` before `<aside key={sel.id}`. |
-| `when one card is pointed at or picked, every other card stands further back - smaller, dimmer, higher` | replaced-by-a-gone-check | `the 3D stage, far/near cards, stage lamp and hover-zone rules are gone (tag game-edition-v1 keeps them)` | Merged the 4 removed stage/far-near visual checks into one gone-check asserting `.kpm-stage`/`.kpm-actor`/`.kpm-actor-card` are absent and tag `game-edition-v1` exists. |
-| `the pointed or picked card steps forward` | replaced-by-a-gone-check | `the 3D stage, far/near cards, stage lamp and hover-zone rules are gone (tag game-edition-v1 keeps them)` | Covered by the same gone-check above. |
-| `the stage is lit warm and plain - a lamp overhead, its pool on the floor, the edges in shadow - and no lines` | replaced-by-a-gone-check | `the 3D stage, far/near cards, stage lamp and hover-zone rules are gone (tag game-edition-v1 keeps them)` | Covered by the same gone-check above. |
-| `the hover zones touch - no gap between cards - so crossing the row never drops the far/near state` | replaced-by-a-gone-check | `the 3D stage, far/near cards, stage lamp and hover-zone rules are gone (tag game-edition-v1 keeps them)` | Covered by the same gone-check above. |
-| `no shadow, no filter, nothing on a loop (G30)` | renamed | `the ledger rows use no shadow, no filter, and nothing loops in the ledger or panel CSS (G30)` | Checks `ledgerCss` has no `drop-shadow`, `filter:`, `infinite`, or row `box-shadow` (allowing only the slide-over panel's own edge shadow). |
-| `Lite Mode keeps every card whole: the dimming is gated out of it, and nothing glides` | renamed | `Lite Mode and reduced motion keep the panel still and drop its shadow (no glide, no replay)` | Checks `.lite-mode .kpm-fleet-panel { animation: none; box-shadow: none; }` and `prefers-reduced-motion: reduce`. |
-| `the big "Active Deployment Terminal" header is gone from the person's side` | renamed | `the big "Active Deployment Terminal" header is still gone from the screen` | Checks `Active Deployment Terminal` and `text-3xl font-black` stay absent from `THE PERSON PANEL`. |
-| `the bar names the place and the picked person, left` | renamed | `the person panel names the picked person, their role and which warehouse they load from` | Checks `{sel.name}`, `roleLine(sel)`, and `loads from {selectedAgentUsesBranch` in the panel header. |
-| `the permission chips moved into the bar's middle, Titip still read as Consign` | replaced-by-a-gone-check | `permission chips are gone from the panel head on purpose (Details shows them); the gold bar is gone with the stage (tag game-edition-v1)` | Asserts `allowedPayments`/`allowedTiers` are absent from the panel head, `kpm-stage-bar` is gone, and tag `game-edition-v1` exists. |
-| `INITIAL / SOLD / CURRENT moved into the bar with the same sums: buybacks and IOU promises are not sold` | renamed | `Loaded / Sold today / Left in van live in the panel KPIs with the same sums: buybacks and IOU promises are not sold` | Checks `[['Loaded', left + sold], ['Sold today', sold], ['Left in van', left]]`, `soldBks(list, inventory)`, and both skip rules in `vanBay.js`. |
-| `the bar follows the picked person on any page or area tab, as the header did` | renamed | `the panel follows the picked person on any area chip or search` | Checks `const sel = selectedAgent;` and `<aside key={sel.id}`. |
-| `one column on the phone (his 07:50: the place ran under the keys), one line on the PC` | renamed | `phone: the person panel becomes its own full-screen page with a pinned Load key; PC: one-row top strip and slide-over panel` | Checks `@media (max-width: 1023px)` full-page panel hiding the list and `@media (min-width: 1024px)` flex top + absolute slide-over panel. |
-| `Fleet hands the rows to the bay AFTER bypasses, from what it already holds` | renamed | `Fleet hands the rows to LoadSheet's extra tabs from what it already holds (Consignment, Bounty, Requests)` | Checks `damagedInVan`, `titipOf`, `bountyItems`, `isAgentBypass`, and the `titip` / `bounty` / `requests` tabs passed to `<LoadSheet>`. |
-| `gold bar on the phone: one column - place + name, the permissions, the counts, the keys - nothing under anything` | renamed | `top strip + ledger row on phone vs PC: 2-col strip and compact row on phone, 4-col strip and 5-col ledger on PC` | Checks `.kpm-fleet-strip` (2 cols -> 4 cols), `.kpm-fleet-row .who b` ellipsis, and 5-column desktop ledger grid. |
-| `the roster snaps a person to the middle but no longer stops at every one` | replaced-by-a-gone-check | `the stage snap is gone with the 3D card stage (tag game-edition-v1 keeps it)` | Asserts `scroll-snap-type`/`scroll-snap-stop` are absent from `ledgerCss` and tag `game-edition-v1` exists. |
-| `no code takes the swipe any more: the stage has no touch handlers and nothing locks its sideways scroll` | renamed | `no code takes the swipe any more: the ledger has no touch handlers and the 3D stage is gone (tag game-edition-v1 keeps it)` | Checks `<div role="listbox" aria-label="People">`, no `stageTouch`/`swipeFrom`/`swipeTarget`/`.kpm-stage`, and tag `game-edition-v1` exists. |
-| `Fleet & Roster reads it off rows it already listens to - no new listener, one prop` | renamed | `Fleet & Roster reads it off rows it already listens to - no new listener, shown inside the Damaged tab` | Checks `whQuarantine` memo, `QUARANTINE · ${whName.toUpperCase()}` inside the Damaged tab, and 6 `onSnapshot(` calls. |
-| `REGRESSION: the guide walks all eight steps ... (missing: data-guide="load-plus")` | rewritten | `REGRESSION: the guide walks all eight steps, each beat but the last has the mark that proves it done, and every mark a beat names is still on the real screens (missing: none)` | Added `read('src/components/LoadSheet.jsx')` to `guideSrc` so `data-guide="load-plus"` is found. |
-| `BEHAVIOUR: the loading bay - Dika picked and the HOW MANY sheet open = "isi jumlahnya"; a line in the muatan = Muat van; the EOD approval skips straight to Dika's card when the pending list is already up` | renamed | `BEHAVIOUR: the load sheet - Dika picked = tap + on a product; a line in the sheet = Load van; the EOD approval skips straight to Dika's card when the pending list is already up` | Updated `liveBeat(g3, ...)` selectors to `.kpm-fleet-row[data-agent]`, `.kpm-fleet-row.on[data-agent="demo-agent-2"]`, and `[data-mission="3"] [data-ponder="go"]:not(:disabled)`. |
+---
 
-**New checks added (`FLEET & ROSTER: THE LEDGER AND THE LOAD SHEET (2026-11-16)`):**
-- `BEHAVIOUR: suggestBks returns 0 when the van holds at least what was sold, the difference when short, and 0 when no sales exist` (`suggestBks(180, 300) === 0`, `suggestBks(200, 20) === 180`, `suggestBks(undefined, 5) === 0`)
-- `BEHAVIOUR: soldBks skips a pure buyback and an IOU exchange line, and counts a normal sale and a handed exchange line`
-- `BEHAVIOUR: lastDaySold picks the newest day BEFORE today that has a real sale, never today`
-- `REGRESSION: the person panel is keyed by the person, kpmFleetSlide never loops, LoadSheet defines no component inside render, and CountUp floors k at 0`
+## Task 2 - the Retur audit (Aldi queued it 2026-11-11; parked twice, now it runs)
+**Status:** OPEN
 
-**Self-check run:** `node src/config/logicFixes.selfcheck.mjs` -> **2982 passed, 0 failed, 2982 checks** (0 LOST).
+The full task text is in git: run `git show f3ff4b4b:.claude/ANTIGRAVITY-TASK.md` and do the task written there ("Find every way a return (RETUR) could be used for gain"), with its own "Check at least these" list and its own Result format. Write the Result here.
 
+**Result:**
+
+---
+
+## Task 3 - why the demo guide's step 1 points at the wrong place on a PC
+**Status:** OPEN
+
+On a PC-size window (1280 x 800), demo guide step 1, beat 2 says "Buka Restock Vault dari menu." but its ring sits at x 14, y 225, size 56 x 56 - on the dashboard, not on a menu key - and pressing there three times does nothing (found by Claude's lab walk 2026-11-16). On the phone the same beat works.
+
+Read `src/config/demoMission.js` (the `nav(...)` helper and GUIDE[1]), `src/components/DemoMission.jsx` (how a beat's `at` selector is resolved to a ring, how `done` is checked) and the PC menu in `src/components/BiohazardTheme.jsx` (where the Restock Vault key is on a wide screen, its `data-mark`, and whether it is hidden or collapsed at 1280 px). Answer: which element the ring is drawn round at 1280 px and why, what the beat should point at instead, and the smallest change (file:line + the new selector) - do NOT make the change.
+
+**Result:**
