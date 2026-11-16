@@ -235,7 +235,7 @@ export default function LoadSheet({ agent, warehouse, stock, promo = [], soldTod
             </div>
             {!extra && canEdit && (
                 <div className="kpm-fleet-foot">
-                    <span className="sum">{plural(lines.length, 'product')} · <b>{ret ? '−' : '+'}{words(moving, movingPcs)}</b><span className="after"> · van after {ret ? 'return' : 'loading'} <b>{fmt(vanBks + (ret ? -moving : moving))} Bks</b></span></span>
+                    <span className="sum">{plural(lines.length, 'product')} · <b>{lines.length ? (ret ? '−' : '+') : ''}{words(moving, movingPcs)}</b><span className="after"> · van after {ret ? 'return' : 'loading'} <b>{fmt(vanBks + (ret ? -moving : moving))} Bks</b></span></span>
                     <span className="flex gap-2 shrink-0">
                         {lines.length > 0 && <button type="button" className={keyCls} disabled={busy} onClick={() => { setMap({}); setWhy({}); notify(`${ret ? 'Return' : 'Load'} sheet cleared for ${agent.name}. Nothing was saved.`); }}>Clear</button>}
                         <button type="button" data-ponder="go" disabled={!lines.length || busy} onClick={go}

@@ -8779,10 +8779,12 @@ section('ROUND 4: FAR AND NEAR ON THE STAGE (2026-09-24)');
   const ledgerCss = th.slice(th.indexOf('/* ── THE ROSTER LEDGER'), th.indexOf('/* ── END OF THE ROSTER LEDGER'));
   ok('the 3D stage, far/near cards, stage lamp and hover-zone rules are gone (tag game-edition-v1 keeps them)',
      !/\.kpm-stage\b|\.kpm-actor\b|\.kpm-actor-card\b/.test(th) && gameEditionKept);
-  ok('the ledger rows use no shadow, no filter, and nothing loops in the ledger or panel CSS (G30)',
-     ledgerCss.length > 3000 && !/box-shadow|drop-shadow|filter:|infinite/.test(ledgerCss.replace(/\.kpm-fleet-panel \{[^}]*box-shadow:[^;]*;/g, '')));
-  ok('Lite Mode and reduced motion keep the panel still and drop its shadow (no glide, no replay)',
-     /\.lite-mode \.kpm-fleet-panel \{ animation: none; box-shadow: none; \}/.test(ledgerCss) &&
+  /* 2026-11-16: the panel's edge shadow came off before the push - integration.audit G30 ("nothing in the system depends on
+     a shadow") read it; its 1px left rule carries the edge in every theme and in Lite Mode */
+  ok('the ledger and the panel use no shadow, no filter, and nothing loops in their CSS (G30)',
+     ledgerCss.length > 3000 && !/box-shadow|drop-shadow|filter:|infinite/.test(ledgerCss) && /\.kpm-fleet-panel \{[^}]*border-left: 1px solid var\(--line-2\);/.test(ledgerCss));
+  ok('Lite Mode and reduced motion keep the panel still (no glide, no replay)',
+     /\.lite-mode \.kpm-fleet-panel \{ animation: none; \}/.test(ledgerCss) &&
      /@media \(prefers-reduced-motion: reduce\) \{ \.kpm-fleet-panel \{ animation: none; \} \}/.test(ledgerCss));
 }
 

@@ -5875,7 +5875,7 @@ html.lite-mode .kpm-ench *, html.lite-mode .kpm-ench *::before, html.lite-mode .
   .kpm-fleet-head { display: grid; gap: 2px 12px; position: sticky; top: 0; z-index: 1; padding: 8px 16px; border-bottom: 1px solid var(--line-2); background: var(--panel); font-size: 11px; font-weight: 600; color: var(--ink-muted); }
   .kpm-fleet-row > .c { display: block; }
   .kpm-fleet-row > .ph { display: none; }
-  .kpm-fleet-panel { position: absolute; top: 0; right: 0; bottom: 0; z-index: 20; width: min(640px, 100%); border-left: 1px solid var(--line-2); box-shadow: -18px 0 40px rgba(0, 0, 0, .35); animation: kpmFleetSlide 260ms cubic-bezier(.22, 1, .36, 1); }
+  .kpm-fleet-panel { position: absolute; top: 0; right: 0; bottom: 0; z-index: 20; width: min(640px, 100%); border-left: 1px solid var(--line-2); animation: kpmFleetSlide 260ms cubic-bezier(.22, 1, .36, 1); }
   .kpm-fleet-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   .kpm-fleet-tabs button { min-height: 0; }
   .kpm-fleet-kpis { width: auto; justify-content: flex-end; text-align: right; }
@@ -5889,7 +5889,7 @@ html.lite-mode .kpm-ench *, html.lite-mode .kpm-ench *::before, html.lite-mode .
 }
 /* the ONE entrance: 24 px and a fade, 260 ms, once per opening (the panel is keyed by the person, never by a press) */
 @keyframes kpmFleetSlide { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
-.lite-mode .kpm-fleet-panel { animation: none; box-shadow: none; }
+.lite-mode .kpm-fleet-panel { animation: none; }
 @media (prefers-reduced-motion: reduce) { .kpm-fleet-panel { animation: none; } }
 /* ── END OF THE ROSTER LEDGER ─────────────────────────────────────────────────────────────────────────── */
 
