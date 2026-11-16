@@ -493,3 +493,32 @@ Note: none of these 6 holes live in a pure `src/utils/` function (the `RETUR` ga
      /const itemsBks = todaysTrans\s*\.filter\(t => t\.type === 'SALE' && t\.paymentType !== 'Tukar Ganti'\)/.test(block));
 }
 ```
+
+---
+
+## Task 13 - the capybara's sidebar tour, ready to paste (feeds Claude's next job)
+**Status:** OPEN
+**Written:** 2026-11-16 22:00 WIB, by Claude. Same rules as above (read-only, touch only this file, commit it alone, "Antigravity:").
+
+Aldi: the capybara *"should give step by step tutorial starting from the sidebar first and what it use then to the next"*. Claude builds it next, using your Task 5 lines (17 items) and your Task 7 findings (`shows()` / `aim()` in `src/components/DemoMission.jsx` ~L142-155, the rail's opacity-0 children, `.kpm-rail-totem`). For EACH of the 17 sidebar items:
+- **PC (1280)**: the exact element to ring (selector + file:line) when the rail is collapsed AND when it is open. If the item is invisible while collapsed, say what must happen first (open the rail? ring the totem?) and which key/handler opens it (file:line).
+- **Phone (390)**: the same, with the drawer (`[aria-label="Open navigation"]`): ring inside the open drawer, or only the line with no ring.
+- **Tiers that see it** (from the nav config, file:line), so the tour skips items the current demo person cannot see.
+Then write the beats as ONE code block in the shape `GUIDE` uses in `src/config/demoMission.js` (read how a beat is built: `at`, the line, any `nav()`), the Indonesian lines from Task 5 word for word, in sidebar order. Claude pastes it after review. Do NOT change the code.
+
+**Result:**
+
+---
+
+## Task 14 - the other papers on the new Surat Jalan layout: an exact plan
+**Status:** OPEN
+**Written:** 2026-11-16 22:00 WIB, by Claude. Same rules as above.
+
+Aldi picked B (black and white). It is LIVE on the Fleet Surat Jalan: `.kpm-sj` in `src/styles/theme.css` ("THE SURAT JALAN PAPER") and the block `{/* SURAT JALAN - his 2026-11-16 pick B` in `src/FleetCanvasManager.jsx`. Your Task 10 said two siblings should share it: the restock Surat Jalan / GRN (`src/components/AcceptanceReceipt.jsx`) and the LoadSheet SURAT JALAN / BUKTI KEMBALI card (`src/components/LoadSheet.jsx` ~L225, on-screen only today). For each:
+- **Field map**: every field it shows today -> where it goes on the `.kpm-sj` paper (head, the 4-cell info row, table columns, total, statement, signatures); fields with no place; fields `.kpm-sj` needs that it does not have (and where the data would come from, file:line).
+- **Print path**: how it prints today (AcceptanceReceipt has its own `@media print` visibility trick) and whether it would hit the two traps the Fleet paper hit in the lab: (1) the shell's print rule hides every `<header>` and `<nav>` (`src/components/BiohazardTheme.jsx` ~L1220-1243); (2) a `fixed inset-0` wrapper with `overflow-y-auto` becomes 89 px tall in print unless it gets `print:!bottom-auto print:!overflow-visible`.
+- **Phone**: does it force a width or scroll sideways at 390 px?
+- **The edit list**: the smallest set of changes, file:line, in words (no code edits).
+Do NOT change the code.
+
+**Result:**

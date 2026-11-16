@@ -1,6 +1,10 @@
 # PROGRESS — read this, search for nothing
 
-**Updated: 2026-11-16 21:45 WIB, PC clock (🔴 KPM - NOW: "Each press: 1 Bks | 1 Slop" LIVE; waiting on his Surat Jalan pick (A, A2, A3, B or C); pick A LIVE c497b4c1; NEXT-SESSION = the demo guide; Antigravity Tasks 9-10 OPEN. Log trimmed to 5 entries 2026-11-16 21:32 - older ones: git log -p .claude/PROGRESS.md)**
+**Updated: 2026-11-16 22:00 WIB, PC clock (🟢 KPM - NOW: his Surat Jalan pick B (black and white) LIVE; NEXT-SESSION = the demo guide; pick A LIVE c497b4c1; NEXT-SESSION = the demo guide; Antigravity Tasks 9-10 OPEN. Log trimmed to 5 entries 2026-11-16 21:32 - older ones: git log -p .claude/PROGRESS.md)**
+
+## 🟢 2026-11-16 22:00 WIB — KPM: Surat Jalan B (black and white) LIVE; Antigravity 11-12 read, 13-14 queued
+His words: *"i'll choose B black and white it is more netral i guess"*. Lab: two print traps caught before the push (the shell's print rule hides <header>; the portaled wrapper became 89 px tall in print) - both fixed and pinned by checks; printed page proven on A4. Story: the commit message. Antigravity Task 11 found 2 Fleet fixes (keyboard behind the veil, close mid-entrance) -> in NEXT-SESSION's AFTER list.
+WAITING ON ALDI (word for word from the reply): "✅ TEST: open a salesman, press Surat Jalan, then Print." Still owed: his test of pick A live; phone SWITCH twice -> "fast" or "slow".
 
 ## 🔴 2026-11-16 21:45 WIB — KPM: "Each press" key live; Surat Jalan A2 + A3 drawn; Antigravity 9-10 read, 11-12 queued
 His words: *"A is fine but not really special tbh , well 1 press is 1 slop and 1 slop is 10 bks but i think u should add button where i can increase the add button by 1 or by 10"*. Built: LoadSheet "Each press: 1 Bks | 1 Slop" (lab: 1 Bks + + = 2, then 1 Slop + = 12; kept per device). Surat Jalan artifact v3 adds A2 (navy band) and A3 (big title, navy spine, stamp box - my pick).
