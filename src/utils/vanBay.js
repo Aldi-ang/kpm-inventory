@@ -373,6 +373,35 @@ export function teamLoad(people, P) {
   return vans.sort((a, b) => b.bks - a.bks);
 }
 
+/* ── THE LOAD SHEET'S SUMS (2026-11-16, components/LoadSheet.jsx) ──────────────────────────────────────────
+   Packs that left a van in these sales, per product. A pure buyback (a RETUR that is not an exchange) and an exchange
+   line promised for later (IOU) never left the van - the two lines the roster's SOLD has always skipped. */
+export function soldBks(sales, inventory) {
+  const by = {};
+  for (const t of sales || []) {
+    if (t.type === 'RETUR' && t.paymentType !== 'Tukar Ganti') continue;
+    for (const it of t.items || []) {
+      if (t.paymentType === 'Tukar Ganti' && it.fulfillment === 'IOU') continue;
+      by[it.productId] = (by[it.productId] || 0) + convertToBks(it.qty, it.unit, inventory.find(p => p.id === it.productId));
+    }
+  }
+  return by;
+}
+/* HIS LAST WORKING DAY: the newest day BEFORE today on which this person sold anything, and the packs per product */
+export function lastDaySold(transactions, agentId, today, inventory) {
+  const days = {};
+  for (const t of transactions || []) {
+    if (!agentId || t.agentId !== agentId || !t.date || !(t.date < today) || !['SALE', 'RETUR'].includes(t.type || 'SALE')) continue;
+    (days[t.date] = days[t.date] || []).push(t);
+  }
+  for (const day of Object.keys(days).sort().reverse()) {
+    const by = soldBks(days[day], inventory);
+    if (Object.values(by).some(v => v > 0)) return { day, by };
+  }
+  return { day: '', by: {} };
+}
+/* FILL SUGGESTED (his pick, 2026-11-15): last working day's sales less what the van holds now, never below 0 */
+export const suggestBks = (lastSold, inVan) => Math.max(0, Math.round((lastSold || 0) - (inVan || 0)));
 /* The damaged row: what came back broken today. A damaged RETUR never goes back to stock
    (useTransactionEngine isReturnedToStock), so it rides in the van until the EOD settles it. */
 export function damagedInVan(sales, inventory) {

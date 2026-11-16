@@ -5789,116 +5789,109 @@ html.lite-mode .kpm-ench *, html.lite-mode .kpm-ench *::before, html.lite-mode .
 @media (prefers-reduced-motion: reduce) { .kpm-ench *, .kpm-ench *::before, .kpm-ench *::after { animation: none !important; transition: none !important; } }
 /* ── END OF THE BOOK OF THE DAY ─────────────────────────────────────────────────────────────────── */
 
-/* ── THE ROSTER STAGE (FleetCanvasManager.jsx stageCard) — his State of Decay 2 community screen ───────────
-   The people stand side by side on a lit floor, a name over each; pointing lifts a card and lights its floor,
-   the picked one wears the gold ring, the area leader stands on a crown, and a gold bar names the place and
-   carries the actions. "3D character, if its too heavy then just 3D cards": each person is a card turned
-   into the stage, straightening as it is looked at. Borders and backgrounds only - Lite Mode keeps every
-   card, name and figure and loses only the lift. */
-.kpm-stage-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 10px; }
-.kpm-stage-tab { flex: 0 0 auto; min-height: 40px; padding: 0 14px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
-  border: 1px solid var(--line-2); border-radius: 10px; background: var(--inset); color: var(--ink-muted);
-  font: 900 11px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; }
-.kpm-stage-tab small { font-size: 10px; color: var(--ink-dim); }
-.kpm-stage-tab:hover { border-color: var(--accent-edge); }
-.kpm-stage-tab.on { background: var(--gold); color: var(--gold-ink); border-color: var(--accent-edge); }
-.kpm-stage-tab.on small { color: var(--gold-ink); }
-.kpm-stage { display: flex; justify-content: flex-start; gap: 0; overflow-x: auto; padding: 20px 14px 8px; scroll-snap-type: x mandatory; perspective: 900px;
-  border: 1px solid var(--line-2); border-bottom: 0; border-radius: 14px 14px 0 0;
-  background: radial-gradient(90% 55% at 50% 100%, rgba(208, 138, 46, .16), transparent 70%), linear-gradient(180deg, var(--raised), var(--sunk));
-  /* his 12:50 "simple cool and elegant with the warm lighting just like what the State of decay have" - no lines:
-     the lamp overhead, its pool on the floor where the people stand, the room falling into shadow at the edges.
-     The line above stays for a browser without color-mix. */
-  background:
-    radial-gradient(55% 90% at 50% -25%, rgba(245, 196, 120, .20), transparent 70%),
-    radial-gradient(60% 34% at 50% 96%, rgba(208, 138, 46, .22), transparent 72%),
-    radial-gradient(125% 110% at 50% 45%, transparent 55%, color-mix(in srgb, var(--sunk) 80%, transparent) 100%),
-    linear-gradient(180deg, var(--raised), var(--sunk)); }
-/* the hover zones TOUCH (no gap, each person's column is 188 px): his 12:50 recording - with a gap, the pointer crossing
-   between two cards pointed at nothing, so every far card grew back, then shrank again at the next card */
-/* the stage scrolls freely on a touch screen, with the phone's own momentum, and the snap lands a person in the middle -
-   his 2026-10-01 "unlocked and not one by one just to make it fluid" (no touch-action lock, no scroll-snap-stop) */
-.kpm-actor { flex: 0 0 188px; scroll-snap-align: center; display: grid; justify-items: center; gap: 16px; cursor: pointer; outline: none; }
-.kpm-actor-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 900 11px/1.2 var(--font-mono);
-  letter-spacing: .08em; text-transform: uppercase; color: var(--ink-dim); transition: color .15s; }
-.kpm-actor-card { position: relative; width: 156px; height: 196px; display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 16px 8px 10px; text-align: center; overflow: hidden; border-radius: 12px;
-  border: 1px solid var(--line-2); border-right-width: 4px; border-bottom-width: 4px;
-  background: linear-gradient(180deg, var(--raised), var(--inset));
-  transform: rotateY(-14deg) rotateX(4deg); transition: transform .28s cubic-bezier(.2, .9, .3, 1), border-color .15s, opacity .2s; }
-.kpm-actor-card .band { position: absolute; left: 0; right: 0; top: 0; height: 6px; background: var(--line-2); }
-.kpm-actor.leader .kpm-actor-card .band { background: var(--gold); }
-.kpm-actor-card .avatar { position: relative; width: 54px; height: 54px; flex: 0 0 54px; border-radius: 50%; display: grid; place-items: center;
-  border: 2px solid var(--line-2); background: var(--inset); color: var(--ink); font: 900 18px/1 var(--font-mono); }
-.kpm-actor.leader .kpm-actor-card .avatar { border-color: var(--accent-edge); color: var(--accent-ink); }
-.kpm-actor-card .avatar .role { position: absolute; right: -5px; bottom: -5px; padding: 2px; border-radius: 50%; background: var(--panel); color: var(--ink-muted); box-sizing: content-box; }
-.kpm-actor-card .who { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 800; font-size: 13px; line-height: 1.2; color: var(--ink); }
-.kpm-actor-card .tier { max-height: 2.7em; overflow: hidden; font-size: 10px; line-height: 1.35; color: var(--ink-muted); }
-.kpm-actor-card .load { margin-top: auto; display: flex; align-items: center; gap: 5px; font: 700 10px/1.2 var(--font-mono); color: var(--ink-muted); }
-.kpm-actor-card .load i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-2); }
-.kpm-actor-card .load i.on { background: var(--gold); }
-.kpm-actor-floor { width: 140px; height: 22px; margin-top: -8px; border-radius: 50%; display: grid; place-items: center; color: var(--accent-ink);
-  background: radial-gradient(closest-side, rgba(0, 0, 0, .35), transparent); transition: background .2s, transform .28s cubic-bezier(.2, .9, .3, 1); }
-.kpm-actor:hover .kpm-actor-card, .kpm-actor:focus-visible .kpm-actor-card { transform: translateY(-10px) scale(1.05) rotateY(0deg) rotateX(0deg); border-color: var(--accent-edge); }
-.kpm-actor:hover .kpm-actor-floor, .kpm-actor:focus-visible .kpm-actor-floor { background: radial-gradient(closest-side, rgba(208, 138, 46, .45), transparent); }
-.kpm-actor:hover .kpm-actor-name, .kpm-actor:focus-visible .kpm-actor-name, .kpm-actor.on .kpm-actor-name { color: var(--ink); }
-.kpm-actor.on .kpm-actor-card { transform: translateY(-6px) scale(1.05) rotateY(0deg) rotateX(0deg); border-color: var(--accent-edge); outline: 2px solid var(--accent-edge); outline-offset: 3px; }
-.kpm-actor.on .kpm-actor-floor { background: radial-gradient(closest-side, rgba(208, 138, 46, .75), rgba(208, 138, 46, .18) 70%, transparent); }
-/* FAR AND NEAR (round 4, his State of Decay 2 screenshot): while one card is pointed at or picked, every other card
-   stands a little further back - smaller, dimmer, higher up the floor, its floor light going with it - and the one
-   looked at steps forward. Nothing moves until a pointer, a key or a pick asks it to. */
-.kpm-stage:has(.kpm-actor.on, .kpm-actor:hover, .kpm-actor:focus-visible) .kpm-actor:not(.on, :hover, :focus-visible) .kpm-actor-card { transform: translateY(-14px) scale(.9) rotateY(-14deg) rotateX(4deg); }
-.kpm-stage:has(.kpm-actor.on, .kpm-actor:hover, .kpm-actor:focus-visible) .kpm-actor:not(.on, :hover, :focus-visible) .kpm-actor-floor { transform: translateY(-14px) scale(.85); }
-/* Lite Mode keeps every card whole: the far ones only stand back, they never dim (the dimming is gated out of it,
-   not overridden - the far-card selector outranks any plain Lite Mode rule), and nothing glides */
-:root:not(.lite-mode) .kpm-stage:has(.kpm-actor.on, .kpm-actor:hover, .kpm-actor:focus-visible) .kpm-actor:not(.on, :hover, :focus-visible) .kpm-actor-card { opacity: .72; }
-.lite-mode .kpm-actor-card, .lite-mode .kpm-actor-floor { transition: none; }
-/* round 4: the bar took over the big deployment header (his "take a big space even when not use") - place + name
-   left, permission chips middle, INITIAL / SOLD / CURRENT + the keys right; two lines on the phone, one on the PC */
-.kpm-stage-bar { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "who" "chips" "counts" "acts"; align-items: center; gap: 8px 12px;
-  padding: 10px 14px; border: 1px solid var(--accent-edge); border-top-width: 2px; border-radius: 0 0 14px 14px; color: var(--ink);
-  background: linear-gradient(90deg, rgba(208, 138, 46, .30), rgba(208, 138, 46, .05) 30%, rgba(208, 138, 46, .05) 70%, rgba(208, 138, 46, .30)),
-              linear-gradient(180deg, var(--raised), var(--inset)); }
-/* a picked person lights the bar once: one sweep of light across it, then it rests */
-.kpm-stage-bar::after { content: ""; position: absolute; top: 0; bottom: 0; left: -45%; width: 45%; pointer-events: none; opacity: 0;
-  background: linear-gradient(100deg, transparent, rgba(245, 208, 138, .22), transparent); }
-.kpm-stage-bar.lit::after { animation: kpmStageSheen 900ms cubic-bezier(.3, .7, .3, 1) 1 both; }
-@keyframes kpmStageSheen { from { opacity: 1; transform: translateX(0); } to { opacity: 1; transform: translateX(330%); } }
-.kpm-stage-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 900 16px/1.1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent-ink); }
-.kpm-stage-bar:not(.lit) { grid-template-areas: "who acts"; }
-.kpm-stage-who { grid-area: who; min-width: 0; display: grid; gap: 3px; }
-.kpm-stage-person { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 900; font-size: 15px; line-height: 1.15; color: var(--ink); }
-.kpm-stage-chips { grid-area: chips; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; color: var(--accent-ink); }
-.kpm-stage-chips small { margin-right: 2px; font: 700 10px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); }
-.kpm-stage-chips span { padding: 2px 6px; border: 1px solid var(--accent-edge); border-radius: 4px; background: var(--inset); color: var(--accent-ink);
-  font: 900 10px/1.3 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
-.kpm-stage-chips i { font-style: normal; color: var(--ink-muted); }
-.kpm-stage-counts { grid-area: counts; justify-self: start; display: flex; gap: 6px; }
-.kpm-stage-counts span { min-width: 58px; display: grid; justify-items: center; gap: 2px; padding: 4px 8px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--inset); }
-.kpm-stage-counts span + span { border-color: var(--accent-edge); }
-.kpm-stage-counts small { font: 700 9px/1 var(--font-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); }
-.kpm-stage-counts b { font: 900 15px/1.1 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
-.kpm-stage-counts span + span small, .kpm-stage-counts span + span b { color: var(--accent-ink); }
-.kpm-stage-acts { grid-area: acts; justify-self: start; }
-@media (min-width: 1024px) {
-  .kpm-stage-bar { grid-template-columns: auto minmax(0, 1fr) auto auto; grid-template-areas: "who chips counts acts"; gap: 10px 18px; }
-  .kpm-stage-counts, .kpm-stage-acts { justify-self: end; }
+/* ── THE ROSTER LEDGER + THE PERSON PANEL (FleetCanvasManager.jsx rosterRow, components/LoadSheet.jsx) ──────────
+   His 2026-11-15 pick: "Team list A Ledger table · Loading 1 Load sheet · PC Y Slide-over panel", then "make sure the
+   animation is smooth and elegant and not flickering". Ruled lines, tabular numbers, the day's numbers in one strip.
+   MOTION: the panel slides in ONCE per opening - transform and opacity only; a pressed number ticks (LoadSheet, in
+   script); nothing loops. Lite Mode and reduced motion stand still. The 3D stage this replaced lives in tag
+   game-edition-v1. */
+.kpm-fleet-strip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: hidden; }
+.kpm-fleet-strip > div { padding: 8px 16px; min-width: 0; margin-right: -1px; border-top: 1px solid var(--line-2); border-right: 1px solid var(--line-2); }
+.kpm-fleet-strip small { display: block; font-size: 11px; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpm-fleet-strip b { font-size: 17px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.kpm-fleet-layer { position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.kpm-fleet-list { min-width: 0; }
+.kpm-fleet-chip { min-height: 36px; padding: 6px 12px; border: 1px solid var(--line-2); border-radius: 999px; font-size: 12.5px; color: var(--ink-muted); }
+.kpm-fleet-chip.on { border-color: var(--accent-edge); color: var(--ink); font-weight: 600; }
+.kpm-fleet-chip small { margin-left: 2px; font-variant-numeric: tabular-nums; }
+.kpm-fleet-grp { padding: 12px 16px 6px; border-bottom: 1px solid var(--line-2); font-size: 11px; font-weight: 600; letter-spacing: .05em; color: var(--ink-muted); }
+.kpm-fleet-head { display: none; }
+.kpm-fleet-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 12px; padding: 10px 16px 10px 13px; border-bottom: 1px solid var(--line-2); border-left: 3px solid transparent; cursor: pointer; outline: none; }
+.kpm-fleet-row > .c { display: none; }
+.kpm-fleet-row .who { min-width: 0; }
+.kpm-fleet-row .who b { display: block; font-size: 14px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpm-fleet-row .who small, .kpm-fleet-row .ph small { display: block; font-size: 12px; color: var(--ink-muted); }
+.kpm-fleet-row .ph { text-align: right; font-variant-numeric: tabular-nums; }
+.kpm-fleet-row .ph b { font-size: 17px; font-weight: 700; color: var(--ink); }
+.kpm-fleet-row .num, .kpm-fleet-head .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kpm-fleet-row.on, .kpm-fleet-row:focus-visible { background: var(--raised); border-left-color: var(--accent-edge); }
+@media (hover: hover) { .kpm-fleet-row:hover { background: var(--raised); } }
+.kpm-fleet-st { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink); white-space: nowrap; }
+.kpm-fleet-st::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-edge); }
+.kpm-fleet-st.off { color: var(--ink-muted); }
+.kpm-fleet-st.off::before { background: var(--ink-dim); }
+.kpm-fleet-tag { display: inline-block; margin-right: 6px; padding: 1px 6px; border: 1px solid var(--accent-edge); border-radius: 4px; font-style: normal; font-size: 11px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+.kpm-fleet-tag.no { border-color: var(--danger); color: var(--danger-ink); }
+.kpm-fleet-meter { display: block; width: 72px; height: 4px; margin: 4px 0 0 auto; border-radius: 2px; background: var(--line-2); overflow: hidden; }
+.kpm-fleet-meter i { display: block; height: 100%; background: var(--accent-edge); }
+.kpm-fleet-panel { display: flex; flex-direction: column; min-width: 0; background: var(--panel); }
+/* only the sheet's body gives way when the window is short - the head, the keys, the tabs and the Load key keep their height */
+.kpm-fleet-panel > :not(.kpm-fleet-body) { flex: none; }
+.kpm-fleet-kpis { display: flex; justify-content: space-between; gap: 20px; width: 100%; font-variant-numeric: tabular-nums; }
+.kpm-fleet-kpis small { display: block; font-size: 11px; color: var(--ink-muted); white-space: nowrap; }
+.kpm-fleet-kpis b { font-size: 16px; font-weight: 700; color: var(--ink); }
+.kpm-fleet-acts { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 16px; border-bottom: 1px solid var(--line-2); }
+.kpm-fleet-acts button { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 10px; border: 1px solid var(--line-2); border-radius: 6px; background: var(--raised); font-size: 12px; font-weight: 600; color: var(--ink); }
+.kpm-fleet-acts button:hover { border-color: var(--accent-edge); }
+.kpm-fleet-tabs { display: flex; gap: 2px; padding: 0 12px; border-bottom: 1px solid var(--line-2); overflow-x: auto; scrollbar-width: none; }
+.kpm-fleet-tabs::-webkit-scrollbar { display: none; }
+.kpm-fleet-tabs button { flex: none; min-height: 44px; padding: 9px 10px; border-bottom: 2px solid transparent; font-size: 13px; color: var(--ink-muted); white-space: nowrap; }
+.kpm-fleet-tabs button.on { border-bottom-color: var(--accent-edge); font-weight: 600; color: var(--ink); }
+.kpm-fleet-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; padding: 9px 16px; border-bottom: 1px solid var(--line-2); }
+.kpm-fleet-line > .c { display: none; }
+.kpm-fleet-line .n { min-width: 0; }
+.kpm-fleet-line .n b { display: block; font-size: 14px; font-weight: 600; color: var(--ink); }
+.kpm-fleet-line small { display: block; font-size: 12px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.kpm-fleet-line small em { font-style: normal; font-weight: 600; color: var(--ink); }
+.kpm-fleet-line small.why { color: var(--danger-ink); }
+.kpm-fleet-line .s { display: inline-flex; align-items: center; gap: 4px; justify-self: end; }
+.kpm-fleet-line .ph { grid-column: 1 / -1; }
+.kpm-fleet-line.on input { border-color: var(--accent-edge); }
+.kpm-fleet-line input { -moz-appearance: textfield; appearance: textfield; }
+.kpm-fleet-line input::-webkit-outer-spin-button, .kpm-fleet-line input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.kpm-fleet-linehead { display: none; }
+.kpm-fleet-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px; border-top: 1px solid var(--line-2); background: var(--raised); }
+.kpm-fleet-foot .sum { min-width: 0; font-size: 13px; color: var(--ink-muted); }
+.kpm-fleet-foot .sum b { color: var(--ink); font-variant-numeric: tabular-nums; }
+@media (max-width: 1023px) {
+  /* the phone: a person is their own page - the roster and the day strip step aside, and the Load key stays in view
+     (fixed: the shell scrolls the screen under its header) with the sheet padded by its height */
+  .kpm-fleet-top.open, .kpm-fleet-layer.open .kpm-fleet-list { display: none; }
+  .kpm-fleet-foot { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+  .kpm-fleet-foot .after { display: none; }
+  .kpm-fleet-body { padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
 }
-.kpm-stage-acts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-.kpm-stage-acts > button:not([data-kpm-del]) { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 12px; cursor: pointer;
-  border: 1px solid var(--accent-edge); border-radius: 8px; background: rgba(208, 138, 46, .08); color: var(--accent-ink);
-  font: 900 11px/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
-.kpm-stage-acts > button:not([data-kpm-del]):hover { background: var(--gold); color: var(--gold-ink); }
-/* on the PC the columns share the stage evenly, however many stand on it (seven a page at most), still touching */
-@media (min-width: 1024px) { .kpm-stage .kpm-actor { flex: 1 1 188px; } }
-.kpm-stage-pages { display: flex; justify-content: flex-end; gap: 6px; margin: -4px 0 8px; }
-.kpm-stage-page { min-width: 40px; min-height: 36px; padding: 0 12px; cursor: pointer; border: 1px solid var(--line-2); border-radius: 8px;
-  background: var(--inset); color: var(--ink-muted); font: 900 12px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
-.kpm-stage-page:hover { border-color: var(--accent-edge); }
-.kpm-stage-page.on { border-color: var(--accent-edge); color: var(--accent-ink); background: var(--raised); }
-@media (prefers-reduced-motion: reduce) { .kpm-actor-card, .kpm-actor-floor { transition: none; } .kpm-stage-bar.lit::after { animation: none; } }
-/* ── END OF THE ROSTER STAGE ──────────────────────────────────────────────────────────────────────────── */
+@media (min-width: 1024px) {
+  .kpm-fleet-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  /* one row on the PC: the title, the day's four numbers, the keys - the ledger and the panel get the height back */
+  .kpm-fleet-top { display: flex; align-items: stretch; }
+  .kpm-fleet-top > .bar { display: contents; }
+  .kpm-fleet-top .ttl { order: 1; flex: none; align-self: center; max-width: 300px; padding: 10px 20px 10px 16px; }
+  .kpm-fleet-top .kpm-fleet-strip { order: 2; flex: 1 1 auto; border-right: 1px solid var(--line-2); }
+  .kpm-fleet-top .kpm-fleet-strip > div { margin-right: 0; border-top: 0; border-right: 0; border-left: 1px solid var(--line-2); }
+  .kpm-fleet-top .keys { order: 3; align-self: center; padding: 10px 16px; }
+  .kpm-fleet-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  .kpm-fleet-head, .kpm-fleet-row { grid-template-columns: minmax(0, 1fr) 160px 96px 110px 110px; }
+  .kpm-fleet-head { display: grid; gap: 2px 12px; position: sticky; top: 0; z-index: 1; padding: 8px 16px; border-bottom: 1px solid var(--line-2); background: var(--panel); font-size: 11px; font-weight: 600; color: var(--ink-muted); }
+  .kpm-fleet-row > .c { display: block; }
+  .kpm-fleet-row > .ph { display: none; }
+  .kpm-fleet-panel { position: absolute; top: 0; right: 0; bottom: 0; z-index: 20; width: min(640px, 100%); border-left: 1px solid var(--line-2); box-shadow: -18px 0 40px rgba(0, 0, 0, .35); animation: kpmFleetSlide 260ms cubic-bezier(.22, 1, .36, 1); }
+  .kpm-fleet-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  .kpm-fleet-tabs button { min-height: 0; }
+  .kpm-fleet-kpis { width: auto; justify-content: flex-end; text-align: right; }
+  .kpm-fleet-acts { padding: 6px 16px; }
+  .kpm-fleet-acts button { min-height: 30px; padding: 4px 10px; }
+  .kpm-fleet-line { grid-template-columns: minmax(0, 1fr) 76px 60px 84px 132px; }
+  .kpm-fleet-line > .c { display: block; text-align: right; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+  .kpm-fleet-line > .ph { display: none; }
+  .kpm-fleet-linehead { display: grid; position: sticky; top: 0; z-index: 1; padding-top: 7px; padding-bottom: 7px; background: var(--panel); }
+  .kpm-fleet-linehead > span { font-size: 11px; font-weight: 600; color: var(--ink-muted); }
+}
+/* the ONE entrance: 24 px and a fade, 260 ms, once per opening (the panel is keyed by the person, never by a press) */
+@keyframes kpmFleetSlide { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+.lite-mode .kpm-fleet-panel { animation: none; box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .kpm-fleet-panel { animation: none; } }
+/* ── END OF THE ROSTER LEDGER ─────────────────────────────────────────────────────────────────────────── */
 
 /* ── THE MASTER VAULT'S 3D CARD SPIN (2026-10-01, potato phone) ───────────────────────────────────────────── */
 /* The idle spin used to be React state +0.3deg every frame (ResidentEvilInventory.jsx). This inner layer turns the
@@ -6010,7 +6003,7 @@ html.kpm-demo-on { --kpm-safe-top: calc(env(safe-area-inset-top, 0px) + 37px); }
 .kpm-demo-bar .inv button:disabled { opacity: .4; cursor: default; }
 @media (hover: hover) and (pointer: fine) { .kpm-demo-bar .row:hover:not(:disabled) { background: var(--raised); } }
 /* Fleet & Roster on a demo login: the four buttons that would break a shared login look switched off; a press still answers (FleetCanvasManager.jsx isDemoLogin) */
-.kpm-stage-acts button.demo-locked { opacity: .45; }
+.kpm-fleet-acts button.demo-locked { opacity: .45; }
 
 /* THE MISSION LINE (DemoMission.jsx, his pick B 2026-10-24): one more 34 px line under the bar, so the shell moves down
    by that much too. z 96 = over the hint's dim panels (z 95), so the line and its PETUNJUK key stay readable. */

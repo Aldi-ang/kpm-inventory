@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
-    Truck, UserPlus, Save, Archive,
-    MapPin, Activity, X, AlertCircle, ShoppingCart, User, Mail, Pencil, Trash2, 
-    ShieldCheck, ChevronDown, ChevronUp, Crown, FileText, Printer, MessageSquare, Globe, Search, Plus, RotateCcw, KeyRound, Lock, Unlock, Gift
+    Truck, UserPlus, Save,
+    MapPin, Activity, X, AlertCircle, User, Mail, Pencil, Trash2, 
+    ShieldCheck, FileText, Printer, MessageSquare, Search, Plus, RotateCcw, KeyRound, Lock, Unlock, Gift
 } from 'lucide-react';
 import { collection, doc, getDoc, setDoc, deleteDoc, updateDoc, writeBatch, runTransaction, onSnapshot, serverTimestamp, query, where } from 'firebase/firestore';
 import { seatDocId, freeSeats, seatsUsedText, seatsFullMsg } from './utils/seats.js';
@@ -15,9 +15,9 @@ import { canonicalPlace, vanUsesBranch, moveWithGoodsMessage, vanGoodsLines } fr
 import { confirmAction, promptAction } from './components/ConfirmGate.jsx';
 import { notify } from './components/Toast.jsx';
 import { IS_DEMO } from './config/firebase';
-import LoadingBay from './components/LoadingBay.jsx';
+import LoadSheet from './components/LoadSheet.jsx';
 import PromoBundleFields from './components/PromoBundleFields.jsx';
-import { damagedInVan, titipOf, quarantineOf, movePromo } from './utils/vanBay';
+import { damagedInVan, titipOf, quarantineOf, movePromo, soldBks, lastDaySold } from './utils/vanBay';
 
 /* IN FRONT OF HIM (his 2026-10-27 "when i press detail and edit i want the panel to just shows up infront of myface and
    blur other rather than i need to go up and see the updaten as well as the offer button"): DETAILS, EDIT, + and OFFERS
@@ -249,14 +249,24 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     const existingProvinces = useMemo(() => [...new Set(activeMotorists.map(a => a.province ? a.province.trim().toUpperCase() : 'CENTRAL JAVA'))].sort(), [activeMotorists]);
     const existingLocations = useMemo(() => [...new Set(activeMotorists.map(a => a.location ? a.location.trim().toUpperCase() : 'UNASSIGNED AREA'))].sort(), [activeMotorists]);
 
-    /* how many lines the van-loading bay's muatan holds, so switching the salesman can ask first */
+    /* how many unsaved lines the load sheet holds, so opening another person or closing the panel can ask first */
     const [bayLines, setBayLines] = useState(0);
-    /* the area tab that is open on the roster stage ("PROVINCE › LOCATION"), when more than one place is in view */
+    /* the area chip that is open on the roster ("PROVINCE › LOCATION"), when more than one place is in view */
     const [rosterPlace, setRosterPlace] = useState(null);
-    /* the stage shows seven cards a page on the PC (his "it looks great that way"); more people get pages 1 2 3 */
-    const [rosterPage, setRosterPage] = useState(0);
+    /* PC: the screen is exactly as tall as the shell's scroll box (MerchantSalesView's fitH, the same measurement), so the
+       ledger scrolls inside itself and the slide-over panel's Load key is always in view. Measured, not guessed: the
+       box's height depends on the header, the demo bar and the window. */
+    const rootRef = useRef(null);
+    const [fitH, setFitH] = useState(null);
+    useEffect(() => {
+        const box = rootRef.current?.parentElement?.closest('.overflow-y-auto');
+        if (!box || typeof ResizeObserver === 'undefined') return undefined;
+        const fit = () => { const cs = getComputedStyle(box); setFitH(Math.round(box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom))); };
+        fit();
+        const ro = new ResizeObserver(fit); ro.observe(box);
+        return () => ro.disconnect();
+    }, [isFetchingFleet]);
 
-    const [showHistory, setShowHistory] = useState(false);
     const [viewingReceipt, setViewingReceipt] = useState(null);
     const [viewingSuratJalan, setViewingSuratJalan] = useState(false); 
 
@@ -813,20 +823,8 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         }
     };
 
-    /* The van's LAYOUT - which square holds which product, holes included - is its own field, written
-       on the bay's drop. Never inside activeCanvas, which both transactions and every sale write. */
-    const handleSaveLayout = async (cells) => {
-        if (!canEditFleet || !selectedAgent) return false;
-        try {
-            await updateDoc(doc(db, collPath, selectedAgent.id), { vanLayout: cells });
-            return true;
-        } catch (e) {
-            console.error(e);
-            return false;
-        }
-    };
-    /* HIS USUAL LOAD (round 4) - its own field too, written the same way: the bay's "Simpan sebagai muatan biasa".
-       Using it only fills the muatan (vanBay applyPreset); only MUAT VAN moves stock. */
+    /* HIS USUAL LOAD (round 4) - its own field on the person's record, never inside activeCanvas (both transactions and
+       every sale write that one): the sheet's "Save as usual load". Using it only fills the sheet; only Load van moves stock. */
     const handleSavePreset = async (preset) => {
         if (!canEditFleet || !selectedAgent) return false;
         try {
@@ -838,67 +836,66 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
         }
     };
 
-    /* ── THE ROSTER STAGE (2026-09-24) ─────────────────────────────────────────────────────────────────────
-       His State of Decay 2 community screen: the people stand side by side on a stage, a name over each, the one
-       under the pointer lifts and its floor lights, the picked one wears the gold ring, the leader stands on a
-       crown, and a gold bar along the bottom names the place and carries the actions. "3D character, if its too
-       heavy then just 3D cards" - a 3D engine and character models on a cheap Android is too heavy, so each
-       person is a 3D profile card. The search, grouping, rank order, guards and doors are the ones the list had.
-       Each card says what the van holds (packs and items, with a light) - his 2026-09-22 "better UI" was about
-       information. */
+    /* ── THE ROSTER LEDGER (2026-11-16) ────────────────────────────────────────────────────────────────────
+       His pick from the options board: "Team list A Ledger table · Loading 1 Load sheet · PC Y Slide-over panel". One
+       ruled line per person: Status, Loaded, Sold today (with a thin bar), Left in van; on the phone one line with what
+       is left, big. The search, the area grouping, the guards and the doors are the ones the stage had; the 3D stage
+       itself (2026-09-24) lives on in tag game-edition-v1. */
     const loadOf = (m) => (m.activeCanvas || []).reduce((sum, r) => sum + convertToBks(r.qty, r.unit, inventory.find(p => p.id === r.productId)), 0);
-    /* one place key for the stage's area tabs AND the warehouse chest's TEAM tab (the other vans in this place) */
+    /* one place key for the roster's area chips AND the sheet's "Copy a teammate" (the other vans in this place) */
     const placeOf = (a) => {
         const prov = String(a.province || 'CENTRAL JAVA').trim().toUpperCase();
         const loc = String(a.location || 'UNASSIGNED AREA').trim().toUpperCase();
         return { prov, loc, k: `${prov} › ${loc}` };
     };
-    /* ONE matcher for "this person's override requests": the bypass ledger, the activity log and the van chest's
-       GEOFENCE tab all use it, so the three can never disagree about whose request it is */
+    /* ONE matcher for "this person's override requests": the Requests tab and the Activity tab both use it, so the
+       two can never disagree about whose request it is */
     const isAgentBypass = (b, a) => {
         const prefix = (a.email || '').split('@')[0].toLowerCase();
         return b.salesmanId === a.id || (b.salesmanName || '').toLowerCase() === (a.name || '').toLowerCase() || (b.salesmanName || '').toLowerCase() === prefix;
     };
-    /* THE ROSTER SLIDES FREELY (2026-10-01, his "im expecting the fleet and roster user card slider to be unlocked and not
-       one by one just to make it fluid"). The one-person-per-swipe handlers (2026-09-26 / 2026-09-30) are gone: the phone
-       scrolls the stage itself, with its own momentum, and the CSS snap still lands a person in the middle. */
-    /* switching the salesman while the bay's muatan has lines asks first, through the dialog gate */
+    /* opening another person, or closing the panel, while the sheet holds unsaved numbers asks first, through the dialog gate */
     const pickAgent = async (m) => {
-        if (bayLines > 0 && selectedAgent?.id !== m.id && !await confirmAction(`Muatan ${selectedAgent?.name} belum dimuat. Pindah ke ${m.name} dan buang muatan itu?`)) return;
+        if (bayLines > 0 && selectedAgent?.id !== m.id && !await confirmAction(`${selectedAgent?.name}'s sheet has numbers that are not saved yet. Open ${m.name} and drop them?`)) return;
         setSelectedAgent(m);
-        setShowHistory(false);
     };
-    const stageCard = (m) => {
-        const bks = Math.round(loadOf(m));
-        /* the van's promo goods (their own field, pcs) count as items and light the card - a van of T-shirts is not empty */
+    const closePanel = async () => {
+        if (bayLines > 0 && !await confirmAction(`${selectedAgent?.name}'s sheet has numbers that are not saved yet. Close it and drop them?`)) return;
+        setSelectedAgent(null);
+    };
+    /* the three tiers that lead a team stand on top of the ledger - FLEET_CAPTAIN included (the stage forgot that tier) */
+    const isLeader = (m) => ['ADMIN', 'AREA_ADMIN', 'FLEET_CAPTAIN'].includes(m.userRole);
+    /* HIS WORD FOR THE TIER, not the code's. `tierWord` reads the labels he set in Settings, so a rename shows up here
+       without anyone editing this line. */
+    const roleLine = (m) => (m.userRole === 'ADMIN' ? 'Master Admin (Global)'
+        : (m.userRole === 'AREA_ADMIN' || m.userRole === 'FLEET_CAPTAIN') ? `${tierWord(m.userRole) || (m.userRole === 'AREA_ADMIN' ? 'HQ Sales Manager' : 'Regional Admin')} (${m.location})`
+        : `${m.role || ''}${m.vehicle ? ` · ${m.vehicle}` : ''}`);
+    const sumOf = (o) => Object.values(o || {}).reduce((a, b) => a + b, 0);
+    const rosterRow = (m) => {
+        const left = Math.round(loadOf(m));
+        /* the van's promo goods (their own field, pcs) ride beside the packs - a van of T-shirts is not empty, and a
+           piece is never added into the Bks */
         const pcs = (m.promoCanvas || []).reduce((s, r) => s + (Number(r.qty) || 0), 0);
-        const items = (m.activeCanvas || []).filter(r => Number(r.qty) > 0).length + (m.promoCanvas || []).filter(r => Number(r.qty) > 0).length;
-        const on = selectedAgent?.id === m.id;
-        const leader = m.userRole === 'ADMIN' || m.userRole === 'AREA_ADMIN';
-        const Icon = m.userRole === 'ADMIN' ? ShieldCheck : m.userRole === 'AREA_ADMIN' ? Globe : m.role === 'Canvas' ? Truck : Activity;
-        const initials = nameInitials(m.name);
+        const sold = Math.round(sumOf(soldByAgent[m.id])), loaded = left + sold, pct = loaded ? Math.round(100 * sold / loaded) : 0;
+        const on = selectedAgent?.id === m.id, lead = isLeader(m), has = loaded > 0 || pcs > 0;
+        const state = sold > 0 ? 'On route' : has ? 'Loaded' : 'Not loaded';
+        const num = (v) => (has ? v.toLocaleString('id-ID') : '—');
         return (
             <div key={m.id} data-agent={m.id} role="option" aria-selected={on} tabIndex={0} onClick={() => pickAgent(m)}
                 onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); pickAgent(m); } }}
-                className={`kpm-actor${on ? ' on' : ''}${leader ? ' leader' : ''}`}>
-                <span className="kpm-actor-name">{m.name}</span>
-                <span className="kpm-actor-card">
-                    <span className="band" aria-hidden="true" />
-                    <span className="avatar">{initials}<Icon size={14} className="role" /></span>
-                    <span className="who">{m.name}</span>
-                    <span className="tier">
-                        {/* HIS WORD FOR THE TIER, not the code's. `tierWord` reads the labels he set in Settings, so a
-                            rename shows up here without anyone editing this line. */}
-                        {m.userRole === 'ADMIN' ? 'Master Admin (Global)' : (m.userRole === 'AREA_ADMIN' || m.userRole === 'FLEET_CAPTAIN') ? `${tierWord(m.userRole) || (m.userRole === 'AREA_ADMIN' ? 'HQ Sales Manager' : 'Regional Admin')} (${m.location})` : `${m.role || ''}${m.vehicle ? ` • ${m.vehicle}` : ''}`}
-                    </span>
-                    <span className="load"><i className={bks > 0 || pcs > 0 ? 'on' : ''} aria-hidden="true" />{bks > 0 || pcs > 0 ? `${bks.toLocaleString('id-ID')} Bks${pcs > 0 ? ` + ${pcs.toLocaleString('id-ID')} pcs` : ''} · ${items} ${items === 1 ? 'item' : 'items'}` : 'Van empty'}</span>
-                    <span className={`kpm-read ${bks > 0 ? 'on' : ''}`}>{bks > 0 ? 'Loaded' : 'Empty'}</span>
+                className={`kpm-fleet-row${on ? ' on' : ''}`}>
+                <span className="who">
+                    <b>{m.name}</b>
+                    <small>{(!lead || has) && <span className="lg:hidden">{state} · </span>}{roleLine(m)}{pcs > 0 ? ` · + ${pcs.toLocaleString('id-ID')} pcs promo` : ''}</small>
                 </span>
-                <span className="kpm-actor-floor" aria-hidden="true">{leader && <Crown size={14} />}</span>
+                <span className="c">{lead && <i className="kpm-fleet-tag">Leader</i>}{(!lead || has) && <span className={`kpm-fleet-st${has ? '' : ' off'}`}>{state}</span>}</span>
+                <span className="c num">{num(loaded)}</span>
+                <span className="c num">{num(sold)}{loaded > 0 && <span className="kpm-fleet-meter" aria-hidden="true"><i style={{ width: `${pct}%` }} /></span>}</span>
+                <span className="c num">{num(left)}</span>
+                <span className="ph">{loaded > 0 ? <><b>{left.toLocaleString('id-ID')}</b><small>sold {sold.toLocaleString('id-ID')} · {pct}%</small></> : lead ? <i className="kpm-fleet-tag">Leader</i> : <small>van empty</small>}</span>
             </div>
         );
     };
-
     const handleWhatsAppShare = () => {
         if (!viewingReceipt) return;
         const isReturReceipt = viewingReceipt.type === 'RETUR' || viewingReceipt.paymentType === 'Retur/BS';
@@ -925,50 +922,39 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
     // 🚀 FORENSIC UPDATE: Ensure we grab BOTH sales AND return logs for the agent today
     const agentSales = transactions.filter(t => t.agentId === selectedAgent?.id && t.date === todayStr && ['SALE', 'RETUR'].includes(t.type || 'SALE'));
     
-    const combinedItems = useMemo(() => {
-        if (!selectedAgent) return [];
-        const map = {};
-        
-        (selectedAgent.activeCanvas || []).forEach(item => {
-            const p = inventory.find(x => x.id === item.productId);
-            map[item.productId] = {
-                productId: item.productId, name: item.name, currentBks: convertToBks(item.qty, item.unit, p),
-                soldBks: 0, unit: item.unit, currentRaw: item.qty 
-            };
-        });
-        
-        agentSales.forEach(t => {
-            (t.items || []).forEach(item => {
-                // 🚀 MATH ENGINE FIX: Don't deduct from car if it was a Buyback or Pending IOU
-                if (t.type === 'RETUR' && t.paymentType !== 'Tukar Ganti') return;
-                if (t.paymentType === 'Tukar Ganti' && item.fulfillment === 'IOU') return;
-
-                const p = inventory.find(x => x.id === item.productId);
-                const bks = convertToBks(item.qty, item.unit, p);
-                if (!map[item.productId]) {
-                    map[item.productId] = { productId: item.productId, name: item.name, currentBks: 0, soldBks: 0, unit: 'Bks', currentRaw: 0 };
-                }
-                map[item.productId].soldBks += bks;
-            });
-        });
-        
-        return Object.values(map).map(i => ({ ...i, initialBks: i.currentBks + i.soldBks }));
-    }, [selectedAgent, inventory, agentSales]);
+    /* SOLD TODAY, per person and per product, for the whole roster in one pass (vanBay soldBks: a pure buyback and an
+       exchange line promised for later never left the van). The ledger's Sold column, the day strip and the picked
+       person's sheet all read this one map, so the three can never disagree. */
+    const soldByAgent = useMemo(() => {
+        const by = {};
+        for (const t of transactions) if (t.date === todayStr && ['SALE', 'RETUR'].includes(t.type || 'SALE')) (by[t.agentId] = by[t.agentId] || []).push(t);
+        return Object.fromEntries(Object.entries(by).map(([id, list]) => [id, soldBks(list, inventory)]));
+    }, [transactions, todayStr, inventory]);
+    /* the picked person's last working day before today - what the sheet's Fill suggested reads */
+    const lastDay = useMemo(() => lastDaySold(transactions, selectedAgent?.id, todayStr, inventory), [transactions, selectedAgent?.id, todayStr, inventory]);
+    /* THE DAY, SAID ONCE: four numbers for the whole roster in view, in one strip under the title */
+    const crewAll = agents.filter(m => !isLeader(m));
+    const dayStrip = [
+        ['Vans loaded', `${crewAll.filter(m => loadOf(m) > 0 || sumOf(soldByAgent[m.id]) > 0).length} of ${crewAll.length}`],
+        ['In the vans now', `${Math.round(agents.reduce((sum, m) => sum + loadOf(m), 0)).toLocaleString('id-ID')} Bks`],
+        ['Sold today', `${Math.round(agents.reduce((sum, m) => sum + sumOf(soldByAgent[m.id]), 0)).toLocaleString('id-ID')} Bks`],
+        ['Override requests', allBypasses.filter(b => b.status === 'PENDING').length],
+    ];
 
     if (isFetchingFleet) {
         return (
             <div className="h-full w-full flex items-center justify-center bg-[var(--panel)] rounded-2xl border border-[var(--line-2)]">
-                <div className="text-center animate-pulse">
-                    <Activity size={48} className="text-blue-500 mx-auto mb-4" />
-                    <h2 className="text-xl font-bold text-white uppercase tracking-widest">Establishing Regional Uplink</h2>
-                    <p className="text-slate-400 mt-2 text-xs">Fetching Branch Roster Data...</p>
+                <div className="text-center">
+                    <Activity size={48} className="text-[var(--accent-ink)] mx-auto mb-4" />
+                    <h2 className="text-lg font-bold text-[var(--ink)]">Loading the roster</h2>
+                    <p className="text-[var(--ink-muted)] mt-2 text-xs">Reading your branch's team…</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="print-reset h-full w-full bg-[var(--panel)] rounded-2xl border border-[var(--line-2)] overflow-y-auto custom-scrollbar flex flex-col text-[var(--ink)] font-sans relative">
+        <div ref={rootRef} style={fitH ? { '--fleet-h': `${fitH}px` } : undefined} className="print-reset kpm-fleet h-full lg:h-[var(--fleet-h,100%)] w-full bg-[var(--panel)] rounded-2xl border border-[var(--line-2)] overflow-y-auto lg:overflow-hidden custom-scrollbar flex flex-col text-[var(--ink)] font-sans relative">
             
             {/* 🚀 UPGRADED FORENSIC RECEIPT MODAL 🚀 */}
             {viewingReceipt && (() => {
@@ -1131,24 +1117,23 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                 </div>
             )}
 
-            {/* LEFT PANEL: FLEET ROSTER — since 2026-09-24 the full-width stage on top */}
-            <div className="hide-on-print w-full bg-[var(--panel)] border-b border-[var(--line-2)] flex flex-col shrink-0">
-                <div className="p-4 border-b border-[var(--line-2)] flex justify-between items-center gap-3 bg-[var(--raised)]">
-                    <div className="min-w-0">
-                        <h2 className="text-base font-black text-[var(--ink)] flex items-center gap-2 uppercase tracking-wider truncate">
-                            <Truck size={18} className="text-[var(--accent-ink)] shrink-0"/>
-                            {isAreaAdmin ? `${branchPathLocation} Roster` : 'Fleet Roster'}
-                        </h2>
-                        <p className="text-[10px] font-mono text-[var(--ink-muted)] uppercase tracking-widest mt-1">
-                            Active Personnel: {agents.length} · {agents.filter(m => loadOf(m) > 0).length} vans loaded
-                        </p>
+            {/* THE ROSTER LEDGER (2026-11-16) - his pick "Team list A Ledger table · Loading 1 Load sheet · PC Y Slide-over
+                panel": one ruled line per person, the day's four numbers said ONCE in a strip, leaders on top. The game
+                stage (3D cards, gold bar) lives on in tag game-edition-v1. */}
+            <div className={`hide-on-print kpm-fleet-top shrink-0 bg-[var(--raised)] border-b border-[var(--line-2)]${selectedAgent ? ' open' : ''}`}>
+                {/* phone: the title and its keys on one line, the four numbers under it; PC: one row - title, numbers, keys
+                    (theme.css .kpm-fleet-top), so the ledger and the panel keep the height */}
+                <div className="bar px-4 py-3 flex justify-between items-center gap-3">
+                    <div className="ttl min-w-0">
+                        <h2 className="text-base font-bold text-[var(--ink)] truncate">{isAreaAdmin ? `${branchPathLocation} Roster` : 'Fleet & Roster'}</h2>
+                        <p className="text-xs text-[var(--ink-muted)] mt-0.5">{agents.length} {agents.length === 1 ? 'person' : 'people'} · {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'short' })}</p>
                         {licensed && canEditFleet && (
                             <p data-guide="seats" className={`text-[10px] font-mono uppercase tracking-widest mt-0.5 ${seatsFull ? 'text-[var(--accent-ink)] font-bold' : 'text-[var(--ink-muted)]'}`}>
                                 {seatsUsedText(seatDocs.length, seatLimit)}
                             </p>
                         )}
                     </div>
-                    <div className="flex gap-2 shrink-0">
+                    <div className="keys flex gap-2 shrink-0">
                     {canMakeOffers && (
                         <button onClick={() => setOffersOpen(v => !v)} aria-pressed={offersOpen} className="kpm-btn shrink-0 inline-flex items-center gap-1.5" aria-label={offersOpen ? 'Close team offers' : 'Team offers'}>
                             {offersOpen ? <X size={18}/> : <><Gift size={16}/> OFFERS</>}
@@ -1164,8 +1149,10 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     )}
                     </div>
                 </div>
-
-                <div className="p-4 space-y-3">
+                <div className="kpm-fleet-strip" aria-label="Today, the whole roster">
+                    {dayStrip.map(([k, v]) => <div key={k}><small>{k}</small><b>{v}</b></div>)}
+                </div>
+            </div>
                     {canMakeOffers && offersOpen && (() => {
                         const promo = promoItems.find(p => p.id === offerPromoId) || promoItems[0];
                         return (
@@ -1352,185 +1339,13 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                         </div>
                         </FrontPanel>
                     )}
-
-                    {agents.length === 0 && !isAddingAgent ? (
-                        /* AN EMPTY ROSTER HAS FOUR DIFFERENT CAUSES AND THEY NEED FOUR DIFFERENT
-                           ACTIONS. "No personnel found" was printed for all of them, so the screen
-                           that was meant to show a regional admin their own team said nothing at
-                           all when the read was refused, when the admin's own record was missing,
-                           and when their branch was simply empty. Name the cause. */
-                        <div className="text-center py-10 px-4">
-                            <Truck size={48} className="mx-auto text-[var(--ink-dim)] mb-3 opacity-50"/>
-                            {isFetchingFleet ? (
-                                <p className="text-[var(--ink-muted)] text-sm">Loading the roster…</p>
-                            ) : fleetError ? (
-                                <>
-                                    <p className="text-[var(--danger-ink)] text-sm font-bold">The roster could not be read.</p>
-                                    <p className="text-[var(--ink-muted)] text-xs mt-1.5 leading-relaxed">
-                                        The database refused this request (<span className="font-mono">{fleetError}</span>). Nobody is missing — this screen could not look. Show this code to the owner.
-                                    </p>
-                                </>
-                            ) : isAreaAdmin && !myProfile ? (
-                                <>
-                                    <p className="text-[var(--accent-ink)] text-sm font-bold">Your own staff record was not found.</p>
-                                    <p className="text-[var(--ink-muted)] text-xs mt-1.5 leading-relaxed">
-                                        This screen shows the branch YOU are posted to, and it reads that from your record in Fleet &amp; Roster. Without it there is no branch to show, so the roster is empty rather than wrong. The owner can add you on this screen.
-                                    </p>
-                                </>
-                            ) : isAreaAdmin && searchLocation === 'unassigned' ? (
-                                <>
-                                    <p className="text-[var(--accent-ink)] text-sm font-bold">You are not posted to a branch yet.</p>
-                                    <p className="text-[var(--ink-muted)] text-xs mt-1.5 leading-relaxed">
-                                        Your record has no area set, so there is no team to list. The owner can set your area in Fleet &amp; Roster.
-                                    </p>
-                                </>
-                            ) : isAreaAdmin && activeMotorists.length > 0 ? (
-                                <>
-                                    <p className="text-[var(--ink)] text-sm font-bold">Nobody is posted to {branchPathLocation}.</p>
-                                    <p className="text-[var(--ink-muted)] text-xs mt-1.5 leading-relaxed">
-                                        {activeMotorists.length} people are on the company roster; none of them has this area set. You only see your own branch.
-                                    </p>
-                                </>
-                            ) : (
-                                <p className="text-[var(--ink-muted)] text-sm">No personnel found.</p>
-                            )}
-                        </div>
-                    ) : (
-                        <>
-                            <label className="relative block mb-3 max-w-md">
-                                <span className="sr-only">Search the roster</span>
-                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]" />
-                                <input type="text" placeholder="Search name, role, area, email…" value={searchTerm} onChange={e => { setSearchTerm(e.target.value); setRosterPage(0); }} className="w-full bg-[var(--inset)] border border-[var(--line-2)] focus:border-[var(--accent-edge)] rounded-xl py-2.5 pl-9 pr-3 text-sm text-[var(--ink)] placeholder:text-[var(--ink-dim)] outline-none transition-colors"/>
-                            </label>
-
-                            {(() => {
-                                /* The data decides the shape, not a role list: one place in view (an area admin's own branch)
-                                   is one stage; several places (the owner, HQ) get one tab each over the stage. A search puts
-                                   every match on the stage at once. */
-                                const term = searchTerm.toLowerCase();
-                                const shown = agents.filter(a => !term || a.name?.toLowerCase().includes(term) || a.email?.toLowerCase().includes(term) || a.userRole?.toLowerCase().includes(term) || a.location?.toLowerCase().includes(term) || a.province?.toLowerCase().includes(term));
-                                const places = {};
-                                shown.forEach(a => {
-                                    const { prov, loc, k } = placeOf(a);
-                                    (places[k] = places[k] || { prov, loc, people: [] }).people.push(a);
-                                });
-                                const keys = Object.keys(places).sort((x, y) => x.localeCompare(y));
-                                const rank = { 'ADMIN': 3, 'AREA_ADMIN': 2, 'AGENT': 1 };
-                                const byRank = (list) => [...list].sort((x, y) => (rank[y.userRole || 'AGENT'] || 0) - (rank[x.userRole || 'AGENT'] || 0));
-                                const place = places[rosterPlace] ? rosterPlace : (keys.find(k => places[k].people.some(p => p.id === selectedAgent?.id)) || keys[0]);
-                                const cast = byRank(term ? shown : (places[place]?.people || []));
-                                /* the bar carries the picked person wherever the stage is paged or tabbed - it took over the old
-                                   deployment header (his 09:35 "take a big space even when not use"), which always showed them */
-                                const sel = selectedAgent || null;
-                                /* INITIAL / SOLD / CURRENT, moved from that header with the same sums */
-                                let currentLoadBks = 0, soldTodayBks = 0;
-                                if (sel) {
-                                    (sel.activeCanvas || []).forEach(item => {
-                                        const product = inventory.find(p => p.id === item.productId);
-                                        currentLoadBks += convertToBks(item.qty, item.unit, product);
-                                    });
-                                    agentSales.forEach(t => {
-                                        (t.items || []).forEach(item => {
-                                            // 🚀 IGNORE PURE BUYBACKS AND IOU PROMISES FROM "SOLD" TALLY
-                                            if (t.type === 'RETUR' && t.paymentType !== 'Tukar Ganti') return;
-                                            if (t.paymentType === 'Tukar Ganti' && item.fulfillment === 'IOU') return;
-                                            const product = inventory.find(p => p.id === item.productId);
-                                            soldTodayBks += convertToBks(item.qty, item.unit, product);
-                                        });
-                                    });
-                                }
-                                const initialLoadBks = currentLoadBks + soldTodayBks;
-                                const PER_STAGE = 7;
-                                const pages = Math.max(1, Math.ceil(cast.length / PER_STAGE));
-                                const pg = Math.min(rosterPage, pages - 1);
-                                const pageCast = cast.slice(pg * PER_STAGE, pg * PER_STAGE + PER_STAGE);
-
-                                if (term && shown.length === 0) return <p className="text-sm text-[var(--ink-muted)] text-center py-8">Nobody matches “{searchTerm}”.</p>;
-                                return (
-                                    <div>
-                                        {!term && keys.length > 1 && (
-                                            <div className="kpm-stage-tabs" role="tablist" aria-label="Areas">
-                                                {keys.map(k => (
-                                                    <button key={k} type="button" role="tab" aria-selected={k === place} className={`kpm-stage-tab${k === place ? ' on' : ''}`} onClick={() => { setRosterPlace(k); setRosterPage(0); }}>
-                                                        <span>{places[k].loc}</span><small>{places[k].people.length}</small>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-                                        {pages > 1 && (
-                                            <div className="kpm-stage-pages" aria-label="Roster pages">
-                                                {Array.from({ length: pages }, (_, k) => (
-                                                    <button key={k} type="button" className={`kpm-stage-page${k === pg ? ' on' : ''}`} aria-current={k === pg ? 'page' : undefined} onClick={() => setRosterPage(k)}>{k + 1}</button>
-                                                ))}
-                                            </div>
-                                        )}
-                                        <div className="kpm-stage" role="listbox" aria-label="People">
-                                            {pageCast.map(m => stageCard(m))}
-                                        </div>
-                                        {/* keyed by the picked person, so the bar's light sweeps once per pick, never on a loop */}
-                                        <div key={sel?.id || 'none'} className={`kpm-stage-bar${sel ? ' lit' : ''}`}>
-                                            <span className="kpm-stage-who">
-                                                <span className="kpm-stage-name">{sel ? placeOf(sel).loc : term ? `Search · ${cast.length}` : (places[place]?.loc || 'Fleet')}</span>
-                                                {sel && <b className="kpm-stage-person">{sel.name}</b>}
-                                            </span>
-                                            {sel && (
-                                                <>
-                                                    <span className="kpm-stage-chips" title="Permissions">
-                                                        <ShieldCheck size={13} aria-hidden="true"/><small>Permissions</small>
-                                                        {(sel.allowedPayments || ['Cash']).map(p => <span key={'p' + p}>{p === 'Titip' ? 'Consign' : p}</span>)}
-                                                        <i aria-hidden="true">|</i>
-                                                        {(sel.allowedTiers || ['Retail', 'Ecer']).map(t => <span key={'t' + t}>{t}</span>)}
-                                                    </span>
-                                                    <span className="kpm-stage-counts">
-                                                        {[['Initial', initialLoadBks], ['Sold', soldTodayBks], ['Current', currentLoadBks]].map(([k, v]) => <span key={k}><small>{k}</small><b>{v}</b></span>)}
-                                                    </span>
-                                                </>
-                                            )}
-                                            {sel && (
-                                                <span className="kpm-stage-acts">
-                                                    <button type="button" onClick={(e) => handleViewClick(e, sel)}><User size={14}/> <span>Details</span></button>
-                                                    {canEditFleet && (
-                                                        <>
-                                                            <button type="button" className={isDemoLogin(sel) ? 'demo-locked' : undefined} onClick={(e) => handleEditClick(e, sel)}><Pencil size={14}/> <span>Edit</span></button>
-                                                            <button data-kpm-del data-label="Delete" type="button" className={isDemoLogin(sel) ? 'demo-locked' : undefined} onClick={(e) => handleDeleteAgent(e, sel)} aria-label={`Remove ${sel.name}`}><Trash2 size={15}/></button>
-                                                        </>
-                                                    )}
-                                                    {/* T1/T2 only; never on your own card, never on the owner's (the landlord resets that one) */}
-                                                    {isGlobalAdmin && sel.id !== agentProfileId && resolveTierOneId(sel.id) !== TIER_ONE_ID && (
-                                                        <>
-                                                            {hasClearance(sel.userRole, 'view_master_vault') && (
-                                                                <>
-                                                                    <button type="button" onClick={() => handleResetVaultTries(sel)} title="Set this person's wrong vault-password tries back to 0 and lift a lock"><RotateCcw size={14}/> <span>Reset vault tries</span></button>
-                                                                    <button type="button" className={isDemoLogin(sel) ? 'demo-locked' : undefined} onClick={() => handleResetVaultPassword(sel)} title="Wipe this person's vault password - they make a new one themselves"><KeyRound size={14}/> <span>Reset vault password</span></button>
-                                                                </>
-                                                            )}
-                                                            {sel.email && (
-                                                                <button type="button" className={isDemoLogin(sel) ? 'demo-locked' : undefined} onClick={() => handleLockAccount(sel, !selLocked)} title={selLocked ? 'Let this email sign in again' : 'Sign this email out and keep it out (lost or hacked phone)'}>
-                                                                    {selLocked ? <Unlock size={14}/> : <Lock size={14}/>} <span>{selLocked ? 'Unlock account' : 'Lock account'}</span>
-                                                                </button>
-                                                            )}
-                                                        </>
-                                                    )}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })()}
-                        </>
-                    )}
-                </div>
-            </div>
-
-            {/* RIGHT PANEL: THE LOADING DOCK */}
-            <div className="hide-on-print flex-1 bg-[var(--panel)] flex flex-col relative">
-                
-                {/* 🚀 GLOBAL GEOFENCE COMMAND CENTER 🚀 */}
+            <div className={`hide-on-print kpm-fleet-layer${selectedAgent ? ' open' : ''}`}>
+                <div className="kpm-fleet-list custom-scrollbar">
                 {allBypasses.some(b => b.status === 'PENDING') && (
-                    <div className="m-6 mb-0 bg-[var(--raised)] rounded-2xl border-2 border-[var(--accent-edge)] shadow-[0_0_30px_rgba(249,115,22,0.3)] overflow-hidden shrink-0 animate-fade-in-up z-20 backdrop-blur-sm">
+                    <div className="mx-4 mt-3 bg-[var(--raised)] rounded-lg border border-[var(--accent-edge)] overflow-hidden">
                         <div className="p-4 bg-[var(--inset)] border-b border-[var(--accent-edge)] flex justify-between items-center">
                             <div className="flex items-center gap-2">
-                                <AlertCircle size={18} className="text-[var(--accent-ink)] animate-pulse"/>
+                                <AlertCircle size={18} className="text-[var(--accent-ink)]"/>
                                 <h3 className="font-bold text-[var(--accent-ink)] uppercase tracking-widest text-xs">Active HQ Override Requests</h3>
                             </div>
                             <span className="bg-[var(--gold)] text-[var(--gold-ink)] text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
@@ -1586,250 +1401,212 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                         </div>
                     </div>
                 )}
-
-                {selectedAgent ? (
-                    <>
-                        {/* the person's name, permissions and INITIAL / SOLD / CURRENT live in the stage's gold bar now */}
-                        <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
-                            
-                            {/* THE VAN-LOADING BAY — his two chests (components/LoadingBay.jsx). Keyed by the
-                                salesman, so a switch starts a fresh muatan; the roster asks first. */}
-                            <div className="mb-6" data-mission="3">
-                                <LoadingBay
-                                    key={selectedAgent.id}
-                                    agent={selectedAgent}
-                                    warehouse={selectedAgentUsesBranch ? String(selectedAgentLocation).toUpperCase() : 'PUSAT'}
-                                    stock={displayInventory || []}
-                                    promo={displayPromo}
-                                    warehouseQ={whQuarantine}
-                                    damaged={damagedInVan(agentSales, inventory)}
-                                    canEdit={canEditFleet}
-                                    onLoad={handleLoadCanvas}
-                                    onReturn={handleReturnToWarehouse}
-                                    onLayout={handleSaveLayout}
-                                    onDirty={setBayLines}
-                                    onPreset={handleSavePreset}
-                                    team={agents.filter(a => a.id !== selectedAgent.id && placeOf(a).k === placeOf(selectedAgent).k)}
-                                    bypasses={allBypasses.filter(b => isAgentBypass(b, selectedAgent))}
-                                    titip={titipOf(transactions, customers, selectedAgent.id, inventory)}
-                                    bounties={bountyItems(selectedAgent)}
-                                />
-                            </div>
-
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-xs font-bold text-[var(--ink-muted)] uppercase tracking-widest flex items-center gap-2"><ShoppingCart size={14}/> Itemized Asset Ledger</h3>
-                                
-                                {(selectedAgent.activeCanvas || []).length > 0 && (
-                                    <div className="flex items-center gap-2">
-                                        <button onClick={() => setViewingSuratJalan(true)} className="text-[11px] bg-[var(--gold)] text-[var(--gold-ink)] hover:brightness-110 px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors shadow-lg flex items-center gap-1"><Printer size={12}/> Surat Jalan</button>
-                                        {canEditFleet && <button onClick={handleClearCanvas} className="text-[11px] bg-[var(--inset)] text-[var(--danger-ink)] hover:bg-[var(--danger)] hover:text-[var(--ink)] px-3 py-1.5 rounded uppercase tracking-widest font-bold transition-colors">Reconcile & Clear</button>}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="space-y-2">
-                                {combinedItems.length === 0 ? (
-                                    <div className="text-center py-8 bg-[var(--inset)] rounded-xl border border-[var(--line-2)] border-dashed">
-                                        <Archive size={24} className="mx-auto mb-2 text-[var(--ink-muted)]"/>
-                                        <p className="text-xs text-[var(--ink-muted)] uppercase tracking-widest">No Items Assigned Today</p>
-                                    </div>
-                                ) : (
-                                    combinedItems.map((item, idx) => (
-                                        <div key={idx} className="bg-[var(--raised)] p-4 rounded-xl border border-[var(--line-2)] flex flex-col md:flex-row justify-between items-start md:items-center gap-3 animate-pop-in">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-2 h-2 rounded-full ${item.currentBks > 0 ? 'bg-[var(--gold)]' : 'bg-[var(--danger)]'}`}></div>
-                                                <div>
-                                                    <span className="font-bold text-[var(--ink)] text-sm">{item.name}</span>
-                                                    {item.currentRaw > 0 && <p className="text-[10px] text-[var(--ink-muted)] mt-0.5">Active Load: {item.currentRaw} {item.unit}</p>}
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="flex items-center gap-2 bg-[var(--inset)] p-2 rounded-lg border border-[var(--line-2)] text-[10px] font-mono font-bold w-full md:w-auto">
-                                                <span className="text-[var(--ink-muted)] w-16 text-center">INIT: {item.initialBks}</span>
-                                                <span className="w-[1px] h-4 bg-[var(--panel)]"></span>
-                                                <span className="text-[var(--accent-ink)] w-16 text-center">SOLD: {item.soldBks}</span>
-                                                <span className="w-[1px] h-4 bg-[var(--panel)]"></span>
-                                                <span className={`${item.currentBks > 0 ? 'text-[var(--accent-ink)]' : 'text-[var(--danger-ink)]'} w-16 text-center`}>LEFT: {item.currentBks}</span>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-
-                            {/* 🚀 AGENT-SPECIFIC BYPASS HISTORY 🚀 */}
-                            {(() => {
-                                const agentBypasses = allBypasses.filter(b => b.status !== 'PENDING' && isAgentBypass(b, selectedAgent));
-
-                                if (agentBypasses.length === 0) return null;
-
-                                return (
-                                    <div className="mt-6 mb-2 bg-[var(--raised)] rounded-2xl border border-[var(--line-2)] shadow-xl overflow-hidden animate-fade-in-up">
-                                        <div className="p-4 bg-[var(--inset)] border-b border-[var(--line-2)] flex justify-between items-center">
-                                            <div className="flex items-center gap-2">
-                                                <Archive size={18} className="text-[var(--ink-muted)]"/>
-                                                <h3 className="font-bold text-[var(--ink)] uppercase tracking-widest text-xs">Geofence Bypass History</h3>
-                                            </div>
-                                        </div>
-                                        <div className="p-4 space-y-3 bg-[var(--inset)] max-h-[300px] overflow-y-auto custom-scrollbar">
-                                            {agentBypasses.map(bypass => (
-                                                <div key={bypass.id} className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-3 rounded-xl border shadow-sm ${bypass.status === 'APPROVED' ? 'bg-[var(--inset)] border-[var(--accent-edge)]' : 'bg-[var(--inset)] border-[var(--danger)]'}`}>
-                                                    <div className="flex items-start gap-4 w-full">
-                                                        {bypass.photoData && (
-                                                            <div className="w-12 h-12 shrink-0 bg-[var(--inset)] rounded-lg border border-[var(--line-2)] overflow-hidden cursor-zoom-in" onClick={() => window.open(bypass.photoData, '_blank')}>
-                                                                <img src={bypass.photoData} className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="Store Proof" title="Click to enlarge" />
-                                                            </div>
-                                                        )}
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <h4 className="font-bold text-[var(--ink)] text-xs uppercase">{bypass.storeName}</h4>
-                                                                <span className={`text-[11px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${bypass.status === 'APPROVED' ? 'bg-[var(--gold)] text-[var(--gold-ink)]' : 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]'}`}>
-                                                                    {bypass.status}
-                                                                </span>
-                                                            </div>
-                                                            <p className="text-[10px] text-[var(--ink-muted)] font-mono mb-0.5">{new Date(bypass.timestamp).toLocaleString('id-ID')}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                );
-                            })()}
-
-                            {/* 🚀 UNIFIED ACTIVITY LOG (SALES & BYPASSES) 🚀 */}
-                            <div className="mt-8 bg-[var(--raised)] rounded-2xl border border-[var(--line-2)] shadow-xl overflow-hidden animate-fade-in-up">
-                                <button onClick={() => setShowHistory(!showHistory)} className="w-full p-4 flex justify-between items-center bg-[var(--inset)] hover:bg-[var(--inset)] transition-colors">
-                                    <div className="flex items-center gap-2">
-                                        <FileText size={18} className="text-[var(--accent-ink)]"/>
-                                        <h3 className="font-bold text-[var(--ink)] uppercase tracking-widest text-xs">Today's Activity Logs ({agentSales.length} Transactions)</h3>
-                                    </div>
-                                    {showHistory ? <ChevronUp size={18} className="text-[var(--ink-muted)]"/> : <ChevronDown size={18} className="text-[var(--ink-muted)]"/>}
-                                </button>
-                                
-                                {showHistory && (() => {
-                                    const agentBypasses = allBypasses.filter(b => b.status !== 'PENDING' && (isAgentBypass(b, selectedAgent) ||
-                                        agentSales.some(tx => (tx.customerName || '').toLowerCase() === (b.storeName || '').toLowerCase())));
-
-                                    return (
-                                        <div className="p-4 bg-[var(--inset)] border-t border-[var(--line-2)] max-h-[600px] overflow-y-auto custom-scrollbar">
-                                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-                                                
-                                                {/* LEFT COLUMN: FORENSIC SALES LOG */}
-                                                <div className="space-y-3">
-                                                    <h4 className="text-[10px] text-[var(--ink-muted)] uppercase tracking-widest font-bold border-b border-[var(--line-2)] pb-2 mb-3 flex items-center gap-1"><ShoppingCart size={12}/> Daily Transactions</h4>
-                                                    {agentSales.length === 0 ? (
-                                                        <p className="text-center text-xs text-[var(--ink-muted)] uppercase tracking-widest py-4 bg-[var(--inset)] rounded-lg border border-[var(--line-2)] border-dashed">No transactions recorded today.</p>
-                                                    ) : (
-                                                        agentSales.map(tx => {
-                                                            const linkedBypass = agentBypasses.find(b => {
-                                                                if (b.status !== 'APPROVED') return false;
-                                                                if ((b.storeName || '').toLowerCase() !== (tx.customerName || '').toLowerCase()) return false;
-                                                                const bypassTime = new Date(b.timestamp || b.createdAt?.seconds * 1000 || 0).getTime();
-                                                                const now = new Date().getTime();
-                                                                return (now - bypassTime) < (24 * 60 * 60 * 1000);
-                                                            });
-
-                                                            // 🚀 BADGE LOGIC
-                                                            const isRetur = tx.type === 'RETUR' || tx.paymentType === 'Retur/BS';
-                                                            const isExchange = tx.paymentType === 'Tukar Ganti';
-                                                            const isIouFulfill = tx.paymentType === 'IOU Fulfillment';
-
-                                                            return (
-                                                                <div key={tx.id} className="flex justify-between items-center p-3 bg-[var(--inset)] rounded-xl border border-[var(--line-2)] shadow-sm transition-all hover:border-[var(--accent-edge)] group">
-                                                                    <div>
-                                                                        <div className="flex items-center gap-2">
-                                                                            <h4 className="font-bold text-[var(--ink)] text-sm uppercase">{tx.customerName}</h4>
-                                                                            {isRetur ? (
-                                                                                <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-[var(--danger)] text-[var(--ink)] shadow-md">RETUR</span>
-                                                                            ) : isExchange ? (
-                                                                                <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-[var(--gold)] text-[var(--gold-ink)] shadow-md">EXCHANGE</span>
-                                                                            ) : isIouFulfill ? (
-                                                                                <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-[var(--gold)] text-[var(--gold-ink)] shadow-md">UTANG BARANG LUNAS</span>
-                                                                            ) : null}
-                                                                        </div>
-                                                                        <p className="text-[10px] text-[var(--ink-muted)] font-mono mt-0.5">{tx.timestamp ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString('id-ID') : 'Today'} • {tx.paymentType}</p>
-                                                                        
-                                                                        {linkedBypass && (
-                                                                            <div className="mt-1.5 flex items-center gap-1 text-[11px] bg-[var(--inset)] text-[var(--accent-ink)] border border-[var(--accent-edge)] px-1.5 py-0.5 rounded uppercase tracking-widest w-fit shadow-inner">
-                                                                                <MapPin size={8}/> 100m Bypass Used
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="flex items-center gap-3 md:gap-4">
-                                                                        <div className="text-right">
-                                                                            <p className={`font-black text-sm md:text-base ${isRetur ? 'text-[var(--danger-ink)]' : 'text-[var(--accent-ink)]'}`}>
-                                                                                {isRetur && (tx.total || tx.amountPaid || 0) > 0 ? '-' : ''}
-                                                                                {new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', minimumFractionDigits:0}).format(tx.total || tx.amountPaid || 0)}
-                                                                            </p>
-                                                                            <p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest">{tx.items?.length || 0} Items</p>
-                                                                        </div>
-                                                                        <button onClick={() => setViewingReceipt(tx)} className="p-2 bg-[var(--raised)] group-hover:bg-[var(--panel)] text-[var(--accent-ink)] rounded-lg transition-colors shadow-sm" title="View Receipt">
-                                                                            <FileText size={16}/>
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        })
-                                                    )}
-                                                </div>
-
-                                                {/* RIGHT COLUMN: GEOFENCE VISUAL LOG */}
-                                                <div className="space-y-3">
-                                                    <h4 className="text-[10px] text-[var(--ink-muted)] uppercase tracking-widest font-bold border-b border-[var(--line-2)] pb-2 mb-3 flex items-center gap-1"><MapPin size={12}/> Geofence Bypass Log</h4>
-                                                    {agentBypasses.length === 0 ? (
-                                                        <p className="text-center text-xs text-[var(--ink-muted)] uppercase tracking-widest py-4 bg-[var(--inset)] rounded-lg border border-[var(--line-2)] border-dashed">No bypass history.</p>
-                                                    ) : (
-                                                        agentBypasses.map(bypass => (
-                                                            <div key={bypass.id} className={`flex items-start gap-3 p-3 rounded-xl border shadow-sm ${bypass.status === 'APPROVED' ? 'bg-[var(--inset)] border-[var(--accent-edge)]' : 'bg-[var(--inset)] border-[var(--danger)]'}`}>
-                                                                {bypass.photoData && (
-                                                                    <div className="w-12 h-12 shrink-0 bg-[var(--inset)] rounded-lg border border-[var(--line-2)] overflow-hidden cursor-zoom-in" onClick={() => window.open(bypass.photoData, '_blank')}>
-                                                                        <img src={bypass.photoData} className="w-full h-full object-cover opacity-60 hover:opacity-100 transition-opacity" alt="Store Proof" title="Click to enlarge" />
-                                                                    </div>
-                                                                )}
-                                                                <div className="flex-1">
-                                                                    <div className="flex items-center gap-2 mb-1">
-                                                                        <h4 className="font-bold text-[var(--ink)] text-xs uppercase">{bypass.storeName}</h4>
-                                                                        <span className={`text-[11px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest ${bypass.status === 'APPROVED' ? 'bg-[var(--gold)] text-[var(--gold-ink)]' : 'bg-[var(--danger-plate)] text-[var(--danger-plate-ink)]'}`}>
-                                                                            {bypass.status}
-                                                                        </span>
-                                                                    </div>
-                                                                    <p className="text-[10px] text-[var(--ink-muted)] font-mono mb-0.5">{new Date(bypass.timestamp).toLocaleString('id-ID')}</p>
-                                                                    <p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest">Distance: {bypass.distance}m</p>
-                                                                </div>
-                                                            </div>
-                                                        ))
-                                                    )}
-                                                </div>
-
-                                            </div>
-                                        </div>
-                                    );
-                                })()}
-                            </div>
-
+                    {agents.length === 0 && !isAddingAgent ? (
+                        /* AN EMPTY ROSTER HAS FOUR DIFFERENT CAUSES AND THEY NEED FOUR DIFFERENT
+                           ACTIONS. "No personnel found" was printed for all of them, so the screen
+                           that was meant to show a regional admin their own team said nothing at
+                           all when the read was refused, when the admin's own record was missing,
+                           and when their branch was simply empty. Name the cause. */
+                        <div className="text-center py-10 px-4">
+                            <Truck size={48} className="mx-auto text-[var(--ink-dim)] mb-3 opacity-50"/>
+                            {isFetchingFleet ? (
+                                <p className="text-[var(--ink-muted)] text-sm">Loading the roster…</p>
+                            ) : fleetError ? (
+                                <>
+                                    <p className="text-[var(--danger-ink)] text-sm font-bold">The roster could not be read.</p>
+                                    <p className="text-[var(--ink-muted)] text-xs mt-1.5 leading-relaxed">
+                                        The database refused this request (<span className="font-mono">{fleetError}</span>). Nobody is missing — this screen could not look. Show this code to the owner.
+                                    </p>
+                                </>
+                            ) : isAreaAdmin && !myProfile ? (
+                                <>
+                                    <p className="text-[var(--accent-ink)] text-sm font-bold">Your own staff record was not found.</p>
+                                    <p className="text-[var(--ink-muted)] text-xs mt-1.5 leading-relaxed">
+                                        This screen shows the branch YOU are posted to, and it reads that from your record in Fleet &amp; Roster. Without it there is no branch to show, so the roster is empty rather than wrong. The owner can add you on this screen.
+                                    </p>
+                                </>
+                            ) : isAreaAdmin && searchLocation === 'unassigned' ? (
+                                <>
+                                    <p className="text-[var(--accent-ink)] text-sm font-bold">You are not posted to a branch yet.</p>
+                                    <p className="text-[var(--ink-muted)] text-xs mt-1.5 leading-relaxed">
+                                        Your record has no area set, so there is no team to list. The owner can set your area in Fleet &amp; Roster.
+                                    </p>
+                                </>
+                            ) : isAreaAdmin && activeMotorists.length > 0 ? (
+                                <>
+                                    <p className="text-[var(--ink)] text-sm font-bold">Nobody is posted to {branchPathLocation}.</p>
+                                    <p className="text-[var(--ink-muted)] text-xs mt-1.5 leading-relaxed">
+                                        {activeMotorists.length} people are on the company roster; none of them has this area set. You only see your own branch.
+                                    </p>
+                                </>
+                            ) : (
+                                <p className="text-[var(--ink-muted)] text-sm">No personnel found.</p>
+                            )}
                         </div>
-                    </>
-                ) : (
-                    /* THE COMMUNITY, when nobody is picked — his "i dont like this blue panel": State of Decay's
-                       resource strip instead of a navy "standby". Every figure is one this screen already reads. */
-                    <div className="p-6">
-                        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--ink-dim)] mb-3">{isAreaAdmin ? branchPathLocation : 'Fleet'} · the community today</p>
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                            {[
-                                ['People', agents.length],
-                                ['Vans loaded', `${agents.filter(m => loadOf(m) > 0).length} / ${agents.length}`],
-                                ['Bks in the vans', Math.round(agents.reduce((sum, m) => sum + loadOf(m), 0)).toLocaleString('id-ID')],
-                                ['Override requests', allBypasses.filter(b => b.status === 'PENDING').length],
-                            ].map(([label, value]) => (
-                                <div key={label} className="rounded-xl border border-[var(--line-2)] bg-[var(--raised)] p-4">
-                                    <p className="text-[10px] font-mono uppercase tracking-widest text-[var(--ink-dim)]">{label}</p>
-                                    <p className="text-2xl font-black font-mono tabular-nums text-[var(--ink)] mt-1">{value}</p>
+                    ) : (
+                        (() => {
+                            /* The data decides the shape, not a role list: one place in view (an area admin's own branch)
+                               is one table; several places (the owner, HQ) get one chip each beside the search. A search
+                               lists every match at once. */
+                            const term = searchTerm.toLowerCase();
+                            const shown = agents.filter(a => !term || a.name?.toLowerCase().includes(term) || a.email?.toLowerCase().includes(term) || a.userRole?.toLowerCase().includes(term) || a.location?.toLowerCase().includes(term) || a.province?.toLowerCase().includes(term));
+                            const places = {};
+                            shown.forEach(a => {
+                                const { prov, loc, k } = placeOf(a);
+                                (places[k] = places[k] || { prov, loc, people: [] }).people.push(a);
+                            });
+                            const keys = Object.keys(places).sort((x, y) => x.localeCompare(y));
+                            /* FLEET_CAPTAIN stands with the leaders now - the old rank map forgot the tier (the UI side of the
+                               Fleet Captain gap), so a regional admin sorted in among the salesmen */
+                            const rank = { 'ADMIN': 4, 'AREA_ADMIN': 3, 'FLEET_CAPTAIN': 2, 'AGENT': 1 };
+                            const byRank = (list) => [...list].sort((x, y) => (rank[y.userRole || 'AGENT'] || 0) - (rank[x.userRole || 'AGENT'] || 0) || String(x.name || '').localeCompare(String(y.name || '')));
+                            const place = places[rosterPlace] ? rosterPlace : (keys.find(k => places[k].people.some(p => p.id === selectedAgent?.id)) || keys[0]);
+                            const cast = byRank(term ? shown : (places[place]?.people || []));
+                            const leaders = cast.filter(isLeader), crew = cast.filter(m => !isLeader(m));
+                            return (
+                                <>
+                                    <div className="flex flex-wrap items-center gap-2 px-4 py-2.5">
+                                        <label className="relative block flex-1 min-w-[12rem] max-w-md">
+                                            <span className="sr-only">Search the roster</span>
+                                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-muted)]" />
+                                            <input type="text" placeholder="Search name, role, area, email…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full bg-[var(--inset)] border border-[var(--line-2)] focus:border-[var(--accent-edge)] rounded-lg py-2 pl-9 pr-3 text-base lg:text-sm text-[var(--ink)] placeholder:text-[var(--ink-dim)] outline-none"/>
+                                        </label>
+                                        {!term && keys.length > 1 && (
+                                            <div className="flex flex-wrap gap-2" role="tablist" aria-label="Areas">
+                                                {keys.map(k => (
+                                                    <button key={k} type="button" role="tab" aria-selected={k === place} className={`kpm-fleet-chip${k === place ? ' on' : ''}`} onClick={() => setRosterPlace(k)}>
+                                                        {places[k].loc} <small>{places[k].people.length}</small>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    {term && shown.length === 0 ? <p className="text-sm text-[var(--ink-muted)] text-center py-8">Nobody matches “{searchTerm}”.</p> : (
+                                        <div role="listbox" aria-label="People">
+                                            <div className="kpm-fleet-head" aria-hidden="true"><span>Name</span><span>Status</span><span className="num">Loaded</span><span className="num">Sold today</span><span className="num">Left in van</span></div>
+                                            {leaders.length > 0 && <div className="kpm-fleet-grp" role="presentation">LEADERS</div>}
+                                            {leaders.map(m => rosterRow(m))}
+                                            {crew.length > 0 && <div className="kpm-fleet-grp" role="presentation">SALESMEN · A–Z{term ? '' : ' · LEFT IN VAN'}</div>}
+                                            {crew.map(m => rosterRow(m))}
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()
+                    )}
+                </div>
+
+                {/* THE PERSON PANEL - slides over the list on the PC, ONCE per opening (keyed by the person, so a − + press
+                    or a saved load never re-mounts it: that replay was the flicker); its own page on the phone. */}
+                {selectedAgent && (() => {
+                    const sel = selectedAgent;
+                    const left = Math.round(loadOf(sel)), sold = Math.round(sumOf(soldByAgent[sel.id]));
+                    const whName = selectedAgentUsesBranch ? `${selectedAgentLocation} warehouse` : 'Master Vault';
+                    const dmg = damagedInVan(agentSales, inventory), titip = titipOf(transactions, customers, sel.id, inventory), bounties = bountyItems(sel);
+                    const mine = allBypasses.filter(b => isAgentBypass(b, sel)), waiting = mine.filter(b => b.status === 'PENDING').length;
+                    const n = (v) => Math.round(v).toLocaleString('id-ID');
+                    const line = (key, title, sub, right) => (
+                        <div key={key} className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-[var(--line-2)]">
+                            <span className="min-w-0"><b className="block text-sm font-semibold text-[var(--ink)] truncate">{title}</b>{sub && <small className="block text-xs text-[var(--ink-muted)]">{sub}</small>}</span>
+                            <span className="shrink-0 flex items-center gap-2 text-sm font-semibold tabular-nums text-[var(--ink)]">{right}</span>
+                        </div>
+                    );
+                    const none = (words) => <p className="px-4 py-8 text-sm text-[var(--ink-muted)]">{words}</p>;
+                    const group = (words) => <div className="kpm-fleet-grp">{words}</div>;
+                    const rp = (v) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v || 0);
+                    return (
+                        <aside key={sel.id} className="kpm-fleet-panel" aria-label={`${sel.name}'s van`} data-mission="3">
+                            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 border-b border-[var(--line-2)]">
+                                <div className="min-w-0 flex-1">
+                                    <button type="button" className="lg:hidden block text-sm text-[var(--ink-muted)] min-h-[44px] pr-4" onClick={closePanel}>‹ Roster</button>
+                                    <h3 className="text-base font-bold text-[var(--ink)] truncate">{sel.name}</h3>
+                                    <p className="text-xs text-[var(--ink-muted)]">{roleLine(sel)} · loads from {selectedAgentUsesBranch ? `the ${whName}` : 'the Master Vault'}</p>
                                 </div>
-                            ))}
-                        </div>
-                        <p className="text-sm text-[var(--ink-muted)] mt-4 flex items-center gap-2"><Truck size={16} className="text-[var(--accent-ink)]"/> Pick someone on the stage to see their van and load it.</p>
-                    </div>
-                )}
+                                {/* Loaded / Sold / Left for this person - the same sums the ledger line shows, said once here */}
+                                <div className="kpm-fleet-kpis">
+                                    {[['Loaded', left + sold], ['Sold today', sold], ['Left in van', left]].map(([k, v]) => <div key={k}><small>{k}</small><b>{n(v)}</b></div>)}
+                                </div>
+                                <span className="hidden lg:block shrink-0"><button type="button" onClick={closePanel} aria-label={`Close ${sel.name}`} className="kpm-btn"><X size={18}/></button></span>
+                            </div>
+                            <span className="kpm-fleet-acts">
+                                                    {(sel.activeCanvas || []).length > 0 && <button type="button" onClick={() => setViewingSuratJalan(true)}><Printer size={14}/> <span>Surat Jalan</span></button>}
+                                                    <button type="button" onClick={(e) => handleViewClick(e, sel)}><User size={14}/> <span>Details</span></button>
+                                                    {canEditFleet && (
+                                                        <>
+                                                            <button type="button" className={isDemoLogin(sel) ? 'demo-locked' : undefined} onClick={(e) => handleEditClick(e, sel)}><Pencil size={14}/> <span>Edit</span></button>
+                                                            <button data-kpm-del data-label="Delete" type="button" className={isDemoLogin(sel) ? 'demo-locked' : undefined} onClick={(e) => handleDeleteAgent(e, sel)} aria-label={`Remove ${sel.name}`}><Trash2 size={15}/></button>
+                                                        </>
+                                                    )}
+                                                    {/* T1/T2 only; never on your own card, never on the owner's (the landlord resets that one) */}
+                                                    {isGlobalAdmin && sel.id !== agentProfileId && resolveTierOneId(sel.id) !== TIER_ONE_ID && (
+                                                        <>
+                                                            {hasClearance(sel.userRole, 'view_master_vault') && (
+                                                                <>
+                                                                    <button type="button" onClick={() => handleResetVaultTries(sel)} title="Set this person's wrong vault-password tries back to 0 and lift a lock"><RotateCcw size={14}/> <span>Reset vault tries</span></button>
+                                                                    <button type="button" className={isDemoLogin(sel) ? 'demo-locked' : undefined} onClick={() => handleResetVaultPassword(sel)} title="Wipe this person's vault password - they make a new one themselves"><KeyRound size={14}/> <span>Reset vault password</span></button>
+                                                                </>
+                                                            )}
+                                                            {sel.email && (
+                                                                <button type="button" className={isDemoLogin(sel) ? 'demo-locked' : undefined} onClick={() => handleLockAccount(sel, !selLocked)} title={selLocked ? 'Let this email sign in again' : 'Sign this email out and keep it out (lost or hacked phone)'}>
+                                                                    {selLocked ? <Unlock size={14}/> : <Lock size={14}/>} <span>{selLocked ? 'Unlock account' : 'Lock account'}</span>
+                                                                </button>
+                                                            )}
+                                                        </>
+                                                    )}
+                            </span>
+                            <LoadSheet
+                                agent={sel}
+                                warehouse={whName}
+                                stock={displayInventory || []}
+                                promo={displayPromo}
+                                soldToday={soldByAgent[sel.id] || {}}
+                                lastDay={lastDay}
+                                team={agents.filter(a => a.id !== sel.id && placeOf(a).k === placeOf(sel).k)}
+                                canEdit={canEditFleet}
+                                onLoad={handleLoadCanvas}
+                                onReturn={handleReturnToWarehouse}
+                                onPreset={handleSavePreset}
+                                onDirty={setBayLines}
+                                onClear={handleClearCanvas}
+                                tabs={[
+                                    { id: 'damaged', label: `Damaged${dmg.length ? ` ${n(dmg.reduce((a, x) => a + x.bks, 0))}` : ''}`, body: (
+                                        <>
+                                            {group('IN THE VAN TODAY · WAITS FOR EOD')}
+                                            {dmg.length ? dmg.map(x => line(x.id, x.name, x.why, `${n(x.bks)} Bks`)) : none(`No damaged goods came back to ${sel.name} today.`)}
+                                            {whQuarantine.length > 0 && group(`QUARANTINE · ${whName.toUpperCase()}`)}
+                                            {whQuarantine.map(p => line('q' + p.id, p.name, null, `${n(p.damagedStock)} Bks`))}
+                                        </>) },
+                                    { id: 'titip', label: `Consignment${titip.length ? ` ${titip.length}` : ''}`, body: titip.length
+                                        ? titip.map(s => line(s.key, s.name, `${n(s.bks)} Bks still at the shop`, rp(s.rp)))
+                                        : none(`No shop holds ${sel.name}'s consignment goods or owes for them.`) },
+                                    ...(bounties.length ? [{ id: 'bounty', label: `Bounty ${bounties.length}`, body: bounties.map(x => line(x.key, x.label, x.date, rp(x.amount))) }] : []),
+                                    { id: 'requests', label: `Requests${waiting ? ` ${waiting}` : ''}`, body: (
+                                        <>
+                                            {waiting > 0 && <p className="px-4 pt-3 text-xs text-[var(--ink-muted)]">Approve or reject a waiting request in the Override requests list above the roster.</p>}
+                                            {mine.length ? mine.map(b => line(b.id, b.storeName, `${new Date(b.timestamp).toLocaleString('id-ID')} · ${b.distance} m away`, (
+                                                <>
+                                                    {b.photoData && <button type="button" className="text-xs underline text-[var(--ink-muted)]" onClick={() => window.open(b.photoData, '_blank')}>Photo</button>}
+                                                    <span className={`kpm-fleet-tag${b.status === 'REJECTED' ? ' no' : ''}`}>{b.status === 'PENDING' ? 'Waiting' : b.status === 'APPROVED' ? 'Approved' : 'Rejected'}</span>
+                                                </>))) : none(`${sel.name} has not asked for a geofence override.`)}
+                                        </>) },
+                                    { id: 'activity', label: `Activity ${agentSales.length}`, body: agentSales.length ? agentSales.map(tx => {
+                                        const isRetur = tx.type === 'RETUR' || tx.paymentType === 'Retur/BS';
+                                        const kind = isRetur ? 'Retur' : tx.paymentType === 'Tukar Ganti' ? 'Exchange' : tx.paymentType === 'IOU Fulfillment' ? 'Utang barang lunas' : (tx.paymentType || 'Cash');
+                                        /* an approved override for this shop in the last 24 hours rode on this sale */
+                                        const bypassed = mine.some(b => b.status === 'APPROVED' && (b.storeName || '').toLowerCase() === (tx.customerName || '').toLowerCase()
+                                            && Date.now() - new Date(b.timestamp || b.createdAt?.seconds * 1000 || 0).getTime() < 24 * 60 * 60 * 1000);
+                                        const total = tx.total || tx.amountPaid || 0;
+                                        return line(tx.id, tx.customerName, `${tx.timestamp ? new Date(tx.timestamp.seconds * 1000).toLocaleTimeString('id-ID') : 'Today'} · ${kind} · ${tx.items?.length || 0} items${bypassed ? ' · 100 m override used' : ''}`, (
+                                            <>
+                                                <span className={isRetur ? 'text-[var(--danger-ink)]' : ''}>{isRetur && total > 0 ? '-' : ''}{rp(total)}</span>
+                                                <button type="button" onClick={() => setViewingReceipt(tx)} className="kpm-btn" aria-label={`Receipt for ${tx.customerName}`} title="View receipt"><FileText size={16}/></button>
+                                            </>));
+                                    }) : none(`${sel.name} has no sale or return today.`) },
+                                ]}
+                            />
+                        </aside>
+                    );
+                })()}
             </div>
         </div>
     );
