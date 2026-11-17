@@ -1545,11 +1545,69 @@ Do NOT change the code. Done when: four tables + filled-button list + map-librar
   - Region + Find a shop bar `.ms-top` (`L2231-2246`), PC `.ms-totals` (`L2249-2253`), PC `.ms-areas` + `AreaRow` (`L1014-1023, L2256-2266`), PC `.ms-levels` + `LevelChips` (`L1026-1035, L2269-2271`), PC `.ms-layers` (`L2274-2276`), PC `.ms-tools` (`L2279-2281`), phone `.kx-dock.ms-dock` & `.ms-sheet` (`L2284-2313`), `.ms-heatkey` (`L2226-2228`), `StoreBottomSheet` (`L1039-1406`), `ZoneHUD` (`L990-1004`), `TacticalDashboard` (`L310-444`), `BorderImporter` (`L447-986`), `TierAutomationEngine` (`L1408-1714`), Targeting HUD & `Register Target` modal (`L2127-2223`).
 
 ## Task 32 - the same map for Agent Profile (segment 10 of 12)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 12:45 WIB, by Claude. Same rules as above (read-only, touch only this file).
 
 Exactly Task 20's four tables for `src/AgentProfileView.jsx` (the `activeTab === 'agent_profile'` screen, App.jsx L5165) - the screen in Claude's lab frame today: Agent Directory list on the left, the person card (avatar frame, rank, XP bar), the RANK CONFIG / AVATAR / LEADERBOARD / GRANT AWARD keys, LIVE FINANCIAL MATRIX. Every press that writes (avatar upload, award, rank config) gets **Yes** with collection + field. Demo guide marks, selfcheck pins, filled-button list with file:line (LEADERBOARD is filled amber today), and which elements are game art he built (avatar frames, rank colours) - the redesign must keep those, so name each.
 Do NOT change the code. Done when: four tables + filled-button list + game-art list in the Result.
+
+**Result:**
+
+### 1. Every view / modal / drawer
+| view / modal | PC vs phone | what is on it | state / props that control it | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| `Agent Directory` sidebar | PC collapsible `w-72` left column (`view_dashboard`); phone slide-over drawer + backdrop | Location filter `<select>` (`ALL DEPLOYMENT ZONES`), sorted agent list (`.pc-avatar` 56 px mini frame, name, `ShieldCheck` for `master_owner`, location) | `isSidebarOpen`, `locationFilter`, `selectedId`, `filteredMotorists`, `userRole` | `src/AgentProfileView.jsx:928-979` |
+| Main profile & `Live Financial Matrix` | PC `lg:h-screen lg:overflow-y-auto`; phone scrolls with shell, top buttons wrap | Top action bar (Sidebar toggle, `Rank Config`, `Avatar`, `Leaderboard`, `Grant Award`), `PlayerCardHead` + meta strip (`corpIdentity`, `ID`, `location`, `Active`), `Live Financial Matrix` (`Today's Gross Revenue` + `Cash Flow`, expandable `Active Canvas Value` table, expandable `Consignment Risk (Titip)` table), `Operator Credentials` (`Corp. Assignment`, `Comms Link`, `Mount` plate, `System Clearance`), `Service Record` bio, `Timeline Analytics` Recharts bar chart (`1W`/`1M`/`1Y`), `Hall of Fame & Achievements` (category tabs, `Regional MVP` trophy, `AchievementCard` grid) | `activeAgent`, `canEditProfile`, `showCanvasBreakdown`, `showTitipBreakdown`, `isEditingBio`, `bioText`, `chartFilter`, `badgeCategoryFilter`, `userRole` | `src/AgentProfileView.jsx:988-1318` |
+| `Customize Avatar` modal | Both (overlay `z-[999998]`) | 128 px `AgentAvatar` preview, `Upload Photo`/`Replace Photo` trigger (`#avatar-input`), unlocked `Frame` `<select>`, unlock count note | `showAvatarCustomizer`, `canEditProfile`, `unlockedBorders`, `activeBorderStyle` | `src/AgentProfileView.jsx:694-726` |
+| `Cropper` modal (`react-easy-crop`) | Both (fullscreen `z-[999999]`) | 1:1 square `Cropper`, `Cancel`, `Execute Crop & Save` | `cropImageSrc`, `cropTarget`, `crop`, `zoom`, `croppedAreaPixels`, `isUploading` | `src/AgentProfileView.jsx:669-687` |
+| `Leaderboard` (`HallOfFameView`) modal | Both (fullscreen `z-[999999]`) | Renders `<HallOfFameView />` + close `X` | `showHallOfFame`, `motorists`, `transactions`, `rpgData`, `career`, `useCareerLedger`, `badgeData` | `src/AgentProfileView.jsx:729-736` |
+| `Achievement Config` modal | Both (`edit_rank_config`, `z-[999999]`) | Editable badge rows (`Badge Title`, `Data Source` from `BADGE_SOURCES`, `Target Number`, `Theme/Color` + icon, `Remove`, `Description Template`), `+ Add New Badge`, `Deploy Achievements` | `showBadgeConfig`, `editingBadges` | `src/AgentProfileView.jsx:740-809` |
+| `Grant Award` modal | Both (`edit_agent_roles`, `z-[9999]`) | `Title`, `Reason` (>= 10 chars), `XP amount`, `Cosmetic id (optional)`, `Cancel`, `Grant` | `showAwardForm`, `awardForm`, `activeAgent` | `src/AgentProfileView.jsx:811-827` |
+| `Rank & EXP Architecture` modal | Both (`edit_rank_config`, `z-[999999]`) | `Global Experience Multiplier`, `Working Days` (`Mon`–`Sun`), `Active Progression Tiers` (icon upload, custom PNG border upload, `Rank Name`, `EXP Required`, `Theme`, `Border`, `Achievement Title`, delete), `Add New Rank Tier`, `Deploy Rank Architecture` | `showRankConfig`, `editingRpgData` | `src/AgentProfileView.jsx:829-926` |
+
+### 2. Every press & what it writes
+| control / press | handler called | writes (Firestore + local state) | moves stock or money / Firestore write? | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| Agent select, location filter, sidebar toggle, `Avatar`/`Leaderboard`/`Rank Config`/`Grant Award` open/close, `1W`/`1M`/`1Y`, badge category tabs, `Active Canvas Value` / `Consignment Risk` expand | Local state setters | Local UI state only | No | `src/AgentProfileView.jsx:943-956, 1002-1028, 1086-1114, 1225-1259` |
+| `Execute Crop & Save` (`cropTarget === 'avatar'`) | `handleExecuteCrop` | **Yes** — uploads photo if `usePhotoStorage` (`savePhotoAndGetReference`), `setDoc`/`updateDoc` on `artifacts/${appId}/users/${userId}/motorists/${activeAgent.id}`: `profileImage`; deletes old storage photo; updates `ownerProfile` if `master_owner` | **Yes** (`motorists`: `profileImage`; `rank logo`/`borderImage` edits update local `editingRpgData` until Rank Config save) | `src/AgentProfileView.jsx:265-300, 684` |
+| `Customize Avatar`: `Frame` `<select>` | `handleSaveBorderStyle` -> `writeAgentBorder` | **Yes** — `setDoc`/`updateDoc` on `artifacts/${appId}/users/${userId}/motorists/${activeAgent.id}`: `borderStyle`, `borderTier` (also auto-written once on rank-up in `useEffect` `L637-644`) | **Yes** (`motorists`: `borderStyle`, `borderTier`) | `src/AgentProfileView.jsx:391-404, 637-644, 713` |
+| `Service Record`: `Save Intel` | `handleBioSave` | **Yes** — `setDoc`/`updateDoc` on `artifacts/${appId}/users/${userId}/motorists/${activeAgent.id}`: `bio` | **Yes** (`motorists`: `bio`) | `src/AgentProfileView.jsx:337-346, 1194` |
+| `Grant Award`: `Grant` | `handleGrantAward` | **Yes** — `setDoc` new doc in `artifacts/${appId}/users/${userId}/career/${activeAgent.id}/awards` (`title`, `reason`, `xp`, `cosmetic`, `grantedBy`, `grantedByName`, `grantedAt`); `setDoc` merge on `artifacts/${appId}/users/${userId}/career/${activeAgent.id}` (`bonusXP: increment(xpNum)`, `awardCount: increment(1)`); `logAudit("AWARD_GRANTED")` | **Yes** (`career/${id}/awards`: new doc; `career/${id}`: `bonusXP`, `awardCount`) | `src/AgentProfileView.jsx:352-370, 823` |
+| `Rank & EXP Architecture`: `Deploy Rank Architecture` | `handleSaveRankConfig` | **Yes** — sorts & dedupes `ranks` by `min`, `setDoc` merge on `artifacts/${appId}/users/${userId}/settings/progression`: `expMultiplier`, `workingDays`, `ranks` (`id`, `name`, `min`, `hex`, `title`, `logo`, `borderImage`, `borderStyle`) | **Yes** (`settings/progression`: `expMultiplier`, `workingDays`, `ranks`) | `src/AgentProfileView.jsx:372-383, 923` |
+| `Achievement Config`: `Deploy Achievements` | `handleSaveBadgeConfig` | **Yes** — `setDoc` merge on `artifacts/${appId}/users/${userId}/settings/progression`: `badges` | **Yes** (`settings/progression`: `badges`) | `src/AgentProfileView.jsx:155-161, 806` |
+
+### 3. Logic computed inside JSX / render
+| computation | what it computes | file:line |
+| :--- | :--- | :--- |
+| `allAgents` (`useMemo`) & `selectedId` / `filteredMotorists` | Folds `ADMIN_VEHICLE.activeCanvas` into `master_owner` (filters `TIER_ONE_ALIAS_IDS`), puts own entry (`ownId`) on top, defaults selection to `ownId` | `src/AgentProfileView.jsx:187-205, 240-242` |
+| `getCorporateIdentity` | Maps `userRole`/`master_owner` + `DYNAMIC_TIERS` to `{ stars, title, tier, color, bg, border }` | `src/AgentProfileView.jsx:303-335` |
+| `stats` (`useMemo`) | Computes `lifetimeOmset` (`revenueOf`), `todayOmset`, `todayCash`, `titipIssued`/`titipCollected`/`activeTitipResponsibility`/`activeDebtList` (`storeKey` + `debtCredit`), `canvasValue`/`canvasBreakdown`, `lifetimeEXP` (`useCareerLedger ? careerXP : ...`), `rankLadder(...)`, `isTopAgentOfYear`, `daysInService`, `chartData1W`/`1M`/`1Y` | `src/AgentProfileView.jsx:413-609` |
+| `unlockedBorders` (`useMemo`) & `activeBorderStyle` | Computes unlocked `RANK_BORDERS` slice by ladder position + granted `borderStyle`s; falls back if active selection was locked | `src/AgentProfileView.jsx:620-630, 658-660` |
+| `badgeData` progress & `AchievementCard` | Reads `totals(career[activeAgent.id])[badge.source]`, formats `rp`/count, fills `{val}`/`{max}`, computes `percent` & `isUnlocked` | `src/AgentProfileView.jsx:1282-1352` |
+
+### 4. What can move out first & test pins
+| candidate to extract | safe to move first? | `logicFixes.selfcheck.mjs` / `integration.audit.mjs` exact line pins |
+| :--- | :--- | :--- |
+| `Customize Avatar`, `Cropper`, `HallOfFame` wrapper, `Achievement Config`, `Grant Award`, `Rank & EXP Architecture` modals, `Agent Directory` sidebar | **Yes, carefully** — preserve `careerXP`/`rankLadder`/`totals`, `career/{id}/awards` shape, `usePhotoStorage` (`savePhotoAndGetReference`), `storeKey` debt rollup, `PlayerCardHead`, and `HallOfFameView` props | `logicFixes.selfcheck.mjs`: `28`, `1357`, `8230`, `8262`, `8293`, `8334`, `9995`, `11237`, `11645`, `11682`, `12830`, `13082`; `integration.audit.mjs`: `1560` |
+
+### 5. Demo guide marks, filled buttons, and game art to keep
+- **Demo guide marks (`data-mission=` / `data-guide=` / `data-mark=`):** none in `src/AgentProfileView.jsx` (only `data-kpm-del` on Rank Config delete button at `L914`).
+- **Filled buttons (`bg-gold`, `bg-[var(--gold)]`, `bg-orange-*`, `bg-amber-*`, `from-amber-*`, `from-gold`):**
+  - `src/AgentProfileView.jsx:684` — **FILLED BUTTON**: Cropper `Execute Crop & Save` (`bg-gold hover:bg-gold text-white`).
+  - `src/AgentProfileView.jsx:806` — **FILLED BUTTON**: Achievement Config `Deploy Achievements` (`bg-gold hover:bg-gold text-white`).
+  - `src/AgentProfileView.jsx:823` — **FILLED BUTTON**: Grant Award `Grant` (`bg-gold hover:bg-gold text-white`).
+  - `src/AgentProfileView.jsx:848` — **FILLED BUTTON** (active day toggle): Working Days (`bg-gold text-white` when selected).
+  - `src/AgentProfileView.jsx:923` — **FILLED BUTTON**: Rank Config `Deploy Rank Architecture` (`bg-gold hover:bg-gold text-white`).
+  - `src/AgentProfileView.jsx:1020` — **FILLED BUTTON**: Top bar `Leaderboard` (`bg-gradient-to-r from-gold to-gold text-white border border-gold/50`).
+  - `src/AgentProfileView.jsx:1225` — **FILLED BUTTON** (active filter toggle): Timeline `1W`/`1M`/`1Y` (`bg-gold text-white` when selected).
+  - `src/AgentProfileView.jsx:1259` — **FILLED BUTTON** (active filter toggle): Badge category tabs (`bg-gold text-white` when selected).
+  - *(Non-button hits: `L958` active sidebar left bar `w-1 bg-gold`; `L1085` Active Canvas Value left bar `w-1 bg-gold`.)*
+- **Game art he built (must keep in redesign):**
+  - `RankBorder`, `RANK_BORDERS`, `BORDER_KEYFRAMES`, `FrameFilters` (`L13, L92-94, L664-667, L965`) — square material picture frames (wood, steel, gold, marble, violet churn SVG filters & keyframes) plus custom `tier.borderImage` (`L117-118`).
+  - `PlayerCardHead` (`L18, L1045-1057`) & sidebar `.pc-avatar` 56 px scaled frame (`L962-966`) — photo inside rank frame, rank title, XP bar, `CLOSED ?/?` route progress.
+  - Rank colors (`stats.currentTier.hex` / `rpgData.ranks` `hex`, `logo`, `borderImage`, `borderStyle`, `L220, L652, L864-908, L1033`) and `corpIdentity` tier/title colors (`L303-335, L1060, L1150-1152`).
+  - `San Andreas` license plate "Mount" card (`L1158-1172`) & `HQ Override` plate (`L1161`).
+  - `Regional MVP` spinning conic-gradient trophy (`L1267-1279`) & `AchievementCard` unlocked `colorHex` glow cards (`L1282-1352`).
 
 ## Task 33 - BUILD: no amber-filled button on Stock Opname and Receivables & Consignment
 **Status:** OPEN
