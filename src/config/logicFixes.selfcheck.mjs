@@ -12510,6 +12510,20 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      /\.kpm-edge-btn \{[^}]*border: 1px solid var\(--accent-edge\);[^}]*background-color: transparent;/.test(thc) &&
      /\.kpm-edge-btn:hover \{ background-color: color-mix\(in srgb, var\(--gold\) 11%, transparent\);/.test(thc) &&
      /\.kpm-edge-btn:active \{ scale: \.97; \}/.test(thc) && /\.kpm-edge-btn:focus-visible \{ outline: 2px solid/.test(thc));
+  /* Exclusions (not filled buttons): HistoryReportView L712/756/819 (hover-only group-hover:bg-[var(--gold)] icon tiles),
+     L974 (dark:bg-[var(--gold)] Itemized Receipt header bar); CustomerManager L126/1801 (hover-only hover:bg-[var(--gold)]),
+     L1299/1316/1321 (bg-[var(--gold)] duplicate/status badges). */
+  const hrBtnCheck = read('src/components/HistoryReportView.jsx')
+    .replaceAll('group-hover:bg-[var(--gold)]', '')
+    .replaceAll('dark:bg-[var(--gold)]', '');
+  const cmBtnCheck = read('src/components/CustomerManager.jsx')
+    .replaceAll('hover:bg-[var(--gold)]', '')
+    .replaceAll('bg-[var(--gold)] px-2 py-1.5', '')
+    .replaceAll('px-1.5 py-0.5 rounded bg-[var(--gold)]', '');
+  ok('REGRESSION: no amber-filled button on Reports or Customers (his 2026-11-17 "dont make it again")',
+     !fill.test(hrBtnCheck) && !fill.test(cmBtnCheck) &&
+     (hrBtnCheck.match(/className="kpm-edge-btn/g) || []).length >= 4 &&
+     (cmBtnCheck.match(/className="kpm-edge-btn/g) || []).length >= 2);
   /* his 2026-11-17: "i want right now that the segment change but also closing all the panel that is on the path, right now
      literally stuck on the examine button and cant close it" + "i cant go back ... the button is intesect with the demo top panel" */
   const exm = read('src/components/ExamineModal.jsx');

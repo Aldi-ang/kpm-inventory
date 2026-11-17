@@ -430,7 +430,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                         </select>
                         <input type="date" value={targetDate} onChange={e=>setTargetDate(e.target.value)} className="bg-[var(--raised)] border border-[var(--line)] text-[var(--ink)] p-3 rounded-xl font-bold outline-none" />
                         {!isFieldAgent && (
-                            <button onClick={handlePullArchive} disabled={isFetchingHistory} className="bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all whitespace-nowrap flex items-center gap-2 shadow-[0_0_15px_rgba(217,119,6,0.4)] disabled:opacity-50 active:scale-95">
+                            <button onClick={handlePullArchive} disabled={isFetchingHistory} className="kpm-edge-btn px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest whitespace-nowrap flex items-center gap-2 disabled:opacity-50">
                                 {isFetchingHistory ? <RotateCw className="animate-spin" size={16}/> : <Database size={16}/>}
                                 {isFetchingHistory ? 'Extracting...' : 'Pull Archive'}
                             </button>
@@ -468,7 +468,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                         {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-4 flex items-center text-[var(--ink-muted)] hover:text-[var(--danger-text)] transition-colors"><X size={20} /></button>}
                     </div>
                     
-                    <button onClick={() => setReportView(true)} className="bg-[var(--gold)] hover:bg-[var(--gold)] border border-[var(--accent-edge)] px-6 py-3 rounded-xl shadow-md flex items-center justify-center gap-2 font-bold text-[var(--gold-ink)] transition-all whitespace-nowrap active:scale-95 text-xs uppercase tracking-widest">
+                    <button onClick={() => setReportView(true)} className="kpm-edge-btn px-6 py-3 rounded-xl flex items-center justify-center gap-2 font-bold whitespace-nowrap text-xs uppercase tracking-widest">
                         <Calendar size={16}/> Context Analytics
                     </button>
                 </div>
@@ -973,7 +973,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                             <div className="border border-[var(--line-2)] dark:border-[var(--line)] rounded-xl overflow-hidden shadow-sm">
                                 <div className="bg-[var(--raised)] dark:bg-[var(--gold)] p-3 flex justify-between items-center border-b border-[var(--accent-edge)] dark:border-[var(--accent-edge)]">
                                     <span className="font-bold text-xs uppercase tracking-widest text-[var(--ink)] dark:text-[var(--ink-muted)]">Itemized Receipt</span>
-                                    <button type="button" onClick={() => setEditingTrans({...editingTrans, items: [...(editingTrans.items||[]), { productId: '', name: 'Select Product', qty: 1, unit: 'Bks', calculatedPrice: 0 }]})} className="text-[10px] bg-[var(--gold)] text-[var(--gold-ink)] px-3 py-1.5 rounded font-bold hover:bg-[var(--gold)] shadow active:scale-95 transition-transform">+ ADD ITEM</button>
+                                    <button type="button" onClick={() => setEditingTrans({...editingTrans, items: [...(editingTrans.items||[]), { productId: '', name: 'Select Product', qty: 1, unit: 'Bks', calculatedPrice: 0 }]})} className="kpm-edge-btn text-[10px] px-3 py-1.5 rounded font-bold">+ ADD ITEM</button>
                                 </div>
                                 <div className="p-3 space-y-2 bg-[var(--raised)] dark:bg-[var(--raised)]">
                                     {(editingTrans.items || []).map((item, idx) => (
@@ -1007,7 +1007,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                         </div>
                         <div className="flex gap-3 pt-5 mt-2 shrink-0">
                             <button type="button" onClick={()=>setEditingTrans(null)} className="flex-1 py-3.5 bg-[var(--raised)] hover:bg-[var(--raised)] dark:bg-[var(--raised)] dark:hover:bg-[var(--inset)] text-[var(--ink)] dark:text-[var(--ink)] rounded-xl font-bold transition-colors">Cancel</button>
-                            <button type="button" onClick={handleEditSubmit} className="flex-1 py-3.5 bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] rounded-xl font-bold shadow-lg transition-all active:scale-95">Save Changes</button>
+                            <button type="button" onClick={handleEditSubmit} className="kpm-edge-btn flex-1 py-3.5 rounded-xl font-bold">Save Changes</button>
                         </div>
                     </div>
                 </div>

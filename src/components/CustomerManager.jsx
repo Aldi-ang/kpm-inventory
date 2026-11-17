@@ -142,7 +142,7 @@ export const CustomerDetailView = ({ customer, db, appId, user, onBack, logAudit
                                 <input type="number" step="any" value={newBench.price} onChange={e=>setNewBench({...newBench, price:e.target.value})} placeholder="Price (Rp)" className="p-2 min-h-[44px] lg:min-h-0 text-sm rounded border border-[var(--line)] bg-[var(--raised)] text-[var(--ink)]"/>
                                 <select value={newBench.volume} onChange={e=>setNewBench({...newBench, volume:e.target.value})} className="p-2 min-h-[44px] lg:min-h-0 text-sm rounded border border-[var(--line)] bg-[var(--raised)] text-[var(--ink)]"><option>High Sales</option><option>Medium</option><option>Slow Moving</option></select>
                             </div>
-                            <div className="flex gap-3"><input value={newBench.notes} onChange={e=>setNewBench({...newBench, notes:e.target.value})} placeholder="Notes (e.g. Promos)" className="flex-1 p-2 min-h-[44px] lg:min-h-0 text-sm rounded border border-[var(--line)] bg-[var(--raised)] text-[var(--ink)]"/><button className="bg-[var(--gold)] text-[var(--gold-ink)] px-4 py-2 rounded-lg font-bold text-sm hover:bg-[var(--gold)]">Add Log</button></div>
+                            <div className="flex gap-3"><input value={newBench.notes} onChange={e=>setNewBench({...newBench, notes:e.target.value})} placeholder="Notes (e.g. Promos)" className="flex-1 p-2 min-h-[44px] lg:min-h-0 text-sm rounded border border-[var(--line)] bg-[var(--raised)] text-[var(--ink)]"/><button className="kpm-edge-btn px-4 py-2 rounded-lg font-bold text-sm">Add Log</button></div>
                         </form>
                         <div className="flex-1 overflow-y-auto lg:overflow-x-auto pb-2">
                             <table className="w-full text-sm text-left block lg:table lg:min-w-[600px]">
@@ -1788,7 +1788,7 @@ export const CustomerManagement = ({ customers, db, appId, user, logAudit, trigg
                                             </select>
                                             
                                             {c.status === 'PENDING' && (
-                                                <button onClick={(e) => handleApproveNOO(e, c.id, c.name)} className="px-3 py-1.5 text-xs bg-[var(--gold)] text-[var(--gold-ink)] border border-[var(--line)] font-bold rounded-lg hover:bg-[var(--gold)] hover:text-[var(--gold-ink)] transition-all animate-pulse shadow-sm">
+                                                <button onClick={(e) => handleApproveNOO(e, c.id, c.name)} className="kpm-edge-btn px-3 py-1.5 text-xs font-bold rounded-lg">
                                                     Verify
                                                 </button>
                                             )}

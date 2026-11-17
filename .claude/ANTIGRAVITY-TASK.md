@@ -1385,7 +1385,7 @@ Do NOT change the code. Done when: four tables + the filled-button list in the R
 | Already modular (uses `.kpm-mod`, `DashboardBenchmarks`, `PaceChart`, `utils/supply`, `utils/period`, `utils/salesRollup`) | **Keep `App.jsx` mount clean** — do NOT pass `handleRebuildSalesStats` to `<DashboardView>` | `3636` (`dashView`), `5199-5211` (`!/<DashboardView[\s\S]{0,2000}?handleRebuildSalesStats=/.test(appSrc)`) |
 
 ## Task 28 - BUILD: no amber-filled button on Reports and Customers
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 09:00 WIB, by Claude. BUILD rules apply.
 **Touch only:** `src/components/HistoryReportView.jsx`, `src/components/CustomerManager.jsx`, `src/config/logicFixes.selfcheck.mjs`, this file.
 
@@ -1397,6 +1397,24 @@ Aldi, 2026-11-17: *"i really hate the simple amber fill button dont make it agai
 Done when: the four BUILD checks are green and the red-then-green proof is in the Result.
 
 **Result:**
+- Converted 4 filled gold buttons in `src/components/HistoryReportView.jsx` (`433`, `471`, `976`, `1010`) and 2 in `src/components/CustomerManager.jsx` (`145`, `1791`) to `.kpm-edge-btn`. Left all hover-only icon tiles, header bar, and badges untouched.
+- Added `REGRESSION: no amber-filled button on Reports or Customers (his 2026-11-17 "dont make it again")` in `src/config/logicFixes.selfcheck.mjs:12513-12525`.
+- **Red-then-green proof:**
+  - Stashed `.jsx` edits (`git stash push src/components/HistoryReportView.jsx src/components/CustomerManager.jsx`):
+    ```
+      FAIL REGRESSION: no amber-filled button on Reports or Customers (his 2026-11-17 "dont make it again")
+    3009 passed, 1 failed, 3010 checks
+    ```
+  - Restored (`git stash pop`):
+    ```
+      ok   REGRESSION: no amber-filled button on Reports or Customers (his 2026-11-17 "dont make it again")
+    3010 passed, 0 failed, 3010 checks
+    ```
+- **Four BUILD checks (all green after final edit):**
+  1. `node src/config/logicFixes.selfcheck.mjs`: `3010 passed, 0 failed, 3010 checks`
+  2. `src/config/*.selfcheck.mjs`: all 14 scripts exited 0 (`contrast`, `customerBrief`, `dayLog`, `dayStats`, `eodRecord`, `findDuplicates`, `logicFixes`, `mixedUnits`, `nextStop`, `notaScan`, `stockThreshold`, `toastSeverity`, `txSize`, `vaultGrace`)
+  3. `npm run build`: exit 0 (`built in 13.92s`)
+  4. `node src/config/integration.audit.mjs`: `725 passed, 0 failed, 725 checks`
 
 ## Task 29 - BUILD, ONLY after Aldi says "demo bar ok": the demo's two top bars as ONE 40 px line
 **Status:** OPEN - Aldi, 2026-11-17: *"demo bar oke"*.
