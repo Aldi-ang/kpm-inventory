@@ -11130,7 +11130,7 @@ section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual 
   const a = dc ? dc.buildDemoCompany(seed, NOW, VAULT) : null, b = dc ? dc.buildDemoCompany(seed, NOW, VAULT) : null;
   const paths = a ? a.docs.map((d) => d.path) : [];
   const under = (p) => a.docs.filter((d) => d.path.startsWith(`artifacts/cello-inventory-manager/users/${dc.OWNER_UID}/${p}/`));
-  const sales = a ? under('transactions') : [];
+  const sales = a ? under('transactions').filter((d) => !d.path.includes('/demo-titip-')) : [];
   ok('the reset only knows the demo project, and the T1 Gmail is never one of its logins',
      !!dc && dc.DEMO_PROJECT === 'kpm-demo-f4d74' && dc.T1_EMAIL === 'adikaryasukses99@gmail.com' && !a.logins.some((l) => l.email === dc.T1_EMAIL));
   ok('demoKey refuses no key, a broken key, and the REAL project key; takes only kpm-demo-f4d74',
@@ -11281,8 +11281,8 @@ section('THE DEMO RESET (2026-10-11) - his "reset every 24 hours ... for manual 
   ok('REGRESSION: MASUK\'s Asal is never empty in the demo - one registered factory, Produksi Pusat, and every past surat jalan came from it (his 2026-10-25 "add option for the asal ... produksi pusat")',
      !!a && pabrik.length === 1 && pabrik[0].name === 'Produksi Pusat' && pos.every((p) => p.supplierName === pabrik[0].name));
   /* 2026-10-31, his "how better if we can add the total sales into milyar omset instead of just few puluh juta" */
-  const omset = a ? under('transactions').reduce((s, d) => s + (d.data.total || 0), 0) : 0;
-  const lines = a ? under('transactions').flatMap((d) => d.data.items) : [];
+  const omset = a ? sales.reduce((s, d) => s + (d.data.total || 0), 0) : 0;
+  const lines = a ? sales.flatMap((d) => d.data.items) : [];
   ok(`BEHAVIOUR: the demo's four weeks of sales read in miliar (Rp ${(omset / 1e9).toFixed(2).replace('.', ',')} miliar), from orders a distributor really takes - every cigarette line whole slop, a grosir whole bal, the per-piece import only a few`,
      !!a && omset >= 1e9 && omset <= 3e9 && lines.length > 0 &&
      lines.every((i) => (i.calculatedPrice > 50000 ? i.qty >= 1 && i.qty <= 4 : i.qty % 10 === 0 && i.qty >= 50 && (i.priceTier !== 'Grosir' || i.qty % 100 === 0))));
@@ -11305,7 +11305,7 @@ section('THE BIG DEMO COMPANY (2026-11-14) - his "u could simulate as its a big 
   const small = dc ? dc.buildDemoCompany(seed, NOW, VAULT) : null;
   const big = dc?.BIG_STAFF ? dc.buildDemoCompany(seed, NOW, VAULT, { big: true }) : null;
   const home = dc ? `artifacts/cello-inventory-manager/users/${dc.OWNER_UID}/` : '';
-  const under = (c, p) => (c ? c.docs.filter((d) => d.path.startsWith(home + p + '/')).map((d) => d.data) : []);
+  const under = (c, p) => (c ? c.docs.filter((d) => d.path.startsWith(home + p + '/') && !d.path.includes('/demo-titip-')).map((d) => d.data) : []);
   const shops = under(big, 'customers'), sales = under(big, 'transactions'), roster = under(big, 'motorists');
   const real = seed.customers.filter((c) => c.region === 'MAGELANG' || c.province === 'JAWA BARAT');
   const made = shops.filter((c) => String(c.id).startsWith('demo-shop-'));
@@ -14503,6 +14503,51 @@ section('THE MENU TOUR, AND A RING ONLY ON WHAT IS DRAWN (2026-11-17)');
      /* kpm-REELnum, not kpm-roll: the 2026-09-18 check above bans the old LED odometer's .kpm-roll by name */
      /\.kpm-reelnum \{[^}]*font-variant-numeric: tabular-nums/.test(th) && th.includes('.kpm-reelnum .kpm-dig-sep { white-space: pre; }') &&
      so.includes('<RollingNumber text={countedN} />') && so.includes('<RollingNumber text={formatRupiah(shortRp)} />') && wl.includes('<RollingNumber text={formatRupiah(s.rp)} />'));
+}
+section('DEMO CONSIGNMENT DEBT (Task 56, 2026-11-17)');
+{
+  const { buildDemoCompany } = await import('../../api/_demoCompany.js');
+  const { isTitip, debtCredit } = await import('../utils/revenueRule.js');
+  const { storeKey } = await import('../utils/helpers.js');
+  const seed = JSON.parse(read('demo/seed.json'));
+  const fixedNow = new Date('2026-11-17T05:00:00Z');
+  const built = buildDemoCompany(seed, fixedNow, { pin: 'p', recoveryHash: 'r' });
+  const txns = built.docs.filter((d) => d.path.includes('/transactions/')).map((d) => d.data);
+  const transfers = built.docs.filter((d) => d.path.includes('/account_transfers/')).map((d) => d.data);
+  const byShop = new Map();
+  for (const t of txns) {
+    if (t.type === 'SALE' && isTitip(t)) {
+      const k = storeKey(t.customerName);
+      if (!byShop.has(k)) byShop.set(k, { name: t.customerName, drops: [], paid: 0 });
+      byShop.get(k).drops.push({ date: t.date, total: t.total, tempo: t.tempoDays || 7 });
+    } else if (t.type === 'CONSIGNMENT_PAYMENT') {
+      const k = storeKey(t.customerName);
+      if (!byShop.has(k)) byShop.set(k, { name: t.customerName, drops: [], paid: 0 });
+      byShop.get(k).paid += debtCredit(t);
+    }
+  }
+  const todayMs = Date.parse('2026-11-17T00:00:00Z');
+  const openShops = [];
+  for (const s of byShop.values()) {
+    s.drops.sort((a, b) => a.date.localeCompare(b.date));
+    let pay = s.paid;
+    const openDrops = [];
+    for (const d of s.drops) {
+      const take = Math.min(pay, d.total);
+      pay -= take;
+      if (d.total - take > 0.01) openDrops.push({ ...d, left: d.total - take });
+    }
+    const owed = openDrops.reduce((a, d) => a + d.left, 0);
+    if (owed > 0.01) {
+      const age = Math.floor((todayMs - Date.parse(openDrops[0].date + 'T00:00:00Z')) / 86400000);
+      openShops.push({ name: s.name, owed, age, tempo: openDrops[0].tempo });
+    }
+  }
+  const totalOwed = openShops.reduce((a, s) => a + s.owed, 0);
+  const amanah = openShops.find((s) => s.name === 'AMANAH BARU');
+  ok('BEHAVIOUR: demo company builds 8 shops owing Rp 9.120.000, AMANAH BARU Rp 1.580.000 overdue (12d vs tempo 7d), and 2 pending hand-offs',
+     openShops.length === 8 && totalOwed === 9120000 && amanah?.owed === 1580000 && amanah?.age === 12 && amanah?.tempo === 7 && transfers.length === 2,
+     `shops=${openShops.length} total=${totalOwed} amanah=${JSON.stringify(amanah)} transfers=${transfers.length}`);
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

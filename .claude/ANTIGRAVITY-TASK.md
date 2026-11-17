@@ -2308,7 +2308,7 @@ Then: which blocks share a variable declared INSIDE another block (a cut there w
 
 
 ## Task 56 - BUILD: give the demo company real consignment debt
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 18:05 WIB, by Claude. Aldi: *"make the debt on the demo as well of course to show its features"*. Do it after 54-55.
 **Touch only:** `api/_demoCompany.js`, `src/config/logicFixes.selfcheck.mjs`, this file.
 
@@ -2319,9 +2319,10 @@ Today every demo sale is `paymentType: 'Cash'` (`api/_demoCompany.js` ~L173, `da
 - The 2 pending hand-offs: find how the app stores a pending hand-off (grep `handoff` in `src/ConsignmentFinanceView.jsx`, your Task 23 map) and write those 2 the same way. If that needs a collection the demo builder does not write, STOP and write that in the Result instead.
 - TRAPS: never add an `r()` call (every route after it changes); find any selfcheck/audit that pins demo totals (grep the demo totals / `buildDemoCompany` in `src/config/*.mjs`, `tools/*.mjs`) and say if a Titip sale changes a revenue number (`isTitip`, `src/utils/revenueRule.js:28`).
 - Add ONE check to `logicFixes.selfcheck.mjs`: build the demo with a fixed `now` = 2026-11-17 and assert 8 shops owe, total Rp 9.120.000, AMANAH BARU Rp 1.580.000 overdue (oldest note 12 days, tempo 7).
-Done when: logicFixes + every `src/config/*.selfcheck.mjs` exit 0, `npm run build` passes, `node src/config/integration.audit.mjs` passes. Commit `Antigravity: Task 56 ...`. Never push.
-
-**Result:**
+\r
+- Added 9 SALE (paymentType: 'Titip', line(p, qty, 'Retail')) notes, 1 CONSIGNMENT_PAYMENT (AMANAH BARU, mountPaid: 300000, 	otal: 300000, eturnTotal: 0 per debtCredit in src/utils/revenueRule.js:64-71), and 2 pending ccount_transfers (LARIS JAYA, HJ EUIS, PENDING_AGENT) in pi/_demoCompany.js:337-382 using ddDays(day, -back) and tWib(...) with zero () calls.
+- Because isTitip(tx) (src/utils/revenueRule.js:28) is 	rue for paymentType: 'Titip', countsAsRevenue excludes the 9 Titip placements from revenue/omset; logicFixes.selfcheck.mjs (I33, 11284-11285, 11308) excludes demo-titip-* from the dayRound Cash-round assertions and adds section('DEMO CONSIGNMENT DEBT (Task 56, 2026-11-17)') asserting 8 shops owe Rp 9.120.000, AMANAH BARU owes Rp 1.580.000 (ge: 12, 	empo: 7), and 2 pending hand-offs.
+- Checks: logicFixes.selfcheck.mjs Â0 passed, 0 failed; all 14 src/config/*.selfcheck.mjs exited 0; pm run build exited 0 (.53s); integration.audit.mjs :5 passed, 0 failed.
 
 ## Task 57 - BUILD: Receivables & Consignment to the approved picture (segment 4)
 **Status:** OPEN

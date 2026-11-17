@@ -333,6 +333,54 @@ export function buildDemoCompany(seed, now, vault, { big = false } = {}) {
     const rounds = days.flatMap((d) => staff.filter((m) => sellers.has(m.agentId)).map((m) => ({ day: d, man: m, ...dayRound(d, m, shops, products, S) })));
     const sales = rounds.flatMap((x) => x.sales);
     for (const s of sales) put(`${home}/transactions/${s.id}`, s.data);
+
+    /* CONSIGNMENT DEBT & PENDING HAND-OFFS (2026-11-17, approved Receivables picture):
+       9 Titip placements across 8 seed shops + 1 partial CONSIGNMENT_PAYMENT (AMANAH BARU Rp 300.000)
+       + 2 pending account_transfers. Zero r() calls so every route/dayRound draw stays identical.
+       isTitip(tx) is true on the 9 placements so countsAsRevenue() excludes them from omset. */
+    const prod = (sub) => products.find((p) => p.name.toLowerCase().includes(sub.toLowerCase()));
+    const shopExact = (upper) => shops.find((c) => c.name.toUpperCase().trim() === upper)?.name || upper;
+    const TITIP_NOTES = [
+        ['AMANAH BARU', 12, 7, 'demo-agent-1', [['Chocolate', 100], ['Green', 50]]],
+        ['AMANAH BARU', 4, 7, 'demo-agent-1', [['Mmrapi', 40]]],
+        ['FITRIA PLASTIK', 15, 14, 'demo-agent-2', [['Mmrapi', 200]]],
+        ['ASYIFA MART MADURA', 9, 7, 'demo-agent-2', [['Coffee', 120]]],
+        ['DEWI CIBOLERANG', 6, 7, 'demo-agent-4', [['Teh Manis', 80], ['American Spirit', 2]]],
+        ['ANEKA BARU PANJI', 5, 7, 'demo-agent-1', [['Mmrapi', 60]]],
+        ['CEMERLANG', 7, 14, 'demo-agent-1', [['Chocolate', 150]]],
+        ['ENDANG CELL', 3, 7, 'demo-agent-3', [['Green', 100]]],
+        ['ANUGRAH 17', 1, 7, 'demo-agent-4', [['Coffee', 40]]],
+    ];
+    TITIP_NOTES.forEach(([shop, back, tempoDays, agentId, spec], i) => {
+        const txDay = addDays(day, -back);
+        const items = spec.map(([sub, qty]) => line(prod(sub), qty, 'Retail'));
+        put(`${home}/transactions/demo-titip-${i + 1}`, {
+            date: txDay, customerName: shopExact(shop), paymentType: 'Titip', items,
+            total: items.reduce((s, x) => s + x.qty * x.calculatedPrice, 0),
+            totalProfit: items.reduce((s, x) => s + x.profitSnapshot, 0),
+            type: 'SALE', timestamp: atWib(txDay, 10 * 60 + i * 15),
+            agentId, agentName: nameOf[agentId], tempoDays, territoryOverride: null, deliveryProof: null, demo: true,
+        });
+    });
+    const payDay = addDays(day, -5);
+    put(`${home}/transactions/demo-titip-pay-1`, {
+        date: payDay, customerName: shopExact('AMANAH BARU'), paymentType: 'Cash',
+        type: 'CONSIGNMENT_PAYMENT', amountPaid: 300000, total: 300000, returnTotal: 0,
+        timestamp: atWib(payDay, 14 * 60), agentId: 'demo-agent-1', agentName: nameOf['demo-agent-1'], demo: true,
+    });
+    const HANDOFF_SEED = [
+        ['LARIS JAYA', 'demo-agent-1', 'demo-agent-4', 'Mmrapi', 60, addDays(day, -1), 15 * 60 + 20],
+        ['HJ EUIS', 'demo-agent-4', 'demo-agent-1', 'Green', 30, day, 9 * 60 + 5],
+    ];
+    HANDOFF_SEED.forEach(([shop, fromAgentId, toAgentId, sub, qty, hDay, mins], i) => {
+        const cust = shops.find((c) => c.name.toUpperCase().trim() === shop);
+        put(`${home}/account_transfers/demo-handoff-${i + 1}`, {
+            storeName: cust?.name || shop, customerId: cust?.id || null,
+            fromAgentId, fromAgentName: nameOf[fromAgentId], toAgentId, toAgentName: nameOf[toAgentId],
+            note: 'Demo hand-off', status: 'PENDING_AGENT', timestamp: atWib(hDay, mins), demo: true,
+            stockSnapshot: { balance: 0, totalBks: qty, items: [{ name: prod(sub).name, qty, tier: 'Retail' }] },
+        });
+    });
     /* BIG: the months before those days - the same rounds, counted into the month tallies only, never a single sale (the
        write budget). Product Performance reads the tallies; the Reports archive and Day Replay read single sales. */
     const older = [];
