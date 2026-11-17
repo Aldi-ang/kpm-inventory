@@ -1047,3 +1047,21 @@ Do NOT change the code. Done when: four tables in the Result.
 | Sub-views inside `RestockVaultView.jsx` (`Data Induk` tab, `Buku`/`Request` drawer, `isFulfilling` modal, `editingPO` modal) -> `src/components/restock/...` | **Only after updating selfcheck** — `selfcheck` reads `src/RestockVaultView.jsx` directly for exact strings across nav, footer, `REQ_RANK`, `AcceptanceReceipt`, `poDate`, `promoItems`, `handleStartFulfillment` | `logicFixes.selfcheck.mjs:2772-2773` (`REQ_RANK = { DISPUTED: 0`, `sort`), `2890` (`poDate: getLocalDayKey()`), `3900` (`const HQ_NAME = MASTER;`), `3958` (`<AcceptanceReceipt`), `6965-6982` (`ONE nav...`, `{tabs.map(t => (`, `flex-wrap`, `w-full lg:w-auto`, `flex-auto lg:flex-none`), `7018-7035` (`→ Belum lengkap:`, `→ Lengkap. Siap disimpan.`, `truncate sm:whitespace-normal`, `static lg:absolute`, no `di kiri`), `11473` (`onClick={() => handleStartFulfillment(po)}` + `<Truck size={13}/>`), `12370` (`promoItems` exact file list) |
 | Pure math/list derivations (`bookRows`, `lastLanded`, `bksPerUnit`, `checklist`) -> `src/utils/restockHelpers.js` | **Careful** — `poDate: getLocalDayKey()` and `REQ_RANK` are checked in `src/RestockVaultView.jsx` | Same `2772-2773`, `2890` pins in `logicFixes.selfcheck.mjs` |
 | Wrapper div in `src/App.jsx:5398-5426` | **Keep `border-2 lg:border-4` and `p-2 lg:p-4` and `branchStockMap={branchStock}`** | `logicFixes.selfcheck.mjs:1124` (`RestockVaultView...branchStockMap={branchStock}`), `7006-7016` (`border-2 lg:border-4`, `p-2 lg:p-4` matching `tools/ponder-lab.jsx`) |
+
+## Task 22 - the same map for Stock Opname (segment 3 of 12)
+**Status:** OPEN
+**Written:** 2026-11-17 07:42 WIB, by Claude. Same rules as above.
+
+Exactly Task 20's four tables for `src/StockOpnameView.jsx` (monitor view, New Count, the count form, submit, quarantine settle, every warehouse it can open). Mark every demo guide mark (`data-guide=...`, `data-mission=...`, `data-half`) - they must survive the redesign. In table 4, list every `logicFixes.selfcheck.mjs` line that pins an exact class or string in this file.
+Do NOT change the code. Done when: four tables in the Result.
+
+**Result:**
+
+## Task 23 - the same map for Receivables & Consignment (segment 4 of 12)
+**Status:** OPEN
+**Written:** 2026-11-17 07:42 WIB, by Claude. Same rules as above.
+
+Exactly Task 20's four tables for `src/ConsignmentFinanceView.jsx` and the inline `activeTab === 'receivables'` block in `src/App.jsx` (~L5525). Every press that moves money gets **Yes** in the "moves stock or money?" column with the exact field it writes. Mark demo guide marks. In table 4, list the selfcheck pins on this file.
+Do NOT change the code. Done when: four tables in the Result.
+
+**Result:**
