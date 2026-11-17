@@ -1335,13 +1335,54 @@ Do NOT change the code. Done when: four tables + the filled-button list in the R
 | `SamplingAnalyticsView`, `SamplingCartView`, `SamplingFolderView`, `SampleEntryModal` | **Yes, carefully** — preserve `FolderCard` quiet classes and no `purple-/emerald-/cyan-` palette violations | `8020`, `11463`, `13008`, `13761` |
 
 ## Task 27 - the same map for Command Center (segment 8 of 12)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 08:52 WIB, by Claude. Same rules as above.
 
 Exactly Task 20's four tables for `src/components/DashboardView.jsx` (the `activeTab === 'dashboard'` screen, App.jsx ~L5088) - every number on it and where it is computed (file:line), every press. Demo guide marks; selfcheck pins; the same filled-button list.
 Do NOT change the code. Done when: four tables + the filled-button list in the Result.
 
 **Result:**
+
+### Demo Guide Marks in `src/components/DashboardView.jsx`
+- **None** (`rg -n "data-mission=|data-guide="` returned zero matches).
+
+### Filled Amber/Gold Buttons to Convert to `.kpm-edge-btn`
+- **None** in `src/components/DashboardView.jsx` (`rg -n "bg-gold|bg-\[var\(--gold\)\]|bg-orange-|bg-amber-|from-amber-"` returned zero matches — it uses `.kpm-mod`, `.kpm-btn`, `.kpm-period`, `.kpm-vrow`, `.kpm-srow` from `theme.css`).
+
+### 1. Elements on screen (PC & phone, top to bottom)
+| element | PC / phone | what it shows | reads (state / prop / Firestore field) | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| `DashboardBenchmarks` (left/top grid slot) | Both (`.kpm-dash-grid`) | Live period benchmarks, targets editor (`onSaveTargets`), audit/session status, period switch (`period`, `onPeriod`) | `transactions`, `inventory`, `appSettings`, `handleSaveDashboardTargets`, `isAdmin`, `auditLogs`, `sessionStatus`, `period` | `src/components/DashboardView.jsx:306-316` |
+| `Stok Kritis` (`isAdmin && runningOut.length > 0`) | Both (`.kpm-mod.hazard`) | Up to 6 low-stock products sorted by `daysOfCover`, showing `left.n`, `left.unit`, `left.rest`, `ambang limit.n limit.unit`, plus `N produk` button | `isAdmin`, `runningOut`, `appSettings` | `src/components/DashboardView.jsx:320-359` |
+| `Perputaran Inventaris` (Velocity) | Both (`.kpm-mod`) | Top 6 products by `bks` sold in `period`: rank, name, progress bar (`pct%`, `neg` if `dead`), `out.n out.unit keluar · left.n left.unit stok` | `velocity`, `meta.title`, `openRow`, `arrived` | `src/components/DashboardView.jsx:361-399` |
+| `Distribusi Inventaris` (`isAdmin && inventory.length > 0`) | Both (`.kpm-mod`) | `N produk dorman` chip, warehouse switch (`Semua` + `Master` + `gudangs`), legend (`Terjual`/`Dalam perjalanan`/`Stok gudang`), top 8 `supply.rows` stacked bars (`%` inside segments `>= 12%`) + `Total ...` or interactive segment readout (`seg`) | `isAdmin`, `inventory`, `gudangs`, `gudang`, `supply`, `openRow`, `seg`, `arrived` | `src/components/DashboardView.jsx:409-534` |
+| `Kinerja Regional` (`isAdmin && (regions.rows.length > 0 \|\| regions.unknown)`) | Both (`.kpm-mod`) | Active region count, `<PaceChart>` for `shown` region (`omzet · share%` + steady pace caption), top 6 ranked region buttons (`omzet · share% · toko pelanggan`), `+ N wilayah` tail count, `Wilayah tidak teridentifikasi` row if `regions.unknown` | `isAdmin`, `regions`, `shown`, `wilayah`, `period`, `arrived` | `src/components/DashboardView.jsx:536-632` |
+| `Leaderboard` (`AGEN · HARI INI`) | Both (`.kpm-mod`, `.idle` if empty) | Today's agent ranking by `revenueOf(t)` (`formatRupiah(a.revenue) · a.count transaksi`) | `agents` | `src/components/DashboardView.jsx:634-661` |
+
+### 2. Every press & what it writes
+| control / press | handler called | writes (Firestore + local state) | moves stock or money? | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| `Stok Kritis` (`N produk` button & 6 product cards) | `setActiveTab('inventory')` | Navigates to Master Vault tab | No | `src/components/DashboardView.jsx:329, 341` |
+| `Perputaran Inventaris` row | `setOpenRow(...)` | Local `openRow` | No | `src/components/DashboardView.jsx:381` |
+| `Distribusi Inventaris` warehouse switch (`Semua`/`Master`/branch) | `setGudang(null \| g)` | Local `gudang` | No | `src/components/DashboardView.jsx:433, 436` |
+| `Distribusi Inventaris` row & bar segments | `setOpenRow(...)` / `setSeg({ id, key })` | Local `openRow`, `seg` | No | `src/components/DashboardView.jsx:476, 491-492` |
+| `Kinerja Regional` row | `setWilayah(r.region)` | Local `wilayah` | No | `src/components/DashboardView.jsx:589` |
+| `DashboardBenchmarks` period & target save | `setPeriod` / `handleSaveDashboardTargets` | Local `period`; target save writes `settings/general` (`App.jsx:798-808`) | No (sets goal targets only) | `src/components/DashboardView.jsx:310, 315` |
+
+### 3. Logic computed inside JSX / render
+| computation | what it computes | file:line |
+| :--- | :--- | :--- |
+| `dominant(bks, product)` | Formats quantities via `displayQty(bks, product, appSettings?.defaultDisplayUnit \|\| 'AUTO')` | `src/components/DashboardView.jsx:66-67` |
+| `runningOut` | Sums 30-day `SALE` `convertToBks` per product, computes `daysOfCover(item.stock, perDay)`, `left`, `limit` (`minStockBks`), sorts shortest cover first | `src/components/DashboardView.jsx:78-106` |
+| `velocity` | Sums `SALE` `convertToBks` inside `periodWindow(period)`, flags `low` (`isLowStock`) and `dead` (`bks === 0 && stock > 0`), takes top 6 with `pct` | `src/components/DashboardView.jsx:110-143` |
+| `regions` & `shown` | Joins `revenueOf(t)` in `periodWindow(period)` to `customers[].region` by `customerName` (unmatched -> `unknown`), builds cumulative `series`, `evenPace`, `fastStart`, `share`, top 6 + `shown` | `src/components/DashboardView.jsx:160-246, 291` |
+| `supply` | Filters `branchStock` to live `gudangs` (`warehouseList(motorists)`), calls `supplyByProduct(...)` and `dormant(rows)` | `src/components/DashboardView.jsx:251-265` |
+| `agents` | Sums today's `revenueOf(t)`, `totalProfit`, and `count` per `t.agentName \|\| 'Admin'`, sorted descending by `revenue` | `src/components/DashboardView.jsx:268-287` |
+
+### 4. What can move out first & `logicFixes.selfcheck.mjs` pins
+| candidate to extract | safe to move first? | `logicFixes.selfcheck.mjs` exact line pins |
+| :--- | :--- | :--- |
+| Already modular (uses `.kpm-mod`, `DashboardBenchmarks`, `PaceChart`, `utils/supply`, `utils/period`, `utils/salesRollup`) | **Keep `App.jsx` mount clean** — do NOT pass `handleRebuildSalesStats` to `<DashboardView>` | `3636` (`dashView`), `5199-5211` (`!/<DashboardView[\s\S]{0,2000}?handleRebuildSalesStats=/.test(appSrc)`) |
 
 ## Task 28 - BUILD: no amber-filled button on Reports and Customers
 **Status:** OPEN
