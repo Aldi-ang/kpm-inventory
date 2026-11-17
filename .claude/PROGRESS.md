@@ -4,7 +4,8 @@
 
 ## 🔴 2026-11-17 08:55 WIB — KPM: the menu closes open panels, the 3D viewer's X below the demo bars LIVE 593875e9; demo bar picture sent
 His words: *"i cant go back inside the demo since the button is intesect with the demo top panel ... i want right now that the segment change but also closing all the panel that is on the path"* + *"i think u need to redesign that one ... to many spaces taken by those lines"*. Fixed and lab-proven (story: the commit). Demo bar = one picture, https://claude.ai/artifact/WEBH4YHN5V3E8mpH2gSRQv, nothing built. Antigravity 24-25 read, 26-27 queued.
-WAITING ON ALDI (word for word from the reply): "🔴 DECIDE: the demo bar in one line - ok, or what to change?" and "✅ TEST the 3D viewer + menu (PC + phone)" and paste the Antigravity prompt for Tasks 26-27.
+09:02: his "make antigrav work 75% of your work" -> BUILD rules in the task file; Tasks 28 (BUILD), 29 (BUILD, on his demo-bar ok), 30 (Restock Vault picture draft) written.
+WAITING ON ALDI (word for word from the reply): "🔴 DECIDE: the demo bar in one line - ok, or what to change?" and "✅ TEST the 3D viewer + menu (PC + phone)" and paste the Antigravity prompt for Tasks 26, 27, 28, 30.
 
 ## 🟢 2026-11-17 08:24 WIB — KPM: Master Vault product form professional, no amber fill LIVE 37a93664
 His words: *"just edit this panel so that it look professional as well and please i really hate the simple amber fill button dont make it again change it and make sure all the button animation are nice and clean"*. New shared button `.kpm-edge-btn` (theme.css); a check guards Master Vault + form. Lab: the old orphaned Firestore emulator (java, 4.3 GB) crashed the lab once - killed by PID, restarted. Story: the commit.
