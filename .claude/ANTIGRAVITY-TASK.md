@@ -771,7 +771,7 @@ All 18 overlays read CSS tokens (`--ink`, `--raised`, `--duke-*`, `.light`, `.li
 *(Count note: 12 Group A + 1 Group B + 6 Group C = 19, because `AcceptanceReceipt` and `ShipmentLabel` are counted separately here alongside the 4 receipts.)*
 
 ## Task 17 - review the demo guide's menu tour (commit 04a6bed2)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 06:40 WIB, by Claude. Same rules as above (read-only, touch only this file, commit it alone, "Antigravity:").
 
 Claude shipped the menu tour you supplied the data for (Tasks 5 and 13): `src/components/DemoMission.jsx` (the tour state, `seen()` / `shows()` / `aim()`, the LANJUT / LEWATI keys), `src/config/demoMission.js` (`TOUR`, `tourBeat`, `nav()`, `UNLOCK`), `src/styles/theme.css` (`html.kpm-tour`). Review it read-only, as a visitor would meet it:
@@ -781,3 +781,30 @@ Claude shipped the menu tour you supplied the data for (Tasks 5 and 13): `src/co
 Do NOT change the code. Done when: three tables (tier x line truth, name mismatches, press-during-tour trace) in the Result.
 
 **Result:**
+
+### 1. Tier x `TOUR` line truth (`src/config/demoLogins.js:24-31`, `src/components/BiohazardTheme.jsx:501-535`, `src/config/permissions.js:154-203`, `src/config/demoMission.js:115-133`)
+- **T2 Owner (`HARTONO SUSILO`, `ADMIN`, 16 items — all except `agent_inventory`):** Every `TOUR` line is true for T2.
+- **T4 Regional Admin (`HENDRA GUNAWAN`, `FLEET_CAPTAIN`, 11 items — `agent_profile`, `map_war_room`, `journey`, `fleet`, `agent_inventory`, `sales`, `receivables`, `eod`, `stock_opname`, `transactions`, `settings`):** 10 lines true; **`settings` is wrong**.
+- **T6 Motorist (`DIKA SAPUTRA`, `ROOKIE`/`AGENT`, 7 items — `agent_profile`, `journey`, `agent_inventory`, `sales`, `eod`, `transactions`, `settings`):** 6 lines true; **`settings` is wrong**.
+
+| Tier | Item (`data-mark`) | Why wrong (`file:line`) | Corrected Indonesian sentence (using `${L}`) |
+|---|---|---|---|
+| T4, T6 | `settings` (`Pengaturan`) | `demoMission.js:132` says `"serta aturan perusahaan"`, but `permissions.js:193, 201` does NOT grant `view_settings` to T4 or T6 — `BiohazardTheme.jsx:532` shows Settings to all tiers only for this device's Language & Graphics. | `Di ${L}, Anda mengatur bahasa dan tampilan hemat baterai di perangkat ini.` (or keep `"serta aturan perusahaan"` only when `view_settings` is granted). |
+
+### 2. Screen name mismatches vs menu label (`tr(item.label)` in `src/config/lang.js:71, 244-258`)
+*(Indonesian is default in `lang.js:1-5`; `nav()` in `demoMission.js:60-101` and `GO` in `DemoMission.jsx:59-72` hardcode English names instead of `tr(...)`.)*
+
+| Where (`file:line`) | Hardcoded text | Menu shows in ID (`lang.js:line`) | Words to use |
+|---|---|---|---|
+| `DemoMission.jsx:60, 61`, `demoMission.js:60, 67` | `Restock Vault` | `Isi Stok Gudang` (`lang.js:249`) | `tr('Restock Vault')` -> `Isi Stok Gudang` |
+| `DemoMission.jsx:69, 71`, `demoMission.js:15, 21-23` | `Master Vault` | `Gudang Pusat` (`lang.js:71`) | `tr('Master Vault')` -> `Gudang Pusat` |
+| `DemoMission.jsx:63`, `demoMission.js:73` | `Fleet & Canvas` | `Armada & Kanvas` (`lang.js:247`) | `tr('Fleet & Canvas')` -> `Armada & Kanvas` |
+| `DemoMission.jsx:64, 66`, `demoMission.js:77, 83` | `Sales Terminal` | `Terminal Penjualan` (`lang.js:250`) | `tr('Sales Terminal')` -> `Terminal Penjualan` |
+| `DemoMission.jsx:68, 70`, `demoMission.js:92, 96` | `EOD` / `EOD Setoran` | `Setoran Sore` (`lang.js:252`) | `tr('EOD Setoran')` -> `Setoran Sore` |
+| `DemoMission.jsx:71`, `demoMission.js:101` | `Stock Opname` | `Stok Opname` (`lang.js:253`) | `tr('Stock Opname')` -> `Stok Opname` |
+
+### 3. Pressing the ringed menu item instead of `LANJUT` during the tour
+| Surface | What happens (`file:line`) | Tour state & bug? |
+|---|---|---|
+| **PC (1280)** | `BiohazardTheme.jsx:927` runs `setActiveTab(item.id); setIsMobileMenuOpen(false);`. `html.kpm-tour` keeps the rail open (`theme.css:2030, 2055, 2080, 2101, 2114, 2311`). | **Stays on same item** (`tour` index only advances on `LANJUT` at `DemoMission.jsx:272`). **Bug if user clicks `SWITCH` mid-tour:** `items` in `DemoMission.jsx:297-298` depends only on `[touring]`, not on `me?.tier`, so after switching T2 -> T6 `items` still holds T2's missing marks (e.g. `dashboard`), `aim()` falls back to `.kpm-rail-totem` (`v.alt = true`), and `LANJUT` disappears. |
+| **Phone (390)** | `BiohazardTheme.jsx:927` runs `setActiveTab(item.id); setIsMobileMenuOpen(false);`, **closing the drawer** (`translate-x-full`, `BiohazardTheme.jsx:820`). | **Stays on same item, loses `LANJUT`:** next `look()` (`DemoMission.jsx:176-199`) sees `[data-mark]` off-screen, falls back to `[aria-label="Open navigation"]` (`v.alt = true`), hides `LANJUT` (`DemoMission.jsx:272`), and asks `"Buka menu dulu: tekan tombol ini."` again. |
