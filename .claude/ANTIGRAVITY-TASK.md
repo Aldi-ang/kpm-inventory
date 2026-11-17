@@ -1476,3 +1476,34 @@ Done when: the file exists, opens with no script, and the Result lists every fea
   - **4 totals (`Nilai barang`, `Biaya tambahan`, `Total dibayar`, `Landed / Bks`)**: 4-cell strip on PC; 2×2 grid on Phone 2.
   - **Completeness footer (`Kelengkapan`, progress bar, `%`, missing/ready text, `Simpan surat jalan`)**: pinned bottom bar on PC and Phone 2.
   - **`Kirim`, `Request` (`Siapkan` modal), `Buku` (expandable drawer, `Cetak`, `Edit`, `Hapus`, `<Proses>`), `Data Induk` (`Pabrik`/`Gudang`/`Orang`)**: remain in their own tabs/modals as noted in the one-line `.note` above the phone frames.
+
+---
+**Claude review 2026-11-17 12:45 WIB:** Tasks 26-30 read. 28 + 29 gates re-run green (logicFixes 3010/0, 14 self-checks exit 0, build 0, audit 725/0), demo bar rendered PC 1440/1024 + phone 390, Pull Archive rendered - LIVE 7386bcc7. Task 30 arithmetic checked against RestockVaultView.jsx L497-498 + L2025: right. Claude fixed 4 things in the draft (promo name not in seed -> T-shirt Cello 40 pcs; receiver "Aldi" -> the demo owner Hartono Susilo; the phone dropped the swap key, Tanggal, the three costs and the evidence) and published it.
+Lesson for every next picture draft: the PHONE frames must carry every feature the PC frame has (moved, never dropped), and every name/number must exist in `demo/seed.json` - no invented people or products.
+
+## Task 31 - the same map for Map System (segment 9 of 12)
+**Status:** OPEN
+**Written:** 2026-11-17 12:45 WIB, by Claude. Same rules as above (read-only, touch only this file).
+
+Exactly Task 20's four tables for `src/MapMissionControl.jsx` (the `activeTab === 'map_war_room'` screen, App.jsx L5137). Every press that writes to Firestore gets **Yes** with the exact collection + field it writes. Demo guide marks (`data-mission=` / `data-guide=` / `data-mark=`); every selfcheck pin on this file (grep logicFixes.selfcheck.mjs + integration.audit.mjs for `MapMissionControl`); the filled-button list (`bg-gold`, `bg-[var(--gold)]`, `bg-orange-*`, `bg-amber-*`, `from-amber-*`) with file:line. Also: which parts are the map library itself (Leaflet or similar - the restyle must not touch them) and which are KPM's own panels around it.
+Do NOT change the code. Done when: four tables + filled-button list + map-library-vs-KPM list in the Result.
+
+## Task 32 - the same map for Agent Profile (segment 10 of 12)
+**Status:** OPEN
+**Written:** 2026-11-17 12:45 WIB, by Claude. Same rules as above (read-only, touch only this file).
+
+Exactly Task 20's four tables for `src/AgentProfileView.jsx` (the `activeTab === 'agent_profile'` screen, App.jsx L5165) - the screen in Claude's lab frame today: Agent Directory list on the left, the person card (avatar frame, rank, XP bar), the RANK CONFIG / AVATAR / LEADERBOARD / GRANT AWARD keys, LIVE FINANCIAL MATRIX. Every press that writes (avatar upload, award, rank config) gets **Yes** with collection + field. Demo guide marks, selfcheck pins, filled-button list with file:line (LEADERBOARD is filled amber today), and which elements are game art he built (avatar frames, rank colours) - the redesign must keep those, so name each.
+Do NOT change the code. Done when: four tables + filled-button list + game-art list in the Result.
+
+## Task 33 - BUILD: no amber-filled button on Stock Opname and Receivables & Consignment
+**Status:** OPEN
+**Written:** 2026-11-17 12:45 WIB, by Claude. BUILD rules apply.
+**Touch only:** `src/StockOpnameView.jsx`, `src/ConsignmentFinanceView.jsx`, `src/config/logicFixes.selfcheck.mjs`, this file.
+
+Same job as Task 28, two other screens. Aldi, 2026-11-17: *"i really hate the simple amber fill button dont make it again"*.
+1. FIRST list every filled button in both files: `rg -n "bg-gold|bg-\[var\(--gold\)\]|bg-orange-|bg-amber-|from-amber-" src/StockOpnameView.jsx src/ConsignmentFinanceView.jsx`. For each hit decide: FILLED BUTTON (a `<button>` whose resting background is the fill) or NOT (hover-only `hover:`/`group-hover:` fills, badges, bars, progress fills, header strips, anything inside a print area). Put the whole list with the verdict in the Result BEFORE editing.
+2. Each FILLED BUTTON: exactly Task 28 point 1 (remove the fill, its `text-[var(--gold-ink)]`/`text-gold-ink`, any `shadow-*` glow, any `transition-*` / `hover:opacity-*` / `active:scale-*`; add `kpm-edge-btn` at the front, `danger` for delete/reject, `quiet` for a secondary press; keep size, padding, width, flex, gap, rounded, font). Never a handler, never `disabled=`, never a `data-*`.
+3. A print block (anything under a `print-` class or inside a receipt / Surat Jalan that prints) is NOT touched: the receipt keeps company colours (a locked rule).
+4. In logicFixes.selfcheck.mjs, right AFTER the Task 28 check (`REGRESSION: no amber-filled button on Reports or Customers`), add ONE check `REGRESSION: no amber-filled button on Stock Opname or Receivables (his 2026-11-17 "dont make it again")` in the same style: read both files, `.replace` ONLY the exact NOT strings from point 1 (a comment names each line), `!fill.test(...)` per file, and a minimum `kpm-edge-btn` count per file equal to the number you converted.
+5. Red-then-green proof exactly like Task 28 point 4 (stash the two .jsx, check FAILS; pop, PASSES). Paste both outputs.
+Done when: the four BUILD checks are green, the list with verdicts and the red-then-green proof are in the Result. If a file has zero filled buttons, say so, add no check for that file, and still do the other.

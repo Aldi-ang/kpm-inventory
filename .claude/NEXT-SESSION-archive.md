@@ -1,3 +1,6 @@
+## 2026-11-17 12:45 - DONE, LIVE 7386bcc7
+DONE ON HIS OK ("demo bar oke") - Antigravity Task 29 builds it; Claude reviews + renders. The demo bar in one line. His 2026-11-17 08:37 *"i think this top panel that show demo is really annoying since there is so many intersection with the main UI i think u need to redesign that one ... to many spaces taken by those lines"*. Picture: https://claude.ai/artifact/WEBH4YHN5V3E8mpH2gSRQv (A-Brain Raw/2026-11-17-master-vault/demo-bar.html): DEMO stamp + who (PC) + the mission steps + `? Petunjuk` + `Switch` on ONE 40 px line, no hazard tape. Code: `src/components/DemoFrontDoor.jsx` (bar, L~199-230) + `src/components/DemoMission.jsx` (mission line, L~312-350) + theme.css `.kpm-demo-bar` / `.kpm-mission` (~L6085-6150). Trap: `--kpm-safe-top` (theme.css L6092 + L6142) is what moves the shell down - it must become 40 px total, and the guide's marks (`[data-mission="switch"]`, PETUNJUK, step keys) must survive; grep logicFixes for `kpm-mission` / `kpm-demo-bar` pins first. Then Restock Vault.
+
 # DONE 2026-11-17 07:43 WIB - LIVE ad0b7d5a (Master Vault professional)
 
 # The one job - Master Vault in the professional look (segment 1 of 12, deadline 20 November)
