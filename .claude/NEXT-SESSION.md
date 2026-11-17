@@ -2,7 +2,7 @@
 
 His words, 2026-11-17 07:15: *"anyway just skip the demo for now and do the next segment i want to finish all segment before 20 november"*.
 
-FIRST read PROGRESS's WAITING ON ALDI: his answer to "🔴 DECIDE: go with this order and the one-picture loop? Answer go, or write your own order." The order put to him: Master Vault, Restock Vault, Stock Opname, Receivables & Consignment, Reports, Customers, Sampling, Command Center, Map System, Agent Profile, Audit Logs, Settings. If he gave his own order, segment 1 is his first one - this brief's method still holds.
+HIS ANSWER, 2026-11-17 07:20: *"your plan go"* - the order is fixed: Master Vault, Restock Vault, Stock Opname, Receivables & Consignment, Reports, Customers, Sampling, Command Center, Map System, Agent Profile, Audit Logs, Settings. One picture per screen, no A/B/C.
 
 Already in the new look (copy their language, never invent a new one): Sales Terminal (11-11), EOD Setoran, Agent Inventory, Journey Plan (11-13), Fleet & Roster (11-16). Taste: A-Brain Wiki/Concepts/Aldi's Design Taste.md, grep "professional" (densest, quietest; ruled lines beat cards). Palette law: no blue, no green; slate + gold.
 
@@ -16,4 +16,4 @@ BEFORE ANY PUSH: `git log --format=%s origin/phase0-solid-ground..HEAD | grep -q
 
 PARKED until after 20 November (his call): the demo (step 3 Dika A/C pick, Task 17's two copy fixes - see PROGRESS and A-Brain Wiki/Concepts/Demo Guide on the Phone.md); the two Fleet fixes (Antigravity Task 15's code).
 
-ANTIGRAVITY: 18 DONE (not read), 19 OPEN - both are demo audits, so park their results. Refill with segment prep instead: per next segment, a read-only map of its file - every handler / money path / Firestore write and every element on screen, so the redesign keeps them all. Keep at least 2 OPEN; end every reply that queues or closes work with the paste-ready prompt.
+ANTIGRAVITY: 18 DONE (demo audit, parked, not read), 19 OPEN (demo audit, parked). 20 OPEN = the Master Vault map (every element, press, write, inline logic, what can move out) - THIS JOB's data, read it first if DONE. 21 OPEN = the same map for Restock Vault. Keep at least 2 OPEN (next: segment 3+ maps); end every reply that queues or closes work with the paste-ready prompt.

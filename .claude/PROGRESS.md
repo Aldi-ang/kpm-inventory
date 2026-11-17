@@ -4,7 +4,8 @@
 
 ## 🔴 2026-11-17 07:16 WIB — KPM: DEMO PAUSED; every segment done before 20 November (NEXT-SESSION = Master Vault)
 His words: *"anyway just skip the demo for now and do the next segment i want to finish all segment before 20 november"*. So the step-3 A/C pick below is parked (not dropped). New look already done: Sales Terminal, EOD Setoran, Agent Inventory, Journey Plan, Fleet & Roster (patchNotes 11-11..11-16). 12 left. Nothing built.
-WAITING ON ALDI (word for word from the reply): "🔴 DECIDE: go with this order and the one-picture loop? Answer go, or write your own order."
+ANSWERED 07:20: *"your plan go"* - order fixed, one picture per screen. Antigravity 20-21 queued (Master Vault + Restock Vault maps).
+WAITING ON ALDI (word for word from the reply): "Type /clear, then /alucard continue." and paste the Antigravity prompt for Tasks 19-21.
 
 ## 🔴 2026-11-17 07:12 WIB — KPM: step 3 "Pilih DIKA SAPUTRA" with Dika not on the list - root cause found, waiting on his pick
 His words: *"dika syahputra is not even there"*. Cause (lab, big company): Fleet & Roster shows one area at a time for a viewer with several (owner, his T1); it opens on BANDUNG, Dika is under HEADQUARTERS. Hendra (T4) sees Dika fine. Nothing built. Vault: Demo Guide on the Phone (OPEN section). Lab servers left running. Antigravity 15-17 DONE (its 3 commits went out in my 07:13 notes push before I read them - task file only, gates re-run green after; lesson written); 16-17 read, 18-19 queued (the Dika class of bug across all 8 steps).
