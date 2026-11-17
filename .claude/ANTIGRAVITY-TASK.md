@@ -2281,7 +2281,7 @@ Done when: `node src/config/toastSeverity.selfcheck.mjs` exits 0, `node src/conf
   - New Task 53 sweep counts: `CHECK 33 / X 213 / NOTHING 107 / WRONG CHECK 0 / MISSED CHECK 0 / WRONG X 0` *(43 bare-variable `notify(msg)` calls skipped)*.
 
 ## Task 55 - read-only: where the Receivables blocks sit, for the cut-and-place build
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 17:55 WIB, by Claude. READ-ONLY. Do it after Task 54.
 **Touch only:** this file.
 
@@ -2292,6 +2292,19 @@ Then: which blocks share a variable declared INSIDE another block (a cut there w
 **Result:** one table (block | lines | outer element | reads) + the shared-variable list + the useMemo answer. Keep it under 60 lines.
 
 **Result:**
+| block | lines | outer element | reads (state / handlers) |
+| :--- | :--- | :--- | :--- |
+| 1. Title + region / salesman filters | `931-1013` | `<div className="flex flex-col lg:flex-row ...">` | `isAdmin`, `activeRegion`, `setActiveRegion`, `uniqueLocations`, `agentSearch`, `setAgentSearch`, `showAgentDropdown`, `setShowAgentDropdown`, `dropdownAgents`, `setSelectedCustomer` |
+| 2. 3-tab strip + THE SHAKE dot | `1015-1041` | `<div className="flex bg-black/40 p-1 rounded-xl ...">` | `activeTab`, `setActiveTab`, `incomingRequests`, `pendingAdminRequests` |
+| 3. 2 summary tiles | `1047-1056` | `<div className="grid grid-cols-2 md:grid-cols-4 gap-4">` | `debtData.totalValue`, `debtData.activeAccounts` |
+| 4. SAFE/WARNING/OVERDUE + 1 shop row | `602-632`, `1057-1061` | `<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">` (`StatusCard` `602-632`, row `610-628`) | `debtData.GREEN`, `debtData.YELLOW`, `debtData.RED` |
+| 5. Store Audit press + inline panel/confirm | `1166-1244`, `1259, 1267-1270` | `<button onClick={() => setAuditMode(true)}>` / `{auditMode ? ...}` / `submitAction` (`507-600`) | `auditMode`, `setAuditMode`, `auditData`, `setAuditData`, `handleAuditInput`, `submitAction`, `activeCustomer`, `formatRupiah` |
+| 6. Add Goods, Hand-off, Receipt presses | `638-928`, `1120-1165`, `1250, 1261-1264` | `{viewingReceipt && (() => ...)}` (`638-928`); `<button onClick={() => onAddGoods...}>` (`1250`); `<button onClick={() => setTransferMode(true)}>` (`1261`) + `transferMode` panel (`1120-1165`) | `viewingReceipt`, `setViewingReceipt`, `handoffLine`, `isAdmin`, `onAddGoods`, `activeCustomer`, `transferMode`, `setTransferMode`, `targetAgent`, `setTargetAgent`, `transferNote`, `setTransferNote`, `handoffTargets`, `submitAction`, `shareReceipt` |
+| 7. Physical Stock tab body | `1066-1277` | `{activeTab === 'stock' && (<div ...>)}` | `customerData`, `selectedCustomer`, `setSelectedCustomer`, `activeCustomer`, `auditMode`, `transferMode`, `auditData`, `isAdmin`, `handoffTargets`, `formatRupiah` |
+| 8. Hand-offs tab body | `1280-1368` | `{activeTab === 'transfers' && (<div ...>)}` | `pendingAdminRequests`, `incomingRequests`, `outgoingRequests`, `onAdminApproveTransfer`, `onAgentAcceptTransfer`, `onShowStoreOnJourney`, `HandoffOffer` |
+
+- **Shared variables declared inside another block:** `activeCustomer` (`350-358`, component scope, shared by blocks 5, 6, 7); `receiptDateStr` (`639`, inside `viewingReceipt` IIFE `638-928` only); `StatusCard` (`602-632`, component scope, used by block 4). Blocks 5 & 6 (`auditMode`, `transferMode`, `submitAction`, `Add Goods`, `Hand-off`) sit *inside* block 7 (`activeTab === 'stock'`).
+- **Aging rule `useMemo`:** Yes — `debtData` (`163-244`, with aging rule at `201-238`) returns `{ GREEN, YELLOW, RED, totalValue, activeAccounts }` and can be reused as-is.
 
 
 ## Task 56 - BUILD: give the demo company real consignment debt
