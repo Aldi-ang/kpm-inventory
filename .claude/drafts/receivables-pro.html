@@ -140,6 +140,42 @@ td .it{font-size:12px;color:var(--ink-dim);margin-top:2px}
 .rs{display:flex;flex-direction:column;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
 .rs span{height:1.2em;line-height:1.2em}
 
+/* option A: the late line */
+.opt{margin-bottom:6px}
+.tlwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.tl{padding:18px 26px 14px;border-right:1px solid var(--line)}
+.tl:last-child{border-right:0}
+.tl h3{font-size:14.5px;font-weight:700;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.tl .sub{font-size:12px;color:var(--ink-dim);margin-top:2px}
+.track{position:relative;height:8px;border-radius:4px;background:var(--inset);margin:40px 6px 34px}
+.track .f{position:absolute;top:0;bottom:0;left:0;width:0;border-radius:4px;background:var(--seg-ok);transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.track .late{background:var(--seg-bad);border-radius:0 4px 4px 0;transition:width .7s linear .8s}
+.track .rest{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(90deg,var(--seg-soon) 0 5px,transparent 5px 9px);opacity:.75;border-radius:0 4px 4px 0}
+.track .due{position:absolute;top:-8px;width:2px;height:24px;margin-left:-1px;background:var(--accent-edge);border-radius:1px}
+.track .nd{position:absolute;top:-4px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--panel);border:2px solid var(--line-2)}
+.track .now{position:absolute;top:-4px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--ink);border:3px solid var(--panel);box-shadow:0 0 0 1px var(--line-2)}
+.lb{position:absolute;font-size:11px;color:var(--ink-dim);white-space:nowrap;transform:translateX(-50%)}
+.lb.up{top:-30px;font-weight:600;color:var(--accent-ink)}
+.lb.dn{top:18px}
+.lb.el,.lb.er{transform:none}
+.verdict{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.verdict.bad{color:var(--danger-ink)}.verdict.soon{color:var(--warn)}
+
+/* option B: salesman cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;padding:16px 18px;border-bottom:1px solid var(--line);background:var(--raised)}
+.card{text-align:left;font:inherit;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:7px;transition:border-color .16s ease,background-color .16s ease,transform .14s ease}
+.card:hover{border-color:var(--line-2)}
+.card:active{transform:scale(.98)}
+.card.on{border-color:var(--accent-edge);background:var(--sel)}
+.card .top{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600}
+.card .top small{margin-left:auto;font-size:11.5px;font-weight:500;color:var(--ink-dim)}
+.card .v{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.card .lt{font-size:12px;color:var(--danger-ink)}
+.card .lt.none{color:var(--ink-dim)}
+.card .t{height:4px;border-radius:2px;background:var(--inset);overflow:hidden}
+.card .t i{display:block;height:100%;width:0;background:var(--seg-bad);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.rowin{animation:in .22s cubic-bezier(.2,.8,.2,1) both}
+
 /* toast */
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,12px);opacity:0;background:var(--raised);border:1px solid var(--line-2);color:var(--ink);
   border-radius:10px;padding:11px 16px;font-size:13px;display:flex;align-items:center;gap:9px;box-shadow:0 14px 40px -18px rgba(0,0,0,.6);transition:opacity .18s ease,transform .18s ease;pointer-events:none;max-width:calc(100% - 32px)}
@@ -185,6 +221,14 @@ td .it{font-size:12px;color:var(--ink-dim);margin-top:2px}
 <div class="wrap">
   <p class="cap">Receivables &amp; Consignment · picture v5 · PC 1440</p>
   <p class="note">Shops, salesmen and prices are the demo's own. The debts below are the ones the demo will get (the demo has none today). Click a shop, the tabs and the buttons.</p>
+
+  <p class="cap">Option A · the late line, inside the shop on the right</p>
+  <p class="note">The line runs from the day the goods were left to today. The gold mark is the due day. Days after it turn red.</p>
+  <div class="frame opt"><div class="tlwrap" id="optA"></div></div>
+  <p class="cap" style="margin-top:26px">Option B · one card per salesman, on top of the list</p>
+  <p class="note">Click a card: the list shows only that salesman's shops. Click it again: everyone.</p>
+  <div class="frame opt"><div class="cards" id="optB"></div><div id="optBl"></div></div>
+  <p class="cap" style="margin-top:34px">Option C · the picture as it is now</p>
 
   <div class="pcwrap">
   <div class="frame">
@@ -426,6 +470,62 @@ document.addEventListener('click', (e) => {
   const t = document.getElementById('toast'); t.classList.add('on');
   clearTimeout(tm); tm = setTimeout(() => t.classList.remove('on'), 2600);
 });
+
+/* OPTION A - the late line for one overdue and one due-soon shop */
+function optA() {
+  const shops = ['AMANAH BARU', 'ANEKA BARU PANJI'].map((n) => SHOPS.find((s) => s.name === n));
+  document.getElementById('optA').innerHTML = shops.map((s) => {
+    const start = d(s.oldest.date), due = new Date(start); due.setDate(due.getDate() + s.tempo);
+    const end = TODAY > due ? TODAY : due, span = end - start;
+    const x = (dt) => (dt - start) / span * 100;
+    const edge = (p) => p < 6 ? ' el' : p > 94 ? ' er' : '';
+    const at = (p) => p > 94 ? `right:${100 - p}%` : `left:${p}%`;
+    const okTo = x(TODAY < due ? TODAY : due);
+    const dots = s.notes.filter((n) => n.left > 0).map((n) => { const p = x(d(n.date)); return `<span class="nd" style="left:${p}%"></span><span class="lb dn${edge(p)}" style="${at(p)}">${fmt(n.date)} · ${rp(n.left)}</span>`; }).join('');
+    const late = TODAY > due ? `<span class="f late" data-l="${x(due)}" data-w="${100 - x(due)}" style="left:${x(due)}%"></span>` : `<span class="rest" style="left:${okTo}%;width:${100 - okTo}%"></span>`;
+    const tday = x(TODAY);
+    return `<div class="tl">
+      <h3><span>${s.name}</span><span class="num">${rp(s.total)}</span></h3>
+      <div class="sub">${s.man} · tempo ${s.tempo} days</div>
+      <div class="track">
+        <span class="f ok" data-w="${okTo}"></span>${late}
+        <span class="due" style="left:${x(due)}%"></span><span class="lb up${edge(x(due))}" style="${at(x(due))}">due ${fmt([due.getFullYear(), due.getMonth() + 1, due.getDate()])}</span>
+        ${dots}
+        <span class="now" style="left:${tday}%"></span><span class="lb up${edge(tday)}" style="${at(tday)};color:var(--ink)">today</span>
+      </div>
+      <div class="verdict ${s.state}"><span class="st ${s.state}"></span>${s.until < 0 ? `${-s.until} days late` : `${s.until} days left`}</div>
+    </div>`;
+  }).join('');
+  requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll('#optA .f').forEach((f) => { f.style.width = f.dataset.w + '%'; })));
+}
+
+/* OPTION B - one card per salesman; a card filters the list */
+let man = null;
+function optB() {
+  const men = [...new Set(SHOPS.map((s) => s.man))].map((m) => {
+    const mine = SHOPS.filter((s) => s.man === m);
+    const owed = mine.reduce((a, s) => a + s.total, 0), late = mine.filter((s) => s.state === 'bad').reduce((a, s) => a + s.total, 0);
+    return { m, n: mine.length, owed, late };
+  }).sort((a, b) => b.late - a.late || b.owed - a.owed);
+  document.getElementById('optB').innerHTML = men.map((c) => `
+    <button class="card${man === c.m ? ' on' : ''}" data-m="${c.m}">
+      <span class="top"><span class="av">${c.m[0]}</span>${c.m}<small>${c.n} shop${c.n === 1 ? '' : 's'}</small></span>
+      <span class="v num">${rp(c.owed)}</span>
+      <span class="t"><i data-w="${c.late / c.owed * 100}"></i></span>
+      <span class="lt num${c.late ? '' : ' none'}">${c.late ? rp(c.late) + ' late' : 'nothing late'}</span>
+    </button>`).join('');
+  document.getElementById('optBl').innerHTML = SHOPS.filter((s) => !man || s.man === man).map((s, i) => `
+    <div class="r rowin" style="animation-delay:${i * 30}ms;cursor:default">
+      <div class="who"><span class="av">${ini(s.name)}</span><span style="min-width:0"><div class="nm">${s.name}</div><div class="mt">${s.where.split(',')[0]} · ${s.man}</div></span></div>
+      <span class="amt num">${rp(s.total)}</span><span class="mt num">${when(s)}</span><span class="st ${s.state}">${WORD[s.state]}</span>
+    </div>`).join('');
+  requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll('#optB .t i').forEach((b) => { b.style.width = b.dataset.w + '%'; })));
+}
+document.getElementById('optB').addEventListener('click', (e) => {
+  const c = e.target.closest('.card'); if (!c) return;
+  man = man === c.dataset.m ? null : c.dataset.m; optB();
+});
+optA(); optB();
 
 roll(document.getElementById('tot'), rp(sum()));
 document.getElementById('totm').textContent = `${SHOPS.length} shops owe · ${cnt('bad')} overdue`;
