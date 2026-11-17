@@ -11,6 +11,7 @@ Aldi, 2026-11-16 20:15: *"keep giving antigravity jobs without i need to ask eve
 
 ## BUILD rules (only for a task marked BUILD)
 - classNames, words and the checks it names - NEVER a handler, an `onClick=`/`onChange=` body, a `name=` on an input, a Firestore call, or a `data-guide=` / `data-mission=` / `data-mark=` attribute.
+- **NEW 2026-11-17 21:50 - a FIFTH gate, first:** `node src/config/undef.check.mjs` must end with `clean`. Why: Task 57 called `isTitip` and `txTime` without importing them; build and all four gates passed (Vite does not check undefined names) and the Receivables screen would have crashed on the first shop that owes. Claude fixed it in e4c1e313.
 - After your LAST edit, all four must pass, in this order: `node src/config/logicFixes.selfcheck.mjs` (0 failed) · every `src/config/*.selfcheck.mjs` by exit code (`for f in src/config/*.selfcheck.mjs; do node "$f" >/dev/null 2>&1 || echo "RED $f"; done` prints nothing) · `npm run build` (exit 0) · `node src/config/integration.audit.mjs` (0 failed). One red = do NOT commit the code; write what is red in the Result, set Status BLOCKED, `git checkout -- <your files>`, go to the next task.
 - Commit the "Touch only" files + this file together, message "Antigravity: Task N <what>". Put the four check results (pass counts) in the Result.
 
@@ -2348,3 +2349,34 @@ Done when: `git diff` shows the debtData block and every handler unchanged (past
   - `Physical Stock` & `Hand-offs` tabs + `Receipt` modal: same tabs/modals with `.kpm-edge-btn`.
 - Added patch note line in `src/config/patchNotes.js:7` and v5 guard in `src/config/logicFixes.selfcheck.mjs:12543-12545`.
 - Checks: `logicFixes.selfcheck.mjs` `3020 passed, 0 failed`; all 14 `src/config/*.selfcheck.mjs` exited 0; `npm run build` exited 0 (`10.78s`); `integration.audit.mjs` `725 passed, 0 failed`.
+
+**Claude's review of 54-57 (2026-11-17 21:50):** 54, 55, 56 accepted as written. 57: all 30 old handlers verbatim, debtData byte-identical, 0 Firestore calls added - BUT `isTitip` and `txTime` were never imported (runtime crash); fixed in e4c1e313. Read the new fifth gate in BUILD rules above. Not pushed yet: waits on Claude's lab frames.
+
+---
+
+## Task 58 - read-only: review Task 57's new Receivables code for bugs no gate can see
+**Status:** OPEN
+**Written:** 2026-11-17 21:50 WIB, by Claude. READ-ONLY.
+**Touch only:** this file.
+
+Read `src/ConsignmentFinanceView.jsx` as it is TODAY: `arView`, `activeDebtShop`, `openStoreAction` (~L368-442) and every JSX line using them (~L1008-1310). The gates passed on a file that would have crashed, so look for what a running screen hits:
+- No shop owes (debtData empty): does anything read `activeDebtShop.x` while it is null? Does the list show an empty state, or nothing?
+- `openStoreAction` does NOTHING when `customerData` has no match - Store Audit / Hand-off pressed and silent. Aldi's law: every action must report. Which shops can reach that path (a Titip note for a shop with no customer doc? a shop name typed differently?) - give a real case or say none.
+- `notes[].left` is FIFO over ALL payments: does it agree with `debtData`'s owed for the same shop? Use the Task 56 demo data (AMANAH BARU: notes 12 days + 4 days, Rp 300.000 paid) and write both numbers.
+- Phone: the row press uses `window.innerWidth < 1024` at press time - what happens if the window is resized with a shop open? Is there a second phone path that never closes?
+- `setViewingReceipt(activeDebtShop.payments[0])` - a shop with notes but no payment: is the Receipt press hidden, or does it open `undefined`?
+- `agent` falls back to `'Admin'` - when does a real shop show "Admin" as its responsible salesman? Is that a lie on screen?
+- Any key missing / duplicate key in the new `.map(` lists; any English that is unclear.
+
+**Result:** ONE table: Finding | Who hits it | What goes wrong | file:line | HIGH/MED/LOW | smallest fix in one sentence. Worst first; "checked, fine" for each bullet with nothing.
+
+---
+
+## Task 59 - read-only: line map of the Reports screen blocks, for the cut-and-place build (segment 5)
+**Status:** OPEN
+**Written:** 2026-11-17 21:50 WIB, by Claude. READ-ONLY. Same job as your Task 55, for the next screen.
+**Touch only:** this file.
+
+Reports = `src/components/HistoryReportView.jsx` + the Product Performance panel (your Task 24 map, grep "## Task 24"; your picture `.claude/drafts/reports-pro.html`, Task 40). For TODAY's file list each block: exact start-end line, outermost element, the state/handlers it reads (names only). Blocks: title + date/region/salesman filters · summary tiles/numbers · the transaction list and ONE row · the one transaction opened (detail, receipt, Day Replay) · Edit / Delete (admin) and their confirm · export / print / share presses · Product Performance panel · every modal (`fixed inset-0`, your Task 4 list: L940, L956).
+Then: which blocks share a variable declared INSIDE another block (a cut there breaks it), which useMemo holds the money totals (name it, its lines) so the new layout reuses it as-is, and every Firestore write in the file (line + what it writes) - those are the lines the build must never touch.
+**Result:** one table (block | lines | outer element | reads) + shared-variable list + the useMemo answer + the write list. Under 70 lines.
