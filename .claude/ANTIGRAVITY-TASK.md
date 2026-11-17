@@ -1220,10 +1220,61 @@ Do NOT change the code. Done when: four tables + the filled-button list in the R
 | `handleDeleteHistory` / `handleDeleteSingleTransaction` | **Keep in `App.jsx` (or update selfcheck)** | `4400-4401` (`handleDeleteHistory` anchor in `App.jsx`) |
 
 ## Task 25 - the same map for Customers (segment 6 of 12)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 08:26 WIB, by Claude. Same rules as above.
 
 Exactly Task 20's four tables for `src/components/CustomerManager.jsx` (`CustomerManagement`, the `activeTab === 'customers'` screen). Note which tier sees which customers (the region / permission filter) with file:line. Same filled-button list as Task 24.
 Do NOT change the code. Done when: four tables + the filled-button list in the Result.
 
 **Result:**
+
+### Demo Guide Marks in `src/components/CustomerManager.jsx`
+- `data-guide="photo"` on the store photo shutter button inside the Add/Edit Customer form (`src/components/CustomerManager.jsx` — pinned in `logicFixes.selfcheck.mjs:7270, 7288`).
+
+### Which Tier Sees & Edits Which Customers
+- **Visibility (browsing the directory):** `CustomerManagement` receives `customers` from `src/App.jsx:5586` without region filtering (`searchedCustomers` at `CustomerManager.jsx:381-393` searches all `customers`) — every tier can browse/look up stores (`view_only` shows a read-only banner at `1355-1360`).
+- **Add / Edit gating:** `customerAccessLevel = getCustomerAccessLevel(userRole)` (`207`: `'view_only'` / `'own_region'` / `'global'`), overridden by `isAdmin` (`220`) or `customerScope` (`canEditShop(customerScope, c)` at `222`, from `Settings > Customer access`). `own_region` allows editing stores whose `c.region` matches `employeeRegion` or is unclassified (`isRegionUnclassified(c.region)` at `211-226`).
+- **Grosir & Salesman approvals:** `grantsGrosir = isAdmin || canConfirmGrosir(userRole)` (`232`, Tier 1–4 or unlocked); `ownerAsks` (`252-253`) further filters to shops with `hasNoSalesman(c) && canEditCustomer(c)`.
+- **Admin-only powers:** `adminTools` (`1240`, `1370`), folder `DEL`/`EDIT` (`311-312`), and store card `Move`/`Verify`/`Del` (`1772-1806`) require `isAdmin`.
+
+### Filled Amber/Gold Buttons to Convert to `.kpm-edge-btn`
+- `src/components/CustomerManager.jsx:145` — `Add Log` button inside `CustomerDetailView` (`bg-[var(--gold)] text-[var(--gold-ink)]`)
+- `src/components/CustomerManager.jsx:1791` — `Verify` NOO button on pending store cards (`bg-[var(--gold)] text-[var(--gold-ink)]`)
+*(Hover-only `hover:bg-[var(--gold)]` on `126` and `1801`; badge/banner `bg-[var(--gold)]` on `1299`, `1316`, `1321`.)*
+
+### 1. Elements on screen (PC & phone, top to bottom)
+| element | PC / phone | what it shows | reads (state / prop / Firestore field) | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| `App.jsx` tab mount (`activeTab === 'customers'`) | Both | `<CustomerManagement>` (lazy-loaded) | `customers`, `isAdmin`, `userRole`, `employeeRegion`, `customerScope`, `tierSettings`, `roster` | `src/App.jsx:5585-5599` |
+| `CustomerDetailView` (`viewMode === 'detail'`) | Both | Full-page store detail view + benchmark logs (`Add Log` / delete log) + Map button | `selectedCustomer`, `viewMode`, `newBench` | `src/components/CustomerManager.jsx:36-188, 1189` |
+| Header & Admin Tools | Both (`hidden lg:flex` on PC; `Admin tools` fold on phone) | `Customer Directory` title + `Repair N Store Tiers` (when needed), `Find Duplicates`, `Data Scrub`, `Import Map Marker (KML)` | `isAdmin`, `customers`, `dupScanning`, `showTools` | `src/components/CustomerManager.jsx:1196-1241, 1370-1383` |
+| Duplicate Report (`isAdmin && dupReport`) | Both | Possible duplicate store groups (identical name or <= 40m), `Show/Hide ignored`, `Edit` (`openForEdit`), `Delete` (`handleDeleteDuplicate`) | `dupReport`, `dupVisible`, `dupIgnored`, `dupShowIgnored` | `src/components/CustomerManager.jsx:1125, 1245-1351` |
+| View-only banner / `Add new customer` button | Both | Read-only notice (`!canAddOrEditAnything`) OR `+ Add new customer` button (`canAddOrEditAnything`) | `canAddOrEditAnything`, `showForm`, `editingId` | `src/components/CustomerManager.jsx:1355-1369` |
+| Add/Edit Customer modal (`createPortal` to `document.body`) | Both (`z-[9000]`) | Form: `Store Name`, `Phone`, `Map Pin Tier`, `priceTier`, `visitFreq`, `picName`, photo shutter (**`data-guide="photo"`**), `Auto-Find`, `GPS`, Provinsi/Kabupaten/Kecamatan datalists, `Address`, `Description`, `GPS Coordinates`, `Street View Link`, `Save Customer` / `Update Profile` | `showForm`, `editingId`, `formData`, `coordInput`, `tierSettings`, `customers`, `croppedImage` | `src/components/CustomerManager.jsx:1388-1573` |
+| Search bar | Both | `"Search store name, region, city, or salesperson..."` | `searchTerm` | `src/components/CustomerManager.jsx:1576-1585` |
+| `Grosir requests` & `Shops waiting for a salesman` (`grantsGrosir`) | Both | Pending `requestedTier === 'Grosir'` (`Keep Retail`/`Confirm Grosir`) & unassigned shops (`ownerAsks`, `<select>` from `roster` + `Give`) | `grantsGrosir`, `grosirAsks`, `ownerAsks`, `ownerPick`, `ownerAll`, `roster` | `src/components/CustomerManager.jsx:232-268, 1589-1633` |
+| 4-level Folder & Store Directory | Both (2-col folders on phone, 3-col on `lg`; 1/2-col store cards) | Breadcrumb (`Indonesia` > `Provinsi` > `Kabupaten` > `Kecamatan`), `<FolderCard>`s with `<NixieCount>` Pending & admin `⋯` (`DEL`/`EDIT`), then A–Z store cards (tier/price/`Grosir?` badges, `T3/T4 PIC`, `NOO By`, admin `Move`/`Verify`/`Map`/`Edit`/`Del`, non-admin `Edit` if `canEditCustomer`) | `folderStructure`, `selectedProvince`, `selectedRegion`, `selectedCity`, `activeProv/Kab/Kec`, `isAdmin`, `actsOpen`, `customerScope`, `customerAccessLevel` | `src/components/CustomerManager.jsx:300-324, 1636-1825` |
+
+### 2. Every press & what it writes
+| control / press | handler called | writes (Firestore + local state) | moves stock or money? | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| Search, breadcrumbs, `<FolderCard>`, `MoreKey` (`⋯`), `Add new customer`, `Edit`, `Map`, `Find Duplicates` | Local state setters / `openDetail` / `handleEdit` / `onNavigateToMap` | Local UI state / `sessionStorage('targetMapStore')` | No | `src/components/CustomerManager.jsx:1091, 1638-1814` |
+| `Save Customer` / `Update Profile` | `handleSubmit` | Validates name, WhatsApp phone, Prov/Kab/Kec (pin auto-fill), non-zero GPS pin; `updateDoc` or `addDoc` `artifacts/${appId}/users/${user.uid}/customers` (with Grosir hold `requestedTier: 'Grosir'` when `!grantsGrosir`) + `logAudit` | No (sets `priceTier` / `requestedTier` for future sales) | `src/components/CustomerManager.jsx:968-1090, 1569` |
+| `Keep Retail` / `Confirm Grosir` | `decideGrosir(c, yes)` | `updateDoc` `customers/${c.id}` (`priceTier: 'Grosir'` + delete `requestedTier`, or delete `requestedTier`) + `logAudit` | No (unlocks Grosir tier on future sales) | `src/components/CustomerManager.jsx:234-247, 1599-1600` |
+| `Give` (assign salesman) | `giveSalesman(c)` | `updateDoc` `customers/${c.id}` (`assignedAgent`, `assignedBy`, `assignedAt`) + `logAudit("AGENT_ASSIGNED")` | No | `src/components/CustomerManager.jsx:256-268, 1623` |
+| `Verify` (NOO) | `handleApproveNOO` | `updateDoc` `customers/${id}` (`status: 'APPROVED'`, `verifiedAt`) + `logAudit("NOO_APPROVED")` | No | `src/components/CustomerManager.jsx:1136-1147, 1791` |
+| `Del` / `Delete` duplicate / `DEL` folder / `EDIT` folder / `Move` / `Data Scrub` / `Repair Tiers` / `Import KML` | `handleDelete`, `handleDeleteDuplicate`, `handleDeleteFolder`, `handleBulkRename`, `handleFastStoreMove`, `handleEnterpriseDataScrub`, `handleRepairTierField`, `handleImportKML` | `deleteDoc` / `updateDoc` / `writeBatch` on `artifacts/${appId}/users/${user.uid}/customers` + `logAudit` | No | `src/components/CustomerManager.jsx:491-577, 626-727, 788-967, 1115` |
+| Detail `Add Log` / Delete log | `handleAddBenchmark` / `handleDeleteBenchmark` | `addDoc` / `deleteDoc` `customers/${id}/competitor_benchmarks` | No | `src/components/CustomerManager.jsx:36-60, 145` |
+
+### 3. Logic computed inside JSX / render
+| computation | what it computes | file:line |
+| :--- | :--- | :--- |
+| `customerAccessLevel` & `canEditCustomer` | Resolves `view_only`/`own_region`/`global`, `customerScope` (`canEditShop`), and `isRegionUnclassified` fallback | `src/components/CustomerManager.jsx:207-230` |
+| `grosirAsks`, `ownerAsks` | Filters `requestedTier === 'Grosir'`, and `hasNoSalesman(c) && canEditCustomer(c)` sorted newest-first | `src/components/CustomerManager.jsx:233, 252-253` |
+| `searchedCustomers` & `folderStructure` | Searches 7 fields; fills unknown Prov/Kab/Kec via `areaFromPin(lat, lng, sortedBorders)` + text dictionary (`guessKecamatan`/`Kabupaten`/`Province`); uppercases folder keys; counts stores & `PENDING` NOOs; injects custom folders | `src/components/CustomerManager.jsx:381-463` |
+| Store A–Z sort | Sorts `activeKec.stores` by `localeCompare(..., 'id', { sensitivity: 'base' })` | `src/components/CustomerManager.jsx:1719` |
+
+### 4. What can move out first & `logicFixes.selfcheck.mjs` pins
+| candidate to extract | safe to move first? | `logicFixes.selfcheck.mjs` exact line pins |
+| :--- | :--- | :--- |
+| `CustomerDetailView`, `DuplicateReport`, `Add/Edit Form` portal -> `src/components/customers/...` | **Only alongside `selfcheck` updates** — `selfcheck` reads `src/components/CustomerManager.jsx` directly for `canEditShop`, `lastVisit`, `kpm-shutter`, `kpm-arrive`, `NixieCount`, `data-guide="photo"`, `accept="image/*"` | `1546`, `5938`, `6048`, `6695-6736`, `7270-7290` (`<button data-guide="photo" ... className="kpm-shutter kpm-corners">`), `7338`, `7433`, `7583`, `7835` (`<div className="grid grid-cols-1 md:grid-cols-2 gap-4 kpm-arrive">`), `7904`, `9813-9819` (`App.jsx` lazy import `CustomerManagement`), `11462-11463`, `11861`, `11882`, `11994` (`if (customerScope) return canEditShop(customerScope, c);`), `12083`, `12109`, `13853` (`<NixieCount value={pending} size={12} rollIn /> Pending`), `14080` |
