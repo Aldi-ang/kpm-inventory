@@ -846,7 +846,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 </datalist>
                 
                 <input type="file" accept=".geojson,.json" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
-                <button onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={isLoading || !uploadFolder.trim()} className="w-full bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500 text-emerald-400 font-bold py-2.5 rounded flex justify-center items-center gap-2 text-xs transition-colors disabled:opacity-50">
+                <button onClick={() => fileInputRef.current && fileInputRef.current.click()} disabled={isLoading || !uploadFolder.trim()} className="kpm-edge-btn w-full font-bold py-2.5 rounded flex justify-center items-center gap-2 text-xs disabled:opacity-50">
                     <Upload size={14}/> {isLoading ? "Processing..." : "2. Select Shapefile"}
                 </button>
             </div>
@@ -855,7 +855,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                 <div className="flex justify-between items-center mb-2 shrink-0 bg-slate-800 p-2 rounded border border-slate-700">
                     <h4 className="text-[10px] uppercase tracking-widest text-slate-300 font-bold">Active Borders ({safeBoundaries.length})</h4>
                     <div className="flex gap-2">
-                        <button onClick={handleCreateFolder} className="text-[11px] px-2 py-1 rounded bg-blue-900/50 text-blue-400 hover:bg-blue-500 hover:text-white font-bold uppercase transition-colors shadow-md">+ Folder</button>
+                        <button onClick={handleCreateFolder} className="kpm-edge-btn quiet text-[11px] px-2 py-1 rounded font-bold uppercase">+ Folder</button>
                         <button onClick={handleWipeAll} className="text-[11px] px-2 py-1 rounded bg-red-900/50 text-red-400 hover:bg-red-500 hover:text-white font-bold uppercase transition-colors">Clear All</button>
                     </div>
                 </div>
@@ -882,10 +882,10 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                         </div>
                                         <div className="flex gap-1 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
                                             {/* 🚀 FOLDER MANAGEMENT BUTTONS */}
-                                            <button onClick={() => triggerFolderUpload(folderName)} className="text-[11px] font-bold tracking-widest bg-emerald-900/40 text-emerald-400 hover:bg-emerald-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Upload directly to this folder">+ FILE</button>
+                                            <button onClick={() => triggerFolderUpload(folderName)} className="kpm-edge-btn quiet text-[11px] font-bold tracking-widest px-1.5 py-1 rounded" title="Upload directly to this folder">+ FILE</button>
                                             <button onClick={() => handleDeleteFolder(folderName)} className="text-[11px] font-bold tracking-widest bg-red-900/40 text-red-400 hover:bg-red-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Delete Folder">DEL</button>
-                                            <button onClick={() => handleRenameFolder(folderName)} className="text-[11px] font-bold tracking-widest bg-blue-900/40 text-blue-400 hover:bg-blue-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Rename Folder">EDIT</button>
-                                            <button onClick={() => toggleFolderVisibility(folderName, false)} className="text-[11px] font-bold tracking-widest bg-emerald-900/40 text-emerald-400 hover:bg-emerald-500 hover:text-white px-1.5 py-1 rounded transition-colors" title="Show All">VIS</button>
+                                            <button onClick={() => handleRenameFolder(folderName)} className="kpm-edge-btn quiet text-[11px] font-bold tracking-widest px-1.5 py-1 rounded" title="Rename Folder">EDIT</button>
+                                            <button onClick={() => toggleFolderVisibility(folderName, false)} className="kpm-edge-btn quiet text-[11px] font-bold tracking-widest px-1.5 py-1 rounded" title="Show All">VIS</button>
                                             <button onClick={() => toggleFolderVisibility(folderName, true)} className="text-[11px] font-bold tracking-widest bg-slate-700 text-slate-400 hover:bg-slate-600 hover:text-white px-1.5 py-1 rounded transition-colors" title="Hide All">HID</button>
                                         </div>
                                     </div>
@@ -931,7 +931,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                             </select>
                                                         </div>
                                                     </div>
-                                                    <button onClick={() => handleSaveBoundary(b.id)} className="w-full bg-blue-600/20 hover:bg-blue-600 border border-blue-500 text-blue-400 hover:text-white py-1.5 rounded text-[10px] font-bold uppercase tracking-widest mt-2 transition-colors flex items-center justify-center gap-2">
+                                                    <button onClick={() => handleSaveBoundary(b.id)} className="kpm-edge-btn w-full py-1.5 rounded text-[10px] font-bold uppercase tracking-widest mt-2 flex items-center justify-center gap-2">
                                                         <Save size={12}/> Save Sector Configuration
                                                     </button>
                                                 </div>
@@ -958,7 +958,7 @@ const BorderImporter = ({ db, appId, user, boundaries, setBoundaries, setIsOpen,
                                                                 <option value="CREATE_NEW">+ New Folder</option>
                                                             </optgroup>
                                                         </select>
-                                                        <button onClick={() => toggleVisibility(b.id, b.isHidden)} className={`text-[11px] font-bold px-1.5 py-1 rounded transition-colors ${b.isHidden ? 'bg-slate-800 text-slate-400 hover:bg-emerald-600 hover:text-white' : 'bg-emerald-900/50 text-emerald-400 hover:bg-slate-700 hover:text-white'}`}>{b.isHidden ? 'HIDDEN' : 'VISIBLE'}</button>
+                                                        <button onClick={() => toggleVisibility(b.id, b.isHidden)} className={`kpm-edge-btn ${b.isHidden ? 'quiet text-slate-400' : ''} text-[11px] font-bold px-1.5 py-1 rounded`}>{b.isHidden ? 'HIDDEN' : 'VISIBLE'}</button>
                                                         <button onClick={() => { 
                                                             setEditingId(b.id); 
                                                             setEditForm({
@@ -1688,14 +1688,14 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
                             </div>
                             <div className="flex gap-3">
                                 <button onClick={() => setSimResults(null)} className="flex-1 bg-slate-800 text-slate-300 py-3 rounded-lg font-bold uppercase text-xs hover:bg-slate-700 transition-colors">Discard</button>
-                                <button onClick={applyChanges} disabled={isApplying} className="flex-[2] bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-black uppercase tracking-widest text-xs shadow-lg transition-transform active:scale-95 disabled:opacity-50">
+                                <button onClick={applyChanges} disabled={isApplying} className="kpm-edge-btn flex-[2] py-3 rounded-lg font-black uppercase tracking-widest text-xs disabled:opacity-50">
                                     {isApplying ? 'EXECUTING...' : 'EXECUTE SEASON UPDATE'}
                                 </button>
                             </div>
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            <button onClick={runSimulation} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black uppercase tracking-[0.2em] shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-transform active:scale-95 flex items-center justify-center gap-2">
+                            <button onClick={runSimulation} className="kpm-edge-btn w-full py-4 rounded-xl font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2">
                                 <Activity size={18}/> Audit Season Ranks
                             </button>
 
@@ -2161,7 +2161,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                                     setNewStoreForm({ name: '', phone: '', address: '', priceTier: 'Retail' });
                                 }
                             }}
-                            className="flex-1 bg-orange-600 hover:bg-orange-500 text-white py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-1 shadow-md transition-all active:scale-95 px-4"
+                            className="kpm-edge-btn flex-1 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-1 px-4"
                         >
                             <CheckCircle size={12} /> {editingStoreId ? "Save" : "Confirm"}
                         </button>
@@ -2213,7 +2213,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
                             <button 
                                 onClick={handleSaveNewStore}
                                 disabled={isSavingStore}
-                                className={`w-full py-4 mt-2 rounded-xl font-black uppercase tracking-[0.2em] transition-all shadow-lg ${isSavingStore ? 'bg-slate-700 text-slate-400' : 'bg-orange-600 hover:bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.5)]'}`}
+                                className={`kpm-edge-btn w-full py-4 mt-2 rounded-xl font-black uppercase tracking-[0.2em] ${isSavingStore ? 'quiet opacity-50' : ''}`}
                             >
                                 {isSavingStore ? 'Saving...' : 'Deploy Target'}
                             </button>

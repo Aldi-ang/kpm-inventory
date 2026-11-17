@@ -12541,6 +12541,19 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      /* the three Receivables tabs share one look: no tab fills blue/indigo/orange when active (palette law + his 11-17 call) */
      (cfBtnCheck.match(/className=\{?["'`]kpm-edge-btn/g) || []).length >= 3 &&
      !/bg-(blue|indigo)-500 text-white shadow-lg/.test(cfBtnCheck));
+  /* Exclusions (not filled buttons): MapMissionControl L382 (w-12 h-6 rounded-full Heatmap switch), L393 (barColor sector
+     progress bar), L2179 (bg-orange-500/20 Register Target icon badge); AuditVaultView L150 (REMOTE SNAPSHOT LOADED badge). */
+  const paletteFill = /bg-gold\b|bg-\[var\(--gold\)\]|bg-orange-\d|bg-amber-\d|from-amber-\d|bg-blue-\d|bg-indigo-\d|bg-green-\d|bg-emerald-\d|bg-\[#0d0a09\]/;
+  const mmBtnCheck = read('src/MapMissionControl.jsx')
+    .replaceAll("salesHeatmapMode ? 'bg-emerald-500' : 'bg-slate-600'", "salesHeatmapMode ? '' : ''")
+    .replaceAll("const barColor = hasTarget ? (ratio >= 1 ? 'bg-emerald-500' : ratio > 0.5 ? 'bg-orange-500' : 'bg-red-500') : (ratio > 0.6 ? 'bg-emerald-500' : ratio > 0.2 ? 'bg-orange-500' : 'bg-red-500');", '')
+    .replaceAll('bg-orange-500/20', '');
+  const avBtnCheck = read('src/components/AuditVaultView.jsx')
+    .replaceAll('text-[10px] bg-[var(--gold)] text-[var(--gold-ink)] border border-[var(--accent-edge)] px-1.5 py-0.5 rounded tracking-tighter animate-pulse', '');
+  ok('REGRESSION: no filled button on Map System or Audit Logs (his 2026-11-17 "dont make it again")',
+     !paletteFill.test(mmBtnCheck) && !paletteFill.test(avBtnCheck) &&
+     (mmBtnCheck.match(/className=\{?["'`]kpm-edge-btn/g) || []).length >= 11 &&
+     (avBtnCheck.match(/className=\{?["'`]kpm-edge-btn/g) || []).length >= 1);
   /* his 2026-11-17: "i want right now that the segment change but also closing all the panel that is on the path, right now
      literally stuck on the examine button and cant close it" + "i cant go back ... the button is intesect with the demo top panel" */
   const exm = read('src/components/ExamineModal.jsx');

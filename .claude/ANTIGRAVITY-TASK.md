@@ -1811,7 +1811,7 @@ Done when: the file exists, opens with no script, the arithmetic + badge comment
   - **`Hand-offs` (`Authorize Transfer`/`Reject`, `Accept Responsibility`/`Decline`, `See it on the journey map`, outgoing status), `Store Audit` live inputs, and `Receipt` modal (58mm/A4 Print & Share):** named in the one-line `.note` above the phone frames ("same tabs/modals, restyled").
 
 ## Task 37 - BUILD: no filled button on Map System and Audit Logs
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 13:30 WIB, by Claude. BUILD rules apply. Do it AFTER Task 39.
 **Touch only:** `src/MapMissionControl.jsx`, the Audit Logs component file your Task 35 named, `src/config/logicFixes.selfcheck.mjs`, this file.
 
@@ -1822,6 +1822,42 @@ Same job as Task 33 (read Claude's 13:10 review of it first: a tab strip is ONE 
 4. ONE check after the Task 33 one: `REGRESSION: no filled button on Map System or Audit Logs (his 2026-11-17 "dont make it again")`, same style; `.replace` only the exact NOT strings (a comment names each line); a minimum `kpm-edge-btn` count per file = what you converted.
 5. Red-then-green proof (stash the .jsx files, FAIL; pop, PASS). Both outputs in the Result.
 Done when: the four BUILD checks are green, list + proof in the Result.
+
+**Result:**
+- **Hit list & verdicts (`rg -n "bg-gold|bg-\[var\(--gold\)\]|bg-orange-|bg-amber-|from-amber-|bg-blue-|bg-indigo-|bg-green-|bg-emerald-" src/MapMissionControl.jsx src/components/AuditVaultView.jsx`):**
+  - `src/components/AuditVaultView.jsx:150` (`REMOTE SNAPSHOT LOADED` pill `<span>`): **NOT** (status badge `<span>`).
+  - `src/components/AuditVaultView.jsx:162` (`Revert` `<button>`): **FILLED BUTTON** -> converted to `kpm-edge-btn`.
+  - `src/MapMissionControl.jsx:382` (`Heatmap Engine` `w-12 h-6 rounded-full` toggle `<button>`): **NOT** (on/off toggle switch).
+  - `src/MapMissionControl.jsx:393` (`barColor` progress bar): **NOT** (sector progress bar `<div>`).
+  - `src/MapMissionControl.jsx:849` (`2. Select Shapefile` `<button>`): **FILLED BUTTON** -> `kpm-edge-btn`.
+  - `src/MapMissionControl.jsx:858` (`+ Folder` `<button>`): **FILLED BUTTON** -> `kpm-edge-btn quiet`.
+  - `src/MapMissionControl.jsx:885` (`+ FILE` `<button>`): **FILLED BUTTON** -> `kpm-edge-btn quiet`.
+  - `src/MapMissionControl.jsx:887` (`EDIT` `<button>`): **FILLED BUTTON** -> `kpm-edge-btn quiet`.
+  - `src/MapMissionControl.jsx:888` (`VIS` `<button>`): **FILLED BUTTON** -> `kpm-edge-btn quiet`.
+  - `src/MapMissionControl.jsx:934` (`Save Sector Configuration` `<button>`): **FILLED BUTTON** -> `kpm-edge-btn`.
+  - `src/MapMissionControl.jsx:961` (`HIDDEN` / `VISIBLE` `<button>`): **FILLED BUTTON** -> `kpm-edge-btn` (`quiet` when hidden).
+  - `src/MapMissionControl.jsx:1691` (`EXECUTE SEASON UPDATE` `<button>`): **FILLED BUTTON** -> `kpm-edge-btn`.
+  - `src/MapMissionControl.jsx:1698` (`Audit Season Ranks` `<button>`): **FILLED BUTTON** -> `kpm-edge-btn`.
+  - `src/MapMissionControl.jsx:2164` (`Targeting HUD` `Save` / `Confirm` `<button>`): **FILLED BUTTON** -> `kpm-edge-btn`.
+  - `src/MapMissionControl.jsx:2179` (`Register Target` icon badge `bg-orange-500/20`): **NOT** (icon badge `<div>`).
+  - `src/MapMissionControl.jsx:2216` (`Deploy Target` `<button>`): **FILLED BUTTON** -> `kpm-edge-btn`.
+- **Selfcheck added:** `REGRESSION: no filled button on Map System or Audit Logs (his 2026-11-17 "dont make it again")` in `src/config/logicFixes.selfcheck.mjs:12544-12556`.
+- **Red-then-green proof:**
+  - Stashed `.jsx` edits (`git stash push src/MapMissionControl.jsx src/components/AuditVaultView.jsx`):
+    ```
+      FAIL REGRESSION: no filled button on Map System or Audit Logs (his 2026-11-17 "dont make it again")
+    3011 passed, 1 failed, 3012 checks
+    ```
+  - Restored (`git stash pop`):
+    ```
+      ok   REGRESSION: no filled button on Map System or Audit Logs (his 2026-11-17 "dont make it again")
+    3012 passed, 0 failed, 3012 checks
+    ```
+- **Four BUILD checks (all green after final edit):**
+  1. `node src/config/logicFixes.selfcheck.mjs`: `3012 passed, 0 failed, 3012 checks`
+  2. `src/config/*.selfcheck.mjs`: all 14 scripts exited 0
+  3. `npm run build`: exit 0 (`built in 12.26s`)
+  4. `node src/config/integration.audit.mjs`: `725 passed, 0 failed, 725 checks`
 
 ## Task 38 - BUILD: no filled button on Agent Profile (keep the game art)
 **Status:** OPEN

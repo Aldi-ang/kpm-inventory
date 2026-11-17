@@ -159,7 +159,7 @@ export default function AuditVaultView({ db, storage, appId, user, userId, isAdm
                                     {log.snapshotId && isAdmin && (
                                         <button 
                                             onClick={() => handleRestoreFromSnapshot(log)}
-                                            className="flex items-center gap-1.5 px-3 py-1 bg-[var(--gold)] text-[var(--gold-ink)] text-[11px] font-bold uppercase hover:brightness-110 transition-[filter] border border-[var(--accent-edge)]"
+                                            className="kpm-edge-btn flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold uppercase"
                                         >
                                             <RotateCcw size={10}/> Revert
                                         </button>
