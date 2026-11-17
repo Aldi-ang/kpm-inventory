@@ -7,8 +7,15 @@ Aldi, 2026-11-16 20:15: *"keep giving antigravity jobs without i need to ask eve
 **Your jobs are THINKING jobs** (Aldi, 2026-11-10): reading code, audits, reviews. Never a browser, never a click-through.
 **Previous task (the 39 Fleet self-checks): DONE, reviewed by Claude 2026-11-16 (commit ca4921ca): count adds up (2981 - 3 merged + 4 new = 2982), no check weakened. Its Result table is in that commit.**
 
+**NEW 2026-11-17 08:58 - BUILD tasks.** Aldi: *"your quota is almost finish i want u to make antigrav work 75% of your work if possible make sure u give the exact notes and information before its working and you are here to check make sure all the quota for antigrav is depleted first"*. A task marked **BUILD** may edit the files in its own "Touch only" list - nothing else - and run `npm run build` and the checks. It still never pushes, never deploys, never touches firestore.rules or A-Brain, never opens a browser. Claude reads every BUILD commit (`git show`) and re-runs the gates before anything goes live.
+
+## BUILD rules (only for a task marked BUILD)
+- classNames, words and the checks it names - NEVER a handler, an `onClick=`/`onChange=` body, a `name=` on an input, a Firestore call, or a `data-guide=` / `data-mission=` / `data-mark=` attribute.
+- After your LAST edit, all four must pass, in this order: `node src/config/logicFixes.selfcheck.mjs` (0 failed) · every `src/config/*.selfcheck.mjs` by exit code (`for f in src/config/*.selfcheck.mjs; do node "$f" >/dev/null 2>&1 || echo "RED $f"; done` prints nothing) · `npm run build` (exit 0) · `node src/config/integration.audit.mjs` (0 failed). One red = do NOT commit the code; write what is red in the Result, set Status BLOCKED, `git checkout -- <your files>`, go to the next task.
+- Commit the "Touch only" files + this file together, message "Antigravity: Task N <what>". Put the four check results (pass counts) in the Result.
+
 ## Rules for every task below
-- READ-ONLY on the app: never edit anything in src/, firestore.rules, A-Brain. Never build, deploy, push, or open a browser.
+- READ-ONLY on the app (except a BUILD task's own list): never edit anything in src/, firestore.rules, A-Brain. Never deploy, push, or open a browser.
 - An answer you did not read in TODAY's code is CAN'T TELL. Every claim carries file:line.
 - Touch only THIS file: write the task's Result under it, set its Status to DONE, commit THIS file alone with a message starting "Antigravity:", then start the next task.
 - Claude may be committing to the same branch while you work. Before each commit run `git status`; if anything other than this file is staged, unstage it.
@@ -1294,5 +1301,48 @@ Do NOT change the code. Done when: four tables + the filled-button list in the R
 
 Exactly Task 20's four tables for `src/components/DashboardView.jsx` (the `activeTab === 'dashboard'` screen, App.jsx ~L5088) - every number on it and where it is computed (file:line), every press. Demo guide marks; selfcheck pins; the same filled-button list.
 Do NOT change the code. Done when: four tables + the filled-button list in the Result.
+
+**Result:**
+
+## Task 28 - BUILD: no amber-filled button on Reports and Customers
+**Status:** OPEN
+**Written:** 2026-11-17 09:00 WIB, by Claude. BUILD rules apply.
+**Touch only:** `src/components/HistoryReportView.jsx`, `src/components/CustomerManager.jsx`, `src/config/logicFixes.selfcheck.mjs`, this file.
+
+Aldi, 2026-11-17: *"i really hate the simple amber fill button dont make it again change it and make sure all the button animation are nice and clean"*. The shared style exists: `.kpm-edge-btn` in `src/styles/theme.css` (search "THE PROFESSIONAL BUTTON") - a gold edge around a plain word, see-through, hover gold wash, press sink. Variants: `.quiet` (plain edge, secondary) and `.danger` (red word).
+1. Every FILLED button your Tasks 24 and 25 listed: HistoryReportView.jsx 433 (Pull Archive), 471 (Context Analytics), 976 (+ ADD ITEM), 1010 (Save Changes); CustomerManager.jsx 145 (Add Log), 1791 (Verify). In each button's `className`, REMOVE every gold fill (`bg-[var(--gold)]`, `hover:bg-[var(--gold)]`, `text-[var(--gold-ink)]`, `bg-gold`, `text-gold-ink`), any `shadow-*` glow and any `transition-*` / `hover:opacity-*` / `active:scale-*` (the class owns the motion), then ADD `kpm-edge-btn` at the front. Keep sizes, padding, `w-full`, flex, gap, rounded, font size/weight, uppercase if present. A delete/reject button gets `kpm-edge-btn danger`; a secondary press `kpm-edge-btn quiet`.
+2. Do NOT touch: the hover-only icon tiles (HistoryReportView 712, 756, 819; CustomerManager 126, 1801), the Itemized Receipt header bar (974), the badges/banners (CustomerManager 1299, 1316, 1321). They are not filled buttons.
+3. In `src/config/logicFixes.selfcheck.mjs`, find the check named `REGRESSION: no amber-filled button on the Master Vault or its product form`. Right AFTER that `ok(...)`, add ONE new check in the same style, named `REGRESSION: no amber-filled button on Reports or Customers (his 2026-11-17 "dont make it again")`. It reads both files with `read(...)`, removes ONLY the exact excluded class strings of point 2 with precise `.replace(...)` calls (a comment names each line it excludes), then requires `!fill.test(...)` for each file (`fill` is the regex defined just above that check - never loosen it), plus at least 4 `kpm-edge-btn` in HistoryReportView.jsx and at least 2 in CustomerManager.jsx.
+4. Prove it: with your two .jsx edits stashed (`git stash push src/components/HistoryReportView.jsx src/components/CustomerManager.jsx`), the new check must FAIL; `git stash pop`, it must PASS. Paste both outputs in the Result.
+Done when: the four BUILD checks are green and the red-then-green proof is in the Result.
+
+**Result:**
+
+## Task 29 - BUILD, ONLY after Aldi says "demo bar ok": the demo's two top bars as ONE 40 px line
+**Status:** ON HIS OK - skip it until Aldi tells you "demo bar ok"; then treat it as OPEN.
+**Written:** 2026-11-17 09:00 WIB, by Claude. BUILD rules apply.
+**Touch only:** `src/components/DemoFrontDoor.jsx`, `src/components/DemoMission.jsx`, `src/styles/theme.css` (only the `.kpm-demo-bar` / `.kpm-mission` / `--kpm-safe-top` block, about L6085-6160), `src/config/logicFixes.selfcheck.mjs`, `src/config/integration.audit.mjs`, `src/config/patchNotes.js`, this file.
+
+The spec is the picture Aldi is judging: A-Brain `Raw/2026-11-17-master-vault/demo-bar.html` - read it first.
+1. Before any edit: grep logicFixes.selfcheck.mjs and integration.audit.mjs for `kpm-demo-bar`, `kpm-mission`, `kpm-safe-top`, `tape`, `hintkey`, `37px`, `34px`; list every pin in the Result. A pin you change keeps its INTENT (what it protects); only its string moves.
+2. The mission line moves INSIDE the demo bar: one fixed row, 40 px high, `background: var(--panel)`, `border-bottom: 1px solid var(--line-2)`, no hazard tape (delete its element and CSS). Order: DEMO stamp, who (PC only, hidden below sm as today; drop "resets every night at 00:05 WIB" from the bar - it stays in the Switch sheet's foot), a 1 px divider, the steps, a `? Petunjuk` key (`kpm-edge-btn quiet`), the `Switch` key (`kpm-edge-btn`). Steps: done = gold check, the current one = its number in gold + its words with an 11% gold wash and a 2 px gold underline, the rest = dim numbers. Phone (under 640 px): stamp, the current step as `3/8 words` (ellipsis), `?`, `Switch`.
+3. `--kpm-safe-top` with the demo on = safe-area + 40px, mission on or off (today 37 / 71). Keep every `data-mission`, `data-guide`, `aria-label` and every `onClick` exactly.
+4. One patch note (en + id, plain words, no names): the demo's two top bars are now one thin line, more room for the app.
+Done when: the four BUILD checks are green; the pin list and what changed in each in the Result. Claude renders it on PC and phone before it goes live.
+
+**Result:**
+
+## Task 30 - draft the Restock Vault picture (segment 2) for Claude to check
+**Status:** OPEN
+**Written:** 2026-11-17 09:00 WIB, by Claude. Writes ONE new file - not an app BUILD.
+**Touch only:** `.claude/drafts/restock-vault-pro.html` (new), this file.
+
+The loop per screen: ONE picture (PC + phone, real lab numbers) -> Aldi's ok -> build. You draft the picture; Claude reviews and publishes it.
+- Copy the structure and CSS of A-Brain `Raw/2026-11-17-master-vault/master-vault-pro.html` (Aldi: *"actually its look solid"*): same tokens (`:root` + both dark blocks), fonts, frames - a PC frame on top, two phone frames under it.
+- Content = today's Restock Vault from YOUR Task 21 map: the 5 tabs (Masuk, Kirim, Request, Buku, Data Induk) as underline tabs with counts; the MASUK screen: product picker (left on PC, on top on phone), the route (Asal swap Tujuan, Pengirim, Penerima, SJ numbers, Tanggal), the cart as a ruled table (Barang, Batch, Jumlah, @ Landed, total), the costs (Ongkos kirim, Pita cukai, Upah bongkar), the 4 totals (Nilai barang, Biaya tambahan, Total dibayar, Landed / Bks), the completeness footer with `Simpan surat jalan`.
+- Real numbers: the 6 products of `demo/seed.json` `inventory` (name, priceDistributor, packing). A cart of 2 lines, e.g. Cello Chocolate 2 Bal and Cello Green 5 Slop; work every total by hand and SHOW the arithmetic in an HTML comment under the cart so Claude can check it.
+- Buttons look like `.kpm-edge-btn` (copy its CSS from theme.css "THE PROFESSIONAL BUTTON"). NO amber fill anywhere.
+- Every feature today's screen has is on the picture or named in a one-line note under it ("moved to ..."). Aldi's rule from Master Vault: a new look may move his features, never drop them.
+Done when: the file exists, opens with no script, and the Result lists every feature from your Task 21 map with where it sits on the picture.
 
 **Result:**
