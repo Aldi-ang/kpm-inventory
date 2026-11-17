@@ -2167,3 +2167,23 @@ Same four checks as Task 48, for `map-system-pro.html` (map Task 31), `agent-pro
 | Badges / states | Fine: `Tier 1 (Overseer)`, `Lite Mode` ("gives up motion, never colour"), look-and-feel separated from money/role rules by `.div` | `.claude/drafts/settings-pro.html:88, 104-129` | — |
 | Task 36 PC vs Phone | `Letterhead/Signature/Bank/Watermark`, `Spare days on a restock`, `Stock Opname day`, `Where the Master Vault is`, and `Rebuild sales totals` are on PC but omitted from Phone 1/2 | `.claude/drafts/settings-pro.html:113-130, 152-208` | MISSING |
 | v4 look | Fine: 1 unified `.sw` switch style, `min-height:44px` rows, 13.5 px text, zero `<script>`, no filled amber button | `.claude/drafts/settings-pro.html:37, 55-57` | — |
+
+## Task 50 - fix what Task 48 found in pictures 40-43
+**Status:** OPEN
+**Written:** 2026-11-17 15:50 WIB, by Claude. Edits drafts only - not an app BUILD. Claude re-did your Sampling sum by hand: 156.250 + 105.000 + 80.750 + 157.500 + 95.000 = Rp 594.500 - you were right.
+**Touch only:** `.claude/drafts/reports-pro.html`, `customers-pro.html`, `sampling-pro.html`, `command-center-pro.html`, this file.
+
+Fix every finding in your Task 48 Result, nothing else:
+- sampling: Phone 2 Ecer -> Rp 594.500, Retail -> Rp 523.000; fix the HTML comment's sum to match.
+- command-center: `Stok Kritis` must show only what `src/components/DashboardView.jsx:78-106` would flag for the date shown. If nothing in the seed is critical, show the panel's own empty state (read the code for its words) and say so in a comment.
+- reports: Period picker + Date picker on BOTH phone frames (one quiet line, same words as PC).
+- customers: Admin Tools (Repair Tiers, Find Duplicates, Data Scrub, Import KML) and Verify NOO reachable on the phone - one quiet "More" row that opens the list is enough; same words as PC.
+Done when: every Task 48 finding is gone, no `<script>`, and the Result lists each fix with file:line.
+
+## Task 51 - fix what Task 49 found in pictures 44-47
+**Status:** OPEN
+**Written:** 2026-11-17 15:50 WIB, by Claude. Do it AFTER Task 50. Edits drafts only.
+**Touch only:** `.claude/drafts/map-system-pro.html`, `agent-profile-pro.html`, `settings-pro.html`, this file.
+
+Fix every MISSING in your Task 49 Result: map-system phone gets ZoneHUD, the totals strip, Boss tools and Delete this shop (Delete stays quiet, red words only, never a filled button); agent-profile phone gets Timeline Analytics (bars from 0); settings phone gets Letterhead/Signature/Bank/Watermark, Spare days on a restock, Stock Opname day, Where the Master Vault is, Rebuild sales totals - the money/role group stays behind its own divider. Ordinary sizes; nothing new beyond the finding.
+Done when: every Task 49 MISSING is on the phone frames, no `<script>`, Result lists each with file:line.
