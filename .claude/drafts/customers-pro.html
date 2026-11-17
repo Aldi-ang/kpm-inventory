@@ -1,0 +1,292 @@
+<!doctype html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Customers · v4</title>
+<style>
+:root{
+  --bg:#0E0C0A;--panel:#15120F;--raised:#1C1814;
+  --ink:#F3EDE2;--ink-dim:#A69D8E;--ink-mute:#6D6558;
+  --line:#2B251E;--line-2:#3C342B;
+  --gold:#E0AC43;--wash:rgba(224,172,67,.09);
+  --bad:#D96B5A;--bad-wash:rgba(217,107,90,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;padding:28px 20px 64px;-webkit-font-smoothing:antialiased}
+.cap{max-width:1180px;margin:0 auto 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute)}
+.note{max-width:1180px;margin:0 auto 14px;font-size:12px;color:var(--ink-dim)}
+.note b{color:var(--ink);font-weight:600}
+.note code{font-size:11px;color:var(--ink);background:var(--raised);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+.i{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* edge buttons: hairline + subtle tint, never solid fill */
+.btn{height:34px;padding:0 14px;border-radius:8px;font:600 13px/1 inherit;color:var(--ink);background:rgba(255,255,255,.03);border:1px solid var(--line-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn.edge{border-color:var(--gold);color:var(--gold);background:var(--wash)}
+.btn.quiet{color:var(--ink-dim);background:transparent}
+.btn.danger{border-color:rgba(217,107,90,.45);color:var(--bad);background:var(--bad-wash)}
+.btn.sm{height:28px;padding:0 10px;font-size:12px}
+
+.frame{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 24px 60px -30px rgba(0,0,0,.7)}
+.pc{max-width:1180px;margin:0 auto 40px}
+
+.top{display:flex;align-items:center;gap:24px;padding:14px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.top h1{font-size:18px;font-weight:700;letter-spacing:-.02em;padding-bottom:12px}
+.tabs{display:flex;gap:20px}
+.tab{padding:0 2px 12px;font-size:13px;font-weight:600;color:var(--ink-mute);border-bottom:2px solid transparent}
+.tab.on{color:var(--ink);border-color:var(--gold)}
+.ctl{margin-left:auto;display:flex;align-items:center;gap:8px;padding-bottom:12px}
+.pill{height:30px;padding:0 10px;border-radius:7px;background:var(--raised);border:1px solid var(--line);font-size:12px;color:var(--ink-dim);display:inline-flex;align-items:center;gap:6px}
+
+.sum{display:flex;align-items:center;gap:14px;padding:11px 20px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-dim);flex-wrap:wrap}
+.sum b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.sum .bad{color:var(--bad)}
+.sep{width:1px;height:12px;background:var(--line)}
+
+.work{display:grid;grid-template-columns:390px 1fr;min-height:470px}
+.list{border-right:1px solid var(--line);display:flex;flex-direction:column}
+.find{margin:12px 14px 8px;height:34px;padding:0 10px;border-radius:8px;background:var(--raised);border:1px solid var(--line);display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-mute)}
+.crumb{padding:0 16px 8px;font-size:11px;color:var(--ink-mute);border-bottom:1px solid var(--line)}
+.crumb b{color:var(--ink-dim);font-weight:600}
+.rows{overflow:auto;flex:1}
+.r{display:grid;grid-template-columns:16px minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:10px 16px;border-left:2px solid transparent;border-bottom:1px solid rgba(43,37,30,.55)}
+.r.sel{background:var(--wash);border-left-color:var(--gold)}
+.ic{color:var(--ink-mute);display:flex}
+.r.sel .ic{color:var(--gold)}
+.n{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reg{font-size:11.5px;color:var(--ink-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink-dim);text-align:right;white-space:nowrap}
+.s{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-mute);text-align:right;white-space:nowrap}
+.s.bad{color:var(--bad)}
+.s.gold{color:var(--gold)}
+
+.hand{display:flex;flex-direction:column;justify-content:space-between;background:radial-gradient(600px 260px at 50% 0%,rgba(224,172,67,.04),transparent 70%)}
+.hand .in{padding:24px 28px;display:flex;flex-direction:column;gap:16px}
+.ph{display:flex;align-items:center;gap:14px}
+.big{width:44px;height:44px;border-radius:10px;background:var(--raised);border:1px solid var(--line-2);display:grid;place-items:center;color:var(--gold);flex:none}
+.ph h2{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.ph p{font-size:12.5px;color:var(--ink-dim);margin-top:2px}
+.ph .pos{margin-left:auto;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--bad);border:1px solid rgba(217,107,90,.4);background:var(--bad-wash);padding:4px 9px;border-radius:7px}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:5px 10px;border-radius:7px;background:var(--raised);border:1px solid var(--line);font-size:12px;color:var(--ink-dim)}
+.chip b{color:var(--ink);font-weight:600}
+
+.sec-h{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-mute);text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px solid rgba(43,37,30,.55);color:var(--ink-dim)}
+td b{color:var(--ink);font-weight:600}
+th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
+
+.act{display:flex;align-items:center;gap:8px;padding:14px 28px;border-top:1px solid var(--line);flex-wrap:wrap}
+.act .sp{flex:1}
+
+/* phones */
+.phones{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;max-width:1180px;margin:0 auto}
+.phone{width:390px;max-width:100%;height:780px;display:flex;flex-direction:column;border-radius:22px;position:relative}
+.sb{height:28px;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font-size:11px;color:var(--ink-dim)}
+.phone .top{padding:8px 16px 0;gap:0;flex-direction:column;align-items:stretch}
+.phone .top h1{margin-bottom:8px}
+.phone .tabs{gap:16px}
+.phone .sum{padding:9px 16px;gap:10px;font-size:12px}
+.phone .list{width:auto;border:none;flex:1}
+.phone .r{padding:9px 16px}
+.dim-under{position:absolute;inset:0;background:rgba(5,4,3,.45)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--raised);border-top:1px solid var(--line-2);border-radius:20px 20px 0 0;
+  padding:10px 16px 16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 -18px 40px -20px rgba(0,0,0,.6)}
+.grab{width:38px;height:4px;border-radius:2px;background:var(--line-2);margin:0 auto}
+.an-sec{padding:12px 16px;display:flex;flex-direction:column;gap:12px;overflow:auto;flex:1}
+.card{padding:10px 12px;border-radius:10px;background:var(--raised);border:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.card-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px}
+@media (max-width:700px){.pc{display:none}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="store" viewBox="0 0 24 24"><path d="M4 10h16v10H4z"/><path d="M3 10l2-5h14l2 5"/><path d="M9 20v-6h6v6"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+  <symbol id="pin" viewBox="0 0 24 24"><path d="M12 21s6-5.4 6-10.5a6 6 0 1 0-12 0C6 15.6 12 21 12 21z"/><circle cx="12" cy="10.5" r="2"/></symbol>
+  <symbol id="cam" viewBox="0 0 24 24"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></symbol>
+  <symbol id="edit" viewBox="0 0 24 24"><path d="M14 4l6 6-10 10H4v-6z"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></symbol>
+  <symbol id="trash" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M7 7l1 13h8l1-13"/></symbol>
+</svg>
+
+<p class="cap">Customers · v4 · PC (Directory + Shop in hand)</p>
+<p class="note">All 8 shop names, regions, tiers, and <code>visitFreq</code> come from <b>demo/seed.json</b> (<code>152</code> total customers, <code>0</code> with status <code>PENDING</code>, <code>0</code> with <code>lastVisit</code>). Benchmark log entries and the <code>PENDING</code> NOO example state are labeled <b>example</b>. Admin Tools (<code>Repair Tiers</code>, <code>Find Duplicates</code>, <code>Data Scrub</code>, <code>Import KML</code>), Duplicate Report, and the Add/Edit Customer modal (with <code>data-guide="photo"</code> shutter) stay behind their existing drawers/modals, restyled with <code>.btn</code>.</p>
+
+<div class="frame pc">
+  <div class="top">
+    <h1>Customer Directory</h1>
+    <div class="tabs"><span class="tab on">Directory</span><span class="tab">Grosir &amp; Agents</span><span class="tab">Admin Tools</span></div>
+    <div class="ctl">
+      <span class="pill">Date: 2026-11-17</span>
+      <button class="btn edge">+ Add customer</button>
+    </div>
+  </div>
+  <div class="sum">
+    <span><b>152</b> shops (seed)</span><span class="sep"></span>
+    <span><b>0</b> pending NOO in seed</span><span class="sep"></span>
+    <span class="bad"><b>8 / 8</b> shown overdue</span><span class="sep"></span>
+    <span><b>1</b> Epic · <b>1</b> Grosir</span>
+  </div>
+
+  <div class="work">
+    <aside class="list">
+      <div class="find"><svg class="i"><use href="#search"/></svg>Search store name, region, city, or salesperson...</div>
+      <div class="crumb">Indonesia › <b>All Provinces</b> › 8 of 152 seed shops</div>
+      <div class="rows">
+        <div class="r sel">
+          <span class="ic"><svg class="i"><use href="#store"/></svg></span>
+          <span style="min-width:0"><div class="n">Asyifa Mart Madura</div><div class="reg">MAGELANG · MUNTILAN</div></span>
+          <span class="v">7d</span>
+          <span class="s bad">OVERDUE</span>
+        </div>
+        <div class="r">
+          <span class="ic"><svg class="i"><use href="#store"/></svg></span>
+          <span style="min-width:0"><div class="n">AMANAH BARU</div><div class="reg">BANDUNG · MARGAHAYU</div></span>
+          <span class="v">7d</span>
+          <span class="s bad">OVERDUE</span>
+        </div>
+        <div class="r">
+          <span class="ic"><svg class="i"><use href="#store"/></svg></span>
+          <span style="min-width:0"><div class="n">ANEKA BARU PANJI</div><div class="reg">BANDUNG · MARGAHAYU</div></span>
+          <span class="v">7d</span>
+          <span class="s bad">OVERDUE</span>
+        </div>
+        <div class="r">
+          <span class="ic"><svg class="i"><use href="#store"/></svg></span>
+          <span style="min-width:0"><div class="n">ANUGRAH 17</div><div class="reg">KOTA CIMAHI · CIMAHI TENGAH</div></span>
+          <span class="v">7d</span>
+          <span class="s bad">OVERDUE</span>
+        </div>
+        <div class="r">
+          <span class="ic"><svg class="i"><use href="#store"/></svg></span>
+          <span style="min-width:0"><div class="n">ARIF CILILIN</div><div class="reg">BANDUNG BARAT · CILILIN</div></span>
+          <span class="v">7d</span>
+          <span class="s bad">OVERDUE</span>
+        </div>
+        <div class="r">
+          <span class="ic"><svg class="i"><use href="#store"/></svg></span>
+          <span style="min-width:0"><div class="n">CEMERLANG</div><div class="reg">BANDUNG · SOREANG</div></span>
+          <span class="v">7d</span>
+          <span class="s bad">OVERDUE</span>
+        </div>
+        <div class="r">
+          <span class="ic"><svg class="i"><use href="#store"/></svg></span>
+          <span style="min-width:0"><div class="n">HQ TEST</div><div class="reg">Epic tier · Retail</div></span>
+          <span class="v">7d</span>
+          <span class="s bad">OVERDUE</span>
+        </div>
+        <div class="r">
+          <span class="ic"><svg class="i"><use href="#store"/></svg></span>
+          <span style="min-width:0"><div class="n">HQ (RETAIL) 1</div><div class="reg">Unranked · Grosir</div></span>
+          <span class="v">7d</span>
+          <span class="s gold">PENDING (ex)</span>
+        </div>
+      </div>
+    </aside>
+
+    <section class="hand">
+      <div class="in">
+        <div class="ph">
+          <div class="big"><svg class="i"><use href="#store"/></svg></div>
+          <div><h2>Asyifa Mart Madura</h2><p>JAWA TENGAH · MAGELANG · MUNTILAN · status: APPROVED</p></div>
+          <span class="pos">OVERDUE</span>
+        </div>
+
+        <div class="chips">
+          <span class="chip">Map Tier: <b>Unranked</b></span>
+          <span class="chip">Price Tier: <b>Retail</b></span>
+          <span class="chip">Visit Rhythm: <b>Every 7 days</b></span>
+          <span class="chip">Last Visit: <b>None recorded</b></span>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span class="sec-h">Competitor Benchmark Log (example)</span>
+          <button class="btn edge sm">+ Add Log</button>
+        </div>
+        <table>
+          <thead><tr><th>Date</th><th>Brand / Note (example)</th><th class="r">Price</th></tr></thead>
+          <tbody>
+            <tr><td>2026-11-10</td><td><b>Competitor Kretek 12</b> · shelf eye-level</td><td class="r"><b>Rp 11.000</b></td></tr>
+            <tr><td>2026-11-03</td><td><b>Competitor Mild 16</b> · promo poster</td><td class="r"><b>Rp 18.500</b></td></tr>
+          </tbody>
+        </table>
+        <!--
+          VISIT-OVERDUE RULE CHECK (date shown: 2026-11-17):
+          Rule in src/components/MapMissionControl.jsx:1887-1904 (displayed via lastVisit in src/components/CustomerManager.jsx:1330):
+            last = c.lastVisit; if (!last) return 'overdue';
+            next = last + (c.visitFreq || 7) days;
+            diffDays = Math.ceil((next - today) / 86400000);
+            diffDays <= 0 -> 'overdue'; diffDays <= 2 -> 'soon'; else 'ok'.
+          Seed data check (demo/seed.json customers, 152 total):
+            - 0 customers have status === 'PENDING'.
+            - 0 customers have a lastVisit value (all 8 shown have lastVisit: undefined).
+            - Asyifa Mart Madura has visitFreq: 7; the other 7 default to visitFreq || 7 = 7.
+          Hand run for 2026-11-17:
+            Because !last is true for all 8 seed customers, the rule returns 'overdue' for all 8.
+        -->
+      </div>
+      <div class="act">
+        <button class="btn quiet"><svg class="i"><use href="#pin"/></svg>Map</button>
+        <button class="btn quiet"><svg class="i"><use href="#edit"/></svg>Edit</button>
+        <button class="btn quiet">Move</button>
+        <span class="sp"></span>
+        <button class="btn edge"><svg class="i"><use href="#check"/></svg>Verify NOO (when PENDING)</button>
+        <button class="btn danger"><svg class="i"><use href="#trash"/></svg>Del</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<p class="cap" style="margin-top:28px">Customers · v4 · Phone (1: Directory + Shop Sheet · 2: Grosir &amp; Agents + Form)</p>
+<div class="phones">
+  <div class="frame phone">
+    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
+    <div class="top">
+      <h1>Customer Directory</h1>
+      <div class="tabs"><span class="tab on">Directory</span><span class="tab">Grosir &amp; Agents</span></div>
+    </div>
+    <div class="sum"><span><b>152</b> shops</span><span class="sep"></span><span class="bad"><b>0</b> pending</span><span class="sep"></span><button class="btn edge sm" style="margin-left:auto">+ Add</button></div>
+    <div class="list">
+      <div class="r sel"><span class="ic"><svg class="i"><use href="#store"/></svg></span><span class="n">Asyifa Mart Madura</span><span class="v">7d</span><span class="s bad">OVERDUE</span></div>
+      <div class="r"><span class="ic"><svg class="i"><use href="#store"/></svg></span><span class="n">AMANAH BARU</span><span class="v">7d</span><span class="s bad">OVERDUE</span></div>
+      <div class="r"><span class="ic"><svg class="i"><use href="#store"/></svg></span><span class="n">HQ TEST</span><span class="v">Epic</span><span class="s bad">OVERDUE</span></div>
+    </div>
+    <div class="dim-under"></div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <div class="ph"><div><h2>Asyifa Mart Madura</h2><p>MAGELANG · Unranked · Retail · Every 7d</p></div><span class="pos">OVERDUE</span></div>
+      <table><tbody>
+        <tr><td>2026-11-10</td><td><b>Competitor Kretek 12</b> (ex)</td><td class="r">Rp 11.000</td></tr>
+      </tbody></table>
+      <div style="display:flex;gap:8px"><button class="btn edge" style="flex:1">Add Log</button><button class="btn quiet">Map</button><button class="btn quiet">Edit</button></div>
+    </div>
+  </div>
+
+  <div class="frame phone">
+    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
+    <div class="top">
+      <h1>Grosir &amp; Agents</h1>
+      <div class="tabs"><span class="tab">Directory</span><span class="tab on">Grosir &amp; Agents</span></div>
+    </div>
+    <div class="sum"><span><b>1</b> Grosir ask (ex)</span><span class="sep"></span><span><b>1</b> Unassigned (ex)</span></div>
+    <div class="an-sec">
+      <div class="sec-h">Grosir Requests (grantsGrosir)</div>
+      <div class="card">
+        <div class="card-row"><b>AMANAH BARU</b><span style="color:var(--ink-mute)">Retail → Grosir</span></div>
+        <div style="display:flex;gap:8px"><button class="btn quiet sm" style="flex:1">Keep Retail</button><button class="btn edge sm" style="flex:1">Confirm Grosir</button></div>
+      </div>
+
+      <div class="sec-h">Shops Waiting for a Salesman</div>
+      <div class="card">
+        <div class="card-row"><b>CEMERLANG</b><span style="color:var(--ink-mute)">BANDUNG · SOREANG</span></div>
+        <div style="display:flex;gap:8px"><span class="pill" style="flex:1">Pick roster agent ▾</span><button class="btn edge sm">Give</button></div>
+      </div>
+
+      <div class="sec-h">Add / Edit Customer Modal</div>
+      <div class="card">
+        <div class="card-row"><span>Store, Phone, Tier, Price, VisitFreq</span><span style="color:var(--ink-mute)">Prov/Kab/Kec</span></div>
+        <div style="display:flex;gap:8px"><button class="btn quiet sm" data-guide="photo"><svg class="i"><use href="#cam"/></svg>Photo</button><button class="btn quiet sm">Auto-Find</button><button class="btn edge sm" style="margin-left:auto">Save</button></div>
+      </div>
+    </div>
+  </div>
+</div>

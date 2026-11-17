@@ -1936,9 +1936,22 @@ Where every Task 24 element sits in `.claude/drafts/reports-pro.html`:
 - **Arithmetic check & `DATA AUDIT` edit modal note**: HTML comment inside PC `.hand` (`1,350,000 + 510,000 + 340,000 - 85,000 + 635,000 = Rp 2,750,000`) and `.note` above the PC frame.
 
 ## Task 41 - draft the Customers picture (segment 6) in the v4 look
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 14:06 WIB, by Claude. Writes ONE new file - not an app BUILD. Do it AFTER Task 40.
 **Touch only:** `.claude/drafts/customers-pro.html` (new), this file.
 
 From YOUR Task 25 map (grep "## Task 25") of `CustomerManager.jsx` (the directory + the customer detail). This IS a master-detail screen: the shop list on the left (one line: name, region, one number, one mark), the shop in hand on the right (its tier, price tier, visit rhythm, the benchmark log, the NOO Verify press for a pending shop). Shop names, regions and tiers from `demo/seed.json` `customers` (pick 8 real ones, one with status PENDING if the seed has one - say so if not). The visit-overdue mark must be what the code's own rule gives for the date you show (cite file:line, run it by hand in the comment).
 Done when: the file exists, no script, the comment is there, and the Result lists every Task 25 element with where it sits.
+
+**Result:**
+`demo/seed.json` has `152` customers, **`0` with `status === 'PENDING'`**, and **`0` with `lastVisit`**. By the app's overdue rule (`src/components/MapMissionControl.jsx:1887-1904`, displayed via `lastVisit` in `src/components/CustomerManager.jsx:1330`), `!last` evaluates to `'overdue'` for all 8 real seed customers on `2026-11-17` (worked out in the HTML comment). `HQ (RETAIL) 1` is marked `PENDING (ex)` as an example so the `Verify NOO` press is shown.
+
+Where every Task 25 element sits in `.claude/drafts/customers-pro.html`:
+- **Header (`Customer Directory`), Tabs (`Directory`, `Grosir & Agents`, `Admin Tools`), Date pill (`2026-11-17`), `+ Add customer` (`.btn edge`)**: PC `.top` and Phone 1 & 2 `.top`.
+- **Summary strip (`152` shops, `0` pending NOO in seed, `8 / 8` shown overdue, `1` Epic · `1` Grosir)**: PC `.sum` and Phone 1 `.sum`.
+- **Search bar & 4-level Folder Breadcrumb (`Indonesia › All Provinces › ...`)**: PC `.list` top (`.find` + `.crumb`).
+- **Shop list (8 real `demo/seed.json` customers: `Asyifa Mart Madura`, `AMANAH BARU`, `ANEKA BARU PANJI`, `ANUGRAH 17`, `ARIF CILILIN`, `CEMERLANG`, `HQ TEST`, `HQ (RETAIL) 1`)**: PC `.list .rows` and Phone 1 `.list` (one line: name, region/tier, visit rhythm `7d`, overdue/pending mark).
+- **Opened shop in hand (`CustomerDetailView`: store header, `Map Tier`, `Price Tier`, `Visit Rhythm`, `Last Visit`, `Competitor Benchmark Log` table + `+ Add Log` `.btn edge`, and `.act` actions `Map`, `Edit`, `Move`, `Verify NOO`, `Del`)**: PC `.hand` right pane and Phone 1 bottom `.sheet`.
+- **Grosir requests (`Keep Retail` / `Confirm Grosir`), Shops waiting for a salesman (`Pick roster agent ▾` + `Give`), and Add/Edit Customer modal (`data-guide="photo"` shutter, `Auto-Find`, `Save`)**: Phone 2 `.an-sec` (and PC `Grosir & Agents` tab / modal note).
+- **Admin Tools (`Repair Tiers`, `Find Duplicates`, `Data Scrub`, `Import KML`) & Duplicate Report & View-only notice**: PC `Admin Tools` tab and `.note` above the PC frame.
+- **Visit-overdue hand calculation**: HTML comment inside PC `.hand` citing `src/components/MapMissionControl.jsx:1887-1904` and `src/components/CustomerManager.jsx:1330`.
