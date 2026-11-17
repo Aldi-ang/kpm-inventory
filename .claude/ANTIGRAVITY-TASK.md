@@ -1507,3 +1507,19 @@ Same job as Task 28, two other screens. Aldi, 2026-11-17: *"i really hate the si
 4. In logicFixes.selfcheck.mjs, right AFTER the Task 28 check (`REGRESSION: no amber-filled button on Reports or Customers`), add ONE check `REGRESSION: no amber-filled button on Stock Opname or Receivables (his 2026-11-17 "dont make it again")` in the same style: read both files, `.replace` ONLY the exact NOT strings from point 1 (a comment names each line), `!fill.test(...)` per file, and a minimum `kpm-edge-btn` count per file equal to the number you converted.
 5. Red-then-green proof exactly like Task 28 point 4 (stash the two .jsx, check FAILS; pop, PASSES). Paste both outputs.
 Done when: the four BUILD checks are green, the list with verdicts and the red-then-green proof are in the Result. If a file has zero filled buttons, say so, add no check for that file, and still do the other.
+
+## Task 34 - DO THIS ONE FIRST: draft the Stock Opname picture (segment 3) for Claude to check
+**Status:** OPEN
+**Written:** 2026-11-17 12:55 WIB, by Claude. Writes ONE new file - not an app BUILD. Do it BEFORE Tasks 31-33.
+**Touch only:** `.claude/drafts/stock-opname-pro.html` (new), this file.
+
+Aldi, 2026-11-17 12:50: *"restock vault is professional enough we can skip that and proceed to the next segment"*. So Restock Vault is not redesigned; segment 3 = Stock Opname is next. Same loop as Task 30: you draft the picture, Claude checks and publishes it.
+- Copy the structure, tokens, fonts and `.kpm-edge-btn` CSS of YOUR `.claude/drafts/restock-vault-pro.html` as Claude left it (commit d967b665) - Aldi saw that look. Same frame set: a PC frame on top, two phone frames under it.
+- Content = today's Stock Opname from YOUR Task 22 map (grep "## Task 22"). Underline tabs: Monitor, HQ Audits (with its pending count), Quarantine, New Count.
+- PC frame = the **New Count** worksheet (the screen the guide's step 8 lands on): the weekly banner, search, the product rows with `Good stock` + `Damaged` boxes, ONE row in the revealed state (expected vs counted, the difference, its tone, the variance-cause reel), ONE row with damage > 0 showing the damage-kind panel + `Upload Damaged Proof`, ONE row half-filled (the `data-half` look), the `Clear and count again` key, and the `Submit to HQ` footer with what is still uncounted.
+- Phone 1 = the same worksheet, stacked (every PC feature moved, never dropped). Phone 2 = **Monitor**: the facility select + two product cards (Vault / Initial, Field, Sold, Damaged, the low/healthy badge).
+- One line under the frames names where Review (worklist accept/reject, history, put back), Quarantine (crates, Sunk Capital, Execute Protocol) and the god-mode Vault edit sit - "same tab, restyled" is enough.
+- Real numbers ONLY from `demo/seed.json` (product names, `stock`, `priceDistributor`, packing; missing packing = 10/20/4) and the people in the seed / demo. No invented people or products (Claude had to fix that in Task 30). Work every difference by hand with the code's own rule (`getVariance`, `expectedOf`, the tolerance - cite file:line) and show it in an HTML comment under the rows.
+- Buttons look like `.kpm-edge-btn` (`.quiet` secondary, `.danger` for reject/delete). NO amber fill anywhere: `rg "bg-gold|--gold\)|orange|amber" .claude/drafts/stock-opname-pro.html` must show only the token lines and the 11% hover wash.
+- Mark which visible words are Indonesian vs English today and keep each as today (the language switch is a later job).
+Done when: the file exists, opens with no script, the arithmetic comment is there, and the Result lists every Task 22 element with where it sits on the picture (PC / phone 1 / phone 2 / the note line).
