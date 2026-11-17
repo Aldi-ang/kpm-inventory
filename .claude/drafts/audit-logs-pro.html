@@ -1,0 +1,210 @@
+<!doctype html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Audit Logs · v4</title>
+<style>
+:root{
+  --bg:#0E0C0A;--panel:#15120F;--raised:#1C1814;
+  --ink:#F3EDE2;--ink-dim:#A69D8E;--ink-mute:#6D6558;
+  --line:#2B251E;--line-2:#3C342B;
+  --gold:#E0AC43;--wash:rgba(224,172,67,.09);
+  --bad:#D96B5A;--bad-wash:rgba(217,107,90,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;padding:28px 20px 64px;-webkit-font-smoothing:antialiased}
+.cap{max-width:1180px;margin:0 auto 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute)}
+.note{max-width:1180px;margin:0 auto 14px;font-size:12px;color:var(--ink-dim)}
+.note b{color:var(--ink);font-weight:600}
+.note code{font-size:11px;color:var(--ink);background:var(--raised);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+.i{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+.btn{height:34px;padding:0 14px;border-radius:8px;font:600 13px/1 inherit;color:var(--ink);background:rgba(255,255,255,.03);border:1px solid var(--line-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn.edge{border-color:var(--gold);color:var(--gold);background:var(--wash)}
+.btn.quiet{color:var(--ink-dim);background:transparent}
+.btn.danger{border-color:rgba(217,107,90,.45);color:var(--bad);background:var(--bad-wash)}
+.btn.sm{height:28px;padding:0 10px;font-size:12px}
+
+.frame{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 24px 60px -30px rgba(0,0,0,.7)}
+.pc{max-width:1180px;margin:0 auto 40px}
+
+.top{display:flex;align-items:center;gap:20px;padding:14px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.top h1{font-size:18px;font-weight:700;letter-spacing:-.02em;padding-bottom:12px}
+.tabs{display:flex;gap:20px}
+.tab{padding:0 2px 12px;font-size:13px;font-weight:600;color:var(--ink-mute);border-bottom:2px solid transparent}
+.tab.on{color:var(--ink);border-color:var(--gold)}
+.ctl{margin-left:auto;display:flex;align-items:center;gap:8px;padding-bottom:12px;flex-wrap:wrap}
+.pill{height:30px;padding:0 10px;border-radius:7px;background:var(--raised);border:1px solid var(--line);font-size:12px;color:var(--ink-dim);display:inline-flex;align-items:center;gap:6px}
+
+.sum{display:flex;align-items:center;gap:14px;padding:11px 20px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-dim);flex-wrap:wrap}
+.sum b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.sep{width:1px;height:12px;background:var(--line)}
+
+.work{display:grid;grid-template-columns:460px 1fr;min-height:460px}
+.list{border-right:1px solid var(--line);display:flex;flex-direction:column}
+.fbar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.crumb{padding:8px 14px;font-size:11.5px;color:var(--ink-mute);border-bottom:1px solid var(--line)}
+.crumb b{color:var(--ink-dim);font-weight:600}
+.rows{overflow:auto;flex:1}
+.r{display:grid;grid-template-columns:16px 46px 110px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:44px;padding:8px 14px;border-left:2px solid transparent;border-bottom:1px solid rgba(43,37,30,.55)}
+.r.sel{background:var(--wash);border-left-color:var(--gold)}
+.ic{color:var(--ink-mute);display:flex}
+.r.sel .ic{color:var(--gold)}
+.tm{font-size:12px;color:var(--ink-mute);font-variant-numeric:tabular-nums}
+.who{font-size:12px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.what{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kind{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--gold);text-align:right;white-space:nowrap}
+
+.hand{display:flex;flex-direction:column;justify-content:space-between;background:radial-gradient(600px 260px at 50% 0%,rgba(224,172,67,.04),transparent 70%)}
+.hand .in{padding:24px 28px;display:flex;flex-direction:column;gap:16px}
+.ph{display:flex;align-items:center;gap:14px}
+.big{width:44px;height:44px;border-radius:10px;background:var(--raised);border:1px solid var(--line-2);display:grid;place-items:center;color:var(--gold);flex:none}
+.ph h2{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.ph p{font-size:12.5px;color:var(--ink-dim);margin-top:2px}
+.snap{margin-left:auto;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(224,172,67,.4);background:var(--wash);padding:4px 8px;border-radius:6px;white-space:nowrap}
+
+.diff{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dbox{padding:12px 14px;border-radius:9px;background:var(--raised);border:1px solid var(--line)}
+.dbox span{display:block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-mute);margin-bottom:4px}
+.dbox b{font-size:13px;color:var(--ink)}
+
+.meta{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-dim)}
+.meta b{color:var(--ink)}
+.act{display:flex;align-items:center;gap:10px;padding:14px 28px;border-top:1px solid var(--line)}
+.act .sp{flex:1}
+
+.phones{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;max-width:1180px;margin:0 auto}
+.phone{width:390px;max-width:100%;height:780px;display:flex;flex-direction:column;border-radius:22px;position:relative}
+.sb{height:28px;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font-size:11px;color:var(--ink-dim)}
+.phone .top{padding:8px 16px 0;gap:0;flex-direction:column;align-items:stretch}
+.phone .top h1{margin-bottom:8px}
+.phone .sum{padding:9px 16px;gap:10px;font-size:12px}
+.phone .list{width:auto;border:none;flex:1}
+.phone .r{grid-template-columns:16px 42px minmax(0,1fr) auto;padding:8px 14px}
+.dim-under{position:absolute;inset:0;background:rgba(5,4,3,.45)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--raised);border-top:1px solid var(--line-2);border-radius:20px 20px 0 0;
+  padding:10px 16px 16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 -18px 40px -20px rgba(0,0,0,.6)}
+.grab{width:38px;height:4px;border-radius:2px;background:var(--line-2);margin:0 auto}
+.an-sec{padding:12px 16px;display:flex;flex-direction:column;gap:12px;overflow:auto;flex:1}
+.sec-h{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-mute);text-align:left;padding:6px;border-bottom:1px solid var(--line)}
+td{padding:7px 6px;border-bottom:1px solid rgba(43,37,30,.55);color:var(--ink-dim)}
+td b{color:var(--ink)}
+@media (max-width:860px){.pc{display:none}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="log" viewBox="0 0 24 24"><path d="M7 4h10l3 3v13H7z"/><path d="M10 11h6M10 15h4"/></symbol>
+  <symbol id="undo" viewBox="0 0 24 24"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="dl" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></symbol>
+</svg>
+
+<p class="cap">Audit Logs · v4 · PC (Log List + Entry in Hand)</p>
+<p class="note">People from <b>src/config/demoLogins.js</b>; log entries are <b>example</b> records (none in <code>demo/seed.json</code>). <code>Decrypting Sector</code> / <code>Sector Empty</code> states, <code>VAULT / Year / Month / Day</code> folder browser, and <code>Recent System Activity</code> (7-day <code>audit_logs</code>, 8 newest) sit in the vault/tabs, restyled with <code>.btn</code> (no filled amber <code>Revert</code>).</p>
+
+<div class="frame pc">
+  <div class="top">
+    <h1>Audit Vault</h1>
+    <div class="tabs"><span class="tab on">Day Logs</span><span class="tab">Vault Folders</span><span class="tab">Recent Activity (7d)</span></div>
+    <div class="ctl">
+      <button class="btn quiet sm"><svg class="i"><use href="#dl"/></svg>Export CSV</button>
+    </div>
+  </div>
+  <div class="sum">
+    <span><b>5</b> entries shown (example)</span><span class="sep"></span>
+    <span><b>2</b> with restore snapshot</span><span class="sep"></span>
+    <span>Query: <code>audit_vault/2026-11-17/logs</code></span>
+  </div>
+
+  <div class="work">
+    <aside class="list">
+      <div class="fbar">
+        <span class="pill">Person: All ▾</span>
+        <span class="pill">Kind: All ▾</span>
+        <span class="pill">2026-11-17</span>
+      </div>
+      <div class="crumb">VAULT › 2026 › 11 › <b>17</b></div>
+      <div class="rows">
+        <div class="r sel"><span class="ic"><svg class="i"><use href="#log"/></svg></span><span class="tm">14:10</span><span class="who">HARTONO SUSILO</span><span class="what">Stock Opname · Cello Chocolate (ex)</span><span class="kind">STOCK</span></div>
+        <div class="r"><span class="ic"><svg class="i"><use href="#log"/></svg></span><span class="tm">13:20</span><span class="who">RINA WIJAYA</span><span class="what">NOO Approved · AMANAH BARU (ex)</span><span class="kind">SHOP</span></div>
+        <div class="r"><span class="ic"><svg class="i"><use href="#log"/></svg></span><span class="tm">11:45</span><span class="who">HENDRA GUNAWAN</span><span class="what">Hand-off Accepted · 40 Bks (ex)</span><span class="kind">HANDOFF</span></div>
+        <div class="r"><span class="ic"><svg class="i"><use href="#log"/></svg></span><span class="tm">10:05</span><span class="who">AGUS PRASETYO</span><span class="what">Sampling Batch · 31 Bks (ex)</span><span class="kind">SAMPLE</span></div>
+        <div class="r"><span class="ic"><svg class="i"><use href="#log"/></svg></span><span class="tm">08:30</span><span class="who">DIKA SAPUTRA</span><span class="what">Store Created · Map Pin (ex)</span><span class="kind">MAP</span></div>
+      </div>
+    </aside>
+
+    <section class="hand">
+      <div class="in">
+        <div class="ph">
+          <div class="big"><svg class="i"><use href="#log"/></svg></div>
+          <div><h2>OPNAME_ADJUSTMENT (example)</h2><p>Master Vault · Cello Chocolate</p></div>
+          <span class="snap">REMOTE SNAPSHOT LOADED</span>
+        </div>
+
+        <div class="diff">
+          <div class="dbox"><span>Before</span><b>10.165 Bks</b></div>
+          <div class="dbox"><span>After</span><b>10.161 Bks (−4 Bks)</b></div>
+        </div>
+
+        <div class="meta">
+          <span>Who: <b>HARTONO SUSILO (T2)</b></span>
+          <span>When: <b>2026-11-17 14:10 WIB</b></span>
+          <span>Screen: <b>Stock Opname</b></span>
+        </div>
+      </div>
+      <div class="act">
+        <span style="font-size:12px;color:var(--ink-dim)">Restores inventory &amp; customers from snapshot</span>
+        <span class="sp"></span>
+        <button class="btn danger"><svg class="i"><use href="#undo"/></svg>Revert to Snapshot (Admin)</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<p class="cap" style="margin-top:28px">Audit Logs · v4 · Phone (1: Filter + Day Logs + Entry Sheet · 2: Vault Folders + Recent 7d Activity)</p>
+<div class="phones">
+  <div class="frame phone">
+    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
+    <div class="top">
+      <h1>Audit Vault</h1>
+      <div class="tabs"><span class="tab on">Day Logs</span><span class="tab">Folders</span><span class="tab">Recent (7d)</span></div>
+    </div>
+    <div class="sum"><span class="pill">Person ▾</span><span class="pill">Kind ▾</span><span class="pill">11-17</span><button class="btn quiet sm" style="margin-left:auto">Export</button></div>
+    <div class="list">
+      <div class="r sel"><span class="ic"><svg class="i"><use href="#log"/></svg></span><span class="tm">14:10</span><span class="what">HARTONO · Stock Opname (ex)</span><span class="kind">STOCK</span></div>
+      <div class="r"><span class="ic"><svg class="i"><use href="#log"/></svg></span><span class="tm">13:20</span><span class="what">RINA · NOO Approved (ex)</span><span class="kind">SHOP</span></div>
+      <div class="r"><span class="ic"><svg class="i"><use href="#log"/></svg></span><span class="tm">11:45</span><span class="what">HENDRA · Hand-off (ex)</span><span class="kind">HANDOFF</span></div>
+    </div>
+    <div class="dim-under"></div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <div class="ph"><div><h2>OPNAME_ADJUSTMENT (ex)</h2><p>HARTONO SUSILO · 14:10 · Stock Opname</p></div><span class="snap">SNAPSHOT</span></div>
+      <div class="diff">
+        <div class="dbox"><span>Before</span><b>10.165 Bks</b></div>
+        <div class="dbox"><span>After</span><b>10.161 Bks</b></div>
+      </div>
+      <button class="btn danger"><svg class="i"><use href="#undo"/></svg>Revert to Snapshot (Admin)</button>
+    </div>
+  </div>
+
+  <div class="frame phone">
+    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
+    <div class="top">
+      <h1>Folders &amp; Recent Activity</h1>
+      <div class="tabs"><span class="tab">Day Logs</span><span class="tab on">Folders</span><span class="tab">Recent (7d)</span></div>
+    </div>
+    <div class="sum"><span>VAULT › 2026 › 11 › 17</span></div>
+    <div class="an-sec">
+      <div class="sec-h">Vault Folder Browser (2025 – 2029)</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="pill">2025</span><span class="pill" style="border-color:var(--gold);color:var(--ink)">2026</span><span class="pill">11 (Nov)</span><span class="pill">17</span></div>
+      <div class="sec-h">Recent System Activity (7d · Top 8)</div>
+      <table>
+        <thead><tr><th>Action</th><th>Details (ex)</th><th>Time</th></tr></thead>
+        <tbody>
+          <tr><td><b>OPNAME</b></td><td>Cello Chocolate −4</td><td>14:10</td></tr>
+          <tr><td><b>NOO_OK</b></td><td>AMANAH BARU</td><td>13:20</td></tr>
+          <tr><td><b>HANDOFF</b></td><td>40 Bks accepted</td><td>11:45</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -2044,12 +2044,21 @@ Where every Task 32 element & piece of game art sits in `.claude/drafts/agent-pr
 - **Arithmetic check**: HTML comment inside PC `.hand .in` verifying Hartono Susilo's `Rp 82.860.000` split and the 5-agent directory total (`Rp 127.560.000`).
 
 ## Task 46 - draft the Audit Logs picture (segment 11) in the v4 look
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 15:05 WIB, by Claude. Writes ONE new file - not an app BUILD. Read "THE LOOK HE PICKED" (above Task 40) first.
 **Touch only:** `.claude/drafts/audit-logs-pro.html` (new), this file.
 
 From YOUR Task 35 map of the Audit Logs screen. Master-detail: the log list on the left (one quiet line per entry: time, who, what, one word for the kind), the entry in hand on the right (what changed, before -> after, who, when, which screen). Filters (person, kind, date) as ONE quiet bar above the list, never a block of dropdowns. Every filter, export and button Task 35 lists must still be somewhere. People from `src/config/demoLogins.js`; any entry not in `demo/seed.json` is marked "example". Ordinary sizes (13-14 px text, 44 px rows), drawn SVG icons, no filled amber button.
 Done when: the file exists, no `<script>`, PC 1440 + phone 390 frames in it, and the Result lists every Task 35 element with where it sits.
+
+**Result:**
+Where every Task 35 element sits in `.claude/drafts/audit-logs-pro.html`:
+- **Header (`Audit Vault`), Tabs (`Day Logs`, `Vault Folders`, `Recent Activity (7d)`), `Export CSV` (`.btn quiet`)**: PC `.top` and Phone 1 & 2 `.top`.
+- **Summary strip (`5` entries shown example, `2` with restore snapshot, query `audit_vault/2026-11-17/logs`)**: PC `.sum`.
+- **Quiet filter bar (`Person: All ▾`, `Kind: All ▾`, `2026-11-17`) + Breadcrumb (`VAULT › 2026 › 11 › 17`)**: PC `.list` (`.fbar` + `.crumb`) and Phone 1 `.sum`.
+- **Day Log List (`.rows`, 44 px rows with time, person from `demoLogins.js`, what, one-word kind)**: PC `.list .rows` and Phone 1 `.list` (5 example rows; `Decrypting Sector` / `Sector Empty` states noted in `.note`).
+- **Opened entry in hand (`OPNAME_ADJUSTMENT`, `REMOTE SNAPSHOT LOADED` hairline pill, `Before -> After` diff boxes, `Who`, `When`, `Screen`, and admin `Revert to Snapshot (Admin)` `.btn danger`)**: PC `.hand` right pane and Phone 1 bottom `.sheet`.
+- **Audit Vault folder browser (`2025 – 2029` / Month / Day) & `Recent System Activity` (7-day `audit_logs`, top 8 table)**: PC `.top` tabs and Phone 2 `.an-sec`.
 
 ## Task 47 - draft the Settings picture (segment 12) in the v4 look
 **Status:** OPEN
