@@ -1049,13 +1049,69 @@ Do NOT change the code. Done when: four tables in the Result.
 | Wrapper div in `src/App.jsx:5398-5426` | **Keep `border-2 lg:border-4` and `p-2 lg:p-4` and `branchStockMap={branchStock}`** | `logicFixes.selfcheck.mjs:1124` (`RestockVaultView...branchStockMap={branchStock}`), `7006-7016` (`border-2 lg:border-4`, `p-2 lg:p-4` matching `tools/ponder-lab.jsx`) |
 
 ## Task 22 - the same map for Stock Opname (segment 3 of 12)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 07:42 WIB, by Claude. Same rules as above.
 
 Exactly Task 20's four tables for `src/StockOpnameView.jsx` (monitor view, New Count, the count form, submit, quarantine settle, every warehouse it can open). Mark every demo guide mark (`data-guide=...`, `data-mission=...`, `data-half`) - they must survive the redesign. In table 4, list every `logicFixes.selfcheck.mjs` line that pins an exact class or string in this file.
 Do NOT change the code. Done when: four tables in the Result.
 
 **Result:**
+
+### Demo Guide Marks in `src/StockOpnameView.jsx` (MUST SURVIVE REDESIGN)
+- `data-mission="8"` on the `New Count` tab button (`src/StockOpnameView.jsx:1257`)
+- `data-guide="count"` on the count worksheet container (`src/StockOpnameView.jsx:1709`)
+- `data-guide="week-count"` on the weekly count status banner (`src/StockOpnameView.jsx:1711`)
+- `data-half={counts[item.id] !== undefined && countBoxEmpty(counts[item.id]) ? '' : undefined}` on each product count row (`src/StockOpnameView.jsx:1769`)
+- `data-guide="good"` on each row's `Good stock` input (`src/StockOpnameView.jsx:1780`)
+- `data-guide="submit-count"` and `data-half={halfRows ? '' : undefined}` on the `Submit to HQ` button (`src/StockOpnameView.jsx:2011`)
+
+### Warehouses & Default View
+- `viewMode` defaults to `isHighCommand ? 'monitor' : canDecide ? 'review' : 'count'` (`src/StockOpnameView.jsx:285`).
+- **Count tab:** `isAreaAdmin = !isHighCommand && (!user?.location || !isMasterVaultPlace(user.location))` (`265`). When `isAreaAdmin === false` (T1/T2/T3/HQ), `countPlace` is `HQ_LABEL` (**Master Vault**, `280`) and `activeInventory` is `[...safeInventory, ...promoItems]` (`306`). When `isAreaAdmin === true`, `countPlace` is `user?.location` (`280`) and `activeInventory` is `branchInventory` (`295-306`).
+- **Monitor tab:** `monitorFacility` defaults to `'MASTER'` (`289`); `<select>` switches between `MASTER` (`HQ_LABEL`) and `uniqueBranches` (`1272-1275`).
+- **Review tab:** `boardPlaces` lists `vaultFacilities` (`MASTER` + `uniqueBranches`) + extra audit places when `boardScope === 'all'` (`375-380`), or own warehouse (`MASTER` or `user.location`) when `boardScope === 'own'`.
+- **Quarantine tab:** `openFac` opens the first warehouse crate in `vaultFacilities` that has `damagedStock > 0` (`339-340`).
+
+### 1. Elements on screen (PC & phone, top to bottom)
+| element | PC / phone | what it shows | reads (state / prop / Firestore field) | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| Header & tab strip (`canSeeBoard`) | Both (`kpm-opname-tabs` 2-col grid on phone, flex row on `md+`; header title hidden when `viewMode === 'review'`) | Mode title/subtitle + up to 4 tabs: `Monitor` (`isHighCommand`), `HQ Audits`/`Review` + `NixieCount(pendingAudits.length)`, `Quarantine` (`canSell`), `New Count` (`canCount`, **`data-mission="8"`**) | `viewMode`, `isHighCommand`, `canSeeBoard`, `canSell`, `canCount`, `boardScope`, `pendingAudits`, `countPlace`, `countClosed`, `showExpectedWhileCounting` | `src/StockOpnameView.jsx:1229-1262` |
+| `Monitor` view (`viewMode === 'monitor' && isHighCommand`) | Both (1/2/3-col grid) | Facility `<select>` (`MASTER` / `uniqueBranches`) + product telemetry cards (thumb, name, ID, `Vault / Initial` + low/healthy badge, `Field`/`Sold`/`Damaged` boxes, 4-segment bar) | `monitorFacility`, `uniqueBranches`, `monitorStats`, `appSettings`, `userRole` | `src/StockOpnameView.jsx:1267-1365` |
+| `Quarantine` view (`viewMode === 'quarantine' && canSell`) | Both | `Active Quarantine` / `Liquidation History` sub-tabs (`isHighCommand` only), `Sunk Capital` total, `<CrateVault>` crates (`MASTER` + branches) with actions (`Convert to Sample`, `Sell Again`, `RTV Factory`, `Penalty Charge`, `Repair`), or filtered `quarantine_logs` list | `quarSubTab`, `regionFilter`, `vaultFacilities`, `quarantineInventory`, `openFac`, `shownQuarantine`, `displayedQuarantineLogs`, `isHighCommand` | `src/StockOpnameView.jsx:1370-1486` |
+| `Review` worklist (`viewMode === 'review' && auditSubTab !== 'history'`) | Both | `<OpnameWorklist>` per-warehouse board, accept/reject per product, leak streak badge, photo preview, history button | `boards`, `openPlace`, `weekLabel`, `canDecide`, `auditsDenied`, `auditHistory`, `countDay` | `src/StockOpnameView.jsx:1491-1496` |
+| `Review` history (`viewMode === 'review' && auditSubTab === 'history'`) | Both | `Back to the review` button, region `<select>` (`boardScope === 'all'`), expandable `displayedAudits` cards (`Good`/`Damaged` `AuditFigures`, leak streak, `varianceReason`, `countedTwice`/`threeWayDisagreement`, `damageKinds`, `View Damage Proof`, `Put back` button) | `auditSubTab`, `regionFilter`, `displayedAudits`, `expandedAudit`, `auditHistory`, `isHighCommand` | `src/StockOpnameView.jsx:1497-1703` |
+| `Count` worksheet (`viewMode === 'count'`, **`data-guide="count"`**) | Both | Weekly banner (**`data-guide="week-count"`** for non-high-command non-demo), search input, product rows (**`data-half`**) with **`data-guide="good"`** + `Damaged` inputs, expandable verdict block (`Expected good/damaged`, `Good/Damaged match/difference`, `Upload Damaged Proof`, `Clear and count again` recount prompt, `VARIANCE_REASONS` reel, `DAMAGE_REASONS` reel + qty inputs), footer (`Reset` + **`data-guide="submit-count" data-half`** `Submit to HQ`) | `counts`, `checkedRows`, `filteredItems`, `countClosed`, `showExpectedWhileCounting`, `recountState`, `stillUncounted`, `halfRows`, `weekDone`, `notCountDay`, `recounting`, `isSubmitting` | `src/StockOpnameView.jsx:1708-2015` |
+| `resolutionModal` & `viewingImage` | Both (overlay) | Quarantine resolution form (`SAMPLING`, `SELL`, `RTV`, `PENALTY`, `REPAIR`) + fullscreen image modal | `resolutionModal`, `viewingImage`, `safeMotorists`, `uniqueBranches`, `isProcessingAudit` | `src/StockOpnameView.jsx:1195-1227` |
+
+### 2. Every press & what it writes
+| control / press | handler called | writes (Firestore + local state) | moves stock or money? | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| Top tabs (`Monitor`/`HQ Audits`/`Quarantine`/`New Count`) | `setViewMode(...)` | Local `viewMode` | No | `src/StockOpnameView.jsx:1248-1259` |
+| Monitor `Vault` number click (`DEVELOPER` / `COMPANY_OWNER`) | `handleGodModeEdit` | Prompts, then `updateDoc` `products/${id}` (`MASTER`) or `branches/${facility}/inventory/${id}` (`{ stock: newStock }`) | **Yes — directly overwrites warehouse `stock`** | `src/StockOpnameView.jsx:1072-1091, 1314` |
+| Count `Good stock` / `Damaged` inputs | `handleCountChange` | Local `counts` + `localStorage` draft (`saveOpnameDraft`) | No | `src/StockOpnameView.jsx:464-499, 534, 1780-1784` |
+| `Upload Damaged Proof` / `X` clear photo | `handlePhotoUpload` / `handleClearPhoto` | Uploads/deletes Storage photo; updates local `counts[id].photo` | No | `src/StockOpnameView.jsx:599-618, 1843-1845` |
+| `Clear and count again` | `startRecount(id)` | Banks pass into `counts[id].passes`, clears `good`/`damaged`/`checkedRows[id]` | No | `src/StockOpnameView.jsx:563-572, 1861` |
+| Variance cause reel / Damage kind reel & qty | `stepVarianceReason`, `toggleDamagePanel`, `stepDamageKind`, `setDamageKindQty` | Local `counts[id].varianceReason`, `counts[id].kinds`, `varPos`, `dmgPos`, `dmgOpen` | No | `src/StockOpnameView.jsx:501-517, 557, 576-596, 1892-1979` |
+| `Submit to HQ` (`data-guide="submit-count"`) | `handleCommit` | Validates counts/boxes/damage/recount/cause; batch: `set` `pending_audits/${auditId}` (`PENDING_HQ_APPROVAL`) + `update` `motorists/${agentId}.lastOpname` (non-high-command); `addDoc` `notifications` (`ADMIN`); dispatches `kpm-mission` step 8; `logAudit` | No (pending HQ decision) | `src/StockOpnameView.jsx:640-775, 2011` |
+| `OpnameWorklist` Accept / Reject per product (+ Undo) | `decideProducts(place, rows, status, reason)` | Checks fresh `pending_audits`, batch: updates `products/${id}` or `branches/${loc}/inventory/${id}` (`stock: increment(good)`, `damagedStock: increment(damaged)` or `overwrite`), updates `pending_audits/${id}.decisions.${pid}` (+ `status`/`resolvedAt`/`resolvedBy`/`noPutBack`), on reject updates `motorists/${agentId}.lastOpname.reopened` + `notifications`; returns undo callback | **Yes — adjusts `stock` and `damagedStock` on accept (and reverses on undo)** | `src/StockOpnameView.jsx:804-857, 1493` |
+| History `Put back what this count took from Quarantine` | `handlePutBack(audit)` | Batch: `damagedStock: increment(back)`, `stock: increment(-goodOut)` on `products` or `branches/${loc}/inventory` + `pending_audits/${id}.putBack=true` + `logAudit` | **Yes — moves stock between `stock` and `damagedStock`** | `src/StockOpnameView.jsx:785-798, 1690` |
+| Quarantine `Execute Protocol` / `Put on sale` | `executeResolution` | Batch: decrements `damagedStock` on `products` or `branches/${fac}/inventory`; `REPAIR`: `stock: increment(qty)`; `SAMPLING`: creates/updates `dmg-${id}` promo item (`products` + `branches/${toWh}/inventory`); `SELL`: creates/updates `rsk-${id}` lot (`products` + `branches/${fromFac}/inventory`); `PENALTY`: sets `motorists/${agentId}.cukaiDebts` + `cukaiDebtNotes` + `notifications`; writes `quarantine_logs` + `logAudit` | **Yes — moves `damagedStock` -> `stock`/promo/`rsk-` lot, or charges agent money (`cukaiDebts`)** | `src/StockOpnameView.jsx:859-1000, 1221` |
+
+### 3. Logic computed inside JSX / render
+| computation | what it computes | file:line |
+| :--- | :--- | :--- |
+| `monitorStats` | Computes per-product `vault`, `damaged`, `field` (converts `activeCanvas` via `packsPerSlop`/`slopsPerBal`/`balsPerCarton`), `sold` (today's transactions for `targetAgents`), and `initial = vault + damaged + field + sold` | `src/StockOpnameView.jsx:1003-1070` |
+| `boards` & `openPlace` | Calls `opnameBoard(allAudits, p.key, { from: boardFrom, shelf, priceOf })` using `priceDistributor \|\| hpp \|\| costPrice` | `src/StockOpnameView.jsx:381-402` |
+| `Sunk Capital` & crate `line` | Sums `(item.damagedStock || 0) * Number(item.priceDistributor || item.hpp || 0)` across `shownQuarantine` | `src/StockOpnameView.jsx:1402, 1413` |
+| `getVariance`, `expectedOf`, `recount`, `tone`, `isRevealed` | Freezes `expStock`/`expDamaged` on first keystroke; computes `goodDiff`/`damagedDiff`, `withinTolerance`, `recountState`, `locked`, `tone` (`idle`/`wait`/`bad`) | `src/StockOpnameView.jsx:622-634, 1731-1759` |
+| `stillUncounted` & `halfRows` | `opnameMissing(activeInventory, counts)` for non-high-command non-demo; `halfRows` checks `countBoxEmpty(counts[id])` for `[data-half]` | `src/StockOpnameView.jsx:636-639` |
+| `dmgTotal`, `sorted`, `blocked` | `damageSorted(entry)` and `damageBlocked(entry)` inside the `damagedDiff >= 1` panel | `src/StockOpnameView.jsx:1919-1943` |
+
+### 4. What can move out first & `logicFixes.selfcheck.mjs` pins
+| candidate to extract | safe to move first? | `logicFixes.selfcheck.mjs` exact line pins |
+| :--- | :--- | :--- |
+| Visual layout/cards in `Monitor`, `Quarantine`, `History`, `Count` | **Only alongside `selfcheck` updates** — many checks read `src/StockOpnameView.jsx` by exact class/string | `639`, `676`, `1356`, `1545`, `1594` (`cukaiDebtNotes: { [penaltyId]: {`), `1661-1663` (`tierPrice(resolutionModal.item, appSettings?.penaltyPriceTier)`), `2144`, `2209`, `2561`, `2580`, `2620`, `3921` (`<option value="MASTER"[^>]*>{HQ_LABEL}</option>`), `4330` (`` `PENALTY_${Date.now()}` ``), `6905` (`userRole: liveRole`), `7649`, `7713`, `8487-8497` (`Expected good</div>`, `text-sm font-black font-mono tabular-nums`, `kpm-verdict-down`, `kpm-verdict-up`, `<div key={diff}>`), `9692`, `12218` (`[data-guide="good"]` / `GUIDE[8]`), `12228`, `12380` (`promoItems` file list), `12555`, `12578` (`setBoardShelf(snap.docs.map(...))`), `13049`, `13488`, `13509`, `13546`, `13621`, `13691`, `13742`, `13780-13794` (`const lotId = \`rsk-${sellSrc.id}\``, Sell Again refusals & button order/border), `13801-13815` (`canSell`, `isHighCommand` Quarantine tabs/actions, `Only Tier 3 and up can set this price.`), `13839` (`<NixieCount value={pendingAudits.length} size={13} rollIn />`) |
+| `handleCommit` / `decideProducts` / `executeResolution` | **Keep logic & error strings intact** | Pinned by `1594`, `1663`, `4330`, `13780-13791`, `13810-13815` |
 
 ## Task 23 - the same map for Receivables & Consignment (segment 4 of 12)
 **Status:** OPEN
