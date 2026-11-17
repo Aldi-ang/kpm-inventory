@@ -2198,3 +2198,29 @@ Done when: every Task 49 MISSING is on the phone frames, no `<script>`, Result l
 - `map-system-pro.html`: Added totals `.sum` strip (`152 shops · Rp 82,86 jt · 152 visit`), `ZoneHUD: Muntilan · 12 shops`, `Boss tools (⋯)`, and quiet red-text `Delete this shop` button to Phone 1 (`.claude/drafts/map-system-pro.html:189-199`).
 - `agent-profile-pro.html`: Added `Timeline Analytics (from 0)` (`1W · 1M · 1Y`) bar chart to Phone 2 `.an-sec` (`.claude/drafts/agent-profile-pro.html:242-249`).
 - `settings-pro.html`: Added `Letterhead, Signature, Bank & Watermark` above `.div` and `Spare days (3d)`, `Opname day (Any)`, `Master Vault (Unset)`, and `Rebuild sales` below `.div` in Phone 1 `.sheet` (`.claude/drafts/settings-pro.html:178-184`).
+
+## Task 52 - re-cut the Receivables & Consignment picture (segment 4) to the v4 look
+**Status:** OPEN
+**Written:** 2026-11-17 16:00 WIB, by Claude. Edits one draft - not an app BUILD. Read "THE LOOK HE PICKED" (above Task 40) first.
+**Touch only:** `.claude/drafts/receivables-pro.html`, this file.
+
+Your Task 39 drew this BEFORE Aldi picked the v4 look. Re-cut it:
+- Master-detail: LEFT = the A/R list of shops that owe (one quiet line each: shop, region, amount owed, one-word state). RIGHT = the shop in hand: its open notes (date, amount, days) and the settle press. Phone: the shop opens under its own row.
+- ONE summary line on top with the money fact in Rupiah (total owed, how much overdue). No tiles, no 3 SAFE / WARNING / OVERDUE columns - the state is a word on each row.
+- The 3 tabs stay (A/R Financials, Physical Stock, Hand-offs) as one quiet strip; Hand-offs keeps its red waiting dot (rule: "THE SHAKE" comment ~L1021 of `src/ConsignmentFinanceView.jsx`).
+- Every element in YOUR Task 23 map must still be somewhere, PC and phone.
+- The state word on each row = the code's own rule (Task 23 lists it): run it by hand for 2026-11-17 and write the sum in an HTML comment. The demo seed has NO open debt, so every amount is marked "example" and added up in the comment.
+- Money presses (settle / pay / transfer) are drawn as quiet gold-edged buttons, never filled.
+Done when: the file is re-cut, no `<script>`, PC 1440 + phone 390 frames, the comment adds up, and the Result lists every Task 23 element with where it sits.
+
+## Task 53 - which messages now get the gold check? (read-only audit)
+**Status:** OPEN
+**Written:** 2026-11-17 16:00 WIB, by Claude. Do it AFTER Task 52. READ-ONLY.
+**Touch only:** this file.
+
+Since f6152ec5 a message strip draws a gold check when `isSuccess(text)` is true and an X when `isFailure(text)` is true (`src/utils/toastSeverity.js`, used in `src/components/Toast.jsx`). A check on a message that is NOT a real save would lie to Aldi's staff.
+List every `notify(` call in `src/` whose text is a string or template you can read. For each: file:line, the text (short), and what it gets: CHECK / X / NOTHING - by running the two regexes in your head on the text. Then flag:
+- WRONG CHECK: gets a check but nothing was saved/done (e.g. a question, a hint, a "you can now ...").
+- MISSED CHECK: a real "saved/done" message that gets NOTHING (a word the SUCCESS regex lacks).
+- WRONG X: a real success that isFailure catches.
+**Result:** counts on top (CHECK n / X n / NOTHING n / WRONG CHECK n / MISSED CHECK n / WRONG X n), then ONE table of only the flagged lines: file:line | text | gets | should get | the word that decides it. Do not list the fine ones line by line.
