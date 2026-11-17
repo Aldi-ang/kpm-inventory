@@ -12524,6 +12524,21 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      !fill.test(hrBtnCheck) && !fill.test(cmBtnCheck) &&
      (hrBtnCheck.match(/className="kpm-edge-btn/g) || []).length >= 4 &&
      (cmBtnCheck.match(/className="kpm-edge-btn/g) || []).length >= 2);
+  /* Exclusions (not filled buttons): StockOpnameView L1353-1355 & L1952 (bg-[var(--gold)] stock/progress bars);
+     ConsignmentFinanceView L1074 (bg-orange-50 selected list row), L1083/1166/1362 (bg-orange-900/30, bg-orange-900/20,
+     bg-orange-500/20 status badges/banners). */
+  const soBtnCheck = read('src/StockOpnameView.jsx')
+    .replaceAll('<div className="h-full bg-[var(--gold)]"', '<div className="h-full"')
+    .replaceAll("blocked ? 'bg-[var(--danger)]' : 'bg-[var(--gold)]'", "blocked ? 'bg-[var(--danger)]' : ''");
+  const cfBtnCheck = read('src/ConsignmentFinanceView.jsx')
+    .replaceAll('bg-orange-50 dark:bg-slate-700', 'dark:bg-slate-700')
+    .replaceAll('bg-orange-900/30', '')
+    .replaceAll('bg-orange-900/20', '')
+    .replaceAll('bg-orange-500/20', '');
+  ok('REGRESSION: no amber-filled button on Stock Opname or Receivables (his 2026-11-17 "dont make it again")',
+     !fill.test(soBtnCheck) && !fill.test(cfBtnCheck) &&
+     (soBtnCheck.match(/className=\{?["'`]kpm-edge-btn/g) || []).length >= 1 &&
+     (cfBtnCheck.match(/className=\{?["'`]kpm-edge-btn/g) || []).length >= 1);
   /* his 2026-11-17: "i want right now that the segment change but also closing all the panel that is on the path, right now
      literally stuck on the examine button and cant close it" + "i cant go back ... the button is intesect with the demo top panel" */
   const exm = read('src/components/ExamineModal.jsx');

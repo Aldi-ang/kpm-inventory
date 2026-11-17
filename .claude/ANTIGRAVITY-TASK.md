@@ -1610,7 +1610,7 @@ Do NOT change the code. Done when: four tables + filled-button list + game-art l
   - `Regional MVP` spinning conic-gradient trophy (`L1267-1279`) & `AchievementCard` unlocked `colorHex` glow cards (`L1282-1352`).
 
 ## Task 33 - BUILD: no amber-filled button on Stock Opname and Receivables & Consignment
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 12:45 WIB, by Claude. BUILD rules apply.
 **Touch only:** `src/StockOpnameView.jsx`, `src/ConsignmentFinanceView.jsx`, `src/config/logicFixes.selfcheck.mjs`, this file.
 
@@ -1621,6 +1621,34 @@ Same job as Task 28, two other screens. Aldi, 2026-11-17: *"i really hate the si
 4. In logicFixes.selfcheck.mjs, right AFTER the Task 28 check (`REGRESSION: no amber-filled button on Reports or Customers`), add ONE check `REGRESSION: no amber-filled button on Stock Opname or Receivables (his 2026-11-17 "dont make it again")` in the same style: read both files, `.replace` ONLY the exact NOT strings from point 1 (a comment names each line), `!fill.test(...)` per file, and a minimum `kpm-edge-btn` count per file equal to the number you converted.
 5. Red-then-green proof exactly like Task 28 point 4 (stash the two .jsx, check FAILS; pop, PASSES). Paste both outputs.
 Done when: the four BUILD checks are green, the list with verdicts and the red-then-green proof are in the Result. If a file has zero filled buttons, say so, add no check for that file, and still do the other.
+
+**Result:**
+- **Hit list & verdicts (`rg -n "bg-gold|bg-\[var\(--gold\)\]|bg-orange-|bg-amber-|from-amber-" src/StockOpnameView.jsx src/ConsignmentFinanceView.jsx`):**
+  - `src/ConsignmentFinanceView.jsx:1016` (`A/R Financials` tab `<button>`, `bg-orange-500 text-white shadow-lg` when active): **FILLED BUTTON** -> converted to `kpm-edge-btn` (`quiet` when inactive).
+  - `src/ConsignmentFinanceView.jsx:1074` (`<div ... bg-orange-50 dark:bg-slate-700 border-l-4 border-l-orange-500>` selected list row): **NOT** (not a `<button>`, selectable customer row `<div>`).
+  - `src/ConsignmentFinanceView.jsx:1083` (`<div ... bg-orange-900/30 ...>` badge): **NOT** (status badge `<div>`).
+  - `src/ConsignmentFinanceView.jsx:1166` (`<div className="bg-orange-900/20 ...">` alert banner): **NOT** (banner `<div>`).
+  - `src/ConsignmentFinanceView.jsx:1362` (`<span ... bg-orange-500/20 ...>` status pill): **NOT** (status pill `<span>`).
+  - `src/StockOpnameView.jsx:1353`, `1354`, `1355` (`<div className="h-full bg-[var(--gold)]" ...>`): **NOT** (stock breakdown progress bar segments).
+  - `src/StockOpnameView.jsx:1952` (`<span className={... bg-[var(--gold)]}>`): **NOT** (progress bar `<span>`).
+  - `src/StockOpnameView.jsx:2011` (`Submit to HQ` `<button>`, `bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)] shadow-lg transition-all active:scale-95`): **FILLED BUTTON** -> converted to `kpm-edge-btn`, keeping `data-guide="submit-count"`, `data-half`, `onClick`, and `disabled` untouched.
+- **Selfcheck added:** `REGRESSION: no amber-filled button on Stock Opname or Receivables (his 2026-11-17 "dont make it again")` in `src/config/logicFixes.selfcheck.mjs:12527-12542`.
+- **Red-then-green proof:**
+  - Stashed `.jsx` edits (`git stash push src/StockOpnameView.jsx src/ConsignmentFinanceView.jsx`):
+    ```
+      FAIL REGRESSION: no amber-filled button on Stock Opname or Receivables (his 2026-11-17 "dont make it again")
+    3010 passed, 1 failed, 3011 checks
+    ```
+  - Restored (`git stash pop`):
+    ```
+      ok   REGRESSION: no amber-filled button on Stock Opname or Receivables (his 2026-11-17 "dont make it again")
+    3011 passed, 0 failed, 3011 checks
+    ```
+- **Four BUILD checks (all green after final edit):**
+  1. `node src/config/logicFixes.selfcheck.mjs`: `3011 passed, 0 failed, 3011 checks`
+  2. `src/config/*.selfcheck.mjs`: all 14 scripts exited 0 (`contrast`, `customerBrief`, `dayLog`, `dayStats`, `eodRecord`, `findDuplicates`, `logicFixes`, `mixedUnits`, `nextStop`, `notaScan`, `stockThreshold`, `toastSeverity`, `txSize`, `vaultGrace`)
+  3. `npm run build`: exit 0 (`built in 11.01s`)
+  4. `node src/config/integration.audit.mjs`: `725 passed, 0 failed, 725 checks`
 
 ## Task 34 - DO THIS ONE FIRST: draft the Stock Opname picture (segment 3) for Claude to check
 **Status:** OPEN

@@ -1013,7 +1013,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                 </div>
                 
                 <div className="flex bg-black/40 p-1 rounded-xl border border-white/10 overflow-x-auto max-w-full shrink-0">
-                    <button onClick={() => setActiveTab('financials')} className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'financials' ? 'bg-orange-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}><DollarSign size={16}/> A/R Financials</button>
+                    <button onClick={() => setActiveTab('financials')} className={`kpm-edge-btn ${activeTab === 'financials' ? '' : 'quiet text-slate-400 hover:text-white'} flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest whitespace-nowrap`}><DollarSign size={16}/> A/R Financials</button>
                     <button onClick={() => setActiveTab('stock')} className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'stock' ? 'bg-blue-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}><Box size={16}/> Physical Stock</button>
                     <button onClick={() => setActiveTab('transfers')} className={`flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap relative ${activeTab === 'transfers' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}>
                         <ArrowLeftRight size={16}/> Hand-offs
