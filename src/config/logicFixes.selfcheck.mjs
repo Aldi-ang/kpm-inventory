@@ -12543,6 +12543,10 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      (cfBtnCheck.match(/className=\{?["'`]kpm-edge-btn/g) || []).length >= 8 &&
      cfBtnCheck.includes('kpm-ar-wrap') && cfBtnCheck.includes('<RollingNumber') &&
      !/bg-(blue|indigo)-500 text-white shadow-lg/.test(cfBtnCheck));
+  /* 2026-11-17 review of Antigravity Task 57: the v5 list called isTitip + txTime with no import - the build passed, the screen
+     would have thrown on the first shop that owes. undef.check caught it; this pins the two imports. */
+  ok('REGRESSION: Receivables v5 list imports isTitip and txTime (a missing one crashes the screen the moment a shop owes)',
+     /import \{[^}]*\bisTitip\b[^}]*\} from '\.\/utils\/revenueRule'/.test(cfBtnCheck) && /import \{[^}]*\btxTime\b[^}]*\} from '\.\/utils\/mapAreas'/.test(cfBtnCheck));
   /* his 2026-11-17 pick of picture v4: "i like this one better i think u can build it make sure the sizing is not too big on pc and
      dont forget that the rules about this stock opname will also applied here". The list + the product in hand is a NEW LAYOUT
      over the SAME rules: these pin the three places the layout could have leaked what the blind count withholds. */

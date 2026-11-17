@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { FileSpreadsheet, ShieldCheck, AlertCircle, XCircle, MessageSquare, Box, Package, ArrowRight, DollarSign, Store, Truck, Plus, Wallet, RotateCcw, Lock, Trash2, ArrowLeftRight, Check, X, ClipboardList, ScanSearch, Calculator, Printer, User, MapPin, Search } from 'lucide-react';
 import { convertToBks, formatRupiah, storeKey, storeLabel } from './utils/helpers';
 import { debtCredit } from './utils/revenueRule';
+import { isTitip } from './utils/revenueRule';
+import { txTime } from './utils/mapAreas';
 import { txSeconds } from './utils/dayStats';
 import { confirmAction } from './components/ConfirmGate.jsx';
 import { handoffEligibility, canHandOffAcrossRegions, normalizeRegion, canApproveHandoffFrom } from './config/permissions';
