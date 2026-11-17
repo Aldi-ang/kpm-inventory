@@ -983,10 +983,67 @@ Do NOT change the code. Done when: four tables in the Result.
 | `handleSaveProduct` (`src/App.jsx:3693-3792`) | **Keep in `App.jsx` (or update selfcheck)** — `selfcheck` slices `app.slice(app.indexOf('const handleSaveProduct'), app.indexOf('const handleUpdateProduct'))` | `logicFixes.selfcheck.mjs:10967, 12333, 12459` |
 
 ## Task 21 - the same map for Restock Vault (segment 2 of 12)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 07:20 WIB, by Claude. Same rules as above.
 
 Exactly Task 20's four tables for `src/RestockVaultView.jsx` (MASUK / KIRIM, the surat jalan save, approvals, the master desk). Mark every place the demo guide's marks sit (`data-guide=...`, `data-mission=...`) - they must survive the redesign.
 Do NOT change the code. Done when: four tables in the Result.
 
 **Result:**
+
+### Demo Guide Marks in `src/RestockVaultView.jsx` (MUST SURVIVE REDESIGN)
+- `data-mission={t.id === 'in' ? '1' : t.id === 'out' ? '2' : undefined}` on the `Masuk` / `Kirim` tab buttons (`src/RestockVaultView.jsx:1501`)
+- `data-guide="goods"` on the product picker `<aside>` (`src/RestockVaultView.jsx:1843`)
+- `data-guide={guide}` + `data-ok={value ? '' : undefined}` inside `RouteCombo` (`src/RestockVaultView.jsx:88`) for `guide="asal"` (`1945`) and `guide="tujuan"` (`1959`)
+- `data-guide="cart"` + `data-n={cart.length || undefined}` + `data-qty={...}` on the cart `<table>` (`src/RestockVaultView.jsx:2010-2011`)
+- `data-guide="save"` on the `Simpan surat jalan` / `Kirim sekarang` submit button (`src/RestockVaultView.jsx:2198`)
+
+### 1. Elements on screen (PC & phone, top to bottom)
+| element | PC / phone | what it shows | reads (state / prop / Firestore field) | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| Top desk nav + tab strip | Both (`flex-wrap`, `w-full lg:w-auto` tabs) | Mode title/subtitle (`Master Vault` / `Kirim ke cabang` / `Permintaan cabang` / `Buku Besar` / `Data Induk`) + 5 tabs (`Masuk`, `Kirim`, `Request`, `Buku`, `Data Induk`) with counts + **`data-mission="1"` / `"2"`** | `viewMode` (defaults `'in'`, `185`), `tabs` (`1185-1193`), `cart.length`, `bookRows`, `requestRows`, `unregisteredFactories`, `warehouseOptions` | `src/RestockVaultView.jsx:1485-1512` |
+| `Masuk` / `Kirim` product picker (`<aside data-guide="goods">`) | PC left `262px` / Phone stacked top (`max-h-[40vh]`) | `CARI BARANG...` input + cigarettes list + `Promo items · pcs` divider + promo items with stock & `priceDistributor` | `goods` (`[...inventory, ...promoItems]`, `449`), `searchTerm`, `cart`, `isOut` | `src/RestockVaultView.jsx:1841-1883` |
+| `Masuk` / `Kirim` form header & Production Targets strip | Both | `Goods Received` / `Shipment Out` heading; if `!isOut`, `Target produksi bulan ini` cards (`made / targetQty Bks · pct%`) + `+ Set` button | `isOut`, `monthTargets`, `targets`, `procurements` | `src/RestockVaultView.jsx:1896-1935` |
+| Route & handlers (`Asal`, `⇄`, `Tujuan`, `Pengirim`, `Penerima`, SJ numbers, `Tanggal`) | Both (`sm:grid-cols-[1fr_44px_1fr]`, `sm:grid-cols-2`, `sm:grid-cols-3`) | `RouteCombo` (`data-guide="asal"`, `data-guide="tujuan"`), swap button, `Pengirim` & `Penerima` combos, `Delivery note (app)`, `Delivery note (factory/paper)`, `Tanggal` | `poData`, `factoryOptions`, `warehouseOptions`, `peopleOptions`, `places`, `motorists`, `stockRequests` | `src/RestockVaultView.jsx:1940-1999` |
+| Cart table (`<table data-guide="cart" data-n data-qty>`) | Both (`kpm-stack-rows` stacks on phone) | Empty breathing notice (`kpm-notice`) or rows: `Barang`, `Batch`, `Jumlah` (promo `pcs` input OR `Karton`/`Bal`/`Slop`/`Bks` mix + `= X Bks` + packing rates + Bks input + `sendAdvice` floor in `Kirim`), `@ Landed` + price drift vs `lastLanded`, remove `X` | `cart`, `inventory`, `totalItemsReceived`, `extraCosts`, `lastLanded`, `sendAdvice` | `src/RestockVaultView.jsx:2008-2121` |
+| Costs & Evidence & Totals | Both | `Ongkos kirim` (+ `Pita cukai` & `Upah bongkar` when `!isOut`); `Bukti foto barang`, `Nota / faktur` (`scan`), `Resi & kurir`; 4 summary boxes (`Nilai barang`, `Biaya tambahan`/`Ongkos kirim`, `Total dibayar`/`Nilai kiriman`, `Landed / Bks`) | `poData`, `isOut`, `packageFile`, `receiptFile`, `galleryOk`, `totalBasePrice`, `extraCosts`, `trueLandedTotal`, `landedPerUnit`, `totalItemsReceived`, `promoPcs` | `src/RestockVaultView.jsx:2123-2181` |
+| Completeness footer (`data-guide="save"`) | Both (collapses to 1 line on phone) | Progress bar + `donePct%` + `Simpan surat jalan` / `Kirim sekarang` button + `→ Belum lengkap: ...` / `→ Lengkap` | `donePct`, `missing`, `isSubmitting`, `cart.length`, `isOut` | `src/RestockVaultView.jsx:2185-2221` |
+| `Request` / `Buku` queue & drawer | Both | Status summary pills (`DISPUTED`/`PENDING`/`IN_TRANSIT`) or filter buttons (`Semua`/`Masuk`/`Keluar`); expandable `shownRows` + sibling `Siapkan` button (`PENDING` in `req`); expanded drawer with metadata, line table, totals, photo/nota/resi pills, `Cetak`/`Edit`/`Hapus` (`in`) or `Cetak label`/`Edit resi`/`Hapus` (`out`), `<Proses>` timeline | `viewMode`, `bookFilter`, `shownRows`, `requestRows`, `bookRows`, `expandedPO` | `src/RestockVaultView.jsx:1669-1837` |
+| `Data Induk` (`viewMode === 'place'`) | Both | `Daftarkan pabrik` / `Daftarkan orang` (if `mayEditRegistry`), inline place form, `unregisteredFactories` chips, 3 grouped lists (`Pabrik`, `Gudang`, `Orang`) with edit/delete | `mayEditRegistry`, `placeForm`, `unregisteredFactories`, `factoryOptions`, `warehouseOptions`, `peopleOptions`, `places` | `src/RestockVaultView.jsx:1520-1668` |
+| Modals & Print views | Both (overlay) | `viewingImage`, `showTargetModal`, `editingOrder`, `ShipmentLabel`, `AcceptanceReceipt`, `editingPO`, `isFulfilling` (branch request fulfillment/reject modal) | Respective modal state vars | `src/RestockVaultView.jsx:1198-1479` |
+
+### 2. Every press & what it writes
+| control / press | handler called | writes (Firestore + local state) | moves stock or money? | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| Top tab / `⇄` swap | `setViewMode` / `setDirection` / `swapRoute` | Local `viewMode`, updates `poData.supplierName` & `destination` | No | `src/RestockVaultView.jsx:531-541, 1502, 1951` |
+| Picker item / Enter in search | `addToCart(item)` | Appends line to local `cart` | No | `src/RestockVaultView.jsx:395-407, 1850, 1868` |
+| Mix boxes / qty / batch / remove | `applyMix`, `updateCartItem`, `removeFromCart` | Updates local `cart` | No | `src/RestockVaultView.jsx:431-446, 2032-2113` |
+| `Simpan surat jalan` (`data-guide="save"`, `!isOut`) | `handleProcessRestock` | Uploads scanned nota + package photo to Storage; batch: `products/${id}.stock += increment(qty)` + `addDoc` `procurement` (`items`, `totalBasePrice`, `trueLandedTotal`, addresses, `incomplete`); dispatches `kpm-mission` step 1; `logAudit("RESTOCK_VAULT")` | **Yes — adds HQ stock + records procurement cost** | `src/RestockVaultView.jsx:604-677, 2198-2199` |
+| `Kirim sekarang` (`data-guide="save"`, `isOut`) | `handleHQPush` | Checks HQ stock, confirms, uploads photo; batch: `products/${id}.stock += increment(-qty)` + `setDoc` `stock_requests/${orderId}` (`IN_TRANSIT`, `initiatedByHQ: true`); dispatches `kpm-mission` step 2; `logAudit("STOCK_HQ_PUSH")` | **Yes — deducts HQ stock** (branch credits on count) | `src/RestockVaultView.jsx:683-763, 2198-2199` |
+| `Siapkan` -> `Konfirmasi & kirim barang` | `handleStartFulfillment` -> `handleShipItems` | Validates sender/courier/resi/photo & HQ stock, uploads photo; batch: `products/${id}.stock += increment(-qty)` + `updateDoc` `stock_requests/${id}` (`IN_TRANSIT`, `fulfilledItems`, timeline); `logAudit("STOCK_SHIP")` | **Yes — deducts HQ stock** | `src/RestockVaultView.jsx:907-915, 961-1020, 1469, 1734` |
+| `Tolak` in fulfillment modal | `handleRejectRequest` | `updateDoc` `stock_requests/${id}` (`status: 'REJECTED'`, timeline) + `logAudit("STOCK_REJECT")` | No | `src/RestockVaultView.jsx:940-959, 1473` |
+| Buku `Hapus` (`in`) | `handleDeletePO(po)` | Confirms, batch: `products/${id}.stock += increment(-qty)` + `deleteDoc` `procurement/${po.id}` + `logAudit("RESTOCK_DELETE")` | **Yes — reverts HQ stock & deletes cost record** | `src/RestockVaultView.jsx:803-825, 1815` |
+| Buku `Edit` -> `Save All Changes` (`in`) | `handleSaveEditPO` | Uploads replacement receipt if set; batch: `products/${id}.stock += increment(diff)` + `updateDoc` `procurement/${id}` (`totalBasePrice`, `trueLandedTotal`, etc.) | **Yes — adjusts HQ stock by diff & updates landed total** | `src/RestockVaultView.jsx:836-903, 1357, 1814` |
+| Buku `Hapus` (`out`) | `handleDeleteRequest(id)` | Confirms, `deleteDoc` `stock_requests/${id}` + `logAudit("STOCK_DELETE_LOG")` (does NOT revert stock) | No | `src/RestockVaultView.jsx:827-834, 1824` |
+| Buku `Edit resi` -> `Simpan Perubahan` (`out`) | `handleStartEditingOrder` -> `handleSaveOrderEdit` | `updateDoc` `stock_requests/${id}` (`senderName`, `courier`, `trackingNo`, timeline) + `logAudit("STOCK_EDIT_LOG")` | No | `src/RestockVaultView.jsx:1022-1059, 1262, 1823` |
+| Target `+ Set` / `Save Target` / `X` | `handleSaveTarget` / `handleDeleteTarget` | `setDoc` / `deleteDoc` `production_targets/${month}_${productId}` | No | `src/RestockVaultView.jsx:765-801, 1230, 1913, 1925` |
+| `Data Induk` `Simpan` / `Trash2` | `savePlace` / `removePlace` | `setDoc` / `deleteDoc` `places/${slug}` (`canManageRegistry(userRole)` gated) + `logAudit` | No | `src/RestockVaultView.jsx:555-601, 1597, 1658` |
+
+### 3. Logic computed inside JSX / render
+| computation | what it computes | file:line |
+| :--- | :--- | :--- |
+| `bksPerUnit` & `applyMix` | Uses `convertToBks` from `inventory.find(pr => pr.id === item.id)` (`Karton`, `Bal`, `Slop`, `Bks`) to compute `totalBks` into `qtyReceived` while keeping `mix` display-only; renders `1 KARTON = … · 1 BAL = … · 1 SLOP = … BKS` | `src/RestockVaultView.jsx:424-443, 2078-2085` |
+| `goods`, `totalBasePrice`, `totalItemsReceived`, `promoPcs` | Merges `inventory` + `promoItems` for picker; sums `qtyReceived * basePrice`; `bksOf(cart)` excludes promo; `pcsOf(cart)` counts promo pcs only | `src/RestockVaultView.jsx:449-454` |
+| `extraCosts`, `trueLandedTotal`, `landedPerUnit` | `shippingCost + (isOut ? 0 : laborCost + exciseTax)`; `totalBasePrice + extraCosts`; `trueLandedTotal / totalItemsReceived` | `src/RestockVaultView.jsx:496-498` |
+| `sendAdvice` & `short` flag | When `isOut` & valid branch, computes `reorderAdvice(...)` per non-promo line from `branchStockMap[to]`, `stockRequests`, `bufferDays`; highlights red when `typed < adv.suggest` | `src/RestockVaultView.jsx:477-494, 2089-2101` |
+| `lastLanded` & `drift` | Scans `procurements` newest-first for latest unit landed cost per cigarette; computes `%` drift on cart rows | `src/RestockVaultView.jsx:380-393, 2025-2027, 2106-2110` |
+| `checklist`, `donePct`, `missing` | 8-item completeness percentage & `missing` label list (never blocks save) | `src/RestockVaultView.jsx:502-513` |
+| `bookRows`, `requestRows`, `shownRows` | Merges `procurements` + `stockRequests`, computes `bksOf`/`pcsOf`/outbound `value` via `inventory.priceDistributor`, computes `stale` (`IN_TRANSIT && !arrivedAt && days >= 3`), sorts `requestRows` by `REQ_RANK` (`DISPUTED` first) | `src/RestockVaultView.jsx:1063-1123` |
+| `factoryOptions`, `warehouseOptions`, `peopleOptions`, `unregisteredFactories` | Derives factories (`places.kind==='pabrik'`), warehouses (`HQ_NAME` + `branchesSeen`), authorized people (`canHandleDelivery` staff + `kind==='orang'`), and unregistered factories from `procurements` | `src/RestockVaultView.jsx:299-376` |
+
+### 4. What can move out first & `logicFixes.selfcheck.mjs` pins
+| candidate to extract | safe to move first? | `logicFixes.selfcheck.mjs` pins that check exact strings / file paths |
+| :--- | :--- | :--- |
+| Sub-views inside `RestockVaultView.jsx` (`Data Induk` tab, `Buku`/`Request` drawer, `isFulfilling` modal, `editingPO` modal) -> `src/components/restock/...` | **Only after updating selfcheck** — `selfcheck` reads `src/RestockVaultView.jsx` directly for exact strings across nav, footer, `REQ_RANK`, `AcceptanceReceipt`, `poDate`, `promoItems`, `handleStartFulfillment` | `logicFixes.selfcheck.mjs:2772-2773` (`REQ_RANK = { DISPUTED: 0`, `sort`), `2890` (`poDate: getLocalDayKey()`), `3900` (`const HQ_NAME = MASTER;`), `3958` (`<AcceptanceReceipt`), `6965-6982` (`ONE nav...`, `{tabs.map(t => (`, `flex-wrap`, `w-full lg:w-auto`, `flex-auto lg:flex-none`), `7018-7035` (`→ Belum lengkap:`, `→ Lengkap. Siap disimpan.`, `truncate sm:whitespace-normal`, `static lg:absolute`, no `di kiri`), `11473` (`onClick={() => handleStartFulfillment(po)}` + `<Truck size={13}/>`), `12370` (`promoItems` exact file list) |
+| Pure math/list derivations (`bookRows`, `lastLanded`, `bksPerUnit`, `checklist`) -> `src/utils/restockHelpers.js` | **Careful** — `poDate: getLocalDayKey()` and `REQ_RANK` are checked in `src/RestockVaultView.jsx` | Same `2772-2773`, `2890` pins in `logicFixes.selfcheck.mjs` |
+| Wrapper div in `src/App.jsx:5398-5426` | **Keep `border-2 lg:border-4` and `p-2 lg:p-4` and `branchStockMap={branchStock}`** | `logicFixes.selfcheck.mjs:1124` (`RestockVaultView...branchStockMap={branchStock}`), `7006-7016` (`border-2 lg:border-4`, `p-2 lg:p-4` matching `tools/ponder-lab.jsx`) |
