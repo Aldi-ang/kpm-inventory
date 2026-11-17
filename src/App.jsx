@@ -1759,7 +1759,12 @@ const handleGitHubMirror = async () => {
   const [useFrontForBack, setUseFrontForBack] = useState(false);
   const [boxDimensions, setBoxDimensions] = useState({ w: 55, h: 90, d: 22 });
   const [cropImageSrc, setCropImageSrc] = useState(null);
-  const [activeCropContext, setActiveCropContext] = useState(null); 
+  const [activeCropContext, setActiveCropContext] = useState(null);
+  /* THE MENU WINS (his 2026-11-17: "i want right now that the segment change but also closing all the panel that is on
+     the path, right now literally stuck on the examine button and cant close it"). These three panels live at App level,
+     so a new screen from the menu left them open over it (the 3D viewer, the picture cropper) or waiting to reopen (the
+     product form). Panels a screen owns close by themselves: the screen unmounts. */
+  useEffect(() => { setExaminingProduct(null); setCropImageSrc(null); setActiveCropContext(null); setEditingProduct(null); }, [activeTab]);
   
   
 // --- NEW: DISCO MODE STATE ---

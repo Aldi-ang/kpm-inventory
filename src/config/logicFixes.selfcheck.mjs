@@ -12510,6 +12510,13 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      /\.kpm-edge-btn \{[^}]*border: 1px solid var\(--accent-edge\);[^}]*background-color: transparent;/.test(thc) &&
      /\.kpm-edge-btn:hover \{ background-color: color-mix\(in srgb, var\(--gold\) 11%, transparent\);/.test(thc) &&
      /\.kpm-edge-btn:active \{ scale: \.97; \}/.test(thc) && /\.kpm-edge-btn:focus-visible \{ outline: 2px solid/.test(thc));
+  /* his 2026-11-17: "i want right now that the segment change but also closing all the panel that is on the path, right now
+     literally stuck on the examine button and cant close it" + "i cant go back ... the button is intesect with the demo top panel" */
+  const exm = read('src/components/ExamineModal.jsx');
+  ok('REGRESSION: a screen picked from the menu closes the App-level panels (3D viewer, cropper, product form); the viewer\'s X and zoom keys sit below the demo bars, and Esc closes it',
+     app.includes('useEffect(() => { setExaminingProduct(null); setCropImageSrc(null); setActiveCropContext(null); setEditingProduct(null); }, [activeTab]);') &&
+     (exm.match(/style=\{\{ top: 'calc\(var\(--kpm-safe-top, 0px\) \+ 2(\.5)?rem\)' \}\}/g) || []).length === 2 && !/absolute top-8 right-/.test(exm) &&
+     exm.includes("if (e.key === 'Escape') onClose?.();"));
   const looks = read('src/components/PromoLookFields.jsx'), app2 = read('src/App.jsx');
   ok('REGRESSION: EDIT on a promo item without a FRONT photo shows the look - a live 3D preview, PRINTED TEXT, COLOR, PRINT COLOR, Default colors; TYPE switches the preview',
      form.includes('<PromoLookFields key={editingProduct.id || \'new\'} product={editingProduct} previewRef={goodsPreviewRef} />') &&

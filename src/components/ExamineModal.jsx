@@ -28,6 +28,13 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
   const rotRef = useRef({ ...START_ROTATION });
   const draggingRef = useRef(false);
 
+  /* Esc closes it too: on the demo his only way out was the X, and the X sat under the demo bars (2026-11-17) */
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   useEffect(() => {
     let animationFrameId;
     const animate = () => {
@@ -79,7 +86,9 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
        stray press could navigate away mid-inspection. Backdrop blur as well as the dark:
        blur is what signals a layer you can dismiss, rather than one more panel. */
     <div className="kpm-examine-in fixed inset-0 z-[10000] bg-black/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 overflow-hidden" onPointerDown={handleMouseDown} onPointerMove={handleMouseMove} onPointerUp={handleMouseUp} onPointerLeave={handleMouseUp}>
-      <button onClick={onClose} className="absolute top-8 right-8 text-white hover:text-red-500 z-50 p-2 bg-black/20 rounded-full"><X size={40} /></button>
+      {/* top = the demo bars' height (--kpm-safe-top, 0 outside the demo) + 2rem: at a bare top-8 the bars (fixed, over the
+          shell) covered this X and the zoom keys - his 2026-11-17 "i cant go back ... the button is intesect with the demo top panel" */}
+      <button onClick={onClose} aria-label="Close" style={{ top: 'calc(var(--kpm-safe-top, 0px) + 2rem)' }} className="absolute right-8 text-white hover:text-red-500 z-50 p-2 bg-black/20 rounded-full"><X size={40} /></button>
 
       {/* THE DIMENSIONS PANEL IS GONE FROM THIS SCREEN, on his instruction: "dimension panel
           should only be exist inside master vault and not the preview in sales terminal".
@@ -89,7 +98,7 @@ export default function ExamineModal({ product, onClose, isAdmin }) {
           them now, so it no longer needs onUpdateProduct at all.
           Reset moved in here because it was living inside that panel and is worth keeping. */}
       {!goods3d && (   /* zoom, lock and reset size the flat card; the 3D goods fit themselves */
-      <div className="absolute top-8 right-24 z-50 flex gap-2" onPointerDown={(e) => e.stopPropagation()}>
+      <div className="absolute right-24 z-50 flex gap-2" style={{ top: 'calc(var(--kpm-safe-top, 0px) + 2.5rem)' }} onPointerDown={(e) => e.stopPropagation()}>
          <button onClick={() => handleZoom(-0.2)} className="p-2 bg-black/60 text-white rounded-full hover:bg-white/20"><ZoomOut size={18}/></button>
          <button onClick={() => setIsScaleLocked(!isScaleLocked)} className={`p-2 rounded-full hover:bg-white/20 ${isScaleLocked ? 'bg-orange-600 text-white' : 'bg-black/60 text-white'}`}>{isScaleLocked ? <Lock size={18}/> : <Unlock size={18}/>}</button>
          <button onClick={() => handleZoom(0.2)} className="p-2 bg-black/60 text-white rounded-full hover:bg-white/20"><ZoomIn size={18}/></button>

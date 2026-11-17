@@ -1278,3 +1278,21 @@ Do NOT change the code. Done when: four tables + the filled-button list in the R
 | candidate to extract | safe to move first? | `logicFixes.selfcheck.mjs` exact line pins |
 | :--- | :--- | :--- |
 | `CustomerDetailView`, `DuplicateReport`, `Add/Edit Form` portal -> `src/components/customers/...` | **Only alongside `selfcheck` updates** — `selfcheck` reads `src/components/CustomerManager.jsx` directly for `canEditShop`, `lastVisit`, `kpm-shutter`, `kpm-arrive`, `NixieCount`, `data-guide="photo"`, `accept="image/*"` | `1546`, `5938`, `6048`, `6695-6736`, `7270-7290` (`<button data-guide="photo" ... className="kpm-shutter kpm-corners">`), `7338`, `7433`, `7583`, `7835` (`<div className="grid grid-cols-1 md:grid-cols-2 gap-4 kpm-arrive">`), `7904`, `9813-9819` (`App.jsx` lazy import `CustomerManagement`), `11462-11463`, `11861`, `11882`, `11994` (`if (customerScope) return canEditShop(customerScope, c);`), `12083`, `12109`, `13853` (`<NixieCount value={pending} size={12} rollIn /> Pending`), `14080` |
+
+## Task 26 - the same map for Sampling (segment 7 of 12)
+**Status:** OPEN
+**Written:** 2026-11-17 08:52 WIB, by Claude. Same rules as above.
+
+Exactly Task 20's four tables for `src/components/SamplingManager.jsx` (SamplingAnalyticsView, SamplingCartView, SamplingFolderView, SampleEntryModal - the `activeTab === 'sampling'` screen, App.jsx ~L5630). Every press that takes stock out (a sample given) gets **Yes** with the exact field it writes. Demo guide marks; selfcheck pins; the same filled-button list as Task 24 (`bg-gold`, `bg-[var(--gold)]`, `bg-orange-*`, `bg-amber-*`, `from-amber-*`).
+Do NOT change the code. Done when: four tables + the filled-button list in the Result.
+
+**Result:**
+
+## Task 27 - the same map for Command Center (segment 8 of 12)
+**Status:** OPEN
+**Written:** 2026-11-17 08:52 WIB, by Claude. Same rules as above.
+
+Exactly Task 20's four tables for `src/components/DashboardView.jsx` (the `activeTab === 'dashboard'` screen, App.jsx ~L5088) - every number on it and where it is computed (file:line), every press. Demo guide marks; selfcheck pins; the same filled-button list.
+Do NOT change the code. Done when: four tables + the filled-button list in the Result.
+
+**Result:**
