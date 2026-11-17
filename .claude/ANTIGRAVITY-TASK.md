@@ -1783,3 +1783,46 @@ Do NOT change the code. Done when: four tables + filled-button list + the switch
   1. **2-button segmented control (`.kpm-switch` with `aria-pressed`):** `Graphics` (`Full`/`Lite`, `L63-68`), `Language · Bahasa` (`English`/`Indonesia`, `L85-88`), `Pita cukai at EOD` (`Collected at EOD`/`Off`, `L582-585`), `Rank source` (`Last 7 days`/`Career history`, `L1285-1294`), `Photo storage` (`Database`/`Cloud · Blaze`, `L1541-1550`).
   2. **Worded toggle button with icon (`.kpm-btn` + `<ToggleLeft>`/`<ToggleRight>`):** `Fleet paintbrush` (`Turn it off`/`Turn it on`, `L1049-1059`).
   3. **CSS sliding switch pill (`.kpm-toggle` + `<span className="kpm-sw">` with `aria-pressed`):** `PermissionMatrixEditor` permission rows (mobile `L2007-2011` and desktop `L2111-2115`).
+
+---
+**Claude review 2026-11-17 13:30 WIB:** 34-36 read. Task 34's picture: arithmetic right (expectedOf / getVariance L622-634, tolerance L112-113), cause + damage labels match L70-75. Claude fixed 3 things: Cello Coffee's Monitor badge said Low but 593 Bks is above its minStock 10 (stockThreshold.js L38-52) - it is Healthy; "Open today (Sunday)" - today is Tuesday, and the count day is a setting, so no day name; Field / Sold today are not in the seed, so the note now says they are example figures. Published https://claude.ai/artifact/RgwzugPr456zKvjasEYRT1.
+Lesson for every next picture: every badge/state shown must be what the app's OWN rule gives for those numbers - run the rule (file:line) for each badge, don't pick the one that shows off the feature; and a number not in the seed is labelled "example" on the picture.
+
+## Task 39 - DO THIS ONE FIRST: draft the Receivables & Consignment picture (segment 4)
+**Status:** OPEN
+**Written:** 2026-11-17 13:30 WIB, by Claude. Writes ONE new file - not an app BUILD.
+**Touch only:** `.claude/drafts/receivables-pro.html` (new), this file.
+
+Same job as Task 34, for `src/ConsignmentFinanceView.jsx` (the `receivables` screen), from YOUR Task 23 map (grep "## Task 23").
+- Copy the structure, tokens, fonts, frames and `.kpm-edge-btn` CSS of `.claude/drafts/stock-opname-pro.html` as Claude left it (commit after 13:30). PC frame on top, two phone frames under it.
+- The three tabs (A/R Financials, Physical Stock, Hand-offs) as underline tabs; Hand-offs keeps its red waiting dot (its pulse rule is in the code comment "THE SHAKE" ~L1021 - keep what that comment allows, nothing it forbids).
+- PC frame = **A/R Financials** (the screen it opens on): the totals, the list of shops that owe (Titip / consignment), one shop opened with its open notes and the pay / settle press. Phone 1 = the same, stacked. Phone 2 = **Physical Stock** (what sits in shops on consignment).
+- One note line: where Hand-offs and every other press from your map sit ("same tab, restyled").
+- Numbers: shop names from `demo/seed.json` `customers`; product names + `priceDistributor` from `inventory`. Amounts a shop owes are NOT in the seed: work them from a stated qty x the seed price, show the sum in an HTML comment, and label them "example" on the picture. Every badge (overdue, due soon, paid) must be what the code's own rule gives for the dates you show - cite file:line for the rule and run it by hand in the comment.
+- Buttons `.kpm-edge-btn` (`.quiet`, `.danger`). No amber, blue, indigo, green or emerald fill anywhere.
+Done when: the file exists, opens with no script, the arithmetic + badge comment is there, and the Result lists every Task 23 element with where it sits (PC / phone 1 / phone 2 / note line).
+
+## Task 37 - BUILD: no filled button on Map System and Audit Logs
+**Status:** OPEN
+**Written:** 2026-11-17 13:30 WIB, by Claude. BUILD rules apply. Do it AFTER Task 39.
+**Touch only:** `src/MapMissionControl.jsx`, the Audit Logs component file your Task 35 named, `src/config/logicFixes.selfcheck.mjs`, this file.
+
+Same job as Task 33 (read Claude's 13:10 review of it first: a tab strip is ONE unit - convert all its tabs or none).
+1. Start from the filled-button lists in YOUR Tasks 31 and 35 Results; re-run the grep on today's files (`bg-gold|bg-\[var\(--gold\)\]|bg-orange-|bg-amber-|from-amber-|bg-blue-|bg-indigo-|bg-green-|bg-emerald-`), put the list with a FILLED BUTTON / NOT verdict per hit in the Result BEFORE editing.
+2. Never touch anything Leaflet draws (markers, clusters, map tiles, popups built by the map library - your Task 31 split) and never a print block.
+3. Convert each FILLED BUTTON exactly like Task 28 point 1. Never a handler, `disabled=`, `data-*`, `name=`.
+4. ONE check after the Task 33 one: `REGRESSION: no filled button on Map System or Audit Logs (his 2026-11-17 "dont make it again")`, same style; `.replace` only the exact NOT strings (a comment names each line); a minimum `kpm-edge-btn` count per file = what you converted.
+5. Red-then-green proof (stash the .jsx files, FAIL; pop, PASS). Both outputs in the Result.
+Done when: the four BUILD checks are green, list + proof in the Result.
+
+## Task 38 - BUILD: no filled button on Agent Profile (keep the game art)
+**Status:** OPEN
+**Written:** 2026-11-17 13:30 WIB, by Claude. BUILD rules apply. Do it AFTER Task 37.
+**Touch only:** `src/AgentProfileView.jsx`, `src/config/logicFixes.selfcheck.mjs`, this file.
+
+Same as Task 37 for the 8 filled buttons/toggles your Task 32 listed (LEADERBOARD among them).
+- The game art list from your Task 32 (avatar frames, rank colours, XP bar, award art) is NOT a button: never touch it. A rank colour that fills a badge stays.
+- The four keys RANK CONFIG / AVATAR / LEADERBOARD / GRANT AWARD are ONE strip: the active one = `kpm-edge-btn`, the others `kpm-edge-btn quiet` - all four the same way.
+- A toggle (on/off switch) that fills gold when on: do NOT convert it - list it in the Result as "switch, waits for the Settings redesign" (one switch style comes with segment 12).
+- Check after Task 37's: `REGRESSION: no filled button on Agent Profile (his 2026-11-17 "dont make it again")`, same style, red-then-green proof.
+Done when: the four BUILD checks are green, list (with the switches named) + proof in the Result.
