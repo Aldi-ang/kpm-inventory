@@ -1287,13 +1287,52 @@ Do NOT change the code. Done when: four tables + the filled-button list in the R
 | `CustomerDetailView`, `DuplicateReport`, `Add/Edit Form` portal -> `src/components/customers/...` | **Only alongside `selfcheck` updates** — `selfcheck` reads `src/components/CustomerManager.jsx` directly for `canEditShop`, `lastVisit`, `kpm-shutter`, `kpm-arrive`, `NixieCount`, `data-guide="photo"`, `accept="image/*"` | `1546`, `5938`, `6048`, `6695-6736`, `7270-7290` (`<button data-guide="photo" ... className="kpm-shutter kpm-corners">`), `7338`, `7433`, `7583`, `7835` (`<div className="grid grid-cols-1 md:grid-cols-2 gap-4 kpm-arrive">`), `7904`, `9813-9819` (`App.jsx` lazy import `CustomerManagement`), `11462-11463`, `11861`, `11882`, `11994` (`if (customerScope) return canEditShop(customerScope, c);`), `12083`, `12109`, `13853` (`<NixieCount value={pending} size={12} rollIn /> Pending`), `14080` |
 
 ## Task 26 - the same map for Sampling (segment 7 of 12)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 08:52 WIB, by Claude. Same rules as above.
 
 Exactly Task 20's four tables for `src/components/SamplingManager.jsx` (SamplingAnalyticsView, SamplingCartView, SamplingFolderView, SampleEntryModal - the `activeTab === 'sampling'` screen, App.jsx ~L5630). Every press that takes stock out (a sample given) gets **Yes** with the exact field it writes. Demo guide marks; selfcheck pins; the same filled-button list as Task 24 (`bg-gold`, `bg-[var(--gold)]`, `bg-orange-*`, `bg-amber-*`, `from-amber-*`).
 Do NOT change the code. Done when: four tables + the filled-button list in the Result.
 
 **Result:**
+
+### Demo Guide Marks in `src/components/SamplingManager.jsx`
+- **None** (`rg -n "data-mission=|data-guide="` returned zero matches).
+
+### Filled Amber/Gold Buttons to Convert to `.kpm-edge-btn`
+- `src/components/SamplingManager.jsx:320` — `Save N Products` button in `SamplingCartView` (`bg-[var(--gold)] hover:brightness-110 text-[var(--gold-ink)]`)
+- `src/components/SamplingManager.jsx:593` — `Add to Folder` / `Save Changes` submit button in `SampleEntryModal` (`bg-[var(--gold)] hover:brightness-110 text-[var(--gold-ink)]`)
+*(Also inline in `src/App.jsx:5649`: `Save Move` button in the Rename Folder modal uses `bg-orange-500`.)*
+
+### 1. Elements on screen (PC & phone, top to bottom)
+| element | PC / phone | what it shows | reads (state / prop / Firestore field) | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| `App.jsx` tab mount (`activeTab === 'sampling'`) | Both | Rename Folder modal (`editingFolder`), `<SampleEntryModal>` (`editingSample`), and `<SamplingAnalyticsView>` or `<SamplingFolderView>` | `samplings`, `inventory`, `isAdmin`, `editingFolder`, `editingSample`, `showSamplingAnalytics` | `src/App.jsx:5639-5674` |
+| `SamplingFolderView` (default) | Both (2-col phone / 4-col `lg` `<FolderCard>`s -> item rows) | 4-level drilldown (Year -> Month -> Date -> Location): `Sampling Archives` header, `+ New Sample` (`isAdmin`) & `View Analytics` buttons (`kpm-edgebtn`), folder cards, then grouped by `note` with item rows (`productName`, `formatSampleQty`, `Pencil` & `Trash2` if `isAdmin`) + `Edit Folder` button | `samplings`, `isAdmin`, `selectedYear`, `selectedMonth`, `selectedDate`, `selectedLocation`, `folderStructure` | `src/components/SamplingManager.jsx:336-497` |
+| `SamplingAnalyticsView` (`showSamplingAnalytics`) | Both | `Back to Folders`, period tabs (`daily`/`weekly`/`monthly`/`yearly`, `kpm-tab-on`), `targetDate` picker, 3 KPI cards (`Total Marketing Burn` at Distributor cost, `Items Distributed` Bks/Btg, `Physical Proof Required` `Pita Cukai`), 3 potential-value cards (`ECER`/`RETAIL`/`GROSIR`), Recharts `Top 5 Products by Marketing Spend` bar chart | `samplings`, `inventory`, `rangeType`, `targetDate`, `stats` | `src/components/SamplingManager.jsx:21-190` |
+| `SampleEntryModal` (`editingSample`) | Both (overlay) | Modal form: `Date`, `Bungkus` & `Batang` dual inputs, `Product` `<select>`, `Location / Store Name` (`reason`), `Notes (Folder Group)` (`note`), submit button | `isOpen`, `initialData`, `inventory`, `formData` | `src/components/SamplingManager.jsx:500-600` |
+| `SamplingCartView` (exported component) | PC 2/3 + 1/3 split / Phone stacked | Left: `Search item to sample...` + product grid (`stock in Vault`). Right: `Folder Name / Location`, `Description / Store Name`, `Date` (locked if `!isAdmin`), cart items with `Bungkus`/`Batang` `-`/`+` rollover & direct inputs, `Save N Products` button | `inventory`, `isAdmin`, `searchTerm`, `cart`, `location`, `note`, `targetDate`, `isSubmitting` | `src/components/SamplingManager.jsx:193-328` |
+
+### 2. Every press & what it writes
+| control / press | handler called | writes (Firestore + local state) | moves stock or money? | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| Folder cards, `Back`, `View Analytics`, period tabs, `New Sample`, `Edit` | Local state setters / `setShowSamplingAnalytics` / `setEditingSample` | Local UI state only | No | `src/components/SamplingManager.jsx:123-131, 376-488` |
+| `SampleEntryModal` submit (`Add to Folder` when `isNew`) / `SamplingCartView` `Save N Products` | `handleBatchSamplingSubmit` | `runTransaction`: deducts `qtyInBks` from `products/${id}.stock` (when VAULT) OR `motorists/${agentId}.activeCanvas` (when VEHICLE); creates `samplings` doc (`date`, `productId`, `productName`, `qty`, `unit: 'Bks'`, `sticksPerPack`, `reason`, `note`, `sourceId`); `logAudit("SAMPLING_BATCH")` | **Yes — deducts `products.stock` or `motorists.activeCanvas`** | `src/components/SamplingManager.jsx:232-248, 526-541`, `src/App.jsx:4005-4086` |
+| `SampleEntryModal` submit (`Save Changes` when editing) | `handleUpdateSampling` | `runTransaction`: restores old `qty` to `products.stock` or `motorists.activeCanvas`, deducts new `qty` from `products.stock` or `motorists.activeCanvas`, updates `samplings/${id}` | **Yes — adjusts `products.stock` or `motorists.activeCanvas`** | `src/components/SamplingManager.jsx:526-541`, `src/App.jsx:4127-4224` |
+| Item row `Trash2` (`isAdmin`) | `onDelete(s)` -> `handleDeleteSampling` | Confirms, `runTransaction`: restores `qtyInBks` to `products/${id}.stock` (if `VAULT`) or `motorists/${sourceId}.activeCanvas`, deletes `samplings/${id}` + `logAudit("SAMPLING_DELETE")` | **Yes — restores `products.stock` or `motorists.activeCanvas`** | `src/components/SamplingManager.jsx:399`, `src/App.jsx:4088-4125` |
+| `Edit Folder` -> `Save Move` (`isAdmin`) | `onEditFolder` -> `processFolderEdit` | Batch-updates `date` and `reason` on matching `samplings` docs | No | `src/components/SamplingManager.jsx:378`, `src/App.jsx:4225, 5646` |
+
+### 3. Logic computed inside JSX / render
+| computation | what it computes | file:line |
+| :--- | :--- | :--- |
+| `formatSampleQty` | Splits decimal Bks into `X Bks Y Btg` using `sticksPerPack \|\| 16` | `src/components/SamplingManager.jsx:9-18, 395` |
+| `SamplingAnalyticsView` `stats` | Filters `samplings` by `daily`/`weekly`/`monthly`/`yearly`; converts legacy `'Batang'` to `bksEq`; sums Distributor cost (`totalValueDistributor`), potential `Ecer`/`Retail`/`Grosir` values, `totalPitaCukai = sum(Math.ceil(p.qty))`, top 5 `chartData`, `topLocation` | `src/components/SamplingManager.jsx:48-119` |
+| `SamplingCartView` rollover & decimal encoding | `updateCartQty` rolls `qtyBatang >= sticksPerPack` into `qtyBks`; `handleFinalSubmit` encodes `qty = qtyBks + qtyBatang / sticksPerPack` (`unit: 'Bks'`) | `src/components/SamplingManager.jsx:212-244` |
+| `SamplingFolderView` `folderStructure` & `groupedItems` | Groups `samplings` by Year -> Month -> Date -> `reason` (`location`) -> `note` | `src/components/SamplingManager.jsx:344-370` |
+
+### 4. What can move out first & `logicFixes.selfcheck.mjs` pins
+| candidate to extract | safe to move first? | `logicFixes.selfcheck.mjs` exact line pins |
+| :--- | :--- | :--- |
+| `SamplingAnalyticsView`, `SamplingCartView`, `SamplingFolderView`, `SampleEntryModal` | **Yes, carefully** — preserve `FolderCard` quiet classes and no `purple-/emerald-/cyan-` palette violations | `8020`, `11463`, `13008`, `13761` |
 
 ## Task 27 - the same map for Command Center (segment 8 of 12)
 **Status:** OPEN
