@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, Plus, Package, AlertCircle, AlertTriangle, ImageIcon, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Package, ImageIcon, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatRupiah, convertToBks, getLocalDayKey, isPromo, isDamagedPack, promoSkin, promoGoods, inQuarantine } from '../utils/helpers';
 import PromoGoods3D from './PromoGoods3D';
 import HazardMark from './HazardMark';
@@ -15,7 +15,7 @@ export const formatAdvancedStock = (stock, item) => {
     const bks = Math.floor(stock);
     const fractional = stock - bks;
     const btg = Math.round(fractional * sp);
-    
+
     let bksStr = `${bks} Bks`;
     if (btg > 0) bksStr += ` + ${btg} Btg`;
     else if (bks === 0 && btg === 0) bksStr = `0 Bks`;
@@ -26,39 +26,49 @@ export const formatAdvancedStock = (stock, item) => {
     return { bks: bksStr, slop: `${slopDec} Slop`, bal: `${balDec} Bal` };
 };
 
+const num = (v) => new Intl.NumberFormat('id-ID').format(Number(v) || 0);
+const groupBks = (s) => s.replace(/^\d+/, (d) => num(d));   /* "10161 Bks + 4 Btg" -> "10.161 Bks + 4 Btg" */
+
+/* THE PROFESSIONAL LOOK (2026-11-17, his "actually its look solid" on the picture, A-Brain Raw/2026-11-17-master-vault):
+   the tokens of Fleet & Roster and Agent Inventory, ruled lines instead of cards, sentence-case words, no glow, no pulse.
+   Two of his features kept on purpose, his same message: the 3D size sliders ("3D slider is important we need to keep it
+   somewhere") fold under the product on every width, and the background picture ("we also need it ... professional and
+   not kaku and looks minimalistic but cool") sits faded behind the 3D box only, with its button in that corner. */
+
 // --- HELPER: SLIDER COMPONENT ---
 export const DimensionControl = ({ label, val, axis, onChange, onInteract }) => (
-    <div className="flex items-center gap-2 mb-2">
-        <span className="text-[10px] font-mono text-slate-400 w-8">{label}</span>
-        <input 
-            type="range" min="10" max="300" 
-            value={val} 
+    <div className="flex items-center gap-3 mb-2">
+        <span className="text-xs font-semibold text-ink-dim w-4">{label}</span>
+        <input
+            type="range" min="10" max="300"
+            value={val}
             onMouseDown={() => onInteract(true)}
             onMouseUp={() => onInteract(false)}
             onTouchStart={() => onInteract(true)}
             onTouchEnd={() => onInteract(false)}
             onChange={(e) => onChange(axis, parseInt(e.target.value))}
-            className="flex-1 h-1 bg-slate-700 rounded-full appearance-none cursor-pointer accent-amber-500"
+            aria-label={`${label} size in mm`}
+            className="flex-1 h-1 bg-line-2 rounded-full appearance-none cursor-pointer accent-[var(--gold)]"
         />
-        <input 
-            type="number" 
+        <input
+            type="number"
             value={val}
             onChange={(e) => onChange(axis, parseInt(e.target.value))}
-            className="w-12 h-6 text-[10px] font-mono bg-black border border-white/20 text-white text-center rounded focus:border-amber-500 outline-none"
+            aria-label={`${label} size in mm, typed`}
+            className="w-14 h-9 text-xs tabular-nums bg-ground border border-line-2 text-ink text-center focus:border-accent-edge outline-none"
         />
-        <span className="text-[10px] text-slate-400">mm</span>
+        <span className="text-xs text-ink-dim">mm</span>
     </div>
 );
 
 // --- TRUE 3D ITEM INSPECTOR ---
-export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct, onExpand }) => {
+export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProduct, onExpand, isLow = false, backgroundSrc, onUploadBg }) => {
     const rotation = { x: -15, y: 35 };   /* the resting tilt; turning by hand happens in the fullscreen viewer now (see the stage) */
     const [isInteracting, setIsInteracting] = useState(false);
 
     const [dims, setDims] = useState(product.dimensions || { w: 55, h: 90, d: 22 });
-    const [zoom, setZoom] = useState(product.defaultZoom || 3.0); 
-    const [showControls, setShowControls] = useState(false);
-    
+    const [zoom, setZoom] = useState(product.defaultZoom || 3.0);
+
     useEffect(() => {
         setDims(product.dimensions || { w: 55, h: 90, d: 22 });
         setZoom(product.defaultZoom || 3.0);
@@ -75,8 +85,8 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
        the box, and a tap on it or the button opens the sales terminal's fullscreen viewer (ExamineModal: fixed, nothing
        behind it moves), where the finger turns it. */
 
-    const w = dims.w * zoom; 
-    const h = dims.h * zoom; 
+    const w = dims.w * zoom;
+    const h = dims.h * zoom;
     const d = dims.d * zoom;
 
     const renderFace = (img, fallbackColor) => img ? <img src={img} className="w-full h-full object-cover" /> : <div className={`w-full h-full ${fallbackColor} border border-white/10`}></div>;
@@ -87,40 +97,33 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
     const goods3d = isPromo(product) && !front0 && promoGoods(product);
     const front = front0 || (isPromo(product) ? promoSkin(product, 'front') : null);
     const back = product.useFrontForBack ? front : images.back || (isPromo(product) ? promoSkin(product, 'back') : null);
-
-    /* the 3D size controls: a floating panel on the desk (top-right button), a fold under the prices on the phone */
-    const sizeControls = (<>
-        <DimensionControl label="W" val={dims.w} axis="w" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
-        <DimensionControl label="H" val={dims.h} axis="h" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
-        <DimensionControl label="D" val={dims.d} axis="d" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
-        <button onClick={() => onUpdateProduct(product.id, { dimensions: dims, defaultZoom: zoom })} className="w-full mt-2 min-h-11 lg:min-h-0 bg-gradient-to-b from-amber-500 to-amber-700 text-black text-[10px] font-bold py-2 rounded shadow-[0_0_10px_rgba(217,164,65,0.4)]">Save 3D Layout</button>
-    </>);
+    const info = formatAdvancedStock(product.stock, product);
+    const ruled = 'flex justify-between gap-4 py-2 border-b border-line text-sm';
 
     return (
-        <div className="lg:h-full flex flex-col relative animate-fade-in select-none bg-gradient-to-b from-black via-stone-900/30 to-black overflow-hidden">
-            {isAdmin && !goods3d && (   /* the size sliders shape the flat card; a 3D goods model has its own shape */
-                <div className="absolute top-4 right-4 z-[100] hidden lg:flex flex-col items-end gap-2 controls-panel">
-                    <button onClick={() => setShowControls(!showControls)} className={`w-11 h-11 flex items-center justify-center rounded-full border ${showControls ? 'bg-amber-500 border-amber-300 text-black shadow-[0_0_12px_rgba(217,164,65,0.6)]' : 'bg-black/50 border-amber-500/20 text-amber-200/70'}`}>
-                        <Maximize2 size={16}/>
-                    </button>
-                    {showControls && (
-                        <div className="bg-black/90 backdrop-blur-md border border-amber-500/30 p-4 rounded-xl w-64 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
-                             {sizeControls}
-                        </div>
-                    )}
-                </div>
-            )}
-
+        <div className="flex flex-col select-none">
+            {/* THE STAGE: the box over his background picture, faded into the page so it reads as light, not as a poster.
+                No picture yet -> a soft gold glow on the inset. The floor shadow under the box is what makes it sit. */}
             <div
-                className="flex-1 min-h-[340px] lg:min-h-0 flex items-center justify-center relative perspective-[1200px] cursor-pointer z-10"
+                className="h-[300px] lg:h-[340px] flex items-center justify-center relative overflow-hidden cursor-pointer border-b border-line-2 bg-inset"
                 style={{ perspective: '1200px', touchAction: 'manipulation' }}
                 onClick={() => onExpand?.(product)}
             >
+                {backgroundSrc
+                    ? <img src={backgroundSrc} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover opacity-30 saturate-[.5] blur-[3px] scale-110 pointer-events-none" />
+                    : <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_50%_42%,color-mix(in_srgb,var(--gold)_16%,transparent),transparent_68%)]" />}
+                <div aria-hidden="true" className="absolute inset-0 pointer-events-none bg-[linear-gradient(to_top,var(--ground)_0%,transparent_45%),linear-gradient(to_bottom,color-mix(in_srgb,var(--ground)_55%,transparent)_0%,transparent_30%)]" />
+                <div aria-hidden="true" className="absolute bottom-[14%] left-1/2 -translate-x-1/2 w-48 h-8 rounded-[50%] pointer-events-none bg-[radial-gradient(closest-side,rgba(0,0,0,0.45),transparent)]" />
                 {onExpand && (
                     <button type="button" onClick={(e) => { e.stopPropagation(); onExpand(product); }}
-                        className="absolute top-3 left-3 z-20 inline-flex items-center gap-2 min-h-11 px-4 rounded-full border border-amber-500/40 bg-black/80 text-amber-200 text-xs font-bold uppercase tracking-widest whitespace-nowrap hover:border-amber-400 active:scale-[0.97] transition-transform">
-                        <Maximize2 size={14} aria-hidden="true" />View in fullscreen
-                    </button>
+                        className="absolute top-3 left-3 z-20 inline-flex items-center gap-2 min-h-11 lg:min-h-9 px-3 border border-line-2 bg-[color-mix(in_srgb,var(--ground)_75%,transparent)] text-ink text-xs font-semibold whitespace-nowrap hover:border-accent-edge active:scale-[0.97] transition-[border-color,transform]">
+                        <Maximize2 size={14} aria-hidden="true" />View in fullscreen</button>
+                )}
+                {isAdmin && onUploadBg && (
+                    <label onClick={(e) => e.stopPropagation()} title="Change the background picture" className="absolute top-3 right-3 z-20 cursor-pointer">
+                        <span className="w-11 h-11 lg:w-9 lg:h-9 flex items-center justify-center border border-line-2 bg-[color-mix(in_srgb,var(--ground)_75%,transparent)] text-ink-muted hover:text-ink hover:border-accent-edge transition-colors"><ImageIcon size={15} aria-hidden="true"/></span>
+                        <input type="file" accept="image/*" onChange={onUploadBg} className="hidden" aria-label="Change the background picture" />
+                    </label>
                 )}
                 {/* bottom-right: the top corners hold VIEW IN FULLSCREEN and the background-picture button */}
                 {isDamagedPack(product) && <HazardMark className="bottom-3 right-3 z-20 w-10 h-10" />}
@@ -130,77 +133,82 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                     style={{
                         width: w, height: h,
                         transform: `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`,
-                        transformStyle: 'preserve-3d', 
-                        willChange: 'transform' 
+                        transformStyle: 'preserve-3d',
+                        willChange: 'transform'
                     }}
                 >
                     <div className={`kpm-inspect-spin${isInteracting ? ' held' : ''}`}>
                     <div className="absolute inset-0 bg-white" style={{ transform: `translateZ(${d/2}px)`, backfaceVisibility: 'hidden' }}>{renderFace(front, "bg-white")}</div>
-                    <div className="absolute inset-0 bg-slate-800" style={{ transform: `rotateY(180deg) translateZ(${d/2}px)`, backfaceVisibility: 'hidden' }}>{renderFace(back, "bg-slate-800")}</div>
-                    <div className="absolute" style={{ width: d, height: h, transform: `rotateY(90deg) translateZ(${w/2}px)`, left: (w-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.right, "bg-slate-400")}</div>
-                    <div className="absolute" style={{ width: d, height: h, transform: `rotateY(-90deg) translateZ(${w/2}px)`, left: (w-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.left, "bg-slate-400")}</div>
-                    <div className="absolute" style={{ width: w, height: d, transform: `rotateX(90deg) translateZ(${h/2}px)`, top: (h-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.top, "bg-slate-300")}</div>
-                    <div className="absolute" style={{ width: w, height: d, transform: `rotateX(-90deg) translateZ(${h/2}px)`, top: (h-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.bottom, "bg-slate-500")}</div>
+                    <div className="absolute inset-0 bg-stone-800" style={{ transform: `rotateY(180deg) translateZ(${d/2}px)`, backfaceVisibility: 'hidden' }}>{renderFace(back, "bg-stone-800")}</div>
+                    <div className="absolute" style={{ width: d, height: h, transform: `rotateY(90deg) translateZ(${w/2}px)`, left: (w-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.right, "bg-stone-400")}</div>
+                    <div className="absolute" style={{ width: d, height: h, transform: `rotateY(-90deg) translateZ(${w/2}px)`, left: (w-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.left, "bg-stone-400")}</div>
+                    <div className="absolute" style={{ width: w, height: d, transform: `rotateX(90deg) translateZ(${h/2}px)`, top: (h-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.top, "bg-stone-300")}</div>
+                    <div className="absolute" style={{ width: w, height: d, transform: `rotateX(-90deg) translateZ(${h/2}px)`, top: (h-d)/2, backfaceVisibility: 'hidden' }}>{renderFace(images.bottom, "bg-stone-500")}</div>
                     </div>
                 </div>
                 )}
             </div>
 
-            <div className="bg-black/90 border-t-2 border-amber-600/80 p-6 md:p-8 relative z-20 backdrop-blur-xl shadow-[0_-10px_30px_rgba(0,0,0,0.6)]">
-                <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
-                    <div className="w-full">
-                        <h2 className="text-xl md:text-3xl text-transparent bg-clip-text bg-gradient-to-b from-amber-200 to-amber-500 font-serif tracking-widest uppercase mb-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">{product.name}</h2>
-                        <div className="flex items-center gap-3 flex-wrap">
-                            <span className="bg-amber-900/20 px-3 py-1 rounded border border-amber-500/40 text-amber-300 text-sm md:text-base font-mono font-bold tracking-widest">
-                                STOCK: {isAdmin ? (isPromo(product) ? `${product.stock || 0} pcs` : (() => {
-                                    const info = formatAdvancedStock(product.stock, product);
-                                    return `${info.bks} / ${info.slop} / ${info.bal}`;
-                                })()) : "**"}
-                            </span>
-                            {isAdmin && (product.damagedStock || 0) > 0 && (
-                                <span className="bg-rose-950/40 px-3 py-1 rounded border border-rose-700/60 text-rose-400 text-sm md:text-base font-mono font-bold tracking-widest">
-                                    DAMAGED: {product.damagedStock} Bks
-                                </span>
-                            )}
-                            <span className="text-[10px] text-slate-400 font-mono uppercase border border-white/10 px-2 py-0.5 rounded">{product.type}</span>
-                        </div>
+            <div className="p-4 lg:p-6 flex flex-col gap-5">
+                <div>
+                    <h2 className="text-lg lg:text-xl font-bold text-ink [text-wrap:balance]">{product.name}</h2>
+                    <p className="text-xs text-ink-dim mt-0.5">{[product.type, !isPromo(product) && `${product.sticksPerPack || 16} sticks per Bks`].filter(Boolean).join(' · ')}</p>
+                    <div className="mt-3 flex items-baseline gap-2">
+                        <span className="text-3xl font-extrabold text-ink tabular-nums leading-none">
+                            {isAdmin ? (isPromo(product) ? `${product.stock || 0} pcs` : groupBks(info.bks)) : '**'}
+                        </span>
+                        {isAdmin && <span className="text-xs text-ink-dim">in the vault</span>}
                     </div>
-
+                    {isAdmin && !isPromo(product) && <p className="mt-1.5 text-xs text-ink-dim tabular-nums">{info.slop} · {info.bal}</p>}
+                    {isAdmin && (isLow || (product.damagedStock || 0) > 0) && (
+                        <p className="mt-2 text-xs font-semibold text-danger-ink">
+                            {[isLow && 'Below the low-stock line', (product.damagedStock || 0) > 0 && `${product.damagedStock} ${isPromo(product) ? 'pcs' : 'Bks'} damaged, in quarantine`].filter(Boolean).join(' · ')}
+                        </p>
+                    )}
                     {isAdmin && (
-                        <div className="flex gap-2 w-full md:w-auto">
-                            <button onClick={() => onEdit(product)} className="flex-1 md:px-6 py-2 min-h-11 lg:min-h-0 bg-gradient-to-b from-amber-400 to-amber-600 text-black text-[10px] font-bold uppercase tracking-widest hover:from-amber-300 hover:to-amber-500 transition-colors shadow-[0_0_10px_rgba(217,164,65,0.3)]">Edit</button>
-                            <button onClick={() => onDelete(product.id)} className="flex-1 md:px-6 py-2 min-h-11 lg:min-h-0 bg-red-950/40 text-rose-500 border border-rose-800 text-[10px] font-bold uppercase tracking-widest hover:bg-rose-700 hover:text-white transition-colors">Discard</button>
+                        <div className="flex gap-2 mt-4">
+                            <button onClick={() => onEdit(product)} className="flex-1 lg:flex-none min-h-11 lg:min-h-9 px-4 border border-line-2 text-ink text-sm font-semibold hover:border-accent-edge transition-colors">Edit product</button>
+                            <button onClick={() => onDelete(product.id)} className="flex-1 lg:flex-none min-h-11 lg:min-h-9 px-4 border border-line-2 text-danger-ink text-sm font-semibold hover:border-danger-ink transition-colors">Delete</button>
                         </div>
                     )}
                 </div>
 
-                {!isPromo(product) && (   /* a promo item has no price: given free with a sale (his 2026-10-25 answer 6) */
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 font-mono border-t border-amber-500/10 pt-5 mt-2">
-                    <div className="bg-white/5 p-3 border-l-4 border-rose-600">
-                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Dist</p>
-                        <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceDistributor)}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
+                    {!isPromo(product) && (   /* a promo item has no price: given free with a sale (his 2026-10-25 answer 6) */
+                    <div>
+                        <h3 className="text-[11px] font-bold uppercase tracking-wider text-ink-dim mb-1">Prices per Bks</h3>
+                        <div className="border-t border-line-2 tabular-nums">
+                            <div className={ruled}><span className="text-ink-muted">Distributor (cost)</span><span className="font-semibold text-ink">{formatRupiah(product.priceDistributor)}</span></div>
+                            <div className={ruled}><span className="text-ink-muted">Retail</span><span className="font-semibold text-ink">{formatRupiah(product.priceRetail)}</span></div>
+                            <div className={ruled}><span className="text-ink-muted">Grosir</span><span className="font-semibold text-ink">{formatRupiah(product.priceGrosir)}</span></div>
+                            <div className={ruled}><span className="text-ink-muted">Ecer</span><span className="font-semibold text-ink">{formatRupiah(product.priceEcer)}</span></div>
+                        </div>
                     </div>
-                    <div className="bg-white/5 p-3 border-l-4 border-amber-500">
-                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Retail</p>
-                        <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceRetail)}</p>
+                    )}
+                    {!isPromo(product) && (
+                    <div>
+                        <h3 className="text-[11px] font-bold uppercase tracking-wider text-ink-dim mb-1">Packing</h3>
+                        <div className="border-t border-line-2 tabular-nums">
+                            <div className={ruled}><span className="text-ink-muted">Bks per Slop</span><span className="font-semibold text-ink">{product.packsPerSlop || 10}</span></div>
+                            <div className={ruled}><span className="text-ink-muted">Slop per Bal</span><span className="font-semibold text-ink">{product.slopsPerBal || 20}</span></div>
+                            <div className={ruled}><span className="text-ink-muted">Bal per Karton</span><span className="font-semibold text-ink">{product.balsPerCarton || 4}</span></div>
+                        </div>
                     </div>
-                    <div className="bg-white/5 p-3 border-l-4 border-stone-400">
-                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Grosir</p>
-                        <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceGrosir)}</p>
-                    </div>
-                    <div className="bg-white/5 p-3 border-l-4 border-yellow-600">
-                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Ecer</p>
-                        <p className="text-white text-sm md:text-base font-bold tracking-wider">{formatRupiah(product.priceEcer)}</p>
-                    </div>
+                    )}
                 </div>
-                )}
 
+                {/* the 3D size sliders shape the flat card (a 3D goods model has its own shape) - one fold on every width */}
                 {isAdmin && !goods3d && (
-                    <details className="lg:hidden mt-4 border border-amber-500/20 controls-panel group">
-                        <summary className="min-h-11 px-3 flex items-center cursor-pointer list-none text-[11px] font-mono text-stone-300">
-                            3D size {dims.w} × {dims.h} × {dims.d} mm<ChevronRight size={14} className="ml-auto text-amber-500/60 group-open:rotate-90 transition-transform"/>
+                    <details className="border-y border-line-2 controls-panel group">
+                        <summary className="min-h-11 flex items-center cursor-pointer list-none text-sm text-ink-muted">
+                            3D box size <span className="ml-2 text-ink tabular-nums">{dims.w} × {dims.h} × {dims.d} mm</span><ChevronRight size={14} aria-hidden="true" className="ml-auto text-ink-dim group-open:rotate-90 transition-transform"/>
                         </summary>
-                        <div className="px-3 pb-3">{sizeControls}</div>
+                        <div className="pb-3">
+                            <DimensionControl label="W" val={dims.w} axis="w" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
+                            <DimensionControl label="H" val={dims.h} axis="h" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
+                            <DimensionControl label="D" val={dims.d} axis="d" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
+                            <button onClick={() => onUpdateProduct(product.id, { dimensions: dims, defaultZoom: zoom })} className="w-full mt-2 min-h-11 lg:min-h-9 bg-gold text-gold-ink text-sm font-semibold hover:opacity-90 transition-opacity">Save 3D size</button>
+                        </div>
                     </details>
                 )}
             </div>
@@ -216,6 +224,8 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
    list reads too, so nothing that filtered before stops filtering. */
 const isPhone = () => window.matchMedia('(max-width: 1023px)').matches;
 const QUARANTINE = '__quarantine';   /* never a product type, so no type tab can collide with it */
+/* the wide desk reads the list as a table; below xl the Field / Sold numbers fold under the name, so nothing slides sideways */
+const COLS = 'xl:grid-cols-[minmax(0,1fr)_7rem_4.5rem_5rem_5.5rem]';
 
 export default function ResidentEvilInventory({ inventory, motorists = [], transactions = [], isAdmin, onEdit, onDelete, onAddNew, backgroundSrc, onUploadBg, onUpdateProduct, onInspect, appSettings, searchTerm = '', onSearch }) {
     const [selectedId, setSelectedId] = useState(null);
@@ -254,124 +264,130 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
     const inQ = activeSection === QUARANTINE;
     const currentList = inQ ? quarantine : (sections[activeSection] || []);   /* a search can empty the chosen type: no group, no crash */
     const selectedItem = inventory.find(i => i.id === selectedId) || inventory[0];
+    const lowCount = isAdmin ? inventory.filter(i => threshold.isLowStock(i, appSettings)).length : 0;
+    const quarantineUnits = quarantine.reduce((s, i) => s + (Number(i.damagedStock) || 0), 0);
+
+    /* what each row shows - display only: the vans' load and today's sales put back on the vault give the morning count */
+    const todayStr = getLocalDayKey();
+    const rowNums = (item) => {
+        /* a promo item is counted in pcs; its FIELD is the vans' promo goods (promoCanvas, stage 3); nothing is sold (stage 4 gives) */
+        if (isPromo(item)) {
+            const fieldPcs = motorists.reduce((s, m) => s + (Number((m.promoCanvas || []).find(c => c.productId === item.id)?.qty) || 0), 0);
+            return { vault: item.stock || 0, unit: 'pcs', field: fieldPcs, sold: null, start: null };
+        }
+        let fieldBks = 0;
+        motorists.forEach(m => {
+            const cItem = (m.activeCanvas || []).find(c => c.productId === item.id);
+            if (cItem) fieldBks += convertToBks(cItem.qty, cItem.unit, item);
+        });
+        let soldBks = 0;
+        transactions.filter(t => t.date === todayStr && t.type === 'SALE').forEach(t => {
+            const tItem = (t.items || []).find(i => i.productId === item.id);
+            if (tItem) soldBks += convertToBks(tItem.qty, tItem.unit, item);
+        });
+        const startBks = item.stock + fieldBks + soldBks;
+        return { vault: groupBks(formatAdvancedStock(item.stock, item).bks).replace(/ Bks/, ''), unit: 'Bks', field: fieldBks, sold: soldBks, start: startBks };
+    };
+    const tab = (on) => `h-11 lg:h-10 px-2 -mb-px border-b-2 text-[13px] font-semibold whitespace-nowrap transition-colors ${on ? 'border-gold text-ink' : 'border-transparent text-ink-dim hover:text-ink'}`;
 
     return (
-        <div ref={rootRef} className="flex flex-col lg:flex-row h-auto lg:h-full w-full bg-black overflow-hidden border border-amber-500/20 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.6)] relative">
-            <div className={`${phoneOpen ? 'hidden lg:flex' : 'flex'} w-full lg:w-96 h-auto lg:h-full flex-col shrink-0 border-b lg:border-b-0 lg:border-r border-amber-500/20 bg-black/95 relative z-30 shadow-[10px_0_30px_rgba(0,0,0,0.5)]`}>
-                <div className="p-4 md:p-6 border-b border-amber-500/20">
-                    <h3 className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-200 font-serif italic text-lg md:text-2xl mb-2">Supply Case</h3>
-                    <div className="relative mb-3">
-                        <input value={searchTerm} onChange={e => onSearch?.(e.target.value)} placeholder="Search products..." className="w-full h-11 lg:h-9 bg-black/50 border border-amber-500/30 pl-9 pr-3 text-white text-xs font-mono outline-none focus:border-amber-400"/>
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-500/50 pointer-events-none"/>
+        <div ref={rootRef} className="flex flex-col lg:flex-row h-auto lg:h-full w-full bg-ground border border-line-2 overflow-hidden relative">
+            <div className={`${phoneOpen ? 'hidden lg:flex' : 'flex'} w-full lg:w-[55%] h-auto lg:h-full flex-col shrink-0 border-b lg:border-b-0 lg:border-r border-line-2 bg-ground relative z-30`}>
+                <div className="px-4 lg:px-5 pt-3 lg:pt-4 pb-3 flex flex-wrap items-center gap-x-4 gap-y-3 border-b border-line-2">
+                    <div className="min-w-0">
+                        <h1 className="text-base font-bold text-ink">Master Vault</h1>
+                        {isAdmin && (
+                            <p className="text-xs text-ink-dim tabular-nums">
+                                {inventory.length} products{lowCount > 0 && <> · <span className="text-danger-ink font-semibold">{lowCount} low</span></>}{quarantineUnits > 0 && ` · ${num(quarantineUnits)} in quarantine`}
+                            </p>
+                        )}
                     </div>
-                    {/* the tabs WRAP: a hidden sideways scroll put the last tabs out of sight on a phone (and on the PC once
-                        QUARANTINE joined the row) - his rule, "sideways swipe is inconvenience for phone" */}
-                    <div className="flex gap-1 items-start">
-                        <div className="flex flex-wrap gap-1 min-w-0">
-                            {sectionKeys.map(sec => (<React.Fragment key={sec}>
-                                <button onClick={() => setActiveSection(sec)} className={`h-11 lg:h-8 px-3 text-[11px] font-bold uppercase border whitespace-nowrap ${activeSection === sec ? 'bg-amber-500 text-black border-amber-400' : 'text-amber-200/40 border-amber-900/60'}`}>{sec}</button>
-                                {sec === 'ALL' && isAdmin && (
-                                    <button onClick={() => setActiveSection(QUARANTINE)} className={`h-11 lg:h-8 px-3 flex items-center gap-1 text-[11px] font-bold uppercase border whitespace-nowrap ${inQ ? 'bg-amber-500 text-black border-amber-400' : quarantine.length ? 'text-rose-400 border-rose-900/70' : 'text-amber-200/40 border-amber-900/60'}`}><AlertTriangle size={12}/> Quarantine</button>
-                                )}
-                            </React.Fragment>))}
-                        </div>
-                        {isAdmin && <button onClick={onAddNew} className="ml-auto shrink-0 h-11 lg:h-8 px-3 flex items-center gap-1 border border-amber-500/50 text-amber-400 hover:text-amber-200 text-[11px] font-bold uppercase tracking-widest"><Plus size={14}/> Add</button>}
+                    {isAdmin && <button onClick={onAddNew} className="ml-auto shrink-0 min-h-11 lg:min-h-9 px-4 flex items-center gap-1.5 bg-gold text-gold-ink text-sm font-semibold hover:opacity-90 transition-opacity"><Plus size={15} aria-hidden="true"/> Add product</button>}
+                    <div className="relative basis-full">
+                        <input value={searchTerm} onChange={e => onSearch?.(e.target.value)} placeholder="Search products" aria-label="Search products" className="w-full h-11 lg:h-9 bg-inset border border-line-2 pl-9 pr-3 text-ink text-sm outline-none focus:border-accent-edge placeholder:text-ink-dim"/>
+                        <Search size={15} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-dim pointer-events-none"/>
+                    </div>
+                </div>
+                {/* the tabs WRAP: a hidden sideways scroll put the last tabs out of sight on a phone (and on the PC once
+                    QUARANTINE joined the row) - his rule, "sideways swipe is inconvenience for phone" */}
+                <div className="px-3 lg:px-4 border-b border-line-2">
+                    <div className="flex flex-wrap gap-1 min-w-0">
+                        {sectionKeys.map(sec => (<React.Fragment key={sec}>
+                            <button onClick={() => setActiveSection(sec)} className={tab(activeSection === sec)}>{sec === 'ALL' ? 'All' : sec}<span className="ml-1.5 text-ink-dim tabular-nums">{sections[sec].length}</span></button>
+                            {sec === 'ALL' && isAdmin && (
+                                <button onClick={() => setActiveSection(QUARANTINE)} className={`${tab(inQ)} ${quarantine.length && !inQ ? '!text-danger-ink' : ''}`}>Quarantine<span className="ml-1.5 tabular-nums">{quarantine.length}</span></button>
+                            )}
+                        </React.Fragment>))}
                     </div>
                 </div>
 
-                <div className="lg:flex-1 lg:overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-amber-900/40">
-                    {inQ && <p className="px-2 pt-1 pb-3 text-[11px] font-mono text-rose-300/80">Damaged stock waits here until Stock Opname settles it.</p>}
+                <div className="lg:flex-1 lg:overflow-y-auto">
+                    {inQ && <p className="px-4 lg:px-5 pt-3 pb-2 text-xs text-danger-ink">Damaged stock waits here until Stock Opname settles it.</p>}
+                    {isAdmin && currentList.length > 0 && (
+                        <div className={`hidden xl:grid ${COLS} gap-3 px-5 py-2 border-b border-line-2 text-[11px] font-semibold text-ink-dim sticky top-0 bg-ground z-10`}>
+                            <span>Product</span><span className="text-right">{inQ ? 'Damaged' : 'Vault'}</span><span className="text-right">Field</span><span className="text-right">Sold today</span><span className="text-right">Start of day</span>
+                        </div>
+                    )}
                     {currentList.map(item => {
                         const isLowStock = threshold.isLowStock(item, appSettings);
+                        const sel = selectedId === item.id;
+                        const r = isAdmin ? rowNums(item) : null;
+                        const big = !isAdmin ? '**' : inQ ? num(item.damagedStock) : (r.unit === 'pcs' ? num(r.vault) : r.vault);
+                        const unit = inQ ? (isPromo(item) ? 'pcs' : 'Bks') : r?.unit;
+                        const sub = !isAdmin ? item.type : inQ ? `${item.type || ''}${item.type ? ' · ' : ''}${num(item.damagedStock)} ${unit} damaged`
+                            : [item.type, r.field > 0 && `Field ${num(r.field)}`, r.sold > 0 && `Sold ${num(r.sold)}`].filter(Boolean).join(' · ');
                         return (
-                            <div key={item.id} id={`mv-row-${item.id}`} onClick={() => openProduct(item.id)} className={`p-3 md:p-4 cursor-pointer border mb-2 flex items-center gap-4 transition-all relative ${selectedId === item.id ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_15px_rgba(217,164,65,0.15)]' : 'border-transparent'}`}>
-                                {isLowStock && isAdmin && (<div className="absolute left-0 top-0 bottom-0 w-1.5 bg-rose-600 shadow-[0_0_12px_rgba(220,38,38,1)] z-10"></div>)}
-                                <div className={`w-12 h-12 shrink-0 border flex items-center justify-center bg-black relative ${selectedId === item.id ? 'border-amber-500' : isLowStock && isAdmin ? 'border-rose-500' : 'border-amber-900/30'}`}>
-                                    {item.images?.front || isPromo(item) ? <img src={item.images?.front || (promoGoods(item) ? item.thumb || `/promo/${promoGoods(item)}.png` : promoSkin(item, 'front'))} className="w-full h-full object-cover" /> : <Package size={20} className="text-amber-900/60"/>}
-                                    {isLowStock && isAdmin && <AlertCircle size={14} className="absolute -top-1.5 -right-1.5 text-rose-500 bg-black rounded-full shadow-[0_0_5px_red]" />}
-                                    {isDamagedPack(item) && <HazardMark className="-bottom-1.5 -right-1.5 z-10 w-5 h-5" />}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h4 className={`text-sm md:text-base font-black uppercase tracking-wide truncate ${selectedId === item.id ? 'text-amber-400' : isLowStock && isAdmin ? 'text-rose-400' : 'text-slate-300'}`}>{item.name}</h4>
-                                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                                        {(() => {
-                                            if (!isAdmin) return <p className="text-sm font-mono text-slate-400 font-bold">STK: **</p>;
-                                            if (inQ) return <p className="text-[10px] md:text-xs font-mono font-bold text-rose-400">QUARANTINE: {item.damagedStock} {isPromo(item) ? 'pcs' : 'Bks'}</p>;
-                                            /* a promo item is counted in pcs; its FIELD is the vans' promo goods (promoCanvas, stage 3); nothing is sold (stage 4 gives) */
-                                            if (isPromo(item)) {
-                                                const fieldPcs = motorists.reduce((s, m) => s + (Number((m.promoCanvas || []).find(c => c.productId === item.id)?.qty) || 0), 0);
-                                                return <p className={`text-[10px] md:text-xs font-mono font-bold ${isLowStock ? 'text-rose-500' : 'text-amber-200'}`}>VAULT: {item.stock || 0} pcs{fieldPcs > 0 ? ` · FIELD: ${fieldPcs} pcs` : ''}</p>;
-                                            }
-                                            const todayStr = getLocalDayKey();
-                                            let fieldBks = 0;
-                                            motorists.forEach(m => {
-                                                const cItem = (m.activeCanvas || []).find(c => c.productId === item.id);
-                                                if (cItem) fieldBks += convertToBks(cItem.qty, cItem.unit, item);
-                                            });
-                                            let soldBks = 0;
-                                            transactions.filter(t => t.date === todayStr && t.type === 'SALE').forEach(t => {
-                                                const tItem = (t.items || []).find(i => i.productId === item.id);
-                                                if (tItem) soldBks += convertToBks(tItem.qty, tItem.unit, item);
-                                            });
-                                            const startBks = item.stock + fieldBks + soldBks;
-                                            const damagedBks = item.damagedStock || 0;
-
-                                            return (
-                                                /* the numbers WRAP under the name - they used to slide sideways in every row, at
-                                                   every width (his rule: "sideways swipe is inconvenience for phone") */
-                                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] md:text-xs font-mono font-bold w-full">
-                                                    <span className={`basis-full whitespace-nowrap ${isLowStock ? 'text-rose-500' : 'text-amber-200'}`}>
-                                                        VAULT: {formatAdvancedStock(item.stock, item).bks} ({formatAdvancedStock(item.stock, item).slop})
-                                                    </span>
-                                                    <span className="text-slate-400 whitespace-nowrap">START: {startBks}</span>
-                                                    <span className="text-amber-400 whitespace-nowrap">FIELD: {fieldBks}</span>
-                                                    <span className="text-stone-200 whitespace-nowrap">SOLD: {soldBks}</span>
-                                                    {damagedBks > 0 && (
-                                                        <span className="text-rose-400 whitespace-nowrap">DMG: {damagedBks}</span>
-                                                    )}
-                                                </div>
-                                            );
-                                        })()}
-                                        {isLowStock && isAdmin && (<span className="text-[11px] font-black bg-rose-950/50 text-rose-400 px-1.5 py-0.5 rounded border border-rose-500/50 uppercase animate-pulse tracking-widest shadow-[0_0_8px_rgba(220,38,38,0.4)] mt-1">Low</span>)}
+                            <div key={item.id} id={`mv-row-${item.id}`} onClick={() => openProduct(item.id)}
+                                className={`grid grid-cols-[minmax(0,1fr)_auto_auto] ${isAdmin && !inQ ? COLS : ''} gap-3 items-center px-4 lg:px-5 py-3 min-h-16 cursor-pointer border-b border-line transition-colors ${sel ? 'bg-[color-mix(in_srgb,var(--gold)_9%,transparent)] shadow-[inset_2px_0_0_var(--gold)]' : 'hover:bg-panel'}`}>
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="w-8 h-10 shrink-0 border border-line-2 flex items-center justify-center bg-inset relative">
+                                        {item.images?.front || isPromo(item) ? <img src={item.images?.front || (promoGoods(item) ? item.thumb || `/promo/${promoGoods(item)}.png` : promoSkin(item, 'front'))} className="w-full h-full object-cover" /> : <Package size={16} aria-hidden="true" className="text-ink-dim"/>}
+                                        {isDamagedPack(item) && <HazardMark className="-bottom-1.5 -right-1.5 z-10 w-5 h-5" />}
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h4 className="text-sm font-semibold leading-snug text-ink">
+                                            {item.name}{isLowStock && isAdmin && <span className="ml-2 text-[11px] font-bold text-danger-ink">Low</span>}
+                                        </h4>
+                                        <p className={`text-xs text-ink-dim tabular-nums ${isAdmin && !inQ ? 'xl:hidden' : ''}`}>{sub}</p>
+                                        {isAdmin && !inQ && item.type && <p className="hidden xl:block text-xs text-ink-dim">{item.type}</p>}
                                     </div>
                                 </div>
-                                <ChevronRight size={18} className="lg:hidden shrink-0 text-amber-500/40" />
+                                <div className={`text-right tabular-nums whitespace-nowrap ${inQ ? 'text-danger-ink' : 'text-ink'}`}>
+                                    <span className="font-bold">{big}</span>{isAdmin && <span className="ml-1 text-[11px] text-ink-dim">{unit}</span>}
+                                </div>
+                                {isAdmin && !inQ && <>
+                                    <span className="hidden xl:block text-right text-sm tabular-nums text-ink-muted">{num(r.field)}</span>
+                                    <span className="hidden xl:block text-right text-sm tabular-nums text-ink-muted">{r.sold === null ? '-' : num(r.sold)}</span>
+                                    <span className="hidden xl:block text-right text-sm tabular-nums text-ink-dim">{r.start === null ? '-' : num(r.start)}</span>
+                                </>}
+                                <ChevronRight size={16} aria-hidden="true" className="lg:hidden shrink-0 text-ink-dim" />
                             </div>
                         );
                     })}
-                    {currentList.length === 0 && <p className="text-center text-[10px] text-slate-400 mt-10">{inQ ? 'NO DAMAGED STOCK' : 'NO ITEMS FOUND'}</p>}
+                    {currentList.length === 0 && <p className="text-center text-sm text-ink-dim py-12">{inQ ? 'No damaged stock' : 'No products found'}</p>}
                 </div>
             </div>
 
-            <div className={`${phoneOpen ? 'block' : 'hidden'} lg:block w-full h-auto lg:flex-1 lg:h-full relative bg-black shrink-0`}>
-                <div className="absolute inset-0 z-0">
-                    <img src={backgroundSrc || 'https://www.transparenttextures.com/patterns/dark-leather.png'} className="w-full h-full object-cover opacity-60" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-stone-900/20 to-black/80"></div>
+            <div className={`${phoneOpen ? 'block' : 'hidden'} lg:block w-full h-auto lg:flex-1 lg:h-full lg:overflow-y-auto relative bg-ground`}>
+                {/* hidden on the WRAPPER: theme.css's `button:has(> svg:only-child)` outranks lg:hidden on the button itself */}
+                <div className="lg:hidden relative z-[110]">
+                    <button type="button" onClick={backToList} className="w-full h-11 px-4 flex items-center justify-start gap-1 text-sm font-semibold text-ink-muted border-b border-line-2">
+                        <ChevronLeft size={16} aria-hidden="true"/> Back to the list
+                    </button>
                 </div>
-                <div className="relative z-10 lg:h-full">
-                    {/* hidden on the WRAPPER: theme.css's `button:has(> svg:only-child)` outranks lg:hidden on the button itself */}
-                    <div className="lg:hidden relative z-[110]">
-                        <button type="button" onClick={backToList} className="h-11 px-3 flex items-center gap-1 text-[11px] font-mono font-bold uppercase tracking-widest text-amber-200/80">
-                            <ChevronLeft size={16}/> Back
-                        </button>
-                    </div>
-                    {isAdmin && (
-                        <label className="absolute top-[52px] lg:top-4 right-4 lg:right-[68px] z-50 cursor-pointer">
-                            <div className="w-11 h-11 flex items-center justify-center bg-black/50 rounded-full text-amber-300 border border-amber-500/20"><ImageIcon size={14}/></div>
-                            <input type="file" accept="image/*" onChange={onUploadBg} className="hidden" />
-                        </label>
-                    )}
-                    {selectedItem && (
-                        <ItemInspector 
-                            product={selectedItem} 
-                            isAdmin={isAdmin} 
-                            onEdit={onEdit} 
-                            onDelete={onDelete} 
-                            onUpdateProduct={onUpdateProduct} 
-                            onExpand={onInspect}
-                        />
-                    )}
-                </div>
+                {selectedItem && (
+                    <ItemInspector
+                        product={selectedItem}
+                        isAdmin={isAdmin}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        onUpdateProduct={onUpdateProduct}
+                        onExpand={onInspect}
+                        isLow={threshold.isLowStock(selectedItem, appSettings)}
+                        backgroundSrc={backgroundSrc}
+                        onUploadBg={onUploadBg}
+                    />
+                )}
             </div>
         </div>
     );

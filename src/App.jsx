@@ -5172,7 +5172,7 @@ const handleGitHubMirror = async () => {
 
           
           {activeTab === 'inventory' && (
-          <div className="h-auto min-h-[800px] lg:min-h-0 lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto border-4 border-[var(--duke-frame)] shadow-[0_0_0_1px_var(--duke-lift)] relative flex flex-col">
+          <div className="h-auto lg:h-[calc(100vh-140px)] w-full max-w-7xl mx-auto relative flex flex-col">
 
               {/* searchTerm drives filteredInventory (the Sales Terminal's list reads it too). Its box lives INSIDE the
                   Master Vault's list now (2026-10-02): there were two search boxes, and on the phone this one sat above

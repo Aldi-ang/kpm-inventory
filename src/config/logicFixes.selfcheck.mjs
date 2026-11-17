@@ -10241,13 +10241,23 @@ section('MASTER VAULT ON THE PHONE (2026-10-02)');
   ok('pinch maths on real numbers: fingers twice as far apart doubles the zoom, half halves it, clamped 0.1-5, a zero start changes nothing',
      !!pz && pz(1, 100, 200) === 2 && pz(2, 200, 100) === 1 && pz(3, 100, 300) === 5 && pz(0.2, 100, 10) === 0.1 && pz(1.5, 0, 50) === 1.5);
   ok('phone = the list, then the product on its own screen with a Back; the desk keeps both',
-     /\$\{phoneOpen \? 'hidden lg:flex' : 'flex'\} w-full lg:w-96 h-auto lg:h-full/.test(re) && /\$\{phoneOpen \? 'block' : 'hidden'\} lg:block/.test(re) &&
+     /\$\{phoneOpen \? 'hidden lg:flex' : 'flex'\} w-full lg:w-\[55%\] h-auto lg:h-full/.test(re) && /\$\{phoneOpen \? 'block' : 'hidden'\} lg:block/.test(re) &&
      /<div className="lg:hidden relative z-\[110\]">\s*<button type="button" onClick=\{backToList\}/.test(re) && /onClick=\{\(\) => openProduct\(item\.id\)\}/.test(re) && !/h-\[350px\]/.test(re));
   ok('one search box: the list\'s own drives App\'s searchTerm (the Sales Terminal list still filters), the outer box is gone',
      /<ResidentEvilInventory\s+searchTerm=\{searchTerm\}\s+onSearch=\{setSearchTerm\}/.test(a) && !/placeholder="Search inventory by name\.\.\."/.test(a) &&
      /value=\{searchTerm\} onChange=\{e => onSearch\?\.\(e\.target\.value\)\}/.test(re) && /sections\[activeSection\] \|\| \[\]/.test(re));
-  ok('the row numbers wrap, never slide sideways; 3D size folds under the prices on the phone',
-     /flex flex-wrap items-center gap-x-3 gap-y-1/.test(re) && !/overflow-x-auto custom-scrollbar/.test(re) && /<details className="lg:hidden mt-4/.test(re));
+  /* the professional look (2026-11-17): the numbers are table columns only from xl; below it Field / Sold fold under the name */
+  ok('the row numbers never slide sideways (columns from xl, folded under the name below it); 3D size folds under the prices on every width',
+     re.includes("const COLS = 'xl:grid-cols-[minmax(0,1fr)_7rem_4.5rem_5rem_5.5rem]';") && re.includes("${isAdmin && !inQ ? 'xl:hidden' : ''}") &&
+     !/overflow-x-auto custom-scrollbar/.test(re) && /<details className="border-y border-line-2 controls-panel group">/.test(re) && !/hidden lg:flex flex-col items-end gap-2 controls-panel/.test(re));
+  /* his 2026-11-17 "3D slider is important we need to keep it somewhere, and the background yea we also need it ... professional
+     and not kaku and looks minimalistic but cool" */
+  ok('REGRESSION: the 3D size sliders (W, H, D) and their save stay; the background picture sits faded behind the box with its upload button in that corner, and no outside leather texture loads',
+     (re.match(/<DimensionControl label="[WHD]"/g) || []).length === 3 && re.includes("onClick={() => onUpdateProduct(product.id, { dimensions: dims, defaultZoom: zoom })}") &&
+     re.includes('<img src={backgroundSrc} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover opacity-30') &&
+     /* not the accept="image/*" text: code() reads its slash-star as a comment opening */
+     read('src/components/ResidentEvilInventory.jsx').includes('<input type="file" accept="image/*" onChange={onUploadBg} className="hidden"') && re.includes('backgroundSrc={backgroundSrc}') && re.includes('onUploadBg={onUploadBg}') &&
+     !/transparenttextures\.com/.test(re) && /backgroundSrc=\{appSettings\?\.inventoryBg\}\s+onUploadBg=\{handleInventoryBgSelect\}/.test(a));
   ok('the cropper: Crop & Save pinned below the scroll, every tool kept, 44 px handles, the capybara out of the way',
      /<div className="shrink-0 flex gap-2 p-4 pt-3">/.test(ic) && /Crop &amp; Save/.test(ic) && /min="-180" max="180"/.test(ic) && /r => r - 90/.test(ic) && /r => r \+ 90/.test(ic) &&
      /<DimSlider label="Depth"/.test(ic) && /absolute w-11 h-11 rounded-full/.test(ic) && /\{user && !gateUp && !cropImageSrc && \(/.test(a));
@@ -12416,7 +12426,7 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      exam.includes("images.back || (isPromo(product) ? promoSkin(product, 'back') : null)") && imports(exam, 'promoSkin'));
   ok('REGRESSION: the Master Vault list counts a promo item in pcs, never Bks / Slop / Bal, and shows it no price grid (Rp 0 x4)',
      /* stage 3: its FIELD is the vans' promoCanvas, in pcs */
-     rei.includes('if (isPromo(item)) {') && rei.includes('VAULT: {item.stock || 0} pcs{fieldPcs > 0 ? ` · FIELD: ${fieldPcs} pcs` : \'\'}') && rei.includes('`${product.stock || 0} pcs`') && imports(rei, 'isPromo') &&
+     rei.includes('if (isPromo(item)) {') && rei.includes("return { vault: item.stock || 0, unit: 'pcs', field: fieldPcs, sold: null, start: null };") && rei.includes('`${product.stock || 0} pcs`') && imports(rei, 'isPromo') &&
      rei.indexOf('{!isPromo(product) && (') > 0 && rei.indexOf('{!isPromo(product) && (') < rei.indexOf('{formatRupiah(product.priceDistributor)}') &&
      read('src/components/ExamineModal.jsx').includes("`STOCK: ${product.stock} ${isPromo(product) ? 'pcs' : 'Bks'}`"));
   ok('BEHAVIOUR: a promo item converts to its own count in every unit; a cigarette still multiplies (1 Bal = 200 Bks, 1 Karton = 800 by the defaults)',
@@ -12530,8 +12540,8 @@ section('MASTER VAULT QUARANTINE - the damaged stock gets a tab on the same row 
      rei.includes("{sec === 'ALL' && isAdmin && (") && rei.includes('onClick={() => setActiveSection(QUARANTINE)}') &&
      rei.includes("const QUARANTINE = '__quarantine';") && imports(rei, 'inQuarantine'));
   ok('REGRESSION: a quarantine row shows its damaged Bks, the empty tab says so, and the tab says where it is settled',
-     rei.includes("if (inQ) return <p className=\"text-[10px] md:text-xs font-mono font-bold text-rose-400\">QUARANTINE: {item.damagedStock} {isPromo(item) ? 'pcs' : 'Bks'}</p>;") &&
-     rei.includes("{inQ ? 'NO DAMAGED STOCK' : 'NO ITEMS FOUND'}") && rei.includes('Damaged stock waits here until Stock Opname settles it.'));
+     rei.includes("inQ ? num(item.damagedStock)") && rei.includes("const unit = inQ ? (isPromo(item) ? 'pcs' : 'Bks') : r?.unit;") && rei.includes("{inQ ? 'Damaged' : 'Vault'}") &&
+     rei.includes("{inQ ? 'No damaged stock' : 'No products found'}") && rei.includes('Damaged stock waits here until Stock Opname settles it.'));
   /* the lab frame at 375 (2026-10-26): with QUARANTINE in the row the hidden sideways scroll put PROMO out of sight and
      squeezed the QUARANTINE label to "UARANTIN" - the row wraps now */
   ok('REGRESSION: the tab row wraps - no hidden sideways scroll that hides the last tabs',
