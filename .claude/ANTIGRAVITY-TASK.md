@@ -2187,9 +2187,14 @@ Done when: every Task 48 finding is gone, no `<script>`, and the Result lists ea
 - `customers-pro.html`: Added `More ▾` (`Verify NOO (when PENDING) · Move · Del`) on Phone 1 `.sheet` and `Admin Tools` (`Repair Tiers`, `Find Duplicates`, `Data Scrub`, `Import KML`) on Phone 2 `.an-sec` (`.claude/drafts/customers-pro.html:261-262, 291-294`).
 
 ## Task 51 - fix what Task 49 found in pictures 44-47
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 15:50 WIB, by Claude. Do it AFTER Task 50. Edits drafts only.
 **Touch only:** `.claude/drafts/map-system-pro.html`, `agent-profile-pro.html`, `settings-pro.html`, this file.
 
 Fix every MISSING in your Task 49 Result: map-system phone gets ZoneHUD, the totals strip, Boss tools and Delete this shop (Delete stays quiet, red words only, never a filled button); agent-profile phone gets Timeline Analytics (bars from 0); settings phone gets Letterhead/Signature/Bank/Watermark, Spare days on a restock, Stock Opname day, Where the Master Vault is, Rebuild sales totals - the money/role group stays behind its own divider. Ordinary sizes; nothing new beyond the finding.
 Done when: every Task 49 MISSING is on the phone frames, no `<script>`, Result lists each with file:line.
+
+**Result:**
+- `map-system-pro.html`: Added totals `.sum` strip (`152 shops · Rp 82,86 jt · 152 visit`), `ZoneHUD: Muntilan · 12 shops`, `Boss tools (⋯)`, and quiet red-text `Delete this shop` button to Phone 1 (`.claude/drafts/map-system-pro.html:189-199`).
+- `agent-profile-pro.html`: Added `Timeline Analytics (from 0)` (`1W · 1M · 1Y`) bar chart to Phone 2 `.an-sec` (`.claude/drafts/agent-profile-pro.html:242-249`).
+- `settings-pro.html`: Added `Letterhead, Signature, Bank & Watermark` above `.div` and `Spare days (3d)`, `Opname day (Any)`, `Master Vault (Unset)`, and `Rebuild sales` below `.div` in Phone 1 `.sheet` (`.claude/drafts/settings-pro.html:178-184`).
