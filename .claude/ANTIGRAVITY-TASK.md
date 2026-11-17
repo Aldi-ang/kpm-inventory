@@ -1915,12 +1915,25 @@ Done when: the four BUILD checks are green, list (with the switches named) + pro
 - No amber/blue/indigo/green/emerald fill. Sizes ordinary (his "not too big on pc"): 13-14 px text, 44 px rows, 48 px fields.
 
 ## Task 40 - draft the Reports picture (segment 5) in the v4 look
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 14:06 WIB, by Claude. Writes ONE new file - not an app BUILD.
 **Touch only:** `.claude/drafts/reports-pro.html` (new), this file.
 
 From YOUR Task 24 map (grep "## Task 24") of the Reports screen (`HistoryReportView.jsx` + the Product Performance panel). Decide, and say why in the Result in 3 lines: is Reports a master-detail screen (the day's transactions list + the one transaction in hand) or a read-only report (summary line + one ruled table)? Draw it the v4 way: PC frame + two phones, the summary line, the list/table, the one transaction or product opened. Keep Pull Archive, Context Analytics, date + period pickers, edit/delete for admins (name where they sit). Numbers: product names + prices from the seed; transaction amounts are NOT in the seed - label them "example" and add them up by hand in an HTML comment.
 Done when: the file exists, no script, the comment is there, and the Result lists every Task 24 element with where it sits.
+
+**Result:**
+Reports (`Folders & Ledger`) is **master-detail** because users drill into 7 folder levels and open individual transactions to inspect line items, GPS, proof photos, receipts, and admin Edit/Delete actions. `Context Analytics` is a **read-only report** tab alongside it, showing aggregated KPIs, product performance, offer performance, and package returns. Together they keep ledger inspection separated from period analytics without cramming both into one table.
+
+Where every Task 24 element sits in `.claude/drafts/reports-pro.html`:
+- **Title + Mode Tabs (`Folders & Ledger` / `Context Analytics`)**: PC `.top` header and Phone 1 & 2 `.top` headers (`Ledger` / `Analytics`).
+- **Period picker (`Daily ▾`), Date picker (`2026-11-17`), `Pull Archive` button**: PC `.top .ctl` bar (and `Archive` `.btn quiet` in Phone 1 `.sum`).
+- **Summary strip (receipts/tx count, revenue, net profit, Bks moved)**: PC `.sum` bar, Phone 1 `.sum`, Phone 2 `.sum`.
+- **Search bar (`Search product, value, or store...`) & 7-level folder breadcrumb (`Master HQ › BANDUNG › AMANAH BARU`)**: PC `.list` top (`find` + `.crumb`; full 7-level drilldown noted in `.note`).
+- **Transaction list (`.rows`)**: PC `.list` left pane and Phone 1 `.list` (5 example rows using `demo/seed.json` shop names).
+- **Opened transaction in hand**: PC `.hand` right pane and Phone 1 bottom `.sheet` (store header, product table with `demo/seed.json` names/prices & example quantities/subtotals, Proof/GPS/Payment meta strip, and `.act` buttons: `Proof`, `Receipt`, admin `Edit`, admin `Delete`).
+- **Context Analytics (`ProductPerformancePanel`, Scale 100%, Print PDF, Offer Performance `data-guide="offer-performance"`, Package Returns 7d / Clears 30d `data-guide="package-returns"`)**: Phone 2 `.an-sec`.
+- **Arithmetic check & `DATA AUDIT` edit modal note**: HTML comment inside PC `.hand` (`1,350,000 + 510,000 + 340,000 - 85,000 + 635,000 = Rp 2,750,000`) and `.note` above the PC frame.
 
 ## Task 41 - draft the Customers picture (segment 6) in the v4 look
 **Status:** OPEN
