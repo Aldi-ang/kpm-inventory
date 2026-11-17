@@ -1,4 +1,7 @@
 ## 2026-11-17 14:06 - Stock Opname DONE, LIVE c25814d7 (his pick of picture v4). The job text as it stood:
+
+MOVED 2026-11-17 17:50 from NEXT-SESSION (finished, not the one job):
+SKILLS (2026-11-17 14:20, not KPM): new skills installed (ink-wash-painting, anatomy, six animation reel skills) and A-Brain Skills-Library now mirrors every skill Claude has (claude-installed/ + claude-plugins/, 58b7482c). Teardown was not found at its link. RunComfy is a connector he connects himself. Keep 2+ OPEN; end every reply that queues or closes work with the paste-ready prompt.
 # The one job - Stock Opname in the professional look (segment 3 of 12, deadline 20 November)
 
 His words, 2026-11-17 07:15: *"anyway just skip the demo for now and do the next segment i want to finish all segment before 20 november"*. Fixed order: Master Vault (DONE, LIVE ad0b7d5a), Restock Vault (SKIPPED 12:50 - his *"restock vault is professional enough we can skip that and proceed to the next segment"*; its picture + map are in NEXT-SESSION-archive.md), **Stock Opname**, Receivables & Consignment, Reports, Customers, Sampling, Command Center, Map System, Agent Profile, Audit Logs, Settings. One picture per screen, no A/B/C.
