@@ -1902,3 +1902,30 @@ Done when: the four BUILD checks are green, list (with the switches named) + pro
   2. `src/config/*.selfcheck.mjs`: all 14 scripts exited 0
   3. `npm run build`: exit 0 (`built in 22.82s`)
   4. `node src/config/integration.audit.mjs`: `725 passed, 0 failed, 725 checks`
+
+---
+**Claude review 2026-11-17 14:06 WIB:** 37 + 38 read whole (class names only, every onClick unchanged, nothing Leaflet draws touched, tab strips whole), gates green with them in (3016/0, 14 ok, build 0, audit 725/0), Agent Profile rendered (LEADERBOARD no longer filled, no console errors). LIVE with c25814d7 (Stock Opname professional count). Task 39's Receivables picture: Claude reviews it next.
+
+**THE LOOK HE PICKED (read before drafting any picture below).** Stock Opname took FOUR pictures: v1 cards with every shape different ("format is confusing"), v2 one table with 7 columns ("why is there so many information and writing"), v3 four bare columns ("i feels like there is no effort ... should try researching"), v4 = what he picked: *"i like this one better"*. v4 is `.claude/drafts/stock-opname-pro.html` (commit 2fc27619) - copy ITS tokens, frames, drawn SVG icons (`<symbol>` set, one 1.6 stroke), `.btn` edge buttons. Its rules:
+- **Master-detail when the screen is "work through many things":** a quiet list on the left (one 44 px line: icon, name, one number, one mark), the ONE thing in hand on the right with room. Phone = the list, the thing opens under its row (or a sheet).
+- **One summary LINE on top** (not big-number tiles - those are banned): 3-4 facts in plain words, the money fact in Rupiah.
+- **Few words, real craft:** no explaining sentences on the screen; one or two words per state; but drawn icons, real spacing, a real summary - "simplify" from him means fewer words, never a plainer build.
+- **Every number from `demo/seed.json` or labelled "example"; every badge/state = the app's own rule run by hand, with file:line, in an HTML comment.** No invented people or products.
+- **Every feature the screen has today is on the picture or named in ONE note line.** Phone frames carry every PC feature.
+- No amber/blue/indigo/green/emerald fill. Sizes ordinary (his "not too big on pc"): 13-14 px text, 44 px rows, 48 px fields.
+
+## Task 40 - draft the Reports picture (segment 5) in the v4 look
+**Status:** OPEN
+**Written:** 2026-11-17 14:06 WIB, by Claude. Writes ONE new file - not an app BUILD.
+**Touch only:** `.claude/drafts/reports-pro.html` (new), this file.
+
+From YOUR Task 24 map (grep "## Task 24") of the Reports screen (`HistoryReportView.jsx` + the Product Performance panel). Decide, and say why in the Result in 3 lines: is Reports a master-detail screen (the day's transactions list + the one transaction in hand) or a read-only report (summary line + one ruled table)? Draw it the v4 way: PC frame + two phones, the summary line, the list/table, the one transaction or product opened. Keep Pull Archive, Context Analytics, date + period pickers, edit/delete for admins (name where they sit). Numbers: product names + prices from the seed; transaction amounts are NOT in the seed - label them "example" and add them up by hand in an HTML comment.
+Done when: the file exists, no script, the comment is there, and the Result lists every Task 24 element with where it sits.
+
+## Task 41 - draft the Customers picture (segment 6) in the v4 look
+**Status:** OPEN
+**Written:** 2026-11-17 14:06 WIB, by Claude. Writes ONE new file - not an app BUILD. Do it AFTER Task 40.
+**Touch only:** `.claude/drafts/customers-pro.html` (new), this file.
+
+From YOUR Task 25 map (grep "## Task 25") of `CustomerManager.jsx` (the directory + the customer detail). This IS a master-detail screen: the shop list on the left (one line: name, region, one number, one mark), the shop in hand on the right (its tier, price tier, visit rhythm, the benchmark log, the NOO Verify press for a pending shop). Shop names, regions and tiers from `demo/seed.json` `customers` (pick 8 real ones, one with status PENDING if the seed has one - say so if not). The visit-overdue mark must be what the code's own rule gives for the date you show (cite file:line, run it by hand in the comment).
+Done when: the file exists, no script, the comment is there, and the Result lists every Task 25 element with where it sits.
