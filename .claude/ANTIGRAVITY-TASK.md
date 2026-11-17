@@ -2080,3 +2080,23 @@ Where every Task 36 element sits in `.claude/drafts/settings-pro.html`:
 - **`Security & Data` (`Master backup` 3 rails, `Rank source`, `Master vault PIN`, `Biometric devices`, `Share a dataset`, `Restore`, `Data wipe` Hold×3) & `Architect (Tier 1)` (`Photo storage`, `AchievementTester`, `CareerDevTools`, `LandlordDashboard`, `CrownTransferProtocol`, `Capy disco`)**: Phone 2 `.an-sec` (and PC rail items).
 - **Lockscreen (`!isAdmin`: `DeviceBand`, `opnameDayCard`, `Unlock System`)**: noted in `.note` above PC frame.
 - **Code defaults HTML comment**: inside PC `.hand .in .div`, citing `src/components/SettingsView.jsx:6, 65-67, 85-88, 190, 207, 326, 347, 590, 627, 678, 785, 793, 1017, 1032, 1273-1290, 1530-1546`.
+
+## Task 48 - check the Reports, Customers, Sampling and Command Center pictures (40-43) before Aldi sees them
+**Status:** OPEN
+**Written:** 2026-11-17 15:18 WIB, by Claude. READ-ONLY review - touches nothing but this file.
+**Touch only:** this file.
+
+All 12 pictures now exist. Before Claude shows one to Aldi it must be RIGHT. For each of `.claude/drafts/reports-pro.html`, `customers-pro.html`, `sampling-pro.html`, `command-center-pro.html`:
+1. Every number: where it comes from (`demo/seed.json` path, or marked "example"), and does the arithmetic in its HTML comment add up? Redo each sum by hand.
+2. Every state word or badge (overdue / due soon / ok, ranks, statuses): the code's own rule, file:line, and run it by hand for the date the picture shows. A badge the code would not give = finding.
+3. Every element in YOUR map task for that screen (Tasks 24, 25, 26, 27): is it on the PC frame AND the phone frame? A feature missing on the phone = finding.
+4. The v4 look (read "THE LOOK HE PICKED" above Task 40): 13-14 px text, 44 px rows, no filled amber button, one summary line (no giant hero number), drawn SVG icons, no `<script>`.
+**Result:** one table per picture: Check | Finding or "fine" | file:line or seed path | Severity (WRONG NUMBER / WRONG BADGE / MISSING / LOOK). Count per severity on top.
+
+## Task 49 - the same check for Map System, Agent Profile, Audit Logs and Settings (44-47)
+**Status:** OPEN
+**Written:** 2026-11-17 15:18 WIB, by Claude. Do it AFTER Task 48. READ-ONLY.
+**Touch only:** this file.
+
+Same four checks as Task 48, for `map-system-pro.html` (map Task 31), `agent-profile-pro.html` (Task 32; also: every piece of game art still there), `audit-logs-pro.html` (Task 35), `settings-pro.html` (Task 36; also: every default value in its comment matches the code at the file:line it names).
+**Result:** same table shape, one per picture.
