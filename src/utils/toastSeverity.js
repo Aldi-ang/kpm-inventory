@@ -11,7 +11,7 @@
 
    Both languages, because the messages are written in both. */
 
-const FAILURE = /\b(fail|fails|failed|failure|error|denied|invalid|cannot|can't|couldn't|unable|insufficient|unauthori[sz]ed|revoked|suspended|expired|rejected|incorrect|wrong|missing|gagal|ditolak|kadaluarsa|salah|habis|kurang|menolak)\b|\bcould not\b|\bnot (enough|found|allowed)\b|\bnot\s+(?:been\s+)?\w+ed\b|\bbelum\b(?!\s+selesai\b)|\btidak (bisa|cukup|ditemukan|tersimpan)\b|⚠|❌/i;
+const FAILURE = /\b(fail|fails|failed|failure|error|denied|invalid|cannot|can't|couldn't|unable|insufficient|unauthori[sz]ed|revoked|suspended|expired|rejected|incorrect|wrong|missing|gagal|ditolak|kadaluarsa|salah|habis|kurang|menolak)\b|\bcould not\b|\bnot (enough|found|allowed)\b|\bnot\s+(?:been\s+)?(?:\w+ed|sent)\b|\bbelum\b(?!\s+selesai\b)|\btidak (bisa|cukup|ditemukan|tersimpan)\b|⚠|❌/i;
 
 /* "Is this a failure?" — only a recognised one counts. Three readers:
    - App.jsx triggerCapy: his pick A (2026-10-02) - a failure goes to the top panel ONLY, the
@@ -25,9 +25,13 @@ export function isFailure(message) {
 /* isSuccess - which strips get the self-drawing check (his Framer pick 4, 2026-11-17). Only a line that
    says something WAS done. Plain news ("Your count came back ...") gets no check, and a failure never does:
    "Not saved" mentions "saved" but isFailure claims it first. Toast.jsx is the only reader. */
-const SUCCESS = /\b(saved|submitted|sent|settled|accepted|approved|loaded|returned|added|updated|deleted|removed|restored|recorded|tersimpan|disimpan|terkirim|berhasil|lunas)\b|\bsuccess(fully)?\b|✅|✓/i;
+const SUCCESS = /\b(saved|submitted|sent|settled|accepted|approved|loaded|returned|added|updated|deleted|removed|restored|recorded|moved|reset|cleared|completed?|locked|unlocked|tersimpan|disimpan|terkirim|berhasil|lunas|dibuat|dipindah|diganti|selesai|dihapus)\b|\bsuccess(fully)?\b|✅|✓/i;
 export function isSuccess(message) {
     const text = String(message ?? '').trim();
-    /* "Nothing is sent until you press Submit" names a success word and promises the opposite */
-    return !isFailure(text) && SUCCESS.test(text) && !/\b(nothing|never|until)\b/i.test(text);
+    if (isFailure(text)) return false;
+    /* Check per sentence so "Agus is locked. ... until you unlock it." still gets a check, while
+       "Nothing is sent until you press Submit" or "No ... saved ... yet" does not. */
+    return text.split(/[.!?\n]+/).some(
+        (s) => SUCCESS.test(s) && !/\b(no|not|belum|tidak|gagal|nothing|never|until|walk-in)\b/i.test(s)
+    );
 }

@@ -8,7 +8,7 @@
    news; too wide and ordinary news leaves the capybara for the top panel. */
 
 import { readFileSync } from 'node:fs';
-import { isFailure } from '../utils/toastSeverity.js';
+import { isFailure, isSuccess } from '../utils/toastSeverity.js';
 
 /* isFailure decides which of the 68 mascot-only reports in App.jsx also raise a strip. Too
    narrow and a real failure is announced solely by a bubble that can be walked over; too wide
@@ -145,6 +145,34 @@ console.log('\nthe dialog paints over the toast column, never under it');
     const gateZ = gate ? Number(gate[1]) : NaN;
     report(toastZ < gateZ, `toast column z-[${toastZ}] sits below the dialog z-[${gateZ}]`,
         'a strip paints across the top edge of an open dialog');
+}
+
+/* Task 53/54: gold-check / X classification on real notify() texts */
+console.log('\ngold check vs X vs nothing (Task 53/54)');
+const classify = (m) => (isFailure(m) ? 'X' : isSuccess(m) ? 'CHECK' : 'NOTHING');
+const TASK53_CASES = [
+    ['This is the demo: recovery emails are switched off, so no code is sent.', 'NOTHING'],
+    ['No usual load saved for Agus yet. Set the numbers, then press Save as usual load.', 'NOTHING'],
+    ['"0812" is not a phone number - the receipt was not sent.', 'X'],
+    ['No changes recorded. Did you enter Sisa / Retur data?', 'NOTHING'],
+    ['"Warung Maju" is saved as a walk-in, not a registered shop. Consignment is for registered shops - register it properly first.', 'NOTHING'],
+    ['This shop has no GPS pin saved yet.', 'NOTHING'],
+    ['Rank and badge settings moved into this company\'s own folder.', 'CHECK'],
+    ['AKUN UJI DIBUAT: Agus di Bandung. Hapus lewat Fleet kapan saja.', 'CHECK'],
+    ['Agus DIPINDAH KE Bandung.', 'CHECK'],
+    ['TRANSFER COMPLETE. You will now be logged out. The new owner must log in with Google to claim the Crown.', 'CHECK'],
+    ['MISI 1/5 SELESAI: selesai.', 'CHECK'],
+    ['Vault tries reset for Budi: back to 0 (it was 2). They can try again now.', 'CHECK'],
+    ['Agus moved to BANDUNG. Still in the van: 10 Bks.', 'CHECK'],
+    ['Vault tries reset for Agus: back to 0 (it was 1). They can try again now.', 'CHECK'],
+    ['Vault password reset for Agus. They make a new one the next time they open the vault.', 'CHECK'],
+    ['Agus is locked. agus@demo.com is signed out and stays out until you unlock it.', 'CHECK'],
+    ['Warung Maju may take Paket A again - its count is cleared.', 'CHECK'],
+    ['"Gudang Barat" dihapus dari daftar.', 'CHECK'],
+];
+for (const [msg, expected] of TASK53_CASES) {
+    const got = classify(msg);
+    report(got === expected, `${expected}: ${msg.slice(0, 62)}`, `got ${got}, expected ${expected}`);
 }
 
 console.log('\n' + '='.repeat(58));

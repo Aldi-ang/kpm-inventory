@@ -2261,7 +2261,7 @@ List every `notify(` call in `src/` whose text is a string or template you can r
 
 
 ## Task 54 - BUILD: fix the gold check / X words from Task 53
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 17:55 WIB, by Claude. A small BUILD. Read your own Task 53 Result first.
 **Touch only:** `src/utils/toastSeverity.js`, `src/config/toastSeverity.selfcheck.mjs`, this file.
 
@@ -2273,6 +2273,12 @@ Task 53 found 6 WRONG CHECK and 12 MISSED CHECK lines. Fix them in the two regex
 Done when: `node src/config/toastSeverity.selfcheck.mjs` exits 0, `node src/config/logicFixes.selfcheck.mjs` exits 0, and the Result has the new counts (CHECK n / X n / NOTHING n / WRONG CHECK 0 / MISSED CHECK 0 / WRONG X 0). Commit as `Antigravity: Task 54 ...`. Never push.
 
 **Result:**
+- Added all 18 Task 53 cases to `src/config/toastSeverity.selfcheck.mjs:150-175`; ran `node src/config/toastSeverity.selfcheck.mjs` BEFORE fixing `toastSeverity.js` and observed `55 passed, 18 failed, 73 checks` (exit 1).
+- Updated `src/utils/toastSeverity.js:14, 28-35`: added `sent` to `not (?:been )?(?:\w+ed|sent)` in `FAILURE`, added `moved|reset|cleared|completed?|locked|unlocked|dibuat|dipindah|diganti|selesai|dihapus` to `SUCCESS`, and checked per sentence in `isSuccess` so negations (`no|not|belum|tidak|gagal|nothing|never|until|walk-in`) cancel the check in that sentence without hiding a multi-sentence lock/save.
+- Re-ran checks AFTER the fix:
+  - `node src/config/toastSeverity.selfcheck.mjs`: `73 passed, 0 failed, 73 checks` (exit 0)
+  - `node src/config/logicFixes.selfcheck.mjs`: `3019 passed, 0 failed, 3019 checks` (exit 0)
+  - New Task 53 sweep counts: `CHECK 33 / X 213 / NOTHING 107 / WRONG CHECK 0 / MISSED CHECK 0 / WRONG X 0` *(43 bare-variable `notify(msg)` calls skipped)*.
 
 ## Task 55 - read-only: where the Receivables blocks sit, for the cut-and-place build
 **Status:** OPEN
