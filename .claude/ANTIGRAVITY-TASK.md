@@ -2042,3 +2042,19 @@ Where every Task 32 element & piece of game art sits in `.claude/drafts/agent-pr
 - **`Live Financial Matrix` ruled table & `Timeline Analytics` (`1W · 1M · 1Y` bars from 0)**: PC `.grid2` inside `.hand .in`.
 - **`Operator Credentials` / `Service Record` (`Save Intel`) & Modals (`Customize Avatar`, `Cropper`, `Leaderboard`, `Rank & EXP Architecture`, `Achievement Config`, `Grant Award`)**: Phone 2 `.an-sec` and PC `.top .tabs`.
 - **Arithmetic check**: HTML comment inside PC `.hand .in` verifying Hartono Susilo's `Rp 82.860.000` split and the 5-agent directory total (`Rp 127.560.000`).
+
+## Task 46 - draft the Audit Logs picture (segment 11) in the v4 look
+**Status:** OPEN
+**Written:** 2026-11-17 15:05 WIB, by Claude. Writes ONE new file - not an app BUILD. Read "THE LOOK HE PICKED" (above Task 40) first.
+**Touch only:** `.claude/drafts/audit-logs-pro.html` (new), this file.
+
+From YOUR Task 35 map of the Audit Logs screen. Master-detail: the log list on the left (one quiet line per entry: time, who, what, one word for the kind), the entry in hand on the right (what changed, before -> after, who, when, which screen). Filters (person, kind, date) as ONE quiet bar above the list, never a block of dropdowns. Every filter, export and button Task 35 lists must still be somewhere. People from `src/config/demoLogins.js`; any entry not in `demo/seed.json` is marked "example". Ordinary sizes (13-14 px text, 44 px rows), drawn SVG icons, no filled amber button.
+Done when: the file exists, no `<script>`, PC 1440 + phone 390 frames in it, and the Result lists every Task 35 element with where it sits.
+
+## Task 47 - draft the Settings picture (segment 12) in the v4 look
+**Status:** OPEN
+**Written:** 2026-11-17 15:05 WIB, by Claude. Writes ONE new file - not an app BUILD. Do it AFTER Task 46.
+**Touch only:** `.claude/drafts/settings-pro.html` (new), this file.
+
+From YOUR Task 36 map of the Settings screen. Master-detail: the setting groups on the left (one line each: icon, name, one-word state), the group in hand on the right (its switches and fields, each with its CURRENT value from the code's default - give file:line in an HTML comment). Anything that changes money, roles or tiers stays visibly separate from look-and-feel switches (a quiet divider + its own heading). Lite Mode switch must be in it (it gives up motion, never colour). Every element Task 36 lists must still be somewhere. Ordinary sizes, drawn SVG icons, no filled amber button.
+Done when: the file exists, no `<script>`, PC 1440 + phone 390 frames in it, the defaults comment is there, and the Result lists every Task 36 element with where it sits.
