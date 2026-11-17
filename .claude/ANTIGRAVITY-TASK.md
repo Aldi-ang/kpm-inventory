@@ -1723,8 +1723,63 @@ Do NOT change the code. Done when: four tables + filled-button list + the loadin
   - **Recent System Activity (`AuditVaultView.jsx:188`, `src/hooks/useDatabaseSync.js:100`):** `auditLogs` is subscribed via `onSnapshot(query(collection(db, basePath, 'audit_logs'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')))` — **no `limit()`** (loads all `audit_logs` from the last 7 days), then JSX renders `auditLogs.slice(0, 8)`.
 
 ## Task 36 - the same map for Settings (segment 12 of 12)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 13:10 WIB, by Claude. Same rules as above (read-only, touch only this file). Do it AFTER Task 35.
 
 Exactly Task 20's four tables for the `activeTab === 'settings'` screen (App.jsx ~L5701 - find the component and every sub-panel it opens). Every setting that writes gets **Yes** with collection + field, and which tier may change it (the check in the code, file:line). Demo guide marks; selfcheck pins; the filled-button list (same colour list as Task 35). Also list every toggle/switch and what it looks like today (a filled pill? a checkbox?) - the redesign needs one switch style.
 Do NOT change the code. Done when: four tables + filled-button list + the switch list in the Result.
+
+**Result:** Component rendered at `src/App.jsx:5701-5720` is `SettingsView` (`src/components/SettingsView.jsx`).
+
+### 1. Every view / tab / sub-panel
+| view / sub-panel | PC vs phone | what is on it | state / props that control it | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| Lockscreen (`!isAdmin`) | Both (max-w-3xl) | `DeviceBand` (`Graphics` Full/Lite, `Language · Bahasa`), `opnameDayCard` (if `isSystemOwner \|\| canSetOpnameDay(userRole)`), `Restricted Access` + `Unlock System` (if `hasClearance(userRole, 'view_settings')`) | `isAdmin`, `userRole`, `isSystemOwner`, `isLiteMode`, `appSettings.opnameDay` | `src/components/SettingsView.jsx:42-93, 201-256` |
+| Command Center header & nav | PC left rail `md:w-56`; phone stacked nav | Clearance line (`Tier 1 (Overseer)` / `Tier 2 (Manager)`), `Reset indicators`, `Lock terminal`, up to 5 nav tabs (`General & Brand`, `Tiers & Logic`, `Customer access`, `Security & Data`, `Architect (Tier 1)`) | `activeTab`, `isSystemOwner`, `userRole`, `navTabs` | `src/components/SettingsView.jsx:357-423` |
+| `General & Brand` (`general`) | Both | `DeviceBand`, `Letterhead`, `Signature & bank`, `Receipt watermark` + `<ReceiptPreview>` portal modal, `Lost pita cukai fine` (`isSystemOwner`), `What a lost or damaged pack costs the salesman` (`isSystemOwner`), `Spare days on a restock` (`isSystemOwner`), `Rebuild the sales totals` (`isSystemOwner && handleRebuildSalesStats`), `Where the Master Vault is` (`isSystemOwner`), `opnameDayCard`, `Mascot Size` slider, `Mascot Dialogue` dropdown/add/edit/delete | `activeTab === 'general'`, `isSystemOwner`, `showReceiptPreview`, `capyOut`, `pickedMsg`, `editingMsgIndex`, `editCompanyProfile`, `appSettings` | `src/components/SettingsView.jsx:430-880` |
+| `Tiers & Logic` (`tiers`) | Both (desktop drag matrix table vs mobile chip + `.kpm-permlist`) | `Customer tiers` (add/export/import, color/name/emoji-or-image/delete), `<PermissionMatrixEditor>` (feature toggles, `AuthoritySelect` for Fleet/Customers/Reporting, add/rename/reorder/delete rank, `Deploy matrix`), `Fleet paintbrush` (`DEVELOPER`/`ADMIN`/`COMPANY_OWNER`), `Performance tier logic` (`isSystemOwner`, omset/volume rules + `Save logic`) | `activeTab === 'tiers'`, `tierSettings`, `tierRules`, `isSavingTierRules`, `userRole`, `isSystemOwner` | `src/components/SettingsView.jsx:885-1170, 1664-2197` |
+| `Customer access` (`access`) | Both (`isSystemOwner \|\| isTopTier(userRole)`) | `<CustomerAccessPanel>` (folder access per team member) | `activeTab === 'access'`, `customers`, `motorists`, `customerAccess` | `src/components/SettingsView.jsx:364, 1172-1175` |
+| `Security & Data` (`security`) | Both | `Master backup` (Recovery/USB/Cloud rails + `Run master backup`), `Rebuild career history` + `Rank source` (`DEVELOPER`/`ADMIN`/`COMPANY_OWNER`), `Master vault PIN` (`Change PIN`), `Biometric devices` (`Authorise this device`, `Revoke`), `Share a dataset` (Export/Import products/customers/both), `Restore from a backup file`, `Data wipe` (`<HoldButton>` x3) | `activeTab === 'security'`, `sessionStatus`, `registeredPasskeys`, `auditLogs`, `userRole` | `src/components/SettingsView.jsx:1180-1470` |
+| `Architect (Tier 1)` (`architect`) | Both (`isSystemOwner`) | `<AchievementTester>`, `<CareerDevTools>`, `Photo storage` switch, `<LandlordDashboard>`, `Crown transfer` -> `<CrownTransferProtocol>` modal, `Capy disco protocol` | `activeTab === 'architect'`, `isSystemOwner`, `showCrownTransfer`, `isDiscoMode` | `src/components/SettingsView.jsx:1475-1630` |
+
+### 2. Every setting that writes, what it writes & which tier may change it
+| setting / press | tier check in code | writes (Firestore collection + field / local) | file:line |
+| :--- | :--- | :--- | :--- |
+| `Graphics` (`Full` / `Lite`) & `Language · Bahasa` | Everyone (above lockscreen) | `localStorage` only (`writeLiteMode`, `setLang`), no Firestore write | `src/components/SettingsView.jsx:42-93` |
+| `Stock Opname day` (`writeOpnameDay`) | `isSystemOwner \|\| canSetOpnameDay(userRole)` (Tier 3+) | **Yes** — `setDoc(..., { merge: true })` `artifacts/${appId}/users/${userId}/settings/general`: `opnameDay` | `src/components/SettingsView.jsx:190-225` |
+| `Letterhead` (`Save letterhead`) | `isAdmin` (vault unlocked) | **Yes** — `handleSaveCompanyProfile` (`App.jsx`): `settings/general` company `name`, `address`, `phone` | `src/components/SettingsView.jsx:453-467` |
+| `Signature & bank` (`Signed by`, `Bank details`) | `isAdmin` | **Yes** — `setDoc(..., { merge: true })` `artifacts/${appId}/users/${user.uid}/settings/general`: `adminDisplayName`, `bankDetails` | `src/components/SettingsView.jsx:484-503` |
+| `Receipt watermark` (`Choose & crop`) | `isAdmin` | **Yes** — `handleMascotSelect` (`App.jsx`): crops & saves `settings/general.receiptWatermark` | `src/components/SettingsView.jsx:532-535` |
+| `Lost pita cukai fine` (switch + `Rupiah per stamp`) | `isSystemOwner` (`L565`) | **Yes** — `setDoc(..., { merge: true })` `artifacts/${appId}/users/${user.uid}/settings/general`: `cukaiReturn`, `cukaiFinePrice` | `src/components/SettingsView.jsx:348-354, 565-599` |
+| `Penalty price tier` (`Charge from this price list`) | `isSystemOwner` (`L608`) | **Yes** — `setDoc(..., { merge: true })` `artifacts/${appId}/users/${user.uid}/settings/general`: `penaltyPriceTier` | `src/components/SettingsView.jsx:608-641` |
+| `Spare days on a restock` (company default + per-branch) | `isSystemOwner` (`L658`) | **Yes** — `setDoc(..., { merge: true })` `artifacts/${appId}/users/${user.uid}/settings/general`: `restockBufferDays`, `restockBufferPerBranch` | `src/components/SettingsView.jsx:658-711` |
+| `Where the Master Vault is` (`writeMasterPlace`) | `isSystemOwner` (`L749`) | **Yes** — reads `branches/${place}/inventory` (`getDocs`), `setDoc(..., { merge: true })` `artifacts/${appId}/users/${user.uid}/settings/general`: `masterVaultPlace` | `src/components/SettingsView.jsx:328-342, 749-773` |
+| `Mascot Size` slider & `Mascot Dialogue` (Add/Save/Delete) | `isAdmin` | **Yes** — `Size`: `setDoc` `settings/general.mascotScale`; `Dialogue`: `App.jsx` handlers write `settings/general` mascot messages | `src/components/SettingsView.jsx:792-875` |
+| `Customer tiers` (Add/Import/Colour/Name/Kind/Badge/Delete) | `isAdmin` | **Yes** — `handleSaveTiers` (`App.jsx`): writes `tierSettings` | `src/components/SettingsView.jsx:909-1002` |
+| `PermissionMatrixEditor` (`Deploy matrix`) | `userRole === 'DEVELOPER' \|\| 'ADMIN' \|\| 'COMPANY_OWNER'` (`L1665`) | **Yes** — `setDoc` (full replace) on `artifacts/${appId}/users/${userId}/settings/permission_matrix` AND `appSettings/permission_matrix`: `matrix`, `tiers`, `updatedAt` | `src/components/SettingsView.jsx:1664-1665, 1896-1916` |
+| `Fleet paintbrush` | `userRole === 'DEVELOPER' \|\| 'ADMIN' \|\| 'COMPANY_OWNER'` (`L1020`) | **Yes** — `setDoc(..., { merge: true })` `artifacts/${appId}/users/${user.uid}/settings/general`: `enableFleetPaintbrush` | `src/components/SettingsView.jsx:1020-1062` |
+| `Performance tier logic` (`Save logic`) | `isSystemOwner` (`L1067`) | **Yes** — `setDoc` `artifacts/${appId}/users/${userId}/appSettings/tierRules`: `rules` | `src/components/SettingsView.jsx:165-184, 1067-1166` |
+| `Customer access` (`CustomerAccessPanel`) | `isSystemOwner \|\| isTopTier(userRole)` (`L364, L1172`) | **Yes** — handled in `CustomerAccessPanel.jsx` (`settings/customer_access`) | `src/components/SettingsView.jsx:1172-1175` |
+| `Rank source` (`writeCareerLedger`) | `userRole === 'DEVELOPER' \|\| 'ADMIN' \|\| 'COMPANY_OWNER'` (`L1267`) | **Yes** — `setDoc(..., { merge: true })` `artifacts/${appId}/users/${user.uid}/settings/general`: `useCareerLedger` | `src/components/SettingsView.jsx:1267-1296, 1655-1661` |
+| `Master vault PIN`, `Biometric devices`, `Restore`, `Data wipe`, `Rebuild sales/career` | `isAdmin` (`Rebuild career` = `DEVELOPER`/`ADMIN`/`COMPANY_OWNER`; `Rebuild sales` = `isSystemOwner`) | **Yes** — delegated to `App.jsx` callbacks (`handleChangePin`, `handleRegisterPasskey`, `handleRemovePasskey`, `handleRestoreData`, `handleWipeData`, `handleRebuildSalesStats`, `handleRecalculateCareer`) | `src/components/SettingsView.jsx:722-745, 1239-1468` |
+| `Photo storage` (`writePhotoStorage`) & Architect tools | `isSystemOwner` (`L1475`) | **Yes** — `Photo storage`: `setDoc` `settings/general.usePhotoStorage`; sub-panels: `<CareerDevTools>`, `<LandlordDashboard>`, `<CrownTransferProtocol>` write their own collections | `src/components/SettingsView.jsx:1475-1605, 1641-1647` |
+
+### 3. Logic computed inside JSX / render
+| computation | what it computes | file:line |
+| :--- | :--- | :--- |
+| `watermarkSrc`, `pick`, `opnameDay`, `masterPlace`/`masterOptions`, `cukaiOn` | Fallbacks/clamps for watermark, mascot message index, opname day, warehouse options (`warehouseList`), cukai state | `src/components/SettingsView.jsx:128, 190, 285, 326-327, 347` |
+| `isRecoverySecure`, `isUsbSecure`, `isCloudSecure` | Merges `sessionStatus` with `auditLogs` (`DATABASE_MIRROR`/`MASTER_BACKUP`/`isSavePoint` after `resetThreshold`) and `localStorage.last_usb_backup` (7-day window) | `src/components/SettingsView.jsx:259-315` |
+| `navTabs` & `PermissionMatrixEditor` `fleetAccessOf` | Builds tier-filtered tab list; resolves effective fleet access via `defaultFleetAccess(tierId)` | `src/components/SettingsView.jsx:357-368, 1774-1775` |
+
+### 4. What can move out first & test pins
+| candidate to extract | safe to move first? | `logicFixes.selfcheck.mjs` / `integration.audit.mjs` exact line pins |
+| :--- | :--- | :--- |
+| Individual `.kpm-mod` sections or `PermissionMatrixEditor` | **Carefully** — many pins check exact prop/label/handler/attribute strings (`data-kpm-del`, `isSystemOwner && handleRebuildSalesStats`, matrix feature IDs/labels, `shelfHolding`) | `logicFixes.selfcheck.mjs`: `1094`, `1665`, `2145`, `3245`, `4795`, `5198-5214`, `6582`, `8209`, `9814-9819`, `11694`, `11756`, `11996`, `12628-12629`, `12959`, `13007`, `13022`, `13232`, `13286`, `13464`, `13559`, `13714`, `13859`; `integration.audit.mjs`: `1564`, `1838`, `3113`, `3117`, `3167`, `3237` |
+
+### 5. Demo guide marks, filled buttons, and switches today
+- **Demo guide marks (`data-mission=` / `data-guide=` / `data-mark=`):** none in `src/components/SettingsView.jsx`.
+- **Filled buttons (`bg-gold`, `bg-[var(--gold)]`, `bg-orange-*`, `bg-amber-*`, `from-amber-*`, `bg-blue-*`, `bg-indigo-*`, `bg-green-*`, `bg-emerald-*`):** **0 filled buttons** (only `L402` comment mentions the removed `bg-blue-600`; all buttons already use `.kpm-btn` / `.kpm-switch` / `.kpm-toggle`).
+- **All toggles/switches today (3 distinct styles):**
+  1. **2-button segmented control (`.kpm-switch` with `aria-pressed`):** `Graphics` (`Full`/`Lite`, `L63-68`), `Language · Bahasa` (`English`/`Indonesia`, `L85-88`), `Pita cukai at EOD` (`Collected at EOD`/`Off`, `L582-585`), `Rank source` (`Last 7 days`/`Career history`, `L1285-1294`), `Photo storage` (`Database`/`Cloud · Blaze`, `L1541-1550`).
+  2. **Worded toggle button with icon (`.kpm-btn` + `<ToggleLeft>`/`<ToggleRight>`):** `Fleet paintbrush` (`Turn it off`/`Turn it on`, `L1049-1059`).
+  3. **CSS sliding switch pill (`.kpm-toggle` + `<span className="kpm-sw">` with `aria-pressed`):** `PermissionMatrixEditor` permission rows (mobile `L2007-2011` and desktop `L2111-2115`).
