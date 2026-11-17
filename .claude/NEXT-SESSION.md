@@ -20,4 +20,5 @@ BEFORE ANY PUSH: read every `Antigravity:` commit in `git log origin/phase0-soli
 
 PARKED until after 20 November (his call): the demo (step 3 Dika A/C pick, Task 17's copy fixes, Tasks 18-19 results); the two Fleet fixes (Task 15's code).
 
-ANTIGRAVITY - DOES ~75% (his 2026-11-17 08:58). 19-39 DONE. OPEN: 40 (Reports picture, v4 look), 41 (Customers picture, v4 look). Review them like Task 34/39: seed numbers, each badge's own rule, phone keeps every feature. Keep 2+ OPEN; end every reply that queues or closes work with the paste-ready prompt.
+ANTIGRAVITY - DOES ~75% (his 2026-11-17 08:58). 19-41 DONE. 40 (`.claude/drafts/reports-pro.html`, 9b9fb033) and 41 (`.claude/drafts/customers-pro.html`, 055811ab) are LOCAL and NOT REVIEWED - .claude/ files only, so a push carrying them changes nothing live, but read them before showing him (seed numbers, each badge's own rule, phone keeps every feature, the v4 look). OPEN: 42 (Sampling picture), 43 (Command Center picture).
+SKILLS (2026-11-17 14:20, not KPM): new skills installed (ink-wash-painting, anatomy, six animation reel skills) and A-Brain Skills-Library now mirrors every skill Claude has (claude-installed/ + claude-plugins/, 58b7482c). Teardown was not found at its link. RunComfy is a connector he connects himself. Keep 2+ OPEN; end every reply that queues or closes work with the paste-ready prompt.

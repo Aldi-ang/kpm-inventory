@@ -1955,3 +1955,19 @@ Where every Task 25 element sits in `.claude/drafts/customers-pro.html`:
 - **Grosir requests (`Keep Retail` / `Confirm Grosir`), Shops waiting for a salesman (`Pick roster agent ▾` + `Give`), and Add/Edit Customer modal (`data-guide="photo"` shutter, `Auto-Find`, `Save`)**: Phone 2 `.an-sec` (and PC `Grosir & Agents` tab / modal note).
 - **Admin Tools (`Repair Tiers`, `Find Duplicates`, `Data Scrub`, `Import KML`) & Duplicate Report & View-only notice**: PC `Admin Tools` tab and `.note` above the PC frame.
 - **Visit-overdue hand calculation**: HTML comment inside PC `.hand` citing `src/components/MapMissionControl.jsx:1887-1904` and `src/components/CustomerManager.jsx:1330`.
+
+## Task 42 - draft the Sampling picture (segment 7) in the v4 look
+**Status:** OPEN
+**Written:** 2026-11-17 14:37 WIB, by Claude. Writes ONE new file - not an app BUILD. Read "THE LOOK HE PICKED" (above Task 40) first.
+**Touch only:** `.claude/drafts/sampling-pro.html` (new), this file.
+
+From YOUR Task 26 map (grep "## Task 26") of `src/components/SamplingManager.jsx`. Sampling = free samples given out of stock. Decide in 3 lines in the Result: master-detail (the list of sample runs / folders + the one in hand) or summary line + one ruled table, and why. Every press that takes stock out must be visible and named on the picture. Product names from the seed; sample quantities are not in the seed - label "example" and add them up in an HTML comment.
+Done when: the file exists, no script, the comment is there, and the Result lists every Task 26 element with where it sits.
+
+## Task 43 - draft the Command Center picture (segment 8) in the v4 look
+**Status:** OPEN
+**Written:** 2026-11-17 14:37 WIB, by Claude. Writes ONE new file - not an app BUILD. Do it AFTER Task 42.
+**Touch only:** `.claude/drafts/command-center-pro.html` (new), this file.
+
+From YOUR Task 27 map (grep "## Task 27"). The Command Center is the owner's first screen: the "LIVE FINANCIAL MATRIX" (today's gross revenue, active canvas value, consignment risk) and the panels under it. The craft floor bans the hero-metric template (big number + small label + supporting stats): show the day as ONE summary line and the money as a ruled breakdown or one honest chart drawn to scale (bars from zero), not giant numbers. Today's lab value is Rp 82.860.000 omset (seen 2026-11-17 13:31) - use it, label the rest "example", add every total up in an HTML comment.
+Done when: the file exists, no script, the comment is there, and the Result lists every Task 27 element with where it sits.
