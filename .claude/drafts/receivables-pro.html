@@ -161,8 +161,12 @@ td .it{font-size:12px;color:var(--ink-dim);margin-top:2px}
 .po .btns{display:flex;gap:8px}
 .po .btns .btn{flex:1}
 
-@media (max-width:980px){.work{grid-template-columns:1fr}.list{border-right:0;border-bottom:1px solid var(--line)}.facts{grid-template-columns:repeat(2,minmax(0,1fr))}.facts>div:nth-child(2){border-right:0}.facts>div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
-@media (max-width:700px){.pcwrap{display:none}.aging{grid-template-columns:1fr}}
+@media (max-width:0px){.work{grid-template-columns:1fr}.list{border-right:0;border-bottom:1px solid var(--line)}.facts{grid-template-columns:repeat(2,minmax(0,1fr))}.facts>div:nth-child(2){border-right:0}.facts>div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+/* on a phone the PC frame stays visible as a small 1240 px copy, so he can judge the PC view from his phone */
+@media (max-width:1100px){.pcwrap{overflow:hidden}.pcwrap .frame{width:1240px;zoom:calc((100vw - 34px) / 1240px)}}
+@media (max-width:1100px) and (min-width:0){.pcwrap .frame{zoom:.75}}
+@media (max-width:900px){.pcwrap .frame{zoom:.6}}
+@media (max-width:700px){.pcwrap .frame{zoom:.29}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
 
