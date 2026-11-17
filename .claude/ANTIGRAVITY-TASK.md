@@ -808,3 +808,79 @@ Do NOT change the code. Done when: three tables (tier x line truth, name mismatc
 |---|---|---|
 | **PC (1280)** | `BiohazardTheme.jsx:927` runs `setActiveTab(item.id); setIsMobileMenuOpen(false);`. `html.kpm-tour` keeps the rail open (`theme.css:2030, 2055, 2080, 2101, 2114, 2311`). | **Stays on same item** (`tour` index only advances on `LANJUT` at `DemoMission.jsx:272`). **Bug if user clicks `SWITCH` mid-tour:** `items` in `DemoMission.jsx:297-298` depends only on `[touring]`, not on `me?.tier`, so after switching T2 -> T6 `items` still holds T2's missing marks (e.g. `dashboard`), `aim()` falls back to `.kpm-rail-totem` (`v.alt = true`), and `LANJUT` disappears. |
 | **Phone (390)** | `BiohazardTheme.jsx:927` runs `setActiveTab(item.id); setIsMobileMenuOpen(false);`, **closing the drawer** (`translate-x-full`, `BiohazardTheme.jsx:820`). | **Stays on same item, loses `LANJUT`:** next `look()` (`DemoMission.jsx:176-199`) sees `[data-mark]` off-screen, falls back to `[aria-label="Open navigation"]` (`v.alt = true`), hides `LANJUT` (`DemoMission.jsx:272`), and asks `"Buka menu dulu: tekan tombol ini."` again. |
+
+## Task 18 - every guide beat in steps 1-4: is its target on the page in the doer's DEFAULT view?
+**Status:** DONE
+**Written:** 2026-11-17 07:20 WIB, by Claude. Same rules as above (read-only, touch only this file, commit it alone, "Antigravity:").
+
+Aldi found step 3's "Pilih DIKA SAPUTRA." with Dika nowhere on the screen. Cause: Fleet & Roster shows ONE area at a time to a viewer who can see several (`src/FleetCanvasManager.jsx` ~L1449: `place = rosterPlace || the selected person's area || keys[0]`, areas A-Z), so the owner and Aldi's own T1 account open on BANDUNG while Dika is under HEADQUARTERS. Hendra (T4, the step's doer) sees one area and is fine. Find every other beat like it.
+For each beat of GUIDE steps 1-4 (`src/config/demoMission.js`), for TWO logins - the step's doer (`STEPS[n].who`, `src/config/demoLogins.js`) and T1 (Aldi's own account: `const mine = isT1 || ...` in `src/components/DemoMission.jsx`, so T1 is guided through every step; T1 sees what the owner sees) - on the BIG demo company (`api/_demoCompany.js`):
+- Is the beat's target in the page when the visitor arrives in the screen's default state (default tab, filter, area / team / date, sort, list length or virtualisation, folded sections)? Name the state and its default (file:line).
+- If not: what must the visitor press first, and the smallest guide-only fix (one more target in the beat's `at` list with its own line, plus the mark to add on that control). Never a change to the screen's default for real users.
+Do NOT change the code. Done when: one table per step (beat, login, in the page yes/no, why with file:line, fix).
+
+**Result:**
+
+### Step 1 (`Restock Vault` — Produksi -> Master Vault; doer = `T2` Owner, also `T1`)
+| Beat (`demoMission.js:60-66`) | Login | In page by default? | Why (`file:line`) | Fix |
+|---|---|---|---|---|
+| 1. `UNLOCK` | T2, T1 | **Yes** | Vault starts locked (`!isAdmin`); `[data-guide="unlock"]` (`App.jsx:5105` on locked vault tab) or `.kpm-rail-totem` (`BiohazardTheme.jsx:831`) is visible. | None |
+| 2. `nav('restock_vault', ...)` | T2, T1 | **Yes** | `restock_vault` is in `visibleMenu` for T1/T2 (`permissions.js:183,185`); `.kpm-rail-totem` / `[aria-label="Open navigation"]` / `[data-mark="restock_vault"]` (`BiohazardTheme.jsx:831,641,925`). | None |
+| 3. `[data-mission="1"]` (`MASUK`) | T2, T1 | **Yes** (already `done`) | `RestockVaultView.jsx:185` defaults `viewMode = 'in'`, so `data-mission="1"` (`1501`) already has `aria-selected="true"` once unlocked. | None |
+| 4–8. `asal`, `tujuan`, `goods`, `cart`, `save` | T2, T1 | **Yes** | All five render in `viewMode === 'in'` (`RestockVaultView.jsx:88, 1843, 2010, 2198`). | None |
+
+### Step 2 (`Restock Vault` — Master Vault -> Cabang; doer = `T2` Owner, also `T1`)
+| Beat (`demoMission.js:67-72`) | Login | In page by default? | Why (`file:line`) | Fix |
+|---|---|---|---|---|
+| 1. `UNLOCK` | T2, T1 | **Yes** | Same as Step 1 (`BiohazardTheme.jsx:831`, `App.jsx:5105`). | None |
+| 2. `nav('restock_vault', ...)` | T2, T1 | **Yes** | Same as Step 1 (`BiohazardTheme.jsx:925`). | None |
+| 3. `[data-mission="2"]` (`KIRIM`) | T2, T1 | **Yes** | `RestockVaultView.jsx:185` defaults to `'in'`, so `KIRIM` (`1501`) is visible and unselected; tapping it switches to `'out'`. | None |
+| 4–7. `tujuan`, `goods`, `cart`, `save` | T2, T1 | **Yes** | All four render once `viewMode === 'out'` (`RestockVaultView.jsx:88, 1843, 2010, 2198`). | None |
+
+### Step 3 (`Fleet & Roster` — Muat ke tas Dika; doer = `T4` Hendra, also `T1`)
+| Beat (`demoMission.js:69-72`) | Login | In page by default? | Why (`file:line`) | Fix |
+|---|---|---|---|---|
+| 1. `nav('fleet', ...)` | T4, T1 | **Yes** | `view_fleet` is granted to T4 (`permissions.js:193`) and T1 (`183`). | None |
+| 2. `.kpm-fleet-row[data-agent="demo-agent-2"]` (Dika) | **T4 Hendra** | **Yes** | Hendra is `isAreaAdmin` (`FleetCanvasManager.jsx:51`) at `Headquarters`; `agents` (`156`) holds only `HEADQUARTERS`, so Dika (`demo-agent-2`) is on screen. | None |
+| 2. `.kpm-fleet-row[data-agent="demo-agent-2"]` (Dika) | **T1** | **NO** | T1 sees all places (`BANDUNG` + `HEADQUARTERS`). `keys` is sorted A–Z (`1444`), `rosterPlace` defaults `null` (`265`), so `place` (`1449`) opens on `keys[0]` = **`BANDUNG`**; Dika is under `HEADQUARTERS`. | Add `data-place={places[k].loc}` on the area chip at `FleetCanvasManager.jsx:1463`, and update `GUIDE[3]` beat 2 (`demoMission.js:74`) to `at: ['.kpm-fleet-row[data-agent="demo-agent-2"]', '[data-place="HEADQUARTERS"]']` with `'Pilih area HEADQUARTERS dulu untuk melihat Dika.'`. |
+| 3–4. `[data-guide="load-plus"]`, `[data-ponder="go"]` | T4, T1 | **Yes** | Both render in `LoadSheet.jsx:218, 245` as soon as Dika's panel opens. | None |
+
+### Step 4 (`Sales Terminal` — Penjualan; doer = `T6` Dika, also `T1`)
+| Beat (`demoMission.js:77-82`) | Login | In page by default? | Why (`file:line`) | Fix |
+|---|---|---|---|---|
+| 1. `nav('sales', ...)` | T6, T1 | **Yes** | `view_sales` is granted to T6 (`permissions.js:201`) and T1 (`183`). | None |
+| 2. `slip(sale-mode)` | T6, T1 | **Yes** (already `done`) | `isReturMode` defaults `false` (`MerchantSalesView.jsx:133`), so `[data-mission="4"]:not([data-retur])` is already satisfied. | None |
+| 3. `SHOP` | T6, T1 | **Yes** | On PC `data-guide="customer"` (`1882`) is visible; on phone `2530` (`lg:hidden`) is visible; clicking opens `data-guide="shops"` (`1753`). | None |
+| 4. `shelf(...)` | T6, T1 | **Yes** | `data-guide="products"` (`2818`) is visible; `manifestOpen` starts `false` (`92`), so `data-covered` is unset on phone. | None |
+| 5–6. `slip(PHOTO)`, `slip(MAKE DEAL)` | T6, T1 | **Yes** | On PC both (`2365, 2406`) are visible; on phone `slip()` rings `[data-guide="open-slip"][data-shut]` (`2468`) first, then `2365` / `2406`. | None |
+
+## Task 19 - the same check for steps 5-8
+**Status:** OPEN
+**Written:** 2026-11-17 07:20 WIB, by Claude. Same rules as above.
+
+Exactly Task 18's method, for GUIDE steps 5-8. Look hard at step 7: its Dika card is `.pc[data-agent="demo-agent-2"]:not([data-late])` in EOD's HQ Verification - which date, filter or area decides whether that card is listed for the owner and for T1, and what happens when Dika's EOD is from yesterday (the `data-late` mark)? And step 8's count rows (`[data-guide="good"]`, `[data-half]`): which warehouse does Stock Opname open on for the owner and for T1?
+Do NOT change the code. Done when: one table per step (beat, login, in the page yes/no, why with file:line, fix).
+
+**Result:**
+
+## Task 20 - map the Master Vault screen before its redesign (segment 1 of 12)
+**Status:** OPEN
+**Written:** 2026-11-17 07:20 WIB, by Claude. Same rules as above (read-only, touch only this file, commit it alone, "Antigravity:").
+
+Aldi, 2026-11-17: *"i want to finish all segment before 20 november"* - 12 screens get the professional look (the same look as Sales Terminal, EOD Setoran, Agent Inventory, Journey Plan, Fleet & Roster). The first is the Master Vault, written INLINE in `src/App.jsx` (`activeTab === 'inventory'` ~L5174). A new face on that file can break a money path silently, so Claude needs a full map first:
+1. Every element on the screen, top to bottom, at PC and at phone width: what it shows, what it reads (state / prop / Firestore field), file:line.
+2. Every press: the handler it calls, what that handler writes (Firestore collection + fields, local state), and whether it moves stock or money. file:line.
+3. Every piece of logic computed INSIDE the JSX (sums, filters, unit conversions Bks / Slop / Bal / Karton, quarantine, promo pcs) that a redesign could drop or change by accident.
+4. What could be moved out into its own file first (`src/components/...`) without changing behaviour, and which `logicFixes.selfcheck.mjs` checks pin this screen's code by exact string (they would break on a move).
+Do NOT change the code. Done when: four tables in the Result.
+
+**Result:**
+
+## Task 21 - the same map for Restock Vault (segment 2 of 12)
+**Status:** OPEN
+**Written:** 2026-11-17 07:20 WIB, by Claude. Same rules as above.
+
+Exactly Task 20's four tables for `src/RestockVaultView.jsx` (MASUK / KIRIM, the surat jalan save, approvals, the master desk). Mark every place the demo guide's marks sit (`data-guide=...`, `data-mission=...`) - they must survive the redesign.
+Do NOT change the code. Done when: four tables in the Result.
+
+**Result:**
