@@ -73,9 +73,14 @@ body{background:var(--page);color:var(--ink);font:14px/1.45 var(--f);-webkit-fon
 .leg .lv{font-size:13.5px;font-weight:600}
 
 /* work area */
-.work{display:grid;grid-template-columns:540px minmax(0,1fr);min-height:520px}
+.work{display:grid;grid-template-columns:620px minmax(0,1fr);min-height:520px}
 .list{border-right:1px solid var(--line);min-width:0}
-.lh,.r{display:grid;grid-template-columns:minmax(0,1fr) 112px 76px 78px;gap:12px;align-items:center;padding:0 18px}
+.ag{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;color:var(--ink-muted);min-width:0;white-space:nowrap}
+.av.xs{width:22px;height:22px;border-radius:6px;font-size:10px}
+.agent{display:inline-flex;align-items:center;gap:7px;margin-top:8px;padding:3px 11px 3px 3px;border:1px solid var(--line-2);border-radius:999px;font-size:12px;color:var(--ink-dim)}
+.agent b{color:var(--ink);font-weight:600}
+.ph .agent .av{width:22px;height:22px;border-radius:999px;font-size:10px}
+.lh,.r{display:grid;grid-template-columns:minmax(0,1fr) 84px 112px 76px 78px;gap:12px;align-items:center;padding:0 18px}
 .lh{height:34px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);border-bottom:1px solid var(--line)}
 .lh .rt,.r .rt{text-align:right}
 .r{min-height:56px;border-bottom:1px solid var(--hair);border-left:2px solid transparent;cursor:pointer;transition:background-color .16s ease}
@@ -222,13 +227,14 @@ td .it{font-size:12px;color:var(--ink-dim);margin-top:2px}
   <p class="cap">Receivables &amp; Consignment · picture v5 · PC 1440</p>
   <p class="note">Shops, salesmen and prices are the demo's own. The debts below are the ones the demo will get (the demo has none today). Click a shop, the tabs and the buttons.</p>
 
+  <div hidden><!-- options A and B, not picked (his 2026-11-17 "C is still the best") -->
   <p class="cap">Option A · the late line, inside the shop on the right</p>
   <p class="note">The line runs from the day the goods were left to today. The gold mark is the due day. Days after it turn red.</p>
   <div class="frame opt"><div class="tlwrap" id="optA"></div></div>
   <p class="cap" style="margin-top:26px">Option B · one card per salesman, on top of the list</p>
   <p class="note">Click a card: the list shows only that salesman's shops. Click it again: everyone.</p>
   <div class="frame opt"><div class="cards" id="optB"></div><div id="optBl"></div></div>
-  <p class="cap" style="margin-top:34px">Option C · the picture as it is now</p>
+  </div>
 
   <div class="pcwrap">
   <div class="frame">
@@ -257,7 +263,7 @@ td .it{font-size:12px;color:var(--ink-dim);margin-top:2px}
       </div>
       <div class="work">
         <div class="list">
-          <div class="lh"><span>Shop</span><span class="rt">Owed</span><span>Tempo</span><span class="rt">State</span></div>
+          <div class="lh"><span>Shop</span><span>Salesman</span><span class="rt">Owed</span><span>Tempo</span><span class="rt">State</span></div>
           <div id="rows"></div>
         </div>
         <section class="hand">
@@ -384,7 +390,8 @@ let sel = 0;
 function rows() {
   document.getElementById('rows').innerHTML = SHOPS.map((s, i) => `
     <div class="r${i === sel ? ' sel' : ''}" data-i="${i}">
-      <div class="who"><span class="av">${ini(s.name)}</span><span style="min-width:0"><div class="nm">${s.name}</div><div class="mt">${s.where.split(',')[0]} · ${s.man}</div></span></div>
+      <div class="who"><span class="av">${ini(s.name)}</span><span style="min-width:0"><div class="nm">${s.name}</div><div class="mt">${s.where}</div></span></div>
+      <span class="ag"><span class="av xs">${s.man[0]}</span>${s.man}</span>
       <span class="amt num">${rp(s.total)}</span>
       <span class="use"><span class="t"><i data-w="${Math.min(100, s.age / s.tempo * 100)}" style="background:var(--seg-${s.state})"></i></span><small class="num">${s.age} of ${s.tempo} days</small></span>
       <span class="st ${s.state}">${WORD[s.state]}</span>
@@ -404,7 +411,8 @@ function hand(first) {
   ].sort((a, b) => d(a[1]) - d(b[1]));
   h.innerHTML = `
     <div class="ph"><span class="av">${ini(s.name)}</span>
-      <div><h2>${s.name}</h2><p>${s.where} · ${s.man} · ${s.phone}</p></div>
+      <div><h2>${s.name}</h2><p>${s.where} · ${s.phone}</p>
+        <span class="agent"><span class="av xs">${s.man[0]}</span>Responsible: <b>${s.man}</b></span></div>
       <div class="owe"><div class="k">Owes</div><div class="v num" id="owe"></div></div></div>
     <div class="facts">
       <div><div class="k">State</div><div class="v"><span class="st ${s.state}" style="justify-content:flex-start">${WORD[s.state]}</span></div></div>
@@ -447,7 +455,7 @@ let psel = 0;
 function phone() {
   document.getElementById('prows').innerHTML = SHOPS.map((s, i) => `
     <div class="pr${i === psel ? ' sel' : ''}" data-i="${i}">
-      <div class="who"><span class="av">${ini(s.name)}</span><span style="min-width:0"><div class="nm">${s.name}</div><div class="mt">${s.man} · ${when(s)}</div></span></div>
+      <div class="who"><span class="av">${ini(s.name)}</span><span style="min-width:0"><div class="nm">${s.name}</div><div class="mt" style="display:flex;align-items:center;gap:5px"><svg class="i" style="width:13px;height:13px"><use href="#user"/></svg>${s.man} · ${when(s)}</div></span></div>
       <div class="rt"><span class="amt num">${rp(s.total)}</span><span class="st ${s.state}">${WORD[s.state]}</span></div>
     </div>
     ${i === psel ? `<div class="po">

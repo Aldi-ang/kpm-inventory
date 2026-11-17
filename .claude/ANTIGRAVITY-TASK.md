@@ -2286,3 +2286,35 @@ Then: which blocks share a variable declared INSIDE another block (a cut there w
 **Result:** one table (block | lines | outer element | reads) + the shared-variable list + the useMemo answer. Keep it under 60 lines.
 
 **Result:**
+
+
+## Task 56 - BUILD: give the demo company real consignment debt
+**Status:** OPEN
+**Written:** 2026-11-17 18:05 WIB, by Claude. Aldi: *"make the debt on the demo as well of course to show its features"*. Do it after 54-55.
+**Touch only:** `api/_demoCompany.js`, `src/config/logicFixes.selfcheck.mjs`, this file.
+
+Today every demo sale is `paymentType: 'Cash'` (`api/_demoCompany.js` ~L173, `dayRound`). Add, AFTER the generated sales (do not touch `dayRound`), the exact data of the approved picture (`.claude/drafts/receivables-pro.html`, the `SHOPS` and `HANDOFFS` constants in its script):
+- 9 Titip notes = 9 transactions `type: 'SALE', paymentType: 'Titip'`, `tempoDays` from the picture, items via the file's own `line(p, qty, 'Retail')` helper (so `total` = Retail price x qty), `customerName` = the seed shop name, `agentId/agentName` = the salesman's demo login (Agus demo-agent-1, Dika demo-agent-2, Budi demo-agent-3, Ari demo-agent-4).
+- 1 transaction `type: 'CONSIGNMENT_PAYMENT'` for AMANAH BARU, Rp 300.000, dated 12 Nov-equivalent. Read `debtCredit()` in `src/utils/revenueRule.js` (~L64) and give it the field it reads for cash paid.
+- DATES: never a fixed date. The picture's "today" is 17 Nov: a note dated 5 Nov = `now` minus 12 days. Use the file's own day helpers (atWib etc.) so the OVERDUE / DUE SOON / SAFE words stay true every night.
+- The 2 pending hand-offs: find how the app stores a pending hand-off (grep `handoff` in `src/ConsignmentFinanceView.jsx`, your Task 23 map) and write those 2 the same way. If that needs a collection the demo builder does not write, STOP and write that in the Result instead.
+- TRAPS: never add an `r()` call (every route after it changes); find any selfcheck/audit that pins demo totals (grep the demo totals / `buildDemoCompany` in `src/config/*.mjs`, `tools/*.mjs`) and say if a Titip sale changes a revenue number (`isTitip`, `src/utils/revenueRule.js:28`).
+- Add ONE check to `logicFixes.selfcheck.mjs`: build the demo with a fixed `now` = 2026-11-17 and assert 8 shops owe, total Rp 9.120.000, AMANAH BARU Rp 1.580.000 overdue (oldest note 12 days, tempo 7).
+Done when: logicFixes + every `src/config/*.selfcheck.mjs` exit 0, `npm run build` passes, `node src/config/integration.audit.mjs` passes. Commit `Antigravity: Task 56 ...`. Never push.
+
+**Result:**
+
+## Task 57 - BUILD: Receivables & Consignment to the approved picture (segment 4)
+**Status:** OPEN
+**Written:** 2026-11-17 18:05 WIB, by Claude. Aldi picked the picture (v5, option C) + *"dont forget to add the agent who responsible in there as well"*. Do it after Task 55 (your line map) and 56.
+**Touch only:** `src/ConsignmentFinanceView.jsx`, `src/styles/theme.css` (only new classes), `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file.
+
+Rebuild the look of `src/ConsignmentFinanceView.jsx` to `.claude/drafts/receivables-pro.html` (artifact https://claude.ai/artifact/PuX2thEyaC84BjjoPCAR1t), PC and phone:
+- Header (title, as-of date, search, region, salesman) · 3 underline tabs, Hand-offs keeps THE SHAKE dot (~L1021) · the aging summary (Outstanding rolling digits + Safe/Due soon/Overdue bar and amounts) · the list (shop + area, Salesman column = the shop's responsible agent, owed, tempo-used bar "12 of 7 days", state word) sorted overdue first · the shop in hand (name, area, phone, "Responsible: <agent>" chip, 4 facts, consignment notes with still-owed, history) · action bar: Receipt, Add Goods, Hand-off quiet; Store Audit & Settle = `.kpm-edge-btn` (gold edge, NEVER a gold fill) · phone: the shop opens under its own row.
+- Rolling digits: reuse what f6152ec5 shipped (grep the rolling-digit component) - do not write a second one.
+- MONEY RULE (Claude reviews this line by line): restyle and re-layout only. The `debtData` useMemo (~L162-238), every handler (settle, pay, transfer, hand-off accept/reject, add goods) and every Firestore write must stay byte-identical. Build by CUTTING the existing JSX blocks by line number with a script (Task 55 map) and placing them - never retype a rule. The file is CRLF: normalise, edit, restore.
+- Every element of your Task 23 map must still exist somewhere, PC and phone. List where each went.
+- Add to the logicFixes check that guards `.kpm-edge-btn` screens: this file joins it. One patch note line (en + id, plain words, no names) in `src/config/patchNotes.js`.
+Done when: `git diff` shows the debtData block and every handler unchanged (paste the command you used to prove it), every selfcheck exits 0, `npm run build` passes, `node src/config/integration.audit.mjs` passes. Commit `Antigravity: Task 57 ...`. Never push - Claude renders it in the lab and pushes.
+
+**Result:**
