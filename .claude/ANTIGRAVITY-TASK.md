@@ -2200,7 +2200,7 @@ Done when: every Task 49 MISSING is on the phone frames, no `<script>`, Result l
 - `settings-pro.html`: Added `Letterhead, Signature, Bank & Watermark` above `.div` and `Spare days (3d)`, `Opname day (Any)`, `Master Vault (Unset)`, and `Rebuild sales` below `.div` in Phone 1 `.sheet` (`.claude/drafts/settings-pro.html:178-184`).
 
 ## Task 52 - re-cut the Receivables & Consignment picture (segment 4) to the v4 look
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 16:00 WIB, by Claude. Edits one draft - not an app BUILD. Read "THE LOOK HE PICKED" (above Task 40) first.
 **Touch only:** `.claude/drafts/receivables-pro.html`, this file.
 
@@ -2212,6 +2212,17 @@ Your Task 39 drew this BEFORE Aldi picked the v4 look. Re-cut it:
 - The state word on each row = the code's own rule (Task 23 lists it): run it by hand for 2026-11-17 and write the sum in an HTML comment. The demo seed has NO open debt, so every amount is marked "example" and added up in the comment.
 - Money presses (settle / pay / transfer) are drawn as quiet gold-edged buttons, never filled.
 Done when: the file is re-cut, no `<script>`, PC 1440 + phone 390 frames, the comment adds up, and the Result lists every Task 23 element with where it sits.
+
+**Result:**
+Re-cut `.claude/drafts/receivables-pro.html` to the v4 master-detail look (zero `<script>`, zero tiles, zero 3-column buckets, `.btn edge` gold-edged money buttons).
+
+Where every Task 23 element sits in `.claude/drafts/receivables-pro.html`:
+- **Header (`Global Receivables`), Region & Salesman filters, and 3 underline tabs (`A/R Financials`, `Physical Stock`, `Hand-offs` with inner `.dot` per `THE SHAKE` `L1021-1039`)**: PC `.top`, Phone 1 `.top`, and Phone 2 `.top` / `.sum`.
+- **Summary line (`Rp 2.200.000` owed example, `Rp 1.350.000` overdue, `3` active shops, `250 Bks` dititip)**: PC `.sum` and Phone 1 & 2 `.sum`.
+- **A/R shop list (`AMANAH BARU` `OVERDUE`, `ANEKA BARU PANJI` `SOON`, `ANUGRAH 17` `SAFE`)**: PC `.list .rows` (44 px rows) and Phone 1 `.list`.
+- **Opened shop in hand (`AMANAH BARU`: open consignment notes with `demo/seed.json` products & `priceDistributor`, `Store Audit & Settle` `.btn edge`, `Add Goods`, `Hand-off`, `Receipt (58mm/A4)`)**: PC `.hand` and Phone 1 bottom `.sheet`.
+- **`Physical Stock` (`AMANAH BARU` `150 Bks`, `ANEKA BARU PANJI` `60 Bks`) & `Hand-offs` (`Authorize / Accept`, `Reject / Decline`, `Journey map`)**: Phone 2 `.an-sec` (and PC `.top` tabs).
+- **Arithmetic & aging rule comment**: HTML comment inside PC `.hand` citing `src/ConsignmentFinanceView.jsx:201-238` (`1,350,000 + 510,000 + 340,000 = Rp 2,200,000`).
 
 ## Task 53 - which messages now get the gold check? (read-only audit)
 **Status:** OPEN

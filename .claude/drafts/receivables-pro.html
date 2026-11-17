@@ -1,267 +1,235 @@
-<title>Receivables &amp; Consignment, professional</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<!doctype html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Receivables &amp; Consignment · v4</title>
 <style>
-/* layout: the picture = PC frame on top (A/R Financials), two phone frames under it (A/R Financials stacked, Physical Stock); KPM professional tokens (theme.css) */
 :root{
-  --ground:#D2C9B4;--panel:#E1DAC8;--inset:#D9D1BD;--line:#6E6A64;--line-2:#5E5A55;--hair:rgba(19,18,17,.14);
-  --ink:#131211;--ink-muted:#3A3733;--ink-dim:#3F3B36;--gold:#1B1917;--gold-ink:#F7F3E9;--accent-ink:#4F3603;--accent-edge:#6E5116;--danger-ink:#611A14;
-  --page:#C9C0AA;--sel:rgba(79,54,3,.10);
-  --f:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --bg:#0E0C0A;--panel:#15120F;--raised:#1C1814;
+  --ink:#F3EDE2;--ink-dim:#A69D8E;--ink-mute:#6D6558;
+  --line:#2B251E;--line-2:#3C342B;
+  --gold:#E0AC43;--wash:rgba(224,172,67,.09);
+  --bad:#D96B5A;--bad-wash:rgba(217,107,90,.12);
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --ground:#0A0908;--panel:#121110;--inset:#0E0D0C;--line:#26231F;--line-2:#3E3A35;--hair:rgba(232,228,222,.08);
-  --ink:#E8E4DE;--ink-muted:#A39B90;--ink-dim:#928B81;--gold:#D08A2E;--gold-ink:#0A0908;--accent-ink:#D08A2E;--accent-edge:#9C6924;--danger-ink:#E08C82;
-  --page:#050504;--sel:rgba(208,138,46,.09);color-scheme:dark}}
-:root[data-theme="dark"]{
-  --ground:#0A0908;--panel:#121110;--inset:#0E0D0C;--line:#26231F;--line-2:#3E3A35;--hair:rgba(232,228,222,.08);
-  --ink:#E8E4DE;--ink-muted:#A39B90;--ink-dim:#928B81;--gold:#D08A2E;--gold-ink:#0A0908;--accent-ink:#D08A2E;--accent-edge:#9C6924;--danger-ink:#E08C82;
-  --page:#050504;--sel:rgba(208,138,46,.09);color-scheme:dark}
-*{box-sizing:border-box}
-body{margin:0;background:var(--page);color:var(--ink);font:13.5px/1.45 var(--f);font-variant-numeric:tabular-nums;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
-.cap{max-width:1180px;margin:0 auto 10px;color:var(--ink-muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
-.note{max-width:1180px;margin:0 auto 22px;color:var(--ink-muted);font-size:13px}
-.note b{color:var(--ink)}
-.frame{background:var(--ground);border:1px solid var(--line-2);margin:0 auto}
-.pc{max-width:1180px;height:820px;display:flex;flex-direction:column;overflow:hidden}
-.phones{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;max-width:1180px;margin:0 auto}
-.phone{width:390px;max-width:100%;height:840px;overflow:hidden;display:flex;flex-direction:column;border-radius:18px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;padding:28px 20px 64px;-webkit-font-smoothing:antialiased}
+.cap{max-width:1180px;margin:0 auto 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute)}
+.note{max-width:1180px;margin:0 auto 14px;font-size:12px;color:var(--ink-dim)}
+.note b{color:var(--ink);font-weight:600}
+.note code{font-size:11px;color:var(--ink);background:var(--raised);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+.i{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
-/* THE PROFESSIONAL BUTTON (.kpm-edge-btn from theme.css — no solid fill anywhere) */
-.kpm-edge-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 14px;border:1px solid var(--accent-edge);
-  background-color:transparent;color:var(--ink);font:600 12.5px var(--f);cursor:pointer;white-space:nowrap;
-  transition:background-color .16s ease,border-color .16s ease,scale .12s ease}
-.kpm-edge-btn:hover{background-color:color-mix(in srgb,var(--gold) 11%,transparent);border-color:var(--accent-ink)}
-.kpm-edge-btn:active{scale:.97}
-.kpm-edge-btn.quiet{border-color:var(--line-2)}
-.kpm-edge-btn.quiet:hover{border-color:var(--accent-edge)}
-.kpm-edge-btn.danger{border-color:var(--line-2);color:var(--danger-ink)}
-.kpm-edge-btn.danger:hover{border-color:var(--danger-ink);background-color:color-mix(in srgb,var(--danger-ink) 9%,transparent)}
+.btn{height:34px;padding:0 14px;border-radius:8px;font:600 13px/1 inherit;color:var(--ink);background:rgba(255,255,255,.03);border:1px solid var(--line-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn.edge{border-color:var(--gold);color:var(--gold);background:var(--wash)}
+.btn.quiet{color:var(--ink-dim);background:transparent}
+.btn.danger{border-color:rgba(217,107,90,.45);color:var(--bad);background:var(--bad-wash)}
+.btn.sm{height:28px;padding:0 10px;font-size:12px}
 
-/* header & underline tabs */
-.hd{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--line-2);flex-wrap:wrap}
-.hd h1{margin:0;font-size:16px;font-weight:700}
-.hd .sum{color:var(--ink-dim);font-size:12px}
-.sp{flex:1}
-.tabs{display:flex;flex-wrap:wrap;gap:0 18px;padding:0 20px;border-bottom:1px solid var(--line-2)}
-.tab{padding:10px 0 9px;margin-bottom:-1px;border-bottom:2px solid transparent;font-size:13px;font-weight:600;color:var(--ink-dim);white-space:nowrap;display:inline-flex;align-items:center;gap:7px}
+.frame{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 24px 60px -30px rgba(0,0,0,.7)}
+.pc{max-width:1180px;margin:0 auto 40px}
+
+.top{display:flex;align-items:center;gap:20px;padding:14px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.top h1{font-size:18px;font-weight:700;letter-spacing:-.02em;padding-bottom:12px}
+.tabs{display:flex;gap:20px}
+.tab{padding:0 2px 12px;font-size:13px;font-weight:600;color:var(--ink-mute);border-bottom:2px solid transparent;display:inline-flex;align-items:center;gap:7px}
 .tab.on{color:var(--ink);border-color:var(--gold)}
-/* Hand-offs dot sits INSIDE the tab label (THE SHAKE L1021-1039: never outside overflow-x-auto) */
-.dot{width:7px;height:7px;border-radius:50%;background:var(--danger-ink);display:inline-block}
+/* THE SHAKE (ConsignmentFinanceView.jsx:1021-1039): dot sits inside tab label */
+.dot{width:7px;height:7px;border-radius:50%;background:var(--bad);display:inline-block}
+.ctl{margin-left:auto;display:flex;align-items:center;gap:8px;padding-bottom:12px}
+.pill{height:30px;padding:0 10px;border-radius:7px;background:var(--raised);border:1px solid var(--line);font-size:12px;color:var(--ink-dim);display:inline-flex;align-items:center;gap:6px}
 
-.scroll{flex:1;overflow:auto;padding:14px 20px;display:flex;flex-direction:column;gap:14px}
-.flt{display:flex;gap:8px;align-items:center}
-.inp{height:34px;padding:0 10px;border:1px solid var(--line-2);background:var(--inset);display:flex;align-items:center;justify-content:space-between;font-size:12.5px}
+.sum{display:flex;align-items:center;gap:14px;padding:11px 20px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-dim);flex-wrap:wrap}
+.sum b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.sum .bad{color:var(--bad)}
+.sep{width:1px;height:12px;background:var(--line)}
 
-/* totals strip */
-.totals{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line-2);background:var(--panel)}
-.totals>div{padding:10px 14px;border-right:1px solid var(--hair)}
-.totals>div:last-child{border-right:none;background:var(--inset)}
-.totals small{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-dim)}
-.totals strong{display:block;font-size:16px;font-weight:800;margin-top:2px}
-.totals .bad{color:var(--danger-ink)}
+.work{display:grid;grid-template-columns:420px 1fr;min-height:450px}
+.list{border-right:1px solid var(--line);display:flex;flex-direction:column}
+.rows{overflow:auto;flex:1}
+.r{display:grid;grid-template-columns:16px minmax(0,1fr) auto auto;align-items:center;gap:10px;min-height:44px;padding:10px 16px;border-left:2px solid transparent;border-bottom:1px solid rgba(43,37,30,.55)}
+.r.sel{background:var(--wash);border-left-color:var(--gold)}
+.ic{color:var(--ink-mute);display:flex}
+.r.sel .ic{color:var(--gold)}
+.n{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reg{font-size:11.5px;color:var(--ink-mute)}
+.v{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);text-align:right;white-space:nowrap}
+.s{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-mute);text-align:right;white-space:nowrap}
+.s.bad{color:var(--bad)}
+.s.gold{color:var(--gold)}
 
-/* 3 aging buckets */
-.cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.bucket{border:1px solid var(--line-2);background:var(--panel);display:flex;flex-direction:column}
-.bucket.bad{border-top:2px solid var(--danger-ink)}
-.bucket.warn{border-top:2px solid var(--accent-edge)}
-.bhd{padding:10px 12px;border-bottom:1px solid var(--hair);display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700}
-.shop{padding:10px 12px;border-bottom:1px solid var(--hair);display:flex;justify-content:space-between;align-items:center;gap:8px}
-.shop:last-child{border-bottom:none}
-.shop.sel{background:var(--sel);box-shadow:inset 2px 0 0 var(--gold)}
-.shop b{display:block;font-size:13px}
-.shop small{display:block;font-size:11px;color:var(--ink-dim)}
-.tag{font-size:10.5px;font-weight:700;padding:2px 7px;border:1px solid var(--line-2);white-space:nowrap}
-.tag.bad{border-color:var(--danger-ink);color:var(--danger-ink)}
-.tag.warn{border-color:var(--accent-edge);color:var(--accent-ink)}
-.tag.ok{color:var(--ink-muted)}
+.hand{display:flex;flex-direction:column;justify-content:space-between;background:radial-gradient(600px 260px at 50% 0%,rgba(224,172,67,.04),transparent 70%)}
+.hand .in{padding:24px 28px;display:flex;flex-direction:column;gap:16px}
+.ph{display:flex;align-items:center;gap:14px}
+.big{width:44px;height:44px;border-radius:10px;background:var(--raised);border:1px solid var(--line-2);display:grid;place-items:center;color:var(--gold);flex:none}
+.ph h2{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.ph p{font-size:12.5px;color:var(--ink-dim);margin-top:2px}
+.ph .pos{margin-left:auto;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--bad)}
 
-/* opened shop drawer / panel */
-.open-shop{border:1px solid var(--accent-edge);background:var(--panel);padding:14px;display:flex;flex-direction:column;gap:10px}
-.open-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--hair);padding-bottom:10px}
-table{width:100%;border-collapse:collapse;border:1px solid var(--line-2);background:var(--inset)}
-th{background:var(--panel);text-align:left;font-size:10.5px;font-weight:700;color:var(--ink-dim);letter-spacing:.05em;text-transform:uppercase;padding:7px 10px;border-bottom:1px solid var(--line-2)}
-th.r,td.r{text-align:right}
-td{padding:8px 10px;border-bottom:1px solid var(--hair);font-size:12.5px}
+.sec-h{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-mute);text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+td{padding:8px;border-bottom:1px solid rgba(43,37,30,.55);color:var(--ink-dim)}
+td b{color:var(--ink);font-weight:600}
+th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
 
-/* phone */
-.st{height:24px;display:flex;justify-content:space-between;align-items:center;padding:0 16px;font-size:11px;color:var(--ink-dim)}
-.phone .hd{padding:10px 14px}
-.phone .tabs{padding:0 14px;gap:0 12px}
-.phone .tab{font-size:12px}
-.phone .scroll{padding:10px 14px;gap:10px}
-.phone .kpm-edge-btn{height:38px}
-.phone .totals{grid-template-columns:1fr 1fr}
-.phone .totals>div:last-child{grid-column:1 / -1;border-top:1px solid var(--hair)}
-.phone .cols3{grid-template-columns:1fr;gap:10px}
-.pcard{border:1px solid var(--line-2);background:var(--panel);padding:10px 12px;display:flex;flex-direction:column;gap:8px}
-.pcard-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--hair);background:var(--inset)}
-@media (max-width:700px){.pc{display:none}.pcnote{display:block!important}}
+.act{display:flex;align-items:center;gap:8px;padding:14px 28px;border-top:1px solid var(--line);flex-wrap:wrap}
+.act .sp{flex:1}
+
+.phones{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;max-width:1180px;margin:0 auto}
+.phone{width:390px;max-width:100%;height:780px;display:flex;flex-direction:column;border-radius:22px;position:relative}
+.sb{height:28px;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font-size:11px;color:var(--ink-dim)}
+.phone .top{padding:8px 16px 0;gap:0;flex-direction:column;align-items:stretch}
+.phone .top h1{margin-bottom:8px}
+.phone .tabs{gap:14px}
+.phone .sum{padding:9px 16px;gap:10px;font-size:12px}
+.phone .list{width:auto;border:none;flex:1}
+.dim-under{position:absolute;inset:0;background:rgba(5,4,3,.45)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--raised);border-top:1px solid var(--line-2);border-radius:20px 20px 0 0;
+  padding:10px 16px 16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 -18px 40px -20px rgba(0,0,0,.6)}
+.grab{width:38px;height:4px;border-radius:2px;background:var(--line-2);margin:0 auto}
+.an-sec{padding:12px 16px;display:flex;flex-direction:column;gap:12px;overflow:auto;flex:1}
+.card{padding:10px 12px;border-radius:10px;background:var(--raised);border:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+@media (max-width:860px){.pc{display:none}}
 </style>
 
-<p class="cap">Receivables &amp; Consignment · new look · PC (A/R Financials)</p>
-<p class="note">Shop names from <b>demo/seed.json</b> (<code>customers</code>); product prices from <code>inventory</code>. Debt &amp; date figures below are <b>example</b> numbers following the exact aging rule in <code>ConsignmentFinanceView.jsx:220-226</code>. Hand-offs keeps its inner dot (<code>THE SHAKE L1021</code>).</p>
-<p class="note pcnote" style="display:none">Open this on the PC to see the PC frame.</p>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="bill" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></symbol>
+  <symbol id="print" viewBox="0 0 24 24"><path d="M7 8V3h10v5"/><rect x="4" y="8" width="16" height="8" rx="1"/><path d="M7 14h10v7H7z"/></symbol>
+</svg>
+
+<p class="cap">Receivables &amp; Consignment · v4 · PC (A/R Shop List + Shop in Hand)</p>
+<p class="note">Shop names from <b>demo/seed.json</b> (<code>customers</code>); product prices from <code>inventory</code>. Seed has <code>0</code> open debts, so debt &amp; date figures are <b>example</b> numbers using <code>ConsignmentFinanceView.jsx:201-238</code>. <code>Store Audit</code> live inputs and <code>Receipt</code> modal (58mm/A4 Print &amp; Share) open from the buttons below.</p>
 
 <div class="frame pc">
-  <div class="hd">
+  <div class="top">
     <h1>Global Receivables</h1>
-    <span class="sum">Consignment &amp; Credit Control · Example figures</span>
-    <span class="sp"></span>
-    <div class="flt">
-      <div class="inp">Region: ALL ▾</div>
-      <div class="inp" style="width:170px;color:var(--ink-dim)">Filter salesman...</div>
-    </div>
-  </div>
-  <div class="tabs">
-    <span class="tab on">A/R Financials</span>
-    <span class="tab">Physical Stock</span>
-    <span class="tab">Hand-offs <span class="dot" aria-label="pending requests"></span></span>
-  </div>
-
-  <div class="scroll">
-    <div class="totals">
-      <div><small>Total Assigned Debt (example)</small><strong>Rp 2.200.000</strong></div>
-      <div><small>Active Accounts (example)</small><strong>3 shops</strong></div>
-      <div><small>Overdue · Jatuh Tempo (example)</small><strong class="bad">Rp 1.350.000</strong></div>
-    </div>
-
-    <div class="cols3">
-      <div class="bucket">
-        <div class="bhd"><span>Safe (Due in 4+ Days)</span><span class="tag ok">1</span></div>
-        <div class="shop">
-          <div><b>ANUGRAH 17</b><small>CIMAHI TENGAH · 1 note · 2026-11-16</small></div>
-          <div style="text-align:right"><b>Rp 340.000</b><small>Due in 6d</small></div>
-        </div>
-      </div>
-
-      <div class="bucket warn">
-        <div class="bhd"><span>Warning (Due Soon)</span><span class="tag warn">1</span></div>
-        <div class="shop">
-          <div><b>ANEKA BARU PANJI</b><small>MARGAHAYU · 1 note · 2026-11-12</small></div>
-          <div style="text-align:right"><b>Rp 510.000</b><small style="color:var(--accent-ink)">Due in 2d</small></div>
-        </div>
-      </div>
-
-      <div class="bucket bad">
-        <div class="bhd"><span>OVERDUE (Jatuh Tempo)</span><span class="tag bad">1</span></div>
-        <div class="shop sel">
-          <div><b>AMANAH BARU</b><small>MARGAHAYU · 1 note · 2026-11-05</small></div>
-          <div style="text-align:right"><b>Rp 1.350.000</b><small style="color:var(--danger-ink);font-weight:700">5 Days Overdue</small></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Opened shop detail + open Titip notes + pay / settle press -->
-    <div class="open-shop">
-      <div class="open-hd">
-        <div>
-          <b style="font-size:14px">AMANAH BARU</b>
-          <span class="tag bad" style="margin-left:8px">5 Days Overdue</span>
-          <div style="font-size:11.5px;color:var(--ink-dim);margin-top:2px">MARGAHAYU, BANDUNG · Open Titip since 2026-11-05 (tempo 7d)</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="kpm-edge-btn quiet">Add Goods</button>
-          <button class="kpm-edge-btn quiet">Hand-off</button>
-          <button class="kpm-edge-btn">Store Audit &amp; Settle</button>
-        </div>
-      </div>
-      <table>
-        <thead><tr><th>Product (seed.json)</th><th class="r">Dititip</th><th class="r">@ Price (Distributor)</th><th class="r">Open Balance (example)</th></tr></thead>
-        <tbody>
-          <tr><td><b>Cello Chocolate</b></td><td class="r">100 Bks</td><td class="r">Rp 10.000</td><td class="r"><b>Rp 1.000.000</b></td></tr>
-          <tr><td><b>Cello Green</b></td><td class="r">50 Bks</td><td class="r">Rp 7.000</td><td class="r"><b>Rp 350.000</b></td></tr>
-        </tbody>
-      </table>
-    </div>
-    <!--
-      ARITHMETIC & BADGE CHECK (from demo/seed.json & src/ConsignmentFinanceView.jsx:201-238, today = 2026-11-17):
-      Rule: ageDays = floor((today - oldestDate) / 86400000); tempoDays = oldestDebt.tempoDays || 7; daysUntilDue = tempoDays - ageDays.
-            daysUntilDue < 0 -> RED (Math.abs(daysUntilDue) + " Days Overdue"); daysUntilDue <= 3 -> YELLOW; else GREEN.
-      1) AMANAH BARU (example): 100 Bks Cello Chocolate * Rp 10,000 (seed priceDistributor) + 50 Bks Cello Green * Rp 7,000 = 1,000,000 + 350,000 = Rp 1,350,000.
-         oldestDate = 2026-11-05, today = 2026-11-17 -> ageDays = 12, tempoDays = 7 -> daysUntilDue = 7 - 12 = -5 (< 0) -> RED ("5 Days Overdue").
-      2) ANEKA BARU PANJI (example): 60 Bks Cello Mmrapi * Rp 8,500 (seed priceDistributor) = Rp 510,000.
-         oldestDate = 2026-11-12, today = 2026-11-17 -> ageDays = 5, tempoDays = 7 -> daysUntilDue = 7 - 5 = 2 (<= 3) -> YELLOW ("Due in 2d").
-      3) ANUGRAH 17 (example): 40 Bks Cello Coffee & Caramel kretek * Rp 8,500 (seed priceDistributor) = Rp 340,000.
-         oldestDate = 2026-11-16, today = 2026-11-17 -> ageDays = 1, tempoDays = 7 -> daysUntilDue = 7 - 1 = 6 (> 3) -> GREEN ("Due in 6d").
-      Totals: totalValue = 1,350,000 + 510,000 + 340,000 = Rp 2,200,000; totalOverdue = Rp 1,350,000; activeAccounts = 3.
-    -->
-  </div>
-</div>
-
-<p class="cap" style="margin-top:34px">Receivables &amp; Consignment · new look · Phone (1: A/R Financials · 2: Physical Stock)</p>
-<p class="note"><b>Hand-offs</b> (<code>Authorize Transfer</code> / <code>Reject</code>, <code>Accept Responsibility</code> / <code>Decline</code>, <code>See it on the journey map</code>, outgoing status), <b>Store Audit</b> live calculation + <b>Receipt modal</b> (58mm / A4 Print &amp; Share) stay in their same tabs/modals, restyled with <code>.kpm-edge-btn</code>.</p>
-
-<div class="phones">
-  <!-- PHONE 1: A/R Financials stacked -->
-  <div class="frame phone">
-    <div class="st"><span>09:41</span><span>5G · 92%</span></div>
-    <div class="hd"><h1>Global Receivables</h1><span class="sp"></span><span class="sum">Example</span></div>
     <div class="tabs">
       <span class="tab on">A/R Financials</span>
       <span class="tab">Physical Stock</span>
       <span class="tab">Hand-offs <span class="dot"></span></span>
     </div>
-    <div class="scroll">
-      <div class="totals">
-        <div><small>Assigned Debt</small><strong>Rp 2.200.000</strong></div>
-        <div><small>Active</small><strong>3 shops</strong></div>
-        <div><small>Overdue (Jatuh Tempo)</small><strong class="bad">Rp 1.350.000</strong></div>
-      </div>
-      <div class="bucket bad">
-        <div class="bhd"><span>OVERDUE (Jatuh Tempo)</span><span class="tag bad">1</span></div>
-        <div class="shop sel">
-          <div><b>AMANAH BARU</b><small>2026-11-05 · 5 Days Overdue</small></div>
-          <b>Rp 1.350.000</b>
+    <div class="ctl">
+      <span class="pill">Region: ALL ▾</span>
+      <span class="pill">Filter salesman...</span>
+    </div>
+  </div>
+  <div class="sum">
+    <span><b>Rp 2.200.000</b> owed (example)</span><span class="sep"></span>
+    <span class="bad"><b>Rp 1.350.000</b> overdue</span><span class="sep"></span>
+    <span><b>3</b> active shops</span><span class="sep"></span>
+    <span><b>250 Bks</b> dititip</span>
+  </div>
+
+  <div class="work">
+    <aside class="list">
+      <div class="rows">
+        <div class="r sel">
+          <span class="ic"><svg class="i"><use href="#bill"/></svg></span>
+          <span style="min-width:0"><div class="n">AMANAH BARU</div><div class="reg">MARGAHAYU · 2026-11-05</div></span>
+          <span class="v">Rp 1.350.000</span>
+          <span class="s bad">OVERDUE</span>
+        </div>
+        <div class="r">
+          <span class="ic"><svg class="i"><use href="#bill"/></svg></span>
+          <span style="min-width:0"><div class="n">ANEKA BARU PANJI</div><div class="reg">MARGAHAYU · 2026-11-12</div></span>
+          <span class="v">Rp 510.000</span>
+          <span class="s gold">SOON</span>
+        </div>
+        <div class="r">
+          <span class="ic"><svg class="i"><use href="#bill"/></svg></span>
+          <span style="min-width:0"><div class="n">ANUGRAH 17</div><div class="reg">CIMAHI TENGAH · 2026-11-16</div></span>
+          <span class="v">Rp 340.000</span>
+          <span class="s">SAFE</span>
         </div>
       </div>
-      <div class="open-shop">
-        <div class="open-hd">
-          <div><b>AMANAH BARU</b><div style="font-size:11px;color:var(--ink-dim)">Cello Chocolate 100 Bks · Cello Green 50 Bks</div></div>
+    </aside>
+
+    <section class="hand">
+      <div class="in">
+        <div class="ph">
+          <div class="big"><svg class="i"><use href="#bill"/></svg></div>
+          <div><h2>AMANAH BARU</h2><p>2026-11-05 · Tempo 7d · 5 Days Overdue · MARGAHAYU, BANDUNG</p></div>
+          <span class="pos">Rp 1.350.000</span>
         </div>
-        <button class="kpm-edge-btn" style="width:100%">Store Audit &amp; Settle</button>
+
+        <div class="sec-h">Open Consignment Notes (example)</div>
+        <table>
+          <thead><tr><th>Product (seed.json)</th><th class="r">Dititip</th><th class="r">@ Dist. Price</th><th class="r">Balance (example)</th></tr></thead>
+          <tbody>
+            <tr><td><b>Cello Chocolate</b></td><td class="r">100 Bks</td><td class="r">Rp 10.000</td><td class="r"><b>Rp 1.000.000</b></td></tr>
+            <tr><td><b>Cello Green</b></td><td class="r">50 Bks</td><td class="r">Rp 7.000</td><td class="r"><b>Rp 350.000</b></td></tr>
+          </tbody>
+        </table>
+        <!--
+          ARITHMETIC & BADGE CHECK (from demo/seed.json & src/ConsignmentFinanceView.jsx:201-238, today = 2026-11-17):
+          Rule: ageDays = floor((today - oldestDate) / 86400000); tempoDays = oldestDebt.tempoDays || 7; daysUntilDue = tempoDays - ageDays.
+                daysUntilDue < 0 -> OVERDUE; daysUntilDue <= 3 -> SOON; else SAFE.
+          1) AMANAH BARU (example): 100 Bks Cello Chocolate * Rp 10,000 + 50 Bks Cello Green * Rp 7,000 = 1,000,000 + 350,000 = Rp 1,350,000.
+             oldestDate = 2026-11-05, today = 2026-11-17 -> ageDays = 12, tempoDays = 7 -> daysUntilDue = -5 (< 0) -> OVERDUE (5 Days Overdue).
+          2) ANEKA BARU PANJI (example): 60 Bks Cello Mmrapi * Rp 8,500 = Rp 510,000.
+             oldestDate = 2026-11-12, today = 2026-11-17 -> ageDays = 5, tempoDays = 7 -> daysUntilDue = 2 (<= 3) -> SOON (Due in 2d).
+          3) ANUGRAH 17 (example): 40 Bks Cello Coffee & Caramel kretek * Rp 8,500 = Rp 340,000.
+             oldestDate = 2026-11-16, today = 2026-11-17 -> ageDays = 1, tempoDays = 7 -> daysUntilDue = 6 (> 3) -> SAFE (Due in 6d).
+          Totals: 1,350,000 + 510,000 + 340,000 = Rp 2,200,000; overdue = Rp 1,350,000; dititip = 150 + 60 + 40 = 250 Bks; activeAccounts = 3.
+        -->
       </div>
-      <div class="bucket warn">
-        <div class="bhd"><span>Warning (Due Soon)</span><span class="tag warn">1</span></div>
-        <div class="shop"><div><b>ANEKA BARU PANJI</b><small>Due in 2d</small></div><b>Rp 510.000</b></div>
+      <div class="act">
+        <button class="btn quiet"><svg class="i"><use href="#print"/></svg>Receipt (58mm/A4)</button>
+        <button class="btn quiet">Add Goods</button>
+        <button class="btn quiet">Hand-off</button>
+        <span class="sp"></span>
+        <button class="btn edge"><svg class="i"><use href="#check"/></svg>Store Audit &amp; Settle</button>
       </div>
-      <div class="bucket">
-        <div class="bhd"><span>Safe (Due in 4+ Days)</span><span class="tag ok">1</span></div>
-        <div class="shop"><div><b>ANUGRAH 17</b><small>Due in 6d</small></div><b>Rp 340.000</b></div>
-      </div>
+    </section>
+  </div>
+</div>
+
+<p class="cap" style="margin-top:28px">Receivables &amp; Consignment · v4 · Phone (1: A/R List + Settle Sheet · 2: Physical Stock &amp; Hand-offs)</p>
+<div class="phones">
+  <div class="frame phone">
+    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
+    <div class="top">
+      <h1>Global Receivables</h1>
+      <div class="tabs"><span class="tab on">A/R Financials</span><span class="tab">Physical Stock</span><span class="tab">Hand-offs <span class="dot"></span></span></div>
+    </div>
+    <div class="sum"><span><b>Rp 2.200.000</b> owed</span><span class="sep"></span><span class="bad"><b>Rp 1.350.000</b> overdue</span></div>
+    <div class="list">
+      <div class="r sel"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span class="n">AMANAH BARU</span><span class="v">Rp 1.350.000</span><span class="s bad">OVERDUE</span></div>
+      <div class="r"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span class="n">ANEKA BARU PANJI</span><span class="v">Rp 510.000</span><span class="s gold">SOON</span></div>
+      <div class="r"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span class="n">ANUGRAH 17</span><span class="v">Rp 340.000</span><span class="s">SAFE</span></div>
+    </div>
+    <div class="dim-under"></div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <div class="ph"><div><h2>AMANAH BARU</h2><p>2026-11-05 · 5d overdue · 150 Bks</p></div><span class="pos">Rp 1.350.000</span></div>
+      <table><tbody>
+        <tr><td>Cello Chocolate</td><td class="r">100 Bks</td><td class="r">Rp 1.000.000</td></tr>
+        <tr><td>Cello Green</td><td class="r">50 Bks</td><td class="r">Rp 350.000</td></tr>
+      </tbody></table>
+      <div style="display:flex;gap:8px"><button class="btn quiet" style="flex:1">Add Goods</button><button class="btn quiet">Hand-off</button><button class="btn edge" style="flex:1">Settle</button></div>
     </div>
   </div>
 
-  <!-- PHONE 2: Physical Stock -->
   <div class="frame phone">
-    <div class="st"><span>09:41</span><span>5G · 92%</span></div>
-    <div class="hd"><h1>Global Receivables</h1><span class="sp"></span><span class="sum">150 Bks</span></div>
-    <div class="tabs">
-      <span class="tab">A/R Financials</span>
-      <span class="tab on">Physical Stock</span>
-      <span class="tab">Hand-offs <span class="dot"></span></span>
+    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
+    <div class="top">
+      <h1>Physical Stock &amp; Hand-offs</h1>
+      <div class="tabs"><span class="tab">A/R Financials</span><span class="tab on">Physical Stock</span><span class="tab">Hand-offs <span class="dot"></span></span></div>
     </div>
-    <div class="scroll">
-      <div class="pcard">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><b>AMANAH BARU</b><div style="font-size:11px;color:var(--ink-dim)">MARGAHAYU · 150 Bks Held</div></div>
-          <b>Rp 1.350.000</b>
-        </div>
-        <div class="pcard-row"><span><b>Cello Chocolate</b><div style="font-size:11px;color:var(--ink-dim)">Dititip: 100 Bks</div></span><span>Rp 10.000/Bks</span></div>
-        <div class="pcard-row"><span><b>Cello Green</b><div style="font-size:11px;color:var(--ink-dim)">Dititip: 50 Bks</div></span><span>Rp 7.000/Bks</span></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:4px">
-          <button class="kpm-edge-btn quiet" style="flex:1">Add Goods</button>
-          <button class="kpm-edge-btn quiet" style="flex:1">Hand-off</button>
-          <button class="kpm-edge-btn" style="flex-basis:100%">Store Audit</button>
-        </div>
+    <div class="sum"><span><b>250 Bks</b> dititip</span><span class="sep"></span><span><b>3</b> shops</span><span class="sep"></span><span class="pill" style="height:24px">Region ▾</span></div>
+    <div class="an-sec">
+      <div class="sec-h">Physical Stock on Consignment (example)</div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between"><b>AMANAH BARU</b><span>150 Bks</span></div>
+        <div style="display:flex;gap:6px"><button class="btn quiet sm" style="flex:1">Add Goods</button><button class="btn quiet sm" style="flex:1">Hand-off</button><button class="btn edge sm" style="flex:1">Store Audit</button></div>
       </div>
-      <div class="pcard">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><b>ANEKA BARU PANJI</b><div style="font-size:11px;color:var(--ink-dim)">MARGAHAYU · 60 Bks Held</div></div>
-          <b>Rp 510.000</b>
-        </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between"><b>ANEKA BARU PANJI</b><span>60 Bks</span></div>
+      </div>
+
+      <div class="sec-h">Pending Hand-offs</div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;font-size:12px"><b>ANUGRAH 17 · 40 Bks</b><span style="color:var(--ink-mute)">Journey map</span></div>
+        <div style="display:flex;gap:6px"><button class="btn danger sm" style="flex:1">Reject / Decline</button><button class="btn edge sm" style="flex:1">Authorize / Accept</button></div>
       </div>
     </div>
   </div>
