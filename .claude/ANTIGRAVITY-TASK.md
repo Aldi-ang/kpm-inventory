@@ -1957,12 +1957,25 @@ Where every Task 25 element sits in `.claude/drafts/customers-pro.html`:
 - **Visit-overdue hand calculation**: HTML comment inside PC `.hand` citing `src/components/MapMissionControl.jsx:1887-1904` and `src/components/CustomerManager.jsx:1330`.
 
 ## Task 42 - draft the Sampling picture (segment 7) in the v4 look
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 14:37 WIB, by Claude. Writes ONE new file - not an app BUILD. Read "THE LOOK HE PICKED" (above Task 40) first.
 **Touch only:** `.claude/drafts/sampling-pro.html` (new), this file.
 
 From YOUR Task 26 map (grep "## Task 26") of `src/components/SamplingManager.jsx`. Sampling = free samples given out of stock. Decide in 3 lines in the Result: master-detail (the list of sample runs / folders + the one in hand) or summary line + one ruled table, and why. Every press that takes stock out must be visible and named on the picture. Product names from the seed; sample quantities are not in the seed - label "example" and add them up in an HTML comment.
 Done when: the file exists, no script, the comment is there, and the Result lists every Task 26 element with where it sits.
+
+**Result:**
+Sampling is **master-detail** for `Sampling Archives` (left: date/location folder runs; right: the opened sample run with `Bks/Btg` line items, `Edit`, `Delete`, `Edit Folder`, and `+ New Sample` / `Add to Folder`), paired with a **read-only** `View Analytics` tab (`SamplingAnalyticsView`) and `Sample Cart` (`SamplingCartView`). Keeping the run list and opened items side by side lets admins audit or restore stock per sample without losing folder context.
+
+Where every Task 26 element sits in `.claude/drafts/sampling-pro.html`:
+- **Header (`Sampling Archives`), Tabs (`Folders`, `View Analytics`, `Sample Cart`), Date pill (`2026-11-17`), `+ New Sample (Deducts Stock)` (`.btn edge`)**: PC `.top` and Phone 1 & 2 `.top`.
+- **Summary strip (`3` sample runs, `56 Bks` distributed, `57` Pita Cukai, `Rp 467.000` distributor burn)**: PC `.sum`, Phone 1 `.sum`, Phone 2 `.sum`.
+- **4-level Folder Drilldown (`Year > Month > Date > Location`) & Search (`Search item or location...`)**: PC `.list` (`.find` + `.crumb`; full drilldown noted in `.note`).
+- **Sample runs list (3 example runs using `demo/seed.json` store names)**: PC `.list .rows` and Phone 1 `.list`.
+- **Opened run in hand (`AMANAH BARU · Sampling Run`, `note`, `Bks/Btg` table with `demo/seed.json` products & distributor prices, per-row `Edit`/`Del`)**: PC `.hand` and Phone 1 bottom `.sheet`.
+- **Stock-moving presses visible and named**: `+ New Sample (Deducts Stock)` (PC `.top .ctl`), `Add to Folder (Deducts Stock)` (PC `.act`), `Delete Item (Restores Stock)` (PC `.act` and Phone 1 `.sheet`), `Edit Folder (Save Move)` (PC `.act`), and `Save 3 Products (Deducts Stock)` (`SamplingCartView` in Phone 2 `.an-sec`).
+- **`SamplingAnalyticsView` (period tabs `Daily`/`Monthly`, `2026-11-17`, Potential Value `Ecer`/`Retail`/`Grosir`, Top Products by Burn bar chart from 0)**: Phone 2 `.an-sec`.
+- **Arithmetic check**: HTML comment inside PC `.hand` (`269,500 + 127,500 + 70,000 = Rp 467,000`; `31 + 15 + 10 = 56 Bks`; `32 + 15 + 10 = 57 Pita Cukai`).
 
 ## Task 43 - draft the Command Center picture (segment 8) in the v4 look
 **Status:** OPEN
