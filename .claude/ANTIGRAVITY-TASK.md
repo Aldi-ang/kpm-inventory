@@ -1164,13 +1164,60 @@ Do NOT change the code. Done when: four tables in the Result.
 | `App.jsx` handlers (`handleRequestTransfer`, `handleAgentAcceptTransfer`, `handleAdminApproveTransfer`, `handleDeleteConsignmentData`) | **Keep in `App.jsx` (or update selfcheck)** | `4370-4401`, `4615-4618`, `4813-4831`, `5428-5432`, `5876`, `6384-6387` |
 
 ## Task 24 - the same map for Reports (segment 5 of 12)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 08:26 WIB, by Claude. Same rules as above.
 
 Exactly Task 20's four tables for `src/components/HistoryReportView.jsx` (the `activeTab === 'transactions'` screen, App.jsx ~L5668-5678): every folder, filter, export, delete. Every press that deletes or changes a transaction gets **Yes** in the "moves stock or money?" column with the exact path it writes. Mark demo guide marks. In table 4, list the selfcheck pins on this file. Also list every amber/gold FILLED button in it (`bg-gold`, `bg-[var(--gold)]`, `bg-orange-*`, `bg-amber-*`, `from-amber-*`) with file:line - they must all become `.kpm-edge-btn` (theme.css).
 Do NOT change the code. Done when: four tables + the filled-button list in the Result.
 
 **Result:**
+
+### Demo Guide Marks in `src/components/HistoryReportView.jsx` (MUST SURVIVE REDESIGN)
+- `data-guide="offer-performance"` on the Offer Performance section (`src/components/HistoryReportView.jsx:534`)
+- `data-guide="package-returns"` on the 7-day Package Returns & Cleared Counts section (`src/components/HistoryReportView.jsx:556`)
+
+### Filled Amber/Gold Buttons to Convert to `.kpm-edge-btn`
+- `src/components/HistoryReportView.jsx:433` — `Pull Archive` button (`bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)]`)
+- `src/components/HistoryReportView.jsx:471` — `Context Analytics` button (`bg-[var(--gold)] hover:bg-[var(--gold)] ... text-[var(--gold-ink)]`)
+- `src/components/HistoryReportView.jsx:976` — `+ ADD ITEM` button inside `DATA AUDIT` modal (`bg-[var(--gold)] text-[var(--gold-ink)]`)
+- `src/components/HistoryReportView.jsx:1010` — `Save Changes` button inside `DATA AUDIT` modal (`bg-[var(--gold)] hover:bg-[var(--gold)] text-[var(--gold-ink)]`)
+*(Note: lines `712`, `756`, `819` also have `group-hover:bg-[var(--gold)]` on folder card icon tiles, and line `974` has `dark:bg-[var(--gold)]` on the `Itemized Receipt` header bar.)*
+
+### 1. Elements on screen (PC & phone, top to bottom)
+| element | PC / phone | what it shows | reads (state / prop / Firestore field) | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| `App.jsx` tab mount (`activeTab === 'transactions'`) | Both | `<ProductPerformancePanel>` (only when `canReadSalesTotals(userRole)` = T1/T2) above `<HistoryReportView>` | `userRole`, `transactions`, `inventory`, `isAdmin`, `motorists`, `displayCustomers`, `appSettings` | `src/App.jsx:5677-5687` |
+| `Operational Command` bar (`!reportView`) | Both | `rangeType` `<select>` (`daily`/`weekly`/`monthly`/`yearly`), `targetDate` `<input type="date">`, `Pull Archive` button (`!isFieldAgent`) | `rangeType`, `targetDate`, `isFieldAgent`, `isFetchingHistory` | `src/components/HistoryReportView.jsx:411-440` |
+| Breadcrumb bar (`!reportView`) | Both | `Master HQ` (`reportAccessLevel === 'global'`) `>` `Region` `>` `Agent` `>` `Provinsi` `>` `Kabupaten` `>` `Kecamatan` `>` `Customer` | `reportAccessLevel`, `isFieldAgent`, `selectedRegion`, `selectedAgent`, `selectedProv`, `selectedKab`, `selectedKec`, `selectedCustomer` | `src/components/HistoryReportView.jsx:443-458` |
+| Search & `Context Analytics` bar (`!reportView`) | Both | Search input (`product, value, or store...`) + clear `X` + `Context Analytics` button | `searchTerm`, `reportView` | `src/components/HistoryReportView.jsx:461-475` |
+| 7-level Folder Drilldown (`!reportView`) | Both (1/2/3-col grid -> store table/cards) | L1 Regions (`global` only) -> L2 Agents -> L3 Provinsi -> L4 Kabupaten -> L5 Kecamatan -> L6 Stores (`Individuals (Ecer)` vs store) -> L7 Store Receipt Archive (header with `Account Total` + store-folder `Delete`, responsive card-under-`lg` / table-on-`lg` ledger with `RETUR`/`EXCHANGE`/`UTANG BARANG LUNAS`/`STORE AUDIT`/`SALE` badges, proof photo, receipt, `Pencil` edit, `Trash2` delete) | `reportData`, `selectedRegion..selectedCustomer`, `isAdmin`, `reportAccessLevel` | `src/components/HistoryReportView.jsx:700-936` |
+| `Context Analytics` dashboard (`reportView === true`) | Both + Print PDF | `Back to Folders`, print `Scale` slider (50–150%), `Print PDF` (`window.print()`); header (`Context Revenue`); 3 KPI cards (`Transactions`, `Items Moved (Bks)`, `Net Profit (Cuan)`); `Product Performance` table; `Offer Performance` (**`data-guide="offer-performance"`**) + `Package, then Retur within 7 days` & `Package counts cleared, last 30 days` (**`data-guide="package-returns"`**, `!isFieldAgent`); `Agent Roster` / `My Detailed Breakdown` accordions (items sold + chronological ledger) | `stats`, `offerStats`, `pkgReturns`, `countClears`, `printScale`, `expandedAgent`, `isFieldAgent`, `motorists` | `src/components/HistoryReportView.jsx:478-698` |
+| Modals (`viewingPhoto`, `editingTrans`, `viewingReceipt`) | Both (overlay) | Delivery proof photo + GPS/time; `DATA AUDIT` transaction editor (`date`, `customerName`, `priceTier`, `items` rows, `Grand Total`); `<SaleReceipt>` printer/WhatsApp modal | `viewingPhoto`, `editingTrans`, `viewingReceipt`, `inventory`, `customers`, `appSettings` | `src/components/HistoryReportView.jsx:939-1019` |
+
+### 2. Every press & what it writes
+| control / press | handler called | writes (Firestore + local state) | moves stock or money? | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| `rangeType`, `targetDate`, `searchTerm`, breadcrumbs, folder cards, `Context Analytics`, `Back to Folders`, `Print PDF`, `Scale`, agent accordion, `Camera`, `FileText` | Local state setters / `window.print()` | Local UI state only (note: `handlePullArchive` fetches historical `transactions` into local `historicalData`) | No | `src/components/HistoryReportView.jsx:236-249, 425-489, 588, 709-830, 919-920` |
+| `Pull Archive` | `handlePullArchive` -> `fetchHistoricalTransactions(start, end)` | Queries `transactions` in date range into local `historicalData` | No | `src/components/HistoryReportView.jsx:236-249, 433` |
+| Folder `Trash2` (`Delete ALL history for this store`, `isAdmin`) | `onDeleteFolder` -> `handleDeleteHistory(customerName, agentName)` | Confirms, then `commitInChunks`: `delete` matching `artifacts/${appId}/users/${userId}/transactions/${id}` + `untallyOps(targets)` (updates monthly sales rollup) + `logAudit("HISTORY_DELETE")` (does NOT restore stock) | **Yes — deletes transaction records & reverses sales rollup (`transactions`, `stats`/rollup)** | `src/components/HistoryReportView.jsx:857`, `src/App.jsx:3528-3548` |
+| Row `Trash2` (`Delete this specific transaction`, `isAdmin`) | `onDeleteTransaction(t)` -> `handleDeleteSingleTransaction` | Confirms, then `commitInChunks`: `delete` `artifacts/${appId}/users/${userId}/transactions/${t.id}` + `untallyOps([t])` + `logAudit("TRANS_DELETE")` (does NOT restore stock) | **Yes — deletes transaction record & reverses sales rollup (`transactions`, `stats`/rollup)** | `src/components/HistoryReportView.jsx:922`, `src/App.jsx:3489-3504` |
+| Row `Pencil` -> `DATA AUDIT` `Save Changes` (`isAdmin`) | `handleEditSubmit` | `commitInChunks`: `update` `artifacts/${appId}/users/${userId}/transactions/${id}` (`date`, `customerName`, `total`, `amountPaid`, `priceTier`, `items`, `timestamp`, `updatedAt`) + `tallySaleOp(..., __before, -1)` + `tallySaleOp(..., after, +1)` (updates monthly sales rollup; does NOT adjust stock) | **Yes — updates transaction amounts/items & adjusts sales rollup (`transactions`, `stats`/rollup)** | `src/components/HistoryReportView.jsx:368-405, 921, 1010` |
+
+### 3. Logic computed inside JSX / render
+| computation | what it computes | file:line |
+| :--- | :--- | :--- |
+| `reportAccessLevel`, `isFieldAgent`, `isRegionalOnly` | Fail-closed visibility: `ADMIN`/`DEVELOPER`/`COMPANY_OWNER` or `view_reports_global` -> `'global'`; `view_reports_regional` -> `'regional'` (filtered by `myLocation`); else `'personal'` (`agentProfileId` only) | `src/components/HistoryReportView.jsx:50-86` |
+| `dateFilteredTransactions` & `searchedTransactions` | Deduplicates `transactions + historicalData`, fences by access level, filters by `daily`/`weekly`/`monthly`/`yearly`, sorts newest first, filters by `searchTerm` | `src/components/HistoryReportView.jsx:69-114` |
+| `reportData` (6-tier hierarchy) | Groups into Region -> Agent -> Provinsi -> Kabupaten -> Kecamatan -> Store (`Individuals (Ecer)` if walk-in or `priceTier === 'Ecer'`); subtracts `RETUR` values (`-Math.abs(...)`) | `src/components/HistoryReportView.jsx:117-216` |
+| `contextualTransactions`, `stats` | Filters to selected Region/Agent; sums `totalRev` (`RETUR` negative), `totalProfit`, `count`, `payments`, `items` (`convertToBks`), `agentRoster` | `src/components/HistoryReportView.jsx:251-319` |
+| `offerStats`, `pkgReturns`, `countClears` | Calls `offerResults(contextualTransactions)` sorted by `rp`; calls `packageReturns(...)` & filters `customers[].bundleReset` within 30 days (`!isFieldAgent`) | `src/components/HistoryReportView.jsx:264-275` |
+| `handleEditItemChange` & `handleEditTierChange` | Recomputes `calculatedPrice = basePrice * convertToBks(1, unit, product)` and `total` / `amountPaid` | `src/components/HistoryReportView.jsx:321-366` |
+
+### 4. What can move out first & `logicFixes.selfcheck.mjs` pins
+| candidate to extract | safe to move first? | `logicFixes.selfcheck.mjs` exact line pins |
+| :--- | :--- | :--- |
+| `DATA AUDIT` modal (`editingTrans`), `viewingPhoto` modal, or `ReportAnalytics` (`reportView`) -> `src/components/reports/...` | **Only alongside `selfcheck` updates** — `selfcheck` reads `src/components/HistoryReportView.jsx` directly for analytics layout, store ledger grid classes, `offerStats`, `pkgReturns`, `promoGiven`, `convertToBks` | `32`, `129` (`imports(history, 'convertToBks')`), `1028`, `1071`, `10331-10351` (exact classes: `flex flex-col gap-3 md:flex-row md:justify-between md:items-end md:gap-0 print:flex-row...`, `text-right pr-3 md:pr-6 print:pr-6`, `grid grid-cols-[1fr_auto] gap-x-3 gap-y-2 py-3 lg:table-row`, `p-4 flex flex-wrap gap-y-2 items-center justify-between text-left`, etc.), `10912`, `12819` (`.concat((t.promoGiven || []).map(g =>`), `12904-12905` (`offerStats`, `data-guide="offer-performance"`), `14119-14122` (`packageReturns(contextualTransactions)`, `{!isFieldAgent && (`, `data-guide="package-returns"`, `Package counts cleared, last 30 days:`) |
+| `handleDeleteHistory` / `handleDeleteSingleTransaction` | **Keep in `App.jsx` (or update selfcheck)** | `4400-4401` (`handleDeleteHistory` anchor in `App.jsx`) |
 
 ## Task 25 - the same map for Customers (segment 6 of 12)
 **Status:** OPEN
