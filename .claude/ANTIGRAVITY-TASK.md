@@ -2169,7 +2169,7 @@ Same four checks as Task 48, for `map-system-pro.html` (map Task 31), `agent-pro
 | v4 look | Fine: 1 unified `.sw` switch style, `min-height:44px` rows, 13.5 px text, zero `<script>`, no filled amber button | `.claude/drafts/settings-pro.html:37, 55-57` | — |
 
 ## Task 50 - fix what Task 48 found in pictures 40-43
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 15:50 WIB, by Claude. Edits drafts only - not an app BUILD. Claude re-did your Sampling sum by hand: 156.250 + 105.000 + 80.750 + 157.500 + 95.000 = Rp 594.500 - you were right.
 **Touch only:** `.claude/drafts/reports-pro.html`, `customers-pro.html`, `sampling-pro.html`, `command-center-pro.html`, this file.
 
@@ -2179,6 +2179,12 @@ Fix every finding in your Task 48 Result, nothing else:
 - reports: Period picker + Date picker on BOTH phone frames (one quiet line, same words as PC).
 - customers: Admin Tools (Repair Tiers, Find Duplicates, Data Scrub, Import KML) and Verify NOO reachable on the phone - one quiet "More" row that opens the list is enough; same words as PC.
 Done when: every Task 48 finding is gone, no `<script>`, and the Result lists each fix with file:line.
+
+**Result:**
+- `sampling-pro.html`: Fixed Phone 2 Potential Value to `Ecer: Rp 594.500` and `Retail: Rp 523.000` (`.claude/drafts/sampling-pro.html:232`) and added the Ecer/Retail/Grosir breakdown to the HTML arithmetic comment (`.claude/drafts/sampling-pro.html:179-181`).
+- `command-center-pro.html`: Updated summary strip (`0 low-stock SKUs (seed)`) and `Stok Kritis` on PC and Phone 1 to reflect `src/components/DashboardView.jsx:78-106, 320` (hidden when `runningOut.length === 0`, since all 6 seed SKUs are above `minStock`), with rule comment (`.claude/drafts/command-center-pro.html:100, 115-117, 175, 184-185`).
+- `reports-pro.html`: Added `Daily ▾` period picker and `2026-11-17` date picker to both Phone 1 and Phone 2 `.sum` bars (`.claude/drafts/reports-pro.html:194, 218`).
+- `customers-pro.html`: Added `More ▾` (`Verify NOO (when PENDING) · Move · Del`) on Phone 1 `.sheet` and `Admin Tools` (`Repair Tiers`, `Find Duplicates`, `Data Scrub`, `Import KML`) on Phone 2 `.an-sec` (`.claude/drafts/customers-pro.html:261-262, 291-294`).
 
 ## Task 51 - fix what Task 49 found in pictures 44-47
 **Status:** OPEN
