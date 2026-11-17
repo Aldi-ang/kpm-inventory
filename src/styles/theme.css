@@ -6086,21 +6086,18 @@ html.lite-mode .kpm-fleet-acts { animation: none; }
   .kpm-demo-row:hover:not(:disabled), .kpm-demo-badge:hover { border-color: #E7700F; background: rgba(231,112,15,.09); }
 }
 
-/* the bar: fixed above the whole shell, 34 px + a 3 px hazard edge, under the notch. While it is up, html carries
-   .kpm-demo-on and --kpm-safe-top grows by its height - the shell and the phone drawer already pad by that variable,
-   so everything moves down together instead of each screen learning about the bar. */
-html.kpm-demo-on { --kpm-safe-top: calc(env(safe-area-inset-top, 0px) + 37px); }
-.kpm-demo-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 95; padding-top: env(safe-area-inset-top, 0px); background: var(--inset); }
-.kpm-demo-bar .in { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 12px; }
+/* the bar: one 40 px fixed row above the whole shell, under the notch, with the mission steps inside it. While it is up,
+   html carries .kpm-demo-on and --kpm-safe-top grows by 40 px - the shell, rail, toasts and phone drawer already pad by
+   that variable, so everything moves down together. */
+html.kpm-demo-on { --kpm-safe-top: calc(env(safe-area-inset-top, 0px) + 40px); }
+.kpm-demo-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 95; padding-top: env(safe-area-inset-top, 0px); background: var(--panel); border-bottom: 1px solid var(--line-2); }
+.kpm-demo-bar .in { display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 10px 0 12px; }
 .kpm-demo-bar .stamp { flex: none; padding: 3px 6px; border: 1px solid var(--accent-edge); font: 700 10px/1 var(--font-mono); letter-spacing: .22em; color: var(--accent-ink); }
-.kpm-demo-bar .who { min-width: 0; font: 600 12px/1.2 var(--font-mono); letter-spacing: .1em; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.kpm-demo-bar .who span { color: var(--ink-dim); }
-.kpm-demo-bar .key { flex: none; margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; background: var(--plate);
-  border: 1.5px solid var(--accent-edge); font: 700 11px/1 var(--font-mono); letter-spacing: .16em; color: var(--ink); cursor: pointer; touch-action: manipulation;
-  transition: transform 120ms ease-out; }
-.kpm-demo-bar .key::after { content: ''; border: 4px solid transparent; border-top-color: var(--accent-ink); margin-top: 4px; }
-.kpm-demo-bar .key:active { transform: scale(.97); }
-.kpm-demo-bar .tape { height: 3px; background-image: repeating-linear-gradient(135deg, var(--accent-edge) 0 6px, transparent 6px 12px); }
+.kpm-demo-bar .who { flex: 0 1 auto; min-width: 0; font: 500 13px/1.2 var(--font-body); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpm-demo-bar .who i { font-style: normal; color: var(--ink-dim); }
+.kpm-demo-bar .switch, .kpm-demo-bar .hintkey { flex: none; height: 28px; padding: 0 10px; gap: 6px; border-radius: 6px; font: 600 12px/1 var(--font-body); }
+.kpm-demo-bar .switch { margin-left: auto; }
+.kpm-demo-bar .switch .car { border: 4px solid transparent; border-top-color: var(--accent-ink); margin-top: 4px; }
 .kpm-demo-bar .scrim { position: fixed; inset: 0; z-index: 0; background: transparent; border: 0; cursor: default; }
 .kpm-demo-bar .sheet { position: absolute; z-index: 1; right: 8px; top: 100%; width: 340px; max-height: calc(100dvh - 60px); overflow-y: auto;
   background: var(--panel); border: 1px solid var(--line-3); }
@@ -6137,28 +6134,26 @@ html.kpm-demo-on { --kpm-safe-top: calc(env(safe-area-inset-top, 0px) + 37px); }
 /* Fleet & Roster on a demo login: the four buttons that would break a shared login look switched off; a press still answers (FleetCanvasManager.jsx isDemoLogin) */
 .kpm-fleet-acts button.demo-locked { opacity: .45; }
 
-/* THE MISSION LINE (DemoMission.jsx, his pick B 2026-10-24): one more 34 px line under the bar, so the shell moves down
-   by that much too. z 96 = over the hint's dim panels (z 95), so the line and its PETUNJUK key stay readable. */
-html.kpm-demo-on.kpm-mission-on { --kpm-safe-top: calc(env(safe-area-inset-top, 0px) + 37px + 34px); }
-.kpm-mission { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 37px); left: 0; right: 0; z-index: 96; height: 34px; display: flex; align-items: center; gap: 10px;
-  padding: 0 8px 0 12px; background: var(--inset); border-bottom: 1px solid var(--line-3); font-family: var(--font-mono); color: var(--ink); }
-.kpm-mission .tag { flex: none; font: 700 10px/1 var(--font-mono); letter-spacing: .22em; color: var(--ink-dim); }
-.kpm-mission .tag b, .kpm-mission .tick { color: var(--accent-ink); font-weight: 700; }
-.kpm-mission .now { min-width: 0; flex: 1; font: 600 14px/1.2 var(--font-mono); letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.kpm-mission .hintkey { position: relative; flex: none; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 8px; background: var(--plate);
-  border: 1.5px solid var(--accent-edge); font: 700 10px/1 var(--font-mono); letter-spacing: .14em; color: var(--ink); cursor: pointer; touch-action: manipulation; }
-.kpm-mission .hintkey::after { content: ''; position: absolute; inset: -4px -6px; }   /* the whole 34 px line height is the finger's target */
-.kpm-mission .hintkey[aria-pressed="true"] { color: var(--accent-ink); }
-.kpm-mission ol { display: none; }
-@media (min-width: 1024px) {
-  .kpm-mission .now { display: none; }
-  .kpm-mission ol { display: flex; flex: 1; min-width: 0; margin: 0; padding: 0; list-style: none; overflow: hidden; }
-  .kpm-mission li { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 0 16px; height: 34px; font: 600 14px/1 var(--font-mono); letter-spacing: .02em;
-    color: var(--ink-dim); border-left: 1px solid var(--line-3); border-bottom: 2px solid transparent; white-space: nowrap; }
-  .kpm-mission li.on { color: var(--ink); border-bottom-color: var(--accent-edge); }
-  .kpm-mission li .n { font-weight: 700; }
-  .kpm-mission li.on .n { color: var(--accent-ink); }
-  .kpm-mission li em { font-style: normal; color: var(--ink-dim); font-weight: 500; }
+/* THE MISSION STEPS (DemoMission.jsx): inside the 40 px demo bar. Phone (< 640 px) shows current step as 3/8 words + ?;
+   PC (>= 640 px) shows 1 px divider, all steps, and ? Petunjuk. */
+.kpm-mission { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; }
+.kpm-mission .sep { display: none; width: 1px; height: 20px; background: var(--line-2); flex: none; }
+.kpm-mission .steps { display: flex; align-items: center; gap: 2px; min-width: 0; flex: 1; }
+.kpm-mission .st { min-width: 26px; height: 26px; place-items: center; border-radius: 5px; font: 600 12px var(--font-body); color: var(--ink-dim); flex: none; }
+.kpm-mission .st.done { color: var(--accent-ink); }
+.kpm-mission .st.now { padding: 0 10px; color: var(--ink); background: color-mix(in srgb, var(--gold) 11%, transparent); border-bottom: 2px solid var(--accent-edge); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; line-height: 24px; }
+.kpm-mission .st.now b { color: var(--accent-ink); font-weight: 700; margin-right: 6px; }
+.kpm-mission .st.now em { font-style: normal; color: var(--ink-dim); font-weight: 500; }
+.kpm-mission .st-pc { display: none; }
+.kpm-mission .st-phone { display: block; }
+.kpm-mission .hintkey .lbl { display: none; }
+.kpm-mission .hintkey[aria-pressed="true"] { color: var(--accent-ink); border-color: var(--accent-edge); }
+@media (min-width: 640px) {
+  .kpm-mission .sep { display: block; }
+  .kpm-mission .st-phone { display: none; }
+  .kpm-mission .st-pc { display: grid; }
+  .kpm-mission .st-pc.now { display: block; }
+  .kpm-mission .hintkey .lbl { display: inline; }
 }
 /* the hint: everything outside the square dimmed and blurred. No blur in Lite Mode, so the dim alone carries it: .55 read
    as no dim at all on the 2026-10-24 frame, .8 reads */

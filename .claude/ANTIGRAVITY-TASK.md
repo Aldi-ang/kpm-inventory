@@ -1417,7 +1417,7 @@ Done when: the four BUILD checks are green and the red-then-green proof is in th
   4. `node src/config/integration.audit.mjs`: `725 passed, 0 failed, 725 checks`
 
 ## Task 29 - BUILD, ONLY after Aldi says "demo bar ok": the demo's two top bars as ONE 40 px line
-**Status:** OPEN - Aldi, 2026-11-17: *"demo bar oke"*.
+**Status:** DONE - Aldi, 2026-11-17: *"demo bar oke"*.
 **Written:** 2026-11-17 09:00 WIB, by Claude. BUILD rules apply.
 **Touch only:** `src/components/DemoFrontDoor.jsx`, `src/components/DemoMission.jsx`, `src/styles/theme.css` (only the `.kpm-demo-bar` / `.kpm-mission` / `--kpm-safe-top` block, about L6085-6160), `src/config/logicFixes.selfcheck.mjs`, `src/config/integration.audit.mjs`, `src/config/patchNotes.js`, this file.
 
@@ -1429,6 +1429,27 @@ The spec is the picture Aldi is judging: A-Brain `Raw/2026-11-17-master-vault/de
 Done when: the four BUILD checks are green; the pin list and what changed in each in the Result. Claude renders it on PC and phone before it goes live.
 
 **Result:**
+- **Pin list (`logicFixes.selfcheck.mjs` & `integration.audit.mjs`):**
+  - `src/config/integration.audit.mjs`: 0 matches (none to change).
+  - `src/config/logicFixes.selfcheck.mjs`:
+    - `9312-9313` (`--kpm-safe-top` base + shell padding): unchanged.
+    - `9583, 9611, 9626, 9628, 9629, 9635, 9645, 9658, 9675, 9747, 9755` (Agent Inventory quarantine `tape` band): unrelated, unchanged.
+    - `11401-11403` (`--kpm-safe-top` demo bar height): **updated** `37 px` / `37px` -> `40 px` / `40px` (kept intent: `--kpm-safe-top` reserves the bar height and `<DemoBar` mounts outside the overflow-hidden root).
+    - `11412-11413` (PC rail + Toast padding by `--kpm-safe-top`): unchanged.
+    - `12253-12258` (`data-mission="switch"` and `{inside && <DemoMission me={me} isT1={isT1} people={PEOPLE} />}` in `DemoFrontDoor.jsx`): unchanged (kept exact props inside `.kpm-demo-bar .in`).
+    - `12262-12264` (capybara greets first, mission hidden until `!greeting`): **updated** line `12264` from checking `kpm-mission-on` class (removed since mission sits inside the 40 px bar) to `!read('src/styles/theme.css').includes('kpm-mission-on')`, keeping the `greet(...)` and `{!greeting && (<div className="kpm-mission` checks intact.
+    - `12532` (ExamineModal `top` with `--kpm-safe-top`): unchanged.
+    - `14208-14214` (Journey full map `--kpm-safe-top` offset): unchanged.
+- **Changes made:**
+  - `src/components/DemoFrontDoor.jsx`: moved `{inside && <DemoMission ... />}` inside `.kpm-demo-bar > .in` between `who` and `Switch`; removed `<div className="tape" />`, phone `who`, and `"resets every night at 00:05 WIB"` from the bar (kept in Switch sheet `.foot`); updated `who` to `{who} · {tier} {role}` on `sm+`; changed `Switch` button to `kpm-edge-btn switch` keeping `data-mission="switch"` and `onClick`.
+  - `src/components/DemoMission.jsx`: replaced `<ol>`/`<Lightbulb>` with `.sep` (hidden `< 640px`), `.steps` (PC `>= 640px`: done `✓`, active `.st.now` with gold number + words, rest dim numbers; Phone `< 640px`: `.st.now.st-phone` with `n/8` + words), and `? Petunjuk` (`kpm-edge-btn quiet hintkey`, `?` only on `< 640px`, keeping `aria-pressed`, `aria-label="Petunjuk"`, `onClick={press}`); removed `kpm-mission-on` `useEffect`; portaled `CapyTalk` to `document.body` so `.kpm-ct-veil` / `.kpm-ct` are not trapped in `.kpm-demo-bar`'s `z-index: 95` stacking context.
+  - `src/styles/theme.css`: updated `html.kpm-demo-on` `--kpm-safe-top` to `+ 40px`; styled `.kpm-demo-bar` (`background: var(--panel)`, `border-bottom: 1px solid var(--line-2)`), `.in` (`height: 40px`), `.who`, `.switch`, `.kpm-mission`, `.sep`, `.steps`, `.st`, `.st.done`, `.st.now` (11% gold wash + `2px` gold bottom border so Lite Mode keeps it); deleted `.tape` and `kpm-mission-on` CSS.
+  - `src/config/patchNotes.js`: added `2026-11-17` `en` + `id` patch note for the combined one-line demo bar.
+- **Four BUILD checks (all green after final edit):**
+  1. `node src/config/logicFixes.selfcheck.mjs`: `3010 passed, 0 failed, 3010 checks`
+  2. `src/config/*.selfcheck.mjs`: all 14 scripts exited 0 (`contrast`, `customerBrief`, `dayLog`, `dayStats`, `eodRecord`, `findDuplicates`, `logicFixes`, `mixedUnits`, `nextStop`, `notaScan`, `stockThreshold`, `toastSeverity`, `txSize`, `vaultGrace`)
+  3. `npm run build`: exit 0 (`built in 14.73s`)
+  4. `node src/config/integration.audit.mjs`: `725 passed, 0 failed, 725 checks`
 
 ## Task 30 - draft the Restock Vault picture (segment 2) for Claude to check
 **Status:** DONE

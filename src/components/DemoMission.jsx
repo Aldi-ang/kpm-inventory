@@ -12,7 +12,6 @@
    (00:05 WIB) starts it again. */
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Lightbulb } from 'lucide-react';
 import { notify } from './Toast.jsx';
 import { STEPS, GUIDE, TOUR, tourBeat, missionDay, liveStep, liveBeat } from '../config/demoMission.js';
 import talk from '../assets/capy-talk/e-talk.webp';
@@ -112,7 +111,7 @@ function CapyTalk({ lines, onShow, onClose }) {
     }, [onClose, onShow, L.choices]);
     /* every face of the scene is in the page from the first line, so a snap never waits for a download */
     const faces = [...new Set(lines.map((l) => l.face))];
-    return (
+    return createPortal(
         <>
             <div className="kpm-ct-veil hide-on-print" onClick={L.choices ? undefined : next} />
             <div className="kpm-ct hide-on-print" role="dialog" aria-label="Agent Capybara">
@@ -130,7 +129,8 @@ function CapyTalk({ lines, onShow, onClose }) {
                     </div>
                 )}
             </div>
-        </>
+        </>,
+        document.body
     );
 }
 
@@ -306,13 +306,6 @@ export default function DemoMission({ me, isT1, people }) {
         return () => document.documentElement.classList.remove('kpm-tour');
     }, [touringNow]);
 
-    /* the 34 px the shell moves down for the line, only once the line is there */
-    useEffect(() => {
-        if (greeting) return undefined;
-        document.documentElement.classList.add('kpm-mission-on');
-        return () => document.documentElement.classList.remove('kpm-mission-on');
-    }, [greeting]);
-
     useEffect(() => {
         const tick = (e) => {
             const { step: s, ...d } = e.detail || {};
@@ -344,21 +337,27 @@ export default function DemoMission({ me, isT1, people }) {
     return (
         <>
             {!greeting && (
-                <div className="kpm-mission hide-on-print">
-                    <span className="tag"><span className="hidden lg:inline">MISI </span><b>{n ? `${n}/${LAST}` : '✓'}</b></span>
-                    <span className="now">{n ? step.todo : `Misi selesai: ${step.done(done[LAST])}`}{n && !mine ? <em> · sebagai {doer.role}</em> : null}</span>
-                    {/* the PC line: the live step in words, every other step as its tick or its number */}
-                    <ol>
-                        {STEPS.map((s) => (
-                            <li key={s.n} className={s.n === (n || LAST) ? 'on' : ''} title={done[s.n] ? s.done(done[s.n]) : s.todo}>
-                                {done[s.n] ? <span className="tick">✓</span> : <span className="n">{s.n}</span>}
-                                {s.n === (n || LAST) && (done[s.n] ? s.done(done[s.n]) : s.todo)}
-                                {s.n === n && !mine && <em>· sebagai {doer.role}</em>}
-                            </li>
-                        ))}
-                    </ol>
-                    <button type="button" className="hintkey" aria-pressed={!!(talking || guide)} aria-label="Petunjuk" onClick={press}>
-                        <Lightbulb size={14} /><span className="hidden lg:inline">PETUNJUK</span>
+                <div className="kpm-mission">
+                    <span className="sep" aria-hidden="true" />
+                    <div className="steps">
+                        <span className="st now st-phone">
+                            <b>{n ? `${n}/${LAST}` : '✓'}</b>
+                            {n ? step.todo : `Misi selesai: ${step.done(done[LAST])}`}
+                            {n && !mine ? <em> · sebagai {doer.role}</em> : null}
+                        </span>
+                        {STEPS.map((s) => {
+                            const isNow = s.n === (n || LAST);
+                            const isDone = !!done[s.n] && !isNow;
+                            const tip = done[s.n] ? s.done(done[s.n]) : s.todo;
+                            return (
+                                <span key={s.n} className={`st st-pc${isDone ? ' done' : ''}${isNow ? ' now' : ''}`} title={tip}>
+                                    {isNow ? (<><b>{done[s.n] ? '✓' : s.n}</b>{done[s.n] ? s.done(done[s.n]) : s.todo}{s.n === n && !mine ? <em> · sebagai {doer.role}</em> : null}</>) : (isDone ? '✓' : s.n)}
+                                </span>
+                            );
+                        })}
+                    </div>
+                    <button type="button" className="kpm-edge-btn quiet hintkey" aria-pressed={!!(talking || guide)} aria-label="Petunjuk" onClick={press}>
+                        <span aria-hidden="true">?</span><span className="lbl">Petunjuk</span>
                     </button>
                 </div>
             )}

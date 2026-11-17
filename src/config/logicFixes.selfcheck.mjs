@@ -11398,8 +11398,8 @@ section('THE DEMO FRONT DOOR + SWITCH BAR (2026-10-13) - his "A for phone B for 
      (door.match(/notify\(DEMO_DOWN\)/g) || []).length === 1 && (door.match(/enterAs\(p, setBusy\)/g) || []).length === 3 && !/notify\([^)]*e\.message/.test(door));
   ok('phone = five keys (A), PC = five badges (B): Tailwind switches the two layouts, and the class sheet never sets display on them (it loads after Tailwind and would show both)',
      door.includes('kpm-demo-list lg:hidden') && door.includes('kpm-demo-grid hidden lg:grid') && !/\.kpm-demo-(list|grid)\s*\{[^}]*display\s*:/.test(th));
-  ok('the bar takes its 37 px through --kpm-safe-top (the shell and the phone drawer already pad by it) and mounts outside the overflow-hidden root',
-     th.includes('html.kpm-demo-on { --kpm-safe-top: calc(env(safe-area-inset-top, 0px) + 37px); }')
+  ok('the bar takes its 40 px through --kpm-safe-top (the shell and the phone drawer already pad by it) and mounts outside the overflow-hidden root',
+     th.includes('html.kpm-demo-on { --kpm-safe-top: calc(env(safe-area-inset-top, 0px) + 40px); }')
      && shell.indexOf('<DemoBar') > 0 && shell.indexOf('<DemoBar') < shell.indexOf('<div className="print-reset h-[100dvh]'));
   ok('the T1 reset shows for his Gmail only and goes through the server, which checks the token again (api/demo-reset.js callerOf)',
      door.includes('const isT1 = email === POV_OWNER_EMAIL') && door.includes('{isT1 && (')
@@ -12259,9 +12259,9 @@ section('DEMO MISSION. A step ticks on the saved write only; the line resets wit
   ok('REGRESSION: the mission waits until the visitor is inside - not on the vault password screen, not on "pick who to be" (his 2026-10-25 "shouldnt be there when user even not login yet")',
      /<DemoBar user=\{user\} inside=\{!showAdminLogin && !!userRole && userRole !== 'UNAUTHORIZED'\} \/>/.test(read('src/components/BiohazardTheme.jsx')) &&
      /export function DemoBar\(\{ user, inside = true \}\)/.test(door));
-  ok('REGRESSION: the capybara greets first and the line waits for him - hidden, and the shell not moved down, until the greeting ends (his 2026-10-25 "hide the mission and let the dialogue starts first")',
+  ok('REGRESSION: the capybara greets first and the mission steps wait for him - hidden until the greeting ends (his 2026-10-25 "hide the mission and let the dialogue starts first")',
      /useState\(\(\) => \(greeted \? null : greet\(n, done, mine, doer, me\)\)\)/.test(dm) && /\{!greeting && \(\s*<div className="kpm-mission/.test(dm) &&
-     /if \(greeting\) return undefined;\s*document\.documentElement\.classList\.add\('kpm-mission-on'\)/.test(dm));
+     !read('src/styles/theme.css').includes('kpm-mission-on'));
   ok('REGRESSION: only the live step ticks - once and in order (a van return before the sale must not tick step 5)',
      /if \(!STEPS\[s - 1\] \|\| liveStep\(doneRef\.current\) !== s\) return;/.test(dm));
   ok('the capybara says saya / Anda, never aku / kamu (his 2026-10-25 call)', !/\b(aku|kamu)\b/i.test(code(dm)) && /saya/.test(dm) && /Anda/.test(dm));
