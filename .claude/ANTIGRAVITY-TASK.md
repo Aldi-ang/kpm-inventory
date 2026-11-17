@@ -1114,10 +1114,51 @@ Do NOT change the code. Done when: four tables in the Result.
 | `handleCommit` / `decideProducts` / `executeResolution` | **Keep logic & error strings intact** | Pinned by `1594`, `1663`, `4330`, `13780-13791`, `13810-13815` |
 
 ## Task 23 - the same map for Receivables & Consignment (segment 4 of 12)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 07:42 WIB, by Claude. Same rules as above.
 
 Exactly Task 20's four tables for `src/ConsignmentFinanceView.jsx` and the inline `activeTab === 'receivables'` block in `src/App.jsx` (~L5525). Every press that moves money gets **Yes** in the "moves stock or money?" column with the exact field it writes. Mark demo guide marks. In table 4, list the selfcheck pins on this file.
 Do NOT change the code. Done when: four tables in the Result.
 
 **Result:**
+
+### Demo Guide Marks
+- **None** in `src/ConsignmentFinanceView.jsx` or `src/App.jsx:5525-5548` (`rg -n "data-mission=|data-guide="` returned zero matches).
+
+### 1. Elements on screen (PC & phone, top to bottom)
+| element | PC / phone | what it shows | reads (state / prop / Firestore field) | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| `App.jsx` tab mount | Both | Renders `<ConsignmentFinanceView>` directly when `activeTab === 'receivables'` (no outer wrapper) | `transactions`, `customers`, `focusStore`, `inventory`, `isAdmin`, `user`, `agentProfileId`, `motorists`, `transferRequests`, `appSettings` | `src/App.jsx:5525-5548` |
+| Header, filters & tab bar | Both | Title (`Global Receivables` if `isAdmin`, else `My Receivables`); when `isAdmin`: region `<select>` (`ALL`, `HQ`, `uniqueLocations`) + agent autocomplete search; 3 tabs (`A/R Financials` default, `Physical Stock`, `Hand-offs` with red dot when `incomingRequests.length > 0 \|\| pendingAdminRequests.length > 0`) | `isAdmin`, `activeRegion`, `agentSearch`, `showAgentDropdown`, `dropdownAgents`, `activeTab`, `incomingRequests`, `pendingAdminRequests` | `src/ConsignmentFinanceView.jsx:51, 930-1042` |
+| `A/R Financials` tab (`activeTab === 'financials'`) | Both | 2 KPI cards (`Total Assigned Debt`, `Active Accounts`) + 3 `<StatusCard>` columns (`Safe (Due in 4+ Days)`, `Warning (Due Soon)`, `OVERDUE (Jatuh Tempo)`) | `debtData` (`totalValue`, `activeAccounts`, `GREEN`, `YELLOW`, `RED`) | `src/ConsignmentFinanceView.jsx:602-632, 1045-1063` |
+| `Physical Stock` tab (`activeTab === 'stock'`) | PC 1/3 + 2/3 split / Phone switches list -> detail via `selectedCustomer` | Left: `Active Consignments` cards (`name`, `Managed by`, `handoffChain`, `Bks Held`, `balance`). Right: store header, product rows (`Dititip` qty, or in `auditMode`: `Sisa Rak` + `Retur / BS` inputs + `Laku (Rp)`), or `transferMode` panel (`targetAgent` grouped by branch, `Show other branches` checkbox if `canCrossBranches`, note), footer (`Add Goods` if `isAdmin`, `Store Audit`, `Hand-off`, or `Cancel` / `Confirm`) | `customerData`, `selectedCustomer`, `activeCustomer`, `auditMode`, `auditData`, `transferMode`, `handoffTargets`, `canCrossBranches`, `showAllBranches`, `isAdmin` | `src/ConsignmentFinanceView.jsx:1066-1277` |
+| `Hand-offs` tab (`activeTab === 'transfers'`) | Both (2-col on `md+`) | Left: `pendingAdminRequests` (`Reject` / `Authorize Transfer`) + `incomingRequests` (`HandoffOffer`, `See it on the journey map`, `Decline` / `Accept Responsibility` or waiting badge). Right: `My Outgoing Requests` (`outgoingRequests`) | `pendingAdminRequests`, `incomingRequests`, `outgoingRequests`, `onShowStoreOnJourney` | `src/ConsignmentFinanceView.jsx:1280-1368` |
+| Receipt modal (`viewingReceipt`) | Both (overlay) | Thermal (58mm) or A4 `STORE AUDIT REPORT` / `STORE AUDIT RECEIPT` with `handoffLine`, `Print` (iframe), `Share` (WhatsApp), `CLOSE RECEIPT` | `viewingReceipt`, `printFormat`, `handoffLine`, `appSettings`, `customers` | `src/ConsignmentFinanceView.jsx:638-928` |
+
+### 2. Every press & what it writes
+| control / press | handler called | writes (Firestore + local state) | moves stock or money? | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| Region `<select>`, Agent search, Tabs (`financials`/`stock`/`transfers`), Store card click, `Store Audit`, `Hand-off`, `Cancel`, `Show other branches`, `Print`, `Share`, `CLOSE RECEIPT` | Local state setters / `shareReceipt` / `window.print` | Local UI state only (`activeRegion`, `agentSearch`, `activeTab`, `selectedCustomer`, `auditMode`, `transferMode`, `showAllBranches`, `viewingReceipt`, `printFormat`) | No | `src/ConsignmentFinanceView.jsx:950-1018, 1074, 1154, 1259-1268, 829-924` |
+| `Add Goods` (`isAdmin`) | `onAddGoods` -> `handleAddGoodsToCustomer` | Sets `activeTab('sales')` + toast (`notify`) | No | `src/ConsignmentFinanceView.jsx:1250`, `src/App.jsx:3903` |
+| `See it on the journey map` | `onShowStoreOnJourney(r.storeName)` -> `showStoreOnJourney` | Navigates to Journey map focused on store | No | `src/ConsignmentFinanceView.jsx:1337`, `src/App.jsx:5541` |
+| `Confirm Audit & Update Ledgers` (`auditMode`) | `submitAction` -> `onPayment` -> `handleConsignmentPayment` | Confirms, then **online**: `runTransaction` adds `transactions` doc (`type: 'CONSIGNMENT_PAYMENT'`, `amountPaid`, `returnTotal`, `itemsPaid`, `itemsReturned`, `itemsRemaining`), increments `products/${id}.stock` (when no `currentAgentProfileId`) or updates `motorists/${id}.activeCanvas` with returned items, updates monthly revenue rollup; **offline**: writes Ghost Ledger (`saveOfflineTransaction`) | **Yes** — records collected cash (`transactions.amountPaid`, `transactions.returnTotal`) and returns unsold/damaged packs (`products.stock` or `motorists.activeCanvas`) | `src/ConsignmentFinanceView.jsx:554-599, 1269`, `src/hooks/useTransactionEngine.js:513-645` |
+| `Confirm Hand-off Request` (`transferMode`) | `submitAction` -> `onRequestTransfer` -> `handleRequestTransfer` | Validates `handoffEligibility`, `addDoc` `account_transfers` (`status: 'PENDING_AGENT'`, `storeName`, `customerId`, `fromAgentId`, `toAgentId`, `stockSnapshot`) + `addDoc` `notifications` (`toAgentId`, `linkToStore`) | No (offer only; debt/stock stays with current holder until authorized) | `src/ConsignmentFinanceView.jsx:510-552, 1269`, `src/App.jsx:1965-2046` |
+| `Accept Responsibility` / `Decline` | `onAgentAcceptTransfer(r.id, bool)` -> `handleAgentAcceptTransfer` | `updateDoc` `account_transfers/${id}` (`status: 'PENDING_ADMIN'` or `'REJECTED'`, `respondedAt`) + `notifications` to requester, `ADMIN`, and `handoffApprovers` | No (still awaiting admin/branch authorization) | `src/ConsignmentFinanceView.jsx:1344-1345`, `src/App.jsx:2048-2131` |
+| `Authorize Transfer` / `Reject` | `onAdminApproveTransfer(r, bool)` -> `handleAdminApproveTransfer` | Checks `canApproveHandoffFrom` + fresh `account_transfers/${id}`, updates `account_transfers/${id}` (`APPROVED`/`REJECTED`), on approve stamps `customers/${id}.ownerAgentId` + `handoffs` array (transfers consignment debt & shelf ownership to `toAgentId`) + `notifications` | **Yes** — reassigns store consignment debt & stock ownership (`customers.ownerAgentId`, `customers.handoffs`) to `toAgentId` | `src/ConsignmentFinanceView.jsx:1317-1318`, `src/App.jsx:2133-2200` |
+
+### 3. Logic computed inside JSX / render
+| computation | what it computes | file:line |
+| :--- | :--- | :--- |
+| `myTransactions` | Filters `transactions` by `isAdmin` / `agentProfileId` / `isInherited(store)` + `activeRegion` + `agentSearch` | `src/ConsignmentFinanceView.jsx:100-151` |
+| `debtData` (FIFO debt engine) | Sorts `myTransactions` by `txSeconds`, builds per-customer FIFO `Titip` debts, subtracts `debtCredit(t)` on `CONSIGNMENT_PAYMENT` / `RETURN`, buckets into `GREEN` / `YELLOW` (`<= 3d`) / `RED` (`< 0d`), sums `totalValue`, `totalOverdue`, `activeAccounts` | `src/ConsignmentFinanceView.jsx:163-239` |
+| `customerData` | Aggregates `Titip` items (`convertToBks`), deducts `itemsPaid` + `itemsReturned`, clamps `balance` & `qty >= 0`, resolves `ownerName` via `handedOwnerByStore` -> `rosterNameById` | `src/ConsignmentFinanceView.jsx:260-357` |
+| `handoffTargets` | Filters `motorists` via `handoffEligibility`, groups by `normalizeRegion(m.location)`, hides other branches unless `showAllBranches` | `src/ConsignmentFinanceView.jsx:409-438` |
+| `incomingRequests`, `outgoingRequests`, `pendingAdminRequests` | Splits `transferRequests` by `agentProfileId`, `isAdmin`, and `canApproveHandoffFrom` | `src/ConsignmentFinanceView.jsx:451-487` |
+| Audit row live math (`soldQty`, `soldValue`, `Bks Held`) | Computes `soldQty = Math.max(0, item.qty - shelf - damaged)`, `soldValue = soldQty * calculatedPrice`, and total `Bks Held` per card | `src/ConsignmentFinanceView.jsx:1095, 1191-1197` |
+
+### 4. What can move out first & `logicFixes.selfcheck.mjs` pins
+| candidate to extract | safe to move first? | `logicFixes.selfcheck.mjs` exact line pins |
+| :--- | :--- | :--- |
+| `StatusCard`, `HandoffOffer`, `viewingReceipt` print/share modal -> `src/components/consignment/...` | **Only alongside `selfcheck` updates** — `selfcheck` reads `src/ConsignmentFinanceView.jsx` directly | `267`, `1356`, `4368`, `4499`, `4602`, `4692`, `4793`, `5287` (`paymentItems.push({ productId: item.productId, name: item.name, qty: sold, priceTier: item.priceTier, calculatedPrice: item.calculatedPrice, unit: 'Bks' })`), `5550`, `5768-5769`, `5853-5854`, `5945`, `6128`, `6227`, `6266`, `6309` (`isAdmin ? 'Global Receivables' : 'My Receivables'`), `8333`, `11533`, `13278-13279` (`const sorted = [...myTransactions].sort((a, b) => (txSeconds(a) ?? Number.MAX_SAFE_INTEGER) - (txSeconds(b) ?? Number.MAX_SAFE_INTEGER));`) |
+| `debtData` / `customerData` pure FIFO & consignment aggregations -> `src/utils/consignmentMath.js` | **Careful** — `13279` checks exact `sorted` line in `src/ConsignmentFinanceView.jsx` | `13278-13279` |
+| `App.jsx` handlers (`handleRequestTransfer`, `handleAgentAcceptTransfer`, `handleAdminApproveTransfer`, `handleDeleteConsignmentData`) | **Keep in `App.jsx` (or update selfcheck)** | `4370-4401`, `4615-4618`, `4813-4831`, `5428-5432`, `5876`, `6384-6387` |
