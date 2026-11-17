@@ -621,7 +621,7 @@ Do NOT change the code.
 ---
 
 ## Task 15 - the two Fleet fixes from your Task 11, as exact proposed code
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-16 22:10 WIB, by Claude. Same rules as above (read-only, touch only this file, commit it alone, "Antigravity:").
 
 Your Task 11 found (1) with the PC person panel open, Tab reaches the dimmed keys behind `.kpm-fleet-veil` and Escape does not close the panel; (2) closing inside the first ~300 ms snaps to opacity 1 before `kpmFleetOut` runs (two keyframe animations swapped). Claude will build both. Write the exact change as code blocks in your Result (do NOT edit the files):
@@ -629,6 +629,99 @@ Your Task 11 found (1) with the PC person panel open, Tab reaches the dimmed key
 - **(2)** the open/close driven by CSS transitions instead of `kpmFleetSlide`/`kpmFleetOut` keyframes, keeping: the 40 ms hold, 260 ms in / 200 ms out, the veil moving with the panel, the unmount on the panel's own end (today `onAnimationEnd` -> `finishClose`; a transition needs `onTransitionEnd` + a fallback timer), Lite Mode and reduced motion instant, and no replay on a − + press. Name every logicFixes check (file:line) that pins the old keyframes and would need re-pinning.
 
 **Result:**
+
+### (1) `inert` on blurred top bar, `Escape` handler, and focus return (`package.json:24` is React `^19.2.3`, so `inert` takes a boolean, matching `CustomerManager.jsx:1379`)
+- **What gets `inert`:** `.kpm-fleet-top` (`src/FleetCanvasManager.jsx:1109`) — it is the only sibling inside `.kpm-fleet` that sits under `.kpm-fleet-veil` (`z: 15`). `.kpm-fleet-list` stays interactive (`z: 16`) so names can be switched; the app header/rail in `BiohazardTheme.jsx` sit outside `.kpm-fleet` and stay sharp.
+- **Proposed JSX (`src/FleetCanvasManager.jsx:1109`):**
+```jsx
+<div inert={!!selectedAgent} className={`hide-on-print kpm-fleet-top shrink-0 bg-[var(--raised)] border-b border-[var(--line-2)]${selectedAgent ? ' open' : ''}`}>
+```
+- **Proposed `Escape` + focus return (`src/FleetCanvasManager.jsx` near `closePanel` ~L884-893):**
+```jsx
+const returnFocus = (id) => {
+    if (!id) return;
+    requestAnimationFrame(() => rootRef.current?.querySelector(`.kpm-fleet-row[data-agent="${id}"]`)?.focus());
+};
+const finishClose = () => {
+    const id = selectedAgent?.id;
+    clearTimeout(closeTimer.current); setPanelClosing(false); setSelectedAgent(null);
+    returnFocus(id);
+};
+const closePanel = async () => {
+    if (panelClosing) return;
+    if (bayLines > 0 && !await confirmAction(`${selectedAgent?.name}'s sheet has numbers that are not saved yet. Close it and drop them?`)) return;
+    if (!window.matchMedia('(min-width: 1024px) and (prefers-reduced-motion: no-preference)').matches || document.documentElement.classList.contains('lite-mode')) {
+        const id = selectedAgent?.id;
+        setSelectedAgent(null);
+        return returnFocus(id);
+    }
+    setPanelClosing(true);
+    closeTimer.current = setTimeout(finishClose, 400);
+};
+
+useEffect(() => {
+    if (!selectedAgent) return undefined;
+    const onKey = (e) => {
+        if (e.key !== 'Escape') return;
+        if (offersOpen || isAddingAgent || viewingSuratJalan || viewingReceipt) return;
+        if (document.querySelector('[role="alertdialog"], [role="dialog"][aria-modal="true"]')) return;
+        closePanel();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+});
+```
+
+### (2) CSS transition open/close replacing `kpmFleetSlide` / `kpmFleetOut`
+- **Proposed JS (`src/FleetCanvasManager.jsx`):**
+  Track `panelShown` (reset to `false` when `selectedAgent?.id` changes, set to `true` inside `requestAnimationFrame` on mount) and `veilShown` (true on `rAF` while `selectedAgent && !panelClosing`).
+```jsx
+const [panelShown, setPanelShown] = useState(false);
+const [veilShown, setVeilShown] = useState(false);
+useEffect(() => {
+    if (!selectedAgent) { setPanelShown(false); setVeilShown(false); return undefined; }
+    setPanelShown(false);
+    const id = requestAnimationFrame(() => { setPanelShown(true); setVeilShown(true); });
+    return () => cancelAnimationFrame(id);
+}, [selectedAgent?.id]);
+```
+  And on the veil + panel (`src/FleetCanvasManager.jsx:1532, 1549`):
+```jsx
+{selectedAgent && <div className={`kpm-fleet-veil${veilShown && !panelClosing ? ' open' : ''}${panelClosing ? ' closing' : ''}`} onClick={closePanel} aria-hidden="true" />}
+...
+<aside key={sel.id} className={`kpm-fleet-panel${panelShown && !panelClosing ? ' open' : ''}${panelClosing ? ' closing' : ''}`}
+    onTransitionEnd={(e) => { if (e.target === e.currentTarget && e.propertyName === 'opacity' && panelClosing) finishClose(); }}
+    aria-label={`${sel.name}'s van`} data-mission="3" data-more={moreOpen || undefined}>
+```
+- **Proposed CSS (`src/styles/theme.css:5908, 5921, 5941-5965`):**
+```css
+/* inside @media (min-width: 1024px) */
+.kpm-fleet-panel {
+  /* ...grid & placement unchanged... */
+  opacity: 0; transform: translateX(24px);
+  transition: transform 260ms cubic-bezier(.22, 1, .36, 1) 40ms, opacity 260ms cubic-bezier(.22, 1, .36, 1) 40ms;
+}
+.kpm-fleet-panel.open { opacity: 1; transform: none; }
+.kpm-fleet-panel.closing {
+  opacity: 0; transform: translateX(24px); pointer-events: none;
+  transition: transform 200ms cubic-bezier(.23, 1, .32, 1) 0ms, opacity 200ms cubic-bezier(.23, 1, .32, 1) 0ms;
+}
+.kpm-fleet-veil {
+  display: block; position: fixed; inset: 0; z-index: 15;
+  background: rgba(8, 7, 6, .55); backdrop-filter: blur(3px);
+  opacity: 0; transition: opacity 260ms cubic-bezier(.22, 1, .36, 1) 40ms;
+}
+.kpm-fleet-veil.open { opacity: 1; }
+.kpm-fleet-veil.closing { opacity: 0; pointer-events: none; transition: opacity 200ms cubic-bezier(.23, 1, .32, 1) 0ms; }
+/* Lite Mode & reduced motion: */
+.lite-mode .kpm-fleet-panel, html.lite-mode .kpm-fleet-veil { transition: none; }
+@media (prefers-reduced-motion: reduce) { .kpm-fleet-panel, .kpm-fleet-veil, .kpm-fleet-acts { transition: none; animation: none; } }
+```
+- **`logicFixes.selfcheck.mjs` checks that pin the old keyframes and must be re-pinned:**
+  - `src/config/logicFixes.selfcheck.mjs:8656-8657` (`kpmFleetSlide` animation on `.kpm-fleet-panel`)
+  - `src/config/logicFixes.selfcheck.mjs:14255-14257` (`@keyframes kpmFleetSlide`)
+  - `src/config/logicFixes.selfcheck.mjs:14273-14278` (`kpmFleetOut`, `onAnimationEnd`)
+  - `src/config/logicFixes.selfcheck.mjs:14302-14314` (`VEIL` string, `kpmFleetSlide`, `kpmFleetVeilIn`, `kpmFleetVeilOut`)
 
 ---
 
@@ -642,5 +735,17 @@ Your Task 8 listed 18 overlays that can open cut under the demo bars. The Fleet 
 - **z-index after the portal**: must be 97+ to clear the demo bars (ImageCropper `z-[70]`).
 - **Anything it reads from its place in the tree** (CSS that depends on a parent class) that a portal would break.
 Group them: which can share ONE small wrapper component, which need their own change. Do NOT change the code.
+
+**Result:**
+
+## Task 17 - review the demo guide's menu tour (commit 04a6bed2)
+**Status:** OPEN
+**Written:** 2026-11-17 06:40 WIB, by Claude. Same rules as above (read-only, touch only this file, commit it alone, "Antigravity:").
+
+Claude shipped the menu tour you supplied the data for (Tasks 5 and 13): `src/components/DemoMission.jsx` (the tour state, `seen()` / `shows()` / `aim()`, the LANJUT / LEWATI keys), `src/config/demoMission.js` (`TOUR`, `tourBeat`, `nav()`, `UNLOCK`), `src/styles/theme.css` (`html.kpm-tour`). Review it read-only, as a visitor would meet it:
+1. **Per tier** - T2 owner, T4 regional admin (Hendra), T6 motorist (Dika), from `src/config/demoLogins.js`: which menu items does the tour walk (the shell renders `visibleMenu`, `src/components/BiohazardTheme.jsx` ~L526), and is every `TOUR` line TRUE for that tier? Example: the Settings line says "serta aturan perusahaan" - can a T6 change company rules there? For each line that is wrong for a tier: the tier, why (file:line), and a corrected Indonesian sentence (a full sentence, "Anda", never "kamu", named with the `${L}` the menu shows).
+2. **Screen names** - every place the guide names a screen in words (`GO` and `BEFORE` in DemoMission.jsx, the `nav()` labels in demoMission.js) against the name the menu shows (`tr(item.label)`, `src/config/lang.js`). List each mismatch with file:line and the words to use (example: GO 3 says "Fleet & Canvas" - what does the menu show in Indonesian?).
+3. **A press during the tour** - what happens when the visitor presses the RINGED menu item instead of LANJUT, on the PC (menu held open by `html.kpm-tour`) and on the phone (the drawer closes on a press, BiohazardTheme.jsx ~L925)? Trace it through the code: does the tour stay on that item, move on, or break? Anything that goes wrong, with file:line.
+Do NOT change the code. Done when: three tables (tier x line truth, name mismatches, press-during-tour trace) in the Result.
 
 **Result:**
