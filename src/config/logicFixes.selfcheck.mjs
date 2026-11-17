@@ -12538,7 +12538,9 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
   ok('REGRESSION: no amber-filled button on Stock Opname or Receivables (his 2026-11-17 "dont make it again")',
      !fill.test(soBtnCheck) && !fill.test(cfBtnCheck) &&
      (soBtnCheck.match(/className=\{?["'`]kpm-edge-btn/g) || []).length >= 1 &&
-     (cfBtnCheck.match(/className=\{?["'`]kpm-edge-btn/g) || []).length >= 1);
+     /* the three Receivables tabs share one look: no tab fills blue/indigo/orange when active (palette law + his 11-17 call) */
+     (cfBtnCheck.match(/className=\{?["'`]kpm-edge-btn/g) || []).length >= 3 &&
+     !/bg-(blue|indigo)-500 text-white shadow-lg/.test(cfBtnCheck));
   /* his 2026-11-17: "i want right now that the segment change but also closing all the panel that is on the path, right now
      literally stuck on the examine button and cant close it" + "i cant go back ... the button is intesect with the demo top panel" */
   const exm = read('src/components/ExamineModal.jsx');

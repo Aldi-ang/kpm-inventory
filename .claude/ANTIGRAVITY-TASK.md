@@ -1665,3 +1665,20 @@ Aldi, 2026-11-17 12:50: *"restock vault is professional enough we can skip that 
 - Buttons look like `.kpm-edge-btn` (`.quiet` secondary, `.danger` for reject/delete). NO amber fill anywhere: `rg "bg-gold|--gold\)|orange|amber" .claude/drafts/stock-opname-pro.html` must show only the token lines and the 11% hover wash.
 - Mark which visible words are Indonesian vs English today and keep each as today (the language switch is a later job).
 Done when: the file exists, opens with no script, the arithmetic comment is there, and the Result lists every Task 22 element with where it sits on the picture (PC / phone 1 / phone 2 / the note line).
+
+---
+**Claude review 2026-11-17 13:10 WIB:** 31 + 32 read (task file only). 33 read whole: Submit to HQ fine; but the Receivables tab strip came out mixed - A/R Financials edge-styled while Physical Stock / Hand-offs still filled `bg-blue-500` / `bg-indigo-500` when active (blue also breaks the palette law). Claude converted those two the same way and tightened your check (>= 3 `kpm-edge-btn` + no blue/indigo active fill), red-then-green. Lesson for every BUILD: a tab strip / segmented control is ONE unit - convert every tab of it or none, and grep the same element for `bg-blue-|bg-indigo-|bg-green-|bg-emerald-` too (palette law: no blue, no green).
+
+## Task 35 - the same map for Audit Logs (segment 11 of 12)
+**Status:** OPEN
+**Written:** 2026-11-17 13:10 WIB, by Claude. Same rules as above (read-only, touch only this file). Do it AFTER Task 34.
+
+Exactly Task 20's four tables for the `activeTab === 'audit'` screen (App.jsx ~L5694 - find the component it renders and map that file). Every press that writes gets **Yes** with collection + field (expect very few: it is a log). Demo guide marks; selfcheck pins on the file; the filled-button list with file:line (`bg-gold`, `bg-[var(--gold)]`, `bg-orange-*`, `bg-amber-*`, `from-amber-*`, AND `bg-blue-*` / `bg-indigo-*` / `bg-green-*` / `bg-emerald-*` - palette law). Also: how many log rows it loads at once and from which query (file:line) - a professional log list needs paging or a limit, say which it has.
+Do NOT change the code. Done when: four tables + filled-button list + the loading answer in the Result.
+
+## Task 36 - the same map for Settings (segment 12 of 12)
+**Status:** OPEN
+**Written:** 2026-11-17 13:10 WIB, by Claude. Same rules as above (read-only, touch only this file). Do it AFTER Task 35.
+
+Exactly Task 20's four tables for the `activeTab === 'settings'` screen (App.jsx ~L5701 - find the component and every sub-panel it opens). Every setting that writes gets **Yes** with collection + field, and which tier may change it (the check in the code, file:line). Demo guide marks; selfcheck pins; the filled-button list (same colour list as Task 35). Also list every toggle/switch and what it looks like today (a filled pill? a checkbox?) - the redesign needs one switch style.
+Do NOT change the code. Done when: four tables + filled-button list + the switch list in the Result.
