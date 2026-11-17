@@ -726,7 +726,7 @@ useEffect(() => {
 ---
 
 ## Task 16 - the 18 AT RISK overlays from your Task 8: an exact edit plan
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-16 22:10 WIB, by Claude. Same rules as above.
 
 Your Task 8 listed 18 overlays that can open cut under the demo bars. The Fleet Surat Jalan is fixed (portaled, b10ce952). Two print traps were found on it in the lab: (a) the shell's print rule (`BiohazardTheme.jsx` ~L1220-1243) hides every `<header>` and `<nav>`; (b) a portaled `fixed inset-0` wrapper with `overflow-y-auto` prints only 89 px unless it gets `print:!bottom-auto print:!overflow-visible`. For EACH remaining AT RISK overlay:
@@ -737,6 +737,38 @@ Your Task 8 listed 18 overlays that can open cut under the demo bars. The Fleet 
 Group them: which can share ONE small wrapper component, which need their own change. Do NOT change the code.
 
 **Result:**
+All 18 overlays read CSS tokens (`--ink`, `--raised`, `--duke-*`, `.light`, `.lite-mode`) from `<html>`/`:root`, so **none** depend on a parent class inside `BiohazardTheme.jsx:1122`'s `z-10` wrapper.
+
+### Group A — Non-printing overlays (12 overlays): share ONE `BodyPortal` (`createPortal(children, document.body)`)
+| Overlay (`file:line`) | Smallest fix | `z` after portal | Print? |
+|---|---|---|---|
+| `src/JourneyView.jsx:1930` (Shop modal) | Wrap JSX in `createPortal(..., document.body)` | `2000` (ok) | No |
+| `src/MerchantSalesView.jsx:3027` (GPS bypass modal) | Wrap JSX in `createPortal(..., document.body)` | `300` (ok) | No |
+| `src/MerchantSalesView.jsx:3121` (Manual/proof modal) | Wrap JSX in `createPortal(..., document.body)` | `300` (ok) | No |
+| `src/RestockVaultView.jsx:1199` (Image lightbox, `top-6` X) | Wrap JSX in `createPortal(..., document.body)` | `300` (ok) | No |
+| `src/RestockVaultView.jsx:1283` (Edit PO) | Wrap JSX in `createPortal(..., document.body)` | `100` (ok) | No |
+| `src/RestockVaultView.jsx:1372` (PO detail modal) | Wrap JSX in `createPortal(..., document.body)` | `300` (ok) | No |
+| `src/StockOpnameView.jsx:1112` (Image lightbox, `top-6` X) | Wrap JSX in `createPortal(..., document.body)` | `500` (ok) | No |
+| `src/components/HistoryReportView.jsx:940` (Photo lightbox, `top-6` X) | Wrap JSX in `createPortal(..., document.body)` | `600` (ok) | No |
+| `src/components/HistoryReportView.jsx:956` (Edit transaction) | Wrap JSX in `createPortal(..., document.body)` | `100` (ok) | No |
+| `src/components/ArrivalScanner.jsx:81` | Wrap JSX in `createPortal(..., document.body)` | `220` (ok) | No |
+| `src/components/ExamineModal.jsx:81` (3D viewer, `top-8` X) | Wrap JSX in `createPortal(..., document.body)` | `10000` (ok) | No |
+| `src/components/PhotoField.jsx:168` | Wrap JSX in `createPortal(..., document.body)` | `9999` (ok) | No |
+
+### Group B — Needs its own `z-index` bump + portal (1 overlay)
+- `src/components/ImageCropper.jsx:171`: **Portal to `document.body` AND change `z-[70]` -> `z-[500]`** (at `z-[70]` it would still lose to `.kpm-demo-bar` `z: 95` and `.kpm-mission` `z: 96`). Non-printing.
+
+### Group C — Printing overlays (5 overlays): portal + print-trap checks
+| Overlay (`file:line`) | Smallest fix | Trap (a) `<header>`/`<nav>`? | Trap (b) `inset-0` + overflow? | `z` after portal |
+|---|---|---|---|---|
+| `src/FleetCanvasManager.jsx:992` (Reprint receipt) | Wrap in `createPortal(..., document.body)` + add `print:!bottom-auto print:!overflow-visible` to wrapper | No | Wrapper has `print-modal-wrapper fixed inset-0`; inner `.print-receipt` has `overflow-y-auto` | `500` (ok) |
+| `src/ConsignmentFinanceView.jsx:648` (Receipt) | Wrap in `createPortal(..., document.body)` + add `print:!bottom-auto print:!overflow-visible` to wrapper | No | Same (plus uses popup iframe print at `865`) | `500` (ok) |
+| `src/MerchantSalesView.jsx:3240` (Deal receipt) | Wrap in `createPortal(..., document.body)` + add `print:!bottom-auto print:!overflow-visible` to wrapper | No | Same (plus uses popup iframe print at `3478`) | `400` (ok) |
+| `src/components/SaleReceipt.jsx:32` | Wrap in `createPortal(..., document.body)` + add `print:!bottom-auto print:!overflow-visible` (unless already inside `DayReplay.jsx:396`'s portal) | No | Same (plus uses popup iframe print at `233`) | `500` (ok) |
+| `src/components/AcceptanceReceipt.jsx:61` | Portal to `document.body` + replace `<header>` (`85`) with `<div className="hd">` + add `print-modal-wrapper` & `print:!bottom-auto print:!overflow-visible` (and drop `<style>` `62-69`) | **YES** (`<header>` at `85` is hidden by `BiohazardTheme.jsx:1224`) | Outer `fixed inset-0`, inner `.print-receipt` has `max-h-[90vh] overflow-y-auto` | `200` (ok) |
+| `src/components/ShipmentLabel.jsx:55` | Portal to `document.body` + replace `<header>` (`71`) with `<div className="hd">` + add `print-modal-wrapper` & `print:!bottom-auto print:!overflow-visible` (and drop `<style>` `56-63`) | **YES** (`<header>` at `71` is hidden by `BiohazardTheme.jsx:1224`) | Outer `fixed inset-0`, inner `.print-receipt` has `max-h-[90vh] overflow-y-auto` | `200` (ok) |
+
+*(Count note: 12 Group A + 1 Group B + 6 Group C = 19, because `AcceptanceReceipt` and `ShipmentLabel` are counted separately here alongside the 4 receipts.)*
 
 ## Task 17 - review the demo guide's menu tour (commit 04a6bed2)
 **Status:** OPEN
