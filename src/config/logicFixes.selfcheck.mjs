@@ -8277,7 +8277,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      /className="flex-1 min-w-0 lg:h-screen lg:overflow-y-auto custom-scrollbar relative"/.test(ap) &&   /* min-w-0: a flex column's min-content (372 as the boss) was pushing it past the 359 shell */
      !/animate-bounce-slow/.test(apc.slice(apc.indexOf('className="static lg:absolute'), apc.indexOf('pt-6 lg:pt-24'))) &&
      !/animate-pulse" style=\{\{ color: safeCurrentHex, textShadow/.test(apc) &&
-     /min-h-11 bg-black\/80 backdrop-blur-md border border-line-2 px-4 py-2\.5 rounded-xl text-ink-muted/.test(ap),
+     /kpm-edge-btn[^`"]*min-h-11/.test(ap),
      'a light blinks only while something happens; a key is 44 px');
   ok('STAGE B, board 2 = B: the salesman\'s Shift Closed block counts tonight\'s XP with the nixie mounting at 0, then the working rows rise in AFTER the roll',
      /import NixieCount from '\.\/components\/NixieCount\.jsx';/.test(ev) &&
@@ -12554,6 +12554,14 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      !paletteFill.test(mmBtnCheck) && !paletteFill.test(avBtnCheck) &&
      (mmBtnCheck.match(/className=\{?["'`]kpm-edge-btn/g) || []).length >= 11 &&
      (avBtnCheck.match(/className=\{?["'`]kpm-edge-btn/g) || []).length >= 1);
+  /* Exclusions (not filled buttons): AgentProfileView L958 (active sidebar w-1 bg-gold bar), L1085 (Active Canvas Value
+     w-1 bg-gold accent bar). */
+  const apBtnCheck = read('src/AgentProfileView.jsx')
+    .replaceAll('w-1 bg-gold', 'w-1')
+    .replaceAll('w-1 h-full bg-gold', 'w-1 h-full');
+  ok('REGRESSION: no filled button on Agent Profile (his 2026-11-17 "dont make it again")',
+     !paletteFill.test(apBtnCheck) && !/from-gold\b/.test(apBtnCheck) &&
+     (apBtnCheck.match(/className=\{?["'`]kpm-edge-btn/g) || []).length >= 11);
   /* his 2026-11-17: "i want right now that the segment change but also closing all the panel that is on the path, right now
      literally stuck on the examine button and cant close it" + "i cant go back ... the button is intesect with the demo top panel" */
   const exm = read('src/components/ExamineModal.jsx');

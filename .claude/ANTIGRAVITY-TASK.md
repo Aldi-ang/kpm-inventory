@@ -1860,7 +1860,7 @@ Done when: the four BUILD checks are green, list + proof in the Result.
   4. `node src/config/integration.audit.mjs`: `725 passed, 0 failed, 725 checks`
 
 ## Task 38 - BUILD: no filled button on Agent Profile (keep the game art)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 13:30 WIB, by Claude. BUILD rules apply. Do it AFTER Task 37.
 **Touch only:** `src/AgentProfileView.jsx`, `src/config/logicFixes.selfcheck.mjs`, this file.
 
@@ -1870,3 +1870,35 @@ Same as Task 37 for the 8 filled buttons/toggles your Task 32 listed (LEADERBOAR
 - A toggle (on/off switch) that fills gold when on: do NOT convert it - list it in the Result as "switch, waits for the Settings redesign" (one switch style comes with segment 12).
 - Check after Task 37's: `REGRESSION: no filled button on Agent Profile (his 2026-11-17 "dont make it again")`, same style, red-then-green proof.
 Done when: the four BUILD checks are green, list (with the switches named) + proof in the Result.
+
+**Result:**
+- **Hit list & verdicts (`rg -n "bg-gold|bg-\[var\(--gold\)\]|from-gold|bg-orange-|bg-amber-|from-amber-|bg-blue-|bg-indigo-|bg-green-|bg-emerald-" src/AgentProfileView.jsx`):**
+  - `src/AgentProfileView.jsx:684` (`Execute Crop & Save` `<button>`): **FILLED BUTTON** -> `kpm-edge-btn`.
+  - `src/AgentProfileView.jsx:806` (`Deploy Achievements` `<button>`): **FILLED BUTTON** -> `kpm-edge-btn`.
+  - `src/AgentProfileView.jsx:823` (`Grant` `<button>`): **FILLED BUTTON** -> `kpm-edge-btn`.
+  - `src/AgentProfileView.jsx:848` (`Working Days` `Mon`–`Sun` `<button>`s): **FILLED BUTTON** -> `kpm-edge-btn` (`quiet` when unselected).
+  - `src/AgentProfileView.jsx:923` (`Deploy Rank Architecture` `<button>`): **FILLED BUTTON** -> `kpm-edge-btn`.
+  - `src/AgentProfileView.jsx:958` (`w-1 bg-gold` active sidebar left bar): **NOT** (indicator bar `<div>`).
+  - `src/AgentProfileView.jsx:1008, 1015, 1020, 1026` (`Rank Config` / `Avatar` / `Leaderboard` / `Grant Award` strip — `Leaderboard` had `from-gold to-gold`): **FILLED BUTTON / UNIFIED STRIP** -> all four converted to `kpm-edge-btn` (active) / `kpm-edge-btn quiet` (inactive); updated `STAGE B` check line `8280` in `logicFixes.selfcheck.mjs` to match `kpm-edge-btn ... min-h-11`.
+  - `src/AgentProfileView.jsx:1085` (`w-1 h-full bg-gold` Active Canvas Value left bar): **NOT** (accent bar `<div>`).
+  - `src/AgentProfileView.jsx:1225` (`1W` / `1M` / `1Y` timeline `<button>`s): **FILLED BUTTON** -> `kpm-edge-btn` (`quiet` when unselected).
+  - `src/AgentProfileView.jsx:1259` (badge category `<button>`s): **FILLED BUTTON** -> `kpm-edge-btn` (`quiet` when unselected).
+  - **Switches:** none in `src/AgentProfileView.jsx` (no on/off pill switch in this file).
+  - **Game art (`AgentAvatar`, `RankBorder`, `PlayerCardHead`, `stats.currentTier.hex`, `San Andreas` Mount plate, `Regional MVP` trophy, `AchievementCard`):** untouched.
+- **Selfcheck added:** `REGRESSION: no filled button on Agent Profile (his 2026-11-17 "dont make it again")` in `src/config/logicFixes.selfcheck.mjs:12557-12562`.
+- **Red-then-green proof:**
+  - Stashed `src/AgentProfileView.jsx` (`git stash push src/AgentProfileView.jsx`):
+    ```
+      FAIL REGRESSION: no filled button on Agent Profile (his 2026-11-17 "dont make it again")
+    3012 passed, 1 failed, 3013 checks
+    ```
+  - Restored (`git stash pop`):
+    ```
+      ok   REGRESSION: no filled button on Agent Profile (his 2026-11-17 "dont make it again")
+    3013 passed, 0 failed, 3013 checks
+    ```
+- **Four BUILD checks (all green after final edit):**
+  1. `node src/config/logicFixes.selfcheck.mjs`: `3013 passed, 0 failed, 3013 checks`
+  2. `src/config/*.selfcheck.mjs`: all 14 scripts exited 0
+  3. `npm run build`: exit 0 (`built in 22.82s`)
+  4. `node src/config/integration.audit.mjs`: `725 passed, 0 failed, 725 checks`

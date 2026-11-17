@@ -681,7 +681,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                     </div>
                     <div className="mt-8 flex gap-4 w-full max-w-2xl">
                         <button onClick={() => setCropImageSrc(null)} className="flex-1 py-4 border border-line-2 text-ink rounded-xl font-black uppercase tracking-widest hover:bg-panel transition-colors">Cancel</button>
-                        <button onClick={handleExecuteCrop} disabled={isUploading} className="flex-1 py-4 bg-gold hover:bg-gold text-white rounded-xl font-black uppercase tracking-widest shadow-[0_0_20px_rgba(212,175,55,0.5)] transition-colors flex items-center justify-center gap-2">{isUploading ? 'Saving...' : <><Camera size={18}/> Execute Crop & Save</>}</button>
+                        <button onClick={handleExecuteCrop} disabled={isUploading} className="kpm-edge-btn flex-1 py-4 rounded-xl font-black uppercase tracking-widest flex items-center justify-center gap-2">{isUploading ? 'Saving...' : <><Camera size={18}/> Execute Crop & Save</>}</button>
                     </div>
                 </div>
             )}
@@ -803,7 +803,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                 permanently locked. */}
                             <button onClick={() => setEditingBadges([...editingBadges, { id: Date.now().toString(), cat: 'jual', source: 'itemsBks', fmt: STAT_LABELS.itemsBks.fmt, target: 1000, title: 'New Badge', desc: 'Reached {val} / {max}', icon: 'Star', hex: '#ffffff' }])} className="w-full py-4 border-2 border-dashed border-line-2 text-ink-muted hover:text-white hover:border-line-3 rounded-xl flex justify-center items-center gap-2 text-xs font-black uppercase tracking-widest transition-colors"><Plus size={18}/> Add New Badge</button>
                         </div>
-                        <button onClick={handleSaveBadgeConfig} className="w-full bg-gold hover:bg-gold text-white font-black uppercase tracking-[0.2em] py-5 rounded-xl shadow-[0_0_20px_rgba(202,138,4,0.5)] transition-all active:scale-95 flex items-center justify-center gap-2 text-lg"><Save size={20}/> Deploy Achievements</button>
+                        <button onClick={handleSaveBadgeConfig} className="kpm-edge-btn w-full font-black uppercase tracking-[0.2em] py-5 rounded-xl flex items-center justify-center gap-2 text-lg"><Save size={20}/> Deploy Achievements</button>
                     </div>
                 </div>
             )}
@@ -820,7 +820,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                         <input type="text" placeholder="Cosmetic id (optional)" value={awardForm.cosmetic} onChange={e => setAwardForm({...awardForm, cosmetic: e.target.value})} className="w-full bg-black border border-line-2 rounded-lg p-3 text-sm text-white mb-4 outline-none focus:border-line-3"/>
                         <div className="flex gap-3">
                             <button onClick={() => setShowAwardForm(false)} className="flex-1 py-3 bg-panel text-ink-muted rounded-lg font-bold uppercase text-xs">Cancel</button>
-                            <button onClick={handleGrantAward} className="flex-1 py-3 bg-gold hover:bg-gold text-white rounded-lg font-bold uppercase text-xs">Grant</button>
+                            <button onClick={handleGrantAward} className="kpm-edge-btn flex-1 py-3 rounded-lg font-bold uppercase text-xs">Grant</button>
                         </div>
                     </div>
                 </div>
@@ -845,7 +845,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                 <label className="text-[10px] font-black text-ink-muted uppercase tracking-widest block mb-3">Timeline Analytics (Working Days)</label>
                                 <div className="flex gap-2 justify-center">
                                     {[{id:1,l:'Mon'},{id:2,l:'Tue'},{id:3,l:'Wed'},{id:4,l:'Thu'},{id:5,l:'Fri'},{id:6,l:'Sat'},{id:0,l:'Sun'}].map(day => (
-                                        <button key={day.id} onClick={() => toggleWorkingDay(day.id)} className={`w-10 h-10 rounded-lg font-black text-[10px] uppercase transition-all ${(editingRpgData.workingDays || [1,2,3,4,5,6]).includes(day.id) ? 'bg-gold text-white shadow-[0_0_10px_rgba(212,175,55,0.5)]' : 'bg-ground text-ink-muted border border-line hover:border-line-3'}`}>
+                                        <button key={day.id} onClick={() => toggleWorkingDay(day.id)} className={`kpm-edge-btn ${(editingRpgData.workingDays || [1,2,3,4,5,6]).includes(day.id) ? '' : 'quiet text-ink-muted'} w-10 h-10 rounded-lg font-black text-[10px] uppercase`}>
                                             {day.l}
                                         </button>
                                     ))}
@@ -920,7 +920,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                             <button onClick={() => setEditingRpgData({...editingRpgData, ranks: [...editingRpgData.ranks, {id: Date.now().toString(), name: 'New Rank', min: 0, hex: '#ffffff', title: '', logo: '', borderImage: ''}]})} className="w-full py-4 border-2 border-dashed border-line-2 text-ink-muted hover:text-white hover:border-line-3 rounded-xl flex justify-center items-center gap-2 text-xs font-black uppercase tracking-widest transition-colors"><Plus size={18}/> Add New Rank Tier</button>
                         </div>
 
-                        <button onClick={handleSaveRankConfig} className="w-full bg-gold hover:bg-gold text-white font-black uppercase tracking-[0.2em] py-5 rounded-xl shadow-[0_0_20px_rgba(212,175,55,0.5)] transition-all active:scale-95 flex items-center justify-center gap-2 text-lg"><Save size={20}/> Deploy Rank Architecture</button>
+                        <button onClick={handleSaveRankConfig} className="kpm-edge-btn w-full font-black uppercase tracking-[0.2em] py-5 rounded-xl flex items-center justify-center gap-2 text-lg"><Save size={20}/> Deploy Rank Architecture</button>
                     </div>
                 </div>
             )}
@@ -1005,25 +1005,25 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                     )}
                     {/* 🚀 MATRIX: Rank Config Button Access */}
                     {hasClearance(userRole, 'edit_rank_config') && (
-                        <button onClick={() => { setEditingRpgData(JSON.parse(JSON.stringify(rpgData))); setShowRankConfig(true); }} className="min-h-11 bg-black/80 backdrop-blur-md border border-line-2 px-4 py-2.5 rounded-xl text-ink-muted hover:text-ink-muted hover:border-line-3 hover:shadow-[0_0_20px_rgba(212,175,55,0.3)] transition-all active:scale-95 flex items-center gap-2 text-[11px] lg:text-[10px] font-black uppercase tracking-widest">
+                        <button onClick={() => { setEditingRpgData(JSON.parse(JSON.stringify(rpgData))); setShowRankConfig(true); }} className={`kpm-edge-btn ${showRankConfig ? '' : 'quiet'} min-h-11 px-4 py-2.5 rounded-xl flex items-center gap-2 text-[11px] lg:text-[10px] font-black uppercase tracking-widest`}>
                             <Settings size={16}/> Rank Config
                         </button>
                     )}
                     {/* 🚀 Phase 5: Customize Avatar — same modal the avatar itself opens, given a
                         labelled entry point so it's findable without guessing the avatar is a button. */}
                     {canEditProfile && (
-                        <button onClick={() => setShowAvatarCustomizer(true)} className="min-h-11 bg-black/80 backdrop-blur-md border border-line-2 px-4 py-2.5 rounded-xl text-ink-muted hover:text-white hover:border-line-3 transition-all active:scale-95 flex items-center gap-2 text-[11px] lg:text-[10px] font-black uppercase tracking-widest">
+                        <button onClick={() => setShowAvatarCustomizer(true)} className={`kpm-edge-btn ${showAvatarCustomizer ? '' : 'quiet'} min-h-11 px-4 py-2.5 rounded-xl flex items-center gap-2 text-[11px] lg:text-[10px] font-black uppercase tracking-widest`}>
                             <ImageIcon size={16}/> Avatar
                         </button>
                     )}
                     {/* 🚀 NEW: HALL OF FAME MODAL BUTTON (the trophy no longer bounces - a light blinks only while something happens) */}
-                    <button onClick={() => setShowHallOfFame(true)} className="min-h-11 bg-gradient-to-r from-gold to-gold text-white border border-gold/50 px-4 py-2.5 rounded-xl hover:shadow-[0_0_20px_rgba(212,175,55,0.5)] transition-all active:scale-95 flex items-center gap-2 text-[11px] lg:text-[10px] font-black uppercase tracking-widest shadow-lg">
+                    <button onClick={() => setShowHallOfFame(true)} className={`kpm-edge-btn ${showHallOfFame ? '' : 'quiet'} min-h-11 px-4 py-2.5 rounded-xl flex items-center gap-2 text-[11px] lg:text-[10px] font-black uppercase tracking-widest`}>
                         <Trophy size={16}/> Leaderboard
                     </button>
                     {/* 🚀 Phase 6: grant a real, reasoned award instead of overriding a raw number - moved up here from the
                         OMSET box the head replaced (stage B) */}
                     {hasClearance(userRole, 'edit_agent_roles') && (
-                        <button onClick={() => setShowAwardForm(true)} className="min-h-11 bg-black/80 backdrop-blur-md border border-line-2 px-4 py-2.5 rounded-xl text-ink-muted hover:text-white hover:border-line-3 transition-all active:scale-95 flex items-center gap-2 text-[11px] lg:text-[10px] font-black uppercase tracking-widest">
+                        <button onClick={() => setShowAwardForm(true)} className={`kpm-edge-btn ${showAwardForm ? '' : 'quiet'} min-h-11 px-4 py-2.5 rounded-xl flex items-center gap-2 text-[11px] lg:text-[10px] font-black uppercase tracking-widest`}>
                             <Award size={16}/> Grant Award
                         </button>
                     )}
@@ -1222,7 +1222,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                 </div>
                                 <div className="flex items-center gap-1 bg-black/50 p-1 rounded-lg border border-line shadow-inner">
                                     {['1W', '1M', '1Y'].map(f => (
-                                        <button key={f} onClick={() => setChartFilter(f)} className={`px-3 py-1 rounded-md text-[11px] font-black uppercase transition-all ${chartFilter === f ? 'bg-gold text-white shadow-[0_0_10px_rgba(212,175,55,0.5)]' : 'text-ink-muted hover:text-white hover:bg-white/5'}`}>{f}</button>
+                                        <button key={f} onClick={() => setChartFilter(f)} className={`kpm-edge-btn ${chartFilter === f ? '' : 'quiet text-ink-muted'} px-3 py-1 rounded-md text-[11px] font-black uppercase`}>{f}</button>
                                     ))}
                                 </div>
                             </div>
@@ -1256,7 +1256,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                                     <button
                                         key={c.id}
                                         onClick={() => setBadgeCategoryFilter(c.id)}
-                                        className={`px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-colors ${badgeCategoryFilter === c.id ? 'bg-gold text-white' : 'bg-panel text-ink-muted hover:text-white'}`}
+                                        className={`kpm-edge-btn ${badgeCategoryFilter === c.id ? '' : 'quiet text-ink-muted'} px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest`}
                                     >
                                         {c.label}
                                     </button>
