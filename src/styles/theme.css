@@ -1791,6 +1791,25 @@ html.lite-mode .kpm-topbar-ghost { opacity: .04; }
 /* the colon keeps the same line box as the reels or the row loses its baseline */
 .kpm-dig-sep { display: block; height: var(--row); line-height: var(--row); }
 @media (prefers-reduced-motion: reduce) { .kpm-dig-reel { transition: none; } }
+
+/* ---------- ROLLING NUMBERS + THE SAVED CHECK ----------
+   His Framer picks 1 + 4, 2026-11-17: *"1 and 4 is simple and look good"*.
+   1. RollingNumber (BiohazardTheme.jsx, class kpm-reelnum - NOT kpm-roll, which a 2026-09-18 check bans as the old LED odometer) reuses the clock's reels above; only the row height and the
+      digit width are set here. ⚠️ tabular-nums is load-bearing again: `1ch` matches every digit only then.
+      `white-space: pre` keeps the space in "Rp 1.240.000" - a block span holding one space is 0 px wide.
+   2. The check draws itself by stroke-dashoffset. ⚠️ Lite Mode does not remove the animation, it shortens
+      it to 0.001 s (index.css html.lite-mode *), and reduced motion removes it: in both the dash must
+      be set to 0 by hand, or the check is invisible - a saved strip that looks unsaved. */
+.kpm-reelnum { display: inline-flex; vertical-align: bottom; --row: 1.25em; font-variant-numeric: tabular-nums; }
+.kpm-reelnum-reels { display: inline-flex; }
+.kpm-reelnum .kpm-dig-sep { white-space: pre; }
+.kpm-ck { flex: none; width: 20px; height: 20px; margin-top: 1px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+.kpm-ck circle { stroke-width: 1.6; opacity: .35; }
+.kpm-ck path { stroke-width: 2.2; }
+.kpm-ck:not(.kpm-ck-x) path { stroke-dasharray: 16; stroke-dashoffset: 16; animation: kpm-ck-draw .3s cubic-bezier(.65, 0, .35, 1) .16s forwards; }
+@keyframes kpm-ck-draw { to { stroke-dashoffset: 0; } }
+html.lite-mode .kpm-ck path { animation: none; stroke-dashoffset: 0; }
+@media (prefers-reduced-motion: reduce) { .kpm-ck path { animation: none; stroke-dashoffset: 0; } }
 /* The Sales Terminal's "+" flag (2026-10-31) slides out from under the Manifest tab on the phone's left edge.
    Lite Mode and reduced motion stop it through their global rules: it just appears. */
 @keyframes kpm-flag-out { from { transform: translateX(-100%); opacity: 0; } }

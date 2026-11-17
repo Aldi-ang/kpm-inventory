@@ -21,6 +21,7 @@ import { MASTER as HQ_LABEL, isMasterVaultPlace, opnameThisWeek, opnameMark, cou
 import { nextWeekStart, weekStart, WEEK_DAYS } from './utils/period.js';
 import { CrateVault } from './components/WarehouseChest.jsx';
 import OpnameWorklist from './components/OpnameWorklist.jsx';
+import { RollingNumber } from './components/BiohazardTheme.jsx';
 import { IS_DEMO } from './config/firebase';
 import { useWide } from './hooks/useWide.js';
 
@@ -1839,7 +1840,7 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                                         </div>
                                     </div>
                                     {showExpectedWhileCounting && isRevealed && goodDiff <= -1 && priceOfItem(item) > 0 && (
-                                        <div className="text-xs text-[var(--ink-muted)]">Short by <b className="text-[var(--danger-ink)] font-semibold">{formatNumber(Math.abs(goodDiff))} {promo ? 'pcs' : 'Bks'} · {formatRupiah(Math.abs(goodDiff) * priceOfItem(item))}</b></div>
+                                        <div className="text-xs text-[var(--ink-muted)]">Short by <b className="text-[var(--danger-ink)] font-semibold"><RollingNumber text={formatNumber(Math.abs(goodDiff))} /> {promo ? 'pcs' : 'Bks'} · <RollingNumber text={formatRupiah(Math.abs(goodDiff) * priceOfItem(item))} /></b></div>
                                     )}
                                     {/* the verdict block slides open under the boxes on the first typed number -
                                         the same grid-rows fold as ADMIN TOOLS; Lite Mode makes it a jump */}
@@ -2066,9 +2067,9 @@ const StockOpnameView =({ inventory = [], promoItems = [], transactions = [], db
                         return (<>
                             {!countClosed && (
                                 <div className="kpm-oc-sum">
-                                    <span><b>{countedN}</b> of {rows.length} counted</span>
+                                    <span><b><RollingNumber text={countedN} /></b> of {rows.length} counted</span>
                                     {needN > 0 && <span><b>{needN}</b> need you</span>}
-                                    {shortRp > 0 && <span className="text-[var(--danger-ink)]">{formatRupiah(shortRp)} short</span>}
+                                    {shortRp > 0 && <span className="text-[var(--danger-ink)]"><RollingNumber text={formatRupiah(shortRp)} /> short</span>}
                                 </div>
                             )}
                             <div className={`flex-1 min-h-0 flex flex-col lg:flex-row${countClosed ? ' hidden' : ''}`}>

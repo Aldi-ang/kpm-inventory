@@ -21,3 +21,13 @@ const FAILURE = /\b(fail|fails|failed|failure|error|denied|invalid|cannot|can't|
 export function isFailure(message) {
     return FAILURE.test(String(message ?? '').trim());
 }
+
+/* isSuccess - which strips get the self-drawing check (his Framer pick 4, 2026-11-17). Only a line that
+   says something WAS done. Plain news ("Your count came back ...") gets no check, and a failure never does:
+   "Not saved" mentions "saved" but isFailure claims it first. Toast.jsx is the only reader. */
+const SUCCESS = /\b(saved|submitted|sent|settled|accepted|approved|loaded|returned|added|updated|deleted|removed|restored|recorded|tersimpan|disimpan|terkirim|berhasil|lunas)\b|\bsuccess(fully)?\b|✅|✓/i;
+export function isSuccess(message) {
+    const text = String(message ?? '').trim();
+    /* "Nothing is sent until you press Submit" names a success word and promises the opposite */
+    return !isFailure(text) && SUCCESS.test(text) && !/\b(nothing|never|until)\b/i.test(text);
+}

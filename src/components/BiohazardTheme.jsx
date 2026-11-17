@@ -49,6 +49,22 @@ import { decodeFrame, decodeFrames } from '../utils/liteMode.js';
    an 11th row plus a silent reset, i.e. JS state per digit. */
 const REEL = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
+/* ROLLING NUMBER - his Framer pick 1, 2026-11-17: *"1 and 4 is simple and look good"* (A-Brain
+   Brainstorm/2026-11-17_framer-motion-picks.md). The clock's reel on any number that changes while
+   he works, so a count or a Rupiah total rolls instead of jumping. Same CSS, same 260 ms.
+   Keyed from the RIGHT: when 990.000 becomes 1.240.000 the ones digit is still the ones digit and
+   rolls, instead of every reel shifting one place. The reels print 0-9 each, so a screen reader
+   gets the plain text and the reels are hidden from it. */
+export function RollingNumber({ text }) {
+    const s = String(text ?? '');
+    return (
+        <span className="kpm-reelnum">
+            <span className="sr-only">{s}</span>
+            <span className="kpm-reelnum-reels" aria-hidden="true">{s.split('').map((c, i) => <SlidingDigit key={s.length - i} char={c} />)}</span>
+        </span>
+    );
+}
+
 function SlidingDigit({ char }) {
     /* a colon is not a digit and must never get a reel — it would translate to
        row NaN, which resolves to no transform at all and prints a stack of ten

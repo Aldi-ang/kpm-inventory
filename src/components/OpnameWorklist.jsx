@@ -7,6 +7,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, X, History, Camera, TriangleAlert, Repeat2 } from 'lucide-react';
 import { formatRupiah, formatNumber } from '../utils/helpers';
+import { RollingNumber } from './BiohazardTheme.jsx';
 import { damagedAsGood, damagedCountNote, opnameSums } from '../utils/supply.js';
 
 const still = () => document.documentElement.classList.contains('lite-mode') || !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -138,7 +139,7 @@ export default function OpnameWorklist({ places, selected, onSelect, weekLabel, 
             <div><small>Decided</small><b>{s.decided} <em>of {s.counted}</em></b></div>
             <div><small>Missing</small><b>{formatNumber(s.missing)} <em>{formatRupiah(s.missingRp)}</em></b></div>
             <div><small>Damaged</small><b>{formatNumber(s.damaged)} <em>{formatRupiah(s.damagedRp)}</em></b></div>
-            <div className="big"><small>Lost value</small><b className={s.rp ? 'bad' : ''}>{formatRupiah(s.rp)}</b></div>
+            <div className="big"><small>Lost value</small><b className={s.rp ? 'bad' : ''}><RollingNumber text={formatRupiah(s.rp)} /></b></div>
           </div>
           <div className="kpm-wl-prog" aria-hidden="true"><i className="ok" style={{ flexGrow: s.ok }} /><i className="no" style={{ flexGrow: s.no }} /><i className="wait" style={{ flexGrow: s.waiting }} /><i className="none" style={{ flexGrow: s.none + (s.total ? 0 : 1) }} /></div>
         </section>

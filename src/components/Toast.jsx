@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { isFailure } from '../utils/toastSeverity.js';
+import { isFailure, isSuccess } from '../utils/toastSeverity.js';
 import { recordMissed } from '../utils/missedLog.js';
 import { playSound } from '../hooks/useSound.js';
 
@@ -141,6 +141,7 @@ export function ToastHost() {
             `}</style>
             {items.map((item) => {
                 const accent = item.bad ? '#b4524a' : '#ff9d00';
+                const ok = !item.bad && isSuccess(item.text);
                 return (
                     <div
                         key={item.id}
@@ -150,12 +151,18 @@ export function ToastHost() {
                         className={`pointer-events-auto w-full max-w-md cursor-pointer border border-[#a89070] bg-[#14100e] shadow-[0_0_30px_rgba(0,0,0,0.8)] ${item.leaving ? 'kpm-toast-out' : 'kpm-toast-in'}`}
                     >
                         <div className="flex items-start gap-3 border-l-[3px] px-3 py-2.5" style={{ borderColor: accent }}>
+                            {/* his Framer pick 4, 2026-11-17: a check that draws itself, ONLY on a real save
+                                (isSuccess). A failure gets an X and never the check - a failed save must never
+                                look like a saved one. Plain news gets neither. theme.css .kpm-ck. */}
+                            {ok && <svg className="kpm-ck" viewBox="0 0 22 22" aria-hidden="true" style={{ color: accent }}><circle cx="11" cy="11" r="10" /><path d="M6.5 11.4l3 3 6-6.4" /></svg>}
+                            {item.bad && <svg className="kpm-ck kpm-ck-x" viewBox="0 0 22 22" aria-hidden="true" style={{ color: accent }}><path d="M7 7l8 8M15 7l-8 8" /></svg>}
                             {/* pre-line: many of these messages were written with \n\n paragraph
                                 breaks back when a browser box was rendering them. */}
                             {/* 15 px semibold, his "this font for notification is not visible i think it is too small" (2026-10-05):
                                 since 7f88984 "mono" IS Rajdhani, a narrow face that reads two sizes smaller than the old 11 px mono */}
                             <div className="min-w-0 flex-1 whitespace-pre-line break-words font-mono text-[15px] font-semibold leading-snug text-[#E8E4DE]">
-                                {item.text}
+                                {/* the drawn check replaces a leading ✅ - two ticks side by side read as a typo */}
+                                {ok ? item.text.replace(/^✅\s*/, '') : item.text}
                             </div>
                         </div>
                     </div>

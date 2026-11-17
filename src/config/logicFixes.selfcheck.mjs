@@ -14488,5 +14488,21 @@ section('THE MENU TOUR, AND A RING ONLY ON WHAT IS DRAWN (2026-11-17)');
      dm.includes('{!v.alt && <button type="button" className="on" onClick={tour.next}>LANJUT ▶</button>}') && dm.includes('onClick={tour.skip}>LEWATI<') &&
      /\.kpm-mx-cap \.go button \{[^}]*pointer-events: auto;/.test(th));
 }
+/* his Framer picks 1 + 4, 2026-11-17: "1 and 4 is simple and look good" - rolling numbers + the saved check */
+{ const { isSuccess } = await import('../utils/toastSeverity.js');
+  const th = read('src/styles/theme.css').replace(/\r/g, ''), tj = read('src/components/Toast.jsx').replace(/\r/g, ''), bt = read('src/components/BiohazardTheme.jsx').replace(/\r/g, '');
+  const so = read('src/StockOpnameView.jsx').replace(/\r/g, ''), wl = read('src/components/OpnameWorklist.jsx').replace(/\r/g, '');
+  ok('BEHAVIOUR: the saved check goes on real saves only - "✅ Physical Count submitted to HQ successfully!" and "Product saved." yes; "Not saved", "Failed to process image.", "Your count came back ... Nothing is sent until you press Submit." no',
+     isSuccess('✅ Physical Count submitted to HQ successfully!') && isSuccess('Product saved.') && !isSuccess('Not saved') && !isSuccess('Failed to process image.') &&
+     !isSuccess('Your count came back: 3 products, as you left them. Nothing is sent until you press Submit.'));
+  ok('REGRESSION: a failed strip never carries the check (ok = !item.bad && isSuccess), and Lite Mode + reduced motion set the dash to 0 by hand, or the check is invisible',
+     tj.includes('const ok = !item.bad && isSuccess(item.text);') && tj.includes('{ok && <svg className="kpm-ck"') &&
+     th.includes('html.lite-mode .kpm-ck path { animation: none; stroke-dashoffset: 0; }') && /prefers-reduced-motion: reduce\) \{ \.kpm-ck path \{ animation: none; stroke-dashoffset: 0; \}/.test(th));
+  ok('REGRESSION: RollingNumber reuses the clock reel (SlidingDigit), keyed from the right, screen readers get the plain text; tabular-nums + white-space: pre on the roll; Stock Opname counted / short / short-by and Lost value use it',
+     bt.includes('key={s.length - i} char={c}') && bt.includes('<span className="sr-only">{s}</span>') &&
+     /* kpm-REELnum, not kpm-roll: the 2026-09-18 check above bans the old LED odometer's .kpm-roll by name */
+     /\.kpm-reelnum \{[^}]*font-variant-numeric: tabular-nums/.test(th) && th.includes('.kpm-reelnum .kpm-dig-sep { white-space: pre; }') &&
+     so.includes('<RollingNumber text={countedN} />') && so.includes('<RollingNumber text={formatRupiah(shortRp)} />') && wl.includes('<RollingNumber text={formatRupiah(s.rp)} />'));
+}
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);
