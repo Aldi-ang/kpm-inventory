@@ -68,7 +68,7 @@ table{width:100%;border-collapse:collapse;font-size:12.5px}
 th{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-mute);text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
 td{padding:8px;border-bottom:1px solid rgba(43,37,30,.55);color:var(--ink-dim)}
 td b{color:var(--ink);font-weight:600}
-th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
 
 .act{display:flex;align-items:center;gap:8px;padding:14px 28px;border-top:1px solid var(--line);flex-wrap:wrap}
 .act .sp{flex:1}
@@ -86,6 +86,7 @@ th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
   padding:10px 16px 16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 -18px 40px -20px rgba(0,0,0,.6)}
 .grab{width:38px;height:4px;border-radius:2px;background:var(--line-2);margin:0 auto}
 .an-sec{padding:12px 16px;display:flex;flex-direction:column;gap:12px;overflow:auto;flex:1}
+.open{padding:4px 16px 14px 42px;display:flex;flex-direction:column;gap:10px;background:var(--wash);border-left:2px solid var(--gold);border-bottom:1px solid var(--line)}
 .card{padding:10px 12px;border-radius:10px;background:var(--raised);border:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
 @media (max-width:860px){.pc{display:none}}
 </style>
@@ -97,7 +98,7 @@ th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
 </svg>
 
 <p class="cap">Receivables &amp; Consignment · v4 · PC (A/R Shop List + Shop in Hand)</p>
-<p class="note">Shop names from <b>demo/seed.json</b> (<code>customers</code>); product prices from <code>inventory</code>. Seed has <code>0</code> open debts, so debt &amp; date figures are <b>example</b> numbers using <code>ConsignmentFinanceView.jsx:201-238</code>. <code>Store Audit</code> live inputs and <code>Receipt</code> modal (58mm/A4 Print &amp; Share) open from the buttons below.</p>
+<p class="note">Real shops and prices from the demo. The demo has no open debt yet, so the amounts are <b>example</b> numbers.</p>
 
 <div class="frame pc">
   <div class="top">
@@ -124,19 +125,19 @@ th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
       <div class="rows">
         <div class="r sel">
           <span class="ic"><svg class="i"><use href="#bill"/></svg></span>
-          <span style="min-width:0"><div class="n">AMANAH BARU</div><div class="reg">MARGAHAYU · 2026-11-05</div></span>
+          <span style="min-width:0"><div class="n">AMANAH BARU</div><div class="reg">MARGAHAYU · <span style="color:var(--bad)">5 days late</span></div></span>
           <span class="v">Rp 1.350.000</span>
           <span class="s bad">OVERDUE</span>
         </div>
         <div class="r">
           <span class="ic"><svg class="i"><use href="#bill"/></svg></span>
-          <span style="min-width:0"><div class="n">ANEKA BARU PANJI</div><div class="reg">MARGAHAYU · 2026-11-12</div></span>
+          <span style="min-width:0"><div class="n">ANEKA BARU PANJI</div><div class="reg">MARGAHAYU · due in 2 days</div></span>
           <span class="v">Rp 510.000</span>
           <span class="s gold">SOON</span>
         </div>
         <div class="r">
           <span class="ic"><svg class="i"><use href="#bill"/></svg></span>
-          <span style="min-width:0"><div class="n">ANUGRAH 17</div><div class="reg">CIMAHI TENGAH · 2026-11-16</div></span>
+          <span style="min-width:0"><div class="n">ANUGRAH 17</div><div class="reg">CIMAHI TENGAH · due in 6 days</div></span>
           <span class="v">Rp 340.000</span>
           <span class="s">SAFE</span>
         </div>
@@ -153,10 +154,10 @@ th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
 
         <div class="sec-h">Open Consignment Notes (example)</div>
         <table>
-          <thead><tr><th>Product (seed.json)</th><th class="r">Dititip</th><th class="r">@ Dist. Price</th><th class="r">Balance (example)</th></tr></thead>
+          <thead><tr><th>Product (seed.json)</th><th class="num">Dititip</th><th class="num">@ Dist. Price</th><th class="num">Balance (example)</th></tr></thead>
           <tbody>
-            <tr><td><b>Cello Chocolate</b></td><td class="r">100 Bks</td><td class="r">Rp 10.000</td><td class="r"><b>Rp 1.000.000</b></td></tr>
-            <tr><td><b>Cello Green</b></td><td class="r">50 Bks</td><td class="r">Rp 7.000</td><td class="r"><b>Rp 350.000</b></td></tr>
+            <tr><td><b>Cello Chocolate</b></td><td class="num">100 Bks</td><td class="num">Rp 10.000</td><td class="num"><b>Rp 1.000.000</b></td></tr>
+            <tr><td><b>Cello Green</b></td><td class="num">50 Bks</td><td class="num">Rp 7.000</td><td class="num"><b>Rp 350.000</b></td></tr>
           </tbody>
         </table>
         <!--
@@ -183,7 +184,7 @@ th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
   </div>
 </div>
 
-<p class="cap" style="margin-top:28px">Receivables &amp; Consignment · v4 · Phone (1: A/R List + Settle Sheet · 2: Physical Stock &amp; Hand-offs)</p>
+<p class="cap" style="margin-top:28px">Receivables &amp; Consignment · v4 · Phone (1: the shop opens under its row · 2: Physical Stock · 3: Hand-offs)</p>
 <div class="phones">
   <div class="frame phone">
     <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
@@ -193,43 +194,45 @@ th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
     </div>
     <div class="sum"><span><b>Rp 2.200.000</b> owed</span><span class="sep"></span><span class="bad"><b>Rp 1.350.000</b> overdue</span></div>
     <div class="list">
-      <div class="r sel"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span class="n">AMANAH BARU</span><span class="v">Rp 1.350.000</span><span class="s bad">OVERDUE</span></div>
-      <div class="r"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span class="n">ANEKA BARU PANJI</span><span class="v">Rp 510.000</span><span class="s gold">SOON</span></div>
-      <div class="r"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span class="n">ANUGRAH 17</span><span class="v">Rp 340.000</span><span class="s">SAFE</span></div>
-    </div>
-    <div class="dim-under"></div>
-    <div class="sheet">
-      <div class="grab"></div>
-      <div class="ph"><div><h2>AMANAH BARU</h2><p>2026-11-05 · 5d overdue · 150 Bks</p></div><span class="pos">Rp 1.350.000</span></div>
-      <table><tbody>
-        <tr><td>Cello Chocolate</td><td class="r">100 Bks</td><td class="r">Rp 1.000.000</td></tr>
-        <tr><td>Cello Green</td><td class="r">50 Bks</td><td class="r">Rp 350.000</td></tr>
-      </tbody></table>
-      <div style="display:flex;gap:8px"><button class="btn quiet" style="flex:1">Add Goods</button><button class="btn quiet">Hand-off</button><button class="btn edge" style="flex:1">Settle</button></div>
+      <div class="r sel"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span style="min-width:0"><div class="n">AMANAH BARU</div><div class="reg" style="color:var(--bad)">5 days late</div></span><span class="v">Rp 1.350.000</span><span class="s bad">OVERDUE</span></div>
+      <div class="open">
+        <table><tbody>
+          <tr><td>Cello Chocolate</td><td class="num">100 Bks</td><td class="num">Rp 1.000.000</td></tr>
+          <tr><td>Cello Green</td><td class="num">50 Bks</td><td class="num">Rp 350.000</td></tr>
+        </tbody></table>
+        <div style="display:flex;gap:8px"><button class="btn quiet sm"><svg class="i"><use href="#print"/></svg></button><button class="btn quiet sm" style="flex:1">Add Goods</button><button class="btn quiet sm" style="flex:1">Hand-off</button></div>
+        <button class="btn edge" style="width:100%;height:44px"><svg class="i"><use href="#check"/></svg>Store Audit &amp; Settle</button>
+      </div>
+      <div class="r"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span style="min-width:0"><div class="n">ANEKA BARU PANJI</div><div class="reg">due in 2 days</div></span><span class="v">Rp 510.000</span><span class="s gold">SOON</span></div>
+      <div class="r"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span style="min-width:0"><div class="n">ANUGRAH 17</div><div class="reg">due in 6 days</div></span><span class="v">Rp 340.000</span><span class="s">SAFE</span></div>
     </div>
   </div>
 
   <div class="frame phone">
     <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
     <div class="top">
-      <h1>Physical Stock &amp; Hand-offs</h1>
+      <h1>Global Receivables</h1>
       <div class="tabs"><span class="tab">A/R Financials</span><span class="tab on">Physical Stock</span><span class="tab">Hand-offs <span class="dot"></span></span></div>
     </div>
-    <div class="sum"><span><b>250 Bks</b> dititip</span><span class="sep"></span><span><b>3</b> shops</span><span class="sep"></span><span class="pill" style="height:24px">Region ▾</span></div>
-    <div class="an-sec">
-      <div class="sec-h">Physical Stock on Consignment (example)</div>
-      <div class="card">
-        <div style="display:flex;justify-content:space-between"><b>AMANAH BARU</b><span>150 Bks</span></div>
-        <div style="display:flex;gap:6px"><button class="btn quiet sm" style="flex:1">Add Goods</button><button class="btn quiet sm" style="flex:1">Hand-off</button><button class="btn edge sm" style="flex:1">Store Audit</button></div>
-      </div>
-      <div class="card">
-        <div style="display:flex;justify-content:space-between"><b>ANEKA BARU PANJI</b><span>60 Bks</span></div>
-      </div>
+    <div class="sum"><span><b>250 Bks</b> at shops</span><span class="sep"></span><span><b>3</b> shops</span></div>
+    <div class="list">
+      <div class="r"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span class="n">AMANAH BARU</span><span class="v">150 Bks</span><span class="s"></span></div>
+      <div class="r"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span class="n">ANEKA BARU PANJI</span><span class="v">60 Bks</span><span class="s"></span></div>
+      <div class="r"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span class="n">ANUGRAH 17</span><span class="v">40 Bks</span><span class="s"></span></div>
+    </div>
+  </div>
 
-      <div class="sec-h">Pending Hand-offs</div>
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;font-size:12px"><b>ANUGRAH 17 · 40 Bks</b><span style="color:var(--ink-mute)">Journey map</span></div>
-        <div style="display:flex;gap:6px"><button class="btn danger sm" style="flex:1">Reject / Decline</button><button class="btn edge sm" style="flex:1">Authorize / Accept</button></div>
+  <div class="frame phone">
+    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
+    <div class="top">
+      <h1>Global Receivables</h1>
+      <div class="tabs"><span class="tab">A/R Financials</span><span class="tab">Physical Stock</span><span class="tab on">Hand-offs <span class="dot"></span></span></div>
+    </div>
+    <div class="sum"><span><b>1</b> waiting for you</span></div>
+    <div class="list">
+      <div class="r sel"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span style="min-width:0"><div class="n">ANUGRAH 17 · 40 Bks</div><div class="reg">from Dika · Journey map</div></span><span class="v"></span><span class="s gold">WAITING</span></div>
+      <div class="open">
+        <div style="display:flex;gap:8px"><button class="btn quiet" style="flex:1">Decline</button><button class="btn edge" style="flex:1"><svg class="i"><use href="#check"/></svg>Accept</button></div>
       </div>
     </div>
   </div>

@@ -2258,3 +2258,31 @@ List every `notify(` call in `src/` whose text is a string or template you can r
 | `src/FleetCanvasManager.jsx:614` | `` `${agent.name} is locked / is unlocked...` `` | NOTHING | CHECK | `locked` / `unlocked` |
 | `src/MerchantSalesView.jsx:677` | `` `${shop.name} may take ${b.name} again - its count is cleared.` `` | NOTHING | CHECK | `cleared` (lacks `cleared` in `SUCCESS`) |
 | `src/RestockVaultView.jsx:596` | `` `"${place.name}" dihapus dari daftar.` `` | NOTHING | CHECK | `dihapus` (lacks `dihapus` in `SUCCESS`) |
+
+
+## Task 54 - BUILD: fix the gold check / X words from Task 53
+**Status:** OPEN
+**Written:** 2026-11-17 17:55 WIB, by Claude. A small BUILD. Read your own Task 53 Result first.
+**Touch only:** `src/utils/toastSeverity.js`, `src/config/toastSeverity.selfcheck.mjs`, this file.
+
+Task 53 found 6 WRONG CHECK and 12 MISSED CHECK lines. Fix them in the two regexes only - never edit a `notify(` text in a screen file.
+- WRONG CHECK (6): a "no ... saved / sent / recorded ... (yet)" or "not sent" sentence must NOT get a check. The 3 that are real failures (`shareReceipt.js:21` "was not sent") should get the X; the others get NOTHING. Simplest rule: a negation word (no / not / belum / tidak / gagal) before the success word in the same sentence cancels the check.
+- MISSED CHECK (12): add the success words Task 53 named: moved, reset, cleared, complete, locked, unlocked, dibuat, dipindah, diganti, selesai, dihapus. Match whole words only (`\b`), so "unlocked" does not also match as "locked" twice and "completed" still works.
+- WRONG X must stay 0: after your change, re-run your Task 53 sweep and write the new counts.
+- Add one line per fixed text to `toastSeverity.selfcheck.mjs` (the real text from Task 53, the expected CHECK / X / NOTHING). The selfcheck must fail before your regex change and pass after - say that you saw both.
+Done when: `node src/config/toastSeverity.selfcheck.mjs` exits 0, `node src/config/logicFixes.selfcheck.mjs` exits 0, and the Result has the new counts (CHECK n / X n / NOTHING n / WRONG CHECK 0 / MISSED CHECK 0 / WRONG X 0). Commit as `Antigravity: Task 54 ...`. Never push.
+
+**Result:**
+
+## Task 55 - read-only: where the Receivables blocks sit, for the cut-and-place build
+**Status:** OPEN
+**Written:** 2026-11-17 17:55 WIB, by Claude. READ-ONLY. Do it after Task 54.
+**Touch only:** this file.
+
+The Receivables picture (`.claude/drafts/receivables-pro.html`, artifact https://claude.ai/artifact/PuX2thEyaC84BjjoPCAR1t) is waiting for Aldi's ok. The build will cut the existing JSX blocks of `src/ConsignmentFinanceView.jsx` out by line number and place them in the new layout, so no rule is retyped (the way Stock Opname was built).
+List, for today's file, the exact start-end line of each block below, its outermost element, and what state/handlers it reads (names only):
+1. Title + region / salesman filters. 2. The 3 tabs strip (and THE SHAKE dot, ~L1021). 3. The 2 tiles (Total assigned debt, Active accounts). 4. The SAFE / WARNING / OVERDUE columns and ONE shop row inside them. 5. The settle / Store Audit press and the modal it opens. 6. Add Goods, Hand-off, Receipt presses. 7. Physical Stock tab body. 8. Hand-offs tab body (Authorize / Reject).
+Then: which blocks share a variable declared INSIDE another block (a cut there would break it), and is the aging rule (L201-238) inside a useMemo the new list can reuse as-is (name it).
+**Result:** one table (block | lines | outer element | reads) + the shared-variable list + the useMemo answer. Keep it under 60 lines.
+
+**Result:**
