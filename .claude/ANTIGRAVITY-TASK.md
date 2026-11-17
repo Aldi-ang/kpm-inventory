@@ -1162,3 +1162,21 @@ Do NOT change the code. Done when: four tables in the Result.
 | `StatusCard`, `HandoffOffer`, `viewingReceipt` print/share modal -> `src/components/consignment/...` | **Only alongside `selfcheck` updates** — `selfcheck` reads `src/ConsignmentFinanceView.jsx` directly | `267`, `1356`, `4368`, `4499`, `4602`, `4692`, `4793`, `5287` (`paymentItems.push({ productId: item.productId, name: item.name, qty: sold, priceTier: item.priceTier, calculatedPrice: item.calculatedPrice, unit: 'Bks' })`), `5550`, `5768-5769`, `5853-5854`, `5945`, `6128`, `6227`, `6266`, `6309` (`isAdmin ? 'Global Receivables' : 'My Receivables'`), `8333`, `11533`, `13278-13279` (`const sorted = [...myTransactions].sort((a, b) => (txSeconds(a) ?? Number.MAX_SAFE_INTEGER) - (txSeconds(b) ?? Number.MAX_SAFE_INTEGER));`) |
 | `debtData` / `customerData` pure FIFO & consignment aggregations -> `src/utils/consignmentMath.js` | **Careful** — `13279` checks exact `sorted` line in `src/ConsignmentFinanceView.jsx` | `13278-13279` |
 | `App.jsx` handlers (`handleRequestTransfer`, `handleAgentAcceptTransfer`, `handleAdminApproveTransfer`, `handleDeleteConsignmentData`) | **Keep in `App.jsx` (or update selfcheck)** | `4370-4401`, `4615-4618`, `4813-4831`, `5428-5432`, `5876`, `6384-6387` |
+
+## Task 24 - the same map for Reports (segment 5 of 12)
+**Status:** OPEN
+**Written:** 2026-11-17 08:26 WIB, by Claude. Same rules as above.
+
+Exactly Task 20's four tables for `src/components/HistoryReportView.jsx` (the `activeTab === 'transactions'` screen, App.jsx ~L5668-5678): every folder, filter, export, delete. Every press that deletes or changes a transaction gets **Yes** in the "moves stock or money?" column with the exact path it writes. Mark demo guide marks. In table 4, list the selfcheck pins on this file. Also list every amber/gold FILLED button in it (`bg-gold`, `bg-[var(--gold)]`, `bg-orange-*`, `bg-amber-*`, `from-amber-*`) with file:line - they must all become `.kpm-edge-btn` (theme.css).
+Do NOT change the code. Done when: four tables + the filled-button list in the Result.
+
+**Result:**
+
+## Task 25 - the same map for Customers (segment 6 of 12)
+**Status:** OPEN
+**Written:** 2026-11-17 08:26 WIB, by Claude. Same rules as above.
+
+Exactly Task 20's four tables for `src/components/CustomerManager.jsx` (`CustomerManagement`, the `activeTab === 'customers'` screen). Note which tier sees which customers (the region / permission filter) with file:line. Same filled-button list as Task 24.
+Do NOT change the code. Done when: four tables + the filled-button list in the Result.
+
+**Result:**
