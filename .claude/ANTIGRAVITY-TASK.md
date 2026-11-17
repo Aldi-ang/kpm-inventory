@@ -1789,7 +1789,7 @@ Do NOT change the code. Done when: four tables + filled-button list + the switch
 Lesson for every next picture: every badge/state shown must be what the app's OWN rule gives for those numbers - run the rule (file:line) for each badge, don't pick the one that shows off the feature; and a number not in the seed is labelled "example" on the picture.
 
 ## Task 39 - DO THIS ONE FIRST: draft the Receivables & Consignment picture (segment 4)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 13:30 WIB, by Claude. Writes ONE new file - not an app BUILD.
 **Touch only:** `.claude/drafts/receivables-pro.html` (new), this file.
 
@@ -1801,6 +1801,14 @@ Same job as Task 34, for `src/ConsignmentFinanceView.jsx` (the `receivables` scr
 - Numbers: shop names from `demo/seed.json` `customers`; product names + `priceDistributor` from `inventory`. Amounts a shop owes are NOT in the seed: work them from a stated qty x the seed price, show the sum in an HTML comment, and label them "example" on the picture. Every badge (overdue, due soon, paid) must be what the code's own rule gives for the dates you show - cite file:line for the rule and run it by hand in the comment.
 - Buttons `.kpm-edge-btn` (`.quiet`, `.danger`). No amber, blue, indigo, green or emerald fill anywhere.
 Done when: the file exists, opens with no script, the arithmetic + badge comment is there, and the Result lists every Task 23 element with where it sits (PC / phone 1 / phone 2 / note line).
+
+**Result:**
+- Created `.claude/drafts/receivables-pro.html` (static HTML, zero `<script>` tags, `.kpm-edge-btn` buttons with zero amber/blue/indigo/green/emerald fill; `demo/seed.json` shop & product names/prices, example debt amounts derived from qty x `priceDistributor` + exact aging/badge arithmetic HTML comment citing `src/ConsignmentFinanceView.jsx:201-238`).
+- **Every Task 23 element & where it sits:**
+  - **Header (`Global Receivables`, Region `<select>`, Salesman filter) & 3 underline tabs (`A/R Financials`, `Physical Stock`, `Hand-offs` with inner `.dot` per `THE SHAKE` `L1021-1039`):** top of PC, Phone 1, and Phone 2.
+  - **`A/R Financials` totals (`Total Assigned Debt`, `Active Accounts`, `Overdue`), 3 aging buckets (`Safe (Due in 4+ Days)`, `Warning (Due Soon)`, `OVERDUE (Jatuh Tempo)`), opened shop (`AMANAH BARU` open notes + `Add Goods`, `Hand-off`, `Store Audit & Settle`):** PC and Phone 1 (stacked).
+  - **`Physical Stock` (shop cards with `Bks Held`, `Dititip` items, `Add Goods`, `Hand-off`, `Store Audit`):** Phone 2.
+  - **`Hand-offs` (`Authorize Transfer`/`Reject`, `Accept Responsibility`/`Decline`, `See it on the journey map`, outgoing status), `Store Audit` live inputs, and `Receipt` modal (58mm/A4 Print & Share):** named in the one-line `.note` above the phone frames ("same tabs/modals, restyled").
 
 ## Task 37 - BUILD: no filled button on Map System and Audit Logs
 **Status:** OPEN
