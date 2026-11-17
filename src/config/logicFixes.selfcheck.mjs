@@ -10242,7 +10242,7 @@ section('MASTER VAULT ON THE PHONE (2026-10-02)');
      !!pz && pz(1, 100, 200) === 2 && pz(2, 200, 100) === 1 && pz(3, 100, 300) === 5 && pz(0.2, 100, 10) === 0.1 && pz(1.5, 0, 50) === 1.5);
   ok('phone = the list, then the product on its own screen with a Back; the desk keeps both',
      /\$\{phoneOpen \? 'hidden lg:flex' : 'flex'\} w-full lg:w-\[55%\] h-auto lg:h-full/.test(re) && /\$\{phoneOpen \? 'block' : 'hidden'\} lg:block/.test(re) &&
-     /<div className="lg:hidden relative z-\[110\]">\s*<button type="button" onClick=\{backToList\}/.test(re) && /onClick=\{\(\) => openProduct\(item\.id\)\}/.test(re) && !/h-\[350px\]/.test(re));
+     /<div className="lg:hidden relative z-40">\s*<button type="button" onClick=\{backToList\}/.test(re) && /onClick=\{\(\) => openProduct\(item\.id\)\}/.test(re) && !/h-\[350px\]/.test(re));
   ok('one search box: the list\'s own drives App\'s searchTerm (the Sales Terminal list still filters), the outer box is gone',
      /<ResidentEvilInventory\s+searchTerm=\{searchTerm\}\s+onSearch=\{setSearchTerm\}/.test(a) && !/placeholder="Search inventory by name\.\.\."/.test(a) &&
      /value=\{searchTerm\} onChange=\{e => onSearch\?\.\(e\.target\.value\)\}/.test(re) && /sections\[activeSection\] \|\| \[\]/.test(re));
@@ -10981,7 +10981,7 @@ section('A product save reports what the SERVER said (his pick B, 2026-10-10: th
      /navigator\.onLine === false/.test(save));
   ok('"Saving…" shows on the button while it waits, and the button cannot be pressed twice',
      /setSavingProduct\(true\)/.test(save) && /setSavingProduct\(false\)/.test(save)
-     && /disabled=\{savingProduct\}/.test(app) && /\{savingProduct \? 'Saving…' : 'Update Database'\}/.test(app));
+     && /disabled=\{savingProduct\}/.test(app) && /\{savingProduct \? 'Saving…' : 'Save product'\}/.test(app));
 }
 
 section('The demo seed (demo/seed.json, made by tools/demo-seed-from-backup.mjs from his real backup, his pick A 2026-10-10) - nothing private on a public page');
@@ -12341,7 +12341,9 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
   const { convertToBks, isPromo, promoSkin } = await import('../utils/helpers.js');
   const sync = read('src/hooks/useDatabaseSync.js'), rei = read('src/components/ResidentEvilInventory.jsx');
   const save = app.slice(app.indexOf('const handleSaveProduct'), app.indexOf('const handleUpdateProduct'));
-  const form = app.slice(app.indexOf('<form onSubmit={handleSaveProduct}'), app.indexOf("{savingProduct ? 'Saving…' : 'Update Database'}"));
+  const form = app.slice(app.indexOf('<form onSubmit={handleSaveProduct}'), app.indexOf("{savingProduct ? 'Saving…' : 'Save product'}"));
+  /* the professional form (2026-11-17): the slice must end where the form does - a missing end marker made it run to the file's end */
+  ok('the product form is found whole: both ends of the slice exist', app.indexOf('<form onSubmit={handleSaveProduct}') > 0 && app.indexOf("{savingProduct ? 'Saving…' : 'Save product'}") > app.indexOf('<form onSubmit={handleSaveProduct}'));
   /* The skip list is ONE place. Every cigarette-only path - bks/slop/bal/karton, revenue, price tiers, sales targets, the
      terminal's pita cukai debt, valuation, low stock - reads `inventory`, and `inventory` is cut from the one products
      listener. A second reader of the list would hand a T-shirt to a cigarette screen as Rp 0 / 1 Bks with no error, so the
@@ -12397,9 +12399,9 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      form.includes('<div className="grid md:grid-cols-2 gap-x-8 gap-y-4">') &&
      cell("space-y-4 md:col-start-1 md:row-start-1 ${isPromo(editingProduct) ? 'md:row-span-2' : ''}") > 0 &&
      cell("space-y-4 md:row-start-2 ${isPromo(editingProduct) ? 'md:col-start-2' : 'md:col-start-1'}") > cell('name="balsPerCarton"') &&
-     cell("space-y-4 md:row-start-2 ${isPromo(editingProduct) ? 'md:col-start-2' : 'md:col-start-1'}") < cell('TEXTURE ASSETS') &&
-     cell("space-y-4 mt-4 md:mt-0 md:col-start-2 md:row-start-1 ${isPromo(editingProduct) ? '' : 'md:row-span-2'}") > cell('TEXTURE ASSETS') &&
-     cell("space-y-4 mt-4 md:mt-0 md:col-start-2 md:row-start-1 ${isPromo(editingProduct) ? '' : 'md:row-span-2'}") < cell('PRICING ENGINE'));
+     cell("space-y-4 md:row-start-2 ${isPromo(editingProduct) ? 'md:col-start-2' : 'md:col-start-1'}") < cell('Box pictures') &&
+     cell("space-y-4 mt-4 md:mt-0 md:col-start-2 md:row-start-1 ${isPromo(editingProduct) ? '' : 'md:row-span-2'}") > cell('Box pictures') &&
+     cell("space-y-4 mt-4 md:mt-0 md:col-start-2 md:row-start-1 ${isPromo(editingProduct) ? '' : 'md:row-span-2'}") < cell('Prices per Bks'));
   /* His pick A, 2026-10-25 ("A looks simple and light i guess we could do that"): a promo item is a photo card - FRONT +
      BACK only, starting thin. Not a style choice: the cropper shapes each crop from the size (ImageCropper.jsx:40), so a
      LEFT / RIGHT face on a 3-deep card would crop as a 3x100 sliver. */
@@ -12496,8 +12498,18 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      form's light ink on it - an <option> takes the browser's white unless it is given its own colours (the same fix the
      app's other lists carry, bg-[var(--sunk)]); here the form's own solid well + ink, which flip with light mode. */
   ok('REGRESSION: the TYPE list is readable when it opens - every option has its own solid background and ink, never the browser\'s white under the form\'s light ink',
-     form.includes('<option value="" disabled className="bg-[var(--duke-well-solid)] text-[var(--duke-ink-hi)]">Pick what it is</option>') &&
-     form.includes('<option key={id} value={id} className="bg-[var(--duke-well-solid)] text-[var(--duke-ink-hi)]">{label}</option>'));
+     form.includes('<option value="" disabled className="bg-[var(--panel)] text-[var(--ink)]">Pick what it is</option>') &&
+     form.includes('<option key={id} value={id} className="bg-[var(--panel)] text-[var(--ink)]">{label}</option>'));
+  /* his 2026-11-17 "i really hate the simple amber fill button dont make it again": no gold-filled button on the Master
+     Vault or its product form; the presses there wear .kpm-edge-btn (a gold edge around a plain word, theme.css) */
+  const mvFace = read('src/components/ResidentEvilInventory.jsx'), thc = read('src/styles/theme.css');
+  const fill = /bg-gold\b|bg-\[var\(--gold\)\]|bg-orange-\d|bg-amber-\d|from-amber-\d|bg-\[#0d0a09\]/;
+  ok('REGRESSION: no amber-filled button on the Master Vault or its product form - Add product, Save 3D size and Save product wear the gold edge',
+     !fill.test(mvFace) && !fill.test(form) && (mvFace.match(/className="kpm-edge-btn/g) || []).length >= 4 &&
+     app.includes('className="kpm-edge-btn w-full h-12 text-sm font-semibold"') &&
+     /\.kpm-edge-btn \{[^}]*border: 1px solid var\(--accent-edge\);[^}]*background-color: transparent;/.test(thc) &&
+     /\.kpm-edge-btn:hover \{ background-color: color-mix\(in srgb, var\(--gold\) 11%, transparent\);/.test(thc) &&
+     /\.kpm-edge-btn:active \{ scale: \.97; \}/.test(thc) && /\.kpm-edge-btn:focus-visible \{ outline: 2px solid/.test(thc));
   const looks = read('src/components/PromoLookFields.jsx'), app2 = read('src/App.jsx');
   ok('REGRESSION: EDIT on a promo item without a FRONT photo shows the look - a live 3D preview, PRINTED TEXT, COLOR, PRINT COLOR, Default colors; TYPE switches the preview',
      form.includes('<PromoLookFields key={editingProduct.id || \'new\'} product={editingProduct} previewRef={goodsPreviewRef} />') &&

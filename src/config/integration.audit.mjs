@@ -3025,14 +3025,14 @@ check(G40, 'a veil EDGE is a separate token from a veil FILL, and is far stronge
   alphaOf('--duke-veil-edge') >= alphaOf('--duke-veil') * 3,
   'the fill and the edge share one rgba in dark; collapsing them into one token loses the ' +
   'boundary of every input the moment the ground goes pale');
-/* ⚠️ AN INK ONLY FLIPS WHEN THE GROUND UNDER IT DOES. The Update Database button is a hardcoded
-   near-black plank in BOTH themes; it was wearing --shell-ink, which flips to near-black, so its
-   label went dark-on-dark in light. Same bug as the wells, running the other way. */
-check(G40, 'the dark plank\'s label uses an ink that does NOT flip',
-  /bg-\[#0d0a09\][\s\S]{0,60}text-\[var\(--duke-on-plank\)\]/.test(app) &&
-  [...themeCss.matchAll(/--duke-on-plank:\s*(#[0-9a-f]{6})/g)].map(m => m[1])
-    .every((v, _, a) => a.length === 2 && v === a[0]),
-  'a flipping ink on a plate that cannot flip is invisible text, and it reads as "the button ' +
+/* ⚠️ AN INK ONLY FLIPS WHEN THE GROUND UNDER IT DOES. The product form's save button was a hardcoded
+   near-black plank in BOTH themes; wearing --shell-ink its label went dark-on-dark in light. Since the
+   professional form (2026-11-17, "Save product") it has no plate at all: a see-through .kpm-edge-btn
+   whose ink is --ink, so ground and ink flip together. Same intent, the other way round. */
+check(G40, 'the product form\'s save label flips with the ground under it (no fixed plank, see-through + --ink)',
+  /className="kpm-edge-btn w-full h-12 text-sm font-semibold"[\s\S]{0,400}'Save product'/.test(app) && !/bg-\[#0d0a09\]/.test(app) &&
+  /\.kpm-edge-btn \{[^}]*background-color: transparent; color: var\(--ink\);/.test(themeCss),
+  'a fixed plate under an ink that flips is invisible text, and it reads as "the button ' +
   'lost its label" rather than as a colour bug');
 /* the role rule from group 39, now enforced on the shell as well — it was only ever scoped to
    the terminal because the terminal was the only file with role-named tokens at the time */
@@ -3180,7 +3180,7 @@ check(G42, 'the lockscreen text below the medallion is tokenised in both files',
   'this block sits directly on the page, which now goes pale — white text on it is nothing');
 /* the product editor was the densest patch of un-themed accent left in the app */
 const editor = app.slice(app.indexOf('EDIT MODAL - AUTO HIDES WHEN CROPPING'),
-                         app.indexOf('Update Database'));
+                         app.indexOf("'Save product'"));
 const editorLeft = [...new Set(editor.match(
   /(?:hover:|focus:)?(?:text|border)-(?:red|orange|amber|yellow)-\d+(?:\/\d+)?/g) || [])];
 check(G42, 'the product editor carries no accent that cannot change theme', !editorLeft.length,

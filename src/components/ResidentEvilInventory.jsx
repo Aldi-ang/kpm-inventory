@@ -167,8 +167,8 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                     )}
                     {isAdmin && (
                         <div className="flex gap-2 mt-4">
-                            <button onClick={() => onEdit(product)} className="flex-1 lg:flex-none min-h-11 lg:min-h-9 px-4 border border-line-2 text-ink text-sm font-semibold hover:border-accent-edge transition-colors">Edit product</button>
-                            <button onClick={() => onDelete(product.id)} className="flex-1 lg:flex-none min-h-11 lg:min-h-9 px-4 border border-line-2 text-danger-ink text-sm font-semibold hover:border-danger-ink transition-colors">Delete</button>
+                            <button onClick={() => onEdit(product)} className="kpm-edge-btn quiet flex-1 lg:flex-none min-h-11 lg:min-h-9 px-4 text-sm font-semibold">Edit product</button>
+                            <button onClick={() => onDelete(product.id)} className="kpm-edge-btn danger flex-1 lg:flex-none min-h-11 lg:min-h-9 px-4 text-sm font-semibold">Delete</button>
                         </div>
                     )}
                 </div>
@@ -207,7 +207,7 @@ export const ItemInspector = ({ product, isAdmin, onEdit, onDelete, onUpdateProd
                             <DimensionControl label="W" val={dims.w} axis="w" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
                             <DimensionControl label="H" val={dims.h} axis="h" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
                             <DimensionControl label="D" val={dims.d} axis="d" onChange={(a,v) => setDims(p=>({...p, [a]:v}))} onInteract={setIsInteracting} />
-                            <button onClick={() => onUpdateProduct(product.id, { dimensions: dims, defaultZoom: zoom })} className="w-full mt-2 min-h-11 lg:min-h-9 bg-gold text-gold-ink text-sm font-semibold hover:opacity-90 transition-opacity">Save 3D size</button>
+                            <button onClick={() => onUpdateProduct(product.id, { dimensions: dims, defaultZoom: zoom })} className="kpm-edge-btn w-full mt-2 min-h-11 lg:min-h-9 text-sm font-semibold">Save 3D size</button>
                         </div>
                     </details>
                 )}
@@ -302,7 +302,7 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
                             </p>
                         )}
                     </div>
-                    {isAdmin && <button onClick={onAddNew} className="ml-auto shrink-0 min-h-11 lg:min-h-9 px-4 flex items-center gap-1.5 bg-gold text-gold-ink text-sm font-semibold hover:opacity-90 transition-opacity"><Plus size={15} aria-hidden="true"/> Add product</button>}
+                    {isAdmin && <button onClick={onAddNew} className="kpm-edge-btn ml-auto shrink-0 min-h-11 lg:min-h-9 px-4 text-sm font-semibold"><Plus size={15} aria-hidden="true" className="text-accent-ink"/> Add product</button>}
                     <div className="relative basis-full">
                         <input value={searchTerm} onChange={e => onSearch?.(e.target.value)} placeholder="Search products" aria-label="Search products" className="w-full h-11 lg:h-9 bg-inset border border-line-2 pl-9 pr-3 text-ink text-sm outline-none focus:border-accent-edge placeholder:text-ink-dim"/>
                         <Search size={15} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-dim pointer-events-none"/>
@@ -369,8 +369,9 @@ export default function ResidentEvilInventory({ inventory, motorists = [], trans
             </div>
 
             <div className={`${phoneOpen ? 'block' : 'hidden'} lg:block w-full h-auto lg:flex-1 lg:h-full lg:overflow-y-auto relative bg-ground`}>
-                {/* hidden on the WRAPPER: theme.css's `button:has(> svg:only-child)` outranks lg:hidden on the button itself */}
-                <div className="lg:hidden relative z-[110]">
+                {/* hidden on the WRAPPER: theme.css's `button:has(> svg:only-child)` outranks lg:hidden on the button itself.
+                    z-40, not 110: above the stage's own keys (z-20), under the product form (z-100) - at 110 it drew over the open form */}
+                <div className="lg:hidden relative z-40">
                     <button type="button" onClick={backToList} className="w-full h-11 px-4 flex items-center justify-start gap-1 text-sm font-semibold text-ink-muted border-b border-line-2">
                         <ChevronLeft size={16} aria-hidden="true"/> Back to the list
                     </button>

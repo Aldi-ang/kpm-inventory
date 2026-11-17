@@ -1182,6 +1182,22 @@ html.lite-mode .kpm-merch-deal { background-image: url('/sprites/merchant-deal.p
 /* press feedback. Never below .95 — lower reads as exaggerated. */
 .kpm-press { transition-property: scale; transition-duration: 150ms; transition-timing-function: ease-out; }
 .kpm-press:active { scale: .96; }
+/* THE PROFESSIONAL BUTTON. His 2026-11-17: "i really hate the simple amber fill button dont make it again ... make sure
+   all the button animation are nice and clean"; his 2026-11-08 pick "1 better": no fill, a gold edge around a plain word.
+   Hover: a faint gold wash fades in and the edge firms up. Press: sinks 3%. Keyboard: a gold ring (outline, so Lite Mode's
+   box-shadow kill cannot take it). Colour + scale only, nothing rotates, nothing re-mounts. .danger and .quiet are the two
+   others: a red word on a plain edge, and a plain edge for the secondary press. */
+.kpm-edge-btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border: 1px solid var(--accent-edge);
+  background-color: transparent; color: var(--ink); border-radius: 6px; cursor: pointer;
+  transition: background-color 160ms ease-out, border-color 160ms ease-out, color 160ms ease-out, scale 140ms ease-out; }
+.kpm-edge-btn:hover { background-color: color-mix(in srgb, var(--gold) 11%, transparent); border-color: var(--accent-ink); }
+.kpm-edge-btn:active { scale: .97; }
+.kpm-edge-btn:focus-visible { outline: 2px solid color-mix(in srgb, var(--gold) 55%, transparent); outline-offset: 2px; }
+.kpm-edge-btn:disabled { opacity: .55; cursor: default; scale: 1; }
+.kpm-edge-btn.quiet { border-color: var(--line-2); }
+.kpm-edge-btn.quiet:hover { border-color: var(--accent-edge); }
+.kpm-edge-btn.danger { border-color: var(--line-2); color: var(--danger-ink); }
+.kpm-edge-btn.danger:hover { border-color: var(--danger-ink); background-color: color-mix(in srgb, var(--danger-ink) 9%, transparent); }
 
 /* ----------------------------------------------------------------------------
    LITE MODE — the app's PERFORMANCE switch (not the light colour theme).

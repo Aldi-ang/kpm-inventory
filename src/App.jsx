@@ -190,6 +190,11 @@ const CAN_MASK_TEXT_INPUT =
    open the vault button on my phone it is just not working". On a desk the autofocus is a real
    convenience and costs nothing, so it stays there. */
 const IS_TOUCH = typeof matchMedia === 'function' && matchMedia('(hover: none)').matches;
+/* the product form's three looks (Master Vault Edit / New product, professional edition 2026-11-17): one label, one
+   input with a gold focus edge, one section heading - every field of the form reads them, so they cannot drift apart */
+const PF_LABEL = 'block mb-1.5 text-xs font-medium text-[var(--ink-muted)]';
+const PF_INPUT = 'w-full h-10 px-3 rounded-md bg-[var(--inset)] border border-[var(--line-2)] text-[var(--ink)] outline-none transition-[border-color] duration-150 hover:border-[var(--line-3)] focus:border-[var(--accent-edge)] placeholder:text-[var(--ink-dim)]';
+const PF_HEAD = 'text-[11px] font-bold uppercase tracking-wider text-[var(--ink-dim)] pb-1.5 mb-3 border-b border-[var(--line-2)]';
 import { isFailure } from './utils/toastSeverity.js';
 import { missedDocPath, bindMissed, recordMissed } from './utils/missedLog.js';
 
@@ -5219,52 +5224,56 @@ const handleGitHubMirror = async () => {
               {/* EDIT MODAL - AUTO HIDES WHEN CROPPING (fixes "Menu doesn't exit") */}
               {editingProduct && (
                 <div 
-                    className="fixed inset-0 z-[100] bg-[var(--duke-scrim-hi)] backdrop-blur-md flex items-center justify-center p-4 transition-opacity duration-300"
+                    className="fixed inset-0 z-[100] bg-[var(--duke-scrim-hi)] backdrop-blur-sm flex items-center justify-center p-3 sm:p-4"
                     style={{ display: cropImageSrc ? 'none' : 'flex' }} // <--- MAGIC FIX: Hides when cropping
                 >
-                    <div className="bg-[var(--duke-well-solid)] border border-[var(--duke-veil-edge-3)] w-full max-w-2xl max-h-[90vh] overflow-y-auto p-8 relative shadow-[0_0_50px_var(--duke-lift)]">
-                        <button onClick={() => setEditingProduct(null)} className="absolute top-4 right-4 text-[var(--duke-ink-hi)] hover:text-[var(--duke-danger-ink)]"><X size={24}/></button>
-                        <h2 className="text-2xl font-bold text-[var(--duke-ink-hi)] mb-6 uppercase tracking-widest border-b border-[var(--duke-veil-edge-2)] pb-2">
-                            {editingProduct.id ? "Edit Record" : "New Entry"}
+                    {/* THE PROFESSIONAL FORM (his 2026-11-17 "just edit this panel so that it look professional as well"): the
+                        Master Vault's tokens, sentence-case labels, one input style with a gold focus edge, no amber fill
+                        anywhere (his "i really hate the simple amber fill button dont make it again"). Classes and words only:
+                        every name=, handler and grid cell below is what it was. */}
+                    <div className="animate-fade-in bg-[var(--panel)] border border-[var(--line-2)] rounded-lg w-full max-w-2xl max-h-[82dvh] overflow-y-auto p-5 sm:p-7 relative shadow-2xl">
+                        <button type="button" onClick={() => setEditingProduct(null)} aria-label="Close" className="kpm-press absolute top-3 right-3 w-10 h-10 flex items-center justify-center rounded-md text-[var(--ink-dim)] hover:text-[var(--ink)] hover:bg-[var(--inset)] transition-colors"><X size={20}/></button>
+                        <h2 className="text-lg font-bold text-[var(--ink)] mb-6 pr-12 pb-3 border-b border-[var(--line-2)]">
+                            {editingProduct.id ? `Edit product${editingProduct.name ? ` · ${editingProduct.name}` : ''}` : "New product"}
                         </h2>
-                        
-                        <form onSubmit={handleSaveProduct} className="space-y-6 font-mono text-xs">
+
+                        <form onSubmit={handleSaveProduct} className="space-y-6 text-sm">
                             {/* three cells, not two columns: the pictures are a cell of their own, so a promo item (no prices) can
                                 move them into the right half it empties. A phone still reads fields, pictures, prices. */}
                             <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
                                 <div className={`space-y-4 md:col-start-1 md:row-start-1 ${isPromo(editingProduct) ? 'md:row-span-2' : ''}`}>
-                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">PRODUCT NAME</label><input name="name" defaultValue={editingProduct.name} onBlur={(e) => { const name = e.target.value; if (isPromo(editingProduct)) setEditingProduct(p => ({ ...p, name })); }} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none"/></div>
+                                    <div><label className={PF_LABEL}>Product name</label><input name="name" defaultValue={editingProduct.name} onBlur={(e) => { const name = e.target.value; if (isPromo(editingProduct)) setEditingProduct(p => ({ ...p, name })); }} className={PF_INPUT}/></div>
                                     {/* the description shows in the fullscreen viewer (ExamineModal); handleSaveProduct takes it from the form like every other field (his 2026-10-10 "the description editor for each product is gone") */}
-                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">DESCRIPTION</label><textarea name="description" defaultValue={editingProduct.description || ''} rows={3} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none resize-y"/></div>
+                                    <div><label className={PF_LABEL}>Description</label><textarea name="description" defaultValue={editingProduct.description || ''} rows={3} className={`${PF_INPUT} h-auto py-2 resize-y`}/></div>
 
                                     {/* PROMO ITEM (stage 1 of 4, his 2026-10-25 answers): chosen on a NEW entry only - flipping a
                                         cigarette later would re-read its past Bal sales as pieces. An edit shows the kind, never changes it. */}
-                                    {editingProduct.id ? (isPromo(editingProduct) && <p className="text-[var(--duke-brass-ink)] tracking-widest">PROMO ITEM · COUNTED IN PCS</p>) : (
-                                        <div className="flex items-center gap-2">
-                                            <input type="checkbox" id="isPromo" checked={isPromo(editingProduct)} onChange={(e) => { const on = e.target.checked; setEditingProduct(p => ({ ...p, kind: on ? 'promo' : undefined })); setBoxDimensions(on ? { w: 90, h: 100, d: 3 } : { w: 55, h: 90, d: 22 }); }} className="accent-orange-500 w-4 h-4"/>
-                                            <label htmlFor="isPromo" className="text-[var(--duke-ink-hi)] text-xs cursor-pointer select-none">Promo item (T-shirt, poster, hat, lighter, ashtray, mug) - counted in pcs, no price</label>
+                                    {editingProduct.id ? (isPromo(editingProduct) && <p className="text-xs font-semibold text-[var(--accent-ink)]">Promo item · counted in pcs</p>) : (
+                                        <div className="flex items-start gap-2.5">
+                                            <input type="checkbox" id="isPromo" checked={isPromo(editingProduct)} onChange={(e) => { const on = e.target.checked; setEditingProduct(p => ({ ...p, kind: on ? 'promo' : undefined })); setBoxDimensions(on ? { w: 90, h: 100, d: 3 } : { w: 55, h: 90, d: 22 }); }} className="accent-[var(--gold)] w-4 h-4 mt-0.5 shrink-0"/>
+                                            <label htmlFor="isPromo" className="text-[var(--ink-muted)] text-sm leading-snug cursor-pointer select-none">Promo item (T-shirt, poster, hat, lighter, ashtray, mug) - counted in pcs, no price</label>
                                         </div>
                                     )}
                                     {/* WHAT IT IS (his 2026-10-26 "there is no product type"): picks the 3D goods the vault shows
                                         when no photo is uploaded. TYPE, as the cigarette form names its own type field. */}
                                     {isPromo(editingProduct) && (
-                                        <div><label htmlFor="goods" className="text-[var(--duke-ink-8)] block mb-1">TYPE</label>
-                                            <select name="goods" defaultValue={promoGoods(editingProduct) || ''} required id="goods" onChange={(e) => setEditingProduct(p => ({ ...p, goods: e.target.value }))} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-amber-edge)] outline-none">
+                                        <div><label htmlFor="goods" className={PF_LABEL}>Type</label>
+                                            <select name="goods" defaultValue={promoGoods(editingProduct) || ''} required id="goods" onChange={(e) => setEditingProduct(p => ({ ...p, goods: e.target.value }))} className={PF_INPUT}>
                                                 {/* each option its own colours: left alone, the opened list is the browser's white under the form's white ink (his 2026-10-26 screenshot) */}
-                                                <option value="" disabled className="bg-[var(--duke-well-solid)] text-[var(--duke-ink-hi)]">Pick what it is</option>
-                                                {PROMO_GOODS.map(([id, label]) => <option key={id} value={id} className="bg-[var(--duke-well-solid)] text-[var(--duke-ink-hi)]">{label}</option>)}
+                                                <option value="" disabled className="bg-[var(--panel)] text-[var(--ink)]">Pick what it is</option>
+                                                {PROMO_GOODS.map(([id, label]) => <option key={id} value={id} className="bg-[var(--panel)] text-[var(--ink)]">{label}</option>)}
                                             </select>
                                         </div>
                                     )}
 
                                   {/* --- PINPOINT: Edit Product Modal --- */}
-                                    <div className={`grid ${isPromo(editingProduct) ? 'grid-cols-2' : 'grid-cols-4'} gap-2`}>
-                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">{isPromo(editingProduct) ? 'STOCK (PCS)' : 'STOCK'}</label><input name="stock" type="number" step="any" defaultValue={editingProduct.stock} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
-                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">{isPromo(editingProduct) ? 'MIN. ALERT (PCS)' : 'MIN. ALERT (BKS)'}</label><input name="minStock" type="number" step="any" defaultValue={editingProduct.minStock || ''} placeholder={`pakai batas perusahaan (${appSettings?.defaultMinStockQty || 3} ${isPromo(editingProduct) ? 'pcs' : (appSettings?.defaultMinStockUnit || 'Bal')})`} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-danger-edge)] text-[var(--duke-danger-ink)] focus:border-[var(--duke-danger-edge)] outline-none"/></div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div><label className={PF_LABEL}>{isPromo(editingProduct) ? 'Stock (pcs)' : 'Stock (Bks)'}</label><input name="stock" type="number" step="any" defaultValue={editingProduct.stock} className={`${PF_INPUT} tabular-nums`}/></div>
+                                        <div><label className={PF_LABEL}>{isPromo(editingProduct) ? 'Low-stock warning (pcs)' : 'Low-stock warning (Bks)'}</label><input name="minStock" type="number" step="any" defaultValue={editingProduct.minStock || ''} placeholder={`Default ${appSettings?.defaultMinStockQty || 3} ${isPromo(editingProduct) ? 'pcs' : (appSettings?.defaultMinStockUnit || 'Bal')}`} className={`${PF_INPUT} tabular-nums`}/></div>
                                         {!isPromo(editingProduct) && (<>
                                         {/* 🚀 NEW: STICKS PER PACK INPUT */}
-                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">STICKS / BKS</label><input name="sticksPerPack" type="number" step="any" defaultValue={editingProduct.sticksPerPack || 16} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
-                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">TYPE</label><input name="type" defaultValue={editingProduct.type} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge-2)] text-[var(--duke-ink-hi)] focus:border-[var(--duke-veil-edge-3)] outline-none"/></div>
+                                        <div><label className={PF_LABEL}>Sticks per Bks</label><input name="sticksPerPack" type="number" step="any" defaultValue={editingProduct.sticksPerPack || 16} className={`${PF_INPUT} tabular-nums`}/></div>
+                                        <div><label className={PF_LABEL}>Type</label><input name="type" defaultValue={editingProduct.type} placeholder="SKT, Natural…" className={PF_INPUT}/></div>
                                         </>)}
                                     </div>
 
@@ -5273,55 +5282,60 @@ const handleGitHubMirror = async () => {
                                         to 10/20/4 for every product. Aldi's real stock varies (a Bal can be 100 or
                                         200 Bks, a Karton 4 or 5 Bal), so they have to be per product. */}
                                     {!isPromo(editingProduct) && (
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">BKS / SLOP</label><input name="packsPerSlop" type="number" step="any" defaultValue={editingProduct.packsPerSlop || 10} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-brass-edge)] text-[var(--duke-brass-ink)] focus:border-[var(--duke-brass-edge)] outline-none"/></div>
-                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">SLOP / BAL</label><input name="slopsPerBal" type="number" step="any" defaultValue={editingProduct.slopsPerBal || 20} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-brass-edge)] text-[var(--duke-brass-ink)] focus:border-[var(--duke-brass-edge)] outline-none"/></div>
-                                        <div><label className="text-[10px] text-[var(--duke-ink-8)] block mb-1 tracking-widest">BAL / KARTON</label><input name="balsPerCarton" type="number" step="any" defaultValue={editingProduct.balsPerCarton || 4} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-brass-edge)] text-[var(--duke-brass-ink)] focus:border-[var(--duke-brass-edge)] outline-none"/></div>
+                                    <div>
+                                    <h3 className={PF_HEAD}>Packing</h3>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        <div><label className={PF_LABEL}>Bks per Slop</label><input name="packsPerSlop" type="number" step="any" defaultValue={editingProduct.packsPerSlop || 10} className={`${PF_INPUT} tabular-nums`}/></div>
+                                        <div><label className={PF_LABEL}>Slop per Bal</label><input name="slopsPerBal" type="number" step="any" defaultValue={editingProduct.slopsPerBal || 20} className={`${PF_INPUT} tabular-nums`}/></div>
+                                        <div><label className={PF_LABEL}>Bal per Karton</label><input name="balsPerCarton" type="number" step="any" defaultValue={editingProduct.balsPerCarton || 4} className={`${PF_INPUT} tabular-nums`}/></div>
+                                    </div>
                                     </div>
                                     )}
                                 </div>
 
                                 <div className={`space-y-4 md:row-start-2 ${isPromo(editingProduct) ? 'md:col-start-2' : 'md:col-start-1'}`}>
                                     {/* RESTORED: FRONT = BACK TOGGLE */}
-                                    <div className="flex items-center gap-2">
-                                        <input 
-                                            type="checkbox" 
-                                            id="useFront" 
-                                            checked={useFrontForBack} 
+                                    <div className="flex items-center gap-2.5">
+                                        <input
+                                            type="checkbox"
+                                            id="useFront"
+                                            checked={useFrontForBack}
                                             onChange={(e) => setUseFrontForBack(e.target.checked)}
-                                            className="accent-orange-500 w-4 h-4"
+                                            className="accent-[var(--gold)] w-4 h-4"
                                         />
-                                        <label htmlFor="useFront" className="text-[var(--duke-ink-hi)] text-xs cursor-pointer select-none">Use Front Image for Back</label>
+                                        <label htmlFor="useFront" className="text-[var(--ink-muted)] text-sm cursor-pointer select-none">Use the front picture for the back</label>
                                     </div>
 
                                     {/* TEXTURE ASSETS (WITH PREVIEWS & EDIT BTN). A promo item is a photo card (his pick A, 2026-10-25):
                                         FRONT + BACK only, because the tick above makes it 3 deep and the cropper cuts each face to the
                                         box's own shape - a side face would be a 3x100 sliver. */}
-                                    <div className="p-3 border border-dashed border-[var(--duke-veil-edge-3)] text-center bg-[var(--duke-veil)]">
-                                        <p className="text-[var(--shell-orange-ink)] font-bold mb-2">TEXTURE ASSETS</p>
+                                    <div>
+                                        <h3 className={PF_HEAD}>Box pictures</h3>
                                         <div className={`grid ${isPromo(editingProduct) ? 'grid-cols-2' : 'grid-cols-3'} gap-2`}>
                                             {(isPromo(editingProduct) ? ['front', 'back'] : ['front', 'back', 'left', 'right', 'top', 'bottom']).map(face => {
                                                 const hasImg = tempImages[face] || (editingProduct.images && editingProduct.images[face]);
                                                 return (
                                                     <div 
                                                         key={face} 
-                                                        className="h-12 bg-[var(--duke-well-solid)] border border-[var(--duke-veil-edge)] flex items-center justify-center text-[11px] text-[var(--duke-ink-8)] uppercase cursor-pointer hover:bg-[var(--duke-veil-2)] hover:text-[var(--duke-ink-hi)] transition-colors relative group overflow-hidden" 
+                                                        className="h-14 rounded-md bg-[var(--inset)] border border-dashed border-[var(--line-2)] flex items-center justify-center text-xs text-[var(--ink-dim)] capitalize cursor-pointer hover:border-[var(--accent-edge)] hover:text-[var(--ink)] transition-colors relative group overflow-hidden"
                                                         onClick={() => document.getElementById(`file-edit-${face}`).click()}
                                                     >
                                                         {hasImg ? (
                                                             <>
-                                                                <img src={hasImg} className="w-full h-full object-cover opacity-50 group-hover:opacity-100"/>
-                                                                <div className="absolute inset-0 flex items-center justify-center bg-[var(--duke-well)] opacity-40 group-hover:opacity-100 transition-opacity">
-                                                                    <Pencil size={12} className="text-[var(--duke-ink-hi)]"/>
+                                                                <img src={hasImg} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"/>
+                                                                <div className="absolute inset-0 flex items-center justify-center bg-[color-mix(in_srgb,var(--ground)_45%,transparent)] opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <Pencil size={13} className="text-[var(--ink)]"/>
                                                                 </div>
                                                                 {/* RESTORED: Edit from existing button */}
                                                                 <button
                                                                     type="button"
                                                                     onClick={(e) => { e.stopPropagation(); handleEditExisting(face, hasImg); }}
-                                                                    className="absolute top-0 right-0 p-1 bg-orange-600 text-[var(--duke-on-fill)] opacity-100 z-20"
-                                                                    title="Edit Crop"
+                                                                    className="absolute top-0 right-0 w-6 h-6 flex items-center justify-center rounded-bl-md bg-[var(--panel)] border-l border-b border-[var(--line-2)] text-[var(--accent-ink)] hover:text-[var(--ink)] transition-colors z-20"
+                                                                    title="Crop again"
+                                                                    aria-label={`Crop the ${face} picture again`}
                                                                 >
-                                                                    <Crop size={8}/>
+                                                                    {/* the hidden word keeps theme.css's `button:has(> svg:only-child)` (a 44 px icon key) off this corner tab */}
+                                                                    <Crop size={11} aria-hidden="true"/><span className="sr-only">Crop again</span>
                                                                 </button>
                                                             </>
                                                         ) : (
@@ -5335,11 +5349,11 @@ const handleGitHubMirror = async () => {
                                     </div>
                                 </div>
                                 <div className={`space-y-4 mt-4 md:mt-0 md:col-start-2 md:row-start-1 ${isPromo(editingProduct) ? '' : 'md:row-span-2'}`}>
-                                    {isPromo(editingProduct) && <p className="text-[var(--duke-ink-8)] leading-relaxed">PROMO ITEM - given free together with a sale. No price and no packing: it is counted in pcs.</p>}
+                                    {isPromo(editingProduct) && <p className="text-[var(--ink-dim)] leading-relaxed">Promo item - given free together with a sale. No price and no packing: it is counted in pcs.</p>}
                                     {/* THE LOOK (his 2026-10-26 "edit the color appearance on the 3D design, and change the name on it
                                         when press edit"): only while there is no FRONT photo - a photo is the flat card, it has no paint */}
                                     {isPromo(editingProduct) && ((tempImages.front || editingProduct.images?.front)
-                                        ? <p className="text-[var(--duke-ink-8)] leading-relaxed">A FRONT photo is set, so the vault shows the photo card, not the 3D model.</p>
+                                        ? <p className="text-[var(--ink-dim)] leading-relaxed">A FRONT photo is set, so the vault shows the photo card, not the 3D model.</p>
                                         : <PromoLookFields key={editingProduct.id || 'new'} product={editingProduct} previewRef={goodsPreviewRef} />)}
                                     {isPromo(editingProduct) && editingProduct.id && (
                                         <PromoBundleFields promo={editingProduct} bundles={[...(appSettings?.promoBundles || []), ...regionOffers]} products={inventory} onSave={(list) => handleSavePromoBundles(list)}
@@ -5347,34 +5361,29 @@ const handleGitHubMirror = async () => {
                                             canToggle={canSwitchBundle(userRole)} canSetRules={canSetBundleRules(userRole)}
                                             regions={[...new Set(motorists.map(m => normalizeRegion(m.location)))].filter(r => r !== 'UNASSIGNED').sort()} />)}
                                     {!isPromo(editingProduct) && (<>
-                                    <h3 className="text-[var(--duke-ink-hi)] border-b border-[var(--duke-veil-edge)] pb-1 mb-2">PRICING ENGINE</h3>
-                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">DISTRIBUTOR (MODAL)</label><input name="priceDistributor" type="number" step="any" defaultValue={editingProduct.priceDistributor} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-danger-edge)] text-[var(--duke-danger-ink)] focus:border-[var(--duke-danger-edge)] outline-none"/></div>
-                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">RETAIL PRICE</label><input name="priceRetail" type="number" step="any" defaultValue={editingProduct.priceRetail} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
-                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">GROSIR PRICE</label><input name="priceGrosir" type="number" step="any" defaultValue={editingProduct.priceGrosir} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-veil-edge)] text-[var(--shell-ink)] focus:border-[var(--duke-amber-edge)] outline-none transition-colors"/></div>
-                                    <div><label className="text-[var(--duke-ink-8)] block mb-1">ECER PRICE</label><input name="priceEcer" type="number" step="any" defaultValue={editingProduct.priceEcer} className="w-full p-2 bg-[var(--duke-veil)] border border-[var(--duke-brass-edge)] text-[var(--duke-brass-ink)] focus:border-[var(--duke-brass-edge)] outline-none"/></div>
+                                    <h3 className={PF_HEAD}>Prices per Bks</h3>
+                                    <div><label className={PF_LABEL}>Distributor (cost)</label><input name="priceDistributor" type="number" step="any" defaultValue={editingProduct.priceDistributor} className={`${PF_INPUT} tabular-nums`}/></div>
+                                    <div><label className={PF_LABEL}>Retail</label><input name="priceRetail" type="number" step="any" defaultValue={editingProduct.priceRetail} className={`${PF_INPUT} tabular-nums`}/></div>
+                                    <div><label className={PF_LABEL}>Grosir</label><input name="priceGrosir" type="number" step="any" defaultValue={editingProduct.priceGrosir} className={`${PF_INPUT} tabular-nums`}/></div>
+                                    <div><label className={PF_LABEL}>Ecer</label><input name="priceEcer" type="number" step="any" defaultValue={editingProduct.priceEcer} className={`${PF_INPUT} tabular-nums`}/></div>
                                     </>)}
                                 </div>
                             </div>
                             {/* type is explicit: this submits handleSaveProduct. It was relying on
                                 a bare <button> defaulting to submit inside the form, which is easy
-                                to break by accident and impossible to read at a glance. Hover and
-                                press are the app's own gold, not the white/grey it had — no rotation,
-                                so Lite Mode is unaffected. */}
+                                to break by accident and impossible to read at a glance. The look is
+                                .kpm-edge-btn (theme.css): a gold edge around a plain word, a soft gold
+                                wash on hover, a 3% press - his "no amber fill" (2026-11-17). Its ink
+                                is --ink on a see-through ground, so it flips with the theme. */}
+                            <div className="sticky z-30 -bottom-5 sm:-bottom-7 -mx-5 sm:-mx-7 px-5 sm:px-7 pt-3 pb-5 sm:pb-7 bg-[var(--panel)] border-t border-[var(--line-2)]">
                             <button
                                 type="submit"
-                                /* transition-[…] not transition-all: `all` makes the browser watch every
-                                   animatable property on the element, and it will happily animate one
-                                   nobody intended. Naming the four that actually change is both cheaper
-                                   and predictable. */
-                                /* ⚠️ --duke-on-plank, NOT --shell-ink. The plank under this label is a
-                                   hardcoded near-black in BOTH themes, so an ink that flips to
-                                   near-black in light put dark text on a dark plate. An ink only
-                                   flips when the ground beneath it does. */
-                                className="group w-full mt-6 py-4 bg-[#0d0a09] text-[var(--duke-on-plank)] font-black uppercase tracking-widest text-sm border-2 border-[#3a3128] border-b-[3px] border-b-[#ff9d00] shadow-[0_3px_0_rgba(0,0,0,0.55)] transition-[background-color,border-color,letter-spacing,transform] duration-150 ease-out hover:bg-[#1c1814] hover:border-[var(--duke-edge-3)] hover:border-b-[#ff9d00] hover:tracking-[0.22em] active:translate-y-[3px] active:shadow-none"
+                                className="kpm-edge-btn w-full h-12 text-sm font-semibold"
                                 disabled={savingProduct}
                             >
-                                {savingProduct ? 'Saving…' : 'Update Database'}
+                                {savingProduct ? 'Saving…' : 'Save product'}
                             </button>
+                            </div>
                         </form>
                     </div>
                 </div>
