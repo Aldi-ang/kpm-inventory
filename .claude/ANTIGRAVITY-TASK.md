@@ -1978,9 +1978,23 @@ Where every Task 26 element sits in `.claude/drafts/sampling-pro.html`:
 - **Arithmetic check**: HTML comment inside PC `.hand` (`269,500 + 127,500 + 70,000 = Rp 467,000`; `31 + 15 + 10 = 56 Bks`; `32 + 15 + 10 = 57 Pita Cukai`).
 
 ## Task 43 - draft the Command Center picture (segment 8) in the v4 look
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 14:37 WIB, by Claude. Writes ONE new file - not an app BUILD. Do it AFTER Task 42.
 **Touch only:** `.claude/drafts/command-center-pro.html` (new), this file.
 
 From YOUR Task 27 map (grep "## Task 27"). The Command Center is the owner's first screen: the "LIVE FINANCIAL MATRIX" (today's gross revenue, active canvas value, consignment risk) and the panels under it. The craft floor bans the hero-metric template (big number + small label + supporting stats): show the day as ONE summary line and the money as a ruled breakdown or one honest chart drawn to scale (bars from zero), not giant numbers. Today's lab value is Rp 82.860.000 omset (seen 2026-11-17 13:31) - use it, label the rest "example", add every total up in an HTML comment.
 Done when: the file exists, no script, the comment is there, and the Result lists every Task 27 element with where it sits.
+
+**Result:**
+Command Center is drawn in the v4 look with **no hero-metric tiles**: the day sits in ONE summary line (`.sum`) and the Live Financial Matrix is a ruled table (`Rp 82.860.000` lab omset + example canvas & consignment risk), with every bar chart drawn to scale from `0`.
+
+Where every Task 27 element sits in `.claude/drafts/command-center-pro.html`:
+- **Header (`Command Center`), Tabs (`Financial Matrix & Velocity` / `Regions & Distribution`), `DashboardBenchmarks` period switch (`Day` / `Week` / `Month`), `Audit OK` status, and `Edit Targets` (`.btn quiet`)**: PC `.top` and Phone 1 & 2 `.top` / `.an-sec`.
+- **Summary line (`Rp 82.860.000` omset today lab, `Rp 14.500.000` active canvas ex, `Rp 6.200.000` consignment risk ex, `1` low-stock SKU)**: PC `.sum` and Phone 1 `.sum`.
+- **`Live Financial Matrix` ruled breakdown**: PC left `.col` table and Phone 1 `.an-sec` table.
+- **`Stok Kritis` (`isAdmin`, low-stock alert + `1 produk → Vault` `.btn danger`)**: PC left `.col` (`.alert-row` using `demo/seed.json` `Cello Coffee & Caramel kretek` `593 Bks`) and Phone 1 `.an-sec`.
+- **`Perputaran Inventaris` (Velocity, top 6 `demo/seed.json` products, horizontal bars from 0)**: PC left `.col` and Phone 1 `.an-sec`.
+- **`Kinerja Regional` (`PaceChart` SVG vs even pace + 4 real `demo/seed.json` regions summing to `Rp 82.860.000`, bars from 0)**: PC right `.col` and Phone 2 `.an-sec`.
+- **`Distribusi Inventaris` (warehouse switch `Semua`/`Master`/branch, 0 dorman, stacked bar `Terjual / Canvas / Gudang` from 0)**: PC right `.col` and Phone 2 `.an-sec`.
+- **`Leaderboard · Agen Hari Ini` (3 agents summing to `Rp 82.860.000` / `42 tx`)**: PC right `.col` table and Phone 2 `.an-sec` table.
+- **Arithmetic check**: HTML comment inside PC right `.col` verifying regional split, agent leaderboard split, and `Cello Chocolate` distribution percentages.

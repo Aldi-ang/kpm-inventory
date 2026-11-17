@@ -1,0 +1,225 @@
+<!doctype html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Command Center · v4</title>
+<style>
+:root{
+  --bg:#0E0C0A;--panel:#15120F;--raised:#1C1814;
+  --ink:#F3EDE2;--ink-dim:#A69D8E;--ink-mute:#6D6558;
+  --line:#2B251E;--line-2:#3C342B;
+  --gold:#E0AC43;--wash:rgba(224,172,67,.09);
+  --bad:#D96B5A;--bad-wash:rgba(217,107,90,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;padding:28px 20px 64px;-webkit-font-smoothing:antialiased}
+.cap{max-width:1180px;margin:0 auto 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute)}
+.note{max-width:1180px;margin:0 auto 14px;font-size:12px;color:var(--ink-dim)}
+.note b{color:var(--ink);font-weight:600}
+.note code{font-size:11px;color:var(--ink);background:var(--raised);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+.i{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+.btn{height:34px;padding:0 14px;border-radius:8px;font:600 13px/1 inherit;color:var(--ink);background:rgba(255,255,255,.03);border:1px solid var(--line-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn.edge{border-color:var(--gold);color:var(--gold);background:var(--wash)}
+.btn.quiet{color:var(--ink-dim);background:transparent}
+.btn.danger{border-color:rgba(217,107,90,.45);color:var(--bad);background:var(--bad-wash)}
+.btn.sm{height:28px;padding:0 10px;font-size:12px}
+
+.frame{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 24px 60px -30px rgba(0,0,0,.7)}
+.pc{max-width:1180px;margin:0 auto 40px}
+
+.top{display:flex;align-items:center;gap:24px;padding:14px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.top h1{font-size:18px;font-weight:700;letter-spacing:-.02em;padding-bottom:12px}
+.tabs{display:flex;gap:20px}
+.tab{padding:0 2px 12px;font-size:13px;font-weight:600;color:var(--ink-mute);border-bottom:2px solid transparent}
+.tab.on{color:var(--ink);border-color:var(--gold)}
+.ctl{margin-left:auto;display:flex;align-items:center;gap:8px;padding-bottom:12px}
+.pill{height:30px;padding:0 10px;border-radius:7px;background:var(--raised);border:1px solid var(--line);font-size:12px;color:var(--ink-dim);display:inline-flex;align-items:center;gap:6px}
+.pill.on{border-color:var(--gold);color:var(--ink)}
+
+.sum{display:flex;align-items:center;gap:14px;padding:11px 20px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-dim);flex-wrap:wrap}
+.sum b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.sum .bad{color:var(--bad)}
+.sep{width:1px;height:12px;background:var(--line)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr}
+.col{padding:20px 24px;display:flex;flex-direction:column;gap:18px}
+.col:first-child{border-right:1px solid var(--line)}
+
+.sec-h{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-mute);text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+td{padding:8px 6px;border-bottom:1px solid rgba(43,37,30,.55);color:var(--ink-dim)}
+td b{color:var(--ink);font-weight:600}
+th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
+
+.bar-row{display:flex;flex-direction:column;gap:4px;font-size:12.5px}
+.bar-head{display:flex;justify-content:space-between;gap:8px;font-variant-numeric:tabular-nums}
+.bar-track{height:7px;border-radius:4px;background:var(--raised);border:1px solid var(--line);overflow:hidden;display:flex}
+.bar-fill{height:100%;background:var(--gold)}
+.bar-mid{height:100%;background:var(--ink-dim)}
+.bar-mute{height:100%;background:var(--line-2)}
+
+.alert-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-radius:8px;background:var(--bad-wash);border:1px solid rgba(217,107,90,.35);font-size:12.5px}
+.alert-row b{color:var(--ink)}
+
+.phones{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;max-width:1180px;margin:0 auto}
+.phone{width:390px;max-width:100%;height:780px;display:flex;flex-direction:column;border-radius:22px;position:relative}
+.sb{height:28px;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font-size:11px;color:var(--ink-dim)}
+.phone .top{padding:8px 16px 0;gap:0;flex-direction:column;align-items:stretch}
+.phone .top h1{margin-bottom:8px}
+.phone .tabs{gap:16px}
+.phone .sum{padding:9px 16px;gap:10px;font-size:12px}
+.an-sec{padding:12px 16px;display:flex;flex-direction:column;gap:12px;overflow:auto;flex:1}
+@media (max-width:700px){.pc{display:none}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="pulse" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
+  <symbol id="warn" viewBox="0 0 24 24"><path d="M12 4L3 20h18z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".6"/></symbol>
+  <symbol id="sliders" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="17" r="2"/></symbol>
+</svg>
+
+<p class="cap">Command Center · v4 · PC (Owner's First Screen · Summary Line + Ruled Breakdown + Scale Bars)</p>
+<p class="note">Lab omset today: <b>Rp 82.860.000</b> (2026-11-17 13:31). Stock counts and product names come from <b>demo/seed.json</b>; canvas, consignment, velocity, regional split, and agent leaderboard numbers are <b>example</b> figures. All bars start at <code>0</code>.</p>
+
+<div class="frame pc">
+  <div class="top">
+    <h1>Command Center</h1>
+    <div class="tabs"><span class="tab on">Financial Matrix &amp; Velocity</span><span class="tab">Regions &amp; Distribution</span></div>
+    <div class="ctl">
+      <span class="pill on">Day</span>
+      <span class="pill">Week</span>
+      <span class="pill">Month</span>
+      <span class="pill">Audit OK</span>
+      <button class="btn quiet"><svg class="i"><use href="#sliders"/></svg>Edit Targets</button>
+    </div>
+  </div>
+  <div class="sum">
+    <span><b>Rp 82.860.000</b> omset today (lab)</span><span class="sep"></span>
+    <span><b>Rp 14.500.000</b> active canvas (ex)</span><span class="sep"></span>
+    <span><b>Rp 6.200.000</b> consignment risk (ex)</span><span class="sep"></span>
+    <span class="bad"><b>1</b> low-stock SKU</span>
+  </div>
+
+  <div class="grid2">
+    <div class="col">
+      <div class="sec-h"><span>Live Financial Matrix (Ruled Breakdown)</span><span>Period: Today</span></div>
+      <table>
+        <thead><tr><th>Line</th><th class="r">Share / Note</th><th class="r">Amount</th></tr></thead>
+        <tbody>
+          <tr><td><b>Gross Revenue (Omset · lab)</b></td><td class="r">42 tx (example)</td><td class="r"><b>Rp 82.860.000</b></td></tr>
+          <tr><td><b>Active Canvas Value</b></td><td class="r">Motorists (example)</td><td class="r"><b>Rp 14.500.000</b></td></tr>
+          <tr><td><b>Consignment Risk (Titip)</b></td><td class="r">Unsettled (example)</td><td class="r"><b>Rp 6.200.000</b></td></tr>
+        </tbody>
+      </table>
+
+      <div class="sec-h"><span>Stok Kritis (Admin · 30d Cover)</span><button class="btn danger sm">1 produk → Vault</button></div>
+      <div class="alert-row">
+        <span><svg class="i" style="vertical-align:-2px;margin-right:6px"><use href="#warn"/></svg><b>Cello Coffee &amp; Caramel kretek</b></span>
+        <span><b>593 Bks</b> left · min 10</span>
+      </div>
+
+      <div class="sec-h"><span>Perputaran Inventaris (Velocity · Scale from 0)</span><span>Top 6 Bks (ex)</span></div>
+      <div class="bar-row"><div class="bar-head"><span><b>1. Cello Chocolate</b></span><span>1.200 Bks keluar · 10.161 stok</span></div><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div></div>
+      <div class="bar-row"><div class="bar-head"><span><b>2. Cello Mmrapi</b></span><span>960 Bks keluar · 9.845 stok</span></div><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div></div>
+      <div class="bar-row"><div class="bar-head"><span><b>3. Cello Green</b></span><span>720 Bks keluar · 9.948 stok</span></div><div class="bar-track"><div class="bar-fill" style="width:60%"></div></div></div>
+      <div class="bar-row"><div class="bar-head"><span><b>4. Cello Teh Manis</b></span><span>480 Bks keluar · 7.981 stok</span></div><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div></div>
+      <div class="bar-row"><div class="bar-head"><span><b>5. Cello Coffee &amp; Caramel kretek</b></span><span>360 Bks keluar · 593 stok</span></div><div class="bar-track"><div class="bar-fill" style="width:30%"></div></div></div>
+      <div class="bar-row"><div class="bar-head"><span><b>6. American Spirit - Turquoise</b></span><span>120 Bks keluar · 1.000 stok</span></div><div class="bar-track"><div class="bar-fill" style="width:10%"></div></div></div>
+    </div>
+
+    <div class="col">
+      <div class="sec-h"><span>Kinerja Regional (4 Active · Scale from 0)</span><span>Pace vs Even</span></div>
+      <svg viewBox="0 0 360 56" style="width:100%;height:56px;background:var(--raised);border:1px solid var(--line);border-radius:8px">
+        <line x1="12" y1="46" x2="348" y2="10" stroke="#3C342B" stroke-width="1.2" stroke-dasharray="4 4"/>
+        <polyline fill="none" stroke="#E0AC43" stroke-width="2" points="12,46 80,38 160,26 250,18 348,10"/>
+      </svg>
+      <div class="bar-row"><div class="bar-head"><span><b>BANDUNG</b></span><span>Rp 41.430.000 · 50%</span></div><div class="bar-track"><div class="bar-fill" style="width:50%"></div></div></div>
+      <div class="bar-row"><div class="bar-head"><span><b>BANDUNG BARAT</b></span><span>Rp 20.715.000 · 25%</span></div><div class="bar-track"><div class="bar-fill" style="width:25%"></div></div></div>
+      <div class="bar-row"><div class="bar-head"><span><b>KOTA CIMAHI</b></span><span>Rp 12.429.000 · 15%</span></div><div class="bar-track"><div class="bar-fill" style="width:15%"></div></div></div>
+      <div class="bar-row"><div class="bar-head"><span><b>MAGELANG</b></span><span>Rp 8.286.000 · 10%</span></div><div class="bar-track"><div class="bar-fill" style="width:10%"></div></div></div>
+
+      <div class="sec-h"><span>Distribusi Inventaris (Semua · 0 dorman)</span><span>Terjual / Canvas / Gudang</span></div>
+      <div class="bar-row">
+        <div class="bar-head"><span><b>Cello Chocolate</b></span><span>1.200 / 240 / 10.161 Bks</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:10.3%"></div><div class="bar-mid" style="width:2.1%"></div><div class="bar-mute" style="width:87.6%"></div></div>
+      </div>
+
+      <div class="sec-h"><span>Leaderboard · Agen Hari Ini (example)</span><span>Total Rp 82.860.000</span></div>
+      <table>
+        <thead><tr><th>Agent</th><th class="r">Tx</th><th class="r">Revenue</th></tr></thead>
+        <tbody>
+          <tr><td><b>Admin</b></td><td class="r">18</td><td class="r"><b>Rp 38.000.000</b></td></tr>
+          <tr><td><b>Canvaser A</b></td><td class="r">14</td><td class="r"><b>Rp 26.860.000</b></td></tr>
+          <tr><td><b>Canvaser B</b></td><td class="r">10</td><td class="r"><b>Rp 18.000.000</b></td></tr>
+        </tbody>
+      </table>
+      <!--
+        ARITHMETIC CHECK (lab omset 2026-11-17 13:31 = Rp 82,860,000; seed stock counts from demo/seed.json):
+        1) Kinerja Regional split (example):
+           41,430,000 (50%) + 20,715,000 (25%) + 12,429,000 (15%) + 8,286,000 (10%) = Rp 82,860,000 (100%).
+        2) Leaderboard Agen Hari Ini (example):
+           38,000,000 (18 tx) + 26,860,000 (14 tx) + 18,000,000 (10 tx) = Rp 82,860,000 (42 tx).
+        3) Distribusi Cello Chocolate:
+           1,200 + 240 + 10,161 = 11,601 Bks total -> 10.3% sold, 2.1% in transit, 87.6% vault stock.
+      -->
+    </div>
+  </div>
+</div>
+
+<p class="cap" style="margin-top:28px">Command Center · v4 · Phone (1: Financial Matrix &amp; Velocity · 2: Regions, Supply &amp; Leaderboard)</p>
+<div class="phones">
+  <div class="frame phone">
+    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
+    <div class="top">
+      <h1>Command Center</h1>
+      <div class="tabs"><span class="tab on">Matrix &amp; Velocity</span><span class="tab">Regions &amp; Stock</span></div>
+    </div>
+    <div class="sum"><span><b>Rp 82.860.000</b> omset</span><span class="sep"></span><span class="bad"><b>1</b> low stock</span></div>
+    <div class="an-sec">
+      <div style="display:flex;gap:6px"><span class="pill on">Day</span><span class="pill">Week</span><span class="pill">Month</span><button class="btn quiet sm" style="margin-left:auto">Targets</button></div>
+      <div class="sec-h"><span>Live Financial Matrix</span><span>Today</span></div>
+      <table><tbody>
+        <tr><td><b>Omset Today (lab)</b></td><td class="r"><b>Rp 82.860.000</b></td></tr>
+        <tr><td>Active Canvas (ex)</td><td class="r">Rp 14.500.000</td></tr>
+        <tr><td>Consignment Risk (ex)</td><td class="r">Rp 6.200.000</td></tr>
+      </tbody></table>
+      <div class="sec-h"><span>Stok Kritis</span><button class="btn danger sm">Vault</button></div>
+      <div class="alert-row"><span><b>Cello Coffee &amp; Caramel</b></span><span>593 Bks</span></div>
+      <div class="sec-h"><span>Perputaran Inventaris (from 0)</span></div>
+      <div class="bar-row"><div class="bar-head"><span>1. Cello Chocolate</span><b>1.200 Bks</b></div><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div></div>
+      <div class="bar-row"><div class="bar-head"><span>2. Cello Mmrapi</span><b>960 Bks</b></div><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div></div>
+      <div class="bar-row"><div class="bar-head"><span>3. Cello Green</span><b>720 Bks</b></div><div class="bar-track"><div class="bar-fill" style="width:60%"></div></div></div>
+    </div>
+  </div>
+
+  <div class="frame phone">
+    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
+    <div class="top">
+      <h1>Regions &amp; Distribution</h1>
+      <div class="tabs"><span class="tab">Matrix &amp; Velocity</span><span class="tab on">Regions &amp; Stock</span></div>
+    </div>
+    <div class="sum"><span><b>4</b> regions</span><span class="sep"></span><span><b>3</b> agents today</span></div>
+    <div class="an-sec">
+      <div class="sec-h"><span>Kinerja Regional (Pace)</span><span>Rp 82.860.000</span></div>
+      <svg viewBox="0 0 320 48" style="width:100%;height:48px;background:var(--raised);border:1px solid var(--line);border-radius:8px">
+        <line x1="10" y1="40" x2="310" y2="8" stroke="#3C342B" stroke-width="1.2" stroke-dasharray="4 4"/>
+        <polyline fill="none" stroke="#E0AC43" stroke-width="2" points="10,40 70,33 140,22 220,15 310,8"/>
+      </svg>
+      <div class="bar-row"><div class="bar-head"><span>BANDUNG</span><b>Rp 41.430.000 (50%)</b></div><div class="bar-track"><div class="bar-fill" style="width:50%"></div></div></div>
+      <div class="bar-row"><div class="bar-head"><span>BANDUNG BARAT</span><b>Rp 20.715.000 (25%)</b></div><div class="bar-track"><div class="bar-fill" style="width:25%"></div></div></div>
+
+      <div class="sec-h"><span>Distribusi Inventaris</span><span>Semua ▾</span></div>
+      <div class="bar-row">
+        <div class="bar-head"><span>Cello Chocolate</span><span>87.6% stok</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:10.3%"></div><div class="bar-mid" style="width:2.1%"></div><div class="bar-mute" style="width:87.6%"></div></div>
+      </div>
+
+      <div class="sec-h"><span>Leaderboard · Hari Ini (ex)</span></div>
+      <table><tbody>
+        <tr><td><b>Admin</b> (18 tx)</td><td class="r"><b>Rp 38.000.000</b></td></tr>
+        <tr><td><b>Canvaser A</b> (14 tx)</td><td class="r"><b>Rp 26.860.000</b></td></tr>
+        <tr><td><b>Canvaser B</b> (10 tx)</td><td class="r"><b>Rp 18.000.000</b></td></tr>
+      </tbody></table>
+    </div>
+  </div>
+</div>
