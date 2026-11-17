@@ -855,13 +855,68 @@ Do NOT change the code. Done when: one table per step (beat, login, in the page 
 | 5–6. `slip(PHOTO)`, `slip(MAKE DEAL)` | T6, T1 | **Yes** | On PC both (`2365, 2406`) are visible; on phone `slip()` rings `[data-guide="open-slip"][data-shut]` (`2468`) first, then `2365` / `2406`. | None |
 
 ## Task 19 - the same check for steps 5-8
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 07:20 WIB, by Claude. Same rules as above.
 
 Exactly Task 18's method, for GUIDE steps 5-8. Look hard at step 7: its Dika card is `.pc[data-agent="demo-agent-2"]:not([data-late])` in EOD's HQ Verification - which date, filter or area decides whether that card is listed for the owner and for T1, and what happens when Dika's EOD is from yesterday (the `data-late` mark)? And step 8's count rows (`[data-guide="good"]`, `[data-half]`): which warehouse does Stock Opname open on for the owner and for T1?
 Do NOT change the code. Done when: one table per step (beat, login, in the page yes/no, why with file:line, fix).
 
 **Result:**
+
+### Step 5 — Sales Terminal: Retur (`STEPS[4].who = T6`, `GUIDE[5]` in `src/config/demoMission.js:83-91`)
+Both `T6` (Dika, `allowRetur: true` in `api/_demoCompany.js:451`) and `T1` (`ADMIN`, `allowRetur: true` in `src/App.jsx:5501`) receive `allowRetur=true`. Default state: `manifestOpen=false` (`src/MerchantSalesView.jsx:92`), `isReturMode=false` (`src/MerchantSalesView.jsx:133`). On PC (`lg:`), the slip is always open; on phone (`<lg`), `manifestOpen=false` keeps the slip off-canvas so `slip()` (`src/config/demoMission.js:46`) falls back to `[data-guide="open-slip"][data-shut]` (`src/MerchantSalesView.jsx:2468`).
+
+| beat | login | in the page yes/no | why with file:line | fix |
+| :--- | :--- | :--- | :--- | :--- |
+| 1. `nav('sales', ...)` (`demoMission.js:83`) | T6 / T1 | No (until menu opened) | App opens on default tab, not `sales`; `[data-mark="sales"]` is hidden in `.kpm-rail-totem` (PC) or `[aria-label="Open navigation"]` (phone) | None — `nav()` (`demoMission.js:36`) already lists `.kpm-rail-totem` and `[aria-label="Open navigation"]` |
+| 2. `slip([data-mission="5"])` (`demoMission.js:84`) | T6 / T1 | Yes on PC / No on phone (drawer shut) | `isReturMode` defaults `false` (`MerchantSalesView.jsx:133`); `allowRetur` is `true` for both (`api/_demoCompany.js:451`, `App.jsx:5501`), so `[data-mission="5"]` (`MerchantSalesView.jsx:1817`) renders in slip; on phone `manifestOpen=false` (`92`) hides it until `[data-guide="open-slip"][data-shut]` (`2468`) is pressed | None — `slip()` (`demoMission.js:46`) already rings `[data-guide="open-slip"][data-shut]` first on phone |
+| 3. `SHOP` (`demoMission.js:40-41, 85`) | T6 / T1 | Yes | No customer selected by default; `[data-guide="customer"]` is on-screen on PC (`MerchantSalesView.jsx:1882`) and phone (`2530`), and `[data-guide="shops"]` (`1753`) opens on click | None |
+| 4. `shelf(...)` (`demoMission.js:49, 86`) | T6 / T1 | Yes (if slip shut on phone) | `[data-guide="products"]:not([data-covered])` (`MerchantSalesView.jsx:2818`) is visible on PC, and on phone when `manifestOpen=false` (`92`); if open, `[data-guide="close-slip"]` (`2253`) closes it | None — `shelf()` (`demoMission.js:49`) already falls back to `[data-guide="close-slip"]` |
+| 5. `slip(['[data-guide="reason"]', '[data-guide="cond"]'])` (`demoMission.js:88-89`) | T6 / T1 | No until cart has item | `[data-guide="reason"]` (`MerchantSalesView.jsx:2120`) and `[data-guide="cond"]` (`2109`) only render for cart lines; beat 4 adds the item first, then `slip()` opens drawer on phone (`2468`) | None |
+| 6. `slip(PHOTO)` (`demoMission.js:42, 90`) | T6 / T1 | Yes on PC / No on phone (drawer shut) | `[data-guide="photo"]` (`MerchantSalesView.jsx:2365`) sits inside the slip; on phone `slip()` rings `[data-guide="open-slip"][data-shut]` (`2468`) first | None |
+| 7. `slip([data-mission="4"])` (`demoMission.js:91`) | T6 / T1 | Yes on PC / No on phone (drawer shut) | `[data-mission="4"]` (`MerchantSalesView.jsx:2406`) sits inside the slip; on phone `slip()` rings `[data-guide="open-slip"][data-shut]` (`2468`) first | None |
+
+---
+
+### Step 6 — EOD Setoran: Agent Submit (`STEPS[5].who = T6`, `GUIDE[6]` in `src/config/demoMission.js:92-95`)
+Default state: `viewMode = useState(isAdmin ? 'review' : 'submit')` (`src/EODReconciliationView.jsx:63`). `T6` has `isAdmin=false` and lands directly on `'submit'`; `T1` has `isAdmin=true` and lands on `'review'` (`HQ Verification`).
+
+| beat | login | in the page yes/no | why with file:line | fix |
+| :--- | :--- | :--- | :--- | :--- |
+| 1. `nav('eod', ...)` (`demoMission.js:92`) | T6 | Yes (after nav) | `isAdmin=false` defaults `viewMode` to `'submit'` (`EODReconciliationView.jsx:63`), which renders `<EODAgentFlow>` and `[data-mission="6"]` (`EODAgentFlow.jsx:119`) | None |
+| 1. `nav('eod', ...)` (`demoMission.js:92`) | T1 | No (after nav, wrong tab) | `isAdmin=true` defaults `viewMode` to `'review'` (`EODReconciliationView.jsx:63`); `[data-mission="6"]` (`EODAgentFlow.jsx:119`) is unmounted until T1 presses `My Setoran` (`EODReconciliationView.jsx:397-399`), which has no `data-guide` mark | Add `data-guide="eod-submit"` to the `My Setoran` button (`EODReconciliationView.jsx:397`) and insert `{ at: '[data-guide="eod-submit"]', say: 'Tekan My Setoran untuk mengirim laporan akhir hari.', done: '[data-mission="6"]' }` before beat 2 (or add `[data-guide="eod-submit"]` to `GUIDE[6]` beat 2's `at` fallback) |
+| 2. `[data-guide="deck"]` (`demoMission.js:93-94`) | T6 | Yes | `[data-guide="deck"]` (`EODAgentFlow.jsx:164`) renders immediately in `viewMode === 'submit'` | None |
+| 2. `[data-guide="deck"]` (`demoMission.js:93-94`) | T1 | No | Hidden while `viewMode === 'review'` (`EODReconciliationView.jsx:63`); visitor must press `My Setoran` (`397`) first | Same `[data-guide="eod-submit"]` tab beat as above |
+| 3. `[data-guide="send"]` (`demoMission.js:95`) | T6 / T1 | No until deck finished | `[data-guide="send"]` (`EODLetter.jsx:192`) renders after `stage` leaves `'open'` (`demoMission.js:94`); for T1 also blocked until `My Setoran` (`397`) is opened | Covered by beat 2 + `[data-guide="eod-submit"]` for T1 |
+
+---
+
+### Step 7 — EOD Setoran: HQ Verification (`STEPS[6].who = T2`, `GUIDE[7]` in `src/config/demoMission.js:96-100`)
+**Date / filter / area rules for `DIKA` (`.pc[data-agent="demo-agent-2"]:not([data-late])`, `demoMission.js:50`):**
+- **Area / filter:** `pendingReports` is `eodReports.filter(r => r.status === 'PENDING')` (`src/EODReconciliationView.jsx:301-303`) with **no area or region filter**, so both `T2` (Owner) and `T1` (`ADMIN`) see every pending EOD across the company.
+- **Date (`data-late`):** `groupPendingEOD(pendingReports, getLocalDayKey())` (`EODReconciliationView.jsx:311`) splits pending reports by report date vs today (`getLocalDayKey()`): today's go to `tonight`, earlier dates go to `late` (`EODReconciliationView.jsx:986-990`), which sets `data-late=""` on the card (`src/components/PlayerCard.jsx:321`).
+- **What happens when Dika's EOD is from yesterday:** In the BIG demo seed (`api/_demoCompany.js:374, 387`), `demo-agent-2` (Dika) is seeded `PENDING` on `recent[recent.length - 1]` (**yesterday**). That seeded card lands in `late` with `data-late=""`, so `.pc[data-agent="demo-agent-2"]:not([data-late])` (`demoMission.js:50`) **does NOT match it** — `DIKA` only matches a same-day EOD submitted today (Step 6).
+
+| beat | login | in the page yes/no | why with file:line | fix |
+| :--- | :--- | :--- | :--- | :--- |
+| 1. `UNLOCK` (`demoMission.js:55-58, 96`) | T2 / T1 | Yes | Master Vault starts locked (`[data-vault="open"]` absent); `[data-guide="unlock"]` or menu fallback is on-screen | None |
+| 2. `nav('eod', ...)` (`demoMission.js:96`) | T2 / T1 | No (until menu opened) | App opens on default tab; `nav()` opens menu and lands on `EODReconciliationView` with `viewMode === 'review'` (`EODReconciliationView.jsx:63`) | None |
+| 3. `[data-guide="eod-review"]` (`demoMission.js:97`) | T2 / T1 | Yes (auto-skipped) | `isAdmin=true` defaults `viewMode` to `'review'` (`EODReconciliationView.jsx:63`), so `[data-mission="7"]` (`EODReconciliationView.jsx:937`) is already in the DOM and `liveBeat` (`demoMission.js:139-142`) skips beat 3 | None |
+| 4. `DIKA` (`demoMission.js:50, 98`) | T2 / T1 | Yes if Step 6 done today / **No** on fresh demo (yesterday's seed) | `pendingReports` (`EODReconciliationView.jsx:301-303`) has no area filter, but `groupPendingEOD` (`311`) marks yesterday's seeded Dika EOD (`api/_demoCompany.js:374, 387`) as `late` (`EODReconciliationView.jsx:986-990`, `PlayerCard.jsx:321` sets `data-late=""`), which `:not([data-late])` (`demoMission.js:50`) excludes | If yesterday's seeded card should also be valid, add `.pc[data-agent="demo-agent-2"]` as fallback in `at` (and `.pc[data-agent="demo-agent-2"].open` in `done`); otherwise keep `:not([data-late])` if Step 7 strictly targets today's Step-6 EOD |
+| 5. `${DIKA} [aria-label^="approve "][aria-pressed="false"]` (`demoMission.js:99`) | T2 / T1 | No until beat 4 opens `DIKA` | Section approve toggles render inside the expanded `DIKA` card (same `data-late` caveat if only yesterday's seeded EOD exists) | Same as beat 4 |
+| 6. `${DIKA} [data-guide="approve-night"]` (`demoMission.js:100`) | T2 / T1 | No until beat 4 opens `DIKA` | Approve button renders inside the expanded `DIKA` card (same `data-late` caveat if only yesterday's seeded EOD exists) | Same as beat 4 |
+
+---
+
+### Step 8 — Stock Opname: Master Vault (`STEPS[7].who = T2`, `GUIDE[8]` in `src/config/demoMission.js:101-109`)
+**Which warehouse Stock Opname opens on for `T2` and `T1`:** Both `T2` (Owner) and `T1` (`ADMIN`) have `isHighCommand === true`, so `isAreaAdmin` is `false` (`src/StockOpnameView.jsx:265`), `countPlace` is `HQ_LABEL` (**Master Vault**, `StockOpnameView.jsx:280`), and `activeInventory` is `[...safeInventory, ...promoItems]` (**Master Vault** stock, `StockOpnameView.jsx:306`). No warehouse picker is needed. Default tab: `viewMode = useState(isHighCommand ? 'monitor' : canDecide ? 'review' : 'count')` (`StockOpnameView.jsx:285`), so both open on `'monitor'`.
+
+| beat | login | in the page yes/no | why with file:line | fix |
+| :--- | :--- | :--- | :--- | :--- |
+| 1. `nav('stock_opname', ...)` (`demoMission.js:101`) | T2 / T1 | No (until menu opened) | App opens on default tab; after opening Stock Opname, `[data-mission="8"]` (`New Count` tab at `StockOpnameView.jsx:1257`) is on-screen in default `'monitor'` view (`285`) | None |
+| 2. `[data-mission="8"]` (`demoMission.js:102`) | T2 / T1 | Yes (in `'monitor'` view) | `viewMode` defaults to `'monitor'` (`StockOpnameView.jsx:285`), so `[data-guide="count"]` (`1709`) is not mounted yet and `[data-mission="8"]` (`1257`) is visible to click | None |
+| 3. `['[data-half] input:placeholder-shown', '[data-guide="good"]', '[data-guide="count"]']` (`demoMission.js:106-108`) | T2 / T1 | No on arrival / Yes after pressing `New Count` | Hidden in default `'monitor'` view (`StockOpnameView.jsx:285`); pressing `[data-mission="8"]` (`1257`) switches to `'count'`, rendering `[data-guide="count"]` (`1709`), `[data-guide="good"]` (`1780`), and `[data-half]` (`1769`) for Master Vault (`306`) | None — beat 2 already guides pressing `[data-mission="8"]` first |
+| 4. `[data-guide="submit-count"]` (`demoMission.js:109`) | T2 / T1 | No on arrival / Yes after entering `'count'` view | `[data-guide="submit-count"]` (`StockOpnameView.jsx:2011`) only renders in `'count'` view (`1709`) after beat 2 switches from `'monitor'` | None — beat 2 already guides pressing `[data-mission="8"]` first |
 
 ## Task 20 - map the Master Vault screen before its redesign (segment 1 of 12)
 **Status:** OPEN
