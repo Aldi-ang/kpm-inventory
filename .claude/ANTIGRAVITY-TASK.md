@@ -2061,9 +2061,22 @@ Where every Task 35 element sits in `.claude/drafts/audit-logs-pro.html`:
 - **Audit Vault folder browser (`2025 – 2029` / Month / Day) & `Recent System Activity` (7-day `audit_logs`, top 8 table)**: PC `.top` tabs and Phone 2 `.an-sec`.
 
 ## Task 47 - draft the Settings picture (segment 12) in the v4 look
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 15:05 WIB, by Claude. Writes ONE new file - not an app BUILD. Do it AFTER Task 46.
 **Touch only:** `.claude/drafts/settings-pro.html` (new), this file.
 
 From YOUR Task 36 map of the Settings screen. Master-detail: the setting groups on the left (one line each: icon, name, one-word state), the group in hand on the right (its switches and fields, each with its CURRENT value from the code's default - give file:line in an HTML comment). Anything that changes money, roles or tiers stays visibly separate from look-and-feel switches (a quiet divider + its own heading). Lite Mode switch must be in it (it gives up motion, never colour). Every element Task 36 lists must still be somewhere. Ordinary sizes, drawn SVG icons, no filled amber button.
 Done when: the file exists, no `<script>`, PC 1440 + phone 390 frames in it, the defaults comment is there, and the Result lists every Task 36 element with where it sits.
+
+**Result:**
+All 3 old switch styles are unified into one hairline `.sw` segmented control, with look-and-feel switches visibly separated by a `.div` divider and heading from money/stock/role rules.
+
+Where every Task 36 element sits in `.claude/drafts/settings-pro.html`:
+- **Command Center header (`Settings`, `Clearance: Tier 1 (Overseer)`, `Reset indicators`, `Lock terminal`)**: PC `.top` and `.top .ctl`.
+- **Setting groups rail (`General & Brand`, `Tiers & Logic`, `Customer access`, `Security & Data`, `Architect (Tier 1)`)**: PC `.list` left pane (44 px rows with icon, name, one-word state) and Phone 1 `.list`.
+- **Look & Feel section (above `.div` divider: `Graphics (Lite Mode)` Full/Lite, `Language · Bahasa` English/Indonesia, `Letterhead`, `Signature & bank`, `Receipt watermark` + `Preview Receipt`, `Mascot Size` & `Dialogue`)**: PC `.hand .in` and Phone 1 bottom `.sheet`.
+- **Money, Stock & Role Rules section (below `.div` divider: `Lost pita cukai fine` Rp 5.000, `Penalty price tier` Retail, `Spare days on a restock` 3 days, `Stock Opname day` Any day, `Where the Master Vault is`, `Rebuild sales totals`)**: PC `.hand .in .div` and Phone 1 `.sheet`.
+- **`Tiers & Logic` (`Customer tiers`, `PermissionMatrixEditor` + `Deploy matrix`, `Fleet paintbrush`, `Performance tier logic` + `Save logic`) & `Customer access` (`CustomerAccessPanel`)**: Phone 2 `.an-sec` (and PC `Tiers & Logic` / `Customer access` rail items).
+- **`Security & Data` (`Master backup` 3 rails, `Rank source`, `Master vault PIN`, `Biometric devices`, `Share a dataset`, `Restore`, `Data wipe` Hold×3) & `Architect (Tier 1)` (`Photo storage`, `AchievementTester`, `CareerDevTools`, `LandlordDashboard`, `CrownTransferProtocol`, `Capy disco`)**: Phone 2 `.an-sec` (and PC rail items).
+- **Lockscreen (`!isAdmin`: `DeviceBand`, `opnameDayCard`, `Unlock System`)**: noted in `.note` above PC frame.
+- **Code defaults HTML comment**: inside PC `.hand .in .div`, citing `src/components/SettingsView.jsx:6, 65-67, 85-88, 190, 207, 326, 347, 590, 627, 678, 785, 793, 1017, 1032, 1273-1290, 1530-1546`.
