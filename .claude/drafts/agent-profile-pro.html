@@ -1,0 +1,253 @@
+<!doctype html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agent Profile · v4</title>
+<style>
+:root{
+  --bg:#0E0C0A;--panel:#15120F;--raised:#1C1814;
+  --ink:#F3EDE2;--ink-dim:#A69D8E;--ink-mute:#6D6558;
+  --line:#2B251E;--line-2:#3C342B;
+  --gold:#E0AC43;--wash:rgba(224,172,67,.09);
+  --bad:#D96B5A;--bad-wash:rgba(217,107,90,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;padding:28px 20px 64px;-webkit-font-smoothing:antialiased}
+.cap{max-width:1180px;margin:0 auto 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute)}
+.note{max-width:1180px;margin:0 auto 14px;font-size:12px;color:var(--ink-dim)}
+.note b{color:var(--ink);font-weight:600}
+.note code{font-size:11px;color:var(--ink);background:var(--raised);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+.i{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+.btn{height:34px;padding:0 14px;border-radius:8px;font:600 13px/1 inherit;color:var(--ink);background:rgba(255,255,255,.03);border:1px solid var(--line-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn.edge{border-color:var(--gold);color:var(--gold);background:var(--wash)}
+.btn.quiet{color:var(--ink-dim);background:transparent}
+.btn.sm{height:28px;padding:0 10px;font-size:12px}
+
+.frame{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 24px 60px -30px rgba(0,0,0,.7)}
+.pc{max-width:1180px;margin:0 auto 40px}
+
+.top{display:flex;align-items:center;gap:20px;padding:14px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.top h1{font-size:18px;font-weight:700;letter-spacing:-.02em;padding-bottom:12px}
+.tabs{display:flex;gap:18px;flex-wrap:wrap}
+.tab{padding:0 2px 12px;font-size:13px;font-weight:600;color:var(--ink-mute);border-bottom:2px solid transparent}
+.tab.on{color:var(--ink);border-color:var(--gold)}
+.ctl{margin-left:auto;display:flex;align-items:center;gap:8px;padding-bottom:12px}
+.pill{height:30px;padding:0 10px;border-radius:7px;background:var(--raised);border:1px solid var(--line);font-size:12px;color:var(--ink-dim);display:inline-flex;align-items:center;gap:6px}
+.pill.on{border-color:var(--gold);color:var(--ink)}
+
+.work{display:grid;grid-template-columns:340px 1fr;min-height:520px}
+.list{border-right:1px solid var(--line);display:flex;flex-direction:column}
+.find{margin:12px 14px;height:34px;padding:0 10px;border-radius:8px;background:var(--raised);border:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--ink-dim)}
+.rows{overflow:auto;flex:1}
+.r{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 14px;border-left:2px solid transparent;border-bottom:1px solid rgba(43,37,30,.55)}
+.r.sel{background:var(--wash);border-left-color:var(--gold)}
+
+/* preserved game art: rank border frame, XP bar, San Andreas plate, Regional MVP trophy */
+.av-mini{width:42px;height:42px;border-radius:8px;background:var(--raised);border:2px solid var(--gold);display:grid;place-items:center;font-weight:700;font-size:12px;color:var(--gold);box-shadow:inset 0 0 8px rgba(224,172,67,.25)}
+.av-mini.steel{border-color:var(--ink-dim);color:var(--ink-dim);box-shadow:none}
+.av-lg{width:76px;height:76px;border-radius:12px;background:var(--raised);border:3px solid var(--gold);display:grid;place-items:center;font-weight:800;font-size:20px;color:var(--gold);box-shadow:0 0 22px -6px rgba(224,172,67,.45),inset 0 0 12px rgba(224,172,67,.22);flex:none}
+.n{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reg{font-size:11.5px;color:var(--ink-mute)}
+.v{font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink-dim)}
+
+.hand{display:flex;flex-direction:column}
+.sum{display:flex;align-items:center;gap:14px;padding:11px 24px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-dim);flex-wrap:wrap}
+.sum b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.sep{width:1px;height:12px;background:var(--line)}
+
+.in{padding:20px 24px;display:flex;flex-direction:column;gap:18px}
+.pcard{display:flex;align-items:center;gap:16px;padding:16px;border-radius:12px;background:var(--raised);border:1px solid var(--line-2);flex-wrap:wrap}
+.xp-wrap{flex:1;min-width:220px;display:flex;flex-direction:column;gap:6px}
+.xp-track{height:8px;border-radius:4px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+.xp-fill{height:100%;background:var(--gold)}
+
+.sec-h{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-mute);text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+td{padding:7px 6px;border-bottom:1px solid rgba(43,37,30,.55);color:var(--ink-dim)}
+td b{color:var(--ink);font-weight:600}
+th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
+
+.plate{padding:8px 12px;border-radius:7px;background:var(--bg);border:2px solid var(--line-2);font-family:ui-monospace,monospace;font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--gold);display:inline-flex;align-items:center;gap:8px}
+.trophy{padding:10px 12px;border-radius:10px;background:var(--raised);border:1px solid var(--gold);display:flex;align-items:center;gap:10px;font-size:12.5px}
+.ach-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.ach{padding:9px 11px;border-radius:8px;background:var(--raised);border:1px solid var(--line-2);font-size:12px}
+.ach.on{border-color:rgba(224,172,67,.5)}
+
+.phones{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;max-width:1180px;margin:0 auto}
+.phone{width:390px;max-width:100%;height:780px;display:flex;flex-direction:column;border-radius:22px}
+.sb{height:28px;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font-size:11px;color:var(--ink-dim)}
+.phone .top{padding:8px 16px 0;gap:0;flex-direction:column;align-items:stretch}
+.phone .top h1{margin-bottom:8px}
+.phone .sum{padding:9px 16px;gap:10px;font-size:12px}
+.an-sec{padding:12px 16px;display:flex;flex-direction:column;gap:12px;overflow:auto;flex:1}
+@media (max-width:860px){.pc{display:none}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="trophy" viewBox="0 0 24 24"><path d="M8 4h8v6a4 4 0 0 1-8 0z"/><path d="M8 6H5v2a3 3 0 0 0 3 3"/><path d="M16 6h3v2a3 3 0 0 1-3 3"/><path d="M12 14v5M8 20h8"/></symbol>
+  <symbol id="shield" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6z"/></symbol>
+</svg>
+
+<p class="cap">Agent Profile · v4 · PC (Agent Directory + Player Card &amp; Game Art + Summary Line)</p>
+<p class="note">Names, tiers, and regions from <b>src/config/demoLogins.js</b>; <b>Hartono Susilo</b> lab omset today: <b>Rp 82.860.000</b> (2026-11-17). All game art is preserved: <code>RankBorder</code> frames, <code>PlayerCardHead</code> XP bar, <code>corpIdentity</code> badge, <code>San Andreas</code> Mount plate, <code>Regional MVP</code> trophy, and <code>AchievementCard</code>s. <code>RANK CONFIG</code>, <code>AVATAR</code>, <code>LEADERBOARD</code>, and <code>GRANT AWARD</code> live in one quiet tab strip.</p>
+
+<div class="frame pc">
+  <div class="top">
+    <h1>Agent Profile</h1>
+    <div class="tabs">
+      <span class="tab on">Profile</span>
+      <span class="tab">Rank Config</span>
+      <span class="tab">Avatar</span>
+      <span class="tab">Leaderboard</span>
+      <span class="tab">Grant Award</span>
+    </div>
+    <div class="ctl"><span class="pill">Active</span></div>
+  </div>
+
+  <div class="work">
+    <aside class="list">
+      <div class="find"><span>ALL DEPLOYMENT ZONES</span><span>▾</span></div>
+      <div class="rows">
+        <div class="r sel">
+          <div class="av-mini">HS</div>
+          <div style="min-width:0"><div class="n">HARTONO SUSILO</div><div class="reg">T2 · Headquarters</div></div>
+          <div class="v">Rp 82,86 jt</div>
+        </div>
+        <div class="r">
+          <div class="av-mini steel">RW</div>
+          <div style="min-width:0"><div class="n">RINA WIJAYA</div><div class="reg">T3 · Headquarters</div></div>
+          <div class="v">Rp 18,4 jt (ex)</div>
+        </div>
+        <div class="r">
+          <div class="av-mini steel">HG</div>
+          <div style="min-width:0"><div class="n">HENDRA GUNAWAN</div><div class="reg">T4 · Headquarters</div></div>
+          <div class="v">Rp 12,6 jt (ex)</div>
+        </div>
+        <div class="r">
+          <div class="av-mini steel">AP</div>
+          <div style="min-width:0"><div class="n">AGUS PRASETYO</div><div class="reg">T5 · BANDUNG</div></div>
+          <div class="v">Rp 9,5 jt (ex)</div>
+        </div>
+        <div class="r">
+          <div class="av-mini steel">DS</div>
+          <div style="min-width:0"><div class="n">DIKA SAPUTRA</div><div class="reg">T6 · Headquarters</div></div>
+          <div class="v">Rp 4,2 jt (ex)</div>
+        </div>
+      </div>
+    </aside>
+
+    <section class="hand">
+      <div class="sum">
+        <span><b>Rp 82.860.000</b> omset today (lab)</span><span class="sep"></span>
+        <span><b>Rp 24.500.000</b> cash flow (ex)</span><span class="sep"></span>
+        <span><b>Rp 14.500.000</b> active canvas (ex)</span><span class="sep"></span>
+        <span><b>Rp 6.200.000</b> consignment risk (ex)</span>
+      </div>
+
+      <div class="in">
+        <div class="pcard">
+          <div class="av-lg">HS</div>
+          <div class="xp-wrap">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <h2 style="font-size:17px">HARTONO SUSILO</h2>
+              <span class="pill on"><svg class="i"><use href="#shield"/></svg>T2 · Master Owner</span>
+              <span class="pill">Rank: Sovereign (ex)</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink-dim)">
+              <span>XP: 48.200 / 50.000 (example)</span><span>CLOSED 12/15</span>
+            </div>
+            <div class="xp-track"><div class="xp-fill" style="width:96%"></div></div>
+          </div>
+          <div class="plate">SAN ANDREAS · HQ OVERRIDE</div>
+        </div>
+
+        <div class="grid2">
+          <div>
+            <div class="sec-h" style="margin-bottom:8px"><span>Live Financial Matrix (Ruled)</span><span>Today</span></div>
+            <table>
+              <tbody>
+                <tr><td><b>Today's Gross Revenue (lab)</b></td><td class="r"><b>Rp 82.860.000</b></td></tr>
+                <tr><td>Cash Flow (example)</td><td class="r">Rp 24.500.000</td></tr>
+                <tr><td>Active Canvas Value (ex)</td><td class="r">Rp 14.500.000</td></tr>
+                <tr><td>Consignment Risk / Titip (ex)</td><td class="r">Rp 6.200.000</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <div class="sec-h" style="margin-bottom:8px"><span>Timeline Analytics (example)</span><span>1W · 1M · 1Y</span></div>
+            <div style="display:flex;align-items:flex-end;gap:8px;height:86px;padding:10px;border-radius:8px;background:var(--raised);border:1px solid var(--line)">
+              <div style="flex:1;height:40%;background:var(--line-2);border-radius:3px"></div>
+              <div style="flex:1;height:65%;background:var(--line-2);border-radius:3px"></div>
+              <div style="flex:1;height:55%;background:var(--line-2);border-radius:3px"></div>
+              <div style="flex:1;height:80%;background:var(--line-2);border-radius:3px"></div>
+              <div style="flex:1;height:100%;background:var(--gold);border-radius:3px"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sec-h"><span>Hall of Fame &amp; Achievements (Game Art Kept)</span><span>Regional MVP</span></div>
+        <div class="ach-grid">
+          <div class="trophy"><svg class="i" style="color:var(--gold)"><use href="#trophy"/></svg><div><b>Regional MVP</b><div style="font-size:11.5px;color:var(--ink-dim)">Headquarters · Top Revenue</div></div></div>
+          <div class="ach on"><b>Century Seller (example)</b><div style="font-size:11.5px;color:var(--ink-dim)">Unlocked · 100+ stores</div></div>
+        </div>
+        <!--
+          ARITHMETIC CHECK (Hartono Susilo, 2026-11-17):
+          - Today's Gross Revenue (lab): Rp 82,860,000
+          - Split (example): Cash Flow Rp 24,500,000 + Credit/Titip/Transfer Rp 58,360,000 = Rp 82,860,000.
+          - Directory total shown across 5 demoLogins (1 lab + 4 example):
+            82,860,000 + 18,400,000 + 12,600,000 + 9,500,000 + 4,200,000 = Rp 127,560,000.
+        -->
+      </div>
+    </section>
+  </div>
+</div>
+
+<p class="cap" style="margin-top:28px">Agent Profile · v4 · Phone (1: Directory + Player Card · 2: Financial Matrix, Achievements &amp; Modals)</p>
+<div class="phones">
+  <div class="frame phone">
+    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
+    <div class="top">
+      <h1>Agent Profile</h1>
+      <div class="tabs"><span class="tab on">Profile</span><span class="tab">Ranks</span><span class="tab">Avatar</span><span class="tab">Board</span></div>
+    </div>
+    <div class="sum"><span><b>Rp 82.860.000</b> omset</span><span class="sep"></span><span><b>Rp 24,5 jt</b> cash</span></div>
+    <div class="an-sec">
+      <div class="pcard" style="padding:12px">
+        <div class="av-mini" style="width:54px;height:54px;font-size:15px">HS</div>
+        <div class="xp-wrap" style="min-width:160px">
+          <b>HARTONO SUSILO</b>
+          <div style="font-size:11.5px;color:var(--ink-dim)">T2 Master Owner · Sovereign</div>
+          <div class="xp-track"><div class="xp-fill" style="width:96%"></div></div>
+        </div>
+      </div>
+      <div class="plate" style="justify-content:center">SAN ANDREAS · HQ OVERRIDE</div>
+      <div class="sec-h"><span>Agent Directory (5 Demo)</span></div>
+      <div class="r sel" style="padding:8px 6px"><div class="av-mini">HS</div><div><div class="n">HARTONO SUSILO</div><div class="reg">Headquarters</div></div><div class="v">82,86 jt</div></div>
+      <div class="r" style="padding:8px 6px"><div class="av-mini steel">RW</div><div><div class="n">RINA WIJAYA</div><div class="reg">Headquarters</div></div><div class="v">18,4 jt</div></div>
+      <div class="r" style="padding:8px 6px"><div class="av-mini steel">AP</div><div><div class="n">AGUS PRASETYO</div><div class="reg">BANDUNG</div></div><div class="v">9,5 jt</div></div>
+    </div>
+  </div>
+
+  <div class="frame phone">
+    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
+    <div class="top">
+      <h1>Matrix, Awards &amp; Config</h1>
+      <div class="tabs"><span class="tab">Profile</span><span class="tab on">Ranks</span><span class="tab">Award</span><span class="tab">Board</span></div>
+    </div>
+    <div class="sum"><span><b>Rp 14,5 jt</b> canvas</span><span class="sep"></span><span><b>Rp 6,2 jt</b> titip</span></div>
+    <div class="an-sec">
+      <div class="sec-h"><span>Service Record &amp; Credentials</span><button class="btn quiet sm">Save Intel</button></div>
+      <div style="font-size:12px;color:var(--ink-dim)">Corp: Master Owner · Comms: demo.owner@example.com</div>
+      <div class="sec-h"><span>Hall of Fame</span></div>
+      <div class="trophy"><svg class="i" style="color:var(--gold)"><use href="#trophy"/></svg><div><b>Regional MVP</b><div style="font-size:11px;color:var(--ink-dim)">Headquarters</div></div></div>
+      <div class="sec-h"><span>Modals (Quiet Strip)</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <button class="btn quiet sm">Customize Avatar</button>
+        <button class="btn quiet sm">Leaderboard</button>
+        <button class="btn edge sm">Deploy Rank Architecture</button>
+        <button class="btn edge sm">Grant Award</button>
+      </div>
+    </div>
+  </div>
+</div>

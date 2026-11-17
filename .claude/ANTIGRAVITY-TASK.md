@@ -2020,9 +2020,25 @@ Where every Task 31 KPM-panel element sits in `.claude/drafts/map-system-pro.htm
 - **`mapPoints` overdue rule check**: HTML comment inside PC `.hand` citing `src/MapMissionControl.jsx:1887-1904` (`!last` -> `'overdue'` for all 6 seed customers on `2026-11-17`).
 
 ## Task 45 - draft the Agent Profile picture (segment 10) in the v4 look
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 14:52 WIB, by Claude. Writes ONE new file - not an app BUILD. Do it AFTER Task 44.
 **Touch only:** `.claude/drafts/agent-profile-pro.html` (new), this file.
 
 From YOUR Task 32 map. KEEP every piece of game art you listed (avatar frames, rank colours, XP bar, award art) - Aldi built them; the new look frames them, never replaces them. Master-detail: Agent Directory on the left (one line per person: avatar, name, region, one number), the person in hand on the right (the card with the avatar frame + rank + XP, then the money as ONE summary line - not the big Rp 82.860.000 hero number, which the craft rules ban - then the panels). RANK CONFIG / AVATAR / LEADERBOARD / GRANT AWARD as one quiet tab strip. Names, tiers and regions from the demo people (`src/config/demoLogins.js` + seed); today's lab omset Rp 82.860.000 for Hartono Susilo (seen 2026-11-17); anything else "example", added up in an HTML comment.
 Done when: the file exists, no script, the comment is there, and the Result lists every Task 32 element (and every piece of game art) with where it sits.
+
+**Result:**
+All game art from Task 32 is preserved and framed inside the v4 master-detail layout; no giant hero number is shown, and `RANK CONFIG`, `AVATAR`, `LEADERBOARD`, and `GRANT AWARD` sit in one quiet tab strip (no filled amber `LEADERBOARD` button).
+
+Where every Task 32 element & piece of game art sits in `.claude/drafts/agent-profile-pro.html`:
+- **Quiet top tab strip (`Profile`, `Rank Config`, `Avatar`, `Leaderboard`, `Grant Award`)**: PC `.top .tabs` and Phone 1 & 2 `.top .tabs`.
+- **`Agent Directory` sidebar (`ALL DEPLOYMENT ZONES` filter + 5 real `src/config/demoLogins.js` people: `HARTONO SUSILO`, `RINA WIJAYA`, `HENDRA GUNAWAN`, `AGUS PRASETYO`, `DIKA SAPUTRA`, each with mini `.av-mini` frame, name, region, one number)**: PC `.list` left pane and Phone 1 `.an-sec`.
+- **Money summary line (`Rp 82.860.000` lab omset today, `Rp 24.500.000` cash flow ex, `Rp 14.500.000` active canvas ex, `Rp 6.200.000` consignment risk ex)**: PC `.hand .sum` and Phone 1 & 2 `.sum`.
+- **`PlayerCardHead` + Game Art kept**:
+  - `RankBorder` / `.pc-avatar` square material frames (`.av-mini` 42 px in sidebar, `.av-lg` 76 px in `.pcard`)
+  - Rank title + rank color (`Rank: Sovereign (ex)`) + `corpIdentity` (`T2 · Master Owner`) + XP bar (`.xp-track` / `.xp-fill` 96%) + `CLOSED 12/15` inside `.pcard` (PC `.hand .in` and Phone 1)
+  - `San Andreas` license plate "Mount" card (`SAN ANDREAS · HQ OVERRIDE`, `.plate`) inside `.pcard` (PC) and Phone 1
+  - `Regional MVP` trophy (`.trophy`) and `AchievementCard` (`Century Seller`, `.ach.on`) in PC `Hall of Fame & Achievements` and Phone 2
+- **`Live Financial Matrix` ruled table & `Timeline Analytics` (`1W · 1M · 1Y` bars from 0)**: PC `.grid2` inside `.hand .in`.
+- **`Operator Credentials` / `Service Record` (`Save Intel`) & Modals (`Customize Avatar`, `Cropper`, `Leaderboard`, `Rank & EXP Architecture`, `Achievement Config`, `Grant Award`)**: Phone 2 `.an-sec` and PC `.top .tabs`.
+- **Arithmetic check**: HTML comment inside PC `.hand .in` verifying Hartono Susilo's `Rp 82.860.000` split and the 5-agent directory total (`Rp 127.560.000`).
