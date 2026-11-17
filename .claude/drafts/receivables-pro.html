@@ -1,239 +1,431 @@
-<!doctype html><html lang="en"><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Receivables &amp; Consignment · v4</title>
+<title>Global Receivables</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <style>
+/* layout: master-detail work screen (v4 rule) - quiet list left, the shop in hand right; phone = opens under its row */
 :root{
-  --bg:#0E0C0A;--panel:#15120F;--raised:#1C1814;
-  --ink:#F3EDE2;--ink-dim:#A69D8E;--ink-mute:#6D6558;
-  --line:#2B251E;--line-2:#3C342B;
-  --gold:#E0AC43;--wash:rgba(224,172,67,.09);
-  --bad:#D96B5A;--bad-wash:rgba(217,107,90,.12);
+  --ground:#D6CEBA;--panel:#E3DCCB;--raised:#EAE4D6;--inset:#DCD4C1;--line:#B8AF9C;--line-2:#9F9785;--hair:rgba(19,18,17,.10);
+  --ink:#131211;--ink-muted:#3A3733;--ink-dim:#5E584F;--gold:#8A5A12;--accent-ink:#5A3B05;--accent-edge:#8A6420;--danger-ink:#7A2118;
+  --page:#C9C0AA;--sel:rgba(138,90,18,.09);--wash:rgba(138,90,18,.13);--warn:#8A5A12;--ok:#5E584F;
+  --seg-ok:#9F9785;--seg-soon:#B98A3E;--seg-bad:#A3483A;
+  --f:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
 }
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;--hair:rgba(232,228,222,.06);
+  --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--accent-ink:#E0A04A;--accent-edge:#9C6924;--danger-ink:#E7907F;
+  --page:#050504;--sel:rgba(208,138,46,.07);--wash:rgba(208,138,46,.12);--warn:#E0A04A;--ok:#A9A196;
+  --seg-ok:#4A453E;--seg-soon:#B07A2C;--seg-bad:#B8574A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;--hair:rgba(232,228,222,.06);
+  --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--accent-ink:#E0A04A;--accent-edge:#9C6924;--danger-ink:#E7907F;
+  --page:#050504;--sel:rgba(208,138,46,.07);--wash:rgba(208,138,46,.12);--warn:#E0A04A;--ok:#A9A196;
+  --seg-ok:#4A453E;--seg-soon:#B07A2C;--seg-bad:#B8574A;color-scheme:dark}
+
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;padding:28px 20px 64px;-webkit-font-smoothing:antialiased}
-.cap{max-width:1180px;margin:0 auto 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute)}
-.note{max-width:1180px;margin:0 auto 14px;font-size:12px;color:var(--ink-dim)}
-.note b{color:var(--ink);font-weight:600}
-.note code{font-size:11px;color:var(--ink);background:var(--raised);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
-.i{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+body{background:var(--page);color:var(--ink);font:14px/1.45 var(--f);-webkit-font-smoothing:antialiased;
+  padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1240px;margin:0 auto}
+.cap{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);margin:0 0 8px}
+.note{font-size:12.5px;color:var(--ink-muted);margin:0 0 14px}
+.num{font-variant-numeric:tabular-nums}
+.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
-.btn{height:34px;padding:0 14px;border-radius:8px;font:600 13px/1 inherit;color:var(--ink);background:rgba(255,255,255,.03);border:1px solid var(--line-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
-.btn.edge{border-color:var(--gold);color:var(--gold);background:var(--wash)}
-.btn.quiet{color:var(--ink-dim);background:transparent}
-.btn.danger{border-color:rgba(217,107,90,.45);color:var(--bad);background:var(--bad-wash)}
-.btn.sm{height:28px;padding:0 10px;font-size:12px}
+/* buttons = .kpm-edge-btn spec: gold edge, no fill, hover 11% wash 160ms, press sinks 3% */
+.btn{height:36px;padding:0 14px;border-radius:8px;font:600 13px/1 var(--f);color:var(--ink);background:transparent;border:1px solid var(--line-2);
+  cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;
+  transition:background-color .16s ease,border-color .16s ease,transform .14s ease}
+.btn:hover{background:var(--hair)}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.btn.edge{border-color:var(--accent-edge);color:var(--accent-ink)}
+.btn.edge:hover{background:var(--wash)}
+.btn.quiet{color:var(--ink-muted)}
+.btn.sm{height:30px;padding:0 10px;font-size:12px}
 
-.frame{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 24px 60px -30px rgba(0,0,0,.7)}
-.pc{max-width:1180px;margin:0 auto 40px}
+.frame{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 0 var(--hair),0 24px 60px -34px rgba(0,0,0,.55)}
 
-.top{display:flex;align-items:center;gap:20px;padding:14px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
-.top h1{font-size:18px;font-weight:700;letter-spacing:-.02em;padding-bottom:12px}
-.tabs{display:flex;gap:20px}
-.tab{padding:0 2px 12px;font-size:13px;font-weight:600;color:var(--ink-mute);border-bottom:2px solid transparent;display:inline-flex;align-items:center;gap:7px}
+/* header */
+.hd{display:flex;align-items:center;gap:14px;padding:16px 22px;flex-wrap:wrap}
+.mark{width:36px;height:36px;border-radius:9px;background:var(--raised);border:1px solid var(--line-2);display:grid;place-items:center;color:var(--gold)}
+.hd h1{font-size:18px;font-weight:700;letter-spacing:-.02em}
+.hd .sub{font-size:12px;color:var(--ink-dim)}
+.tools{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.field{height:34px;padding:0 11px;border-radius:8px;background:var(--inset);border:1px solid var(--line);font-size:12.5px;color:var(--ink-muted);display:inline-flex;align-items:center;gap:7px}
+.field.search{width:220px}
+.tabs{display:flex;gap:22px;padding:0 22px;border-bottom:1px solid var(--line)}
+.tab{background:none;border:0;font:600 13px/1 var(--f);color:var(--ink-dim);padding:10px 2px 12px;border-bottom:2px solid transparent;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:color .16s ease,border-color .16s ease}
+.tab:hover{color:var(--ink-muted)}
 .tab.on{color:var(--ink);border-color:var(--gold)}
-/* THE SHAKE (ConsignmentFinanceView.jsx:1021-1039): dot sits inside tab label */
-.dot{width:7px;height:7px;border-radius:50%;background:var(--bad);display:inline-block}
-.ctl{margin-left:auto;display:flex;align-items:center;gap:8px;padding-bottom:12px}
-.pill{height:30px;padding:0 10px;border-radius:7px;background:var(--raised);border:1px solid var(--line);font-size:12px;color:var(--ink-dim);display:inline-flex;align-items:center;gap:6px}
+.tab .ct{font-size:11px;font-weight:700;color:var(--danger-ink)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--danger-ink);display:inline-block}
 
-.sum{display:flex;align-items:center;gap:14px;padding:11px 20px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-dim);flex-wrap:wrap}
-.sum b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
-.sum .bad{color:var(--bad)}
-.sep{width:1px;height:12px;background:var(--line)}
+/* aging summary */
+.aging{display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line);background:var(--raised)}
+.tot .k{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
+.tot .v{font-size:26px;font-weight:700;letter-spacing:-.02em;margin-top:2px}
+.tot .m{font-size:12px;color:var(--ink-dim);margin-top:2px}
+.bar{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--inset);gap:2px}
+.bar i{display:block;height:100%;width:0;transition:width .7s cubic-bezier(.2,.8,.2,1)}
+.leg{display:flex;gap:26px;margin-top:10px;flex-wrap:wrap}
+.leg div{display:flex;flex-direction:column;gap:1px}
+.leg .lk{font-size:11.5px;color:var(--ink-dim);display:flex;align-items:center;gap:6px}
+.leg .lk b{width:8px;height:8px;border-radius:2px;display:inline-block}
+.leg .lv{font-size:13.5px;font-weight:600}
 
-.work{display:grid;grid-template-columns:420px 1fr;min-height:450px}
-.list{border-right:1px solid var(--line);display:flex;flex-direction:column}
-.rows{overflow:auto;flex:1}
-.r{display:grid;grid-template-columns:16px minmax(0,1fr) auto auto;align-items:center;gap:10px;min-height:44px;padding:10px 16px;border-left:2px solid transparent;border-bottom:1px solid rgba(43,37,30,.55)}
-.r.sel{background:var(--wash);border-left-color:var(--gold)}
-.ic{color:var(--ink-mute);display:flex}
-.r.sel .ic{color:var(--gold)}
-.n{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.reg{font-size:11.5px;color:var(--ink-mute)}
-.v{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);text-align:right;white-space:nowrap}
-.s{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-mute);text-align:right;white-space:nowrap}
-.s.bad{color:var(--bad)}
-.s.gold{color:var(--gold)}
+/* work area */
+.work{display:grid;grid-template-columns:540px minmax(0,1fr);min-height:520px}
+.list{border-right:1px solid var(--line);min-width:0}
+.lh,.r{display:grid;grid-template-columns:minmax(0,1fr) 112px 76px 78px;gap:12px;align-items:center;padding:0 18px}
+.lh{height:34px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);border-bottom:1px solid var(--line)}
+.lh .rt,.r .rt{text-align:right}
+.r{min-height:56px;border-bottom:1px solid var(--hair);border-left:2px solid transparent;cursor:pointer;transition:background-color .16s ease}
+.r:hover{background:var(--hair)}
+.r.sel{background:var(--sel);border-left-color:var(--gold)}
+.who{display:flex;align-items:center;gap:11px;min-width:0}
+.av{width:32px;height:32px;border-radius:8px;background:var(--inset);border:1px solid var(--line);display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--ink-muted);flex:none}
+.r.sel .av,.pr.sel .av{border-color:var(--accent-edge);color:var(--accent-ink)}
+.nm{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mt{font-size:11.5px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.amt{font-size:13.5px;font-weight:600;text-align:right}
+.use{display:flex;flex-direction:column;gap:4px}
+.use .t{height:4px;border-radius:2px;background:var(--inset);overflow:hidden}
+.use .t i{display:block;height:100%;width:0;border-radius:2px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.use small{font-size:10.5px;color:var(--ink-dim)}
+.st{display:inline-flex;align-items:center;justify-content:flex-end;gap:6px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ok);white-space:nowrap}
+.st::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.st.soon{color:var(--warn)}
+.st.bad{color:var(--danger-ink)}
 
-.hand{display:flex;flex-direction:column;justify-content:space-between;background:radial-gradient(600px 260px at 50% 0%,rgba(224,172,67,.04),transparent 70%)}
-.hand .in{padding:24px 28px;display:flex;flex-direction:column;gap:16px}
-.ph{display:flex;align-items:center;gap:14px}
-.big{width:44px;height:44px;border-radius:10px;background:var(--raised);border:1px solid var(--line-2);display:grid;place-items:center;color:var(--gold);flex:none}
-.ph h2{font-size:17px;font-weight:700;letter-spacing:-.01em}
-.ph p{font-size:12.5px;color:var(--ink-dim);margin-top:2px}
-.ph .pos{margin-left:auto;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--bad)}
-
-.sec-h{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
-table{width:100%;border-collapse:collapse;font-size:12.5px}
-th{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-mute);text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
-td{padding:8px;border-bottom:1px solid rgba(43,37,30,.55);color:var(--ink-dim)}
+/* the shop in hand */
+.hand{display:flex;flex-direction:column;min-width:0}
+.hin{padding:22px 26px;display:flex;flex-direction:column;gap:18px;flex:1}
+.hin.enter{animation:in .22s cubic-bezier(.2,.8,.2,1)}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ph{display:flex;align-items:flex-start;gap:14px}
+.ph .av{width:46px;height:46px;border-radius:11px;font-size:14px}
+.ph h2{font-size:18px;font-weight:700;letter-spacing:-.01em}
+.ph p{font-size:12.5px;color:var(--ink-dim);margin-top:3px}
+.ph .owe{margin-left:auto;text-align:right}
+.ph .owe .k{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
+.ph .owe .v{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.facts>div{padding:11px 14px;border-right:1px solid var(--line);background:var(--raised)}
+.facts>div:last-child{border-right:0}
+.facts .k{font-size:11px;color:var(--ink-dim)}
+.facts .v{font-size:14px;font-weight:600;margin-top:2px}
+.sec{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-dim);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--hair);color:var(--ink-muted);vertical-align:top}
 td b{color:var(--ink);font-weight:600}
-th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}
-
-.act{display:flex;align-items:center;gap:8px;padding:14px 28px;border-top:1px solid var(--line);flex-wrap:wrap}
+th.n,td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td .it{font-size:12px;color:var(--ink-dim);margin-top:2px}
+.paid{color:var(--ink-dim);text-decoration:line-through}
+.trail{display:flex;flex-direction:column;gap:8px}
+.ev{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-muted)}
+.ev .d{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--line-2);flex:none}
+.ev .d.g{border-color:var(--accent-edge);background:var(--wash)}
+.ev time{margin-left:auto;font-size:11.5px;color:var(--ink-dim)}
+.act{display:flex;align-items:center;gap:8px;padding:14px 26px;border-top:1px solid var(--line);flex-wrap:wrap;background:var(--raised)}
 .act .sp{flex:1}
 
-.phones{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;max-width:1180px;margin:0 auto}
-.phone{width:390px;max-width:100%;height:780px;display:flex;flex-direction:column;border-radius:22px;position:relative}
-.sb{height:28px;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font-size:11px;color:var(--ink-dim)}
-.phone .top{padding:8px 16px 0;gap:0;flex-direction:column;align-items:stretch}
-.phone .top h1{margin-bottom:8px}
-.phone .tabs{gap:14px}
-.phone .sum{padding:9px 16px;gap:10px;font-size:12px}
-.phone .list{width:auto;border:none;flex:1}
-.dim-under{position:absolute;inset:0;background:rgba(5,4,3,.45)}
-.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--raised);border-top:1px solid var(--line-2);border-radius:20px 20px 0 0;
-  padding:10px 16px 16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 -18px 40px -20px rgba(0,0,0,.6)}
-.grab{width:38px;height:4px;border-radius:2px;background:var(--line-2);margin:0 auto}
-.an-sec{padding:12px 16px;display:flex;flex-direction:column;gap:12px;overflow:auto;flex:1}
-.open{padding:4px 16px 14px 42px;display:flex;flex-direction:column;gap:10px;background:var(--wash);border-left:2px solid var(--gold);border-bottom:1px solid var(--line)}
-.card{padding:10px 12px;border-radius:10px;background:var(--raised);border:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
-@media (max-width:860px){.pc{display:none}}
+/* other tabs */
+.pane{display:none}.pane.on{display:block}
+.pane .tw{padding:6px 22px 18px}
+
+/* rolling digits (his Framer pick 1) */
+.tot .v,.owe .v{line-height:1.2em;height:1.2em;white-space:nowrap}
+.rd{display:inline-block;height:1.2em;overflow:hidden;vertical-align:top}
+.rs{display:flex;flex-direction:column;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+.rs span{height:1.2em;line-height:1.2em}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,12px);opacity:0;background:var(--raised);border:1px solid var(--line-2);color:var(--ink);
+  border-radius:10px;padding:11px 16px;font-size:13px;display:flex;align-items:center;gap:9px;box-shadow:0 14px 40px -18px rgba(0,0,0,.6);transition:opacity .18s ease,transform .18s ease;pointer-events:none;max-width:calc(100% - 32px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* phone */
+.phones{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.phone{width:390px;max-width:100%;border-radius:24px}
+.phone .hd{padding:14px 16px 10px}
+.phone .tabs{padding:0 16px;gap:16px}
+.phone .aging{grid-template-columns:1fr;gap:12px;padding:14px 16px}
+.phone .tot .v{font-size:22px}
+.phone .leg{gap:16px}
+.pr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 16px;min-height:60px;border-bottom:1px solid var(--hair);border-left:2px solid transparent;cursor:pointer}
+.pr.sel{background:var(--sel);border-left-color:var(--gold)}
+.pr .rt{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.po{padding:4px 16px 16px 18px;border-bottom:1px solid var(--line);background:var(--sel);border-left:2px solid var(--gold);display:flex;flex-direction:column;gap:12px;animation:in .22s cubic-bezier(.2,.8,.2,1)}
+.po .row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-muted);padding:6px 0;border-bottom:1px solid var(--hair)}
+.po .btns{display:flex;gap:8px}
+.po .btns .btn{flex:1}
+
+@media (max-width:980px){.work{grid-template-columns:1fr}.list{border-right:0;border-bottom:1px solid var(--line)}.facts{grid-template-columns:repeat(2,minmax(0,1fr))}.facts>div:nth-child(2){border-right:0}.facts>div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+@media (max-width:700px){.pcwrap{display:none}.aging{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="bill" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></symbol>
-  <symbol id="check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></symbol>
-  <symbol id="print" viewBox="0 0 24 24"><path d="M7 8V3h10v5"/><rect x="4" y="8" width="16" height="8" rx="1"/><path d="M7 14h10v7H7z"/></symbol>
+  <symbol id="rcv" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></symbol>
+  <symbol id="srch" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></symbol>
+  <symbol id="pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.5-6-11a6 6 0 0112 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2"/></symbol>
+  <symbol id="user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 4-5.5 7-5.5s6 1.5 7 5.5"/></symbol>
+  <symbol id="prn" viewBox="0 0 24 24"><path d="M7 8V3h10v5"/><rect x="4" y="8" width="16" height="8" rx="1.5"/><path d="M7 14h10v7H7z"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="swap" viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></symbol>
+  <symbol id="audit" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 11l2 2 4-4M9 17h6"/></symbol>
+  <symbol id="info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h0"/></symbol>
 </svg>
 
-<p class="cap">Receivables &amp; Consignment · v4 · PC (A/R Shop List + Shop in Hand)</p>
-<p class="note">Real shops and prices from the demo. The demo has no open debt yet, so the amounts are <b>example</b> numbers.</p>
+<div class="wrap">
+  <p class="cap">Receivables &amp; Consignment · picture v5 · PC 1440</p>
+  <p class="note">Shops, salesmen and prices are the demo's own. The debts below are the ones the demo will get (the demo has none today). Click a shop, the tabs and the buttons.</p>
 
-<div class="frame pc">
-  <div class="top">
-    <h1>Global Receivables</h1>
-    <div class="tabs">
-      <span class="tab on">A/R Financials</span>
-      <span class="tab">Physical Stock</span>
-      <span class="tab">Hand-offs <span class="dot"></span></span>
+  <div class="pcwrap">
+  <div class="frame">
+    <div class="hd">
+      <div class="mark"><svg class="i"><use href="#rcv"/></svg></div>
+      <div><h1>Global Receivables</h1><div class="sub">Consignment · as of Tue, 17 Nov 2026</div></div>
+      <div class="tools">
+        <span class="field search"><svg class="i"><use href="#srch"/></svg>Search shop</span>
+        <span class="field"><svg class="i"><use href="#pin"/></svg>All regions</span>
+        <span class="field"><svg class="i"><use href="#user"/></svg>All salesmen</span>
+      </div>
     </div>
-    <div class="ctl">
-      <span class="pill">Region: ALL ▾</span>
-      <span class="pill">Filter salesman...</span>
+    <div class="tabs" role="tablist">
+      <button class="tab on" data-p="ar">A/R Financials</button>
+      <button class="tab" data-p="ps">Physical Stock</button>
+      <button class="tab" data-p="ho">Hand-offs <span class="dot"></span><span class="ct">2</span></button>
     </div>
-  </div>
-  <div class="sum">
-    <span><b>Rp 2.200.000</b> owed (example)</span><span class="sep"></span>
-    <span class="bad"><b>Rp 1.350.000</b> overdue</span><span class="sep"></span>
-    <span><b>3</b> active shops</span><span class="sep"></span>
-    <span><b>250 Bks</b> dititip</span>
-  </div>
 
-  <div class="work">
-    <aside class="list">
-      <div class="rows">
-        <div class="r sel">
-          <span class="ic"><svg class="i"><use href="#bill"/></svg></span>
-          <span style="min-width:0"><div class="n">AMANAH BARU</div><div class="reg">MARGAHAYU · <span style="color:var(--bad)">5 days late</span></div></span>
-          <span class="v">Rp 1.350.000</span>
-          <span class="s bad">OVERDUE</span>
-        </div>
-        <div class="r">
-          <span class="ic"><svg class="i"><use href="#bill"/></svg></span>
-          <span style="min-width:0"><div class="n">ANEKA BARU PANJI</div><div class="reg">MARGAHAYU · due in 2 days</div></span>
-          <span class="v">Rp 510.000</span>
-          <span class="s gold">SOON</span>
-        </div>
-        <div class="r">
-          <span class="ic"><svg class="i"><use href="#bill"/></svg></span>
-          <span style="min-width:0"><div class="n">ANUGRAH 17</div><div class="reg">CIMAHI TENGAH · due in 6 days</div></span>
-          <span class="v">Rp 340.000</span>
-          <span class="s">SAFE</span>
+    <div class="pane on" id="p-ar">
+      <div class="aging">
+        <div class="tot"><div class="k">Outstanding</div><div class="v num" id="tot"></div><div class="m" id="totm"></div></div>
+        <div>
+          <div class="bar"><i id="b-ok" style="background:var(--seg-ok)"></i><i id="b-soon" style="background:var(--seg-soon)"></i><i id="b-bad" style="background:var(--seg-bad)"></i></div>
+          <div class="leg" id="leg"></div>
         </div>
       </div>
-    </aside>
-
-    <section class="hand">
-      <div class="in">
-        <div class="ph">
-          <div class="big"><svg class="i"><use href="#bill"/></svg></div>
-          <div><h2>AMANAH BARU</h2><p>2026-11-05 · Tempo 7d · 5 Days Overdue · MARGAHAYU, BANDUNG</p></div>
-          <span class="pos">Rp 1.350.000</span>
+      <div class="work">
+        <div class="list">
+          <div class="lh"><span>Shop</span><span class="rt">Owed</span><span>Tempo</span><span class="rt">State</span></div>
+          <div id="rows"></div>
         </div>
-
-        <div class="sec-h">Open Consignment Notes (example)</div>
-        <table>
-          <thead><tr><th>Product (seed.json)</th><th class="num">Dititip</th><th class="num">@ Dist. Price</th><th class="num">Balance (example)</th></tr></thead>
-          <tbody>
-            <tr><td><b>Cello Chocolate</b></td><td class="num">100 Bks</td><td class="num">Rp 10.000</td><td class="num"><b>Rp 1.000.000</b></td></tr>
-            <tr><td><b>Cello Green</b></td><td class="num">50 Bks</td><td class="num">Rp 7.000</td><td class="num"><b>Rp 350.000</b></td></tr>
-          </tbody>
-        </table>
-        <!--
-          ARITHMETIC & BADGE CHECK (from demo/seed.json & src/ConsignmentFinanceView.jsx:201-238, today = 2026-11-17):
-          Rule: ageDays = floor((today - oldestDate) / 86400000); tempoDays = oldestDebt.tempoDays || 7; daysUntilDue = tempoDays - ageDays.
-                daysUntilDue < 0 -> OVERDUE; daysUntilDue <= 3 -> SOON; else SAFE.
-          1) AMANAH BARU (example): 100 Bks Cello Chocolate * Rp 10,000 + 50 Bks Cello Green * Rp 7,000 = 1,000,000 + 350,000 = Rp 1,350,000.
-             oldestDate = 2026-11-05, today = 2026-11-17 -> ageDays = 12, tempoDays = 7 -> daysUntilDue = -5 (< 0) -> OVERDUE (5 Days Overdue).
-          2) ANEKA BARU PANJI (example): 60 Bks Cello Mmrapi * Rp 8,500 = Rp 510,000.
-             oldestDate = 2026-11-12, today = 2026-11-17 -> ageDays = 5, tempoDays = 7 -> daysUntilDue = 2 (<= 3) -> SOON (Due in 2d).
-          3) ANUGRAH 17 (example): 40 Bks Cello Coffee & Caramel kretek * Rp 8,500 = Rp 340,000.
-             oldestDate = 2026-11-16, today = 2026-11-17 -> ageDays = 1, tempoDays = 7 -> daysUntilDue = 6 (> 3) -> SAFE (Due in 6d).
-          Totals: 1,350,000 + 510,000 + 340,000 = Rp 2,200,000; overdue = Rp 1,350,000; dititip = 150 + 60 + 40 = 250 Bks; activeAccounts = 3.
-        -->
+        <section class="hand">
+          <div class="hin" id="hand"></div>
+          <div class="act">
+            <button class="btn quiet" data-t="Receipt opens here: 58 mm or A4, print or share."><svg class="i"><use href="#prn"/></svg>Receipt</button>
+            <button class="btn quiet" data-t="Add Goods opens here: more stock on consignment for this shop."><svg class="i"><use href="#plus"/></svg>Add Goods</button>
+            <button class="btn quiet" data-t="Hand-off opens here: give this shop to another salesman."><svg class="i"><use href="#swap"/></svg>Hand-off</button>
+            <span class="sp"></span>
+            <button class="btn edge" data-t="Store Audit opens here: count what is left, the rest is paid."><svg class="i"><use href="#audit"/></svg>Store Audit &amp; Settle</button>
+          </div>
+        </section>
       </div>
-      <div class="act">
-        <button class="btn quiet"><svg class="i"><use href="#print"/></svg>Receipt (58mm/A4)</button>
-        <button class="btn quiet">Add Goods</button>
-        <button class="btn quiet">Hand-off</button>
-        <span class="sp"></span>
-        <button class="btn edge"><svg class="i"><use href="#check"/></svg>Store Audit &amp; Settle</button>
-      </div>
-    </section>
-  </div>
-</div>
-
-<p class="cap" style="margin-top:28px">Receivables &amp; Consignment · v4 · Phone (1: the shop opens under its row · 2: Physical Stock · 3: Hand-offs)</p>
-<div class="phones">
-  <div class="frame phone">
-    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
-    <div class="top">
-      <h1>Global Receivables</h1>
-      <div class="tabs"><span class="tab on">A/R Financials</span><span class="tab">Physical Stock</span><span class="tab">Hand-offs <span class="dot"></span></span></div>
     </div>
-    <div class="sum"><span><b>Rp 2.200.000</b> owed</span><span class="sep"></span><span class="bad"><b>Rp 1.350.000</b> overdue</span></div>
-    <div class="list">
-      <div class="r sel"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span style="min-width:0"><div class="n">AMANAH BARU</div><div class="reg" style="color:var(--bad)">5 days late</div></span><span class="v">Rp 1.350.000</span><span class="s bad">OVERDUE</span></div>
-      <div class="open">
-        <table><tbody>
-          <tr><td>Cello Chocolate</td><td class="num">100 Bks</td><td class="num">Rp 1.000.000</td></tr>
-          <tr><td>Cello Green</td><td class="num">50 Bks</td><td class="num">Rp 350.000</td></tr>
-        </tbody></table>
-        <div style="display:flex;gap:8px"><button class="btn quiet sm"><svg class="i"><use href="#print"/></svg></button><button class="btn quiet sm" style="flex:1">Add Goods</button><button class="btn quiet sm" style="flex:1">Hand-off</button></div>
-        <button class="btn edge" style="width:100%;height:44px"><svg class="i"><use href="#check"/></svg>Store Audit &amp; Settle</button>
-      </div>
-      <div class="r"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span style="min-width:0"><div class="n">ANEKA BARU PANJI</div><div class="reg">due in 2 days</div></span><span class="v">Rp 510.000</span><span class="s gold">SOON</span></div>
-      <div class="r"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span style="min-width:0"><div class="n">ANUGRAH 17</div><div class="reg">due in 6 days</div></span><span class="v">Rp 340.000</span><span class="s">SAFE</span></div>
+
+    <div class="pane" id="p-ps">
+      <div class="aging"><div class="tot"><div class="k">At shops on consignment</div><div class="v num" id="psb"></div><div class="m" id="psm"></div></div><div></div></div>
+      <div class="tw"><table><thead><tr><th>Shop</th><th>Salesman</th><th>Goods</th><th class="n">Bks</th><th class="n">Value</th></tr></thead><tbody id="psrows"></tbody></table></div>
+    </div>
+
+    <div class="pane" id="p-ho">
+      <div class="aging"><div class="tot"><div class="k">Waiting for your answer</div><div class="v num">2 hand-offs</div><div class="m">A salesman asked to give a shop and its goods to another.</div></div><div></div></div>
+      <div class="tw"><table><thead><tr><th>Shop</th><th>From → To</th><th class="n">Bks</th><th>Asked</th><th></th></tr></thead><tbody id="horows"></tbody></table></div>
     </div>
   </div>
-
-  <div class="frame phone">
-    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
-    <div class="top">
-      <h1>Global Receivables</h1>
-      <div class="tabs"><span class="tab">A/R Financials</span><span class="tab on">Physical Stock</span><span class="tab">Hand-offs <span class="dot"></span></span></div>
-    </div>
-    <div class="sum"><span><b>250 Bks</b> at shops</span><span class="sep"></span><span><b>3</b> shops</span></div>
-    <div class="list">
-      <div class="r"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span class="n">AMANAH BARU</span><span class="v">150 Bks</span><span class="s"></span></div>
-      <div class="r"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span class="n">ANEKA BARU PANJI</span><span class="v">60 Bks</span><span class="s"></span></div>
-      <div class="r"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span class="n">ANUGRAH 17</span><span class="v">40 Bks</span><span class="s"></span></div>
-    </div>
   </div>
 
-  <div class="frame phone">
-    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
-    <div class="top">
-      <h1>Global Receivables</h1>
-      <div class="tabs"><span class="tab">A/R Financials</span><span class="tab">Physical Stock</span><span class="tab on">Hand-offs <span class="dot"></span></span></div>
-    </div>
-    <div class="sum"><span><b>1</b> waiting for you</span></div>
-    <div class="list">
-      <div class="r sel"><span class="ic"><svg class="i"><use href="#bill"/></svg></span><span style="min-width:0"><div class="n">ANUGRAH 17 · 40 Bks</div><div class="reg">from Dika · Journey map</div></span><span class="v"></span><span class="s gold">WAITING</span></div>
-      <div class="open">
-        <div style="display:flex;gap:8px"><button class="btn quiet" style="flex:1">Decline</button><button class="btn edge" style="flex:1"><svg class="i"><use href="#check"/></svg>Accept</button></div>
+  <p class="cap" style="margin-top:34px">Phone 390 · the shop opens under its own row</p>
+  <div class="phones">
+    <div class="frame phone">
+      <div class="hd"><div class="mark"><svg class="i"><use href="#rcv"/></svg></div><div><h1>Global Receivables</h1><div class="sub">as of 17 Nov 2026</div></div></div>
+      <div class="tabs"><button class="tab on">A/R</button><button class="tab">Stock</button><button class="tab">Hand-offs <span class="dot"></span></button></div>
+      <div class="aging">
+        <div class="tot"><div class="k">Outstanding</div><div class="v num" id="ptot"></div></div>
+        <div><div class="bar"><i id="pb-ok" style="background:var(--seg-ok)"></i><i id="pb-soon" style="background:var(--seg-soon)"></i><i id="pb-bad" style="background:var(--seg-bad)"></i></div><div class="leg" id="pleg"></div></div>
       </div>
+      <div id="prows"></div>
     </div>
   </div>
 </div>
+<div class="toast" id="toast"><svg class="i"><use href="#info"/></svg><span id="tt"></span></div>
+
+<script>
+/* TODAY is fixed so the states stay true to this picture */
+const TODAY = new Date(2026, 10, 17);
+const P = { CHOC:['Cello Chocolate',11000], GREEN:['Cello Green',8000], MM:['Cello Mmrapi',9500], COF:['Cello Coffee & Caramel',9500], TEH:['Cello Teh Manis',8000], AS:['American Spirit Turquoise',230000] };
+/* Retail tier price = what a Titip SALE's total is (calculatedPrice), so the debt is at this price */
+const SHOPS = [
+  { name:'AMANAH BARU', where:'Margahayu, Bandung', man:'Agus', phone:'0812-2210-4471', notes:[
+      { no:'KPM-1105-07', date:[2026,11,5], tempo:7, items:[['CHOC',100],['GREEN',50]] },
+      { no:'KPM-1113-02', date:[2026,11,13], tempo:7, items:[['MM',40]] } ],
+    paid:[{ date:[2026,11,12], amt:300000 }], trail:[['Agus took the shop over from Ari', [2026,11,3]]] },
+  { name:'FITRIA PLASTIK', where:'Muntilan, Magelang', man:'Dika', phone:'0857-4410-2290', notes:[
+      { no:'KPM-1102-11', date:[2026,11,2], tempo:14, items:[['MM',200]] } ], paid:[], trail:[] },
+  { name:'ASYIFA MART MADURA', where:'Muntilan, Magelang', man:'Dika', phone:'0813-9021-7765', notes:[
+      { no:'KPM-1108-04', date:[2026,11,8], tempo:7, items:[['COF',120]] } ], paid:[], trail:[] },
+  { name:'DEWI CIBOLERANG', where:'Bandung Kulon, Kota Bandung', man:'Ari', phone:'0822-1180-5532', notes:[
+      { no:'KPM-1111-09', date:[2026,11,11], tempo:7, items:[['TEH',80],['AS',2]] } ], paid:[], trail:[] },
+  { name:'ANEKA BARU PANJI', where:'Margahayu, Bandung', man:'Agus', phone:'0812-7765-0091', notes:[
+      { no:'KPM-1112-05', date:[2026,11,12], tempo:7, items:[['MM',60]] } ], paid:[], trail:[] },
+  { name:'CEMERLANG', where:'Soreang, Bandung', man:'Agus', phone:'0858-6620-1184', notes:[
+      { no:'KPM-1110-01', date:[2026,11,10], tempo:14, items:[['CHOC',150]] } ], paid:[], trail:[] },
+  { name:'ENDANG CELL', where:'Muntilan, Magelang', man:'Budi', phone:'0819-3302-8840', notes:[
+      { no:'KPM-1114-06', date:[2026,11,14], tempo:7, items:[['GREEN',100]] } ], paid:[], trail:[] },
+  { name:'ANUGRAH 17', where:'Cimahi Tengah, Kota Cimahi', man:'Ari', phone:'0821-4471-9902', notes:[
+      { no:'KPM-1116-03', date:[2026,11,16], tempo:7, items:[['COF',40]] } ], paid:[], trail:[] },
+];
+const HANDOFFS = [ ['LARIS JAYA','Agus','Ari',60,'16 Nov, 15:20'], ['HJ EUIS','Ari','Agus',30,'17 Nov, 09:05'] ];
+
+const rp = (n) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
+const d = (a) => new Date(a[0], a[1] - 1, a[2]);
+const fmt = (a) => d(a).toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+const ini = (s) => s.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('');
+const lineTotal = (it) => P[it[0]][1] * it[1];
+
+/* the app's own rule, ConsignmentFinanceView.jsx:166-232: FIFO payments, the OLDEST open note decides the state */
+SHOPS.forEach((s) => {
+  s.notes.forEach((n) => { n.total = n.items.reduce((a, it) => a + lineTotal(it), 0); n.left = n.total; });
+  let pay = s.paid.reduce((a, p) => a + p.amt, 0);
+  for (const n of s.notes) { const take = Math.min(pay, n.left); n.left -= take; pay -= take; }
+  const open = s.notes.filter((n) => n.left > 0.01);
+  s.total = open.reduce((a, n) => a + n.left, 0);
+  s.bks = s.notes.reduce((a, n) => a + n.items.reduce((b, it) => b + (it[0] === 'AS' ? 0 : it[1]), 0), 0);
+  const oldest = open[0];
+  s.age = Math.floor((TODAY - d(oldest.date)) / 86400000);
+  s.tempo = oldest.tempo || 7;
+  s.until = s.tempo - s.age;
+  s.state = s.until < 0 ? 'bad' : s.until <= 3 ? 'soon' : 'ok';
+  s.oldest = oldest;
+});
+const ORDER = { bad:0, soon:1, ok:2 };
+SHOPS.sort((a, b) => ORDER[a.state] - ORDER[b.state] || a.until - b.until);
+const WORD = { bad:'Overdue', soon:'Due soon', ok:'Safe' };
+const when = (s) => s.until < 0 ? `${-s.until} day${s.until === -1 ? '' : 's'} late` : s.until === 0 ? 'due today' : `due in ${s.until} day${s.until === 1 ? '' : 's'}`;
+const sum = (st) => SHOPS.filter((s) => !st || s.state === st).reduce((a, s) => a + s.total, 0);
+const cnt = (st) => SHOPS.filter((s) => s.state === st).length;
+
+/* rolling digits: each digit is a 0-9 column that slides to its value */
+function roll(el, text) {
+  const prev = el.dataset.v || '';
+  el.dataset.v = text;
+  el.textContent = '';
+  [...text].forEach((ch, i) => {
+    if (!/\d/.test(ch)) { el.append(ch); return; }
+    const box = document.createElement('span'); box.className = 'rd';
+    const col = document.createElement('span'); col.className = 'rs';
+    for (let k = 0; k <= 9; k++) { const s = document.createElement('span'); s.textContent = k; col.append(s); }
+    const from = prev.length === text.length && /\d/.test(prev[i]) ? +prev[i] : 0;
+    col.style.transform = `translateY(${-1.2 * from}em)`;
+    box.append(col); el.append(box);
+    requestAnimationFrame(() => requestAnimationFrame(() => { col.style.transform = `translateY(${-1.2 * +ch}em)`; }));
+  });
+}
+
+function aging(prefix, legId) {
+  const all = sum();
+  const parts = [['ok', 'Safe'], ['soon', 'Due soon'], ['bad', 'Overdue']];
+  requestAnimationFrame(() => requestAnimationFrame(() => parts.forEach(([k]) => { document.getElementById(prefix + k).style.width = (sum(k) / all * 100) + '%'; })));
+  document.getElementById(legId).innerHTML = parts.map(([k, w]) =>
+    `<div><span class="lk"><b style="background:var(--seg-${k})"></b>${w} · ${cnt(k)}</span><span class="lv num">${rp(sum(k))}</span></div>`).join('');
+}
+
+let sel = 0;
+function rows() {
+  document.getElementById('rows').innerHTML = SHOPS.map((s, i) => `
+    <div class="r${i === sel ? ' sel' : ''}" data-i="${i}">
+      <div class="who"><span class="av">${ini(s.name)}</span><span style="min-width:0"><div class="nm">${s.name}</div><div class="mt">${s.where.split(',')[0]} · ${s.man}</div></span></div>
+      <span class="amt num">${rp(s.total)}</span>
+      <span class="use"><span class="t"><i data-w="${Math.min(100, s.age / s.tempo * 100)}" style="background:var(--seg-${s.state})"></i></span><small class="num">${s.age} of ${s.tempo} days</small></span>
+      <span class="st ${s.state}">${WORD[s.state]}</span>
+    </div>`).join('');
+  requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll('#rows .t i').forEach((b) => { b.style.width = b.dataset.w + '%'; })));
+}
+function hand(first) {
+  const s = SHOPS[sel], h = document.getElementById('hand');
+  const notes = s.notes.map((n) => `
+    <tr><td><b>${n.no}</b><div class="it">${n.items.map((it) => `${P[it[0]][0]} × ${it[1]}`).join(' · ')}</div></td>
+      <td>${fmt(n.date)}</td><td class="n">${rp(n.total)}</td>
+      <td class="n">${n.left > 0 ? `<b>${rp(n.left)}</b>` : '<span class="paid">paid</span>'}</td></tr>`).join('');
+  const trail = [
+    ...s.trail.map(([t, w]) => [t, w, 0]),
+    ...s.notes.map((n) => [`Goods left on consignment · ${n.no}`, n.date, 0]),
+    ...s.paid.map((p) => [`Paid ${rp(p.amt)} at Store Audit`, p.date, 1]),
+  ].sort((a, b) => d(a[1]) - d(b[1]));
+  h.innerHTML = `
+    <div class="ph"><span class="av">${ini(s.name)}</span>
+      <div><h2>${s.name}</h2><p>${s.where} · ${s.man} · ${s.phone}</p></div>
+      <div class="owe"><div class="k">Owes</div><div class="v num" id="owe"></div></div></div>
+    <div class="facts">
+      <div><div class="k">State</div><div class="v"><span class="st ${s.state}" style="justify-content:flex-start">${WORD[s.state]}</span></div></div>
+      <div><div class="k">Oldest note</div><div class="v num">${fmt(s.oldest.date)} · ${s.age} days</div></div>
+      <div><div class="k">Tempo</div><div class="v num">${s.tempo} days · ${when(s)}</div></div>
+      <div><div class="k">Goods at the shop</div><div class="v num">${s.bks.toLocaleString('id-ID')} Bks</div></div>
+    </div>
+    <div class="sec">Consignment notes</div>
+    <div class="tw"><table><thead><tr><th>Note</th><th>Date</th><th class="n">Total</th><th class="n">Still owed</th></tr></thead><tbody>${notes}</tbody></table></div>
+    <div class="sec">History</div>
+    <div class="trail">${trail.map(([t, w, g]) => `<div class="ev"><span class="d${g ? ' g' : ''}"></span>${t}<time>${fmt(w)}</time></div>`).join('')}</div>`;
+  roll(document.getElementById('owe'), rp(s.total));
+  if (!first) { h.classList.remove('enter'); void h.offsetWidth; h.classList.add('enter'); }
+}
+document.getElementById('rows').addEventListener('click', (e) => {
+  const r = e.target.closest('.r'); if (!r || +r.dataset.i === sel) return;
+  document.querySelector('#rows .r.sel')?.classList.remove('sel'); r.classList.add('sel');
+  sel = +r.dataset.i; hand(false);
+});
+
+/* tabs */
+document.querySelectorAll('.pcwrap .tab').forEach((t) => t.addEventListener('click', () => {
+  document.querySelectorAll('.pcwrap .tab').forEach((x) => x.classList.toggle('on', x === t));
+  document.querySelectorAll('.pcwrap .pane').forEach((p) => p.classList.toggle('on', p.id === 'p-' + t.dataset.p));
+}));
+document.getElementById('psrows').innerHTML = SHOPS.map((s) => {
+  const goods = {}; s.notes.forEach((n) => n.items.forEach((it) => { goods[it[0]] = (goods[it[0]] || 0) + it[1]; }));
+  const val = s.notes.reduce((a, n) => a + n.total, 0);
+  return `<tr><td><b>${s.name}</b><div class="it">${s.where}</div></td><td>${s.man}</td><td>${Object.entries(goods).map(([k, q]) => `${P[k][0]} × ${q}`).join(' · ')}</td><td class="n">${s.bks.toLocaleString('id-ID')}</td><td class="n">${rp(val)}</td></tr>`;
+}).join('');
+const allBks = SHOPS.reduce((a, s) => a + s.bks, 0);
+document.getElementById('psb').textContent = allBks.toLocaleString('id-ID') + ' Bks';
+document.getElementById('psm').textContent = `${SHOPS.length} shops · counted at the shop's price`;
+document.getElementById('horows').innerHTML = HANDOFFS.map(([shop, a, b, q, t]) => `
+  <tr><td><b>${shop}</b></td><td>${a} → ${b}</td><td class="n">${q}</td><td>${t}</td>
+  <td class="n"><button class="btn quiet sm" data-t="Decline: the shop stays with ${a}.">Decline</button> <button class="btn edge sm" data-t="Accept: ${shop} and its goods move to ${b}.">Accept</button></td></tr>`).join('');
+
+/* phone */
+let psel = 0;
+function phone() {
+  document.getElementById('prows').innerHTML = SHOPS.map((s, i) => `
+    <div class="pr${i === psel ? ' sel' : ''}" data-i="${i}">
+      <div class="who"><span class="av">${ini(s.name)}</span><span style="min-width:0"><div class="nm">${s.name}</div><div class="mt">${s.man} · ${when(s)}</div></span></div>
+      <div class="rt"><span class="amt num">${rp(s.total)}</span><span class="st ${s.state}">${WORD[s.state]}</span></div>
+    </div>
+    ${i === psel ? `<div class="po">
+      ${s.notes.filter((n) => n.left > 0).map((n) => `<div class="row"><span>${n.no} · ${fmt(n.date)}</span><b class="num">${rp(n.left)}</b></div>`).join('')}
+      <div class="btns"><button class="btn quiet sm" data-t="Receipt opens here."><svg class="i"><use href="#prn"/></svg></button><button class="btn quiet sm" data-t="Add Goods opens here.">Add Goods</button><button class="btn quiet sm" data-t="Hand-off opens here.">Hand-off</button></div>
+      <button class="btn edge" style="height:44px" data-t="Store Audit opens here: count what is left, the rest is paid."><svg class="i"><use href="#audit"/></svg>Store Audit &amp; Settle</button>
+    </div>` : ''}`).join('');
+}
+document.getElementById('prows').addEventListener('click', (e) => {
+  if (e.target.closest('.btn')) return;
+  const r = e.target.closest('.pr'); if (!r) return;
+  psel = +r.dataset.i === psel ? -1 : +r.dataset.i; phone();
+});
+
+/* every press reports (his rule): picture only, so it says what would open */
+let tm;
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-t]'); if (!b) return;
+  document.getElementById('tt').textContent = b.dataset.t;
+  const t = document.getElementById('toast'); t.classList.add('on');
+  clearTimeout(tm); tm = setTimeout(() => t.classList.remove('on'), 2600);
+});
+
+roll(document.getElementById('tot'), rp(sum()));
+document.getElementById('totm').textContent = `${SHOPS.length} shops owe · ${cnt('bad')} overdue`;
+aging('b-', 'leg'); rows(); hand(true);
+roll(document.getElementById('ptot'), rp(sum()));
+aging('pb-', 'pleg'); phone();
+</script>
