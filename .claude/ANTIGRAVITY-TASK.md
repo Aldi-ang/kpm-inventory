@@ -1681,11 +1681,46 @@ Done when: the file exists, opens with no script, the arithmetic comment is ther
 **Claude review 2026-11-17 13:10 WIB:** 31 + 32 read (task file only). 33 read whole: Submit to HQ fine; but the Receivables tab strip came out mixed - A/R Financials edge-styled while Physical Stock / Hand-offs still filled `bg-blue-500` / `bg-indigo-500` when active (blue also breaks the palette law). Claude converted those two the same way and tightened your check (>= 3 `kpm-edge-btn` + no blue/indigo active fill), red-then-green. Lesson for every BUILD: a tab strip / segmented control is ONE unit - convert every tab of it or none, and grep the same element for `bg-blue-|bg-indigo-|bg-green-|bg-emerald-` too (palette law: no blue, no green).
 
 ## Task 35 - the same map for Audit Logs (segment 11 of 12)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 13:10 WIB, by Claude. Same rules as above (read-only, touch only this file). Do it AFTER Task 34.
 
 Exactly Task 20's four tables for the `activeTab === 'audit'` screen (App.jsx ~L5694 - find the component it renders and map that file). Every press that writes gets **Yes** with collection + field (expect very few: it is a log). Demo guide marks; selfcheck pins on the file; the filled-button list with file:line (`bg-gold`, `bg-[var(--gold)]`, `bg-orange-*`, `bg-amber-*`, `from-amber-*`, AND `bg-blue-*` / `bg-indigo-*` / `bg-green-*` / `bg-emerald-*` - palette law). Also: how many log rows it loads at once and from which query (file:line) - a professional log list needs paging or a limit, say which it has.
 Do NOT change the code. Done when: four tables + filled-button list + the loading answer in the Result.
+
+**Result:** Component rendered at `src/App.jsx:5694-5696` is `AuditVaultView` (`src/components/AuditVaultView.jsx`).
+
+### 1. Every view / modal / drawer
+| view / modal | PC vs phone | what is on it | state / props that control it | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| Audit Vault folder browser (`!path.day`) | Both (2/4/6-col grid) | Header (`Audit Vault`), breadcrumb (`VAULT / year / month / day`), Year folders (`2025` to `currentYear+3`), Month folders (`01`–`12`), Day folders (`01`–`31`) | `path` (`{ year, month, day }`), `years`, `months`, `days` | `src/components/AuditVaultView.jsx:18-25, 91-132` |
+| Day Log List (`path.day`) | Both | Loading state (`Decrypting Sector`), log rows (`action`, `REMOTE SNAPSHOT LOADED` pill if `snapshotId`, `details`, `Revert` button if `log.snapshotId && isAdmin`, `timeStr`), or `Sector Empty` | `path.day`, `loading`, `logs`, `isAdmin` | `src/components/AuditVaultView.jsx:69-85, 135-173` |
+| Recent System Activity table | Both | Table (`Action`, `Details`, `Time`) showing `auditLogs.slice(0, 8)` | `auditLogs` (from `App.jsx` / `useDatabaseSync.js`) | `src/components/AuditVaultView.jsx:176-200` |
+
+### 2. Every press & what it writes
+| control / press | handler called | writes (Firestore + local state) | moves stock or money / Firestore write? | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| Breadcrumb (`VAULT` / year / month) & folder buttons (Year / Month / Day) | `setPath(...)` | Local `path` state; when `path.day` is set, subscribes `onSnapshot` to `audit_vault/${dateKey}/logs` | No | `src/components/AuditVaultView.jsx:69-85, 103-131` |
+| `Revert` button (`log.snapshotId && isAdmin`) | `handleRestoreFromSnapshot(log)` | Confirms, downloads JSON snapshot from Firebase Storage (`logEntry.snapshotPath`), calls `logAudit("PRE_REVERT_SAFETY", ..., true)`, then `commitInChunks` (`set`) overwriting `artifacts/${appId}/users/${masterUid}/products/${item.id}` (`snapshot.inventory`) and `customers/${c.id}` (`snapshot.customers`), sets `backupToast(true)` and reloads page | **Yes — overwrites `products` (all fields incl. `stock`/`damagedStock`) and `customers` (all fields) from snapshot, plus writes `audit_logs`/`audit_vault`** | `src/components/AuditVaultView.jsx:27-67, 160-165` |
+
+### 3. Logic computed inside JSX / render
+| computation | what it computes | file:line |
+| :--- | :--- | :--- |
+| `years` / `months` / `days` / `formatM` | Static calendar arrays (`START_YEAR = 2025` .. `+3` yrs, 12 months, 31 days) and locale month label | `src/components/AuditVaultView.jsx:18-25, 87` |
+| `auditLogs.slice(0, 8)` & timestamp | Slices newest 8 `auditLogs` and formats `timestamp.seconds * 1000` via `toLocaleTimeString()` | `src/components/AuditVaultView.jsx:188-194` |
+
+### 4. What can move out first & test pins
+| candidate to extract | safe to move first? | `logicFixes.selfcheck.mjs` / `integration.audit.mjs` exact line pins |
+| :--- | :--- | :--- |
+| Folder grid, Day log list, Recent activity table | **Yes** — preserve `lazy(() => import('./components/AuditVaultView'))` in `App.jsx` and `<AuditVaultView` singleton mount | `logicFixes.selfcheck.mjs`: `9815-9816`, `9819`; `integration.audit.mjs`: `3406`, `3417` |
+
+### 5. Demo guide marks, filled buttons, and log loading
+- **Demo guide marks (`data-mission=` / `data-guide=` / `data-mark=`):** none in `src/components/AuditVaultView.jsx`.
+- **Filled buttons (`bg-gold`, `bg-[var(--gold)]`, `bg-orange-*`, `bg-amber-*`, `from-amber-*`, `bg-blue-*`, `bg-indigo-*`, `bg-green-*`, `bg-emerald-*`):**
+  - `src/components/AuditVaultView.jsx:160-165` — **FILLED BUTTON**: `Revert` `<button>` (`bg-[var(--gold)] text-[var(--gold-ink)] border border-[var(--accent-edge)]`).
+  - *(Non-button hit: `L150` `REMOTE SNAPSHOT LOADED` pill `<span>` uses `bg-[var(--gold)] text-[var(--gold-ink)]`.)*
+- **How many log rows it loads at once & from which query:**
+  - **Day Log List (`AuditVaultView.jsx:73-77`):** `onSnapshot(query(collection(db, 'artifacts/${appId}/users/${user.uid}/audit_vault/${dateKey}/logs'), orderBy('timestamp', 'desc')))` — **no `limit()` and no paging**; loads every log document for that `dateKey` at once.
+  - **Recent System Activity (`AuditVaultView.jsx:188`, `src/hooks/useDatabaseSync.js:100`):** `auditLogs` is subscribed via `onSnapshot(query(collection(db, basePath, 'audit_logs'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')))` — **no `limit()`** (loads all `audit_logs` from the last 7 days), then JSX renders `auditLogs.slice(0, 8)`.
 
 ## Task 36 - the same map for Settings (segment 12 of 12)
 **Status:** OPEN
