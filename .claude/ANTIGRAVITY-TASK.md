@@ -2082,7 +2082,7 @@ Where every Task 36 element sits in `.claude/drafts/settings-pro.html`:
 - **Code defaults HTML comment**: inside PC `.hand .in .div`, citing `src/components/SettingsView.jsx:6, 65-67, 85-88, 190, 207, 326, 347, 590, 627, 678, 785, 793, 1017, 1032, 1273-1290, 1530-1546`.
 
 ## Task 48 - check the Reports, Customers, Sampling and Command Center pictures (40-43) before Aldi sees them
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 15:18 WIB, by Claude. READ-ONLY review - touches nothing but this file.
 **Touch only:** this file.
 
@@ -2093,10 +2093,77 @@ All 12 pictures now exist. Before Claude shows one to Aldi it must be RIGHT. For
 4. The v4 look (read "THE LOOK HE PICKED" above Task 40): 13-14 px text, 44 px rows, no filled amber button, one summary line (no giant hero number), drawn SVG icons, no `<script>`.
 **Result:** one table per picture: Check | Finding or "fine" | file:line or seed path | Severity (WRONG NUMBER / WRONG BADGE / MISSING / LOOK). Count per severity on top.
 
+**Counts:** WRONG NUMBER: 2 | WRONG BADGE: 1 | MISSING: 2 | LOOK: 0
+
+### 1. `.claude/drafts/reports-pro.html`
+| Check | Finding or "fine" | file:line or seed path | Severity |
+| :--- | :--- | :--- | :--- |
+| Numbers & arithmetic | Fine: `1,350,000 + 510,000 + 340,000 - 85,000 + 635,000 = Rp 2,750,000`; seed product names & `priceDistributor` (`10.000`, `7.000`, `8.500`); example tx marked `(example)` | `demo/seed.json` `inventory`/`customers`, `.claude/drafts/reports-pro.html:165-173` | — |
+| Badges / states | Fine: `SALE`, `RETUR`, `AUDIT`, `Attached`, `Verified`, `Cash` match example tx rows | `.claude/drafts/reports-pro.html:136-140, 160-163` | — |
+| Task 24 PC vs Phone | Period picker (`Daily ▾`) and Date picker (`2026-11-17`) are on PC `.ctl` but omitted from Phone 1 & Phone 2 headers | `.claude/drafts/reports-pro.html:119-120, 190-217` | MISSING |
+| v4 look | Fine: 13–14 px text, 44 px `.r` rows, `.btn` edge buttons, 1 summary line, `<symbol>` SVG icons, zero `<script>` | `.claude/drafts/reports-pro.html:54, 102-109` | — |
+
+### 2. `.claude/drafts/customers-pro.html`
+| Check | Finding or "fine" | file:line or seed path | Severity |
+| :--- | :--- | :--- | :--- |
+| Numbers & arithmetic | Fine: `152` customers, `0` `PENDING`, `1` `Epic` (`HQ TEST`), `1` `Grosir` (`HQ (RETAIL) 1`), `visitFreq: 7` (`Asyifa Mart Madura`) all match `demo/seed.json` | `demo/seed.json` `customers`, `.claude/drafts/customers-pro.html:116-127` | — |
+| Badges / states | Fine: `0` `lastVisit` in seed -> `!last` returns `'overdue'` for all 8 on `2026-11-17`; `HQ (RETAIL) 1` `PENDING (ex)` labelled `(ex)` | `src/MapMissionControl.jsx:1887-1904`, `src/components/CustomerManager.jsx:1330` | — |
+| Task 25 PC vs Phone | `Admin Tools` (`Repair Tiers`, `Find Duplicates`, `Data Scrub`, `Import KML`) and `Verify NOO` button are on PC but not shown on Phone 1/2 | `.claude/drafts/customers-pro.html:118, 224, 240-289` | MISSING |
+| v4 look | Fine: 13.5 px text, 2-line `.r` rows (> 44 px), `.btn` edge buttons, 1 summary line, `<symbol>` SVG icons, zero `<script>` | `.claude/drafts/customers-pro.html:49, 100-108` | — |
+
+### 3. `.claude/drafts/sampling-pro.html`
+| Check | Finding or "fine" | file:line or seed path | Severity |
+| :--- | :--- | :--- | :--- |
+| Numbers & arithmetic (Run & Burn) | Fine: `12.5*10,000 + 10*8,500 + 8.5*7,000 = 269,500`; `+ 127,500 + 70,000 = Rp 467,000`; `31 + 15 + 10 = 56 Bks`; `32 + 15 + 10 = 57` Pita Cukai | `demo/seed.json` `inventory`, `.claude/drafts/sampling-pro.html:164-179` | — |
+| Numbers & arithmetic (Phone 2 Potential Value) | Phone 2 prints `Ecer: Rp 595.750` and `Retail: Rp 522.500`; actual sums from seed prices (`12.5*12500 + 10*10500 + 8.5*9500 + 15*10500 + 10*9500`) are **`Ecer: Rp 594.500`** and **`Retail: Rp 523.000`** (`Grosir: Rp 495.000` is exact) | `demo/seed.json` `inventory`, `.claude/drafts/sampling-pro.html:229` | WRONG NUMBER (×2) |
+| Badges / states | Fine: `Deducts Stock` / `Restores Stock` match `SamplingManager.jsx` transactions | `src/components/SamplingManager.jsx:232-248, 399, 526-541` | — |
+| Task 26 PC vs Phone & v4 look | Fine: Folders, Analytics, Sample Cart, Edit/Delete/Add on both PC & Phones; 13–14 px, `.btn` edge, 1 summary line, `<symbol>` SVGs, zero `<script>` | `.claude/drafts/sampling-pro.html:113-242` | — |
+
+### 4. `.claude/drafts/command-center-pro.html`
+| Check | Finding or "fine" | file:line or seed path | Severity |
+| :--- | :--- | :--- | :--- |
+| Numbers & arithmetic | Fine: `Rp 82.860.000` lab omset; Regions `41,430,000 + 20,715,000 + 12,429,000 + 8,286,000 = 82,860,000`; Leaderboard `38,000,000 + 26,860,000 + 18,000,000 = 82,860,000` (`42 tx`); `Cello Chocolate` `10.3% + 2.1% + 87.6% = 100%` | `demo/seed.json` `inventory`, `.claude/drafts/command-center-pro.html:155-164` | — |
+| Badges / states | `Stok Kritis` flags `Cello Coffee & Caramel kretek` (`593 Bks`, `minStock: 10`). With 30-day velocity `360 Bks` (`12/day`), `daysOfCover = 49.4d` (not critical); only critical if `360 Bks` is `Today` (`1.6d` cover) | `src/components/DashboardView.jsx:78-106`, `demo/seed.json`, `.claude/drafts/command-center-pro.html:118-119` | WRONG BADGE |
+| Task 27 PC vs Phone & v4 look | Fine: All 6 panels (`Live Financial Matrix`, `Stok Kritis`, `Perputaran`, `Kinerja Regional`, `Distribusi`, `Leaderboard`) on PC & Phones; no giant hero number, 1 summary line, bars from `0`, zero `<script>` | `.claude/drafts/command-center-pro.html:92-224` | — |
+
 ## Task 49 - the same check for Map System, Agent Profile, Audit Logs and Settings (44-47)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 15:18 WIB, by Claude. Do it AFTER Task 48. READ-ONLY.
 **Touch only:** this file.
 
 Same four checks as Task 48, for `map-system-pro.html` (map Task 31), `agent-profile-pro.html` (Task 32; also: every piece of game art still there), `audit-logs-pro.html` (Task 35), `settings-pro.html` (Task 36; also: every default value in its comment matches the code at the file:line it names).
 **Result:** same table shape, one per picture.
+
+**Counts:** WRONG NUMBER: 0 | WRONG BADGE: 0 | MISSING: 3 | LOOK: 0
+
+### 1. `.claude/drafts/map-system-pro.html`
+| Check | Finding or "fine" | file:line or seed path | Severity |
+| :--- | :--- | :--- | :--- |
+| Numbers & arithmetic | Fine: `152` shops (`demo/seed.json`), `1` `Epic` (`HQ TEST`), `151` `Unranked`, `Rp 82.860.000` lab | `demo/seed.json` `customers`, `.claude/drafts/map-system-pro.html:103-114` | — |
+| Badges / states | Fine: `0` `lastVisit` in seed -> `mapPoints` returns `'overdue'` for all 6 shops on `2026-11-17` | `src/MapMissionControl.jsx:1887-1904`, `.claude/drafts/map-system-pro.html:148-158` | — |
+| Task 31 PC vs Phone | `ZoneHUD`, `.ms-totals` summary strip, `Boss tools` (`⋯`), and `Delete this shop` are on PC but omitted from Phone 1/2 | `.claude/drafts/map-system-pro.html:103, 126, 147, 162, 168-229` | MISSING |
+| v4 look | Fine: Leaflet untouched as plain `"map"` rectangle, 13–14 px text, `.btn` edge buttons, zero `<script>` | `.claude/drafts/map-system-pro.html:129, 175` | — |
+
+### 2. `.claude/drafts/agent-profile-pro.html`
+| Check | Finding or "fine" | file:line or seed path | Severity |
+| :--- | :--- | :--- | :--- |
+| Numbers & arithmetic | Fine: `24,500,000 + 58,360,000 = Rp 82,860,000`; 5 `demoLogins.js` agents sum `82.86 + 18.4 + 12.6 + 9.5 + 4.2 = Rp 127,560,000` | `src/config/demoLogins.js:24-30`, `.claude/drafts/agent-profile-pro.html:194-200` | — |
+| Game art & badges | Fine: `RankBorder` (`.av-mini`, `.av-lg`), `PlayerCardHead` XP bar, `corpIdentity` (`T2 · Master Owner`), `San Andreas` plate, `Regional MVP` trophy, `AchievementCard`s all present | `.claude/drafts/agent-profile-pro.html:114-193` | — |
+| Task 32 PC vs Phone | `Timeline Analytics` (`1W · 1M · 1Y` bar chart) is on PC but omitted from Phone 1/2 | `.claude/drafts/agent-profile-pro.html:178-186, 206-252` | MISSING |
+| v4 look | Fine: quiet tab strip (no filled amber `Leaderboard`), 1 summary line, no giant hero number, zero `<script>` | `.claude/drafts/agent-profile-pro.html:99-105, 139-144` | — |
+
+### 3. `.claude/drafts/audit-logs-pro.html`
+| Check | Finding or "fine" | file:line or seed path | Severity |
+| :--- | :--- | :--- | :--- |
+| Numbers & arithmetic | Fine: `10,165 - 4 = 10,161 Bks`; 5 example rows use `src/config/demoLogins.js` names | `src/config/demoLogins.js:24-30`, `.claude/drafts/audit-logs-pro.html:127-146` | — |
+| Badges / states | Fine: `REMOTE SNAPSHOT LOADED` and admin `Revert to Snapshot` match `AuditVaultView.jsx:150-165` | `src/components/AuditVaultView.jsx:150-165` | — |
+| Task 35 PC vs Phone | Fine: Filter bar, `Export`, `Day Logs`, `Vault Folders` (`2025–2029`), `Recent Activity (7d)`, and `Revert` `.btn danger` on both PC & Phones | `.claude/drafts/audit-logs-pro.html:104-209` | — |
+| v4 look | Fine: `min-height:44px` rows, 13–14 px text, no filled amber `Revert`, `<symbol>` SVGs, zero `<script>` | `.claude/drafts/audit-logs-pro.html:47, 89-93` | — |
+
+### 4. `.claude/drafts/settings-pro.html`
+| Check | Finding or "fine" | file:line or seed path | Severity |
+| :--- | :--- | :--- | :--- |
+| Defaults comment vs code | Fine: all 12 defaults (`Lite=false`, `lang='en'`, `opnameDay=null`, `masterVaultPlace=''`, `cukaiReturn=true`, `cukaiFinePrice=5000`, `penaltyPriceTier='Retail'`, `DEFAULT_BUFFER_DAYS=3`, `mascotScale=1`, `enableFleetPaintbrush=true`, `useCareerLedger=false`, `usePhotoStorage=false`) match exact cited lines | `src/components/SettingsView.jsx:6,65-67,85-88,190,207,326,347,590,627,678,785,793,1017,1032,1273-1290,1530-1546`, `src/utils/supply.js:328` | — |
+| Badges / states | Fine: `Tier 1 (Overseer)`, `Lite Mode` ("gives up motion, never colour"), look-and-feel separated from money/role rules by `.div` | `.claude/drafts/settings-pro.html:88, 104-129` | — |
+| Task 36 PC vs Phone | `Letterhead/Signature/Bank/Watermark`, `Spare days on a restock`, `Stock Opname day`, `Where the Master Vault is`, and `Rebuild sales totals` are on PC but omitted from Phone 1/2 | `.claude/drafts/settings-pro.html:113-130, 152-208` | MISSING |
+| v4 look | Fine: 1 unified `.sw` switch style, `min-height:44px` rows, 13.5 px text, zero `<script>`, no filled amber button | `.claude/drafts/settings-pro.html:37, 55-57` | — |
