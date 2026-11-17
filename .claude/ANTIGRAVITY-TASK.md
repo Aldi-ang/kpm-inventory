@@ -1651,7 +1651,7 @@ Done when: the four BUILD checks are green, the list with verdicts and the red-t
   4. `node src/config/integration.audit.mjs`: `725 passed, 0 failed, 725 checks`
 
 ## Task 34 - DO THIS ONE FIRST: draft the Stock Opname picture (segment 3) for Claude to check
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 12:55 WIB, by Claude. Writes ONE new file - not an app BUILD. Do it BEFORE Tasks 31-33.
 **Touch only:** `.claude/drafts/stock-opname-pro.html` (new), this file.
 
@@ -1665,6 +1665,17 @@ Aldi, 2026-11-17 12:50: *"restock vault is professional enough we can skip that 
 - Buttons look like `.kpm-edge-btn` (`.quiet` secondary, `.danger` for reject/delete). NO amber fill anywhere: `rg "bg-gold|--gold\)|orange|amber" .claude/drafts/stock-opname-pro.html` must show only the token lines and the 11% hover wash.
 - Mark which visible words are Indonesian vs English today and keep each as today (the language switch is a later job).
 Done when: the file exists, opens with no script, the arithmetic comment is there, and the Result lists every Task 22 element with where it sits on the picture (PC / phone 1 / phone 2 / the note line).
+
+**Result:**
+- Created `.claude/drafts/stock-opname-pro.html` (static HTML, zero `<script>` tags, `.kpm-edge-btn` buttons with zero amber fill — `rg "bg-gold|--gold\)|orange|amber"` shows only `--gold` token/11% wash/bar/tab-border lines; real `demo/seed.json` inventory + `expectedOf`/`getVariance`/`VARIANCE_TOLERANCE_BKS` arithmetic HTML comment citing `src/StockOpnameView.jsx:112-113, 622-634`).
+- **Every Task 22 element & where it sits:**
+  - **4 underline tabs (`Monitor`, `HQ Audits` + count `2`, `Quarantine`, `New Count`):** top tab strip in PC, Phone 1, and Phone 2.
+  - **Weekly banner (`data-guide="week-count"`), search (`Cari barang...`), `4 of 6 counted`:** top of `New Count` worksheet in PC and Phone 1.
+  - **Product rows (`Good stock` + `Damaged`, `data-guide="good"`, `data-half`):** PC & Phone 1 show revealed variance + cause reel (`Cello Chocolate`: `-5 Bks`, `Miscount`), damage > 0 kind panel + `Upload Damaged Proof` (`Cello Coffee & Caramel kretek`: `+3 Bks`), half-filled `data-half` (`Cello Green`), and matched `Clear and count again` (`Cello Mmrapi`, PC).
+  - **Footer (`Reset`, `Submit to HQ` `data-guide="submit-count"`, uncounted list):** pinned bottom bar in PC and Phone 1.
+  - **`Monitor` (facility `<select>` + 2 product cards with `Vault / Initial`, `Field`, `Sold today`, `Damaged`, `Low`/`Healthy` badge, 4-segment bar):** Phone 2.
+  - **`Review` (worklist accept/reject, history, Put back), `Quarantine` (crates, `Sunk Capital`, `Execute Protocol`), god-mode Vault edit:** named in the one-line `.note` above the phone frames ("same tab, restyled").
+- **Language check (kept as today):** Search placeholder `Cari barang...` is Indonesian; all other UI labels (`Monitor`, `HQ Audits`, `Quarantine`, `New Count`, `Weekly Count`, `Good stock`, `Damaged`, `Expected good`, `Clear and count again`, `Upload Damaged Proof`, `What kind of damage?`, `Reset`, `Submit to HQ`, `Vault`, `Initial`, `Field`, `Sold today`, `Low`, `Healthy`) are English.
 
 ---
 **Claude review 2026-11-17 13:10 WIB:** 31 + 32 read (task file only). 33 read whole: Submit to HQ fine; but the Receivables tab strip came out mixed - A/R Financials edge-styled while Physical Stock / Hand-offs still filled `bg-blue-500` / `bg-indigo-500` when active (blue also breaks the palette law). Claude converted those two the same way and tightened your check (>= 3 `kpm-edge-btn` + no blue/indigo active fill), red-then-green. Lesson for every BUILD: a tab strip / segmented control is ONE unit - convert every tab of it or none, and grep the same element for `bg-blue-|bg-indigo-|bg-green-|bg-emerald-` too (palette law: no blue, no green).

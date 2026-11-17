@@ -1,0 +1,361 @@
+<title>Stock Opname, professional</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+/* layout: the picture = PC frame on top (New Count), two phone frames under it (New Count stacked, Monitor); KPM professional tokens (theme.css) */
+:root{
+  --ground:#D2C9B4;--panel:#E1DAC8;--inset:#D9D1BD;--line:#6E6A64;--line-2:#5E5A55;--hair:rgba(19,18,17,.14);
+  --ink:#131211;--ink-muted:#3A3733;--ink-dim:#3F3B36;--gold:#1B1917;--gold-ink:#F7F3E9;--accent-ink:#4F3603;--accent-edge:#6E5116;--danger-ink:#611A14;
+  --page:#C9C0AA;--sel:rgba(79,54,3,.10);
+  --f:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0A0908;--panel:#121110;--inset:#0E0D0C;--line:#26231F;--line-2:#3E3A35;--hair:rgba(232,228,222,.08);
+  --ink:#E8E4DE;--ink-muted:#A39B90;--ink-dim:#928B81;--gold:#D08A2E;--gold-ink:#0A0908;--accent-ink:#D08A2E;--accent-edge:#9C6924;--danger-ink:#E08C82;
+  --page:#050504;--sel:rgba(208,138,46,.09);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ground:#0A0908;--panel:#121110;--inset:#0E0D0C;--line:#26231F;--line-2:#3E3A35;--hair:rgba(232,228,222,.08);
+  --ink:#E8E4DE;--ink-muted:#A39B90;--ink-dim:#928B81;--gold:#D08A2E;--gold-ink:#0A0908;--accent-ink:#D08A2E;--accent-edge:#9C6924;--danger-ink:#E08C82;
+  --page:#050504;--sel:rgba(208,138,46,.09);color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:13.5px/1.45 var(--f);font-variant-numeric:tabular-nums;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.cap{max-width:1180px;margin:0 auto 10px;color:var(--ink-muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.note{max-width:1180px;margin:0 auto 22px;color:var(--ink-muted);font-size:13px}
+.note b{color:var(--ink)}
+.frame{background:var(--ground);border:1px solid var(--line-2);margin:0 auto}
+.pc{max-width:1180px;height:820px;display:flex;flex-direction:column;overflow:hidden}
+.phones{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;max-width:1180px;margin:0 auto}
+.phone{width:390px;max-width:100%;height:840px;overflow:hidden;display:flex;flex-direction:column;border-radius:18px}
+
+/* THE PROFESSIONAL BUTTON (.kpm-edge-btn from theme.css — no solid fill anywhere) */
+.kpm-edge-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 14px;border:1px solid var(--accent-edge);
+  background-color:transparent;color:var(--ink);font:600 12.5px var(--f);cursor:pointer;white-space:nowrap;
+  transition:background-color .16s ease,border-color .16s ease,scale .12s ease}
+.kpm-edge-btn:hover{background-color:color-mix(in srgb,var(--gold) 11%,transparent);border-color:var(--accent-ink)}
+.kpm-edge-btn:active{scale:.97}
+.kpm-edge-btn.quiet{border-color:var(--line-2)}
+.kpm-edge-btn.quiet:hover{border-color:var(--accent-edge)}
+.kpm-edge-btn.danger{border-color:var(--line-2);color:var(--danger-ink)}
+.kpm-edge-btn.danger:hover{border-color:var(--danger-ink);background-color:color-mix(in srgb,var(--danger-ink) 9%,transparent)}
+
+/* header & underline tabs */
+.hd{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--line-2)}
+.hd h1{margin:0;font-size:16px;font-weight:700}
+.hd .sum{color:var(--ink-dim);font-size:12px}
+.sp{flex:1}
+.tabs{display:flex;flex-wrap:wrap;gap:0 18px;padding:0 20px;border-bottom:1px solid var(--line-2)}
+.tab{padding:10px 0 9px;margin-bottom:-1px;border-bottom:2px solid transparent;font-size:13px;font-weight:600;color:var(--ink-dim);white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.tab b{font-weight:700;font-size:11px;padding:1px 6px;border:1px solid var(--line-2);color:var(--accent-ink)}
+.tab.on{color:var(--ink);border-color:var(--gold)}
+
+/* worksheet body */
+.scroll{flex:1;overflow:auto;padding:14px 20px;display:flex;flex-direction:column;gap:12px}
+.banner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border:1px solid var(--line-2);background:var(--panel);font-size:12px}
+.banner .tag{font-weight:700;color:var(--accent-ink);text-transform:uppercase;letter-spacing:.05em;font-size:11px}
+.toolbar{display:flex;align-items:center;gap:10px}
+.search{display:flex;align-items:center;gap:8px;height:34px;flex:1;padding:0 10px;border:1px solid var(--line-2);background:var(--inset);color:var(--ink-dim);font-size:12.5px}
+.inp{height:34px;padding:0 10px;border:1px solid var(--line-2);background:var(--inset);display:flex;align-items:center;justify-content:space-between;font-size:12.5px}
+
+/* product count rows */
+.rows{display:flex;flex-direction:column;gap:10px}
+.row{border:1px solid var(--line-2);background:var(--panel);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.row.half{border-color:var(--accent-edge);box-shadow:inset 2px 0 0 var(--gold)}
+.row.bad{border-left:3px solid var(--danger-ink)}
+.row-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.pname{flex:1;min-width:180px}
+.pname b{display:block;font-size:13.5px;font-weight:700}
+.pname small{display:block;font-size:11.5px;color:var(--ink-dim);margin-top:2px}
+.boxes{display:flex;align-items:end;gap:10px}
+.fld label{display:block;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:4px}
+.box{width:104px;height:34px;padding:0 10px;border:1px solid var(--line-2);background:var(--inset);display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:13px}
+.box.empty{border-color:var(--accent-edge);color:var(--ink-dim);font-weight:500}
+.box small{font-size:11px;font-weight:500;color:var(--ink-dim)}
+
+/* revealed verdict & panels */
+.verdict{border-top:1px solid var(--hair);padding-top:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:center}
+.verdict .cell small{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-dim)}
+.verdict .cell b{font-size:13px;font-weight:700}
+.verdict .cell b.bad{color:var(--danger-ink)}
+.verdict .cell b.ok{color:var(--accent-ink)}
+.reel{display:flex;align-items:center;gap:6px;flex-wrap:wrap;grid-column:1 / -1;padding-top:4px}
+.reel span.lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-dim);margin-right:4px}
+.chip{padding:4px 9px;border:1px solid var(--line-2);font-size:11.5px;color:var(--ink-muted);background:var(--inset)}
+.chip.on{border-color:var(--accent-edge);color:var(--ink);background:var(--sel);font-weight:600}
+
+.dmg-panel{border:1px solid var(--line-2);background:var(--inset);padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.dmg-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px}
+.dmg-grid{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dmg-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid var(--accent-edge);background:var(--panel);font-size:12px}
+
+/* monitor cards (phone 2) */
+.mcard{border:1px solid var(--line-2);background:var(--panel);padding:12px;display:flex;flex-direction:column;gap:10px}
+.mhead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.mbadge{padding:2px 7px;border:1px solid var(--line-2);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.mbadge.low{border-color:var(--danger-ink);color:var(--danger-ink)}
+.mbadge.ok{border-color:var(--accent-edge);color:var(--accent-ink)}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mstat{border:1px solid var(--hair);background:var(--inset);padding:7px 9px}
+.mstat small{display:block;font-size:10.5px;text-transform:uppercase;color:var(--ink-dim)}
+.mstat strong{font-size:13.5px;font-weight:700}
+.sbar{height:5px;background:var(--inset);display:flex;overflow:hidden;border:1px solid var(--hair)}
+.sbar i{display:block;height:100%}
+
+/* footer */
+.foot{border-top:1px solid var(--line-2);background:var(--panel);padding:10px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.foot .info{font-size:12px;color:var(--ink-muted);flex:1;min-width:200px}
+
+/* phone */
+.st{height:24px;display:flex;justify-content:space-between;align-items:center;padding:0 16px;font-size:11px;color:var(--ink-dim)}
+.phone .hd{padding:10px 14px}
+.phone .tabs{padding:0 14px;gap:0 12px}
+.phone .tab{font-size:12px}
+.phone .scroll{padding:10px 14px;gap:10px}
+.phone .kpm-edge-btn{height:38px}
+.phone .boxes{width:100%}
+.phone .box{width:100%}
+.phone .boxes>.fld{flex:1}
+.phone .verdict{grid-template-columns:1fr 1fr}
+.phone .foot{padding:10px 14px}
+@media (max-width:700px){.pc{display:none}.pcnote{display:block!important}}
+</style>
+
+<p class="cap">Stock Opname · new look · PC (New Count)</p>
+<p class="note">Real numbers from <b>demo/seed.json</b>. Keeps every Task 22 feature &amp; demo mark (<code>data-mission="8"</code>, <code>data-guide="count"</code>, <code>data-guide="week-count"</code>, <code>data-half</code>, <code>data-guide="good"</code>, <code>data-guide="submit-count"</code>): weekly banner, search, revealed variance + cause reel, damage &gt; 0 kind panel + Upload Damaged Proof, half-filled row, Clear and count again, and Submit to HQ footer.</p>
+<p class="note pcnote" style="display:none">Open this on the PC to see the PC frame.</p>
+
+<div class="frame pc">
+  <div class="hd">
+    <h1>Stock Opname</h1>
+    <span class="sum">Master Vault (HQ) · Physical Inventory Audit</span>
+    <span class="sp"></span>
+    <span class="sum">Hartono Susilo · T2 Owner</span>
+  </div>
+  <div class="tabs">
+    <span class="tab">Monitor</span>
+    <span class="tab">HQ Audits<b>2</b></span>
+    <span class="tab">Quarantine</span>
+    <span class="tab on">New Count</span>
+  </div>
+
+  <div class="scroll">
+    <div class="banner">
+      <span><span class="tag">Weekly Count</span> · Master Vault (HQ) · Open today (Sunday)</span>
+      <span style="color:var(--ink-dim)">Snapshot locks on first keystroke per product</span>
+    </div>
+
+    <div class="toolbar">
+      <div class="search">⌕ Cari barang...</div>
+      <span style="font-size:12px;color:var(--ink-dim)">4 of 6 counted</span>
+    </div>
+
+    <div class="rows">
+      <!-- ROW 1: revealed + confirmed variance + cause reel -->
+      <div class="row bad">
+        <div class="row-top">
+          <div class="pname"><b>Cello Chocolate</b><small>1 Karton = 600 · 1 Bal = 100 · 1 Slop = 10 Bks</small></div>
+          <div class="boxes">
+            <div class="fld"><label>Good stock (Bks)</label><div class="box">10.156 <small>Bks</small></div></div>
+            <div class="fld"><label>Damaged (Bks)</label><div class="box">0 <small>Bks</small></div></div>
+          </div>
+          <button class="kpm-edge-btn quiet">Clear and count again</button>
+        </div>
+        <div class="verdict">
+          <div class="cell"><small>Expected good</small><b>10.161 Bks</b></div>
+          <div class="cell"><small>Good difference</small><b class="bad">-5 Bks (short)</b></div>
+          <div class="cell"><small>Expected damaged</small><b>0 Bks</b></div>
+          <div class="cell"><small>Damaged difference</small><b>0 Bks (match)</b></div>
+          <div class="reel">
+            <span class="lbl">Variance cause:</span>
+            <span class="chip on">Miscount</span>
+            <span class="chip">Unrecorded sale</span>
+            <span class="chip">Breakage</span>
+            <span class="chip">Theft</span>
+            <span class="chip">Cause unknown</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 2: damage > 0 with damage-kind panel + Upload Damaged Proof -->
+      <div class="row">
+        <div class="row-top">
+          <div class="pname"><b>Cello Coffee &amp; Caramel kretek</b><small>1 Karton = 800 · 1 Bal = 200 · 1 Slop = 10 Bks</small></div>
+          <div class="boxes">
+            <div class="fld"><label>Good stock (Bks)</label><div class="box">593 <small>Bks</small></div></div>
+            <div class="fld"><label>Damaged (Bks)</label><div class="box">8 <small>Bks</small></div></div>
+          </div>
+          <button class="kpm-edge-btn quiet">Upload Damaged Proof</button>
+        </div>
+        <div class="verdict">
+          <div class="cell"><small>Expected good</small><b>593 Bks</b></div>
+          <div class="cell"><small>Good difference</small><b class="ok">0 Bks (match)</b></div>
+          <div class="cell"><small>Expected damaged</small><b>5 Bks</b></div>
+          <div class="cell"><small>Damaged difference</small><b class="bad">+3 Bks new damage</b></div>
+        </div>
+        <div class="dmg-panel">
+          <div class="dmg-hd">
+            <b>What kind of damage? (+3 Bks)</b>
+            <span style="color:var(--accent-ink);font-weight:600">3 / 3 Bks allocated · ✓ Proof photo attached</span>
+          </div>
+          <div class="dmg-grid">
+            <span class="dmg-tag"><b>Torn / crushed</b> · 2 Bks</span>
+            <span class="dmg-tag"><b>Water damage</b> · 1 Bks</span>
+            <span class="chip">Expired</span>
+            <span class="chip">Pest damage</span>
+            <span class="chip">Factory defect</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 3: half-filled (data-half) -->
+      <div class="row half">
+        <div class="row-top">
+          <div class="pname"><b>Cello Green</b><small>1 Karton = 800 · 1 Bal = 200 · 1 Slop = 10 Bks · Needs Damaged box (type 0 if none)</small></div>
+          <div class="boxes">
+            <div class="fld"><label>Good stock (Bks)</label><div class="box">9.948 <small>Bks</small></div></div>
+            <div class="fld"><label>Damaged (Bks)</label><div class="box empty">0? <small>Bks</small></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 4: matched -->
+      <div class="row">
+        <div class="row-top">
+          <div class="pname"><b>Cello Mmrapi</b><small>1 Karton = 800 · 1 Bal = 200 · 1 Slop = 10 Bks</small></div>
+          <div class="boxes">
+            <div class="fld"><label>Good stock (Bks)</label><div class="box">9.845 <small>Bks</small></div></div>
+            <div class="fld"><label>Damaged (Bks)</label><div class="box">0 <small>Bks</small></div></div>
+          </div>
+          <button class="kpm-edge-btn quiet">Clear and count again</button>
+        </div>
+      </div>
+    </div>
+    <!--
+      ARITHMETIC CHECK (from demo/seed.json & src/StockOpnameView.jsx:112-113, 622-634):
+      Rule: expectedOf(item, entry) = { stock: entry.expStock ?? item.stock ?? 0, damaged: entry.expDamaged ?? item.damagedStock ?? 0 }.
+            getVariance(item) = { goodDiff: Number(entry.good||0) - target.stock, damagedDiff: Number(entry.damaged||0) - target.damaged }.
+            withinTolerance(v) = Math.abs(v) < VARIANCE_TOLERANCE_BKS (1 Bks).
+      1) Cello Chocolate: seed stock=10161, damagedStock=undefined -> target={stock:10161, damaged:0}.
+         Counted good=10156, damaged=0 -> goodDiff = 10156 - 10161 = -5 Bks (|−5| >= 1 -> variance, needs cause); damagedDiff = 0 - 0 = 0.
+      2) Cello Coffee & Caramel kretek: seed stock=593, damagedStock=5 -> target={stock:593, damaged:5}.
+         Counted good=593, damaged=8 -> goodDiff = 593 - 593 = 0; damagedDiff = 8 - 5 = +3 Bks (needs 3 Bks allocated in damage-kind panel + proof photo).
+      3) Cello Green: seed stock=9948, damagedStock=0 -> target={stock:9948, damaged:0}.
+         Counted good=9948, damaged='' (unfilled) -> halfRows=true (data-half triggers until Damaged has a number).
+      4) Cello Mmrapi: seed stock=9845, damagedStock=undefined -> target={stock:9845, damaged:0}.
+         Counted good=9845, damaged=0 -> goodDiff=0, damagedDiff=0 (withinTolerance -> Match).
+      5) Uncounted in seed.json: Cello Teh Manis (7981), American Spirit - Turquoise (1000).
+    -->
+  </div>
+
+  <div class="foot">
+    <span class="info">4 of 6 counted · Uncounted: <b>Cello Teh Manis, American Spirit - Turquoise</b></span>
+    <button class="kpm-edge-btn quiet">Reset</button>
+    <button class="kpm-edge-btn">Submit to HQ</button>
+  </div>
+</div>
+
+<p class="cap" style="margin-top:34px">Stock Opname · new look · Phone (1: New Count · 2: Monitor)</p>
+<p class="note"><b>Review</b> (worklist accept/reject, history, Put back), <b>Quarantine</b> (crates, Sunk Capital, Execute Protocol), and <b>god-mode Vault edit</b> (owner tap on Vault count in Monitor) stay in their same tabs, restyled with <code>.kpm-edge-btn</code>.</p>
+
+<div class="phones">
+  <!-- PHONE 1: New Count stacked -->
+  <div class="frame phone">
+    <div class="st"><span>09:41</span><span>5G · 92%</span></div>
+    <div class="hd">
+      <h1>Stock Opname</h1>
+      <span class="sp"></span>
+      <span class="sum">Master Vault</span>
+    </div>
+    <div class="tabs">
+      <span class="tab">Monitor</span>
+      <span class="tab">Audits<b>2</b></span>
+      <span class="tab">Quarantine</span>
+      <span class="tab on">New Count</span>
+    </div>
+    <div class="scroll">
+      <div class="banner"><span class="tag">Weekly Count</span><span>Open today</span></div>
+      <div class="search">⌕ Cari barang...</div>
+      <div class="row bad">
+        <div class="pname"><b>Cello Chocolate</b><small>Expected: 10.161 good · 0 damaged</small></div>
+        <div class="boxes">
+          <div class="fld"><label>Good stock</label><div class="box">10.156</div></div>
+          <div class="fld"><label>Damaged</label><div class="box">0</div></div>
+        </div>
+        <div class="verdict">
+          <div class="cell"><small>Good diff</small><b class="bad">-5 Bks</b></div>
+          <div class="cell"><small>Cause</small><b>Miscount</b></div>
+        </div>
+        <button class="kpm-edge-btn quiet">Clear and count again</button>
+      </div>
+      <div class="row">
+        <div class="pname"><b>Cello Coffee &amp; Caramel kretek</b><small>Expected: 593 good · 5 damaged</small></div>
+        <div class="boxes">
+          <div class="fld"><label>Good stock</label><div class="box">593</div></div>
+          <div class="fld"><label>Damaged</label><div class="box">8</div></div>
+        </div>
+        <div class="dmg-panel">
+          <div class="dmg-hd"><b>Damage kind (+3 Bks)</b><span>3/3 Bks</span></div>
+          <div class="dmg-grid"><span class="dmg-tag">Torn/crushed 2</span><span class="dmg-tag">Water 1</span></div>
+        </div>
+        <button class="kpm-edge-btn quiet">Upload Damaged Proof</button>
+      </div>
+      <div class="row half">
+        <div class="pname"><b>Cello Green</b><small>Fill Damaged (0 if none)</small></div>
+        <div class="boxes">
+          <div class="fld"><label>Good stock</label><div class="box">9.948</div></div>
+          <div class="fld"><label>Damaged</label><div class="box empty">0?</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="foot">
+      <span class="info" style="flex-basis:100%">4 of 6 counted · 2 uncounted</span>
+      <button class="kpm-edge-btn quiet">Reset</button>
+      <button class="kpm-edge-btn" style="flex:1">Submit to HQ</button>
+    </div>
+  </div>
+
+  <!-- PHONE 2: Monitor -->
+  <div class="frame phone">
+    <div class="st"><span>09:41</span><span>5G · 92%</span></div>
+    <div class="hd">
+      <h1>Stock Opname</h1>
+      <span class="sp"></span>
+      <span class="sum">T2 Owner</span>
+    </div>
+    <div class="tabs">
+      <span class="tab on">Monitor</span>
+      <span class="tab">Audits<b>2</b></span>
+      <span class="tab">Quarantine</span>
+      <span class="tab">New Count</span>
+    </div>
+    <div class="scroll">
+      <div class="fld"><label>Facility</label><div class="inp"><span>Master Vault (HQ)</span><small>▾</small></div></div>
+      <div class="mcard">
+        <div class="mhead">
+          <div><b>Cello Coffee &amp; Caramel kretek</b><div style="font-size:11px;color:var(--ink-dim)">ID: DNTG4q9y · Rp 8.500/Bks</div></div>
+          <span class="mbadge low">Low</span>
+        </div>
+        <div class="mgrid">
+          <div class="mstat"><small>Vault / Initial</small><strong>593 / 678 Bks</strong></div>
+          <div class="mstat"><small>Field (Vans)</small><strong>50 Bks</strong></div>
+          <div class="mstat"><small>Sold today</small><strong>30 Bks</strong></div>
+          <div class="mstat"><small>Damaged</small><strong style="color:var(--danger-ink)">5 Bks</strong></div>
+        </div>
+        <div class="sbar"><i style="width:87%;background:var(--gold)"></i><i style="width:7%;background:var(--accent-edge)"></i><i style="width:4%;background:var(--line)"></i><i style="width:2%;background:var(--danger-ink)"></i></div>
+      </div>
+      <div class="mcard">
+        <div class="mhead">
+          <div><b>Cello Chocolate</b><div style="font-size:11px;color:var(--ink-dim)">ID: H6CFDL0I · Rp 10.000/Bks</div></div>
+          <span class="mbadge ok">Healthy</span>
+        </div>
+        <div class="mgrid">
+          <div class="mstat"><small>Vault / Initial</small><strong>10.161 / 10.481 Bks</strong></div>
+          <div class="mstat"><small>Field (Vans)</small><strong>200 Bks</strong></div>
+          <div class="mstat"><small>Sold today</small><strong>120 Bks</strong></div>
+          <div class="mstat"><small>Damaged</small><strong>0 Bks</strong></div>
+        </div>
+        <div class="sbar"><i style="width:97%;background:var(--gold)"></i><i style="width:2%;background:var(--accent-edge)"></i><i style="width:1%;background:var(--line)"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
