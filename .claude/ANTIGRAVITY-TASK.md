@@ -2325,7 +2325,7 @@ Today every demo sale is `paymentType: 'Cash'` (`api/_demoCompany.js` ~L173, `da
 - Checks: logicFixes.selfcheck.mjs Â0 passed, 0 failed; all 14 src/config/*.selfcheck.mjs exited 0; pm run build exited 0 (.53s); integration.audit.mjs :5 passed, 0 failed.
 
 ## Task 57 - BUILD: Receivables & Consignment to the approved picture (segment 4)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 18:05 WIB, by Claude. Aldi picked the picture (v5, option C) + *"dont forget to add the agent who responsible in there as well"*. Do it after Task 55 (your line map) and 56.
 **Touch only:** `src/ConsignmentFinanceView.jsx`, `src/styles/theme.css` (only new classes), `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file.
 
@@ -2338,3 +2338,13 @@ Rebuild the look of `src/ConsignmentFinanceView.jsx` to `.claude/drafts/receivab
 Done when: `git diff` shows the debtData block and every handler unchanged (paste the command you used to prove it), every selfcheck exits 0, `npm run build` passes, `node src/config/integration.audit.mjs` passes. Commit `Antigravity: Task 57 ...`. Never push - Claude renders it in the lab and pushes.
 
 **Result:**
+- Rebuilt `src/ConsignmentFinanceView.jsx` to the v5 master-detail layout (`.kpm-ar-*` classes in `src/styles/theme.css:6446-6500`), keeping `debtData`, `customerData`, `handleAuditInput`, `submitAction`, `StatusCard`, and `{viewingReceipt && ...}` byte-identical (CRLF preserved).
+- Diff proof: `git diff -U0 src/ConsignmentFinanceView.jsx | rg -n "^@@"` shows hunks only at `9` (import `RollingNumber`), `51` (3 UI states), `363` (read-only `arView`/`activeDebtShop`/`openStoreAction`), and `931..1371` (JSX only); zero changes in `163-362` or `440-930`.
+- Task 23 elements:
+  - Header (title, as-of date, search, region, salesman autocomplete): `.kpm-ar-hd` (PC & phone).
+  - 3 underline tabs + `THE SHAKE` dot: `.kpm-ar-tabs` with `overflow-x-auto max-w-full shrink-0`.
+  - Aging summary (`RollingNumber` Outstanding + Safe/Due soon/Overdue segmented bar & clickable legend): `.kpm-ar-aging`.
+  - Master-detail A/R list (shop + area, Salesman, Owed, tempo bar, State word, sorted overdue first; opens under its own row on phone) + shop in hand (Responsible chip, `RollingNumber` Still Owed, 4 facts, Consignment Notes, History, `Receipt`, `Add Goods`, `Hand-off`, `.kpm-edge-btn` `Store Audit & Settle`): `.kpm-ar-work`.
+  - `Physical Stock` & `Hand-offs` tabs + `Receipt` modal: same tabs/modals with `.kpm-edge-btn`.
+- Added patch note line in `src/config/patchNotes.js:7` and v5 guard in `src/config/logicFixes.selfcheck.mjs:12543-12545`.
+- Checks: `logicFixes.selfcheck.mjs` `3020 passed, 0 failed`; all 14 `src/config/*.selfcheck.mjs` exited 0; `npm run build` exited 0 (`10.78s`); `integration.audit.mjs` `725 passed, 0 failed`.

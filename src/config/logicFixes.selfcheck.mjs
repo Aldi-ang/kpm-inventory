@@ -12540,7 +12540,8 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      !fill.test(soBtnCheck) && !fill.test(cfBtnCheck) &&
      (soBtnCheck.match(/className=\{?["'`]kpm-edge-btn/g) || []).length >= 1 &&
      /* the three Receivables tabs share one look: no tab fills blue/indigo/orange when active (palette law + his 11-17 call) */
-     (cfBtnCheck.match(/className=\{?["'`]kpm-edge-btn/g) || []).length >= 3 &&
+     (cfBtnCheck.match(/className=\{?["'`]kpm-edge-btn/g) || []).length >= 8 &&
+     cfBtnCheck.includes('kpm-ar-wrap') && cfBtnCheck.includes('<RollingNumber') &&
      !/bg-(blue|indigo)-500 text-white shadow-lg/.test(cfBtnCheck));
   /* his 2026-11-17 pick of picture v4: "i like this one better i think u can build it make sure the sizing is not too big on pc and
      dont forget that the rules about this stock opname will also applied here". The list + the product in hand is a NEW LAYOUT

@@ -6440,3 +6440,59 @@ html.lite-mode .kpm-ct-veil { background: rgba(5, 4, 3, .8); backdrop-filter: no
 .kpm-oc-num button:active:not(:disabled) { scale: .92; }
 .kpm-oc-num button:disabled, .kpm-oc-num input:disabled { opacity: .45; cursor: not-allowed; }
 @media (max-width: 1023px) { .kpm-oc-num { height: 52px; } .kpm-oc-num button { width: 44px; } }
+
+/* RECEIVABLES & CONSIGNMENT, PROFESSIONAL EDITION (ConsignmentFinanceView.jsx, v5 approved picture).
+   Master-detail A/R list + shop in hand, aging bar, tempo-used meter, responsible-agent chip, quiet underline tabs. */
+.kpm-ar-wrap { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; color: var(--ink); }
+.kpm-ar-hd { display: flex; align-items: center; gap: 14px; padding: 16px 22px; flex-wrap: wrap; }
+.kpm-ar-mark { width: 36px; height: 36px; border-radius: 9px; background: var(--raised); border: 1px solid var(--line-2);
+  display: grid; place-items: center; color: var(--accent-ink); flex: none; }
+.kpm-ar-tools { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.kpm-ar-field { height: 34px; padding: 0 11px; border-radius: 8px; background: var(--sunk); border: 1px solid var(--line);
+  font-size: 12.5px; color: var(--ink); display: inline-flex; align-items: center; gap: 7px; }
+.kpm-ar-tabs { display: flex; gap: 22px; padding: 0 22px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.kpm-ar-aging { display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: center; padding: 18px 22px;
+  border-bottom: 1px solid var(--line); background: var(--raised); }
+.kpm-ar-bar { display: flex; height: 7px; border-radius: 4px; overflow: hidden; background: var(--sunk); gap: 2px; }
+.kpm-ar-bar > span { display: block; height: 100%; border-radius: 2px; transition: width .5s cubic-bezier(.2,.8,.2,1); }
+.kpm-ar-leg { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 9px; font-size: 12px; color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.kpm-ar-leg button { display: inline-flex; align-items: center; gap: 6px; padding: 2px 6px; border-radius: 6px; border: 1px solid transparent; }
+.kpm-ar-leg button.on { border-color: var(--accent-edge); background: color-mix(in srgb, var(--gold) 10%, transparent); color: var(--ink); }
+.kpm-ar-work { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); min-height: 500px; }
+.kpm-ar-list { border-right: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; }
+.kpm-ar-lh, .kpm-ar-r { display: grid; grid-template-columns: minmax(0,1fr) 84px 112px 76px 78px; gap: 12px; align-items: center; padding: 0 18px; }
+.kpm-ar-lh { height: 34px; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-dim); border-bottom: 1px solid var(--line); }
+.kpm-ar-r { min-height: 56px; border-bottom: 1px solid var(--line); border-left: 2px solid transparent; width: 100%; text-align: left;
+  transition: background-color 150ms ease; }
+.kpm-ar-r:hover { background: var(--inset); }
+.kpm-ar-r.sel { background: color-mix(in srgb, var(--gold) 9%, transparent); border-left-color: var(--accent-edge); }
+.kpm-ar-av { width: 32px; height: 32px; border-radius: 8px; background: var(--sunk); border: 1px solid var(--line); display: grid; place-items: center;
+  font-size: 11px; font-weight: 700; color: var(--ink-dim); flex: none; }
+.kpm-ar-r.sel .kpm-ar-av { border-color: var(--accent-edge); color: var(--accent-ink); }
+.kpm-ar-use { display: flex; flex-direction: column; gap: 4px; }
+.kpm-ar-use .t { height: 4px; border-radius: 2px; background: var(--sunk); overflow: hidden; }
+.kpm-ar-use .t i { display: block; height: 100%; border-radius: 2px; }
+.kpm-ar-use small { font-size: 10.5px; color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.kpm-ar-st { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; font-size: 11px; font-weight: 700;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--ink-dim); white-space: nowrap; }
+.kpm-ar-st::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.kpm-ar-st.soon { color: var(--accent-ink); }
+.kpm-ar-st.bad { color: var(--danger-ink); }
+.kpm-ar-hand { display: flex; flex-direction: column; min-width: 0; }
+.kpm-ar-hin { padding: 22px 24px; display: flex; flex-direction: column; gap: 16px; flex: 1; }
+.kpm-ar-agent { display: inline-flex; align-items: center; gap: 7px; margin-top: 8px; padding: 3px 11px 3px 4px;
+  border: 1px solid var(--line-2); border-radius: 999px; font-size: 12px; color: var(--ink-dim); }
+.kpm-ar-agent b { color: var(--ink); font-weight: 600; }
+.kpm-ar-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.kpm-ar-facts > div { padding: 10px 12px; border-right: 1px solid var(--line); background: var(--raised); }
+.kpm-ar-facts > div:last-child { border-right: 0; }
+.kpm-ar-act { display: flex; align-items: center; gap: 8px; padding: 14px 24px; border-top: 1px solid var(--line); flex-wrap: wrap; background: var(--raised); }
+@media (max-width: 1023px) {
+  .kpm-ar-aging { grid-template-columns: 1fr; gap: 14px; }
+  .kpm-ar-work { grid-template-columns: 1fr; }
+  .kpm-ar-list { border-right: 0; }
+  .kpm-ar-lh { display: none; }
+  .kpm-ar-r { grid-template-columns: minmax(0,1fr) auto; padding: 10px 16px; }
+  .kpm-ar-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+html.lite-mode .kpm-ar-bar > span { transition: none; }

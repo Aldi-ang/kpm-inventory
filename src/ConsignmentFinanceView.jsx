@@ -7,6 +7,7 @@ import { confirmAction } from './components/ConfirmGate.jsx';
 import { handoffEligibility, canHandOffAcrossRegions, normalizeRegion, canApproveHandoffFrom } from './config/permissions';
 import { notify } from './components/Toast.jsx';
 import { shareReceipt } from './components/shareReceipt.js';
+import { RollingNumber } from './components/BiohazardTheme.jsx';
 
 /* 📦 THE OFFER, drawn identically wherever a hand-off is being decided. Aldi, 2026-09-07, the moment
    the approver's button finally appeared: *"please also put the store and product information so
@@ -49,6 +50,9 @@ function HandoffOffer({ r }) {
 
 export default function ConsignmentFinanceView({ transactions = [], customers = [], focusStore = null, onFocusStoreHandled, inventory = [], onAddGoods, onPayment, onReturn, onDeleteConsignment, isAdmin, user, agentProfileId, motorists = [], transferRequests = [], onRequestTransfer, onAgentAcceptTransfer, onAdminApproveTransfer, onShowStoreOnJourney, appSettings, triggerCapy }) {
     const [activeTab, setActiveTab] = useState('financials');
+    const [selectedDebtName, setSelectedDebtName] = useState(null);
+    const [debtFilter, setDebtFilter] = useState('ALL');
+    const [debtSearch, setDebtSearch] = useState('');
     
     // SCALABLE MULTI-FILTER STATE
     const [activeRegion, setActiveRegion] = useState('ALL');
@@ -361,6 +365,80 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
     /* 🤝 WHO IS DOING THE HANDING OVER. An admin acts for the company and carries no branch of
        their own; a field agent carries whatever branch is on their roster record. Those two are
        NOT the same "no region" — see handoffEligibility in config/permissions.js. */
+
+    /* UI-only read-only view model for the v5 A/R master-detail layout; reads debtData + customerData without altering either. */
+    const arView = useMemo(() => {
+        const order = { bad: 0, soon: 1, ok: 2 };
+        const stateLabel = { bad: 'Overdue', soon: 'Due soon', ok: 'Safe' };
+        const rawList = [
+            ...debtData.RED.map(s => ({ ...s, state: 'bad' })),
+            ...debtData.YELLOW.map(s => ({ ...s, state: 'soon' })),
+            ...debtData.GREEN.map(s => ({ ...s, state: 'ok' })),
+        ].sort((a, b) => order[a.state] - order[b.state] || a.daysUntilDue - b.daysUntilDue);
+
+        const q = debtSearch.trim().toLowerCase();
+        const shops = rawList.map((s) => {
+            const k = storeKey(s.name);
+            const cust = (customers || []).find(c => storeKey(c.name) === k);
+            const cd = customerData.find(c => storeKey(c.name) === k);
+            const drops = myTransactions
+                .filter(t => t.type === 'SALE' && isTitip(t) && storeKey(t.customerName) === k)
+                .sort((a, b) => txTime(a) - txTime(b));
+            const payments = myTransactions
+                .filter(t => t.type === 'CONSIGNMENT_PAYMENT' && storeKey(t.customerName) === k)
+                .sort((a, b) => txTime(b) - txTime(a));
+            let payLeft = payments.reduce((sum, tx) => sum + debtCredit(tx), 0);
+            const notes = drops.map((t) => {
+                const tot = Number(t.total) || 0;
+                const take = Math.min(payLeft, tot);
+                payLeft -= take;
+                return { id: t.id, date: t.date || '', items: t.items || [], total: tot, left: Math.max(0, tot - take), tempo: t.tempoDays || 7 };
+            });
+            const oldest = notes.find(n => n.left > 0.01) || notes[0] || null;
+            const agent = cd?.ownerName || handedOwnerByStore[k]?.name || drops[drops.length - 1]?.agentName || 'Admin';
+            const bks = notes.reduce((sum, n) => sum + n.items.reduce((b, it) => b + (Number(it.qty) || 0), 0), 0);
+            return {
+                ...s,
+                stateLabel: stateLabel[s.state],
+                area: [cust?.city, cust?.region].filter(Boolean).join(', ') || cust?.address || '—',
+                phone: cust?.phone || '',
+                agent,
+                bks,
+                notes,
+                payments,
+                trail: (cust?.handoffs || []).slice(-3),
+                oldest,
+                cd,
+            };
+        }).filter(s => (debtFilter === 'ALL' || s.state === debtFilter) && (!q || s.name.toLowerCase().includes(q) || s.area.toLowerCase().includes(q) || s.agent.toLowerCase().includes(q)));
+
+        const sumState = (st) => rawList.filter(s => s.state === st).reduce((a, s) => a + s.total, 0);
+        const cntState = (st) => rawList.filter(s => s.state === st).length;
+        return {
+            shops,
+            allCount: rawList.length,
+            safeAmt: sumState('ok'), safeCnt: cntState('ok'),
+            soonAmt: sumState('soon'), soonCnt: cntState('soon'),
+            badAmt: sumState('bad'), badCnt: cntState('bad'),
+        };
+    }, [debtData, customers, customerData, myTransactions, handedOwnerByStore, debtFilter, debtSearch]);
+
+    const activeDebtShop = useMemo(() => {
+        if (!arView.shops.length) return null;
+        return arView.shops.find(s => storeKey(s.name) === storeKey(selectedDebtName)) || arView.shops[0];
+    }, [arView.shops, selectedDebtName]);
+
+    const openStoreAction = (shopName, mode) => {
+        const match = customerData.find(c => storeKey(c.name) === storeKey(shopName));
+        if (match) {
+            setSelectedCustomer(match);
+            setAuditData({});
+            setAuditMode(mode === 'audit');
+            setTransferMode(mode === 'transfer');
+            setActiveTab('stock');
+        }
+    };
+
     const myProfile = useMemo(() => (motorists || []).find(m => m.id === agentProfileId) || null, [motorists, agentProfileId]);
     const senderIsCompanyWide = isAdmin || !agentProfileId;
     const senderRole = isAdmin ? 'ADMIN' : (myProfile?.userRole || null);
@@ -928,95 +1006,111 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
             })()}
 
             {/* --- HEADER & FILTERS --- */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 border-b border-white/10 pb-6">
-                <div className="w-full lg:w-auto">
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-2">
-                        <h2 className="text-3xl font-black text-white uppercase tracking-widest flex items-center gap-3">
-                            <FileSpreadsheet className="text-orange-500" size={32}/> 
-                            {isAdmin ? 'Global Receivables' : 'My Receivables'}
-                        </h2>
-                    </div>
-                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-2 mb-4 lg:mb-0">Accounts Receivable & Territory Management</p>
-                    
-                    {/* REGION SELECTOR + AGENT SEARCH */}
-                    {isAdmin && (
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-black/60 border border-white/10 p-1.5 rounded-xl shadow-lg mt-3">
-                            
-                            {/* Region Dropdown */}
-                            <div className="flex items-center gap-2 px-2 py-1 border-b sm:border-b-0 sm:border-r border-white/10 shrink-0">
-                                <MapPin size={16} className="text-orange-500"/>
-                                <select 
-                                    value={activeRegion}
-                                    onChange={(e) => { 
-                                        setActiveRegion(e.target.value); 
-                                        setAgentSearch(''); 
-                                        setSelectedCustomer(null); 
-                                    }}
-                                    className="bg-transparent text-orange-400 font-bold uppercase tracking-widest text-xs outline-none cursor-pointer"
-                                >
-                                    <option value="ALL" className="bg-slate-900">🌍 All Regions</option>
-                                    <option value="HQ" className="bg-slate-900">👑 HQ (Main Area)</option>
-                                    {uniqueLocations.map(loc => (
-                                        <option key={loc} value={loc} className="bg-slate-900">📍 Region: {loc}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            
-                            {/* Smart Autocomplete Search */}
-                            <div className="flex-1 relative">
-                                <div className="flex items-center gap-2 px-2 py-1">
-                                    <Search size={14} className="text-slate-400 shrink-0"/>
-                                    <input 
-                                        type="text" 
-                                        placeholder="Search Member Name..." 
-                                        value={agentSearch}
-                                        onFocus={() => setShowAgentDropdown(true)}
-                                        onBlur={() => setTimeout(() => setShowAgentDropdown(false), 200)}
-                                        onChange={(e) => { 
-                                            setAgentSearch(e.target.value); 
-                                            setSelectedCustomer(null);
-                                            setShowAgentDropdown(true); 
-                                        }}
-                                        className="w-full bg-transparent border-none text-white text-xs outline-none placeholder:text-slate-400 font-bold uppercase tracking-widest"
-                                    />
-                                    {agentSearch && (
-                                        <button onClick={() => { setAgentSearch(''); setSelectedCustomer(null); setShowAgentDropdown(false); }} className="text-slate-400 hover:text-red-500 shrink-0 z-10 relative">
-                                            <X size={14}/>
-                                        </button>
-                                    )}
-                                </div>
 
-                                {/* Floating Dropdown Results */}
-                                {showAgentDropdown && dropdownAgents.length > 0 && (
-                                    <div className="absolute top-full left-0 right-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-[100] max-h-60 overflow-y-auto custom-scrollbar animate-fade-in">
-                                        {dropdownAgents.map(agent => (
-                                            <button
-                                                key={agent.id}
-                                                onClick={() => {
-                                                    setAgentSearch(agent.name);
-                                                    setShowAgentDropdown(false);
-                                                    setSelectedCustomer(null);
-                                                }}
-                                                className="w-full text-left px-4 py-3 hover:bg-slate-700 border-b border-slate-700/50 last:border-0 transition-colors flex flex-col group"
-                                            >
-                                                <span className="text-white font-bold text-xs uppercase group-hover:text-orange-400 transition-colors">{agent.name}</span>
-                                                <span className="text-[11px] text-slate-400 uppercase tracking-widest mt-0.5">
-                                                    {agent.role || 'Motorist'} • {agent.location || 'Unassigned'}
-                                                </span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+            <div className="kpm-ar-wrap">
+                {/* --- HEADER & FILTERS --- */}
+                <div className="kpm-ar-hd">
+                    <div className="kpm-ar-mark"><FileSpreadsheet size={18}/></div>
+                    <div>
+                        <h2 className="text-lg font-bold tracking-tight">{isAdmin ? 'Global Receivables' : 'My Receivables'}</h2>
+                        <p className="text-xs text-[var(--ink-dim)]">Accounts Receivable &amp; Consignment · {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                    </div>
+                    <div className="kpm-ar-tools">
+                        <div className="kpm-ar-field">
+                            <Search size={14} className="text-[var(--ink-dim)] shrink-0"/>
+                            <input
+                                type="text"
+                                placeholder="Search shop, area, agent..."
+                                value={debtSearch}
+                                onChange={(e) => setDebtSearch(e.target.value)}
+                                className="bg-transparent border-none outline-none text-xs w-40 sm:w-48 text-[var(--ink)] placeholder:text-[var(--ink-dim)]"
+                            />
+                            {debtSearch && <button type="button" onClick={() => setDebtSearch('')} className="text-[var(--ink-dim)] hover:text-[var(--danger-ink)]"><X size={13}/></button>}
                         </div>
-                    )}
+                        {isAdmin && (
+                            <div className="flex flex-wrap items-center gap-2">
+                                                    {isAdmin && (
+                                                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-black/60 border border-white/10 p-1.5 rounded-xl shadow-lg mt-3">
+                                                            
+                                                            {/* Region Dropdown */}
+                                                            <div className="flex items-center gap-2 px-2 py-1 border-b sm:border-b-0 sm:border-r border-white/10 shrink-0">
+                                                                <MapPin size={16} className="text-orange-500"/>
+                                                                <select 
+                                                                    value={activeRegion}
+                                                                    onChange={(e) => { 
+                                                                        setActiveRegion(e.target.value); 
+                                                                        setAgentSearch(''); 
+                                                                        setSelectedCustomer(null); 
+                                                                    }}
+                                                                    className="bg-transparent text-orange-400 font-bold uppercase tracking-widest text-xs outline-none cursor-pointer"
+                                                                >
+                                                                    <option value="ALL" className="bg-slate-900">🌍 All Regions</option>
+                                                                    <option value="HQ" className="bg-slate-900">👑 HQ (Main Area)</option>
+                                                                    {uniqueLocations.map(loc => (
+                                                                        <option key={loc} value={loc} className="bg-slate-900">📍 Region: {loc}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+                                                            
+                                                            {/* Smart Autocomplete Search */}
+                                                            <div className="flex-1 relative">
+                                                                <div className="flex items-center gap-2 px-2 py-1">
+                                                                    <Search size={14} className="text-slate-400 shrink-0"/>
+                                                                    <input 
+                                                                        type="text" 
+                                                                        placeholder="Search Member Name..." 
+                                                                        value={agentSearch}
+                                                                        onFocus={() => setShowAgentDropdown(true)}
+                                                                        onBlur={() => setTimeout(() => setShowAgentDropdown(false), 200)}
+                                                                        onChange={(e) => { 
+                                                                            setAgentSearch(e.target.value); 
+                                                                            setSelectedCustomer(null);
+                                                                            setShowAgentDropdown(true); 
+                                                                        }}
+                                                                        className="w-full bg-transparent border-none text-white text-xs outline-none placeholder:text-slate-400 font-bold uppercase tracking-widest"
+                                                                    />
+                                                                    {agentSearch && (
+                                                                        <button onClick={() => { setAgentSearch(''); setSelectedCustomer(null); setShowAgentDropdown(false); }} className="text-slate-400 hover:text-red-500 shrink-0 z-10 relative">
+                                                                            <X size={14}/>
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                
+                                                                {/* Floating Dropdown Results */}
+                                                                {showAgentDropdown && dropdownAgents.length > 0 && (
+                                                                    <div className="absolute top-full left-0 right-0 mt-2 bg-slate-800 border border-slate-700 rounded-lg shadow-2xl z-[100] max-h-60 overflow-y-auto custom-scrollbar animate-fade-in">
+                                                                        {dropdownAgents.map(agent => (
+                                                                            <button
+                                                                                key={agent.id}
+                                                                                onClick={() => {
+                                                                                    setAgentSearch(agent.name);
+                                                                                    setShowAgentDropdown(false);
+                                                                                    setSelectedCustomer(null);
+                                                                                }}
+                                                                                className="w-full text-left px-4 py-3 hover:bg-slate-700 border-b border-slate-700/50 last:border-0 transition-colors flex flex-col group"
+                                                                            >
+                                                                                <span className="text-white font-bold text-xs uppercase group-hover:text-orange-400 transition-colors">{agent.name}</span>
+                                                                                <span className="text-[11px] text-slate-400 uppercase tracking-widest mt-0.5">
+                                                                                    {agent.role || 'Motorist'} • {agent.location || 'Unassigned'}
+                                                                                </span>
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                            </div>
+                        )}
+                    </div>
                 </div>
-                
-                <div className="flex bg-black/40 p-1 rounded-xl border border-white/10 overflow-x-auto max-w-full shrink-0">
-                    <button onClick={() => setActiveTab('financials')} className={`kpm-edge-btn ${activeTab === 'financials' ? '' : 'quiet text-slate-400 hover:text-white'} flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest whitespace-nowrap`}><DollarSign size={16}/> A/R Financials</button>
-                    <button onClick={() => setActiveTab('stock')} className={`kpm-edge-btn ${activeTab === 'stock' ? '' : 'quiet text-slate-400 hover:text-white'} flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest whitespace-nowrap`}><Box size={16}/> Physical Stock</button>
-                    <button onClick={() => setActiveTab('transfers')} className={`kpm-edge-btn ${activeTab === 'transfers' ? '' : 'quiet text-slate-400 hover:text-white'} flex items-center gap-2 px-4 md:px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest whitespace-nowrap relative`}>
-                        <ArrowLeftRight size={16}/> Hand-offs
+
+                {/* --- 3 UNDERLINE TABS --- */}
+                <div className="kpm-ar-tabs overflow-x-auto max-w-full shrink-0">
+                    <button type="button" onClick={() => setActiveTab('financials')} className={`kpm-edge-btn quiet ${activeTab === 'financials' ? 'kpm-tab-on' : ''} border-0 rounded-none px-1 py-2.5 text-[13px] font-semibold whitespace-nowrap flex items-center gap-2`}><DollarSign size={15}/> A/R Financials</button>
+                    <button type="button" onClick={() => setActiveTab('stock')} className={`kpm-edge-btn quiet ${activeTab === 'stock' ? 'kpm-tab-on' : ''} border-0 rounded-none px-1 py-2.5 text-[13px] font-semibold whitespace-nowrap flex items-center gap-2`}><Box size={15}/> Physical Stock</button>
+                    <button type="button" onClick={() => setActiveTab('transfers')} className={`kpm-edge-btn quiet ${activeTab === 'transfers' ? 'kpm-tab-on' : ''} border-0 rounded-none px-1 py-2.5 text-[13px] font-semibold whitespace-nowrap flex items-center gap-2 relative pr-6`}>
+                        <ArrowLeftRight size={15}/> Hand-offs
                         {(incomingRequests.length > 0 || pendingAdminRequests.length > 0) && (
                             /* 🔴 THE SHAKE. Aldi, 2026-09-07, with a video: *"there is snapping animation
                                when the red link blinking on this page"*, and the whole row twitched in time
@@ -1039,30 +1133,178 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                         )}
                     </button>
                 </div>
-            </div>
 
-            {/* --- TAB A: FINANCIALS --- */}
-            {activeTab === 'financials' && (
-                <div className="animate-fade-in-up space-y-6">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="bg-black/20 border border-white/10 rounded-xl p-4">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Total Assigned Debt</p>
-                            <p className="text-2xl font-black text-white">Rp {new Intl.NumberFormat('id-ID').format(debtData.totalValue)}</p>
+                {/* --- TAB A: FINANCIALS (MASTER-DETAIL) --- */}
+                {activeTab === 'financials' && (
+                    <div>
+                        <div className="kpm-ar-aging">
+                            <div>
+                                <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-dim)]">Total Outstanding</div>
+                                <div className="text-2xl font-bold tracking-tight mt-0.5"><RollingNumber text={formatRupiah(debtData.totalValue)} /></div>
+                                <div className="text-xs text-[var(--ink-dim)] mt-0.5">{debtData.activeAccounts} shops owe · {arView.badCnt} overdue</div>
+                            </div>
+                            <div>
+                                <div className="kpm-ar-bar">
+                                    <span style={{ width: `${(debtData.totalValue > 0 ? (arView.safeAmt / debtData.totalValue) * 100 : 0)}%`, background: 'var(--line-2)' }}/>
+                                    <span style={{ width: `${(debtData.totalValue > 0 ? (arView.soonAmt / debtData.totalValue) * 100 : 0)}%`, background: 'var(--accent-edge)' }}/>
+                                    <span style={{ width: `${(debtData.totalValue > 0 ? (arView.badAmt / debtData.totalValue) * 100 : 0)}%`, background: 'var(--danger-ink)' }}/>
+                                </div>
+                                <div className="kpm-ar-leg">
+                                    <button type="button" className={debtFilter === 'ALL' ? 'on' : ''} onClick={() => setDebtFilter('ALL')}>All ({arView.allCount})</button>
+                                    <button type="button" className={debtFilter === 'ok' ? 'on' : ''} onClick={() => setDebtFilter(debtFilter === 'ok' ? 'ALL' : 'ok')}>
+                                        <span className="w-2 h-2 rounded-full bg-[var(--line-2)] inline-block"/> Safe ({arView.safeCnt}) · {formatRupiah(arView.safeAmt)}
+                                    </button>
+                                    <button type="button" className={debtFilter === 'soon' ? 'on' : ''} onClick={() => setDebtFilter(debtFilter === 'soon' ? 'ALL' : 'soon')}>
+                                        <span className="w-2 h-2 rounded-full bg-[var(--accent-edge)] inline-block"/> Due soon ({arView.soonCnt}) · {formatRupiah(arView.soonAmt)}
+                                    </button>
+                                    <button type="button" className={debtFilter === 'bad' ? 'on' : ''} onClick={() => setDebtFilter(debtFilter === 'bad' ? 'ALL' : 'bad')}>
+                                        <span className="w-2 h-2 rounded-full bg-[var(--danger-ink)] inline-block"/> Overdue ({arView.badCnt}) · {formatRupiah(arView.badAmt)}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <div className="bg-black/20 border border-white/10 rounded-xl p-4">
-                            <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Active Accounts</p>
-                            <p className="text-2xl font-black text-blue-400">{debtData.activeAccounts}</p>
+
+                        <div className="kpm-ar-work">
+                            <div className="kpm-ar-list">
+                                <div className="kpm-ar-lh">
+                                    <span>Shop</span><span>Salesman</span><span className="text-right">Owed</span><span>Tempo</span><span className="text-right">State</span>
+                                </div>
+                                {arView.shops.length === 0 ? (
+                                    <div className="p-10 text-center text-xs text-[var(--ink-dim)]">No open consignment balances match this filter.</div>
+                                ) : arView.shops.map((s) => {
+                                    const sel = activeDebtShop && storeKey(activeDebtShop.name) === storeKey(s.name);
+                                    const pct = Math.min(100, Math.round((s.ageDays / (s.tempoDays || 7)) * 100));
+                                    const ini = s.name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('');
+                                    const whenTxt = s.daysUntilDue < 0 ? `${Math.abs(s.daysUntilDue)}d late` : s.daysUntilDue === 0 ? 'due today' : `${s.daysUntilDue}d left`;
+                                    return (
+                                        <div key={s.name}>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedDebtName(sel && typeof window !== 'undefined' && window.innerWidth < 1024 ? null : s.name)}
+                                                className={`kpm-ar-r ${sel ? 'sel' : ''}`}
+                                            >
+                                                <div className="flex items-center gap-2.5 min-w-0">
+                                                    <span className="kpm-ar-av">{ini}</span>
+                                                    <div className="min-w-0">
+                                                        <div className="text-[13.5px] font-semibold truncate">{s.name}</div>
+                                                        <div className="text-[11.5px] text-[var(--ink-dim)] truncate">{s.area}</div>
+                                                    </div>
+                                                </div>
+                                                <span className="hidden lg:inline text-xs text-[var(--ink-dim)] truncate">{s.agent}</span>
+                                                <span className="text-[13.5px] font-semibold text-right tabular-nums">{formatRupiah(s.total)}</span>
+                                                <span className="hidden lg:flex kpm-ar-use">
+                                                    <span className="t"><i style={{ width: `${pct}%`, background: s.state === 'bad' ? 'var(--danger-ink)' : s.state === 'soon' ? 'var(--accent-edge)' : 'var(--line-2)' }}/></span>
+                                                    <small>{s.ageDays} of {s.tempoDays}d</small>
+                                                </span>
+                                                <span className={`hidden lg:inline-flex kpm-ar-st ${s.state}`}>{s.stateLabel}</span>
+                                            </button>
+                                            {sel && (
+                                                <div className="lg:hidden p-4 bg-[var(--raised)] border-b border-[var(--line)] space-y-3">
+                                                    <div className="flex items-center justify-between gap-2 text-xs text-[var(--ink-dim)]">
+                                                        <span>Responsible: <b className="text-[var(--ink)]">{s.agent}</b></span>
+                                                        <span className={`kpm-ar-st ${s.state}`}>{s.stateLabel} · {whenTxt}</span>
+                                                    </div>
+                                                    <div className="space-y-1.5">
+                                                        {s.notes.filter(n => n.left > 0.01).map(n => (
+                                                            <div key={n.id} className="flex justify-between text-xs border-b border-[var(--line)] pb-1">
+                                                                <span>{n.date} ({n.items.map(it => `${it.qty} ${it.name}`).join(', ')})</span>
+                                                                <b className="tabular-nums">{formatRupiah(n.left)}</b>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {isAdmin && <button type="button" onClick={() => onAddGoods && onAddGoods(s.name)} className="kpm-edge-btn quiet px-3 py-1.5 rounded-lg text-xs">Add Goods</button>}
+                                                        <button type="button" onClick={() => openStoreAction(s.name, 'transfer')} className="kpm-edge-btn quiet px-3 py-1.5 rounded-lg text-xs">Hand-off</button>
+                                                        <button type="button" onClick={() => openStoreAction(s.name, 'audit')} className="kpm-edge-btn px-3 py-1.5 rounded-lg text-xs font-semibold ml-auto">Store Audit &amp; Settle</button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="hidden lg:flex kpm-ar-hand">
+                                {!activeDebtShop ? (
+                                    <div className="flex-1 grid place-items-center text-xs text-[var(--ink-dim)] p-8">Select a shop from the list to inspect open notes.</div>
+                                ) : (
+                                    <>
+                                        <div className="kpm-ar-hin">
+                                            <div className="flex items-start gap-3.5">
+                                                <span className="kpm-ar-av w-11 h-11 rounded-xl text-sm">{activeDebtShop.name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('')}</span>
+                                                <div className="min-w-0">
+                                                    <h3 className="text-lg font-bold leading-tight">{activeDebtShop.name}</h3>
+                                                    <p className="text-xs text-[var(--ink-dim)] mt-0.5">{activeDebtShop.area}{activeDebtShop.phone ? ` · ${activeDebtShop.phone}` : ''}</p>
+                                                    <span className="kpm-ar-agent"><User size={12}/> Responsible: <b>{activeDebtShop.agent}</b></span>
+                                                </div>
+                                                <div className="ml-auto text-right">
+                                                    <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-dim)]">Still Owed</div>
+                                                    <div className="text-xl font-bold"><RollingNumber text={formatRupiah(activeDebtShop.total)} /></div>
+                                                </div>
+                                            </div>
+
+                                            <div className="kpm-ar-facts">
+                                                <div><div className="text-[11px] text-[var(--ink-dim)]">Oldest Note</div><div className="text-sm font-semibold mt-0.5">{activeDebtShop.oldest?.date || '—'}</div></div>
+                                                <div><div className="text-[11px] text-[var(--ink-dim)]">Tempo</div><div className="text-sm font-semibold mt-0.5">{activeDebtShop.ageDays} / {activeDebtShop.tempoDays} days</div></div>
+                                                <div><div className="text-[11px] text-[var(--ink-dim)]">Bks Held</div><div className="text-sm font-semibold mt-0.5 tabular-nums">{activeDebtShop.bks} Bks</div></div>
+                                                <div><div className="text-[11px] text-[var(--ink-dim)]">Open Notes</div><div className="text-sm font-semibold mt-0.5 tabular-nums">{activeDebtShop.notes.filter(n => n.left > 0.01).length}</div></div>
+                                            </div>
+
+                                            <div>
+                                                <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-dim)] mb-2">Consignment Notes</div>
+                                                <table className="w-full text-xs">
+                                                    <thead><tr className="border-b border-[var(--line)] text-[var(--ink-dim)]"><th className="py-1.5 text-left">Date</th><th className="py-1.5 text-left">Items</th><th className="py-1.5 text-right">Total</th><th className="py-1.5 text-right">Still Owed</th></tr></thead>
+                                                    <tbody>
+                                                        {activeDebtShop.notes.map(n => (
+                                                            <tr key={n.id} className="border-b border-[var(--line)]/60">
+                                                                <td className="py-2 whitespace-nowrap">{n.date}</td>
+                                                                <td className="py-2 text-[var(--ink-dim)]">{n.items.map(it => `${it.qty}× ${it.name}`).join(', ')}</td>
+                                                                <td className="py-2 text-right tabular-nums">{formatRupiah(n.total)}</td>
+                                                                <td className="py-2 text-right font-semibold tabular-nums">{formatRupiah(n.left)}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {(activeDebtShop.payments.length > 0 || activeDebtShop.trail.length > 0) && (
+                                                <div className="space-y-1.5">
+                                                    <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-dim)]">History</div>
+                                                    {activeDebtShop.payments.map(p => (
+                                                        <div key={p.id} className="flex justify-between text-xs text-[var(--ink-dim)]">
+                                                            <span>Payment ({p.date})</span>
+                                                            <span className="font-semibold text-[var(--ink)] tabular-nums">−{formatRupiah(debtCredit(p))}</span>
+                                                        </div>
+                                                    ))}
+                                                    {activeDebtShop.trail.map((h, idx) => (
+                                                        <div key={idx} className="flex justify-between text-xs text-[var(--ink-dim)]">
+                                                            <span>Hand-off: {h.fromName || h.fromId} → {h.toName || h.toId}</span>
+                                                            <span>{h.date || ''}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="kpm-ar-act">
+                                            {activeDebtShop.payments[0] && (
+                                                <button type="button" onClick={() => setViewingReceipt(activeDebtShop.payments[0])} className="kpm-edge-btn quiet px-3 py-2 rounded-lg text-xs">Receipt</button>
+                                            )}
+                                            {isAdmin && (
+                                                <button type="button" onClick={() => onAddGoods && onAddGoods(activeDebtShop.name)} className="kpm-edge-btn quiet px-3 py-2 rounded-lg text-xs">Add Goods</button>
+                                            )}
+                                            <button type="button" onClick={() => openStoreAction(activeDebtShop.name, 'transfer')} className="kpm-edge-btn quiet px-3 py-2 rounded-lg text-xs">Hand-off</button>
+                                            <span className="flex-1"/>
+                                            <button type="button" onClick={() => openStoreAction(activeDebtShop.name, 'audit')} className="kpm-edge-btn px-4 py-2 rounded-lg text-xs font-semibold">Store Audit &amp; Settle</button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <StatusCard title="Safe (Due in 4+ Days)" data={debtData.GREEN} colorClass="text-emerald-500" borderClass="border-emerald-500/30" bgClass="bg-emerald-950/10" icon={<ShieldCheck size={18}/>} isOverdue={false} />
-                        <StatusCard title="Warning (Due Soon)" data={debtData.YELLOW} colorClass="text-yellow-500" borderClass="border-yellow-500/30" bgClass="bg-yellow-950/10" icon={<AlertCircle size={18}/>} isOverdue={false} />
-                        <StatusCard title="OVERDUE (Jatuh Tempo)" data={debtData.RED} colorClass="text-red-500" borderClass="border-red-500/50" bgClass="bg-red-950/20" icon={<XCircle size={18}/>} isOverdue={true} />
-                    </div>
-                </div>
-            )}
+                )}
 
-            {/* --- TAB B: STOCK & AUDIT TERMINAL --- */}
+                {/* --- TAB B: PHYSICAL STOCK & AUDIT TERMINAL --- */}
             {activeTab === 'stock' && (
                 <div className="animate-fade-in-up flex flex-col lg:flex-row gap-6 h-[calc(100vh-250px)]">
                     
@@ -1247,7 +1489,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                 <div className="p-4 md:p-6 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900 rounded-b-2xl shrink-0">
                                     {(!auditMode && !transferMode) ? (
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                            {isAdmin && <button onClick={() => onAddGoods && onAddGoods(activeCustomer?.name)} className="p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:border-orange-500 transition-all flex flex-col items-center shadow-sm"><Plus size={20} className="text-orange-500 mb-1"/><span className="text-[10px] font-bold dark:text-slate-300">Add Goods</span></button>}
+                                            {isAdmin && <button onClick={() => onAddGoods && onAddGoods(activeCustomer?.name)} className="p-3 kpm-edge-btn quiet p-3 rounded-xl flex flex-col items-center"><Plus size={20} className="text-orange-500 mb-1"/><span className="text-[10px] font-bold dark:text-slate-300">Add Goods</span></button>}
                                             {/* 🤝 THE AGENT CAN COLLECT NOW. This was `isAdmin &&`, and collecting money and
                                                 writing the shelf count both run through Store Audit - so a field agent could
                                                 never do either, on any consignment store, including one handed to him.
@@ -1256,9 +1498,9 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                                 named - "the consignment that they made or receive from other handsoff, that is
                                                 the only store that they see". The button cannot reach a store the screen does
                                                 not show, and erasing history stays refused in App.jsx. */}
-                                            <button onClick={() => setAuditMode(true)} className="col-span-2 p-3 bg-gradient-to-r from-emerald-600 to-emerald-500 rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all flex flex-col items-center shadow-lg active:scale-95"><ScanSearch size={24} className="text-white mb-1"/><span className="text-[11px] uppercase tracking-widest font-black text-white">Store Audit</span></button>
+                                            <button onClick={() => setAuditMode(true)} className="col-span-2 p-3 kpm-edge-btn col-span-2 p-3 rounded-xl flex flex-col items-center"><ScanSearch size={24} className="text-white mb-1"/><span className="text-[11px] uppercase tracking-widest font-black text-white">Store Audit</span></button>
                                             
-                                            <button onClick={() => setTransferMode(true)} className={`p-3 bg-white dark:bg-slate-800 border dark:border-slate-600 rounded-xl hover:border-indigo-500 transition-all flex flex-col items-center shadow-sm ${!isAdmin ? 'col-span-2' : ''}`}>
+                                            <button onClick={() => setTransferMode(true)} className={`p-3 kpm-edge-btn quiet p-3 rounded-xl flex flex-col items-center ${!isAdmin ? 'col-span-2' : ''}`}>
                                                 <ArrowLeftRight size={20} className="text-indigo-500 mb-1"/>
                                                 <span className="text-[10px] font-bold dark:text-slate-300">Hand-off</span>
                                             </button>
@@ -1266,7 +1508,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                     ) : (
                                         <div className="flex flex-col md:flex-row gap-3">
                                             <button onClick={() => { setAuditMode(false); setTransferMode(false); setAuditData({}); }} className="w-full md:w-1/3 py-4 rounded-xl bg-slate-200 dark:bg-slate-800 font-bold dark:text-slate-300 uppercase tracking-widest text-xs hover:dark:bg-slate-700 transition-colors">Cancel</button>
-                                            <button onClick={submitAction} className="w-full md:w-2/3 py-4 rounded-xl font-black text-white shadow-lg bg-emerald-500 hover:bg-emerald-600 uppercase tracking-[0.1em] flex justify-center items-center gap-2 active:scale-95 transition-transform"><Check size={18}/> Confirm {transferMode ? 'Hand-off Request' : 'Audit & Update Ledgers'}</button>
+                                            <button onClick={submitAction} className="w-full md:w-2/3 py-4 rounded-xl font-black text-white shadow-lg kpm-edge-btn uppercase tracking-[0.1em] flex justify-center items-center gap-2 active:scale-95 transition-transform"><Check size={18}/> Confirm {transferMode ? 'Hand-off Request' : 'Audit & Update Ledgers'}</button>
                                         </div>
                                     )}
                                 </div>
@@ -1276,7 +1518,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                 </div>
             )}
 
-            {/* --- TAB C: TRANSFER HANDSHAKE HUB --- */}
+                {/* --- TAB C: TRANSFER HANDSHAKE HUB --- */}
             {activeTab === 'transfers' && (
                 <div className="animate-fade-in-up grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-black/20 border border-white/10 rounded-2xl p-6">
@@ -1314,8 +1556,8 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                     <HandoffOffer r={r} />
 
                                     <div className="flex gap-2">
-                                        <button onClick={() => onAdminApproveTransfer(r, false)} className="flex-1 py-2 bg-red-900/50 hover:bg-red-500 text-white rounded text-xs font-bold transition-colors">Reject</button>
-                                        <button onClick={() => onAdminApproveTransfer(r, true)} className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold transition-colors">Authorize Transfer</button>
+                                        <button onClick={() => onAdminApproveTransfer(r, false)} className="flex-1 py-2 kpm-edge-btn quiet rounded text-xs font-bold text-[var(--danger-ink)]">Reject</button>
+                                        <button onClick={() => onAdminApproveTransfer(r, true)} className="flex-1 py-2 kpm-edge-btn rounded text-xs font-bold">Authorize Transfer</button>
                                     </div>
                                 </div>
                             ))}
@@ -1341,8 +1583,8 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                     )}
                                     {r.status === 'PENDING_AGENT' ? (
                                         <div className="flex gap-2">
-                                            <button onClick={() => onAgentAcceptTransfer(r.id, false)} className="flex-1 py-2 bg-red-900/50 hover:bg-red-500 text-white rounded text-xs font-bold transition-colors">Decline</button>
-                                            <button onClick={() => onAgentAcceptTransfer(r.id, true)} className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-bold transition-colors">Accept Responsibility</button>
+                                            <button onClick={() => onAgentAcceptTransfer(r.id, false)} className="flex-1 py-2 kpm-edge-btn quiet rounded text-xs font-bold text-[var(--danger-ink)]">Decline</button>
+                                            <button onClick={() => onAgentAcceptTransfer(r.id, true)} className="flex-1 py-2 kpm-edge-btn rounded text-xs font-bold">Accept Responsibility</button>
                                         </div>
                                     ) : (
                                         <p className="text-center text-[11px] font-black uppercase tracking-widest py-2 rounded bg-indigo-500/20 text-indigo-400">You accepted &middot; waiting for admin</p>
@@ -1366,6 +1608,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                     </div>
                 </div>
             )}
+            </div>
         </div>
     );
 }
