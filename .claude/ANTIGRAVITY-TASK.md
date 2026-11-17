@@ -919,7 +919,7 @@ Default state: `viewMode = useState(isAdmin ? 'review' : 'submit')` (`src/EODRec
 | 4. `[data-guide="submit-count"]` (`demoMission.js:109`) | T2 / T1 | No on arrival / Yes after entering `'count'` view | `[data-guide="submit-count"]` (`StockOpnameView.jsx:2011`) only renders in `'count'` view (`1709`) after beat 2 switches from `'monitor'` | None — beat 2 already guides pressing `[data-mission="8"]` first |
 
 ## Task 20 - map the Master Vault screen before its redesign (segment 1 of 12)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 07:20 WIB, by Claude. Same rules as above (read-only, touch only this file, commit it alone, "Antigravity:").
 
 Aldi, 2026-11-17: *"i want to finish all segment before 20 november"* - 12 screens get the professional look (the same look as Sales Terminal, EOD Setoran, Agent Inventory, Journey Plan, Fleet & Roster). The first is the Master Vault, written INLINE in `src/App.jsx` (`activeTab === 'inventory'` ~L5174). A new face on that file can break a money path silently, so Claude needs a full map first:
@@ -930,6 +930,57 @@ Aldi, 2026-11-17: *"i want to finish all segment before 20 november"* - 12 scree
 Do NOT change the code. Done when: four tables in the Result.
 
 **Result:**
+
+### 1. Elements on screen (PC & phone, top to bottom)
+| element | PC / phone | what it shows | reads (state / prop / Firestore field) | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| Outer shell wrapper | Both (`lg:h-[calc(100vh-140px)]`, phone `h-auto min-h-[800px]`) | Framed container around `ResidentEvilInventory` + edit modal | `activeTab === 'inventory'` | `src/App.jsx:5174-5175` |
+| Supply Case list pane | Both (`phoneOpen ? 'hidden lg:flex' : 'flex'`, `w-full lg:w-96`) | Left column on PC; full-width screen 1 on phone | `phoneOpen` state | `src/components/ResidentEvilInventory.jsx:260` |
+| Search input | Both | `"Search products..."` (single search driving `App.jsx` `searchTerm`) | `searchTerm` prop (`App.jsx:4414-4416`) | `src/components/ResidentEvilInventory.jsx:263-266` |
+| Section filter tabs (`ALL`, `Quarantine`, product `type`s) + `+ Add` | Both (`flex-wrap`) | Wraps tabs; `Quarantine` (with `AlertTriangle`) & `+ Add` only if `isAdmin` | `sections`, `sectionKeys`, `activeSection`, `quarantine`, `isAdmin` | `src/components/ResidentEvilInventory.jsx:269-279` |
+| Quarantine banner | Both (when `activeSection === QUARANTINE`) | `"Damaged stock waits here until Stock Opname settles it."` | `inQ` | `src/components/ResidentEvilInventory.jsx:283` |
+| Product list rows (`#mv-row-${item.id}`) | Both (phone adds `ChevronRight`) | Thumb/3D-thumb/Package icon, low-stock bar/badge, `HazardMark`, name, `VAULT`/`START`/`FIELD`/`SOLD`/`DMG` or `QUARANTINE` or `VAULT: X pcs · FIELD: Y pcs` (or `STK: **` if `!isAdmin`) | `vaultList` (`products` split into `inventory` + `promoItems`), `motorists`, `transactions`, `appSettings`, `isAdmin`, `selectedId` | `src/App.jsx:4416`, `src/components/ResidentEvilInventory.jsx:284-342` |
+| Inspector pane | PC always / Phone when `phoneOpen` (`lg:block`) | Background texture + Back button (phone only) + BG upload button (if `isAdmin`) + `ItemInspector` | `phoneOpen`, `backgroundSrc` (`appSettings?.inventoryBg`), `selectedItem`, `isAdmin` | `src/components/ResidentEvilInventory.jsx:346-375` |
+| `ItemInspector` 3D stage | Both (`min-h-[340px]` phone) | `View in fullscreen` button, `HazardMark`, `PromoGoods3D` (when promo & no front photo) or 6-face CSS 3D box (`.kpm-inspect-spin`); 3D size controls (top-right popover on PC, `<details>` fold under prices on phone, admin + non-3D-goods only) | `product` (`dimensions`, `defaultZoom`, `images`, `useFrontForBack`, `kind`, `goods`), `isAdmin`, `showControls`, `dims`, `zoom`, `isInteracting` | `src/components/ResidentEvilInventory.jsx:54-147, 198-205` |
+| `ItemInspector` footer | Both | Product name, `STOCK` (`X pcs` or `Bks / Slop / Bal` or `**`), `DAMAGED: X Bks`, `type` badge, `Edit`/`Discard` buttons (if `isAdmin`), 4 price cards (`Dist`/`Retail`/`Grosir`/`Ecer`, hidden if promo) | `product` (`name`, `stock`, `damagedStock`, `type`, `priceDistributor/Retail/Grosir/Ecer`), `isAdmin` | `src/components/ResidentEvilInventory.jsx:149-196` |
+| `ExamineModal` fullscreen viewer | Both (portal/overlay in `App.jsx`) | Fullscreen interactive 3D/photo viewer + `description` | `examiningProduct` (`App.jsx:1750`) | `src/App.jsx:4690` |
+| Edit / New Entry modal | Both (`hidden` while `cropImageSrc` is open) | Form: `name`, `description`, `isPromo` checkbox (new only), `goods` select (promo), `stock`, `minStock`, `sticksPerPack`, `type`, `packsPerSlop`, `slopsPerBal`, `balsPerCarton`, `useFrontForBack`, 2 or 6 texture face slots (`front/back/left/right/top/bottom`), `PromoLookFields`, `PromoBundleFields` (existing promo), `PRICING ENGINE` (non-promo), submit button | `editingProduct`, `tempImages`, `boxDimensions`, `useFrontForBack`, `cropImageSrc`, `savingProduct`, `appSettings`, `regionOffers`, `inventory`, `promoItems`, `motorists`, `userRole` | `src/App.jsx:5220-5381` |
+
+### 2. Every press & what it writes
+| control / press | handler called | writes (Firestore + local state) | moves stock or money? | file:line |
+| :--- | :--- | :--- | :--- | :--- |
+| Search input `onChange` | `onSearch` -> `setSearchTerm` | Local `App.jsx` `searchTerm` only | No | `src/components/ResidentEvilInventory.jsx:264`, `src/App.jsx:5182` |
+| Section / Quarantine tab | `setActiveSection(sec)` / `setActiveSection(QUARANTINE)` | Local `activeSection` | No | `src/components/ResidentEvilInventory.jsx:272-274` |
+| Product row click | `openProduct(item.id)` | Local `selectedId`, `phoneOpen=true` on phone | No | `src/components/ResidentEvilInventory.jsx:225-230, 287` |
+| Phone `Back` button | `backToList` | Local `phoneOpen=false`, scrolls `#mv-row-${selectedId}` | No | `src/components/ResidentEvilInventory.jsx:231-234, 354` |
+| BG upload input | `onUploadBg` -> `handleInventoryBgSelect` | Local `cropImageSrc`, `activeCropContext`, `boxDimensions` (opens cropper; cropper saves `settings/general.inventoryBg`) | No | `src/components/ResidentEvilInventory.jsx:361`, `src/App.jsx:3665-3677, 5190` |
+| 3D stage / `View in fullscreen` | `onExpand` -> `setExaminingProduct(item)` | Local `examiningProduct` | No | `src/components/ResidentEvilInventory.jsx:117, 120`, `src/App.jsx:5184` |
+| 3D size `Save 3D Layout` | `onUpdateProduct(id, { dimensions, defaultZoom })` | Firestore `artifacts/${appId}/users/${user.uid}/products/${id}` (`dimensions`, `defaultZoom`); local `inventory` | No | `src/components/ResidentEvilInventory.jsx:96`, `src/App.jsx:5193-5201` |
+| `+ Add` button | `onAddNew` | Local `editingProduct={}`, `tempImages={}`, `boxDimensions={w:55,h:90,d:22}`, `useFrontForBack=false` | No | `src/components/ResidentEvilInventory.jsx:278`, `src/App.jsx:5211-5216` |
+| `Edit` button | `onEdit(product)` | Local `editingProduct=item`, `tempImages=item.images||{}`, `boxDimensions`, `useFrontForBack` | No | `src/components/ResidentEvilInventory.jsx:171`, `src/App.jsx:5205-5210` |
+| `Discard` button | `onDelete(id)` -> `deleteProduct(id)` | Confirms, then `deleteDoc` on `artifacts/${appId}/users/${user.uid}/products/${id}` + `logAudit("PRODUCT_DELETE", ...)` | Deletes product record (removes its stock from Master Vault) | `src/components/ResidentEvilInventory.jsx:172`, `src/App.jsx:3810-3820, 5204` |
+| Texture slot click / crop button | `handleProductFaceUpload` / `handleEditExisting` | Local `cropImageSrc`, `activeCropContext` -> populates `tempImages[face]` | No | `src/App.jsx:3647-3663, 5309-5330` |
+| `PromoBundleFields` save | `handleSavePromoBundles(list)` | Firestore batch: `settings/general.promoBundles` + `promoOffers/${region}.bundles` + `logAudit("SETTINGS_UPDATE", ...)` | Changes promo bundle gift rules (not immediate stock/money) | `src/App.jsx:777-795, 5345` |
+| Modal `Update Database` submit | `handleSaveProduct` | Firestore `updateDoc` or `addDoc` on `artifacts/${appId}/users/${user.uid}/products` (`name`, `description`, `stock`, `minStock`, `sticksPerPack`, `type`, `packsPerSlop`, `slopsPerBal`, `balsPerCarton`, `priceDistributor`, `priceRetail`, `priceGrosir`, `priceEcer`, `images`, `dimensions`, `useFrontForBack`, `updatedAt`, promo `kind`/`unit`/`goods`/`goodsColor`/`printColor`/`trimColor`/`accentColor`/`printText`/`subText`/`thumb`) + `logAudit` | **Yes** — directly overwrites `stock` and all 4 unit prices + packing multipliers | `src/App.jsx:3693-3792, 5231, 5363` |
+
+### 3. Logic computed inside JSX / render
+| computation | what it computes | file:line |
+| :--- | :--- | :--- |
+| `vaultList` & `filteredInventory` | Filters `inventory` by `searchTerm` and appends matching `promoItems` (`App.jsx:4414-4416`) | `src/App.jsx:4414-4416` |
+| `formatAdvancedStock(stock, item)` | Converts `stock` (Bks) into `Bks + Btg` (using `sticksPerPack || 16`), `Slop` (`stock / (packsPerSlop || 10)`), and `Bal` (`stock / (ps * (slopsPerBal || 20))`) | `src/components/ResidentEvilInventory.jsx:9-27, 156, 324` |
+| `sections` / `sectionKeys` / `quarantine` / `currentList` | Groups `inventory` (actually `vaultList`) by `item.type || "MISC"`, sorts keys, filters `inQuarantine` items, picks `currentList` | `src/components/ResidentEvilInventory.jsx:236-256` |
+| `isLowStock` | `threshold.isLowStock(item, appSettings)` controls red bar, badge, icon, and text | `src/components/ResidentEvilInventory.jsx:285, 288, 295, 335` |
+| Promo row `fieldPcs` | Sums `motorists` `promoCanvas` qty for `item.id` in `pcs` | `src/components/ResidentEvilInventory.jsx:301-303` |
+| Cigarette row `fieldBks`, `soldBks`, `startBks`, `damagedBks` | Converts `m.activeCanvas` via `convertToBks`, sums today's (`getLocalDayKey()`) `SALE` transactions via `convertToBks`, computes `startBks = item.stock + fieldBks + soldBks`, reads `item.damagedStock || 0` | `src/components/ResidentEvilInventory.jsx:305-332` |
+| `goods3d`, `front`, `back` | Decides `PromoGoods3D` vs 6-face flat box; `useFrontForBack` mirrors `front` onto `back`; `promoSkin` fallback | `src/components/ResidentEvilInventory.jsx:84-89` |
+| `editingProduct` packing fallback & `counted` summary | Clamps `packsPerSlop` (10), `slopsPerBal` (20), `balsPerCarton` (4) to `> 0`; formats `1 Karton = … Bks · 1 Bal = … Bks` | `src/App.jsx:3729-3733, 3778-3779` |
+
+### 4. What can move out first & `logicFixes.selfcheck.mjs` pins
+| candidate to extract | safe to move first? | `logicFixes.selfcheck.mjs` pins that check exact strings / file paths |
+| :--- | :--- | :--- |
+| Inline `editingProduct` modal (`src/App.jsx:5220-5381`) -> `src/components/ProductEditModal.jsx` | **Not without updating selfcheck** — `selfcheck` slices `src/App.jsx` directly for `<form onSubmit={handleSaveProduct}` | `logicFixes.selfcheck.mjs:12334, 12457-12458, 12493, 10235, 12823` check `form` / `ap` inside `src/App.jsx` for `<textarea name="description"...>`, `<select name="goods"...>`, `<PromoLookFields...>`, `<PromoBundleFields...>` |
+| `ResidentEvilInventory.jsx` visual layout / styling (`src/components/ResidentEvilInventory.jsx`) | **Yes, carefully** — keep all pinned JSX strings & marks intact, or update `selfcheck` together | `logicFixes.selfcheck.mjs:9728` (`markAt`), `9903`, `10224-10254` (exact class/prop strings: `touchAction: 'manipulation'`, `View in fullscreen`, `onExpand={onInspect}`, `onInspect={(item) => setExaminingProduct(item)}`, `searchTerm={searchTerm} onSearch={setSearchTerm}`, `phoneOpen ? 'hidden lg:flex'`, `lg:hidden relative z-[110]`, `flex flex-wrap items-center gap-x-3 gap-y-1`, `<details className="lg:hidden mt-4`, palette ban `cyan-/purple-/emerald-/bg-white `), `12460-12465` (`goods3d`, `<PromoGoods3D`, `promoGoods(item) ? item.thumb`), `12521` |
+| `handleSaveProduct` (`src/App.jsx:3693-3792`) | **Keep in `App.jsx` (or update selfcheck)** — `selfcheck` slices `app.slice(app.indexOf('const handleSaveProduct'), app.indexOf('const handleUpdateProduct'))` | `logicFixes.selfcheck.mjs:10967, 12333, 12459` |
 
 ## Task 21 - the same map for Restock Vault (segment 2 of 12)
 **Status:** OPEN
