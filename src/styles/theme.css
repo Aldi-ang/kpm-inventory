@@ -6387,3 +6387,37 @@ html.lite-mode .kpm-ct-veil { background: rgba(5, 4, 3, .8); backdrop-filter: no
 /* "SAME AS LAST TIME" IS AN EDGE, NOT A SLAB. His 2026-11-08 pick, "1 better", over a dark plate: no fill, a gold edge around a plain word, like the
    house edge buttons. Its box is unchanged (border-2 stays on the button); the PC one's disabled: classes still grey the edge and the word in retur mode. */
 .kpm-reorder { background: transparent; border-color: var(--accent-edge); color: var(--ink); }
+
+/* THE COUNT, PROFESSIONAL EDITION (StockOpnameView.jsx, his pick of picture v4 2026-11-17, "make sure the sizing is not too big
+   on pc"). The list (one line per product) + the product in hand. Sizes are the PC's ordinary ones: 40 px rows, a 48 px number
+   field, 13-14 px text - nothing billboard-sized. Every edge is a border, so Lite Mode keeps the whole look. */
+.kpm-oc-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 20px; padding: 10px 16px; border-bottom: 1px solid var(--line);
+  background: var(--raised); font-size: 13px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.kpm-oc-sum b { color: var(--ink); font-weight: 600; }
+.kpm-oc-chip { padding: 4px 11px; border-radius: 999px; border: 1px solid transparent; font-size: 12px; font-weight: 600; color: var(--ink-dim);
+  transition: color 150ms ease-out, background-color 150ms ease-out; }
+.kpm-oc-chip:hover { color: var(--ink); }
+.kpm-oc-chip.on { color: var(--ink); border-color: var(--accent-edge); background: color-mix(in srgb, var(--gold) 11%, transparent); }
+.kpm-oc-row { width: 100%; min-height: 44px; display: flex; align-items: center; gap: 11px; padding: 6px 16px; font-size: 13.5px; color: var(--ink);
+  border: 1px solid transparent; border-left: 0; border-right: 0; transition: background-color 150ms ease-out; }
+.kpm-oc-row:hover { background: var(--inset); }
+.kpm-oc-row.on { background: color-mix(in srgb, var(--gold) 9%, transparent); border-color: var(--line); font-weight: 600; }
+.kpm-oc-row:focus-visible { outline: 2px solid var(--accent-edge); outline-offset: -2px; }
+.kpm-oc-ic { width: 28px; height: 28px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 7px;
+  border: 1px solid var(--line); background: var(--sunk); color: var(--ink-dim); }
+.kpm-oc-row.on .kpm-oc-ic { border-color: var(--accent-edge); color: var(--accent-ink); }
+.kpm-oc-ic.big { width: 44px; height: 44px; border-radius: 11px; color: var(--accent-ink); }
+.kpm-oc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-ink); outline: 3px solid color-mix(in srgb, var(--gold) 18%, transparent); }
+.kpm-oc-num { display: flex; align-items: center; height: 48px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--sunk);
+  transition: border-color 150ms ease-out; }
+.kpm-oc-num:focus-within { border-color: var(--accent-edge); }
+.kpm-oc-num input { flex: 1; min-width: 0; height: 100%; border: 0; background: transparent; outline: none; text-align: center; color: var(--ink);
+  font: 600 20px/1 var(--font-body, inherit); font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+.kpm-oc-num input::-webkit-outer-spin-button, .kpm-oc-num input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.kpm-oc-num input::placeholder { color: var(--ink-dim); }
+.kpm-oc-num button { width: 40px; height: 100%; flex: none; display: inline-flex; align-items: center; justify-content: center; color: var(--ink-dim);
+  border-radius: 10px; transition: color 150ms ease-out; }
+.kpm-oc-num button:hover:not(:disabled) { color: var(--accent-ink); }
+.kpm-oc-num button:active:not(:disabled) { scale: .92; }
+.kpm-oc-num button:disabled, .kpm-oc-num input:disabled { opacity: .45; cursor: not-allowed; }
+@media (max-width: 1023px) { .kpm-oc-num { height: 52px; } .kpm-oc-num button { width: 44px; } }

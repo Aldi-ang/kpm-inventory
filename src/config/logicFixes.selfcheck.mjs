@@ -2211,7 +2211,7 @@ section('S35. The counting card is readable in both themes and cannot overlap it
   const to = opname.indexOf('{Number(damagedVal) > 0', from);
   const card = (from === -1 || to === -1) ? '' : opname.slice(from, to);
   ok('the counting card was found and is a sane size',
-     card.length > 1500 && card.length < 10500, `sliced ${card.length} chars`);   /* 2026-09-22: the verdict figure's note added ~560 chars */
+     card.length > 1500 && card.length < 12000, `sliced ${card.length} chars`);   /* 2026-09-22: the verdict figure's note added ~560 chars; 2026-11-17: the − + keys and the Bal/Slop helper ~1,100 */
 
   ok('no label is positioned ON a field any more - that is what caused the overlap',
      !/absolute -top-2/.test(card));
@@ -2552,8 +2552,10 @@ ${opname.slice(lOpen + 1, lEnd)}
      /\.kpm-dmg-reel \{[\s\S]{0,160}transform: translateY/.test(reelCss)
      && /\.kpm-dot \{[\s\S]{0,200}border: 1px solid/.test(reelCss)
      && !/\.kpm-dot \{[\s\S]{0,200}box-shadow/.test(reelCss));
-  ok('and it is told apart at a glance by a rail, not by colour alone',
-     /aria-hidden="true"/.test(card)); }
+  /* 2026-11-17 professional count (picture v4): the rail went with the card list. A row's state is now a SHAPE in the list -
+     a dot (needs you), a check (counted), a figure (the difference) - so it still does not lean on colour alone. */
+  ok('and it is told apart at a glance by its shape, not by colour alone',
+     /aria-label="Needs you"/.test(opname) && /aria-label="Counted"/.test(opname)); }
 
 /* The whole screen, not just the card: these are the fixed near-blacks he could not read in
    light mode. Two are gone; the rest are the next job and are counted here so the number cannot
@@ -7668,7 +7670,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      'the region picker measured 17 px tall, the facility picker 19, the quarantine picker 38');
   ok('names wrap on the phone and truncate on the desk - the audit item and the counting card',
      /<span className="font-bold text-sm lg:text-xs text-\[var\(--ink\)\] uppercase lg:truncate">\{item\.name\}<\/span>/.test(so) &&
-     /<div className="font-bold text-\[var\(--ink\)\] text-sm uppercase tracking-wide lg:truncate">\{item\.name\}<\/div>/.test(so) &&
+     /<div className="text-base font-bold text-\[var\(--ink\)\] lg:truncate">\{item\.name\}<\/div>/.test(so) &&
      !/uppercase truncate">\{item\.name\}/.test(code(so)) && !/tracking-wide truncate">\{item\.name\}/.test(code(so)),
      '"CELLO GREE..." at 91 px in the expanded audit');
   ok('his board 2 = A: the reel\'s two arrows are 44 x 44 keys on the phone, the face is a key too, the kind box is 64 x 44',
@@ -7734,8 +7736,7 @@ section('THE SCANNER FINDS THE PAPER, SQUARES IT, AND LETS HIM FIX THE CORNERS (
      'audit G30 turned drawn shadows into gradients once already (832ea7c); this one is born without them');
   ok('his board 5 = A: the count card is AMBER for a first-pass difference and RED only once the second count confirms it or the damage line is refused',
      /const tone = !hasTyped \? 'idle' : \(recount\.confirmed \|\| recount\.disagreement\) && isRevealed && !matched \? 'bad' : 'wait';/.test(so) &&
-     /const edge = \{ idle: 'border-\[var\(--line\)\]', wait: 'border-\[var\(--accent-edge\)\]', bad: 'border-\[var\(--danger\)\]' \}\[tone\];/.test(so) &&
-     /const bar = \{ idle: 'bg-\[var\(--line\)\]', wait: 'bg-\[var\(--accent-edge\)\]', bad: 'bg-\[var\(--danger\)\]' \}\[tone\];/.test(so) &&
+     /r\.tone === 'bad' \? 'text-\[var\(--danger-ink\)\]' : 'text-\[var\(--accent-ink\)\]'/.test(so) &&
      !/hasTyped \? \(matched \? 'border-\[var\(--accent-edge\)\]' : 'border-\[var\(--danger\)\]'\)/.test(code(so)) &&
      !/hasTyped \? \(matched \? 'bg-\[var\(--accent-edge\)\]' : 'bg-\[var\(--danger\)\]'\)/.test(code(so)),
      'measured 2026-09-18: five red things on the FIRST miscount - his "too much red"');
@@ -12541,6 +12542,21 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      /* the three Receivables tabs share one look: no tab fills blue/indigo/orange when active (palette law + his 11-17 call) */
      (cfBtnCheck.match(/className=\{?["'`]kpm-edge-btn/g) || []).length >= 3 &&
      !/bg-(blue|indigo)-500 text-white shadow-lg/.test(cfBtnCheck));
+  /* his 2026-11-17 pick of picture v4: "i like this one better i think u can build it make sure the sizing is not too big on pc and
+     dont forget that the rules about this stock opname will also applied here". The list + the product in hand is a NEW LAYOUT
+     over the SAME rules: these pin the three places the layout could have leaked what the blind count withholds. */
+  { const soc = read('src/StockOpnameView.jsx');
+    ok('REGRESSION: the professional count keeps the blind count blind - the list dot waits for isRevealed, the Rupiah and the short total only for tiers that see the system number',
+       /countBoxEmpty\(r\.entry\) \|\| \(r\.isRevealed && \(r\.recount\.needsRecount/.test(soc) &&
+       /const offRows = showExpectedWhileCounting \? rows\.filter\(\(r\) => r\.isRevealed && r\.goodDiff <= -1\) : \[\];/.test(soc) &&
+       /\{showExpectedWhileCounting && isRevealed && goodDiff <= -1 && priceOfItem\(item\) > 0 && \(/.test(soc) &&
+       /if \(showExpectedWhileCounting && r\.isRevealed && !r\.matched\)/.test(soc));
+    ok('REGRESSION: the product in hand carries data-half (the guide rings its empty box on the PC) and renders ONCE - beside the list on the PC, under its row on the phone - so there is one Good box, one data-guide="good"',
+       /<div className="flex flex-col gap-5" data-half=\{counts\[item\.id\] !== undefined && countBoxEmpty\(counts\[item\.id\]\) \? '' : undefined\}>/.test(soc) &&
+       /\{!wideScreen && on && <div/.test(soc) && /\{wideScreen && cur && <div/.test(soc) && (soc.match(/data-guide="good"/g) || []).length === 1);
+    ok('his "not too big on pc": a 44 px list row, a 48 px number box on the PC (52 on the phone), 13-20 px type',
+       /\.kpm-oc-row \{[^}]*min-height: 44px;/.test(read('src/styles/theme.css')) && /\.kpm-oc-num \{[^}]*height: 48px;/.test(read('src/styles/theme.css'))
+       && /@media \(max-width: 1023px\) \{ \.kpm-oc-num \{ height: 52px; \}/.test(read('src/styles/theme.css'))); }
   /* Exclusions (not filled buttons): MapMissionControl L382 (w-12 h-6 rounded-full Heatmap switch), L393 (barColor sector
      progress bar), L2179 (bg-orange-500/20 Register Target icon badge); AuditVaultView L150 (REMOTE SNAPSHOT LOADED badge). */
   const paletteFill = /bg-gold\b|bg-\[var\(--gold\)\]|bg-orange-\d|bg-amber-\d|from-amber-\d|bg-blue-\d|bg-indigo-\d|bg-green-\d|bg-emerald-\d|bg-\[#0d0a09\]/;
@@ -12707,7 +12723,7 @@ section('PROMO ITEMS, stage 2 of 4 - MASUK / KIRIM carry promo lines in pcs, the
   }
   ok('REGRESSION: Stock Opname counts the Master Vault\'s promo items by the piece; the Bks-only monitor and quarantine crates skip them',
      so.includes('const activeInventory = isAreaAdmin ? (branchInventory || []) : [...safeInventory, ...promoItems];') &&
-     so.includes("{isPromo(item) ? 'PROMO · count in pcs' : `ID: ${item.id}`}") && so.split('.filter(r => !isPromo(r))').length - 1 === 3);
+     so.includes("{promo ? 'Promo · count in pcs'") && so.split('.filter(r => !isPromo(r))').length - 1 === 3);
 }
 
 section('PROMO ITEMS, stage 3 of 4 - the van: promo goods load in pcs, show in Agent Inventory, and what is left comes back at EOD with no money (his 2026-10-25 answer 3b, "as well as the agent inventory, EOD")');
@@ -13598,7 +13614,7 @@ section('Stock Opname day: T3 and above pick one day, the count opens only that 
   ok('EVERY ACTION REPORTS: a press on another day is refused in the red strip, the button says when it opens, the line says the next date',
      isFailure(refusal) && op.includes('if (notCountDay) return notify(\`Cannot submit: Stock Opname day is \${WEEK_DAYS[countDay]}.\`);') &&
      op.includes('notCountDay ? \`Opens on \${WEEK_DAYS[countDay]}\`') && op.includes('<b>Stock Opname day is {WEEK_DAYS[countDay]}.</b>') &&
-     op.includes('{(countClosed ? [] : filteredItems).map(item => {'));
+     op.includes('const rows = (countClosed ? [] : filteredItems).map(rowOf);'));   /* 2026-11-17 professional count: the same "a closed day shows no rows" rule, now feeding the list */
   ok('BEHAVIOUR: T1, T2 and T3 may pick the day; T4, T5 and T6 may not',
      typeof T.canSetOpnameDay === 'function' && ['DEVELOPER', 'ADMIN', 'COMPANY_OWNER', 'AREA_ADMIN'].every(r => T.canSetOpnameDay(r)) &&
      ['FLEET_CAPTAIN', 'FIELD_OPERATIVE', 'ROOKIE', undefined].every(r => !T.canSetOpnameDay(r)));
@@ -13642,7 +13658,7 @@ section('Stock Opname: both numbers become what was counted; damaged typed as go
      so.includes("(recount.confirmed || recount.disagreement) && isRevealed && !matched ? 'bad' : 'wait'"));
   ok('BLIND: a flagged row is locked until Clear and count again, so a wrong guess costs one of three attempts and HQ sees them all',
      so.includes('const locked = !showExpectedWhileCounting && !!checkedRows[item.id] && recount.needsRecount;') &&
-     (so.match(/disabled=\{locked\}/g) || []).length === 2 && /const startRecount = \(id\) => \{\s*setCheckedRows\(/.test(so));
+     (so.match(/<input [^>]*disabled=\{locked\}/g) || []).length === 2 && (so.match(/disabled=\{locked\}/g) || []).length === 6 && /const startRecount = \(id\) => \{\s*setCheckedRows\(/.test(so));
   ok('REGRESSION: the REPORT of a blind count flags rows only when Submit is pressed', /if \(!showExpectedWhileCounting\) setCheckedRows\(/.test(so));
   ok('REGRESSION: the count row shows two differences and never a total',
      !so.includes('Total found') && !so.includes('item.totalFound') && so.includes('const { goodDiff, damagedDiff } = getVariance(item);') &&
