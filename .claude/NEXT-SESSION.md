@@ -19,4 +19,4 @@ BEFORE ANY PUSH: `git log --format=%s origin/phase0-solid-ground..HEAD | grep -q
 
 PARKED until after 20 November (his call): the demo (step 3 Dika A/C pick, Task 17's copy fixes, Tasks 18-19 results); the two Fleet fixes (Task 15's code). (The Master Vault Edit form is DONE, LIVE 37a93664.)
 
-ANTIGRAVITY: 19-21 DONE (read 07:33). 22 OPEN = Stock Opname map (segment 3), 23 OPEN = Receivables & Consignment map (segment 4). Keep 2+ OPEN; end every reply that queues or closes work with the paste-ready prompt.
+ANTIGRAVITY: 19-23 DONE (22 = Stock Opname map, 23 = Receivables & Consignment map - segments 3-4, read them when their turn comes). 24 OPEN = Reports map, 25 OPEN = Customers map (both also list every amber-filled button). Keep 2+ OPEN; end every reply that queues or closes work with the paste-ready prompt.
