@@ -1,0 +1,318 @@
+<title>Restock Vault, professional</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+/* layout: the picture = PC frame on top, two phone frames under it; inside, KPM's own professional tokens (theme.css) */
+:root{
+  --ground:#D2C9B4;--panel:#E1DAC8;--inset:#D9D1BD;--line:#6E6A64;--line-2:#5E5A55;--hair:rgba(19,18,17,.14);
+  --ink:#131211;--ink-muted:#3A3733;--ink-dim:#3F3B36;--gold:#1B1917;--gold-ink:#F7F3E9;--accent-ink:#4F3603;--accent-edge:#6E5116;--danger-ink:#611A14;
+  --page:#C9C0AA;--sel:rgba(79,54,3,.10);
+  --f:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0A0908;--panel:#121110;--inset:#0E0D0C;--line:#26231F;--line-2:#3E3A35;--hair:rgba(232,228,222,.08);
+  --ink:#E8E4DE;--ink-muted:#A39B90;--ink-dim:#928B81;--gold:#D08A2E;--gold-ink:#0A0908;--accent-ink:#D08A2E;--accent-edge:#9C6924;--danger-ink:#E08C82;
+  --page:#050504;--sel:rgba(208,138,46,.09);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ground:#0A0908;--panel:#121110;--inset:#0E0D0C;--line:#26231F;--line-2:#3E3A35;--hair:rgba(232,228,222,.08);
+  --ink:#E8E4DE;--ink-muted:#A39B90;--ink-dim:#928B81;--gold:#D08A2E;--gold-ink:#0A0908;--accent-ink:#D08A2E;--accent-edge:#9C6924;--danger-ink:#E08C82;
+  --page:#050504;--sel:rgba(208,138,46,.09);color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:13.5px/1.45 var(--f);font-variant-numeric:tabular-nums;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.cap{max-width:1180px;margin:0 auto 10px;color:var(--ink-muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.note{max-width:1180px;margin:0 auto 22px;color:var(--ink-muted);font-size:13px}
+.note b{color:var(--ink)}
+.frame{background:var(--ground);border:1px solid var(--line-2);margin:0 auto}
+.pc{max-width:1180px;height:760px;display:flex;flex-direction:column;overflow:hidden}
+.phones{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;max-width:1180px;margin:0 auto}
+.phone{width:390px;max-width:100%;height:780px;overflow:hidden;display:flex;flex-direction:column;border-radius:18px}
+
+/* THE PROFESSIONAL BUTTON (.kpm-edge-btn from theme.css — no amber fill anywhere) */
+.kpm-edge-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 14px;border:1px solid var(--accent-edge);
+  background-color:transparent;color:var(--ink);font:600 12.5px var(--f);cursor:pointer;white-space:nowrap;
+  transition:background-color .16s ease,border-color .16s ease,scale .12s ease}
+.kpm-edge-btn:hover{background-color:color-mix(in srgb,var(--gold) 11%,transparent);border-color:var(--accent-ink)}
+.kpm-edge-btn:active{scale:.97}
+.kpm-edge-btn.quiet{border-color:var(--line-2)}
+.kpm-edge-btn.quiet:hover{border-color:var(--accent-edge)}
+
+/* header & underline tabs */
+.hd{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--line-2)}
+.hd h1{margin:0;font-size:16px;font-weight:700}
+.hd .sum{color:var(--ink-dim);font-size:12px}
+.sp{flex:1}
+.tabs{display:flex;flex-wrap:wrap;gap:0 18px;padding:0 20px;border-bottom:1px solid var(--line-2)}
+.tab{padding:10px 0 9px;margin-bottom:-1px;border-bottom:2px solid transparent;font-size:13px;font-weight:600;color:var(--ink-dim);white-space:nowrap}
+.tab b{font-weight:600;color:var(--ink-dim);margin-left:4px}
+.tab.on{color:var(--ink);border-color:var(--gold)}
+
+/* workspace: left picker + right desk */
+.body{flex:1;display:flex;min-height:0}
+.aside{width:270px;flex:none;border-right:1px solid var(--line-2);display:flex;flex-direction:column;background:var(--panel)}
+.search-box{padding:10px 12px;border-bottom:1px solid var(--line-2)}
+.search{display:flex;align-items:center;gap:8px;height:34px;width:100%;padding:0 10px;border:1px solid var(--line-2);background:var(--inset);color:var(--ink-dim);font-size:12.5px}
+.plist{flex:1;overflow:auto}
+.pitem{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;border-bottom:1px solid var(--hair)}
+.pitem.sel{background:var(--sel);box-shadow:inset 2px 0 0 var(--gold)}
+.pitem .nm{font-weight:600;font-size:12.5px;line-height:1.25}
+.pitem .sub{font-size:11px;color:var(--ink-dim);margin-top:2px}
+.pitem .plus{border:1px solid var(--line-2);padding:2px 7px;font-size:11px;font-weight:700;color:var(--ink-muted)}
+.psec{padding:8px 12px 4px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink);border-bottom:1px solid var(--hair)}
+
+.desk{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.scroll{flex:1;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px}
+.subhd{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.subhd h2{margin:0;font-size:15px;font-weight:700}
+.subhd span{font-size:11.5px;color:var(--ink-dim)}
+.tgt{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 12px;border:1px solid var(--line-2);background:var(--panel);font-size:12px}
+.tgt .bar{width:110px;height:4px;background:var(--inset);overflow:hidden}
+.tgt .bar i{display:block;height:100%;background:var(--gold)}
+
+.grid3{display:grid;grid-template-columns:1fr 38px 1fr;gap:8px;align-items:end}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3eq{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.fld label{display:block;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:4px}
+.inp{height:34px;padding:0 10px;border:1px solid var(--line-2);background:var(--inset);display:flex;align-items:center;justify-content:space-between;font-size:12.5px}
+.inp small{color:var(--ink-dim);font-size:11px}
+
+/* ruled cart table */
+table{width:100%;border-collapse:collapse;border:1px solid var(--line-2)}
+th{background:var(--panel);text-align:left;font-size:10.5px;font-weight:700;color:var(--ink-dim);letter-spacing:.05em;text-transform:uppercase;padding:7px 10px;border-bottom:1px solid var(--line-2)}
+th.r,td.r{text-align:right}
+td{padding:8px 10px;border-bottom:1px solid var(--hair);vertical-align:top;font-size:12.5px}
+.mix{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px}
+.mix span{border:1px solid var(--line-2);background:var(--inset);padding:2px 6px;font-size:11px}
+.mix span b{font-weight:700}
+.rates{font-size:10.5px;color:var(--ink-dim)}
+.drift{font-size:11px;color:var(--accent-ink);margin-top:2px}
+
+.ev{border:1px solid var(--line-2);background:var(--panel);padding:8px 10px;font-size:12px;display:flex;flex-direction:column;gap:4px}
+.ev b{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-dim)}
+.totals{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line-2);background:var(--panel)}
+.totals>div{padding:9px 12px;border-right:1px solid var(--hair)}
+.totals>div:last-child{border-right:none;background:var(--inset)}
+.totals small{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-dim)}
+.totals strong{display:block;font-size:15px;font-weight:800;margin-top:2px}
+.totals .hi{color:var(--accent-ink)}
+
+/* completeness footer */
+.foot{border-top:1px solid var(--line-2);background:var(--panel);padding:10px 20px;display:flex;align-items:center;gap:12px}
+.prog{flex:1;height:4px;background:var(--inset);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--gold)}
+.miss{font-size:11.5px;color:var(--ink-muted)}
+
+/* phone */
+.st{height:24px;display:flex;justify-content:space-between;align-items:center;padding:0 16px;font-size:11px;color:var(--ink-dim)}
+.phone .hd{padding:10px 14px}
+.phone .tabs{padding:0 14px;gap:0 14px}
+.phone .tab{padding:10px 0 9px;font-size:12px}
+.phone .scroll{padding:12px 14px;gap:12px}
+.phone .kpm-edge-btn{height:40px}
+.phone .grid3{grid-template-columns:1fr;gap:8px}
+.phone .grid3eq{grid-template-columns:1fr;gap:8px}
+.phone .totals{grid-template-columns:1fr 1fr}
+.phone .totals>div{border-bottom:1px solid var(--hair)}
+.phone .foot{padding:10px 14px;flex-wrap:wrap}
+.cardrow{border:1px solid var(--line-2);background:var(--panel);padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+@media (max-width:700px){.pc{display:none}.pcnote{display:block!important}}
+</style>
+
+<p class="cap">Restock Vault · new look · PC (Masuk)</p>
+<p class="note">Real numbers from <b>demo/seed.json</b>. Every feature from today's screen is kept: <b>Masuk / Kirim / Request / Buku / Data Induk</b> tabs, product picker (with promo pcs), production targets, Asal ⇄ Tujuan route &amp; people combos, cart with 4-box mix + packing rates + landed drift, evidence (photo, scanned nota, resi), 4 totals, and completeness bar.</p>
+<p class="note pcnote" style="display:none">Open this on the PC to see the PC frame.</p>
+
+<div class="frame pc">
+  <div class="hd">
+    <h1>Restock Vault</h1>
+    <span class="sum">HQ · Gudang Pusat · Goods Received (Masuk)</span>
+    <span class="sp"></span>
+    <button class="kpm-edge-btn quiet">Target produksi: + Set</button>
+  </div>
+  <div class="tabs">
+    <span class="tab on">Masuk<b>2</b></span>
+    <span class="tab">Kirim<b>1</b></span>
+    <span class="tab">Request<b>2</b></span>
+    <span class="tab">Buku<b>14</b></span>
+    <span class="tab">Data Induk<b>1</b></span>
+  </div>
+  <div class="body">
+    <aside class="aside">
+      <div class="search-box"><div class="search">⌕ Cari barang...</div></div>
+      <div class="plist">
+        <div class="pitem"><div><div class="nm">American Spirit - Turquoise</div><div class="sub">1.000 Bks · Rp 210.000</div></div><span class="plus">+</span></div>
+        <div class="pitem"><div><div class="nm">Cello Coffee &amp; Caramel kretek</div><div class="sub">593 Bks · Rp 8.500</div></div><span class="plus">+</span></div>
+        <div class="pitem sel"><div><div class="nm">Cello Chocolate</div><div class="sub">10.161 Bks · Rp 10.000</div></div><span class="plus">✓</span></div>
+        <div class="pitem"><div><div class="nm">Cello Mmrapi</div><div class="sub">9.845 Bks · Rp 8.500</div></div><span class="plus">+</span></div>
+        <div class="pitem sel"><div><div class="nm">Cello Green</div><div class="sub">9.948 Bks · Rp 7.000</div></div><span class="plus">✓</span></div>
+        <div class="pitem"><div><div class="nm">Cello Teh Manis</div><div class="sub">7.981 Bks · Rp 7.000</div></div><span class="plus">+</span></div>
+        <div class="psec">Promo items · pcs</div>
+        <div class="pitem"><div><div class="nm">Korek Gas KPM</div><div class="sub">120 pcs</div></div><span class="plus">+</span></div>
+      </div>
+    </aside>
+
+    <div class="desk">
+      <div class="scroll">
+        <div class="subhd">
+          <h2>Goods Received</h2>
+          <span>Masuk dari pabrik · Bks</span>
+        </div>
+
+        <div class="tgt">
+          <span><b>Target bulan ini:</b> Cello Chocolate · 2.400 / 4.000 Bks (60%)</span>
+          <div class="bar"><i style="width:60%"></i></div>
+        </div>
+
+        <div class="grid3">
+          <div class="fld"><label>Asal (Pabrik)</label><div class="inp"><span>Pabrik Kudus</span><small>Jl. Raya Kudus No. 12</small></div></div>
+          <button class="kpm-edge-btn quiet" style="width:38px;padding:0" title="Tukar asal dan tujuan">⇄</button>
+          <div class="fld"><label>Tujuan (Gudang)</label><div class="inp"><span>Master Vault (HQ)</span><small>Gudang Pusat</small></div></div>
+        </div>
+
+        <div class="grid2">
+          <div class="fld"><label>Pengirim</label><div class="inp"><span>Budi Santoso</span><small>Supir Pabrik</small></div></div>
+          <div class="fld"><label>Penerima</label><div class="inp"><span>Aldi (HQ)</span><small>Owner</small></div></div>
+        </div>
+
+        <div class="grid3eq">
+          <div class="fld"><label>Delivery note (app)</label><div class="inp">SJ-849201</div></div>
+          <div class="fld"><label>Delivery note (factory)</label><div class="inp">SJ-KDS-118</div></div>
+          <div class="fld"><label>Tanggal</label><div class="inp">2026-11-17</div></div>
+        </div>
+
+        <table>
+          <thead>
+            <tr><th>Barang</th><th style="width:92px">Batch</th><th>Jumlah (Karton / Bal / Slop / Bks)</th><th class="r">@ Landed</th><th class="r">Subtotal</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Cello Chocolate</b><div class="rates">Base Rp 10.000 / Bks</div></td>
+              <td>08-B</td>
+              <td>
+                <div class="mix"><span><b>2</b> Bal</span><span><b>= 200 Bks</b></span></div>
+                <div class="rates">1 KARTON = 600 · 1 BAL = 100 · 1 SLOP = 10 BKS</div>
+              </td>
+              <td class="r"><b>Rp 13.000</b><div class="drift">+2,4% vs SJ-841</div></td>
+              <td class="r"><b>Rp 2.000.000</b></td>
+            </tr>
+            <tr>
+              <td><b>Cello Green</b><div class="rates">Base Rp 7.000 / Bks</div></td>
+              <td>11-A</td>
+              <td>
+                <div class="mix"><span><b>5</b> Slop</span><span><b>= 50 Bks</b></span></div>
+                <div class="rates">1 KARTON = 800 · 1 BAL = 200 · 1 SLOP = 10 BKS</div>
+              </td>
+              <td class="r"><b>Rp 10.000</b><div class="drift">sama · SJ-841</div></td>
+              <td class="r"><b>Rp 350.000</b></td>
+            </tr>
+          </tbody>
+        </table>
+        <!--
+          ARITHMETIC CHECK (from demo/seed.json):
+          1) Cello Chocolate: priceDistributor = 10,000; packsPerSlop = 10, slopsPerBal = 10, balsPerCarton = 6 (1 Bal = 100 Bks, 1 Karton = 600 Bks).
+             Qty = 2 Bal = 200 Bks. Base subtotal = 200 * 10,000 = Rp 2,000,000.
+          2) Cello Green: priceDistributor = 7,000; packing omitted in seed.json -> defaults 10/20/4 (1 Slop = 10 Bks, 1 Bal = 200 Bks, 1 Karton = 800 Bks).
+             Qty = 5 Slop = 50 Bks. Base subtotal = 50 * 7,000 = Rp 350,000.
+          Total Bks (totalItemsReceived) = 200 + 50 = 250 Bks.
+          Nilai barang (totalBasePrice) = 2,000,000 + 350,000 = Rp 2,350,000.
+          Extra costs: Ongkos kirim 150,000 + Pita cukai 500,000 + Upah bongkar 100,000 = Rp 750,000.
+          Total dibayar (trueLandedTotal) = 2,350,000 + 750,000 = Rp 3,100,000.
+          Extra per Bks = 750,000 / 250 = Rp 3,000 / Bks.
+          @ Landed Cello Chocolate = 10,000 + 3,000 = Rp 13,000 / Bks.
+          @ Landed Cello Green     =  7,000 + 3,000 = Rp 10,000 / Bks.
+          Average Landed / Bks (landedPerUnit) = 3,100,000 / 250 = Rp 12,400 / Bks.
+        -->
+
+        <div class="grid3eq">
+          <div class="fld"><label>Ongkos kirim</label><div class="inp">Rp 150.000</div></div>
+          <div class="fld"><label>Pita cukai</label><div class="inp">Rp 500.000</div></div>
+          <div class="fld"><label>Upah bongkar</label><div class="inp">Rp 100.000</div></div>
+        </div>
+
+        <div class="grid3eq">
+          <div class="ev"><b>Bukti foto barang</b><span>✓ Foto terpasang</span></div>
+          <div class="ev"><b>Nota / faktur (scan)</b><span>✓ Nota dipindai</span></div>
+          <div class="ev"><b>Resi &amp; kurir</b><span>JNE-99201 · Internal</span></div>
+        </div>
+
+        <div class="totals">
+          <div><small>Nilai barang</small><strong>Rp 2.350.000</strong></div>
+          <div><small>Biaya tambahan</small><strong>Rp 750.000</strong></div>
+          <div><small>Total dibayar</small><strong>Rp 3.100.000</strong></div>
+          <div><small>Landed / Bks · 250 Bks</small><strong class="hi">Rp 12.400</strong></div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--ink-dim)">Kelengkapan</span>
+        <div class="prog"><i style="width:100%"></i></div>
+        <span style="font-weight:700">100%</span>
+        <span class="miss">→ Lengkap. Siap disimpan.</span>
+        <button class="kpm-edge-btn">Simpan surat jalan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="cap" style="margin-top:34px">Restock Vault · new look · phone (picker + route, then cart + totals)</p>
+<p class="note"><b>Moved / folded notes:</b> Production target edit modal (+ Set), Buku Besar expandable drawer &amp; Cetak / Edit / Hapus, Request fulfillment modal (Siapkan), and Data Induk place/person registry stay in their own tabs or modals as today, restyled with <code>.kpm-edge-btn</code>.</p>
+
+<div class="phones">
+  <div class="frame phone">
+    <div class="st"><span>09:00</span><span>KPM</span></div>
+    <div class="hd"><h1>Restock Vault</h1><span class="sp"></span><button class="kpm-edge-btn quiet">+ Target</button></div>
+    <div class="tabs">
+      <span class="tab on">Masuk<b>2</b></span><span class="tab">Kirim<b>1</b></span><span class="tab">Request<b>2</b></span><span class="tab">Buku<b>14</b></span><span class="tab">Data Induk<b>1</b></span>
+    </div>
+    <div class="scroll">
+      <div class="search">⌕ Cari barang...</div>
+      <div class="cardrow">
+        <div style="display:flex;justify-content:space-between"><b>Cello Chocolate</b><span>10.161 Bks · ✓</span></div>
+        <div style="display:flex;justify-content:space-between"><b>Cello Green</b><span>9.948 Bks · ✓</span></div>
+        <div style="display:flex;justify-content:space-between;color:var(--ink-dim)"><span>Cello Coffee &amp; Caramel</span><span>593 Bks · +</span></div>
+      </div>
+      <div class="grid3">
+        <div class="fld"><label>Asal (Pabrik)</label><div class="inp"><span>Pabrik Kudus</span></div></div>
+        <div class="fld"><label>Tujuan (Gudang)</label><div class="inp"><span>Master Vault (HQ)</span></div></div>
+      </div>
+      <div class="grid2">
+        <div class="fld"><label>Pengirim</label><div class="inp">Budi Santoso</div></div>
+        <div class="fld"><label>Penerima</label><div class="inp">Aldi (HQ)</div></div>
+      </div>
+      <div class="grid2">
+        <div class="fld"><label>SJ App</label><div class="inp">SJ-849201</div></div>
+        <div class="fld"><label>SJ Pabrik</label><div class="inp">SJ-KDS-118</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame phone">
+    <div class="st"><span>09:00</span><span>KPM</span></div>
+    <div class="hd"><h1>Goods Received</h1><span class="sum">2 baris · 250 Bks</span></div>
+    <div class="scroll">
+      <div class="cardrow">
+        <div style="display:flex;justify-content:space-between"><b>Cello Chocolate</b><span>Batch 08-B</span></div>
+        <div class="mix"><span><b>2</b> Bal</span><span><b>= 200 Bks</b></span></div>
+        <div class="rates">1 Karton = 600 · 1 Bal = 100 · 1 Slop = 10 Bks</div>
+        <div style="display:flex;justify-content:space-between"><span>@ Landed Rp 13.000</span><b>Rp 2.000.000</b></div>
+      </div>
+      <div class="cardrow">
+        <div style="display:flex;justify-content:space-between"><b>Cello Green</b><span>Batch 11-A</span></div>
+        <div class="mix"><span><b>5</b> Slop</span><span><b>= 50 Bks</b></span></div>
+        <div class="rates">1 Karton = 800 · 1 Bal = 200 · 1 Slop = 10 Bks</div>
+        <div style="display:flex;justify-content:space-between"><span>@ Landed Rp 10.000</span><b>Rp 350.000</b></div>
+      </div>
+      <div class="totals">
+        <div><small>Nilai barang</small><strong>Rp 2.350.000</strong></div>
+        <div><small>Biaya tambahan</small><strong>Rp 750.000</strong></div>
+        <div><small>Total dibayar</small><strong>Rp 3.100.000</strong></div>
+        <div><small>Landed / Bks</small><strong class="hi">Rp 12.400</strong></div>
+      </div>
+    </div>
+    <div class="foot">
+      <div class="prog"><i style="width:100%"></i></div>
+      <span style="font-weight:700">100%</span>
+      <button class="kpm-edge-btn" style="width:100%">Simpan surat jalan</button>
+    </div>
+  </div>
+</div>

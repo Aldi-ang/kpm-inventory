@@ -1431,7 +1431,7 @@ Done when: the four BUILD checks are green; the pin list and what changed in eac
 **Result:**
 
 ## Task 30 - draft the Restock Vault picture (segment 2) for Claude to check
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 09:00 WIB, by Claude. Writes ONE new file - not an app BUILD.
 **Touch only:** `.claude/drafts/restock-vault-pro.html` (new), this file.
 
@@ -1444,3 +1444,14 @@ The loop per screen: ONE picture (PC + phone, real lab numbers) -> Aldi's ok -> 
 Done when: the file exists, opens with no script, and the Result lists every feature from your Task 21 map with where it sits on the picture.
 
 **Result:**
+- Created `.claude/drafts/restock-vault-pro.html` (static HTML, zero `<script>` tags, `.kpm-edge-btn` buttons with zero amber fill, PC frame + two phone frames, real `demo/seed.json` 6 products + 2-line cart arithmetic comment).
+- **Every Task 21 feature & where it sits on the picture:**
+  - **5 underline tabs with counts** (`Masuk 2`, `Kirim 1`, `Request 2`, `Buku 14`, `Data Induk 1`): top tab strip in both PC and Phone 1.
+  - **Product picker + search + promo `pcs` section**: left `<aside>` on PC; stacked top list on Phone 1.
+  - **Production targets (`Target produksi bulan ini` + `+ Set` modal)**: target strip above route on PC; `+ Target` button in Phone 1 header (modal stays on click).
+  - **Route & people (`Asal` ⇄ `Tujuan`, `Pengirim`, `Penerima`, `SJ App`, `SJ Pabrik`, `Tanggal`)**: form grids in PC center and Phone 1.
+  - **Cart table (`Barang`, `Batch`, `Jumlah` 4-box mix + packing rates, `@ Landed` + drift, `Subtotal`)**: ruled table in PC center (with full arithmetic HTML comment below it); stacked cards in Phone 2.
+  - **Extra costs (`Ongkos kirim`, `Pita cukai`, `Upah bongkar`) & Evidence (`Bukti foto barang`, `Nota / faktur (scan)`, `Resi & kurir`)**: 3-column rows under the cart on PC.
+  - **4 totals (`Nilai barang`, `Biaya tambahan`, `Total dibayar`, `Landed / Bks`)**: 4-cell strip on PC; 2×2 grid on Phone 2.
+  - **Completeness footer (`Kelengkapan`, progress bar, `%`, missing/ready text, `Simpan surat jalan`)**: pinned bottom bar on PC and Phone 2.
+  - **`Kirim`, `Request` (`Siapkan` modal), `Buku` (expandable drawer, `Cetak`, `Edit`, `Hapus`, `<Proses>`), `Data Induk` (`Pabrik`/`Gudang`/`Orang`)**: remain in their own tabs/modals as noted in the one-line `.note` above the phone frames.
