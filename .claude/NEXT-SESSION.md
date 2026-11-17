@@ -2,6 +2,8 @@
 
 State 2026-11-17 06:35 WIB: LIVE 04a6bed2 - the demo guide's menu tour (PC + phone) and a ring only on drawn items. Nothing of this job is built.
 
+BEFORE this job: PROGRESS's WAITING ON ALDI holds his 🔴 A/C pick for step 3 (his "dika syahputra is not even there": Fleet & Roster opens on BANDUNG for the owner and his T1, Dika is under HEADQUARTERS - root cause and options in A-Brain Wiki/Concepts/Demo Guide on the Phone.md). If he has answered, build that first, with Antigravity Task 17's two copy fixes (the Settings tour line is wrong for T4/T6; six screen names in GO / nav() must be the menu's tr() names - its Result has the table).
+
 Antigravity Task 11 (read 2026-11-16 22:00) found two faults in the PC person panel of Fleet & Roster (`src/FleetCanvasManager.jsx`, CRLF - edit with a rep script, see LAB). Task 15 (DONE, not read yet) wrote the exact proposed code for both: `.claude/ANTIGRAVITY-TASK.md`, "## Task 15", its Result. Read it in full and check it against the code before using any of it - Task 13's "ready to paste" block would have frozen the guide (no `done`, no way forward).
 
 1. MED - the keyboard behind the veil. With a person's panel open on the PC, Tab still reaches the dimmed keys behind the veil (`.kpm-fleet-top`: Offers, Add personnel), and Escape does not close the panel. Smallest fix: `inert` on `.kpm-fleet-top` while a person is open, and Escape -> `closePanel`. Trap: FrontPanel has its own Escape (FleetCanvasManager.jsx ~L28) and the Surat Jalan is a portal on document.body - Escape must close only the top-most thing (the Surat Jalan first when it is open).
@@ -19,7 +21,7 @@ LAB: launch demo-emulator, demo-api-emulator, demo-app-emulator (5176); `node to
 
 BEFORE ANY PUSH: `git log origin/phase0-solid-ground..HEAD`; any `Antigravity:` commit gets `git show` (only .claude/ANTIGRAVITY-TASK.md) and the gates re-run. Gates: logicFixes, npm run build, integration.audit, every *.selfcheck.mjs by exit code; dist-demo rebuilt + demoBuild.check when the demo changed; a patch note en + id.
 
-ANTIGRAVITY: Task 15 DONE (not read - it is this job's data), 16 OPEN (an edit plan for the 18 AT RISK overlays), 17 OPEN (a review of the menu tour: is each line true for each tier, the screen names in GO / nav() against the menu's own names, a press on the ringed item during the tour). Task 17 was appended while Antigravity's own Task 15 edits were uncommitted - check it is still in the file. Keep at least 2 OPEN, refill unasked, end every reply that queues or closes work with the paste-ready prompt.
+ANTIGRAVITY: Task 15 DONE (not read - it is this job's data). 16 DONE, read 07:15 (the 18 AT RISK overlays: 12 can share one body portal, ImageCropper needs z 500, the 5 printing ones need the print traps handled). 17 DONE, read 07:15 (see BEFORE above; a press on the ringed item keeps the tour on that item - no bug). 18-19 OPEN (every guide beat: is its target on the page in the doer's and T1's default view - the Dika class of bug). Keep at least 2 OPEN, refill unasked, end every reply that queues or closes work with the paste-ready prompt.
 
 AFTER THIS JOB (next brief, not now): Task 17's findings (tour line fixes, name mismatches); then the Retur audit's 6 OPEN holes as 🔴 DECIDEs (Task 6 drafts them, Task 12 has a failing check per hole) - money, never fixed unasked; then Task 16's overlay plan.
 
