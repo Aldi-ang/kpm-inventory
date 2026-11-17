@@ -1319,7 +1319,7 @@ Done when: the four BUILD checks are green and the red-then-green proof is in th
 **Result:**
 
 ## Task 29 - BUILD, ONLY after Aldi says "demo bar ok": the demo's two top bars as ONE 40 px line
-**Status:** ON HIS OK - skip it until Aldi tells you "demo bar ok"; then treat it as OPEN.
+**Status:** OPEN - Aldi, 2026-11-17: *"demo bar oke"*.
 **Written:** 2026-11-17 09:00 WIB, by Claude. BUILD rules apply.
 **Touch only:** `src/components/DemoFrontDoor.jsx`, `src/components/DemoMission.jsx`, `src/styles/theme.css` (only the `.kpm-demo-bar` / `.kpm-mission` / `--kpm-safe-top` block, about L6085-6160), `src/config/logicFixes.selfcheck.mjs`, `src/config/integration.audit.mjs`, `src/config/patchNotes.js`, this file.
 
