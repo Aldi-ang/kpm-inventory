@@ -1,0 +1,173 @@
+<title>KPM Motion Picks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one working Stock Opname row on top, the toast it fires underneath, a Lite Mode switch. Tokens = the v4 Stock Opname picture. */
+:root{
+  --ground:#D6CEBA;--panel:#E3DCCB;--raised:#EAE4D6;--inset:#DCD4C1;--line:#B8AF9C;--line-2:#9F9785;
+  --ink:#131211;--ink-muted:#3A3733;--ink-dim:#5E584F;--gold:#8A5A12;--danger-ink:#7A2118;--page:#C9C0AA;
+  --f:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;--m:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  /* the app's toast is dark in both themes (Toast.jsx:150) - copied as is */
+  --t-bg:#14100e;--t-edge:#a89070;--t-ink:#E8E4DE;--t-gold:#ff9d00;--t-bad:#b4524a;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;
+  --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--danger-ink:#E7907F;--page:#050504;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;
+  --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--danger-ink:#E7907F;--page:#050504;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--page);color:var(--ink);font:14px/1.45 var(--f);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1{font-size:18px;margin:0;font-weight:700;text-wrap:balance}
+.sub{color:var(--ink-dim);font-size:13px;margin:2px 0 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.hd{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-muted)}
+.hd b{color:var(--ink);font-weight:600}
+.tag{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);border:1px solid var(--line-2);border-radius:4px;padding:1px 6px}
+.sum{display:flex;flex-wrap:wrap;gap:6px 18px;padding:10px 14px;background:var(--raised);border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-muted)}
+.sum .v{color:var(--ink);font-weight:600}
+.sum .short{color:var(--danger-ink)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;align-items:center;gap:14px;padding:0 14px;min-height:64px}
+.name{min-width:0}.name b{display:block;font-weight:600}.name span{font-size:12px;color:var(--ink-dim)}
+.lab{font-size:11px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.05em}
+.num{font:600 15px var(--m);font-variant-numeric:tabular-nums}
+.step{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:6px;background:var(--inset);height:48px}
+.step button{width:44px;height:46px;border:0;background:none;color:var(--ink);font-size:20px;cursor:pointer}
+.step button:focus-visible,.btn:focus-visible,.sw input:focus-visible+span{outline:2px solid var(--gold);outline-offset:2px}
+.step .num{width:44px;text-align:center}
+.diff{min-width:64px;text-align:right}
+.diff.neg{color:var(--danger-ink)}.diff.pos{color:var(--gold)}
+.foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-top:1px solid var(--line)}
+.btn{height:44px;padding:0 18px;border-radius:6px;border:1px solid var(--gold);background:none;color:var(--gold);font:600 14px var(--f);cursor:pointer}
+.btn.quiet{border-color:var(--line-2);color:var(--ink-muted)}
+.sw{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-muted);cursor:pointer}
+.sw input{position:absolute;opacity:0}
+.sw span{width:34px;height:20px;border-radius:10px;background:var(--inset);border:1px solid var(--line-2);position:relative}
+.sw span::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--ink-dim);transition:transform .15s}
+.sw input:checked+span::after{transform:translateX(14px);background:var(--gold)}
+.notes{font-size:13px;color:var(--ink-muted);padding:12px 14px;display:grid;gap:6px}
+.notes b{color:var(--ink)}
+
+/* ---- PICK 1: rolling digits - the SAME rule as the clock (theme.css .kpm-dig, 260ms) ---- */
+.dig{display:inline-block;width:1ch;height:var(--row,1.4em);overflow:hidden;vertical-align:bottom}
+.reel{display:block;transform:translateY(calc(var(--d) * var(--row,1.4em) * -1));transition:transform 260ms cubic-bezier(.2,.9,.2,1)}
+.reel>i{display:block;font-style:normal;height:var(--row,1.4em);line-height:var(--row,1.4em);text-align:center}
+.sep{display:inline-block;height:var(--row,1.4em);line-height:var(--row,1.4em);vertical-align:bottom}
+
+/* ---- PICK 4: toast slides in (today's kpm-toast-in) + a checkmark that draws itself ---- */
+.toasts{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 12px);display:flex;flex-direction:column;align-items:center;gap:8px;padding:0 12px;pointer-events:none;z-index:50}
+.toast{pointer-events:auto;width:100%;max-width:448px;background:var(--t-bg);border:1px solid var(--t-edge);box-shadow:0 0 30px rgba(0,0,0,.8);cursor:pointer}
+.toast .in{display:flex;align-items:center;gap:12px;border-left:3px solid var(--t-gold);padding:10px 12px}
+.toast.bad .in{border-left-color:var(--t-bad)}
+.toast p{margin:0;flex:1;min-width:0;font:600 15px/1.35 var(--m);color:var(--t-ink)}
+.toast small{display:block;font:500 12px var(--f);color:#a89f92;margin-top:2px}
+.tin{animation:tin .26s cubic-bezier(.16,1,.3,1) both}
+.tout{animation:tout .2s ease-in both}
+@keyframes tin{from{opacity:0;transform:translateY(-10px) scale(.98)}}
+@keyframes tout{to{opacity:0;transform:translateY(-6px)}}
+.ck{flex:none;width:22px;height:22px}
+.ck circle{fill:none;stroke:var(--t-gold);stroke-width:1.6;opacity:.35}
+.ck path{fill:none;stroke:var(--t-gold);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:16;stroke-dashoffset:16;animation:draw .3s cubic-bezier(.65,0,.35,1) .16s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.xk{flex:none;width:22px;height:22px;fill:none;stroke:var(--t-bad);stroke-width:2.2;stroke-linecap:round}
+
+/* Lite Mode = the app's html.lite-mode rule: every animation and transition off, colour stays */
+.lite *,.lite *::after{animation:none!important;transition:none!important}
+.lite .ck path{stroke-dashoffset:0}
+@media (prefers-reduced-motion:reduce){.reel{transition:none}.tin,.tout{animation:none}.ck path{animation:none;stroke-dashoffset:0}}
+@media (max-width:560px){
+  .row{grid-template-columns:minmax(0,1fr) auto;row-gap:10px;padding-block:12px}
+  .row .sys{display:none}
+}
+</style>
+
+<div class="wrap" id="root">
+  <div>
+    <h1>Your two picks, running in KPM colours</h1>
+    <p class="sub">Press − / + and Save count. Then switch Lite Mode on and press again: the same thing happens with no motion.</p>
+  </div>
+
+  <div class="card">
+    <div class="hd"><span><b>Stock Opname</b> · Gudang Utama</span><span class="tag">example numbers</span></div>
+    <div class="sum">
+      <span>Counted <span class="v num" id="sCount"></span> of 3</span>
+      <span>Difference <span class="v num short" id="sMoney"></span></span>
+    </div>
+    <div class="row">
+      <div class="name"><b>Gudang Garam Filter 12</b><span>Bks · Rp 24.800 each</span></div>
+      <div class="sys"><div class="lab">System</div><div class="num">120</div></div>
+      <div class="step" role="group" aria-label="Counted">
+        <button id="minus" aria-label="One less">−</button>
+        <div class="num" id="cnt"></div>
+        <button id="plus" aria-label="One more">+</button>
+      </div>
+      <div class="diff"><div class="lab">Diff</div><div class="num" id="diff"></div></div>
+    </div>
+    <div class="foot">
+      <label class="sw"><input type="checkbox" id="lite"><span></span>Lite Mode</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn quiet" id="fail">Show a failed save</button>
+        <button class="btn" id="save">Save count</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="notes">
+      <div><b>1 · Rolling digits.</b> Each digit rolls on its own little wheel when the number changes. This is the same rule your clock already uses (260 ms), so here it costs one shared piece. Where: the Stock Opname difference, the Rupiah summary line, Receivables totals.</div>
+      <div><b>4 · Toast + checkmark.</b> The toast already slides in today. What's new is the gold checkmark that draws itself, and only when something really saved. A failed save keeps today's red edge, with an X and no checkmark, so a failure never looks like a success.</div>
+      <div><b>Lite Mode</b> turns off both motions and keeps every colour. On a slow phone, the number just changes and the check is just there.</div>
+    </div>
+  </div>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+const PRICE=24800, SYS=120; let counted=117, saved=1;
+const $=id=>document.getElementById(id);
+const REEL='0123456789';
+function roll(el,text){
+  // keep existing digit windows so the reels slide instead of being rebuilt
+  if(el.dataset.len!==String(text.length)){
+    el.innerHTML=[...text].map(c=>c>='0'&&c<='9'
+      ?'<span class="dig"><span class="reel">'+[...REEL].map(d=>'<i>'+d+'</i>').join('')+'</span></span>'
+      :'<span class="sep">'+c+'</span>').join('');
+    el.dataset.len=String(text.length);
+  }
+  const kids=el.children;
+  [...text].forEach((c,i)=>{
+    const k=kids[i];
+    if(c>='0'&&c<='9'){ if(!k.classList.contains('dig')){el.dataset.len='';return roll(el,text);} k.firstChild.style.setProperty('--d',c); }
+    else if(k.classList.contains('sep')) k.textContent=c;
+  });
+}
+const rp=n=>'Rp '+Math.abs(n).toLocaleString('id-ID').replace(/,/g,'.');
+function paint(){
+  const d=counted-SYS;
+  roll($('cnt'),String(counted));
+  const de=$('diff'); de.className='num diff '+(d<0?'neg':d>0?'pos':'');
+  roll(de,(d>0?'+':d<0?'−':'')+Math.abs(d));
+  roll($('sMoney'),(d<0?'−':d>0?'+':'')+rp(d*PRICE));
+  roll($('sCount'),String(saved));
+}
+$('minus').onclick=()=>{if(counted>0){counted--;paint();}};
+$('plus').onclick=()=>{counted++;paint();};
+$('lite').onchange=e=>document.body.classList.toggle('lite',e.target.checked);
+function toast(ok,msg,sub){
+  const t=document.createElement('div');
+  t.className='toast tin'+(ok?'':' bad');
+  t.innerHTML='<div class="in">'+(ok
+    ?'<svg class="ck" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10"/><path d="M6.5 11.4l3 3 6-6.4"/></svg>'
+    :'<svg class="xk" viewBox="0 0 22 22" aria-hidden="true"><path d="M7 7l8 8M15 7l-8 8"/></svg>')
+    +'<p>'+msg+'<small>'+sub+'</small></p></div>';
+  const go=()=>{t.classList.replace('tin','tout');setTimeout(()=>t.remove(),document.body.classList.contains('lite')?0:200);};
+  t.onclick=go; $('toasts').prepend(t); setTimeout(go,3200);
+}
+$('save').onclick=()=>{
+  const d=counted-SYS; saved=Math.min(3,saved+1); paint();
+  toast(true,'Count saved',`Gudang Garam Filter 12 · ${counted} Bks · ${d===0?'no difference':(d<0?'short ':'over ')+Math.abs(d)}`);
+};
+$('fail').onclick=()=>toast(false,'Not saved','No signal. Your count is kept here. Press Save again.');
+paint();
+</script>
