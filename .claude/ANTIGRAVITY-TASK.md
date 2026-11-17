@@ -2000,12 +2000,24 @@ Where every Task 27 element sits in `.claude/drafts/command-center-pro.html`:
 - **Arithmetic check**: HTML comment inside PC right `.col` verifying regional split, agent leaderboard split, and `Cello Chocolate` distribution percentages.
 
 ## Task 44 - draft the Map System picture (segment 9) in the v4 look
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 14:52 WIB, by Claude. Writes ONE new file - not an app BUILD. Read "THE LOOK HE PICKED" (above Task 40) first.
 **Touch only:** `.claude/drafts/map-system-pro.html` (new), this file.
 
 From YOUR Task 31 map (grep "## Task 31") of `src/MapMissionControl.jsx`. The MAP ITSELF (Leaflet: tiles, markers, clusters, popups) is not redrawn - draw it as a plain toned rectangle labelled "map". Redesign only KPM's panels around it: the shop list / filters / region tree, the side panel for one shop, the boundary editor, the "Deploy Target" new-shop form, the simulation panel. Master-detail where it fits (shop list + the shop in hand). Shop names and regions from `demo/seed.json` customers; the overdue / soon / ok state must be the code's own rule (Task 31 table 3, `mapPoints` diffDays) run by hand for the date you show, in an HTML comment.
 Done when: the file exists, no script, the comment is there, and the Result lists every Task 31 KPM-panel element with where it sits.
+
+**Result:**
+The Leaflet map (`MapContainer`, `TileLayer`, `GeoJSON`, `Polyline`, `Circle`, `MarkerClusterGroup`, `ExpeditionLayer`) is untouched and drawn as a plain toned rectangle labelled **`map`**.
+
+Where every Task 31 KPM-panel element sits in `.claude/drafts/map-system-pro.html`:
+- **Header (`Map System`), Tabs (`Map & Shops`, `Sector Command`, `Territory Manager`, `Season Rank Engine`), `Region` `<select>`, `Set Home`, `+ Add Pin` (`.btn edge`)**: PC `.top` and Phone 1 & 2 `.top`.
+- **Totals strip (`.ms-totals`: `152` shops, `Rp 82.860.000` this month lab, `152` need a visit)**: PC `.sum`.
+- **Shop list, `Find a shop`, `LevelChips` (`All` / `Epic` / `Unranked`), `Top areas` (`BANDUNG`)**: PC `.list` left pane (6 real `demo/seed.json` shops) and `.hud-bar`.
+- **Layer dock (`.ms-layers`: `Borders`, `Heatmap`, `Network`, `Conquest`), `Locate`, `ZoneHUD` (`Muntilan · 12 shops`), Targeting HUD (`Drag pin · Save`)**: PC `.map-pane` `.hud-bar`s and Phone 1 bottom dock pills (`Areas`, `Levels`, `Layers`, `Locate`).
+- **`StoreBottomSheet` (side panel for opened shop `Asyifa Mart Madura`: tier, area, `This month`, `Last order`, `Still unpaid`, `Visit rhythm`, `Directions`, `WhatsApp`, `On Journey Plan`, `Boss tools`, `Edit Profile`, `Delete this shop`)**: PC `.hand` right pane and Phone 1 bottom `.sheet`.
+- **`TacticalDashboard` ("Sector Command"), `BorderImporter` ("Territory Manager"), `TierAutomationEngine` ("Season Rank Engine"), `Register Target` (`Deploy Target` `.btn edge`)**: PC `.top` tabs and Phone 2 `.an-sec`.
+- **`mapPoints` overdue rule check**: HTML comment inside PC `.hand` citing `src/MapMissionControl.jsx:1887-1904` (`!last` -> `'overdue'` for all 6 seed customers on `2026-11-17`).
 
 ## Task 45 - draft the Agent Profile picture (segment 10) in the v4 look
 **Status:** OPEN

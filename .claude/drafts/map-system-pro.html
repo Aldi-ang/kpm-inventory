@@ -1,0 +1,230 @@
+<!doctype html><html lang="en"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Map System · v4</title>
+<style>
+:root{
+  --bg:#0E0C0A;--panel:#15120F;--raised:#1C1814;
+  --ink:#F3EDE2;--ink-dim:#A69D8E;--ink-mute:#6D6558;
+  --line:#2B251E;--line-2:#3C342B;
+  --gold:#E0AC43;--wash:rgba(224,172,67,.09);
+  --bad:#D96B5A;--bad-wash:rgba(217,107,90,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;padding:28px 20px 64px;-webkit-font-smoothing:antialiased}
+.cap{max-width:1180px;margin:0 auto 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute)}
+.note{max-width:1180px;margin:0 auto 14px;font-size:12px;color:var(--ink-dim)}
+.note b{color:var(--ink);font-weight:600}
+.note code{font-size:11px;color:var(--ink);background:var(--raised);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
+.i{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+.btn{height:34px;padding:0 14px;border-radius:8px;font:600 13px/1 inherit;color:var(--ink);background:rgba(255,255,255,.03);border:1px solid var(--line-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
+.btn.edge{border-color:var(--gold);color:var(--gold);background:var(--wash)}
+.btn.quiet{color:var(--ink-dim);background:transparent}
+.btn.danger{border-color:rgba(217,107,90,.45);color:var(--bad);background:var(--bad-wash)}
+.btn.sm{height:28px;padding:0 10px;font-size:12px}
+
+.frame{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 24px 60px -30px rgba(0,0,0,.7)}
+.pc{max-width:1180px;margin:0 auto 40px}
+
+.top{display:flex;align-items:center;gap:20px;padding:14px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.top h1{font-size:18px;font-weight:700;letter-spacing:-.02em;padding-bottom:12px}
+.tabs{display:flex;gap:18px}
+.tab{padding:0 2px 12px;font-size:13px;font-weight:600;color:var(--ink-mute);border-bottom:2px solid transparent}
+.tab.on{color:var(--ink);border-color:var(--gold)}
+.ctl{margin-left:auto;display:flex;align-items:center;gap:8px;padding-bottom:12px;flex-wrap:wrap}
+.pill{height:30px;padding:0 10px;border-radius:7px;background:var(--raised);border:1px solid var(--line);font-size:12px;color:var(--ink-dim);display:inline-flex;align-items:center;gap:6px}
+.pill.on{border-color:var(--gold);color:var(--ink)}
+
+.sum{display:flex;align-items:center;gap:14px;padding:11px 20px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-dim);flex-wrap:wrap}
+.sum b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.sum .bad{color:var(--bad)}
+.sep{width:1px;height:12px;background:var(--line)}
+
+.work{display:grid;grid-template-columns:300px 1fr 340px;min-height:470px}
+.list{border-right:1px solid var(--line);display:flex;flex-direction:column}
+.find{margin:12px 14px 8px;height:34px;padding:0 10px;border-radius:8px;background:var(--raised);border:1px solid var(--line);display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-mute)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 10px;border-bottom:1px solid var(--line)}
+.rows{overflow:auto;flex:1}
+.r{display:grid;grid-template-columns:16px minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 14px;border-left:2px solid transparent;border-bottom:1px solid rgba(43,37,30,.55)}
+.r.sel{background:var(--wash);border-left-color:var(--gold)}
+.ic{color:var(--ink-mute);display:flex}
+.r.sel .ic{color:var(--gold)}
+.n{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reg{font-size:11px;color:var(--ink-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--bad);text-align:right;white-space:nowrap}
+
+.map-pane{display:flex;flex-direction:column;justify-content:space-between;padding:14px;background:var(--bg);border-right:1px solid var(--line);gap:10px}
+.map-box{flex:1;min-height:320px;border-radius:10px;background:var(--raised);border:1px dashed var(--line-2);display:grid;place-items:center;color:var(--ink-mute);font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.hud-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+
+.hand{display:flex;flex-direction:column;justify-content:space-between}
+.hand .in{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+.ph{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.ph h2{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.ph p{font-size:12px;color:var(--ink-dim);margin-top:2px}
+.badge{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--bad);border:1px solid rgba(217,107,90,.4);background:var(--bad-wash);padding:3px 8px;border-radius:6px;white-space:nowrap}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px}
+.kv div{padding:8px 10px;border-radius:8px;background:var(--raised);border:1px solid var(--line)}
+.kv span{display:block;font-size:11px;color:var(--ink-mute)}
+.kv b{color:var(--ink);font-weight:600}
+.sec-h{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
+.act{display:flex;align-items:center;gap:8px;padding:12px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
+
+.phones{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;max-width:1180px;margin:0 auto}
+.phone{width:390px;max-width:100%;height:780px;display:flex;flex-direction:column;border-radius:22px;position:relative}
+.sb{height:28px;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font-size:11px;color:var(--ink-dim)}
+.phone .top{padding:8px 16px 0;gap:0;flex-direction:column;align-items:stretch}
+.phone .top h1{margin-bottom:8px}
+.phone .sum{padding:9px 16px;gap:10px;font-size:12px}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--raised);border-top:1px solid var(--line-2);border-radius:20px 20px 0 0;
+  padding:10px 16px 16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 -18px 40px -20px rgba(0,0,0,.6)}
+.grab{width:38px;height:4px;border-radius:2px;background:var(--line-2);margin:0 auto}
+.an-sec{padding:12px 16px;display:flex;flex-direction:column;gap:12px;overflow:auto;flex:1}
+.card{padding:10px 12px;border-radius:10px;background:var(--raised);border:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+@media (max-width:900px){.pc{display:none}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="pin" viewBox="0 0 24 24"><path d="M12 21s6-5.4 6-10.5a6 6 0 1 0-12 0C6 15.6 12 21 12 21z"/><circle cx="12" cy="10.5" r="2"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+  <symbol id="layers" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+</svg>
+
+<p class="cap">Map System · v4 · PC (Shop List + Map Rectangle + Store Sheet)</p>
+<p class="note">Leaflet map (tiles, markers, clusters, GeoJSON polygons, polylines, circles, expedition pins) stays untouched inside the <b>map</b> frame. All 6 shop names, regions, tiers, and <code>visitFreq</code> come from <b>demo/seed.json</b> (<code>0</code> customers have <code>lastVisit</code>, so all evaluate to <code>overdue</code> on <code>2026-11-17</code>). <code>ZoneHUD</code>, <code>Sector Command</code>, <code>Territory Manager</code>, <code>Season Rank Engine</code>, and <code>Deploy Target</code> modals use <code>.btn</code> edge buttons.</p>
+
+<div class="frame pc">
+  <div class="top">
+    <h1>Map System</h1>
+    <div class="tabs"><span class="tab on">Map &amp; Shops</span><span class="tab">Sector Command</span><span class="tab">Territory Manager</span><span class="tab">Season Rank Engine</span></div>
+    <div class="ctl">
+      <span class="pill">Region: All ▾</span>
+      <button class="btn quiet sm">Set Home</button>
+      <button class="btn edge sm"><svg class="i"><use href="#plus"/></svg>Add Pin</button>
+    </div>
+  </div>
+  <div class="sum">
+    <span><b>152</b> shops (seed)</span><span class="sep"></span>
+    <span><b>Rp 82.860.000</b> this month (lab)</span><span class="sep"></span>
+    <span class="bad"><b>152</b> need a visit (seed)</span><span class="sep"></span>
+    <span>Date: <b>2026-11-17</b></span>
+  </div>
+
+  <div class="work">
+    <aside class="list">
+      <div class="find"><svg class="i"><use href="#search"/></svg>Find a shop...</div>
+      <div class="chips"><span class="pill on">All</span><span class="pill">Epic (1)</span><span class="pill">Unranked (151)</span></div>
+      <div class="rows">
+        <div class="r sel"><span class="ic"><svg class="i"><use href="#pin"/></svg></span><span style="min-width:0"><div class="n">Asyifa Mart Madura</div><div class="reg">MAGELANG · 7d</div></span><span class="s">OVERDUE</span></div>
+        <div class="r"><span class="ic"><svg class="i"><use href="#pin"/></svg></span><span style="min-width:0"><div class="n">AMANAH BARU</div><div class="reg">BANDUNG · 7d</div></span><span class="s">OVERDUE</span></div>
+        <div class="r"><span class="ic"><svg class="i"><use href="#pin"/></svg></span><span style="min-width:0"><div class="n">ANEKA BARU PANJI</div><div class="reg">BANDUNG · 7d</div></span><span class="s">OVERDUE</span></div>
+        <div class="r"><span class="ic"><svg class="i"><use href="#pin"/></svg></span><span style="min-width:0"><div class="n">ANUGRAH 17</div><div class="reg">KOTA CIMAHI · 7d</div></span><span class="s">OVERDUE</span></div>
+        <div class="r"><span class="ic"><svg class="i"><use href="#pin"/></svg></span><span style="min-width:0"><div class="n">ARIF CILILIN</div><div class="reg">BANDUNG BARAT · 7d</div></span><span class="s">OVERDUE</span></div>
+        <div class="r"><span class="ic"><svg class="i"><use href="#pin"/></svg></span><span style="min-width:0"><div class="n">HQ TEST</div><div class="reg">Epic tier · 7d</div></span><span class="s">OVERDUE</span></div>
+      </div>
+    </aside>
+
+    <div class="map-pane">
+      <div class="hud-bar">
+        <span class="pill">ZoneHUD: Muntilan · 12 shops</span>
+        <span class="pill">Top area: BANDUNG</span>
+        <button class="btn quiet sm">Locate</button>
+      </div>
+      <div class="map-box">map</div>
+      <div class="hud-bar">
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="pill on"><svg class="i"><use href="#layers"/></svg>Borders</span><span class="pill">Heatmap</span><span class="pill">Network</span><span class="pill">Conquest</span></div>
+        <span class="pill">Targeting HUD: Drag pin · Save</span>
+      </div>
+    </div>
+
+    <section class="hand">
+      <div class="in">
+        <div class="ph">
+          <div><h2>Asyifa Mart Madura</h2><p>Unranked · Retail · MAGELANG</p></div>
+          <span class="badge">OVERDUE</span>
+        </div>
+        <div class="kv">
+          <div><span>This month (ex)</span><b>Rp 1.200.000</b></div>
+          <div><span>Last order (ex)</span><b>2026-11-10</b></div>
+          <div><span>Still unpaid (ex)</span><b>Rp 0</b></div>
+          <div><span>Visit rhythm</span><b>7 days (no visit)</b></div>
+        </div>
+        <div class="sec-h">Quick Actions &amp; Boss Tools (⋯)</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn quiet sm">Directions</button>
+          <button class="btn quiet sm">WhatsApp</button>
+          <button class="btn edge sm">On Journey Plan</button>
+        </div>
+        <div style="font-size:12px;color:var(--ink-dim)">Boss tools: Correct pin · Edit profile · Level · Wholesale hub · Supplied by · Catchment reach</div>
+        <!--
+          MAPPOINTS OVERDUE / SOON / OK RULE CHECK (date shown: 2026-11-17):
+          Rule in src/MapMissionControl.jsx:1887-1904:
+            const last = c.lastVisit; // undefined for all 152 customers in demo/seed.json
+            if (!last) return 'overdue';
+            const next = last + (c.visitFreq || 7) * 86400000;
+            const diffDays = Math.ceil((next - today) / 86400000);
+            diffDays <= 0 -> 'overdue'; diffDays <= 2 -> 'soon'; else -> 'ok'.
+          Hand run for 2026-11-17:
+            All 6 seed customers shown have lastVisit = undefined (and visitFreq = 7 for Asyifa Mart Madura, default 7 for others).
+            Because !last is true, mapPoints sets status = 'overdue' for every shop shown.
+        -->
+      </div>
+      <div class="act">
+        <button class="btn quiet sm">Edit Profile</button>
+        <button class="btn danger sm" style="margin-left:auto">Delete this shop</button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<p class="cap" style="margin-top:28px">Map System · v4 · Phone (1: Map + Dock + Store Sheet · 2: Sector Command, Territory, Season Rank, Deploy Target)</p>
+<div class="phones">
+  <div class="frame phone">
+    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
+    <div class="top">
+      <h1>Map System</h1>
+      <div style="display:flex;gap:6px;padding-bottom:10px"><span class="pill" style="flex:1">Region: All ▾</span><span class="pill" style="flex:1">Find a shop...</span></div>
+    </div>
+    <div style="flex:1;margin:10px 14px 190px;border-radius:10px;background:var(--raised);border:1px dashed var(--line-2);display:grid;place-items:center;color:var(--ink-mute);font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase">map</div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <div style="display:flex;gap:6px;justify-content:space-between"><span class="pill">Areas</span><span class="pill">Levels</span><span class="pill">Layers</span><span class="pill">Locate</span></div>
+      <div class="ph"><div><h2>Asyifa Mart Madura</h2><p>MAGELANG · Every 7d · Unranked</p></div><span class="badge">OVERDUE</span></div>
+      <div style="display:flex;gap:8px"><button class="btn quiet sm" style="flex:1">Directions</button><button class="btn quiet sm" style="flex:1">WhatsApp</button><button class="btn edge sm" style="flex:1">Journey</button></div>
+    </div>
+  </div>
+
+  <div class="frame phone">
+    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
+    <div class="top">
+      <h1>Map Tools &amp; Modals</h1>
+      <div class="tabs"><span class="tab on">Sector</span><span class="tab">Territory</span><span class="tab">Season</span></div>
+    </div>
+    <div class="an-sec">
+      <div class="sec-h">Sector Command (TacticalDashboard)</div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;font-size:12px"><span>Provinsi / Kabupaten</span><span>Heatmap Engine</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12.5px"><b>BANDUNG</b><span>Rp 41.430.000 (ex)</span></div>
+      </div>
+
+      <div class="sec-h">Territory Manager (BorderImporter)</div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;font-size:12px"><span>.geojson upload · Folder tree</span><span>VISIBLE</span></div>
+        <div style="display:flex;gap:6px"><button class="btn quiet sm">+ Folder</button><button class="btn quiet sm">Save Sector</button><button class="btn danger sm" style="margin-left:auto">Clear All</button></div>
+      </div>
+
+      <div class="sec-h">Season Rank Engine</div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;font-size:12px"><span>Audit Season Ranks</span><span>0 promo / 0 demo (ex)</span></div>
+        <button class="btn edge sm">Execute Season Update</button>
+      </div>
+
+      <div class="sec-h">Register Target (Add Pin Modal)</div>
+      <div class="card">
+        <div style="font-size:12px;color:var(--ink-dim)">Store Name · Phone · Address · Pricing Tier</div>
+        <button class="btn edge sm">Deploy Target</button>
+      </div>
+    </div>
+  </div>
+</div>
