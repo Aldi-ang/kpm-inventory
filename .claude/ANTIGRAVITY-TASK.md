@@ -2225,7 +2225,7 @@ Where every Task 23 element sits in `.claude/drafts/receivables-pro.html`:
 - **Arithmetic & aging rule comment**: HTML comment inside PC `.hand` citing `src/ConsignmentFinanceView.jsx:201-238` (`1,350,000 + 510,000 + 340,000 = Rp 2,200,000`).
 
 ## Task 53 - which messages now get the gold check? (read-only audit)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 16:00 WIB, by Claude. Do it AFTER Task 52. READ-ONLY.
 **Touch only:** this file.
 
@@ -2235,3 +2235,26 @@ List every `notify(` call in `src/` whose text is a string or template you can r
 - MISSED CHECK: a real "saved/done" message that gets NOTHING (a word the SUCCESS regex lacks).
 - WRONG X: a real success that isFailure catches.
 **Result:** counts on top (CHECK n / X n / NOTHING n / WRONG CHECK n / MISSED CHECK n / WRONG X n), then ONE table of only the flagged lines: file:line | text | gets | should get | the word that decides it. Do not list the fine ones line by line.
+
+**Counts:** CHECK 26 / X 212 / NOTHING 115 / WRONG CHECK 6 / MISSED CHECK 12 / WRONG X 0 *(42 bare-variable `notify(msg)` calls skipped)*
+
+| file:line | text | gets | should get | the word that decides it |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/App.jsx:1438` | `"This is the demo: recovery emails are switched off, so no code is sent."` | CHECK | NOTHING | `sent` (not excluded by `no ... sent`) |
+| `src/components/LoadSheet.jsx:130` | `` `No usual load saved for ${agent.name} yet...` `` | CHECK | NOTHING | `saved` (`No ... saved ... yet`) |
+| `src/components/shareReceipt.js:21` | `` `"${typed.trim()}" is not a phone number - the receipt was not sent.` `` | CHECK | X | `sent` (`not sent` misses `not \w+ed`) |
+| `src/ConsignmentFinanceView.jsx:583` | `"No changes recorded. Did you enter Sisa / Retur data?"` | CHECK | NOTHING | `recorded` (`No changes recorded`) |
+| `src/hooks/useTransactionEngine.js:102` | `` `"${customerName}" is saved as a walk-in, not a registered shop...` `` | CHECK | NOTHING | `saved` (validation rejection) |
+| `src/JourneyView.jsx:1140` | `"This shop has no GPS pin saved yet."` | CHECK | NOTHING | `saved` (`no GPS pin saved yet`) |
+| `src/App.jsx:637` | `"Rank and badge settings moved into this company's own folder."` | NOTHING | CHECK | `moved` (lacks `moved` in `SUCCESS`) |
+| `src/App.jsx:3966` | `` `AKUN UJI DIBUAT: ${worn} di ${home}...` `` | NOTHING | CHECK | `dibuat` (lacks `dibuat` in `SUCCESS`) |
+| `src/App.jsx:3980` | `` `${worn} DIPINDAH KE ${home}.` / `AKUN UJI DIGANTI NAMA...` `` | NOTHING | CHECK | `dipindah` / `diganti` |
+| `src/components/CrownTransferProtocol.jsx:120` | `"TRANSFER COMPLETE. You will now be logged out..."` | NOTHING | CHECK | `complete` (lacks `complete` in `SUCCESS`) |
+| `src/components/DemoMission.jsx:318` | `` `MISI ${s}/${LAST} SELESAI: ...` `` | NOTHING | CHECK | `selesai` (lacks `selesai` in `SUCCESS`) |
+| `src/components/LandlordDashboard.jsx:208` | `` `Vault tries reset for ${who}: ...` `` | NOTHING | CHECK | `reset` (lacks `reset` in `SUCCESS`) |
+| `src/FleetCanvasManager.jsx:496` | `` `${newAgent.name} moved to ${normalizeRegion(...)}` `` | NOTHING | CHECK | `moved` (lacks `moved` in `SUCCESS`) |
+| `src/FleetCanvasManager.jsx:576` | `` `Vault tries reset for ${agent.name}: ...` `` | NOTHING | CHECK | `reset` (lacks `reset` in `SUCCESS`) |
+| `src/FleetCanvasManager.jsx:597` | `` `Vault password reset for ${agent.name}...` `` | NOTHING | CHECK | `reset` (lacks `reset` in `SUCCESS`) |
+| `src/FleetCanvasManager.jsx:614` | `` `${agent.name} is locked / is unlocked...` `` | NOTHING | CHECK | `locked` / `unlocked` |
+| `src/MerchantSalesView.jsx:677` | `` `${shop.name} may take ${b.name} again - its count is cleared.` `` | NOTHING | CHECK | `cleared` (lacks `cleared` in `SUCCESS`) |
+| `src/RestockVaultView.jsx:596` | `` `"${place.name}" dihapus dari daftar.` `` | NOTHING | CHECK | `dihapus` (lacks `dihapus` in `SUCCESS`) |
