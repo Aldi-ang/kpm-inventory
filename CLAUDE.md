@@ -43,6 +43,11 @@ Full workflow: A-Brain `Wiki/Concepts/Publishing a Fix.md`.
 
 ## Antigravity, Claude's partner (2026-11-08)
 
+**UNTIL SATURDAY 2026-11-21: Antigravity is the LEAD** (Aldi, 2026-11-18: *"start using alucard inside the antigravity
+until saturday because the weekly quota in here is almost depleted"*). Its terms: the OVERRIDE block in `GEMINI.md`.
+A Claude session in this repo before then: read PROGRESS.md's newest entries (they may be Antigravity's), ask Aldi
+before editing anything, never two writers.
+
 Aldi: *"i want u alucard on claude is the one who responsible for our app project and i want antigravity as your partner to do your task"*; on who puts its work live: *"1 is safer so lets do that"*.
 Its rules: `GEMINI.md`. Options and what was rejected: A-Brain `Brainstorm/2026-11-08_claude-and-antigravity-together.md`.
 

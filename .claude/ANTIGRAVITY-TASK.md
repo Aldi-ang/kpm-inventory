@@ -2440,9 +2440,54 @@ Then: which blocks share a variable declared INSIDE another block (a cut there b
 ---
 
 ## Task 61 - check the Reports picture against your Task 59 map (segment 5 is next)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-18 08:20 WIB, by Claude. Do it after Task 60.
 **Touch only:** `.claude/drafts/reports-pro.html`, this file.
 
 Your Task 40 drew `.claude/drafts/reports-pro.html`; your Task 59 mapped today's `src/components/HistoryReportView.jsx`. Open both. For every block and every press in the Task 59 table, say where it is in the picture, or MISSING. Fix only MISSING or wrong items in the picture file (same look, same seed numbers, no script, palette law: no blue, no green, gold never as text on light). Keep in mind what Receivables taught: Aldi wants the responsible salesman visible, one summary line with the money fact in Rupiah, master-detail (list left, the one thing in hand right; phone: it opens under its row), ordinary sizes (13-14 px text, 44 px rows).
 **Result:** table (Task 59 block or press | where in the picture | was it MISSING, now fixed?) + the count of fixes. Commit both files together as "Antigravity: Task 61 ...".
+**Fixes count:** 4 (responsible salesman on list/detail, Phone 1 opens under its own row, `Delete Folder` action, Phone 2 `Agent Roster`).
+
+| Task 59 block or press | where in `.claude/drafts/reports-pro.html` | was it MISSING, now fixed? |
+| :--- | :--- | :--- |
+| 1. Title + date/region/salesman filters | PC `.top` (`Daily ▾`, `2026-11-17`, `Pull Archive`), `.list` (`.find`, `.crumb`); Phone 1 & 2 `.sum` | Present; responsible salesman (`Agus`, `Ari`, `Rina`) added to every row + opened detail (`L136-148, 196-198`) |
+| 2. Summary line (`stats`) | PC `.sum` (`Rp 2.750.000`, `Rp 650.000` net, `280 Bks`, `14` receipts); Phone 1 & 2 | Present |
+| 3. Transaction list & 1 row + 7-level folders | PC `.list .rows` (`44 px`); Phone 1 `.list` (7-level drilldown in `.note`) | Fixed Phone 1 so opened row sits **under its own row** instead of a bottom `.sheet` (`L196-205`) |
+| 4. Opened transaction (`SaleReceipt`, `Proof` photo + GPS) | PC `.hand` + `.act` (`Proof`, `Receipt`); Phone 1 inline detail under row | Present (`Proof` & `Receipt` added to Phone 1 inline buttons `L203`) |
+| 5. Edit / Delete (admin) & `Delete Folder` | PC `.act` (`Delete Folder`, `Edit`, `Delete`); Phone 1 inline (`Edit`, `Delete`); `DATA AUDIT` in `.note` | **`Delete Folder`** (`L857`) was MISSING — added to PC `.act` (`L178`) |
+| 6. Export / Print PDF / Scale | Phone 2 `.an-sec` (`Scale 100%`, `Print PDF`) | Present |
+| 7. `Product Performance`, `Offer Performance`, `Package Returns`, `Agent Roster` | Phone 2 `.an-sec` (`L220-235`) | **`Agent Roster`** (`575-637`) was MISSING — added to Phone 2 (`L234-235`) |
+| 8. Modals (`Proof`, `DATA AUDIT`, `SaleReceipt`) | Triggered from `.act` / Phone 1 buttons; `DATA AUDIT` noted in `.note` (`L112`) | Present |
+
+---
+
+**2026-11-18 09:30 - READ GEMINI.md's OVERRIDE block first: until Saturday 2026-11-21 you are the LEAD (Aldi's call, Claude is out of weekly quota). Tasks 62-63 are yours to do AND review; push only on Aldi's "push".**
+
+## Task 62 - BUILD: consignment debt is never limited to 7 days (Aldi's decision)
+**Status:** OPEN
+**Written:** 2026-11-18 09:30 WIB, by Claude. Do it after Task 60 - it builds Task 60's pick.
+**Touch only:** `src/hooks/useDatabaseSync.js`, `src/App.jsx` (only the lines that pass the new list down), `src/ConsignmentFinanceView.jsx` (only where `myTransactions` is fed - NOT `debtData`'s maths), `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file. Anything else -> write why in the Result and STOP.
+
+His words: *"for data like consignment that can last more than 7 days i think the data should not limited to seeing last 7 days because it will hide all the consignment that is more than 7 days right"*.
+- Receivables must see EVERY Titip note that still owes money, however old, plus every `CONSIGNMENT_PAYMENT` / `RETURN` that pays one off. The other screens keep their 7-day feed (that limit saves reads on purpose, `useDatabaseSync.js:87` "FIREWALL").
+- `debtData` (~L163-244 of ConsignmentFinanceView.jsx) stays byte-identical: feed it more rows, never change its maths. Merge the old-note rows with the 7-day rows by `id` (no doubles - a doubled payment pays twice).
+- RULES FIRST: a new `query(...)` on `transactions` must pass `firestore.rules` for EVERY tier that opens Receivables (T1-T6 - read the `transactions` match block; a list query is refused unless its `where` matches what the rule checks). If a rule must change: do NOT build. Write the exact CHANGE (old line, new line, why) in the Result for Aldi to publish in the Console, set Status BLOCKED, and go to Task 63. Test the query in the emulator (`rules-test/`, the demo lab) before saying it passes.
+- Index: if the query needs a composite index, add it to `firestore.indexes.json` ONLY if that file exists and is in the repo; say so in the Result (indexes deploy with rules - Aldi's Console job).
+- Every listener you add must be unsubscribed in the same cleanup as the others (no leak on log out / switch).
+- Checks: ONE logicFixes check that would fail if Receivables went back to the 7-day list, and ONE behaviour check on the Task 56 demo data: with "today" = 2026-11-18, Receivables' feed holds all 9 demo Titip notes + the payment (8 shops owe Rp 9.120.000, AMANAH BARU overdue).
+- Done when: the five gates in GEMINI.md's OVERRIDE are green, lab frame PC 1440 shows 8 shops / Rp 9.120.000 / AMANAH BARU Overdue (the demo lab steps are in NEXT-SESSION.md's LAB block; save the frame to `../A-Brain/Raw/2026-11-18-receivables/`), one patch note line (en + id, plain words, no names). Commit "Antigravity: Task 62 ...". Push only on Aldi's "push".
+
+## Task 63 - read-only: every rule of Receivables still holds in the NEW screen
+**Status:** OPEN
+**Written:** 2026-11-18 09:30 WIB, by Claude. Aldi: *"u know all the rules make sure the rules also work on this new UI"*.
+**Touch only:** this file (then fix what you find as Task 64, BUILD, same shape as 62).
+
+Your Task 23 map listed every rule, press and write of the OLD `src/ConsignmentFinanceView.jsx` (grep "## Task 23"). The new v5 screen (commits e7595752, e4c1e313, 5a696b31) moved the presses. For EVERY rule in that map, say where it is enforced TODAY and whether the new screen can get around it. At least:
+- Who sees what: `isAdmin` (= vault open) vs a salesman's own notes (`isInherited`, `myTransactions` L128-157); region filter (`activeRegion`, HQ); member search. Does the new list, the search box, or the "Responsible" chip show a salesman a shop or Rupiah that is not his?
+- Hand-off: `handoffEligibility`, `canHandOffAcrossRegions`, `canApproveHandoffFrom`, `normalizeRegion` (`src/config/permissions.js`) - the new Hand-off press goes through `openStoreAction(..., 'transfer')`: does it still reach the same checks before any write? Admin approve vs agent accept (THE SHAKE dot).
+- Store Audit & Settle: the "INVALID AUDIT" guard (~L580), `allowCashRefund` / `allowRetur` settings, who may settle - same path as before?
+- Add Goods (`onAddGoods`): who may press it, does the new button show for a tier that the old one hid?
+- Receipt / share: `handoffLine`, `shareReceipt` - same data?
+- Physical Stock and Hand-offs tabs: anything the v5 cut lost (a disabled state, a `busy` guard, a confirm via `confirmAction`)?
+- Firestore side: each write still goes through the same handler - list them; anything the rules would now refuse that the UI offers (UI-says-yes-server-says-no: A-Brain `Wiki/Concepts/UI-Says-Yes-Server-Says-No Pattern.md`).
+**Result:** ONE table: Rule | where enforced today (file:line) | can the new screen get around it? (no / YES + how) | severity | smallest fix. Every row of Task 23's map gets a line. Then write Task 64 (BUILD) for every YES, and do it.

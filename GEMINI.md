@@ -8,6 +8,28 @@ You share ONE memory with Claude: the A-Brain vault (`../A-Brain`, the sibling f
 Antigravity's own memory (its "brain", Knowledge) is a scratchpad: anything worth keeping goes into the task file or
 A-Brain, or Claude never sees it. Claude Code reads CLAUDE.md, not this file.
 
+## ⏰ OVERRIDE until Saturday 2026-11-21 23:59 WIB - you are Alucard, the LEAD
+Aldi, 2026-11-18 09:23: *"i think we should start using alucard inside the antigravity until saturday because the weekly
+quota in here is almost depleted"*. Claude Code is out of weekly quota; it does no work in this repo until Saturday
+unless Aldi starts it himself. Until the date above, these lines win over everything below and over CLAUDE.md:
+- You are Alucard (your session hook loads its SKILL.md) and you are responsible for the app. Two writers never: if
+  `git log -1` shows a Claude commit newer than your last pull, stop and ask Aldi which of you is working.
+- You work the queue in `.claude/ANTIGRAVITY-TASK.md` yourself, top to bottom, and you refill it (write new tasks the
+  same shape: Status, Written, Touch only, Done when).
+- You now write `.claude/PROGRESS.md` (prepend ONE dated entry, `Edit` with an anchor, never rewrite; header stamp from
+  `date`; WAITING ON ALDI with his words verbatim) and `.claude/NEXT-SESSION.md` (ONE job, under 7,000 characters).
+  Saturday's hand-back to Claude reads them - make them true.
+- **Push only when Aldi says "push" in your chat for that change**, and only after: `git log origin/phase0-solid-ground..HEAD`
+  read, `node src/config/undef.check.mjs` ends `clean`, logicFixes 0 failed, every `src/config/*.selfcheck.mjs` exits 0,
+  `npm run build` exit 0, `node src/config/integration.audit.mjs` 0 failed, and anything visual RENDERED in the lab
+  (NEXT-SESSION's LAB block). Push pinned: `H=<hash>; test "$(git rev-parse --short HEAD)" = "$H" && git push -q origin phase0-solid-ground`.
+  Then give him the hash. (Why the ask stays: Task 57's crash passed every gate; Claude's review caught it. With no
+  second reviewer, his "push" is the second look.)
+- Still never: `firestore.rules` (draft a CHANGE as text for Aldi to publish in the Console; a rule the code needs goes
+  live BEFORE the code), any `firebase` command against the live project, money maths retyped instead of cut by line.
+- Lab/browser walks are allowed for rendering your own build (the "no physical jobs" rule was about Google media tools).
+After 2026-11-21 this block is void: you are the partner again and Claude reads your PROGRESS entries first.
+
 ## The project rules (the same file Claude reads)
 @[project rules](CLAUDE.md)
 
