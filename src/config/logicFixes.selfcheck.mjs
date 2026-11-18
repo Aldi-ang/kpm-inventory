@@ -14714,5 +14714,17 @@ section('REPORTS V2 MASTER-DETAIL & OMSET ONLY (Task 68, 2026-11-18)');
      !/\b(?:blue|emerald|green|pink|purple|sky|cyan|indigo|teal|violet|slate)-\d|#3b82f6|#10b981/i.test(hrNoComments),
      'Reports v2 invariant missed');
 }
+section('REPORTS: TITIP GIVEN SEPARATE FROM HOW THEY PAID MIX (Task 69, 2026-11-18)');
+{
+  const hr = code(read('src/components/HistoryReportView.jsx'));
+  const mixBlock = hr.slice(hr.indexOf('const mixEntries = ['), hr.indexOf('const mixTotal ='));
+  ok('REGRESSION: HistoryReportView How-they-paid mix excludes Titip (Cash/Transfer/QRIS only) and shows read-only Titip given using isTitip on SALE rows without touching stats',
+     hr.includes("import { isTitip } from '../utils/revenueRule'") &&
+     !mixBlock.includes("'Titip'") &&
+     mixBlock.includes("'Cash'") && mixBlock.includes("'Transfer'") && mixBlock.includes("'QRIS'") &&
+     hr.includes("(t.type || 'SALE') === 'SALE' && isTitip(t)") &&
+     hr.includes('Titip given {formatRupiah(kpiSummary.titipGiven)}'),
+     'Titip given KPI split invariant missed');
+}
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

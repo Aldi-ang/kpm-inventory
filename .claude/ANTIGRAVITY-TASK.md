@@ -2647,3 +2647,19 @@ Rebuild `src/components/HistoryReportView.jsx` by cut-and-place using Task 59's 
 - NO 90-day cap. His words say "not limited"; a note 100 days old that still owes must show. Listen to every Titip SALE + every CONSIGNMENT_PAYMENT + RETURN with no date limit. The read cost grows with history - write the number in the Result; archiving paid-off notes is a LATER task, not this one.
 - Scope = ALL 7 places in your Task 60 table 1 (Receivables, Command Center Piutang, sales terminal sidebar, App.jsx delete + hand-off L3512, Map shop card, Agent Profile Titip, vanBay titipOf). Feed them a SEPARATE merged list (`consignmentTx` = 7-day rows + old consignment rows, de-duplicated by id) - never widen the global `transactions` (Reports, EOD, revenue, Day Replay must keep their 7-day list). Touch only grows to: `src/components/DashboardBenchmarks.jsx`, `src/MerchantSalesView.jsx`, `src/MapMissionControl.jsx`, `src/AgentProfileView.jsx`, `src/utils/vanBay.js` - ONLY the line where each reads its list. If one needs more than that, list it in the Result and leave it.
 - Each money rule stays where it is (`debtData`, `outstandingTitip`, `debtCredit`, `titipOf`): more rows in, same maths.
+
+## Task 69 - BUILD: Separate `Titip given` from `How they paid` mix bar in Reports (`HistoryReportView.jsx`)
+**Status:** DONE
+**Written:** 2026-11-18 14:32 WIB, per Aldi directive after Task 68 push.
+**Touch only:** `src/components/HistoryReportView.jsx`, `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file.
+
+In `src/components/HistoryReportView.jsx` KPI strip:
+1. Remove `Titip` from `How they paid` (`mixEntries` keeps `Cash`, `Transfer`, `QRIS` only — previously `Titip` always showed `0%` because `stats.payments` is omset/paid-only).
+2. Compute `titipGiven` read-only in `kpiSummary` as the sum of `(t.type || 'SALE') === 'SALE' && isTitip(t)` `Number(t.total) || 0` in `contextualTransactions`. Do NOT touch `stats` (`useMemo`).
+3. Render `Titip given {formatRupiah(kpiSummary.titipGiven)}` on its own `.d` line below `.kpm-rep-mixl`.
+**Done when:** All 5 gates pass, lab PC screenshot confirms the 3-way mix bar + `Titip given Rp ...` line, Task 69 is `DONE`, committed locally starting `Antigravity:`, and waiting for Aldi's `"push"`.
+**Result:**
+- Updated `src/components/HistoryReportView.jsx` (without touching `stats`): imported `isTitip` from `../utils/revenueRule`, removed `Titip` from `mixEntries` (`Cash`, `Transfer`, `QRIS` only), computed `titipGiven` read-only across `(t.type || 'SALE') === 'SALE' && isTitip(t)` in `kpiSummary`, and rendered `Titip given {formatRupiah(kpiSummary.titipGiven)}` below `.kpm-rep-mixl`.
+- Added regression check in `src/config/logicFixes.selfcheck.mjs` + EN/ID entry in `src/config/patchNotes.js`.
+- Verified all 5 gates green after final edit: `undef.check.mjs` -> `clean`; `logicFixes.selfcheck.mjs` -> **3029 passed, 0 failed**; all 14 `*.selfcheck.mjs` -> exit `0`; `npm run build` -> exit `0` (`13.51s`); `integration.audit.mjs` -> **726 passed, 0 failed**.
+- Verified in demo lab (`lab-task69.mjs`, `T2` + vault unlocked): `HOW THEY PAID RP 258,9 JT` -> `Cash 100% Transfer 0% QRIS 0%`, sub-line `Titip given Rp 1.180.000`, `overflowPC: false`, `ERRORS: []`. Screenshot saved to `../A-Brain/Raw/2026-11-18-reports/rep-task69-pc-1440.jpg` (Artifact `rep-task69-pc-1440.jpg`). Waiting on Aldi's `"push"`.

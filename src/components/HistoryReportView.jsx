@@ -8,6 +8,7 @@ import { tallySaleOp } from '../utils/salesRollupWrite';
 import { hasClearance } from '../config/permissions';
 import { canonicalPlace, isMasterVaultPlace } from '../utils/supply';
 import { offerResults, packageReturns } from '../utils/vanBay';
+import { isTitip } from '../utils/revenueRule';
 import { notify } from './Toast.jsx';
 import SaleReceipt from './SaleReceipt.jsx';
 import { RollingNumber } from './BiohazardTheme.jsx';
@@ -506,9 +507,11 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             ['Cash', Math.max(0, stats.payments.Cash || 0), 'kpm-rep-c-cash'],
             ['Transfer', Math.max(0, stats.payments.Transfer || 0), 'kpm-rep-c-tf'],
             ['QRIS', Math.max(0, stats.payments.QRIS || 0), 'kpm-rep-c-qr'],
-            ['Titip', Math.max(0, stats.payments.Titip || 0), 'kpm-rep-c-ti'],
         ];
         const mixTotal = mixEntries.reduce((a, [, v]) => a + v, 0);
+        const titipGiven = contextualTransactions
+            .filter(t => (t.type || 'SALE') === 'SALE' && isTitip(t))
+            .reduce((s, t) => s + (Number(t.total) || 0), 0);
         return {
             totalBks,
             settledPaid,
@@ -517,6 +520,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             avgReceipt: saleLikeCount ? saleLikeSum / saleLikeCount : 0,
             mixEntries,
             mixTotal,
+            titipGiven,
         };
     }, [stats, contextualTransactions]);
 
@@ -951,6 +955,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                     <span key={label}><i className={cls} />{label} {Math.round((val / (kpiSummary.mixTotal || 1)) * 100)}%</span>
                                 ))}
                             </div>
+                            <div className="d">Titip given {formatRupiah(kpiSummary.titipGiven)}</div>
                         </div>
                     </div>
 
