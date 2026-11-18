@@ -2697,3 +2697,23 @@ Build `.claude/drafts/customers-c.html` (taking section C of `.claude/drafts/cus
   - Live Phone frame (`390×844`) where the three panes stack (`Tree → Area → Shop`) with a `← Folders` / `← <Area>` back key and step bar.
   - `"Needs action"` opens the live `Grosir` (`Keep` / `Confirm`) and `Waiting for a salesman` (`Give`) queues; `Admin tools` opens `Repair store tiers`, `Find duplicates` (`Not duplicates`, `Show/Hide`, `Bring all back`, `Edit`, `Delete`), `Data scrub` preview + run, and `Import KML`; `+ Add customer` / `Edit shop` opens the full 6-column form enforcing non-zero GPS coordinates.
   - Verified every button in headless Chrome (`verify-customers-c.mjs`: `ERRORS: []`, zero `alert`/`confirm`/`prompt`, zero profit/cuan text).
+
+## Task 72 - READ-ONLY: what the real competitor log stores, vs what the side-by-side card needs (from Claude)
+**Status:** OPEN
+**Written:** 2026-11-19 06:40 WIB, for Customers C v3 (`.claude/drafts/customers-c.html`, function `compareCard`).
+**Touch only:** this file.
+1. In `src/components/CustomerManager.jsx` (and any util it calls), find every place a competitor / benchmark price is WRITTEN and READ. Give `file:line` for each, the Firestore path, and every field name written.
+2. Find the `firestore.rules` lines that gate that path (read + write, which tiers).
+3. Table: each thing the side-by-side card shows (our product + price, rival name + price, logged date, older price of the same rival, shelf, promo, selling speed, same rival at other shops) -> EXISTS (field name) / NEW. For each NEW: the smallest data change, and whether a rules line must change.
+**Done when:** Result has the 3 parts with `file:line` on every claim and a `could not check:` line.
+**Result:**
+
+## Task 73 - READ-ONLY: does our product data know sticks per pack? (from Claude)
+**Status:** OPEN
+**Written:** 2026-11-19 06:40 WIB. Rival names carry pack size ("Kretek 12", "Mild 16"); a fair compare is price PER STICK.
+**Touch only:** this file.
+1. Find where a product (Master Vault) is defined and saved: every field (`file:line`). Is there a sticks / pcs-per-pack / isi field? Name it, or say none.
+2. If none: list where the pack size is visible today (product name, unit label, anything) with `file:line`.
+3. One paragraph: the smallest way to show "Rp per stick" for both sides without a new field, and the risk if the name does not end in a number.
+**Done when:** Result answers 1-3 with `file:line` and a `could not check:` line.
+**Result:**
