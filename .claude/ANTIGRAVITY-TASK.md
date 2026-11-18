@@ -2551,11 +2551,61 @@ Move the 3 multi-file Task 60 Table 1 readers left in Task 62 onto `consignmentT
 - All 5 gates green after final edit: `undef.check.mjs` -> `clean`; `logicFixes.selfcheck.mjs` -> **3027 passed, 0 failed**; all 14 `src/config/*.selfcheck.mjs` scripts -> exit `0`; `npm run build` -> built in `10.62s` (exit `0`); `integration.audit.mjs` -> **725 passed, 0 failed**; `graphify update .` -> `3369 nodes, 6651 edges`.
 
 ## Task 66 - read-only: exact Console `firestore.rules` draft text for Task 63's 2 Authorize Transfer gaps (from Aldi)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-18 11:08 WIB, from Aldi. READ-ONLY (NEVER edit `firestore.rules` on disk).
 **Touch only:** this file.
 
 Draft the exact `old line`, `new line`, and `why` for both `Authorize Transfer` server-vs-UI mismatches from Task 63 so Aldi can paste/publish them in Firebase Console, and verify the drafted rules compile & pass in the Firestore emulator (`@firebase/rules-unit-testing`) against an in-memory rules string (never touching `firestore.rules`).
+**Result (`firestore.rules` on disk untouched — verified `RULES_DRAFT_VERIFIED_7_OF_7` in Firestore emulator):**
+1. **Add approver helpers after `firestore.rules:180` (`isFleetTier`):**
+   - **Old line (`L180`):**
+     `function isFleetTier(bossUid) { return isCompanyTopTier(bossUid) || isAreaAdmin(bossUid) || isFleetCaptain(bossUid); }`
+   - **New lines:**
+     ```
+     function isFleetTier(bossUid) { return isCompanyTopTier(bossUid) || isAreaAdmin(bossUid) || isFleetCaptain(bossUid); }
+     function isNamedHandoffApprover(bossUid, regionUpper) {
+       let profile = getEmployeeProfile();
+       let aId = profile != null ? profile.get('agentId', '') : '';
+       let mDoc = isAuthenticated() && profile != null && profile.bossUid == bossUid && aId != ''
+         ? get(/databases/$(database)/documents/artifacts/cello-inventory-manager/users/$(bossUid)/motorists/$(aId)) : null;
+       let regions = mDoc != null ? mDoc.data.get('approvalRegions', null) : null;
+       return regions is list && (regionUpper == null ? regions.size() > 0 : regionUpper in regions);
+     }
+     function canApproveTransferDoc(bossUid, tr) {
+       let toDoc = get(/databases/$(database)/documents/artifacts/cello-inventory-manager/users/$(bossUid)/motorists/$(tr.toAgentId));
+       let r = toDoc != null ? toDoc.data.get('location', 'UNASSIGNED').trim().upper() : 'UNASSIGNED';
+       return isFleetTier(bossUid) || isNamedHandoffApprover(bossUid, r);
+     }
+     function canHandoffStampCustomer(bossUid) {
+       let profile = getEmployeeProfile();
+       let role = profile != null ? profile.get('userRole', 'NONE') : 'NONE';
+       let aId = profile != null ? profile.get('agentId', '') : '';
+       let mDoc = isAuthenticated() && profile != null && profile.bossUid == bossUid && aId != ''
+         ? get(/databases/$(database)/documents/artifacts/cello-inventory-manager/users/$(bossUid)/motorists/$(aId)) : null;
+       let regions = mDoc != null ? mDoc.data.get('approvalRegions', null) : null;
+       return isVaultOwner(bossUid) || (isAuthenticated() && profile != null && profile.bossUid == bossUid && (
+         isT1Tag(role) || role == 'ADMIN' || role == 'COMPANY_OWNER' || role == 'AREA_ADMIN' || role == 'FLEET_CAPTAIN' ||
+         (regions is list && regions.size() > 0)
+       ));
+     }
+     ```
+   - **Why:** Single-profile-read helpers matching `canApproveHandoffFrom` (`permissions.js:515-547`) without exceeding Firestore's 1,000-expression limit.
+2. **Gap A — `account_transfers` update (`firestore.rules:950`):**
+   - **Old line (`L950`):** `allow update: if isSalesman(bossUid) && (request.resource.data.get('status', '') != 'APPROVED' || isFleetTier(bossUid));`
+   - **New line:** `allow update: if isSalesman(bossUid) && (request.resource.data.get('status', '') != 'APPROVED' || canApproveTransferDoc(bossUid, resource.data));`
+   - **Why:** Allows named `approvalRegions` approvers (even T5/T6 when delegated in Fleet) to approve hand-offs into their named region while denying un-named T5/T6.
+3. **Self-grant guard on `motorists` (`firestore.rules:880`):**
+   - **Old line (`L880`):** `(isSalesman(bossUid) && getEmployeeProfile().agentId == motoristId) ||`
+   - **New line:** `(isSalesman(bossUid) && getEmployeeProfile().agentId == motoristId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['approvalRegions'])) ||`
+   - **Why:** Stops a salesman from writing `approvalRegions` onto their own `motorists` doc to grant themselves hand-off approval.
+4. **Gap B — `customers/{customerId}` ownership stamp (`firestore.rules:778`):**
+   - **Old line (`L778`):** `allow update: if isSalesman(bossUid) && folderLimited(bossUid) && folderEditOk(bossUid) && grosirUpdateOk() && ownerFieldsUpdateOk();`
+   - **New lines:**
+     ```
+     allow update: if isSalesman(bossUid) && folderLimited(bossUid) && folderEditOk(bossUid) && grosirUpdateOk() && ownerFieldsUpdateOk();
+     allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mappedBy', 'ownerAgentId', 'ownerAgentName', 'handoffs']) && canHandoffStampCustomer(bossUid);
+     ```
+   - **Why:** Lets authorized hand-off approvers (`App.jsx:2235`) stamp store ownership & `handoffs` trail even when `view_only`, `own_region`, or `folderLimited` (`adminEdit: false`) blocks general shop edits, while still denying `priceTier` (`Grosir`) or address changes.
 
 **Task 62 AMENDED 2026-11-18 09:40 by Claude, after reading Task 60's Result (pick = option a, second listener, no rules change):**
 - NO 90-day cap. His words say "not limited"; a note 100 days old that still owes must show. Listen to every Titip SALE + every CONSIGNMENT_PAYMENT + RETURN with no date limit. The read cost grows with history - write the number in the Result; archiving paid-off notes is a LATER task, not this one.
