@@ -10331,28 +10331,21 @@ section('THE TWO-PART BELL: NEEDS YOU / MISSED, EVERY STRIP FADES (2026-10-02)')
      /match \/missed_log\/\{profileId\} \{\s*allow read, write: if isSalesman\(bossUid\) && getEmployeeProfile\(\)\.get\('agentId', ''\) == profileId;\s*\}/.test(rules));
 }
 
-section('PHONE SWEEP: REPORTS + LEADERBOARD (2026-10-02)');
+section('PHONE SWEEP: REPORTS + LEADERBOARD (2026-10-02, Reports v2 2026-11-18)');
 { const hr = code(read('src/components/HistoryReportView.jsx')).replace(/\r/g, ''), pp = code(read('src/components/ProductPerformancePanel.jsx')).replace(/\r/g, '');
   const hf = code(read('src/HallOfFameView.jsx')).replace(/\r/g, '');
-  ok('Reports analytics on the phone: the title stacks over the revenue; md and the printed A4 sheet (~718 px, under md) keep the row',
-     /className="flex flex-col gap-3 md:flex-row md:justify-between md:items-end md:gap-0 print:flex-row print:justify-between print:items-end print:gap-0 mb-8/.test(hr) &&
-     /<div className="md:text-right print:text-right"><p className="text-xs print:text-\[10px\][^"]*">Context Revenue/.test(hr) && /dark:print:bg-\[var\(--raised\)\] p-4 md:p-8 rounded-2xl/.test(hr),
-     'measured 2026-10-02: "Rp 14.625.0" ran off a 390 phone and the whole page slid sideways (390 < 441)');
-  ok('the product table has no fixed width: Revenue is on the phone screen, not behind a swipe; print keeps its 24 px qty gap',
-     /<table className="w-full text-sm print:text-\[10px\] text-left border-collapse">/.test(hr) && !/min-w-\[450px\]/.test(hr) &&
-     (hr.match(/text-right pr-3 md:pr-6 print:pr-6/g) || []).length === 2,
-     'measured: 450 px in a 308 px box, 8 cells hidden');
-  ok('the store ledger is a card per sale under lg (date | amount, type | keys, details), a table on the desk',
-     /<div className="p-4 md:p-6 lg:overflow-x-auto">/.test(hr) && /<table className="w-full text-sm text-left block lg:table lg:min-w-\[600px\]">/.test(hr) &&
-     /<thead className="hidden lg:table-header-group/.test(hr) && /<tbody className="block lg:table-row-group/.test(hr) &&
-     /<tr key=\{t\.id\} className="grid grid-cols-\[1fr_auto\] gap-x-3 gap-y-2 py-3 lg:table-row lg:py-0/.test(hr) &&
-     /"col-start-1 row-start-1 lg:p-3 font-mono/.test(hr) && /"col-start-1 row-start-2 self-center lg:p-3"/.test(hr) &&
-     /"col-span-2 row-start-3 lg:col-span-1 lg:p-3 [^"]*lg:max-w-\[250px\]/.test(hr) && /`col-start-2 row-start-1 lg:p-3 text-right/.test(hr) &&
-     /"col-start-2 row-start-2 lg:p-3 text-center">\s*<div className="flex justify-end lg:justify-center gap-2">/.test(hr),
-     'measured: 632 px in a 372 px box - the amount and the keys were behind a sideways swipe');
-  ok('agent roster row wraps on the phone: the name shrinks and breaks, the total keeps its width',
-     /p-4 flex flex-wrap gap-y-2 items-center justify-between text-left/.test(hr) && /"flex items-center gap-4 min-w-0"/.test(hr) &&
-     /"flex items-center gap-6 shrink-0"/.test(hr) && /leading-none mb-1 break-words">\{agent\.name\}/.test(hr));
+  const thCss = read('src/styles/theme.css');
+  ok('Reports v2 uses master-detail .kpm-rep-* shell and collapses cleanly at max-width: 1023px (2-col KPI, under-row phone drawer, 2-col facts)',
+     hr.includes('className="kpm-rep-wrap"') && hr.includes('className="kpm-rep-kpi"') && hr.includes('className="kpm-rep-work"') &&
+     hr.includes('className="kpm-rep-under"') &&
+     /\.kpm-rep-kpi \{ grid-template-columns: 1fr 1fr;/.test(thCss) &&
+     /\.kpm-rep-hand \{ display: none; \}/.test(thCss) &&
+     /\.kpm-rep-under \{ display: flex; flex-direction: column;/.test(thCss) &&
+     /\.kpm-rep-facts \{ grid-template-columns: 1fr 1fr; \}/.test(thCss));
+  ok('Reports v2 tables never force a fixed pixel width that overflows 390px phone screens',
+     hr.includes('className="kpm-rep-tbl"') && !/min-w-\[450px\]|min-w-\[600px\]/.test(hr));
+  ok('Reports v2 Salesmen roster and Product Performance render clean tables with Omset (never Profit)',
+     hr.includes('stats.agentRoster.map(agent') && !/Net Profit|Cuan/i.test(hr) && hr.includes('<span>Omset</span>'));
   ok('the four period keys: two by two on the phone, 44 tall, 11 px; one row from sm',
      /<div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:shrink-0 sm:flex-wrap">/.test(pp) &&
      /min-h-11 sm:min-h-0 px-3 py-1\.5 rounded-lg border text-\[11px\] sm:text-\[10px\]/.test(pp),
@@ -12514,19 +12507,15 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      /\.kpm-edge-btn \{[^}]*border: 1px solid var\(--accent-edge\);[^}]*background-color: transparent;/.test(thc) &&
      /\.kpm-edge-btn:hover \{ background-color: color-mix\(in srgb, var\(--gold\) 11%, transparent\);/.test(thc) &&
      /\.kpm-edge-btn:active \{ scale: \.97; \}/.test(thc) && /\.kpm-edge-btn:focus-visible \{ outline: 2px solid/.test(thc));
-  /* Exclusions (not filled buttons): HistoryReportView L712/756/819 (hover-only group-hover:bg-[var(--gold)] icon tiles),
-     L974 (dark:bg-[var(--gold)] Itemized Receipt header bar); CustomerManager L126/1801 (hover-only hover:bg-[var(--gold)]),
-     L1299/1316/1321 (bg-[var(--gold)] duplicate/status badges). */
-  const hrBtnCheck = read('src/components/HistoryReportView.jsx')
-    .replaceAll('group-hover:bg-[var(--gold)]', '')
-    .replaceAll('dark:bg-[var(--gold)]', '');
+  /* Reports v2 carries ZERO bg-[var(--gold)] / amber fills; CustomerManager retains its duplicate/status badge exclusions. */
+  const hrBtnCheck = read('src/components/HistoryReportView.jsx');
   const cmBtnCheck = read('src/components/CustomerManager.jsx')
     .replaceAll('hover:bg-[var(--gold)]', '')
     .replaceAll('bg-[var(--gold)] px-2 py-1.5', '')
     .replaceAll('px-1.5 py-0.5 rounded bg-[var(--gold)]', '');
   ok('REGRESSION: no amber-filled button on Reports or Customers (his 2026-11-17 "dont make it again")',
      !fill.test(hrBtnCheck) && !fill.test(cmBtnCheck) &&
-     (hrBtnCheck.match(/className="kpm-edge-btn/g) || []).length >= 4 &&
+     (hrBtnCheck.match(/className=\{?`?kpm-edge-btn/g) || []).length >= 4 &&
      (cmBtnCheck.match(/className="kpm-edge-btn/g) || []).length >= 2);
   /* Exclusions (not filled buttons): StockOpnameView L1353-1355 & L1952 (bg-[var(--gold)] stock/progress bars);
      ConsignmentFinanceView L1074 (bg-orange-50 selected list row), L1083/1166/1362 (bg-orange-900/30, bg-orange-900/20,
@@ -14706,6 +14695,24 @@ section('COMMAND CENTER, FLEET BAY, AGENT PROFILE READ CONSIGNMENTTX (Task 65, 2
   ok('BEHAVIOUR: at today=2026-11-18, outstandingTitip(consignmentTx) = Rp 9.120.000 and titipOf(consignmentTx, demo-agent-1) includes 12-day-old AMANAH BARU (Rp 1.580.000)',
      outstandingTitip(feed) === 9120000 && agusAmanah?.rp === 1580000,
      `piutang=${outstandingTitip(feed)} agusAmanah=${JSON.stringify(agusAmanah)}`);
+}
+section('REPORTS V2 MASTER-DETAIL & OMSET ONLY (Task 68, 2026-11-18)');
+{
+  const hr = read('src/components/HistoryReportView.jsx');
+  const hrNoComments = code(hr);
+  ok('REGRESSION: HistoryReportView keeps stats (including stats.totalProfit computed) & handleEditSubmit byte-shape, hides Profit from view (Omset only), keeps both data-guide attributes & SaleReceipt, and avoids blue/green/pink/slate',
+     hrNoComments.includes('const totalProfit = contextualTransactions.reduce((sum, t) => sum + (t.totalProfit || 0), 0);') &&
+     hrNoComments.includes('totalRev, totalProfit, count, items, payments,') &&
+     hrNoComments.includes('tallySaleOp(db, appId, userId, editingTrans.__before, productsById, -1)') &&
+     hrNoComments.includes('tallySaleOp(db, appId, userId, after, productsById, 1)') &&
+     !/Net Profit|Cuan/i.test(hrNoComments) &&
+     hrNoComments.includes('<span>Omset</span>') &&
+     hrNoComments.includes('<RollingNumber') &&
+     hrNoComments.includes('data-guide="offer-performance"') &&
+     hrNoComments.includes('data-guide="package-returns"') &&
+     hrNoComments.includes('<SaleReceipt') &&
+     !/\b(?:blue|emerald|green|pink|purple|sky|cyan|indigo|teal|violet|slate)-\d|#3b82f6|#10b981/i.test(hrNoComments),
+     'Reports v2 invariant missed');
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

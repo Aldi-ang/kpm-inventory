@@ -1604,10 +1604,17 @@ const delMarks = DEL_FILES.reduce((n, f) =>
    "Hapus" beside its glyph — the very delete counted one check below. So the glyph did not go
    away, it arrived somewhere with room for the word. If the Request tab ever grows its own
    icon-only delete, this count goes back to 13. */
-check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 12,
-  `found ${delMarks} marked, expected 12 — a new icon-only delete button needs ` +
+/* 12 → 10 on 2026-11-18 (Task 68, Reports v2): Receipt Delete and Shop History Delete now render their own words
+   ("Delete" and "Delete all history for this shop") inside the detail action strip and shop archive; DATA AUDIT line
+   delete stays icon-only with data-kpm-del. */
+check(G25, 'every icon-only delete button in the app wears the expanding control', delMarks === 10,
+  `found ${delMarks} marked, expected 10 — a new icon-only delete button needs ` +
   '`data-kpm-del data-label="Delete"` on it, and one that carries its own word ("Remove", "DEL") ' +
   'must NOT be marked or the label prints twice');
+{ const hrWords = fs.readFileSync('src/components/HistoryReportView.jsx', 'utf8');
+  check(G25, 'the two Reports deletes say their own word instead',
+    hrWords.includes('Delete\n') || /Delete<\/button>/.test(hrWords) && hrWords.includes('Delete all history for this shop'),
+    'the count above dropped to 10 because Reports detail & shop-archive deletes stopped being icon-only glyphs'); }
 /* the other half of that migration: the count may only drop because a WORD replaced the glyph. */
 const restockDelWords = (fs.readFileSync('src/RestockVaultView.jsx', 'utf8').match(/Hapus<\/button>/g) || []).length;
 check(G25, 'the two Restock Vault deletes say their own word instead', restockDelWords >= 2,

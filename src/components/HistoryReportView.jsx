@@ -1,16 +1,40 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, X, ArrowRight, Printer, Calendar, User, Folder, Store, Wallet, Package, Pencil, Trash2, Camera, FileText, Database, ChevronRight, RotateCw, MapPin, Globe, ChevronDown, ChevronUp, Clock, AlertTriangle } from 'lucide-react';
-import { updateDoc, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
-import { commitInChunks } from '../utils/helpers';
+import { Search, X, Printer, Pencil, Trash2, Camera, FileText, Folder, Lock, Archive, RotateCw } from 'lucide-react';
+import { doc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { commitInChunks, formatRupiah, convertToBks, getCurrentDate, storeKey } from '../utils/helpers';
 /* An edit is the third path that can rot the sales rollup, and the least obvious of the
    three: a delete at least looks destructive, while changing a quantity looks like tidying. */
 import { tallySaleOp } from '../utils/salesRollupWrite';
-import { formatRupiah, convertToBks, getCurrentDate, storeKey } from '../utils/helpers';
 import { hasClearance } from '../config/permissions';
 import { canonicalPlace, isMasterVaultPlace } from '../utils/supply';
 import { offerResults, packageReturns } from '../utils/vanBay';
 import { notify } from './Toast.jsx';
 import SaleReceipt from './SaleReceipt.jsx';
+import { RollingNumber } from './BiohazardTheme.jsx';
+
+const MON_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const RANGE_UNIT = { daily: 'day', weekly: 'week', monthly: 'month', yearly: 'year' };
+
+const parseDay = (k) => {
+    const [y, m, d] = String(k || '').split('-').map(Number);
+    return (y && m && d) ? new Date(y, m - 1, d) : null;
+};
+const fmtDayKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const addDaysKey = (k, n) => {
+    const d = parseDay(k);
+    if (!d) return k;
+    d.setDate(d.getDate() + n);
+    return fmtDayKey(d);
+};
+const shortDateLabel = (k) => {
+    const d = parseDay(k);
+    return d ? `${d.getDate()} ${MON_SHORT[d.getMonth()]}` : (k || '');
+};
+const rpShort = (n) => Math.abs(n) >= 1e6
+    ? `${n < 0 ? '-' : ''}Rp ${(Math.abs(n) / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 })} jt`
+    : formatRupiah(n);
+const initialsOf = (s) => String(s || '?').trim().split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
 
 /* 🔴 `userId`, NOT `user.uid`. They are the same for the owner and different for every delegated
    account: `userId = bossUid || user.uid`, and the receipts live under the BOSS. Editing one here
@@ -19,47 +43,46 @@ import SaleReceipt from './SaleReceipt.jsx';
    and the tally moved in a document nothing reads. */
 export default function HistoryReportView({ transactions, inventory, onDeleteFolder, onDeleteTransaction, isAdmin, user, userId, appId, db, appSettings, userRole, agentProfileId, fetchHistoricalTransactions, motorists, customers }) {
     const [searchTerm, setSearchTerm] = useState('');
-    const [reportView, setReportView] = useState(false);
+    const [activeTab, setActiveTab] = useState('ledger');
 
     // 🚀 TIME MACHINE & COMMAND CENTER STATE
-    const [rangeType, setRangeType] = useState('daily');
+    const [rangeType, setRangeType] = useState('weekly');
     const [targetDate, setTargetDate] = useState(getCurrentDate());
     const [historicalData, setHistoricalData] = useState([]);
     const [isFetchingHistory, setIsFetchingHistory] = useState(false);
+    const [hasPulledArchive, setHasPulledArchive] = useState(false);
 
     // 🏢 6-TIER HIERARCHY NAVIGATION STATE
-    const [selectedRegion, setSelectedRegion] = useState(null); 
-    const [selectedAgent, setSelectedAgent] = useState(null);   
-    const [selectedProv, setSelectedProv] = useState(null);     
-    const [selectedKab, setSelectedKab] = useState(null);       
-    const [selectedKec, setSelectedKec] = useState(null);       
-    const [selectedCustomer, setSelectedCustomer] = useState(null); 
+    const [selectedRegion, setSelectedRegion] = useState(null);
+    const [selectedAgent, setSelectedAgent] = useState(null);
+    const [selectedProv, setSelectedProv] = useState(null);
+    const [selectedKab, setSelectedKab] = useState(null);
+    const [selectedKec, setSelectedKec] = useState(null);
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
 
-    // MODAL STATES
+    // MASTER-DETAIL & MODAL STATES
+    const [selectedTxId, setSelectedTxId] = useState(null);
+    const [openPhoneTxId, setOpenPhoneTxId] = useState(undefined);
     const [editingTrans, setEditingTrans] = useState(null);
-    const [viewingReceipt, setViewingReceipt] = useState(null); 
+    const [viewingReceipt, setViewingReceipt] = useState(null);
     const [viewingPhoto, setViewingPhoto] = useState(null);
-    const [printScale, setPrintScale] = useState(100); 
+    const [printScale, setPrintScale] = useState(100);
 
     // ANALYTICS STATE
     const [expandedAgent, setExpandedAgent] = useState(null);
 
     // 🚀 INDESTRUCTIBLE SECURITY FIREWALL — 3-TIER REPORT VISIBILITY
-    // Reads the "Reporting Authority" dropdown set in Settings > Global Permission Matrix.
-    // If the engine has any doubt, the safest (most restrictive) level wins.
     const reportAccessLevel = useMemo(() => {
         if (userRole === 'ADMIN' || userRole === 'DEVELOPER' || userRole === 'COMPANY_OWNER') return 'global';
         if (hasClearance(userRole, 'view_reports_global')) return 'global';
         if (hasClearance(userRole, 'view_reports_regional')) return 'regional';
         if (hasClearance(userRole, 'view_reports_personal')) return 'personal';
-        // 🛑 FAIL-CLOSED: nothing configured for this tier yet? Lock to the safest option.
         return 'personal';
     }, [userRole]);
 
     const isFieldAgent = reportAccessLevel === 'personal';
     const isRegionalOnly = reportAccessLevel === 'regional';
 
-    // The current viewer's own branch/region — used to fence in 'regional' access
     const myLocation = useMemo(() => {
         const myProfile = motorists?.find(m => m.id === agentProfileId);
         return canonicalPlace(myProfile?.location) || null;
@@ -71,55 +94,65 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         return Array.from(new Map(combined.map(t => [t.id, t])).values());
     }, [transactions, historicalData]);
 
-    const dateFilteredTransactions = useMemo(() => {
-        const target = new Date(targetDate);
+    const scopedTransactions = useMemo(() => {
         return allTransactions.filter(t => {
-            // 🛑 FAIL-CLOSED PROTOCOL: Total Data Shredder
             if (isFieldAgent) {
-                if (!agentProfileId) return false; // Hide everything if profile hasn't loaded
-                if (t.agentId !== agentProfileId) return false; // Shred other team members' data
+                if (!agentProfileId) return false;
+                if (t.agentId !== agentProfileId) return false;
             } else if (isRegionalOnly) {
-                if (!myLocation) return false; // Hide everything if we don't know their branch yet
+                if (!myLocation) return false;
                 const txAgentId = t.agentId || 'ADMIN';
                 const txLocation = txAgentId === 'ADMIN' ? 'Headquarters' : (motorists?.find(m => m.id === txAgentId)?.location || null);
-                if (canonicalPlace(txLocation) !== myLocation) return false; // Shred other regions' data
+                if (canonicalPlace(txLocation) !== myLocation) return false;
             }
-            
-            const tDate = new Date(t.date);
-            if (rangeType === 'daily') return t.date === targetDate;
-            if (rangeType === 'weekly') {
-                const start = new Date(target); start.setDate(target.getDate() - target.getDay()); start.setHours(0,0,0,0);
-                const end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999);
-                return tDate >= start && tDate <= end;
-            }
-            if (rangeType === 'monthly') return tDate.getMonth() === target.getMonth() && tDate.getFullYear() === target.getFullYear();
-            if (rangeType === 'yearly') return tDate.getFullYear() === target.getFullYear();
-            return false;
-        }).sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
-    }, [allTransactions, rangeType, targetDate, isFieldAgent, isRegionalOnly, myLocation, agentProfileId, motorists]);
+            return true;
+        });
+    }, [allTransactions, isFieldAgent, isRegionalOnly, myLocation, agentProfileId, motorists]);
+
+    const matchesWindow = (t, rType, refDateStr) => {
+        const target = new Date(refDateStr);
+        const tDate = new Date(t.date);
+        if (rType === 'daily') return t.date === refDateStr;
+        if (rType === 'weekly') {
+            const start = new Date(target); start.setDate(target.getDate() - target.getDay()); start.setHours(0, 0, 0, 0);
+            const end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23, 59, 59, 999);
+            return tDate >= start && tDate <= end;
+        }
+        if (rType === 'monthly') return tDate.getMonth() === target.getMonth() && tDate.getFullYear() === target.getFullYear();
+        if (rType === 'yearly') return tDate.getFullYear() === target.getFullYear();
+        return false;
+    };
+
+    const dateFilteredTransactions = useMemo(() => {
+        return scopedTransactions
+            .filter(t => matchesWindow(t, rangeType, targetDate))
+            .sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+    }, [scopedTransactions, rangeType, targetDate]);
 
     // --- ENGINE 2: GLOBAL SEARCH ---
+    const matchesSearch = (t, rawTerm) => {
+        if (!rawTerm.trim()) return true;
+        const term = rawTerm.toLowerCase();
+        const customerMatch = (t.customerName || '').toLowerCase().includes(term);
+        const agentMatch = (t.agentName || '').toLowerCase().includes(term);
+        const valueMatch = String(t.total || t.amountPaid || 0).includes(term);
+        const offerMatch = (t.offers || []).some(o => (o.name || '').toLowerCase().includes(term));
+        let itemsMatch = false;
+        if (t.items) itemsMatch = t.items.some(i => (i.name || '').toLowerCase().includes(term));
+        return customerMatch || agentMatch || valueMatch || offerMatch || itemsMatch;
+    };
+
     const searchedTransactions = useMemo(() => {
         if (!searchTerm.trim()) return dateFilteredTransactions;
-        const term = searchTerm.toLowerCase();
-        
-        return dateFilteredTransactions.filter(t => {
-            const customerMatch = (t.customerName || '').toLowerCase().includes(term);
-            const agentMatch = (t.agentName || '').toLowerCase().includes(term);
-            const valueMatch = String(t.total || t.amountPaid || 0).includes(term);
-            let itemsMatch = false;
-            if (t.items) itemsMatch = t.items.some(i => (i.name || '').toLowerCase().includes(term));
-            return customerMatch || agentMatch || valueMatch || itemsMatch;
-        });
+        return dateFilteredTransactions.filter(t => matchesSearch(t, searchTerm));
     }, [dateFilteredTransactions, searchTerm]);
 
     // --- ENGINE 3: THE 6-TIER ENTERPRISE HIERARCHY BUILDER ---
     const reportData = useMemo(() => {
-        const structure = {}; 
-        
+        const structure = {};
+
         if (motorists && motorists.length > 0) {
             motorists.forEach(m => {
-                // 🛑 UI LOCK: Prevent UI folders from being built for anyone else
                 if (isFieldAgent && m.id !== agentProfileId) return;
                 if (isRegionalOnly && (canonicalPlace(m.location) || 'UNASSIGNED AREA') !== myLocation) return;
 
@@ -129,7 +162,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 if (!structure[loc].agents[aName]) structure[loc].agents[aName] = { name: aName, id: m.id, total: 0, count: 0, provinsi: {} };
             });
         }
-        
+
         if (reportAccessLevel === 'global' && !structure['Headquarters']) {
             structure['Headquarters'] = { name: 'Headquarters', total: 0, count: 0, agents: {} };
         }
@@ -175,23 +208,23 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
             if (!structure[regionName]) structure[regionName] = { name: regionName, total: 0, count: 0, agents: {} };
             if (!structure[regionName].agents[agentName]) structure[regionName].agents[agentName] = { name: agentName, total: 0, count: 0, provinsi: {} };
-            
+
             const agentNode = structure[regionName].agents[agentName];
             if (!agentNode.provinsi[prov]) agentNode.provinsi[prov] = { name: prov, total: 0, count: 0, kabupaten: {} };
-            
+
             const provNode = agentNode.provinsi[prov];
             if (!provNode.kabupaten[kab]) provNode.kabupaten[kab] = { name: kab, total: 0, count: 0, kecamatan: {} };
-            
+
             const kabNode = provNode.kabupaten[kab];
             if (!kabNode.kecamatan[kec]) kabNode.kecamatan[kec] = { name: kec, total: 0, count: 0, stores: {} };
-            
+
             const kecNode = kabNode.kecamatan[kec];
             if (!kecNode.stores[cust]) kecNode.stores[cust] = { name: cust, total: 0, count: 0, history: [] };
 
             const storeNode = kecNode.stores[cust];
 
             const tValue = t.type === 'RETUR' ? -Math.abs(t.total || t.amountPaid || 0) : (t.total || t.amountPaid || 0);
-            
+
             structure[regionName].total += tValue;
             structure[regionName].count += 1;
 
@@ -211,7 +244,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             storeNode.count += 1;
             storeNode.history.push(t);
         });
-        
+
         return structure;
     }, [searchedTransactions, motorists, customers, isFieldAgent, isRegionalOnly, myLocation, reportAccessLevel, agentProfileId]);
 
@@ -225,7 +258,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                 if (agents.length === 1 && !selectedAgent) setSelectedAgent(agents[0]);
             }
         } else if (isRegionalOnly) {
-            // Regional Command: lock into their own region, but they can still browse every agent inside it
             const regions = Object.keys(reportData);
             if (regions.length === 1 && !selectedRegion) {
                 setSelectedRegion(regions[0]);
@@ -238,14 +270,26 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         setIsFetchingHistory(true);
         const target = new Date(targetDate);
         let start = new Date(target); let end = new Date(target);
-        if (rangeType === 'daily') { start.setHours(0,0,0,0); end.setHours(23,59,59,999); }
-        else if (rangeType === 'weekly') { start.setDate(target.getDate() - target.getDay()); start.setHours(0,0,0,0); end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999); }
+        if (rangeType === 'daily') { start.setHours(0, 0, 0, 0); end.setHours(23, 59, 59, 999); }
+        else if (rangeType === 'weekly') { start.setDate(target.getDate() - target.getDay()); start.setHours(0, 0, 0, 0); end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23, 59, 59, 999); }
         else if (rangeType === 'monthly') { start = new Date(target.getFullYear(), target.getMonth(), 1); end = new Date(target.getFullYear(), target.getMonth() + 1, 0, 23, 59, 59); }
         else if (rangeType === 'yearly') { start = new Date(target.getFullYear(), 0, 1); end = new Date(target.getFullYear(), 11, 31, 23, 59, 59); }
-        
+
         const data = await fetchHistoricalTransactions(start, end);
-        setHistoricalData(data);
+        setHistoricalData(data || []);
+        setHasPulledArchive(true);
         setIsFetchingHistory(false);
+    };
+
+    const matchesContext = (t) => {
+        if (selectedAgent && selectedRegion) return (t.agentName || 'Admin') === selectedAgent;
+        if (selectedAgent) return (t.agentName || 'Admin') === selectedAgent;
+        if (selectedRegion) {
+            const agentId = t.agentId || 'ADMIN';
+            if (agentId === 'ADMIN') return isMasterVaultPlace(selectedRegion);
+            return canonicalPlace(motorists?.find(m => m.id === agentId)?.location) === selectedRegion;
+        }
+        return true;
     };
 
     const contextualTransactions = useMemo(() => {
@@ -255,17 +299,14 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             if (agentId === 'ADMIN') return isMasterVaultPlace(selectedRegion);
             return canonicalPlace(motorists?.find(m => m.id === agentId)?.location) === selectedRegion;
         });
-        return searchedTransactions; 
+        return searchedTransactions;
     }, [searchedTransactions, selectedRegion, selectedAgent, motorists]);
 
-    /* OFFER PERFORMANCE (his 2026-10-27 "the result dashboard should be somewhere else because this panel is just for adding
-       the bundle"): the same sales this report already shows - its period, its region/agent fence - counted per factory
-       offer, best first. No extra read: every deal carries its `offers`. */
+    /* OFFER PERFORMANCE: the same sales this report already shows - counted per factory offer, best first. */
     const offerStats = useMemo(() => Object.entries(offerResults(contextualTransactions))
         .map(([id, r]) => ({ id, ...r })).sort((a, b) => b.rp - a.rp), [contextualTransactions]);
     /* PACKAGE RULES STAGE D: a package, then its cigarettes back as a Retur within 7 days - and every shop whose package
-       count tier 1-4 cleared in the last 30 days (his accepted cost of "Clear count"). For the people who watch others:
-       a field agent's own report does not show it. Shown, never blocked. */
+       count tier 1-4 cleared in the last 30 days. For the people who watch others: a field agent's own report does not show it. */
     const pkgReturns = useMemo(() => (isFieldAgent ? [] : packageReturns(contextualTransactions)), [contextualTransactions, isFieldAgent]);
     const countClears = useMemo(() => {
         if (isFieldAgent) return [];
@@ -339,6 +380,7 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
 
         if (field === 'productId' || field === 'unit' || field === 'qty') {
             const product = inventory.find(p => p.id === newItems[index].productId);
+            if (field === 'productId' && product?.name) newItems[index].name = product.name;
             const tier = editingTrans.priceTier || 'Retail';
             const currentMultiplier = convertToBks(1, currentItem.unit, product);
             const fallbackPackPrice = (Number(currentItem.calculatedPrice) || 0) / currentMultiplier;
@@ -376,20 +418,6 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             }
             const cleanItems = (editingTrans.items || []).map(i => ({ productId: i.productId || '', name: i.name || 'Unknown', qty: Number(i.qty) || 1, unit: i.unit || 'Bks', calculatedPrice: Number(i.calculatedPrice) || 0 }));
 
-            /* THE EDIT, AND ITS TWO HALVES OF THE ROLLUP.
-
-               An edited sale is not "a sale that changed". To a running total it is one sale
-               removed and a different one added. Applying only the +1 double-counts the packs
-               that were already counted; applying neither leaves the totals describing a
-               receipt that no longer exists.
-
-               `__before` is the record exactly as it stood when the editor opened, stashed at
-               that moment rather than looked up now: `transactions` holds seven days, so a
-               historical record pulled through the Time Machine would not be found here.
-
-               All three writes go in ONE commit. An edit whose +1 landed while its -1 failed
-               is the worst of the outcomes, and it is what a bare updateDoc followed by two
-               separate writes produces on a bad connection. */
             const productsById = Object.fromEntries((inventory || []).map(pr => [pr.id, pr]));
             const after = { date: rawDate, type: editingTrans.type || 'SALE', items: cleanItems };
             await commitInChunks(db, writeBatch, [
@@ -404,565 +432,1138 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
         } catch(err) { notify(err.message); }
     };
 
-    return (
-        <div className="print-reset animate-fade-in max-w-6xl mx-auto pb-20 relative">
-            
-            {/* 🚀 THE GLOBAL COMMAND CENTER 🚀 */}
-            {!reportView && (
-                <div className="bg-[var(--panel)] rounded-2xl p-6 mb-8 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 animate-fade-in relative overflow-hidden border border-[var(--line)]">
-                    {/* the ambient glow blob is GONE, 2026-08-25. It was a blue haze softening a navy
-                        panel; against the faceplate it rendered as a black cloud bleeding out of the
-                        corner, which is what Aldi saw. And it was a Lite Mode trap besides: Lite strips
-                        the blur, so a cheap phone would have drawn a hard 256px near-black disc. This
-                        theme does not do ambient light - the material is flat and the edges do the work. */}
-                    <div className="z-10 flex-1 w-full">
-                        <h2 className="text-[var(--ink)] text-lg font-black tracking-widest uppercase mb-1 flex items-center gap-2">
-                            <Database size={20} className="text-[var(--ink-muted)]"/> Operational Command
-                        </h2>
-                        <p className="text-[var(--ink-muted)] text-[10px] font-mono uppercase tracking-widest">Filter dates & extract deep historical records</p>
+    // --- DERIVED UI METRICS (read-only formatting on top of stats / contextualTransactions) ---
+    const todayStr = getCurrentDate();
+    const liveCutoffStr = addDaysKey(todayStr, -6);
+
+    const windowRange = useMemo(() => {
+        const d = parseDay(targetDate) || new Date();
+        if (rangeType === 'daily') return [fmtDayKey(d), fmtDayKey(d)];
+        if (rangeType === 'weekly') {
+            const start = new Date(d); start.setDate(d.getDate() - d.getDay());
+            const end = new Date(start); end.setDate(start.getDate() + 6);
+            return [fmtDayKey(start), fmtDayKey(end)];
+        }
+        if (rangeType === 'monthly') {
+            const start = new Date(d.getFullYear(), d.getMonth(), 1);
+            const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+            return [fmtDayKey(start), fmtDayKey(end)];
+        }
+        return [`${d.getFullYear()}-01-01`, `${d.getFullYear()}-12-31`];
+    }, [rangeType, targetDate]);
+
+    const prevTargetDate = useMemo(() => {
+        const d = parseDay(targetDate) || new Date();
+        if (rangeType === 'daily') d.setDate(d.getDate() - 1);
+        else if (rangeType === 'weekly') d.setDate(d.getDate() - 7);
+        else if (rangeType === 'monthly') d.setMonth(d.getMonth() - 1);
+        else d.setFullYear(d.getFullYear() - 1);
+        return fmtDayKey(d);
+    }, [rangeType, targetDate]);
+
+    const isPartialWindow = !hasPulledArchive && windowRange[0] < liveCutoffStr;
+
+    const prevOmset = useMemo(() => {
+        if (!hasPulledArchive && (addDaysKey(windowRange[0], rangeType === 'daily' ? -1 : -7) < liveCutoffStr || rangeType === 'monthly' || rangeType === 'yearly')) {
+            return null;
+        }
+        const prevList = scopedTransactions.filter(t => matchesWindow(t, rangeType, prevTargetDate) && matchesSearch(t, searchTerm) && matchesContext(t));
+        return prevList.reduce((sum, t) => t.type === 'RETUR' ? sum - Math.abs(t.total || 0) : sum + (t.total || t.amountPaid || 0), 0);
+    }, [scopedTransactions, rangeType, prevTargetDate, searchTerm, selectedAgent, selectedRegion, hasPulledArchive, windowRange, liveCutoffStr]);
+
+    const sparkDays = useMemo(() => {
+        const days = [];
+        for (let i = 13; i >= 0; i--) {
+            const k = addDaysKey(targetDate, -i);
+            const v = scopedTransactions
+                .filter(t => t.date === k && matchesSearch(t, searchTerm) && matchesContext(t))
+                .reduce((sum, t) => t.type === 'RETUR' ? sum - Math.abs(t.total || 0) : sum + (t.total || t.amountPaid || 0), 0);
+            days.push(v);
+        }
+        return days;
+    }, [scopedTransactions, targetDate, searchTerm, selectedAgent, selectedRegion]);
+
+    const kpiSummary = useMemo(() => {
+        const totalBks = Object.values(stats.items).reduce((a, b) => a + b.qty, 0);
+        const settledPaid = contextualTransactions
+            .filter(t => t.type === 'CONSIGNMENT_PAYMENT')
+            .reduce((s, t) => s + (Number(t.amountPaid || t.total) || 0), 0);
+        const shopNames = new Set();
+        let walkIns = 0;
+        let saleLikeCount = 0;
+        let saleLikeSum = 0;
+        contextualTransactions.forEach(t => {
+            const cust = (t.customerName || '').trim();
+            const isWalk = !cust || cust.toLowerCase().includes('walk-in') || t.items?.some(i => i.priceTier === 'Ecer');
+            if (isWalk) walkIns += 1;
+            else shopNames.add(storeKey(cust));
+            if (t.type !== 'CONSIGNMENT_PAYMENT' && t.type !== 'RETUR') {
+                saleLikeCount += 1;
+                saleLikeSum += (t.total || t.amountPaid || 0);
+            }
+        });
+        const mixEntries = [
+            ['Cash', Math.max(0, stats.payments.Cash || 0), 'kpm-rep-c-cash'],
+            ['Transfer', Math.max(0, stats.payments.Transfer || 0), 'kpm-rep-c-tf'],
+            ['QRIS', Math.max(0, stats.payments.QRIS || 0), 'kpm-rep-c-qr'],
+            ['Titip', Math.max(0, stats.payments.Titip || 0), 'kpm-rep-c-ti'],
+        ];
+        const mixTotal = mixEntries.reduce((a, [, v]) => a + v, 0);
+        return {
+            totalBks,
+            settledPaid,
+            shopsServed: shopNames.size,
+            walkIns,
+            avgReceipt: saleLikeCount ? saleLikeSum / saleLikeCount : 0,
+            mixEntries,
+            mixTotal,
+        };
+    }, [stats, contextualTransactions]);
+
+    const productRows = useMemo(() => {
+        const rows = Object.entries(stats.items).map(([name, data]) => {
+            const shops = new Set();
+            contextualTransactions.forEach(t => {
+                if (t.items?.some(i => i.name === name)) shops.add(storeKey(t.customerName || 'Walk-in'));
+            });
+            return { name, qty: data.qty, om: data.val, shops: shops.size };
+        }).sort((a, b) => b.om - a.om);
+        const maxOm = Math.max(1, ...rows.map(r => r.om));
+        return { rows, maxOm };
+    }, [stats.items, contextualTransactions]);
+
+    const returnRows = useMemo(() => contextualTransactions.filter(t => t.type === 'RETUR' || t.paymentType === 'Retur/BS'), [contextualTransactions]);
+
+    const pkgFlaggedIds = useMemo(() => {
+        const set = new Set();
+        const pkgMap = pkgReturns || [];
+        returnRows.forEach(t => {
+            if (pkgMap.some(p => storeKey(p.shop) === storeKey(t.customerName) && Math.abs((p.returnedAt || 0) - ((t.timestamp?.seconds || 0) * 1000)) < 86400000)) {
+                set.add(t.id);
+            }
+        });
+        return set;
+    }, [returnRows, pkgReturns]);
+
+    const regionOptions = useMemo(() => Object.keys(reportData).sort(), [reportData]);
+    const agentOptions = useMemo(() => {
+        const list = [];
+        const regionsToScan = selectedRegion && reportData[selectedRegion] ? [reportData[selectedRegion]] : Object.values(reportData);
+        regionsToScan.forEach(reg => {
+            Object.values(reg.agents || {}).forEach(a => list.push({ name: a.name, region: reg.name }));
+        });
+        return list.sort((a, b) => a.name.localeCompare(b.name));
+    }, [reportData, selectedRegion]);
+
+    const activeTx = useMemo(() => {
+        if (selectedTxId) {
+            const found = contextualTransactions.find(t => t.id === selectedTxId);
+            if (found) return found;
+        }
+        return contextualTransactions[0] || null;
+    }, [contextualTransactions, selectedTxId]);
+
+    const resolvedPhoneOpenId = openPhoneTxId === undefined ? (contextualTransactions[0]?.id || null) : openPhoneTxId;
+
+    const ledgerDays = useMemo(() => {
+        const groups = [];
+        const map = new Map();
+        contextualTransactions.forEach(t => {
+            const k = t.date || 'Unknown';
+            if (!map.has(k)) {
+                const g = { date: k, rows: [], count: 0, omset: 0 };
+                map.set(k, g);
+                groups.push(g);
+            }
+            const g = map.get(k);
+            g.rows.push(t);
+            g.count += 1;
+            g.omset += t.type === 'RETUR' ? -Math.abs(t.total || 0) : (t.total || t.amountPaid || 0);
+        });
+        return groups;
+    }, [contextualTransactions]);
+
+    const dayHeading = (k) => {
+        const dt = parseDay(k);
+        const now = parseDay(todayStr);
+        if (!dt || !now) return k;
+        const diff = Math.round((now - dt) / 864e5);
+        const tag = diff === 0 ? 'Today' : diff === 1 ? 'Yesterday' : DAY_SHORT[dt.getDay()];
+        return `${tag} · ${shortDateLabel(k)}`;
+    };
+
+    const chipForTx = (t) => {
+        const isRetur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
+        const isExchange = t.paymentType === 'Tukar Ganti';
+        const isIou = t.paymentType === 'IOU Fulfillment';
+        if (isRetur) return { label: 'RETUR', cls: 'rt' };
+        if (t.type === 'CONSIGNMENT_PAYMENT') return { label: 'NOTE PAID', cls: 'ti' };
+        if (isExchange) return { label: 'TUKAR', cls: '' };
+        if (isIou) return { label: 'IOU', cls: '' };
+        const pay = (t.paymentType || 'Cash').toUpperCase();
+        return { label: pay, cls: t.paymentType === 'Titip' ? 'ti' : '' };
+    };
+
+    const txAreaText = (t) => {
+        const shop = (customers || []).find(c => storeKey(c.name) === storeKey(t.customerName));
+        if (shop) return [shop.city, shop.region].filter(Boolean).join(', ');
+        if (!t.customerName || t.customerName.toLowerCase().includes('walk-in') || t.items?.some(i => i.priceTier === 'Ecer')) return 'Ecer, walk-in';
+        return 'Store record';
+    };
+
+    const txAgentRegion = (t) => {
+        const aid = t.agentId || 'ADMIN';
+        if (aid === 'ADMIN') return 'Headquarters';
+        const match = motorists?.find(m => m.id === aid || (t.agentName && (m.name === t.agentName || m.agentName === t.agentName)));
+        return canonicalPlace(match?.location) || 'UNASSIGNED AREA';
+    };
+
+    const txTime = (t) => t.timestamp?.seconds
+        ? new Date(t.timestamp.seconds * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
+        : '--:--';
+
+    const txQtyBks = (t) => (t.items || []).reduce((s, i) => {
+        const prod = inventory.find(p => p.id === i.productId);
+        return s + convertToBks(i.qty, i.unit, prod || {});
+    }, 0);
+
+    const txRowItems = (t) => {
+        if (t.type === 'CONSIGNMENT_PAYMENT') {
+            return (t.itemsPaid || []).concat(t.itemsReturned || [], t.itemsRemaining || []).reduce((acc, curr) => {
+                if (!acc.find(i => i.productId === curr.productId)) acc.push(curr);
+                return acc;
+            }, []).map(i => `• ${i.name}`).join(', ') || 'Store consignment audit';
+        }
+        return (t.items || []).map(i => {
+            let lbl = `${i.qty} ${i.unit} ${i.name}`;
+            if (i.condition === 'DAMAGED') lbl += ' [DMG]';
+            if (i.fulfillment === 'IOU') lbl += ' [UTANG BARANG]';
+            if (i.isIouFulfillment) lbl += ' [FULFILLED]';
+            return lbl;
+        }).concat((t.promoGiven || []).map(g => `${g.qty} pcs ${g.name} [BONUS]`)).join(', ') || 'N/A';
+    };
+
+    const renderTxDetail = (t, isPhoneDrawer = false) => {
+        const isRetur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
+        const isExchange = t.paymentType === 'Tukar Ganti';
+        const isIou = t.paymentType === 'IOU Fulfillment';
+        const val = Number(t.total || t.amountPaid) || 0;
+        const signedVal = isRetur && val > 0 ? -Math.abs(val) : val;
+        const shopName = t.customerName || 'Walk-in Customer';
+        const totalBksCount = txQtyBks(t);
+        const offersText = (t.offers || []).map(o => o.name).filter(Boolean).join(', ') || '—';
+
+        return (
+            <>
+                <div className="kpm-rep-ph">
+                    <div className="kpm-rep-av">{initialsOf(shopName)}</div>
+                    <div className="min-w-0">
+                        <h3>{shopName}</h3>
+                        <p>{txAreaText(t)} · {txAgentRegion(t)}</p>
+                        <span className="kpm-rep-resp">Salesman <b>{t.agentName || 'Admin'}</b></span>
                     </div>
-                    <div className="z-10 flex flex-wrap md:flex-nowrap items-center gap-3 w-full md:w-auto">
-                        <select value={rangeType} onChange={e=>setRangeType(e.target.value)} className="bg-[var(--raised)] border border-[var(--line)] text-[var(--ink)] p-3 min-h-11 rounded-xl font-bold uppercase text-[10px] tracking-widest outline-none">
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="yearly">Yearly</option>
-                        </select>
-                        <input type="date" value={targetDate} onChange={e=>setTargetDate(e.target.value)} className="bg-[var(--raised)] border border-[var(--line)] text-[var(--ink)] p-3 rounded-xl font-bold outline-none" />
-                        {!isFieldAgent && (
-                            <button onClick={handlePullArchive} disabled={isFetchingHistory} className="kpm-edge-btn px-6 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest whitespace-nowrap flex items-center gap-2 disabled:opacity-50">
-                                {isFetchingHistory ? <RotateCw className="animate-spin" size={16}/> : <Database size={16}/>}
-                                {isFetchingHistory ? 'Extracting...' : 'Pull Archive'}
-                            </button>
+                    <div className="tot">
+                        <div className="l">{t.type === 'CONSIGNMENT_PAYMENT' ? 'Paid on notes' : isRetur ? 'Refund' : 'Receipt total'}</div>
+                        <div className={`v ${signedVal < 0 ? 'text-[var(--danger-ink)]' : ''}`}><RollingNumber text={formatRupiah(signedVal)} /></div>
+                    </div>
+                </div>
+
+                <div className="kpm-rep-facts">
+                    <div><div className="l">When</div><div className="v">{shortDateLabel(t.date)}, {txTime(t)}</div></div>
+                    <div><div className="l">{isRetur ? 'Condition' : 'Payment'}</div><div className="v">{t.paymentType || 'Cash'}</div></div>
+                    <div><div className="l">Moved</div><div className="v">{t.items?.length ? `${totalBksCount} Bks` : '—'}</div></div>
+                    <div><div className="l">Price tier</div><div className="v">{t.priceTier || '—'}</div></div>
+                    {!isPhoneDrawer && (
+                        <>
+                            <div><div className="l">GPS</div><div className="v">{t.deliveryProof?.latitude ? 'Verified' : '—'}</div></div>
+                            <div><div className="l">Proof photo</div><div className="v">{t.deliveryProof ? 'Attached' : 'None'}</div></div>
+                            <div><div className="l">Offer</div><div className="v">{offersText}</div></div>
+                            <div><div className="l">Receipt no.</div><div className="v">{t.receiptNumber || t.id || '—'}</div></div>
+                        </>
+                    )}
+                </div>
+
+                {isExchange && <p className="text-[13px] text-[var(--ink-muted)] m-0">Tukar Ganti: damaged packs swapped for good ones. Goods move, money does not.</p>}
+                {isIou && <p className="text-[13px] text-[var(--ink-muted)] m-0">Utang Barang Lunas: goods already paid earlier, delivered now.</p>}
+
+                {t.type === 'CONSIGNMENT_PAYMENT' ? (
+                    <div className="text-[13px] text-[var(--ink-muted)] space-y-1">
+                        <p className="m-0">Store audit / note payment: lowers consignment balance for this store.</p>
+                        {(t.itemsPaid?.length > 0 || t.itemsReturned?.length > 0 || t.itemsRemaining?.length > 0) && (
+                            <p className="m-0 text-xs">{txRowItems(t)}</p>
                         )}
                     </div>
-                </div>
-            )}
-
-            {/* BREADCRUMB NAVIGATION */}
-            {!reportView && (
-                <div className="flex flex-wrap gap-2 items-center mb-6 text-xs font-black uppercase tracking-widest text-[var(--ink-muted)] bg-[var(--raised)] dark:bg-[var(--raised)] p-3 rounded-xl border dark:border-[var(--line)] shadow-sm">
-                    {reportAccessLevel === 'global' && (
-                        <span onClick={()=> {setSelectedRegion(null); setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-[var(--accent-ink)] flex items-center gap-1"><Globe size={14}/> Master HQ</span>
-                    )}
-                    
-                    {/* 🚀 UI LOCK: Field Agents cannot navigate UP to team folders */}
-                    {selectedRegion && <> {!isFieldAgent && <ChevronRight size={14}/>} <span onClick={()=> { if(!isFieldAgent) {setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-[var(--accent-ink)] text-[var(--ink)]' : 'text-[var(--ink-muted)]'}`}><MapPin size={14}/> {selectedRegion}</span> </>}
-                    {selectedAgent && <> <ChevronRight size={14}/> <span onClick={()=> { if(!isFieldAgent) {setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);} }} className={`flex items-center gap-1 ${!isFieldAgent ? 'cursor-pointer hover:text-[var(--accent-ink)] text-[var(--verified)]' : 'text-[var(--ink-muted)]'}`}><User size={14}/> {selectedAgent}</span> </>}
-                    
-                    {selectedProv && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-[var(--accent-ink)] text-[var(--alt-ink)] flex items-center gap-1">{selectedProv}</span> </>}
-                    {selectedKab && <> <ChevronRight size={14}/> <span onClick={()=> {setSelectedKec(null); setSelectedCustomer(null);}} className="cursor-pointer hover:text-[var(--accent-ink)] text-pink-500 flex items-center gap-1">{selectedKab}</span> </>}
-                    {selectedKec && <> <ChevronRight size={14}/> <span onClick={()=> setSelectedCustomer(null)} className="cursor-pointer hover:text-[var(--accent-ink)] text-[var(--danger-text)] flex items-center gap-1">{selectedKec}</span> </>}
-                    {selectedCustomer && <> <ChevronRight size={14}/> <span className="text-[var(--ink)] dark:text-[var(--ink)] flex items-center gap-1"><Store size={14}/> {selectedCustomer}</span> </>}
-                </div>
-            )}
-
-            {/* ACTION BAR (Search & Analytics Trigger) */}
-            {!reportView && (
-                <div className="flex flex-col md:flex-row gap-4 mb-8">
-                    <div className="relative w-full shadow-sm rounded-xl group transition-shadow hover:shadow-md focus-within:shadow-md">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                            <Search size={20} className={`transition-colors ${searchTerm ? 'text-[var(--accent-ink)]' : 'text-[var(--ink-muted)] group-focus-within:text-[var(--accent-ink)]'}`} />
-                        </div>
-                        <input type="text" placeholder="Search product, value, or store..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-12 pr-12 py-3.5 bg-[var(--raised)] dark:bg-[var(--raised)] border border-[var(--line-2)] dark:border-[var(--line)] focus:border-[var(--accent-edge)] rounded-xl text-[var(--ink)] dark:text-[var(--ink)] font-medium text-sm outline-none transition-all"/>
-                        {searchTerm && <button onClick={() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-4 flex items-center text-[var(--ink-muted)] hover:text-[var(--danger-text)] transition-colors"><X size={20} /></button>}
+                ) : t.items?.length > 0 ? (
+                    <div className="kpm-rep-tblw">
+                        <table className="kpm-rep-tbl">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th className="num">Qty</th>
+                                    {!isPhoneDrawer && <th className="num">Price</th>}
+                                    <th className="num">Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {t.items.map((i, idx) => (
+                                    <tr key={idx}>
+                                        <td>
+                                            {i.name}
+                                            {i.condition === 'DAMAGED' && ' [DMG]'}
+                                            {i.fulfillment === 'IOU' && ' [UTANG BARANG]'}
+                                            {i.isIouFulfillment && ' [FULFILLED]'}
+                                        </td>
+                                        <td className="num">{i.qty} {i.unit}</td>
+                                        {!isPhoneDrawer && <td className="num">{formatRupiah(Number(i.calculatedPrice) || 0)}</td>}
+                                        <td className="num">{formatRupiah((Number(i.calculatedPrice) || 0) * (Number(i.qty) || 0) * (isRetur ? -1 : 1))}</td>
+                                    </tr>
+                                ))}
+                                {(t.promoGiven || []).map((g, gIdx) => (
+                                    <tr key={`g-${gIdx}`}>
+                                        <td>{g.name} [BONUS]</td>
+                                        <td className="num">{g.qty} pcs</td>
+                                        {!isPhoneDrawer && <td className="num">—</td>}
+                                        <td className="num">Bonus</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colSpan={isPhoneDrawer ? 2 : 3}>Total</td>
+                                    <td className="num">{formatRupiah(signedVal)}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
                     </div>
-                    
-                    <button onClick={() => setReportView(true)} className="kpm-edge-btn px-6 py-3 rounded-xl flex items-center justify-center gap-2 font-bold whitespace-nowrap text-xs uppercase tracking-widest">
-                        <Calendar size={16}/> Context Analytics
+                ) : (
+                    <p className="text-[13px] text-[var(--ink-muted)] m-0">No line items recorded ({txRowItems(t)}).</p>
+                )}
+
+                {isPhoneDrawer && (
+                    <div className="flex flex-wrap gap-2 items-center pt-1">
+                        {renderActionButtons(t, true)}
+                    </div>
+                )}
+            </>
+        );
+    };
+
+    const renderActionButtons = (t, isCompact = false) => {
+        const pad = isCompact ? 'px-2.5 py-1.5 text-xs' : 'px-3 py-1.5 text-xs';
+        return (
+            <>
+                <button type="button" onClick={() => setViewingReceipt(t)} className={`kpm-edge-btn quiet ${pad} rounded-lg font-semibold flex items-center gap-1.5`}>
+                    <FileText size={14} /> Receipt
+                </button>
+                {t.deliveryProof && (
+                    <button type="button" onClick={() => setViewingPhoto(t.deliveryProof)} className={`kpm-edge-btn quiet ${pad} rounded-lg font-semibold flex items-center gap-1.5`}>
+                        <Camera size={14} /> Proof
                     </button>
-                </div>
-            )}
+                )}
+                {!isCompact && <span className="flex-1" />}
+                {isAdmin ? (
+                    <>
+                        <button type="button" onClick={() => setEditingTrans({ ...t, __before: t })} className={`kpm-edge-btn ${pad} rounded-lg font-semibold flex items-center gap-1.5`}>
+                            <Pencil size={14} /> Edit
+                        </button>
+                        <button type="button" onClick={() => onDeleteTransaction(t)} className={`kpm-edge-btn danger ${pad} rounded-lg font-semibold flex items-center gap-1.5`}>
+                            <Trash2 size={14} /> Delete
+                        </button>
+                    </>
+                ) : (
+                    <span className="text-[11.5px] text-[var(--ink-dim)] flex items-center gap-1">
+                        <Lock size={12} /> Edit and delete need the vault open
+                    </span>
+                )}
+            </>
+        );
+    };
 
-            {/* --- 🚀 THE NEW MACRO-TO-MICRO ANALYTICS DASHBOARD --- */}
-            {reportView && (
-                <div className="animate-fade-in relative z-10">
-                     <div className="print:hidden mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <button onClick={() => setReportView(false)} className="flex items-center gap-2 text-[var(--ink-muted)] hover:text-[var(--accent-ink)] transition-colors font-bold uppercase tracking-widest text-xs"><ArrowRight className="rotate-180" size={16}/> Back to Folders</button>
-                        <div className="flex items-center gap-3">
-                            <div className="hidden md:flex items-center gap-2 bg-[var(--raised)] dark:bg-[var(--raised)] px-3 py-2 rounded-xl border dark:border-[var(--line)] shadow-sm print:hidden">
-                                <span className="text-[10px] font-bold text-[var(--ink-muted)] uppercase tracking-widest">Scale</span>
-                                <input type="range" min="50" max="150" step="5" value={printScale} onChange={(e) => setPrintScale(Number(e.target.value))} className="w-20 accent-orange-500 cursor-pointer" />
-                                <span className="text-[10px] font-mono text-[var(--ink-muted)] w-8 text-right">{printScale}%</span>
-                            </div>
-                            <button onClick={() => window.print()} className="bg-[var(--raised)] hover:bg-[var(--panel)] text-[var(--ink)] px-6 py-2.5 rounded-xl shadow-sm text-xs font-bold uppercase tracking-widest flex items-center gap-2"><Printer size={16}/> Print PDF</button>
+    const scopeSubtitle = isFieldAgent
+        ? `Your own sales · ${selectedAgent || 'My account'}`
+        : isRegionalOnly
+            ? `${myLocation || 'Branch'} region`
+            : 'Master HQ · every region';
+
+    const winLabel = rangeType === 'daily'
+        ? shortDateLabel(windowRange[0])
+        : `${shortDateLabel(windowRange[0])} – ${shortDateLabel(windowRange[1] > todayStr ? todayStr : windowRange[1])}`;
+
+    const sparkMax = Math.max(1, ...sparkDays);
+    const sparkPts = sparkDays.map((v, idx) => [idx * (200 / (sparkDays.length - 1)), 23 - (Math.max(0, v) / sparkMax) * 20]);
+    const sparkLine = sparkPts.map(p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+    const sparkLast = sparkPts[sparkPts.length - 1];
+
+    const deltaContent = () => {
+        if (prevOmset === null) return <span>pull archive to compare</span>;
+        if (!prevOmset) return <span>no earlier figure</span>;
+        const pct = Math.round(((stats.totalRev - prevOmset) / Math.abs(prevOmset)) * 100);
+        return <><span className={pct >= 0 ? 'up' : 'dn'}>{pct >= 0 ? '▲' : '▼'} {Math.abs(pct)}%</span> vs previous {RANGE_UNIT[rangeType]}</>;
+    };
+
+    const currentFolderLevel = () => {
+        if (!selectedRegion) return 'region';
+        if (!selectedAgent) return 'agent';
+        if (!selectedProv) return 'prov';
+        if (!selectedKab) return 'kab';
+        if (!selectedKec) return 'kec';
+        if (!selectedCustomer) return 'store';
+        return 'archive';
+    };
+    const folderLevel = currentFolderLevel();
+
+    const maxRosterOmset = Math.max(1, ...stats.agentRoster.map(a => Math.max(0, a.total)));
+
+    return (
+        <div className="print-reset animate-fade-in max-w-6xl mx-auto pb-20 relative">
+            <style>{` @media print { .print-container { zoom: ${printScale / 100} !important; -moz-transform: scale(${printScale / 100}); -moz-transform-origin: top left; } } `}</style>
+
+            {/* === INTERACTIVE MASTER-DETAIL REPORTS WORKSPACE (hidden on print) === */}
+            <div className="kpm-rep-screen hide-on-print">
+                <div className="kpm-rep-wrap">
+                    {/* 1. HEADER + CONTROLS */}
+                    <div className="kpm-rep-hd">
+                        <h2>Reports</h2>
+                        <span className="kpm-rep-sub">{scopeSubtitle} · {winLabel}</span>
+                        <div className="kpm-rep-ctl">
+                            <span className="kpm-rep-per" role="group" aria-label="Range">
+                                {['daily', 'weekly', 'monthly', 'yearly'].map(r => (
+                                    <button key={r} type="button" aria-pressed={rangeType === r} onClick={() => setRangeType(r)}>
+                                        {r[0].toUpperCase() + r.slice(1)}
+                                    </button>
+                                ))}
+                            </span>
+                            <input
+                                type="date"
+                                className="kpm-rep-field"
+                                value={targetDate}
+                                onChange={(e) => e.target.value && setTargetDate(e.target.value)}
+                                aria-label="Date"
+                            />
+                            {reportAccessLevel === 'global' && (
+                                <select
+                                    className="kpm-rep-field"
+                                    aria-label="Region"
+                                    value={selectedRegion || ''}
+                                    onChange={(e) => {
+                                        const val = e.target.value || null;
+                                        setSelectedRegion(val);
+                                        setSelectedAgent(null);
+                                        setSelectedProv(null);
+                                        setSelectedKab(null);
+                                        setSelectedKec(null);
+                                        setSelectedCustomer(null);
+                                    }}
+                                >
+                                    <option value="">All regions</option>
+                                    {regionOptions.map(reg => <option key={reg} value={reg}>{reg}</option>)}
+                                </select>
+                            )}
+                            {!isFieldAgent && (
+                                <select
+                                    className="kpm-rep-field"
+                                    aria-label="Salesman"
+                                    value={selectedAgent || ''}
+                                    onChange={(e) => {
+                                        const val = e.target.value || null;
+                                        if (val) {
+                                            const match = agentOptions.find(a => a.name === val);
+                                            if (match && reportAccessLevel === 'global') setSelectedRegion(match.region);
+                                            setSelectedAgent(val);
+                                        } else {
+                                            setSelectedAgent(null);
+                                        }
+                                        setSelectedProv(null);
+                                        setSelectedKab(null);
+                                        setSelectedKec(null);
+                                        setSelectedCustomer(null);
+                                    }}
+                                >
+                                    <option value="">All salesmen</option>
+                                    {agentOptions.map(a => <option key={`${a.region}-${a.name}`} value={a.name}>{a.name}</option>)}
+                                </select>
+                            )}
+                            <label className="kpm-rep-search">
+                                <Search size={14} />
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Shop, salesman, product"
+                                    aria-label="Search"
+                                />
+                                {searchTerm && (
+                                    <button type="button" onClick={() => setSearchTerm('')} className="text-[var(--ink-dim)] hover:text-[var(--danger-ink)]" aria-label="Clear search">
+                                        <X size={13} />
+                                    </button>
+                                )}
+                            </label>
+                            <select
+                                className="kpm-rep-field kpm-rep-hide-ph"
+                                aria-label="Print scale"
+                                value={printScale}
+                                onChange={(e) => setPrintScale(Number(e.target.value))}
+                            >
+                                {[50, 75, 100, 125, 150].map(s => <option key={s} value={s}>{s}%</option>)}
+                            </select>
+                            <button type="button" onClick={() => window.print()} className="kpm-edge-btn quiet kpm-rep-hide-ph px-3 h-8 rounded-lg text-xs font-semibold flex items-center gap-1.5">
+                                <Printer size={14} /> Print
+                            </button>
                         </div>
-                     </div>
+                    </div>
 
-                     <style>{` @media print { .print-container { zoom: ${printScale / 100} !important; -moz-transform: scale(${printScale / 100}); -moz-transform-origin: top left; } } `}</style>
+                    {/* 2. 5-CELL KPI STRIP (OMSET ONLY — NO PROFIT TILE) */}
+                    <div className="kpm-rep-kpi">
+                        <div className="kpm-rep-k">
+                            <div className="l"><span>Omset</span><span>{RANGE_UNIT[rangeType]}</span></div>
+                            <div className={`v ${stats.totalRev < 0 ? 'text-[var(--danger-ink)]' : ''}`}><RollingNumber text={formatRupiah(stats.totalRev)} /></div>
+                            <div className="d">{deltaContent()}</div>
+                            <svg className="kpm-rep-spark kpm-rep-hide-ph" viewBox="0 0 200 26" preserveAspectRatio="none" aria-hidden="true">
+                                <polygon points={`0,26 ${sparkLine} 200,26`} fill="color-mix(in srgb, var(--gold) 12%, transparent)" />
+                                <polyline points={sparkLine} fill="none" stroke="var(--gold)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+                                <circle cx={sparkLast[0]} cy={sparkLast[1]} r="2.6" fill="var(--gold)" />
+                            </svg>
+                        </div>
+                        <div className="kpm-rep-k">
+                            <div className="l">Receipts</div>
+                            <div className="v sm"><RollingNumber text={String(stats.count)} /></div>
+                            <div className="d">avg {rpShort(kpiSummary.avgReceipt)}</div>
+                        </div>
+                        <div className="kpm-rep-k">
+                            <div className="l">Moved</div>
+                            <div className="v sm"><RollingNumber text={`${kpiSummary.totalBks.toLocaleString('id-ID')} Bks`} /></div>
+                            <div className="d">{formatRupiah(kpiSummary.settledPaid)} notes paid</div>
+                        </div>
+                        <div className="kpm-rep-k">
+                            <div className="l">Shops served</div>
+                            <div className="v sm"><RollingNumber text={String(kpiSummary.shopsServed)} /></div>
+                            <div className="d">+ {kpiSummary.walkIns} walk-in (Ecer)</div>
+                        </div>
+                        <div className="kpm-rep-k mixk">
+                            <div className="l"><span>How they paid</span><span>{rpShort(kpiSummary.mixTotal)}</span></div>
+                            <div className="kpm-rep-mix">
+                                {kpiSummary.mixEntries.map(([label, val, cls]) => (
+                                    <span key={label} className={cls} style={{ width: `${(val / (kpiSummary.mixTotal || 1)) * 100}%` }} title={label} />
+                                ))}
+                            </div>
+                            <div className="kpm-rep-mixl">
+                                {kpiSummary.mixEntries.map(([label, val, cls]) => (
+                                    <span key={label}><i className={cls} />{label} {Math.round((val / (kpiSummary.mixTotal || 1)) * 100)}%</span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
 
-                     <div className="print-container bg-[var(--raised)] dark:bg-[var(--raised)] dark:print:bg-[var(--raised)] p-4 md:p-8 rounded-2xl shadow-xl border dark:border-[var(--line)] print:shadow-none print:border-none print:p-0">
-                         {/* MACRO VIEW: GLOBAL STATS */}
-                         {/* Phone: the title, then the revenue under it - side by side the revenue ran off the screen and
-                             the whole page slid sideways. md and the printed sheet (A4 is ~718 px, under md) keep the row. */}
-                         <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-end md:gap-0 print:flex-row print:justify-between print:items-end print:gap-0 mb-8 print:mb-4 border-b-2 border-[var(--accent-edge)] pb-4 print:pb-2">
-                             <div>
-                                 <h1 className="text-3xl print:text-xl font-bold text-[var(--ink)] dark:text-[var(--ink)] dark:print:text-[var(--ink)] uppercase tracking-tight">
-                                     {isFieldAgent ? 'My Performance' : selectedAgent ? `${selectedAgent}'s Performance` : selectedRegion ? `${selectedRegion} Operations` : 'Global Master Analytics'}
-                                 </h1>
-                                 <p className="text-[var(--ink-muted)] dark:print:text-[var(--ink-muted)] font-mono text-sm print:text-[10px] mt-1 uppercase">{rangeType} Recap • {new Date(targetDate).toLocaleDateString()}</p>
-                             </div>
-                             <div className="md:text-right print:text-right"><p className="text-xs print:text-[10px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Context Revenue</p><h2 className="text-3xl md:text-4xl print:text-2xl [overflow-wrap:anywhere] font-bold text-[var(--verified)] dark:print:text-[var(--verified)]">{formatRupiah(stats.totalRev)}</h2></div>
-                         </div>
-                         
-                         <div className="grid grid-cols-1 md:grid-cols-3 print:grid-cols-3 gap-4 md:gap-6 print:gap-2 mb-8 print:mb-4">
-                             <div className="p-4 print:p-2 bg-[var(--raised)] dark:bg-[var(--panel)] dark:print:bg-[var(--raised)] rounded-xl border dark:border-[var(--line)] print:border-[var(--line-2)]"><p className="text-xs print:text-[11px] uppercase text-[var(--ink-muted)] font-bold mb-1 print:mb-0">Transactions</p><p className="text-2xl print:text-base font-bold text-[var(--ink)] dark:text-[var(--ink)] dark:print:text-[var(--ink)]">{stats.count}</p></div>
-                             <div className="p-4 print:p-2 bg-[var(--raised)] dark:bg-[var(--panel)] dark:print:bg-[var(--raised)] rounded-xl border dark:border-[var(--line)] print:border-[var(--line-2)]"><p className="text-xs print:text-[11px] uppercase text-[var(--ink-muted)] font-bold mb-1 print:mb-0">Items Moved (Bks)</p><p className="text-2xl print:text-base font-bold text-[var(--ink)]">{Object.values(stats.items).reduce((a,b)=>a+b.qty,0)}</p></div>
-                             <div className="p-4 print:p-2 bg-[var(--raised)] dark:bg-[var(--panel)] dark:print:bg-[var(--raised)] rounded-xl border dark:border-[var(--line)] print:border-[var(--line-2)]"><p className="text-xs print:text-[11px] uppercase text-[var(--ink-muted)] font-bold mb-1 print:mb-0">Net Profit (Cuan)</p><p className="text-2xl print:text-base font-bold text-[var(--verified)]">{formatRupiah(stats.totalProfit)}</p></div>
-                         </div>
-
-                         <div className="mb-8 print:mb-0">
-                             <h3 className="font-bold text-lg print:text-sm mb-4 print:mb-2 text-[var(--ink)] dark:text-[var(--ink)] dark:print:text-[var(--ink)] flex items-center gap-2"><Package size={20} className="print:w-4 print:h-4 text-[var(--accent-ink)]"/> Product Performance</h3>
-                             <div className="overflow-x-auto pb-2">
-                                 <table className="w-full text-sm print:text-[10px] text-left border-collapse">
-                                    <thead className="text-[var(--ink-muted)] border-b-2 border-[var(--line-2)] dark:border-[var(--line)] dark:print:border-[var(--line-2)]">
-                                        <tr><th className="py-2 print:py-1 w-1/2">Product Name</th><th className="py-2 print:py-1 text-right pr-3 md:pr-6 print:pr-6 w-1/4">Qty (Bks)</th><th className="py-2 print:py-1 text-right w-1/4">Revenue</th></tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-[var(--line)] dark:divide-[var(--line)] dark:print:divide-[var(--line)]">
-                                        {Object.entries(stats.items).sort((a,b) => b[1].val - a[1].val).map(([name, data]) => (
-                                            <tr key={name} className="hover:bg-[var(--raised)] dark:hover:bg-[var(--raised)] transition-colors">
-                                                <td className="py-3 print:py-1.5 font-bold text-[var(--ink)] dark:text-[var(--ink)] dark:print:text-[var(--ink)] uppercase text-xs">{name}</td>
-                                                <td className="py-3 print:py-1.5 text-right pr-3 md:pr-6 print:pr-6 text-[var(--ink-muted)] dark:text-[var(--ink-muted)] dark:print:text-[var(--ink)] font-mono">{data.qty}</td>
-                                                <td className="py-3 print:py-1.5 text-right font-bold text-[var(--verified)]">{formatRupiah(data.val)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                 </table>
-                             </div>
-                         </div>
-
-                         <div className="mb-8 print:mb-0" data-guide="offer-performance">
-                             <h3 className="font-bold text-lg print:text-sm mb-1 text-[var(--ink)] flex items-center gap-2"><Package size={20} className="print:w-4 print:h-4 text-[var(--accent-ink)]"/> Offer Performance</h3>
-                             <p className="text-xs text-[var(--ink-muted)] mb-4 print:mb-2">Sales that used a factory offer in this period. Revenue = that offer's cigarettes only, not the whole order.</p>
-                             {offerStats.length === 0 ? <p className="text-sm text-[var(--ink-muted)]">No factory offer was used in this period.</p> : (
-                             <div className="overflow-x-auto pb-2">
-                                 <table className="w-full text-sm print:text-[10px] text-left border-collapse">
-                                    <thead className="text-[var(--ink-muted)] border-b-2 border-[var(--line-2)]">
-                                        <tr><th className="py-2 print:py-1">Offer</th><th className="py-2 print:py-1 text-right pr-3">Sales</th><th className="py-2 print:py-1 text-right pr-3">Shops</th><th className="py-2 print:py-1 text-right">Revenue</th></tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-[var(--line)]">
-                                        {offerStats.map((o, i) => (
-                                            <tr key={o.id} className="hover:bg-[var(--raised)] transition-colors">
-                                                <td className="py-3 print:py-1.5 text-xs"><span className="font-bold text-[var(--ink)] uppercase">{o.name}</span>{i === 0 && <span className="ml-2 text-[10px] font-black text-[var(--accent-ink)]">BEST</span>}<span className="block text-[var(--ink-muted)]">{o.region ? `${o.region} only` : 'All areas'}</span></td>
-                                                <td className="py-3 print:py-1.5 text-right pr-3 font-mono text-[var(--ink-muted)]">{o.sales}</td>
-                                                <td className="py-3 print:py-1.5 text-right pr-3 font-mono text-[var(--ink-muted)]">{o.shops}</td>
-                                                <td className="py-3 print:py-1.5 text-right font-bold text-[var(--verified)]">{formatRupiah(o.rp)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                 </table>
-                             </div>)}
-                             {!isFieldAgent && (
-                             <div className="mt-5 print:mt-3" data-guide="package-returns">
-                                 <h4 className="font-bold text-sm print:text-xs text-[var(--ink)] flex items-center gap-2"><AlertTriangle size={16} className="text-[var(--accent-ink)]"/> Package, then Retur within 7 days</h4>
-                                 <p className="text-xs text-[var(--ink-muted)] mb-2">The shop took a package, then sent back that package's cigarettes as a Retur within 7 days. Nothing is blocked - this is only to see it.</p>
-                                 {pkgReturns.length === 0 ? <p className="text-sm text-[var(--ink-muted)]">None in this period.</p> : (
-                                 <ul className="divide-y divide-[var(--line)] text-xs">
-                                     {pkgReturns.map((r, i) => (
-                                         <li key={i} className="py-2">
-                                             <span className="font-bold text-[var(--ink)]">{r.shop}</span>
-                                             <span className="text-[var(--ink-muted)]"> · {r.offer} on {shortDay(r.soldAt)} by {r.salesman} · Retur on {shortDay(r.returnedAt)} by {r.returnedBy}: {r.items.join(', ')}</span>
-                                         </li>
-                                     ))}
-                                 </ul>)}
-                                 {countClears.length > 0 && (
-                                 <p className="mt-3 text-xs text-[var(--ink-muted)]"><span className="font-bold text-[var(--ink)]">Package counts cleared, last 30 days:</span> {countClears.map(c => `${c.shop} (${c.offer}, ${shortDay(c.at)})`).join(' · ')}. Who cleared each one is in the audit log.</p>
-                                 )}
-                             </div>)}
-                         </div>
-
-                         {/* MICRO VIEW: AGENT PERFORMANCE ROSTER */}
-                         <div className="mt-12 pt-8 border-t border-[var(--line-2)] dark:border-[var(--line)]">
-                             <h3 className="font-black text-xl mb-6 text-[var(--ink)] dark:text-[var(--ink)] flex items-center gap-2 uppercase tracking-widest">
-                                 <User size={24} className="text-[var(--ink)]"/> {isFieldAgent ? 'My Detailed Breakdown' : 'Agent Roster'}
-                             </h3>
-                             <div className="space-y-4">
-                                 {stats.agentRoster.map(agent => {
-                                     const isExpanded = isFieldAgent || expandedAgent === agent.name;
-                                     const agentProfile = motorists?.find(m => m.id === agent.agentId) || {};
-                                     
-                                     return (
-                                         <div key={agent.name} className={`border rounded-2xl overflow-hidden transition-all duration-300 ${isExpanded ? 'border-[var(--accent-edge)] shadow-lg dark:bg-[var(--raised)]' : 'border-[var(--line-2)] dark:border-[var(--line)] bg-[var(--raised)] dark:bg-[var(--raised)] hover:border-[var(--line-2)]'}`}>
-                                             {/* Accordion Header */}
-                                             <button 
-                                                onClick={() => setExpandedAgent(isExpanded ? null : agent.name)}
-                                                className={`w-full p-4 flex flex-wrap gap-y-2 items-center justify-between text-left focus:outline-none ${isFieldAgent ? 'cursor-default pointer-events-none' : ''}`}
-                                             >
-                                                 <div className="flex items-center gap-4 min-w-0">
-                                                     {agentProfile.photoURL ? (
-                                                         <img src={agentProfile.photoURL} className="w-12 h-12 rounded-full object-cover border-2 border-[var(--line-2)] dark:border-[var(--line)] shrink-0" alt={agent.name} />
-                                                     ) : (
-                                                         <div className="w-12 h-12 rounded-full bg-[var(--raised)] dark:bg-[var(--raised)] flex items-center justify-center shrink-0">
-                                                             <User size={24} className="text-[var(--ink)]" />
-                                                         </div>
-                                                     )}
-                                                     <div>
-                                                         <h4 className="font-bold text-lg dark:text-[var(--ink)] leading-none mb-1 break-words">{agent.name}</h4>
-                                                         <p className="text-[10px] text-[var(--ink-muted)] uppercase tracking-widest">{agent.count} Receipts</p>
-                                                     </div>
-                                                 </div>
-                                                 <div className="flex items-center gap-6 shrink-0">
-                                                     <div className="text-right">
-                                                         <p className="text-[10px] text-[var(--ink-muted)] uppercase tracking-widest font-bold mb-0.5">Agent Total</p>
-                                                         <p className={`font-black text-lg ${agent.total < 0 ? 'text-[var(--danger-text)]' : 'text-[var(--verified)]'}`}>{formatRupiah(agent.total)}</p>
-                                                     </div>
-                                                     {!isFieldAgent && (
-                                                        <div className="p-2 bg-[var(--raised)] dark:bg-[var(--panel)] rounded-full text-[var(--ink-muted)]">
-                                                            {isExpanded ? <ChevronUp size={20}/> : <ChevronDown size={20}/>}
-                                                        </div>
-                                                     )}
-                                                 </div>
-                                             </button>
-
-                                             {/* Accordion Body (Deep Dive) */}
-                                             {isExpanded && (
-                                                 <div className="p-6 bg-[var(--raised)] dark:bg-[var(--panel)] border-t border-[var(--line-2)] dark:border-[var(--line)] animate-fade-in">
-                                                     
-                                                     {/* Agent's Product Breakdown */}
-                                                     <div className="mb-8">
-                                                         <h5 className="font-bold text-sm text-[var(--ink-muted)] dark:text-[var(--ink-muted)] uppercase tracking-widest mb-3 flex items-center gap-2"><Package size={16}/> Items Sold by {agent.name}</h5>
-                                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                             {Object.entries(agent.items).sort((a,b) => b[1].val - a[1].val).map(([pName, pData]) => (
-                                                                 <div key={pName} className="bg-[var(--raised)] dark:bg-[var(--raised)] p-3 rounded-lg border dark:border-[var(--line)] flex justify-between items-center shadow-sm">
-                                                                     <div>
-                                                                         <p className="text-xs font-bold dark:text-[var(--ink)] uppercase mb-0.5 truncate max-w-[120px]">{pName}</p>
-                                                                         <p className="text-[10px] text-[var(--ink-muted)] font-mono">{pData.qty} Bks</p>
-                                                                     </div>
-                                                                     <p className="text-sm font-black text-[var(--verified)]">{formatRupiah(pData.val)}</p>
-                                                                 </div>
-                                                             ))}
-                                                         </div>
-                                                     </div>
-
-                                                     {/* Agent's Transaction Timeline */}
-                                                     <div>
-                                                         <h5 className="font-bold text-sm text-[var(--ink-muted)] dark:text-[var(--ink-muted)] uppercase tracking-widest mb-3 flex items-center gap-2"><Clock size={16}/> Chronological Ledger</h5>
-                                                         <div className="space-y-2">
-                                                             {agent.transactions.map(t => {
-                                                                 // 🚀 FORENSIC BADGES
-                                                                 const isRetur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
-                                                                 const isExchange = t.paymentType === 'Tukar Ganti';
-                                                                 const isIouFulfill = t.paymentType === 'IOU Fulfillment';
-
-                                                                 return (
-                                                                 <div key={t.id} className="bg-[var(--raised)] dark:bg-[var(--raised)] p-4 rounded-xl border dark:border-[var(--line)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-                                                                     <div className="flex items-center gap-4 w-full md:w-auto">
-                                                                         <div className="bg-[var(--raised)] dark:bg-[var(--raised)] px-3 py-2 rounded-lg text-center shrink-0">
-                                                                             <p className="text-[10px] text-[var(--ink-muted)] font-bold uppercase">{t.date.split('-').reverse().join('/')}</p>
-                                                                             <p className="text-xs font-mono font-black dark:text-[var(--ink)]">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '--:--'}</p>
-                                                                         </div>
-                                                                         <div className="min-w-0">
-                                                                             <div className="flex items-center gap-2 mb-0.5">
-                                                                                <p className="font-bold text-sm dark:text-[var(--ink)] truncate uppercase">{t.customerName}</p>
-                                                                                {isRetur ? (
-                                                                                    <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-[var(--danger-well)] text-[var(--danger-text)] border border-[var(--danger)]">RETUR</span>
-                                                                                ) : isExchange ? (
-                                                                                    <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-[var(--raised)] text-[var(--ink)] border border-[var(--accent-edge)]">EXCHANGE</span>
-                                                                                ) : isIouFulfill ? (
-                                                                                    <span className="text-[11px] font-black px-1 py-0.5 rounded uppercase tracking-widest bg-[var(--verified-fill)] text-[var(--verified)] border border-[var(--line-2)]">UTANG BARANG LUNAS</span>
-                                                                                ) : null}
-                                                                             </div>
-                                                                             <p className="text-[10px] text-[var(--ink-muted)] uppercase mt-0.5 truncate">
-                                                                                 {t.type === 'CONSIGNMENT_PAYMENT' ? 'STORE AUDIT' : t.items ? t.items.map(i => {
-                                                                                     let lbl = `${i.qty} ${i.unit} ${i.name}`;
-                                                                                     if (i.condition === 'DAMAGED') lbl += ' [DMG]';
-                                                                                     if (i.fulfillment === 'IOU') lbl += ' [UTANG BARANG]';
-                                                                                     if (i.isIouFulfillment) lbl += ' [FULFILLED]';
-                                                                                     return lbl;
-                                                                                 }).concat((t.promoGiven || []).map(g => `${g.qty} pcs ${g.name} [BONUS]`)).join(", ") : 'N/A'}
-                                                                             </p>
-                                                                         </div>
-                                                                     </div>
-                                                                     <div className="text-right shrink-0 w-full md:w-auto flex justify-between md:block items-center">
-                                                                         <span className={`text-[11px] px-2 py-1 rounded font-bold uppercase tracking-widest ${t.paymentType === 'Titip' ? 'bg-[var(--raised)] text-[var(--accent-ink)]' : 'bg-[var(--raised)] text-[var(--ink-muted)]'}`}>{t.paymentType || 'Cash'}</span>
-                                                                         <p className={`font-black text-base mt-1 ${isRetur && (t.amountPaid || t.total) > 0 ? 'text-[var(--danger-text)]' : 'text-[var(--verified)]'}`}>
-                                                                            {isRetur && (t.amountPaid || t.total) > 0 ? '-' : ''}{formatRupiah(t.amountPaid || t.total)}
-                                                                         </p>
-                                                                     </div>
-                                                                 </div>
-                                                             )})}
-                                                         </div>
-                                                     </div>
-
-                                                 </div>
-                                             )}
-                                         </div>
-                                     );
-                                 })}
-                                 {stats.agentRoster.length === 0 && <p className="text-center text-[var(--ink-muted)] py-6 font-bold uppercase tracking-widest">No agent activity logged.</p>}
-                             </div>
-                         </div>
-
-                     </div>
-                </div>
-            )}
-
-            <div className="hide-on-print w-full">
-
-            {/* --- LEVEL 1: REGION SELECTION (TEAM) --- */}
-            {!reportView && reportAccessLevel === 'global' && !selectedRegion && (
-                <div className="animate-fade-in relative z-10">
-                    {Object.keys(reportData).length === 0 ? (
-                        <div className="text-center py-20 opacity-50"><MapPin size={48} className="mx-auto mb-4 text-[var(--ink)]"/><p className="text-lg font-bold tracking-widest uppercase text-[var(--ink-muted)]">No Regions Active</p></div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {Object.values(reportData).sort((a,b) => b.total - a.total).map(r => (
-                                <div key={r.name} onClick={() => setSelectedRegion(r.name)} className="bg-gradient-to-br from-[var(--panel)] to-white dark:from-[var(--panel)] dark:to-[var(--raised)] p-6 rounded-2xl border dark:border-[var(--line)] shadow-sm cursor-pointer hover:shadow-lg hover:border-[var(--accent-edge)] transition-all group">
-                                    <div className="flex items-start justify-between mb-6">
-                                        <div className="p-4 bg-[var(--raised)] dark:bg-[var(--raised)] rounded-xl text-[var(--ink)] group-hover:bg-[var(--gold)] group-hover:text-[var(--gold-ink)] transition-colors shadow-sm"><MapPin size={28} /></div>
-                                    </div>
-                                    <h3 className="font-black text-xl dark:text-[var(--ink)] mb-2 tracking-wide">{r.name}</h3>
-                                    <div className="flex justify-between items-end border-t border-[var(--line-2)] dark:border-[var(--line)] pt-4 mt-4">
-                                        <div><p className="text-[10px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Regional Gross</p><p className="font-black text-[var(--ink)] text-xl">{formatRupiah(r.total)}</p></div>
-                                        <div className="text-right"><p className="text-[10px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Sales</p><p className="font-black dark:text-[var(--ink)] text-xl">{r.count}</p></div>
-                                    </div>
-                                </div>
-                            ))}
+                    {/* ARCHIVE BANNER */}
+                    {isPartialWindow && (
+                        <div className="kpm-rep-part">
+                            <span>Showing the last 7 days live feed. This {RANGE_UNIT[rangeType]} starts on {shortDateLabel(windowRange[0])}.</span>
+                            {!isFieldAgent ? (
+                                <button type="button" onClick={handlePullArchive} disabled={isFetchingHistory} className="kpm-edge-btn px-3 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50">
+                                    {isFetchingHistory ? <RotateCw size={13} className="animate-spin" /> : <Archive size={13} />}
+                                    {isFetchingHistory ? 'Extracting...' : 'Pull archive'}
+                                </button>
+                            ) : (
+                                <span>Ask an admin for older receipts.</span>
+                            )}
                         </div>
                     )}
-                </div>
-            )}
 
-            {/* --- LEVEL 2: AGENT SELECTION --- */}
-            {!reportView && selectedRegion && !selectedAgent && (
-                <div className="animate-fade-in relative z-10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.values(reportData[selectedRegion]?.agents || {}).sort((a,b) => b.total - a.total).map(a => (
-                            <div key={a.name} onClick={() => setSelectedAgent(a.name)} className="bg-[var(--raised)] dark:bg-[var(--raised)] p-6 rounded-2xl border dark:border-[var(--line)] shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--line-2)] transition-all group">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="p-3 bg-[var(--verified-fill)] dark:bg-[var(--raised)] rounded-xl text-[var(--verified)] group-hover:bg-[var(--verified-fill)]0 group-hover:text-[var(--ink)] transition-colors"><User size={24} /></div>
-                                </div>
-                                <h3 className="font-bold text-lg dark:text-[var(--ink)] mb-4 truncate">{a.name}</h3>
-                                <div className="flex justify-between items-end border-t border-[var(--line-2)] dark:border-[var(--line)] pt-3">
-                                    <div><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Agent Gross</p><p className="font-black text-[var(--verified)] text-lg">{formatRupiah(a.total)}</p></div>
-                                    <div className="text-right"><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Stops</p><p className="font-black dark:text-[var(--ink)] text-lg">{a.count}</p></div>
-                                </div>
-                            </div>
+                    {/* 3. UNDERLINE TABS */}
+                    <div className="kpm-rep-tabs" role="tablist">
+                        {[
+                            ['ledger', 'Ledger', contextualTransactions.length],
+                            ['folders', 'Folders', ''],
+                            ['products', 'Products', productRows.rows.length],
+                            ...(!isFieldAgent ? [['salesmen', 'Salesmen', stats.agentRoster.length]] : []),
+                            ['returns', 'Returns', returnRows.length],
+                        ].map(([key, label, count]) => (
+                            <button
+                                key={key}
+                                type="button"
+                                role="tab"
+                                className="kpm-rep-tab"
+                                aria-selected={activeTab === key}
+                                onClick={() => setActiveTab(key)}
+                            >
+                                {label}
+                                {count !== '' && <span className="n">{count}</span>}
+                            </button>
                         ))}
                     </div>
-                </div>
-            )}
 
-            {/* --- LEVEL 3: PROVINSI SELECTION --- */}
-            {!reportView && selectedRegion && selectedAgent && !selectedProv && (
-                <div className="animate-fade-in relative z-10">
-                    {Object.keys(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi || {}).length === 0 ? (
-                         <div className="text-center py-20 opacity-50"><Folder size={48} className="mx-auto mb-4 text-[var(--alt-ink)]"/><p className="text-lg font-bold tracking-widest uppercase text-[var(--ink-muted)]">No Provinces Visited</p></div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi || {}).sort((a,b) => b.total - a.total).map(p => (
-                                <div key={p.name} onClick={() => setSelectedProv(p.name)} className="bg-[var(--raised)] dark:bg-[var(--raised)] p-5 rounded-2xl border dark:border-[var(--line)] shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--alt-edge)] transition-all group">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="p-2.5 rounded-xl transition-colors bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--alt-ink)] group-hover:bg-[var(--gold)] group-hover:text-[var(--gold-ink)]"><MapPin size={20}/></div>
-                                    </div>
-                                    <h3 className="font-black text-base dark:text-[var(--ink)] mb-3 truncate uppercase tracking-wide">{p.name}</h3>
-                                    <div className="flex justify-between items-end border-t border-[var(--line-2)] dark:border-[var(--line)] pt-3">
-                                        <div><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Prov. Value</p><p className="font-bold text-sm text-[var(--alt-ink)]">{formatRupiah(p.total)}</p></div>
-                                        <div className="text-right"><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-[var(--ink)] text-sm">{p.count}</p></div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* --- LEVEL 4: KABUPATEN SELECTION --- */}
-            {!reportView && selectedRegion && selectedAgent && selectedProv && !selectedKab && (
-                <div className="animate-fade-in relative z-10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten || {}).sort((a,b) => b.total - a.total).map(k => (
-                            <div key={k.name} onClick={() => setSelectedKab(k.name)} className="bg-[var(--raised)] dark:bg-[var(--raised)] p-5 rounded-2xl border dark:border-[var(--line)] shadow-sm cursor-pointer hover:shadow-md hover:border-pink-500 transition-all group">
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="p-2.5 rounded-xl transition-colors bg-pink-100 dark:bg-[var(--raised)] text-pink-600 group-hover:bg-pink-500 group-hover:text-[var(--ink)]"><Folder size={20}/></div>
-                                </div>
-                                <h3 className="font-black text-base dark:text-[var(--ink)] mb-3 truncate uppercase tracking-wide">{k.name}</h3>
-                                <div className="flex justify-between items-end border-t border-[var(--line-2)] dark:border-[var(--line)] pt-3">
-                                    <div><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Kab. Value</p><p className="font-bold text-sm text-pink-500">{formatRupiah(k.total)}</p></div>
-                                    <div className="text-right"><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-[var(--ink)] text-sm">{k.count}</p></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* --- LEVEL 5: KECAMATAN SELECTION --- */}
-            {!reportView && selectedRegion && selectedAgent && selectedProv && selectedKab && !selectedKec && (
-                <div className="animate-fade-in relative z-10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten[selectedKab]?.kecamatan || {}).sort((a,b) => b.total - a.total).map(c => (
-                            <div key={c.name} onClick={() => setSelectedKec(c.name)} className="bg-[var(--raised)] dark:bg-[var(--raised)] p-5 rounded-2xl border dark:border-[var(--line)] shadow-sm cursor-pointer hover:shadow-md hover:border-[var(--danger)] transition-all group">
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="p-2.5 rounded-xl transition-colors bg-[var(--danger-well)] dark:bg-[var(--raised)] text-[var(--danger-text)] group-hover:bg-[var(--danger-plate)] group-hover:text-[var(--ink)]"><Folder size={20}/></div>
-                                </div>
-                                <h3 className="font-black text-base dark:text-[var(--ink)] mb-3 truncate uppercase tracking-wide">{c.name}</h3>
-                                <div className="flex justify-between items-end border-t border-[var(--line-2)] dark:border-[var(--line)] pt-3">
-                                    <div><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Kec. Value</p><p className="font-bold text-sm text-[var(--danger-text)]">{formatRupiah(c.total)}</p></div>
-                                    <div className="text-right"><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Stops</p><p className="font-bold dark:text-[var(--ink)] text-sm">{c.count}</p></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* --- LEVEL 6: CUSTOMER SELECTION --- */}
-            {!reportView && selectedRegion && selectedAgent && selectedProv && selectedKab && selectedKec && !selectedCustomer && (
-                <div className="animate-fade-in relative z-10">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten[selectedKab]?.kecamatan[selectedKec]?.stores || {}).sort((a,b) => b.total - a.total).map(c => {
-                            const isIndiv = c.name === "Individuals (Ecer)";
-                            return (
-                                <div key={c.name} onClick={() => setSelectedCustomer(c.name)} className={`relative bg-[var(--raised)] dark:bg-[var(--raised)] p-5 rounded-2xl border shadow-sm cursor-pointer hover:shadow-md transition-all group ${isIndiv ? 'border-[var(--line-2)] dark:border-[var(--line-2)] hover:border-[var(--line-2)]' : 'dark:border-[var(--line)] hover:border-[var(--accent-edge)]'}`}>
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className={`p-2.5 rounded-xl transition-colors ${isIndiv ? 'bg-[var(--verified-fill)] dark:bg-[var(--verified-fill)] text-[var(--verified)] group-hover:bg-[var(--verified-fill)]0 group-hover:text-[var(--ink)]' : 'bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--accent-ink)] group-hover:bg-[var(--gold)] group-hover:text-[var(--gold-ink)]'}`}>
-                                            {isIndiv ? <User size={20}/> : <Store size={20} />}
+                    {/* 4. TAB PANELS */}
+                    {activeTab === 'ledger' && (
+                        <div className="kpm-rep-work">
+                            <aside className="kpm-rep-list">
+                                <div className="kpm-rep-rows">
+                                    {ledgerDays.length === 0 ? (
+                                        <div className="p-10 text-center text-sm text-[var(--ink-dim)]">
+                                            No receipts match. Clear the search or pick another date / pull archive.
                                         </div>
-                                    </div>
-                                    <h3 className="font-black text-base dark:text-[var(--ink)] mb-3 truncate">{c.name}</h3>
-                                    <div className="flex justify-between items-end border-t border-[var(--line-2)] dark:border-[var(--line)] pt-3">
-                                        <div><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Value</p><p className={`font-bold text-sm ${isIndiv ? 'text-[var(--verified)]' : 'text-[var(--accent-ink)]'}`}>{formatRupiah(c.total)}</p></div>
-                                        <div className="text-right"><p className="text-[11px] text-[var(--ink-muted)] uppercase tracking-widest font-bold">Receipts</p><p className="font-bold dark:text-[var(--ink)] text-sm">{c.count}</p></div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-
-            {/* --- LEVEL 7: RECEIPT ARCHIVE --- */}
-            {!reportView && selectedRegion && selectedAgent && selectedProv && selectedKab && selectedKec && selectedCustomer && (
-                <div className="animate-fade-in relative z-10">
-                    <div className="bg-[var(--raised)] dark:bg-[var(--raised)] rounded-2xl shadow-xl border dark:border-[var(--line)] overflow-hidden">
-                        {(() => {
-                            const cObj = reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten[selectedKab]?.kecamatan[selectedKec]?.stores[selectedCustomer];
-                            if (!cObj) return null;
-                            
-                            return (
-                                <>
-                                    <div className="bg-[var(--panel)] text-[var(--ink)] p-6 md:p-8">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <p className="text-[var(--accent-ink)] font-bold tracking-widest text-[10px] uppercase mb-1">Audit Log • {selectedAgent}</p>
-                                                <h1 className="text-2xl md:text-3xl font-black">{cObj.name}</h1>
-                                            </div>
-                                            <div className="flex items-start gap-4">
-                                                <div className="text-right">
-                                                    <p className="text-[10px] uppercase tracking-widest opacity-70 font-bold">Account Total</p>
-                                                    <p className={`text-xl md:text-2xl font-black ${cObj.total < 0 ? 'text-[var(--danger-text)]' : 'text-[var(--verified)]'}`}>{formatRupiah(cObj.total)}</p>
+                                    ) : (
+                                        ledgerDays.map(day => (
+                                            <React.Fragment key={day.date}>
+                                                <div className="kpm-rep-day">
+                                                    <span>{dayHeading(day.date)}</span>
+                                                    <span>{day.count} receipts · {formatRupiah(day.omset)}</span>
                                                 </div>
-                                                {isAdmin && (
-                                                    <button data-kpm-del data-label="Delete" onClick={() => onDeleteFolder(cObj.name, selectedAgent)} title="Delete ALL history for this store" className="p-2 bg-[var(--danger-plate)] hover:bg-[var(--danger-plate)] text-[var(--danger-text)] hover:text-[var(--ink)] border border-[var(--danger)] rounded-lg transition-colors shrink-0">
-                                                        <Trash2 size={16}/>
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {/* Under lg every sale is a card: date | amount, type | the keys, then the details full
-                                        width - the same grid as the competitor table. 632 px in a 372 px box hid
-                                        the amount and the keys behind a sideways swipe. */}
-                                    <div className="p-4 md:p-6 lg:overflow-x-auto">
-                                        <table className="w-full text-sm text-left block lg:table lg:min-w-[600px]">
-                                            <thead className="hidden lg:table-header-group bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--ink-muted)] uppercase text-[10px] font-bold tracking-widest">
-                                                <tr><th className="p-3 rounded-l-lg">Date / Time</th><th className="p-3">Type</th><th className="p-3">Details</th><th className="p-3 text-right">Amount</th><th className="p-3 rounded-r-lg text-center">Action</th></tr>
-                                            </thead>
-                                            <tbody className="block lg:table-row-group divide-y divide-[var(--line)] dark:divide-[var(--line)]">
-                                                {cObj.history.map(t => {
-                                                    // 🚀 FORENSIC BADGES
+                                                {day.rows.map(t => {
+                                                    const chip = chipForTx(t);
                                                     const isRetur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
-                                                    const isExchange = t.paymentType === 'Tukar Ganti';
-                                                    const isIouFulfill = t.paymentType === 'IOU Fulfillment';
+                                                    const isZero = t.paymentType === 'Tukar Ganti' || t.paymentType === 'IOU Fulfillment';
+                                                    const rawAmt = Number(t.total || t.amountPaid) || 0;
+                                                    const rowAmt = isRetur && rawAmt > 0 ? -Math.abs(rawAmt) : isZero ? 0 : rawAmt;
+                                                    const isSelectedDesktop = activeTx?.id === t.id;
+                                                    const isOpenPhone = resolvedPhoneOpenId === t.id;
 
                                                     return (
-                                                    <tr key={t.id} className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-2 py-3 lg:table-row lg:py-0 hover:bg-[var(--raised)] dark:hover:bg-[var(--panel)] transition-colors">
-                                                        <td className="col-start-1 row-start-1 lg:p-3 font-mono text-[var(--ink-muted)] dark:text-[var(--ink-muted)] text-xs font-bold">{t.date}<br/><span className="text-[10px] opacity-70">{t.timestamp ? new Date(t.timestamp.seconds*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : ''}</span></td>
-                                                        <td className="col-start-1 row-start-2 self-center lg:p-3">
-                                                            {isRetur ? (
-                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-[var(--danger-well)] text-[var(--danger-text)] border border-[var(--danger)]">RETUR</span>
-                                                            ) : isExchange ? (
-                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-[var(--raised)] text-[var(--ink)] border border-[var(--accent-edge)]">EXCHANGE</span>
-                                                            ) : isIouFulfill ? (
-                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-[var(--verified-fill)] text-[var(--verified)] border border-[var(--line-2)]">UTANG BARANG LUNAS</span>
-                                                            ) : t.type === 'CONSIGNMENT_PAYMENT' ? (
-                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-[var(--raised)] text-[var(--alt-ink)] border border-[var(--alt-edge)]">STORE AUDIT</span>
-                                                            ) : (
-                                                                <span className="px-2 py-1 rounded text-[11px] uppercase tracking-widest font-black bg-[var(--verified-fill)] text-[var(--verified)] border border-[var(--line-2)]">SALE</span>
-                                                            )}
-                                                        </td>
-                                                        <td className="col-span-2 row-start-3 lg:col-span-1 lg:p-3 text-[var(--ink)] dark:text-[var(--ink-muted)] text-xs font-bold leading-relaxed lg:max-w-[250px] break-words uppercase">
-                                                            {t.type === 'CONSIGNMENT_PAYMENT' ? (
-                                                                <div className="space-y-1">
-                                                                    {(t.itemsPaid || []).concat(t.itemsReturned || [], t.itemsRemaining || []).reduce((acc, curr) => {
-                                                                        if (!acc.find(i => i.productId === curr.productId)) acc.push(curr); return acc;
-                                                                    }, []).map((item, idx) => <div key={idx}>• {item.name}</div>)}
+                                                        <React.Fragment key={t.id}>
+                                                            <button
+                                                                type="button"
+                                                                className={`kpm-rep-r ${isSelectedDesktop ? 'sel' : ''}`}
+                                                                onClick={() => {
+                                                                    setSelectedTxId(t.id);
+                                                                    setOpenPhoneTxId(curr => (curr === undefined ? (t.id === contextualTransactions[0]?.id ? null : t.id) : (curr === t.id ? null : t.id)));
+                                                                }}
+                                                            >
+                                                                <span className="t">{txTime(t)}</span>
+                                                                <span className="sh">
+                                                                    <b>
+                                                                        {t.customerName || 'Walk-in Customer'}
+                                                                        {t.offers?.length > 0 && <span className="kpm-rep-pk">PAKET</span>}
+                                                                    </b>
+                                                                    <span>{txAreaText(t)}</span>
+                                                                </span>
+                                                                <span className="ag">{(t.agentName || 'Admin').split(' ')[0]}</span>
+                                                                <span className={`kpm-rep-chip ${chip.cls}`}>{chip.label}</span>
+                                                                <span className={`am ${rowAmt < 0 ? 'neg' : rowAmt === 0 ? 'zero' : ''}`}>
+                                                                    {formatRupiah(rowAmt)}
+                                                                </span>
+                                                            </button>
+                                                            {isOpenPhone && (
+                                                                <div className="kpm-rep-under">
+                                                                    {renderTxDetail(t, true)}
                                                                 </div>
-                                                            ) : (
-                                                                t.items ? t.items.map(i => {
-                                                                    let lbl = `${i.qty} ${i.unit} ${i.name}`;
-                                                                    if (i.condition === 'DAMAGED') lbl += ' [DMG]';
-                                                                    if (i.fulfillment === 'IOU') lbl += ' [UTANG BARANG]';
-                                                                    if (i.isIouFulfillment) lbl += ' [FULFILLED]';
-                                                                    return lbl;
-                                                                }).join(", ") : 'N/A'
                                                             )}
-                                                            {t.paymentType === 'Titip' && <span className="block mt-1 text-[11px] text-[var(--accent-ink)] tracking-widest border border-[var(--accent-edge)] w-fit px-1 rounded">(CONSIGNMENT)</span>}
-                                                            {t.paymentType !== 'Titip' && t.paymentType !== 'Cash' && t.paymentType && !isExchange && !isIouFulfill && <span className="block mt-1 text-[11px] text-[var(--ink)] tracking-widest">({t.paymentType})</span>}
-                                                        </td>
-                                                        <td className={`col-start-2 row-start-1 lg:p-3 text-right font-black ${isRetur && (t.amountPaid || t.total) > 0 ? 'text-[var(--danger-text)]' : 'text-[var(--verified)]'}`}>
-                                                            {isRetur && (t.amountPaid || t.total) > 0 ? '-' : ''}{formatRupiah(t.amountPaid || t.total)}
-                                                        </td>
-                                                        <td className="col-start-2 row-start-2 lg:p-3 text-center">
-                                                            <div className="flex justify-end lg:justify-center gap-2">
-                                                                {t.deliveryProof && <button onClick={() => setViewingPhoto(t.deliveryProof)} className="p-2 bg-[var(--verified-fill)] dark:bg-[var(--verified-fill)] text-[var(--verified)] dark:text-[var(--verified)] hover:bg-[var(--verified-fill)] rounded-lg transition-colors"><Camera size={14}/></button>}
-                                                                <button onClick={() => setViewingReceipt(t)} className="p-2 bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--ink-muted)] dark:text-[var(--ink-muted)] hover:text-[var(--accent-ink)] rounded-lg transition-colors"><FileText size={14}/></button>
-                                                                {isAdmin && <button onClick={() => setEditingTrans({ ...t, __before: t })} className="p-2 bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--ink-muted)] dark:text-[var(--ink-muted)] hover:text-[var(--ink)] rounded-lg transition-colors"><Pencil size={14}/></button>}
-                                                                {isAdmin && <button data-kpm-del data-label="Delete" onClick={() => onDeleteTransaction(t)} className="p-2 bg-[var(--raised)] dark:bg-[var(--raised)] text-[var(--ink-muted)] dark:text-[var(--ink-muted)] hover:text-[var(--danger-text)] rounded-lg transition-colors"><Trash2 size={14}/></button>}
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                )})}
-                                            </tbody>
-                                        </table>
+                                                        </React.Fragment>
+                                                    );
+                                                })}
+                                            </React.Fragment>
+                                        ))
+                                    )}
+                                </div>
+                            </aside>
+
+                            <section className="kpm-rep-hand">
+                                {activeTx ? (
+                                    <>
+                                        <div className="kpm-rep-hin">
+                                            {renderTxDetail(activeTx, false)}
+                                        </div>
+                                        <div className="kpm-rep-act">
+                                            {renderActionButtons(activeTx, false)}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="p-10 text-center text-sm text-[var(--ink-dim)]">
+                                        Pick a receipt from the list.
                                     </div>
-                                </>
-                            );
-                        })()}
-                    </div>
+                                )}
+                            </section>
+                        </div>
+                    )}
+
+                    {activeTab === 'folders' && (
+                        <div className="kpm-rep-pane">
+                            <div className="kpm-rep-crumb">
+                                {reportAccessLevel === 'global' && (
+                                    <button type="button" onClick={() => { setSelectedRegion(null); setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null); }}>
+                                        Master HQ
+                                    </button>
+                                )}
+                                {selectedRegion && (
+                                    <>
+                                        {reportAccessLevel === 'global' && <span>›</span>}
+                                        {!isFieldAgent && folderLevel !== 'agent' ? (
+                                            <button type="button" onClick={() => { setSelectedAgent(null); setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null); }}>{selectedRegion}</button>
+                                        ) : (
+                                            <b>{selectedRegion}</b>
+                                        )}
+                                    </>
+                                )}
+                                {selectedAgent && (
+                                    <>
+                                        <span>›</span>
+                                        {folderLevel !== 'prov' ? (
+                                            <button type="button" onClick={() => { setSelectedProv(null); setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null); }}>{selectedAgent}</button>
+                                        ) : (
+                                            <b>{selectedAgent}</b>
+                                        )}
+                                    </>
+                                )}
+                                {selectedProv && (
+                                    <>
+                                        <span>›</span>
+                                        {folderLevel !== 'kab' ? (
+                                            <button type="button" onClick={() => { setSelectedKab(null); setSelectedKec(null); setSelectedCustomer(null); }}>{selectedProv}</button>
+                                        ) : (
+                                            <b>{selectedProv}</b>
+                                        )}
+                                    </>
+                                )}
+                                {selectedKab && (
+                                    <>
+                                        <span>›</span>
+                                        {folderLevel !== 'kec' ? (
+                                            <button type="button" onClick={() => { setSelectedKec(null); setSelectedCustomer(null); }}>{selectedKab}</button>
+                                        ) : (
+                                            <b>{selectedKab}</b>
+                                        )}
+                                    </>
+                                )}
+                                {selectedKec && (
+                                    <>
+                                        <span>›</span>
+                                        {folderLevel !== 'store' ? (
+                                            <button type="button" onClick={() => setSelectedCustomer(null)}>{selectedKec}</button>
+                                        ) : (
+                                            <b>{selectedKec}</b>
+                                        )}
+                                    </>
+                                )}
+                                {selectedCustomer && <><span>›</span><b>{selectedCustomer}</b></>}
+                            </div>
+
+                            {folderLevel !== 'archive' ? (() => {
+                                let nodes = [];
+                                let levelTitle = 'Region';
+                                let onPick = () => {};
+                                if (folderLevel === 'region') {
+                                    levelTitle = 'Regions';
+                                    nodes = Object.values(reportData);
+                                    onPick = (name) => setSelectedRegion(name);
+                                } else if (folderLevel === 'agent') {
+                                    levelTitle = 'Salesmen';
+                                    nodes = Object.values(reportData[selectedRegion]?.agents || {});
+                                    onPick = (name) => setSelectedAgent(name);
+                                } else if (folderLevel === 'prov') {
+                                    levelTitle = 'Provinsi';
+                                    nodes = Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi || {});
+                                    onPick = (name) => setSelectedProv(name);
+                                } else if (folderLevel === 'kab') {
+                                    levelTitle = 'Kabupaten';
+                                    nodes = Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten || {});
+                                    onPick = (name) => setSelectedKab(name);
+                                } else if (folderLevel === 'kec') {
+                                    levelTitle = 'Kecamatan';
+                                    nodes = Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten[selectedKab]?.kecamatan || {});
+                                    onPick = (name) => setSelectedKec(name);
+                                } else {
+                                    levelTitle = 'Shops';
+                                    nodes = Object.values(reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten[selectedKab]?.kecamatan[selectedKec]?.stores || {});
+                                    onPick = (name) => setSelectedCustomer(name);
+                                }
+                                nodes.sort((a, b) => b.total - a.total);
+                                const sumOm = nodes.reduce((s, n) => s + n.total, 0);
+
+                                return (
+                                    <>
+                                        <div className="kpm-rep-sec">
+                                            <span>{levelTitle} · {nodes.length}</span>
+                                            <span>{formatRupiah(sumOm)}</span>
+                                        </div>
+                                        {nodes.length === 0 ? (
+                                            <p className="text-xs text-[var(--ink-dim)] m-0">Nothing in this range.</p>
+                                        ) : (
+                                            <div className="kpm-rep-folders">
+                                                {nodes.map(node => (
+                                                    <button key={node.name} type="button" className="kpm-rep-fold" onClick={() => onPick(node.name)}>
+                                                        <span className="fi"><Folder size={16} /></span>
+                                                        <span className="min-w-0">
+                                                            <b>{node.name}</b>
+                                                            <span>{node.count} records</span>
+                                                        </span>
+                                                        <span className="fv">{rpShort(node.total)}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </>
+                                );
+                            })() : (() => {
+                                const cObj = reportData[selectedRegion]?.agents[selectedAgent]?.provinsi[selectedProv]?.kabupaten[selectedKab]?.kecamatan[selectedKec]?.stores[selectedCustomer];
+                                if (!cObj) return <p className="text-xs text-[var(--ink-dim)]">No archive records for this store in this range.</p>;
+                                return (
+                                    <>
+                                        <div className="kpm-rep-sec">
+                                            <span>Receipt archive · {cObj.name}</span>
+                                            <span>Account total {formatRupiah(cObj.total)}</span>
+                                        </div>
+                                        <div className="kpm-rep-tblw">
+                                            <table className="kpm-rep-tbl">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Date</th>
+                                                        <th>Type</th>
+                                                        <th className="kpm-rep-hide-ph">Items</th>
+                                                        <th className="num">Amount</th>
+                                                        <th />
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {cObj.history.map(t => {
+                                                        const isRetur = t.type === 'RETUR' || t.paymentType === 'Retur/BS';
+                                                        const val = Number(t.amountPaid || t.total) || 0;
+                                                        return (
+                                                            <tr
+                                                                key={t.id}
+                                                                className="kpm-rep-rowbtn"
+                                                                onClick={() => { setSelectedTxId(t.id); setOpenPhoneTxId(t.id); setActiveTab('ledger'); }}
+                                                            >
+                                                                <td>{shortDateLabel(t.date)} {txTime(t)}</td>
+                                                                <td>{t.type === 'CONSIGNMENT_PAYMENT' ? 'Store Audit' : (t.paymentType || 'Cash')}</td>
+                                                                <td className="kpm-rep-hide-ph">{txRowItems(t)}</td>
+                                                                <td className={`num ${isRetur && val > 0 ? 'text-[var(--danger-ink)]' : ''}`}>
+                                                                    {isRetur && val > 0 ? '-' : ''}{formatRupiah(val)}
+                                                                </td>
+                                                                <td className="num">›</td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {isAdmin && (
+                                            <div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onDeleteFolder(cObj.name, selectedAgent)}
+                                                    className="kpm-edge-btn danger px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5"
+                                                >
+                                                    <Trash2 size={14} /> Delete all history for this shop
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
+                                );
+                            })()}
+                        </div>
+                    )}
+
+                    {activeTab === 'products' && (
+                        <div className="kpm-rep-pane">
+                            <div className="kpm-rep-sec">
+                                <span>Product performance</span>
+                                <span>tap a row to see its receipts</span>
+                            </div>
+                            <div className="kpm-rep-tblw">
+                                <table className="kpm-rep-tbl">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th className="num">Moved</th>
+                                            <th className="num kpm-rep-hide-ph">Shops</th>
+                                            <th className="num">Omset</th>
+                                            <th className="kpm-rep-hide-ph">Share</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {productRows.rows.length === 0 ? (
+                                            <tr><td colSpan={5} className="text-[var(--ink-dim)]">No sales in this range.</td></tr>
+                                        ) : (
+                                            productRows.rows.map(row => (
+                                                <tr
+                                                    key={row.name}
+                                                    className="kpm-rep-rowbtn"
+                                                    onClick={() => { setSearchTerm(row.name); setActiveTab('ledger'); }}
+                                                >
+                                                    <td><b>{row.name}</b></td>
+                                                    <td className="num">{row.qty.toLocaleString('id-ID')} Bks</td>
+                                                    <td className="num kpm-rep-hide-ph">{row.shops}</td>
+                                                    <td className="num">{formatRupiah(row.om)}</td>
+                                                    <td className="kpm-rep-hide-ph" style={{ width: '24%' }}>
+                                                        <div className="kpm-rep-bar"><span style={{ width: `${Math.max(2, (row.om / productRows.maxOm) * 100)}%` }} /></div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div data-guide="offer-performance" className="space-y-3 pt-2">
+                                <div className="kpm-rep-sec">
+                                    <span>Offer performance</span>
+                                    <span>packages sold</span>
+                                </div>
+                                <div className="kpm-rep-tblw">
+                                    <table className="kpm-rep-tbl">
+                                        <thead>
+                                            <tr>
+                                                <th>Offer</th>
+                                                <th className="num">Sales</th>
+                                                <th className="num kpm-rep-hide-ph">Shops</th>
+                                                <th className="num">Omset</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {offerStats.length === 0 ? (
+                                                <tr><td colSpan={4} className="text-[var(--ink-dim)]">No package sales in this range.</td></tr>
+                                            ) : (
+                                                offerStats.map((o, i) => (
+                                                    <tr
+                                                        key={o.id}
+                                                        className="kpm-rep-rowbtn"
+                                                        onClick={() => { setSearchTerm(o.name); setActiveTab('ledger'); }}
+                                                    >
+                                                        <td>
+                                                            <b>{o.name}</b>
+                                                            {i === 0 && <span className="kpm-rep-pk ml-2">BEST</span>}
+                                                            <div className="text-[11px] text-[var(--ink-dim)]">{o.region ? `${o.region} only` : 'All areas'}</div>
+                                                        </td>
+                                                        <td className="num">{o.sales}</td>
+                                                        <td className="num kpm-rep-hide-ph">{o.shops}</td>
+                                                        <td className="num">{formatRupiah(o.rp)}</td>
+                                                    </tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'salesmen' && !isFieldAgent && (
+                        <div className="kpm-rep-pane">
+                            <div className="kpm-rep-sec">
+                                <span>Agent roster</span>
+                                <span>tap a name to open breakdown</span>
+                            </div>
+                            <div className="kpm-rep-tblw">
+                                <table className="kpm-rep-tbl">
+                                    <thead>
+                                        <tr>
+                                            <th>Salesman</th>
+                                            <th className="num">Receipts</th>
+                                            <th className="num kpm-rep-hide-ph">Moved</th>
+                                            <th className="num">Omset</th>
+                                            <th className="kpm-rep-hide-ph" />
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {stats.agentRoster.length === 0 ? (
+                                            <tr><td colSpan={5} className="text-[var(--ink-dim)]">No agent activity logged.</td></tr>
+                                        ) : (
+                                            stats.agentRoster.map(agent => {
+                                                const isOpen = expandedAgent === agent.name;
+                                                const agentBks = Object.values(agent.items || {}).reduce((s, d) => s + d.qty, 0);
+                                                const agentProfile = motorists?.find(m => m.id === agent.agentId) || {};
+                                                const topItems = Object.entries(agent.items || {}).sort((a, b) => b[1].val - a[1].val).slice(0, 3);
+                                                return (
+                                                    <React.Fragment key={agent.name}>
+                                                        <tr className="kpm-rep-rowbtn" onClick={() => setExpandedAgent(isOpen ? null : agent.name)}>
+                                                            <td>
+                                                                <b>{agent.name}</b>
+                                                                <div className="text-[11.5px] text-[var(--ink-dim)]">{canonicalPlace(agentProfile.location) || 'Headquarters'}</div>
+                                                            </td>
+                                                            <td className="num">{agent.count}</td>
+                                                            <td className="num kpm-rep-hide-ph">{agentBks.toLocaleString('id-ID')} Bks</td>
+                                                            <td className={`num ${agent.total < 0 ? 'text-[var(--danger-ink)]' : ''}`}>{formatRupiah(agent.total)}</td>
+                                                            <td className="kpm-rep-hide-ph" style={{ width: '20%' }}>
+                                                                <div className="kpm-rep-bar"><span style={{ width: `${Math.max(2, (Math.max(0, agent.total) / maxRosterOmset) * 100)}%` }} /></div>
+                                                            </td>
+                                                        </tr>
+                                                        {isOpen && (
+                                                            <tr>
+                                                                <td colSpan={5} className="bg-[var(--inset)]">
+                                                                    <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--ink-muted)]">
+                                                                        <span>
+                                                                            Top: {topItems.length ? topItems.map(([n, d]) => `${n} (${d.qty} Bks)`).join(', ') : '—'}
+                                                                        </span>
+                                                                        <button
+                                                                            type="button"
+                                                                            className="kpm-edge-btn px-2.5 py-1 rounded-md text-xs font-semibold"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                const match = agentOptions.find(a => a.name === agent.name);
+                                                                                if (match && reportAccessLevel === 'global') setSelectedRegion(match.region);
+                                                                                setSelectedAgent(agent.name);
+                                                                                setActiveTab('ledger');
+                                                                            }}
+                                                                        >
+                                                                            Show receipts
+                                                                        </button>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        )}
+                                                    </React.Fragment>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'returns' && (
+                        <div className="kpm-rep-pane">
+                            <div className="kpm-rep-sec">
+                                <span>Returns (damaged goods)</span>
+                                <span>{formatRupiah(returnRows.reduce((s, t) => s - Math.abs(t.total || t.amountPaid || 0), 0))}</span>
+                            </div>
+                            <div className="kpm-rep-tblw">
+                                <table className="kpm-rep-tbl">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Shop</th>
+                                            <th className="kpm-rep-hide-ph">Salesman</th>
+                                            <th>Items</th>
+                                            <th className="num">Value</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {returnRows.length === 0 ? (
+                                            <tr><td colSpan={5} className="text-[var(--ink-dim)]">No returns in this range. Clean.</td></tr>
+                                        ) : (
+                                            returnRows.map(t => (
+                                                <tr
+                                                    key={t.id}
+                                                    className="kpm-rep-rowbtn"
+                                                    onClick={() => { setSelectedTxId(t.id); setOpenPhoneTxId(t.id); setActiveTab('ledger'); }}
+                                                >
+                                                    <td>{shortDateLabel(t.date)}</td>
+                                                    <td>
+                                                        <b>{t.customerName || 'Walk-in'}</b>
+                                                        {pkgFlaggedIds.has(t.id) && <span className="ml-1.5 text-[var(--danger-ink)] font-semibold">· package ≤7 days</span>}
+                                                    </td>
+                                                    <td className="kpm-rep-hide-ph">{(t.agentName || 'Admin').split(' ')[0]}</td>
+                                                    <td>{txRowItems(t)}</td>
+                                                    <td className="num text-[var(--danger-ink)]">-{formatRupiah(Math.abs(t.total || t.amountPaid || 0))}</td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {!isFieldAgent && (
+                                <div className="space-y-3 pt-2" data-guide="package-returns">
+                                    <div className="kpm-rep-sec">
+                                        <span>Package, then Retur within 7 days</span>
+                                        <span>{pkgReturns.length} flagged</span>
+                                    </div>
+                                    <p className="text-xs text-[var(--ink-dim)] m-0">
+                                        The shop took a package, then sent back that package's cigarettes as a Retur within 7 days. Nothing is blocked - this is only to see it.
+                                    </p>
+                                    {pkgReturns.length === 0 ? (
+                                        <p className="text-xs text-[var(--ink-muted)] m-0">None in this period.</p>
+                                    ) : (
+                                        <div className="kpm-rep-tblw">
+                                            <table className="kpm-rep-tbl">
+                                                <tbody>
+                                                    {pkgReturns.map((r, i) => (
+                                                        <tr key={i}>
+                                                            <td><b>{r.shop}</b></td>
+                                                            <td>{r.offer} on {shortDay(r.soldAt)} by {r.salesman} · Retur on {shortDay(r.returnedAt)} by {r.returnedBy}: {r.items.join(', ')}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                    {countClears.length > 0 && (
+                                        <p className="text-xs text-[var(--ink-muted)] m-0">
+                                            <span className="font-bold text-[var(--ink)]">Package counts cleared, last 30 days:</span> {countClears.map(c => `${c.shop} (${c.offer}, ${shortDay(c.at)})`).join(' · ')}. Who cleared each one is in the audit log.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
-            )}
             </div>
 
-            {/* MODALS */}
+            {/* === PRINT ANALYTICS SUMMARY (visible only when printing at printScale%) === */}
+            <div className="kpm-rep-print-only print-container p-6 text-[var(--ink)] bg-[var(--raised)]">
+                <div className="flex justify-between items-end pb-3 mb-4 border-b-2 border-[var(--accent-edge)]">
+                    <div>
+                        <h1 className="text-2xl font-bold uppercase m-0">
+                            {isFieldAgent ? 'My Performance' : selectedAgent ? `${selectedAgent}'s Performance` : selectedRegion ? `${selectedRegion} Operations` : 'Global Master Analytics'}
+                        </h1>
+                        <p className="text-xs text-[var(--ink-muted)] mt-1">{rangeType.toUpperCase()} RECAP · {winLabel}</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[10px] uppercase font-bold text-[var(--ink-muted)]">Context Omset</p>
+                        <p className="text-2xl font-bold">{formatRupiah(stats.totalRev)}</p>
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="p-3 border border-[var(--line)] rounded-lg"><div className="text-[10px] uppercase text-[var(--ink-dim)]">Receipts</div><div className="text-lg font-bold">{stats.count}</div></div>
+                    <div className="p-3 border border-[var(--line)] rounded-lg"><div className="text-[10px] uppercase text-[var(--ink-dim)]">Items Moved (Bks)</div><div className="text-lg font-bold">{kpiSummary.totalBks}</div></div>
+                </div>
+                <h3 className="text-sm font-bold uppercase mb-2">Product Performance</h3>
+                <table className="kpm-rep-tbl mb-6">
+                    <thead><tr><th>Product</th><th className="num">Qty (Bks)</th><th className="num">Omset</th></tr></thead>
+                    <tbody>
+                        {productRows.rows.map(r => (
+                            <tr key={r.name}><td>{r.name}</td><td className="num">{r.qty}</td><td className="num">{formatRupiah(r.om)}</td></tr>
+                        ))}
+                    </tbody>
+                </table>
+                {offerStats.length > 0 && (
+                    <>
+                        <h3 className="text-sm font-bold uppercase mb-2">Offer Performance</h3>
+                        <table className="kpm-rep-tbl mb-6">
+                            <thead><tr><th>Offer</th><th className="num">Sales</th><th className="num">Shops</th><th className="num">Omset</th></tr></thead>
+                            <tbody>
+                                {offerStats.map(o => (
+                                    <tr key={o.id}><td>{o.name}</td><td className="num">{o.sales}</td><td className="num">{o.shops}</td><td className="num">{formatRupiah(o.rp)}</td></tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </>
+                )}
+            </div>
+
+            {/* === MODALS === */}
             {viewingPhoto && (
-                 <div className="fixed inset-0 z-[600] bg-[var(--panel)] flex flex-col items-center justify-center p-4 animate-fade-in">
-                     <button onClick={() => setViewingPhoto(null)} className="absolute top-6 right-6 text-[var(--ink)] hover:text-[var(--danger-text)] z-50 bg-[var(--panel)] p-2 rounded-full transition-colors"><X size={32}/></button>
-                     <div className="bg-[var(--raised)] p-2 rounded-xl shadow-2xl max-w-2xl w-full relative">
-                         <img src={viewingPhoto.photo || viewingPhoto} className="w-full h-auto max-h-[80vh] object-contain rounded-lg" alt="Delivery Proof" />
-                     </div>
-                     {viewingPhoto.latitude && (
-                         <div className="text-[var(--ink)] mt-4 font-mono text-xs text-center bg-[var(--panel)] px-6 py-3 rounded-xl border border-[var(--line-2)] shadow-lg">
-                             <p className="font-bold text-[var(--verified)] mb-1">GPS VERIFIED LOCATION</p>
-                             <p>LAT/LNG: {viewingPhoto.latitude.toFixed(5)}, {viewingPhoto.longitude.toFixed(5)}</p>
-                             <p>TIME: {new Date(viewingPhoto.capturedAt).toLocaleString('id-ID')}</p>
-                         </div>
-                     )}
-                 </div>
-             )}
+                <div className="fixed inset-0 z-[600] bg-[var(--panel)] flex flex-col items-center justify-center p-4 animate-fade-in">
+                    <button type="button" onClick={() => setViewingPhoto(null)} className="absolute top-6 right-6 text-[var(--ink)] hover:text-[var(--danger-text)] z-50 bg-[var(--panel)] p-2 rounded-full transition-colors"><X size={32} /></button>
+                    <div className="bg-[var(--raised)] p-2 rounded-xl shadow-2xl max-w-2xl w-full relative">
+                        <img src={viewingPhoto.photo || viewingPhoto} className="w-full h-auto max-h-[80vh] object-contain rounded-lg" alt="Delivery Proof" />
+                    </div>
+                    {viewingPhoto.latitude && (
+                        <div className="text-[var(--ink)] mt-4 font-mono text-xs text-center bg-[var(--panel)] px-6 py-3 rounded-xl border border-[var(--line-2)] shadow-lg">
+                            <p className="font-bold text-[var(--verified)] mb-1">GPS VERIFIED LOCATION</p>
+                            <p>LAT/LNG: {viewingPhoto.latitude.toFixed(5)}, {viewingPhoto.longitude.toFixed(5)}</p>
+                            <p>TIME: {new Date(viewingPhoto.capturedAt).toLocaleString('id-ID')}</p>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {editingTrans && (
                 <div className="fixed inset-0 z-[100] bg-[var(--panel)] flex items-center justify-center p-4 animate-fade-in">
-                    <div className="bg-[var(--raised)] dark:bg-[var(--raised)] p-6 rounded-2xl w-full max-w-2xl shadow-2xl max-h-[90vh] flex flex-col border dark:border-[var(--line)]">
-                        <h3 className="font-black text-xl mb-4 dark:text-[var(--ink)] flex items-center gap-2"><Pencil size={22} className="text-[var(--accent-ink)]"/> DATA AUDIT</h3>
+                    <div className="bg-[var(--raised)] p-6 rounded-2xl w-full max-w-2xl shadow-2xl max-h-[90vh] flex flex-col border border-[var(--line)]">
+                        <h3 className="font-black text-xl mb-4 text-[var(--ink)] flex items-center gap-2"><Pencil size={22} className="text-[var(--accent-ink)]" /> DATA AUDIT</h3>
                         <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar space-y-5">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-[var(--raised)] dark:bg-[var(--panel)] p-4 rounded-xl border dark:border-[var(--line)]">
-                                <div><label className="text-[10px] font-bold text-[var(--ink-muted)] uppercase">Date</label><input type="date" value={editingTrans.date || ''} onChange={e=>setEditingTrans({...editingTrans, date: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-[var(--raised)] dark:border-[var(--line)] dark:text-[var(--ink)] outline-none"/></div>
-                                <div><label className="text-[10px] font-bold text-[var(--ink-muted)] uppercase">Customer Name</label><input type="text" value={editingTrans.customerName || ''} onChange={e=>setEditingTrans({...editingTrans, customerName: e.target.value})} className="w-full p-2 text-sm border rounded dark:bg-[var(--raised)] dark:border-[var(--line)] dark:text-[var(--ink)] outline-none"/></div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-[var(--panel)] p-4 rounded-xl border border-[var(--line)]">
+                                <div>
+                                    <label className="text-[10px] font-bold text-[var(--ink-muted)] uppercase">Date</label>
+                                    <input type="date" value={editingTrans.date || ''} onChange={e => setEditingTrans({ ...editingTrans, date: e.target.value })} className="w-full p-2 text-sm border rounded bg-[var(--raised)] border-[var(--line)] text-[var(--ink)] outline-none" />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-[var(--ink-muted)] uppercase">Customer Name</label>
+                                    <input type="text" value={editingTrans.customerName || ''} onChange={e => setEditingTrans({ ...editingTrans, customerName: e.target.value })} className="w-full p-2 text-sm border rounded bg-[var(--raised)] border-[var(--line)] text-[var(--ink)] outline-none" />
+                                </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-[var(--accent-ink)] uppercase">Pricing Tier</label>
-                                    <select value={editingTrans.priceTier || 'Retail'} onChange={handleEditTierChange} className="w-full p-2 text-sm border rounded dark:bg-[var(--raised)] dark:border-[var(--line)] font-bold text-[var(--accent-ink)] outline-none">
+                                    <select value={editingTrans.priceTier || 'Retail'} onChange={handleEditTierChange} className="w-full p-2 text-sm border rounded bg-[var(--raised)] border-[var(--line)] font-bold text-[var(--accent-ink)] outline-none">
                                         <option value="Grosir">Grosir</option>
                                         <option value="Retail">Retail</option>
                                         <option value="Ecer">Ecer</option>
@@ -970,43 +1571,48 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
                                 </div>
                             </div>
 
-                            <div className="border border-[var(--line-2)] dark:border-[var(--line)] rounded-xl overflow-hidden shadow-sm">
-                                <div className="bg-[var(--raised)] dark:bg-[var(--gold)] p-3 flex justify-between items-center border-b border-[var(--accent-edge)] dark:border-[var(--accent-edge)]">
-                                    <span className="font-bold text-xs uppercase tracking-widest text-[var(--ink)] dark:text-[var(--ink-muted)]">Itemized Receipt</span>
-                                    <button type="button" onClick={() => setEditingTrans({...editingTrans, items: [...(editingTrans.items||[]), { productId: '', name: 'Select Product', qty: 1, unit: 'Bks', calculatedPrice: 0 }]})} className="kpm-edge-btn text-[10px] px-3 py-1.5 rounded font-bold">+ ADD ITEM</button>
+                            <div className="border border-[var(--line-2)] rounded-xl overflow-hidden shadow-sm">
+                                <div className="bg-[var(--panel)] p-3 flex justify-between items-center border-b border-[var(--accent-edge)]">
+                                    <span className="font-bold text-xs uppercase tracking-widest text-[var(--ink)]">Itemized Receipt</span>
+                                    <button type="button" onClick={() => setEditingTrans({ ...editingTrans, items: [...(editingTrans.items || []), { productId: '', name: 'Select Product', qty: 1, unit: 'Bks', calculatedPrice: 0 }] })} className="kpm-edge-btn text-[10px] px-3 py-1.5 rounded font-bold">+ ADD ITEM</button>
                                 </div>
-                                <div className="p-3 space-y-2 bg-[var(--raised)] dark:bg-[var(--raised)]">
+                                <div className="p-3 space-y-2 bg-[var(--raised)]">
                                     {(editingTrans.items || []).map((item, idx) => (
-                                        <div key={idx} className="flex flex-wrap md:flex-nowrap gap-2 items-center bg-[var(--raised)] dark:bg-[var(--panel)] p-2 rounded-lg border dark:border-[var(--line)]">
-                                            <select value={item.productId || ''} onChange={(e) => handleEditItemChange(idx, 'productId', e.target.value)} className="flex-1 p-2 text-xs font-bold border rounded dark:bg-[var(--raised)] dark:border-[var(--line)] dark:text-[var(--ink)] outline-none min-w-[150px]">
+                                        <div key={idx} className="flex flex-wrap md:flex-nowrap gap-2 items-center bg-[var(--panel)] p-2 rounded-lg border border-[var(--line)]">
+                                            <select value={item.productId || ''} onChange={(e) => handleEditItemChange(idx, 'productId', e.target.value)} className="flex-1 p-2 text-xs font-bold border rounded bg-[var(--raised)] border-[var(--line)] text-[var(--ink)] outline-none min-w-[150px]">
                                                 <option value="">-- Select Product --</option>
                                                 {inventory.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                             </select>
-                                            <input type="number" min="1" value={item.qty} onChange={(e) => handleEditItemChange(idx, 'qty', Number(e.target.value))} className="w-16 p-2 text-xs text-center border rounded dark:bg-[var(--raised)] dark:border-[var(--line)] dark:text-[var(--ink)] font-bold outline-none" />
-                                            <select value={item.unit} onChange={(e) => handleEditItemChange(idx, 'unit', e.target.value)} className="w-20 p-2 text-xs font-bold border rounded dark:bg-[var(--raised)] dark:border-[var(--line)] dark:text-[var(--ink)] outline-none">
+                                            <input type="number" min="1" value={item.qty} onChange={(e) => handleEditItemChange(idx, 'qty', Number(e.target.value))} className="w-16 p-2 text-xs text-center border rounded bg-[var(--raised)] border-[var(--line)] text-[var(--ink)] font-bold outline-none" />
+                                            <select value={item.unit} onChange={(e) => handleEditItemChange(idx, 'unit', e.target.value)} className="w-20 p-2 text-xs font-bold border rounded bg-[var(--raised)] border-[var(--line)] text-[var(--ink)] outline-none">
                                                 <option value="Bks">Bks</option>
                                                 <option value="Slop">Slop</option>
                                                 <option value="Karton">Karton</option>
                                             </select>
-                                            <input type="number" value={item.calculatedPrice} onChange={(e) => handleEditItemChange(idx, 'calculatedPrice', Number(e.target.value))} className="w-28 p-2 text-xs text-right border rounded dark:bg-[var(--raised)] dark:border-[var(--line)] dark:text-[var(--ink)] text-[var(--verified)] font-bold outline-none" placeholder="Price/Unit" />
+                                            <input type="number" value={item.calculatedPrice} onChange={(e) => handleEditItemChange(idx, 'calculatedPrice', Number(e.target.value))} className="w-28 p-2 text-xs text-right border rounded bg-[var(--raised)] border-[var(--line)] text-[var(--ink)] font-bold outline-none" placeholder="Price/Unit" />
                                             <button data-kpm-del data-label="Delete" type="button" onClick={() => {
-                                                const newItems = editingTrans.items.filter((_, i) => i !== idx);
-                                                const newTotal = newItems.reduce((sum, it) => sum + ((it.calculatedPrice || 0) * it.qty), 0);
-                                                setEditingTrans({...editingTrans, items: newItems, total: newTotal, amountPaid: newTotal});
-                                            }} className="p-2 text-[var(--ink-muted)] hover:text-[var(--danger-text)] hover:bg-[var(--danger-well)] dark:hover:bg-[var(--danger-plate)] rounded transition-colors"><Trash2 size={16}/></button>
+                                                    const newItems = editingTrans.items.filter((_, i) => i !== idx);
+                                                    const newTotal = newItems.reduce((sum, it) => sum + ((it.calculatedPrice || 0) * it.qty), 0);
+                                                    setEditingTrans({ ...editingTrans, items: newItems, total: newTotal, amountPaid: newTotal });
+                                                }}
+                                                className="p-2 text-[var(--ink-muted)] hover:text-[var(--danger-text)] hover:bg-[var(--danger-well)] rounded transition-colors"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
                                         </div>
                                     ))}
                                 </div>
                             </div>
-                            <div className="flex justify-between items-center bg-[var(--verified-fill)] dark:bg-[var(--verified-fill)] p-4 rounded-xl border border-[var(--line-2)] dark:border-[var(--line-2)]">
+
+                            <div className="flex justify-between items-center bg-[var(--verified-fill)] p-4 rounded-xl border border-[var(--line-2)]">
                                 <div>
-                                    <span className="font-black text-sm uppercase tracking-widest text-[var(--verified)] dark:text-[var(--verified)] block">Grand Total</span>
+                                    <span className="font-black text-sm uppercase tracking-widest text-[var(--verified)] block">Grand Total</span>
                                 </div>
-                                <input type="number" value={editingTrans.total} onChange={e=>setEditingTrans({...editingTrans, total: Number(e.target.value), amountPaid: Number(e.target.value)})} className="w-40 p-2 text-right border-2 border-[var(--line-2)] dark:border-[var(--line-2)] rounded-lg bg-[var(--raised)] dark:bg-[var(--raised)] dark:text-[var(--ink)] font-black text-xl text-[var(--verified)] outline-none focus:border-[var(--line-2)] transition-colors" />
+                                <input type="number" value={editingTrans.total} onChange={e => setEditingTrans({ ...editingTrans, total: Number(e.target.value), amountPaid: Number(e.target.value) })} className="w-40 p-2 text-right border-2 border-[var(--line-2)] rounded-lg bg-[var(--raised)] text-[var(--ink)] font-black text-xl outline-none" />
                             </div>
                         </div>
                         <div className="flex gap-3 pt-5 mt-2 shrink-0">
-                            <button type="button" onClick={()=>setEditingTrans(null)} className="flex-1 py-3.5 bg-[var(--raised)] hover:bg-[var(--raised)] dark:bg-[var(--raised)] dark:hover:bg-[var(--inset)] text-[var(--ink)] dark:text-[var(--ink)] rounded-xl font-bold transition-colors">Cancel</button>
+                            <button type="button" onClick={() => setEditingTrans(null)} className="kpm-edge-btn quiet flex-1 py-3.5 rounded-xl font-bold">Cancel</button>
                             <button type="button" onClick={handleEditSubmit} className="kpm-edge-btn flex-1 py-3.5 rounded-xl font-bold">Save Changes</button>
                         </div>
                     </div>
@@ -1014,9 +1620,10 @@ export default function HistoryReportView({ transactions, inventory, onDeleteFol
             )}
 
             {/* RECEIPT PRINTER MODAL */}
-            {viewingReceipt && <SaleReceipt tx={viewingReceipt} appSettings={appSettings} onClose={() => setViewingReceipt(null)}
-                shop={(customers || []).find(c => storeKey(c.name) === storeKey(viewingReceipt.customerName))} />}
-
+            {viewingReceipt && (
+                <SaleReceipt tx={viewingReceipt} appSettings={appSettings} onClose={() => setViewingReceipt(null)}
+                    shop={(customers || []).find(c => storeKey(c.name) === storeKey(viewingReceipt.customerName))} />
+            )}
         </div>
     );
 }
