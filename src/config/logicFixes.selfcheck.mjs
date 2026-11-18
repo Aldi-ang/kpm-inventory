@@ -13357,15 +13357,15 @@ section('PROMO ITEMS, stage 4 of 4 - giving: promo goods go to a shop only WITH 
    newest-first, so a payment made the same day as its sale was processed first, found no debt and was thrown away.
    Receivables sorts by the exact second. The engine itself is lifted out of the .jsx and run on his numbers. */
 { const ms = read('src/MerchantSalesView.jsx');
-  const a = ms.indexOf('const custTrans = transactions.filter('), b = ms.indexOf('const activeDebts = debts.filter', a);
+  const a = ms.indexOf('const custTrans = (consignmentTx || transactions).filter('), b = ms.indexOf('const activeDebts = debts.filter', a);
   const { storeKey: sk } = await import('../utils/helpers.js');
   const { debtCredit: dc } = await import('../utils/revenueRule.js');
   const { txSeconds: ts } = await import('../utils/dayStats.js');
-  const engine = a > -1 && b > a ? new Function('transactions', 'customerName', 'storeKey', 'debtCredit', 'txSeconds',
+  const engine = a > -1 && b > a ? new Function('consignmentTx', 'transactions', 'customerName', 'storeKey', 'debtCredit', 'txSeconds',
     ms.slice(a, b) + '\nreturn debts.reduce((s, d) => s + Math.max(0, d.remaining), 0);') : null;
   const sale = { type: 'SALE', paymentType: 'Titip', customerName: 'HQ 2', total: 2100000, date: '2026-11-02', timestamp: { seconds: 1762081200 } };
   const paid = { type: 'CONSIGNMENT_PAYMENT', customerName: 'HQ 2', amountPaid: 1050000, total: 1050000, date: '2026-11-02', timestamp: { seconds: 1762084800 } };
-  const owes = (list) => engine(list, 'HQ 2', sk, dc, ts);
+  const owes = (list) => engine(list, [], 'HQ 2', sk, dc, ts);
   ok('the sidebar debt engine was found in MerchantSalesView', !!engine);
   ok('BEHAVIOUR: a payment made the same day as its sale counts - list newest-first (as Firestore sends it): owes Rp 1.050.000, not 2.100.000',
      !!engine && owes([paid, sale]) === 1050000 && owes([sale, paid]) === 1050000, engine ? `got ${owes([paid, sale])}` : 'engine slice not found');
@@ -14558,6 +14558,88 @@ section('DEMO CONSIGNMENT DEBT (Task 56, 2026-11-17)');
   ok('BEHAVIOUR: demo company builds 8 shops owing Rp 9.120.000, AMANAH BARU Rp 1.580.000 overdue (12d vs tempo 7d), and 2 pending hand-offs',
      openShops.length === 8 && totalOwed === 9120000 && amanah?.owed === 1580000 && amanah?.age === 12 && amanah?.tempo === 7 && transfers.length === 2,
      `shops=${openShops.length} total=${totalOwed} amanah=${JSON.stringify(amanah)} transfers=${transfers.length}`);
+}
+section('UNBOUNDED CONSIGNMENT DEBT FEED (Task 62, 2026-11-18)');
+{
+  const sync = read('src/hooks/useDatabaseSync.js');
+  const appSrc = read('src/App.jsx');
+  const tagOf = (name) => {
+    const a = appSrc.indexOf('<' + name);
+    const b = a > -1 ? appSrc.indexOf('/>', a) : -1;
+    return a > -1 && b > a ? appSrc.slice(a, b) : '';
+  };
+  const cfvTag = tagOf('ConsignmentFinanceView');
+  const msvTag = tagOf('MerchantSalesView');
+  const mapTag = tagOf('MapMissionControl');
+  ok('REGRESSION: Receivables, Sales Terminal sidebar debt, Map shop card, and App consignment delete/hand-off read merged consignmentTx (never the 7-day transactions list alone), while global transactions keeps its 7-day firewall and both extra listeners unsubscribe on cleanup',
+     /where\('paymentType', '==', 'Titip'\)/.test(sync) &&
+     /where\('type', 'in', \['CONSIGNMENT_PAYMENT', 'RETURN'\]\)/.test(sync) &&
+     !/unsubTitip[\s\S]{0,160}sevenDaysAgo/.test(sync) &&
+     sync.includes('unsubTitip()') && sync.includes('unsubCredits()') &&
+     sync.includes("where('timestamp', '>=', sevenDaysAgo)") &&
+     !cfvTag.includes('transactions={transactions}') &&
+     cfvTag.includes('transactions={consignmentTx}') &&
+     msvTag.includes('consignmentTx={consignmentTx}') &&
+     mapTag.includes('consignmentTx={consignmentTx}') &&
+     appSrc.includes('const targets = consignmentTx.filter(') &&
+     appSrc.includes('(consignmentTx || []).forEach(t => {'),
+     `cfv=${cfvTag.includes('transactions={consignmentTx}')} msv=${msvTag.includes('consignmentTx={consignmentTx}')} map=${mapTag.includes('consignmentTx={consignmentTx}')}`);
+
+  const mA = sync.indexOf('export function mergeConsignmentTx');
+  const mB = sync.indexOf('export default function useDatabaseSync', mA);
+  const mergeConsignmentTx = (mA > -1 && mB > mA)
+    ? new Function(sync.slice(mA, mB).replace('export function ', 'function ') + '\nreturn mergeConsignmentTx;')()
+    : null;
+  const { buildDemoCompany } = await import('../../api/_demoCompany.js');
+  const { isTitip, debtCredit } = await import('../utils/revenueRule.js');
+  const { storeKey } = await import('../utils/helpers.js');
+  const seed = JSON.parse(read('demo/seed.json'));
+  const fixedNow = new Date('2026-11-18T05:00:00Z');
+  const built = buildDemoCompany(seed, fixedNow, { pin: 'p', recoveryHash: 'r' });
+  const allTx = built.docs.filter((d) => d.path.includes('/transactions/')).map((d) => ({ id: d.path.split('/').pop(), ...d.data }));
+  const cutoffMs = fixedNow.getTime() - 7 * 86400000;
+  const txMs = (t) => (t.timestamp instanceof Date ? t.timestamp.getTime() : (t.timestamp?.seconds ? t.timestamp.seconds * 1000 : Date.parse(t.date + 'T00:00:00Z')));
+  const recent7d = allTx.filter((t) => txMs(t) >= cutoffMs);
+  const titipSales = allTx.filter((t) => t.paymentType === 'Titip');
+  const titipCredits = allTx.filter((t) => t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN');
+  const feed = mergeConsignmentTx ? mergeConsignmentTx(recent7d, titipSales, titipCredits) : [];
+
+  const feedTitipCount = feed.filter((t) => t.id?.startsWith('demo-titip-') && !t.id.includes('-pay-') && t.type === 'SALE').length;
+  const feedPayCount = feed.filter((t) => t.id === 'demo-titip-pay-1').length;
+  const byShop = new Map();
+  for (const t of feed) {
+    if (t.type === 'SALE' && isTitip(t)) {
+      const k = storeKey(t.customerName);
+      if (!byShop.has(k)) byShop.set(k, { name: t.customerName, drops: [], paid: 0 });
+      byShop.get(k).drops.push({ date: t.date, total: t.total, tempo: t.tempoDays || 7 });
+    } else if (t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN') {
+      const k = storeKey(t.customerName);
+      if (!byShop.has(k)) byShop.set(k, { name: t.customerName, drops: [], paid: 0 });
+      byShop.get(k).paid += debtCredit(t);
+    }
+  }
+  const todayMs = Date.parse('2026-11-18T00:00:00Z');
+  const openShops = [];
+  for (const s of byShop.values()) {
+    s.drops.sort((a, b) => a.date.localeCompare(b.date));
+    let pay = s.paid;
+    const openDrops = [];
+    for (const d of s.drops) {
+      const take = Math.min(pay, d.total);
+      pay -= take;
+      if (d.total - take > 0.01) openDrops.push({ ...d, left: d.total - take });
+    }
+    const owed = openDrops.reduce((a, d) => a + d.left, 0);
+    if (owed > 0.01) {
+      const age = Math.floor((todayMs - Date.parse(openDrops[0].date + 'T00:00:00Z')) / 86400000);
+      openShops.push({ name: s.name, owed, age, overdue: (openDrops[0].tempo - age) < 0 });
+    }
+  }
+  const totalOwed = openShops.reduce((a, s) => a + s.owed, 0);
+  const amanah = openShops.find((s) => s.name === 'AMANAH BARU');
+  ok('BEHAVIOUR: at today=2026-11-18, merged consignmentTx holds all 9 demo Titip notes + 1 payment without doubles (8 shops owe Rp 9.120.000, AMANAH BARU overdue)',
+     feedTitipCount === 9 && feedPayCount === 1 && openShops.length === 8 && totalOwed === 9120000 && amanah?.owed === 1580000 && amanah?.overdue === true,
+     `titip=${feedTitipCount} pay=${feedPayCount} shops=${openShops.length} total=${totalOwed} amanah=${JSON.stringify(amanah)}`);
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

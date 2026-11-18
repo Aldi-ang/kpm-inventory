@@ -2464,7 +2464,7 @@ Your Task 40 drew `.claude/drafts/reports-pro.html`; your Task 59 mapped today's
 **2026-11-18 09:30 - READ GEMINI.md's OVERRIDE block first: until Saturday 2026-11-21 you are the LEAD (Aldi's call, Claude is out of weekly quota). Tasks 62-63 are yours to do AND review; push only on Aldi's "push".**
 
 ## Task 62 - BUILD: consignment debt is never limited to 7 days (Aldi's decision)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-18 09:30 WIB, by Claude. Do it after Task 60 - it builds Task 60's pick.
 **Touch only:** `src/hooks/useDatabaseSync.js`, `src/App.jsx` (only the lines that pass the new list down), `src/ConsignmentFinanceView.jsx` (only where `myTransactions` is fed - NOT `debtData`'s maths), `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file. Anything else -> write why in the Result and STOP.
 
@@ -2476,6 +2476,17 @@ His words: *"for data like consignment that can last more than 7 days i think th
 - Every listener you add must be unsubscribed in the same cleanup as the others (no leak on log out / switch).
 - Checks: ONE logicFixes check that would fail if Receivables went back to the 7-day list, and ONE behaviour check on the Task 56 demo data: with "today" = 2026-11-18, Receivables' feed holds all 9 demo Titip notes + the payment (8 shops owe Rp 9.120.000, AMANAH BARU overdue).
 - Done when: the five gates in GEMINI.md's OVERRIDE are green, lab frame PC 1440 shows 8 shops / Rp 9.120.000 / AMANAH BARU Overdue (the demo lab steps are in NEXT-SESSION.md's LAB block; save the frame to `../A-Brain/Raw/2026-11-18-receivables/`), one patch note line (en + id, plain words, no names). Commit "Antigravity: Task 62 ...". Push only on Aldi's "push".
+**Result:**
+- **Listeners & merge (`src/hooks/useDatabaseSync.js:14-44, 113-114, 165, 287`):** Added two unbounded `onSnapshot` listeners (`where('paymentType', '==', 'Titip')` and `where('type', 'in', ['CONSIGNMENT_PAYMENT', 'RETURN'])`, no date cap) merged with 7-day `transactions` by `id` into `consignmentTx` (`mergeConsignmentTx`), and unsubscribed `unsubTitip()` + `unsubCredits()` in cleanup. Global 7-day `transactions` listener (`where('timestamp', '>=', sevenDaysAgo)`) stayed unchanged.
+- **Rules & Index:** `firestore.rules:794-798` (`allow read: if isSalesman(bossUid);`) needs no change; emulator test (`projectId: demo-rules-consign`) passed **18/18** for `VaultOwner`, `T1`–`T6`, locked T5 (denied), and another company (denied). Neither query uses `orderBy`, so both use Firestore's automatic single-field indexes (no `firestore.indexes.json` in repo; zero composite index needed).
+- **Read cost (unbounded, no 90-day cap):** At 30 salesmen (~90 cold starts/day) across ~2,000 shops: ~300 docs initially (~27,000 reads/day), growing linearly (~3,600 consignment docs/year = ~324,000 cold-start reads/day, warm resumes served by persistence cache) until settled-note archiving is built.
+- **Task 60 Table 1 places:**
+  - **Wired (`4/7`):** `ConsignmentFinanceView` (`src/App.jsx:5541`, `transactions={consignmentTx}`, `debtData` maths untouched); `App.jsx` consignment delete & hand-off owner check (`src/App.jsx:3512, 2002`); `MerchantSalesView` sidebar FIFO debt engine (`src/MerchantSalesView.jsx:230`); `MapMissionControl` `StoreBottomSheet` `Still unpaid` & consignment packs (`src/MapMissionControl.jsx:1144-1160`, keeping `totalRev`/`monthRev`/`lastOrderAt` on 7-day `transactions`).
+  - **Left (needed more than a 1-line list read — per Task 62 AMENDED):**
+    1. `src/components/DashboardBenchmarks.jsx:180` (`piutang`): mounted inside `src/components/DashboardView.jsx:306` (`transactions={transactions}`), which is outside `Touch only` and shares `transactions` with 7-day omset/velocity.
+    2. `src/utils/vanBay.js:427` (`titipOf`): called from `src/FleetCanvasManager.jsx:1495` (`titipOf(transactions, ...)`), which is outside `Touch only` and pinned at `logicFixes.selfcheck.mjs:8833`.
+    3. `src/AgentProfileView.jsx:442, 504-547`: single `(transactions || []).forEach(...)` loop computes both 7-day `lifetimeOmset`/`yearlyAgentOmset`/`lifetimeEXP` and `storeDebt`/`titipIssued`/`titipCollected`, and `L546` (`if (debtKey && storeDebt[debtKey])`) assumes sales appear before payments whereas `mergeConsignmentTx` places 7-day rows ahead of older Titip sales — safely switching it requires splitting the loop and sorting chronologically rather than swapping one list-read line.
+- **Gates, Checks & Lab:** `logicFixes.selfcheck.mjs:14562` added regression + Task 56 demo behaviour check at `2026-11-18` (re-anchored `L13360` FIFO slice for `(consignmentTx || transactions)`): **3024 passed, 0 failed**; `undef.check.mjs` -> **clean**; all `src/config/*.selfcheck.mjs` exited **0**; `npm run build` exited **0**; `integration.audit.mjs` **725 passed, 0 failed**; `patchNotes.js` updated (`2026-11-18`). Demo lab (`1440x900`, `T2 Owner` vault unlocked) rendered **Global Receivables · Rp 9.120.000 · 8 shops owe · 3 overdue** with **AMANAH BARU** (`2026-11-06`, `12 of 7d`, `OVERDUE`, `Rp 1.580.000`), `ERRORS: []`; saved to `../A-Brain/Raw/2026-11-18-receivables/rec-task62-pc-1440.jpg`.
 
 ## Task 63 - read-only: every rule of Receivables still holds in the NEW screen
 **Status:** OPEN

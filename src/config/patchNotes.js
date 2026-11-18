@@ -3,6 +3,9 @@
    Every finished job that changes what people see adds a line here before its push (CLAUDE.md, Publishing).
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
+  { date: '2026-11-18', items: [
+    { kind: 'fixed', en: 'Receivables, the Map shop card, and the Sales Terminal sidebar now keep every unpaid Titip note regardless of age, instead of dropping notes older than 7 days.', id: 'Piutang, kartu toko di Peta, dan bilah Terminal Penjualan sekarang tetap menampilkan semua nota Titip yang belum lunas berapa pun umurnya, tidak lagi hilang setelah 7 hari.' },
+  ] },
   { date: '2026-11-17', items: [
     { kind: 'new', en: 'Receivables & Consignment: shops that owe are now listed on the left with their responsible salesman, owed total, tempo-used bar and state, and the shop you pick opens on the right (under its row on a phone) with its open notes, history and gold-edged settle keys.', id: 'Piutang & Konsinyasi: toko yang masih berhutang kini tampil di daftar kiri lengkap dengan salesman penanggung jawab, total hutang, bilah tempo dan statusnya, dan toko yang dipilih terbuka di kanan (di bawah barisnya pada HP) beserta nota terbuka, riwayat dan tombol pelunasan bergaris emas.' },
     { kind: 'new', en: 'Stock Opname: numbers that change while you count (counted, short by, the Rupiah totals) now roll digit by digit, like the clock. Messages that say something was saved now show a gold check that draws itself, and a failed one shows an X. Lite Mode turns the motion off and keeps the colours.', id: 'Stock Opname: angka yang berubah saat menghitung (terhitung, kurang, total Rupiah) sekarang bergulir per digit seperti jam. Pesan yang menyatakan sesuatu tersimpan sekarang menampilkan centang emas yang tergambar sendiri, dan pesan gagal menampilkan tanda X. Lite Mode mematikan gerakannya dan tetap menjaga warnanya.' },

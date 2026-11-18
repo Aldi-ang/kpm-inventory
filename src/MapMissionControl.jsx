@@ -1036,7 +1036,7 @@ const LevelChips = ({ tiers, counts, filterTier, toggle, toggleAll }) => (
 
 const daysAgo = (ms) => { if (!ms) return 'Never'; const d = Math.floor((Date.now() - ms) / 86400000); return d <= 0 ? 'Today' : d === 1 ? 'Yesterday' : `${d} days ago`; };
 
-const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride, setEditingStoreId, setDragPinCoords, canOverrideGps, activeTiers, setLocalTierUpdates, onNavigateToDirectory, onShowStoreOnJourney }) => {
+const StoreBottomSheet = ({ store, mapPoints, transactions, consignmentTx, inventory, db, appId, user, isAdmin, setSelectedStore, liveScaleOverride, setLiveScaleOverride, setEditingStoreId, setDragPinCoords, canOverrideGps, activeTiers, setLocalTierUpdates, onNavigateToDirectory, onShowStoreOnJourney }) => {
     const sheetRef = useRef(null);
     const translateVal = useRef(0);
     const touchY = useRef(0);
@@ -1141,20 +1141,22 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
            rows come back and the debt goes UP toward its true value. */
         const key = storeKey(store.name);
         const storeTrans = safeTrans.filter(t => t && storeKey(t.customerName) === key);
+        const safeTitip = Array.isArray(consignmentTx) ? consignmentTx : safeTrans;
+        const titipTrans = safeTitip.filter(t => t && storeKey(t.customerName) === key);
         
         /* Money this shop has actually paid, so a store holding a big unpaid consignment no longer
            looks like the best customer on the map. `revenueOf` skips a Titip placement and counts
            the store audit that collects it (Aldi, 2026-09-09). The `totalTitip` line below is
            untouched: that one is measuring the debt on purpose. */
         const totalRev = storeTrans.reduce((sum, t) => sum + revenueOf(t), 0);
-        const totalTitip = storeTrans.filter(t => t.type === 'SALE' && t.paymentType === 'Titip').reduce((sum, t) => sum + (Number(t.total) || 0), 0);
-        const totalPaid = storeTrans.reduce((sum, t) => sum + debtCredit(t), 0);   /* cash paid + damaged goods handed back + refunds (revenueRule.js) */
+        const totalTitip = titipTrans.filter(t => t.type === 'SALE' && t.paymentType === 'Titip').reduce((sum, t) => sum + (Number(t.total) || 0), 0);
+        const totalPaid = titipTrans.reduce((sum, t) => sum + debtCredit(t), 0);   /* cash paid + damaged goods handed back + refunds (revenueRule.js) */
         const currentConsignment = Math.max(0, totalTitip - totalPaid);
         
         const itemMap = {}; 
         const safeInv = Array.isArray(inventory) ? inventory : [];
 
-        storeTrans.forEach(t => {
+        titipTrans.forEach(t => {
             if (t.type === 'SALE' && t.paymentType === 'Titip') {
                 const itemsList = Array.isArray(t.items) ? t.items : Object.values(t.items || {});
                 itemsList.forEach(i => { 
@@ -1179,7 +1181,7 @@ const StoreBottomSheet = ({ store, mapPoints, transactions, inventory, db, appId
         const monthRev = monthByShop(storeTrans)[key] || 0;
         const lastOrderAt = storeTrans.filter(t => (t.type || 'SALE') === 'SALE').reduce((m, t) => Math.max(m, txTime(t)), 0);
         return { totalRev, currentConsignment, activeItems, monthRev, lastOrderAt };
-    }, [store?.name, transactions, inventory]);
+    }, [store?.name, transactions, consignmentTx, inventory]);
 
     const recentSales = useMemo(() => {
         if (!store?.name) return [];
@@ -1714,7 +1716,7 @@ const TierAutomationEngine = ({ db, appId, user, activeTiers, mapPoints, transac
 };
 
 // --- MAIN WRAPPER (APP IN APP) ---
-const MapMissionControl = ({ customers, transactions, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings, motorists = [], onNavigateToDirectory, userRole, agentProfileId, eodReports, onShowStoreOnJourney }) => {
+const MapMissionControl = ({ customers, transactions, consignmentTx, inventory, db, appId, user, logAudit, triggerCapy, isAdmin, savedHome, onSetHome, tierSettings, motorists = [], onNavigateToDirectory, userRole, agentProfileId, eodReports, onShowStoreOnJourney }) => {
 
     const userId = user?.uid || user?.id || "default";
 
@@ -2456,7 +2458,7 @@ const MapMissionControl = ({ customers, transactions, inventory, db, appId, user
 
             {activeStore && (
                 <StoreBottomSheet 
-                    store={activeStore} mapPoints={mapPoints} transactions={transactions} 
+                    store={activeStore} mapPoints={mapPoints} transactions={transactions} consignmentTx={consignmentTx} 
                     inventory={inventory} db={db} appId={appId} user={user} 
                     isAdmin={isAdmin} setSelectedStore={setSelectedStore} 
                     liveScaleOverride={liveScaleOverride} setLiveScaleOverride={setLiveScaleOverride}

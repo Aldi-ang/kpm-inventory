@@ -601,7 +601,7 @@ export default function KPMInventoryApp() {  // <--- ONLY ONE OPENING BRACE
   // --- DATABASE SYNC ENGINE (MOVED HERE!) ---
   const {
       fetchHistoricalTransactions, // 🚀 THE TIME MACHINE ENGINE PLUGGED IN
-      inventory, setInventory, promoItems, customers, customerAccess, transactions, setTransactions,
+      inventory, setInventory, promoItems, customers, customerAccess, transactions, setTransactions, consignmentTx,
       samplings, setSamplings, auditLogs, setAuditLogs, procurements, setProcurements,
       motorists, setMotorists, regionOffers, agentInventories, setAgentInventories, eodReports, setEodReports,
       transferRequests, setTransferRequests,
@@ -1999,7 +1999,7 @@ const handleGitHubMirror = async () => {
       let currentOwnerId = ownerDoc?.ownerAgentId || null;
       if (!currentOwnerId) {
           let newest = null;
-          (transactions || []).forEach(t => {
+          (consignmentTx || []).forEach(t => {
               if (!t.customerName || !t.agentId) return;
               if (storeKey(t.customerName) !== storeKey(storeName)) return;
               if (!newest || (t.timestamp?.seconds || 0) >= (newest.timestamp?.seconds || 0)) newest = t;
@@ -3509,7 +3509,7 @@ const handleGitHubMirror = async () => {
   };
 
   const handleDeleteConsignmentData = async (customerName) => {
-      const targets = transactions.filter(t => (t.customerName||'').trim() === customerName && (t.type.includes('CONSIGNMENT') || (t.type === 'SALE' && t.paymentType === 'Titip') || t.type === 'RETURN'));
+      const targets = consignmentTx.filter(t => (t.customerName||'').trim() === customerName && (t.type.includes('CONSIGNMENT') || (t.type === 'SALE' && t.paymentType === 'Titip') || t.type === 'RETURN'));
       // 🤝 VIEW-ONLY ON INHERITED HISTORY. A store that was handed over keeps the sales the
       // previous agent made: the new holder may see them and collect on them, but may not erase
       // them - and neither may the seller erase what the new holder has added since. Refused HERE,
@@ -5134,7 +5134,7 @@ const handleGitHubMirror = async () => {
 
 
           {/* MAP SYSTEM: Shows ALL customers (Read-only for agents to maintain situational awareness) */}
-          {activeTab === 'map_war_room' && <MapMissionControl customers={userRole === 'ADMIN' ? displayCustomers : displayPermitted} transactions={transactions} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} motorists={motorists} onNavigateToDirectory={() => setActiveTab('customers')} userRole={userRole} agentProfileId={agentProfileId} eodReports={eodReports} onShowStoreOnJourney={showStoreOnJourney} />}
+          {activeTab === 'map_war_room' && <MapMissionControl customers={userRole === 'ADMIN' ? displayCustomers : displayPermitted} transactions={transactions} consignmentTx={consignmentTx} inventory={inventory} db={db} appId={appId} user={user} logAudit={logAudit} triggerCapy={triggerCapy} isAdmin={isAdmin} savedHome={appSettings?.mapHome} onSetHome={handleSetMapHome} tierSettings={tierSettings} motorists={motorists} onNavigateToDirectory={() => setActiveTab('customers')} userRole={userRole} agentProfileId={agentProfileId} eodReports={eodReports} onShowStoreOnJourney={showStoreOnJourney} />}
           
          {/* JOURNEY PLAN: Strictly locked down to ONLY show Admin's authorized Pricing Tiers */}
          {activeTab === 'journey' && <JourneyView motorists={motorists} agentProfileId={agentProfileId} transactions={transactions} customers={displayPermitted} db={db} appId={appId} user={user} userRole={userRole} logAudit={logAudit} triggerCapy={triggerCapy} setActiveTab={setActiveTab} tierSettings={tierSettings} isAdmin={isAdmin} isLiteMode={isLiteMode} appSettings={appSettings} focusStore={journeyFocus} onFocusStoreHandled={() => setJourneyFocus(null)} eodReports={eodReports} />}
@@ -5531,6 +5531,7 @@ const handleGitHubMirror = async () => {
                           logAudit={logAudit}
                           triggerCapy={triggerCapy}
                           transactions={transactions}
+                          consignmentTx={consignmentTx}
                           storage={storage}
                       />
               </div>
@@ -5538,7 +5539,7 @@ const handleGitHubMirror = async () => {
 
         {activeTab === 'receivables' && (
               <ConsignmentFinanceView
-                  transactions={transactions}
+                  transactions={consignmentTx}
                   customers={customers}
                   focusStore={focusStore}
                   onFocusStoreHandled={() => setFocusStore(null)}

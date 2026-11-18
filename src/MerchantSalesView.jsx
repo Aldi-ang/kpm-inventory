@@ -54,7 +54,7 @@ const readDraft = (uid) => {
     } catch { return null; }
 };
 
-const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], levels = [], transactions = [], allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, motorists = [], storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine, pendingTxs = [], promoVan = [], sellerRegion = '', regionOffers = [] }) => {
+const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, triggerCapy, onProcessSale, onInspect, appSettings, customers = [], allowedPayments = ['Cash'], allowedTiers = ['Retail', 'Ecer'], levels = [], transactions = [], consignmentTx = null, allowRetur = true, allowCashRefund = false, db, appId, agentProfileId, motorists = [], storage, masterUserId, adminSalesMode, onAdminSalesMode, isOnline = navigator.onLine, pendingTxs = [], promoVan = [], sellerRegion = '', regionOffers = [] }) => {
     /* WHOSE VAULT THE CUSTOMER RECORDS LIVE IN — and the answer must be the same one App used to
        fetch them, or a write lands in a document nobody reads.
 
@@ -227,7 +227,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
     // 🚀 THE FIFO DEBT ENGINE 
     const debtInfo = React.useMemo(() => {
         if (!customerName) return null;
-        const custTrans = transactions.filter(t => 
+        const custTrans = (consignmentTx || transactions).filter(t => 
             storeKey(t.customerName) === storeKey(customerName)
         /* by the exact second, like Receivables: `date` is only the DAY and the list arrives newest-first, so a payment
            made the same day as its sale used to be counted before the sale and thrown away (his 2026-11-03: Utang
@@ -282,7 +282,7 @@ const MerchantSalesView = ({ inventory, user, userRole, isAdmin, logAudit, trigg
         const isOverdue = activeDebts.some(d => now > (d.saleMs + (d.tempo * 86400000)));
 
         return { totalDebt, ageDays, status, oldestDate, isOverdue };
-    }, [customerName, transactions]);
+    }, [customerName, consignmentTx, transactions]);
 
     /* 🚀 ONE debt number, not two. This screen used to work out what a store owes TWICE — the red
        "OWES" line from the FIFO engine above, and this panel from its own separate pass — and then

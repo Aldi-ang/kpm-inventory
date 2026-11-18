@@ -9,6 +9,23 @@ import { isNonBranch, setMasterVaultPlace } from '../utils/supply.js';
 
 const NO_SHOPS = [];   // one stable empty list, so screens keyed on `customers` do not re-run every render
 
+/* Merge 7-day transactions with unbounded consignment rows (Titip placements + payments/returns),
+   deduplicating by id so no payment is ever counted twice. */
+export function mergeConsignmentTx(recent = [], titip = [], credits = []) {
+    const byId = new Map();
+    const put = (list, prefix) => {
+        (Array.isArray(list) ? list : []).forEach((t, i) => {
+            if (!t) return;
+            const k = t.id ? `id:${t.id}` : `${prefix}:${i}:${t.date || ''}:${t.customerName || ''}:${t.total || t.amountPaid || 0}`;
+            if (!byId.has(k)) byId.set(k, t);
+        });
+    };
+    put(recent, 'r');
+    put(titip, 't');
+    put(credits, 'c');
+    return Array.from(byId.values());
+}
+
 export default function useDatabaseSync(db, appId, user, userId, userRole, location) {
     // Data States
     /* `products` is the whole collection. `inventory` - what every cigarette screen, sum and the Sales Terminal reads -
@@ -19,6 +36,12 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
     const promoItems = useMemo(() => products.filter(isPromo), [products]);
     const [customers, setCustomers] = useState([]); 
     const [transactions, setTransactions] = useState([]);
+    const [titipSales, setTitipSales] = useState([]);
+    const [titipCredits, setTitipCredits] = useState([]);
+    const consignmentTx = useMemo(
+        () => mergeConsignmentTx(transactions, titipSales, titipCredits),
+        [transactions, titipSales, titipCredits]
+    );
     const [samplings, setSamplings] = useState([]);
     const [auditLogs, setAuditLogs] = useState([]);
     const [procurements, setProcurements] = useState([]); 
@@ -86,6 +109,9 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
         
         // 🛡️ FIREWALL ACTIVE: All transaction/log data is strictly gated to the last 7 days!
         const unsubTrans = onSnapshot(query(collection(db, basePath, 'transactions'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setTransactions(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Transactions listener:", err.code));
+        // Unbounded consignment listeners (Aldi 2026-11-18): consignment debt must never disappear after 7 days.
+        const unsubTitip = onSnapshot(query(collection(db, basePath, 'transactions'), where('paymentType', '==', 'Titip')), (snap) => setTitipSales(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Titip sales listener:", err.code));
+        const unsubCredits = onSnapshot(query(collection(db, basePath, 'transactions'), where('type', 'in', ['CONSIGNMENT_PAYMENT', 'RETURN'])), (snap) => setTitipCredits(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Titip credits listener:", err.code));
         const unsubSamp = onSnapshot(query(collection(db, basePath, 'samplings'), where('timestamp', '>=', sevenDaysAgo), orderBy('timestamp', 'desc')), (snap) => setSamplings(snap.docs.map(d => ({id: d.id, ...d.data()}))), (err) => console.warn("Samplings listener:", err.code));
         /* 💸 ADMIN ONLY, same pattern the procurement listener below already uses.
            Audit logs are written far more often than sales — every save, every restore, every
@@ -136,7 +162,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
         }, (err) => console.warn("Admin vehicle canvas listener:", err.code));
 
         return () => { 
-            unsubSettings(); unsubInv(); unsubTrans(); unsubSamp(); 
+            unsubSettings(); unsubInv(); unsubTrans(); unsubTitip(); unsubCredits(); unsubSamp(); 
             unsubLogs(); unsubProc(); unsubMotorists(); unsubCareer(); unsubOffers();
             unsubAdminVeh(); unsubEod(); unsubTransfers();
         };
@@ -258,7 +284,7 @@ export default function useDatabaseSync(db, appId, user, userId, userRole, locat
         fetchHistoricalTransactions, // 🚀 EXPORT THE ENGINE
         inventory, setInventory: setProducts, promoItems,
         customers: noFolders ? NO_SHOPS : customers, setCustomers, customerAccess,
-        transactions, setTransactions,
+        transactions, setTransactions, consignmentTx,
         samplings, setSamplings,
         auditLogs, setAuditLogs,
         procurements, setProcurements,
