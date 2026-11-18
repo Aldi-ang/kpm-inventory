@@ -1,3 +1,5 @@
+**HANDOVER 2026-11-18 09:45 (Claude, out of weekly quota): until Saturday 2026-11-21 ANTIGRAVITY IS THE LEAD (GEMINI.md OVERRIDE). Its order: Task 62 (BUILD - consignment never limited to 7 days, all 7 readers, his decision) -> Task 63 (every Receivables rule holds in the new screen) + 64 fixes -> then the Reports job below (Task 61 already checked the picture: .claude/drafts/reports-pro.html, 4 fixes, b4210779 - publish it, get his ok). Push only on his "push".**
+
 # The one job - Reports in the professional look (segment 5 of 12, deadline 20 November)
 
 His words, 2026-11-17 07:15: *"anyway just skip the demo for now and do the next segment i want to finish all segment before 20 november"*. Fixed order: Master Vault (LIVE ad0b7d5a), Restock Vault (SKIPPED, his call), Stock Opname (LIVE c25814d7), Receivables & Consignment (LIVE 607ad270, 2026-11-18), **Reports**, Customers, Sampling, Command Center, Map System, Agent Profile, Audit Logs, Settings. One picture per screen.
