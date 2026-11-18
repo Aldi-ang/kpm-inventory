@@ -1,32 +1,37 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="claude:viewport-fit-sides" content="cover">
-<title>Customers · Segment 6 Picture (v5)</title>
+<title>KPM Customers</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <style>
+/* layout: KPM v5 master-detail (same standard as reports-live.html) - 4-cell KPI strip, folder+shop directory left, shop in hand right; phone opens under its row */
 :root{
   --ground:#D6CEBA;--panel:#E3DCCB;--raised:#EAE4D6;--inset:#DCD4C1;--line:#B8AF9C;--line-2:#9F9785;--hair:rgba(19,18,17,.10);
   --ink:#131211;--ink-muted:#3A3733;--ink-dim:#5E584F;--gold:#8A5A12;--accent-ink:#5A3B05;--accent-edge:#8A6420;--danger-ink:#7A2118;
-  --page:#C9C0AA;--sel:rgba(138,90,18,.09);--wash:rgba(138,90,18,.13);--scrim:rgba(19,18,17,.45);
+  --page:#C9C0AA;--sel:rgba(138,90,18,.09);--wash:rgba(138,90,18,.13);--scrim:rgba(19,18,17,.38);
   --f:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
 }
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;--hair:rgba(232,228,222,.06);
+  --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--accent-ink:#E0A04A;--accent-edge:#9C6924;--danger-ink:#E7907F;
+  --page:#050504;--sel:rgba(208,138,46,.07);--wash:rgba(208,138,46,.12);--scrim:rgba(0,0,0,.6);color-scheme:dark}}
 :root[data-theme="dark"]{
   --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;--hair:rgba(232,228,222,.06);
   --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--accent-ink:#E0A04A;--accent-edge:#9C6924;--danger-ink:#E7907F;
-  --page:#050504;--sel:rgba(208,138,46,.07);--wash:rgba(208,138,46,.12);--scrim:rgba(0,0,0,.68);color-scheme:dark;
-}
+  --page:#050504;--sel:rgba(208,138,46,.07);--wash:rgba(208,138,46,.12);--scrim:rgba(0,0,0,.6);color-scheme:dark}
 *{box-sizing:border-box}
-body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 var(--f);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;padding:18px 16px 56px}
+body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 var(--f);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 64px}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 svg.i{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
-.board{max-width:1180px;margin:0 auto 12px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:12.5px;color:var(--ink-muted)}
-.board h1{font-size:12.5px;margin:0;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim)}
+.board{max-width:1180px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;font-size:12.5px;color:var(--ink-muted)}
+.board h1{font-size:13px;margin:0;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
 .seg{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;flex-wrap:wrap}
 .seg button{border:0;background:transparent;padding:5px 10px;font-size:12px;color:var(--ink-dim)}
 .seg button[aria-pressed="true"]{background:var(--wash);color:var(--ink);font-weight:600}
@@ -37,7 +42,7 @@ svg.i{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.65;str
 .frame.phone{width:390px;max-width:100%;height:844px;border-radius:24px}
 .app{height:100%;display:flex;flex-direction:column;min-height:0}
 
-/* KPM edge button rule: zero solid amber fills */
+/* edge buttons: hairline + subtle wash, never solid amber fill */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 13px;border:1px solid var(--accent-edge);
   background:transparent;color:var(--ink);font-weight:600;font-size:12.5px;border-radius:8px;white-space:nowrap;transition:background .15s,transform .1s}
 .btn:hover{background:var(--sel)}
@@ -60,52 +65,67 @@ svg.i{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.65;str
 .kpi{display:grid;grid-template-columns:1.1fr 1fr 1.15fr 1.55fr;margin:12px 20px 0;border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
 .k{padding:11px 15px;min-width:0}
 .k+.k{border-left:1px solid var(--line)}
-.k .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-dim);display:flex;justify-content:space-between;gap:6px;font-weight:600}
+.k.actk{cursor:pointer;transition:background .15s}
+.k.actk:hover{background:var(--sel)}
+.k .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-dim);display:flex;justify-content:space-between;align-items:center;gap:6px;font-weight:600}
 .k .v{font-size:21px;font-weight:700;margin-top:3px;letter-spacing:-.02em;line-height:1.15;white-space:nowrap}
 .k .v.bad{color:var(--danger-ink)}
 .k .d{font-size:11.5px;color:var(--ink-dim);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mix{display:flex;height:7px;border-radius:4px;overflow:hidden;margin:7px 0 5px;background:var(--inset)}
-.mix span{height:100%;transition:width .6s ease}
+.mix span{height:100%;width:0;transition:width .7s cubic-bezier(.2,.7,.2,1)}
 .c1{background:var(--gold)}
 .c2{background:var(--ink-muted)}
 .c3{background:var(--ink-dim)}
 .mixl{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:11px;color:var(--ink-muted)}
 .mixl i{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:4px;vertical-align:1px}
 
+/* Rolling digits */
+.roll{display:inline-flex;align-items:baseline;line-height:1.15;white-space:pre}
+.reel{display:inline-block;height:1.15em;overflow:hidden;vertical-align:bottom}
+.reel > span{display:flex;flex-direction:column;transition:transform .65s cubic-bezier(.2,.7,.2,1)}
+.reel > span > span{height:1.15em}
+
 /* Tabs */
-.tabs{display:flex;gap:18px;padding:10px 20px 0;border-bottom:1px solid var(--line);align-items:center}
-.tab{border:0;background:transparent;padding:0 2px 9px;font-size:13px;font-weight:600;color:var(--ink-dim);border-bottom:2px solid transparent;display:inline-flex;align-items:center;gap:6px}
-.tab.on{color:var(--ink);border-bottom-color:var(--gold)}
+.tabs{display:flex;gap:18px;padding:10px 20px 0;border-bottom:1px solid var(--line);align-items:center;overflow-x:auto}
+.tab{border:0;background:transparent;padding:0 2px 9px;font-size:13px;font-weight:600;color:var(--ink-dim);border-bottom:2px solid transparent;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--gold)}
 .pill-n{font-size:10.5px;padding:1px 6px;border-radius:999px;border:1px solid var(--accent-edge);color:var(--accent-ink);background:var(--sel)}
+
+/* View-only banner */
+.ro-note{margin:10px 20px 0;padding:8px 12px;border:1px dashed var(--line-2);border-radius:8px;background:var(--inset);font-size:12px;color:var(--ink-dim);display:flex;align-items:center;gap:8px}
 
 /* Master-Detail Body */
 .work{display:grid;grid-template-columns:390px 1fr;grid-template-rows:minmax(0,1fr);flex:1;min-height:0;overflow:hidden}
 .list{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--panel);overflow:hidden}
-.crumb-bar{display:flex;align-items:center;gap:4px;padding:7px 12px;border-bottom:1px solid var(--hair);font-size:11px;color:var(--ink-dim);flex-wrap:nowrap;background:var(--inset);white-space:nowrap}
-.crumb-btn{border:0;background:transparent;padding:2px 4px;border-radius:4px;color:var(--ink-dim);font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.crumb-bar{display:flex;align-items:center;gap:5px;padding:7px 12px;border-bottom:1px solid var(--hair);font-size:11.5px;color:var(--ink-dim);flex-wrap:nowrap;background:var(--inset);white-space:nowrap}
+.crumb-btn{border:0;background:transparent;padding:2px 4px;border-radius:4px;color:var(--ink-dim);font-weight:600;flex:none}
 .crumb-btn:hover{color:var(--ink);background:var(--sel)}
 .crumb-btn.on{color:var(--accent-ink)}
-.folder-strip{display:flex;gap:6px;padding:8px 14px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:none}
+.folder-acts{display:flex;padding:6px 12px;gap:6px;background:var(--inset);border-bottom:1px solid var(--line)}
+.folder-strip{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:none;flex:none}
 .fchip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 9px;border-radius:7px;border:1px solid var(--line-2);background:var(--raised);font-size:11.5px;font-weight:600;white-space:nowrap;flex:none}
+.fchip:hover{border-color:var(--accent-edge)}
 .fchip.on{border-color:var(--accent-edge);background:var(--sel);color:var(--ink)}
 .fchip .cnt{font-size:10.5px;color:var(--ink-dim);font-weight:500}
-.fchip .pnd{font-size:10px;color:var(--danger-ink);font-weight:700}
+.fchip .pnd{display:inline-flex;align-items:center;gap:2px;font-size:10px;color:var(--danger-ink);font-weight:700}
 
-.rows{overflow-y:auto;flex:1}
-.r{display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 14px;border-left:2.5px solid transparent;border-bottom:1px solid var(--hair);cursor:pointer}
+.rows{overflow-y:auto;flex:1;min-height:0}
+.r{display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;padding:10px 14px;border:0;border-left:2.5px solid transparent;border-bottom:1px solid var(--hair);background:transparent;text-align:left;cursor:pointer}
 .r:hover{background:color-mix(in srgb,var(--gold) 5%,transparent)}
 .r.sel{background:var(--wash);border-left-color:var(--gold)}
 .thumb{width:36px;height:36px;border-radius:8px;border:1px solid var(--line-2);background:var(--inset);display:grid;place-items:center;color:var(--accent-ink);font-size:11px;font-weight:700;overflow:hidden;flex:none}
 .r .n{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
 .r .subr{font-size:11px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 .r .right{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
-.badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:5px;border:1px solid var(--line-2);color:var(--ink-muted);background:var(--inset);white-space:nowrap}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:5px;border:1px solid var(--line-2);color:var(--ink-muted);background:var(--inset);white-space:nowrap}
 .badge.bad{color:var(--danger-ink);border-color:color-mix(in srgb,var(--danger-ink) 45%,transparent);background:color-mix(in srgb,var(--danger-ink) 9%,transparent)}
 .badge.gold{color:var(--accent-ink);border-color:var(--accent-edge);background:var(--sel)}
 
 /* Right Hand Pane */
 .hand{display:flex;flex-direction:column;min-height:0;background:radial-gradient(640px 260px at 50% 0%,color-mix(in srgb,var(--gold) 6%,transparent),transparent 72%);overflow:hidden}
-.hand-scroll{flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:14px}
+.hand-scroll{flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:14px;min-height:0}
+.fade{animation:fadeUp .18s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes fadeUp{from{opacity:.96;transform:translateY(3px)}to{opacity:1;transform:none}}
 .ph{display:flex;align-items:flex-start;gap:12px}
 .big{width:46px;height:46px;border-radius:10px;background:var(--raised);border:1px solid var(--line-2);display:grid;place-items:center;color:var(--accent-ink);flex:none}
 .ph h3{margin:0;font-size:17px;font-weight:700;letter-spacing:-.01em}
@@ -118,7 +138,7 @@ svg.i{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.65;str
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .card-h{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);display:flex;justify-content:space-between;align-items:center}
 .mapbox{height:108px;border-radius:8px;border:1px solid var(--line-2);background:var(--inset);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:8px}
-.mapbox::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 18px,var(--hair) 18px 19px),repeating-linear-gradient(90deg,transparent 0 22px,var(--hair) 22px 23px)}
+.mapbox.gridbg::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 18px,var(--hair) 18px 19px),repeating-linear-gradient(90deg,transparent 0 22px,var(--hair) 22px 23px)}
 .pin-dot{position:relative;z-index:1;align-self:center;margin-top:14px;padding:3px 8px;border-radius:999px;border:1px solid var(--accent-edge);background:var(--raised);font-size:10.5px;font-weight:700;color:var(--accent-ink);display:inline-flex;align-items:center;gap:4px}
 
 .bench-form{display:grid;grid-template-columns:1.1fr 1fr 82px auto;gap:6px;align-items:center}
@@ -134,544 +154,867 @@ th.tr-r,td.tr-r{text-align:right;white-space:nowrap}
 .act .sp{flex:1}
 
 /* Sub-tabs (Approvals & Tools) */
-.subpage{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px}
-.box{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
-.box-h{padding:9px 14px;background:var(--inset);border-bottom:1px solid var(--line);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-ink);display:flex;justify-content:space-between;align-items:center}
+.subpage{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px;min-height:0}
+.box{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden;flex:none}
+.box-h{padding:9px 14px;background:var(--inset);border-bottom:1px solid var(--line);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-ink);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .box-r{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--hair);flex-wrap:wrap}
 .box-r:last-child{border-bottom:0}
-.tools-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.tools-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
 .tcard{border:1px solid var(--line-2);border-radius:10px;background:var(--panel);padding:12px;display:flex;flex-direction:column;gap:8px}
 .tcard h4{margin:0;font-size:13px;font-weight:700}
 .tcard p{margin:0;font-size:11.5px;color:var(--ink-dim);flex:1}
+.link-btn{border:0;background:transparent;padding:0;color:var(--accent-ink);text-decoration:underline;font-size:11.5px;font-weight:600}
 
-/* Phones */
-.phones{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;max-width:1180px;margin:0 auto}
-.phone .sb{height:24px;display:flex;justify-content:space-between;align-items:center;padding:0 18px;font-size:11px;color:var(--ink-dim);background:var(--panel)}
-.phone .hd{padding:8px 14px 0;gap:8px;background:var(--panel)}
-.phone .hd h2{font-size:15.5px}
-.phone .tabs{padding:8px 14px 0;gap:14px;background:var(--panel)}
-.phone .rows{background:var(--ground)}
-.under{margin:0 10px 8px;border:1px solid var(--accent-edge);border-radius:10px;background:var(--panel);padding:11px 12px;display:flex;flex-direction:column;gap:8px}
-.sheet-dim{position:absolute;inset:0;background:var(--scrim)}
-.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--accent-edge);border-radius:18px 18px 0 0;padding:10px 14px 14px;display:flex;flex-direction:column;gap:9px;max-height:82%;overflow:auto}
-.grab{width:36px;height:4px;border-radius:2px;background:var(--line-2);margin:0 auto}
-.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.fgrid label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-dim);margin-bottom:2px}
+/* In-page Dialog / Modal Overlay */
+.ov{position:absolute;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;z-index:25;padding:16px;animation:fi .16s}
+@keyframes fi{from{opacity:0}}
+.dlg{background:var(--raised);border:1px solid var(--accent-edge);border-radius:12px;width:min(680px,100%);max-height:94%;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 24px 50px -20px rgba(0,0,0,.65);animation:fadeUp .2s}
+.dlg.sm{width:min(440px,100%)}
+.dlg h4{margin:0;font-size:15px}
+.dlg p{margin:0;font-size:13px;color:var(--ink-muted);line-height:1.5}
+.dlg .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding-top:4px}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fgrid label{display:flex;flex-direction:column;gap:3px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-dim)}
 .fgrid .inp{width:100%;height:34px}
 
-.modal-wrap{position:absolute;inset:0;background:var(--scrim);display:none;align-items:center;justify-content:center;padding:24px;z-index:20}
-.modal-wrap.open{display:flex}
-.modal{width:100%;max-width:740px;background:var(--panel);border:1px solid var(--accent-edge);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;max-height:94%;overflow:auto}
+/* Self-drawing gold check toast */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  display:flex;align-items:center;gap:10px;background:var(--raised);border:1px solid var(--accent-edge);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;
+  box-shadow:0 18px 40px -16px rgba(0,0,0,.6);transition:opacity .2s,transform .25s cubic-bezier(.2,.7,.2,1);z-index:50;max-width:calc(100% - 32px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast svg{width:18px;height:18px;flex:none;stroke:var(--gold);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.toast path{stroke-dasharray:24;stroke-dashoffset:24}
+.toast.on path{animation:draw .45s .1s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
 
-html.lite-mode *{transition:none!important;animation:none!important}
-@media (max-width:700px){.pc,.board{display:none}}
+/* Phone overrides (same app mounted in .frame.phone) */
+.sb{height:26px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:11px;color:var(--ink-dim);background:var(--panel);flex:none}
+.phone .hd{padding:10px 14px 0;gap:8px}
+.phone .hd .sub{width:100%;order:3;margin:0;font-size:11.5px}
+.phone .ctl{width:100%;order:4}
+.phone .search{flex:1}
+.phone .search input{width:100%}
+.phone .kpi{grid-template-columns:1fr 1fr;margin:10px 14px 0}
+.phone .k{border-bottom:1px solid var(--line);padding:9px 12px}
+.phone .k:nth-child(2n){border-right:0}
+.phone .k:nth-child(n+3){border-bottom:0}
+.phone .k .v{font-size:17px}
+.phone .tabs{padding:8px 14px 0;gap:14px}
+.phone .work{grid-template-columns:1fr}
+.phone .list{border-right:0}
+.phone .hand{display:none}
+.phone .under{margin:0 10px 8px;border:1px solid var(--accent-edge);border-radius:10px;background:var(--raised);padding:12px;display:flex;flex-direction:column;gap:10px;animation:fadeUp .2s}
+.phone .split2{grid-template-columns:1fr}
+.phone .bench-form{grid-template-columns:1fr 1fr}
+.phone .subpage{padding:12px 14px}
+.phone .tools-grid{grid-template-columns:1fr 1fr}
+.phone .fgrid.five{grid-template-columns:1fr 1fr!important}
+.phone .fgrid.three{grid-template-columns:1fr!important}
+
+@media (max-width:760px){.frame.pc,.pcap{display:none}}
+.nomotion *,.nomotion *::before,.nomotion *::after{animation:none!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-  <symbol id="store" viewBox="0 0 24 24"><path d="M4 10h16v10H4z"/><path d="M3 10l2-5h14l2 5"/><path d="M9 20v-6h6v6"/></symbol>
-  <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
-  <symbol id="pin" viewBox="0 0 24 24"><path d="M12 21s6-5.4 6-10.5a6 6 0 1 0-12 0C6 15.6 12 21 12 21z"/><circle cx="12" cy="10.5" r="2"/></symbol>
-  <symbol id="cam" viewBox="0 0 24 24"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></symbol>
-  <symbol id="folder" viewBox="0 0 24 24"><path d="M3 6h6l2 2h10v10H3z"/></symbol>
-  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
-  <symbol id="more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/></symbol>
-  <symbol id="check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></symbol>
-  <symbol id="trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></symbol>
+  <symbol id="i-store" viewBox="0 0 24 24"><path d="M4 10h16v10H4z"/><path d="M3 10l2-5h14l2 5"/><path d="M9 20v-6h6v6"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s6-5.4 6-10.5a6 6 0 1 0-12 0C6 15.6 12 21 12 21z"/><circle cx="12" cy="10.5" r="2"/></symbol>
+  <symbol id="i-cam" viewBox="0 0 24 24"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6h6l2 2h10v10H3z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M14 4l6 6-10 10H4v-6z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3.2 2"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3.5v5.5c0 5-3.4 8.3-8 9.8-4.6-1.5-8-4.8-8-9.8V6.5z"/><path d="M12 8v5M12 16h.01"/></symbol>
 </svg>
 
 <div class="board">
-  <h1>Customers · Segment 6 Picture (v5)</h1>
-  <div class="seg" role="group" aria-label="Theme">
-    <button type="button" onclick="setTheme('dark')" id="th-dark" aria-pressed="true">Espresso (Dark)</button>
-    <button type="button" onclick="setTheme('light')" id="th-light" aria-pressed="false">Warm Stone (Light)</button>
-  </div>
-  <div class="seg" role="group" aria-label="Motion">
-    <button type="button" onclick="setLite(false)" id="lt-off" aria-pressed="true">Motion On</button>
-    <button type="button" onclick="setLite(true)" id="lt-on" aria-pressed="false">Lite Mode</button>
-  </div>
-  <div class="seg" role="group" aria-label="Role">
-    <button type="button" onclick="setRole('boss')" id="rl-boss" aria-pressed="true">T1/T2 Boss</button>
-    <button type="button" onclick="setRole('regional')" id="rl-reg" aria-pressed="false">T3/T4 Regional</button>
-    <button type="button" onclick="setRole('view')" id="rl-view" aria-pressed="false">T5 View Only</button>
-  </div>
+  <h1>Customers · playable picture</h1>
+  <span>View as <span class="seg" id="role"><button type="button" aria-pressed="true" data-v="boss">T1/T2 Boss</button><button type="button" aria-pressed="false" data-v="regional">T3/T4 Regional</button><button type="button" aria-pressed="false" data-v="view">T5 View Only</button></span></span>
+  <span>Theme <span class="seg" id="theme"><button type="button" aria-pressed="true" data-v="">System</button><button type="button" aria-pressed="false" data-v="light">Light</button><button type="button" aria-pressed="false" data-v="dark">Dark</button></span></span>
+  <span>Motion <span class="seg" id="motion"><button type="button" aria-pressed="true" data-v="on">On</button><button type="button" aria-pressed="false" data-v="off">Lite</button></span></span>
+  <span style="flex-basis:100%">Every button works inside this page: confirm or keep Grosir, assign a salesman, log or delete competitor benchmarks, add/rename/reset folders, edit or add customers, and run admin tools.</span>
 </div>
 
-<!-- PC FRAME -->
-<div class="frame pc" id="pcFrame">
-  <div class="app">
+<p class="cap pcap">PC · 1180 px</p>
+<div class="frame pc" id="pc"></div>
+<p class="cap">Phone · 390 px (same app mounted live; tap a shop row to open or fold its drawer)</p>
+<div class="frame phone" id="ph"></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span id="toastT"></span></div>
+
+<script>
+const ROSTER = ['Agus Salim', 'Budi Santoso', 'Dika Saputra', 'Sri Rahayu', 'Ujang Pratama'];
+const FOLDERS = [
+  { prov: 'JAWA BARAT', kab: 'BANDUNG', kec: 'MARGAHAYU' },
+  { prov: 'JAWA BARAT', kab: 'BANDUNG', kec: 'SOREANG' },
+  { prov: 'JAWA BARAT', kab: 'BANDUNG', kec: 'CILILIN' },
+  { prov: 'JAWA TENGAH', kab: 'MAGELANG', kec: 'MUNTILAN' },
+];
+
+const SHOPS = [
+  { id: 's1', name: 'AMANAH BARU', prov: 'JAWA BARAT', kab: 'BANDUNG', kec: 'MARGAHAYU', tier: 'Unranked', price: 'Retail', grosirAsk: false, status: 'APPROVED', pic: 'Budi Santoso', noo: 'demo-agent-1', freq: 7, last: '2026-11-08', ov: 'OVERDUE', gps: '-6.9654, 107.5759', phone: '0812-3456-7890', addr: 'Jl. Kopo Bihbul No. 42 · Folder 1', embed: '', hasPhoto: false, logs: [
+    { id: 'b1', d: '2026-11-10', b: 'Competitor', p: 'Kretek 12', v: 'High Sales', n: 'eye-level rack', rp: 11000 },
+    { id: 'b2', d: '2026-11-03', b: 'Competitor', p: 'Mild 16', v: 'Medium', n: 'promo poster', rp: 18500 },
+  ] },
+  { id: 's2', name: 'ANEKA BARU PANJI', prov: 'JAWA BARAT', kab: 'BANDUNG', kec: 'MARGAHAYU', tier: 'Unranked', price: 'Retail', grosirAsk: true, status: 'APPROVED', pic: 'Budi Santoso', noo: 'Dika Saputra', freq: 7, last: '2026-11-15', ov: 'OK · 4d left', gps: '-6.9695, 107.5752', phone: '0813-2209-1122', addr: 'Jl. Taman Kopo Indah II', embed: '', hasPhoto: false, logs: [
+    { id: 'b3', d: '2026-11-14', b: 'Competitor', p: 'Filter 12', v: 'Slow Moving', n: 'stock dusty', rp: 14000 },
+  ] },
+  { id: 's3', name: 'Asyifa Mart Madura', prov: 'JAWA TENGAH', kab: 'MAGELANG', kec: 'MUNTILAN', tier: 'Unranked', price: 'Retail', grosirAsk: false, status: 'APPROVED', pic: 'Agus Salim', noo: 'Agus Salim', freq: 7, last: '', ov: 'OVERDUE', gps: '-7.5812, 110.2894', phone: '0812-7788-9900', addr: 'Jl. Pemuda No. 18, Muntilan', embed: '', hasPhoto: false, logs: [] },
+  { id: 's4', name: 'CEMERLANG', prov: 'JAWA BARAT', kab: 'BANDUNG', kec: 'SOREANG', tier: 'Unranked', price: 'Retail', grosirAsk: false, status: 'PENDING', pic: 'Unassigned', noo: 'Sri Rahayu', freq: 7, last: '2026-11-11', ov: 'OVERDUE', gps: '-7.0241, 107.5198', phone: '0857-9901-3344', addr: 'Pasar Soreang Blok B', embed: '', hasPhoto: false, logs: [] },
+  { id: 's5', name: 'HQ (RETAIL) 1', prov: 'JAWA BARAT', kab: 'BANDUNG', kec: 'CILILIN', tier: 'Unranked', price: 'Grosir', grosirAsk: false, status: 'APPROVED', pic: 'Ujang Pratama', noo: 'Admin', freq: 14, last: '2026-11-14', ov: 'OK · 10d left', gps: '-6.9491, 107.4581', phone: '0812-8877-6655', addr: 'Jl. Raya Cililin No. 9', embed: '', hasPhoto: false, logs: [] },
+  { id: 's6', name: 'HQ TEST', prov: 'JAWA TENGAH', kab: 'MAGELANG', kec: 'MUNTILAN', tier: 'Epic', price: 'Retail', grosirAsk: false, status: 'APPROVED', pic: 'Budi Santoso', noo: 'Admin', freq: 7, last: '', ov: 'OVERDUE', gps: '-7.5801, 110.2910', phone: '0811-0000-1111', addr: 'Master HQ Yard', embed: '', hasPhoto: false, logs: [] },
+  { id: 's7', name: 'TOKO HARAPAN JAYA', prov: 'JAWA TENGAH', kab: 'MAGELANG', kec: 'MUNTILAN', tier: 'Silver', price: 'Retail', grosirAsk: false, status: 'APPROVED', pic: 'Unassigned', noo: 'Agus Salim', freq: 7, last: '2026-11-16', ov: 'OK · 5d left', gps: '-7.5844, 110.2932', phone: '0813-4455-6677', addr: 'Jl. Kartini No. 7, Muntilan', embed: '', hasPhoto: false, logs: [] },
+];
+
+const DUPS = [
+  { id: 'g1', reason: 'name and location', dist: '12 m apart', far: false, members: [
+    { id: 's1', name: 'AMANAH BARU', place: 'MARGAHAYU, BANDUNG', tag: 'oldest — likely original', date: '24 Jun 2026', agent: 'Budi Santoso', folder: 'Folder 1' },
+    { id: 'd2', name: 'AMANAH BARU', place: '-6.9654, 107.5759', tag: '12 m from oldest', date: '15 Nov 2026', agent: 'unassigned', folder: 'Folder 1' },
+  ] },
+  { id: 'g2', reason: 'same name only', dist: '14.5 km apart', far: true, members: [
+    { id: 's4', name: 'CEMERLANG', place: 'SOREANG, BANDUNG', tag: 'oldest — likely original', date: '02 Jul 2026', agent: 'Unassigned', folder: 'Folder 2' },
+    { id: 'd4', name: 'CEMERLANG', place: 'MARGAHAYU, BANDUNG', tag: '14.5 km from oldest', date: '11 Nov 2026', agent: 'Dika Saputra', folder: 'Folder 1' },
+  ] },
+];
+
+const G = { role: 'boss', motion: true, tierBroken: 2, scrubbed: false, ignoredDups: new Set(), showIgnoredDups: false };
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const rp = (n) => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
+const iniOf = (name) => String(name || 'ST').replace(/[^A-Za-z0-9 ]+/g, ' ').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || 'ST';
+
+/* ---------- rolling digits + gold check toast ---------- */
+function rollHTML(text, prevText) {
+  const out = [], pt = prevText || '', off = text.length - pt.length;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (/\d/.test(c)) {
+      const old = pt[i - off], from = /\d/.test(old || '') ? +old : 0;
+      out.push(`<span class="reel"><span data-to="${c}" style="transform:translateY(-${from * 1.15}em)">${'0123456789'.split('').map((x) => `<span>${x}</span>`).join('')}</span></span>`);
+    } else out.push(`<span>${esc(c)}</span>`);
+  }
+  return `<span class="roll" aria-label="${esc(text)}">${out.join('')}</span>`;
+}
+function R(st, key, text) { const h = rollHTML(text, st.prev[key]); st.prev[key] = text; return h; }
+function settleRolls(root) {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    root.querySelectorAll('.reel > span[data-to]').forEach((s) => { s.style.transform = `translateY(-${+s.dataset.to * 1.15}em)`; });
+    root.querySelectorAll('[data-w]').forEach((b) => { b.style.width = b.dataset.w; });
+  }));
+}
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.classList.remove('on');
+  void t.offsetWidth;
+  document.getElementById('toastT').textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('on'), 2800);
+}
+
+/* ---------- dual-mounted state ---------- */
+const apps = [];
+const freshState = (mode) => ({
+  mode, tab: 'directory', q: '', prov: 'ALL', folder: 'ALL', folderActs: false,
+  sel: 's1', openPhone: mode === 'phone' ? 's1' : null, streetMode: false,
+  benchBrand: '', benchNotes: '', benchPrice: '', benchVol: 'High Sales',
+  ownerPick: {}, prev: {}, grown: false, modal: null, form: null, promptVal: '',
+});
+
+function mount(el, mode) {
+  const st = freshState(mode);
+  apps.push({ el, st });
+  el.addEventListener('click', (e) => onClick(e, el, st));
+  el.addEventListener('input', (e) => onInput(e, el, st));
+  el.addEventListener('change', (e) => onInput(e, el, st));
+  render(el, st);
+}
+function rerenderAll() { apps.forEach((a) => render(a.el, a.st)); }
+
+function statsOf() {
+  const total = SHOPS.length;
+  const overdue = SHOPS.filter((s) => s.ov === 'OVERDUE').length;
+  const grosirAsks = SHOPS.filter((s) => s.grosirAsk);
+  const ownerAsks = SHOPS.filter((s) => !s.pic || s.pic === 'Unassigned');
+  const gCnt = SHOPS.filter((s) => s.price === 'Grosir').length;
+  const eCnt = SHOPS.filter((s) => s.price === 'Ecer').length;
+  const rCnt = Math.max(0, total - gCnt - eCnt);
+  const gPct = total ? Math.round((gCnt / total) * 100) : 0;
+  const ePct = total ? Math.round((eCnt / total) * 100) : 0;
+  const rPct = Math.max(0, 100 - gPct - ePct);
+  const provs = new Set(SHOPS.map((s) => s.prov)).size;
+  return { total, overdue, grosirAsks, ownerAsks, actions: grosirAsks.length + ownerAsks.length, gPct, rPct, ePct, provs, kecs: FOLDERS.length };
+}
+
+function visibleShops(st) {
+  const q = st.q.trim().toLowerCase();
+  return SHOPS.filter((s) => {
+    if (G.role === 'regional' && s.prov !== 'JAWA BARAT') return false;
+    if (st.prov !== 'ALL' && s.prov !== st.prov) return false;
+    if (st.folder !== 'ALL' && s.kec !== st.folder) return false;
+    if (q && !(s.name + ' ' + s.kab + ' ' + s.kec + ' ' + s.pic + ' ' + s.noo).toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a, b) => a.name.localeCompare(b.name, 'id', { sensitivity: 'base' }));
+}
+
+function render(el, st) {
+  const ph = st.mode === 'phone', ro = G.role === 'view', boss = G.role === 'boss';
+  if (ro && st.tab !== 'directory') st.tab = 'directory';
+  if (!boss && st.tab === 'tools') st.tab = 'directory';
+  const scroll = el.querySelector('.rows, .subpage')?.scrollTop || 0;
+  const kpi = statsOf();
+  const list = visibleShops(st);
+  if (!st.sel || !list.find((s) => s.id === st.sel)) st.sel = list[0]?.id || SHOPS[0]?.id || null;
+  const W = (x) => st.grown ? `style="width:${x}"` : `data-w="${x}"`;
+  const folders = FOLDERS.filter((f) => (G.role !== 'regional' || f.prov === 'JAWA BARAT') && (st.prov === 'ALL' || f.prov === st.prov));
+
+  let html = ph ? `<div class="sb"><span>09:41</span><span>5G · 92%</span></div>` : '';
+  html += `<div class="app">
     <header class="hd">
-      <svg class="i" style="width:20px;height:20px;color:var(--accent-ink)"><use href="#store"/></svg>
+      <svg class="i" style="width:19px;height:19px;color:var(--accent-ink)"><use href="#i-store"/></svg>
       <h2>Customer Directory</h2>
-      <span class="sub" id="pcSub">600 shops · 3 provinces · Muntilan &amp; Bandung</span>
+      <span class="sub">${G.role === 'boss' ? `${kpi.total} shops · ${kpi.provs} provinces · Muntilan & Bandung` : G.role === 'regional' ? 'JAWA BARAT region · Hendra Gunawan' : 'View-only directory · T5 Operative'}</span>
       <div class="ctl">
-        <div class="search">
-          <svg class="i"><use href="#search"/></svg>
-          <input id="pcSearch" type="text" placeholder="Search store, city, or agent..." oninput="renderList()">
-        </div>
-        <button type="button" class="btn" id="pcAddBtn" onclick="openModal()"><svg class="i"><use href="#plus"/></svg>Add new customer</button>
+        <label class="search"><svg class="i"><use href="#i-search"/></svg><input data-f="q" id="q-${st.mode}" value="${esc(st.q)}" placeholder="Search store, city, or agent..." aria-label="Search stores"></label>
+        ${!ro ? `<button type="button" class="btn${ph ? ' sm' : ''}" data-act="add-shop"><svg class="i"><use href="#i-plus"/></svg>${ph ? 'Add' : 'Add new customer'}</button>` : ''}
       </div>
     </header>
 
     <div class="kpi">
       <div class="k">
-        <div class="l"><span>Shops Filed</span><span>SEED + LIVE</span></div>
-        <div class="v">600</div>
-        <div class="d">3 provinces · 14 kecamatan</div>
+        <div class="l"><span>Shops Filed</span><span>DIRECTORY</span></div>
+        <div class="v">${R(st, 'tot', String(kpi.total))}</div>
+        <div class="d">${kpi.provs} provinces · ${kpi.kecs} kecamatan</div>
       </div>
       <div class="k">
         <div class="l"><span>Overdue Visits</span><span>RHYTHM</span></div>
-        <div class="v bad">18</div>
+        <div class="v bad">${R(st, 'ov', String(kpi.overdue))}</div>
         <div class="d">past visitFreq schedule</div>
       </div>
-      <div class="k" style="cursor:pointer" onclick="setTab('approvals')">
-        <div class="l"><span>Needs Action</span><span style="color:var(--accent-ink)">TAP ↗</span></div>
-        <div class="v">3</div>
-        <div class="d">1 Grosir ask · 2 need salesman</div>
+      <div class="k ${!ro ? 'actk' : ''}" ${!ro ? 'data-tab="approvals"' : ''}>
+        <div class="l"><span>Needs Action</span>${!ro ? `<span style="color:var(--accent-ink);display:inline-flex;align-items:center;gap:2px">OPEN <svg class="i" style="width:12px;height:12px"><use href="#i-up"/></svg></span>` : '<span>QUEUE</span>'}</div>
+        <div class="v">${R(st, 'act', String(kpi.actions))}</div>
+        <div class="d">${kpi.grosirAsks.length} Grosir ask · ${kpi.ownerAsks.length} need salesman</div>
       </div>
       <div class="k">
-        <div class="l"><span>Price Mix</span><span>600 SHOPS</span></div>
-        <div class="mix"><span class="c1" style="width:11%"></span><span class="c2" style="width:87%"></span><span class="c3" style="width:2%"></span></div>
-        <div class="mixl"><span><i class="c1"></i>Grosir 11%</span><span><i class="c2"></i>Retail 87%</span><span><i class="c3"></i>Ecer 2%</span></div>
+        <div class="l"><span>Price Mix</span><span>${kpi.total} SHOPS</span></div>
+        <div class="mix">
+          <span class="c1" ${W(kpi.gPct + '%')} title="Grosir"></span>
+          <span class="c2" ${W(kpi.rPct + '%')} title="Retail"></span>
+          <span class="c3" ${W(kpi.ePct + '%')} title="Ecer"></span>
+        </div>
+        <div class="mixl"><span><i class="c1"></i>Grosir ${kpi.gPct}%</span><span><i class="c2"></i>Retail ${kpi.rPct}%</span><span><i class="c3"></i>Ecer ${kpi.ePct}%</span></div>
       </div>
     </div>
 
-    <nav class="tabs">
-      <button type="button" class="tab on" data-tab="directory" onclick="setTab('directory')">Directory</button>
-      <button type="button" class="tab" data-tab="approvals" onclick="setTab('approvals')" id="tabApprovals">Grosir &amp; Agents <span class="pill-n">3</span></button>
-      <button type="button" class="tab" data-tab="tools" onclick="setTab('tools')" id="tabTools">Admin Tools</button>
+    <nav class="tabs" role="tablist">
+      <button type="button" class="tab" role="tab" data-tab="directory" aria-selected="${st.tab === 'directory'}">Directory <span class="pill-n">${list.length}</span></button>
+      ${!ro ? `<button type="button" class="tab" role="tab" data-tab="approvals" aria-selected="${st.tab === 'approvals'}">Grosir &amp; Agents <span class="pill-n">${kpi.actions}</span></button>` : ''}
+      ${boss ? `<button type="button" class="tab" role="tab" data-tab="tools" aria-selected="${st.tab === 'tools'}">Admin Tools</button>` : ''}
     </nav>
 
-    <!-- VIEW-ONLY NOTICE -->
-    <div id="viewOnlyNote" style="display:none;margin:10px 20px 0;padding:8px 12px;border:1px dashed var(--line-2);border-radius:8px;background:var(--inset);font-size:12px;color:var(--ink-dim)">
-      Your access level is <b style="color:var(--ink)">View Only</b> for the Customer Directory. Browsing stays open; adding or editing is turned off.
-    </div>
+    ${ro ? `<div class="ro-note"><svg class="i"><use href="#i-shield"/></svg><span>Your access level is <b style="color:var(--ink)">View Only</b>. You can browse folders and inspect shops, but adding or editing is turned off.</span></div>` : ''}`;
 
-    <!-- DIRECTORY TAB -->
-    <div class="work" id="view-directory">
+  if (st.tab === 'directory') {
+    const activeProv = st.folder !== 'ALL' ? (FOLDERS.find((f) => f.kec === st.folder)?.prov || 'JAWA BARAT') : st.prov;
+    html += `<div class="work">
       <aside class="list">
         <div class="crumb-bar">
-          <button type="button" class="crumb-btn" onclick="setLevel('ALL')">Indonesia</button><span>›</span>
-          <button type="button" class="crumb-btn" onclick="setLevel('JAWA BARAT')">JAWA BARAT</button><span>›</span>
-          <button type="button" class="crumb-btn on" id="activeCrumb">BANDUNG (4)</button>
+          <button type="button" class="crumb-btn ${st.prov === 'ALL' && st.folder === 'ALL' ? 'on' : ''}" data-act="crumb-all">Indonesia</button><span>›</span>
+          ${activeProv !== 'ALL'
+            ? `<button type="button" class="crumb-btn ${st.folder === 'ALL' ? 'on' : ''}" data-act="crumb-prov" data-prov="${esc(activeProv)}">${esc(activeProv)}</button>${st.folder !== 'ALL' ? `<span>›</span><span class="crumb-btn on">${esc(st.folder)}</span>` : ''}`
+            : `<button type="button" class="crumb-btn" data-act="crumb-prov" data-prov="JAWA BARAT">Jawa Barat</button><span>·</span><button type="button" class="crumb-btn" data-act="crumb-prov" data-prov="JAWA TENGAH">Jawa Tengah</button>`}
           <span style="flex:1"></span>
-          <button type="button" class="btn xs quiet admin-only" onclick="alert('New Kecamatan folder created under active Kabupaten')">+ Folder</button>
-          <button type="button" class="btn xs quiet admin-only" title="Rename or reset folder" onclick="toggleFolderActs()"><svg class="i"><use href="#more"/></svg></button>
+          ${boss ? `<button type="button" class="btn xs quiet" data-act="add-folder"><svg class="i" style="width:12px;height:12px"><use href="#i-plus"/></svg>Folder</button>
+          <button type="button" class="btn xs quiet" data-act="toggle-folder-acts" aria-label="Folder actions"><svg class="i"><use href="#i-more"/></svg></button>` : ''}
         </div>
-        <div id="folderActsRow" style="display:none;padding:6px 14px;gap:6px;background:var(--inset);border-bottom:1px solid var(--line)">
-          <button type="button" class="btn xs quiet" style="flex:1">Rename Folder</button>
-          <button type="button" class="btn xs danger" style="flex:1">Reset to Unknown</button>
+        ${boss && st.folderActs ? `<div class="folder-acts">
+          <button type="button" class="btn xs quiet" style="flex:1" data-act="ren-folder"><svg class="i" style="width:12px;height:12px"><use href="#i-edit"/></svg>Rename ${st.folder === 'ALL' ? 'MARGAHAYU' : esc(st.folder)}</button>
+          <button type="button" class="btn xs danger" style="flex:1" data-act="del-folder"><svg class="i" style="width:12px;height:12px"><use href="#i-trash"/></svg>Reset to Unknown</button>
+        </div>` : ''}
+        <div class="folder-strip">
+          ${folders.map((f) => {
+            const fShops = SHOPS.filter((s) => s.kec === f.kec);
+            const pnd = fShops.filter((s) => s.status === 'PENDING').length;
+            return `<button type="button" class="fchip ${st.folder === f.kec ? 'on' : ''}" data-folder="${esc(f.kec)}">
+              <svg class="i" style="width:13px;height:13px"><use href="#i-folder"/></svg>${esc(f.kec)} <span class="cnt">${fShops.length}</span>
+              ${pnd ? `<span class="pnd"><svg class="i" style="width:11px;height:11px"><use href="#i-clock"/></svg>${pnd}</span>` : ''}
+            </button>`;
+          }).join('')}
         </div>
-        <div class="folder-strip" id="folderStrip">
-          <button type="button" class="fchip on" onclick="pickFolder('MARGAHAYU',this)"><svg class="i" style="width:13px;height:13px"><use href="#folder"/></svg>MARGAHAYU <span class="cnt">14</span></button>
-          <button type="button" class="fchip" onclick="pickFolder('SOREANG',this)"><svg class="i" style="width:13px;height:13px"><use href="#folder"/></svg>SOREANG <span class="cnt">11</span> <span class="pnd">1⏳</span></button>
-          <button type="button" class="fchip" onclick="pickFolder('CILILIN',this)"><svg class="i" style="width:13px;height:13px"><use href="#folder"/></svg>CILILIN <span class="cnt">6</span></button>
-          <button type="button" class="fchip" onclick="pickFolder('MUNTILAN',this)"><svg class="i" style="width:13px;height:13px"><use href="#folder"/></svg>MUNTILAN <span class="cnt">22</span></button>
+        <div class="rows">
+          ${list.length ? list.map((s) => {
+            const sel = ph ? st.openPhone === s.id : st.sel === s.id;
+            let row = `<button type="button" class="r ${sel ? 'sel' : ''}" data-row="${s.id}">
+              <div class="thumb">${iniOf(s.name)}</div>
+              <div style="min-width:0">
+                <div class="n">${esc(s.name)}</div>
+                <div class="subr">${esc(s.kec)}, ${esc(s.kab)} · PIC: ${esc(s.pic)}</div>
+              </div>
+              <div class="right">
+                <span class="badge ${s.tier === 'Epic' || s.grosirAsk ? 'gold' : ''}">${s.grosirAsk ? 'Grosir?' : esc(s.price)}${s.tier === 'Epic' ? ' · Epic' : ''}</span>
+                <span class="badge ${s.ov === 'OVERDUE' || s.status === 'PENDING' ? 'bad' : ''}">${s.status === 'PENDING' ? 'PENDING' : esc(s.ov)}</span>
+              </div>
+            </button>`;
+            if (ph && st.openPhone === s.id) row += `<div class="under">${handContent(s, st, true)}${handActions(s, st, true)}</div>`;
+            return row;
+          }).join('') : `<div style="padding:36px 16px;text-align:center;color:var(--ink-dim);font-size:12.5px">No shops match this filter.</div>`}
         </div>
-        <div class="rows" id="shopRows"></div>
       </aside>
-
-      <section class="hand" id="handPane"></section>
-    </div>
-
-    <!-- APPROVALS TAB -->
-    <div class="subpage" id="view-approvals" style="display:none">
+      ${!ph ? `<section class="hand">${(() => {
+        const s = SHOPS.find((x) => x.id === st.sel) || list[0];
+        return s ? `<div class="hand-scroll fade">${handContent(s, st, false)}</div>${handActions(s, st, false)}` : '';
+      })()}</section>` : ''}
+    </div>`;
+  } else if (st.tab === 'approvals') {
+    html += `<div class="subpage">
       <div class="box">
-        <div class="box-h"><span>Grosir Requests · 1 waiting</span><span>grantsGrosir (T1–T4)</span></div>
-        <div class="box-r">
-          <div style="flex:1;min-width:220px">
-            <div style="font-weight:700;font-size:14px">ANEKA BARU PANJI</div>
-            <div style="font-size:11.5px;color:var(--ink-dim)">MARGAHAYU · BANDUNG · asked by Dika Saputra · sells at Retail now</div>
+        <div class="box-h"><span>Grosir Requests · ${kpi.grosirAsks.length} waiting</span><span>grantsGrosir (T1–T4)</span></div>
+        ${kpi.grosirAsks.length ? kpi.grosirAsks.map((c) => `<div class="box-r">
+          <div style="flex:1;min-width:200px">
+            <div style="font-weight:700;font-size:14px">${esc(c.name)}</div>
+            <div style="font-size:11.5px;color:var(--ink-dim)">${esc(c.kec)} · ${esc(c.kab)} · asked by ${esc(c.noo)} · sells at ${esc(c.price)} now</div>
           </div>
-          <button type="button" class="btn sm quiet">Keep Retail</button>
-          <button type="button" class="btn sm">Confirm Grosir</button>
-        </div>
+          <button type="button" class="btn sm quiet" data-act="grosir-no" data-id="${c.id}">Keep ${esc(c.price)}</button>
+          <button type="button" class="btn sm" data-act="grosir-yes" data-id="${c.id}"><svg class="i"><use href="#i-check"/></svg>Confirm Grosir</button>
+        </div>`).join('') : `<div class="box-r" style="color:var(--ink-dim);font-size:12.5px">All Grosir requests have been decided.</div>`}
       </div>
 
       <div class="box">
-        <div class="box-h"><span>Shops Waiting for a Salesman · 2</span><span>no package until assigned</span></div>
-        <div class="box-r">
-          <div style="flex:1;min-width:220px">
-            <div style="font-weight:700;font-size:14px">WARUNG SUMBER REJEKI</div>
-            <div style="font-size:11.5px;color:var(--ink-dim)">SOREANG · BANDUNG · added by Sri Rahayu · Grosir also requested above</div>
-          </div>
-          <select class="inp" style="width:175px"><option>Choose salesman...</option><option selected>Dika Saputra</option><option>Ujang Pratama</option></select>
-          <button type="button" class="btn sm">Give</button>
-        </div>
-        <div class="box-r">
-          <div style="flex:1;min-width:220px">
-            <div style="font-weight:700;font-size:14px">TOKO HARAPAN JAYA</div>
-            <div style="font-size:11.5px;color:var(--ink-dim)">MUNTILAN · MAGELANG · added by Agus Salim</div>
-          </div>
-          <select class="inp" style="width:175px"><option value="">Choose salesman...</option><option>Budi Santoso</option><option>Sri Rahayu</option></select>
-          <button type="button" class="btn sm">Give</button>
-        </div>
+        <div class="box-h"><span>Shops Waiting for a Salesman · ${kpi.ownerAsks.length}</span><span>no package until assigned</span></div>
+        ${kpi.ownerAsks.length ? kpi.ownerAsks.map((c) => {
+          const picked = st.ownerPick[c.id] || ROSTER[0];
+          return `<div class="box-r">
+            <div style="flex:1;min-width:200px">
+              <div style="font-weight:700;font-size:14px">${esc(c.name)}</div>
+              <div style="font-size:11.5px;color:var(--ink-dim)">${esc(c.kec)} · ${esc(c.kab)} · added by ${esc(c.noo)}${c.grosirAsk ? ' · Grosir also requested above' : ''}</div>
+            </div>
+            <select class="inp" style="width:165px" data-f="owner-pick" data-id="${c.id}" aria-label="Salesman for ${esc(c.name)}">
+              ${ROSTER.map((r) => `<option value="${esc(r)}" ${picked === r ? 'selected' : ''}>${esc(r)}</option>`).join('')}
+            </select>
+            <button type="button" class="btn sm" data-act="give-agent" data-id="${c.id}"><svg class="i"><use href="#i-check"/></svg>Give</button>
+          </div>`;
+        }).join('') : `<div class="box-r" style="color:var(--ink-dim);font-size:12.5px">Every shop has a responsible salesman assigned.</div>`}
       </div>
-    </div>
-
-    <!-- ADMIN TOOLS TAB -->
-    <div class="subpage" id="view-tools" style="display:none">
+    </div>`;
+  } else if (st.tab === 'tools') {
+    const visDups = DUPS.filter((g) => G.showIgnoredDups || !G.ignoredDups.has(g.id)).filter((g) => g.members.length > 1);
+    html += `<div class="subpage">
       <div class="tools-grid">
-        <div class="tcard">
-          <h4>Repair 2 Store Tiers</h4>
-          <p>Copies legacy <code>pricingTier</code> to <code>priceTier</code> without deleting or merging stores. Hidden once repaired.</p>
-          <button type="button" class="btn sm">Run Tier Repair</button>
-        </div>
+        ${G.tierBroken > 0 ? `<div class="tcard">
+          <h4>Repair ${G.tierBroken} Store Tiers</h4>
+          <p>Copies legacy <code>pricingTier</code> to <code>priceTier</code> without deleting or merging stores.</p>
+          <button type="button" class="btn sm" data-act="repair-tiers">Run Tier Repair</button>
+        </div>` : ''}
         <div class="tcard">
           <h4>Find Duplicates</h4>
-          <p>Scans identical names or pins within 40 m. Remembers "Not duplicates" groups in Firestore.</p>
-          <button type="button" class="btn sm">Scan Now (2 groups)</button>
+          <p>Scans identical names or pins within 40 m. Remembers "Not duplicates" in Firestore.</p>
+          <button type="button" class="btn sm" data-act="scan-dups"><svg class="i"><use href="#i-search"/></svg>Scan Now (${visDups.length} groups)</button>
         </div>
         <div class="tcard">
           <h4>Data Scrub</h4>
-          <p>Fills empty Prov/Kab/Kec from map borders (<code>areaFromPin</code>) then address words; typed areas stay untouched.</p>
-          <button type="button" class="btn sm quiet">Preview Scrub</button>
+          <p>Fills empty Prov/Kab/Kec from map borders (<code>areaFromPin</code>) then address words.</p>
+          <button type="button" class="btn sm quiet" data-act="scrub">${G.scrubbed ? 'Scrubbed Clean' : 'Preview Scrub'}</button>
         </div>
         <div class="tcard">
           <h4>Import Map Marker</h4>
           <p>Creates pins from <code>.kml</code> using chunked batches; drops into Unassigned pool.</p>
-          <button type="button" class="btn sm quiet">Choose .kml</button>
+          <button type="button" class="btn sm quiet" data-act="import-kml"><svg class="i"><use href="#i-folder"/></svg>Choose .kml</button>
         </div>
       </div>
 
       <div class="box">
-        <div class="box-h"><span>Duplicate Report · 2 possible duplicates (read-only until you act)</span><span style="color:var(--ink-dim);font-weight:500">1 group cleared previously</span></div>
-        <div class="box-r" style="flex-direction:column;align-items:stretch;gap:8px">
-          <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--accent-ink)">
-            <span>2 copies · matched by name and location · 12 m apart</span>
-            <button type="button" class="btn xs quiet">✓ Not duplicates</button>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--hair)">
-            <b>AMANAH BARU</b>
-            <span class="badge">📍 MARGAHAYU, BANDUNG</span>
-            <span class="badge gold">oldest — likely original</span>
-            <span style="font-size:11.5px;color:var(--ink-dim)">24 Jun 2026 · demo-agent-1 · 📁 Folder 1</span>
-            <span style="flex:1"></span>
-            <button type="button" class="btn xs quiet" onclick="openModal(SHOPS[0])">Edit</button>
-            <button type="button" class="btn xs danger">Delete</button>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--hair)">
-            <b>AMANAH BARU</b>
-            <span class="badge">📍 -6.9654, 107.5759</span>
-            <span class="badge gold">12 m from oldest</span>
-            <span style="font-size:11.5px;color:var(--ink-dim)">15 Nov 2026 · unassigned</span>
-            <span style="flex:1"></span>
-            <button type="button" class="btn xs quiet" onclick="openModal(SHOPS[0])">Edit</button>
-            <button type="button" class="btn xs danger">Delete</button>
-          </div>
+        <div class="box-h">
+          <span>Duplicate Report · ${visDups.length} possible duplicate group${visDups.length === 1 ? '' : 's'}</span>
+          <span>
+            ${G.ignoredDups.size > 0 ? `${G.ignoredDups.size} cleared · <button type="button" class="link-btn" data-act="toggle-ignored">${G.showIgnoredDups ? 'Hide them' : 'Show them'}</button> · <button type="button" class="link-btn" data-act="reset-ignored">Bring all back</button>` : 'read-only until you act'}
+          </span>
         </div>
-        <div class="box-r" style="flex-direction:column;align-items:stretch;gap:6px">
-          <div style="padding:7px 10px;border-left:3px solid var(--accent-edge);background:var(--sel);font-size:11.5px">
-            <b>Probably NOT duplicates.</b> Same name only, and 14.5 km apart. Open them before deleting anything.
+        ${visDups.length ? visDups.map((g) => `<div class="box-r" style="flex-direction:column;align-items:stretch;gap:8px;${G.ignoredDups.has(g.id) ? 'opacity:.6' : ''}">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--accent-ink);flex-wrap:wrap">
+            <span>${g.members.length} copies · matched by ${esc(g.reason)} · ${esc(g.dist)}</span>
+            ${G.ignoredDups.has(g.id)
+              ? `<span style="color:var(--ink-dim);text-transform:none">— marked not duplicates</span>`
+              : `<button type="button" class="btn xs quiet" data-act="not-dup" data-gid="${g.id}"><svg class="i" style="width:12px;height:12px"><use href="#i-check"/></svg>Not duplicates</button>`}
           </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <b>WARUNG SUMBER REJEKI</b>
-            <span class="badge">📍 SOREANG, BANDUNG</span>
+          ${g.far ? `<div style="padding:7px 10px;border-left:3px solid var(--accent-edge);background:var(--sel);font-size:11.5px">
+            <b>Probably NOT duplicates.</b> Same name only, and ${esc(g.dist)}. Open them before deleting anything.
+          </div>` : ''}
+          ${g.members.map((m) => `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--hair)">
+            <b>${esc(m.name)}</b>
+            <span class="badge"><svg class="i" style="width:11px;height:11px"><use href="#i-pin"/></svg>${esc(m.place)}</span>
+            <span class="badge gold">${esc(m.tag)}</span>
+            <span style="font-size:11.5px;color:var(--ink-dim)">${esc(m.date)} · ${esc(m.agent)} · ${esc(m.folder)}</span>
             <span style="flex:1"></span>
-            <button type="button" class="btn xs quiet">✓ Not duplicates</button>
-            <button type="button" class="btn xs quiet">Edit</button>
-          </div>
-        </div>
+            <button type="button" class="btn xs quiet" data-act="dup-edit" data-id="${m.id}"><svg class="i" style="width:12px;height:12px"><use href="#i-edit"/></svg>Edit</button>
+            <button type="button" class="btn xs danger" data-act="del-dup" data-gid="${g.id}" data-mid="${m.id}"><svg class="i" style="width:12px;height:12px"><use href="#i-trash"/></svg>Delete</button>
+          </div>`).join('')}
+        </div>`).join('') : `<div class="box-r" style="color:var(--ink-dim);font-size:12.5px">Checked all ${SHOPS.length} stores. Nothing left to review.</div>`}
       </div>
-    </div>
-  </div>
+    </div>`;
+  }
 
-  <!-- ADD / EDIT CUSTOMER PORTAL MODAL PREVIEW -->
-  <div class="modal-wrap" id="modalWrap" onclick="if(event.target===this)closeModal()">
-    <div class="modal" role="dialog" aria-label="Edit Customer">
+  html += `</div>`;
+  if (st.modal) html += st.modal(st);
+  el.innerHTML = html;
+  const sc = el.querySelector('.rows, .subpage');
+  if (sc) sc.scrollTop = scroll;
+  settleRolls(el);
+  st.grown = true;
+}
+
+function handContent(s, st, ph) {
+  const ro = G.role === 'view';
+  const head = ph ? '' : `<div class="ph">
+      <div class="big"><svg class="i" style="width:22px;height:22px"><use href="#i-store"/></svg></div>
+      <div style="min-width:0;flex:1">
+        <h3>${esc(s.name)}</h3>
+        <p>${esc(s.prov)} · ${esc(s.kab)} · ${esc(s.kec)} · status: <b>${esc(s.status)}</b></p>
+      </div>
+      <span class="badge ${s.ov === 'OVERDUE' ? 'bad' : 'gold'}" style="font-size:11px;padding:4px 9px">${esc(s.ov)}</span>
+    </div>`;
+  return `${head}
+    <div class="chips">
+      <span class="chip">T3/T4 PIC: <b>${esc(s.pic)}</b></span>
+      <span class="chip">NOO By: <b>${esc(s.noo)}</b></span>
+      <span class="chip">Map Tier: <b>${esc(s.tier)}</b></span>
+      <span class="chip">Price Tier: <b>${esc(s.price)}</b>${s.grosirAsk ? ' · <span style="color:var(--accent-ink)">Grosir asked</span>' : ''}</span>
+      <span class="chip">Visit Rhythm: <b>Every ${s.freq}d</b></span>
+      <span class="chip">Last Visit: <b>${esc(s.last || 'None')}</b></span>
+      <span class="chip">WhatsApp: <b>${esc(s.phone)}</b></span>
+    </div>
+    <div class="split2">
+      <div class="card">
+        <div class="card-h"><span>Location &amp; Pin</span><span>${st.streetMode ? 'Street View' : 'Exact GPS'}</span></div>
+        <div class="mapbox ${st.streetMode ? '' : 'gridbg'}">
+          ${st.streetMode
+            ? `<svg viewBox="0 0 220 74" width="100%" height="68" aria-label="Street View preview"><rect x="18" y="16" width="184" height="54" rx="4" fill="var(--panel)" stroke="var(--line-2)"/><rect x="38" y="34" width="54" height="36" fill="var(--ground)" stroke="var(--line-2)"/><rect x="108" y="32" width="72" height="24" fill="var(--wash)" stroke="var(--accent-edge)"/><text x="110" y="13" text-anchor="middle" font-size="9" font-weight="700" fill="var(--ink-dim)">STREET VIEW · ${esc(s.name)}</text></svg>`
+            : `<span class="pin-dot"><svg class="i" style="width:12px;height:12px"><use href="#i-pin"/></svg>${esc(s.gps)}</span>`}
+          <div style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:10.5px;color:var(--ink-dim)">${esc(s.kec)}</span>
+            <button type="button" class="btn xs quiet" data-act="toggle-street">${st.streetMode ? 'Map View' : 'Street View'}</button>
+          </div>
+        </div>
+        <div style="font-size:11.5px;color:var(--ink-dim)">${esc(s.addr)}</div>
+        <button type="button" class="btn sm quiet" style="width:100%" data-act="open-map" data-id="${s.id}"><svg class="i"><use href="#i-globe"/></svg>Open in Map Mission Control</button>
+      </div>
+      <div class="card">
+        <div class="card-h"><span>Competitor Intelligence (benchmarks)</span><span>${s.logs.length} logs</span></div>
+        ${!ro ? `<div class="bench-form">
+          <input class="inp" data-f="benchBrand" id="bb-${st.mode}" value="${esc(st.benchBrand)}" placeholder="Brand & Product">
+          <input class="inp" data-f="benchNotes" id="bn-${st.mode}" value="${esc(st.benchNotes)}" placeholder="Notes (Promo/Shelf)">
+          <input class="inp" data-f="benchPrice" id="bp-${st.mode}" value="${esc(st.benchPrice)}" placeholder="Price Rp" type="number">
+          <button type="button" class="btn sm" data-act="add-bench" data-id="${s.id}">Add Log</button>
+        </div>` : ''}
+        <table>
+          <thead><tr><th>Product / Brand</th><th>Perf</th><th class="tr-r">Price</th><th style="width:34px"></th></tr></thead>
+          <tbody>
+            ${s.logs.length ? s.logs.map((l) => `<tr>
+              <td><b>${esc(l.p)}</b><div style="font-size:10.5px;color:var(--ink-dim)">${esc(l.b)} · ${esc(l.n)}</div></td>
+              <td><span class="badge ${l.v === 'Slow Moving' ? 'bad' : ''}">${esc(l.v)}</span></td>
+              <td class="tr-r"><b>${rp(l.rp)}</b></td>
+              <td class="tr-r">${!ro ? `<button type="button" class="btn xs danger" data-kpm-del data-act="del-bench" data-id="${s.id}" data-bid="${l.id}" aria-label="Delete benchmark"><svg class="i"><use href="#i-trash"/></svg></button>` : ''}</td>
+            </tr>`).join('') : `<tr><td colspan="4" style="text-align:center;padding:18px 8px;color:var(--ink-dim)">No competitor benchmarks logged for this shop yet.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function handActions(s, st, ph) {
+  const ro = G.role === 'view', boss = G.role === 'boss';
+  return `<div class="act" style="${ph ? 'padding:8px 0 0;background:transparent' : ''}">
+    ${boss ? `<select class="inp" style="width:152px" data-f="move-kec" data-id="${s.id}" aria-label="Move Kecamatan">
+      ${FOLDERS.map((f) => `<option value="${esc(f.kec)}" ${s.kec === f.kec ? 'selected' : ''}>${esc(f.kec)}</option>`).join('')}
+      <option value="CREATE_NEW">+ New Folder...</option>
+    </select>` : ''}
+    ${boss && s.status === 'PENDING' ? `<button type="button" class="btn sm" data-act="verify-noo" data-id="${s.id}"><svg class="i"><use href="#i-check"/></svg>Verify NOO</button>` : ''}
+    ${!ro ? `<button type="button" class="btn sm quiet" data-act="edit-shop" data-id="${s.id}"><svg class="i"><use href="#i-edit"/></svg>Edit Shop</button>` : ''}
+    <span class="sp"></span>
+    ${boss ? `<button type="button" class="btn sm danger" data-act="del-shop" data-id="${s.id}"><svg class="i"><use href="#i-trash"/></svg>Delete</button>` : (ro ? '<span style="font-size:11.5px;color:var(--ink-dim)">Read-only mode</span>' : '')}
+  </div>`;
+}
+
+/* ---------- in-page modals (never alert/confirm/prompt) ---------- */
+const M = {
+  editShop: () => (st) => {
+    const f = st.form;
+    return `<div class="ov"><div class="dlg" role="dialog" aria-label="${f.id ? 'Edit Customer' : 'Add New Customer'}">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <h3 style="margin:0;font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-dim)" id="modalTitle">Edit Customer</h3>
-        <button type="button" class="btn xs quiet" onclick="closeModal()">Cancel edit</button>
+        <h4>${f.id ? 'Edit Customer · ' + esc(f.name) : 'Add New Customer'}</h4>
+        <button type="button" class="btn xs quiet" data-act="close">${f.id ? 'Cancel edit' : 'Close'}</button>
       </div>
       <div class="fgrid">
-        <div><label>Store Name</label><input class="inp" id="mName" value="AMANAH BARU"></div>
-        <div><label>Phone (WhatsApp)</label><input class="inp" value="0812 3456 7890"></div>
+        <label>Store Name<input class="inp" data-m="name" id="m-name-${st.mode}" value="${esc(f.name)}"></label>
+        <label>Phone (WhatsApp)<input class="inp" data-m="phone" value="${esc(f.phone)}" placeholder="0812 3456 7890"></label>
       </div>
-      <div class="fgrid" style="grid-template-columns:repeat(5,1fr)">
-        <div><label>Map Pin Tier</label><select class="inp"><option>Epic</option><option selected>Unranked</option><option>Silver</option></select></div>
-        <div><label style="color:var(--accent-ink)">Pricing Type</label><select class="inp"><option>Retail</option><option>Grosir</option><option>Ecer</option></select></div>
-        <div><label>T3/T4 PIC</label><input class="inp" value="Budi Santoso"></div>
-        <div><label>Last Visit</label><input class="inp" type="date" value="2026-11-11"></div>
-        <div><label>Store Photo</label><button type="button" class="btn sm quiet" style="width:100%" data-guide="photo"><svg class="i"><use href="#cam"/></svg>Upload</button></div>
+      <div class="fgrid five" style="grid-template-columns:repeat(5,1fr)">
+        <label>Map Pin Tier<select class="inp" data-m="tier">${['Unranked', 'Silver', 'Epic'].map((t) => `<option ${f.tier === t ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+        <label style="color:var(--accent-ink)">Pricing Type<select class="inp" data-m="price">${['Retail', 'Grosir', 'Ecer'].map((p) => `<option ${f.price === p ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
+        <label>T3/T4 PIC<input class="inp" data-m="pic" value="${esc(f.pic)}" placeholder="Salesman name"></label>
+        <label>Last Visit<input class="inp" type="date" data-m="last" value="${esc(f.last)}"></label>
+        <label>Store Photo<button type="button" class="btn sm ${f.hasPhoto ? '' : 'quiet'}" style="width:100%;height:34px" data-guide="photo" data-act="toggle-photo"><svg class="i"><use href="#i-cam"/></svg>${f.hasPhoto ? 'Photo Ready' : 'Upload'}</button></label>
       </div>
       <div style="border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--inset);display:flex;flex-direction:column;gap:8px">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <span style="font-size:12px;font-weight:700"><svg class="i" style="vertical-align:-3px;color:var(--accent-ink)"><use href="#pin"/></svg> Location &amp; Street View</span>
-          <div style="display:flex;gap:6px"><button type="button" class="btn xs">Auto-Find</button><button type="button" class="btn xs quiet">My GPS</button></div>
-        </div>
-        <div class="fgrid" style="grid-template-columns:1fr 1fr 1fr">
-          <div><label>Provinsi</label><input class="inp" value="JAWA BARAT"></div>
-          <div><label>Kabupaten</label><input class="inp" value="BANDUNG"></div>
-          <div><label>Kecamatan</label><input class="inp" value="MARGAHAYU"></div>
-        </div>
-        <div><label style="font-size:10px;font-weight:700;color:var(--ink-dim)">Address &amp; Notes</label><input class="inp" style="width:100%" value="Jl. Kopo Bihbul No. 42, sebelah minimarket"></div>
-        <div class="fgrid">
-          <div><label>GPS Coordinates (Required)</label><input class="inp" style="font-family:monospace" value="-6.965387, 107.575909"></div>
-          <div><label>Street View Link / Embed</label><input class="inp" placeholder="Google Maps URL or iframe"></div>
-        </div>
-      </div>
-      <div style="display:flex;justify-content:flex-end;gap:8px">
-        <button type="button" class="btn quiet" onclick="closeModal()">Close</button>
-        <button type="button" class="btn" onclick="closeModal()">Update Profile</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- PHONES -->
-<p class="cap">Phone (390×844) · 1: Directory + Under-Row Drawer + MoreKey · 2: Grosir &amp; Agents + Edit Sheet</p>
-<div class="phones">
-  <div class="frame phone">
-    <div class="app">
-      <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
-      <div class="hd">
-        <h2>Customer Directory</h2>
-        <span style="flex:1"></span>
-        <button type="button" class="btn xs">+ Add</button>
-      </div>
-      <div style="padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;gap:6px">
-        <div class="search" style="flex:1;height:32px"><svg class="i"><use href="#search"/></svg><input style="width:100%" placeholder="Search stores..."></div>
-        <button type="button" class="btn sm quiet">Admin ▾</button>
-      </div>
-      <div class="crumb-bar" style="padding:6px 14px">Indonesia › BANDUNG › <b style="color:var(--accent-ink)">MARGAHAYU</b> <span style="flex:1"></span> <button type="button" class="btn xs quiet"><svg class="i"><use href="#more"/></svg></button></div>
-      <div class="rows">
-        <div class="r sel">
-          <div class="thumb">AB</div>
-          <div style="min-width:0">
-            <div class="n">AMANAH BARU</div>
-            <div class="subr">PIC: Budi · NOO: demo-agent-1</div>
-          </div>
-          <div class="right"><span class="badge">Retail</span><span class="badge bad">OVERDUE</span></div>
-        </div>
-        <!-- Under-row inline drawer -->
-        <div class="under">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:11px;color:var(--ink-dim)">Exact GPS · Unranked · Every 7d</span>
-            <span class="badge gold">Grosir?</span>
-          </div>
-          <div style="border-top:1px solid var(--hair);padding-top:6px;font-size:11.5px;display:flex;justify-content:space-between">
-            <span>Competitor Kretek 12 · eye-level</span><b>Rp 11.000</b>
-          </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+          <span style="font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px"><svg class="i" style="color:var(--accent-ink)"><use href="#i-pin"/></svg>Location &amp; Street View</span>
           <div style="display:flex;gap:6px">
-            <button type="button" class="btn sm" style="flex:1">Add Log</button>
-            <button type="button" class="btn sm quiet">Map</button>
-            <button type="button" class="btn sm quiet">Edit</button>
-            <button type="button" class="btn sm quiet"><svg class="i"><use href="#more"/></svg></button>
+            <button type="button" class="btn xs" data-act="auto-find"><svg class="i" style="width:12px;height:12px"><use href="#i-search"/></svg>Auto-Find</button>
+            <button type="button" class="btn xs quiet" data-act="my-gps"><svg class="i" style="width:12px;height:12px"><use href="#i-pin"/></svg>My GPS</button>
           </div>
         </div>
-        <div class="r">
-          <div class="thumb">AN</div>
-          <div style="min-width:0">
-            <div class="n">ANEKA BARU PANJI</div>
-            <div class="subr">PIC: Budi · MARGAHAYU</div>
-          </div>
-          <div class="right"><span class="badge">Retail</span><span class="badge">2d left</span></div>
+        <div class="fgrid three" style="grid-template-columns:1fr 1fr 1fr">
+          <label>Provinsi<input class="inp" data-m="prov" value="${esc(f.prov)}" placeholder="JAWA BARAT"></label>
+          <label>Kabupaten<input class="inp" data-m="kab" value="${esc(f.kab)}" placeholder="BANDUNG"></label>
+          <label>Kecamatan<input class="inp" data-m="kec" value="${esc(f.kec)}" placeholder="MARGAHAYU"></label>
         </div>
-        <div class="r">
-          <div class="thumb">HQ</div>
-          <div style="min-width:0">
-            <div class="n">HQ TEST</div>
-            <div class="subr">PIC: Unassigned · NOO: Admin</div>
-          </div>
-          <div class="right"><span class="badge gold">Epic</span><span class="badge bad">OVERDUE</span></div>
-        </div>
-        <div class="r">
-          <div class="thumb">WR</div>
-          <div style="min-width:0">
-            <div class="n">WARUNG SUMBER REJEKI</div>
-            <div class="subr">Needs salesman · NOO: Sri</div>
-          </div>
-          <div class="right"><span class="badge gold">PENDING</span></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="frame phone">
-    <div class="app">
-      <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
-      <div class="hd"><h2>Grosir &amp; Agents</h2></div>
-      <nav class="tabs" style="padding-top:6px"><button type="button" class="tab">Directory</button><button type="button" class="tab on">Approvals <span class="pill-n">3</span></button></nav>
-      <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
-        <div class="box">
-          <div class="box-h"><span>Grosir Request</span><span>1</span></div>
-          <div class="box-r" style="flex-direction:column;align-items:stretch;gap:7px">
-            <div><b>ANEKA BARU PANJI</b><div style="font-size:11px;color:var(--ink-dim)">asked by Dika · sells Retail now</div></div>
-            <div style="display:flex;gap:6px"><button type="button" class="btn sm quiet" style="flex:1">Keep Retail</button><button type="button" class="btn sm" style="flex:1">Confirm Grosir</button></div>
-          </div>
-        </div>
-        <div class="box">
-          <div class="box-h"><span>Needs Salesman</span><span>2</span></div>
-          <div class="box-r" style="flex-direction:column;align-items:stretch;gap:7px">
-            <div><b>WARUNG SUMBER REJEKI</b><div style="font-size:11px;color:var(--ink-dim)">SOREANG · added by Sri</div></div>
-            <div style="display:flex;gap:6px"><select class="inp" style="flex:1"><option>Dika Saputra</option></select><button type="button" class="btn sm">Give</button></div>
-          </div>
-        </div>
-      </div>
-      <div class="sheet-dim"></div>
-      <div class="sheet">
-        <div class="grab"></div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <b style="font-size:13px;text-transform:uppercase;letter-spacing:.05em">Edit · AMANAH BARU</b>
-          <button type="button" class="btn xs quiet">Cancel</button>
-        </div>
+        <label style="display:flex;flex-direction:column;gap:3px;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-dim)">Address &amp; Internal Notes<input class="inp" style="width:100%;height:34px" data-m="addr" value="${esc(f.addr)}" placeholder="Street address or landmark..."></label>
         <div class="fgrid">
-          <div><label>Store Name</label><input class="inp" value="AMANAH BARU"></div>
-          <div><label>Phone</label><input class="inp" value="0812 3456 7890"></div>
-          <div><label>Price Tier</label><select class="inp"><option>Retail</option><option>Grosir</option></select></div>
-          <div><label>Photo</label><button type="button" class="btn sm quiet" style="width:100%;height:34px" data-guide="photo"><svg class="i"><use href="#cam"/></svg>Upload</button></div>
+          <label>GPS Coordinates (Compulsory)<input class="inp" style="font-family:monospace" data-m="gps" value="${esc(f.gps)}" placeholder="-6.9654, 107.5759"></label>
+          <label>Street View Link / Embed<input class="inp" data-m="embed" value="${esc(f.embed)}" placeholder="Paste Google Maps link..."></label>
         </div>
-        <div style="display:flex;gap:6px"><button type="button" class="btn sm" style="flex:1">Auto-Find</button><button type="button" class="btn sm quiet" style="flex:1">My GPS</button></div>
-        <div class="fgrid" style="grid-template-columns:1fr 1fr 1fr">
-          <div><label>Prov</label><input class="inp" value="JAWA BARAT"></div>
-          <div><label>Kab</label><input class="inp" value="BANDUNG"></div>
-          <div><label>Kec</label><input class="inp" value="MARGAHAYU"></div>
-        </div>
-        <button type="button" class="btn" style="width:100%;height:40px">Update Profile</button>
       </div>
-    </div>
-  </div>
-</div>
-
-<script>
-const SHOPS = [
-  { id:'1', name:'AMANAH BARU', prov:'JAWA BARAT', kab:'BANDUNG', kec:'MARGAHAYU', tier:'Unranked', price:'Retail', grosirAsk:false, status:'APPROVED', pic:'Budi Santoso', noo:'demo-agent-1', freq:7, last:'2026-11-08', ov:'OVERDUE', gps:'-6.9654, 107.5759', phone:'0812-3456-7890', addr:'Jl. Kopo Bihbul No. 42 · Folder 1', logs:[{d:'2026-11-10',b:'Competitor',p:'Kretek 12',v:'High Sales',n:'eye-level rack',rp:'Rp 11.000'},{d:'2026-11-03',b:'Competitor',p:'Mild 16',v:'Medium',n:'promo poster',rp:'Rp 18.500'}] },
-  { id:'2', name:'ANEKA BARU PANJI', prov:'JAWA BARAT', kab:'BANDUNG', kec:'MARGAHAYU', tier:'Unranked', price:'Retail', grosirAsk:true, status:'APPROVED', pic:'Budi Santoso', noo:'Dika Saputra', freq:7, last:'2026-11-15', ov:'OK · 4d left', gps:'-6.9695, 107.5752', phone:'0813-2209-1122', addr:'Jl. Taman Kopo Indah II', logs:[{d:'2026-11-14',b:'Competitor',p:'Filter 12',v:'Slow Moving',n:'stock dusty',rp:'Rp 14.000'}] },
-  { id:'3', name:'Asyifa Mart Madura', prov:'JAWA TENGAH', kab:'MAGELANG', kec:'MUNTILAN', tier:'Unranked', price:'Retail', grosirAsk:false, status:'APPROVED', pic:'Agus Salim', noo:'Agus Salim', freq:7, last:'', ov:'OVERDUE', gps:'-7.5812, 110.2894', phone:'—', addr:'Jl. Pemuda No. 18, Muntilan', logs:[] },
-  { id:'4', name:'CEMERLANG', prov:'JAWA BARAT', kab:'BANDUNG', kec:'SOREANG', tier:'Unranked', price:'Retail', grosirAsk:false, status:'PENDING', pic:'Unassigned', noo:'Sri Rahayu', freq:7, last:'2026-11-11', ov:'OVERDUE', gps:'-7.0241, 107.5198', phone:'0857-9901-3344', addr:'Pasar Soreang Blok B', logs:[] },
-  { id:'5', name:'HQ TEST', prov:'JAWA TENGAH', kab:'MAGELANG', kec:'MUNTILAN', tier:'Epic', price:'Retail', grosirAsk:false, status:'APPROVED', pic:'T1 Owner', noo:'Admin', freq:7, last:'', ov:'OVERDUE', gps:'-7.5801, 110.2910', phone:'0811-0000-1111', addr:'Master HQ Yard', logs:[] },
-  { id:'6', name:'HQ (RETAIL) 1', prov:'JAWA BARAT', kab:'BANDUNG', kec:'CILILIN', tier:'Unranked', price:'Grosir', grosirAsk:false, status:'APPROVED', pic:'Ujang Pratama', noo:'Admin', freq:14, last:'2026-11-14', ov:'OK · 10d left', gps:'-6.9491, 107.4581', phone:'0812-8877-6655', addr:'Jl. Raya Cililin No. 9', logs:[] }
-];
-let selId = '1', roleMode = 'boss', activeFolder = 'ALL';
-
-function setTheme(t){
-  document.documentElement.setAttribute('data-theme', t);
-  document.getElementById('th-dark').setAttribute('aria-pressed', t==='dark');
-  document.getElementById('th-light').setAttribute('aria-pressed', t==='light');
-}
-function setLite(on){
-  document.documentElement.classList.toggle('lite-mode', on);
-  document.getElementById('lt-off').setAttribute('aria-pressed', !on);
-  document.getElementById('lt-on').setAttribute('aria-pressed', on);
-}
-function setRole(r){
-  roleMode = r;
-  document.getElementById('rl-boss').setAttribute('aria-pressed', r==='boss');
-  document.getElementById('rl-reg').setAttribute('aria-pressed', r==='regional');
-  document.getElementById('rl-view').setAttribute('aria-pressed', r==='view');
-  const ro = r==='view';
-  document.getElementById('viewOnlyNote').style.display = ro ? 'block' : 'none';
-  document.getElementById('pcAddBtn').style.display = ro ? 'none' : 'inline-flex';
-  document.getElementById('tabTools').style.display = r==='boss' ? 'inline-flex' : 'none';
-  document.getElementById('tabApprovals').style.display = ro ? 'none' : 'inline-flex';
-  document.querySelectorAll('.admin-only').forEach(e=>e.style.display = r==='boss' ? '' : 'none');
-  if(ro) setTab('directory');
-  renderHand();
-}
-function setTab(t){
-  ['directory','approvals','tools'].forEach(k=>{
-    document.getElementById('view-'+k).style.display = (k===t) ? (k==='directory'?'grid':'flex') : 'none';
-    const b = document.querySelector('.tab[data-tab="'+k+'"]');
-    if(b) b.classList.toggle('on', k===t);
-  });
-}
-function pickFolder(name, el){
-  activeFolder = (activeFolder === name) ? 'ALL' : name;
-  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('on'));
-  if(activeFolder !== 'ALL' && el) el.classList.add('on');
-  document.getElementById('activeCrumb').textContent = activeFolder === 'ALL' ? 'ALL KECAMATAN (6 shown)' : activeFolder;
-  renderList();
-}
-function setLevel(){ activeFolder='ALL'; document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('on')); renderList(); }
-function toggleFolderActs(){ const r=document.getElementById('folderActsRow'); r.style.display=r.style.display==='flex'?'none':'flex'; }
-function openModal(s){ const x=s||SHOPS.find(a=>a.id===selId); document.getElementById('modalTitle').textContent = s ? 'Edit · '+s.name : 'Edit Customer · '+(x?.name||'New'); document.getElementById('mName').value=x?.name||''; document.getElementById('modalWrap').classList.add('open'); }
-function closeModal(){ document.getElementById('modalWrap').classList.remove('open'); }
-
-function renderList(){
-  const q = (document.getElementById('pcSearch').value||'').toLowerCase().trim();
-  const list = SHOPS.filter(s => (activeFolder==='ALL' || s.kec===activeFolder) && (!q || (s.name+s.kab+s.kec+s.pic+s.noo).toLowerCase().includes(q)))
-    .sort((a,b)=>a.name.localeCompare(b.name,'id',{sensitivity:'base'}));
-  document.getElementById('shopRows').innerHTML = list.map(s => {
-    const ini = s.name.replace(/[^A-Za-z0-9 ]+/g,' ').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase() || 'ST';
-    return `
-    <div class="r ${s.id===selId?'sel':''}" onclick="selId='${s.id}';renderList();renderHand()">
-      <div class="thumb">${ini}</div>
-      <div style="min-width:0">
-        <div class="n">${s.name}</div>
-        <div class="subr">${s.kec}, ${s.kab} · PIC: ${s.pic}</div>
+      <div class="row">
+        <button type="button" class="btn quiet" data-act="close">Close</button>
+        <button type="button" class="btn" data-act="save-shop"><svg class="i"><use href="#i-check"/></svg>${f.id ? 'Update Profile' : 'Save Customer'}</button>
       </div>
-      <div class="right">
-        <span class="badge ${s.tier==='Epic'||s.grosirAsk?'gold':''}">${s.grosirAsk?'Grosir?':s.price}${s.tier==='Epic'?' · Epic':''}</span>
-        <span class="badge ${s.ov==='OVERDUE'||s.status==='PENDING'?'bad':''}">${s.status==='PENDING'?'PENDING':s.ov}</span>
-      </div>
-    </div>`;
-  }).join('');
+    </div></div>`;
+  },
+  delShop: (s) => () => `<div class="ov"><div class="dlg sm" role="alertdialog" aria-label="Delete customer profile">
+    <h4>Delete ${esc(s.name)}?</h4>
+    <p>${esc(s.kec)}, ${esc(s.kab)} · handled by <b>${esc(s.pic)}</b>. Its sales history stays in the ledger, and this removal is written to the audit log.</p>
+    <div class="row"><button type="button" class="btn quiet" data-act="close">Keep shop</button><button type="button" class="btn danger" data-act="confirm-del-shop" data-id="${s.id}"><svg class="i"><use href="#i-trash"/></svg>Delete profile</button></div>
+  </div></div>`,
+  delBench: (s, b) => () => `<div class="ov"><div class="dlg sm" role="alertdialog" aria-label="Delete benchmark log">
+    <h4>Delete this competitor log?</h4>
+    <p><b>${esc(b.p)}</b> (${esc(b.b)}) · ${rp(b.rp)} at ${esc(s.name)}.</p>
+    <div class="row"><button type="button" class="btn quiet" data-act="close">Keep log</button><button type="button" class="btn danger" data-act="confirm-del-bench" data-id="${s.id}" data-bid="${b.id}"><svg class="i"><use href="#i-trash"/></svg>Delete log</button></div>
+  </div></div>`,
+  addFolder: (targetShopId) => (st) => `<div class="ov"><div class="dlg sm" role="dialog" aria-label="New Kecamatan folder">
+    <h4>New Kecamatan folder</h4>
+    <p>Folder names are saved in capital letters so every shop in the same Kecamatan groups together.</p>
+    <label style="display:flex;flex-direction:column;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-dim)">Kecamatan Name<input class="inp" style="height:36px" data-f="promptVal" id="pv-${st.mode}" value="${esc(st.promptVal)}" placeholder="e.g. DAYEUHKOLOT"></label>
+    <div class="row"><button type="button" class="btn quiet" data-act="close">Cancel</button><button type="button" class="btn" data-act="confirm-add-folder" ${targetShopId ? `data-move="${targetShopId}"` : ''}><svg class="i"><use href="#i-check"/></svg>Create folder</button></div>
+  </div></div>`,
+  renFolder: (oldKec) => (st) => `<div class="ov"><div class="dlg sm" role="dialog" aria-label="Rename folder">
+    <h4>Rename "${esc(oldKec)}"</h4>
+    <p>Moves ${SHOPS.filter((s) => s.kec === oldKec).length} shop(s) in this folder using sequential chunked batches.</p>
+    <label style="display:flex;flex-direction:column;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-dim)">New Kecamatan Name<input class="inp" style="height:36px" data-f="promptVal" id="pv-${st.mode}" value="${esc(st.promptVal)}"></label>
+    <div class="row"><button type="button" class="btn quiet" data-act="close">Cancel</button><button type="button" class="btn" data-act="confirm-ren-folder" data-old="${esc(oldKec)}"><svg class="i"><use href="#i-check"/></svg>Rename folder</button></div>
+  </div></div>`,
+  delFolder: (kec) => () => `<div class="ov"><div class="dlg sm" role="alertdialog" aria-label="Reset folder">
+    <h4>Delete "${esc(kec)}" folder?</h4>
+    <p>Resets its ${SHOPS.filter((s) => s.kec === kec).length} shop(s) to <b>UNKNOWN KECAMATAN</b>. No shop profile or sales history is deleted.</p>
+    <div class="row"><button type="button" class="btn quiet" data-act="close">Keep folder</button><button type="button" class="btn danger" data-act="confirm-del-folder" data-kec="${esc(kec)}"><svg class="i"><use href="#i-trash"/></svg>Reset to Unknown</button></div>
+  </div></div>`,
+  delDup: (g, m) => () => `<div class="ov"><div class="dlg sm" role="alertdialog" aria-label="Delete duplicate store">
+    <h4>Delete duplicate "${esc(m.name)}"?</h4>
+    ${g.far ? `<p style="color:var(--danger-ink);font-weight:600">Warning: these only share a name and sit ${esc(g.dist)}.</p>` : ''}
+    <p>Location: <b>${esc(m.place)}</b> · registered ${esc(m.date)} · ${esc(m.agent)}. Its sales history stays in the database.</p>
+    <div class="row"><button type="button" class="btn quiet" data-act="close">Keep store</button><button type="button" class="btn danger" data-act="confirm-del-dup" data-gid="${g.id}" data-mid="${m.id}"><svg class="i"><use href="#i-trash"/></svg>Delete permanently</button></div>
+  </div></div>`,
+  scrub: () => () => `<div class="ov"><div class="dlg sm" role="dialog" aria-label="Enterprise Data Scrub">
+    <h4>Data Scrub · ${SHOPS.length} shops checked</h4>
+    <p>• <b>2 shops</b> get their Kecamatan from their map pin (<code>areaFromPin</code>)<br>• <b>1 shop</b> gets its Kabupaten from address words<br>• <b>0 shops</b> stay UNMAPPED<br>• A typed area is never replaced, only normalized to uppercase.</p>
+    <div class="row"><button type="button" class="btn quiet" data-act="close">Cancel</button><button type="button" class="btn" data-act="confirm-scrub"><svg class="i"><use href="#i-check"/></svg>Run Data Scrub</button></div>
+  </div></div>`,
+  kml: () => () => `<div class="ov"><div class="dlg sm" role="dialog" aria-label="Import Map Marker KML">
+    <h4>Import Map Marker (.kml)</h4>
+    <p>Found <b>2 valid GPS placemarks</b> in <code>bandung-selatan-pins.kml</code> (Folder: <b>BALEENDAH</b>). Each store lands in the Unassigned pool for regional assignment.</p>
+    <div class="row"><button type="button" class="btn quiet" data-act="close">Cancel</button><button type="button" class="btn" data-act="confirm-kml"><svg class="i"><use href="#i-check"/></svg>Import 2 Pins</button></div>
+  </div></div>`,
+};
+
+/* ---------- events ---------- */
+function refocus(el, id) {
+  const i = el.querySelector('#' + id);
+  if (i) { i.focus(); if (i.setSelectionRange && i.type !== 'number' && i.type !== 'date') i.setSelectionRange(i.value.length, i.value.length); }
 }
 
-function renderHand(){
-  const s = SHOPS.find(a=>a.id===selId) || SHOPS[0];
-  const ro = roleMode==='view', boss = roleMode==='boss';
-  document.getElementById('handPane').innerHTML = `
-    <div class="hand-scroll">
-      <div class="ph">
-        <div class="big"><svg class="i" style="width:22px;height:22px"><use href="#store"/></svg></div>
-        <div style="min-width:0;flex:1">
-          <h3>${s.name}</h3>
-          <p>${s.prov} · ${s.kab} · ${s.kec} · status: <b>${s.status}</b></p>
-        </div>
-        <span class="badge ${s.ov==='OVERDUE'?'bad':'gold'}" style="font-size:11px;padding:4px 9px">${s.ov}</span>
-      </div>
-      <div class="chips">
-        <span class="chip">T3/T4 PIC: <b>${s.pic}</b></span>
-        <span class="chip">NOO By: <b>${s.noo}</b></span>
-        <span class="chip">Map Tier: <b>${s.tier}</b></span>
-        <span class="chip">Price Tier: <b>${s.price}</b>${s.grosirAsk?' · <span style="color:var(--accent-ink)">Grosir asked</span>':''}</span>
-        <span class="chip">Visit Rhythm: <b>Every ${s.freq}d</b></span>
-        <span class="chip">Last Visit: <b>${s.last||'None'}</b></span>
-        <span class="chip">WhatsApp: <b>${s.phone}</b></span>
-      </div>
-      <div class="split2">
-        <div class="card">
-          <div class="card-h"><span>Location &amp; Pin</span><span>Exact GPS</span></div>
-          <div class="mapbox">
-            <span class="pin-dot"><svg class="i" style="width:12px;height:12px"><use href="#pin"/></svg>${s.gps}</span>
-            <div style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center">
-              <span style="font-size:10.5px;color:var(--ink-dim)">${s.kec}</span>
-              <button type="button" class="btn xs quiet">Street View</button>
-            </div>
-          </div>
-          <div style="font-size:11.5px;color:var(--ink-dim)">${s.addr}</div>
-          <button type="button" class="btn sm quiet" style="width:100%">Open in Map Mission Control</button>
-        </div>
-        <div class="card">
-          <div class="card-h"><span>Competitor Intelligence (benchmarks)</span><span>${s.logs.length} logs</span></div>
-          ${ro ? '' : `<div class="bench-form">
-            <input class="inp" placeholder="Brand & Product">
-            <input class="inp" placeholder="Notes (Promo/Shelf)">
-            <input class="inp" placeholder="Price Rp">
-            <button type="button" class="btn sm">Add Log</button>
-          </div>`}
-          <table>
-            <thead><tr><th>Product / Brand</th><th>Perf</th><th class="tr-r">Price</th><th style="width:34px"></th></tr></thead>
-            <tbody>
-              ${s.logs.length ? s.logs.map(l=>`<tr><td><b>${l.p}</b><div style="font-size:10.5px;color:var(--ink-dim)">${l.b} · ${l.n}</div></td><td><span class="badge ${l.v==='Slow Moving'?'bad':''}">${l.v}</span></td><td class="tr-r"><b>${l.rp}</b></td><td class="tr-r"><button type="button" class="btn xs danger" data-kpm-del><svg class="i"><use href="#trash"/></svg></button></td></tr>`).join('')
-              : `<tr><td colspan="4" style="text-align:center;padding:18px 8px;color:var(--ink-dim)">No competitor benchmarks logged for this shop yet.</td></tr>`}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    <div class="act">
-      ${boss ? `<select class="inp" style="width:155px"><option>${s.kec}</option><option>SOREANG</option><option>CILILIN</option><option>+ New Folder</option></select>` : ''}
-      ${boss && s.status==='PENDING' ? `<button type="button" class="btn sm"><svg class="i"><use href="#check"/></svg>Verify NOO</button>` : ''}
-      ${!ro ? `<button type="button" class="btn sm quiet" onclick="openModal()">Edit Shop</button>` : ''}
-      <span class="sp"></span>
-      ${boss ? `<button type="button" class="btn sm danger"><svg class="i"><use href="#trash"/></svg>Delete</button>` : (!ro ? '' : '<span style="font-size:11.5px;color:var(--ink-dim)">Read-only mode</span>')}
-    </div>`;
+function onInput(e, el, st) {
+  const tg = e.target, f = tg.dataset.f, m = tg.dataset.m;
+  if (m && st.form) {
+    st.form[m] = (m === 'prov' || m === 'kab' || m === 'kec') ? tg.value.toUpperCase() : tg.value;
+    return;
+  }
+  if (!f) return;
+  if (f === 'q') { st.q = tg.value; render(el, st); return refocus(el, `q-${st.mode}`); }
+  if (f === 'benchBrand' || f === 'benchNotes' || f === 'benchPrice') { st[f] = tg.value; return; }
+  if (f === 'promptVal') { st.promptVal = tg.value; return; }
+  if (f === 'owner-pick') { st.ownerPick[tg.dataset.id] = tg.value; return; }
+  if (f === 'move-kec' && e.type === 'change') {
+    const s = SHOPS.find((x) => x.id === tg.dataset.id);
+    if (!s) return;
+    if (tg.value === 'CREATE_NEW') {
+      st.promptVal = '';
+      st.modal = M.addFolder(s.id);
+      return render(el, st);
+    }
+    s.kec = tg.value;
+    rerenderAll();
+    return toast(`${s.name} moved to ${s.kec}`);
+  }
 }
-renderList();
-renderHand();
+
+function onClick(e, el, st) {
+  const b = e.target.closest('button, [data-tab], .ov');
+  if (!b) return;
+  if (b.classList.contains('ov')) { if (e.target === b) { st.modal = null; st.form = null; render(el, st); } return; }
+  const d = b.dataset;
+  if (d.tab) { st.tab = d.tab; return render(el, st); }
+  if (d.folder) { st.folder = st.folder === d.folder ? 'ALL' : d.folder; return render(el, st); }
+  if (d.row) {
+    if (st.mode === 'phone') st.openPhone = st.openPhone === d.row ? null : d.row;
+    else st.sel = d.row;
+    return render(el, st);
+  }
+  const s = SHOPS.find((x) => x.id === d.id);
+  switch (d.act) {
+    case 'close': st.modal = null; st.form = null; return render(el, st);
+    case 'crumb-all': st.prov = 'ALL'; st.folder = 'ALL'; return render(el, st);
+    case 'crumb-prov': st.prov = d.prov; st.folder = 'ALL'; return render(el, st);
+    case 'toggle-folder-acts': st.folderActs = !st.folderActs; return render(el, st);
+    case 'toggle-street': st.streetMode = !st.streetMode; return render(el, st);
+    case 'open-map': return toast(`Map Mission Control centered on ${s ? s.name : 'shop'}`);
+    case 'add-bench': {
+      if (!s) return;
+      const raw = (st.benchBrand || '').trim() || 'Competitor Kretek 16';
+      const parts = raw.split(/\s+/);
+      const brand = parts.length > 1 ? parts[0] : 'Competitor';
+      const prod = parts.length > 1 ? parts.slice(1).join(' ') : raw;
+      const price = Math.max(1000, parseInt(st.benchPrice, 10) || 15000);
+      const notes = (st.benchNotes || '').trim() || 'shelf check';
+      s.logs.unshift({ id: 'b' + Date.now(), d: '2026-11-18', b: brand, p: prod, v: 'High Sales', n: notes, rp: price });
+      st.benchBrand = ''; st.benchNotes = ''; st.benchPrice = '';
+      rerenderAll();
+      return toast(`Benchmark logged for ${s.name}`);
+    }
+    case 'del-bench': {
+      if (!s) return;
+      const bLog = s.logs.find((x) => x.id === d.bid);
+      if (bLog) { st.modal = M.delBench(s, bLog); render(el, st); }
+      return;
+    }
+    case 'confirm-del-bench': {
+      if (!s) return;
+      s.logs = s.logs.filter((x) => x.id !== d.bid);
+      st.modal = null;
+      rerenderAll();
+      return toast('Benchmark log removed');
+    }
+    case 'verify-noo': {
+      if (!s) return;
+      s.status = 'APPROVED';
+      rerenderAll();
+      return toast(`${s.name} verified and approved`);
+    }
+    case 'add-shop': {
+      st.form = { id: null, name: '', phone: '', tier: 'Unranked', price: 'Retail', pic: 'Budi Santoso', last: '2026-11-18', prov: 'JAWA BARAT', kab: 'BANDUNG', kec: st.folder === 'ALL' ? 'MARGAHAYU' : st.folder, addr: '', gps: '-6.9654, 107.5759', embed: '', hasPhoto: false };
+      st.modal = M.editShop();
+      return render(el, st);
+    }
+    case 'edit-shop': {
+      if (!s) return;
+      st.form = { ...s };
+      st.modal = M.editShop();
+      return render(el, st);
+    }
+    case 'dup-edit': {
+      const target = SHOPS.find((x) => x.id === d.id) || SHOPS[0];
+      st.tab = 'directory';
+      st.folder = target.kec;
+      st.sel = target.id;
+      st.form = { ...target };
+      st.modal = M.editShop();
+      return render(el, st);
+    }
+    case 'toggle-photo': if (st.form) { st.form.hasPhoto = !st.form.hasPhoto; render(el, st); toast(st.form.hasPhoto ? 'Store photo attached' : 'Store photo cleared'); } return;
+    case 'auto-find': if (st.form) { st.form.gps = '-6.9682, 107.5784'; st.form.prov = st.form.prov || 'JAWA BARAT'; st.form.kab = st.form.kab || 'BANDUNG'; st.form.kec = st.form.kec || 'MARGAHAYU'; render(el, st); toast('Coordinates filled from address search'); } return;
+    case 'my-gps': if (st.form) { st.form.gps = '-6.9654, 107.5759'; render(el, st); toast('GPS locked to current position'); } return;
+    case 'save-shop': {
+      const f = st.form;
+      if (!f) return;
+      const name = (f.name || '').trim().toUpperCase();
+      if (!name) return toast('Type the shop name before saving');
+      const coords = (f.gps || '').split(',').map((x) => parseFloat(x.trim()));
+      if (coords.length !== 2 || !Number.isFinite(coords[0]) || !Number.isFinite(coords[1]) || (coords[0] === 0 && coords[1] === 0)) {
+        return toast('A valid non-zero GPS pin is required before saving');
+      }
+      const prov = (f.prov || 'JAWA BARAT').trim().toUpperCase();
+      const kab = (f.kab || 'BANDUNG').trim().toUpperCase();
+      const kec = (f.kec || 'MARGAHAYU').trim().toUpperCase();
+      if (!FOLDERS.some((x) => x.kec === kec)) FOLDERS.push({ prov, kab, kec });
+      if (f.id) {
+        const orig = SHOPS.find((x) => x.id === f.id);
+        if (orig) Object.assign(orig, { ...f, name, prov, kab, kec, ov: f.last ? 'OK · 7d left' : orig.ov });
+        st.modal = null; st.form = null;
+        rerenderAll();
+        return toast(`${name} profile updated`);
+      } else {
+        const nid = 's' + (SHOPS.length + 1 + Math.floor(Math.random() * 90));
+        SHOPS.push({ ...f, id: nid, name, prov, kab, kec, status: 'APPROVED', noo: 'Admin', freq: 7, ov: f.last ? 'OK · 7d left' : 'OVERDUE', logs: [] });
+        st.sel = nid; st.openPhone = nid; st.modal = null; st.form = null;
+        rerenderAll();
+        return toast(`${name} added to ${kec}`);
+      }
+    }
+    case 'del-shop': if (s) { st.modal = M.delShop(s); render(el, st); } return;
+    case 'confirm-del-shop': {
+      if (!s) return;
+      const idx = SHOPS.indexOf(s);
+      if (idx > -1) SHOPS.splice(idx, 1);
+      st.modal = null; st.sel = null; st.openPhone = null;
+      rerenderAll();
+      return toast(`${s.name} deleted, written to audit log`);
+    }
+    case 'add-folder': st.promptVal = ''; st.modal = M.addFolder(null); render(el, st); return;
+    case 'confirm-add-folder': {
+      const clean = (st.promptVal || '').trim().toUpperCase();
+      if (!clean) return toast('Enter a Kecamatan folder name');
+      const prov = st.prov === 'ALL' ? 'JAWA BARAT' : st.prov;
+      const kab = prov === 'JAWA TENGAH' ? 'MAGELANG' : 'BANDUNG';
+      if (!FOLDERS.some((f) => f.kec === clean)) FOLDERS.push({ prov, kab, kec: clean });
+      if (d.move) {
+        const ms = SHOPS.find((x) => x.id === d.move);
+        if (ms) { ms.kec = clean; ms.prov = prov; ms.kab = kab; }
+      }
+      st.folder = clean; st.modal = null;
+      rerenderAll();
+      return toast(`Folder ${clean} created`);
+    }
+    case 'ren-folder': {
+      const targetKec = st.folder === 'ALL' ? 'MARGAHAYU' : st.folder;
+      st.promptVal = targetKec;
+      st.modal = M.renFolder(targetKec);
+      return render(el, st);
+    }
+    case 'confirm-ren-folder': {
+      const next = (st.promptVal || '').trim().toUpperCase(), old = d.old;
+      if (!next || next === old) { st.modal = null; return render(el, st); }
+      const f = FOLDERS.find((x) => x.kec === old);
+      if (f) f.kec = next;
+      SHOPS.filter((x) => x.kec === old).forEach((x) => { x.kec = next; });
+      if (st.folder === old) st.folder = next;
+      st.modal = null; st.folderActs = false;
+      rerenderAll();
+      return toast(`Renamed ${old} to ${next}`);
+    }
+    case 'del-folder': {
+      const targetKec = st.folder === 'ALL' ? 'MARGAHAYU' : st.folder;
+      st.modal = M.delFolder(targetKec);
+      return render(el, st);
+    }
+    case 'confirm-del-folder': {
+      const kec = d.kec;
+      if (!FOLDERS.some((x) => x.kec === 'UNKNOWN KECAMATAN')) FOLDERS.push({ prov: 'JAWA BARAT', kab: 'BANDUNG', kec: 'UNKNOWN KECAMATAN' });
+      SHOPS.filter((x) => x.kec === kec).forEach((x) => { x.kec = 'UNKNOWN KECAMATAN'; });
+      const idx = FOLDERS.findIndex((x) => x.kec === kec);
+      if (idx > -1 && FOLDERS.length > 1) FOLDERS.splice(idx, 1);
+      st.folder = 'ALL'; st.modal = null; st.folderActs = false;
+      rerenderAll();
+      return toast(`Folder ${kec} reset to Unknown`);
+    }
+    case 'grosir-yes': {
+      if (!s) return;
+      s.price = 'Grosir';
+      s.grosirAsk = false;
+      rerenderAll();
+      return toast(`${s.name} confirmed at Grosir pricing`);
+    }
+    case 'grosir-no': {
+      if (!s) return;
+      s.grosirAsk = false;
+      rerenderAll();
+      return toast(`${s.name} kept at ${s.price} pricing`);
+    }
+    case 'give-agent': {
+      if (!s) return;
+      const picked = st.ownerPick[s.id] || ROSTER[0];
+      s.pic = picked;
+      rerenderAll();
+      return toast(`${s.name} assigned to ${picked}`);
+    }
+    case 'repair-tiers': {
+      const n = G.tierBroken;
+      G.tierBroken = 0;
+      rerenderAll();
+      return toast(`Repaired ${n} stores: pricingTier copied to priceTier`);
+    }
+    case 'scan-dups': {
+      rerenderAll();
+      const live = DUPS.filter((g) => !G.ignoredDups.has(g.id) && g.members.length > 1).length;
+      return toast(`Scanned ${SHOPS.length} stores: ${live} duplicate group(s) to review`);
+    }
+    case 'not-dup': {
+      G.ignoredDups.add(d.gid);
+      rerenderAll();
+      return toast('Group marked as not duplicates');
+    }
+    case 'toggle-ignored': G.showIgnoredDups = !G.showIgnoredDups; rerenderAll(); return;
+    case 'reset-ignored': G.ignoredDups.clear(); G.showIgnoredDups = false; rerenderAll(); return toast('Cleared duplicate groups restored');
+    case 'del-dup': {
+      const g = DUPS.find((x) => x.id === d.gid);
+      const m = g?.members.find((x) => x.id === d.mid);
+      if (g && m) { st.modal = M.delDup(g, m); render(el, st); }
+      return;
+    }
+    case 'confirm-del-dup': {
+      const g = DUPS.find((x) => x.id === d.gid);
+      if (g) g.members = g.members.filter((x) => x.id !== d.mid);
+      const shopIdx = SHOPS.findIndex((x) => x.id === d.mid);
+      if (shopIdx > -1) SHOPS.splice(shopIdx, 1);
+      st.modal = null;
+      rerenderAll();
+      return toast('Duplicate store record deleted');
+    }
+    case 'scrub': st.modal = M.scrub(); return render(el, st);
+    case 'confirm-scrub': {
+      G.scrubbed = true;
+      SHOPS.forEach((x) => { x.prov = x.prov.toUpperCase(); x.kab = x.kab.toUpperCase(); x.kec = x.kec.toUpperCase(); });
+      st.modal = null;
+      rerenderAll();
+      return toast('Great Scrub complete: 3 shops normalized from pins and address words');
+    }
+    case 'import-kml': st.modal = M.kml(); return render(el, st);
+    case 'confirm-kml': {
+      if (!FOLDERS.some((f) => f.kec === 'BALEENDAH')) FOLDERS.push({ prov: 'JAWA BARAT', kab: 'BANDUNG', kec: 'BALEENDAH' });
+      SHOPS.push(
+        { id: 'kml1', name: 'KIOS BERKAH BALEENDAH', prov: 'JAWA BARAT', kab: 'BANDUNG', kec: 'BALEENDAH', tier: 'Unranked', price: 'Retail', grosirAsk: false, status: 'APPROVED', pic: 'Unassigned', noo: 'KML Import', freq: 7, last: '', ov: 'OVERDUE', gps: '-7.0051, 107.6312', phone: '—', addr: 'Imported from Map Marker KML', embed: '', hasPhoto: false, logs: [] },
+        { id: 'kml2', name: 'WARUNG BU NENG', prov: 'JAWA BARAT', kab: 'BANDUNG', kec: 'BALEENDAH', tier: 'Unranked', price: 'Retail', grosirAsk: false, status: 'APPROVED', pic: 'Unassigned', noo: 'KML Import', freq: 7, last: '', ov: 'OVERDUE', gps: '-7.0068, 107.6335', phone: '—', addr: 'Imported from Map Marker KML', embed: '', hasPhoto: false, logs: [] }
+      );
+      st.modal = null;
+      rerenderAll();
+      return toast('Imported 2 map markers into BALEENDAH (Unassigned pool)');
+    }
+  }
+}
+
+/* ---------- top board controls ---------- */
+const segs = (id, fn) => document.getElementById(id).addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  b.parentElement.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b));
+  fn(b.dataset.v);
+});
+segs('role', (v) => {
+  G.role = v;
+  apps.forEach((a) => { a.st.modal = null; a.st.form = null; a.st.prov = 'ALL'; a.st.folder = 'ALL'; });
+  rerenderAll();
+  toast(v === 'boss' ? 'T1/T2 Boss: every region, approvals, and admin tools' : v === 'regional' ? 'T3/T4 Regional: JAWA BARAT shops and Grosir/Agent approvals' : 'T5 View Only: directory browse only, edits disabled');
+});
+segs('theme', (v) => { if (v) document.documentElement.dataset.theme = v; else delete document.documentElement.dataset.theme; });
+segs('motion', (v) => { G.motion = v === 'on'; document.body.classList.toggle('nomotion', !G.motion); });
+
+mount(document.getElementById('pc'), 'pc');
+mount(document.getElementById('ph'), 'phone');
 </script>
 </body>
 </html>
