@@ -2532,6 +2532,31 @@ Fix the two `YES` rows from Task 63 in `src/ConsignmentFinanceView.jsx`:
 - Added regression check `RECEIVABLES V5 ARVIEW CONSISTENCY (Task 64, 2026-11-18)` in `src/config/logicFixes.selfcheck.mjs`.
 - All 5 gates green after final edit: `undef.check.mjs` (`clean`), `logicFixes.selfcheck.mjs` (**3025 passed, 0 failed**), all 14 `src/config/*.selfcheck.mjs` scripts (exit 0), `npm run build` (`built in 11.97s`, exit 0), `integration.audit.mjs` (**725 passed, 0 failed**).
 
+## Task 65 - BUILD: wire the 3 remaining 7-day consignment readers onto consignmentTx (from Aldi)
+**Status:** DONE
+**Written:** 2026-11-18 11:08 WIB, from Aldi. Same rules as Task 62.
+**Touch only:** `src/App.jsx` (`L5120`, `L5151`, `L5174` props), `src/components/DashboardView.jsx` (`L54`, `L307`), `src/components/DashboardBenchmarks.jsx` (`L59`, `L180`, `L186`), `src/FleetCanvasManager.jsx` (`L48`, `L1495`), `src/AgentProfileView.jsx` (`txSeconds` import, `L126`, `L439-549` split consignment loop sorted by `txSeconds`, `L609`), `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file.
+
+Move the 3 multi-file Task 60 Table 1 readers left in Task 62 onto `consignmentTx` without altering any money rule or widening 7-day revenue/omset/velocity:
+1. Command Center `Piutang`: `App.jsx` passes `consignmentTx` to `DashboardView` -> `DashboardBenchmarks`, where `piutang` calls `outstandingTitip(consignmentTx || transactions)`.
+2. Fleet Loading Bay `Titip`: `App.jsx` passes `consignmentTx` to `FleetCanvasManager`, where `titip = titipOf(consignmentTx || transactions, customers, sel.id, inventory)`.
+3. Agent Profile `Consignment Risk (Titip)`: `App.jsx` passes `consignmentTx` to `AgentProfileView`; keep 7-day `transactions` for `lifetimeOmset`, `yearlyAgentOmset`, `todayOmset`, `todayCash`, charts & volume, and run `titipIssued` / `titipCollected` / `storeDebt` in its own loop over `(consignmentTx || transactions)` sorted by `txSeconds` (so payments on old Titip notes never hit an uninitialized `storeDebt[debtKey]`!).
+**Done when:** regression + Task 56 demo behaviour checks pass for all 3 places (`logicFixes.selfcheck.mjs`), 1 patch note line added, all 5 gates in `GEMINI.md` OVERRIDE pass, committed starting `Antigravity:` (wait for Aldi's `"push"`).
+**Result:**
+- Wired `consignmentTx` from [App.jsx](src/App.jsx) (`L5121`, `L5152`, `L5176`) to:
+  1. `DashboardView.jsx:54,308` -> `DashboardBenchmarks.jsx:59,180,186` (`piutang: outstandingTitip(consignmentTx || transactions)`).
+  2. `FleetCanvasManager.jsx:48,1495` (`titipOf(consignmentTx || transactions, customers, sel.id, inventory)`).
+  3. `AgentProfileView.jsx:21,127,507-550,611` (split `titipIssued`, `titipCollected`, and `storeDebt` into a `titipSorted` loop over `consignmentTx || transactions` sorted by `txSeconds`, keeping `lifetimeOmset`, `yearlyAgentOmset`, `todayOmset`, `todayCash`, charts, and volume strictly on 7-day `transactions`).
+- Updated `logicFixes.selfcheck.mjs:8833` pin + added `COMMAND CENTER, FLEET BAY, AGENT PROFILE READ CONSIGNMENTTX (Task 65, 2026-11-18)` asserting both wiring and Task 56 demo (`today=2026-11-18`, `outstandingTitip(consignmentTx) = Rp 9.120.000`, `titipOf(..., 'demo-agent-1')` `AMANAH BARU = Rp 1.580.000`). Added EN/ID patch note in `src/config/patchNotes.js`.
+- All 5 gates green after final edit: `undef.check.mjs` -> `clean`; `logicFixes.selfcheck.mjs` -> **3027 passed, 0 failed**; all 14 `src/config/*.selfcheck.mjs` scripts -> exit `0`; `npm run build` -> built in `10.62s` (exit `0`); `integration.audit.mjs` -> **725 passed, 0 failed**; `graphify update .` -> `3369 nodes, 6651 edges`.
+
+## Task 66 - read-only: exact Console `firestore.rules` draft text for Task 63's 2 Authorize Transfer gaps (from Aldi)
+**Status:** OPEN
+**Written:** 2026-11-18 11:08 WIB, from Aldi. READ-ONLY (NEVER edit `firestore.rules` on disk).
+**Touch only:** this file.
+
+Draft the exact `old line`, `new line`, and `why` for both `Authorize Transfer` server-vs-UI mismatches from Task 63 so Aldi can paste/publish them in Firebase Console, and verify the drafted rules compile & pass in the Firestore emulator (`@firebase/rules-unit-testing`) against an in-memory rules string (never touching `firestore.rules`).
+
 **Task 62 AMENDED 2026-11-18 09:40 by Claude, after reading Task 60's Result (pick = option a, second listener, no rules change):**
 - NO 90-day cap. His words say "not limited"; a note 100 days old that still owes must show. Listen to every Titip SALE + every CONSIGNMENT_PAYMENT + RETURN with no date limit. The read cost grows with history - write the number in the Result; archiving paid-off notes is a LATER task, not this one.
 - Scope = ALL 7 places in your Task 60 table 1 (Receivables, Command Center Piutang, sales terminal sidebar, App.jsx delete + hand-off L3512, Map shop card, Agent Profile Titip, vanBay titipOf). Feed them a SEPARATE merged list (`consignmentTx` = 7-day rows + old consignment rows, de-duplicated by id) - never widen the global `transactions` (Reports, EOD, revenue, Day Replay must keep their 7-day list). Touch only grows to: `src/components/DashboardBenchmarks.jsx`, `src/MerchantSalesView.jsx`, `src/MapMissionControl.jsx`, `src/AgentProfileView.jsx`, `src/utils/vanBay.js` - ONLY the line where each reads its list. If one needs more than that, list it in the Result and leave it.

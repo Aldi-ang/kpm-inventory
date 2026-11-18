@@ -8830,7 +8830,7 @@ section('ROUND 5: TITIP AND BOUNTIES BEHIND THE VAN CHEST (2026-09-26)');
      /aria-labelledby="kpm-slip-titip"/.test(bayc) && /aria-labelledby="kpm-slip-bounty"/.test(bayc));
   ok('each new list is the slip\'s one-minmax-column list', (bayc.match(/<ul className="rows">/g) || []).length === 4);
   ok('Fleet hands the rows to LoadSheet\'s extra tabs from what it already holds (Consignment, Bounty, Requests)',
-     /const dmg = damagedInVan\(agentSales, inventory\), titip = titipOf\(transactions, customers, sel\.id, inventory\), bounties = bountyItems\(sel\);/.test(flc) &&
+     /const dmg = damagedInVan\(agentSales, inventory\), titip = titipOf\(consignmentTx \|\| transactions, customers, sel\.id, inventory\), bounties = bountyItems\(sel\);/.test(flc) &&
      /const mine = allBypasses\.filter\(b => isAgentBypass\(b, sel\)\)/.test(flc) &&
      /id: 'titip', label: `Consignment/.test(flc) && /id: 'bounty', label: `Bounty/.test(flc) && /id: 'requests', label: `Requests/.test(flc));
   ok('no new listener: the customers come from App as a prop, the transactions already did',
@@ -14654,6 +14654,55 @@ section('RECEIVABLES V5 ARVIEW CONSISTENCY (Task 64, 2026-11-18)');
      arSlice.includes('convertToBks(') &&
      /\[debtData, customers, customerData, myTransactions, handedOwnerByStore, rosterNameById, inventory, debtFilter, debtSearch\]/.test(arSlice),
      'arView Bks Held or handedOwnerByStore lookup regressed');
+}
+section('COMMAND CENTER, FLEET BAY, AGENT PROFILE READ CONSIGNMENTTX (Task 65, 2026-11-18)');
+{
+  const appSrc = read('src/App.jsx');
+  const dashSrc = read('src/components/DashboardView.jsx');
+  const benchSrc = read('src/components/DashboardBenchmarks.jsx');
+  const flcSrc = read('src/FleetCanvasManager.jsx');
+  const apSrc = read('src/AgentProfileView.jsx');
+  const tagOf = (name) => {
+    const a = appSrc.indexOf('<' + name);
+    const b = a > -1 ? appSrc.indexOf('/>', a) : -1;
+    return a > -1 && b > a ? appSrc.slice(a, b) : '';
+  };
+  ok('REGRESSION: DashboardBenchmarks Piutang, FleetCanvasManager titipOf, and AgentProfileView Titip responsibility all receive consignmentTx from App while leaving 7-day omset / sales paths untouched',
+     tagOf('DashboardView').includes('consignmentTx={consignmentTx}') &&
+     dashSrc.includes('consignmentTx={consignmentTx}') &&
+     benchSrc.includes('piutang: outstandingTitip(consignmentTx || transactions)') &&
+     tagOf('FleetCanvasManager').includes('consignmentTx={consignmentTx}') &&
+     flcSrc.includes('titip = titipOf(consignmentTx || transactions, customers, sel.id, inventory)') &&
+     tagOf('AgentProfileView').includes('consignmentTx={consignmentTx}') &&
+     apSrc.includes('const titipSorted = [...(consignmentTx || transactions || [])].sort(') &&
+     apSrc.includes('}, [activeAgent, transactions, consignmentTx, inventory, rpgData]);'),
+     'one of the 3 remaining consignment readers fell back to 7-day transactions');
+
+  const sync = read('src/hooks/useDatabaseSync.js');
+  const mA = sync.indexOf('export function mergeConsignmentTx');
+  const mB = sync.indexOf('export default function useDatabaseSync', mA);
+  const mergeConsignmentTx = new Function(sync.slice(mA, mB).replace('export function ', 'function ') + '\nreturn mergeConsignmentTx;')();
+  const { buildDemoCompany } = await import('../../api/_demoCompany.js');
+  const { outstandingTitip } = await import('../utils/revenueRule.js');
+  const { titipOf } = await import('../utils/vanBay.js');
+  const seed = JSON.parse(read('demo/seed.json'));
+  const fixedNow = new Date('2026-11-18T05:00:00Z');
+  const built = buildDemoCompany(seed, fixedNow, { pin: 'p', recoveryHash: 'r' });
+  const allTx = built.docs.filter((d) => d.path.includes('/transactions/')).map((d) => ({ id: d.path.split('/').pop(), ...d.data }));
+  const allCust = built.docs.filter((d) => d.path.includes('/customers/')).map((d) => ({ id: d.path.split('/').pop(), ...d.data }));
+  const inv = built.docs.filter((d) => d.path.includes('/products/')).map((d) => ({ id: d.path.split('/').pop(), ...d.data }));
+  const cutoffMs = fixedNow.getTime() - 7 * 86400000;
+  const txMs = (t) => (t.timestamp instanceof Date ? t.timestamp.getTime() : (t.timestamp?.seconds ? t.timestamp.seconds * 1000 : Date.parse(t.date + 'T00:00:00Z')));
+  const feed = mergeConsignmentTx(
+    allTx.filter((t) => txMs(t) >= cutoffMs),
+    allTx.filter((t) => t.paymentType === 'Titip'),
+    allTx.filter((t) => t.type === 'CONSIGNMENT_PAYMENT' || t.type === 'RETURN')
+  );
+  const agusTitip = titipOf(feed, allCust, 'demo-agent-1', inv);
+  const agusAmanah = agusTitip.find((s) => s.name === 'AMANAH BARU');
+  ok('BEHAVIOUR: at today=2026-11-18, outstandingTitip(consignmentTx) = Rp 9.120.000 and titipOf(consignmentTx, demo-agent-1) includes 12-day-old AMANAH BARU (Rp 1.580.000)',
+     outstandingTitip(feed) === 9120000 && agusAmanah?.rp === 1580000,
+     `piutang=${outstandingTitip(feed)} agusAmanah=${JSON.stringify(agusAmanah)}`);
 }
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

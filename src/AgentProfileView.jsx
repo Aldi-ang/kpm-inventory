@@ -18,6 +18,7 @@ import { savePhotoAndGetReference, deletePhotoFromStorage, photoStamp, formatNum
 import { PlayerCardHead } from './components/PlayerCard.jsx';
 import { careerXP, DEFAULT_XP, totals, DEFAULT_BADGES, DEFAULT_RANKS, rankLadder, STAT_LABELS, BADGE_SOURCES, statLabel } from './config/career';
 import { revenueOf, debtCredit } from './utils/salesRollup';
+import { txSeconds } from './utils/dayStats';
 import { notify } from './components/Toast.jsx';
 
 const DynamicIconMap = { Calendar, PackageOpen, Crown, Target, Zap, Trophy, Medal, Star, Flame, ShieldCheck, Truck, Activity, DollarSign, Award };
@@ -123,7 +124,7 @@ const AgentAvatar = ({ tier, tierIndex, hex, photo, styleId, iconSize, scrim = f
     </>
 );
 
-const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentProfileId, db, appId, userId, storage, appSettings, career, logAudit, customers = [] }) => {
+const AgentProfileView = ({ motorists, transactions, consignmentTx = null, inventory, userRole, agentProfileId, db, appId, userId, storage, appSettings, career, logAudit, customers = [] }) => {
     const useCareerLedger = !!appSettings?.useCareerLedger;
     
     const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 1024);
@@ -501,20 +502,6 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                     const isEcer = itemsList.some(i => i.priceTier === 'Ecer') || (t.customerName || '').toLowerCase().includes('ecer') || (t.customerName || '').toLowerCase().includes('walk-in');
                     if (isEcer) ecerItemsSold += tQty;
                     
-                    if (t.paymentType === 'Titip') {
-                        titipIssued += (t.total || 0);
-                        /* 🚀 FIX — key the tally on storeKey, not on the raw name. "Warung Bu Sari
-                           (Retail)" (written before the sale engine stopped welding the tier on),
-                           "Warung Bu Sari" and "warung bu sari " are ONE shop; keyed raw they were
-                           three rows in his "who owes me" list, each holding part of the debt, and
-                           a payment filed under one spelling never cancelled the others. The raw
-                           name is kept for DISPLAY — the key is lowercased, the list is not. */
-                        if(t.customerName) {
-                            const key = storeKey(t.customerName);
-                            if(!storeDebt[key]) storeDebt[key] = { store: storeLabel(t.customerName), amount: 0 };
-                            storeDebt[key].amount += (t.total || 0);
-                        }
-                    }
                     if (txDateStr === todayStr) {
                         todayOmset += (t.total || 0);
                         if (t.paymentType !== 'Titip') todayCash += (t.total || 0);
@@ -535,16 +522,31 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
                     /* The other half of the rule above: this is the moment consignment money is
                        earned, so it enters omset here and nowhere else. */
                     lifetimeOmset += revenueOf(t);
-                    titipCollected += (t.amountPaid || t.total || 0);
-                    /* The payment cancels the debt through the SAME key, so a payment written
-                       "warung bu sari" now clears a sale written "Warung Bu Sari (Retail)".
-                       The `&& storeDebt[key]` guard stays: with the key unified, the only case
-                       left where it fires is a payment whose Titip sale is outside the loaded
-                       window — and there the debt is already absent, so subtracting would invent
-                       a negative entry for a shop that owes nothing. */
-                    const debtKey = t.customerName ? storeKey(t.customerName) : null;
-                    if(debtKey && storeDebt[debtKey]) storeDebt[debtKey].amount -= debtCredit(t);   /* cash paid + the damaged goods handed back */
                 }
+            }
+        });
+
+        /* Unbounded consignment responsibility (Task 65): read merged consignmentTx sorted
+           chronologically by exact second so payments on Titip notes older than 7 days deduct
+           after their placement without widening the 7-day omset / chart / EXP totals above. */
+        const titipSorted = [...(consignmentTx || transactions || [])].sort((a, b) => (txSeconds(a) ?? Number.MAX_SAFE_INTEGER) - (txSeconds(b) ?? Number.MAX_SAFE_INTEGER));
+        titipSorted.forEach(t => {
+            const isOwnerView = activeAgent.id === 'master_owner';
+            const belongsToAgent = t.agentId === activeAgent.id || (t.agentName && t.agentName.toLowerCase() === activeAgent.name?.toLowerCase());
+            if (!(isOwnerView || belongsToAgent)) return;
+            if (t.type === 'SALE' && t.paymentType === 'Titip') {
+                titipIssued += (t.total || 0);
+                /* 🚀 FIX — key the tally on storeKey, not on the raw name. */
+                if (t.customerName) {
+                    const key = storeKey(t.customerName);
+                    if (!storeDebt[key]) storeDebt[key] = { store: storeLabel(t.customerName), amount: 0 };
+                    storeDebt[key].amount += (t.total || 0);
+                }
+            }
+            if (t.type === 'CONSIGNMENT_PAYMENT') {
+                titipCollected += (t.amountPaid || t.total || 0);
+                const debtKey = t.customerName ? storeKey(t.customerName) : null;
+                if (debtKey && storeDebt[debtKey]) storeDebt[debtKey].amount -= debtCredit(t);   /* cash paid + the damaged goods handed back */
             }
         });
 
@@ -606,7 +608,7 @@ const AgentProfileView = ({ motorists, transactions, inventory, userRole, agentP
             achievements: { stores: uniqueStores.size, titipCollected, totalItemsSold, ecerItemsSold },
             canvasBreakdown, activeDebtList, isTopAgentOfYear, currentYearString
         };
-    }, [activeAgent, transactions, inventory, rpgData]);
+    }, [activeAgent, transactions, consignmentTx, inventory, rpgData]);
 
     // How far up the ladder you are, scaled onto the frame shelf — bottom rank owns 1 frame, top
     // rank owns all of them, whatever the rank count happens to be.

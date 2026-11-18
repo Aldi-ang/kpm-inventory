@@ -4,6 +4,7 @@
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
   { date: '2026-11-18', items: [
+    { kind: 'fixed', en: 'Command Center Piutang, the Fleet Loading Bay Titip tab, and Agent Profile now show every unpaid Titip note regardless of age, matching Receivables.', id: 'Piutang di Pusat Kendali, tab Titip di Armada Muat Barang, dan Profil Sales sekarang juga selalu menampilkan semua nota Titip yang belum lunas berapa pun umurnya, sama seperti di Piutang.' },
     { kind: 'fixed', en: 'Receivables, the Map shop card, and the Sales Terminal sidebar now keep every unpaid Titip note regardless of age, instead of dropping notes older than 7 days.', id: 'Piutang, kartu toko di Peta, dan bilah Terminal Penjualan sekarang tetap menampilkan semua nota Titip yang belum lunas berapa pun umurnya, tidak lagi hilang setelah 7 hari.' },
   ] },
   { date: '2026-11-17', items: [

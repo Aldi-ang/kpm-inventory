@@ -45,7 +45,7 @@ function FrontPanel({ label, onClose, children }) {
     );
 }
 
-export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, promoItems = [], transactions = [], customers = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, regionOffers = [], onSavePromoBundles = null, masterUserId = null }) {
+export default function FleetCanvasManager({ db, appId, user, userRole, agentProfileId, inventory, promoItems = [], transactions = [], consignmentTx = null, customers = [], appSettings = {}, logAudit, triggerCapy, isAdmin, motorists = [], previewing = null, regionOffers = [], onSavePromoBundles = null, masterUserId = null }) {
 
     const isGlobalAdmin = ['DEVELOPER', 'COMPANY_OWNER', 'ADMIN'].includes(userRole);
     const isAreaAdmin = !isGlobalAdmin;
@@ -1492,7 +1492,7 @@ export default function FleetCanvasManager({ db, appId, user, userRole, agentPro
                     const sel = selectedAgent;
                     const left = Math.round(loadOf(sel)), sold = Math.round(sumOf(soldByAgent[sel.id]));
                     const whName = selectedAgentUsesBranch ? `${selectedAgentLocation} warehouse` : 'Master Vault';
-                    const dmg = damagedInVan(agentSales, inventory), titip = titipOf(transactions, customers, sel.id, inventory), bounties = bountyItems(sel);
+                    const dmg = damagedInVan(agentSales, inventory), titip = titipOf(consignmentTx || transactions, customers, sel.id, inventory), bounties = bountyItems(sel);
                     const mine = allBypasses.filter(b => isAgentBypass(b, sel)), waiting = mine.filter(b => b.status === 'PENDING').length;
                     const n = (v) => Math.round(v).toLocaleString('id-ID');
                     const line = (key, title, sub, right) => (

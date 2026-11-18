@@ -5118,6 +5118,7 @@ const handleGitHubMirror = async () => {
                 <DashboardView
                     isAdmin={isAdmin}
                     transactions={transactions}
+                    consignmentTx={consignmentTx}
                     inventory={inventory}
                     lowStockItems={lowStockItems}
                     setActiveTab={setActiveTab}
@@ -5149,6 +5150,7 @@ const handleGitHubMirror = async () => {
                 inventory={inventory} 
                 promoItems={promoItems}   /* the bay's PROMO view loads them into the van in pcs (stage 3) - never activeCanvas */
                 transactions={transactions} 
+                consignmentTx={consignmentTx}
                 customers={customers}   // the van chest's TITIP tab reads who holds a shop after a hand-off - no new listener
                 appSettings={appSettings}
                 logAudit={logAudit} 
@@ -5172,6 +5174,7 @@ const handleGitHubMirror = async () => {
                   appId={appId}
                   userId={userId}
                   transactions={transactions}
+                  consignmentTx={consignmentTx}
                   storage={storage}
                   appSettings={appSettings}
                   career={career}

@@ -51,7 +51,7 @@ const SERIES = [
 ];
 
 export default function DashboardView({
-    isAdmin, transactions = [], lowStockItems = [], setActiveTab,
+    isAdmin, transactions = [], consignmentTx = null, lowStockItems = [], setActiveTab,
     sessionStatus, auditLogs = [], appSettings, handleSaveDashboardTargets,
     inventory = [], customers = [], motorists = [], branchStock = {},
 }) {
@@ -305,6 +305,7 @@ export default function DashboardView({
                     switch, not like the screen reloading. */}
                 <DashboardBenchmarks
                     transactions={transactions}
+                    consignmentTx={consignmentTx}
                     inventory={inventory}
                     appSettings={appSettings}
                     onSaveTargets={handleSaveDashboardTargets}

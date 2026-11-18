@@ -56,7 +56,7 @@ const groupDigits = (v) =>
     String(v ?? '').replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
 export default function DashboardBenchmarks({
-    transactions = [], inventory = [], appSettings, onSaveTargets, canEditGoals,
+    transactions = [], consignmentTx = null, inventory = [], appSettings, onSaveTargets, canEditGoals,
     auditLogs = [], sessionStatus, period = 'bulan', onPeriod,
 }) {
     const [isEditing, setIsEditing] = useState(false);
@@ -177,13 +177,13 @@ export default function DashboardBenchmarks({
         return {
             omzet, bal, series, buckets, done, tickOf,
             /* a standing balance, not a period figure — see outstandingTitip's own note */
-            piutang: outstandingTitip(transactions),
+            piutang: outstandingTitip(consignmentTx || transactions),
             omzetDelta: prevOmzet > 0 ? ((omzet - prevOmzet) / prevOmzet) * 100 : null,
             skm: totalMix > 0 ? Math.round((filterBal / totalMix) * 100) : 0,
             revTarget: revTarget(period),
             balTarget: balTarget(period),
         };
-    }, [transactions, inventory, period, appSettings]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [transactions, consignmentTx, inventory, period, appSettings]); // eslint-disable-line react-hooks/exhaustive-deps
 
     /* one arrival, on mount. The panel is keyed on the period by its parent, so a swap remounts
        it and this runs again — no synchronous reset, and nothing to get out of step. */
