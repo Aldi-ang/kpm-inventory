@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>KPM Customers · Layout C (Area Tree)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* layout: KPM Customers Layout C (area tree, his pick "c looks the best" 2026-11-18) - 3 panes on PC (tree | area + shops | full shop), stacked on phone (tree -> area -> shop with Back key) */
+:root{
+  --ground:#D6CEBA;--panel:#E3DCCB;--raised:#EAE4D6;--inset:#DCD4C1;--line:#B8AF9C;--line-2:#9F9785;--hair:rgba(19,18,17,.10);
+  --ink:#131211;--ink-muted:#3A3733;--ink-dim:#5E584F;--gold:#8A5A12;--accent-ink:#5A3B05;--accent-edge:#8A6420;--danger-ink:#7A2118;
+  --page:#C9C0AA;--sel:rgba(138,90,18,.09);--wash:rgba(138,90,18,.13);--scrim:rgba(19,18,17,.40);
+  --f:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;--hair:rgba(232,228,222,.06);
+  --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--accent-ink:#E0A04A;--accent-edge:#9C6924;--danger-ink:#E7907F;
+  --page:#050504;--sel:rgba(208,138,46,.07);--wash:rgba(208,138,46,.12);--scrim:rgba(0,0,0,.62);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;--hair:rgba(232,228,222,.06);
+  --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--accent-ink:#E0A04A;--accent-edge:#9C6924;--danger-ink:#E7907F;
+  --page:#050504;--sel:rgba(208,138,46,.07);--wash:rgba(208,138,46,.12);--scrim:rgba(0,0,0,.62);color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:13px/1.4 var(--f);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 64px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+svg.i{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:-2px}
+
+.board{max-width:1240px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;font-size:12.5px;color:var(--ink-muted)}
+.board h1{font-size:13px;margin:0;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:5px 10px;font-size:12px;color:var(--ink-dim)}
+.seg button[aria-pressed="true"]{background:var(--wash);color:var(--ink);font-weight:600}
+.cap{max-width:1240px;margin:22px auto 10px;color:var(--ink-dim);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+
+.fr{background:var(--ground);border:1px solid var(--line-2);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;margin:0 auto;position:relative;box-shadow:0 18px 40px -24px rgba(0,0,0,.55)}
+.fr.pc{max-width:1240px;height:785px}
+.fr.phone{width:390px;max-width:100%;height:844px;border-radius:24px}
+
+.top{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;flex:none}
+.top b.t{font-size:15px;margin-right:4px}
+.top .sub{font-size:11.5px;color:var(--ink-dim)}
+.top .sp{flex:1}
+.search{height:28px;padding:0 9px;border:1px solid var(--line-2);border-radius:7px;display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-muted);background:var(--inset);min-width:0}
+.search input{border:0;background:transparent;outline:0;color:var(--ink);width:170px;font-size:11.5px}
+
+/* Edge buttons: zero solid amber fill */
+.btn{height:28px;border:1px solid var(--accent-edge);border-radius:7px;background:transparent;color:var(--ink);font-weight:600;font-size:11.5px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;transition:background .15s,transform .1s}
+.btn:hover{background:var(--sel)}
+.btn:active{transform:scale(.97)}
+.btn.q{border-color:var(--line-2);color:var(--ink-muted)}
+.btn.d{border-color:var(--line-2);color:var(--danger-ink)}
+.btn.d:hover{border-color:var(--danger-ink);background:color-mix(in srgb,var(--danger-ink) 10%,transparent)}
+.btn.xs{height:24px;padding:0 8px;font-size:11px}
+
+/* 4-cell KPI strip */
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);flex:none;background:var(--panel)}
+.kpi > div{padding:7px 14px;border-right:1px solid var(--line);min-width:0}
+.kpi > div:last-child{border-right:0}
+.kpi > div.click{cursor:pointer;transition:background .15s}
+.kpi > div.click:hover{background:var(--sel)}
+.kpi span.lbl{display:block;font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim);font-weight:600}
+.kpi b.val{font-size:16px}
+.kpi b.val.bad{color:var(--danger-ink)}
+.kpi i{font-style:normal;font-size:11px;color:var(--ink-dim);margin-left:6px}
+.mix{display:flex;height:6px;border-radius:3px;overflow:hidden;margin-top:5px;background:var(--inset)}
+.mix span{height:100%;width:0;transition:width .7s cubic-bezier(.2,.7,.2,1)}
+.mix .g{background:var(--gold)}.mix .r{background:var(--ink-muted)}.mix .e{background:var(--ink-dim)}
+
+/* Rolling digits */
+.roll{display:inline-flex;align-items:baseline;line-height:1.15;white-space:pre}
+.reel{display:inline-block;height:1.15em;overflow:hidden;vertical-align:bottom}
+.reel > span{display:flex;flex-direction:column;transition:transform .65s cubic-bezier(.2,.7,.2,1)}
+.reel > span > span{height:1.15em}
+
+.st{font-size:9.5px;font-weight:700;letter-spacing:.04em;padding:1px 6px;border-radius:5px;border:1px solid var(--line-2);color:var(--ink-muted);white-space:nowrap;text-transform:uppercase; display:inline-flex;align-items:center;gap:3px}
+.st.bad{border-color:var(--danger-ink);color:var(--danger-ink)}
+.st.g{border-color:var(--accent-edge);color:var(--accent-ink)}
+.dim{color:var(--ink-dim)}
+.r{text-align:right}
+
+/* View-only banner */
+.ro-bar{padding:6px 14px;background:var(--inset);border-bottom:1px solid var(--line);font-size:11.5px;color:var(--ink-dim);display:flex;align-items:center;gap:8px;flex:none}
+
+/* Layout C 3-Pane Body */
+.body{display:grid;grid-template-columns:250px 310px minmax(0,1fr);grid-template-rows:minmax(0,1fr);flex:1;min-height:0;overflow:hidden}
+.tree{border-right:1px solid var(--line);background:var(--panel);padding:6px 0;overflow-y:auto;min-height:0}
+.t{display:grid;grid-template-columns:minmax(0,1fr) 28px 46px;align-items:center;gap:6px;width:100%;border:0;background:transparent;text-align:left;padding:0 10px;height:28px;font-size:11.5px;color:var(--ink)}
+.t:hover{background:var(--sel)}
+.t.l1{font-weight:700}
+.t.l2{padding-left:20px;color:var(--ink-muted)}
+.t.l3{padding-left:32px;color:var(--ink-muted)}
+.t.on{background:var(--wash);color:var(--ink);font-weight:600}
+.t.need{color:var(--accent-ink);font-weight:700;border-bottom:1px solid var(--line);margin-bottom:4px;height:31px}
+.t .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px}
+.dot{width:6px;height:6px;border-radius:999px;background:var(--gold);flex:none}
+.heat{height:5px;border-radius:3px;background:var(--line-2);overflow:hidden}
+.heat span{display:block;height:100%;background:var(--danger-ink);width:0;transition:width .65s cubic-bezier(.2,.7,.2,1)}
+
+/* Middle Pane: Area Facts + Shop List (or Needs Action Queue) */
+.mid{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--ground);overflow:hidden}
+.ah{padding:9px 12px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
+.ah b.at{font-size:14px}
+.af{display:grid;grid-template-columns:repeat(4,1fr);margin-top:6px;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.af div{padding:4px 6px;border-right:1px solid var(--line);background:var(--inset)}
+.af div:last-child{border-right:0}
+.af span.al{display:block;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
+.af b.av2{font-size:13px}
+.mid-list{flex:1;overflow-y:auto;min-height:0}
+.sr{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:8px;width:100%;border:0;background:transparent;text-align:left;align-items:center;padding:0 12px;height:42px;border-bottom:1px solid var(--hair)}
+.sr:hover{background:var(--sel)}
+.sr.sel{background:var(--wash)}
+.av{width:40px;height:40px;border-radius:9px;border:1px solid var(--line-2);background:var(--raised);display:grid;place-items:center;font-weight:700;font-size:12px;color:var(--accent-ink);flex:none}
+.sr .av{width:28px;height:28px;font-size:10px;border-radius:7px}
+.sr b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr span.s{display:block;font-size:10.5px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Needs action cards inside Middle Pane */
+.qsec{padding:7px 12px;background:var(--inset);border-bottom:1px solid var(--line);font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink);display:flex;justify-content:space-between}
+.qcard{padding:9px 12px;border-bottom:1px solid var(--hair);display:flex;flex-direction:column;gap:6px}
+.qcard.sel{background:var(--wash)}
+.qcard .qh{display:flex;justify-content:space-between;align-items:baseline;gap:6px;cursor:pointer}
+.qcard .qh b{font-size:12px}
+
+/* Right Pane: Full Shop in Hand */
+.right{padding:12px 14px;overflow-y:auto;min-height:0;display:flex;flex-direction:column}
+.det{display:flex;flex-direction:column;gap:10px;min-width:0;flex:1}
+.dh{display:flex;gap:10px;align-items:flex-start}
+.dh h3{margin:0;font-size:15px}
+.dh p{margin:1px 0 0;font-size:11.5px;color:var(--ink-dim)}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel);flex:none}
+.facts div{padding:6px 9px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-width:0}
+.facts div:nth-child(4n){border-right:0}
+.facts div:nth-last-child(-n+4){border-bottom:0}
+.facts span.fl{display:block;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);font-weight:600}
+.facts b.fv{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.cards{display:grid;grid-template-columns:1fr;gap:10px}
+.card{border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:9px 10px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.ch{display:flex;justify-content:space-between;align-items:center;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);font-weight:700}
+.map{height:84px;border:1px solid var(--line-2);border-radius:7px;background:var(--inset);position:relative;overflow:hidden}
+.map::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 16px,var(--hair) 16px 17px),repeating-linear-gradient(90deg,transparent 0 20px,var(--hair) 20px 21px)}
+.map .road{position:absolute;left:-10%;right:-10%;top:58%;height:7px;background:var(--line);transform:rotate(-8deg)}
+.map .pin{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:999px;border:1px solid var(--accent-edge);background:var(--raised);font-size:10px;font-weight:700;color:var(--accent-ink);white-space:nowrap}
+.sv{height:84px;border:1px solid var(--line-2);border-radius:7px;overflow:hidden;background:var(--inset)}
+.seg2{display:inline-flex;border:1px solid var(--line-2);border-radius:6px;overflow:hidden}
+.seg2 button{border:0;background:transparent;padding:2px 7px;font-size:10px;color:var(--ink-dim)}
+.seg2 button.on{background:var(--wash);color:var(--ink);font-weight:600}
+.addr{font-size:11px;color:var(--ink-muted)}
+.bf{display:grid;grid-template-columns:1.2fr 1fr 76px auto;gap:5px}
+.inp{height:26px;border:1px solid var(--line-2);border-radius:6px;background:var(--inset);padding:0 7px;font-size:11px;color:var(--ink);outline:0;min-width:0}
+.inp:focus{border-color:var(--accent-edge)}
+table.b{width:100%;border-collapse:collapse}
+table.b th{text-align:left;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);padding:4px 5px;border-bottom:1px solid var(--line)}
+table.b td{padding:5px;border-bottom:1px solid var(--hair);font-size:11.5px;vertical-align:middle}
+table.b tr:last-child td{border-bottom:0}
+.xbtn{border:0;background:transparent;color:var(--danger-ink);font-size:13px;font-weight:700;padding:2px 6px;border-radius:4px}
+.xbtn:hover{background:color-mix(in srgb,var(--danger-ink) 12%,transparent)}
+.acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line);padding-top:9px;margin-top:auto}
+.acts .sp{flex:1}
+
+/* In-page Modals (Admin Tools, Add/Edit Form, Confirm/Prompt Boxes) */
+.ov{position:absolute;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;z-index:25;padding:16px;animation:fi .15s}
+@keyframes fi{from{opacity:0}}
+.dlg{background:var(--raised);border:1px solid var(--accent-edge);border-radius:12px;width:min(720px,100%);max-height:94%;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:11px;box-shadow:0 24px 50px -20px rgba(0,0,0,.65)}
+.dlg.sm{width:min(430px,100%)}
+.dlg h4{margin:0;font-size:14px}
+.dlg p{margin:0;font-size:12px;color:var(--ink-muted);line-height:1.45}
+.dlg .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding-top:4px}
+.box{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+.bh{padding:8px 12px;background:var(--inset);border-bottom:1px solid var(--line);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.br{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--hair);flex-wrap:wrap}
+.br:last-child{border-bottom:0}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tc{border:1px solid var(--line-2);border-radius:8px;background:var(--panel);padding:9px;display:flex;flex-direction:column;gap:5px}
+.tc b{font-size:12px}.tc span{font-size:11px;color:var(--ink-dim);flex:1}
+.form{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
+.form label{display:flex;flex-direction:column;gap:3px;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);font-weight:700}
+.form .inp{height:30px;font-size:11.5px;width:100%}
+.form .w2{grid-column:span 2}.form .w3{grid-column:span 3}.form .w6{grid-column:span 6}
+.link-btn{border:0;background:transparent;padding:0;color:var(--accent-ink);text-decoration:underline;font-size:11px;font-weight:600}
+
+/* Self-drawing gold check toast */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  display:flex;align-items:center;gap:10px;background:var(--raised);border:1px solid var(--accent-edge);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;
+  box-shadow:0 18px 40px -16px rgba(0,0,0,.6);transition:opacity .2s,transform .25s cubic-bezier(.2,.7,.2,1);z-index:50;max-width:calc(100% - 32px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast svg{width:18px;height:18px;flex:none;stroke:var(--gold);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.toast path{stroke-dasharray:24;stroke-dashoffset:24}
+.toast.on path{animation:draw .45s .1s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+/* Phone frame: stacked panes (tree -> area -> shop, with Back key) */
+.sb{height:24px;display:flex;justify-content:space-between;align-items:center;padding:0 18px;font-size:11px;color:var(--ink-dim);background:var(--panel);flex:none}
+.phone .top{padding:8px 12px;gap:6px}
+.phone .top .sub{display:none}
+.phone .search{order:10;flex:1 1 100%;height:30px}
+.phone .search input{width:100%}
+.phone .kpi{grid-template-columns:1fr 1fr}
+.phone .kpi > div{padding:6px 10px;border-bottom:1px solid var(--line)}
+.phone .kpi > div:nth-child(2n){border-right:0}
+.phone .kpi > div:nth-child(n+3){border-bottom:0}
+.phone .kpi i{display:block;margin:1px 0 0;font-size:10px}
+.ph-nav{display:flex;align-items:center;gap:6px;padding:7px 12px;background:var(--inset);border-bottom:1px solid var(--line);flex:none}
+.ph-steps{display:inline-flex;border:1px solid var(--line-2);border-radius:6px;overflow:hidden;margin-left:auto}
+.ph-steps button{border:0;background:transparent;padding:3px 8px;font-size:10.5px;color:var(--ink-dim)}
+.ph-steps button.on{background:var(--wash);color:var(--ink);font-weight:600}
+.phone .body{grid-template-columns:1fr}
+.phone .tree,.phone .mid{border-right:0}
+.phone .facts{grid-template-columns:1fr 1fr}
+.phone .facts div:nth-child(2n){border-right:0}
+.phone .facts div:nth-last-child(-n+4){border-bottom:1px solid var(--line)}
+.phone .facts div:nth-last-child(-n+2){border-bottom:0}
+.phone .bf{grid-template-columns:1fr 1fr}
+.phone .tools{grid-template-columns:1fr}
+.phone .form{grid-template-columns:1fr 1fr}
+.phone .form .w2,.phone .form .w3,.phone .form .w6{grid-column:span 2}
+
+@media (max-width:760px){.fr.pc,.pcap{display:none}}
+.nomotion *,.nomotion *::before,.nomotion *::after{animation:none!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="pin" viewBox="0 0 24 24"><path d="M12 21s6-5.4 6-10.5a6 6 0 1 0-12 0C6 15.6 12 21 12 21z"/><circle cx="12" cy="10.5" r="2"/></symbol>
+  <symbol id="srch" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="fold" viewBox="0 0 24 24"><path d="M3 6h6l2 2h10v10H3z"/></symbol>
+  <symbol id="edit" viewBox="0 0 24 24"><path d="M14 4l6 6-10 10H4v-6z"/></symbol>
+  <symbol id="trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></symbol>
+  <symbol id="chk" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></symbol>
+  <symbol id="globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></symbol>
+  <symbol id="wa" viewBox="0 0 24 24"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/></symbol>
+  <symbol id="gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></symbol>
+  <symbol id="back" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></symbol>
+  <symbol id="cam" viewBox="0 0 24 24"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></symbol>
+  <symbol id="shield" viewBox="0 0 24 24"><path d="M12 3l8 3.5v5.5c0 5-3.4 8.3-8 9.8-4.6-1.5-8-4.8-8-9.8V6.5z"/></symbol>
+</svg>
+
+<div class="board">
+  <h1>Customers · Layout C (area tree)</h1>
+  <span>View as <span class="seg" id="role"><button type="button" aria-pressed="true" data-v="boss">T1/T2 Boss</button><button type="button" aria-pressed="false" data-v="regional">T3/T4 Regional</button><button type="button" aria-pressed="false" data-v="view">T5 View Only</button></span></span>
+  <span>Theme <span class="seg" id="theme"><button type="button" aria-pressed="true" data-v="">System</button><button type="button" aria-pressed="false" data-v="light">Light</button><button type="button" aria-pressed="false" data-v="dark">Dark</button></span></span>
+  <span>Motion <span class="seg" id="motion"><button type="button" aria-pressed="true" data-v="on">On</button><button type="button" aria-pressed="false" data-v="off">Lite</button></span></span>
+  <span style="flex-basis:100%">Three panes: (1) folder tree Prov › Kab › Kec with shop counts, red late bars, and "Needs action" on top; (2) the picked area's 4 numbers and its shops; (3) the full shop. On the phone the three panes stack (Tree → Area → Shop) with a Back key.</span>
+</div>
+
+<p class="cap pcap">PC · 1240 px (Three Panes: Folder Tree · Picked Area · Full Shop)</p>
+<div class="fr pc" id="pc"></div>
+<p class="cap">Phone · 390 px (Live Stacked Panes: Tree → Area → Shop with Back Key)</p>
+<div class="fr phone" id="ph"></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span id="toastT"></span></div>
+
+<script>
+const ROSTER = ['Agus Prasetyo', 'Ari Wibowo', 'Budi Santoso', 'Dika Saputra', 'Sri Rahayu', 'Ujang Pratama'];
+
+const FOLDERS = [
+  { prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU' },
+  { prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'SOREANG' },
+  { prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'CILILIN' },
+  { prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'BALEENDAH' },
+  { prov: 'JAWA BARAT', kab: 'KOTA CIMAHI', kec: 'CIMAHI TENGAH' },
+  { prov: 'JAWA BARAT', kab: 'KOTA CIMAHI', kec: 'CIMAHI SELATAN' },
+  { prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MUNTILAN' },
+  { prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MERTOYUDAN' },
+];
+
+const SHOPS = [
+  { id: 's1', name: 'AMANAH BARU', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Budi Santoso', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-08', state: '10d late', late: true, wa: '0812-3456-7890', gps: '-6.9654, 107.5759', addr: 'Jl. Kopo Bihbul No. 42, next to the minimarket · Folder 1', embed: '', hasPhoto: false, logs: [
+    { id: 'l1', p: 'Kretek 12', n: 'Competitor · eye-level rack', v: 'High sales', rp: 11000 },
+    { id: 'l2', p: 'Mild 16', n: 'Competitor · promo poster', v: 'Medium', rp: 18500 },
+    { id: 'l3', p: 'Filter 12', n: 'Competitor · dusty stock', v: 'Slow', rp: 14000 },
+  ] },
+  { id: 's2', name: 'ANEKA BARU PANJI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Budi Santoso', noo: 'Dika Saputra', tier: 'Unranked', price: 'Retail', grosirAsk: true, freq: 7, last: '2026-11-15', state: '4d left', late: false, wa: '0813-2209-1122', gps: '-6.9695, 107.5752', addr: 'Jl. Taman Kopo Indah II No. 14', embed: '', hasPhoto: false, logs: [
+    { id: 'l4', p: 'Kretek 16', n: 'Competitor · counter display', v: 'High sales', rp: 16500 },
+  ] },
+  { id: 's3', name: 'WARUNG BU DARMI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-12', state: '1d left', late: false, wa: '0812-9001-2233', gps: '-6.9618, 107.5711', addr: 'Gg. Masjid Al-Huda No. 3', embed: '', hasPhoto: false, logs: [] },
+  { id: 's4', name: 'TOKO JAYA ABADI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Silver', price: 'Grosir', grosirAsk: false, freq: 7, last: '2026-11-13', state: '2d left', late: false, wa: '0813-8811-4455', gps: '-6.9640, 107.5802', addr: 'Jl. Raya Kopo No. 118', embed: '', hasPhoto: false, logs: [] },
+  { id: 's5', name: 'MINIMARKET SARI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Budi Santoso', noo: 'Budi Santoso', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-08', state: '3d late', late: true, wa: '0812-3344-5566', gps: '-6.9671, 107.5764', addr: 'Jl. Sadang Sari No. 9', embed: '', hasPhoto: false, logs: [] },
+  { id: 's6', name: 'KIOS BAROKAH', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Ecer', grosirAsk: false, freq: 7, last: '2026-11-17', state: '6d left', late: false, wa: '0856-1122-3344', gps: '-6.9688, 107.5790', addr: 'Pasar Segar Kopo Blok A', embed: '', hasPhoto: false, logs: [] },
+  { id: 's7', name: 'CEMERLANG', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'SOREANG', status: 'PENDING', pic: 'Unassigned', noo: 'Sri Rahayu', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-09', state: '2d late', late: true, wa: '0857-9901-3344', gps: '-7.0241, 107.5198', addr: 'Pasar Soreang Blok B No. 12', embed: '', hasPhoto: false, logs: [] },
+  { id: 's8', name: 'TOKO SUMBER REJEKI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'SOREANG', status: 'Approved', pic: 'Dika Saputra', noo: 'Dika Saputra', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 14, last: '2026-11-17', state: '13d left', late: false, wa: '0812-6655-4433', gps: '-7.0285, 107.5210', addr: 'Jl. Raya Soreang-Banjaran', embed: '', hasPhoto: false, logs: [] },
+  { id: 's9', name: 'ARIF CILILIN', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'CILILIN', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-15', state: '4d left', late: false, wa: '0813-7766-5544', gps: '-6.9512, 107.4590', addr: 'Alun-Alun Cililin Barat', embed: '', hasPhoto: false, logs: [] },
+  { id: 's10', name: 'HQ (RETAIL) 1', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'CILILIN', status: 'Approved', pic: 'Ujang Pratama', noo: 'Admin', tier: 'Unranked', price: 'Grosir', grosirAsk: false, freq: 14, last: '2026-11-14', state: '10d left', late: false, wa: '0812-8877-6655', gps: '-6.9491, 107.4581', addr: 'Jl. Raya Cililin No. 9', embed: '', hasPhoto: false, logs: [] },
+  { id: 's11', name: 'LARIS JAYA', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'BALEENDAH', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Silver', price: 'Grosir', grosirAsk: false, freq: 7, last: '2026-11-16', state: '5d left', late: false, wa: '0812-4433-2211', gps: '-7.0050, 107.6310', addr: 'Jl. Adipati Agung No. 29', embed: '', hasPhoto: false, logs: [] },
+  { id: 's12', name: 'ANUGRAH 17', prov: 'JAWA BARAT', kab: 'KOTA CIMAHI', kec: 'CIMAHI TENGAH', status: 'Approved', pic: 'Ari Wibowo', noo: 'Ari Wibowo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-14', state: '3d left', late: false, wa: '0813-9988-7766', gps: '-6.8721, 107.5425', addr: 'Jl. Gandawijaya No. 17', embed: '', hasPhoto: false, logs: [] },
+  { id: 's13', name: 'HJ EUIS', prov: 'JAWA BARAT', kab: 'KOTA CIMAHI', kec: 'CIMAHI SELATAN', status: 'Approved', pic: 'Ari Wibowo', noo: 'Ari Wibowo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-07', state: '4d late', late: true, wa: '0812-5544-3322', gps: '-6.9012, 107.5390', addr: 'Jl. Melong Asih No. 8', embed: '', hasPhoto: false, logs: [] },
+  { id: 's14', name: 'ASYIFA MART MADURA', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MUNTILAN', status: 'Approved', pic: 'Dika Saputra', noo: 'Dika Saputra', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '', state: 'Never visited', late: true, wa: '0812-7788-9900', gps: '-7.5812, 110.2894', addr: 'Jl. Pemuda No. 18, Muntilan', embed: '', hasPhoto: false, logs: [] },
+  { id: 's15', name: 'ENDANG CELL', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MUNTILAN', status: 'Approved', pic: 'Budi Santoso', noo: 'Budi Santoso', tier: 'Epic', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-02', state: '9d late', late: true, wa: '0811-2233-4455', gps: '-7.5801, 110.2910', addr: 'Jl. Talun Km 1, Muntilan', embed: '', hasPhoto: false, logs: [] },
+  { id: 's16', name: 'TOKO HARAPAN JAYA', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MUNTILAN', status: 'Approved', pic: 'Unassigned', noo: 'Agus Prasetyo', tier: 'Silver', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-16', state: '5d left', late: false, wa: '0813-4455-6677', gps: '-7.5844, 110.2932', addr: 'Jl. Kartini No. 7, Muntilan', embed: '', hasPhoto: false, logs: [] },
+  { id: 's17', name: 'TOKO SRI REJEKI', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MERTOYUDAN', status: 'Approved', pic: 'Budi Santoso', noo: 'Budi Santoso', tier: 'Unranked', price: 'Grosir', grosirAsk: false, freq: 7, last: '2026-11-15', state: '4d left', late: false, wa: '0812-6677-8899', gps: '-7.5230, 110.2241', addr: 'Jl. Mayjen Bambang Soegeng', embed: '', hasPhoto: false, logs: [] },
+];
+
+const DUPS = [
+  { id: 'g1', reason: 'name and location', dist: '12 m apart', far: false, members: [
+    { id: 's1', name: 'AMANAH BARU', place: 'MARGAHAYU, KAB. BANDUNG', tag: 'oldest — likely original', date: '24 Jun 2026', agent: 'Budi Santoso' },
+    { id: 'd2', name: 'AMANAH BARU', place: '-6.9654, 107.5759', tag: '12 m from oldest', date: '15 Nov 2026', agent: 'unassigned' },
+  ] },
+  { id: 'g2', reason: 'same name only', dist: '14.5 km apart', far: true, members: [
+    { id: 's7', name: 'CEMERLANG', place: 'SOREANG, KAB. BANDUNG', tag: 'oldest — likely original', date: '02 Jul 2026', agent: 'Unassigned' },
+    { id: 'd4', name: 'CEMERLANG', place: 'MARGAHAYU, KAB. BANDUNG', tag: '14.5 km from oldest', date: '11 Nov 2026', agent: 'Dika Saputra' },
+  ] },
+];
+
+const G = { role: 'boss', motion: true, tierBroken: 2, scrubbed: false, ignoredDups: new Set(), showIgnoredDups: false };
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const rp = (n) => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
+const iniOf = (name) => String(name || 'ST').replace(/[^A-Za-z0-9 ]+/g, ' ').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase() || 'ST';
+const shortName = (n) => (!n || n === 'Unassigned') ? '—' : n.split(' ')[0] + (n.split(' ')[1] ? ' ' + n.split(' ')[1][0] + '.' : '');
+
+/* ---------- rolling digits + self-drawing gold check toast ---------- */
+function rollHTML(text, prevText) {
+  const out = [], pt = prevText || '', off = text.length - pt.length;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (/\d/.test(c)) {
+      const old = pt[i - off], from = /\d/.test(old || '') ? +old : 0;
+      out.push(`<span class="reel"><span data-to="${c}" style="transform:translateY(-${from * 1.15}em)">${'0123456789'.split('').map((x) => `<span>${x}</span>`).join('')}</span></span>`);
+    } else out.push(`<span>${esc(c)}</span>`);
+  }
+  return `<span class="roll" aria-label="${esc(text)}">${out.join('')}</span>`;
+}
+function R(st, key, text) { const h = rollHTML(text, st.prev[key]); st.prev[key] = text; return h; }
+function settleRolls(root) {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    root.querySelectorAll('.reel > span[data-to]').forEach((s) => { s.style.transform = `translateY(-${+s.dataset.to * 1.15}em)`; });
+    root.querySelectorAll('[data-w]').forEach((b) => { b.style.width = b.dataset.w; });
+  }));
+}
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.classList.remove('on');
+  void t.offsetWidth;
+  document.getElementById('toastT').textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('on'), 2800);
+}
+
+/* ---------- dual-mounted app (PC 3-pane + Phone stacked) ---------- */
+const apps = [];
+const freshState = (mode) => ({
+  mode, q: '', node: 'kec:MARGAHAYU', sel: 's1', phoneStep: 'tree', locMode: 'both',
+  bProd: '', bNote: '', bPrice: '', ownerPick: {}, prev: {}, grown: false,
+  modal: null, form: null, promptVal: '', folderLevel: 'Kecamatan',
+});
+
+function mount(el, mode) {
+  const st = freshState(mode);
+  apps.push({ el, st });
+  el.addEventListener('click', (e) => onClick(e, el, st));
+  el.addEventListener('input', (e) => onInput(e, el, st));
+  el.addEventListener('change', (e) => onInput(e, el, st));
+  render(el, st);
+}
+function rerenderAll() { apps.forEach((a) => render(a.el, a.st)); }
+
+function scopedShops() {
+  return G.role === 'regional' ? SHOPS.filter((s) => s.prov === 'JAWA BARAT') : SHOPS;
+}
+
+function kpiOf() {
+  const all = scopedShops();
+  const total = all.length;
+  const late = all.filter((s) => s.late).length;
+  const grosirAsks = all.filter((s) => s.grosirAsk);
+  const noSalesman = all.filter((s) => !s.pic || s.pic === 'Unassigned');
+  const needs = grosirAsks.length + noSalesman.length;
+  const gCnt = all.filter((s) => s.price === 'Grosir').length;
+  const eCnt = all.filter((s) => s.price === 'Ecer').length;
+  const gPct = total ? Math.round((gCnt / total) * 100) : 0;
+  const ePct = total ? Math.round((eCnt / total) * 100) : 0;
+  const rPct = Math.max(0, 100 - gPct - ePct);
+  const provs = new Set(all.map((s) => s.prov)).size;
+  const kecs = new Set(all.map((s) => s.kec)).size;
+  return { total, late, grosirAsks, noSalesman, needs, gPct, rPct, ePct, provs, kecs };
+}
+
+function shopsForNode(node, qStr) {
+  const all = scopedShops();
+  const q = (qStr || '').trim().toLowerCase();
+  const matchQ = (s) => !q || (s.name + ' ' + s.kec + ' ' + s.kab + ' ' + s.prov + ' ' + s.pic + ' ' + s.noo).toLowerCase().includes(q);
+  if (node === 'NEEDS_ACTION') {
+    return all.filter((s) => (s.grosirAsk || !s.pic || s.pic === 'Unassigned') && matchQ(s));
+  }
+  const [kind, val] = String(node || '').split(':');
+  return all.filter((s) => {
+    if (kind === 'prov' && s.prov !== val) return false;
+    if (kind === 'kab' && s.kab !== val) return false;
+    if (kind === 'kec' && s.kec !== val) return false;
+    return matchQ(s);
+  }).sort((a, b) => a.name.localeCompare(b.name, 'id', { sensitivity: 'base' }));
+}
+
+function nodeTitle(node) {
+  if (node === 'NEEDS_ACTION') return { name: 'Needs action', sub: 'Grosir asks & unassigned shops', kind: 'need' };
+  const [kind, val] = String(node || '').split(':');
+  const f = FOLDERS.find((x) => x.kec === val || x.kab === val || x.prov === val);
+  const sub = kind === 'kec' ? (f?.kab || 'Unmapped') : kind === 'kab' ? (f?.prov || 'Indonesia') : 'Provinsi';
+  return { name: val || 'MARGAHAYU', sub, kind };
+}
+
+function render(el, st) {
+  const ph = st.mode === 'phone', ro = G.role === 'view', boss = G.role === 'boss';
+  if (G.role === 'regional' && st.node.includes('JAWA TENGAH')) st.node = 'kec:MARGAHAYU';
+  if (ro && st.node === 'NEEDS_ACTION') st.node = 'kec:MARGAHAYU';
+  const kpi = kpiOf();
+  const W = (x) => st.grown ? `style="width:${x}"` : `data-w="${x}"`;
+  const areaList = shopsForNode(st.node, st.q);
+  if (!st.sel || !SHOPS.some((s) => s.id === st.sel)) st.sel = areaList[0]?.id || SHOPS[0]?.id || null;
+  const activeShop = SHOPS.find((s) => s.id === st.sel) || areaList[0] || SHOPS[0];
+  const nt = nodeTitle(st.node);
+
+  let html = ph ? `<div class="sb"><span>09:41</span><span>5G · 92%</span></div>` : '';
+  html += `<div class="top">
+    <b class="t">Customers</b>
+    <span class="sub">${G.role === 'boss' ? 'Master HQ · every region' : G.role === 'regional' ? 'JAWA BARAT · Hendra Gunawan' : 'View-only · T5 Operative'}</span>
+    <label class="search"><svg class="i"><use href="#srch"/></svg><input data-f="q" id="q-${st.mode}" value="${esc(st.q)}" placeholder="Shop, area, or salesman..." aria-label="Search"></label>
+    <span class="sp"></span>
+    ${boss ? `<button type="button" class="btn q" data-act="add-folder"><svg class="i"><use href="#plus"/></svg>Folder</button>` : ''}
+    ${boss ? `<button type="button" class="btn q" data-act="open-tools"><svg class="i"><use href="#gear"/></svg>Admin tools</button>` : ''}
+    ${!ro ? `<button type="button" class="btn" data-act="add-shop"><svg class="i"><use href="#plus"/></svg>${ph ? 'Add' : 'Add customer'}</button>` : ''}
+  </div>
+
+  <div class="kpi">
+    <div><span class="lbl">Shops filed</span><b class="val">${R(st, 'k-tot', String(kpi.total))}</b><i>${kpi.provs} provinces · ${kpi.kecs} kecamatan</i></div>
+    <div><span class="lbl">Overdue visits</span><b class="val bad">${R(st, 'k-late', String(kpi.late))}</b><i>past their rhythm</i></div>
+    <div class="${!ro ? 'click' : ''}" ${!ro ? 'data-node="NEEDS_ACTION"' : ''}><span class="lbl">Needs action</span><b class="val" style="color:var(--accent-ink)">${R(st, 'k-act', String(kpi.needs))}</b><i>${kpi.grosirAsks.length} Grosir ask · ${kpi.noSalesman.length} no salesman</i></div>
+    <div><span class="lbl">Price mix</span><div class="mix"><span class="g" ${W(kpi.gPct + '%')}></span><span class="r" ${W(kpi.rPct + '%')}></span><span class="e" ${W(kpi.ePct + '%')}></span></div><i style="margin:0">Grosir ${kpi.gPct}% · Retail ${kpi.rPct}% · Ecer ${kpi.ePct}%</i></div>
+  </div>
+  ${ro ? `<div class="ro-bar"><svg class="i"><use href="#shield"/></svg><span>View Only mode: browse the area tree and inspect shops; adding or editing is disabled.</span></div>` : ''}`;
+
+  if (ph) {
+    html += `<div class="ph-nav">
+      ${st.phoneStep === 'area' ? `<button type="button" class="btn xs q" data-act="ph-back-tree"><svg class="i"><use href="#back"/></svg>Folders</button>` : ''}
+      ${st.phoneStep === 'shop' ? `<button type="button" class="btn xs q" data-act="ph-back-area"><svg class="i"><use href="#back"/></svg>${esc(nt.name)}</button>` : ''}
+      ${st.phoneStep === 'tree' ? `<span style="font-size:11px;font-weight:700;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.05em">1 · Pick an area</span>` : ''}
+      <div class="ph-steps" role="group" aria-label="Phone pane">
+        <button type="button" class="${st.phoneStep === 'tree' ? 'on' : ''}" data-pstep="tree">Tree</button>
+        <button type="button" class="${st.phoneStep === 'area' ? 'on' : ''}" data-pstep="area">Area (${areaList.length})</button>
+        <button type="button" class="${st.phoneStep === 'shop' ? 'on' : ''}" data-pstep="shop">Shop</button>
+      </div>
+    </div>`;
+  }
+
+  html += `<div class="body">`;
+  if (!ph || st.phoneStep === 'tree') html += renderTreePane(st, kpi, W, ro);
+  if (!ph || st.phoneStep === 'area') html += renderMidPane(st, nt, areaList, kpi, ro, boss);
+  if (!ph || st.phoneStep === 'shop') html += renderRightPane(activeShop, st, ro, boss);
+  html += `</div>`;
+
+  if (st.modal) html += st.modal(st);
+  el.innerHTML = html;
+  settleRolls(el);
+  st.grown = true;
+}
+
+function renderTreePane(st, kpi, W, ro) {
+  const all = scopedShops();
+  const provMap = new Map();
+  FOLDERS.forEach((f) => {
+    if (G.role === 'regional' && f.prov !== 'JAWA BARAT') return;
+    if (!provMap.has(f.prov)) provMap.set(f.prov, new Map());
+    const kabMap = provMap.get(f.prov);
+    if (!kabMap.has(f.kab)) kabMap.set(f.kab, []);
+    if (!kabMap.get(f.kab).includes(f.kec)) kabMap.get(f.kab).push(f.kec);
+  });
+
+  const rowBtn = (node, label, list, cls) => {
+    const cnt = list.length;
+    const latePct = cnt ? Math.min(100, Math.round((list.filter((s) => s.late).length / cnt) * 100)) : 0;
+    const on = st.node === node ? ' on' : '';
+    return `<button type="button" class="t ${cls}${on}" data-node="${esc(node)}">
+      <span class="nm">${esc(label)}</span>
+      <span class="dim r">${cnt}</span>
+      <div class="heat"><span ${W(latePct + '%')}></span></div>
+    </button>`;
+  };
+
+  let h = `<aside class="tree" aria-label="Area folder tree">`;
+  if (!ro) {
+    h += `<button type="button" class="t need ${st.node === 'NEEDS_ACTION' ? 'on' : ''}" data-node="NEEDS_ACTION">
+      <span class="nm"><span class="dot"></span>Needs action</span>
+      <span class="dim r">${kpi.needs}</span>
+      <span></span>
+    </button>`;
+  }
+  for (const [prov, kabMap] of provMap.entries()) {
+    h += rowBtn('prov:' + prov, prov, all.filter((s) => s.prov === prov), 'l1');
+    for (const [kab, kecs] of kabMap.entries()) {
+      h += rowBtn('kab:' + kab, kab, all.filter((s) => s.kab === kab), 'l2');
+      for (const kec of kecs) {
+        h += rowBtn('kec:' + kec, kec, all.filter((s) => s.kec === kec), 'l3');
+      }
+    }
+  }
+  const unk = all.filter((s) => s.kec === 'UNKNOWN KECAMATAN');
+  if (unk.length > 0 || st.node === 'kec:UNKNOWN KECAMATAN') {
+    h += rowBtn('kec:UNKNOWN KECAMATAN', 'Unknown kecamatan', unk, 'l1');
+  }
+  h += `</aside>`;
+  return h;
+}
+
+function renderMidPane(st, nt, areaList, kpi, ro, boss) {
+  if (st.node === 'NEEDS_ACTION') {
+    const gAsks = kpi.grosirAsks;
+    const oAsks = kpi.noSalesman;
+    return `<section class="mid" aria-label="Needs action queue">
+      <div class="ah">
+        <b class="at">Needs action</b> <span class="dim">· T1–T4 approvals</span>
+        <div class="af">
+          <div><span class="al">Waiting</span><b class="av2" style="color:var(--accent-ink)">${R(st, 'na-tot', String(kpi.needs))}</b></div>
+          <div><span class="al">Grosir?</span><b class="av2">${R(st, 'na-gr', String(gAsks.length))}</b></div>
+          <div><span class="al">No PIC</span><b class="av2">${R(st, 'na-pic', String(oAsks.length))}</b></div>
+          <div><span class="al">Pending</span><b class="av2">${R(st, 'na-pnd', String(scopedShops().filter((s) => s.status === 'PENDING').length))}</b></div>
+        </div>
+      </div>
+      <div class="mid-list">
+        <div class="qsec"><span>Grosir asks (${gAsks.length})</span><span>price tier</span></div>
+        ${gAsks.length ? gAsks.map((c) => `<div class="qcard ${st.sel === c.id ? 'sel' : ''}">
+          <div class="qh" data-row="${c.id}"><b>${esc(c.name)}</b><span class="dim" style="font-size:10.5px">${esc(c.kec)} · asked by ${esc(shortName(c.noo))}</span></div>
+          <div style="display:flex;gap:6px">
+            <button type="button" class="btn xs q" style="flex:1" data-act="grosir-no" data-id="${c.id}">Keep ${esc(c.price)}</button>
+            <button type="button" class="btn xs" style="flex:1" data-act="grosir-yes" data-id="${c.id}"><svg class="i"><use href="#chk"/></svg>Confirm Grosir</button>
+          </div>
+        </div>`).join('') : `<div style="padding:10px 12px;font-size:11.5px;color:var(--ink-dim)">All Grosir requests decided.</div>`}
+
+        <div class="qsec"><span>Waiting for a salesman (${oAsks.length})</span><span>assign PIC</span></div>
+        ${oAsks.length ? oAsks.map((c) => {
+          const picked = st.ownerPick[c.id] || ROSTER[0];
+          return `<div class="qcard ${st.sel === c.id ? 'sel' : ''}">
+            <div class="qh" data-row="${c.id}"><b>${esc(c.name)}</b><span class="dim" style="font-size:10.5px">${esc(c.kec)} · added by ${esc(shortName(c.noo))}</span></div>
+            <div style="display:flex;gap:6px">
+              <select class="inp" style="flex:1" data-f="owner-pick" data-id="${c.id}" aria-label="Salesman for ${esc(c.name)}">
+                ${ROSTER.map((r) => `<option value="${esc(r)}" ${picked === r ? 'selected' : ''}>${esc(r)}</option>`).join('')}
+              </select>
+              <button type="button" class="btn xs" data-act="give-agent" data-id="${c.id}"><svg class="i"><use href="#chk"/></svg>Give</button>
+            </div>
+          </div>`;
+        }).join('') : `<div style="padding:10px 12px;font-size:11.5px;color:var(--ink-dim)">Every shop has a salesman assigned.</div>`}
+      </div>
+    </section>`;
+  }
+
+  const lateCnt = areaList.filter((s) => s.late).length;
+  const grosirCnt = areaList.filter((s) => s.price === 'Grosir').length;
+  const asksCnt = areaList.filter((s) => s.grosirAsk || !s.pic || s.pic === 'Unassigned').length;
+  const agents = [...new Set(areaList.map((s) => s.pic && s.pic !== 'Unassigned' ? s.pic.split(' ')[0] : null).filter(Boolean))].slice(0, 3).join(', ') || 'Unassigned';
+
+  return `<section class="mid" aria-label="Picked area shops">
+    <div class="ah">
+      <b class="at">${esc(nt.name)}</b> <span class="dim">· ${esc(nt.sub)} · ${esc(agents)}</span>
+      <div class="af">
+        <div><span class="al">Shops</span><b class="av2">${R(st, 'a-sh', String(areaList.length))}</b></div>
+        <div><span class="al">Late</span><b class="av2" style="color:var(--danger-ink)">${R(st, 'a-lt', String(lateCnt))}</b></div>
+        <div><span class="al">Grosir</span><b class="av2">${R(st, 'a-gr', String(grosirCnt))}</b></div>
+        <div><span class="al">Asks</span><b class="av2" style="color:var(--accent-ink)">${R(st, 'a-ak', String(asksCnt))}</b></div>
+      </div>
+      ${boss ? `<div style="display:flex;gap:6px;margin-top:7px">
+        <button type="button" class="btn xs q" data-act="ren-folder"><svg class="i" style="width:12px;height:12px"><use href="#edit"/></svg>Rename</button>
+        <button type="button" class="btn xs d" data-act="del-folder"><svg class="i" style="width:12px;height:12px"><use href="#trash"/></svg>Reset to Unknown</button>
+      </div>` : ''}
+    </div>
+    <div class="mid-list">
+      ${areaList.length ? areaList.map((s) => {
+        const badgeCls = s.grosirAsk ? 'g' : (s.late || s.status === 'PENDING' || !s.pic || s.pic === 'Unassigned') ? 'bad' : '';
+        const badgeTxt = s.status === 'PENDING' ? 'PENDING' : s.grosirAsk ? 'Grosir?' : (!s.pic || s.pic === 'Unassigned') ? 'No salesman' : s.state;
+        return `<button type="button" class="sr ${st.sel === s.id ? 'sel' : ''}" data-row="${s.id}">
+          <div class="av">${iniOf(s.name)}</div>
+          <div style="min-width:0"><b>${esc(s.name)}</b><span class="s">${esc(shortName(s.pic))} · ${esc(s.price)}${s.tier !== 'Unranked' ? ' · ' + esc(s.tier) : ''}</span></div>
+          <span class="st ${badgeCls}">${esc(badgeTxt)}</span>
+        </button>`;
+      }).join('') : `<div style="padding:28px 14px;text-align:center;color:var(--ink-dim);font-size:12px">No shops in this folder match.</div>`}
+    </div>
+  </section>`;
+}
+
+function renderRightPane(s, st, ro, boss) {
+  if (!s) return `<section class="right"><div class="dim" style="padding:36px;text-align:center">Pick a shop from the middle pane.</div></section>`;
+  const stateCls = s.status === 'PENDING' || s.late ? 'bad' : s.grosirAsk ? 'g' : '';
+  const stateLabel = s.status === 'PENDING' ? 'PENDING' : s.state;
+  const lastTxt = s.last ? `${s.last.slice(8).replace(/^0/, '')} Nov · ${s.state}` : 'Never visited';
+  const showMap = st.locMode !== 'street';
+  const showSv = st.locMode !== 'map';
+
+  return `<section class="right" aria-label="Full shop details">
+    <div class="det">
+      <div class="dh">
+        <div class="av">${iniOf(s.name)}</div>
+        <div style="flex:1;min-width:0">
+          <h3>${esc(s.name)}</h3>
+          <p>${esc(s.kec)} · ${esc(s.kab)} · ${esc(s.prov)} · ${esc(s.status)}</p>
+        </div>
+        <span class="st ${stateCls}">${esc(stateLabel)}</span>
+      </div>
+
+      <div class="facts">
+        <div><span class="fl">Salesman (PIC)</span><b class="fv">${esc(s.pic)}</b></div>
+        <div><span class="fl">Opened by (NOO)</span><b class="fv">${esc(s.noo)}</b></div>
+        <div><span class="fl">Price tier</span><b class="fv">${esc(s.price)}</b></div>
+        <div><span class="fl">Map tier</span><b class="fv">${esc(s.tier)}</b></div>
+        <div><span class="fl">Visit rhythm</span><b class="fv">Every ${s.freq} days</b></div>
+        <div><span class="fl">Last visit</span><b class="fv" style="${s.late ? 'color:var(--danger-ink)' : ''}">${esc(lastTxt)}</b></div>
+        <div><span class="fl">WhatsApp</span><b class="fv">${esc(s.wa)}</b></div>
+        <div>
+          <span class="fl">Grosir ask</span>
+          ${s.grosirAsk && !ro
+            ? `<span style="display:flex;gap:4px;margin-top:1px"><button type="button" class="btn xs" style="height:20px;padding:0 6px;font-size:10px" data-act="grosir-yes" data-id="${s.id}">Confirm</button><button type="button" class="btn xs q" style="height:20px;padding:0 6px;font-size:10px" data-act="grosir-no" data-id="${s.id}">Keep</button></span>`
+            : `<b class="fv">${s.grosirAsk ? 'Waiting' : 'None'}</b>`}
+        </div>
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <div class="ch">
+            <span>Location</span>
+            <span class="seg2" role="group" aria-label="Location view">
+              <button type="button" class="${st.locMode === 'both' ? 'on' : ''}" data-act="loc-mode" data-m="both">Both</button>
+              <button type="button" class="${st.locMode === 'map' ? 'on' : ''}" data-act="loc-mode" data-m="map">GPS map</button>
+              <button type="button" class="${st.locMode === 'street' ? 'on' : ''}" data-act="loc-mode" data-m="street">Street View</button>
+            </span>
+          </div>
+          <div style="display:grid;grid-template-columns:${showMap && showSv ? '1fr 1fr' : '1fr'};gap:6px">
+            ${showMap ? `<div class="map"><div class="road"></div><span class="pin"><svg class="i" style="width:11px;height:11px"><use href="#pin"/></svg>${esc(s.gps)}</span></div>` : ''}
+            ${showSv ? `<div class="sv"><svg viewBox="0 0 160 96" width="100%" height="100%" preserveAspectRatio="none" role="img" aria-label="Street View of the shop"><rect width="160" height="96" fill="var(--inset)"/><rect x="0" y="70" width="160" height="26" fill="var(--line)"/><rect x="18" y="26" width="124" height="46" fill="var(--panel)" stroke="var(--line-2)"/><rect x="18" y="16" width="124" height="14" fill="var(--line-2)"/><text x="80" y="26" text-anchor="middle" font-size="7.5" font-weight="700" fill="var(--ink)">${esc(s.name)}</text><rect x="30" y="40" width="34" height="32" fill="var(--ground)" stroke="var(--line-2)"/><rect x="78" y="38" width="50" height="20" fill="var(--wash)" stroke="var(--accent-edge)"/></svg></div>` : ''}
+          </div>
+          <div class="addr">${esc(s.addr)}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button type="button" class="btn q" data-act="open-map" data-id="${s.id}"><svg class="i"><use href="#globe"/></svg>Open in Map</button>
+            <button type="button" class="btn q" data-act="wa-chat" data-id="${s.id}"><svg class="i"><use href="#wa"/></svg>WhatsApp</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ch"><span>Competitor intelligence</span><span>${s.logs.length} logs</span></div>
+          ${!ro ? `<div class="bf">
+            <input class="inp" data-f="bProd" id="bp-${st.mode}" value="${esc(st.bProd)}" placeholder="Brand & product">
+            <input class="inp" data-f="bNote" id="bn-${st.mode}" value="${esc(st.bNote)}" placeholder="Shelf / promo note">
+            <input class="inp" data-f="bPrice" id="br-${st.mode}" value="${esc(st.bPrice)}" type="number" placeholder="Price Rp">
+            <button type="button" class="btn" data-act="add-bench" data-id="${s.id}">Add</button>
+          </div>` : ''}
+          <table class="b">
+            <thead><tr><th>Product</th><th>Selling</th><th class="r">Price</th><th style="width:28px"></th></tr></thead>
+            <tbody>
+              ${s.logs.length ? s.logs.map((l) => `<tr>
+                <td><b>${esc(l.p)}</b><div class="dim" style="font-size:10.5px">${esc(l.n)}</div></td>
+                <td><span class="st ${l.v === 'Slow' ? 'bad' : ''}">${esc(l.v)}</span></td>
+                <td class="r"><b>${rp(l.rp)}</b></td>
+                <td class="r">${!ro ? `<button type="button" class="xbtn" data-act="del-bench" data-id="${s.id}" data-lid="${l.id}" aria-label="Delete competitor price">×</button>` : ''}</td>
+              </tr>`).join('') : `<tr><td colspan="4" class="dim" style="text-align:center;padding:12px">No competitor prices logged yet.</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="acts">
+        ${boss ? `<select class="inp" style="width:142px;height:28px" data-f="move-kec" data-id="${s.id}" aria-label="Move folder">
+          ${FOLDERS.map((f) => `<option value="${esc(f.kec)}" ${s.kec === f.kec ? 'selected' : ''}>${esc(f.kec)}</option>`).join('')}
+          ${s.kec === 'UNKNOWN KECAMATAN' ? `<option value="UNKNOWN KECAMATAN" selected>UNKNOWN KECAMATAN</option>` : ''}
+          <option value="CREATE_NEW">+ New Folder...</option>
+        </select>` : ''}
+        ${boss ? `<button type="button" class="btn" data-act="verify-noo" data-id="${s.id}"><svg class="i"><use href="#chk"/></svg>Verify NOO</button>` : ''}
+        ${!ro ? `<button type="button" class="btn q" data-act="edit-shop" data-id="${s.id}"><svg class="i"><use href="#edit"/></svg>Edit shop</button>` : ''}
+        <span class="sp"></span>
+        ${boss ? `<button type="button" class="btn d" data-act="del-shop" data-id="${s.id}"><svg class="i"><use href="#trash"/></svg>Delete</button>` : ''}
+      </div>
+    </div>
+  </section>`;
+}
+
+/* ---------- in-page modals ---------- */
+const M = {
+  tools: () => () => {
+    const visDups = DUPS.filter((g) => G.showIgnoredDups || !G.ignoredDups.has(g.id)).filter((g) => g.members.length > 1);
+    return `<div class="ov"><div class="dlg" role="dialog" aria-label="Admin tools">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h4>Admin tools · T1/T2</h4>
+        <button type="button" class="btn xs q" data-act="close">Close</button>
+      </div>
+      <div class="tools">
+        ${G.tierBroken > 0 ? `<div class="tc"><b>Repair ${G.tierBroken} store tiers</b><span>Copies the old pricingTier field to priceTier. Nothing deleted.</span><button type="button" class="btn" data-act="repair-tiers">Run repair</button></div>` : `<div class="tc"><b>Store tiers clean</b><span>Every store already carries priceTier.</span><span class="st g">Repaired</span></div>`}
+        <div class="tc"><b>Find duplicates</b><span>Same name or pins within 40 m. ${visDups.length} group(s). "Not duplicates" is remembered.</span><button type="button" class="btn" data-act="scan-dups">Scan now</button></div>
+        <div class="tc"><b>Data scrub</b><span>Fills empty Prov/Kab/Kec from the map pin, then the address.</span><button type="button" class="btn q" data-act="scrub">${G.scrubbed ? 'Scrubbed clean' : 'Preview'}</button></div>
+        <div class="tc"><b>Import map markers</b><span>Pins from a .kml file land in the Unassigned pool.</span><button type="button" class="btn q" data-act="import-kml">Choose .kml</button></div>
+      </div>
+      <div class="box">
+        <div class="bh">
+          <span>Duplicate report · ${visDups.length} group${visDups.length === 1 ? '' : 's'}</span>
+          <span>${G.ignoredDups.size > 0 ? `${G.ignoredDups.size} cleared · <button type="button" class="link-btn" data-act="toggle-ignored">${G.showIgnoredDups ? 'Hide' : 'Show'}</button> · <button type="button" class="link-btn" data-act="reset-ignored">Bring all back</button>` : 'read-only until you act'}</span>
+        </div>
+        ${visDups.length ? visDups.map((g) => `<div class="br" style="flex-direction:column;align-items:stretch;gap:6px;${G.ignoredDups.has(g.id) ? 'opacity:.6' : ''}">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--accent-ink)">
+            <span>${g.members.length} copies · matched by ${esc(g.reason)} · ${esc(g.dist)}</span>
+            ${G.ignoredDups.has(g.id) ? `<span class="dim" style="text-transform:none">marked not duplicates</span>` : `<button type="button" class="btn xs q" data-act="not-dup" data-gid="${g.id}"><svg class="i"><use href="#chk"/></svg>Not duplicates</button>`}
+          </div>
+          ${g.far ? `<div style="padding:5px 8px;border-left:3px solid var(--accent-edge);background:var(--sel);font-size:11px"><b>Probably NOT duplicates.</b> Same name only, and ${esc(g.dist)}.</div>` : ''}
+          ${g.members.map((m) => `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding-top:5px;border-top:1px solid var(--hair)">
+            <b>${esc(m.name)}</b>
+            <span class="st"><svg class="i" style="width:10px;height:10px"><use href="#pin"/></svg>${esc(m.place)}</span>
+            <span class="st g">${esc(m.tag)}</span>
+            <span class="dim" style="font-size:11px">${esc(m.date)} · ${esc(m.agent)}</span>
+            <span style="flex:1"></span>
+            <button type="button" class="btn xs q" data-act="dup-edit" data-id="${m.id}">Edit</button>
+            <button type="button" class="btn xs d" data-act="del-dup" data-gid="${g.id}" data-mid="${m.id}">Delete</button>
+          </div>`).join('')}
+        </div>`).join('') : `<div class="br dim">Nothing left to review.</div>`}
+      </div>
+    </div></div>`;
+  },
+  editShop: () => (st) => {
+    const f = st.form;
+    return `<div class="ov"><div class="dlg" role="dialog" aria-label="${f.id ? 'Edit customer' : 'Add customer'}">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h4>${f.id ? 'Edit customer · ' + esc(f.name) : 'Add customer'}</h4>
+        <span class="st g">GPS pin required to save</span>
+      </div>
+      <div class="form">
+        <label class="w3">Store name<input class="inp" data-m="name" value="${esc(f.name)}"></label>
+        <label class="w3">Phone (WhatsApp)<input class="inp" data-m="wa" value="${esc(f.wa)}" placeholder="0812 3456 7890"></label>
+        <label>Map pin tier<select class="inp" data-m="tier">${['Unranked', 'Silver', 'Epic'].map((t) => `<option ${f.tier === t ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
+        <label>Price type<select class="inp" data-m="price">${['Retail', 'Grosir', 'Ecer'].map((p) => `<option ${f.price === p ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
+        <label>Salesman (PIC)<input class="inp" data-m="pic" value="${esc(f.pic)}"></label>
+        <label>Visit every<select class="inp" data-m="freq">${[7, 14, 30].map((d) => `<option value="${d}" ${+f.freq === d ? 'selected' : ''}>${d} days</option>`).join('')}</select></label>
+        <label>Last visit<input class="inp" type="date" data-m="last" value="${esc(f.last)}"></label>
+        <label>Store photo<button type="button" class="btn ${f.hasPhoto ? '' : 'q'}" style="height:30px;width:100%" data-guide="photo" data-act="toggle-photo"><svg class="i"><use href="#cam"/></svg>${f.hasPhoto ? 'Uploaded' : 'Upload'}</button></label>
+        <label class="w2">Provinsi<input class="inp" data-m="prov" value="${esc(f.prov)}"></label>
+        <label class="w2">Kabupaten<input class="inp" data-m="kab" value="${esc(f.kab)}"></label>
+        <label class="w2">Kecamatan<input class="inp" data-m="kec" value="${esc(f.kec)}"></label>
+        <label class="w3">GPS coordinates<div style="display:flex;gap:4px"><input class="inp" style="flex:1;font-family:monospace" data-m="gps" value="${esc(f.gps)}" placeholder="-6.9654, 107.5759"><button type="button" class="btn xs q" data-act="auto-find">Auto-find</button><button type="button" class="btn xs q" data-act="my-gps">My GPS</button></div></label>
+        <label class="w3">Street View link<input class="inp" data-m="embed" value="${esc(f.embed)}" placeholder="Paste a Google Maps link"></label>
+        <label class="w6">Address &amp; notes<input class="inp" data-m="addr" value="${esc(f.addr)}"></label>
+      </div>
+      <div class="row">
+        <button type="button" class="btn q" data-act="close">Cancel</button>
+        <button type="button" class="btn" data-act="save-shop"><svg class="i"><use href="#chk"/></svg>${f.id ? 'Update profile' : 'Save customer'}</button>
+      </div>
+    </div></div>`;
+  },
+  addFolder: (moveShopId) => (st) => `<div class="ov"><div class="dlg sm" role="dialog" aria-label="New folder">
+    <h4>New Kecamatan folder</h4>
+    <p>Folder names are stored in capital letters under their Provinsi &amp; Kabupaten.</p>
+    <label style="display:flex;flex-direction:column;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-dim)">Kecamatan name<input class="inp" style="height:32px" data-f="promptVal" id="pv-${st.mode}" value="${esc(st.promptVal)}" placeholder="e.g. DAYEUHKOLOT"></label>
+    <div class="row"><button type="button" class="btn q" data-act="close">Cancel</button><button type="button" class="btn" data-act="confirm-add-folder" ${moveShopId ? `data-move="${moveShopId}"` : ''}><svg class="i"><use href="#chk"/></svg>Create folder</button></div>
+  </div></div>`,
+  renFolder: (oldName) => (st) => `<div class="ov"><div class="dlg sm" role="dialog" aria-label="Rename folder">
+    <h4>Rename "${esc(oldName)}"</h4>
+    <p>Moves every shop inside ${esc(oldName)} to the new name using sequential chunked batches.</p>
+    <label style="display:flex;flex-direction:column;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-dim)">New name<input class="inp" style="height:32px" data-f="promptVal" id="pv-${st.mode}" value="${esc(st.promptVal)}"></label>
+    <div class="row"><button type="button" class="btn q" data-act="close">Cancel</button><button type="button" class="btn" data-act="confirm-ren-folder" data-old="${esc(oldName)}"><svg class="i"><use href="#chk"/></svg>Rename</button></div>
+  </div></div>`,
+  delFolder: (name, count) => () => `<div class="ov"><div class="dlg sm" role="alertdialog" aria-label="Reset folder to Unknown">
+    <h4>Reset "${esc(name)}" to Unknown?</h4>
+    <p>Moves ${count} shop(s) into <b>Unknown kecamatan</b>. No shop profile or sales history is deleted.</p>
+    <div class="row"><button type="button" class="btn q" data-act="close">Keep folder</button><button type="button" class="btn d" data-act="confirm-del-folder" data-name="${esc(name)}"><svg class="i"><use href="#trash"/></svg>Reset to Unknown</button></div>
+  </div></div>`,
+  delBench: (s, l) => () => `<div class="ov"><div class="dlg sm" role="alertdialog" aria-label="Delete competitor price">
+    <h4>Remove competitor price?</h4>
+    <p><b>${esc(l.p)}</b> (${esc(l.n)}) · <b>${rp(l.rp)}</b> at ${esc(s.name)}.</p>
+    <div class="row"><button type="button" class="btn q" data-act="close">Keep it</button><button type="button" class="btn d" data-act="confirm-del-bench" data-id="${s.id}" data-lid="${l.id}"><svg class="i"><use href="#trash"/></svg>Delete</button></div>
+  </div></div>`,
+  delShop: (s) => () => `<div class="ov"><div class="dlg sm" role="alertdialog" aria-label="Delete shop">
+    <h4>Delete ${esc(s.name)}?</h4>
+    <p>${esc(s.kec)} · ${esc(s.kab)} · handled by <b>${esc(s.pic)}</b>. Its sales history stays in the ledger, and this removal is written to the audit log.</p>
+    <div class="row"><button type="button" class="btn q" data-act="close">Keep shop</button><button type="button" class="btn d" data-act="confirm-del-shop" data-id="${s.id}"><svg class="i"><use href="#trash"/></svg>Delete</button></div>
+  </div></div>`,
+  delDup: (g, m) => () => `<div class="ov"><div class="dlg sm" role="alertdialog" aria-label="Delete duplicate store">
+    <h4>Delete duplicate "${esc(m.name)}"?</h4>
+    ${g.far ? `<p style="color:var(--danger-ink);font-weight:600">Warning: these only share a name and sit ${esc(g.dist)}.</p>` : ''}
+    <p>${esc(m.place)} · registered ${esc(m.date)} · ${esc(m.agent)}. This cannot be undone.</p>
+    <div class="row"><button type="button" class="btn q" data-act="close">Cancel</button><button type="button" class="btn d" data-act="confirm-del-dup" data-gid="${g.id}" data-mid="${m.id}"><svg class="i"><use href="#trash"/></svg>Delete permanently</button></div>
+  </div></div>`,
+  scrub: () => () => `<div class="ov"><div class="dlg sm" role="dialog" aria-label="Data scrub preview">
+    <h4>Data scrub · ${SHOPS.length} shops</h4>
+    <p>• <b>2 shops</b> get their area from their map pin (<code>areaFromPin</code>)<br>• <b>1 shop</b> gets its Kabupaten from address words<br>• <b>0 shops</b> stay UNMAPPED<br>• Typed areas are never overwritten, only normalized to capitals.</p>
+    <div class="row"><button type="button" class="btn q" data-act="open-tools">Back</button><button type="button" class="btn" data-act="confirm-scrub"><svg class="i"><use href="#chk"/></svg>Run Data Scrub</button></div>
+  </div></div>`,
+  kml: () => () => `<div class="ov"><div class="dlg sm" role="dialog" aria-label="Import KML">
+    <h4>Import Map Marker (.kml)</h4>
+    <p>Found <b>2 valid GPS pins</b> in <code>bandung-selatan.kml</code> (Folder: <b>BALEENDAH</b>). Each store lands in the Unassigned pool.</p>
+    <div class="row"><button type="button" class="btn q" data-act="open-tools">Back</button><button type="button" class="btn" data-act="confirm-kml"><svg class="i"><use href="#chk"/></svg>Import 2 Pins</button></div>
+  </div></div>`,
+};
+
+/* ---------- events ---------- */
+function refocus(el, id) {
+  const i = el.querySelector('#' + id);
+  if (i) { i.focus(); if (i.setSelectionRange && i.type !== 'number' && i.type !== 'date') i.setSelectionRange(i.value.length, i.value.length); }
+}
+
+function onInput(e, el, st) {
+  const tg = e.target, f = tg.dataset.f, m = tg.dataset.m;
+  if (m && st.form) {
+    st.form[m] = (m === 'prov' || m === 'kab' || m === 'kec') ? tg.value.toUpperCase() : tg.value;
+    return;
+  }
+  if (!f) return;
+  if (f === 'q') { st.q = tg.value; render(el, st); return refocus(el, `q-${st.mode}`); }
+  if (f === 'bProd' || f === 'bNote' || f === 'bPrice' || f === 'promptVal') { st[f] = tg.value; return; }
+  if (f === 'owner-pick') { st.ownerPick[tg.dataset.id] = tg.value; return; }
+  if (f === 'move-kec' && e.type === 'change') {
+    const s = SHOPS.find((x) => x.id === tg.dataset.id);
+    if (!s) return;
+    if (tg.value === 'CREATE_NEW') {
+      st.promptVal = '';
+      st.modal = M.addFolder(s.id);
+      return render(el, st);
+    }
+    const targetFolder = FOLDERS.find((x) => x.kec === tg.value);
+    s.kec = tg.value;
+    if (targetFolder) { s.prov = targetFolder.prov; s.kab = targetFolder.kab; }
+    st.node = 'kec:' + tg.value;
+    rerenderAll();
+    return toast(`${s.name} moved to ${s.kec}`);
+  }
+}
+
+function onClick(e, el, st) {
+  const b = e.target.closest('button, [data-node], [data-row], .ov');
+  if (!b) return;
+  if (b.classList.contains('ov')) { if (e.target === b) { st.modal = null; st.form = null; render(el, st); } return; }
+  const d = b.dataset;
+
+  if (d.pstep) { st.phoneStep = d.pstep; return render(el, st); }
+  if (d.node) {
+    st.node = d.node;
+    const list = shopsForNode(st.node, st.q);
+    if (list.length && !list.some((x) => x.id === st.sel)) st.sel = list[0].id;
+    if (st.mode === 'phone') st.phoneStep = 'area';
+    return render(el, st);
+  }
+  if (d.row && !d.act) {
+    st.sel = d.row;
+    if (st.mode === 'phone') st.phoneStep = 'shop';
+    return render(el, st);
+  }
+
+  const s = SHOPS.find((x) => x.id === d.id) || SHOPS.find((x) => x.id === st.sel);
+  switch (d.act) {
+    case 'close': st.modal = null; st.form = null; return render(el, st);
+    case 'ph-back-tree': st.phoneStep = 'tree'; return render(el, st);
+    case 'ph-back-area': st.phoneStep = 'area'; return render(el, st);
+    case 'loc-mode': st.locMode = d.m; return render(el, st);
+    case 'open-map': return toast(`Map Mission Control centered on ${s ? s.name : 'shop'}`);
+    case 'wa-chat': return toast(`WhatsApp chat opened for ${s ? s.name : 'shop'} (${s ? s.wa : ''})`);
+    case 'add-bench': {
+      if (!s) return;
+      const prod = (st.bProd || '').trim() || 'Kretek 16';
+      const note = (st.bNote || '').trim() || 'Competitor · shelf check';
+      const price = Math.max(1000, parseInt(st.bPrice, 10) || 15500);
+      s.logs.unshift({ id: 'l' + Date.now(), p: prod, n: note.includes('Competitor') ? note : 'Competitor · ' + note, v: 'High sales', rp: price });
+      st.bProd = ''; st.bNote = ''; st.bPrice = '';
+      rerenderAll();
+      return toast(`Competitor price added for ${s.name}`);
+    }
+    case 'del-bench': {
+      if (!s) return;
+      const l = s.logs.find((x) => x.id === d.lid);
+      if (l) { st.modal = M.delBench(s, l); render(el, st); }
+      return;
+    }
+    case 'confirm-del-bench': {
+      if (!s) return;
+      s.logs = s.logs.filter((x) => x.id !== d.lid);
+      st.modal = null;
+      rerenderAll();
+      return toast('Competitor price removed');
+    }
+    case 'verify-noo': {
+      if (!s) return;
+      s.status = 'Approved';
+      rerenderAll();
+      return toast(`${s.name} verified as Approved NOO`);
+    }
+    case 'grosir-yes': {
+      if (!s) return;
+      s.price = 'Grosir';
+      s.grosirAsk = false;
+      rerenderAll();
+      return toast(`${s.name} confirmed at Grosir pricing`);
+    }
+    case 'grosir-no': {
+      if (!s) return;
+      s.grosirAsk = false;
+      rerenderAll();
+      return toast(`${s.name} kept at ${s.price} pricing`);
+    }
+    case 'give-agent': {
+      if (!s) return;
+      const picked = st.ownerPick[s.id] || ROSTER[0];
+      s.pic = picked;
+      rerenderAll();
+      return toast(`${s.name} assigned to ${picked}`);
+    }
+    case 'add-folder': st.promptVal = ''; st.modal = M.addFolder(null); return render(el, st);
+    case 'confirm-add-folder': {
+      const clean = (st.promptVal || '').trim().toUpperCase();
+      if (!clean) return toast('Type a Kecamatan folder name');
+      const curFolder = FOLDERS.find((f) => st.node.endsWith(f.kec) || st.node.endsWith(f.kab) || st.node.endsWith(f.prov)) || FOLDERS[0];
+      if (!FOLDERS.some((f) => f.kec === clean)) FOLDERS.push({ prov: curFolder.prov, kab: curFolder.kab, kec: clean });
+      if (d.move) {
+        const ms = SHOPS.find((x) => x.id === d.move);
+        if (ms) { ms.kec = clean; ms.prov = curFolder.prov; ms.kab = curFolder.kab; }
+      }
+      st.node = 'kec:' + clean;
+      st.modal = null;
+      rerenderAll();
+      return toast(`Folder ${clean} created`);
+    }
+    case 'ren-folder': {
+      const nt = nodeTitle(st.node);
+      st.promptVal = nt.name;
+      st.modal = M.renFolder(nt.name);
+      return render(el, st);
+    }
+    case 'confirm-ren-folder': {
+      const next = (st.promptVal || '').trim().toUpperCase(), old = d.old;
+      if (!next || next === old) { st.modal = null; return render(el, st); }
+      FOLDERS.forEach((f) => {
+        if (f.kec === old) f.kec = next;
+        if (f.kab === old) f.kab = next;
+        if (f.prov === old) f.prov = next;
+      });
+      SHOPS.forEach((x) => {
+        if (x.kec === old) x.kec = next;
+        if (x.kab === old) x.kab = next;
+        if (x.prov === old) x.prov = next;
+      });
+      const [kind] = st.node.split(':');
+      st.node = (kind || 'kec') + ':' + next;
+      st.modal = null;
+      rerenderAll();
+      return toast(`Renamed ${old} to ${next}`);
+    }
+    case 'del-folder': {
+      const nt = nodeTitle(st.node);
+      const list = shopsForNode(st.node, '');
+      st.modal = M.delFolder(nt.name, list.length);
+      return render(el, st);
+    }
+    case 'confirm-del-folder': {
+      const target = d.name;
+      const list = shopsForNode(st.node, '');
+      list.forEach((x) => { x.kec = 'UNKNOWN KECAMATAN'; });
+      const idx = FOLDERS.findIndex((f) => f.kec === target);
+      if (idx > -1 && FOLDERS.length > 1) FOLDERS.splice(idx, 1);
+      st.node = 'kec:UNKNOWN KECAMATAN';
+      st.modal = null;
+      rerenderAll();
+      return toast(`${target} reset to Unknown kecamatan`);
+    }
+    case 'open-tools': st.modal = M.tools(); return render(el, st);
+    case 'repair-tiers': {
+      const n = G.tierBroken;
+      G.tierBroken = 0;
+      st.modal = M.tools();
+      rerenderAll();
+      return toast(`Repaired ${n} store tiers`);
+    }
+    case 'scan-dups': {
+      st.modal = M.tools();
+      rerenderAll();
+      const live = DUPS.filter((g) => !G.ignoredDups.has(g.id) && g.members.length > 1).length;
+      return toast(`Scanned ${SHOPS.length} stores: ${live} duplicate group(s)`);
+    }
+    case 'not-dup': {
+      G.ignoredDups.add(d.gid);
+      st.modal = M.tools();
+      rerenderAll();
+      return toast('Marked as not duplicates');
+    }
+    case 'toggle-ignored': G.showIgnoredDups = !G.showIgnoredDups; st.modal = M.tools(); rerenderAll(); return;
+    case 'reset-ignored': G.ignoredDups.clear(); G.showIgnoredDups = false; st.modal = M.tools(); rerenderAll(); return toast('Cleared duplicate groups restored');
+    case 'del-dup': {
+      const g = DUPS.find((x) => x.id === d.gid);
+      const m = g?.members.find((x) => x.id === d.mid);
+      if (g && m) { st.modal = M.delDup(g, m); render(el, st); }
+      return;
+    }
+    case 'confirm-del-dup': {
+      const g = DUPS.find((x) => x.id === d.gid);
+      if (g) g.members = g.members.filter((x) => x.id !== d.mid);
+      const si = SHOPS.findIndex((x) => x.id === d.mid);
+      if (si > -1) SHOPS.splice(si, 1);
+      st.modal = M.tools();
+      rerenderAll();
+      return toast('Duplicate store deleted');
+    }
+    case 'dup-edit': {
+      const target = SHOPS.find((x) => x.id === d.id) || SHOPS[0];
+      st.node = 'kec:' + target.kec;
+      st.sel = target.id;
+      st.form = { ...target };
+      st.modal = M.editShop();
+      return render(el, st);
+    }
+    case 'scrub': st.modal = M.scrub(); return render(el, st);
+    case 'confirm-scrub': {
+      G.scrubbed = true;
+      SHOPS.forEach((x) => { x.prov = x.prov.toUpperCase(); x.kab = x.kab.toUpperCase(); x.kec = x.kec.toUpperCase(); });
+      st.modal = M.tools();
+      rerenderAll();
+      return toast('Data Scrub complete: 3 shops normalized');
+    }
+    case 'import-kml': st.modal = M.kml(); return render(el, st);
+    case 'confirm-kml': {
+      SHOPS.push(
+        { id: 'kml1', name: 'KIOS BERKAH', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'BALEENDAH', status: 'Approved', pic: 'Unassigned', noo: 'KML Import', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '', state: 'Never visited', late: true, wa: '—', gps: '-7.0051, 107.6312', addr: 'Imported from Map Marker KML', embed: '', hasPhoto: false, logs: [] },
+        { id: 'kml2', name: 'WARUNG BU NENG', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'BALEENDAH', status: 'Approved', pic: 'Unassigned', noo: 'KML Import', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '', state: 'Never visited', late: true, wa: '—', gps: '-7.0068, 107.6335', addr: 'Imported from Map Marker KML', embed: '', hasPhoto: false, logs: [] }
+      );
+      st.node = 'kec:BALEENDAH';
+      st.modal = null;
+      rerenderAll();
+      return toast('Imported 2 pins into BALEENDAH (Unassigned pool)');
+    }
+    case 'add-shop': {
+      const curKec = st.node.startsWith('kec:') ? st.node.slice(4) : 'MARGAHAYU';
+      const f = FOLDERS.find((x) => x.kec === curKec) || FOLDERS[0];
+      st.form = { id: null, name: '', wa: '', tier: 'Unranked', price: 'Retail', pic: 'Budi Santoso', freq: 7, last: '2026-11-18', prov: f.prov, kab: f.kab, kec: f.kec, gps: '-6.9654, 107.5759', embed: '', addr: '', hasPhoto: false };
+      st.modal = M.editShop();
+      return render(el, st);
+    }
+    case 'edit-shop': {
+      if (!s) return;
+      st.form = { ...s };
+      st.modal = M.editShop();
+      return render(el, st);
+    }
+    case 'toggle-photo': if (st.form) { st.form.hasPhoto = !st.form.hasPhoto; render(el, st); toast(st.form.hasPhoto ? 'Store photo attached' : 'Store photo cleared'); } return;
+    case 'auto-find': if (st.form) { st.form.gps = '-6.9682, 107.5784'; render(el, st); toast('GPS coordinates filled from address'); } return;
+    case 'my-gps': if (st.form) { st.form.gps = '-6.9654, 107.5759'; render(el, st); toast('GPS locked to current position'); } return;
+    case 'save-shop': {
+      const f = st.form;
+      if (!f) return;
+      const name = (f.name || '').trim().toUpperCase();
+      if (!name) return toast('Store name is required');
+      const coords = (f.gps || '').split(',').map((x) => parseFloat(x.trim()));
+      if (coords.length !== 2 || !Number.isFinite(coords[0]) || !Number.isFinite(coords[1]) || (coords[0] === 0 && coords[1] === 0)) {
+        return toast('A valid non-zero GPS pin is required before saving');
+      }
+      const prov = (f.prov || 'JAWA BARAT').trim().toUpperCase();
+      const kab = (f.kab || 'KAB. BANDUNG').trim().toUpperCase();
+      const kec = (f.kec || 'MARGAHAYU').trim().toUpperCase();
+      if (!FOLDERS.some((x) => x.kec === kec)) FOLDERS.push({ prov, kab, kec });
+      if (f.id) {
+        const orig = SHOPS.find((x) => x.id === f.id);
+        if (orig) Object.assign(orig, { ...f, name, prov, kab, kec, late: !f.last, state: f.last ? '7d left' : 'Never visited' });
+        st.modal = null; st.form = null;
+        rerenderAll();
+        return toast(`${name} updated`);
+      } else {
+        const nid = 's' + (SHOPS.length + 10);
+        SHOPS.push({ ...f, id: nid, name, prov, kab, kec, status: 'Approved', noo: 'Admin', grosirAsk: false, late: !f.last, state: f.last ? '7d left' : 'Never visited', logs: [] });
+        st.node = 'kec:' + kec;
+        st.sel = nid;
+        st.modal = null; st.form = null;
+        rerenderAll();
+        return toast(`${name} added to ${kec}`);
+      }
+    }
+    case 'del-shop': if (s) { st.modal = M.delShop(s); render(el, st); } return;
+    case 'confirm-del-shop': {
+      if (!s) return;
+      const idx = SHOPS.indexOf(s);
+      if (idx > -1) SHOPS.splice(idx, 1);
+      st.modal = null; st.sel = null;
+      if (st.mode === 'phone') st.phoneStep = 'area';
+      rerenderAll();
+      return toast(`${s.name} deleted, written to audit log`);
+    }
+  }
+}
+
+/* ---------- top board controls ---------- */
+const segs = (id, fn) => document.getElementById(id).addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  b.parentElement.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b));
+  fn(b.dataset.v);
+});
+segs('role', (v) => {
+  G.role = v;
+  apps.forEach((a) => { a.st.modal = null; a.st.form = null; });
+  rerenderAll();
+  toast(v === 'boss' ? 'T1/T2 Boss: every region, Needs action, and Admin tools' : v === 'regional' ? 'T3/T4 Regional: JAWA BARAT tree and Needs action queue' : 'T5 View Only: browse tree and shops only');
+});
+segs('theme', (v) => { if (v) document.documentElement.dataset.theme = v; else delete document.documentElement.dataset.theme; });
+segs('motion', (v) => { G.motion = v === 'on'; document.body.classList.toggle('nomotion', !G.motion); });
+
+mount(document.getElementById('pc'), 'pc');
+mount(document.getElementById('ph'), 'phone');
+</script>
+</body>
+</html>
