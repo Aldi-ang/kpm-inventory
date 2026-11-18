@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <style>
-/* layout: KPM v5 master-detail (Receivables look) - one dense KPI strip, ledger left, receipt in hand right; phone opens under its row */
+/* layout: KPM v5 master-detail (Receivables look, his "keep this UI" 2026-11-18) - one dense KPI strip, ledger left, receipt in hand right; phone opens under its row */
 :root{
   --ground:#D6CEBA;--panel:#E3DCCB;--raised:#EAE4D6;--inset:#DCD4C1;--line:#B8AF9C;--line-2:#9F9785;--hair:rgba(19,18,17,.10);
   --ink:#131211;--ink-muted:#3A3733;--ink-dim:#5E584F;--gold:#8A5A12;--accent-ink:#5A3B05;--accent-edge:#8A6420;--danger-ink:#7A2118;
@@ -26,48 +26,44 @@ button{cursor:pointer}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
-/* page controls (not part of the app) */
 .board{max-width:1180px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;font-size:12.5px;color:var(--ink-muted)}
 .board h1{font-size:13px;margin:0;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
-.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;flex-wrap:wrap}
 .seg button{border:0;background:transparent;padding:5px 10px;font-size:12px;color:var(--ink-dim)}
 .seg button[aria-pressed="true"]{background:var(--wash);color:var(--ink);font-weight:600}
 .cap{max-width:1180px;margin:22px auto 10px;color:var(--ink-dim);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
 
 .frame{background:var(--ground);border:1px solid var(--line-2);margin:0 auto;border-radius:12px;overflow:hidden;position:relative;box-shadow:0 18px 40px -24px rgba(0,0,0,.55)}
-.frame.pc{max-width:1180px;height:760px}
-.frame.phone{width:390px;max-width:100%;height:820px;border-radius:24px}
+.frame.pc{max-width:1180px;height:780px}
+.frame.phone{width:390px;max-width:100%;height:840px;border-radius:24px}
 .app{height:100%;display:flex;flex-direction:column;min-height:0}
 
-/* buttons: gold EDGE, never a gold fill (his 2026-11-17) */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:34px;padding:0 13px;border:1px solid var(--accent-edge);
   background:transparent;color:var(--ink);font-weight:600;font-size:12.5px;border-radius:8px;white-space:nowrap;transition:background .15s}
 .btn:hover{background:var(--sel)}
 .btn.quiet{border-color:var(--line-2);color:var(--ink-muted)}
 .btn.danger{border-color:var(--line-2);color:var(--danger-ink)}
 .btn.sm{height:30px;padding:0 10px;font-size:12px}
-.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.xs{height:26px;padding:0 8px;font-size:11.5px}
 
-/* header */
 .hd{display:flex;align-items:center;gap:10px;padding:14px 20px 0;flex-wrap:wrap}
 .hd h2{margin:0;font-size:17px;font-weight:700;letter-spacing:-.01em;margin-right:6px}
 .hd .sub{font-size:12px;color:var(--ink-dim);margin-right:auto}
 .ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .field{height:32px;border:1px solid var(--line-2);border-radius:8px;background:var(--inset);padding:0 10px;font-size:12.5px;color:var(--ink)}
 .search{display:flex;align-items:center;gap:6px;height:32px;border:1px solid var(--line-2);border-radius:8px;background:var(--inset);padding:0 10px;color:var(--ink-dim);min-width:0}
-.search input{border:0;background:transparent;outline:0;width:170px;font-size:12.5px;color:var(--ink)}
+.search input{border:0;background:transparent;outline:0;width:150px;font-size:12.5px;color:var(--ink)}
 .per{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;height:32px}
-.per button{border:0;background:transparent;padding:0 11px;font-size:12.5px;color:var(--ink-dim)}
+.per button{border:0;background:transparent;padding:0 10px;font-size:12.5px;color:var(--ink-dim)}
 .per button[aria-pressed="true"]{background:var(--wash);color:var(--ink);font-weight:600}
 
-/* KPI strip: one line, all the money facts */
-.kpi{display:grid;grid-template-columns:1.35fr 1fr 1fr 1fr 1.6fr;gap:0;margin:12px 20px 0;border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+.kpi{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1.6fr;margin:12px 20px 0;border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
 .k{padding:10px 14px;border-right:1px solid var(--line);min-width:0}
 .k:last-child{border-right:0}
 .k .l{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim);font-weight:600;display:flex;justify-content:space-between;gap:6px}
 .k .v{font-size:19px;font-weight:700;letter-spacing:-.015em;margin-top:2px;white-space:nowrap}
 .k .v.sm{font-size:16px}
-.k .d{font-size:11.5px;color:var(--ink-dim);margin-top:1px;white-space:nowrap}
+.k .d{font-size:11.5px;color:var(--ink-dim);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .d .up{color:var(--accent-ink);font-weight:600}.d .dn{color:var(--danger-ink);font-weight:600}
 .spark{display:block;width:100%;height:26px;margin-top:4px}
 .mix{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:8px 0 6px;background:var(--inset)}
@@ -76,18 +72,18 @@ svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.6;stro
 .mixl i{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:5px;vertical-align:1px}
 .c-cash{background:var(--ink-muted)}.c-tf{background:var(--line-2)}.c-qr{background:var(--ink-dim)}.c-ti{background:var(--gold)}
 
-/* tabs */
-.tabs{display:flex;gap:22px;padding:0 20px;border-bottom:1px solid var(--line);margin-top:10px;overflow-x:auto}
+.part{margin:8px 20px 0;display:flex;align-items:center;gap:10px;justify-content:space-between;padding:7px 12px;border:1px dashed var(--accent-edge);border-radius:8px;font-size:12px;color:var(--ink-muted);flex-wrap:wrap}
+
+.tabs{display:flex;gap:20px;padding:0 20px;border-bottom:1px solid var(--line);margin-top:10px;overflow-x:auto}
 .tab{border:0;background:transparent;padding:9px 0 10px;border-bottom:2px solid transparent;font-size:13px;font-weight:600;color:var(--ink-dim);white-space:nowrap}
 .tab[aria-selected="true"]{color:var(--ink);border-color:var(--gold)}
 .tab .n{font-weight:500;color:var(--ink-dim);margin-left:4px}
 
-/* work area */
 .work{flex:1;display:flex;min-height:0}
 .list{width:470px;flex:none;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--panel);min-height:0}
 .rows{flex:1;overflow:auto;min-height:0}
 .day{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;padding:7px 16px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-dim);background:var(--inset);border-bottom:1px solid var(--line)}
-.r{display:grid;grid-template-columns:42px minmax(0,1fr) 74px 58px 104px;align-items:center;gap:8px;width:100%;min-height:44px;padding:6px 16px;border:0;border-bottom:1px solid var(--hair);background:transparent;text-align:left}
+.r{display:grid;grid-template-columns:42px minmax(0,1fr) 62px 74px 100px;align-items:center;gap:8px;width:100%;min-height:44px;padding:6px 16px;border:0;border-bottom:1px solid var(--hair);background:transparent;text-align:left}
 .r:hover{background:var(--sel)}
 .r.sel{background:var(--wash)}
 .r .t{font-size:12px;color:var(--ink-dim)}
@@ -96,14 +92,14 @@ svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.6;stro
 .r .sh span{display:block;font-size:11.5px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .r .ag{font-size:12px;color:var(--ink-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .r .am{text-align:right;font-weight:600;font-size:13px;white-space:nowrap}
-.r .am.neg{color:var(--danger-ink)}
-.chip{justify-self:start;font-size:10.5px;font-weight:600;letter-spacing:.03em;padding:2px 6px;border-radius:5px;border:1px solid var(--line-2);color:var(--ink-muted);white-space:nowrap}
+.r .am.neg{color:var(--danger-ink)}.r .am.zero{color:var(--ink-dim)}
+.chip{justify-self:start;font-size:10px;font-weight:600;letter-spacing:.03em;padding:2px 6px;border-radius:5px;border:1px solid var(--line-2);color:var(--ink-muted);white-space:nowrap}
 .chip.ti{border-color:var(--accent-edge);color:var(--accent-ink)}
 .chip.rt{border-color:var(--danger-ink);color:var(--danger-ink)}
+.pk{font-size:10px;font-weight:700;color:var(--accent-ink);letter-spacing:.04em;margin-left:4px}
 .more{padding:14px 16px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--ink-dim)}
 .empty{padding:40px 20px;text-align:center;color:var(--ink-dim);font-size:13px}
 
-/* in hand */
 .hand{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--ground)}
 .hand .in{flex:1;padding:20px 26px;display:flex;flex-direction:column;gap:14px;overflow:auto;min-height:0}
 .fade{animation:fadeUp .24s cubic-bezier(.2,.7,.2,1)}
@@ -133,37 +129,54 @@ tfoot td{background:var(--inset);font-weight:700;border-top:1px solid var(--line
 .act{display:flex;align-items:center;gap:8px;padding:12px 26px;border-top:1px solid var(--line);flex-wrap:wrap}
 .act .sp{flex:1}
 .lock{font-size:11.5px;color:var(--ink-dim)}
+.note{margin:0;font-size:13px;color:var(--ink-muted)}
 
-/* products / salesmen tables */
-.pane{flex:1;overflow:auto;padding:16px 20px;min-height:0}
+.pane{flex:1;overflow:auto;padding:16px 20px;min-height:0;display:flex;flex-direction:column;gap:14px}
+.sec{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim);display:flex;justify-content:space-between;align-items:center;gap:8px}
 .bar{height:6px;border-radius:3px;background:var(--inset);overflow:hidden;min-width:60px}
 .bar span{display:block;height:100%;background:var(--gold);width:0;transition:width .8s cubic-bezier(.2,.7,.2,1)}
 .rowbtn{cursor:pointer}
 .rowbtn:hover td{background:var(--sel)}
-.hint{font-size:12px;color:var(--ink-dim);margin:0 0 10px}
+.hint{font-size:12px;color:var(--ink-dim);margin:0}
+.crumb{display:flex;flex-wrap:wrap;align-items:center;gap:4px;font-size:12px;color:var(--ink-dim)}
+.crumb button{border:0;background:transparent;padding:2px 4px;border-radius:4px;color:var(--ink-muted);font-size:12px}
+.crumb button:hover{background:var(--sel)}
+.crumb b{color:var(--ink);padding:2px 4px}
+.folders{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.fold{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);text-align:left;width:100%}
+.fold:hover{border-color:var(--accent-edge);background:var(--sel)}
+.fold .fi{width:34px;height:34px;border-radius:8px;background:var(--inset);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink-dim);flex:none}
+.fold b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fold span{display:block;font-size:11.5px;color:var(--ink-dim)}
+.fold .fv{margin-left:auto;font-weight:700;font-size:13px;white-space:nowrap}
+.sub-row td{background:var(--inset);font-size:12px;color:var(--ink-muted)}
+.flag{color:var(--danger-ink);font-weight:600}
 
-/* rolling digits */
 .roll{display:inline-flex;align-items:baseline;line-height:1.15;white-space:pre}
 .reel{display:inline-block;height:1.15em;overflow:hidden;vertical-align:bottom}
 .reel > span{display:flex;flex-direction:column;transition:transform .65s cubic-bezier(.2,.7,.2,1)}
 .reel > span > span{height:1.15em}
 
-/* overlays */
 .ov{position:absolute;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px;animation:fi .16s}
 @keyframes fi{from{opacity:0}}
-.dlg{background:var(--raised);border:1px solid var(--line-2);border-radius:12px;width:min(420px,100%);max-height:100%;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 24px 50px -20px rgba(0,0,0,.6);animation:fadeUp .2s}
+.dlg{background:var(--raised);border:1px solid var(--line-2);border-radius:12px;width:min(460px,100%);max-height:100%;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 24px 50px -20px rgba(0,0,0,.6);animation:fadeUp .2s}
 .dlg h4{margin:0;font-size:15px}
 .dlg p{margin:0;font-size:13px;color:var(--ink-muted)}
 .dlg .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
-.qty{width:84px;height:30px;border:1px solid var(--line-2);border-radius:7px;background:var(--inset);padding:0 8px;text-align:right}
+.dlg label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-dim)}
+.dlg .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.eline{display:grid;grid-template-columns:minmax(0,1fr) 76px 92px 28px;gap:6px;align-items:center;font-size:12.5px}
+.eline select,.eline input{height:30px;border:1px solid var(--line-2);border-radius:7px;background:var(--inset);padding:0 6px;min-width:0;font-size:12.5px}
+.eline input{text-align:right}
+.x{border:1px solid var(--line-2);background:transparent;border-radius:7px;height:30px;color:var(--danger-ink)}
+.gt{display:flex;justify-content:space-between;font-weight:700;font-size:14px;border-top:1px solid var(--line);padding-top:10px}
 .paper{background:var(--paper);color:var(--paper-ink);border-radius:8px;padding:14px 16px;font-size:12.5px}
 .paper .rh{background:var(--receipt);color:#fff;margin:-14px -16px 10px;padding:10px 16px;border-radius:8px 8px 0 0;font-weight:700;letter-spacing:.04em}
 .paper table{border:0;background:transparent}
-.paper td,.paper th{background:transparent;color:var(--paper-ink);border-bottom:1px dashed #c9c4b8;padding:5px 0;font-size:12px}
-.paper .gt{display:flex;justify-content:space-between;font-weight:700;font-size:14px;margin-top:8px}
+.paper td{background:transparent;color:var(--paper-ink);border-bottom:1px dashed #c9c4b8;padding:5px 0;font-size:12px}
+.paper .gt{border-color:#c9c4b8}
 .photo{border-radius:8px;overflow:hidden;border:1px solid var(--line-2)}
 
-/* toast with a self-drawing check */
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;
   display:flex;align-items:center;gap:10px;background:var(--raised);border:1px solid var(--accent-edge);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;
   box-shadow:0 18px 40px -16px rgba(0,0,0,.6);transition:opacity .2s,transform .25s cubic-bezier(.2,.7,.2,1);z-index:50;max-width:calc(100% - 32px)}
@@ -173,7 +186,6 @@ tfoot td{background:var(--inset);font-weight:700;border-top:1px solid var(--line
 .toast.on path{animation:draw .45s .1s forwards}
 @keyframes draw{to{stroke-dashoffset:0}}
 
-/* phone layout of the same app */
 .phone .hd{padding:12px 14px 0}
 .phone .hd .sub{width:100%;order:3;margin:0}
 .phone .ctl{width:100%}
@@ -183,6 +195,7 @@ tfoot td{background:var(--inset);font-weight:700;border-top:1px solid var(--line
 .phone .k:nth-child(2n){border-right:0}
 .phone .k.mixk{grid-column:1/-1;border-bottom:0}
 .phone .k .v{font-size:16px}
+.phone .part{margin:8px 14px 0}
 .phone .tabs{padding:0 14px;gap:16px}
 .phone .list{width:100%;border-right:0}
 .phone .hand{display:none}
@@ -194,6 +207,7 @@ tfoot td{background:var(--inset);font-weight:700;border-top:1px solid var(--line
 .phone .facts div:nth-child(n+3){border-top:1px solid var(--line)}
 .phone .pane{padding:12px 14px}
 .phone .hide-ph{display:none}
+.phone .folders{grid-template-columns:1fr}
 .sb{height:26px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:11px;color:var(--ink-dim);flex:none}
 
 @media (max-width:760px){.frame.pc{display:none}.pcap{display:none}}
@@ -203,10 +217,10 @@ tfoot td{background:var(--inset);font-weight:700;border-top:1px solid var(--line
 
 <div class="board">
   <h1>Reports · playable picture</h1>
-  <span>View as <span class="seg" id="role"><button aria-pressed="true" data-v="owner">Owner (T2)</button><button aria-pressed="false" data-v="agus">Salesman Agus (T5)</button></span></span>
+  <span>View as <span class="seg" id="role"><button aria-pressed="true" data-v="global">Owner (all)</button><button aria-pressed="false" data-v="regional">Regional · Hendra, Bandung</button><button aria-pressed="false" data-v="personal">Salesman · Agus</button></span></span>
   <span>Theme <span class="seg" id="theme"><button aria-pressed="true" data-v="">System</button><button aria-pressed="false" data-v="light">Light</button><button aria-pressed="false" data-v="dark">Dark</button></span></span>
   <span>Motion <span class="seg" id="motion"><button aria-pressed="true" data-v="on">On</button><button aria-pressed="false" data-v="off">Lite</button></span></span>
-  <span style="flex-basis:100%">Shops, salesmen and products are the demo company's. Every amount is an <b>example</b>, worked out from the lines of each receipt.</span>
+  <span style="flex-basis:100%">Shops, salesmen and products are the demo company's. Every amount is an <b>example</b>, worked out from the lines of each receipt. Omset only: the app keeps no cost price, so there is no profit figure.</span>
 </div>
 
 <p class="cap pcap">PC · 1180 px</p>
@@ -223,239 +237,262 @@ tfoot td{background:var(--inset);font-weight:700;border-top:1px solid var(--line
   <symbol id="i-edit" viewBox="0 0 24 24"><path d="M14 4l6 6-10 10H4v-6z"/></symbol>
   <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M7 7l1 13h8l1-13"/></symbol>
   <symbol id="i-share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 11l7.6-3.8M8.2 13l7.6 3.8"/></symbol>
-  <symbol id="i-out" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M5 19h14"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 8V3h10v5"/><rect x="4" y="8" width="16" height="8" rx="1"/><path d="M7 14h10v7H7z"/></symbol>
   <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.6-6-11a6 6 0 1112 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></symbol>
   <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></symbol>
+  <symbol id="i-fold" viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10H3z"/></symbol>
+  <symbol id="i-arch" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v11h14V9"/><path d="M10 13h4"/></symbol>
 </svg>
 
 <script>
-/* ---------- demo data (seeded, so the numbers are the same every load) ---------- */
+/* ---------- demo data (seeded) ---------- */
 const P = [
-  { id: 'choc', name: 'Cello Chocolate', price: 10000, cost: 8400 },
-  { id: 'green', name: 'Cello Green', price: 7000, cost: 5900 },
-  { id: 'mm', name: 'Cello Mmrapi', price: 8500, cost: 7150 },
-  { id: 'cof', name: 'Cello Coffee & Caramel', price: 8500, cost: 7100 },
-  { id: 'teh', name: 'Cello Teh Manis', price: 8000, cost: 6700 },
-  { id: 'as', name: 'American Spirit Turquoise', price: 230000, cost: 210000, slop: true },
+  { id: 'choc', name: 'Cello Chocolate', price: 10000 }, { id: 'green', name: 'Cello Green', price: 7000 },
+  { id: 'mm', name: 'Cello Mmrapi', price: 8500 }, { id: 'cof', name: 'Cello Coffee & Caramel', price: 8500 },
+  { id: 'teh', name: 'Cello Teh Manis', price: 8000 }, { id: 'as', name: 'American Spirit Turquoise', price: 230000, slop: true },
 ];
+const TIER = { Retail: 1, Grosir: 0.95, Ecer: 1.06 };
 const A = {
-  agus: { name: 'Agus Prasetyo', short: 'Agus', region: 'BANDUNG' },
-  ari: { name: 'Ari Wibowo', short: 'Ari', region: 'BANDUNG' },
-  dika: { name: 'Dika Saputra', short: 'Dika', region: 'MAGELANG' },
-  budi: { name: 'Budi Santoso', short: 'Budi', region: 'MAGELANG' },
+  agus: { name: 'Agus Prasetyo', short: 'Agus', region: 'BANDUNG' }, ari: { name: 'Ari Wibowo', short: 'Ari', region: 'BANDUNG' },
+  dika: { name: 'Dika Saputra', short: 'Dika', region: 'MAGELANG' }, budi: { name: 'Budi Santoso', short: 'Budi', region: 'MAGELANG' },
 };
+const JB = ['JAWA BARAT', 'KAB. BANDUNG'], JT = ['JAWA TENGAH', 'KAB. MAGELANG'];
 const S = [
-  ['AMANAH BARU', 'Margahayu, Bandung', 'agus'], ['ANEKA BARU PANJI', 'Margahayu, Bandung', 'agus'], ['CEMERLANG', 'Soreang, Bandung', 'agus'],
-  ['ARIF CILILIN', 'Cililin, Bandung Barat', 'agus'], ['LARIS JAYA', 'Baleendah, Bandung', 'agus'], ['DEWI CIBOLERANG', 'Bandung Kulon', 'ari'],
-  ['ANUGRAH 17', 'Cimahi Tengah', 'ari'], ['HJ EUIS', 'Cimahi Selatan', 'ari'], ['FITRIA PLASTIK', 'Muntilan, Magelang', 'dika'],
-  ['ASYIFA MART MADURA', 'Muntilan, Magelang', 'dika'], ['ENDANG CELL', 'Muntilan, Magelang', 'budi'], ['TOKO SRI REJEKI', 'Mertoyudan, Magelang', 'budi'],
-].map(([name, area, agent]) => ({ name, area, agent }));
+  ['AMANAH BARU', 'agus', JB, 'MARGAHAYU'], ['ANEKA BARU PANJI', 'agus', JB, 'MARGAHAYU'], ['CEMERLANG', 'agus', JB, 'SOREANG'],
+  ['LARIS JAYA', 'agus', JB, 'BALEENDAH'], ['ARIF CILILIN', 'agus', ['JAWA BARAT', 'KAB. BANDUNG BARAT'], 'CILILIN'],
+  ['DEWI CIBOLERANG', 'ari', ['JAWA BARAT', 'KOTA BANDUNG'], 'BANDUNG KULON'], ['ANUGRAH 17', 'ari', ['JAWA BARAT', 'KOTA CIMAHI'], 'CIMAHI TENGAH'],
+  ['HJ EUIS', 'ari', ['JAWA BARAT', 'KOTA CIMAHI'], 'CIMAHI SELATAN'], ['FITRIA PLASTIK', 'dika', JT, 'MUNTILAN'], ['ASYIFA MART MADURA', 'dika', JT, 'MUNTILAN'],
+  ['ENDANG CELL', 'budi', JT, 'MUNTILAN'], ['TOKO SRI REJEKI', 'budi', JT, 'MERTOYUDAN'],
+].map(([name, agent, [prov, kab], kec]) => ({ name, agent, prov, kab, kec, area: kec.charAt(0) + kec.slice(1).toLowerCase() + ', ' + kab.replace('KAB. ', '').replace('KOTA ', 'Kota ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) }));
+const OFFERS = ['Paket Hemat 10+1', 'Bundle Cello Mix'];
 const TODAY = new Date(2026, 10, 18);
 let seed = 20261118;
 const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
 const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
 const dayKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-const TX = [];
+const parseKey = (k) => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (k, n) => { const d = parseKey(k); d.setDate(d.getDate() + n); return dayKey(d); };
+const line = (p, qty, tier) => ({ p: p.id, qty, price: Math.round(p.price * TIER[tier] / 50) * 50 });
+const TX = []; let nid = 1;
 for (let back = 59; back >= 0; back--) {
-  const d = new Date(TODAY); d.setDate(d.getDate() - back);
+  const d = new Date(TODAY); d.setDate(d.getDate() - back); const date = dayKey(d);
   const n = 5 + Math.floor(rnd() * 6);
   for (let k = 0; k < n; k++) {
-    const shop = pick(S), roll = rnd();
+    const walk = rnd() < 0.08, shop = pick(S), roll = rnd();
+    const agent = walk ? pick(Object.keys(A)) : shop.agent, sh = walk ? { name: 'Walk-in buyer', prov: S.find((s) => s.agent === agent).prov, kab: S.find((s) => s.agent === agent).kab, kec: S.find((s) => s.agent === agent).kec, area: 'Ecer, no shop' } : shop;
     const mins = 8 * 60 + Math.floor(rnd() * 9 * 60);
-    const base = { id: `t${TX.length + 1}`, date: dayKey(d), time: `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`, shop: shop.name, area: shop.area, agent: shop.agent, region: A[shop.agent].region };
-    if (roll < 0.06) {
-      const p = pick(P.filter((x) => !x.slop));
-      TX.push({ ...base, type: 'RETUR', pay: 'Damaged', tier: 'Retail', items: [{ p: p.id, qty: 5 + Math.floor(rnd() * 3) * 5 }] });
-    } else if (roll < 0.14) {
-      TX.push({ ...base, type: 'SETTLE', pay: 'Cash', tier: '-', items: [], paid: (2 + Math.floor(rnd() * 8)) * 100000 });
-    } else {
-      const pr = rnd();
-      const pay = pr < 0.55 ? 'Cash' : pr < 0.7 ? 'Transfer' : pr < 0.82 ? 'QRIS' : 'Titip';
+    const base = { id: 't' + nid++, date, time: `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`, shop: sh.name, area: sh.area, prov: sh.prov, kab: sh.kab, kec: sh.kec, agent, region: A[agent].region };
+    if (walk) { const p = pick(P.filter((x) => !x.slop)); TX.push({ ...base, type: 'SALE', pay: 'Cash', tier: 'Ecer', items: [line(p, 1 + Math.floor(rnd() * 4), 'Ecer')] }); continue; }
+    if (roll < 0.05) { const p = pick(P.filter((x) => !x.slop)); TX.push({ ...base, type: 'RETUR', pay: 'Damaged', tier: 'Retail', items: [line(p, (1 + Math.floor(rnd() * 3)) * 5, 'Retail')] }); }
+    else if (roll < 0.12) TX.push({ ...base, type: 'SETTLE', pay: 'Cash', tier: '-', items: [], paid: (2 + Math.floor(rnd() * 8)) * 100000 });
+    else if (roll < 0.15) { const p = pick(P.filter((x) => !x.slop)); TX.push({ ...base, type: 'EXCHANGE', pay: 'Tukar Ganti', tier: 'Retail', items: [line(p, 10, 'Retail')] }); }
+    else if (roll < 0.17) { const p = pick(P.filter((x) => !x.slop)); TX.push({ ...base, type: 'IOU', pay: 'IOU fulfilment', tier: 'Retail', items: [line(p, 20, 'Retail')] }); }
+    else {
+      const pr = rnd(), pay = pr < 0.55 ? 'Cash' : pr < 0.7 ? 'Transfer' : pr < 0.82 ? 'QRIS' : 'Titip';
+      const tier = rnd() < 0.2 ? 'Grosir' : 'Retail', offer = rnd() < 0.1 ? pick(OFFERS) : null;
       const lines = 1 + Math.floor(rnd() * 3), used = new Set(), items = [];
-      for (let j = 0; j < lines; j++) {
-        const p = pick(P); if (used.has(p.id)) continue; used.add(p.id);
-        items.push({ p: p.id, qty: p.slop ? 1 + Math.floor(rnd() * 2) : (2 + Math.floor(rnd() * 14)) * 10 });
-      }
-      TX.push({ ...base, type: 'SALE', pay, tier: 'Retail', items });
+      for (let j = 0; j < lines; j++) { const p = pick(P); if (used.has(p.id)) continue; used.add(p.id);
+        items.push(line(p, p.slop ? 1 + Math.floor(rnd() * 2) : (2 + Math.floor(rnd() * 14)) * 10, tier)); }
+      TX.push({ ...base, type: 'SALE', pay, tier, items, offer });
     }
   }
 }
+/* one package returned 3 days after its package sale - the 7-day flag the old screen shows */
+(() => { const s = TX.find((t) => t.offer && t.date >= addDays(dayKey(TODAY), -10) && t.shop !== 'Walk-in buyer');
+  if (s) TX.push({ ...s, id: 't' + nid++, type: 'RETUR', pay: 'Damaged', offer: null, date: addDays(s.date, 3) <= dayKey(TODAY) ? addDays(s.date, 3) : s.date, time: '15:40', items: [{ ...s.items[0], qty: 10 }] }); })();
 TX.sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+const CLEARS = [{ shop: 'CEMERLANG', date: '2026-11-04', by: 'Hendra Gunawan' }, { shop: 'ENDANG CELL', date: '2026-10-29', by: 'Hartono Susilo' }];
+
 const prod = (id) => P.find((x) => x.id === id);
-const total = (t) => t.type === 'SETTLE' ? t.paid : (t.type === 'RETUR' ? -1 : 1) * t.items.reduce((s, it) => s + it.qty * prod(it.p).price, 0);
-const profit = (t) => t.type === 'SALE' ? t.items.reduce((s, it) => s + it.qty * (prod(it.p).price - prod(it.p).cost), 0) : t.type === 'RETUR' ? -t.items.reduce((s, it) => s + it.qty * prod(it.p).cost, 0) : 0;
+const linesTotal = (t) => t.items.reduce((s, it) => s + it.qty * it.price, 0);
+/* omset rule as the old screen: SALE counts, RETUR subtracts, Tukar Ganti / IOU fulfilment move goods for Rp 0, a note payment is collected cash, not omset */
+const total = (t) => t.type === 'SETTLE' ? t.paid : t.type === 'RETUR' ? -linesTotal(t) : (t.type === 'EXCHANGE' || t.type === 'IOU') ? 0 : linesTotal(t);
+const omsetOf = (t) => t.type === 'SETTLE' ? 0 : total(t);
 const bks = (t) => t.items.reduce((s, it) => s + it.qty * (prod(it.p).slop ? 10 : 1), 0);
 const rp = (n) => (n < 0 ? '−' : '') + 'Rp ' + Math.round(Math.abs(n)).toLocaleString('id-ID');
-const rpShort = (n) => Math.abs(n) >= 1e6 ? 'Rp ' + (n / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt' : rp(n);
+const rpShort = (n) => Math.abs(n) >= 1e6 ? (n < 0 ? '−' : '') + 'Rp ' + (Math.abs(n) / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt' : rp(n);
 const ini = (s) => s.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('');
 const DAYN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const dayLabel = (k) => { const [y, m, d] = k.split('-').map(Number); const dt = new Date(y, m - 1, d); const diff = Math.round((TODAY - dt) / 864e5);
-  return (diff === 0 ? 'Today' : diff === 1 ? 'Yesterday' : DAYN[dt.getDay()]) + ' · ' + d + ' ' + MON[m - 1]; };
+const short = (k) => { const d = parseKey(k); return d.getDate() + ' ' + MON[d.getMonth()]; };
+const dayLabel = (k) => { const dt = parseKey(k); const diff = Math.round((TODAY - dt) / 864e5); return (diff === 0 ? 'Today' : diff === 1 ? 'Yesterday' : DAYN[dt.getDay()]) + ' · ' + short(k); };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const LIVE_FROM = addDays(dayKey(TODAY), -6);   /* the app's live feed holds 7 days; older needs Pull archive */
 
-/* ---------- page-level state ---------- */
-const G = { role: 'owner', motion: true };
-const isOwner = () => G.role === 'owner';
+const G = { role: 'global', motion: true };
+const isAdmin = () => G.role === 'global';
+const scopeOk = (t) => G.role === 'global' ? true : G.role === 'regional' ? t.region === 'BANDUNG' : t.agent === 'agus';
 
-/* ---------- rolling digits (his Framer pick 1) ---------- */
+/* ---------- rolling digits + toast ---------- */
 function rollHTML(text, prevText) {
-  const out = []; const pt = prevText || '';
-  const off = text.length - pt.length;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (/\d/.test(c)) {
-      const old = pt[i - off]; const from = /\d/.test(old || '') ? +old : 0;
+  const out = [], pt = prevText || '', off = text.length - pt.length;
+  for (let i = 0; i < text.length; i++) { const c = text[i];
+    if (/\d/.test(c)) { const old = pt[i - off], from = /\d/.test(old || '') ? +old : 0;
       out.push(`<span class="reel"><span data-to="${c}" style="transform:translateY(-${from * 1.15}em)">${'0123456789'.split('').map((x) => `<span>${x}</span>`).join('')}</span></span>`);
-    } else out.push(`<span>${esc(c)}</span>`);
-  }
+    } else out.push(`<span>${esc(c)}</span>`); }
   return `<span class="roll" aria-label="${esc(text)}">${out.join('')}</span>`;
 }
-function settleRolls(root) {
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    root.querySelectorAll('.reel > span[data-to]').forEach((s) => { s.style.transform = `translateY(-${+s.dataset.to * 1.15}em)`; });
-    root.querySelectorAll('[data-w]').forEach((b) => { b.style.width = b.dataset.w; });
-  }));
-}
-
-/* ---------- toast with self-drawing check (his Framer pick 4) ---------- */
+function settleRolls(root) { requestAnimationFrame(() => requestAnimationFrame(() => {
+  root.querySelectorAll('.reel > span[data-to]').forEach((s) => { s.style.transform = `translateY(-${+s.dataset.to * 1.15}em)`; });
+  root.querySelectorAll('[data-w]').forEach((b) => { b.style.width = b.dataset.w; }); })); }
 let toastTimer;
-function toast(msg) {
-  const t = document.getElementById('toast');
-  t.classList.remove('on'); void t.offsetWidth;
-  document.getElementById('toastT').textContent = msg;
-  t.classList.add('on'); clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('on'), 2600);
-}
+function toast(msg) { const t = document.getElementById('toast'); t.classList.remove('on'); void t.offsetWidth;
+  document.getElementById('toastT').textContent = msg; t.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 2800); }
 
-/* ---------- one app, mounted twice (PC + phone) ---------- */
+/* ---------- one app, mounted twice ---------- */
 const apps = [];
-function mount(el, mode) {
-  const st = { mode, per: 7, region: 'ALL', agent: 'ALL', q: '', tab: 'ledger', sel: null, openPhone: null, prev: {}, grown: false, modal: null };
-  apps.push({ el, st });
-  el.addEventListener('click', (e) => onClick(e, el, st));
-  el.addEventListener('input', (e) => onInput(e, el, st));
-  el.addEventListener('change', (e) => onInput(e, el, st));
-  render(el, st);
-}
+const freshState = (mode) => ({ mode, range: 'weekly', date: dayKey(TODAY), archive: false, region: 'ALL', agent: 'ALL', q: '', tab: 'ledger', sel: null, openPhone: null,
+  path: [], expanded: null, prev: {}, grown: false, modal: null, edit: null, scale: 100 });
+function mount(el, mode) { const st = freshState(mode); apps.push({ el, st });
+  el.addEventListener('click', (e) => onClick(e, el, st)); el.addEventListener('input', (e) => onInput(e, el, st)); el.addEventListener('change', (e) => onInput(e, el, st)); render(el, st); }
 
+function windowOf(st, shift = 0) {
+  const d = parseKey(st.date); let lo, hi;
+  if (st.range === 'daily') { d.setDate(d.getDate() - shift); lo = hi = dayKey(d); }
+  else if (st.range === 'weekly') { d.setDate(d.getDate() - 7 * shift); hi = dayKey(d); lo = addDays(hi, -6); }
+  else if (st.range === 'monthly') { const m = new Date(d.getFullYear(), d.getMonth() - shift, 1); lo = dayKey(m); hi = dayKey(new Date(m.getFullYear(), m.getMonth() + 1, 0)); }
+  else { const y = d.getFullYear() - shift; lo = `${y}-01-01`; hi = `${y}-12-31`; }
+  return [lo, hi];
+}
 function view(st) {
-  const lo = new Date(TODAY); lo.setDate(lo.getDate() - (st.per - 1));
-  const plo = new Date(lo); plo.setDate(plo.getDate() - st.per);
   const q = st.q.trim().toLowerCase();
-  const agentOk = (t) => isOwner() ? (st.agent === 'ALL' || t.agent === st.agent) : t.agent === 'agus';
-  const base = (t) => (st.region === 'ALL' || t.region === st.region || !isOwner()) && agentOk(t) &&
-    (!q || t.shop.toLowerCase().includes(q) || A[t.agent].name.toLowerCase().includes(q) || t.items.some((it) => prod(it.p).name.toLowerCase().includes(q)));
-  const rows = TX.filter((t) => t.date >= dayKey(lo) && base(t));
-  const prevRows = TX.filter((t) => t.date >= dayKey(plo) && t.date < dayKey(lo) && base(t));
-  const sum = (list) => {
-    const sales = list.filter((t) => t.type !== 'SETTLE');
-    const o = { rev: sales.reduce((s, t) => s + total(t), 0), prof: list.reduce((s, t) => s + profit(t), 0), n: list.filter((t) => t.type === 'SALE').length,
-      bks: list.filter((t) => t.type === 'SALE').reduce((s, t) => s + bks(t), 0), settled: list.filter((t) => t.type === 'SETTLE').reduce((s, t) => s + t.paid, 0), mix: {} };
-    list.filter((t) => t.type === 'SALE').forEach((t) => { o.mix[t.pay] = (o.mix[t.pay] || 0) + total(t); });
-    return o;
-  };
-  const days = [];
-  for (let i = 13; i >= 0; i--) { const d = new Date(TODAY); d.setDate(d.getDate() - i); const k = dayKey(d);
-    days.push(TX.filter((t) => t.date === k && base(t) && t.type !== 'SETTLE').reduce((s, t) => s + total(t), 0)); }
-  return { rows, now: sum(rows), was: sum(prevRows), days };
+  const base = (t) => scopeOk(t) && (G.role !== 'global' || st.region === 'ALL' || t.region === st.region) && (G.role === 'personal' || st.agent === 'ALL' || t.agent === st.agent) &&
+    (!q || t.shop.toLowerCase().includes(q) || A[t.agent].name.toLowerCase().includes(q) || t.items.some((it) => prod(it.p).name.toLowerCase().includes(q)) || (t.offer || '').toLowerCase().includes(q));
+  const inWin = ([lo, hi]) => (t) => t.date >= (st.archive ? lo : (lo < LIVE_FROM ? LIVE_FROM : lo)) && t.date <= hi;
+  const w = windowOf(st), pw = windowOf(st, 1);
+  const partial = !st.archive && w[0] < LIVE_FROM;
+  const rows = TX.filter((t) => inWin(w)(t) && base(t));
+  const prevRows = st.archive || pw[0] >= LIVE_FROM ? TX.filter((t) => inWin(pw)(t) && base(t)) : null;
+  const sum = (list) => { const o = { om: list.reduce((s, t) => s + omsetOf(t), 0), n: list.filter((t) => t.type === 'SALE').length,
+      bks: list.filter((t) => t.type === 'SALE').reduce((s, t) => s + bks(t), 0), settled: list.filter((t) => t.type === 'SETTLE').reduce((s, t) => s + t.paid, 0),
+      shops: new Set(list.filter((t) => t.shop !== 'Walk-in buyer').map((t) => t.shop)).size, walk: list.filter((t) => t.shop === 'Walk-in buyer').length, mix: {} };
+    list.filter((t) => t.type === 'SALE').forEach((t) => { o.mix[t.pay] = (o.mix[t.pay] || 0) + total(t); }); return o; };
+  const days = []; for (let i = 13; i >= 0; i--) { const k = addDays(st.date, -i); days.push(TX.filter((t) => t.date === k && base(t)).reduce((s, t) => s + omsetOf(t), 0)); }
+  return { rows, now: sum(rows), was: prevRows ? sum(prevRows) : null, days, partial, w };
 }
-
-function delta(now, was) {
-  if (!was) return '<span>no earlier figure</span>';
-  const p = Math.round((now - was) / Math.abs(was) * 100);
-  return `<span class="${p >= 0 ? 'up' : 'dn'}">${p >= 0 ? '▲' : '▼'} ${Math.abs(p)}%</span> vs previous ${'' }`;
-}
-
-function spark(days) {
-  const w = 200, h = 26, mx = Math.max(...days, 1);
-  const pts = days.map((v, i) => [i * (w / (days.length - 1)), h - 3 - (v / mx) * (h - 6)]);
-  const line = pts.map((p) => p.map((x) => x.toFixed(1)).join(',')).join(' ');
-  const last = pts[pts.length - 1];
-  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
-    <polygon points="0,${h} ${line} ${w},${h}" fill="var(--wash)"/>
-    <polyline points="${line}" fill="none" stroke="var(--gold)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
-    <circle cx="${last[0]}" cy="${last[1]}" r="2.6" fill="var(--gold)"/></svg>`;
-}
-
+const RANGE = { daily: 'day', weekly: 'week', monthly: 'month', yearly: 'year' };
+function delta(now, was, st) { if (!was) return '<span>pull archive to compare</span>'; if (!was.om) return '<span>no earlier figure</span>';
+  const p = Math.round((now.om - was.om) / Math.abs(was.om) * 100); return `<span class="${p >= 0 ? 'up' : 'dn'}">${p >= 0 ? '▲' : '▼'} ${Math.abs(p)}%</span> vs previous ${RANGE[st.range]}`; }
+function spark(days) { const w = 200, h = 26, mx = Math.max(...days, 1);
+  const pts = days.map((v, i) => [i * (w / (days.length - 1)), h - 3 - (Math.max(0, v) / mx) * (h - 6)]); const ln = pts.map((p) => p.map((x) => x.toFixed(1)).join(',')).join(' '), last = pts[pts.length - 1];
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,${h} ${ln} ${w},${h}" fill="var(--wash)"/><polyline points="${ln}" fill="none" stroke="var(--gold)" stroke-width="1.5" vector-effect="non-scaling-stroke"/><circle cx="${last[0]}" cy="${last[1]}" r="2.6" fill="var(--gold)"/></svg>`; }
 function R(st, key, text) { const h = rollHTML(text, st.prev[key]); st.prev[key] = text; return h; }
+const chipOf = (t) => t.type === 'RETUR' ? '<span class="chip rt">RETUR</span>' : t.type === 'SETTLE' ? '<span class="chip ti">NOTE PAID</span>' : t.type === 'EXCHANGE' ? '<span class="chip">TUKAR</span>' : t.type === 'IOU' ? '<span class="chip">IOU</span>' : `<span class="chip ${t.pay === 'Titip' ? 'ti' : ''}">${t.pay.toUpperCase()}</span>`;
+const kindOf = (t) => t.type === 'SALE' ? t.pay : t.type === 'RETUR' ? 'Retur' : t.type === 'SETTLE' ? 'Note paid' : t.pay;
+
+/* folder levels, the old screen's 7-level drilldown */
+const LEVELS = [['region', 'Region', (t) => t.region], ['agent', 'Salesman', (t) => A[t.agent].name], ['prov', 'Provinsi', (t) => t.prov], ['kab', 'Kabupaten', (t) => t.kab],
+  ['kec', 'Kecamatan', (t) => t.kec], ['store', 'Shop', (t) => t.shop === 'Walk-in buyer' || t.tier === 'Ecer' ? 'Individuals (Ecer)' : t.shop]];
+const startLevel = () => G.role === 'global' ? 0 : G.role === 'regional' ? 1 : 2;
 
 function render(el, st) {
   const v = view(st), ph = st.mode === 'phone';
   const scroll = el.querySelector('.rows, .pane')?.scrollTop || 0;
   if (!st.sel || !v.rows.find((t) => t.id === st.sel)) st.sel = v.rows[0]?.id || null;
-  const mixTot = Object.values(v.now.mix).reduce((a, b) => a + b, 0) || 1;
+  const mixTot = Object.values(v.now.mix).reduce((a, b) => a + b, 0);
   const MIX = [['Cash', 'c-cash'], ['Transfer', 'c-tf'], ['QRIS', 'c-qr'], ['Titip', 'c-ti']];
-  const agents = Object.entries(A).filter(([, a]) => st.region === 'ALL' || a.region === st.region);
-  const prodRows = P.map((p) => { const lines = v.rows.filter((t) => t.type === 'SALE').flatMap((t) => t.items.filter((it) => it.p === p.id));
-    const q = lines.reduce((s, it) => s + it.qty, 0); return { p, q, rev: q * p.price, prof: q * (p.price - p.cost) }; }).filter((x) => x.q).sort((a, b) => b.rev - a.rev);
-  const agRows = Object.entries(A).map(([id, a]) => { const r = v.rows.filter((t) => t.agent === id);
-    return { id, a, rev: r.filter((t) => t.type !== 'SETTLE').reduce((s, t) => s + total(t), 0), n: r.filter((t) => t.type === 'SALE').length,
-      shops: new Set(r.map((t) => t.shop)).size, titip: r.filter((t) => t.pay === 'Titip').reduce((s, t) => s + total(t), 0), settled: r.filter((t) => t.type === 'SETTLE').reduce((s, t) => s + t.paid, 0) }; })
-    .filter((x) => x.n || x.settled).sort((a, b) => b.rev - a.rev);
-  const returns = v.rows.filter((t) => t.type === 'RETUR');
-  const maxP = Math.max(1, ...prodRows.map((x) => x.rev)), maxA = Math.max(1, ...agRows.map((x) => x.rev));
   const W = (x) => st.grown ? `style="width:${x}"` : `data-w="${x}"`;
+  const sales = v.rows.filter((t) => t.type === 'SALE');
+  const prodRows = P.map((p) => { const ls = sales.flatMap((t) => t.items.filter((it) => it.p === p.id)); const q = ls.reduce((s, it) => s + it.qty, 0);
+    return { p, q, om: ls.reduce((s, it) => s + it.qty * it.price, 0), shops: new Set(sales.filter((t) => t.items.some((it) => it.p === p.id)).map((t) => t.shop)).size }; }).filter((x) => x.q).sort((a, b) => b.om - a.om);
+  const offers = OFFERS.map((o) => { const r = sales.filter((t) => t.offer === o); return { o, n: r.length, om: r.reduce((s, t) => s + total(t), 0), bks: r.reduce((s, t) => s + bks(t), 0) }; }).filter((x) => x.n).sort((a, b) => b.om - a.om);
+  const agRows = Object.entries(A).filter(([id]) => v.rows.some((t) => t.agent === id)).map(([id, a]) => { const r = v.rows.filter((t) => t.agent === id);
+    const mix = {}; r.filter((t) => t.type === 'SALE').forEach((t) => { mix[t.pay] = (mix[t.pay] || 0) + total(t); });
+    const top = P.map((p) => ({ p, q: r.filter((t) => t.type === 'SALE').flatMap((t) => t.items).filter((it) => it.p === p.id).reduce((s, it) => s + it.qty, 0) })).filter((x) => x.q).sort((x, y) => y.q - x.q).slice(0, 3);
+    return { id, a, om: r.reduce((s, t) => s + omsetOf(t), 0), n: r.filter((t) => t.type === 'SALE').length, shops: new Set(r.map((t) => t.shop)).size, bks: r.filter((t) => t.type === 'SALE').reduce((s, t) => s + bks(t), 0),
+      titip: r.filter((t) => t.pay === 'Titip').reduce((s, t) => s + total(t), 0), settled: r.filter((t) => t.type === 'SETTLE').reduce((s, t) => s + t.paid, 0), mix, top }; }).sort((a, b) => b.om - a.om);
+  const returns = v.rows.filter((t) => t.type === 'RETUR');
+  const pkgFlag = (t) => TX.some((s) => s.offer && s.shop === t.shop && s.date <= t.date && s.date >= addDays(t.date, -7));
+  const maxP = Math.max(1, ...prodRows.map((x) => x.om)), maxA = Math.max(1, ...agRows.map((x) => x.om));
+  const tabs = [['ledger', 'Ledger', v.rows.length], ['folders', 'Folders', ''], ['products', 'Products', prodRows.length], ['salesmen', 'Salesmen', agRows.length], ['returns', 'Returns', returns.length]]
+    .filter(([k]) => G.role !== 'personal' || k !== 'salesmen');
+  const winTxt = st.range === 'daily' ? short(v.w[0]) : `${short(v.w[0])} – ${short(v.w[1] > dayKey(TODAY) ? dayKey(TODAY) : v.w[1])}`;
 
   let html = ph ? `<div class="sb"><span>09:41</span><span>5G · 92%</span></div>` : '';
-  html += `<div class="app">
-  <div class="hd">
-    <h2>Reports</h2><span class="sub">${isOwner() ? 'All salesmen' : 'Your own sales · Agus Prasetyo'} · up to ${dayLabel(dayKey(TODAY)).split(' · ')[1]} 2026</span>
+  html += `<div class="app"><div class="hd">
+    <h2>Reports</h2><span class="sub">${G.role === 'global' ? 'Master HQ · every region' : G.role === 'regional' ? 'BANDUNG region · Hendra Gunawan' : 'Your own sales · Agus Prasetyo'} · ${winTxt} 2026</span>
     <div class="ctl">
-      <span class="per" role="group" aria-label="Period">${[[1, 'Today'], [7, '7 days'], [30, '30 days']].map(([n, l]) => `<button data-per="${n}" aria-pressed="${st.per === n}">${l}</button>`).join('')}</span>
-      ${isOwner() ? `<select class="field hide-ph" data-f="region" aria-label="Region"><option value="ALL">All regions</option>${['BANDUNG', 'MAGELANG'].map((r) => `<option ${st.region === r ? 'selected' : ''}>${r}</option>`).join('')}</select>
-      <select class="field hide-ph" data-f="agent" aria-label="Salesman"><option value="ALL">All salesmen</option>${agents.map(([id, a]) => `<option value="${id}" ${st.agent === id ? 'selected' : ''}>${a.name}</option>`).join('')}</select>` : ''}
-      <label class="search"><svg class="i"><use href="#i-search"/></svg><input data-f="q" value="${esc(st.q)}" placeholder="Shop, salesman, product" aria-label="Search"></label>
-      <button class="btn quiet sm hide-ph" data-act="export"><svg class="i"><use href="#i-out"/></svg>Export</button>
-    </div>
-  </div>
+      <span class="per" role="group" aria-label="Range">${Object.keys(RANGE).map((r) => `<button data-range="${r}" aria-pressed="${st.range === r}">${r[0].toUpperCase() + r.slice(1)}</button>`).join('')}</span>
+      <input type="date" class="field" data-f="date" value="${st.date}" max="${dayKey(TODAY)}" aria-label="Date" id="date-${st.mode}">
+      ${G.role === 'global' ? `<select class="field hide-ph" data-f="region" aria-label="Region"><option value="ALL">All regions</option>${['BANDUNG', 'MAGELANG'].map((r) => `<option ${st.region === r ? 'selected' : ''}>${r}</option>`).join('')}</select>` : ''}
+      ${G.role !== 'personal' ? `<select class="field hide-ph" data-f="agent" aria-label="Salesman"><option value="ALL">All salesmen</option>${Object.entries(A).filter(([, a]) => (G.role === 'regional' ? a.region === 'BANDUNG' : st.region === 'ALL' || a.region === st.region)).map(([id, a]) => `<option value="${id}" ${st.agent === id ? 'selected' : ''}>${a.name}</option>`).join('')}</select>` : ''}
+      <label class="search"><svg class="i"><use href="#i-search"/></svg><input data-f="q" id="q-${st.mode}" value="${esc(st.q)}" placeholder="Shop, salesman, product" aria-label="Search"></label>
+      <select class="field hide-ph" data-f="scale" aria-label="Print scale">${[50, 75, 100, 125, 150].map((s) => `<option value="${s}" ${st.scale === s ? 'selected' : ''}>${s}%</option>`).join('')}</select>
+      <button class="btn quiet sm hide-ph" data-act="print"><svg class="i"><use href="#i-print"/></svg>Print</button>
+    </div></div>
   <div class="kpi">
-    <div class="k"><div class="l"><span>Sales</span><span>${st.per === 1 ? 'today' : st.per + ' days'}</span></div><div class="v">${R(st, 'rev', rp(v.now.rev))}</div><div class="d">${delta(v.now.rev, v.was.rev)}</div>${ph ? '' : spark(v.days)}</div>
-    ${isOwner() ? `<div class="k"><div class="l">Net profit</div><div class="v sm">${R(st, 'prof', rp(v.now.prof))}</div><div class="d">${v.now.rev ? Math.round(v.now.prof / v.now.rev * 1000) / 10 : 0}% margin</div></div>`
-      : `<div class="k"><div class="l">Shops visited</div><div class="v sm">${R(st, 'shops', String(new Set(v.rows.map((t) => t.shop)).size))}</div><div class="d">of ${S.filter((s) => s.agent === 'agus').length} on your route</div></div>`}
-    <div class="k"><div class="l">Receipts</div><div class="v sm">${R(st, 'n', String(v.now.n))}</div><div class="d">avg ${rpShort(v.now.n ? v.now.rev / v.now.n : 0)}</div></div>
+    <div class="k"><div class="l"><span>Omset</span><span>${RANGE[st.range]}</span></div><div class="v">${R(st, 'om', rp(v.now.om))}</div><div class="d">${delta(v.now, v.was, st)}</div>${ph ? '' : spark(v.days)}</div>
+    <div class="k"><div class="l">Receipts</div><div class="v sm">${R(st, 'n', String(v.now.n))}</div><div class="d">avg ${rpShort(v.now.n ? sales.reduce((s, t) => s + total(t), 0) / v.now.n : 0)}</div></div>
     <div class="k"><div class="l">Moved</div><div class="v sm">${R(st, 'bks', v.now.bks.toLocaleString('id-ID') + ' Bks')}</div><div class="d">${rp(v.now.settled)} notes paid</div></div>
-    <div class="k mixk"><div class="l"><span>How they paid</span><span>${rpShort(mixTot === 1 ? 0 : mixTot)}</span></div>
-      <div class="mix">${MIX.map(([k, c]) => `<span class="${c}" ${W(((v.now.mix[k] || 0) / mixTot * 100).toFixed(1) + '%')} title="${k}"></span>`).join('')}</div>
-      <div class="mixl">${MIX.map(([k, c]) => `<span><i class="${c}"></i>${k} ${Math.round((v.now.mix[k] || 0) / mixTot * 100)}%</span>`).join('')}</div></div>
+    <div class="k"><div class="l">Shops served</div><div class="v sm">${R(st, 'shops', String(v.now.shops))}</div><div class="d">+ ${v.now.walk} walk-in (Ecer)</div></div>
+    <div class="k mixk"><div class="l"><span>How they paid</span><span>${rpShort(mixTot)}</span></div>
+      <div class="mix">${MIX.map(([k, c]) => `<span class="${c}" ${W(((v.now.mix[k] || 0) / (mixTot || 1) * 100).toFixed(1) + '%')} title="${k}"></span>`).join('')}</div>
+      <div class="mixl">${MIX.map(([k, c]) => `<span><i class="${c}"></i>${k} ${Math.round((v.now.mix[k] || 0) / (mixTot || 1) * 100)}%</span>`).join('')}</div></div>
   </div>
-  <div class="tabs" role="tablist">${[['ledger', 'Ledger', v.rows.length], ['products', 'Products', prodRows.length], ['salesmen', 'Salesmen', agRows.length], ['returns', 'Returns', returns.length]]
-    .filter(([k]) => isOwner() || k !== 'salesmen').map(([k, l, n]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${st.tab === k}">${l}<span class="n">${n}</span></button>`).join('')}</div>`;
+  ${v.partial ? `<div class="part"><span>Showing the last 7 days. This ${RANGE[st.range]} starts on ${short(v.w[0])}.</span>${G.role !== 'personal' ? `<button class="btn xs" data-act="archive"><svg class="i"><use href="#i-arch"/></svg>Pull archive</button>` : '<span>Ask an admin for older receipts.</span>'}</div>` : ''}
+  <div class="tabs" role="tablist">${tabs.map(([k, l, n]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${st.tab === k}">${l}${n !== '' ? `<span class="n">${n}</span>` : ''}</button>`).join('')}</div>`;
 
   if (st.tab === 'ledger') {
     html += `<div class="work"><aside class="list"><div class="rows">`;
-    if (!v.rows.length) html += `<div class="empty">No receipts match. Clear the search or pick a longer period.</div>`;
+    if (!v.rows.length) html += `<div class="empty">No receipts match. Clear the search or pick a longer range.</div>`;
     let lastDay = '';
     v.rows.forEach((t) => {
       if (t.date !== lastDay) { lastDay = t.date; const dr = v.rows.filter((x) => x.date === t.date);
-        html += `<div class="day"><span>${dayLabel(t.date)}</span><span>${dr.filter((x) => x.type === 'SALE').length} receipts · ${rp(dr.filter((x) => x.type !== 'SETTLE').reduce((s, x) => s + total(x), 0))}</span></div>`; }
+        html += `<div class="day"><span>${dayLabel(t.date)}</span><span>${dr.filter((x) => x.type === 'SALE').length} receipts · ${rp(dr.reduce((s, x) => s + omsetOf(x), 0))}</span></div>`; }
       const tot = total(t), sel = ph ? st.openPhone === t.id : st.sel === t.id;
-      const chip = t.type === 'RETUR' ? '<span class="chip rt">RETUR</span>' : t.type === 'SETTLE' ? '<span class="chip ti">NOTE PAID</span>' : `<span class="chip ${t.pay === 'Titip' ? 'ti' : ''}">${t.pay.toUpperCase()}</span>`;
-      html += `<button class="r ${sel ? 'sel' : ''}" data-row="${t.id}"><span class="t">${t.time}</span><span class="sh"><b>${esc(t.shop)}</b><span>${ph ? A[t.agent].short + ' · ' + (t.type === 'SALE' ? t.pay : t.type === 'RETUR' ? 'Retur' : 'Note paid') : esc(t.area)}</span></span>
-        <span class="ag">${A[t.agent].short}</span>${chip}<span class="am ${tot < 0 ? 'neg' : ''}">${rp(tot)}</span></button>`;
+      html += `<button class="r ${sel ? 'sel' : ''}" data-row="${t.id}"><span class="t">${t.time}</span><span class="sh"><b>${esc(t.shop)}${t.offer ? '<span class="pk">PAKET</span>' : ''}</b><span>${ph ? A[t.agent].short + ' · ' + kindOf(t) : esc(t.area)}</span></span>
+        <span class="ag">${A[t.agent].short}</span>${chipOf(t)}<span class="am ${tot < 0 ? 'neg' : tot === 0 ? 'zero' : ''}">${rp(tot)}</span></button>`;
       if (ph && st.openPhone === t.id) html += `<div class="under">${detail(t, st, true)}</div>`;
     });
-    if (v.rows.length) html += `<div class="more"><span>Older than ${st.per === 30 ? '30' : st.per === 7 ? '7' : '1'} day${st.per === 1 ? '' : 's'}?</span><button class="btn quiet sm" data-act="archive">Pull archive</button></div>`;
     html += `</div></aside>`;
     if (!ph) { const t = v.rows.find((x) => x.id === st.sel);
-      html += `<section class="hand">${t ? `<div class="in fade" data-k="${t.id}">${detail(t, st, false)}</div><div class="act">${actions(t, false)}</div>` : '<div class="empty">Pick a receipt from the list.</div>'}</section>`; }
+      html += `<section class="hand">${t ? `<div class="in fade">${detail(t, st, false)}</div><div class="act">${actions(t, false)}</div>` : '<div class="empty">Pick a receipt from the list.</div>'}</section>`; }
+    html += `</div>`;
+  } else if (st.tab === 'folders') {
+    const lv = startLevel() + st.path.length, inPath = (t) => st.path.every((val, i) => LEVELS[startLevel() + i][2](t) === val);
+    const rs = v.rows.filter(inPath);
+    const crumbs = [`<button data-crumb="-1">${G.role === 'global' ? 'Master HQ' : G.role === 'regional' ? 'BANDUNG' : 'Agus Prasetyo'}</button>`].concat(st.path.map((p, i) => i === st.path.length - 1 ? `<b>${esc(p)}</b>` : `<button data-crumb="${i}">${esc(p)}</button>`));
+    html += `<div class="pane"><div class="crumb">${crumbs.join('<span>›</span>')}</div>`;
+    if (lv < LEVELS.length) {
+      const groups = {}; rs.forEach((t) => { const k = LEVELS[lv][2](t); (groups[k] = groups[k] || []).push(t); });
+      html += `<div class="sec"><span>${LEVELS[lv][1]} · ${Object.keys(groups).length}</span><span>${rp(rs.reduce((s, t) => s + omsetOf(t), 0))}</span></div><div class="folders">
+        ${Object.entries(groups).sort((a, b) => b[1].reduce((s, t) => s + omsetOf(t), 0) - a[1].reduce((s, t) => s + omsetOf(t), 0)).map(([k, r]) =>
+          `<button class="fold" data-drill="${esc(k)}"><span class="fi"><svg class="i"><use href="#i-fold"/></svg></span><span style="min-width:0"><b>${esc(k)}</b><span>${r.length} records</span></span><span class="fv">${rpShort(r.reduce((s, t) => s + omsetOf(t), 0))}</span></button>`).join('') || '<p class="hint">Nothing in this range.</p>'}</div>`;
+    } else {
+      const store = st.path[st.path.length - 1], acct = rs.reduce((s, t) => s + omsetOf(t), 0);
+      html += `<div class="sec"><span>Receipt archive · ${esc(store)}</span><span>Account total ${rp(acct)}</span></div>
+        <div class="tblw"><table><thead><tr><th>Date</th><th>Type</th><th class="hide-ph">Items</th><th class="num">Amount</th><th></th></tr></thead><tbody>
+        ${rs.map((t) => `<tr class="rowbtn" data-goto="${t.id}"><td>${short(t.date)} ${t.time}</td><td>${kindOf(t)}${t.offer ? ' <span class="pk">PAKET</span>' : ''}</td><td class="hide-ph">${t.items.map((it) => it.qty + '× ' + prod(it.p).name).join(', ') || '—'}</td><td class="num">${rp(total(t))}</td><td class="num">›</td></tr>`).join('')}
+        </tbody></table></div>
+        ${isAdmin() ? `<div><button class="btn danger sm" data-act="delstore" data-store="${esc(store)}"><svg class="i"><use href="#i-trash"/></svg>Delete all history for this shop</button></div>` : ''}`;
+    }
     html += `</div>`;
   } else if (st.tab === 'products') {
-    html += `<div class="pane"><p class="hint">Tap a product to see its receipts in the ledger.</p><div class="tblw"><table><thead><tr><th>Product</th><th class="num">Moved</th><th class="num">Sales</th><th class="hide-ph">Share</th>${isOwner() ? '<th class="num hide-ph">Profit</th>' : ''}</tr></thead><tbody>
-      ${prodRows.map((x) => `<tr class="rowbtn" data-prod="${esc(x.p.name)}"><td><b>${esc(x.p.name)}</b></td><td class="num">${x.q.toLocaleString('id-ID')} ${x.p.slop ? 'Slop' : 'Bks'}</td><td class="num">${rp(x.rev)}</td>
-        <td class="hide-ph"><div class="bar"><span ${W((x.rev / maxP * 100).toFixed(1) + '%')}></span></div></td>${isOwner() ? `<td class="num hide-ph">${rp(x.prof)}</td>` : ''}</tr>`).join('') || '<tr><td colspan="5">No sales in this period.</td></tr>'}
+    html += `<div class="pane"><div class="sec"><span>Product performance</span><span>tap a row to see its receipts</span></div><div class="tblw"><table><thead><tr><th>Product</th><th class="num">Moved</th><th class="num hide-ph">Shops</th><th class="num">Omset</th><th class="hide-ph">Share</th></tr></thead><tbody>
+      ${prodRows.map((x) => `<tr class="rowbtn" data-prod="${esc(x.p.name)}"><td><b>${esc(x.p.name)}</b></td><td class="num">${x.q.toLocaleString('id-ID')} ${x.p.slop ? 'Slop' : 'Bks'}</td><td class="num hide-ph">${x.shops}</td><td class="num">${rp(x.om)}</td>
+        <td class="hide-ph" style="width:24%"><div class="bar"><span ${W((x.om / maxP * 100).toFixed(1) + '%')}></span></div></td></tr>`).join('') || '<tr><td colspan="5">No sales in this range.</td></tr>'}
+      </tbody></table></div>
+      <div class="sec"><span>Offer performance</span><span>packages sold</span></div><div class="tblw"><table><thead><tr><th>Offer</th><th class="num">Sold</th><th class="num hide-ph">Moved</th><th class="num">Omset</th></tr></thead><tbody>
+      ${offers.map((x) => `<tr class="rowbtn" data-prod="${esc(x.o)}"><td><b>${esc(x.o)}</b></td><td class="num">${x.n}×</td><td class="num hide-ph">${x.bks} Bks</td><td class="num">${rp(x.om)}</td></tr>`).join('') || '<tr><td colspan="4">No package sales in this range.</td></tr>'}
       </tbody></table></div></div>`;
   } else if (st.tab === 'salesmen') {
-    html += `<div class="pane"><p class="hint">Tap a salesman to see only their receipts.</p><div class="tblw"><table><thead><tr><th>Salesman</th><th class="num">Receipts</th><th class="num hide-ph">Shops</th><th class="num">Sales</th><th class="hide-ph"></th><th class="num hide-ph">Titip given</th><th class="num hide-ph">Notes paid</th></tr></thead><tbody>
-      ${agRows.map((x) => `<tr class="rowbtn" data-agent="${x.id}"><td><b>${x.a.name}</b><div style="font-size:11.5px;color:var(--ink-dim)">${x.a.region}</div></td><td class="num">${x.n}</td><td class="num hide-ph">${x.shops}</td><td class="num">${rp(x.rev)}</td>
-        <td class="hide-ph" style="width:22%"><div class="bar"><span ${W((Math.max(0, x.rev) / maxA * 100).toFixed(1) + '%')}></span></div></td><td class="num hide-ph">${rp(x.titip)}</td><td class="num hide-ph">${rp(x.settled)}</td></tr>`).join('')}
+    html += `<div class="pane"><div class="sec"><span>Salesman roster</span><span>tap a name to open it</span></div><div class="tblw"><table><thead><tr><th>Salesman</th><th class="num">Receipts</th><th class="num hide-ph">Shops</th><th class="num hide-ph">Moved</th><th class="num">Omset</th><th class="hide-ph"></th></tr></thead><tbody>
+      ${agRows.map((x) => `<tr class="rowbtn" data-exp="${x.id}"><td><b>${x.a.name}</b><div style="font-size:11.5px;color:var(--ink-dim)">${x.a.region}</div></td><td class="num">${x.n}</td><td class="num hide-ph">${x.shops}</td><td class="num hide-ph">${x.bks.toLocaleString('id-ID')} Bks</td><td class="num">${rp(x.om)}</td>
+        <td class="hide-ph" style="width:20%"><div class="bar"><span ${W((Math.max(0, x.om) / maxA * 100).toFixed(1) + '%')}></span></div></td></tr>
+        ${st.expanded === x.id ? `<tr class="sub-row"><td colspan="6"><div style="display:flex;flex-wrap:wrap;gap:6px 22px">
+          <span>Paid: ${MIX.map(([k]) => `${k} ${rp(x.mix[k] || 0)}`).join(' · ')}</span><span>Titip given ${rp(x.titip)} · notes paid ${rp(x.settled)}</span>
+          <span>Top: ${x.top.map((t) => `${t.p.name} ${t.q}`).join(', ') || '—'}</span><button class="btn xs" data-agentgo="${x.id}">Show receipts</button></div></td></tr>` : ''}`).join('')}
       </tbody></table></div></div>`;
   } else {
-    html += `<div class="pane"><p class="hint">Goods shops handed back as damaged. A package returned within 7 days of its sale is flagged.</p><div class="tblw"><table><thead><tr><th>Date</th><th>Shop</th><th class="hide-ph">Salesman</th><th>Product</th><th class="num">Value</th></tr></thead><tbody>
-      ${returns.map((t) => `<tr class="rowbtn" data-goto="${t.id}"><td>${dayLabel(t.date).split(' · ')[1]}</td><td><b>${esc(t.shop)}</b></td><td class="hide-ph">${A[t.agent].short}</td><td>${t.items.map((it) => it.qty + '× ' + prod(it.p).name).join(', ')}</td><td class="num" style="color:var(--danger-ink)">${rp(total(t))}</td></tr>`).join('') || '<tr><td colspan="5">No returns in this period. Clean.</td></tr>'}
-      </tbody>${returns.length ? `<tfoot><tr><td colspan="${ph ? 3 : 4}">${returns.length} returns · 0 package returns flagged</td><td class="num">${rp(returns.reduce((s, t) => s + total(t), 0))}</td></tr></tfoot>` : ''}</table></div></div>`;
+    html += `<div class="pane"><div class="sec"><span>Returns (damaged goods)</span><span>${rp(returns.reduce((s, t) => s + total(t), 0))}</span></div><div class="tblw"><table><thead><tr><th>Date</th><th>Shop</th><th class="hide-ph">Salesman</th><th>Product</th><th class="num">Value</th></tr></thead><tbody>
+      ${returns.map((t) => `<tr class="rowbtn" data-goto="${t.id}"><td>${short(t.date)}</td><td><b>${esc(t.shop)}</b>${pkgFlag(t) ? ' <span class="flag">· package ≤7 days</span>' : ''}</td><td class="hide-ph">${A[t.agent].short}</td><td>${t.items.map((it) => it.qty + '× ' + prod(it.p).name).join(', ')}</td><td class="num" style="color:var(--danger-ink)">${rp(total(t))}</td></tr>`).join('') || '<tr><td colspan="5">No returns in this range. Clean.</td></tr>'}
+      </tbody></table></div>
+      <div class="sec"><span>Package returns within 7 days</span><span>${returns.filter(pkgFlag).length} flagged</span></div>
+      <p class="hint">A shop that hands back goods within 7 days of buying a package is flagged, so the package price is not used to resell at a profit.</p>
+      ${G.role !== 'personal' ? `<div class="sec"><span>Package counts cleared · last 30 days</span><span>${CLEARS.length}</span></div>
+      <div class="tblw"><table><tbody>${CLEARS.map((c) => `<tr><td><b>${c.shop}</b></td><td>${short(c.date)}</td><td class="num">by ${c.by}</td></tr>`).join('')}</tbody></table></div>` : ''}</div>`;
   }
   html += `</div>`;
-  if (st.modal) html += st.modal;
+  if (st.modal) html += st.modal();
   el.innerHTML = html;
   const sc = el.querySelector('.rows, .pane'); if (sc) sc.scrollTop = scroll;
   settleRolls(el); st.grown = true;
@@ -463,111 +500,137 @@ function render(el, st) {
 
 function detail(t, st, ph) {
   const tot = total(t), a = A[t.agent];
-  const head = `<div class="ph"><div class="av">${ini(t.shop)}</div><div style="min-width:0"><h3>${esc(t.shop)}</h3><p>${esc(t.area)} · ${a.region}</p>
+  const head = `<div class="ph"><div class="av">${ini(t.shop)}</div><div style="min-width:0"><h3>${esc(t.shop)}</h3><p>${esc(t.kec)}, ${esc(t.kab)} · ${t.region}</p>
     <span class="resp">Salesman <b>${a.name}</b></span></div><div class="tot"><div class="l">${t.type === 'SETTLE' ? 'Paid on notes' : t.type === 'RETUR' ? 'Refund' : 'Receipt total'}</div><div class="v">${R(st, 'det' + (ph ? 'p' : ''), rp(tot))}</div></div></div>`;
   const facts = `<div class="facts">
-    <div><div class="l">When</div><div class="v">${dayLabel(t.date).split(' · ')[1]}, ${t.time}</div></div>
+    <div><div class="l">When</div><div class="v">${short(t.date)}, ${t.time}</div></div>
     <div><div class="l">${t.type === 'RETUR' ? 'Condition' : 'Payment'}</div><div class="v">${t.pay}</div></div>
-    <div><div class="l">${t.type === 'SETTLE' ? 'Receipt' : 'Moved'}</div><div class="v">${t.type === 'SETTLE' ? '#' + t.id.slice(1) : bks(t) + ' Bks'}</div></div>
-    <div><div class="l">${isOwner() ? 'Profit' : 'Price tier'}</div><div class="v">${isOwner() ? rp(profit(t)) : t.tier}</div></div>
-    ${ph ? '' : `<div><div class="l">GPS</div><div class="v">Verified · 38 m</div></div><div><div class="l">Proof photo</div><div class="v">Attached</div></div><div><div class="l">Price tier</div><div class="v">${t.tier}</div></div><div><div class="l">Receipt no.</div><div class="v">KPM-${t.date.slice(2).replace(/-/g, '')}-${t.id.slice(1)}</div></div>`}
+    <div><div class="l">Moved</div><div class="v">${t.items.length ? bks(t) + ' Bks' : '—'}</div></div>
+    <div><div class="l">Price tier</div><div class="v">${t.tier}</div></div>
+    ${ph ? '' : `<div><div class="l">GPS</div><div class="v">Verified · 38 m</div></div><div><div class="l">Proof photo</div><div class="v">Attached</div></div><div><div class="l">Offer</div><div class="v">${t.offer || '—'}</div></div><div><div class="l">Receipt no.</div><div class="v">KPM-${t.date.slice(2).replace(/-/g, '')}-${t.id.slice(1)}</div></div>`}
   </div>`;
+  const note = t.type === 'EXCHANGE' ? '<p class="note">Tukar Ganti: damaged packs swapped for good ones. Goods move, money does not.</p>'
+    : t.type === 'IOU' ? '<p class="note">IOU fulfilment: goods the shop had already paid for, delivered now. Counted when it was paid.</p>' : '';
   const lines = t.items.length ? `<div class="tblw"><table><thead><tr><th>Product</th><th class="num">Qty</th>${ph ? '' : '<th class="num">Price</th>'}<th class="num">Subtotal</th></tr></thead><tbody>
-    ${t.items.map((it) => { const p = prod(it.p); return `<tr><td>${esc(p.name)}</td><td class="num">${it.qty} ${p.slop ? 'Slop' : 'Bks'}</td>${ph ? '' : `<td class="num">${rp(p.price)}</td>`}<td class="num">${rp(it.qty * p.price * (t.type === 'RETUR' ? -1 : 1))}</td></tr>`; }).join('')}
+    ${t.items.map((it) => { const p = prod(it.p); return `<tr><td>${esc(p.name)}</td><td class="num">${it.qty} ${p.slop ? 'Slop' : 'Bks'}</td>${ph ? '' : `<td class="num">${rp(it.price)}</td>`}<td class="num">${rp(it.qty * it.price * (t.type === 'RETUR' ? -1 : 1))}</td></tr>`; }).join('')}
     </tbody><tfoot><tr><td colspan="${ph ? 2 : 3}">Total</td><td class="num">${rp(tot)}</td></tr></tfoot></table></div>`
-    : `<p style="margin:0;font-size:13px;color:var(--ink-muted)">Cash collected against this shop's consignment notes. It lowers what the shop owes and does not count as a new sale.</p>`;
-  return head + facts + lines + (ph ? `<div style="display:flex;gap:6px;flex-wrap:wrap">${actions(t, true)}</div>` : '');
+    : `<p class="note">Cash collected against this shop's consignment notes. It lowers what the shop owes and is not new omset.</p>`;
+  return head + facts + note + lines + (ph ? `<div style="display:flex;gap:6px;flex-wrap:wrap">${actions(t, true)}</div>` : '');
 }
-
 function actions(t, ph) {
   const s = ph ? ' sm' : '';
   let h = `<button class="btn quiet${s}" data-act="receipt" data-id="${t.id}"><svg class="i"><use href="#i-doc"/></svg>Receipt</button>
-    <button class="btn quiet${s}" data-act="proof" data-id="${t.id}"><svg class="i"><use href="#i-cam"/></svg>Proof</button>
-    <button class="btn quiet${s}" data-act="share" data-id="${t.id}"><svg class="i"><use href="#i-share"/></svg>Share</button>`;
+    <button class="btn quiet${s}" data-act="proof" data-id="${t.id}"><svg class="i"><use href="#i-cam"/></svg>Proof</button>`;
   if (!ph) h += `<span class="sp"></span>`;
-  if (isOwner()) h += `${t.items.length ? `<button class="btn${s}" data-act="edit" data-id="${t.id}"><svg class="i"><use href="#i-edit"/></svg>Edit</button>` : ''}
+  if (isAdmin()) h += `${t.items.length && t.type === 'SALE' ? `<button class="btn${s}" data-act="edit" data-id="${t.id}"><svg class="i"><use href="#i-edit"/></svg>Edit</button>` : ''}
     <button class="btn danger${s}" data-act="delete" data-id="${t.id}"><svg class="i"><use href="#i-trash"/></svg>Delete</button>`;
-  else h += `<span class="lock"><svg class="i" style="vertical-align:-3px;width:14px;height:14px"><use href="#i-lock"/></svg> Edit and delete are for admins</span>`;
+  else h += `<span class="lock"><svg class="i" style="vertical-align:-3px;width:14px;height:14px"><use href="#i-lock"/></svg> Edit and delete need the vault open</span>`;
   return h;
 }
 
-/* ---------- modals (built into the page, never a browser dialog) ---------- */
-function receiptModal(t) {
-  return `<div class="ov" data-close><div class="dlg" role="dialog" aria-label="Receipt"><div class="paper"><div class="rh">KPM · NOTA ${t.type === 'RETUR' ? 'RETUR' : 'PENJUALAN'}</div>
-    <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:8px"><span>${esc(t.shop)}<br>${esc(t.area)}</span><span style="text-align:right">${t.date} ${t.time}<br>${A[t.agent].name}</span></div>
-    ${t.items.length ? `<table><tbody>${t.items.map((it) => `<tr><td>${esc(prod(it.p).name)}<br>${it.qty} × ${rp(prod(it.p).price)}</td><td class="num">${rp(it.qty * prod(it.p).price)}</td></tr>`).join('')}</tbody></table>` : '<p style="margin:0">Pembayaran titip</p>'}
+/* ---------- modals, built into the page ---------- */
+const M = {
+  receipt: (t) => () => `<div class="ov" data-close><div class="dlg" role="dialog" aria-label="Receipt"><div class="paper"><div class="rh">KPM · NOTA ${t.type === 'RETUR' ? 'RETUR' : 'PENJUALAN'}</div>
+    <div style="display:flex;justify-content:space-between;gap:10px;font-size:11.5px;margin-bottom:8px"><span>${esc(t.shop)}<br>${esc(t.kec)}</span><span style="text-align:right">${t.date} ${t.time}<br>${A[t.agent].name}</span></div>
+    ${t.items.length ? `<table><tbody>${t.items.map((it) => `<tr><td>${esc(prod(it.p).name)}<br>${it.qty} × ${rp(it.price)}</td><td class="num">${rp(it.qty * it.price)}</td></tr>`).join('')}</tbody></table>` : '<p style="margin:0">Pembayaran titip</p>'}
     <div class="gt"><span>${t.pay}</span><span>${rp(total(t))}</span></div></div>
-    <div class="row"><button class="btn quiet" data-act="close">Close</button><button class="btn" data-act="share" data-id="${t.id}"><svg class="i"><use href="#i-share"/></svg>Share receipt</button></div></div></div>`;
-}
-function proofModal(t) {
-  return `<div class="ov" data-close><div class="dlg" role="dialog" aria-label="Proof photo"><h4>Proof of visit · ${esc(t.shop)}</h4>
+    <div class="row"><button class="btn quiet" data-act="close">Close</button><button class="btn quiet" data-act="printr">Print</button><button class="btn" data-act="share" data-id="${t.id}"><svg class="i"><use href="#i-share"/></svg>WhatsApp</button></div></div></div>`,
+  proof: (t) => () => `<div class="ov" data-close><div class="dlg" role="dialog" aria-label="Proof photo"><h4>Delivery proof · ${esc(t.shop)}</h4>
     <div class="photo"><svg viewBox="0 0 320 180" width="100%" role="img" aria-label="Example shop front photo"><rect width="320" height="180" fill="var(--inset)"/>
       <rect x="40" y="60" width="240" height="110" fill="var(--panel)" stroke="var(--line-2)"/><rect x="40" y="44" width="240" height="22" fill="var(--line-2)"/>
       <rect x="70" y="95" width="70" height="75" fill="var(--ground)" stroke="var(--line-2)"/><rect x="170" y="90" width="85" height="45" fill="var(--wash)" stroke="var(--line-2)"/>
       <text x="160" y="59" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)">${esc(t.shop)}</text></svg></div>
-    <p><svg class="i" style="vertical-align:-3px"><use href="#i-pin"/></svg> Taken ${t.time} · 38 m from the shop's pin · inside the visit window</p>
-    <div class="row"><button class="btn quiet" data-act="close">Close</button></div></div></div>`;
-}
-function editModal(t) {
-  return `<div class="ov" data-close><div class="dlg" role="dialog" aria-label="Edit receipt"><h4>Edit receipt · ${esc(t.shop)}</h4><p>Change the quantities. The total, the profit and the day's figures are worked out again.</p>
-    ${t.items.map((it, i) => `<label style="display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px">${esc(prod(it.p).name)} <span><input class="qty" type="number" min="0" step="${prod(it.p).slop ? 1 : 10}" id="eq-${t.id}-${i}" value="${it.qty}"> ${prod(it.p).slop ? 'Slop' : 'Bks'}</span></label>`).join('')}
-    <div class="row"><button class="btn quiet" data-act="close">Cancel</button><button class="btn" data-act="save" data-id="${t.id}">Save changes</button></div></div></div>`;
-}
-function deleteModal(t) {
-  return `<div class="ov" data-close><div class="dlg" role="alertdialog" aria-label="Delete receipt"><h4>Delete this receipt?</h4>
-    <p>${esc(t.shop)} · ${t.time} · <b>${rp(total(t))}</b>. The day's totals are worked out again and the stock goes back. This is written to the audit log.</p>
-    <div class="row"><button class="btn quiet" data-act="close">Keep it</button><button class="btn danger" data-act="confirmdel" data-id="${t.id}"><svg class="i"><use href="#i-trash"/></svg>Delete</button></div></div></div>`;
-}
+    <p><svg class="i" style="vertical-align:-3px"><use href="#i-pin"/></svg> ${t.date} ${t.time} · −6.9612, 107.6411 · 38 m from the shop's pin</p>
+    <div class="row"><button class="btn quiet" data-act="close">Close</button></div></div></div>`,
+  del: (t) => () => `<div class="ov" data-close><div class="dlg" role="alertdialog" aria-label="Delete receipt"><h4>Delete this receipt?</h4>
+    <p>${esc(t.shop)} · ${short(t.date)} ${t.time} · <b>${rp(total(t))}</b>. The month's sales figures are taken back and it is written to the audit log. Stock is not put back.</p>
+    <div class="row"><button class="btn quiet" data-act="close">Keep it</button><button class="btn danger" data-act="confirmdel" data-id="${t.id}"><svg class="i"><use href="#i-trash"/></svg>Delete</button></div></div></div>`,
+  delstore: (store, n, om) => () => `<div class="ov" data-close><div class="dlg" role="alertdialog" aria-label="Delete shop history"><h4>Delete all history for ${esc(store)}?</h4>
+    <p>${n} records · ${rp(om)} in this range. Every one is removed and the sales figures are taken back. This cannot be undone.</p>
+    <div class="row"><button class="btn quiet" data-act="close">Keep them</button><button class="btn danger" data-act="confirmdelstore" data-store="${esc(store)}"><svg class="i"><use href="#i-trash"/></svg>Delete ${n} records</button></div></div></div>`,
+  edit: (st) => () => { const e = st.edit, gt = e.items.reduce((s, it) => s + it.qty * it.price, 0);
+    return `<div class="ov" data-close><div class="dlg" role="dialog" aria-label="Data audit"><h4>Data audit · edit receipt</h4>
+    <div class="two"><label>Date<input type="date" class="field" data-e="date" id="e-date-${st.mode}" value="${e.date}"></label><label>Price tier<select class="field" data-e="tier" id="e-tier-${st.mode}">${Object.keys(TIER).map((k) => `<option ${e.tier === k ? 'selected' : ''}>${k}</option>`).join('')}</select></label></div>
+    <label>Shop name<input class="field" data-e="shop" id="e-shop-${st.mode}" value="${esc(e.shop)}"></label>
+    <div style="display:flex;flex-direction:column;gap:6px">${e.items.map((it, i) => `<div class="eline"><select data-e="p" data-i="${i}" id="e-p-${st.mode}-${i}" aria-label="Product">${P.map((p) => `<option value="${p.id}" ${it.p === p.id ? 'selected' : ''}>${p.name}</option>`).join('')}</select>
+      <input type="number" min="0" data-e="qty" data-i="${i}" id="e-q-${st.mode}-${i}" value="${it.qty}" aria-label="Quantity"><span class="num" id="e-s-${st.mode}-${i}">${rp(it.qty * it.price)}</span><button class="x" data-act="eline-x" data-i="${i}" aria-label="Remove line">×</button></div>`).join('')}</div>
+    <div><button class="btn quiet xs" data-act="eline-add">+ Add item</button></div>
+    <div class="gt"><span>Grand total</span><span id="e-gt-${st.mode}">${rp(gt)}</span></div>
+    <div class="row"><button class="btn quiet" data-act="close">Cancel</button><button class="btn" data-act="save">Save changes</button></div></div></div>`; },
+};
 
 /* ---------- events ---------- */
 function rerenderAll() { apps.forEach((a) => render(a.el, a.st)); }
+function refocus(el, id, st) { const i = el.querySelector('#' + id); if (i) { i.focus(); if (i.setSelectionRange && i.type !== 'number' && i.type !== 'date') i.setSelectionRange(i.value.length, i.value.length); } }
 function onInput(e, el, st) {
-  const f = e.target.dataset.f; if (!f) return;
-  if (f === 'q') { st.q = e.target.value; render(el, st); const i = el.querySelector('[data-f="q"]'); i.focus(); i.setSelectionRange(st.q.length, st.q.length); return; }
+  const tg = e.target, f = tg.dataset.f, ed = tg.dataset.e;
+  if (ed && st.edit) {
+    const i = +tg.dataset.i;
+    if (ed === 'qty') { st.edit.items[i].qty = Math.max(0, parseInt(tg.value, 10) || 0);
+      el.querySelector(`#e-s-${st.mode}-${i}`).textContent = rp(st.edit.items[i].qty * st.edit.items[i].price);
+      el.querySelector(`#e-gt-${st.mode}`).textContent = rp(st.edit.items.reduce((s, it) => s + it.qty * it.price, 0)); return; }
+    if (e.type !== 'change' && ed !== 'shop') return;
+    if (ed === 'shop') { st.edit.shop = tg.value; return; }
+    if (ed === 'date') st.edit.date = tg.value;
+    if (ed === 'tier') { st.edit.tier = tg.value; st.edit.items.forEach((it) => { it.price = line(prod(it.p), it.qty, st.edit.tier).price; }); }
+    if (ed === 'p') { st.edit.items[i].p = tg.value; st.edit.items[i].price = line(prod(tg.value), 1, st.edit.tier).price; }
+    return render(el, st);
+  }
+  if (!f) return;
+  if (f === 'q') { st.q = tg.value; render(el, st); return refocus(el, `q-${st.mode}`, st); }
   if (e.type !== 'change') return;
-  if (f === 'region') { st.region = e.target.value; st.agent = 'ALL'; }
-  if (f === 'agent') st.agent = e.target.value;
+  if (f === 'date') { if (tg.value) st.date = tg.value > dayKey(TODAY) ? dayKey(TODAY) : tg.value; }
+  if (f === 'region') { st.region = tg.value; st.agent = 'ALL'; }
+  if (f === 'agent') st.agent = tg.value;
+  if (f === 'scale') st.scale = +tg.value;
   render(el, st);
 }
 function onClick(e, el, st) {
   const b = e.target.closest('button, tr.rowbtn, .ov');
   if (!b) return;
-  if (b.classList.contains('ov') && e.target === b) { st.modal = null; return render(el, st); }
+  if (b.classList.contains('ov')) { if (e.target === b) { st.modal = null; st.edit = null; render(el, st); } return; }
   const d = b.dataset, t = TX.find((x) => x.id === d.id);
-  if (d.per) { st.per = +d.per; return render(el, st); }
+  if (d.range) { st.range = d.range; return render(el, st); }
   if (d.tab) { st.tab = d.tab; return render(el, st); }
   if (d.row) { if (st.mode === 'phone') st.openPhone = st.openPhone === d.row ? null : d.row; else st.sel = d.row; return render(el, st); }
   if (d.prod) { st.q = d.prod; st.tab = 'ledger'; st.sel = null; return render(el, st); }
-  if (d.agent) { st.agent = d.agent; st.region = A[d.agent].region; st.tab = 'ledger'; st.sel = null; return render(el, st); }
+  if (d.exp) { st.expanded = st.expanded === d.exp ? null : d.exp; return render(el, st); }
+  if (d.agentgo) { st.agent = d.agentgo; if (G.role === 'global') st.region = A[d.agentgo].region; st.tab = 'ledger'; st.sel = null; return render(el, st); }
   if (d.goto) { st.tab = 'ledger'; st.sel = d.goto; st.openPhone = d.goto; return render(el, st); }
+  if (d.drill !== undefined) { st.path.push(d.drill); return render(el, st); }
+  if (d.crumb !== undefined) { st.path = st.path.slice(0, +d.crumb + 1); return render(el, st); }
   switch (d.act) {
-    case 'close': st.modal = null; return render(el, st);
-    case 'receipt': st.modal = receiptModal(t); return render(el, st);
-    case 'proof': st.modal = proofModal(t); return render(el, st);
-    case 'edit': st.modal = editModal(t); return render(el, st);
-    case 'delete': st.modal = deleteModal(t); return render(el, st);
-    case 'share': {
-      const txt = `KPM ${t.date} ${t.time} · ${t.shop} · ${t.items.map((it) => it.qty + 'x ' + prod(it.p).name).join(', ') || 'Pembayaran titip'} · ${rp(total(t))} (${t.pay})`;
-      const done = () => toast('Receipt copied, ready to paste in WhatsApp');
-      try { navigator.clipboard.writeText(txt).then(done, done); } catch (_) { done(); }
-      st.modal = null; return render(el, st);
-    }
-    case 'save': {
-      t.items.forEach((it, i) => { const v = parseInt(el.querySelector(`#eq-${t.id}-${i}`).value, 10); it.qty = Math.max(0, isNaN(v) ? it.qty : v); });
-      t.items = t.items.filter((it) => it.qty > 0); if (!t.items.length) TX.splice(TX.indexOf(t), 1);
-      st.modal = null; rerenderAll(); return toast('Receipt saved, totals updated');
-    }
-    case 'confirmdel': TX.splice(TX.indexOf(t), 1); st.modal = null; st.sel = null; st.openPhone = null; rerenderAll(); return toast('Receipt deleted, totals updated');
-    case 'export': return toast(`In the app this saves the ${view(st).rows.length} rows shown as a spreadsheet`);
-    case 'archive': return toast('In the app this loads the older receipts from the archive');
+    case 'close': st.modal = null; st.edit = null; return render(el, st);
+    case 'receipt': st.modal = M.receipt(t); return render(el, st);
+    case 'proof': st.modal = M.proof(t); return render(el, st);
+    case 'delete': st.modal = M.del(t); return render(el, st);
+    case 'edit': st.edit = { id: t.id, date: t.date, shop: t.shop, tier: t.tier, items: t.items.map((it) => ({ ...it })) }; st.modal = M.edit(st); return render(el, st);
+    case 'eline-add': st.edit.items.push(line(P[0], 10, st.edit.tier)); return render(el, st);
+    case 'eline-x': st.edit.items.splice(+d.i, 1); return render(el, st);
+    case 'save': { const x = TX.find((y) => y.id === st.edit.id), items = st.edit.items.filter((it) => it.qty > 0);
+      if (!items.length) return toast('A receipt needs at least one line. Use Delete to remove it.');
+      Object.assign(x, { date: st.edit.date || x.date, shop: st.edit.shop.trim() || x.shop, tier: st.edit.tier, items });
+      TX.sort((a, c) => (c.date + c.time).localeCompare(a.date + a.time)); st.modal = null; st.edit = null; rerenderAll(); return toast('Receipt saved, the month\'s figures updated'); }
+    case 'share': { const txt = `KPM ${t.date} ${t.time} · ${t.shop} · ${t.items.map((it) => it.qty + 'x ' + prod(it.p).name).join(', ') || 'Pembayaran titip'} · ${rp(total(t))} (${t.pay})`;
+      const done = () => toast('Receipt copied, ready to paste in WhatsApp'); try { navigator.clipboard.writeText(txt).then(done, done); } catch (_) { done(); }
+      st.modal = null; return render(el, st); }
+    case 'confirmdel': TX.splice(TX.indexOf(t), 1); st.modal = null; st.sel = null; st.openPhone = null; rerenderAll(); return toast('Receipt deleted, written to the audit log');
+    case 'delstore': { const v = view(st), rs = v.rows.filter((x) => (x.shop === d.store) || (d.store === 'Individuals (Ecer)' && (x.shop === 'Walk-in buyer' || x.tier === 'Ecer')));
+      st.modal = M.delstore(d.store, rs.length, rs.reduce((s, x) => s + omsetOf(x), 0)); return render(el, st); }
+    case 'confirmdelstore': { const v = view(st), rs = v.rows.filter((x) => x.shop === d.store || (d.store === 'Individuals (Ecer)' && (x.shop === 'Walk-in buyer' || x.tier === 'Ecer')));
+      rs.forEach((x) => TX.splice(TX.indexOf(x), 1)); st.modal = null; st.path.pop(); rerenderAll(); return toast(`${rs.length} records deleted for ${d.store}`); }
+    case 'archive': apps.forEach((a) => { a.st.archive = true; }); rerenderAll(); return toast('Archive pulled: older receipts loaded for this range');
+    case 'print': return toast(`In the app this opens the print view at ${st.scale}%`);
+    case 'printr': return toast('In the app this sends the receipt to the Bluetooth printer');
   }
 }
 
 /* ---------- page controls ---------- */
 const segs = (id, fn) => document.getElementById(id).addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return;
   b.parentElement.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b)); fn(b.dataset.v); });
-segs('role', (v) => { G.role = v; apps.forEach((a) => { a.st.agent = 'ALL'; a.st.region = 'ALL'; a.st.sel = null; a.st.openPhone = null; if (v !== 'owner' && a.st.tab === 'salesmen') a.st.tab = 'ledger'; }); rerenderAll();
-  toast(v === 'owner' ? 'Viewing as the owner: every salesman, profit, edit and delete' : 'Viewing as Agus: only his own sales, no profit, no edit'); });
+segs('role', (v) => { G.role = v; apps.forEach((a) => { Object.assign(a.st, { agent: 'ALL', region: 'ALL', sel: null, openPhone: null, path: [], expanded: null, modal: null, edit: null });
+  if (v === 'personal' && a.st.tab === 'salesmen') a.st.tab = 'ledger'; }); rerenderAll();
+  toast(v === 'global' ? 'Owner: every region, edit and delete with the vault open' : v === 'regional' ? 'Hendra: only the BANDUNG region, no edit or delete' : 'Agus: only his own sales, no archive, no edit'); });
 segs('theme', (v) => { if (v) document.documentElement.dataset.theme = v; else delete document.documentElement.dataset.theme; });
 segs('motion', (v) => { G.motion = v === 'on'; document.body.classList.toggle('nomotion', !G.motion); });
 
