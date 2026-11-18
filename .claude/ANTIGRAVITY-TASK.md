@@ -2705,7 +2705,8 @@ Build `.claude/drafts/customers-c.html` (taking section C of `.claude/drafts/cus
 1. In `src/components/CustomerManager.jsx` (and any util it calls), find every place a competitor / benchmark price is WRITTEN and READ. Give `file:line` for each, the Firestore path, and every field name written.
 2. Find the `firestore.rules` lines that gate that path (read + write, which tiers).
 3. Table: each thing the side-by-side card shows (our product + price, rival name + price, logged date, older price of the same rival, shelf, promo, selling speed, same rival at other shops) -> EXISTS (field name) / NEW. For each NEW: the smallest data change, and whether a rules line must change.
-**Done when:** Result has the 3 parts with `file:line` on every claim and a `could not check:` line.
+4. (added 2026-11-19 06:53, picture v4) The card now also needs: a rival CATALOG set by us (rival name + category + the Cello product we pair it with), one CATEGORY list shared by our products and rivals, and each price log pointing at a catalog entry. For each: where our product category lives today (`type` / `category`, `file:line`, how the category list is built), and the smallest new collection/fields + the `firestore.rules` lines that would gate them (who may add a category, a rival, change a pair).
+**Done when:** Result has the 4 parts with `file:line` on every claim and a `could not check:` line.
 **Result:**
 
 ## Task 73 - READ-ONLY: does our product data know sticks per pack? (from Claude)

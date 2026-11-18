@@ -230,6 +230,13 @@ table.b tr:last-child td{border-bottom:0}
 button.crow{width:100%;border:0;border-bottom:1px solid var(--hair);background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer;border-radius:0}
 button.crow:hover,button.crow.on{background:var(--sel)}
 .phone .dcol .big{font-size:17px}
+/* Categories + pairs set by us (his 2026-11-19: "we are the only one who knows which of our product that is can be compared with what product ... apple to apple") */
+.cchips{display:flex;gap:6px;flex-wrap:wrap}
+.cchip{border:1px solid var(--line-2);background:transparent;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--ink-muted)}
+.cchip:hover{border-color:var(--accent-edge)}
+.cchip.on{border-color:var(--accent-edge);background:var(--wash);color:var(--ink)}
+.cchip span{color:var(--ink-dim);margin-left:4px;font-weight:500}
+.dempty{border:1px dashed var(--line-2);border-radius:6px;padding:12px 8px;font-size:11.5px;color:var(--ink-dim);text-align:center;line-height:1.45}
 .phone .glance,.phone .locgrid.two,.phone .csum{grid-template-columns:1fr 1fr}
 .phone .map.big,.phone .sv.big{height:150px}
 .phone .crow{grid-template-columns:minmax(0,1fr) 72px auto}.phone .cb{display:none}
@@ -346,13 +353,13 @@ const FOLDERS = [
 
 const SHOPS = [
   { id: 's1', name: 'AMANAH BARU', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Budi Santoso', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-08', state: '10d late', late: true, wa: '0812-3456-7890', gps: '-6.9654, 107.5759', addr: 'Jl. Kopo Bihbul No. 42, next to the minimarket · Folder 1', embed: '', hasPhoto: false, logs: [
-    { id: 'l1', d: '2026-11-15', p: 'Rival Kretek 12', n: 'owner says it sells first', v: 'Fast', rp: 7500, shelf: 'Eye level', promo: 'Poster', ours: 'cof' },
-    { id: 'l2', d: '2026-11-08', p: 'Rival Mild 16', n: 'new stock this week', v: 'Medium', rp: 9000, shelf: 'Counter / till', promo: 'Discount', ours: 'choc' },
-    { id: 'l3', d: '2026-11-01', p: 'Rival Filter 12', n: 'dusty packs', v: 'Slow', rp: 8800, shelf: 'Bottom shelf', promo: 'None', ours: 'mm' },
+    { id: 'l1', d: '2026-11-15', p: 'Rival Kretek 12', n: 'owner says it sells first', v: 'Fast', rp: 7500, shelf: 'Eye level', promo: 'Poster', rid: 'r1' },
+    { id: 'l2', d: '2026-11-08', p: 'Rival Mild 16', n: 'new stock this week', v: 'Medium', rp: 9000, shelf: 'Counter / till', promo: 'Discount', rid: 'r2' },
+    { id: 'l3', d: '2026-11-01', p: 'Rival Filter 12', n: 'dusty packs', v: 'Slow', rp: 8800, shelf: 'Bottom shelf', promo: 'None', rid: 'r3' },
   ] },
   { id: 's2', name: 'ANEKA BARU PANJI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Budi Santoso', noo: 'Dika Saputra', tier: 'Unranked', price: 'Retail', grosirAsk: true, freq: 7, last: '2026-11-15', state: '4d left', late: false, wa: '0813-2209-1122', gps: '-6.9695, 107.5752', addr: 'Jl. Taman Kopo Indah II No. 14', embed: '', hasPhoto: false, logs: [
-    { id: 'l4', d: '2026-11-14', p: 'Rival Kretek 16', n: 'counter display', v: 'Fast', rp: 8000, shelf: 'Counter / till', promo: 'Free gift', ours: 'cof' },
-    { id: 'l5', d: '2026-11-12', p: 'Rival Kretek 12', n: '', v: 'Fast', rp: 7000, shelf: 'Eye level', promo: 'Discount', ours: 'cof' },
+    { id: 'l4', d: '2026-11-14', p: 'Rival Kretek 16', n: 'counter display', v: 'Fast', rp: 8000, shelf: 'Counter / till', promo: 'Free gift', rid: 'r4' },
+    { id: 'l5', d: '2026-11-12', p: 'Rival Kretek 12', n: '', v: 'Fast', rp: 7000, shelf: 'Eye level', promo: 'Discount', rid: 'r1' },
   ] },
   { id: 's3', name: 'WARUNG BU DARMI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-12', state: '1d left', late: false, wa: '0812-9001-2233', gps: '-6.9618, 107.5711', addr: 'Gg. Masjid Al-Huda No. 3', embed: '', hasPhoto: false, logs: [] },
   { id: 's4', name: 'TOKO JAYA ABADI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Silver', price: 'Grosir', grosirAsk: false, freq: 7, last: '2026-11-13', state: '2d left', late: false, wa: '0813-8811-4455', gps: '-6.9640, 107.5802', addr: 'Jl. Raya Kopo No. 118', embed: '', hasPhoto: false, logs: [] },
@@ -422,7 +429,8 @@ function toast(msg) {
 const apps = [];
 const freshState = (mode) => ({
   mode, q: '', node: 'kec:MARGAHAYU', sel: 's1', phoneStep: 'tree', locMode: 'both',
-  bProd: '', bNote: '', bPrice: '', bOurs: 'cof', bShelf: 'Eye level', bPromo: 'None', bSpeed: 'Medium', shopTab: 'shop', cmpRival: '', cmpOurs: '', ownerPick: {}, prev: {}, grown: false,
+  bRival: 'r1', bNote: '', bPrice: '', bShelf: 'Eye level', bPromo: 'None', bSpeed: 'Medium', shopTab: 'shop', cmpCat: '', cmpRival: '', cmpOurs: '',
+  rvName: '', rvCat: 'SKM', rvPair: '', newCat: '', ownerPick: {}, prev: {}, grown: false,
   modal: null, form: null, promptVal: '', folderLevel: 'Kecamatan',
 });
 
@@ -658,55 +666,82 @@ function renderMidPane(st, nt, areaList, kpi, ro, boss) {
 }
 
 const OURS = [
-  { id: 'cof', name: 'Cello Coffee & Caramel', rp: 8500 }, { id: 'mm', name: 'Cello Mmrapi', rp: 8500 },
-  { id: 'choc', name: 'Cello Chocolate', rp: 10000 }, { id: 'green', name: 'Cello Green', rp: 7000 }, { id: 'teh', name: 'Cello Teh Manis', rp: 8000 },
+  { id: 'cof', name: 'Cello Coffee & Caramel', rp: 8500, cat: 'SKM' }, { id: 'mm', name: 'Cello Mmrapi', rp: 8500, cat: 'Mild' },
+  { id: 'choc', name: 'Cello Chocolate', rp: 10000, cat: 'SKM' }, { id: 'green', name: 'Cello Green', rp: 7000, cat: 'Mild' }, { id: 'teh', name: 'Cello Teh Manis', rp: 8000, cat: 'SKT' },
 ];
+/* One category list for our products AND rival products (demo names from his message; the real list is his) */
+const CATS = ['SKT', 'SKM', 'Mild', 'Rokok Putih', 'Kretek'];
+/* Rival catalog, set by us: each rival sits in a category and has the Cello product WE chose to compare it with */
+const RIVALS = [
+  { id: 'r1', name: 'Rival Kretek 12', cat: 'SKM', pair: 'cof' },
+  { id: 'r2', name: 'Rival Mild 16', cat: 'Mild', pair: 'green' },
+  { id: 'r3', name: 'Rival Filter 12', cat: 'Rokok Putih', pair: '' },
+  { id: 'r4', name: 'Rival Kretek 16', cat: 'SKM', pair: 'choc' },
+];
+const rivalOf = (l) => RIVALS.find((x) => x.id === l.rid) || { id: '', name: l.p, cat: '—', pair: '' };
+const pairOf = (l) => OURS.find((x) => x.id === rivalOf(l).pair) || null;
+const rivalOptions = (sel) => CATS.filter((c) => RIVALS.some((r) => r.cat === c)).map((c) => `<optgroup label="${esc(c)}">${RIVALS.filter((r) => r.cat === c).map((r) => `<option value="${r.id}" ${sel === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</optgroup>`).join('');
 const SHELF = ['Eye level', 'Top shelf', 'Bottom shelf', 'Counter / till'];
 const PROMO = ['None', 'Poster', 'Discount', 'Free gift'];
 const SPEED = ['Fast', 'Medium', 'Slow'];
 const fmtD = (d) => { if (!d) return '—'; const [y, m, dd] = d.split('-'); return +dd + ' ' + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+m - 1]; };
 
-/* Side by side: the user picks our product AND the rival; nothing is paired for them */
-function compareCard(s, st) {
+/* Side by side: one category at a time; the rival opens next to the Cello product WE paired it with; the user can still pick another Cello in the same category */
+function compareCard(s, st, ro) {
   const logs = s.logs;
   if (!logs.length) return '';
-  const r = logs.find((l) => l.id === st.cmpRival) || logs[0];
-  const o = OURS.find((x) => x.id === st.cmpOurs) || OURS.find((x) => x.id === r.ours) || OURS[0];
-  const gap = r.rp - o.rp, pct = Math.round((Math.abs(gap) / o.rp) * 100), top = Math.max(r.rp, o.rp);
-  const verdict = gap < 0 ? `Rival ${rp(-gap)} cheaper · ${pct}%` : gap > 0 ? `Cello ${rp(gap)} cheaper · ${pct}%` : 'Same price';
-  const older = logs.find((l) => l.p === r.p && l.d < r.d);
-  const away = SHOPS.filter((x) => x.id !== s.id).flatMap((x) => x.logs.filter((l) => l.p === r.p).map((l) => l.rp));
-  const lad = [{ n: r.p, rp: r.rp, k: 'pick' }], seen = new Set([r.p]);
-  logs.forEach((l) => { if (!seen.has(l.p)) { seen.add(l.p); lad.push({ n: l.p, rp: l.rp, k: '' }); } });
-  lad.push({ n: o.name, rp: o.rp, k: 'me' });
+  const cats = CATS.filter((c) => logs.some((l) => rivalOf(l).cat === c));
+  const cat = cats.includes(st.cmpCat) ? st.cmpCat : rivalOf(logs.find((l) => l.id === st.cmpRival) || logs[0]).cat;
+  const inCat = logs.filter((l) => rivalOf(l).cat === cat);
+  const r = inCat.find((l) => l.id === st.cmpRival) || inCat[0];
+  const rv = rivalOf(r);
+  const oursIn = OURS.filter((x) => x.cat === cat);
+  const o = oursIn.find((x) => x.id === st.cmpOurs) || oursIn.find((x) => x.id === rv.pair) || oursIn[0] || null;
+  const older = inCat.find((l) => l.rid === r.rid && l.d < r.d);
+  const away = SHOPS.filter((x) => x.id !== s.id).flatMap((x) => x.logs.filter((l) => l.rid === r.rid).map((l) => l.rp));
+  const lad = [{ n: r.p, rp: r.rp, k: 'pick' }], seen = new Set([r.rid]);
+  inCat.forEach((l) => { if (!seen.has(l.rid)) { seen.add(l.rid); lad.push({ n: l.p, rp: l.rp, k: '' }); } });
+  if (o) lad.push({ n: o.name, rp: o.rp, k: 'me' });
   lad.sort((a, b) => a.rp - b.rp || (a.k === 'me' ? -1 : b.k === 'me' ? 1 : 0));
   const rank = lad.findIndex((x) => x.k === 'me') + 1;
-  return `<div class="ch"><span>Side by side</span><span>you pick both sides</span></div>
-    <div class="duel">
-      <div class="dcols">
-        <div class="dcol mine">
-          <span class="fl">Our product</span>
-          <label class="pk"><span>${esc(o.name)}</span><i>▾</i><select data-f="cmpOurs" aria-label="Our product to compare">${OURS.map((x) => `<option value="${x.id}" ${x.id === o.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
+  let mine, mid = '';
+  if (!o) {
+    mine = `<div class="dcol mine"><span class="fl">Our product · ${esc(cat)}</span><div class="dempty">No Cello product in ${esc(cat)} yet.<br>Add one in Master Vault to compare.</div></div>`;
+  } else {
+    const isPair = o.id === rv.pair;
+    const gap = r.rp - o.rp, pct = Math.round((Math.abs(gap) / o.rp) * 100), top = Math.max(r.rp, o.rp);
+    const verdict = gap < 0 ? `Rival ${rp(-gap)} cheaper · ${pct}%` : gap > 0 ? `Cello ${rp(gap)} cheaper · ${pct}%` : 'Same price';
+    mine = `<div class="dcol mine">
+          <span class="fl">Our product · ${esc(cat)}</span>
+          <label class="pk"><span>${esc(o.name)}</span><i>▾</i><select data-f="cmpOurs" aria-label="Our product to compare">${oursIn.map((x) => `<option value="${x.id}" ${x.id === o.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
           <span class="big">${rp(o.rp)}</span>
           <span class="sub">our price list · this shop buys ${esc(s.price)}</span>
-        </div>
+          ${isPair ? `<span class="st g" style="align-self:flex-start">✓ Our pair for this rival</span>` : !ro ? `<button type="button" class="link-btn" style="align-self:flex-start;text-align:left" data-act="set-pair" data-rid="${rv.id}" data-ours="${o.id}">Save as the pair for ${esc(r.p)}</button>` : `<span class="sub">not the saved pair</span>`}
+        </div>`;
+    mid = `<div class="bfly">
+        <div class="l"><span class="bar us" style="width:${Math.round((o.rp / top) * 100)}%"></span></div>
+        <span class="st ${gap < 0 ? 'bad' : 'g'}">${verdict}</span>
+        <div><span class="bar them" style="width:${Math.round((r.rp / top) * 100)}%"></span></div>
+      </div>`;
+  }
+  return `<div class="ch"><span>Side by side</span><span>same category · pairs set by us</span></div>
+    <div class="duel">
+      <div class="cchips" role="group" aria-label="Category">${cats.map((c) => `<button type="button" class="cchip ${c === cat ? 'on' : ''}" aria-pressed="${c === cat}" data-act="cmp-cat" data-cat="${esc(c)}">${esc(c)}<span>${logs.filter((l) => rivalOf(l).cat === c).length}</span></button>`).join('')}</div>
+      <div class="dcols">
+        ${mine}
         <div class="dcol">
-          <span class="fl">Rival product</span>
-          <label class="pk"><span>${esc(r.p)}</span><i>▾</i><select data-f="cmpRival" aria-label="Rival product to compare">${logs.map((l) => `<option value="${l.id}" ${l.id === r.id ? 'selected' : ''}>${esc(l.p)} · ${rp(l.rp)} · ${fmtD(l.d)}</option>`).join('')}</select></label>
+          <span class="fl">Rival product · ${esc(cat)}</span>
+          <label class="pk"><span>${esc(r.p)}</span><i>▾</i><select data-f="cmpRival" aria-label="Rival product to compare">${inCat.map((l) => `<option value="${l.id}" ${l.id === r.id ? 'selected' : ''}>${esc(l.p)} · ${rp(l.rp)} · ${fmtD(l.d)}</option>`).join('')}</select></label>
           <span class="big" style="color:var(--danger-ink)">${rp(r.rp)}</span>
           <span class="sub">logged ${fmtD(r.d)}${older ? ` · was ${rp(older.rp)} on ${fmtD(older.d)}` : ''}</span>
           <div class="chips"><span class="st">${esc(r.shelf)}</span><span class="st">${r.promo === 'None' ? 'No promo' : esc(r.promo)}</span><span class="st ${r.v === 'Fast' ? 'bad' : ''}">${esc(r.v)} selling</span></div>
         </div>
       </div>
-      <div class="bfly">
-        <div class="l"><span class="bar us" style="width:${Math.round((o.rp / top) * 100)}%"></span></div>
-        <span class="st ${gap < 0 ? 'bad' : 'g'}">${verdict}</span>
-        <div><span class="bar them" style="width:${Math.round((r.rp / top) * 100)}%"></span></div>
-      </div>
+      ${mid}
       ${r.n ? `<div class="dim" style="font-size:11px">Note: ${esc(r.n)}</div>` : ''}
       ${away.length ? `<div class="dim" style="font-size:11px">Same rival at ${away.length} other shop${away.length === 1 ? '' : 's'}: ${rp(Math.min(...away))}${away.length > 1 ? ' – ' + rp(Math.max(...away)) : ''}</div>` : ''}
       <div class="ladder">
-        <div class="ch" style="padding:0 6px 4px"><span>Price ladder here, cheapest first</span><span>Cello is #${rank} of ${lad.length}</span></div>
+        <div class="ch" style="padding:0 6px 4px"><span>Price ladder · ${esc(cat)}, cheapest first</span><span>${o ? `Cello is #${rank} of ${lad.length}` : 'no Cello here'}</span></div>
         ${lad.map((x, i) => `<div class="lad ${x.k}"><span class="dim">${i + 1}</span><span class="n">${esc(x.n)}${x.k === 'me' ? ' (ours)' : ''}</span><b>${rp(x.rp)}</b></div>`).join('')}
       </div>
     </div>`;
@@ -784,41 +819,48 @@ function renderRightPane(s, st, ro, boss) {
     const logs = s.logs;
     const brands = new Set(logs.map((l) => l.p.split(' ')[0])).size;
     const cheapest = logs.length ? logs.reduce((a, b) => (b.rp < a.rp ? b : a)) : null;
-    const under = logs.filter((l) => { const o = OURS.find((x) => x.id === l.ours); return o && l.rp < o.rp; }).length;
+    const paired = logs.filter((l) => pairOf(l));
+    const under = paired.filter((l) => l.rp < pairOf(l).rp).length;
+    const picked = (logs.find((x) => x.id === st.cmpRival) || logs[0] || {}).id;
     body = `<div class="csum">
         <div><span class="fl">Prices logged</span><b>${R(st, 'c-n' + s.id, String(logs.length))}</b></div>
         <div><span class="fl">Brands seen</span><b>${R(st, 'c-b' + s.id, String(brands))}</b></div>
         <div><span class="fl">Cheapest rival</span><b>${cheapest ? rp(cheapest.rp) : '—'}</b><span class="dim">${cheapest ? esc(cheapest.p) : ''}</span></div>
-        <div><span class="fl">Cheaper than us</span><b style="${under ? 'color:var(--danger-ink)' : ''}">${R(st, 'c-u' + s.id, String(under))}</b><span class="dim">of ${logs.length}</span></div>
+        <div><span class="fl">Cheaper than its pair</span><b style="${under ? 'color:var(--danger-ink)' : ''}">${R(st, 'c-u' + s.id, String(under))}</b><span class="dim">of ${paired.length} paired</span></div>
       </div>
-      ${compareCard(s, st)}
-      <div class="ch"><span>Every rival vs nearest Cello</span><span>tap to compare</span></div>
-      <div class="cmp">${logs.length ? logs.map((l) => { const o = OURS.find((x) => x.id === l.ours) || OURS[0]; const gap = l.rp - o.rp;
-        const w = Math.min(100, Math.round(Math.max(l.rp, o.rp) ? (l.rp / Math.max(l.rp, o.rp)) * 100 : 0)), w2 = Math.min(100, Math.round((o.rp / Math.max(l.rp, o.rp)) * 100));
-        const on = l.id === (logs.find((x) => x.id === st.cmpRival) || logs[0]).id;
+      ${compareCard(s, st, ro)}
+      <div class="ch"><span>Every rival vs its Cello pair</span>${!ro ? `<button type="button" class="link-btn" data-act="open-rivals">Rival list &amp; pairs ›</button>` : '<span>tap to compare</span>'}</div>
+      <div class="cmp">${logs.length ? logs.map((l) => { const rv = rivalOf(l), o = pairOf(l), on = l.id === picked;
+        if (!o) return `<button type="button" class="crow ${on ? 'on' : ''}" data-act="cmp-pick" data-lid="${l.id}" aria-pressed="${on}">
+          <div class="cn"><b>${esc(l.p)}</b><span class="dim">${esc(rv.cat)} · no Cello pair set</span></div>
+          <div class="cb"></div>
+          <div class="cp"><b>${rp(l.rp)}</b><span class="dim">—</span></div>
+          <span class="st">No pair</span>
+        </button>`;
+        const gap = l.rp - o.rp, top = Math.max(l.rp, o.rp), w = Math.round((l.rp / top) * 100), w2 = Math.round((o.rp / top) * 100);
         return `<button type="button" class="crow ${on ? 'on' : ''}" data-act="cmp-pick" data-lid="${l.id}" aria-pressed="${on}">
-          <div class="cn"><b>${esc(l.p)}</b><span class="dim">vs ${esc(o.name)}</span></div>
+          <div class="cn"><b>${esc(l.p)}</b><span class="dim">${esc(rv.cat)} · vs ${esc(o.name)}</span></div>
           <div class="cb"><div class="cbar"><span class="them" style="width:${w}%"></span></div><div class="cbar"><span class="us" style="width:${w2}%"></span></div></div>
           <div class="cp"><b>${rp(l.rp)}</b><span class="dim">${rp(o.rp)}</span></div>
           <span class="st ${gap < 0 ? 'bad' : 'g'}">${gap < 0 ? rp(-gap) + ' cheaper' : gap > 0 ? rp(gap) + ' dearer' : 'same'}</span>
         </button>`; }).join('') : `<div class="dim" style="padding:12px;text-align:center">No rival prices logged at this shop yet.</div>`}
         <div class="legend"><span><i class="them"></i>Rival</span><span><i class="us"></i>Cello</span></div></div>
-      ${!ro ? `<div class="ch"><span>Log a rival price</span><span>takes 10 seconds at the shelf</span></div>
+      ${!ro ? `<div class="ch"><span>Log a rival price</span><span>pick from our rival list</span></div>
       <div class="cform">
-        <input class="inp w2" data-f="bProd" id="bp-${st.mode}" value="${esc(st.bProd)}" placeholder="Rival brand &amp; product">
+        <select class="inp w2" data-f="bRival" aria-label="Rival product">${rivalOptions(st.bRival)}</select>
         <input class="inp" data-f="bPrice" id="br-${st.mode}" value="${esc(st.bPrice)}" type="number" placeholder="Price Rp">
-        <select class="inp" data-f="bOurs" aria-label="Compare with">${OURS.map((o) => `<option value="${o.id}" ${st.bOurs === o.id ? 'selected' : ''}>vs ${o.name}</option>`).join('')}</select>
         <select class="inp" data-f="bShelf" aria-label="Shelf">${SHELF.map((x) => `<option ${st.bShelf === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
         <select class="inp" data-f="bPromo" aria-label="Promo">${PROMO.map((x) => `<option value="${x}" ${st.bPromo === x ? 'selected' : ''}>${x === 'None' ? 'No promo' : x}</option>`).join('')}</select>
         <select class="inp" data-f="bSpeed" aria-label="Selling">${SPEED.map((x) => `<option value="${x}" ${st.bSpeed === x ? 'selected' : ''}>${x} selling</option>`).join('')}</select>
         <input class="inp w2" data-f="bNote" id="bn-${st.mode}" value="${esc(st.bNote)}" placeholder="Note (stock level, what the owner said)">
+        <button type="button" class="btn q" data-act="open-rivals"><svg class="i"><use href="#plus"/></svg>New rival product</button>
         <button type="button" class="btn q" data-act="bench-photo"><svg class="i"><use href="#cam"/></svg>Shelf photo</button>
         <button type="button" class="btn" data-act="add-bench" data-id="${s.id}"><svg class="i"><use href="#plus"/></svg>Log price</button>
       </div>` : ''}
       <div class="ch"><span>History at this shop</span><span>${logs.length} entries</span></div>
       <div class="tl">${logs.length ? logs.map((l) => `<div class="tli">
         <span class="td">${fmtD(l.d)}</span>
-        <div class="tb"><b>${esc(l.p)} · ${rp(l.rp)}</b><span class="dim">${esc(l.shelf)} · ${l.promo === 'None' ? 'no promo' : esc(l.promo)} · ${esc(l.v)} selling${l.n ? ' · ' + esc(l.n) : ''}</span></div>
+        <div class="tb"><b>${esc(l.p)} · ${rp(l.rp)}</b><span class="dim">${esc(rivalOf(l).cat)} · ${esc(l.shelf)} · ${l.promo === 'None' ? 'no promo' : esc(l.promo)} · ${esc(l.v)} selling${l.n ? ' · ' + esc(l.n) : ''}</span></div>
         <span class="st ${l.v === 'Slow' ? 'bad' : ''}">${esc(l.v)}</span>
         ${!ro ? `<button type="button" class="xbtn" data-act="del-bench" data-id="${s.id}" data-lid="${l.id}" aria-label="Delete this price">×</button>` : ''}
       </div>`).join('') : `<div class="dim" style="padding:10px">Nothing yet.</div>`}</div>`;
@@ -913,6 +955,29 @@ const M = {
     <p>Moves ${count} shop(s) into <b>Unknown kecamatan</b>. No shop profile or sales history is deleted.</p>
     <div class="row"><button type="button" class="btn q" data-act="close">Keep folder</button><button type="button" class="btn d" data-act="confirm-del-folder" data-name="${esc(name)}"><svg class="i"><use href="#trash"/></svg>Reset to Unknown</button></div>
   </div></div>`,
+  rivals: () => (st) => {
+    const pairOpts = (cat, sel) => `<option value="" ${!sel ? 'selected' : ''}>No pair yet</option>` + OURS.filter((o) => o.cat === cat).map((o) => `<option value="${o.id}" ${sel === o.id ? 'selected' : ''}>vs ${esc(o.name)}</option>`).join('');
+    const used = (rid) => SHOPS.reduce((n, x) => n + x.logs.filter((l) => l.rid === rid).length, 0);
+    return `<div class="ov"><div class="dlg" role="dialog" aria-label="Rival products and pairs">
+    <h4>Rival products &amp; pairs</h4>
+    <p>Set by us, once. Every rival product sits in a category and is compared with the Cello product we choose, so every comparison is like with like. Salesmen only pick from this list.</p>
+    <div class="box"><div class="bh"><span>Categories (${CATS.length})</span><span>shared with Master Vault</span></div>
+      <div class="br">${CATS.map((c) => `<span class="st">${esc(c)} · ${OURS.filter((o) => o.cat === c).length} ours · ${RIVALS.filter((r) => r.cat === c).length} rival</span>`).join('')}</div>
+      <div class="br"><input class="inp" style="flex:1 1 160px;height:30px" data-f="newCat" id="nc-${st.mode}" value="${esc(st.newCat)}" placeholder="New category name"><button type="button" class="btn" data-act="add-cat"><svg class="i"><use href="#plus"/></svg>Add category</button></div>
+    </div>
+    <div class="box"><div class="bh"><span>Add a rival product</span><span>category first, then its Cello pair</span></div>
+      <div class="br">
+        <input class="inp" style="flex:2 1 160px;height:30px" data-f="rvName" id="rn-${st.mode}" value="${esc(st.rvName)}" placeholder="Rival brand &amp; product">
+        <select class="inp" style="flex:1 1 110px;height:30px" data-f="rvCat" aria-label="Category">${CATS.map((c) => `<option ${st.rvCat === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
+        <select class="inp" style="flex:1 1 150px;height:30px" data-f="rvPair" aria-label="Compare with">${pairOpts(st.rvCat, st.rvPair)}</select>
+        <button type="button" class="btn" data-act="add-rival"><svg class="i"><use href="#plus"/></svg>Add</button>
+      </div></div>
+    <div class="box"><div class="bh"><span>All rival products (${RIVALS.length})</span><span>change a pair any time</span></div>
+      ${CATS.filter((c) => RIVALS.some((r) => r.cat === c)).map((c) => `<div class="qsec"><span>${esc(c)}</span><span>${OURS.filter((o) => o.cat === c).length} Cello in this category</span></div>` + RIVALS.filter((r) => r.cat === c).map((r) => `<div class="br"><b style="flex:1 1 140px;font-size:12px">${esc(r.name)}</b><span class="dim" style="font-size:11px">${used(r.id)} price${used(r.id) === 1 ? '' : 's'}</span><select class="inp" style="flex:0 1 190px;height:28px" data-f="pair-edit" data-rid="${r.id}" aria-label="Cello pair for ${esc(r.name)}">${pairOpts(c, r.pair)}</select></div>`).join('')).join('')}
+    </div>
+    <div class="row"><button type="button" class="btn q" data-act="close">Done</button></div>
+  </div></div>`;
+  },
   delBench: (s, l) => () => `<div class="ov"><div class="dlg sm" role="alertdialog" aria-label="Delete competitor price">
     <h4>Remove competitor price?</h4>
     <p><b>${esc(l.p)}</b> (${esc(l.n)}) · <b>${rp(l.rp)}</b> at ${esc(s.name)}.</p>
@@ -955,8 +1020,18 @@ function onInput(e, el, st) {
   }
   if (!f) return;
   if (f === 'q') { st.q = tg.value; render(el, st); return refocus(el, `q-${st.mode}`); }
-  if (f === 'cmpRival' || f === 'cmpOurs') { if (st[f] === tg.value) return; st[f] = tg.value; return render(el, st); }
-  if (['bProd', 'bNote', 'bPrice', 'promptVal', 'bOurs', 'bShelf', 'bSpeed'].includes(f)) { st[f] = tg.value; return; }
+  if (f === 'cmpRival' || f === 'cmpOurs') { if (st[f] === tg.value) return; st[f] = tg.value; if (f === 'cmpRival') st.cmpOurs = ''; return render(el, st); }
+  if (f === 'rvCat') { if (st.rvCat === tg.value) return; st.rvCat = tg.value; st.rvPair = ''; return render(el, st); }
+  if (f === 'pair-edit') {
+    if (e.type !== 'change') return;
+    const r = RIVALS.find((x) => x.id === tg.dataset.rid);
+    if (!r) return;
+    r.pair = tg.value;
+    rerenderAll();
+    const o = OURS.find((x) => x.id === r.pair);
+    return toast(o ? `Pair saved: ${r.name} ↔ ${o.name}` : `${r.name} has no Cello pair now`);
+  }
+  if (['bRival', 'bNote', 'bPrice', 'promptVal', 'bShelf', 'bSpeed', 'rvName', 'rvPair', 'newCat'].includes(f)) { st[f] = tg.value; return; }
   if (f === 'bPromo') { st.bPromo = tg.value === 'No promo' ? 'None' : tg.value; return; }
   if (f === 'bSpeed') { st.bSpeed = tg.value.replace(' selling', ''); return; }
   if (f === 'owner-pick') { st.ownerPick[tg.dataset.id] = tg.value; return; }
@@ -1007,24 +1082,51 @@ function onClick(e, el, st) {
     case 'open-map': return toast(`Map Mission Control centered on ${s ? s.name : 'shop'}`);
     case 'wa-chat': return toast(`WhatsApp chat opened for ${s ? s.name : 'shop'} (${s ? s.wa : ''})`);
     case 'directions': return toast(`Route to ${s ? s.name : 'shop'} opened in Google Maps`);
+    case 'cmp-cat': st.cmpCat = d.cat; st.cmpRival = ''; st.cmpOurs = ''; return render(el, st);
     case 'cmp-pick': {
       const l = s && s.logs.find((x) => x.id === d.lid);
       if (!l) return;
-      st.cmpRival = l.id;
+      st.cmpRival = l.id; st.cmpCat = rivalOf(l).cat; st.cmpOurs = '';
       render(el, st);
-      const o = OURS.find((x) => x.id === st.cmpOurs) || OURS.find((x) => x.id === l.ours) || OURS[0];
-      return toast(`Comparing ${l.p} with ${o.name}`);
+      const o = pairOf(l);
+      return toast(o ? `Comparing ${l.p} with ${o.name}` : `${l.p} has no Cello pair yet`);
+    }
+    case 'set-pair': {
+      const r = RIVALS.find((x) => x.id === d.rid), o = OURS.find((x) => x.id === d.ours);
+      if (!r || !o) return;
+      r.pair = o.id;
+      rerenderAll();
+      return toast(`Pair saved: ${r.name} ↔ ${o.name}`);
+    }
+    case 'open-rivals': st.modal = M.rivals(); return render(el, st);
+    case 'add-cat': {
+      const c = (st.newCat || '').trim();
+      if (!c) return toast('Type the category name first');
+      if (CATS.some((x) => x.toLowerCase() === c.toLowerCase())) return toast(`${c} is already a category`);
+      CATS.push(c); st.newCat = '';
+      rerenderAll();
+      return toast(`Category ${c} added`);
+    }
+    case 'add-rival': {
+      const name = (st.rvName || '').trim();
+      if (!name) return toast('Type the rival product name first');
+      if (RIVALS.some((x) => x.name.toLowerCase() === name.toLowerCase())) return toast(`${name} is already on the list`);
+      const id = 'r' + Date.now(), o = OURS.find((x) => x.id === st.rvPair);
+      RIVALS.push({ id, name, cat: st.rvCat, pair: o ? o.id : '' });
+      st.rvName = ''; st.bRival = id;
+      rerenderAll();
+      return toast(`${name} added to ${st.rvCat}${o ? ' · compared with ' + o.name : ''}`);
     }
     case 'bench-photo': return toast('Shelf photo attached to this price');
     case 'copy-gps': { const t = s ? s.gps : ''; const done = () => toast(`GPS ${t} copied`); try { navigator.clipboard.writeText(t).then(done, done); } catch (_) { done(); } return; }
     case 'add-bench': {
       if (!s) return;
-      const prod = (st.bProd || '').trim();
+      const rv = RIVALS.find((x) => x.id === st.bRival);
       const price = parseInt(st.bPrice, 10);
-      if (!prod) return toast('Type the rival brand and product first');
+      if (!rv) return toast('Pick the rival product first');
       if (!price || price < 100) return toast('Type the rival price in Rupiah');
-      s.logs.unshift({ id: 'l' + Date.now(), d: '2026-11-18', p: prod, n: (st.bNote || '').trim(), v: st.bSpeed.replace(' selling', ''), rp: price, shelf: st.bShelf, promo: st.bPromo, ours: st.bOurs });
-      st.bProd = ''; st.bNote = ''; st.bPrice = '';
+      s.logs.unshift({ id: 'l' + Date.now(), d: '2026-11-19', p: rv.name, rid: rv.id, n: (st.bNote || '').trim(), v: st.bSpeed.replace(' selling', ''), rp: price, shelf: st.bShelf, promo: st.bPromo });
+      st.bNote = ''; st.bPrice = '';
       rerenderAll();
       return toast(`Competitor price added for ${s.name}`);
     }
