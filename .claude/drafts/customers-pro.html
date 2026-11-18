@@ -1,298 +1,677 @@
-<!doctype html><html lang="en"><meta charset="utf-8">
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Customers · v4</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Customers · Segment 6 Picture (v5)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <style>
 :root{
-  --bg:#0E0C0A;--panel:#15120F;--raised:#1C1814;
-  --ink:#F3EDE2;--ink-dim:#A69D8E;--ink-mute:#6D6558;
-  --line:#2B251E;--line-2:#3C342B;
-  --gold:#E0AC43;--wash:rgba(224,172,67,.09);
-  --bad:#D96B5A;--bad-wash:rgba(217,107,90,.12);
+  --ground:#D6CEBA;--panel:#E3DCCB;--raised:#EAE4D6;--inset:#DCD4C1;--line:#B8AF9C;--line-2:#9F9785;--hair:rgba(19,18,17,.10);
+  --ink:#131211;--ink-muted:#3A3733;--ink-dim:#5E584F;--gold:#8A5A12;--accent-ink:#5A3B05;--accent-edge:#8A6420;--danger-ink:#7A2118;
+  --page:#C9C0AA;--sel:rgba(138,90,18,.09);--wash:rgba(138,90,18,.13);--scrim:rgba(19,18,17,.45);
+  --f:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;padding:28px 20px 64px;-webkit-font-smoothing:antialiased}
-.cap{max-width:1180px;margin:0 auto 8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute)}
-.note{max-width:1180px;margin:0 auto 14px;font-size:12px;color:var(--ink-dim)}
-.note b{color:var(--ink);font-weight:600}
-.note code{font-size:11px;color:var(--ink);background:var(--raised);padding:1px 5px;border-radius:4px;border:1px solid var(--line)}
-.i{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:root[data-theme="dark"]{
+  --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;--hair:rgba(232,228,222,.06);
+  --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--accent-ink:#E0A04A;--accent-edge:#9C6924;--danger-ink:#E7907F;
+  --page:#050504;--sel:rgba(208,138,46,.07);--wash:rgba(208,138,46,.12);--scrim:rgba(0,0,0,.68);color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 var(--f);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;padding:18px 16px 56px}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+svg.i{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
-/* edge buttons: hairline + subtle tint, never solid fill */
-.btn{height:34px;padding:0 14px;border-radius:8px;font:600 13px/1 inherit;color:var(--ink);background:rgba(255,255,255,.03);border:1px solid var(--line-2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}
-.btn.edge{border-color:var(--gold);color:var(--gold);background:var(--wash)}
-.btn.quiet{color:var(--ink-dim);background:transparent}
-.btn.danger{border-color:rgba(217,107,90,.45);color:var(--bad);background:var(--bad-wash)}
-.btn.sm{height:28px;padding:0 10px;font-size:12px}
+.board{max-width:1180px;margin:0 auto 12px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:12.5px;color:var(--ink-muted)}
+.board h1{font-size:12.5px;margin:0;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim)}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:5px 10px;font-size:12px;color:var(--ink-dim)}
+.seg button[aria-pressed="true"]{background:var(--wash);color:var(--ink);font-weight:600}
+.cap{max-width:1180px;margin:22px auto 10px;color:var(--ink-dim);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
 
-.frame{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 24px 60px -30px rgba(0,0,0,.7)}
-.pc{max-width:1180px;margin:0 auto 40px}
+.frame{background:var(--ground);border:1px solid var(--line-2);margin:0 auto;border-radius:12px;overflow:hidden;position:relative;box-shadow:0 18px 40px -24px rgba(0,0,0,.55)}
+.frame.pc{max-width:1180px;height:810px}
+.frame.phone{width:390px;max-width:100%;height:844px;border-radius:24px}
+.app{height:100%;display:flex;flex-direction:column;min-height:0}
 
-.top{display:flex;align-items:center;gap:24px;padding:14px 20px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
-.top h1{font-size:18px;font-weight:700;letter-spacing:-.02em;padding-bottom:12px}
-.tabs{display:flex;gap:20px}
-.tab{padding:0 2px 12px;font-size:13px;font-weight:600;color:var(--ink-mute);border-bottom:2px solid transparent}
-.tab.on{color:var(--ink);border-color:var(--gold)}
-.ctl{margin-left:auto;display:flex;align-items:center;gap:8px;padding-bottom:12px}
-.pill{height:30px;padding:0 10px;border-radius:7px;background:var(--raised);border:1px solid var(--line);font-size:12px;color:var(--ink-dim);display:inline-flex;align-items:center;gap:6px}
+/* KPM edge button rule: zero solid amber fills */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:34px;padding:0 13px;border:1px solid var(--accent-edge);
+  background:transparent;color:var(--ink);font-weight:600;font-size:12.5px;border-radius:8px;white-space:nowrap;transition:background .15s,transform .1s}
+.btn:hover{background:var(--sel)}
+.btn:active{transform:scale(.97)}
+.btn.quiet{border-color:var(--line-2);color:var(--ink-muted)}
+.btn.danger{border-color:var(--line-2);color:var(--danger-ink)}
+.btn.danger:hover{border-color:var(--danger-ink);background:color-mix(in srgb,var(--danger-ink) 10%,transparent)}
+.btn.sm{height:29px;padding:0 10px;font-size:12px}
+.btn.xs{height:25px;padding:0 8px;font-size:11.5px}
 
-.sum{display:flex;align-items:center;gap:14px;padding:11px 20px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-dim);flex-wrap:wrap}
-.sum b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
-.sum .bad{color:var(--bad)}
-.sep{width:1px;height:12px;background:var(--line)}
+/* Header */
+.hd{display:flex;align-items:center;gap:10px;padding:13px 20px 0;flex-wrap:wrap}
+.hd h2{margin:0;font-size:17px;font-weight:700;letter-spacing:-.01em}
+.hd .sub{font-size:12px;color:var(--ink-dim);margin-right:auto}
+.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.search{display:flex;align-items:center;gap:6px;height:34px;border:1px solid var(--line-2);border-radius:8px;background:var(--inset);padding:0 10px;color:var(--ink-dim);min-width:0}
+.search input{border:0;background:transparent;outline:0;width:230px;font-size:12.5px;color:var(--ink)}
 
-.work{display:grid;grid-template-columns:390px 1fr;min-height:470px}
-.list{border-right:1px solid var(--line);display:flex;flex-direction:column}
-.find{margin:12px 14px 8px;height:34px;padding:0 10px;border-radius:8px;background:var(--raised);border:1px solid var(--line);display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-mute)}
-.crumb{padding:0 16px 8px;font-size:11px;color:var(--ink-mute);border-bottom:1px solid var(--line)}
-.crumb b{color:var(--ink-dim);font-weight:600}
-.rows{overflow:auto;flex:1}
-.r{display:grid;grid-template-columns:16px minmax(0,1fr) auto auto;align-items:center;gap:10px;padding:10px 16px;border-left:2px solid transparent;border-bottom:1px solid rgba(43,37,30,.55)}
+/* 4-cell KPI strip */
+.kpi{display:grid;grid-template-columns:1.1fr 1fr 1.15fr 1.55fr;margin:12px 20px 0;border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+.k{padding:11px 15px;min-width:0}
+.k+.k{border-left:1px solid var(--line)}
+.k .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-dim);display:flex;justify-content:space-between;gap:6px;font-weight:600}
+.k .v{font-size:21px;font-weight:700;margin-top:3px;letter-spacing:-.02em;line-height:1.15;white-space:nowrap}
+.k .v.bad{color:var(--danger-ink)}
+.k .d{font-size:11.5px;color:var(--ink-dim);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mix{display:flex;height:7px;border-radius:4px;overflow:hidden;margin:7px 0 5px;background:var(--inset)}
+.mix span{height:100%;transition:width .6s ease}
+.c1{background:var(--gold)}
+.c2{background:var(--ink-muted)}
+.c3{background:var(--ink-dim)}
+.mixl{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:11px;color:var(--ink-muted)}
+.mixl i{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:4px;vertical-align:1px}
+
+/* Tabs */
+.tabs{display:flex;gap:18px;padding:10px 20px 0;border-bottom:1px solid var(--line);align-items:center}
+.tab{border:0;background:transparent;padding:0 2px 9px;font-size:13px;font-weight:600;color:var(--ink-dim);border-bottom:2px solid transparent;display:inline-flex;align-items:center;gap:6px}
+.tab.on{color:var(--ink);border-bottom-color:var(--gold)}
+.pill-n{font-size:10.5px;padding:1px 6px;border-radius:999px;border:1px solid var(--accent-edge);color:var(--accent-ink);background:var(--sel)}
+
+/* Master-Detail Body */
+.work{display:grid;grid-template-columns:390px 1fr;grid-template-rows:minmax(0,1fr);flex:1;min-height:0;overflow:hidden}
+.list{border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;background:var(--panel);overflow:hidden}
+.crumb-bar{display:flex;align-items:center;gap:4px;padding:7px 12px;border-bottom:1px solid var(--hair);font-size:11px;color:var(--ink-dim);flex-wrap:nowrap;background:var(--inset);white-space:nowrap}
+.crumb-btn{border:0;background:transparent;padding:2px 4px;border-radius:4px;color:var(--ink-dim);font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.crumb-btn:hover{color:var(--ink);background:var(--sel)}
+.crumb-btn.on{color:var(--accent-ink)}
+.folder-strip{display:flex;gap:6px;padding:8px 14px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:none}
+.fchip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 9px;border-radius:7px;border:1px solid var(--line-2);background:var(--raised);font-size:11.5px;font-weight:600;white-space:nowrap;flex:none}
+.fchip.on{border-color:var(--accent-edge);background:var(--sel);color:var(--ink)}
+.fchip .cnt{font-size:10.5px;color:var(--ink-dim);font-weight:500}
+.fchip .pnd{font-size:10px;color:var(--danger-ink);font-weight:700}
+
+.rows{overflow-y:auto;flex:1}
+.r{display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 14px;border-left:2.5px solid transparent;border-bottom:1px solid var(--hair);cursor:pointer}
+.r:hover{background:color-mix(in srgb,var(--gold) 5%,transparent)}
 .r.sel{background:var(--wash);border-left-color:var(--gold)}
-.ic{color:var(--ink-mute);display:flex}
-.r.sel .ic{color:var(--gold)}
-.n{font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.reg{font-size:11.5px;color:var(--ink-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.v{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink-dim);text-align:right;white-space:nowrap}
-.s{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-mute);text-align:right;white-space:nowrap}
-.s.bad{color:var(--bad)}
-.s.gold{color:var(--gold)}
+.thumb{width:36px;height:36px;border-radius:8px;border:1px solid var(--line-2);background:var(--inset);display:grid;place-items:center;color:var(--accent-ink);font-size:11px;font-weight:700;overflow:hidden;flex:none}
+.r .n{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.r .subr{font-size:11px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.r .right{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:5px;border:1px solid var(--line-2);color:var(--ink-muted);background:var(--inset);white-space:nowrap}
+.badge.bad{color:var(--danger-ink);border-color:color-mix(in srgb,var(--danger-ink) 45%,transparent);background:color-mix(in srgb,var(--danger-ink) 9%,transparent)}
+.badge.gold{color:var(--accent-ink);border-color:var(--accent-edge);background:var(--sel)}
 
-.hand{display:flex;flex-direction:column;justify-content:space-between;background:radial-gradient(600px 260px at 50% 0%,rgba(224,172,67,.04),transparent 70%)}
-.hand .in{padding:24px 28px;display:flex;flex-direction:column;gap:16px}
-.ph{display:flex;align-items:center;gap:14px}
-.big{width:44px;height:44px;border-radius:10px;background:var(--raised);border:1px solid var(--line-2);display:grid;place-items:center;color:var(--gold);flex:none}
-.ph h2{font-size:17px;font-weight:700;letter-spacing:-.01em}
-.ph p{font-size:12.5px;color:var(--ink-dim);margin-top:2px}
-.ph .pos{margin-left:auto;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--bad);border:1px solid rgba(217,107,90,.4);background:var(--bad-wash);padding:4px 9px;border-radius:7px}
-
-.chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{padding:5px 10px;border-radius:7px;background:var(--raised);border:1px solid var(--line);font-size:12px;color:var(--ink-dim)}
+/* Right Hand Pane */
+.hand{display:flex;flex-direction:column;min-height:0;background:radial-gradient(640px 260px at 50% 0%,color-mix(in srgb,var(--gold) 6%,transparent),transparent 72%);overflow:hidden}
+.hand-scroll{flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:14px}
+.ph{display:flex;align-items:flex-start;gap:12px}
+.big{width:46px;height:46px;border-radius:10px;background:var(--raised);border:1px solid var(--line-2);display:grid;place-items:center;color:var(--accent-ink);flex:none}
+.ph h3{margin:0;font-size:17px;font-weight:700;letter-spacing:-.01em}
+.ph p{margin:2px 0 0;font-size:12px;color:var(--ink-dim)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:4px 9px;border-radius:6px;background:var(--raised);border:1px solid var(--line);font-size:11.5px;color:var(--ink-dim)}
 .chip b{color:var(--ink);font-weight:600}
 
-.sec-h{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
-table{width:100%;border-collapse:collapse;font-size:12.5px}
-th{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-mute);text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
-td{padding:8px;border-bottom:1px solid rgba(43,37,30,.55);color:var(--ink-dim)}
-td b{color:var(--ink);font-weight:600}
-th.r,td.r{text-align:right;font-variant-numeric:tabular-nums}
+.split2{display:grid;grid-template-columns:215px minmax(0,1fr);gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card-h{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);display:flex;justify-content:space-between;align-items:center}
+.mapbox{height:108px;border-radius:8px;border:1px solid var(--line-2);background:var(--inset);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;padding:8px}
+.mapbox::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 18px,var(--hair) 18px 19px),repeating-linear-gradient(90deg,transparent 0 22px,var(--hair) 22px 23px)}
+.pin-dot{position:relative;z-index:1;align-self:center;margin-top:14px;padding:3px 8px;border-radius:999px;border:1px solid var(--accent-edge);background:var(--raised);font-size:10.5px;font-weight:700;color:var(--accent-ink);display:inline-flex;align-items:center;gap:4px}
 
-.act{display:flex;align-items:center;gap:8px;padding:14px 28px;border-top:1px solid var(--line);flex-wrap:wrap}
+.bench-form{display:grid;grid-template-columns:1.1fr 1fr 82px auto;gap:6px;align-items:center}
+.inp{height:30px;padding:0 8px;border:1px solid var(--line-2);border-radius:6px;background:var(--inset);font-size:12px;color:var(--ink);outline:0;min-width:0}
+.inp:focus{border-color:var(--accent-edge)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-dim);text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+td{padding:7px 6px;border-bottom:1px solid var(--hair);color:var(--ink-muted);vertical-align:middle}
+td b{color:var(--ink)}
+th.tr-r,td.tr-r{text-align:right;white-space:nowrap}
+
+.act{display:flex;align-items:center;gap:8px;padding:11px 22px;border-top:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
 .act .sp{flex:1}
 
-/* phones */
+/* Sub-tabs (Approvals & Tools) */
+.subpage{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px}
+.box{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+.box-h{padding:9px 14px;background:var(--inset);border-bottom:1px solid var(--line);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-ink);display:flex;justify-content:space-between;align-items:center}
+.box-r{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--hair);flex-wrap:wrap}
+.box-r:last-child{border-bottom:0}
+.tools-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.tcard{border:1px solid var(--line-2);border-radius:10px;background:var(--panel);padding:12px;display:flex;flex-direction:column;gap:8px}
+.tcard h4{margin:0;font-size:13px;font-weight:700}
+.tcard p{margin:0;font-size:11.5px;color:var(--ink-dim);flex:1}
+
+/* Phones */
 .phones{display:flex;gap:28px;justify-content:center;flex-wrap:wrap;max-width:1180px;margin:0 auto}
-.phone{width:390px;max-width:100%;height:780px;display:flex;flex-direction:column;border-radius:22px;position:relative}
-.sb{height:28px;display:flex;justify-content:space-between;align-items:center;padding:0 20px;font-size:11px;color:var(--ink-dim)}
-.phone .top{padding:8px 16px 0;gap:0;flex-direction:column;align-items:stretch}
-.phone .top h1{margin-bottom:8px}
-.phone .tabs{gap:16px}
-.phone .sum{padding:9px 16px;gap:10px;font-size:12px}
-.phone .list{width:auto;border:none;flex:1}
-.phone .r{padding:9px 16px}
-.dim-under{position:absolute;inset:0;background:rgba(5,4,3,.45)}
-.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--raised);border-top:1px solid var(--line-2);border-radius:20px 20px 0 0;
-  padding:10px 16px 16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 -18px 40px -20px rgba(0,0,0,.6)}
-.grab{width:38px;height:4px;border-radius:2px;background:var(--line-2);margin:0 auto}
-.an-sec{padding:12px 16px;display:flex;flex-direction:column;gap:12px;overflow:auto;flex:1}
-.card{padding:10px 12px;border-radius:10px;background:var(--raised);border:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
-.card-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px}
-@media (max-width:700px){.pc{display:none}}
+.phone .sb{height:24px;display:flex;justify-content:space-between;align-items:center;padding:0 18px;font-size:11px;color:var(--ink-dim);background:var(--panel)}
+.phone .hd{padding:8px 14px 0;gap:8px;background:var(--panel)}
+.phone .hd h2{font-size:15.5px}
+.phone .tabs{padding:8px 14px 0;gap:14px;background:var(--panel)}
+.phone .rows{background:var(--ground)}
+.under{margin:0 10px 8px;border:1px solid var(--accent-edge);border-radius:10px;background:var(--panel);padding:11px 12px;display:flex;flex-direction:column;gap:8px}
+.sheet-dim{position:absolute;inset:0;background:var(--scrim)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--panel);border-top:1px solid var(--accent-edge);border-radius:18px 18px 0 0;padding:10px 14px 14px;display:flex;flex-direction:column;gap:9px;max-height:82%;overflow:auto}
+.grab{width:36px;height:4px;border-radius:2px;background:var(--line-2);margin:0 auto}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.fgrid label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-dim);margin-bottom:2px}
+.fgrid .inp{width:100%;height:34px}
+
+.modal-wrap{position:absolute;inset:0;background:var(--scrim);display:none;align-items:center;justify-content:center;padding:24px;z-index:20}
+.modal-wrap.open{display:flex}
+.modal{width:100%;max-width:740px;background:var(--panel);border:1px solid var(--accent-edge);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:12px;max-height:94%;overflow:auto}
+
+html.lite-mode *{transition:none!important;animation:none!important}
+@media (max-width:700px){.pc,.board{display:none}}
 </style>
+</head>
+<body>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="store" viewBox="0 0 24 24"><path d="M4 10h16v10H4z"/><path d="M3 10l2-5h14l2 5"/><path d="M9 20v-6h6v6"/></symbol>
   <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
   <symbol id="pin" viewBox="0 0 24 24"><path d="M12 21s6-5.4 6-10.5a6 6 0 1 0-12 0C6 15.6 12 21 12 21z"/><circle cx="12" cy="10.5" r="2"/></symbol>
   <symbol id="cam" viewBox="0 0 24 24"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></symbol>
-  <symbol id="edit" viewBox="0 0 24 24"><path d="M14 4l6 6-10 10H4v-6z"/></symbol>
+  <symbol id="folder" viewBox="0 0 24 24"><path d="M3 6h6l2 2h10v10H3z"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/></symbol>
   <symbol id="check" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></symbol>
-  <symbol id="trash" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M7 7l1 13h8l1-13"/></symbol>
+  <symbol id="trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></symbol>
 </svg>
 
-<p class="cap">Customers · v4 · PC (Directory + Shop in hand)</p>
-<p class="note">All 8 shop names, regions, tiers, and <code>visitFreq</code> come from <b>demo/seed.json</b> (<code>152</code> total customers, <code>0</code> with status <code>PENDING</code>, <code>0</code> with <code>lastVisit</code>). Benchmark log entries and the <code>PENDING</code> NOO example state are labeled <b>example</b>. Admin Tools (<code>Repair Tiers</code>, <code>Find Duplicates</code>, <code>Data Scrub</code>, <code>Import KML</code>), Duplicate Report, and the Add/Edit Customer modal (with <code>data-guide="photo"</code> shutter) stay behind their existing drawers/modals, restyled with <code>.btn</code>.</p>
-
-<div class="frame pc">
-  <div class="top">
-    <h1>Customer Directory</h1>
-    <div class="tabs"><span class="tab on">Directory</span><span class="tab">Grosir &amp; Agents</span><span class="tab">Admin Tools</span></div>
-    <div class="ctl">
-      <span class="pill">Date: 2026-11-17</span>
-      <button class="btn edge">+ Add customer</button>
-    </div>
+<div class="board">
+  <h1>Customers · Segment 6 Picture (v5)</h1>
+  <div class="seg" role="group" aria-label="Theme">
+    <button type="button" onclick="setTheme('dark')" id="th-dark" aria-pressed="true">Espresso (Dark)</button>
+    <button type="button" onclick="setTheme('light')" id="th-light" aria-pressed="false">Warm Stone (Light)</button>
   </div>
-  <div class="sum">
-    <span><b>152</b> shops (seed)</span><span class="sep"></span>
-    <span><b>0</b> pending NOO in seed</span><span class="sep"></span>
-    <span class="bad"><b>8 / 8</b> shown overdue</span><span class="sep"></span>
-    <span><b>1</b> Epic · <b>1</b> Grosir</span>
+  <div class="seg" role="group" aria-label="Motion">
+    <button type="button" onclick="setLite(false)" id="lt-off" aria-pressed="true">Motion On</button>
+    <button type="button" onclick="setLite(true)" id="lt-on" aria-pressed="false">Lite Mode</button>
   </div>
-
-  <div class="work">
-    <aside class="list">
-      <div class="find"><svg class="i"><use href="#search"/></svg>Search store name, region, city, or salesperson...</div>
-      <div class="crumb">Indonesia › <b>All Provinces</b> › 8 of 152 seed shops</div>
-      <div class="rows">
-        <div class="r sel">
-          <span class="ic"><svg class="i"><use href="#store"/></svg></span>
-          <span style="min-width:0"><div class="n">Asyifa Mart Madura</div><div class="reg">MAGELANG · MUNTILAN</div></span>
-          <span class="v">7d</span>
-          <span class="s bad">OVERDUE</span>
-        </div>
-        <div class="r">
-          <span class="ic"><svg class="i"><use href="#store"/></svg></span>
-          <span style="min-width:0"><div class="n">AMANAH BARU</div><div class="reg">BANDUNG · MARGAHAYU</div></span>
-          <span class="v">7d</span>
-          <span class="s bad">OVERDUE</span>
-        </div>
-        <div class="r">
-          <span class="ic"><svg class="i"><use href="#store"/></svg></span>
-          <span style="min-width:0"><div class="n">ANEKA BARU PANJI</div><div class="reg">BANDUNG · MARGAHAYU</div></span>
-          <span class="v">7d</span>
-          <span class="s bad">OVERDUE</span>
-        </div>
-        <div class="r">
-          <span class="ic"><svg class="i"><use href="#store"/></svg></span>
-          <span style="min-width:0"><div class="n">ANUGRAH 17</div><div class="reg">KOTA CIMAHI · CIMAHI TENGAH</div></span>
-          <span class="v">7d</span>
-          <span class="s bad">OVERDUE</span>
-        </div>
-        <div class="r">
-          <span class="ic"><svg class="i"><use href="#store"/></svg></span>
-          <span style="min-width:0"><div class="n">ARIF CILILIN</div><div class="reg">BANDUNG BARAT · CILILIN</div></span>
-          <span class="v">7d</span>
-          <span class="s bad">OVERDUE</span>
-        </div>
-        <div class="r">
-          <span class="ic"><svg class="i"><use href="#store"/></svg></span>
-          <span style="min-width:0"><div class="n">CEMERLANG</div><div class="reg">BANDUNG · SOREANG</div></span>
-          <span class="v">7d</span>
-          <span class="s bad">OVERDUE</span>
-        </div>
-        <div class="r">
-          <span class="ic"><svg class="i"><use href="#store"/></svg></span>
-          <span style="min-width:0"><div class="n">HQ TEST</div><div class="reg">Epic tier · Retail</div></span>
-          <span class="v">7d</span>
-          <span class="s bad">OVERDUE</span>
-        </div>
-        <div class="r">
-          <span class="ic"><svg class="i"><use href="#store"/></svg></span>
-          <span style="min-width:0"><div class="n">HQ (RETAIL) 1</div><div class="reg">Unranked · Grosir</div></span>
-          <span class="v">7d</span>
-          <span class="s gold">PENDING (ex)</span>
-        </div>
-      </div>
-    </aside>
-
-    <section class="hand">
-      <div class="in">
-        <div class="ph">
-          <div class="big"><svg class="i"><use href="#store"/></svg></div>
-          <div><h2>Asyifa Mart Madura</h2><p>JAWA TENGAH · MAGELANG · MUNTILAN · status: APPROVED</p></div>
-          <span class="pos">OVERDUE</span>
-        </div>
-
-        <div class="chips">
-          <span class="chip">Map Tier: <b>Unranked</b></span>
-          <span class="chip">Price Tier: <b>Retail</b></span>
-          <span class="chip">Visit Rhythm: <b>Every 7 days</b></span>
-          <span class="chip">Last Visit: <b>None recorded</b></span>
-        </div>
-
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <span class="sec-h">Competitor Benchmark Log (example)</span>
-          <button class="btn edge sm">+ Add Log</button>
-        </div>
-        <table>
-          <thead><tr><th>Date</th><th>Brand / Note (example)</th><th class="r">Price</th></tr></thead>
-          <tbody>
-            <tr><td>2026-11-10</td><td><b>Competitor Kretek 12</b> · shelf eye-level</td><td class="r"><b>Rp 11.000</b></td></tr>
-            <tr><td>2026-11-03</td><td><b>Competitor Mild 16</b> · promo poster</td><td class="r"><b>Rp 18.500</b></td></tr>
-          </tbody>
-        </table>
-        <!--
-          VISIT-OVERDUE RULE CHECK (date shown: 2026-11-17):
-          Rule in src/components/MapMissionControl.jsx:1887-1904 (displayed via lastVisit in src/components/CustomerManager.jsx:1330):
-            last = c.lastVisit; if (!last) return 'overdue';
-            next = last + (c.visitFreq || 7) days;
-            diffDays = Math.ceil((next - today) / 86400000);
-            diffDays <= 0 -> 'overdue'; diffDays <= 2 -> 'soon'; else 'ok'.
-          Seed data check (demo/seed.json customers, 152 total):
-            - 0 customers have status === 'PENDING'.
-            - 0 customers have a lastVisit value (all 8 shown have lastVisit: undefined).
-            - Asyifa Mart Madura has visitFreq: 7; the other 7 default to visitFreq || 7 = 7.
-          Hand run for 2026-11-17:
-            Because !last is true for all 8 seed customers, the rule returns 'overdue' for all 8.
-        -->
-      </div>
-      <div class="act">
-        <button class="btn quiet"><svg class="i"><use href="#pin"/></svg>Map</button>
-        <button class="btn quiet"><svg class="i"><use href="#edit"/></svg>Edit</button>
-        <button class="btn quiet">Move</button>
-        <span class="sp"></span>
-        <button class="btn edge"><svg class="i"><use href="#check"/></svg>Verify NOO (when PENDING)</button>
-        <button class="btn danger"><svg class="i"><use href="#trash"/></svg>Del</button>
-      </div>
-    </section>
+  <div class="seg" role="group" aria-label="Role">
+    <button type="button" onclick="setRole('boss')" id="rl-boss" aria-pressed="true">T1/T2 Boss</button>
+    <button type="button" onclick="setRole('regional')" id="rl-reg" aria-pressed="false">T3/T4 Regional</button>
+    <button type="button" onclick="setRole('view')" id="rl-view" aria-pressed="false">T5 View Only</button>
   </div>
 </div>
 
-<p class="cap" style="margin-top:28px">Customers · v4 · Phone (1: Directory + Shop Sheet · 2: Grosir &amp; Agents + Form)</p>
+<!-- PC FRAME -->
+<div class="frame pc" id="pcFrame">
+  <div class="app">
+    <header class="hd">
+      <svg class="i" style="width:20px;height:20px;color:var(--accent-ink)"><use href="#store"/></svg>
+      <h2>Customer Directory</h2>
+      <span class="sub" id="pcSub">600 shops · 3 provinces · Muntilan &amp; Bandung</span>
+      <div class="ctl">
+        <div class="search">
+          <svg class="i"><use href="#search"/></svg>
+          <input id="pcSearch" type="text" placeholder="Search store, city, or agent..." oninput="renderList()">
+        </div>
+        <button type="button" class="btn" id="pcAddBtn" onclick="openModal()"><svg class="i"><use href="#plus"/></svg>Add new customer</button>
+      </div>
+    </header>
+
+    <div class="kpi">
+      <div class="k">
+        <div class="l"><span>Shops Filed</span><span>SEED + LIVE</span></div>
+        <div class="v">600</div>
+        <div class="d">3 provinces · 14 kecamatan</div>
+      </div>
+      <div class="k">
+        <div class="l"><span>Overdue Visits</span><span>RHYTHM</span></div>
+        <div class="v bad">18</div>
+        <div class="d">past visitFreq schedule</div>
+      </div>
+      <div class="k" style="cursor:pointer" onclick="setTab('approvals')">
+        <div class="l"><span>Needs Action</span><span style="color:var(--accent-ink)">TAP ↗</span></div>
+        <div class="v">3</div>
+        <div class="d">1 Grosir ask · 2 need salesman</div>
+      </div>
+      <div class="k">
+        <div class="l"><span>Price Mix</span><span>600 SHOPS</span></div>
+        <div class="mix"><span class="c1" style="width:11%"></span><span class="c2" style="width:87%"></span><span class="c3" style="width:2%"></span></div>
+        <div class="mixl"><span><i class="c1"></i>Grosir 11%</span><span><i class="c2"></i>Retail 87%</span><span><i class="c3"></i>Ecer 2%</span></div>
+      </div>
+    </div>
+
+    <nav class="tabs">
+      <button type="button" class="tab on" data-tab="directory" onclick="setTab('directory')">Directory</button>
+      <button type="button" class="tab" data-tab="approvals" onclick="setTab('approvals')" id="tabApprovals">Grosir &amp; Agents <span class="pill-n">3</span></button>
+      <button type="button" class="tab" data-tab="tools" onclick="setTab('tools')" id="tabTools">Admin Tools</button>
+    </nav>
+
+    <!-- VIEW-ONLY NOTICE -->
+    <div id="viewOnlyNote" style="display:none;margin:10px 20px 0;padding:8px 12px;border:1px dashed var(--line-2);border-radius:8px;background:var(--inset);font-size:12px;color:var(--ink-dim)">
+      Your access level is <b style="color:var(--ink)">View Only</b> for the Customer Directory. Browsing stays open; adding or editing is turned off.
+    </div>
+
+    <!-- DIRECTORY TAB -->
+    <div class="work" id="view-directory">
+      <aside class="list">
+        <div class="crumb-bar">
+          <button type="button" class="crumb-btn" onclick="setLevel('ALL')">Indonesia</button><span>›</span>
+          <button type="button" class="crumb-btn" onclick="setLevel('JAWA BARAT')">JAWA BARAT</button><span>›</span>
+          <button type="button" class="crumb-btn on" id="activeCrumb">BANDUNG (4)</button>
+          <span style="flex:1"></span>
+          <button type="button" class="btn xs quiet admin-only" onclick="alert('New Kecamatan folder created under active Kabupaten')">+ Folder</button>
+          <button type="button" class="btn xs quiet admin-only" title="Rename or reset folder" onclick="toggleFolderActs()"><svg class="i"><use href="#more"/></svg></button>
+        </div>
+        <div id="folderActsRow" style="display:none;padding:6px 14px;gap:6px;background:var(--inset);border-bottom:1px solid var(--line)">
+          <button type="button" class="btn xs quiet" style="flex:1">Rename Folder</button>
+          <button type="button" class="btn xs danger" style="flex:1">Reset to Unknown</button>
+        </div>
+        <div class="folder-strip" id="folderStrip">
+          <button type="button" class="fchip on" onclick="pickFolder('MARGAHAYU',this)"><svg class="i" style="width:13px;height:13px"><use href="#folder"/></svg>MARGAHAYU <span class="cnt">14</span></button>
+          <button type="button" class="fchip" onclick="pickFolder('SOREANG',this)"><svg class="i" style="width:13px;height:13px"><use href="#folder"/></svg>SOREANG <span class="cnt">11</span> <span class="pnd">1⏳</span></button>
+          <button type="button" class="fchip" onclick="pickFolder('CILILIN',this)"><svg class="i" style="width:13px;height:13px"><use href="#folder"/></svg>CILILIN <span class="cnt">6</span></button>
+          <button type="button" class="fchip" onclick="pickFolder('MUNTILAN',this)"><svg class="i" style="width:13px;height:13px"><use href="#folder"/></svg>MUNTILAN <span class="cnt">22</span></button>
+        </div>
+        <div class="rows" id="shopRows"></div>
+      </aside>
+
+      <section class="hand" id="handPane"></section>
+    </div>
+
+    <!-- APPROVALS TAB -->
+    <div class="subpage" id="view-approvals" style="display:none">
+      <div class="box">
+        <div class="box-h"><span>Grosir Requests · 1 waiting</span><span>grantsGrosir (T1–T4)</span></div>
+        <div class="box-r">
+          <div style="flex:1;min-width:220px">
+            <div style="font-weight:700;font-size:14px">ANEKA BARU PANJI</div>
+            <div style="font-size:11.5px;color:var(--ink-dim)">MARGAHAYU · BANDUNG · asked by Dika Saputra · sells at Retail now</div>
+          </div>
+          <button type="button" class="btn sm quiet">Keep Retail</button>
+          <button type="button" class="btn sm">Confirm Grosir</button>
+        </div>
+      </div>
+
+      <div class="box">
+        <div class="box-h"><span>Shops Waiting for a Salesman · 2</span><span>no package until assigned</span></div>
+        <div class="box-r">
+          <div style="flex:1;min-width:220px">
+            <div style="font-weight:700;font-size:14px">WARUNG SUMBER REJEKI</div>
+            <div style="font-size:11.5px;color:var(--ink-dim)">SOREANG · BANDUNG · added by Sri Rahayu · Grosir also requested above</div>
+          </div>
+          <select class="inp" style="width:175px"><option>Choose salesman...</option><option selected>Dika Saputra</option><option>Ujang Pratama</option></select>
+          <button type="button" class="btn sm">Give</button>
+        </div>
+        <div class="box-r">
+          <div style="flex:1;min-width:220px">
+            <div style="font-weight:700;font-size:14px">TOKO HARAPAN JAYA</div>
+            <div style="font-size:11.5px;color:var(--ink-dim)">MUNTILAN · MAGELANG · added by Agus Salim</div>
+          </div>
+          <select class="inp" style="width:175px"><option value="">Choose salesman...</option><option>Budi Santoso</option><option>Sri Rahayu</option></select>
+          <button type="button" class="btn sm">Give</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN TOOLS TAB -->
+    <div class="subpage" id="view-tools" style="display:none">
+      <div class="tools-grid">
+        <div class="tcard">
+          <h4>Repair 2 Store Tiers</h4>
+          <p>Copies legacy <code>pricingTier</code> to <code>priceTier</code> without deleting or merging stores. Hidden once repaired.</p>
+          <button type="button" class="btn sm">Run Tier Repair</button>
+        </div>
+        <div class="tcard">
+          <h4>Find Duplicates</h4>
+          <p>Scans identical names or pins within 40 m. Remembers "Not duplicates" groups in Firestore.</p>
+          <button type="button" class="btn sm">Scan Now (2 groups)</button>
+        </div>
+        <div class="tcard">
+          <h4>Data Scrub</h4>
+          <p>Fills empty Prov/Kab/Kec from map borders (<code>areaFromPin</code>) then address words; typed areas stay untouched.</p>
+          <button type="button" class="btn sm quiet">Preview Scrub</button>
+        </div>
+        <div class="tcard">
+          <h4>Import Map Marker</h4>
+          <p>Creates pins from <code>.kml</code> using chunked batches; drops into Unassigned pool.</p>
+          <button type="button" class="btn sm quiet">Choose .kml</button>
+        </div>
+      </div>
+
+      <div class="box">
+        <div class="box-h"><span>Duplicate Report · 2 possible duplicates (read-only until you act)</span><span style="color:var(--ink-dim);font-weight:500">1 group cleared previously</span></div>
+        <div class="box-r" style="flex-direction:column;align-items:stretch;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--accent-ink)">
+            <span>2 copies · matched by name and location · 12 m apart</span>
+            <button type="button" class="btn xs quiet">✓ Not duplicates</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--hair)">
+            <b>AMANAH BARU</b>
+            <span class="badge">📍 MARGAHAYU, BANDUNG</span>
+            <span class="badge gold">oldest — likely original</span>
+            <span style="font-size:11.5px;color:var(--ink-dim)">24 Jun 2026 · demo-agent-1 · 📁 Folder 1</span>
+            <span style="flex:1"></span>
+            <button type="button" class="btn xs quiet" onclick="openModal(SHOPS[0])">Edit</button>
+            <button type="button" class="btn xs danger">Delete</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--hair)">
+            <b>AMANAH BARU</b>
+            <span class="badge">📍 -6.9654, 107.5759</span>
+            <span class="badge gold">12 m from oldest</span>
+            <span style="font-size:11.5px;color:var(--ink-dim)">15 Nov 2026 · unassigned</span>
+            <span style="flex:1"></span>
+            <button type="button" class="btn xs quiet" onclick="openModal(SHOPS[0])">Edit</button>
+            <button type="button" class="btn xs danger">Delete</button>
+          </div>
+        </div>
+        <div class="box-r" style="flex-direction:column;align-items:stretch;gap:6px">
+          <div style="padding:7px 10px;border-left:3px solid var(--accent-edge);background:var(--sel);font-size:11.5px">
+            <b>Probably NOT duplicates.</b> Same name only, and 14.5 km apart. Open them before deleting anything.
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <b>WARUNG SUMBER REJEKI</b>
+            <span class="badge">📍 SOREANG, BANDUNG</span>
+            <span style="flex:1"></span>
+            <button type="button" class="btn xs quiet">✓ Not duplicates</button>
+            <button type="button" class="btn xs quiet">Edit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT CUSTOMER PORTAL MODAL PREVIEW -->
+  <div class="modal-wrap" id="modalWrap" onclick="if(event.target===this)closeModal()">
+    <div class="modal" role="dialog" aria-label="Edit Customer">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 style="margin:0;font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-dim)" id="modalTitle">Edit Customer</h3>
+        <button type="button" class="btn xs quiet" onclick="closeModal()">Cancel edit</button>
+      </div>
+      <div class="fgrid">
+        <div><label>Store Name</label><input class="inp" id="mName" value="AMANAH BARU"></div>
+        <div><label>Phone (WhatsApp)</label><input class="inp" value="0812 3456 7890"></div>
+      </div>
+      <div class="fgrid" style="grid-template-columns:repeat(5,1fr)">
+        <div><label>Map Pin Tier</label><select class="inp"><option>Epic</option><option selected>Unranked</option><option>Silver</option></select></div>
+        <div><label style="color:var(--accent-ink)">Pricing Type</label><select class="inp"><option>Retail</option><option>Grosir</option><option>Ecer</option></select></div>
+        <div><label>T3/T4 PIC</label><input class="inp" value="Budi Santoso"></div>
+        <div><label>Last Visit</label><input class="inp" type="date" value="2026-11-11"></div>
+        <div><label>Store Photo</label><button type="button" class="btn sm quiet" style="width:100%" data-guide="photo"><svg class="i"><use href="#cam"/></svg>Upload</button></div>
+      </div>
+      <div style="border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--inset);display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:12px;font-weight:700"><svg class="i" style="vertical-align:-3px;color:var(--accent-ink)"><use href="#pin"/></svg> Location &amp; Street View</span>
+          <div style="display:flex;gap:6px"><button type="button" class="btn xs">Auto-Find</button><button type="button" class="btn xs quiet">My GPS</button></div>
+        </div>
+        <div class="fgrid" style="grid-template-columns:1fr 1fr 1fr">
+          <div><label>Provinsi</label><input class="inp" value="JAWA BARAT"></div>
+          <div><label>Kabupaten</label><input class="inp" value="BANDUNG"></div>
+          <div><label>Kecamatan</label><input class="inp" value="MARGAHAYU"></div>
+        </div>
+        <div><label style="font-size:10px;font-weight:700;color:var(--ink-dim)">Address &amp; Notes</label><input class="inp" style="width:100%" value="Jl. Kopo Bihbul No. 42, sebelah minimarket"></div>
+        <div class="fgrid">
+          <div><label>GPS Coordinates (Required)</label><input class="inp" style="font-family:monospace" value="-6.965387, 107.575909"></div>
+          <div><label>Street View Link / Embed</label><input class="inp" placeholder="Google Maps URL or iframe"></div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <button type="button" class="btn quiet" onclick="closeModal()">Close</button>
+        <button type="button" class="btn" onclick="closeModal()">Update Profile</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PHONES -->
+<p class="cap">Phone (390×844) · 1: Directory + Under-Row Drawer + MoreKey · 2: Grosir &amp; Agents + Edit Sheet</p>
 <div class="phones">
   <div class="frame phone">
-    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
-    <div class="top">
-      <h1>Customer Directory</h1>
-      <div class="tabs"><span class="tab on">Directory</span><span class="tab">Grosir &amp; Agents</span></div>
-    </div>
-    <div class="sum"><span><b>152</b> shops</span><span class="sep"></span><span class="bad"><b>0</b> pending</span><span class="sep"></span><button class="btn edge sm" style="margin-left:auto">+ Add</button></div>
-    <div class="list">
-      <div class="r sel"><span class="ic"><svg class="i"><use href="#store"/></svg></span><span class="n">Asyifa Mart Madura</span><span class="v">7d</span><span class="s bad">OVERDUE</span></div>
-      <div class="r"><span class="ic"><svg class="i"><use href="#store"/></svg></span><span class="n">AMANAH BARU</span><span class="v">7d</span><span class="s bad">OVERDUE</span></div>
-      <div class="r"><span class="ic"><svg class="i"><use href="#store"/></svg></span><span class="n">HQ TEST</span><span class="v">Epic</span><span class="s bad">OVERDUE</span></div>
-    </div>
-    <div class="dim-under"></div>
-    <div class="sheet">
-      <div class="grab"></div>
-      <div class="ph"><div><h2>Asyifa Mart Madura</h2><p>MAGELANG · Unranked · Retail · Every 7d</p></div><span class="pos">OVERDUE</span></div>
-      <table><tbody>
-        <tr><td>2026-11-10</td><td><b>Competitor Kretek 12</b> (ex)</td><td class="r">Rp 11.000</td></tr>
-      </tbody></table>
-      <div style="display:flex;gap:8px"><button class="btn edge" style="flex:1">Add Log</button><button class="btn quiet">Map</button><button class="btn quiet">Edit</button><button class="btn quiet">More ▾</button></div>
-      <div style="font-size:11.5px;color:var(--ink-mute)">More: Verify NOO (when PENDING) · Move · Del</div>
+    <div class="app">
+      <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
+      <div class="hd">
+        <h2>Customer Directory</h2>
+        <span style="flex:1"></span>
+        <button type="button" class="btn xs">+ Add</button>
+      </div>
+      <div style="padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line);display:flex;gap:6px">
+        <div class="search" style="flex:1;height:32px"><svg class="i"><use href="#search"/></svg><input style="width:100%" placeholder="Search stores..."></div>
+        <button type="button" class="btn sm quiet">Admin ▾</button>
+      </div>
+      <div class="crumb-bar" style="padding:6px 14px">Indonesia › BANDUNG › <b style="color:var(--accent-ink)">MARGAHAYU</b> <span style="flex:1"></span> <button type="button" class="btn xs quiet"><svg class="i"><use href="#more"/></svg></button></div>
+      <div class="rows">
+        <div class="r sel">
+          <div class="thumb">AB</div>
+          <div style="min-width:0">
+            <div class="n">AMANAH BARU</div>
+            <div class="subr">PIC: Budi · NOO: demo-agent-1</div>
+          </div>
+          <div class="right"><span class="badge">Retail</span><span class="badge bad">OVERDUE</span></div>
+        </div>
+        <!-- Under-row inline drawer -->
+        <div class="under">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:11px;color:var(--ink-dim)">Exact GPS · Unranked · Every 7d</span>
+            <span class="badge gold">Grosir?</span>
+          </div>
+          <div style="border-top:1px solid var(--hair);padding-top:6px;font-size:11.5px;display:flex;justify-content:space-between">
+            <span>Competitor Kretek 12 · eye-level</span><b>Rp 11.000</b>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button type="button" class="btn sm" style="flex:1">Add Log</button>
+            <button type="button" class="btn sm quiet">Map</button>
+            <button type="button" class="btn sm quiet">Edit</button>
+            <button type="button" class="btn sm quiet"><svg class="i"><use href="#more"/></svg></button>
+          </div>
+        </div>
+        <div class="r">
+          <div class="thumb">AN</div>
+          <div style="min-width:0">
+            <div class="n">ANEKA BARU PANJI</div>
+            <div class="subr">PIC: Budi · MARGAHAYU</div>
+          </div>
+          <div class="right"><span class="badge">Retail</span><span class="badge">2d left</span></div>
+        </div>
+        <div class="r">
+          <div class="thumb">HQ</div>
+          <div style="min-width:0">
+            <div class="n">HQ TEST</div>
+            <div class="subr">PIC: Unassigned · NOO: Admin</div>
+          </div>
+          <div class="right"><span class="badge gold">Epic</span><span class="badge bad">OVERDUE</span></div>
+        </div>
+        <div class="r">
+          <div class="thumb">WR</div>
+          <div style="min-width:0">
+            <div class="n">WARUNG SUMBER REJEKI</div>
+            <div class="subr">Needs salesman · NOO: Sri</div>
+          </div>
+          <div class="right"><span class="badge gold">PENDING</span></div>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="frame phone">
-    <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
-    <div class="top">
-      <h1>Grosir &amp; Agents</h1>
-      <div class="tabs"><span class="tab">Directory</span><span class="tab on">Grosir &amp; Agents</span></div>
-    </div>
-    <div class="sum"><span><b>1</b> Grosir ask (ex)</span><span class="sep"></span><span><b>1</b> Unassigned (ex)</span></div>
-    <div class="an-sec">
-      <div class="sec-h">Grosir Requests (grantsGrosir)</div>
-      <div class="card">
-        <div class="card-row"><b>AMANAH BARU</b><span style="color:var(--ink-mute)">Retail → Grosir</span></div>
-        <div style="display:flex;gap:8px"><button class="btn quiet sm" style="flex:1">Keep Retail</button><button class="btn edge sm" style="flex:1">Confirm Grosir</button></div>
+    <div class="app">
+      <div class="sb"><span>09:41</span><span>5G · 92%</span></div>
+      <div class="hd"><h2>Grosir &amp; Agents</h2></div>
+      <nav class="tabs" style="padding-top:6px"><button type="button" class="tab">Directory</button><button type="button" class="tab on">Approvals <span class="pill-n">3</span></button></nav>
+      <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+        <div class="box">
+          <div class="box-h"><span>Grosir Request</span><span>1</span></div>
+          <div class="box-r" style="flex-direction:column;align-items:stretch;gap:7px">
+            <div><b>ANEKA BARU PANJI</b><div style="font-size:11px;color:var(--ink-dim)">asked by Dika · sells Retail now</div></div>
+            <div style="display:flex;gap:6px"><button type="button" class="btn sm quiet" style="flex:1">Keep Retail</button><button type="button" class="btn sm" style="flex:1">Confirm Grosir</button></div>
+          </div>
+        </div>
+        <div class="box">
+          <div class="box-h"><span>Needs Salesman</span><span>2</span></div>
+          <div class="box-r" style="flex-direction:column;align-items:stretch;gap:7px">
+            <div><b>WARUNG SUMBER REJEKI</b><div style="font-size:11px;color:var(--ink-dim)">SOREANG · added by Sri</div></div>
+            <div style="display:flex;gap:6px"><select class="inp" style="flex:1"><option>Dika Saputra</option></select><button type="button" class="btn sm">Give</button></div>
+          </div>
+        </div>
       </div>
-
-      <div class="sec-h">Shops Waiting for a Salesman</div>
-      <div class="card">
-        <div class="card-row"><b>CEMERLANG</b><span style="color:var(--ink-mute)">BANDUNG · SOREANG</span></div>
-        <div style="display:flex;gap:8px"><span class="pill" style="flex:1">Pick roster agent ▾</span><button class="btn edge sm">Give</button></div>
-      </div>
-
-      <div class="sec-h">Add / Edit Customer Modal</div>
-      <div class="card">
-        <div class="card-row"><span>Store, Phone, Tier, Price, VisitFreq</span><span style="color:var(--ink-mute)">Prov/Kab/Kec</span></div>
-        <div style="display:flex;gap:8px"><button class="btn quiet sm" data-guide="photo"><svg class="i"><use href="#cam"/></svg>Photo</button><button class="btn quiet sm">Auto-Find</button><button class="btn edge sm" style="margin-left:auto">Save</button></div>
-      </div>
-
-      <div class="sec-h">Admin Tools</div>
-      <div class="card">
-        <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn quiet sm">Repair Tiers</button><button class="btn quiet sm">Find Duplicates</button><button class="btn quiet sm">Data Scrub</button><button class="btn quiet sm">Import KML</button></div>
+      <div class="sheet-dim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <b style="font-size:13px;text-transform:uppercase;letter-spacing:.05em">Edit · AMANAH BARU</b>
+          <button type="button" class="btn xs quiet">Cancel</button>
+        </div>
+        <div class="fgrid">
+          <div><label>Store Name</label><input class="inp" value="AMANAH BARU"></div>
+          <div><label>Phone</label><input class="inp" value="0812 3456 7890"></div>
+          <div><label>Price Tier</label><select class="inp"><option>Retail</option><option>Grosir</option></select></div>
+          <div><label>Photo</label><button type="button" class="btn sm quiet" style="width:100%;height:34px" data-guide="photo"><svg class="i"><use href="#cam"/></svg>Upload</button></div>
+        </div>
+        <div style="display:flex;gap:6px"><button type="button" class="btn sm" style="flex:1">Auto-Find</button><button type="button" class="btn sm quiet" style="flex:1">My GPS</button></div>
+        <div class="fgrid" style="grid-template-columns:1fr 1fr 1fr">
+          <div><label>Prov</label><input class="inp" value="JAWA BARAT"></div>
+          <div><label>Kab</label><input class="inp" value="BANDUNG"></div>
+          <div><label>Kec</label><input class="inp" value="MARGAHAYU"></div>
+        </div>
+        <button type="button" class="btn" style="width:100%;height:40px">Update Profile</button>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+const SHOPS = [
+  { id:'1', name:'AMANAH BARU', prov:'JAWA BARAT', kab:'BANDUNG', kec:'MARGAHAYU', tier:'Unranked', price:'Retail', grosirAsk:false, status:'APPROVED', pic:'Budi Santoso', noo:'demo-agent-1', freq:7, last:'2026-11-08', ov:'OVERDUE', gps:'-6.9654, 107.5759', phone:'0812-3456-7890', addr:'Jl. Kopo Bihbul No. 42 · Folder 1', logs:[{d:'2026-11-10',b:'Competitor',p:'Kretek 12',v:'High Sales',n:'eye-level rack',rp:'Rp 11.000'},{d:'2026-11-03',b:'Competitor',p:'Mild 16',v:'Medium',n:'promo poster',rp:'Rp 18.500'}] },
+  { id:'2', name:'ANEKA BARU PANJI', prov:'JAWA BARAT', kab:'BANDUNG', kec:'MARGAHAYU', tier:'Unranked', price:'Retail', grosirAsk:true, status:'APPROVED', pic:'Budi Santoso', noo:'Dika Saputra', freq:7, last:'2026-11-15', ov:'OK · 4d left', gps:'-6.9695, 107.5752', phone:'0813-2209-1122', addr:'Jl. Taman Kopo Indah II', logs:[{d:'2026-11-14',b:'Competitor',p:'Filter 12',v:'Slow Moving',n:'stock dusty',rp:'Rp 14.000'}] },
+  { id:'3', name:'Asyifa Mart Madura', prov:'JAWA TENGAH', kab:'MAGELANG', kec:'MUNTILAN', tier:'Unranked', price:'Retail', grosirAsk:false, status:'APPROVED', pic:'Agus Salim', noo:'Agus Salim', freq:7, last:'', ov:'OVERDUE', gps:'-7.5812, 110.2894', phone:'—', addr:'Jl. Pemuda No. 18, Muntilan', logs:[] },
+  { id:'4', name:'CEMERLANG', prov:'JAWA BARAT', kab:'BANDUNG', kec:'SOREANG', tier:'Unranked', price:'Retail', grosirAsk:false, status:'PENDING', pic:'Unassigned', noo:'Sri Rahayu', freq:7, last:'2026-11-11', ov:'OVERDUE', gps:'-7.0241, 107.5198', phone:'0857-9901-3344', addr:'Pasar Soreang Blok B', logs:[] },
+  { id:'5', name:'HQ TEST', prov:'JAWA TENGAH', kab:'MAGELANG', kec:'MUNTILAN', tier:'Epic', price:'Retail', grosirAsk:false, status:'APPROVED', pic:'T1 Owner', noo:'Admin', freq:7, last:'', ov:'OVERDUE', gps:'-7.5801, 110.2910', phone:'0811-0000-1111', addr:'Master HQ Yard', logs:[] },
+  { id:'6', name:'HQ (RETAIL) 1', prov:'JAWA BARAT', kab:'BANDUNG', kec:'CILILIN', tier:'Unranked', price:'Grosir', grosirAsk:false, status:'APPROVED', pic:'Ujang Pratama', noo:'Admin', freq:14, last:'2026-11-14', ov:'OK · 10d left', gps:'-6.9491, 107.4581', phone:'0812-8877-6655', addr:'Jl. Raya Cililin No. 9', logs:[] }
+];
+let selId = '1', roleMode = 'boss', activeFolder = 'ALL';
+
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('th-dark').setAttribute('aria-pressed', t==='dark');
+  document.getElementById('th-light').setAttribute('aria-pressed', t==='light');
+}
+function setLite(on){
+  document.documentElement.classList.toggle('lite-mode', on);
+  document.getElementById('lt-off').setAttribute('aria-pressed', !on);
+  document.getElementById('lt-on').setAttribute('aria-pressed', on);
+}
+function setRole(r){
+  roleMode = r;
+  document.getElementById('rl-boss').setAttribute('aria-pressed', r==='boss');
+  document.getElementById('rl-reg').setAttribute('aria-pressed', r==='regional');
+  document.getElementById('rl-view').setAttribute('aria-pressed', r==='view');
+  const ro = r==='view';
+  document.getElementById('viewOnlyNote').style.display = ro ? 'block' : 'none';
+  document.getElementById('pcAddBtn').style.display = ro ? 'none' : 'inline-flex';
+  document.getElementById('tabTools').style.display = r==='boss' ? 'inline-flex' : 'none';
+  document.getElementById('tabApprovals').style.display = ro ? 'none' : 'inline-flex';
+  document.querySelectorAll('.admin-only').forEach(e=>e.style.display = r==='boss' ? '' : 'none');
+  if(ro) setTab('directory');
+  renderHand();
+}
+function setTab(t){
+  ['directory','approvals','tools'].forEach(k=>{
+    document.getElementById('view-'+k).style.display = (k===t) ? (k==='directory'?'grid':'flex') : 'none';
+    const b = document.querySelector('.tab[data-tab="'+k+'"]');
+    if(b) b.classList.toggle('on', k===t);
+  });
+}
+function pickFolder(name, el){
+  activeFolder = (activeFolder === name) ? 'ALL' : name;
+  document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('on'));
+  if(activeFolder !== 'ALL' && el) el.classList.add('on');
+  document.getElementById('activeCrumb').textContent = activeFolder === 'ALL' ? 'ALL KECAMATAN (6 shown)' : activeFolder;
+  renderList();
+}
+function setLevel(){ activeFolder='ALL'; document.querySelectorAll('.fchip').forEach(c=>c.classList.remove('on')); renderList(); }
+function toggleFolderActs(){ const r=document.getElementById('folderActsRow'); r.style.display=r.style.display==='flex'?'none':'flex'; }
+function openModal(s){ const x=s||SHOPS.find(a=>a.id===selId); document.getElementById('modalTitle').textContent = s ? 'Edit · '+s.name : 'Edit Customer · '+(x?.name||'New'); document.getElementById('mName').value=x?.name||''; document.getElementById('modalWrap').classList.add('open'); }
+function closeModal(){ document.getElementById('modalWrap').classList.remove('open'); }
+
+function renderList(){
+  const q = (document.getElementById('pcSearch').value||'').toLowerCase().trim();
+  const list = SHOPS.filter(s => (activeFolder==='ALL' || s.kec===activeFolder) && (!q || (s.name+s.kab+s.kec+s.pic+s.noo).toLowerCase().includes(q)))
+    .sort((a,b)=>a.name.localeCompare(b.name,'id',{sensitivity:'base'}));
+  document.getElementById('shopRows').innerHTML = list.map(s => {
+    const ini = s.name.replace(/[^A-Za-z0-9 ]+/g,' ').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase() || 'ST';
+    return `
+    <div class="r ${s.id===selId?'sel':''}" onclick="selId='${s.id}';renderList();renderHand()">
+      <div class="thumb">${ini}</div>
+      <div style="min-width:0">
+        <div class="n">${s.name}</div>
+        <div class="subr">${s.kec}, ${s.kab} · PIC: ${s.pic}</div>
+      </div>
+      <div class="right">
+        <span class="badge ${s.tier==='Epic'||s.grosirAsk?'gold':''}">${s.grosirAsk?'Grosir?':s.price}${s.tier==='Epic'?' · Epic':''}</span>
+        <span class="badge ${s.ov==='OVERDUE'||s.status==='PENDING'?'bad':''}">${s.status==='PENDING'?'PENDING':s.ov}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderHand(){
+  const s = SHOPS.find(a=>a.id===selId) || SHOPS[0];
+  const ro = roleMode==='view', boss = roleMode==='boss';
+  document.getElementById('handPane').innerHTML = `
+    <div class="hand-scroll">
+      <div class="ph">
+        <div class="big"><svg class="i" style="width:22px;height:22px"><use href="#store"/></svg></div>
+        <div style="min-width:0;flex:1">
+          <h3>${s.name}</h3>
+          <p>${s.prov} · ${s.kab} · ${s.kec} · status: <b>${s.status}</b></p>
+        </div>
+        <span class="badge ${s.ov==='OVERDUE'?'bad':'gold'}" style="font-size:11px;padding:4px 9px">${s.ov}</span>
+      </div>
+      <div class="chips">
+        <span class="chip">T3/T4 PIC: <b>${s.pic}</b></span>
+        <span class="chip">NOO By: <b>${s.noo}</b></span>
+        <span class="chip">Map Tier: <b>${s.tier}</b></span>
+        <span class="chip">Price Tier: <b>${s.price}</b>${s.grosirAsk?' · <span style="color:var(--accent-ink)">Grosir asked</span>':''}</span>
+        <span class="chip">Visit Rhythm: <b>Every ${s.freq}d</b></span>
+        <span class="chip">Last Visit: <b>${s.last||'None'}</b></span>
+        <span class="chip">WhatsApp: <b>${s.phone}</b></span>
+      </div>
+      <div class="split2">
+        <div class="card">
+          <div class="card-h"><span>Location &amp; Pin</span><span>Exact GPS</span></div>
+          <div class="mapbox">
+            <span class="pin-dot"><svg class="i" style="width:12px;height:12px"><use href="#pin"/></svg>${s.gps}</span>
+            <div style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:10.5px;color:var(--ink-dim)">${s.kec}</span>
+              <button type="button" class="btn xs quiet">Street View</button>
+            </div>
+          </div>
+          <div style="font-size:11.5px;color:var(--ink-dim)">${s.addr}</div>
+          <button type="button" class="btn sm quiet" style="width:100%">Open in Map Mission Control</button>
+        </div>
+        <div class="card">
+          <div class="card-h"><span>Competitor Intelligence (benchmarks)</span><span>${s.logs.length} logs</span></div>
+          ${ro ? '' : `<div class="bench-form">
+            <input class="inp" placeholder="Brand & Product">
+            <input class="inp" placeholder="Notes (Promo/Shelf)">
+            <input class="inp" placeholder="Price Rp">
+            <button type="button" class="btn sm">Add Log</button>
+          </div>`}
+          <table>
+            <thead><tr><th>Product / Brand</th><th>Perf</th><th class="tr-r">Price</th><th style="width:34px"></th></tr></thead>
+            <tbody>
+              ${s.logs.length ? s.logs.map(l=>`<tr><td><b>${l.p}</b><div style="font-size:10.5px;color:var(--ink-dim)">${l.b} · ${l.n}</div></td><td><span class="badge ${l.v==='Slow Moving'?'bad':''}">${l.v}</span></td><td class="tr-r"><b>${l.rp}</b></td><td class="tr-r"><button type="button" class="btn xs danger" data-kpm-del><svg class="i"><use href="#trash"/></svg></button></td></tr>`).join('')
+              : `<tr><td colspan="4" style="text-align:center;padding:18px 8px;color:var(--ink-dim)">No competitor benchmarks logged for this shop yet.</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="act">
+      ${boss ? `<select class="inp" style="width:155px"><option>${s.kec}</option><option>SOREANG</option><option>CILILIN</option><option>+ New Folder</option></select>` : ''}
+      ${boss && s.status==='PENDING' ? `<button type="button" class="btn sm"><svg class="i"><use href="#check"/></svg>Verify NOO</button>` : ''}
+      ${!ro ? `<button type="button" class="btn sm quiet" onclick="openModal()">Edit Shop</button>` : ''}
+      <span class="sp"></span>
+      ${boss ? `<button type="button" class="btn sm danger"><svg class="i"><use href="#trash"/></svg>Delete</button>` : (!ro ? '' : '<span style="font-size:11.5px;color:var(--ink-dim)">Read-only mode</span>')}
+    </div>`;
+}
+renderList();
+renderHand();
+</script>
+</body>
+</html>
