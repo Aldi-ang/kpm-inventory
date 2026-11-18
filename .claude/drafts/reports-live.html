@@ -1,0 +1,577 @@
+<title>KPM Reports</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* layout: KPM v5 master-detail (Receivables look) - one dense KPI strip, ledger left, receipt in hand right; phone opens under its row */
+:root{
+  --ground:#D6CEBA;--panel:#E3DCCB;--raised:#EAE4D6;--inset:#DCD4C1;--line:#B8AF9C;--line-2:#9F9785;--hair:rgba(19,18,17,.10);
+  --ink:#131211;--ink-muted:#3A3733;--ink-dim:#5E584F;--gold:#8A5A12;--accent-ink:#5A3B05;--accent-edge:#8A6420;--danger-ink:#7A2118;
+  --page:#C9C0AA;--sel:rgba(138,90,18,.09);--wash:rgba(138,90,18,.13);--scrim:rgba(19,18,17,.38);
+  --paper:#FBF9F4;--paper-ink:#1A1A1A;--receipt:#1E4C8F;
+  --f:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;--hair:rgba(232,228,222,.06);
+  --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--accent-ink:#E0A04A;--accent-edge:#9C6924;--danger-ink:#E7907F;
+  --page:#050504;--sel:rgba(208,138,46,.07);--wash:rgba(208,138,46,.12);--scrim:rgba(0,0,0,.6);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ground:#0B0A09;--panel:#121110;--raised:#171513;--inset:#0E0D0C;--line:#24211D;--line-2:#3A3631;--hair:rgba(232,228,222,.06);
+  --ink:#ECE7E0;--ink-muted:#A9A196;--ink-dim:#7C756C;--gold:#D08A2E;--accent-ink:#E0A04A;--accent-edge:#9C6924;--danger-ink:#E7907F;
+  --page:#050504;--sel:rgba(208,138,46,.07);--wash:rgba(208,138,46,.12);--scrim:rgba(0,0,0,.6);color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 var(--f);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 64px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* page controls (not part of the app) */
+.board{max-width:1180px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;font-size:12.5px;color:var(--ink-muted)}
+.board h1{font-size:13px;margin:0;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:5px 10px;font-size:12px;color:var(--ink-dim)}
+.seg button[aria-pressed="true"]{background:var(--wash);color:var(--ink);font-weight:600}
+.cap{max-width:1180px;margin:22px auto 10px;color:var(--ink-dim);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+
+.frame{background:var(--ground);border:1px solid var(--line-2);margin:0 auto;border-radius:12px;overflow:hidden;position:relative;box-shadow:0 18px 40px -24px rgba(0,0,0,.55)}
+.frame.pc{max-width:1180px;height:760px}
+.frame.phone{width:390px;max-width:100%;height:820px;border-radius:24px}
+.app{height:100%;display:flex;flex-direction:column;min-height:0}
+
+/* buttons: gold EDGE, never a gold fill (his 2026-11-17) */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:34px;padding:0 13px;border:1px solid var(--accent-edge);
+  background:transparent;color:var(--ink);font-weight:600;font-size:12.5px;border-radius:8px;white-space:nowrap;transition:background .15s}
+.btn:hover{background:var(--sel)}
+.btn.quiet{border-color:var(--line-2);color:var(--ink-muted)}
+.btn.danger{border-color:var(--line-2);color:var(--danger-ink)}
+.btn.sm{height:30px;padding:0 10px;font-size:12px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* header */
+.hd{display:flex;align-items:center;gap:10px;padding:14px 20px 0;flex-wrap:wrap}
+.hd h2{margin:0;font-size:17px;font-weight:700;letter-spacing:-.01em;margin-right:6px}
+.hd .sub{font-size:12px;color:var(--ink-dim);margin-right:auto}
+.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.field{height:32px;border:1px solid var(--line-2);border-radius:8px;background:var(--inset);padding:0 10px;font-size:12.5px;color:var(--ink)}
+.search{display:flex;align-items:center;gap:6px;height:32px;border:1px solid var(--line-2);border-radius:8px;background:var(--inset);padding:0 10px;color:var(--ink-dim);min-width:0}
+.search input{border:0;background:transparent;outline:0;width:170px;font-size:12.5px;color:var(--ink)}
+.per{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;height:32px}
+.per button{border:0;background:transparent;padding:0 11px;font-size:12.5px;color:var(--ink-dim)}
+.per button[aria-pressed="true"]{background:var(--wash);color:var(--ink);font-weight:600}
+
+/* KPI strip: one line, all the money facts */
+.kpi{display:grid;grid-template-columns:1.35fr 1fr 1fr 1fr 1.6fr;gap:0;margin:12px 20px 0;border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+.k{padding:10px 14px;border-right:1px solid var(--line);min-width:0}
+.k:last-child{border-right:0}
+.k .l{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim);font-weight:600;display:flex;justify-content:space-between;gap:6px}
+.k .v{font-size:19px;font-weight:700;letter-spacing:-.015em;margin-top:2px;white-space:nowrap}
+.k .v.sm{font-size:16px}
+.k .d{font-size:11.5px;color:var(--ink-dim);margin-top:1px;white-space:nowrap}
+.d .up{color:var(--accent-ink);font-weight:600}.d .dn{color:var(--danger-ink);font-weight:600}
+.spark{display:block;width:100%;height:26px;margin-top:4px}
+.mix{display:flex;height:8px;border-radius:4px;overflow:hidden;margin:8px 0 6px;background:var(--inset)}
+.mix span{height:100%;transition:width .7s cubic-bezier(.2,.7,.2,1)}
+.mixl{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:11.5px;color:var(--ink-muted)}
+.mixl i{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:5px;vertical-align:1px}
+.c-cash{background:var(--ink-muted)}.c-tf{background:var(--line-2)}.c-qr{background:var(--ink-dim)}.c-ti{background:var(--gold)}
+
+/* tabs */
+.tabs{display:flex;gap:22px;padding:0 20px;border-bottom:1px solid var(--line);margin-top:10px;overflow-x:auto}
+.tab{border:0;background:transparent;padding:9px 0 10px;border-bottom:2px solid transparent;font-size:13px;font-weight:600;color:var(--ink-dim);white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-color:var(--gold)}
+.tab .n{font-weight:500;color:var(--ink-dim);margin-left:4px}
+
+/* work area */
+.work{flex:1;display:flex;min-height:0}
+.list{width:470px;flex:none;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--panel);min-height:0}
+.rows{flex:1;overflow:auto;min-height:0}
+.day{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;padding:7px 16px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-dim);background:var(--inset);border-bottom:1px solid var(--line)}
+.r{display:grid;grid-template-columns:42px minmax(0,1fr) 74px 58px 104px;align-items:center;gap:8px;width:100%;min-height:44px;padding:6px 16px;border:0;border-bottom:1px solid var(--hair);background:transparent;text-align:left}
+.r:hover{background:var(--sel)}
+.r.sel{background:var(--wash)}
+.r .t{font-size:12px;color:var(--ink-dim)}
+.r .sh{min-width:0}
+.r .sh b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r .sh span{display:block;font-size:11.5px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r .ag{font-size:12px;color:var(--ink-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r .am{text-align:right;font-weight:600;font-size:13px;white-space:nowrap}
+.r .am.neg{color:var(--danger-ink)}
+.chip{justify-self:start;font-size:10.5px;font-weight:600;letter-spacing:.03em;padding:2px 6px;border-radius:5px;border:1px solid var(--line-2);color:var(--ink-muted);white-space:nowrap}
+.chip.ti{border-color:var(--accent-edge);color:var(--accent-ink)}
+.chip.rt{border-color:var(--danger-ink);color:var(--danger-ink)}
+.more{padding:14px 16px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--ink-dim)}
+.empty{padding:40px 20px;text-align:center;color:var(--ink-dim);font-size:13px}
+
+/* in hand */
+.hand{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--ground)}
+.hand .in{flex:1;padding:20px 26px;display:flex;flex-direction:column;gap:14px;overflow:auto;min-height:0}
+.fade{animation:fadeUp .24s cubic-bezier(.2,.7,.2,1)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ph{display:flex;align-items:flex-start;gap:12px}
+.ph .av{width:42px;height:42px;border-radius:10px;background:var(--raised);border:1px solid var(--line-2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--accent-ink);flex:none}
+.ph h3{margin:0;font-size:17px;font-weight:700;letter-spacing:-.01em}
+.ph p{margin:2px 0 0;font-size:12px;color:var(--ink-dim)}
+.ph .tot{margin-left:auto;text-align:right}
+.ph .tot .l{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim);font-weight:600}
+.ph .tot .v{font-size:20px;font-weight:700;white-space:nowrap}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+.facts div{padding:8px 12px;border-right:1px solid var(--line);min-width:0}
+.facts div:nth-child(4n){border-right:0}
+.facts div:nth-child(n+5){border-top:1px solid var(--line)}
+.facts .l{font-size:10.5px;color:var(--ink-dim);letter-spacing:.05em;text-transform:uppercase;font-weight:600}
+.facts .v{font-size:13px;font-weight:600;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.resp{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);border-radius:999px;padding:3px 10px;font-size:12px;color:var(--ink-muted);margin-top:6px}
+.resp b{color:var(--ink)}
+.tblw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+th{background:var(--inset);text-align:left;font-size:10.5px;font-weight:600;color:var(--ink-dim);letter-spacing:.06em;text-transform:uppercase;padding:7px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px 12px;border-bottom:1px solid var(--hair);font-size:13px}
+tr:last-child td{border-bottom:none}
+.num{text-align:right;white-space:nowrap}
+tfoot td{background:var(--inset);font-weight:700;border-top:1px solid var(--line)}
+.act{display:flex;align-items:center;gap:8px;padding:12px 26px;border-top:1px solid var(--line);flex-wrap:wrap}
+.act .sp{flex:1}
+.lock{font-size:11.5px;color:var(--ink-dim)}
+
+/* products / salesmen tables */
+.pane{flex:1;overflow:auto;padding:16px 20px;min-height:0}
+.bar{height:6px;border-radius:3px;background:var(--inset);overflow:hidden;min-width:60px}
+.bar span{display:block;height:100%;background:var(--gold);width:0;transition:width .8s cubic-bezier(.2,.7,.2,1)}
+.rowbtn{cursor:pointer}
+.rowbtn:hover td{background:var(--sel)}
+.hint{font-size:12px;color:var(--ink-dim);margin:0 0 10px}
+
+/* rolling digits */
+.roll{display:inline-flex;align-items:baseline;line-height:1.15;white-space:pre}
+.reel{display:inline-block;height:1.15em;overflow:hidden;vertical-align:bottom}
+.reel > span{display:flex;flex-direction:column;transition:transform .65s cubic-bezier(.2,.7,.2,1)}
+.reel > span > span{height:1.15em}
+
+/* overlays */
+.ov{position:absolute;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px;animation:fi .16s}
+@keyframes fi{from{opacity:0}}
+.dlg{background:var(--raised);border:1px solid var(--line-2);border-radius:12px;width:min(420px,100%);max-height:100%;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 24px 50px -20px rgba(0,0,0,.6);animation:fadeUp .2s}
+.dlg h4{margin:0;font-size:15px}
+.dlg p{margin:0;font-size:13px;color:var(--ink-muted)}
+.dlg .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.qty{width:84px;height:30px;border:1px solid var(--line-2);border-radius:7px;background:var(--inset);padding:0 8px;text-align:right}
+.paper{background:var(--paper);color:var(--paper-ink);border-radius:8px;padding:14px 16px;font-size:12.5px}
+.paper .rh{background:var(--receipt);color:#fff;margin:-14px -16px 10px;padding:10px 16px;border-radius:8px 8px 0 0;font-weight:700;letter-spacing:.04em}
+.paper table{border:0;background:transparent}
+.paper td,.paper th{background:transparent;color:var(--paper-ink);border-bottom:1px dashed #c9c4b8;padding:5px 0;font-size:12px}
+.paper .gt{display:flex;justify-content:space-between;font-weight:700;font-size:14px;margin-top:8px}
+.photo{border-radius:8px;overflow:hidden;border:1px solid var(--line-2)}
+
+/* toast with a self-drawing check */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  display:flex;align-items:center;gap:10px;background:var(--raised);border:1px solid var(--accent-edge);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;
+  box-shadow:0 18px 40px -16px rgba(0,0,0,.6);transition:opacity .2s,transform .25s cubic-bezier(.2,.7,.2,1);z-index:50;max-width:calc(100% - 32px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast svg{width:18px;height:18px;flex:none;stroke:var(--gold);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.toast path{stroke-dasharray:24;stroke-dashoffset:24}
+.toast.on path{animation:draw .45s .1s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+/* phone layout of the same app */
+.phone .hd{padding:12px 14px 0}
+.phone .hd .sub{width:100%;order:3;margin:0}
+.phone .ctl{width:100%}
+.phone .search{flex:1}.phone .search input{width:100%}
+.phone .kpi{grid-template-columns:1fr 1fr;margin:10px 14px 0}
+.phone .k{border-bottom:1px solid var(--line)}
+.phone .k:nth-child(2n){border-right:0}
+.phone .k.mixk{grid-column:1/-1;border-bottom:0}
+.phone .k .v{font-size:16px}
+.phone .tabs{padding:0 14px;gap:16px}
+.phone .list{width:100%;border-right:0}
+.phone .hand{display:none}
+.phone .r{grid-template-columns:38px minmax(0,1fr) 92px;padding:7px 14px}
+.phone .r .ag,.phone .r .chip{display:none}
+.phone .under{background:var(--raised);border-bottom:1px solid var(--line);padding:12px 14px;display:flex;flex-direction:column;gap:10px;animation:fadeUp .22s}
+.phone .facts{grid-template-columns:1fr 1fr}
+.phone .facts div:nth-child(2n){border-right:0}
+.phone .facts div:nth-child(n+3){border-top:1px solid var(--line)}
+.phone .pane{padding:12px 14px}
+.phone .hide-ph{display:none}
+.sb{height:26px;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:11px;color:var(--ink-dim);flex:none}
+
+@media (max-width:760px){.frame.pc{display:none}.pcap{display:none}}
+.nomotion *,.nomotion *::before,.nomotion *::after{animation:none!important;transition:none!important}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+
+<div class="board">
+  <h1>Reports · playable picture</h1>
+  <span>View as <span class="seg" id="role"><button aria-pressed="true" data-v="owner">Owner (T2)</button><button aria-pressed="false" data-v="agus">Salesman Agus (T5)</button></span></span>
+  <span>Theme <span class="seg" id="theme"><button aria-pressed="true" data-v="">System</button><button aria-pressed="false" data-v="light">Light</button><button aria-pressed="false" data-v="dark">Dark</button></span></span>
+  <span>Motion <span class="seg" id="motion"><button aria-pressed="true" data-v="on">On</button><button aria-pressed="false" data-v="off">Lite</button></span></span>
+  <span style="flex-basis:100%">Shops, salesmen and products are the demo company's. Every amount is an <b>example</b>, worked out from the lines of each receipt.</span>
+</div>
+
+<p class="cap pcap">PC · 1180 px</p>
+<div class="frame pc" id="pc"></div>
+<p class="cap">Phone · 390 px</p>
+<div class="frame phone" id="ph"></div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span id="toastT"></span></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h4"/></symbol>
+  <symbol id="i-cam" viewBox="0 0 24 24"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M14 4l6 6-10 10H4v-6z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M7 7l1 13h8l1-13"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.2 11l7.6-3.8M8.2 13l7.6 3.8"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M5 19h14"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6-5.6-6-11a6 6 0 1112 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></symbol>
+</svg>
+
+<script>
+/* ---------- demo data (seeded, so the numbers are the same every load) ---------- */
+const P = [
+  { id: 'choc', name: 'Cello Chocolate', price: 10000, cost: 8400 },
+  { id: 'green', name: 'Cello Green', price: 7000, cost: 5900 },
+  { id: 'mm', name: 'Cello Mmrapi', price: 8500, cost: 7150 },
+  { id: 'cof', name: 'Cello Coffee & Caramel', price: 8500, cost: 7100 },
+  { id: 'teh', name: 'Cello Teh Manis', price: 8000, cost: 6700 },
+  { id: 'as', name: 'American Spirit Turquoise', price: 230000, cost: 210000, slop: true },
+];
+const A = {
+  agus: { name: 'Agus Prasetyo', short: 'Agus', region: 'BANDUNG' },
+  ari: { name: 'Ari Wibowo', short: 'Ari', region: 'BANDUNG' },
+  dika: { name: 'Dika Saputra', short: 'Dika', region: 'MAGELANG' },
+  budi: { name: 'Budi Santoso', short: 'Budi', region: 'MAGELANG' },
+};
+const S = [
+  ['AMANAH BARU', 'Margahayu, Bandung', 'agus'], ['ANEKA BARU PANJI', 'Margahayu, Bandung', 'agus'], ['CEMERLANG', 'Soreang, Bandung', 'agus'],
+  ['ARIF CILILIN', 'Cililin, Bandung Barat', 'agus'], ['LARIS JAYA', 'Baleendah, Bandung', 'agus'], ['DEWI CIBOLERANG', 'Bandung Kulon', 'ari'],
+  ['ANUGRAH 17', 'Cimahi Tengah', 'ari'], ['HJ EUIS', 'Cimahi Selatan', 'ari'], ['FITRIA PLASTIK', 'Muntilan, Magelang', 'dika'],
+  ['ASYIFA MART MADURA', 'Muntilan, Magelang', 'dika'], ['ENDANG CELL', 'Muntilan, Magelang', 'budi'], ['TOKO SRI REJEKI', 'Mertoyudan, Magelang', 'budi'],
+].map(([name, area, agent]) => ({ name, area, agent }));
+const TODAY = new Date(2026, 10, 18);
+let seed = 20261118;
+const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
+const dayKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const TX = [];
+for (let back = 59; back >= 0; back--) {
+  const d = new Date(TODAY); d.setDate(d.getDate() - back);
+  const n = 5 + Math.floor(rnd() * 6);
+  for (let k = 0; k < n; k++) {
+    const shop = pick(S), roll = rnd();
+    const mins = 8 * 60 + Math.floor(rnd() * 9 * 60);
+    const base = { id: `t${TX.length + 1}`, date: dayKey(d), time: `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`, shop: shop.name, area: shop.area, agent: shop.agent, region: A[shop.agent].region };
+    if (roll < 0.06) {
+      const p = pick(P.filter((x) => !x.slop));
+      TX.push({ ...base, type: 'RETUR', pay: 'Damaged', tier: 'Retail', items: [{ p: p.id, qty: 5 + Math.floor(rnd() * 3) * 5 }] });
+    } else if (roll < 0.14) {
+      TX.push({ ...base, type: 'SETTLE', pay: 'Cash', tier: '-', items: [], paid: (2 + Math.floor(rnd() * 8)) * 100000 });
+    } else {
+      const pr = rnd();
+      const pay = pr < 0.55 ? 'Cash' : pr < 0.7 ? 'Transfer' : pr < 0.82 ? 'QRIS' : 'Titip';
+      const lines = 1 + Math.floor(rnd() * 3), used = new Set(), items = [];
+      for (let j = 0; j < lines; j++) {
+        const p = pick(P); if (used.has(p.id)) continue; used.add(p.id);
+        items.push({ p: p.id, qty: p.slop ? 1 + Math.floor(rnd() * 2) : (2 + Math.floor(rnd() * 14)) * 10 });
+      }
+      TX.push({ ...base, type: 'SALE', pay, tier: 'Retail', items });
+    }
+  }
+}
+TX.sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time));
+const prod = (id) => P.find((x) => x.id === id);
+const total = (t) => t.type === 'SETTLE' ? t.paid : (t.type === 'RETUR' ? -1 : 1) * t.items.reduce((s, it) => s + it.qty * prod(it.p).price, 0);
+const profit = (t) => t.type === 'SALE' ? t.items.reduce((s, it) => s + it.qty * (prod(it.p).price - prod(it.p).cost), 0) : t.type === 'RETUR' ? -t.items.reduce((s, it) => s + it.qty * prod(it.p).cost, 0) : 0;
+const bks = (t) => t.items.reduce((s, it) => s + it.qty * (prod(it.p).slop ? 10 : 1), 0);
+const rp = (n) => (n < 0 ? '−' : '') + 'Rp ' + Math.round(Math.abs(n)).toLocaleString('id-ID');
+const rpShort = (n) => Math.abs(n) >= 1e6 ? 'Rp ' + (n / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt' : rp(n);
+const ini = (s) => s.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0]).join('');
+const DAYN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const dayLabel = (k) => { const [y, m, d] = k.split('-').map(Number); const dt = new Date(y, m - 1, d); const diff = Math.round((TODAY - dt) / 864e5);
+  return (diff === 0 ? 'Today' : diff === 1 ? 'Yesterday' : DAYN[dt.getDay()]) + ' · ' + d + ' ' + MON[m - 1]; };
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* ---------- page-level state ---------- */
+const G = { role: 'owner', motion: true };
+const isOwner = () => G.role === 'owner';
+
+/* ---------- rolling digits (his Framer pick 1) ---------- */
+function rollHTML(text, prevText) {
+  const out = []; const pt = prevText || '';
+  const off = text.length - pt.length;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (/\d/.test(c)) {
+      const old = pt[i - off]; const from = /\d/.test(old || '') ? +old : 0;
+      out.push(`<span class="reel"><span data-to="${c}" style="transform:translateY(-${from * 1.15}em)">${'0123456789'.split('').map((x) => `<span>${x}</span>`).join('')}</span></span>`);
+    } else out.push(`<span>${esc(c)}</span>`);
+  }
+  return `<span class="roll" aria-label="${esc(text)}">${out.join('')}</span>`;
+}
+function settleRolls(root) {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    root.querySelectorAll('.reel > span[data-to]').forEach((s) => { s.style.transform = `translateY(-${+s.dataset.to * 1.15}em)`; });
+    root.querySelectorAll('[data-w]').forEach((b) => { b.style.width = b.dataset.w; });
+  }));
+}
+
+/* ---------- toast with self-drawing check (his Framer pick 4) ---------- */
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.classList.remove('on'); void t.offsetWidth;
+  document.getElementById('toastT').textContent = msg;
+  t.classList.add('on'); clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('on'), 2600);
+}
+
+/* ---------- one app, mounted twice (PC + phone) ---------- */
+const apps = [];
+function mount(el, mode) {
+  const st = { mode, per: 7, region: 'ALL', agent: 'ALL', q: '', tab: 'ledger', sel: null, openPhone: null, prev: {}, grown: false, modal: null };
+  apps.push({ el, st });
+  el.addEventListener('click', (e) => onClick(e, el, st));
+  el.addEventListener('input', (e) => onInput(e, el, st));
+  el.addEventListener('change', (e) => onInput(e, el, st));
+  render(el, st);
+}
+
+function view(st) {
+  const lo = new Date(TODAY); lo.setDate(lo.getDate() - (st.per - 1));
+  const plo = new Date(lo); plo.setDate(plo.getDate() - st.per);
+  const q = st.q.trim().toLowerCase();
+  const agentOk = (t) => isOwner() ? (st.agent === 'ALL' || t.agent === st.agent) : t.agent === 'agus';
+  const base = (t) => (st.region === 'ALL' || t.region === st.region || !isOwner()) && agentOk(t) &&
+    (!q || t.shop.toLowerCase().includes(q) || A[t.agent].name.toLowerCase().includes(q) || t.items.some((it) => prod(it.p).name.toLowerCase().includes(q)));
+  const rows = TX.filter((t) => t.date >= dayKey(lo) && base(t));
+  const prevRows = TX.filter((t) => t.date >= dayKey(plo) && t.date < dayKey(lo) && base(t));
+  const sum = (list) => {
+    const sales = list.filter((t) => t.type !== 'SETTLE');
+    const o = { rev: sales.reduce((s, t) => s + total(t), 0), prof: list.reduce((s, t) => s + profit(t), 0), n: list.filter((t) => t.type === 'SALE').length,
+      bks: list.filter((t) => t.type === 'SALE').reduce((s, t) => s + bks(t), 0), settled: list.filter((t) => t.type === 'SETTLE').reduce((s, t) => s + t.paid, 0), mix: {} };
+    list.filter((t) => t.type === 'SALE').forEach((t) => { o.mix[t.pay] = (o.mix[t.pay] || 0) + total(t); });
+    return o;
+  };
+  const days = [];
+  for (let i = 13; i >= 0; i--) { const d = new Date(TODAY); d.setDate(d.getDate() - i); const k = dayKey(d);
+    days.push(TX.filter((t) => t.date === k && base(t) && t.type !== 'SETTLE').reduce((s, t) => s + total(t), 0)); }
+  return { rows, now: sum(rows), was: sum(prevRows), days };
+}
+
+function delta(now, was) {
+  if (!was) return '<span>no earlier figure</span>';
+  const p = Math.round((now - was) / Math.abs(was) * 100);
+  return `<span class="${p >= 0 ? 'up' : 'dn'}">${p >= 0 ? '▲' : '▼'} ${Math.abs(p)}%</span> vs previous ${'' }`;
+}
+
+function spark(days) {
+  const w = 200, h = 26, mx = Math.max(...days, 1);
+  const pts = days.map((v, i) => [i * (w / (days.length - 1)), h - 3 - (v / mx) * (h - 6)]);
+  const line = pts.map((p) => p.map((x) => x.toFixed(1)).join(',')).join(' ');
+  const last = pts[pts.length - 1];
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+    <polygon points="0,${h} ${line} ${w},${h}" fill="var(--wash)"/>
+    <polyline points="${line}" fill="none" stroke="var(--gold)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+    <circle cx="${last[0]}" cy="${last[1]}" r="2.6" fill="var(--gold)"/></svg>`;
+}
+
+function R(st, key, text) { const h = rollHTML(text, st.prev[key]); st.prev[key] = text; return h; }
+
+function render(el, st) {
+  const v = view(st), ph = st.mode === 'phone';
+  const scroll = el.querySelector('.rows, .pane')?.scrollTop || 0;
+  if (!st.sel || !v.rows.find((t) => t.id === st.sel)) st.sel = v.rows[0]?.id || null;
+  const mixTot = Object.values(v.now.mix).reduce((a, b) => a + b, 0) || 1;
+  const MIX = [['Cash', 'c-cash'], ['Transfer', 'c-tf'], ['QRIS', 'c-qr'], ['Titip', 'c-ti']];
+  const agents = Object.entries(A).filter(([, a]) => st.region === 'ALL' || a.region === st.region);
+  const prodRows = P.map((p) => { const lines = v.rows.filter((t) => t.type === 'SALE').flatMap((t) => t.items.filter((it) => it.p === p.id));
+    const q = lines.reduce((s, it) => s + it.qty, 0); return { p, q, rev: q * p.price, prof: q * (p.price - p.cost) }; }).filter((x) => x.q).sort((a, b) => b.rev - a.rev);
+  const agRows = Object.entries(A).map(([id, a]) => { const r = v.rows.filter((t) => t.agent === id);
+    return { id, a, rev: r.filter((t) => t.type !== 'SETTLE').reduce((s, t) => s + total(t), 0), n: r.filter((t) => t.type === 'SALE').length,
+      shops: new Set(r.map((t) => t.shop)).size, titip: r.filter((t) => t.pay === 'Titip').reduce((s, t) => s + total(t), 0), settled: r.filter((t) => t.type === 'SETTLE').reduce((s, t) => s + t.paid, 0) }; })
+    .filter((x) => x.n || x.settled).sort((a, b) => b.rev - a.rev);
+  const returns = v.rows.filter((t) => t.type === 'RETUR');
+  const maxP = Math.max(1, ...prodRows.map((x) => x.rev)), maxA = Math.max(1, ...agRows.map((x) => x.rev));
+  const W = (x) => st.grown ? `style="width:${x}"` : `data-w="${x}"`;
+
+  let html = ph ? `<div class="sb"><span>09:41</span><span>5G · 92%</span></div>` : '';
+  html += `<div class="app">
+  <div class="hd">
+    <h2>Reports</h2><span class="sub">${isOwner() ? 'All salesmen' : 'Your own sales · Agus Prasetyo'} · up to ${dayLabel(dayKey(TODAY)).split(' · ')[1]} 2026</span>
+    <div class="ctl">
+      <span class="per" role="group" aria-label="Period">${[[1, 'Today'], [7, '7 days'], [30, '30 days']].map(([n, l]) => `<button data-per="${n}" aria-pressed="${st.per === n}">${l}</button>`).join('')}</span>
+      ${isOwner() ? `<select class="field hide-ph" data-f="region" aria-label="Region"><option value="ALL">All regions</option>${['BANDUNG', 'MAGELANG'].map((r) => `<option ${st.region === r ? 'selected' : ''}>${r}</option>`).join('')}</select>
+      <select class="field hide-ph" data-f="agent" aria-label="Salesman"><option value="ALL">All salesmen</option>${agents.map(([id, a]) => `<option value="${id}" ${st.agent === id ? 'selected' : ''}>${a.name}</option>`).join('')}</select>` : ''}
+      <label class="search"><svg class="i"><use href="#i-search"/></svg><input data-f="q" value="${esc(st.q)}" placeholder="Shop, salesman, product" aria-label="Search"></label>
+      <button class="btn quiet sm hide-ph" data-act="export"><svg class="i"><use href="#i-out"/></svg>Export</button>
+    </div>
+  </div>
+  <div class="kpi">
+    <div class="k"><div class="l"><span>Sales</span><span>${st.per === 1 ? 'today' : st.per + ' days'}</span></div><div class="v">${R(st, 'rev', rp(v.now.rev))}</div><div class="d">${delta(v.now.rev, v.was.rev)}</div>${ph ? '' : spark(v.days)}</div>
+    ${isOwner() ? `<div class="k"><div class="l">Net profit</div><div class="v sm">${R(st, 'prof', rp(v.now.prof))}</div><div class="d">${v.now.rev ? Math.round(v.now.prof / v.now.rev * 1000) / 10 : 0}% margin</div></div>`
+      : `<div class="k"><div class="l">Shops visited</div><div class="v sm">${R(st, 'shops', String(new Set(v.rows.map((t) => t.shop)).size))}</div><div class="d">of ${S.filter((s) => s.agent === 'agus').length} on your route</div></div>`}
+    <div class="k"><div class="l">Receipts</div><div class="v sm">${R(st, 'n', String(v.now.n))}</div><div class="d">avg ${rpShort(v.now.n ? v.now.rev / v.now.n : 0)}</div></div>
+    <div class="k"><div class="l">Moved</div><div class="v sm">${R(st, 'bks', v.now.bks.toLocaleString('id-ID') + ' Bks')}</div><div class="d">${rp(v.now.settled)} notes paid</div></div>
+    <div class="k mixk"><div class="l"><span>How they paid</span><span>${rpShort(mixTot === 1 ? 0 : mixTot)}</span></div>
+      <div class="mix">${MIX.map(([k, c]) => `<span class="${c}" ${W(((v.now.mix[k] || 0) / mixTot * 100).toFixed(1) + '%')} title="${k}"></span>`).join('')}</div>
+      <div class="mixl">${MIX.map(([k, c]) => `<span><i class="${c}"></i>${k} ${Math.round((v.now.mix[k] || 0) / mixTot * 100)}%</span>`).join('')}</div></div>
+  </div>
+  <div class="tabs" role="tablist">${[['ledger', 'Ledger', v.rows.length], ['products', 'Products', prodRows.length], ['salesmen', 'Salesmen', agRows.length], ['returns', 'Returns', returns.length]]
+    .filter(([k]) => isOwner() || k !== 'salesmen').map(([k, l, n]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${st.tab === k}">${l}<span class="n">${n}</span></button>`).join('')}</div>`;
+
+  if (st.tab === 'ledger') {
+    html += `<div class="work"><aside class="list"><div class="rows">`;
+    if (!v.rows.length) html += `<div class="empty">No receipts match. Clear the search or pick a longer period.</div>`;
+    let lastDay = '';
+    v.rows.forEach((t) => {
+      if (t.date !== lastDay) { lastDay = t.date; const dr = v.rows.filter((x) => x.date === t.date);
+        html += `<div class="day"><span>${dayLabel(t.date)}</span><span>${dr.filter((x) => x.type === 'SALE').length} receipts · ${rp(dr.filter((x) => x.type !== 'SETTLE').reduce((s, x) => s + total(x), 0))}</span></div>`; }
+      const tot = total(t), sel = ph ? st.openPhone === t.id : st.sel === t.id;
+      const chip = t.type === 'RETUR' ? '<span class="chip rt">RETUR</span>' : t.type === 'SETTLE' ? '<span class="chip ti">NOTE PAID</span>' : `<span class="chip ${t.pay === 'Titip' ? 'ti' : ''}">${t.pay.toUpperCase()}</span>`;
+      html += `<button class="r ${sel ? 'sel' : ''}" data-row="${t.id}"><span class="t">${t.time}</span><span class="sh"><b>${esc(t.shop)}</b><span>${ph ? A[t.agent].short + ' · ' + (t.type === 'SALE' ? t.pay : t.type === 'RETUR' ? 'Retur' : 'Note paid') : esc(t.area)}</span></span>
+        <span class="ag">${A[t.agent].short}</span>${chip}<span class="am ${tot < 0 ? 'neg' : ''}">${rp(tot)}</span></button>`;
+      if (ph && st.openPhone === t.id) html += `<div class="under">${detail(t, st, true)}</div>`;
+    });
+    if (v.rows.length) html += `<div class="more"><span>Older than ${st.per === 30 ? '30' : st.per === 7 ? '7' : '1'} day${st.per === 1 ? '' : 's'}?</span><button class="btn quiet sm" data-act="archive">Pull archive</button></div>`;
+    html += `</div></aside>`;
+    if (!ph) { const t = v.rows.find((x) => x.id === st.sel);
+      html += `<section class="hand">${t ? `<div class="in fade" data-k="${t.id}">${detail(t, st, false)}</div><div class="act">${actions(t, false)}</div>` : '<div class="empty">Pick a receipt from the list.</div>'}</section>`; }
+    html += `</div>`;
+  } else if (st.tab === 'products') {
+    html += `<div class="pane"><p class="hint">Tap a product to see its receipts in the ledger.</p><div class="tblw"><table><thead><tr><th>Product</th><th class="num">Moved</th><th class="num">Sales</th><th class="hide-ph">Share</th>${isOwner() ? '<th class="num hide-ph">Profit</th>' : ''}</tr></thead><tbody>
+      ${prodRows.map((x) => `<tr class="rowbtn" data-prod="${esc(x.p.name)}"><td><b>${esc(x.p.name)}</b></td><td class="num">${x.q.toLocaleString('id-ID')} ${x.p.slop ? 'Slop' : 'Bks'}</td><td class="num">${rp(x.rev)}</td>
+        <td class="hide-ph"><div class="bar"><span ${W((x.rev / maxP * 100).toFixed(1) + '%')}></span></div></td>${isOwner() ? `<td class="num hide-ph">${rp(x.prof)}</td>` : ''}</tr>`).join('') || '<tr><td colspan="5">No sales in this period.</td></tr>'}
+      </tbody></table></div></div>`;
+  } else if (st.tab === 'salesmen') {
+    html += `<div class="pane"><p class="hint">Tap a salesman to see only their receipts.</p><div class="tblw"><table><thead><tr><th>Salesman</th><th class="num">Receipts</th><th class="num hide-ph">Shops</th><th class="num">Sales</th><th class="hide-ph"></th><th class="num hide-ph">Titip given</th><th class="num hide-ph">Notes paid</th></tr></thead><tbody>
+      ${agRows.map((x) => `<tr class="rowbtn" data-agent="${x.id}"><td><b>${x.a.name}</b><div style="font-size:11.5px;color:var(--ink-dim)">${x.a.region}</div></td><td class="num">${x.n}</td><td class="num hide-ph">${x.shops}</td><td class="num">${rp(x.rev)}</td>
+        <td class="hide-ph" style="width:22%"><div class="bar"><span ${W((Math.max(0, x.rev) / maxA * 100).toFixed(1) + '%')}></span></div></td><td class="num hide-ph">${rp(x.titip)}</td><td class="num hide-ph">${rp(x.settled)}</td></tr>`).join('')}
+      </tbody></table></div></div>`;
+  } else {
+    html += `<div class="pane"><p class="hint">Goods shops handed back as damaged. A package returned within 7 days of its sale is flagged.</p><div class="tblw"><table><thead><tr><th>Date</th><th>Shop</th><th class="hide-ph">Salesman</th><th>Product</th><th class="num">Value</th></tr></thead><tbody>
+      ${returns.map((t) => `<tr class="rowbtn" data-goto="${t.id}"><td>${dayLabel(t.date).split(' · ')[1]}</td><td><b>${esc(t.shop)}</b></td><td class="hide-ph">${A[t.agent].short}</td><td>${t.items.map((it) => it.qty + '× ' + prod(it.p).name).join(', ')}</td><td class="num" style="color:var(--danger-ink)">${rp(total(t))}</td></tr>`).join('') || '<tr><td colspan="5">No returns in this period. Clean.</td></tr>'}
+      </tbody>${returns.length ? `<tfoot><tr><td colspan="${ph ? 3 : 4}">${returns.length} returns · 0 package returns flagged</td><td class="num">${rp(returns.reduce((s, t) => s + total(t), 0))}</td></tr></tfoot>` : ''}</table></div></div>`;
+  }
+  html += `</div>`;
+  if (st.modal) html += st.modal;
+  el.innerHTML = html;
+  const sc = el.querySelector('.rows, .pane'); if (sc) sc.scrollTop = scroll;
+  settleRolls(el); st.grown = true;
+}
+
+function detail(t, st, ph) {
+  const tot = total(t), a = A[t.agent];
+  const head = `<div class="ph"><div class="av">${ini(t.shop)}</div><div style="min-width:0"><h3>${esc(t.shop)}</h3><p>${esc(t.area)} · ${a.region}</p>
+    <span class="resp">Salesman <b>${a.name}</b></span></div><div class="tot"><div class="l">${t.type === 'SETTLE' ? 'Paid on notes' : t.type === 'RETUR' ? 'Refund' : 'Receipt total'}</div><div class="v">${R(st, 'det' + (ph ? 'p' : ''), rp(tot))}</div></div></div>`;
+  const facts = `<div class="facts">
+    <div><div class="l">When</div><div class="v">${dayLabel(t.date).split(' · ')[1]}, ${t.time}</div></div>
+    <div><div class="l">${t.type === 'RETUR' ? 'Condition' : 'Payment'}</div><div class="v">${t.pay}</div></div>
+    <div><div class="l">${t.type === 'SETTLE' ? 'Receipt' : 'Moved'}</div><div class="v">${t.type === 'SETTLE' ? '#' + t.id.slice(1) : bks(t) + ' Bks'}</div></div>
+    <div><div class="l">${isOwner() ? 'Profit' : 'Price tier'}</div><div class="v">${isOwner() ? rp(profit(t)) : t.tier}</div></div>
+    ${ph ? '' : `<div><div class="l">GPS</div><div class="v">Verified · 38 m</div></div><div><div class="l">Proof photo</div><div class="v">Attached</div></div><div><div class="l">Price tier</div><div class="v">${t.tier}</div></div><div><div class="l">Receipt no.</div><div class="v">KPM-${t.date.slice(2).replace(/-/g, '')}-${t.id.slice(1)}</div></div>`}
+  </div>`;
+  const lines = t.items.length ? `<div class="tblw"><table><thead><tr><th>Product</th><th class="num">Qty</th>${ph ? '' : '<th class="num">Price</th>'}<th class="num">Subtotal</th></tr></thead><tbody>
+    ${t.items.map((it) => { const p = prod(it.p); return `<tr><td>${esc(p.name)}</td><td class="num">${it.qty} ${p.slop ? 'Slop' : 'Bks'}</td>${ph ? '' : `<td class="num">${rp(p.price)}</td>`}<td class="num">${rp(it.qty * p.price * (t.type === 'RETUR' ? -1 : 1))}</td></tr>`; }).join('')}
+    </tbody><tfoot><tr><td colspan="${ph ? 2 : 3}">Total</td><td class="num">${rp(tot)}</td></tr></tfoot></table></div>`
+    : `<p style="margin:0;font-size:13px;color:var(--ink-muted)">Cash collected against this shop's consignment notes. It lowers what the shop owes and does not count as a new sale.</p>`;
+  return head + facts + lines + (ph ? `<div style="display:flex;gap:6px;flex-wrap:wrap">${actions(t, true)}</div>` : '');
+}
+
+function actions(t, ph) {
+  const s = ph ? ' sm' : '';
+  let h = `<button class="btn quiet${s}" data-act="receipt" data-id="${t.id}"><svg class="i"><use href="#i-doc"/></svg>Receipt</button>
+    <button class="btn quiet${s}" data-act="proof" data-id="${t.id}"><svg class="i"><use href="#i-cam"/></svg>Proof</button>
+    <button class="btn quiet${s}" data-act="share" data-id="${t.id}"><svg class="i"><use href="#i-share"/></svg>Share</button>`;
+  if (!ph) h += `<span class="sp"></span>`;
+  if (isOwner()) h += `${t.items.length ? `<button class="btn${s}" data-act="edit" data-id="${t.id}"><svg class="i"><use href="#i-edit"/></svg>Edit</button>` : ''}
+    <button class="btn danger${s}" data-act="delete" data-id="${t.id}"><svg class="i"><use href="#i-trash"/></svg>Delete</button>`;
+  else h += `<span class="lock"><svg class="i" style="vertical-align:-3px;width:14px;height:14px"><use href="#i-lock"/></svg> Edit and delete are for admins</span>`;
+  return h;
+}
+
+/* ---------- modals (built into the page, never a browser dialog) ---------- */
+function receiptModal(t) {
+  return `<div class="ov" data-close><div class="dlg" role="dialog" aria-label="Receipt"><div class="paper"><div class="rh">KPM · NOTA ${t.type === 'RETUR' ? 'RETUR' : 'PENJUALAN'}</div>
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:8px"><span>${esc(t.shop)}<br>${esc(t.area)}</span><span style="text-align:right">${t.date} ${t.time}<br>${A[t.agent].name}</span></div>
+    ${t.items.length ? `<table><tbody>${t.items.map((it) => `<tr><td>${esc(prod(it.p).name)}<br>${it.qty} × ${rp(prod(it.p).price)}</td><td class="num">${rp(it.qty * prod(it.p).price)}</td></tr>`).join('')}</tbody></table>` : '<p style="margin:0">Pembayaran titip</p>'}
+    <div class="gt"><span>${t.pay}</span><span>${rp(total(t))}</span></div></div>
+    <div class="row"><button class="btn quiet" data-act="close">Close</button><button class="btn" data-act="share" data-id="${t.id}"><svg class="i"><use href="#i-share"/></svg>Share receipt</button></div></div></div>`;
+}
+function proofModal(t) {
+  return `<div class="ov" data-close><div class="dlg" role="dialog" aria-label="Proof photo"><h4>Proof of visit · ${esc(t.shop)}</h4>
+    <div class="photo"><svg viewBox="0 0 320 180" width="100%" role="img" aria-label="Example shop front photo"><rect width="320" height="180" fill="var(--inset)"/>
+      <rect x="40" y="60" width="240" height="110" fill="var(--panel)" stroke="var(--line-2)"/><rect x="40" y="44" width="240" height="22" fill="var(--line-2)"/>
+      <rect x="70" y="95" width="70" height="75" fill="var(--ground)" stroke="var(--line-2)"/><rect x="170" y="90" width="85" height="45" fill="var(--wash)" stroke="var(--line-2)"/>
+      <text x="160" y="59" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ink)">${esc(t.shop)}</text></svg></div>
+    <p><svg class="i" style="vertical-align:-3px"><use href="#i-pin"/></svg> Taken ${t.time} · 38 m from the shop's pin · inside the visit window</p>
+    <div class="row"><button class="btn quiet" data-act="close">Close</button></div></div></div>`;
+}
+function editModal(t) {
+  return `<div class="ov" data-close><div class="dlg" role="dialog" aria-label="Edit receipt"><h4>Edit receipt · ${esc(t.shop)}</h4><p>Change the quantities. The total, the profit and the day's figures are worked out again.</p>
+    ${t.items.map((it, i) => `<label style="display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px">${esc(prod(it.p).name)} <span><input class="qty" type="number" min="0" step="${prod(it.p).slop ? 1 : 10}" id="eq-${t.id}-${i}" value="${it.qty}"> ${prod(it.p).slop ? 'Slop' : 'Bks'}</span></label>`).join('')}
+    <div class="row"><button class="btn quiet" data-act="close">Cancel</button><button class="btn" data-act="save" data-id="${t.id}">Save changes</button></div></div></div>`;
+}
+function deleteModal(t) {
+  return `<div class="ov" data-close><div class="dlg" role="alertdialog" aria-label="Delete receipt"><h4>Delete this receipt?</h4>
+    <p>${esc(t.shop)} · ${t.time} · <b>${rp(total(t))}</b>. The day's totals are worked out again and the stock goes back. This is written to the audit log.</p>
+    <div class="row"><button class="btn quiet" data-act="close">Keep it</button><button class="btn danger" data-act="confirmdel" data-id="${t.id}"><svg class="i"><use href="#i-trash"/></svg>Delete</button></div></div></div>`;
+}
+
+/* ---------- events ---------- */
+function rerenderAll() { apps.forEach((a) => render(a.el, a.st)); }
+function onInput(e, el, st) {
+  const f = e.target.dataset.f; if (!f) return;
+  if (f === 'q') { st.q = e.target.value; render(el, st); const i = el.querySelector('[data-f="q"]'); i.focus(); i.setSelectionRange(st.q.length, st.q.length); return; }
+  if (e.type !== 'change') return;
+  if (f === 'region') { st.region = e.target.value; st.agent = 'ALL'; }
+  if (f === 'agent') st.agent = e.target.value;
+  render(el, st);
+}
+function onClick(e, el, st) {
+  const b = e.target.closest('button, tr.rowbtn, .ov');
+  if (!b) return;
+  if (b.classList.contains('ov') && e.target === b) { st.modal = null; return render(el, st); }
+  const d = b.dataset, t = TX.find((x) => x.id === d.id);
+  if (d.per) { st.per = +d.per; return render(el, st); }
+  if (d.tab) { st.tab = d.tab; return render(el, st); }
+  if (d.row) { if (st.mode === 'phone') st.openPhone = st.openPhone === d.row ? null : d.row; else st.sel = d.row; return render(el, st); }
+  if (d.prod) { st.q = d.prod; st.tab = 'ledger'; st.sel = null; return render(el, st); }
+  if (d.agent) { st.agent = d.agent; st.region = A[d.agent].region; st.tab = 'ledger'; st.sel = null; return render(el, st); }
+  if (d.goto) { st.tab = 'ledger'; st.sel = d.goto; st.openPhone = d.goto; return render(el, st); }
+  switch (d.act) {
+    case 'close': st.modal = null; return render(el, st);
+    case 'receipt': st.modal = receiptModal(t); return render(el, st);
+    case 'proof': st.modal = proofModal(t); return render(el, st);
+    case 'edit': st.modal = editModal(t); return render(el, st);
+    case 'delete': st.modal = deleteModal(t); return render(el, st);
+    case 'share': {
+      const txt = `KPM ${t.date} ${t.time} · ${t.shop} · ${t.items.map((it) => it.qty + 'x ' + prod(it.p).name).join(', ') || 'Pembayaran titip'} · ${rp(total(t))} (${t.pay})`;
+      const done = () => toast('Receipt copied, ready to paste in WhatsApp');
+      try { navigator.clipboard.writeText(txt).then(done, done); } catch (_) { done(); }
+      st.modal = null; return render(el, st);
+    }
+    case 'save': {
+      t.items.forEach((it, i) => { const v = parseInt(el.querySelector(`#eq-${t.id}-${i}`).value, 10); it.qty = Math.max(0, isNaN(v) ? it.qty : v); });
+      t.items = t.items.filter((it) => it.qty > 0); if (!t.items.length) TX.splice(TX.indexOf(t), 1);
+      st.modal = null; rerenderAll(); return toast('Receipt saved, totals updated');
+    }
+    case 'confirmdel': TX.splice(TX.indexOf(t), 1); st.modal = null; st.sel = null; st.openPhone = null; rerenderAll(); return toast('Receipt deleted, totals updated');
+    case 'export': return toast(`In the app this saves the ${view(st).rows.length} rows shown as a spreadsheet`);
+    case 'archive': return toast('In the app this loads the older receipts from the archive');
+  }
+}
+
+/* ---------- page controls ---------- */
+const segs = (id, fn) => document.getElementById(id).addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return;
+  b.parentElement.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', x === b)); fn(b.dataset.v); });
+segs('role', (v) => { G.role = v; apps.forEach((a) => { a.st.agent = 'ALL'; a.st.region = 'ALL'; a.st.sel = null; a.st.openPhone = null; if (v !== 'owner' && a.st.tab === 'salesmen') a.st.tab = 'ledger'; }); rerenderAll();
+  toast(v === 'owner' ? 'Viewing as the owner: every salesman, profit, edit and delete' : 'Viewing as Agus: only his own sales, no profit, no edit'); });
+segs('theme', (v) => { if (v) document.documentElement.dataset.theme = v; else delete document.documentElement.dataset.theme; });
+segs('motion', (v) => { G.motion = v === 'on'; document.body.classList.toggle('nomotion', !G.motion); });
+
+mount(document.getElementById('pc'), 'pc');
+mount(document.getElementById('ph'), 'phone');
+apps[1].st.openPhone = apps[1].st.sel; render(apps[1].el, apps[1].st);
+</script>
