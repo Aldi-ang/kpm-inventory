@@ -2403,3 +2403,28 @@ Then: which blocks share a variable declared INSIDE another block (a cut there b
 - **Shared variables inside another block:** `cObj` (`840`) is declared inside the Level 7 IIFE (`839-932`) and used by both header (`845-862`) and table (`867-929`); `isRetur`/`isExchange`/`isIouFulfill` (`875-877`) are inside `cObj.history.map`.
 - **Money totals `useMemo`:** `stats` (`278-319`) computes `totalRev`, `totalProfit`, `count`, `items`, `payments`, and `agentRoster` from `contextualTransactions`.
 - **Firestore writes (must stay untouched):** `395-401` inside `handleEditSubmit` — atomic `commitInChunks(db, writeBatch, ...)` updating `artifacts/${appId}/users/${userId}/transactions/${editingTrans.id}` (`date`, `customerName`, `total`, `amountPaid`, `priceTier`, `items`, `timestamp`, `updatedAt`) plus `tallySaleOp(..., -1)` and `tallySaleOp(..., 1)` on `sales_stats`. (Deletes delegate to `onDeleteFolder` / `onDeleteTransaction` in `App.jsx`.)
+
+**Claude's review of 58-59 (2026-11-18 08:20):** both accepted. All four Task 58 findings were real; Claude fixed them in 5a696b31 (notes now read debtData's own walk). Lab frames showed one more thing, NOT from your build: the app loads only 7 days of sales (`src/hooks/useDatabaseSync.js:88`), so every Titip note older than 7 days is missing from Receivables - the demo shows 6 shops / Rp 4.880.000, not 8 / Rp 9.120.000, and Overdue is empty. Task 60 is about that.
+
+---
+
+## Task 60 - read-only: the 7-day window hides old consignment debt - map it and give Aldi the options
+**Status:** OPEN
+**Written:** 2026-11-18 08:20 WIB, by Claude. READ-ONLY, a THINKING job (Claude writes the decision for Aldi from your Result).
+**Touch only:** this file.
+
+`src/hooks/useDatabaseSync.js:88` listens to `transactions` with `where('timestamp', '>=', sevenDaysAgo)`. Receivables (`debtData` in `src/ConsignmentFinanceView.jsx`) builds what each shop owes from that list, so a Titip note 8+ days old vanishes, a 7-day-tempo note can never reach Overdue, and a payment inside the window may be set against the wrong (newer) note. Backlog already has part of it: A-Brain `Backlog/SWEEP - App.jsx admin handlers.md` section 5 (hand-off approval only moves 7 days of debt).
+1. List EVERY place that works out debt / Titip / consignment money from the 7-day `transactions` prop (grep `paymentType === 'Titip'`, `isTitip`, `CONSIGNMENT_PAYMENT`, `debtCredit`, `outstandingTitip` across src/). For each: file:line, what it shows or writes, and what goes wrong for a 10-day-old note (money / trust / looks).
+2. Give 3 real ways to fix it, e.g. (a) a second listener for open Titip notes + their payments/returns with no date limit, (b) a running balance per shop kept on the customer doc, (c) a fetch only when Receivables opens. For each: reads per day for 30 salesmen and ~2,000 shops (show the sum), the Firestore index it needs, whether `firestore.rules` must change (say WHICH match block - never edit it), the files it touches, and what could break (offline, the demo reset, EOD).
+3. Your pick and one sentence why. Name the cheapest test that would prove it works.
+**Result:** table 1 (place | file:line | wrong for a 10-day note | severity) + table 2 (option | reads/day | index | rules block | files | breaks) + the pick. Under 70 lines. CAN'T TELL for anything you did not read today.
+
+---
+
+## Task 61 - check the Reports picture against your Task 59 map (segment 5 is next)
+**Status:** OPEN
+**Written:** 2026-11-18 08:20 WIB, by Claude. Do it after Task 60.
+**Touch only:** `.claude/drafts/reports-pro.html`, this file.
+
+Your Task 40 drew `.claude/drafts/reports-pro.html`; your Task 59 mapped today's `src/components/HistoryReportView.jsx`. Open both. For every block and every press in the Task 59 table, say where it is in the picture, or MISSING. Fix only MISSING or wrong items in the picture file (same look, same seed numbers, no script, palette law: no blue, no green, gold never as text on light). Keep in mind what Receivables taught: Aldi wants the responsible salesman visible, one summary line with the money fact in Rupiah, master-detail (list left, the one thing in hand right; phone: it opens under its row), ordinary sizes (13-14 px text, 44 px rows).
+**Result:** table (Task 59 block or press | where in the picture | was it MISSING, now fixed?) + the count of fixes. Commit both files together as "Antigravity: Task 61 ...".
