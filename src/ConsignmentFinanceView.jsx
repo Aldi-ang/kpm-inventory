@@ -233,7 +233,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
 
                 results.totalValue += total; 
                 results.activeAccounts++;
-                results[status].push({ name: c.name, total, ageDays, daysUntilDue, tempoDays, oldestDate: oldestDebt.date, phone: c.phone, activeInvoices: active.length });
+                results[status].push({ name: c.name, total, ageDays, daysUntilDue, tempoDays, oldestDate: oldestDebt.date, phone: c.phone, activeInvoices: active.length, debts: c.debts });
             }
         });
         
@@ -389,15 +389,14 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
             const payments = myTransactions
                 .filter(t => t.type === 'CONSIGNMENT_PAYMENT' && storeKey(t.customerName) === k)
                 .sort((a, b) => txTime(b) - txTime(a));
-            let payLeft = payments.reduce((sum, tx) => sum + debtCredit(tx), 0);
-            const notes = drops.map((t) => {
-                const tot = Number(t.total) || 0;
-                const take = Math.min(payLeft, tot);
-                payLeft -= take;
-                return { id: t.id, date: t.date || '', items: t.items || [], total: tot, left: Math.max(0, tot - take), tempo: t.tempoDays || 7 };
-            });
+            /* what each note still owes comes from debtData's own walk (s.debts) - ONE money rule, never a second copy:
+               a second FIFO here skipped RETURN credits and disagreed with the total (Antigravity Task 58, 2026-11-18) */
+            const notes = (s.debts || []).map((d) => ({
+                id: d.id, date: d.date || '', items: drops.find(t => t.id === d.id)?.items || [],
+                total: d.original, left: d.remaining, tempo: d.tempoDays,
+            }));
             const oldest = notes.find(n => n.left > 0.01) || notes[0] || null;
-            const agent = cd?.ownerName || handedOwnerByStore[k]?.name || drops[drops.length - 1]?.agentName || 'Admin';
+            const agent = cd?.ownerName || handedOwnerByStore[k]?.name || drops[drops.length - 1]?.agentName || 'Unassigned';
             const bks = notes.reduce((sum, n) => sum + n.items.reduce((b, it) => b + (Number(it.qty) || 0), 0), 0);
             return {
                 ...s,
@@ -426,7 +425,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
     }, [debtData, customers, customerData, myTransactions, handedOwnerByStore, debtFilter, debtSearch]);
 
     const activeDebtShop = useMemo(() => {
-        if (!arView.shops.length) return null;
+        if (!arView.shops.length || selectedDebtName === '') return null;   /* '' = the phone closed its open row */
         return arView.shops.find(s => storeKey(s.name) === storeKey(selectedDebtName)) || arView.shops[0];
     }, [arView.shops, selectedDebtName]);
 
@@ -438,7 +437,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
             setAuditMode(mode === 'audit');
             setTransferMode(mode === 'transfer');
             setActiveTab('stock');
-        }
+        } else notify(`${shopName} has no consignment stock on record, so Store Audit and Hand-off cannot open it.`);
     };
 
     const myProfile = useMemo(() => (motorists || []).find(m => m.id === agentProfileId) || null, [motorists, agentProfileId]);
@@ -1182,7 +1181,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                                         <div key={s.name}>
                                             <button
                                                 type="button"
-                                                onClick={() => setSelectedDebtName(sel && typeof window !== 'undefined' && window.innerWidth < 1024 ? null : s.name)}
+                                                onClick={() => setSelectedDebtName(sel && typeof window !== 'undefined' && window.innerWidth < 1024 ? '' : s.name)}
                                                 className={`kpm-ar-r ${sel ? 'sel' : ''}`}
                                             >
                                                 <div className="flex items-center gap-2.5 min-w-0">

@@ -12547,6 +12547,11 @@ section('PROMO ITEMS, stage 1 of 4 - promo items exist, nothing cigarette-only c
      would have thrown on the first shop that owes. undef.check caught it; this pins the two imports. */
   ok('REGRESSION: Receivables v5 list imports isTitip and txTime (a missing one crashes the screen the moment a shop owes)',
      /import \{[^}]*\bisTitip\b[^}]*\} from '\.\/utils\/revenueRule'/.test(cfBtnCheck) && /import \{[^}]*\btxTime\b[^}]*\} from '\.\/utils\/mapAreas'/.test(cfBtnCheck));
+  /* 2026-11-18, Antigravity Task 58's review of the v5 list: four bugs no gate saw */
+  ok('REGRESSION: Receivables v5 - each note\'s "still owed" comes from debtData\'s own walk (no second FIFO that skipped RETURN), the phone can close row 0, a press with no stock record reports, no shop is shown as "Admin"',
+     /activeInvoices: active\.length, debts: c\.debts \}/.test(cfBtnCheck) && /\(s\.debts \|\| \[\]\)\.map/.test(cfBtnCheck) && !/payLeft/.test(cfBtnCheck) &&
+     /selectedDebtName === ''\) return null/.test(cfBtnCheck) && /innerWidth < 1024 \? '' : s\.name/.test(cfBtnCheck) &&
+     /\} else notify\(`\$\{shopName\} has no consignment stock on record/.test(cfBtnCheck) && /agentName \|\| 'Unassigned'/.test(cfBtnCheck));
   /* his 2026-11-17 pick of picture v4: "i like this one better i think u can build it make sure the sizing is not too big on pc and
      dont forget that the rules about this stock opname will also applied here". The list + the product in hand is a NEW LAYOUT
      over the SAME rules: these pin the three places the layout could have leaked what the blind count withholds. */
