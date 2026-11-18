@@ -2618,19 +2618,13 @@ Draft the exact `old line`, `new line`, and `why` for both `Authorize Transfer` 
    - `canApproveTransferDoc(bossUid, tr)` so a named approver can only approve/stamp their own `approvalRegions` (and never `'UNASSIGNED'`).
    - `changed.hasAny(['ownerAgentId', 'lastHandoffId'])` alongside `hasOnly(['mappedBy', 'ownerAgentId', 'ownerAgentName', 'handoffs', 'lastHandoffId'])`.
 3. Verify in the Firebase Firestore emulator including all refusals: named T6 stamping a shop in another region = denied; `view_only` T4 stamping with no approved hand-off = denied; stamp pointing at a `PENDING` hand-off = denied; mismatched `toAgentId`/store = denied. Also verify all 5 repo gates pass.
-**Result (`firestore.rules` on disk untouched — verified `RULES_67: 15 passed, 0 failed` in Firestore emulator):**
-- Added `lastHandoffId: request.id` to `src/App.jsx:2239` inside `handleAdminApproveTransfer`'s `custRef` batch update, plus regression check in `src/config/logicFixes.selfcheck.mjs:4393-4395`.
+**Result (`firestore.rules` on disk untouched — updated per Claude's review, verified `RULES_67: 21 passed, 0 failed` in Firestore emulator):**
+- Added `lastHandoffId: request.id` to `src/App.jsx:2239` inside `handleAdminApproveTransfer`'s `custRef` batch update, plus regression check in `src/config/logicFixes.selfcheck.mjs:4393-4395` (`412ac4cc`, held locally until Console rules publish).
 - Repo checks green after last edit: `undef.check.mjs` -> `clean`, `logicFixes.selfcheck.mjs` -> `3028 passed, 0 failed`, all 14 `src/config/*.selfcheck.mjs` -> exit `0`, `npm run build` -> `built in 11.58s` (exit `0`), `integration.audit.mjs` -> `725 passed, 0 failed`.
-- Verified Console `firestore.rules` draft (4 parts, in-memory emulator `demo-rules-67`, **`RULES_67: 15 passed, 0 failed`**):
-  1. Named T6 batch-approves own-region `tr1` & stamps `c1` (`lastHandoffId: 'tr1'`) -> ALLOWED
-  2. `view_only` T4 batch-approves legacy `customerId: null` `tr1b` (normalized `storeName` match) & stamps `c1` -> ALLOWED
-  3. Named T6 (`BANDUNG`) stamping shop `c2` in `MUNTILAN` (even with `tr_other_approved`) -> DENIED
-  4. Named T6 (`BANDUNG`) batch-approving `MUNTILAN` handoff -> DENIED
-  5. `view_only` T4 stamping `c1` with no `lastHandoffId` or nonexistent `lastHandoffId` -> DENIED (both)
-  6. `view_only` T4 stamping `c1` pointing at `PENDING_ADMIN` handoff -> DENIED
-  7. Mismatched `ownerAgentId != tr.toAgentId` or mismatched store (`tr1` used on `c2`) -> DENIED (both)
-  8. Un-named T5 approving or self-granting `approvalRegions`, and `priceTier: 'Grosir'` (alone or piggybacked onto a valid stamp) -> DENIED (all 4)
-  9. Normal `T5` visit update & `T4` phone edit on folder-visible `c1` still ALLOWED cleanly under the 1,000-expression cap.
+- Updated Console `firestore.rules` draft (`canApproveTransferDoc` now delegates to `isFleetTier(bossUid) || isNamedTransferApprover(bossUid, tr)` instead of a hand-written role list) and verified in Firestore emulator (`RULES_67: 21 passed, 0 failed`):
+  1. Still allowed: Vault owner, T1 `ADMIN`, T2 `COMPANY_OWNER`, normal T3 `AREA_ADMIN`, normal T4 `FLEET_CAPTAIN` (both `folder OFF` and `folder adminEdit:false + view_only`), named T6 (`BANDUNG`), `view_only` T4 on legacy `customerId: null` (normalized `storeName`), T5 updating own `motorists` `photo` (without `approvalRegions`), T5 visit write on folder-visible `c1` -> ALL ALLOWED.
+  2. Refusals: named T6 (`BANDUNG`) stamping `c2` in `MUNTILAN` (even with `tr_other_approved`) -> DENIED; named T6 batch-approving `MUNTILAN` handoff -> DENIED; `view_only` T4 with no/missing `lastHandoffId` or pointing at `PENDING_ADMIN` -> DENIED; wrong `ownerAgentId != tr.toAgentId` or wrong store -> DENIED; un-named T5 approve/self-grant `approvalRegions` -> DENIED; `priceTier: 'Grosir'` alone or piggybacked -> DENIED.
+  3. Tested `412ac4cc` (`lastHandoffId` write) against TODAY's unmodified `firestore.rules` on disk: Vault owner, T1 `ADMIN`, T2 `COMPANY_OWNER`, T3 `AREA_ADMIN`, and normal T4 (`folder OFF`, no `view_only`) -> ALLOWED; `view_only` / `folder adminEdit:false` T4 and named T6 (`BANDUNG`) -> REFUSED until the 4 rules parts publish.
 
 **Task 62 AMENDED 2026-11-18 09:40 by Claude, after reading Task 60's Result (pick = option a, second listener, no rules change):**
 - NO 90-day cap. His words say "not limited"; a note 100 days old that still owes must show. Listen to every Titip SALE + every CONSIGNMENT_PAYMENT + RETURN with no date limit. The read cost grows with history - write the number in the Result; archiving paid-off notes is a LATER task, not this one.
