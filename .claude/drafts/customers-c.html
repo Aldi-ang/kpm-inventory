@@ -162,6 +162,53 @@ table.b tr:last-child td{border-bottom:0}
 .acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line);padding-top:9px;margin-top:auto}
 .acts .sp{flex:1}
 
+/* Shop pane: its own three sections (his 2026-11-18: competitor intelligence, Street View and GPS map each get a special place, never mixed into the shop facts) */
+.stabs{display:flex;gap:4px;border-bottom:1px solid var(--line);flex:none;overflow-x:auto}
+.stab{border:0;background:transparent;padding:7px 10px 8px;font-size:12px;font-weight:600;color:var(--ink-dim);border-bottom:2px solid transparent;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.stab:hover{color:var(--ink)}
+.stab.on{color:var(--ink);border-bottom-color:var(--gold)}
+.stab .cnt{font-size:10px;padding:0 5px;border-radius:999px;border:1px solid var(--accent-edge);color:var(--accent-ink)}
+.tabbody{display:flex;flex-direction:column;gap:10px;flex:1;min-height:0}
+.glance{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.gl{border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:8px 10px;text-align:left;display:flex;flex-direction:column;gap:1px;min-width:0}
+.gl:hover{border-color:var(--accent-edge);background:var(--sel)}
+.gl b{font-size:12.5px}.gl span.dim{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fl{display:block;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);font-weight:600}
+.locgrid{display:grid;grid-template-columns:1fr;gap:8px}
+.locgrid.two{grid-template-columns:1fr 1fr}
+.map.big,.sv.big{height:220px;position:relative}
+.map .road.r2{top:20%;left:44%;right:auto;width:7px;height:140%;transform:rotate(12deg)}
+.map .scale{position:absolute;right:8px;bottom:6px;font-size:9.5px;color:var(--ink-dim);border-bottom:1px solid var(--ink-dim);padding:0 10px 1px}
+.svtag{position:absolute;left:8px;bottom:6px;font-size:9.5px;padding:1px 6px;border-radius:5px;background:var(--raised);border:1px solid var(--line-2);color:var(--ink-muted)}
+.lrows{border:1px solid var(--line);border-radius:9px;background:var(--panel);overflow:hidden}
+.lrows > div{display:grid;grid-template-columns:96px minmax(0,1fr) auto;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--hair);font-size:12px}
+.lrows > div:last-child{border-bottom:0}
+.csum{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel)}
+.csum > div{padding:7px 10px;border-right:1px solid var(--line);min-width:0}.csum > div:last-child{border-right:0}
+.csum b{font-size:15px;display:block}.csum span.dim{font-size:10.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmp{border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:4px 10px}
+.crow{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 78px auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--hair)}
+.cn b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cn span{font-size:10.5px}
+.cb{display:flex;flex-direction:column;gap:3px}
+.cbar{height:5px;border-radius:3px;background:var(--inset);overflow:hidden}
+.cbar span{display:block;height:100%}
+.them{background:var(--danger-ink)}.us{background:var(--gold)}
+.cp{text-align:right}.cp b{display:block;font-size:12px}.cp span{font-size:10.5px}
+.legend{display:flex;gap:12px;justify-content:flex-end;padding:6px 0 3px;font-size:10.5px;color:var(--ink-dim)}
+.legend i{display:inline-block;width:10px;height:5px;border-radius:2px;margin-right:5px;vertical-align:1px}
+.cform{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.cform .w2{grid-column:span 2}
+.cform .inp{height:30px}
+.tl{border:1px solid var(--line);border-radius:9px;background:var(--panel)}
+.tli{display:grid;grid-template-columns:48px minmax(0,1fr) auto 24px;gap:8px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--hair)}
+.tli:last-child{border-bottom:0}
+.td{font-size:11px;font-weight:700;color:var(--ink-muted)}
+.tb b{display:block;font-size:12px}.tb span{font-size:10.5px;display:block}
+.phone .glance,.phone .locgrid.two,.phone .csum{grid-template-columns:1fr 1fr}
+.phone .map.big,.phone .sv.big{height:150px}
+.phone .crow{grid-template-columns:minmax(0,1fr) 72px auto}.phone .cb{display:none}
+.phone .cform{grid-template-columns:1fr 1fr}
+
 /* In-page Modals (Admin Tools, Add/Edit Form, Confirm/Prompt Boxes) */
 .ov{position:absolute;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;z-index:25;padding:16px;animation:fi .15s}
 @keyframes fi{from{opacity:0}}
@@ -273,12 +320,12 @@ const FOLDERS = [
 
 const SHOPS = [
   { id: 's1', name: 'AMANAH BARU', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Budi Santoso', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-08', state: '10d late', late: true, wa: '0812-3456-7890', gps: '-6.9654, 107.5759', addr: 'Jl. Kopo Bihbul No. 42, next to the minimarket · Folder 1', embed: '', hasPhoto: false, logs: [
-    { id: 'l1', p: 'Kretek 12', n: 'Competitor · eye-level rack', v: 'High sales', rp: 11000 },
-    { id: 'l2', p: 'Mild 16', n: 'Competitor · promo poster', v: 'Medium', rp: 18500 },
-    { id: 'l3', p: 'Filter 12', n: 'Competitor · dusty stock', v: 'Slow', rp: 14000 },
+    { id: 'l1', d: '2026-11-15', p: 'Rival Kretek 12', n: 'owner says it sells first', v: 'Fast', rp: 7500, shelf: 'Eye level', promo: 'Poster', ours: 'cof' },
+    { id: 'l2', d: '2026-11-08', p: 'Rival Mild 16', n: 'new stock this week', v: 'Medium', rp: 9000, shelf: 'Counter / till', promo: 'Discount', ours: 'choc' },
+    { id: 'l3', d: '2026-11-01', p: 'Rival Filter 12', n: 'dusty packs', v: 'Slow', rp: 8800, shelf: 'Bottom shelf', promo: 'None', ours: 'mm' },
   ] },
   { id: 's2', name: 'ANEKA BARU PANJI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Budi Santoso', noo: 'Dika Saputra', tier: 'Unranked', price: 'Retail', grosirAsk: true, freq: 7, last: '2026-11-15', state: '4d left', late: false, wa: '0813-2209-1122', gps: '-6.9695, 107.5752', addr: 'Jl. Taman Kopo Indah II No. 14', embed: '', hasPhoto: false, logs: [
-    { id: 'l4', p: 'Kretek 16', n: 'Competitor · counter display', v: 'High sales', rp: 16500 },
+    { id: 'l4', d: '2026-11-14', p: 'Rival Kretek 16', n: 'counter display', v: 'Fast', rp: 8000, shelf: 'Counter / till', promo: 'Free gift', ours: 'cof' },
   ] },
   { id: 's3', name: 'WARUNG BU DARMI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-12', state: '1d left', late: false, wa: '0812-9001-2233', gps: '-6.9618, 107.5711', addr: 'Gg. Masjid Al-Huda No. 3', embed: '', hasPhoto: false, logs: [] },
   { id: 's4', name: 'TOKO JAYA ABADI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Silver', price: 'Grosir', grosirAsk: false, freq: 7, last: '2026-11-13', state: '2d left', late: false, wa: '0813-8811-4455', gps: '-6.9640, 107.5802', addr: 'Jl. Raya Kopo No. 118', embed: '', hasPhoto: false, logs: [] },
@@ -348,7 +395,7 @@ function toast(msg) {
 const apps = [];
 const freshState = (mode) => ({
   mode, q: '', node: 'kec:MARGAHAYU', sel: 's1', phoneStep: 'tree', locMode: 'both',
-  bProd: '', bNote: '', bPrice: '', ownerPick: {}, prev: {}, grown: false,
+  bProd: '', bNote: '', bPrice: '', bOurs: 'cof', bShelf: 'Eye level', bPromo: 'None', bSpeed: 'Medium', shopTab: 'shop', ownerPick: {}, prev: {}, grown: false,
   modal: null, form: null, promptVal: '', folderLevel: 'Kecamatan',
 });
 
@@ -583,26 +630,32 @@ function renderMidPane(st, nt, areaList, kpi, ro, boss) {
   </section>`;
 }
 
+const OURS = [
+  { id: 'cof', name: 'Cello Coffee & Caramel', rp: 8500 }, { id: 'mm', name: 'Cello Mmrapi', rp: 8500 },
+  { id: 'choc', name: 'Cello Chocolate', rp: 10000 }, { id: 'green', name: 'Cello Green', rp: 7000 }, { id: 'teh', name: 'Cello Teh Manis', rp: 8000 },
+];
+const SHELF = ['Eye level', 'Top shelf', 'Bottom shelf', 'Counter / till'];
+const PROMO = ['None', 'Poster', 'Discount', 'Free gift'];
+const SPEED = ['Fast', 'Medium', 'Slow'];
+const fmtD = (d) => { if (!d) return '—'; const [y, m, dd] = d.split('-'); return +dd + ' ' + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+m - 1]; };
+
 function renderRightPane(s, st, ro, boss) {
   if (!s) return `<section class="right"><div class="dim" style="padding:36px;text-align:center">Pick a shop from the middle pane.</div></section>`;
   const stateCls = s.status === 'PENDING' || s.late ? 'bad' : s.grosirAsk ? 'g' : '';
   const stateLabel = s.status === 'PENDING' ? 'PENDING' : s.state;
-  const lastTxt = s.last ? `${s.last.slice(8).replace(/^0/, '')} Nov · ${s.state}` : 'Never visited';
-  const showMap = st.locMode !== 'street';
-  const showSv = st.locMode !== 'map';
+  const lastTxt = s.last ? `${fmtD(s.last)} · ${s.state}` : 'Never visited';
+  const tab = st.shopTab || 'shop';
+  const head = `<div class="dh">
+      <div class="av">${iniOf(s.name)}</div>
+      <div style="flex:1;min-width:0"><h3>${esc(s.name)}</h3><p>${esc(s.kec)} · ${esc(s.kab)} · ${esc(s.prov)} · ${esc(s.status)}</p></div>
+      <span class="st ${stateCls}">${esc(stateLabel)}</span>
+    </div>`;
+  const TABS = [['shop', 'Shop info', 'edit'], ['loc', 'Location', 'pin'], ['comp', 'Competitor intelligence', 'srch']];
+  const tabs = `<div class="stabs" role="tablist">${TABS.map(([k, l, ic]) => `<button type="button" class="stab ${tab === k ? 'on' : ''}" role="tab" aria-selected="${tab === k}" data-stab="${k}"><svg class="i"><use href="#${ic}"/></svg>${l}${k === 'comp' ? ` <span class="cnt">${s.logs.length}</span>` : ''}</button>`).join('')}</div>`;
+  let body = '';
 
-  return `<section class="right" aria-label="Full shop details">
-    <div class="det">
-      <div class="dh">
-        <div class="av">${iniOf(s.name)}</div>
-        <div style="flex:1;min-width:0">
-          <h3>${esc(s.name)}</h3>
-          <p>${esc(s.kec)} · ${esc(s.kab)} · ${esc(s.prov)} · ${esc(s.status)}</p>
-        </div>
-        <span class="st ${stateCls}">${esc(stateLabel)}</span>
-      </div>
-
-      <div class="facts">
+  if (tab === 'shop') {
+    body = `<div class="facts">
         <div><span class="fl">Salesman (PIC)</span><b class="fv">${esc(s.pic)}</b></div>
         <div><span class="fl">Opened by (NOO)</span><b class="fv">${esc(s.noo)}</b></div>
         <div><span class="fl">Price tier</span><b class="fv">${esc(s.price)}</b></div>
@@ -610,69 +663,93 @@ function renderRightPane(s, st, ro, boss) {
         <div><span class="fl">Visit rhythm</span><b class="fv">Every ${s.freq} days</b></div>
         <div><span class="fl">Last visit</span><b class="fv" style="${s.late ? 'color:var(--danger-ink)' : ''}">${esc(lastTxt)}</b></div>
         <div><span class="fl">WhatsApp</span><b class="fv">${esc(s.wa)}</b></div>
-        <div>
-          <span class="fl">Grosir ask</span>
-          ${s.grosirAsk && !ro
-            ? `<span style="display:flex;gap:4px;margin-top:1px"><button type="button" class="btn xs" style="height:20px;padding:0 6px;font-size:10px" data-act="grosir-yes" data-id="${s.id}">Confirm</button><button type="button" class="btn xs q" style="height:20px;padding:0 6px;font-size:10px" data-act="grosir-no" data-id="${s.id}">Keep</button></span>`
-            : `<b class="fv">${s.grosirAsk ? 'Waiting' : 'None'}</b>`}
-        </div>
+        <div><span class="fl">Grosir ask</span>${s.grosirAsk && !ro
+          ? `<span style="display:flex;gap:4px;margin-top:1px"><button type="button" class="btn xs" style="height:20px;padding:0 6px;font-size:10px" data-act="grosir-yes" data-id="${s.id}">Confirm</button><button type="button" class="btn xs q" style="height:20px;padding:0 6px;font-size:10px" data-act="grosir-no" data-id="${s.id}">Keep</button></span>`
+          : `<b class="fv">${s.grosirAsk ? 'Waiting' : 'None'}</b>`}</div>
       </div>
-
-      <div class="cards">
-        <div class="card">
-          <div class="ch">
-            <span>Location</span>
-            <span class="seg2" role="group" aria-label="Location view">
-              <button type="button" class="${st.locMode === 'both' ? 'on' : ''}" data-act="loc-mode" data-m="both">Both</button>
-              <button type="button" class="${st.locMode === 'map' ? 'on' : ''}" data-act="loc-mode" data-m="map">GPS map</button>
-              <button type="button" class="${st.locMode === 'street' ? 'on' : ''}" data-act="loc-mode" data-m="street">Street View</button>
-            </span>
-          </div>
-          <div style="display:grid;grid-template-columns:${showMap && showSv ? '1fr 1fr' : '1fr'};gap:6px">
-            ${showMap ? `<div class="map"><div class="road"></div><span class="pin"><svg class="i" style="width:11px;height:11px"><use href="#pin"/></svg>${esc(s.gps)}</span></div>` : ''}
-            ${showSv ? `<div class="sv"><svg viewBox="0 0 160 96" width="100%" height="100%" preserveAspectRatio="none" role="img" aria-label="Street View of the shop"><rect width="160" height="96" fill="var(--inset)"/><rect x="0" y="70" width="160" height="26" fill="var(--line)"/><rect x="18" y="26" width="124" height="46" fill="var(--panel)" stroke="var(--line-2)"/><rect x="18" y="16" width="124" height="14" fill="var(--line-2)"/><text x="80" y="26" text-anchor="middle" font-size="7.5" font-weight="700" fill="var(--ink)">${esc(s.name)}</text><rect x="30" y="40" width="34" height="32" fill="var(--ground)" stroke="var(--line-2)"/><rect x="78" y="38" width="50" height="20" fill="var(--wash)" stroke="var(--accent-edge)"/></svg></div>` : ''}
-          </div>
-          <div class="addr">${esc(s.addr)}</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button type="button" class="btn q" data-act="open-map" data-id="${s.id}"><svg class="i"><use href="#globe"/></svg>Open in Map</button>
-            <button type="button" class="btn q" data-act="wa-chat" data-id="${s.id}"><svg class="i"><use href="#wa"/></svg>WhatsApp</button>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="ch"><span>Competitor intelligence</span><span>${s.logs.length} logs</span></div>
-          ${!ro ? `<div class="bf">
-            <input class="inp" data-f="bProd" id="bp-${st.mode}" value="${esc(st.bProd)}" placeholder="Brand & product">
-            <input class="inp" data-f="bNote" id="bn-${st.mode}" value="${esc(st.bNote)}" placeholder="Shelf / promo note">
-            <input class="inp" data-f="bPrice" id="br-${st.mode}" value="${esc(st.bPrice)}" type="number" placeholder="Price Rp">
-            <button type="button" class="btn" data-act="add-bench" data-id="${s.id}">Add</button>
-          </div>` : ''}
-          <table class="b">
-            <thead><tr><th>Product</th><th>Selling</th><th class="r">Price</th><th style="width:28px"></th></tr></thead>
-            <tbody>
-              ${s.logs.length ? s.logs.map((l) => `<tr>
-                <td><b>${esc(l.p)}</b><div class="dim" style="font-size:10.5px">${esc(l.n)}</div></td>
-                <td><span class="st ${l.v === 'Slow' ? 'bad' : ''}">${esc(l.v)}</span></td>
-                <td class="r"><b>${rp(l.rp)}</b></td>
-                <td class="r">${!ro ? `<button type="button" class="xbtn" data-act="del-bench" data-id="${s.id}" data-lid="${l.id}" aria-label="Delete competitor price">×</button>` : ''}</td>
-              </tr>`).join('') : `<tr><td colspan="4" class="dim" style="text-align:center;padding:12px">No competitor prices logged yet.</td></tr>`}
-            </tbody>
-          </table>
-        </div>
+      <div class="glance">
+        <button type="button" class="gl" data-stab="loc"><span class="fl">Location</span><b>${esc(s.kec)}</b><span class="dim">${esc(s.gps)} · open map &amp; Street View ›</span></button>
+        <button type="button" class="gl" data-stab="comp"><span class="fl">Competitors</span><b>${s.logs.length} price${s.logs.length === 1 ? '' : 's'} logged</b><span class="dim">${s.logs.length ? 'cheapest ' + rp(Math.min(...s.logs.map((l) => l.rp))) + ' · last ' + fmtD(s.logs[0].d) : 'none yet'} ›</span></button>
       </div>
-
+      <div class="addr">${esc(s.addr)}</div>
       <div class="acts">
         ${boss ? `<select class="inp" style="width:142px;height:28px" data-f="move-kec" data-id="${s.id}" aria-label="Move folder">
           ${FOLDERS.map((f) => `<option value="${esc(f.kec)}" ${s.kec === f.kec ? 'selected' : ''}>${esc(f.kec)}</option>`).join('')}
           ${s.kec === 'UNKNOWN KECAMATAN' ? `<option value="UNKNOWN KECAMATAN" selected>UNKNOWN KECAMATAN</option>` : ''}
-          <option value="CREATE_NEW">+ New Folder...</option>
-        </select>` : ''}
+          <option value="CREATE_NEW">+ New Folder...</option></select>` : ''}
         ${boss ? `<button type="button" class="btn" data-act="verify-noo" data-id="${s.id}"><svg class="i"><use href="#chk"/></svg>Verify NOO</button>` : ''}
         ${!ro ? `<button type="button" class="btn q" data-act="edit-shop" data-id="${s.id}"><svg class="i"><use href="#edit"/></svg>Edit shop</button>` : ''}
         <span class="sp"></span>
         ${boss ? `<button type="button" class="btn d" data-act="del-shop" data-id="${s.id}"><svg class="i"><use href="#trash"/></svg>Delete</button>` : ''}
+      </div>`;
+  } else if (tab === 'loc') {
+    const showMap = st.locMode !== 'street', showSv = st.locMode !== 'map';
+    body = `<div class="ch"><span>Where the shop is</span>
+        <span class="seg2" role="group" aria-label="Location view">
+          <button type="button" class="${st.locMode === 'both' ? 'on' : ''}" data-act="loc-mode" data-m="both">Both</button>
+          <button type="button" class="${st.locMode === 'map' ? 'on' : ''}" data-act="loc-mode" data-m="map">GPS map</button>
+          <button type="button" class="${st.locMode === 'street' ? 'on' : ''}" data-act="loc-mode" data-m="street">Street View</button>
+        </span></div>
+      <div class="locgrid ${showMap && showSv ? 'two' : ''}">
+        ${showMap ? `<div class="map big"><div class="road"></div><div class="road r2"></div><span class="pin"><svg class="i" style="width:12px;height:12px"><use href="#pin"/></svg>${esc(s.name)}</span><span class="scale">50 m</span></div>` : ''}
+        ${showSv ? `<div class="sv big"><svg viewBox="0 0 320 200" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Street View of ${esc(s.name)}"><rect width="320" height="200" fill="var(--inset)"/><rect x="0" y="150" width="320" height="50" fill="var(--line)"/><rect x="0" y="146" width="320" height="4" fill="var(--line-2)"/><rect x="36" y="54" width="248" height="96" fill="var(--panel)" stroke="var(--line-2)"/><rect x="36" y="36" width="248" height="24" fill="var(--line-2)"/><text x="160" y="53" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">${esc(s.name)}</text><rect x="58" y="80" width="68" height="70" fill="var(--ground)" stroke="var(--line-2)"/><rect x="150" y="76" width="112" height="44" fill="var(--wash)" stroke="var(--accent-edge)"/><rect x="292" y="70" width="8" height="80" fill="var(--line-2)"/></svg><span class="svtag">Street View · facing north</span></div>` : ''}
       </div>
-    </div>
+      <div class="lrows">
+        <div><span class="fl">GPS pin</span><b style="font-family:ui-monospace,monospace">${esc(s.gps)}</b><button type="button" class="btn xs q" data-act="copy-gps" data-id="${s.id}">Copy</button></div>
+        <div><span class="fl">Address</span><b>${esc(s.addr)}</b></div>
+        <div><span class="fl">Area</span><b>${esc(s.kec)} · ${esc(s.kab)} · ${esc(s.prov)}</b></div>
+        <div><span class="fl">Street View</span><b>${s.embed ? 'Own link saved' : 'Taken from the GPS pin'}</b></div>
+      </div>
+      <div class="acts">
+        <button type="button" class="btn" data-act="open-map" data-id="${s.id}"><svg class="i"><use href="#globe"/></svg>Open in Map</button>
+        <button type="button" class="btn q" data-act="directions" data-id="${s.id}"><svg class="i"><use href="#pin"/></svg>Directions</button>
+        <button type="button" class="btn q" data-act="wa-chat" data-id="${s.id}"><svg class="i"><use href="#wa"/></svg>WhatsApp</button>
+        <span class="sp"></span>
+        ${!ro ? `<button type="button" class="btn q" data-act="edit-shop" data-id="${s.id}"><svg class="i"><use href="#edit"/></svg>Move pin</button>` : ''}
+      </div>`;
+  } else {
+    const logs = s.logs;
+    const brands = new Set(logs.map((l) => l.p.split(' ')[0])).size;
+    const cheapest = logs.length ? logs.reduce((a, b) => (b.rp < a.rp ? b : a)) : null;
+    const under = logs.filter((l) => { const o = OURS.find((x) => x.id === l.ours); return o && l.rp < o.rp; }).length;
+    body = `<div class="csum">
+        <div><span class="fl">Prices logged</span><b>${R(st, 'c-n' + s.id, String(logs.length))}</b></div>
+        <div><span class="fl">Brands seen</span><b>${R(st, 'c-b' + s.id, String(brands))}</b></div>
+        <div><span class="fl">Cheapest rival</span><b>${cheapest ? rp(cheapest.rp) : '—'}</b><span class="dim">${cheapest ? esc(cheapest.p) : ''}</span></div>
+        <div><span class="fl">Cheaper than us</span><b style="${under ? 'color:var(--danger-ink)' : ''}">${R(st, 'c-u' + s.id, String(under))}</b><span class="dim">of ${logs.length}</span></div>
+      </div>
+      <div class="ch"><span>Rival price vs our nearest Cello</span><span>last check ${logs.length ? fmtD(logs[0].d) : '—'}</span></div>
+      <div class="cmp">${logs.length ? logs.map((l) => { const o = OURS.find((x) => x.id === l.ours) || OURS[0]; const gap = l.rp - o.rp;
+        const w = Math.min(100, Math.round(Math.max(l.rp, o.rp) ? (l.rp / Math.max(l.rp, o.rp)) * 100 : 0)), w2 = Math.min(100, Math.round((o.rp / Math.max(l.rp, o.rp)) * 100));
+        return `<div class="crow">
+          <div class="cn"><b>${esc(l.p)}</b><span class="dim">vs ${esc(o.name)}</span></div>
+          <div class="cb"><div class="cbar"><span class="them" style="width:${w}%"></span></div><div class="cbar"><span class="us" style="width:${w2}%"></span></div></div>
+          <div class="cp"><b>${rp(l.rp)}</b><span class="dim">${rp(o.rp)}</span></div>
+          <span class="st ${gap < 0 ? 'bad' : 'g'}">${gap < 0 ? rp(-gap) + ' cheaper' : gap > 0 ? rp(gap) + ' dearer' : 'same'}</span>
+        </div>`; }).join('') : `<div class="dim" style="padding:12px;text-align:center">No rival prices logged at this shop yet.</div>`}
+        <div class="legend"><span><i class="them"></i>Rival</span><span><i class="us"></i>Cello</span></div></div>
+      ${!ro ? `<div class="ch"><span>Log a rival price</span><span>takes 10 seconds at the shelf</span></div>
+      <div class="cform">
+        <input class="inp w2" data-f="bProd" id="bp-${st.mode}" value="${esc(st.bProd)}" placeholder="Rival brand &amp; product">
+        <input class="inp" data-f="bPrice" id="br-${st.mode}" value="${esc(st.bPrice)}" type="number" placeholder="Price Rp">
+        <select class="inp" data-f="bOurs" aria-label="Compare with">${OURS.map((o) => `<option value="${o.id}" ${st.bOurs === o.id ? 'selected' : ''}>vs ${o.name}</option>`).join('')}</select>
+        <select class="inp" data-f="bShelf" aria-label="Shelf">${SHELF.map((x) => `<option ${st.bShelf === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
+        <select class="inp" data-f="bPromo" aria-label="Promo">${PROMO.map((x) => `<option value="${x}" ${st.bPromo === x ? 'selected' : ''}>${x === 'None' ? 'No promo' : x}</option>`).join('')}</select>
+        <select class="inp" data-f="bSpeed" aria-label="Selling">${SPEED.map((x) => `<option value="${x}" ${st.bSpeed === x ? 'selected' : ''}>${x} selling</option>`).join('')}</select>
+        <input class="inp w2" data-f="bNote" id="bn-${st.mode}" value="${esc(st.bNote)}" placeholder="Note (stock level, what the owner said)">
+        <button type="button" class="btn q" data-act="bench-photo"><svg class="i"><use href="#cam"/></svg>Shelf photo</button>
+        <button type="button" class="btn" data-act="add-bench" data-id="${s.id}"><svg class="i"><use href="#plus"/></svg>Log price</button>
+      </div>` : ''}
+      <div class="ch"><span>History at this shop</span><span>${logs.length} entries</span></div>
+      <div class="tl">${logs.length ? logs.map((l) => `<div class="tli">
+        <span class="td">${fmtD(l.d)}</span>
+        <div class="tb"><b>${esc(l.p)} · ${rp(l.rp)}</b><span class="dim">${esc(l.shelf)} · ${l.promo === 'None' ? 'no promo' : esc(l.promo)} · ${esc(l.v)} selling${l.n ? ' · ' + esc(l.n) : ''}</span></div>
+        <span class="st ${l.v === 'Slow' ? 'bad' : ''}">${esc(l.v)}</span>
+        ${!ro ? `<button type="button" class="xbtn" data-act="del-bench" data-id="${s.id}" data-lid="${l.id}" aria-label="Delete this price">×</button>` : ''}
+      </div>`).join('') : `<div class="dim" style="padding:10px">Nothing yet.</div>`}</div>`;
+  }
+  return `<section class="right" aria-label="Shop">
+    <div class="det">${head}${tabs}<div class="fade tabbody">${body}</div></div>
   </section>`;
 }
 
@@ -803,7 +880,9 @@ function onInput(e, el, st) {
   }
   if (!f) return;
   if (f === 'q') { st.q = tg.value; render(el, st); return refocus(el, `q-${st.mode}`); }
-  if (f === 'bProd' || f === 'bNote' || f === 'bPrice' || f === 'promptVal') { st[f] = tg.value; return; }
+  if (['bProd', 'bNote', 'bPrice', 'promptVal', 'bOurs', 'bShelf', 'bSpeed'].includes(f)) { st[f] = tg.value; return; }
+  if (f === 'bPromo') { st.bPromo = tg.value === 'No promo' ? 'None' : tg.value; return; }
+  if (f === 'bSpeed') { st.bSpeed = tg.value.replace(' selling', ''); return; }
   if (f === 'owner-pick') { st.ownerPick[tg.dataset.id] = tg.value; return; }
   if (f === 'move-kec' && e.type === 'change') {
     const s = SHOPS.find((x) => x.id === tg.dataset.id);
@@ -829,6 +908,7 @@ function onClick(e, el, st) {
   const d = b.dataset;
 
   if (d.pstep) { st.phoneStep = d.pstep; return render(el, st); }
+  if (d.stab) { st.shopTab = d.stab; return render(el, st); }
   if (d.node) {
     st.node = d.node;
     const list = shopsForNode(st.node, st.q);
@@ -850,12 +930,16 @@ function onClick(e, el, st) {
     case 'loc-mode': st.locMode = d.m; return render(el, st);
     case 'open-map': return toast(`Map Mission Control centered on ${s ? s.name : 'shop'}`);
     case 'wa-chat': return toast(`WhatsApp chat opened for ${s ? s.name : 'shop'} (${s ? s.wa : ''})`);
+    case 'directions': return toast(`Route to ${s ? s.name : 'shop'} opened in Google Maps`);
+    case 'bench-photo': return toast('Shelf photo attached to this price');
+    case 'copy-gps': { const t = s ? s.gps : ''; const done = () => toast(`GPS ${t} copied`); try { navigator.clipboard.writeText(t).then(done, done); } catch (_) { done(); } return; }
     case 'add-bench': {
       if (!s) return;
-      const prod = (st.bProd || '').trim() || 'Kretek 16';
-      const note = (st.bNote || '').trim() || 'Competitor · shelf check';
-      const price = Math.max(1000, parseInt(st.bPrice, 10) || 15500);
-      s.logs.unshift({ id: 'l' + Date.now(), p: prod, n: note.includes('Competitor') ? note : 'Competitor · ' + note, v: 'High sales', rp: price });
+      const prod = (st.bProd || '').trim();
+      const price = parseInt(st.bPrice, 10);
+      if (!prod) return toast('Type the rival brand and product first');
+      if (!price || price < 100) return toast('Type the rival price in Rupiah');
+      s.logs.unshift({ id: 'l' + Date.now(), d: '2026-11-18', p: prod, n: (st.bNote || '').trim(), v: st.bSpeed.replace(' selling', ''), rp: price, shelf: st.bShelf, promo: st.bPromo, ours: st.bOurs });
       st.bProd = ''; st.bNote = ''; st.bPrice = '';
       rerenderAll();
       return toast(`Competitor price added for ${s.name}`);
