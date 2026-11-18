@@ -2409,7 +2409,7 @@ Then: which blocks share a variable declared INSIDE another block (a cut there b
 ---
 
 ## Task 60 - read-only: the 7-day window hides old consignment debt - map it and give Aldi the options
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-18 08:20 WIB, by Claude. READ-ONLY, a THINKING job (Claude writes the decision for Aldi from your Result).
 **Touch only:** this file.
 
@@ -2418,6 +2418,24 @@ Then: which blocks share a variable declared INSIDE another block (a cut there b
 2. Give 3 real ways to fix it, e.g. (a) a second listener for open Titip notes + their payments/returns with no date limit, (b) a running balance per shop kept on the customer doc, (c) a fetch only when Receivables opens. For each: reads per day for 30 salesmen and ~2,000 shops (show the sum), the Firestore index it needs, whether `firestore.rules` must change (say WHICH match block - never edit it), the files it touches, and what could break (offline, the demo reset, EOD).
 3. Your pick and one sentence why. Name the cheapest test that would prove it works.
 **Result:** table 1 (place | file:line | wrong for a 10-day note | severity) + table 2 (option | reads/day | index | rules block | files | breaks) + the pick. Under 70 lines. CAN'T TELL for anything you did not read today.
+| place | file:line | wrong for a 10-day note | severity |
+| :--- | :--- | :--- | :--- |
+| `ConsignmentFinanceView` (`debtData`, `customerData`, `arView`) | `src/ConsignmentFinanceView.jsx:169-245, 286-361, 372-426` | 10-day Titip note vanishes; 7-day-tempo notes never reach Overdue; recent payment offsets newer note instead | HIGH |
+| `DashboardBenchmarks` (`outstandingTitip`) | `src/components/DashboardBenchmarks.jsx:180`, `src/utils/revenueRule.js:98-112` | Command Center `Piutang` balance drops all 8+ day old Titip notes | HIGH |
+| `MerchantSalesView` sidebar debt check | `src/MerchantSalesView.jsx:239-265` | Sales terminal shows Rp 0 owed when visiting a shop with 8+ day old debt | HIGH |
+| `App.jsx` consignment delete & hand-off | `src/App.jsx:3512` | Only deletes/moves 7-day rows, leaving 10-day Titip rows orphaned on the old agent | HIGH |
+| `MapMissionControl` (`StoreBottomSheet`) | `src/MapMissionControl.jsx:1150-1180` | Map shop card `Still unpaid` & consignment Bks drop 8+ day old notes | MED |
+| `AgentProfileView` (`activeTitipResponsibility`) | `src/AgentProfileView.jsx:504-550` | Agent Profile `Consignment Risk (Titip)` drops 8+ day old notes | MED |
+| `vanBay` (`titipOf`) | `src/utils/vanBay.js:424-455` | Loading bay Titip tally omits 8+ day old notes | MED |
+
+| option | reads/day (30 men, ~2k shops) | index | rules block | files | breaks |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **(a) 2nd `onSnapshot` listener** for Titip + `CONSIGNMENT_PAYMENT` (or 90d / open) | 90 opens/day × ~300 docs = **~27,000/day** (grows unless archived) | Composite on `transactions` (`paymentType` + `timestamp`) | `firestore.rules:794-798` (`allow read: if isSalesman(bossUid)` — **no change** unless adding `settled` flag on `L797`) | `useDatabaseSync.js`, `App.jsx`, `firestore.indexes.json` | Needs composite index; unbounded growth over months without archiving |
+| **(b) Running balance on `customers/{id}`** | **0 extra/day** (`customers` already listened) | None | `firestore.rules:762-779` (**must change** for `own_region`/`folderLimited` writes) | `useTransactionEngine.js`, `ConsignmentFinanceView.jsx`, `App.jsx`, `_demoCompany.js`, `firestore.rules` | Offline/race drift vs `transactions`; Admin Edit/Delete & `demoReset` must mirror it |
+| **(c) On-demand `getDocs`** when Receivables opens | 60 opens/day × ~300 docs = **~18,000/day** (0 on cold start) | 2 single-field `where` queries (no composite) or 1 composite | `firestore.rules:794-798` (**no change**) | `ConsignmentFinanceView.jsx`, `useDatabaseSync.js` | Fails/misses old notes offline; Command Center & Sales Terminal still miss old debt on cold start |
+
+- **Pick:** **Option (a)** (second `onSnapshot` listener for Titip + `CONSIGNMENT_PAYMENT` over last 90 days or open notes) because it fixes all 7 screens at once with zero `firestore.rules` changes, works offline via snapshot cache, and keeps `transactions` as the single source of truth.
+- **Cheapest proof test:** Run `buildDemoCompany(seed, new Date('2026-11-17T05:00:00Z'), ...)` in `logicFixes.selfcheck.mjs`, filter `transactions` with the 2nd listener's predicate merged with the 7-day window, and assert `outstandingTitip` returns `Rp 9.120.000` (including 12-day-old `AMANAH BARU`).
 
 ---
 
