@@ -14641,5 +14641,19 @@ section('UNBOUNDED CONSIGNMENT DEBT FEED (Task 62, 2026-11-18)');
      feedTitipCount === 9 && feedPayCount === 1 && openShops.length === 8 && totalOwed === 9120000 && amanah?.owed === 1580000 && amanah?.overdue === true,
      `titip=${feedTitipCount} pay=${feedPayCount} shops=${openShops.length} total=${totalOwed} amanah=${JSON.stringify(amanah)}`);
 }
+section('RECEIVABLES V5 ARVIEW CONSISTENCY (Task 64, 2026-11-18)');
+{
+  const cfvSrc = read('src/ConsignmentFinanceView.jsx');
+  const arA = cfvSrc.indexOf('const arView = useMemo(');
+  const arB = cfvSrc.indexOf('const activeDebtShop', arA);
+  const arSlice = arA > -1 && arB > arA ? cfvSrc.slice(arA, arB) : '';
+  ok('REGRESSION: arView resolves handed-over Responsible fallback through Map.get + rosterNameById (never handedOwnerByStore[k]?.name) and counts remaining converted Bks from cd.items',
+     !cfvSrc.includes('handedOwnerByStore[k]') &&
+     arSlice.includes('rosterNameById.get(handedOwnerByStore.get(k))') &&
+     arSlice.includes('Object.values(cd.items || {})') &&
+     arSlice.includes('convertToBks(') &&
+     /\[debtData, customers, customerData, myTransactions, handedOwnerByStore, rosterNameById, inventory, debtFilter, debtSearch\]/.test(arSlice),
+     'arView Bks Held or handedOwnerByStore lookup regressed');
+}
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

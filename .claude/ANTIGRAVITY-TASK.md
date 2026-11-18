@@ -2519,7 +2519,7 @@ Your Task 23 map listed every rule, press and write of the OLD `src/ConsignmentF
 ---
 
 ## Task 64 - BUILD: fix the two v5 `arView` mismatches found in Task 63
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-18 10:47 WIB, by Antigravity (LEAD per `GEMINI.md` OVERRIDE).
 **Touch only:** `src/ConsignmentFinanceView.jsx` (`L399-400` and `arView` deps `L425`), `src/config/logicFixes.selfcheck.mjs`, this file.
 
@@ -2527,6 +2527,10 @@ Fix the two `YES` rows from Task 63 in `src/ConsignmentFinanceView.jsx`:
 1. `L399`: replace broken Map bracket lookup `handedOwnerByStore[k]?.name` with `rosterNameById.get(handedOwnerByStore.get(k))`.
 2. `L400`: compute `arView` `bks` from `cd?.items` (already converted via `convertToBks` and reduced by `itemsPaid`/`itemsReturned`/`RETURN`), falling back to `convertToBks` over `notes` items only when `cd` is absent; add `rosterNameById` and `inventory` to `arView` `useMemo` deps (`L425`).
 **Done when:** `logicFixes.selfcheck.mjs` has a regression check proving `bks` reads `cd.items` (not raw `n.items`) and `handedOwnerByStore.get(k)` via `rosterNameById`, all five gates in `GEMINI.md` OVERRIDE pass, and commit is saved starting `Antigravity:`.
+**Result:**
+- Fixed `src/ConsignmentFinanceView.jsx:399-402, 427` (`arView` now resolves `rosterNameById.get(handedOwnerByStore.get(k))`, computes `bks` from `cd.items` with `convertToBks` fallback, and includes `rosterNameById, inventory` in deps).
+- Added regression check `RECEIVABLES V5 ARVIEW CONSISTENCY (Task 64, 2026-11-18)` in `src/config/logicFixes.selfcheck.mjs`.
+- All 5 gates green after final edit: `undef.check.mjs` (`clean`), `logicFixes.selfcheck.mjs` (**3025 passed, 0 failed**), all 14 `src/config/*.selfcheck.mjs` scripts (exit 0), `npm run build` (`built in 11.97s`, exit 0), `integration.audit.mjs` (**725 passed, 0 failed**).
 
 **Task 62 AMENDED 2026-11-18 09:40 by Claude, after reading Task 60's Result (pick = option a, second listener, no rules change):**
 - NO 90-day cap. His words say "not limited"; a note 100 days old that still owes must show. Listen to every Titip SALE + every CONSIGNMENT_PAYMENT + RETURN with no date limit. The read cost grows with history - write the number in the Result; archiving paid-off notes is a LATER task, not this one.

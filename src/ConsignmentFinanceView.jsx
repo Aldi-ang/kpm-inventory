@@ -396,8 +396,10 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
                 total: d.original, left: d.remaining, tempo: d.tempoDays,
             }));
             const oldest = notes.find(n => n.left > 0.01) || notes[0] || null;
-            const agent = cd?.ownerName || handedOwnerByStore[k]?.name || drops[drops.length - 1]?.agentName || 'Unassigned';
-            const bks = notes.reduce((sum, n) => sum + n.items.reduce((b, it) => b + (Number(it.qty) || 0), 0), 0);
+            const agent = cd?.ownerName || rosterNameById.get(handedOwnerByStore.get(k)) || drops[drops.length - 1]?.agentName || 'Unassigned';
+            const bks = cd
+                ? Object.values(cd.items || {}).reduce((b, it) => b + (Number(it.qty) || 0), 0)
+                : notes.reduce((sum, n) => sum + n.items.reduce((b, it) => b + convertToBks(Number(it.qty) || 0, it.unit, (inventory || []).find(p => p.id === it.productId)), 0), 0);
             return {
                 ...s,
                 stateLabel: stateLabel[s.state],
@@ -422,7 +424,7 @@ export default function ConsignmentFinanceView({ transactions = [], customers = 
             soonAmt: sumState('soon'), soonCnt: cntState('soon'),
             badAmt: sumState('bad'), badCnt: cntState('bad'),
         };
-    }, [debtData, customers, customerData, myTransactions, handedOwnerByStore, debtFilter, debtSearch]);
+    }, [debtData, customers, customerData, myTransactions, handedOwnerByStore, rosterNameById, inventory, debtFilter, debtSearch]);
 
     const activeDebtShop = useMemo(() => {
         if (!arView.shops.length || selectedDebtName === '') return null;   /* '' = the phone closed its open row */
