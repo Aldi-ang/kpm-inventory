@@ -2355,7 +2355,7 @@ Done when: `git diff` shows the debtData block and every handler unchanged (past
 ---
 
 ## Task 58 - read-only: review Task 57's new Receivables code for bugs no gate can see
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 21:50 WIB, by Claude. READ-ONLY.
 **Touch only:** this file.
 
@@ -2369,14 +2369,37 @@ Read `src/ConsignmentFinanceView.jsx` as it is TODAY: `arView`, `activeDebtShop`
 - Any key missing / duplicate key in the new `.map(` lists; any English that is unclear.
 
 **Result:** ONE table: Finding | Who hits it | What goes wrong | file:line | HIGH/MED/LOW | smallest fix in one sentence. Worst first; "checked, fine" for each bullet with nothing.
+| Finding | Who hits it | What goes wrong | file:line | Severity | Smallest fix |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `arView` `notes[].left` skips `RETURN` credits | Any shop with a `RETURN` transaction | `arView` only sums `CONSIGNMENT_PAYMENT` (`L390`) while `debtData` subtracts `RETURN` (`L190`), so `notes[].left` sums higher than `activeDebtShop.total` (for Task 56 `AMANAH BARU` with 0 returns both agree: `1,200,000 + 380,000 = Rp 1.580.000`) | `src/ConsignmentFinanceView.jsx:389-398` | HIGH | Include `t.type === 'RETURN'` in `arView`'s credit filter and sort by `txSeconds` like `debtData`. |
+| Phone row 0 cannot close (`window.innerWidth < 1024`) | Phone users (`< 1024 px`) | Pressing row 0 sets `selectedDebtName` to `null`, and `activeDebtShop` (`L430`) falls back to `arView.shops[0]` when `selectedDebtName` is falsy, so row 0 stays stuck open | `src/ConsignmentFinanceView.jsx:428-431, 1185` | HIGH | Use `''` for explicitly collapsed on phone and only fall back to `shops[0]` on `null` (initial desktop state). |
+| `openStoreAction` silent no-op when `customerData` has no match | Any `debtData` row missing from `customerData` (e.g. empty `customerName` keyed as `'Unknown'` at `L176`) | Pressing `Hand-off` or `Store Audit & Settle` does nothing silently | `src/ConsignmentFinanceView.jsx:433-442` | MED | Add `else notify(`Could not open ${shopName} in Physical Stock.`)` after `if (match)`. |
+| `agent` falls back to `'Admin'` | Legacy Titip rows with no `agentName` and no `customerData` match | Shows `Admin` as responsible salesman even if unassigned | `src/ConsignmentFinanceView.jsx:400` | LOW | Fall back to `'Unassigned'` when `drops[last]?.agentName` is empty. |
+| Empty `debtData` (`activeDebtShop === null`) | Checked, fine | List renders empty message (`L1175`), right panel guards `!activeDebtShop` (`L1230`) | `src/ConsignmentFinanceView.jsx:429, 1174-1175, 1230-1231` | — | — |
+| `setViewingReceipt(activeDebtShop.payments[0])` | Checked, fine | Button is gated behind `{activeDebtShop.payments[0] && (...)}` | `src/ConsignmentFinanceView.jsx:1292-1295` | — | — |
+| Keys & English in `.map(` lists | Checked, fine | Unique keys (`s.name`, `n.id`, `p.id`, `idx`) and clear copy | `src/ConsignmentFinanceView.jsx:1182, 1210, 1260, 1275, 1281` | — | — |
 
 ---
 
 ## Task 59 - read-only: line map of the Reports screen blocks, for the cut-and-place build (segment 5)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-17 21:50 WIB, by Claude. READ-ONLY. Same job as your Task 55, for the next screen.
 **Touch only:** this file.
 
 Reports = `src/components/HistoryReportView.jsx` + the Product Performance panel (your Task 24 map, grep "## Task 24"; your picture `.claude/drafts/reports-pro.html`, Task 40). For TODAY's file list each block: exact start-end line, outermost element, the state/handlers it reads (names only). Blocks: title + date/region/salesman filters · summary tiles/numbers · the transaction list and ONE row · the one transaction opened (detail, receipt, Day Replay) · Edit / Delete (admin) and their confirm · export / print / share presses · Product Performance panel · every modal (`fixed inset-0`, your Task 4 list: L940, L956).
 Then: which blocks share a variable declared INSIDE another block (a cut there breaks it), which useMemo holds the money totals (name it, its lines) so the new layout reuses it as-is, and every Firestore write in the file (line + what it writes) - those are the lines the build must never touch.
 **Result:** one table (block | lines | outer element | reads) + shared-variable list + the useMemo answer + the write list. Under 70 lines.
+| block | lines | outer element | reads (state / handlers) |
+| :--- | :--- | :--- | :--- |
+| 1. Title + date/region/salesman filters | `411-475` | `{!reportView && (<div ...>)}` | `rangeType`, `setRangeType`, `targetDate`, `setTargetDate`, `isFieldAgent`, `isFetchingHistory`, `handlePullArchive`, `reportAccessLevel`, `selectedRegion`..`selectedCustomer`, `searchTerm`, `setSearchTerm`, `setReportView` |
+| 2. Summary tiles/numbers (`Context Revenue`, `Transactions`, `Items Moved`, `Net Profit`) | `498-512` | `<div className="flex flex-col gap-3 ...">` + `<div className="grid ...">` | `isFieldAgent`, `selectedAgent`, `selectedRegion`, `rangeType`, `targetDate`, `stats.totalRev`, `stats.count`, `stats.items`, `stats.totalProfit` |
+| 3. Transaction list & 1 row (plus folder levels 1–6) | `640-935` | `reportData` folder grids (`640-833`) + Level 7 table (`836-935`, row `873-926`) | `reportData`, `selectedRegion`..`selectedCustomer`, `isAdmin`, `onDeleteFolder`, `setViewingPhoto`, `setViewingReceipt`, `setEditingTrans`, `onDeleteTransaction` |
+| 4. Opened transaction (`SaleReceipt` & Proof photo) | `939-953`, `1017-1018` | `{viewingPhoto && (<div className="fixed inset-0 z-[600] ...">)}`, `{viewingReceipt && <SaleReceipt ... />}` | `viewingPhoto`, `setViewingPhoto`, `viewingReceipt`, `setViewingReceipt`, `appSettings`, `customers` |
+| 5. Edit / Delete (admin) & confirm | `348-405`, `857, 921-922`, `955-1014` | `{editingTrans && (<div className="fixed inset-0 z-[100] ...">)}` | `editingTrans`, `setEditingTrans`, `inventory`, `handleEditTierChange`, `handleEditItemChange`, `handleEditSubmit`, `onDeleteTransaction`, `onDeleteFolder` |
+| 6. Export / Print / Scale presses | `480-492` | `<div className="print:hidden mb-6 ...">` | `setReportView`, `printScale`, `setPrintScale`, `window.print()` |
+| 7. Product Performance (+ Offer Performance, Package Returns, Agent Roster) | `514-637` | `<div className="mb-8 print:mb-0">` + `data-guide="offer-performance"` / `"package-returns"` | `stats.items`, `offerStats`, `pkgReturns`, `countClears`, `stats.agentRoster`, `expandedAgent`, `setExpandedAgent`, `motorists`, `isFieldAgent` |
+| 8. Every modal (`fixed inset-0`) | `940-953` (`z-[600]`), `956-1014` (`z-[100]`), `1017-1018` | Proof photo viewer, `DATA AUDIT` edit modal, `<SaleReceipt>` | `viewingPhoto`, `editingTrans`, `viewingReceipt` |
+
+- **Shared variables inside another block:** `cObj` (`840`) is declared inside the Level 7 IIFE (`839-932`) and used by both header (`845-862`) and table (`867-929`); `isRetur`/`isExchange`/`isIouFulfill` (`875-877`) are inside `cObj.history.map`.
+- **Money totals `useMemo`:** `stats` (`278-319`) computes `totalRev`, `totalProfit`, `count`, `items`, `payments`, and `agentRoster` from `contextualTransactions`.
+- **Firestore writes (must stay untouched):** `395-401` inside `handleEditSubmit` — atomic `commitInChunks(db, writeBatch, ...)` updating `artifacts/${appId}/users/${userId}/transactions/${editingTrans.id}` (`date`, `customerName`, `total`, `amountPaid`, `priceTier`, `items`, `timestamp`, `updatedAt`) plus `tallySaleOp(..., -1)` and `tallySaleOp(..., 1)` on `sales_stats`. (Deletes delegate to `onDeleteFolder` / `onDeleteTransaction` in `App.jsx`.)
