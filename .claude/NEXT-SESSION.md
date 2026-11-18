@@ -1,3 +1,5 @@
+**2026-11-18 15:22 (Claude): Customers picture v2 REJECTED as "standardised and too similar with other segment"; he wants a tidier design for a lot of data. Three concepts drawn: `.claude/drafts/customers-concepts.html` (A sheet / B visit board / C area tree; A-Brain Brainstorm/2026-11-18_customers-three-concepts.md). WAIT for his pick before building or drawing the full picture. Do NOT build CustomerManager.jsx to customers-pro.html.**
+
 **2026-11-18 15:09 (Antigravity LEAD until Saturday 2026-11-21 per GEMINI.md OVERRIDE): Task 68 + Task 69 LIVE `d2b4fe3a`. Task 70 (Customers Segment 6): mapped `src/components/CustomerManager.jsx` (1,828L) and upgraded `.claude/drafts/customers-pro.html` to the same playable standard as `.claude/drafts/reports-live.html` (dual-mounted PC + Phone, rolling KPI digits, self-drawing gold check toast, drawn SVG icons, in-page dialogs, System/Light/Dark theme, verified `ERRORS: []`), sent via `customers-picture.md` for Aldi's ok. Also still pending: Aldi's Console publish of the 4-part `firestore.rules` before pushing `412ac4cc` (Task 67).**
 
 # The one job - Customers in the professional look (segment 6 of 12, deadline 20 November)
