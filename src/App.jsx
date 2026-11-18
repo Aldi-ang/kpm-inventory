@@ -2236,6 +2236,7 @@ const handleGitHubMirror = async () => {
                       mappedBy: request.toAgentName,
                       ownerAgentId: request.toAgentId,
                       ownerAgentName: request.toAgentName,
+                      lastHandoffId: request.id,
                       // serverTimestamp() is illegal inside arrayUnion, so the date is a plain
                       // string - getCurrentDate(), never an inline toISOString(), which is UTC and
                       // would date a 06:00 WIB hand-off to the day before.

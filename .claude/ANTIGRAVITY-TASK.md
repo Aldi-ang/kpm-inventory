@@ -2607,6 +2607,31 @@ Draft the exact `old line`, `new line`, and `why` for both `Authorize Transfer` 
      ```
    - **Why:** Lets authorized hand-off approvers (`App.jsx:2235`) stamp store ownership & `handoffs` trail even when `view_only`, `own_region`, or `folderLimited` (`adminEdit: false`) blocks general shop edits, while still denying `priceTier` (`Grosir`) or address changes.
 
+## Task 67 - BUILD + Console firestore.rules draft: bind customer hand-off stamp to an APPROVED account_transfers doc (`lastHandoffId`) (from Aldi)
+**Status:** DONE
+**Written:** 2026-11-18 12:25 WIB, from Aldi (replaces unsafe Task 66 part 4 caught by Claude's review). NEVER edit `firestore.rules` on disk.
+**Touch only:** `src/App.jsx` (`L2239` add `lastHandoffId: request.id`), `src/config/logicFixes.selfcheck.mjs`, this file.
+
+1. In `src/App.jsx` (`handleAdminApproveTransfer`, ~`L2235-2249`), add `lastHandoffId: request.id` to the `custRef` batch update payload alongside `mappedBy`, `ownerAgentId`, `ownerAgentName`, and `handoffs`.
+2. Rewrite the `firestore.rules` Console draft (all 4 parts together) so `canHandoffStampCustomer` requires:
+   - `lastHandoffId` points to an `account_transfers/<id>` whose `getAfter(...)` doc has `status == 'APPROVED'`, `toAgentId == request.resource.data.ownerAgentId`, and matches the same store (`customerId == customerId`, or normalized `storeName == name` when `customerId` is unset).
+   - `canApproveTransferDoc(bossUid, tr)` so a named approver can only approve/stamp their own `approvalRegions` (and never `'UNASSIGNED'`).
+   - `changed.hasAny(['ownerAgentId', 'lastHandoffId'])` alongside `hasOnly(['mappedBy', 'ownerAgentId', 'ownerAgentName', 'handoffs', 'lastHandoffId'])`.
+3. Verify in the Firebase Firestore emulator including all refusals: named T6 stamping a shop in another region = denied; `view_only` T4 stamping with no approved hand-off = denied; stamp pointing at a `PENDING` hand-off = denied; mismatched `toAgentId`/store = denied. Also verify all 5 repo gates pass.
+**Result (`firestore.rules` on disk untouched — verified `RULES_67: 15 passed, 0 failed` in Firestore emulator):**
+- Added `lastHandoffId: request.id` to `src/App.jsx:2239` inside `handleAdminApproveTransfer`'s `custRef` batch update, plus regression check in `src/config/logicFixes.selfcheck.mjs:4393-4395`.
+- Repo checks green after last edit: `undef.check.mjs` -> `clean`, `logicFixes.selfcheck.mjs` -> `3028 passed, 0 failed`, all 14 `src/config/*.selfcheck.mjs` -> exit `0`, `npm run build` -> `built in 11.58s` (exit `0`), `integration.audit.mjs` -> `725 passed, 0 failed`.
+- Verified Console `firestore.rules` draft (4 parts, in-memory emulator `demo-rules-67`, **`RULES_67: 15 passed, 0 failed`**):
+  1. Named T6 batch-approves own-region `tr1` & stamps `c1` (`lastHandoffId: 'tr1'`) -> ALLOWED
+  2. `view_only` T4 batch-approves legacy `customerId: null` `tr1b` (normalized `storeName` match) & stamps `c1` -> ALLOWED
+  3. Named T6 (`BANDUNG`) stamping shop `c2` in `MUNTILAN` (even with `tr_other_approved`) -> DENIED
+  4. Named T6 (`BANDUNG`) batch-approving `MUNTILAN` handoff -> DENIED
+  5. `view_only` T4 stamping `c1` with no `lastHandoffId` or nonexistent `lastHandoffId` -> DENIED (both)
+  6. `view_only` T4 stamping `c1` pointing at `PENDING_ADMIN` handoff -> DENIED
+  7. Mismatched `ownerAgentId != tr.toAgentId` or mismatched store (`tr1` used on `c2`) -> DENIED (both)
+  8. Un-named T5 approving or self-granting `approvalRegions`, and `priceTier: 'Grosir'` (alone or piggybacked onto a valid stamp) -> DENIED (all 4)
+  9. Normal `T5` visit update & `T4` phone edit on folder-visible `c1` still ALLOWED cleanly under the 1,000-expression cap.
+
 **Task 62 AMENDED 2026-11-18 09:40 by Claude, after reading Task 60's Result (pick = option a, second listener, no rules change):**
 - NO 90-day cap. His words say "not limited"; a note 100 days old that still owes must show. Listen to every Titip SALE + every CONSIGNMENT_PAYMENT + RETURN with no date limit. The read cost grows with history - write the number in the Result; archiving paid-off notes is a LATER task, not this one.
 - Scope = ALL 7 places in your Task 60 table 1 (Receivables, Command Center Piutang, sales terminal sidebar, App.jsx delete + hand-off L3512, Map shop card, Agent Profile Titip, vanBay titipOf). Feed them a SEPARATE merged list (`consignmentTx` = 7-day rows + old consignment rows, de-duplicated by id) - never widen the global `transactions` (Reports, EOD, revenue, Day Replay must keep their 7-day list). Touch only grows to: `src/components/DashboardBenchmarks.jsx`, `src/MerchantSalesView.jsx`, `src/MapMissionControl.jsx`, `src/AgentProfileView.jsx`, `src/utils/vanBay.js` - ONLY the line where each reads its list. If one needs more than that, list it in the Result and leave it.

@@ -4390,6 +4390,9 @@ if (aA > -1 && aB > aA) {
   ok('approval moves ownership onto the store record instead',
      /ownerAgentId:\s*request\.toAgentId/.test(approval),
      'without an owner on the customer doc the new holder cannot see the debt');
+  ok('approval stamps lastHandoffId so Firestore rules can verify the approved transfer doc',
+     /lastHandoffId:\s*request\.id/.test(approval),
+     'missing lastHandoffId leaves customer-stamp security rules unable to bind the stamp to account_transfers');
   ok('approval appends the hand-off to the store’s history',
      /handoffs:\s*arrayUnion/.test(approval),
      'the receipt line has nothing to render');
