@@ -3525,7 +3525,7 @@ Updated `.claude/drafts/customers-c.html` and verified every wording rule + all 
 2. Emulator run (`npx firebase emulators:exec --only firestore --project demo-kpm-rules "node rules-test/test-product-categories.mjs"`): **`30 passed, 0 failed` (exit code 0)**. `firestore.rules` on disk untouched.
 
 ## Task 90 - READ-ONLY: check the Task 86 Undo plan against the real code
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 18:05 WIB (Claude).
 **Touch only:** this file.
 1. `src/utils/delayedWrite.js` does NOT exist today (Claude checked). Say in the plan which file is NEW and which existing files change, with `file:line` for each of the 12 delete rows (#8 ... #34).
@@ -3533,3 +3533,45 @@ Updated `.claude/drafts/customers-c.html` and verified every wording rule + all 
 3. Name the ONE row to build first (smallest, most used) and its self-check line for `src/config/logicFixes.selfcheck.mjs`.
 **Done when:** the table has file:line for all 12 rows and one "build first" pick.
 **Result:**
+
+### 1. Which file is NEW vs which existing files change
+- **NEW file to create (1):**
+  - `src/utils/delayedWrite.js` (**NEW** — does not exist on disk today): exports `scheduleDelayedWrite`, `undoPendingWrite`, `flushPendingWrite`, `isPendingUndo`, `getPendingPatch`, and `usePendingUndo`.
+- **EXISTING files that change (7):**
+  1. `src/components/Toast.jsx:50-63, 118-171` — keeps `notify()` (`L50-61`) and the 5-second top strip (`L85-104`) untouched; exports `notifyUndo` / `clearUndoToast` and renders the bottom 8-second Undo toast-bar inside `<ToastHost />` (`L63`).
+  2. `src/hooks/useDatabaseSync.js:37, 250` — filters `customers` by `!isPendingUndo(\`cust:\${c.id}\`)` and overlays pending `#27` / `#28` area patches so every consumer of `customers` / `displayCustomers` (`src/App.jsx:3905, 5130, 5139, 5505, 5697`) hides a pending-delete shop during the 8-second window.
+  3. `src/components/CustomerManager.jsx:26, 46-49, 533-559, 788-819, 897-966, 1115` — wraps rows **#8**, **#9**, **#10**, **#27**, **#28**.
+  4. `src/MapMissionControl.jsx:463, 558-595, 702-726, 1277-1289` — wraps rows **#13**, **#14**, **#29**, **#30**.
+  5. `src/RestockVaultView.jsx:204, 208, 279, 284, 589-601, 793-801` — wraps rows **#15**, **#16**.
+  6. `src/App.jsx:1822, 3397-3403` — wraps row **#34** (`handleDeleteMascotMessage`) and filters `activeMessages` (`L1822`).
+  7. `src/config/logicFixes.selfcheck.mjs` — adds the regression and behaviour checks at the end of the file.
+
+### 2. Verification of all 12 rows against real code (quoted lines + money/stock check)
+
+Every single one of the 12 rows was checked against today's code. **0 of the 12 touch money (`transactions`, `sales_stats`, `cukaiDebts`) or stock (`products.stock`, `damagedStock`, `branches/*/inventory`, `motorists.activeCanvas`, `procurement`, `samplings`)** — all 12 stay in the plan:
+
+| Row | Existing file & exact `file:line` | Quoted write line in today's code | Touches money or stock? | Verdict |
+|---|---|---|---|---|
+| **#8 Benchmark** | `src/components/CustomerManager.jsx:48` (`handleDeleteBenchmark` at `L46-49`, button at `L175`) | `await deleteDoc(doc(db, \`artifacts/\${appId}/users/\${user.uid}/customers/\${customer.id}/benchmarks\`, id));` | **No** — deletes only a rival price note in subcollection `customers/{cid}/benchmarks/{id}`. | **Keep in plan** |
+| **#9 Duplicate shop** | `src/components/CustomerManager.jsx:806` (`handleDeleteDuplicate` at `L788-819`, button at `L1340`) | `await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', store.id));` | **No** — deletes only `customers/{store.id}`; `L801` confirms sales history and debt stay in `transactions`. | **Keep in plan** |
+| **#10 Shop delete (Directory)** | `src/components/CustomerManager.jsx:1115` (`handleDelete` at `L1115`, button at `L1804`) | `const handleDelete = async (id, name) => { if (await confirmAction("Delete profile?")) { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id)); logAudit("CUSTOMER_DELETE", \`Deleted \${name}\`); } };` | **No** — deletes only the profile document `customers/{id}`; `transactions` and `products` are untouched. | **Keep in plan (BUILD FIRST)** |
+| **#13 Single map border** | `src/MapMissionControl.jsx:561` (`deleteBoundaryFromFirebase` at `L558-567`, called by `handleDeleteBorder` at `L588-595`, button at `L972`) | `await deleteDoc(doc(db, \`artifacts/\${appId}/users/\${userId}/mapSettings\`, \`bnd_\${id}\`));` | **No** — deletes only one GeoJSON boundary document `mapSettings/bnd_{id}`. | **Keep in plan** |
+| **#14 Shop delete (Map sheet)** | `src/MapMissionControl.jsx:1282` (`handleDeleteStore` at `L1277-1289`, button at `L1390`) | `await deleteDoc(doc(db, \`artifacts/\${appId}/users/\${userId}/customers\`, store.id));` | **No** — deletes only `customers/{store.id}`; sales and stock are untouched. | **Keep in plan** |
+| **#15 Restock place** | `src/RestockVaultView.jsx:594` (`removePlace` at `L589-601`, button at `L1658`) | `await deleteDoc(doc(db, \`artifacts/\${appId}/users/\${activeUserId}/places\`, place.id));` | **No** — deletes only an address registry doc `places/{place.id}`; old Surat Jalan keep their saved text (`L592`). | **Keep in plan** |
+| **#16 Production target** | `src/RestockVaultView.jsx:796` (`handleDeleteTarget` at `L793-801`, button at `L1925`) | `await deleteDoc(doc(db, \`artifacts/\${appId}/users/\${activeUserId}/production_targets\`, targetId));` | **No** — deletes only a monthly goal doc `production_targets/{targetId}`; never touches `products.stock` or `procurement`. | **Keep in plan** |
+| **#27 Customer folder reset** | `src/components/CustomerManager.jsx:541-550` (`handleDeleteFolder` at `L533-559`, button at `L317`) | `if (level === 'Provinsi') updateData.province = 'Unknown Provinsi'; if (level === 'Kabupaten') updateData.region = 'Unknown Kabupaten'; if (level === 'Kecamatan') updateData.city = 'Unknown Kecamatan'; return { type: 'update', ref, data: updateData }; ... await commitInChunks(db, writeBatch, operations);` | **No** — updates only area strings (`province` / `region` / `city`) on `customers/{id}`. | **Keep in plan** |
+| **#28 Enterprise Data Scrub** | `src/components/CustomerManager.jsx:930-932, 956-957` (`handleEnterpriseDataScrub` at `L897-966`, button at `L1222`) | `data: { province: prov.toUpperCase(), region: kab.toUpperCase(), city: kec.toUpperCase(), updatedAt: serverTimestamp() } ... await commitInChunks(db, writeBatch, operations);` | **No** — normalizes only `province`, `region`, `city`, and `updatedAt` on `customers/{id}`. | **Keep in plan** |
+| **#29 Wipe all map borders** | `src/MapMissionControl.jsx:574-578` (`handleWipeAll` at `L569-586`, button at `L859`) | `const operations = safeBoundaries.map(b => ({ type: 'delete', ref: doc(db, \`artifacts/\${appId}/users/\${userId}/mapSettings\`, \`bnd_\${b.id}\`) })); await commitInChunks(db, writeBatch, operations);` | **No** — batch-deletes only `mapSettings/bnd_*` polygon docs and clears `borderCache`. | **Keep in plan** |
+| **#30 Map border folder** | `src/MapMissionControl.jsx:715-719` (`handleDeleteFolder` at `L702-726`, button at `L886`) | `const operations = bordersInside.map(b => ({ type: 'delete', ref: doc(db, \`artifacts/\${appId}/users/\${userId}/mapSettings\`, \`bnd_\${b.id}\`) })); await commitInChunks(db, writeBatch, operations);` | **No** — batch-deletes only `mapSettings/bnd_*` polygon docs inside `folderName`. | **Keep in plan** |
+| **#34 Mascot message** | `src/App.jsx:3400-3401` (`handleDeleteMascotMessage` at `L3397-3403`, button at `src/components/SettingsView.jsx:870`) | `const updatedMessages = currentMessages.filter(m => m !== msgToDelete); await setDoc(doc(db, \`artifacts/\${appId}/users/\${user.uid}/settings/general\`), { mascotMessages: updatedMessages }, {merge: true});` | **No** — updates only `settings/general.mascotMessages` dialogue strings. | **Keep in plan** |
+
+### 3. The ONE row to build first + its `src/config/logicFixes.selfcheck.mjs` line
+- **Build first:** **Row #10 — Customer Directory shop delete (`src/components/CustomerManager.jsx:1115`, `handleDelete`)**, together with the new `src/utils/delayedWrite.js`, `notifyUndo` in `src/components/Toast.jsx:63`, and the `!isPendingUndo(\`cust:\${c.id}\`)` filter in `src/hooks/useDatabaseSync.js:37, 250`.
+- **Why #10 first:** It is a 1-line function (`CustomerManager.jsx:1115`), its `Del` button (`CustomerManager.jsx:1804`) sits on every shop card in the Customer Directory (the single easiest fatal button to press by mistake in daily use), it touches zero money and zero stock, and wiring it proves the entire `scheduleDelayedWrite` + `notifyUndo` + `useDatabaseSync` pipeline before expanding to the other 11 rows.
+- **Self-check lines for `src/config/logicFixes.selfcheck.mjs`:**
+  ```js
+  ok('REGRESSION: CustomerManager handleDelete (#10) routes through scheduleDelayedWrite after confirmAction, and ToastHost renders the 8-second Undo bar',
+     /const handleDelete = async \(id, name\) => \{[\s\S]{0,260}confirmAction\("Delete profile\?"\)[\s\S]{0,260}scheduleDelayedWrite\(\{[\s\S]{0,260}key:\s*`cust:\$\{id\}`/.test(read('src/components/CustomerManager.jsx')) &&
+     read('src/components/Toast.jsx').includes('export function notifyUndo(') &&
+     read('src/hooks/useDatabaseSync.js').includes('isPendingUndo'));
+  ```
