@@ -3651,3 +3651,23 @@ Because the current codebase stores the product category string in **`product.ty
 | **10** | `src/components/DashboardBenchmarks.jsx:164` | `const type = (item.type \|\| '').toLowerCase(); if (type.includes('skm') \|\| type.includes('filter')) ...` | Command Center 30-day Filter/SKM vs Kretek volume mix benchmark (note: `tx.items` lines do not store `item.type`, so looking up `p = prod.get(item.productId)` on `L160` is needed too). | Step 1.10 checks `(p.type \|\| resolveCategoryName(p, productCategories) \|\| item.type \|\| '').toLowerCase()`, and dual-writing `product.type` preserves the category name string. |
 | **11** | `src/StockOpnameView.jsx:940` | `kind: 'promo', unit: 'pcs', type: 'PROMO'` | `QUARANTINE_SAMPLING` (`dmg-*`) promo item creation from damaged stock. | Untouched — promo items stay `kind: 'promo', type: 'PROMO'` and are excluded from `product_categories`. |
 | **12** | `src/config/demoSeed.js:116-123` | `type: 'SKT'`, `type: 'SKM'`, `type: 'PROMO'` on demo seed products | Demo company seeded products. | `resolveCategoryName(prod, cats)` falls back to `prod.type \|\| 'MISC'`, so demo products without `categoryId` continue grouping under `'SKT'` and `'SKM'` automatically. |
+
+## Task 93 - READ-ONLY: where else a "deleted" shop still shows during the 8 s Undo
+**Status:** OPEN
+**Written:** 2026-11-19 18:55 WIB (Claude). Claude reviewed 91 (5b178ee0) + 92 (52eef4af): OK; re-ran the gates itself: undef clean, selfcheck 3031/0, build 0, audit 726/0. 91 is NOT pushed yet (not rendered).
+**Touch only:** this file.
+1. Task 91 hides the shop only inside `CustomerManagement` (filter on `isPendingUndo`). List every OTHER screen that reads the same customers list (map, reports, sales terminal shop picker, receivables, ...) with `file:line`, and say if the shop stays visible there for the 8 s.
+2. Smallest fix: one place where the filter could live so every screen gets it (e.g. where the customers snapshot is read in `src/App.jsx`), with the exact line. No edits.
+3. Also say: `beforeunload` in `src/utils/delayedWrite.js` calls `e.preventDefault()` - does the browser then show its own "Leave site?" box on a normal reload? Is that box needed for the write to reach the local cache, or can it go?
+**Done when:** the screen table + one fix line + the answer to 3.
+**Result:**
+
+## Task 94 - BUILD (local only): the Step 1 steps marked [CAN BUILD BEFORE CONSOLE PUBLISH] in Task 92
+**Status:** OPEN
+**Written:** 2026-11-19 18:55 WIB (Claude).
+**Touch only:** the files those steps name in Task 92's checklist, `src/config/logicFixes.selfcheck.mjs`, this file. NOT `firestore.rules`. No step marked [NEEDS CONSOLE CHANGE 29 FIRST].
+1. Build only those steps, in order. Each leaves its self-check line.
+2. Nothing new may show to users yet unless it works without Change 29 live (old products with only `product.category` must still show and sell - check the 12 readers from Task 92).
+3. Gates after the LAST edit (undef clean, selfcheck, build, audit) - counts in the Result. Commit locally. NEVER push.
+**Done when:** those steps built, gates green, the 12 old-field readers still pass.
+**Result:**
