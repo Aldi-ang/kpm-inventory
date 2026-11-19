@@ -48,14 +48,34 @@ svg.i{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 .search{height:28px;padding:0 9px;border:1px solid var(--line-2);border-radius:7px;display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-muted);background:var(--inset);min-width:0}
 .search input{border:0;background:transparent;outline:0;color:var(--ink);width:170px;font-size:11.5px}
 
-/* Edge buttons: zero solid amber fill */
-.btn{height:28px;border:1px solid var(--accent-edge);border-radius:7px;background:transparent;color:var(--ink);font-weight:600;font-size:11.5px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;transition:background .15s,transform .1s}
-.btn:hover{background:var(--sel)}
+/* Edge buttons: min 36px PC / 44px phone, outlined, zero solid amber fill (Task 81 G) */
+.btn{min-height:36px;border:1px solid var(--accent-edge);border-radius:8px;background:var(--panel);color:var(--ink);font-weight:600;font-size:12px;padding:0 12px;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;transition:background .15s,border-color .15s,transform .1s}
+.btn:hover{background:var(--wash)}
 .btn:active{transform:scale(.97)}
-.btn.q{border-color:var(--line-2);color:var(--ink-muted)}
-.btn.d{border-color:var(--line-2);color:var(--danger-ink)}
-.btn.d:hover{border-color:var(--danger-ink);background:color-mix(in srgb,var(--danger-ink) 10%,transparent)}
-.btn.xs{height:24px;padding:0 8px;font-size:11px}
+.btn.q{border-color:var(--line-2);color:var(--ink)}
+.btn.q:hover{background:var(--sel);border-color:var(--accent-edge)}
+.btn.d{border-color:var(--danger-ink);color:var(--danger-ink)}
+.btn.d:hover{background:color-mix(in srgb,var(--danger-ink) 12%,transparent)}
+.btn.xs{min-height:36px;padding:0 10px;font-size:11.5px}
+
+/* Searchable picker button + popover (Task 81 C: kills native browser blue highlight) */
+.pick-btn{min-height:38px;width:100%;border:1px solid var(--line-2);border-radius:8px;background:var(--inset);color:var(--ink);padding:6px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;transition:border-color .14s,background .14s}
+.pick-btn:hover{border-color:var(--accent-edge);background:var(--sel)}
+.pick-btn .pk-txt{min-width:0;flex:1}
+.pick-btn .pk-name{display:block;font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick-btn .pk-sub{display:block;font-size:10.5px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pick-btn .pk-ic{display:inline-flex;align-items:center;gap:4px;color:var(--accent-ink);font-size:11px;font-weight:600;flex:none}
+.search-box{min-height:38px;padding:0 10px;border:1px solid var(--line-2);border-radius:8px;display:flex;align-items:center;gap:8px;background:var(--inset);color:var(--ink-muted);width:100%}
+.search-box:focus-within{border-color:var(--accent-edge)}
+.search-box input{border:0;background:transparent;outline:0;color:var(--ink);flex:1;min-width:0;font-size:12.5px}
+.pop-list{max-height:300px;overflow-y:auto;border:1px solid var(--line);border-radius:9px;background:var(--panel);display:flex;flex-direction:column}
+.pop-grp{padding:6px 11px;background:var(--inset);border-bottom:1px solid var(--line);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-ink)}
+.pop-opt{width:100%;min-height:42px;border:0;border-bottom:1px solid var(--hair);background:transparent;padding:8px 12px;text-align:left;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pop-opt:last-child{border-bottom:0}
+.pop-opt:hover{background:var(--sel)}
+.pop-opt.on{background:var(--wash);font-weight:700}
+.pop-opt b{display:block;font-size:12.5px}
+.pop-opt span{display:block;font-size:11px;color:var(--ink-dim)}
 
 /* 4-cell KPI strip */
 .kpi{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);flex:none;background:var(--panel)}
@@ -126,142 +146,131 @@ svg.i{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 .qcard .qh{display:flex;justify-content:space-between;align-items:baseline;gap:6px;cursor:pointer}
 .qcard .qh b{font-size:12px}
 
-/* Right Pane: Full Shop in Hand */
-.right{padding:12px 14px;overflow-y:auto;min-height:0;display:flex;flex-direction:column}
-.det{display:flex;flex-direction:column;gap:10px;min-width:0;flex:1}
-.dh{display:flex;gap:10px;align-items:flex-start}
-.dh h3{margin:0;font-size:15px}
-.dh p{margin:1px 0 0;font-size:11.5px;color:var(--ink-dim)}
-.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel);flex:none}
-.facts div{padding:6px 9px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-width:0}
+/* Right Pane: Full Shop in Hand (Task 81 D, F: clear segmented tabs + distinct spaced cards) */
+.right{padding:14px 16px;overflow-y:auto;min-height:0;display:flex;flex-direction:column;background:var(--ground)}
+.det{display:flex;flex-direction:column;gap:14px;min-width:0;flex:1}
+.dh{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:11px;background:var(--panel)}
+.dh h3{margin:0;font-size:15.5px}
+.dh p{margin:2px 0 0;font-size:11.5px;color:var(--ink-dim)}
+.sec-wrap{display:flex;flex-direction:column;gap:7px}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--panel);flex:none}
+.facts div{padding:8px 11px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-width:0}
 .facts div:nth-child(4n){border-right:0}
 .facts div:nth-last-child(-n+4){border-bottom:0}
 .facts span.fl{display:block;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);font-weight:600}
 .facts b.fv{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-.cards{display:grid;grid-template-columns:1fr;gap:10px}
-.card{border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:9px 10px;display:flex;flex-direction:column;gap:7px;min-width:0}
-.ch{display:flex;justify-content:space-between;align-items:center;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);font-weight:700}
-.map{height:84px;border:1px solid var(--line-2);border-radius:7px;background:var(--inset);position:relative;overflow:hidden}
+.cards{display:grid;grid-template-columns:1fr;gap:12px}
+.card{border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:12px 14px;display:flex;flex-direction:column;gap:9px;min-width:0}
+.ch{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim);font-weight:700;gap:8px;flex-wrap:wrap;padding:0 2px}
+.map{height:84px;border:1px solid var(--line-2);border-radius:8px;background:var(--inset);position:relative;overflow:hidden}
 .map::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 16px,var(--hair) 16px 17px),repeating-linear-gradient(90deg,transparent 0 20px,var(--hair) 20px 21px)}
 .map .road{position:absolute;left:-10%;right:-10%;top:58%;height:7px;background:var(--line);transform:rotate(-8deg)}
 .map .pin{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:999px;border:1px solid var(--accent-edge);background:var(--raised);font-size:10px;font-weight:700;color:var(--accent-ink);white-space:nowrap}
-.sv{height:84px;border:1px solid var(--line-2);border-radius:7px;overflow:hidden;background:var(--inset)}
-.seg2{display:inline-flex;border:1px solid var(--line-2);border-radius:6px;overflow:hidden}
-.seg2 button{border:0;background:transparent;padding:2px 7px;font-size:10px;color:var(--ink-dim)}
-.seg2 button.on{background:var(--wash);color:var(--ink);font-weight:600}
-.addr{font-size:11px;color:var(--ink-muted)}
-.bf{display:grid;grid-template-columns:1.2fr 1fr 76px auto;gap:5px}
-.inp{height:26px;border:1px solid var(--line-2);border-radius:6px;background:var(--inset);padding:0 7px;font-size:11px;color:var(--ink);outline:0;min-width:0}
+.sv{height:84px;border:1px solid var(--line-2);border-radius:8px;overflow:hidden;background:var(--inset)}
+.seg2{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;padding:3px;gap:3px;background:var(--inset)}
+.seg2 button{min-height:32px;border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:0 10px;font-size:11.5px;color:var(--ink-muted);font-weight:600}
+.seg2 button.on{background:var(--wash);border-color:var(--accent-edge);color:var(--ink);font-weight:700}
+.addr{font-size:12px;color:var(--ink-muted);padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.bf{display:grid;grid-template-columns:1.2fr 1fr 76px auto;gap:6px}
+.inp{min-height:36px;border:1px solid var(--line-2);border-radius:8px;background:var(--inset);padding:0 10px;font-size:12px;color:var(--ink);outline:0;min-width:0}
 .inp:focus{border-color:var(--accent-edge)}
+select.inp option{background:var(--panel);color:var(--ink)}
 table.b{width:100%;border-collapse:collapse}
 table.b th{text-align:left;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);padding:4px 5px;border-bottom:1px solid var(--line)}
 table.b td{padding:5px;border-bottom:1px solid var(--hair);font-size:11.5px;vertical-align:middle}
 table.b tr:last-child td{border-bottom:0}
-.xbtn{border:0;background:transparent;color:var(--danger-ink);font-size:13px;font-weight:700;padding:2px 6px;border-radius:4px}
+.xbtn{min-height:36px;border:1px solid var(--danger-ink);background:var(--panel);color:var(--danger-ink);font-size:13px;font-weight:700;padding:0 10px;border-radius:7px}
 .xbtn:hover{background:color-mix(in srgb,var(--danger-ink) 12%,transparent)}
-.acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line);padding-top:9px;margin-top:auto}
+.acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:10px 12px;margin-top:auto}
 .acts .sp{flex:1}
 
-/* Shop pane: its own three sections (his 2026-11-18: competitor intelligence, Street View and GPS map each get a special place, never mixed into the shop facts) */
-.stabs{display:flex;gap:4px;border-bottom:1px solid var(--line);flex:none;overflow-x:auto}
-.stab{border:0;background:transparent;padding:7px 10px 8px;font-size:12px;font-weight:600;color:var(--ink-dim);border-bottom:2px solid transparent;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
-.stab:hover{color:var(--ink)}
-.stab.on{color:var(--ink);border-bottom-color:var(--gold)}
-.stab .cnt{font-size:10px;padding:0 5px;border-radius:999px;border:1px solid var(--accent-edge);color:var(--accent-ink)}
-.tabbody{display:flex;flex-direction:column;gap:10px;flex:1;min-height:0}
-.glance{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.gl{border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:8px 10px;text-align:left;display:flex;flex-direction:column;gap:1px;min-width:0}
+/* Segmented Control Shop Tabs (Task 81 D) */
+.stabs{display:flex;gap:5px;padding:4px;border:1px solid var(--line-2);border-radius:10px;background:var(--inset);flex:none;overflow-x:auto;scrollbar-width:none}
+.stabs::-webkit-scrollbar{display:none}
+.stab{flex:1 0 auto;min-height:36px;border:1px solid var(--line-2);border-radius:7px;background:var(--panel);padding:0 10px;font-size:12px;font-weight:600;color:var(--ink-muted);display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;transition:background .14s,border-color .14s}
+.stab:hover{border-color:var(--accent-edge);color:var(--ink)}
+.stab.on{background:var(--wash);border-color:var(--accent-edge);color:var(--ink);font-weight:700}
+.stab .cnt{font-size:10px;padding:0 5px;border-radius:999px;border:1px solid var(--accent-edge);color:var(--accent-ink);background:var(--panel)}
+.tabbody{display:flex;flex-direction:column;gap:14px;flex:1;min-height:0}
+.glance{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.gl{min-height:68px;border:1px solid var(--line-2);border-radius:11px;background:var(--panel);padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:2px;min-width:0}
 .gl:hover{border-color:var(--accent-edge);background:var(--sel)}
-.gl b{font-size:12.5px}.gl span.dim{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gl b{font-size:13px}.gl span.dim{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fl{display:block;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);font-weight:600}
-.locgrid{display:grid;grid-template-columns:1fr;gap:8px}
+.locgrid{display:grid;grid-template-columns:1fr;gap:12px}
 .locgrid.two{grid-template-columns:1fr 1fr}
 .map.big,.sv.big{height:220px;position:relative}
 .map .road.r2{top:20%;left:44%;right:auto;width:7px;height:140%;transform:rotate(12deg)}
 .map .scale{position:absolute;right:8px;bottom:6px;font-size:9.5px;color:var(--ink-dim);border-bottom:1px solid var(--ink-dim);padding:0 10px 1px}
 .svtag{position:absolute;left:8px;bottom:6px;font-size:9.5px;padding:1px 6px;border-radius:5px;background:var(--raised);border:1px solid var(--line-2);color:var(--ink-muted)}
-.lrows{border:1px solid var(--line);border-radius:9px;background:var(--panel);overflow:hidden}
-.lrows > div{display:grid;grid-template-columns:96px minmax(0,1fr) auto;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid var(--hair);font-size:12px}
+.lrows{border:1px solid var(--line);border-radius:11px;background:var(--panel);overflow:hidden}
+.lrows > div{display:grid;grid-template-columns:96px minmax(0,1fr) auto;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--hair);font-size:12px}
 .lrows > div:last-child{border-bottom:0}
-.csum{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--panel)}
-.csum > div{padding:7px 10px;border-right:1px solid var(--line);min-width:0}.csum > div:last-child{border-right:0}
-.csum b{font-size:15px;display:block}.csum span.dim{font-size:10.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cmp{border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:4px 10px}
-.crow{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 78px auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--hair)}
-.cn b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cn span{font-size:10.5px}
+.csum{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--panel)}
+.csum > div{padding:10px 12px;border-right:1px solid var(--line);min-width:0}.csum > div:last-child{border-right:0}
+.csum b{font-size:16px;display:block}.csum span.dim{font-size:10.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmp{border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:6px 12px}
+.crow{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 78px auto;gap:10px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--hair);min-height:48px}
+.cn b{display:block;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cn span{font-size:11px}
 .cb{display:flex;flex-direction:column;gap:3px}
 .cbar{height:5px;border-radius:3px;background:var(--inset);overflow:hidden}
 .cbar span{display:block;height:100%}
 .them{background:var(--danger-ink)}.us{background:var(--gold)}
-.cp{text-align:right}.cp b{display:block;font-size:12px}.cp span{font-size:10.5px}
-.legend{display:flex;gap:12px;justify-content:flex-end;padding:6px 0 3px;font-size:10.5px;color:var(--ink-dim)}
+.cp{text-align:right}.cp b{display:block;font-size:12.5px}.cp span{font-size:10.5px}
+.legend{display:flex;gap:12px;justify-content:flex-end;padding:7px 0 4px;font-size:10.5px;color:var(--ink-dim)}
 .legend i{display:inline-block;width:10px;height:5px;border-radius:2px;margin-right:5px;vertical-align:1px}
-.cform{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-.cform .w2{grid-column:span 2}
-.cform .inp{height:30px}
-.tl{border:1px solid var(--line);border-radius:9px;background:var(--panel)}
-.tli{display:grid;grid-template-columns:48px minmax(0,1fr) auto 24px;gap:8px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--hair)}
+.tl{border:1px solid var(--line);border-radius:11px;background:var(--panel)}
+.tli{display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--hair)}
 .tli:last-child{border-bottom:0}
 .td{font-size:11px;font-weight:700;color:var(--ink-muted)}
-.tb b{display:block;font-size:12px}.tb span{font-size:10.5px;display:block}
-/* Side by side (his 2026-11-19: "we can choose one of our competitor products and it shows comparison of our choosen product" - the user picks both sides, ours always on the left) */
-.duel{border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:10px;display:flex;flex-direction:column;gap:10px}
-.dcols{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.dcol{border:1px solid var(--line);border-radius:8px;background:var(--raised);padding:8px 10px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.tb b{display:block;font-size:12.5px}.tb span{font-size:11px;display:block}
+.duel{border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:13px 14px;display:flex;flex-direction:column;gap:12px}
+.dcols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dcol{border:1px solid var(--line);border-radius:9px;background:var(--raised);padding:11px 12px;display:flex;flex-direction:column;gap:7px;min-width:0}
 .dcol.mine{border-color:var(--accent-edge)}
-.pk{position:relative;display:flex;align-items:center;gap:6px;border:1px solid var(--line-2);border-radius:6px;background:var(--inset);padding:5px 8px;font-size:12px;font-weight:600;min-height:32px}
-.pk span{flex:1;min-width:0;line-height:1.25}
-.pk i{font-style:normal;color:var(--ink-dim);font-size:11px}
-.pk select{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
-.pk:hover{border-color:var(--accent-edge)}
-.pk:focus-within{outline:2px solid var(--accent-edge);outline-offset:1px}
 .dcol .big{font-size:21px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
-.dcol .sub{font-size:10.5px;color:var(--ink-dim)}
-.chips{display:flex;flex-wrap:wrap;gap:4px}
-.bfly{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}
+.dcol .sub{font-size:11px;color:var(--ink-dim)}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.bfly{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
 .bfly .l{display:flex;justify-content:flex-end}
 .bfly .bar{display:block;height:8px;border-radius:4px;transition:width .3s ease}
-.ladder{display:flex;flex-direction:column;border-top:1px solid var(--hair);padding-top:6px}
-.lad{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:center;padding:4px 6px;border-left:3px solid transparent;font-size:11.5px;border-radius:4px}
+.ladder{display:flex;flex-direction:column;border-top:1px solid var(--hair);padding-top:8px}
+.lad{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 8px;border-left:3px solid transparent;font-size:12px;border-radius:4px}
 .lad.me{border-left-color:var(--gold);background:var(--sel);font-weight:700}
 .lad.pick{border-left-color:var(--danger-ink);font-weight:700}
 .lad .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lad b{font-variant-numeric:tabular-nums}
 button.crow{width:100%;border:0;border-bottom:1px solid var(--hair);background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer;border-radius:0}
 button.crow:hover,button.crow.on{background:var(--sel)}
-.phone .dcol .big{font-size:17px}
-/* Categories + pairs set by us (his 2026-11-19: "we are the only one who knows which of our product that is can be compared with what product ... apple to apple") */
-.cchips{display:flex;gap:6px;flex-wrap:wrap}
-.cchip{border:1px solid var(--line-2);background:transparent;border-radius:999px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--ink-muted)}
-.cchip:hover{border-color:var(--accent-edge)}
-.cchip.on{border-color:var(--accent-edge);background:var(--wash);color:var(--ink)}
-.cchip span{color:var(--ink-dim);margin-left:4px;font-weight:500}
+.phone .dcol .big{font-size:18px}
 .dempty{border:1px dashed var(--line-2);border-radius:6px;padding:12px 8px;font-size:11.5px;color:var(--ink-dim);text-align:center;line-height:1.45}
 .phone .glance,.phone .locgrid.two,.phone .csum{grid-template-columns:1fr 1fr}
 .phone .map.big,.phone .sv.big{height:150px}
-.phone .crow{grid-template-columns:minmax(0,1fr) 72px auto}.phone .cb{display:none}
-.phone .cform{grid-template-columns:1fr 1fr}
 
-/* In-page Modals (Admin Tools, Add/Edit Form, Confirm/Prompt Boxes) */
-.ov{position:absolute;inset:0;background:var(--scrim);display:flex;align-items:center;justify-content:center;z-index:25;padding:16px;animation:fi .15s}
+/* In-page Modals with BLURRED backdrop (Task 81 E) */
+.ov{position:absolute;inset:0;background:var(--scrim);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:25;padding:16px;animation:fi .15s}
+.ov.pop{z-index:40}
 @keyframes fi{from{opacity:0}}
-.dlg{background:var(--raised);border:1px solid var(--accent-edge);border-radius:12px;width:min(720px,100%);max-height:94%;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:11px;box-shadow:0 24px 50px -20px rgba(0,0,0,.65)}
-.dlg.sm{width:min(430px,100%)}
-.dlg h4{margin:0;font-size:14px}
+.dlg{background:var(--raised);border:1px solid var(--accent-edge);border-radius:12px;width:min(720px,100%);max-height:94%;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 24px 50px -20px rgba(0,0,0,.65)}
+.dlg.sm{width:min(460px,100%)}
+.dlg h4{margin:0;font-size:15px}
 .dlg p{margin:0;font-size:12px;color:var(--ink-muted);line-height:1.45}
 .dlg .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding-top:4px}
 .box{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
-.bh{padding:8px 12px;background:var(--inset);border-bottom:1px solid var(--line);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
-.br{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--hair);flex-wrap:wrap}
+.bh{padding:9px 12px;background:var(--inset);border-bottom:1px solid var(--line);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.br{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--hair);flex-wrap:wrap}
 .br:last-child{border-bottom:0}
-.tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.tc{border:1px solid var(--line-2);border-radius:8px;background:var(--panel);padding:9px;display:flex;flex-direction:column;gap:5px}
-.tc b{font-size:12px}.tc span{font-size:11px;color:var(--ink-dim);flex:1}
-.form{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
-.form label{display:flex;flex-direction:column;gap:3px;font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);font-weight:700}
-.form .inp{height:30px;font-size:11.5px;width:100%}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tc{border:1px solid var(--line-2);border-radius:9px;background:var(--panel);padding:11px;display:flex;flex-direction:column;gap:7px}
+.tc b{font-size:12.5px}.tc span{font-size:11.5px;color:var(--ink-dim);flex:1}
+.form{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
+.form label{display:flex;flex-direction:column;gap:4px;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);font-weight:700}
+.form .inp{min-height:36px;font-size:12px;width:100%}
 .form .w2{grid-column:span 2}.form .w3{grid-column:span 3}.form .w6{grid-column:span 6}
-.link-btn{border:0;background:transparent;padding:0;color:var(--accent-ink);text-decoration:underline;font-size:11px;font-weight:600}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fg2 label{display:flex;flex-direction:column;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-dim)}
+.link-btn{min-height:36px;border:1px solid var(--accent-edge);border-radius:8px;background:var(--panel);padding:0 11px;color:var(--accent-ink);font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.link-btn:hover{background:var(--wash)}
 
 /* Self-drawing gold check toast */
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;
@@ -275,21 +284,23 @@ button.crow:hover,button.crow.on{background:var(--sel)}
 
 /* Phone frame: stacked panes (tree -> area -> shop, with Back key) */
 .sb{height:24px;display:flex;justify-content:space-between;align-items:center;padding:0 18px;font-size:11px;color:var(--ink-dim);background:var(--panel);flex:none}
-.phone .top{padding:8px 12px;gap:6px}
+.phone .top{padding:8px 12px;gap:8px}
 .phone .top .sub{display:none}
-.phone .search{order:10;flex:1 1 100%;height:30px}
+.phone .btn,.phone .btn.xs,.phone .stab,.phone .pick-btn,.phone .pop-opt,.phone .link-btn,.phone .seg2 button,.phone .ph-steps button{min-height:44px}
+.phone .search{order:10;flex:1 1 100%;min-height:40px}
 .phone .search input{width:100%}
 .phone .kpi{grid-template-columns:1fr 1fr}
 .phone .kpi > div{padding:6px 10px;border-bottom:1px solid var(--line)}
 .phone .kpi > div:nth-child(2n){border-right:0}
 .phone .kpi > div:nth-child(n+3){border-bottom:0}
 .phone .kpi i{display:block;margin:1px 0 0;font-size:10px}
-.ph-nav{display:flex;align-items:center;gap:6px;padding:7px 12px;background:var(--inset);border-bottom:1px solid var(--line);flex:none}
-.ph-steps{display:inline-flex;border:1px solid var(--line-2);border-radius:6px;overflow:hidden;margin-left:auto}
-.ph-steps button{border:0;background:transparent;padding:3px 8px;font-size:10.5px;color:var(--ink-dim)}
-.ph-steps button.on{background:var(--wash);color:var(--ink);font-weight:600}
+.ph-nav{display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--inset);border-bottom:1px solid var(--line);flex:none;flex-wrap:wrap}
+.ph-steps{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;padding:3px;gap:3px;background:var(--ground);margin-left:auto}
+.ph-steps button{border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:0 9px;font-size:11px;color:var(--ink-muted);font-weight:600}
+.ph-steps button.on{background:var(--wash);border-color:var(--accent-edge);color:var(--ink);font-weight:700}
 .phone .body{grid-template-columns:1fr}
 .phone .tree,.phone .mid{border-right:0}
+.phone .right{padding:12px}
 .phone .facts{grid-template-columns:1fr 1fr}
 .phone .facts div:nth-child(2n){border-right:0}
 .phone .facts div:nth-last-child(-n+4){border-bottom:1px solid var(--line)}
@@ -298,9 +309,11 @@ button.crow:hover,button.crow.on{background:var(--sel)}
 .phone .tools{grid-template-columns:1fr}
 .phone .form{grid-template-columns:1fr 1fr}
 .phone .form .w2,.phone .form .w3,.phone .form .w6{grid-column:span 2}
-.phone .stabs{gap:8px;overflow-x:auto}
-.phone .stab{font-size:11px;gap:4px;white-space:nowrap;flex-shrink:0}
+.phone .fg2{grid-template-columns:1fr}
+.phone .stabs{gap:4px;overflow-x:auto}
+.phone .stab{font-size:11px;gap:4px;white-space:nowrap;flex-shrink:0;padding:0 8px}
 .phone .dcols{grid-template-columns:1fr}
+.phone .bfly{grid-template-columns:1fr;text-align:center}
 .phone .crow{grid-template-columns:1fr auto}
 .phone .crow .cb{display:none}
 
@@ -463,7 +476,7 @@ const freshState = (mode) => ({
   bRival: 'r1', bNewName: '', bNote: '', bPrice: '', bShelf: 'Eye level', bPromo: 'None', bSpeed: 'Medium', bPhoto: false,
   shopTab: 'shop', cmpRival: '', cmpOurs: '',
   ownerPick: {}, prev: {}, grown: false,
-  modal: null, form: null, promptVal: '', folderLevel: 'Kecamatan',
+  modal: null, form: null, picker: null, promptVal: '', folderLevel: 'Kecamatan',
 });
 
 function mount(el, mode) {
@@ -475,6 +488,14 @@ function mount(el, mode) {
   render(el, st);
 }
 function rerenderAll() { apps.forEach((a) => render(a.el, a.st)); }
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    apps.forEach((a) => {
+      if (a.st.picker) { a.st.picker = null; render(a.el, a.st); }
+      else if (a.st.modal) { a.st.modal = null; a.st.form = null; render(a.el, a.st); }
+    });
+  }
+});
 
 function scopedShops() {
   return isRegionalOnly() ? SHOPS.filter((s) => s.prov === 'JAWA BARAT') : SHOPS;
@@ -571,6 +592,7 @@ function render(el, st) {
   html += `</div>`;
 
   if (st.modal) html += st.modal(st);
+  if (st.picker) html += renderPickerPopover(st, activeShop);
   el.innerHTML = html;
   settleRolls(el);
   st.grown = true;
@@ -787,7 +809,62 @@ function regionSpeedCompare(s, l) {
   };
 }
 
-/* Side by side (read-only from global Competitors): region price for THIS shop's customer type; any Cello vs any rival; cross-category allowed & tagged */
+/* Searchable picker button + popover (Task 81 C: kills native browser blue highlight) */
+function pickerButton({ kind, target, label, sub }) {
+  return `<button type="button" class="pick-btn" data-open-picker="${kind}" data-target="${target}">
+    <span class="pk-txt"><span class="pk-name">${esc(label)}</span>${sub ? `<span class="pk-sub">${esc(sub)}</span>` : ''}</span>
+    <span class="pk-ic"><svg class="i"><use href="#srch"/></svg>Change</span>
+  </button>`;
+}
+
+function renderPickerPopover(st, s) {
+  const pk = st.picker;
+  const q = (pk.q || '').trim().toLowerCase();
+  const sections = [];
+  if (pk.kind === 'ours') {
+    const refCat = pk.catId || '';
+    const same = OURS.filter((o) => o.catId === refCat && (!q || o.name.toLowerCase().includes(q) || catLabel(o.catId, o.subId).toLowerCase().includes(q)));
+    const other = OURS.filter((o) => o.catId !== refCat && (!q || o.name.toLowerCase().includes(q) || catLabel(o.catId, o.subId).toLowerCase().includes(q)));
+    if (same.length) sections.push({ title: 'Same category', items: same.map((o) => ({ id: o.id, name: o.name, sub: catLabel(o.catId, o.subId), right: rp(ourPrice(o, s.price)) })) });
+    if (other.length) sections.push({ title: 'Other categories', items: other.map((o) => ({ id: o.id, name: o.name, sub: catLabel(o.catId, o.subId), right: rp(ourPrice(o, s.price)) })) });
+  } else if (pk.kind === 'shop-rival') {
+    const logs = s?.logs || [];
+    CAT_TREE.forEach((c) => {
+      const items = logs.filter((l) => {
+        const rv = rivalOf(l);
+        return rv && rv.catId === c.id && (!q || rv.name.toLowerCase().includes(q) || catLabel(rv.catId, rv.subId).toLowerCase().includes(q));
+      });
+      if (items.length) sections.push({ title: c.name, items: items.map((l) => { const rv = rivalOf(l); return { id: l.id, name: rv.name, sub: `${catLabel(rv.catId, rv.subId)} · ${l.v} selling`, right: rp(rivalPrice(rv, s.prov, s.price)) }; }) });
+    });
+  } else if (pk.kind === 'report-rival') {
+    sections.push({ title: 'New product', items: [{ id: '__new__', name: '+ New product (not on list yet)', sub: 'Type the rival name on the form', right: '' }] });
+    CAT_TREE.forEach((c) => {
+      const items = RIVALS.filter((r) => r.catId === c.id && (!q || r.name.toLowerCase().includes(q) || catLabel(r.catId, r.subId).toLowerCase().includes(q)));
+      if (items.length) sections.push({ title: c.name, items: items.map((r) => ({ id: r.id, name: r.name, sub: catLabel(r.catId, r.subId), right: rp(rivalPrice(r, s.prov, s.price)) })) });
+    });
+  }
+  return `<div class="ov pop" data-ov="picker"><div class="dlg sm" role="dialog" aria-label="${esc(pk.title)}">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <h4>${esc(pk.title)}</h4>
+      <button type="button" class="btn xs q" data-act="close-picker">Close</button>
+    </div>
+    <label class="search-box">
+      <svg class="i"><use href="#srch"/></svg>
+      <input data-f="pkQ" id="pkq-${st.mode}" value="${esc(pk.q || '')}" placeholder="Search product or category...">
+    </label>
+    <div class="pop-list">
+      ${sections.length ? sections.map((sec) => `
+        <div class="pop-grp">${esc(sec.title)}</div>
+        ${sec.items.map((it) => `<button type="button" class="pop-opt ${pk.current === it.id ? 'on' : ''}" data-pick-opt="${esc(it.id)}">
+          <div style="min-width:0"><b>${esc(it.name)}</b><span>${esc(it.sub)}</span></div>
+          ${it.right ? `<b style="font-size:12px;white-space:nowrap">${esc(it.right)}</b>` : ''}
+        </button>`).join('')}
+      `).join('') : `<div class="dim" style="padding:18px;text-align:center">No products match "${esc(pk.q)}".</div>`}
+    </div>
+  </div></div>`;
+}
+
+/* Side by side (read-only from global Competitors): region price for THIS shop's customer type; searchable pickers; cross-category allowed & tagged */
 function compareCard(s, st) {
   const logs = s.logs;
   if (!logs.length) return '';
@@ -805,7 +882,6 @@ function compareCard(s, st) {
   const verdict = gap < 0 ? `Rival ${rp(-gap)} cheaper · ${pct}%` : gap > 0 ? `Cello ${rp(gap)} cheaper · ${pct}%` : 'Same price';
   const peer = regionSpeedCompare(s, r);
 
-  // Price ladder in the rival's sub-category using this shop's region + customer type
   const lad = [];
   RIVALS.filter((x) => x.subId === rv.subId).forEach((x) => {
     lad.push({ n: x.name, rp: rivalPrice(x, s.prov, s.price), k: x.id === rv.id ? 'pick' : '' });
@@ -817,23 +893,24 @@ function compareCard(s, st) {
   lad.sort((a, b) => a.rp - b.rp || (a.k === 'me' ? -1 : b.k === 'me' ? 1 : 0));
   const rank = lad.findIndex((x) => x.k === 'me') + 1;
 
-  return `<div class="ch"><span>Side by side · ${esc(s.prov)} · ${esc(s.price)}</span><button type="button" class="link-btn" data-act="open-competitors">Open Competitors ›</button></div>
+  return `<div class="sec-wrap">
+    <div class="ch"><span>Side by side · ${esc(s.prov)} · ${esc(s.price)}</span><span>read-only from Competitors</span></div>
     <div class="duel">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-        <span class="dim" style="font-size:11px">Read-only prices from Competitors screen (${esc(s.prov)} · ${esc(s.price)})</span>
+        <span class="dim" style="font-size:11.5px">Region price for this shop (${esc(s.prov)} · ${esc(s.price)})</span>
         ${diffCat ? `<span class="st g">Different category</span>` : `<span class="st">Same category</span>`}
       </div>
       <div class="dcols">
         <div class="dcol mine">
           <span class="fl">Our product · ${esc(catLabel(o.catId, o.subId))}</span>
-          <label class="pk"><span>${esc(o.name)}</span><i>▾</i><select data-f="cmpOurs" aria-label="Our product to compare">${OURS.map((x) => `<option value="${x.id}" ${x.id === o.id ? 'selected' : ''}>${esc(x.name)} · ${esc(catLabel(x.catId, x.subId))}</option>`).join('')}</select></label>
+          ${pickerButton({ kind: 'ours', target: 'cmp-ours', label: o.name, sub: catLabel(o.catId, o.subId) })}
           <span class="big">${rp(oRp)}</span>
           <span class="sub">our ${esc(s.price)} price list</span>
           ${o.id === rv.pair ? `<span class="st g" style="align-self:flex-start">Default pair</span>` : `<span class="sub">comparing freely</span>`}
         </div>
         <div class="dcol">
           <span class="fl">Rival product · ${esc(catLabel(rv.catId, rv.subId))}</span>
-          <label class="pk"><span>${esc(rv.name)}</span><i>▾</i><select data-f="cmpRival" aria-label="Rival product to compare">${logs.map((l) => { const rx = rivalOf(l); return rx ? `<option value="${l.id}" ${l.id === r.id ? 'selected' : ''}>${esc(rx.name)} · ${rp(rivalPrice(rx, s.prov, s.price))}</option>` : ''; }).join('')}</select></label>
+          ${pickerButton({ kind: 'shop-rival', target: 'cmp-rival', label: rv.name, sub: `${catLabel(rv.catId, rv.subId)} · ${r.v} selling` })}
           <span class="big" style="color:var(--danger-ink)">${rp(rRp)}</span>
           <span class="sub">${esc(s.prov)} ${esc(s.price)} · by ${esc(meta.by)} · ${fmtD(meta.date)}</span>
           <div class="chips"><span class="st">${esc(r.shelf)}</span><span class="st">${r.promo === 'None' ? 'No promo' : esc(r.promo)}</span><span class="st ${r.v === 'Fast' ? 'bad' : ''}">${esc(r.v)} selling</span></div>
@@ -844,12 +921,13 @@ function compareCard(s, st) {
         <span class="st ${gap < 0 ? 'bad' : 'g'}">${verdict}</span>
         <div><span class="bar them" style="width:${Math.round((rRp / top) * 100)}%"></span></div>
       </div>
-      <div class="dim" style="font-size:11px"><b>In this shop:</b> ${esc(peer.summary)}${r.n ? ' · Note: ' + esc(r.n) : ''}</div>
+      <div class="dim" style="font-size:11.5px"><b>In this shop:</b> ${esc(peer.summary)}${r.n ? ' · Note: ' + esc(r.n) : ''}</div>
       <div class="ladder">
         <div class="ch" style="padding:0 6px 4px"><span>Price ladder · ${esc(catLabel(rv.catId, rv.subId))} (${esc(s.prov)} ${esc(s.price)})</span><span>Cello is #${rank} of ${lad.length}</span></div>
         ${lad.map((x, i) => `<div class="lad ${x.k}"><span class="dim">${i + 1}</span><span class="n">${esc(x.n)}${x.k === 'me' ? ' (ours)' : ''}</span><b>${rp(x.rp)}</b></div>`).join('')}
       </div>
-    </div>`;
+    </div>
+  </div>`;
 }
 
 function renderRightPane(s, st, ro, boss) {
@@ -863,31 +941,37 @@ function renderRightPane(s, st, ro, boss) {
       <div style="flex:1;min-width:0"><h3>${esc(s.name)}</h3><p>${esc(s.kec)} · ${esc(s.kab)} · ${esc(s.prov)} · ${esc(s.status)}</p></div>
       <span class="st ${stateCls}">${esc(stateLabel)}</span>
     </div>`;
-  const TABS = [['shop', 'Shop info', 'edit'], ['loc', 'Location', 'pin'], ['comp', 'Competitor intelligence', 'srch']];
-  const tabs = `<div class="stabs" role="tablist">${TABS.map(([k, l, ic]) => `<button type="button" class="stab ${tab === k ? 'on' : ''}" role="tab" aria-selected="${tab === k}" data-stab="${k}"><svg class="i"><use href="#${ic}"/></svg>${l}${k === 'comp' ? ` <span class="cnt">${s.logs.length}</span>` : ''}</button>`).join('')}</div>`;
+  const TABS = [['shop', 'Shop info', 'edit'], ['loc', 'Location', 'pin'], ['comp', 'Competitors', 'srch']];
+  const tabs = `<div class="stabs" role="tablist" aria-label="Shop sections">${TABS.map(([k, l, ic]) => `<button type="button" class="stab ${tab === k ? 'on' : ''}" role="tab" aria-selected="${tab === k}" data-stab="${k}"><svg class="i"><use href="#${ic}"/></svg>${l}${k === 'comp' ? ` <span class="cnt">${s.logs.length}</span>` : ''}</button>`).join('')}</div>`;
   let body = '';
 
   if (tab === 'shop') {
     const minRv = s.logs.length ? Math.min(...s.logs.map((l) => rivalPrice(rivalOf(l), s.prov, s.price))) : 0;
-    body = `<div class="facts">
-        <div><span class="fl">Salesman (PIC)</span><b class="fv">${esc(s.pic)}</b></div>
-        <div><span class="fl">Opened by (NOO)</span><b class="fv">${esc(s.noo)}</b></div>
-        <div><span class="fl">Price tier</span><b class="fv">${esc(s.price)}</b></div>
-        <div><span class="fl">Map tier</span><b class="fv">${esc(s.tier)}</b></div>
-        <div><span class="fl">Visit rhythm</span><b class="fv">Every ${s.freq} days</b></div>
-        <div><span class="fl">Last visit</span><b class="fv" style="${s.late ? 'color:var(--danger-ink)' : ''}">${esc(lastTxt)}</b></div>
-        <div><span class="fl">WhatsApp</span><b class="fv">${esc(s.wa)}</b></div>
-        <div><span class="fl">Grosir ask</span>${s.grosirAsk && !ro
-          ? `<span style="display:flex;gap:4px;margin-top:1px"><button type="button" class="btn xs" style="height:20px;padding:0 6px;font-size:10px" data-act="grosir-yes" data-id="${s.id}">Confirm</button><button type="button" class="btn xs q" style="height:20px;padding:0 6px;font-size:10px" data-act="grosir-no" data-id="${s.id}">Keep</button></span>`
-          : `<b class="fv">${s.grosirAsk ? 'Waiting' : 'None'}</b>`}</div>
+    body = `<div class="sec-wrap">
+        <div class="ch"><span>Shop profile</span><span>${esc(s.price)} pricing</span></div>
+        <div class="facts">
+          <div><span class="fl">Salesman (PIC)</span><b class="fv">${esc(s.pic)}</b></div>
+          <div><span class="fl">Opened by (NOO)</span><b class="fv">${esc(s.noo)}</b></div>
+          <div><span class="fl">Price tier</span><b class="fv">${esc(s.price)}</b></div>
+          <div><span class="fl">Map tier</span><b class="fv">${esc(s.tier)}</b></div>
+          <div><span class="fl">Visit rhythm</span><b class="fv">Every ${s.freq} days</b></div>
+          <div><span class="fl">Last visit</span><b class="fv" style="${s.late ? 'color:var(--danger-ink)' : ''}">${esc(lastTxt)}</b></div>
+          <div><span class="fl">WhatsApp</span><b class="fv">${esc(s.wa)}</b></div>
+          <div><span class="fl">Grosir ask</span>${s.grosirAsk && !ro
+            ? `<span style="display:flex;gap:5px;margin-top:3px"><button type="button" class="btn xs" data-act="grosir-yes" data-id="${s.id}">Confirm</button><button type="button" class="btn xs q" data-act="grosir-no" data-id="${s.id}">Keep</button></span>`
+            : `<b class="fv">${s.grosirAsk ? 'Waiting' : 'None'}</b>`}</div>
+        </div>
       </div>
       <div class="glance">
         <button type="button" class="gl" data-stab="loc"><span class="fl">Location</span><b>${esc(s.kec)}</b><span class="dim">${esc(s.gps)} · open map &amp; Street View ›</span></button>
         <button type="button" class="gl" data-stab="comp"><span class="fl">Competitors</span><b>${s.logs.length} rival${s.logs.length === 1 ? '' : 's'} seen here</b><span class="dim">${s.logs.length ? 'from ' + rp(minRv) + ' (' + esc(s.price) + ') · last ' + fmtD(s.logs[0].d) : 'none reported yet'} ›</span></button>
       </div>
-      <div class="addr">${esc(s.addr)}</div>
+      <div class="sec-wrap">
+        <div class="ch"><span>Address &amp; notes</span></div>
+        <div class="addr">${esc(s.addr)}</div>
+      </div>
       <div class="acts">
-        ${boss ? `<select class="inp" style="width:142px;height:28px" data-f="move-kec" data-id="${s.id}" aria-label="Move folder">
+        ${boss ? `<select class="inp" style="width:155px" data-f="move-kec" data-id="${s.id}" aria-label="Move folder">
           ${FOLDERS.map((f) => `<option value="${esc(f.kec)}" ${s.kec === f.kec ? 'selected' : ''}>${esc(f.kec)}</option>`).join('')}
           ${s.kec === 'UNKNOWN KECAMATAN' ? `<option value="UNKNOWN KECAMATAN" selected>UNKNOWN KECAMATAN</option>` : ''}
           <option value="CREATE_NEW">+ New Folder...</option></select>` : ''}
@@ -898,21 +982,28 @@ function renderRightPane(s, st, ro, boss) {
       </div>`;
   } else if (tab === 'loc') {
     const showMap = st.locMode !== 'street', showSv = st.locMode !== 'map';
-    body = `<div class="ch"><span>Where the shop is</span>
-        <span class="seg2" role="group" aria-label="Location view">
-          <button type="button" class="${st.locMode === 'both' ? 'on' : ''}" data-act="loc-mode" data-m="both">Both</button>
-          <button type="button" class="${st.locMode === 'map' ? 'on' : ''}" data-act="loc-mode" data-m="map">GPS map</button>
-          <button type="button" class="${st.locMode === 'street' ? 'on' : ''}" data-act="loc-mode" data-m="street">Street View</button>
-        </span></div>
-      <div class="locgrid ${showMap && showSv ? 'two' : ''}">
-        ${showMap ? `<div class="map big"><div class="road"></div><div class="road r2"></div><span class="pin"><svg class="i" style="width:12px;height:12px"><use href="#pin"/></svg>${esc(s.name)}</span><span class="scale">50 m</span></div>` : ''}
-        ${showSv ? `<div class="sv big"><svg viewBox="0 0 320 200" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Street View of ${esc(s.name)}"><rect width="320" height="200" fill="var(--inset)"/><rect x="0" y="150" width="320" height="50" fill="var(--line)"/><rect x="0" y="146" width="320" height="4" fill="var(--line-2)"/><rect x="36" y="54" width="248" height="96" fill="var(--panel)" stroke="var(--line-2)"/><rect x="36" y="36" width="248" height="24" fill="var(--line-2)"/><text x="160" y="53" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">${esc(s.name)}</text><rect x="58" y="80" width="68" height="70" fill="var(--ground)" stroke="var(--line-2)"/><rect x="150" y="76" width="112" height="44" fill="var(--wash)" stroke="var(--accent-edge)"/><rect x="292" y="70" width="8" height="80" fill="var(--line-2)"/></svg><span class="svtag">Street View · facing north</span></div>` : ''}
+    body = `<div class="sec-wrap">
+        <div class="ch"><span>Where the shop is</span>
+          <span class="seg2" role="group" aria-label="Location view">
+            <button type="button" class="${st.locMode === 'both' ? 'on' : ''}" data-act="loc-mode" data-m="both">Both</button>
+            <button type="button" class="${st.locMode === 'map' ? 'on' : ''}" data-act="loc-mode" data-m="map">GPS map</button>
+            <button type="button" class="${st.locMode === 'street' ? 'on' : ''}" data-act="loc-mode" data-m="street">Street View</button>
+          </span></div>
+        <div class="card">
+          <div class="locgrid ${showMap && showSv ? 'two' : ''}">
+            ${showMap ? `<div class="map big"><div class="road"></div><div class="road r2"></div><span class="pin"><svg class="i" style="width:12px;height:12px"><use href="#pin"/></svg>${esc(s.name)}</span><span class="scale">50 m</span></div>` : ''}
+            ${showSv ? `<div class="sv big"><svg viewBox="0 0 320 200" width="100%" height="100%" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Street View of ${esc(s.name)}"><rect width="320" height="200" fill="var(--inset)"/><rect x="0" y="150" width="320" height="50" fill="var(--line)"/><rect x="0" y="146" width="320" height="4" fill="var(--line-2)"/><rect x="36" y="54" width="248" height="96" fill="var(--panel)" stroke="var(--line-2)"/><rect x="36" y="36" width="248" height="24" fill="var(--line-2)"/><text x="160" y="53" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">${esc(s.name)}</text><rect x="58" y="80" width="68" height="70" fill="var(--ground)" stroke="var(--line-2)"/><rect x="150" y="76" width="112" height="44" fill="var(--wash)" stroke="var(--accent-edge)"/><rect x="292" y="70" width="8" height="80" fill="var(--line-2)"/></svg><span class="svtag">Street View · facing north</span></div>` : ''}
+          </div>
+        </div>
       </div>
-      <div class="lrows">
-        <div><span class="fl">GPS pin</span><b style="font-family:ui-monospace,monospace">${esc(s.gps)}</b><button type="button" class="btn xs q" data-act="copy-gps" data-id="${s.id}">Copy</button></div>
-        <div><span class="fl">Address</span><b>${esc(s.addr)}</b></div>
-        <div><span class="fl">Area</span><b>${esc(s.kec)} · ${esc(s.kab)} · ${esc(s.prov)}</b></div>
-        <div><span class="fl">Street View</span><b>${s.embed ? 'Own link saved' : 'Taken from the GPS pin'}</b></div>
+      <div class="sec-wrap">
+        <div class="ch"><span>Coordinates &amp; address</span></div>
+        <div class="lrows">
+          <div><span class="fl">GPS pin</span><b style="font-family:ui-monospace,monospace">${esc(s.gps)}</b><button type="button" class="btn xs q" data-act="copy-gps" data-id="${s.id}">Copy</button></div>
+          <div><span class="fl">Address</span><b>${esc(s.addr)}</b></div>
+          <div><span class="fl">Area</span><b>${esc(s.kec)} · ${esc(s.kab)} · ${esc(s.prov)}</b></div>
+          <div><span class="fl">Street View</span><b>${s.embed ? 'Own link saved' : 'Taken from the GPS pin'}</b></div>
+        </div>
       </div>
       <div class="acts">
         <button type="button" class="btn" data-act="open-map" data-id="${s.id}"><svg class="i"><use href="#globe"/></svg>Open in Map</button>
@@ -928,53 +1019,59 @@ function renderRightPane(s, st, ro, boss) {
     const cheapestRv = cheapestLog ? rivalOf(cheapestLog) : null;
     const fastHere = logs.filter((l) => l.v === 'Fast').length;
     const picked = (logs.find((x) => x.id === st.cmpRival) || logs[0] || {}).id;
-    body = `<div class="csum">
+    body = `<div class="card" style="flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div style="min-width:160px"><b style="font-size:13.5px">Competitor actions</b><div class="dim" style="font-size:11.5px">Prices come from Competitors; field reports go to ${esc(s.prov)} admin</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" class="btn" data-act="open-report-rival" data-id="${s.id}"><svg class="i"><use href="#cam"/></svg>Report a rival</button>
+          <button type="button" class="btn q" data-act="open-competitors"><svg class="i"><use href="#globe"/></svg>Open Competitors ›</button>
+        </div>
+      </div>
+
+      <div class="csum">
         <div><span class="fl">Rivals seen here</span><b>${R(st, 'c-n' + s.id, String(logs.length))}</b><span class="dim">approved reports</span></div>
         <div><span class="fl">Fast-selling here</span><b style="${fastHere ? 'color:var(--danger-ink)' : ''}">${R(st, 'c-f' + s.id, String(fastHere))}</b><span class="dim">of ${logs.length} seen</span></div>
         <div><span class="fl">Cheapest (${esc(s.price)})</span><b>${cheapestRv ? rp(rivalPrice(cheapestRv, s.prov, s.price)) : '—'}</b><span class="dim">${cheapestRv ? esc(cheapestRv.name) : 'none yet'}</span></div>
         <div><span class="fl">Waiting approval</span><b style="color:var(--accent-ink)">${R(st, 'c-p' + s.id, String(pending.length))}</b><span class="dim">sent to admin</span></div>
       </div>
+
       ${compareCard(s, st)}
-      <div class="ch"><span>How it sells here vs other shops</span><span>${esc(s.prov)} · tap a rival to compare</span></div>
-      <div class="cmp">${logs.length ? logs.map((l) => {
-        const rv = rivalOf(l); if (!rv) return '';
-        const o = pairOf(l), on = l.id === picked;
-        const rRp = rivalPrice(rv, s.prov, s.price);
-        const oRp = o ? ourPrice(o, s.price) : 0;
-        const peer = regionSpeedCompare(s, l);
-        const top = Math.max(rRp, oRp, 1), w = Math.round((rRp / top) * 100), w2 = o ? Math.round((oRp / top) * 100) : 0;
-        return `<button type="button" class="crow ${on ? 'on' : ''}" data-act="cmp-pick" data-lid="${l.id}" aria-pressed="${on}">
-          <div class="cn"><b>${esc(rv.name)}</b><span class="dim" style="display:block">${esc(peer.summary)}</span><span class="dim" style="display:block">${esc(catLabel(rv.catId, rv.subId))} · ${esc(l.shelf)} · ${l.promo === 'None' ? 'no promo' : esc(l.promo)}</span></div>
-          <div class="cb"><div class="cbar"><span class="them" style="width:${w}%"></span></div>${o ? `<div class="cbar"><span class="us" style="width:${w2}%"></span></div>` : ''}</div>
-          <div class="cp"><b>${rp(rRp)}</b><span class="dim">${o ? rp(oRp) : '—'}</span></div>
-          <span class="st ${peer.cls}">${esc(peer.badge)}</span>
-        </button>`;
-      }).join('') : `<div class="dim" style="padding:12px;text-align:center">No approved rival sightings at this shop yet. Report one below or open Competitors.</div>`}
-        <div class="legend"><span><i class="them"></i>Rival (${esc(s.prov)} ${esc(s.price)})</span><span><i class="us"></i>Cello (${esc(s.price)})</span></div></div>
-      <div class="ch"><span>Report a rival</span><span>goes to ${esc(s.prov)} admin for approval</span></div>
-      <div class="cform">
-        <select class="inp w2" data-f="bRival" aria-label="Rival product">${rivalOptions(st.bRival)}</select>
-        <input class="inp" data-f="bPrice" id="br-${st.mode}" value="${esc(st.bPrice)}" type="number" placeholder="Price seen (Rp)">
-        ${st.bRival === '__new__' ? `<input class="inp w2" data-f="bNewName" id="bnw-${st.mode}" value="${esc(st.bNewName)}" placeholder="New rival product name (e.g. Rival Berry 16)">` : ''}
-        <select class="inp" data-f="bShelf" aria-label="Shelf">${SHELF.map((x) => `<option ${st.bShelf === x ? 'selected' : ''}>${x}</option>`).join('')}</select>
-        <select class="inp" data-f="bPromo" aria-label="Promo">${PROMO.map((x) => `<option value="${x}" ${st.bPromo === x ? 'selected' : ''}>${x === 'None' ? 'No promo' : x}</option>`).join('')}</select>
-        <select class="inp" data-f="bSpeed" aria-label="Selling">${SPEED.map((x) => `<option value="${x}" ${st.bSpeed === x ? 'selected' : ''}>${x} selling</option>`).join('')}</select>
-        <input class="inp w2" data-f="bNote" id="bn-${st.mode}" value="${esc(st.bNote)}" placeholder="Note (stock level, what the owner said)">
-        <button type="button" class="btn ${st.bPhoto ? '' : 'q'}" data-act="bench-photo"><svg class="i"><use href="#cam"/></svg>${st.bPhoto ? 'Photo attached' : 'Shelf photo'}</button>
-        <button type="button" class="btn" data-act="report-rival" data-id="${s.id}"><svg class="i"><use href="#chk"/></svg>Send report</button>
+
+      <div class="sec-wrap">
+        <div class="ch"><span>How it sells here vs other shops</span><span>${esc(s.prov)} · tap a rival to compare</span></div>
+        <div class="cmp">${logs.length ? logs.map((l) => {
+          const rv = rivalOf(l); if (!rv) return '';
+          const o = pairOf(l), on = l.id === picked;
+          const rRp = rivalPrice(rv, s.prov, s.price);
+          const oRp = o ? ourPrice(o, s.price) : 0;
+          const peer = regionSpeedCompare(s, l);
+          const top = Math.max(rRp, oRp, 1), w = Math.round((rRp / top) * 100), w2 = o ? Math.round((oRp / top) * 100) : 0;
+          return `<button type="button" class="crow ${on ? 'on' : ''}" data-act="cmp-pick" data-lid="${l.id}" aria-pressed="${on}">
+            <div class="cn"><b>${esc(rv.name)}</b><span class="dim" style="display:block">${esc(peer.summary)}</span><span class="dim" style="display:block">${esc(catLabel(rv.catId, rv.subId))} · ${esc(l.shelf)} · ${l.promo === 'None' ? 'no promo' : esc(l.promo)}</span></div>
+            <div class="cb"><div class="cbar"><span class="them" style="width:${w}%"></span></div>${o ? `<div class="cbar"><span class="us" style="width:${w2}%"></span></div>` : ''}</div>
+            <div class="cp"><b>${rp(rRp)}</b><span class="dim">${o ? rp(oRp) : '—'}</span></div>
+            <span class="st ${peer.cls}">${esc(peer.badge)}</span>
+          </button>`;
+        }).join('') : `<div class="dim" style="padding:14px;text-align:center">No approved rival sightings at this shop yet. Press "Report a rival" above.</div>`}
+          <div class="legend"><span><i class="them"></i>Rival (${esc(s.prov)} ${esc(s.price)})</span><span><i class="us"></i>Cello (${esc(s.price)})</span></div></div>
       </div>
-      ${pending.length ? `<div class="ch"><span>Waiting for approval</span><span>${pending.length} pending · not in comparison yet</span></div>
-      <div class="tl">${pending.map((p) => `<div class="tli">
-        <span class="td">${fmtD(p.d)}</span>
-        <div class="tb"><b>${esc(p.name)} · ${rp(p.rp)}</b><span class="dim">${p.isNew ? 'New product · ' : ''}${esc(p.shelf)} · ${p.promo === 'None' ? 'no promo' : esc(p.promo)} · ${esc(p.v)} selling${p.photo ? ' · photo' : ''}${p.n ? ' · ' + esc(p.n) : ''}</span></div>
-        <span class="st g">Waiting approval</span>
-      </div>`).join('')}</div>` : ''}
-      <div class="ch"><span>Approved sightings at this shop</span><span>${logs.length} entries · managed in Competitors</span></div>
-      <div class="tl">${logs.length ? logs.map((l) => { const rv = rivalOf(l); if (!rv) return ''; return `<div class="tli">
-        <span class="td">${fmtD(l.d)}</span>
-        <div class="tb"><b>${esc(rv.name)} · ${rp(rivalPrice(rv, s.prov, s.price))}</b><span class="dim">${esc(catLabel(rv.catId, rv.subId))} · ${esc(l.shelf)} · ${l.promo === 'None' ? 'no promo' : esc(l.promo)} · ${esc(l.v)} selling${l.n ? ' · ' + esc(l.n) : ''}</span></div>
-        <span class="st ${l.v === 'Fast' ? 'bad' : ''}">${esc(l.v)}</span>
-      </div>`; }).join('') : `<div class="dim" style="padding:10px">No approved sightings yet.</div>`}</div>`;
+
+      ${pending.length ? `<div class="sec-wrap">
+        <div class="ch"><span>Waiting for approval</span><span>${pending.length} pending · not in comparison yet</span></div>
+        <div class="tl">${pending.map((p) => `<div class="tli">
+          <span class="td">${fmtD(p.d)}</span>
+          <div class="tb"><b>${esc(p.name)} · ${rp(p.rp)}</b><span class="dim">${p.isNew ? 'New product · ' : ''}${esc(p.shelf)} · ${p.promo === 'None' ? 'no promo' : esc(p.promo)} · ${esc(p.v)} selling${p.photo ? ' · photo' : ''}${p.n ? ' · ' + esc(p.n) : ''}</span></div>
+          <span class="st g">Waiting approval</span>
+        </div>`).join('')}</div>
+      </div>` : ''}
+
+      <div class="sec-wrap">
+        <div class="ch"><span>Approved sightings at this shop</span><span>${logs.length} entries · managed in Competitors</span></div>
+        <div class="tl">${logs.length ? logs.map((l) => { const rv = rivalOf(l); if (!rv) return ''; return `<div class="tli">
+          <span class="td">${fmtD(l.d)}</span>
+          <div class="tb"><b>${esc(rv.name)} · ${rp(rivalPrice(rv, s.prov, s.price))}</b><span class="dim">${esc(catLabel(rv.catId, rv.subId))} · ${esc(l.shelf)} · ${l.promo === 'None' ? 'no promo' : esc(l.promo)} · ${esc(l.v)} selling${l.n ? ' · ' + esc(l.n) : ''}</span></div>
+          <span class="st ${l.v === 'Fast' ? 'bad' : ''}">${esc(l.v)}</span>
+        </div>`; }).join('') : `<div class="dim" style="padding:12px">No approved sightings yet.</div>`}</div>
+      </div>`;
   }
   return `<section class="right" aria-label="Shop">
     <div class="det">${head}${tabs}<div class="fade tabbody">${body}</div></div>
@@ -1087,6 +1184,36 @@ const M = {
     <p>Found <b>2 valid GPS pins</b> in <code>bandung-selatan.kml</code> (Folder: <b>BALEENDAH</b>). Each store lands in the Unassigned pool.</p>
     <div class="row"><button type="button" class="btn q" data-act="open-tools">Back</button><button type="button" class="btn" data-act="confirm-kml"><svg class="i"><use href="#chk"/></svg>Import 2 Pins</button></div>
   </div></div>`,
+  reportRival: (s) => (st) => {
+    const isNew = st.bRival === '__new__';
+    const rv = isNew ? null : RIVALS.find((x) => x.id === st.bRival);
+    return `<div class="ov"><div class="dlg sm" role="dialog" aria-label="Report a rival">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <h4>Report a rival · ${esc(s.name)}</h4>
+        <span class="st g">${esc(s.prov)} · ${esc(s.price)}</span>
+      </div>
+      <p>Sends to your ${esc(s.prov)} admin for approval. Stays in <b>Waiting for approval</b> until approved (not added to the comparison automatically).</p>
+      <div>
+        <span class="fl" style="margin-bottom:4px">Rival product</span>
+        ${pickerButton({ kind: 'report-rival', target: 'report-rival', label: isNew ? '+ New product (not on list yet)' : (rv ? rv.name : 'Pick rival...'), sub: isNew ? 'Type the new rival name below' : (rv ? catLabel(rv.catId, rv.subId) : '') })}
+      </div>
+      <div class="fg2">
+        ${isNew ? `<label>New rival name<input class="inp" data-f="bNewName" id="bnw-${st.mode}" value="${esc(st.bNewName)}" placeholder="e.g. Rival Berry 16"></label>` : ''}
+        <label>Price seen (Rp)<input class="inp" data-f="bPrice" id="br-${st.mode}" value="${esc(st.bPrice)}" type="number" placeholder="e.g. 11000"></label>
+        <label>Shelf<select class="inp" data-f="bShelf">${SHELF.map((x) => `<option ${st.bShelf === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
+        <label>Promo<select class="inp" data-f="bPromo">${PROMO.map((x) => `<option value="${x}" ${st.bPromo === x ? 'selected' : ''}>${x === 'None' ? 'No promo' : x}</option>`).join('')}</select></label>
+        <label>Selling speed<select class="inp" data-f="bSpeed">${SPEED.map((x) => `<option value="${x}" ${st.bSpeed === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
+      </div>
+      <label style="display:flex;flex-direction:column;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-dim)">Note<input class="inp" data-f="bNote" id="bn-${st.mode}" value="${esc(st.bNote)}" placeholder="Stock level, what the owner said..."></label>
+      <div class="row" style="justify-content:space-between">
+        <button type="button" class="btn ${st.bPhoto ? '' : 'q'}" data-act="bench-photo"><svg class="i"><use href="#cam"/></svg>${st.bPhoto ? 'Photo attached' : 'Shelf photo'}</button>
+        <div style="display:flex;gap:8px">
+          <button type="button" class="btn q" data-act="close">Cancel</button>
+          <button type="button" class="btn" data-act="report-rival" data-id="${s.id}"><svg class="i"><use href="#chk"/></svg>Send report</button>
+        </div>
+      </div>
+    </div></div>`;
+  },
 };
 
 /* ---------- events ---------- */
@@ -1103,6 +1230,7 @@ function onInput(e, el, st) {
   }
   if (!f) return;
   if (f === 'q') { st.q = tg.value; render(el, st); return refocus(el, `q-${st.mode}`); }
+  if (f === 'pkQ' && st.picker) { st.picker.q = tg.value; render(el, st); return refocus(el, `pkq-${st.mode}`); }
   if (f === 'cmpRival' || f === 'cmpOurs') { if (st[f] === tg.value) return; st[f] = tg.value; if (f === 'cmpRival') st.cmpOurs = ''; return render(el, st); }
   if (f === 'bRival') { if (st.bRival === tg.value) return; st.bRival = tg.value; return render(el, st); }
   if (['bNewName', 'bNote', 'bPrice', 'promptVal', 'bShelf', 'bSpeed'].includes(f)) { st[f] = tg.value; return; }
@@ -1126,10 +1254,36 @@ function onInput(e, el, st) {
 }
 
 function onClick(e, el, st) {
-  const b = e.target.closest('button, [data-node], [data-row], .ov');
+  const b = e.target.closest('button, [data-node], [data-row], [data-open-picker], [data-pick-opt], .ov');
   if (!b) return;
-  if (b.classList.contains('ov')) { if (e.target === b) { st.modal = null; st.form = null; render(el, st); } return; }
+  if (b.classList.contains('ov')) {
+    if (e.target === b) {
+      if (b.dataset.ov === 'picker') st.picker = null;
+      else { st.modal = null; st.form = null; }
+      render(el, st);
+    }
+    return;
+  }
   const d = b.dataset;
+
+  if (d.openPicker) {
+    const s = SHOPS.find((x) => x.id === st.sel) || SHOPS[0];
+    const rLog = s?.logs.find((l) => l.id === st.cmpRival) || s?.logs[0];
+    const rv = rLog ? rivalOf(rLog) : null;
+    const title = d.openPicker === 'ours' ? 'Pick our product' : d.openPicker === 'shop-rival' ? 'Pick rival seen at this shop' : 'Pick rival product';
+    const current = d.openPicker === 'ours' ? (st.cmpOurs || rv?.pair || OURS[0].id) : d.openPicker === 'shop-rival' ? (rLog?.id || '') : st.bRival;
+    st.picker = { kind: d.openPicker, target: d.target, title, current, catId: rv?.catId || '', q: '' };
+    render(el, st);
+    return refocus(el, `pkq-${st.mode}`);
+  }
+  if (d.pickOpt !== undefined && st.picker) {
+    const val = d.pickOpt, pk = st.picker;
+    st.picker = null;
+    if (pk.target === 'cmp-ours') st.cmpOurs = val;
+    else if (pk.target === 'cmp-rival') { st.cmpRival = val; st.cmpOurs = ''; }
+    else if (pk.target === 'report-rival') st.bRival = val;
+    return render(el, st);
+  }
 
   if (d.pstep) { st.phoneStep = d.pstep; return render(el, st); }
   if (d.stab) { st.shopTab = d.stab; return render(el, st); }
@@ -1148,7 +1302,14 @@ function onClick(e, el, st) {
 
   const s = SHOPS.find((x) => x.id === d.id) || SHOPS.find((x) => x.id === st.sel);
   switch (d.act) {
+    case 'close-picker': st.picker = null; return render(el, st);
     case 'close': st.modal = null; st.form = null; return render(el, st);
+    case 'open-report-rival': {
+      if (!s) return;
+      st.bRival = 'r1'; st.bNewName = ''; st.bPrice = ''; st.bNote = ''; st.bShelf = 'Eye level'; st.bPromo = 'None'; st.bSpeed = 'Medium'; st.bPhoto = false;
+      st.modal = M.reportRival(s);
+      return render(el, st);
+    }
     case 'ph-back-tree': st.phoneStep = 'tree'; return render(el, st);
     case 'ph-back-area': st.phoneStep = 'area'; return render(el, st);
     case 'loc-mode': st.locMode = d.m; return render(el, st);
@@ -1184,6 +1345,7 @@ function onClick(e, el, st) {
         photo: !!st.bPhoto, n: (st.bNote || '').trim(),
       });
       st.bNewName = ''; st.bNote = ''; st.bPrice = ''; st.bPhoto = false;
+      st.modal = null;
       rerenderAll();
       return toast('Sent to your admin for approval');
     }
