@@ -2981,7 +2981,7 @@ One playable page, same standard as `.claude/drafts/reports-live.html` (dual-mou
 **Result:**
 
 ## Task 80 - READ-ONLY: build plan for STEP 1 (Master Vault categories + sub-categories)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 09:04 WIB. Design decided (A-Brain Brainstorm 2026-11-19 categories note). Build order: step 0 rules, step 1 Master Vault categories, step 2 Competitors, step 3 Customers tab. This task plans ONLY steps 0 + 1, using your Task 74 and Task 75 findings.
 **Touch only:** this file.
 1. Data: the smallest shape for the shared category list (collection name, fields, one doc per category with a `subs` array or a sub-collection - pick one and say why) and the new product fields (`categoryId`, `subCategoryId`), keeping `type` written with the category NAME during the change-over.
@@ -2991,6 +2991,160 @@ One playable page, same standard as `.claude/drafts/reports-live.html` (dual-mou
 5. The `logicFixes.selfcheck.mjs` lines that would guard it (one regression guard + one real-numbers check).
 **Done when:** Result has parts 1-5 with `file:line` on every claim and a `could not check:` line.
 **Result:**
+
+### 1. Data shape (shared category list + product fields)
+- **Collection:** `artifacts/{appId}/users/{bossUid}/product_categories/{catId}`
+- **Choice: ONE doc per category with an embedded `subs` array** (not a subcollection).
+  - *Why:* A company has ~5–30 categories and ~2–10 sub-categories each (well under Firestore's 1 MB doc limit). One `onSnapshot(collection(..., 'product_categories'))` loads every category AND every sub-category in a single listener (zero N+1 subcollection listeners on cold phone start), adding/renaming/deleting a sub-category is one atomic doc write, and USB Backup/Restore/Wipe handles it as one flat array just like `products`.
+- **Document fields (`product_categories/{catId}`):**
+  ```js
+  {
+    name: 'Kid',                 // display name
+    normName: 'kid',             // lowercase alphanumeric only (duplicate guard)
+    subs: [                      // empty array [] for top-level-only categories like 'Elder'
+      { id: 'sub_173...', name: 'Kid Silver', normName: 'kidsilver' }
+    ],
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    updatedBy: 'Aldi (T2)'
+  }
+  ```
+- **Product fields (`artifacts/{appId}/users/{bossUid}/products/{productId}`):**
+  - Add optional `categoryId: string` and `subCategoryId: string` (`''` when top-level only).
+  - **Dual-write `type` during change-over:** on every non-promo product save, write `type: pickedCategory.name` alongside `categoryId` + `subCategoryId`. Every legacy reader, restored backup, or older phone still sees a valid category string in `product.type`.
+  - **Promo items (`kind: 'promo'`):** stay untouched (`kind: 'promo', unit: 'pcs', type: 'PROMO'`, `src/App.jsx:3716`, `src/StockOpnameView.jsx:940`) and are NEVER written into `product_categories`.
+
+### 2. Every code change for Step 1
+
+| `file:line` | What changes | Why |
+| :--- | :--- | :--- |
+| `src/utils/productCategories.js` *(new)* | Pure helpers: `normCatName(s)`, `findDuplicateCategory(cats, name, skipId)`, `findDuplicateSub(cat, name, skipId)`, `resolveCategoryName(prod, cats)` (`cat?.name \|\| prod.type \|\| 'MISC'`), `resolveSubName(prod, cats)`, `categoryUsageCount(catId, inventory)` / `subUsageCount(subId, inventory)`. | Single source of truth shared by Master Vault, Sales Terminal, ExamineModal, DashboardBenchmarks, and `logicFixes.selfcheck.mjs`. |
+| `src/hooks/useDatabaseSync.js:34-62, 88-108, 290-302` | Add `[productCategories, setProductCategories] = useState([])`, subscribe `onSnapshot(collection(db, basePath, 'product_categories'), ...)`, unsubscribe on cleanup, and return `productCategories`. | Live synced category list available to every screen without extra queries. |
+| `src/App.jsx:606, 5150-5232` | Destructure `productCategories` from `useDatabaseSync`, pass `productCategories` + `canManageCategories(userRole)` + category write handlers (`handleSaveCategory`, `handleDeleteCategory`) into `ResidentEvilInventory` and `MerchantSalesView`. | Wires Master Vault Categories manager and Sales Terminal 2-row tabs to Firestore. |
+| `src/App.jsx:5282-5286` (Master Vault product form) | For `!isPromo(editingProduct)`: replace `<input name="type" .../>` with a searchable Category picker (`Our categories` first, `Competitor-only categories` under a divider) + linked Sub-category picker (options follow picked `categoryId`) + inline `"+ New sub-category"` control. Keep `isPromo` block (`L5260-5276`) untouched. | Matches approved Task 81 H design; keeps `PROMO` out of the shared category list. |
+| `src/App.jsx:3708-3719, 3754-3755` (`handleSaveProduct`) | When `!promo`: save `categoryId`, `subCategoryId`, and dual-write `type: resolvedCatName` (preserving `editingProduct.type` if no category picked yet). Keep `if (promo) Object.assign(data, { kind: 'promo', unit: 'pcs', type: 'PROMO' })` at `L3716` byte-identical. | Ensures new products carry IDs while old screens/backups reading `type` never break. |
+| `src/components/ResidentEvilInventory.jsx:155, 230, 246-265, 296-305, 337-338, 352` | Add `"Categories"` manager button + modal (`Our categories` vs collapsed-by-default `Competitor-only categories`, add/rename/delete blocked when `categoryUsageCount > 0` or `subUsageCount > 0`, duplicate warning). Update `sections` memo (`L246-254`) to group by `resolveCategoryName(item, productCategories)`, display `Category › Sub` on detail (`L155`) and rows (`L337-338, 352`). Show Main warehouse stock only (no branch/regional warehouse). Promo items keep their own `PROMO` tab or existing `isPromo` handling, never added to `product_categories`. | Implements Master Vault Categories manager + 2-level display (Task 77 + Task 81 H). |
+| `src/components/ExamineModal.jsx:135` | Render `TYPE: {[resolveCategoryName(product, productCategories), resolveSubName(product, productCategories)].filter(Boolean).join(' › ')}` (falling back to `product.type`). | Prevents blank `TYPE:` in 3D viewer and shows `Category › Sub`. |
+| `src/MerchantSalesView.jsx:104, 1689-1690, 2691-2699, 2905` | Add `activeSubCategory` state (`'ALL'`). Build Row-1 categories from `inventory` (already excludes `isPromo` at `useDatabaseSync.js:35`) using `resolveCategoryName(i, productCategories)`. Add Row-2 single-line horizontally scrollable sub-categories for the picked category (`overflow-x-auto flex-nowrap`, never wraps to 3 lines). Fix `L1689` filter to match `resolveCategoryName(i, productCategories) === activeCategory` (fixes existing bug where undefined `i.type` didn't match `"MISC"`) + optional `subCategoryId` match. Display `Category › Sub` at `L2905`. | Implements 2-row Sales Terminal tabs (Task 77 frame 3) with full legacy fallback. |
+| `src/StockOpnameView.jsx:940, 950-955` | Leave `L940` (`QUARANTINE_SAMPLING`, `kind: 'promo', type: 'PROMO'`) unchanged. In `L950` (`QUARANTINE_SELL`, `rsk-*` lot), add `'categoryId', 'subCategoryId'` to the `keep` array: `['type', 'category', 'categoryId', 'subCategoryId', ...]`. | Damaged-pack lots keep their category & sub-category on the Sales Terminal (requires Step 0 rules live FIRST). |
+| `src/App.jsx:774, 916-933, 957-960, 1014-1019, 4320-4326` | Add `productCategories` to `generateFullSystemPayload` (`L774`), `handleExportGranular` when `type === 'products' \|\| type === 'both'` (`L958`), `handleImportGranular` (`L1014-1019`), full restore (`L4321`, `queueToBatch('product_categories', data.productCategories)`), and nuclear wipe (`L916-933`, delete every doc in `product_categories`). | Prevents categories from being silently dropped on backup/restore or orphaned after a nuclear wipe. |
+| `src/components/DashboardBenchmarks.jsx:160-166` | Change `L164` from `(item.type \|\| '').toLowerCase()` to `(p.type \|\| resolveCategoryName(p, productCategories) \|\| item.type \|\| '').toLowerCase()` using `p = prod.get(item.productId)` already fetched on `L160`. | Keeps Command Center's Filter/SKM vs Kretek mix working on both legacy `type` and new `categoryId` products. |
+| `src/config/permissions.js:184-195, 422-431` + `src/components/SettingsView.jsx:1723` | Add `'manage_product_categories'` to default `ROLE_PERMISSIONS` (`TIER_2`, `TIER_3`, `TIER_4`), `ALL_FEATURES` in `PermissionMatrixEditor`, and `canManageCategories(userRole)` with `matrixKnowsKey` fallback (see Part 4). | Matches matrix default T1–T4 without locking out existing companies. |
+
+### 3. Exact `firestore.rules` text to ADD for Step 0 (publish in Console BEFORE Step 1 code — text only, `firestore.rules` NOT edited)
+
+**3a. Helper (add right after `sellDamagedHolder` at `firestore.rules:155`):**
+```
+    // [CHANGE 29 — DRAFT] WHO MANAGES SHARED PRODUCT CATEGORIES (Master Vault + Competitors).
+    // Mirrors canManageCategories in src/config/permissions.js: until 'manage_product_categories' is
+    // saved in settings/permission_matrix, T1-T4 may write; once saved, the matrix switch wins (T3-T4).
+    // T1/T2 also pass via isCompanyTopTier / users/{bossUid} catch-all; T5/T6 stay read-only unless enabled.
+    function categoryManager(bossUid) {
+      let profile = getEmployeeProfile();
+      let role = profile != null ? profile.get('userRole', 'NONE') : 'NONE';
+      let m = getPermissionMatrixDoc(bossUid);
+      let saved = m != null && ('matrix' in m) ? m.matrix : {};
+      let key = 'manage_product_categories';
+      let known = key in saved.get('DEVELOPER', []) || key in saved.get('COMPANY_OWNER', []) || key in saved.get('AREA_ADMIN', []) ||
+        key in saved.get('FLEET_CAPTAIN', []) || key in saved.get('FIELD_OPERATIVE', []) || key in saved.get('ROOKIE', []);
+      return isAuthenticated() && profile != null && profile.bossUid == bossUid &&
+        (known ? key in saved.get(role, []) : (role == 'AREA_ADMIN' || role == 'FLEET_CAPTAIN'));
+    }
+```
+
+**3b. New collection match (add inside `match /artifacts/cello-inventory-manager/users/{bossUid}`, right after `match /products/{productId}` at `firestore.rules:678`):**
+```
+      // [CHANGE 29 — DRAFT] Shared 2-level category list (Master Vault + Competitors).
+      // Every signed-in company member reads; T1-T4 (or saved matrix 'manage_product_categories') write.
+      match /product_categories/{catId} {
+        allow read: if isSalesman(bossUid);
+        allow create, update: if (isCompanyTopTier(bossUid) || categoryManager(bossUid)) &&
+          request.resource.data.keys().hasOnly(['name', 'normName', 'subs', 'createdAt', 'updatedAt', 'updatedBy']) &&
+          request.resource.data.name is string && request.resource.data.name.size() > 0 &&
+          request.resource.data.subs is list;
+        allow delete: if isCompanyTopTier(bossUid) || categoryManager(bossUid);
+      }
+```
+
+**3c. Two new keys in the `Sell Again` (`rsk-*`) whitelist (`firestore.rules:669` and `firestore.rules:674`):**
+- **Old line 669 (`allow create`):**
+  `request.resource.data.keys().hasOnly(['name', 'damagedFrom', 'type', 'category', 'images', 'dimensions', 'useFrontForBack',`
+- **New line 669:**
+  `request.resource.data.keys().hasOnly(['name', 'damagedFrom', 'type', 'category', 'categoryId', 'subCategoryId', 'images', 'dimensions', 'useFrontForBack',`
+- **Old line 674 (`allow update`):**
+  `request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'damagedFrom', 'type', 'category', 'images', 'dimensions',`
+- **New line 674:**
+  `request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'damagedFrom', 'type', 'category', 'categoryId', 'subCategoryId', 'images', 'dimensions',`
+
+*(Publish order: publish 3a + 3b + 3c in the Firebase Console FIRST, then deploy Step 1 code — otherwise `rsk-*` Sell Again writes with `categoryId`/`subCategoryId` and any T3/T4 category save will get `permission-denied`.)*
+
+### 4. Permission-matrix row in `src/config/permissions.js` + `SettingsView.jsx`
+- **In `src/config/permissions.js` (`ROLE_PERMISSIONS`, `L184-195`):** add `'manage_product_categories'` to `TIER_2`, `TIER_3`, and `TIER_4` default arrays.
+- **In `src/config/permissions.js` (right beside `canHandOffAcrossRegions` at `L422-431`):**
+  ```js
+  const MANAGE_CATEGORIES_KEY = 'manage_product_categories';
+  export const canManageCategories = (userRole) => {
+      const role = translateLegacyRole(userRole);
+      if (role === CORPORATE_TIERS.TIER_1) return true;
+      const matrixKnowsKey = Object.values(ROLE_PERMISSIONS)
+          .some(list => Array.isArray(list) && list.includes(MANAGE_CATEGORIES_KEY));
+      if (matrixKnowsKey) return hasClearance(userRole, MANAGE_CATEGORIES_KEY);
+      return role === CORPORATE_TIERS.TIER_2
+          || role === CORPORATE_TIERS.TIER_3
+          || role === CORPORATE_TIERS.TIER_4;   // default T1-T4 for existing saved matrices
+  };
+  ```
+- **In `src/components/SettingsView.jsx` (`ALL_FEATURES`, right after `L1723`):**
+  ```js
+  { id: 'manage_product_categories', label: 'Master Vault & Competitors: add, rename or delete shared categories (default Tier 4 and above)' },
+  ```
+
+### 5. `logicFixes.selfcheck.mjs` guards (one REGRESSION + one real-numbers BEHAVIOUR check)
+```js
+section('STEP 1: MASTER VAULT SHARED CATEGORIES & SUB-CATEGORIES');
+{
+  const rules = read('firestore.rules');
+  const app = read('src/App.jsx');
+  const op = read('src/StockOpnameView.jsx');
+  const sync = read('src/hooks/useDatabaseSync.js');
+  const sales = read('src/MerchantSalesView.jsx');
+
+  ok('REGRESSION: product_categories rules, rsk-* categoryId/subCategoryId whitelist, dual-write type, sync listener, and backup/restore/wipe are all wired',
+     rules.includes('match /product_categories/{catId}') &&
+     (rules.match(/'categoryId',\s*'subCategoryId'/g) || []).length >= 2 &&
+     op.includes("'categoryId', 'subCategoryId'") &&
+     sync.includes("'product_categories'") &&
+     app.includes('product_categories') &&
+     sales.includes('resolveCategoryName') &&
+     app.includes("kind: 'promo', unit: 'pcs', type: 'PROMO'"));
+
+  const { normCatName, resolveCategoryName, categoryUsageCount, subUsageCount } = await import('../utils/productCategories.js');
+  const { canManageCategories } = await import('./permissions.js');
+  const cats = [
+    { id: 'kid', name: 'Kid', normName: 'kid', subs: [{ id: 'kid-gold', name: 'Kid Gold', normName: 'kidgold' }] },
+    { id: 'putih', name: 'Rokok Putih', normName: 'rokokputih', subs: [] },
+  ];
+  const prods = [
+    { id: 'p1', name: 'NutriKid Gold', categoryId: 'kid', subCategoryId: 'kid-gold', type: 'Kid' },
+    { id: 'p2', name: 'NutriKid Silver', categoryId: 'kid', subCategoryId: 'kid-silver', type: 'Kid' },
+    { id: 'p3', name: 'Legacy Pack', type: 'SKT' }, // old product with type only
+  ];
+  ok('BEHAVIOUR: duplicate normalizer, delete-usage counts (Kid=2 blocked, Rokok Putih=0 allowed), legacy type fallback (SKT), and T1-T4 matrix default work on real data',
+     normCatName('Kid - Gold.') === 'kidgold' &&
+     categoryUsageCount('kid', prods) === 2 &&
+     subUsageCount('kid-gold', prods) === 1 &&
+     categoryUsageCount('putih', prods) === 0 &&
+     resolveCategoryName(prods[2], cats) === 'SKT' &&
+     canManageCategories('DEVELOPER') === true &&
+     canManageCategories('COMPANY_OWNER') === true &&
+     canManageCategories('AREA_ADMIN') === true &&
+     canManageCategories('FLEET_CAPTAIN') === true &&
+     canManageCategories('FIELD_OPERATIVE') === false &&
+     canManageCategories('ROOKIE') === false);
+}
+```
+
+**could not check:** Live production Firestore `products` or `permission_matrix` documents, and did not run the Firebase rules emulator on the proposed Change 29 text (read-only planning task; `firestore.rules` and `src/` were not modified).
 
 ## Task 81 - PICTURES round 2: Aldi's review of the 3 pictures + Task 79's 6 faults (drafts only) - DO THIS FIRST, then 80
 **Status:** DONE
