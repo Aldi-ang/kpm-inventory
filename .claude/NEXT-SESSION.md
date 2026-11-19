@@ -1,7 +1,7 @@
 # The one job - Categories + Competitors: from approved pictures to the build (step 0 + step 1)
 
 
-**Status 2026-11-19 17:59 WIB (Claude, quota 95%):** Antigravity 86-88 reviewed OK (drafts only, not pushed). Antigravity Task 89 writes the Console paste steps for Change 29 into `.claude/drafts/console-change-29.md` - when DONE, check its blocks match the emulator-proven draft rules (`rules-test/test-product-categories.mjs`), then Aldi publishes in the Console, then step 1 build. Task 90 checks the Undo plan (`src/utils/delayedWrite.js` does not exist yet - it is a NEW file).
+**Status 2026-11-19 18:10 WIB (Claude, quota 95%):** Antigravity 86-90 reviewed OK, local, not pushed. Console steps READY: `.claude/drafts/console-change-29.md` (every pasted line matches `rules-test/test-product-categories.mjs`, emulator 30/0). Aldi pastes them in the Console; then step 1 build (Task 92 = its checklist). Task 91 = Undo for shop delete only, local.
 **Written 2026-11-19 09:05 WIB (Claude).** Design is DECIDED. Full note with his words: A-Brain `Brainstorm/2026-11-19_categories-subcategories-and-rival-catalog.md` (DECISION section).
 
 ## What he decided (2026-11-19)

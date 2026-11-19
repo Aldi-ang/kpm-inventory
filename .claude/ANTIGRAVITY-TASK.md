@@ -3575,3 +3575,24 @@ Every single one of the 12 rows was checked against today's code. **0 of the 12 
      read('src/components/Toast.jsx').includes('export function notifyUndo(') &&
      read('src/hooks/useDatabaseSync.js').includes('isPendingUndo'));
   ```
+
+## Task 91 - BUILD: Undo for Row #10 only (shop delete, `CustomerManager.jsx:1115`)
+**Status:** OPEN
+**Written:** 2026-11-19 18:10 WIB (Claude). Claude reviewed 89 (every pasted line matches the emulator-tested rules text, 0 missing) and 90 (OK).
+**Touch only:** `src/utils/delayedWrite.js` (new), `src/components/Toast.jsx`, `src/components/CustomerManager.jsx`, `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file.
+1. Build exactly the Task 86 plan for Row #10: the delete waits 8 s, the toast shows "Undo"; Undo = nothing written. No other row.
+2. Trap: the tab closes or the app goes offline inside the 8 s. Say what happens (write lost? written on next load?) and pick the safe answer: the delete must either happen or visibly not happen - never a shop that looks deleted but comes back silently.
+3. One line in `logicFixes.selfcheck.mjs` (regression guard + behaviour check), one patch-notes line (en + id, plain words).
+4. Gates after the LAST edit: `node src/config/undef.check.mjs` (clean), `node src/config/logicFixes.selfcheck.mjs`, `npm run build`, `node src/config/integration.audit.mjs` - all green, counts in the Result.
+**Done when:** 1-4 done, committed locally. NEVER push.
+**Result:**
+
+## Task 92 - READ-ONLY: Step 1 build checklist (Master Vault categories), ready for after the Console publish
+**Status:** OPEN
+**Written:** 2026-11-19 18:10 WIB (Claude).
+**Touch only:** this file.
+1. From the Task 80 plan + Task 82 fix: an ordered build checklist, each step = file:line today, what changes, which self-check line proves it.
+2. Mark which steps NEED Change 29 live in the Console (they fail without it) and which can be built before.
+3. List every place that reads `product.category` today (the old field) so none breaks when `categoryId` / `subCategoryId` arrive.
+**Done when:** checklist with file:line for every step + the "needs Console first" marks + the old-field read list.
+**Result:**
