@@ -491,8 +491,7 @@ function toast(msg, undoOpts) {
   const t = document.getElementById('toast');
   clearTimeout(toastTimer);
   activeUndo = undoOpts || null;
-  t.classList.remove('on', 'has-undo');
-  void t.offsetWidth;
+  t.classList.remove('on', 'has-undo'); void t.offsetWidth;
   document.getElementById('toastT').textContent = msg;
   if (activeUndo) t.classList.add('has-undo');
   t.classList.add('on');

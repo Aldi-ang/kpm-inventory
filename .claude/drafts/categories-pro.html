@@ -736,10 +736,12 @@ function renderProductFormFrame(co, st, ourCats, compCats) {
   </div>`;
 }
 
-/* ---------- Frame 3: Preview: terminal tabs (Task 79.4 + Task 81 I) ---------- */
+/* ---------- Frame 3: Preview: terminal tabs (Task 79.4 + Task 81 I + Task 87.1) ---------- */
 function renderSalesTerminalPreview(co, st, ourCats) {
-  if (st.stCat !== 'ALL' && st.stCat !== 'BUNDLES' && !ourCats.some((c) => c.id === st.stCat)) { st.stCat = 'ALL'; st.stSub = 'ALL'; }
-  const pickedCat = ourCats.find((c) => c.id === st.stCat) || null;
+  // Task 87.1: real Sales Terminal builds tabs from products, so only categories with >0 products show in row 1
+  const termCats = ourCats.filter((c) => productsInCat(c.id).length > 0);
+  if (st.stCat !== 'ALL' && st.stCat !== 'BUNDLES' && !termCats.some((c) => c.id === st.stCat)) { st.stCat = 'ALL'; st.stSub = 'ALL'; }
+  const pickedCat = termCats.find((c) => c.id === st.stCat) || null;
   if (pickedCat && st.stSub !== 'ALL' && !pickedCat.subs.some((s) => s.id === st.stSub)) st.stSub = 'ALL';
 
   const q = st.stQ.trim().toLowerCase();
@@ -760,7 +762,7 @@ function renderSalesTerminalPreview(co, st, ourCats) {
       <div class="st-row1-wrap">
         <div class="st-strip" role="tablist" aria-label="Categories (row 1)" id="row1-${st.mode}">
           <button type="button" class="st-pill ${st.stCat === 'ALL' ? 'on' : ''}" data-st-cat="ALL">ALL</button>
-          ${ourCats.map((c) => `<button type="button" class="st-pill ${st.stCat === c.id ? 'on' : ''}" data-st-cat="${c.id}">${esc(c.name)}</button>`).join('')}
+          ${termCats.map((c) => `<button type="button" class="st-pill ${st.stCat === c.id ? 'on' : ''}" data-st-cat="${c.id}">${esc(c.name)}</button>`).join('')}
           <button type="button" class="st-pill ${st.stCat === 'BUNDLES' ? 'on' : ''}" data-st-cat="BUNDLES">BUNDLES</button>
         </div>
         <input class="inp st-search" data-f="stQ" id="stq-${st.mode}" value="${esc(st.stQ)}" placeholder="Search wares...">

@@ -3449,7 +3449,7 @@ section('DELAYED-WRITE 8-SECOND UNDO (NON-MONEY / NON-STOCK DELETES)');
 **could not check:** Did not edit `src/` or run `logicFixes.selfcheck.mjs` against `src/utils/delayedWrite.js` (read-only planning task; `src/` was not modified).
 
 ## Task 87 - PICTURE: 2 nits from Claude's review of Task 84 (drafts only)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 11:45 WIB.
 **Touch only:** `.claude/drafts/categories-pro.html`, `.claude/drafts/customers-c.html`, this file.
 1. `categories-pro.html` "Preview: terminal tabs": row 1 shows a category with 0 products (add "Toddler" in Categories, it appears as an empty terminal tab). The real terminal builds tabs from products, so only categories that HAVE products may show there.
@@ -3457,6 +3457,10 @@ section('DELAYED-WRITE 8-SECOND UNDO (NON-MONEY / NON-STOCK DELETES)');
 3. Headless `ERRORS: []` for both.
 **Done when:** 1-3 done, Result lists what you checked.
 **Result:**
+Verified in headless Chrome (`verify-task87.mjs`, `ERRORS: []`):
+1. `categories-pro.html`: `renderSalesTerminalPreview` now filters `const termCats = ourCats.filter((c) => productsInCat(c.id).length > 0);`. Adding `"Toddler"` (0 products) keeps it under `"Our categories"` (`inOurCats: true`) while `"Preview: terminal tabs"` row 1 shows only `["ALL", "KID", "ADULT", "ELDER", "BUNDLES"]` (`toddlerInRow1: false`).
+2. `customers-c.html`: Aligned `toast()` to `t.classList.remove('on', 'has-undo'); void t.offsetWidth;` (`hasReflow: true, active: true` on consecutive undo toasts), matching `categories-pro.html` and `competitors-pro.html`.
+3. Headless Chrome check passed with `ERRORS: []` on both files.
 
 ## Task 88 - PICTURE: clear words for the 2 approval queues + every feature on the phone (customers-c.html only) - DO THIS BEFORE 86/87
 **Status:** DONE
