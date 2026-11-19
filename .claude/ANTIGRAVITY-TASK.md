@@ -3202,3 +3202,25 @@ Updated `.claude/drafts/competitors-pro.html`, `.claude/drafts/customers-c.html`
 3. Headless `ERRORS: []` for both files.
 **Done when:** 1-3 done, Result lists what you checked.
 **Result:**
+
+## Task 84 - PICTURES round 3: NOO stands out, Undo after a delete, Master Vault stock + all prices (drafts only) - do after 82 + 83
+**Status:** OPEN
+**Written:** 2026-11-19 11:00 WIB. Aldi, verbatim: *"competitor screen is good, for customer i want u to make verify noo have better button visibility as i want the admin to realise if there is NOO verification to do, its hard to see and realise which of the new stores are NOO stores and old stores this is something that u need to working on and other thing that we need on this app is undo button especially when doing accidental fatal pressing like deleting data and for master vault i just want the stock number to be visible and also show all the price level for that product not just the grosir one everything else looks fine for now"*.
+**Touch only:** `.claude/drafts/customers-c.html`, `.claude/drafts/categories-pro.html`, `.claude/drafts/competitors-pro.html` (Undo only), this file.
+1. **NOO stands out (customers-c.html):** a shop waiting for NOO verification (status PENDING) must be impossible to miss: (a) in the shop list a gold-edged "NEW · VERIFY NOO" tag + a left gold bar on the row, old shops have none; (b) a count "NOO to verify: N" in the KPI strip and on the area tree ("Needs action" includes it, tap -> filters to those shops); (c) in the shop pane a full-width banner at the top "New shop - waiting for NOO verification" with the Verify NOO button as the strongest button on the screen (filled `--wash`, `--accent-edge` border, bold, bigger), only for T4 and above; T5/T6 see "Waiting for admin to verify". After Verify -> banner gone, toast. Seed 2-3 PENDING shops.
+2. **Undo after a delete (all 3 drafts):** every delete (shop, folder reset, rival price, report reject, category, sub-category, rival product) shows a toast-bar "Deleted <name> · UNDO" for 8 seconds with a countdown line; UNDO puts it back exactly (same place, same data) and reports "Restored <name>". The confirm box before a delete STAYS (Undo is the second safety, not a replacement). Write in the toast-bar's small print: "Undo for 8 seconds".
+3. **Master Vault stock + all prices (categories-pro.html):** on the product cards (Preview tab and the products list in Categories) the MAIN WAREHOUSE stock is the biggest number on the card (e.g. "180 Box", red + "Low" when under the warning level), and every price level shows as a small labelled row: Distributor (cost) · Retail · Grosir · Ecer. No price hidden.
+4. Same standards as Task 71 (toast on every action, no blue, no green, no `alert/confirm/prompt`, PC 1240 + phone 390 nothing cut off, Lite motion, headless `ERRORS: []` for all 3 files).
+**Done when:** 1-4 done, the Result lists what you checked for each.
+**Result:**
+
+## Task 85 - READ-ONLY: every "fatal press" in the real app, and the smallest Undo for each (for Aldi's undo button)
+**Status:** OPEN
+**Written:** 2026-11-19 11:00 WIB.
+**Touch only:** this file.
+1. Table of every irreversible action in `src/` (each `deleteDoc(` - there are 17 - plus batch deletes, folder reset, data scrub, nuclear wipe, stock write-offs, any `writeBatch` that removes data): `file:line` / what it deletes / who can press it (tier) / is there already a confirm box (`confirmAction`, `src/components/ConfirmGate.jsx:32`) / is the data recoverable today (audit log copy? backup?).
+2. For each, pick the smallest Undo: (a) DELAYED write - the delete only runs after the 8-second Undo toast closes (nothing touches the database while Undo is open; risk: app closed inside 8 s = delete not done), or (b) SOFT delete - mark `deletedAt` and hide it, a real delete later (needs rules + every reader to skip it), or (c) not undoable - say why (money / stock ledger lines that must never vanish).
+3. Which ones touch money or stock (sales, consignment, receivables, opname): those need extra care - say what an Undo would break.
+4. One paragraph recommendation for Aldi in plain English.
+**Done when:** parts 1-4 with `file:line` on every claim and a `could not check:` line.
+**Result:**

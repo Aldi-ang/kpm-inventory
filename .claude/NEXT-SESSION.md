@@ -19,8 +19,10 @@
 
 - 2026-11-19 10:35 round 2 (Task 81, 44fe133f) reviewed: diffs read whole, rendered PC 1240 + phone 390 (collapsed groups, searchable pickers, pair save, blurred front panels, 44 px phone buttons, 0 overflow) and RE-PUBLISHED at the same 3 links. Task 83 = 2 small fixes (selected rival's group opens on load; Master Vault category `origin` so a new empty category of ours is not labelled competitor-only).
 
+- 2026-11-19 11:00 his round 3: **Competitors screen APPROVED** (*"competitor screen is good"*). Still to change -> Antigravity Task 84: NOO shops must stand out in the list + a strong Verify NOO for T4+; an UNDO toast (8 s) after every delete (confirm box stays); Master Vault cards show main-warehouse stock big + every price level (Distributor/Retail/Grosir/Ecer). Task 85 (read-only) maps every delete in the real app (17 `deleteDoc(` + batches) and the smallest Undo for each (delayed write vs soft delete vs not undoable for money/stock lines).
+
 ## Next, in order
-1. His ok on the 3 pictures (or changes -> Antigravity picture task).
+1. His ok on Customers + Master Vault after Task 84 (Competitors already ok).
 2. Build plan = Antigravity Task 80 (df5a12d1), reviewed. ONE BUG: it adds `manage_product_categories` to the DEFAULT `ROLE_PERMISSIONS` lists AND uses `matrixKnowsKey` - with `injectDynamicPermissions` (`src/config/permissions.js:209`) merging a saved matrix over defaults per tier, a missing tier keeps the key and locks T2/T3 out. Must follow `canHandOffAcrossRegions` (`permissions.js:422-431`): key in NO default list. Task 82 rewrites Part 4 + proves the Change 29 rules draft in the emulator (`rules-test/test-product-categories.mjs`).
 3. Step 0: only after Task 82 is all green - Aldi publishes Change 29 in the Console FIRST (helper `categoryManager`, `match /product_categories/{catId}`, 2 new keys in the Sell Again whitelist ~`firestore.rules:669/674`). Claude reviews the test file first.
 4. Step 1 build (Antigravity BUILD task, Claude reviews + renders + gates + pushes): Master Vault categories, product form, Sales Terminal 2-row tabs.
