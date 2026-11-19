@@ -3347,7 +3347,7 @@ For almost every everyday delete in KPM — deleting a shop, resetting a folder 
 **Result:**
 
 ## Task 88 - PICTURE: clear words for the 2 approval queues + every feature on the phone (customers-c.html only) - DO THIS BEFORE 86/87
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 11:54 WIB. Aldi, verbatim: *"make a better description for these so that the users now what is this confirmation not just no pic and also reword the Grosir? doesnt sounds professional there make sure all the features is available on phone as well"* (he was looking at the "Waiting for a salesman (2) · ASSIGN PIC" queue with the salesman picker + Give).
 **Touch only:** `.claude/drafts/customers-c.html`, this file.
 1. **Every "Grosir ask" wording becomes "Grosir price request"** (L583, L712, L726, L776, L1035 today - grep for all). Shop-list badge "GROSIR?" -> "GROSIR REQUESTED". Queue header "Grosir asks (N) · price tier" -> "Grosir price requests (N)" with a one-line description under it: "A salesman asked to sell to this shop at the Grosir (wholesale) price. Approve to switch the shop's price, or keep its current price." Buttons: "Keep <Retail>" -> "Keep <Retail> price", "Confirm Grosir" -> "Approve Grosir price". Toasts say the same words.
@@ -3356,3 +3356,38 @@ For almost every everyday delete in KPM — deleting a shop, resetting a folder 
 4. Same standards: toast on every action, no blue, no green, no `alert/confirm/prompt`, 44 px phone buttons, nothing cut at 390, headless `ERRORS: []`.
 **Done when:** 1-4 done, the phone-parity table in the Result shows every feature OK.
 **Result:**
+Updated `.claude/drafts/customers-c.html` and verified every wording rule + all 25 phone features in headless Chrome (`verify-task88.mjs`, `ERRORS: []`):
+1. **"Grosir price request" wording (`wording.hasGrosirBadge / hasGrosirHead / hasGrosirDesc / hasGrosirBtns / hasShopGrosirFact = true`):**
+   - Replaced every `"Grosir ask"` / `"Grosir?"` across KPI strip, `nodeTitle`, Needs action 4-cell summary (`Grosir requests`), queue header (`Grosir price requests (1)` + description `"A salesman asked to sell to this shop at the Grosir (wholesale) price. Approve to switch the shop's price, or keep its current price."`), buttons (`Keep Retail price` / `Approve Grosir price`), shop-list badge (`GROSIR REQUESTED`), Shop info profile cell (`Grosir price request`), and toasts (`"Approved Grosir price for <Shop>"` / `"Kept <Retail> price for <Shop>"`).
+2. **"Shops without a salesman (N)" + NOO description + Area facts (`wording.hasNoSalesmanHead / hasNoSalesmanDesc / hasReasonRemoved / hasReasonNew / hasAssignBtn / hasNooDesc / hasRequestsFact = true`):**
+   - Renamed queue to `"Shops without a salesman (2)"` with description `"Nobody is in charge of these shops, so they get no visits and no stock package. Pick the salesman who will look after each shop and press Assign."`
+   - Seeded both card reasons (`CEMERLANG`: `"Salesman removed from the team"`; `TOKO HARAPAN JAYA`: `"New shop, no salesman chosen yet"`), changed button `"Give"` -> `"Assign"`, toast `"<Shop> is now handled by <Salesman>"`, KPI subtitle `"1 Grosir price request · 2 shops without a salesman"`, area facts `"ASKS"` -> `"REQUESTS"`, and added the NOO queue description (`"New shops opened by a salesman. Check the details and press Verify NOO to make the shop official."`).
+3. **Full Phone Parity Table (390 px `#ph` frame — `minBtnH: 44`, `phOverflow: false`, `ERRORS: []`):**
+
+| Feature | PC path (`#pc`) | Phone path (`#ph` 390 px) | OK |
+|---|---|---|---|
+| **Search** | Top bar `#q-pc` input | Top bar `#q-phone` input (full-width row) | **OK** (`parity.search: true`) |
+| **+ Folder** | Top bar `[data-act="add-folder"]` -> `[data-act="confirm-add-folder"]` | Top bar `[data-act="add-folder"]` -> `[data-act="confirm-add-folder"]` | **OK** (`parity.addFolder: true`) |
+| **Admin tools: Tier repair** | Top bar `Admin tools` -> `[data-act="repair-tiers"]` | Top bar `Admin tools` -> `[data-act="repair-tiers"]` | **OK** (`parity.adminTools: true`) |
+| **Admin tools: Duplicates (Scan / Not duplicates / Delete + Undo)** | `Admin tools` -> `Scan now` / `Not duplicates` / `Delete` | `Admin tools` -> `Scan now` / `Not duplicates` / `Delete` + `#toastUndo` | **OK** (`parity.adminTools: true`) |
+| **Admin tools: Data scrub** | `Admin tools` -> `Preview` -> `Run Data Scrub` | `Admin tools` -> `Preview` -> `Run Data Scrub` | **OK** (`parity.adminTools: true`) |
+| **Admin tools: KML import** | `Admin tools` -> `Choose .kml` -> `Import 2 Pins` | `Admin tools` -> `Choose .kml` -> `Import 2 Pins` | **OK** (`parity.adminTools: true`) |
+| **Add customer** | Top bar `Add customer` -> `Save customer` | Top bar `+ Add` -> `Save customer` | **OK** (`parity.addCustomer: true`) |
+| **Rename folder** | Middle pane `[data-act="ren-folder"]` -> `Rename` | `Area` step -> `[data-act="ren-folder"]` -> `Rename` | **OK** (`parity.renameFolder: true`) |
+| **Reset to Unknown** | Middle pane `[data-act="del-folder"]` -> `Reset to Unknown` | `Area` step -> `[data-act="del-folder"]` -> `Reset to Unknown` | **OK** (`parity.resetFolderAndUndo: true`) |
+| **Needs action + 3 queues** | KPI / Tree `[data-node="NEEDS_ACTION"]` | KPI / Tree `[data-node="NEEDS_ACTION"]` (switches to `Area` step) | **OK** (`parity.needsActionQueues: true`) |
+| **NOO to verify filter** | KPI / Tree `[data-node="NOO_VERIFY"]` | KPI / Tree `[data-node="NOO_VERIFY"]` (switches to `Area` step) | **OK** (`parity.nooVerifyAndBanner: true`) |
+| **Verify NOO** | Queue `[data-act="verify-noo"]` or shop `.btn-noo` | `Area` queue `[data-act="verify-noo"]` or `Shop` step `.btn-noo` | **OK** (`parity.nooVerifyAndBanner: true`) |
+| **Approve / Keep Grosir price** | Queue or Shop info `[data-act="grosir-yes/no"]` | `Area` queue or `Shop` info (spans 2 cols at 390px) `[data-act="grosir-yes/no"]` | **OK** (`parity.needsActionQueues: true`) |
+| **Assign salesman** | Queue `[data-f="owner-pick"]` + `[data-act="give-agent"]` | `Area` queue `[data-f="owner-pick"]` (44px) + `Assign` | **OK** (`parity.needsActionQueues: true`) |
+| **Shop tabs (Shop info / Location / Competitors)** | Right pane `.stabs [data-stab="shop/loc/comp"]` | `Shop` step `.stabs [data-stab="shop/loc/comp"]` (44px) | **OK** (`parity.locationTabActions: true`) |
+| **Report a rival** | Competitors tab `[data-act="open-report-rival"]` -> `Send report` | `Shop` -> `Competitors` -> `[data-act="open-report-rival"]` -> `Send report` | **OK** (`parity.competitorsTabActions: true`) |
+| **Open Competitors** | Competitors tab `[data-act="open-competitors"]` | `Shop` -> `Competitors` -> `[data-act="open-competitors"]` | **OK** (`parity.competitorsTabActions: true`) |
+| **Copy GPS** | Location tab `[data-act="copy-gps"]` | `Shop` -> `Location` -> `[data-act="copy-gps"]` | **OK** (`parity.locationTabActions: true`) |
+| **Directions** | Location tab `[data-act="directions"]` | `Shop` -> `Location` -> `[data-act="directions"]` | **OK** (`parity.locationTabActions: true`) |
+| **WhatsApp** | Location tab `[data-act="wa-chat"]` | `Shop` -> `Location` -> `[data-act="wa-chat"]` | **OK** (`parity.locationTabActions: true`) |
+| **Open in Map** | Location tab `[data-act="open-map"]` | `Shop` -> `Location` -> `[data-act="open-map"]` | **OK** (`parity.locationTabActions: true`) |
+| **Move folder** | Shop info `.acts [data-f="move-kec"]` | `Shop` -> `Shop info` -> `.acts [data-f="move-kec"]` (44px) | **OK** (`parity.shopInfoActions: true`) |
+| **Edit shop** | Shop info / Location `[data-act="edit-shop"]` -> `Update profile` | `Shop` -> `Shop info` / `Location` -> `[data-act="edit-shop"]` -> `Update profile` | **OK** (`parity.shopInfoActions: true`) |
+| **Delete shop** | Shop info `.acts [data-act="del-shop"]` -> `Delete` | `Shop` -> `Shop info` -> `[data-act="del-shop"]` -> `Delete` | **OK** (`parity.shopInfoActions: true`) |
+| **8-second Undo** | Bottom toast-bar `#toastUndo` (`UNDO`) | Bottom toast-bar `#toastUndo` (`UNDO`) after shop/folder/dup delete | **OK** (`parity.shopInfoActions / resetFolderAndUndo: true`) |

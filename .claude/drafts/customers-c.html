@@ -149,11 +149,13 @@ svg.i{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 .sr span.s{display:block;font-size:10.5px;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* Needs action cards inside Middle Pane */
-.qsec{padding:7px 12px;background:var(--inset);border-bottom:1px solid var(--line);font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink);display:flex;justify-content:space-between}
-.qcard{padding:9px 12px;border-bottom:1px solid var(--hair);display:flex;flex-direction:column;gap:6px}
+.qsec{padding:8px 12px 6px;background:var(--inset);border-bottom:1px solid var(--line);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink);display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.qdesc{padding:7px 12px 8px;background:var(--panel);border-bottom:1px solid var(--line);font-size:11.5px;color:var(--ink-muted);line-height:1.42}
+.qcard{padding:10px 12px;border-bottom:1px solid var(--hair);display:flex;flex-direction:column;gap:6px}
 .qcard.sel{background:var(--wash)}
-.qcard .qh{display:flex;justify-content:space-between;align-items:baseline;gap:6px;cursor:pointer}
+.qcard .qh{display:flex;justify-content:space-between;align-items:baseline;gap:6px;cursor:pointer;flex-wrap:wrap}
 .qcard .qh b{font-size:12px}
+.qwhy{font-size:11px;color:var(--accent-ink);font-weight:600}
 
 /* Right Pane: Full Shop in Hand (Task 81 D, F: clear segmented tabs + distinct spaced cards) */
 .right{padding:14px 16px;overflow-y:auto;min-height:0;display:flex;flex-direction:column;background:var(--ground)}
@@ -307,7 +309,7 @@ button.crow:hover,button.crow.on{background:var(--sel)}
 .sb{height:24px;display:flex;justify-content:space-between;align-items:center;padding:0 18px;font-size:11px;color:var(--ink-dim);background:var(--panel);flex:none}
 .phone .top{padding:8px 12px;gap:8px}
 .phone .top .sub{display:none}
-.phone .btn,.phone .btn.xs,.phone .stab,.phone .pick-btn,.phone .pop-opt,.phone .link-btn,.phone .seg2 button,.phone .ph-steps button{min-height:44px}
+.phone .btn,.phone .btn.xs,.phone .btn-noo,.phone .inp,.phone .stab,.phone .pick-btn,.phone .pop-opt,.phone .link-btn,.phone .seg2 button,.phone .ph-steps button{min-height:44px}
 .phone .search{order:10;flex:1 1 100%;min-height:40px}
 .phone .search input{width:100%}
 .phone .kpi{grid-template-columns:1fr 1fr}
@@ -426,7 +428,7 @@ const SHOPS = [
   { id: 's6', name: 'KIOS BAROKAH', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'PENDING', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Ecer', grosirAsk: false, freq: 7, last: '2026-11-17', state: '6d left', late: false, wa: '0856-1122-3344', gps: '-6.9688, 107.5790', addr: 'Pasar Segar Kopo Blok A', embed: '', hasPhoto: false, logs: [
     { id: 'l12', d: '2026-11-17', n: 'ecer buyers ask for clove', v: 'Fast', shelf: 'Counter / till', promo: 'None', rid: 'r6' },
   ], pendingReports: [] },
-  { id: 's7', name: 'CEMERLANG', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'SOREANG', status: 'PENDING', pic: 'Unassigned', noo: 'Sri Rahayu', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-09', state: '2d late', late: true, wa: '0857-9901-3344', gps: '-7.0241, 107.5198', addr: 'Pasar Soreang Blok B No. 12', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
+  { id: 's7', name: 'CEMERLANG', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'SOREANG', status: 'PENDING', pic: 'Unassigned', noPicWhy: 'Salesman removed from the team', noo: 'Sri Rahayu', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-09', state: '2d late', late: true, wa: '0857-9901-3344', gps: '-7.0241, 107.5198', addr: 'Pasar Soreang Blok B No. 12', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
   { id: 's8', name: 'TOKO SUMBER REJEKI', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'SOREANG', status: 'Approved', pic: 'Dika Saputra', noo: 'Dika Saputra', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 14, last: '2026-11-17', state: '13d left', late: false, wa: '0812-6655-4433', gps: '-7.0285, 107.5210', addr: 'Jl. Raya Soreang-Banjaran', embed: '', hasPhoto: false, logs: [
     { id: 'l13', d: '2026-11-16', n: 'medium demand', v: 'Medium', shelf: 'Eye level', promo: 'Poster', rid: 'r2' },
   ], pendingReports: [] },
@@ -439,7 +441,7 @@ const SHOPS = [
     { id: 'l14', d: '2026-11-17', n: 'matches Cello Green in Muntilan', v: 'Fast', shelf: 'Eye level', promo: 'None', rid: 'r5' },
   ], pendingReports: [] },
   { id: 's15', name: 'ENDANG CELL', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MUNTILAN', status: 'Approved', pic: 'Budi Santoso', noo: 'Budi Santoso', tier: 'Epic', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-02', state: '9d late', late: true, wa: '0811-2233-4455', gps: '-7.5801, 110.2910', addr: 'Jl. Talun Km 1, Muntilan', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
-  { id: 's16', name: 'TOKO HARAPAN JAYA', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MUNTILAN', status: 'PENDING', pic: 'Unassigned', noo: 'Agus Prasetyo', tier: 'Silver', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-16', state: '5d left', late: false, wa: '0813-4455-6677', gps: '-7.5844, 110.2932', addr: 'Jl. Kartini No. 7, Muntilan', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
+  { id: 's16', name: 'TOKO HARAPAN JAYA', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MUNTILAN', status: 'PENDING', pic: 'Unassigned', noPicWhy: 'New shop, no salesman chosen yet', noo: 'Agus Prasetyo', tier: 'Silver', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-16', state: '5d left', late: false, wa: '0813-4455-6677', gps: '-7.5844, 110.2932', addr: 'Jl. Kartini No. 7, Muntilan', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
   { id: 's17', name: 'TOKO SRI REJEKI', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MERTOYUDAN', status: 'Approved', pic: 'Budi Santoso', noo: 'Budi Santoso', tier: 'Unranked', price: 'Grosir', grosirAsk: false, freq: 7, last: '2026-11-15', state: '4d left', late: false, wa: '0812-6677-8899', gps: '-7.5230, 110.2241', addr: 'Jl. Mayjen Bambang Soegeng', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
 ];
 
@@ -580,7 +582,7 @@ function shopsForNode(node, qStr) {
 
 function nodeTitle(node) {
   if (node === 'NOO_VERIFY') return { name: 'NOO to verify', sub: 'New shops waiting for verification', kind: 'noo' };
-  if (node === 'NEEDS_ACTION') return { name: 'Needs action', sub: 'NOO verify, Grosir asks & unassigned shops', kind: 'need' };
+  if (node === 'NEEDS_ACTION') return { name: 'Needs action', sub: 'NOO verify, Grosir price requests & shops without a salesman', kind: 'need' };
   const [kind, val] = String(node || '').split(':');
   const f = FOLDERS.find((x) => x.kec === val || x.kab === val || x.prov === val);
   const sub = kind === 'kec' ? (f?.kab || 'Unmapped') : kind === 'kab' ? (f?.prov || 'Indonesia') : 'Provinsi';
@@ -613,7 +615,7 @@ function render(el, st) {
     <div><span class="lbl">Shops filed</span><b class="val">${R(st, 'k-tot', String(kpi.total))}</b><i>${kpi.provs} prov · ${kpi.kecs} kec</i></div>
     <div><span class="lbl">Overdue visits</span><b class="val bad">${R(st, 'k-late', String(kpi.late))}</b><i>past rhythm</i></div>
     <div class="click ${kpi.nooPending.length ? 'noo-kpi' : ''}" data-node="NOO_VERIFY" role="button" tabindex="0"><span class="lbl">NOO to verify: ${kpi.nooPending.length}</span><b class="val" style="color:var(--accent-ink)">${R(st, 'k-noo', String(kpi.nooPending.length))}</b><i>${kpi.nooPending.length ? 'tap to verify new shops' : 'all verified'}</i></div>
-    <div class="${canApproveAsks() ? 'click' : ''}" ${canApproveAsks() ? 'data-node="NEEDS_ACTION"' : ''}><span class="lbl">Needs action</span><b class="val" style="color:var(--accent-ink)">${R(st, 'k-act', String(kpi.needs))}</b><i>${kpi.nooPending.length} NOO · ${kpi.grosirAsks.length} Grosir · ${kpi.noSalesman.length} PIC</i></div>
+    <div class="${canApproveAsks() ? 'click' : ''}" ${canApproveAsks() ? 'data-node="NEEDS_ACTION"' : ''}><span class="lbl">Needs action</span><b class="val" style="color:var(--accent-ink)">${R(st, 'k-act', String(kpi.needs))}</b><i>${kpi.grosirAsks.length} Grosir price request${kpi.grosirAsks.length === 1 ? '' : 's'} · ${kpi.noSalesman.length} shop${kpi.noSalesman.length === 1 ? '' : 's'} without a salesman</i></div>
     <div><span class="lbl">Price mix</span><div class="mix"><span class="g" ${W(kpi.gPct + '%')}></span><span class="r" ${W(kpi.rPct + '%')}></span><span class="e" ${W(kpi.ePct + '%')}></span></div><i style="margin:0">Grosir ${kpi.gPct}% · Retail ${kpi.rPct}% · Ecer ${kpi.ePct}%</i></div>
   </div>
   ${ro ? `<div class="ro-bar"><svg class="i"><use href="#shield"/></svg><span>${esc(G.role)} view: browse shops and submit competitor field reports for admin approval.</span></div>` : ''}`;
@@ -709,12 +711,13 @@ function renderMidPane(st, nt, areaList, kpi, ro, boss) {
         <div class="af">
           <div><span class="al">Waiting</span><b class="av2" style="color:var(--accent-ink)">${R(st, 'na-tot', String(kpi.needs))}</b></div>
           <div><span class="al">NOO</span><b class="av2" style="color:var(--accent-ink)">${R(st, 'na-pnd', String(nAsks.length))}</b></div>
-          <div><span class="al">Grosir?</span><b class="av2">${R(st, 'na-gr', String(gAsks.length))}</b></div>
-          <div><span class="al">No PIC</span><b class="av2">${R(st, 'na-pic', String(oAsks.length))}</b></div>
+          <div><span class="al">Grosir requests</span><b class="av2">${R(st, 'na-gr', String(gAsks.length))}</b></div>
+          <div><span class="al">No salesman</span><b class="av2">${R(st, 'na-pic', String(oAsks.length))}</b></div>
         </div>
       </div>
       <div class="mid-list">
-        <div class="qsec"><span>NOO to verify (${nAsks.length})</span><span>new shops</span></div>
+        <div class="qsec"><span>NOO to verify (${nAsks.length})</span></div>
+        <div class="qdesc">New shops opened by a salesman. Check the details and press Verify NOO to make the shop official.</div>
         ${nAsks.length ? nAsks.map((c) => `<div class="qcard noo-row ${st.sel === c.id ? 'sel' : ''}" style="border-left:3px solid var(--gold)">
           <div class="qh" data-row="${c.id}"><b>${esc(c.name)}</b><span class="st g">NEW · VERIFY NOO</span></div>
           <div class="dim" style="font-size:10.5px">${esc(c.kec)} · opened by ${esc(shortName(c.noo))}</div>
@@ -723,25 +726,29 @@ function renderMidPane(st, nt, areaList, kpi, ro, boss) {
           </div>
         </div>`).join('') : `<div style="padding:10px 12px;font-size:11.5px;color:var(--ink-dim)">All new shops verified.</div>`}
 
-        <div class="qsec"><span>Grosir asks (${gAsks.length})</span><span>price tier</span></div>
+        <div class="qsec"><span>Grosir price requests (${gAsks.length})</span></div>
+        <div class="qdesc">A salesman asked to sell to this shop at the Grosir (wholesale) price. Approve to switch the shop's price, or keep its current price.</div>
         ${gAsks.length ? gAsks.map((c) => `<div class="qcard ${st.sel === c.id ? 'sel' : ''}">
-          <div class="qh" data-row="${c.id}"><b>${esc(c.name)}</b><span class="dim" style="font-size:10.5px">${esc(c.kec)} · asked by ${esc(shortName(c.noo))}</span></div>
-          <div style="display:flex;gap:6px">
-            <button type="button" class="btn xs q" style="flex:1" data-act="grosir-no" data-id="${c.id}">Keep ${esc(c.price)}</button>
-            <button type="button" class="btn xs" style="flex:1" data-act="grosir-yes" data-id="${c.id}"><svg class="i"><use href="#chk"/></svg>Confirm Grosir</button>
+          <div class="qh" data-row="${c.id}"><b>${esc(c.name)}</b><span class="dim" style="font-size:10.5px">${esc(c.kec)} · requested by ${esc(shortName(c.noo))}</span></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button type="button" class="btn xs q" style="flex:1" data-act="grosir-no" data-id="${c.id}">Keep ${esc(c.price)} price</button>
+            <button type="button" class="btn xs" style="flex:1" data-act="grosir-yes" data-id="${c.id}"><svg class="i"><use href="#chk"/></svg>Approve Grosir price</button>
           </div>
-        </div>`).join('') : `<div style="padding:10px 12px;font-size:11.5px;color:var(--ink-dim)">All Grosir requests decided.</div>`}
+        </div>`).join('') : `<div style="padding:10px 12px;font-size:11.5px;color:var(--ink-dim)">All Grosir price requests decided.</div>`}
 
-        <div class="qsec"><span>Waiting for a salesman (${oAsks.length})</span><span>assign PIC</span></div>
+        <div class="qsec"><span>Shops without a salesman (${oAsks.length})</span></div>
+        <div class="qdesc">Nobody is in charge of these shops, so they get no visits and no stock package. Pick the salesman who will look after each shop and press Assign.</div>
         ${oAsks.length ? oAsks.map((c) => {
           const picked = st.ownerPick[c.id] || ROSTER[0];
+          const why = c.noPicWhy || (c.status === 'PENDING' ? 'New shop, no salesman chosen yet' : 'Salesman removed from the team');
           return `<div class="qcard ${st.sel === c.id ? 'sel' : ''}">
-            <div class="qh" data-row="${c.id}"><b>${esc(c.name)}</b><span class="dim" style="font-size:10.5px">${esc(c.kec)} · added by ${esc(shortName(c.noo))}</span></div>
+            <div class="qh" data-row="${c.id}"><b>${esc(c.name)}</b><span class="dim" style="font-size:10.5px">${esc(c.kec)} · opened by ${esc(shortName(c.noo))}</span></div>
+            <div class="qwhy">${esc(why)}</div>
             <div style="display:flex;gap:6px">
               <select class="inp" style="flex:1" data-f="owner-pick" data-id="${c.id}" aria-label="Salesman for ${esc(c.name)}">
                 ${ROSTER.map((r) => `<option value="${esc(r)}" ${picked === r ? 'selected' : ''}>${esc(r)}</option>`).join('')}
               </select>
-              <button type="button" class="btn xs" data-act="give-agent" data-id="${c.id}"><svg class="i"><use href="#chk"/></svg>Give</button>
+              <button type="button" class="btn xs" data-act="give-agent" data-id="${c.id}"><svg class="i"><use href="#chk"/></svg>Assign</button>
             </div>
           </div>`;
         }).join('') : `<div style="padding:10px 12px;font-size:11.5px;color:var(--ink-dim)">Every shop has a salesman assigned.</div>`}
@@ -750,7 +757,6 @@ function renderMidPane(st, nt, areaList, kpi, ro, boss) {
   }
 
   const lateCnt = areaList.filter((s) => s.late).length;
-  const nooCnt = areaList.filter((s) => s.status === 'PENDING').length;
   const grosirCnt = areaList.filter((s) => s.price === 'Grosir').length;
   const asksCnt = areaList.filter((s) => s.status === 'PENDING' || s.grosirAsk || !s.pic || s.pic === 'Unassigned').length;
   const agents = [...new Set(areaList.map((s) => s.pic && s.pic !== 'Unassigned' ? s.pic.split(' ')[0] : null).filter(Boolean))].slice(0, 3).join(', ') || 'Unassigned';
@@ -760,9 +766,9 @@ function renderMidPane(st, nt, areaList, kpi, ro, boss) {
       <b class="at">${esc(nt.name)}</b> <span class="dim">· ${esc(nt.sub)} · ${esc(agents)}</span>
       <div class="af">
         <div><span class="al">Shops</span><b class="av2">${R(st, 'a-sh', String(areaList.length))}</b></div>
-        <div><span class="al">NOO</span><b class="av2" style="color:var(--accent-ink)">${R(st, 'a-noo', String(nooCnt))}</b></div>
         <div><span class="al">Late</span><b class="av2" style="color:var(--danger-ink)">${R(st, 'a-lt', String(lateCnt))}</b></div>
         <div><span class="al">Grosir</span><b class="av2">${R(st, 'a-gr', String(grosirCnt))}</b></div>
+        <div><span class="al">Requests</span><b class="av2" style="color:var(--accent-ink)">${R(st, 'a-ak', String(asksCnt))}</b></div>
       </div>
       ${boss && nt.kind !== 'noo' ? `<div style="display:flex;gap:6px;margin-top:7px">
         <button type="button" class="btn xs q" data-act="ren-folder"><svg class="i" style="width:12px;height:12px"><use href="#edit"/></svg>Rename</button>
@@ -773,7 +779,7 @@ function renderMidPane(st, nt, areaList, kpi, ro, boss) {
       ${areaList.length ? areaList.map((s) => {
         const isNoo = s.status === 'PENDING';
         const badgeCls = isNoo || s.grosirAsk ? 'g' : (s.late || !s.pic || s.pic === 'Unassigned') ? 'bad' : '';
-        const badgeTxt = isNoo ? 'NEW · VERIFY NOO' : s.grosirAsk ? 'Grosir?' : (!s.pic || s.pic === 'Unassigned') ? 'No salesman' : s.state;
+        const badgeTxt = isNoo ? 'NEW · VERIFY NOO' : s.grosirAsk ? 'GROSIR REQUESTED' : (!s.pic || s.pic === 'Unassigned') ? 'No salesman' : s.state;
         return `<button type="button" class="sr ${isNoo ? 'noo-row' : ''} ${st.sel === s.id ? 'sel' : ''}" data-row="${s.id}">
           <div class="av">${iniOf(s.name)}</div>
           <div style="min-width:0"><b>${esc(s.name)}</b><span class="s">${esc(shortName(s.pic))} · ${esc(s.price)}${s.tier !== 'Unranked' ? ' · ' + esc(s.tier) : ''}</span></div>
@@ -1032,8 +1038,8 @@ function renderRightPane(s, st, ro, boss) {
           <div><span class="fl">Visit rhythm</span><b class="fv">Every ${s.freq} days</b></div>
           <div><span class="fl">Last visit</span><b class="fv" style="${s.late ? 'color:var(--danger-ink)' : ''}">${esc(lastTxt)}</b></div>
           <div><span class="fl">WhatsApp</span><b class="fv">${esc(s.wa)}</b></div>
-          <div><span class="fl">Grosir ask</span>${s.grosirAsk && !ro
-            ? `<span style="display:flex;gap:5px;margin-top:3px"><button type="button" class="btn xs" data-act="grosir-yes" data-id="${s.id}">Confirm</button><button type="button" class="btn xs q" data-act="grosir-no" data-id="${s.id}">Keep</button></span>`
+          <div style="${s.grosirAsk && !ro && st.mode === 'phone' ? 'grid-column:span 2' : ''}"><span class="fl">Grosir price request</span>${s.grosirAsk && !ro
+            ? `<span style="display:flex;gap:5px;margin-top:4px;flex-wrap:wrap"><button type="button" class="btn xs" data-act="grosir-yes" data-id="${s.id}"><svg class="i"><use href="#chk"/></svg>Approve Grosir price</button><button type="button" class="btn xs q" data-act="grosir-no" data-id="${s.id}">Keep ${esc(s.price)} price</button></span>`
             : `<b class="fv">${s.grosirAsk ? 'Waiting' : 'None'}</b>`}</div>
         </div>
       </div>
@@ -1401,7 +1407,7 @@ function onClick(e, el, st) {
       return toast(rv ? (o ? `Comparing ${rv.name} with ${o.name}` : `Comparing ${rv.name}`) : 'Updated comparison');
     }
     case 'bench-photo': st.bPhoto = !st.bPhoto; render(el, st); return toast(st.bPhoto ? 'Shelf photo attached' : 'Shelf photo removed');
-    case 'copy-gps': { const t = s ? s.gps : ''; const done = () => toast(`GPS ${t} copied`); try { navigator.clipboard.writeText(t).then(done, done); } catch (_) { done(); } return; }
+    case 'copy-gps': { const t = s ? s.gps : ''; try { navigator.clipboard?.writeText?.(t); } catch (_) {} return toast(`GPS ${t} copied`); }
     case 'report-rival': {
       if (!s) return;
       const isNew = st.bRival === '__new__';
@@ -1434,20 +1440,20 @@ function onClick(e, el, st) {
       s.price = 'Grosir';
       s.grosirAsk = false;
       rerenderAll();
-      return toast(`${s.name} confirmed at Grosir pricing`);
+      return toast(`Approved Grosir price for ${s.name}`);
     }
     case 'grosir-no': {
       if (!s) return;
       s.grosirAsk = false;
       rerenderAll();
-      return toast(`${s.name} kept at ${s.price} pricing`);
+      return toast(`Kept ${s.price} price for ${s.name}`);
     }
     case 'give-agent': {
       if (!s) return;
       const picked = st.ownerPick[s.id] || ROSTER[0];
       s.pic = picked;
       rerenderAll();
-      return toast(`${s.name} assigned to ${picked}`);
+      return toast(`${s.name} is now handled by ${picked}`);
     }
     case 'add-folder': st.promptVal = ''; st.modal = M.addFolder(null); return render(el, st);
     case 'confirm-add-folder': {
