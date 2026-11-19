@@ -2732,7 +2732,7 @@ Build `.claude/drafts/customers-c.html` (taking section C of `.claude/drafts/cus
 **Result:**
 
 ## Task 75 - DISCUSS: your own view on the categories + rival catalog design (from Aldi: "let antigravity also discuss with us") - DO THIS ONE FIRST
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 07:15 WIB. Read A-Brain `Brainstorm/2026-11-19_categories-subcategories-and-rival-catalog.md` (Aldi's words + Claude's proposal) and the last 3 entries of `.claude/PROGRESS.md`.
 **Touch only:** this file.
 Aldi wants a second opinion, not a copy of Claude's. In the Result:
@@ -2743,6 +2743,55 @@ Aldi wants a second opinion, not a copy of Claude's. In the Result:
 4. Write it in short plain English for Aldi (he reads it): no jargon without a one-line meaning.
 **Done when:** Result has parts 1-4, every code claim has `file:line`, and a `could not check:` line.
 **Result:**
+
+### 1. Second opinion on each part of Claude's proposal (plain English for Aldi)
+
+- **Two fixed levels (`Category > Sub-category`) — AGREE.**
+  Today `src/MerchantSalesView.jsx:1690` builds a single flat row of tabs from each product's `type` (`["ALL", ...new Set(inventory.map(i => i.type || "MISC"))]`). Two fixed rows (Categories on row 1, Sub-categories of the picked one on row 2) stay easy to tap on a phone and cover your milk example (`Kid > Kid Gold`) without turning every screen into a deep folder tree.
+- **One shared category list (our products + rivals) — AGREE, with one small guard.**
+  Today promo items (`T-shirt`, `lighter`, `poster`) hardcode `type: 'PROMO'` (`src/App.jsx:3716`, `src/StockOpnameView.jsx:940`). Keep promo goods outside the shared category list (they already have `kind: 'promo'`) so `PROMO` never clutters competitor categories or milk/cigarette pickers.
+- **Cross-category comparison allowed — AGREE.**
+  No rule or screen in `src/` needs both sides to share a category, and showing each side's `Category › Sub` with a `"Different category"` tag gives you full freedom without losing clarity.
+- **Admin current price (now region x customer type) — DISAGREE with one flat price; AGREE with your region x customer-type grid.**
+  Claude's first draft had one price per rival product. Your product prices already split into `priceRetail`, `priceGrosir`, `priceEcer` (`src/App.jsx:3878-3880`, `api/_demoCompany.js:127`), and regional offers already key by `normalizeRegion` (`src/config/permissions.js:411`). Storing rival prices by **region x customer type** makes the side-by-side compare apples-to-apples for every shop.
+- **Matrix row default T1–T4 — AGREE, with a safety rule for existing companies.**
+  `PermissionMatrixEditor` (`src/components/SettingsView.jsx:1664-1688`) loads a saved `settings/permission_matrix` document that replaces defaults. Because existing companies do not have the new competitor keys saved yet, the code MUST use the same fallback rule as `handoff_cross_region` (`src/config/permissions.js:422-430`: if the saved matrix does not mention the key yet, fall back to the tier default) — otherwise existing T1–T4 accounts get locked out until someone re-saves Settings.
+- **Duplicate warning on add — AGREE, and make it block exact duplicates, warn on near ones.**
+  We already have `normaliseName` (`src/utils/findDuplicates.js:19-20`, turns names into uppercase letters/numbers only) for shops. Reusing the exact same helper on categories and rival products keeps the rule consistent across the whole app, and refusing an *exact* duplicate after normalisation (while warning + offering Merge on a *near* match) prevents accidental double rows on slow phones.
+- **Build order (`Master Vault -> rival list -> Customers`) — AGREE, and put `firestore.rules` + USB Backup wiring at step 0.**
+  Master Vault sets the shared category list first, Competitors builds the rival catalog and region prices second, and Customers' shop tab reads from it third. Before any code writes the new collections, the new `firestore.rules` must go live in the Console first — including adding `categoryId` / `subCategoryId` to the `Sell Again` damaged-lot whitelist (`firestore.rules:669,674`).
+
+### 2. Cost of your 08:03 and 08:25 choices (not re-asking — just what we pay for them)
+
+- **Retail / Grosir / Ecer x Region price grid:** Low cost on our side (matches `priceRetail` / `priceGrosir` / `priceEcer` already in `src/App.jsx:3878-3880`), and keeps Firestore reads small if one rival product document holds a `pricesByRegion` map (`{ "JAWA BARAT": { Retail, Grosir, Ecer, updatedBy, updatedAt } }`). **Watch-out:** a Firestore rule cannot filter *fields inside* one document — if a T4 is truly forbidden from reading another region's price even in raw database traffic (not just hidden in the UI), then each region's price must be its own sub-document (`competitors/{rivalId}/region_prices/{REGION}`) so Firestore rules can enforce `region == myRegion` on reads.
+- **T4 approves own region, T3+ approves any region:** Clean and matches your branch model (`normalizeRegion`, `src/config/permissions.js:411`). Cost: a T4's `location` text must match the region key exactly (just like Fleet & Roster branches); if a T4 has no `location` (`UNASSIGNED`), rules must refuse approval rather than leak across regions.
+- **Choice B on approval ("Update region price" vs "Keep as a note only"):** Very smart. One small cost: `"Keep as a note only"` still needs to store the selling speed (`Fast` / `Medium` / `Slow`) on the approved report so the shop's `"How it sells here vs other shops"` line updates even when the region price stayed unchanged.
+- **Shared category list with 2 add choices ("Existing" vs "New category"):** Main cost is **category drift** — a regional admin (T4) might create `"Kretek Mild"` when `"Mild"` already exists. Showing the live duplicate warning on `"Add a new category"`, tagging rival-only categories `"competitors only · 0 of ours"` in Master Vault, and letting T1–T3 merge two categories later keeps the shared list tidy.
+
+### 2b. Your new direction (global Competitors screen + read-only shop tab + approval flow + T4 region scope)
+
+- **Competitors as its own global screen — STRONG AGREE.** Today competitor logs live buried inside each shop (`src/components/CustomerManager.jsx:31`, `customers/{id}/benchmarks`), so there is no way to see one rival across Bandung vs Magelang without clicking 20 shops one by one. Moving the catalog and prices to a global screen fixes that completely.
+- **Shop tab only reads from global Competitors — STRONG AGREE.** Keeps the shop screen fast and calm, and guarantees one single source of truth for prices.
+- **Salesman reports go through admin approval — STRONG AGREE.** Today `firestore.rules:780-782` lets *any* salesman (`isSalesman`) add, edit, or delete competitor records directly. An approval queue stops typos, jokes, or unverified prices from polluting the owner's comparison table.
+- **T4 sees only his own region's prices; T3+ sees all regions — AGREE, with the storage note above.** If we store region prices in a subcollection keyed by `REGION` (one doc per region per rival), Firestore rules can truly block a T4 from reading another region's prices, not just hide the column on screen (avoiding a "UI hides it, database still sends it" gap).
+
+### 3. Things Claude missed in TODAY's code (with `file:line`)
+
+1. **Damaged-pack "Sell Again" whitelist will break (`firestore.rules:668-676`, `src/StockOpnameView.jsx:949-955`):** When someone puts damaged packs back on sale (`rsk-<id>`), Firestore rules strictly allow ONLY a fixed list of 18 fields (`type`, `category`, `prices`, etc.). Adding `categoryId` / `subCategoryId` to `StockOpnameView.jsx:950` without updating `firestore.rules:669,674` first will cause `permission-denied` on every Sell Again save.
+2. **Command Center's SKM vs Kretek mix is hardcoded for cigarettes (`src/components/DashboardBenchmarks.jsx:164-166`):** It checks `item.type.includes('skm')` and `name.includes('filter') / 'mild'` to calculate `% SKM`. First, if a milk company uses the app, this card makes no sense. Second, it reads `item.type` on the *transaction line item* instead of `p.type` on the product (`L160`), and changing `type` to `categoryId` without keeping `type` synced (or making that chart follow top categories) leaves it blind.
+3. **USB Safe Backup, Restore, and Nuclear Wipe (`src/App.jsx:766-768, 926-928, 970-973, 1023-1028, 4334-4341`):** Today Backup & Restore explicitly copies `products` and each shop's `customers/{id}/benchmarks` subcollection. Any NEW collections (`categories`, `competitors`, `region_prices`, `competitor_reports`) will be **silently left out of backups** and **left behind after a wipe** unless we add them to those exact handlers in `App.jsx` (and `SettingsView.jsx:1394-1403` granular export/import).
+4. **Master Vault grouping & 3D Examine view (`src/components/ResidentEvilInventory.jsx:155, 249, 337-338, 352`, `src/components/ExamineModal.jsx:135`):** Master Vault groups products by `item.type || "MISC"` (`L249`) and ExamineModal prints `TYPE: {product.type}` (`L135`). Writing BOTH `categoryId`/`subCategoryId` AND keeping `type` set to the category name during migration prevents blank labels anywhere.
+5. **Permission Matrix fallback (`src/config/permissions.js:422-430`):** Existing companies already have a saved `permission_matrix` doc. New competitor permissions MUST check `matrixKnowsKey` first so existing T1–T4 accounts get their defaults automatically without waiting for a manual Settings save.
+6. **Old `customers/{id}/benchmarks` rule (`firestore.rules:780-782`):** Currently `allow read, write: if isSalesman(bossUid);` — any tier can delete any shop's competitor history. Once the new approval queue ships, lock writes on the old `benchmarks` path so nobody bypasses approval.
+
+### 4. Plain-English summary for Aldi
+
+- **Two levels (`Category > Sub-category`) + one shared list + free cross-category compare + global Competitors screen** is the right shape. It works for cigarettes today and for milk or any other company tomorrow.
+- **Two things to lock in before building:**
+  1. Store each region's rival price in its own small region record so the database itself (not just the screen) stops a Tier 4 admin from seeing another region's prices.
+  2. Wire the new category and competitor tables into **USB Backup / Restore**, **Sell Again damaged packs**, and the **Permission Matrix defaults** so nothing breaks or goes missing for existing companies.
+
+**could not check:** Live production Firestore data (never touched per rules; checked code + `firestore.rules` + `demo/seed.json` shape only).
 
 ## Task 76 - PICTURE: Customers C v5 - the shop's competitor tab only READS from the global Competitors screen (draft only) - DO AFTER TASK 78
 **Status:** OPEN
