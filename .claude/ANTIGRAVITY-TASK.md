@@ -3324,3 +3324,24 @@ Updated `.claude/drafts/customers-c.html`, `.claude/drafts/categories-pro.html`,
 For almost every everyday delete in KPM — deleting a shop, resetting a folder to Unknown, deleting a duplicate, removing a rival price/product, deleting a category/sub-category, removing a map border, or deleting a restock place/target — the smallest, cleanest Undo is a **Delayed Write**: keep your confirm box first, then hide the item on screen and show the 8-second **"Deleted · UNDO"** bar, and only send the real delete to Firebase when those 8 seconds run out (if you press Undo, nothing ever touched the database, and we need zero `firestore.rules` changes). Use the exact same 8-second pause before committing stock actions like Delete Sampling, Clear Van, or Delete PO so live stock numbers never get tangled in a race. For **Products** and **Staff accounts**, Soft Delete (archiving them instead of erasing them) is safer long-term so old receipts and vans never lose their links, and for **Money & Quarantine ledger lines** (sales receipts, Titip history, opname write-offs/penalties, and the full Nuclear Wipe), keep them **not undoable** after they land — use a Void/reversal record for mistakes instead of erasing history.
 
 **could not check:** Live production Firestore data volume, whether any custom company `permission_matrix` in production grants `isAdmin`-gated screens differently, or whether `firestore.rules` on the live console differs from `firestore.rules` on disk (read-only audit of `src/` only).
+
+## Task 86 - READ-ONLY: build plan for the real Undo (the "delayed write" deletes only)
+**Status:** OPEN
+**Written:** 2026-11-19 11:45 WIB. From your Task 85 map (4b07368b). Aldi wants an Undo after accidental deletes. Plan ONLY the rows you marked "DELAYED write" that touch no money and no stock: #8 benchmark, #9 duplicate shop, #10 + #14 shop delete, #13 + #29 + #30 map borders, #15 place, #16 production target, #27 folder reset, #28 data scrub, #34 mascot message. Leave every money/stock/security row out.
+**Touch only:** this file.
+1. ONE shared helper (name, file, signature): hides the item on screen at once, shows the 8-second "Deleted <name> · UNDO" bar, runs the real write only when the 8 s end, cancels on UNDO; what happens if the screen closes or the phone goes offline inside the 8 s (say plainly: the delete is then NOT done, and the item comes back next load - is that safe for each row?).
+2. Per row: `file:line` of the current `deleteDoc` / batch, the exact change (wrap the write in the helper), and what the screen must hide meanwhile (lists that read the same data).
+3. The toast: the app's toast is `notify()` (`src/components/Toast.jsx:50`) - can it carry an UNDO button and an 8-second countdown, or does it need a sibling component? `file:line`.
+4. The `logicFixes.selfcheck.mjs` lines: one regression guard (every listed site goes through the helper), one behaviour check (helper with fake timers: UNDO inside 8 s = no write; no UNDO = exactly one write).
+**Done when:** parts 1-4 with `file:line` on every claim and a `could not check:` line.
+**Result:**
+
+## Task 87 - PICTURE: 2 nits from Claude's review of Task 84 (drafts only)
+**Status:** OPEN
+**Written:** 2026-11-19 11:45 WIB.
+**Touch only:** `.claude/drafts/categories-pro.html`, `.claude/drafts/customers-c.html`, this file.
+1. `categories-pro.html` "Preview: terminal tabs": row 1 shows a category with 0 products (add "Toddler" in Categories, it appears as an empty terminal tab). The real terminal builds tabs from products, so only categories that HAVE products may show there.
+2. `customers-c.html` `toast()`: unlike the other two files it skips `void t.offsetWidth` after removing the classes, so a second toast right after the first may not restart the 8-second countdown line. Make it match the other two files.
+3. Headless `ERRORS: []` for both.
+**Done when:** 1-3 done, Result lists what you checked.
+**Result:**
