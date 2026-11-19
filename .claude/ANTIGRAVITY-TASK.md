@@ -3326,7 +3326,7 @@ For almost every everyday delete in KPM — deleting a shop, resetting a folder 
 **could not check:** Live production Firestore data volume, whether any custom company `permission_matrix` in production grants `isAdmin`-gated screens differently, or whether `firestore.rules` on the live console differs from `firestore.rules` on disk (read-only audit of `src/` only).
 
 ## Task 86 - READ-ONLY: build plan for the real Undo (the "delayed write" deletes only)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 11:45 WIB. From your Task 85 map (4b07368b). Aldi wants an Undo after accidental deletes. Plan ONLY the rows you marked "DELAYED write" that touch no money and no stock: #8 benchmark, #9 duplicate shop, #10 + #14 shop delete, #13 + #29 + #30 map borders, #15 place, #16 production target, #27 folder reset, #28 data scrub, #34 mascot message. Leave every money/stock/security row out.
 **Touch only:** this file.
 1. ONE shared helper (name, file, signature): hides the item on screen at once, shows the 8-second "Deleted <name> · UNDO" bar, runs the real write only when the 8 s end, cancels on UNDO; what happens if the screen closes or the phone goes offline inside the 8 s (say plainly: the delete is then NOT done, and the item comes back next load - is that safe for each row?).
@@ -3335,6 +3335,118 @@ For almost every everyday delete in KPM — deleting a shop, resetting a folder 
 4. The `logicFixes.selfcheck.mjs` lines: one regression guard (every listed site goes through the helper), one behaviour check (helper with fake timers: UNDO inside 8 s = no write; no UNDO = exactly one write).
 **Done when:** parts 1-4 with `file:line` on every claim and a `could not check:` line.
 **Result:**
+
+### 1. Shared helper: `scheduleDelayedWrite` in `src/utils/delayedWrite.js` (new file)
+- **Signature & exports:**
+  ```js
+  export const UNDO_MS = 8000;
+  export function scheduleDelayedWrite({
+    key,              // e.g. `cust:${id}`, `bench:${id}`, `border:${id}`, `place:${id}`, `target:${id}`, `folder:${level}:${name}`, `scrub:all`, `mascot:${idx}`
+    label,            // human name shown in "Deleted <label> · UNDO" and "Restored <label>"
+    onOptimistic,     // optional sync callback run immediately to update local state
+    commit,           // async () => { /* real deleteDoc / commitInChunks / setDoc + logAudit */ }
+    onUndo,           // optional sync callback run if user presses UNDO (or if commit throws)
+    durationMs = UNDO_MS,
+    timers = { setTimeout: globalThis.setTimeout, clearTimeout: globalThis.clearTimeout }, // injectable for selfcheck
+  })
+  export function undoPendingWrite(key)       // cancels timer, runs onUndo(), toasts "Restored <label>", returns true
+  export function flushPendingWrite(key)      // runs commit() immediately (used if a second delete replaces the active bar)
+  export function isPendingUndo(key)          // boolean reader for filter hooks
+  export function getPendingPatch(key)        // returns optimistic patch data (for #27 folder reset & #28 data scrub)
+  export function usePendingUndo()            // React hook via useSyncExternalStore subscribing to pending keys/patches
+  ```
+- **Lifecycle:**
+  1. Confirm dialog (`confirmAction`, `src/components/ConfirmGate.jsx:32`) still runs **before** `scheduleDelayedWrite` is called.
+  2. When called: if another undo bar is currently counting down, `scheduleDelayedWrite` flushes the previous pending write (`flushPendingWrite(prevKey)`) so rapid deletes never silently drop an earlier delete.
+  3. Adds `key` to the module-level `pendingMap`, runs `onOptimistic?.()`, notifies React subscribers (`usePendingUndo()`), and opens the 8-second Undo toast-bar via `notifyUndo({ key, label, durationMs, onUndo: () => undoPendingWrite(key) })`.
+  4. **If UNDO is pressed inside 8 s:** `clearTimeout`, deletes `key` from `pendingMap`, calls `onUndo?.()`, closes the Undo bar, and calls `notify(\`Restored \${label}.\`)`. **Zero Firestore writes happen.**
+  5. **When 8 s expire without UNDO:** deletes `key` from `pendingMap`, closes the Undo bar, and runs `await commit()`. If `commit()` throws, runs `onUndo?.()` and `notify(\`Could not delete \${label}: \${err.message}\`)`.
+- **What happens if the screen closes or the phone goes offline inside the 8 seconds:**
+  - **Switching screens/tabs inside the app** (e.g. Customers -> Map Mission Control): the timer and `pendingMap` live at module scope in `src/utils/delayedWrite.js` and the bar lives in `<ToastHost />` (`src/main.jsx:11`), so switching tabs inside KPM does **not** cancel the delete or hide the Undo bar.
+  - **Closing the browser tab / killing the app inside the 8 s:** the 8-second timer dies with the tab, so **the delete is NOT done, and the item comes back on the next load**.
+  - **Phone goes offline inside the 8 s:** if the app stays open when the 8 s end, Firestore's IndexedDB persistence queues `commit()` and syncs when signal returns; if the phone goes offline *and* the tab is closed before the 8 s end, the delete is NOT done and the item comes back next load.
+  - **Is "item comes back next load" safe for every row?** **Yes, 100% safe for all 12 rows (#8, #9, #10, #13, #14, #15, #16, #27, #28, #29, #30, #34):** none of them touch money, stock, or auth credentials, so failing closed (keeping the shop, benchmark, folder name, map border, place, production target, or mascot quote) never corrupts balances or inventory — matching `ConfirmGate.jsx:29-30` (*"silently NOT destroying data beats silently destroying it"*).
+
+### 2. Per-row wiring (`file:line`, exact change, and what the screen hides meanwhile)
+
+| Row | Current write (`file:line`) | Exact change (wrap in `scheduleDelayedWrite`) | What the screen must hide / overlay meanwhile |
+|---|---|---|---|
+| **#8 Benchmark** | `src/components/CustomerManager.jsx:48` (`await deleteDoc(doc(db, .../benchmarks, id))`) | After `confirmAction` (`L47`), call `scheduleDelayedWrite({ key: \`bench:\${id}\`, label: b.product \|\| 'benchmark', commit: () => deleteDoc(doc(db, \`artifacts/\${appId}/users/\${user.uid}/customers/\${customer.id}/benchmarks\`, id)) })` | In `CustomerDetailView` (`CustomerManager.jsx:26, 160`), filter `benchmarks.filter(b => !isPendingUndo(\`bench:\${b.id}\`))`. |
+| **#9 Duplicate shop** | `src/components/CustomerManager.jsx:806` (`await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', store.id))`) | After `confirmAction` (`L795`), run `setDupReport(...)` (`L811-813`) in `onOptimistic` (restoring previous `dupReport` in `onUndo`), and move `deleteDoc` (`L806`) + `logAudit("CUSTOMER_DELETE_DUPLICATE", ...)` (`L807`) into `commit` with `key: \`cust:\${store.id}\`, label: store.name`. | `dupReport` row hides via `L811-813`; filter `customers` in `src/hooks/useDatabaseSync.js:37, 250` by `!isPendingUndo(\`cust:\${c.id}\`)` so `displayCustomers` (`src/App.jsx:3905, 5130, 5139, 5505, 5697`) hides the shop across Customers, Map, Journey, and Sales Terminal at once. |
+| **#10 Shop delete (Directory)** | `src/components/CustomerManager.jsx:1115` (`await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id))`) | Keep `confirmAction("Delete profile?")` (`L1115`), then call `scheduleDelayedWrite({ key: \`cust:\${id}\`, label: name, onOptimistic: () => { if (selectedCustomer?.id === id) setSelectedCustomer(null); }, commit: async () => { await deleteDoc(...); logAudit("CUSTOMER_DELETE", \`Deleted \${name}\`); } })`. | Same shared `!isPendingUndo(\`cust:\${c.id}\`)` filter in `useDatabaseSync.js:37, 250` hides the shop card (`CustomerManager.jsx:1804`), folder counts (`L308`), and map pin immediately. |
+| **#14 Shop delete (Map sheet)** | `src/MapMissionControl.jsx:1282` (`await deleteDoc(doc(db, \`artifacts/\${appId}/users/\${userId}/customers\`, store.id))`) | Keep `confirmAction` (`L1278`), run `setSelectedStore(null)` (`L1284`) in `onOptimistic` (restoring `setSelectedStore(store)` in `onUndo`), and move `deleteDoc` (`L1282`) into `commit` under `key: \`cust:\${store.id}\`, label: store.name`. | Same shared `!isPendingUndo(\`cust:\${c.id}\`)` filter removes the store marker from `MapMissionControl` (`customers` prop at `App.jsx:5139`) and `CustomerManager`. |
+| **#13 Single map border** | `src/MapMissionControl.jsx:561` (called from `handleDeleteBorder` at `L588-595`) | Keep `confirmAction` (`L589`); in `onOptimistic` save `prev = safeBoundaries` and call `setBoundaries(updated)` (`L591`); in `onUndo` call `setBoundaries(prev)`; in `commit` run `saveBorderCache(appId, updated)` (`L592`) + `await deleteBoundaryFromFirebase(idToRemove)` (`L561, 593`). | `safeBoundaries` (`MapMissionControl.jsx:463`) drops the border immediately from the Leaflet canvas and `Active Borders` list (`L856, 972`). |
+| **#29 Wipe all map borders** | `src/MapMissionControl.jsx:575-578` (`handleWipeAll`, `commitInChunks` delete) | Keep `confirmAction` (`L570`); in `onOptimistic` save `prev = safeBoundaries` and call `setBoundaries([])` (`L583`); in `onUndo` call `setBoundaries(prev)`; in `commit` run `await commitInChunks(db, writeBatch, operations)` (`L578`) + `clearBorderCache(appId)` (`L584`). | `safeBoundaries` (`L463, 856`) empties immediately on map and sidebar; `prev` array restores all polygons on UNDO. |
+| **#30 Map border folder** | `src/MapMissionControl.jsx:716-719` (`handleDeleteFolder`, `commitInChunks` delete) | Keep `confirmAction` (`L704`); in `onOptimistic` save `prev = safeBoundaries` and call `setBoundaries(updatedList)` (`L708-709`); in `onUndo` call `setBoundaries(prev)`; in `commit` run `saveBorderCache(appId, updatedList)` (`L710`) + `await commitInChunks(db, writeBatch, operations)` (`L719`). | `safeBoundaries` (`L463`) and `existingFolders` (`L476, 870`) hide the folder and all its polygons immediately. |
+| **#15 Restock place** | `src/RestockVaultView.jsx:594` (`removePlace`, `await deleteDoc(doc(db, .../places, place.id))`) | Keep `confirmAction` (`L592`); wrap `deleteDoc` (`L594`) + `logAudit("PLACE_REMOVED", ...)` (`L595`) in `scheduleDelayedWrite({ key: \`place:\${place.id}\`, label: place.name, ... })`. | Filter `places` (`RestockVaultView.jsx:204, 284`) by `!isPendingUndo(\`place:\${p.id}\`)` so the registry table (`L1658`) and supplier/warehouse dropdowns hide it at once. |
+| **#16 Production target** | `src/RestockVaultView.jsx:796` (`handleDeleteTarget`, `await deleteDoc(doc(db, .../production_targets, targetId))`) | Keep `confirmAction` (`L794`); wrap `deleteDoc` (`L796`) in `scheduleDelayedWrite({ key: \`target:\${targetId}\`, label: targetLabel, ... })`. | Filter `targets` (`RestockVaultView.jsx:208, 279`) by `!isPendingUndo(\`target:\${t.id}\`)` so the target card (`L1925`) hides at once. |
+| **#27 Customer folder reset** | `src/components/CustomerManager.jsx:541-550` (`handleDeleteFolder`, `commitInChunks` update to `'Unknown ...'`) | Keep `confirmAction` (`L535`); in `onOptimistic` save a patch map `{ [store.id]: updateData }` on key `folder:${level}:${folderName}` and update `customProv`/`customKab`/`customKec` (`L553-555`, restoring them in `onUndo`); in `commit` run `await commitInChunks(db, writeBatch, operations)` (`L550`). | Overlay pending `folder:*` patches onto `customers` in `useDatabaseSync.js:37, 250` so the folder vanishes from `FolderCard` (`CustomerManager.jsx:306`) and its shops show under `Unknown ...` during the 8 s. |
+| **#28 Enterprise Data Scrub** | `src/components/CustomerManager.jsx:956-957` (`handleEnterpriseDataScrub`, `commitInChunks` update) | Keep `confirmAction` (`L944`); in `onOptimistic` save patch map `{ [c.id]: w.data }` on key `scrub:all`; in `commit` run `await commitInChunks(db, writeBatch, operations)` (`L957`) + `logAudit("ENTERPRISE_DATA_SCRUB", summary)` (`L960`). | Overlay pending `scrub:all` patches onto `customers` in `useDatabaseSync.js:37, 250` so folder tree & shop cards reflect scrubbed areas immediately and revert if UNDO is pressed. |
+| **#34 Mascot message** | `src/App.jsx:3401` (`handleDeleteMascotMessage`, `setDoc(..., { mascotMessages: updatedMessages }, { merge: true })`) | Add `if (!await confirmAction(\`Delete mascot line "\${msgToDelete}"?\`)) return;` at `App.jsx:3398`, then wrap `setDoc` (`L3401`) in `scheduleDelayedWrite({ key: \`mascot:\${msgToDelete}\`, label: 'mascot dialogue', ... })`. | Filter `activeMessages` (`src/App.jsx:1822`) by `!isPendingUndo(\`mascot:\${m}\`)` so `SettingsView.jsx:863, 870` and `App.jsx:3362` skip the deleted line during the 8 s. |
+
+### 3. Toast architecture (`src/components/Toast.jsx:50-173`) — inside `Toast.jsx`, no second host
+- **Why `notify()` itself must NOT be altered and no second host should be added to `src/main.jsx`:**
+  1. `src/components/Toast.jsx:22-23` states: *"ONE mechanism, matching the gate: a module-level singleton, one host mounted in main.jsx as a sibling of `<App />`, and a plain function call at the call sites. Do not add a second."*
+  2. `src/config/integration.audit.mjs:460-478` (Group 13) asserts exact regexes on `src/components/Toast.jsx`: `notify` must stay non-async and have `>= 2` occurrences of `return undefined;` (`L460-462`), must contain `const bad = isFailure(text);` and `pushToast({ id: nextId++, text, bad })` (`L469`), must contain `recordMissed(text, bad); if (!pushToast)` (`L473`), and must keep `const FADE_MS = 5000;` with `timers.current.set(item.id, setTimeout(() => dismiss(item.id, true), FADE_MS));` while forbidding `item.sticky` (`L476-477`).
+- **Exact design in `src/components/Toast.jsx`:**
+  - Keep `notify(message)` (`Toast.jsx:50-61`) and the top 5-second `items` strip (`Toast.jsx:85-104, 142-170`) **byte-identical**.
+  - Export `notifyUndo({ key, label, durationMs = 8000, onUndo })` and `clearUndoToast(key)` from `src/components/Toast.jsx` using a module singleton `pushUndo` wired inside the existing `<ToastHost />` (`Toast.jsx:63`).
+  - Inside `<ToastHost />`, render the bottom Undo bar (`fixed bottom-5 left-1/2 -translate-x-1/2 z-[10000]`) when `undoItem` is present: drawn gold check (`svg.kpm-ck`), `"Deleted ${undoItem.label}"`, subtitle `"Undo for 8 seconds"`, outlined `UNDO` button (`min-h-[44px] sm:min-h-[36px]`, calls `undoItem.onUndo()`), and the 8-second bottom countdown line (`@keyframes kpm-undo-cd { from { transform: scaleX(1); } to { transform: scaleX(0); } }`, disabled under `.lite-mode` and `prefers-reduced-motion`).
+
+### 4. `src/config/logicFixes.selfcheck.mjs` guards (one REGRESSION + one BEHAVIOUR check)
+```js
+section('DELAYED-WRITE 8-SECOND UNDO (NON-MONEY / NON-STOCK DELETES)');
+{
+  const dw = read('src/utils/delayedWrite.js');
+  const tj = read('src/components/Toast.jsx');
+  const cm = read('src/components/CustomerManager.jsx');
+  const mm = read('src/MapMissionControl.jsx');
+  const rv = read('src/RestockVaultView.jsx');
+  const app = read('src/App.jsx');
+
+  ok('REGRESSION: ToastHost exports notifyUndo without touching notify() 5s contract, and all 12 delayed-write sites route through scheduleDelayedWrite',
+     tj.includes('export function notifyUndo(') &&
+     tj.includes('Undo for 8 seconds') &&
+     dw.includes('export function scheduleDelayedWrite(') &&
+     (cm.match(/scheduleDelayedWrite\(/g) || []).length >= 5 && // #8 bench, #9 dup, #10 shop, #27 folder reset, #28 data scrub
+     (mm.match(/scheduleDelayedWrite\(/g) || []).length >= 4 && // #13 border, #14 map shop, #29 wipe borders, #30 border folder
+     (rv.match(/scheduleDelayedWrite\(/g) || []).length >= 2 && // #15 place, #16 production target
+     app.includes('handleDeleteMascotMessage') &&
+     /handleDeleteMascotMessage[\s\S]{0,600}scheduleDelayedWrite\(/.test(app));
+
+  const { scheduleDelayedWrite, undoPendingWrite, isPendingUndo } = await import('../utils/delayedWrite.js');
+  const queue = [];
+  const fakeTimers = {
+    setTimeout: (fn, ms) => { const id = queue.length + 1; queue.push({ id, fn, ms, cleared: false }); return id; },
+    clearTimeout: (id) => { const t = queue.find((x) => x.id === id); if (t) t.cleared = true; },
+  };
+  let writes = 0, undone = 0;
+  scheduleDelayedWrite({
+    key: 'cust:s1', label: 'AMANAH BARU', timers: fakeTimers,
+    commit: () => { writes++; },
+    onUndo: () => { undone++; },
+  });
+  const pendingDuringWindow = isPendingUndo('cust:s1');
+  undoPendingWrite('cust:s1');
+  queue.forEach((t) => { if (!t.cleared) t.fn(); }); // simulate 8s passing after UNDO
+  const writesAfterUndo = writes;
+
+  scheduleDelayedWrite({
+    key: 'cust:s2', label: 'ANEKA BARU', timers: fakeTimers,
+    commit: () => { writes++; },
+  });
+  queue.forEach((t) => { if (!t.cleared) t.fn(); }); // simulate 8s expiring with no UNDO
+
+  ok('BEHAVIOUR: pressing UNDO inside 8s performs 0 writes and restores state; letting 8s expire performs exactly 1 write',
+     pendingDuringWindow === true &&
+     undone === 1 &&
+     writesAfterUndo === 0 &&
+     writes === 1 &&
+     isPendingUndo('cust:s2') === false);
+}
+```
+
+**could not check:** Did not edit `src/` or run `logicFixes.selfcheck.mjs` against `src/utils/delayedWrite.js` (read-only planning task; `src/` was not modified).
 
 ## Task 87 - PICTURE: 2 nits from Claude's review of Task 84 (drafts only)
 **Status:** OPEN
