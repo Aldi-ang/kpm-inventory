@@ -2710,11 +2710,22 @@ Build `.claude/drafts/customers-c.html` (taking section C of `.claude/drafts/cus
 **Result:**
 
 ## Task 73 - READ-ONLY: does our product data know sticks per pack? (from Claude)
-**Status:** OPEN
+**Status:** NONE - cancelled 2026-11-19 by Aldi ("dont add price per batang"); skip it.
 **Written:** 2026-11-19 06:40 WIB. Rival names carry pack size ("Kretek 12", "Mild 16"); a fair compare is price PER STICK.
 **Touch only:** this file.
 1. Find where a product (Master Vault) is defined and saved: every field (`file:line`). Is there a sticks / pcs-per-pack / isi field? Name it, or say none.
 2. If none: list where the pack size is visible today (product name, unit label, anything) with `file:line`.
 3. One paragraph: the smallest way to show "Rp per stick" for both sides without a new field, and the risk if the name does not end in a number.
 **Done when:** Result answers 1-3 with `file:line` and a `could not check:` line.
+**Result:**
+
+## Task 74 - READ-ONLY: every place the product category (`type`) is read or written (from Claude)
+**Status:** OPEN
+**Written:** 2026-11-19 07:10 WIB. Aldi wants Category > Sub-category on every product (Master Vault + inventory), shared with rival products. Design note: A-Brain `Brainstorm/2026-11-19_categories-subcategories-and-rival-catalog.md`. Before anything is built we need the size of the change.
+**Touch only:** this file.
+1. Every `file:line` in `src/` and `api/` that READS a product's `type` (tabs, filters, reports, sorting, receipts, exports) and every one that WRITES it (product form, imports, seeds, demo reset). One table: file:line / read or write / what the screen does with it.
+2. Is any other field used as a category (`category`, `group`, anything)? `file:line` each.
+3. `firestore.rules`: any line that checks `type` or product fields by name.
+4. One paragraph: if `type` became `categoryId` + `subCategoryId`, which of the places in part 1 would break if old products still only had `type`.
+**Done when:** Result has the 4 parts with `file:line` on every claim and a `could not check:` line.
 **Result:**
