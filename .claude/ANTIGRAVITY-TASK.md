@@ -2794,7 +2794,7 @@ Build `.claude/drafts/customers-c.html` (taking section C of `.claude/drafts/cus
 **Result:**
 
 ## Task 74 - READ-ONLY: every place the product category (`type`) is read or written (from Claude)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 07:10 WIB. Aldi wants Category > Sub-category on every product (Master Vault + inventory), shared with rival products. Design note: A-Brain `Brainstorm/2026-11-19_categories-subcategories-and-rival-catalog.md`. Before anything is built we need the size of the change.
 **Touch only:** this file.
 1. Every `file:line` in `src/` and `api/` that READS a product's `type` (tabs, filters, reports, sorting, receipts, exports) and every one that WRITES it (product form, imports, seeds, demo reset). One table: file:line / read or write / what the screen does with it.
@@ -2803,6 +2803,45 @@ Build `.claude/drafts/customers-c.html` (taking section C of `.claude/drafts/cus
 4. One paragraph: if `type` became `categoryId` + `subCategoryId`, which of the places in part 1 would break if old products still only had `type`.
 **Done when:** Result has the 4 parts with `file:line` on every claim and a `could not check:` line.
 **Result:**
+
+### 1. Every place a product's `type` is READ or WRITTEN (`src/`, `api/`, plus `demo/seed.json`)
+
+| `file:line` | Read / Write | What the screen / job does with it |
+| :--- | :--- | :--- |
+| `src/App.jsx:5285` | Read + Write (form input) | Master Vault Edit/New Product modal renders `<input name="type" defaultValue={editingProduct.type} placeholder="SKT, Natural…"/>` (hidden for promo items via `!isPromo(editingProduct)` at `L5282`). |
+| `src/App.jsx:3708-3716, 3754-3755` | Write | `handleSaveProduct` captures `name="type"` via `FormData` (`L3708-3709`) and saves to `products/{id}` (`L3754-3755`); for promo items (`isPromo`), overwrites `type: 'PROMO'` (`L3716`). |
+| `src/App.jsx:774, 958` | Read (pass-through export) | Full system backup (`generateFullSystemPayload`, `L774`) and Granular export (`handleExportGranular`, `L958`) serialize raw `inventory` + `promoItems` docs verbatim, including `type`. |
+| `src/App.jsx:1017, 4321` | Write (pass-through import) | Granular import (`handleImportGranular`, `L1017`) and full restore (`queueToBatch('products', data.inventory)`, `L4321`) write imported product objects verbatim (preserving whatever `type` is in the JSON). |
+| `src/components/ResidentEvilInventory.jsx:155` | Read | Master Vault detail header prints `[product.type, !isPromo(product) && "${sticks} sticks per Bks"]` as subtitle. |
+| `src/components/ResidentEvilInventory.jsx:248-252, 260, 265` | Read | Master Vault builds its category tabs dynamically (`const type = item.type || "MISC"`), sorts keys alphabetically (`L260`), and filters `currentList` by `sections[activeSection]` (`L265`). |
+| `src/components/ResidentEvilInventory.jsx:337-338, 352` | Read | Master Vault product list row subtitle (`L337-338`) and desktop sub-label (`L352`) display `item.type`. |
+| `src/components/ExamineModal.jsx:135` | Read | Fullscreen 3D product viewer renders `TYPE: {product.type}`. |
+| `src/MerchantSalesView.jsx:1689` | Read | Sales Terminal filters wares by `activeCategory === "ALL" || i.type === activeCategory` (exact string match; `i.type` undefined will never match `"MISC"`!). |
+| `src/MerchantSalesView.jsx:1690, 2693` | Read | Sales Terminal builds Row-1 category pills dynamically: `["ALL", ...new Set(inventory.map(i => i.type || "MISC")), ...(bundles.length ? ["BUNDLES"] : [])]` (`L1690`), rendered at `L2693`. |
+| `src/MerchantSalesView.jsx:2905` | Read | Sales Terminal desktop product card renders `{item.type || tr('MISC')}`. |
+| `src/StockOpnameView.jsx:940` | Write | Quarantine -> Convert to Sampling writes `{ kind: 'promo', unit: 'pcs', type: 'PROMO', damagedFrom: ... }` to `products/dmg-${id}`. |
+| `src/StockOpnameView.jsx:950, 954-955` | Read + Write | Quarantine -> Sell Again copies `['type', 'category', ...]` from `sellSrc` (`L950`) onto `products/rsk-${sellSrc.id}` (`L954-955`). |
+| `src/components/DashboardBenchmarks.jsx:164-166` | Read | Command Center's Filter/SKM vs Kretek volume mix reads `const type = (item.type || '').toLowerCase()` on each sale line item (`t.items`) and checks `type.includes('skm')` (note: sale lines built at `MerchantSalesView.jsx:1401` and `api/_demoCompany.js:131` do not copy `type`, so today this mostly falls back to `item.name` checking `'filter'` / `'mild'`, even though `prod.get(item.productId)` is already fetched at `L160`). |
+| `api/_demoCompany.js:286, 320-322` | Read + Write (seed reset) | Demo company reset reads `seed.inventory` + `seed.promo` from `demo/seed.json` (`L286, 322`) — where products carry `"type": "Natural"`, `"type": "SKT"`, etc. (`demo/seed.json:51, 90`) — and writes them verbatim to `products/{p.id}` (`L320-322`). |
+| *(Receipts & Reports)* | None | Verified `src/components/SaleReceipt.jsx` and `src/components/HistoryReportView.jsx`: **0 reads** of `product.type` (every `.type` there is transaction `t.type`). |
+
+### 2. Other category-like fields on products (`file:line`)
+- **`category`:** Copied defensively in `src/StockOpnameView.jsx:950` (`['type', 'category', ...]`) and whitelisted on `rsk-*` lots in `firestore.rules:669, 674`, but **0 places** in `src/` or `api/` ever read or display `product.category` (legacy holdover).
+- **`kind` (`'promo'`):** Separates promo giveaway goods from sellable products (`src/utils/helpers.js:266` `isPromo = (product) => product?.kind === 'promo'`; written at `src/App.jsx:3716` and `src/StockOpnameView.jsx:940`; checked in `src/utils/supply.js:208-209`, `src/components/ResidentEvilInventory.jsx:97, 155, 274, 344`, `src/components/ExamineModal.jsx:75`).
+- **`goods`:** Promo-item sub-type (`tshirt | poster | hat | lighter | ashtray | mug`) selecting the 3D model and thumbnail (`src/utils/helpers.js:294-308`, `src/App.jsx:3718, 5270-5273`, `src/components/PromoLookFields.jsx:16-34`, `src/components/PromoGoods3D.jsx:12`, `src/components/WarehouseChest.jsx:100`).
+- **No `group`, `family`, `line`, or `subType` field** exists on products anywhere in `src/` or `api/`.
+
+### 3. `firestore.rules` lines checking `type` or product fields by name
+All inside `match /products/{productId}` (`firestore.rules:626-678`):
+- **`firestore.rules:663-664`** (T3/T4 fleet load/return & EOD stock update): `request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock', 'damagedStock', 'name', 'productId'])` — blocks T3/T4 from touching `type` or prices on normal products.
+- **`firestore.rules:668-671`** (`Sell Again` damaged-lot create `rsk-*`): `request.resource.data.keys().hasOnly(['name', 'damagedFrom', 'type', 'category', 'images', 'dimensions', 'useFrontForBack', 'sticksPerPack', 'packsPerSlop', 'slopsPerBal', 'balsPerCarton', 'hpp', 'costPrice', 'priceRetail', 'priceGrosir', 'priceEcer', 'priceDistributor', 'stock'])` — **explicitly checks `type` and `category` by name**, so any new `categoryId` / `subCategoryId` written by `StockOpnameView.jsx:950` will be **denied** until added here.
+- **`firestore.rules:672-676`** (`Sell Again` damaged-lot update `rsk-*`): same exact 18-field `affectedKeys().hasOnly([...])` whitelist including `'type'` and `'category'`.
+- *(T1/T2 writes via `users/{bossUid}/{document=**}` at `firestore.rules:561-562` have no field whitelist.)*
+
+### 4. What breaks if `type` became `categoryId` + `subCategoryId` while old products only had `type`
+If the app switched to reading only `categoryId` + `subCategoryId` without a fallback or dual-write, **every old product** (plus restored JSON backups from `src/App.jsx:1017, 4321` and `demo/seed.json:51, 90`) would break in five places at once: (1) **Master Vault tabs and row labels** (`src/components/ResidentEvilInventory.jsx:155, 249, 337-338, 352`) would lump every old product into `"MISC"` / blank subtitle; (2) **Sales Terminal tabs and filtering** (`src/MerchantSalesView.jsx:1689-1690, 2905`) would either drop old products from every category tab (note `L1689` already fails to match `"MISC"` when `type` is missing because it tests `i.type === activeCategory` without `|| "MISC"`) or show them only under `ALL` / `MISC`; (3) **ExamineModal** (`src/components/ExamineModal.jsx:135`) would print a blank `TYPE:`; (4) **Command Center's SKM/Filter vs Kretek mix** (`src/components/DashboardBenchmarks.jsx:164-166`) would lose `type.includes('skm')` if someone ever fixed it to read `p.type` without checking category name; and (5) **Quarantine Sell Again** (`src/StockOpnameView.jsx:950, 954-955`) would either fail with `permission-denied` if `categoryId`/`subCategoryId` are written before updating `firestore.rules:669, 674`, or create damaged lots missing their category if `L950` isn't updated. **Cleanest migration:** keep `type` populated with the resolved category name whenever a product is saved, and have every reader fall back `categoryName(p.categoryId) || p.type || 'MISC'` so old products, old backups, and demo seeds never break.
+
+**could not check:** Live production Firestore `products` documents (never touched live Firebase per rules; verified `src/`, `api/`, `demo/seed.json`, and `firestore.rules` on disk only).
 
 ## Task 75 - DISCUSS: your own view on the categories + rival catalog design (from Aldi: "let antigravity also discuss with us") - DO THIS ONE FIRST
 **Status:** DONE
