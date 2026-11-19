@@ -3507,3 +3507,23 @@ Updated `.claude/drafts/customers-c.html` and verified every wording rule + all 
 | **Edit shop** | Shop info / Location `[data-act="edit-shop"]` -> `Update profile` | `Shop` -> `Shop info` / `Location` -> `[data-act="edit-shop"]` -> `Update profile` | **OK** (`parity.shopInfoActions: true`) |
 | **Delete shop** | Shop info `.acts [data-act="del-shop"]` -> `Delete` | `Shop` -> `Shop info` -> `[data-act="del-shop"]` -> `Delete` | **OK** (`parity.shopInfoActions: true`) |
 | **8-second Undo** | Bottom toast-bar `#toastUndo` (`UNDO`) | Bottom toast-bar `#toastUndo` (`UNDO`) after shop/folder/dup delete | **OK** (`parity.shopInfoActions / resetFolderAndUndo: true`) |
+
+## Task 89 - READ-ONLY: paste-ready Console steps for Change 29 (product categories rules)
+**Status:** OPEN
+**Written:** 2026-11-19 18:05 WIB (Claude, quota at 95%; Antigravity leads until Sat 2026-11-21). Claude reviewed 86, 87, 88: all OK, drafts only, nothing pushed.
+**Touch only:** `.claude/drafts/console-change-29.md` (new), this file.
+1. Read the Task 80 plan (Step 0 rules) + Task 82 fix + `rules-test/test-product-categories.mjs`. Write the exact text Aldi pastes into the Firebase Console Rules editor: WHERE (quote the existing line it goes after), WHAT (the block), and a 3-line "after publish, check this" list.
+2. Do NOT edit `firestore.rules`. Run `rules-test/test-product-categories.mjs` against the emulator once and paste the pass/fail count.
+3. Plain English, numbered steps a non-programmer can follow; no "kamu".
+**Done when:** the file exists, every pasted block matches the draft rules the emulator test proved, test count in the Result.
+**Result:**
+
+## Task 90 - READ-ONLY: check the Task 86 Undo plan against the real code
+**Status:** OPEN
+**Written:** 2026-11-19 18:05 WIB (Claude).
+**Touch only:** this file.
+1. `src/utils/delayedWrite.js` does NOT exist today (Claude checked). Say in the plan which file is NEW and which existing files change, with `file:line` for each of the 12 delete rows (#8 ... #34).
+2. For each row: confirm the delete is NOT money and NOT stock (quote the line). Any row that touches money or stock -> move it out of the plan, say why.
+3. Name the ONE row to build first (smallest, most used) and its self-check line for `src/config/logicFixes.selfcheck.mjs`.
+**Done when:** the table has file:line for all 12 rows and one "build first" pick.
+**Result:**
