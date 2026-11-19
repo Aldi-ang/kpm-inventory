@@ -2966,3 +2966,28 @@ One playable page, same standard as `.claude/drafts/reports-live.html` (dual-mou
   4. **Manage + 4b:** Adding a rival or approving a `"New product"` report shows both `"Add to an existing category"` and `"Add a new category"` side by side with live duplicate warnings (`hasDupWarn: true`); new competitor categories appear tagged `"competitors only · 0 of ours"` (`hasCompOnlyTag: true`); category rename, sub-category add, pair change, and region price edit (`by <name> · <date>`) all work in-page.
   5. **Permission matrix defaults note:** Footer bar lists all 3 rows and defaults (`T1–T3`, `T1–T4 own region for T4`, `All tiers`).
   6. **Quality & phone fit:** Zero blue/green/alert/confirm/prompt, phone detail back navigation works (`phHasBack: true`), `phOverflow: false`, `ERRORS: []`.
+
+## Task 79 - PICTURE FIXES from Claude's review of Tasks 77 + 78 (draft only)
+**Status:** OPEN
+**Written:** 2026-11-19 09:04 WIB. Claude read both files whole and rendered them; these are the faults found.
+**Touch only:** `.claude/drafts/competitors-pro.html`, `.claude/drafts/categories-pro.html`, this file.
+1. `competitors-pro.html` `confirm-approve` (new product) and `save-rival`: they write prices into ALL 3 regions and invent Grosir (= price - 500) and Ecer (= price + 1000). Fix: set ONLY the report's region x customer type (approve) or the approver's visible regions (add rival: T4 = JAWA BARAT only); every other cell stays empty and shows "—" with "not set yet". No made-up numbers.
+2. `competitors-pro.html` report form (`M.reportForm`): add Promo and a "Shelf photo" toggle (Task 78 asked for photo); keep shop + customer type.
+3. `categories-pro.html` looks different from the other pictures (white cards, system font, its own colours). Use the SAME `:root` tokens, dark tokens and Inter font as `.claude/drafts/customers-c.html` / `competitors-pro.html` so the three pages look like one app.
+4. `categories-pro.html` phone, Sales terminal row 2: the hint "Pick a category on row 1 to filter sub-categories (always 1 line)" is cut off at 390 px. Shorten it to "Pick a category above".
+5. `categories-pro.html` example names Aldi never gave: remove "Plant-based / Oat Milk" and the sub "Elder Calcium" (keep "Elder" with no sub-category). Only Aldi names categories.
+6. Headless check `ERRORS: []` for both files after the edits.
+**Done when:** 1-6 done and the Result lists what you checked for each.
+**Result:**
+
+## Task 80 - READ-ONLY: build plan for STEP 1 (Master Vault categories + sub-categories)
+**Status:** OPEN
+**Written:** 2026-11-19 09:04 WIB. Design decided (A-Brain Brainstorm 2026-11-19 categories note). Build order: step 0 rules, step 1 Master Vault categories, step 2 Competitors, step 3 Customers tab. This task plans ONLY steps 0 + 1, using your Task 74 and Task 75 findings.
+**Touch only:** this file.
+1. Data: the smallest shape for the shared category list (collection name, fields, one doc per category with a `subs` array or a sub-collection - pick one and say why) and the new product fields (`categoryId`, `subCategoryId`), keeping `type` written with the category NAME during the change-over.
+2. Every code change for step 1 as a table: file:line / what changes / why. Include Master Vault grouping (`ResidentEvilInventory.jsx`), ExamineModal, product form, Sales Terminal tabs (`MerchantSalesView.jsx:1690`), Sell Again (`StockOpnameView.jsx:950`), USB Backup/Restore/Wipe (`App.jsx` lines from Task 75), `DashboardBenchmarks.jsx:164`, and promo items (`kind: 'promo'`, keep them out of the list).
+3. The exact `firestore.rules` text to ADD for step 0 (Console first): who may read the category list (everyone in the company), who may write it (the new matrix row, default T1-T4), and the two new keys in the Sell Again whitelist (`firestore.rules` ~L669/L674). Text only - never edit `firestore.rules`.
+4. The permission-matrix row(s) to add in `src/config/permissions.js` with the `matrixKnowsKey` fallback (L422-430) so old companies get the default.
+5. The `logicFixes.selfcheck.mjs` lines that would guard it (one regression guard + one real-numbers check).
+**Done when:** Result has parts 1-5 with `file:line` on every claim and a `could not check:` line.
+**Result:**
