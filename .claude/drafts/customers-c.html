@@ -77,12 +77,14 @@ svg.i{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 .pop-opt b{display:block;font-size:12.5px}
 .pop-opt span{display:block;font-size:11px;color:var(--ink-dim)}
 
-/* 4-cell KPI strip */
-.kpi{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);flex:none;background:var(--panel)}
-.kpi > div{padding:7px 14px;border-right:1px solid var(--line);min-width:0}
+/* 5-cell KPI strip (includes dedicated clickable NOO to verify tile) */
+.kpi{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--line);flex:none;background:var(--panel)}
+.kpi > div{padding:7px 12px;border-right:1px solid var(--line);min-width:0}
 .kpi > div:last-child{border-right:0}
 .kpi > div.click{cursor:pointer;transition:background .15s}
 .kpi > div.click:hover{background:var(--sel)}
+.kpi > div.noo-kpi{background:var(--wash);box-shadow:inset 0 -2px 0 var(--gold)}
+.kpi > div.noo-kpi:hover{background:var(--sel)}
 .kpi span.lbl{display:block;font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim);font-weight:600}
 .kpi b.val{font-size:16px}
 .kpi b.val.bad{color:var(--danger-ink)}
@@ -131,9 +133,16 @@ svg.i{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stro
 .af span.al{display:block;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
 .af b.av2{font-size:13px}
 .mid-list{flex:1;overflow-y:auto;min-height:0}
-.sr{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:8px;width:100%;border:0;background:transparent;text-align:left;align-items:center;padding:0 12px;height:42px;border-bottom:1px solid var(--hair)}
+.sr{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:8px;width:100%;border:0;border-left:3px solid transparent;background:transparent;text-align:left;align-items:center;padding:0 12px 0 9px;min-height:46px;border-bottom:1px solid var(--hair)}
 .sr:hover{background:var(--sel)}
+.sr.noo-row{border-left-color:var(--gold);background:var(--sel)}
 .sr.sel{background:var(--wash)}
+.noo-banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:13px 15px;border:2px solid var(--accent-edge);border-radius:11px;background:var(--wash)}
+.noo-banner b{display:block;font-size:13.5px;color:var(--ink)}
+.noo-banner span.ns{display:block;font-size:11.5px;color:var(--ink-muted);margin-top:2px}
+.btn-noo{min-height:44px;padding:0 18px;border:2px solid var(--accent-edge);border-radius:9px;background:var(--wash);color:var(--ink);font-size:13.5px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;box-shadow:0 6px 18px -10px var(--gold)}
+.btn-noo:hover{background:var(--sel);border-color:var(--gold)}
+.btn-noo:active{transform:scale(.98)}
 .av{width:40px;height:40px;border-radius:9px;border:1px solid var(--line-2);background:var(--raised);display:grid;place-items:center;font-weight:700;font-size:12px;color:var(--accent-ink);flex:none}
 .sr .av{width:28px;height:28px;font-size:10px;border-radius:7px}
 .sr b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -272,15 +281,27 @@ button.crow:hover,button.crow.on{background:var(--sel)}
 .link-btn{min-height:36px;border:1px solid var(--accent-edge);border-radius:8px;background:var(--panel);padding:0 11px;color:var(--accent-ink);font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .link-btn:hover{background:var(--wash)}
 
-/* Self-drawing gold check toast */
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;
-  display:flex;align-items:center;gap:10px;background:var(--raised);border:1px solid var(--accent-edge);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;
-  box-shadow:0 18px 40px -16px rgba(0,0,0,.6);transition:opacity .2s,transform .25s cubic-bezier(.2,.7,.2,1);z-index:50;max-width:calc(100% - 32px)}
+/* Self-drawing gold check toast + 8-second Undo toast-bar (Task 84) */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;overflow:hidden;
+  display:flex;align-items:center;gap:10px;background:var(--raised);border:1px solid var(--accent-edge);border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;
+  box-shadow:0 18px 40px -16px rgba(0,0,0,.6);transition:opacity .2s,transform .25s cubic-bezier(.2,.7,.2,1);z-index:60;max-width:calc(100% - 28px)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
+.toast.has-undo{pointer-events:auto;padding-bottom:14px}
 .toast svg{width:18px;height:18px;flex:none;stroke:var(--gold);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .toast path{stroke-dasharray:24;stroke-dashoffset:24}
 .toast.on path{animation:draw .45s .1s forwards}
+.toast-copy{display:flex;flex-direction:column;gap:1px;min-width:0}
+.toast-sub{display:none;font-size:10.5px;font-weight:500;color:var(--ink-dim)}
+.toast.has-undo .toast-sub{display:block}
+.toast-undo{display:none;min-height:34px;padding:0 12px;border:1px solid var(--accent-edge);border-radius:7px;background:var(--wash);color:var(--ink);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;flex:none}
+.toast-undo:hover{border-color:var(--gold)}
+.toast.has-undo .toast-undo{display:inline-flex;align-items:center;justify-content:center}
+.toast-cd{display:none;position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--inset)}
+.toast-cd > span{display:block;height:100%;width:100%;background:var(--gold);transform-origin:left center}
+.toast.has-undo .toast-cd{display:block}
+.toast.on.has-undo .toast-cd > span{animation:countdown 8s linear forwards}
 @keyframes draw{to{stroke-dashoffset:0}}
+@keyframes countdown{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 
 /* Phone frame: stacked panes (tree -> area -> shop, with Back key) */
 .sb{height:24px;display:flex;justify-content:space-between;align-items:center;padding:0 18px;font-size:11px;color:var(--ink-dim);background:var(--panel);flex:none}
@@ -292,7 +313,7 @@ button.crow:hover,button.crow.on{background:var(--sel)}
 .phone .kpi{grid-template-columns:1fr 1fr}
 .phone .kpi > div{padding:6px 10px;border-bottom:1px solid var(--line)}
 .phone .kpi > div:nth-child(2n){border-right:0}
-.phone .kpi > div:nth-child(n+3){border-bottom:0}
+.phone .kpi > div:last-child{grid-column:1 / -1;border-right:0;border-bottom:0}
 .phone .kpi i{display:block;margin:1px 0 0;font-size:10px}
 .ph-nav{display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--inset);border-bottom:1px solid var(--line);flex:none;flex-wrap:wrap}
 .ph-steps{display:inline-flex;border:1px solid var(--line-2);border-radius:8px;padding:3px;gap:3px;background:var(--ground);margin-left:auto}
@@ -341,7 +362,7 @@ button.crow:hover,button.crow.on{background:var(--sel)}
 </svg>
 
 <div class="board">
-  <h1>Customers · Layout C v5 (shop reads from Competitors)</h1>
+  <h1>Customers · Layout C v6 (NOO standout + 8s Undo)</h1>
   <span>View as <span class="seg" id="role">
     <button type="button" aria-pressed="true" data-v="T2">T2 Owner</button>
     <button type="button" aria-pressed="false" data-v="T3">T3 HQ Sales Manager</button>
@@ -359,7 +380,12 @@ button.crow:hover,button.crow.on{background:var(--sel)}
 <p class="cap">Phone · 390 px (Live Stacked Panes: Tree → Area → Shop with Back Key)</p>
 <div class="fr phone" id="ph"></div>
 
-<div class="toast" id="toast" role="status" aria-live="polite"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span id="toastT"></span></div>
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+  <span class="toast-copy"><span id="toastT"></span><span class="toast-sub">Undo for 8 seconds</span></span>
+  <button type="button" class="toast-undo" id="toastUndo">UNDO</button>
+  <span class="toast-cd"><span></span></span>
+</div>
 
 <script>
 const ROSTER = ['Agus Prasetyo', 'Ari Wibowo', 'Budi Santoso', 'Dika Saputra', 'Sri Rahayu', 'Ujang Pratama'];
@@ -397,7 +423,7 @@ const SHOPS = [
     { id: 'l10', d: '2026-11-11', n: 'near checkout', v: 'Medium', shelf: 'Counter / till', promo: 'None', rid: 'r1' },
     { id: 'l11', d: '2026-11-11', n: 'slow turnover', v: 'Slow', shelf: 'Bottom shelf', promo: 'None', rid: 'r3' },
   ], pendingReports: [] },
-  { id: 's6', name: 'KIOS BAROKAH', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'Approved', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Ecer', grosirAsk: false, freq: 7, last: '2026-11-17', state: '6d left', late: false, wa: '0856-1122-3344', gps: '-6.9688, 107.5790', addr: 'Pasar Segar Kopo Blok A', embed: '', hasPhoto: false, logs: [
+  { id: 's6', name: 'KIOS BAROKAH', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'MARGAHAYU', status: 'PENDING', pic: 'Agus Prasetyo', noo: 'Agus Prasetyo', tier: 'Unranked', price: 'Ecer', grosirAsk: false, freq: 7, last: '2026-11-17', state: '6d left', late: false, wa: '0856-1122-3344', gps: '-6.9688, 107.5790', addr: 'Pasar Segar Kopo Blok A', embed: '', hasPhoto: false, logs: [
     { id: 'l12', d: '2026-11-17', n: 'ecer buyers ask for clove', v: 'Fast', shelf: 'Counter / till', promo: 'None', rid: 'r6' },
   ], pendingReports: [] },
   { id: 's7', name: 'CEMERLANG', prov: 'JAWA BARAT', kab: 'KAB. BANDUNG', kec: 'SOREANG', status: 'PENDING', pic: 'Unassigned', noo: 'Sri Rahayu', tier: 'Unranked', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-09', state: '2d late', late: true, wa: '0857-9901-3344', gps: '-7.0241, 107.5198', addr: 'Pasar Soreang Blok B No. 12', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
@@ -413,7 +439,7 @@ const SHOPS = [
     { id: 'l14', d: '2026-11-17', n: 'matches Cello Green in Muntilan', v: 'Fast', shelf: 'Eye level', promo: 'None', rid: 'r5' },
   ], pendingReports: [] },
   { id: 's15', name: 'ENDANG CELL', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MUNTILAN', status: 'Approved', pic: 'Budi Santoso', noo: 'Budi Santoso', tier: 'Epic', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-02', state: '9d late', late: true, wa: '0811-2233-4455', gps: '-7.5801, 110.2910', addr: 'Jl. Talun Km 1, Muntilan', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
-  { id: 's16', name: 'TOKO HARAPAN JAYA', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MUNTILAN', status: 'Approved', pic: 'Unassigned', noo: 'Agus Prasetyo', tier: 'Silver', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-16', state: '5d left', late: false, wa: '0813-4455-6677', gps: '-7.5844, 110.2932', addr: 'Jl. Kartini No. 7, Muntilan', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
+  { id: 's16', name: 'TOKO HARAPAN JAYA', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MUNTILAN', status: 'PENDING', pic: 'Unassigned', noo: 'Agus Prasetyo', tier: 'Silver', price: 'Retail', grosirAsk: false, freq: 7, last: '2026-11-16', state: '5d left', late: false, wa: '0813-4455-6677', gps: '-7.5844, 110.2932', addr: 'Jl. Kartini No. 7, Muntilan', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
   { id: 's17', name: 'TOKO SRI REJEKI', prov: 'JAWA TENGAH', kab: 'KAB. MAGELANG', kec: 'MERTOYUDAN', status: 'Approved', pic: 'Budi Santoso', noo: 'Budi Santoso', tier: 'Unranked', price: 'Grosir', grosirAsk: false, freq: 7, last: '2026-11-15', state: '4d left', late: false, wa: '0812-6677-8899', gps: '-7.5230, 110.2241', addr: 'Jl. Mayjen Bambang Soegeng', embed: '', hasPhoto: false, logs: [], pendingReports: [] },
 ];
 
@@ -458,21 +484,34 @@ function settleRolls(root) {
     root.querySelectorAll('[data-w]').forEach((b) => { b.style.width = b.dataset.w; });
   }));
 }
-let toastTimer;
-function toast(msg) {
+let toastTimer, activeUndo = null;
+function toast(msg, undoOpts) {
   const t = document.getElementById('toast');
-  t.classList.remove('on');
+  clearTimeout(toastTimer);
+  activeUndo = undoOpts || null;
+  t.classList.remove('on', 'has-undo');
   void t.offsetWidth;
   document.getElementById('toastT').textContent = msg;
+  if (activeUndo) t.classList.add('has-undo');
   t.classList.add('on');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('on'), 2800);
+  toastTimer = setTimeout(() => {
+    t.classList.remove('on', 'has-undo');
+    activeUndo = null;
+  }, activeUndo ? 8000 : 2800);
 }
+document.getElementById('toastUndo').addEventListener('click', () => {
+  if (!activeUndo) return;
+  const u = activeUndo;
+  activeUndo = null;
+  clearTimeout(toastTimer);
+  u.restore();
+  toast(`Restored ${u.label}`);
+});
 
 /* ---------- dual-mounted app (PC 3-pane + Phone stacked) ---------- */
 const apps = [];
 const freshState = (mode) => ({
-  mode, q: '', node: 'kec:MARGAHAYU', sel: 's1', phoneStep: 'tree', locMode: 'both',
+  mode, q: '', node: 'kec:MARGAHAYU', sel: 's6', phoneStep: 'tree', locMode: 'both',
   bRival: 'r1', bNewName: '', bNote: '', bPrice: '', bShelf: 'Eye level', bPromo: 'None', bSpeed: 'Medium', bPhoto: false,
   shopTab: 'shop', cmpRival: '', cmpOurs: '',
   ownerPick: {}, prev: {}, grown: false,
@@ -505,9 +544,10 @@ function kpiOf() {
   const all = scopedShops();
   const total = all.length;
   const late = all.filter((s) => s.late).length;
+  const nooPending = all.filter((s) => s.status === 'PENDING');
   const grosirAsks = all.filter((s) => s.grosirAsk);
   const noSalesman = all.filter((s) => !s.pic || s.pic === 'Unassigned');
-  const needs = grosirAsks.length + noSalesman.length;
+  const needs = nooPending.length + grosirAsks.length + noSalesman.length;
   const gCnt = all.filter((s) => s.price === 'Grosir').length;
   const eCnt = all.filter((s) => s.price === 'Ecer').length;
   const gPct = total ? Math.round((gCnt / total) * 100) : 0;
@@ -515,15 +555,19 @@ function kpiOf() {
   const rPct = Math.max(0, 100 - gPct - ePct);
   const provs = new Set(all.map((s) => s.prov)).size;
   const kecs = new Set(all.map((s) => s.kec)).size;
-  return { total, late, grosirAsks, noSalesman, needs, gPct, rPct, ePct, provs, kecs };
+  return { total, late, nooPending, grosirAsks, noSalesman, needs, gPct, rPct, ePct, provs, kecs };
 }
 
 function shopsForNode(node, qStr) {
   const all = scopedShops();
   const q = (qStr || '').trim().toLowerCase();
   const matchQ = (s) => !q || (s.name + ' ' + s.kec + ' ' + s.kab + ' ' + s.prov + ' ' + s.pic + ' ' + s.noo).toLowerCase().includes(q);
+  if (node === 'NOO_VERIFY') {
+    return all.filter((s) => s.status === 'PENDING' && matchQ(s))
+      .sort((a, b) => a.name.localeCompare(b.name, 'id', { sensitivity: 'base' }));
+  }
   if (node === 'NEEDS_ACTION') {
-    return all.filter((s) => (s.grosirAsk || !s.pic || s.pic === 'Unassigned') && matchQ(s));
+    return all.filter((s) => (s.status === 'PENDING' || s.grosirAsk || !s.pic || s.pic === 'Unassigned') && matchQ(s));
   }
   const [kind, val] = String(node || '').split(':');
   return all.filter((s) => {
@@ -531,11 +575,12 @@ function shopsForNode(node, qStr) {
     if (kind === 'kab' && s.kab !== val) return false;
     if (kind === 'kec' && s.kec !== val) return false;
     return matchQ(s);
-  }).sort((a, b) => a.name.localeCompare(b.name, 'id', { sensitivity: 'base' }));
+  }).sort((a, b) => (a.status === 'PENDING' ? -1 : 0) - (b.status === 'PENDING' ? -1 : 0) || a.name.localeCompare(b.name, 'id', { sensitivity: 'base' }));
 }
 
 function nodeTitle(node) {
-  if (node === 'NEEDS_ACTION') return { name: 'Needs action', sub: 'Grosir asks & unassigned shops', kind: 'need' };
+  if (node === 'NOO_VERIFY') return { name: 'NOO to verify', sub: 'New shops waiting for verification', kind: 'noo' };
+  if (node === 'NEEDS_ACTION') return { name: 'Needs action', sub: 'NOO verify, Grosir asks & unassigned shops', kind: 'need' };
   const [kind, val] = String(node || '').split(':');
   const f = FOLDERS.find((x) => x.kec === val || x.kab === val || x.prov === val);
   const sub = kind === 'kec' ? (f?.kab || 'Unmapped') : kind === 'kab' ? (f?.prov || 'Indonesia') : 'Provinsi';
@@ -565,9 +610,10 @@ function render(el, st) {
   </div>
 
   <div class="kpi">
-    <div><span class="lbl">Shops filed</span><b class="val">${R(st, 'k-tot', String(kpi.total))}</b><i>${kpi.provs} provinces · ${kpi.kecs} kecamatan</i></div>
-    <div><span class="lbl">Overdue visits</span><b class="val bad">${R(st, 'k-late', String(kpi.late))}</b><i>past their rhythm</i></div>
-    <div class="${canApproveAsks() ? 'click' : ''}" ${canApproveAsks() ? 'data-node="NEEDS_ACTION"' : ''}><span class="lbl">Needs action</span><b class="val" style="color:var(--accent-ink)">${R(st, 'k-act', String(kpi.needs))}</b><i>${kpi.grosirAsks.length} Grosir ask · ${kpi.noSalesman.length} no salesman</i></div>
+    <div><span class="lbl">Shops filed</span><b class="val">${R(st, 'k-tot', String(kpi.total))}</b><i>${kpi.provs} prov · ${kpi.kecs} kec</i></div>
+    <div><span class="lbl">Overdue visits</span><b class="val bad">${R(st, 'k-late', String(kpi.late))}</b><i>past rhythm</i></div>
+    <div class="click ${kpi.nooPending.length ? 'noo-kpi' : ''}" data-node="NOO_VERIFY" role="button" tabindex="0"><span class="lbl">NOO to verify: ${kpi.nooPending.length}</span><b class="val" style="color:var(--accent-ink)">${R(st, 'k-noo', String(kpi.nooPending.length))}</b><i>${kpi.nooPending.length ? 'tap to verify new shops' : 'all verified'}</i></div>
+    <div class="${canApproveAsks() ? 'click' : ''}" ${canApproveAsks() ? 'data-node="NEEDS_ACTION"' : ''}><span class="lbl">Needs action</span><b class="val" style="color:var(--accent-ink)">${R(st, 'k-act', String(kpi.needs))}</b><i>${kpi.nooPending.length} NOO · ${kpi.grosirAsks.length} Grosir · ${kpi.noSalesman.length} PIC</i></div>
     <div><span class="lbl">Price mix</span><div class="mix"><span class="g" ${W(kpi.gPct + '%')}></span><span class="r" ${W(kpi.rPct + '%')}></span><span class="e" ${W(kpi.ePct + '%')}></span></div><i style="margin:0">Grosir ${kpi.gPct}% · Retail ${kpi.rPct}% · Ecer ${kpi.ePct}%</i></div>
   </div>
   ${ro ? `<div class="ro-bar"><svg class="i"><use href="#shield"/></svg><span>${esc(G.role)} view: browse shops and submit competitor field reports for admin approval.</span></div>` : ''}`;
@@ -628,6 +674,13 @@ function renderTreePane(st, kpi, W, ro) {
       <span></span>
     </button>`;
   }
+  if (kpi.nooPending.length > 0 || st.node === 'NOO_VERIFY') {
+    h += `<button type="button" class="t need ${st.node === 'NOO_VERIFY' ? 'on' : ''}" data-node="NOO_VERIFY">
+      <span class="nm"><span class="dot"></span>NOO to verify: ${kpi.nooPending.length}</span>
+      <span></span>
+      <span></span>
+    </button>`;
+  }
   for (const [prov, kabMap] of provMap.entries()) {
     h += rowBtn('prov:' + prov, prov, all.filter((s) => s.prov === prov), 'l1');
     for (const [kab, kecs] of kabMap.entries()) {
@@ -647,6 +700,7 @@ function renderTreePane(st, kpi, W, ro) {
 
 function renderMidPane(st, nt, areaList, kpi, ro, boss) {
   if (st.node === 'NEEDS_ACTION') {
+    const nAsks = kpi.nooPending;
     const gAsks = kpi.grosirAsks;
     const oAsks = kpi.noSalesman;
     return `<section class="mid" aria-label="Needs action queue">
@@ -654,12 +708,21 @@ function renderMidPane(st, nt, areaList, kpi, ro, boss) {
         <b class="at">Needs action</b> <span class="dim">· T1–T4 approvals</span>
         <div class="af">
           <div><span class="al">Waiting</span><b class="av2" style="color:var(--accent-ink)">${R(st, 'na-tot', String(kpi.needs))}</b></div>
+          <div><span class="al">NOO</span><b class="av2" style="color:var(--accent-ink)">${R(st, 'na-pnd', String(nAsks.length))}</b></div>
           <div><span class="al">Grosir?</span><b class="av2">${R(st, 'na-gr', String(gAsks.length))}</b></div>
           <div><span class="al">No PIC</span><b class="av2">${R(st, 'na-pic', String(oAsks.length))}</b></div>
-          <div><span class="al">Pending</span><b class="av2">${R(st, 'na-pnd', String(scopedShops().filter((s) => s.status === 'PENDING').length))}</b></div>
         </div>
       </div>
       <div class="mid-list">
+        <div class="qsec"><span>NOO to verify (${nAsks.length})</span><span>new shops</span></div>
+        ${nAsks.length ? nAsks.map((c) => `<div class="qcard noo-row ${st.sel === c.id ? 'sel' : ''}" style="border-left:3px solid var(--gold)">
+          <div class="qh" data-row="${c.id}"><b>${esc(c.name)}</b><span class="st g">NEW · VERIFY NOO</span></div>
+          <div class="dim" style="font-size:10.5px">${esc(c.kec)} · opened by ${esc(shortName(c.noo))}</div>
+          <div style="display:flex;gap:6px">
+            <button type="button" class="btn xs" style="flex:1;background:var(--wash);border-width:1.5px" data-act="verify-noo" data-id="${c.id}"><svg class="i"><use href="#chk"/></svg>Verify NOO</button>
+          </div>
+        </div>`).join('') : `<div style="padding:10px 12px;font-size:11.5px;color:var(--ink-dim)">All new shops verified.</div>`}
+
         <div class="qsec"><span>Grosir asks (${gAsks.length})</span><span>price tier</span></div>
         ${gAsks.length ? gAsks.map((c) => `<div class="qcard ${st.sel === c.id ? 'sel' : ''}">
           <div class="qh" data-row="${c.id}"><b>${esc(c.name)}</b><span class="dim" style="font-size:10.5px">${esc(c.kec)} · asked by ${esc(shortName(c.noo))}</span></div>
@@ -687,8 +750,9 @@ function renderMidPane(st, nt, areaList, kpi, ro, boss) {
   }
 
   const lateCnt = areaList.filter((s) => s.late).length;
+  const nooCnt = areaList.filter((s) => s.status === 'PENDING').length;
   const grosirCnt = areaList.filter((s) => s.price === 'Grosir').length;
-  const asksCnt = areaList.filter((s) => s.grosirAsk || !s.pic || s.pic === 'Unassigned').length;
+  const asksCnt = areaList.filter((s) => s.status === 'PENDING' || s.grosirAsk || !s.pic || s.pic === 'Unassigned').length;
   const agents = [...new Set(areaList.map((s) => s.pic && s.pic !== 'Unassigned' ? s.pic.split(' ')[0] : null).filter(Boolean))].slice(0, 3).join(', ') || 'Unassigned';
 
   return `<section class="mid" aria-label="Picked area shops">
@@ -696,25 +760,26 @@ function renderMidPane(st, nt, areaList, kpi, ro, boss) {
       <b class="at">${esc(nt.name)}</b> <span class="dim">· ${esc(nt.sub)} · ${esc(agents)}</span>
       <div class="af">
         <div><span class="al">Shops</span><b class="av2">${R(st, 'a-sh', String(areaList.length))}</b></div>
+        <div><span class="al">NOO</span><b class="av2" style="color:var(--accent-ink)">${R(st, 'a-noo', String(nooCnt))}</b></div>
         <div><span class="al">Late</span><b class="av2" style="color:var(--danger-ink)">${R(st, 'a-lt', String(lateCnt))}</b></div>
         <div><span class="al">Grosir</span><b class="av2">${R(st, 'a-gr', String(grosirCnt))}</b></div>
-        <div><span class="al">Asks</span><b class="av2" style="color:var(--accent-ink)">${R(st, 'a-ak', String(asksCnt))}</b></div>
       </div>
-      ${boss ? `<div style="display:flex;gap:6px;margin-top:7px">
+      ${boss && nt.kind !== 'noo' ? `<div style="display:flex;gap:6px;margin-top:7px">
         <button type="button" class="btn xs q" data-act="ren-folder"><svg class="i" style="width:12px;height:12px"><use href="#edit"/></svg>Rename</button>
         <button type="button" class="btn xs d" data-act="del-folder"><svg class="i" style="width:12px;height:12px"><use href="#trash"/></svg>Reset to Unknown</button>
       </div>` : ''}
     </div>
     <div class="mid-list">
       ${areaList.length ? areaList.map((s) => {
-        const badgeCls = s.grosirAsk ? 'g' : (s.late || s.status === 'PENDING' || !s.pic || s.pic === 'Unassigned') ? 'bad' : '';
-        const badgeTxt = s.status === 'PENDING' ? 'PENDING' : s.grosirAsk ? 'Grosir?' : (!s.pic || s.pic === 'Unassigned') ? 'No salesman' : s.state;
-        return `<button type="button" class="sr ${st.sel === s.id ? 'sel' : ''}" data-row="${s.id}">
+        const isNoo = s.status === 'PENDING';
+        const badgeCls = isNoo || s.grosirAsk ? 'g' : (s.late || !s.pic || s.pic === 'Unassigned') ? 'bad' : '';
+        const badgeTxt = isNoo ? 'NEW · VERIFY NOO' : s.grosirAsk ? 'Grosir?' : (!s.pic || s.pic === 'Unassigned') ? 'No salesman' : s.state;
+        return `<button type="button" class="sr ${isNoo ? 'noo-row' : ''} ${st.sel === s.id ? 'sel' : ''}" data-row="${s.id}">
           <div class="av">${iniOf(s.name)}</div>
           <div style="min-width:0"><b>${esc(s.name)}</b><span class="s">${esc(shortName(s.pic))} · ${esc(s.price)}${s.tier !== 'Unranked' ? ' · ' + esc(s.tier) : ''}</span></div>
           <span class="st ${badgeCls}">${esc(badgeTxt)}</span>
         </button>`;
-      }).join('') : `<div style="padding:28px 14px;text-align:center;color:var(--ink-dim);font-size:12px">No shops in this folder match.</div>`}
+      }).join('') : `<div style="padding:28px 14px;text-align:center;color:var(--ink-dim);font-size:12px">${nt.kind === 'noo' ? 'All new shops have been verified.' : 'No shops in this folder match.'}</div>`}
     </div>
   </section>`;
 }
@@ -932,8 +997,9 @@ function compareCard(s, st) {
 
 function renderRightPane(s, st, ro, boss) {
   if (!s) return `<section class="right"><div class="dim" style="padding:36px;text-align:center">Pick a shop from the middle pane.</div></section>`;
-  const stateCls = s.status === 'PENDING' || s.late ? 'bad' : s.grosirAsk ? 'g' : '';
-  const stateLabel = s.status === 'PENDING' ? 'PENDING' : s.state;
+  const isNoo = s.status === 'PENDING';
+  const stateCls = isNoo || s.grosirAsk ? 'g' : s.late ? 'bad' : '';
+  const stateLabel = isNoo ? 'NEW · VERIFY NOO' : s.state;
   const lastTxt = s.last ? `${fmtD(s.last)} · ${s.state}` : 'Never visited';
   const tab = st.shopTab || 'shop';
   const head = `<div class="dh">
@@ -941,6 +1007,15 @@ function renderRightPane(s, st, ro, boss) {
       <div style="flex:1;min-width:0"><h3>${esc(s.name)}</h3><p>${esc(s.kec)} · ${esc(s.kab)} · ${esc(s.prov)} · ${esc(s.status)}</p></div>
       <span class="st ${stateCls}">${esc(stateLabel)}</span>
     </div>`;
+  const nooBanner = isNoo ? `<div class="noo-banner" role="region" aria-label="NOO verification">
+      <div>
+        <b>New shop — waiting for NOO verification</b>
+        <span class="ns">Opened by ${esc(s.noo)} · verify this new shop so it moves to Approved.</span>
+      </div>
+      ${canApproveAsks()
+        ? `<button type="button" class="btn-noo" data-act="verify-noo" data-id="${s.id}"><svg class="i"><use href="#chk"/></svg>Verify NOO</button>`
+        : `<span class="st g">Waiting for admin to verify</span>`}
+    </div>` : '';
   const TABS = [['shop', 'Shop info', 'edit'], ['loc', 'Location', 'pin'], ['comp', 'Competitors', 'srch']];
   const tabs = `<div class="stabs" role="tablist" aria-label="Shop sections">${TABS.map(([k, l, ic]) => `<button type="button" class="stab ${tab === k ? 'on' : ''}" role="tab" aria-selected="${tab === k}" data-stab="${k}"><svg class="i"><use href="#${ic}"/></svg>${l}${k === 'comp' ? ` <span class="cnt">${s.logs.length}</span>` : ''}</button>`).join('')}</div>`;
   let body = '';
@@ -975,7 +1050,6 @@ function renderRightPane(s, st, ro, boss) {
           ${FOLDERS.map((f) => `<option value="${esc(f.kec)}" ${s.kec === f.kec ? 'selected' : ''}>${esc(f.kec)}</option>`).join('')}
           ${s.kec === 'UNKNOWN KECAMATAN' ? `<option value="UNKNOWN KECAMATAN" selected>UNKNOWN KECAMATAN</option>` : ''}
           <option value="CREATE_NEW">+ New Folder...</option></select>` : ''}
-        ${boss ? `<button type="button" class="btn" data-act="verify-noo" data-id="${s.id}"><svg class="i"><use href="#chk"/></svg>Verify NOO</button>` : ''}
         ${!ro ? `<button type="button" class="btn q" data-act="edit-shop" data-id="${s.id}"><svg class="i"><use href="#edit"/></svg>Edit shop</button>` : ''}
         <span class="sp"></span>
         ${boss ? `<button type="button" class="btn d" data-act="del-shop" data-id="${s.id}"><svg class="i"><use href="#trash"/></svg>Delete</button>` : ''}
@@ -1074,7 +1148,7 @@ function renderRightPane(s, st, ro, boss) {
       </div>`;
   }
   return `<section class="right" aria-label="Shop">
-    <div class="det">${head}${tabs}<div class="fade tabbody">${body}</div></div>
+    <div class="det">${head}${nooBanner}${tabs}<div class="fade tabbody">${body}</div></div>
   </section>`;
 }
 
@@ -1171,8 +1245,8 @@ const M = {
   delDup: (g, m) => () => `<div class="ov"><div class="dlg sm" role="alertdialog" aria-label="Delete duplicate store">
     <h4>Delete duplicate "${esc(m.name)}"?</h4>
     ${g.far ? `<p style="color:var(--danger-ink);font-weight:600">Warning: these only share a name and sit ${esc(g.dist)}.</p>` : ''}
-    <p>${esc(m.place)} · registered ${esc(m.date)} · ${esc(m.agent)}. This cannot be undone.</p>
-    <div class="row"><button type="button" class="btn q" data-act="close">Cancel</button><button type="button" class="btn d" data-act="confirm-del-dup" data-gid="${g.id}" data-mid="${m.id}"><svg class="i"><use href="#trash"/></svg>Delete permanently</button></div>
+    <p>${esc(m.place)} · registered ${esc(m.date)} · ${esc(m.agent)}. You can still undo for 8 seconds after deleting.</p>
+    <div class="row"><button type="button" class="btn q" data-act="close">Cancel</button><button type="button" class="btn d" data-act="confirm-del-dup" data-gid="${g.id}" data-mid="${m.id}"><svg class="i"><use href="#trash"/></svg>Delete</button></div>
   </div></div>`,
   scrub: () => () => `<div class="ov"><div class="dlg sm" role="dialog" aria-label="Data scrub preview">
     <h4>Data scrub · ${SHOPS.length} shops</h4>
@@ -1350,7 +1424,7 @@ function onClick(e, el, st) {
       return toast('Sent to your admin for approval');
     }
     case 'verify-noo': {
-      if (!s) return;
+      if (!s || !canApproveAsks()) return;
       s.status = 'Approved';
       rerenderAll();
       return toast(`${s.name} verified as Approved NOO`);
@@ -1423,14 +1497,24 @@ function onClick(e, el, st) {
     }
     case 'confirm-del-folder': {
       const target = d.name;
+      const prevNode = st.node;
       const list = shopsForNode(st.node, '');
+      const moved = list.map((x) => ({ shop: x, prevKec: x.kec }));
       list.forEach((x) => { x.kec = 'UNKNOWN KECAMATAN'; });
-      const idx = FOLDERS.findIndex((f) => f.kec === target);
-      if (idx > -1 && FOLDERS.length > 1) FOLDERS.splice(idx, 1);
+      const fIdx = FOLDERS.findIndex((f) => f.kec === target);
+      const removedFolder = (fIdx > -1 && FOLDERS.length > 1) ? FOLDERS.splice(fIdx, 1)[0] : null;
       st.node = 'kec:UNKNOWN KECAMATAN';
       st.modal = null;
       rerenderAll();
-      return toast(`${target} reset to Unknown kecamatan`);
+      return toast(`Deleted folder ${target}`, {
+        label: target,
+        restore: () => {
+          if (removedFolder) FOLDERS.splice(fIdx, 0, removedFolder);
+          moved.forEach((m) => { m.shop.kec = m.prevKec; });
+          st.node = prevNode;
+          rerenderAll();
+        },
+      });
     }
     case 'open-tools': st.modal = M.tools(); return render(el, st);
     case 'repair-tiers': {
@@ -1462,12 +1546,21 @@ function onClick(e, el, st) {
     }
     case 'confirm-del-dup': {
       const g = DUPS.find((x) => x.id === d.gid);
-      if (g) g.members = g.members.filter((x) => x.id !== d.mid);
-      const si = SHOPS.findIndex((x) => x.id === d.mid);
-      if (si > -1) SHOPS.splice(si, 1);
+      const mIdx = g ? g.members.findIndex((x) => x.id === d.mid) : -1;
+      const removedMember = mIdx > -1 ? g.members.splice(mIdx, 1)[0] : null;
+      const sIdx = SHOPS.findIndex((x) => x.id === d.mid);
+      const removedShop = sIdx > -1 ? SHOPS.splice(sIdx, 1)[0] : null;
+      const label = removedMember?.name || removedShop?.name || 'duplicate store';
       st.modal = M.tools();
       rerenderAll();
-      return toast('Duplicate store deleted');
+      return toast(`Deleted ${label}`, {
+        label,
+        restore: () => {
+          if (g && removedMember) g.members.splice(mIdx, 0, removedMember);
+          if (removedShop) SHOPS.splice(sIdx, 0, removedShop);
+          rerenderAll();
+        },
+      });
     }
     case 'dup-edit': {
       const target = SHOPS.find((x) => x.id === d.id) || SHOPS[0];
@@ -1545,11 +1638,23 @@ function onClick(e, el, st) {
     case 'confirm-del-shop': {
       if (!s) return;
       const idx = SHOPS.indexOf(s);
-      if (idx > -1) SHOPS.splice(idx, 1);
+      const removed = idx > -1 ? SHOPS.splice(idx, 1)[0] : null;
+      const prevNode = st.node, prevStep = st.phoneStep;
       st.modal = null; st.sel = null;
       if (st.mode === 'phone') st.phoneStep = 'area';
       rerenderAll();
-      return toast(`${s.name} deleted, written to audit log`);
+      return toast(`Deleted ${s.name}`, {
+        label: s.name,
+        restore: () => {
+          if (removed) {
+            SHOPS.splice(idx, 0, removed);
+            st.node = prevNode;
+            st.sel = removed.id;
+            if (st.mode === 'phone') st.phoneStep = prevStep;
+          }
+          rerenderAll();
+        },
+      });
     }
   }
 }

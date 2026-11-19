@@ -171,10 +171,21 @@ select.inp option{background:var(--panel);color:var(--ink)}
 .st-sub.on{border-color:var(--accent-edge);background:var(--wash);color:var(--ink);font-weight:700}
 .st-search{width:220px;flex:none}
 .wares{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-content:start}
-.ware{border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:13px;display:flex;flex-direction:column;gap:6px}
-.ware b{font-size:13.5px}
-.ware .pr{font-size:16px;font-weight:700;color:var(--accent-ink);margin-top:2px}
-.ware .foot{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:4px;padding-top:7px;border-top:1px solid var(--hair);font-size:11px;color:var(--ink-dim)}
+.ware{border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:13px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.ware b.wn{font-size:13.5px;display:block}
+.stock-hero{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--inset)}
+.stock-hero.low{border-color:var(--danger-ink)}
+.stock-big{font-size:24px;font-weight:700;line-height:1.05;letter-spacing:-.02em;color:var(--ink)}
+.stock-big.low{color:var(--danger-ink)}
+.stock-lbl{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim)}
+.price-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.ware .price-row{grid-template-columns:1fr 1fr}
+.price-row > div{background:var(--raised);padding:6px 8px;min-width:0}
+.price-row span{display:block;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.price-row b{display:block;font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap;margin-top:2px}
+.prod-item{padding:12px 14px;border-bottom:1px solid var(--hair);display:flex;flex-direction:column;gap:8px}
+.prod-item:last-child{border-bottom:0}
+.prod-item-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 
 /* Blurred Modal & Picker Popover (Task 81 E) */
 .ov{position:absolute;inset:0;background:var(--scrim);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:14px;z-index:30}
@@ -184,15 +195,27 @@ select.inp option{background:var(--panel);color:var(--ink)}
 .dlg p{margin:0;font-size:12px;color:var(--ink-muted);line-height:1.45}
 .dlg .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding-top:4px}
 
-/* Self-drawing gold check toast */
-.toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,20px);opacity:0;pointer-events:none;
-  display:flex;align-items:center;gap:10px;background:var(--raised);border:1px solid var(--accent-edge);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;
-  box-shadow:0 18px 40px -16px rgba(0,0,0,.6);transition:opacity .2s,transform .25s cubic-bezier(.2,.7,.2,1);z-index:60;max-width:calc(100% - 32px)}
+/* Self-drawing gold check toast + 8-second Undo toast-bar (Task 84) */
+.toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,20px);opacity:0;pointer-events:none;overflow:hidden;
+  display:flex;align-items:center;gap:10px;background:var(--raised);border:1px solid var(--accent-edge);border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;
+  box-shadow:0 18px 40px -16px rgba(0,0,0,.6);transition:opacity .2s,transform .25s cubic-bezier(.2,.7,.2,1);z-index:60;max-width:calc(100% - 28px)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
+.toast.has-undo{pointer-events:auto;padding-bottom:14px}
 .toast svg{width:18px;height:18px;flex:none;stroke:var(--gold);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .toast path{stroke-dasharray:24;stroke-dashoffset:24}
 .toast.on path{animation:draw .45s .1s forwards}
+.toast-copy{display:flex;flex-direction:column;gap:1px;min-width:0}
+.toast-sub{display:none;font-size:10.5px;font-weight:500;color:var(--ink-dim)}
+.toast.has-undo .toast-sub{display:block}
+.toast-undo{display:none;min-height:34px;padding:0 12px;border:1px solid var(--accent-edge);border-radius:7px;background:var(--wash);color:var(--ink);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;flex:none}
+.toast-undo:hover{border-color:var(--gold)}
+.toast.has-undo .toast-undo{display:inline-flex;align-items:center;justify-content:center}
+.toast-cd{display:none;position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--inset)}
+.toast-cd > span{display:block;height:100%;width:100%;background:var(--gold);transform-origin:left center}
+.toast.has-undo .toast-cd{display:block}
+.toast.on.has-undo .toast-cd > span{animation:countdown 8s linear forwards}
 @keyframes draw{to{stroke-dashoffset:0}}
+@keyframes countdown{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 
 /* Phone frame overrides (390px, 44px touch buttons, zero horizontal overflow) */
 .sb{height:24px;display:flex;justify-content:space-between;align-items:center;padding:0 18px;font-size:11px;color:var(--ink-dim);background:var(--panel);flex:none}
@@ -220,6 +243,7 @@ select.inp option{background:var(--panel);color:var(--ink)}
 .phone .st-row2-wrap{padding:7px 10px}
 .phone .st-search{width:100%}
 .phone .wares{grid-template-columns:1fr}
+.phone .price-row{grid-template-columns:1fr 1fr}
 .ph-back{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--inset);border-bottom:1px solid var(--line);flex:none}
 @media (max-width:760px){.fr.pc,.pcap{display:none}}
 .nomotion *,.nomotion *::before,.nomotion *::after{animation:none!important;transition:none!important}
@@ -241,7 +265,7 @@ select.inp option{background:var(--panel);color:var(--ink)}
 </svg>
 
 <div class="board">
-  <h1>Master Vault · Categories &amp; Sub-categories (Round 2)</h1>
+  <h1>Master Vault · Categories &amp; Sub-categories (Round 3)</h1>
   <span>Company <span class="seg" id="company">
     <button type="button" aria-pressed="true" data-v="milk">Milk Company (example)</button>
     <button type="button" aria-pressed="false" data-v="cig">Cigarette Company (example)</button>
@@ -256,7 +280,12 @@ select.inp option{background:var(--panel);color:var(--ink)}
 <p class="cap">Phone · 390 px (same app mounted live)</p>
 <div class="fr phone" id="ph"></div>
 
-<div class="toast" id="toast" role="status" aria-live="polite"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span id="toastT"></span></div>
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+  <span class="toast-copy"><span id="toastT"></span><span class="toast-sub">Undo for 8 seconds</span></span>
+  <button type="button" class="toast-undo" id="toastUndo">UNDO</button>
+  <span class="toast-cd"><span></span></span>
+</div>
 
 <script>
 /* Task 79.5: ONLY Aldi's exact example category names — no Plant-based / Oat Milk, Elder has no sub-categories. */
@@ -350,15 +379,28 @@ function settleRolls(root) {
     root.querySelectorAll('.reel > span[data-to]').forEach((s) => { s.style.transform = `translateY(-${+s.dataset.to * 1.15}em)`; });
   }));
 }
-let toastTimer;
-function toast(msg) {
+let toastTimer, activeUndo = null;
+function toast(msg, undoOpts) {
   const t = document.getElementById('toast');
-  t.classList.remove('on'); void t.offsetWidth;
-  document.getElementById('toastT').textContent = msg;
-  t.classList.add('on');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('on'), 2800);
+  activeUndo = undoOpts || null;
+  t.classList.remove('on', 'has-undo'); void t.offsetWidth;
+  document.getElementById('toastT').textContent = msg;
+  if (activeUndo) t.classList.add('has-undo');
+  t.classList.add('on');
+  toastTimer = setTimeout(() => {
+    t.classList.remove('on', 'has-undo');
+    activeUndo = null;
+  }, activeUndo ? 8000 : 2800);
 }
+document.getElementById('toastUndo').addEventListener('click', () => {
+  if (!activeUndo) return;
+  const u = activeUndo;
+  activeUndo = null;
+  clearTimeout(toastTimer);
+  u.restore();
+  toast(`Restored ${u.label}`);
+});
 
 /* ---------- dual-mounted state ---------- */
 const apps = [];
@@ -484,6 +526,24 @@ function renderPickerPopover(st, co, ourCats, compCats) {
   </div></div>`;
 }
 
+const fmtNum = (n) => Math.round(Number(n) || 0).toLocaleString('id-ID');
+function renderStockAndPrices(p, co) {
+  const isLow = Number(p.stock) < Number(p.minStock);
+  return `<div class="stock-hero ${isLow ? 'low' : ''}">
+      <div>
+        <span class="stock-lbl">Main warehouse stock</span>
+        <div class="stock-big ${isLow ? 'low' : ''}">${fmtNum(p.stock)} ${esc(co.unit)}</div>
+      </div>
+      ${isLow ? `<span class="st bad">Low · min ${fmtNum(p.minStock)}</span>` : `<span class="dim" style="font-size:11px">min ${fmtNum(p.minStock)} ${esc(co.unit)}</span>`}
+    </div>
+    <div class="price-row" aria-label="All price levels">
+      <div><span>Distributor (cost)</span><b>${rp(p.cost)}</b></div>
+      <div><span>Retail</span><b>${rp(p.retail)}</b></div>
+      <div><span>Grosir</span><b>${rp(p.grosir)}</b></div>
+      <div><span>Ecer</span><b>${rp(p.ecer)}</b></div>
+    </div>`;
+}
+
 /* ---------- Frame 1: Categories Manager (Our categories + collapsed Competitor-only categories) ---------- */
 function renderCatsFrame(co, st, activeCat, ourCats, compCats, ph) {
   const newMatch = findCatMatch(st.newCatName, null);
@@ -573,12 +633,14 @@ function renderCatsFrame(co, st, activeCat, ourCats, compCats, ph) {
       </div>
 
       <div class="sec-wrap">
-        <div class="sec-lbl"><span>Our products in ${esc(activeCat.name)} (${prods.length})</span><span>Main warehouse stock · delete blocked while used</span></div>
+        <div class="sec-lbl"><span>Our products in ${esc(activeCat.name)} (${prods.length})</span><span>Main warehouse stock &amp; all 4 price levels</span></div>
         <div class="card">
-          ${prods.length ? prods.map((p) => `<div class="sub-row">
-            <div style="flex:1;min-width:140px"><b>${esc(p.name)}</b><div class="dim" style="font-size:11.5px">${esc(catLabel(p.catId, p.subId))} · Main warehouse: ${p.stock} ${esc(co.unit)}</div></div>
-            <b>${rp(p.retail)}</b>
-            <button type="button" class="btn xs q" data-act="edit-in-form" data-pid="${p.id}"><svg class="i"><use href="#edit"/></svg>Edit</button>
+          ${prods.length ? prods.map((p) => `<div class="prod-item">
+            <div class="prod-item-top">
+              <div style="flex:1;min-width:140px"><b>${esc(p.name)}</b><div class="dim" style="font-size:11.5px">${esc(catLabel(p.catId, p.subId))}</div></div>
+              <button type="button" class="btn xs q" data-act="edit-in-form" data-pid="${p.id}"><svg class="i"><use href="#edit"/></svg>Edit</button>
+            </div>
+            ${renderStockAndPrices(p, co)}
           </div>`).join('') : `<div class="sub-row dim">0 of our products use ${esc(activeCat.name)} — safe to delete, or assign one in Product form.</div>`}
         </div>
       </div>
@@ -720,12 +782,11 @@ function renderSalesTerminalPreview(co, st, ourCats) {
       ${wares.length ? wares.map((p) => `<div class="ware">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
           <span class="st">${esc(catLabel(p.catId, p.subId))}</span>
-          ${Number(p.stock) < Number(p.minStock) ? `<span class="st bad">Low stock</span>` : ''}
+          ${Number(p.stock) < Number(p.minStock) ? `<span class="st bad">Low</span>` : `<span class="dim" style="font-size:10.5px">per ${esc(co.unit)}</span>`}
         </div>
-        <b>${esc(p.name)}</b>
+        <b class="wn">${esc(p.name)}</b>
         <span class="dim" style="font-size:11.5px">${esc(p.desc)}</span>
-        <span class="pr">${rp(p.retail)} <span class="dim" style="font-size:11px;font-weight:400">/ ${esc(co.unit)}</span></span>
-        <div class="foot"><span>Main warehouse: ${p.stock} ${esc(co.unit)}</span><span>Grosir ${rp(p.grosir)}</span></div>
+        ${renderStockAndPrices(p, co)}
       </div>`).join('') : `<div class="card pad" style="grid-column:1/-1;text-align:center"><span class="dim">${st.stCat === 'BUNDLES' ? 'Active promo bundles appear here.' : 'No products match this filter.'}</span></div>`}
     </div>
   </div>`;
@@ -890,10 +951,18 @@ function onClick(e, el, st) {
     case 'confirm-del-cat': {
       const idx = co.cats.findIndex((c) => c.id === d.cid);
       if (idx < 0) return;
-      const name = co.cats[idx].name;
-      co.cats.splice(idx, 1);
+      const removed = co.cats.splice(idx, 1)[0];
+      const prevSel = st.selCat;
       st.selCat = co.cats[0]?.id || ''; st.phDetail = false; st.modal = null;
-      rerenderAll(); return toast(`Deleted category "${name}"`);
+      rerenderAll();
+      return toast(`Deleted ${removed.name}`, {
+        label: removed.name,
+        restore: () => {
+          co.cats.splice(idx, 0, removed);
+          st.selCat = prevSel;
+          rerenderAll();
+        },
+      });
     }
     case 'add-sub': {
       const cat = co.cats.find((c) => c.id === d.cid);
@@ -939,10 +1008,16 @@ function onClick(e, el, st) {
       if (!cat) return;
       const idx = cat.subs.findIndex((s) => s.id === d.sid);
       if (idx < 0) return;
-      const name = cat.subs[idx].name;
-      cat.subs.splice(idx, 1);
+      const removed = cat.subs.splice(idx, 1)[0];
       st.modal = null;
-      rerenderAll(); return toast(`Deleted sub-category "${name}"`);
+      rerenderAll();
+      return toast(`Deleted ${removed.name}`, {
+        label: removed.name,
+        restore: () => {
+          cat.subs.splice(idx, 0, removed);
+          rerenderAll();
+        },
+      });
     }
     case 'toggle-inline-sub':
       st.pfInlineSubOpen = !st.pfInlineSubOpen; st.pfInlineSubName = '';

@@ -3239,7 +3239,7 @@ Verified in headless Chrome (`verify-task83.mjs`, `ERRORS: []`):
 3. Both files ran cleanly with `ERRORS: []`.
 
 ## Task 84 - PICTURES round 3: NOO stands out, Undo after a delete, Master Vault stock + all prices (drafts only) - do after 82 + 83
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 11:00 WIB. Aldi, verbatim: *"competitor screen is good, for customer i want u to make verify noo have better button visibility as i want the admin to realise if there is NOO verification to do, its hard to see and realise which of the new stores are NOO stores and old stores this is something that u need to working on and other thing that we need on this app is undo button especially when doing accidental fatal pressing like deleting data and for master vault i just want the stock number to be visible and also show all the price level for that product not just the grosir one everything else looks fine for now"*.
 **Touch only:** `.claude/drafts/customers-c.html`, `.claude/drafts/categories-pro.html`, `.claude/drafts/competitors-pro.html` (Undo only), this file.
 1. **NOO stands out (customers-c.html):** a shop waiting for NOO verification (status PENDING) must be impossible to miss: (a) in the shop list a gold-edged "NEW · VERIFY NOO" tag + a left gold bar on the row, old shops have none; (b) a count "NOO to verify: N" in the KPI strip and on the area tree ("Needs action" includes it, tap -> filters to those shops); (c) in the shop pane a full-width banner at the top "New shop - waiting for NOO verification" with the Verify NOO button as the strongest button on the screen (filled `--wash`, `--accent-edge` border, bold, bigger), only for T4 and above; T5/T6 see "Waiting for admin to verify". After Verify -> banner gone, toast. Seed 2-3 PENDING shops.
@@ -3248,6 +3248,19 @@ Verified in headless Chrome (`verify-task83.mjs`, `ERRORS: []`):
 4. Same standards as Task 71 (toast on every action, no blue, no green, no `alert/confirm/prompt`, PC 1240 + phone 390 nothing cut off, Lite motion, headless `ERRORS: []` for all 3 files).
 **Done when:** 1-4 done, the Result lists what you checked for each.
 **Result:**
+Updated `.claude/drafts/customers-c.html`, `.claude/drafts/categories-pro.html`, and `.claude/drafts/competitors-pro.html`, verified every item in headless Chrome (`verify-task84.mjs`, `ERRORS: []`) and visually checked PC 1240 + Phone 390 screenshots:
+1. **NOO stands out (`customers-c.html`):**
+   - Seeded 3 `PENDING` shops (`KIOS BAROKAH` in Margahayu, `CEMERLANG` in Soreang, `TOKO HARAPAN JAYA` in Muntilan).
+   - (a) Every `PENDING` row gets left gold bar (`.sr.noo-row`) + gold-edged `NEW · VERIFY NOO` badge (`nooRowHasTag: true`); old (`Approved`) shops have none (`oldRowNoNooTag: true`).
+   - (b) KPI strip shows clickable `NOO to verify: 3` tile (`kpiHasNoo3: true`) and Area Tree shows `NOO to verify: 3` (`treeHasNoo3: true`, also counted inside `Needs action`); tapping filters to all 3 `PENDING` shops (`filteredCount: 3`).
+   - (c) Shop pane top shows full-width gold-edged `.noo-banner` (`"New shop — waiting for NOO verification"`) with strongest 44px `Verify NOO` button (`btnNooH: 44`) for T2–T4 (`t4HasBtn: true`); T5/T6 see `"Waiting for admin to verify"` with no Verify button (`t5Waiting: true`). Verifying removes banner and toasts `"KIOS BAROKAH verified as Approved NOO"` (`afterVerifyBannerGone: true`).
+2. **8-second Undo after delete (all 3 drafts, confirm dialogs kept):**
+   - `customers-c.html`: Shop delete (`hasShopConfirm: true`, `17 -> 16 -> UNDO -> 17`, `"Restored KIOS BAROKAH"`), folder reset to Unknown (`folderGone: true -> UNDO -> folderRestored: true`), and duplicate delete all trigger the 8s Undo toast-bar (`"Undo for 8 seconds"` + countdown line).
+   - `categories-pro.html`: Empty category & sub-category delete (`hasCatConfirm: true`, `goneAfterDel: true -> UNDO -> restoredAfterUndo: true`, `"Restored TempCat"`).
+   - `competitors-pro.html`: Delete rival price (`hasPriceConfirm: true`, `11000 -> null -> UNDO -> 11000`), reject report (`WAITING -> REJECTED -> UNDO -> WAITING`), and delete rival product (`hasRivalConfirm: true`, `6 -> 5 -> UNDO -> 6`, `"Restored Rival Kretek 12 (example)"`).
+3. **Master Vault stock + all 4 price levels (`categories-pro.html`):**
+   - Both `Preview: terminal tabs` cards and `Categories` -> `"Our products in <Cat>"` show **Main warehouse stock** as the largest number (`24px`, e.g. `180 Box`, red + `Low` badge on `DailyFit Banana Choco` `24 Box < 30`, `previewLowCount: 1`) and all 4 price levels unabbreviated (`DISTRIBUTOR (COST)`, `RETAIL`, `GROSIR`, `ECER`).
+4. **Standards:** Zero `alert`/`confirm`/`prompt` (`banned: false`), zero phone overflow (`phOverflow: false`), zero blue/green, Lite motion + System/Light/Dark preserved, `ERRORS: []` across all 3 files.
 
 ## Task 85 - READ-ONLY: every "fatal press" in the real app, and the smallest Undo for each (for Aldi's undo button)
 **Status:** OPEN

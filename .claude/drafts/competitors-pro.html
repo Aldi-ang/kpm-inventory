@@ -190,15 +190,27 @@ table.pt tr:last-child td{border-bottom:0}
 .pop-opt b{display:block;font-size:12.5px}
 .pop-opt span{display:block;font-size:11px;color:var(--ink-dim)}
 
-/* Self-drawing gold check toast */
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;
-  display:flex;align-items:center;gap:10px;background:var(--raised);border:1px solid var(--accent-edge);border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;
-  box-shadow:0 18px 40px -16px rgba(0,0,0,.6);transition:opacity .2s,transform .25s cubic-bezier(.2,.7,.2,1);z-index:60;max-width:calc(100% - 32px)}
+/* Self-drawing gold check toast + 8-second Undo toast-bar (Task 84) */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;overflow:hidden;
+  display:flex;align-items:center;gap:10px;background:var(--raised);border:1px solid var(--accent-edge);border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;
+  box-shadow:0 18px 40px -16px rgba(0,0,0,.6);transition:opacity .2s,transform .25s cubic-bezier(.2,.7,.2,1);z-index:60;max-width:calc(100% - 28px)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
+.toast.has-undo{pointer-events:auto;padding-bottom:14px}
 .toast svg{width:18px;height:18px;flex:none;stroke:var(--gold);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .toast path{stroke-dasharray:24;stroke-dashoffset:24}
 .toast.on path{animation:draw .45s .1s forwards}
+.toast-copy{display:flex;flex-direction:column;gap:1px;min-width:0}
+.toast-sub{display:none;font-size:10.5px;font-weight:500;color:var(--ink-dim)}
+.toast.has-undo .toast-sub{display:block}
+.toast-undo{display:none;min-height:34px;padding:0 12px;border:1px solid var(--accent-edge);border-radius:7px;background:var(--wash);color:var(--ink);font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;flex:none}
+.toast-undo:hover{border-color:var(--gold)}
+.toast.has-undo .toast-undo{display:inline-flex;align-items:center;justify-content:center}
+.toast-cd{display:none;position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--inset)}
+.toast-cd > span{display:block;height:100%;width:100%;background:var(--gold);transform-origin:left center}
+.toast.has-undo .toast-cd{display:block}
+.toast.on.has-undo .toast-cd > span{animation:countdown 8s linear forwards}
 @keyframes draw{to{stroke-dashoffset:0}}
+@keyframes countdown{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 
 /* Phone overrides: 44px touch buttons, zero overflow */
 .sb{height:24px;display:flex;justify-content:space-between;align-items:center;padding:0 18px;font-size:11px;color:var(--ink-dim);background:var(--panel);flex:none}
@@ -242,10 +254,11 @@ table.pt tr:last-child td{border-bottom:0}
   <symbol id="list" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></symbol>
   <symbol id="inbox" viewBox="0 0 24 24"><path d="M4 13l2-7h12l2 7v6H4z"/><path d="M4 13h5l2 2h2l2-2h5"/></symbol>
   <symbol id="sliders" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="17" r="2"/></symbol>
+  <symbol id="trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13"/></symbol>
 </svg>
 
 <div class="board">
-  <h1>Competitors · Global Screen (Round 2)</h1>
+  <h1>Competitors · Global Screen (Round 3 · Undo)</h1>
   <span>View as <span class="seg" id="role">
     <button type="button" aria-pressed="true" data-v="T2">T2 Owner</button>
     <button type="button" aria-pressed="false" data-v="T3">T3 HQ Sales Manager</button>
@@ -263,7 +276,12 @@ table.pt tr:last-child td{border-bottom:0}
 <p class="cap">Phone · 390 px (same app mounted live)</p>
 <div class="fr phone" id="ph"></div>
 
-<div class="toast" id="toast" role="status" aria-live="polite"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span id="toastT"></span></div>
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+  <span class="toast-copy"><span id="toastT"></span><span class="toast-sub">Undo for 8 seconds</span></span>
+  <button type="button" class="toast-undo" id="toastUndo">UNDO</button>
+  <span class="toast-cd"><span></span></span>
+</div>
 
 <script>
 /* ---------- Shared Seed Data ---------- */
@@ -375,15 +393,28 @@ function settleRolls(root) {
     root.querySelectorAll('.reel > span[data-to]').forEach((s) => { s.style.transform = `translateY(-${+s.dataset.to * 1.15}em)`; });
   }));
 }
-let toastTimer;
-function toast(msg) {
+let toastTimer, activeUndo = null;
+function toast(msg, undoOpts) {
   const t = document.getElementById('toast');
-  t.classList.remove('on'); void t.offsetWidth;
-  document.getElementById('toastT').textContent = msg;
-  t.classList.add('on');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('on'), 2800);
+  activeUndo = undoOpts || null;
+  t.classList.remove('on', 'has-undo'); void t.offsetWidth;
+  document.getElementById('toastT').textContent = msg;
+  if (activeUndo) t.classList.add('has-undo');
+  t.classList.add('on');
+  toastTimer = setTimeout(() => {
+    t.classList.remove('on', 'has-undo');
+    activeUndo = null;
+  }, activeUndo ? 8000 : 2800);
 }
+document.getElementById('toastUndo').addEventListener('click', () => {
+  if (!activeUndo) return;
+  const u = activeUndo;
+  activeUndo = null;
+  clearTimeout(toastTimer);
+  u.restore();
+  toast(`Restored ${u.label}`);
+});
 
 /* ---------- dual-mounted state ---------- */
 const apps = [];
@@ -831,6 +862,7 @@ function renderManageTab(st) {
             <div style="flex:1 1 220px;min-width:190px">
               ${pickerButton({ kind: 'pair', target: 'manage-pair', rid: r.id, label: pair ? pair.name : 'No pair set', sub: pair ? catLabel(pair.catId, pair.subId) : 'Tap to pick Cello pair' })}
             </div>
+            <button type="button" class="btn xs d" data-act="open-del-rival" data-rid="${r.id}"><svg class="i"><use href="#trash"/></svg>Delete</button>
           </div>`;
         }).join('')}
       </div>
@@ -846,9 +878,28 @@ const M = {
       <h4>Edit ${esc(f.region)} · ${esc(f.ct)} price</h4>
       <p><b>${esc(f.rivalName)}</b> · saved with your name (${esc(actorName())}) and today's date.</p>
       <label style="display:flex;flex-direction:column;gap:4px;font-size:10px;font-weight:700;text-transform:uppercase;color:var(--ink-dim)">New price (Rp)<input class="inp" type="number" data-m="price" value="${esc(f.price)}"></label>
-      <div class="row"><button type="button" class="btn q" data-act="close">Cancel</button><button type="button" class="btn" data-act="save-price"><svg class="i"><use href="#chk"/></svg>Save price</button></div>
+      <div class="row" style="justify-content:space-between">
+        ${f.hasExisting ? `<button type="button" class="btn d" data-act="open-del-price"><svg class="i"><use href="#trash"/></svg>Delete price</button>` : `<span></span>`}
+        <div style="display:flex;gap:8px">
+          <button type="button" class="btn q" data-act="close">Cancel</button>
+          <button type="button" class="btn" data-act="save-price"><svg class="i"><use href="#chk"/></svg>Save price</button>
+        </div>
+      </div>
     </div></div>`;
   },
+  confirmDelPrice: () => (st) => {
+    const f = st.form;
+    return `<div class="ov"><div class="dlg sm" role="alertdialog" aria-label="Delete rival price">
+      <h4>Delete ${esc(f.region)} · ${esc(f.ct)} price?</h4>
+      <p>Removes the saved price for <b>${esc(f.rivalName)}</b> so the cell returns to "not set yet". You can undo for 8 seconds after deleting.</p>
+      <div class="row"><button type="button" class="btn q" data-act="close">Keep price</button><button type="button" class="btn d" data-act="confirm-del-price"><svg class="i"><use href="#trash"/></svg>Delete price</button></div>
+    </div></div>`;
+  },
+  confirmDelRival: (r) => () => `<div class="ov"><div class="dlg sm" role="alertdialog" aria-label="Delete rival product">
+    <h4>Delete "${esc(r.name)}"?</h4>
+    <p>Removes this rival product and its saved regional prices from Competitors. You can undo for 8 seconds after deleting.</p>
+    <div class="row"><button type="button" class="btn q" data-act="close">Keep product</button><button type="button" class="btn d" data-act="confirm-del-rival" data-rid="${r.id}"><svg class="i"><use href="#trash"/></svg>Delete</button></div>
+  </div></div>`,
   approve: () => (st) => {
     const f = st.form;
     const rep = REPORTS.find((x) => x.id === f.repId);
@@ -1119,9 +1170,55 @@ function onClick(e, el, st) {
     case 'edit-price': {
       const r = RIVALS.find((x) => x.id === d.rid);
       if (!r) return;
-      st.form = { rid: r.id, rivalName: r.name, region: d.reg, ct: d.ct, price: r.prices[d.reg]?.[d.ct] || '' };
+      const cur = r.prices[d.reg]?.[d.ct];
+      st.form = { rid: r.id, rivalName: r.name, region: d.reg, ct: d.ct, price: cur || '', hasExisting: cur > 0 };
       st.modal = M.editPrice();
       return render(el, st);
+    }
+    case 'open-del-price': {
+      if (!st.form) return;
+      st.modal = M.confirmDelPrice();
+      return render(el, st);
+    }
+    case 'confirm-del-price': {
+      const f = st.form, r = RIVALS.find((x) => x.id === f?.rid);
+      if (!r || !f) return;
+      const prevCell = r.prices[f.region] ? { ...r.prices[f.region] } : null;
+      if (r.prices[f.region]) delete r.prices[f.region][f.ct];
+      const label = `${f.region} ${f.ct} price`;
+      st.modal = null; st.form = null;
+      rerenderAll();
+      return toast(`Deleted ${label}`, {
+        label,
+        restore: () => {
+          if (prevCell) r.prices[f.region] = { ...prevCell };
+          rerenderAll();
+        },
+      });
+    }
+    case 'open-del-rival': {
+      const r = RIVALS.find((x) => x.id === d.rid);
+      if (!r) return;
+      st.modal = M.confirmDelRival(r);
+      return render(el, st);
+    }
+    case 'confirm-del-rival': {
+      const idx = RIVALS.findIndex((x) => x.id === d.rid);
+      if (idx < 0) return;
+      const removed = RIVALS.splice(idx, 1)[0];
+      const prevSel = st.selRival;
+      if (st.selRival === removed.id) st.selRival = RIVALS[0]?.id || '';
+      st.modal = null; st.form = null;
+      rerenderAll();
+      return toast(`Deleted ${removed.name}`, {
+        label: removed.name,
+        restore: () => {
+          RIVALS.splice(idx, 0, removed);
+          st.selRival = prevSel;
+          st.openGroups.add(grpKey(removed.catId, removed.subId));
+          rerenderAll();
+        },
+      });
     }
     case 'save-price': {
       const f = st.form, r = RIVALS.find((x) => x.id === f.rid);
@@ -1194,10 +1291,18 @@ function onClick(e, el, st) {
     case 'confirm-reject': {
       const rep = REPORTS.find((x) => x.id === st.form.repId);
       if (!st.form.reason.trim()) return toast('Enter a short reason before rejecting');
+      const prevStatus = rep ? rep.status : 'WAITING';
       if (rep) rep.status = 'REJECTED';
+      const label = rep ? `${rep.shop} report` : 'report';
       st.modal = null; st.form = null;
       rerenderAll();
-      return toast('Report rejected and salesman notified');
+      return toast(`Deleted ${label}`, {
+        label,
+        restore: () => {
+          if (rep) rep.status = prevStatus;
+          rerenderAll();
+        },
+      });
     }
     case 'open-add-rival': {
       const regs = visibleRegions();
