@@ -2699,7 +2699,7 @@ Build `.claude/drafts/customers-c.html` (taking section C of `.claude/drafts/cus
   - Verified every button in headless Chrome (`verify-customers-c.mjs`: `ERRORS: []`, zero `alert`/`confirm`/`prompt`, zero profit/cuan text).
 
 ## Task 72 - READ-ONLY: what the real competitor log stores, vs what the side-by-side card needs (from Claude)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 06:40 WIB, for Customers C v3 (`.claude/drafts/customers-c.html`, function `compareCard`).
 **Touch only:** this file.
 1. In `src/components/CustomerManager.jsx` (and any util it calls), find every place a competitor / benchmark price is WRITTEN and READ. Give `file:line` for each, the Firestore path, and every field name written.
@@ -2709,6 +2709,79 @@ Build `.claude/drafts/customers-c.html` (taking section C of `.claude/drafts/cus
 5. (added 2026-11-19 07:20, Aldi's new direction - see Task 78) Also map: how a REGION is stored and checked today (`normalizeRegion`, `src/config/permissions.js:411`, and the rules side), how our price per customer type (Retail / Grosir / Ecer) is stored on a product, and the smallest new data for (a) a rival price per region x customer type and (b) a "salesman report waiting for approval" record, with the `firestore.rules` lines each needs (T4 sees and approves only his own region; T3 and above all regions).
 **Done when:** Result has the 5 parts with `file:line` on every claim and a `could not check:` line.
 **Result:**
+
+### 1. Every place competitor / benchmark data is READ or WRITTEN today
+- **Firestore path:** `artifacts/${appId}/users/${user.uid}/customers/${customer.id}/benchmarks/{benchmarkId}`
+- **Live UI (`src/components/CustomerManager.jsx`):**
+  - **READ (listener):** `src/components/CustomerManager.jsx:31-32` (`onSnapshot` ordered by `createdAt desc`), rendered at `L159-178` (`b.product`, `b.brand`, `b.price`, `b.volume`, `b.notes`).
+  - **CREATE:** `src/components/CustomerManager.jsx:40` (`addDoc`) from state initialized at `L27`. Exact fields written: `brand` (string), `product` (string), `price` (`parseFloat(newBench.price)`), `notes` (string), `volume` (`'High Sales' | 'Medium' | 'Slow Moving'`, `L143`), `createdAt` (`serverTimestamp()`).
+  - **DELETE:** `src/components/CustomerManager.jsx:48` (`deleteDoc`), triggered from `L175`. No update/edit handler exists.
+- **Backup / Restore / Wipe (`src/App.jsx`):**
+  - **READ (backup / export):** `src/App.jsx:766-767` (JSON export) and `src/App.jsx:970-971` (USB backup).
+  - **WRITE (restore / import):** `src/App.jsx:1027-1028` (USB restore) and `src/App.jsx:4340-4341` (JSON import).
+  - **DELETE (nuclear wipe):** `src/App.jsx:926-928`.
+
+### 2. `firestore.rules` gating that path today
+- **`firestore.rules:780-782`:**
+  ```
+  match /benchmarks/{benchmarkId} {
+    allow read, write: if isSalesman(bossUid);
+  }
+  ```
+- **Who passes `isSalesman(bossUid)` (`firestore.rules:157-160`):** ANY authenticated employee of the company (`T3–T6`, plus `T1/T2` via the `users/{bossUid}/{document=**}` catch-all at `firestore.rules:552-563`) has full **read, create, update, and delete** access to every shop's `benchmarks`, with zero field checks and zero region checks.
+
+### 3. Side-by-side card fields: EXISTS vs NEW
+
+| What the card shows | Status | Existing field / smallest new data change | Rules change needed? |
+| :--- | :--- | :--- | :--- |
+| Our product + price | **EXISTS** | `products/{id}`: `name`, `priceRetail`, `priceGrosir`, `priceEcer`, `priceDistributor` (`src/App.jsx:3714, 3878-3881`, `src/utils/helpers.js:871-872`). | No (`firestore.rules:626-627` already allows `isSalesman` read). |
+| Rival name + price | **EXISTS** (per shop) / **NEW** (global region price) | Today `benchmarks`: `brand`, `product`, `price` (`CustomerManager.jsx:27,40`). Moving to global catalog: `competitors/{rivalId}.name` + `region_prices/{REGION}` (see Part 5). | **Yes** — new collection rules (Parts 4–5). |
+| Logged date | **EXISTS** | `benchmarks`: `createdAt` (`CustomerManager.jsx:40`). | No. |
+| Older price of same rival | **NEW** (needs stable key) | Today `product` is free text (`CustomerManager.jsx:141`), so typos break matching. Add `rivalId` pointing to `competitors/{rivalId}` + keep history in `priceHistory` or approved `competitor_reports`. | **Yes** — allow `rivalId` on report/log doc. |
+| Shelf position | **NEW** | Add `shelf` (`'Eye level' \| 'Top shelf' \| 'Bottom shelf' \| 'Counter / till'`) on the salesman report / approved shop sighting. | **Yes** (if fields are whitelisted on new collection). |
+| Promo | **NEW** | Today only hinted inside free-text `notes` (`CustomerManager.jsx:145`). Add structured `promo` (`'None' \| 'Poster' \| 'Discount' \| 'Free gift'`). | **Yes** (in field whitelist). |
+| Selling speed | **EXISTS** (different wording) | `benchmarks.volume` (`'High Sales' \| 'Medium' \| 'Slow Moving'`, `CustomerManager.jsx:27,143`). Map cleanly or store `speed: 'Fast' \| 'Medium' \| 'Slow'`. | No (or whitelist `speed`). |
+| Same rival at other shops / region speed | **NEW** (query shape) | Today `benchmarks` is a subcollection under each shop (`CustomerManager.jsx:31`), so comparing across shops requires N queries or a `collectionGroup('benchmarks')` index. Storing approved shop sightings in a company-level `competitor_reports` collection (indexed by `rivalId` + `region` + `status == 'APPROVED'`) gives cross-shop speed in 1 listener. | **Yes** — new `match /competitor_reports/{id}` rule. |
+
+### 4. Rival catalog, shared category list, and where product category lives today
+- **Where our product category lives today:**
+  - Single free-text string `type` on `products/{id}`, entered at `src/App.jsx:5285` (`<input name="type" placeholder="SKT, Natural…"/>`) and saved raw via `FormData` in `handleSaveProduct` (`src/App.jsx:3698-3719`); promo items force `type = 'PROMO'` (`src/App.jsx:3716`, `src/StockOpnameView.jsx:940`).
+  - There is **NO stored category list** today — every screen builds categories on the fly by scanning `inventory`: `src/components/ResidentEvilInventory.jsx:246-254` (`item.type || "MISC"`) and `src/MerchantSalesView.jsx:1690` (`["ALL", ...new Set(inventory.map(i => i.type || "MISC"))]`).
+- **Smallest new collections / fields:**
+  1. **`users/{bossUid}/product_categories/{catId}`**: `{ name, normName, subs: [{ id, name, normName }], createdBy, updatedAt }` — ONE shared 2-level list for both Master Vault products and rival products.
+  2. **On `products/{productId}`**: add optional `categoryId` and `subCategoryId` while **keeping `type` synced** to the category name so legacy screens (`ResidentEvilInventory`, `MerchantSalesView`, `ExamineModal`, `DashboardBenchmarks`) never break during rollout. Also add `'categoryId', 'subCategoryId'` to the `rsk-*` Sell Again whitelist at `firestore.rules:669,674`.
+  3. **`users/{bossUid}/competitors/{rivalId}`**: `{ name, normName, categoryId, subCategoryId, pairProductId, createdBy, updatedAt }`.
+- **`firestore.rules` gating them:**
+  - `product_categories/{catId}`: `allow read: if isSalesman(bossUid);` · `allow create, update: if isCompanyTopTier(bossUid) || isAreaAdmin(bossUid) || isFleetCaptain(bossUid);` (or matrix-gated helper mirroring `opnameDecider` at `firestore.rules:129-139` defaulting to T1–T4) · `allow delete: if isCompanyTopTier(bossUid) || isAreaAdmin(bossUid);` (app blocks delete while any product/rival references `catId`).
+  - `competitors/{rivalId}`: `allow read: if isSalesman(bossUid);` · `allow create, update: if isCompanyTopTier(bossUid) || isAreaAdmin(bossUid) || isFleetCaptain(bossUid);` (same matrix helper defaulting T1–T4 for adding rivals & changing `pairProductId`) · `allow delete: if isCompanyTopTier(bossUid) || isAreaAdmin(bossUid);`.
+  - Lock writes on legacy `customers/{customerId}/benchmarks/{benchmarkId}` (`firestore.rules:780-782`) to read-only (`allow read: if isSalesman(bossUid); allow write: if false;`) once the approval flow goes live.
+
+### 5. Region checking today, product prices per customer type, and smallest data + rules for region × customer-type rival prices & salesman approval queue
+- **How REGION is stored & checked today:**
+  - **App side:** `normalizeRegion(location)` at `src/config/permissions.js:411` (`String(location || 'UNASSIGNED').trim().toUpperCase()`), used for employee branch (`motorists.location`, `employee_directory.location`), regional offers (`src/App.jsx:5371`), and transfer approvals (`src/config/permissions.js:457, 463, 507, 536, 546`).
+  - **Rules side (two existing patterns):**
+    1. Exact branch-to-region doc ID match in `promoOffers/{region}` (`firestore.rules:1019-1028`): `loc is string && loc.trim() != '' && loc.trim().upper() == region;` — note `T1–T3` (`isCompanyTopTier || isAreaAdmin`) write any region, `T4` (`isFleetCaptain`) writes ONLY `isOwnRegionDoc()`.
+    2. Customer-doc comparison in `isOwnRegionMatch(bossUid)` (`firestore.rules:228-235`): compares `profile.location.lower().trim() == resource.data.region.lower().trim()` (flagged in comments `L220-226` because `customer.region` is Kabupaten while `employee.location` is branch).
+- **How our price per customer type is stored on a product:**
+  - Flat numeric fields on `products/{productId}`: `priceRetail`, `priceGrosir`, `priceEcer`, `priceDistributor` (`src/App.jsx:3714, 3878-3881, 5374-5377`; resolved by `src/utils/helpers.js:871-872` and `src/MerchantSalesView.jsx:175, 208-210, 872`).
+- **Smallest new data + `firestore.rules`:**
+  - **(a) Rival price per region × customer type — subcollection `users/{bossUid}/competitors/{rivalId}/region_prices/{region}`** (doc ID = `normalizeRegion`, matching `promoOffers/{region}` at `firestore.rules:1019`):
+    - Fields: `{ Retail: number, Grosir: number, Ecer: number, updatedBy: string, updatedAt: timestamp }`.
+    - **Why a sub-doc per region instead of a map on `competitors/{rivalId}`:** Firestore rules cannot hide fields inside a document; keying the doc by `{region}` lets rules truly enforce T4's own-region read scope (not just hide columns in the UI).
+    - **Rules:**
+      - `allow read: if isCompanyTopTier(bossUid) || isAreaAdmin(bossUid) || (isSalesman(bossUid) && ownRegionId(region));` (T1–T3 read all regions; T4/T5/T6 read ONLY `region == profile.location.trim().upper()`, where `location` is non-empty and `!= 'UNASSIGNED'`).
+      - `allow create, update: if (isCompanyTopTier(bossUid) || isAreaAdmin(bossUid) || (isFleetCaptain(bossUid) && ownRegionId(region))) && request.resource.data.keys().hasOnly(['Retail','Grosir','Ecer','updatedBy','updatedAt']);`
+      - `allow delete: if false;` (or `isCompanyTopTier(bossUid)`).
+  - **(b) Salesman report waiting for approval — `users/{bossUid}/competitor_reports/{reportId}`:**
+    - Fields: `{ shopId, shopName, region, customerType, rivalId, suggestedName, priceSeen, shelf, promo, speed, note, photoUrl, submittedByUid, submittedByName, createdAt, status, priceAction, reviewedBy, reviewedAt, rejectReason }` (`status`: `'WAITING' | 'APPROVED' | 'REJECTED'`, `priceAction`: `'UPDATE_REGION_PRICE' | 'NOTE_ONLY' | null`).
+    - **Rules:**
+      - `allow read: if isCompanyTopTier(bossUid) || isAreaAdmin(bossUid) || (isSalesman(bossUid) && ownRegionId(resource.data.region));` (T4/T5/T6 query with `where('region', '==', myRegion)`; T3+ query unfiltered).
+      - `allow create: if isSalesman(bossUid) && request.resource.data.status == 'WAITING' && request.resource.data.submittedByUid == request.auth.uid && request.resource.data.region is string && request.resource.data.region.trim() != '';` (any tier submits ONLY `'WAITING'`, never pre-approved).
+      - `allow update: if (isCompanyTopTier(bossUid) || isAreaAdmin(bossUid) || (isFleetCaptain(bossUid) && ownRegionId(resource.data.region))) && resource.data.status == 'WAITING' && request.resource.data.status in ['APPROVED', 'REJECTED'] && request.resource.data.region == resource.data.region;` (T4 approves/rejects ONLY own region; T3+ any region).
+      - `allow delete: if false;` (audit trail kept; T1/T2 retain catch-all at `firestore.rules:561-562` if cleanup needed).
+  - Also wire all 3 new collections (`product_categories`, `competitors` + `region_prices`, `competitor_reports`) into USB Backup / Restore / Wipe (`src/App.jsx:766, 926, 970, 1027, 4340`).
+
+**could not check:** Live production Firestore documents or indexes (never touched live Firebase per rules; verified code in `src/` and `firestore.rules` on disk only).
 
 ## Task 73 - READ-ONLY: does our product data know sticks per pack? (from Claude)
 **Status:** NONE - cancelled 2026-11-19 by Aldi ("dont add price per batang"); skip it.
