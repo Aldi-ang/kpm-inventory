@@ -14726,5 +14726,60 @@ section('REPORTS: TITIP GIVEN SEPARATE FROM HOW THEY PAID MIX (Task 69, 2026-11-
      hr.includes('Titip given {formatRupiah(kpiSummary.titipGiven)}'),
      'Titip given KPI split invariant missed');
 }
+section('CUSTOMER DIRECTORY SHOP DELETE 8-SECOND UNDO (Task 91, 2026-11-19)');
+{
+  const dw = read('src/utils/delayedWrite.js');
+  const tj = read('src/components/Toast.jsx');
+  const cm = read('src/components/CustomerManager.jsx');
+  ok('REGRESSION: CustomerManager handleDelete (#10) routes through scheduleDelayedWrite after confirmAction, ToastHost renders the 8-second Undo bar, and offline / unload traps are guarded',
+     dw.includes('export function scheduleDelayedWrite(') &&
+     dw.includes("window.addEventListener('offline'") &&
+     dw.includes("window.addEventListener('beforeunload'") &&
+     tj.includes('export function notifyUndo(') &&
+     tj.includes('Undo for 8 seconds') &&
+     /const handleDelete = async \(id, name\) => \{[\s\S]{0,260}confirmAction\("Delete profile\?"\)[\s\S]{0,260}scheduleDelayedWrite\(\{[\s\S]{0,260}key:\s*`cust:\$\{id\}`/.test(cm) &&
+     cm.includes('!isPendingUndo(`cust:${c.id}`)'),
+     'Row #10 delayed-write Undo regression guard failed');
+
+  const { scheduleDelayedWrite, undoPendingWrite, isPendingUndo } = await import('../utils/delayedWrite.js');
+  const queue = [];
+  const fakeTimers = {
+    setTimeout: (fn, ms) => { const id = queue.length + 1; queue.push({ id, fn, ms, cleared: false }); return id; },
+    clearTimeout: (id) => { const t = queue.find((x) => x.id === id); if (t) t.cleared = true; },
+  };
+  let writes = 0, undone = 0;
+  scheduleDelayedWrite({
+    key: 'cust:s1', label: 'AMANAH BARU', timers: fakeTimers, isOnline: () => true,
+    commit: () => { writes++; },
+    onUndo: () => { undone++; },
+  });
+  const pendingWhileOpen = isPendingUndo('cust:s1');
+  undoPendingWrite('cust:s1');
+  queue.forEach((t) => { if (!t.cleared) t.fn(); });
+  const writesAfterUndo = writes;
+
+  scheduleDelayedWrite({
+    key: 'cust:s2', label: 'ANEKA BARU', timers: fakeTimers, isOnline: () => true,
+    commit: () => { writes++; },
+  });
+  queue.forEach((t) => { if (!t.cleared) { t.cleared = true; t.fn(); } });
+  const writesAfterExpire = writes;
+
+  const refusedWhenOffline = scheduleDelayedWrite({
+    key: 'cust:s3', label: 'OFFLINE SHOP', timers: fakeTimers, isOnline: () => false,
+    commit: () => { writes++; },
+  });
+
+  ok('BEHAVIOUR: UNDO inside 8 s performs 0 writes and restores state; 8 s expiry performs 1 write; offline delete is visibly refused before hiding',
+     pendingWhileOpen === true &&
+     undone === 1 &&
+     writesAfterUndo === 0 &&
+     writesAfterExpire === 1 &&
+     isPendingUndo('cust:s2') === false &&
+     refusedWhenOffline === false &&
+     isPendingUndo('cust:s3') === false &&
+     writes === 1,
+     `pending=${pendingWhileOpen} undone=${undone} afterUndo=${writesAfterUndo} afterExpire=${writesAfterExpire} offline=${refusedWhenOffline}`);
+}
 console.log(`\n${'='.repeat(58)}\n${pass} passed, ${fail} failed, ${pass + fail} checks`);
 process.exit(fail ? 1 : 0);

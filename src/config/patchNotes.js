@@ -3,6 +3,9 @@
    Every finished job that changes what people see adds a line here before its push (CLAUDE.md, Publishing).
    kind is 'new' or 'fixed'. en and id are both needed: the phone's language picks one (Settings > This device). */
 export const PATCH_NOTES = [
+  { date: '2026-11-19', items: [
+    { kind: 'new', en: 'Customer Directory: after confirming a shop delete, an "Undo" bar now stays at the bottom for 8 seconds before the shop is permanently removed.', id: 'Daftar Pelanggan: setelah konfirmasi hapus toko, bilah "Undo" kini muncul di bawah selama 8 detik sebelum toko benar-benar dihapus.' },
+  ] },
   { date: '2026-11-18', items: [
     { kind: 'fixed', en: 'Reports: "How they paid" now compares Cash, Transfer, and QRIS only, with "Titip given" shown on its own line below.', id: 'Laporan: ringkasan bayar kini membandingkan Tunai, Transfer, dan QRIS saja, sementara "Titip given" tampil di baris terpisah di bawahnya.' },
     { kind: 'new', en: 'Reports has a cleaner layout matching Receivables: Omset, receipts, moved stock, shops served, and payment mix sit in one summary strip, the ledger opens on the right (under its row on a phone), and tabs switch between Folders, Products, Salesmen, and Returns.', id: 'Laporan kini tampil lebih rapi seperti Piutang: Omset, jumlah nota, barang keluar, toko terlayani, dan komposisi bayar ada di satu baris ringkas, nota yang dipilih terbuka di kanan (di bawah barisnya pada HP), dan tab beralih antara Folder, Produk, Salesman, dan Retur.' },

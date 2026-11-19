@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { isFailure, isSuccess } from '../utils/toastSeverity.js';
 import { recordMissed } from '../utils/missedLog.js';
 import { playSound } from '../hooks/useSound.js';
+import { registerUndoToastBridge } from '../utils/delayedWrite.js';
 
 /* WHY THIS FILE EXISTS
    ────────────────────
@@ -29,6 +30,7 @@ import { playSound } from '../hooks/useSound.js';
    paragraph is allowed to name what it bans. */
 
 let pushToast = null;
+let pushUndo = null;
 let nextId = 1;
 
 /* EVERY STRIP FADES, failures too - his design, 2026-10-02: *"i want the top panel notification to be
@@ -60,8 +62,23 @@ export function notify(message) {
     return undefined;
 }
 
+export function notifyUndo({ key, label, durationMs = 8000, onUndo }) {
+    if (!pushUndo) return undefined;
+    pushUndo({ id: nextId++, key, label: String(label ?? ''), durationMs, onUndo });
+    return undefined;
+}
+
+export function clearUndoToast(key) {
+    if (!pushUndo) return undefined;
+    pushUndo((cur) => (!cur || (key && cur.key !== key) ? cur : null));
+    return undefined;
+}
+
+registerUndoToastBridge({ notify, notifyUndo, clearUndoToast });
+
 export function ToastHost() {
     const [items, setItems] = useState([]);
+    const [undoItem, setUndoItem] = useState(null);
     const timers = useRef(new Map());
 
     /* Two phases, deliberately. Removing the strip on the same tick as the click is what makes
@@ -100,7 +117,11 @@ export function ToastHost() {
             timers.current.set(item.id, setTimeout(() => dismiss(item.id, true), FADE_MS));
         };
         pushToast = show;
-        return () => { if (pushToast === show) pushToast = null; };
+        pushUndo = setUndoItem;
+        return () => {
+            if (pushToast === show) pushToast = null;
+            if (pushUndo === setUndoItem) pushUndo = null;
+        };
     }, [dismiss]);
 
     /* Clear every pending timer on unmount so a fired timeout cannot call setState on a gone
@@ -110,7 +131,7 @@ export function ToastHost() {
         return () => { pending.forEach(clearTimeout); pending.clear(); };
     }, []);
 
-    if (items.length === 0) return null;
+    if (items.length === 0 && !undoItem) return null;
 
     return (
         /* pointer-events-none on the column, auto on each strip: the toasts sit over the app,
@@ -132,11 +153,16 @@ export function ToastHost() {
                     from { opacity: 1; transform: none; }
                     to   { opacity: 0; transform: translateY(-10px) scale(.98); }
                 }
+                @keyframes kpm-undo-cd {
+                    from { transform: scaleX(1); }
+                    to   { transform: scaleX(0); }
+                }
                 .kpm-toast-in  { animation: kpm-toast-in .26s cubic-bezier(.16,1,.3,1) both; }
                 .kpm-toast-out { animation: kpm-toast-out .2s ease-in both; }
-                .lite-mode .kpm-toast-in, .lite-mode .kpm-toast-out { animation: none; }
+                .kpm-undo-bar  { animation: kpm-undo-cd 8s linear forwards; transform-origin: left center; }
+                .lite-mode .kpm-toast-in, .lite-mode .kpm-toast-out, .lite-mode .kpm-undo-bar { animation: none; }
                 @media (prefers-reduced-motion: reduce) {
-                    .kpm-toast-in, .kpm-toast-out { animation: none; }
+                    .kpm-toast-in, .kpm-toast-out, .kpm-undo-bar { animation: none; }
                 }
             `}</style>
             {items.map((item) => {
@@ -168,6 +194,36 @@ export function ToastHost() {
                     </div>
                 );
             })}
+            {undoItem && (
+                <div
+                    key={undoItem.id}
+                    role="status"
+                    aria-live="polite"
+                    className="pointer-events-auto fixed bottom-5 left-1/2 z-[10000] w-[calc(100%-28px)] max-w-md -translate-x-1/2 overflow-hidden rounded-[10px] border border-[var(--accent-edge,#a89070)] bg-[var(--raised,#14100e)] shadow-[0_18px_40px_-16px_rgba(0,0,0,0.75)] kpm-toast-in"
+                >
+                    <div className="flex items-center gap-3 px-3.5 pt-2.5 pb-3.5">
+                        <svg className="kpm-ck shrink-0" viewBox="0 0 22 22" aria-hidden="true" style={{ color: '#ff9d00' }}><circle cx="11" cy="11" r="10" /><path d="M6.5 11.4l3 3 6-6.4" /></svg>
+                        <div className="min-w-0 flex-1">
+                            <div className="truncate font-mono text-[15px] font-semibold leading-snug text-[var(--ink,#E8E4DE)]">
+                                Deleted {undoItem.label}
+                            </div>
+                            <div className="text-[11px] font-medium text-[var(--ink-dim,#a89070)]">
+                                Undo for 8 seconds
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => { playSound('click'); if (undoItem.onUndo) undoItem.onUndo(); }}
+                            className="kpm-edgebtn shrink-0 min-h-[44px] sm:min-h-[36px] rounded-lg px-3.5 text-xs font-bold uppercase tracking-wider"
+                        >
+                            UNDO
+                        </button>
+                    </div>
+                    <div className="h-[3px] w-full bg-[var(--inset,#0e0d0c)]">
+                        <div className="h-full w-full bg-[var(--gold,#ff9d00)] kpm-undo-bar" />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

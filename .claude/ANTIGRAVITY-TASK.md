@@ -3577,7 +3577,7 @@ Every single one of the 12 rows was checked against today's code. **0 of the 12 
   ```
 
 ## Task 91 - BUILD: Undo for Row #10 only (shop delete, `CustomerManager.jsx:1115`)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 18:10 WIB (Claude). Claude reviewed 89 (every pasted line matches the emulator-tested rules text, 0 missing) and 90 (OK).
 **Touch only:** `src/utils/delayedWrite.js` (new), `src/components/Toast.jsx`, `src/components/CustomerManager.jsx`, `src/config/logicFixes.selfcheck.mjs`, `src/config/patchNotes.js`, this file.
 1. Build exactly the Task 86 plan for Row #10: the delete waits 8 s, the toast shows "Undo"; Undo = nothing written. No other row.
@@ -3586,6 +3586,24 @@ Every single one of the 12 rows was checked against today's code. **0 of the 12 
 4. Gates after the LAST edit: `node src/config/undef.check.mjs` (clean), `node src/config/logicFixes.selfcheck.mjs`, `npm run build`, `node src/config/integration.audit.mjs` - all green, counts in the Result.
 **Done when:** 1-4 done, committed locally. NEVER push.
 **Result:**
+1. **Row #10 Delayed-Write Undo built:**
+   - `src/utils/delayedWrite.js` (`L1-175`): exports `UNDO_MS = 8000`, `registerUndoToastBridge`, `usePendingUndo`, `isPendingUndo`, `undoPendingWrite`, `flushPendingWrite`, `flushAllPendingWrites`, and `scheduleDelayedWrite`.
+   - `src/components/Toast.jsx` (`L65-77`, `L195-225`): registers the toast bridge (`registerUndoToastBridge({ notify, notifyUndo, clearUndoToast })`), keeps `notify()` and the 5-second top strip untouched, and renders the 8-second bottom Undo toast-bar (`Deleted <name> · Undo for 8 seconds · [UNDO]`) inside `<ToastHost />`.
+   - `src/components/CustomerManager.jsx` (`L29`, `L190-196`, `L1121-1133`): calls `usePendingUndo()`, filters `rawCustomers` by `!isPendingUndo(\`cust:\${c.id}\`)` so a pending-delete shop disappears from the directory immediately, and routes `handleDelete` (`L1121`) through `scheduleDelayedWrite({ key: \`cust:\${id}\`, label: name || 'shop', commit: async () => { await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'customers', id)); logAudit("CUSTOMER_DELETE", \`Deleted \${name}\`); } })` after `confirmAction("Delete profile?")`. Pressing **UNDO** inside 8 s cancels the timer, unhides the shop, and performs **0 Firestore writes**.
+2. **Trap analysis & safe handling (tab close or offline inside the 8 s):**
+   - **What would happen without a guard:** Because the 8-second timer lives in memory (`setTimeout`), closing the tab inside the 8 s would lose the timer and the shop would silently come back on next load; going offline inside the 8 s would either queue an unconfirmed write or leave the shop hidden until refresh.
+   - **Safe answer implemented (`src/utils/delayedWrite.js:68-78, 92-97, 130-134, 161-175`):**
+     - **Offline before or during the 8 s -> visibly does NOT happen:** If `navigator.onLine === false` when Delete is pressed (`L131`), `scheduleDelayedWrite` refuses before hiding the shop and shows the red failure strip `"Failed to delete <name>: you are offline. Nothing was deleted."`. If the browser fires the `offline` event during the 8-second countdown (`L162`) or is offline when the timer expires (`L96`), `cancelBecauseOffline` cancels the timer, closes the Undo bar, immediately restores the shop on screen, and shows `"Failed to delete <name>: you are offline. Nothing was deleted."`.
+     - **Tab close / reload during the 8 s while online -> delete happens immediately before unload:** `window.addEventListener('beforeunload', ...)` (`L165`) and `window.addEventListener('pagehide', ...)` (`L172`) call `flushAllPendingWrites()` synchronously so `commit()` (`deleteDoc`) fires into Firestore's persistent IndexedDB cache (`src/config/firebase.js:65`) before unload, and `beforeunload` sets `e.preventDefault(); e.returnValue = ''` to warn the browser while the write flushes.
+3. **Self-check & patch notes:**
+   - `src/config/logicFixes.selfcheck.mjs:14729-14783` (`CUSTOMER DIRECTORY SHOP DELETE 8-SECOND UNDO (Task 91, 2026-11-19)`): 1 `REGRESSION` check + 1 `BEHAVIOUR` check (verifies Undo inside 8 s -> 0 writes & restored; 8 s expiry -> 1 write; offline -> visibly refused).
+   - `src/config/patchNotes.js:6-8`: added `2026-11-19` entry (`en` + `id`, plain words, no `"kamu"`).
+4. **5 BUILD gates after last edit (all green):**
+   - `node src/config/undef.check.mjs`: **`clean`** (`no new undefined identifiers in src (4 pinned)`)
+   - `node src/config/logicFixes.selfcheck.mjs`: **`3031 passed, 0 failed, 3031 checks`**
+   - Every `src/config/*.selfcheck.mjs` (14 suites): **all 14 exited 0 (`0 RED`)**
+   - `npm run build`: **exit 0** (`built in 15.47s`)
+   - `node src/config/integration.audit.mjs`: **`726 passed, 0 failed, 726 checks`**
 
 ## Task 92 - READ-ONLY: Step 1 build checklist (Master Vault categories), ready for after the Console publish
 **Status:** OPEN
