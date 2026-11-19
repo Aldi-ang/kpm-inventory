@@ -3182,3 +3182,23 @@ Updated `.claude/drafts/competitors-pro.html`, `.claude/drafts/customers-c.html`
   - **H (Master Vault scope):** Shows OUR products and **Main warehouse only** (`hasMainWhOnly: true`, zero regional/branch warehouse); Categories manager splits into `"Our categories"` and collapsed-by-default `"Competitor-only categories"` (`compCollapsedDefault: true`; expanding in Cigarette example shows `Rokok Putih`, `cigCompShowsPutih: true`); product form category picker lists `"Our categories"` first.
   - **I (No second Sales Terminal):** Third tab renamed `"Preview: terminal tabs"` (`tab3Text`) with the banner `"Shows how the real Sales Terminal tabs will look - not a second terminal."` directly under it.
   - **J (Quality & phone fit):** Zero blue/green/alert/confirm/prompt, `phOverflow: false` on all 3 files, `ERRORS: []`.
+
+## Task 82 - Fix the Task 80 plan's permission bug + PROVE the draft rules in the emulator (rules-test only)
+**Status:** OPEN
+**Written:** 2026-11-19 10:35 WIB. Claude's review of your Task 80 (df5a12d1).
+**Touch only:** `rules-test/test-product-categories.mjs` (new), this file. Never edit `firestore.rules` or `src/`.
+1. **Bug in Part 4:** you add `'manage_product_categories'` to the DEFAULT `ROLE_PERMISSIONS` lists (`src/config/permissions.js:184-195`) AND use `matrixKnowsKey`. `injectDynamicPermissions` (`permissions.js:209`) merges a saved matrix OVER the defaults tier by tier, so for a company whose saved matrix lacks one tier, that tier keeps the default list WITH the key -> `matrixKnowsKey` turns true -> every saved tier WITHOUT the key (e.g. T2, T3) is now refused. `canHandOffAcrossRegions` (`permissions.js:422-431`) works because its key is in NO default list ("ABSENCE-MEANS-TIER-DEFAULT", comment above it). Rewrite Part 4 in your Result the same way: the key is NOT added to any default list; only `ALL_FEATURES` in SettingsView gets it.
+2. Write `rules-test/test-product-categories.mjs` in the style of `rules-test/test-sell-damaged.mjs`: load `firestore.rules`, insert your Change 29 text (3a helper, 3b match, 3c the two whitelist lines) IN MEMORY, start the emulator test env with that string, and check: T2, T3 (AREA_ADMIN), T4 (FLEET_CAPTAIN) can create/update/delete `product_categories`; T5, T6 cannot write; every company member can read; another company's user cannot read; a saved matrix that lists the key for some tiers but NOT FLEET_CAPTAIN -> T4 write refused; extra field on a category doc -> refused; Sell Again `rsk-*` create with `categoryId` + `subCategoryId` -> allowed; with an unknown key -> refused.
+3. Run it (same command style as the other rules-test files) and paste the pass/fail counts in the Result. A red check = fix the DRAFT text in your Result (never `firestore.rules`) and rerun.
+**Done when:** Part 4 rewritten, the test file exists, every check passes, counts in the Result.
+**Result:**
+
+## Task 83 - PICTURE: 2 small fixes from Claude's review of Task 81 (drafts only)
+**Status:** OPEN
+**Written:** 2026-11-19 10:35 WIB.
+**Touch only:** `.claude/drafts/competitors-pro.html`, `.claude/drafts/categories-pro.html`, this file.
+1. `competitors-pro.html`: on first load the selected rival (r1) sits inside a COLLAPSED group, so its row is hidden while its detail shows. Open the selected rival's group on load (Task 81 A: "the group of the selected rival opens itself") - every other group stays collapsed.
+2. `categories-pro.html`: "Competitor-only" is decided by "0 of our products", so a category Aldi adds in Master Vault before giving it a product jumps into "Competitor-only categories". Store where a category came from (`origin: 'ours' | 'competitors'`): categories added in Master Vault = 'ours' (stay under "Our categories" even with 0 products, label "0 products yet"); only categories made from Competitors = 'competitors'. Seed Rokok Putih as 'competitors'.
+3. Headless `ERRORS: []` for both files.
+**Done when:** 1-3 done, Result lists what you checked.
+**Result:**

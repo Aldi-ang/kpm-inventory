@@ -17,10 +17,12 @@
 - 2026-11-19 09:55 he reviewed them: Antigravity **Task 81** = his round-2 changes (collapsed category groups, change pair anywhere with same-category first, searchable pickers instead of native selects, clear outlined segment tabs, "Report a rival" as a blurred front panel, card spacing, bigger outlined buttons, Master Vault = our products only with "Our / Competitor-only" category sections, rename the preview tab so there is no second Sales terminal) + Claude's 6 faults (Task 79, merged). Claude: read the diffs whole, render PC + phone, re-publish all 3 at the same paths.
 - DECIDED 2026-11-19 10:05: Master Vault = MAIN warehouse only, no regional/branch warehouse in it (his *"no regional warehouse on the master vault"*); branches stay in Branch Warehouse (`src/App.jsx:64`) + Stock Opname. In Task 81 point H.
 
+- 2026-11-19 10:35 round 2 (Task 81, 44fe133f) reviewed: diffs read whole, rendered PC 1240 + phone 390 (collapsed groups, searchable pickers, pair save, blurred front panels, 44 px phone buttons, 0 overflow) and RE-PUBLISHED at the same 3 links. Task 83 = 2 small fixes (selected rival's group opens on load; Master Vault category `origin` so a new empty category of ours is not labelled competitor-only).
+
 ## Next, in order
 1. His ok on the 3 pictures (or changes -> Antigravity picture task).
-2. Antigravity Task 80 (read-only) = the build plan for step 0 + 1: data shape, every file:line, the Console rules text, matrix rows with the `matrixKnowsKey` fallback (`src/config/permissions.js:422-430`), self-check lines. Claude reviews it.
-3. Step 0: Aldi publishes the new `firestore.rules` lines in the Console FIRST (category list read/write + 2 new keys in the Sell Again whitelist ~`firestore.rules:669/674`).
+2. Build plan = Antigravity Task 80 (df5a12d1), reviewed. ONE BUG: it adds `manage_product_categories` to the DEFAULT `ROLE_PERMISSIONS` lists AND uses `matrixKnowsKey` - with `injectDynamicPermissions` (`src/config/permissions.js:209`) merging a saved matrix over defaults per tier, a missing tier keeps the key and locks T2/T3 out. Must follow `canHandOffAcrossRegions` (`permissions.js:422-431`): key in NO default list. Task 82 rewrites Part 4 + proves the Change 29 rules draft in the emulator (`rules-test/test-product-categories.mjs`).
+3. Step 0: only after Task 82 is all green - Aldi publishes Change 29 in the Console FIRST (helper `categoryManager`, `match /product_categories/{catId}`, 2 new keys in the Sell Again whitelist ~`firestore.rules:669/674`). Claude reviews the test file first.
 4. Step 1 build (Antigravity BUILD task, Claude reviews + renders + gates + pushes): Master Vault categories, product form, Sales Terminal 2-row tabs.
 5. Step 2 Competitors screen, step 3 Customers tab - each its own job.
 
