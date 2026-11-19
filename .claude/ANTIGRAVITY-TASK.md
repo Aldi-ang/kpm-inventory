@@ -3184,7 +3184,7 @@ Updated `.claude/drafts/competitors-pro.html`, `.claude/drafts/customers-c.html`
   - **J (Quality & phone fit):** Zero blue/green/alert/confirm/prompt, `phOverflow: false` on all 3 files, `ERRORS: []`.
 
 ## Task 82 - Fix the Task 80 plan's permission bug + PROVE the draft rules in the emulator (rules-test only)
-**Status:** OPEN
+**Status:** DONE
 **Written:** 2026-11-19 10:35 WIB. Claude's review of your Task 80 (df5a12d1).
 **Touch only:** `rules-test/test-product-categories.mjs` (new), this file. Never edit `firestore.rules` or `src/`.
 1. **Bug in Part 4:** you add `'manage_product_categories'` to the DEFAULT `ROLE_PERMISSIONS` lists (`src/config/permissions.js:184-195`) AND use `matrixKnowsKey`. `injectDynamicPermissions` (`permissions.js:209`) merges a saved matrix OVER the defaults tier by tier, so for a company whose saved matrix lacks one tier, that tier keeps the default list WITH the key -> `matrixKnowsKey` turns true -> every saved tier WITHOUT the key (e.g. T2, T3) is now refused. `canHandOffAcrossRegions` (`permissions.js:422-431`) works because its key is in NO default list ("ABSENCE-MEANS-TIER-DEFAULT", comment above it). Rewrite Part 4 in your Result the same way: the key is NOT added to any default list; only `ALL_FEATURES` in SettingsView gets it.
@@ -3192,6 +3192,37 @@ Updated `.claude/drafts/competitors-pro.html`, `.claude/drafts/customers-c.html`
 3. Run it (same command style as the other rules-test files) and paste the pass/fail counts in the Result. A red check = fix the DRAFT text in your Result (never `firestore.rules`) and rerun.
 **Done when:** Part 4 rewritten, the test file exists, every check passes, counts in the Result.
 **Result:**
+
+### 1. Rewritten Part 4 (fixes `ROLE_PERMISSIONS` merge bug — ABSENCE-MEANS-TIER-DEFAULT)
+- **Do NOT add `'manage_product_categories'` to ANY default array in `ROLE_PERMISSIONS` (`src/config/permissions.js:182-204`).** Because `injectDynamicPermissions` (`src/config/permissions.js:207-210`) merges a saved Firebase matrix over `ROLE_PERMISSIONS` tier by tier, leaving the key out of every default list ensures `matrixKnowsKey` stays `false` for existing companies (even if their saved matrix is missing one tier) until Aldi deliberately toggles and saves the key in Settings.
+- **In `src/config/permissions.js` (right beside `canHandOffAcrossRegions` at `L422-431`):**
+  ```js
+  const MANAGE_CATEGORIES_KEY = 'manage_product_categories';
+  export const canManageCategories = (userRole) => {
+      const role = translateLegacyRole(userRole);
+      if (role === CORPORATE_TIERS.TIER_1) return true;
+      const matrixKnowsKey = Object.values(ROLE_PERMISSIONS)
+          .some(list => Array.isArray(list) && list.includes(MANAGE_CATEGORIES_KEY));
+      if (matrixKnowsKey) return hasClearance(userRole, MANAGE_CATEGORIES_KEY);
+      return role === CORPORATE_TIERS.TIER_2
+          || role === CORPORATE_TIERS.TIER_3
+          || role === CORPORATE_TIERS.TIER_4;   // absence means T1-T4 default
+  };
+  ```
+- **In `src/components/SettingsView.jsx` (`ALL_FEATURES`, right after `L1723`):** add ONLY the UI row so Aldi can toggle it when he wants:
+  ```js
+  { id: 'manage_product_categories', label: 'Master Vault & Competitors: add, rename or delete shared categories (default Tier 4 and above)' },
+  ```
+
+### 2 & 3. Rules Emulator Proof (`rules-test/test-product-categories.mjs`)
+- Created `rules-test/test-product-categories.mjs` (loads `firestore.rules` read-only and splices Change 29 parts 3a + 3b + 3c in memory; `firestore.rules` on disk untouched).
+- Command run: `npx firebase emulators:exec --only firestore --project demo-kpm-rules "node rules-test/test-product-categories.mjs"`
+- **Result: `30 passed, 0 failed` (exit code 0):**
+  - Read (6/6): T2, T3, T4, T5, T6 allowed; other company (`bossUid: ownerB`) denied.
+  - Default write with no saved key (15/15): T2, T3 (`AREA_ADMIN`), T4 (`FLEET_CAPTAIN`) create/update/delete allowed; T5 (`FIELD_OPERATIVE`), T6 (`ROOKIE`), and other company denied.
+  - Saved matrix override (`AREA_ADMIN` has key, `FLEET_CAPTAIN` does not) (4/4): T3 create allowed; T4 create/update/delete refused.
+  - Field whitelist on `product_categories` (2/2): extra `rogueField` refused for both T3 and T4.
+  - Sell Again `rsk-*` whitelist (3/3): T3 create and update with `categoryId` + `subCategoryId` allowed; create with `unknownKey` refused.
 
 ## Task 83 - PICTURE: 2 small fixes from Claude's review of Task 81 (drafts only)
 **Status:** OPEN
