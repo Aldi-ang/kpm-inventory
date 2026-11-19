@@ -2729,3 +2729,41 @@ Build `.claude/drafts/customers-c.html` (taking section C of `.claude/drafts/cus
 4. One paragraph: if `type` became `categoryId` + `subCategoryId`, which of the places in part 1 would break if old products still only had `type`.
 **Done when:** Result has the 4 parts with `file:line` on every claim and a `could not check:` line.
 **Result:**
+
+## Task 75 - DISCUSS: your own view on the categories + rival catalog design (from Aldi: "let antigravity also discuss with us") - DO THIS ONE FIRST
+**Status:** OPEN
+**Written:** 2026-11-19 07:15 WIB. Read A-Brain `Brainstorm/2026-11-19_categories-subcategories-and-rival-catalog.md` (Aldi's words + Claude's proposal) and the last 3 entries of `.claude/PROGRESS.md`.
+**Touch only:** this file.
+Aldi wants a second opinion, not a copy of Claude's. In the Result:
+1. For EACH row of Claude's proposal (two fixed levels; one shared list; cross-category allowed; admin current price; matrix row default T1-T4; duplicate warning; build order Master Vault -> rival list -> Customers): AGREE or DISAGREE, one reason from TODAY's code (`file:line`), and a better option if you have one.
+2. Aldi's three open questions - give YOUR recommended answer to each, with the cost of the other answer: (a) two fixed levels + one shared list? (b) side by side uses the admin price, or this shop's logged price with the admin price as fallback? (c) do salesmen still log shop prices?
+3. Anything Claude missed: a screen, a report, an export, a rule, a money path that reads the product category and would break (`file:line`).
+4. Write it in short plain English for Aldi (he reads it): no jargon without a one-line meaning.
+**Done when:** Result has parts 1-4, every code claim has `file:line`, and a `could not check:` line.
+**Result:**
+
+## Task 76 - PICTURE: Customers C v5 = the recommended design (draft only)
+**Status:** OPEN
+**Written:** 2026-11-19 07:15 WIB. Aldi has NOT answered yet; this picture shows the RECOMMENDED answers so he can judge by looking (his rule: show, don't tell).
+**Touch only:** `.claude/drafts/customers-c.html`, this file.
+Change the Competitor intelligence tab and the "Rival products & pairs" dialog (both already in the file; read `compareCard`, `M.rivals`, `RIVALS`, `CATS`):
+1. Categories get TWO levels: a category list where each category has sub-categories (`CATS` becomes e.g. `[{ name, subs: [...] }]`). Rival products carry category + sub-category. Show both as "Category › Sub" everywhere a category shows today. Demo names = the ones in Aldi's message only, and the dialog says "example list" (only Aldi names real categories).
+2. Cross-category compare ALLOWED: the Cello picker lists ALL our products grouped by category (optgroup); when the two sides differ, show a small tag "Different category". Remove the "No Cello product in X yet" block (no longer needed) and keep "Save as the pair".
+3. Rival list: each rival gets "Current price" (edited by admin, shows "by <name> · <date>"). Side by side uses this shop's latest logged price; if none, the admin price with the label "admin price".
+4. Duplicate warning: adding a rival or category whose name matches an existing one after lower-casing and removing spaces, dots and dashes shows an in-page warning box ("Looks like <existing> - add anyway / cancel"), never a native dialog. Add a "Possible duplicates" section (Merge / Not duplicates) in the dialog; seed one pair so it shows.
+5. Role switch: replace the 3 simplified roles with the real tiers T2 Owner, T3 HQ Sales Manager, T4 Regional Admin, T5 Sales Canvas, T6 Sales Motorist (`src/config/permissions.js:45-49`). T2-T4 can edit the rival list, categories and pairs; T5-T6 see it read-only (default of the new matrix row).
+6. Same standards as Task 71: every action reports (gold check toast), no blue, no green, no `alert/confirm/prompt`, PC 1240 + phone 390 with nothing cut off, System/Light/Dark, Lite motion, 0 errors in headless Chrome (script, not clicking by hand).
+**Done when:** the 6 points work, headless check `ERRORS: []`, and the Result lists each point with what you checked.
+**Result:**
+
+## Task 77 - PICTURE: Master Vault categories + sub-categories (new draft)
+**Status:** OPEN
+**Written:** 2026-11-19 07:15 WIB. Aldi: *"this update should also applied on each of our inventory or master vault dont forget about that"*.
+**Touch only:** `.claude/drafts/categories-pro.html` (new), this file.
+One playable page, same standard as `.claude/drafts/reports-live.html` (dual-mounted PC 1240 + phone 390, in-page dialogs, gold check toast, System/Light/Dark, Lite motion). Look = Master Vault today (read `src/` Master Vault product form first; match its words). Three frames:
+1. "Categories" manager in Master Vault: category list, each with its sub-categories; add / rename / delete (delete refuses while products use it and says how many); duplicate warning like Task 76 point 4. Example data: Aldi's milk example (Kid > Kid Silver / Kid Bronze / Kid Gold; Adult > Adult Chocolate / Adult Vanilla / Adult Banana Choco; Elder) AND a cigarette set (SKT, SKM, Mild, Rokok Putih, Kretek), switchable by a "Company" toggle, labeled "example".
+2. Product form: Category and Sub-category pickers (sub list follows the category), plus "+ New sub-category" inline.
+3. Sales terminal product tabs: row 1 = categories, row 2 = sub-categories of the picked one (one line each, scroll sideways on the phone, never wrap to 3 lines).
+Nothing in `src/` changes. 0 errors in headless Chrome.
+**Done when:** 3 frames work on PC + phone, `ERRORS: []`, Result lists what you checked.
+**Result:**
