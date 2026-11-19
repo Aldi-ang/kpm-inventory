@@ -2706,7 +2706,8 @@ Build `.claude/drafts/customers-c.html` (taking section C of `.claude/drafts/cus
 2. Find the `firestore.rules` lines that gate that path (read + write, which tiers).
 3. Table: each thing the side-by-side card shows (our product + price, rival name + price, logged date, older price of the same rival, shelf, promo, selling speed, same rival at other shops) -> EXISTS (field name) / NEW. For each NEW: the smallest data change, and whether a rules line must change.
 4. (added 2026-11-19 06:53, picture v4) The card now also needs: a rival CATALOG set by us (rival name + category + the Cello product we pair it with), one CATEGORY list shared by our products and rivals, and each price log pointing at a catalog entry. For each: where our product category lives today (`type` / `category`, `file:line`, how the category list is built), and the smallest new collection/fields + the `firestore.rules` lines that would gate them (who may add a category, a rival, change a pair).
-**Done when:** Result has the 4 parts with `file:line` on every claim and a `could not check:` line.
+5. (added 2026-11-19 07:20, Aldi's new direction - see Task 78) Also map: how a REGION is stored and checked today (`normalizeRegion`, `src/config/permissions.js:411`, and the rules side), how our price per customer type (Retail / Grosir / Ecer) is stored on a product, and the smallest new data for (a) a rival price per region x customer type and (b) a "salesman report waiting for approval" record, with the `firestore.rules` lines each needs (T4 sees and approves only his own region; T3 and above all regions).
+**Done when:** Result has the 5 parts with `file:line` on every claim and a `could not check:` line.
 **Result:**
 
 ## Task 73 - READ-ONLY: does our product data know sticks per pack? (from Claude)
@@ -2736,22 +2737,23 @@ Build `.claude/drafts/customers-c.html` (taking section C of `.claude/drafts/cus
 **Touch only:** this file.
 Aldi wants a second opinion, not a copy of Claude's. In the Result:
 1. For EACH row of Claude's proposal (two fixed levels; one shared list; cross-category allowed; admin current price; matrix row default T1-T4; duplicate warning; build order Master Vault -> rival list -> Customers): AGREE or DISAGREE, one reason from TODAY's code (`file:line`), and a better option if you have one.
-2. Aldi's three open questions - give YOUR recommended answer to each, with the cost of the other answer: (a) two fixed levels + one shared list? (b) side by side uses the admin price, or this shop's logged price with the admin price as fallback? (c) do salesmen still log shop prices?
+2. Aldi's open questions - give YOUR recommended answer to each, with the cost of the other answer: (a) two fixed levels + one shared list? (b) [UPDATED 07:20 by his new direction, read the note's last section] is "customer type" our existing Retail / Grosir / Ecer? (c) who approves a salesman's report - T4 for his own region, T3 and above anywhere? (d) when an approved report shows a different price than the region price, does approving UPDATE the region price, or only keep it as a note?
+2b. His new direction (note's last section: a global Competitors segment, the shop tab only reads from it, salesman reports go through admin approval, T4 sees only his region): AGREE / DISAGREE with each part and why.
 3. Anything Claude missed: a screen, a report, an export, a rule, a money path that reads the product category and would break (`file:line`).
 4. Write it in short plain English for Aldi (he reads it): no jargon without a one-line meaning.
 **Done when:** Result has parts 1-4, every code claim has `file:line`, and a `could not check:` line.
 **Result:**
 
-## Task 76 - PICTURE: Customers C v5 = the recommended design (draft only)
+## Task 76 - PICTURE: Customers C v5 - the shop's competitor tab only READS from the global Competitors screen (draft only) - DO AFTER TASK 78
 **Status:** OPEN
-**Written:** 2026-11-19 07:15 WIB. Aldi has NOT answered yet; this picture shows the RECOMMENDED answers so he can judge by looking (his rule: show, don't tell).
+**Written:** 2026-11-19 07:20 WIB (rewritten after Aldi's new direction): *"we make the competitor segment as its own segment and the competitor inside each of the stores is just some comparison, data taken from the competitor own segment just to see if that product is perform the best in that stores compare to other, all the option to see competitor as a whole, adding or seeing all the competitors just available inside the competitor segment this should be outside of each stores"*.
 **Touch only:** `.claude/drafts/customers-c.html`, this file.
-Change the Competitor intelligence tab and the "Rival products & pairs" dialog (both already in the file; read `compareCard`, `M.rivals`, `RIVALS`, `CATS`):
-1. Categories get TWO levels: a category list where each category has sub-categories (`CATS` becomes e.g. `[{ name, subs: [...] }]`). Rival products carry category + sub-category. Show both as "Category › Sub" everywhere a category shows today. Demo names = the ones in Aldi's message only, and the dialog says "example list" (only Aldi names real categories).
-2. Cross-category compare ALLOWED: the Cello picker lists ALL our products grouped by category (optgroup); when the two sides differ, show a small tag "Different category". Remove the "No Cello product in X yet" block (no longer needed) and keep "Save as the pair".
-3. Rival list: each rival gets "Current price" (edited by admin, shows "by <name> · <date>"). Side by side uses this shop's latest logged price; if none, the admin price with the label "admin price".
-4. Duplicate warning: adding a rival or category whose name matches an existing one after lower-casing and removing spaces, dots and dashes shows an in-page warning box ("Looks like <existing> - add anyway / cancel"), never a native dialog. Add a "Possible duplicates" section (Merge / Not duplicates) in the dialog; seed one pair so it shows.
-5. Role switch: replace the 3 simplified roles with the real tiers T2 Owner, T3 HQ Sales Manager, T4 Regional Admin, T5 Sales Canvas, T6 Sales Motorist (`src/config/permissions.js:45-49`). T2-T4 can edit the rival list, categories and pairs; T5-T6 see it read-only (default of the new matrix row).
+Reuse Task 78's data shape (copy its seed arrays so both pictures show the same products and prices). In the shop's "Competitor intelligence" tab (read `compareCard`, `M.rivals`, `RIVALS`, `CATS` first):
+1. REMOVE from the shop: the "Rival products & pairs" dialog, "+ New rival product", add category, add rival, change pair, the admin price edit. All of that lives in Task 78's screen now. Leave one link "Open Competitors ›" (toast: "Opens the Competitors screen").
+2. Side by side stays, read-only data: our product vs rival, prices = the REGION price for THIS shop's customer type (the shop's price type: Retail / Grosir / Ecer, `s.price`), both sides. Category shown as "Category › Sub" on each side; different categories allowed, tagged "Different category".
+3. "How it sells here vs other shops": for each rival product seen at this shop, its selling speed here (from approved salesman reports) next to the other shops in the same region (e.g. "Fast here · Medium in 4 other shops"), so the boss sees where it performs best.
+4. "Report a rival" (T5/T6 and up): product picked from the list OR "new product" name, price seen, shelf, promo, selling speed, note, photo -> toast "Sent to your admin for approval" and the shop shows it as "Waiting for approval" (NOT in the comparison until approved).
+5. Real tiers in the role switch: T2 Owner, T3 HQ Sales Manager, T4 Regional Admin, T5 Sales Canvas, T6 Sales Motorist (`src/config/permissions.js:45-49`).
 6. Same standards as Task 71: every action reports (gold check toast), no blue, no green, no `alert/confirm/prompt`, PC 1240 + phone 390 with nothing cut off, System/Light/Dark, Lite motion, 0 errors in headless Chrome (script, not clicking by hand).
 **Done when:** the 6 points work, headless check `ERRORS: []`, and the Result lists each point with what you checked.
 **Result:**
@@ -2766,4 +2768,18 @@ One playable page, same standard as `.claude/drafts/reports-live.html` (dual-mou
 3. Sales terminal product tabs: row 1 = categories, row 2 = sub-categories of the picked one (one line each, scroll sideways on the phone, never wrap to 3 lines).
 Nothing in `src/` changes. 0 errors in headless Chrome.
 **Done when:** 3 frames work on PC + phone, `ERRORS: []`, Result lists what you checked.
+**Result:**
+
+## Task 78 - PICTURE: the global Competitors screen (new draft) - DO RIGHT AFTER TASK 75
+**Status:** OPEN
+**Written:** 2026-11-19 07:20 WIB. Aldi: *"i dont think that our competitor will give different price for each of their retailer, they may also set their price according to the customer type ... tier 4 can only see the price difference within his own region ... while the tier 3 and above as default can see all of the prices between region ... salesman should give us information towards the product to the admin through the app and admin approve and add it to global competitor screen"*.
+**Touch only:** `.claude/drafts/competitors-pro.html` (new), this file.
+One playable page, same standard as `.claude/drafts/reports-live.html` (dual-mounted PC 1240 + phone 390, in-page dialogs, gold check toast, rolling digits, System/Light/Dark, Lite motion, real tiers T2-T6 switch, look of `.claude/drafts/customers-c.html`). Seed: 3 regions (e.g. JAWA BARAT, JAWA TENGAH, JAWA TIMUR), customer types Retail / Grosir / Ecer, 5-6 rival products in Category › Sub (cigarette example names from Aldi's messages, labeled "example").
+1. **Rival products** list grouped by Category › Sub. Each product opens a price table: rows = customer type, columns = regions, plus our paired Cello price per customer type. Cells that differ between regions are marked. T3 and above see every region; T4 sees ONLY his own region's column (switch the tier and it must change); T5/T6 see their region read-only.
+2. **Compare**: pick ANY of our products and ANY rival (category shown, different categories allowed and tagged), pick region + customer type, see both prices, the gap in Rp and %, and the price ladder of that sub-category.
+3. **Reports waiting** (the approval queue): salesman reports (shop, salesman, product or "new product", price seen, shelf, promo, speed, photo, date). Approve -> the approver picks "Update the region price" or "Keep as a note only"; Reject -> asks a short reason (in-page box). A report whose product name matches an existing one after lower-casing and removing spaces/dots/dashes shows "Looks like <existing>" and offers Merge. T4 sees and approves only his region; T3 and above all. Every action reports with a toast.
+4. **Manage** (T4 and above by default): add / rename category and sub-category, add rival product, set its Cello pair, edit the region price (shows "by <name> · <date>"). Duplicate warning on add.
+5. A note on the page listing the new permission-matrix rows and their defaults: "See competitor prices in all regions" T1-T3 · "Approve competitor reports and edit prices" T1-T4 (own region for T4) · "Report a competitor" all tiers.
+6. 0 errors in headless Chrome (script), no blue, no green, no `alert/confirm/prompt`, nothing cut off at 390.
+**Done when:** the 6 points work, `ERRORS: []`, and the Result lists each point with what you checked.
 **Result:**
